@@ -36,11 +36,24 @@ LANE DISCIPLINE
 ---------------
 House law (CLAUDE.md): nightly/asia is the sole advancer of ledgers; render
 lanes discard ``data/`` writes.  Every writer here goes through ``_lane_ok``,
-which is FAIL-CLOSED: ``lane == 'asia'`` writes and everything else — an
-unrecognised lane, or no lane at all — is refused before any write.  It does
-NOT mirror ``engine.china_standout_track.append_board``'s permissive
-``lane is not None`` form; see ``_lane_ok`` for why keep-FIRST makes that
-default unsafe here.
+which is FAIL-CLOSED and PER-SUITE: each suite names the ONE collection lane
+allowed to advance it (``SUITE_LANE``) and everything else — a foreign lane, an
+unrecognised lane, an unknown suite, or no lane at all — is refused before any
+write.  It does NOT mirror ``engine.china_standout_track.append_board``'s
+permissive ``lane is not None`` form; see ``_lane_ok`` for why keep-FIRST makes
+that default unsafe here.
+
+THREE SUITES, TWO LANES (GMI W1a)
+---------------------------------
+The two CN suites are advanced by the asia collection lane (asia-close.yml,
+``CN_LANE=asia``).  The US suite ``baskets`` — the 49 hand-curated US thematic
+baskets in ``data/baskets/membership.json`` — is advanced by the US nightly
+(daily.yml, ``COLLECT_LANE=nightly``), which is the only lane that collects and
+commits US ``data/``.  The gate is per-suite precisely because "asia" is the
+wrong answer for a US store and "nightly" is the wrong answer for a CN one: a
+single global lane name would have to be permissive enough to admit both, and
+this store cannot afford a permissive gate (keep-FIRST, below).  US rows carry
+the same COLUMNS; ``name_zh`` is simply empty for them — one reader, not two.
 
 TWO SIDE-CAR SHAPES (and why the store says which one it used)
 --------------------------------------------------------------
@@ -72,6 +85,7 @@ import hashlib
 import json
 import logging
 import math
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -82,11 +96,32 @@ log = logging.getLogger(__name__)
 
 SUITE_THS = "baskets_china_ths"
 SUITE_CURATED = "baskets_china"
+SUITE_US = "baskets"
+
+#: The CN pair.  Kept as ``SUITES`` because it is the default of ``append_all``
+#: and the set every existing caller and test means by "both suites".
 SUITES: tuple[str, ...] = (SUITE_THS, SUITE_CURATED)
+#: The US suite, advanced by a DIFFERENT lane — hence its own tuple.
+SUITES_US: tuple[str, ...] = (SUITE_US,)
+ALL_SUITES: tuple[str, ...] = (*SUITES, *SUITES_US)
+
+#: The ONE collection lane permitted to advance each suite's PIT store.
+#: Fail-closed by construction: a suite absent from this map has NO lane that
+#: may write it, so a typo'd or newly-added suite refuses until it is declared.
+SUITE_LANE: dict[str, str] = {
+    SUITE_THS: "asia",       # asia-close.yml band A, CN_LANE=asia
+    SUITE_CURATED: "asia",   # ditto
+    SUITE_US: "nightly",     # daily.yml engine job, COLLECT_LANE=nightly
+}
 
 MEMBERSHIP_FILE = "membership.json"
 HISTORY_FILE = "membership_history.parquet"
 SNAPSHOT_DIR = "snapshots"
+
+#: Mutable cadence stamp inside each suite's snapshot dir — deliberately NOT part
+#: of the append-only history.  See ``write_cadence_stamp``.  The leading
+#: underscore keeps it out of the ``????-??-??.json`` dated-side-car namespace.
+CADENCE_FILE = "_cadence.json"
 
 #: Parquet column order.  ``added``/``removed`` are the source's own PIT dates and
 #: are carried through so a reader can resolve membership BETWEEN two snapshots.
@@ -125,8 +160,30 @@ def history_path(suite: str) -> Path:
 
 
 def snapshot_dir(suite: str) -> Path:
-    """Dated JSON side-car directory (THS only, today)."""
+    """Dated JSON side-car directory for ``suite``."""
     return config.data_dir() / suite / SNAPSHOT_DIR
+
+
+def cadence_path(suite: str) -> Path:
+    """The suite's mutable cadence stamp (see ``write_cadence_stamp``)."""
+    return snapshot_dir(suite) / CADENCE_FILE
+
+
+def dated_snapshots(suite: str) -> list[Path]:
+    """The suite's dated side-cars, oldest→newest.
+
+    The ONE place the dated-side-car namespace is defined.  ``????-??-??.json``
+    excludes the ``_cadence.json`` stamp and any other underscore-prefixed
+    working file — an important exclusion rather than a cosmetic one, because
+    ``_`` sorts AFTER every digit in ASCII, so a plain ``*.json`` glob taking a
+    max/last would resolve the stamp as the NEWEST snapshot.
+    """
+    d = snapshot_dir(suite)
+    try:
+        return sorted(p for p in d.glob("????-??-??.json")) if d.is_dir() else []
+    except Exception as exc:  # noqa: BLE001
+        log.warning("basket_membership_pit: snapshot scan failed for %s (%s)", suite, exc)
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -305,14 +362,70 @@ def _latest_sha(df: pd.DataFrame) -> tuple[str | None, str | None]:
 
 
 # ---------------------------------------------------------------------------
-# Writers (asia-lane only)
+# Cadence stamp (mutable, deliberately outside the append-only history)
 # ---------------------------------------------------------------------------
 
-def _lane_ok(lane: str | None, what: str) -> bool:
-    """The asia-lane gate for every writer here — FAIL-CLOSED.
+def write_cadence_stamp(suite: str, *, writer: str, membership_sha: str | None,
+                        now: str | None = None) -> Path | None:
+    """Rewrite ``<suite>/snapshots/_cadence.json`` — "this writer ran, and here is what it saw".
 
-    ``lane == 'asia'`` writes.  EVERYTHING else refuses: an unrecognised lane, and —
-    the case that matters — no lane at all.  This deliberately does NOT mirror
+    WHY A SEPARATE STAMP.  Both snapshot writers are content-deduped: when
+    membership has not changed they write nothing and log a dedup skip.  That is
+    correct for the history and catastrophic for monitoring, because a writer that
+    is deduping and a writer that has been UNWIRED FOR A MONTH leave the identical
+    trace on disk — nothing.  That is precisely how the THS side-car store sat at
+    two snapshots while its nightly step ran green ~35 nights in a row: the step
+    hashed today's membership.json against the last side-car, matched, and skipped,
+    every night, because nothing upstream was refreshing membership.json at all.
+
+    So liveness gets its own artifact.  It is MUTABLE (rewritten every run) and
+    therefore explicitly NOT part of the append-only history: it records the last
+    time the writer ran, never what membership was on some past date.  It lives
+    inside the snapshots dir so a reader needs one path, and is named with a
+    leading ``_`` so it can never collide with — or be globbed as — a dated
+    side-car (``dated_snapshots`` is the one enumerator, and it is date-shaped).
+
+    ``membership_sha`` is the writer's own dedup basis (sha256 of the membership
+    document it just hashed), so a stale ``last_snapshot_date`` next to a moving
+    ``membership_sha`` says "membership is churning but nothing is being stamped",
+    which is a different fault from "nothing is running".  Never raises.
+    """
+    try:
+        p = cadence_path(suite)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        dated = dated_snapshots(suite)
+        payload = {
+            "schema": "basket_membership_cadence.v1",
+            "suite": suite,
+            "writer": writer,
+            "checked_at": now or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "membership_sha": membership_sha,
+            "last_snapshot_date": dated[-1].stem if dated else None,
+        }
+        p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return p
+    except Exception as exc:  # noqa: BLE001 — a liveness stamp never breaks a build
+        log.warning("basket_membership_pit: cadence stamp failed for %s (%s)", suite, exc)
+        return None
+
+
+def read_cadence(suite: str) -> dict | None:
+    """The suite's cadence stamp, or None when absent/unreadable."""
+    blob = _read_json(cadence_path(suite))
+    return blob if isinstance(blob, dict) else None
+
+
+# ---------------------------------------------------------------------------
+# Writers (one collection lane per suite)
+# ---------------------------------------------------------------------------
+
+def _lane_ok(lane: str | None, what: str, *, suite: str) -> bool:
+    """The per-suite collection-lane gate for every writer here — FAIL-CLOSED.
+
+    ``lane == SUITE_LANE[suite]`` writes.  EVERYTHING else refuses: a FOREIGN lane
+    (the US nightly reaching for a CN suite, or asia reaching for the US one), an
+    unrecognised lane, a suite with no declared lane, and — the case that matters —
+    no lane at all.  This deliberately does NOT mirror
     ``china_standout_track.append_board``'s permissive ``lane is not None`` form.
     append_board can afford that default because a board row is re-derivable and a
     second lane rewriting it changes nothing.  This store cannot: it is append-only
@@ -326,15 +439,19 @@ def _lane_ok(lane: str | None, what: str) -> bool:
     that leaves ``CN_LANE`` unset — a hand-run, a future render-lane adopter — arrived
     here as the asia lane itself and the gate never fired.
 
-    Only ``.github/workflows/asia-close.yml`` (band A, step "CN/HK builder band A")
-    sets ``CN_LANE: asia``; the resolver that reads it is
-    ``scripts.build_baskets_china_ths._membership_pit_lane``, which has no default, so
-    every other context resolves None and lands on the refusal below.
+    The lane NAMES come from what the workflows already pass, and each resolver is
+    itself defaultless: ``.github/workflows/asia-close.yml`` (band A) sets
+    ``CN_LANE: asia``, read by ``scripts.build_baskets_china_ths._membership_pit_lane``;
+    ``.github/workflows/daily.yml`` (engine job) sets ``COLLECT_LANE: nightly``, read by
+    ``scripts.build_baskets._membership_pit_lane``.  Every other context resolves None
+    and lands on the refusal below.
     """
-    if lane == "asia":
+    want = SUITE_LANE.get(suite)
+    if want is not None and lane == want:
         return True
-    log.info("basket_membership_pit: %s REFUSED (lane=%r, not 'asia') — the asia "
-             "collection lane is the sole advancer of the PIT store", what, lane)
+    log.info("basket_membership_pit: %s REFUSED (lane=%r, suite %s is advanced only by "
+             "lane %r) — one collection lane per suite is the sole advancer of the PIT "
+             "store", what, lane, suite, want)
     return False
 
 
@@ -376,7 +493,7 @@ def append_snapshot(suite: str, *, asof: str | None = None,
     """
     result = {"suite": suite, "written": False, "rows_added": 0,
               "snapshot_date": None, "reason": None}
-    if not _lane_ok(lane, f"{suite} snapshot"):
+    if not _lane_ok(lane, f"{suite} snapshot", suite=suite):
         result["reason"] = f"lane={lane}"
         return result
     doc = _read_json(membership_path(suite))
@@ -417,15 +534,10 @@ def backfill_from_json_snapshots(suite: str, *, lane: str | None = None) -> dict
     """
     result = {"suite": suite, "dates": [], "rows_added": 0,
               "unparsed": [], "reason": None}
-    if not _lane_ok(lane, f"{suite} backfill"):
+    if not _lane_ok(lane, f"{suite} backfill", suite=suite):
         result["reason"] = f"lane={lane}"
         return result
-    d = snapshot_dir(suite)
-    try:
-        files = sorted(d.glob("????-??-??.json")) if d.is_dir() else []
-    except Exception as exc:  # noqa: BLE001
-        log.warning("basket_membership_pit: snapshot scan failed for %s (%s)", suite, exc)
-        files = []
+    files = dated_snapshots(suite)
     if not files:
         result["reason"] = "no dated JSON snapshots"
         return result
@@ -464,14 +576,22 @@ def backfill_from_json_snapshots(suite: str, *, lane: str | None = None) -> dict
     return result
 
 
-def append_all(*, asof: str | None = None, lane: str | None = None) -> dict:
-    """Backfill + stamp BOTH CN suites. The single nightly entry point.
+def append_all(*, asof: str | None = None, lane: str | None = None,
+               suites: tuple[str, ...] = SUITES) -> dict:
+    """Backfill + stamp each suite in ``suites``. The single nightly entry point.
 
     ``lane`` is threaded straight through to both writers and is FAIL-CLOSED there
-    (see ``_lane_ok``): omit it and nothing is written, in either suite.
+    (see ``_lane_ok``): omit it and nothing is written, in any suite.
+
+    ``suites`` defaults to the CN pair — the asia lane's call, unchanged.  The US
+    nightly passes ``SUITES_US``.  It is a parameter rather than a global sweep
+    because the lane gate is per-suite: a single call naming one lane can only
+    ever advance the suites that lane owns, so sweeping all three from either
+    nightly would log two guaranteed refusals every run and train the reader to
+    ignore the refusal line that matters.
     """
     out: dict = {}
-    for suite in SUITES:
+    for suite in suites:
         try:
             backfill = backfill_from_json_snapshots(suite, lane=lane)
             snap = append_snapshot(suite, asof=asof, lane=lane)

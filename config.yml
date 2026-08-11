@@ -3394,7 +3394,7 @@ alert_push:
 # plane. Folded into the scheduled heartbeat via scripts/healthcheck.py (telegram + red
 # run) and run `--strict --max-age-hours 2` right after each publish in daily/asia CI.
 live_flow:
-  cadence_sec: 120          # target poll interval (seconds between cycle starts)
+  cadence_sec: 120          # minimum start-to-start poll floor; actual interval is emitted in meta/v2
   max_concurrent: 2         # HARD LAW — T1 backfill shares the terminal's 8-request cap
   etf_floor: 1000000        # $ gross premium notability floor for ETF anchors
   name_floor: 250000        # $ gross premium notability floor for single names
@@ -3404,7 +3404,7 @@ live_flow:
   near_dte_cap_days: 90     # current-day fallback: cap per-expiration pulls to <=90 DTE (near-dated flow, where notable premium lives)
   # etf_anchors: []         # defaults to 22 anchors (see live_flow_poller._resolve_universe)
   # Flow-Surface store (scripts/build_flow_surface.py) — per-strike net-premium grids for the
-  # Terminal surface pane, materialized in the poller loop (cadence = cadence_sec above).
+  # Terminal surface pane, materialized in the poller loop (completeness floor = cadence_sec).
   # surface_roots: [SPY, QQQ, IWM]   # base roots to materialize (defaults to these 3)
   # surface_top_n: 0                 # +N extra roots by day gross premium (cheap; reuses cycle rollup)
   # surface_retain_sessions: 10      # dated surface prefixes kept per root

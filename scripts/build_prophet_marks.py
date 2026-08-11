@@ -1,10 +1,10 @@
 """scripts/build_prophet_marks.py — Prophet live-premium marks publisher (Item E).
 
-Reads active prophet plans from site/prophet/index.json (repo checkout, fallback to R2),
-extracts plans with a defined option_contract, derives the OCC symbol, pulls a current
-quote per contract from ThetaData v3 (PER-CONTRACT — v3 rejects wildcard-exp current-day,
-see #1774), assembles the prophet.live_marks/v1 payload, and publishes to R2 key
-live_flow/prophet_marks.json.
+Reads active prophet plans from the canonical R2 index in publish mode (local checkout
+first, then R2, for debug builds), extracts plans with a defined option_contract,
+derives the OCC symbol, pulls a current quote per contract from ThetaData v3
+(PER-CONTRACT — v3 rejects wildcard-exp current-day, see #1774), assembles the
+prophet.live_marks/v1 payload, and publishes to R2 key live_flow/prophet_marks.json.
 
 RTH behaviour
 -------------
@@ -107,7 +107,7 @@ def _load_index_local() -> dict | None:
 
 
 def _load_index_r2() -> dict | None:
-    """Fallback: fetch index.json from R2 public URL."""
+    """Fetch the canonical published index.json from R2."""
     try:
         req = urllib.request.Request(
             R2_FALLBACK_URL,
@@ -120,8 +120,17 @@ def _load_index_r2() -> dict | None:
     return None
 
 
-def _load_index() -> dict | None:
-    """Load the prophet index, local first then R2 fallback."""
+def _load_index(*, publish: bool = False) -> dict | None:
+    """Load the Prophet index appropriate for the requested output mode.
+
+    A deployed publisher may run from an intentionally pinned operations
+    checkout, so its local generated index is not canonical.  Publish mode is
+    therefore R2-only and fail-closed.  Local-first loading remains useful for
+    explicit debug builds in a development checkout.
+    """
+    if publish:
+        return _load_index_r2()
+
     idx = _load_index_local()
     if idx is not None:
         return idx
@@ -387,7 +396,7 @@ def build_marks(publish: bool = False, dry_run: bool = False) -> dict | None:
 
     # 2. Load index
     try:
-        index = _load_index()
+        index = _load_index(publish=publish)
     except Exception as exc:  # noqa: BLE001
         log.error("prophet_marks: index load failed: %s", exc)
         return None
@@ -463,7 +472,9 @@ def build_marks(publish: bool = False, dry_run: bool = False) -> dict | None:
     if dry_run:
         print(payload_json)
     elif publish:
-        _publish_r2(payload_json)
+        if not _publish_r2(payload_json):
+            log.error("prophet_marks: canonical R2 publish failed")
+            return None
     else:
         # Default: write to /tmp for smoke inspection
         tmp_path = Path("/tmp/prophet_marks_debug.json")

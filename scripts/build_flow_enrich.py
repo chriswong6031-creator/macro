@@ -224,7 +224,6 @@ def main(argv: list[str] | None = None) -> int:
 
     from engine import flow_enrich as fe
 
-    asof = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     bucket = os.environ.get("R2_BUCKET", "")
     s3 = _r2_client()
 
@@ -259,9 +258,10 @@ def main(argv: list[str] | None = None) -> int:
 
     # 4. Enrich
     try:
+        built_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         envelope = fe.enrich_feed(
             feed_payload=feed_payload,
-            asof=asof,
+            built_at=built_at,
             pool_events=pool_events if pool_events else None,
             oi_confirmed=oi_confirmed,
         )
