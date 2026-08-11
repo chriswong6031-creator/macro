@@ -29,7 +29,6 @@ from datetime import date, datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
 
 from engine import options_signal_episode
 from engine.neuralweb import market_memory, market_memory_identity, market_memory_pit
@@ -2340,17 +2339,17 @@ class OptionsContextDispatcher:
             try:
                 stdout, stderr = process.communicate(input=batch, timeout=30)
                 returncode = process.returncode
-            except BaseException:
+            except Exception:  # noqa: BLE001 - every post-Popen failure is unknown
                 # Popen returning is the only defensible launch boundary.  Any
                 # later failure can hide a remote commit or a lost ACK.
                 try:
                     process.kill()
-                except BaseException:
-                    pass
+                except Exception as cleanup_error:  # noqa: BLE001
+                    _ = cleanup_error
                 try:
                     process.communicate(timeout=1)
-                except BaseException:
-                    pass
+                except Exception as cleanup_error:  # noqa: BLE001
+                    _ = cleanup_error
                 completed = _utc_now().astimezone(timezone.utc)
                 for path, request in selected:
                     self._complete(
