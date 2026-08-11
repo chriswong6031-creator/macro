@@ -1,9 +1,10 @@
 """Pure W5A synthetic Operating Cortex conformance kernel.
 
-The kernel consumes only caller-supplied synthetic evidence and the exact W4A
-episodic-retrieval dependency graph.  It performs structural citation, salience,
-contradiction, missingness, and falsifier audits.  It has no discovery, prose
-generation, clock, filesystem, network, store, service, or emission capability.
+The kernel consumes caller-supplied, content-addressed evidence and claim cards
+over one exact W4A episodic-retrieval record.  It performs structural byte-span
+closure, salience, contradiction, missingness, falsifier, and citation audits.
+It never evaluates semantic entailment or attention quality and has no clock,
+filesystem, network, LLM, store, service, write, or emission capability.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import copy
 import hashlib
 import json
 import re
+import unicodedata
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_EVEN, Context, Decimal, InvalidOperation, localcontext
@@ -28,43 +30,83 @@ NUMERIC_CONVENTION: Final = "decimal64_half_even_one_final_q18/v1"
 
 CLAIMS: Mapping[str, bool] = MappingProxyType(
     {
-        "source_authenticity_established": False,
-        "citation_entailment_evaluated": False,
+        "operational_input_authenticated": False,
         "evidence_population_complete": False,
-        "contradiction_population_complete": False,
-        "missingness_population_complete": False,
-        "falsifier_population_complete": False,
+        "salience_component_provenance_authenticated": False,
+        "citation_semantic_entailment_evaluated": False,
+        "unsupported_claim_truth_evaluated": False,
         "attention_quality_evaluated": False,
+        "learned_synthesis_performed": False,
+        "hypotheses_generated": False,
         "forecast_input_eligible": False,
         "aggregate_eligible": False,
         "skill_claim_eligible": False,
+        "prophet_input_eligible": False,
     }
 )
 
 SALIENCE_WEIGHTS: Mapping[str, str] = MappingProxyType(
     {
-        "freshness": "0.250000000000000000",
-        "source_quality": "0.200000000000000000",
-        "episode_relevance": "0.150000000000000000",
-        "contradiction_relevance": "0.150000000000000000",
-        "missingness_relevance": "0.150000000000000000",
-        "falsifier_relevance": "0.100000000000000000",
+        "standardized_surprise": "0.250000000000000000",
+        "change_hazard": "0.200000000000000000",
+        "novelty": "0.150000000000000000",
+        "disagreement": "0.150000000000000000",
+        "materiality": "0.150000000000000000",
+        "data_health_deficit": "0.100000000000000000",
     }
 )
 
-_MAX_REGISTRATION_BYTES = 256 * 1024
-_MAX_PACKET_BYTES = 2 * 1024 * 1024
-_MAX_SOURCE_BYTES = 64 * 1024
-_MAX_AGGREGATE_SOURCE_BYTES = 4 * 1024 * 1024
+READ_TOOLS: tuple[str, ...] = (
+    "read_attention_queue",
+    "read_citation_projection",
+    "read_contradictions",
+    "read_episode_scope",
+    "read_falsifier_audit",
+    "read_missingness",
+    "read_scorecards",
+)
+
+_MAX_REGISTRATION_BYTES = 262_144
+_MAX_PACKET_BYTES = 2_097_152
+_MAX_SOURCE_BYTES = 65_536
+_MAX_AGGREGATE_SOURCE_BYTES = 4_194_304
 _MAX_EVIDENCE = 64
 _MAX_CLAIMS = 128
 _MAX_REFS = 8
 _MAX_KINDS = 16
-_MAX_CONTRADICTION_GROUPS = 128
+_MAX_CONTRADICTIONS = 128
 _MAX_EPISODES = 33
-_MAX_STRING = 256
+_MAX_STRING_BYTES = 256
 _MAX_DEPTH = 16
 _MAX_NODES = 16_384
+
+BOUNDS: Mapping[str, int] = MappingProxyType(
+    {
+        "max_registration_bytes": _MAX_REGISTRATION_BYTES,
+        "max_packet_bytes": _MAX_PACKET_BYTES,
+        "max_source_bytes": _MAX_SOURCE_BYTES,
+        "max_aggregate_source_bytes": _MAX_AGGREGATE_SOURCE_BYTES,
+        "max_evidence_cards": _MAX_EVIDENCE,
+        "max_claims": _MAX_CLAIMS,
+        "max_evidence_card_refs": _MAX_REFS,
+        "max_evidence_kinds": _MAX_KINDS,
+        "max_contradictions": _MAX_CONTRADICTIONS,
+        "max_episodes": _MAX_EPISODES,
+        "max_string_bytes": _MAX_STRING_BYTES,
+        "max_depth": _MAX_DEPTH,
+        "max_nodes": _MAX_NODES,
+    }
+)
+
+COVERAGE: Mapping[str, bool] = MappingProxyType(
+    {
+        "w4_exact_join_validated": True,
+        "citation_byte_closure_validated": True,
+        "evidence_population_complete": False,
+        "citation_semantic_entailment_evaluated": False,
+        "attention_quality_evaluated": False,
+    }
+)
 
 _DECIMAL_CONTEXT = Context(
     prec=64,
@@ -73,6 +115,7 @@ _DECIMAL_CONTEXT = Context(
     Emax=999_999,
 )
 _QUANTUM = Decimal("0.000000000000000001")
+
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _OPAQUE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}\Z")
 _Q18_UNIT = re.compile(r"(?:0|1)\.[0-9]{18}\Z")
@@ -80,15 +123,117 @@ _UTC = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]
 _REGISTRATION_ID = re.compile(r"mmcortexregistration_[a-f0-9]{64}\Z")
 _PACKET_ID = re.compile(r"mmcortexpacket_[a-f0-9]{64}\Z")
 _FORECAST_ID = re.compile(r"mmforecast_[a-f0-9]{64}\Z")
+_TRIAL_ID = re.compile(r"mmtrial_[a-f0-9]{64}\Z")
+_RETRIEVAL_ID = re.compile(r"mmretrievalregistration_[a-f0-9]{64}\Z")
+_EPISODIC_ID = re.compile(r"mmepisodicretrieval_[a-f0-9]{64}\Z")
+_CITATION_ID = re.compile(r"mmcitation_[a-f0-9]{64}\Z")
+_EVIDENCE_ID = re.compile(r"mmevidencecard_[a-f0-9]{64}\Z")
+_CLAIM_ID = re.compile(r"mmclaim_[a-f0-9]{64}\Z")
+_ATTENTION_ID = re.compile(r"mmattentionitem_[a-f0-9]{64}\Z")
+_CONTRADICTION_ID = re.compile(r"mmcontradictiongroup_[a-f0-9]{64}\Z")
 
-# These concepts are intentionally unavailable to this structural kernel.  The
-# boundary applies to caller-defined identifiers and UTF-8 source bytes, not to
-# exact W2/W4 dependency identifiers such as ``mmforecast_*``.
-_FORBIDDEN_TOKEN = re.compile(
-    r"(?i)(?:^|[^a-z0-9])(?:actions?|buys?|sells?|holds?|holding|long|short|"
-    r"outcomes?|labels?|bullish|bearish|forecasts?|directions?|pnl|p\s*&\s*l|"
-    r"profits?|loss(?:es)?|returns?|trades?|positions?|targets?|recommendations?)"
-    r"(?:$|[^a-z0-9])"
+# Caller-controlled W5 codes and keys must not smuggle an action or authority
+# capability through separator, compact, Unicode-compatibility, or camel form.
+# Exact cited source bytes are deliberately excluded: closure proves integrity,
+# never semantics, authority, or suitability.
+_FORBIDDEN_WORDS = frozenset(
+    {
+        "action",
+        "actions",
+        "authority",
+        "authoritative",
+        "bearish",
+        "bullish",
+        "buy",
+        "buying",
+        "buys",
+        "direction",
+        "directions",
+        "escalate",
+        "execute",
+        "executed",
+        "execution",
+        "forecast",
+        "forecasts",
+        "gate",
+        "gated",
+        "gating",
+        "hold",
+        "holding",
+        "holds",
+        "label",
+        "labels",
+        "long",
+        "loss",
+        "losses",
+        "originate",
+        "originated",
+        "origination",
+        "outcome",
+        "outcomes",
+        "permission",
+        "permissions",
+        "permitted",
+        "pnl",
+        "position",
+        "positions",
+        "profit",
+        "profits",
+        "promote",
+        "promoted",
+        "promotion",
+        "prophet",
+        "rank",
+        "ranked",
+        "ranking",
+        "recommendation",
+        "recommendations",
+        "recommend",
+        "recommended",
+        "return",
+        "returns",
+        "sell",
+        "selling",
+        "sells",
+        "short",
+        "size",
+        "sized",
+        "sizing",
+        "target",
+        "targets",
+        "trade",
+        "traded",
+        "trading",
+        "trades",
+        "train",
+        "trained",
+        "training",
+    }
+)
+_FORBIDDEN_COMPACT = frozenset(
+    {
+        "appendoutcome",
+        "buysignal",
+        "executeaction",
+        "forecastcontext",
+        "mayappendoutcome",
+        "mayescalate",
+        "mayexecute",
+        "maygate",
+        "mayoriginate",
+        "mayrank",
+        "mayselectoptionscandidate",
+        "maysize",
+        "maytrade",
+        "maytrainprophet",
+        "maywriteoptionsepisode",
+        "outcomefree",
+        "promotioneligible",
+        "proposalweight",
+        "recommendationengine",
+        "sellsignal",
+        "trainingeligible",
+    }
 )
 
 _REGISTRATION_FIELDS = frozenset(
@@ -98,10 +243,13 @@ _REGISTRATION_FIELDS = frozenset(
         "registration_key",
         "registered_at",
         "retrieval_registration_id",
-        "retrieval_registration_sha256",
+        "trial_registration_id",
+        "trial_plan_sha256",
         "required_evidence_kinds",
         "salience_policy",
         "citation_policy",
+        "read_tools",
+        "bounds",
         "implementation",
         "input_profile",
         "claims",
@@ -109,15 +257,6 @@ _REGISTRATION_FIELDS = frozenset(
         "authority",
     }
 )
-_SALIENCE_POLICY_FIELDS = frozenset(
-    {"components", "weights", "missing_component", "ordering", "numeric_convention"}
-)
-_CITATION_POLICY_FIELDS = frozenset(
-    {"closure", "entailment", "source_profile", "withholding_precedence"}
-)
-_IMPLEMENTATION_FIELDS = frozenset({"producer_code_sha256", "producer_config_sha256"})
-_CLAIM_FIELDS = frozenset(CLAIMS)
-
 _PACKET_FIELDS = frozenset(
     {
         "schema",
@@ -126,50 +265,77 @@ _PACKET_FIELDS = frozenset(
         "retrieval_registration_id",
         "episodic_retrieval_record_id",
         "trial_registration_id",
-        "assembled_at",
+        "subject",
+        "produced_at",
         "episode_scope",
-        "source_manifests",
-        "evidence_cards",
-        "claim_inputs",
+        "evidence_manifest",
         "attention_queue",
         "contradictions",
         "missingness",
         "falsifier_audit",
         "citation_projection",
-        "scorecards",
+        "unsupported_claim_scorecard",
+        "attention_quality_scorecard",
+        "read_tools",
+        "coverage",
         "input_profile",
         "claims",
         "emission_enabled",
         "authority",
     }
 )
-_EVIDENCE_FIELDS = frozenset(
+_SUBJECT_FIELDS = frozenset({"subject_id", "instrument_id"})
+_EPISODE_FIELDS = frozenset({"episode_role", "episode_forecast_id", "subject"})
+_CITATION_FIELDS = frozenset(
     {
-        "evidence_id",
-        "episode_forecast_id",
-        "evidence_kind",
-        "source_id",
+        "citation_id",
+        "source_record_ref",
         "source_sha256",
-        "citations",
-        "stance",
-        "contradiction_group_id",
-        "salience_components",
+        "source_bytes",
+        "span_start_byte",
+        "span_end_byte",
+        "span_sha256",
+        "known_at",
     }
 )
-_CITATION_FIELDS = frozenset({"byte_start", "byte_end"})
-_CLAIM_INPUT_FIELDS = frozenset(
+_EVIDENCE_FIELDS = frozenset(
+    {
+        "evidence_card_id",
+        "episode_role",
+        "episode_forecast_id",
+        "subject",
+        "evidence_kind",
+        "claim_key",
+        "stance",
+        "known_at",
+        "salience_components",
+        "citation",
+    }
+)
+_EVIDENCE_INPUT_FIELDS = frozenset({"evidence_card", "exact_source_bytes"})
+_CLAIM_FIELDS = frozenset(
     {
         "claim_id",
-        "episode_forecast_id",
-        "evidence_ids",
-        "required_evidence_kinds",
-        "falsifier_evidence_ids",
+        "subject",
+        "claim_key",
+        "stance",
+        "evidence_card_refs",
+        "falsifier_code",
+    }
+)
+_PROJECTION_FIELDS = frozenset(
+    {
+        *_CLAIM_FIELDS,
+        "status",
+        "withholding_reason",
+        "citation_ids",
+        "semantic_entailment_evaluated",
     }
 )
 
 
 class MarketMemoryOperatingCortexContractError(ValueError):
-    """A W5A structural cortex value is unsafe or ambiguous."""
+    """A W5A Operating Cortex value is unsafe, ambiguous, or inauthentic."""
 
 
 def _fail(message: str) -> NoReturn:
@@ -205,15 +371,18 @@ def _resource_guard(value: object, *, field: str) -> None:
             _fail(f"{field} exceeds depth {_MAX_DEPTH}")
         if type(item) is dict:
             for key, child in item.items():
-                if type(key) is not str or len(key) > _MAX_STRING:
+                if type(key) is not str or len(key.encode("utf-8")) > _MAX_STRING_BYTES:
                     _fail(f"{field} contains an invalid key")
                 visit(child, depth + 1)
         elif type(item) is list:
             for child in item:
                 visit(child, depth + 1)
-        elif type(item) is str and len(item) > _MAX_STRING:
-            _fail(f"{field} contains a string longer than {_MAX_STRING}")
-        elif item is not None and type(item) not in {str, int, bool}:
+        elif type(item) is str:
+            if len(item.encode("utf-8")) > _MAX_STRING_BYTES:
+                _fail(
+                    f"{field} contains a string longer than {_MAX_STRING_BYTES} bytes"
+                )
+        elif item is not None and type(item) not in {int, bool}:
             _fail(f"{field} contains a non-JSON scalar")
 
     visit(value, 0)
@@ -223,7 +392,11 @@ def _canonical_bytes(value: object, *, field: str, maximum: int) -> bytes:
     _resource_guard(value, field=field)
     try:
         body = forward.canonical_json_bytes(value)
-    except (forward.MarketMemoryForwardContractError, RecursionError) as exc:
+    except (
+        forward.MarketMemoryForwardContractError,
+        RecursionError,
+        ValueError,
+    ) as exc:
         raise MarketMemoryOperatingCortexContractError(
             f"{field} is not canonical JSON"
         ) from exc
@@ -263,11 +436,25 @@ def _match(value: object, pattern: re.Pattern[str], *, field: str) -> str:
     return value
 
 
+def _semantic_forms(text: str) -> tuple[set[str], str]:
+    normalized = unicodedata.normalize("NFKC", text)
+    camel_split = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", normalized)
+    words = re.findall(r"[a-z0-9]+", camel_split.casefold())
+    return set(words), "".join(words)
+
+
 def _opaque(value: object, *, field: str) -> str:
     text = _match(value, _OPAQUE, field=field)
-    if _FORBIDDEN_TOKEN.search(text.replace("_", " ").replace("-", " ")):
-        _fail(f"{field} contains a forbidden semantic token")
+    words, compact = _semantic_forms(text)
+    if words & _FORBIDDEN_WORDS or any(
+        token in compact for token in _FORBIDDEN_COMPACT
+    ):
+        _fail(f"{field} contains a forbidden action or authority token")
     return text
+
+
+def _dependency_opaque(value: object, *, field: str) -> str:
+    return _match(value, _OPAQUE, field=field)
 
 
 def _sha(value: object, *, field: str) -> str:
@@ -320,21 +507,16 @@ def _q18_text(value: Decimal, *, field: str) -> str:
     return text
 
 
-def _authority(value: object) -> dict[str, Any]:
-    expected = dict(forward.AUTHORITY)
-    if not _exact_equal(
-        value, expected, field="authority", maximum=_MAX_REGISTRATION_BYTES
-    ):
-        _fail("authority must equal the frozen W2 zero-authority block")
-    return expected
-
-
-def _claims(value: object) -> dict[str, bool]:
-    payload = _require_fields(value, _CLAIM_FIELDS, field="claims")
-    expected = dict(CLAIMS)
-    if payload != expected:
-        _fail("all W5A evidence and authority claims must remain false")
-    return expected
+def _clean_subject(value: object, *, field: str) -> dict[str, str]:
+    payload = _require_fields(value, _SUBJECT_FIELDS, field=field)
+    return {
+        "instrument_id": _dependency_opaque(
+            payload["instrument_id"], field=f"{field}.instrument_id"
+        ),
+        "subject_id": _dependency_opaque(
+            payload["subject_id"], field=f"{field}.subject_id"
+        ),
+    }
 
 
 def _sorted_unique_opaque(
@@ -350,12 +532,45 @@ def _sorted_unique_opaque(
     return rows
 
 
-def _registration_sha(value: Mapping[str, Any]) -> str:
-    return hashlib.sha256(
-        _canonical_bytes(
-            value, field="retrieval registration", maximum=_MAX_REGISTRATION_BYTES
-        )
-    ).hexdigest()
+def _claims(value: object) -> dict[str, bool]:
+    payload = _require_fields(value, frozenset(CLAIMS), field="claims")
+    expected = dict(CLAIMS)
+    if payload != expected:
+        _fail("all W5A evidence and authority claims must remain false")
+    return expected
+
+
+def _authority(value: object) -> dict[str, Any]:
+    expected = dict(forward.AUTHORITY)
+    if not _exact_equal(
+        value, expected, field="authority", maximum=_MAX_REGISTRATION_BYTES
+    ):
+        _fail("authority must equal the frozen W2 zero-authority block")
+    return expected
+
+
+def _fixed_salience_policy() -> dict[str, Any]:
+    return {
+        "components": list(SALIENCE_WEIGHTS),
+        "weights": dict(SALIENCE_WEIGHTS),
+        "missing_component": "abstain",
+        "ordering": "score_desc_then_evidence_card_id_then_abstained_evidence_card_id",
+        "numeric_convention": NUMERIC_CONVENTION,
+    }
+
+
+def _fixed_citation_policy() -> dict[str, Any]:
+    return {
+        "byte_closure": "source_sha256_length_and_half_open_span_sha256",
+        "semantic_entailment": "not_evaluated",
+        "withholding_precedence": [
+            "evidence_reference_missing",
+            "evidence_reference_mismatch",
+            "required_evidence_kind_missing",
+            "citation_not_closed",
+            "semantic_entailment_not_evaluated",
+        ],
+    }
 
 
 def _joined_retrieval_registration(
@@ -371,30 +586,6 @@ def _joined_retrieval_registration(
         ) from exc
 
 
-def _fixed_salience_policy() -> dict[str, Any]:
-    return {
-        "components": list(SALIENCE_WEIGHTS),
-        "weights": dict(SALIENCE_WEIGHTS),
-        "missing_component": "abstain",
-        "ordering": "score_desc_then_evidence_id_then_abstained_evidence_id",
-        "numeric_convention": NUMERIC_CONVENTION,
-    }
-
-
-def _fixed_citation_policy() -> dict[str, Any]:
-    return {
-        "closure": "exact_source_sha256_and_half_open_byte_spans",
-        "entailment": "not_evaluated",
-        "source_profile": "caller_supplied_synthetic_exact_bytes",
-        "withholding_precedence": [
-            "evidence_reference_missing",
-            "required_evidence_kind_missing",
-            "citation_not_closed",
-            "falsifier_reference_missing",
-        ],
-    }
-
-
 def build_operating_cortex_registration(
     *,
     retrieval_registration: Mapping[str, Any],
@@ -405,7 +596,7 @@ def build_operating_cortex_registration(
     producer_code_sha256: str,
     producer_config_sha256: str,
 ) -> dict[str, Any]:
-    """Build an inert W5A registration over one exact W4A registration."""
+    """Build the frozen inert W5A registration over exact W4A/W2A owners."""
 
     joined = _joined_retrieval_registration(
         retrieval_registration, trial_registration=trial_registration
@@ -424,10 +615,13 @@ def build_operating_cortex_registration(
         "registration_key": registration_key,
         "registered_at": registered_at,
         "retrieval_registration_id": joined["retrieval_registration_id"],
-        "retrieval_registration_sha256": _registration_sha(joined),
+        "trial_registration_id": joined["trial_registration_id"],
+        "trial_plan_sha256": joined["trial_plan_sha256"],
         "required_evidence_kinds": kinds,
         "salience_policy": _fixed_salience_policy(),
         "citation_policy": _fixed_citation_policy(),
+        "read_tools": list(READ_TOOLS),
+        "bounds": dict(BOUNDS),
         "implementation": {
             "producer_code_sha256": producer_code_sha256,
             "producer_config_sha256": producer_config_sha256,
@@ -453,7 +647,7 @@ def build_operating_cortex_registration(
 def validate_operating_cortex_registration_record(
     value: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Validate a self-authenticating W5A registration without dependency joins."""
+    """Validate one self-authenticating frozen W5A registration."""
 
     payload = _require_fields(value, _REGISTRATION_FIELDS, field="cortex registration")
     _canonical_bytes(
@@ -466,15 +660,30 @@ def validate_operating_cortex_registration_record(
         _REGISTRATION_ID,
         field="operating_cortex_registration_id",
     )
+    implementation = _require_fields(
+        payload["implementation"],
+        frozenset({"producer_code_sha256", "producer_config_sha256"}),
+        field="implementation",
+    )
     salience = _require_fields(
-        payload["salience_policy"], _SALIENCE_POLICY_FIELDS, field="salience_policy"
+        payload["salience_policy"],
+        frozenset(
+            {
+                "components",
+                "weights",
+                "missing_component",
+                "ordering",
+                "numeric_convention",
+            }
+        ),
+        field="salience_policy",
     )
     citation = _require_fields(
-        payload["citation_policy"], _CITATION_POLICY_FIELDS, field="citation_policy"
+        payload["citation_policy"],
+        frozenset({"byte_closure", "semantic_entailment", "withholding_precedence"}),
+        field="citation_policy",
     )
-    implementation = _require_fields(
-        payload["implementation"], _IMPLEMENTATION_FIELDS, field="implementation"
-    )
+    bounds = _require_fields(payload["bounds"], frozenset(BOUNDS), field="bounds")
     clean: dict[str, Any] = {
         "schema": OPERATING_CORTEX_REGISTRATION_SCHEMA,
         "operating_cortex_registration_id": registration_id,
@@ -486,12 +695,14 @@ def validate_operating_cortex_registration_record(
         ),
         "retrieval_registration_id": _match(
             payload["retrieval_registration_id"],
-            re.compile(r"mmretrievalregistration_[a-f0-9]{64}\Z"),
+            _RETRIEVAL_ID,
             field="retrieval_registration_id",
         ),
-        "retrieval_registration_sha256": _sha(
-            payload["retrieval_registration_sha256"],
-            field="retrieval_registration_sha256",
+        "trial_registration_id": _match(
+            payload["trial_registration_id"], _TRIAL_ID, field="trial_registration_id"
+        ),
+        "trial_plan_sha256": _sha(
+            payload["trial_plan_sha256"], field="trial_plan_sha256"
         ),
         "required_evidence_kinds": _sorted_unique_opaque(
             payload["required_evidence_kinds"],
@@ -501,6 +712,10 @@ def validate_operating_cortex_registration_record(
         ),
         "salience_policy": dict(salience),
         "citation_policy": dict(citation),
+        "read_tools": list(payload["read_tools"])
+        if type(payload["read_tools"]) is list
+        else payload["read_tools"],
+        "bounds": dict(bounds),
         "implementation": {
             "producer_code_sha256": _sha(
                 implementation["producer_code_sha256"], field="producer_code_sha256"
@@ -515,9 +730,13 @@ def validate_operating_cortex_registration_record(
         "authority": _authority(payload["authority"]),
     }
     if clean["salience_policy"] != _fixed_salience_policy():
-        _fail("salience policy differs from the frozen six-component W5A policy")
+        _fail("salience policy differs from the frozen six-component policy")
     if clean["citation_policy"] != _fixed_citation_policy():
-        _fail("citation policy differs from the frozen structural W5A policy")
+        _fail("citation policy differs from the frozen closure policy")
+    if clean["read_tools"] != list(READ_TOOLS):
+        _fail("read_tools differ from the frozen seven-view surface")
+    if clean["bounds"] != dict(BOUNDS):
+        _fail("bounds differ from the frozen W5A limits")
     if (
         clean["input_profile"] != INPUT_PROFILE
         or clean["emission_enabled"] is not False
@@ -554,8 +773,10 @@ def validate_operating_cortex_registration_join(
     clean = validate_operating_cortex_registration_record(value)
     if clean["retrieval_registration_id"] != joined["retrieval_registration_id"]:
         _fail("cortex registration differs from exact W4A registration id")
-    if clean["retrieval_registration_sha256"] != _registration_sha(joined):
-        _fail("cortex registration differs from exact W4A registration bytes")
+    if clean["trial_registration_id"] != joined["trial_registration_id"]:
+        _fail("cortex registration differs from exact W2A trial id")
+    if clean["trial_plan_sha256"] != joined["trial_plan_sha256"]:
+        _fail("cortex registration differs from exact W2A trial-plan bytes")
     if _utc(clean["registered_at"], field="registered_at") < _utc(
         joined["registered_at"], field="retrieval.registered_at"
     ):
@@ -616,469 +837,6 @@ def load_operating_cortex_registration_join_json(
     )
 
 
-def _exact_sources(
-    value: Mapping[str, bytes],
-) -> tuple[dict[str, bytes], list[dict[str, Any]]]:
-    if type(value) is not dict or not all(type(key) is str for key in value):
-        _fail("exact_source_bytes must be a plain source_id to bytes mapping")
-    if len(value) > _MAX_EVIDENCE:
-        _fail("exact_source_bytes contains too many sources")
-    sources: dict[str, bytes] = {}
-    total = 0
-    for raw_id in sorted(value):
-        source_id = _opaque(raw_id, field="exact_source_bytes source_id")
-        body = value[raw_id]
-        if type(body) is not bytes or not body or len(body) > _MAX_SOURCE_BYTES:
-            _fail("each exact source must contain 1..64 KiB bytes")
-        total += len(body)
-        if total > _MAX_AGGREGATE_SOURCE_BYTES:
-            _fail("aggregate exact source bytes exceed 4 MiB")
-        text = body.decode("latin-1")
-        if _FORBIDDEN_TOKEN.search(text):
-            _fail("synthetic exact source bytes contain a forbidden semantic token")
-        sources[source_id] = bytes(body)
-    manifests = [
-        {
-            "source_id": source_id,
-            "source_sha256": hashlib.sha256(body).hexdigest(),
-            "byte_length": len(body),
-        }
-        for source_id, body in sources.items()
-    ]
-    return sources, manifests
-
-
-def _clean_evidence(
-    value: Sequence[Mapping[str, Any]],
-    *,
-    episode_scope: set[str],
-    sources: Mapping[str, bytes],
-) -> list[dict[str, Any]]:
-    if type(value) not in {list, tuple} or len(value) > _MAX_EVIDENCE:
-        _fail("evidence_cards must contain at most 64 rows")
-    rows: list[dict[str, Any]] = []
-    for index, item in enumerate(value):
-        row = _require_fields(item, _EVIDENCE_FIELDS, field=f"evidence_cards[{index}]")
-        evidence_id = _opaque(
-            row["evidence_id"], field=f"evidence_cards[{index}].evidence_id"
-        )
-        episode_id = _match(
-            row["episode_forecast_id"],
-            _FORECAST_ID,
-            field=f"evidence_cards[{index}].episode_forecast_id",
-        )
-        if episode_id not in episode_scope:
-            _fail("evidence card episode is outside exact W4A episode scope")
-        source_id = _opaque(
-            row["source_id"], field=f"evidence_cards[{index}].source_id"
-        )
-        if source_id not in sources:
-            _fail("evidence card references an absent exact source")
-        source_sha = _sha(
-            row["source_sha256"], field=f"evidence_cards[{index}].source_sha256"
-        )
-        if source_sha != hashlib.sha256(sources[source_id]).hexdigest():
-            _fail("evidence card source hash differs from exact source bytes")
-        citations_raw = row["citations"]
-        if type(citations_raw) is not list or len(citations_raw) > _MAX_REFS:
-            _fail("evidence citations must contain at most 8 spans")
-        citations: list[dict[str, int]] = []
-        for citation_index, raw in enumerate(citations_raw):
-            citation = _require_fields(
-                raw,
-                _CITATION_FIELDS,
-                field=f"evidence_cards[{index}].citations[{citation_index}]",
-            )
-            start = _exact_int(
-                citation["byte_start"],
-                field="byte_start",
-                minimum=0,
-                maximum=len(sources[source_id]),
-            )
-            end = _exact_int(
-                citation["byte_end"],
-                field="byte_end",
-                minimum=1,
-                maximum=len(sources[source_id]),
-            )
-            if start >= end:
-                _fail("citation spans must be non-empty half-open byte intervals")
-            citations.append({"byte_start": start, "byte_end": end})
-        if citations != sorted(
-            citations, key=lambda span: (span["byte_start"], span["byte_end"])
-        ) or len({(span["byte_start"], span["byte_end"]) for span in citations}) != len(
-            citations
-        ):
-            _fail("citation spans must be sorted and unique")
-        stance = row["stance"]
-        if stance not in {"supports", "challenges", "neutral"}:
-            _fail("evidence stance must be supports, challenges, or neutral")
-        group = row["contradiction_group_id"]
-        if group is not None:
-            group = _opaque(
-                group, field=f"evidence_cards[{index}].contradiction_group_id"
-            )
-        if stance in {"supports", "challenges"} and group is None:
-            _fail("supporting and challenging evidence requires a contradiction group")
-        if stance == "neutral" and group is not None:
-            _fail("neutral evidence cannot claim a contradiction group")
-        components = _require_dict(
-            row["salience_components"], field="salience_components"
-        )
-        if set(components) != set(SALIENCE_WEIGHTS):
-            _fail("salience components must contain the frozen six component names")
-        clean_components: dict[str, str | None] = {}
-        for component in SALIENCE_WEIGHTS:
-            raw_component = components[component]
-            if raw_component is None:
-                clean_components[component] = None
-            else:
-                clean_components[component] = _q18_unit(
-                    raw_component, field=f"salience_components.{component}"
-                )[0]
-        rows.append(
-            {
-                "evidence_id": evidence_id,
-                "episode_forecast_id": episode_id,
-                "evidence_kind": _opaque(row["evidence_kind"], field="evidence_kind"),
-                "source_id": source_id,
-                "source_sha256": source_sha,
-                "citations": citations,
-                "stance": stance,
-                "contradiction_group_id": group,
-                "salience_components": clean_components,
-            }
-        )
-    ids = [row["evidence_id"] for row in rows]
-    if ids != sorted(ids) or len(ids) != len(set(ids)):
-        _fail("evidence cards must be sorted by unique evidence_id")
-    if (
-        len(
-            {
-                row["contradiction_group_id"]
-                for row in rows
-                if row["contradiction_group_id"] is not None
-            }
-        )
-        > _MAX_CONTRADICTION_GROUPS
-    ):
-        _fail("contradiction groups exceed the bound")
-    return rows
-
-
-def _clean_claim_inputs(
-    value: Sequence[Mapping[str, Any]], *, episode_scope: set[str]
-) -> list[dict[str, Any]]:
-    if type(value) not in {list, tuple} or len(value) > _MAX_CLAIMS:
-        _fail("claim_inputs must contain at most 128 rows")
-    rows: list[dict[str, Any]] = []
-    for index, item in enumerate(value):
-        row = _require_fields(item, _CLAIM_INPUT_FIELDS, field=f"claim_inputs[{index}]")
-        episode_id = _match(
-            row["episode_forecast_id"], _FORECAST_ID, field="claim episode"
-        )
-        if episode_id not in episode_scope:
-            _fail("claim episode is outside exact W4A episode scope")
-        rows.append(
-            {
-                "claim_id": _opaque(row["claim_id"], field="claim_id"),
-                "episode_forecast_id": episode_id,
-                "evidence_ids": _sorted_unique_opaque(
-                    row["evidence_ids"],
-                    field="claim evidence_ids",
-                    minimum=1,
-                    maximum=_MAX_REFS,
-                ),
-                "required_evidence_kinds": _sorted_unique_opaque(
-                    row["required_evidence_kinds"],
-                    field="claim required_evidence_kinds",
-                    minimum=1,
-                    maximum=_MAX_KINDS,
-                ),
-                "falsifier_evidence_ids": _sorted_unique_opaque(
-                    row["falsifier_evidence_ids"],
-                    field="claim falsifier_evidence_ids",
-                    minimum=0,
-                    maximum=_MAX_REFS,
-                ),
-            }
-        )
-    ids = [row["claim_id"] for row in rows]
-    if ids != sorted(ids) or len(ids) != len(set(ids)):
-        _fail("claim inputs must be sorted by unique claim_id")
-    return rows
-
-
-def _attention(evidence: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    scored: list[dict[str, Any]] = []
-    abstained: list[dict[str, Any]] = []
-    for row in evidence:
-        components = row["salience_components"]
-        if any(components[name] is None for name in SALIENCE_WEIGHTS):
-            abstained.append(
-                {
-                    "evidence_id": row["evidence_id"],
-                    "episode_forecast_id": row["episode_forecast_id"],
-                    "salience_score": None,
-                    "status": "abstained",
-                    "reason": "missing_salience_component",
-                }
-            )
-            continue
-        with localcontext(_DECIMAL_CONTEXT):
-            total = sum(
-                Decimal(components[name]) * Decimal(weight)
-                for name, weight in SALIENCE_WEIGHTS.items()
-            )
-        scored.append(
-            {
-                "evidence_id": row["evidence_id"],
-                "episode_forecast_id": row["episode_forecast_id"],
-                "salience_score": _q18_text(total, field="salience_score"),
-                "status": "scored",
-                "reason": None,
-            }
-        )
-    scored.sort(key=lambda row: (-Decimal(row["salience_score"]), row["evidence_id"]))
-    abstained.sort(key=lambda row: row["evidence_id"])
-    return scored + abstained
-
-
-def _contradictions(evidence: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    groups: dict[str, dict[str, list[str]]] = {}
-    for row in evidence:
-        group_id = row["contradiction_group_id"]
-        if group_id is None:
-            continue
-        group = groups.setdefault(group_id, {"supports": [], "challenges": []})
-        group[row["stance"]].append(row["evidence_id"])
-    rows = []
-    for group_id, group in sorted(groups.items()):
-        if len(group["supports"]) > _MAX_REFS or len(group["challenges"]) > _MAX_REFS:
-            _fail("each contradiction stance exceeds the 8-reference bound")
-        if group["supports"] and group["challenges"]:
-            rows.append(
-                {
-                    "contradiction_group_id": group_id,
-                    "supports_evidence_ids": sorted(group["supports"]),
-                    "challenges_evidence_ids": sorted(group["challenges"]),
-                    "status": "structural_conflict",
-                }
-            )
-    return rows
-
-
-def _missingness(
-    episode_scope: Sequence[str],
-    evidence: Sequence[Mapping[str, Any]],
-    required_kinds: Sequence[str],
-) -> list[dict[str, Any]]:
-    supplied: dict[str, set[str]] = {episode_id: set() for episode_id in episode_scope}
-    for row in evidence:
-        supplied[row["episode_forecast_id"]].add(row["evidence_kind"])
-    return [
-        {
-            "episode_forecast_id": episode_id,
-            "required_evidence_kinds": list(required_kinds),
-            "supplied_required_evidence_kinds": sorted(
-                supplied[episode_id] & set(required_kinds)
-            ),
-            "missing_required_evidence_kinds": sorted(
-                set(required_kinds) - supplied[episode_id]
-            ),
-            "scope": "supplied_synthetic_evidence_only",
-        }
-        for episode_id in episode_scope
-    ]
-
-
-def _falsifier_audit(
-    claims: Sequence[Mapping[str, Any]], evidence_by_id: Mapping[str, Mapping[str, Any]]
-) -> list[dict[str, Any]]:
-    rows = []
-    for claim in claims:
-        expected = claim["falsifier_evidence_ids"]
-        supplied = [
-            evidence_id
-            for evidence_id in expected
-            if evidence_id in evidence_by_id
-            and evidence_by_id[evidence_id]["episode_forecast_id"]
-            == claim["episode_forecast_id"]
-        ]
-        missing = sorted(set(expected) - set(supplied))
-        rows.append(
-            {
-                "claim_id": claim["claim_id"],
-                "registered_falsifier_evidence_ids": list(expected),
-                "supplied_falsifier_evidence_ids": supplied,
-                "missing_falsifier_evidence_ids": missing,
-                "status": (
-                    "not_registered"
-                    if not expected
-                    else "complete"
-                    if not missing
-                    else "incomplete"
-                ),
-                "generation": "never_generated",
-            }
-        )
-    return rows
-
-
-def _citation_projection(
-    claims: Sequence[Mapping[str, Any]], evidence_by_id: Mapping[str, Mapping[str, Any]]
-) -> list[dict[str, Any]]:
-    rows = []
-    for claim in claims:
-        referenced = [
-            evidence_by_id.get(evidence_id) for evidence_id in claim["evidence_ids"]
-        ]
-        reason: str | None = None
-        if any(
-            item is None or item["episode_forecast_id"] != claim["episode_forecast_id"]
-            for item in referenced
-        ):
-            reason = "evidence_reference_missing"
-        present_kinds = {
-            item["evidence_kind"] for item in referenced if item is not None
-        }
-        if (
-            reason is None
-            and not set(claim["required_evidence_kinds"]) <= present_kinds
-        ):
-            reason = "required_evidence_kind_missing"
-        if reason is None and any(not item["citations"] for item in referenced):
-            reason = "citation_not_closed"
-        missing_falsifiers = [
-            evidence_id
-            for evidence_id in claim["falsifier_evidence_ids"]
-            if evidence_id not in evidence_by_id
-            or evidence_by_id[evidence_id]["episode_forecast_id"]
-            != claim["episode_forecast_id"]
-        ]
-        if reason is None and missing_falsifiers:
-            reason = "falsifier_reference_missing"
-        citations = []
-        if reason is None:
-            for item in referenced:
-                for span in item["citations"]:
-                    citations.append(
-                        {
-                            "evidence_id": item["evidence_id"],
-                            "source_id": item["source_id"],
-                            "source_sha256": item["source_sha256"],
-                            "byte_start": span["byte_start"],
-                            "byte_end": span["byte_end"],
-                        }
-                    )
-        rows.append(
-            {
-                "claim_id": claim["claim_id"],
-                "episode_forecast_id": claim["episode_forecast_id"],
-                "status": "available" if reason is None else "withheld",
-                "withholding_reason": reason,
-                "citation_refs": citations,
-                "entailment": "not_evaluated",
-            }
-        )
-    return rows
-
-
-def _scorecards(projection: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    denominator = len(projection)
-    numerator = sum(row["status"] == "withheld" for row in projection)
-    if denominator:
-        with localcontext(_DECIMAL_CONTEXT):
-            value = Decimal(numerator) / Decimal(denominator)
-        unsupported = {
-            "status": "computed",
-            "value_decimal": _q18_text(value, field="structural_unsupported_rate"),
-            "numerator": numerator,
-            "denominator": denominator,
-            "scope": "supplied_synthetic_claims_only",
-        }
-    else:
-        unsupported = {
-            "status": "abstained",
-            "value_decimal": None,
-            "numerator": 0,
-            "denominator": 0,
-            "scope": "supplied_synthetic_claims_only",
-        }
-    return {
-        "structural_unsupported_rate": unsupported,
-        "attention_quality": {
-            "status": "not_evaluated",
-            "value": None,
-            "reason": "no_labeled_attention_outcomes",
-        },
-    }
-
-
-def _derive_packet(
-    *,
-    registration: Mapping[str, Any],
-    episodic_record: Mapping[str, Any],
-    evidence_cards: Sequence[Mapping[str, Any]],
-    exact_source_bytes: Mapping[str, bytes],
-    claim_inputs: Sequence[Mapping[str, Any]],
-    assembled_at: str,
-) -> dict[str, Any]:
-    assembled = _utc(assembled_at, field="assembled_at")
-    retrieved = _utc(episodic_record["retrieved_at"], field="retrieved_at")
-    if assembled < retrieved:
-        _fail("assembled_at cannot precede exact W4A retrieval")
-    scope = [
-        episodic_record["query"]["forecast_id"],
-        *episodic_record["selected_forecast_ids"],
-    ]
-    if len(scope) > _MAX_EPISODES or len(scope) != len(set(scope)):
-        _fail("exact W4A episode scope is invalid or exceeds 33 ids")
-    sources, manifests = _exact_sources(exact_source_bytes)
-    evidence = _clean_evidence(
-        evidence_cards, episode_scope=set(scope), sources=sources
-    )
-    claims = _clean_claim_inputs(claim_inputs, episode_scope=set(scope))
-    used_source_ids = {row["source_id"] for row in evidence}
-    if used_source_ids != set(sources):
-        _fail("exact source bytes must contain every and only evidence-card sources")
-    registered_kinds = set(registration["required_evidence_kinds"])
-    if any(
-        not set(claim["required_evidence_kinds"]) <= registered_kinds
-        for claim in claims
-    ):
-        _fail("claim required evidence kinds must be preregistered")
-    evidence_by_id = {row["evidence_id"]: row for row in evidence}
-    projection = _citation_projection(claims, evidence_by_id)
-    return {
-        "schema": OPERATING_CORTEX_PACKET_SCHEMA,
-        "operating_cortex_packet_id": "",
-        "operating_cortex_registration_id": registration[
-            "operating_cortex_registration_id"
-        ],
-        "retrieval_registration_id": episodic_record["retrieval_registration_id"],
-        "episodic_retrieval_record_id": episodic_record["episodic_retrieval_record_id"],
-        "trial_registration_id": episodic_record["trial_registration_id"],
-        "assembled_at": assembled_at,
-        "episode_scope": scope,
-        "source_manifests": manifests,
-        "evidence_cards": evidence,
-        "claim_inputs": claims,
-        "attention_queue": _attention(evidence),
-        "contradictions": _contradictions(evidence),
-        "missingness": _missingness(
-            scope, evidence, registration["required_evidence_kinds"]
-        ),
-        "falsifier_audit": _falsifier_audit(claims, evidence_by_id),
-        "citation_projection": projection,
-        "scorecards": _scorecards(projection),
-        "input_profile": INPUT_PROFILE,
-        "claims": dict(CLAIMS),
-        "emission_enabled": False,
-        "authority": dict(forward.AUTHORITY),
-    }
-
-
 def _validate_w4_join(
     episodic_retrieval_record: Mapping[str, Any],
     *,
@@ -1107,6 +865,610 @@ def _validate_w4_join(
         ) from exc
 
 
+def _episode_scope_from_record(
+    episodic_record: Mapping[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    query = episodic_record["query"]
+    subject = _clean_subject(query["subject"], field="W4 query subject")
+    scope = [
+        {
+            "episode_role": "query",
+            "episode_forecast_id": query["forecast_id"],
+            "subject": subject,
+        }
+    ]
+    cutoffs = {query["forecast_id"]: query["decision_cutoff"]}
+    candidates = {row["forecast_id"]: row for row in episodic_record["candidates"]}
+    for forecast_id in episodic_record["selected_forecast_ids"]:
+        candidate = candidates.get(forecast_id)
+        if candidate is None:
+            _fail("W4 selected forecast is absent from its candidate audit")
+        candidate_subject = _clean_subject(
+            candidate["subject"], field="W4 analogue subject"
+        )
+        if candidate_subject != subject:
+            _fail("W4 episode scope does not retain the exact query subject")
+        scope.append(
+            {
+                "episode_role": "analogue",
+                "episode_forecast_id": forecast_id,
+                "subject": candidate_subject,
+            }
+        )
+        cutoffs[forecast_id] = candidate["decision_cutoff"]
+    if len(scope) > _MAX_EPISODES or len(
+        {row["episode_forecast_id"] for row in scope}
+    ) != len(scope):
+        _fail("exact W4A episode scope is invalid or exceeds 33 rows")
+    return scope, cutoffs
+
+
+def _clean_episode_scope(
+    value: object, *, packet_subject: Mapping[str, str]
+) -> list[dict[str, Any]]:
+    if type(value) is not list or not 1 <= len(value) <= _MAX_EPISODES:
+        _fail("episode_scope must contain 1..33 rows")
+    rows: list[dict[str, Any]] = []
+    for index, raw in enumerate(value):
+        row = _require_fields(raw, _EPISODE_FIELDS, field=f"episode_scope[{index}]")
+        role = row["episode_role"]
+        if role not in {"query", "analogue"}:
+            _fail("episode_role must be query or analogue")
+        if (index == 0) != (role == "query"):
+            _fail("episode_scope must contain exactly one leading query row")
+        subject = _clean_subject(
+            row["subject"], field=f"episode_scope[{index}].subject"
+        )
+        if subject != dict(packet_subject):
+            _fail("episode_scope subject differs from exact packet subject")
+        rows.append(
+            {
+                "episode_role": role,
+                "episode_forecast_id": _match(
+                    row["episode_forecast_id"],
+                    _FORECAST_ID,
+                    field=f"episode_scope[{index}].episode_forecast_id",
+                ),
+                "subject": subject,
+            }
+        )
+    ids = [row["episode_forecast_id"] for row in rows]
+    if len(ids) != len(set(ids)):
+        _fail("episode_scope forecast ids must be unique")
+    return rows
+
+
+def _clean_citation(
+    value: object,
+    *,
+    field: str,
+    exact_source_bytes: bytes | None,
+) -> dict[str, Any]:
+    row = _require_fields(value, _CITATION_FIELDS, field=field)
+    source_ref = _opaque(row["source_record_ref"], field=f"{field}.source_record_ref")
+    known_at = _utc(row["known_at"], field=f"{field}.known_at").strftime(
+        "%Y-%m-%dT%H:%M:%S.%fZ"
+    )
+    start = _exact_int(
+        row["span_start_byte"],
+        field=f"{field}.span_start_byte",
+        minimum=0,
+        maximum=_MAX_SOURCE_BYTES,
+    )
+    if exact_source_bytes is None:
+        source_length = _exact_int(
+            row["source_bytes"],
+            field=f"{field}.source_bytes",
+            minimum=1,
+            maximum=_MAX_SOURCE_BYTES,
+        )
+        source_sha = _sha(row["source_sha256"], field=f"{field}.source_sha256")
+        span_sha = _sha(row["span_sha256"], field=f"{field}.span_sha256")
+    else:
+        if type(exact_source_bytes) is not bytes or not exact_source_bytes:
+            _fail(f"{field} exact_source_bytes must contain 1..64 KiB bytes")
+        if len(exact_source_bytes) > _MAX_SOURCE_BYTES:
+            _fail(f"{field} exact_source_bytes exceeds 64 KiB")
+        source_length = len(exact_source_bytes)
+        source_sha = hashlib.sha256(exact_source_bytes).hexdigest()
+        supplied_source_sha = row["source_sha256"]
+        if supplied_source_sha not in {"", source_sha}:
+            _fail(f"{field}.source_sha256 differs from exact source bytes")
+        if row["source_bytes"] not in {0, source_length}:
+            _fail(f"{field}.source_bytes differs from exact source length")
+        span_sha = ""
+    end = _exact_int(
+        row["span_end_byte"],
+        field=f"{field}.span_end_byte",
+        minimum=1,
+        maximum=source_length,
+    )
+    if start >= end:
+        _fail("citation spans must be non-empty half-open byte intervals")
+    if exact_source_bytes is not None:
+        span_sha = hashlib.sha256(exact_source_bytes[start:end]).hexdigest()
+        if row["span_sha256"] not in {"", span_sha}:
+            _fail(f"{field}.span_sha256 differs from exact span bytes")
+    clean = {
+        "citation_id": "",
+        "source_record_ref": source_ref,
+        "source_sha256": source_sha,
+        "source_bytes": source_length,
+        "span_start_byte": start,
+        "span_end_byte": end,
+        "span_sha256": span_sha,
+        "known_at": known_at,
+    }
+    expected_id = _content_id(
+        "mmcitation_", clean, field="citation_id", maximum=_MAX_SOURCE_BYTES * 2
+    )
+    supplied_id = row["citation_id"]
+    if supplied_id not in {"", expected_id}:
+        _fail(f"{field}.citation_id does not bind canonical citation content")
+    clean["citation_id"] = expected_id
+    return clean
+
+
+def _clean_evidence_card(
+    value: object,
+    *,
+    field: str,
+    scope_by_id: Mapping[str, Mapping[str, Any]],
+    exact_source_bytes: bytes | None,
+    cutoff_by_id: Mapping[str, str] | None,
+) -> dict[str, Any]:
+    row = _require_fields(value, _EVIDENCE_FIELDS, field=field)
+    role = row["episode_role"]
+    if role not in {"query", "analogue"}:
+        _fail(f"{field}.episode_role must be query or analogue")
+    episode_id = _match(
+        row["episode_forecast_id"],
+        _FORECAST_ID,
+        field=f"{field}.episode_forecast_id",
+    )
+    episode = scope_by_id.get(episode_id)
+    if episode is None or episode["episode_role"] != role:
+        _fail(f"{field} differs from exact W4 episode identity or role")
+    subject = _clean_subject(row["subject"], field=f"{field}.subject")
+    if subject != episode["subject"]:
+        _fail(f"{field}.subject differs from exact W4 subject")
+    known_at = _utc(row["known_at"], field=f"{field}.known_at").strftime(
+        "%Y-%m-%dT%H:%M:%S.%fZ"
+    )
+    if cutoff_by_id is not None and _utc(known_at, field=f"{field}.known_at") > _utc(
+        cutoff_by_id[episode_id], field="episode.decision_cutoff"
+    ):
+        _fail(f"{field}.known_at exceeds its exact W4 episode decision cutoff")
+    stance = row["stance"]
+    if stance not in {"supports", "challenges", "neutral"}:
+        _fail(f"{field}.stance must be supports, challenges, or neutral")
+    components = _require_dict(
+        row["salience_components"], field=f"{field}.salience_components"
+    )
+    if set(components) != set(SALIENCE_WEIGHTS):
+        _fail(f"{field}.salience_components differ from the frozen six names")
+    clean_components: dict[str, str | None] = {}
+    for name in SALIENCE_WEIGHTS:
+        raw = components[name]
+        clean_components[name] = (
+            None
+            if raw is None
+            else _q18_unit(raw, field=f"{field}.salience_components.{name}")[0]
+        )
+    citation = _clean_citation(
+        row["citation"],
+        field=f"{field}.citation",
+        exact_source_bytes=exact_source_bytes,
+    )
+    if citation["known_at"] != known_at:
+        _fail(f"{field}.citation known_at must equal evidence known_at")
+    clean: dict[str, Any] = {
+        "evidence_card_id": "",
+        "episode_role": role,
+        "episode_forecast_id": episode_id,
+        "subject": subject,
+        "evidence_kind": _opaque(row["evidence_kind"], field=f"{field}.evidence_kind"),
+        "claim_key": _opaque(row["claim_key"], field=f"{field}.claim_key"),
+        "stance": stance,
+        "known_at": known_at,
+        "salience_components": clean_components,
+        "citation": citation,
+    }
+    expected_id = _content_id(
+        "mmevidencecard_",
+        clean,
+        field="evidence_card_id",
+        maximum=_MAX_PACKET_BYTES,
+    )
+    supplied_id = row["evidence_card_id"]
+    if supplied_id not in {"", expected_id}:
+        _fail(f"{field}.evidence_card_id does not bind canonical evidence content")
+    clean["evidence_card_id"] = expected_id
+    return clean
+
+
+def _clean_evidence_inputs(
+    value: Sequence[Mapping[str, Any]],
+    *,
+    episode_scope: Sequence[Mapping[str, Any]],
+    cutoff_by_id: Mapping[str, str],
+) -> list[dict[str, Any]]:
+    if type(value) not in {list, tuple} or len(value) > _MAX_EVIDENCE:
+        _fail("evidence_inputs must contain at most 64 wrappers")
+    scope_by_id = {row["episode_forecast_id"]: row for row in episode_scope}
+    cards: list[dict[str, Any]] = []
+    source_refs: list[str] = []
+    aggregate = 0
+    for index, raw in enumerate(value):
+        wrapper = _require_fields(
+            raw, _EVIDENCE_INPUT_FIELDS, field=f"evidence_inputs[{index}]"
+        )
+        source = wrapper["exact_source_bytes"]
+        if type(source) is not bytes or not source or len(source) > _MAX_SOURCE_BYTES:
+            _fail("each evidence input must supply 1..64 KiB exact source bytes")
+        aggregate += len(source)
+        if aggregate > _MAX_AGGREGATE_SOURCE_BYTES:
+            _fail("aggregate exact source bytes exceed 4 MiB")
+        card = _clean_evidence_card(
+            wrapper["evidence_card"],
+            field=f"evidence_inputs[{index}].evidence_card",
+            scope_by_id=scope_by_id,
+            exact_source_bytes=source,
+            cutoff_by_id=cutoff_by_id,
+        )
+        source_refs.append(card["citation"]["source_record_ref"])
+        cards.append(card)
+    if len(source_refs) != len(set(source_refs)):
+        _fail("evidence_inputs contain duplicate exact source wrappers")
+    cards.sort(key=lambda row: row["evidence_card_id"])
+    ids = [row["evidence_card_id"] for row in cards]
+    if len(ids) != len(set(ids)):
+        _fail("evidence_inputs contain duplicate evidence cards")
+    return cards
+
+
+def _clean_evidence_manifest(
+    value: object, *, episode_scope: Sequence[Mapping[str, Any]]
+) -> list[dict[str, Any]]:
+    if type(value) is not list or len(value) > _MAX_EVIDENCE:
+        _fail("evidence_manifest must contain at most 64 cards")
+    scope_by_id = {row["episode_forecast_id"]: row for row in episode_scope}
+    cards = [
+        _clean_evidence_card(
+            raw,
+            field=f"evidence_manifest[{index}]",
+            scope_by_id=scope_by_id,
+            exact_source_bytes=None,
+            cutoff_by_id=None,
+        )
+        for index, raw in enumerate(value)
+    ]
+    ids = [row["evidence_card_id"] for row in cards]
+    if ids != sorted(ids) or len(ids) != len(set(ids)):
+        _fail("evidence_manifest must be sorted by unique evidence_card_id")
+    refs = [row["citation"]["source_record_ref"] for row in cards]
+    if len(refs) != len(set(refs)):
+        _fail("evidence_manifest contains duplicate source_record_ref wrappers")
+    return cards
+
+
+def _clean_claim_card(
+    value: object, *, field: str, packet_subject: Mapping[str, str]
+) -> dict[str, Any]:
+    row = _require_fields(value, _CLAIM_FIELDS, field=field)
+    subject = _clean_subject(row["subject"], field=f"{field}.subject")
+    if subject != dict(packet_subject):
+        _fail(f"{field}.subject differs from exact W4 packet subject")
+    stance = row["stance"]
+    if stance not in {"supports", "challenges", "neutral"}:
+        _fail(f"{field}.stance must be supports, challenges, or neutral")
+    refs_raw = row["evidence_card_refs"]
+    if type(refs_raw) is not list or len(refs_raw) > _MAX_REFS:
+        _fail(f"{field}.evidence_card_refs must contain 0..8 values")
+    refs = [
+        _match(item, _EVIDENCE_ID, field=f"{field}.evidence_card_refs[{index}]")
+        for index, item in enumerate(refs_raw)
+    ]
+    if refs != sorted(refs) or len(refs) != len(set(refs)):
+        _fail(f"{field}.evidence_card_refs must be sorted and unique")
+    falsifier = row["falsifier_code"]
+    if falsifier is not None:
+        falsifier = _opaque(falsifier, field=f"{field}.falsifier_code")
+    clean: dict[str, Any] = {
+        "claim_id": "",
+        "subject": subject,
+        "claim_key": _opaque(row["claim_key"], field=f"{field}.claim_key"),
+        "stance": stance,
+        "evidence_card_refs": refs,
+        "falsifier_code": falsifier,
+    }
+    expected_id = _content_id(
+        "mmclaim_", clean, field="claim_id", maximum=_MAX_PACKET_BYTES
+    )
+    supplied_id = row["claim_id"]
+    if supplied_id not in {"", expected_id}:
+        _fail(f"{field}.claim_id does not bind canonical claim content")
+    clean["claim_id"] = expected_id
+    return clean
+
+
+def _clean_claim_cards(
+    value: Sequence[Mapping[str, Any]], *, packet_subject: Mapping[str, str]
+) -> list[dict[str, Any]]:
+    if type(value) not in {list, tuple} or len(value) > _MAX_CLAIMS:
+        _fail("claim_cards must contain at most 128 rows")
+    rows = [
+        _clean_claim_card(
+            raw, field=f"claim_cards[{index}]", packet_subject=packet_subject
+        )
+        for index, raw in enumerate(value)
+    ]
+    rows.sort(key=lambda row: row["claim_id"])
+    ids = [row["claim_id"] for row in rows]
+    if len(ids) != len(set(ids)):
+        _fail("claim_cards contain duplicate claims")
+    return rows
+
+
+def _attention(evidence: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    scored: list[dict[str, Any]] = []
+    abstained: list[dict[str, Any]] = []
+    for evidence_card in evidence:
+        components = evidence_card["salience_components"]
+        if any(components[name] is None for name in SALIENCE_WEIGHTS):
+            core: dict[str, Any] = {
+                "attention_item_id": "",
+                "evidence_card_id": evidence_card["evidence_card_id"],
+                "status": "abstained",
+                "reason": "missing_salience_component",
+                "salience_score_q18": None,
+            }
+            core["attention_item_id"] = _content_id(
+                "mmattentionitem_",
+                core,
+                field="attention_item_id",
+                maximum=_MAX_PACKET_BYTES,
+            )
+            abstained.append(core)
+            continue
+        with localcontext(_DECIMAL_CONTEXT):
+            total = sum(
+                (
+                    Decimal(components[name]) * Decimal(weight)
+                    for name, weight in SALIENCE_WEIGHTS.items()
+                ),
+                Decimal(0),
+            )
+        core = {
+            "attention_item_id": "",
+            "evidence_card_id": evidence_card["evidence_card_id"],
+            "status": "scored",
+            "reason": None,
+            "salience_score_q18": _q18_text(total, field="salience_score_q18"),
+        }
+        core["attention_item_id"] = _content_id(
+            "mmattentionitem_",
+            core,
+            field="attention_item_id",
+            maximum=_MAX_PACKET_BYTES,
+        )
+        scored.append(core)
+    # q18 unit strings have fixed width and lexical numeric order.  Two stable
+    # string sorts avoid every dependency on the process-global Decimal context.
+    scored.sort(key=lambda row: row["evidence_card_id"])
+    scored.sort(key=lambda row: row["salience_score_q18"], reverse=True)
+    abstained.sort(key=lambda row: row["evidence_card_id"])
+    return scored + abstained
+
+
+def _contradictions(claims: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[tuple[str, str, str], dict[str, list[str]]] = {}
+    subjects: dict[tuple[str, str, str], dict[str, str]] = {}
+    for claim in claims:
+        subject = claim["subject"]
+        key = (subject["subject_id"], subject["instrument_id"], claim["claim_key"])
+        subjects[key] = dict(subject)
+        group = groups.setdefault(key, {"supports": [], "challenges": []})
+        if claim["stance"] in group:
+            group[claim["stance"]].append(claim["claim_id"])
+    rows: list[dict[str, Any]] = []
+    for key in sorted(groups):
+        group = groups[key]
+        if not group["supports"] or not group["challenges"]:
+            continue
+        row: dict[str, Any] = {
+            "contradiction_group_id": "",
+            "subject": subjects[key],
+            "claim_key": key[2],
+            "supporting_claim_ids": sorted(group["supports"]),
+            "challenging_claim_ids": sorted(group["challenges"]),
+            "status": "structural_conflict",
+        }
+        row["contradiction_group_id"] = _content_id(
+            "mmcontradictiongroup_",
+            row,
+            field="contradiction_group_id",
+            maximum=_MAX_PACKET_BYTES,
+        )
+        rows.append(row)
+    if len(rows) > _MAX_CONTRADICTIONS:
+        _fail("contradictions exceed the frozen 128-row bound")
+    rows.sort(key=lambda row: row["contradiction_group_id"])
+    return rows
+
+
+def _missingness(
+    evidence: Sequence[Mapping[str, Any]], required_kinds: Sequence[str]
+) -> list[dict[str, Any]]:
+    supplied = {row["evidence_kind"] for row in evidence}
+    return [
+        {
+            "evidence_kind": kind,
+            "status": "present" if kind in supplied else "missing",
+            "scope": "supplied_evidence_manifest_only",
+        }
+        for kind in required_kinds
+    ]
+
+
+def _falsifier_audit(claims: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "claim_id": claim["claim_id"],
+            "falsifier_code": claim["falsifier_code"],
+            "status": "not_registered"
+            if claim["falsifier_code"] is None
+            else "registered",
+            "generation_performed": False,
+        }
+        for claim in claims
+    ]
+
+
+_STRUCTURAL_REASONS = (
+    "evidence_reference_missing",
+    "evidence_reference_mismatch",
+    "required_evidence_kind_missing",
+    "citation_not_closed",
+)
+
+
+def _citation_projection(
+    claims: Sequence[Mapping[str, Any]],
+    evidence: Sequence[Mapping[str, Any]],
+    required_kinds: Sequence[str],
+) -> list[dict[str, Any]]:
+    evidence_by_id = {row["evidence_card_id"]: row for row in evidence}
+    rows: list[dict[str, Any]] = []
+    for claim in claims:
+        referenced = [evidence_by_id.get(ref) for ref in claim["evidence_card_refs"]]
+        reason: str | None = None
+        if not referenced or any(row is None for row in referenced):
+            reason = "evidence_reference_missing"
+        if reason is None and any(
+            row["subject"] != claim["subject"]
+            or row["claim_key"] != claim["claim_key"]
+            or row["stance"] != claim["stance"]
+            for row in referenced
+        ):
+            reason = "evidence_reference_mismatch"
+        present_kinds = {row["evidence_kind"] for row in referenced if row is not None}
+        if reason is None and not set(required_kinds) <= present_kinds:
+            reason = "required_evidence_kind_missing"
+        if reason is None and any(row.get("citation") is None for row in referenced):
+            reason = "citation_not_closed"
+        structurally_included = reason is None
+        rows.append(
+            {
+                **copy.deepcopy(dict(claim)),
+                "status": "included_structural_only"
+                if structurally_included
+                else "withheld",
+                "withholding_reason": "semantic_entailment_not_evaluated"
+                if structurally_included
+                else reason,
+                "citation_ids": sorted(
+                    row["citation"]["citation_id"]
+                    for row in referenced
+                    if row is not None and row.get("citation") is not None
+                )
+                if structurally_included
+                else [],
+                "semantic_entailment_evaluated": False,
+            }
+        )
+    return rows
+
+
+def _unsupported_claim_scorecard(
+    projection: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    total = len(projection)
+    counts = {
+        reason: sum(row["withholding_reason"] == reason for row in projection)
+        for reason in _STRUCTURAL_REASONS
+    }
+    withheld = sum(counts.values())
+    included = total - withheld
+    rate: str | None = None
+    if total:
+        with localcontext(_DECIMAL_CONTEXT):
+            rate = _q18_text(
+                Decimal(withheld) / Decimal(total),
+                field="structural_unsupported_rate_q18",
+            )
+    return {
+        "status": "structural_only",
+        "total": total,
+        "included": included,
+        "withheld": withheld,
+        "counts_by_reason": counts,
+        "structural_unsupported_rate_q18": rate,
+    }
+
+
+def _attention_quality_scorecard() -> dict[str, Any]:
+    return {
+        "status": "not_evaluated",
+        "reason": "no_preregistered_attention_outcomes",
+        "graded_items": 0,
+        "precision_q18": None,
+        "recall_q18": None,
+        "false_positive_rate_q18": None,
+        "ndcg_q18": None,
+    }
+
+
+def _derive_packet(
+    *,
+    registration: Mapping[str, Any],
+    episodic_record: Mapping[str, Any],
+    evidence_inputs: Sequence[Mapping[str, Any]],
+    claim_cards: Sequence[Mapping[str, Any]],
+    produced_at: str,
+) -> dict[str, Any]:
+    produced = _utc(produced_at, field="produced_at")
+    retrieved = _utc(episodic_record["retrieved_at"], field="retrieved_at")
+    if produced < retrieved:
+        _fail("produced_at cannot precede exact W4A retrieval")
+    episode_scope, cutoffs = _episode_scope_from_record(episodic_record)
+    subject = episode_scope[0]["subject"]
+    evidence = _clean_evidence_inputs(
+        evidence_inputs, episode_scope=episode_scope, cutoff_by_id=cutoffs
+    )
+    claims = _clean_claim_cards(claim_cards, packet_subject=subject)
+    projection = _citation_projection(
+        claims, evidence, registration["required_evidence_kinds"]
+    )
+    return {
+        "schema": OPERATING_CORTEX_PACKET_SCHEMA,
+        "operating_cortex_packet_id": "",
+        "operating_cortex_registration_id": registration[
+            "operating_cortex_registration_id"
+        ],
+        "retrieval_registration_id": episodic_record["retrieval_registration_id"],
+        "episodic_retrieval_record_id": episodic_record["episodic_retrieval_record_id"],
+        "trial_registration_id": episodic_record["trial_registration_id"],
+        "subject": subject,
+        "produced_at": produced_at,
+        "episode_scope": episode_scope,
+        "evidence_manifest": evidence,
+        "attention_queue": _attention(evidence),
+        "contradictions": _contradictions(claims),
+        "missingness": _missingness(evidence, registration["required_evidence_kinds"]),
+        "falsifier_audit": _falsifier_audit(claims),
+        "citation_projection": projection,
+        "unsupported_claim_scorecard": _unsupported_claim_scorecard(projection),
+        "attention_quality_scorecard": _attention_quality_scorecard(),
+        "read_tools": list(READ_TOOLS),
+        "coverage": dict(COVERAGE),
+        "input_profile": INPUT_PROFILE,
+        "claims": dict(CLAIMS),
+        "emission_enabled": False,
+        "authority": dict(forward.AUTHORITY),
+    }
+
+
 def build_operating_cortex_packet(
     *,
     operating_cortex_registration: Mapping[str, Any],
@@ -1118,12 +1480,11 @@ def build_operating_cortex_packet(
     query_exact_context_bytes: bytes,
     query_coordinates: Mapping[str, str | None],
     candidate_inputs: Sequence[Mapping[str, Any]],
-    evidence_cards: Sequence[Mapping[str, Any]],
-    exact_source_bytes: Mapping[str, bytes],
-    claim_inputs: Sequence[Mapping[str, Any]],
-    assembled_at: str,
+    evidence_inputs: Sequence[Mapping[str, Any]],
+    claim_cards: Sequence[Mapping[str, Any]],
+    produced_at: str,
 ) -> dict[str, Any]:
-    """Build one inert packet after first revalidating the complete W4/W2 join."""
+    """Build one inert packet after revalidating the complete W4/W2 join."""
 
     episodic = _validate_w4_join(
         episodic_retrieval_record,
@@ -1144,16 +1505,15 @@ def build_operating_cortex_packet(
         registration["retrieval_registration_id"]
         != episodic["retrieval_registration_id"]
     ):
-        _fail(
-            "cortex registration and episodic record do not share exact W4A registration"
-        )
+        _fail("cortex registration and packet do not share exact W4A registration")
+    if registration["trial_registration_id"] != episodic["trial_registration_id"]:
+        _fail("cortex registration and packet do not share exact W2A trial")
     payload = _derive_packet(
         registration=registration,
         episodic_record=episodic,
-        evidence_cards=evidence_cards,
-        exact_source_bytes=exact_source_bytes,
-        claim_inputs=claim_inputs,
-        assembled_at=assembled_at,
+        evidence_inputs=evidence_inputs,
+        claim_cards=claim_cards,
+        produced_at=produced_at,
     )
     payload["operating_cortex_packet_id"] = _content_id(
         "mmcortexpacket_",
@@ -1164,8 +1524,30 @@ def build_operating_cortex_packet(
     return validate_operating_cortex_packet(payload)
 
 
+def _projection_claims(
+    value: object, *, packet_subject: Mapping[str, str]
+) -> list[dict[str, Any]]:
+    if type(value) is not list or len(value) > _MAX_CLAIMS:
+        _fail("citation_projection must contain at most 128 rows")
+    claims: list[dict[str, Any]] = []
+    for index, raw in enumerate(value):
+        row = _require_fields(
+            raw, _PROJECTION_FIELDS, field=f"citation_projection[{index}]"
+        )
+        claim = _clean_claim_card(
+            {key: row[key] for key in _CLAIM_FIELDS},
+            field=f"citation_projection[{index}].claim",
+            packet_subject=packet_subject,
+        )
+        claims.append(claim)
+    ids = [row["claim_id"] for row in claims]
+    if ids != sorted(ids) or len(ids) != len(set(ids)):
+        _fail("citation_projection must be sorted by unique claim_id")
+    return claims
+
+
 def validate_operating_cortex_packet(value: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate packet identity and all self-contained structural projections."""
+    """Validate packet identity and every self-contained structural projection."""
 
     payload = _require_fields(value, _PACKET_FIELDS, field="operating cortex packet")
     _canonical_bytes(
@@ -1185,174 +1567,52 @@ def validate_operating_cortex_packet(value: Mapping[str, Any]) -> dict[str, Any]
     )
     _match(
         payload["retrieval_registration_id"],
-        re.compile(r"mmretrievalregistration_[a-f0-9]{64}\Z"),
+        _RETRIEVAL_ID,
         field="retrieval_registration_id",
     )
     _match(
         payload["episodic_retrieval_record_id"],
-        re.compile(r"mmepisodicretrieval_[a-f0-9]{64}\Z"),
+        _EPISODIC_ID,
         field="episodic_retrieval_record_id",
     )
-    _match(
-        payload["trial_registration_id"],
-        re.compile(r"mmtrial_[a-f0-9]{64}\Z"),
-        field="trial_registration_id",
+    _match(payload["trial_registration_id"], _TRIAL_ID, field="trial_registration_id")
+    _utc(payload["produced_at"], field="produced_at")
+    subject = _clean_subject(payload["subject"], field="packet.subject")
+    scope = _clean_episode_scope(payload["episode_scope"], packet_subject=subject)
+    evidence = _clean_evidence_manifest(
+        payload["evidence_manifest"], episode_scope=scope
     )
-    _utc(payload["assembled_at"], field="assembled_at")
-    if (
-        type(payload["episode_scope"]) is not list
-        or not 1 <= len(payload["episode_scope"]) <= _MAX_EPISODES
-    ):
-        _fail("episode_scope must contain 1..33 forecast ids")
-    scope = [
-        _match(item, _FORECAST_ID, field="episode_scope")
-        for item in payload["episode_scope"]
-    ]
-    if len(scope) != len(set(scope)):
-        _fail("episode_scope must be unique")
-    manifests = payload["source_manifests"]
-    if type(manifests) is not list or len(manifests) > _MAX_EVIDENCE:
-        _fail("source_manifests exceeds its bound")
-    source_ids = []
-    for index, item in enumerate(manifests):
+    claims = _projection_claims(payload["citation_projection"], packet_subject=subject)
+    missing_raw = payload["missingness"]
+    if type(missing_raw) is not list or not 1 <= len(missing_raw) <= _MAX_KINDS:
+        _fail("missingness must pin 1..16 required evidence kinds")
+    required_kinds: list[str] = []
+    for index, raw in enumerate(missing_raw):
         row = _require_fields(
-            item,
-            frozenset({"source_id", "source_sha256", "byte_length"}),
-            field=f"source_manifests[{index}]",
+            raw,
+            frozenset({"evidence_kind", "status", "scope"}),
+            field=f"missingness[{index}]",
         )
-        source_ids.append(_opaque(row["source_id"], field="source_id"))
-        _sha(row["source_sha256"], field="source_sha256")
-        _exact_int(
-            row["byte_length"],
-            field="byte_length",
-            minimum=1,
-            maximum=_MAX_SOURCE_BYTES,
+        required_kinds.append(
+            _opaque(row["evidence_kind"], field=f"missingness[{index}].evidence_kind")
         )
-    if source_ids != sorted(source_ids) or len(source_ids) != len(set(source_ids)):
-        _fail("source manifests must be sorted and unique")
-    manifest_by_id = {row["source_id"]: row for row in manifests}
-    for name in (
-        "evidence_cards",
-        "claim_inputs",
-        "attention_queue",
-        "contradictions",
-        "missingness",
-        "falsifier_audit",
-        "citation_projection",
+    if required_kinds != sorted(required_kinds) or len(required_kinds) != len(
+        set(required_kinds)
     ):
-        if type(payload[name]) is not list:
-            _fail(f"{name} must be an array")
-    if (
-        len(payload["evidence_cards"]) > _MAX_EVIDENCE
-        or len(payload["claim_inputs"]) > _MAX_CLAIMS
-    ):
-        _fail("packet evidence or claim input bound exceeded")
-    evidence: list[dict[str, Any]] = []
-    for index, item in enumerate(payload["evidence_cards"]):
-        row = _require_fields(item, _EVIDENCE_FIELDS, field=f"evidence_cards[{index}]")
-        evidence_id = _opaque(row["evidence_id"], field="evidence_id")
-        episode_id = _match(
-            row["episode_forecast_id"], _FORECAST_ID, field="episode_forecast_id"
-        )
-        if episode_id not in scope:
-            _fail("evidence card episode is outside packet scope")
-        source_id = _opaque(row["source_id"], field="source_id")
-        source_sha = _sha(row["source_sha256"], field="source_sha256")
-        manifest = manifest_by_id.get(source_id)
-        if manifest is None or manifest["source_sha256"] != source_sha:
-            _fail("evidence card does not close to its source manifest")
-        citations_raw = row["citations"]
-        if type(citations_raw) is not list or len(citations_raw) > _MAX_REFS:
-            _fail("evidence citations exceed their bound")
-        citations = []
-        for citation_index, raw in enumerate(citations_raw):
-            citation = _require_fields(
-                raw,
-                _CITATION_FIELDS,
-                field=f"evidence_cards[{index}].citations[{citation_index}]",
-            )
-            start = _exact_int(
-                citation["byte_start"],
-                field="byte_start",
-                minimum=0,
-                maximum=manifest["byte_length"],
-            )
-            end = _exact_int(
-                citation["byte_end"],
-                field="byte_end",
-                minimum=1,
-                maximum=manifest["byte_length"],
-            )
-            if start >= end:
-                _fail("citation spans must be non-empty half-open byte intervals")
-            citations.append({"byte_start": start, "byte_end": end})
-        if citations != sorted(
-            citations, key=lambda span: (span["byte_start"], span["byte_end"])
-        ) or len({(span["byte_start"], span["byte_end"]) for span in citations}) != len(
-            citations
-        ):
-            _fail("citation spans must be sorted and unique")
-        stance = row["stance"]
-        group = row["contradiction_group_id"]
-        if stance not in {"supports", "challenges", "neutral"}:
-            _fail("evidence stance is invalid")
-        if group is not None:
-            group = _opaque(group, field="contradiction_group_id")
-        if (stance in {"supports", "challenges"}) != (group is not None):
-            _fail("evidence stance and contradiction group are inconsistent")
-        components = _require_dict(
-            row["salience_components"], field="salience_components"
-        )
-        if set(components) != set(SALIENCE_WEIGHTS):
-            _fail("salience components differ from the frozen six")
-        clean_components = {}
-        for component in SALIENCE_WEIGHTS:
-            raw_component = components[component]
-            clean_components[component] = (
-                None
-                if raw_component is None
-                else _q18_unit(raw_component, field=f"salience.{component}")[0]
-            )
-        evidence.append(
-            {
-                "evidence_id": evidence_id,
-                "episode_forecast_id": episode_id,
-                "evidence_kind": _opaque(row["evidence_kind"], field="evidence_kind"),
-                "source_id": source_id,
-                "source_sha256": source_sha,
-                "citations": citations,
-                "stance": stance,
-                "contradiction_group_id": group,
-                "salience_components": clean_components,
-            }
-        )
-    evidence_ids = [row["evidence_id"] for row in evidence]
-    if evidence_ids != sorted(evidence_ids) or len(evidence_ids) != len(
-        set(evidence_ids)
-    ):
-        _fail("evidence cards must be sorted by unique evidence_id")
-    claim_inputs = _clean_claim_inputs(
-        payload["claim_inputs"], episode_scope=set(scope)
-    )
-    if not payload["missingness"]:
-        _fail("missingness must project every episode")
-    first_missingness = _require_dict(payload["missingness"][0], field="missingness[0]")
-    required_kinds = _sorted_unique_opaque(
-        first_missingness.get("required_evidence_kinds"),
-        field="missingness required_evidence_kinds",
-        minimum=1,
-        maximum=_MAX_KINDS,
-    )
-    evidence_by_id = {row["evidence_id"]: row for row in evidence}
-    expected_projection = _citation_projection(claim_inputs, evidence_by_id)
+        _fail("missingness evidence kinds must be sorted and unique")
+    expected_projection = _citation_projection(claims, evidence, required_kinds)
     expected_sections = {
-        "evidence_cards": evidence,
-        "claim_inputs": claim_inputs,
+        "episode_scope": scope,
+        "evidence_manifest": evidence,
         "attention_queue": _attention(evidence),
-        "contradictions": _contradictions(evidence),
-        "missingness": _missingness(scope, evidence, required_kinds),
-        "falsifier_audit": _falsifier_audit(claim_inputs, evidence_by_id),
+        "contradictions": _contradictions(claims),
+        "missingness": _missingness(evidence, required_kinds),
+        "falsifier_audit": _falsifier_audit(claims),
         "citation_projection": expected_projection,
+        "unsupported_claim_scorecard": _unsupported_claim_scorecard(
+            expected_projection
+        ),
+        "attention_quality_scorecard": _attention_quality_scorecard(),
     }
     for name, expected in expected_sections.items():
         if not _exact_equal(
@@ -1361,30 +1621,11 @@ def validate_operating_cortex_packet(value: Mapping[str, Any]) -> dict[str, Any]
             field=f"packet internal {name}",
             maximum=_MAX_PACKET_BYTES,
         ):
-            _fail(f"packet {name} differs from its structural inputs")
-    scorecards = _require_fields(
-        payload["scorecards"],
-        frozenset({"structural_unsupported_rate", "attention_quality"}),
-        field="scorecards",
-    )
-    attention_quality = _require_fields(
-        scorecards["attention_quality"],
-        frozenset({"status", "value", "reason"}),
-        field="attention_quality",
-    )
-    if attention_quality != {
-        "status": "not_evaluated",
-        "value": None,
-        "reason": "no_labeled_attention_outcomes",
-    }:
-        _fail("attention quality must remain exactly not_evaluated")
-    if not _exact_equal(
-        scorecards,
-        _scorecards(expected_projection),
-        field="packet internal scorecards",
-        maximum=_MAX_PACKET_BYTES,
-    ):
-        _fail("packet scorecards differ from citation projection")
+            _fail(f"packet {name} differs from its content-bound inputs")
+    if payload["read_tools"] != list(READ_TOOLS):
+        _fail("packet read_tools differ from the frozen seven-view surface")
+    if payload["coverage"] != dict(COVERAGE):
+        _fail("packet coverage differs from the frozen honest coverage block")
     if (
         payload["input_profile"] != INPUT_PROFILE
         or payload["emission_enabled"] is not False
@@ -1417,39 +1658,25 @@ def validate_operating_cortex_packet_join(
     query_exact_context_bytes: bytes,
     query_coordinates: Mapping[str, str | None],
     candidate_inputs: Sequence[Mapping[str, Any]],
-    exact_source_bytes: Mapping[str, bytes],
+    evidence_inputs: Sequence[Mapping[str, Any]],
+    claim_cards: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Rebuild a packet from exact W4/W2 and source dependencies and require identity."""
+    """Rebuild a packet from every exact dependency and require byte identity."""
 
-    episodic = _validate_w4_join(
-        episodic_retrieval_record,
+    clean = validate_operating_cortex_packet(value)
+    expected = build_operating_cortex_packet(
+        operating_cortex_registration=operating_cortex_registration,
         retrieval_registration=retrieval_registration,
         trial_registration=trial_registration,
+        episodic_retrieval_record=episodic_retrieval_record,
         query_state_snapshot=query_state_snapshot,
         query_forecast_record=query_forecast_record,
         query_exact_context_bytes=query_exact_context_bytes,
         query_coordinates=query_coordinates,
         candidate_inputs=candidate_inputs,
-    )
-    registration = validate_operating_cortex_registration_join(
-        operating_cortex_registration,
-        retrieval_registration=retrieval_registration,
-        trial_registration=trial_registration,
-    )
-    clean = validate_operating_cortex_packet(value)
-    expected = _derive_packet(
-        registration=registration,
-        episodic_record=episodic,
-        evidence_cards=clean["evidence_cards"],
-        exact_source_bytes=exact_source_bytes,
-        claim_inputs=clean["claim_inputs"],
-        assembled_at=clean["assembled_at"],
-    )
-    expected["operating_cortex_packet_id"] = _content_id(
-        "mmcortexpacket_",
-        expected,
-        field="operating_cortex_packet_id",
-        maximum=_MAX_PACKET_BYTES,
+        evidence_inputs=evidence_inputs,
+        claim_cards=claim_cards,
+        produced_at=clean["produced_at"],
     )
     if not _exact_equal(
         clean, expected, field="operating cortex exact joins", maximum=_MAX_PACKET_BYTES
@@ -1470,9 +1697,10 @@ def load_operating_cortex_packet_join_json(
     query_exact_context_bytes: bytes,
     query_coordinates: Mapping[str, str | None],
     candidate_inputs: Sequence[Mapping[str, Any]],
-    exact_source_bytes: Mapping[str, bytes],
+    evidence_inputs: Sequence[Mapping[str, Any]],
+    claim_cards: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Strictly load a packet and fully revalidate all exact dependencies."""
+    """Strictly load a packet and fully revalidate every exact dependency."""
 
     return validate_operating_cortex_packet_join(
         _strict_json_object(
@@ -1487,18 +1715,47 @@ def load_operating_cortex_packet_join_json(
         query_exact_context_bytes=query_exact_context_bytes,
         query_coordinates=query_coordinates,
         candidate_inputs=candidate_inputs,
-        exact_source_bytes=exact_source_bytes,
+        evidence_inputs=evidence_inputs,
+        claim_cards=claim_cards,
     )
 
 
 class OperatingCortexReader:
-    """Immutable, capability-limited reader over one fully rejoined packet."""
+    """Immutable capability-limited reader over exactly seven detached views."""
 
-    __slots__ = ("__packet", "__sealed")
+    __slots__ = (
+        "__attention_queue",
+        "__citation_projection",
+        "__contradictions",
+        "__episode_scope",
+        "__falsifier_audit",
+        "__missingness",
+        "__scorecards",
+        "__sealed",
+    )
 
     def __init__(self, packet: Mapping[str, Any], **join_dependencies: Any) -> None:
         clean = validate_operating_cortex_packet_join(packet, **join_dependencies)
-        object.__setattr__(self, "_OperatingCortexReader__packet", clean)
+        views = {
+            "attention_queue": clean["attention_queue"],
+            "citation_projection": clean["citation_projection"],
+            "contradictions": clean["contradictions"],
+            "episode_scope": clean["episode_scope"],
+            "falsifier_audit": clean["falsifier_audit"],
+            "missingness": clean["missingness"],
+            "scorecards": {
+                "unsupported_claim_scorecard": clean["unsupported_claim_scorecard"],
+                "attention_quality_scorecard": clean["attention_quality_scorecard"],
+            },
+        }
+        for name, value in views.items():
+            object.__setattr__(
+                self,
+                f"_OperatingCortexReader__{name}",
+                _canonical_bytes(
+                    value, field=f"reader {name}", maximum=_MAX_PACKET_BYTES
+                ),
+            )
         object.__setattr__(self, "_OperatingCortexReader__sealed", True)
 
     def __setattr__(self, name: str, value: object) -> None:
@@ -1506,37 +1763,37 @@ class OperatingCortexReader:
             raise AttributeError("OperatingCortexReader is immutable")
         object.__setattr__(self, name, value)
 
-    def _read(self, field: str) -> Any:
-        return copy.deepcopy(self.__packet[field])
-
     def read_attention_queue(self) -> list[dict[str, Any]]:
-        return self._read("attention_queue")
+        return json.loads(self.__attention_queue)
 
-    def read_episode_scope(self) -> list[str]:
-        return self._read("episode_scope")
+    def read_episode_scope(self) -> list[dict[str, Any]]:
+        return json.loads(self.__episode_scope)
 
     def read_contradictions(self) -> list[dict[str, Any]]:
-        return self._read("contradictions")
+        return json.loads(self.__contradictions)
 
     def read_missingness(self) -> list[dict[str, Any]]:
-        return self._read("missingness")
+        return json.loads(self.__missingness)
 
     def read_falsifier_audit(self) -> list[dict[str, Any]]:
-        return self._read("falsifier_audit")
+        return json.loads(self.__falsifier_audit)
 
     def read_citation_projection(self) -> list[dict[str, Any]]:
-        return self._read("citation_projection")
+        return json.loads(self.__citation_projection)
 
     def read_scorecards(self) -> dict[str, Any]:
-        return self._read("scorecards")
+        return json.loads(self.__scorecards)
 
 
 __all__ = [
+    "BOUNDS",
     "CLAIMS",
+    "COVERAGE",
     "INPUT_PROFILE",
     "NUMERIC_CONVENTION",
     "OPERATING_CORTEX_PACKET_SCHEMA",
     "OPERATING_CORTEX_REGISTRATION_SCHEMA",
+    "READ_TOOLS",
     "SALIENCE_WEIGHTS",
     "MarketMemoryOperatingCortexContractError",
     "OperatingCortexReader",

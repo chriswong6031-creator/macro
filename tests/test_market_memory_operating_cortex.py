@@ -1,4 +1,4 @@
-"""W5A synthetic/private Operating Cortex conformance."""
+"""W5A frozen synthetic/private Operating Cortex conformance."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import copy
 import hashlib
 import inspect
 import json
+from decimal import ROUND_DOWN, Inexact, getcontext, setcontext
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,119 @@ SCHEMA_DIR = ROOT / "contracts" / "market_memory"
 QUERY_COORDINATES = {
     "alpha": "0.000000000000000000",
     "beta": "0.000000000000000000",
+}
+
+REGISTRATION_FIELDS = {
+    "schema",
+    "operating_cortex_registration_id",
+    "registration_key",
+    "registered_at",
+    "retrieval_registration_id",
+    "trial_registration_id",
+    "trial_plan_sha256",
+    "required_evidence_kinds",
+    "salience_policy",
+    "citation_policy",
+    "read_tools",
+    "bounds",
+    "implementation",
+    "input_profile",
+    "claims",
+    "emission_enabled",
+    "authority",
+}
+PACKET_FIELDS = {
+    "schema",
+    "operating_cortex_packet_id",
+    "operating_cortex_registration_id",
+    "retrieval_registration_id",
+    "episodic_retrieval_record_id",
+    "trial_registration_id",
+    "subject",
+    "produced_at",
+    "episode_scope",
+    "evidence_manifest",
+    "attention_queue",
+    "contradictions",
+    "missingness",
+    "falsifier_audit",
+    "citation_projection",
+    "unsupported_claim_scorecard",
+    "attention_quality_scorecard",
+    "read_tools",
+    "coverage",
+    "input_profile",
+    "claims",
+    "emission_enabled",
+    "authority",
+}
+EVIDENCE_FIELDS = {
+    "evidence_card_id",
+    "episode_role",
+    "episode_forecast_id",
+    "subject",
+    "evidence_kind",
+    "claim_key",
+    "stance",
+    "known_at",
+    "salience_components",
+    "citation",
+}
+CITATION_FIELDS = {
+    "citation_id",
+    "source_record_ref",
+    "source_sha256",
+    "source_bytes",
+    "span_start_byte",
+    "span_end_byte",
+    "span_sha256",
+    "known_at",
+}
+CLAIM_FIELDS = {
+    "claim_id",
+    "subject",
+    "claim_key",
+    "stance",
+    "evidence_card_refs",
+    "falsifier_code",
+}
+EXPECTED_READ_TOOLS = [
+    "read_attention_queue",
+    "read_citation_projection",
+    "read_contradictions",
+    "read_episode_scope",
+    "read_falsifier_audit",
+    "read_missingness",
+    "read_scorecards",
+]
+EXPECTED_BOUNDS = {
+    "max_registration_bytes": 262_144,
+    "max_packet_bytes": 2_097_152,
+    "max_source_bytes": 65_536,
+    "max_aggregate_source_bytes": 4_194_304,
+    "max_evidence_cards": 64,
+    "max_claims": 128,
+    "max_evidence_card_refs": 8,
+    "max_evidence_kinds": 16,
+    "max_contradictions": 128,
+    "max_episodes": 33,
+    "max_string_bytes": 256,
+    "max_depth": 16,
+    "max_nodes": 16_384,
+}
+EXPECTED_CLAIMS = {
+    "operational_input_authenticated": False,
+    "evidence_population_complete": False,
+    "salience_component_provenance_authenticated": False,
+    "citation_semantic_entailment_evaluated": False,
+    "unsupported_claim_truth_evaluated": False,
+    "attention_quality_evaluated": False,
+    "learned_synthesis_performed": False,
+    "hypotheses_generated": False,
+    "forecast_input_eligible": False,
+    "aggregate_eligible": False,
+    "skill_claim_eligible": False,
+    "prophet_input_eligible": False,
 }
 
 
@@ -43,43 +157,80 @@ def _validate_schema(name: str, value: dict[str, Any]) -> None:
     ).validate(value)
 
 
-def _rehash(value: dict[str, Any], *, field: str, prefix: str) -> None:
+def _content_id(prefix: str, value: dict[str, Any], field: str) -> str:
     core = copy.deepcopy(value)
     core[field] = ""
-    value[field] = (
-        prefix + hashlib.sha256(forward.canonical_json_bytes(core)).hexdigest()
-    )
+    return prefix + hashlib.sha256(forward.canonical_json_bytes(core)).hexdigest()
+
+
+def _rehash(value: dict[str, Any], *, field: str, prefix: str) -> None:
+    value[field] = _content_id(prefix, value, field)
 
 
 def _components(value: str | None = "1.000000000000000000") -> dict[str, str | None]:
     return {name: value for name in cortex.SALIENCE_WEIGHTS}
 
 
-def _card(
+def _evidence_input(
     *,
-    evidence_id: str,
+    episode_role: str,
     episode_id: str,
-    kind: str,
-    source_id: str,
+    subject: dict[str, str],
+    evidence_kind: str,
+    claim_key: str,
+    stance: str,
+    known_at: str,
+    source_ref: str,
     source: bytes,
-    stance: str = "neutral",
-    group: str | None = None,
     components: dict[str, str | None] | None = None,
-    citations: list[dict[str, int]] | None = None,
+    span_start: int = 0,
+    span_end: int = 5,
 ) -> dict[str, Any]:
-    return {
-        "evidence_id": evidence_id,
-        "episode_forecast_id": episode_id,
-        "evidence_kind": kind,
-        "source_id": source_id,
+    citation = {
+        "citation_id": "",
+        "source_record_ref": source_ref,
         "source_sha256": hashlib.sha256(source).hexdigest(),
-        "citations": citations
-        if citations is not None
-        else [{"byte_start": 0, "byte_end": 5}],
-        "stance": stance,
-        "contradiction_group_id": group,
-        "salience_components": components or _components(),
+        "source_bytes": len(source),
+        "span_start_byte": span_start,
+        "span_end_byte": span_end,
+        "span_sha256": hashlib.sha256(source[span_start:span_end]).hexdigest(),
+        "known_at": known_at,
     }
+    _rehash(citation, field="citation_id", prefix="mmcitation_")
+    card = {
+        "evidence_card_id": "",
+        "episode_role": episode_role,
+        "episode_forecast_id": episode_id,
+        "subject": copy.deepcopy(subject),
+        "evidence_kind": evidence_kind,
+        "claim_key": claim_key,
+        "stance": stance,
+        "known_at": known_at,
+        "salience_components": components or _components(),
+        "citation": citation,
+    }
+    _rehash(card, field="evidence_card_id", prefix="mmevidencecard_")
+    return {"evidence_card": card, "exact_source_bytes": source}
+
+
+def _claim(
+    *,
+    subject: dict[str, str],
+    claim_key: str,
+    stance: str,
+    evidence_card_refs: list[str],
+    falsifier_code: str | None = None,
+) -> dict[str, Any]:
+    row = {
+        "claim_id": "",
+        "subject": copy.deepcopy(subject),
+        "claim_key": claim_key,
+        "stance": stance,
+        "evidence_card_refs": sorted(evidence_card_refs),
+        "falsifier_code": falsifier_code,
+    }
+    _rehash(row, field="claim_id", prefix="mmclaim_")
+    return row
 
 
 def _fixture() -> dict[str, Any]:
@@ -93,90 +244,142 @@ def _fixture() -> dict[str, Any]:
         producer_code_sha256="a" * 64,
         producer_config_sha256="b" * 64,
     )
+    subject = record["query"]["subject"]
     query_id = record["query"]["forecast_id"]
-    selected_id = record["selected_forecast_ids"][0]
-    sources = {
-        "src.a": b"macro datum alpha",
-        "src.b": b"technical datum beta",
-        "src.c": b"macro datum gamma",
-        "src.d": b"technical datum delta",
-    }
+    analogue_id = record["selected_forecast_ids"][0]
     half = _components("0.500000000000000000")
+    close = _components("0.510000000000000000")
+    three_quarters = _components("0.750000000000000000")
+    quarter = _components("0.250000000000000000")
     missing = _components("0.250000000000000000")
-    missing["freshness"] = None
-    evidence = [
-        _card(
-            evidence_id="ev.a",
+    missing["standardized_surprise"] = None
+    evidence_inputs = [
+        _evidence_input(
+            episode_role="query",
             episode_id=query_id,
-            kind="macro_fact",
-            source_id="src.a",
-            source=sources["src.a"],
+            subject=subject,
+            evidence_kind="macro_fact",
+            claim_key="inflation.pressure",
             stance="supports",
-            group="group.a",
+            known_at="2026-08-27T19:00:00.000000Z",
+            source_ref="source.alpha.macro",
+            source=b"buy signal language is allowed in exact cited source bytes",
+            components=close,
         ),
-        _card(
-            evidence_id="ev.b",
+        _evidence_input(
+            episode_role="query",
             episode_id=query_id,
-            kind="technical_fact",
-            source_id="src.b",
-            source=sources["src.b"],
-            stance="challenges",
-            group="group.a",
+            subject=subject,
+            evidence_kind="technical_fact",
+            claim_key="inflation.pressure",
+            stance="supports",
+            known_at="2026-08-27T19:01:00.000000Z",
+            source_ref="source.alpha.technical",
+            source=b"technical source beta",
             components=half,
         ),
-        _card(
-            evidence_id="ev.c",
-            episode_id=selected_id,
-            kind="macro_fact",
-            source_id="src.c",
-            source=sources["src.c"],
+        _evidence_input(
+            episode_role="query",
+            episode_id=query_id,
+            subject=subject,
+            evidence_kind="macro_fact",
+            claim_key="inflation.pressure",
+            stance="challenges",
+            known_at="2026-08-27T19:02:00.000000Z",
+            source_ref="source.alpha.challenge.macro",
+            source=b"macro challenge gamma",
+            components=three_quarters,
+        ),
+        _evidence_input(
+            episode_role="query",
+            episode_id=query_id,
+            subject=subject,
+            evidence_kind="technical_fact",
+            claim_key="inflation.pressure",
+            stance="challenges",
+            known_at="2026-08-27T19:03:00.000000Z",
+            source_ref="source.alpha.challenge.technical",
+            source=b"technical challenge delta",
             components=missing,
         ),
-        _card(
-            evidence_id="ev.d",
+        _evidence_input(
+            episode_role="analogue",
+            episode_id=analogue_id,
+            subject=subject,
+            evidence_kind="macro_fact",
+            claim_key="growth.pulse",
+            stance="neutral",
+            known_at="2026-08-17T19:00:00.000000Z",
+            source_ref="source.growth.macro",
+            source=b"analogue macro epsilon",
+            components=quarter,
+        ),
+        _evidence_input(
+            episode_role="query",
             episode_id=query_id,
-            kind="macro_fact",
-            source_id="src.d",
-            source=sources["src.d"],
-            citations=[],
+            subject=subject,
+            evidence_kind="technical_fact",
+            claim_key="growth.pulse",
+            stance="neutral",
+            known_at="2026-08-27T19:04:00.000000Z",
+            source_ref="source.growth.technical",
+            source=b"query technical zeta",
+            components=quarter,
         ),
     ]
+    cards = [row["evidence_card"] for row in evidence_inputs]
+    by = {
+        (
+            row["claim_key"],
+            row["stance"],
+            row["evidence_kind"],
+            row["episode_role"],
+        ): row["evidence_card_id"]
+        for row in cards
+    }
     claims = [
-        {
-            "claim_id": "claim.a",
-            "episode_forecast_id": query_id,
-            "evidence_ids": ["ev.a", "ev.b"],
-            "required_evidence_kinds": ["macro_fact", "technical_fact"],
-            "falsifier_evidence_ids": ["ev.b"],
-        },
-        {
-            "claim_id": "claim.b",
-            "episode_forecast_id": query_id,
-            "evidence_ids": ["ev.a"],
-            "required_evidence_kinds": ["macro_fact", "technical_fact"],
-            "falsifier_evidence_ids": [],
-        },
-        {
-            "claim_id": "claim.c",
-            "episode_forecast_id": query_id,
-            "evidence_ids": ["ev.d"],
-            "required_evidence_kinds": ["macro_fact"],
-            "falsifier_evidence_ids": [],
-        },
-        {
-            "claim_id": "claim.d",
-            "episode_forecast_id": query_id,
-            "evidence_ids": ["ev.a"],
-            "required_evidence_kinds": ["macro_fact"],
-            "falsifier_evidence_ids": ["ev.z"],
-        },
-        {
-            "claim_id": "claim.e",
-            "episode_forecast_id": query_id,
-            "evidence_ids": ["ev.z"],
-            "required_evidence_kinds": ["macro_fact"],
-            "falsifier_evidence_ids": [],
-        },
+        _claim(
+            subject=subject,
+            claim_key="inflation.pressure",
+            stance="supports",
+            evidence_card_refs=[
+                by[("inflation.pressure", "supports", "macro_fact", "query")],
+                by[("inflation.pressure", "supports", "technical_fact", "query")],
+            ],
+            falsifier_code="data_reversal",
+        ),
+        _claim(
+            subject=subject,
+            claim_key="inflation.pressure",
+            stance="challenges",
+            evidence_card_refs=[
+                by[("inflation.pressure", "challenges", "macro_fact", "query")],
+                by[("inflation.pressure", "challenges", "technical_fact", "query")],
+            ],
+        ),
+        _claim(
+            subject=subject,
+            claim_key="inflation.pressure",
+            stance="supports",
+            evidence_card_refs=[
+                by[("inflation.pressure", "supports", "macro_fact", "query")]
+            ],
+        ),
+        _claim(
+            subject=subject,
+            claim_key="inflation.pressure",
+            stance="neutral",
+            evidence_card_refs=[],
+        ),
+        _claim(
+            subject=subject,
+            claim_key="inflation.pressure",
+            stance="neutral",
+            evidence_card_refs=[
+                by[("growth.pulse", "neutral", "macro_fact", "analogue")],
+                by[("growth.pulse", "neutral", "technical_fact", "query")],
+            ],
+        ),
     ]
     build_kwargs = {
         "operating_cortex_registration": registration,
@@ -188,16 +391,13 @@ def _fixture() -> dict[str, Any]:
         "query_exact_context_bytes": query["exact_context_bytes"],
         "query_coordinates": QUERY_COORDINATES,
         "candidate_inputs": candidates,
-        "evidence_cards": evidence,
-        "exact_source_bytes": sources,
-        "claim_inputs": claims,
-        "assembled_at": "2026-08-29T00:00:00.000000Z",
+        "evidence_inputs": evidence_inputs,
+        "claim_cards": claims,
+        "produced_at": "2026-08-29T00:00:00.000000Z",
     }
     packet = cortex.build_operating_cortex_packet(**build_kwargs)
     join_kwargs = {
-        key: value
-        for key, value in build_kwargs.items()
-        if key not in {"evidence_cards", "claim_inputs", "assembled_at"}
+        key: value for key, value in build_kwargs.items() if key != "produced_at"
     }
     return {
         "packet": packet,
@@ -207,38 +407,96 @@ def _fixture() -> dict[str, Any]:
         "record": record,
         "query": query,
         "candidates": candidates,
-        "sources": sources,
-        "evidence": evidence,
+        "evidence_inputs": evidence_inputs,
         "claims": claims,
         "build_kwargs": build_kwargs,
         "join_kwargs": join_kwargs,
     }
 
 
-def test_registration_and_packet_are_schema_valid_content_addressed_and_zero_authority() -> (
-    None
-):
+def test_frozen_top_level_and_row_matrices_are_exact_and_schema_valid() -> None:
     fixture = _fixture()
     registration = fixture["registration"]
     packet = fixture["packet"]
 
-    assert registration["salience_policy"]["weights"] == dict(cortex.SALIENCE_WEIGHTS)
-    assert registration["input_profile"] == "synthetic_fixture_only"
-    assert packet["input_profile"] == "synthetic_fixture_only"
-    assert not any(registration["claims"].values())
-    assert not any(packet["claims"].values())
-    assert registration["authority"] == dict(forward.AUTHORITY)
-    assert packet["authority"] == dict(forward.AUTHORITY)
-    assert registration["emission_enabled"] is False
-    assert packet["emission_enabled"] is False
+    assert set(registration) == REGISTRATION_FIELDS
+    assert set(packet) == PACKET_FIELDS
+    assert set(packet["evidence_manifest"][0]) == EVIDENCE_FIELDS
+    assert set(packet["evidence_manifest"][0]["citation"]) == CITATION_FIELDS
+    assert set(packet["attention_queue"][0]) == {
+        "attention_item_id",
+        "evidence_card_id",
+        "status",
+        "reason",
+        "salience_score_q18",
+    }
+    assert set(packet["contradictions"][0]) == {
+        "contradiction_group_id",
+        "subject",
+        "claim_key",
+        "supporting_claim_ids",
+        "challenging_claim_ids",
+        "status",
+    }
+    assert set(packet["missingness"][0]) == {"evidence_kind", "status", "scope"}
+    assert set(packet["falsifier_audit"][0]) == {
+        "claim_id",
+        "falsifier_code",
+        "status",
+        "generation_performed",
+    }
+    assert set(packet["citation_projection"][0]) == CLAIM_FIELDS | {
+        "status",
+        "withholding_reason",
+        "citation_ids",
+        "semantic_entailment_evaluated",
+    }
+    assert set(packet["unsupported_claim_scorecard"]) == {
+        "status",
+        "total",
+        "included",
+        "withheld",
+        "counts_by_reason",
+        "structural_unsupported_rate_q18",
+    }
+    assert registration["read_tools"] == EXPECTED_READ_TOOLS
+    assert packet["read_tools"] == EXPECTED_READ_TOOLS
+    assert list(cortex.READ_TOOLS) == EXPECTED_READ_TOOLS
+    assert registration["bounds"] == EXPECTED_BOUNDS
+    assert dict(cortex.BOUNDS) == EXPECTED_BOUNDS
+    assert registration["citation_policy"] == {
+        "byte_closure": "source_sha256_length_and_half_open_span_sha256",
+        "semantic_entailment": "not_evaluated",
+        "withholding_precedence": [
+            "evidence_reference_missing",
+            "evidence_reference_mismatch",
+            "required_evidence_kind_missing",
+            "citation_not_closed",
+            "semantic_entailment_not_evaluated",
+        ],
+    }
     _validate_schema("operating_cortex_registration.v1.schema.json", registration)
     _validate_schema("operating_cortex_packet.v1.schema.json", packet)
 
 
-def test_registration_is_frozen_after_w4_and_before_w2_live_forward() -> None:
+def test_registration_closes_exact_w4_w2_ids_plan_and_freeze_window() -> None:
     fixture = _fixture()
+    registration = fixture["registration"]
+    retrieval_registration = fixture["retrieval_registration"]
+
+    assert (
+        registration["retrieval_registration_id"]
+        == retrieval_registration["retrieval_registration_id"]
+    )
+    assert (
+        registration["trial_registration_id"]
+        == retrieval_registration["trial_registration_id"]
+    )
+    assert (
+        registration["trial_plan_sha256"] == retrieval_registration["trial_plan_sha256"]
+    )
     common = {
-        "retrieval_registration": fixture["retrieval_registration"],
+        "retrieval_registration": retrieval_registration,
         "trial_registration": fixture["trial"],
         "registration_key": "synthetic.cortex.v1",
         "required_evidence_kinds": ["macro_fact"],
@@ -257,293 +515,549 @@ def test_registration_is_frozen_after_w4_and_before_w2_live_forward() -> None:
         )
 
 
-def test_schemas_fail_closed_on_authority_q18_and_extra_field_forgery() -> None:
+def test_exact_claims_coverage_authority_and_emission_are_honest() -> None:
     fixture = _fixture()
-    registration = copy.deepcopy(fixture["registration"])
-    registration["claims"]["attention_quality_evaluated"] = True
-    with pytest.raises(ValidationError):
-        _validate_schema("operating_cortex_registration.v1.schema.json", registration)
-
-    packet = copy.deepcopy(fixture["packet"])
-    packet["evidence_cards"][0]["salience_components"]["freshness"] = (
-        "1.500000000000000000"
-    )
-    with pytest.raises(ValidationError):
-        _validate_schema("operating_cortex_packet.v1.schema.json", packet)
-
-    packet = copy.deepcopy(fixture["packet"])
-    packet["unexpected"] = False
-    with pytest.raises(ValidationError):
-        _validate_schema("operating_cortex_packet.v1.schema.json", packet)
+    for value in (fixture["registration"], fixture["packet"]):
+        assert value["claims"] == EXPECTED_CLAIMS
+        assert not any(value["claims"].values())
+        assert value["authority"] == dict(forward.AUTHORITY)
+        assert value["emission_enabled"] is False
+        assert value["input_profile"] == "synthetic_fixture_only"
+    assert dict(cortex.CLAIMS) == EXPECTED_CLAIMS
+    assert fixture["packet"]["coverage"] == {
+        "w4_exact_join_validated": True,
+        "citation_byte_closure_validated": True,
+        "evidence_population_complete": False,
+        "citation_semantic_entailment_evaluated": False,
+        "attention_quality_evaluated": False,
+    }
 
 
-def test_packet_revalidates_complete_w4_join_before_processing_evidence() -> None:
-    fixture = _fixture()
-    kwargs = copy.deepcopy(fixture["build_kwargs"])
-    kwargs["episodic_retrieval_record"]["counts"]["supplied_candidates"] = 99
-    kwargs["exact_source_bytes"] = {"src.a": b"buy"}
-
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="W4A"):
-        cortex.build_operating_cortex_packet(**kwargs)
-
-
-def test_salience_uses_six_frozen_weights_one_final_q18_and_abstains_on_missing() -> (
+def test_source_span_citation_evidence_claim_and_packet_ids_are_content_addressed() -> (
     None
 ):
-    packet = _fixture()["packet"]
-    queue = packet["attention_queue"]
-
-    assert [row["evidence_id"] for row in queue] == ["ev.a", "ev.d", "ev.b", "ev.c"]
-    assert [row["salience_score"] for row in queue] == [
-        "1.000000000000000000",
-        "1.000000000000000000",
-        "0.500000000000000000",
-        None,
-    ]
-    assert queue[-1]["status"] == "abstained"
-    assert queue[-1]["reason"] == "missing_salience_component"
-
-
-def test_salience_mixed_components_matches_exact_frozen_weight_sum() -> None:
     fixture = _fixture()
-    components = {
-        "freshness": "1.000000000000000000",
-        "source_quality": "0.500000000000000000",
-        "episode_relevance": "0.000000000000000000",
-        "contradiction_relevance": "1.000000000000000000",
-        "missingness_relevance": "0.000000000000000000",
-        "falsifier_relevance": "0.500000000000000000",
-    }
-    fixture["build_kwargs"]["evidence_cards"][0]["salience_components"] = components
-    packet = cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
-    row = next(
-        item for item in packet["attention_queue"] if item["evidence_id"] == "ev.a"
+    registration = fixture["registration"]
+    assert registration["operating_cortex_registration_id"] == _content_id(
+        "mmcortexregistration_",
+        registration,
+        "operating_cortex_registration_id",
     )
-    assert row["salience_score"] == "0.550000000000000000"
+    packet = fixture["packet"]
+    source_by_ref = {
+        row["evidence_card"]["citation"]["source_record_ref"]: row["exact_source_bytes"]
+        for row in fixture["evidence_inputs"]
+    }
+    for card in packet["evidence_manifest"]:
+        citation = card["citation"]
+        source = source_by_ref[citation["source_record_ref"]]
+        assert citation["source_sha256"] == hashlib.sha256(source).hexdigest()
+        assert citation["source_bytes"] == len(source)
+        assert (
+            citation["span_sha256"]
+            == hashlib.sha256(
+                source[citation["span_start_byte"] : citation["span_end_byte"]]
+            ).hexdigest()
+        )
+        assert citation["citation_id"] == _content_id(
+            "mmcitation_", citation, "citation_id"
+        )
+        assert card["evidence_card_id"] == _content_id(
+            "mmevidencecard_", card, "evidence_card_id"
+        )
+    for projection in packet["citation_projection"]:
+        claim = {key: projection[key] for key in CLAIM_FIELDS}
+        assert claim["claim_id"] == _content_id("mmclaim_", claim, "claim_id")
+    for item in packet["attention_queue"]:
+        assert item["attention_item_id"] == _content_id(
+            "mmattentionitem_", item, "attention_item_id"
+        )
+    assert packet["operating_cortex_packet_id"] == _content_id(
+        "mmcortexpacket_", packet, "operating_cortex_packet_id"
+    )
 
 
 @pytest.mark.parametrize(
-    ("freshness", "expected"),
+    ("mutation", "match"),
+    [
+        (
+            lambda f: f["build_kwargs"]["evidence_inputs"][0][
+                "evidence_card"
+            ].__setitem__("evidence_card_id", "mmevidencecard_" + "f" * 64),
+            "evidence_card_id",
+        ),
+        (
+            lambda f: f["build_kwargs"]["evidence_inputs"][0]["evidence_card"][
+                "citation"
+            ].__setitem__("citation_id", "mmcitation_" + "f" * 64),
+            "citation_id",
+        ),
+        (
+            lambda f: f["build_kwargs"]["claim_cards"][0].__setitem__(
+                "claim_id", "mmclaim_" + "f" * 64
+            ),
+            "claim_id",
+        ),
+        (
+            lambda f: f["build_kwargs"]["evidence_inputs"][0]["evidence_card"][
+                "citation"
+            ].__setitem__("source_sha256", "f" * 64),
+            "source_sha256",
+        ),
+        (
+            lambda f: f["build_kwargs"]["evidence_inputs"][0]["evidence_card"][
+                "citation"
+            ].__setitem__("source_bytes", 1),
+            "source_bytes",
+        ),
+        (
+            lambda f: f["build_kwargs"]["evidence_inputs"][0]["evidence_card"][
+                "citation"
+            ].__setitem__("span_sha256", "f" * 64),
+            "span_sha256",
+        ),
+    ],
+)
+def test_opaque_identity_and_source_span_forgery_fail_closed(
+    mutation, match: str
+) -> None:
+    fixture = _fixture()
+    mutation(fixture)
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match=match):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+
+def test_exact_w4_subject_episode_role_known_at_and_produced_time_fail_closed() -> None:
+    fixture = _fixture()
+    card = fixture["build_kwargs"]["evidence_inputs"][0]["evidence_card"]
+    card["subject"]["subject_id"] = "other"
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="subject"
+    ):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+    fixture = _fixture()
+    fixture["build_kwargs"]["evidence_inputs"][0]["evidence_card"]["episode_role"] = (
+        "analogue"
+    )
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="role"):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+    fixture = _fixture()
+    card = fixture["build_kwargs"]["evidence_inputs"][0]["evidence_card"]
+    card["known_at"] = "2026-08-28T00:00:00.000000Z"
+    card["citation"]["known_at"] = card["known_at"]
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="decision cutoff"
+    ):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+    fixture = _fixture()
+    fixture["build_kwargs"]["produced_at"] = "2026-08-27T23:59:59.999999Z"
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="retrieval"
+    ):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+
+def test_episode_scope_is_exact_query_then_w4_selected_analogues() -> None:
+    fixture = _fixture()
+    packet = fixture["packet"]
+    record = fixture["record"]
+    assert [row["episode_role"] for row in packet["episode_scope"]] == [
+        "query",
+        "analogue",
+        "analogue",
+        "analogue",
+    ]
+    assert [row["episode_forecast_id"] for row in packet["episode_scope"]] == [
+        record["query"]["forecast_id"],
+        *record["selected_forecast_ids"],
+    ]
+    assert all(
+        row["subject"] == record["query"]["subject"] for row in packet["episode_scope"]
+    )
+
+
+def test_frozen_salience_names_weights_one_final_q18_and_missing_abstention() -> None:
+    fixture = _fixture()
+    registration = fixture["registration"]
+    queue = fixture["packet"]["attention_queue"]
+    assert registration["salience_policy"]["weights"] == {
+        "standardized_surprise": "0.250000000000000000",
+        "change_hazard": "0.200000000000000000",
+        "novelty": "0.150000000000000000",
+        "disagreement": "0.150000000000000000",
+        "materiality": "0.150000000000000000",
+        "data_health_deficit": "0.100000000000000000",
+    }
+    assert registration["salience_policy"]["components"] == [
+        "standardized_surprise",
+        "change_hazard",
+        "novelty",
+        "disagreement",
+        "materiality",
+        "data_health_deficit",
+    ]
+    assert registration["salience_policy"]["missing_component"] == "abstain"
+    assert (
+        registration["salience_policy"]["ordering"]
+        == "score_desc_then_evidence_card_id_then_abstained_evidence_card_id"
+    )
+    assert (
+        registration["salience_policy"]["numeric_convention"]
+        == "decimal64_half_even_one_final_q18/v1"
+    )
+    scored = [row for row in queue if row["status"] == "scored"]
+    assert [row["salience_score_q18"] for row in scored] == sorted(
+        (row["salience_score_q18"] for row in scored), reverse=True
+    )
+    abstained = [row for row in queue if row["status"] == "abstained"]
+    assert len(abstained) == 1
+    assert abstained[0]["reason"] == "missing_salience_component"
+    assert abstained[0]["salience_score_q18"] is None
+
+
+@pytest.mark.parametrize(
+    ("surprise", "expected"),
     [
         ("0.000000000000000002", "0.000000000000000000"),
         ("0.000000000000000006", "0.000000000000000002"),
     ],
 )
-def test_salience_one_final_quantization_is_half_even(
-    freshness: str, expected: str
+def test_salience_uses_one_final_half_even_quantization(
+    surprise: str, expected: str
 ) -> None:
     fixture = _fixture()
-    components = _components("0.000000000000000000")
-    components["freshness"] = freshness
-    fixture["build_kwargs"]["evidence_cards"][0]["salience_components"] = components
+    target = fixture["build_kwargs"]["evidence_inputs"][0]["evidence_card"]
+    target["salience_components"] = _components("0.000000000000000000")
+    target["salience_components"]["standardized_surprise"] = surprise
+    target["evidence_card_id"] = ""
     packet = cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+    new_id = next(
+        card["evidence_card_id"]
+        for card in packet["evidence_manifest"]
+        if card["citation"]["source_record_ref"] == "source.alpha.macro"
+    )
     row = next(
-        item for item in packet["attention_queue"] if item["evidence_id"] == "ev.a"
+        item for item in packet["attention_queue"] if item["evidence_card_id"] == new_id
     )
-    assert row["salience_score"] == expected
+    assert row["salience_score_q18"] == expected
 
 
-def test_structural_contradiction_and_required_kind_missingness_are_bounded_to_inputs() -> (
+def test_global_decimal_precision_rounding_flags_and_traps_cannot_change_packet() -> (
     None
 ):
     fixture = _fixture()
-    packet = fixture["packet"]
+    baseline = fixture["packet"]
+    original = getcontext().copy()
+    try:
+        getcontext().prec = 1
+        getcontext().rounding = ROUND_DOWN
+        getcontext().traps[Inexact] = True
+        hostile = cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+    finally:
+        setcontext(original)
+    assert hostile == baseline
+    queue = hostile["attention_queue"]
+    by_source = {
+        card["citation"]["source_record_ref"]: card["evidence_card_id"]
+        for card in hostile["evidence_manifest"]
+    }
+    ids = [row["evidence_card_id"] for row in queue]
+    assert ids.index(by_source["source.alpha.macro"]) < ids.index(
+        by_source["source.alpha.technical"]
+    )
 
-    assert packet["contradictions"] == [
+
+def test_contradictions_are_derived_from_exact_subject_claim_key_and_claim_stance() -> (
+    None
+):
+    fixture = _fixture()
+    rows = fixture["packet"]["contradictions"]
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["subject"] == fixture["record"]["query"]["subject"]
+    assert row["claim_key"] == "inflation.pressure"
+    assert row["status"] == "structural_conflict"
+    claims = {claim["claim_id"]: claim for claim in fixture["claims"]}
+    assert all(
+        claims[item]["stance"] == "supports" for item in row["supporting_claim_ids"]
+    )
+    assert all(
+        claims[item]["stance"] == "challenges" for item in row["challenging_claim_ids"]
+    )
+    assert row["contradiction_group_id"] == _content_id(
+        "mmcontradictiongroup_", row, "contradiction_group_id"
+    )
+
+
+def test_missingness_is_structural_and_bounded_to_required_kinds() -> None:
+    rows = _fixture()["packet"]["missingness"]
+    assert rows == [
         {
-            "contradiction_group_id": "group.a",
-            "supports_evidence_ids": ["ev.a"],
-            "challenges_evidence_ids": ["ev.b"],
-            "status": "structural_conflict",
-        }
+            "evidence_kind": "macro_fact",
+            "status": "present",
+            "scope": "supplied_evidence_manifest_only",
+        },
+        {
+            "evidence_kind": "technical_fact",
+            "status": "present",
+            "scope": "supplied_evidence_manifest_only",
+        },
     ]
-    missingness = {row["episode_forecast_id"]: row for row in packet["missingness"]}
-    query_id = fixture["record"]["query"]["forecast_id"]
-    selected_id = fixture["record"]["selected_forecast_ids"][0]
-    assert missingness[query_id]["missing_required_evidence_kinds"] == []
-    assert missingness[selected_id]["missing_required_evidence_kinds"] == [
-        "technical_fact"
-    ]
-    assert all(
-        row["scope"] == "supplied_synthetic_evidence_only"
-        for row in missingness.values()
-    )
 
 
-def test_falsifiers_are_audited_but_never_generated() -> None:
-    rows = {row["claim_id"]: row for row in _fixture()["packet"]["falsifier_audit"]}
-
-    assert rows["claim.a"]["status"] == "complete"
-    assert rows["claim.b"]["status"] == "not_registered"
-    assert rows["claim.d"]["status"] == "incomplete"
-    assert rows["claim.d"]["missing_falsifier_evidence_ids"] == ["ev.z"]
-    assert all(row["generation"] == "never_generated" for row in rows.values())
-
-
-def test_citation_projection_is_byte_closed_not_entailment_and_withholding_is_deterministic() -> (
-    None
-):
-    packet = _fixture()["packet"]
-    rows = {row["claim_id"]: row for row in packet["citation_projection"]}
-
-    assert rows["claim.a"]["status"] == "available"
-    assert len(rows["claim.a"]["citation_refs"]) == 2
-    assert rows["claim.a"]["entailment"] == "not_evaluated"
-    assert rows["claim.b"]["withholding_reason"] == "required_evidence_kind_missing"
-    assert rows["claim.c"]["withholding_reason"] == "citation_not_closed"
-    assert rows["claim.d"]["withholding_reason"] == "falsifier_reference_missing"
-    assert rows["claim.e"]["withholding_reason"] == "evidence_reference_missing"
-    assert all(
-        not row["citation_refs"] for row in rows.values() if row["status"] == "withheld"
-    )
-
-
-def test_scorecards_report_only_structural_unsupported_rate_and_no_attention_quality() -> (
-    None
-):
-    scorecards = _fixture()["packet"]["scorecards"]
-
-    assert scorecards["structural_unsupported_rate"] == {
-        "status": "computed",
-        "value_decimal": "0.800000000000000000",
-        "numerator": 4,
-        "denominator": 5,
-        "scope": "supplied_synthetic_claims_only",
-    }
-    assert scorecards["attention_quality"] == {
-        "status": "not_evaluated",
-        "value": None,
-        "reason": "no_labeled_attention_outcomes",
-    }
-
-
-def test_empty_claims_abstain_structural_rate_without_inventing_quality() -> None:
+def test_falsifiers_are_registered_or_absent_but_never_generated() -> None:
     fixture = _fixture()
-    fixture["build_kwargs"]["claim_inputs"] = []
-    packet = cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+    rows = {row["claim_id"]: row for row in fixture["packet"]["falsifier_audit"]}
+    registered = next(claim for claim in fixture["claims"] if claim["falsifier_code"])
+    assert rows[registered["claim_id"]] == {
+        "claim_id": registered["claim_id"],
+        "falsifier_code": "data_reversal",
+        "status": "registered",
+        "generation_performed": False,
+    }
+    assert all(row["generation_performed"] is False for row in rows.values())
+    assert all(
+        row["status"] == ("registered" if row["falsifier_code"] else "not_registered")
+        for row in rows.values()
+    )
 
-    assert packet["scorecards"]["structural_unsupported_rate"]["status"] == "abstained"
-    assert packet["scorecards"]["structural_unsupported_rate"]["value_decimal"] is None
-    assert packet["scorecards"]["attention_quality"]["status"] == "not_evaluated"
+
+def test_citation_projection_pins_structural_precedence_and_semantic_withholding() -> (
+    None
+):
+    fixture = _fixture()
+    rows = fixture["packet"]["citation_projection"]
+    by_shape = {
+        (row["stance"], len(row["evidence_card_refs"]), row["falsifier_code"]): row
+        for row in rows
+    }
+    included = [row for row in rows if row["status"] == "included_structural_only"]
+    assert len(included) == 2
+    assert all(
+        row["withholding_reason"] == "semantic_entailment_not_evaluated"
+        and row["semantic_entailment_evaluated"] is False
+        and len(row["citation_ids"]) == 2
+        for row in included
+    )
+    zero = by_shape[("neutral", 0, None)]
+    assert zero["status"] == "withheld"
+    assert zero["withholding_reason"] == "evidence_reference_missing"
+    missing_kind = next(
+        row
+        for row in rows
+        if row["status"] == "withheld" and len(row["evidence_card_refs"]) == 1
+    )
+    assert missing_kind["withholding_reason"] == "required_evidence_kind_missing"
+    mismatch = next(
+        row
+        for row in rows
+        if row["status"] == "withheld" and len(row["evidence_card_refs"]) == 2
+    )
+    assert mismatch["withholding_reason"] == "evidence_reference_mismatch"
+    assert all(not row["citation_ids"] for row in rows if row["status"] == "withheld")
+
+
+def test_claim_references_must_close_exact_subject_claim_key_and_stance() -> None:
+    fixture = _fixture()
+    claim = next(
+        row
+        for row in fixture["claims"]
+        if row["stance"] == "supports" and len(row["evidence_card_refs"]) == 2
+    )
+    claim["stance"] = "neutral"
+    claim["claim_id"] = ""
+    fixture["build_kwargs"]["claim_cards"] = [claim]
+    packet = cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+    assert (
+        packet["citation_projection"][0]["withholding_reason"]
+        == "evidence_reference_mismatch"
+    )
+
+
+def test_structural_unsupported_scorecard_and_attention_quality_are_exact() -> None:
+    packet = _fixture()["packet"]
+    assert packet["unsupported_claim_scorecard"] == {
+        "status": "structural_only",
+        "total": 5,
+        "included": 2,
+        "withheld": 3,
+        "counts_by_reason": {
+            "evidence_reference_missing": 1,
+            "evidence_reference_mismatch": 1,
+            "required_evidence_kind_missing": 1,
+            "citation_not_closed": 0,
+        },
+        "structural_unsupported_rate_q18": "0.600000000000000000",
+    }
+    assert packet["attention_quality_scorecard"] == {
+        "status": "not_evaluated",
+        "reason": "no_preregistered_attention_outcomes",
+        "graded_items": 0,
+        "precision_q18": None,
+        "recall_q18": None,
+        "false_positive_rate_q18": None,
+        "ndcg_q18": None,
+    }
+
+
+def test_zero_claims_has_null_rate_and_zero_evidence_refs_are_accepted() -> None:
+    fixture = _fixture()
+    fixture["build_kwargs"]["claim_cards"] = []
+    packet = cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+    score = packet["unsupported_claim_scorecard"]
+    assert score["total"] == score["included"] == score["withheld"] == 0
+    assert score["structural_unsupported_rate_q18"] is None
+    assert packet["citation_projection"] == []
+
+    fixture = _fixture()
+    fixture["build_kwargs"]["claim_cards"] = [
+        claim for claim in fixture["claims"] if not claim["evidence_card_refs"]
+    ]
+    packet = cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+    assert (
+        packet["citation_projection"][0]["withholding_reason"]
+        == "evidence_reference_missing"
+    )
 
 
 @pytest.mark.parametrize(
-    "mutation",
+    "token",
     [
-        lambda fixture: fixture["build_kwargs"]["evidence_cards"][0][
-            "salience_components"
-        ].__setitem__("freshness", "0.1"),
-        lambda fixture: fixture["build_kwargs"]["evidence_cards"][0][
-            "salience_components"
-        ].__setitem__("freshness", float("nan")),
-        lambda fixture: fixture["build_kwargs"]["evidence_cards"][0].__setitem__(
-            "episode_forecast_id", "mmforecast_" + "0" * 64
-        ),
-        lambda fixture: fixture["build_kwargs"]["evidence_cards"][0]["citations"][
-            0
-        ].update({"byte_start": 5, "byte_end": 5}),
-        lambda fixture: fixture["build_kwargs"]["evidence_cards"].reverse(),
-        lambda fixture: fixture["build_kwargs"]["claim_inputs"].reverse(),
+        "buy_signal",
+        "buySignal",
+        "buyingSignal",
+        "BuySignal",
+        "authority",
+        "permissions",
+        "proposal_weight",
+        "safeProposalWeightV1",
+        "may_rank",
+        "rankingGate",
+        "executeNow",
+        "promotion_eligible",
+        "outcomeFree",
+        "recommendationEngine",
+        "mayTrainProphet",
     ],
 )
-def test_hostile_evidence_decimal_scope_span_and_order_inputs_fail_closed(
-    mutation,
+def test_action_and_authority_morphology_is_rejected_from_caller_codes(
+    token: str,
 ) -> None:
     fixture = _fixture()
-    mutation(fixture)
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
-        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
-
-
-@pytest.mark.parametrize(
-    "body", [b"buy now", b"profits", b"bearish datum", b"p&l datum", b"actions"]
-)
-def test_forbidden_semantic_token_family_is_rejected_from_source_bytes(
-    body: bytes,
-) -> None:
-    fixture = _fixture()
-    fixture["build_kwargs"]["exact_source_bytes"]["src.a"] = body
-    fixture["build_kwargs"]["evidence_cards"][0]["source_sha256"] = hashlib.sha256(
-        body
-    ).hexdigest()
-    fixture["build_kwargs"]["evidence_cards"][0]["citations"] = [
-        {"byte_start": 0, "byte_end": min(3, len(body))}
-    ]
-
     with pytest.raises(
         cortex.MarketMemoryOperatingCortexContractError, match="forbidden"
     ):
-        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
-
-
-def test_exact_source_hash_bytes_and_aggregate_bounds_fail_closed() -> None:
-    fixture = _fixture()
-    fixture["build_kwargs"]["exact_source_bytes"]["src.a"] = b"macro datum changed"
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="hash"):
-        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
-
-    fixture = _fixture()
-    fixture["build_kwargs"]["exact_source_bytes"]["src.a"] = b"x" * (64 * 1024 + 1)
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="64 KiB"):
-        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
-
-    fixture = _fixture()
-    fixture["build_kwargs"]["exact_source_bytes"]["src.unused"] = b"unused datum"
-    with pytest.raises(
-        cortex.MarketMemoryOperatingCortexContractError, match="every and only"
-    ):
-        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
-
-
-def test_self_validator_rejects_rehashed_projection_score_and_claim_forgery() -> None:
-    packet = _fixture()["packet"]
-    packet["attention_queue"][0]["salience_score"] = "0.000000000000000000"
-    _rehash(packet, field="operating_cortex_packet_id", prefix="mmcortexpacket_")
-    with pytest.raises(
-        cortex.MarketMemoryOperatingCortexContractError, match="attention"
-    ):
-        cortex.validate_operating_cortex_packet(packet)
-
-    packet = _fixture()["packet"]
-    packet["scorecards"]["structural_unsupported_rate"]["numerator"] = 0
-    _rehash(packet, field="operating_cortex_packet_id", prefix="mmcortexpacket_")
-    with pytest.raises(
-        cortex.MarketMemoryOperatingCortexContractError, match="scorecards"
-    ):
-        cortex.validate_operating_cortex_packet(packet)
-
-    packet = _fixture()["packet"]
-    packet["claims"]["attention_quality_evaluated"] = True
-    _rehash(packet, field="operating_cortex_packet_id", prefix="mmcortexpacket_")
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="claims"):
-        cortex.validate_operating_cortex_packet(packet)
-
-
-def test_join_detects_exact_source_and_registration_dependency_tampering() -> None:
-    fixture = _fixture()
-    sources = dict(fixture["sources"])
-    sources["src.a"] = b"macro datum altered"
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
-        cortex.validate_operating_cortex_packet_join(
-            fixture["packet"],
-            **{**fixture["join_kwargs"], "exact_source_bytes": sources},
+        cortex.build_operating_cortex_registration(
+            retrieval_registration=fixture["retrieval_registration"],
+            trial_registration=fixture["trial"],
+            registration_key=token,
+            registered_at="2026-08-01T19:00:00.000000Z",
+            required_evidence_kinds=["macro_fact"],
+            producer_code_sha256="a" * 64,
+            producer_config_sha256="b" * 64,
         )
 
-    registration = copy.deepcopy(fixture["registration"])
-    registration["required_evidence_kinds"] = ["macro_fact"]
-    _rehash(
-        registration,
-        field="operating_cortex_registration_id",
-        prefix="mmcortexregistration_",
+
+def test_morphology_applies_to_source_refs_kinds_claim_keys_and_falsifier_codes() -> (
+    None
+):
+    for path, value in [
+        (
+            ("evidence_inputs", 0, "evidence_card", "citation", "source_record_ref"),
+            "mayRank",
+        ),
+        (("evidence_inputs", 0, "evidence_card", "evidence_kind"), "tradeSignal"),
+        (("evidence_inputs", 0, "evidence_card", "claim_key"), "forecast_context"),
+        (("claim_cards", 0, "falsifier_code"), "promotionEligible"),
+    ]:
+        fixture = _fixture()
+        target: Any = fixture["build_kwargs"]
+        for key in path[:-1]:
+            target = target[key]
+        target[path[-1]] = value
+        with pytest.raises(
+            cortex.MarketMemoryOperatingCortexContractError, match="forbidden"
+        ):
+            cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+
+def test_morphology_does_not_reject_safe_substring_only_codes() -> None:
+    fixture = _fixture()
+    registration = cortex.build_operating_cortex_registration(
+        retrieval_registration=fixture["retrieval_registration"],
+        trial_registration=fixture["trial"],
+        registration_key="constraint.audit.v1",
+        registered_at="2026-08-01T19:00:00.000000Z",
+        required_evidence_kinds=["macro_fact"],
+        producer_code_sha256="a" * 64,
+        producer_config_sha256="b" * 64,
     )
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
-        cortex.validate_operating_cortex_packet_join(
-            fixture["packet"],
-            **{
-                **fixture["join_kwargs"],
-                "operating_cortex_registration": registration,
-            },
+    assert registration["registration_key"] == "constraint.audit.v1"
+
+
+def test_exact_source_bytes_may_contain_action_words_without_gaining_authority() -> (
+    None
+):
+    fixture = _fixture()
+    wrapper = fixture["build_kwargs"]["evidence_inputs"][0]
+    source = b"buySignal authority may_rank executeNow proposal_weight outcomeFree"
+    wrapper["exact_source_bytes"] = source
+    citation = wrapper["evidence_card"]["citation"]
+    citation.update(
+        {
+            "citation_id": "",
+            "source_sha256": "",
+            "source_bytes": 0,
+            "span_start_byte": 0,
+            "span_end_byte": 9,
+            "span_sha256": "",
+        }
+    )
+    wrapper["evidence_card"]["evidence_card_id"] = ""
+    packet = cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+    assert packet["authority"] == dict(forward.AUTHORITY)
+    assert not any(packet["claims"].values())
+
+
+def test_structural_schemas_reject_action_outcome_and_unknown_fields() -> None:
+    fixture = _fixture()
+    packet = copy.deepcopy(fixture["packet"])
+    packet["action"] = "none"
+    with pytest.raises(ValidationError):
+        _validate_schema("operating_cortex_packet.v1.schema.json", packet)
+    card = copy.deepcopy(fixture["packet"]["evidence_manifest"][0])
+    card["outcome"] = "none"
+    schema = json.loads(
+        (SCHEMA_DIR / "operating_cortex_packet.v1.schema.json").read_text(
+            encoding="utf-8"
         )
+    )
+    validator = Draft202012Validator(schema, registry=_registry())
+    errors = list(
+        validator.iter_errors({**fixture["packet"], "evidence_manifest": [card]})
+    )
+    assert errors
+
+
+def test_duplicate_and_unused_exact_source_wrappers_fail_closed() -> None:
+    fixture = _fixture()
+    second = fixture["build_kwargs"]["evidence_inputs"][1]["evidence_card"]
+    first = fixture["build_kwargs"]["evidence_inputs"][0]["evidence_card"]
+    second["citation"]["source_record_ref"] = first["citation"]["source_record_ref"]
+    second["citation"]["citation_id"] = ""
+    second["evidence_card_id"] = ""
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="duplicate"
+    ):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+    fixture = _fixture()
+    fixture["build_kwargs"]["evidence_inputs"][0]["unused_source"] = b"orphan"
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="extra"):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
 
 
 def test_strict_loaders_reject_duplicate_nonfinite_and_oversize_json() -> None:
@@ -564,7 +1078,6 @@ def test_strict_loaders_reject_duplicate_nonfinite_and_oversize_json() -> None:
         )
         == fixture["registration"]
     )
-
     duplicate = packet_body.replace(b'"authority":', b'"authority":{},"authority":', 1)
     with pytest.raises(
         cortex.MarketMemoryOperatingCortexContractError, match="duplicate"
@@ -584,71 +1097,228 @@ def test_strict_loaders_reject_duplicate_nonfinite_and_oversize_json() -> None:
         cortex.MarketMemoryOperatingCortexContractError, match="byte bound"
     ):
         cortex.load_operating_cortex_registration_join_json(
-            b"{" + b" " * (256 * 1024),
+            b"{" + b" " * 262_144,
+            retrieval_registration=fixture["retrieval_registration"],
+            trial_registration=fixture["trial"],
+        )
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="byte bound"
+    ):
+        cortex.load_operating_cortex_packet_join_json(
+            b"{" + b" " * 2_097_152, **fixture["join_kwargs"]
+        )
+
+
+@pytest.mark.parametrize(
+    "mutator",
+    [
+        lambda p: p["attention_queue"][0].__setitem__(
+            "salience_score_q18", "0.000000000000000000"
+        ),
+        lambda p: p["unsupported_claim_scorecard"].__setitem__("withheld", 0),
+        lambda p: p["coverage"].__setitem__("evidence_population_complete", True),
+        lambda p: p["claims"].__setitem__("attention_quality_evaluated", True),
+        lambda p: p["citation_projection"][0].__setitem__(
+            "semantic_entailment_evaluated", True
+        ),
+    ],
+)
+def test_self_validator_rejects_rehashed_derived_claim_coverage_forgery(
+    mutator,
+) -> None:
+    packet = _fixture()["packet"]
+    mutator(packet)
+    _rehash(packet, field="operating_cortex_packet_id", prefix="mmcortexpacket_")
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
+        cortex.validate_operating_cortex_packet(packet)
+
+
+def test_join_rejects_fully_rehashed_source_span_and_dependency_forgery() -> None:
+    fixture = _fixture()
+    alternative_kwargs = copy.deepcopy(fixture["build_kwargs"])
+    wrapper = alternative_kwargs["evidence_inputs"][0]
+    card = wrapper["evidence_card"]
+    old_evidence_id = card["evidence_card_id"]
+    source = b"forged source bytes with an internally valid identity"
+    wrapper["exact_source_bytes"] = source
+    citation = card["citation"]
+    citation["source_sha256"] = hashlib.sha256(source).hexdigest()
+    citation["source_bytes"] = len(source)
+    citation["span_sha256"] = hashlib.sha256(
+        source[citation["span_start_byte"] : citation["span_end_byte"]]
+    ).hexdigest()
+    _rehash(citation, field="citation_id", prefix="mmcitation_")
+    _rehash(card, field="evidence_card_id", prefix="mmevidencecard_")
+    for claim in alternative_kwargs["claim_cards"]:
+        claim["evidence_card_refs"] = sorted(
+            card["evidence_card_id"] if ref == old_evidence_id else ref
+            for ref in claim["evidence_card_refs"]
+        )
+        claim["claim_id"] = ""
+    alternative = cortex.build_operating_cortex_packet(**alternative_kwargs)
+    assert cortex.validate_operating_cortex_packet(alternative) == alternative
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
+        cortex.validate_operating_cortex_packet_join(
+            alternative, **fixture["join_kwargs"]
+        )
+
+    fixture = _fixture()
+    fixture["build_kwargs"]["episodic_retrieval_record"]["counts"][
+        "supplied_candidates"
+    ] = 99
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="W4A"):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+
+def test_registration_join_rejects_rehashed_trial_plan_or_owner_forgery() -> None:
+    fixture = _fixture()
+    registration = fixture["registration"]
+    registration["trial_plan_sha256"] = "f" * 64
+    _rehash(
+        registration,
+        field="operating_cortex_registration_id",
+        prefix="mmcortexregistration_",
+    )
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="trial-plan"
+    ):
+        cortex.validate_operating_cortex_registration_join(
+            registration,
             retrieval_registration=fixture["retrieval_registration"],
             trial_registration=fixture["trial"],
         )
 
 
-def test_reader_is_immutable_detached_and_exposes_only_frozen_read_surface() -> None:
+def test_canonical_time_q18_span_reference_and_source_bounds_fail_closed() -> None:
+    fixture = _fixture()
+    fixture["build_kwargs"]["produced_at"] = "2026-08-29T00:00:00Z"
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="canonical"
+    ):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+    fixture = _fixture()
+    card = fixture["build_kwargs"]["evidence_inputs"][0]["evidence_card"]
+    card["salience_components"]["novelty"] = "NaN"
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+    fixture = _fixture()
+    citation = fixture["build_kwargs"]["evidence_inputs"][0]["evidence_card"][
+        "citation"
+    ]
+    citation["span_start_byte"] = 1
+    citation["span_end_byte"] = 1
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="non-empty"
+    ):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+    fixture = _fixture()
+    fixture["build_kwargs"]["evidence_inputs"][0]["exact_source_bytes"] = b"x" * 65_537
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="64 KiB"):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+    fixture = _fixture()
+    claim = fixture["build_kwargs"]["claim_cards"][0]
+    claim["evidence_card_refs"] = [
+        "mmevidencecard_" + f"{index:064x}" for index in range(9)
+    ]
+    claim["claim_id"] = ""
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="0..8"):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+
+def test_packet_and_registration_schema_reject_wrong_q18_extra_and_authority() -> None:
+    fixture = _fixture()
+    registration = copy.deepcopy(fixture["registration"])
+    registration["salience_policy"]["weights"]["novelty"] = "0.15"
+    with pytest.raises(ValidationError):
+        _validate_schema("operating_cortex_registration.v1.schema.json", registration)
+    packet = copy.deepcopy(fixture["packet"])
+    packet["authority"]["may_rank"] = True
+    with pytest.raises(ValidationError):
+        _validate_schema("operating_cortex_packet.v1.schema.json", packet)
+    packet = copy.deepcopy(fixture["packet"])
+    packet["evidence_manifest"][0]["extra"] = 1
+    with pytest.raises(ValidationError):
+        _validate_schema("operating_cortex_packet.v1.schema.json", packet)
+    packet = copy.deepcopy(fixture["packet"])
+    packet["attention_queue"][0]["status"] = "abstained"
+    with pytest.raises(ValidationError):
+        _validate_schema("operating_cortex_packet.v1.schema.json", packet)
+    packet = copy.deepcopy(fixture["packet"])
+    included = next(
+        row
+        for row in packet["citation_projection"]
+        if row["status"] == "included_structural_only"
+    )
+    included["withholding_reason"] = "citation_not_closed"
+    with pytest.raises(ValidationError):
+        _validate_schema("operating_cortex_packet.v1.schema.json", packet)
+
+
+def test_reader_is_detached_immutable_seven_view_and_has_no_generic_field_access() -> (
+    None
+):
     fixture = _fixture()
     reader = cortex.OperatingCortexReader(fixture["packet"], **fixture["join_kwargs"])
 
-    assert reader.read_episode_scope() == fixture["packet"]["episode_scope"]
     assert reader.read_attention_queue() == fixture["packet"]["attention_queue"]
+    assert reader.read_episode_scope() == fixture["packet"]["episode_scope"]
     assert reader.read_contradictions() == fixture["packet"]["contradictions"]
     assert reader.read_missingness() == fixture["packet"]["missingness"]
     assert reader.read_falsifier_audit() == fixture["packet"]["falsifier_audit"]
     assert reader.read_citation_projection() == fixture["packet"]["citation_projection"]
-    assert reader.read_scorecards() == fixture["packet"]["scorecards"]
-    mutable = reader.read_attention_queue()
-    mutable.clear()
+    assert reader.read_scorecards() == {
+        "unsupported_claim_scorecard": fixture["packet"]["unsupported_claim_scorecard"],
+        "attention_quality_scorecard": fixture["packet"]["attention_quality_scorecard"],
+    }
+    detached = reader.read_attention_queue()
+    detached.clear()
     assert reader.read_attention_queue()
+    assert not hasattr(reader, "_read")
+    assert not hasattr(reader, "packet")
     with pytest.raises(AttributeError):
         reader.packet = fixture["packet"]
-
+    backing = reader._OperatingCortexReader__attention_queue
+    assert type(backing) is bytes
+    with pytest.raises(AttributeError):
+        reader._OperatingCortexReader__attention_queue = b"[]"
+    assert reader.read_attention_queue() == fixture["packet"]["attention_queue"]
     public = {
         name
         for name, member in inspect.getmembers(cortex.OperatingCortexReader)
         if callable(member) and not name.startswith("_")
     }
-    assert public == {
-        "read_attention_queue",
-        "read_episode_scope",
-        "read_contradictions",
-        "read_missingness",
-        "read_falsifier_audit",
-        "read_citation_projection",
-        "read_scorecards",
-    }
+    assert public == set(cortex.READ_TOOLS)
 
 
-def test_module_is_pure_stdlib_plus_exact_w2_w4_owners_and_has_no_cortex_llm_import() -> (
+def test_module_is_pure_and_has_no_llm_filesystem_network_clock_or_write_capability() -> (
     None
 ):
     path = Path(cortex.__file__)
     source = path.read_text(encoding="utf-8")
     tree = ast.parse(source)
     imports = set()
-    forbidden_calls = set()
+    calls = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             imports.update(alias.name for alias in node.names)
         elif isinstance(node, ast.ImportFrom):
             imports.add(node.module or "")
-        elif (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id in {"open", "eval", "exec", "compile", "__import__"}
-        ):
-            forbidden_calls.add(node.func.id)
-
-    allowed = {
+        elif isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name):
+                calls.add(node.func.id)
+            elif isinstance(node.func, ast.Attribute):
+                calls.add(node.func.attr)
+    assert imports <= {
         "__future__",
         "copy",
         "hashlib",
         "json",
         "re",
+        "unicodedata",
         "collections.abc",
         "datetime",
         "decimal",
@@ -656,72 +1326,75 @@ def test_module_is_pure_stdlib_plus_exact_w2_w4_owners_and_has_no_cortex_llm_imp
         "typing",
         "engine.neuralweb",
     }
-    assert imports <= allowed
-    assert not forbidden_calls
-    assert "cortex.py" not in source
-    assert "os.environ" not in source
-    assert "requests" not in source
+    assert not (
+        calls
+        & {
+            "open",
+            "write",
+            "write_text",
+            "write_bytes",
+            "request",
+            "urlopen",
+            "connect",
+            "socket",
+            "run",
+            "Popen",
+            "system",
+            "now",
+            "utcnow",
+        }
+    )
 
 
-def test_depth_node_string_evidence_claim_reference_and_kind_bounds() -> None:
-    fixture = _fixture()
-    too_many_evidence = [copy.deepcopy(fixture["evidence"][0]) for _ in range(65)]
-    for index, row in enumerate(too_many_evidence):
-        row["evidence_id"] = f"ev.{index:03d}"
-    fixture["build_kwargs"]["evidence_cards"] = too_many_evidence
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="64"):
-        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
-
-    fixture = _fixture()
-    fixture["build_kwargs"]["claim_inputs"][0]["evidence_ids"] = [
-        f"ev.{i}" for i in range(9)
-    ]
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="8"):
-        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
-
-    fixture = _fixture()
-    fixture["build_kwargs"]["evidence_cards"][0]["evidence_kind"] = "x" * 257
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
-        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
-
-    fixture = _fixture()
-    fixture["build_kwargs"]["claim_inputs"][0]["required_evidence_kinds"] = [
-        "unregistered_fact"
-    ]
-    with pytest.raises(
-        cortex.MarketMemoryOperatingCortexContractError, match="preregistered"
-    ):
-        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
-
-
-def test_json_resource_depth_and_node_bounds_precede_deep_semantics() -> None:
+def test_resource_depth_node_string_evidence_claim_and_kind_bounds_fail_closed() -> (
+    None
+):
     fixture = _fixture()
     registration = copy.deepcopy(fixture["registration"])
-    nested: Any = False
+    nested: Any = "leaf"
     for _ in range(18):
-        nested = [nested]
-    registration["claims"]["extra"] = nested
+        nested = {"x": nested}
+    registration["implementation"]["producer_config_sha256"] = nested
     with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="depth"):
         cortex.validate_operating_cortex_registration_record(registration)
 
-    registration = copy.deepcopy(fixture["registration"])
-    registration["claims"]["extra"] = [False] * 16_385
+    fixture = _fixture()
+    packet = copy.deepcopy(fixture["packet"])
+    packet["coverage"]["extra"] = [0] * 16_384
     with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="nodes"):
-        cortex.validate_operating_cortex_registration_record(registration)
+        cortex.validate_operating_cortex_packet(packet)
 
-
-def test_registration_loader_and_join_reject_wrong_w4_hash_even_when_rehashed() -> None:
     fixture = _fixture()
     registration = copy.deepcopy(fixture["registration"])
-    registration["retrieval_registration_sha256"] = "0" * 64
+    registration["registration_key"] = "x" * 257
     _rehash(
         registration,
         field="operating_cortex_registration_id",
         prefix="mmcortexregistration_",
     )
-    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="bytes"):
-        cortex.validate_operating_cortex_registration_join(
-            registration,
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="256 bytes"
+    ):
+        cortex.validate_operating_cortex_registration_record(registration)
+
+    fixture = _fixture()
+    fixture["build_kwargs"]["evidence_inputs"] = fixture["evidence_inputs"] * 11
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="64"):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+    fixture = _fixture()
+    fixture["build_kwargs"]["claim_cards"] = fixture["claims"] * 26
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="128"):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
+
+    fixture = _fixture()
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match="16"):
+        cortex.build_operating_cortex_registration(
             retrieval_registration=fixture["retrieval_registration"],
             trial_registration=fixture["trial"],
+            registration_key="synthetic.cortex.v1",
+            registered_at="2026-08-01T19:00:00.000000Z",
+            required_evidence_kinds=[f"kind.{index:02d}" for index in range(17)],
+            producer_code_sha256="a" * 64,
+            producer_config_sha256="b" * 64,
         )

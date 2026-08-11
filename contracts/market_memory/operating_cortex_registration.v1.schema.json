@@ -2,16 +2,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mastermind-x.com/contracts/market_memory/operating_cortex_registration.v1.schema.json",
   "title": "Market Memory synthetic Operating Cortex registration v1",
-  "description": "Strict W5A registration for structural processing of caller-supplied synthetic evidence. It grants no source-authenticity, entailment, attention-quality, forecasting, ranking, aggregation, or trading claim.",
+  "description": "Frozen W5A registration over exact W4A/W2A owners. It grants no semantic, population, quality, forecast, aggregation, Prophet, or action authority.",
   "type": "object",
   "additionalProperties": false,
-  "minProperties": 14,
-  "maxProperties": 14,
+  "minProperties": 17,
+  "maxProperties": 17,
   "required": [
     "schema", "operating_cortex_registration_id", "registration_key", "registered_at",
-    "retrieval_registration_id", "retrieval_registration_sha256", "required_evidence_kinds",
-    "salience_policy", "citation_policy", "implementation", "input_profile", "claims",
-    "emission_enabled", "authority"
+    "retrieval_registration_id", "trial_registration_id", "trial_plan_sha256",
+    "required_evidence_kinds", "salience_policy", "citation_policy", "read_tools",
+    "bounds", "implementation", "input_profile", "claims", "emission_enabled", "authority"
   ],
   "properties": {
     "schema": {"const": "market_memory.operating_cortex_registration.v1"},
@@ -19,13 +19,16 @@
     "registration_key": {"$ref": "#/$defs/opaque"},
     "registered_at": {"$ref": "#/$defs/timestamp"},
     "retrieval_registration_id": {"type": "string", "pattern": "^mmretrievalregistration_[a-f0-9]{64}$"},
-    "retrieval_registration_sha256": {"$ref": "#/$defs/sha256"},
+    "trial_registration_id": {"type": "string", "pattern": "^mmtrial_[a-f0-9]{64}$"},
+    "trial_plan_sha256": {"$ref": "#/$defs/sha256"},
     "required_evidence_kinds": {
       "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true,
       "items": {"$ref": "#/$defs/opaque"}
     },
     "salience_policy": {"$ref": "#/$defs/saliencePolicy"},
     "citation_policy": {"$ref": "#/$defs/citationPolicy"},
+    "read_tools": {"$ref": "#/$defs/readTools"},
+    "bounds": {"$ref": "#/$defs/bounds"},
     "implementation": {"$ref": "#/$defs/implementation"},
     "input_profile": {"const": "synthetic_fixture_only"},
     "claims": {"$ref": "#/$defs/claims"},
@@ -37,65 +40,98 @@
     "timestamp": {"type": "string", "minLength": 27, "maxLength": 27, "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
     "opaque": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"},
     "q18": {"type": "string", "minLength": 20, "maxLength": 20, "pattern": "^(?:0\\.[0-9]{18}|1\\.0{18})$"},
+    "readTools": {
+      "const": [
+        "read_attention_queue", "read_citation_projection", "read_contradictions",
+        "read_episode_scope", "read_falsifier_audit", "read_missingness", "read_scorecards"
+      ]
+    },
+    "bounds": {
+      "const": {
+        "max_registration_bytes": 262144,
+        "max_packet_bytes": 2097152,
+        "max_source_bytes": 65536,
+        "max_aggregate_source_bytes": 4194304,
+        "max_evidence_cards": 64,
+        "max_claims": 128,
+        "max_evidence_card_refs": 8,
+        "max_evidence_kinds": 16,
+        "max_contradictions": 128,
+        "max_episodes": 33,
+        "max_string_bytes": 256,
+        "max_depth": 16,
+        "max_nodes": 16384
+      }
+    },
     "saliencePolicy": {
       "type": "object", "additionalProperties": false, "minProperties": 5, "maxProperties": 5,
       "required": ["components", "weights", "missing_component", "ordering", "numeric_convention"],
       "properties": {
         "components": {
-          "const": ["freshness", "source_quality", "episode_relevance", "contradiction_relevance", "missingness_relevance", "falsifier_relevance"]
+          "const": ["standardized_surprise", "change_hazard", "novelty", "disagreement", "materiality", "data_health_deficit"]
         },
         "weights": {
           "type": "object", "additionalProperties": false, "minProperties": 6, "maxProperties": 6,
-          "required": ["freshness", "source_quality", "episode_relevance", "contradiction_relevance", "missingness_relevance", "falsifier_relevance"],
+          "required": ["standardized_surprise", "change_hazard", "novelty", "disagreement", "materiality", "data_health_deficit"],
           "properties": {
-            "freshness": {"const": "0.250000000000000000"},
-            "source_quality": {"const": "0.200000000000000000"},
-            "episode_relevance": {"const": "0.150000000000000000"},
-            "contradiction_relevance": {"const": "0.150000000000000000"},
-            "missingness_relevance": {"const": "0.150000000000000000"},
-            "falsifier_relevance": {"const": "0.100000000000000000"}
+            "standardized_surprise": {"const": "0.250000000000000000"},
+            "change_hazard": {"const": "0.200000000000000000"},
+            "novelty": {"const": "0.150000000000000000"},
+            "disagreement": {"const": "0.150000000000000000"},
+            "materiality": {"const": "0.150000000000000000"},
+            "data_health_deficit": {"const": "0.100000000000000000"}
           }
         },
         "missing_component": {"const": "abstain"},
-        "ordering": {"const": "score_desc_then_evidence_id_then_abstained_evidence_id"},
+        "ordering": {"const": "score_desc_then_evidence_card_id_then_abstained_evidence_card_id"},
         "numeric_convention": {"const": "decimal64_half_even_one_final_q18/v1"}
       }
     },
     "citationPolicy": {
-      "type": "object", "additionalProperties": false, "minProperties": 4, "maxProperties": 4,
-      "required": ["closure", "entailment", "source_profile", "withholding_precedence"],
+      "type": "object", "additionalProperties": false, "minProperties": 3, "maxProperties": 3,
+      "required": ["byte_closure", "semantic_entailment", "withholding_precedence"],
       "properties": {
-        "closure": {"const": "exact_source_sha256_and_half_open_byte_spans"},
-        "entailment": {"const": "not_evaluated"},
-        "source_profile": {"const": "caller_supplied_synthetic_exact_bytes"},
-        "withholding_precedence": {"const": ["evidence_reference_missing", "required_evidence_kind_missing", "citation_not_closed", "falsifier_reference_missing"]}
+        "byte_closure": {"const": "source_sha256_length_and_half_open_span_sha256"},
+        "semantic_entailment": {"const": "not_evaluated"},
+        "withholding_precedence": {
+          "const": [
+            "evidence_reference_missing", "evidence_reference_mismatch",
+            "required_evidence_kind_missing", "citation_not_closed",
+            "semantic_entailment_not_evaluated"
+          ]
+        }
       }
     },
     "implementation": {
       "type": "object", "additionalProperties": false, "minProperties": 2, "maxProperties": 2,
       "required": ["producer_code_sha256", "producer_config_sha256"],
-      "properties": {"producer_code_sha256": {"$ref": "#/$defs/sha256"}, "producer_config_sha256": {"$ref": "#/$defs/sha256"}}
+      "properties": {
+        "producer_code_sha256": {"$ref": "#/$defs/sha256"},
+        "producer_config_sha256": {"$ref": "#/$defs/sha256"}
+      }
     },
     "claims": {
-      "type": "object", "additionalProperties": false, "minProperties": 10, "maxProperties": 10,
+      "type": "object", "additionalProperties": false, "minProperties": 12, "maxProperties": 12,
       "required": [
-        "source_authenticity_established", "citation_entailment_evaluated",
-        "evidence_population_complete", "contradiction_population_complete",
-        "missingness_population_complete", "falsifier_population_complete",
-        "attention_quality_evaluated", "forecast_input_eligible", "aggregate_eligible",
-        "skill_claim_eligible"
+        "operational_input_authenticated", "evidence_population_complete",
+        "salience_component_provenance_authenticated", "citation_semantic_entailment_evaluated",
+        "unsupported_claim_truth_evaluated", "attention_quality_evaluated",
+        "learned_synthesis_performed", "hypotheses_generated", "forecast_input_eligible",
+        "aggregate_eligible", "skill_claim_eligible", "prophet_input_eligible"
       ],
       "properties": {
-        "source_authenticity_established": {"const": false},
-        "citation_entailment_evaluated": {"const": false},
+        "operational_input_authenticated": {"const": false},
         "evidence_population_complete": {"const": false},
-        "contradiction_population_complete": {"const": false},
-        "missingness_population_complete": {"const": false},
-        "falsifier_population_complete": {"const": false},
+        "salience_component_provenance_authenticated": {"const": false},
+        "citation_semantic_entailment_evaluated": {"const": false},
+        "unsupported_claim_truth_evaluated": {"const": false},
         "attention_quality_evaluated": {"const": false},
+        "learned_synthesis_performed": {"const": false},
+        "hypotheses_generated": {"const": false},
         "forecast_input_eligible": {"const": false},
         "aggregate_eligible": {"const": false},
-        "skill_claim_eligible": {"const": false}
+        "skill_claim_eligible": {"const": false},
+        "prophet_input_eligible": {"const": false}
       }
     }
   }
