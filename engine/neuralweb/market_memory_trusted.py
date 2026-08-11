@@ -150,6 +150,26 @@ class _TrustedStoreState:
     generation: dict[str, Any]
 
 
+@dataclass(frozen=True)
+class TrustedGenerationHeadObservation:
+    """Validated current trusted HEAD identity without an ancestry walk."""
+
+    profile: str
+    store_id: str
+    generation_id: str
+    generation_sha256: str
+    capture_count: int
+
+
+@dataclass(frozen=True)
+class PinnedTrustedCaptureProjection:
+    """One owner-validated receipt, packet, and feature loaded exactly once."""
+
+    receipt: dict[str, Any]
+    stored: market_memory_pit.StoredMarketMemoryContext
+    feature: dict[str, Any]
+
+
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -1181,11 +1201,9 @@ def _validate_receipt_against_packet(
         )
 
 
-def _load_stored(
+def _load_stored_with_feature(
     root: Path, receipt: Mapping[str, Any], *, store_id: str
-) -> market_memory_pit.StoredMarketMemoryContext:
-    from engine.neuralweb import market_memory_projection
-
+) -> tuple[market_memory_pit.StoredMarketMemoryContext, dict[str, Any]]:
     clean_receipt = _validate_receipt(receipt)
     if clean_receipt["store_id"] != store_id:
         raise market_memory_pit.MarketMemoryStoreError(
@@ -1206,6 +1224,27 @@ def _load_stored(
         )
     clean_packet = _validate_trusted_packet(packet)
     _validate_receipt_against_packet(clean_receipt, clean_packet)
+    clean_feature = _load_feature_object(root, clean_receipt)
+    return (
+        market_memory_pit.StoredMarketMemoryContext(clean_packet, clean_receipt),
+        clean_feature,
+    )
+
+
+def _load_stored(
+    root: Path, receipt: Mapping[str, Any], *, store_id: str
+) -> market_memory_pit.StoredMarketMemoryContext:
+    return _load_stored_with_feature(root, receipt, store_id=store_id)[0]
+
+
+def _load_feature_object(
+    root: Path, receipt: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Reload the exact macro feature object named by one validated receipt."""
+
+    from engine.neuralweb import market_memory_projection
+
+    clean_receipt = _validate_receipt(receipt)
     feature_digest = clean_receipt["feature_snapshot"]["content_sha256"]
     feature, feature_body = market_memory_pit._read_canonical_object(
         _feature_path(root, feature_digest),
@@ -1235,7 +1274,7 @@ def _load_stored(
         raise market_memory_pit.MarketMemoryStoreError(
             "trusted feature object differs from its capture receipt"
         )
-    return market_memory_pit.StoredMarketMemoryContext(clean_packet, clean_receipt)
+    return clean_feature
 
 
 def _existing_evidence_capture(
@@ -1288,12 +1327,59 @@ class TrustedFileAsKnownAtReader(market_memory.AsKnownAtReader):
             tuple[str, str], market_memory_pit.PinnedGenerationSnapshot
         ] = {}
 
-    def read_pinned_generation(
-        self, *, generation_id: str | None = None
-    ) -> market_memory_pit.PinnedGenerationSnapshot:
-        """Pin current trusted HEAD or one append-only published ancestor."""
+    def observe_generation_head(
+        self, *, maximum_capture_count: int | None = None
+    ) -> TrustedGenerationHeadObservation:
+        """Validate current HEAD bytes without a cumulative ancestry walk."""
 
         state = _load_state(self.root)
+        count = len(state.generation["captures"])
+        if maximum_capture_count is not None:
+            if (
+                type(maximum_capture_count) is not int
+                or not 0 <= maximum_capture_count <= _MAX_GENERATION_CAPTURES
+            ):
+                raise market_memory_pit.MarketMemoryQueryError(
+                    "maximum_capture_count is outside the trusted store bound"
+                )
+            if count > maximum_capture_count:
+                raise market_memory_pit.MarketMemoryStoreError(
+                    "trusted active generation exceeds the caller's pin budget"
+                )
+        return TrustedGenerationHeadObservation(
+            profile=TRUSTED_STORE_PROFILE,
+            store_id=str(state.manifest["store_id"]),
+            generation_id=str(state.head["generation_id"]),
+            generation_sha256=str(state.head["generation_sha256"]),
+            capture_count=count,
+        )
+
+    def read_pinned_generation(
+        self,
+        *,
+        generation_id: str | None = None,
+        maximum_capture_count: int | None = None,
+    ) -> market_memory_pit.PinnedGenerationSnapshot:
+        """Pin current HEAD or one ancestor through a bounded full-chain walk.
+
+        Callers with a fixed pilot budget should pass ``maximum_capture_count``;
+        it is checked against the authenticated active index before the ancestry
+        walk begins, avoiding an accidental quadratic-lifetime read contract.
+        """
+
+        state = _load_state(self.root)
+        if maximum_capture_count is not None:
+            if (
+                type(maximum_capture_count) is not int
+                or not 0 <= maximum_capture_count <= _MAX_GENERATION_CAPTURES
+            ):
+                raise market_memory_pit.MarketMemoryQueryError(
+                    "maximum_capture_count is outside the trusted store bound"
+                )
+            if len(state.generation["captures"]) > maximum_capture_count:
+                raise market_memory_pit.MarketMemoryStoreError(
+                    "trusted active generation exceeds the caller's pin budget"
+                )
         target = generation_id or str(state.head["generation_id"])
         key = (str(state.head["generation_id"]), target)
         snapshot = market_memory_pit._read_pinned_generation_from_state(
@@ -1339,20 +1425,39 @@ class TrustedFileAsKnownAtReader(market_memory.AsKnownAtReader):
         """Read one trusted owner-validated receipt from a pinned index."""
 
         authenticated = self._authenticate_pinned_snapshot(generation)
+        return self._read_pinned_capture_receipt_authenticated(
+            authenticated, query_id=query_id
+        )
+
+    def _read_pinned_capture_receipt_authenticated(
+        self,
+        authenticated: market_memory_pit.PinnedGenerationSnapshot,
+        *,
+        query_id: str,
+        entry: market_memory_pit.PinnedCaptureIndexEntry | None = None,
+        verify_context_alias: bool = True,
+    ) -> dict[str, Any]:
         if not isinstance(query_id, str) or not _QUERY_ID.fullmatch(query_id):
             raise market_memory_pit.MarketMemoryQueryError(
                 "query_id must be mmquery_<sha256>"
             )
-        entries = [row for row in authenticated.captures if row.query_id == query_id]
-        if not entries:
-            raise market_memory_pit.MarketMemoryContextNotFound(
-                "query is absent from the pinned trusted generation"
-            )
-        if len(entries) != 1:  # pragma: no cover - generation validator proves this
+        if entry is None:
+            entries = [
+                row for row in authenticated.captures if row.query_id == query_id
+            ]
+            if not entries:
+                raise market_memory_pit.MarketMemoryContextNotFound(
+                    "query is absent from the pinned trusted generation"
+                )
+            if len(entries) != 1:  # pragma: no cover - generation proves this
+                raise market_memory_pit.MarketMemoryStoreError(
+                    "pinned trusted query index is ambiguous"
+                )
+            entry = entries[0]
+        elif entry.query_id != query_id:
             raise market_memory_pit.MarketMemoryStoreError(
-                "pinned trusted query index is ambiguous"
+                "pinned trusted query entry differs from requested query"
             )
-        entry = entries[0]
         receipt, receipt_body = market_memory_pit._read_canonical_object(
             market_memory_pit._query_path(self.root, query_id),
             limit=_MAX_RECEIPT_BYTES,
@@ -1367,16 +1472,77 @@ class TrustedFileAsKnownAtReader(market_memory.AsKnownAtReader):
             raise market_memory_pit.MarketMemoryStoreError(
                 "pinned trusted query receipt differs from generation"
             )
-        context_receipt, context_body = market_memory_pit._read_canonical_object(
-            market_memory_pit._context_path(self.root, clean_receipt["context_id"]),
-            limit=_MAX_RECEIPT_BYTES,
-            label="pinned trusted context receipt",
-        )
-        if context_body != receipt_body or context_receipt != receipt:
-            raise market_memory_pit.MarketMemoryStoreError(
-                "pinned trusted query and context receipts disagree"
+        if verify_context_alias:
+            context_receipt, context_body = market_memory_pit._read_canonical_object(
+                market_memory_pit._context_path(self.root, clean_receipt["context_id"]),
+                limit=_MAX_RECEIPT_BYTES,
+                label="pinned trusted context receipt",
             )
+            if context_body != receipt_body or context_receipt != receipt:
+                raise market_memory_pit.MarketMemoryStoreError(
+                    "pinned trusted query and context receipts disagree"
+                )
         return clean_receipt
+
+    def read_pinned_capture_projections(
+        self,
+        generation: market_memory_pit.PinnedGenerationSnapshot,
+        *,
+        query_ids: list[str] | tuple[str, ...] | None = None,
+    ) -> tuple[PinnedTrustedCaptureProjection, ...]:
+        """Batch-load each exact pinned receipt, packet, and feature once.
+
+        The authenticated generation is checked once for the batch. The
+        returned order is the caller's exact query order, or generation order
+        when omitted. No current HEAD or underscored owner API is exposed.
+        """
+
+        authenticated = self._authenticate_pinned_snapshot(generation)
+        entries_by_query: dict[str, market_memory_pit.PinnedCaptureIndexEntry] = {}
+        for entry in authenticated.captures:
+            if entry.query_id in entries_by_query:
+                raise market_memory_pit.MarketMemoryStoreError(
+                    "pinned trusted generation duplicates a query index"
+                )
+            entries_by_query[entry.query_id] = entry
+        requested = (
+            tuple(entries_by_query)
+            if query_ids is None
+            else tuple(query_ids)
+        )
+        if len(requested) != len(set(requested)):
+            raise market_memory_pit.MarketMemoryQueryError(
+                "pinned trusted projection query_ids must be unique"
+            )
+        active = set(entries_by_query)
+        if any(
+            type(query_id) is not str
+            or not _QUERY_ID.fullmatch(query_id)
+            or query_id not in active
+            for query_id in requested
+        ):
+            raise market_memory_pit.MarketMemoryContextNotFound(
+                "projection query is absent from the pinned trusted generation"
+            )
+        rows: list[PinnedTrustedCaptureProjection] = []
+        for query_id in requested:
+            receipt = self._read_pinned_capture_receipt_authenticated(
+                authenticated,
+                query_id=query_id,
+                entry=entries_by_query[query_id],
+                verify_context_alias=True,
+            )
+            stored, feature = _load_stored_with_feature(
+                self.root, receipt, store_id=authenticated.store_id
+            )
+            rows.append(
+                PinnedTrustedCaptureProjection(
+                    receipt=copy.deepcopy(receipt),
+                    stored=stored,
+                    feature=copy.deepcopy(feature),
+                )
+            )
+        return tuple(rows)
 
     def read_stored_from_pinned_generation(
         self,
@@ -1386,9 +1552,23 @@ class TrustedFileAsKnownAtReader(market_memory.AsKnownAtReader):
     ) -> market_memory_pit.StoredMarketMemoryContext:
         """Read one exact trusted packet without consulting a newer index."""
 
-        authenticated = self._authenticate_pinned_snapshot(generation)
-        receipt = self.read_pinned_capture_receipt(authenticated, query_id=query_id)
-        return _load_stored(self.root, receipt, store_id=authenticated.store_id)
+        return self.read_pinned_capture_projections(
+            generation, query_ids=(query_id,)
+        )[0].stored
+
+    def read_macro_feature_from_pinned_generation(
+        self,
+        generation: market_memory_pit.PinnedGenerationSnapshot,
+        *,
+        query_id: str,
+    ) -> dict[str, Any]:
+        """Read the exact macro feature object through its published owner pin."""
+
+        return copy.deepcopy(
+            self.read_pinned_capture_projections(
+                generation, query_ids=(query_id,)
+            )[0].feature
+        )
 
     def read_stored_as_known_at(
         self,
@@ -1880,3 +2060,20 @@ def default_private_evidence_root(repository_root: str | Path) -> Path:
         else Path("/var/lib/macro-market-memory/state/context-projection")
     )
     return validate_trusted_store_root(candidate, repository_root=repository)
+
+
+__all__ = [
+    "CompositeAsKnownAtReader",
+    "MarketMemoryTrustedCaptureError",
+    "MarketMemoryTrustedError",
+    "PinnedTrustedCaptureProjection",
+    "TRUSTED_STORE_PROFILE",
+    "TrustedFileAsKnownAtReader",
+    "TrustedGenerationHeadObservation",
+    "build_trusted_packet",
+    "capture_trusted_regime_context",
+    "default_private_evidence_root",
+    "default_trusted_store_root",
+    "initialize_trusted_store",
+    "validate_trusted_store_root",
+]

@@ -1,0 +1,14 @@
+[Unit]
+Description=Accrue the registered SPY experience census at its daily decision window
+
+[Timer]
+# Opportunity identity comes from the registered XNYS census, never this timer.
+# Persistent catch-up outside the window can only reconcile a missed session.
+OnCalendar=*-*-* 04:30:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=true
+Unit=macro-market-memory-experience.service
+
+[Install]
+WantedBy=timers.target
