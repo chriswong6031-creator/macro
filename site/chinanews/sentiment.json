@@ -1,1 +1,1 @@
-{"schema":"china_news_intel.v1","is_context_only":true,"value":3.34,"z":-0.3,"n_days":59,"band":"steady","label_en":"steady / neutral","label_zh":"平稳 / 中性","n_events_7d":1253,"asof":"2026-08-10"}
+{"schema":"china_news_intel.v1","is_context_only":true,"value":3.08,"z":-0.66,"n_days":60,"band":"cautious","label_en":"cautious / risk-tilted lean","label_zh":"偏谨慎 / 防风险","n_events_7d":1258,"asof":"2026-08-11"}
