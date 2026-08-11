@@ -7,7 +7,7 @@ final verdict language belongs to the main session after the reviewer pass.
 
 ## 1. Run receipts
 
-- git HEAD `b6fd1523281` (2026-08-11T14:52:47-07:00), branch `claude/gmi-w2-exposure-axes-probe`
+- git HEAD `74afc634cb9` (2026-08-11T15:18:35-07:00), branch `claude/gmi-w2-exposure-axes-probe`
 - theme graph `_meta`: belief_time **2026-08-11**, era `reconstruction`, mode `backfill`, engine `theme_graph.v1`, counts {'edges': 5628, 'edges_latest_belief': 5628, 'evidence': 9, 'nodes': 2707}
 
 | store | rows | date range | sha256 (first 16) |
@@ -74,6 +74,18 @@ benchmark? or accept relative-vol as the intended reading?) belongs to the main 
 - **龙虎榜 (sparse)** (month `2026-08`, n=11, cell COMPUTABLE): Spearman(beta, attention) = **0.298** (p=0.4361, mc-permutation(n=11,draws=100000,seed=20260811)) — identical ranks: **False**.
   Top-3 attention → 002851.SZ share 0.5000 (beta rank #6); 688322.SS share 0.5000 (beta rank #2); 002046.SZ share 0.0000 (beta rank #8).
   Top-3 beta → 688017.SS beta 1.8162 (attention rank #7); 688322.SS beta 1.5765 (attention rank #1); 002747.SZ beta 1.1168 (attention rank #7).
+
+**TRIPWIRE DID NOT FIRE (ρ=0.509, not ≈1.0) — non-firing is NOT contamination**
+**clearance.** This expectation was written as a one-way alarm: identical ranks would
+have PROVEN the attention source is price-derived. Distinct ranks prove only that the
+alarm did not trip, which is a far weaker statement than "these sources are independent
+of price". Two things in this run cut directly against reading it as clearance:
+(a) the 龙虎榜 tape is itself a price-threshold-selected universe — see the
+price-trigger finding in §7's LHB basis, where the listing rules that put a name on the
+tape at all are price-move / turnover / amplitude thresholds; and (b) a ρ well below 1
+is exactly what a price-selected tape with heavy tie mass produces even when it IS
+price-derived, because the ties destroy rank information rather than align it. The gate
+is answered as asked, and it clears nothing.
 
 ### 5.3 — a defense prime with high beta-to-basket but modest WSB attention
 
@@ -196,7 +208,9 @@ Two things this table must not be read past:
   preregistered H3 statistic has a mechanical floor for `trading_beta.v0`: consecutive
   estimates are partly the same data. The lag-3 companion column (NOT preregistered —
   disclosed here because the preregistered number alone would overstate the case) repeats
-  the same rank autocorrelation three months apart, where the two windows are disjoint.
+  the same rank autocorrelation three months apart, where the windows are at most
+  partially overlapping — see the measured per-market overlap in §5a; the pairing is by
+  month label, which does NOT make the windows disjoint.
   Read the beta row's stability claim off the companion, not off the adjacent-month median.
 
 Per-slot depth:
@@ -224,6 +238,46 @@ Per-slot depth:
 | `attention_share.us.flare.v0` | `us_young_narrow` | 0 | — | ABSTAIN (H1 coverage floor) |
 | `attention_share.us.flare.v0` | `us_institutional` | 0 | — | ABSTAIN (H1 coverage floor) |
 | `attention_share.us.flare.v0` | `cross_market_pair.us` | 1 | 0.999 | UNDERPOWERED-BY-DEPTH |
+
+### 5a. Per-market decomposition and the MEASURED lag-3 window overlap
+
+The verdict rule (§7) reads H3 per market off the frozen adjacent-month metric, never
+off a median pooled across both markets — a per-market row decided by a pooled statistic
+is answering a question nobody asked. Per-pair rows are in `companion_lag3_pairs.csv`.
+
+**The lag-3 companion is NOT a disjoint-window statistic.** Pairing is by month LABEL,
+and a 3-month gap is 60-65 sessions against a 63-session window, so many pairs
+still share sessions. The overlap is measured per pair, not assumed:
+
+| construction | market | slots | adjacent pairs | adjacent median | frozen reading | lag-3 pairs | lag-3 median | sessions shared (min/median/max) | pairs still overlapping |
+|---|---|---:|---:|---:|---|---:|---:|---|---|
+| `trading_beta.v0` | US | 4 | 152 | 0.917 | STABLE (median rho 0.917 >= 0.6) | 144 | 0.751 | 0 / 0 / 14 of 63 | 60 of 144 |
+| `trading_beta.v0` | CN | 3 | 93 | 0.882 | STABLE (median rho 0.882 >= 0.6) | 87 | 0.527 | 0 / 3 / 12 of 63 | 72 of 87 |
+| `attention_share.cn.comment.v0` | CN | 3 | 6 | 0.846 | STABLE (median rho 0.846 >= 0.6) | 0 | — | — | — |
+| `attention_share.cn.lhb.v0` | CN | 3 | 34 | 0.226 | NOISE (median rho 0.226 < 0.3) | 14 | 0.341 | — | — |
+| `attention_share.us.flare.v0` | US | 1 | 1 | 0.999 | UNDERPOWERED-BY-DEPTH (1 adjacent pair(s) < 3) | 0 | — | — | — |
+
+`sessions shared` is blank for the attention constructions because they have no rolling
+window — a monthly share is computed from that month's rows alone, so consecutive
+estimates share no input by construction. The overlap caveat is a `trading_beta.v0`
+problem only; for the attention rows the lag-3 column is simply a longer-horizon
+autocorrelation.
+
+Per-slot lag-3 medians for `trading_beta.v0`:
+
+- `us_mature_broad` (US): 0.833
+- `us_young_narrow` (US): 0.775
+- `us_institutional` (US): 0.587
+- `cross_market_pair.us` (US): 0.700
+- `cn_mature` (CN): 0.286
+- `cn_young_speculative` (CN): 0.754
+- `cross_market_pair.cn` (CN): 0.573
+
+**This split is load-bearing for W4.** US beta holds at the ~quarterly horizon
+(0.751), CN does not (0.527 — below the 0.6 floor). The
+pooled 0.687 hides that. Both markets read MEASURABLE-NOW on the frozen
+adjacent-month metric, so the horizon caveat is carried in each verdict's basis
+string rather than in the verdict word itself.
 
 ## 6. Honest-N
 
@@ -269,6 +323,13 @@ present on the tape. Its near-1.0 H3 autocorrelation is that tie block reappeari
 the next month, not a stable attention ranking — the concrete reason the flare cell must
 not be read as a stability result even where its coverage clears the floor.
 
+**Scope clause on survivorship.** The two closed edges are basket EXITS on live
+tickers, both dated 2026-06-18, landing in the last 3 of 39 monthly cross-sections.
+The panel therefore contains no delistings and no dead tickers: survivorship handling
+is disclosed and mechanically exercised here, but it is NOT stress-tested. A slate
+with a genuine delisting would exercise the price-tape half of the problem, which
+this one never touches.
+
 Dead members by name, and the window they stay in the denominator for:
 
 - `us_mature_broad`: **FUTU** (`co:us:FUTU`) — member 2023-05-09 → 2026-06-18; in every monthly denominator that window covers, out of every later one.
@@ -281,12 +342,12 @@ after the reviewer pass. W4 may charter edge annotations only from MEASURABLE-NO
 
 | construction | market | DRAFT verdict | tie mass | unlock | basis |
 |---|---|---|---:|---|---|
-| `economic_share` | US | **BLOCKED-ON-INGESTION** | — | ingestion: segment-axis XBRL ingestion atop engine/fundamental_forensics (US) / CN annual-report segment tables (CN) — prereg §2 ore ledger | honest null — no formula minted (prereg §2) |
-| `economic_share` | CN | **BLOCKED-ON-INGESTION** | — | ingestion: segment-axis XBRL ingestion atop engine/fundamental_forensics (US) / CN annual-report segment tables (CN) — prereg §2 ore ledger | honest null — no formula minted (prereg §2) |
-| `trading_beta.v0` | US | **MEASURABLE-NOW** | — | — | 4 of 4 slots clear the coverage floor; deepest carries 38 adjacent month pairs |
-| `trading_beta.v0` | CN | **MEASURABLE-NOW** | — | — | 3 of 3 slots clear the coverage floor; deepest carries 31 adjacent month pairs |
+| `economic_share` | US | **BLOCKED-ON-INGESTION** | — | ingestion: segment-axis XBRL ingestion atop engine/fundamental_forensics (US) / CN annual-report segment tables (CN) — prereg §2 ore ledger | honest null — no formula minted (prereg §2). No formula has ever been minted or tested: W4 must not read this as ready-pending-data — prereg §2 requires one of the named ingestions to be BUILT and separately adjudicated first |
+| `economic_share` | CN | **BLOCKED-ON-INGESTION** | — | ingestion: segment-axis XBRL ingestion atop engine/fundamental_forensics (US) / CN annual-report segment tables (CN) — prereg §2 ore ledger | honest null — no formula minted (prereg §2). No formula has ever been minted or tested: W4 must not read this as ready-pending-data — prereg §2 requires one of the named ingestions to be BUILT and separately adjudicated first |
+| `trading_beta.v0` | US | **MEASURABLE-NOW** | — | — | 4 of 4 slots clear the coverage floor; deepest carries 38 adjacent month pairs; per-market frozen H3 STABLE (median rho 0.917 >= 0.6) on reconstruction-era membership; at the ~quarterly horizon the lag-3 companion reads 0.751 — holds above the 0.6 floor (weakest slot us_institutional 0.587) |
+| `trading_beta.v0` | CN | **MEASURABLE-NOW** | — | — | 3 of 3 slots clear the coverage floor; deepest carries 31 adjacent month pairs; per-market frozen H3 STABLE (median rho 0.882 >= 0.6) on reconstruction-era membership; at the ~quarterly horizon the lag-3 companion reads 0.527 — below the 0.6 floor, cn_mature 0.286 — W4 must not treat CN trading annotations as quarter-stable |
 | `attention_share.cn.comment.v0` | CN | **UNDERPOWERED-BY-DEPTH** | 7% | 2026-11 | deepest computable slot carries 2 adjacent month pair(s) < 3 |
-| `attention_share.cn.lhb.v0` | CN | **COMPUTABLE-BUT-UNSTABLE** | 87% | — | clears coverage (3 of 3 slots) and depth (14 adjacent pairs), but H3 is NOISE (median rho 0.226 < 0.3) at 87% tie mass — a null for the monthly-share grain, not for the source |
+| `attention_share.cn.lhb.v0` | CN | **COMPUTABLE-BUT-UNSTABLE** | 87% | — | PRICE-SELECTED UNIVERSE: 98.4% of the source rows carry an explicit price-move / turnover / amplitude listing trigger, so the tape selects on price and falls under the prereg §2 refusal family (price momentum wearing a narrative label is NOT attention) — REFUSED as an attention claim on that ground alone. Independently: NOISE (median rho 0.226 < 0.3) at the monthly grain on reconstruction-era membership, and only 15-18% of member-months are non-zero with 87% tie mass, so its H2 |rho| is attenuated by ties and is NOT independent distinctness evidence. A null for the monthly-share grain, not for the source: event-grain and quarterly aggregations stay unmapped-but-open |
 | `attention_share.us.wsb.v0` | US | **BLOCKED-ON-INGESTION** | — | ingestion: a full-universe US retail/news attention tape — the two present stores publish only the tickers they surface (WSB 307, narrative_flare 448), so a slot outside the meme/tech complex is absent from the universe rather than measured at zero | 4 of 4 slots below the 0.7 coverage floor — the members are absent from the source universe, not measured |
 | `attention_share.us.flare.v0` | US | **BLOCKED-ON-INGESTION** | 50% | ingestion: a full-universe US retail/news attention tape — the two present stores publish only the tickers they surface (WSB 307, narrative_flare 448), so a slot outside the meme/tech complex is absent from the universe rather than measured at zero | 3 of 4 slots below the 0.7 coverage floor — the members are absent from the source universe, not measured; and the one cell that does clear it ranks a degenerate magnitude — summed channels_lit is approximately a days-present count, tie mass 50% |
 
@@ -352,6 +413,20 @@ any construction that clears coverage and depth but whose H3 reads NOISE takes i
    and the whole backcast is era=reconstruction anyway (§4), so no PIT claim is made about
    the window's interior.
 
+8. **Membership is evaluated at the month END.** A member is in month `m`'s
+   cross-section when its `[valid_from, valid_to)` window covers the last day of `m`, so
+   a member that exits mid-month is excluded from that ENTIRE month rather than
+   pro-rated. Concretely: FUTU's edge closes 2026-06-18, so FUTU is absent from all of
+   2026-06 despite being a member for 18 of its 30 days. The alternative (any-overlap
+   inclusion) would put a member in a denominator for a month it spent mostly outside
+   the basket; neither is free, and this one is stated rather than left implicit.
+9. **The Vasicek-shrunk beta is computed and shipped, but never analysed.** It lands in
+   every `cells/*__trading_beta.v0.csv` as `value_display_shrunk` (weight 0.66, mirroring `engine/cn_global_beta._shrink`) and is deliberately absent from
+   H1, H2, H3, the exemplar gate and every verdict. Prereg §2 makes the raw beta the
+   probe quantity precisely because shrinkage compresses cross-sectional dispersion and
+   would inflate H3 stability by construction. It is present so a reader can see what the
+   display companion would have said, not so it can be quoted.
+
 Two statistics are ADDITIONS rather than departures — the preregistered tests are computed
 exactly as frozen, and these are printed beside them because the frozen numbers alone
 would read stronger than the data supports:
@@ -359,7 +434,8 @@ would read stronger than the data supports:
 6. **Lag-3 rank autocorrelation companion (§5).** Adjacent-month betas share about two
    thirds of one 63-session window, so the preregistered H3 statistic carries a
    mechanical floor for `trading_beta.v0`. The companion repeats it three months apart,
-   where the windows are disjoint. It does not replace the preregistered number and no
+   where the windows only partially overlap (measured, §5a). It does not replace the
+   preregistered number and no
    threshold is applied to it.
 7. **Modal tie mass (§6, §7).** The fraction of covered members sitting on one identical
    magnitude. Without it a rank statistic computed over a mostly-tied vector reads as a
@@ -400,10 +476,12 @@ relative volatility?**
 |---|---:|---:|
 | adjacent-month median rho | 0.833 | 0.909 |
 | adjacent-month 80% CI | [0.818, 0.846] | [0.891, 0.917] |
-| lag-3 disjoint-window median rho | 0.475 (231 pairs) | 0.687 (231 pairs) |
+| lag-3 (~quarterly, partially overlapping) median rho | 0.475 (231 pairs) | 0.687 (231 pairs) |
 | adjacent pairs | 245 | 245 |
 
-Reading (companion, no threshold authority): STABLE (median rho 0.833 >= 0.6) on reconstruction-era membership.
+Reading (companion, no threshold authority): STABLE (median rho 0.833 >= 0.6) on reconstruction-era membership — the same era caveat as every frozen H3 sentence: the
+graph knows no pre-2026-08-11 basket composition, so this is a statement
+about reconstruction-era membership, not about an observed tape of membership changes.
 
 **Q1 — does the H2 result survive with the volatility ratio removed? Yes, and it
 strengthens.** All 3 computable companion pairs read MEASURABLY-DISAGREE
@@ -416,7 +494,7 @@ vol term; if anything the vol term was working against it.
 
 **Q2 — is co-movement itself as rank-stable as beta? No — it is the LESS persistent
 half.** Adjacent-month medians are close (0.833 vs 0.909), but the gap opens at
-the disjoint-window horizon where the mechanical overlap is gone: 0.475 vs 0.687 (a 0.212 gap). Corr's lag-3 median
+the ~quarterly horizon where most of the mechanical overlap is gone: 0.475 vs 0.687 (a 0.212 gap). Corr's lag-3 median
 falls BELOW the 0.6 H3 stable floor while beta's clears it, so relative
 volatility — not co-movement — is the more persistent component of what
 `trading_beta.v0` ranks. For W4 this narrows rather than widens: an edge annotation built on
@@ -450,9 +528,31 @@ Owner-territory items this probe found and deliberately did not touch (prereg §
 - **`data/quiver/wallstreetbets.parquet` publishes only surfaced tickers** (307 across 44
   collection days). A member outside that set is absent from the universe, not a measured
   zero — which is exactly why the defense / nuclear / fintech WSB cells abstain.
+- **`Count` on that store carries NO time variation: it is a static snapshot
+  re-stamped each collection day.** Measured, not assumed — all 307 of 307 tickers hold an identical
+  `Count` across all 44 collection days, `Sentiment`
+  likewise, and the daily ticker set is one single repeated set
+  (1 distinct set across all
+  days). A monthly sum is therefore `Count × days-in-month`, and because every ticker
+  shares the same collection days the day factor cancels out of the share entirely —
+  so `attention_share.us.wsb.v0` is a CONSTANT snapshot share wearing a monthly
+  label, identical in every month. This does not change any verdict (all four WSB
+  cells already ABSTAIN on coverage), and it touches one printed number: exemplar
+  §5.1's WSB half is a snapshot ranking, not an August measurement. Filed to the
+  store's owner: either the collector is not refreshing, or `Count` is a cumulative
+  field that should not be summed over days.
 - **The graph's `date_provenance` is `seed_constant` on 5,425 of 5,477 MEMBER_OF edges.**
   Every stability sentence here is therefore about reconstruction-era membership; the
   observed era is ~0 months deep and accrues nightly from 2026-08-11.
+- **ACCRUAL-INHERITANCE WARNING — the attention universes here are FULL-SAMPLE sets, and
+  the accrual re-probe must not inherit them.** "In the universe" is currently decided
+  by whether a ticker appears ANYWHERE in the store's history, which at a 2-3 month depth
+  is a harmless approximation. It is a look-ahead the moment the panel is long enough for
+  a ticker's coverage to begin mid-sample: a member scored 0 for January because the tape
+  covers it in June is being credited with a January measurement the tape could not have
+  made. At the §6 accrual checkpoints (2026-11 dense attention, 2027-02 observed-era
+  beta) the universe must become PIT — known-by month `m`, not known-by today — or the
+  zeros stop being values and start being imputation.
 
 ---
 
