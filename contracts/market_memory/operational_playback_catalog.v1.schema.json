@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mastermind-x.com/contracts/market_memory/operational_playback_catalog.v1.schema.json",
-  "title": "Market Memory exact operational playback catalog v1",
-  "description": "A deterministic page over two independently pinned W1 operational_pit generation indexes. The catalog enumerates published actual-output receipts only; it does not claim opportunity completeness, historical reconstruction, cross-store atomicity, source signatures, outcomes, scores, or authority.",
+  "title": "Market Memory exact operational playback preparation catalog v1",
+  "description": "A deterministic preparation page over two independently pinned W1 operational_pit generation indexes. The catalog enumerates published actual-output receipts only; it does not execute playback, include playback evidence, or claim opportunity completeness, historical reconstruction, cross-store atomicity, source signatures, outcomes, scores, or authority.",
   "type": "object",
   "additionalProperties": false,
   "minProperties": 10,
@@ -366,9 +366,12 @@
     "replayPolicy": {
       "type": "object",
       "additionalProperties": false,
-      "minProperties": 12,
-      "maxProperties": 12,
+      "minProperties": 15,
+      "maxProperties": 15,
       "required": [
+        "catalog_only",
+        "playback_execution_performed",
+        "playback_evidence_included",
         "exact_captured_contexts_only",
         "reconstruction_performed",
         "nearest_fallback",
@@ -383,6 +386,9 @@
         "generation_pin_order"
       ],
       "properties": {
+        "catalog_only": {"const": true},
+        "playback_execution_performed": {"const": false},
+        "playback_evidence_included": {"const": false},
         "exact_captured_contexts_only": {"const": true},
         "reconstruction_performed": {"const": false},
         "nearest_fallback": {"const": false},

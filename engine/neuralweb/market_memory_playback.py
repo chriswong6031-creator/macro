@@ -1,6 +1,7 @@
 """Exact actual-output playback catalog over published W1 generations.
 
-W3A does not reconstruct history.  It enumerates only owner-validated
+W3A prepares a catalog; it does not execute playback or emit playback evidence.
+It does not reconstruct history.  It enumerates only owner-validated
 ``operational_pit`` captures already published by the W1A missingness store and
 the W1B.1 trusted canary store.  The independently published generation pair
 is pinned explicitly for deterministic pagination and is never described as an
@@ -112,6 +113,9 @@ _COVERAGE = {
     "cross_store_atomic_snapshot": False,
 }
 _REPLAY_POLICY = {
+    "catalog_only": True,
+    "playback_execution_performed": False,
+    "playback_evidence_included": False,
     "exact_captured_contexts_only": True,
     "reconstruction_performed": False,
     "nearest_fallback": False,
@@ -796,7 +800,7 @@ def read_operational_playback_catalog(
     offset: int = 0,
     limit: int = 100,
 ) -> dict[str, Any]:
-    """Pin a generation pair and return one exact actual-output catalog page.
+    """Pin a generation pair and return one exact preparation catalog page.
 
     Supplying just one generation ID is forbidden.  A first page omits both and
     pins W1A then trusted HEAD; every stable continuation supplies both returned

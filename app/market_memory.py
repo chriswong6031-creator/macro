@@ -723,11 +723,12 @@ def operational_playback_catalog(
     request: Request,
     _user: dict = Depends(require_site_full_user),  # noqa: B008 - FastAPI injection
 ) -> JSONResponse:
-    """List exact published actual-output captures from a pinned generation pair.
+    """Prepare a catalog of published captures from a pinned generation pair.
 
-    The catalog is not historical reconstruction and does not claim a complete
-    opportunity population.  W1A and trusted generations are pinned
-    sequentially and the response explicitly records that they are non-atomic.
+    The catalog does not execute playback or provide playback evidence.  It is
+    not historical reconstruction and does not claim a complete opportunity
+    population.  W1A and trusted generations are pinned sequentially and the
+    response explicitly records that they are non-atomic.
     """
 
     if not _allow_playback_request(request, _user):

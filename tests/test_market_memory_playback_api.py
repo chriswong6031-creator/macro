@@ -94,6 +94,9 @@ def test_api_catalog_is_private_page_bound_and_resolves_exact_context(
     }
     assert payload["authority"]["context_only"] is True
     assert payload["authority"]["proposal_weight"] == 0
+    assert payload["replay_policy"]["catalog_only"] is True
+    assert payload["replay_policy"]["playback_execution_performed"] is False
+    assert payload["replay_policy"]["playback_evidence_included"] is False
     assert response.headers["etag"] == f'"{payload["catalog_id"]}"'
     assert response.headers["x-market-memory-catalog-id"] == payload["catalog_id"]
     assert (

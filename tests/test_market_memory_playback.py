@@ -154,6 +154,9 @@ def test_catalog_is_schema_valid_content_addressed_and_value_free(
         "cross_store_atomic_snapshot": False,
     }
     assert catalog["authority"] == dict(mm.AUTHORITY)
+    assert catalog["replay_policy"]["catalog_only"] is True
+    assert catalog["replay_policy"]["playback_execution_performed"] is False
+    assert catalog["replay_policy"]["playback_evidence_included"] is False
     assert catalog["entries"][0]["capture_provenance"] == [
         {
             "profile": pit.STORE_PROFILE,
@@ -440,6 +443,9 @@ def test_schema_runtime_parity_for_strict_shape_policy_and_authority(
     coverage = copy.deepcopy(catalog)
     coverage["coverage"]["historical_coverage_complete"] = True
     mutations.append(coverage)
+    playback_claim = copy.deepcopy(catalog)
+    playback_claim["replay_policy"]["playback_execution_performed"] = True
+    mutations.append(playback_claim)
     domain_order = copy.deepcopy(catalog)
     domain_order["entries"][0]["domain_states"].reverse()
     mutations.append(domain_order)

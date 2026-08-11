@@ -1202,10 +1202,11 @@ evaluation clock. A production opportunity schedule and completeness receipt,
 prospectively sealed real baselines, outcome adapters, dependence-aware cohort
 inference, and any promotion decision remain later evidence-gated work.
 
-### 11.0.9 W3A generation-pinned operational playback catalog
+### 11.0.9 W3A generation-pinned operational playback preparation catalog
 
-W3A exposes a bounded catalog of exact `operational_pit` captures already
-published by W1A and the W1B.1 trusted canary. It does not reconstruct a
+W3A exposes a bounded preparation catalog of exact `operational_pit` captures
+already published by W1A and the W1B.1 trusted canary. It does not execute a
+playback or provide playback evidence, and it does not reconstruct a
 requested date, search for a nearest or latest state, materialize a new packet,
 or read any private evidence root. Each row contains only opaque capture and
 context identifiers, capture clocks, the exact packet digest, and the fourteen
@@ -1397,7 +1398,7 @@ W2B1 synthetic scoring additions:
   infinity, tamper, loader-bound, import-fence, and no-aggregate/no-skill
   fixtures.
 
-W3A operational playback additions:
+W3A operational playback preparation additions:
 
 - `engine/neuralweb/market_memory_playback.py` and the strict
   `operational_playback_catalog.v1` contract — bounded exact-generation
