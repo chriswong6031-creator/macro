@@ -752,20 +752,40 @@ function grTiles(p,e){
   var t=[];
   // 1 — PARTICIPATION
   var an=pa.activity_n, ab=pa.activity_basis||{};
-  var t50=grCount(pa.trend_share_50d,nc), t200=grCount(pa.trend_share_200d,nc);
+  // A trend share divides by the covered members that HAVE that moving average, which
+  // is not n_covered whenever the basket holds a name too young for the line. Counting
+  // the share back against n_covered prints a number nothing computed, so the divide
+  // is reconstructed from the denominator the artifact publishes for each leg.
+  var n50=pa.trend_n_50d, n200=pa.trend_n_200d;
+  if(n50==null) n50=nc;            // legacy artifact (pre-denominator): the old read
+  if(n200==null) n200=nc;
+  var t50=grCount(pa.trend_share_50d,n50), t200=grCount(pa.trend_share_200d,n200);
+  var trendD;
+  if(t50==null) trendD=L('Trend coverage pending.','趋势读数待补。');
+  else {
+    // The 200-day clause is DROPPED when its share is null (a basket young enough to
+    // have no 200-day line at all) rather than printing an empty count beside a label.
+    var t2En=t200==null?'':` · 200-day: <b>${t200}</b> of <b>${n200}</b>`;
+    var t2Zh=t200==null?'':` · 200日线：<b>${n200}</b> 只中 <b>${t200}</b> 只`;
+    trendD=L(`Above their 50-day line: <b>${t50}</b> of <b>${n50}</b>${t2En}`,
+             `站上50日线：<b>${n50}</b> 只中 <b>${t50}</b> 只${t2Zh}`);
+  }
   var basisEn=`Unusual activity means a member's move against SPY was large versus its own last 63 sessions, or its volume ran at least 1.5× its own 63-day median. Volume confirmed on ${ab.ret_and_volume||0}; ${ab.ret_only||0} on price alone.`;
   var basisZh=`异动指该股对冲SPY后的涨跌明显大于其自身近63个交易日的常态，或成交量至少达到自身63日中位数的1.5倍。其中 ${ab.ret_and_volume||0} 只有成交量配合，${ab.ret_only||0} 只仅凭价格。`;
   t.push(`<div class="gpr-tile"><div class="k">${L('Participation','参与度')}${grInfo(basisEn,basisZh)}</div>
     <div class="v">${an==null||nc==null?L('Not covered','暂无覆盖'):L(`<b>${an}</b> of <b>${nc}</b> moving unusually today`,`<b>${nc}</b> 只中 <b>${an}</b> 只今日异动`)}</div>
-    <div class="d">${t50==null?L('Trend coverage pending.','趋势读数待补。'):L(`Above their 50-day line: <b>${t50}</b> of <b>${nc}</b> · 200-day: <b>${t200}</b> of <b>${nc}</b>`,`站上50日线：<b>${nc}</b> 只中 <b>${t50}</b> 只 · 200日线：<b>${t200}</b> 只`)}</div>
+    <div class="d">${trendD}</div>
     ${an?`<div class="d" style="margin-top:4px">${ab.ret_and_volume?L(`Volume backed <b>${ab.ret_and_volume}</b> of them${ab.ret_only?`; <b>${ab.ret_only}</b> on price alone`:''}.`,`其中 <b>${ab.ret_and_volume}</b> 只有成交量配合${ab.ret_only?`；<b>${ab.ret_only}</b> 只仅凭价格`:''}。`):L(`Price move only — no volume confirmation.`,`仅价格异动，无成交量配合。`)}</div>`:''}</div>`);
   // 2 — DIRECTION. Refuses below the movers floor: a "direction" over one or two names is
   // arithmetic, not a group read, and 100% agreement among one member is meaningless.
   var aw=grAgreeWord(dir.agreement_pct);
   var signW=dir.sign==='up'?['Up','上行']:dir.sign==='down'?['Down','下行']:['Mixed','方向混杂'];
   var mv=dir.median_move_spy_adj, fewMovers=(an!=null&&an<GR_MIN_MOVERS);
-  var agEn=`Agreement is the net lean among the members with unusual activity today: ups minus downs, over that same count — not a head count of who agrees. It needs at least ${GR_MIN_MOVERS} members moving before it means anything, and below about a third of them the group has no single direction.`;
-  var agZh=`一致度指今日异动个股中的净偏向：上涨数减下跌数，除以同一基数，而非“几只同向”的计数。至少需要 ${GR_MIN_MOVERS} 只在动才有意义；低于其中约三分之一时，该组没有统一方向。`;
+  // The tooltip no longer names a mover count. Two floors govern this tile — the label's
+  // own movers floor here, and the engine's floor under the agreement figure — so quoting
+  // either one as "the" threshold contradicts the other on the baskets between them.
+  var agEn=`Agreement is the net lean among the members with unusual activity today: ups minus downs, over that same count — not a head count of who agrees. It needs several members moving before it means anything, and below about a third of them the group has no single direction.`;
+  var agZh=`一致度指今日异动个股中的净偏向：上涨数减下跌数，除以同一基数，而非“几只同向”的计数。需要有若干只个股在动才有意义；低于其中约三分之一时，该组没有统一方向。`;
   var chips=[];
   function mchip(m,en,zh,tipEn,tipZh,withRet){
     if(!m||!m.ticker) return;
@@ -777,22 +797,48 @@ function grTiles(p,e){
   mchip(dir.weakest,'Weakest','最弱','Worst member move today, after taking SPY out.','剔除SPY后今日表现最差的成分股。',true);
   var dirV=fewMovers?L('Too few moving to read','在动个股太少')
     :L(`${esc(signW[0])} <span style="font-weight:520;color:var(--muted)">— ${esc(aw[0])}</span>`,`${esc(signW[1])} <span style="font-weight:520;color:var(--muted)">— ${esc(aw[1])}</span>`);
+  // The median move is a leg over the COVERED members, so it survives an agreement the
+  // engine declined to compute — the refusal is stated in plain words and carries no
+  // count of its own, since the count it was decided on is not the one printed here.
+  var mvEn=mv==null?'':` · median <span class="${cls(mv)}">${fmtPct(mv)}</span> vs SPY`;
+  var mvZh=mv==null?'':` · 中位涨跌 <span class="${cls(mv)}">${fmtPct(mv)}</span>（对冲SPY）`;
   var dirD=fewMovers
     ? L(`A group direction needs at least <b>${GR_MIN_MOVERS}</b> members moving; <b>${an}</b> today.`,`判断整体方向至少需要 <b>${GR_MIN_MOVERS}</b> 只在动，今日仅 <b>${an}</b> 只。`)
-    : (dir.agreement_pct==null?L('Agreement pending.','一致度待补。')
-      :L(`<b>${Math.round(dir.agreement_pct*100)}%</b> net agreement among the <b>${an==null?'—':an}</b> moving${mv==null?'':` · median <span class="${cls(mv)}">${fmtPct(mv)}</span> vs SPY`}`,`在动的 <b>${an==null?'—':an}</b> 只中净一致度 <b>${Math.round(dir.agreement_pct*100)}%</b>${mv==null?'':` · 中位涨跌 <span class="${cls(mv)}">${fmtPct(mv)}</span>（对冲SPY）`}`));
+    : (dir.agreement_pct==null
+      ? L(`Too few members moving to read agreement${mvEn}`,`在动的个股太少，暂不读一致度${mvZh}`)
+      : L(`<b>${Math.round(dir.agreement_pct*100)}%</b> net agreement among the <b>${an==null?'—':an}</b> moving${mvEn}`,`在动的 <b>${an==null?'—':an}</b> 只中净一致度 <b>${Math.round(dir.agreement_pct*100)}%</b>${mvZh}`));
   t.push(`<div class="gpr-tile"><div class="k">${L('Direction','方向')}${grInfo(agEn,agZh)}</div>
     <div class="v">${dirV}</div><div class="d">${dirD}</div>
     ${chips.length?`<div class="gpr-mchips">${chips.join('')}</div>`:''}</div>`);
   // 3 — ARC. The drawdown percentile is precision, so it lives in the hover beside the
   // Oracle P8 null; the tile keeps the counts a reader can act on the meaning of.
-  var aWords=grArcWords(arc.state), wo=arc.washed_out_n, rec=grCount(arc.reclaimed_20d_share,arc.washed_out_n);
-  var dd=arc.drawdown_pctile_own_history;
+  // REFUSAL MEANS REFUSAL: below the coverage floor the state word stands alone with a
+  // plain-word reason and the tile prints NO figure — the old branch tested a count that
+  // is never null, so the refusal word shipped with a confident number underneath it.
+  // And the washout count is read against the members with a LONG ENOUGH HISTORY to have
+  // a washout read, which is the denominator the state was decided on; against n_covered
+  // the same 9 members printed 0.64 while the arc had judged 0.82.
+  var aWords=grArcWords(arc.state), arcRefused=(arc.state==='insufficient_coverage');
+  var wo=arc.washed_out_n, woN=arc.washout_readable_n;
+  var rec=grCount(arc.reclaimed_20d_share,arc.reclaimed_readable_n);
+  var dd=arcRefused?null:arc.drawdown_pctile_own_history;
   var arcTipEn=GR_P8_EN+(dd==null?'':` Right now the group is further below its own high than it has been ${Math.round(dd*100)}% of the time in its own history.`);
   var arcTipZh=GR_P8_ZH+(dd==null?'':` 目前该组距自身高点的回撤幅度，深于其自身历史上 ${Math.round(dd*100)}% 的时间。`);
+  var arcD;
+  if(arcRefused||wo==null)
+    arcD=L('Too few members are covered to read this group today.','本组今日可用成分股太少，暂无读数。');
+  else {
+    var recEn=rec==null?'':` · <b>${rec}</b> back above their 20-day line`;
+    var recZh=rec==null?'':` · <b>${rec}</b> 只已收复20日线`;
+    // No denominator on a legacy artifact: print the count alone rather than divide it
+    // by the wrong n. A missing figure is honest; a confident wrong one is not.
+    arcD=woN==null
+      ? L(`<b>${wo}</b> washed out${recEn}`,`已出清 <b>${wo}</b> 只${recZh}`)
+      : L(`<b>${wo}</b> of <b>${woN}</b> with enough history washed out${recEn}`,`有足够历史的 <b>${woN}</b> 只中 <b>${wo}</b> 只已出清${recZh}`);
+  }
   t.push(`<div class="gpr-tile"><div class="k">${L('Arc','阶段')}${grInfo(arcTipEn,arcTipZh)}</div>
     <div class="v">${L(esc(aWords[2]),esc(GR_ARC_ZH[aWords[2]]||aWords[2]))}</div>
-    <div class="d">${wo==null?L('Not enough members covered.','覆盖成分股不足。'):L(`<b>${wo}</b> of <b>${p.n_covered}</b> washed out${rec==null?'':` · <b>${rec}</b> back above their 20-day line`}`,`<b>${p.n_covered}</b> 只中 <b>${wo}</b> 只已出清${rec==null?'':` · <b>${rec}</b> 只已收复20日线`}`)}</div></div>`);
+    <div class="d">${arcD}</div></div>`);
   // 4 — EARNINGS
   t.push(`<div class="gpr-tile">${grEarnTileBody(e)}</div>`);
   return `<div class="gpr-tiles">${t.join('')}</div>`;

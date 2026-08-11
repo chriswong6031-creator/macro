@@ -15,6 +15,12 @@ Covers:
        None (too-short / unusable) cases.
   (6)  The activity legs: return-leg-only, volume-leg-only, and the basis counts
        that partition activity_n.
+  (6b) EVERY published share carries the denominator it divided by, the reclaimed
+       denominator is pinned BY CONSTRUCTION, `agreement_pct` is refused below
+       AGREEMENT_MIN_N, and below the arc's coverage floor every numeric value leg
+       goes null while the counts survive.  The validator stays LENIENT about the
+       new denominator keys on purpose — the committed artifact cannot carry them
+       until the next nightly, and it is validated by the tripwire suite.
   (7)  engine.group_flow.sign_agreement — the leg added to the existing organ.
   (8)  Authority: context_only, every may_* false, and no banned vocabulary
        (the CI-guarded word "validated", or ignition language) in the module.
@@ -143,15 +149,16 @@ def test_golden_carries_the_frozen_key_set(golden):
         "n_members", "n_covered", "participation", "direction", "arc",
         "episode", "coverage_warnings"}
     assert set(golden["participation"]) == {
-        "activity_share", "activity_n", "trend_share_50d", "trend_share_200d",
-        "activity_basis"}
+        "activity_share", "activity_n", "trend_share_50d", "trend_n_50d",
+        "trend_share_200d", "trend_n_200d", "activity_basis"}
     assert set(golden["participation"]["activity_basis"]) == {"ret_only", "ret_and_volume"}
     assert set(golden["direction"]) == {
-        "agreement_pct", "sign", "median_move_spy_adj", "cohesion", "leader",
-        "strongest", "weakest"}
+        "agreement_pct", "n_active", "sign", "median_move_spy_adj", "cohesion",
+        "leader", "strongest", "weakest"}
     assert set(golden["arc"]) == {
-        "state", "washed_out_share", "washed_out_n", "reclaimed_20d_share",
-        "capitulation_median_age_d", "stage2_share", "stage4_share",
+        "state", "washed_out_share", "washed_out_n", "washout_readable_n",
+        "reclaimed_20d_share", "reclaimed_readable_n",
+        "capitulation_median_age_d", "stage2_share", "stage4_share", "staged_n",
         "drawdown_pctile_own_history", "null_disclosure"}
     assert set(golden["episode"]) == {
         "active_now", "current_start", "sessions_active", "state_change"}
@@ -444,6 +451,255 @@ def test_thresholds_are_pinned_to_their_v1_literals():
     assert (GP.ARC_MIN_COVERED, GP.ARC_MIN_COVERED_FRACTION) == (5, 0.6)
     assert (GP.EPISODE_ENTER_SHARE, GP.EPISODE_EXIT_SHARE) == (0.5, 0.35)
     assert (GP.EPISODE_MIN_ACTIVE, GP.EPISODE_MAX_GAP, GP.EPISODE_CLOSE_AFTER) == (3, 2, 3)
+    # The agreement floor, pinned the way the earnings organ pins MIN_REPORTED: the
+    # literal AND the fact that it is above the degenerate band. |net|/n over three
+    # movers can only be 1/3 or 1 — a floor of 3 would leave the coin-read in place.
+    assert GP.AGREEMENT_MIN_N == 4
+    assert GP.AGREEMENT_MIN_N > 3
+
+
+# ---------------------------------------------------------------------------
+# (6b) EVERY share publishes the denominator it divided by (G0-10 / F-3 / F-4)
+# ---------------------------------------------------------------------------
+
+def test_every_published_share_carries_its_own_denominator(golden):
+    """The contract clause "each carries its own n so the divide is reconstructible"
+    used to hold for two of eight shares. A reader with a share and no n reaches for
+    the nearest count on the page, which is how a 0.82 washout read got printed as
+    "9 of 14" (= 0.64) — a number nothing in the engine ever computed."""
+    for block, share_key, den_block, den_key in GP._SHARE_DENOM_PAIRS:
+        src = golden if den_block == "" else golden[den_block]
+        assert den_key in src, f"{share_key} has no denominator key {den_key}"
+        assert isinstance(src[den_key], int) and not isinstance(src[den_key], bool), \
+            f"{den_key} is not an integer count"
+        assert golden[block][share_key] is None or src[den_key] > 0, \
+            f"{share_key} is published over an empty {den_key}"
+
+
+def test_the_denominator_table_covers_every_share_key_in_the_contract():
+    """Guards the guard: a share added later without a row here would make the test
+    above vacuous for it. The table is derived from the frozen key sets, not trusted."""
+    shares = {(b, k) for b, keys in (("participation", GP._PART_KEYS),
+                                     ("direction", GP._DIR_KEYS),
+                                     ("arc", GP._ARC_KEYS))
+              for k in keys if "_share" in k or k == "agreement_pct"}
+    assert shares == {(b, k) for b, k, _db, _dk in GP._SHARE_DENOM_PAIRS}
+
+
+def test_the_trend_denominators_are_the_members_that_have_the_line():
+    """The MA convention is rolling(N, min_periods=N//2), so an 80-session member HAS
+    a 50-day line and has NOT got a 200-day one — the two trend legs divide by
+    different counts, and the 200-day one is not n_covered."""
+    tk = [f"M{i:02d}" for i in range(8)]
+    panel, _ = _panel(tk, _idx(), short={"M07": 80})
+    obj = _assemble("young", _basket(tk), panel)
+    part = obj["participation"]
+    assert obj["n_covered"] == 8, "the 80-session member must still be COVERED"
+    assert part["trend_n_50d"] == 8
+    assert part["trend_n_200d"] == 7, "the young member has no 200-day line"
+    assert part["trend_n_200d"] != obj["n_covered"], \
+        "fixture no longer separates the trend denominator from n_covered"
+
+
+# ---------------------------------------------------------------------------
+# (6c) the reclaimed denominator, BY CONSTRUCTION
+# ---------------------------------------------------------------------------
+
+def _arc_over(washed: int, have20: int, reclaimed: int, *, n_covered: int = 10) -> dict:
+    """`_arc` over a hand-built cross-section, so the denominator is not inferred from
+    the output — it is the one number the fixture varies."""
+    as_of = pd.Timestamp("2026-06-30")
+    covered = [f"C{i:02d}" for i in range(n_covered)]
+    wash_t = covered[:washed]
+    has20 = {t: (t in wash_t[:have20]) for t in covered}
+    above20 = {t: (t in wash_t[:reclaimed]) for t in covered}
+    frame = lambda d: pd.DataFrame([d], index=[as_of])          # noqa: E731
+    panel = {"has_ma20": frame(has20), "above_ma20": frame(above20)}
+    washouts = {t: {"washed_out": t in wash_t, "sessions_since_trough": 12}
+                for t in covered}
+    return GP._arc({"covered": covered, "active": []}, panel, as_of, washouts,
+                   {t: 2 for t in covered}, n_covered, 0.5, 0.4)
+
+
+def test_reclaimed_divides_by_the_washed_out_members_that_have_a_20_day_line():
+    """5 washed out, 3 of them with a 20-day line, 2 of those back above it.
+
+    The share is 2/3, never 2/5: a washed-out member too young for the line is
+    UNKNOWN, and a no-data member is counted, never divided away (the docstring used
+    to claim the washed_out_n denominator the code has never used)."""
+    arc = _arc_over(washed=5, have20=3, reclaimed=2)
+    assert arc["washed_out_n"] == 5
+    assert arc["reclaimed_readable_n"] == 3
+    assert arc["reclaimed_20d_share"] == pytest.approx(2 / 3, abs=1e-4)
+    assert arc["reclaimed_20d_share"] != pytest.approx(2 / 5, abs=1e-4)
+
+
+def test_the_washout_denominator_is_the_readable_members_not_n_covered():
+    arc = _arc_over(washed=5, have20=3, reclaimed=2, n_covered=10)
+    assert arc["washout_readable_n"] == 10 and arc["washed_out_share"] == pytest.approx(0.5)
+
+
+def test_the_module_docstring_states_the_denominator_the_code_uses():
+    """F-3 (audit 2026-08-10) — the docstring promised washed_out_n and the code
+    divided by the members with a 20-day line. The CODE was right; the prose is what
+    moved, and it is pinned here so the two cannot drift apart again."""
+    from pathlib import Path
+    doc = Path(GP.__file__).read_text(encoding="utf-8")
+    doc = doc[:doc.index('"""', 3)]
+    assert "reclaimed_readable_n" in doc
+    assert "denominator washed_out_n" not in doc
+
+
+# ---------------------------------------------------------------------------
+# (6d) the agreement floor
+# ---------------------------------------------------------------------------
+
+def _force_active(panel: dict, tickers: list[str]) -> None:
+    as_of = panel["index"].max()
+    panel["active"].loc[as_of, :] = False
+    for t in tickers:
+        panel["active"].loc[as_of, t] = True
+
+
+@pytest.mark.parametrize("n_moving,expect_value", [(0, False), (1, False), (3, False),
+                                                   (4, True), (6, True)])
+def test_agreement_is_refused_below_its_floor_and_always_prints_its_n(n_moving,
+                                                                     expect_value):
+    """F-3 — 42 of 49 live baskets printed exactly 0.0 or 1.0, off a median denominator
+    of 2: |net|/n over two movers has only three possible values, two of them the
+    extremes. Below the floor the SHARE is refused and `n_active` — the number that
+    makes the refusal checkable — is published either way."""
+    tk = [f"A{i:02d}" for i in range(8)]
+    panel, _ = _panel(tk, _idx())
+    _force_active(panel, tk[:n_moving])
+    obj = _assemble(f"movers{n_moving}", _basket(tk), panel)
+    d = obj["direction"]
+    assert d["n_active"] == n_moving
+    assert (d["agreement_pct"] is not None) is expect_value
+    if expect_value:
+        assert 0.0 <= d["agreement_pct"] <= 1.0
+    assert d["sign"] in GP._SIGN_STATES        # the label is untouched by the floor
+    assert GP.validate_pulse(obj) == []
+
+
+def test_the_refused_agreement_still_leaves_the_object_valid_and_json_safe():
+    import json
+    tk = [f"B{i:02d}" for i in range(8)]
+    panel, _ = _panel(tk, _idx())
+    _force_active(panel, tk[:2])
+    obj = _assemble("twomovers", _basket(tk), panel)
+    assert obj["direction"]["agreement_pct"] is None
+    assert obj["direction"]["n_active"] == 2
+    json.loads(json.dumps(obj))
+
+
+# ---------------------------------------------------------------------------
+# (6e) below the arc floor the VALUES refuse, the COUNTS stay
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def refused() -> dict:
+    """A basket under ARC_MIN_COVERED whose members nonetheless carry every input —
+    so a null below can only come from the refusal, never from absent data."""
+    tk = [f"S{i:02d}" for i in range(4)]
+    panel, _ = _panel(tk, _idx())
+    obj = _assemble("thin", _basket(tk), panel)
+    assert obj["arc"]["state"] == "insufficient_coverage"
+    return obj
+
+
+def test_the_refusing_fixture_really_does_carry_data(refused):
+    """Guards the guard: without this the nulls below would pass for the wrong reason."""
+    assert refused["arc"]["washout_readable_n"] == 4, "no washout read to refuse"
+    assert refused["arc"]["staged_n"] == 4, "no stage read to refuse"
+
+
+@pytest.mark.parametrize("leg", ["washed_out_share", "reclaimed_20d_share",
+                                 "stage2_share", "stage4_share",
+                                 "drawdown_pctile_own_history"])
+def test_below_the_arc_floor_every_numeric_value_leg_is_null(refused, leg):
+    """G0-10 — the state said "not enough members covered" while the block printed a
+    100% stage share and a 98th-percentile drawdown beside it. A reader takes the
+    number; the refusal was decoration."""
+    assert refused["arc"][leg] is None, f"arc.{leg} published below the coverage floor"
+
+
+@pytest.mark.parametrize("n_key", ["washed_out_n", "washout_readable_n",
+                                   "reclaimed_readable_n", "staged_n"])
+def test_below_the_arc_floor_the_counts_survive(refused, n_key):
+    """A refusal that hides its receipts cannot be checked (group_earnings.py refuses
+    the same way: values None, n's real)."""
+    v = refused["arc"][n_key]
+    assert isinstance(v, int) and not isinstance(v, bool), f"arc.{n_key} lost its count"
+
+
+def test_the_refusal_leaves_the_state_and_the_warnings_untouched(refused):
+    assert refused["arc"]["state"] == "insufficient_coverage"
+    assert refused["arc"]["null_disclosure"] == GP.ARC_NULL_DISCLOSURE
+    assert "below_coverage_floor" in refused["coverage_warnings"]
+    # and the stage warning still means what it says: the stage SOURCE was fine here,
+    # only the coverage failed, so nulling stage2_share must not fake an outage.
+    assert "stage_read_unavailable" not in refused["coverage_warnings"]
+    assert GP.validate_pulse(refused) == []
+
+
+def test_a_covered_basket_still_publishes_the_value_legs(golden):
+    """The other half of the refusal test — proves it is the FLOOR doing the nulling."""
+    assert golden["arc"]["washed_out_share"] is not None
+    assert golden["arc"]["drawdown_pctile_own_history"] is not None
+
+
+def test_the_floor_predicate_is_the_one_the_ladder_uses():
+    """Two copies of the coverage test is how a block ends up saying "not enough
+    covered" beside a confident number."""
+    assert GP.arc_floor_met(5, 5) is True
+    assert GP.arc_floor_met(4, 4) is False
+    assert GP.arc_floor_met(6, 20) is False
+    assert GP.arc_floor_met(0, 0) is False
+    for n_cov, n_mem in ((5, 5), (4, 4), (6, 20), (12, 14)):
+        refuses = GP._arc_state(n_cov, n_mem, 0.9, 1, None, None, None,
+                                None) == "insufficient_coverage"
+        assert refuses is (not GP.arc_floor_met(n_cov, n_mem))
+
+
+# ---------------------------------------------------------------------------
+# (6f) validator leniency — the artifact heals a nightly AFTER the code does
+# ---------------------------------------------------------------------------
+
+def _legacy(obj: dict) -> dict:
+    """The same object as emitted before the denominators existed."""
+    strip = GP._TRANSITIONAL_DENOM_KEYS
+    return {**obj,
+            "participation": {k: v for k, v in obj["participation"].items() if k not in strip},
+            "direction": {k: v for k, v in obj["direction"].items() if k not in strip},
+            "arc": {k: v for k, v in obj["arc"].items() if k not in strip}}
+
+
+def test_a_legacy_object_without_the_new_denominators_still_validates(golden):
+    """TRANSITION — tests/test_group_pulse_tripwire.py validates the COMMITTED
+    site/basketdata/pulse.json, which cannot carry these keys until the next nightly
+    re-emits it. A validator that required them would go red on the shipped bytes the
+    day this merged, for days, over an artifact no PR is allowed to edit."""
+    legacy = _legacy(golden)
+    assert set(legacy["arc"]) & GP._TRANSITIONAL_DENOM_KEYS == set()
+    assert GP.validate_pulse(legacy) == []
+
+
+def test_a_legacy_object_keeps_its_pre_refusal_arc_legs(refused):
+    """Same transition, other half: the committed artifact still carries numeric arc
+    legs under `insufficient_coverage`, so the validator must not demand the nulling
+    either. The nulling is pinned on BUILT objects, above."""
+    stale = {**_legacy(refused),
+             "arc": {**_legacy(refused)["arc"], "stage2_share": 1.0,
+                     "washed_out_share": 0.5, "drawdown_pctile_own_history": 0.98}}
+    assert GP.validate_pulse(stale) == []
+
+
+@pytest.mark.parametrize("bad", ["11", 11.0, True, None, -1])
+def test_a_denominator_that_is_present_must_be_a_real_count(golden, bad):
+    errs = GP.validate_pulse({**golden,
+                              "arc": {**golden["arc"], "washout_readable_n": bad}})
+    assert any("washout_readable_n" in e for e in errs), (bad, errs)
 
 
 # ---------------------------------------------------------------------------
@@ -476,13 +732,15 @@ def test_sign_agreement_drops_nan_and_survives_empty():
 
 def test_direction_sign_is_mixed_below_the_agreement_bar(golden):
     d = golden["direction"]
-    if d["agreement_pct"] < GP.SIGN_AGREEMENT_MIN:
+    if d["agreement_pct"] is not None and d["agreement_pct"] < GP.SIGN_AGREEMENT_MIN:
         assert d["sign"] == "mixed"
 
 
-def test_no_active_members_reads_mixed_at_zero_agreement():
-    """A basket where nothing moved: agreement is 0.0 over an empty set and the label
-    is `mixed` — not a coin-flip direction on an empty cross-section."""
+def test_no_active_members_reads_mixed_with_a_refused_agreement():
+    """A basket where nothing moved: the label is `mixed` — not a coin-flip direction
+    on an empty cross-section — and the agreement share is REFUSED rather than printed
+    as 0.0. `|net| / n` is undefined over an empty set; publishing 0.0 for it said
+    "the members disagree" when the truth was "there are no members to agree."""
     tk = [f"Q{i:02d}" for i in range(8)]
     idx = _idx()
     panel, _ = _panel(tk, idx)
@@ -490,7 +748,8 @@ def test_no_active_members_reads_mixed_at_zero_agreement():
     panel["active"].loc[as_of, :] = False
     obj = _assemble("quiet", _basket(tk), panel)
     assert obj["participation"]["activity_n"] == 0
-    assert obj["direction"]["agreement_pct"] == 0.0
+    assert obj["direction"]["agreement_pct"] is None
+    assert obj["direction"]["n_active"] == 0
     assert obj["direction"]["sign"] == "mixed"
     assert obj["direction"]["leader"] is None
 

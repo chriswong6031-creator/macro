@@ -87,31 +87,49 @@ A live member with no tape, or with a tape that stops before `as_of`, is live bu
 NOT covered, and the hole is printed in `coverage_warnings` — never filled in.
 
 DENOMINATORS (why the shares do not all divide by the same n).  Each cross-sectional
-stat divides by the set that could actually answer it, and each carries its own n so
-the divide is reconstructible:
+stat divides by the set that could actually answer it, and each PUBLISHES that set's
+count beside it, so a reader can reconstruct the divide instead of assuming the
+nearest n on the page (the surface used to read `washed_out_share` against n_covered
+and print a number the state was never decided on):
 
     activity_share          activity_n / n_covered
-    trend_share_50d/200d    over covered members that HAVE that MA (a 40-session
-                            IPO has no 200d MA; it is not a member below its MA)
-    agreement_pct           over ACTIVE members (|net sign| / n_active), 0.0 when
-                            n_active == 0, in which case `sign` is "mixed"
+    trend_share_50d/200d    over covered members that HAVE that MA — `trend_n_50d` /
+                            `trend_n_200d` (a 40-session IPO has no 200d MA; it is
+                            not a member below its MA)
+    agreement_pct           over ACTIVE members (|net sign| / `n_active`), and NULL
+                            below AGREEMENT_MIN_N (4): |net|/n over two movers is a
+                            coin-read that lands on 0.0 or 1.0 by construction.
+                            `n_active` is published whether or not the share is.
     cohesion                mean pairwise correlation of COVERED members' returns
                             over group_flow's `corr_window_d` (default 40 sessions)
     median_move_spy_adj,
     strongest / weakest     over COVERED members.  All three are on the SPY-ADJUSTED
                             basis — the whole `direction` block is one basis, so a
                             surface can label it "vs SPY" once and be right.
-    washed_out_share        washed_out_n / (covered members with a NON-NULL washout
-                            read).  `washout_ctx` needs 308 sessions, so a young
-                            member is unknown, not un-washed-out.
-    reclaimed_20d_share     over the WASHED-OUT members (denominator washed_out_n)
+    washed_out_share        washed_out_n / `washout_readable_n` (covered members with
+                            a NON-NULL washout read).  `washout_ctx` needs 308
+                            sessions, so a young member is unknown, not un-washed-out.
+    reclaimed_20d_share     over the washed-out members that HAVE a 20d MA —
+                            `reclaimed_readable_n`, NOT washed_out_n.  A washed-out
+                            member too young for a 20d line is unknown; it stays in
+                            the count it belongs to and is never divided away.
     stage2_share/stage4_share  over covered members with a non-null stage read
+                            (`staged_n`)
 
 ARC LADDER (first match wins; the coverage floors are checked FIRST):
 
     floors : n_covered >= ARC_MIN_COVERED (5) AND
              n_covered / n_members >= ARC_MIN_COVERED_FRACTION (0.6)
              else state = "insufficient_coverage"
+
+    Below the floors the arc REFUSES rather than half-refuses: the state string says
+    so AND every numeric VALUE leg (`washed_out_share`, `reclaimed_20d_share`,
+    `stage2_share`, `stage4_share`, `drawdown_pctile_own_history`) goes null, while
+    the COUNTS (`washed_out_n`, `washout_readable_n`, `reclaimed_readable_n`,
+    `staged_n`, `capitulation_median_age_d`) stay real so the refusal still shows its
+    receipts — the same shape engine/group_earnings.py refuses in below MIN_REPORTED.
+    A basket printing "not enough covered" beside a confident 100% share was inviting
+    the reader to use the number the state had just declined to stand behind.
     1 washout_in_progress               washed_out_share >= 0.5 AND
                                         capitulation_median_age_d <= 5
     2 washout_complete_awaiting_reclaim washed_out_share >= 0.5 AND age > 5 AND
@@ -209,6 +227,12 @@ RECLAIM_MA: int = 20
 #: |net sign| / n_active at or above this prints an "up"/"down" label; below it the
 #: cross-section is called "mixed".  0.5 == a 75/25 split.  A LABEL, not a gate.
 SIGN_AGREEMENT_MIN: float = 0.5
+
+#: Movers below which `agreement_pct` is REFUSED (published null; `n_active` still
+#: printed).  Below 4 readable members, agreement is a coin-read — 42 of 49 live
+#: baskets printed exactly 0.0 or 1.0 off denominators of ~2.  The `sign` LABEL keeps
+#: its own template-side movers floor; unifying the two is a separate change.
+AGREEMENT_MIN_N: int = 4
 
 # ── arc ladder ───────────────────────────────────────────────────────────────
 ARC_MIN_COVERED: int = 5
@@ -695,13 +719,18 @@ def _participation(panel: dict, as_of: pd.Timestamp,
         above = sum(1 for t in has if bool(panel[f"above_{key}"].at[as_of, t]))
         return _share(above, len(has)), len(has)
 
-    trend50, _n50 = _trend("ma50")
-    trend200, _n200 = _trend("ma200")
+    # The trend n's are PUBLISHED, not discarded: `trend_share_50d` divides by the
+    # covered members that have a 50d MA, which is not n_covered whenever the basket
+    # holds a young name — and a reader with only the share reaches for n_covered.
+    trend50, n50 = _trend("ma50")
+    trend200, n200 = _trend("ma200")
     block = {
         "activity_share": _r(_share(len(active), len(covered)), 4),
         "activity_n": len(active),
         "trend_share_50d": _r(trend50, 4),
+        "trend_n_50d": n50,
         "trend_share_200d": _r(trend200, 4),
+        "trend_n_200d": n200,
         "activity_basis": {"ret_only": len(active) - len(with_vol),
                            "ret_and_volume": len(with_vol)},
     }
@@ -713,11 +742,18 @@ def _direction(sets: dict, panel: dict, as_of: pd.Timestamp) -> dict:
     row = panel["spy_adj"].loc[as_of]
 
     agree = sign_agreement(row.reindex(active)) if active else sign_agreement(pd.Series(dtype="float64"))
+    n_active = int(agree["n"])
     pct = float(agree["agreement_pct"])
     if agree["n"] == 0 or pct < SIGN_AGREEMENT_MIN or agree["net"] == 0:
         sign = "mixed"
     else:
         sign = "up" if agree["net"] > 0 else "down"
+    # |net| / n over two or three movers can only land on a handful of values, most of
+    # them 0.0 or 1.0 — so the share is REFUSED below the floor while `n_active`, the
+    # denominator that makes the refusal checkable, is published either way.  The
+    # `sign` LABEL is deliberately untouched here: it carries its own movers floor on
+    # the surface, and moving it is a separate, wider change.
+    agreement = _r(pct, 4) if n_active >= AGREEMENT_MIN_N else None
 
     cov_rets = row.reindex(covered).dropna()
     median_move = float(cov_rets.median()) if not cov_rets.empty else None
@@ -744,7 +780,8 @@ def _direction(sets: dict, panel: dict, as_of: pd.Timestamp) -> dict:
         weakest = {"ticker": str(cov_rets.idxmin()), "ret": _r(cov_rets.min(), 4)}
 
     return {
-        "agreement_pct": _r(pct, 4),
+        "agreement_pct": agreement,
+        "n_active": n_active,
         "sign": sign,
         "median_move_spy_adj": _r(median_move, 5),
         "cohesion": _r(cohesion, 4),
@@ -767,6 +804,9 @@ def _arc(sets: dict, panel: dict, as_of: pd.Timestamp, washouts: dict,
     ages = [washouts[t]["sessions_since_trough"] for t in washed]
     median_age = int(np.median(ages)) if ages else None
 
+    # `reclaimed_20d_share` divides by the washed-out members that HAVE a 20d line,
+    # never by washed_out_n: a member too young for the MA is unknown, not un-reclaimed.
+    have20: list[str] = []
     reclaimed = None
     if washed:
         have20 = [t for t in washed if bool(panel["has_ma20"].at[as_of, t])]
@@ -780,17 +820,35 @@ def _arc(sets: dict, panel: dict, as_of: pd.Timestamp, washouts: dict,
 
     state = _arc_state(n_covered, n_members, washed_share, median_age, reclaimed,
                        stage2, stage4, trend50)
+    # REFUSAL MEANS REFUSAL.  The floor verdict is the SAME predicate the ladder just
+    # used, so the state string and the value legs can never disagree: below it every
+    # numeric value goes null and only the counts survive (group_earnings.py's
+    # below-MIN_REPORTED shape — values None, n's real, the hole printed not filled).
+    if not arc_floor_met(n_covered, n_members):
+        washed_share = reclaimed = stage2 = stage4 = dd_pctile = None
     return {
         "state": state,
         "washed_out_share": _r(washed_share, 4),
         "washed_out_n": len(washed),
+        "washout_readable_n": len(readable),
         "reclaimed_20d_share": _r(reclaimed, 4),
+        "reclaimed_readable_n": len(have20),
         "capitulation_median_age_d": median_age,
         "stage2_share": _r(stage2, 4),
         "stage4_share": _r(stage4, 4),
+        "staged_n": len(staged),
         "drawdown_pctile_own_history": _r(dd_pctile, 4),
         "null_disclosure": ARC_NULL_DISCLOSURE,
     }
+
+
+def arc_floor_met(n_covered: int, n_members: int) -> bool:
+    """The arc's coverage floor as ONE predicate, read by both the ladder and the
+    value legs.  Two copies of this test is how a block ends up saying "not enough
+    covered" beside a confident number: the string refused and the legs did not."""
+    if n_covered < ARC_MIN_COVERED:
+        return False
+    return n_members > 0 and (n_covered / n_members) >= ARC_MIN_COVERED_FRACTION
 
 
 def _arc_state(n_covered: int, n_members: int, washed_share: float | None,
@@ -798,9 +856,7 @@ def _arc_state(n_covered: int, n_members: int, washed_share: float | None,
                stage2: float | None, stage4: float | None,
                trend50: float | None) -> str:
     """The ARC ladder — floors first, then first match wins (see module docstring)."""
-    if n_covered < ARC_MIN_COVERED:
-        return "insufficient_coverage"
-    if n_members <= 0 or (n_covered / n_members) < ARC_MIN_COVERED_FRACTION:
+    if not arc_floor_met(n_covered, n_members):
         return "insufficient_coverage"
     washed_ok = washed_share is not None and washed_share >= ARC_WASHOUT_SHARE_MIN
     if washed_ok and median_age is not None and median_age <= ARC_CAPIT_FRESH_SESSIONS:
@@ -915,7 +971,10 @@ def basket_pulse(basket_id: str, basket: dict, panel: dict, as_of: pd.Timestamp,
         warnings.append(f"members_without_activity_read:{thin}")
     if arc["state"] == "insufficient_coverage":
         warnings.append("below_coverage_floor")
-    if not stage_source_ok or arc["stage2_share"] is None:
+    # Read the stage DENOMINATOR, not the share: below the coverage floor the share is
+    # refused to null, and a refused arc is not the same fact as an unavailable stage
+    # source.  `staged_n == 0` is exactly the old `stage2_share is None` condition.
+    if not stage_source_ok or arc["staged_n"] == 0:
         warnings.append("stage_read_unavailable")
     if not bench_ok:
         warnings.append("benchmark_unavailable_returns_unadjusted")
@@ -947,13 +1006,14 @@ _TOP_KEYS = {
     "as_of": str, "n_members": int, "n_covered": int, "participation": dict,
     "direction": dict, "arc": dict, "episode": dict, "coverage_warnings": list,
 }
-_PART_KEYS = {"activity_share", "activity_n", "trend_share_50d",
-              "trend_share_200d", "activity_basis"}
+_PART_KEYS = {"activity_share", "activity_n", "trend_share_50d", "trend_n_50d",
+              "trend_share_200d", "trend_n_200d", "activity_basis"}
 _BASIS_KEYS = {"ret_only", "ret_and_volume"}
-_DIR_KEYS = {"agreement_pct", "sign", "median_move_spy_adj", "cohesion",
+_DIR_KEYS = {"agreement_pct", "n_active", "sign", "median_move_spy_adj", "cohesion",
              "leader", "strongest", "weakest"}
-_ARC_KEYS = {"state", "washed_out_share", "washed_out_n", "reclaimed_20d_share",
-             "capitulation_median_age_d", "stage2_share", "stage4_share",
+_ARC_KEYS = {"state", "washed_out_share", "washed_out_n", "washout_readable_n",
+             "reclaimed_20d_share", "reclaimed_readable_n",
+             "capitulation_median_age_d", "stage2_share", "stage4_share", "staged_n",
              "drawdown_pctile_own_history", "null_disclosure"}
 _EPI_KEYS = {"active_now", "current_start", "sessions_active", "state_change"}
 
@@ -962,6 +1022,36 @@ _EPI_KEYS = {"active_now", "current_start", "sessions_active", "state_change"}
 #: not merely documented.
 _SHARE_N_PAIRS = (("participation", "activity_share", "activity_n"),
                   ("arc", "washed_out_share", "washed_out_n"))
+
+#: Every published SHARE mapped to the key carrying the DENOMINATOR it divided by
+#: (block "" == the top-level object).  The point of the table is that the pairing is
+#: enumerable: a surface can join share -> n mechanically instead of reaching for the
+#: nearest count on the page.  `stage2_share` and `stage4_share` share one denominator
+#: because they are two slices of the same staged set.
+_SHARE_DENOM_PAIRS = (
+    ("participation", "activity_share", "", "n_covered"),
+    ("participation", "trend_share_50d", "participation", "trend_n_50d"),
+    ("participation", "trend_share_200d", "participation", "trend_n_200d"),
+    ("direction", "agreement_pct", "direction", "n_active"),
+    ("arc", "washed_out_share", "arc", "washout_readable_n"),
+    ("arc", "reclaimed_20d_share", "arc", "reclaimed_readable_n"),
+    ("arc", "stage2_share", "arc", "staged_n"),
+    ("arc", "stage4_share", "arc", "staged_n"),
+)
+
+#: The denominator keys this pass ADDED.  Every object built by the code above carries
+#: them; an artifact emitted before this pass does not, and the committed
+#: site/basketdata/pulse.json is exactly that artifact until the next nightly re-emits.
+#: So they are ALLOWED-but-not-REQUIRED here: a validator that demanded them would go
+#: red on the shipped bytes the moment this merged, days before the bytes could heal.
+#: Presence is enforced where it is enforceable — on freshly BUILT objects, in
+#: tests/test_group_pulse_contract.py.  For the same reason validate_pulse does not
+#: require the arc's value legs to be null under `insufficient_coverage`: the
+#: committed artifact still carries the old numeric legs.  Delete this set (folding
+#: the keys into the required sets) once an artifact carrying them is committed.
+_TRANSITIONAL_DENOM_KEYS = frozenset({
+    "trend_n_50d", "trend_n_200d", "n_active",
+    "washout_readable_n", "reclaimed_readable_n", "staged_n"})
 
 
 def _block(errs: list[str], obj: dict, name: str, allowed: set) -> dict:
@@ -972,7 +1062,7 @@ def _block(errs: list[str], obj: dict, name: str, allowed: set) -> dict:
     unknown = set(b) - allowed
     if unknown:
         errs.append(f"{name}: unknown key(s) {sorted(unknown)}")
-    missing = allowed - set(b)
+    missing = allowed - set(b) - _TRANSITIONAL_DENOM_KEYS
     if missing:
         errs.append(f"{name}: missing key(s) {sorted(missing)}")
     return b
@@ -1038,6 +1128,21 @@ def validate_pulse(obj: Any) -> list[str]:
         if isinstance(b, dict) and b.get(share_key) is not None and not isinstance(
                 b.get(n_key), int):
             errs.append(f"{block_name}.{share_key} present without {n_key}")
+
+    # A denominator that is THERE must be a real count.  An ABSENT one is legal only
+    # because the committed artifact predates them (see _TRANSITIONAL_DENOM_KEYS);
+    # "share implies its denominator" is enforced on built objects by the contract
+    # suite, which is the only place it can be enforced without a scheduled red.
+    for block_name, _share_key, den_block, den_key in _SHARE_DENOM_PAIRS:
+        src = obj if den_block == "" else obj.get(den_block)
+        if not isinstance(src, dict) or den_key not in src:
+            continue
+        v = src[den_key]
+        where = den_key if den_block == "" else f"{den_block}.{den_key}"
+        if isinstance(v, bool) or not isinstance(v, int):
+            errs.append(f"{where} must be an integer count")
+        elif v < 0:
+            errs.append(f"{where} must be non-negative")
 
     for k in ("n_members", "n_covered"):
         v = obj.get(k)
