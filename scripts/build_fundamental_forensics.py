@@ -677,20 +677,20 @@ def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, A
 
         findings.sort(key=lambda f: (0 if f["priority"] == "high" else 1, f["detector"]))
         if any(f["priority"] == "high" for f in findings):
-            action = {"key": "high", "en": "Review before adding risk", "zh": "加仓前复核"}
+            action = {"key": "high", "en": "Changes need attention", "zh": "有变化需要关注"}
         elif findings:
-            action = {"key": "watch", "en": "Watch the next filing", "zh": "关注下一份财报"}
+            action = {"key": "watch", "en": "Changes to keep an eye on", "zh": "有变化值得持续观察"}
         elif evaluable_count < len(DETECTORS):
             action = {
                 "key": "limited",
-                "en": "Coverage limited — do not infer clean",
-                "zh": "覆盖有限 — 不可推断为无异常",
+                "en": "Some checks could not run",
+                "zh": "部分检查无法运行",
             }
         else:
             action = {
                 "key": "covered",
-                "en": "No review prompt in covered checks",
-                "zh": "已覆盖检查暂无复核提示",
+                "en": "No unusual change in covered checks",
+                "zh": "已覆盖检查暂无异常变化",
             }
 
         recent = rows.tail(8).iloc[::-1]
