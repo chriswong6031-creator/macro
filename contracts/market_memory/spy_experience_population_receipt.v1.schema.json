@@ -1,0 +1,351 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/spy_experience_population_receipt.v1.schema.json",
+  "title": "Market Memory SPY experience population receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "population_receipt_id", "previous_population_receipt_id", "registration_id", "registration_sha256",
+    "through_session", "census_basis", "expected_sessions", "opportunities",
+    "missing_sessions", "matured_admitted_opportunity_ids", "latest_outcomes",
+    "outcome_missing_opportunity_ids", "scoreable_opportunity_ids", "counts",
+    "coverage", "decision_state_diagnostics", "owner_auditability",
+    "owner_generation_refs", "terminal", "complete",
+    "observed_at", "writer_commit", "evidence_policy", "claims", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.spy_experience_population_receipt.v1"},
+    "population_receipt_id": {"type": "string", "pattern": "^mmspyexppop_[a-f0-9]{64}$"},
+    "previous_population_receipt_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^mmspyexppop_[a-f0-9]{64}$"}]},
+    "registration_id": {"type": "string", "pattern": "^mmspyexpreg_[a-f0-9]{64}$"},
+    "registration_sha256": {"$ref": "#/$defs/sha256"},
+    "through_session": {"$ref": "#/$defs/session"},
+    "census_basis": {"const": "frozen_activation_plus_xnys_calendar_not_presence_or_timer_runs"},
+    "expected_sessions": {
+      "type": "array", "maxItems": 4096,
+      "items": {"$ref": "#/$defs/session"}
+    },
+    "opportunities": {
+      "type": "array", "maxItems": 4096,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["session", "opportunity_id", "disposition"],
+        "properties": {
+          "session": {"$ref": "#/$defs/session"},
+          "opportunity_id": {"type": "string", "pattern": "^mmspyexpopp_[a-f0-9]{64}$"},
+          "disposition": {"enum": ["admitted", "abstained", "missed"]}
+        }
+      }
+    },
+    "missing_sessions": {
+      "type": "array", "maxItems": 4096,
+      "items": {"$ref": "#/$defs/session"}
+    },
+    "matured_admitted_opportunity_ids": {
+      "type": "array", "maxItems": 4096,
+      "items": {"type": "string", "pattern": "^mmspyexpopp_[a-f0-9]{64}$"}
+    },
+    "latest_outcomes": {
+      "type": "array", "maxItems": 4096,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["opportunity_id", "outcome_revision_id", "revision_number", "status", "owner_failure_reason_counts"],
+        "properties": {
+          "opportunity_id": {"type": "string", "pattern": "^mmspyexpopp_[a-f0-9]{64}$"},
+          "outcome_revision_id": {"type": "string", "pattern": "^mmspyexpout_[a-f0-9]{64}$"},
+          "revision_number": {"type": "integer", "minimum": 1, "maximum": 4096},
+          "status": {"enum": ["observed", "unavailable", "censored"]},
+          "owner_failure_reason_counts": {
+            "type": "object", "additionalProperties": false,
+            "required": ["integrity", "unavailable", "pin_cap"],
+            "properties": {
+              "integrity": {"type": "integer", "minimum": 0, "maximum": 4096},
+              "unavailable": {"type": "integer", "minimum": 0, "maximum": 4096},
+              "pin_cap": {"type": "integer", "minimum": 0, "maximum": 4096}
+            }
+          }
+        }
+      }
+    },
+    "outcome_missing_opportunity_ids": {
+      "type": "array", "maxItems": 4096,
+      "items": {"type": "string", "pattern": "^mmspyexpopp_[a-f0-9]{64}$"}
+    },
+    "scoreable_opportunity_ids": {
+      "type": "array", "maxItems": 4096, "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^mmspyexpopp_[a-f0-9]{64}$"}
+    },
+    "counts": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "expected", "recorded", "admitted", "abstained", "missed",
+        "matured_admitted", "outcome_receipted", "outcome_observed",
+        "outcome_unavailable", "outcome_censored", "outcome_revision_count",
+        "pending_admitted", "corrected_outcome_chains", "scoreable", "timely",
+        "projected_timely"
+      ],
+      "properties": {
+        "expected": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "recorded": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "admitted": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "abstained": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "missed": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "matured_admitted": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "outcome_receipted": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "outcome_observed": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "outcome_unavailable": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "outcome_censored": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "outcome_revision_count": {"type": "integer", "minimum": 0, "maximum": 16777216},
+        "pending_admitted": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "corrected_outcome_chains": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "scoreable": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "timely": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "projected_timely": {"type": "integer", "minimum": 0, "maximum": 4096}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["opportunity_completeness_q18", "admission_coverage_q18", "mature_outcome_receipt_coverage_q18", "mature_observed_target_coverage_q18", "timely_opportunity_coverage_q18", "due_outcome_completion_q18", "timely_coordinate_coverage_q18"],
+      "properties": {
+        "opportunity_completeness_q18": {"$ref": "#/$defs/q18"},
+        "admission_coverage_q18": {"$ref": "#/$defs/q18"},
+        "mature_outcome_receipt_coverage_q18": {"$ref": "#/$defs/q18"},
+        "mature_observed_target_coverage_q18": {"$ref": "#/$defs/q18"},
+        "timely_opportunity_coverage_q18": {"$ref": "#/$defs/q18"},
+        "due_outcome_completion_q18": {"$ref": "#/$defs/q18"},
+        "timely_coordinate_coverage_q18": {"$ref": "#/$defs/q18"}
+      }
+    },
+    "decision_state_diagnostics": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "abstained_by_reason", "projection_unavailable_by_reason", "scoreable_quad_counts",
+        "scoreable_liquidity_overlay_counts", "scoreable_cycle_tag_counts",
+        "scoreable_distinct_quads", "scoreable_distinct_liquidity_overlays",
+        "scoreable_distinct_cycle_tags", "scoreable_distinct_numeric_coordinate_pairs",
+        "scoreable_coordinates_nondegenerate",
+        "complete_non_overlapping_five_session_scoreable_blocks",
+        "owner_integrity_failure_fact_count", "owner_unavailable_failure_fact_count",
+        "owner_pin_cap_failure_fact_count", "w4_eligibility_claimed",
+        "retrieval_skill_claimed"
+      ],
+      "properties": {
+        "abstained_by_reason": {"$ref": "#/$defs/abstentionReasonCounts"},
+        "projection_unavailable_by_reason": {"$ref": "#/$defs/projectionUnavailableReasonCounts"},
+        "scoreable_quad_counts": {"$ref": "#/$defs/quadCounts"},
+        "scoreable_liquidity_overlay_counts": {"$ref": "#/$defs/liquidityCounts"},
+        "scoreable_cycle_tag_counts": {"$ref": "#/$defs/cycleCounts"},
+        "scoreable_distinct_quads": {"type": "integer", "minimum": 0, "maximum": 4},
+        "scoreable_distinct_liquidity_overlays": {"type": "integer", "minimum": 0, "maximum": 4},
+        "scoreable_distinct_cycle_tags": {"type": "integer", "minimum": 0, "maximum": 4},
+        "scoreable_distinct_numeric_coordinate_pairs": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "scoreable_coordinates_nondegenerate": {"type": "boolean"},
+        "complete_non_overlapping_five_session_scoreable_blocks": {"type": "integer", "minimum": 0, "maximum": 25},
+        "owner_integrity_failure_fact_count": {"type": "integer", "minimum": 0, "maximum": 16777216},
+        "owner_unavailable_failure_fact_count": {"type": "integer", "minimum": 0, "maximum": 16777216},
+        "owner_pin_cap_failure_fact_count": {"type": "integer", "minimum": 0, "maximum": 16777216},
+        "w4_eligibility_claimed": {"const": false},
+        "retrieval_skill_claimed": {"const": false}
+      }
+    },
+    "owner_auditability": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "trusted_current_capture_count", "technical_current_capture_count", "status",
+        "warning_owner_capture_count", "checkpoint_migration_required_before_owner_count",
+        "v2_acceptance_requirement", "indefinite_v1_auditability"
+      ],
+      "properties": {
+        "trusted_current_capture_count": {"type": ["integer", "null"], "minimum": 0, "maximum": 256},
+        "technical_current_capture_count": {"type": ["integer", "null"], "minimum": 0, "maximum": 256},
+        "status": {"enum": [
+          "within_v1_auditability_window", "warning_checkpoint_migration_due",
+          "critical_checkpoint_migration_required", "no_authenticated_owner_pair_ever"
+        ]},
+        "warning_owner_capture_count": {"const": 320},
+        "checkpoint_migration_required_before_owner_count": {"const": 384},
+        "v2_acceptance_requirement": {"const": "reload_every_v1_pilot_source_ref_from_authenticated_checkpoint_or_delta"},
+        "indefinite_v1_auditability": {"const": false}
+      }
+    },
+    "owner_generation_refs": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "object", "additionalProperties": false,
+         "required": ["pin_observed_at", "trusted_generation", "technical_generation"],
+         "properties": {
+           "pin_observed_at": {"$ref": "#/$defs/utc"},
+           "trusted_generation": {"$ref": "#/$defs/trustedGeneration"},
+           "technical_generation": {"$ref": "#/$defs/technicalGeneration"}
+         }}
+      ]
+    },
+    "terminal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["correction_observation_sessions", "correction_sunset_session", "terminal_window_opens_at", "terminal_deadline_at", "status", "receipt", "denominator_and_maturity_receipts_complete", "final_source_revision_census_authenticated"],
+      "properties": {
+        "correction_observation_sessions": {"const": 5},
+        "correction_sunset_session": {"const": "2027-03-02"},
+        "terminal_window_opens_at": {"const": "2027-03-03T04:30:00Z"},
+        "terminal_deadline_at": {"const": "2027-03-03T04:45:00Z"},
+        "status": {"enum": ["open", "sealed"]},
+        "receipt": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/terminalReceipt"}]},
+        "denominator_and_maturity_receipts_complete": {"type": "boolean"},
+        "final_source_revision_census_authenticated": {"type": "boolean"}
+      }
+    },
+    "complete": {"type": "boolean"},
+    "observed_at": {"$ref": "#/$defs/utc"},
+    "writer_commit": {"type": "string", "pattern": "^[a-f0-9]{40}(?:[a-f0-9]{24})?$"},
+    "evidence_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["denominator_complete", "abstentions_retained", "misses_retained", "timer_runs_are_census", "training_eligible", "promotion_eligible"],
+      "properties": {
+        "denominator_complete": {"type": "boolean"},
+        "abstentions_retained": {"const": true},
+        "misses_retained": {"const": true},
+        "timer_runs_are_census": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false}
+      }
+    },
+    "claims": {"$ref": "#/$defs/claims"},
+    "authority": {"$ref": "spy_experience_registration.v1.schema.json#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "session": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"},
+    "q18": {"type": "string", "pattern": "^(?:0|1)\\.[0-9]{18}$"},
+    "countValue": {"type": "integer", "minimum": 0, "maximum": 4096},
+    "abstentionReasonCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["trusted_macro_session_absent", "technical_session_absent", "trusted_macro_and_technical_session_absent", "owner_capture_clock_tie"],
+      "properties": {
+        "trusted_macro_session_absent": {"$ref": "#/$defs/countValue"},
+        "technical_session_absent": {"$ref": "#/$defs/countValue"},
+        "trusted_macro_and_technical_session_absent": {"$ref": "#/$defs/countValue"},
+        "owner_capture_clock_tie": {"$ref": "#/$defs/countValue"}
+      }
+    },
+    "projectionUnavailableReasonCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["trusted_macro_unavailable_or_ambiguous", "missed_without_authenticated_owner_pair", "owner_liquidity_overlay_unknown", "owner_cycle_tag_unknown", "owner_liquidity_overlay_and_cycle_tag_unknown"],
+      "properties": {
+        "trusted_macro_unavailable_or_ambiguous": {"$ref": "#/$defs/countValue"},
+        "missed_without_authenticated_owner_pair": {"$ref": "#/$defs/countValue"},
+        "owner_liquidity_overlay_unknown": {"$ref": "#/$defs/countValue"},
+        "owner_cycle_tag_unknown": {"$ref": "#/$defs/countValue"},
+        "owner_liquidity_overlay_and_cycle_tag_unknown": {"$ref": "#/$defs/countValue"}
+      }
+    },
+    "quadCounts": {
+      "type": "object", "additionalProperties": false, "required": ["Q1", "Q2", "Q3", "Q4"],
+      "properties": {"Q1": {"$ref": "#/$defs/countValue"}, "Q2": {"$ref": "#/$defs/countValue"}, "Q3": {"$ref": "#/$defs/countValue"}, "Q4": {"$ref": "#/$defs/countValue"}}
+    },
+    "liquidityCounts": {
+      "type": "object", "additionalProperties": false, "required": ["expanding", "neutral", "contracting", "unknown"],
+      "properties": {"expanding": {"$ref": "#/$defs/countValue"}, "neutral": {"$ref": "#/$defs/countValue"}, "contracting": {"$ref": "#/$defs/countValue"}, "unknown": {"$ref": "#/$defs/countValue"}}
+    },
+    "cycleCounts": {
+      "type": "object", "additionalProperties": false, "required": ["early", "mid", "late", "unknown"],
+      "properties": {"early": {"$ref": "#/$defs/countValue"}, "mid": {"$ref": "#/$defs/countValue"}, "late": {"$ref": "#/$defs/countValue"}, "unknown": {"$ref": "#/$defs/countValue"}}
+    },
+    "generationBase": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profile", "store_id", "generation_id", "generation_sha256", "capture_count"],
+      "properties": {
+        "profile": {"type": "string"},
+        "store_id": {"type": "string"},
+        "generation_id": {"type": "string"},
+        "generation_sha256": {"$ref": "#/$defs/sha256"},
+        "capture_count": {"type": "integer", "minimum": 0, "maximum": 256}
+      }
+    },
+    "trustedGeneration": {
+      "allOf": [
+        {"$ref": "#/$defs/generationBase"},
+        {"properties": {
+          "profile": {"const": "market_memory.trusted.macro_regime_canary.v1"},
+          "store_id": {"type": "string", "pattern": "^mmstore_[a-f0-9]{64}$"},
+          "generation_id": {"type": "string", "pattern": "^mmgeneration_[a-f0-9]{64}$"},
+          "generation_sha256": {"$ref": "#/$defs/sha256"},
+          "capture_count": {"type": "integer", "minimum": 0, "maximum": 256}
+        }}
+      ]
+    },
+    "technicalGeneration": {
+      "allOf": [
+        {"$ref": "#/$defs/generationBase"},
+        {"properties": {
+          "profile": {"const": "market_memory.private.spy_raw_technical_actual_output.v1"},
+          "store_id": {"type": "string", "pattern": "^mmactualstore_[a-f0-9]{64}$"},
+          "generation_id": {"type": "string", "pattern": "^mmactualgeneration_[a-f0-9]{64}$"},
+          "generation_sha256": {"$ref": "#/$defs/sha256"},
+          "capture_count": {"type": "integer", "minimum": 0, "maximum": 256}
+        }}
+      ]
+    },
+    "targetGenerationPin": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profile", "store_id", "generation_id", "generation_sha256", "capture_count", "pin_observed_at", "selection", "subject", "calendar"],
+      "properties": {
+        "profile": {"const": "market_memory.private.spy_raw_technical_actual_output.v1"},
+        "store_id": {"type": "string", "pattern": "^mmactualstore_[a-f0-9]{64}$"},
+        "generation_id": {"type": "string", "pattern": "^mmactualgeneration_[a-f0-9]{64}$"},
+        "generation_sha256": {"$ref": "#/$defs/sha256"},
+        "capture_count": {"type": "integer", "minimum": 0, "maximum": 256},
+        "pin_observed_at": {"$ref": "#/$defs/utc"},
+        "selection": {"const": "owner_observed_revision_chain.v1"},
+        "subject": {"$ref": "#/$defs/subject"},
+        "calendar": {"$ref": "#/$defs/calendar"}
+      }
+    },
+    "terminalReceipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["disposition", "observed_at", "technical_generation_pin"],
+      "properties": {
+        "disposition": {"enum": ["stable_terminal_generation_observed", "terminal_owner_window_missed", "no_authenticated_owner_pair_ever"]},
+        "observed_at": {"$ref": "#/$defs/utc"},
+        "technical_generation_pin": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/targetGenerationPin"}]}
+      },
+      "allOf": [
+        {"if": {"properties": {"disposition": {"const": "stable_terminal_generation_observed"}}}, "then": {"properties": {"technical_generation_pin": {"$ref": "#/$defs/targetGenerationPin"}}}},
+        {"if": {"properties": {"disposition": {"enum": ["terminal_owner_window_missed", "no_authenticated_owner_pair_ever"]}}}, "then": {"properties": {"technical_generation_pin": {"type": "null"}}}}
+      ]
+    },
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["symbol", "subject_id", "instrument_id", "identity_version", "mic", "currency"],
+      "properties": {
+        "symbol": {"const": "SPY"},
+        "subject_id": {"const": "mmsecurity_5fc37e8db34f74314b654c910ea8bacfa7de8b5d2d067f2e5421c9d5745ceb4c"},
+        "instrument_id": {"const": "mmsecurity_6f361f5bad9f06a3b2ff157585d5728f55f77198420959aadd8922d1045c3fea"},
+        "identity_version": {"const": "mmidentityv_65ec5e55473e953b55fa2d146f40e8b56dfae2e68a3df7423405db1034d16903"},
+        "mic": {"const": "ARCX"}, "currency": {"const": "USD"}
+      }
+    },
+    "calendar": {
+      "type": "object", "additionalProperties": false,
+      "required": ["calendar_id", "market_session"],
+      "properties": {
+        "calendar_id": {"const": "mmcalendar_a102c5367c17f9c0b4df3af5c2826824fc112935ec76e6d18d55833f53644e0c"},
+        "market_session": {"const": "XNYS_REGULAR"}
+      }
+    },
+    "claims": {
+      "type": "object", "additionalProperties": false,
+      "required": ["external_clock_authenticated", "aba_resistance_authenticated", "calendar_session_derivation_authenticated", "coverage_derived_from_authenticated_ledger_rows"],
+      "properties": {
+        "external_clock_authenticated": {"const": false},
+        "aba_resistance_authenticated": {"const": false},
+        "calendar_session_derivation_authenticated": {"const": true},
+        "coverage_derived_from_authenticated_ledger_rows": {"const": true}
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"terminal": {"properties": {"status": {"const": "open"}}}}}, "then": {"properties": {"terminal": {"properties": {"receipt": {"type": "null"}}}}}},
+    {"if": {"properties": {"terminal": {"properties": {"status": {"const": "sealed"}}}}}, "then": {"properties": {"terminal": {"properties": {"receipt": {"$ref": "#/$defs/terminalReceipt"}}}}}}
+  ]
+}
