@@ -2440,12 +2440,10 @@ class TestCommittedArtifactIntegration:
         """G0.3 at board grain: the committed board through score_rows with and
         without the basing opt-in.
 
-        The witness is injected rather than hoped for.  The 2026-07-31 artifact
-        happens to carry no BOTTOM WATCH buy row, so reading this fixture as-is would
-        pass on an engine that had never learned the state — the vacuous form of this
-        guard.  The board's own ledger says the state IS routine (41 buy-lane rows
-        over 13 of the 17 board days ending 07-31), so one real row is relabelled to
-        the state the ledger shows and the assertions below refuse an empty split.
+        Prefer every movable BOTTOM WATCH row already present in the committed
+        artifact.  When a nightly artifact carries none, inject one deterministic
+        witness instead.  This keeps the guard non-vacuous without assuming that a
+        later daily board still has the 2026-07-31 fixture composition.
 
         The non-buy lanes are asserted as OBJECTS, not counts: score_rows is never
         handed watch/leaders/laggards/ran, and this is the test that says so.
@@ -2460,6 +2458,14 @@ class TestCommittedArtifactIntegration:
         def _pool():
             raw = [json.loads(json.dumps(r)) for r in board["buy"]]
             assert len(raw) >= 2, "committed board must have room for a witness"
+            movable = {
+                row["ticker"] for row in raw
+                if ubr.is_bottom_watch(row)
+                and ubr._status_of(row.get("entry_signal"))
+                not in ubr._BLOCKED_STATUSES
+            }
+            if movable:
+                return raw, movable
             # The witness must be a row the shelf CAN move, and that is not every row:
             # `stage_for` checks the entry status FIRST, and an explicit blocked/exit/
             # avoid verdict outranks the cycle read by design ("Blocked wins over
@@ -2479,14 +2485,16 @@ class TestCommittedArtifactIntegration:
             raw[idx].update({"state": "BOTTOM WATCH", "label": "NEARING A LOW",
                              "dir": "down"})
             raw[idx].pop("label_zh", None)
-            return raw, raw[idx]["ticker"]
+            return raw, {raw[idx]["ticker"]}
 
         lanes_before = json.dumps(
             {lane: board.get(lane) for lane in
              ("watch", "leaders", "laggards", "ran")}, sort_keys=True)
 
-        raw_before, witness = _pool()
-        raw_after, _ = _pool()
+        raw_before, witnesses = _pool()
+        raw_after, repeated_witnesses = _pool()
+        assert witnesses == repeated_witnesses
+        assert witnesses, "the basing split requires at least one movable witness"
         before = ubr.score_rows(raw_before, verdict_by=verdicts,
                                 board_asof=board["as_of"])
         after = ubr.score_rows(raw_after, verdict_by=verdicts,
@@ -2495,13 +2503,13 @@ class TestCommittedArtifactIntegration:
 
         by_before = {r["ticker"]: r for r in before}
         by_after = {r["ticker"]: r for r in after}
-        assert by_before[witness]["stage"] == "blocked", (
-            "witness must be blocked without the opt-in or this proves nothing")
-        assert by_after[witness]["stage"] == "basing"
+        assert all(by_before[t]["stage"] == "blocked" for t in witnesses), (
+            "every witness must be blocked without the opt-in or this proves nothing")
+        assert all(by_after[t]["stage"] == "basing" for t in witnesses)
 
         moved = {t for t in by_before
                  if by_before[t]["stage"] != by_after[t]["stage"]}
-        assert moved == {witness}
+        assert moved == witnesses
         assert all(by_before[t]["stage"] == "blocked" for t in moved)
         assert all(by_after[t]["stage"] == "basing" for t in moved)
 
