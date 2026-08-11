@@ -90,6 +90,10 @@ _MAX_TECHNICAL_VIEW_BYTES = 2 * 1024 * 1024
 _MAX_TERMINAL_BYTES = 64 * 1024
 _MAX_EXACT_DECIMAL_CHARS = 768
 
+OPPORTUNITY_CAPTURE_SELECTION = (
+    "earliest_distinct_owner_observation_exact_session.v1"
+)
+
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _COMMIT = re.compile(r"[a-f0-9]{40}(?:[a-f0-9]{24})?\Z")
 _SESSION = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
@@ -250,6 +254,12 @@ class _RunOwnerView:
     trusted_candidates_by_session: dict[str, tuple[_TrustedCandidate, ...]]
     technical_candidates_by_session: dict[str, tuple[_TechnicalCandidate, ...]]
     failure_reason: str | None = None
+
+
+@dataclass(frozen=True)
+class _PersistedTechnicalViewCatalog:
+    views_by_generation_id: dict[str, tuple[dict[str, Any], ...]]
+    ordered_views: tuple[dict[str, Any], ...]
 
 
 @dataclass(frozen=True)
@@ -595,7 +605,12 @@ def _expected_registration_spec() -> dict[str, Any]:
             "capture_clock_not_after_cutoff": True,
             "publication_proof": "same_authenticated_head_observed_before_and_after_local_sample",
             "owner_protocol_assumption": "monotone_append_only_content_addressed_head",
-            "selection": "owner_observed_revision_chain.v1",
+            "opportunity_selection": OPPORTUNITY_CAPTURE_SELECTION,
+            "opportunity_selection_scope": "exact_subject_exact_session_within_authenticated_generation",
+            "trusted_selection_clock_field": "captured_at",
+            "technical_selection_clock_field": "first_observed_at",
+            "opportunity_owner_clock_ordering": "parsed_utc_instant_ascending_then_capture_id_lexicographic_ascending",
+            "opportunity_equal_clock_policy": "abstain_owner_capture_clock_tie_no_selection",
             "state_semantics": "narrow_owner_reference_pair_not_w2a_or_combined_domain_state",
             "fallback_allowed": False,
         },
@@ -660,6 +675,8 @@ def _expected_registration_spec() -> dict[str, Any]:
             "clock_tie_policy": "append_censored_no_capture_selection",
             "maturity_owner_miss_policy": "append_censored_preserve_late_resolution_chain",
             "target_maturity_window_rule": "target_session_following_calendar_day_same_registered_window",
+            "initial_maturity_persisted_view_recovery": "earliest_distinct_in_window_pair_observed_at.v1",
+            "initial_maturity_persisted_view_equal_clock_policy": "fail_closed_ambiguous_no_generation_selection",
             "revision_selection": "owner_observed_revision_chain.v1",
             "correction_policy": "strictly_later_owner_observation_active_predecessor_chain",
             "final_tail_xnys_sessions": CORRECTION_OBSERVATION_SESSIONS,
@@ -1405,6 +1422,21 @@ def _active_retry_deadline(now: datetime) -> datetime:
     return deadline if opened <= now <= deadline else now
 
 
+def _inside_registered_owner_observation_window(value: datetime) -> bool:
+    """Admit owner evidence only in a finite registered daily window."""
+
+    first_opened, _first_deadline = _window(ACTIVATION_SESSION)
+    _terminal_opened, terminal_deadline = _terminal_window()
+    opened = datetime.combine(
+        value.date(), time(4, 30), tzinfo=timezone.utc
+    )
+    deadline = opened + timedelta(seconds=900)
+    return (
+        first_opened <= value <= terminal_deadline
+        and opened <= value <= deadline
+    )
+
+
 def _owner_failure_reason(exc: Exception) -> str:
     message = str(exc).lower()
     if "pin budget" in message or "capture count" in message and "256" in message:
@@ -1465,6 +1497,12 @@ def _observe_run_owner_view(
                 _head_identity(before_trusted) == _head_identity(after_trusted)
                 and _head_identity(before_technical) == _head_identity(after_technical)
             ):
+                if not _inside_registered_owner_observation_window(sampled):
+                    # The actual between-HEAD sample is the cutoff.  A run
+                    # that entered at the inclusive deadline but crossed it
+                    # cannot publish a post-window owner view.
+                    failure_reason = "owner_pair_not_stable_by_deadline"
+                    break
                 trusted_pin = (
                     current_pins.trusted
                     if _pin_matches_head(current_pins.trusted, before_trusted)
@@ -2692,7 +2730,7 @@ def _source_pins(
 ) -> dict[str, Any]:
     return {
         "pin_observed_at": pin_observed_at,
-        "selection": "owner_observed_revision_chain.v1",
+        "selection": OPPORTUNITY_CAPTURE_SELECTION,
         "subject": copy.deepcopy(_SUBJECT),
         "calendar": copy.deepcopy(_CALENDAR),
         "trusted_generation": _generation_ref(pins.trusted, technical=False),
@@ -3069,7 +3107,7 @@ def _validate_source_pins(value: object, *, session: str) -> dict[str, Any]:
         _fail("W2C source pin fields are not canonical")
     _parse_utc(clean.get("pin_observed_at"), field="source pin observed_at")
     if (
-        clean.get("selection") != "owner_observed_revision_chain.v1"
+        clean.get("selection") != OPPORTUNITY_CAPTURE_SELECTION
         or clean.get("subject") != _SUBJECT
         or clean.get("calendar") != _CALENDAR
     ):
@@ -3897,6 +3935,261 @@ def _target_observation_from_run(
             getattr(view.pins.technical, "ancestry_generation_ids", ())
         ),
     )
+
+
+def _load_persisted_technical_view_catalog(
+    root: Path,
+    *,
+    registration: Registration,
+) -> _PersistedTechnicalViewCatalog:
+    """Authenticate and index the local technical-view chain once per run."""
+
+    tip = _recover_technical_view_chain_head(
+        root, registration=registration, pin=None
+    )
+    if tip is None:
+        return _PersistedTechnicalViewCatalog(
+            views_by_generation_id={}, ordered_views=()
+        )
+    by_generation: dict[str, list[dict[str, Any]]] = {}
+    newest_to_oldest: list[dict[str, Any]] = []
+    reached: set[str] = set()
+    cursor: dict[str, Any] | None = tip
+    while cursor is not None:
+        view_id = str(cursor["technical_view_id"])
+        if view_id in reached:
+            _fail("W2C persisted technical-view catalog is cyclic")
+        reached.add(view_id)
+        newest_to_oldest.append(cursor)
+        generation_id = str(cursor["technical_generation"]["generation_id"])
+        by_generation.setdefault(generation_id, []).append(cursor)
+        predecessor_id = cursor["previous_technical_view_id"]
+        if predecessor_id is None:
+            cursor = None
+            continue
+        raw, _body = _read_json_path(
+            _safe_path(root, "technical_views", f"{predecessor_id}.json"),
+            limit=_MAX_TECHNICAL_VIEW_BYTES,
+            label="W2C persisted technical-view catalog predecessor",
+        )
+        cursor = _validate_technical_view(raw, registration=registration)
+        if cursor["technical_view_id"] != predecessor_id:
+            _fail("W2C persisted technical-view catalog path drift")
+    return _PersistedTechnicalViewCatalog(
+        views_by_generation_id={
+            generation_id: tuple(views)
+            for generation_id, views in by_generation.items()
+        },
+        ordered_views=tuple(reversed(newest_to_oldest)),
+    )
+
+
+def _target_observation_from_persisted_view(
+    view: Mapping[str, Any],
+    *,
+    target_session: date,
+    generation_pin: Mapping[str, Any],
+    ancestry_generation_ids: tuple[str, ...],
+) -> _TargetObservation:
+    candidates: list[_TechnicalCandidate] = []
+    ordinals: dict[str, int] = {}
+    for ordinal, row in enumerate(view["captures"]):
+        capture_id = str(row["index"]["capture_id"])
+        ordinals[capture_id] = ordinal
+        if row["index"]["session"] != target_session.isoformat():
+            continue
+        reference = copy.deepcopy(dict(row["reference"]))
+        candidates.append(
+            _TechnicalCandidate(
+                reference=reference,
+                end_close=float.fromhex(
+                    reference["end_close_binary64_hex"]
+                ),
+            )
+        )
+    return _TargetObservation(
+        pin_observed_at=str(generation_pin["pin_observed_at"]),
+        stable=True,
+        generation_pin=copy.deepcopy(dict(generation_pin)),
+        candidates=tuple(candidates),
+        clock_tie=_owner_clock_tie(
+            candidates, clock_field="first_observed_at"
+        ),
+        generation_capture_ordinals=ordinals,
+        ancestry_generation_ids=ancestry_generation_ids,
+    )
+
+
+def _target_observation_from_active_persisted_generation(
+    *,
+    catalog: _PersistedTechnicalViewCatalog,
+    opportunity: Mapping[str, Any],
+    chain: list[dict[str, Any]],
+) -> _TargetObservation | None:
+    """Reload the active outcome generation before considering a descendant."""
+
+    pinned_rows = [
+        row
+        for row in chain
+        if isinstance(row.get("target_generation_pin"), Mapping)
+    ]
+    if not pinned_rows:
+        return None
+    active_pin = copy.deepcopy(dict(pinned_rows[-1]["target_generation_pin"]))
+    active_generation = {
+        key: active_pin[key]
+        for key in (
+            "profile", "store_id", "generation_id",
+            "generation_sha256", "capture_count",
+        )
+    }
+    active_pin_clock = _parse_utc(
+        active_pin["pin_observed_at"], field="active outcome generation pin"
+    )
+    views = [
+        view
+        for view in catalog.views_by_generation_id.get(
+            str(active_pin["generation_id"]), ()
+        )
+        if (
+            view["technical_generation"] == active_generation
+            and _parse_utc(
+                view["pair_observed_at"],
+                field="active outcome technical-view owner pair",
+            )
+            <= active_pin_clock
+        )
+    ]
+    if not views:
+        _fail("W2C active outcome generation lacks its exact persisted view")
+
+    target_session = date.fromisoformat(str(opportunity["target_session"]))
+    candidate_versions = {
+        tuple(
+            _canonical_bytes(row)
+            for row in view["captures"]
+            if row["index"]["session"] == target_session.isoformat()
+        )
+        for view in views
+    }
+    if len(candidate_versions) != 1:
+        _fail("W2C active outcome generation views disagree on candidates")
+    return _target_observation_from_persisted_view(
+        views[0],
+        target_session=target_session,
+        generation_pin=active_pin,
+        ancestry_generation_ids=(),
+    )
+
+
+def _target_observation_from_eligible_persisted_maturity(
+    *,
+    catalog: _PersistedTechnicalViewCatalog,
+    opportunity: Mapping[str, Any],
+) -> _TargetObservation | None:
+    """Recover the first durable exact-window view before revision one."""
+
+    target_session = date.fromisoformat(str(opportunity["target_session"]))
+    opened, deadline = _window(target_session)
+    eligible = [
+        (view, observed)
+        for views in catalog.views_by_generation_id.values()
+        for view in views
+        for observed in (
+            _parse_utc(
+                view["pair_observed_at"],
+                field="persisted maturity owner pair",
+            ),
+        )
+        if opened <= observed <= deadline
+    ]
+    if not eligible:
+        return None
+    first_clock = min(observed for _view, observed in eligible)
+    first_views = [
+        view for view, observed in eligible if observed == first_clock
+    ]
+    if len(first_views) != 1:
+        _fail("W2C persisted maturity owner-pair clock is ambiguous")
+    selected = first_views[0]
+    generation_pin = {
+        **copy.deepcopy(dict(selected["technical_generation"])),
+        "pin_observed_at": str(selected["pair_observed_at"]),
+        "selection": "owner_observed_revision_chain.v1",
+        "subject": copy.deepcopy(_SUBJECT),
+        "calendar": copy.deepcopy(_CALENDAR),
+    }
+    return _target_observation_from_persisted_view(
+        selected,
+        target_session=target_session,
+        generation_pin=generation_pin,
+        ancestry_generation_ids=(),
+    )
+
+
+def _target_observations_from_persisted_descendants(
+    *,
+    catalog: _PersistedTechnicalViewCatalog,
+    opportunity: Mapping[str, Any],
+    chain: list[dict[str, Any]],
+) -> tuple[_TargetObservation, ...]:
+    pinned_rows = [
+        row
+        for row in chain
+        if isinstance(row.get("target_generation_pin"), Mapping)
+    ]
+    if not pinned_rows:
+        return ()
+    active_pin = pinned_rows[-1]["target_generation_pin"]
+    active_generation_id = str(active_pin["generation_id"])
+    active_pin_clock = _parse_utc(
+        active_pin["pin_observed_at"],
+        field="persisted descendant active generation pin",
+    )
+    target_session = date.fromisoformat(str(opportunity["target_session"]))
+    ancestry: list[str] = []
+    active_seen = False
+    current_generation_id = active_generation_id
+    observations: list[_TargetObservation] = []
+    for view in catalog.ordered_views:
+        generation_id = str(view["technical_generation"]["generation_id"])
+        pair_clock = _parse_utc(
+            view["pair_observed_at"],
+            field="persisted descendant owner pair",
+        )
+        if generation_id == active_generation_id and pair_clock <= active_pin_clock:
+            active_seen = True
+        if not active_seen or pair_clock <= active_pin_clock:
+            if generation_id not in ancestry:
+                ancestry.append(generation_id)
+            continue
+        if generation_id == current_generation_id:
+            continue
+        if not _inside_finite_correction_window(
+            pair_clock, target_session=target_session
+        ):
+            continue
+        generation_pin = {
+            **copy.deepcopy(dict(view["technical_generation"])),
+            "pin_observed_at": str(view["pair_observed_at"]),
+            "selection": "owner_observed_revision_chain.v1",
+            "subject": copy.deepcopy(_SUBJECT),
+            "calendar": copy.deepcopy(_CALENDAR),
+        }
+        observations.append(
+            _target_observation_from_persisted_view(
+                view,
+                target_session=target_session,
+                generation_pin=generation_pin,
+                ancestry_generation_ids=tuple(ancestry),
+            )
+        )
+        if generation_id not in ancestry:
+            ancestry.append(generation_id)
+        current_generation_id = generation_id
+    if not active_seen:
+        _fail("W2C active outcome generation is absent from persisted view order")
+    return tuple(observations)
 
 
 def _validate_target_generation_pin(value: object) -> dict[str, Any]:
@@ -5080,6 +5373,7 @@ def _accrue_outcomes(
     now: datetime,
     observation: _TargetObservation,
     writer_commit: str,
+    persisted_view_catalog: _PersistedTechnicalViewCatalog | None = None,
 ) -> list[str]:
     if opportunity["disposition"] != "admitted":
         return []
@@ -5090,21 +5384,28 @@ def _accrue_outcomes(
     chain = _load_outcome_chain(
         root, registration=registration, opportunity=opportunity
     )
+    catalog = persisted_view_catalog or _load_persisted_technical_view_catalog(
+        root, registration=registration
+    )
     appended: list[dict[str, Any]] = []
     if not chain:
+        persisted_maturity = _target_observation_from_eligible_persisted_maturity(
+            catalog=catalog, opportunity=opportunity
+        )
+        initial_observation = persisted_maturity or observation
         pin_dt = _parse_utc(
-            observation.pin_observed_at, field="target actual pin"
+            initial_observation.pin_observed_at, field="target actual pin"
         )
         if (
-            observation.stable
-            and observation.generation_pin is not None
+            initial_observation.stable
+            and initial_observation.generation_pin is not None
             and opened <= pin_dt <= deadline
         ):
             initial = _append_initial_outcome(
                 root,
                 registration=registration,
                 opportunity=opportunity,
-                observation=observation,
+                observation=initial_observation,
                 appended_at=now,
                 writer_commit=writer_commit,
             )
@@ -5119,7 +5420,7 @@ def _accrue_outcomes(
                 "owner_pin_cap_exceeded_by_deadline":
                     "maturity_owner_pin_cap_exceeded_by_deadline",
             }.get(
-                observation.failure_reason,
+                initial_observation.failure_reason,
                 "maturity_owner_window_missed",
             )
             appended.append(
@@ -5134,6 +5435,43 @@ def _accrue_outcomes(
             )
             chain = list(appended)
     if chain:
+        persisted_observation = (
+            _target_observation_from_active_persisted_generation(
+                catalog=catalog,
+                opportunity=opportunity,
+                chain=chain,
+            )
+        )
+        if persisted_observation is not None:
+            resumed = _append_later_target_revisions(
+                root,
+                registration=registration,
+                opportunity=opportunity,
+                chain=chain,
+                observation=persisted_observation,
+                appended_at=now,
+                writer_commit=writer_commit,
+            )
+            appended.extend(resumed)
+            chain.extend(resumed)
+        for descendant_observation in (
+            _target_observations_from_persisted_descendants(
+                catalog=catalog,
+                opportunity=opportunity,
+                chain=chain,
+            )
+        ):
+            recovered_descendant = _append_later_target_revisions(
+                root,
+                registration=registration,
+                opportunity=opportunity,
+                chain=chain,
+                observation=descendant_observation,
+                appended_at=now,
+                writer_commit=writer_commit,
+            )
+            appended.extend(recovered_descendant)
+            chain.extend(recovered_descendant)
         later = _append_later_target_revisions(
             root,
             registration=registration,
@@ -7653,7 +7991,10 @@ def accrue_spy_experience(
             if now > terminal_deadline
             else None
         )
-        run_view = recovered_run_view or _observe_run_owner_view(
+        if recovered_run_view is not None:
+            run_view = recovered_run_view
+        elif _inside_registered_owner_observation_window(now):
+            run_view = _observe_run_owner_view(
                 root,
                 registration=registration,
                 reader=reader,
@@ -7664,6 +8005,18 @@ def accrue_spy_experience(
                 retry_deadline=_active_retry_deadline(now),
                 sleeper=sleep_fn,
                 require_capacity_preflight=activation_preflight_required,
+            )
+        else:
+            # Catch-up outside a registered window is ledger reconciliation,
+            # never a second chance to pin or publish source evidence.
+            run_view = _RunOwnerView(
+                pin_observed_at=_format_utc(now),
+                stable=False,
+                reader=None,
+                pins=None,
+                trusted_candidates_by_session={},
+                technical_candidates_by_session={},
+                failure_reason="not_sealed_by_deadline",
             )
         _cleanup_unsealed_prepared_staging(
             root, registration=registration
@@ -7769,6 +8122,9 @@ def accrue_spy_experience(
                 opportunities.append(existing)
 
         outcome_now = max(decision_now, _sample_clock(clock_fn))
+        persisted_view_catalog = _load_persisted_technical_view_catalog(
+            root, registration=registration
+        )
         for opportunity in opportunities:
             target_session = date.fromisoformat(str(opportunity["target_session"]))
             observation = _target_observation_from_run(
@@ -7798,6 +8154,7 @@ def accrue_spy_experience(
                     now=outcome_now,
                     observation=observation,
                     writer_commit=writer_commit,
+                    persisted_view_catalog=persisted_view_catalog,
                 )
             )
         population_pins: OwnerPins | None = None

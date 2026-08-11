@@ -1468,6 +1468,13 @@ identical content-addressed IDs and hashes across that sandwich can bind a
 pair. It then loads exact-session rows from those pinned generations and
 requires every owner availability clock to be no later than the sampled
 cutoff, which must fall in the tracked 04:30-04:45Z next-calendar-day window.
+Opportunity input selection is frozen separately from outcome revision
+semantics as `earliest_distinct_owner_observation_exact_session.v1`: within
+each authenticated generation and exact subject/session, trusted rows order by
+parsed `captured_at` and technical rows by parsed `first_observed_at`, then by
+lexicographic capture ID for a deterministic total order. Any equal-clock
+multiplicity is unselectable and produces
+`abstained/owner_capture_clock_tie`; it is never broken by capture ID.
 Producer capture clocks precede HEAD publication and therefore never prove a
 fixed 04:30 as-of. A durable prepared
 object observed before the deadline may resume after a crash; otherwise later
@@ -1511,7 +1518,13 @@ rounding without ambient Decimal context. It is not the ratio of two 20-day
 ratios, not a regular-session-close claim, and never reads a target from later
 historical rows. A stable target-generation sandwich persists observed,
 unavailable, or clock-tie-censored maturity facts. A missed maturity window is
-also an immutable censored receipt. Later source resolution/correction appends
+also an immutable censored receipt. If the writer crashes after publishing an
+authenticated in-window technical view but before outcome revision one,
+recovery chooses the earliest distinct `pair_observed_at` inside that maturity
+window and finishes its exact candidate batch before considering a descendant
+generation. Multiple eligible views at the same earliest clock are ambiguous
+and fail closed; view ID and later owner state never break that tie. Later
+source resolution/correction appends
 one strictly ordered active-predecessor chain and never erases the initial
 absence. An equal-clock later owner delta appends a censored active-predecessor
 revision; a strictly later unambiguous delta may then resolve it. Owner clocks

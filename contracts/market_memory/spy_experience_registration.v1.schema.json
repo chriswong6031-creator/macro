@@ -70,7 +70,10 @@
             "trusted_profile", "macro_feature_id", "macro_session_field",
             "technical_profile", "technical_session_field", "same_session_required",
             "published_generation_ancestry_required", "max_owner_generation_capture_count", "capture_clock_not_after_cutoff",
-            "publication_proof", "owner_protocol_assumption", "selection", "state_semantics", "fallback_allowed"
+            "publication_proof", "owner_protocol_assumption", "opportunity_selection",
+            "opportunity_selection_scope", "trusted_selection_clock_field",
+            "technical_selection_clock_field", "opportunity_owner_clock_ordering",
+            "opportunity_equal_clock_policy", "state_semantics", "fallback_allowed"
           ],
           "properties": {
             "trusted_profile": {"const": "market_memory.trusted.macro_regime_canary.v1"},
@@ -84,7 +87,12 @@
             "capture_clock_not_after_cutoff": {"const": true},
             "publication_proof": {"const": "same_authenticated_head_observed_before_and_after_local_sample"},
             "owner_protocol_assumption": {"const": "monotone_append_only_content_addressed_head"},
-            "selection": {"const": "owner_observed_revision_chain.v1"},
+            "opportunity_selection": {"const": "earliest_distinct_owner_observation_exact_session.v1"},
+            "opportunity_selection_scope": {"const": "exact_subject_exact_session_within_authenticated_generation"},
+            "trusted_selection_clock_field": {"const": "captured_at"},
+            "technical_selection_clock_field": {"const": "first_observed_at"},
+            "opportunity_owner_clock_ordering": {"const": "parsed_utc_instant_ascending_then_capture_id_lexicographic_ascending"},
+            "opportunity_equal_clock_policy": {"const": "abstain_owner_capture_clock_tie_no_selection"},
             "state_semantics": {"const": "narrow_owner_reference_pair_not_w2a_or_combined_domain_state"},
             "fallback_allowed": {"const": false}
           }
@@ -182,7 +190,8 @@
             "input_encoding", "exact_decimal_encoding", "quantization", "rounding",
             "economic_return", "corporate_action_adjusted", "missing_target_policy",
             "late_target_policy", "clock_tie_policy", "maturity_owner_miss_policy",
-            "target_maturity_window_rule", "revision_selection", "correction_policy",
+            "target_maturity_window_rule", "initial_maturity_persisted_view_recovery",
+            "initial_maturity_persisted_view_equal_clock_policy", "revision_selection", "correction_policy",
             "final_tail_xnys_sessions", "final_tail_sunset_session",
             "correction_observation_window_rule",
             "terminal_census_window_opens_at", "terminal_census_deadline_at", "terminal_marker_policy"
@@ -204,6 +213,8 @@
             "clock_tie_policy": {"const": "append_censored_no_capture_selection"},
             "maturity_owner_miss_policy": {"const": "append_censored_preserve_late_resolution_chain"},
             "target_maturity_window_rule": {"const": "target_session_following_calendar_day_same_registered_window"},
+            "initial_maturity_persisted_view_recovery": {"const": "earliest_distinct_in_window_pair_observed_at.v1"},
+            "initial_maturity_persisted_view_equal_clock_policy": {"const": "fail_closed_ambiguous_no_generation_selection"},
             "revision_selection": {"const": "owner_observed_revision_chain.v1"},
             "correction_policy": {"const": "strictly_later_owner_observation_active_predecessor_chain"},
             "final_tail_xnys_sessions": {"const": 5},

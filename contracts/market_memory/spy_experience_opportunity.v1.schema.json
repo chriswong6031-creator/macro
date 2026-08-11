@@ -215,7 +215,7 @@
       ],
       "properties": {
         "pin_observed_at": {"$ref": "#/$defs/utc"},
-        "selection": {"const": "owner_observed_revision_chain.v1"},
+        "selection": {"const": "earliest_distinct_owner_observation_exact_session.v1"},
         "subject": {"$ref": "#/$defs/subject"},
         "calendar": {"$ref": "#/$defs/calendar"},
         "trusted_generation": {"$ref": "#/$defs/trustedGeneration"},
