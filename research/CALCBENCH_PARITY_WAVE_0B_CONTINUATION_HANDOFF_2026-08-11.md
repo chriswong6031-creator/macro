@@ -7,10 +7,13 @@ everything below. That document remains the canonical description of the
 
 **Opening instruction for the next session:**
 
-> Read this handoff. The only thing blocking Wave 0B is four missing GitHub
-> secrets — verify whether they now exist before doing anything else. If they
-> do, dispatch `attested-history-aapl-seed.yml` and run the Wave 0B chain in
-> §5. If they do not, stop and tell the operator; there is no path around it.
+> Read this handoff. All six GitHub secret names exist and the dedicated reader
+> delivery is live. The remaining blocker is the protected environment secret
+> `R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID`, which run `31534160304` proved is
+> not a valid R2 S3 Access Key ID. Check whether that one secret has been
+> updated after `2026-08-11T03:27:33Z`; if it has, rerun
+> `attested-history-aapl-seed.yml` from `main` and continue the Wave 0B chain in
+> §5. Do not debug acquisition before the writer store passes admission.
 
 ---
 
@@ -19,10 +22,10 @@ everything below. That document remains the canonical description of the
 | Item | State | Evidence |
 |---|---|---|
 | Wave 0A — dedicated reader, code | **live verified** | `app/forensics.py` on main binds `build_attested_history_store` (2 refs), **0** `research_vault` refs; live API healthy; `/api/forensics/state` → 401 fails closed |
-| Wave 0A — credential binding | **NOT done** | 4 of 6 secrets absent (§2). An earlier claim that this was done was **wrong** — see §4.1 |
+| Wave 0A — credential binding | **live verified** | secret-delivery run `31534101495` succeeded; production API advanced to diagnostic merge `59b5fcfefc9`; the reviewed deploy path contains no seed-writer variable (§4.1) |
 | Dedicated R2 bucket | **created 2026-08-11** | `mastermind-attested-history-prod`, account `641d31a6bc84bccd90f347ac753275b3` (§3) |
-| Seed run | **never succeeded** | Two attempts: `31170827673` cancelled (0 artifacts), `31312195264` failed at `environment-boundary` |
-| Wave 0B | **blocked** | Needs a successful seed first |
+| Seed run | **never succeeded** | post-repair run `31534160304` reached `writer-store` and named `R2 parent access key ID is invalid`; 0 artifacts |
+| Wave 0B | **blocked** | Needs a valid writer parent and successful seed first |
 | Waves 1–8 | **not started** | Strictly sequential behind 0B |
 
 `main` was green as of 2026-08-08T10:38Z. Repo has **moved** to
@@ -33,22 +36,31 @@ everything below. That document remains the canonical description of the
 ## §1 WHAT THE BLOCKER ACTUALLY IS
 
 The seed has never produced a single artifact. Not because the pipeline is
-broken — **the pipeline is proven good** (§4.2) — but because four of the six
-required GitHub secrets do not exist.
+broken — **the pipeline is proven good** (§4.2) — but because the protected
+writer parent is rejected by local credential-format admission before the
+first R2 request.
 
-Verified 2026-08-11 against the API, positive-controlled (the endpoint lists
-67 repo secrets fine, so an empty result is a real absence, not a permissions
-artifact):
+Verified 2026-08-11:
 
-- repo scope — 67 secrets, **zero** beginning `R2_`
+- repo scope — all four `R2_ATTESTED_HISTORY_*` reader/address names exist
 - org scope — 0 secrets
 - environment `attested-history-seed` — exactly 2, both `..._SEED_...`,
   updated `2026-08-11T03:27:33Z` / `03:27:39Z` (the operator rotated these to
   the new bucket's token)
+- run `31528819923` attempt 1 rejected at `writer-store`; after correcting the
+  endpoint secret from a bare host to the required HTTPS URL, attempt 2
+  rejected at the same stage
+- diagnostic repair PR `#5381` merged as `59b5fcfefc903b2b7e060cb1599d25b7d4dbbc1f`
+  and was live-verified; post-repair run `31534160304` then rejected the
+  protected writer parent specifically because the R2 parent access key ID is
+  invalid
+- environment secret timestamps remain `2026-08-11T03:27:33Z` / `03:27:39Z`;
+  do not rerun until the Access Key ID timestamp advances. The value must be
+  Cloudflare's R2 S3 Access Key ID, not an API token value, token ID, or name.
 
 ---
 
-## §2 THE FOUR MISSING SECRETS — EXACT VALUES
+## §2 THE SIX SECRETS — CURRENT SCOPES AND VALUES
 
 All four at **repository** scope. Not environment scope: the operator workflow
 (`attested-history-operator.yml`) declares no `environment:`, so environment
@@ -56,7 +68,7 @@ secrets are invisible to it.
 
 | Secret | Value |
 |---|---|
-| `R2_ATTESTED_HISTORY_ENDPOINT` | `641d31a6bc84bccd90f347ac753275b3.r2.cloudflarestorage.com` |
+| `R2_ATTESTED_HISTORY_ENDPOINT` | `https://641d31a6bc84bccd90f347ac753275b3.r2.cloudflarestorage.com` |
 | `R2_ATTESTED_HISTORY_BUCKET` | `mastermind-attested-history-prod` |
 | `R2_ATTESTED_HISTORY_READONLY_ACCESS_KEY_ID` | *(read-only R2 token's key id)* |
 | `R2_ATTESTED_HISTORY_READONLY_SECRET_ACCESS_KEY` | *(read-only R2 token's secret)* |
@@ -67,9 +79,9 @@ Already present (environment `attested-history-seed`, do not move them):
 
 **Format rules — all three enforced by regex, all three easy to get wrong:**
 
-- endpoint: `^[a-f0-9]{32}\.r2\.cloudflarestorage\.com$` — **bare host**. No
-  `https://`, no trailing slash, no `/bucket` path. The full console URL is
-  REJECTED; this was verified by running the repo's own validator.
+- endpoint: `^https://[a-f0-9]{32}\.r2\.cloudflarestorage\.com$` — HTTPS URL,
+  with no trailing slash and no `/bucket` path. The earlier bare-host
+  instruction was wrong: the production credential signer rejects it.
 - bucket: `^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$` — lowercase.
 - access key: `^[A-Za-z0-9]{16,128}$`.
 
@@ -81,13 +93,13 @@ secrets present.
 To verify without reading values:
 
 ```bash
-gh api repos/mastermindx-market-intelligence/macro/actions/secrets \
-  --jq '[.secrets[].name | select(test("ATTESTED";"i"))] | .[]'
+gh api --paginate repos/mastermindx-market-intelligence/macro/actions/secrets \
+  --jq '.secrets[].name | select(test("ATTESTED";"i"))'
 ```
 
-Expect all four names. If the output is empty, first confirm
-`.total_count` is ~67 — an empty result with a working endpoint is a real
-absence; an empty result from a broken query is not.
+Expect all four names. `--paginate` is mandatory: the repository has more than
+one API page of secrets, and inspecting only page 1 falsely reported them
+absent during this continuation.
 
 ---
 
@@ -141,10 +153,13 @@ is empty. With the four secrets absent it delivered nothing for them, exited
 reports "not configured" rather than crashing. Green workflow, healthy
 service, **zero credentials bound**.
 
-**This is unfixed.** Once the four secrets exist, `deploy-api-secrets.yml`
-will finally deliver them — but the silent-skip remains, so any future missing
-value produces another hollow green. Worth fixing: make the workflow fail
-loudly when an expected name resolves empty.
+The repair now requires each of the four dedicated reader/address inputs before
+building or delivering the VPS env. A future missing value fails the workflow
+loudly with the variable name and never prints the value. Secret-delivery run
+`31534101495` passed both service jobs, and `/api/health` advanced to merge
+`59b5fcfefc9`; the credential-delivery boundary is live. Functional R2 reads
+remain intentionally unclaimed until the seed's cross-role control read and
+the later zero-write replay succeed.
 
 ### 4.2 The seed pipeline is proven good — do not debug it
 
@@ -229,7 +244,23 @@ Preconditions: all six secrets present (§2); bucket is
    **recompute byte lengths and SHA-256s** rather than trusting the receipts.
    Verify repo / commit / ref / workflow / run / attempt / dependency-lock /
    environment / storage-control-probe / issuer / accession / object IDs, and
-   the explicit nonclaims.
+   the explicit nonclaims. After the verifier PR lands and `origin/main` is
+   fetched, run:
+
+   ```bash
+   python3 -m scripts.verify_fundamental_forensics_attested_history_seed_bundle \
+     --artifact-dir <downloaded-artifact-directory> \
+     --repo-root . \
+     --sha <full-actions-head-sha> \
+     --run-id <run-id> \
+     --run-attempt <run-attempt>
+   ```
+
+   Accept only `status=verified`, `zero_write_preflight=true`, and
+   `all_nonclaims_exact=true`. The verifier independently recomputes all four
+   artifact digests, binds the exact dependency-lock bytes from the reviewed
+   commit reachable from `origin/main`, and rejects rehashed semantic tampering
+   or extra files.
 5. **Packet-activation PR** — commit the sealed packet to
    `config/fundamental_forensics/attested_history_operator.v1.json` and
    replace the inert absence assertion at the end of
@@ -263,7 +294,9 @@ Preconditions: all six secrets present (§2); bucket is
    Filing Forensics page and **annual** YoY on stock pages, with identical
    thresholds. Fixing it moves published numbers, so it was pinned, not
    decided.
-4. **`deploy-api-secrets.yml` silent skip** (§4.1) — unfixed.
+4. **Writer S3 Access Key ID** — the protected environment value is invalid;
+   operator rotation is the only remaining external input before the seed can
+   reach R2.
 
 ---
 
@@ -273,7 +306,8 @@ Merged: **#4960** paid-forensics leak containment (seam + parquet purge +
 repo-wide guard); **#4961** detector evaluability authority (all three
 implementations, 11/11 mutations, 3 `HOLD-` rows); **#4963** → landed via
 **#4965** (third-party structural skip, main heal); **#5145** diagnosable seed
-failure.
+failure; **#5381** value-free credential-field diagnostics plus fail-loud
+reader delivery, merged and live as `59b5fcfefc9`.
 
 Verified live on main, not merely merged: leak columns absent from both
 candidate parquets, and a nightly appended **after** the fix (2026-08-08
