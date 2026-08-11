@@ -56,6 +56,7 @@ _MAX_FEATURE_OBJECT_BYTES = 128 * 1024
 _MAX_GENERATION_BYTES = 4 * 1024 * 1024
 _MAX_GENERATION_CAPTURES = 4_096
 _MAX_HEAD_BYTES = 16 * 1024
+_MAX_PIN_ANCESTRY_BYTES = 64 * 1024 * 1024
 _SOURCE_LIMITS = {
     "publish_manifest": 512 * 1024,
     "spy_daily_parquet": 8 * 1024 * 1024,
@@ -155,6 +156,53 @@ class StoredTechnicalActualOutput:
 
 
 @dataclass(frozen=True)
+class PinnedTechnicalCaptureIndexEntry:
+    """One detached capture index row from a published generation."""
+
+    capture_id: str
+    session: str
+    revision_id: str
+    source_observation_id: str
+    snapshot_id: str
+    first_observed_at: str
+    receipt_sha256: str
+
+    def as_dict(self) -> dict[str, str]:
+        return {
+            "capture_id": self.capture_id,
+            "session": self.session,
+            "revision_id": self.revision_id,
+            "source_observation_id": self.source_observation_id,
+            "snapshot_id": self.snapshot_id,
+            "first_observed_at": self.first_observed_at,
+            "receipt_sha256": self.receipt_sha256,
+        }
+
+
+@dataclass(frozen=True)
+class PinnedTechnicalGenerationSnapshot:
+    """Authenticated current or append-only ancestor generation capability."""
+
+    profile: str
+    store_id: str
+    generation_id: str
+    generation_sha256: str
+    captures: tuple[PinnedTechnicalCaptureIndexEntry, ...]
+    ancestry_generation_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class TechnicalGenerationHeadObservation:
+    """Validated current HEAD identity without a cumulative ancestry walk."""
+
+    profile: str
+    store_id: str
+    generation_id: str
+    generation_sha256: str
+    capture_count: int
+
+
+@dataclass(frozen=True)
 class _StoreState:
     manifest: dict[str, Any]
     head: dict[str, Any]
@@ -190,7 +238,7 @@ def _content_id(prefix: str, value: Mapping[str, Any], *, field: str) -> str:
     return prefix + _digest(_canonical_bytes(core))
 
 
-def _exact_utc(value: object, *, field: str) -> str:
+def _parsed_utc(value: object, *, field: str) -> datetime:
     if type(value) is not str or not _RFC3339_UTC.fullmatch(value):
         raise MarketMemoryTechnicalStoreError(
             f"actual-output {field} is not exact RFC3339 UTC"
@@ -203,6 +251,11 @@ def _exact_utc(value: object, *, field: str) -> str:
         ) from exc
     if parsed.utcoffset() != timedelta(0):
         raise MarketMemoryTechnicalStoreError(f"actual-output {field} must be UTC")
+    return parsed.astimezone(timezone.utc)
+
+
+def _exact_utc(value: object, *, field: str) -> str:
+    parsed = _parsed_utc(value, field=field)
     return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
@@ -806,7 +859,9 @@ def _new_generation(
             (copy.deepcopy(dict(row)) for row in captures),
             key=lambda row: (
                 row["session"],
-                row["first_observed_at"],
+                _parsed_utc(
+                    row["first_observed_at"], field="first_observed_at"
+                ),
                 row["capture_id"],
             ),
         ),
@@ -860,7 +915,7 @@ def _validate_generation(value: Mapping[str, Any], *, store_id: str) -> dict[str
         "first_observed_at",
         "receipt_sha256",
     }
-    sort_keys: list[tuple[str, str, str]] = []
+    sort_keys: list[tuple[str, datetime, str]] = []
     capture_ids: list[str] = []
     revisions: list[str] = []
     for entry in captures:
@@ -898,12 +953,14 @@ def _validate_generation(value: Mapping[str, Any], *, store_id: str) -> dict[str
             raise MarketMemoryTechnicalStoreError(
                 "actual-output generation snapshot ID is malformed"
             )
-        _exact_utc(entry.get("first_observed_at"), field="first_observed_at")
+        observed_at = _parsed_utc(
+            entry.get("first_observed_at"), field="first_observed_at"
+        )
         _require_digest(entry.get("receipt_sha256"), field="receipt digest")
         sort_keys.append(
             (
                 entry["session"],
-                entry["first_observed_at"],
+                observed_at,
                 entry["capture_id"],
             )
         )
@@ -925,6 +982,52 @@ def _validate_generation(value: Mapping[str, Any], *, store_id: str) -> dict[str
             "actual-output generation_id does not bind its generation"
         )
     return clean
+
+
+def _validate_generation_link(
+    *, newer: Mapping[str, Any], older: Mapping[str, Any]
+) -> None:
+    """Require the exact append-one ancestry emitted by the sole writer."""
+
+    if newer.get("previous_generation_id") != older.get("generation_id"):
+        raise MarketMemoryTechnicalStoreError(
+            "actual-output generation ancestry link mismatch"
+        )
+    newer_rows = [dict(row) for row in newer["captures"]]
+    older_rows = [dict(row) for row in older["captures"]]
+    if len(newer_rows) != len(older_rows) + 1:
+        raise MarketMemoryTechnicalStoreError(
+            "actual-output generation ancestry is not one append-only capture"
+        )
+    newer_by_capture = {row["capture_id"]: row for row in newer_rows}
+    for row in older_rows:
+        if newer_by_capture.get(row["capture_id"]) != row:
+            raise MarketMemoryTechnicalStoreError(
+                "actual-output generation ancestry rewrites a published capture"
+            )
+
+
+def _pinned_snapshot(
+    generation: Mapping[str, Any], *, generation_sha256: str
+) -> PinnedTechnicalGenerationSnapshot:
+    return PinnedTechnicalGenerationSnapshot(
+        profile=STORE_PROFILE,
+        store_id=str(generation["store_id"]),
+        generation_id=str(generation["generation_id"]),
+        generation_sha256=generation_sha256,
+        captures=tuple(
+            PinnedTechnicalCaptureIndexEntry(
+                capture_id=str(row["capture_id"]),
+                session=str(row["session"]),
+                revision_id=str(row["revision_id"]),
+                source_observation_id=str(row["source_observation_id"]),
+                snapshot_id=str(row["snapshot_id"]),
+                first_observed_at=str(row["first_observed_at"]),
+                receipt_sha256=str(row["receipt_sha256"]),
+            )
+            for row in generation["captures"]
+        ),
+    )
 
 
 def _new_head(generation: Mapping[str, Any], *, body: bytes) -> dict[str, Any]:
@@ -1699,22 +1802,85 @@ def _generation_entry(receipt: Mapping[str, Any], *, body: bytes) -> dict[str, A
 
 
 def _load_generation(
-    root: Path, *, manifest: Mapping[str, Any], generation_id: str | None
+    root: Path, *, state: _StoreState, generation_id: str | None,
+    ancestry_generation_ids: list[str] | None = None,
 ) -> tuple[dict[str, Any], bytes]:
-    if generation_id is None:
-        state = _load_state(root)
-        return state.generation, _canonical_bytes(state.generation)
-    raw, body = _read_json(
-        _generation_path(root, generation_id),
-        limit=_MAX_GENERATION_BYTES,
-        label="pinned actual-output generation",
-    )
-    clean = _validate_generation(raw, store_id=manifest["store_id"])
-    if clean["generation_id"] != generation_id:
+    """Resolve only current HEAD or one authenticated published ancestor."""
+
+    if generation_id is not None and (
+        type(generation_id) is not str or not _GENERATION_ID.fullmatch(generation_id)
+    ):
         raise MarketMemoryTechnicalStoreError(
-            "pinned actual-output generation differs from its object key"
+            "pinned actual-output generation_id is malformed"
         )
-    return clean, body
+    target = generation_id or str(state.head["generation_id"])
+    current = copy.deepcopy(state.generation)
+    current_body = _canonical_bytes(current)
+    current_sha256 = str(state.head["generation_sha256"])
+    if _digest(current_body) != current_sha256:
+        raise MarketMemoryTechnicalStoreError(
+            "active actual-output generation canonical digest mismatch"
+        )
+    expected_depth = len(current["captures"]) + 1
+    total_bytes = len(current_body)
+    if total_bytes > _MAX_PIN_ANCESTRY_BYTES:
+        raise MarketMemoryTechnicalStoreError(
+            "actual-output generation ancestry exceeds its aggregate byte bound"
+        )
+    visited: set[str] = set()
+    depth = 0
+    target_value: tuple[dict[str, Any], bytes] | None = None
+    while True:
+        current_id = str(current["generation_id"])
+        if current_id in visited:
+            raise MarketMemoryTechnicalStoreError(
+                "actual-output generation ancestry contains a cycle"
+            )
+        visited.add(current_id)
+        if ancestry_generation_ids is not None:
+            ancestry_generation_ids.append(current_id)
+        depth += 1
+        if current_id == target:
+            target_value = (copy.deepcopy(current), current_body)
+        previous_id = current.get("previous_generation_id")
+        if previous_id is None:
+            if current["captures"]:
+                raise MarketMemoryTechnicalStoreError(
+                    "actual-output generation ancestry does not end at empty genesis"
+                )
+            if depth != expected_depth:
+                raise MarketMemoryTechnicalStoreError(
+                    "actual-output generation ancestry depth differs from capture count"
+                )
+            if target_value is None:
+                raise MarketMemoryTechnicalStoreError(
+                    "generation is not published by the active actual-output HEAD ancestry"
+                )
+            return target_value
+        if depth >= expected_depth or depth > _MAX_GENERATION_CAPTURES:
+            raise MarketMemoryTechnicalStoreError(
+                "actual-output generation ancestry exceeds its safe bound"
+            )
+        previous_raw, previous_body = _read_json(
+            _generation_path(root, previous_id),
+            limit=_MAX_GENERATION_BYTES,
+            label="published ancestor actual-output generation",
+        )
+        total_bytes += len(previous_body)
+        if total_bytes > _MAX_PIN_ANCESTRY_BYTES:
+            raise MarketMemoryTechnicalStoreError(
+                "actual-output generation ancestry exceeds its aggregate byte bound"
+            )
+        previous = _validate_generation(
+            previous_raw, store_id=state.manifest["store_id"]
+        )
+        if previous["generation_id"] != previous_id:
+            raise MarketMemoryTechnicalStoreError(
+                "actual-output generation ancestry identity mismatch"
+            )
+        _validate_generation_link(newer=current, older=previous)
+        current = previous
+        current_body = previous_body
 
 
 def _load_capture(
@@ -1882,16 +2048,154 @@ def initialize_technical_actual_output_store(root: str | Path) -> dict[str, Any]
 def load_technical_actual_output_generation(
     root: str | Path, *, generation_id: str | None = None
 ) -> dict[str, Any]:
-    """Load the active or an explicitly pinned immutable generation."""
+    """Load current HEAD or an authenticated append-only published ancestor."""
 
     store_root = validate_technical_actual_output_store_root(root)
     state = _load_state(store_root)
     generation, _ = _load_generation(
         store_root,
-        manifest=state.manifest,
+        state=state,
         generation_id=generation_id,
     )
     return copy.deepcopy(generation)
+
+
+def pin_technical_actual_output_generation(
+    root: str | Path,
+    *,
+    generation_id: str | None = None,
+    maximum_capture_count: int | None = None,
+) -> PinnedTechnicalGenerationSnapshot:
+    """Return a detached capability through one bounded full-chain walk."""
+
+    store_root = validate_technical_actual_output_store_root(root)
+    state = _load_state(store_root)
+    if maximum_capture_count is not None:
+        if (
+            type(maximum_capture_count) is not int
+            or not 0 <= maximum_capture_count <= _MAX_GENERATION_CAPTURES
+        ):
+            raise MarketMemoryTechnicalStoreError(
+                "maximum_capture_count is outside the actual-output store bound"
+            )
+        if len(state.generation["captures"]) > maximum_capture_count:
+            raise MarketMemoryTechnicalStoreError(
+                "actual-output active generation exceeds the caller's pin budget"
+            )
+    ancestry_generation_ids: list[str] = []
+    generation, body = _load_generation(
+        store_root,
+        state=state,
+        generation_id=generation_id,
+        ancestry_generation_ids=ancestry_generation_ids,
+    )
+    pinned = _pinned_snapshot(generation, generation_sha256=_digest(body))
+    return PinnedTechnicalGenerationSnapshot(
+        profile=pinned.profile,
+        store_id=pinned.store_id,
+        generation_id=pinned.generation_id,
+        generation_sha256=pinned.generation_sha256,
+        captures=pinned.captures,
+        ancestry_generation_ids=tuple(ancestry_generation_ids),
+    )
+
+
+def observe_technical_actual_output_generation_head(
+    root: str | Path,
+    *,
+    maximum_capture_count: int | None = None,
+) -> TechnicalGenerationHeadObservation:
+    """Validate and return the current HEAD identity without walking ancestry."""
+
+    store_root = validate_technical_actual_output_store_root(root)
+    state = _load_state(store_root)
+    count = len(state.generation["captures"])
+    if maximum_capture_count is not None:
+        if (
+            type(maximum_capture_count) is not int
+            or not 0 <= maximum_capture_count <= _MAX_GENERATION_CAPTURES
+        ):
+            raise MarketMemoryTechnicalStoreError(
+                "maximum_capture_count is outside the actual-output store bound"
+            )
+        if count > maximum_capture_count:
+            raise MarketMemoryTechnicalStoreError(
+                "actual-output active generation exceeds the caller's pin budget"
+            )
+    return TechnicalGenerationHeadObservation(
+        profile=STORE_PROFILE,
+        store_id=str(state.manifest["store_id"]),
+        generation_id=str(state.head["generation_id"]),
+        generation_sha256=str(state.head["generation_sha256"]),
+        capture_count=count,
+    )
+
+
+def load_technical_actual_output_captures_from_pinned_generation(
+    root: str | Path,
+    *,
+    pin: PinnedTechnicalGenerationSnapshot,
+    capture_ids: tuple[str, ...] | list[str],
+) -> tuple[StoredTechnicalActualOutput, ...]:
+    """Batch-reproject named captures from one already-authenticated pin.
+
+    This reads the named generation once and deliberately does not repeat its
+    ancestry walk.  The caller must supply the capability returned by
+    :func:`pin_technical_actual_output_generation` in the same run.
+    """
+
+    if not isinstance(pin, PinnedTechnicalGenerationSnapshot):
+        raise MarketMemoryTechnicalStoreError(
+            "batch actual-output load requires a reviewed pinned capability"
+        )
+    requested = list(capture_ids)
+    if (
+        len(requested) > _MAX_GENERATION_CAPTURES
+        or len(requested) != len(set(requested))
+        or any(type(item) is not str or not _CAPTURE_ID.fullmatch(item) for item in requested)
+    ):
+        raise MarketMemoryTechnicalStoreError(
+            "batch actual-output capture IDs are malformed or duplicated"
+        )
+    if pin.profile != STORE_PROFILE:
+        raise MarketMemoryTechnicalStoreError(
+            "batch actual-output pin profile differs from its owner"
+        )
+    store_root = validate_technical_actual_output_store_root(root)
+    state = _load_state(store_root)
+    if state.manifest["store_id"] != pin.store_id:
+        raise MarketMemoryTechnicalStoreError(
+            "batch actual-output pin belongs to another store"
+        )
+    generation_raw, generation_body = _read_json(
+        _generation_path(store_root, pin.generation_id),
+        limit=_MAX_GENERATION_BYTES,
+        label="pinned actual-output batch generation",
+    )
+    generation = _validate_generation(generation_raw, store_id=pin.store_id)
+    if (
+        generation["generation_id"] != pin.generation_id
+        or _digest(generation_body) != pin.generation_sha256
+        or tuple(dict(row) for row in generation["captures"])
+        != tuple(entry.as_dict() for entry in pin.captures)
+    ):
+        raise MarketMemoryTechnicalStoreError(
+            "batch actual-output generation differs from its authenticated pin"
+        )
+    active_ids = {entry.capture_id for entry in pin.captures}
+    if any(item not in active_ids for item in requested):
+        raise MarketMemoryTechnicalStoreError(
+            "batch actual-output capture is absent from its pinned generation"
+        )
+    return tuple(
+        _load_capture(
+            store_root,
+            manifest=state.manifest,
+            generation=generation,
+            capture_id=capture_id,
+        )
+        for capture_id in requested
+    )
 
 
 def load_technical_actual_output_capture(
@@ -1906,7 +2210,7 @@ def load_technical_actual_output_capture(
     state = _load_state(store_root)
     generation, _ = _load_generation(
         store_root,
-        manifest=state.manifest,
+        state=state,
         generation_id=generation_id,
     )
     return _load_capture(
@@ -2108,11 +2412,17 @@ __all__ = [
     "STORE_SCHEMA",
     "MarketMemoryTechnicalCaptureError",
     "MarketMemoryTechnicalStoreError",
+    "PinnedTechnicalCaptureIndexEntry",
+    "PinnedTechnicalGenerationSnapshot",
     "StoredTechnicalActualOutput",
+    "TechnicalGenerationHeadObservation",
     "capture_technical_actual_output",
     "default_technical_actual_output_store_root",
     "initialize_technical_actual_output_store",
     "load_technical_actual_output_capture",
+    "load_technical_actual_output_captures_from_pinned_generation",
     "load_technical_actual_output_generation",
+    "observe_technical_actual_output_generation_head",
+    "pin_technical_actual_output_generation",
     "validate_technical_actual_output_store_root",
 ]
