@@ -299,6 +299,14 @@ def test_registration_is_content_addressed_bounded_and_calendar_derived() -> Non
     assert spec["cutoff"]["aba_adversary_model"] == (
         "transient_a_to_b_to_a_between_reads_not_detectable_v1"
     )
+    assert spec["cutoff"]["owner_failure_attribution"] == (
+        "exact_matching_session_and_in_window_attempt_required_for_specific_"
+        "reason_generic_gap_has_no_attempt"
+    )
+    assert spec["outcome"]["maturity_owner_failure_attribution"] == (
+        "exact_matching_target_session_and_in_window_attempt_required_for_"
+        "specific_reason_generic_gap_has_no_attempt"
+    )
     distance = spec["decision_state_projection"]["distance_arithmetic"]
     assert distance == {
         "decimal_context_precision": 64,
@@ -830,11 +838,12 @@ def test_run_owner_pair_retry_is_bounded_and_eventual_stability_is_authenticated
     monkeypatch.setattr(accrual, "_publish_technical_view", lambda *_args: None)
     clock_values = iter(
         [
-            datetime(2026, 8, 18, 4, 30, tzinfo=timezone.utc),
-            datetime(2026, 8, 18, 4, 30, tzinfo=timezone.utc),
-            datetime(2026, 8, 18, 4, 30, 30, tzinfo=timezone.utc),
-        ]
-    )
+                datetime(2026, 8, 18, 4, 30, tzinfo=timezone.utc),
+                datetime(2026, 8, 18, 4, 30, tzinfo=timezone.utc),
+                datetime(2026, 8, 18, 4, 30, 30, tzinfo=timezone.utc),
+                datetime(2026, 8, 18, 4, 30, 30, tzinfo=timezone.utc),
+            ]
+        )
     sleeps: list[float] = []
     view = accrual._observe_run_owner_view(
         tmp_path,
@@ -856,6 +865,183 @@ def test_run_owner_pair_retry_is_bounded_and_eventual_stability_is_authenticated
     # One initial ancestry pin plus at most one stable-pair ancestry pin per owner.
     assert 1 + reader.full_pin_calls == 2
     assert 1 + len(technical_full_pins) == 2
+
+
+def test_trusted_sibling_generation_cannot_extend_persisted_w2c_view(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+    ancestor_head = _read(trusted_root / "HEAD.json")
+
+    _capture_trusted(tmp_path, monkeypatch, session=date(2026, 8, 18))
+    branch_a = trusted.TrustedFileAsKnownAtReader(
+        trusted_root
+    ).read_pinned_generation(maximum_capture_count=256)
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-19T04:35:00Z",
+    )
+    persisted_view = _read(
+        next((experience / "technical_views").glob("*.json"))
+    )
+    assert persisted_view["trusted_generation"] == accrual._generation_ref(
+        branch_a, technical=False
+    )
+
+    # Rewind only the test owner HEAD to the common parent, then publish a
+    # different valid second capture.  Both branch tips have equal counts and
+    # valid bytes, but neither is an ancestor of the other.
+    pit._replace_head(trusted_root, ancestor_head)
+    _capture_trusted(tmp_path, monkeypatch, session=date(2026, 8, 19))
+    reader, branch_b_pins = accrual._pin_owners(trusted_root, technical_root)
+    assert len(branch_b_pins.trusted.captures) == len(branch_a.captures)
+    assert branch_b_pins.trusted.generation_id != branch_a.generation_id
+    with pytest.raises(pit.MarketMemoryContextNotFound, match="not published"):
+        reader.read_pinned_generation(
+            generation_id=branch_a.generation_id,
+            maximum_capture_count=256,
+        )
+
+    frozen = {
+        str(path.relative_to(experience)): (
+            path.read_bytes(),
+            path.stat().st_mtime_ns,
+        )
+        for path in experience.rglob("*")
+        if path.is_file()
+    }
+    observed_at = datetime(2026, 8, 20, 4, 35, tzinfo=timezone.utc)
+    view = accrual._observe_run_owner_view(
+        experience,
+        registration=accrual.load_registration(ROOT),
+        trusted_root=trusted_root,
+        reader=reader,
+        initial_pins=branch_b_pins,
+        technical_root=technical_root,
+        clock=lambda: observed_at,
+        retry_deadline=observed_at,
+        sleeper=lambda _seconds: None,
+    )
+
+    assert view.stable is False
+    assert view.failure_reason == "owner_integrity_failure_by_deadline"
+    assert {
+        str(path.relative_to(experience)): (
+            path.read_bytes(),
+            path.stat().st_mtime_ns,
+        )
+        for path in experience.rglob("*")
+        if path.is_file()
+    } == frozen
+
+
+def test_technical_sibling_generation_is_owner_failure_and_terminal_stays_live(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+    common_head = _read(technical_root / "HEAD.json")
+
+    _capture_technical(
+        tmp_path,
+        monkeypatch,
+        session=date(2026, 8, 18),
+        observed_at=datetime(2026, 8, 19, 4, 31, tzinfo=timezone.utc),
+        end_close=121.0,
+    )
+    branch_a = technical_store.pin_technical_actual_output_generation(
+        technical_root, maximum_capture_count=256
+    )
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-19T04:35:00Z",
+    )
+    technical_view_head = experience / "technical_view_HEAD.json"
+    frozen_view_head = technical_view_head.read_bytes()
+    frozen_views = {
+        path.name: (path.read_bytes(), path.stat().st_mtime_ns)
+        for path in (experience / "technical_views").glob("*.json")
+    }
+
+    # Publish a valid equal-depth sibling from T1 instead of extending T2A.
+    technical_store._replace_head(technical_root, common_head)
+    _capture_technical(
+        tmp_path,
+        monkeypatch,
+        session=date(2026, 8, 18),
+        observed_at=datetime(2026, 8, 19, 4, 32, tzinfo=timezone.utc),
+        end_close=122.0,
+    )
+    branch_b = technical_store.pin_technical_actual_output_generation(
+        technical_root, maximum_capture_count=256
+    )
+    assert len(branch_b.captures) == len(branch_a.captures)
+    assert branch_b.generation_id != branch_a.generation_id
+    with pytest.raises(
+        technical_store.MarketMemoryTechnicalStoreError,
+        match="not published",
+    ):
+        technical_store.pin_technical_actual_output_generation(
+            technical_root,
+            generation_id=branch_a.generation_id,
+            maximum_capture_count=256,
+        )
+
+    inside = datetime(2026, 8, 20, 4, 35, tzinfo=timezone.utc)
+    after = datetime(2026, 8, 20, 4, 46, tzinfo=timezone.utc)
+    samples = iter([inside, inside, inside, after, after, *([after] * 8)])
+    accrual.accrue_spy_experience(
+        ROOT,
+        experience_root=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        writer_commit=COMMIT,
+        clock=lambda: next(samples),
+        sleeper=lambda _seconds: None,
+    )
+    failed = _read(experience / "opportunities" / "2026-08-19.json")
+    assert failed["reason"] == "owner_integrity_failure_by_deadline"
+    assert technical_view_head.read_bytes() == frozen_view_head
+    assert {
+        path.name: (path.read_bytes(), path.stat().st_mtime_ns)
+        for path in (experience / "technical_views").glob("*.json")
+    } == frozen_views
+
+    def forbidden_owner(*_args, **_kwargs):  # pragma: no cover - guard
+        raise AssertionError("terminal catch-up consulted divergent active owners")
+
+    monkeypatch.setattr(accrual, "_pin_owners", forbidden_owner)
+    terminal = _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2027-03-03T04:46:00Z",
+    )
+    assert terminal.population_receipt_id is not None
+    marker = _read(experience / "TERMINAL.json")
+    assert marker["population_receipt_id"] == terminal.population_receipt_id
 
 
 def test_owner_clock_after_local_cutoff_is_an_owner_integrity_failure(
@@ -1049,10 +1235,21 @@ def test_run_owner_pair_continuous_movement_stops_after_31_attempts(
         captures=(),
         ancestry_generation_ids=(),
     )
+    retry_base = datetime(2026, 8, 18, 4, 30, tzinfo=timezone.utc)
     times = iter(
-        datetime(2026, 8, 18, 4, 30, tzinfo=timezone.utc)
-        + timedelta(seconds=30 * ordinal)
-        for ordinal in range(32)
+        [
+            retry_base,
+            retry_base + timedelta(seconds=30),
+            *[
+                instant
+                for ordinal in range(2, 31)
+                for instant in (
+                    retry_base + timedelta(seconds=30 * ordinal),
+                    retry_base + timedelta(seconds=30 * ordinal),
+                )
+            ],
+            retry_base + timedelta(seconds=30 * 31),
+        ]
     )
     sleeps: list[float] = []
     view = accrual._observe_run_owner_view(
@@ -1099,6 +1296,7 @@ def test_unstable_owner_pair_crossing_deadline_seals_a_missed_row(
             pins=None,
             trusted_candidates_by_session={},
             technical_candidates_by_session={},
+            failure_attempted_at="2026-08-18T04:35:00Z",
         )
 
     monkeypatch.setattr(accrual, "_observe_run_owner_view", unstable)
@@ -1113,12 +1311,488 @@ def test_unstable_owner_pair_crossing_deadline_seals_a_missed_row(
     missed = _read(experience / "opportunities" / "2026-08-17.json")
     assert missed["disposition"] == "missed"
     assert missed["reason"] == "owner_pair_not_stable_by_deadline"
+    assert missed["cutoff"]["owner_attempted_window_session"] == "2026-08-17"
+    assert missed["cutoff"]["owner_attempted_at"] == "2026-08-18T04:35:00Z"
     assert missed["claims"] == {
         "external_clock_authenticated": False,
         "aba_resistance_authenticated": False,
         "calendar_session_derivation_authenticated": True,
         "source_generation_pins_authenticated": False,
     }
+
+
+def test_same_day_noon_owner_failure_does_not_label_opportunity_by_deadline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+
+    def noon_failure(*_args, reader, **_kwargs):
+        return accrual._RunOwnerView(
+            pin_observed_at="2026-08-18T12:00:00Z",
+            stable=False,
+            reader=reader,
+            pins=None,
+            trusted_candidates_by_session={},
+            technical_candidates_by_session={},
+            failure_reason="owner_unavailable_by_deadline",
+            failure_attempted_at=None,
+        )
+
+    monkeypatch.setattr(accrual, "_observe_run_owner_view", noon_failure)
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-18T04:35:00Z",
+    )
+    missed = _read(experience / "opportunities" / "2026-08-17.json")
+    assert missed["reason"] == "not_sealed_by_deadline"
+    assert missed["cutoff"]["owner_attempted_window_session"] is None
+    assert missed["cutoff"]["owner_attempted_at"] is None
+
+
+def test_same_day_noon_owner_failure_does_not_label_maturity_by_deadline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-18T04:35:00Z",
+    )
+    opportunity = _read(experience / "opportunities" / "2026-08-17.json")
+
+    def noon_failure(*_args, reader, **_kwargs):
+        return accrual._RunOwnerView(
+            pin_observed_at="2026-08-25T12:00:00Z",
+            stable=False,
+            reader=reader,
+            pins=None,
+            trusted_candidates_by_session={},
+            technical_candidates_by_session={},
+            failure_reason="owner_unavailable_by_deadline",
+            failure_attempted_at=None,
+        )
+
+    monkeypatch.setattr(accrual, "_observe_run_owner_view", noon_failure)
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-25T04:35:00Z",
+    )
+    outcome = _read(
+        experience
+        / "outcomes"
+        / opportunity["opportunity_id"]
+        / "000001.json"
+    )
+    assert outcome["reason"] == "maturity_owner_window_missed"
+    assert outcome["maturity_cutoff"]["owner_attempted_window_session"] is None
+    assert outcome["maturity_cutoff"]["owner_attempted_at"] is None
+
+
+def test_later_owner_failure_is_not_back_attributed_to_skipped_opportunity_window(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+    original_pin_owners = accrual._pin_owners
+    monkeypatch.setattr(
+        accrual,
+        "_pin_owners",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            FileNotFoundError("later owner unavailable")
+        ),
+    )
+    inside = datetime(2026, 8, 19, 4, 35, tzinfo=timezone.utc)
+    after = datetime(2026, 8, 19, 4, 46, tzinfo=timezone.utc)
+    samples = iter([inside, inside, *([after] * 12)])
+
+    accrual.accrue_spy_experience(
+        ROOT,
+        experience_root=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        writer_commit=COMMIT,
+        clock=lambda: next(samples),
+        sleeper=lambda _seconds: None,
+    )
+
+    skipped = _read(experience / "opportunities" / "2026-08-17.json")
+    attempted = _read(experience / "opportunities" / "2026-08-18.json")
+    assert skipped["reason"] == "not_sealed_by_deadline"
+    assert attempted["reason"] == "owner_unavailable_by_deadline"
+    assert skipped["cutoff"]["owner_attempted_window_session"] is None
+    assert skipped["cutoff"]["owner_attempted_at"] is None
+    assert attempted["cutoff"]["owner_attempted_window_session"] == "2026-08-18"
+    assert attempted["cutoff"]["owner_attempted_at"] == "2026-08-19T04:35:00Z"
+    monkeypatch.setattr(accrual, "_pin_owners", original_pin_owners)
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-20T04:35:00Z",
+    )
+    population_head = _read(experience / "population_HEAD.json")
+    population = _read(
+        experience
+        / "population_receipts"
+        / f"{population_head['population_receipt_id']}.json"
+    )
+    assert population["decision_state_diagnostics"][
+        "owner_unavailable_failure_fact_count"
+    ] == 1
+
+
+def test_opportunity_specific_owner_miss_requires_exact_durable_attempt_window(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+    monkeypatch.setattr(
+        accrual,
+        "_pin_owners",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            FileNotFoundError("attempted owner unavailable")
+        ),
+    )
+    inside = datetime(2026, 8, 19, 4, 35, tzinfo=timezone.utc)
+    after = datetime(2026, 8, 19, 4, 46, tzinfo=timezone.utc)
+    samples = iter([inside, inside, *([after] * 12)])
+    accrual.accrue_spy_experience(
+        ROOT,
+        experience_root=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        writer_commit=COMMIT,
+        clock=lambda: next(samples),
+        sleeper=lambda _seconds: None,
+    )
+    generic = _read(experience / "opportunities" / "2026-08-17.json")
+    specific = _read(experience / "opportunities" / "2026-08-18.json")
+    registration = accrual.load_registration(ROOT)
+    registry, schemas = _schema_registry()
+    validator = Draft202012Validator(
+        schemas["spy_experience_opportunity.v1.schema.json"], registry=registry
+    )
+    validator.validate(generic)
+    validator.validate(specific)
+
+    missing_attempt = copy.deepcopy(specific)
+    missing_attempt["cutoff"]["owner_attempted_window_session"] = None
+    missing_attempt["cutoff"]["owner_attempted_at"] = None
+    missing_attempt = _rehash(
+        missing_attempt, field="opportunity_id", prefix="mmspyexpopp_"
+    )
+    with pytest.raises(accrual.MarketMemoryExperienceStoreError, match="conditional"):
+        accrual.validate_opportunity(missing_attempt, registration=registration)
+    with pytest.raises(ValidationError):
+        validator.validate(missing_attempt)
+
+    cross_session = copy.deepcopy(specific)
+    cross_session["cutoff"]["owner_attempted_window_session"] = "2026-08-17"
+    cross_session["cutoff"]["owner_attempted_at"] = "2026-08-18T04:35:00Z"
+    cross_session = _rehash(
+        cross_session, field="opportunity_id", prefix="mmspyexpopp_"
+    )
+    with pytest.raises(
+        accrual.MarketMemoryExperienceStoreError, match="another window"
+    ):
+        accrual.validate_opportunity(cross_session, registration=registration)
+
+    out_of_window = copy.deepcopy(specific)
+    out_of_window["cutoff"]["owner_attempted_at"] = "2026-08-19T12:00:00Z"
+    out_of_window = _rehash(
+        out_of_window, field="opportunity_id", prefix="mmspyexpopp_"
+    )
+    with pytest.raises(
+        accrual.MarketMemoryExperienceStoreError, match="another window"
+    ):
+        accrual.validate_opportunity(out_of_window, registration=registration)
+
+    generic_with_attempt = copy.deepcopy(generic)
+    generic_with_attempt["cutoff"]["owner_attempted_window_session"] = "2026-08-17"
+    generic_with_attempt["cutoff"]["owner_attempted_at"] = "2026-08-18T04:35:00Z"
+    generic_with_attempt = _rehash(
+        generic_with_attempt, field="opportunity_id", prefix="mmspyexpopp_"
+    )
+    with pytest.raises(accrual.MarketMemoryExperienceStoreError, match="conditional"):
+        accrual.validate_opportunity(generic_with_attempt, registration=registration)
+    with pytest.raises(ValidationError):
+        validator.validate(generic_with_attempt)
+
+
+def test_later_owner_failure_is_not_back_attributed_to_skipped_maturity_window(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-18T04:35:00Z",
+    )
+    opportunity = _read(experience / "opportunities" / "2026-08-17.json")
+    assert opportunity["disposition"] == "admitted"
+    assert opportunity["target_session"] == "2026-08-24"
+
+    monkeypatch.setattr(
+        accrual,
+        "_pin_owners",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            FileNotFoundError("later owner unavailable")
+        ),
+    )
+    inside = datetime(2026, 8, 26, 4, 35, tzinfo=timezone.utc)
+    after = datetime(2026, 8, 26, 4, 46, tzinfo=timezone.utc)
+    samples = iter([inside, inside, *([after] * 24)])
+    accrual.accrue_spy_experience(
+        ROOT,
+        experience_root=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        writer_commit=COMMIT,
+        clock=lambda: next(samples),
+        sleeper=lambda _seconds: None,
+    )
+
+    outcome = _read(
+        experience
+        / "outcomes"
+        / opportunity["opportunity_id"]
+        / "000001.json"
+    )
+    assert outcome["status"] == "censored"
+    assert outcome["reason"] == "maturity_owner_window_missed"
+    assert outcome["absence_fact"]["reason"] == "maturity_owner_window_missed"
+    assert outcome["maturity_cutoff"]["owner_attempted_window_session"] is None
+    assert outcome["maturity_cutoff"]["owner_attempted_at"] is None
+    monkeypatch.undo()
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-27T04:35:00Z",
+    )
+    population_head = _read(experience / "population_HEAD.json")
+    population = _read(
+        experience
+        / "population_receipts"
+        / f"{population_head['population_receipt_id']}.json"
+    )
+    assert population["decision_state_diagnostics"][
+        "owner_integrity_failure_fact_count"
+    ] == 0
+
+
+def test_specific_maturity_owner_miss_binds_attempt_and_later_revisions_preserve_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-18T04:35:00Z",
+    )
+    opportunity = _read(experience / "opportunities" / "2026-08-17.json")
+    original_observer = accrual._observe_run_owner_view
+
+    def failed_target_owner(*_args, reader, **_kwargs):
+        return accrual._RunOwnerView(
+            pin_observed_at="2026-08-25T04:45:01Z",
+            stable=False,
+            reader=reader,
+            pins=None,
+            trusted_candidates_by_session={},
+            technical_candidates_by_session={},
+            failure_reason="owner_unavailable_by_deadline",
+            failure_attempted_at="2026-08-25T04:35:00Z",
+        )
+
+    monkeypatch.setattr(accrual, "_observe_run_owner_view", failed_target_owner)
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-25T04:35:00Z",
+    )
+    outcome_dir = experience / "outcomes" / opportunity["opportunity_id"]
+    initial = _read(outcome_dir / "000001.json")
+    assert initial["reason"] == "maturity_owner_unavailable_by_deadline"
+    assert initial["maturity_cutoff"] == {
+        "actual_pin_observed_at": None,
+        "owner_attempted_window_session": "2026-08-24",
+        "owner_attempted_at": "2026-08-25T04:35:00Z",
+        "rule": "target_session_following_calendar_day_same_registered_window",
+    }
+
+    registration = accrual.load_registration(ROOT)
+    registry, schemas = _schema_registry()
+    validator = Draft202012Validator(
+        schemas["spy_experience_outcome_revision.v1.schema.json"],
+        registry=registry,
+    )
+    validator.validate(initial)
+
+    missing_attempt = copy.deepcopy(initial)
+    missing_attempt["maturity_cutoff"]["owner_attempted_window_session"] = None
+    missing_attempt["maturity_cutoff"]["owner_attempted_at"] = None
+    missing_attempt = _rehash(
+        missing_attempt,
+        field="outcome_revision_id",
+        prefix="mmspyexpout_",
+    )
+    with pytest.raises(accrual.MarketMemoryExperienceStoreError, match="miss matrix"):
+        accrual.validate_outcome_revision(
+            missing_attempt, registration=registration, opportunity=opportunity
+        )
+    with pytest.raises(ValidationError):
+        validator.validate(missing_attempt)
+
+    cross_session = copy.deepcopy(initial)
+    cross_session["maturity_cutoff"]["owner_attempted_window_session"] = (
+        "2026-08-25"
+    )
+    cross_session = _rehash(
+        cross_session,
+        field="outcome_revision_id",
+        prefix="mmspyexpout_",
+    )
+    with pytest.raises(
+        accrual.MarketMemoryExperienceStoreError, match="another window"
+    ):
+        accrual.validate_outcome_revision(
+            cross_session, registration=registration, opportunity=opportunity
+        )
+
+    out_of_window = copy.deepcopy(initial)
+    out_of_window["maturity_cutoff"]["owner_attempted_at"] = (
+        "2026-08-25T12:00:00Z"
+    )
+    out_of_window = _rehash(
+        out_of_window,
+        field="outcome_revision_id",
+        prefix="mmspyexpout_",
+    )
+    with pytest.raises(
+        accrual.MarketMemoryExperienceStoreError, match="another window"
+    ):
+        accrual.validate_outcome_revision(
+            out_of_window, registration=registration, opportunity=opportunity
+        )
+
+    generic_with_attempt = copy.deepcopy(initial)
+    generic_with_attempt["reason"] = "maturity_owner_window_missed"
+    generic_with_attempt["absence_fact"]["reason"] = (
+        "maturity_owner_window_missed"
+    )
+    generic_with_attempt = _rehash(
+        generic_with_attempt,
+        field="outcome_revision_id",
+        prefix="mmspyexpout_",
+    )
+    with pytest.raises(accrual.MarketMemoryExperienceStoreError, match="miss matrix"):
+        accrual.validate_outcome_revision(
+            generic_with_attempt, registration=registration, opportunity=opportunity
+        )
+    with pytest.raises(ValidationError):
+        validator.validate(generic_with_attempt)
+
+    monkeypatch.setattr(accrual, "_observe_run_owner_view", original_observer)
+    _capture_technical(
+        tmp_path,
+        monkeypatch,
+        session=date(2026, 8, 24),
+        observed_at=datetime(2026, 8, 26, 4, 31, tzinfo=timezone.utc),
+        end_close=150.0,
+    )
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-26T04:35:00Z",
+    )
+    resolution = _read(outcome_dir / "000002.json")
+    assert resolution["revision_kind"] == "late_source_resolution"
+    assert resolution["maturity_cutoff"] == initial["maturity_cutoff"]
+
+    rewritten = copy.deepcopy(resolution)
+    rewritten["maturity_cutoff"]["owner_attempted_at"] = (
+        "2026-08-25T04:36:00Z"
+    )
+    rewritten = _rehash(
+        rewritten,
+        field="outcome_revision_id",
+        prefix="mmspyexpout_",
+    )
+    with pytest.raises(
+        accrual.MarketMemoryExperienceStoreError, match="initial maturity cutoff"
+    ):
+        accrual.validate_outcome_revision(
+            rewritten,
+            registration=registration,
+            opportunity=opportunity,
+            previous=initial,
+            history=[initial],
+        )
 
 
 def test_installation_is_required_before_activation_and_never_backfilled(
@@ -2480,6 +3154,8 @@ def test_maturity_owner_window_miss_is_persisted_and_nullable_only_where_registe
     assert outcome["reason"] == "maturity_owner_window_missed"
     assert outcome["target_generation_pin"] is None
     assert outcome["maturity_cutoff"]["actual_pin_observed_at"] is None
+    assert outcome["maturity_cutoff"]["owner_attempted_window_session"] is None
+    assert outcome["maturity_cutoff"]["owner_attempted_at"] is None
     assert outcome["absence_fact"]["observed_at"] == "2026-08-25T04:50:00Z"
     assert outcome["claims"] == {
         "external_clock_authenticated": False,
@@ -3504,6 +4180,7 @@ def test_final_terminal_marker_makes_every_later_invocation_a_pre_owner_no_write
     _technical_rows, technical_view = accrual._prepare_technical_view(
         experience,
         registration=registration,
+        trusted_reader=trusted.TrustedFileAsKnownAtReader(trusted_root),
         technical_root=technical_root,
         pin=pins.technical,
         trusted_pin=pins.trusted,
@@ -3797,6 +4474,7 @@ def test_no_owner_pair_ever_still_seals_finite_local_denominator(
     _rows, orphan_view = accrual._prepare_technical_view(
         experience,
         registration=accrual.load_registration(ROOT),
+        trusted_reader=trusted.TrustedFileAsKnownAtReader(trusted_root),
         technical_root=technical_root,
         pin=technical_pin,
         trusted_pin=trusted_pin,
@@ -4401,6 +5079,31 @@ def test_run_scoped_126_session_view_projects_only_generation_delta_at_256_cap(
         "c",
         ancestry=(first_pin.generation_id,),
     )
+    monkeypatch.setattr(
+        technical_store,
+        "pin_technical_actual_output_generation",
+        lambda _root, *, generation_id, maximum_capture_count: (
+            first_pin
+            if generation_id == first_pin.generation_id
+            and maximum_capture_count == 256
+            else (_ for _ in ()).throw(AssertionError("unexpected ancestry pin"))
+        ),
+    )
+    monkeypatch.setattr(
+        technical_store,
+        "observe_technical_actual_output_generation_head",
+        lambda _root, *, maximum_capture_count: (
+            technical_store.TechnicalGenerationHeadObservation(
+                profile=final_pin.profile,
+                store_id=final_pin.store_id,
+                generation_id=final_pin.generation_id,
+                generation_sha256=final_pin.generation_sha256,
+                capture_count=len(final_pin.captures),
+            )
+            if maximum_capture_count == 256
+            else (_ for _ in ()).throw(AssertionError("unexpected head budget"))
+        ),
+    )
     projection_batches: list[tuple[str, ...]] = []
     trusted_pin = SimpleNamespace(
         profile=trusted.TRUSTED_STORE_PROFILE,
@@ -4434,6 +5137,7 @@ def test_run_scoped_126_session_view_projects_only_generation_delta_at_256_cap(
     first_by_session, first_view = accrual._prepare_technical_view(
         experience,
         registration=registration,
+        trusted_reader=None,
         technical_root=tmp_path / "technicals-v1",
         pin=first_pin,
         trusted_pin=trusted_pin,
@@ -4444,6 +5148,7 @@ def test_run_scoped_126_session_view_projects_only_generation_delta_at_256_cap(
     final_by_session, final_view = accrual._prepare_technical_view(
         experience,
         registration=registration,
+        trusted_reader=None,
         technical_root=tmp_path / "technicals-v1",
         pin=final_pin,
         trusted_pin=trusted_pin,
@@ -4454,6 +5159,7 @@ def test_run_scoped_126_session_view_projects_only_generation_delta_at_256_cap(
     unchanged_by_session, unchanged_view = accrual._prepare_technical_view(
         experience,
         registration=registration,
+        trusted_reader=None,
         technical_root=tmp_path / "technicals-v1",
         pin=final_pin,
         trusted_pin=trusted_pin,
