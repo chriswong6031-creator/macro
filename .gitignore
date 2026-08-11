@@ -673,3 +673,10 @@ data/institutional_13f/*
 # this containment wall prevents an explicitly configured legacy store from
 # being swept into broad data/ staging or public Git history.
 /data/china_tushare_spine/
+
+# Page-evidence screenshots are LOCAL observation, not repository content. One P0
+# sweep is ~360 full-page PNGs (state matrix x 30 pages) at ~0.5 MB each, and they
+# are re-derivable from the committed manifest at any time. The manifest and the
+# smell report carry each shot's sha256, so the evidence stays citable without the
+# bytes ever entering Git. See docs/product_experience/PAGE_EVIDENCE_HARNESS.md.
+data/product_experience/evidence/

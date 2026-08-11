@@ -7107,3 +7107,24 @@ jobs:
       # as a Python import edge.
       - name: Winner Health inert surface design freeze
         run: python -m pytest tests/test_winner_health_design_freeze.py -q
+
+  product-experience-observability:
+    if: ${{ false }}
+    # HANDOFF C (Operation Institutionalize): the cross-repo page registry census
+    # and the browser evidence-capture harness. Both suites are pure-pytest with
+    # an injected fake driver — playwright is deliberately NOT installed here and
+    # must never be: a missing browser is a nonzero "verifier_unavailable" outcome
+    # locally, and CI proves only the driver-independent contracts.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install product-experience test deps
+        run: pip install pytest pyyaml
+      - name: page registry — committed-JSON drift guard + derivation contracts
+        run: TZ=UTC python -m pytest tests/test_build_product_page_registry.py -q
+      - name: evidence capture — fake-driver harness contracts
+        run: TZ=UTC python -m pytest tests/test_capture_page_evidence.py -q
