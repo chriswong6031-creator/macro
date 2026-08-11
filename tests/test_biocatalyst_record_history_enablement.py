@@ -1,24 +1,21 @@
-"""The ClinicalTrials.gov Record History RIGHTS enablement, and its fences.
+"""The ClinicalTrials.gov Record History bounded activation, and its fences.
 
-The repository operator cleared exactly ONE of three gates on 2026-08-07
-(``research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md``, Ruling 1): the rights
-gate.  This file is the guard that the ruling did not quietly become an
-activation.  Every assertion here is a fence the ruling explicitly left standing:
+The repository operator cleared the rights gate on 2026-08-07
+(``research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md``, Ruling 1). The
+2026-08-11 forward-clock wave separately arms the runtime and exact four-NCT
+universe. Every assertion here fences that bounded activation:
 
-* the **runtime** gate (``production_enable_env`` / ``default_enabled``) is still
-  off, so nothing collects;
-* the **universe** gate (``allowlist_config_env`` / ``default_allowlist``) is
-  still empty, so even an armed runtime would have nothing to fetch;
+* the **runtime** gate is on only for this reviewed canary path;
+* the **universe** is exactly the four B1 NCTs, never discovery or expansion;
 * the **source-shape canary** is still mandatory, because the transport is an
   undocumented UI-backing route that can change without notice;
-* public projection is still blocked; and
+* public projection is source facts with attribution only; and
 * all seven distribution obligations that bind every surface displaying this
   data are intact.
 
-It also pins that no outcome-family clock was opened.  A clock over a source
-with no proven collection path would record "accruing since 2026-08-07" while
-accruing nothing, which is the exact fabrication this program exists to prevent.
-Clocks open through the activation receipt, never through a config edit.
+It also pins that the frozen policy file is not rewritten to impersonate live
+state. Exactly three clocks open through the activation receipt, never through
+a config boolean, and they accrue from the receipt instant with no backfill.
 """
 from __future__ import annotations
 
@@ -27,6 +24,7 @@ from pathlib import Path
 
 import yaml
 
+from engine.biocatalyst.family_clock import evaluate_family_clocks
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_REGISTRY = ROOT / "config" / "biocatalyst_sources.yml"
@@ -57,14 +55,18 @@ DISTRIBUTION_OBLIGATIONS = {
     "display_source_submitter_responsibility_note",
 }
 
-# The three outcome families the rights ruling made rights-eligible. None of
-# them may have a clock: there is still no active collection path for this
-# source.
+# The three outcome families the bounded source path makes activation-eligible.
 HISTORY_BACKED_FAMILIES = {
     "trial_progression_termination",
     "timing_slip",
     "enrollment_site_change",
 }
+CANARY_NCTS = [
+    "NCT04528082",
+    "NCT05020236",
+    "NCT06602479",
+    "NCT07218380",
+]
 
 
 def _load(path: Path) -> dict:
@@ -123,26 +125,27 @@ def test_the_closed_beta_denominator_mirrors_the_registry_rights_state() -> None
     source = _source()
     assert binding["rights_state"] == source["rights_state"]
     assert binding["production_ingest_allowed"] == source["production_ingest_allowed"]
-    # A denominator, not an activation: the family stays deferred/unavailable.
+    # This artifact remains a denominator, not the activation receipt.
     assert manifest["state"] == "draft_denominator_unarmed"
 
 
 # --------------------------------------------------------------------------
-# What the ruling did NOT do -- the fences that must still hold
+# The bounded activation fences that must still hold
 # --------------------------------------------------------------------------
 
 
-def test_the_runtime_gate_is_still_off_so_nothing_collects() -> None:
+def test_the_runtime_gate_is_armed_for_the_reviewed_canary() -> None:
     canary = _canary()
     assert canary["production_enable_env"] == "BIOCATALYST_HISTORY_ENABLED"
-    assert canary["default_enabled"] is False
+    assert canary["default_enabled"] is True
     assert _source()["collection_target"] == "operator_armed_explicit_nct_allowlist"
 
 
-def test_the_universe_gate_is_still_empty_so_there_is_nothing_to_fetch() -> None:
+def test_the_universe_is_exactly_the_four_b1_ncts() -> None:
     canary = _canary()
     assert canary["allowlist_config_env"] == "BIOCATALYST_CANARY_NCTS"
-    assert canary["default_allowlist"] == []
+    assert canary["default_allowlist"] == CANARY_NCTS
+    assert len(canary["default_allowlist"]) == len(set(canary["default_allowlist"]))
     assert canary["universe_mode"] == "explicit_nct_allowlist"
     assert canary["universe_relation"] == "exact_b1_current_nct_set"
 
@@ -156,9 +159,9 @@ def test_the_source_shape_canary_requirement_is_still_mandatory() -> None:
     assert source["maximum_consecutive_misses"] == 0
 
 
-def test_public_projection_is_still_blocked_and_the_source_is_not_launch_critical() -> None:
+def test_public_projection_is_attributed_source_facts_and_not_launch_critical() -> None:
     source = _source()
-    assert source["public_projection"] == "blocked_until_enable"
+    assert source["public_projection"] == "source_facts_with_attribution"
     assert source["raw_archive"] == "private_only"
     assert source["launch_critical"] is False
 
@@ -180,29 +183,31 @@ def test_the_prohibited_claim_list_survived_the_enablement() -> None:
     } <= prohibited
 
 
-def test_no_outcome_family_clock_was_opened_by_the_rights_enablement() -> None:
-    # The ruling is explicit: a clock over a source with no proven collection
-    # path would record accrual that is not happening.  Clearing a rights flag
-    # makes families gate-ELIGIBLE; it does not start any clock.
-    families = _load(OUTCOME_POLICY)["families"]
+def test_exactly_three_history_families_evaluate_open_but_policy_stays_frozen() -> None:
+    policy = _load(OUTCOME_POLICY)
+    families = policy["families"]
     assert HISTORY_BACKED_FAMILIES <= set(families), sorted(families)
     for name in sorted(HISTORY_BACKED_FAMILIES):
         family = families[name]
         gate = family["entry_gate"]
         assert family["state"] == "clock_not_opened", name
         assert gate["satisfied"] is False, name
-        # BC-O1b landed after the ruling branch fork, so the writer now exists.
-        # The separately controlled runtime/universe gates are what still keep
-        # the source activation-ineligible and prevent fabricated accrual.
-        assert "o1b_outcome_writer" not in gate["unsatisfied_preconditions"], name
-        assert (
-            "eligible_source_registration" in gate["unsatisfied_preconditions"]
-        ), name
-        assert "required_source_not_activation_eligible" in gate["blockers"], name
         assert "clinicaltrials_gov_record_history" in gate["required_source_ids"], name
+    decisions = {
+        decision.family_id: decision
+        for decision in evaluate_family_clocks(
+            policy, _load(SOURCE_REGISTRY), writer_available=True
+        )
+    }
+    assert {name for name, decision in decisions.items() if decision.opened} == (
+        HISTORY_BACKED_FAMILIES
+    )
+    assert policy["clock_activation"]["clock_state_authority"] == (
+        "activation_receipt_not_this_file"
+    )
 
 
-def test_no_family_anywhere_in_the_policy_has_an_open_clock() -> None:
+def test_the_frozen_policy_file_itself_declares_no_open_clock() -> None:
     families = _load(OUTCOME_POLICY)["families"]
     opened = sorted(
         name for name, family in families.items() if family["state"] != "clock_not_opened"

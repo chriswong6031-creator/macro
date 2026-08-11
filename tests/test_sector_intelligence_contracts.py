@@ -746,12 +746,12 @@ def _launch_slo_artifact(
         "object_ref": f"r2://biocatalyst-soak/{kind}/{digest}.json",
         "content_sha256": digest,
         "byte_count": 128,
-        "captured_at": "2026-08-18T00:01:00Z",
+        "captured_at": "2026-08-26T00:01:00Z",
         "scheduled_manifest_id": scheduled_manifest_id,
         "scheduled_manifest_content_sha256": scheduled_manifest_content_sha256,
         "source_id": source_id,
-        "window_start": "2026-08-04T00:00:00Z",
-        "window_end": "2026-08-18T00:00:00Z",
+        "window_start": "2026-08-12T00:00:00Z",
+        "window_end": "2026-08-26T00:00:00Z",
     }
 
 
@@ -765,8 +765,8 @@ def _completed_launch_slo_manifest() -> dict:
     payload["sources"][0]["activation_state"] = "armed"
     payload["soak"] = {
         "required_duration_seconds": 1209600,
-        "window_start": "2026-08-04T00:00:00Z",
-        "window_end": "2026-08-18T00:00:00Z",
+        "window_start": "2026-08-12T00:00:00Z",
+        "window_end": "2026-08-26T00:00:00Z",
         "telemetry_generation_ref": _launch_slo_artifact(
             "telemetry_generation",
             scheduled_manifest_id=predecessor_id,

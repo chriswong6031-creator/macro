@@ -111,13 +111,11 @@ sources:
     etag_semantics: retained_as_transport_metadata_never_content_identity_or_freshness
     license_class: us_government_source_facts
     # Rights gate CLEARED by the named operator ruling of 2026-08-07 (Ruling 1).
-    # This clears exactly ONE of three gates. The runtime gate
-    # (b2_history_canary.production_enable_env / default_enabled) and the
-    # universe gate (allowlist_config_env / default_allowlist) are untouched and
-    # still closed, there is no installed worker or timer for record history, and
-    # NO outcome-family clock is opened by this. `source_shape_canary_required`
-    # stays true: this is an undocumented UI-backing route that can change
-    # without notice, and the canary is the tripwire.
+    # The separately reviewed 2026-08-11 forward-clock activation arms only the
+    # exact four-NCT B1 universe below. `source_shape_canary_required` stays
+    # true: this is an undocumented UI-backing route that can change without
+    # notice, and the canary is the tripwire. The activation receipt, not this
+    # registry comment, is the authority for which family clocks accrue.
     rights_state: official_terms_operator_reviewed_for_bounded_beta
     rights_reviewed_at: "2026-08-07T00:00:00Z"
     rights_review_basis: official_terms_conditions_not_legal_opinion
@@ -125,13 +123,11 @@ sources:
     # RE-BOUND 2026-08-08.  The ruling document gained Ruling 3 (the four
     # subsidiary sponsor rows), which moved its digest.  Ruling 1 — the rights
     # decision this block records — is UNCHANGED in that document; only the
-    # bytes surrounding it moved.  Nothing else in this block was touched: the
-    # runtime gate, the universe gate, the canary requirement, and every clock
-    # remain exactly as the operator left them on 2026-08-07.
+    # bytes surrounding it moved.
     rights_review_ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     production_ingest_allowed: true
     raw_archive: private_only
-    public_projection: blocked_until_enable
+    public_projection: source_facts_with_attribution
     distribution_obligations:
       - attribute_clinicaltrials_gov
       - display_source_processing_date
@@ -440,9 +436,13 @@ b2_history_canary:
   universe_mode: explicit_nct_allowlist
   allowlist_config_env: BIOCATALYST_CANARY_NCTS
   universe_relation: exact_b1_current_nct_set
-  default_allowlist: []
+  default_allowlist:
+    - NCT04528082
+    - NCT05020236
+    - NCT06602479
+    - NCT07218380
   production_enable_env: BIOCATALYST_HISTORY_ENABLED
-  default_enabled: false
+  default_enabled: true
   allowed_contracts:
     - ctgov_history_receipt.v1
     - ctgov_history_run.v1
