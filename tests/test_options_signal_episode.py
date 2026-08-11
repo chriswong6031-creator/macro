@@ -2903,7 +2903,16 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
     )
     assert "push_on_main_ok || exit 0" in checkpoint_block
     assert "push_metadata_replay_commit" in checkpoint_block
-    assert 'git reset --mixed "$OIP_PARENT"' in checkpoint_block
+    assert "git write-tree" in checkpoint_block
+    assert "git commit-tree" in checkpoint_block
+    assert 'git reset -q -- "${OIP_LEDGER_PATHS[@]}"' in checkpoint_block
+    assert "git commit -m" not in checkpoint_block
+    assert 'git reset --mixed "$OIP_PUBLISH"' not in checkpoint_block
+    assert 'git reset --mixed "$OIP_PARENT"' not in checkpoint_block
+    assert "git reset --mixed origin/main" not in checkpoint_block
+    assert checkpoint_block.index("git commit-tree") < checkpoint_block.index(
+        "while push_attempt; do"
+    )
     assert 'git add -- "${OIP_LEDGER_PATHS[@]}"' in checkpoint_block
     assert 'push_staged_clean "${OIP_LEDGER_PATHS[@]}"' in checkpoint_block
 
@@ -2933,7 +2942,15 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         campaign_checkpoint_block
     )
     assert "push_metadata_replay_commit" in campaign_checkpoint_block
-    assert 'git reset --mixed "$OIP_PARENT"' in campaign_checkpoint_block
+    assert "git write-tree" in campaign_checkpoint_block
+    assert "git commit-tree" in campaign_checkpoint_block
+    assert 'git reset -q -- "${OIP_CAMPAIGN_PATHS[@]}"' in (
+        campaign_checkpoint_block
+    )
+    assert "git commit -m" not in campaign_checkpoint_block
+    assert 'git reset --mixed "$OIP_PUBLISH"' not in campaign_checkpoint_block
+    assert 'git reset --mixed "$OIP_PARENT"' not in campaign_checkpoint_block
+    assert "git reset --mixed origin/main" not in campaign_checkpoint_block
     assert 'git add -- "${OIP_CAMPAIGN_PATHS[@]}"' in campaign_checkpoint_block
     expected_campaign_paths = {
         "data/options_signal_campaign/campaigns.jsonl",
@@ -2968,6 +2985,51 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
     assert "steps.options_signal_campaign_publish.outcome != 'success'" in workflow[
         final_gate:
     ]
+
+
+def test_narrow_commit_tree_candidate_cannot_advance_head_on_interruption(
+    tmp_path: Path,
+) -> None:
+    lane = tmp_path / "lane"
+    lane.mkdir()
+
+    def git(*args: str, input_text: str | None = None) -> str:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=lane,
+            text=True,
+            input=input_text,
+            capture_output=True,
+            check=True,
+        )
+        return result.stdout.strip()
+
+    git("init", "-b", "main")
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    owned = lane / "owned.json"
+    owned.write_text('{"version":1}\n')
+    git("add", "owned.json")
+    git("commit", "-m", "baseline")
+    parent = git("rev-parse", "HEAD")
+
+    owned.write_text('{"version":2}\n')
+    git("add", "owned.json")
+    tree = git("write-tree")
+    candidate = git("commit-tree", tree, "-p", parent, input_text="candidate\n")
+    git("reset", "-q", "--", "owned.json")
+
+    assert git("rev-parse", "HEAD") == parent
+    assert git("rev-parse", f"{candidate}^") == parent
+    assert git("show", f"{candidate}:owned.json") == '{"version":2}'
+    assert git("show", "HEAD:owned.json") == '{"version":1}'
+    assert owned.read_text() == '{"version":2}\n'
+    assert subprocess.run(
+        ["git", "diff", "--cached", "--quiet"], cwd=lane, check=False
+    ).returncode == 0
+    assert subprocess.run(
+        ["git", "diff", "--quiet"], cwd=lane, check=False
+    ).returncode == 1
 
 
 def test_session_outcome_registry_has_one_writer_no_authority_consumers() -> None:

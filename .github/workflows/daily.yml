@@ -4114,9 +4114,14 @@ jobs:
           push_staged_clean "${OIP_LEDGER_PATHS[@]}" || exit 1
 
           OIP_PARENT=$(git rev-parse HEAD)
-          git commit -m "options-pit: durable episode checkpoint $(date -u +%F)"
-          OIP_COMMIT=$(git rev-parse HEAD)
-          OIP_MESSAGE=$(git log -1 --format=%B "$OIP_COMMIT")
+          OIP_MESSAGE="options-pit: durable episode checkpoint $(date -u +%F)"
+          # Build an unreachable candidate commit without advancing HEAD. A
+          # timeout/cancellation anywhere before a verified push therefore cannot
+          # leave an unpublished commit for the later broad engine lane to smuggle.
+          OIP_TREE=$(git write-tree)
+          OIP_COMMIT=$(printf '%s\n' "$OIP_MESSAGE" | \
+            git commit-tree "$OIP_TREE" -p "$OIP_PARENT")
+          git reset -q -- "${OIP_LEDGER_PATHS[@]}"
           OIP_REPLAY_INDEX="${RUNNER_TEMP:-/tmp}/options-pit-replay-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}.idx"
 
           while push_attempt; do
@@ -4144,11 +4149,7 @@ jobs:
             push_backoff
           done
           push_lost
-          # Do not let the later broad engine push smuggle this failed narrow
-          # publication. Move only this runner-local commit back to its captured
-          # parent; the broad commit also restores/unstages the owned paths.
-          git reset --mixed "$OIP_PARENT"
-          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the narrow publication was rolled back locally and the run will stay red"
+          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); HEAD never advanced and the run will stay red"
           exit 1
       - name: OIP campaign v2 — checkpoint the exact three canonical ledgers
         id: options_signal_campaign_publish
@@ -4206,9 +4207,13 @@ jobs:
           push_staged_clean "${OIP_CAMPAIGN_PATHS[@]}" || exit 1
 
           OIP_PARENT=$(git rev-parse HEAD)
-          git commit -m "options-campaign-v2: durable checkpoint $(date -u +%F)"
-          OIP_COMMIT=$(git rev-parse HEAD)
-          OIP_MESSAGE=$(git log -1 --format=%B "$OIP_COMMIT")
+          OIP_MESSAGE="options-campaign-v2: durable checkpoint $(date -u +%F)"
+          # Keep the candidate unreachable until origin/main accepts it. This is
+          # interruption-safe: neither timeout nor cancellation can dirty HEAD.
+          OIP_TREE=$(git write-tree)
+          OIP_COMMIT=$(printf '%s\n' "$OIP_MESSAGE" | \
+            git commit-tree "$OIP_TREE" -p "$OIP_PARENT")
+          git reset -q -- "${OIP_CAMPAIGN_PATHS[@]}"
           OIP_REPLAY_INDEX="${RUNNER_TEMP:-/tmp}/options-campaign-v2-replay-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}.idx"
 
           while push_attempt; do
@@ -4236,11 +4241,7 @@ jobs:
             push_backoff
           done
           push_lost
-          # A failed narrow publisher must remain unpublished even though the
-          # later engine step stages data/ broadly. Return this runner-local
-          # commit to its captured parent; the broad exclusion removes leftovers.
-          git reset --mixed "$OIP_PARENT"
-          echo "::error title=options campaign checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the narrow publication was rolled back locally and the run will stay red"
+          echo "::error title=options campaign checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); HEAD never advanced and the run will stay red"
           exit 1
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and

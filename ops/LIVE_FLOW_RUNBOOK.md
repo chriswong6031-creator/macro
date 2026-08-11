@@ -144,9 +144,11 @@ shrink, drift, backdated membership, or forged receipts fail closed.
 The episode publisher owns exactly its four files; the campaign publisher owns
 exactly its three files. Both use narrow metadata replay. Their steps may let
 unrelated render work continue, but a late `OIP PIT integrity` gate makes the
-engine job visibly fail if either build or publication did not succeed. A lost
-narrow push rolls back its runner-local commit, and the broad engine commit
-restores/unstages these seven owned paths so it cannot bypass that refusal.
+engine job visibly fail if either build or publication did not succeed. Narrow
+publishers create unreachable `commit-tree` candidates and never advance local
+`HEAD`; interruption cannot strand an unverified local commit or make upstream
+bytes look locally modified. The broad engine commit also restores/unstages
+these seven owned paths so it cannot bypass a refusal.
 
 Replay older than the 64-session live catch-up window belongs to an explicit
 offline/research restore job. It must consume preserved date-keyed raw stages,
