@@ -2407,30 +2407,84 @@ def test_launchd_crash_recovery_and_installed_worktree_contract():
     payload = plistlib.loads(plist_path.read_bytes())
     assert payload["KeepAlive"] == {"SuccessfulExit": False}
     assert payload["ThrottleInterval"] == 60
-    assert payload["WorkingDirectory"] == "/Users/chriswong/flow-ops-wt"
-    assert payload["ProgramArguments"][0].startswith("/Users/chriswong/flow-ops-wt/")
-    assert payload["ProgramArguments"][1] == "/Users/chriswong/flow-ops-wt/.env"
+    deploy = "/Users/chriswong/chainsnap-ops-wt"
+    assert payload["WorkingDirectory"] == deploy
+    assert payload["ProgramArguments"][0].startswith(f"{deploy}/")
+    assert payload["ProgramArguments"][1] == f"{deploy}/.env"
+    assert payload["EnvironmentVariables"]["PYTHONPATH"] == deploy
+    assert all(
+        "/Users/chriswong/flow-ops-wt" not in argument
+        for argument in payload["ProgramArguments"]
+    )
 
 
 def test_runbook_pins_exact_clock_join_recovery_and_installed_reload_order():
     runbook = (Path(__file__).parents[1] / "ops/CHAIN_SNAPSHOTS_RUNBOOK.md").read_text()
     assert "`(root, expiration, strike, right, snapshot_ts)`" in runbook
     assert "non-null second Greek" in runbook
-    assert "/Users/chriswong/flow-ops-wt" in runbook
-    assert "/Users/chriswong/chainsnap-ops-wt" not in runbook
+    assert "/Users/chriswong/chainsnap-ops-wt" in runbook
+    assert "/Users/chriswong/flow-ops-wt/data/chain_snapshots" in runbook
+    assert "standalone shallow clone" in runbook
+    assert "exact symlink" in runbook
+    rollout = runbook.split("trap restore_on_error EXIT", 1)[1].split(
+        "ROLLOUT_COMMITTED=1", 1
+    )[0]
     commands = [
-        "launchctl unload",
-        "cp /Users/chriswong/flow-ops-wt/ops/launchd/",
-        "plutil -lint",
-        "launchctl load",
-        "launchctl print",
+        'launchctl bootout "$DOMAIN/$LABEL"',
+        "git clone --depth 1",
+        'ln -s "$STATE"',
+        'cmp "$BEFORE_MANIFEST" "$VIA_DEPLOY_MANIFEST"',
+        'plutil -lint "$NEW/ops/launchd/$LABEL.plist"',
+        'install -m 644 "$DEPLOY/ops/launchd/$LABEL.plist"',
+        'plutil -lint "$PLIST"',
+        'launchctl bootstrap "$DOMAIN" "$PLIST"',
+        'launchctl print "$DOMAIN/$LABEL" | grep -F "$DEPLOY"',
     ]
-    positions = [runbook.index(command) for command in commands]
+    positions = [rollout.index(command) for command in commands]
     assert positions == sorted(positions)
     assert "KeepAlive.SuccessfulExit=false" in runbook
     assert "relative-path, byte-size, and SHA-256" in runbook
     assert "producer is stopped" in runbook
     assert "Never copy or restore this state after the producer starts" in runbook
+    assert "pgrep -f 'scripts[.]chain_snapshot_poller'" in runbook
+    assert "Do not use `launchctl kickstart`" in runbook
+    assert "restore_on_error" in runbook
+    assert "rollout() (" in runbook
+    assert "trap 'exit 130' INT" in runbook
+    assert "trap 'exit 143' TERM" in runbook
+    assert "set +e" in runbook
+    assert "SWAPPED" not in runbook
+    assert "ROLLBACK_STOPPED=1" in runbook
+    assert "HARD MANUAL STOP: scheduler/PID still active" in runbook
+    assert '"$PRIOR_DEPLOY_READY" -eq 1' in runbook
+    assert 'merge-base --is-ancestor "$EXPECTED_MERGE" origin/main' in runbook
+    assert 'test ! -L "$STATE"' in runbook
+    assert 'for _ in $(seq 1 13)' in runbook
+    assert "assert_rollout_window()" in runbook
+    assert runbook.count("assert_rollout_window") == 4
+    assert 'if [ "$DOW" -le 5 ] && [ "$HHMM" -lt 1325 ]' in runbook
+    assert '"$HHMM" -ge 0600' not in runbook
+    assert rollout.count("assert_rollout_window") == 2
+
+    live_runbook = (
+        Path(__file__).parents[1] / "ops/LIVE_FLOW_RUNBOOK.md"
+    ).read_text()
+    normalized_live_runbook = " ".join(live_runbook.split())
+    assert "| `chainsnap-ops-wt` | `com.mastermind.chainsnapshots` |" in live_runbook
+    assert (
+        "`liveflow-ops-wt` never owns or carries chain state"
+        in normalized_live_runbook
+    )
+    assert (
+        "exact `data/chain_snapshots` symlink to the physical authority"
+        in live_runbook
+    )
+
+
+def test_chain_snapshot_runtime_ignore_covers_directory_and_deploy_symlink():
+    ignore = (Path(__file__).parents[1] / ".gitignore").read_text().splitlines()
+    assert "data/chain_snapshots" in ignore
+    assert "data/chain_snapshots/" not in ignore
 
 
 def _leave_close_decision_only(

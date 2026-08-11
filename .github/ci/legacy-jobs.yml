@@ -6789,6 +6789,8 @@ jobs:
           tests/test_market_memory_retrieval.py
           tests/test_market_memory_operating_cortex.py
           tests/test_market_memory_promotion_audit.py
+          tests/test_market_memory_production_records.py
+          tests/test_market_memory_production_records_deploy.py
           tests/test_market_memory_projection.py
           tests/test_market_memory_trusted.py
           tests/test_market_memory_context_deploy.py

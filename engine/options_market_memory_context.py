@@ -37,9 +37,10 @@ AUDIT_SCHEMA = "options.market_memory_context_audit/v1"
 REFERENCE_PREFIX = "omctxref_"
 AUDIT_PREFIX = "omctxaudit_"
 
-_MAX_REFERENCE_BYTES = 256 * 1024
-_MAX_AUDIT_BYTES = 512 * 1024
-_MAX_REFERENCES = 25_000
+_MAX_REFERENCE_BYTES = 8 * 1024
+_MAX_AUDIT_BYTES = 64 * 1024
+_MAX_REFERENCE_SET_BYTES = 8 * 1024 * 1024
+_MAX_REFERENCES = 4_096
 _MAX_CONFIG_BYTES = 32 * 1024
 
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
@@ -380,28 +381,13 @@ def _episode_owner(episode: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _campaign_owner(
-    campaign: Mapping[str, Any],
-    *,
-    episodes: Sequence[Mapping[str, Any]],
-    h60_outcomes: Sequence[Mapping[str, Any]],
+def _campaign_owner_from_replay(
+    row: Mapping[str, Any], episode_by_id: Mapping[str, Mapping[str, Any]]
 ) -> dict[str, Any]:
-    row = copy.deepcopy(dict(campaign))
-    episode_rows = [copy.deepcopy(dict(item)) for item in episodes]
-    outcome_rows = [copy.deepcopy(dict(item)) for item in h60_outcomes]
-    try:
-        options_signal_episode.validate_campaign_against_sources(
-            row, episode_rows, outcome_rows
-        )
-    except options_signal_episode.ContractError as exc:
-        raise OptionsMarketMemoryContextError(
-            "owner campaign fails its exact episode/outcome replay"
-        ) from exc
     anchor_id = row["anchor"]["episode_id"]
-    anchors = [item for item in episode_rows if item.get("episode_id") == anchor_id]
-    if len(anchors) != 1:
-        _fail("campaign anchor episode is absent or ambiguous")
-    anchor = anchors[0]
+    anchor = episode_by_id.get(anchor_id)
+    if anchor is None:
+        _fail("campaign anchor episode is absent")
     event_dt, event_time = _exact_utc(
         anchor["event_time"], field="campaign.anchor.event_time"
     )
@@ -420,6 +406,29 @@ def _campaign_owner(
         "requested_as_of_basis": "campaign_formed_at_anchor_available_at",
         "evidence_phase": row["evidence_phase"],
     }
+
+
+def _campaign_owner(
+    campaign: Mapping[str, Any],
+    *,
+    episodes: Sequence[Mapping[str, Any]],
+    h60_outcomes: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    row = copy.deepcopy(dict(campaign))
+    episode_rows = [copy.deepcopy(dict(item)) for item in episodes]
+    outcome_rows = [copy.deepcopy(dict(item)) for item in h60_outcomes]
+    try:
+        options_signal_episode.validate_campaign_against_sources(
+            row, episode_rows, outcome_rows
+        )
+    except options_signal_episode.ContractError as exc:
+        raise OptionsMarketMemoryContextError(
+            "owner campaign fails its exact episode/outcome replay"
+        ) from exc
+    episode_by_id = {item["episode_id"]: item for item in episode_rows}
+    if len(episode_by_id) != len(episode_rows):
+        _fail("campaign source episodes are not unique")
+    return _campaign_owner_from_replay(row, episode_by_id)
 
 
 def _receipt_validator(receipt: Mapping[str, Any]) -> dict[str, Any]:
@@ -571,9 +580,9 @@ def _resolve(
         if not isinstance(canary_identity, CanaryIdentitySnapshot):
             _fail("preloaded canary identity is malformed")
         identity_snapshot = canary_identity
-    symbol, subject, config_sha256 = _validate_canary_identity_snapshot(
-        identity_snapshot
-    )
+    symbol = identity_snapshot.symbol
+    subject = identity_snapshot.subject
+    config_sha256 = identity_snapshot.config_sha256
     if owner["ticker"] != symbol:
         return _reference(
             owner=owner,
@@ -650,6 +659,50 @@ def resolve_campaign_context_reference(
         config_path=config_path,
         canary_identity=canary_identity,
     )
+
+
+def resolve_campaign_context_references(
+    campaigns: Sequence[Mapping[str, Any]],
+    *,
+    episodes: Sequence[Mapping[str, Any]],
+    h60_outcomes: Sequence[Mapping[str, Any]],
+    reader: StoredAsKnownAtReader,
+    config_path: str | Path = market_memory_identity.DEFAULT_CONFIG_PATH,
+    canary_identity: CanaryIdentitySnapshot | None = None,
+) -> list[dict[str, Any]]:
+    """Replay a campaign corpus once, then resolve every exact owner query."""
+
+    if not isinstance(campaigns, Sequence) or len(campaigns) > _MAX_REFERENCES:
+        _fail("campaign corpus exceeds the bounded reference set")
+    if not isinstance(episodes, Sequence) or len(episodes) > _MAX_REFERENCES:
+        _fail("campaign episode corpus exceeds the bounded reference set")
+    if not isinstance(h60_outcomes, Sequence) or len(h60_outcomes) > _MAX_REFERENCES:
+        _fail("campaign outcome corpus exceeds the bounded reference set")
+    campaign_rows = [copy.deepcopy(dict(item)) for item in campaigns]
+    episode_rows = [copy.deepcopy(dict(item)) for item in episodes]
+    outcome_rows = [copy.deepcopy(dict(item)) for item in h60_outcomes]
+    try:
+        expected, _pending = options_signal_episode.derive_campaigns(
+            episode_rows, outcome_rows
+        )
+    except options_signal_episode.ContractError as exc:
+        raise OptionsMarketMemoryContextError(
+            "campaign corpus fails exact episode/outcome replay"
+        ) from exc
+    if campaign_rows != expected:
+        _fail("campaign corpus differs from exact episode/outcome replay")
+    episode_by_id = {item["episode_id"]: item for item in episode_rows}
+    if len(episode_by_id) != len(episode_rows):
+        _fail("campaign source episodes are not unique")
+    return [
+        _resolve(
+            owner=_campaign_owner_from_replay(row, episode_by_id),
+            reader=reader,
+            config_path=config_path,
+            canary_identity=canary_identity,
+        )
+        for row in campaign_rows
+    ]
 
 
 def validate_context_reference(value: Mapping[str, Any]) -> dict[str, Any]:
@@ -866,7 +919,7 @@ def _source_artifact(value: object) -> dict[str, Any]:
     ):
         _fail("source artifact path must be normalized and repository-relative")
     _match(row["sha256"], _SHA256, field="source artifact sha256")
-    if type(row["bytes"]) is not int or not 1 <= row["bytes"] <= 64 * 1024 * 1024:
+    if type(row["bytes"]) is not int or not 1 <= row["bytes"] <= 8 * 1024 * 1024:
         _fail("source artifact byte count is invalid")
     if (
         type(row["record_count"]) is not int
@@ -900,6 +953,30 @@ def _generation_receipt(value: object) -> dict[str, Any]:
     return row
 
 
+def _validated_reference_set(
+    references: Sequence[Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], bytes]:
+    if not isinstance(references, Sequence) or len(references) > _MAX_REFERENCES:
+        _fail("reference set exceeds the bounded corpus")
+    clean = [validate_context_reference(row) for row in references]
+    owner_keys = [(row["owner"]["schema"], row["owner"]["id"]) for row in clean]
+    if owner_keys != sorted(owner_keys) or len(owner_keys) != len(set(owner_keys)):
+        _fail("references must be sorted by unique owner identity")
+    body = _canonical_bytes(clean)
+    if len(body) > _MAX_REFERENCE_SET_BYTES:
+        _fail("canonical reference set exceeds its aggregate byte bound")
+    return clean, body
+
+
+def canonical_reference_set_bytes(
+    references: Sequence[Mapping[str, Any]],
+) -> bytes:
+    """Return the bounded canonical bytes sealed by an audit receipt."""
+
+    _clean, body = _validated_reference_set(references)
+    return body
+
+
 def build_audit_receipt(
     *,
     references: Sequence[Mapping[str, Any]],
@@ -909,15 +986,7 @@ def build_audit_receipt(
 ) -> dict[str, Any]:
     """Seal one bounded coverage receipt over exact owner/store snapshots."""
 
-    if not isinstance(references, Sequence) or len(references) > _MAX_REFERENCES:
-        _fail("audit references exceed the bounded corpus")
-    clean_references = [validate_context_reference(row) for row in references]
-    owner_keys = [
-        (row["owner"]["schema"], row["owner"]["id"])
-        for row in clean_references
-    ]
-    if owner_keys != sorted(owner_keys) or len(owner_keys) != len(set(owner_keys)):
-        _fail("audit references must be sorted by unique owner identity")
+    clean_references, reference_body = _validated_reference_set(references)
     if not isinstance(source_artifacts, Sequence) or len(source_artifacts) != len(
         _SOURCE_PATHS
     ):
@@ -960,7 +1029,7 @@ def build_audit_receipt(
         "audited_at": audited_at,
         "source_artifacts": clean_sources,
         "context_generations": clean_generations,
-        "reference_set_sha256": _digest(clean_references),
+        "reference_set_sha256": hashlib.sha256(reference_body).hexdigest(),
         "counts": counts,
         "evidence_policy": dict(EVIDENCE_POLICY),
         "authority": dict(market_memory.AUTHORITY),
@@ -1036,20 +1105,10 @@ def validate_audit_receipt(
     ):
         _fail("audit owner source counts differ from reference counts")
     if references is not None:
-        if not isinstance(references, Sequence) or len(references) > _MAX_REFERENCES:
-            _fail("supplied audit references exceed the bounded corpus")
-        clean_references = [validate_context_reference(row) for row in references]
-        owner_keys = [
-            (row["owner"]["schema"], row["owner"]["id"])
-            for row in clean_references
-        ]
-        if owner_keys != sorted(owner_keys) or len(owner_keys) != len(
-            set(owner_keys)
-        ):
-            _fail("supplied audit references must be sorted by unique owner identity")
+        clean_references, reference_body = _validated_reference_set(references)
         if len(clean_references) != counts["references"]:
             _fail("audit reference count differs from supplied references")
-        if _digest(clean_references) != reference_digest:
+        if hashlib.sha256(reference_body).hexdigest() != reference_digest:
             _fail("audit reference digest differs from supplied references")
         derived_dispositions = Counter(row["disposition"] for row in clean_references)
         derived_reasons = Counter(
@@ -1104,8 +1163,10 @@ __all__ = [
     "PinnedCompositeAsKnownAtReader",
     "StoredAsKnownAtReader",
     "build_audit_receipt",
+    "canonical_reference_set_bytes",
     "load_canary_identity_snapshot",
     "resolve_campaign_context_reference",
+    "resolve_campaign_context_references",
     "resolve_episode_context_reference",
     "validate_audit_receipt",
     "validate_context_reference",
