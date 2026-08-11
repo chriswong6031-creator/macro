@@ -19,6 +19,7 @@ from engine.neuralweb import market_memory_pit as pit
 from engine.neuralweb import market_memory_trusted as trusted
 from scripts import initialize_market_memory_w1a as w1a_initializer
 from scripts import project_market_memory_context as writer_module
+from tests.test_market_memory_pit import CAPTURED_AT, _packet
 
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY = ROOT / "app" / "deploy"
@@ -383,6 +384,37 @@ def test_w1a_initializer_creates_only_idempotent_empty_metadata(
     }
     assert second == first
     assert second_files == first_files
+
+
+def test_w1a_initializer_authenticates_existing_capture_without_mutation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    store = tmp_path / "public"
+    monkeypatch.setattr(pit, "_utc_now", lambda: CAPTURED_AT)
+    stored = pit.capture_context(store, _packet())
+    before = {
+        path.relative_to(store): path.read_bytes()
+        for path in store.rglob("*")
+        if path.is_file()
+    }
+
+    result = w1a_initializer.initialize_w1a_store(store)
+
+    after = {
+        path.relative_to(store): path.read_bytes()
+        for path in store.rglob("*")
+        if path.is_file()
+    }
+    assert result["capture_count"] == 1
+    assert (
+        result["generation_id"]
+        == pit.FileAsKnownAtReader(store).read_pinned_generation().generation_id
+    )
+    assert stored.capture_receipt["query_id"] in {
+        row.query_id
+        for row in pit.FileAsKnownAtReader(store).read_pinned_generation().captures
+    }
+    assert after == before
 
 
 def test_w1a_initializer_rejects_symlink_permission_and_tamper(
