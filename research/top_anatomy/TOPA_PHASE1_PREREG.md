@@ -230,3 +230,8 @@ gauntlet.
   DM). Headline, in the freeze's own terms: the duration/length-bias half of the artifact story is
   DISCHARGED for B2/F3 (and for B3 on the wide tier only); the anchor-geometry half is
   affirmatively measured as sufficient-magnitude and passes, decidable, to AM-v2.
+- **2026-08-11 — CORRECTION (append-only) to the DM-verdicts entry above:** the B2 anchor-comparison
+  ratio pair "0.94× / 0.74×" misstates r63. Correct: DM points vs W2's duration-unmatched points
+  are **1.28×** (r63: +4.947 vs +3.87) and **0.74×** (atrz: +2.885 vs +3.92); both points remain
+  INSIDE W2's CIs and the declared branch conclusion is unchanged. (Primary vs phase-0's +1.29 is
+  0.74× — the likely source of the transposition.)
