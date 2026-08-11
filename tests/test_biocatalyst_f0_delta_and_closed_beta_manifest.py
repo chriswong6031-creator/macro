@@ -367,10 +367,14 @@ def test_closed_beta_manifest_binds_a_successor_of_the_fourteen_day_launch_slo()
     assert binding["required_soak_duration_seconds"] == 1209600
     assert binding["successor_manifest_required_before_soak_scheduling"] is True
 
-    # The SLO manifest's own scheduling blockers must survive, plus the new one.
+    # The source soak has cleared its own blockers. Closed-beta launch remains
+    # separately blocked until its full mandatory source denominator is met.
     assert set(slo["soak"]["scheduling_blockers"]) <= set(
         binding["soak_scheduling_blockers"]
     )
+    assert binding["soak_scheduling_blockers"] == [
+        "closed_beta_source_denominator_not_met"
+    ]
     assert "closed_beta_source_denominator_not_met" in binding[
         "soak_scheduling_blockers"
     ]
