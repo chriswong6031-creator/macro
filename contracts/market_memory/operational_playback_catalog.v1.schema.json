@@ -1,0 +1,456 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/operational_playback_catalog.v1.schema.json",
+  "title": "Market Memory exact operational playback preparation catalog v1",
+  "description": "A deterministic preparation page over two independently pinned W1 operational_pit generation indexes. The catalog enumerates published actual-output receipts only; it does not execute playback, include playback evidence, or claim opportunity completeness, historical reconstruction, cross-store atomicity, source signatures, outcomes, scores, or authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 10,
+  "maxProperties": 10,
+  "required": [
+    "schema",
+    "catalog_id",
+    "mode",
+    "subject",
+    "generations",
+    "selection",
+    "entries",
+    "coverage",
+    "replay_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.operational_playback_catalog.v1"},
+    "catalog_id": {
+      "type": "string",
+      "minLength": 75,
+      "maxLength": 75,
+      "pattern": "^mmplayback_[a-f0-9]{64}$"
+    },
+    "mode": {"const": "actual_output_operational_pit"},
+    "subject": {"$ref": "#/$defs/subject"},
+    "generations": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {"$ref": "#/$defs/w1aGeneration"},
+        {"$ref": "#/$defs/trustedGeneration"}
+      ],
+      "items": false
+    },
+    "selection": {"$ref": "#/$defs/selection"},
+    "entries": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {"$ref": "#/$defs/entry"}
+    },
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "replay_policy": {"$ref": "#/$defs/replayPolicy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "securityId": {
+      "type": "string",
+      "minLength": 75,
+      "maxLength": 75,
+      "pattern": "^mmsecurity_[a-f0-9]{64}$"
+    },
+    "generationId": {
+      "type": "string",
+      "minLength": 77,
+      "maxLength": 77,
+      "pattern": "^mmgeneration_[a-f0-9]{64}$"
+    },
+    "storeId": {
+      "type": "string",
+      "minLength": 72,
+      "maxLength": 72,
+      "pattern": "^mmstore_[a-f0-9]{64}$"
+    },
+    "queryId": {
+      "type": "string",
+      "minLength": 72,
+      "maxLength": 72,
+      "pattern": "^mmquery_[a-f0-9]{64}$"
+    },
+    "contextId": {
+      "type": "string",
+      "minLength": 70,
+      "maxLength": 70,
+      "pattern": "^mmctx_[a-f0-9]{64}$"
+    },
+    "captureId": {
+      "type": "string",
+      "minLength": 74,
+      "maxLength": 74,
+      "pattern": "^mmcapture_[a-f0-9]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "maxLength": 27,
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.(?!000000)[0-9]{6})?Z$"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 2,
+      "maxProperties": 2,
+      "required": ["subject_id", "instrument_id"],
+      "properties": {
+        "subject_id": {"$ref": "#/$defs/securityId"},
+        "instrument_id": {"$ref": "#/$defs/securityId"}
+      }
+    },
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 5,
+      "maxProperties": 5,
+      "required": [
+        "profile",
+        "store_id",
+        "generation_id",
+        "generation_sha256",
+        "capture_count"
+      ],
+      "properties": {
+        "profile": {
+          "enum": [
+            "market_memory.w1a.missing_only.v1",
+            "market_memory.trusted.macro_regime_canary.v1"
+          ]
+        },
+        "store_id": {"$ref": "#/$defs/storeId"},
+        "generation_id": {"$ref": "#/$defs/generationId"},
+        "generation_sha256": {"$ref": "#/$defs/sha256"},
+        "capture_count": {"type": "integer", "minimum": 0, "maximum": 4096}
+      }
+    },
+    "w1aGeneration": {
+      "allOf": [
+        {"$ref": "#/$defs/generation"},
+        {
+          "properties": {
+            "profile": {"const": "market_memory.w1a.missing_only.v1"}
+          }
+        }
+      ]
+    },
+    "trustedGeneration": {
+      "allOf": [
+        {"$ref": "#/$defs/generation"},
+        {
+          "properties": {
+            "profile": {"const": "market_memory.trusted.macro_regime_canary.v1"}
+          }
+        }
+      ]
+    },
+    "continuation": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 5,
+      "maxProperties": 5,
+      "required": [
+        "subject",
+        "w1a_generation_id",
+        "trusted_generation_id",
+        "offset",
+        "limit"
+      ],
+      "properties": {
+        "subject": {"$ref": "#/$defs/subject"},
+        "w1a_generation_id": {"$ref": "#/$defs/generationId"},
+        "trusted_generation_id": {"$ref": "#/$defs/generationId"},
+        "offset": {"type": "integer", "minimum": 0, "maximum": 8192},
+        "limit": {"type": "integer", "minimum": 1, "maximum": 100}
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 7,
+      "maxProperties": 7,
+      "required": [
+        "offset",
+        "limit",
+        "ordering",
+        "total_matching",
+        "returned",
+        "truncated",
+        "continuation"
+      ],
+      "properties": {
+        "offset": {"type": "integer", "minimum": 0, "maximum": 8192},
+        "limit": {"type": "integer", "minimum": 1, "maximum": 100},
+        "ordering": {
+          "const": "as_known_at_desc.event_time_desc.query_id_asc.context_id_asc.v1"
+        },
+        "total_matching": {"type": "integer", "minimum": 0, "maximum": 8192},
+        "returned": {"type": "integer", "minimum": 0, "maximum": 100},
+        "truncated": {"type": "boolean"},
+        "continuation": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/continuation"}
+          ]
+        }
+      }
+    },
+    "profile": {
+      "enum": [
+        "market_memory.w1a.missing_only.v1",
+        "market_memory.trusted.macro_regime_canary.v1"
+      ]
+    },
+    "captureProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 3,
+      "maxProperties": 3,
+      "required": ["profile", "capture_id", "captured_at"],
+      "properties": {
+        "profile": {"$ref": "#/$defs/profile"},
+        "capture_id": {"$ref": "#/$defs/captureId"},
+        "captured_at": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "w1aCaptureProvenance": {
+      "allOf": [
+        {"$ref": "#/$defs/captureProvenance"},
+        {
+          "properties": {
+            "profile": {"const": "market_memory.w1a.missing_only.v1"}
+          }
+        }
+      ]
+    },
+    "trustedCaptureProvenance": {
+      "allOf": [
+        {"$ref": "#/$defs/captureProvenance"},
+        {
+          "properties": {
+            "profile": {"const": "market_memory.trusted.macro_regime_canary.v1"}
+          }
+        }
+      ]
+    },
+    "domainStatus": {
+      "enum": ["observed", "partial", "degraded", "missing"]
+    },
+    "domainState": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 2,
+      "maxProperties": 2,
+      "required": ["domain", "status"],
+      "properties": {
+        "domain": {
+          "enum": [
+            "macro",
+            "rates_credit",
+            "breadth_factors",
+            "technicals",
+            "options",
+            "positioning_flows",
+            "dark_pool",
+            "intraday_microstructure",
+            "fundamentals",
+            "earnings",
+            "news_narrative",
+            "alt_data",
+            "prophet_context",
+            "system_health"
+          ]
+        },
+        "status": {"$ref": "#/$defs/domainStatus"}
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 8,
+      "maxProperties": 8,
+      "required": [
+        "ordinal",
+        "capture_provenance",
+        "query_id",
+        "context_id",
+        "packet_sha256",
+        "event_time",
+        "as_known_at",
+        "domain_states"
+      ],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 0, "maximum": 8192},
+        "capture_provenance": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "prefixItems": [{"$ref": "#/$defs/captureProvenance"}],
+              "items": false
+            },
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "prefixItems": [
+                {"$ref": "#/$defs/w1aCaptureProvenance"},
+                {"$ref": "#/$defs/trustedCaptureProvenance"}
+              ],
+              "items": false
+            }
+          ]
+        },
+        "query_id": {"$ref": "#/$defs/queryId"},
+        "context_id": {"$ref": "#/$defs/contextId"},
+        "packet_sha256": {"$ref": "#/$defs/sha256"},
+        "event_time": {"$ref": "#/$defs/timestamp"},
+        "as_known_at": {"$ref": "#/$defs/timestamp"},
+        "domain_states": {
+          "type": "array",
+          "minItems": 14,
+          "maxItems": 14,
+          "prefixItems": [
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "macro"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "rates_credit"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "breadth_factors"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "technicals"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "options"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "positioning_flows"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "dark_pool"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "intraday_microstructure"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "fundamentals"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "earnings"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "news_narrative"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "alt_data"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "prophet_context"}}}]},
+            {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "system_health"}}}]}
+          ],
+          "items": false
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 6,
+      "maxProperties": 6,
+      "required": [
+        "receipt_index_scan_complete",
+        "returned_entries_packet_closure_validated",
+        "off_page_packets_validated",
+        "captured_opportunity_population_complete",
+        "historical_coverage_complete",
+        "cross_store_atomic_snapshot"
+      ],
+      "properties": {
+        "receipt_index_scan_complete": {"const": true},
+        "returned_entries_packet_closure_validated": {"const": true},
+        "off_page_packets_validated": {"const": false},
+        "captured_opportunity_population_complete": {"const": false},
+        "historical_coverage_complete": {"const": false},
+        "cross_store_atomic_snapshot": {"const": false}
+      }
+    },
+    "replayPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 15,
+      "maxProperties": 15,
+      "required": [
+        "catalog_only",
+        "playback_execution_performed",
+        "playback_evidence_included",
+        "exact_captured_contexts_only",
+        "reconstruction_performed",
+        "nearest_fallback",
+        "latest_fallback",
+        "request_time_materialization",
+        "private_evidence_read",
+        "labels_outcomes_scores_included",
+        "identical_query_deduplication",
+        "catalog_content_addressed",
+        "origin_signature_authenticated",
+        "capture_clock_externally_authenticated",
+        "generation_pin_order"
+      ],
+      "properties": {
+        "catalog_only": {"const": true},
+        "playback_execution_performed": {"const": false},
+        "playback_evidence_included": {"const": false},
+        "exact_captured_contexts_only": {"const": true},
+        "reconstruction_performed": {"const": false},
+        "nearest_fallback": {"const": false},
+        "latest_fallback": {"const": false},
+        "request_time_materialization": {"const": false},
+        "private_evidence_read": {"const": false},
+        "labels_outcomes_scores_included": {"const": false},
+        "identical_query_deduplication": {"const": "dual_capture_provenance"},
+        "catalog_content_addressed": {"const": true},
+        "origin_signature_authenticated": {"const": false},
+        "capture_clock_externally_authenticated": {"const": false},
+        "generation_pin_order": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {"const": "market_memory.w1a.missing_only.v1"},
+            {"const": "market_memory.trusted.macro_regime_canary.v1"}
+          ],
+          "items": false
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 15,
+      "maxProperties": 15,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
