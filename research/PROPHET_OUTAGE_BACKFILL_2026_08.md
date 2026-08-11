@@ -18,8 +18,10 @@ This document is the design of record for the backfill PR. §0 gates are the
    NOT reconstructed (see §2 refusal). 2026-08-10 forward belongs to the live
    nightly.
 2. **Pinned population and receipted current-engine inputs.** The replay reads the genuine
-   `as_of=2026-08-07` board (post-heal staleness block), plus the event-time
-   plans baseline, each pinned by commit SHA. A separately pinned current
+   79-row `as_of=2026-08-07` incident board at `b3d3c38...`, validates its
+   exact raw blob, and applies only #5241's measured panel-session clamp in
+   memory. The event-time plan baseline is separately pinned at `5d06ee6...`.
+   A separately pinned current
    plans baseline supplies collision authority. All three SHAs are recorded in
    the backfill receipt, together with the immutable refusal-checkpoint SHA.
    The operator ordered the **current** engine, whose post-selection enrichments
@@ -91,12 +93,14 @@ This document is the design of record for the backfill PR. §0 gates are the
   enrichments intentionally come from the operator-ordered current engine and
   are pinned/receipted at execution. They are not represented as event-time
   byte-for-byte inputs.
-- The board it read is still on main (`site/factordata/us_standouts.json`,
-  `as_of=2026-08-07`), and the 2026-08-10 closing-bell render re-derived its
-  staleness block through the healed `_panel_price_reach`:
-  `mixed_vintage: false`, `off_majority_tickers: [CTRA, CWEN-A, TPH]` (real
-  strays, not weekend riders). The replay input already exists at the right
-  vintage on main — pin its SHA.
+- The exact generated incident board survives at `b3d3c38...`
+  (`site/factordata/us_standouts.json`, `as_of=2026-08-07`, 79 buys). Its raw
+  panel receipt is `through=2026-08-09`, `majority_through=2026-08-07`,
+  `members_at_through=6`, `members_total=1758`, `mixed_vintage=true`.
+  Applying #5241's session clamp changes only that receipt to
+  `through=2026-08-07`, `through_raw=2026-08-09`, `1758/1758`,
+  `mixed_vintage=false`, `off_majority_tickers=[]`; ranked rows stay unchanged.
+  A different current board has 81 buys and is not a substitute.
 - All origination clock gates are relative to the `asof` parameter
   (`engine/prophet_bridge.py:585-671`; `scripts/build_prophet.py --date`,
   `:1384-1391`): `price_basis_date(2026-08-07) ==
@@ -140,8 +144,9 @@ to run twice — idempotence via the disclosure artifact):
 
 1. Population/collision inputs (all pinned, passed as SHAs on the CLI, recorded
    in the receipt):
-   - `--board-commit <sha>`: commit on main whose
-     `site/factordata/us_standouts.json` is the healed 08-07 board.
+   - `--board-commit b3d3c38...`: exact generated incident board. The script
+     validates its raw SHA-256 and five-field poisoned panel receipt, then
+     applies the fully enumerated #5241 session-clamp receipt in memory.
    - `--event-baseline-commit <sha>`: the plan set at the scheduled event's
      checkout (`5d06ee689...`), used for duplicate/open-plan suppression so the
      replay can reproduce the receipted 30-row refusal population.

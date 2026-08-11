@@ -153,9 +153,11 @@ after a multi-day origination outage. Design of record:
 intake end to end and refused all 30 eligible candidates at `clock_provenance`,
 because the board it read carried a poisoned
 `staleness.inputs.panel.mixed_vintage=true`. PR #5241 healed the derivation. The
-replay uses the recovered 79-row incident board and applies that one proven session-
-clamp correction to its staleness receipt before the unchanged engine sees it; every
-ranked row stays untouched. The durable checkpoint from run `31340764145` is loaded
+replay uses the exact recovered 79-row incident board at `b3d3c38...`, validates its
+raw blob hash, and applies the fully enumerated #5241 session-clamp correction to its
+staleness receipt before the unchanged engine sees it; every ranked row stays
+untouched. The event plan baseline is separately pinned at `5d06ee6...`. The durable
+checkpoint from run `31340764145` is loaded
 as an immutable 30-identity allowlist, and the write refuses unless the healed replay
 partitions exactly those 30 rows. The exception permits replaying that ONE refusal at
 `recorded_at=2026-08-09`. It does not permit any other date:

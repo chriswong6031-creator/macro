@@ -109,6 +109,10 @@ RECEIPT_SCHEMA = "prophet.origination_receipt/v1"
 REFUSAL_RUN_ID = "31340764145"
 REFUSAL_ENGINE_JOB_ID = "93332847126"
 EVENT_CHECKOUT_SHA = "5d06ee689bec47e0ec8c1079c5545c5091c79411"
+INCIDENT_BOARD_SHA = "b3d3c38bdce5cd9934da68cb1b3743b5fe6f484b"
+INCIDENT_BOARD_BLOB_SHA256 = (
+    "0ac356cb84188c5e180a3455ff37a6284b3d6c39f23e02ba5f808840466020cc"
+)
 REFUSAL_CHECKPOINT_SHA = "8421e4783f141248656c850bfd61d1e15a6aeb97"
 REFUSAL_CHECKPOINT_PATH = "site/prophet/index.json"
 
@@ -121,6 +125,23 @@ EXPECTED_REFUSAL_PARTITION: dict[str, Any] = {
     "validation_failed": 30,
     "originated": 0,
     "lossless": True,
+}
+
+_INCIDENT_PANEL_RECEIPT: dict[str, Any] = {
+    "through": "2026-08-09",
+    "majority_through": "2026-08-07",
+    "members_at_through": 6,
+    "members_total": 1758,
+    "mixed_vintage": True,
+}
+_HEALED_PANEL_RECEIPT: dict[str, Any] = {
+    "through": "2026-08-07",
+    "through_raw": "2026-08-09",
+    "majority_through": "2026-08-07",
+    "members_at_through": 1758,
+    "members_total": 1758,
+    "mixed_vintage": False,
+    "off_majority_tickers": [],
 }
 
 _MIXED_VINTAGE_REFUSAL = (
@@ -665,6 +686,72 @@ def _load_authorized_refusal_checkpoint(repo: Path) -> dict[str, Any]:
     return _validate_refusal_checkpoint_payload(payload)
 
 
+def _prepare_replay_board(
+    board_blob: bytes,
+    *,
+    board_sha: str,
+    checkpoint: dict[str, Any],
+) -> tuple[dict[str, Any], bytes, dict[str, Any]]:
+    """Apply only #5241's measured session clamp to the exact incident board.
+
+    The 79-row board that run 31340764145 actually consumed was committed at b3d3.
+    A different 79-row commit (including the event checkout's earlier board) changes
+    duplicate suppression and widens the population to 31. The raw blob, its poisoned
+    five-field panel receipt and the complete healed seven-field receipt are therefore
+    all immutable gates. No ranked row is edited.
+
+    Synthetic unit repos do not carry the real checkpoint and take the identity path;
+    the production checkpoint can only take the exact derivation path below.
+    """
+    try:
+        raw_board = json.loads(board_blob.decode("utf-8"))
+    except Exception as exc:  # noqa: BLE001 - an authority blob must be exact JSON
+        raise BackfillRefused(f"incident board is not readable JSON ({exc})") from exc
+    if checkpoint.get("checkpoint_commit") != REFUSAL_CHECKPOINT_SHA:
+        return raw_board, board_blob, {
+            "mode": "synthetic_identity",
+            "incident_sha256": hashlib.sha256(board_blob).hexdigest(),
+            "replay_sha256": hashlib.sha256(board_blob).hexdigest(),
+        }
+
+    raw_digest = hashlib.sha256(board_blob).hexdigest()
+    panel = (((raw_board.get("staleness") or {}).get("inputs") or {}).get("panel"))
+    if board_sha != INCIDENT_BOARD_SHA:
+        raise BackfillRefused(
+            "authorized replay requires the exact run-31340764145 incident board "
+            f"{INCIDENT_BOARD_SHA}; observed {board_sha}"
+        )
+    if raw_digest != INCIDENT_BOARD_BLOB_SHA256:
+        raise BackfillRefused(
+            "authorized incident board bytes changed: "
+            f"expected {INCIDENT_BOARD_BLOB_SHA256}, observed {raw_digest}"
+        )
+    if len(raw_board.get("buy") or []) != EXPECTED_REFUSAL_PARTITION["buy_rows"]:
+        raise BackfillRefused("authorized incident board no longer contains 79 buy rows")
+    if panel != _INCIDENT_PANEL_RECEIPT:
+        raise BackfillRefused(
+            "authorized incident panel receipt changed: "
+            f"expected {_INCIDENT_PANEL_RECEIPT}, observed {panel}"
+        )
+
+    # JSON round-trip is an explicit deep copy over a JSON artifact. Only the panel
+    # receipt is replaced; ranked rows and every other board byte's decoded value stay.
+    healed = json.loads(json.dumps(raw_board, allow_nan=False))
+    healed["staleness"]["inputs"]["panel"] = dict(_HEALED_PANEL_RECEIPT)
+    healed_blob = json.dumps(
+        healed, sort_keys=True, separators=(",", ":"), allow_nan=False,
+    ).encode("utf-8")
+    return healed, healed_blob, {
+        "mode": "panel_session_clamp_5241",
+        "incident_commit": board_sha,
+        "incident_sha256": raw_digest,
+        "incident_panel": dict(_INCIDENT_PANEL_RECEIPT),
+        "replay_sha256": hashlib.sha256(healed_blob).hexdigest(),
+        "replay_panel": dict(_HEALED_PANEL_RECEIPT),
+        "ranked_rows_changed": False,
+    }
+
+
 def _validate_replay_population(
     checkpoint: dict[str, Any],
     intake: dict[str, Any],
@@ -853,12 +940,16 @@ def run_backfill(
     event_baseline_sha = resolve_commit(repo, event_baseline_commit)
     collision_baseline_sha = resolve_commit(repo, collision_baseline_commit)
 
-    board_blob = blob_at(repo, board_sha, BOARD_RELPATH)
-    if board_blob is None:
+    incident_board_blob = blob_at(repo, board_sha, BOARD_RELPATH)
+    if incident_board_blob is None:
         raise BackfillRefused(f"{BOARD_RELPATH} does not exist at {board_sha[:12]}")
-    board = json.loads(board_blob.decode("utf-8"))
 
     refusal_checkpoint = _load_authorized_refusal_checkpoint(repo)
+    board, board_blob, board_derivation = _prepare_replay_board(
+        incident_board_blob,
+        board_sha=board_sha,
+        checkpoint=refusal_checkpoint,
+    )
     candidate_tickers = sorted({
         str(plan_id).rsplit("-BULL-", 1)[0]
         for plan_id in refusal_checkpoint["refusal_plan_ids"]
@@ -870,11 +961,11 @@ def run_backfill(
     )
     checkpoint_sha = str(refusal_checkpoint["checkpoint_commit"])
     if checkpoint_sha == REFUSAL_CHECKPOINT_SHA and (
-        board_sha != EVENT_CHECKOUT_SHA or event_baseline_sha != EVENT_CHECKOUT_SHA
+        board_sha != INCIDENT_BOARD_SHA or event_baseline_sha != EVENT_CHECKOUT_SHA
     ):
         raise BackfillRefused(
-            "authorized replay requires the exact run-31340764145 event checkout "
-            f"for both board and event baseline ({EVENT_CHECKOUT_SHA}); observed "
+            "authorized replay requires the exact run-31340764145 incident board "
+            f"{INCIDENT_BOARD_SHA} and event baseline {EVENT_CHECKOUT_SHA}; observed "
             f"board={board_sha}, event={event_baseline_sha}"
         )
     require_ancestor(
@@ -1031,6 +1122,8 @@ def run_backfill(
             "board_commit": board_sha,
             "board_path": BOARD_RELPATH,
             "board_sha256": hashlib.sha256(board_blob).hexdigest(),
+            "incident_board_sha256": hashlib.sha256(incident_board_blob).hexdigest(),
+            "board_derivation": board_derivation,
             "board_asof": str(board.get("as_of") or "")[:10] or None,
             "board_price_through": price_through,
             "event_baseline_commit": event_baseline_sha,
@@ -1100,6 +1193,8 @@ def run_backfill(
         receipt_id=receipt_id,
         board=board,
         board_blob=board_blob,
+        incident_board_blob=incident_board_blob,
+        board_derivation=board_derivation,
         board_sha=board_sha,
         event_baseline_sha=event_baseline_sha,
         collision_baseline_sha=collision_baseline_sha,
@@ -1249,6 +1344,8 @@ def _build_receipt(
     receipt_id: str,
     board: dict,
     board_blob: bytes,
+    incident_board_blob: bytes,
+    board_derivation: dict[str, Any],
     board_sha: str,
     event_baseline_sha: str,
     collision_baseline_sha: str,
@@ -1324,10 +1421,13 @@ def _build_receipt(
         },
         "source": {
             "basis": staleness.get("basis"),
+            "derivation": board_derivation,
             "board_asof": str(board.get("as_of") or "")[:10] or None,
             "delayed": bool(staleness.get("delayed")),
             "gate_go": board.get("gate_go"),
             "path": BOARD_RELPATH,
+            "incident_commit": board_sha,
+            "incident_sha256": hashlib.sha256(incident_board_blob).hexdigest(),
             "price_through": price_through,
             "sha256": hashlib.sha256(board_blob).hexdigest(),
             "size_bytes": len(board_blob),
@@ -1427,8 +1527,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--board-commit", required=True,
-        help="commit on main whose site/factordata/us_standouts.json is the healed "
-             "as_of=2026-08-07 board (price_through must be 2026-08-07)",
+        help="exact b3d3 incident-board commit; the script validates its raw bytes "
+             "and applies only the receipted #5241 panel session clamp",
     )
     parser.add_argument(
         "--event-baseline-commit", required=True,

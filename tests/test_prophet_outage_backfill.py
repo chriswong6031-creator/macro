@@ -784,6 +784,34 @@ def _authorized_checkpoint_payload() -> dict:
 class TestAuthorizedRefusalFence:
     """No equal-count substitute may inherit run 31340764145's authority."""
 
+    def test_incident_board_derivation_changes_only_the_exact_panel_receipt(self):
+        import hashlib
+
+        raw = {
+            "as_of": PRICE_THROUGH,
+            "staleness": {
+                "price_through": PRICE_THROUGH,
+                "inputs": {"panel": dict(bf._INCIDENT_PANEL_RECEIPT)},
+            },
+            "buy": [{"ticker": f"T{i:02d}", "rank": i} for i in range(79)],
+            "other_receipt": {"unchanged": True},
+        }
+        blob = json.dumps(raw, separators=(",", ":")).encode("utf-8")
+        checkpoint = {"checkpoint_commit": bf.REFUSAL_CHECKPOINT_SHA}
+        with patch.object(
+            bf, "INCIDENT_BOARD_BLOB_SHA256", hashlib.sha256(blob).hexdigest(),
+        ):
+            healed, healed_blob, derivation = bf._prepare_replay_board(
+                blob, board_sha=bf.INCIDENT_BOARD_SHA, checkpoint=checkpoint,
+            )
+
+        assert raw["staleness"]["inputs"]["panel"] == bf._INCIDENT_PANEL_RECEIPT
+        assert healed["staleness"]["inputs"]["panel"] == bf._HEALED_PANEL_RECEIPT
+        assert healed["buy"] == raw["buy"]
+        assert healed["other_receipt"] == raw["other_receipt"]
+        assert derivation["ranked_rows_changed"] is False
+        assert derivation["replay_sha256"] == hashlib.sha256(healed_blob).hexdigest()
+
     def test_exact_8421_checkpoint_partition_identities_and_errors_are_accepted(self):
         checkpoint = bf._validate_refusal_checkpoint_payload(
             _authorized_checkpoint_payload())
