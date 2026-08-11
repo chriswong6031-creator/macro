@@ -361,7 +361,7 @@ files, then refuses a normal stop while session-created work is uncommitted,
 unpushed, unmerged, awaiting a render, or absent from production.
 The dirty snapshot judges only this checkout's own work. Untracked entries under
 another fleet's worktree roots (`.claude/worktrees/`, `.claire/worktrees/`,
-`.codex-worktrees/`) are excluded — a blocked session can neither commit another
+`.codex/worktrees/`, `.codex-worktrees/`) are excluded — a blocked session can neither commit another
 session's checkout nor delete it without destroying live work — and a path that
 LEAVES `git status`, whether committed or newly ignored, stops counting as
 outstanding. Both stay fail-closed: tracked content under those roots gates
