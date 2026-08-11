@@ -266,7 +266,18 @@ partition — 144 of a ~1,540-name curated universe on the 2026-08-07 board — 
 rows carry nulls here. That is this store's disclosure idiom ("not measured for this name
 tonight"), not a gap. Scan-tier rows are never in the pool: a scan name is never admitted.
 
-**`prophet_score` stays null for the ~63 off-board eligibles**, and that is deliberate,
+**The gap the partition closes, counted (2026-08-07 board, origin/main `8c2d152`):**
+`eligible` 144, published `buy[]` **78**, so **66** names had no published row — 55
+sector-cap overflow (`concentration.overflow_count`) + 6 earnings-blackout suppressions
+(`earnings_blackout_note.tickers`) + 5 across the dual-class dedup and the
+sector-integrity backstop. Each of those five drop sites now writes its own reason at the
+point of the drop; anything that reaches `off_board_reason_unknown` is an
+**uninstrumented drop site**, and the builder raises a line-start
+`::warning title=candidate-pool-unknown-reason` naming the tickers rather than letting a
+defect read as a lane. (The earnings-blackout gate lived in that bucket for exactly one
+review cycle — six real names, while the same artifact named them.)
+
+**`prophet_score` stays null for the 66 off-board eligibles**, and that is deliberate,
 not a debt. `us_board_rank.score_rows` builds its `edge` leg from `alpha_percentiles`
 over the pool it is handed, so scoring the off-board names as their own pool mints a
 SECOND RULER, and scoring them together with `buy[]` moves every published row's
@@ -280,11 +291,25 @@ at stamp time and retroactive backfill is forbidden here. Origination is build_p
 fact and lives in its artifact and ledger; join on `(stamp_date, ticker)`. What IS
 knowable — an already-open plan — is stamped as `pool_open_plan`.
 
+**Reason words come from four declared vocabularies**, and nothing else may ship: this
+module's own literals, `OFF_BOARD_REASONS`, `prophet_bridge.REFUSAL_ORDER`, and
+`us_board_rank`'s featured shortfalls (`FEATURED_SHORTFALL_CODES` plus the three
+parametrized families `entry_status_*` / `stage_*` / `tier_*`). A word in none of them
+raises `::warning title=candidate-pool-undeclared-reason`. The column is public parquet,
+so an upstream rename must go red rather than split one cohort across two spellings.
+
+**The partition is built at the LAST moment before the artifact is written**, after the
+W8 arbiter, the blocked-buy invariant and `_expire_pending_buys`. Those passes mutate buy
+rows (the arbiter can demote `conviction.band` to `low`, which IS a refusal; the expiry
+replaces `wide["buy"]` with a list whose demoted rows are fresh copies), so an earlier
+snapshot describes rows that never ship. A `pending_expired` row is `late_or_unfillable`
+regardless of what the admission gates say about it — no gate reads that flag.
+
 **Zero authority, fenced by a file boundary.** `engine/us_candidate_lanes.py` imports
 from `us_board_rank` / `prophet_bridge`; nothing on the admission path imports it, and
 `tests/test_us_candidate_lanes.py::TestNoAuthorityLeak` pins that as a static token
-sweep, an import-closure walk and a behavioural invariance check on
-`prophet_bridge.select_candidates`.
+sweep (over every `pool_*` column name, not just the module), an import-closure walk and
+a behavioural invariance check on `prophet_bridge.select_candidates`.
 
 ## Named debts
 

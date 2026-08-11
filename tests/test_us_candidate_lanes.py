@@ -98,6 +98,9 @@ def board():
         "JJJ": ["dual_class_duplicate"],
         "KKK": ["buy_slice_cap"],
         "LLL": ["sector_label_unreadable"],
+        # W1.5 earnings-blackout hygiene gate — the drop site that shipped
+        # uninstrumented and put 6 real names in the fail-closed bucket
+        "MMM": ["event_blackout"],
     }
     eligible_order = [r["ticker"] for r in buy] + list(off)
     meta = {t: {"name": f"{t} Inc", "sector": "Industrials"} for t in off}
@@ -132,7 +135,7 @@ class TestLosslessPartition:
 
     def test_counts_reconcile(self, board):
         block = _build(board)
-        assert block["eligible"] == len(board["eligible_order"]) == 12
+        assert block["eligible"] == len(board["eligible_order"]) == 13
         assert len(block["rows"]) == block["eligible"]
         assert sum(block["lane_counts"].values()) == block["eligible"]
 
@@ -150,7 +153,7 @@ class TestLosslessPartition:
     def test_in_buy_lane_and_off_buy_lane_sum_to_eligible(self, board):
         block = _build(board)
         assert block["in_buy_lane"] == 8
-        assert block["off_buy_lane"] == 4
+        assert block["off_buy_lane"] == 5
         assert block["in_buy_lane"] + block["off_buy_lane"] == block["eligible"]
 
     def test_display_rank_is_dense_within_every_lane(self, board):
@@ -162,7 +165,7 @@ class TestLosslessPartition:
     def test_pool_rank_is_the_blend_order(self, board):
         block = _build(board)
         by_ticker = {r["ticker"]: r["pool_rank"] for r in block["rows"]}
-        assert [by_ticker[t] for t in board["eligible_order"]] == list(range(1, 13))
+        assert [by_ticker[t] for t in board["eligible_order"]] == list(range(1, 14))
 
     def test_a_buy_row_missing_from_the_eligible_order_is_still_published(self, board):
         """Fail-closed: the pool must never lose a published name."""
@@ -231,6 +234,7 @@ class TestLaneTaxonomy:
         ("JJJ", ucl.LANE_MORE_ACTIONABLE),
         ("KKK", ucl.LANE_MORE_ACTIONABLE),
         ("LLL", ucl.LANE_FORMING),
+        ("MMM", ucl.LANE_LATE_OR_UNFILLABLE),
     ])
     def test_row_lands_in_its_lane(self, board, ticker, lane):
         block = _build(board)
@@ -246,7 +250,7 @@ class TestLaneTaxonomy:
     def test_off_board_eligibles_all_carry_reasons(self, board):
         block = _build(board)
         off = [r for r in block["rows"] if not r["in_buy_lane"]]
-        assert len(off) == 4
+        assert len(off) == 5
         for row in off:
             assert row["lane_reasons"]
             assert row["headline_reason"] in ucl.OFF_BOARD_REASONS
@@ -262,6 +266,44 @@ class TestLaneTaxonomy:
             row = next(r for r in block["rows"] if r["ticker"] == ticker)
             assert code in row["lane_reasons"]
             assert code in pb.REFUSAL_ORDER
+
+    def test_a_blackout_suppressed_eligible_is_blocked_not_forming(self, board):
+        """M1a.  The W1.5 hygiene gate removes intact setups for a DATED event.
+
+        Filing them under `forming` would say the setup had not developed, which is
+        false — and `earnings_blackout_note` in the same artifact names them, so the two
+        blocks would contradict each other.  Six real names on the 2026-08-07 board
+        (UAMY, ASTS, LITE, SVM, CRC, ONON) sat in `off_board_reason_unknown` before this.
+        """
+        block = _build(board)
+        row = next(r for r in block["rows"] if r["ticker"] == "MMM")
+        assert row["lane"] == ucl.LANE_LATE_OR_UNFILLABLE
+        assert row["headline_reason"] == "event_blackout"
+        assert row["in_buy_lane"] is False
+        assert ucl.OFF_BOARD_REASONS["event_blackout"] == ucl.LANE_LATE_OR_UNFILLABLE
+        # and it never reaches the alarm bucket
+        assert "MMM" not in block["unknown_reason_tickers"]
+
+    def test_the_builder_stamps_event_blackout_at_the_drop_site(self):
+        """The reason is only honest if the DROP SITE writes it.
+
+        Pins the wiring in scripts/build_stock_library.py, not just the taxonomy — the
+        defect was a missing `_pool_off_board` entry, and a taxonomy-only test would have
+        passed straight through it.
+        """
+        source = (REPO / "scripts" / "build_stock_library.py").read_text()
+        assert source.count('_pool_off_board[_t_eb] = ["event_blackout"]') == 2, (
+            "both earnings-blackout drop sites (trend lane + Lane-R recovery) must "
+            "stamp the pool reason")
+
+    def test_a_pending_expired_row_is_blocked_however_the_gate_reads_it(self, board):
+        """M4.  `_expire_pending_buys` demotes INSIDE buy[]; no admission gate sees it."""
+        board["buy"][0]["pending_expired"] = True          # AAA: featured + expired
+        block = _build(board)
+        row = next(r for r in block["rows"] if r["ticker"] == "AAA")
+        assert row["lane"] == ucl.LANE_LATE_OR_UNFILLABLE
+        assert row["headline_reason"] == ucl.PENDING_EXPIRED
+        assert block["lane_counts"][ucl.LANE_FEATURED] == 0
 
     def test_an_unaccounted_eligible_fails_closed_into_forming(self, board):
         block = _build(board, off_board_reasons={})
@@ -326,12 +368,126 @@ class TestDisclosure:
         assert block["board_featured_count"] == 1
         assert block["featured_divergence"] == []
 
+    def test_the_unknown_reason_bucket_is_reported_as_an_alarm(self, board):
+        """M1b.  An uninstrumented drop site is a defect, and must not read as a lane."""
+        healthy = _build(board)
+        assert healthy["unknown_reason_count"] == 0
+        assert healthy["unknown_reason_tickers"] == []
+        broken = _build(board, off_board_reasons={})
+        assert broken["unknown_reason_count"] == 5
+        assert broken["unknown_reason_tickers"] == ["III", "JJJ", "KKK", "LLL", "MMM"]
+
+    def test_the_builder_raises_a_line_start_annotation_for_unknown_reasons(self):
+        """House law: a bare line-start print, never a logger.
+
+        `build_stock_library`'s logger prefixes every record with its level, so
+        `log.warning("::warning …")` emits "WARNING ::warning …" and GitHub drops it.
+        Asserted on the SOURCE because the surrounding builder cannot be run here.
+        """
+        source = (REPO / "scripts" / "build_stock_library.py").read_text()
+        for title in ("candidate-pool-unknown-reason",
+                      "candidate-pool-undeclared-reason",
+                      "candidate-pool-orphan-buy"):
+            marker = f'::warning title={title}::'
+            assert marker in source, title
+            for line in source.splitlines():
+                if marker in line:
+                    assert line.lstrip().startswith(("print(", 'f"', '"')), line
+                    assert "log." not in line, line
+        # the dead guard it replaced must be gone
+        assert "!= board eligible" not in source
+
     def test_pool_definition_and_era_are_stamped(self, board):
         block = _build(board)
         assert block["pool_definition"] == ucl.POOL_DEFINITION
         assert block["selection_era"] == "anticipation-v1-2026-08-08"
         assert all(r["selection_era"] == "anticipation-v1-2026-08-08"
                    for r in block["rows"])
+
+
+# --------------------------------------------------------------------------- #
+# 4b. the reason vocabulary — four declared sets, no undeclared word ships
+# --------------------------------------------------------------------------- #
+
+class TestReasonVocabulary:
+    """M3.  `pool_headline_reason` ships to a PUBLIC parquet.
+
+    Every value it can take must be declared somewhere a rename has to go past, or an
+    upstream edit silently splits a cohort across two spellings of the same fact.  The
+    fourth source — ``us_board_rank.featured_shortfalls`` plus the featured pass in
+    ``score_rows`` — carried 41 of 144 headline reasons on the 2026-08-07 board while
+    being in no declared set at all.
+    """
+
+    def test_every_reason_the_fixture_board_emits_is_declared(self, board):
+        block = _build(board)
+        undeclared = sorted({code for r in block["rows"] for code in r["lane_reasons"]
+                             if not ucl.is_declared_reason(code)})
+        assert undeclared == []
+        assert block["undeclared_reasons"] == []
+
+    def test_the_seven_codes_the_review_found_undeclared_are_now_declared(self):
+        """The exact set the adversarial pass named."""
+        for code in ("alpha_below_floor", "antichase_blocked", "extended",
+                     "featured_cap", "stage_ran", "ticks_stale", "tier_unknown"):
+            assert ucl.is_declared_reason(code), code
+
+    def test_an_undeclared_word_is_reported_not_absorbed(self, board):
+        board["buy"][1]["featured_blocked_by"] = ["freshly_renamed_upstream"]
+        block = _build(board)
+        assert block["undeclared_reasons"] == ["freshly_renamed_upstream"]
+
+    def test_every_declared_literal_still_exists_upstream(self):
+        """A rename in us_board_rank must RED here rather than drift silently."""
+        import inspect
+
+        from engine import us_board_rank as ubr
+
+        source = inspect.getsource(ubr.featured_shortfalls) + inspect.getsource(
+            ubr.score_rows)
+        for code in ucl.FEATURED_SHORTFALL_CODES:
+            assert f'"{code}"' in source, (
+                f"{code} is declared here but no longer emitted by us_board_rank — "
+                "drop it or follow the rename")
+
+    def test_every_declared_prefix_still_exists_upstream(self):
+        import inspect
+
+        from engine import us_board_rank as ubr
+
+        source = inspect.getsource(ubr.featured_shortfalls)
+        for prefix in ucl.FEATURED_SHORTFALL_PREFIXES:
+            assert f'f"{prefix}' in source, prefix
+
+    def test_the_stage_family_is_bounded_by_the_boards_own_stage_enum(self):
+        """A prefix match alone would wave a renamed stage through."""
+        from engine import us_board_rank as ubr
+
+        for stage in ubr.STAGE_ORDER:
+            assert ucl.is_declared_reason(f"stage_{stage}")
+
+    def test_the_refusal_family_is_exactly_prophet_bridges(self):
+        from engine import prophet_bridge as pb
+
+        assert set(pb.REFUSAL_ORDER) <= ucl.declared_reasons()
+
+    def test_off_board_reasons_are_all_declared(self):
+        assert set(ucl.OFF_BOARD_REASONS) <= ucl.declared_reasons()
+
+    def test_earnings_blackout_and_event_blackout_are_different_facts(self):
+        """Both are declared and must NOT be unified by a future tidy-up.
+
+        ``earnings_blackout`` is a FEATURED veto stamped by us_board_rank on a row that
+        is still on the board; ``event_blackout`` is the W1.5 gate REMOVING the name
+        from buy[] entirely.  Same event, different consequence.
+        """
+        assert "earnings_blackout" in ucl.FEATURED_SHORTFALL_CODES
+        assert "event_blackout" in ucl.OFF_BOARD_REASONS
+        assert "earnings_blackout" not in ucl.OFF_BOARD_REASONS
+
+    @pytest.mark.parametrize("code", ["", None, "  ", "totally_made_up"])
+    def test_undeclared_input_is_rejected(self, code):
+        assert ucl.is_declared_reason(code) is False
 
 
 # --------------------------------------------------------------------------- #
@@ -560,12 +716,44 @@ class TestGraduationFields:
         assert fields["III"]["score_delta_5d"] is None
 
     def test_a_name_new_to_the_pool_reads_night_one(self, three_night_store):
-        history, _ = ucl.load_pool_history("2026-08-08", root=three_night_store)
+        history, meta = ucl.load_pool_history("2026-08-08", root=three_night_store)
         fields = ucl.graduation_fields(
-            history, tonight_lane_by_ticker={"NEW": ucl.LANE_FORMING})
-        assert fields["NEW"] == {"days_in_pool": 1, "score_delta_5d": None,
-                                 "lane_transitions": 0, "prev_lane": None,
-                                 "first_seen": None}
+            history, tonight_lane_by_ticker={"NEW": ucl.LANE_FORMING},
+            window_meta=meta)
+        assert fields["NEW"]["days_in_pool"] == 1
+        assert fields["NEW"]["score_delta_5d"] is None
+        assert fields["NEW"]["lane_transitions"] == 0
+        assert fields["NEW"]["prev_lane"] is None
+        assert fields["NEW"]["first_seen"] is None
+        # a name with no history cannot be window-truncated
+        assert fields["NEW"]["window_truncated"] is False
+
+    def test_days_in_pool_discloses_when_it_is_only_a_floor(self, three_night_store):
+        """m6.  A name whose history starts AT the window edge may be much older.
+
+        Without this, a four-month resident and a genuine 5-night arrival both read
+        "5 nights" with the same confidence.
+        """
+        history, meta = ucl.load_pool_history("2026-08-08", root=three_night_store)
+        fields = ucl.graduation_fields(
+            history, tonight_lane_by_ticker={"AAA": ucl.LANE_FEATURED},
+            window_meta=meta)
+        assert meta["oldest_stamp"] == "2026-08-03"
+        assert meta["months_back"] == 1
+        assert fields["AAA"]["first_seen"] == "2026-08-03"
+        assert fields["AAA"]["window_truncated"] is True
+        assert fields["AAA"]["window_oldest"] == "2026-08-03"
+        assert fields["AAA"]["window_months_back"] == 1
+
+    def test_a_name_that_arrived_inside_the_window_is_not_truncated(
+        self, three_night_store
+    ):
+        history, meta = ucl.load_pool_history("2026-08-08", root=three_night_store)
+        history = {"AAA": [r for r in history["AAA"] if r["stamp_date"] > "2026-08-03"]}
+        fields = ucl.graduation_fields(
+            history, tonight_lane_by_ticker={"AAA": ucl.LANE_FEATURED},
+            window_meta=meta)
+        assert fields["AAA"]["window_truncated"] is False
 
     def test_an_empty_store_is_an_available_read_with_no_nights(self, tmp_path):
         """"No prior nights" is a successful read, not an unavailable one."""
@@ -651,10 +839,14 @@ AUTHORITY_MODULES = (
     "engine/us_leader_pullback.py",
 )
 
-#: Every token that would mean a module is reading this feature.
+#: Every token that would mean a module is reading this feature.  This must stay a
+#: SUPERSET of the store's column names — a reader that touches only
+#: ``pool_admission_class`` or ``pool_open_plan`` is reading the pool just as surely as
+#: one that names the module (review n16).  ``test_the_fence_covers_every_store_column``
+#: pins that so a tenth column cannot land outside the fence.
 POOL_TOKENS = frozenset({
-    "us_candidate_lanes", "candidate_pool", "pool_lane", "pool_rank",
-    "pool_in_buy_lane", "pool_headline_reason", "POOL_COLUMNS", "us_candidate_pool_v1",
+    "us_candidate_lanes", "candidate_pool", "us_candidate_pool_v1", "POOL_COLUMNS",
+    *ucv.POOL_COLUMNS,
 })
 
 #: PRE-EXISTING, UNRELATED uses of two of those words, each named with its reason.  A
@@ -736,6 +928,11 @@ class TestNoAuthorityLeak:
             "candidate-pool tokens reached a non-allowlisted module — if this is a new "
             "READER, add it to POOL_ALLOWLIST only after confirming it decides nothing: "
             f"{offenders}")
+
+    def test_the_fence_covers_every_store_column(self):
+        """A new pool column must not land outside the sweep (review n16)."""
+        assert set(ucv.POOL_COLUMNS) <= POOL_TOKENS
+        assert set(ucl.STORE_COLUMNS) <= POOL_TOKENS
 
     def test_every_collision_exemption_is_still_real(self):
         """A stale exemption is a hole.  Each one must still be earned."""

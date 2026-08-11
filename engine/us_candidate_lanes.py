@@ -3,13 +3,17 @@
 Operator commission 2026-08-11: *refused / below-cutoff candidates must stay visible
 in a lower pool and be able to graduate to the real list when their scoring improves.*
 
-WHAT THIS FIXES.  The US board publishes only its ``buy[]`` lane.  Measured on the
-committed 2026-08-07 board (``site/factordata/us_standouts.json``): ``eligible`` is
-**144** and ``buy`` holds **81** rows, so **63 cascade-eligible names get no published
-row at all** — ``scripts/build_stock_library.py`` discloses them as a single integer
-(``wide["eligible"]``) and the concentration stat's ``overflow_count``.  A name that was
-displaced by the per-sector soft cap is, from the artifact's point of view,
-indistinguishable from a name the gate never saw.  The CN board already ships the fix:
+WHAT THIS FIXES.  The US board publishes only its ``buy[]`` lane.  Counted on the
+committed 2026-08-07 board (``site/factordata/us_standouts.json`` as of origin/main
+``8c2d152``): ``eligible`` is **144** and ``buy`` holds **78** rows, so **66
+cascade-eligible names get no published row at all** — ``scripts/build_stock_library.py``
+discloses them as a single integer (``wide["eligible"]``) and the concentration stat's
+``overflow_count``.  The 66 decompose as **55 sector-cap overflow** (``overflow_count``)
++ **6 earnings-blackout suppressions** (``earnings_blackout_note.tickers``: UAMY, ASTS,
+LITE, SVM, CRC, ONON) + **5** across the dual-class dedup and the sector-integrity
+backstop.  A name that was displaced by the per-sector soft cap is, from the artifact's
+point of view, indistinguishable from a name the gate never saw.  The CN board ships the
+fix already:
 ``engine/china_board_rank.py::_partition`` places EVERY eligible row into one of four
 lanes, each row carrying ``lane``, ``lane_reasons`` and ``display_rank`` (real counts on
 the 2026-08-10 CN board: eligible 180 = 24 + 93 + 41 + 22).  This module ports that
@@ -37,7 +41,7 @@ WHY ``prophet.score`` IS NULL OFF THE BUY LANE (read before "fixing" it)
 --------------------------------------------------------------------------------------
 ``us_board_rank.score_rows`` computes its ``edge`` leg from
 ``alpha_percentiles(pool)`` — a CROSS-SECTIONAL percentile over the pool it is handed.
-So there are only two ways to score the 63 off-board names, and both are wrong:
+So there are only two ways to score the 66 off-board names, and both are wrong:
 
 * score them as their own pool → their ``edge`` legs are percentiles of a DIFFERENT
   population than the published ``buy[]`` scores.  Two rulers wearing one name; every
@@ -151,16 +155,87 @@ OFF_BOARD_REASONS = {
     "dual_class_duplicate": LANE_MORE_ACTIONABLE,
     # beyond the buy-lane display slice
     "buy_slice_cap": LANE_MORE_ACTIONABLE,
+    # W1.5 earnings-blackout hygiene gate removed it from `buyable` for tonight.  LATE,
+    # not FORMING: the setup is intact and the name is blocked *by a dated event*, which
+    # is the same "signal there, entry not available to us tonight" shape as `extended`.
+    # Filing it under `forming` would say the setup had not developed, which is false —
+    # and the SAME artifact names these tickers in `earnings_blackout_note`, so the two
+    # blocks would have contradicted each other (6 names on the 2026-08-07 board:
+    # UAMY, ASTS, LITE, SVM, CRC, ONON).
+    "event_blackout": LANE_LATE_OR_UNFILLABLE,
     # the sector-integrity backstop dropped the row (corrupt GICS label)
     "sector_label_unreadable": LANE_FORMING,
     # FAIL-CLOSED: eligible, and this module could not account for it.  The row still
     # ships — a pool that silently loses a name is the defect this module exists to fix.
+    # A non-zero count of these raises a line-start ``::warning`` from the builder: an
+    # uninstrumented drop site is a REAL defect and must be loud, not quietly absorbed
+    # into a bucket that looks like a lane.
     "off_board_reason_unknown": LANE_FORMING,
 }
+
+#: Reason for a buy-lane row whose pending confirmation window lapsed.  The row still
+#: ships inside ``buy[]`` (``_expire_pending_buys`` re-tags it ``lane="watch"`` and keeps
+#: it there for the template's Watch sub-heading), so the pool must see it as blocked
+#: rather than inherit whatever the pre-expiry pass thought of it.
+PENDING_EXPIRED = "pending_expired"
 
 #: Reason for a buy-lane row that cleared every admission gate and carries no other
 #: explanation for sitting off the top shelf.
 CLEARED_ADMISSION = "cleared_admission"
+
+# --------------------------------------------------------------------------- #
+# the FOURTH reason vocabulary — the board's own featured shortfalls
+# --------------------------------------------------------------------------- #
+#
+# `pool_lane_reasons` / `pool_headline_reason` ship to a PUBLIC parquet, so every value
+# they can take must be declared somewhere a rename has to go past.  Three of the four
+# sources were already declared (:data:`OFF_BOARD_REASONS`, this module's own literals,
+# and ``prophet_bridge.REFUSAL_ORDER``).  The fourth was not, and it is the biggest:
+# ``us_board_rank.featured_shortfalls`` + the featured pass in ``score_rows`` supply the
+# reasons for every cleared-but-not-featured row — 41 of 144 headline reasons on the
+# 2026-08-07 board, through codes like ``alpha_below_floor`` and ``featured_cap`` that
+# appeared in no declared set at all.  An upstream rename must RED, not silently split a
+# cohort across two spellings of the same fact.
+
+#: Fixed literals emitted by ``us_board_rank.featured_shortfalls`` and by the featured
+#: pass inside ``score_rows``.  Pinned against those functions' own source by
+#: ``TestReasonVocabulary`` so a rename cannot land quietly.
+FEATURED_SHORTFALL_CODES = frozenset({
+    "ticks_unknown", "ticks_stale", "provisional", "antichase_blocked", "extended",
+    "alpha_unknown", "alpha_below_floor", "earnings_blackout",
+    # stamped by score_rows' featured pass, not by featured_shortfalls
+    "featured_cap", "sector_cap", "not_evaluated",
+})
+
+#: The three PARAMETRIZED families — ``featured_shortfalls`` interpolates a status, a
+#: stage or a tier into the code.  Declared as prefixes AND bounded by their producing
+#: enum (see ``TestReasonVocabulary``), so a new stage word is caught rather than waved
+#: through by a permissive prefix match.
+FEATURED_SHORTFALL_PREFIXES = ("entry_status_", "stage_", "tier_")
+
+
+def declared_reasons() -> frozenset[str]:
+    """Every fixed reason literal this module can emit, across all four vocabularies."""
+    from engine.prophet_bridge import REFUSAL_ORDER  # noqa: PLC0415
+
+    return frozenset({
+        *OFF_BOARD_REASONS,
+        *FEATURED_SHORTFALL_CODES,
+        *REFUSAL_ORDER,
+        *FEATURED_REASONS,
+        CLEARED_ADMISSION,
+        PENDING_EXPIRED,
+    })
+
+
+def is_declared_reason(code: Any) -> bool:
+    """True when ``code`` is a declared literal or a member of a declared family."""
+    text = _text(code)
+    if not text:
+        return False
+    if text in declared_reasons():
+        return True
+    return any(text.startswith(prefix) for prefix in FEATURED_SHORTFALL_PREFIXES)
 
 #: ``score_delta_5d`` is measured over the ticker's five most recent PRIOR STAMPS in the
 #: store, not over five calendar sessions: the store stamps once per nightly, so a missed
@@ -330,6 +405,14 @@ def _classify_buy_row(
 
     refusing = [c for c in codes if c not in NON_REFUSING_CODES]
     informational: list[str] = [c for c in codes if c in NON_REFUSING_CODES]
+
+    # A row whose pending confirmation expired is BLOCKED, whatever the gate codes say.
+    # `_expire_pending_buys` demotes it to lane="watch" INSIDE buy[] and none of the
+    # admission gates read that flag, so without this the pool would keep calling an
+    # expired row featured — which is exactly what it did before the partition was moved
+    # below that pass (BIDU and UEC on the 2026-08-07 board).
+    if row.get("pending_expired") is True:
+        return LANE_LATE_OR_UNFILLABLE, [PENDING_EXPIRED, *refusing, *informational]
     if not refusing and ticker and ticker in open_tickers \
             and "already_open" not in informational:
         informational.append("already_open")
@@ -380,8 +463,8 @@ def _pool_row(
         "stage": _text(source.get("stage")),
         "selection_era": selection_era,
         # The full prophet block is deliberately NOT duplicated per row (its
-        # ``zero_score_authority`` list would repeat 81 times); the score, its legs and
-        # the alpha percentile are what a graduation reader needs.
+        # ``zero_score_authority`` list would repeat once per buy row); the score, its
+        # legs and the alpha percentile are what a graduation reader needs.
         "prophet": ({
             "score": _finite(prophet.get("score")),
             "components": deepcopy(dict(_mapping(prophet.get("components")))),
@@ -506,6 +589,18 @@ def build_candidate_pool(
     lane_counts = {lane: int(counts.get(lane, 0)) for lane in LANE_ORDER}
     in_buy = sum(1 for row in rows if row["in_buy_lane"])
 
+    # THE FAIL-CLOSED BUCKET MUST BE LOUD.  `off_board_reason_unknown` is not a lane, it
+    # is an UNINSTRUMENTED DROP SITE — a real defect that reads like data.  Surfaced on
+    # the block so the builder can raise a line-start ::warning, and named per ticker so
+    # the next drop site is found by reading the annotation rather than by re-deriving
+    # the whole funnel.  (The earnings-blackout gate hid here for exactly one review.)
+    unknown = sorted(r["ticker"] for r in rows
+                     if r["headline_reason"] == "off_board_reason_unknown")
+    # Same treatment for a reason word no declared vocabulary knows: the column ships to
+    # a public parquet, so an upstream rename must be visible, not silently absorbed.
+    undeclared = sorted({str(code) for r in rows for code in r["lane_reasons"]
+                         if not is_declared_reason(code)})
+
     # TWO NUMBERS THAT CAN HONESTLY DISAGREE, NAMED RATHER THAN RECONCILED.
     # The board's `featured` flag is a DISPLAY shelf inside buy[]; this module's
     # `featured` lane additionally requires the row to clear the PLAN INTAKE gate, which
@@ -540,6 +635,10 @@ def build_candidate_pool(
         # featured LANE answer different questions and are reported separately.
         "board_featured_count": len(board_featured),
         "featured_divergence": divergence,
+        # Fail-closed disclosure — both of these should be empty on a healthy board.
+        "unknown_reason_count": len(unknown),
+        "unknown_reason_tickers": unknown,
+        "undeclared_reasons": undeclared,
         # Every DISPLAY cap that displaced a name, with what it displaced.  The pool
         # block itself is never truncated — that is the point — so these describe the
         # OTHER lanes' caps, not this one's.
@@ -690,7 +789,9 @@ def load_pool_history(
         })
     for rows in history.values():
         rows.sort(key=lambda r: r["stamp_date"])
-    meta.update({"available": True, "nights": len(nights), "months": months})
+    meta.update({"available": True, "nights": len(nights), "months": months,
+                 "months_back": max(0, int(months_back)),
+                 "oldest_stamp": min(nights) if nights else None})
     return history, meta
 
 
@@ -699,6 +800,7 @@ def graduation_fields(
     *,
     tonight_lane_by_ticker: Mapping[str, str],
     tonight_score_by_ticker: Mapping[str, Any] | None = None,
+    window_meta: Mapping[str, Any] | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Per-ticker graduation annotations derived from the dated store.
 
@@ -715,8 +817,16 @@ def graduation_fields(
       history including tonight.  0 means it has never moved lane.
     * ``prev_lane`` — the pool lane at the most recent prior stamp; null on night one.
     * ``first_seen`` — the earliest prior stamp in the loaded window.
+    * ``window_truncated`` — TRUE when the ticker's history reaches the OLDEST stamp the
+      loaded window contains, i.e. ``days_in_pool`` and ``first_seen`` are FLOOR values
+      bounded by how far back we read, not by when the name entered the pool.  Without
+      this a name that has been in the pool for four months reads "62 nights" with the
+      same confidence as one that genuinely arrived 62 nights ago.  ``window_oldest``
+      and ``window_months_back`` name the bound.
     """
     tonight_score_by_ticker = tonight_score_by_ticker or {}
+    window_oldest = _text((window_meta or {}).get("oldest_stamp"))
+    months_back = (window_meta or {}).get("months_back")
     out: dict[str, dict[str, Any]] = {}
     for ticker, lane_now in (tonight_lane_by_ticker or {}).items():
         key = str(ticker or "").strip().upper()
@@ -731,11 +841,18 @@ def graduation_fields(
             reference = _finite(prior[-5].get("prophet_score"))
             if reference is not None:
                 delta = round(score_now - reference, 2)
+        first_seen = _text(prior[0].get("stamp_date")) if prior else None
         out[key] = {
             "days_in_pool": len(prior) + 1,
             "score_delta_5d": delta,
             "lane_transitions": transitions,
             "prev_lane": (_text(prior[-1].get("pool_lane")) if prior else None),
-            "first_seen": (_text(prior[0].get("stamp_date")) if prior else None),
+            "first_seen": first_seen,
+            # A name whose earliest row IS the window's earliest row may well have been
+            # in the pool before the window opened: the counts are floors, and say so.
+            "window_truncated": bool(
+                first_seen and window_oldest and first_seen <= window_oldest),
+            "window_oldest": window_oldest,
+            "window_months_back": months_back,
         }
     return out
