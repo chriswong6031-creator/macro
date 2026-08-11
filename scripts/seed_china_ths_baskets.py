@@ -329,6 +329,17 @@ def _classified_snapshots() -> list[tuple[str, str, dict]]:
     return out
 
 
+def raw_snapshots() -> list[tuple[str, dict]]:
+    """Public alias of the raw-dump enumeration, for consumers outside this seeder.
+
+    ``scripts/build_theme_graph.py`` (GMI W1b) needs the newest RAW vendor dump to
+    corroborate THS memberships, and it must use THIS classifier rather than its own
+    copy — one rule, one place, or the two drift and the graph starts corroborating
+    memberships against a membership document.
+    """
+    return _all_snapshots()
+
+
 def _latest_snapshot(refresh: bool) -> dict[str, list[dict]]:
     """Return the THS member snapshot to build from (optionally re-fetching a today snapshot).
 
