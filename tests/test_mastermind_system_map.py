@@ -72,7 +72,9 @@ def test_real_registry_is_valid_and_covers_the_complete_census(model):
     raw_owners = _owner_values(model.synapse.get("artifacts")) | _owner_values(
         model.lobe_charters.get("charters")
     )
-    assert len(raw_owners) == 98
+    # 98 -> 99: GMI W1b (#5343) made gmi-theme-graph a raw synapse owner
+    # (theme-graph-nodes/edges/evidence); disposition row added in the same change.
+    assert len(raw_owners) == 99
     assert raw_owners == set(registry["owner_program_dispositions"])
     assert raw_owners == {
         owner for repository, owner in model.dispositions if repository == "macro"
