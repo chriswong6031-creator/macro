@@ -19,6 +19,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -283,6 +284,17 @@ _MARKET_MEMORY_SHA256_RE = re.compile(r"[a-f0-9]{64}\Z")
 _MARKET_MEMORY_CREATED_AT_RE = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z\Z"
 )
+_MARKET_MEMORY_HYPOTHESIS_RE = re.compile(
+    r"Conformance candidate for frozen Market Memory trial "
+    r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}"
+    r"; no retrieval or evaluation result is claimed\.\Z"
+)
+_MARKET_MEMORY_MECHANISM = (
+    "Read-only pointer to an exact W2A preregistration; W4 retrieval and "
+    "W5 evaluation evidence are deferred."
+)
+_MARKET_MEMORY_HYPOTHESIS_MAX_BYTES = 512
+_MARKET_MEMORY_MECHANISM_MAX_BYTES = 256
 _MARKET_MEMORY_MAX_BYTES = 256 * 1024
 
 
@@ -311,7 +323,7 @@ def _market_memory_canonical_bytes(value: object) -> bytes | None:
             separators=(",", ":"),
             sort_keys=True,
         ).encode("utf-8")
-    except (TypeError, ValueError, RecursionError):
+    except (TypeError, ValueError, UnicodeEncodeError, RecursionError):
         return None
 
 
@@ -325,6 +337,43 @@ def _market_memory_bounded_int(
     value: object, *, minimum: int, maximum: int
 ) -> bool:
     return type(value) is int and minimum <= value <= maximum
+
+
+def _market_memory_text_matches(
+    value: object,
+    *,
+    maximum_bytes: int,
+    pattern: re.Pattern[str] | None = None,
+    exact: str | None = None,
+) -> bool:
+    if type(value) is not str or not value:
+        return False
+    try:
+        body = value.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    if len(body) > maximum_bytes:
+        return False
+    if pattern is not None and pattern.fullmatch(value) is None:
+        return False
+    return exact is None or value == exact
+
+
+def _market_memory_real_canonical_utc(value: object) -> bool:
+    if (
+        type(value) is not str
+        or _MARKET_MEMORY_CREATED_AT_RE.fullmatch(value) is None
+    ):
+        return False
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return (
+        parsed.utcoffset() == timedelta(0)
+        and parsed.isoformat(timespec="microseconds").replace("+00:00", "Z")
+        == value
+    )
 
 
 def _validate_market_memory_candidate_structure(
@@ -356,10 +405,24 @@ def _validate_market_memory_candidate_structure(
     if type(spec_ref) is not str or not _MARKET_MEMORY_SPEC_ID_RE.fullmatch(spec_ref):
         errs.append(f"{mm_label}: spec_ref is malformed")
     created_at = row.get("created_at")
-    if type(created_at) is not str or not _MARKET_MEMORY_CREATED_AT_RE.fullmatch(
-        created_at
+    if not _market_memory_real_canonical_utc(created_at):
+        errs.append(f"{mm_label}: created_at is not real canonical microsecond UTC")
+    if not _market_memory_text_matches(
+        row.get("hypothesis"),
+        maximum_bytes=_MARKET_MEMORY_HYPOTHESIS_MAX_BYTES,
+        pattern=_MARKET_MEMORY_HYPOTHESIS_RE,
     ):
-        errs.append(f"{mm_label}: created_at is not exact microsecond UTC")
+        errs.append(
+            f"{mm_label}: hypothesis must be bounded exact-string inert morphology"
+        )
+    if not _market_memory_text_matches(
+        row.get("mechanism"),
+        maximum_bytes=_MARKET_MEMORY_MECHANISM_MAX_BYTES,
+        exact=_MARKET_MEMORY_MECHANISM,
+    ):
+        errs.append(
+            f"{mm_label}: mechanism must be bounded exact-string inert morphology"
+        )
 
     exact_top_level = {
         "status": "proposed",

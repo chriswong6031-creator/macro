@@ -1360,11 +1360,24 @@ def _write_drop_candidate_and_transition(
     """
     candidates_path = out_dir / "candidates.jsonl"
     transitions_path = out_dir / "transitions.jsonl"
+    # Rejection rows intentionally bypass candidate validation so the audit
+    # ledger can retain malformed proposals. Reserved subtype discriminators
+    # are different: retaining even one Market Memory marker would label this
+    # deliberately non-conforming audit row as a canonical W6A projection.
+    # Strip only those three reserved markers; the transition's proposal hash
+    # and reason_text retain the rejection evidence without impersonating W6A.
+    cand = dict(cand)
+    for field, marker in (
+        ("source", "market_memory"),
+        ("candidate_type", "market_memory_candidate"),
+        ("domain", "market_memory"),
+    ):
+        if cand.get(field) == marker:
+            cand[field] = "schema_rejected_input"
     # Candidates schema requires authority; drops carry status in the dict.
     # Use append_row without validate_fn for drop candidates because
     # schema_rejected candidates intentionally fail validate_candidate.
     if cand.get("authority") != "display_only":
-        cand = dict(cand)
         cand["authority"] = "display_only"
     rf_ledger.append_row(candidates_path, cand)
     rf_ledger.append_row(transitions_path, trans, validate_fn=validate_transition)

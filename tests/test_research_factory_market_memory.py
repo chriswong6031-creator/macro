@@ -15,7 +15,9 @@ import pytest
 from engine.neuralweb import market_memory
 from engine.neuralweb import market_memory_forward as forward
 from engine.research_factory import adapter_market_memory as adapter
+from engine.research_factory import ledger as rf_ledger
 from engine.research_factory import schema as rf_schema
+from scripts import research_factory_ingest as rf_ingest
 
 ROOT = Path(__file__).resolve().parents[1]
 ADAPTER = ROOT / "engine" / "research_factory" / "adapter_market_memory.py"
@@ -139,6 +141,18 @@ def _mutate(candidate: dict[str, Any], path: tuple[str, ...], value: object) -> 
     return hostile
 
 
+def _rehash_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    hostile = copy.deepcopy(candidate)
+    semantic = copy.deepcopy(hostile)
+    semantic.pop("candidate_id")
+    semantic.pop("created_at")
+    hostile["candidate_id"] = (
+        "rf-market-memory-"
+        + hashlib.sha256(forward.canonical_json_bytes(semantic)).hexdigest()
+    )
+    return hostile
+
+
 def test_canonical_candidate_enums_are_extended_as_one_conforming_tuple() -> None:
     assert adapter.MARKET_MEMORY_CANDIDATE_SOURCE in rf_schema.SOURCES
     assert adapter.MARKET_MEMORY_CANDIDATE_TYPE in rf_schema.CANDIDATE_TYPES
@@ -170,6 +184,94 @@ def test_generic_rf_ingest_rejects_relabelled_legacy_row_without_conformance() -
     violations = rf_schema.validate_candidate(hostile)
     assert violations
     assert any("Market Memory structural projection" in row for row in violations)
+
+
+def test_generic_ingest_never_persists_invalid_market_memory_discriminators(
+    tmp_path: Path,
+) -> None:
+    hostile = _mutate(
+        _candidate(),
+        ("artifacts", "market_memory_conformance", "authority_granted"),
+        True,
+    )
+    rf_dir = tmp_path / "rf"
+    result = rf_ingest.run_ingest(
+        [hostile],
+        oracle_registry_path=tmp_path / "absent-oracle.jsonl",
+        species_registry_path=tmp_path / "absent-species.json",
+        machine_registry_path=tmp_path / "absent-machine.jsonl",
+        trial_ledger_path=tmp_path / "absent-trials.jsonl",
+        rf_dir=rf_dir,
+        dry_run=False,
+    )
+
+    assert len(result.registered) == 0
+    assert len(result.dropped) == 1
+    assert result.dropped[0][1] == "schema_rejected"
+    rows = rf_ledger.load_jsonl(rf_dir / "candidates.jsonl")
+    assert len(rows) == 1
+    stored = rows[0]
+    assert stored["status"] == "schema_rejected"
+    assert (
+        stored["source"],
+        stored["candidate_type"],
+        stored["domain"],
+    ) == (
+        "schema_rejected_input",
+        "schema_rejected_input",
+        "schema_rejected_input",
+    )
+    assert not any(
+        value == marker
+        for value, marker in zip(
+            (stored["source"], stored["candidate_type"], stored["domain"]),
+            ("market_memory", "market_memory_candidate", "market_memory"),
+        )
+    )
+    transitions = rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
+    assert len(transitions) == 1
+    assert transitions[0]["to"] == "schema_rejected"
+    assert "must remain zero authority" in transitions[0]["reason_text"]
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("hypothesis", {"action_authority": {"may_trade": True}}),
+        ("hypothesis", "Market Memory candidate may rank and trade."),
+        ("hypothesis", "x" * 513),
+        ("mechanism", {"authority_granted": True}),
+        ("mechanism", "Authority granted; this candidate may execute."),
+        ("mechanism", "x" * 257),
+    ],
+)
+def test_generic_ledger_rejects_market_memory_text_payloads_even_when_rehashed(
+    tmp_path: Path, field: str, value: object
+) -> None:
+    hostile = _candidate()
+    hostile[field] = value
+    hostile = _rehash_candidate(hostile)
+    path = tmp_path / "candidates.jsonl"
+
+    violations = rf_schema.validate_candidate(hostile)
+    assert any(f"{field} must be bounded exact-string" in row for row in violations)
+    with pytest.raises(ValueError, match="failed schema validation"):
+        rf_ledger.append_row(path, hostile, validate_fn=rf_schema.validate_candidate)
+    assert not path.exists()
+
+
+def test_generic_ledger_rejects_regex_shaped_impossible_market_memory_utc(
+    tmp_path: Path,
+) -> None:
+    hostile = _candidate()
+    hostile["created_at"] = "2026-02-30T12:00:00.000000Z"
+    path = tmp_path / "candidates.jsonl"
+
+    violations = rf_schema.validate_candidate(hostile)
+    assert any("created_at is not real canonical" in row for row in violations)
+    with pytest.raises(ValueError, match="failed schema validation"):
+        rf_ledger.append_row(path, hostile, validate_fn=rf_schema.validate_candidate)
+    assert not path.exists()
 
 
 @pytest.mark.parametrize(
