@@ -9,12 +9,14 @@ import os
 import plistlib
 import subprocess
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+import pytest
 import yaml
 
 from scripts import build_prophet_marks as prophet_marks
+from scripts import build_prophet_option_shadow_lifecycle as option_lifecycle
 from scripts import mirror_flow_idx
 from scripts.build_options_prophet import SCHEMA, build_from_disk, build_payload
 from scripts.mirror_flow_idx import OPTIONS_PROPHET_R2_KEY
@@ -1129,7 +1131,11 @@ def test_prophet_marks_runner_uses_the_checkout_that_owns_it():
     assert 'REPO_ROOT="/Users/' not in runner
     assert 'SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)' in runner
     assert 'REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)' in runner
-    assert 'cd "$REPO_ROOT" && "$PYTHON" -m "$MODULE" --publish' in runner
+    assert '"$PYTHON" -m "$MARKS_MODULE" --publish' in runner
+    assert '"$PYTHON" -m "$LIFECYCLE_MODULE" --advance' in runner
+    assert runner.index('"$PYTHON" -m "$MARKS_MODULE" --publish') < runner.index(
+        '"$PYTHON" -m "$LIFECYCLE_MODULE" --advance'
+    )
 
     plist_path = repo / "ops/launchd/com.mastermind.prophetmarks.plist"
     plist_text = plist_path.read_text(encoding="utf-8")
@@ -1215,8 +1221,16 @@ esac
     assert "outside 09:25–16:05 ET window" in before.stdout
     assert at_open.returncode == 0
     assert "FAKE_PYTHON -m scripts.build_prophet_marks --publish" in at_open.stdout
+    assert (
+        "FAKE_PYTHON -m scripts.build_prophet_option_shadow_lifecycle --advance"
+        in at_open.stdout
+    )
     assert before_close.returncode == 0
     assert "FAKE_PYTHON -m scripts.build_prophet_marks --publish" in before_close.stdout
+    assert (
+        "FAKE_PYTHON -m scripts.build_prophet_option_shadow_lifecycle --advance"
+        in before_close.stdout
+    )
     assert at_close.returncode == 0
     assert "FAKE_PYTHON" not in at_close.stdout
     assert "outside 09:25–16:05 ET window" in at_close.stdout
@@ -1982,3 +1996,598 @@ def test_prophet_marks_refuses_a_non_private_state_directory(monkeypatch, tmp_pa
     ) is None
     assert client.puts == []
     assert list(private_root.iterdir()) == []
+
+
+def _lifecycle_private_dir(path: Path) -> Path:
+    path.mkdir(mode=0o700)
+    path.chmod(0o700)
+    return path
+
+
+def _lifecycle_emit_mark(
+    monkeypatch,
+    mark_root: Path,
+    *,
+    observed_at: str,
+    session_date: str,
+    phase: str,
+    available: bool = True,
+    mid: float = 3.0,
+    strike: float = 16.0,
+    plan_id: str = "SOFI-BULL-20260803",
+) -> tuple[dict, dict]:
+    monkeypatch.setenv("PROPHET_OPTION_EVIDENCE_STATE_ROOT", str(mark_root))
+    plan = _option_mark_plan(plan_id, phase=phase)
+    plan["option_contract"]["strike"] = strike
+    plan["option_contract"]["expiry"] = "2026-10-16"
+    index = {
+        "schema": "prophet.index/v1",
+        "asof": session_date,
+        "recorded_at": session_date,
+        "plans": [plan],
+    }
+    session = date.fromisoformat(session_date)
+    contract, contract_reason = prophet_marks._plan_contract(
+        plan, session_date=session
+    )
+    if available:
+        observed = datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
+        quote_clock = observed - timedelta(minutes=1)
+        raw_quote = {
+            "bid": round(mid - 0.05, 4),
+            "ask": round(mid + 0.05, 4),
+            "last": round(mid, 4),
+            "quote_ts_utc": quote_clock.isoformat(),
+            "trade_ts_utc": (quote_clock + timedelta(seconds=1)).isoformat(),
+            "source_sequence": 7,
+        }
+        quote, quote_reason = prophet_marks._validated_quote(
+            raw_quote,
+            observed_at=observed,
+            session_date=session,
+        )
+    else:
+        quote, quote_reason = None, "SOURCE_UNAVAILABLE"
+    row = prophet_marks._plan_evidence_row(
+        plan,
+        contract=contract,
+        contract_reason=contract_reason,
+        quote=quote,
+        quote_reason=quote_reason,
+    )
+    coverage = prophet_marks._evidence_coverage(
+        index=index,
+        rows=[row],
+        source_call_count=1,
+    )
+    pointer = prophet_marks._publish_private_observation(
+        index=index,
+        payload={
+            "schema": "prophet.live_marks/v1",
+            "asof_utc": observed_at,
+            "session_date": session_date,
+            "marks": {},
+            "coverage": coverage,
+        },
+        evidence_rows=[row],
+    )
+    return pointer, row
+
+
+def _lifecycle_ledger(path: Path) -> Path:
+    path.write_text("# canonical test ledger\n", encoding="utf-8")
+    return path
+
+
+def _lifecycle_append_close(
+    path: Path,
+    *,
+    plan_id: str = "SOFI-BULL-20260803",
+    close_date: str = "2026-08-11",
+    outcome: str = "T1_HIT",
+    option_result_pct=None,
+) -> dict:
+    row = {
+        "schema": "prophet.ledger/v1",
+        "id": plan_id,
+        "close_date": close_date,
+        "outcome": outcome,
+        "asof": close_date,
+        "option_result_pct": option_result_pct,
+    }
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(row, allow_nan=False) + "\n")
+    return row
+
+
+def _lifecycle_state(root: Path) -> dict:
+    return json.loads((root / "current.json").read_text(encoding="utf-8"))
+
+
+def _lifecycle_events(root: Path) -> list[dict]:
+    state = _lifecycle_state(root)
+    pointer = state["lifecycle_head"]
+    backwards = []
+    while pointer is not None:
+        event = option_lifecycle._load_event(root, pointer)
+        backwards.append(event)
+        pointer = event["previous"]
+    backwards.reverse()
+    return backwards
+
+
+def _prepare_enrolled_lifecycle(
+    monkeypatch,
+    tmp_path: Path,
+    *,
+    session_date: str = "2026-08-11",
+) -> tuple[Path, Path, Path, dict]:
+    mark_root = tmp_path / "private-marks"
+    lifecycle_root = _lifecycle_private_dir(tmp_path / "private-lifecycle")
+    ledger_path = _lifecycle_ledger(tmp_path / "ledger.jsonl")
+    day = date.fromisoformat(session_date)
+    boundary_at = datetime(
+        day.year, day.month, day.day, 14, 0, tzinfo=timezone.utc
+    ).isoformat()
+    enrollment_at = datetime(
+        day.year, day.month, day.day, 14, 5, tzinfo=timezone.utc
+    ).isoformat()
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at=boundary_at,
+        session_date=session_date,
+        phase="triggered_pre_t1",
+        mid=2.9,
+    )
+    activated = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert activated["status"] == "activated"
+    enrollment_pointer, _row = _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at=enrollment_at,
+        session_date=session_date,
+        phase="triggered_pre_t1",
+        mid=3.0,
+    )
+    advanced = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert advanced["enrollment_count"] == 1
+    return mark_root, lifecycle_root, ledger_path, enrollment_pointer
+
+
+def test_option_shadow_lifecycle_is_prospective_and_enrolls_once(
+    monkeypatch,
+    tmp_path,
+):
+    mark_root = tmp_path / "private-marks"
+    lifecycle_root = _lifecycle_private_dir(tmp_path / "private-lifecycle")
+    ledger_path = _lifecycle_ledger(tmp_path / "ledger.jsonl")
+
+    boundary_pointer, _ = _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:00:00+00:00",
+        session_date="2026-08-11",
+        phase="triggered_pre_t1",
+        mid=2.9,
+    )
+    activated = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert activated["status"] == "activated"
+    assert _lifecycle_state(lifecycle_root)["enrollments"] == {}
+
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:05:00+00:00",
+        session_date="2026-08-11",
+        phase="pre_trigger",
+        mid=3.0,
+    )
+    pretrigger = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert pretrigger["enrollment_count"] == 0
+
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:10:00+00:00",
+        session_date="2026-08-11",
+        phase="triggered_pre_t1",
+        available=False,
+    )
+    stale = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert stale["enrollment_count"] == 0
+
+    first_fresh_pointer, _ = _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:15:00+00:00",
+        session_date="2026-08-11",
+        phase="triggered_pre_t1",
+        mid=3.1,
+    )
+    enrolled = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert enrolled["enrollment_count"] == 1
+
+    second_fresh_pointer, _ = _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:20:00+00:00",
+        session_date="2026-08-11",
+        phase="triggered_pre_t1",
+        mid=3.2,
+    )
+    repeated = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert repeated["enrollment_count"] == 0
+    state = _lifecycle_state(lifecycle_root)
+    assert len(state["enrollments"]) == 1
+    latest = state["latest_marks"]["SOFI-BULL-20260803"]
+    assert latest["sessions"]["2026-08-11"] == second_fresh_pointer
+
+    events = _lifecycle_events(lifecycle_root)
+    assert [event["event_kind"] for event in events] == [
+        "activation_boundary",
+        "enrollment",
+    ]
+    assert events[0]["payload"]["mark_boundary"] == boundary_pointer
+    enrollment = events[1]
+    assert enrollment["payload"]["mark_observation"] == first_fresh_pointer
+    assert enrollment["payload"]["plan"]["phase"] == "triggered_pre_t1"
+    assert enrollment["payload"]["position_assumed"] is False
+    assert enrollment["payload"]["provider_observed_entry"] is False
+    assert not any(enrollment["authority"].values())
+    assert enrollment["limitations"]["not_trade_pnl"] is True
+    assert enrollment["limitations"]["never_populates_option_result_pct"] is True
+
+    assert lifecycle_root.stat().st_mode & 0o777 == 0o700
+    for node in lifecycle_root.rglob("*"):
+        expected = 0o700 if node.is_dir() else 0o600
+        assert node.stat().st_mode & 0o777 == expected
+
+
+def test_option_shadow_terminal_uses_latest_same_session_mid_without_writing_ledger(
+    monkeypatch,
+    tmp_path,
+):
+    mark_root, lifecycle_root, ledger_path, _ = _prepare_enrolled_lifecycle(
+        monkeypatch, tmp_path
+    )
+    latest_pointer, _ = _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:10:00+00:00",
+        session_date="2026-08-11",
+        phase="triggered_pre_t1",
+        mid=3.3,
+    )
+    source_row = _lifecycle_append_close(ledger_path)
+    ledger_before = ledger_path.read_bytes()
+
+    summary = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert summary["terminal_count"] == 1
+    assert ledger_path.read_bytes() == ledger_before
+    assert source_row["option_result_pct"] is None
+
+    events = _lifecycle_events(lifecycle_root)
+    assert [event["event_kind"] for event in events] == [
+        "activation_boundary",
+        "enrollment",
+        "terminal",
+    ]
+    terminal = events[-1]
+    payload = terminal["payload"]
+    assert payload["terminal_mark"]["status"] == "available"
+    assert payload["terminal_mark"]["mark"]["mark_observation"] == latest_pointer
+    assert payload["shadow_return"] == {
+        "status": "available",
+        "basis": "shadow_mid_to_mid_research_only",
+        "shadow_mark_to_mark_return_pct": 10.0,
+        "unavailable_reason": None,
+        "trade_pnl": False,
+    }
+    assert payload["provider_observed_exit"] is False
+    assert payload["position_assumed"] is False
+    assert payload["canonical_close"]["source_option_result_pct_was_null"] is True
+    assert not any(terminal["authority"].values())
+    assert _lifecycle_state(lifecycle_root)["latest_marks"] == {}
+
+    duplicate = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert duplicate["status"] == "unchanged"
+    assert duplicate["terminal_count"] == 0
+    assert len(list((lifecycle_root / "events").rglob("posle_*.json"))) == 3
+
+
+@pytest.mark.parametrize(
+    ("scenario", "expected_reason"),
+    [
+        ("missing_same_session", "NO_SAME_SESSION_ADMITTED_MARK"),
+        ("contract_drift", "CONTRACT_DRIFT"),
+        ("no_entry", "CANONICAL_NO_ENTRY"),
+        ("close_predates", "CANONICAL_CLOSE_PREDATES_ENROLLMENT"),
+    ],
+)
+def test_option_shadow_terminal_unavailable_reasons_are_immutable(
+    monkeypatch,
+    tmp_path,
+    scenario,
+    expected_reason,
+):
+    enrollment_session = "2026-08-12" if scenario == "close_predates" else "2026-08-11"
+    mark_root, lifecycle_root, ledger_path, _ = _prepare_enrolled_lifecycle(
+        monkeypatch,
+        tmp_path,
+        session_date=enrollment_session,
+    )
+    close_date = "2026-08-12" if scenario == "missing_same_session" else "2026-08-11"
+    outcome = "NO_ENTRY" if scenario == "no_entry" else "T1_HIT"
+    if scenario == "contract_drift":
+        _lifecycle_emit_mark(
+            monkeypatch,
+            mark_root,
+            observed_at="2026-08-11T14:10:00+00:00",
+            session_date="2026-08-11",
+            phase="triggered_pre_t1",
+            mid=3.2,
+            strike=17.0,
+        )
+    _lifecycle_append_close(
+        ledger_path,
+        close_date=close_date,
+        outcome=outcome,
+    )
+
+    summary = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert summary["terminal_count"] == 1
+    terminal = _lifecycle_events(lifecycle_root)[-1]
+    assert terminal["event_kind"] == "terminal"
+    assert terminal["payload"]["terminal_mark"] == {
+        "status": "unavailable",
+        "reason": expected_reason,
+        "mark": None,
+    }
+    assert terminal["payload"]["shadow_return"] == {
+        "status": "unavailable",
+        "basis": "shadow_mid_to_mid_research_only",
+        "shadow_mark_to_mark_return_pct": None,
+        "unavailable_reason": expected_reason,
+        "trade_pnl": False,
+    }
+
+
+def test_option_shadow_lifecycle_refuses_ledger_rewrite_and_option_result_claim(
+    monkeypatch,
+    tmp_path,
+):
+    mark_root = tmp_path / "private-marks"
+    lifecycle_root = _lifecycle_private_dir(tmp_path / "private-lifecycle")
+    ledger_path = _lifecycle_ledger(tmp_path / "ledger.jsonl")
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:00:00+00:00",
+        session_date="2026-08-11",
+        phase="pre_trigger",
+    )
+    option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    state_before = (lifecycle_root / "current.json").read_bytes()
+    ledger_path.write_text("# rewritten ledger prefix\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="no longer extends"):
+        option_lifecycle.advance_lifecycle(
+            lifecycle_root=lifecycle_root,
+            mark_root=mark_root,
+            ledger_path=ledger_path,
+        )
+    assert (lifecycle_root / "current.json").read_bytes() == state_before
+
+    other_root = _lifecycle_private_dir(tmp_path / "private-lifecycle-claim")
+    claimed_ledger = _lifecycle_ledger(tmp_path / "claimed-ledger.jsonl")
+    _lifecycle_append_close(claimed_ledger, option_result_pct=12.3)
+    with pytest.raises(ValueError, match="already claims or lacks"):
+        option_lifecycle.advance_lifecycle(
+            lifecycle_root=other_root,
+            mark_root=mark_root,
+            ledger_path=claimed_ledger,
+        )
+    assert not (other_root / "current.json").exists()
+
+
+def test_option_shadow_lifecycle_refuses_a_non_ancestor_mark_cursor(
+    monkeypatch,
+    tmp_path,
+):
+    mark_root = tmp_path / "private-marks"
+    lifecycle_root = _lifecycle_private_dir(tmp_path / "private-lifecycle")
+    ledger_path = _lifecycle_ledger(tmp_path / "ledger.jsonl")
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:00:00+00:00",
+        session_date="2026-08-11",
+        phase="pre_trigger",
+    )
+    option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:05:00+00:00",
+        session_date="2026-08-11",
+        phase="pre_trigger",
+    )
+    state = _lifecycle_state(lifecycle_root)
+    fake_id = "pom_obs_" + "a" * 64
+    state["mark_cursor"] = {
+        "schema": prophet_marks.EVIDENCE_POINTER_SCHEMA,
+        "observation_id": fake_id,
+        "key": f"observations/2026-08-11/{fake_id}.json",
+        "sha256": "b" * 64,
+        "bytes": 1,
+    }
+    state["state_id"] = option_lifecycle._state_identity(state)
+    forged_state = option_lifecycle._canonical_json_bytes(state)
+    (lifecycle_root / "current.json").write_bytes(forged_state)
+    (lifecycle_root / "current.json").chmod(0o600)
+
+    with pytest.raises(ValueError, match="missing|not an ancestor"):
+        option_lifecycle.advance_lifecycle(
+            lifecycle_root=lifecycle_root,
+            mark_root=mark_root,
+            ledger_path=ledger_path,
+        )
+    assert (lifecycle_root / "current.json").read_bytes() == forged_state
+
+
+def test_option_shadow_lifecycle_runtime_schema_failure_precedes_event_write(
+    monkeypatch,
+    tmp_path,
+):
+    mark_root = tmp_path / "private-marks"
+    lifecycle_root = _lifecycle_private_dir(tmp_path / "private-lifecycle")
+    ledger_path = _lifecycle_ledger(tmp_path / "ledger.jsonl")
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:00:00+00:00",
+        session_date="2026-08-11",
+        phase="triggered_pre_t1",
+    )
+    repo = Path(__file__).resolve().parents[1]
+    schema = json.loads(
+        (
+            repo
+            / "contracts/options/prophet.option_shadow_lifecycle_event.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    schema["properties"]["event_kind"] = {"const": "never_valid"}
+    bad_schema = tmp_path / "bad-lifecycle-schema.json"
+    bad_schema.write_text(json.dumps(schema), encoding="utf-8")
+    monkeypatch.setenv(
+        "PROPHET_OPTION_SHADOW_LIFECYCLE_SCHEMA_PATH",
+        str(bad_schema),
+    )
+
+    with pytest.raises(ValueError, match="schema check failed"):
+        option_lifecycle.advance_lifecycle(
+            lifecycle_root=lifecycle_root,
+            mark_root=mark_root,
+            ledger_path=ledger_path,
+        )
+    assert not (lifecycle_root / "current.json").exists()
+    assert not (lifecycle_root / "events").exists()
+
+
+def test_option_shadow_lifecycle_crash_retry_adopts_identical_event(
+    monkeypatch,
+    tmp_path,
+):
+    mark_root = tmp_path / "private-marks"
+    lifecycle_root = _lifecycle_private_dir(tmp_path / "private-lifecycle")
+    ledger_path = _lifecycle_ledger(tmp_path / "ledger.jsonl")
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:00:00+00:00",
+        session_date="2026-08-11",
+        phase="triggered_pre_t1",
+    )
+    original_write_state = option_lifecycle._write_state
+
+    def fail_state(*_args, **_kwargs):
+        raise OSError("injected state swap failure")
+
+    monkeypatch.setattr(option_lifecycle, "_write_state", fail_state)
+    with pytest.raises(OSError, match="injected"):
+        option_lifecycle.advance_lifecycle(
+            lifecycle_root=lifecycle_root,
+            mark_root=mark_root,
+            ledger_path=ledger_path,
+        )
+    orphan_files = list((lifecycle_root / "events").rglob("posle_*.json"))
+    assert len(orphan_files) == 1
+    original_body = orphan_files[0].read_bytes()
+    original_event = json.loads(original_body)
+    assert not (lifecycle_root / "current.json").exists()
+
+    # The source head may advance before the retry. The durable activation marker
+    # freezes the original boundary, so retry still adopts exactly the orphaned event.
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:05:00+00:00",
+        session_date="2026-08-11",
+        phase="pre_trigger",
+    )
+
+    monkeypatch.setattr(option_lifecycle, "_write_state", original_write_state)
+    recovered = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert recovered["status"] == "activated"
+    event_files = list((lifecycle_root / "events").rglob("posle_*.json"))
+    assert len(event_files) == 1
+    assert event_files[0].read_bytes() == original_body
+    assert recovered["mark_cursor"] == original_event["payload"]["mark_boundary"][
+        "observation_id"
+    ]
+    option_lifecycle._validate_event_chain(
+        lifecycle_root,
+        _lifecycle_state(lifecycle_root),
+    )
+
+
+def test_option_shadow_lifecycle_has_no_public_writer_or_ledger_mutator():
+    source = Path(option_lifecycle.__file__).read_text(encoding="utf-8")
+    assert "put_object(" not in source
+    assert "upload_file(" not in source
+    assert "_append_ledger_row" not in source
+    assert "option_result_pct\"] =" not in source
+    assert option_lifecycle._limitations_block()["public_redistribution"] is False
+    assert not any(option_lifecycle._authority_block().values())
