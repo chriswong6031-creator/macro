@@ -54,6 +54,7 @@ from scripts.propose_government_revenue_recipient_graph import (
     main,
     normalize_legal_name,
     propose_recipient_graph,
+    registrant_join_key,
     render_worksheet_markdown,
     select_ex21_filename,
     write_proposal,
@@ -316,6 +317,131 @@ def test_leading_article_rule_is_paired_boeing_recovers_and_ge_stays_at_zero():
     assert boeing["usaspending_recipient_names"] == ["THE BOEING COMPANY"]
     assert boeing["sec_source_name"] == "BOEING CO"
     assert boeing["normalized_join_key"] == "boeing co"
+
+
+# --- the registrant key must match the registrant's OWN documents ----------
+
+BA_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK0000012927.json"
+BA_EX21_URL = (
+    "https://www.sec.gov/Archives/edgar/data/12927/000001292726000010/"
+    "ba-20251231xexhibit21.htm"
+)
+
+
+def _ba_registry_spelling(registrant_name: str, *, ex21_names_the_registrant: bool):
+    """Re-serve Boeing's registry name, and optionally an EX-21 that lists itself.
+
+    Both halves of the defect need Boeing's own documents, not new fixtures: the
+    SEC registry spelling is the only place the state-of-incorporation suffix
+    appears, and an EX-21 that repeats the registrant is what turns an unmatched
+    registrant key into a subsidiary rather than a silence.
+    """
+    submissions = json.loads(
+        (FIXTURES / "sec_submissions_ba.json").read_text(encoding="utf-8")
+    )
+    submissions["name"] = registrant_name
+    rows = ["Boeing Capital Corporation", "Jeppesen Sanderson, Inc."]
+    if ex21_names_the_registrant:
+        rows.insert(0, "The Boeing Company")
+    body = (
+        "<html><body><p>Exhibit 21.1</p><p>Subsidiaries of the Registrant</p><table>"
+        "<tr><td>Name</td><td>Jurisdiction of Incorporation</td></tr>"
+        + "".join(f"<tr><td>{name}</td><td>Delaware</td></tr>" for name in rows)
+        + "</table></body></html>"
+    )
+    return _fetcher(
+        **{
+            BA_SUBMISSIONS_URL: json.dumps(submissions).encode("utf-8"),
+            BA_EX21_URL: body.encode("utf-8"),
+        }
+    )
+
+
+def _ba_entities(proposal) -> dict[str, dict]:
+    """Every BA legal entity, with the edge and UEIs that landed on it."""
+    graph = proposal.graph
+    edges = {edge["child_entity_id"]: edge for edge in graph["ownership_edges"]}
+    ueis: dict[str, set[str]] = {}
+    for row in graph["identifiers"]:
+        ueis.setdefault(row["entity_id"], set()).add(row["value"])
+    return {
+        entity["entity_id"]: {
+            "canonical_name": entity["canonical_name"],
+            "relationship": edges[entity["entity_id"]]["relationship"],
+            "edge_id": edges[entity["entity_id"]]["edge_id"],
+            "ueis": ueis.get(entity["entity_id"], set()),
+        }
+        for entity in graph["legal_entities"]
+        if entity["entity_id"].startswith("legal:ba:")
+    }
+
+
+def test_registrant_join_key_strips_only_the_state_of_incorporation_suffix():
+    """The suffix is registry bookkeeping; every other token still distinguishes."""
+    assert registrant_join_key("L3HARRIS TECHNOLOGIES, INC. /DE/") == (
+        normalize_legal_name("L3Harris Technologies, Inc.")
+    )
+    assert registrant_join_key("NORTHROP GRUMMAN CORP /DE/") == "northrop grumman corp"
+    # Not a suffix, not stripped: a real name fragment survives untouched.
+    assert registrant_join_key("BOEING CO") == "boeing co"
+    assert registrant_join_key("ACME /DE/ HOLDINGS") == normalize_legal_name(
+        "ACME /DE/ HOLDINGS"
+    )
+
+
+def test_suffixed_registrant_never_becomes_a_wholly_owned_subsidiary_of_itself():
+    """A registrant key no document repeats mints a phantom copy of the issuer.
+
+    ``normalize_legal_name`` keeps the SEC registry's state-of-incorporation
+    suffix as a distinguishing token ("boeing co de"), so the registrant key
+    could not equal the key the registrant's own EX-21 self-reference and its
+    award records produce ("boeing co").  The registrant-wins skip missed, and
+    the issuer's OWN identifiers were minted onto a second entity holding a
+    ``wholly_owned`` edge -- the company recorded as a subsidiary of itself,
+    while the real registrant entity sat beside it with no identifier at all.
+    """
+    proposal = _propose(
+        fetcher=_ba_registry_spelling("BOEING CO /DE/", ex21_names_the_registrant=True)
+    )
+
+    entities = _ba_entities(proposal)
+    holders = {
+        entity_id: row for entity_id, row in entities.items() if "BAENGCMPNY11" in row["ueis"]
+    }
+    assert len(holders) == 1
+    (holder,) = holders.values()
+    # The registrant's own UEI rides the issuer edge, never an ownership edge.
+    assert holder["relationship"] == "issuer_legal_entity"
+    assert [row["relationship"] for row in entities.values()].count(
+        "issuer_legal_entity"
+    ) == 1
+    # No second entity for the same registrant under either spelling.
+    assert not [
+        entity_id for entity_id in entities if entity_id.endswith("-de")
+    ], entities
+    assert _ueis(proposal, "BA") == {"BAENGCMPNY11"}
+    assert load_recipient_entity_graph(proposal.graph, as_of=AS_OF)["status"] == "ready"
+
+
+def test_suffixed_registrant_keeps_its_own_ueis_reachable_without_a_self_reference():
+    """The silent half: no EX-21 self-reference means no phantom, just loss.
+
+    Northrop Grumman ("NORTHROP GRUMMAN CORP /DE/") has no self-reference in its
+    exhibit, so the unmatched registrant key produced no wrong row to notice --
+    the registrant's identifiers simply never reached the graph.
+    """
+    proposal = _propose(
+        fetcher=_ba_registry_spelling("BOEING CO /DE/", ex21_names_the_registrant=False)
+    )
+
+    assert _ueis(proposal, "BA") == {"BAENGCMPNY11"}
+    holders = {
+        entity_id
+        for entity_id, row in _ba_entities(proposal).items()
+        if "BAENGCMPNY11" in row["ueis"]
+    }
+    assert len(holders) == 1
+    assert _causes(proposal).get("BA") is None
 
 
 # --- G5: named, separate causes -------------------------------------------

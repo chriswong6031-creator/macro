@@ -260,6 +260,8 @@ _EX21_LIST_MARKER = re.compile(r"^(?:\(?\d{1,3}[.)]|[•●*\-–—])\s+")
 # ex1012, exhibit231, ex232..., ex311..., ex321... all still fail the pattern.
 _EX21_FILENAME = re.compile(r"ex(?:hibit)?[-_.x]?21", re.IGNORECASE)
 _EX21_EXTENSIONS = (".htm", ".html", ".txt")
+# "L3HARRIS TECHNOLOGIES, INC. /DE/" -> "L3HARRIS TECHNOLOGIES, INC."
+_STATE_OF_INCORPORATION_SUFFIX = re.compile(r"\s*/[A-Za-z]{2}/\s*$")
 
 
 # ---------------------------------------------------------------------------
@@ -290,6 +292,33 @@ def normalize_legal_name(name: str | None) -> str:
     if len(tokens) > 1 and tokens[0] == _LEADING_ARTICLE:
         tokens = tokens[1:]
     return " ".join(tokens)
+
+
+def registrant_join_key(registrant_name: str | None) -> str:
+    """Normalize a registrant name into the key its own documents will match.
+
+    The SEC registry appends a state-of-incorporation suffix to some registrant
+    names ("L3HARRIS TECHNOLOGIES, INC. /DE/", "NORTHROP GRUMMAN CORP /DE/") that
+    no filing and no award record ever repeats.  :func:`normalize_legal_name`
+    keeps that suffix as a distinguishing token ("l3harris technologies inc de"),
+    so a registrant key built from it can never equal the key its EX-21
+    self-reference and its USAspending recipient names produce.
+
+    The consequence was not a missed row but a WRONG one: the registrant key
+    matched nothing, the registrant's own name arrived through the subsidiary
+    path instead, and the registrant's own UEIs were minted as a ``wholly_owned``
+    subsidiary of the company they belong to -- while the real registrant entity
+    sat beside it holding no identifier at all.  Registrants whose suffix-free
+    name never appears (Northrop Grumman) simply lost their registrant UEIs.
+
+    Stripping runs on the RAW name because :func:`normalize_legal_name` rewrites
+    the slashes to spaces first, which would leave a bare ``de`` token behind.
+    This narrows a key to the name everyone else writes; it never widens what one
+    document may vouch for.
+    """
+    return normalize_legal_name(
+        _STATE_OF_INCORPORATION_SUFFIX.sub("", registrant_name or "")
+    )
 
 
 @dataclass(frozen=True)
@@ -796,7 +825,7 @@ def _issuer_graph_rows(
         }
     )
 
-    registrant_key = normalize_legal_name(issuer["registrant_name"])
+    registrant_key = registrant_join_key(issuer["registrant_name"])
     registrant_entity_id = f"legal:{slug}:{_slug(registrant_key)}"
     entity_ids: dict[str, str] = {registrant_key: registrant_entity_id}
     used_ids = {registrant_entity_id}
@@ -1120,7 +1149,10 @@ def propose_recipient_graph(
             continue
 
         registrant_name = str(submissions.get("name") or "").strip()
-        registrant_key = normalize_legal_name(registrant_name)
+        # Same key rule as _issuer_graph_rows: the two must agree, or the
+        # registrant-wins skip below and the issuer_legal_entity edge there key
+        # off different strings for one registrant.
+        registrant_key = registrant_join_key(registrant_name)
         if not registrant_key:
             # An unnamed registrant would still emit a legal-entity row, and one
             # blank canonical_name fails admission as ``missing_entity_display_name``
