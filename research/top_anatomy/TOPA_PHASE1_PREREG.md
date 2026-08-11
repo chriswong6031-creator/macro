@@ -185,3 +185,48 @@ gauntlet.
   [+2.56,+5.25] / +3.92 [+2.80,+4.79]; F1 −2.2/−17.0; F3 −2.25/−2.75; B3 +2.23/+4.67 on the two
   disjoint panels) and phase-0 run-3 (F1 −9.7, F3 −2.25, B3 +1.42, B2 +1.29). Sibling chip
   (NaN-safe summary emitters) in flight in a separate session; absorption procedure declared in §2.
+- **2026-08-11 — RESULTS READ + ADJUDICATION** (append-only; frozen sections untouched). Execution:
+  6/6 cells inside the wall (938 s total vs 12 h), plumbing `54d04f8cce6` + tests `07751721e75`
+  precede every result commit (order preserved through the builder's mid-wave rebase), determinism
+  re-run on two cells to float precision, suite 134 → 164 under TZ=UTC. **Builder deviations
+  accepted and logged:** (a) executed in the commissioning session's checkout — the branch was
+  already checked out there, so a second worktree was impossible (procedural, no scientific
+  content); (b) `--data-root` pointed at the primary checkout's store mirror, read-only, because
+  this worktree's `data/` is empty; (c) the DM stratum is a harness-level matcher
+  (`p1_matched_controls`) rather than per-stratum calls into `ta.matched_controls`, because
+  per-stratum calls would RE-CUT the frozen bin edges — an unregistered second moved variable; a
+  test pins it byte-equal to the frozen matcher when run without a stratum; (d) feature panels are
+  shared across constructions within a panel (a construction selects controls; it never enters a
+  feature value; identity = EXT variant).
+- **2026-08-11 — DISCOVERY + GOVERNING RULING.** §1's AM prose presumed case measurement at the
+  peak day; the FROZEN §2 pipeline measures cases at the {21,10,5} days-to-peak snapshots, where
+  case `days_since_63d_high` sits at median 1–2. Controls pinned at `F3 == 0` therefore sit CLOSER
+  to fresh highs than the cases — the anchor asymmetry REVERSED, not neutralized. Signed AM
+  diagnostics: +2.000 / +1.000 / +2.000 (primary / r63 / atrz) against anchors −2.25 / −2.25 /
+  −2.75 — non-collapse. Per §1's pre-declared clause the AM construction FAILED, and ALL NINE AM
+  cells are adjudicated **UNDERPOWERED-BY-CONSTRUCTION-FAILURE** (the summary JSONs retain the
+  mechanically-computed NOT-SUPPORTED grades, which predate this ruling; the report's table is the
+  adjudicated record). The builder-emitted magnitude-only `collapsed_by_magnitude=True` is ruled
+  NON-GOVERNING — it is blind to the sign flip; the signed diagnostic governs. The AM tolerance
+  gradient is admitted as DIAGNOSTIC-LAYER mechanism evidence only (primary residual gap
+  +2.00→+1.75 moved B3 −7.41→−3.89 and B2 −7.38→−4.61; atrz +2.00→+1.00 moved B3 −4.49→−2.01 and
+  B2 −3.78→−1.91): roughly two sessions of anchor proximity move the heat features by MORE than
+  every registered effect size, so the peak-anchor counter-explanation is LIVE AND LARGE — not
+  merely undischarged. **AM-v2 chartered** (successor construction, NOT run here, requires its own
+  prereg): controls matched to the case F3 DISTRIBUTION rather than pinned at zero, with the
+  snapshot geometry stated correctly.
+- **2026-08-11 — DM VERDICTS (stand as computed) + SYNTHESIS.** B2: P1-SUPPORTED on primary
+  (+0.952 [+0.110,+1.869] q=0.0248) and atrz_disjoint (+2.885 [+1.981,+3.542] q=0.0005);
+  UNDERPOWERED on r63_disjoint (n=90 vs the 100 floor; +4.947 [+3.143,+6.755] declared-sign
+  q=0.0005; the day-weighted sensitivity at n=399 is concordant — the floor, not the data,
+  withholds the grade). F3: P1-SUPPORTED primary (−1.667) + atrz (−1.500), UNDERPOWERED r63
+  (−2.125), each carrying the pre-declared anchor-artifact caveat. B3: P1-NOT-SUPPORTED on primary
+  (+0.429, q=0.284 — on the discovery cohort the duration confound explains B3), P1-SUPPORTED on
+  atrz (+3.268), UNDERPOWERED r63 (+4.885). Registered B2 anchor comparison: DM points sit INSIDE
+  W2's duration-unmatched CIs on BOTH disjoint panels (0.94× / 0.74× of W2's points) → the
+  declared "duration/length-bias artifacts do not explain W2's confirmation" branch. Era: ZERO
+  latest-era wrong-sign flags; B2 era-fade fence `fades=False` on all six cells. Leg synthesis
+  under the frozen rule: **NO leg reaches P1-ROBUST** (AM void; r63_disjoint underpowered under
+  DM). Headline, in the freeze's own terms: the duration/length-bias half of the artifact story is
+  DISCHARGED for B2/F3 (and for B3 on the wide tier only); the anchor-geometry half is
+  affirmatively measured as sufficient-magnitude and passes, decidable, to AM-v2.
