@@ -28,7 +28,7 @@ RECONCILIATION_RECEIPT = (
     / "data"
     / "biocatalyst"
     / "fixtures"
-    / "biocatalyst_f0_delta_reconciliation_receipt.v1.json"
+    / "biocatalyst_f0_delta_reconciliation_receipt.v2.json"
 )
 
 _BLOCKED_ADAPTERS = {
@@ -41,13 +41,11 @@ _BLOCKED_ADAPTERS = {
     "biocatalyst_corporate_document_span_adapter.v1": (
         "versioned_document_and_exact_span_read_contract"
     ),
-    "biocatalyst_capital_structure_pit_adapter.v1": (
-        "versioned_internal_pit_adapter_with_unavailable_state_semantics"
-    ),
 }
 _ELIGIBLE_ADAPTERS = {
     "biocatalyst_trial_read_api.v1",
     "biocatalyst_earnings_transcript_span_adapter.v1",
+    "biocatalyst_capital_structure_pit_adapter.v1",
 }
 _EXPECTED_FAMILIES = {
     "clinicaltrials_current_record",
@@ -127,13 +125,16 @@ def test_reconciliation_receipt_binds_the_exact_bytes_and_commit_it_audited() ->
     assert receipt["receipt_id"] == f"biocatalyst_f0_delta_{identity[:24]}"
 
 
-def test_reconciliation_kept_every_blocked_plane_blocked_with_its_exact_blocker() -> None:
+def test_reconciliation_records_exactly_one_adapter_eligibility_change() -> None:
     receipt = _load_json(RECONCILIATION_RECEIPT)
     fixture_adapters = _load_json(ADAPTER_FIXTURE)["adapters"]
     planes = _plane_by_adapter(receipt)
 
-    assert receipt["state"] == "reconciled_no_eligibility_change"
-    assert all(plane["eligibility_changed"] is False for plane in receipt["planes"])
+    assert receipt["state"] == "reconciled_with_eligibility_change"
+    changed = [plane for plane in receipt["planes"] if plane["eligibility_changed"]]
+    assert [plane["adapter_id"] for plane in changed] == [
+        "biocatalyst_capital_structure_pit_adapter.v1"
+    ]
 
     for adapter_id, blocker in _BLOCKED_ADAPTERS.items():
         plane = planes[adapter_id]
@@ -155,12 +156,16 @@ def test_reconciliation_kept_every_blocked_plane_blocked_with_its_exact_blocker(
 
     assert set(planes) == set(_BLOCKED_ADAPTERS) | _ELIGIBLE_ADAPTERS
 
-    # Capital Structure lineage is owned by open, unmerged PRs; the receipt must
-    # say so rather than quietly pin the adapter.
     capital = planes["biocatalyst_capital_structure_pit_adapter.v1"]
+    assert capital["verdict"] == "eligible"
+    assert capital["prior_biocatalyst_eligible"] is False
+    assert capital["reconciled_biocatalyst_eligible"] is True
+    assert capital["eligibility_changed"] is True
+    assert capital["blocker"] is None
     capital_evidence = " ".join(capital["evidence"])
-    assert "4740" in capital_evidence
-    assert "4746" in capital_evidence
+    assert "one issuer" in capital_evidence
+    assert "cash" in capital_evidence
+    assert "authority" in capital_evidence
 
 
 def test_receipt_records_the_planes_that_own_no_biocatalyst_read_adapter() -> None:
@@ -189,8 +194,7 @@ def test_receipt_schema_rejects_an_eligible_verdict_that_keeps_its_blocker() -> 
     promoted = deepcopy(_load_json(RECONCILIATION_RECEIPT))
     for plane in promoted["planes"]:
         if plane["adapter_id"] == "biocatalyst_capital_structure_pit_adapter.v1":
-            plane["verdict"] = "eligible"
-            plane["reconciled_biocatalyst_eligible"] = True
+            plane["blocker"] = "forbidden_widening"
 
     with pytest.raises(ContractValidationError):
         validate_contract(promoted, repo_root=ROOT)
@@ -198,7 +202,7 @@ def test_receipt_schema_rejects_an_eligible_verdict_that_keeps_its_blocker() -> 
 
 def test_receipt_schema_rejects_a_no_change_state_that_changed_an_eligibility() -> None:
     changed = deepcopy(_load_json(RECONCILIATION_RECEIPT))
-    changed["planes"][0]["eligibility_changed"] = True
+    changed["state"] = "reconciled_no_eligibility_change"
 
     with pytest.raises(ContractValidationError):
         validate_contract(changed, repo_root=ROOT)
@@ -319,6 +323,7 @@ def test_every_unavailable_family_states_a_blocker_and_unlocks_nothing() -> None
         "clinicaltrials_current_record",
         "clinicaltrials_record_history",
         "earnings_transcript_context",
+        "capital_structure_pit",
     }
 
     for family_id in unavailable:
@@ -343,7 +348,6 @@ def test_every_unavailable_family_states_a_blocker_and_unlocks_nothing() -> None
         "corporate_document_and_span": (
             "biocatalyst_corporate_document_span_adapter.v1"
         ),
-        "capital_structure_pit": "biocatalyst_capital_structure_pit_adapter.v1",
     }.items():
         assert families[family_id]["blocker"] == _BLOCKED_ADAPTERS[adapter_id]
 
@@ -391,17 +395,17 @@ def test_manifest_schema_rejects_a_readiness_claim_without_every_mandatory_famil
         validate_contract(claimed, repo_root=ROOT)
 
 
-def test_manifest_schema_rejects_an_available_family_that_keeps_its_blocker() -> None:
+def test_manifest_schema_rejects_an_available_family_with_a_blocker() -> None:
     promoted = deepcopy(_load_yaml(CLOSED_BETA_MANIFEST))
     for family in promoted["families"]:
         if family["family_id"] == "capital_structure_pit":
-            family["availability"] = "available"
+            family["blocker"] = "forbidden_widening"
 
     with pytest.raises(ContractValidationError):
         validate_contract(promoted, repo_root=ROOT)
 
 
-def test_neither_artifact_promotes_a_blocked_adapter_in_the_shared_fixture() -> None:
+def test_fixture_promotes_only_the_implemented_capital_adapter() -> None:
     fixture = _load_json(ADAPTER_FIXTURE)
     registry = _load_yaml(OWNERSHIP_REGISTRY)
 
@@ -419,3 +423,14 @@ def test_neither_artifact_promotes_a_blocked_adapter_in_the_shared_fixture() -> 
         assert adapter["callable"] is None
         assert adapter["routes"] == []
         assert adapter["output_contracts"] == []
+
+    capital = fixture["adapters"][
+        "biocatalyst_capital_structure_pit_adapter.v1"
+    ]
+    assert capital["module"] == "engine.capital_structure.biocatalyst_pit_adapter"
+    assert capital["callable"] == "read_biocatalyst_capital_structure_pit"
+    assert capital["routes"] == []
+    assert capital["output_contracts"] == [
+        "biocatalyst_capital_structure_pit_read.v1"
+    ]
+    assert capital["blocker"] is None

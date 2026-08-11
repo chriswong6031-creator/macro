@@ -1,0 +1,440 @@
+{
+  "schema_version": "1.1.0",
+  "purpose": "Plans minted by the 2026-08-11 force-majeure replay of the receipted 2026-08-09 origination refusal, and every candidate the replay did NOT mint. A plan listed in `minted` did not originate on the night its recorded_at names \u2014 it was reconstructed afterwards from that weekend's pinned board. Any consumer that computes a rate, hit-rate, calibration number or Prophet training input over the forward ledger MUST be able to split these rows out, which is why every minted plan carries origination_mode on the plan, on its index row, and on its forward-ledger row at close.",
+  "why_a_file_and_not_a_comment": "The standing law is that the forward ledger is never backfilled (research/PROPHET_LEDGER_SCHEMA.md). This event is a single operator-ordered exception, not a repeal. A file makes the exception enumerable and test-pinned: tests/test_prophet_outage_backfill.py asserts that the set of plans stamped origination_mode=outage_backfill* and the set listed here are the SAME set, in both directions, so a later silent backfill cannot hide inside this precedent.",
+  "backfills": [
+    {
+      "id": "prophet-us-outage-backfill-2026-08-09",
+      "market": "US",
+      "board_definition": "us_prophet_v1",
+      "engine_selection_era": "anticipation-v1-2026-08-08",
+      "window": {
+        "from": "2026-08-09",
+        "to": "2026-08-09"
+      },
+      "recorded_at": "2026-08-09",
+      "origination_mode": "outage_backfill_2026_08_09",
+      "authority": "operator force-majeure 2026-08-11",
+      "executed_at": "2026-08-11T05:32:28.853265+00:00",
+      "design_doc": "research/PROPHET_OUTAGE_BACKFILL_2026_08.md",
+      "headline": "The 2026-08-09 bake ran and refused all 30 eligible candidates because six of 1,758 panel members carried Sunday-dated bars and the pre-#5241 reach summary called the board mixed-vintage; this replay re-ran the same intake against the same bake-time board with that one flag healed and the heal verified by re-measurement.",
+      "inputs": {
+        "board_commit": "b3d3c38bdce5cd9934da68cb1b3743b5fe6f484b",
+        "board_path": "site/factordata/us_standouts.json",
+        "board_sha256": "0ac356cb84188c5e180a3455ff37a6284b3d6c39f23e02ba5f808840466020cc",
+        "board_blob": "f9ce1f3044fc370659e6b9561c84fd88d81bb6bf",
+        "board_asof": "2026-08-07",
+        "board_rank_by": "us_prophet_v1",
+        "board_buy_rows": 79,
+        "board_ancestry": "ancestor_of_origin_main",
+        "plans_baseline_commit": "ffd490a6cb164884d63a4e78b2a8d6ac7ec03a28",
+        "plans_baseline_count": 162,
+        "plans_baseline_ancestry": "ancestor_of_origin_main",
+        "plans_baseline_post_bake_proof": {
+          "required": "at least one plan with recorded_at >= 2026-08-10",
+          "found": 25,
+          "sample": [
+            "AGNT-BULL-20260406",
+            "BHP-BULL-20260805",
+            "BIIB-BULL-20260731",
+            "CENX-BULL-20260805",
+            "CNM-BULL-20260805"
+          ],
+          "waived": false
+        },
+        "live_wins_from": "2026-08-10",
+        "rejected_as_contaminated": "Any post-heal re-render of the same as_of. The 2026-08-10 evening re-render swapped rank_by v1->v2, refreshed its options snapshot, and admitted ASTS/CRC/SVM via a wall-clock earnings-blackout hole; membership flapped 78<->81 rows by render-host timezone on an identical as_of. Fenced here by the pinned board sha256."
+      },
+      "heal": {
+        "method": "recomputed_panel_price_reach",
+        "clamped_reads_through": "2026-08-09",
+        "recomputed": {
+          "through": "2026-08-07",
+          "through_raw": "2026-08-09",
+          "majority_through": "2026-08-07",
+          "members_at_through": 1755,
+          "members_total": 1758,
+          "mixed_vintage": false,
+          "off_majority_tickers": [
+            "CTRA",
+            "CWEN-A",
+            "TPH"
+          ]
+        },
+        "board_recorded_panel": {
+          "through": "2026-08-09",
+          "majority_through": "2026-08-07",
+          "members_at_through": 6,
+          "members_total": 1758,
+          "mixed_vintage": true
+        },
+        "panel_coverage": 1.0,
+        "panel_coverage_floor": 0.9,
+        "coverage_gate_waived": false,
+        "field": "staleness.inputs.panel.mixed_vintage",
+        "from": true,
+        "to": false
+      },
+      "geometry_vintages": {
+        "regime": {
+          "pinned": true,
+          "path": "data/regime/latest.json",
+          "bake_commit": "b3d3c38bdce5cd9934da68cb1b3743b5fe6f484b",
+          "sha256": "128a9055791826c860e663cb2e166cefe9cfac48d6aedb884e4af68052fcf616",
+          "bake_verdict": false,
+          "live_verdict": false,
+          "agrees": true,
+          "vintage_used": "live working tree (identical verdict to the pinned bake vintage)"
+        },
+        "stage_tilt_demote": {
+          "pinned": true,
+          "path": "data/prophet_stage_shadow/summary.json",
+          "bake_commit": "b3d3c38bdce5cd9934da68cb1b3743b5fe6f484b",
+          "sha256": "02f9fa759dc96bf61dfa57d2bb8f252617cba7c276c2c965a2edd55d26d8d2bc",
+          "bake_verdict": false,
+          "live_verdict": false,
+          "agrees": true,
+          "vintage_used": "live working tree (identical verdict to the pinned bake vintage)"
+        },
+        "earnings_call_table": {
+          "pinned": false,
+          "reason": "data/stage_analysis/backfill/earnings_calls.parquet is a local-only EquityDesk artifact committed to no branch; it cannot be vintage-pinned",
+          "present_on_this_host": false,
+          "vintage_used": "ABSENT \u2014 every earnings lookup answers null and the stage tilt stays at leash 1.0 for every pick"
+        }
+      },
+      "geometry_divergent": [],
+      "executing_commit": "511a7056b54f8bf431a1ad467ebd653da7433932",
+      "receipt": "data/prophet/origination_receipts/backfill-20260809-8bb4aa9900832b01.json",
+      "counts": {
+        "buy_rows": 79,
+        "admitted": 54,
+        "duplicate_id_blocked": 36,
+        "reorigination_blocked": 0,
+        "eligible_after_skips": 18,
+        "minted": 14,
+        "collided": 0,
+        "still_refused": 4
+      },
+      "reconciliation": {
+        "admission_identity": {
+          "statement": "admitted == duplicate_id_blocked + reorigination_blocked + eligible_after_skips",
+          "lhs": 54,
+          "rhs": 54,
+          "holds": true
+        },
+        "disposition_identity": {
+          "statement": "eligible_after_skips + reorigination_blocked == minted + collided + still_refused",
+          "lhs": 18,
+          "rhs": 18,
+          "holds": true
+        }
+      },
+      "minted": [
+        {
+          "plan_id": "APG-BULL-20260731",
+          "ticker": "APG",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 41.72,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/APG-BULL-20260731.json"
+        },
+        {
+          "plan_id": "DAN-BULL-20260731",
+          "ticker": "DAN",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 28.44,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/DAN-BULL-20260731.json"
+        },
+        {
+          "plan_id": "DRI-BULL-20260731",
+          "ticker": "DRI",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 213.8,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/DRI-BULL-20260731.json"
+        },
+        {
+          "plan_id": "FN-BULL-20260805",
+          "ticker": "FN",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 562.4,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/FN-BULL-20260805.json"
+        },
+        {
+          "plan_id": "HASI-BULL-20260805",
+          "ticker": "HASI",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 40.68,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/HASI-BULL-20260805.json"
+        },
+        {
+          "plan_id": "HAYW-BULL-20260731",
+          "ticker": "HAYW",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 15.82,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/HAYW-BULL-20260731.json"
+        },
+        {
+          "plan_id": "HP-BULL-20260731",
+          "ticker": "HP",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 37.1,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/HP-BULL-20260731.json"
+        },
+        {
+          "plan_id": "ISRG-BULL-20260731",
+          "ticker": "ISRG",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 378.8,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/ISRG-BULL-20260731.json"
+        },
+        {
+          "plan_id": "LECO-BULL-20260731",
+          "ticker": "LECO",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 282.0,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/LECO-BULL-20260731.json"
+        },
+        {
+          "plan_id": "MRNA-BULL-20260616",
+          "ticker": "MRNA",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 59.17,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/MRNA-BULL-20260616.json"
+        },
+        {
+          "plan_id": "RGTI-BULL-20260805",
+          "ticker": "RGTI",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 17.94,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/RGTI-BULL-20260805.json"
+        },
+        {
+          "plan_id": "RIO-BULL-20260731",
+          "ticker": "RIO",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 101.1,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/RIO-BULL-20260731.json"
+        },
+        {
+          "plan_id": "SBAC-BULL-20260731",
+          "ticker": "SBAC",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 184.0,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/SBAC-BULL-20260731.json"
+        },
+        {
+          "plan_id": "WFRD-BULL-20260731",
+          "ticker": "WFRD",
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "entry": 86.82,
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/WFRD-BULL-20260731.json"
+        }
+      ],
+      "collided": [],
+      "still_refused": [
+        {
+          "ticker": "CCJ",
+          "plan_id": "CCJ-BULL-20260805",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+          ]
+        },
+        {
+          "ticker": "SHEN",
+          "plan_id": "SHEN-BULL-20260805",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+          ]
+        },
+        {
+          "ticker": "URG",
+          "plan_id": "URG-BULL-20260805",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+          ]
+        },
+        {
+          "ticker": "UUUU",
+          "plan_id": "UUUU-BULL-20260805",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+          ]
+        }
+      ],
+      "already_published": {
+        "count": 36,
+        "plan_ids": [
+          "ADAM-BULL-20260626",
+          "AGNT-BULL-20260406",
+          "AMZN-BULL-20260731",
+          "APO-BULL-20260731",
+          "AVGO-BULL-20260731",
+          "AYI-BULL-20260731",
+          "BHP-BULL-20260805",
+          "BIDU-BULL-20260731",
+          "BIIB-BULL-20260731",
+          "CMC-BULL-20260731",
+          "CTS-BULL-20260805",
+          "ENR-BULL-20260731",
+          "EU-BULL-20260805",
+          "FBRT-BULL-20260805",
+          "FCX-BULL-20260731",
+          "FUL-BULL-20260805",
+          "GNL-BULL-20260805",
+          "GPCR-BULL-20260604",
+          "HD-BULL-20260807",
+          "HRMY-BULL-20260731",
+          "MDB-BULL-20260731",
+          "NGVT-BULL-20260731",
+          "NVDA-BULL-20260805",
+          "OKLO-BULL-20260805",
+          "RES-BULL-20260805",
+          "RH-BULL-20260417",
+          "SMR-BULL-20260731",
+          "STZ-BULL-20260805",
+          "TTC-BULL-20260731",
+          "UAL-BULL-20260805",
+          "UEC-BULL-20260731",
+          "VAL-BULL-20260805",
+          "WBD-BULL-20260805",
+          "WS-BULL-20260731",
+          "WT-BULL-20260710",
+          "XPEL-BULL-20260805"
+        ],
+        "note": "36 id(s) already published on main by an earlier bake \u2014 the SAME episode, not a refusal and not a collision",
+        "live_wins_within_window": [
+          {
+            "plan_id": "AGNT-BULL-20260406",
+            "ticker": "AGNT",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "BHP-BULL-20260805",
+            "ticker": "BHP",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "BIIB-BULL-20260731",
+            "ticker": "BIIB",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "EU-BULL-20260805",
+            "ticker": "EU",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "FBRT-BULL-20260805",
+            "ticker": "FBRT",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "GNL-BULL-20260805",
+            "ticker": "GNL",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "HRMY-BULL-20260731",
+            "ticker": "HRMY",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "OKLO-BULL-20260805",
+            "ticker": "OKLO",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "RES-BULL-20260805",
+            "ticker": "RES",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "STZ-BULL-20260805",
+            "ticker": "STZ",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "VAL-BULL-20260805",
+            "ticker": "VAL",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          },
+          {
+            "plan_id": "WBD-BULL-20260805",
+            "ticker": "WBD",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-10"
+          }
+        ],
+        "live_wins_within_window_count": 12
+      },
+      "never_reconstructed": {
+        "dates": [
+          "2026-08-03",
+          "2026-08-04",
+          "2026-08-05",
+          "2026-08-06"
+        ],
+        "ruling": "us-board-frozen-alpha-2026-08",
+        "ruling_path": "data/us_board_ledger/disclosed_gaps.json",
+        "reason": "Those boards ranked on a factor panel frozen at 2026-07-31 (gradeable: false, backfillable: false). A vintage-correct replay needs a point-in-time board harness that does not exist; reconstructing from the frozen boards would mint picks a correct engine would never have picked."
+      }
+    }
+  ]
+}

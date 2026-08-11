@@ -1,47 +1,11 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-10",
-  "generated_at_utc": "2026-08-10T09:40:07.572114+00:00",
+  "asof": "2026-08-11",
+  "generated_at_utc": "2026-08-11T09:38:21.762350+00:00",
   "horizon_days": 45,
   "entries": [
     {
-      "date": "2026-08-10",
-      "window_end": null,
-      "etype": "CPI",
-      "label_en": "CPI (consumer prices)",
-      "label_zh": "CPI（居民消费价格）",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "static",
-      "source": "engine.china_event_calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-10",
-      "window_end": null,
-      "etype": "CREDIT",
-      "label_en": "Money supply, RMB loans & TSF",
-      "label_zh": "货币供应、人民币贷款与社融",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": true
-    },
-    {
-      "date": "2026-08-10",
-      "window_end": null,
-      "etype": "PPI",
-      "label_en": "PPI (producer prices)",
-      "label_zh": "PPI（工业生产者价格）",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "static",
-      "source": "engine.china_event_calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-10",
+      "date": "2026-08-11",
       "window_end": "2026-08-31",
       "etype": "earnings_season",
       "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
@@ -375,6 +339,18 @@
       "source_class": "static",
       "source": "engine.hk_event_calendar",
       "approx": false
+    },
+    {
+      "date": "2026-09-25",
+      "window_end": null,
+      "etype": "HK_TRADE",
+      "label_en": "HK external trade",
+      "label_zh": "香港对外商品贸易",
+      "region": "hk",
+      "impact": "medium",
+      "source_class": "static",
+      "source": "engine.hk_event_calendar",
+      "approx": true
     }
   ],
   "data_gaps": [

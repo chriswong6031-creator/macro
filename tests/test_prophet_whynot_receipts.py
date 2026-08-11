@@ -495,12 +495,32 @@ def test_build_site_passes_the_receipts_into_the_view_model():
 
 def test_build_site_does_not_source_the_reason_list_from_the_published_index():
     """The build-order law: build_site runs BEFORE build_prophet, so the reason list may
-    only come from tonight's us_standouts. Reading last night's index for OPEN-PLAN keys
-    is the one permitted read, and this pins that it is the only one."""
+    only come from tonight's us_standouts.
+
+    Last night's index may be read ONLY for facts that cannot go stale into a wrong
+    number — a plan's open/closed state, and (§0.10) whether it was reconstructed after
+    the outage, which is a settled fact about its past. Everything a REFUSAL says must
+    come from ``doc``, tonight's board.
+
+    The pin used to be the literal call ``refusal_receipts(doc, open_tickers)``. That
+    spelling broke the moment a second permitted read was added, which made the guard
+    look like a veto on a change it never meant to forbid — so it now pins the LAW: one
+    index open, tonight's board as the reason source, and no refusal field read off the
+    published document.
+    """
     body = BUILD_SITE[BUILD_SITE.index("def _us_prophet_refusals("):]
     body = body[:body.index("\ndef ", 1)]
-    assert "refusal_receipts(doc, open_tickers)" in body
+    # The receipts are built from tonight's board dict, positionally first — never from
+    # anything derived out of the published index.
+    assert "refusal_receipts(doc, open_tickers" in body
+    # ONE index open, still.
     assert body.count("prophet\" / \"index.json") == 1
+    # The only per-plan fields taken off last night's rows. `why`/`groups`/status words
+    # would each be a reason sourced from the wrong generation.
+    permitted = {"asset", "closed", "origination_mode"}
+    read_from_index = set(re.findall(r"p\.get\(\"(\w+)\"\)", body))
+    assert read_from_index <= permitted, read_from_index - permitted
+    assert "is_reconstructed(p)" in body, "the mode is read through the shared predicate"
 
 
 def test_build_prophet_publishes_the_receipts_additively():

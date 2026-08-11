@@ -447,6 +447,16 @@ def _diff_lane(
     # parsed step list (after all the all-scope steps).  To avoid false-positive order
     # errors, we cap the actual subsequence length to the declared count for modules that
     # appear fewer times in declared than in actual.
+    #
+    # DELIBERATE blind spot of that cap (2026-08-11 fetch_r2 census ruling): in a
+    # serial-only lane (no scope arms) an UNDER-declared re-invocation of an
+    # already-declared module is dropped here and never flagged — daily.yml's engine
+    # ran three preamble fetch_r2 restores against one declared step for weeks, and
+    # presence passes set-wise.  The chosen posture is declaration-exactness in
+    # dag.yml (declare each re-invocation as its own step; pinned by the multiplicity
+    # tests in tests/test_dag_conformance.py::TestDiffer) rather than arm-aware
+    # parsing here.  The REVERSE direction — a declared re-invocation the workflow no
+    # longer runs — IS flagged, by the length-surplus branch below.
     common_serial = [m for m in serial_declared if m in actual_serial_set]
     actual_common_order_raw = [m for m in serial_actual if m in declared_serial_set]
     # Count declared occurrences per module so we know the allowed multiplicity
@@ -460,8 +470,10 @@ def _diff_lane(
             _occurrence[m] += 1
     if common_serial != actual_common_order:
         # Find the first position where they diverge to give a precise message
+        prefix_diverged = False
         for i, (dec, act) in enumerate(zip(common_serial, actual_common_order)):
             if dec != act:
+                prefix_diverged = True
                 covered_dec, _ = _covered_by_divergence(dec)
                 covered_act, _ = _covered_by_divergence(act)
                 if not covered_dec and not covered_act:
@@ -472,6 +484,26 @@ def _diff_lane(
                         f"Actual sequence: {actual_common_order}."
                     )
                     break  # one error per lane is enough to diagnose a reorder
+        if not prefix_diverged and len(common_serial) > len(actual_common_order):
+            # Pure length surplus: every zipped pair matched, so the loop above saw
+            # no divergence — zip() stops at the shorter list.  The mismatch is
+            # declared re-invocations BEYOND the count the live workflow still runs
+            # (presence passes set-wise because the module still occurs at least
+            # once).  Without this branch, removing a re-invocation from the
+            # workflow while its extra dag.yml step remains passes silently.
+            surplus = Counter(common_serial) - Counter(actual_common_order)
+            matched_counts = Counter(actual_common_order)
+            for mod in sorted(surplus):
+                covered_mod, _ = _covered_by_divergence(mod)
+                if covered_mod:
+                    continue
+                errors.append(
+                    f"  RE-INVOCATION COUNT MISMATCH in {lane_key}: module '{mod}' "
+                    f"is declared {Counter(common_serial)[mod]}x but the live "
+                    f"workflow runs it only {matched_counts[mod]}x.  A declared "
+                    f"re-invocation no longer exists — remove the extra dag.yml "
+                    f"step(s) or add a divergences entry."
+                )
 
     return errors
 

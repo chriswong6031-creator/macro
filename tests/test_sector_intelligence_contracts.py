@@ -913,6 +913,9 @@ def _write_minimal_schema(path: Path, contract_id: str, schema_uri: str | None =
 def _temporary_contract_root(tmp_path: Path) -> Path:
     (tmp_path / "contracts" / "sector_intelligence").mkdir(parents=True)
     (tmp_path / "contracts" / "biocatalyst").mkdir(parents=True)
+    (tmp_path / "contracts" / "capital_structure_projection.schema.json").write_bytes(
+        (ROOT / "contracts" / "capital_structure_projection.schema.json").read_bytes()
+    )
     return tmp_path
 
 
@@ -942,6 +945,28 @@ def test_b2_history_contracts_are_discovered_as_a_closed_contract_set() -> None:
         "trial_registry_change_fact.v1",
         "trial_history_read_model.v1",
     } <= set(schemas)
+
+
+def test_capital_structure_support_schema_resolves_without_becoming_a_contract() -> None:
+    registry = ContractRegistry(ROOT)
+
+    assert "biocatalyst_capital_structure_pit_read.v1" in registry.contract_ids
+    assert "capital_structure.projection_bundle.v1" not in registry.contract_ids
+    with pytest.raises(UnsupportedContractError):
+        registry.schema_for("capital_structure.projection_bundle.v1")
+
+
+def test_unreferenced_support_schema_is_not_required_in_a_hermetic_registry(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "contracts" / "sector_intelligence").mkdir(parents=True)
+    (tmp_path / "contracts" / "biocatalyst").mkdir(parents=True)
+    _write_minimal_schema(
+        tmp_path / "contracts" / "biocatalyst" / "minimal.schema.json",
+        "minimal.v1",
+    )
+
+    assert ContractRegistry(tmp_path).contract_ids == ("minimal.v1",)
 
 
 @pytest.mark.parametrize(

@@ -59,9 +59,9 @@
 <link rel="preload" href="mm_charts.js?v=244eb769" as="script">
 <link rel="preload" href="sector_cycles.js?v=963925f1" as="script">
 <link rel="prefetch" href="sector_cycles_series_data.js?v=15bb23a0" as="script">
-<link rel="prefetch" href="sector_cycles_narr_data.js?v=71762de4" as="script">
+<link rel="prefetch" href="sector_cycles_narr_data.js?v=733ff21f" as="script">
 <link rel="prefetch" href="sector_cycles_dna_data.js?v=46b0879d" as="script">
-<link rel="preload" href="sector_central_data.js?v=d66861e7" as="script">
+<link rel="preload" href="sector_central_data.js?v=ea89b7a0" as="script">
 
 <link rel="prefetch" href="subsector_rotation.js?v=b8465b64" as="script">
 <link rel="prefetch" href="rotation_events.js?v=c9e4bb83" as="script">
@@ -862,7 +862,7 @@
 
 <link rel="stylesheet" href="assets/css/3cff5b20.css?v=3cff5b20"><link rel="stylesheet" href="assets/css/a32d717f.css?v=a32d717f">
   <div class="panel span12" id="action-board"><h2><span class="l-en">What to act on now</span><span class="l-zh">当前可操作</span>
-      <span class="help">?<span class="tip"><span class="l-en">Every sector and theme is sorted into five lanes by cycle position — the lane name is the action, and each lane explains itself below its title. Hover any row for full detail. Symbols: <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/></svg> sector fund · <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg> theme group · ✓ tested sell-discipline gate (overrides the lane read when it fires) · ★ in the model book.</span><span class="l-zh">所有板块与主题按周期位置分入五个泳道 — 泳道名称即操作建议，各泳道标题下有说明。悬停任意行查看完整详情。图例：<svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/></svg> 板块基金 · <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg> 主题篮子 · ✓ 经回测的卖出纪律门槛（触发时覆盖泳道判读）· ★ 模型组合内。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Every sector and theme is grouped by where it sits in the cycle. The lane name tells you what to do; open a row for detail. Symbols: <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/></svg> sector fund · <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg> theme · ✓ risk check passed · ★ in the model portfolio.</span><span class="l-zh">所有板块与主题都按当前周期位置分组。分组名称就是操作建议；打开任意一行可查看详情。图例：<svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/></svg> 板块基金 · <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg> 主题 · ✓ 风险检查通过 · ★ 模型组合内。</span></span></span>
       <a href="sector_central.html#actnow-section" style="font-size:11px;color:var(--muted);font-weight:400;text-decoration:none;margin-left:8px"><span class="l-en">Theme reasons → Sector Intelligence</span><span class="l-zh">主题详情 → 行业情报页</span></a>
     </h2>
     
@@ -887,7 +887,7 @@
             <a class="actitem ai-theme" data-rpop href="basket/ai_software.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">73</span>
+        <span class="act-row-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">73</span>
       </span>
       <span class="act-row-stat"><span class="up">+8.6%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -940,7 +940,7 @@
             <a class="actitem ai-theme" data-rpop href="basket/gold_miners.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">72</span>
+        <span class="act-row-name"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">72</span>
       </span>
       <span class="act-row-stat"><span class="up">+21.1%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -993,7 +993,7 @@
             <a class="actitem ai-theme" data-rpop href="basket/silver_miners.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Silver Miners</span><span class="l-zh">白银矿业</span></span><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">71</span>
+        <span class="act-row-name"><span class="l-en">Silver Miners</span><span class="l-zh">白银矿业</span></span><span class="ai-book" data-tip-en="This theme has a 25% weight in the model portfolio and has passed its trend-risk check." data-tip-zh="该主题在模型组合中的权重为 25%，并已通过趋势风险检查。">&#9733;25%</span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">71</span>
       </span>
       <span class="act-row-stat"><span class="up">+18.3%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1047,7 +1047,7 @@
             <a class="actitem ai-theme" data-rpop href="basket/ai_agents.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">AI Agents &amp; Applications</span><span class="l-zh">AI 智能体与应用</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">68</span>
+        <span class="act-row-name"><span class="l-en">AI Agents &amp; Applications</span><span class="l-zh">AI 智能体与应用</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">68</span>
       </span>
       <span class="act-row-stat"><span class="up">+8.2%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1100,7 +1100,7 @@
             <a class="actitem ai-theme" data-rpop href="basket/non_ai_software.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Non-AI Software</span><span class="l-zh">非AI软件</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">67</span>
+        <span class="act-row-name"><span class="l-en">Non-AI Software</span><span class="l-zh">非AI软件</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">67</span>
       </span>
       <span class="act-row-stat"><span class="up">+16.6%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1300,7 +1300,7 @@
             <a class="actitem ai-theme" data-rpop href="basket/defense.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">61</span>
+        <span class="act-row-name"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">61</span>
       </span>
       <span class="act-row-stat"><span class="up">+6.8%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1456,7 +1456,7 @@
             <a class="actitem ai-theme" data-rpop href="basket/energy_complex.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="ai-lens" data-tip-en="In favour but no clean-entry setup — add on pullback; entry quality 40%" data-tip-zh="顺势但无干净入场机会 — 等回调加仓；入场质量 40%">&#8635;</span><span class="act-row-score act-score-hi">69</span>
+        <span class="act-row-name"><span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="ai-lens" data-tip-en="In favour but no clean-entry setup — add on pullback; entry quality 40%" data-tip-zh="顺势但无干净入场机会 — 等回调加仓；入场质量 40%">&#8635;</span><span class="act-row-score act-score-hi">69</span>
       </span>
       <span class="act-row-stat"><span class="up">+1.4%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1509,7 +1509,7 @@
             <a class="actitem ai-theme" data-rpop href="basket/big_pharma.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="ai-lens" data-tip-en="In favour but no clean-entry setup — add on pullback; entry quality 45%" data-tip-zh="顺势但无干净入场机会 — 等回调加仓；入场质量 45%">&#8635;</span><span class="act-row-score act-score-hi">68</span>
+        <span class="act-row-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="ai-lens" data-tip-en="In favour but no clean-entry setup — add on pullback; entry quality 45%" data-tip-zh="顺势但无干净入场机会 — 等回调加仓；入场质量 45%">&#8635;</span><span class="act-row-score act-score-hi">68</span>
       </span>
       <span class="act-row-stat"><span class="up">+3.6%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1562,7 +1562,7 @@
             <a class="actitem ai-theme" data-rpop href="basket/robotics_automation.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Robotics &amp; Automation</span><span class="l-zh">机器人与自动化</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="ai-lens" data-tip-en="In favour but no clean-entry setup — add on pullback; entry quality 65%" data-tip-zh="顺势但无干净入场机会 — 等回调加仓；入场质量 65%">&#8635;</span><span class="act-row-score act-score-hi">66</span>
+        <span class="act-row-name"><span class="l-en">Robotics &amp; Automation</span><span class="l-zh">机器人与自动化</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="ai-lens" data-tip-en="In favour but no clean-entry setup — add on pullback; entry quality 65%" data-tip-zh="顺势但无干净入场机会 — 等回调加仓；入场质量 65%">&#8635;</span><span class="act-row-score act-score-hi">66</span>
       </span>
       <span class="act-row-stat"><span class="up">+6.7%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1615,7 +1615,7 @@
             <a class="actitem ai-theme" data-rpop href="basket/space_economy.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Space Economy</span><span class="l-zh">太空经济</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="ai-lens" data-tip-en="In favour but no clean-entry setup — add on pullback; entry quality 80%" data-tip-zh="顺势但无干净入场机会 — 等回调加仓；入场质量 80%">&#8635;</span><span class="act-row-score act-score-mid">54</span>
+        <span class="act-row-name"><span class="l-en">Space Economy</span><span class="l-zh">太空经济</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="ai-lens" data-tip-en="In favour but no clean-entry setup — add on pullback; entry quality 80%" data-tip-zh="顺势但无干净入场机会 — 等回调加仓；入场质量 80%">&#8635;</span><span class="act-row-score act-score-mid">54</span>
       </span>
       <span class="act-row-stat"><span class="up">+12.2%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1683,7 +1683,7 @@
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/></svg></span>
         <span class="act-row-name"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
       </span>
-      <span class="act-row-chips"><span class="two-reads-chip" data-tip-en="Two reads on XLE: cycle timing = NEARING A HIGH; equal-weight basket = ACCUMULATE. Different constructions — both shown for context." data-tip-zh="XLE 两个读数：周期 = 接近高点；等权篮子 = 加仓。不同构建方式，同时显示供参考。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>NEARING A HIGH</b> vs equal-weight <b>ACCUMULATE</b></span><span class="l-zh">两个读数：周期 <b>接近高点</b> vs 等权 <b>加仓</b></span></span></span><span class="act-row-stat"><span class="l-en">late cycle · today</span><span class="l-zh">周期晚期 · 今日</span></span>
+      <span class="act-row-chips"><span class="two-reads-chip" data-tip-en="The headline index says NEARING A HIGH, while the average stock inside it says ACCUMULATE. The difference shows whether a few large names are masking the broader sector." data-tip-zh="龙头指数判断为 接近高点，板块内平均股票判断为 加仓。两者的差异可看出少数大公司是否掩盖了板块整体。"><span class="tr-sep">⇔</span><span class="l-en">headline <b>NEARING A HIGH</b> · broad sector <b>ACCUMULATE</b></span><span class="l-zh">龙头指数 <b>接近高点</b> · 板块整体 <b>加仓</b></span></span></span><span class="act-row-stat"><span class="l-en">late cycle · today</span><span class="l-zh">周期晚期 · 今日</span></span>
       <div class="rp-src row-pop-decision" hidden>
   <div class="row-pop-decision-hd">
     <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/></svg></span>
@@ -1758,7 +1758,7 @@
     <span aria-hidden="true">&rarr;</span>
     <span>
       <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
-      <span><span class="l-en">No clean edge yet — wait for the signals to align.</span><span class="l-zh">暂无清晰优势 — 等待信号同步。</span></span>
+      <span><span class="l-en">No clear setup yet — wait for the signals to agree.</span><span class="l-zh">暂无清晰形态 — 等待信号一致。</span></span>
     </span>
   </div>
   <div class="row-pop-decision-ft">
@@ -1782,7 +1782,7 @@
           <div data-theme-id="cybersecurity"><a class="actitem ai-theme" data-rpop href="basket/cybersecurity.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">71</span>
+        <span class="act-row-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span><span class="ai-book" data-tip-en="This theme has a 25% weight in the model portfolio and has passed its trend-risk check." data-tip-zh="该主题在模型组合中的权重为 25%，并已通过趋势风险检查。">&#9733;25%</span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">71</span>
       </span>
       <span class="act-row-stat"><span class="up">+10.8%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1835,7 +1835,7 @@
           <div data-theme-id="pgm_miners"><a class="actitem ai-theme" data-rpop href="basket/pgm_miners.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">PGM Miners</span><span class="l-zh">铂族金属矿业</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">67</span>
+        <span class="act-row-name"><span class="l-en">PGM Miners</span><span class="l-zh">铂族金属矿业</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">67</span>
       </span>
       <span class="act-row-stat"><span class="up">+23.5%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1887,7 +1887,7 @@
           <div data-theme-id="regional_banks"><a class="actitem ai-theme" data-rpop href="basket/regional_banks.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">62</span>
+        <span class="act-row-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">62</span>
       </span>
       <span class="act-row-stat"><span class="dn">-1.6%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1939,7 +1939,7 @@
           <div data-theme-id="reshoring"><a class="actitem ai-theme" data-rpop href="basket/reshoring.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">61</span>
+        <span class="act-row-name"><span class="l-en">Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">61</span>
       </span>
       <span class="act-row-stat"><span class="up">+2.0%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -1991,7 +1991,7 @@
           <div data-theme-id="retail"><a class="actitem ai-theme" data-rpop href="basket/retail.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Retail</span><span class="l-zh">零售</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">61</span>
+        <span class="act-row-name"><span class="l-en">Retail</span><span class="l-zh">零售</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">61</span>
       </span>
       <span class="act-row-stat"><span class="up">+3.6%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2043,7 +2043,7 @@
           <div data-theme-id="industrial_distribution"><a class="actitem ai-theme" data-rpop href="basket/industrial_distribution.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Industrial Distribution &amp; Capital Goods</span><span class="l-zh">工业分销与资本品</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">60</span>
+        <span class="act-row-name"><span class="l-en">Industrial Distribution &amp; Capital Goods</span><span class="l-zh">工业分销与资本品</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-hi">60</span>
       </span>
       <span class="act-row-stat"><span class="dn">-0.3%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2095,7 +2095,7 @@
           <div data-theme-id="mag7"><a class="actitem ai-theme" data-rpop href="basket/mag7.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-mid">59</span>
+        <span class="act-row-name"><span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-mid">59</span>
       </span>
       <span class="act-row-stat"><span class="dn">-0.2%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2147,7 +2147,7 @@
           <div data-theme-id="ai_semiconductors"><a class="actitem ai-theme" data-rpop href="basket/ai_semiconductors.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">AI Semiconductors</span><span class="l-zh">AI半导体</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-mid">56</span>
+        <span class="act-row-name"><span class="l-en">AI Semiconductors</span><span class="l-zh">AI半导体</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-mid">56</span>
       </span>
       <span class="act-row-stat"><span class="dn">-1.9%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2199,7 +2199,7 @@
           <div data-theme-id="uranium_miners"><a class="actitem ai-theme" data-rpop href="basket/uranium_miners.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-mid">55</span>
+        <span class="act-row-name"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-mid">55</span>
       </span>
       <span class="act-row-stat"><span class="up">+10.8%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2251,7 +2251,7 @@
           <div data-theme-id="non_ai_tech"><a class="actitem ai-theme" data-rpop href="basket/non_ai_tech.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Non-AI Tech &amp; Hardware</span><span class="l-zh">非AI科技与硬件</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-mid">53</span>
+        <span class="act-row-name"><span class="l-en">Non-AI Tech &amp; Hardware</span><span class="l-zh">非AI科技与硬件</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-mid">53</span>
       </span>
       <span class="act-row-stat"><span class="dn">-3.9%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2303,7 +2303,7 @@
           <div data-theme-id="critical_minerals"><a class="actitem ai-theme" data-rpop href="basket/critical_minerals.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-mid">51</span>
+        <span class="act-row-name"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-mid">51</span>
       </span>
       <span class="act-row-stat"><span class="up">+5.6%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2355,7 +2355,7 @@
           <div data-theme-id="travel"><a class="actitem ai-theme" data-rpop href="basket/travel.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-mid">50</span>
+        <span class="act-row-name"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></span><span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span><span class="act-row-score act-score-mid">50</span>
       </span>
       <span class="act-row-stat"><span class="dn">-2.5%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2409,7 +2409,7 @@
             <div data-theme-id="power_grid"><a class="actitem ai-theme" data-rpop href="basket/power_grid.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Power &amp; Grid Buildout</span><span class="l-zh">电力与电网</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">31</span>
+        <span class="act-row-name"><span class="l-en">Power &amp; Grid Buildout</span><span class="l-zh">电力与电网</span></span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-lo">31</span>
       </span>
       <span class="act-row-stat"><span class="dn">-5.3%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2426,7 +2426,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -2463,7 +2463,7 @@
             <div data-theme-id="crypto"><a class="actitem ai-theme" data-rpop href="basket/crypto.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">31</span>
+        <span class="act-row-name"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-lo">31</span>
       </span>
       <span class="act-row-stat"><span class="dn">-7.2%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2480,7 +2480,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -2517,7 +2517,7 @@
             <div data-theme-id="nuclear_power"><a class="actitem ai-theme" data-rpop href="basket/nuclear_power.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Nuclear &amp; SMR Power</span><span class="l-zh">核电与小型模块化反应堆</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">31</span>
+        <span class="act-row-name"><span class="l-en">Nuclear &amp; SMR Power</span><span class="l-zh">核电与小型模块化反应堆</span></span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-lo">31</span>
       </span>
       <span class="act-row-stat"><span class="dn">-6.2%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2534,7 +2534,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -2571,7 +2571,7 @@
             <div data-theme-id="ai_neoclouds"><a class="actitem ai-theme" data-rpop href="basket/ai_neoclouds.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">AI Neoclouds &amp; HPC Hosting</span><span class="l-zh">AI 新云与高性能算力托管</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">32</span>
+        <span class="act-row-name"><span class="l-en">AI Neoclouds &amp; HPC Hosting</span><span class="l-zh">AI 新云与高性能算力托管</span></span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-lo">32</span>
       </span>
       <span class="act-row-stat"><span class="dn">-13.4%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2588,7 +2588,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -2625,7 +2625,7 @@
             <div data-theme-id="managed_care"><a class="actitem ai-theme" data-rpop href="basket/managed_care.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">35</span>
+        <span class="act-row-name"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-lo">35</span>
       </span>
       <span class="act-row-stat"><span class="dn">-14.1%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2642,7 +2642,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -2679,7 +2679,7 @@
             <div data-theme-id="memory_storage"><a class="actitem ai-theme" data-rpop href="basket/memory_storage.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Memory, HBM &amp; Storage</span><span class="l-zh">内存、HBM 与存储</span></span><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-mid">40</span>
+        <span class="act-row-name"><span class="l-en">Memory, HBM &amp; Storage</span><span class="l-zh">内存、HBM 与存储</span></span><span class="ai-book" data-tip-en="This theme has a 25% weight in the model portfolio and has passed its trend-risk check." data-tip-zh="该主题在模型组合中的权重为 25%，并已通过趋势风险检查。">&#9733;25%</span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-mid">40</span>
       </span>
       <span class="act-row-stat"><span class="dn">-18.4%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2696,7 +2696,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">★ Model 25%</span><span class="l-zh">★ 模型 25%</span></span><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">★ Model 25%</span><span class="l-zh">★ 模型 25%</span></span><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -2733,7 +2733,7 @@
             <div data-theme-id="semicap_equipment"><a class="actitem ai-theme" data-rpop href="basket/semicap_equipment.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-mid">41</span>
+        <span class="act-row-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-mid">41</span>
       </span>
       <span class="act-row-stat"><span class="dn">-10.7%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2750,7 +2750,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -2787,7 +2787,7 @@
             <div data-theme-id="data_center_power"><a class="actitem ai-theme" data-rpop href="basket/data_center_power.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Data-Center Power &amp; Cooling</span><span class="l-zh">数据中心电力与散热</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-mid">48</span>
+        <span class="act-row-name"><span class="l-en">Data-Center Power &amp; Cooling</span><span class="l-zh">数据中心电力与散热</span></span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-mid">48</span>
       </span>
       <span class="act-row-stat"><span class="dn">-2.3%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2804,7 +2804,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -2841,7 +2841,7 @@
             <div data-theme-id="ai_infra"><a class="actitem ai-theme" data-rpop href="basket/ai_infra.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></span><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-mid">51</span>
+        <span class="act-row-name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></span><span class="ai-book" data-tip-en="This theme has a 25% weight in the model portfolio and has passed its trend-risk check." data-tip-zh="该主题在模型组合中的权重为 25%，并已通过趋势风险检查。">&#9733;25%</span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-mid">51</span>
       </span>
       <span class="act-row-stat"><span class="dn">-3.7%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2858,7 +2858,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">★ Model 25%</span><span class="l-zh">★ 模型 25%</span></span><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">★ Model 25%</span><span class="l-zh">★ 模型 25%</span></span><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -2895,7 +2895,7 @@
             <div data-theme-id="payments_fintech"><a class="actitem ai-theme" data-rpop href="basket/payments_fintech.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-mid">53</span>
+        <span class="act-row-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-mid">53</span>
       </span>
       <span class="act-row-stat"><span class="dn">-1.5%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2912,7 +2912,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -2949,7 +2949,7 @@
             <div data-theme-id="insurance"><a class="actitem ai-theme" data-rpop href="basket/insurance.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-mid">56</span>
+        <span class="act-row-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-mid">56</span>
       </span>
       <span class="act-row-stat"><span class="dn">-2.3%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -2966,7 +2966,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -3003,7 +3003,7 @@
             <div data-theme-id="obesity_glp1"><a class="actitem ai-theme" data-rpop href="basket/obesity_glp1.html">
       <span class="act-row-top">
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 20.4 12 12 20.8 3.6 12Z"/><path d="M12 7.7 16.3 12 12 16.3 7.7 12Z"/></svg></span>
-        <span class="act-row-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-hi">62</span>
+        <span class="act-row-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span><span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span><span class="act-row-score act-score-hi">62</span>
       </span>
       <span class="act-row-stat"><span class="dn">-1.9%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <div class="rp-src row-pop-decision" hidden>
@@ -3020,7 +3020,7 @@
       <span class="row-pop-score-cap"><span class="l-en">Score</span><span class="l-zh">评分</span></span>
     </span>
     <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span><strong><span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span></strong>
-      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk gate</span><span class="l-zh">✓ 风险门槛</span></span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">✓ Risk check</span><span class="l-zh">✓ 风险检查</span></span></span>
     </span>
   </div>
   <div class="row-pop-stats">
@@ -3059,7 +3059,7 @@
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/></svg></span>
         <span class="act-row-name"><span class="l-en">Communications</span><span class="l-zh">通讯</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="The average stock in this sector says AVOID. That broader risk check takes precedence over the slower headline-index reading." data-tip-zh="板块内平均股票判断为 回避。这一更广泛的风险检查优先于较慢的龙头指数判断。">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
       <div class="rp-src row-pop-decision" hidden>
   <div class="row-pop-decision-hd">
     <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/></svg></span>
@@ -3135,7 +3135,7 @@
     <span aria-hidden="true">&rarr;</span>
     <span>
       <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
-      <span><span class="l-en">No clean edge yet — wait for the signals to align.</span><span class="l-zh">暂无清晰优势 — 等待信号同步。</span></span>
+      <span><span class="l-en">No clear setup yet — wait for the signals to agree.</span><span class="l-zh">暂无清晰形态 — 等待信号一致。</span></span>
     </span>
   </div>
   <div class="row-pop-decision-ft">
@@ -3180,7 +3180,7 @@
     <span aria-hidden="true">&rarr;</span>
     <span>
       <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
-      <span><span class="l-en">No clean edge yet — wait for the signals to align.</span><span class="l-zh">暂无清晰优势 — 等待信号同步。</span></span>
+      <span><span class="l-en">No clear setup yet — wait for the signals to agree.</span><span class="l-zh">暂无清晰形态 — 等待信号一致。</span></span>
     </span>
   </div>
   <div class="row-pop-decision-ft">
@@ -3194,7 +3194,7 @@
         <span class="ai-bdg"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/></svg></span>
         <span class="act-row-name"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="The average stock in this sector says AVOID. That broader risk check takes precedence over the slower headline-index reading." data-tip-zh="板块内平均股票判断为 回避。这一更广泛的风险检查优先于较慢的龙头指数判断。">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
       <div class="rp-src row-pop-decision" hidden>
   <div class="row-pop-decision-hd">
     <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/></svg></span>
@@ -3518,13 +3518,13 @@
       
       <a href="#moving"><span class="l-en">See the rotation map</span><span class="l-zh">查看轮动图</span></a>
       <span class="l-en">for where each group sits in the leading / lagging cycle.</span><span class="l-zh">了解各组在领先/落后周期中的位置。</span>
-      · <span class="l-en">Built</span><span class="l-zh">生成于</span> <span class="num">2026-08-11 06:46 UTC</span>
+      · <span class="l-en">Built</span><span class="l-zh">生成于</span> <span class="num">2026-08-11 08:15 UTC</span>
     </div>
   </section>
 
   <footer>
     <span class="l-en">Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the S&amp;P 500. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list.</span><span class="l-zh">仅供参考，非投资建议。篮子等权重，并以标普 500 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-08-11 06:46 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-08-11 08:15 UTC</span>.
   </footer>
   
   </div>
@@ -4127,7 +4127,7 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
 
 
 
-<script data-sync src="sector_central_data.js?v=d66861e7"></script>
+<script data-sync src="sector_central_data.js?v=ea89b7a0"></script>
 <script>
 (function(){
   "use strict";

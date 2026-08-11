@@ -821,7 +821,19 @@ def _median_tilt(rows: list[dict[str, Any]]) -> dict[str, Any]:
     ABSENCE, not because Stage-2 ∩ EC entries did not occur — an empty-sample null that
     must never be read as a real ≤0 tilt. It is disclosure only: no count here changes
     a median, a diff, or a pick.
+
+    RECONSTRUCTED ROWS ARE EXCLUDED (§0.6e, research/PROPHET_OUTAGE_BACKFILL_2026_08.md).
+    Unlike the surrounding display splits, this block's output is READ BACK into live
+    geometry: ``_stage_tilt_demoted`` consumes ``median_tilt`` and the answer reaches
+    ``plan_horizon_days`` on plans originating tonight. A cohort statistic is the one
+    place a backfilled row stops being display-tier and starts steering live picks, so
+    the 2026-08-09 replay's rows are dropped here even though they are graded on real
+    bars — their SELECTION was reconstructed, and a leash derived partly from
+    reconstructed selection is not the leash the live rule earned.
     """
+    from engine.prophet_bridge import is_reconstructed  # noqa: PLC0415
+
+    rows = [r for r in rows if not is_reconstructed(r)]
     matured = [r for r in rows if (r.get("fwd") or {}).get("fwd_ret_126") is not None]
 
     def _ec_sent(r: dict[str, Any]) -> Any:

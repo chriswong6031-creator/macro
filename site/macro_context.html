@@ -111,6 +111,8 @@
         <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
+        <a href="winner_health.html"><span class="submenu-icon submenu-icon-leader" aria-hidden="true"></span><span class="l-en">Winner Health</span><span class="l-zh">持仓健康度</span><span class="d"><span class="l-en">Big gains near their highs · how the move is aging · what similar past runs did</span><span class="l-zh">涨幅可观且仍在高位 · 行情老化到什么程度 · 相似历史行情走过的路</span></span></a>
+        
         <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业情报</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
         <a href="sector_central.html#confluence"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 tiers · two-way confirmed stocks · basket charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 分层 · 两道确认的选股 · 篮子走势图</span></span></a>
         <a href="strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -322,8 +324,6 @@
     <a href="#timeline">
       <span class="l-en">Transitions</span><span class="l-zh">转换记录</span>
       
-      <span class="cnt">2 <span class="l-en">today</span><span class="l-zh">今日</span></span>
-      
     </a>
     <a href="#census">
       <span class="l-en">Contradictions</span><span class="l-zh">矛盾</span>
@@ -429,8 +429,8 @@
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Labels flipped</span><span class="l-zh">标签变动</span></span>
           <span class="kpi-val c-warn">60</span>
-          <span class="kpi-sub l-en">in 14 days &middot; 2 today</span>
-          <span class="kpi-sub l-zh">近14日 &middot; 今日 2</span>
+          <span class="kpi-sub l-en">in 14 days &middot; 0 today</span>
+          <span class="kpi-sub l-zh">近14日 &middot; 今日 0</span>
         </div>
         
       </div>
@@ -652,7 +652,7 @@
     <!-- Track record (forward-ledger scorecard) — display-only context accrual.
          Guards with .get() so missing keys never crash; absent scorecard = no output. -->
     <div class="trk-line">
-      <span class="l-en">Graded calls accruing — check back once alerts mature (~21 trading days)</span><span class="l-zh">评分记录积累中 — 约21个交易日后可查看</span>
+      <span class="l-en">Monitoring paused — ledger stale</span><span class="l-zh">监控暂停 — 账本数据陈旧</span>
     </div>
     
   </div>
@@ -1248,8 +1248,8 @@
           <span class="domain-name-en"><span class="l-en">International Risk</span><span class="l-zh">国际风险</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-08-10"
-                data-tip-zh="数据截至 2026-08-10">2026-08-10</span>
+                data-tip-en="Source as-of 2026-08-11"
+                data-tip-zh="数据截至 2026-08-11">2026-08-11</span>
           
         </div>
         
@@ -1431,7 +1431,7 @@
             </span>
           </div>
           
-          <div class="field-chip changed-today"
+          <div class="field-chip"
                data-tip-en="Confluence"
                data-tip-zh="信号共振">
             <span class="field-chip-name"><span class="l-en">Confluence</span><span class="l-zh">信号共振</span></span>
@@ -1476,7 +1476,7 @@
             </span>
           </div>
           
-          <div class="field-chip changed-today"
+          <div class="field-chip"
                data-tip-en="Oil"
                data-tip-zh="原油">
             <span class="field-chip-name"><span class="l-en">Oil</span><span class="l-zh">原油</span></span>
@@ -2482,27 +2482,17 @@
 
     <!-- Breaking slug -->
     
-    <div class="breaking-slug">
-      <span class="breaking-badge"><span class="l-en">TODAY</span><span class="l-zh">今日</span></span>
-      <span class="breaking-text">
-        2 <span class="l-en">flip(s) this session</span><span class="l-zh">项转换本轮</span>
-        
-        — <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span>: <span class="l-en">Oil</span><span class="l-zh">原油</span>, <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span>: <span class="l-en">Confluence</span><span class="l-zh">信号共振</span>
-        
-      </span>
-    </div>
-    
 
     
     
     <div class="tl-date-group">
-      <div class="tl-date-header today">
+      <div class="tl-date-header">
         2026-08-10
-         — <span class="l-en">TODAY</span><span class="l-zh">今日</span>
+        
       </div>
       <div class="tl-events">
         
-        <div class="tl-event hot">
+        <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Oil</span><span class="l-zh">原油</span></span>
           <span class="tl-from"><span class="l-en">HOLD</span><span class="l-zh">持有</span></span>
@@ -2510,7 +2500,7 @@
           <span class="tl-to"><span class="l-en">Sell</span><span class="l-zh">Sell</span></span>
         </div>
         
-        <div class="tl-event hot">
+        <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Confluence</span><span class="l-zh">信号共振</span></span>
           <span class="tl-from"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
@@ -3122,7 +3112,7 @@
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅供参考描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-08-11 03:11 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-08-11 07:23 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->

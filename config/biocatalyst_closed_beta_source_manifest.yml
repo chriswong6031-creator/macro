@@ -10,15 +10,15 @@
 contract_id: biocatalyst_closed_beta_source_manifest.v1
 schema_version: 1.0.0
 state: draft_denominator_unarmed
-effective_at: '2026-08-11T08:30:35Z'
+effective_at: '2026-08-11T10:03:45Z'
 owner: biocatalyst
 source_registry_ref: config/biocatalyst_sources.yml
 source_registry_sha256: bf19c50a80fc7611f8b53267e16acf4a234cfa7ca3a0afb6336a12781db41785
 ownership_registry_ref: config/sector_intelligence_ownership.yml
-ownership_registry_sha256: a2036e75f6db6ee7d2df4fa908966fa39dd2bbf2aa7431678367ae2bd60c74c6
-reconciliation_receipt_ref: data/biocatalyst/fixtures/biocatalyst_f0_delta_reconciliation_receipt.v1.json
-reconciliation_receipt_id: biocatalyst_f0_delta_c421aafb2fd1c612417decc3
-reconciliation_receipt_sha256: 5aa5234ee2aa05a1cae1d1e96fcf426433928e0d1892c748d8594c627e9adcda
+ownership_registry_sha256: 48ad80734df866ab9427c72ba046b8a9dfbefcc37c1451426fadb41ed3aeb6e3
+reconciliation_receipt_ref: data/biocatalyst/fixtures/biocatalyst_f0_delta_reconciliation_receipt.v2.json
+reconciliation_receipt_id: biocatalyst_f0_delta_6a72f5fbe06a4482d70f6f11
+reconciliation_receipt_sha256: 84a481510a9176efad63e847101cb953dfea30831aa72da47dbc70105fc9e1d7
 launch_slo_manifest_ref: config/biocatalyst_launch_slo_manifest.yml
 launch_slo_manifest_id: biocatalyst_launch_slo_2231c14e8979c2e3ac6c11b3
 launch_slo_manifest_content_sha256: 2231c14e8979c2e3ac6c11b3b7ef07ca49f047d22cda019fa546bd270e97e731
@@ -383,8 +383,8 @@ families:
 - family_id: capital_structure_pit
   title: Capital Structure point-in-time inputs
   obligation: mandatory
-  availability: unavailable
-  activation_state: no_biocatalyst_read_contract
+  availability: available
+  activation_state: implemented_private_in_process_event_state_only
   bindings:
   - binding_kind: shared_plane_read_adapter
     id: biocatalyst_capital_structure_pit_adapter.v1
@@ -393,28 +393,30 @@ families:
     launch_critical: null
     production_ingest_allowed: null
     license_class: null
-    rights_state: blocked_current_projection_has_no_biocatalyst_pit_adapter
+    rights_state: implemented_private_in_process_event_state_only
   rights:
-    retention: not_applicable_no_eligible_source
-    redistribution: not_applicable_no_eligible_source
-    derived_model_training: not_applicable_no_eligible_source
-    publication: not_applicable_no_eligible_source
+    retention: corporate_adapter_only
+    redistribution: corporate_adapter_only
+    derived_model_training: corporate_adapter_only
+    publication: corporate_adapter_only
     distribution_obligations: []
   slo:
     freshness_slo_seconds: null
-    freshness_denominator: 'Unavailable: the owning plane serves one current projection twin with a single
-      as-of stamp and no as_of request parameter, so no point-in-time freshness denominator exists.'
-    completeness_denominator: 'Unavailable: cash runway, fully diluted shares, instruments, and remaining
-      capacity are declared unavailable capabilities on the owning plane.'
-    error_denominator: 'Unavailable: no BioCatalyst-facing capital-structure read is scheduled.'
-    correction_denominator: 'Unavailable: no capital-structure projection is published by BioCatalyst,
-      so no correction can be replayed.'
-  features_unlocked: []
+    freshness_denominator: Every private read is bounded by the verified owner generation as-of clock;
+      BioCatalyst has no independent Capital Structure refresh schedule.
+    completeness_denominator: Every event in the verified owner generation for the caller-supplied SEC
+      issuer id at the requested system clock; issuer absence is never a negative coverage conclusion.
+    error_denominator: Every private in-process read; invalid queries and unavailable coverage return
+      explicit unavailable documents, while owner integrity failures raise and cannot become empty results.
+    correction_denominator: Every owner event correction whose Mastermind-observed clock is at or before
+      the requested as-of instant, replayed through the owner projection kernel.
+  features_unlocked:
+  - capital_filing_event_context
   features_unavailable:
   - cash_through_catalyst
   - financing_survival_context
   - dilution_distribution_context
-  blocker: versioned_internal_pit_adapter_with_unavailable_state_semantics
+  blocker: null
 - family_id: market_and_options_context
   title: Market and options context for financing or enterprise-value surfaces
   obligation: deferred
@@ -457,7 +459,7 @@ launch_denominator:
   - security_context_boundary
   - capital_structure_pit
   mandatory_families_total: 6
-  mandatory_families_available: 1
+  mandatory_families_available: 2
   all_mandatory_families_available: false
   readiness_claim: closed_beta_source_denominator_not_met
   single_launch_critical_source_is_sufficient: false
@@ -484,5 +486,5 @@ authority:
   constitutes_soak_evidence: false
   originates_signals_scores_or_ranking: false
 hash_scope: canonical_payload_excluding_manifest_id_and_content_sha256
-manifest_id: biocatalyst_closed_beta_7b1239fbf5df4c309d6ad469
-content_sha256: 7b1239fbf5df4c309d6ad469d23847c1ff3c741507c0560d626863f222c8448c
+manifest_id: biocatalyst_closed_beta_4c0bd45a37bfb00d19293408
+content_sha256: 4c0bd45a37bfb00d1929340870e26f8e0e5d362a3ab41036406d325f4539ed83

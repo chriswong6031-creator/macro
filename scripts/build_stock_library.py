@@ -2388,6 +2388,196 @@ def _attach_terminality_shadow(
         personality["terminality_shadow"] = block
 
 
+def _eb_board_session_date(alpha_asof: str | None,
+                           td_dates: "pd.DatetimeIndex | None") -> date | None:
+    """The board's OWN session date for the W1.5 earnings gate — never the host clock.
+
+    DETERMINISM LAW (measured 2026-08-10): engine.earnings_blackout defaults its
+    `today` to date.today(), so at ONE identical as_of=2026-08-07 every UTC-7 host
+    produced a 78-row buy board while every UTC+8 host past local midnight produced
+    81 — the three extra names were admitted through "next_date_in_past" against a
+    2026-08-10 earnings date, i.e. a one-sided lookahead into a POST-as_of event.
+    Board membership must be a function of the board's own session, so the gate
+    anchors to alpha.json's as_of (the same stamp wide["as_of"] publishes) and falls
+    back to the last close session in the universe calendar.
+
+    The two anchors are tried in order, NOT as an either/or: a present-but-corrupt
+    as_of falls through to the close calendar rather than to the clock, so a bad stamp
+    degrades to a still-deterministic session.  Returns None only when BOTH anchors
+    are unavailable; the caller then falls back to the host clock (fail-open — the
+    hygiene gate never blocks a build).  Reads no clock.
+    """
+    if alpha_asof:
+        try:
+            _ts = pd.Timestamp(str(alpha_asof))
+            if not pd.isna(_ts):
+                return _ts.date()
+        except Exception:  # noqa: BLE001 — corrupt stamp => fall through to the calendar
+            pass
+    if td_dates is not None and len(td_dates):
+        try:
+            return pd.Timestamp(td_dates.max()).date()
+        except Exception:  # noqa: BLE001 — non-datetime calendar => host-clock fallback
+            pass
+    return None
+
+
+def _apply_earnings_blackout_gate(buyable: list[tuple],
+                                  recovery_cands: list[tuple],
+                                  row_by_t: dict[str, dict],
+                                  board_session: date | None,
+                                  store_path: Path | None = None,
+                                  _pool_off_board: "dict[str, list[str]] | None" = None,
+                                  ) -> dict:
+    """W1.5 earnings-blackout hygiene veto — fresh-entry suppression only.
+
+    Extracted from main() (2026-08-10) so board MEMBERSHIP is regression-testable and
+    so every store_staleness()/assess() call carries the board's own session date
+    instead of the render host's wall clock (see _eb_board_session_date).  Passing
+    board_session=None restores the pre-fix host-clock behaviour.
+
+    Logic is the inline block verbatim: HOLD (launched/intact/broken) is never
+    re-suppressed, a stale store suppresses NOTHING (fail-open), and `row_by_t` is
+    mutated in place with the `primary_rejection_reason` tag.  `_pool_off_board`
+    (when provided) is likewise mutated AT each drop site so the candidate pool
+    records WHY a name never surfaced (#5295) — the underscore param name is pinned
+    by the drop-site census in tests/test_us_candidate_lanes.py.
+
+    Returns keys: buyable, recovery_cands, blackout_map, suppressed, suppressed_r,
+    store_info, store_stale.
+    """
+    _eb_store_info = _eb.store_staleness(today=board_session, store_path=store_path)
+    _eb_store_stale = _eb_store_info.get("stale", True)
+    _eb_suppressed: list[tuple] = []   # (t, p, tier) suppressed from buy
+    _eb_suppressed_r: list[tuple] = [] # (t, p) suppressed from Lane R
+    _eb_blackout_map: dict[str, dict] = {}  # t -> assess() result
+    if _eb_store_stale:
+        log.warning(
+            "W1.5 earnings_blackout: store stale (as_of_age_td=%s) — "
+            "suppressing NOTHING (fail-open)",
+            _eb_store_info.get("as_of_age_td"))
+    else:
+        # Assess trend-lane buyable candidates
+        _buyable_after_eb: list[tuple] = []
+        for _item_eb in buyable:
+            _t_eb, _p_eb, _tier_eb = _item_eb
+            # Skip HOLD (any active state) — launched/intact/broken are all
+            # treated as open position; earnings gate does not re-suppress them.
+            # NOTE: hold state lives on row_by_t (rec["hold"]), NOT on prof (_p_eb).
+            _hd_eb = (row_by_t[_t_eb].get("hold") or {}) if _t_eb in row_by_t else {}
+            if _hd_eb.get("state") in {"launched", "intact", "broken"}:
+                _buyable_after_eb.append(_item_eb)
+                continue
+            _ev = _eb.assess(_t_eb, today=board_session, store_path=store_path)
+            _eb_blackout_map[_t_eb] = _ev
+            if _ev.get("in_blackout"):
+                _eb_suppressed.append(_item_eb)
+                # Attach rejection tag to the row (REJECTION_TAXONOMY slot)
+                row_by_t[_t_eb]["primary_rejection_reason"] = "event_blackout"
+                # …and to the candidate pool, which otherwise files these names
+                # under `off_board_reason_unknown` while `earnings_blackout_note`
+                # in the SAME artifact names them (6 on the 2026-08-07 board).
+                if _pool_off_board is not None:
+                    _pool_off_board[_t_eb] = ["event_blackout"]
+            else:
+                _buyable_after_eb.append(_item_eb)
+        buyable = _buyable_after_eb
+
+        # Assess Lane-R recovery candidates
+        _recovery_after_eb: list[tuple] = []
+        for _t_eb, _p_eb in recovery_cands:
+            # NOTE: hold state lives on row_by_t (rec["hold"]), NOT on prof (_p_eb).
+            _hd_eb = (row_by_t[_t_eb].get("hold") or {}) if _t_eb in row_by_t else {}
+            if _hd_eb.get("state") in {"launched", "intact", "broken"}:
+                _recovery_after_eb.append((_t_eb, _p_eb))
+                continue
+            _ev = (_eb_blackout_map.get(_t_eb)
+                   or _eb.assess(_t_eb, today=board_session, store_path=store_path))
+            _eb_blackout_map[_t_eb] = _ev
+            if _ev.get("in_blackout"):
+                _eb_suppressed_r.append((_t_eb, _p_eb))
+                row_by_t[_t_eb]["primary_rejection_reason"] = "event_blackout"
+                if _pool_off_board is not None:
+                    _pool_off_board[_t_eb] = ["event_blackout"]
+            else:
+                _recovery_after_eb.append((_t_eb, _p_eb))
+        recovery_cands = _recovery_after_eb
+
+        _n_eb_suppressed = len(_eb_suppressed) + len(_eb_suppressed_r)
+        if _n_eb_suppressed:
+            log.info(
+                "W1.5 earnings_blackout: suppressed %d fresh-buy candidate(s) "
+                "— %s (event_blackout; HOLD/LAUNCHED untouched)",
+                _n_eb_suppressed,
+                ", ".join(t for t, _, _ti in _eb_suppressed)
+                + (", " + ", ".join(t for t, _ in _eb_suppressed_r)
+                   if _eb_suppressed_r else ""),
+            )
+        else:
+            log.info("W1.5 earnings_blackout: no fresh-buy candidates in blackout today")
+
+    return {"buyable": buyable, "recovery_cands": recovery_cands,
+            "blackout_map": _eb_blackout_map, "suppressed": _eb_suppressed,
+            "suppressed_r": _eb_suppressed_r, "store_info": _eb_store_info,
+            "store_stale": _eb_store_stale}
+
+
+def _eb_chip_payload(ticker: str,
+                     blackout_map: dict[str, dict],
+                     store_stale: bool,
+                     board_session: date | None,
+                     closes=None,
+                     store_path: Path | None = None) -> dict:
+    """DISPLAY-TIER earnings payload for ONE board row — chip + catalyst + reaction.
+
+    Extracted from main() (2026-08-11) for the same two reasons the gate above was.
+    (1) ANCHOR: the inline block read the clock TWICE — a bare ``assess(t)`` (the
+    engine defaults ``today`` to ``date.today()``) and the ``date.today()`` handed to
+    ``board_row_fields`` — so two hosts straddling local midnight printed different
+    days_to_report/chip text for one identical board as_of.  ``board_session`` is the
+    board's own session (:func:`_eb_board_session_date`); None restores the pre-fix
+    host-clock behaviour, the same legacy fallback the gate keeps.  (2) TESTABLE: the
+    block was unreachable from a test, which is how the W4 note below could record
+    that its predecessor's only "test" re-implemented the chip text and pinned nothing.
+
+    DISPLAY TIER (masterplan §0 G0.1): zero gate/rank/size/veto power — the caller
+    attaches the returned fields to the row and nothing else reads them here.
+    ``blackout_map`` is mutated in place with a freshly assessed row (the memo the
+    inline block kept).  Never raises: every failure degrades to an empty payload.
+
+    Returns ``board_row_fields``' shape — ``{"earnings_soon": …,
+    "post_earnings_move": …}`` — or ``{}`` when there is nothing to attach.
+    """
+    _row = blackout_map.get(ticker)
+    if _row is None and not store_stale:
+        # Name was not assessed yet (e.g. watch/laggard rows not in the buy pipeline)
+        try:
+            _row = _eb.assess(ticker, today=board_session, store_path=store_path)
+            blackout_map[ticker] = _row
+        except Exception:  # noqa: BLE001
+            _row = None
+    if not _row:
+        return {}
+    # W4 (2026-08-04): the whole earnings payload — chip + catalyst fields +
+    # post-earnings reaction — now comes from engine/earnings_catalyst so it is
+    # unit-testable against the code the builder actually runs (the pre-W4 block
+    # lived inline here and its only "test" re-implemented the chip text in the
+    # test file, which pinned nothing). DISPLAY-TIER, masterplan §0 G0.1: zero
+    # gate/rank/size/veto power, and earnings_blackout.assess above is untouched.
+    # The chip shape is unchanged; what is new is the DISCLOSURE shape emitted for
+    # a STALE row — `days_to_report: null` + `stale: true`, no `days_to`, no chip
+    # text — because a stale row is exactly where the veto fails open in silence.
+    # Nothing new renders this wave: every consumer gates on `days_to`
+    # (dashboard.html.j2, build_prophet, stock_dossier) or `in_blackout is True`
+    # (us_board_rank), and the disclosure shape carries neither. W2 owns display.
+    try:
+        return _ecat.board_row_fields(
+            _row, board_session or date.today(), closes=closes,
+            surprises=_eb.surprise_history(ticker, store_path=store_path)) or {}
+    except Exception:  # noqa: BLE001 — display-only; never fatal
+        return {}
+
+
 def main() -> int:
     _main_t0 = time.time()
     site = config.ROOT / config.load()["storage"]["site_dir"]
@@ -4410,6 +4600,12 @@ def main() -> int:
         # Injection: pass the already-built close-series index as the trading-day
         # calendar so earnings_blackout skips the redundant data/stocks/*.parquet
         # re-read (_build_td_calendar cold cost ~5s on 224+ files).
+        #
+        # Bound BEFORE the try: the display-tier chip below reads this anchor too, and
+        # the fail-open except-path never reaches the assignment inside the try — an
+        # unbound name there would NameError inside the chip's own swallowing except,
+        # killing the chip silently on every row.
+        _eb_today: date | None = None
         try:
             _td_dates: "pd.DatetimeIndex | None" = None
             try:
@@ -4422,73 +4618,27 @@ def main() -> int:
                 _eb.set_td_calendar(_td_dates)
             except Exception:  # noqa: BLE001 — graceful: fall through to internal glob
                 pass
-            _eb_store_info = _eb.store_staleness()
-            _eb_store_stale = _eb_store_info.get("stale", True)
-            _eb_suppressed: list[tuple] = []   # (t, p, tier) suppressed from buy
-            _eb_suppressed_r: list[tuple] = [] # (t, p) suppressed from Lane R
-            _eb_blackout_map: dict[str, dict] = {}  # t -> assess() result
-            if _eb_store_stale:
+            # Session anchor: the gate reads the board's OWN as_of, never the render
+            # host's wall clock — a host past local midnight used to admit names whose
+            # earnings land AFTER the as_of via "next_date_in_past" (78 vs 81 buy rows
+            # at one identical as_of, measured 2026-08-10).
+            _eb_today = _eb_board_session_date(alpha_asof, _td_dates)
+            if _eb_today is None:
                 log.warning(
-                    "W1.5 earnings_blackout: store stale (as_of_age_td=%s) — "
-                    "suppressing NOTHING (fail-open)",
-                    _eb_store_info.get("as_of_age_td"))
-            else:
-                # Assess trend-lane buyable candidates
-                _buyable_after_eb: list[tuple] = []
-                for _item_eb in buyable:
-                    _t_eb, _p_eb, _tier_eb = _item_eb
-                    # Skip HOLD (any active state) — launched/intact/broken are all
-                    # treated as open position; earnings gate does not re-suppress them.
-                    # NOTE: hold state lives on row_by_t (rec["hold"]), NOT on prof (_p_eb).
-                    _hd_eb = (row_by_t[_t_eb].get("hold") or {}) if _t_eb in row_by_t else {}
-                    if _hd_eb.get("state") in {"launched", "intact", "broken"}:
-                        _buyable_after_eb.append(_item_eb)
-                        continue
-                    _ev = _eb.assess(_t_eb)
-                    _eb_blackout_map[_t_eb] = _ev
-                    if _ev.get("in_blackout"):
-                        _eb_suppressed.append(_item_eb)
-                        # Attach rejection tag to the row (REJECTION_TAXONOMY slot)
-                        row_by_t[_t_eb]["primary_rejection_reason"] = "event_blackout"
-                        # …and to the candidate pool, which otherwise files these names
-                        # under `off_board_reason_unknown` while `earnings_blackout_note`
-                        # in the SAME artifact names them (6 on the 2026-08-07 board).
-                        _pool_off_board[_t_eb] = ["event_blackout"]
-                    else:
-                        _buyable_after_eb.append(_item_eb)
-                buyable = _buyable_after_eb
-
-                # Assess Lane-R recovery candidates
-                _recovery_after_eb: list[tuple] = []
-                for _t_eb, _p_eb in _recovery_cands:
-                    # NOTE: hold state lives on row_by_t (rec["hold"]), NOT on prof (_p_eb).
-                    _hd_eb = (row_by_t[_t_eb].get("hold") or {}) if _t_eb in row_by_t else {}
-                    if _hd_eb.get("state") in {"launched", "intact", "broken"}:
-                        _recovery_after_eb.append((_t_eb, _p_eb))
-                        continue
-                    _ev = _eb_blackout_map.get(_t_eb) or _eb.assess(_t_eb)
-                    _eb_blackout_map[_t_eb] = _ev
-                    if _ev.get("in_blackout"):
-                        _eb_suppressed_r.append((_t_eb, _p_eb))
-                        row_by_t[_t_eb]["primary_rejection_reason"] = "event_blackout"
-                        _pool_off_board[_t_eb] = ["event_blackout"]
-                    else:
-                        _recovery_after_eb.append((_t_eb, _p_eb))
-                _recovery_cands = _recovery_after_eb
-                _recovery_tickers = {t for t, _ in _recovery_cands}
-
-                _n_eb_suppressed = len(_eb_suppressed) + len(_eb_suppressed_r)
-                if _n_eb_suppressed:
-                    log.info(
-                        "W1.5 earnings_blackout: suppressed %d fresh-buy candidate(s) "
-                        "— %s (event_blackout; HOLD/LAUNCHED untouched)",
-                        _n_eb_suppressed,
-                        ", ".join(t for t, _, _ti in _eb_suppressed)
-                        + (", " + ", ".join(t for t, _ in _eb_suppressed_r)
-                           if _eb_suppressed_r else ""),
-                    )
-                else:
-                    log.info("W1.5 earnings_blackout: no fresh-buy candidates in blackout today")
+                    "W1.5 earnings_blackout: no board session date (alpha.json as_of and "
+                    "close calendar both unavailable) — gate falls back to the render "
+                    "host's clock; membership is host-timezone dependent for this build")
+            _eb_gate = _apply_earnings_blackout_gate(
+                buyable, _recovery_cands, row_by_t, _eb_today,
+                _pool_off_board=_pool_off_board)
+            _eb_store_info = _eb_gate["store_info"]
+            _eb_store_stale = _eb_gate["store_stale"]
+            _eb_suppressed = _eb_gate["suppressed"]
+            _eb_suppressed_r = _eb_gate["suppressed_r"]
+            _eb_blackout_map = _eb_gate["blackout_map"]
+            buyable = _eb_gate["buyable"]
+            _recovery_cands = _eb_gate["recovery_cands"]
+            _recovery_tickers = {t for t, _ in _recovery_cands}
 
             # Build suppressed-today summary for the board surface
             _eb_suppressed_count = len(_eb_suppressed) + len(_eb_suppressed_r)
@@ -4807,39 +4957,20 @@ def main() -> int:
             # attach the upcoming earnings date chip when days_to_earnings <= 14d (MLC-W5
             # extended from the original 7d; disclosure only per MLC-R10 — never gates).
             # For suppressed names: they are not on the board, so no chip needed here.
-            _eb_row = _eb_blackout_map.get(t)
-            if _eb_row is None and not _eb_store_stale:
-                # Name was not assessed yet (e.g. watch/laggard rows not in the buy pipeline)
-                try:
-                    _eb_row = _eb.assess(t)
-                    _eb_blackout_map[t] = _eb_row
-                except Exception:  # noqa: BLE001
-                    _eb_row = None
-            # W4 (2026-08-04): the whole earnings payload — chip + catalyst fields +
-            # post-earnings reaction — now comes from engine/earnings_catalyst so it is
-            # unit-testable against the code the builder actually runs (the pre-W4 block
-            # lived inline here and its only "test" re-implemented the chip text in the
-            # test file, which pinned nothing). DISPLAY-TIER, masterplan §0 G0.1: zero
-            # gate/rank/size/veto power, and earnings_blackout.assess above is untouched.
-            # The chip shape is unchanged; what is new is the DISCLOSURE shape emitted for
-            # a STALE row — `days_to_report: null` + `stale: true`, no `days_to`, no chip
-            # text — because a stale row is exactly where the veto fails open in silence.
-            # Nothing new renders this wave: every consumer gates on `days_to`
-            # (dashboard.html.j2, build_prophet, stock_dossier) or `in_blackout is True`
-            # (us_board_rank), and the disclosure shape carries neither. W2 owns display.
-            if _eb_row:
-                try:
-                    _ecl = (_ext_closes[t].dropna()
-                            if "_ext_closes" in dir() and t in _ext_closes.columns else None)
-                    _epay = _ecat.board_row_fields(
-                        _eb_row, date.today(), closes=_ecl,
-                        surprises=_eb.surprise_history(t))
-                    if _epay.get("earnings_soon"):
-                        r["earnings_soon"] = _epay["earnings_soon"]
-                    if _epay.get("post_earnings_move"):
-                        r["post_earnings_move"] = _epay["post_earnings_move"]
-                except Exception:  # noqa: BLE001 — display-only; never fatal
-                    pass
+            # The payload (and both of its date reads) lives in _eb_chip_payload; the
+            # close-series lookup stays HERE because `"_ext_closes" in dir()` probes
+            # main()'s OWN locals and means nothing inside a module-level helper.
+            try:
+                _ecl = (_ext_closes[t].dropna()
+                        if "_ext_closes" in dir() and t in _ext_closes.columns else None)
+                _epay = _eb_chip_payload(t, _eb_blackout_map, _eb_store_stale,
+                                         _eb_today, closes=_ecl)
+                if _epay.get("earnings_soon"):
+                    r["earnings_soon"] = _epay["earnings_soon"]
+                if _epay.get("post_earnings_move"):
+                    r["post_earnings_move"] = _epay["post_earnings_move"]
+            except Exception:  # noqa: BLE001 — display-only; never fatal
+                pass
             # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
             # it is a first-class field available for the US-2 ledger study (depth vs
             # forward returns for FRESH-BUY rows). NOT a gate — we do NOT filter on it
