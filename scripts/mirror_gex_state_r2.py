@@ -227,7 +227,9 @@ def public_anchors_match(
 
     fetcher = fetch or _http_get
     names = [f"{root}.json" for root in bundle.required_roots] + ["_index.json"]
-    cache_key = bundle.manifest_sha256[:16]
+    # A unique query prevents an earlier probe of the same manifest from
+    # masking a later stale overwrite in an intermediary cache.
+    cache_key = f"{bundle.manifest_sha256[:16]}-{time.time_ns()}"
     for name in names:
         url = f"{public_base.rstrip('/')}/{PREFIX}/{name}?v={cache_key}"
         try:
@@ -322,6 +324,23 @@ def _remote_keys(client, bucket: str) -> set[str]:
             raise RuntimeError("R2 listing truncated without continuation token")
 
 
+def r2_anchors_match(bundle: MirrorBundle, client, bucket: str) -> bool:
+    """Compare required roots and the index through authenticated object reads."""
+
+    names = [f"{root}.json" for root in bundle.required_roots] + ["_index.json"]
+    for name in names:
+        try:
+            body = client.get_object(
+                Bucket=bucket,
+                Key=f"{PREFIX}/{name}",
+            )["Body"].read()
+        except Exception:  # noqa: BLE001 - any missing/unreadable anchor is a mismatch.
+            return False
+        if body != bundle.body(name):
+            return False
+    return True
+
+
 def publish_bundle(
     bundle: MirrorBundle,
     *,
@@ -333,9 +352,14 @@ def publish_bundle(
     """Publish the bundle, then verify direct R2 and public exact bytes."""
 
     prior = _read_state(state_file)
+    client = None
+    bucket = None
+    if not force and prior.get("manifest_sha256") == bundle.manifest_sha256:
+        client, bucket = _r2_client()
     if (
-        not force
-        and prior.get("manifest_sha256") == bundle.manifest_sha256
+        client is not None
+        and bucket is not None
+        and r2_anchors_match(bundle, client, bucket)
         and public_anchors_match(bundle, public_base)
     ):
         receipt = {
@@ -352,7 +376,8 @@ def publish_bundle(
         }
         return receipt
 
-    client, bucket = _r2_client()
+    if client is None or bucket is None:
+        client, bucket = _r2_client()
     metadata = {
         "source-manifest": bundle.manifest_sha256,
         "source-commit": source_commit[:64],
