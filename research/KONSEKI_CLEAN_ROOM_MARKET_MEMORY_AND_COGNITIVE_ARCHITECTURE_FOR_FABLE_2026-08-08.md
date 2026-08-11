@@ -1482,6 +1482,13 @@ reconciliation records `missed/not_sealed_by_deadline` and cannot overwrite a
 timely abstention. An unstable pair is retryable, never an authenticated
 abstention; bounded retries run through the window and become
 `missed/owner_pair_not_stable_by_deadline` only after it elapses. Every
+owner-specific missed reason also persists
+`owner_attempted_window_session` and the exact in-window
+`owner_attempted_at` from that same failed attempt. Runtime validation binds
+both fields to the row's own registered window; a later run cannot stamp its
+failure onto an older gap. A generic `not_sealed_by_deadline` row forbids those
+attempt fields because it proves only local non-publication, not an owner
+failure by that deadline. Every
 registration, opportunity, outcome, and population claim explicitly records
 `external_clock_authenticated:false`: the calendar derivation and stable
 content-addressed generation pins can be authenticated, but the local writer
@@ -1518,7 +1525,11 @@ rounding without ambient Decimal context. It is not the ratio of two 20-day
 ratios, not a regular-session-close claim, and never reads a target from later
 historical rows. A stable target-generation sandwich persists observed,
 unavailable, or clock-tie-censored maturity facts. A missed maturity window is
-also an immutable censored receipt. If the writer crashes after publishing an
+also an immutable censored receipt. The three owner-specific maturity reasons
+require an exact `owner_attempted_window_session` equal to the target session
+and an `owner_attempted_at` inside that target's registered window. The generic
+`maturity_owner_window_missed` receipt forbids those fields and is not an owner
+integrity fact. If the writer crashes after publishing an
 authenticated in-window technical view but before outcome revision one,
 recovery chooses the earliest distinct `pair_observed_at` inside that maturity
 window and finishes its exact candidate batch before considering a descendant
@@ -1564,7 +1575,17 @@ before W2C mutation at 257. Every population receipt exposes current owner
 counts, exact stable generation references, and auditability policy. One
 run-scoped authenticated owner view walks each ancestry at most twice and
 reprojects only technical capture IDs newly reachable since its last cached
-generation; an unchanged HEAD reprojects and appends nothing. Authenticated checkpoint/delta generations
+generation; an unchanged HEAD reprojects and appends nothing. Every changed
+trusted or technical owner pin must also prove that W2C's last persisted
+generation is an exact published ancestor. The bounded public membership walk
+is bracketed by the same current HEAD identity and its returned generation
+reference must equal W2C's persisted reference. A valid sibling owner branch is
+therefore a current owner-integrity miss for that attempt, not permission to
+extend the cached view and not corruption of the local W2C ledger; the finite
+census can still close. Local W2C chain or byte corruption remains a hard
+failure. An explicit-old technical pin exposes only the requested generation
+itself and its older ancestry, never descendants walked on the way down from
+current HEAD. Authenticated checkpoint/delta generations
 must exist before either owner reaches 384 captures, with warning at 320, and
 v2 acceptance must prove that every v1 pilot source reference reloads. The
 current cumulative full-ancestry pin contract deliberately makes no indefinite
