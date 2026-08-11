@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/theme_graph/cn_limit_rules.v1.schema.json",
+  "title": "CN board price-limit regime registry v1",
+  "description": "Validates config/cn_limit_rules.yml — the CITABLE, board-aware, time-versioned record of A-share daily price-limit regimes (masterplan §4.1 / memo §429-431, gate G0.4). This file is METADATA, not a computer: engine/china_microstructure.py remains the canonical limit-width implementation and this registry never feeds it. What it adds is what the code cannot carry — an effective date, a source URL, and an explicit statement of what is NOT encoded. Every rule row is an interval [valid_from, valid_to] per (board, security_status); the intervals tile each board's timeline with no gaps and no overlaps, so 'which regime governed this date' has exactly one answer. Combinations deliberately not encoded are listed in `unencoded` rather than silently absent (nulls printed, never hidden).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "updated", "boards", "rules", "ipo_windows", "unencoded"],
+  "properties": {
+    "schema": {"const": "theme_graph.cn_limit_rules.v1"},
+    "version": {"type": "integer", "minimum": 1},
+    "updated": {"$ref": "#/$defs/date"},
+    "note": {"type": "string"},
+    "boards": {
+      "type": "object",
+      "minProperties": 5,
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/board_name"},
+      "patternProperties": {
+        "^.*$": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name_en", "name_zh", "limits_from", "st_from", "source"],
+          "properties": {
+            "name_en": {"type": "string", "minLength": 1},
+            "name_zh": {"type": "string", "minLength": 1},
+            "limits_from": {
+              "$ref": "#/$defs/date",
+              "description": "First date this board had a daily price-limit regime at all — the left edge the `ordinary` continuity check tiles from."
+            },
+            "st_from": {
+              "$ref": "#/$defs/nullable_date",
+              "description": "Left edge of the `st` series: the first date a risk-warning status could exist on this board. Distinct from limits_from because the ST designation post-dates the main boards' own price limits by sixteen months — back-filling the ST series to the board's birth would assert a rule for a status that did not yet exist. Null means this board declares no ST series at all, and must then appear in `unencoded`."
+            },
+            "source": {"$ref": "#/$defs/source"},
+            "note": {"type": "string"}
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["board", "security_status", "valid_from", "valid_to", "limit_up", "limit_down", "source"],
+        "properties": {
+          "board": {"$ref": "#/$defs/board_name"},
+          "security_status": {"enum": ["ordinary", "st"]},
+          "valid_from": {"$ref": "#/$defs/date"},
+          "valid_to": {"$ref": "#/$defs/nullable_date", "description": "Null = still in force."},
+          "limit_up": {"type": "number", "exclusiveMinimum": 0, "maximum": 1, "description": "Decimal fraction, e.g. 0.10 for +/-10%."},
+          "limit_down": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+          "source": {"$ref": "#/$defs/source"},
+          "note": {"type": "string"}
+        }
+      }
+    },
+    "ipo_windows": {
+      "type": "array",
+      "description": "Newly-listed windows, where the seasoned-name rule above does not govern. Kept SEPARATE from `rules` so a consumer that only knows about seasoned names cannot accidentally read an IPO window as the daily regime.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["board", "rule", "valid_from", "valid_to", "sessions", "source", "note"],
+        "properties": {
+          "board": {"$ref": "#/$defs/board_name"},
+          "rule": {
+            "enum": ["no_limit", "first_day_collar", "informational"],
+            "description": "no_limit = no daily price limit for the first `sessions` sessions. first_day_collar / informational rows record that a special first-day mechanism applied WITHOUT asserting its numeric form — the exact call-auction and temporary-halt mechanics are exchange-rulebook detail this registry deliberately does not encode."
+          },
+          "valid_from": {"$ref": "#/$defs/date"},
+          "valid_to": {"$ref": "#/$defs/nullable_date"},
+          "sessions": {"type": ["integer", "null"], "minimum": 1},
+          "limit_up": {"type": ["number", "null"]},
+          "limit_down": {"type": ["number", "null"]},
+          "source": {"$ref": "#/$defs/source"},
+          "note": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "unencoded": {
+      "type": "array",
+      "description": "(board, security_status) combinations this registry does NOT claim to cover, each with a reason. An honest null beats a plausible guess: a fabricated width here would be cited as a fact.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["board", "security_status", "reason"],
+        "properties": {
+          "board": {"$ref": "#/$defs/board_name"},
+          "security_status": {"enum": ["ordinary", "st"]},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "board_name": {"enum": ["sse_main", "szse_main", "star", "chinext", "bse"]},
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "nullable_date": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      ]
+    },
+    "source": {
+      "type": "string",
+      "pattern": "^https?://",
+      "description": "Per-row citable URL. A regime with no source is not citable and does not belong here."
+    }
+  }
+}

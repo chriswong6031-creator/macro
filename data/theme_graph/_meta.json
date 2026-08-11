@@ -1,0 +1,79 @@
+{
+  "belief_time": "2026-08-11",
+  "computed_at": "2026-08-11T12:12:07Z",
+  "counts": {
+    "edges": 5628,
+    "edges_latest_belief": 5628,
+    "evidence": 9,
+    "nodes": 2707
+  },
+  "engine_version": "theme_graph.v1",
+  "era": "reconstruction",
+  "lane": "nightly",
+  "mode": "backfill",
+  "per_suite": {
+    "baskets": {
+      "baskets": 49,
+      "companies": 708,
+      "member_edges": 1038,
+      "membership_published_at": "2026-08-07",
+      "seed_constant": "2023-05-09",
+      "tracks_edges": 48
+    },
+    "baskets_canada": {
+      "baskets": 16,
+      "companies": 167,
+      "member_edges": 167,
+      "membership_published_at": "2026-06-18",
+      "seed_constant": "2021-06-14",
+      "tracks_edges": 11
+    },
+    "baskets_china": {
+      "baskets": 22,
+      "companies": 280,
+      "member_edges": 285,
+      "membership_published_at": "2021-06-15",
+      "seed_constant": "2021-06-15",
+      "tracks_edges": 16
+    },
+    "baskets_china_ths": {
+      "baskets": 237,
+      "companies": 919,
+      "member_edges": 3532,
+      "membership_published_at": "2026-06-30",
+      "seed_constant": "2021-06-15",
+      "tracks_edges": 0
+    },
+    "baskets_hk": {
+      "baskets": 17,
+      "companies": 147,
+      "member_edges": 176,
+      "membership_published_at": "2026-07-12",
+      "seed_constant": "2021-06-15",
+      "tracks_edges": 2
+    },
+    "baskets_intl": {
+      "baskets": 17,
+      "companies": 233,
+      "member_edges": 279,
+      "membership_published_at": "2026-06-19",
+      "seed_constant": "2021-06-15",
+      "tracks_edges": 0
+    },
+    "crosswalk": {
+      "expresses_edges": 74,
+      "published_at": "2026-07-09",
+      "themes": 18,
+      "ths_codes_mapped": 61,
+      "ths_codes_unknown": 0
+    }
+  },
+  "rows_appended": {
+    "edges": 5628,
+    "evidence": 9,
+    "nodes": 2707
+  },
+  "skipped_suites": {},
+  "ths_unmapped_concept_count": 312,
+  "unknown_ths_codes": []
+}

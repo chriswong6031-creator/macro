@@ -1,0 +1,314 @@
+# config/cn_limit_rules.yml — A-share daily price-limit regimes, board-aware and
+# time-versioned (GMI W1b; masterplan §4.1 + memo §429-431; gate G0.4).
+#
+# WHAT THIS IS: a CITABLE registry. Each row is one regime interval for one
+# (board, security_status) with an effective date and a source URL, so a surface,
+# a study, or a future session can answer "which limit governed this board on this
+# date, and who says so" without re-deriving it from code comments.
+#
+# WHAT THIS IS NOT: a computer. `engine/china_microstructure.py::limit_width_for_date`
+# remains the canonical implementation for every consumer that needs a width, and this
+# file never feeds it — CN limit ecology is CN-alpha / china_* owner territory (G0.3).
+# tests/test_cn_limit_rules.py holds the two to PARITY for seasoned names, so the
+# registry cannot drift into a second, quietly different, source of truth.
+#
+# HONESTY: intervals tile each board's timeline per security_status with no gaps and
+# no overlaps, so "which regime" has exactly one answer. Combinations this registry
+# does NOT claim to cover are listed in `unencoded` with a reason rather than being
+# silently absent, and IPO windows live in their own list so a consumer that only knows
+# about seasoned names cannot read a listing window as the daily regime. Where the
+# exchange mechanism is more than a single width (the pre-2023 main-board first-day
+# collar), the row records THAT it applied and points at the rulebook instead of
+# inventing a number.
+#
+# Schema: contracts/theme_graph/cn_limit_rules.v1.schema.json
+
+schema: theme_graph.cn_limit_rules.v1
+version: 1
+updated: "2026-08-11"
+note: >
+  Decimal fractions throughout (0.10 = ±10%). Dates are the first/last calendar date the
+  regime applied. valid_to null = still in force. Board ids are this repo's board
+  vocabulary; engine/china_microstructure.py collapses sse_main and szse_main into one
+  "main" board because their widths have never differed.
+
+boards:
+  sse_main:
+    name_en: "Shanghai Stock Exchange main board"
+    name_zh: "上海证券交易所主板"
+    limits_from: "1996-12-16"
+    st_from: "1998-04-28"
+    source: "https://english.sse.com.cn/start/trading/mechanism/"
+    note: >
+      Daily price limits were (re)introduced across both mainland exchanges on
+      1996-12-16. Anything before that date is a different market structure and is
+      outside this registry entirely.
+  szse_main:
+    name_en: "Shenzhen Stock Exchange main board"
+    name_zh: "深圳证券交易所主板"
+    limits_from: "1996-12-16"
+    st_from: "1998-04-28"
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: >
+      Absorbed the SME board (中小板) on 2021-04-06; the merger changed the board's
+      composition, not its price-limit width, so it adds no interval here.
+  star:
+    name_en: "SSE STAR Market"
+    name_zh: "上海证券交易所科创板"
+    limits_from: "2019-07-22"
+    st_from: "2019-07-22"
+    source: "https://english.sse.com.cn/start/trading/mechanism/"
+    note: "First trading day 2019-07-22; ±20% from the outset."
+  chinext:
+    name_en: "SZSE ChiNext"
+    name_zh: "深圳证券交易所创业板"
+    limits_from: "2009-10-30"
+    st_from: "2009-10-30"
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: "Launched 2009-10-30 under main-board widths; widened to ±20% with the 2020 registration reform."
+  bse:
+    name_en: "Beijing Stock Exchange"
+    name_zh: "北京证券交易所"
+    limits_from: "2021-11-15"
+    st_from: null
+    source: "https://www.bse.cn/rule/jygl_list/200028217.html"
+    note: >
+      Opened 2021-11-15 with a ±30% band. st_from is null because this registry does not
+      encode a BSE risk-warning width — see `unencoded`.
+
+# ---------------------------------------------------------------------------
+# Seasoned-name daily limits
+# ---------------------------------------------------------------------------
+rules:
+  - board: sse_main
+    security_status: ordinary
+    valid_from: "1996-12-16"
+    valid_to: null
+    limit_up: 0.10
+    limit_down: 0.10
+    source: "https://english.sse.com.cn/start/trading/mechanism/"
+    note: "±10% since limits were reintroduced; unchanged for ordinary main-board names."
+
+  - board: szse_main
+    security_status: ordinary
+    valid_from: "1996-12-16"
+    valid_to: null
+    limit_up: 0.10
+    limit_down: 0.10
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: "±10%, identical to the SSE main board throughout."
+
+  - board: sse_main
+    security_status: st
+    valid_from: "1998-04-28"
+    valid_to: null
+    limit_up: 0.05
+    limit_down: 0.05
+    source: "https://english.sse.com.cn/start/trading/mechanism/"
+    note: >
+      Risk-warning (ST/*ST) names trade in a ±5% band. The interval starts at the first
+      ST designations, not at the board's own limits_from — before that the status did
+      not exist, which is why the ST series is declared with its own st_from rather than
+      being back-filled to 1996.
+
+  - board: szse_main
+    security_status: st
+    valid_from: "1998-04-28"
+    valid_to: null
+    limit_up: 0.05
+    limit_down: 0.05
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: "±5% for risk-warning names, same as the SSE main board."
+
+  - board: star
+    security_status: ordinary
+    valid_from: "2019-07-22"
+    valid_to: null
+    limit_up: 0.20
+    limit_down: 0.20
+    source: "https://english.sse.com.cn/start/trading/mechanism/"
+    note: "±20% from the first trading day."
+
+  - board: star
+    security_status: st
+    valid_from: "2019-07-22"
+    valid_to: null
+    limit_up: 0.20
+    limit_down: 0.20
+    source: "https://english.sse.com.cn/start/trading/mechanism/"
+    note: >
+      NO NARROWING: a STAR risk-warning name keeps the ±20% band. The main-board
+      intuition (ST ⇒ 5%) is wrong here, and the row exists so nobody has to infer that
+      from an absence.
+
+  - board: chinext
+    security_status: ordinary
+    valid_from: "2009-10-30"
+    valid_to: "2020-08-23"
+    limit_up: 0.10
+    limit_down: 0.10
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: "Launch regime: ChiNext traded on main-board widths for its first eleven years."
+
+  - board: chinext
+    security_status: ordinary
+    valid_from: "2020-08-24"
+    valid_to: null
+    limit_up: 0.20
+    limit_down: 0.20
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: >
+      Registration-system reform: from the first batch of registration-system listings
+      on 2020-08-24, every ChiNext stock — existing names included — trades ±20%.
+
+  - board: chinext
+    security_status: st
+    valid_from: "2009-10-30"
+    valid_to: "2020-08-23"
+    limit_up: 0.05
+    limit_down: 0.05
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: "Risk-warning names followed the main-board ±5% while ChiNext was on main-board widths."
+
+  - board: chinext
+    security_status: st
+    valid_from: "2020-08-24"
+    valid_to: null
+    limit_up: 0.20
+    limit_down: 0.20
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: "The 2020 reform widened risk-warning names too — ±20%, no ST narrowing on ChiNext since."
+
+  - board: bse
+    security_status: ordinary
+    valid_from: "2021-11-15"
+    valid_to: "2026-07-05"
+    limit_up: 0.30
+    limit_down: 0.30
+    source: "https://www.bse.cn/rule/jygl_list/200028217.html"
+    note: "Opening regime: ±30% from the exchange's first trading day."
+
+  - board: bse
+    security_status: ordinary
+    valid_from: "2026-07-06"
+    valid_to: null
+    limit_up: 0.30
+    limit_down: 0.30
+    source: "https://www.bse.cn/rule/jygl_list/200028217.html"
+    note: >
+      SAME WIDTH, NEW RULEBOOK. The row is split at the revised trading rules so that
+      regime version is citable in its own right: a later reader asking "under which
+      rulebook" gets an answer, and a future amendment that DOES move the width has an
+      interval to close instead of a decade-long row to reinterpret.
+
+# ---------------------------------------------------------------------------
+# Newly-listed windows — kept separate from the seasoned regime above
+# ---------------------------------------------------------------------------
+ipo_windows:
+  - board: star
+    rule: no_limit
+    valid_from: "2019-07-22"
+    valid_to: null
+    sessions: 5
+    limit_up: null
+    limit_down: null
+    source: "https://english.sse.com.cn/start/trading/mechanism/"
+    note: >
+      No daily price limit for the first 5 trading sessions after listing; the ±20% band
+      applies from session 6. A limit-event detector that scores those sessions against
+      ±20% manufactures limit hits out of ordinary listing volatility.
+
+  - board: chinext
+    rule: no_limit
+    valid_from: "2020-08-24"
+    valid_to: null
+    sessions: 5
+    limit_up: null
+    limit_down: null
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: "Same 5-session unlimited window as STAR, from the 2020 registration reform."
+
+  - board: sse_main
+    rule: no_limit
+    valid_from: "2023-04-10"
+    valid_to: null
+    sessions: 5
+    limit_up: null
+    limit_down: null
+    source: "https://english.sse.com.cn/start/trading/mechanism/"
+    note: >
+      Full-market registration system: main-board IPOs listing from 2023-04-10 also get
+      5 unlimited sessions. Simultaneous across both exchanges — the dated SZSE circular
+      (t20230306_599093) is the primary source for the parallel SZSE row.
+
+  - board: szse_main
+    rule: no_limit
+    valid_from: "2023-04-10"
+    valid_to: null
+    sessions: 5
+    limit_up: null
+    limit_down: null
+    source: "https://www.szse.cn/lawrules/rule/stock/t20230306_599093.html"
+    note: "Full-market registration system, SZSE main board — 5 unlimited sessions from 2023-04-10."
+
+  - board: sse_main
+    rule: first_day_collar
+    valid_from: "2014-01-01"
+    valid_to: "2023-04-09"
+    sessions: 1
+    limit_up: null
+    limit_down: null
+    source: "https://english.sse.com.cn/start/trading/mechanism/"
+    note: >
+      Pre-registration main-board IPOs traded their first session under a special
+      mechanism (opening call-auction collar plus intraday temporary halts), NOT under
+      the ordinary ±10%. This registry records that the mechanism applied and points at
+      the rulebook; it deliberately does not encode a numeric first-day width, because
+      the effective cap is produced by several interacting rules and any single number
+      here would be cited as a fact.
+
+  - board: szse_main
+    rule: first_day_collar
+    valid_from: "2014-01-01"
+    valid_to: "2023-04-09"
+    sessions: 1
+    limit_up: null
+    limit_down: null
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: "Same pre-registration first-day mechanism on the SZSE main board; not numerically encoded."
+
+  - board: sse_main
+    rule: informational
+    valid_from: "1996-12-16"
+    valid_to: "2013-12-31"
+    sessions: null
+    limit_up: null
+    limit_down: null
+    source: "https://english.sse.com.cn/start/trading/mechanism/"
+    note: >
+      Before the 2014 IPO reform the first-day treatment changed several times. This
+      registry does not encode those eras: treat pre-2014 listing windows as UNKNOWN
+      here rather than assuming the ordinary band applied.
+
+  - board: szse_main
+    rule: informational
+    valid_from: "1996-12-16"
+    valid_to: "2013-12-31"
+    sessions: null
+    limit_up: null
+    limit_down: null
+    source: "https://www.szse.cn/aboutus/trends/news/t20200729_580056.html"
+    note: "Pre-2014 SZSE main-board listing windows are likewise unknown to this registry."
+
+# ---------------------------------------------------------------------------
+# Declared gaps — printed, never hidden
+# ---------------------------------------------------------------------------
+unencoded:
+  - board: bse
+    security_status: st
+    reason: >
+      No BSE risk-warning width is asserted here. The BSE band is ±30% for listed shares
+      and this session found no primary source stating a narrower band for risk-warning
+      names, so the honest answer is "not encoded" rather than a plausible guess that
+      would be cited later as a fact. engine/china_microstructure.py likewise applies ST
+      narrowing on the main board only.
