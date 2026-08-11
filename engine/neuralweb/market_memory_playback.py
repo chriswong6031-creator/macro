@@ -40,6 +40,7 @@ _MAX_PAGE_SIZE = 100
 _MAX_OFFSET = 2 * market_memory_pit._MAX_GENERATION_CAPTURES
 _MAX_SCAN_RECEIPT_BYTES = 64 * 1024 * 1024
 _MAX_SCAN_RECEIPTS = 2 * market_memory_pit._MAX_GENERATION_CAPTURES
+_MAX_RETURNED_PACKET_BYTES = 128 * 1024 * 1024
 _ORDERING = "as_known_at_desc.event_time_desc.query_id_asc.context_id_asc.v1"
 _PROFILE_ORDER = (
     market_memory_pit.STORE_PROFILE,
@@ -234,15 +235,16 @@ def _reader_for_profile(
     )
 
 
-def _stored_candidate(
+def _stored_profile_candidate(
     *,
     reader: market_memory_trusted.CompositeAsKnownAtReader,
     snapshots: Mapping[str, market_memory_pit.PinnedGenerationSnapshot],
-    candidate: _Candidate,
+    profile: str,
+    query_id: str,
 ) -> market_memory_pit.StoredMarketMemoryContext:
-    owner = _reader_for_profile(reader, candidate.profile)
+    owner = _reader_for_profile(reader, profile)
     return owner.read_stored_from_pinned_generation(
-        snapshots[candidate.profile], query_id=candidate.query_id
+        snapshots[profile], query_id=query_id
     )
 
 
@@ -387,10 +389,43 @@ def build_operational_playback_catalog(
     total = len(ordered)
     page = ordered[clean_offset : clean_offset + clean_limit]
     entries: list[dict[str, Any]] = []
+    returned_packet_bytes = 0
     for page_index, candidate in enumerate(page):
-        stored = _stored_candidate(
-            reader=reader, snapshots=snapshots, candidate=candidate
-        )
+        stored_by_profile: dict[str, market_memory_pit.StoredMarketMemoryContext] = {}
+        canonical_packet: bytes | None = None
+        for profile, capture_id, captured_at in candidate.provenance:
+            stored_for_profile = _stored_profile_candidate(
+                reader=reader,
+                snapshots=snapshots,
+                profile=profile,
+                query_id=candidate.query_id,
+            )
+            stored_receipt = stored_for_profile.capture_receipt
+            if (
+                stored_receipt["capture_id"] != capture_id
+                or stored_receipt["captured_at"] != captured_at
+                or stored_receipt["query_id"] != candidate.query_id
+                or stored_receipt["context_id"] != candidate.receipt["context_id"]
+                or stored_receipt["packet_sha256"] != candidate.receipt["packet_sha256"]
+            ):
+                raise market_memory_pit.MarketMemoryStoreError(
+                    "playback provenance differs from its stored packet receipt"
+                )
+            packet_body = _canonical_bytes(stored_for_profile.packet)
+            returned_packet_bytes += len(packet_body)
+            if returned_packet_bytes > _MAX_RETURNED_PACKET_BYTES:
+                raise market_memory_pit.MarketMemoryStoreError(
+                    "playback returned packets exceed their aggregate byte bound"
+                )
+            if canonical_packet is None:
+                canonical_packet = packet_body
+            elif packet_body != canonical_packet:
+                raise market_memory_pit.MarketMemoryStoreError(
+                    "dual-provenance playback packets differ in canonical bytes"
+                )
+            stored_by_profile[profile] = stored_for_profile
+
+        stored = stored_by_profile[candidate.profile]
         receipt = stored.capture_receipt
         packet = stored.packet
         domain_states = [

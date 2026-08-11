@@ -263,6 +263,19 @@ def test_absent_subject_is_exact_empty_without_fallback(
     assert catalog["replay_policy"]["latest_fallback"] is False
 
 
+def test_returned_packet_reads_have_an_aggregate_byte_bound(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    reader, w1a_root, _trusted_root = _composite(tmp_path)
+    stored = _capture_w1a(monkeypatch, w1a_root, seconds=0)
+    monkeypatch.setattr(playback, "_MAX_RETURNED_PACKET_BYTES", 1)
+
+    with pytest.raises(pit.MarketMemoryStoreError, match="aggregate byte bound"):
+        playback.read_operational_playback_catalog(
+            reader=reader, subject=stored.packet["subject"]
+        )
+
+
 def test_unequal_same_query_packets_across_stores_fail_closed(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -311,6 +324,23 @@ def test_identical_cross_store_query_keeps_both_capture_provenances(
             "captured_at": _utc(CUTOFF + timedelta(seconds=31)),
         }
     )
+    trusted_stored = pit.StoredMarketMemoryContext(stored.packet, trusted_receipt)
+    w1a_load = reader.w1a.read_stored_from_pinned_generation
+    loaded_profiles: list[str] = []
+
+    def load_w1a(
+        generation: pit.PinnedGenerationSnapshot, *, query_id: str
+    ) -> pit.StoredMarketMemoryContext:
+        loaded_profiles.append(pit.STORE_PROFILE)
+        return w1a_load(generation, query_id=query_id)
+
+    def load_trusted(
+        generation: pit.PinnedGenerationSnapshot, *, query_id: str
+    ) -> pit.StoredMarketMemoryContext:
+        loaded_profiles.append(trusted.TRUSTED_STORE_PROFILE)
+        return trusted_stored
+
+    monkeypatch.setattr(reader.w1a, "read_stored_from_pinned_generation", load_w1a)
     monkeypatch.setattr(
         reader.trusted,
         "read_pinned_generation",
@@ -324,7 +354,7 @@ def test_identical_cross_store_query_keeps_both_capture_provenances(
     monkeypatch.setattr(
         reader.trusted,
         "read_stored_from_pinned_generation",
-        lambda generation, *, query_id: stored,
+        load_trusted,
     )
 
     catalog = playback.build_operational_playback_catalog(
@@ -347,6 +377,21 @@ def test_identical_cross_store_query_keeps_both_capture_provenances(
             "captured_at": trusted_receipt["captured_at"],
         },
     ]
+    assert loaded_profiles == [pit.STORE_PROFILE, trusted.TRUSTED_STORE_PROFILE]
+
+    def missing_w1a(
+        generation: pit.PinnedGenerationSnapshot, *, query_id: str
+    ) -> pit.StoredMarketMemoryContext:
+        raise pit.MarketMemoryStoreError("alternate W1A packet is missing")
+
+    monkeypatch.setattr(reader.w1a, "read_stored_from_pinned_generation", missing_w1a)
+    with pytest.raises(pit.MarketMemoryStoreError, match="alternate W1A packet"):
+        playback.build_operational_playback_catalog(
+            reader=reader,
+            w1a_generation=w1a_generation,
+            trusted_generation=trusted_generation,
+            subject=stored.packet["subject"],
+        )
 
 
 def test_schema_runtime_parity_for_strict_shape_policy_and_authority(
