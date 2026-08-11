@@ -17,11 +17,13 @@ side-car's keys alone (line 373) — so a side-car missing 173 of 373 boards doe
 not merely under-report those boards, it deletes their baskets.  Hence: scrape
 into staging, promote only when every board resolved.
 
-The last class here is the reason the SEED step is deliberately NOT wired in this
-wave: two producers write two different document shapes into one directory, and
-which of them wrote last silently decides whether a re-seed preserves the
-taxonomy or empties it.  That is pinned rather than fixed — see
-``TestSeederShapeCollision``.
+The last class here covers the mixed-shape snapshot directory: two producers write
+two different document shapes into one directory, and under W1a which of them wrote
+last silently decided whether a re-seed preserved the taxonomy or emptied it.  W1b
+fixes that in two independent layers — content-based shape discrimination and a
+write-level mass-deletion interlock — and ``TestSeederShapeCollision`` now pins the
+FIXED behaviour, including the hostile case where the classification is deliberately
+broken and the interlock alone has to save the taxonomy.
 
 Fixture-only: nothing here reads live ``data/`` and nothing pins a live count.
 """
@@ -267,33 +269,37 @@ def test_the_scrape_lane_gate_is_fail_closed(data_root, monkeypatch):
 
 
 # ===========================================================================
-# 3. WHY THE SEED STEP IS NOT WIRED — the shape collision, pinned not fixed
+# 3. THE SEEDER'S MIXED-SHAPE DIRECTORY — discriminated, and interlocked
 # ===========================================================================
 
 class TestSeederShapeCollision:
-    """Two producers write two document SHAPES into one directory, and the seeder
-    treats whichever wrote last as the authoritative current board list.
+    """Two producers write two document SHAPES into one directory.
 
       * ``scripts/scrape_ths_weekly.py`` promotes the RAW vendor dump
         ``{concept_name: [{ticker, name}]}``.
-      * ``scripts/build_baskets_china_ths.py --snapshot`` (line 79, ``dest.write_bytes(raw)``)
-        byte-copies ``membership.json`` — an entirely different shape, keyed by
-        basket_id under a top-level ``baskets`` key — into the SAME directory,
-        every night that membership changes.
+      * ``scripts/build_baskets_china_ths.py --snapshot`` byte-copies
+        ``membership.json`` — keyed by basket_id under a top-level ``baskets`` key —
+        into the SAME directory, every night that membership changes.
 
-    ``seed_china_ths_baskets._all_snapshots`` (line 247) reads every file in that
-    directory as a raw dump, and the auto-import loop (line 373) enumerates
-    ``snaps[-1][1].keys()``.  So on any run where the newest side-car is the
-    membership-doc copy, that enumeration yields ``version``/``seed_date``/``baskets``
-    — none of which is a THS concept — ``n_auto`` is 0, and EVERY auto-imported
-    ``thsc*`` basket disappears from membership.json.
+    W1a pinned the resulting instability as broken-behaviour witnesses and left the
+    seed step unwired.  W1b fixes it in TWO INDEPENDENT LAYERS, and these are the
+    fixed-behaviour pins:
 
-    That is an identity instability under the wave's own gate (c): vanished
-    concepts are not handled without collateral loss.  So W1a ships the scrape,
-    the receipts and the tripwire — the raw PIT side-cars accrue and the
-    motivating defect is fixed — and leaves the seed unwired.  These tests pin the
-    instability so the follow-up has a failing-shaped witness to work against.
+      1. **Shape discrimination.** ``classify_snapshot_shape`` decides by parsed
+         CONTENT with a positive signature for each shape; a document matching
+         neither or both is refused loudly, never guessed at.  ``_all_snapshots``
+         and ``_latest_snapshot`` keep raw dumps only.
+      2. **A write-level mass-deletion interlock**, independent of every shape
+         decision: a reseed that would drop >50% of the existing auto ``thsc*``
+         baskets refuses to publish.  The directive's hostile guarantee — "a mixed
+         snapshot directory cannot cause all ``thsc*`` baskets to disappear" — must
+         hold EVEN IF the classification were wrong, so the last test here breaks
+         layer 1 deliberately and proves layer 2 alone still saves the taxonomy.
     """
+
+    CURATED_BOARD = "人工智能"          # seed.CURATED[0] → basket id ths_ai
+    AUTO_BOARD = "测试板块甲"            # non-curated → auto-imported as thsc999001
+    AUTO_CODE = "999001"
 
     @staticmethod
     def _seed():
@@ -306,60 +312,208 @@ class TestSeederShapeCollision:
         d.mkdir(parents=True, exist_ok=True)
         return d
 
-    def test_the_membership_doc_side_car_empties_the_auto_import_enumeration(self, data_root):
+    @classmethod
+    def _board(cls, board: str, n: int) -> list[dict]:
+        """n distinct A-share tickers for one board (disjoint across boards)."""
+        base = 600000 + 1000 * len(board) + 100 * (board == cls.AUTO_BOARD)
+        return [{"ticker": f"{base + i}.SS", "name": f"{board}-{i}"} for i in range(n)]
+
+    @classmethod
+    def _raw_dump(cls, *, curated: int = 4, auto: int = 9) -> dict:
+        doc = {}
+        if curated:
+            doc[cls.CURATED_BOARD] = cls._board(cls.CURATED_BOARD, curated)
+        if auto:
+            doc[cls.AUTO_BOARD] = cls._board(cls.AUTO_BOARD, auto)
+        return doc
+
+    @classmethod
+    def _universe(cls) -> list[str]:
+        return [m["ticker"] for m in cls._board(cls.CURATED_BOARD, 4)] + \
+               [m["ticker"] for m in cls._board(cls.AUTO_BOARD, 9)]
+
+    @classmethod
+    def _install_seed_inputs(cls, root: Path, monkeypatch) -> None:
+        """The china_search price cache the seeder filters its universe against."""
+        import pandas as pd
+
+        cache = root / "china_search"
+        cache.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame({t: [1.0] for t in cls._universe()}).to_parquet(
+            cache / "closes.parquet", index=False)
+        monkeypatch.setattr(ths, "concept_code_map",
+                            lambda force=False: {cls.AUTO_BOARD: cls.AUTO_CODE})
+
+    @classmethod
+    def _prior_membership(cls, root: Path, *, n_auto: int = 3) -> Path:
+        """A populated membership.json — the interlock's baseline."""
+        baskets = {f"thsc{90000 + i}": {"name": f"auto-{i}", "members": []}
+                   for i in range(n_auto)}
+        baskets["ths_ai"] = {"name": "Artificial Intelligence", "members": []}
+        p = pit.membership_path(pit.SUITE_THS)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"version": "2026-07-08", "baskets": baskets},
+                                ensure_ascii=False), encoding="utf-8")
+        return p
+
+    # ── layer 1: classification ──────────────────────────────────────────────
+
+    def test_each_shape_is_recognised_by_its_own_positive_signature(self):
+        seed = self._seed()
+        assert seed.classify_snapshot_shape(self._raw_dump()) == seed.SHAPE_RAW_DUMP
+        assert seed.classify_snapshot_shape(
+            {"version": "2026-07-08", "seed_date": "2021-06-15", "baskets": {}}
+        ) == seed.SHAPE_MEMBERSHIP_DOC
+        # An empty board list is still a board list: a concept THS emptied is a real
+        # raw dump, not an ambiguous document.
+        assert seed.classify_snapshot_shape({self.AUTO_BOARD: []}) == seed.SHAPE_RAW_DUMP
+
+    @pytest.mark.parametrize("doc", [
+        {},                                                   # no positive signature at all
+        {"version": "2026-07-08"},                            # half a membership doc
+        {"baskets": {}},                                      # the other half
+        {"人工智能": {"ticker": "600000.SS"}},                  # values are not lists
+        {"人工智能": [{"ticker": "600000.SS"}]},                # member rows lack `name`
+        [{"ticker": "600000.SS", "name": "x"}],               # not an object
+    ])
+    def test_an_unrecognised_document_is_refused_loudly(self, doc):
+        """Never guessed past. Guessing membership_doc→raw_dump empties the auto
+        taxonomy; guessing the other way mints concepts out of structural keys."""
+        seed = self._seed()
+        with pytest.raises(ValueError):
+            seed.classify_snapshot_shape(doc)
+
+    def test_an_ambiguous_file_in_the_directory_stops_the_enumeration(self, data_root):
         seed = self._seed()
         d = self._snap_dir(data_root)
-        (d / "2026-06-30.json").write_text(
-            json.dumps({b: _members(b) for b in BOARDS}, ensure_ascii=False), encoding="utf-8")
-        (d / "2026-07-08.json").write_text(
-            json.dumps(_membership_doc(), ensure_ascii=False), encoding="utf-8")
+        (d / "2026-06-30.json").write_text(json.dumps(self._raw_dump(), ensure_ascii=False),
+                                           encoding="utf-8")
+        (d / "2026-07-08.json").write_text(json.dumps({"version": "2026-07-08"}),
+                                           encoding="utf-8")
+        with pytest.raises(ValueError, match="2026-07-08.json"):
+            seed._all_snapshots()  # noqa: SLF001
 
-        snaps = seed._all_snapshots()  # noqa: SLF001 — the enumeration under test
-        assert [date for date, _doc in snaps] == ["2026-06-30", "2026-07-08"]
-        newest = snaps[-1][1]
-        assert set(newest) & set(BOARDS) == set(), (
-            "the membership-doc side-car has stopped being read as a membership doc — "
-            "if the seeder now understands both shapes, re-run the wiring decision")
-        assert "baskets" in newest, "the newest side-car is the membership-doc shape"
-
-        # WITNESS: with a RAW dump newest, the same enumeration yields the concepts.
-        (d / "2026-08-15.json").write_text(
-            json.dumps({b: _members(b) for b in BOARDS}, ensure_ascii=False), encoding="utf-8")
-        assert set(seed._all_snapshots()[-1][1]) == set(BOARDS)  # noqa: SLF001
-
-    def test_a_membership_doc_newest_freezes_every_curated_theme(self, data_root):
-        """The curated half degrades differently but no less wrongly: with the newest
-        side-car unreadable as a board list, `latest_trustworthy` is False, so NO
-        removal is ever honoured and the theme silently stops tracking THS at all."""
+    def test_the_enumeration_uses_the_newest_raw_dump_and_skips_the_doc(self, data_root, caplog):
+        """The W1a witness, inverted: the membership-doc copy is NEWEST by date, and
+        the enumeration still resolves the THS boards. Classification is by content —
+        both writers use the identical ``YYYY-MM-DD.json`` filename, so a name-based
+        rule has nothing to read."""
         seed = self._seed()
         d = self._snap_dir(data_root)
-        (d / "2026-06-30.json").write_text(
-            json.dumps({BOARDS[0]: _members(BOARDS[0])}, ensure_ascii=False), encoding="utf-8")
+        (d / "2026-06-30.json").write_text(json.dumps(self._raw_dump(), ensure_ascii=False),
+                                           encoding="utf-8")
         (d / "2026-07-08.json").write_text(
-            json.dumps(_membership_doc(), ensure_ascii=False), encoding="utf-8")
+            json.dumps({"version": "2026-07-08", "seed_date": "2021-06-15",
+                        "baskets": {"thsc1": {"members": []}}}, ensure_ascii=False),
+            encoding="utf-8")
+        (d / pit.CADENCE_FILE).write_text(json.dumps({"checked_at": "2026-08-15T00:00:00Z"}),
+                                          encoding="utf-8")
 
-        snaps = seed._all_snapshots()  # noqa: SLF001
-        universe = {m["ticker"] for m in _members(BOARDS[0])}
-        members, _missing = seed._pit_members(  # noqa: SLF001
-            BOARDS[0], snaps, universe, lambda _t, fallback: fallback)
-        assert members, "the curated theme lost its members entirely"
-        assert all(m["removed"] is None for m in members), (
-            "a removal was fabricated from a side-car that is not a board list")
+        with caplog.at_level("INFO"):
+            snaps = seed._all_snapshots()  # noqa: SLF001
+        assert [date for date, _doc in snaps] == ["2026-06-30"]
+        assert set(snaps[-1][1]) == {self.CURATED_BOARD, self.AUTO_BOARD}
+        assert any("2026-07-08" in r.getMessage() for r in caplog.records), (
+            "a skipped side-car must leave a log line — a silent skip and a file that "
+            "was never there look the same")
+        # ...and _latest_snapshot agrees, without reaching for the network.
+        assert set(seed._latest_snapshot(refresh=False)) == {self.CURATED_BOARD, self.AUTO_BOARD}  # noqa: SLF001
 
     def test_the_cadence_stamp_is_not_read_as_a_snapshot(self, data_root):
         """`_cadence.json` shares the snapshots dir, and `_` sorts AFTER every digit in
-        ASCII — so under the old `*.json` glob it would have resolved as the NEWEST
-        snapshot and become the authoritative board list. Date-shaped globs only."""
+        ASCII — so under a bare `*.json` glob it would resolve as the NEWEST snapshot
+        and become the authoritative board list. Date-shaped globs only."""
         seed = self._seed()
         d = self._snap_dir(data_root)
-        (d / "2026-06-30.json").write_text(
-            json.dumps({b: _members(b) for b in BOARDS}, ensure_ascii=False), encoding="utf-8")
-        (d / pit.CADENCE_FILE).write_text(
-            json.dumps({"checked_at": "2026-08-15T00:00:00Z"}), encoding="utf-8")
+        (d / "2026-06-30.json").write_text(json.dumps(self._raw_dump(), ensure_ascii=False),
+                                           encoding="utf-8")
+        (d / pit.CADENCE_FILE).write_text(json.dumps({"checked_at": "2026-08-15T00:00:00Z"}),
+                                          encoding="utf-8")
 
         assert sorted(p.name for p in d.glob("*.json"))[-1] == pit.CADENCE_FILE, (
             "the ASCII-ordering hazard this test guards has moved — re-derive it")
         snaps = seed._all_snapshots()  # noqa: SLF001
         assert [date for date, _doc in snaps] == ["2026-06-30"]
-        assert set(snaps[-1][1]) == set(BOARDS)
-        assert [p.name for p in pit.dated_snapshots(pit.SUITE_THS)] == ["2026-06-30.json"]
+
+    # ── end to end: the mixed directory reseeds intact ───────────────────────
+
+    def test_a_mixed_directory_reseeds_the_auto_taxonomy_intact(self, data_root, monkeypatch):
+        """THE hostile guarantee, top level: raw dump + membership-doc copy + cadence
+        stamp in one directory, doc newest — and the reseed still publishes the
+        auto-imported ``thsc*`` basket."""
+        seed = self._seed()
+        d = self._snap_dir(data_root)
+        (d / "2026-06-30.json").write_text(json.dumps(self._raw_dump(), ensure_ascii=False),
+                                           encoding="utf-8")
+        (d / "2026-07-08.json").write_text(
+            json.dumps({"version": "2026-07-08", "baskets": {"thsc999001": {"members": []}}},
+                       ensure_ascii=False), encoding="utf-8")
+        (d / pit.CADENCE_FILE).write_text(json.dumps({"checked_at": "2026-08-15T00:00:00Z"}),
+                                          encoding="utf-8")
+        self._prior_membership(data_root, n_auto=1)
+        self._install_seed_inputs(data_root, monkeypatch)
+
+        assert seed.main([]) == 0
+        doc = json.loads(pit.membership_path(pit.SUITE_THS).read_text(encoding="utf-8"))
+        assert f"thsc{self.AUTO_CODE}" in doc["baskets"], (
+            "the auto taxonomy was deleted by the membership-doc side-car")
+        assert "ths_ai" in doc["baskets"]
+
+    # ── layer 2: the interlock, proven with layer 1 deliberately broken ──────
+
+    def _break_classification(self, monkeypatch, seed):
+        """Simulate the classification being WRONG in the dangerous direction: every
+        document — including the membership-doc copy — read as a raw board dump."""
+        monkeypatch.setattr(seed, "classify_snapshot_shape", lambda doc: seed.SHAPE_RAW_DUMP)
+
+    def test_the_interlock_refuses_a_wipe_out_even_when_classification_is_wrong(
+            self, data_root, monkeypatch, caplog):
+        seed = self._seed()
+        d = self._snap_dir(data_root)
+        (d / "2026-06-30.json").write_text(json.dumps(self._raw_dump(), ensure_ascii=False),
+                                           encoding="utf-8")
+        (d / "2026-07-08.json").write_text(
+            json.dumps({"version": "2026-07-08", "baskets": {"thsc999001": {"members": []}}},
+                       ensure_ascii=False), encoding="utf-8")
+        prior_p = self._prior_membership(data_root, n_auto=3)
+        before = prior_p.read_text(encoding="utf-8")
+        self._install_seed_inputs(data_root, monkeypatch)
+        self._break_classification(monkeypatch, seed)
+
+        with caplog.at_level("ERROR"):
+            rc = seed.main([])
+        assert rc == 1, "a reseed that deletes the whole auto taxonomy must not succeed"
+        assert prior_p.read_text(encoding="utf-8") == before, (
+            "membership.json was rewritten despite the abort — the interlock must run "
+            "BEFORE the write, not report after it")
+        msg = " ".join(r.getMessage() for r in caplog.records)
+        assert "3" in msg and "0" in msg, "the abort must print both counts"
+
+    def test_the_interlock_refuses_a_majority_shrink_too(self, data_root, monkeypatch):
+        """Not only the wipe-out: 10 auto baskets → 1 is the same class of event and
+        the same likely cause (a bad read), so it is refused on the same terms."""
+        seed = self._seed()
+        d = self._snap_dir(data_root)
+        (d / "2026-06-30.json").write_text(json.dumps(self._raw_dump(), ensure_ascii=False),
+                                           encoding="utf-8")
+        prior_p = self._prior_membership(data_root, n_auto=10)
+        before = prior_p.read_text(encoding="utf-8")
+        self._install_seed_inputs(data_root, monkeypatch)
+
+        assert seed.main([]) == 1
+        assert prior_p.read_text(encoding="utf-8") == before
+
+    def test_allow_shrink_publishes_and_says_so(self, data_root, monkeypatch, caplog):
+        seed = self._seed()
+        d = self._snap_dir(data_root)
+        (d / "2026-06-30.json").write_text(json.dumps(self._raw_dump(), ensure_ascii=False),
+                                           encoding="utf-8")
+        self._prior_membership(data_root, n_auto=10)
+        self._install_seed_inputs(data_root, monkeypatch)
+
+        with caplog.at_level("WARNING"):
+            assert seed.main(["--allow-shrink"]) == 0
+        doc = json.loads(pit.membership_path(pit.SUITE_THS).read_text(encoding="utf-8"))
+        assert set(doc["baskets"]) == {"ths_ai", f"thsc{self.AUTO_CODE}"}
+        assert any("allow-shrink" in r.getMessage() for r in caplog.records), (
+            "a bypassed interlock must leave a line naming the bypass")
