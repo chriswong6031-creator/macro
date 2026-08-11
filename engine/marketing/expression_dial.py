@@ -385,10 +385,26 @@ def _p(*patterns: str) -> tuple[re.Pattern[str], ...]:
 #: the key set against that tuple, so renaming a pinned line without writing its
 #: detector fails loudly instead of quietly disarming a third of the gate.
 #:
-#: Calibration: these run against real named humans, whose whole register is
-#: first person ("I'm watching", "I don't get braver with each test"). The
-#: patterns therefore target TRADES, POSITIONS, P&L and INVENTED EXPERIENCE
-#: specifically — never first person as such. The committed founder/flagship
+#: Calibration (rewritten for Voice Doctrine v5, 2026-08-11:
+#: docs/marketing_voice_doctrine_v5.md). The previous note justified a narrow
+#: detector on the grounds that the personas' "whole register is first person"
+#: ("I'm watching", "I don't get braver with each test"). That premise is dead.
+#: Under v5 the POST LANES CARRY NO FIRST PERSON AT ALL (no I, I'm, my, me, we,
+#: our, us), and the house-wide ban is enforced upstream: ``validate_copy``'s v5
+#: voice screen in engine/marketing/copywriter.py rejects the pronoun at
+#: generation time, and the census-by-content ratchet in
+#: tests/test_marketing_voice_v5.py keeps it from re-entering through a new bank.
+#:
+#: The detectors below stay NARROW anyway, and deliberately. They target TRADES,
+#: POSITIONS, P&L and INVENTED EXPERIENCE, not first person as such, for two
+#: reasons. (1) REPLY lanes remain conversational and are out of scope for this
+#: wave, so a first-person sweep here would fire on copy the reply desk is still
+#: allowed to write. (2) On post lanes the voice screen already rejects the
+#: pronoun, so broadening this detector would only double-report the same line
+#: under a second name and make the AM-R1 count unreadable. What AM-R1 owns is
+#: the FABRICATED CLAIM ("we bought the dip", "a source at Goldman told me") --
+#: it survives any pronoun rule, because the defect is the asserted position or
+#: experience, not the word carrying it. The committed founder/flagship
 #: example_lines are the negative fixture set.
 AM_R1_DETECTORS: dict[str, tuple[re.Pattern[str], ...]] = {
     "first-person trade/position/P&L claims": _p(

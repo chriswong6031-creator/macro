@@ -167,24 +167,33 @@ _PT_PENDING_STATUSES: frozenset[str] = frozenset({"queued", "approved"})
 _PT_INFLIGHT_STATUSES: frozenset[str] = frozenset({"posting"})
 
 #: How many template variants a candidate may be re-rolled through before the
-#: lane gives up and drops it for ending on reader-bait. Bounded on purpose: the
+#: lane gives up and drops it for ending on a question (v5: every interrogative
+#: tail is bait, whoever it is about). Bounded on purpose: the
 #: render is cheap but not free, and a bank that is bait all the way down is a
 #: copywriter defect to report, not a loop to grind.
 _MAX_TAIL_ROLLS = 4
 
 #: First-person markers, in TWO patterns because the two halves need opposite
-#: case rules. A trailing question that carries one is the AUTHOR asking about
-#: their own position ("Am I too slow here?"); one that carries none is the post
-#: asking the timeline to do its thinking ("What's your read?", "Which one breaks
-#: out first?", "Dead-cat bounce or the real dip?").
+#: case rules. FIRST PERSON IS BANNED IN POST COPY (Voice Doctrine v5,
+#: 2026-08-11): the subject of a generated sentence is the market, never the
+#: author. These patterns are the executable form of that ban on the LLM-phrase
+#: path (`llm_phrase_violations` → "first_person_banned").
+#:
+#: WHAT THEY USED TO BE FOR. Under v4 a first-person marker was the thing that
+#: EXCUSED a trailing question — `_tail_is_bait` spared "Am I too slow here?" and
+#: rejected "What's your read?" — because the house register was a persona
+#: reacting to a trade. v5 retires that register outright, so the exemption is
+#: gone and `_tail_is_bait` no longer consults these patterns at all; see its
+#: docstring.
 #:
 #: WHY NOT ONE CASE-SENSITIVE ALTERNATION (the defect this splits). It used to be
 #: `\bI\b|\b(?:me|my|…)\b` compiled with no flags, so the lower-case arm only ever
 #: matched lower-case pronouns — and a first-person pronoun is upper-case exactly
-#: when it opens the sentence, which is the commonest place for it. "My read is
-#: nothing here?" and "Our patience is the cost?" both carry a first-person
-#: stance and both were classified as reader-bait, dropping compliant copy and
-#: burning a re-roll (or the whole candidate) for nothing.
+#: when it opens the sentence, which is the commonest place for it. A phrase
+#: opening "My read..." or "Our patience..." carries a first-person stance and
+#: went unseen, which on the v4 bait path dropped compliant copy and burned a
+#: re-roll (or the whole candidate) for nothing, and on the v5 LLM screen would
+#: wave the banned register straight through.
 #:
 #: The bare "I" arm stays CASE-SENSITIVE deliberately: `\bi\b` under IGNORECASE
 #: matches the stray single letter "i" in any enumeration or transliteration, and
@@ -894,38 +903,36 @@ def _render_copy(candidate: dict, *, account: str, voice: str, persona: dict,
 
 
 def _tail_is_bait(text: str) -> bool:
-    """True when the post ENDS on a question that costs the author nothing.
+    """True when the post ENDS on a question. ANY interrogative tail is bait.
 
     THE DEFECT (operator voice law, 2026-07-31). All four `publisher_live_movers`
     posts that have ever gone out ended on an unanswered engagement question:
     "Dead-cat bounce or the real dip?", "Which one breaks out first?", "Watching,
-    not chasing. What's your read?". The house voice is a concrete fact plus a
-    reaction that COSTS the author — a stance that can later be shown to have
-    been wrong, or a named watch-condition. A question handed to the timeline is
-    the opposite: it commits to nothing and can never be wrong.
+    not chasing. What's your read?". A question handed to the timeline commits to
+    nothing and can never be wrong.
 
-    A POSITIVE test, not a blocklist of the four strings that were caught. A
-    banned-phrase list scoped to one postmortem is a regression pin, not a sweep:
-    the fifth bait line nobody has written yet would sail through it. The rule is
-    instead about WHO the question is about. A post may still end on "?" — and a
-    theme_list MUST, because copywriter.validate_copy requires it — as long as the
-    final sentence is the author asking about their own position ("Am I too slow
-    here?", "Does that cost me the snapback?"). No first-person marker in the
-    final sentence means the question is aimed outward, and that is bait.
+    THE CARVE-OUT THIS RULE USED TO CARRY, AND WHY IT DIED (Voice Doctrine v5,
+    2026-08-11). The v4 rule was about WHO the question was about: a post could
+    still end on "?" — and a theme_list HAD to, because copywriter.validate_copy
+    required it — as long as the final sentence was the author asking about their
+    own position ("Am I too slow here?"). That exemption is now itself a
+    violation. v5 bans first person AND question marks in generated post copy, so
+    the only shape the carve-out ever spared ("?" plus a first-person marker) is
+    doubly forbidden, and keeping the exemption would mean this gate waving
+    through the exact register the doctrine exists to delete. validate_copy's
+    theme_list "?" REQUIREMENT is inverted to a "?" ban in the same wave, and
+    movers_source's `_TAIL_UP`/`_TAIL_DOWN` banks are declarative statements now.
+
+    So the rule is one line: a post ending on "?" is bait, whoever it is about.
+    `_has_first_person` survives for the LLM-phrase screen below
+    (`llm_phrase_violations`, "no first-person stance"), which is the other half
+    of the same doctrine — it just no longer buys a question any forgiveness
+    here.
 
     A post that does not end on a question is not this rule's business at all:
-    "Tape check. Not touching it yet." is already a stance.
+    "Breadth inside the group, not one leader." is already a statement of fact.
     """
-    body = str(text or "").strip()
-    if not body.endswith("?"):
-        return False
-    # Final sentence only. The bait line is welded on AFTER a stance in the worst
-    # observed case ("Watching, not chasing. What's your read?"), so scanning the
-    # whole block for a first-person marker would pass the very post that drew the
-    # complaint.
-    parts = re.split(r"(?<=[.!?])\s+", body)
-    last = parts[-1] if parts else body
-    return not _has_first_person(last)
+    return str(text or "").strip().endswith("?")
 
 
 #: Every LENGTH violation copywriter can raise ends in "N chars (max M)":
@@ -1015,6 +1022,12 @@ def _render_copy_unbaited(candidate: dict, *, account: str, voice: str,
     gives up after _MAX_TAIL_ROLLS. The returned `bait` flag is the give-up
     signal; the caller drops and tallies it, which is what surfaces a bank that
     has gone bait all the way down.
+
+    THE SURFACE WIDENED UNDER v5 (2026-08-11) and this is the net that catches
+    the difference. `_tail_is_bait` now rejects EVERY interrogative tail, not
+    only the ones aimed outward, so a bank variant still carrying a first-person
+    question re-rolls here instead of shipping — one lane's un-migrated bank
+    costs a re-roll, not a post in the v4 register.
 
     LENGTH IS RE-ROLLED TOO, for exactly the same reason bait is (defect closed
     2026-07-31). copywriter.validate_copy caps headline+body at 275 characters,

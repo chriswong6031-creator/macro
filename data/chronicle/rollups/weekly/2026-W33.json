@@ -1,13 +1,41 @@
 {
-  "as_of": "2026-08-10",
+  "as_of": "2026-08-11",
   "coverage": {
-    "end": "2026-08-10",
-    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W33; 13 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-11"
+    "end": "2026-08-11",
+    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W33; 14 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-05-12"
   },
   "iso_week": "2026-W33",
   "schema": "chronicle.rollup.weekly/v1",
   "weeks": [
+    {
+      "clusters": [
+        {
+          "n_events": 1,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "regime_flip",
+          "theme": "regime",
+          "top_events": [
+            {
+              "date": "2026-08-10",
+              "id": "cev-regime_flip-3df289330159",
+              "kind": "state_flip",
+              "source": "regime_flip",
+              "source_ref": "state_log#2026-08-10#regime_china",
+              "tickers": [],
+              "title": "CHINA regime: Q3 Stagflation → Q4 Growth-scare",
+              "weight_hint": 3
+            }
+          ]
+        }
+      ],
+      "iso_week": "2026-W33"
+    },
     {
       "clusters": [
         {
@@ -83,6 +111,12 @@
           "n_events": 1,
           "source": "macro_release",
           "theme": "claims",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "nfp",
           "top_events": []
         },
         {
@@ -469,38 +503,13 @@
     {
       "clusters": [
         {
-          "n_events": 140,
+          "n_events": 101,
           "source": "earnings",
           "theme": "earnings",
-          "top_events": [
-            {
-              "date": "2026-05-14",
-              "id": "cev-earnings-0c92d841b18b",
-              "kind": "earnings",
-              "source": "earnings",
-              "source_ref": "UMAC#2026-05-14",
-              "tickers": [
-                "UMAC"
-              ],
-              "title": "Earnings: UMAC actual vs est",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-13",
-              "id": "cev-earnings-0c9841e78414",
-              "kind": "earnings",
-              "source": "earnings",
-              "source_ref": "GO#2026-05-13",
-              "tickers": [
-                "GO"
-              ],
-              "title": "Earnings: GO actual vs est",
-              "weight_hint": 2
-            }
-          ]
+          "top_events": []
         },
         {
-          "n_events": 13,
+          "n_events": 10,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": [
