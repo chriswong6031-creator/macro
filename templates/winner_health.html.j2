@@ -108,7 +108,7 @@
    forecast. Below the honest-N floor the card SAYS the library is too thin
    rather than printing a rate nobody should read.
    ═══════════════════════════════════════════════════════════════════════════ #}
-{% macro analog(a, lib) -%}
+{% macro analog(a, lib, M) -%}
 {%- if a and a.n -%}
 {%- set thin = (a.n < 12) -%}
 <span class="lens-term lib" tabindex="0" role="button" aria-label="Similar past runs in the library">
@@ -148,6 +148,11 @@
         is silently clipped there. -#}
     <div class="lensx-note">{{ t('This is what those runs did — history, not a forecast. Runs are matched on shape and age, never on the company or its industry.',
                                  '这是那些行情当年走过的路 —— 是历史，不是预测。匹配只看走势形态和运行时长，与公司本身或所属行业无关。') }}
+      {#- The per-tier disclosure is PROSE and lives here, never in the receipt:
+          `.lens-receipt .r-i` is nowrap, so a sentence-length value is silently
+          clipped there (W1 §9.3). -#}
+      {%- if M %} {{ t('Matched only against past runs that also cleared this group\'s bar.',
+                       '只与同样达到本组门槛的历史行情做匹配。') }}{% endif %}
       {%- if a.track == 'W' %} {{ t('The record includes names that later delisted.', '这份记录包含了后来退市的个股。') }}
       {%- else %} {{ t('It draws only on names with long price history, so runs that ended in a delisting are under-represented.',
                        '它只取有长期价格历史的个股，因此以退市收场的行情在样本中偏少。') }}{% endif %}</div>
@@ -160,28 +165,69 @@
   </span>
 </span>
 {%- else -%}
-<span class="lib-null" data-tip-en="No past run in the library matches this one closely enough on shape and age to show a count." data-tip-zh="资料库里没有在形态和运行时长上足够接近的历史行情，因此不显示次数。">{{ t('no match', '无相似样本') }}</span>
+<span class="lib-null" data-tip-en="No past run in this group's library is close enough in shape and age to show a count." data-tip-zh="本分组的资料库里，没有在形态和运行时长上足够接近的历史行情，因此不显示次数。">{{ t('no match', '无相似样本') }}</span>
 {%- endif -%}
 {%- endmacro %}
 
+{# ── the per-tier row figure. Three tiers, three measures, one cell.
+      `atr_x` is a DISTANCE, not a direction — it is >= the bar by construction,
+      so directional ink would print a permanent green (permanent red in ZH) that
+      means nothing. Neutral ink, tabular figures, one decimal. ── #}
+{% macro figcell(r, T) -%}
+{%- set fg = T.figure | default('r126') -%}
+{%- if fg == 'atr_x' -%}
+  {%- if r.atr_x is defined and r.atr_x is not none -%}
+  <span class="fig neutral">{{ '%.1f' % r.atr_x }}×</span>
+  {%- else -%}<span class="fig neutral">—</span>{%- endif -%}
+{%- elif fg == 'r63' -%}
+  <span class="fig{{ ' dn' if (r.r63 is defined and r.r63 is not none and r.r63 < 0) else '' }}">{{ pc(r.r63) }}</span>
+{%- else -%}
+  <span class="fig{{ ' dn' if (r.r126 is defined and r.r126 is not none and r.r126 < 0) else '' }}">{{ pc(r.r126) }}</span>
+{%- endif -%}
+{%- endmacro %}
+
+{# ── PROVENANCE, appended to every leg hover (§4.6b). The mandate requires each
+      receipt to name its own tier's library — and, just as importantly, to say
+      which legs are cut from NO library at all, so a reader never has to assume
+      that three fixed rules were re-fitted per group. The engine stamps the
+      class (`cut`); the tier NAME is display copy and lives here. ── #}
+{% macro prov_en(g, M) -%}
+{%- if g.cut == 'fixed' %} This is a fixed rule, the same in every group.
+{%- else %} Cut from past runs in {{ M.en }} only — never from another group's history.{% endif -%}
+{%- endmacro %}
+{% macro prov_zh(g, M) -%}
+{%- if g.cut == 'fixed' %} 这是一条固定规则，各分组通用。
+{%- else %} 这一标准只取自「{{ M.zh }}」分组内的历史行情 —— 不使用其他分组的历史。{% endif -%}
+{%- endmacro %}
+
 {# ── one name row ── #}
-{% macro namerow(r) -%}
+{% macro namerow(r, T, M, compact=false) -%}
 <div class="row">
   <div class="c-tk">
     {%- if r.href %}<a class="tk" href="{{ r.href }}">{{ r.ticker }}</a>{% else %}<span class="tk">{{ r.ticker }}</span>{% endif %}
-    <span class="nm"><span class="l-en">{{ r.name | default(r.ticker) }}</span><span class="l-zh">{{ r.name_zh | default(r.name | default(r.ticker)) }}</span></span>
+    {#- `default` substitutes only for UNDEFINED, not for None, and the artifact
+        ships "name_zh": null on most rows — without the boolean flag every ZH row
+        printed the literal string "None" under its ticker (§10). -#}
+    <span class="nm"><span class="l-en">{{ r.name | default(r.ticker, true) }}</span><span class="l-zh">{{ r.name_zh | default(r.name | default(r.ticker, true), true) }}</span></span>
   </div>
   <div class="c-gain">
-    <span class="fig{{ ' dn' if (r.r126 is defined and r.r126 is not none and r.r126 < 0) else '' }}">{{ pc(r.r126) }}</span>
-    <span class="cap">{{ t('in six months', '近六个月') }}</span>
+    {{ figcell(r, T) }}
+    <span class="cap">{{ t(M.cap_en, M.cap_zh) }}</span>
   </div>
-  <div class="c-sp">{{ spark(r.spark, r.episode_high) }}</div>
+  {%- if not compact %}<div class="c-sp">{{ spark(r.spark, r.episode_high) }}</div>{% endif %}
   <div class="c-legs">
+    {#- An unreadable row renders NO wear marks at all. Three empty outlined slots
+        mean "measured and clear" on this page, and that would be a lie here:
+        nothing was measured, so nothing is drawn. The spark still renders — it is
+        a picture of price, not a reading. -#}
+    {%- if r.state == 'no_read' %}
+    <span class="legs clean"{% if r.checks and r.checks.total %} data-tip-en="Only {{ r.checks.evaluated }} of the {{ r.checks.total }} checks this group makes could be made on this name, so the board does not place it in a state." data-tip-zh="本分组的 {{ r.checks.total }} 项检查中，只有 {{ r.checks.evaluated }} 项能在这只个股上完成，因此看板不给它归入任何状态。"{% endif %}>{{ t('no similar runs to compare', '没有可比的历史行情') }}</span>
+    {%- else %}
     {{ wear(r.legs | length if r.legs else 0) }}
     {%- if r.legs %}
     <span class="legs">
       {%- for g in r.legs[:3] %}
-      <span class="leg"{% if g.tip_en %} data-tip-en="{{ g.tip_en }}"{% if g.tip_zh %} data-tip-zh="{{ g.tip_zh }}"{% endif %}{% endif %}><span class="l-en">{{ g.words_en }}</span><span class="l-zh">{{ g.words_zh | default(g.words_en) }}</span></span>
+      <span class="leg"{% if g.tip_en %} data-tip-en="{{ g.tip_en }}{{ prov_en(g, M) }}"{% if g.tip_zh %} data-tip-zh="{{ g.tip_zh }}{{ prov_zh(g, M) }}"{% endif %}{% endif %}><span class="l-en">{{ g.words_en }}</span><span class="l-zh">{{ g.words_zh | default(g.words_en) }}</span></span>
       {%- endfor %}
     </span>
     {%- else %}
@@ -198,8 +244,9 @@
       {%- else -%}{{ t('nothing has slipped', '暂无转弱迹象') }}{%- endif -%}
     </span>
     {%- endif %}
+    {%- endif %}
   </div>
-  <div class="c-lib">{{ analog(r.analog, LIB) }}</div>
+  <div class="c-lib">{{ analog(r.analog, T.library | default({}), M) }}</div>
 </div>
 {%- endmacro %}
 
@@ -240,25 +287,89 @@
   'benign':                  ('calm and broad', '平静且广泛')
 } %}
 
+{# ── the off-ladder group (W2b §4.4). It is NOT a fifth wear stage: it sits
+      outside the ramp, takes no hue (m0) and carries no wear marks. ── #}
+{% set NOREAD = {'key':'no_read', 'slug':'noread', 'm':0,
+  'en':'Not enough to compare', 'zh':'无可比样本',
+  'stance_en':'No read tonight', 'stance_zh':'今晚不作判读',
+  'sub_en':'On the board, but with no similar past runs in this group to read them against.',
+  'sub_zh':'它们在看板上，但本分组内没有可供对照的相似历史行情。'} %}
+
+{# ═══════════════════════════════════════════════════════════════════════════
+   THE THREE TIERS (W2b §2.1) — three answers to "what counts as a winner?",
+   NOT three severities and not three confidence levels. Order is LAW:
+   narrowest bar first, never re-ordered by count or by anything nightly.
+   Tiers carry NO hue — on this page colour means wear, and a tier is not a
+   severity. They are distinguished by position, name and size only.
+   ═══════════════════════════════════════════════════════════════════════════ #}
+{% set TIER_META = {
+  'primary': {'slug':'six-month',
+    'en':'Big six-month gains', 'zh':'半年大涨',
+    'def_en':'Up 50% or more over six months.',
+    'def_zh':'半年内上涨 50% 或以上。',
+    'cap_en':'in six months', 'cap_zh':'近六个月',
+    'bar_en':'Up 50% or more over six months, and within 10% of its highest close in the past year.',
+    'bar_zh':'半年内上涨 50% 或以上，且收盘价在过去一年最高收盘价的 10% 以内。',
+    'ord_en':'Inside a group, the largest six-month gain comes first. That is a fact about the past — not a ranking.',
+    'ord_zh':'每组内部按半年涨幅从大到小排列。那只是关于过去的事实 —— 不是排名。',
+    'not_en':'A few checks need a longer price history than some names have. Where a check cannot be made, it is not counted as clear — it is simply not counted.',
+    'not_zh':'有几项检查需要较长的价格历史，部分个股并不具备。无法完成的检查不会被当作「没问题」，它只是没有计入。'},
+  'r63': {'slug':'three-month',
+    'en':'Fast three-month runs', 'zh':'三个月急涨',
+    'def_en':'Up 35% or more over the last three months.',
+    'def_zh':'近三个月上涨 35% 或以上。',
+    'cap_en':'in three months', 'cap_zh':'近三个月',
+    'bar_en':'Up 35% or more over the last three months, and within 10% of its highest close in the past year.',
+    'bar_zh':'近三个月上涨 35% 或以上，且收盘价在过去一年最高收盘价的 10% 以内。',
+    'ord_en':'Inside a group, names run A to Z by ticker so you can find yours. That is not a ranking either.',
+    'ord_zh':'每组内部按代码 A 到 Z 排列，方便你找到自己的持仓。这同样不是排名。',
+    'not_en':'How much a name gained over the past year is left out here — in runs like these it is too weak to lean on. Where any other check cannot be made, it is not counted as clear either.',
+    'not_zh':'个股过去一年的涨幅在这里不予采用 —— 在这类行情中它太弱，不足以依靠。其他检查若无法完成，同样不会被当作「没问题」。'},
+  'atrz': {'slug':'above-trend',
+    'en':'Far above trend', 'zh':'远高于自身均线',
+    'def_en':'At least six of its own typical daily moves above its 200-day average price.',
+    'def_zh':'股价高出自身 200 日均价的幅度，至少相当于它自己 6 个交易日的正常波动。',
+    'cap_en':'above trend', 'cap_zh':'高于均线',
+    'bar_en':'At least six of its own typical daily moves above its 200-day average price, and within 10% of its highest close in the past year.',
+    'bar_zh':'股价高出自身 200 日均价的幅度至少相当于它自己 6 个交易日的正常波动，且收盘价在过去一年最高收盘价的 10% 以内。',
+    'ord_en':'Inside a group, names run A to Z by ticker so you can find yours. That is not a ranking either.',
+    'ord_zh':'每组内部按代码 A 到 Z 排列，方便你找到自己的持仓。这同样不是排名。',
+    'not_en':'How much a name gained over the past year is left out here — in runs like these it points the other way. Where any other check cannot be made, it is not counted as clear either.',
+    'not_zh':'个股过去一年的涨幅在这里不予采用 —— 在这类行情中，它指向的方向是相反的。其他检查若无法完成，同样不会被当作「没问题」。'}
+} %}
+{# One number governs scale (§3.3). Above it, the CALM group rolls up (its
+   absence is itself the complete reading) and the AGING groups go compact —
+   dropping the picture, never the reading. #}
+{% set BIG_GROUP = 55 %}
+
 {% set WH = wh if (wh is defined and wh is not none) else none %}
-{% set LIB = (WH.library if (WH and WH.library) else {}) %}
-{% set ST  = (WH.states  if (WH and WH.states)  else {}) %}
-{% set N_HEALTHY  = (ST.get('extended_healthy') or []) | length %}
-{% set N_WATCH    = (ST.get('extended_watch') or []) | length %}
-{% set N_THIN     = (ST.get('thinning') or []) | length %}
-{% set N_BREAK    = (ST.get('breaking') or []) | length %}
-{% set N_MATURING = N_WATCH + N_THIN + N_BREAK %}
-{# Derived, never taken on trust: the hero must describe the board it is sitting
-   on top of. The builder's contract is that every extended name lands in exactly
-   one state list, so wh.extended_n and this sum agree; if they ever drift, the
-   headline stays true to what is actually rendered and the small print carries
-   the screen result. #}
-{% set N_EXT      = N_HEALTHY + N_MATURING %}
-{# Three honest states, each designed, none an empty table:
-   warm  — tonight's read has not landed
-   none  — nothing in the market is extended at all
-   clear — plenty extended, nothing has started to age #}
-{% set MODE = 'warm' if (not WH or WH.null_state) else ('none' if N_EXT == 0 else ('clear' if N_MATURING == 0 else 'board')) %}
+{# §8 contract note 1, MANDATORY: a top-level `states` with no `tiers` renders as
+   the primary tier ALONE. That keeps every existing fixture valid and means a
+   half-migrated builder degrades to today's page rather than to a blank one. #}
+{% set TIERS = (WH.tiers if (WH and WH.tiers) else ([{
+     'key':'primary', 'readable':True, 'figure':'r126',
+     'library':(WH.library if (WH and WH.library) else {}),
+     'states':(WH.states if (WH and WH.states) else {}),
+     'theme_counts':(WH.theme_counts if WH else none)}] if WH else [])) %}
+{# Page-level `warm` is the ONLY page-scale null and it pre-empts every tier
+   state (§4.10 row 1). #}
+{% set MODE = 'warm' if (not WH or WH.null_state) else 'board' %}
+{# The page-scale flatline signature renders only when ALL THREE tiers are clear,
+   so the quiet-night picture stays rare and stays memorable (§4.8). #}
+{% set ns_all = namespace(clear=true, maxn=0, any=false) %}
+{% for T in TIERS %}
+  {%- set st = T.states or {} -%}
+  {%- set _n1 = (st.get('extended_healthy') or []) | length -%}
+  {%- set _n2 = (st.get('extended_watch') or []) | length -%}
+  {%- set _n3 = (st.get('thinning') or []) | length -%}
+  {%- set _n4 = (st.get('breaking') or []) | length -%}
+  {%- set _n0 = (st.get('no_read') or []) | length -%}
+  {%- set _nt = _n1 + _n2 + _n3 + _n4 + _n0 -%}
+  {%- if _nt > ns_all.maxn %}{% set ns_all.maxn = _nt %}{% endif -%}
+  {%- if _nt %}{% set ns_all.any = true %}{% endif -%}
+  {%- if (not T.readable) or (_n2 + _n3 + _n4 + _n0) > 0 or _nt == 0 %}{% set ns_all.clear = false %}{% endif -%}
+{% endfor %}
+{% set ALL_CLEAR = ns_all.clear and ns_all.any %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -326,6 +437,9 @@ a{color:var(--link);text-decoration:none}
 /* per-state accent binding — one class, four hues, everything downstream
    reads var(--mc). Also gives every state its RULE STYLE (see .rule). */
 .m1{--mc:var(--m1)} .m2{--mc:var(--m2)} .m3{--mc:var(--m3)} .m4{--mc:var(--m4)}
+/* NOT a fifth rung on the ramp — it is the ABSENCE of a rung, and it must never
+   be given a hue. "Not enough to compare" is not a stage of wear. */
+.m0{--mc:var(--muted)}
 
 /* ── page header ─────────────────────────────────────────────────────────── */
 .pghead{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;
@@ -435,6 +549,60 @@ a{color:var(--link);text-decoration:none}
 .thm .tmat{font-size:11.5px;font-weight:650;font-variant-numeric:tabular-nums}
 .thm .tmat.on{color:var(--m3)} .thm .tmat.off{color:var(--muted)}
 
+/* ── THE SHELF — three kinds of winner, compared honestly ─────────────────── */
+.shelf{display:grid;margin:20px 0 0}
+.sh-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 20px;
+  align-items:baseline;padding:14px 6px 16px;border-top:1px solid var(--hair);
+  text-decoration:none;color:inherit;border-radius:10px;transition:background .16s}
+.sh-row:first-child{border-top:none;padding-top:4px}
+.sh-row:hover{background:color-mix(in srgb,var(--text) 4%,transparent)}
+.sh-row:focus-visible{outline:2px solid color-mix(in srgb,var(--link) 70%,transparent);
+  outline-offset:2px}
+.sh-nm{font-size:15px;font-weight:750;letter-spacing:-.016em;color:var(--text)}
+.sh-n{font-size:12px;font-weight:700;color:var(--muted-strong);white-space:nowrap}
+.sh-n b{font-variant-numeric:tabular-nums}
+.sh-def{font-size:12.5px;color:var(--muted-strong);min-width:0}
+.sh-sum{font-size:12px;color:var(--muted);white-space:nowrap}
+.sh-sum b{font-variant-numeric:tabular-nums;color:var(--muted-strong);font-weight:650}
+.sh-bar{grid-column:1 / -1;margin-top:10px}
+.sh-bar .bar{height:10px;border-radius:3px}
+@media(max-width:620px){
+  .sh-row{grid-template-columns:minmax(0,1fr) auto}
+  .sh-sum{grid-column:1;justify-self:start;margin-top:2px}
+}
+
+/* ── TIER SECTION — position, name and size distinguish a tier. Never a hue:
+      on this page colour means wear, and a tier is not a severity. ────────── */
+.tier{margin:48px 0 0;scroll-margin-top:12px}
+.tier-hd{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
+  border-top:1px solid var(--line);padding-top:20px}
+.tier-hd h2{margin:0;font-size:21px;font-weight:800;letter-spacing:-.026em;color:var(--text)}
+.tier-def{margin:6px 0 0;font-size:13px;color:var(--muted-strong);max-width:64ch}
+.tier .ladder{margin-top:18px}
+/* the OFF-LADDER line. The ramp is a wear sequence; "not enough to compare" sits
+   outside it, so it takes no ramp hue and no decaying rule — a neutral hairline. */
+.rung.m0{--mc:var(--muted);margin-top:8px;padding-top:12px;border-top:1px solid var(--hair);
+  border-radius:0 0 9px 9px}
+.rung.m0 .rule{background:var(--hair);opacity:1;background-image:none}
+/* the mixed-cohort disclosure: quiet inset, NO state tint — a tinted banner reads
+   as an alarm, and this is a disclosure. */
+.mixnote{margin:16px 0 0;padding:12px 15px;border-radius:11px;max-width:80ch;
+  border:1px solid color-mix(in srgb,var(--text) 10%,transparent);
+  background:color-mix(in srgb,var(--text) 3.5%,transparent);
+  font-size:12.5px;line-height:1.58;color:var(--muted-strong)}
+.mixnote b{color:var(--text);font-weight:750}
+html[data-theme="light"] .mixnote{background:color-mix(in srgb,var(--text) 4.5%,transparent);
+  border-color:color-mix(in srgb,var(--text) 14%,transparent)}
+/* tier-level null band — quieter than the page hero, which outranks it */
+.tnull{margin:18px 0 0;border:1px solid var(--line);border-radius:14px;padding:20px 22px;
+  background:color-mix(in srgb,var(--panel) 72%,transparent)}
+.tnull h3{margin:0;font-size:17px;font-weight:750;letter-spacing:-.02em;color:var(--text)}
+.tnull p{margin:9px 0 0;font-size:13px;line-height:1.6;color:var(--muted-strong);max-width:62ch}
+.tnull p b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+.tnull .nullstance{color:var(--m1)}
+html[data-theme="light"] .tnull{background:var(--panel);
+  box-shadow:0 1px 2px rgba(20,32,64,.05),0 10px 26px -18px rgba(20,32,64,.28)}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    THE BOARD
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -457,6 +625,39 @@ a{color:var(--link);text-decoration:none}
     var(--mc) 21px 26px,transparent 26px 41px)}
 .grp-hd .cnt{font-size:12px;font-weight:700;color:var(--mc);font-variant-numeric:tabular-nums;
   white-space:nowrap}
+/* Twelve sticky group headers stack down a three-tier page, so each carries the
+   tier it belongs to. ONE token per group header, never a per-row badge. */
+.grp-hd .tkick{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--muted);white-space:nowrap}
+.grp-hd .tkick::after{content:"·";margin-left:9px;color:var(--line)}
+/* the m0 group's rule is a neutral hairline — it is NOT a fifth rung on the ramp.
+   Without this it inherits the --mc-tinted border and reads as a wear stage. */
+.grp.m0 .grp-hd{border-bottom-color:var(--line)}
+.grp.m0 .grp-hd .rule{background:var(--hair);opacity:1;background-image:none}
+/* REQUIRED (measured — §14.2): the tier kicker overflows the sticky header at
+   390px. It takes its own line there, and drops its separator with it. Without
+   this block the page side-scrolls on a phone. */
+@media(max-width:620px){
+  .grp-hd{flex-wrap:wrap;gap:5px 12px;padding-bottom:8px}
+  .grp-hd .tkick{flex:0 0 100%;order:-1}
+  .grp-hd .tkick::after{content:none}
+  .grp-hd h2{white-space:normal;font-size:16px}
+  .grp-hd .cnt{margin-left:auto}
+}
+.rollup{margin:8px 0 0;padding:13px 6px 15px;font-size:12.5px;line-height:1.5;
+  color:var(--muted);border-bottom:1px solid var(--hair)}
+/* compact rows: the sparkline cell is the only thing that leaves. Words, wear
+   marks, hovers and the library card all stay — the picture is what gets dropped
+   under load, never the reading. */
+.grp.compact .row{grid-template-columns:minmax(150px,1.15fr) 92px minmax(220px,2.1fr) auto}
+@media(max-width:820px){.grp.compact .row{grid-template-columns:minmax(0,1fr) auto}}
+/* the trend distance is a DISTANCE, not a direction — permanent green (permanent
+   red in ZH) would be a false directional cue. */
+.c-gain .fig.neutral{color:var(--text)}
+/* stale tape */
+.asof .lag{display:block;margin-top:4px;color:var(--muted);cursor:help;
+  border-bottom:1px dotted color-mix(in srgb,var(--text) 22%,transparent)}
+.asof .lag b{color:var(--muted-strong);font-weight:650}
 .grp-sub{margin:8px 0 2px;font-size:12.5px;color:var(--muted-strong);display:flex;gap:10px;
   align-items:baseline;flex-wrap:wrap}
 .grp-sub .stance{font-size:12px;font-weight:700;color:var(--mc);white-space:nowrap}
@@ -530,8 +731,13 @@ a.tk:hover{color:var(--link)}
   .rise,.rise.d1,.rise.d2,.rise.d3,
   .rise::before,.rise::after,
   .rung,.rung::before,.rung::after,
+  .sh-row,.sh-row::before,.sh-row::after,
   .row,.row::before,.row::after,
   .grp-hd::before,.grp-hd::after,
+  .tier-hd::before,.tier-hd::after,
+  .mixnote::before,.mixnote::after,
+  .rollup::before,.rollup::after,
+  .tnull::before,.tnull::after,
   .thm::before,.thm::after{animation:none!important;transition:none!important}
 }
 </style>
@@ -548,60 +754,94 @@ a.tk:hover{color:var(--link)}
     <div>
       <div class="kick">{{ t('Winner Health', '持仓健康度') }}</div>
       <h1>{{ t('Has your winner changed character?', '你的赢家，性质变了吗？') }}</h1>
-      <p class="sub">{{ t('The US names sitting on big gains near their highs, grouped by how the move is aging.',
-                          '美股中涨幅可观、仍在高位附近的个股，按行情老化的程度分组。') }}</p>
+      {#- REVISED (§4.1): the old sub said "sitting on big gains near their highs",
+          which is now FALSE for two of the three groups — a steady name can be far
+          above its own trend without a big gain. -#}
+      <p class="sub">{{ t('US names near their highs, grouped by how the move is aging.',
+                          '处于高位附近的美股，按行情老化的程度分组。') }}</p>
     </div>
     <div class="asof">
       {% if WH and WH.data_last_day %}<span class="l-en">Priced <b>{{ WH.data_last_day }}</b></span><span class="l-zh">价格截至 <b>{{ WH.data_last_day }}</b></span>{% endif %}
       <span class="l2">{{ t('Re-read every night', '每晚重新判读') }}</span>
+      {#- The board reads the last COMPLETE price tape we have. When that tape is
+          well behind the market, the as-of date alone would misdate the read. -#}
+      {#- `.get` deliberately, not attribute access: a fixture (or a v1 artifact)
+          carries no such key at all, and `Undefined > 5` is a hard render crash. -#}
+      {%- set lag = WH.get('tape_lag_sessions') if WH else none %}
+      {%- if lag is not none and lag > 5 %}
+      <span class="lag" data-tip-en="The board reads the last complete price tape we have. It is {{ lag }} sessions behind the market, so tonight's read describes that tape, not today's prices." data-tip-zh="看板读取的是我们手上最后一份完整的行情数据，它比市场落后 {{ lag }} 个交易日；今晚的判读描述的是那份数据，而不是今天的价格。"><span class="l-en">Prices are <b>{{ lag }}</b> sessions behind</span><span class="l-zh">价格落后 <b>{{ lag }}</b> 个交易日</span></span>
+      {%- endif %}
     </div>
   </div>
 
   {% if MODE == 'board' %}
-  {# ══ HERO — the wear ladder ══ #}
-  <section class="hero rise d1" aria-label="Tonight's board by state">
+  {# ══ HERO — THE SHELF. Three kinds of winner, compared honestly. The overlap
+        fact is stated BEFORE any number, because it is the one thing that makes
+        three counts on one page readable at all. ══ #}
+  <section class="hero rise d1" aria-label="Tonight's groups">
     <div class="hero-lede">
-      <span class="l-en"><b>{{ N_MATURING }}</b> of tonight's <b>{{ N_EXT }}</b> extended names are showing wear. <span class="q">The rest are running the way they were.</span></span>
-      <span class="l-zh">今晚 <b>{{ N_EXT }}</b> 只高位强势股中，有 <b>{{ N_MATURING }}</b> 只出现转弱迹象。<span class="q">其余仍按原来的样子运行。</span></span>
-      {#- ONE explainer for the whole board. It used to sit on each group header,
-          which printed the same three rows four times — a constant repeated is
-          a constant mis-tiered (Law 4). -#}
+      <span class="l-en"><b>Three kinds of winner, each read against its own history.</b>
+        <span class="q">A name can be in more than one, so these counts do not add up to a total.
+        Every name here is within 10% of its highest close in the past year.</span></span>
+      <span class="l-zh"><b>三类赢家，各自对照自身历史来判读。</b>
+        <span class="q">同一只个股可能同时属于多类，因此这些数字不能相加。
+        这里的每一只个股，收盘价都在过去一年最高收盘价的 10% 以内。</span></span>
       {{ lens.lens(
            kind='define',
            ill=lens.ILL_LANES,
            kick=('How this board is built','这块看板是怎么来的'),
-           title=('Four groups, one set of names','四个分组，同一批个股'),
+           title=('Three groups, one question','三个分组，同一个问题'),
            rows=[
              {'tone':'info','k':('Who is here','谁在这里'),
-              'v':('Every US name up a lot over six months and still close to its high. All four groups are drawn from that one set.',
-                   '所有半年涨幅可观、且仍在高点附近的美股。四个分组都来自这同一批个股。')},
-             {'tone':'info','k':('The order','排列顺序'),
-              'v':('Inside a group, the largest six-month gain comes first. That is a fact about the past — not a ranking, not a preference.',
-                   '每组内部按半年涨幅从大到小排列。那只是关于过去的事实 —— 不是排名，也不代表偏好。')},
+              'v':('Every US name within 10% of its highest close in the past year that also clears one of the three bars.',
+                   '所有收盘价在过去一年最高收盘价 10% 以内、并且达到三道门槛之一的美股。')},
+             {'tone':'info','k':('Counted apart','分开计数'),
+              'v':('A name can clear more than one bar, so it can appear in more than one group. The counts are never added together.',
+                   '同一只个股可能同时达到多道门槛，因此可能出现在多个分组里。各组数字从不相加。')},
              {'tone':'warn','k':('Not a call','不是判断'),
               'v':('A group describes how a move is behaving today. It is not a call, a target, or a reason to do anything on its own.',
                    '分组描述的是当下走势的状态。它不是判断、不是目标价，本身也不构成采取任何行动的理由。')}],
            receipt=('display only · no rank, gate or position size','仅供展示 · 不参与排序、准入或仓位')) }}
     </div>
-    <div class="ladder">
-      {%- for s in STATES %}
-      {%- set cnt = (ST.get(s.key) or []) | length %}
-      <a class="rung m{{ s.m }}{{ ' off' if cnt == 0 else '' }}" href="#g-{{ s.slug }}">
-        <span class="n">{{ cnt }}</span>
-        <span class="nm2">{{ t(s.en, s.zh) }}</span>
-        <span class="rule" aria-hidden="true"></span>
-        <span class="stance">{{ t(s.stance_en, s.stance_zh) }}</span>
+    <div class="shelf">
+      {%- for T in TIERS %}
+      {%- set M = TIER_META.get(T.key) or TIER_META['primary'] %}
+      {%- set st = T.states or {} %}
+      {%- set n1 = (st.get('extended_healthy') or []) | length %}
+      {%- set n2 = (st.get('extended_watch') or []) | length %}
+      {%- set n3 = (st.get('thinning') or []) | length %}
+      {%- set n4 = (st.get('breaking') or []) | length %}
+      {%- set n0 = (st.get('no_read') or []) | length %}
+      {%- set nt = n1 + n2 + n3 + n4 + n0 %}
+      {%- set mat = n2 + n3 + n4 %}
+      <a class="sh-row" href="#t-{{ M.slug }}">
+        <span class="sh-nm">{{ t(M.en, M.zh) }}</span>
+        <span class="sh-n"><span class="l-en"><b>{{ nt }}</b> names</span><span class="l-zh"><b>{{ nt }}</b> 只</span></span>
+        <span class="sh-def">{{ t(M.def_en, M.def_zh) }}</span>
+        <span class="sh-sum">
+          {%- if not T.readable -%}{{ t('not read tonight', '今晚未判读') }}
+          {%- elif nt == 0 -%}{{ t('none in this group tonight', '今晚该分组暂无个股') }}
+          {%- elif mat == 0 -%}{{ t('none aging tonight', '今晚没有在老化的') }}
+          {%- else -%}<span class="l-en"><b>{{ mat }}</b> of them aging</span><span class="l-zh">其中 <b>{{ mat }}</b> 只在老化</span>
+          {%- endif -%}
+        </span>
+        {#- HONEST WIDTH, one scope up from the theme tomography: a 122-name group
+            can never be drawn the width of an 848-name one. `no_read` is not a
+            wear state, so it is excluded from the segments and from `mat`. -#}
+        <span class="sh-bar" aria-hidden="true">
+          <span class="bar" style="width:{{ ((nt / ns_all.maxn * 100) | round(1)) if ns_all.maxn else 0 }}%">
+            {%- if n1 %}<i class="b1" style="flex:{{ n1 }}"></i>{% endif %}
+            {%- if n2 %}<i class="b2" style="flex:{{ n2 }}"></i>{% endif %}
+            {%- if n3 %}<i class="b3" style="flex:{{ n3 }}"></i>{% endif %}
+            {%- if n4 %}<i class="b4" style="flex:{{ n4 }}"></i>{% endif %}
+          </span>
+        </span>
       </a>
       {%- endfor %}
     </div>
-  </section>
-
-  {% elif MODE == 'clear' %}
-  {# ══ HONEST NULL — everything extended still looks the way it did ══ #}
-  <section class="nullhero rise d1" aria-label="Nothing is maturing tonight">
-    <p class="eyebrow">{{ t('Tonight', '今晚') }}</p>
-    <h2>{{ t('Nothing is maturing tonight', '今晚没有行情走向成熟') }}</h2>
-    <p><span class="l-en">All <b>{{ N_EXT }}</b> extended US names still look the way they did — none of them has started to slip. An empty board is a reading, not a gap.</span><span class="l-zh">全部 <b>{{ N_EXT }}</b> 只美股高位强势股仍与此前一样 —— 没有任何一只开始转弱。空白的看板本身就是一个判读结果，不是数据缺失。</span></p>
+    {#- The page-scale signature renders ONCE, and only when every tier is quiet,
+        so the quiet-night picture stays rare and stays memorable (§4.8). -#}
+    {%- if ALL_CLEAR %}
     <div class="flatline" aria-hidden="true">
       <svg viewBox="0 0 600 34" preserveAspectRatio="none" role="img">
         <line class="fl-hw" x1="0" y1="9" x2="600" y2="9" vector-effect="non-scaling-stroke"/>
@@ -609,21 +849,9 @@ a.tk:hover{color:var(--link)}
         <circle class="fl-dot" cx="597" cy="9" r="2.6"/>
       </svg>
     </div>
-    <p style="margin-top:6px">{{ t('The line above is the shape this board is watching for: price riding its own high-water mark with no gap underneath it.',
+    <p style="margin:6px 0 0;font-size:13px;color:var(--muted-strong)">{{ t('The line above is the shape this board is watching for: price riding its own high-water mark with no gap underneath it.',
                                    '上方这条线，就是本看板要盯的形态：价格贴着自己的高点运行，下方没有留出缺口。') }}</p>
-    <p class="nullstance"><b>{{ t('Nothing to do', '无需动作') }}</b>
-      <span class="q">{{ t('— a name moves down this page on its own, the night something slips.',
-                           '—— 一旦某只个股出现转弱，它当晚就会自己出现在下面的分组里。') }}</span></p>
-  </section>
-
-  {% elif MODE == 'none' %}
-  <section class="nullhero rise d1" aria-label="Nothing is extended tonight">
-    <p class="eyebrow">{{ t('Tonight', '今晚') }}</p>
-    <h2>{{ t('No US name is extended right now', '当前没有美股处于高位强势') }}</h2>
-    <p><span class="l-en">Out of <b>{{ '{:,}'.format(WH.universe_n) if (WH and WH.universe_n) else '—' }}</b> US names, none is sitting on a large six-month gain close to its high. There is no winner here to age.</span><span class="l-zh">在 <b>{{ '{:,}'.format(WH.universe_n) if (WH and WH.universe_n) else '—' }}</b> 只美股中，没有一只兼具「半年涨幅可观」和「仍在高点附近」。此时没有需要观察老化的赢家。</span></p>
-    <p class="nullstance"><b>{{ t('Nothing to watch', '暂无可观察对象') }}</b>
-      <span class="q">{{ t('— names appear here on their own, the night they qualify.',
-                           '—— 一旦有个股符合条件，它当晚就会自己出现在这里。') }}</span></p>
+    {%- endif %}
   </section>
 
   {% else %}
@@ -662,66 +890,180 @@ a.tk:hover{color:var(--link)}
   </div>
   {% endif %}
 
-  {# ══ theme tomography ══ #}
-  {% if WH and WH.theme_counts %}
-  {%- set tmax = (WH.theme_counts | map(attribute='extended') | select('number') | list | max) if WH.theme_counts else 1 %}
-  <section class="sec rise d3" aria-label="Themes by state">
-    <div class="sec-hd">
-      <h2>{{ t('How much of each theme is aging', '各主题老化到什么程度') }}</h2>
-      <span class="note">{{ t('Counts only — the bar width is the size of the theme, so a small group can never look like a big one.',
-                              '只是计数 —— 条形的宽度代表主题的大小，小主题不会被画得跟大主题一样。') }}</span>
+  {# ══ THE THREE TIER SECTIONS ══ #}
+  {% if MODE == 'board' %}
+  {%- for T in TIERS %}
+  {%- set M = TIER_META.get(T.key) or TIER_META['primary'] %}
+  {%- set st = T.states or {} %}
+  {%- set n1 = (st.get('extended_healthy') or []) | length %}
+  {%- set n2 = (st.get('extended_watch') or []) | length %}
+  {%- set n3 = (st.get('thinning') or []) | length %}
+  {%- set n4 = (st.get('breaking') or []) | length %}
+  {%- set n0 = (st.get('no_read') or []) | length %}
+  {%- set nt = n1 + n2 + n3 + n4 + n0 %}
+  {%- set mat = n2 + n3 + n4 %}
+  {#- does ANY aging group on this tier go compact? drives the tier card's body -#}
+  {%- set has_compact = (n2 > BIG_GROUP) or (n3 > BIG_GROUP) or (n4 > BIG_GROUP) or (n0 > BIG_GROUP) %}
+  <section class="tier" id="t-{{ M.slug }}" aria-label="{{ M.en }}">
+    <div class="tier-hd">
+      <h2>{{ t(M.en, M.zh) }}</h2>
+      {{ lens.lens(
+           kind='define',
+           ill=lens.ILL_LANES,
+           kick=('About this group','关于这个分组'),
+           title=(M.en, M.zh),
+           body=(('In a very large group the small price chart is left off so the page stays quick — the words beside each name are the same.',
+                  '分组很大时，会略去名字旁边的小价格图，以保持页面轻快 —— 文字部分完全相同。') if has_compact else none),
+           rows=[
+             {'tone':'info','k':('The bar','入选门槛'), 'v':(M.bar_en, M.bar_zh)},
+             {'tone':'info','k':('The order','排列顺序'), 'v':(M.ord_en, M.ord_zh)},
+             {'tone':'info','k':('Its own history','自己的历史'),
+              'v':('Every mark here is cut from past runs that also cleared this group\'s bar — never from another group\'s. The same name can read differently in another group.',
+                   '这里的每一条标准，都取自同样达到本组门槛的历史行情 —— 绝不取自其他分组。同一只个股在另一个分组里，可能读出不同的结果。')},
+             {'tone':'warn','k':('What is not read here','这里不看什么'), 'v':(M.not_en, M.not_zh)}],
+           receipt=('display only · no rank, gate or position size','仅供展示 · 不参与排序、准入或仓位')) }}
     </div>
-    <div class="themes">
-      {%- for th in WH.theme_counts %}
-      {%- set tot = (th.extended or 0) %}
-      {%- set mat = (th.watch or 0) + (th.thinning or 0) + (th.breaking or 0) %}
-      {%- set clean = tot - mat if tot > mat else 0 %}
-      <div class="thm" style="--w:{{ ((tot / tmax * 100) | round(1)) if tmax else 100 }}%">
-        <span class="tname"><span class="l-en">{{ th.basket }}</span><span class="l-zh">{{ th.basket_zh | default(th.basket) }}</span></span>
-        <span class="tcount"><span class="l-en">{{ mat }} of {{ tot }}</span><span class="l-zh">{{ tot }} 只中 {{ mat }} 只</span></span>
-        <span class="bar" style="width:var(--w)" aria-hidden="true">
-          {%- if clean %}<i class="b1" style="flex:{{ clean }}"></i>{% endif %}
-          {%- if th.watch %}<i class="b2" style="flex:{{ th.watch }}"></i>{% endif %}
-          {%- if th.thinning %}<i class="b3" style="flex:{{ th.thinning }}"></i>{% endif %}
-          {%- if th.breaking %}<i class="b4" style="flex:{{ th.breaking }}"></i>{% endif %}
-        </span>
-      </div>
-      {%- endfor %}
+    <p class="tier-def">{{ t(M.def_en, M.def_zh) }}</p>
+    {#- The mixed-cohort disclosure the mandate requires, on EVERY state of this
+        tier including its nulls. It is a disclosure, not a warning, so it takes
+        no ramp hue. -#}
+    {%- if T.key == 'atrz' %}
+    <div class="mixnote">
+      <span class="l-en"><b>A mixed group.</b> The bar is set in each name's own trading range, so a slow, steady name can clear it without a big gain. Everything below reads a name against the others in this mix.</span>
+      <span class="l-zh"><b>这是一个混合分组。</b>门槛按每只个股自身的波动幅度来定，因此走势平稳、涨幅不大的个股也可能入选。下面的每一项判读，都是在这个混合分组内部相互比较得出的。</span>
     </div>
-  </section>
-  {% endif %}
+    {%- endif %}
 
-  {# ══ THE BOARD ══ #}
-  {% if MODE == 'board' or MODE == 'clear' %}
-  {%- for s in STATES %}
-  {%- set rows = ST.get(s.key) or [] %}
-  {%- if rows %}
-  <section class="sec grp m{{ s.m }}" id="g-{{ s.slug }}" aria-label="{{ s.en }}">
-    <div class="grp-hd">
-      <h2>{{ t(s.en, s.zh) }}</h2>
-      <span class="rule" aria-hidden="true"></span>
-      <span class="cnt"><span class="l-en">{{ rows | length }} names</span><span class="l-zh">{{ rows | length }} 只</span></span>
+    {%- if not T.readable %}
+    {#- §6 C — this tier's own library did not load. Nothing is shown for it, and
+        the other tiers are unaffected. Never a board of "nothing to do". -#}
+    <div class="tnull">
+      <h3>{{ t('This group was not read tonight', '今晚未对该分组作判读') }}</h3>
+      <p>{{ t('The history this group is measured against did not load, so nothing is shown for it. Nothing is being withheld, and the other groups are unaffected.',
+              '该分组所对照的历史资料本次未能载入，因此这里不显示任何内容。没有任何内容被隐藏，其他分组不受影响。') }}</p>
+      <p class="nullstance"><b>{{ t('Nothing to read here tonight', '今晚此处无可判读') }}</b></p>
     </div>
-    <p class="grp-sub">
-      <span class="stance">{{ t(s.stance_en, s.stance_zh) }}</span>
-      <span>{{ t(s.sub_en, s.sub_zh) }}</span>
-    </p>
-    <div class="rows">
-      {%- for r in rows %}{{ namerow(r) }}{% endfor %}
+    {%- elif nt == 0 %}
+    <div class="tnull">
+      <h3>{{ t('No name is in this group tonight', '今晚该分组没有个股') }}</h3>
+      <p><span class="l-en">Out of <b>{{ '{:,}'.format(WH.universe_n) if (WH and WH.universe_n) else '—' }}</b> US names screened, none clears this group's bar tonight.</span><span class="l-zh">在筛查的 <b>{{ '{:,}'.format(WH.universe_n) if (WH and WH.universe_n) else '—' }}</b> 只美股中，今晚没有一只达到该分组的门槛。</span></p>
+      <p class="nullstance"><b>{{ t('Nothing to watch', '暂无可观察对象') }}</b>
+        <span class="q">{{ t('— names appear here on their own, the night they qualify.',
+                             '—— 一旦有个股符合条件，它当晚就会自己出现在这里。') }}</span></p>
     </div>
+    {%- else %}
+    {%- if mat == 0 and n0 == 0 %}
+    {#- Names present, nothing aging. An empty list is a reading, not a gap — and
+        the `Still running` group still renders below, so a quiet tier is never
+        blank. -#}
+    <div class="tnull">
+      <h3>{{ t('Nothing is aging in this group tonight', '今晚该分组没有行情走向老化') }}</h3>
+      <p><span class="l-en">All <b>{{ nt }}</b> names here still look the way they did. An empty list is a reading, not a gap.</span><span class="l-zh">这里的 <b>{{ nt }}</b> 只个股仍与此前一样。列表为空本身就是一个判读结果，不是数据缺失。</span></p>
+      <p class="nullstance"><b>{{ t('Nothing to do', '无需动作') }}</b>
+        <span class="q">{{ t('— a name moves down this list on its own, the night something slips.',
+                             '—— 一旦某只个股出现转弱，它当晚就会自己出现在下面。') }}</span></p>
+    </div>
+    {%- else %}
+    <div class="ladder">
+      {%- for s in STATES %}
+      {%- set cnt = (st.get(s.key) or []) | length %}
+      <a class="rung m{{ s.m }}{{ ' off' if cnt == 0 else '' }}" href="#{{ 'g-' ~ s.slug if T.key == 'primary' else M.slug ~ '-' ~ s.slug }}">
+        <span class="n">{{ cnt }}</span>
+        <span class="nm2">{{ t(s.en, s.zh) }}</span>
+        <span class="rule" aria-hidden="true"></span>
+        <span class="stance">{{ t(s.stance_en, s.stance_zh) }}</span>
+      </a>
+      {%- endfor %}
+      {#- the OFF-LADDER line. It renders only when that list is non-empty, and it
+          sits outside the wear sequence because "not enough to compare" is not a
+          stage of wear. -#}
+      {%- if n0 %}
+      <a class="rung m0" href="#{{ 'g-noread' if T.key == 'primary' else M.slug ~ '-noread' }}">
+        <span class="n">{{ n0 }}</span>
+        <span class="nm2">{{ t(NOREAD.en, NOREAD.zh) }}</span>
+        <span class="rule" aria-hidden="true"></span>
+        <span class="stance">{{ t(NOREAD.stance_en, NOREAD.stance_zh) }}</span>
+      </a>
+      {%- endif %}
+    </div>
+    {%- endif %}
+
+    {#- ONE tomography on the page, and it belongs to the primary tier. -#}
+    {%- if T.key == 'primary' and T.theme_counts %}
+    {%- set tmax = (T.theme_counts | map(attribute='extended') | select('number') | list | max) if T.theme_counts else 1 %}
+    <section class="sec" aria-label="Themes by state">
+      <div class="sec-hd">
+        <h2>{{ t('How much of each theme is aging', '各主题老化到什么程度') }}</h2>
+        <span class="note">{{ t('Counts only — the bar width is the size of the theme, so a small group can never look like a big one.',
+                                '只是计数 —— 条形的宽度代表主题的大小，小主题不会被画得跟大主题一样。') }}</span>
+      </div>
+      <div class="themes">
+        {%- for th in T.theme_counts %}
+        {%- set tot = (th.extended or 0) %}
+        {%- set tmat = (th.watch or 0) + (th.thinning or 0) + (th.breaking or 0) %}
+        {%- set clean = tot - tmat if tot > tmat else 0 %}
+        <div class="thm" style="--w:{{ ((tot / tmax * 100) | round(1)) if tmax else 100 }}%">
+          <span class="tname"><span class="l-en">{{ th.basket }}</span><span class="l-zh">{{ th.basket_zh | default(th.basket, true) }}</span></span>
+          <span class="tcount"><span class="l-en">{{ tmat }} of {{ tot }}</span><span class="l-zh">{{ tot }} 只中 {{ tmat }} 只</span></span>
+          <span class="bar" style="width:var(--w)" aria-hidden="true">
+            {%- if clean %}<i class="b1" style="flex:{{ clean }}"></i>{% endif %}
+            {%- if th.watch %}<i class="b2" style="flex:{{ th.watch }}"></i>{% endif %}
+            {%- if th.thinning %}<i class="b3" style="flex:{{ th.thinning }}"></i>{% endif %}
+            {%- if th.breaking %}<i class="b4" style="flex:{{ th.breaking }}"></i>{% endif %}
+          </span>
+        </div>
+        {%- endfor %}
+      </div>
+    </section>
+    {%- endif %}
+
+    {#- the groups. `no_read` is appended AFTER the four wear states so the ramp
+        reads top to bottom and the off-ladder group sits outside it. -#}
+    {%- for s in (STATES + [NOREAD]) %}
+    {%- set rows = st.get(s.key) or [] %}
+    {%- if rows %}
+    {%- set big = (rows | length) > BIG_GROUP %}
+    {#- Above 55 the CALM group rolls up — absence from it is itself the complete
+        reading. The aging groups NEVER roll up: a holder must be able to find
+        their name there, so those rows always render and lose only the picture. -#}
+    {%- set rollup = big and s.key == 'extended_healthy' %}
+    {%- set compact = big and not rollup %}
+    <section class="sec grp m{{ s.m }}{{ ' compact' if compact else '' }}" id="{{ ('g-' ~ s.slug) if T.key == 'primary' else (M.slug ~ '-' ~ s.slug) }}" aria-label="{{ M.en }} — {{ s.en }}">
+      <div class="grp-hd">
+        <span class="tkick">{{ t(M.en | upper, M.zh) }}</span>
+        <h2>{{ t(s.en, s.zh) }}</h2>
+        <span class="rule" aria-hidden="true"></span>
+        <span class="cnt"><span class="l-en">{{ rows | length }} names</span><span class="l-zh">{{ rows | length }} 只</span></span>
+      </div>
+      <p class="grp-sub">
+        <span class="stance">{{ t(s.stance_en, s.stance_zh) }}</span>
+        <span>{{ t(s.sub_en, s.sub_zh) }}</span>
+      </p>
+      {%- if rollup %}
+      <p class="rollup">{{ t('Not listed one by one — nothing has slipped on any of them tonight.',
+                             '不逐只列出 —— 今晚它们没有任何环节转弱。') }}</p>
+      {%- else %}
+      <div class="rows">
+        {%- for r in rows %}{{ namerow(r, T, M, compact) }}{% endfor %}
+      </div>
+      {%- endif %}
+    </section>
+    {%- endif %}
+    {%- endfor %}
+    {%- endif %}
   </section>
-  {%- endif %}
   {%- endfor %}
   {% endif %}
 
   {# ══ small print — ONE merged line ══ #}
   <p class="smallprint">
-    {#- The trailing sentence is the board-membership disclosure (design authority,
-        2026-08-10): a name that has just left the extended band stays on the board
-        while its change is being read, so the count above covers slightly more than
-        "extended right now" and says so. -#}
-    <span class="l-en">US names only — the library counts are what similar past runs did, history rather than forecasts, and nothing on this page ranks, gates or sizes anything.{% if WH and WH.extended_n is not none and WH.universe_n %} Tonight: <b>{{ WH.extended_n }}</b> extended out of <b>{{ '{:,}'.format(WH.universe_n) }}</b> US names screened{% if WH.asof %}, read <b>{{ WH.asof }}</b>{% endif %}. A name that has just left the extended band stays listed only while we evaluate the change.{% endif %}</span>
-    <span class="l-zh">仅限美股 —— 资料库中的次数是历史上相似行情走过的路，属于历史而非预测；本页任何内容都不参与排序、准入或仓位。{% if WH and WH.extended_n is not none and WH.universe_n %}今晚：筛查 <b>{{ '{:,}'.format(WH.universe_n) }}</b> 只美股，其中 <b>{{ WH.extended_n }}</b> 只处于高位强势{% if WH.asof %}，判读日期 <b>{{ WH.asof }}</b>{% endif %}。刚离开高位强势区间的个股，仅在我们判读这一变化期间保留在看板上。{% endif %}</span>
+    {#- `extended_n` has LEFT the small print — it is per tier now and lives on
+        the shelf, and a cross-tier total would be a number with no referent. The
+        board-membership sentence is re-scoped from "the extended band" to "a
+        group" because each tier has its own band; the 21-session window itself is
+        untouched. -#}
+    <span class="l-en">US names only — the library counts are what similar past runs did, history rather than forecasts, and nothing on this page ranks, gates or sizes anything. Each group is measured only against its own history, and the counts never add up to a total.{% if WH and WH.universe_n %} Tonight: <b>{{ '{:,}'.format(WH.universe_n) }}</b> US names screened{% if WH.asof %}, read <b>{{ WH.asof }}</b>{% endif %}.{% endif %} A name that has just left a group stays listed there only while we read the change; a name you cannot find anywhere on this page did not clear any of the three bars.</span>
+    <span class="l-zh">仅限美股 —— 资料库中的次数是历史上相似行情走过的路，属于历史而非预测；本页任何内容都不参与排序、准入或仓位。每个分组只对照自己的历史来衡量，各组数字不能相加。{% if WH and WH.universe_n %}今晚：筛查 <b>{{ '{:,}'.format(WH.universe_n) }}</b> 只美股{% if WH.asof %}，判读日期 <b>{{ WH.asof }}</b>{% endif %}。{% endif %}刚离开某个分组的个股，仅在我们判读这一变化期间保留在该组；在本页任何地方都找不到的个股，说明它今晚没有达到这三道门槛中的任何一道。</span>
   </p>
 
 </div>
