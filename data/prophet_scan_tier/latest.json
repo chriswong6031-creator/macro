@@ -21,13 +21,13 @@
    "thin_history": 1518
   },
   "price_through": "2026-08-07",
-  "curated_n": 3146,
+  "curated_n": 3147,
   "curated_overlap_n": 2390,
   "scan_n": 1510,
   "store_manifest": {
    "n_tickers": 20764,
    "latest_date": "2026-08-07",
-   "updated_at": "2026-08-10T00:29:23.536312+00:00"
+   "updated_at": "2026-08-11T00:39:43.652816+00:00"
   }
  },
  "bases": {
