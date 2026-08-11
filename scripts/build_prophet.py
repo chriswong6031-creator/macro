@@ -1182,6 +1182,11 @@ def _degraded_index_entry(
         "source_marker_date": plan.get("source_marker_date"),
         "integrity_status": plan.get("integrity_status"),
         "integrity_reason": plan.get("integrity_reason"),
+        # Same provenance stamp as the healthy row above.  A backfilled plan whose
+        # management degrades tonight must not become UNSPLITTABLE as a side effect
+        # of a missing price history — the degraded row is still a shipped row.
+        "origination_mode": plan.get("origination_mode"),
+        "backfill_executed_at": plan.get("backfill_executed_at"),
         "phase": phase,
         "age_days": age,
         "closed": closed,
@@ -1867,6 +1872,18 @@ def main() -> None:
             "admission_class": plan.get("admission_class"),
             "entry_status": plan.get("entry_status"),
             "selection_era": plan.get("selection_era"),
+            # HOW this row came to exist, not what it selected.  `None` on every
+            # plan a nightly bake originated — that null IS "live", and it is
+            # printed rather than defaulted to a word.  The only non-null value
+            # today is the 2026-08-09 force-majeure replay
+            # (research/PROPHET_OUTAGE_BACKFILL_2026_08.md; enumerated in
+            # data/prophet/backfill_disclosures.json).  Whitelisted for the same
+            # reason `selection_era` is: the Terminal, the showcase and every
+            # track-record aggregate read index.json, not the per-plan files, so
+            # a stamp that never reaches this dict is a stamp no reader can split
+            # a rate by.  Segregation is pinned in tests/test_prophet_outage_backfill.py.
+            "origination_mode": plan.get("origination_mode"),
+            "backfill_executed_at": plan.get("backfill_executed_at"),
             "entry_basis": plan.get("entry_basis"),
             "entry_zone": plan.get("entry_zone"),
             # DERIVED tonight, never stored on the plan.

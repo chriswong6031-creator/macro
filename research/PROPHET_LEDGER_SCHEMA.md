@@ -138,6 +138,75 @@ for a reader to infer a date.
 
 ---
 
+## Addendum 2026-08-11 — force-majeure exception, `recorded_at=2026-08-09` ONLY
+
+**The no-backfill law in Note 4 above stands, unchanged, for every date except one.**
+This addendum records a single operator-ordered exception; it is a carve-out with a
+name, a date and an enumerated row set, not a repeal, and nothing in it authorises a
+second one.
+
+**Authority.** Operator order 2026-08-11 ~00:05Z, an explicit force-majeure override
+after a multi-day origination outage. Design of record:
+`research/PROPHET_OUTAGE_BACKFILL_2026_08.md` (§0 acceptance gates).
+
+**Scope — exactly one event.** The 2026-08-09 22:59Z Sunday bake RAN the current
+intake end to end and refused all 30 eligible candidates at `clock_provenance`,
+because the board it read carried a poisoned
+`staleness.inputs.panel.mixed_vintage=true`. PR #5241 healed the derivation; the same
+board, re-derived, reports `mixed_vintage: false`. The exception permits replaying
+that ONE refusal against that ONE pinned board, at `recorded_at=2026-08-09`. It does
+not permit any other date:
+
+* **2026-08-03 → 2026-08-06 stay refused.** Standing ruling
+  `us-board-frozen-alpha-2026-08` (`data/us_board_ledger/disclosed_gaps.json`, decided
+  2026-08-07 by the operator) records those boards as ranked on a factor panel frozen
+  at 2026-07-31 — `gradeable: false, backfillable: false`. A vintage-correct replay
+  needs a point-in-time board harness that does not exist. Reconstructing from the
+  frozen boards would mint picks a correct engine would never have picked, which is
+  the exact corruption the no-backfill law exists to prevent.
+* **2026-08-10 forward belongs to the live nightly.** Where a live bake has already
+  originated a name, the LIVE plan wins; the weekend counterfactual is disclosed
+  display-only and never minted (one active plan per candidate episode).
+
+**What the exception does NOT touch.** The backfill lane never writes
+`data/prophet/ledger.jsonl`: the nightly remains the sole advancer of the forward
+ledger, and it advances a backfilled plan organically from the plan file, exactly as
+it does a live one. `site/prophet/index.json` and `site/prophet/states/` are still
+rendered only by the nightly. No origination gate was modified — `originate_plans`,
+`_resolve_origination_clocks`, `select_candidates` and the #5071 integrity layer run
+on their own terms, and every candidate they refuse at execution time is RECORDED in
+the disclosure rather than overridden in code (the five chronology-refused candidates
+from the R6 audit stay refused).
+
+**How a reader tells a replayed row from a live one.** Every minted plan carries
+`origination_mode: "outage_backfill_2026_08_09"` and `backfill_executed_at` (the real
+wall date of the write), alongside its normal era stamps — `selection_era` is
+UNCHANGED, because the selection rule did not change, only the moment of writing did.
+Both fields are whitelisted onto the `site/prophet/index.json` row, so any
+track-record, calibration or Prophet-training aggregate can split or exclude these
+rows without reading the per-plan files. A plan minted by this lane WITHOUT the stamp
+is a defect.
+
+**Where the exception is enumerated.** `data/prophet/backfill_disclosures.json` — the
+window, the authority, the pinned input SHAs (board commit + plans baseline), the
+executing commit, and the full counterfactual set: every plan minted, every collision
+that the live lane won, every candidate a gate still refused with its reason, and the
+dates that were deliberately NOT reconstructed.
+
+**What keeps the carve-out from widening.**
+`tests/test_prophet_outage_backfill.py` asserts a both-directions set equality: every
+plan stamped `origination_mode` starting `outage_backfill` appears in the disclosure
+artifact, and every disclosed id exists as a plan. It further pins that the only
+authorised mode string is `outage_backfill_2026_08_09` and the only authorised
+`recorded_at` is `2026-08-09`. A future backfill of any other date therefore turns
+the suite red on arrival, and needs its own operator authority, its own disclosure
+row and its own dated addendum here — deleting the test is not the remedy.
+
+**Producer.** `scripts/backfill_prophet_outage.py`, a one-off that refuses to run
+twice: the disclosure artifact is its idempotence lock.
+
+---
+
 # Prophet Live Marks — Payload Schema
 
 **R2 key:** `live_flow/prophet_marks.json`
