@@ -1039,26 +1039,6 @@
      no way to filter INTO an empty bucket from this surface. Dead CSS on a stylesheet
      that ships on every render reads at review like a shipped feature. */
 
-  /* ── themes in favour mini-strip (G0.5b) ───────────────────────────────────
-     Context, never a verb: it names where today's board clusters and stops there. */
-  .pbt { margin: 2px 0 10px; padding: 9px 12px 10px; border: 1px solid var(--line);
-         border-radius: 10px; background: color-mix(in srgb, var(--panel2) 55%, var(--panel)); }
-  .pbt-hd { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 9px; margin-bottom: 5px; }
-  .pbt-t { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
-           color: var(--muted); }
-  html[data-lang="zh"] .pbt-t { letter-spacing: 0; }
-  .pbt-sub { font-size: 11px; color: var(--muted); opacity: .9; }
-  .pbt-r { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 9px;
-           padding: 4px 0; font-size: 11.5px; min-width: 0; }
-  .pbt-r + .pbt-r { border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
-  .pbt-nm { font-weight: 750; color: var(--text); flex: none; min-width: 8.5em; }
-  .pbt-tk { display: flex; flex-wrap: wrap; gap: 2px 8px; min-width: 0;
-            color: color-mix(in srgb, var(--muted) 40%, var(--text)); font-weight: 700; }
-  .pbt-more { color: var(--muted); font-weight: 600; }
-  /* sits right after the tickers, NOT pushed to the far edge: at 1400px a
-     margin-left:auto stranded a three-word tail ~1,100px from the theme it belongs to. */
-  .pbt-age { flex: none; font-size: 10.5px; color: var(--muted); white-space: nowrap; opacity: .85; }
-
   /* ── ran section (G0.4 display) ────────────────────────────────────────────
      Deliberately NOT a fourth table: two tables already follow this panel, and the
      ran lane is a "these are gone" list, not a comparison. Quiet one-line rows,
@@ -1541,13 +1521,6 @@
              background: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
   .nb-dmnd.dmnd-rk { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line));
              background: color-mix(in srgb, var(--down) 11%, var(--panel)); }
-  /* G6a donor-sector context chip (display-only, US standouts header area) */
-  .nb-donor{display:inline-flex;width:fit-content;align-items:center;gap:7px;padding:5px 11px;margin:6px 0 4px;border-radius:8px;font-size:11px;border:1px solid var(--line);background:var(--panel2)}
-  .nb-donor.donor-cracking{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel2))}
-  .nb-donor.donor-intact{border-color:color-mix(in srgb,var(--up) 35%,var(--line));background:color-mix(in srgb,var(--up) 6%,var(--panel2))}
-  .nb-donor .donor-ic{font-size:12px;flex:none}
-  .nb-donor.donor-cracking .donor-ic{color:var(--ink-warn,var(--warn))}
-  .nb-donor.donor-intact .donor-ic{color:var(--ink-up,var(--up))}
   /* COILED wave-2-validated cohort-washout ranking bonus chip (display-only, US standouts) */
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
   .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
@@ -1607,8 +1580,13 @@
      the stance now rides the card's ⚠N flags popover; see the _fl.rows fold below. */
   /* W1.5 earnings-blackout chip (display-only; no rank power; hygiene context) */
   .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
-  /* W1.5 board-level suppressed-today note */
-  .nb-eb-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,transparent);cursor:help}
+  /* Earnings-window candidates stay visible, below the primary picks. */
+  .nb-ewatch{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 9px;margin:10px 0 2px;
+    padding:8px 10px;border-top:1px solid var(--line);font-size:11.5px;cursor:help}
+  .nb-ewatch-t{font-weight:800;color:var(--text)}
+  .nb-ewatch-n{display:inline-flex;flex-wrap:wrap;gap:4px 9px}
+  .nb-ewatch-n a{font-weight:800;text-decoration:none}
+  .nb-ewatch-copy{color:var(--muted)}
   /* CSP-W5 board staleness badge */
   .nb-stale-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;font-weight:600;color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));background:color-mix(in srgb,var(--warn) 9%,transparent)}
   /* CSP-W5 per-card muted note on expired pending rows */

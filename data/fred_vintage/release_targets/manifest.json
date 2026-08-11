@@ -1,71 +1,89 @@
 {
   "collected_at": "2026-08-10T03:31:09+00:00",
+  "completed_at": "2026-08-10T03:31:09+00:00",
   "dry_run": false,
+  "integrity_profile": "release_target_artifact_sha256_bytes.v1",
+  "mode": "seal_existing",
   "realtime_start": "1997-01-01",
   "schema": "release_target_vintage_collection.v1",
+  "sealed_at": "2026-08-11T03:51:25+00:00",
   "series": {
     "CPIAUCSL": {
-      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/CPIAUCSL_all_vintages.parquet",
+      "artifact_bytes": 161094,
+      "artifact_sha256": "771e7e10a98fa211c6deaabbe2afb3faacdfa4ac875b0190731f982886821c70",
+      "path": "data/fred_vintage/release_targets/CPIAUCSL_all_vintages.parquet",
       "period_max": "2026-06-01",
       "period_min": "1947-01-01",
       "periods": 953,
       "release_dates": 374,
       "rows": 290644,
-      "status": "written"
+      "status": "sealed"
     },
     "CPILFESL": {
-      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/CPILFESL_all_vintages.parquet",
+      "artifact_bytes": 143752,
+      "artifact_sha256": "8258583f292c19c170bb2a51129ccb15c01757172f28c197d588d7c55f778010",
+      "path": "data/fred_vintage/release_targets/CPILFESL_all_vintages.parquet",
       "period_max": "2026-06-01",
       "period_min": "1957-01-01",
       "periods": 833,
       "release_dates": 374,
       "rows": 245764,
-      "status": "written"
+      "status": "sealed"
     },
     "PAYEMS": {
-      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/PAYEMS_all_vintages.parquet",
+      "artifact_bytes": 276071,
+      "artifact_sha256": "16158568cc9eaf8de804d6e7a17fdf971b8a647d17c567a0178f922b1b4f51b4",
+      "path": "data/fred_vintage/release_targets/PAYEMS_all_vintages.parquet",
       "period_max": "2026-07-01",
       "period_min": "1939-01-01",
       "periods": 1051,
       "release_dates": 359,
       "rows": 313139,
-      "status": "written"
+      "status": "sealed"
     },
     "PCEPI": {
-      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/PCEPI_all_vintages.parquet",
+      "artifact_bytes": 154560,
+      "artifact_sha256": "74d64d52f619ac61ded872622827e03fdc1b85274e4d677052cade72c1f4f337",
+      "path": "data/fred_vintage/release_targets/PCEPI_all_vintages.parquet",
       "period_max": "2026-06-01",
       "period_min": "1959-01-01",
       "periods": 810,
       "release_dates": 314,
       "rows": 204161,
-      "status": "written"
+      "status": "sealed"
     },
     "PCEPILFE": {
-      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/PCEPILFE_all_vintages.parquet",
+      "artifact_bytes": 155481,
+      "artifact_sha256": "88cf8d5790f037109a6a6431ea2e8197575940d9f96a7554125797c0eccfb6b8",
+      "path": "data/fred_vintage/release_targets/PCEPILFE_all_vintages.parquet",
       "period_max": "2026-06-01",
       "period_min": "1959-01-01",
       "periods": 810,
       "release_dates": 314,
       "rows": 204161,
-      "status": "written"
+      "status": "sealed"
     },
     "PPIFES": {
-      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/PPIFES_all_vintages.parquet",
+      "artifact_bytes": 16885,
+      "artifact_sha256": "c0f0bb827f768742ea80a11016dbe40b8483cc67abe36649745d48a929e54562",
+      "path": "data/fred_vintage/release_targets/PPIFES_all_vintages.parquet",
       "period_max": "2026-06-01",
       "period_min": "2010-04-01",
       "periods": 195,
       "release_dates": 155,
       "rows": 18650,
-      "status": "written"
+      "status": "sealed"
     },
     "PPIFIS": {
-      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/PPIFIS_all_vintages.parquet",
+      "artifact_bytes": 17283,
+      "artifact_sha256": "84d90a44d184adf84162d0605b96286bf3d15a5862912343f427c1ba1a6bb973",
+      "path": "data/fred_vintage/release_targets/PPIFIS_all_vintages.parquet",
       "period_max": "2026-06-01",
       "period_min": "2009-11-01",
       "periods": 200,
       "release_dates": 155,
       "rows": 19425,
-      "status": "written"
+      "status": "sealed"
     }
   },
   "source": "FRED/ALFRED",
