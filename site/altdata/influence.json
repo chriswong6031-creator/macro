@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-11T00:43:57.202485+00:00",
+  "generated_utc": "2026-08-11T02:40:59.824176+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -849,10 +849,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.35,
+      "alt_score": 5,
+      "alt_weighted": 1.6,
       "alt_channels": [
         "affiliation",
+        "cnbc_pick",
         "hf_model_momentum",
         "lobbying",
         "special_situation"
@@ -998,12 +999,11 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 6,
-      "alt_weighted": 2.15,
+      "alt_score": 5,
+      "alt_weighted": 1.9,
       "alt_channels": [
         "affiliation",
         "app_demand",
-        "cnbc_pick",
         "github_momentum",
         "lobbying",
         "patent_cluster"
@@ -1129,14 +1129,15 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.75,
+      "alt_score": 6,
+      "alt_weighted": 2.4,
       "alt_channels": [
         "affiliation",
         "gov_contract",
         "retail_buzz",
         "stocktwits_bull",
-        "trump"
+        "trump",
+        "unusual_options"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1182,11 +1183,12 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 3,
+      "alt_weighted": 1.7,
       "alt_channels": [
         "13f_add",
-        "affiliation"
+        "affiliation",
+        "congress_cluster"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1680,36 +1682,84 @@
   "n_candidates": 0,
   "filings": [
     {
-      "date": "2026-08-07",
-      "form": "8-K",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "1.02,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026597/ex_1001120.htm"
-    },
-    {
-      "date": "2026-08-07",
+      "date": "2026-08-10",
       "form": "8-K",
       "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
       "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026595/djt20260806c_8k.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026665/ex_1001895.htm"
     },
     {
-      "date": "2026-08-07",
+      "date": "2026-08-10",
       "form": "8-K",
       "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
-      "items": "1.02,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026597/djt20260804_8k.htm"
+      "items": "2.02,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026797/ex_1001984.htm"
     },
     {
-      "date": "2026-08-07",
+      "date": "2026-08-10",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "2.02,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026797/djt20260511_8k.htm"
+    },
+    {
+      "date": "2026-08-10",
       "form": "8-K",
       "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
       "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026595/ex_1000265.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026665/djt20260809_8k.htm"
+    },
+    {
+      "date": "2026-08-10",
+      "form": "425",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026798/djt20260810g_425.htm"
+    },
+    {
+      "date": "2026-08-10",
+      "form": "425",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026798/ex_1002543.htm"
+    },
+    {
+      "date": "2026-08-10",
+      "form": "8-K",
+      "company": "Yorkville Acquisition Corp.",
+      "ticker": null,
+      "items": "1.02,8.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/2064658/000110465926093049/tm2622603d1_ex99-1.htm"
+    },
+    {
+      "date": "2026-08-10",
+      "form": "425",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026809/djt20260810h_425.htm"
+    },
+    {
+      "date": "2026-08-10",
+      "form": "8-K",
+      "company": "Yorkville Acquisition Corp.",
+      "ticker": null,
+      "items": "1.02,8.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/2064658/000110465926093049/tm2622603d1_ex10-1.htm"
+    },
+    {
+      "date": "2026-08-10",
+      "form": "425",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026809/ex_1002711.htm"
     },
     {
       "date": "2026-08-07",
@@ -1720,60 +1770,12 @@
       "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026597/ex_1000119.htm"
     },
     {
-      "date": "2026-08-06",
+      "date": "2026-08-07",
       "form": "8-K",
       "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
       "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026265/ex_1000166.htm"
-    },
-    {
-      "date": "2026-08-06",
-      "form": "8-K",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026265/djt20260806_8k.htm"
-    },
-    {
-      "date": "2026-08-05",
-      "form": "8-K",
-      "company": "New America Acquisition I Corp.",
-      "ticker": null,
-      "items": "5.02,7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/2074878/000149315226036181/ex99-1.htm"
-    },
-    {
-      "date": "2026-08-05",
-      "form": "8-K",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926025800/ex_999015.htm"
-    },
-    {
-      "date": "2026-08-05",
-      "form": "8-K",
-      "company": "New America Acquisition I Corp.",
-      "ticker": null,
-      "items": "5.02,7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/2074878/000149315226036181/form8-k.htm"
-    },
-    {
-      "date": "2026-08-05",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126031402/ef20079557_425.htm"
-    },
-    {
-      "date": "2026-08-05",
-      "form": "8-K",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926025800/djt20260805_8k.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026595/ex_1000265.htm"
     }
   ]
 }
