@@ -545,17 +545,23 @@ and leaves gitignored runtime state (`.env`, `data/live_flow_state/`,
 
 #### Sibling deploy trees on the M1
 
-| Tree | Job(s) | State (2026-07-30) |
+| Tree | Job(s) | State (verified through 2026-08-11) |
 |---|---|---|
 | `liveflow-ops-wt` | `com.mastermind.liveflow` | **standalone clone — git-refreshable** |
+| `chainsnap-ops-wt` | `com.mastermind.chainsnapshots` | **standalone shallow clone; code-only, with an authority symlink into `flow-ops-wt`** |
 | `hub-ops-wt` | `com.mastermind.optionshub`, `com.mastermind.levelsgrader`, `com.mastermind.levelsseal` | **standalone clone — git-refreshable** (rebuilt 2026-07-30) |
 | `theta-ops-wt` | `com.macro.theta-terminal`, `com.macro.thetadata-backfill`, `com.macro.theta-staleness` (+4 readers) | **standalone clone — git-refreshable** (rebuilt 2026-07-30) |
 | `flow-ops-wt` | flow enrich / signing lanes | standalone clone, full history (~75 GB) |
 | `fund-ops-wt` | `com.mastermind.fund` | standalone clone of a *different* repo (`mastermind-terminal`) |
 
-All three macro-repo deploy trees are now standalone shallow clones.  Refresh any
-of them with the ordinary `git fetch --depth 1 origin main && git reset --hard
-FETCH_HEAD` above.
+The dedicated chain deploy tree prevents the receipt-bound producer from running
+mixed-vintage code in the shared dirty `flow-ops-wt`. Its
+`data/chain_snapshots` path is a symlink to the physical authority at
+`flow-ops-wt/data/chain_snapshots`; it must be preserved and manifest-verified
+while the producer is stopped. `liveflow-ops-wt` never owns or carries chain
+state. Do not refresh, replace, or remove `flow-ops-wt` until that physical
+authority is separately migrated under the stopped-producer manifest law in
+`ops/CHAIN_SNAPSHOTS_RUNBOOK.md`.
 
 **Count the jobs before you touch a tree — `grep -l <tree> ~/Library/LaunchAgents/*.plist`.**
 Both rebuilds found a blast radius wider than the tree's name suggests:
@@ -602,6 +608,7 @@ Carry lists as measured 2026-07-30:
 | Tree | Carry | Drop |
 |---|---|---|
 | `liveflow-ops-wt` | `.env`, `data/live_flow_state/`, `data/live_flow_out/` | — |
+| `chainsnap-ops-wt` | `.env`, exact `data/chain_snapshots` symlink to the physical authority in `flow-ops-wt` | everything not present on the reviewed merge |
 | `hub-ops-wt` | `.env`, `data/live_flow_out/` (its own output), `data/levels/` (`grades.parquet`, `track_record.json`, `ledger/`, `backfill_done_years.txt`), `ops/launchd/levels_{grader_daily,seal_preopen}.sh` | `__pycache__`, stale `site/assets/*` render artifacts, templates/tests main deleted |
 | `theta-ops-wt` | `.env`, the `data/thetadata_eod` **symlink** | `backfill.log` (118 MB of 60 s gate lines — launchd recreates it), `__pycache__`, 4 templates main deleted |
 
