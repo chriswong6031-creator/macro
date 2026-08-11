@@ -857,7 +857,8 @@ jobs:
     # grids + (Lane G) intraday dealer-exposure greek grids (gex/dex/vanna/charm) +
     # walls/coverage (grids[metric][levelIdx][timeIdx]) into the R2 snapshot store the
     # Terminal surface pane replays. A regression here (grid orientation/dims, idx↔files
-    # stamp drift, dishonest cadence, non-idempotent append, greek-vs-EOD sign drift, or a
+    # stamp drift, dishonest poll-floor/observed spacing, non-idempotent append,
+    # greek-vs-EOD sign drift, or a
     # greek failure breaking the netprem write) would corrupt or blank the pane. Shapes are
     # asserted against a vendored copy of the Terminal contract (surfaceContract.ts); the
     # greek math is checked against engine/greeks + engine/gex_engine (the EOD source it
@@ -872,8 +873,8 @@ jobs:
         # jinja2 + pyarrow are for the options-screener suite below: the builder imports
         # jinja2 at module scope and reads its inputs from parquet.
         run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow jsonschema fastapi httpx requests
-      - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
-        run: python -m pytest tests/test_flow_surface.py -q
+      - name: flow surface + dated archive cadence truth (poll floor, observed sparse spacing, retention)
+        run: python -m pytest tests/test_flow_surface.py tests/test_flow_archive.py -q
       # PRISM's daily matrix shares this options data-plane lane.  Keep the
       # exact-contract-side volume baseline suite distinct so PIT/no-zero-fill regressions
       # cannot hide inside a broader surface invocation.
@@ -889,6 +890,8 @@ jobs:
         run: python -m pytest tests/test_options_focused_quote.py -q
       - name: live-flow PIT producer (RTH admission, stable source IDs, root-scoped state, cycle WAL)
         run: python -m pytest tests/test_live_flow.py -q
+      - name: flow derivative source clocks (enrich + chain heat, fail-closed provenance)
+        run: python -m pytest tests/test_flow_enrich.py tests/test_build_chain_heat.py -q
       - name: ThetaData PIT store (narrow OI projection, exact-date filter, cache bypass)
         run: python -m pytest tests/test_thetadata_store.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
@@ -1610,6 +1613,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: neural-web registry + envelope + bus-doc freshness tests
         run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_admin_metabolism.py tests/test_admin_metabolism_history.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py tests/test_nw_lobe_descriptions.py tests/test_synapse_registry_contract.py -q
+      - name: Mastermind semantic registry + generated global system map
+        run: python -m pytest tests/test_mastermind_system_map.py -q
       - name: "HARD | entity/thesis/mechanism registry integrity (ETM-C1..C7)"
         run: |
           python3 -m scripts.check_entity_thesis_registry --selftest
@@ -5674,6 +5679,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: neural-web cortex world-state consumers + the factor-contradiction plane
         run: python -m pytest tests/test_build_active_build_map.py tests/test_build_cycle_pattern_state.py tests/test_factor_contradictions.py tests/test_nw_consumers_w3.py tests/test_nw_health_escalation.py tests/test_options_nw_wiring.py tests/test_til_nw_citizenship.py tests/test_world_state_special_sits.py tests/test_world_state_stage_analysis.py -q
+      - name: three-repository advisory Active Build Map
+        run: python -m pytest tests/test_project_active_build_map.py -q
       # Wired 2026-08-06: the CPI substrate that test_build_cycle_pattern_state.py (in
       # the step above) builds ON, dark since it landed and red on main. Its family
       # cardinalities were frozen literals over stores the nightly grows — the code
