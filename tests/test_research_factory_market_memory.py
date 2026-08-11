@@ -153,6 +153,109 @@ def test_canonical_candidate_enums_are_extended_as_one_conforming_tuple() -> Non
     assert rf_schema.validate_candidate(candidate) == []
 
 
+def test_generic_rf_ingest_rejects_relabelled_legacy_row_without_conformance() -> None:
+    first_line = (
+        (ROOT / "data" / "research_factory" / "candidates.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()[0]
+    )
+    hostile = json.loads(first_line)
+    hostile.update(
+        source="market_memory",
+        candidate_type="market_memory_candidate",
+        domain="market_memory",
+    )
+    hostile.pop("artifacts")
+
+    violations = rf_schema.validate_candidate(hostile)
+    assert violations
+    assert any("Market Memory structural projection" in row for row in violations)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("source", "human"),
+        ("candidate_type", "external_idea"),
+        ("domain", "macro"),
+    ],
+)
+def test_generic_rf_ingest_rejects_partial_market_memory_discriminator_tuple(
+    field: str, value: str
+) -> None:
+    hostile = _candidate()
+    hostile[field] = value
+    violations = rf_schema.validate_candidate(hostile)
+    assert any("discriminator tuple must be exact" in row for row in violations)
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (("artifacts", "market_memory_conformance", "authority_granted"), True),
+        (("artifacts", "market_memory_conformance", "authority_granted"), 0),
+        (("artifacts", "market_memory_conformance", "challenge_completed"), True),
+        (("artifacts", "market_memory_conformance", "emission_enabled"), True),
+        (("artifacts", "market_memory_conformance", "training_eligible"), True),
+        (("artifacts", "market_memory_conformance", "promotion_eligible"), True),
+        (
+            (
+                "artifacts",
+                "market_memory_conformance",
+                "action_authority",
+                "may_rank",
+            ),
+            True,
+        ),
+    ],
+)
+def test_generic_rf_ingest_rejects_market_memory_authority_drift(
+    path: tuple[str, ...], value: object
+) -> None:
+    violations = rf_schema.validate_candidate(_mutate(_candidate(), path, value))
+    assert any("must remain zero authority" in row for row in violations)
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "message"),
+    [
+        (("spec_ref",), "mmrfspec_" + "0" * 64, "spec_ref does not bind"),
+        (
+            ("candidate_id",),
+            "rf-market-memory-" + "0" * 64,
+            "candidate_id does not bind",
+        ),
+        (
+            (
+                "artifacts",
+                "market_memory_conformance",
+                "spec",
+                "trial_registration_bytes",
+            ),
+            256 * 1024 + 1,
+            "trial_registration_bytes is out of bounds",
+        ),
+        (("transition_log",), [{}], "transition_log must remain"),
+        (("claim_shape",), "lead_lag", "claim_shape must remain"),
+        (
+            ("evaluation_plan", "status"),
+            "complete",
+            "evaluation_plan must remain",
+        ),
+        (
+            ("evaluation_plan", "defaulted"),
+            0,
+            "evaluation_plan must remain",
+        ),
+    ],
+)
+def test_generic_rf_ingest_rejects_market_memory_structural_drift(
+    path: tuple[str, ...], value: object, message: str
+) -> None:
+    violations = rf_schema.validate_candidate(_mutate(_candidate(), path, value))
+    assert any(message in row for row in violations), violations
+
+
 def test_candidate_is_proposed_read_only_and_exactly_zero_authority() -> None:
     trial_bytes = _bytes()
     trial = forward.load_trial_registration_json(trial_bytes)

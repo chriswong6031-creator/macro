@@ -16,6 +16,8 @@ Pure stdlib: no pandas, no yaml, no third-party imports.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -231,6 +233,360 @@ def _authority_check(row: dict, errs: list[str], label: str) -> None:
         )
 
 
+_MARKET_MEMORY_TRIPLE = (
+    "market_memory",
+    "market_memory_candidate",
+    "market_memory",
+)
+_MARKET_MEMORY_CANDIDATE_FIELDS = frozenset(
+    {
+        "schema",
+        "authority",
+        "candidate_id",
+        "created_at",
+        "source",
+        "candidate_type",
+        "domain",
+        "status",
+        "hypothesis",
+        "mechanism",
+        "claim_shape",
+        "spec_ref",
+        "expected_failure_modes",
+        "decay_conditions",
+        "falsifiers",
+        "trial_accounting",
+        "evaluation_plan",
+        "lineage",
+        "flags",
+        "artifacts",
+        "transition_log",
+    }
+)
+_MARKET_MEMORY_ACTION_AUTHORITY = {
+    "may_rank": False,
+    "may_gate": False,
+    "may_size": False,
+    "may_escalate": False,
+    "may_trade": False,
+    "may_originate": False,
+    "may_select_options_candidate": False,
+    "may_execute": False,
+    "may_write_options_episode": False,
+    "may_append_outcome": False,
+    "may_train_prophet": False,
+}
+_MARKET_MEMORY_CANDIDATE_ID_RE = re.compile(r"rf-market-memory-[a-f0-9]{64}\Z")
+_MARKET_MEMORY_SPEC_ID_RE = re.compile(r"mmrfspec_[a-f0-9]{64}\Z")
+_MARKET_MEMORY_TRIAL_ID_RE = re.compile(r"mmtrial_[a-f0-9]{64}\Z")
+_MARKET_MEMORY_SHA256_RE = re.compile(r"[a-f0-9]{64}\Z")
+_MARKET_MEMORY_CREATED_AT_RE = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z\Z"
+)
+_MARKET_MEMORY_MAX_BYTES = 256 * 1024
+
+
+def _market_memory_object(
+    value: object,
+    fields: frozenset[str],
+    *,
+    errs: list[str],
+    label: str,
+) -> dict | None:
+    if type(value) is not dict:
+        errs.append(f"{label}: must be an exact object")
+        return None
+    if set(value) != fields:
+        errs.append(f"{label}: fields are not canonical")
+        return None
+    return value
+
+
+def _market_memory_canonical_bytes(value: object) -> bytes | None:
+    try:
+        return json.dumps(
+            value,
+            allow_nan=False,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    except (TypeError, ValueError, RecursionError):
+        return None
+
+
+def _market_memory_exact_json(value: object, expected: object) -> bool:
+    supplied = _market_memory_canonical_bytes(value)
+    canonical = _market_memory_canonical_bytes(expected)
+    return supplied is not None and supplied == canonical
+
+
+def _market_memory_bounded_int(
+    value: object, *, minimum: int, maximum: int
+) -> bool:
+    return type(value) is int and minimum <= value <= maximum
+
+
+def _validate_market_memory_candidate_structure(
+    row: dict, errs: list[str], label: str
+) -> None:
+    """Seal generic ledger admission; exact W2A byte authentication is adapter-owned."""
+
+    supplied = (row.get("source"), row.get("candidate_type"), row.get("domain"))
+    if not any(
+        value == marker for value, marker in zip(supplied, _MARKET_MEMORY_TRIPLE)
+    ):
+        return
+    mm_label = f"{label}: Market Memory structural projection"
+    if supplied != _MARKET_MEMORY_TRIPLE:
+        errs.append(f"{mm_label}: discriminator tuple must be exact")
+
+    if set(row) != _MARKET_MEMORY_CANDIDATE_FIELDS:
+        errs.append(f"{mm_label}: candidate fields are not canonical")
+    body = _market_memory_canonical_bytes(row)
+    if body is None or not body or len(body) > _MARKET_MEMORY_MAX_BYTES:
+        errs.append(f"{mm_label}: candidate exceeds its canonical JSON bound")
+
+    candidate_id = row.get("candidate_id")
+    if type(candidate_id) is not str or not _MARKET_MEMORY_CANDIDATE_ID_RE.fullmatch(
+        candidate_id
+    ):
+        errs.append(f"{mm_label}: candidate_id is malformed")
+    spec_ref = row.get("spec_ref")
+    if type(spec_ref) is not str or not _MARKET_MEMORY_SPEC_ID_RE.fullmatch(spec_ref):
+        errs.append(f"{mm_label}: spec_ref is malformed")
+    created_at = row.get("created_at")
+    if type(created_at) is not str or not _MARKET_MEMORY_CREATED_AT_RE.fullmatch(
+        created_at
+    ):
+        errs.append(f"{mm_label}: created_at is not exact microsecond UTC")
+
+    exact_top_level = {
+        "status": "proposed",
+        "claim_shape": None,
+        "expected_failure_modes": [
+            "w4_retrieval_not_available",
+            "w5_evaluation_not_run",
+        ],
+        "decay_conditions": [],
+        "falsifiers": [],
+        "trial_accounting": {
+            "mode": "read_only",
+            "family": None,
+            "declared_at": None,
+        },
+        "evaluation_plan": {
+            "status": "not_run",
+            "primary_metric": None,
+            "horizon_d": None,
+            "min_n": None,
+            "fdr_scope": None,
+            "expected_half_life_d": None,
+            "defaulted": False,
+            "source": "market_memory_w2a_preregistration",
+        },
+        "lineage": {
+            "respin_of": None,
+            "superseded_by": None,
+            "refinement_generation": 0,
+        },
+        "flags": [
+            "market_memory_context_only",
+            "w4_join_deferred",
+            "w5_join_deferred",
+        ],
+        "transition_log": [],
+    }
+    for field, expected in exact_top_level.items():
+        if not _market_memory_exact_json(row.get(field), expected):
+            errs.append(f"{mm_label}: {field} must remain its inert canonical value")
+
+    artifacts = _market_memory_object(
+        row.get("artifacts"),
+        frozenset({"market_memory_conformance"}),
+        errs=errs,
+        label=f"{mm_label}.artifacts",
+    )
+    if artifacts is None:
+        return
+    conformance = _market_memory_object(
+        artifacts.get("market_memory_conformance"),
+        frozenset(
+            {
+                "schema",
+                "spec",
+                "authority_granted",
+                "challenge_completed",
+                "challenge_ref",
+                "emission_enabled",
+                "training_eligible",
+                "promotion_eligible",
+                "action_authority",
+            }
+        ),
+        errs=errs,
+        label=f"{mm_label}.conformance",
+    )
+    if conformance is None:
+        return
+    if conformance.get("schema") != (
+        "research_factory.market_memory_candidate_conformance.v1"
+    ):
+        errs.append(f"{mm_label}: conformance schema is not canonical")
+    zero_authority = {
+        "authority_granted": False,
+        "challenge_completed": False,
+        "challenge_ref": None,
+        "emission_enabled": False,
+        "training_eligible": False,
+        "promotion_eligible": False,
+        "action_authority": _MARKET_MEMORY_ACTION_AUTHORITY,
+    }
+    for field, expected in zero_authority.items():
+        if not _market_memory_exact_json(conformance.get(field), expected):
+            errs.append(f"{mm_label}: conformance {field} must remain zero authority")
+
+    spec = _market_memory_object(
+        conformance.get("spec"),
+        frozenset(
+            {
+                "schema",
+                "trial_registration_id",
+                "trial_registration_sha256",
+                "trial_registration_bytes",
+                "trial_read_back",
+                "w4_retrieval_join",
+                "w5_evaluation_join",
+            }
+        ),
+        errs=errs,
+        label=f"{mm_label}.spec",
+    )
+    if spec is None:
+        return
+    if spec.get("schema") != "research_factory.market_memory_candidate_spec.v1":
+        errs.append(f"{mm_label}: spec schema is not canonical")
+    trial_id = spec.get("trial_registration_id")
+    if type(trial_id) is not str or not _MARKET_MEMORY_TRIAL_ID_RE.fullmatch(trial_id):
+        errs.append(f"{mm_label}: trial_registration_id is malformed")
+    trial_sha = spec.get("trial_registration_sha256")
+    if type(trial_sha) is not str or not _MARKET_MEMORY_SHA256_RE.fullmatch(trial_sha):
+        errs.append(f"{mm_label}: trial_registration_sha256 is malformed")
+    if not _market_memory_bounded_int(
+        spec.get("trial_registration_bytes"),
+        minimum=1,
+        maximum=_MARKET_MEMORY_MAX_BYTES,
+    ):
+        errs.append(f"{mm_label}: trial_registration_bytes is out of bounds")
+    if not _market_memory_exact_json(
+        spec.get("w4_retrieval_join"),
+        {"status": "deferred", "episode_set_id": None, "evidence_ref": None},
+    ):
+        errs.append(f"{mm_label}: W4 retrieval join must remain deferred and null")
+    if not _market_memory_exact_json(
+        spec.get("w5_evaluation_join"),
+        {"status": "not_run", "evaluation_id": None, "evidence_ref": None},
+    ):
+        errs.append(f"{mm_label}: W5 evaluation join must remain not_run and null")
+
+    read_back = _market_memory_object(
+        spec.get("trial_read_back"),
+        frozenset({"purge", "embargo", "trial_budget", "implementation"}),
+        errs=errs,
+        label=f"{mm_label}.trial_read_back",
+    )
+    if read_back is not None:
+        purge = _market_memory_object(
+            read_back.get("purge"),
+            frozenset({"enabled", "before_seconds", "after_seconds"}),
+            errs=errs,
+            label=f"{mm_label}.purge",
+        )
+        if purge is not None and (
+            purge.get("enabled") is not True
+            or not _market_memory_bounded_int(
+                purge.get("before_seconds"), minimum=0, maximum=10**9
+            )
+            or not _market_memory_bounded_int(
+                purge.get("after_seconds"), minimum=0, maximum=10**9
+            )
+        ):
+            errs.append(f"{mm_label}: purge read-back is structurally unsafe")
+        embargo = _market_memory_object(
+            read_back.get("embargo"),
+            frozenset({"enabled", "duration_seconds"}),
+            errs=errs,
+            label=f"{mm_label}.embargo",
+        )
+        if embargo is not None and (
+            embargo.get("enabled") is not True
+            or not _market_memory_bounded_int(
+                embargo.get("duration_seconds"), minimum=1, maximum=10**9
+            )
+        ):
+            errs.append(f"{mm_label}: embargo read-back is structurally unsafe")
+        budget = _market_memory_object(
+            read_back.get("trial_budget"),
+            frozenset(
+                {
+                    "max_trials",
+                    "max_variants",
+                    "family_trials_already_registered",
+                }
+            ),
+            errs=errs,
+            label=f"{mm_label}.trial_budget",
+        )
+        if budget is not None:
+            max_trials = budget.get("max_trials")
+            max_variants = budget.get("max_variants")
+            already = budget.get("family_trials_already_registered")
+            if (
+                not _market_memory_bounded_int(
+                    max_trials, minimum=1, maximum=10**6
+                )
+                or not _market_memory_bounded_int(
+                    max_variants, minimum=1, maximum=max_trials
+                )
+                or not _market_memory_bounded_int(
+                    already, minimum=0, maximum=max_trials - 1
+                )
+            ):
+                errs.append(f"{mm_label}: trial-budget read-back is out of bounds")
+        implementation = _market_memory_object(
+            read_back.get("implementation"),
+            frozenset({"model_sha256", "code_sha256", "config_sha256"}),
+            errs=errs,
+            label=f"{mm_label}.implementation",
+        )
+        if implementation is not None:
+            for field in ("model_sha256", "code_sha256", "config_sha256"):
+                value = implementation.get(field)
+                if type(value) is not str or not _MARKET_MEMORY_SHA256_RE.fullmatch(
+                    value
+                ):
+                    errs.append(f"{mm_label}: implementation {field} is malformed")
+
+    spec_body = _market_memory_canonical_bytes(spec)
+    if spec_body is not None and type(spec_ref) is str:
+        expected_spec_ref = "mmrfspec_" + hashlib.sha256(spec_body).hexdigest()
+        if spec_ref != expected_spec_ref:
+            errs.append(f"{mm_label}: spec_ref does not bind the structural spec")
+    if body is not None and type(candidate_id) is str:
+        semantic = dict(row)
+        semantic.pop("candidate_id", None)
+        semantic.pop("created_at", None)
+        semantic_body = _market_memory_canonical_bytes(semantic)
+        if semantic_body is not None:
+            expected_candidate_id = (
+                "rf-market-memory-" + hashlib.sha256(semantic_body).hexdigest()
+            )
+            if candidate_id != expected_candidate_id:
+                errs.append(
+                    f"{mm_label}: candidate_id does not bind the structural candidate"
+                )
+
+
 # ---------------------------------------------------------------------------
 # Validator: candidate.v1 (§5.1)
 # ---------------------------------------------------------------------------
@@ -322,6 +678,8 @@ def validate_candidate(row: dict) -> list[str]:
                     f"{label}: refinement_generation={gen} exceeds hard cap of 2 "
                     f"(RF-15 — generation 3 forces terminal rejected)"
                 )
+
+    _validate_market_memory_candidate_structure(row, errs, label)
 
     return errs
 

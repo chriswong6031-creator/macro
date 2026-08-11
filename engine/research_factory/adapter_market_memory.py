@@ -6,6 +6,10 @@ files, register a trial family, execute retrieval, evaluate an experiment,
 challenge a candidate, or advance any lifecycle. W4 retrieval and W5 evaluation
 remain explicit deferred/null joins. Every authority, emission, training,
 promotion, and action bit remains false.
+
+The canonical Research Factory validator seals the subtype's inert structure
+for generic ledger admission. It cannot authenticate source bytes; only this
+adapter's validator proves the exact owner-valid W2A byte projection.
 """
 
 from __future__ import annotations

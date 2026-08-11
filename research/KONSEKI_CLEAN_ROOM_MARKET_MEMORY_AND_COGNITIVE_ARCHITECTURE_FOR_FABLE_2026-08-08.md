@@ -1266,6 +1266,14 @@ null join and W5 evaluation is explicitly `not_run` with a null evidence join;
 neither missing slice is fabricated. Challenge completion, emission, training,
 promotion, and every action-authority bit remain false.
 
+Canonical Research Factory ingestion treats any one Market Memory enum as a
+request for the whole sealed subtype: the exact source/type/domain triple,
+inert proposal/accounting/evaluation state, empty lifecycle, canonical IDs,
+strict conformance/spec morphology, and zero authority are all mandatory. This
+generic validator is structural only because a candidate row cannot prove the
+source bytes named by its digest. Only the adapter validator authenticates the
+exact owner-valid W2A bytes and reconstructs the canonical projection.
+
 This slice has no registry, store, writer, filesystem/environment/network
 input, CLI, service, scheduler, API route, real candidate emission, or real
 experiment. It establishes schema conformance only. Later work must supply
