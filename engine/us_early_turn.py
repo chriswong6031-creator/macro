@@ -56,6 +56,7 @@ from engine.confluence_tiers import (
     _to_daily,
     _xup,
 )
+from engine.session_anchor import session_positions   # absolute session-calendar anchor
 
 log = logging.getLogger(__name__)
 
@@ -644,13 +645,70 @@ UNION_LEG_DOT = "early_dot"
 UNION_LEGS: tuple[str, ...] = (UNION_LEG_CROSS, UNION_LEG_DOT)
 
 
-def _union_relaxed_cross_fires(close: "pd.Series") -> "list[tuple[int, int, dict]]":
+def _evaluation_date(close: "pd.Series", asof: Any = None) -> "pd.Timestamp":
+    """The date the read is being made ON.  ``asof`` when the caller named one (knowability
+    is a property of the MARKET calendar, not of whether this name happened to trade), else
+    the last bar of the already-PIT-truncated series."""
+    if asof is not None:
+        try:
+            stamp = pd.Timestamp(asof).normalize()
+            if not pd.isna(stamp):
+                return stamp
+        except Exception:  # noqa: BLE001 — an unparseable asof falls back to the tape
+            pass
+    return pd.Timestamp(close.index[-1]).normalize()
+
+
+def _completed_bucket_mask(tf_index: Any, timeframe: int,
+                           asof: "pd.Timestamp") -> "np.ndarray":
+    """Which rows of a :func:`_tf_bars` grid are COMPLETE — hence FINAL — at ``asof``.
+
+    ``_tf_bars`` groups by ABSOLUTE bucket id and takes ``.last()``, so its TRAILING row is
+    the still-OPEN bucket whenever ``asof`` is not that bucket's final session slot: its
+    close, and therefore its %K/%D, keeps moving until the bucket completes.  A fire read
+    off that row is NOT knowable — it appears one night and is gone the next, re-dated to
+    the bucket's real last session (measured on this module's own committed fixtures: STLD's
+    2026-07-10 fire re-dates to 2026-07-14; NEM printed five such ghosts over 150 walk-
+    forward sessions).  G0.4 is a claim about COMPLETED buckets ONLY, and this is what
+    keeps that claim true.
+
+    A row whose bucket id is ``B`` is admissible at ``asof`` iff
+
+      * ``B < bucket(asof)`` — every earlier bucket has closed; or
+      * ``B == bucket(asof)`` AND ``position(asof) % timeframe == timeframe - 1`` AND the
+        row's own date IS ``asof`` — the trailing bucket, but only on its deterministic
+        final session slot, at whose close the value is final and knowable.
+
+    Both halves are functions of ``(reference calendar, date)`` alone, so this inherits the
+    session-anchor start-invariance: a date is admissible or not no matter how much leading
+    history the caller passed.
+    """
+    di = pd.DatetimeIndex(pd.to_datetime(tf_index)).normalize()
+    if len(di) == 0:
+        return np.zeros(0, dtype=bool)
+    asof_ts = pd.Timestamp(asof).normalize()
+    pos_asof = int(session_positions(pd.DatetimeIndex([asof_ts]), "US")[0])
+    bucket_asof = pos_asof // timeframe
+    buckets = session_positions(di, "US") // timeframe
+    final_slot = (pos_asof % timeframe) == (timeframe - 1)
+    return np.asarray(
+        (buckets < bucket_asof)
+        | ((buckets == bucket_asof) & final_slot & np.asarray(di == asof_ts)))
+
+
+def _union_relaxed_cross_fires(close: "pd.Series",
+                               asof: Any = None) -> "list[tuple[int, int, dict]]":
     """Fire positions for the RELAXED washout-cross leg, on the daily index.
 
     Returns ``[(fire_pos, cross_bar_row, badge_inputs)]``.  The 3D grid comes from
     :func:`engine.confluence_tiers._tf_bars`, whose index IS each bucket's last session —
-    so a 3D event is stamped at the close on which it became knowable (G0.4) with no
-    open-label round trip.
+    so a COMPLETED 3D bucket's event is stamped at the close on which it became knowable
+    (G0.4) with no open-label round trip.
+
+    The grid's trailing row is the still-OPEN bucket, whose %K/%D recompute on every new
+    session, so it is EXCLUDED until its final session slot closes
+    (:func:`_completed_bucket_mask`).  The measured object this leg reproduces is a ledger
+    of completed-bucket fires; an open-bucket fire is unmeasured and, worse, transient.
     """
     tf_close, _known = _tf_bars(close, TF_3D, "US")
     if tf_close is None or len(tf_close) < 40:
@@ -658,6 +716,10 @@ def _union_relaxed_cross_fires(close: "pd.Series") -> "list[tuple[int, int, dict
     k, d = _stoch_rsi_kd(tf_close)
     deep = (k < UNION_OS_BAND) & (d < UNION_OS_BAND)
     sel = (_xup(k, d) & deep).fillna(False).to_numpy()
+    # Every rolling/EWM input above is causal, so masking AFTER the computation is exactly
+    # equivalent to truncating the grid first — and it keeps one code path for both.
+    sel = sel & _completed_bucket_mask(tf_close.index, TF_3D,
+                                       _evaluation_date(close, asof))
     if not sel.any():
         return []
     # deepest %K in the buckets BEFORE the cross — the zero-bound context badge
@@ -692,13 +754,19 @@ def _union_relaxed_cross_fires(close: "pd.Series") -> "list[tuple[int, int, dict
     return out
 
 
-def _union_early_dot_fires(close: "pd.Series") -> "list[tuple[int, int, dict]]":
+def _union_early_dot_fires(close: "pd.Series",
+                           asof: Any = None) -> "list[tuple[int, int, dict]]":
     """Fire positions for the DOT leg, read from the engine's own ``early`` column.
 
     The dot is NOT re-derived here: :func:`engine.signal_quality.signal_frame` owns that
     definition and this reads its output, so the deck and the published store can never
     disagree about whether a name dotted.  ``signal_frame`` is close-driven for this leg,
     so a close-only history is exact.
+
+    The dot's 3D context carries the SAME open-bucket defect as the cross leg — its frame
+    is the same bucketing — so the identical completeness rule applies here
+    (:func:`_completed_bucket_mask`).  Excluding it in one leg only would just move the
+    ghost from one leg name to the other.
     """
     try:
         from engine.signal_quality import signal_frame
@@ -718,6 +786,8 @@ def _union_early_dot_fires(close: "pd.Series") -> "list[tuple[int, int, dict]]":
         # different history and the honest move is to skip the leg rather than guess.
         return []
     sel = frame["early"].fillna(False).to_numpy().astype(bool)
+    sel = sel & _completed_bucket_mask(tf_close.index, TF_3D,
+                                       _evaluation_date(close, asof))
     di = close.index
     kn_pos = di.searchsorted(pd.DatetimeIndex(tf_close.index), side="left")
     out: list[tuple[int, int, dict]] = []
@@ -789,6 +859,10 @@ def union_admission(price_history: Any, asof: str | None = None, *,
       (b) **the dot** — the engine's own ``early`` leg, read from
           :func:`engine.signal_quality.signal_frame`, retained as the anticipation chip.
 
+    BOTH legs read COMPLETED 3D buckets only (:func:`_completed_bucket_mask`).  The grid's
+    trailing bucket is still open until its final session slot closes, and a fire read off
+    it is not knowable: it prints one night and vanishes or re-dates the next.
+
     STARTER GRADE ONLY.  This mints an admission CLASS; it never touches the scored gate,
     a tier, or a rank, and the badges it carries are texture (§A2: proximity, not
     durability — no durability tier is licensed by any measured feature).
@@ -803,8 +877,8 @@ def union_admission(price_history: Any, asof: str | None = None, *,
         out["reason"] = f"fewer than {MIN_BARS} usable daily closes through {asof}"
         return out
     try:
-        cross_fires = _union_relaxed_cross_fires(close)
-        dot_fires = _union_early_dot_fires(close)
+        cross_fires = _union_relaxed_cross_fires(close, asof)
+        dot_fires = _union_early_dot_fires(close, asof)
     except Exception as exc:  # noqa: BLE001 — one unreadable name never kills a run
         log.info("us_early_turn: union admission failed: %s", exc)
         out["reason"] = f"union admission unavailable: {exc}"
@@ -945,7 +1019,12 @@ def setup_geometry(price_history: Any, asof: str | None = None, *,
 
     chase = None
     age = None
-    if isinstance(union, Mapping) and union.get("fire_date"):
+    # The chase leg is gated on a LIVE fire, never on the mere presence of a `fire_date`:
+    # `union_admission` reports the last fire it found even when that fire is months dead,
+    # and keying off the date alone put a "already run from where it turned" chip on rows
+    # whose fire expired 2.5 months earlier — including confirmed-lane `buy_now` rows that
+    # never belonged to this lane at all.
+    if isinstance(union, Mapping) and union.get("fired") and union.get("fire_date"):
         try:
             fire_pos = int(close.index.searchsorted(pd.Timestamp(union["fire_date"]),
                                                     side="left"))
@@ -1029,7 +1108,12 @@ def assess_early_turn(
     daily = turn_signature(price_history, asof=asof, timeframe=TF_DAILY)
     two_day = turn_signature(price_history, asof=asof, timeframe=TF_2D)
     union = union_admission(price_history, asof=asof, benchmark=benchmark)
-    geometry = setup_geometry(price_history, asof=asof, union=union)
+    # THE EARLY LANE IS THE UNION LANE.  Geometry — and every other early-lane key below —
+    # is computed only for a row that is actually on it; a confirmed-lane row must not be
+    # handed a setup score, a stage, or a chase chip belonging to a lane it is not in.
+    early_lane = bool(union.get("fired"))
+    geometry = (setup_geometry(price_history, asof=asof, union=union)
+                if early_lane else None)
     washout = basket_turn_context(ticker, membership)
     leader = leader_pullback_context(ticker, price_history=price_history, asof=asof,
                                      states=leader_states)
@@ -1066,7 +1150,7 @@ def assess_early_turn(
     else:
         reason = daily.get("reason") or "no signature"
 
-    return {
+    row: dict[str, Any] = {
         "schema": SCHEMA,
         "authority": AUTHORITY,
         "ticker": str(ticker or "").strip().upper(),
@@ -1079,35 +1163,13 @@ def assess_early_turn(
         "signature_timeframes": [
             tf for tf, sig in ((TF_DAILY, daily), (TF_2D, two_day)) if sig.get("fired")
         ],
-        # The measured recall spine + the display-tier badges it carries (§A2). Named on
-        # the row so a consumer can tell WHICH construction admitted it and under which era.
+        # The measured recall spine, on EVERY row — including the ones it declined, whose
+        # `union["reason"]` is the named null.  A disclosed null is the house form; hiding
+        # the read entirely would make "no union fire" and "the union was never run"
+        # indistinguishable.
         "union": union,
         "union_fired": bool(union.get("fired")),
         "union_legs": list(union.get("legs") or []),
-        "admission_era": UNION_ADMISSION_ERA if union.get("fired") else None,
-        "context_badges": union.get("badges") if union.get("fired") else None,
-        # The early lane's OWN score — geometry, and the deck's sort key for this lane.
-        # It is never blended with the confirmed lane's score; `stage` is the fact column
-        # that says which lane a row is reading from.
-        "setup_geometry": geometry,
-        "stage": STAGE_EARLY if union.get("fired") else None,
-        # ── TWO SURFACES, ONE READ (operator ruling 2026-08-11) ──────────────────
-        # The WATCH DECK is the recall tier (§6.9 R8: it optimizes recall + context
-        # density, not precision), so it carries EVERY union fire with no context
-        # licensing — the measured coverage/lead numbers are naked-union numbers and a
-        # gated deck would silently under-deliver them.
-        # STARTER-PLAN ORIGINATION is the larger authority step and keeps the context
-        # licence exactly as it was: `fired` is unchanged and is still what mints a plan.
-        # The licence is not hidden by the split — it rides on the row as a stated fact.
-        "deck_admitted": bool(union.get("fired")),
-        "plan_licensed": fired,
-        "licensing": {
-            "licensed": fired,
-            "reason": (reason if fired else
-                       ("no licensing context — carried on the watch deck, but a starter "
-                        "plan needs a washout-mature basket or a leader pullback")
-                       if union.get("fired") else reason),
-        },
         "daily": daily,
         "two_day": two_day,
         "washout": washout,
@@ -1117,3 +1179,45 @@ def assess_early_turn(
         "board_washout_reason": board_reason,
         "reason": reason,
     }
+    if not early_lane:
+        # ── CONFIRMED LANE: no early-lane keys at all ────────────────────────────
+        # ABSENCE, never nulls.  The keys below are the early lane's own vocabulary and a
+        # row that is not on that lane has no answer for them — a `deck_admitted: False`
+        # beside a `plan_licensed: True` is what inverted the deck ⊇ plan invariant in the
+        # first place (measured: 114 STLD fixture sessions read `fired=True`,
+        # `deck_admitted=False`, `admission_era=None` at once).  A consumer must ask
+        # whether the block is there, not read a null out of it.
+        return row
+    # ── TWO SURFACES, ONE READ (operator ruling 2026-08-11) ──────────────────────
+    # The WATCH DECK is the recall tier (§6.9 R8: it optimizes recall + context density,
+    # not precision), so it drops the CONTEXT LICENCE — a union fire reaches the deck with
+    # no washout/leader-pullback behind it.  It does NOT drop the candidate scope: this
+    # function is called by `prophet_bridge` strictly AFTER `select_candidates`, so the
+    # shipped deck is `union ∩ select_candidates`, never the naked universe.  The bake-off's
+    # measured coverage/lead numbers are NAKED-UNION numbers over the full universe and are
+    # therefore NOT a property of this deck — quoting them as such would overstate it by the
+    # size of the candidate filter.  Full-universe intake is chartered separately.
+    # STARTER-PLAN ORIGINATION is the larger authority step and keeps the context licence:
+    # `plan_licensed` is a SUBSET of `deck_admitted` by construction here, which is the
+    # whole invariant.  The licence is not hidden by the split — it rides on the row as a
+    # stated fact.
+    row.update({
+        # Era-stamped on every early-lane row, never None (#4942 era-stamp law): a row
+        # admitted under this construction must be comparable only with its own cohort.
+        "admission_era": UNION_ADMISSION_ERA,
+        "context_badges": union.get("badges"),
+        # The early lane's OWN score — geometry, and the deck's sort key for this lane.
+        # It is never blended with the confirmed lane's score; `stage` is the fact column
+        # that says which lane a row is reading from.
+        "setup_geometry": geometry,
+        "stage": STAGE_EARLY,
+        "deck_admitted": True,
+        "plan_licensed": fired,
+        "licensing": {
+            "licensed": fired,
+            "reason": (reason if fired else
+                       "no licensing context — carried on the watch deck, but a starter "
+                       "plan needs a washout-mature basket or a leader pullback"),
+        },
+    })
+    return row

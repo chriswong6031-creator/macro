@@ -4312,14 +4312,63 @@ def originate_plans(
         # zone_conversion_class; the board's `coiled.washout_ctx` flag is deliberately
         # NOT an input (measured near-constant — see zone_conversion_class).
         washout_ctx = bool((early.get("washout") or {}).get("washout_context"))
-        # The WATCH DECK is the recall tier and carries every union fire, licensed or not
-        # (operator ruling 2026-08-11). Plan ORIGINATION below is unchanged and stays
-        # context-licensed — the two surfaces are populated from one read, never merged.
+        # The WATCH DECK is the recall tier and carries every union fire among the SCORED
+        # CANDIDATES, licensed or not (operator ruling 2026-08-11) — this read runs after
+        # select_candidates, so the deck is `union ∩ candidates`, not the naked universe,
+        # and the bake-off's naked-union coverage numbers are not its property. Plan
+        # ORIGINATION below is unchanged and stays context-licensed — the two surfaces are
+        # populated from one read, never merged. `deck_admitted` is ABSENT (not False) on a
+        # confirmed-lane row, so `.get` is load-bearing here.
         if early.get("deck_admitted"):
             early_turn_watch.append(ticker)
         if early.get("fired"):
             candidate_class = ADMISSION_CLASS_EARLY_TURN
             early_turn_plans.append(ticker)
+
+        # ── the plan's EARLY-TURN disclosure ──────────────────────────────────
+        # The §6.9 R3 half (did the signature fire, under what context, and why) rides on
+        # EVERY plan — including the ones it declined, whose `reason` is the named null.
+        # The EARLY-LANE half below rides ONLY on a row that is on that lane, by ABSENCE
+        # rather than by nulls: a confirmed-lane row has no stage, no setup geometry, no
+        # chase chip and no licence, because none of those are statements about it.
+        early_turn_block: dict[str, Any] = {
+            "fired": bool(early.get("fired")),
+            "reason": early.get("reason"),
+            "timeframes": early.get("signature_timeframes") or [],
+            "washout_state": (early.get("washout") or {}).get("state"),
+            "leader_pullback_source": (
+                early.get("leader_pullback") or {}).get("source"),
+            # ── §A2 UNION ADMISSION — the measured recall spine ───────────────
+            # The union READ is disclosed on every row (a null that is named beats a key
+            # that vanished); the badges and texture below are what only an admitted row
+            # has. The badges are DISPLAY context (proximity, not durability) and the
+            # texture is the copy law: plain words at glance, the pre-trough cost at
+            # Tier-2 depth. Neither ever reaches a rank, tier or score.
+            "union_fired": bool(early.get("union_fired")),
+            "union_legs": early.get("union_legs") or [],
+            "union_texture": union_admission_texture(early.get("union")),
+            "basket_context_chip": (early.get("washout") or {}).get("state"),
+        }
+        if early.get("deck_admitted"):
+            early_turn_block.update({
+                "admission_era": early.get("admission_era"),
+                "context_badges": early.get("context_badges"),
+                # ── the early lane's OWN score (operator ruling 2026-08-11) ───────
+                # Geometry, never probability. It is THIS lane's deck sort key and is
+                # never blended with the confirmed lane's score — `stage` is the fact
+                # column that says which lane a row is reading from. The basket state
+                # sits beside it as display context (its own forward ledger), never in it.
+                "setup_geometry": early.get("setup_geometry"),
+                "geometry_score": (early.get("setup_geometry") or {}).get("score"),
+                "stage": early.get("stage"),
+                "geometry_texture": setup_geometry_texture(
+                    early.get("setup_geometry"), early.get("stage")),
+                # Which surface this row is on, stated rather than inferred.
+                "deck_admitted": True,
+                "plan_licensed": bool(early.get("plan_licensed")),
+                "licensing": early.get("licensing"),
+                "licensing_chip": starter_licence_chip(early.get("licensing")),
+            })
 
         entry_zone = build_entry_zone(
             b,
@@ -4534,39 +4583,7 @@ def originate_plans(
             # fill.  The ZONE is what the plan acts on, and its stance is what the copy
             # says out loud.
             "entry_zone": entry_zone,
-            "early_turn": {
-                "fired": bool(early.get("fired")),
-                "reason": early.get("reason"),
-                "timeframes": early.get("signature_timeframes") or [],
-                "washout_state": (early.get("washout") or {}).get("state"),
-                "leader_pullback_source": (
-                    early.get("leader_pullback") or {}).get("source"),
-                # ── §A2 UNION ADMISSION — the measured recall spine ───────────────
-                # The badges are DISPLAY context (proximity, not durability) and the
-                # texture is the copy law: plain words at glance, the pre-trough cost
-                # at Tier-2 depth. Neither ever reaches a rank, tier or score.
-                "union_fired": bool(early.get("union_fired")),
-                "union_legs": early.get("union_legs") or [],
-                "admission_era": early.get("admission_era"),
-                "context_badges": early.get("context_badges"),
-                "union_texture": union_admission_texture(early.get("union")),
-                # ── the early lane's OWN score (operator ruling 2026-08-11) ───────
-                # Geometry, never probability. It is THIS lane's deck sort key and is
-                # never blended with the confirmed lane's score — `stage` is the fact
-                # column that says which lane a row is reading from. The basket state
-                # sits beside it as display context (its own forward ledger), never in it.
-                "setup_geometry": early.get("setup_geometry"),
-                "geometry_score": (early.get("setup_geometry") or {}).get("score"),
-                "stage": early.get("stage"),
-                "geometry_texture": setup_geometry_texture(
-                    early.get("setup_geometry"), early.get("stage")),
-                "basket_context_chip": (early.get("washout") or {}).get("state"),
-                # Which surface this row is on, stated rather than inferred.
-                "deck_admitted": bool(early.get("deck_admitted")),
-                "plan_licensed": bool(early.get("plan_licensed")),
-                "licensing": early.get("licensing"),
-                "licensing_chip": starter_licence_chip(early.get("licensing")),
-            },
+            "early_turn": early_turn_block,
         }
 
         if government_revenue_ctx:

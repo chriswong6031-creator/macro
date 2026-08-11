@@ -159,7 +159,42 @@ def validate_ticker_doc(doc, schema: dict, where: str) -> list[str]:
                     f"{where}: early_signal_dates has "
                     f"{len(doc['early_signal_dates'])} entries but early_markers has "
                     f"{len(doc['early_markers'])} — the lists are positionally paired")
+            errs += check_knowability_pairing(doc.get("early_markers"),
+                                              doc["early_signal_dates"], where)
     return errs
+
+
+def check_knowability_pairing(labels, stamps, where: str) -> list[str]:
+    """The KNOWABILITY RELATION between the two paired dot lists.
+
+    ``early_markers[i]`` is the dot's 3D bucket OPEN label; ``early_signal_dates[i]`` is
+    the last session of that same bucket — the close at which the dot became knowable.  A
+    bucket's last session is by construction at or after its open label, so a stamp that
+    PRECEDES its own label is not a late stamp, it is a mis-paired one: the two lists have
+    drifted out of positional register and every downstream (date, dot) join is silently
+    wrong.  Lengths are checked by the caller; this checks the ORDER within each pair, which
+    a length check cannot see.
+
+    Equality is legal — a one-session bucket (a holiday-shortened 3D bucket) is knowable on
+    its own open label.  Only ``stamp < label`` is an error.
+    """
+    out: list[str] = []
+    if not isinstance(labels, list) or not isinstance(stamps, list):
+        return out
+    for i, (label, known) in enumerate(zip(labels, stamps)):
+        if not isinstance(label, str) or not isinstance(known, str):
+            continue                       # schema/date checks already flagged the shape
+        try:
+            lo = datetime.strptime(label, "%Y-%m-%d").date()
+            kd = datetime.strptime(known, "%Y-%m-%d").date()
+        except ValueError:
+            continue                       # check_date_list already reported the parse
+        if kd < lo:
+            out.append(
+                f"{where}: early_signal_dates[{i}]: '{known}' is BEFORE its own "
+                f"early_markers[{i}] '{label}' — a dot cannot become knowable before its "
+                f"bucket opens, so the two lists are out of positional register")
+    return out
 
 
 def validate_brain_leaf(doc, schema: dict, where: str) -> list[str]:

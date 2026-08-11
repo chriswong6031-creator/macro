@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -59,15 +60,19 @@ def test_union_surfaces_the_named_exemplars(ticker, asof, legs, k_at_cross):
     assert out["badges"]["k_at_cross"] == pytest.approx(k_at_cross, abs=0.01)
 
 
-def test_cross_leg_requires_both_lines_under_the_band():
+@pytest.mark.parametrize("ticker,asof,legs,k_at_cross", EXEMPLARS)
+def test_cross_leg_requires_both_lines_under_the_band(ticker, asof, legs, k_at_cross):
     """C1-relaxed is the operator's 'crossover done UNDER the 20 line' — both lines, at the
-    cross bar. A cross with either line at or above the band is a different construction."""
-    for ticker, asof, _legs, k in EXEMPLARS:
-        out = union_admission(_fixture(ticker), asof=asof)
-        if UNION_LEG_CROSS not in out["legs"]:
-            continue
-        assert out["badges"]["k_at_cross"] < UNION_OS_BAND
-        assert k < UNION_OS_BAND
+    cross bar. A cross with either line at or above the band is a different construction.
+
+    BOTH exemplars carry the cross leg, so this asserts on both rather than skipping past a
+    row whose legs it did not like: a `continue` here would have made the whole test pass
+    on a build where the cross leg stopped firing altogether."""
+    assert UNION_LEG_CROSS in legs, "every exemplar must exercise the cross leg"
+    out = union_admission(_fixture(ticker), asof=asof)
+    assert UNION_LEG_CROSS in out["legs"], out["reason"]
+    assert out["badges"]["k_at_cross"] < UNION_OS_BAND
+    assert k_at_cross < UNION_OS_BAND
 
 
 def test_badges_are_context_not_durability():
@@ -121,7 +126,9 @@ def test_union_carries_no_quality_or_buy_semantics():
     """Starter grade only: the union names an admission CLASS and never a buy or a quality."""
     out = union_admission(_fixture("STLD"), asof="2026-07-14")
     assert "quality" not in out and "buy" not in out
-    assert set(out["legs"]) <= {UNION_LEG_CROSS, UNION_LEG_DOT}
+    # a non-empty leg list first — `∅ ⊆ anything` would pass on a union that stopped firing
+    assert set(out["legs"]) == {UNION_LEG_CROSS, UNION_LEG_DOT}
+    assert set(out["legs"]) <= set(us_early_turn.UNION_LEGS)
 
 
 # --------------------------------------------------------------- 3. the anchor law
@@ -397,11 +404,41 @@ def test_geometry_refuses_rather_than_guesses_on_thin_history():
 
 
 # --------------------------------------------------------------- 8. the two-surface rule
+#: A membership map that DOES license the exemplar row. WASHED_OUT is in
+#: `WASHOUT_MATURE_STATES`, so `basket_turn_context` returns washout_mature=True for it —
+#: deterministic from the map alone, which is what lets the licensed-row tests below assert
+#: instead of skipping when the fixture "did not license this row".
+LICENSING_MEMBERSHIP = {"STLD": {"state": "WASHED_OUT", "basket_id": "steel",
+                                 "basket_name": "Steel", "data_session": "2026-07-14"}}
+
+
 def _naked_union_row():
     """A union fire with NO licensing context — the case the two surfaces disagree on."""
     df = _fixture("STLD")
     return us_early_turn.assess_early_turn("STLD", df, asof="2026-07-14",
                                            membership={}, leader_states={})
+
+
+def _licensed_union_row():
+    """The same union fire WITH a licensing context — the row `plan_licensed` can be true on."""
+    df = _fixture("STLD")
+    return us_early_turn.assess_early_turn("STLD", df, asof="2026-07-14",
+                                           membership=LICENSING_MEMBERSHIP,
+                                           leader_states={})
+
+
+#: A CONFIRMED-LANE row: the early-turn signature fires under a licensing context, but no
+#: union fire is live (the last one is 2026-07-14, ten sessions back). This is the shape the
+#: launch review measured on 53 STLD fixture sessions reading `fired=True` beside
+#: `deck_admitted=False` — the inversion the lane-scoping repair exists to close.
+CONFIRMED_LANE_ASOF = "2026-07-28"
+
+
+def _confirmed_lane_row():
+    df = _fixture("STLD")
+    return us_early_turn.assess_early_turn("STLD", df, asof=CONFIRMED_LANE_ASOF,
+                                           membership=LICENSING_MEMBERSHIP,
+                                           leader_states={})
 
 
 def test_a_naked_union_fire_reaches_the_deck_but_not_a_plan():
@@ -424,22 +461,32 @@ def test_a_naked_union_fire_reaches_the_deck_but_not_a_plan():
 
 
 def test_a_licensed_union_fire_reaches_both_surfaces():
-    df = _fixture("STLD")
-    row = us_early_turn.assess_early_turn(
-        "STLD", df, asof="2026-07-14",
-        membership={"STLD": {"state": "WASHED_OUT", "basket": "steel"}},
-        leader_states={})
-    if not row["context_fired"]:
-        pytest.skip("fixture basket context did not license this row")
+    """The licensed half of the split, asserted rather than skipped.
+
+    The old form bailed with `pytest.skip("fixture basket context did not license this
+    row")`, which meant the only test of the LICENSED path could quietly stop running. The
+    licence comes from the membership map, which this test supplies — nothing about the
+    fixture can withhold it."""
+    row = _licensed_union_row()
+    assert row["context_fired"] is True
+    assert row["context_sources"] == [us_early_turn.CONTEXT_WASHOUT]
     assert row["deck_admitted"] is True
     assert row["plan_licensed"] is True and row["fired"] is True
+    assert row["licensing"]["licensed"] is True
 
 
 def test_the_deck_roster_is_a_superset_of_the_plan_roster():
     """Structural: a licensed row is always also a deck row. If this ever inverts, the
-    deck is refusing something that minted a plan."""
-    row = _naked_union_row()
-    assert row["deck_admitted"] or not row["plan_licensed"]
+    deck is refusing something that minted a plan.
+
+    Asserted on a row where `plan_licensed` IS true — the naked row alone made this an
+    `∅ ⊆ anything` tautology that would have passed even with the deck permanently empty."""
+    licensed = _licensed_union_row()
+    assert licensed["plan_licensed"] is True, "this pin needs a row that IS licensed"
+    assert licensed["deck_admitted"] is True
+    # and the watch-only direction still holds on the naked row
+    naked = _naked_union_row()
+    assert naked["deck_admitted"] is True and naked["plan_licensed"] is False
 
 
 def test_the_licence_is_shown_not_hidden():
@@ -466,3 +513,214 @@ def test_assess_early_turn_exposes_the_union_without_bypassing_context():
     assert row["fired"] is False, "a union fire with no licensing context must not admit"
     assert row["admission_era"] == UNION_ADMISSION_ERA
     assert row["context_badges"] is not None
+
+
+# ------------------------------------------------- 9. one lane per row (launch review B-18/B-19)
+#: Every key that belongs to the EARLY LANE and to nothing else. A row that is not on that
+#: lane carries NONE of them — by ABSENCE, so a consumer must ask whether the block is there
+#: rather than read a null out of it and call the row early-turn anyway.
+EARLY_LANE_KEYS = ("deck_admitted", "plan_licensed", "admission_era", "context_badges",
+                   "setup_geometry", "stage", "licensing")
+
+
+def test_a_confirmed_lane_row_carries_no_early_lane_block_at_all():
+    """B-18. The measured inversion: `fired=True` beside `deck_admitted=False` and
+    `admission_era=None` on the same row — a row claiming an early-turn admission while the
+    deck refuses it and nothing states which construction admitted it.
+
+    The repair is scope, not a better null: a row with no live union fire is a CONFIRMED-LANE
+    row and simply has no answer to any of these questions."""
+    row = _confirmed_lane_row()
+    assert row["fired"] is True, "this pin needs a row the signature+context DID admit"
+    assert row["union_fired"] is False, "...and whose union fire is not live"
+    for key in EARLY_LANE_KEYS:
+        assert key not in row, f"{key} leaked onto a confirmed-lane row"
+    # the union READ itself stays on the row: a named null, never a vanished key
+    assert row["union"]["fired"] is False and row["union"]["reason"]
+
+
+def test_every_union_fire_is_a_deck_row_and_every_plan_is_a_deck_row():
+    """Invariants (i) and (ii): union fire ⇒ deck row; early-lane plan ⇒ deck row.
+
+    Swept over every session of both fixtures' final stretch rather than asserted on one
+    hand-picked date, so the relation cannot hold by coincidence of the chosen day."""
+    checked = fires = plans = 0
+    for ticker in ("STLD", "NEM"):
+        df = _fixture(ticker)
+        membership = {ticker: {"state": "WASHED_OUT", "basket_id": "b",
+                               "basket_name": "B"}}
+        for stamp in pd.DatetimeIndex(df.index)[-60:]:
+            row = us_early_turn.assess_early_turn(
+                ticker, df, asof=str(stamp.date()), membership=membership,
+                leader_states={})
+            checked += 1
+            if row["union_fired"]:
+                fires += 1
+                assert row.get("deck_admitted") is True          # (i)
+            if row.get("plan_licensed"):
+                plans += 1
+                assert row.get("deck_admitted") is True          # (ii)
+            assert not (row.get("plan_licensed") and not row.get("deck_admitted"))
+    assert checked == 120
+    assert fires > 0 and plans > 0, (
+        f"vacuous sweep: {fires} union fires / {plans} licensed plans over {checked} "
+        f"sessions — this pin proves nothing unless both surfaces are populated")
+
+
+def test_the_era_stamp_is_present_exactly_on_the_early_lane():
+    """Invariant (iv): `admission_era` present iff the row is an early-lane admission — and
+    never None when it is present (#4942: a row that admitted under this construction must
+    be comparable only against its own cohort, which a null era makes impossible)."""
+    for row in (_naked_union_row(), _licensed_union_row(), _confirmed_lane_row()):
+        assert ("admission_era" in row) is bool(row["union_fired"])
+        if "admission_era" in row:
+            assert row["admission_era"] == UNION_ADMISSION_ERA
+
+
+def test_a_dead_fire_never_emits_a_chase_chip():
+    """B-19. The chase/geometry read used to key off the mere PRESENCE of a `fire_date`, so
+    a fire that expired 2.5 months earlier put "already run from where it turned" on rows it
+    had no claim on — including confirmed-lane `buy_now` rows in another lane entirely."""
+    from engine.prophet_bridge import setup_geometry_texture
+    from engine.us_early_turn import setup_geometry
+    df = _fixture("STLD")
+    dead = union_admission(df, asof="2026-06-12")
+    assert dead["fired"] is False and dead["fire_date"] == "2026-03-25"
+    assert dead["age_bars"] > 50, "this pin needs a long-dead fire"
+    geo = setup_geometry(df, asof="2026-06-12", union=dead)
+    assert geo["chase_pct"] is None and geo["age_bars"] is None
+    chips = " ".join(c["en"] for c in setup_geometry_texture(geo, None)["chips"]).lower()
+    assert "chas" not in chips and "turned" not in chips
+    # ...and the confirmed-lane row carries no geometry texture at all
+    assert "setup_geometry" not in _confirmed_lane_row()
+
+
+def test_the_shipped_deck_is_not_claimed_to_be_the_naked_universe():
+    """J-16 comment honesty. `assess_early_turn` runs AFTER `select_candidates`, so the deck
+    it populates is `union ∩ candidates`. The bake-off's coverage/lead numbers are naked-union
+    numbers over the full universe and are NOT this deck's property; the code comment that
+    licenses the split must say so rather than claim them."""
+    import inspect
+    src = inspect.getsource(us_early_turn.assess_early_turn)
+    assert "select_candidates" in src
+    assert "naked universe" in src or "not the naked universe" in src
+    from engine import prophet_bridge
+    bridge = inspect.getsource(prophet_bridge.originate_plans)
+    assert "not the naked universe" in bridge
+
+
+# ------------------------------------------------- 10. knowability: no ghost fires (B-15)
+def _all_union_fire_dates(df, asof) -> frozenset:
+    """EVERY union fire visible at `asof`, both legs, as dates.
+
+    `union_admission` reports only the most recent fire, which cannot see a ghost that
+    appears and vanishes further back in the walk — so the ledger is read from the two legs
+    the union is built from.
+    """
+    close = us_early_turn._close_series(df, asof)
+    if close is None:
+        return frozenset()
+    out = set()
+    for fires in (us_early_turn._union_relaxed_cross_fires(close, asof),
+                  us_early_turn._union_early_dot_fires(close, asof)):
+        for pos, _row, _meta in fires:
+            out.add(str(pd.Timestamp(close.index[pos]).date()))
+    return frozenset(out)
+
+
+#: How many trailing sessions the walk-forward replays per fixture.
+WALK_FORWARD_SESSIONS = 150
+
+
+@pytest.mark.parametrize("ticker", [t for t, *_ in EXEMPLARS])
+def test_a_live_fire_never_disappears_or_re_dates_itself(ticker):
+    """THE knowability gate (launch review B-15).
+
+    `_tf_bars` groups by absolute bucket id and takes `.last()`, so its trailing row is the
+    still-OPEN 3D bucket: its %K/%D recompute on every new session. Reading a fire off it
+    printed a signal one night that was GONE the next, or re-dated to the bucket's real last
+    session — STLD's 2026-07-10 fire re-dating to 2026-07-14 is the double-stamp that names
+    this bug. Measured on these two fixtures before the repair: 7 ghost fire-dates and 357
+    ordered (T, T') pairs whose earlier fire set was not contained in the later one.
+
+    This replays the tape one session at a time and demands the only property a knowable
+    signal can have: what was true at T is still true, unmoved and identically dated, at
+    every T' after it.
+    """
+    df = _fixture(ticker)
+    walk = pd.DatetimeIndex(df.index)[-WALK_FORWARD_SESSIONS:]
+    assert len(walk) == WALK_FORWARD_SESSIONS
+    seen = [(str(stamp.date()), _all_union_fire_dates(df, str(stamp.date())))
+            for stamp in walk]
+    full = _all_union_fire_dates(df, None)
+
+    # (a) no ghosts, no re-dating: every fire live at T is still live, same date, at T'
+    ghosts: list[str] = []
+    for i, (stamp, live) in enumerate(seen):
+        for later_stamp, later in seen[i + 1:]:
+            lost = live - later
+            if lost:
+                ghosts.append(f"{ticker}: fire(s) {sorted(lost)} live at {stamp} "
+                              f"had vanished by {later_stamp}")
+    assert not ghosts, "\n".join(ghosts[:10])
+
+    # (b) every live fire set is a subset of the full-history ledger
+    for stamp, live in seen:
+        assert live <= full, (
+            f"{ticker} at {stamp}: {sorted(live - full)} is not in the full-history ledger")
+
+    # non-vacuity: a walk that never saw a fire proves nothing
+    exemplar = dict((t, a) for t, a, *_ in EXEMPLARS)[ticker]
+    assert seen[-1][1], f"{ticker}: the walk ended with an empty fire ledger"
+    assert exemplar in seen[-1][1], (
+        f"{ticker}: the measured exemplar {exemplar} is missing from the final ledger")
+    assert len(full) >= 8, f"{ticker}: only {len(full)} fires in the full ledger"
+
+
+@pytest.mark.parametrize("ticker", [t for t, *_ in EXEMPLARS])
+def test_the_reported_fire_date_only_ever_moves_forward(ticker):
+    """The same property on the surface a reader sees. `union_admission` reports the most
+    recent fire; across a replayed tape that date may only advance — a fire date that goes
+    BACKWARDS is a signal being un-printed under the reader."""
+    df = _fixture(ticker)
+    previous = None
+    advanced = 0
+    for stamp in pd.DatetimeIndex(df.index)[-WALK_FORWARD_SESSIONS:]:
+        got = union_admission(df, asof=str(stamp.date()))["fire_date"]
+        if got is None:
+            continue
+        if previous is not None:
+            assert got >= previous, (
+                f"{ticker} at {stamp.date()}: reported fire_date went backwards "
+                f"{previous} → {got}")
+            advanced += got > previous
+        previous = got
+    assert previous is not None, f"{ticker}: no fire was ever reported over the walk"
+    assert advanced >= 1, f"{ticker}: the reported fire_date never moved — vacuous walk"
+
+
+def test_an_open_bucket_is_refused_until_its_final_session_closes():
+    """The rule itself, stated on the calendar rather than inferred from a replay: a 3D row
+    is admissible at `asof` only when its bucket has closed — every earlier bucket, plus the
+    trailing one on its own final session slot (position % 3 == 2)."""
+    from engine.confluence_tiers import _tf_bars
+    from engine.session_anchor import session_positions
+    from engine.us_early_turn import _completed_bucket_mask
+
+    close = us_early_turn._close_series(_fixture("STLD"), None)
+    tf_close, _known = _tf_bars(close, us_early_turn.TF_3D, "US")
+    index = pd.DatetimeIndex(tf_close.index)
+    positions = session_positions(index, "US")
+
+    # the fixture's own last bucket is OPEN (its last session is not the final slot)
+    assert positions[-1] % 3 != 2, "fixture no longer exercises the open-bucket case"
+    mask = _completed_bucket_mask(index, us_early_turn.TF_3D, index[-1])
+    assert mask[-1] is np.False_ or not bool(mask[-1])
+    assert bool(mask[-2]), "a completed bucket must stay admissible"
+    assert mask.sum() == len(index) - 1
+
+    # a bucket whose last session IS the final slot is admissible ON that session
+    final_slot = int(np.flatnonzero(positions % 3 == 2)[-1])
+    on_slot = _completed_bucket_mask(index, us_early_turn.TF_3D, index[final_slot])
+    assert bool(on_slot[final_slot])
+    assert not bool(on_slot[final_slot + 1:].any())
