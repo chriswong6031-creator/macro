@@ -1,15 +1,26 @@
 # Sparse exact-option selector — activation preregistration
 
-Status: **registered, selector inactive, zero prospective candidates**
+Status: **draft registered, selector inactive, zero prospective candidates**
 
 Machine receipt:
 `research/options_estate/sparse_selector_preregistration_receipt_v1.json`
 
 Receipt SHA-256:
-`79e8d1b135a6d528b34b5a57d3bbd1be68ff15015fc4b071f4ad368ec698033b`
+`8a95ac6a4e2a3b0f37bea12c5460fef9ab005b93f1750e941910895387478f68`
 
 Frozen MomoEdge benchmark digest:
 `20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42`
+
+The benchmark registration is bound as a full-file receipt, not only as a
+parsed-object digest: 25,677 bytes, SHA-256
+`a093804a2394ad5deff01181d2680eea64fa208f7f1d7e0a013c9cce3d806a63`,
+registered at `2026-08-11T14:30:19Z` from baseline commit
+`e1100ee158a8b18576bbc6130276ef6f8becd373`. The first `origin/main` commit
+containing the exact benchmark digest is
+`c46daec89ce2f25bdff85200eaf29f6de3e1572e` at
+`2026-08-11T15:47:06Z`, so `2026-08-11T15:47:06Z` is the effective benchmark
+freeze. The candidate, decision, evidence, source-campaign, and complete
+selector-rule digests are all recorded separately.
 
 ## What is registered
 
@@ -44,7 +55,14 @@ A later governed implementation may admit only
 `options.signal_campaign/v2` rows first observed after both the selector freeze
 and the benchmark freeze. The effective selector freeze is the later of the
 registration clock and the first `origin/main` commit containing the exact rule
-digest. Version 1 rows remain ineligible forever.
+digest. That selector freeze remains explicitly unresolved while this receipt
+is a draft. Version 1 rows remain ineligible forever.
+
+Observation time cannot make an old row prospective. A candidate must have
+`formed_at == members[-1].available_at`, and both immutable source clocks must
+be at or after both effective freezes. The selector observation must then be
+causal and no earlier than those source clocks. A campaign formed before either
+freeze remains ineligible even if it is first observed days later.
 
 For each stable campaign id, the first prospectively observed revision freezes
 one candidate. A content-addressed candidate manifest must be immutable and
@@ -63,6 +81,16 @@ There is no score, rank, quota, or forced fill. Zero proposals is valid. No
 NYSE session may have more than three proposals; otherwise-complete candidates
 beyond the deterministic cap abstain with `SESSION_PROPOSAL_CAP_REACHED`.
 
+Proposal clocks use `decision_event_at <= decision_available_at`. Both clocks
+must fall in the same `America/New_York` RTH window under the existing
+`nyse_session_window_recurring_schedule/v1` implementation, with market open
+inclusive and market close exclusive. The implementation includes its recurring
+13:00 ET early closes. Non-session, unresolved, cross-session, premarket, and
+post-close proposals abstain with `DECISION_OUTSIDE_NYSE_RTH`. The cap bucket is
+that exact session date; proposals are evaluated in fixed
+`(candidate_available_at, candidate_id)` order and the fourth and later passing
+candidates abstain. The exact calendar implementation bytes are receipted.
+
 ## Required truth receipts
 
 A proposal requires the campaign's exact ticker, right, expiration, strike, and
@@ -75,13 +103,26 @@ All four evidence families must validate before a proposal:
 
 1. exact `options.signal_campaign/v2` row and source-prefix receipt;
 2. durable `options.market_memory_context_receipt_head/v1` plus its exact
-   reference set for `{subject_id, instrument_id, event_time, available_at,
-   mode=operational_pit}`; `exact_requested_as_of_context_absent` abstains;
+   reference set. Campaign v2 binds through its exact final-member source row to
+   the existing episode-owner `options.market_memory_context_reference/v1`:
+   source-prefix bytes, row number, row SHA, episode id, event time,
+   `available_at`, campaign `formed_at`, and exact contract group must all join.
+   The query must use the reviewed SPY `{subject_id, instrument_id}` from the
+   receipted canary config, the episode `event_time`, exact `available_at`,
+   `mode=operational_pit`, and no fallback;
+   `exact_requested_as_of_context_absent` abstains;
 3. host-private `prophet.option_mark_observation/v1` content pointer, exact
    stable plan identity, admitted mark row, and no NBBO/execution inference; and
-4. host-private `prophet.option_shadow_lifecycle_event/v1` pointer, validated
-   lifecycle head, activation boundary, canonical-ledger receipt, mark-chain
-   pointer, stable plan identity, and a prior durable enrollment or terminal.
+4. host-private `prophet.option_shadow_lifecycle_event/v1` and
+   `prophet.option_shadow_lifecycle_state/v1`. The exact merged #5355 event
+   schema and validator implementation bytes are receipted. State is bound by
+   its real fields: `activation` and `lifecycle_head` event pointers,
+   `ledger_cursor`, `mark_cursor`, `enrollments`, `terminals`, and
+   `latest_marks`. The head must reach the activation root without a cycle;
+   activation payload boundaries, the canonical-ledger prefix, mark ancestry,
+   enrollment event, exact plan/contract, and drift state must validate. An open
+   enrollment with no terminal is required to propose; an existing terminal
+   abstains.
 
 Missing, stale, unavailable, mismatched, drifted, broken-chain, or
 authority-bearing evidence abstains with a frozen reason-code vector. A public
@@ -89,11 +130,14 @@ current-marks payload cannot replace the private mark chain. An underlying
 return, EOD mark, trade-paired midpoint, or reconstructed quote cannot create
 option P&L or execution evidence.
 
-At registration, the durable mark prerequisite from #5350 and the durable
-Market Memory receipt path from #5353 were available as zero-authority inputs.
-The #5355 lifecycle and #5362 campaign-v2 work were not yet merged and therefore
-were not treated as live evidence. Their schema names are preregistered only as
-future fail-closed requirements; absence means abstention, never fallback.
+The durable mark prerequisite from #5350, Market Memory receipt path from #5353,
+and lifecycle contract from #5355 are merged zero-authority inputs. The live
+lifecycle has an activation head but no durable enrollment because the observed
+BA quote was stale, so it contributes no eligible proposal. Campaign-v2 #5362
+is still an unmerged draft dependency. This PR must remain draft and merge-blocked
+until #5362 lands and its final `origin/main` schema and implementation bytes are
+integrated and receipted. Until then, there is no satisfiable campaign source and
+the only valid output remains global abstention.
 
 ## Required falsifiers before activation
 
@@ -105,11 +149,16 @@ head before it may emit a covered-session manifest:
 - same-byte duplicates are idempotent and conflicting duplicates fail;
 - missing or extra decisions fail one-to-one reconciliation;
 - a retrospective or digest-mismatched row can never enter the denominator;
+- a pre-freeze `formed_at` or final-member `available_at` can never be cured by
+  delayed observation;
+- campaign v2 cannot use a campaign-v1 context owner or detach from its exact
+  final episode owner/query;
 - every missing options, Konseki, mark, or lifecycle receipt abstains;
 - exact-contract or stable-plan identity drift abstains;
 - zero-candidate and all-fail sessions emit zero proposals;
 - more than three evidence-complete candidates produce exactly three proposals
-  and reason-coded cap abstentions, with no score or quota; and
+  and reason-coded cap abstentions in the exact NYSE RTH session bucket,
+  including early-close and close-boundary cases, with no score or quota; and
 - every authority, public-output, Prophet, Neural Web, training, execution,
   trade, return, and completion-claim flag stays false.
 

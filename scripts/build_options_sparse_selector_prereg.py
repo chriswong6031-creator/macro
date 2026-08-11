@@ -15,6 +15,7 @@ import hashlib
 import json
 import sys
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -36,12 +37,138 @@ RECEIPT_PATH = Path(
 RECEIPT_SCHEMA_PATH = Path(
     "contracts/options/options.sparse_selector_activation_receipt.v1.schema.json"
 )
+CONTEXT_REFERENCE_SCHEMA_PATH = Path(
+    "contracts/options/options.market_memory_context_reference.v1.schema.json"
+)
+CONTEXT_REFERENCE_IMPLEMENTATION_PATH = Path(
+    "engine/options_market_memory_context.py"
+)
+CONTEXT_RECEIPT_STORE_IMPLEMENTATION_PATH = Path(
+    "engine/options_market_memory_receipt_store.py"
+)
+CONTEXT_RECEIPT_HEAD_SCHEMA_PATH = Path(
+    "contracts/options/options.market_memory_context_receipt_head.v1.schema.json"
+)
+CONTEXT_REFERENCE_SET_SCHEMA_PATH = Path(
+    "contracts/options/options.market_memory_context_reference_set.v1.schema.json"
+)
+MARKET_MEMORY_CANARY_IDENTITY_PATH = Path("config/market_memory_canary.v1.json")
+LIFECYCLE_EVENT_SCHEMA_PATH = Path(
+    "contracts/options/prophet.option_shadow_lifecycle_event.v1.schema.json"
+)
+LIFECYCLE_STATE_IMPLEMENTATION_PATH = Path(
+    "scripts/build_prophet_option_shadow_lifecycle.py"
+)
+NYSE_RTH_WINDOW_IMPLEMENTATION_PATH = Path("engine/session_digest.py")
+NYSE_SESSION_CALENDAR_IMPLEMENTATION_PATH = Path("lib/nyse_calendar.py")
 
 SCHEMA = "options.sparse_selector_activation_receipt/v1"
 BENCHMARK_SCHEMA = "momoedge.completion_benchmark_prereg/v1"
 BENCHMARK_DIGEST = "20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42"
+BENCHMARK_FILE_SHA256 = "a093804a2394ad5deff01181d2680eea64fa208f7f1d7e0a013c9cce3d806a63"
+BENCHMARK_FILE_BYTES = 25_677
+BENCHMARK_REGISTERED_AT = "2026-08-11T14:30:19Z"
+BENCHMARK_BASELINE_COMMIT = "e1100ee158a8b18576bbc6130276ef6f8becd373"
+BENCHMARK_FIRST_MAIN_COMMIT = "c46daec89ce2f25bdff85200eaf29f6de3e1572e"
+BENCHMARK_FIRST_MAIN_COMMITTED_AT = "2026-08-11T15:47:06Z"
+BENCHMARK_EFFECTIVE_FREEZE_AT = "2026-08-11T15:47:06Z"
 REGISTERED_AT = "2026-08-11T18:51:16Z"
 REPOSITORY = "mastermindx-market-intelligence/macro"
+
+CONTEXT_REFERENCE_CONTRACT_RECEIPTS = [
+    {
+        "role": "reference_schema",
+        "path": CONTEXT_REFERENCE_SCHEMA_PATH.as_posix(),
+        "file_sha256": "3e00b4410e9e9f6b5328a55e572219a61b0cad21e656c002fbedcf0cd4cd88b4",
+        "file_bytes": 8_142,
+        "source_commit": "c2ea5ef44a37976b91ad1636c438160c8e11ad68",
+    },
+    {
+        "role": "reference_validator_implementation",
+        "path": CONTEXT_REFERENCE_IMPLEMENTATION_PATH.as_posix(),
+        "file_sha256": "a93fa07f277473033fb11fdcb22675af20f189f7293dcb7b4ed0c0cecf0ccb30",
+        "file_bytes": 44_798,
+        "source_commit": "c2ea5ef44a37976b91ad1636c438160c8e11ad68",
+    },
+    {
+        "role": "reviewed_canary_identity_config",
+        "path": MARKET_MEMORY_CANARY_IDENTITY_PATH.as_posix(),
+        "file_sha256": "5e7823e48866b2c0828122b65f684ed5872c6816a6224f61e44db4c03d129b33",
+        "file_bytes": 1_650,
+        "source_commit": "f57e081bc5fc84999011558d8e65a4466d3b5ccb",
+    },
+    {
+        "role": "receipt_store_validator_implementation",
+        "path": CONTEXT_RECEIPT_STORE_IMPLEMENTATION_PATH.as_posix(),
+        "file_sha256": "923d9d612d6c174a785d00880788cf68c7f9176dae911626b4acd16e2f6bd1fa",
+        "file_bytes": 21_818,
+        "source_commit": "c2ea5ef44a37976b91ad1636c438160c8e11ad68",
+    },
+    {
+        "role": "receipt_head_schema",
+        "path": CONTEXT_RECEIPT_HEAD_SCHEMA_PATH.as_posix(),
+        "file_sha256": "bc62d050f254d04802e65b5f88dbe831630b72d0a633e573acae34f01cf072c4",
+        "file_bytes": 1_927,
+        "source_commit": "c2ea5ef44a37976b91ad1636c438160c8e11ad68",
+    },
+    {
+        "role": "reference_set_schema",
+        "path": CONTEXT_REFERENCE_SET_SCHEMA_PATH.as_posix(),
+        "file_sha256": "4b74e6784987b71a32cc612857d53fc73a2d07480ab48501d7ec3c1cd78f5998",
+        "file_bytes": 828,
+        "source_commit": "c2ea5ef44a37976b91ad1636c438160c8e11ad68",
+    },
+]
+
+LIFECYCLE_CONTRACT_RECEIPTS = [
+    {
+        "role": "event_schema",
+        "path": LIFECYCLE_EVENT_SCHEMA_PATH.as_posix(),
+        "file_sha256": "047721a1a86d7ef920a2c9a5fd035ab95f2e407453b33842dbfc6ca54e433a8f",
+        "file_bytes": 14_919,
+        "source_commit": "087a472d4b5051b732b9810a25245707f38a7426",
+    },
+    {
+        "role": "state_and_chain_validator_implementation",
+        "path": LIFECYCLE_STATE_IMPLEMENTATION_PATH.as_posix(),
+        "file_sha256": "a5710b6ba5aedcd605541794aa7343c6f10d9af834848a95b2f8eb46b024c281",
+        "file_bytes": 86_565,
+        "source_commit": "087a472d4b5051b732b9810a25245707f38a7426",
+    },
+]
+
+NYSE_CLOCK_CONTRACT_RECEIPTS = [
+    {
+        "role": "rth_window_implementation",
+        "path": NYSE_RTH_WINDOW_IMPLEMENTATION_PATH.as_posix(),
+        "file_sha256": "25ae25d29f1a1e6ce7d38372bbfaaf03e18925072e41aaea8bc3c1c730a14191",
+        "file_bytes": 95_668,
+    },
+    {
+        "role": "session_calendar_implementation",
+        "path": NYSE_SESSION_CALENDAR_IMPLEMENTATION_PATH.as_posix(),
+        "file_sha256": "7c9167fd416babb64c3067ae7e6237615011ad79e26d826e57005486496410ce",
+        "file_bytes": 29_814,
+    },
+]
+
+CAMPAIGN_V2_POLICIES = {
+    "grouping": "exact-contract-session-census/v2",
+    "eligibility": "all-valid-options-signal-episodes/v2",
+    "member_order": "available-at-then-episode-id/v1",
+    "revision": "strict-source-prefix-extension/v1",
+    "outcome_anchor": "final-member-availability/v1",
+    "frozen_at": "2026-08-11T13:24:00Z",
+}
+CAMPAIGN_V2_RULE_SHA256 = hashlib.sha256(
+    json.dumps(
+        CAMPAIGN_V2_POLICIES,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+).hexdigest()
 
 FALSE_AUTHORITY = {
     "may_originate_signal": False,
@@ -71,7 +198,9 @@ ABSTENTION_REASON_CODES = [
     "MARK_NOT_ADMITTED_OR_STALE",
     "LIFECYCLE_RECEIPT_MISSING_OR_MISMATCHED",
     "LIFECYCLE_NOT_DURABLE_OR_IDENTITY_DRIFT",
+    "LIFECYCLE_ALREADY_TERMINAL",
     "ANY_UPSTREAM_AUTHORITY_TRUE",
+    "DECISION_OUTSIDE_NYSE_RTH",
     "SESSION_PROPOSAL_CAP_REACHED",
 ]
 
@@ -83,6 +212,7 @@ SELECTOR_RULE: dict[str, Any] = {
             "later_of_registered_at_and_first_origin_main_commit_containing_exact_rule_digest"
         ),
         "benchmark_digest_sha256": BENCHMARK_DIGEST,
+        "benchmark_effective_freeze_at": BENCHMARK_EFFECTIVE_FREEZE_AT,
         "prospective_phase": "prospective_after_benchmark_freeze",
         "legacy_campaign_v1_policy": "permanently_ineligible",
         "rule_change_policy": "new_version_and_new_forward_cohort",
@@ -90,8 +220,33 @@ SELECTOR_RULE: dict[str, Any] = {
     "candidate_manifest": {
         "source_schema": "options.signal_campaign/v2",
         "source_phase": "prospective_after_rule_freeze",
+        "source_rule_sha256": CAMPAIGN_V2_RULE_SHA256,
+        "source_contract_registration": {
+            "state": "pending_origin_main_dependency",
+            "dependency_pull_request": 5362,
+            "required_before_any_candidate": True,
+            "exact_schema_full_file_receipt": None,
+            "exact_implementation_full_file_receipt": None,
+            "dependency_absence_or_failure_action": "abstain",
+        },
         "source_clock": "first_selector_observed_available_at",
         "candidate_identity": "sha256(rule_id,benchmark_digest,campaign_id)",
+        "required_digest_fields": [
+            "benchmark_digest_sha256",
+            "selector_rule_sha256",
+            "candidate_manifest_rule_sha256",
+            "decision_rule_sha256",
+            "evidence_rule_sha256",
+            "source_campaign_rule_sha256",
+        ],
+        "immutable_time_fence": {
+            "campaign_formed_at_field": "formed_at",
+            "final_member_available_at_field": "members[-1].available_at",
+            "equality_required": True,
+            "both_at_or_after_benchmark_effective_freeze": True,
+            "both_at_or_after_selector_effective_freeze": True,
+            "observation_clock_cannot_cure_pre_freeze_source": True,
+        },
         "one_candidate_per_campaign_id": True,
         "first_observed_revision_frozen": True,
         "manifest_before_decisions": True,
@@ -111,6 +266,30 @@ SELECTOR_RULE: dict[str, Any] = {
         "overflow_action": "abstain",
         "overflow_reason": "SESSION_PROPOSAL_CAP_REACHED",
         "proposal_semantics": "private_research_review_only_not_issued_plan",
+        "nyse_session_clock": {
+            "timezone": "America/New_York",
+            "calendar_basis": "nyse_session_window_recurring_schedule/v1",
+            "calendar_implementation": (
+                "engine.session_digest.session_window_et+lib.nyse_calendar.is_session"
+            ),
+            "contract_receipts": NYSE_CLOCK_CONTRACT_RECEIPTS,
+            "decision_event_clock_field": "decision_event_at",
+            "decision_available_clock_field": "decision_available_at",
+            "causal_order": "decision_event_at_lte_decision_available_at",
+            "proposal_window": "nyse_rth_only",
+            "session_bucket_field": "decision_nyse_session_date",
+            "session_bucket_rule": (
+                "unique_session_containing_both_event_and_available_clocks"
+            ),
+            "boundary": "lower_inclusive_upper_exclusive",
+            "early_close_policy": "recurring_13_et_close_from_session_window_et",
+            "unresolved_or_non_session_action": "abstain",
+            "outside_rth_action": "abstain",
+            "outside_rth_reason": "DECISION_OUTSIDE_NYSE_RTH",
+            "cap_count_basis": "propose_actions_with_same_decision_nyse_session_date",
+            "cap_evaluation_order": ["candidate_available_at", "candidate_id"],
+            "fourth_and_later_passing_action": "abstain",
+        },
     },
     "exact_contract": {
         "campaign_required_fields": [
@@ -142,6 +321,36 @@ SELECTOR_RULE: dict[str, Any] = {
         "konseki": {
             "head_schema": "options.market_memory_context_receipt_head/v1",
             "reference_set_schema": "options.market_memory_context_reference_set/v1",
+            "reference_schema": "options.market_memory_context_reference/v1",
+            "reference_owner_schema": "options.signal_episode/v1",
+            "owner_binding": "campaign_v2_final_member_episode/v1",
+            "publication_binding": (
+                "authenticated_current_private_head_contains_exact_reference/v1"
+            ),
+            "contract_receipts": CONTEXT_REFERENCE_CONTRACT_RECEIPTS,
+            "campaign_to_owner_requirements": [
+                "source_episode_prefix_exact_bytes",
+                "final_member_source_row_exact",
+                "final_member_source_row_sha256_exact",
+                "final_member_episode_id_exact",
+                "final_member_available_at_equals_episode_available_at_and_campaign_formed_at",
+                "campaign_group_equals_episode_exact_contract",
+                "reference_owner_record_sha256_equals_final_member_source_row_sha256",
+                "reference_owner_event_time_equals_episode_event_time",
+                "reference_owner_requested_as_of_equals_episode_available_at",
+            ],
+            "subject_identity": {
+                "symbol": "SPY",
+                "subject_id": (
+                    "mmsecurity_5fc37e8db34f74314b654c910ea8bacfa7de8b5d2d067f2e5421c9d5745ceb4c"
+                ),
+                "instrument_id": (
+                    "mmsecurity_6f361f5bad9f06a3b2ff157585d5728f55f77198420959aadd8922d1045c3fea"
+                ),
+                "identity_config_sha256": (
+                    "5e7823e48866b2c0828122b65f684ed5872c6816a6224f61e44db4c03d129b33"
+                ),
+            },
             "query_identity": [
                 "subject_id",
                 "instrument_id",
@@ -168,14 +377,65 @@ SELECTOR_RULE: dict[str, Any] = {
         "lifecycle": {
             "event_schema": "prophet.option_shadow_lifecycle_event/v1",
             "state_schema": "prophet.option_shadow_lifecycle_state/v1",
-            "require_event_pointer_fields": ["event_id", "key", "sha256", "bytes"],
-            "require_chain_fields": [
+            "contract_receipts": LIFECYCLE_CONTRACT_RECEIPTS,
+            "state_required_fields": [
+                "schema",
+                "state_id",
+                "activation",
                 "lifecycle_head",
-                "activation_boundary",
-                "canonical_ledger_receipt",
-                "mark_chain_pointer",
+                "ledger_cursor",
+                "mark_cursor",
+                "enrollments",
+                "terminals",
+                "latest_marks",
             ],
-            "require_prior_durable_enrollment_or_terminal": True,
+            "state_content_identity": (
+                "posls_+sha256(json_utf8_sort_keys_compact_no_ascii_escape(state_without_state_id))"
+            ),
+            "event_pointer_fields": ["schema", "event_id", "key", "sha256", "bytes"],
+            "mark_pointer_fields": [
+                "schema",
+                "observation_id",
+                "key",
+                "sha256",
+                "bytes",
+            ],
+            "ledger_cursor_fields": [
+                "schema",
+                "source_repository",
+                "source_ref",
+                "source_commit",
+                "source_path",
+                "bytes",
+                "sha256",
+                "row_count",
+            ],
+            "state_mapping": {
+                "lifecycle_head": "validated_event_chain_head",
+                "activation": "validated_event_chain_root_activation_pointer",
+                "ledger_cursor": "exact_canonical_main_ledger_prefix_receipt",
+                "mark_cursor": "exact_private_mark_chain_head_pointer",
+            },
+            "candidate_mapping": {
+                "plan_id_source": "enrollment_event.payload.plan.id",
+                "open_enrollment_pointer": "state.enrollments[plan_id]",
+                "terminal_pointer": "state.terminals[plan_id]",
+                "latest_mark_state": "state.latest_marks[plan_id]",
+                "require_open_enrollment": True,
+                "terminal_action": "abstain",
+                "terminal_reason": "LIFECYCLE_ALREADY_TERMINAL",
+                "contract_source": "enrollment_event.payload.contract",
+                "plan_identity_source": "enrollment_event.payload.plan",
+                "require_contract_drift_false": True,
+                "require_plan_identity_drift_false": True,
+            },
+            "chain_requirements": [
+                "lifecycle_head_reaches_activation_without_cycle",
+                "activation_event_payload_matches_mark_and_ledger_boundaries",
+                "enrollment_pointer_loads_content_addressed_enrollment_event",
+                "enrollment_mark_observation_is_ancestor_of_mark_cursor",
+                "ledger_cursor_validates_exact_append_only_canonical_prefix",
+            ],
             "missing_drift_or_unavailable_action": "abstain",
         },
     },
@@ -228,6 +488,34 @@ def _sha256(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def _validate_file_receipts(
+    root: Path,
+    receipts: list[dict[str, Any]],
+    *,
+    label: str,
+) -> None:
+    for receipt in receipts:
+        path_value = receipt.get("path")
+        expected_bytes = receipt.get("file_bytes")
+        expected_sha256 = receipt.get("file_sha256")
+        if (
+            not isinstance(path_value, str)
+            or not isinstance(expected_bytes, int)
+            or isinstance(expected_bytes, bool)
+            or expected_bytes < 1
+            or not isinstance(expected_sha256, str)
+            or len(expected_sha256) != 64
+        ):
+            _fail(f"{label} file receipt is malformed")
+        path = root / path_value
+        try:
+            raw = path.read_bytes()
+        except OSError as exc:
+            raise RegistrationError(f"cannot load {label} file receipt: {path}") from exc
+        if len(raw) != expected_bytes or _sha256(raw) != expected_sha256:
+            _fail(f"{label} full-file receipt drift: {path_value}")
+
+
 def _content_id(prefix: str, value: dict[str, Any], field: str) -> str:
     core = copy.deepcopy(value)
     core[field] = ""
@@ -271,6 +559,238 @@ def _canonical_utc(value: object, label: str) -> datetime:
     return parsed
 
 
+def _canonical_decimal(value: object, label: str) -> str:
+    if isinstance(value, bool) or not isinstance(value, (int, float, Decimal)):
+        _fail(f"{label} must be a finite positive number")
+    try:
+        number = Decimal(str(value))
+    except (InvalidOperation, ValueError) as exc:
+        raise RegistrationError(f"{label} must be a finite positive number") from exc
+    if not number.is_finite() or number <= 0:
+        _fail(f"{label} must be a finite positive number")
+    text = format(number, "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text
+
+
+def validate_proposal_decision_clock(
+    *,
+    decision_event_at: str,
+    decision_available_at: str,
+) -> str:
+    """Return the exact NYSE session bucket for one otherwise-passing proposal.
+
+    Both clocks must be causal and inside the same repo-frozen RTH window. An
+    abstention may be recorded outside RTH, but it can never become a proposal.
+    """
+
+    event = _canonical_utc(decision_event_at, "decision event clock")
+    available = _canonical_utc(decision_available_at, "decision available clock")
+    if event > available:
+        _fail("decision event clock is after its available clock")
+    try:
+        from engine.session_digest import ET, session_window_et
+        from lib.nyse_calendar import is_session
+    except ImportError as exc:
+        raise RegistrationError("NYSE proposal clock implementation is unavailable") from exc
+    event_date = event.astimezone(ET).date()
+    available_date = available.astimezone(ET).date()
+    if event_date != available_date or not is_session(event_date):
+        _fail("proposal clocks do not share a resolved NYSE session")
+    session_open, session_close = session_window_et(event_date)
+    event_et = event.astimezone(ET)
+    available_et = available.astimezone(ET)
+    if not (
+        session_open <= event_et < session_close
+        and session_open <= available_et < session_close
+    ):
+        _fail("proposal clock is outside the frozen NYSE RTH window")
+    return event_date.isoformat()
+
+
+def validate_campaign_v2_time_fence(
+    campaign: dict[str, Any],
+    *,
+    first_selector_observed_available_at: str,
+    selector_effective_freeze_at: str,
+) -> None:
+    """Validate the frozen clocks for one future v2 candidate.
+
+    A late selector observation cannot cure an old campaign. Both immutable
+    source clocks must clear the benchmark and resolved selector freezes.
+    """
+
+    if not isinstance(campaign, dict) or campaign.get("schema") != "options.signal_campaign/v2":
+        _fail("candidate campaign must use options.signal_campaign/v2")
+    if campaign.get("policies") != CAMPAIGN_V2_POLICIES:
+        _fail("candidate campaign rule differs from the frozen v2 policy")
+    if campaign.get("evidence_phase") != "prospective_after_rule_freeze":
+        _fail("candidate campaign is not prospectively phased")
+    members = campaign.get("members")
+    if not isinstance(members, list) or not members or not isinstance(members[-1], dict):
+        _fail("candidate campaign requires an immutable final member")
+    formed = _canonical_utc(campaign.get("formed_at"), "candidate formed_at")
+    final_available = _canonical_utc(
+        members[-1].get("available_at"), "candidate final-member available_at"
+    )
+    if formed != final_available:
+        _fail("candidate formed_at must equal final-member available_at")
+    benchmark_freeze = _canonical_utc(
+        BENCHMARK_EFFECTIVE_FREEZE_AT, "benchmark effective freeze"
+    )
+    selector_freeze = _canonical_utc(
+        selector_effective_freeze_at, "selector effective freeze"
+    )
+    registered = _canonical_utc(REGISTERED_AT, "selector registered_at")
+    if selector_freeze < registered:
+        _fail("selector effective freeze cannot predate registration")
+    effective = max(benchmark_freeze, selector_freeze)
+    if formed < effective or final_available < effective:
+        _fail("candidate source clocks predate the effective freeze")
+    observed = _canonical_utc(
+        first_selector_observed_available_at,
+        "first selector observed available_at",
+    )
+    if observed < formed or observed < selector_freeze:
+        _fail("selector observation clock is non-causal")
+
+
+def _decode_canonical_jsonl(
+    raw: bytes,
+    *,
+    label: str,
+    validator: Draft202012Validator | None = None,
+) -> list[tuple[dict[str, Any], bytes]]:
+    if raw and not raw.endswith(b"\n"):
+        _fail(f"{label} has a torn final line")
+    rows: list[tuple[dict[str, Any], bytes]] = []
+    for ordinal, line in enumerate(raw.splitlines(), start=1):
+        if not line:
+            _fail(f"{label} has a blank row at {ordinal}")
+        try:
+            value = strict_loads(line)
+        except (ValueError, json.JSONDecodeError) as exc:
+            raise RegistrationError(f"{label} row {ordinal} is malformed") from exc
+        if not isinstance(value, dict) or canonical_bytes(value) != line:
+            _fail(f"{label} row {ordinal} is not canonical")
+        if validator is not None:
+            _validate(value, validator, f"{label} row {ordinal}")
+        rows.append((value, line))
+    return rows
+
+
+def validate_campaign_v2_context_owner_binding(
+    campaign: dict[str, Any],
+    *,
+    episode_prefix_raw: bytes,
+    context_reference: dict[str, Any],
+    repo_root: str | Path = ROOT,
+) -> None:
+    """Bind campaign v2 through its final v1 episode to an exact #5353 reference."""
+
+    if not isinstance(campaign, dict) or campaign.get("schema") != "options.signal_campaign/v2":
+        _fail("context binding requires options.signal_campaign/v2")
+    if campaign.get("policies") != CAMPAIGN_V2_POLICIES:
+        _fail("context binding campaign policy drift")
+    root = Path(repo_root).resolve()
+    episode_schema_path = (
+        root / "contracts/options/options.signal_episode.v1.schema.json"
+    )
+    rows = _decode_canonical_jsonl(
+        episode_prefix_raw,
+        label="campaign episode prefix",
+        validator=_validator(episode_schema_path, "episode"),
+    )
+    source = campaign.get("source_episode_prefix")
+    if not isinstance(source, dict) or set(source) != {"path", "records", "prefix_sha256"}:
+        _fail("campaign source episode prefix receipt is malformed")
+    if source["path"] != "data/options_signal_episode/episodes.jsonl":
+        _fail("campaign source episode prefix path drift")
+    if source["records"] != len(rows) or source["prefix_sha256"] != _sha256(episode_prefix_raw):
+        _fail("campaign source episode prefix receipt mismatch")
+    episode_ledger_path = root / source["path"]
+    try:
+        episode_ledger_raw = episode_ledger_path.read_bytes()
+    except OSError as exc:
+        raise RegistrationError(
+            f"cannot load campaign source episode ledger: {episode_ledger_path}"
+        ) from exc
+    ledger_lines = episode_ledger_raw.splitlines(keepends=True)
+    expected_prefix = b"".join(ledger_lines[: len(rows)])
+    if episode_prefix_raw != expected_prefix:
+        _fail("campaign episode prefix is not the exact source-ledger prefix")
+    members = campaign.get("members")
+    if not isinstance(members, list) or not members or not isinstance(members[-1], dict):
+        _fail("campaign final member is missing")
+    final = members[-1]
+    source_row = final.get("source_row")
+    if not isinstance(source_row, int) or isinstance(source_row, bool) or not 1 <= source_row <= len(rows):
+        _fail("campaign final-member source row is invalid")
+    episode, episode_line = rows[source_row - 1]
+    episode_sha256 = _sha256(episode_line)
+    if (
+        final.get("episode_id") != episode.get("episode_id")
+        or final.get("available_at") != episode.get("available_at")
+        or final.get("source_row_sha256") != episode_sha256
+        or campaign.get("formed_at") != episode.get("available_at")
+    ):
+        _fail("campaign final member does not bind its exact episode row")
+    group = campaign.get("group")
+    contract = episode.get("contract")
+    if not isinstance(group, dict) or not isinstance(contract, dict):
+        _fail("campaign or episode exact contract is malformed")
+    if (
+        group.get("session_date") != episode.get("session_date")
+        or group.get("ticker") != episode.get("ticker")
+        or group.get("right") != contract.get("right")
+        or group.get("expiration") != contract.get("expiration")
+        or _canonical_decimal(group.get("strike"), "campaign strike")
+        != _canonical_decimal(contract.get("strike"), "episode strike")
+        or group.get("strike_key")
+        != _canonical_decimal(contract.get("strike"), "episode strike")
+    ):
+        _fail("campaign group differs from its exact final-member contract")
+
+    try:
+        from engine.options_market_memory_context import (
+            load_canary_identity_snapshot,
+            validate_context_reference,
+        )
+
+        reference = validate_context_reference(context_reference)
+        identity = load_canary_identity_snapshot(
+            root / MARKET_MEMORY_CANARY_IDENTITY_PATH
+        )
+    except Exception as exc:  # noqa: BLE001 - normalize the owner contract boundary
+        raise RegistrationError("context reference fails its owner contract") from exc
+    expected_owner = {
+        "schema": "options.signal_episode/v1",
+        "id": episode["episode_id"],
+        "record_sha256": episode_sha256,
+        "ticker": episode["ticker"],
+        "event_time": episode["event_time"],
+        "requested_as_of": episode["available_at"],
+        "requested_as_of_basis": "durable_available_at",
+        "evidence_phase": "decision_time_actual_output",
+    }
+    if reference.get("owner") != expected_owner:
+        _fail("context reference owner differs from the campaign final member")
+    query = reference.get("query")
+    if not isinstance(query, dict) or (
+        episode.get("ticker") != identity.symbol
+        or query.get("subject") != identity.subject
+        or query.get("identity_config_sha256") != identity.config_sha256
+        or query.get("event_time") != episode["event_time"]
+        or query.get("as_known_at") != episode["available_at"]
+        or query.get("mode") != "operational_pit"
+        or query.get("fallback_policy") != "exact_no_fallback"
+    ):
+        _fail("context reference query differs from the exact episode clocks")
+    if reference.get("disposition") != "bound" or reference.get("context") is None:
+        _fail("proposal requires a bound exact context reference")
+
+
 def _load_legacy_campaigns(
     path: Path, validator: Draft202012Validator
 ) -> tuple[list[dict[str, Any]], bytes]:
@@ -312,7 +832,34 @@ def _baseline_ledger(benchmark: dict[str, Any]) -> dict[str, Any]:
 
 def build_receipt(repo_root: str | Path = ROOT) -> dict[str, Any]:
     root = Path(repo_root).resolve()
-    benchmark = _load_document(root / BENCHMARK_PATH, "completion benchmark")
+    _validate_file_receipts(
+        root,
+        CONTEXT_REFERENCE_CONTRACT_RECEIPTS,
+        label="Market Memory context-reference contract",
+    )
+    _validate_file_receipts(
+        root,
+        LIFECYCLE_CONTRACT_RECEIPTS,
+        label="option lifecycle contract",
+    )
+    _validate_file_receipts(
+        root,
+        NYSE_CLOCK_CONTRACT_RECEIPTS,
+        label="NYSE proposal-clock contract",
+    )
+    benchmark_file = root / BENCHMARK_PATH
+    try:
+        benchmark_raw = benchmark_file.read_bytes()
+    except OSError as exc:
+        raise RegistrationError(
+            f"cannot load completion benchmark: {benchmark_file}"
+        ) from exc
+    if (
+        len(benchmark_raw) != BENCHMARK_FILE_BYTES
+        or _sha256(benchmark_raw) != BENCHMARK_FILE_SHA256
+    ):
+        _fail("completion benchmark full-file receipt drift")
+    benchmark = _load_document(benchmark_file, "completion benchmark")
     _validate(
         benchmark,
         _validator(root / BENCHMARK_SCHEMA_PATH, "completion benchmark"),
@@ -320,11 +867,34 @@ def build_receipt(repo_root: str | Path = ROOT) -> dict[str, Any]:
     )
     if benchmark.get("schema") != BENCHMARK_SCHEMA:
         _fail("completion benchmark schema drift")
+    expected_benchmark_registration = {
+        "registered_at": BENCHMARK_REGISTERED_AT,
+        "repository": REPOSITORY,
+        "baseline_commit": BENCHMARK_BASELINE_COMMIT,
+        "effective_freeze_rule": (
+            "later_of_registered_at_and_first_origin_main_commit_containing_exact_benchmark_digest"
+        ),
+        "canonicalization": "json_utf8_sort_keys_compact_no_ascii_escape/v1",
+        "benchmark_digest_sha256": BENCHMARK_DIGEST,
+    }
+    if benchmark.get("registration") != expected_benchmark_registration:
+        _fail("completion benchmark registration drift")
     benchmark_digest = _sha256(canonical_bytes(benchmark["benchmark"]))
     if benchmark_digest != BENCHMARK_DIGEST or (
         benchmark["registration"]["benchmark_digest_sha256"] != BENCHMARK_DIGEST
     ):
         _fail("completion benchmark digest drift")
+    benchmark_registered_at = _canonical_utc(
+        BENCHMARK_REGISTERED_AT, "benchmark registered_at"
+    )
+    benchmark_first_main_at = _canonical_utc(
+        BENCHMARK_FIRST_MAIN_COMMITTED_AT, "benchmark first-main committed_at"
+    )
+    benchmark_effective_at = _canonical_utc(
+        BENCHMARK_EFFECTIVE_FREEZE_AT, "benchmark effective freeze"
+    )
+    if benchmark_effective_at != max(benchmark_registered_at, benchmark_first_main_at):
+        _fail("completion benchmark effective freeze is inconsistent")
 
     legacy_validator = _validator(root / LEGACY_CAMPAIGN_SCHEMA_PATH, "legacy campaign")
     rows, legacy_raw = _load_legacy_campaigns(
@@ -338,9 +908,6 @@ def build_receipt(repo_root: str | Path = ROOT) -> dict[str, Any]:
     if baseline["prospective_row_count"] != 0 or baseline["authority"] != "research_only":
         _fail("legacy campaign benchmark baseline authority drift")
 
-    benchmark_registered_at = _canonical_utc(
-        benchmark["registration"]["registered_at"], "benchmark registered_at"
-    )
     for ordinal, row in enumerate(rows, start=1):
         if row["schema"] != "options.signal_campaign/v1":
             _fail(f"legacy campaign row {ordinal} schema drift")
@@ -357,6 +924,22 @@ def build_receipt(repo_root: str | Path = ROOT) -> dict[str, Any]:
 
     rule = copy.deepcopy(SELECTOR_RULE)
     rule_sha256 = _sha256(canonical_bytes(rule))
+    rule_components = {
+        "candidate_manifest_rule_sha256": _sha256(
+            canonical_bytes(rule["candidate_manifest"])
+        ),
+        "decision_rule_sha256": _sha256(canonical_bytes(rule["decisions"])),
+        "evidence_rule_sha256": _sha256(
+            canonical_bytes(
+                {
+                    "exact_contract": rule["exact_contract"],
+                    "required_truth_receipts": rule["required_truth_receipts"],
+                    "abstention_reason_codes": rule["abstention_reason_codes"],
+                }
+            )
+        ),
+        "source_campaign_rule_sha256": CAMPAIGN_V2_RULE_SHA256,
+    }
     empty_ids_sha256 = _sha256(canonical_bytes([]))
     source = {
         "path": LEGACY_CAMPAIGN_PATH.as_posix(),
@@ -390,13 +973,35 @@ def build_receipt(repo_root: str | Path = ROOT) -> dict[str, Any]:
         "registration": {
             "registered_at": REGISTERED_AT,
             "repository": REPOSITORY,
-            "benchmark_path": BENCHMARK_PATH.as_posix(),
-            "benchmark_schema": BENCHMARK_SCHEMA,
-            "benchmark_digest_sha256": BENCHMARK_DIGEST,
+            "benchmark": {
+                "path": BENCHMARK_PATH.as_posix(),
+                "schema": BENCHMARK_SCHEMA,
+                "file_sha256": BENCHMARK_FILE_SHA256,
+                "file_bytes": BENCHMARK_FILE_BYTES,
+                "canonicalization": expected_benchmark_registration["canonicalization"],
+                "benchmark_digest_sha256": BENCHMARK_DIGEST,
+                "registered_at": BENCHMARK_REGISTERED_AT,
+                "baseline_commit": BENCHMARK_BASELINE_COMMIT,
+                "effective_freeze_rule": expected_benchmark_registration[
+                    "effective_freeze_rule"
+                ],
+                "first_origin_main_commit_containing_digest": (
+                    BENCHMARK_FIRST_MAIN_COMMIT
+                ),
+                "first_origin_main_commit_committed_at": (
+                    BENCHMARK_FIRST_MAIN_COMMITTED_AT
+                ),
+                "effective_freeze_at": BENCHMARK_EFFECTIVE_FREEZE_AT,
+            },
             "selector_rule_sha256": rule_sha256,
-            "selector_effective_freeze_rule": rule["version_fence"][
-                "effective_freeze_rule"
-            ],
+            "selector_rule_component_sha256s": rule_components,
+            "selector_effective_freeze": {
+                "rule": rule["version_fence"]["effective_freeze_rule"],
+                "state": "pending_origin_main_registration",
+                "first_origin_main_commit_containing_rule_digest": None,
+                "first_origin_main_commit_committed_at": None,
+                "effective_freeze_at": None,
+            },
         },
         "selector_rule": rule,
         "activation_manifest": manifest,
