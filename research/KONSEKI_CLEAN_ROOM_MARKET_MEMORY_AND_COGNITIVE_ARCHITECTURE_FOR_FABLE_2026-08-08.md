@@ -1393,6 +1393,53 @@ episodic retrieval and W5 Operating Cortex evidence in a new evidence-bearing
 version before that version can enter the existing human-gated Research
 Factory lifecycle without weakening either program's authority rails.
 
+### 11.0.13 W7 inert feature-promotion audit
+
+W7 does not promote a feature. It adds a pure, content-addressed negative audit
+over the frozen `market_memory.feature_registry.2026-08-09.v1` registry. The
+artifact enumerates exactly all 18 canonical feature IDs in sorted order and
+has no registry, data file, configuration, Synapse entry, store, writer, API,
+service, scheduler, or runtime consumer. Its structural v1 grammar admits only
+`failed` and `not_run` gate states; there is no `pass` state, eligible and
+promoted counts are fixed at zero, and exact W2A authority keeps emission,
+training, promotion, and every action bit false.
+
+The evidence checkpoint is negative. Only `macro.regime_state` has a current
+actual-output projection, and it remains degraded because its component source
+receipts are unauthenticated. The other 17 canonical features remain missing.
+The private technical lane is an unadjusted current-tip raw-close ratio rather
+than canonical `price.ret_20d`; private breadth is degraded current-membership
+partial coverage with survivor bias and no operational history; and the option
+OI canary is one bounded source-availability page without a complete, dated,
+atomic chain state. None can be substituted for a canonical observed feature.
+
+At the frozen 2026-08-11 checkpoint, W2 and W4 evidence is synthetic-only,
+while W5 and W6 are classified `not_operational_promotion_evidence`. This is a
+durable evidence classification, not a shipment-state assertion: dormant or
+synthetic code remains insufficient until it accrues owner-authenticated
+operational evidence, and later shipment cannot rewrite this audit. There
+is no operational forward sample size, calibration evidence, clustered
+dependence interval, incremental value after existing Prophet information, or
+shadow-forward evidence. Consequently G0-G7 cannot pass for any feature. The
+audit records G0 temporal/data integrity as `failed` for all 18 features and
+leaves G1-G7 `not_run`; later gates are not credited through a failed entry
+gate. It explicitly excludes a pass state, eligibility or promotion decisions,
+runtime/Synapse integration, training consumption, and action authority. A
+future audit requires a new version and owner-authenticated evidence; v1 cannot
+be edited into a promotion artifact.
+
+Current conformance topology: W4, W5, W6, and W7 are guardrail slices, not an
+operational W4-to-W7 dataflow. W4 can build a caller-supplied synthetic
+`episodic_retrieval_record`; W5 can revalidate that exact dependency set to
+build an unsigned structural Cortex packet whose portable external-coverage
+claims remain false. W6 currently consumes only exact W2A trial-registration
+bytes and carries deferred null `episodic_retrieval_record_id` and
+`operating_cortex_packet_id` owner references. W7 reads the frozen feature
+registry and this evidence checkpoint, not a W6 candidate. Real W5-to-W6 and
+W6-to-W7 edges require new owner-authenticated, evidence-bearing contract
+versions and separate review. The mere presence of a later contract is never
+operational or promotion evidence.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1597,6 +1644,16 @@ W6A Research Factory conformance additions:
 - `tests/test_research_factory_market_memory.py` — exact-byte, owner-control
   read-back, deterministic-ID, null-join, no-I/O, no-callsite, and authority
   mutation guards.
+
+W7 inert promotion-audit additions:
+
+- `contracts/market_memory/feature_promotion_audit.v1.schema.json` and
+  `engine/neuralweb/market_memory_promotion_audit.py` — strict failed/not-run
+  projection of all 18 owner-registry features with content identity and zero
+  authority; no decision or runtime seam;
+- `tests/test_market_memory_promotion_audit.py` — registry completeness,
+  evidence honesty, mutation, canonical-byte, bounds, no-I/O, no-callsite, and
+  CI-ownership guards.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 
