@@ -32,6 +32,9 @@ Module map (see masterplan §4):
                   residual, pos52, VIX percentile.
     ledger.py     the point-in-time event ledger (§5): schema, episodes, era
                   rules, fixed-window grading, display states (§5.1), catch-up.
+    completion.py the ONE sanctioned identity-block write: the §10.1 VIXCLS
+                  stamp-completion pass, against append-only receipts
+                  (``research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md``).
     base_rates.py the frozen family x horizon base-rate tables (§6).
     artifact.py   the display snapshot ``data/price_pressure/latest.json``.
     backfill.py   the one-shot historical seed (era="backfill"), run locally.
@@ -96,6 +99,7 @@ _LAZY = {
     "artifact": "engine.price_pressure.artifact",
     "backfill": "engine.price_pressure.backfill",
     "base_rates": "engine.price_pressure.base_rates",
+    "completion": "engine.price_pressure.completion",
     "context": "engine.price_pressure.context",
     "detect": "engine.price_pressure.detect",
     "ledger": "engine.price_pressure.ledger",
