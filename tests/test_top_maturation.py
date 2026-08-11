@@ -487,12 +487,12 @@ def test_end_to_end_builds_a_board(tmp_path, quiet_lane):
     ctx, diag = tm.build_context(root, out_root=root, repo_root=None,
                                  trailing=420, log=lambda m: None)
     assert ctx["schema"] == tm.SCHEMA and ctx["null_state"] is False
-    assert ctx["extended_n"] == sum(len(v) for v in ctx["states"].values())
-    assert ctx["extended_n"] >= 2
-    seen = {r["ticker"] for v in ctx["states"].values() for r in v}
+    assert _tier_of(ctx)["extended_n"] == sum(len(v) for v in _states_of(ctx).values())
+    assert _tier_of(ctx)["extended_n"] >= 2
+    seen = {r["ticker"] for v in _states_of(ctx).values() for r in v}
     assert {"AAA", "BBB"} <= seen
 
-    row = next(r for v in ctx["states"].values() for r in v)
+    row = next(r for v in _states_of(ctx).values() for r in v)
     assert row["name"].endswith("Corp")
     assert row["href"] is None                       # no shipped page -> no dead link
     assert 3 <= len(row["spark"]) <= tm.SPARK_POINTS
@@ -505,7 +505,7 @@ def test_maturing_name_fires_legs_through_the_real_feature_frame(tmp_path, quiet
     test that would catch a feature-column name drifting away from a leg rule."""
     root = _store(tmp_path / "data")
     ctx, _ = tm.build_context(root, out_root=root, repo_root=None, log=lambda m: None)
-    row = next((r for v in ctx["states"].values() for r in v if r["ticker"] == "CCC"), None)
+    row = next((r for v in _states_of(ctx).values() for r in v if r["ticker"] == "CCC"), None)
     assert row is not None, "the maturing fixture did not reach the board"
     assert row["state"] in ("extended_watch", "thinning", "breaking")
     keys = [g["key"] for g in row["legs"]]
@@ -514,13 +514,13 @@ def test_maturing_name_fires_legs_through_the_real_feature_frame(tmp_path, quiet
     tip = next(g for g in row["legs"] if g["key"] == "updown_volume")["tip_en"]
     assert "of the last 21 sessions" in tip and "{" not in tip
     # the healthy names must NOT have picked legs up in the same pass
-    assert all(not r["legs"] for r in ctx["states"]["extended_healthy"])
+    assert all(not r["legs"] for r in _states_of(ctx)["extended_healthy"])
 
 
 def test_instrument_filter_keeps_exchange_traded_products_off_the_board(tmp_path, quiet_lane):
     root = _store(tmp_path / "data")
     ctx, diag = tm.build_context(root, out_root=root, repo_root=None, log=lambda m: None)
-    seen = {r["ticker"] for v in ctx["states"].values() for r in v}
+    seen = {r["ticker"] for v in _states_of(ctx).values() for r in v}
     assert "ZZETN" not in seen
     assert "ZZETN" in diag["excluded_instruments"]
     assert diag["n_excluded_non_stock_instruments"] == 1
@@ -532,17 +532,17 @@ def test_instrument_filter_keeps_exchange_traded_products_off_the_board(tmp_path
 def test_theme_counts_drop_sector_aggregates_and_non_us_baskets(tmp_path, quiet_lane):
     root = _store(tmp_path / "data")
     ctx, _ = tm.build_context(root, out_root=root, repo_root=None, log=lambda m: None)
-    labels = {t["basket"] for t in ctx["theme_counts"]}
+    labels = {t["basket"] for t in _tier_of(ctx)["theme_counts"]}
     assert "AI Semiconductors" in labels
     assert "Technology" not in labels and "CN Solar" not in labels
-    for t in ctx["theme_counts"]:
+    for t in _tier_of(ctx)["theme_counts"]:
         assert t["extended"] >= t["watch"] + t["thinning"] + t["breaking"]
 
 
 def test_rows_are_sorted_by_trailing_gain_inside_every_group(tmp_path, quiet_lane):
     root = _store(tmp_path / "data")
     ctx, _ = tm.build_context(root, out_root=root, repo_root=None, log=lambda m: None)
-    for rows in ctx["states"].values():
+    for rows in _states_of(ctx).values():
         got = [r["r126"] for r in rows if r["r126"] is not None]
         assert got == sorted(got, reverse=True)
 
@@ -559,8 +559,21 @@ def test_rows_are_sorted_by_trailing_gain_inside_every_group(tmp_path, quiet_lan
 # All four run end to end through the real masks, episodes and feature frame:
 # the rule is only worth anything if it survives the machinery it sits inside.
 # ══════════════════════════════════════════════════════════════════════════════
+# ── W2b: the board moved under `tiers` ────────────────────────────────────────
+# `build_context` now emits one entry per tier and deliberately carries NO
+# top-level `states`, `extended_n` or `theme_counts`: a name can clear more than
+# one bar, so a cross-tier total would be a number with no referent (spec §8
+# note 2). The tests below still assert the PRIMARY board, which is frozen.
+def _tier_of(ctx, key="primary") -> dict:
+    return next(t for t in ctx["tiers"] if t["key"] == key)
+
+
+def _states_of(ctx, key="primary") -> dict:
+    return _tier_of(ctx, key)["states"]
+
+
 def _board(ctx) -> dict[str, str]:
-    return {r["ticker"]: r["state"] for v in ctx["states"].values() for r in v}
+    return {r["ticker"]: r["state"] for v in _states_of(ctx).values() for r in v}
 
 
 def test_recently_extended_name_that_breaks_is_shown_as_breaking(tmp_path, quiet_lane):
@@ -579,7 +592,7 @@ def test_recently_extended_name_that_breaks_is_shown_as_breaking(tmp_path, quiet
     led = next(r for r in diag["ledger_rows"] if r["ticker"] == "DBRK")
     assert {"below_50d", "drawdown_from_high"} <= set(led["fired"]), led["fired"]
     assert led["off_band"] is True
-    row = next(r for r in ctx["states"]["breaking"] if r["ticker"] == "DBRK")
+    row = next(r for r in _states_of(ctx)["breaking"] if r["ticker"] == "DBRK")
     keys = [g["key"] for g in row["legs"]]
     # §4.3 amendment, end to end: the terminal row SHOWS what made it terminal
     assert len(keys) <= tm.MAX_LEGS
@@ -613,7 +626,7 @@ def test_currently_extended_names_run_the_full_state_machine_unchanged(tmp_path,
     ctx, diag = tm.build_context(root, out_root=root, repo_root=None, log=lambda m: None)
     board = _board(ctx)
     # not one currently-EXT candidate was filtered out
-    assert ctx["extended_n"] - diag["n_off_band_on_board"] == diag["n_current_ext_candidates"]
+    assert _tier_of(ctx)["extended_n"] - diag["n_off_band_on_board"] == diag["n_current_ext_candidates"]
     # ...and they occupy the non-terminal groups exactly as before the ruling
     assert board.get("AAA") == "extended_healthy"
     assert board.get("CCC") in ("extended_watch", "thinning", "breaking")
@@ -771,7 +784,7 @@ def test_cli_writes_a_board_and_stamps_its_vintage(tmp_path, quiet_lane):
     out = tmp_path / "out"
     assert btm.main(["--root", str(out), "--data-root", str(root)]) == 0
     art = json.loads((out / tm.LATEST_REL).read_text())
-    assert art["null_state"] is False and art["extended_n"] >= 2
+    assert art["null_state"] is False and _tier_of(art)["extended_n"] >= 2
     assert art["_vintage"]["generated_utc"].endswith("Z")
     assert art["_vintage"]["library_vintage"] == _thresholds()["vintage_utc"]
     assert art["_diagnostics"]["n_excluded_non_stock_instruments"] == 1
@@ -788,3 +801,160 @@ def test_cli_advances_the_ledger_only_on_the_nightly_lane(tmp_path, monkeypatch)
     assert btm.main(["--root", str(out), "--data-root", str(root)]) == 0
     again = (out / tm.LOG_REL).read_text().strip().split("\n")
     assert len(again) == len(rows)              # idempotent across re-runs
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# W2b — the three-tier board
+#
+# The single hardest rule in the surface spec: NO THRESHOLD CROSSES A TIER
+# BOUNDARY. A leg whose threshold cannot be cut for a tier does not fire on that
+# tier — it is never borrowed — and its silence contributes to the unreadable
+# rule, never to a clean reading. These are the executable form of that promise.
+# ══════════════════════════════════════════════════════════════════════════════
+def test_tier_artifact_paths_are_per_tier_and_never_shared():
+    assert tm._tier_rel(tm.LIBRARY_REL, "primary") == "top_anatomy/library.parquet"
+    assert tm._tier_rel(tm.LIBRARY_REL, "r63") == "top_anatomy/library_r63.parquet"
+    assert tm._tier_rel(tm.THRESHOLDS_REL, "atrz") == "top_anatomy/thresholds_atrz.json"
+    paths = {tm._tier_rel(tm.THRESHOLDS_REL, k) for k in tm.TIER_KEYS}
+    assert len(paths) == 3, "two tiers resolve to the same thresholds file"
+
+
+def test_a_tier_never_reads_another_tiers_thresholds(tmp_path):
+    """The no-reuse proof: sentinel values, one per tier, never crossed."""
+    d = tmp_path / "top_anatomy"
+    d.mkdir(parents=True)
+    for tier, cut in (("primary", 11.0), ("r63", 22.0), ("atrz", 33.0)):
+        (d / tm._tier_rel("thresholds.json", tier).split("/")[-1]).write_text(json.dumps(
+            {"ext_variant": tier, "thresholds": {"rs_peak_lag_p90": cut}}))
+    for tier, cut in (("primary", 11.0), ("r63", 22.0), ("atrz", 33.0)):
+        got = tm.load_thresholds(tmp_path, tier)
+        assert got["thresholds"]["rs_peak_lag_p90"] == cut, f"{tier} read the wrong file"
+        assert got["ext_variant"] == tier
+
+
+def test_a_missing_tier_library_never_falls_through_to_the_primary_one(tmp_path):
+    """§6 C. With ONLY the primary pair present, the widened tiers must go dark.
+
+    The failure this prevents is silent and total: `classify([])` returns
+    `extended_healthy`, so a tier that quietly borrowed the primary library would
+    print a confident board of "Still running · Nothing to do" for a cohort whose
+    own history was never loaded.
+    """
+    d = tmp_path / "top_anatomy"
+    d.mkdir(parents=True)
+    _library().to_parquet(d / "library.parquet", index=False)
+    (d / "thresholds.json").write_text(json.dumps(_thresholds()))
+    assert tm.load_thresholds(tmp_path, "primary").get("thresholds")
+    assert tm.load_library(tmp_path, "primary") is not None
+    for tier in ("r63", "atrz"):
+        assert tm.load_thresholds(tmp_path, tier) == {}, f"{tier} borrowed thresholds"
+        assert tm.load_library(tmp_path, tier) is None, f"{tier} borrowed a library"
+
+
+def test_a_mismatched_variant_stamp_is_refused_outright(tmp_path):
+    """Reading one tier's constants under another tier's name is exactly the
+    failure the no-cross-tier rule exists to prevent, so a wrong stamp is `{}`."""
+    d = tmp_path / "top_anatomy"
+    d.mkdir(parents=True)
+    (d / "thresholds_r63.json").write_text(json.dumps(
+        {"ext_variant": "atrz", "thresholds": {"rs_peak_lag_p90": 1.0}}))
+    assert tm.load_thresholds(tmp_path, "r63") == {}
+    # the primary artifact predates the stamp, so an ABSENT stamp is still valid
+    (d / "thresholds.json").write_text(json.dumps({"thresholds": {"rs_peak_lag_p90": 1.0}}))
+    assert tm.load_thresholds(tmp_path, "primary").get("thresholds")
+
+
+def test_unreadable_rule_is_a_majority_of_this_tiers_own_checks():
+    """§6 B, PINNED: `evaluated >= ceil(total / 2)`. The floor may be raised with
+    evidence; it may never be lowered."""
+    assert tm.is_readable_row(5, 9) and not tm.is_readable_row(4, 9)
+    assert tm.is_readable_row(5, 10) and not tm.is_readable_row(4, 10)
+    assert not tm.is_readable_row(0, 0), "a tier with no checks can read nothing"
+
+
+def test_a_missing_threshold_counts_as_unevaluated_never_as_clear():
+    """Silence must contribute to the unreadable rule, not to a clean reading."""
+    f, d = _feats(), _detail()
+    full = tm._checks_evaluated(f, d, _thresholds(), "primary")
+    assert full[1] == 9, "the primary tier counts nine checks"
+    dark = tm._checks_evaluated(f, d, {"thresholds": {}}, "primary")
+    assert dark[0] < full[0], "dropping every threshold did not reduce the evaluated count"
+    assert not tm.is_readable_row(*dark), "a name with no thresholds read as readable"
+
+
+def test_the_widened_tiers_count_one_more_check_than_the_frozen_board():
+    assert tm.tier_counting_legs("primary") == tm.COUNTING_LEGS
+    assert len(tm.tier_counting_legs("r63")) == len(tm.COUNTING_LEGS) + 1
+    assert tm.HOT_LEG in tm.tier_counting_legs("atrz")
+    assert tm.HOT_LEG not in tm.tier_counting_legs("primary")
+    # display order: the new leg LEADS on the widened tiers, and only there
+    assert tm.tier_leg_order("r63")[0] == tm.HOT_LEG
+    assert tm.tier_leg_order("primary") == tm.LEG_ORDER
+    assert tm.MAX_LEGS == 3, "the three-leg cap is unchanged"
+
+
+def test_running_hot_fires_only_when_the_caller_asks_for_it():
+    """Gated on the TIER, never on "a threshold happens to exist" — the exporter
+    cuts this P90 for every variant, so keying the leg off threshold presence
+    would quietly light it up on the frozen primary board."""
+    thr = _thresholds()
+    thr["thresholds"]["running_hot_p90"] = 70.0
+    feats = _feats(B2_rsi14=88.0)
+    legs_off, fired_off, _ = tm._fire_legs(feats, _detail(), thr, None, hot=False)
+    assert tm.HOT_LEG not in fired_off
+    legs_on, fired_on, _ = tm._fire_legs(feats, _detail(), thr, None, hot=True)
+    assert tm.HOT_LEG in fired_on
+    hot = next(g for g in legs_on if g["key"] == tm.HOT_LEG)
+    assert hot["words_en"] == "hotter than most like it"
+    assert hot["words_zh"] and hot["words_zh"] != hot["words_en"]
+    for banned in ("RSI", "rsi", "P90", "z-score", "percentile"):
+        assert banned not in hot["tip_en"], f"{banned!r} leaked into a Tier-2 hover"
+
+
+def test_every_leg_declares_whether_it_was_cut_from_a_library_or_is_a_fixed_rule():
+    """The surface appends a different provenance sentence to each class, and the
+    promise is only worth anything if the split comes from one table."""
+    thr = _thresholds()
+    thr["thresholds"]["running_hot_p90"] = 70.0
+    legs, _, _ = tm._fire_legs(_feats(B2_rsi14=88.0, F2_drawdown_in_episode=-0.2),
+                               _detail(below_50d_streak=9), thr, None, hot=True)
+    assert legs, "no legs fired"
+    for g in legs:
+        assert g["cut"] in ("library", "fixed")
+        assert (g["cut"] == "fixed") == (g["key"] in tm.FIXED_RULE_LEGS)
+    counting = set(tm.tier_counting_legs("r63"))
+    assert counting == set(tm.LIBRARY_CUT_LEGS) | set(tm.FIXED_RULE_LEGS), \
+        "a counting leg belongs to neither provenance class — its hover would lie"
+
+
+def test_v2_payload_is_three_ordered_tiers_and_no_cross_tier_total(tmp_path, quiet_lane):
+    root = _store(tmp_path / "data")
+    ctx, diag = tm.build_context(root, out_root=root, repo_root=None,
+                                 trailing=420, log=lambda m: None)
+    assert ctx["schema"] == "winner_health.v2"
+    assert [t["key"] for t in ctx["tiers"]] == list(tm.TIER_KEYS), \
+        "tier order is law — narrowest bar first, never re-ordered"
+    for forbidden in ("extended_n", "states", "theme_counts"):
+        assert forbidden not in ctx, f"top-level {forbidden!r} is a cross-tier total"
+    for t in ctx["tiers"]:
+        assert set(t["states"]) == {"extended_healthy", "extended_watch", "thinning",
+                                    "breaking", "no_read"}
+        assert t["extended_n"] == sum(len(v) for v in t["states"].values())
+        assert t["figure"] in ("r126", "r63", "atr_x")
+        assert "library" in t
+    # ONE tomography on the page, and it belongs to the primary tier
+    assert "theme_counts" in ctx["tiers"][0]
+    assert all("theme_counts" not in t for t in ctx["tiers"][1:])
+    # the synthetic store ships only the primary pair, so the widened tiers are
+    # honestly unread rather than silently built on the primary's numbers
+    assert ctx["tiers"][0]["readable"] is True
+    assert all(t["readable"] is False for t in ctx["tiers"][1:])
+    assert all(t["extended_n"] == 0 for t in ctx["tiers"][1:])
+
+
+def test_the_membership_window_is_the_same_21_sessions_on_every_tier():
+    """`DNR:KILL-FRESH-TICKS-WINDOW` — a wider bar never buys a wider window."""
+    assert tm.MEMBERSHIP_WINDOW_SESSIONS == 21
+    src = (Path(tm.__file__)).read_text()
+    assert src.count("window = ext.tail(MEMBERSHIP_WINDOW_SESSIONS)") == 1, \
+        "the membership window is computed in more than one place"
