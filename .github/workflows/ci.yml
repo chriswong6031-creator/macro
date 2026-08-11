@@ -1591,6 +1591,13 @@ on:
       - "scripts/*research_factory*.py"
       - "data/research_factory/**"
       - "tests/test_research_factory*.py"
+      # W6A Market Memory candidate conformance: keep the exact adapter/schema,
+      # hostile suite, and owner-contract amendment explicit despite broad globs.
+      - "engine/research_factory/adapter_market_memory.py"
+      - "engine/research_factory/schema.py"
+      - "tests/test_research_factory_market_memory.py"
+      - "research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md"
+      - "research/KONSEKI_CLEAN_ROOM_MARKET_MEMORY_AND_COGNITIVE_ARCHITECTURE_FOR_FABLE_2026-08-08.md"
       - "config/synapse.yml"
       # CPI P2 authority guard: no money-path module may read cycle-pattern lake.
       - "scripts/check_cycle_pattern_authority.py"
