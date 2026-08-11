@@ -37,6 +37,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
 | fundamental-forensics | 3 |
+| gmi-theme-graph | 3 |
 | government-revenue-foresight | 42 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
@@ -113,7 +114,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 371 |
+| display | 374 |
 | infrastructure | 161 |
 | scored | 5 |
 | shadow | 99 |
@@ -122,7 +123,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 597 |
+| git | 600 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 17 |
@@ -423,6 +424,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | fundamental-forensics-private-state | `fundamental_forensics/state.json.gz` | json | daily-engine | display | 3 | 1 |
 | fundamental-forensics-disclosure-bundle | `fundamental_forensics/disclosures/v1/latest.json` | json | nightly-sec | infrastructure | 2 | 0 |
 | fundamental-forensics-sec-source-snapshot | `fundamental_forensics/sec-source/v1/latest.json` | json | nightly-sec | infrastructure | 2 | 0 |
+
+### gmi-theme-graph
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| theme-graph-edges | `data/theme_graph/edges.parquet` | parquet | daily-engine | display | 0 | 0 |
+| theme-graph-evidence | `data/theme_graph/evidence.parquet` | parquet | daily-engine | display | 0 | 0 |
+| theme-graph-nodes | `data/theme_graph/nodes.parquet` | parquet | daily-engine | display | 0 | 0 |
 
 ### government-revenue-foresight
 
@@ -897,13 +906,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | live-flow-tide-dated | `live_flow/tide/<DATE>.json` | json | intraday | display | 1 | 1 |
 | options-issue-desk-private-decisions | `runtime-private/options_issue_desk/decisions.jsonl` | jsonl | on-demand | infrastructure | 1 | 1 |
 | options-issue-desk-private-proposals | `runtime-private/options_issue_desk/proposals.jsonl` | jsonl | on-demand | infrastructure | 1 | 1 |
+| options-signal-episodes | `data/options_signal_episode/episodes.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | live-flow-event-stage-dated | `live_flow/events/<DATE>.jsonl` | jsonl | intraday | infrastructure | 1 | 0 |
 | options-session-ledger | `data/options_session/ledger.parquet` | parquet | daily-engine | display | 1 | 0 |
 | options-signal-campaigns | `data/options_signal_episode/campaigns.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | options-signal-episode-checkpoint | `data/options_signal_episode/checkpoint.json` | json | daily-engine | infrastructure | 1 | 0 |
 | options-signal-episode-h60-outcomes | `data/options_signal_episode/outcomes_h60.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | options-signal-episode-session-outcomes | `data/options_signal_episode/outcomes_session.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
-| options-signal-episodes | `data/options_signal_episode/episodes.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | polygon-intraday-price-cache | `data/intraday/<TICKER>.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | polygon-intraday-price-receipt | `data/intraday/<TICKER>.parquet.receipt.json` | json | daily-engine | infrastructure | 1 | 0 |
 | options-session-latest | `site/session/` | json | daily-engine | display | 0 | 0 |
