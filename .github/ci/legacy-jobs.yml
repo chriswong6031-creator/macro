@@ -7051,7 +7051,7 @@ jobs:
         with:
           node-version: "20"
       - name: install minimal deps
-        run: pip install pytest numpy pandas
+        run: pip install pytest numpy pandas pyyaml
       - name: basket read band + board group-pulse column (GR1)
         run: python -m pytest tests/test_group_read_surface.py -q -rs
 
