@@ -6501,6 +6501,18 @@ jobs:
       # job's venv line already carries both.
       - name: etf flow/selection decomposition — identity, $ estimates, robustness guards
         run: python -m pytest tests/test_etf_flow_decomposition.py -q
+      # W2a/W3 companions (2026-08-12), registered on arrival — this manifest is
+      # explicit-file (no pytest glob), so an unregistered suite runs in ZERO jobs
+      # (see the test_etf_board note above). Registry needs pyyaml; the ledger
+      # suite needs pandas+pyarrow and pins the nightly lane gate + price freeze;
+      # the windows tile renders measurement.html.j2 (jinja2). All deps already
+      # on this job's venv line.
+      - name: etf fund registry — universe coverage, type enum, sponsor drift pin
+        run: python -m pytest tests/test_etf_registry.py -q
+      - name: etf board ledger — lane gate, idempotency, frozen-price grading
+        run: python -m pytest tests/test_etf_board_ledger.py -q
+      - name: etf board windows tile — three states, zh parity, vocab
+        run: python -m pytest tests/test_etf_board_windows_tile.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
 
