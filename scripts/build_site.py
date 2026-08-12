@@ -31,6 +31,7 @@ from engine.i18n import prettify as _prettify, t as T  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
 from engine.market_gamma import view as market_gamma_view  # noqa: E402 — SHARED deriver: FE banner + contract (engine/run.py) call the SAME function so they can't drift
 from lib import config, site_assets, store  # noqa: E402
+from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -3554,6 +3555,12 @@ def _plans_view_model() -> dict:
         "pro": _tier_vm("pro"),
         "founding": founding,
         "terminal_indicators": catalog.get("terminal_indicators", {}),
+        # Chat allowances derived from config/brain.yml — the SAME file
+        # brain_gateway._get_allowance enforces (MNZ-R13). Every chat number on the
+        # page used to be a hand-typed literal; they were correct, but nothing bound
+        # them, so a repriced lane would have left the promise behind. See
+        # lib/chat_allowance.py.
+        "chat_quotas": chat_allowance_view_model(),
     }
 
 
@@ -3567,14 +3574,11 @@ def build_plans_page(env: Environment, site: Path, generated: str) -> None:
     Additive + graceful: never fatal to the build.
     """
     vm = _plans_view_model()
-    html = env.get_template("plans.html.j2").render(
-        generated_utc=generated,
-        currency=vm["currency"],
-        essential=vm["essential"],
-        pro=vm["pro"],
-        founding=vm["founding"],
-        terminal_indicators=vm["terminal_indicators"],
-    )
+    # Splat the view model rather than re-listing its keys: this template is rendered
+    # from THREE places (here, scripts/build_public_pages, and the pricing guards), and
+    # a hand-listed kwarg set means every new view-model key breaks the two call sites
+    # that forget it. Measured 2026-08-12 when `chat_quotas` landed.
+    html = env.get_template("plans.html.j2").render(generated_utc=generated, **vm)
     write_page(site / "plans.html", html)
     log.info("wrote plans.html (essential $%s/$%s save %s%% · pro $%s/$%s save %s%%)",
              vm["essential"]["monthly_pm"], vm["essential"]["annual_pm"], vm["essential"]["save_pct"],

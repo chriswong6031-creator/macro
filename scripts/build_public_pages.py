@@ -20,6 +20,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
+from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -91,6 +92,9 @@ def plans_view_model() -> dict:
         "pro": tier_vm("pro"),
         "founding": founding,
         "terminal_indicators": catalog.get("terminal_indicators", {}),
+        # See the same key in scripts/build_site._plans_view_model — both entry points
+        # render the SAME template, so both must hand it the same contract (MNZ-R13).
+        "chat_quotas": chat_allowance_view_model(),
     }
 
 
@@ -105,14 +109,9 @@ def build(site=None) -> None:
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     vm = plans_view_model()
 
-    plans = env.get_template("plans.html.j2").render(
-        generated_utc=generated,
-        currency=vm["currency"],
-        essential=vm["essential"],
-        pro=vm["pro"],
-        founding=vm["founding"],
-        terminal_indicators=vm["terminal_indicators"],
-    )
+    # See the same splat in scripts/build_site.build_plans_page — one contract, one
+    # place, so a new view-model key cannot reach one renderer and miss another.
+    plans = env.get_template("plans.html.j2").render(generated_utc=generated, **vm)
     write_page(site / "plans.html", plans)
     write_page(
         site / "support.html",
