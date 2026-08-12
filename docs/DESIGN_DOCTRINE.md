@@ -23,7 +23,7 @@ Every piece of copy lives on exactly one tier. Deciding the tier is the design a
 | Tier | Where | Job | Budget |
 |---|---|---|---|
 | **1 · GLANCE** | always-visible on primary dashboards | state + stance + one plain line | title ≤ 4 words; subtitle ≤ 14 words; row ≤ 1 line; footer ≤ 1 sentence |
-| **2 · HOVER** | `data-tip-en/zh`, `.act-pop-src` popovers, `?` help tips | mechanics, definitions, base rates, provenance, receipts | ≤ ~80 words per tip; structured (label: value) beats prose |
+| **2 · HOVER** | LENS `data-tip-en/zh` popovers (optional `data-tip-rc-en/zh` receipt line), `?` help tips | mechanics, definitions, base rates, provenance, receipts | ≤ ~80 words per tip; structured (label: value) beats prose |
 | **3 · STUDY** | detail pages, lab pages, committee/oracle/methodology surfaces | full technical depth, freely | none |
 
 Primary dashboards (Tier 1 surfaces): the landing hub, `us_stocks`, `macro`,
@@ -107,7 +107,7 @@ spin words on tape rows (giveback / dead-cat / bounce — banned by adversarial 
   🏃 In favour · 🟠 Take profits · ⚪ Stand aside. Lane names ARE stances. Unknown states
   route to the cautious lane.
 - **Hover popover row anatomy** (#2206): calm one-line rows; full detail (signal age,
-  breadth, overlays, two-reads) in a `.act-pop-src` popover cloned on hover.
+  breadth, overlays, two-reads) in a LENS `data-tip-en/zh` popover shown on hover.
 - **Self-labeling chip strip** (#2208, `.dtp-*`): the state token IS the label
   (LIVE · 15-MIN DELAYED / SETTLED CLOSE), one as-of, full display names (wrap, never
   truncate), honest shared-scale bars, flow demoted to data-tips, one merged footnote.
