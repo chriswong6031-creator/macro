@@ -285,3 +285,11 @@ gauntlet.
   not-a-single-variable-dial caution; the wrong-sign superlative scoped to this wave; §7.3
   phase-0-cohort-as-supporting. No grade, verdict, or ruling changed. Verification pass 3
   commissioned.
+- **2026-08-11 — POST-MERGE INSTRUMENT NOTE (append-only).** After the PRESENTABLE verdict, CI's
+  Prophet authority-leak fence (`tests/test_us_candidate_lanes.py::TestNoAuthorityLeak`) flagged
+  the harness's `candidate_pool` parameter name as a guarded-token homonym. Renamed
+  `control_candidates` (commit `0b0b563637d`, behavior-neutral, five occurrences inside
+  `p1_matched_controls` only; zero test or artifact references — verified before renaming). The
+  six artifacts of record are untouched; the rename postdates them and changes no computation.
+  PR #5372 merged as `b0001fb1b4c` after the fence rerun and a full fresh proof on the
+  sweeper-refreshed head.

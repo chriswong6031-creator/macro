@@ -11,12 +11,18 @@ Board-aware limit widths (CN-SYS-R12)
   STAR (688/689.SS): ±20% from listing
   ChiNext (300/301.SZ): ±10% BEFORE 2020-08-24; ±20% on/after 2020-08-24
   BSE (8x/4x): ±30% (2021-11-15→) — not present in raw store as of 2026-07-08, handled
-  ST/*ST on MAIN boards only: ±5%; ST names on STAR/ChiNext keep 20%
+  ST/*ST: ±5% on the main board, and on launch-era ChiNext (< 2020-08-24, when ChiNext
+    traded main-board widths); ST names on STAR and on wide-era ChiNext keep 20%
 
 IPO exclusion windows (CN-SYS-R12)
 ------------------------------------
   STAR/ChiNext names: first 5 sessions excluded from limit detection (44% cap regime)
+  Main-board listings from 2023-04-10 (full-market registration reform): first 5 sessions
+    excluded — those sessions trade with no daily price limit at all
   All pre-2014 listings (first bar before 2014-01-01): first session excluded (44% cap regime)
+  The window is keyed to the name's own FIRST STORE BAR, resolved before any start/end date
+    filter, so a windowed (nightly-increment) scan never mistakes its lookback edge for a
+    listing date.
 
 Ex-div caveat
 --------------
@@ -89,8 +95,10 @@ CHINEXT_WIDE_DATE = pd.Timestamp("2020-08-24")   # ChiNext switched to ±20% on 
 BSE_LAUNCH_DATE   = pd.Timestamp("2021-11-15")   # BSE launched
 STAR_LAUNCH_DATE  = pd.Timestamp("2019-07-22")   # STAR market launched
 IPO_PRE2014_DATE  = pd.Timestamp("2014-01-01")   # pre-2014 = 44% cap on day 1
+MAIN_REG_IPO_DATE = pd.Timestamp("2023-04-10")   # full-market registration reform: main-board listings get 5 no-limit sessions (szse.cn t20230306_599093)
 CHINEXT_STAR_IPO_WINDOW = 5                       # first N sessions excluded for STAR/ChiNext
 PRE2014_IPO_WINDOW      = 1                       # first session excluded for pre-2014 listings
+MAIN_REG_IPO_WINDOW     = 5                       # first N sessions excluded for main-board listings from MAIN_REG_IPO_DATE
 
 # Earliest date for which this module produces valid limit data.  The A-share ±10% daily price
 # limit was introduced 1996-12; before that date, applying a 10% rule generates fabricated
@@ -131,7 +139,9 @@ def limit_width_for_date(board: str, trade_date: pd.Timestamp,
                           is_st: bool = False) -> float:
     """Return the limit-up/down width as a decimal fraction for a given board+date.
 
-    ST flag applies ONLY on main board (CN-SYS-R12); STAR/ChiNext ST names keep 20%.
+    ST narrows to 5% on the main board (CN-SYS-R12) and on launch-era ChiNext
+    (< CHINEXT_WIDE_DATE, when ChiNext traded main-board widths); STAR and wide-era
+    ChiNext ST names keep 20%.
     BSE: 30% from 2021-11-15; before that date, BSE did not exist — treated as 30% for
     any bar in the raw store that starts after BSE_LAUNCH_DATE.
     """
@@ -140,7 +150,13 @@ def limit_width_for_date(board: str, trade_date: pd.Timestamp,
     if board == "chinext":
         if trade_date >= CHINEXT_WIDE_DATE:
             return 0.20
-        return 0.10
+        # Launch-era ChiNext (2009-10-30 → 2020-08-23) traded main-board widths,
+        # including the ±5% risk-warning band (szse.cn t20200729_580056); the
+        # 2020-08-24 reform widened ChiNext ST names to 20% with everything else.
+        # Both production callers gate is_st to the main board, so this cell is
+        # reachable only by direct callers — a correctness fix to the width table,
+        # not a production behaviour change.
+        return 0.05 if is_st else 0.10
     if board == "bse":
         return 0.30
     # main board
@@ -191,6 +207,31 @@ def _detect_limit_events(
     df = df.copy()
     df.index = pd.to_datetime(df.index)
 
+    # Determine IPO exclusion window — resolved BEFORE the start/end filter, and applied
+    # by DATE rather than by position in the filtered frame.  Two constraints are encoded:
+    #   (a) the window keys to the name's OWN first store bar in the unfiltered frame, so a
+    #       windowed scan never reads its lookback edge as a listing date.  Both production
+    #       callers pass the full per-ticker frame plus a start_date (build_china_micro-
+    #       structure.py, backfill_china_limit_tape.py); keyed to the filtered frame, every
+    #       seasoned name would look like a fresh listing on every nightly run.
+    #   (b) main-board names get the 5-session registration-era window ONLY when that first
+    #       store bar is on/after MAIN_REG_IPO_DATE.  Listings from 2014 to 2023-04-09 keep
+    #       no window (their day-1 collar bar is unreachable anyway — no prev_close).
+    # Side effect for seasoned star/chinext names in windowed scans: the old positional skip
+    # dropped the first 5 bars of every window; those bars now scan the way main-board bars
+    # always have.  Re-derivation stays idempotent — _append_parquet dedups on
+    # ["date", "ticker", "event"].
+    full_index = df.index
+    first_bar_global = full_index.min()
+    ipo_window = 0
+    if board in ("star", "chinext"):
+        ipo_window = CHINEXT_STAR_IPO_WINDOW
+    elif board == "main" and first_bar_global >= MAIN_REG_IPO_DATE:
+        ipo_window = MAIN_REG_IPO_WINDOW
+    elif first_bar_global < IPO_PRE2014_DATE:
+        ipo_window = PRE2014_IPO_WINDOW
+    ipo_dates = set(full_index.sort_values()[:ipo_window]) if ipo_window else set()
+
     # Apply date filter if requested
     if start_date is not None:
         df = df[df.index >= start_date]
@@ -198,14 +239,6 @@ def _detect_limit_events(
         df = df[df.index <= end_date]
     if df.empty:
         return [], 0, 0
-
-    # Determine IPO exclusion window
-    first_bar_global = pd.to_datetime(df.index.min())
-    ipo_window = 0
-    if board in ("star", "chinext"):
-        ipo_window = CHINEXT_STAR_IPO_WINDOW
-    elif first_bar_global < IPO_PRE2014_DATE:
-        ipo_window = PRE2014_IPO_WINDOW
 
     # ST membership: apply 5% width only for dates >= ST_STORE_COVERAGE_DATE on main boards
     is_st_current = (ticker in st_set)
@@ -226,7 +259,7 @@ def _detect_limit_events(
         trade_date = pd.Timestamp(ts)
 
         # --- IPO window exclusion ---
-        if i < ipo_window:
+        if trade_date in ipo_dates:
             ipo_excluded += 1
             lianban_streak = 0
             continue

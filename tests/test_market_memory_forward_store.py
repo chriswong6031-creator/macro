@@ -15,6 +15,7 @@ import pytest
 from engine.neuralweb import market_memory as mm
 from engine.neuralweb import market_memory_forward as forward
 from engine.neuralweb import market_memory_forward_store as store
+from tests import market_memory_repo_scan as repo_scan
 from tests.test_market_memory_forward import _synthetic_w1_packet
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -369,34 +370,23 @@ def test_store_module_has_no_default_root_env_cli_service_api_or_data_path() -> 
 
 def test_no_production_python_imports_or_calls_the_temp_store() -> None:
     offenders: list[str] = []
-    for base in (ROOT / "app", ROOT / "engine", ROOT / "scripts"):
-        for path in base.rglob("*.py"):
-            if path == ROOT / "engine/neuralweb/market_memory_forward_store.py":
-                continue
-            source = path.read_text(encoding="utf-8")
-            tree = ast.parse(source)
-            imported = any(
-                (
-                    isinstance(node, ast.Import)
-                    and any(
-                        alias.name.endswith("market_memory_forward_store")
-                        for alias in node.names
-                    )
-                )
-                or (
-                    isinstance(node, ast.ImportFrom)
-                    and (
-                        (node.module or "").endswith("market_memory_forward_store")
-                        or any(
-                            alias.name == "market_memory_forward_store"
-                            for alias in node.names
-                        )
-                    )
-                )
-                for node in ast.walk(tree)
+    for path in repo_scan.production_python_paths():
+        if path == ROOT / "engine/neuralweb/market_memory_forward_store.py":
+            continue
+        names = repo_scan.import_names(path)
+        imported = (
+            any(
+                alias.endswith("market_memory_forward_store")
+                for alias in names.imported
             )
-            if imported:
-                offenders.append(path.relative_to(ROOT).as_posix())
+            or any(
+                module.endswith("market_memory_forward_store")
+                for module in names.from_modules
+            )
+            or "market_memory_forward_store" in names.from_names
+        )
+        if imported:
+            offenders.append(path.relative_to(ROOT).as_posix())
     assert offenders == []
 
 

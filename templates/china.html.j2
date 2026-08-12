@@ -1920,15 +1920,18 @@
   <!-- =============== MARKET TILES (C · US mx5 combined index face: SSE / CSI300 / ChiNext / HSI) =============== -->
   <div class="cnx-secbar"><b>{{ t('CHINA DASHBOARD','中国看板') }}</b><span>{{ latest.date }}</span></div>
   {# ── C · One glass face → markets dialog (ported from dashboard.html.j2 9959–10042).
-     Preserves China's four indexes + their live data-sym/data-mkt hooks (SSE + HSI patch
-     via live.js; CSI/ChiNext read the nightly market_tiles level). tone (pos/neg) → up/dn
-     drives the delta colour, which routes through --up/--down so it flips in zh. No idx_spark
-     on the China VM, so sparklines are omitted (the same honest guard as the US block). #}
+     All four tiles are live-wired (nb-px price + nb-chg delta, patched by live.js).
+     SSE + HSI additionally bake the nightly store level/pct as initial content; CSI 300
+     and ChiNext are LIVE-ONLY (the dashboard futures-strip pattern: baked "—") because
+     the real index histories cannot be baked honestly — Yahoo daily history runs weeks
+     stale for 000300.SS and is absent for 399006.SZ (probed 2026-08-11) — and baking
+     the 510300.SS/159915.SZ ETF NAVs rendered ~4.7/~3.6 under index labels (the
+     2026-08-11 production bug). tone (pos/neg) → up/dn drives the baked delta colour,
+     which routes through --up/--down so it flips in zh. No idx_spark on the China VM,
+     so sparklines are omitted (the same honest guard as the US block). #}
   {% set _tile_by_sym = {} %}
   {% for _mt in (market_tiles or []) %}{% set _ = _tile_by_sym.update({_mt.sym: _mt}) %}{% endfor %}
   {% set _sse = _tile_by_sym.get('000001.SS') %}
-  {% set _csi = _tile_by_sym.get('510300.SS') %}
-  {% set _cnx_tile = _tile_by_sym.get('159915.SZ') %}
   {% set _tone_dir = {'pos':'up','neg':'dn'} %}
   <div class="cnx-tiles">
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog"
@@ -1942,28 +1945,22 @@
           <div class="mx5-mkt-sub"><span class="l-en">Shanghai</span><span class="l-zh">上证综指</span></div>
           {% if _sse %}
           <div class="mx5-mkt-price nb-px" data-sym="000001.SS" data-mkt="cn" data-bare>{{ _sse.level }}</div>
-          <div class="mx5-mkt-delta {{ _d }}">{{ _sse.pct }}</div>
-          {% else %}<div class="mx5-mkt-price">—</div><div class="mx5-mkt-delta">—</div>{% endif %}
+          <div class="mx5-mkt-delta nb-chg {{ _d }}" data-sym="000001.SS" data-mkt="cn">{{ _sse.pct }}</div>
+          {% else %}<div class="mx5-mkt-price nb-px" data-sym="000001.SS" data-mkt="cn" data-bare>—</div><div class="mx5-mkt-delta nb-chg" data-sym="000001.SS" data-mkt="cn">—</div>{% endif %}
         </div>
-        {# CSI 300 ETF #}
-        {% set _d = _tone_dir.get(_csi.tone, '') if _csi else '' %}
-        <div class="mx5-mkt-tile {{ _d }}">
+        {# CSI 300 (live-only — see the block comment above) #}
+        <div class="mx5-mkt-tile" data-sym="000300.SS" data-mkt="cn">
           <div class="mx5-mkt-ticker">CSI 300</div>
           <div class="mx5-mkt-sub"><span class="l-en">Large cap</span><span class="l-zh">沪深300</span></div>
-          {% if _csi %}
-          <div class="mx5-mkt-price">{{ _csi.level }}</div>
-          <div class="mx5-mkt-delta {{ _d }}">{{ _csi.pct }}</div>
-          {% else %}<div class="mx5-mkt-price">—</div><div class="mx5-mkt-delta">—</div>{% endif %}
+          <div class="mx5-mkt-price nb-px" data-sym="000300.SS" data-mkt="cn" data-bare>—</div>
+          <div class="mx5-mkt-delta nb-chg" data-sym="000300.SS" data-mkt="cn">—</div>
         </div>
-        {# ChiNext ETF #}
-        {% set _d = _tone_dir.get(_cnx_tile.tone, '') if _cnx_tile else '' %}
-        <div class="mx5-mkt-tile {{ _d }}">
+        {# ChiNext (live-only — see the block comment above) #}
+        <div class="mx5-mkt-tile" data-sym="399006.SZ" data-mkt="cn">
           <div class="mx5-mkt-ticker">ChiNext</div>
           <div class="mx5-mkt-sub"><span class="l-en">Growth</span><span class="l-zh">创业板</span></div>
-          {% if _cnx_tile %}
-          <div class="mx5-mkt-price">{{ _cnx_tile.level }}</div>
-          <div class="mx5-mkt-delta {{ _d }}">{{ _cnx_tile.pct }}</div>
-          {% else %}<div class="mx5-mkt-price">—</div><div class="mx5-mkt-delta">—</div>{% endif %}
+          <div class="mx5-mkt-price nb-px" data-sym="399006.SZ" data-mkt="cn" data-bare>—</div>
+          <div class="mx5-mkt-delta nb-chg" data-sym="399006.SZ" data-mkt="cn">—</div>
         </div>
         {# Hang Seng (live) #}
         {% set _d = _tone_dir.get(hsi_tile.tone, '') if hsi_tile else '' %}
@@ -1972,8 +1969,8 @@
           <div class="mx5-mkt-sub"><span class="l-en">Hang Seng</span><span class="l-zh">恒生</span></div>
           {% if hsi_tile %}
           <div class="mx5-mkt-price nb-px" data-sym="^HSI" data-mkt="hk" data-bare>{{ hsi_tile.level }}</div>
-          <div class="mx5-mkt-delta {{ _d }}">{{ hsi_tile.pct }}</div>
-          {% else %}<div class="mx5-mkt-price">—</div><div class="mx5-mkt-delta">—</div>{% endif %}
+          <div class="mx5-mkt-delta nb-chg {{ _d }}" data-sym="^HSI" data-mkt="hk">{{ hsi_tile.pct }}</div>
+          {% else %}<div class="mx5-mkt-price nb-px" data-sym="^HSI" data-mkt="hk" data-bare>—</div><div class="mx5-mkt-delta nb-chg" data-sym="^HSI" data-mkt="hk">—</div>{% endif %}
         </div>
       </div>
     </div>
