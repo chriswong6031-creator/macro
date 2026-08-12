@@ -2446,6 +2446,16 @@ def _sanitize_thesis_text_zh(text: str) -> str:
     return text
 
 
+# PUBLIC ALIASES — the thesis path is not the only fold that carries snapshot-derived
+# conviction copy onto a user-facing surface. scripts/build_prophet.derive_showcase_card
+# folds the SAME cautions into the landing showcase, and until 2026-08-11 it did so
+# verbatim: a fossilised 'validated drawdown gate' caution rode the board snapshot into
+# site/prophet/showcase.json and from there into the anonymous landing page's ph-data
+# island. Both sanitizers are idempotent, so applying them at every edge is safe.
+sanitize_thesis_text = _sanitize_thesis_text
+sanitize_thesis_text_zh = _sanitize_thesis_text_zh
+
+
 _GOVERNMENT_REVENUE_METRICS = (
     "ttm_obligations",
     "prior_ttm_obligations",
@@ -2797,8 +2807,18 @@ def _build_thesis(
     if dc_phase:
         tech_flags.append(f"Donchian phase: {dc_phase}")
 
-    entry_grade = es.get("entry_grade") or ""
-    archetype = b.get("archetype") or b.get("setup_type") or ""
+    # SNAPSHOT-DERIVED SCALARS ARE SANITIZED TOO (2026-08-11). Sentences 2 and 3 have
+    # sanitized their drivers/cautions/trust-tier since the plan JSON went user-facing,
+    # but sentence 1 interpolated four more board-derived strings raw — the conviction
+    # band, the entry grade, the archetype/setup name, and the Donchian phase — each of
+    # which the board is free to reword at any time. That is the same fossil channel the
+    # landing showcase breach came through, one function earlier. Sanitizing at the read
+    # keeps it closed without touching the append-only board ledger, whose whole purpose
+    # is to preserve the bytes a board actually carried on its own date.
+    band = _sanitize_thesis_text(str(band))
+    tech_flags = [_sanitize_thesis_text(f) for f in tech_flags]
+    entry_grade = _sanitize_thesis_text(es.get("entry_grade") or "")
+    archetype = _sanitize_thesis_text(b.get("archetype") or b.get("setup_type") or "")
 
     s1_parts = [f"{ticker} — conviction {score}/100 ({band})"]
     if tech_flags:
@@ -2902,8 +2922,11 @@ def _build_thesis_zh(
     if dc_phase:
         tech_flags_zh.append(f"唐奇安阶段: {dc_phase}")
 
-    entry_grade = es.get("entry_grade") or ""
-    archetype = b.get("archetype") or b.get("setup_type") or ""
+    # Same snapshot-derived scalars as the EN half — see the note in _build_thesis.
+    band_zh = _sanitize_thesis_text_zh(str(band_zh))
+    tech_flags_zh = [_sanitize_thesis_text_zh(f) for f in tech_flags_zh]
+    entry_grade = _sanitize_thesis_text_zh(es.get("entry_grade") or "")
+    archetype = _sanitize_thesis_text_zh(b.get("archetype") or b.get("setup_type") or "")
 
     s1_parts = [f"{ticker} — 确信度 {score}/100（{band_zh}）"]
     if tech_flags_zh:

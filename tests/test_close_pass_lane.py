@@ -47,6 +47,7 @@ if str(ROOT) not in sys.path:
 import scripts.close_pass_mirror as M  # noqa: E402
 import scripts.close_pass_publish as P  # noqa: E402
 import scripts.close_pass_reconcile as RC  # noqa: E402
+from scripts.workflow_run_source import resolved_workflow_text  # noqa: E402
 from engine import us_board_rank  # noqa: E402
 from engine.close_pass import board as CB  # noqa: E402
 from engine.close_pass import reconcile as CR  # noqa: E402
@@ -1577,8 +1578,8 @@ def test_the_receipt_is_graded_inside_the_nightly_not_after_it():
     assert "workflow_run" not in WORKFLOW[True]  # yaml parses bare `on:` as True
     assert "workflow_run" not in WORKFLOW_SRC.split("jobs:")[1]
 
-    daily_src = (ROOT / ".github" / "workflows" / "daily.yml").read_text(
-        encoding="utf-8")
+    daily_src = resolved_workflow_text(
+        ROOT / ".github" / "workflows" / "daily.yml", ROOT)
     engine = daily_src.split("\n  engine:\n", 1)[1]
     assert "python -m scripts.close_pass_reconcile" in engine
 

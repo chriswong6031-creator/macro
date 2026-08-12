@@ -168,14 +168,42 @@ push_do() {
 push_metadata_replay_commit() {
   local render_parent="$1" onto="$2" render_commit="$3" message="$4" index_path="$5"
   local onto_commit tree commit rc=0 status path base_entry onto_entry render_entry
-  local meta mode oid
+  local meta mode oid diff_path
 
   onto_commit=$(git rev-parse "${onto}^{commit}") || return 1
   rm -f -- "$index_path" "$index_path.lock"
+  diff_path=$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/push-metadata-diff.XXXXXX") \
+    || return 1
+  # Process substitution discards the producer's exit status.  Capture the
+  # complete NUL stream first so a diff-tree process that emits a prefix and
+  # then fails can never be mistaken for a complete replay.
+  if ! git diff-tree -r --no-commit-id --no-renames --name-status -z \
+      "$render_parent" "$render_commit" > "$diff_path"; then
+    printf 'metadata replay cannot enumerate the generated diff\n' >&2
+    rm -f -- "$index_path" "$index_path.lock" "$diff_path"
+    return 1
+  fi
   GIT_INDEX_FILE="$index_path" git read-tree "$onto_commit" || rc=$?
-  while [ "$rc" -eq 0 ] \
-    && IFS= read -r -d '' status \
-    && IFS= read -r -d '' path; do
+  while [ "$rc" -eq 0 ]; do
+    status=""
+    if ! IFS= read -r -d '' status; then
+      if [ -n "$status" ]; then
+        printf 'metadata replay received a truncated status entry\n' >&2
+        rc=1
+      fi
+      break
+    fi
+    path=""
+    if ! IFS= read -r -d '' path; then
+      printf 'metadata replay received a truncated status/path pair\n' >&2
+      rc=1
+      break
+    fi
+    if [ -z "$status" ] || [ -z "$path" ]; then
+      printf 'metadata replay received an empty status/path entry\n' >&2
+      rc=1
+      break
+    fi
     base_entry=$(git ls-tree "$render_parent" -- "$path") || rc=$?
     [ "$rc" -eq 0 ] || break
     onto_entry=$(git ls-tree "$onto_commit" -- "$path") || rc=$?
@@ -203,10 +231,69 @@ push_metadata_replay_commit() {
         rc=1
         ;;
     esac
-  done < <(
-    git diff-tree -r --no-commit-id --no-renames --name-status -z \
-      "$render_parent" "$render_commit"
-  )
+  done < "$diff_path"
+  if [ "$rc" -eq 0 ]; then
+    tree=$(GIT_INDEX_FILE="$index_path" git write-tree --missing-ok) || rc=$?
+  fi
+  if [ "$rc" -eq 0 ]; then
+    commit=$(printf '%s\n' "$message" | git commit-tree "$tree" -p "$onto_commit") || rc=$?
+  fi
+  rm -f -- "$index_path" "$index_path.lock" "$diff_path"
+  [ "$rc" -eq 0 ] || return "$rc"
+  printf '%s\n' "$commit"
+}
+
+# Replay a complete, fixed file set onto newer main.  Unlike the generic helper
+# above, every approved path is compared and overlaid even when its candidate
+# blob equals the original parent.  This prevents a checkpoint assembled from
+# two generations when newer main changes an otherwise-unchanged member.
+#
+# Arguments are the five generic replay arguments followed by one or more exact
+# regular-file paths.  Deletions, non-100644 modes, missing blobs, and a newer
+# main change that differs from the complete candidate snapshot all fail closed.
+push_exact_paths_replay_commit() {
+  local render_parent="$1" onto="$2" render_commit="$3" message="$4" index_path="$5"
+  shift 5
+  local -a exact_paths=("$@")
+  local onto_commit tree commit rc=0 path base_entry onto_entry render_entry
+  local meta mode type oid
+
+  [ "${#exact_paths[@]}" -gt 0 ] || return 1
+  onto_commit=$(git rev-parse "${onto}^{commit}") || return 1
+  rm -f -- "$index_path" "$index_path.lock"
+  GIT_INDEX_FILE="$index_path" git read-tree "$onto_commit" || rc=$?
+  for path in "${exact_paths[@]}"; do
+    [ "$rc" -eq 0 ] || break
+    base_entry=$(git ls-tree "$render_parent" -- "$path") || rc=$?
+    [ "$rc" -eq 0 ] || break
+    onto_entry=$(git ls-tree "$onto_commit" -- "$path") || rc=$?
+    [ "$rc" -eq 0 ] || break
+    render_entry=$(git ls-tree "$render_commit" -- "$path") || rc=$?
+    [ "$rc" -eq 0 ] || break
+    if [ -z "$render_entry" ] || [ "${render_entry#*$'\t'}" != "$path" ]; then
+      printf 'exact metadata replay is missing candidate path %s\n' "$path" >&2
+      rc=1
+      break
+    fi
+    meta=${render_entry%%$'\t'*}
+    mode=${meta%% *}
+    meta=${meta#* }
+    type=${meta%% *}
+    oid=${meta##* }
+    if [ "$mode" != 100644 ] || [ "$type" != blob ] \
+        || ! git cat-file -e "$oid^{blob}" 2>/dev/null; then
+      printf 'exact metadata replay rejected non-regular candidate path %s\n' "$path" >&2
+      rc=1
+      break
+    fi
+    if [ "$onto_entry" != "$base_entry" ] && [ "$onto_entry" != "$render_entry" ]; then
+      printf 'exact metadata replay conflict: newer main also changed %s\n' "$path" >&2
+      rc=1
+      break
+    fi
+    GIT_INDEX_FILE="$index_path" git update-index --add --cacheinfo \
+      "$mode" "$oid" "$path" || rc=$?
+  done
   if [ "$rc" -eq 0 ]; then
     tree=$(GIT_INDEX_FILE="$index_path" git write-tree --missing-ok) || rc=$?
   fi

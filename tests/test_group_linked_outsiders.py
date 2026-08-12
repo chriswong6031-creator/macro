@@ -570,6 +570,72 @@ def test_pulse_json_is_read_from_the_site_root(world: Path, tmp_path: Path):
 
 
 # --------------------------------------------------------------------------
+# as_of — one session for the whole GR plane (audit 2026-08-10, F-7 tail)
+# --------------------------------------------------------------------------
+
+
+def _pulse_at(site: Path, session: str) -> None:
+    (site / "basketdata").mkdir(parents=True, exist_ok=True)
+    (site / "basketdata" / "pulse.json").write_text(
+        json.dumps({"ai_infra": {"as_of": session, "direction": {"sign": "up"}}}),
+        encoding="utf-8",
+    )
+
+
+def test_as_of_follows_the_pulse_data_session_not_the_run_clock(world: Path, tmp_path: Path):
+    """This plane stamped the WALL-CLOCK run date while pulse / episodes / earnings_pulse
+    stamp the last DATA SESSION, so the four GR artifacts disagreed about what "today" was
+    (audit observed 08-10 here against 08-07 there).  With no caller-supplied `as_of` the
+    stamp now comes from the sibling artifact this plane is joined to."""
+    _write_events(world, [_event("NVDA", "2026-07-01", "1.01", "ao-1", "Wolfspeed, Inc.")])
+    site = tmp_path / "site"
+    _pulse_at(site, "2026-08-07")
+    result = glo.compute(data_root=world, site_root=site)
+    assert {obj["as_of"] for obj in result.values()} == {"2026-08-07"}
+
+
+def test_an_explicit_as_of_still_outranks_the_pulse_session(world: Path, tmp_path: Path):
+    """Backfills and the smoke run pass their own session; the pulse stamp is the DEFAULT,
+    never an override."""
+    site = tmp_path / "site"
+    _pulse_at(site, "2026-08-07")
+    result = glo.compute(as_of=date(2026, 8, 5), data_root=world, site_root=site)
+    assert {obj["as_of"] for obj in result.values()} == {"2026-08-05"}
+
+
+def test_a_pulse_without_a_session_stamp_discloses_the_clock_fallback(
+        world: Path, tmp_path: Path, capsys):
+    """No pulse, no session — the run date is still usable, but it is never SILENT, because
+    a silent fallback is exactly how the two planes drifted apart in the first place."""
+    result = glo.compute(data_root=world, site_root=tmp_path / "site", pulse={})
+    lines = [ln for ln in capsys.readouterr().out.splitlines()
+             if "linked-outsiders-as-of" in ln]
+    assert lines, "the fallback to the run clock shipped silently"
+    # GitHub only parses an annotation that STARTS the line.
+    assert lines[0].startswith("::warning title="), lines[0]
+    stamps = {obj["as_of"] for obj in result.values()}
+    assert len(stamps) == 1
+    date.fromisoformat(stamps.pop())   # well formed; the clock value itself is not pinned
+
+
+def test_run_takes_its_window_and_its_stamp_from_the_same_session(
+        world: Path, tmp_path: Path, monkeypatch):
+    """The edge WINDOW and the artifact STAMP are resolved once, together — a filing that
+    lands after the last data session is in-window against the clock and out-of-window
+    against the tape, and the tape is what the outsider move is read on."""
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    site = tmp_path / "site"
+    _pulse_at(site, "2026-08-07")
+    _write_events(world, [_event("NVDA", "2026-08-09", "1.01", "rw-1", "Wolfspeed, Inc.")])
+    glo.run(data_root=world, site_root=site)
+    written = json.loads(
+        (site / "basketdata" / "linked_outsiders.json").read_text(encoding="utf-8"))
+    assert written["ai_infra"]["as_of"] == "2026-08-07"
+    assert written["ai_infra"]["n_outsiders"] == 0, \
+        "a filing past the data session was admitted — the window did not move with the stamp"
+
+
+# --------------------------------------------------------------------------
 # Missing / broken inputs never crash the nightly
 # --------------------------------------------------------------------------
 
