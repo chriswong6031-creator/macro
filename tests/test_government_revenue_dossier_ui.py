@@ -505,8 +505,16 @@ def test_dossier_back_invalidates_pending_subaward_and_evidence_work(tmp_path: P
             var afterMore=host.innerHTML;input.value='Stale';listeners.search.call(input);setTimeout(function(){
               listeners.back();deferred.search();setTimeout(function(){
                 var afterList=host.innerHTML;listeners.award();setTimeout(function(){
-                  listeners.evidence();listeners.back();deferred.evidence();setTimeout(function(){
-                    process.stdout.write(JSON.stringify({afterMore:afterMore,afterList:afterList,final:host.innerHTML,drawer:drawer,calls:calls}));
+                  // The evidence request is dispatched from inside withAuth()'s
+                  // promise chain (the API is bearer-authenticated), so it is in
+                  // flight one microtask after the click rather than during it.
+                  // Yield before clicking back so this still pins what it always
+                  // pinned: a request ALREADY IN FLIGHT, invalidated by back,
+                  // whose late response must not paint.
+                  listeners.evidence();setTimeout(function(){
+                    listeners.back();deferred.evidence();setTimeout(function(){
+                      process.stdout.write(JSON.stringify({afterMore:afterMore,afterList:afterList,final:host.innerHTML,drawer:drawer,calls:calls}));
+                    },10);
                   },10);
                 },10);
               },10);

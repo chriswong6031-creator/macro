@@ -4,6 +4,22 @@ The service never recalculates procurement metrics at request time.  It serves
 the compact, deterministic artifact produced by
 ``scripts.build_government_revenue`` and fails closed when that artifact is
 missing or malformed.
+
+Access tier: PAID (``site_full``), enforced router-wide — see
+``require_site_full_user`` below.  The desk's inputs are public USAspending and
+DoD budget records, but the served payload is the wrapper the program's own
+masterplan calls the moat (``research/GOVERNMENT_REVENUE_FORESIGHT_MASTERPLAN_FOR_FABLE.md``
+§1 and §"Entity resolution is the most important moat"): the resolved
+issuer<->UEI/CAGE graph, revision-aware award history, and house-scored fields
+(company ``confidence`` tiers; the weighted, filtered, rank-ordered
+``company_candidates`` on the opportunity rail).  Public *inputs* do not make a
+derived product free -- the incumbents this desk competes with meter the same
+public records behind a paid subscription.
+
+Note that the masterplan's "authority tier: display/context only" is an
+EPISTEMICS tier (may a signal rank/size/gate a trade -- no) and not an ACCESS
+tier (must a reader be entitled -- yes).  The two are independent; conflating
+them is what left this router open.
 """
 from __future__ import annotations
 
@@ -18,7 +34,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 
 from engine.government_revenue.budget_program import (
     BUDGET_PROGRAM_GRAPH_CONTRACT,
@@ -66,7 +82,24 @@ from engine.government_revenue.subaward_dossiers import (
 )
 from engine.government_revenue.workspace import is_valid_procurement_workspace
 
-router = APIRouter()
+def require_site_full_user(authorization: str | None = Header(default=None)) -> dict:
+    """Authenticate first and enforce the paid payload even while staging.
+
+    Same shape as the sibling Vertical Intelligence desks
+    (``app/biocatalyst.py``, ``app/capital_structure.py``, ``app/market_memory.py``):
+    ``always=True`` so the desk fails closed in every environment rather than
+    riding the global ``PAYWALL_ENABLED`` switch.
+    """
+    from app.main import require_user as _require_user  # noqa: PLC0415
+    from app.paywall import enforce_site_full  # noqa: PLC0415
+
+    return enforce_site_full(_require_user(authorization), always=True)
+
+
+# Router-level rather than per-route: this module has 24 routes and grows, and
+# the failure mode being fixed here is precisely a route that ships without the
+# dependency someone forgot to repeat.  A new @router.get inherits the gate.
+router = APIRouter(dependencies=[Depends(require_site_full_user)])
 
 _REPO = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 _PATHS = (
@@ -2370,7 +2403,10 @@ def search(q: str = Query(min_length=1, max_length=80), limit: int = Query(defau
             })
         if len(matches) >= limit:
             break
-    return {"as_of": payload.get("as_of"), "query": q, "results": matches}
+    # `metrics`/`confidence` are spread straight off the raw company row here
+    # rather than through `_public_company`, so this route has to scrub for
+    # itself; every other route inherits it from a `_public_*` projection.
+    return _scrub_public({"as_of": payload.get("as_of"), "query": q, "results": matches})
 
 
 @router.get("/api/government-revenue/opportunities")
@@ -2494,14 +2530,18 @@ def recompetes(
         for watch in company_row.get("recompete_candidates") or []:
             if not isinstance(watch, dict) or int(watch.get("days_to_end") or 10**9) > within_days:
                 continue
-            rows.append({
+            # ``watch`` is spread straight off the company row and carries a
+            # ``source_url``; without this the row would skip the credential /
+            # non-HTTPS stripping every other URL-bearing route inherits from
+            # its `_public_*` projection.
+            rows.append(_scrub_public({
                 "ticker": company_row.get("ticker"),
                 "name": company_row.get("name"),
                 "classification": "derived_deterministic",
                 "label_limit": "period-of-performance expiry watch; not an official recompete date or solicitation forecast",
                 "authority": payload.get("authority"),
                 **watch,
-            })
+            }))
     rows.sort(key=lambda row: (int(row.get("days_to_end") or 10**9), str(row.get("ticker") or "")))
     total = len(rows)
     page = rows[offset:offset + limit]
