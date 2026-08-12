@@ -18564,5 +18564,5 @@
       "early_turn": null
     }
   ],
-  "note": "DISPLAY-ONLY. All plans are display-tier artifacts. No signal has passed a forward ledger gate. The word 'validated' is forbidden in user-facing text. Nightly is the sole advancer of the forward ledger."
+  "note": "DISPLAY-ONLY. All plans are display-tier artifacts. No signal has passed a forward ledger gate. Affirmative validation language is forbidden in user-facing text. Nightly is the sole advancer of the forward ledger."
 }
