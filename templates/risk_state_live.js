@@ -122,16 +122,21 @@
   var PATH_VZ = { RISK_ON: "偏多", MIXED: "中性", RISK_OFF: "偏空" };
   var MONTH_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  /* Live provisional point on the score-path chart. The baked chart is a view of the
-     nightly forward ledger, so between renders the current session is missing (and a
+  /* Live provisional point on the measured-blend path chart. The baked chart is a view of the
+     nightly forward ledger's raw_score, so between renders the current session is missing (and a
      no-network re-render can even regress the bake to an older close). Trust the live
      feed instead: update the last point in place when the bake already has the session,
      else APPEND a provisional point — rescaling x from the svg's own data-* constants,
-     re-seating the axis ticks/date labels, and recoloring line/fill/dot to the live
+     re-seating the axis ticks/date labels, and recoloring line/fill/dot to the raw blend's
      verdict. data-points is rewritten and 'mx5pathlive' dispatched so the baked hover
      script re-reads it (tooltip stays truthful, incl. on the provisional point). */
   function patchPath(d, disp) {
-    if (disp.score == null || !PATH_V[disp.verdict]) return;
+    var pathRaw = disp.raw_score != null ? disp.raw_score : disp.score;
+    if (pathRaw == null) return;
+    var pathScore = +pathRaw;
+    if (!isFinite(pathScore)) return;
+    var pathVerdict = pathScore >= 60 ? "RISK_ON" : (pathScore >= 42 ? "MIXED" : "RISK_OFF");
+    if (!PATH_V[pathVerdict]) return;
     var svg = document.querySelector(".mx5-sc-right .mx5-path-svg[data-points]");
     if (!svg) return;
     var pts;
@@ -145,23 +150,23 @@
     var PX0 = +(svg.getAttribute("data-px0") || 44),  PXW = +(svg.getAttribute("data-pxw") || 944);
     var PY0 = +(svg.getAttribute("data-py0") || 10),  PYB = +(svg.getAttribute("data-pyb") || 194);
     var VBW = +(svg.getAttribute("data-vbw") || 1000), VBH = +(svg.getAttribute("data-vbh") || 224);
-    var s = Math.max(0, Math.min(100, +disp.score));
+    var s = Math.max(0, Math.min(100, pathScore));
     var y = Math.round((PYB - s / 100 * (PYB - PY0)) * 100) / 100;
-    var col = HEX[COLOR[disp.verdict]];
+    var col = HEX[COLOR[pathVerdict]];
     var appended = false, oldX = null, i;
     if (sess > last.d) {
       oldX = [];
       for (i = 0; i < pts.length; i++) oldX.push(pts[i].x);
       var mm = +sess.slice(5, 7), dd = +sess.slice(8, 10);
       pts.push({ d: sess, md: MONTH_EN[mm - 1] + " " + dd, mz: mm + "月" + dd,
-                 s: s, v: PATH_V[disp.verdict], vz: PATH_VZ[disp.verdict], x: 0, y: y, live: 1 });
+                 s: s, v: PATH_V[pathVerdict], vz: PATH_VZ[pathVerdict], x: 0, y: y, live: 1 });
       for (i = 0; i < pts.length; i++)
         pts[i].x = Math.round((PX0 + i / (pts.length - 1) * PXW) * 100) / 100;
       appended = true;
     } else {
-      if (last.s === s && last.v === PATH_V[disp.verdict]) return;   /* no change */
+      if (last.s === s && last.v === PATH_V[pathVerdict]) return;   /* no change */
       last.s = s; last.y = y;
-      last.v = PATH_V[disp.verdict]; last.vz = PATH_VZ[disp.verdict];
+      last.v = PATH_V[pathVerdict]; last.vz = PATH_VZ[pathVerdict];
     }
     var lastP = pts[pts.length - 1];
     var lineStr = pts.map(function (p) { return p.x + "," + p.y; }).join(" ");
@@ -215,7 +220,7 @@
         if (tZh) tZh.textContent = "近 " + pts.length + " 交易日走势";
       }
     }
-    svg.setAttribute("aria-label", pts.length + "-session macro score path, " +
+    svg.setAttribute("aria-label", pts.length + "-session measured blend path, " +
                                    pts[0].s + " to " + lastP.s);
     svg.setAttribute("data-points", JSON.stringify(pts));
     try { document.dispatchEvent(new CustomEvent("mx5pathlive")); } catch (e2) {}
@@ -270,7 +275,7 @@
         disp.verdict !== d.nightly.verdict) {
       var ntl = d.nightly;
       disp = { verdict: ntl.verdict, label_en: ntl.label_en, label_zh: ntl.label_zh,
-               color: ntl.color, score: disp.score };
+               color: ntl.color, score: disp.score, raw_score: disp.raw_score };
     }
     if (bakedLabelEn === null) {
       var b0 = document.querySelector(".mx5-verdict-word .l-en");
