@@ -1,0 +1,36 @@
+# agentos/schema/workstream.schema.yml
+# Machine mirror of research/MASTERMIND_AGENT_OS_STATE_SCHEMA.md §1.
+# Enforced by scripts/agentos.py validate. Prose spec wins on conflict.
+schema: agentos.workstream.v1
+file: agentos/workstreams/WS-<KEY>.md
+required:
+  key:          {type: string, pattern: UPPER-KEBAB, note: must match filename WS-<key>.md}
+  title:        {type: string}
+  objective:    {type: string, note: "1-3 sentences; 'done' in observable terms"}
+  status:       {enum: [proposed, active, blocked, awaiting_ci, awaiting_review, done, parked, killed]}
+  program:      {type: string, note: key from config/mastermind_programs.yml (validated)}
+  repos:        {type: list, items: {enum: [macro, terminal, mastermind]}}
+  owner:        {type: string, note: accountable seat, not a session id}
+  class:        {enum: [research, build, design, adjudication, mechanical]}
+  blast_radius: {enum: [reversible, user_facing, irreversible]}
+  ambiguity:    {enum: [specified, scoped, open]}
+  waves:        {type: list, min: 1, items: wave}
+  next_action:  {type: string, note: an action, never a goal}
+  created:      {type: date}
+  updated:      {type: date}
+optional:
+  p0:           {type: string, note: id from Mastermind config/strategic_state.yml}
+  owns_paths:   {type: list, items: glob}
+  depends_on:   {type: list, items: "WS:<KEY>", note: cycles are a hard error}
+  blocked_by:   {type: list, note: present iff status == blocked}
+  decisions:    {type: list, items: "DEC:<KEY>"}
+  discoveries:  {type: list, items: "DSC:<KEY>"}
+  landmines:    {type: list}
+  do_not_redo:  {type: list}
+  artifacts:    {type: list, items: repo-relative-path}
+  runtime_ref:  {type: object, fields: [service, deployed_sha, freshness_artifact]}
+  claim:        {type: object, fields: [by, at, expires], note: ADVISORY ONLY - blocks nothing (I1)}
+  needs_ceo:    {type: object, fields: [question, options, recommendation, by_when]}
+wave:
+  required: {id: string, title: string, status: {enum: [todo, in_progress, awaiting_ci, done, dropped]}}
+  optional: {pr: "int|list[int]", depends_on: list[wave-id], next_action: string}

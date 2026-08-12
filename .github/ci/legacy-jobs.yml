@@ -2752,6 +2752,19 @@ jobs:
         # range: on a shared main that sweeps in concurrent sessions' templates/
         # merges and demands a render on a merge commit that can never have one.
         run: python -m pytest tests/test_ship_loop_guard.py tests/test_agent_worktree_roots.py -q
+      - name: agent-os record contract (schema fail-closed, join fail-open)
+        # Folded in as a STEP, not a new job, deliberately: the manifest sits at the
+        # narrow-diff ceiling (test_representative_narrow_diffs_skip_at_least_one_quarter
+        # _of_jobs asserts selected <= len(jobs)*4//5), so adding a job can red an
+        # unrelated pack, and a `paths:` scope cannot fix it — infer_job_scopes() UNIONS
+        # declared paths with inferred ones, so a declaration only ever WIDENS.
+        # Keeping the job COUNT fixed keeps that arithmetic still.
+        run: |
+          # Direct invocation FIRST and deliberately: the pytest suite skips itself
+          # when agentos/ is outside a sparse cone, so a store that failed to check
+          # out would otherwise pass as a skip. This line cannot skip.
+          python3 scripts/agentos.py validate
+          python -m pytest tests/test_agentos_schema.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
           git fetch origin ${{ github.base_ref || 'main' }}
