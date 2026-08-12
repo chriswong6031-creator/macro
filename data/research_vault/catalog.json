@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T21:54:21.861207+00:00",
-  "count": 1017,
+  "generated_at": "2026-08-12T22:09:24.997929+00:00",
+  "count": 1018,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -840,6 +840,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vigbbamajwn-73e757",
+      "title": "Constellation Energy Corp. (CEG) Strong execution and contracting progress balanced by valuation and long dated PPA timeline...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T03:15:24Z",
+      "summary_points": [
+        "**Strong Execution vs.",
+        "Valuation Pressure**: 2Q26 results and $11.50–$12.50 EPS guidance show robust execution, but valuation concerns and 920MW nuclear PPAs (start 2029, 1.7% capacity) balance outlook, sustaining Neutral rating.",
+        "**Regulatory & Capital Allocation**: PJM RBP/IRAS framework addresses 6.8 GW shortfall (FERC co-location rules by 1Q-2Q27); ERCOT Batch Zero pause temporary; $2.2bn buybacks, 2029 sensitivity $0.20/share floor, potential upside >$0.75/share.",
+        "**Model & Valuation**: 2026 EPS revised to $11.98 (from $11.77), 2027-2029 EPS $13.23/$17.09/$19.91; price target $305 (13% total return), key risks: regulatory/interconnection, data center demand slowdown.",
+        "**Price Target & Rating**: Target $305.00 (18-Jun-26) vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
