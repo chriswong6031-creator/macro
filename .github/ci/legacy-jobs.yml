@@ -502,11 +502,23 @@ jobs:
       # not coverage, so it is waived in config/unrun_test_waivers.yml with that reason
       # and an owner: the Prophet US program re-pins the constant, deletes the waiver
       # row, and adds the file to the run: line below.
+      # test_stop_curvature_study.py joined 2026-08-12 with the §6.8(a) curvature study.
+      # It is a MUTATION suite, not a smoke test: it plants the exact defect each of that
+      # study's self-reporting gates claims to catch (a diverged parity flag, a
+      # forward-looking feature, a 3D state stamped before its bucket closed, an outcome
+      # read before the ex-ante exemplar gate) and requires the gate to go red — because
+      # a receipt derived from the thing it checks cannot fail on its own. It also pins
+      # the null in the PASS direction: a planted name that genuinely arches on both
+      # exemplar dates must CLEAR G5, so "all five forms missed" is a measurement rather
+      # than a stuck switch. Synthetic frames only; its one real-store receipt is
+      # skipif'd on the absence of data/ and has a never-skipping synthetic twin, same
+      # pattern as the price ladder above. Measured: 22 tests, ~0.7s.
       - name: prophet US audit guards — post-board trajectory, price ladder, adjusted-basis control
         run: >
           python -m pytest
           research/prophet_us_audit/test_post_board_trajectory.py
           research/prophet_us_audit/test_price_ladder.py
+          research/prophet_us_audit/test_stop_curvature_study.py
           research/prophet_us_audit/test_veto_leg_isolation_adjusted_rerun.py -q
       - name: fundamental forensics lineage, normalization, detector, and schema contracts
         run: >

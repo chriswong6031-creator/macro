@@ -1,0 +1,1204 @@
+{
+ "study": "stop-curvature context study",
+ "charter": "research/prophet_us_audit/STOP_CURVATURE_CHARTER_2026-08-11.md",
+ "parent": "research/prophet_us_audit/EARLY_ADMISSION_BAKEOFF_2026-08-11.md",
+ "started": "2026-08-12T20:56:19.167018Z",
+ "finished": "2026-08-12T20:56:35.822633Z",
+ "seed": 20260812,
+ "anchor_era": "sq-abs-session-2026-08-06",
+ "price_root": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/baskets/ohlcv",
+ "stocks_root": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/stocks",
+ "frame": {
+  "all_confirms": 12940,
+  "r4b_frame": 12786,
+  "names": 240,
+  "base_near_low": 0.3492100735179102,
+  "base_published": 0.349,
+  "null_published": 0.157
+ },
+ "substrate": {
+  "price_window": "the ohlcv store's ~2014+ coverage",
+  "store_events_dropped_C0": 18137,
+  "store_events_dropped_C2": 7202,
+  "dropped_disposition": "dropped, NEVER relocated",
+  "exposure_name_years": 2658.7,
+  "survivorship": "241-name deep-history store universe: names that delisted before the store existed are absent, so outcome columns carry survivorship tint",
+  "breadth": "breadth features are NOT used here, so the post-2023 basket bound does not bind",
+  "anchor_era": "sq-abs-session-2026-08-06"
+ },
+ "parity": {
+  "rows": 12940,
+  "hist_seen": 12940,
+  "hist_match": 12940,
+  "m3_session_anchored_match": 12940,
+  "m3_phased_match": 12859,
+  "m3_seen": 12940,
+  "unresolved": 0,
+  "hist_mismatch_examples": [],
+  "m3_mismatch_examples": []
+ },
+ "pit": {
+  "truncation_scope": "ALL 12940 rows",
+  "truncation_checked": 12940,
+  "truncation_violations": 0,
+  "worst_abs_dev": 0.0,
+  "truncation_seconds": 8.4,
+  "knowability_checked": 12940,
+  "knowability_violations": 0,
+  "deepest_window": 23
+ },
+ "g5": {
+  "K1": {
+   "cells": {
+    "2026-05-19": false,
+    "2026-01-07": false
+   },
+   "pass": false
+  },
+  "K2": {
+   "cells": {
+    "2026-05-19": false,
+    "2026-01-07": false
+   },
+   "pass": false
+  },
+  "K3": {
+   "cells": {
+    "2026-05-19": false,
+    "2026-01-07": false
+   },
+   "pass": false
+  },
+  "K4": {
+   "cells": {
+    "2026-05-19": true,
+    "2026-01-07": false
+   },
+   "pass": false
+  },
+  "K5": {
+   "cells": {
+    "2026-05-19": true,
+    "2026-01-07": false
+   },
+   "pass": false
+  }
+ },
+ "g5_ordering": {
+  "started": "2026-08-12T20:56:31.081702Z",
+  "concluded": "2026-08-12T20:56:31.082589Z",
+  "unsealed": "2026-08-12T20:56:31.082599Z",
+  "reads_before_unseal": 0
+ },
+ "coverage": {
+  "K1": {
+   "true_n": 2921,
+   "frame_n": 12786,
+   "coverage": 0.22845299546378853,
+   "unavailable": 0,
+   "names": 239,
+   "g1_pass": true
+  },
+  "K2": {
+   "true_n": 75,
+   "frame_n": 12786,
+   "coverage": 0.005865790708587518,
+   "unavailable": 0,
+   "names": 64,
+   "g1_pass": false
+  },
+  "K3": {
+   "true_n": 1158,
+   "frame_n": 12786,
+   "coverage": 0.09056780854059127,
+   "unavailable": 0,
+   "names": 237,
+   "g1_pass": true
+  },
+  "K4": {
+   "true_n": 9660,
+   "frame_n": 12786,
+   "coverage": 0.7555138432660723,
+   "unavailable": 0,
+   "names": 240,
+   "g1_pass": true
+  },
+  "K5": {
+   "true_n": 10731,
+   "frame_n": 12786,
+   "coverage": 0.839277334584702,
+   "unavailable": 0,
+   "names": 240,
+   "g1_pass": true
+  }
+ },
+ "grids": {
+  "K1": {
+   "w=10": {
+    "true_n": 2291,
+    "avail_n": 12786,
+    "coverage": 0.17918035351165337,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   },
+   "w=15": {
+    "true_n": 2921,
+    "avail_n": 12786,
+    "coverage": 0.22845299546378853,
+    "primary": true,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   },
+   "w=21": {
+    "true_n": 3728,
+    "avail_n": 12786,
+    "coverage": 0.2915689034881902,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": true
+    }
+   }
+  },
+  "K2": {
+   "m=3": {
+    "true_n": 75,
+    "avail_n": 12786,
+    "coverage": 0.005865790708587518,
+    "primary": true,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   },
+   "m=5": {
+    "true_n": 29,
+    "avail_n": 12786,
+    "coverage": 0.00226810574065384,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   },
+   "m=3 (tight reading: m BARS, not m diffs)": {
+    "true_n": 267,
+    "avail_n": 12786,
+    "coverage": 0.020882214922571564,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   },
+   "m=5 (tight reading: m BARS, not m diffs)": {
+    "true_n": 34,
+    "avail_n": 12786,
+    "coverage": 0.0026591584545596746,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   }
+  },
+  "K3": {
+   "\u03b8=0.15, w=15": {
+    "true_n": 1866,
+    "avail_n": 12786,
+    "coverage": 0.14594087282965743,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   },
+   "\u03b8=0.3, w=15": {
+    "true_n": 1158,
+    "avail_n": 12786,
+    "coverage": 0.09056780854059127,
+    "primary": true,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   },
+   "\u03b8=0.15, w=10": {
+    "true_n": 1299,
+    "avail_n": 12786,
+    "coverage": 0.10159549507273581,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   },
+   "\u03b8=0.3, w=10": {
+    "true_n": 727,
+    "avail_n": 12786,
+    "coverage": 0.056859064601908337,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   },
+   "\u03b8=0.15, w=21": {
+    "true_n": 2555,
+    "avail_n": 12786,
+    "coverage": 0.19982793680588143,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   },
+   "\u03b8=0.3, w=21": {
+    "true_n": 1695,
+    "avail_n": 12786,
+    "coverage": 0.1325668700140779,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": false,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": false
+    }
+   }
+  },
+  "K4": {
+   "session-anchored": {
+    "true_n": 9660,
+    "avail_n": 12786,
+    "coverage": 0.7555138432660723,
+    "primary": true,
+    "exemplars": {
+     "2026-05-19": true,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": true
+    }
+   },
+   "first-timestamp phased (defect mimic)": {
+    "true_n": 9657,
+    "avail_n": 12786,
+    "coverage": 0.7552792116377288,
+    "primary": false,
+    "exemplars": {
+     "2026-05-19": true,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": true
+    }
+   }
+  },
+  "K5": {
+   "K1(w=15) OR K4": {
+    "true_n": 10731,
+    "avail_n": 12786,
+    "coverage": 0.839277334584702,
+    "primary": true,
+    "exemplars": {
+     "2026-05-19": true,
+     "2026-01-07": false
+    },
+    "narrative_exemplar": {
+     "2026-06-18": true
+    }
+   }
+  }
+ },
+ "primary": {},
+ "window_grid": {},
+ "forward": {},
+ "r9d": {},
+ "r9d_control": {
+  "R4b(hist_rising)": {
+   "fix8": {
+    "true": 0.23173333333333335,
+    "false": 0.35204835460040296,
+    "spread_pp": -12.031502126706961,
+    "n_true": 3750,
+    "n_events": 18640
+   },
+   "atr2": {
+    "true": 0.21475593094025586,
+    "false": 0.3028463375796178,
+    "spread_pp": -8.809040663936196,
+    "n_true": 8051,
+    "n_events": 38195
+   },
+   "quintile": {
+    "spread_pp": -3.80288768168235,
+    "quintiles_used": 3
+   },
+   "raw_spread_pp": -11.382569781118221
+  }
+ },
+ "gates": {
+  "K1": {
+   "g5": false,
+   "g1": true,
+   "g2": null,
+   "g3": null,
+   "g4": null,
+   "verdict": "DISQUALIFIED_EX_ANTE_G5"
+  },
+  "K2": {
+   "g5": false,
+   "g1": false,
+   "g2": null,
+   "g3": null,
+   "g4": null,
+   "verdict": "DISQUALIFIED_EX_ANTE_G5"
+  },
+  "K3": {
+   "g5": false,
+   "g1": true,
+   "g2": null,
+   "g3": null,
+   "g4": null,
+   "verdict": "DISQUALIFIED_EX_ANTE_G5"
+  },
+  "K4": {
+   "g5": false,
+   "g1": true,
+   "g2": null,
+   "g3": null,
+   "g4": null,
+   "verdict": "DISQUALIFIED_EX_ANTE_G5"
+  },
+  "K5": {
+   "g5": false,
+   "g1": true,
+   "g2": null,
+   "g3": null,
+   "g4": null,
+   "verdict": "DISQUALIFIED_EX_ANTE_G5"
+  }
+ },
+ "eligible_forms": [],
+ "notes": [
+  "NO enumerated form cleared G5. Per charter \u00a71 every form is disqualified ex ante and no outcome row is read for any of them \u2014 the family's row in the ore ledger is a DEFINITION-VALIDITY null, not a tape null.",
+  "Running the R9d battery on the parent's already-published R4b strict split (hist_rising) as machinery validation. That lens' outcome is already public (23.6% vs 35.0%, \u221211.4pp) \u2014 re-reading it auditions no new construction."
+ ],
+ "deferred": [],
+ "outcome_reads_after_unseal": 8,
+ "tables": {
+  "RC.parity": {
+   "title": "PARITY GATE \u2014 recomputed series vs the R4 replay's own stored columns",
+   "columns": [
+    "leg",
+    "rows compared",
+    "matches",
+    "mismatches",
+    "match%",
+    "verdict"
+   ],
+   "rows": [
+    [
+     "1D MACD-RSI histogram -> hist_rising (2-step strict)",
+     12940,
+     12940,
+     0,
+     100.0,
+     "PASS"
+    ],
+    [
+     "3D macd>=sig, SESSION-ANCHORED -> m3_bull",
+     12940,
+     12940,
+     0,
+     100.0,
+     "matches stored"
+    ],
+    [
+     "3D macd>=sig, FIRST-TIMESTAMP PHASED -> m3_bull",
+     12940,
+     12859,
+     81,
+     99.37,
+     "phase-defect mimic (charter \u00a74.6 reconciliation row)"
+    ]
+   ],
+   "notes": "BLOCKING on hist_rising: a divergent series measures nothing, so the run aborts (exit 3) rather than proceeding on it. The 3D rows are diagnostic: they establish which grid phase the stored m3_bull column actually holds."
+  },
+  "RC.pit": {
+   "title": "PIT LEAK TEST \u2014 every feature input <= the confirm-bar close",
+   "columns": [
+    "leg",
+    "scope",
+    "checked",
+    "violations",
+    "worst deviation",
+    "verdict"
+   ],
+   "rows": [
+    [
+     "(a) 1D histogram truncation identity",
+     "ALL 12940 rows",
+     12940,
+     0,
+     "0.000e+00",
+     "PASS"
+    ],
+    [
+     "(b) 3D bucket-last knowability <= confirm bar",
+     "ALL 12940 rows",
+     12940,
+     0,
+     "-",
+     "PASS"
+    ]
+   ],
+   "notes": "A test that can FAIL, not a comment (charter \u00a74.1). Leg (a) recomputes the histogram on a series TRUNCATED at T and demands bit-comparable values over [T-23, T]; leg (b) demands every 3D value's knowability session <= T."
+  },
+  "RC.g5": {
+   "title": "G5 EXEMPLAR-COVERAGE GATE (charter \u00a71) \u2014 ex ante, before any outcome",
+   "columns": [
+    "form",
+    "STLD 2026-05-19",
+    "STLD 2026-01-07",
+    "G5",
+    "consequence"
+   ],
+   "rows": [
+    [
+     "K1 off-the-trailing-min (hist>tmin_w, hist<0, tmin_w<0)",
+     "FALSE",
+     "FALSE",
+     "FAIL",
+     "DISQUALIFIED ex ante \u2014 no outcome row"
+    ],
+    [
+     "K2 curvature proper (mean 2nd diff >=0, <=1 negative 1st diff)",
+     "FALSE",
+     "FALSE",
+     "FAIL",
+     "DISQUALIFIED ex ante \u2014 no outcome row"
+    ],
+    [
+     "K3 normalized recovery ((hist-tmin_w)/|tmin_w| >= \u03b8)",
+     "FALSE",
+     "FALSE",
+     "FAIL",
+     "DISQUALIFIED ex ante \u2014 no outcome row"
+    ],
+    [
+     "K4 multi-timeframe carry (3D MACD-RSI >= signal at confirm, session-anchored)",
+     "TRUE",
+     "FALSE",
+     "FAIL",
+     "DISQUALIFIED ex ante \u2014 no outcome row"
+    ],
+    [
+     "K5 composite K1(w=15) OR K4",
+     "TRUE",
+     "FALSE",
+     "FAIL",
+     "DISQUALIFIED ex ante \u2014 no outcome row"
+    ]
+   ],
+   "notes": "Checked at the exemplars' own confirm-bar closes on information available then. FAIL = DISQUALIFIED ex ante; the form gets no outcome row at all."
+  },
+  "RC.g5.receipt": {
+   "title": "Exemplar receipts \u2014 the substrate the gate read (confirm-bar close, PIT)",
+   "columns": [
+    "ticker",
+    "confirm",
+    "hist[T]",
+    "hist[T-1]",
+    "hist[T-2]",
+    "tmin_w=15 (excl T)",
+    "hist vs tmin",
+    "3D bull (anchored)",
+    "3D bull (phased)"
+   ],
+   "rows": [
+    [
+     "STLD",
+     "2026-05-19",
+     -2.6464,
+     -2.2161,
+     -1.9723,
+     -2.2161,
+     "AT/BELOW (fresh low)",
+     true,
+     true
+    ],
+    [
+     "STLD",
+     "2026-01-07",
+     -1.5277,
+     -1.0647,
+     -1.1056,
+     -1.4591,
+     "AT/BELOW (fresh low)",
+     false,
+     false
+    ],
+    [
+     "STLD",
+     "2026-06-18  (narrative only)",
+     -2.5989,
+     -1.4289,
+     -1.045,
+     -1.4289,
+     "AT/BELOW (fresh low)",
+     true,
+     true
+    ]
+   ],
+   "notes": "hist = 1D MACD-RSI histogram, the R4 replay's own series (RC.parity-locked)."
+  },
+  "RC.g5.crosscheck": {
+   "title": "CROSS-CHECK RECEIPT \u2014 textbook MACD(12,26,9) histogram at the same exemplars",
+   "columns": [
+    "ticker",
+    "confirm",
+    "hist[T-2]",
+    "hist[T-1]",
+    "hist[T]",
+    "tmin_w=15 (excl T)",
+    "reading"
+   ],
+   "rows": [
+    [
+     "STLD",
+     "2026-05-19",
+     -1.5236,
+     -1.9715,
+     -2.5787,
+     -1.9715,
+     "AT/BELOW (fresh low)"
+    ],
+    [
+     "STLD",
+     "2026-01-07",
+     -0.7136,
+     -0.7213,
+     -1.0317,
+     -0.8596,
+     "AT/BELOW (fresh low)"
+    ],
+    [
+     "STLD",
+     "2026-06-18  (narrative only)",
+     -0.4514,
+     -1.0714,
+     -2.8064,
+     -1.0714,
+     "AT/BELOW (fresh low)"
+    ]
+   ],
+   "notes": "RECEIPT ONLY, on the 3 exemplars whose outcomes are already public. Defines no form, classifies no cohort, reads no outcome, licenses nothing. Its only job is to tell a successor charter whether a G5 miss is a property of the house MACD-RSI series or of the daily bar itself."
+  },
+  "RC.g5.ordering": {
+   "title": "ORDERING PROOF \u2014 G5 concluded before outcomes were readable",
+   "columns": [
+    "event",
+    "wall clock (UTC)",
+    "monotonic offset (s)"
+   ],
+   "rows": [
+    [
+     "outcome columns SEALED at load",
+     "2026-08-12T20:56:19.220587Z",
+     0.0
+    ],
+    [
+     "G5 exemplar gate started",
+     "2026-08-12T20:56:31.081702Z",
+     0.0
+    ],
+    [
+     "G5 exemplar gate concluded",
+     "2026-08-12T20:56:31.082589Z",
+     0.0009
+    ],
+    [
+     "outcome columns UNSEALED",
+     "2026-08-12T20:56:31.082599Z",
+     0.0009
+    ],
+    [
+     "outcome reads before unseal",
+     "0 (enforced \u2014 OutcomeSealError)",
+     "-"
+    ]
+   ],
+   "notes": "The outcome columns are physically sealed inside OutcomeVault until the unseal below; any earlier read raises OutcomeSealError. This table is the receipt that the sequence in the code is the sequence that ran."
+  },
+  "RC.frame": {
+   "title": "FRAME reconciliation (charter \u00a73) \u2014 nothing silently re-windowed",
+   "columns": [
+    "frame",
+    "n",
+    "names",
+    "near-low% (base)",
+    "used for"
+   ],
+   "rows": [
+    [
+     "all replayed confirms",
+     12940,
+     242,
+     35.02,
+     "disclosure"
+    ],
+    [
+     "R4b frame: full_window & non-addon",
+     12786,
+     240,
+     34.92,
+     "PRIMARY \u2014 every gate is read here"
+    ]
+   ],
+   "notes": "The R4b frame (full_window & non-addon) is the frame the parent's 34.9% base, its month-cluster CIs and its 110/12,786 strict-form coverage were all read on. The wider 12,940 row set is printed beside it so the choice is visible. This table emits AFTER G5 because a base rate is an outcome read like any other \u2014 it is served through the same seal."
+  },
+  "RC.substrate": {
+   "title": "SUBSTRATE BOUNDS restated (parent N4\u2013N6) \u2014 no silent re-windowing",
+   "columns": [
+    "bound",
+    "value"
+   ],
+   "rows": [
+    [
+     "price window",
+     "the ohlcv store's ~2014+ coverage"
+    ],
+    [
+     "pre-store events dropped (C0)",
+     "18,137"
+    ],
+    [
+     "pre-store events dropped (C2)",
+     "7,202"
+    ],
+    [
+     "disposition of dropped events",
+     "dropped, NEVER relocated"
+    ],
+    [
+     "exposure (name-years)",
+     "2658.7"
+    ],
+    [
+     "survivorship",
+     "241-name deep-history store universe: names that delisted before the store existed are absent, so outcome columns carry survivorship tint"
+    ],
+    [
+     "breadth bound",
+     "breadth features are NOT used here, so the post-2023 basket bound does not bind"
+    ],
+    [
+     "3D anchor era",
+     "sq-abs-session-2026-08-06"
+    ]
+   ],
+   "notes": "Restated verbatim from the parent artifact. This study re-windows nothing."
+  },
+  "RC.coverage": {
+   "title": "COVERAGE per form on its PRE-DECLARED primary cell (charter G1)",
+   "columns": [
+    "form",
+    "TRUE n",
+    "frame n",
+    "coverage%",
+    "unavailable",
+    "names w/ a fire",
+    "G1 (>=5%)"
+   ],
+   "rows": [
+    [
+     "K1",
+     2921,
+     12786,
+     22.85,
+     0,
+     239,
+     "PASS"
+    ],
+    [
+     "K2",
+     75,
+     12786,
+     0.59,
+     0,
+     64,
+     "FAIL (rare-lens tier)"
+    ],
+    [
+     "K3",
+     1158,
+     12786,
+     9.06,
+     0,
+     237,
+     "PASS"
+    ],
+    [
+     "K4",
+     9660,
+     12786,
+     75.55,
+     0,
+     240,
+     "PASS"
+    ],
+    [
+     "K5",
+     10731,
+     12786,
+     83.93,
+     0,
+     240,
+     "PASS"
+    ]
+   ],
+   "notes": "Frame = the R4b frame (full_window & non-addon). Floor 5%; below it a form is disclosure-tier only, whatever its point estimate."
+  },
+  "RC.grid": {
+   "title": "PARAMETER GRIDS (sensitivity only \u2014 no cell is promotable)",
+   "columns": [
+    "form",
+    "cell",
+    "primary?",
+    "TRUE n",
+    "coverage%",
+    "covers 2026-05-19",
+    "covers 2026-01-07",
+    "fires 2026-06-18 (narrative)"
+   ],
+   "rows": [
+    [
+     "K1",
+     "w=10",
+     "",
+     2291,
+     17.92,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K1",
+     "w=15",
+     "PRIMARY",
+     2921,
+     22.85,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K1",
+     "w=21",
+     "",
+     3728,
+     29.16,
+     "FALSE",
+     "FALSE",
+     "TRUE"
+    ],
+    [
+     "K2",
+     "m=3",
+     "PRIMARY",
+     75,
+     0.59,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K2",
+     "m=5",
+     "",
+     29,
+     0.23,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K2",
+     "m=3 (tight reading: m BARS, not m diffs)",
+     "",
+     267,
+     2.09,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K2",
+     "m=5 (tight reading: m BARS, not m diffs)",
+     "",
+     34,
+     0.27,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K3",
+     "\u03b8=0.15, w=15",
+     "",
+     1866,
+     14.59,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K3",
+     "\u03b8=0.3, w=15",
+     "PRIMARY",
+     1158,
+     9.06,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K3",
+     "\u03b8=0.15, w=10",
+     "",
+     1299,
+     10.16,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K3",
+     "\u03b8=0.3, w=10",
+     "",
+     727,
+     5.69,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K3",
+     "\u03b8=0.15, w=21",
+     "",
+     2555,
+     19.98,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K3",
+     "\u03b8=0.3, w=21",
+     "",
+     1695,
+     13.26,
+     "FALSE",
+     "FALSE",
+     "FALSE"
+    ],
+    [
+     "K4",
+     "session-anchored",
+     "PRIMARY",
+     9660,
+     75.55,
+     "TRUE",
+     "FALSE",
+     "TRUE"
+    ],
+    [
+     "K4",
+     "first-timestamp phased (defect mimic)",
+     "",
+     9657,
+     75.53,
+     "TRUE",
+     "FALSE",
+     "TRUE"
+    ],
+    [
+     "K5",
+     "K1(w=15) OR K4",
+     "PRIMARY",
+     10731,
+     83.93,
+     "TRUE",
+     "FALSE",
+     "TRUE"
+    ]
+   ],
+   "notes": "Printed in full per charter \u00a74.4. Promotion is judged on the pre-declared primary cell; no scanned maximum is eligible for anything. The narrative column is disclosure: charter \u00a71 tunes NO lens to reject Jun-18, so a cell firing there decides nothing \u2014 it is printed because a reviewer will look for it and it should not have to be recomputed by hand."
+  },
+  "RC.primary": {
+   "title": "PRIMARY \u2014 low-marking rate (+/-2 sessions of the +/-10-session local low)",
+   "columns": [
+    "form",
+    "cohort",
+    "n",
+    "near-low%",
+    "spread vs FALSE (pp)",
+    "month-cluster CI 95%",
+    "per-name-first%",
+    "names",
+    "1st half spread (pp)",
+    "2nd half spread (pp)",
+    "STLD-excluded spread (pp)"
+   ],
+   "rows": [
+    [
+     "(none)",
+     "-",
+     0,
+     "-",
+     "-",
+     "-",
+     "-",
+     0,
+     "-",
+     "-",
+     "-"
+    ]
+   ],
+   "notes": "Base 34.9% / random-session null 15.7% (parent R4/R9f). The estimand is TRUE minus FALSE \u2014 the same quantity the killed strict form scored \u221211.4pp [\u221219.2,\u22122.8] on. STLD-excluded column is disclosure (3 events in 12,940 whose outcomes are already public), not protection."
+  },
+  "RC.windowgrid": {
+   "title": "WINDOW-GRID sensitivity on the primary metric (R9f style)",
+   "columns": [
+    "form",
+    "window",
+    "TRUE near-low%",
+    "FALSE near-low%",
+    "spread (pp)",
+    "n TRUE"
+   ],
+   "rows": [
+    [
+     "(none)",
+     "-",
+     "-",
+     "-",
+     "-",
+     0
+    ]
+   ],
+   "notes": "Recomputed from the price frames, not read off a stored column, so the +/-5 and +/-15 windows are real re-measurements."
+  },
+  "RC.forward": {
+   "title": "SECONDARY \u2014 forward tape after confirm (MOVE captured, not safety)",
+   "columns": [
+    "form",
+    "cohort",
+    "n",
+    "median fwd10",
+    "IQR fwd10",
+    "median fwd21",
+    "IQR fwd21",
+    "G4 (median fwd10 >= +2%)"
+   ],
+   "rows": [
+    [
+     "(none)",
+     "-",
+     0,
+     "-",
+     "-",
+     "-",
+     "-",
+     "-"
+    ]
+   ],
+   "notes": "Framed per R8b: these are MOVE medians. Waiting was already shown to change stop-out rates by zero under the fire's own risk contract \u2014 no safety claim is available from this table."
+  },
+  "RC.r9d": {
+   "title": "RISK-EQUALIZATION BATTERY (G5 survivors) \u2014 charter \u00a74.2 / parent R9d",
+   "columns": [
+    "form",
+    "lens",
+    "TRUE near-low%",
+    "FALSE near-low%",
+    "spread (pp)",
+    "n TRUE",
+    "vs raw spread",
+    "reads as"
+   ],
+   "rows": [
+    [
+     "(none)",
+     "-",
+     "-",
+     "-",
+     "-",
+     0,
+     "-",
+     "-"
+    ]
+   ],
+   "notes": "Lens A = fixed \u22128% off the trailing 21-session max close; lens B = same anchor \u2212 2.0\u00d7ATR14; lens C = the real structure stops, split within break-depth quintiles. A sign flip or a collapse to under half the raw lift is stop-width arithmetic, named as such."
+  },
+  "RC.r9d.control": {
+   "title": "RISK-EQUALIZATION BATTERY (control) \u2014 charter \u00a74.2 / parent R9d",
+   "columns": [
+    "form",
+    "lens",
+    "TRUE near-low%",
+    "FALSE near-low%",
+    "spread (pp)",
+    "n TRUE",
+    "vs raw spread",
+    "reads as"
+   ],
+   "rows": [
+    [
+     "R4b(hist_rising)",
+     "RAW (the real structure stops \u2014 the retention denominator)",
+     23.64,
+     35.02,
+     -11.38,
+     110,
+     "1.00x",
+     "baseline"
+    ],
+    [
+     "R4b(hist_rising)",
+     "A fixed \u22128%  (n=18640 synthetic)",
+     23.17,
+     35.2,
+     -12.03,
+     3750,
+     "+1.06x",
+     "survives this lens"
+    ],
+    [
+     "R4b(hist_rising)",
+     "B 2.0\u00d7ATR  (n=38195 synthetic)",
+     21.48,
+     30.28,
+     -8.81,
+     8051,
+     "+0.77x",
+     "survives this lens"
+    ],
+    [
+     "R4b(hist_rising)",
+     "C break-depth quintiles (3/5 usable)",
+     "-",
+     "-",
+     -3.8,
+     110,
+     "+0.33x",
+     "COLLAPSES (<half retained) \u2014 stop-width arithmetic"
+    ]
+   ],
+   "notes": "Lens A = fixed \u22128% off the trailing 21-session max close; lens B = same anchor \u2212 2.0\u00d7ATR14; lens C = the real structure stops, split within break-depth quintiles. A sign flip or a collapse to under half the raw lift is stop-width arithmetic, named as such."
+  },
+  "RC.gates": {
+   "title": "PROMOTION GATES per form (charter \u00a75) \u2014 judged on the PRE-DECLARED primary cell, never a scanned max",
+   "columns": [
+    "form",
+    "G5 exemplar",
+    "G1 coverage",
+    "G2 lift+CI",
+    "G3 risk-equalization",
+    "G4 fwd tape",
+    "VERDICT"
+   ],
+   "rows": [
+    [
+     "K1",
+     "FAIL",
+     "PASS",
+     "not evaluated",
+     "not evaluated",
+     "not evaluated",
+     "DISQUALIFIED ex ante (G5)"
+    ],
+    [
+     "K2",
+     "FAIL",
+     "FAIL (0.6% < 5%)",
+     "not evaluated",
+     "not evaluated",
+     "not evaluated",
+     "DISQUALIFIED ex ante (G5)"
+    ],
+    [
+     "K3",
+     "FAIL",
+     "PASS",
+     "not evaluated",
+     "not evaluated",
+     "not evaluated",
+     "DISQUALIFIED ex ante (G5)"
+    ],
+    [
+     "K4",
+     "FAIL",
+     "PASS",
+     "not evaluated",
+     "not evaluated",
+     "not evaluated",
+     "DISQUALIFIED ex ante (G5)"
+    ],
+    [
+     "K5",
+     "FAIL",
+     "PASS",
+     "not evaluated",
+     "not evaluated",
+     "not evaluated",
+     "DISQUALIFIED ex ante (G5)"
+    ]
+   ],
+   "notes": "G5 is evaluated FIRST and gates the rest: a form disqualified ex ante gets no outcome row, so G2/G3/G4 are NOT EVALUATED for it \u2014 that is the charter's design, not missing work."
+  }
+ }
+}
