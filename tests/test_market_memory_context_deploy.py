@@ -21,6 +21,7 @@ from engine.neuralweb import market_memory_trusted as trusted
 from scripts import audit_options_market_memory_context as options_context_audit
 from scripts import initialize_market_memory_w1a as w1a_initializer
 from scripts import project_market_memory_context as writer_module
+from tests import market_memory_repo_scan as repo_scan
 from tests.test_market_memory_pit import CAPTURED_AT, _packet
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,20 +70,10 @@ def _api_restart_block() -> str:
 
 def _production_calls(function_name: str) -> set[Path]:
     callers: set[Path] = set()
-    for parent in (ROOT / "app", ROOT / "engine", ROOT / "scripts"):
-        for path in parent.rglob("*.py"):
-            tree = ast.parse(_text(path), filename=str(path))
-            for node in ast.walk(tree):
-                if not isinstance(node, ast.Call):
-                    continue
-                called = node.func
-                if (
-                    isinstance(called, ast.Name)
-                    and called.id == function_name
-                    or isinstance(called, ast.Attribute)
-                    and called.attr == function_name
-                ):
-                    callers.add(path.relative_to(ROOT))
+    for path in repo_scan.production_python_paths():
+        called = repo_scan.callee_names(path)
+        if function_name in called.direct or function_name in called.attribute:
+            callers.add(path.relative_to(ROOT))
     return callers
 
 
