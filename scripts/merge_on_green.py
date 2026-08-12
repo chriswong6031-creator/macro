@@ -1558,8 +1558,10 @@ def refresh_lease_reservation_count(
         return 1
     if count == 0 or not runs:
         return 1
-    observed_head = str(((runs[0] or {}).get("head_sha")) or "").lower()
-    return 0 if observed_head == current_head else 1
+    observed = runs[0] if isinstance(runs[0], dict) else {}
+    observed_head = str(observed.get("head_sha") or "").lower()
+    observed_event = str(observed.get("event") or "")
+    return 0 if observed_head == current_head and observed_event == "pull_request" else 1
 
 
 def serialized_refresh_authority(
