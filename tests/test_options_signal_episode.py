@@ -2873,6 +2873,28 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         "      - name: XSR W1 — US fast-sector rotation lens "
         "(build_us_sector_rotation)"
     )
+    if campaign_builder_name not in workflow:
+        # 2026-08-12 (#5416): the campaign-v2 steps are DEFERRED out of
+        # daily.yml — the file crossed GitHub's silent ~512,000-byte
+        # processing cap and the nightly stranded jobless. The deferral must
+        # stay disclosed and the v1 episode lane intact; when the steps are
+        # re-landed (chip task_a1298313) this branch dies and the full
+        # assertions below re-arm untouched.
+        dag = (repo / "config/dag.yml").read_text()
+        assert "build_options_signal_campaign" in dag, (
+            "campaign steps absent from daily.yml AND undeclared in dag.yml — "
+            "the deferral lost its disclosure"
+        )
+        assert "deferred out of the live workflow" in dag, (
+            "campaign steps absent from daily.yml but config/dag.yml carries "
+            "no divergence entry documenting the deferral"
+        )
+        assert builder_name in workflow, (
+            "v1 episode builder step must remain in daily.yml while campaign "
+            "v2 is deferred"
+        )
+        return
+
     builder_start = workflow.index(builder_name)
     campaign_builder_start = workflow.index(campaign_builder_name)
     checkpoint_start = workflow.index(checkpoint_name)
