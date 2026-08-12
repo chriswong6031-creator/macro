@@ -218,13 +218,26 @@ ARTIFACT_MANIFEST = [
     # 1.1.0 -> 1.2.0 (2026-08-07): the anchor-era programme stamps `anchor_era` on
     # every per-stock signal file. REQUIRED, not conditional — measured present on
     # 240/240 committed site/signals/*.json.
+    # 1.2.0 -> 1.3.0 (2026-08-11): `early_signal_dates` — the ADDITIVE knowability stamp
+    # for the dots (§6.7 family) — registered as OPTIONAL. The producer
+    # (engine.signal_quality.analyze) emits it ALL-OR-NOTHING: `stamped = all(x is not
+    # None for x in early_signal_dates)`, and the key is omitted whenever any dot's bucket
+    # did not resolve a last session, because a partially-resolved list would silently
+    # re-index every pair. A conditional key belongs in optional_fields per this file's own
+    # law above — registering it as REQUIRED would have flipped the drift lane red on the
+    # next manifest regeneration against all 241 committed site/signals/*.json (none of
+    # which carry the field yet) and then flapped with the data forever after. Minor bump:
+    # the change is additive and backwards-compatible.
     {"artifact": "site/signals/<SYM>.json",
      "kind": "per_stock_signal",
-     "schema_version": "1.2.0",
+     "schema_version": "1.3.0",
      "schema_fields": [
-         "above200", "anchor_era", "asof", "early_markers", "early_now", "markers",
-         "pit", "risk_flags", "state", "tf", "ticker", "trail_breach", "trail_stop",
-         "weekly_bull",
+         "above200", "anchor_era", "asof", "early_markers", "early_now",
+         "markers", "pit", "risk_flags", "state", "tf", "ticker",
+         "trail_breach", "trail_stop", "weekly_bull",
+     ],
+     "optional_fields": [
+         "early_signal_dates",
      ],
      "expected_max_age_td": 2,
      "as_of_field": "asof",
