@@ -368,7 +368,7 @@ def _load_allowlist() -> list[dict]:
 # fail closed, so a new entry must always declare where it applies.
 #
 # Derivation: basename minus the render/source suffix, minus a partial-template's
-# leading '_' (templates/_market_state_board.html.j2 IS the market_state_board surface).
+# leading '_' (templates/_risk_radar_card.html.j2 IS the risk_radar_card surface).
 # Two structural facts of the estate make the rest:
 #   - site subdirectories are per-item render families (site/sectors/XLB.html is the
 #     sector surface; site/basket*/<name>.html are all the basket_detail surface);

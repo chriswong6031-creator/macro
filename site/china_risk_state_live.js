@@ -12,10 +12,12 @@
    Honest freshness: only lights the "live" pill when realtime:true (delayed_min==0);
    Yahoo spark is ~15-min delayed so the pill is off and the date shows "delayed/延迟".
 
-   DOM targets (inside _market_state_board.html.j2, shared with macro.html):
+   DOM targets (china.html.j2's inline hero-board markup — the cnx hero card;
+   macro.html carries its own separate inline copy, patched by risk_state_live.js):
      #ms-word      — verdict word + .arr glyph span (▲/▶/▼)
      #ms-score     — 0-100 score numeral
-     #ms-tick      — progress tick left: <score>%
+     #ms-tick      — progress tick left: <score>% (macro-page markup only — absent on
+                     china.html, where the mx5 gauge replaces the meter; patch no-ops)
      #ms-date      — "· delayed HH:MM UTC" / "· live HH:MM UTC" / "· YYYY-MM-DD"
      #ms-live-pill — "live" badge toggled on live_active && realtime only
      .v-thesis     — headline_en/zh for the current verdict (bilingual l-en/l-zh)

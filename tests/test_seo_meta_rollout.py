@@ -45,7 +45,7 @@ _EXCLUDED_TEMPLATES = {
     "_forming_narratives.html.j2", "_ignition_radar_card.css.j2",
     "_ignition_radar_card.html.j2",
     "_mag7_panel.css.j2", "_mag7_panel.html.j2",
-    "_market_state_board.html.j2", "_market_state.css.j2",
+    "_market_state.css.j2",
     "_radar_panel.html.j2", "_regime_prob_panel.html.j2",
     "_regime_read_panel.html.j2", "_report_TEMPLATE.html.j2",
     "_risk_radar_card.css.j2", "_risk_radar_card.html.j2",
