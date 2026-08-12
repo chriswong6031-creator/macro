@@ -216,6 +216,17 @@ def test_display_universe_carries_the_packet_curve_inputs():
         assert sym in blq.DISPLAY_SYMBOLS, sym
 
 
+def test_display_universe_carries_the_china_index_face_tiles():
+    """china.html's four index face tiles hydrate from the same-origin display
+    snapshot. CSI 300 (000300.SS) and ChiNext (399006.SZ) are LIVE-ONLY tiles —
+    they bake "—" because Yahoo serves no honest daily history for the real
+    indexes — so a symbol dropped here leaves the tile a permanent dash. (The
+    2026-08-11 production bug was the inverse: the tiles baked 510300.SS /
+    159915.SZ ETF NAVs ~4.7/~3.6 as "index levels" and carried no data-sym.)"""
+    for sym in ("000001.SS", "000300.SS", "399006.SZ", "^HSI"):
+        assert sym in blq.DISPLAY_SYMBOLS, sym
+
+
 def test_display_universe_survives_validation_undropped(tmp_path):
     """meta.requested == the defined display list, exactly — a static guard that
     no DISPLAY entry is silently eaten by the charset regex or by de-duping

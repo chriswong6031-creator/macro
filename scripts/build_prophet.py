@@ -86,6 +86,8 @@ from engine.prophet_bridge import (
     plan_clock_date,
     plan_key,
     refusal_receipts,
+    sanitize_thesis_text,
+    sanitize_thesis_text_zh,
 )
 from engine.prophet_management import compute_management_state
 from engine.prophet_integrity import (
@@ -235,6 +237,49 @@ _SECTOR_ZH = {
 _STAGE_BY_LANE = {"bottoming": 1, "recovery": 2, "continuation": 3, "trend": 4}
 
 
+# ── SNAPSHOT COPY SANITIZERS (the 2026-08-11 landing breach) ─────────────────────────
+#
+# Board snapshots are FOSSILS. data/us_board_ledger/snapshots.jsonl stores the exact bytes
+# of a board as it read on its own date — that is the point of a point-in-time ledger, and
+# it is why the ledger is deliberately NOT rewritten when copy changes in live code. The
+# consequence: copy that engine/stock_score.py stopped emitting months ago is still replayed
+# by every card built from an old snapshot.
+#
+# WHAT SHIPPED. `derive_showcase_card` folded `conviction.cautions` / `cautions_zh` into the
+# card's flags VERBATIM. A fossilised caution pair —
+#   "… is below its long-term trend — validated drawdown gate: size down …"
+#   "…已跌破长期趋势 — 已验证的回撤门槛：减小仓位。"
+# — rode that fold into site/prophet/showcase.json, which §4b bakes into the anonymous
+# landing page's one-line `<script id="ph-data">` island. Four claim pairs were live on
+# templates/index.html + site/index.html with BC-2 reading green, because a `"note":` key
+# elsewhere on that 23k-char line suppressed the whole island (fixed in the same change).
+#
+# WHY PHRASE REWRITES FIRST. The engine's own _sanitize_thesis_text maps the bare token to
+# "risk gate", which reads correctly inside "validated risk gate: trim" but would turn
+# "validated drawdown gate" into "risk gate drawdown gate". These two phrases are what the
+# board actually fossilised, so they get an exact replacement that keeps the sentence's
+# meaning — the gate is MEASURED, which is true and says nothing about promotion — and the
+# bridge sanitizers then catch anything a future fossil carries that these do not name.
+_FLAG_PHRASES_EN = (("validated drawdown gate", "measured drawdown gate"),
+                    ("validated risk gate", "measured risk gate"))
+_FLAG_PHRASES_ZH = (("已验证的回撤门槛", "实测回撤门槛"),
+                    ("已验证风险门槛", "实测风险门槛"))
+
+
+def _sanitize_flag_en(text: str) -> str:
+    """House-legal EN for one snapshot-derived showcase string. Idempotent."""
+    for old, new in _FLAG_PHRASES_EN:
+        text = text.replace(old, new)
+    return sanitize_thesis_text(text)
+
+
+def _sanitize_flag_zh(text: str) -> str:
+    """House-legal ZH for one snapshot-derived showcase string. Idempotent."""
+    for old, new in _FLAG_PHRASES_ZH:
+        text = text.replace(old, new)
+    return sanitize_thesis_text_zh(text)
+
+
 def derive_showcase_card(row: dict) -> dict | None:
     """One landing card from one us_standouts.buy row (None = not showable).
 
@@ -318,11 +363,20 @@ def derive_showcase_card(row: dict) -> dict | None:
 
     edge = c.get("score_edge")
     sec = row.get("sector") or ""
+
+    # ── SINGLE CHOKE POINT: every snapshot-derived display string, sanitized once ──
+    # Applied to the whole flag list rather than to `cau`/`zh`/`chip_en`/`chip_zh` at
+    # each fold: the sanitizers are idempotent, so the hardcoded literals above pass
+    # through byte-identical, and a NEW fold added below this line cannot reintroduce
+    # the breach by forgetting to call them. The sector-stance flag interpolates
+    # `row['sector_stance']` / `sector_stance_zh` too, which this covers for free.
+    flags = [[_sanitize_flag_en(en), _sanitize_flag_zh(zh)] for en, zh in flags]
+
     return {
         "tk": tk,
-        "name": row.get("name") or tk,
-        "sec": sec,
-        "sec_zh": _SECTOR_ZH.get(sec, sec),
+        "name": _sanitize_flag_en(row.get("name") or tk),
+        "sec": _sanitize_flag_en(sec),
+        "sec_zh": _sanitize_flag_zh(_SECTOR_ZH.get(sec, sec)),
         "price_txt": f"${price:.2f}",
         "verb": verb,
         "edge": int(edge) if edge is not None else None,
@@ -2212,10 +2266,16 @@ def main() -> None:
         # whose trigger never confirmed (no position, so neither side of the rate).
         "record": _record,
         "plans": active_entries,
+        # The disclosure names the RULE, never the banned token: `site/prophet/*.json`
+        # is scanned by scripts/check_validated_claims.py as of 2026-08-11, and the
+        # sentence boundary before "The word 'validated'" put the token out of reach of
+        # the negation lookback, so quoting the word reddened the gate this line exists
+        # to describe. 'validation' is not one of the four TOKEN forms.
         "note": (
             "DISPLAY-ONLY. All plans are display-tier artifacts. No signal has"
-            " passed a forward ledger gate. The word 'validated' is forbidden in"
-            " user-facing text. Nightly is the sole advancer of the forward ledger."
+            " passed a forward ledger gate. Affirmative validation language is"
+            " forbidden in user-facing text. Nightly is the sole advancer of the"
+            " forward ledger."
         ),
     }
     # ── Board-level reconstructed disclosure (§0.10) ────────────────────────────

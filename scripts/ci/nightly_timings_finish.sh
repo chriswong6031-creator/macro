@@ -51,18 +51,36 @@ fi
 }
 
 . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+# Source-only: provides the exact private-index candidate builder; its intrinsic
+# BASH_SOURCE guard prevents command dispatch while sourced.
+. "${GITHUB_WORKSPACE:-.}/scripts/ci/options_signal_nightly.sh"
+# The helper is fail-closed and enables errexit for workflow commands.  Timing
+# telemetry is intentionally non-fatal, so restore this script's original mode.
+set +e
 git config user.name "dashboard-bot"
 git config user.email "actions@users.noreply.github.com"
+if [ "$(git symbolic-ref -q HEAD 2>/dev/null || true)" != refs/heads/main ]; then
+  echo "::warning title=nightly timings wrong ref::${JOB}: authoritative timing publication requires exact symbolic main; row remains local"
+  exit 0
+fi
 git add "$LEDGER"
 # A row was appended a few lines ago, so an empty stage means git cannot SEE it
 # (ignored path, wrong workspace, a `git checkout`/reset by an earlier step).
 # That is a silent loss, not a no-op — say so.
-if git diff --cached --quiet; then
+if git diff --cached --quiet -- "$LEDGER"; then
   echo "::warning title=nightly timings not staged::${JOB}: ${LEDGER} was written but git staged no change — the row exists only in the runner workspace and dies at the next clean checkout (non-fatal)"
   exit 0
 fi
-git commit -m "data: nightly timings ${JOB} $(date -u +%F)" || {
-  echo "::warning title=nightly timings commit failed::${JOB}: git commit failed — tonight's row is lost at the next clean checkout (non-fatal)"
+TIMING_PARENT=$(git rev-parse 'HEAD^{commit}') || exit 0
+TIMING_MESSAGE="data: nightly timings ${JOB} $(date -u +%F)"
+TIMING_CANDIDATE_INDEX="${RUNNER_TEMP:-/tmp}/nightly-timing-candidate-${GITHUB_RUN_ID:-local}-${GITHUB_JOB:-job}.idx"
+TIMING_COMMIT=$(oip_exact_candidate_commit \
+  "$TIMING_PARENT" "$TIMING_MESSAGE" "$TIMING_CANDIDATE_INDEX" "$LEDGER") || {
+  echo "::warning title=nightly timings commit failed::${JOB}: exact ledger candidate could not be built — row remains local"
+  exit 0
+}
+git reset -q -- "$LEDGER" || {
+  echo "::warning title=nightly timings reset failed::${JOB}: exact candidate built but the live index could not be cleared; no push attempted"
   exit 0
 }
 # Small, fast budgets: this is a ~200-byte append racing lanes that commit to
@@ -73,14 +91,29 @@ PUSH_ALARM=120
 PUSH_BUDGET_SECS=240
 push_retry_init "nightly timings ${JOB}"
 while push_attempt; do
-  perl -e 'alarm 60; exec @ARGV or die' -- git fetch origin main || true
-  comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
-           <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
-    | while IFS= read -r f; do rm -f -- "$f" || true; done
-  if perl -e 'alarm 180; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
-    if push_do; then echo "pushed nightly timings (${JOB}) on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
+  if ! perl -e 'alarm 60; exec @ARGV or die' -- git fetch origin \
+      +refs/heads/main:refs/remotes/origin/main; then
+    push_backoff
+    continue
   fi
-  push_abort_rebase
+  TIMING_REPLAY_INDEX="${RUNNER_TEMP:-/tmp}/nightly-timing-replay-${GITHUB_RUN_ID:-local}-${GITHUB_JOB:-job}.idx"
+  if TIMING_PUBLISH=$(push_exact_paths_replay_commit \
+      "$TIMING_PARENT" origin/main "$TIMING_COMMIT" "$TIMING_MESSAGE" \
+      "$TIMING_REPLAY_INDEX" "$LEDGER"); then
+    if [ "$(git rev-parse "$TIMING_PUBLISH^{tree}")" = \
+         "$(git rev-parse 'origin/main^{tree}')" ]; then
+      echo "nightly timings (${JOB}) already on origin/main"
+      push_won
+      exit 0
+    fi
+    if push_do origin "$TIMING_PUBLISH:refs/heads/main"; then
+      echo "pushed nightly timings (${JOB}) on attempt $PUSH_ATTEMPT"
+      push_won
+      exit 0
+    fi
+  else
+    PUSH_FAIL_CLASS="rebase-conflict"
+  fi
   push_backoff
 done
 push_lost

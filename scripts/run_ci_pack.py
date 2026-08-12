@@ -5,7 +5,7 @@ GitHub Actions used to provision one fresh VM for every job in ``ci.yml``.
 The repository is large enough that checkout and interpreter setup dominated
 the useful test work, so one PR fanned out to more than eighty hosted runners.
 
-The workflow now contains only the two real ``ci-pack`` matrix jobs. Legacy job
+The workflow now contains one small ``ci-pack`` matrix instead. Legacy job
 definitions live in ``.github/ci/legacy-jobs.yml`` so GitHub does not publish
 roughly one hundred skipped check runs on every pull request. The pack jobs call
 this script, which validates the manifest and executes every legacy ``run``
@@ -13,6 +13,11 @@ step. A hard reset/clean between legacy jobs preserves their former
 clean-checkout isolation. Jobs with different declared pip dependencies also
 get freshly recreated virtual environments; only jobs whose install commands
 are byte-identical share an environment.
+
+Which jobs land in which pack is decided ONCE, by ``build_plan``, and published
+as a hashed ``CIPackPlan`` (``--plan-only``).  Each pack recomputes the same
+pure function and refuses to run when its hash disagrees (``--expect-plan-sha``),
+so twelve runners can never quietly disagree about what the suite is.
 
 The validator is intentionally fail-closed.  A future job using services,
 containers, per-step conditions/environments, or an unfamiliar action must
@@ -26,13 +31,14 @@ from __future__ import annotations
 
 import argparse
 import functools
+import hashlib
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -637,6 +643,393 @@ def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[Lega
     return packs
 
 
+# ---------------------------------------------------------------------------
+# Plan once, execute many (2026-08-11)
+#
+# Every pack used to re-derive the entire selection for itself: twelve runners
+# each loading the manifest, each running infer_job_scopes over 180 jobs, each
+# re-deciding the same partition from the same inputs.  That decision is a pure
+# function of (manifest, changed set, scope mode, pack count), so it is now
+# computed ONCE by `build_plan`, published by `ci-plan` as a hashed document,
+# and merely CHECKED by each pack (`--expect-plan-sha`).  Twelve runners
+# silently disagreeing about what the suite is becomes one loud red instead.
+#
+# What this does NOT buy at this revision, measured 2026-08-11 against the real
+# 180-job manifest: it saves ZERO packs.  Scope inference derives scopes for
+# 179/180 jobs, yet every realistic diff still selects enough of them to fill
+# all twelve packs —
+#
+#     docs-only          120/180 eligible -> 12/12 packs non-empty
+#     one template       130/180          -> 12/12
+#     one engine module  122/180          -> 12/12
+#     test-only          115/180          -> 12/12
+#
+# (pack weights [481, ~250-310 x11]; pack 0 is the indivisible
+# engine-render-guards lane, which alone cannot be split further).  So
+# `nonempty_pack_indices` is [0..11] for every diff shape today and `has_work`
+# is always true.  Do not read the empty-pack machinery as a claim that packs
+# are being skipped now — they are not.
+#
+# Nor does planning once make the packs cheaper, and the arithmetic runs the
+# OTHER way, so do not write that it does.  `--expect-plan-sha` requires each
+# pack to RECOMPUTE the plan (a pack that trusted a handed-down partition would
+# prove nothing), and a pack has always had to derive the partition anyway to
+# know which jobs are its own.  So the twelve inference passes did not go away:
+# ci-plan adds a THIRTEENTH, and unlike the other twelve it is serialised ahead
+# of the whole matrix.  On a pull request that pass costs ~106 s locally over the
+# 180-job manifest (measured 2026-08-11; scope inference is the expensive half of
+# a plan, everything else is ~0.2 s).
+#
+# What plan-once buys at this revision is therefore exactly two things, both
+# correctness rather than speed: twelve runners can no longer silently disagree
+# about what the suite IS — a divergence is one loud red at pack N instead of a
+# green check name covering a partition nobody published — and there is a single
+# stable aggregate (`ci-gate`) for branch protection to name now that a PR may
+# legitimately publish a subset of ci-pack-0..11.  The saving arrives only when
+# selection narrows enough to empty a pack.
+# ---------------------------------------------------------------------------
+
+PLAN_SCHEMA = "ci.pack_plan.v1"
+PLAN_MARKER = "CI_PACK_PLAN="
+
+
+@dataclass(frozen=True)
+class CIPackPlan:
+    """One immutable CI decision, shared verbatim by ci-plan and every pack."""
+
+    schema: str
+    changed_from: str | None
+    scope_mode: str
+    reason: str
+    scope_summary: str
+    legacy_job_count: int
+    eligible_job_ids: tuple[str, ...]
+    skipped_job_ids: tuple[str, ...]
+    pack_jobs: tuple[tuple[str, ...], ...]
+    pack_weights: tuple[int, ...]
+    nonempty_pack_indices: tuple[int, ...]
+    plan_sha256: str
+    # Neither serialised nor hashed.  `scoped_jobs` carries the RESOLVED jobs so
+    # main() executes the very objects the plan partitioned instead of inferring
+    # scopes a second time and hoping the second pass agrees.  `predicted_job_ids`
+    # carries what select_jobs chose BEFORE a shadow/off override widened
+    # `eligible_job_ids` back to the full manifest — that difference is the
+    # entire output of the shadow lane.  Both are compare=False so two plans
+    # built from the same inputs stay equal and the hash remains the identity.
+    scoped_jobs: tuple[LegacyJob, ...] = field(default=(), compare=False, repr=False)
+    predicted_job_ids: tuple[str, ...] = field(default=(), compare=False, repr=False)
+
+    @property
+    def pack_count(self) -> int:
+        return len(self.pack_jobs)
+
+    @property
+    def has_work(self) -> bool:
+        return bool(self.nonempty_pack_indices)
+
+    def matrix(self) -> dict[str, list[dict[str, int]]]:
+        """The GitHub Actions matrix for exactly the packs that carry work."""
+        return {"include": [{"pack": index} for index in self.nonempty_pack_indices]}
+
+    def to_dict(self) -> dict[str, Any]:
+        """The published plan document.
+
+        `scoped_jobs` and `predicted_job_ids` are deliberately absent: this
+        document is a contract between two runners, and a LegacyJob's definition
+        mapping is neither stable nor meaningful across that boundary.
+        """
+        return {
+            "schema": self.schema,
+            "changed_from": self.changed_from,
+            "scope_mode": self.scope_mode,
+            "reason": self.reason,
+            "scope_summary": self.scope_summary,
+            "legacy_job_count": self.legacy_job_count,
+            "eligible_job_count": len(self.eligible_job_ids),
+            "eligible_jobs": list(self.eligible_job_ids),
+            "skipped_job_count": len(self.skipped_job_ids),
+            "skipped_jobs": list(self.skipped_job_ids),
+            "packs": [
+                {
+                    "index": index,
+                    "weight": self.pack_weights[index],
+                    "jobs": list(jobs),
+                }
+                for index, jobs in enumerate(self.pack_jobs)
+            ],
+            "nonempty_pack_indices": list(self.nonempty_pack_indices),
+            "matrix": self.matrix(),
+            "has_work": self.has_work,
+            "plan_sha256": self.plan_sha256,
+        }
+
+
+def plan_hash_payload(
+    *,
+    changed_from: str | None,
+    scope_mode: str,
+    pack_count: int,
+    eligible_job_ids: Iterable[str],
+    pack_jobs: Iterable[Iterable[str]],
+    pack_weights: Iterable[int],
+) -> dict[str, Any]:
+    """Exactly what a pack must agree with ci-plan about, and nothing else.
+
+    Prose (`reason`, `scope_summary`) is EXCLUDED on purpose: rewording a
+    diagnostic must never be able to make a pack refuse a plan that selects the
+    identical jobs.  Derived values (non-empty indices, skipped ids, counts) are
+    excluded because they are functions of the keys below — hashing them only
+    adds ways for two identical decisions to disagree.  The matrix MODE is
+    excluded too: it is an emission policy, so ci-plan and ci-pack agree on the
+    hash whether or not every pack was launched.
+    """
+    return {
+        "schema": PLAN_SCHEMA,
+        "changed_from": changed_from,
+        "scope_mode": scope_mode,
+        "pack_count": pack_count,
+        # PLAN order, never sorted: partition_jobs is greedy over
+        # (-weight, ordinal), so the sequence itself is load-bearing.
+        "eligible_job_ids": list(eligible_job_ids),
+        "pack_jobs": [list(jobs) for jobs in pack_jobs],
+        "pack_weights": list(pack_weights),
+    }
+
+
+def _canonical_digest(payload: dict[str, Any]) -> str:
+    """Canonical JSON sha256 — identical on any machine, Python, or dict order."""
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def build_plan(
+    jobs: Iterable[LegacyJob],
+    changed: list[str] | None,
+    *,
+    changed_from: str | None,
+    scope_mode: str,
+    pack_count: int = 12,
+) -> CIPackPlan:
+    """Decide, once, what this CI run executes.
+
+    This is the ONLY place eligibility and partitioning are decided.  It runs
+    exactly the steps main() used to run inline, in the same order and under the
+    same conditions, so moving the decision here cannot change it.
+    """
+    jobs = list(jobs)
+    # A global invalidator changes what any job MEANS, so inferring scopes under
+    # one is not merely useless — it spends a minute deriving ownership that
+    # select_jobs is about to discard.
+    invalidated = bool(
+        changed and any(_matches_any(GLOBAL_INVALIDATORS, path) for path in changed)
+    )
+    scope_summary = "scope inference not needed"
+    if (
+        changed_from
+        and scope_mode != "off"
+        and changed is not None
+        and not invalidated
+    ):
+        jobs, scope_summary = infer_job_scopes(jobs)
+
+    eligible, reason = select_jobs(jobs, changed)
+    predicted_job_ids = tuple(job.job_id for job in eligible)
+    if scope_mode == "off" and changed_from:
+        eligible = jobs
+        reason = "full suite: CI_SCOPE_MODE=off"
+    elif scope_mode == "shadow" and changed_from:
+        eligible = jobs
+        reason = (
+            f"shadow full suite: predicted {len(predicted_job_ids)}/{len(jobs)} jobs; "
+            f"{reason}"
+        )
+
+    # Balance across the SELECTED set, not the full manifest — otherwise a
+    # scoped run would leave whole packs empty while one pack carried it all.
+    packs = partition_jobs(eligible, pack_count)
+    pack_jobs = tuple(tuple(job.job_id for job in pack) for pack in packs)
+    pack_weights = tuple(sum(job.weight for job in pack) for pack in packs)
+    eligible_job_ids = tuple(job.job_id for job in eligible)
+    selected_ids = set(eligible_job_ids)
+    skipped_job_ids = tuple(
+        job.job_id for job in jobs if job.job_id not in selected_ids
+    )
+    return CIPackPlan(
+        schema=PLAN_SCHEMA,
+        changed_from=changed_from,
+        scope_mode=scope_mode,
+        reason=reason,
+        scope_summary=scope_summary,
+        legacy_job_count=len(jobs),
+        eligible_job_ids=eligible_job_ids,
+        skipped_job_ids=skipped_job_ids,
+        pack_jobs=pack_jobs,
+        pack_weights=pack_weights,
+        nonempty_pack_indices=tuple(
+            index for index, pack in enumerate(pack_jobs) if pack
+        ),
+        plan_sha256=_canonical_digest(
+            plan_hash_payload(
+                changed_from=changed_from,
+                scope_mode=scope_mode,
+                pack_count=pack_count,
+                eligible_job_ids=eligible_job_ids,
+                pack_jobs=pack_jobs,
+                pack_weights=pack_weights,
+            )
+        ),
+        scoped_jobs=tuple(jobs),
+        predicted_job_ids=predicted_job_ids,
+    )
+
+
+def plan_from_workflow(
+    workflow: Path,
+    *,
+    changed_from: str | None,
+    scope_mode: str,
+    pack_count: int = 12,
+) -> CIPackPlan:
+    """Load the manifest, resolve the diff, and plan — the whole decision."""
+    legacy = load_legacy_jobs(workflow)
+    changed = changed_files(changed_from) if changed_from else None
+    return build_plan(
+        legacy,
+        changed,
+        changed_from=changed_from,
+        scope_mode=scope_mode,
+        pack_count=pack_count,
+    )
+
+
+def _full_matrix(pack_count: int) -> dict[str, list[dict[str, int]]]:
+    """Every pack, launched. The only safe answer when the plan is not trusted."""
+    return {"include": [{"pack": index} for index in range(pack_count)]}
+
+
+def _one_line(text: str) -> str:
+    """Flatten a message destined for a GitHub annotation.
+
+    A ManifestError joins its findings with newlines.  Emitted raw, only the
+    first line would start with `::` and GitHub would drop everything after it —
+    the same silent-annotation trap as logging one (CLAUDE.md, #3587).
+    """
+    return " / ".join(part.strip() for part in text.splitlines() if part.strip())
+
+
+def _write_github_output(
+    path: Path,
+    *,
+    matrix: dict[str, Any],
+    has_work: bool,
+    plan_sha: str,
+    reason: str,
+) -> None:
+    """Append the four ci-plan outputs to a `$GITHUB_OUTPUT` file.
+
+    `name=value` cannot carry a newline and `reason` is free prose (a manifest
+    error message reaches it verbatim on the fallback path), so every value uses
+    the heredoc form.  The delimiter is derived from the plan hash: it cannot
+    appear in compact JSON, in "true"/"false", in a hexdigest, or in prose about
+    job counts and paths.
+    """
+    delimiter = "ci_plan_" + (plan_sha[:32] or "planner_fallback")
+    payload = "".join(
+        f"{name}<<{delimiter}\n{value}\n{delimiter}\n"
+        for name, value in (
+            ("matrix", json.dumps(matrix, sort_keys=True, separators=(",", ":"))),
+            ("has_work", "true" if has_work else "false"),
+            ("plan_sha", plan_sha),
+            ("reason", reason),
+        )
+    )
+    # ONE append, never four: a failure between writes would leave GitHub parsing
+    # a half-declared output, and the fallback path would then append a second,
+    # contradicting `matrix` behind it.
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(payload)
+
+
+def _emit_plan_artifacts(args: argparse.Namespace, plan: CIPackPlan) -> None:
+    """Publish the plan in whichever forms the caller asked for."""
+    if args.emit_plan_json:
+        document = plan.to_dict()
+        if str(args.emit_plan_json) == "-":
+            # One prefixed machine line, the same idiom as CI_SCOPE_SHADOW_PLAN,
+            # so one stream serves both a human reading the log and a parser.
+            print(
+                PLAN_MARKER
+                + json.dumps(document, sort_keys=True, separators=(",", ":")),
+                flush=True,
+            )
+        else:
+            Path(args.emit_plan_json).write_text(
+                json.dumps(document, indent=2) + "\n", encoding="utf-8"
+            )
+    if args.github_output is None:
+        return
+    if args.matrix_mode == "active":
+        matrix = plan.matrix()
+        has_work = plan.has_work
+        reason = plan.reason
+    else:
+        # shadow/off launch every pack whatever the plan says.  The plan is still
+        # published and still hashed, so a wrong plan shows up in the log and in
+        # --expect-plan-sha long before it is ever trusted to skip a pack.
+        matrix = _full_matrix(plan.pack_count)
+        has_work = True
+        reason = (
+            f"matrix {args.matrix_mode} (all {plan.pack_count} launch): {plan.reason}"
+        )
+    _write_github_output(
+        args.github_output,
+        matrix=matrix,
+        has_work=has_work,
+        plan_sha=plan.plan_sha256,
+        reason=reason,
+    )
+
+
+def _emit_planner_fallback(args: argparse.Namespace, exc: BaseException) -> None:
+    """A planner that cannot decide must WIDEN, never narrow.
+
+    `has_work: false` is only ever an affirmative proof that no pack is needed.
+    An exception is not that proof, so the fallback launches every pack with an
+    empty `plan_sha` (each pack then runs unpinned rather than failing on a hash
+    ci-plan never produced) and the step still exits 0.
+
+    This is not a hole: every pack runs this same script, so a genuine
+    ManifestError still fails all twelve packs red.  Refusing to plan must never
+    be able to skip a test.
+    """
+    _write_github_output(
+        args.github_output,
+        matrix=_full_matrix(args.pack_count),
+        has_work=True,
+        plan_sha="",
+        reason=f"full suite: planner error ({exc})",
+    )
+    # Bare print, never a logger: a prefixing formatter makes GitHub drop the
+    # annotation silently (CLAUDE.md — annotations must START the line).
+    print(
+        "::warning title=ci-plan-fallback::CI planning failed "
+        f"({_one_line(str(exc))}); launching all {args.pack_count} packs unpinned",
+        flush=True,
+    )
+
+
+def _resolve_pack(plan: CIPackPlan, pack_index: int) -> list[LegacyJob]:
+    """Map a pack's planned job ids back to the jobs it executes.
+
+    Resolution goes through `plan.scoped_jobs` rather than re-reading the
+    manifest, so a pack runs the very objects the plan partitioned — it cannot
+    execute a job whose derived scope was inferred twice and differed the second
+    time.
+    """
+    by_id = {job.job_id: job for job in plan.scoped_jobs}
+    return [by_id[job_id] for job_id in plan.pack_jobs[pack_index]]
+
+
 def render_command(command: str, *, base_ref: str, head_ref: str) -> str:
     """Resolve the only GitHub expressions permitted in legacy run steps."""
     replacements = {
@@ -835,9 +1228,49 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "everything; off is the emergency full-suite kill switch"
         ),
     )
+    parser.add_argument(
+        "--plan-only",
+        action="store_true",
+        help="compute and publish the plan; never execute a legacy job",
+    )
+    parser.add_argument(
+        "--emit-plan-json",
+        default=None,
+        metavar="PATH|-",
+        help=(
+            f"'-' prints exactly one {PLAN_MARKER}<compact json> line; a path "
+            "writes the indented plan document to that file"
+        ),
+    )
+    parser.add_argument(
+        "--expect-plan-sha",
+        default=None,
+        help="refuse to execute unless the recomputed plan hashes to this sha256",
+    )
+    parser.add_argument(
+        "--github-output",
+        type=Path,
+        default=None,
+        help=(
+            "append matrix/has_work/plan_sha/reason to a $GITHUB_OUTPUT file; "
+            "only meaningful with --plan-only"
+        ),
+    )
+    parser.add_argument(
+        "--matrix-mode",
+        choices=("active", "shadow", "off"),
+        default=os.environ.get("CI_DYNAMIC_MATRIX_MODE", "shadow"),
+        help=(
+            "active launches only the packs that carry work; shadow and off "
+            "publish the plan but still launch every pack. Affects the emitted "
+            "outputs only — never the plan and never its hash"
+        ),
+    )
     args = parser.parse_args(argv)
     if args.execute and args.validate_only:
         parser.error("--execute and --validate-only are mutually exclusive")
+    if args.execute and args.plan_only:
+        parser.error("--execute and --plan-only are mutually exclusive")
     if not 0 <= args.pack_index < args.pack_count:
         parser.error("--pack-index must be between 0 and pack-count - 1")
     return args
@@ -846,65 +1279,72 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     try:
-        legacy = load_legacy_jobs(args.workflow)
-        scope_summary = "scope inference not needed"
-        changed = changed_files(args.changed_from) if args.changed_from else None
-        invalidated = bool(
-            changed
-            and any(_matches_any(GLOBAL_INVALIDATORS, path) for path in changed)
+        plan = plan_from_workflow(
+            args.workflow,
+            changed_from=args.changed_from,
+            scope_mode=args.scope_mode,
+            pack_count=args.pack_count,
         )
-        if (
-            args.changed_from
-            and args.scope_mode != "off"
-            and changed is not None
-            and not invalidated
-        ):
-            legacy, scope_summary = infer_job_scopes(legacy)
-        eligible, reason = select_jobs(legacy, changed)
-        predicted = eligible
-        predicted_ids = frozenset(job.job_id for job in predicted)
-        if args.scope_mode == "off" and args.changed_from:
-            eligible = legacy
-            reason = "full suite: CI_SCOPE_MODE=off"
-        elif args.scope_mode == "shadow" and args.changed_from:
-            eligible = legacy
-            reason = (
-                f"shadow full suite: predicted {len(predicted)}/{len(legacy)} jobs; "
-                f"{reason}"
-            )
-            plan = {
-                "changed_from": args.changed_from,
-                "predicted_selected": sorted(predicted_ids),
-                "predicted_skipped": sorted(
-                    job.job_id for job in legacy if job.job_id not in predicted_ids
-                ),
-            }
+        shadow = args.scope_mode == "shadow" and args.changed_from
+        if shadow:
+            predicted_ids = frozenset(plan.predicted_job_ids)
             print(
-                "CI_SCOPE_SHADOW_PLAN=" + json.dumps(plan, sort_keys=True),
+                "CI_SCOPE_SHADOW_PLAN="
+                + json.dumps(
+                    {
+                        "changed_from": args.changed_from,
+                        "predicted_selected": sorted(predicted_ids),
+                        "predicted_skipped": sorted(
+                            job.job_id
+                            for job in plan.scoped_jobs
+                            if job.job_id not in predicted_ids
+                        ),
+                    },
+                    sort_keys=True,
+                ),
                 flush=True,
             )
-        # Balance across the SELECTED set, not the full manifest — otherwise a
-        # scoped run would leave whole packs empty while one pack carried it all.
-        packs = partition_jobs(eligible, args.pack_count)
-        selected = packs[args.pack_index]
-        weights = [sum(job.weight for job in pack) for pack in packs]
+        _emit_plan_artifacts(args, plan)
         # Bare print, never a logger: a prefixing formatter makes GitHub drop the
         # annotation silently (CLAUDE.md — annotations must START the line).
         print(
-            f"::notice title=ci-pack-scope::{reason}; {scope_summary}",
+            f"::notice title=ci-pack-scope::{plan.reason}; {plan.scope_summary}",
             flush=True,
         )
-        skipped = len(legacy) - len(eligible)
+        skipped = plan.legacy_job_count - len(plan.eligible_job_ids)
         if skipped:
             print(
                 f"::notice title=ci-pack-skipped::{skipped} legacy job(s) out of "
                 f"scope for this diff; main's baseline still runs all "
-                f"{len(legacy)}",
+                f"{plan.legacy_job_count}",
                 flush=True,
             )
+        if args.plan_only:
+            print(
+                f"Planned {len(plan.eligible_job_ids)} of "
+                f"{plan.legacy_job_count} legacy jobs into {plan.pack_count} packs; "
+                f"pack weights={list(plan.pack_weights)}; packs with work="
+                f"{list(plan.nonempty_pack_indices)}; plan sha256={plan.plan_sha256}."
+            )
+            return 0
+        # A pack whose recomputed plan differs from the published one would run a
+        # DIFFERENT suite under a check name the sweeper reads as proof of this
+        # one. Refuse here, before a single legacy step runs, and name both
+        # hashes so the divergence is diagnosable rather than merely red.
+        if args.expect_plan_sha and args.expect_plan_sha != plan.plan_sha256:
+            print(
+                "::error title=ci-plan-parity::pack "
+                f"{args.pack_index} recomputed plan {plan.plan_sha256} but ci-plan "
+                f"published {args.expect_plan_sha}; refusing to run a suite the "
+                "published plan does not describe",
+                flush=True,
+            )
+            return 2
+        selected = _resolve_pack(plan, args.pack_index)
         print(
-            f"Validated {len(legacy)} legacy jobs; {len(eligible)} in scope "
-            f"({reason}); pack weights={weights}; "
+            f"Validated {plan.legacy_job_count} legacy jobs; "
+            f"{len(plan.eligible_job_ids)} in scope "
+            f"({plan.reason}); pack weights={list(plan.pack_weights)}; "
             f"selected pack {args.pack_index} ({len(selected)} jobs)."
         )
         print("Selected jobs: " + ", ".join(job.job_id for job in selected))
@@ -913,14 +1353,24 @@ def main(argv: list[str] | None = None) -> int:
         return execute_pack(
             selected,
             shadow_predicted=(
-                predicted_ids
-                if args.scope_mode == "shadow" and args.changed_from
-                else None
+                frozenset(plan.predicted_job_ids) if shadow else None
             ),
         )
-    except (ManifestError, RuntimeError, subprocess.CalledProcessError) as exc:
-        print(f"ci-pack validation/execution failed: {exc}", file=sys.stderr)
-        return 2
+    except Exception as exc:  # noqa: BLE001 — see _emit_planner_fallback
+        # LAW: uncertainty WIDENS. On the ci-plan path an unplannable manifest
+        # must still launch every pack, so this one path swallows the exception,
+        # emits the full-suite matrix, and exits 0. Everywhere else — including
+        # --plan-only WITHOUT --github-output, which is how a developer validates
+        # locally — the old return 2 stands, so a manifest defect stays loud.
+        if args.plan_only and args.github_output is not None:
+            _emit_planner_fallback(args, exc)
+            return 0
+        if isinstance(
+            exc, (ManifestError, RuntimeError, subprocess.CalledProcessError)
+        ):
+            print(f"ci-pack validation/execution failed: {exc}", file=sys.stderr)
+            return 2
+        raise
 
 
 if __name__ == "__main__":

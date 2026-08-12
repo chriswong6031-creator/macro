@@ -354,6 +354,34 @@ def test_the_arc_read_discloses_its_null_verbatim_in_both_languages():
     assert js.count("GR_P8_EN") >= 3 and js.count("GR_P8_ZH") >= 3   # tile + rail + reuse
 
 
+@needs_node
+def test_the_capitulation_age_prints_sessions_not_days():
+    """F-2 (audit 2026-08-10, MAJOR/correctness) — `capitulation_median_age_d` counts TRADING
+    SESSIONS by contract (engine/group_pulse.py: "the unit is sessions, not calendar days").
+
+    Rendered as "days" it understated the elapsed time on every page by ~40%: the live
+    maximum, 90 sessions, is ~126 calendar days.  Pinned on the RENDERED copy in both
+    languages, and pinned NEGATIVELY so the calendar-day wording cannot come back.
+    """
+    ages = [1, 9, 90]
+    rows = _run("""
+        var out = [];
+        %s.forEach(function (age) {
+          out.push(grArcRail({arc: {state: 'turning', capitulation_median_age_d: age}}));
+        });
+        process.stdout.write(JSON.stringify(out));
+    """ % json.dumps(ages))
+    for age, html in zip(ages, rows):
+        en, zh = _langs(html)
+        assert f"{age} trading session" in en, f"EN unit is not sessions at {age}: {en!r}"
+        assert f"{age} 个交易日前" in zh, f"ZH unit is not sessions at {age}: {zh!r}"
+        assert not re.search(r"\bdays?\b", en), f"calendar-day wording is back in EN: {en!r}"
+        assert "天前" not in zh, f"calendar-day wording is back in ZH: {zh!r}"
+    # and the unit agrees with itself on either side of the plural
+    assert "1 trading session ago" in _langs(rows[0])[0]
+    assert "9 trading sessions ago" in _langs(rows[1])[0]
+
+
 def _uncommented(js: str) -> str:
     """Strip comments so the scan reads the CODE, not the reasoning about it — a rule that
     forbids a word must not be tripped by the comment explaining why it is forbidden."""

@@ -59,12 +59,26 @@ PHASE-1 CONTROL CONSTRUCTIONS (`--p1-panel/--p1-construction`,
   No engine change: the cases, features, snapshots, collapse and bootstrap are the
   frozen phase-0 chain.
 
+AM-v2 ANCHOR-DISTRIBUTION CONSTRUCTIONS (`--p1-construction am2|am2_agefree`,
+`research/top_anatomy/TOPA_AMV2_PREREG.md`)
+  The successor to AM, which pinned controls at `days_since_63d_high == 0` and
+  REVERSED the anchor asymmetry against cases measured at the {21,10,5} snapshots.
+  AM2 is the DM path — episode-first draw from every continued EXT day, episode-age
+  tercile stratum, frozen W4 key — plus ONE moved variable: a hard per-case-snapshot
+  anchor caliper at NN time (`|control F3 − case F3| <= 2`). AM2-AGEFREE is the same
+  caliper with NO age stratum, so `F1_episode_age` has one construction that can read
+  it. Both arms of the registered escalation (caliper <= 2 and <= 1) are computed in
+  every run, each with the SIGNED validity diagnostic that GOVERNS (§1: |point| <= 1,
+  CI inside (−2, +2), no positive reversal).
+
 Run:
   python -m scripts.research_top_anatomy_phase0 --data-root <primary>/data
   python -m scripts.research_top_anatomy_phase0 --data-root <...> --track W --quick 300
   python -m scripts.research_top_anatomy_phase0 --data-root <...> --w2-arm r63
   python -m scripts.research_top_anatomy_phase0 --data-root <...> \\
       --p1-panel r63_disjoint --p1-construction am --allow-stale
+  python -m scripts.research_top_anatomy_phase0 --data-root <...> \\
+      --p1-panel atrz_disjoint --p1-construction am2 --allow-stale
 """
 from __future__ import annotations
 
@@ -205,6 +219,7 @@ def _finish_panel(
     residual_up_ratio_break: float | None = None,
     ext_variant: str | None = None,
     p1_construction: str | None = None,
+    p1_caliper: int | None = None,
 ) -> dict:
     """Identity-segment a per-ticker store, widen it, and cache the frames.
 
@@ -223,6 +238,12 @@ def _finish_panel(
     again, so a panel is honestly `None` while anything built downstream of the
     control layer must carry its construction key. The check is present-and-equal in
     both keys, so no construction can read another construction's artifacts.
+
+    ``p1_caliper`` is the AM-v2 statement (`TOPA_AMV2_PREREG.md` §2): the anchor
+    caliper is the construction's ONE moved variable and the registered escalation
+    computes a second arm at a tighter value, so the construction key alone would let
+    a `<= 1` artifact be read off a `<= 2` cache. Same present-and-equal shape; a
+    panel is honestly `None` because no caliper enters panel content.
     """
     calendar = pd.DatetimeIndex(sorted({d for b in bars.values() for d in b.index}))
     gap_segs = ta.split_identity_segments(bars, calendar)
@@ -260,6 +281,7 @@ def _finish_panel(
             "residual_up_ratio_break": residual_up_ratio_break,
             "ext_variant": ext_variant,
             "p1_construction": p1_construction,
+            "p1_caliper": p1_caliper,
             "n_tickers_residual_up_split": len(residual_split),
             "n_residual_up_breaks": int(len(segs) - len(gap_segs))}
     if residual_up_ratio_break is not None:
@@ -297,6 +319,7 @@ def _load_cached(
     residual_up_ratio_break: float | None = None,
     ext_variant: str | None = None,
     p1_construction: str | None = None,
+    p1_caliper: int | None = None,
 ) -> dict | None:
     if not (cache / "meta.json").exists():
         return None
@@ -333,6 +356,15 @@ def _load_cached(
         say(f"cache at {cache} was built under phase-1 construction "
             f"{meta.get('p1_construction')!r}, this run needs {p1_construction!r} — "
             "rebuilding rather than reading one construction's controls off another's")
+        return None
+    # AM-v2 caliper keying (TOPA_AMV2_PREREG §2). The caliper is the construction's
+    # moved variable and the §1 escalation computes a SECOND arm at a tighter value on
+    # the same construction key, so the construction stamp alone cannot separate them.
+    # `None` is again the honest panel value, so phase-0/W2/phase-1 cache hits stand.
+    if meta.get("p1_caliper") != p1_caliper:
+        say(f"cache at {cache} was built under anchor caliper "
+            f"{meta.get('p1_caliper')!r}, this run needs {p1_caliper!r} — rebuilding "
+            "rather than reading one caliper arm's pairs off another's")
         return None
     missing = [c for c in _REQUIRED_PANEL_LEGS
                if not (cache / f"panel_{c}.parquet").exists()]
@@ -2661,8 +2693,13 @@ def w2_grade(panels: dict) -> dict:
 # ══════════════════════════════════════════════════════════════════════════════
 P1_FAMILY = "top_anatomy_p1"
 P1_PREREG = "research/top_anatomy/TOPA_PHASE1_PREREG.md"
-#: §1 — the two purpose-built control constructions.
-P1_CONSTRUCTIONS = ("am", "dm")
+#: `TOPA_AMV2_PREREG.md` — the successor prereg, frozen before any AM-v2 number.
+P1_AMV2_PREREG = "research/top_anatomy/TOPA_AMV2_PREREG.md"
+#: §1 — phase-1's two purpose-built control constructions.
+P1_PHASE1_CONSTRUCTIONS = ("am", "dm")
+#: AM-v2 §1 — the two anchor-DISTRIBUTION constructions (caliper, not a pin).
+P1_AMV2_CONSTRUCTIONS = ("am2", "am2_agefree")
+P1_CONSTRUCTIONS = P1_PHASE1_CONSTRUCTIONS + P1_AMV2_CONSTRUCTIONS
 #: §4 — the three panels, each already constructed by phase-0 (PRIMARY) or W2 (the
 #: two DISJOINT cohorts). `(ext variant, restrict to the arm's DISJOINT episodes)`.
 P1_PANEL_SPEC: dict[str, tuple[str, bool]] = {
@@ -2678,13 +2715,24 @@ P1_SEED = 20260811
 #: engine's declared side — that is what `WRONG_SIGN_EXHIBITS` records), so the
 #: declared side rides here and the engine's own two-sided q is carried under its
 #: own name, exactly as W2 does.
+#:
+#: AM-v2 §3 registers a SMALLER family per construction, and the sizes are part of
+#: the registration: AM2 is exactly {B3, B2} (family of 2) and AM2-AGEFREE is exactly
+#: {F1} (family of 1). `F3` is the matching variable in both AM-v2 constructions and
+#: is NEVER a registered leg there — it is the §1 validity diagnostic.
 P1_REGISTERED: dict[str, tuple[tuple[str, int], ...]] = {
     "am": (("F1_episode_age", -1), ("B3_rsi14_chg10", +1), ("B2_rsi14", +1)),
     "dm": (("F3_days_since_63d_high", -1), ("B3_rsi14_chg10", +1), ("B2_rsi14", +1)),
+    "am2": (("B3_rsi14_chg10", +1), ("B2_rsi14", +1)),
+    "am2_agefree": (("F1_episode_age", -1),),
 }
-#: §1 — the leg each construction MATCHES ON, printed and never graded.
+#: §1 — the leg each construction MATCHES ON, printed and never graded. Both AM-v2
+#: constructions match on the anchor, so both read `F3` — under the SIGNED §1 rule,
+#: never AM-v1's magnitude-only boolean.
 P1_DIAGNOSTIC: dict[str, str] = {"am": "F3_days_since_63d_high",
-                                 "dm": "F1_episode_age"}
+                                 "dm": "F1_episode_age",
+                                 "am2": "F3_days_since_63d_high",
+                                 "am2_agefree": "F3_days_since_63d_high"}
 #: §3 — the phase-0 run-3 / W2 anchors the phase-1 estimate is read against.
 P1_ANCHORS: dict[str, dict[str, float]] = {
     "primary": {"F1_episode_age": -9.6875, "F3_days_since_63d_high": -2.25,
@@ -2718,6 +2766,46 @@ P1_WALL_LIMIT_SECONDS = 12 * 3600
 P1_AGE_FEATURE = "F1_episode_age"
 #: The AM restriction reads the SAME rolling-63d closing-high lag the F3 feature is.
 P1_FRESH_HIGH_FEATURE = "F3_days_since_63d_high"
+
+# ── AM-v2 (`TOPA_AMV2_PREREG.md`) ──────────────────────────────────────────────
+#: §2 — a FRESH seed, declared before any AM-v2 number existed.
+P1_AMV2_SEED = 20260812
+#: §1 — the REGISTERED anchor caliper: at NN time a control may only serve a case
+#: snapshot when `|control F3 − case F3| <= 2` sessions, both read at the days that
+#: enter the feature delta.
+P1_AMV2_CALIPER = 2
+#: §1 — the REGISTERED ESCALATION arm (not a sensitivity): always computed, and it
+#: GOVERNS a panel where the <= 2 arm fails the signed validity rule.
+P1_AMV2_CALIPER_ESCALATION = 1
+#: §5 — the loosen-direction SENSITIVITY (printed, non-binding).
+P1_AMV2_CALIPER_SENSITIVITY = 4
+#: §1 validity clause (a): |episode-first-collapsed F3 gap| <= 1.0 session.
+P1_AMV2_VALIDITY_MAX_ABS_POINT = 1.0
+#: §1 validity clause (b): the 95% CI lies WITHIN (−2.0, +2.0).
+P1_AMV2_VALIDITY_CI_BOUND = 2.0
+#: §1 — the constructions that carry an age stratum (DM's stratum, reused by AM2;
+#: AM2-AGEFREE drops it so `F1_episode_age` is readable at all).
+P1_AGE_STRATUM_CONSTRUCTIONS = ("dm", "am2")
+
+
+def p1_uses_age_stratum(construction: str) -> bool:
+    """§1 — does this construction add the episode-age tercile to the frozen W4 key?"""
+    return construction in P1_AGE_STRATUM_CONSTRUCTIONS
+
+
+def p1_caliper_for(construction: str) -> int | None:
+    """§1 — the construction's REGISTERED anchor caliper (`None` outside AM-v2)."""
+    return P1_AMV2_CALIPER if construction in P1_AMV2_CONSTRUCTIONS else None
+
+
+def p1_seed_for(construction: str) -> int:
+    """§2 — AM-v2's draws are new, so they carry their own declared seed."""
+    return (P1_AMV2_SEED if construction in P1_AMV2_CONSTRUCTIONS else P1_SEED)
+
+
+def p1_prereg_for(construction: str) -> str:
+    """The frozen document a construction is registered in."""
+    return (P1_AMV2_PREREG if construction in P1_AMV2_CONSTRUCTIONS else P1_PREREG)
 
 
 def _p1_wall_exceeded(wave_start: float) -> bool:
@@ -2848,6 +2936,13 @@ def p1_control_candidates(race: pd.DataFrame, dtp: pd.DataFrame, feats: pd.DataF
         census["fresh_high_max"] = fresh_high_max
         cand = cand[cand[P1_FRESH_HIGH_FEATURE].notna()
                     & (cand[P1_FRESH_HIGH_FEATURE] <= float(fresh_high_max))]
+    elif construction in P1_AMV2_CONSTRUCTIONS:
+        census["restriction"] = (
+            f"{construction.upper()}: no day-level restriction — AM-v2 draws from ALL "
+            "continued EXT days exactly as DM does, and the anchor requirement is a "
+            "per-case-snapshot CALIPER applied at NN time, not a pin on the candidate "
+            "pool (AM-v1 pinned the pool at zero and reversed the asymmetry)")
+        census["fresh_high_max"] = None
     else:
         census["restriction"] = ("DM: no day-level restriction — the construction "
                                  "moves the MATCHING KEY (episode-age tercile), not "
@@ -2916,7 +3011,10 @@ def p1_assign_age_tercile(values: pd.Series, edges: Sequence[float]) -> pd.Serie
 
 def p1_matched_controls(cases: pd.DataFrame, control_candidates: pd.DataFrame, *,
                         stratum_col: str | None = None,
-                        max_controls: int = ta.MAX_CONTROLS) -> tuple[pd.DataFrame, dict]:
+                        max_controls: int = ta.MAX_CONTROLS,
+                        caliper: int | None = None,
+                        caliper_col: str = P1_FRESH_HIGH_FEATURE
+                        ) -> tuple[pd.DataFrame, dict]:
     """The frozen W4 key, optionally PLUS one stratum column (§1's DM move).
 
     The binning is the engine's own `_bucket` on the engine's own key — quarter x
@@ -2928,11 +3026,25 @@ def p1_matched_controls(cases: pd.DataFrame, control_candidates: pd.DataFrame, *
     `test_p1_matching_reproduces_the_frozen_matcher_without_a_stratum` pins that
     equality so the two can never drift.
 
-    Returns ``(pairs, diag)`` in `ta.matched_controls`'s shape, plus the stratum name.
+    ``caliper`` is AM-v2's ONE moved variable (`TOPA_AMV2_PREREG.md` §1): a hard
+    PER-CASE-SNAPSHOT anchor band applied INSIDE the neighbour step, so a control may
+    only serve a case whose anchor it sits within `caliper` sessions of. It is a
+    filter on the case's own pool, never a key column and never a pin on the pool as a
+    whole — the pool keeps its full anchor distribution and each case draws from the
+    slice of it that matches ITS anchor. Both sides are read at the days that enter
+    the feature delta, and a null anchor on either side satisfies no band (fail-closed:
+    `abs(nan - x) <= c` is False), so a case with no anchor reading matches nothing
+    rather than matching everything. NN ORDERING IS UNTOUCHED — the caliper narrows
+    the pool, then the frozen lexsort on (|Δr126|, |Δrv63|) picks up to `max_controls`.
+
+    Returns ``(pairs, diag)`` in `ta.matched_controls`'s shape, plus the stratum name,
+    the caliper and its own drop accounting.
     """
     need = {"case_id", "segment", "ticker", "date", "r126", "rv63", "dvol21"}
     if stratum_col:
         need = need | {stratum_col}
+    if caliper is not None:
+        need = need | {caliper_col}
     for nm, fr in (("cases", cases), ("control_candidates", control_candidates)):
         missing = need - set(fr.columns)
         if missing:
@@ -2943,7 +3055,8 @@ def p1_matched_controls(cases: pd.DataFrame, control_candidates: pd.DataFrame, *
                                       "control_date"]),
                 {"n_cases": int(len(cases)), "n_matched": 0,
                  "n_dropped_no_control": int(len(cases)), "n_pairs": 0,
-                 "stratum": stratum_col})
+                 "stratum": stratum_col, "caliper": caliper,
+                 "caliper_column": caliper_col if caliper is not None else None})
     ca = cases.copy()
     co = control_candidates.copy()
     ca["_arm"], co["_arm"] = "case", "control"
@@ -2959,6 +3072,8 @@ def p1_matched_controls(cases: pd.DataFrame, control_candidates: pd.DataFrame, *
     pools = {k: g for k, g in co.groupby(key, sort=False)}
 
     rows, dropped = [], []
+    n_dropped_by_caliper = 0
+    n_null_anchor_cases = 0
     for _, case in ca.iterrows():
         pool = pools.get(tuple(case[k] for k in key))
         if pool is None or pool.empty:
@@ -2968,12 +3083,24 @@ def p1_matched_controls(cases: pd.DataFrame, control_candidates: pd.DataFrame, *
         if pool.empty:
             dropped.append(case["case_id"])
             continue
+        if caliper is not None:
+            anchor = pd.to_numeric(pd.Series([case[caliper_col]]),
+                                   errors="coerce").iloc[0]
+            if not np.isfinite(anchor):
+                n_null_anchor_cases += 1
+            gap = (pd.to_numeric(pool[caliper_col], errors="coerce")
+                   - anchor).abs()
+            pool = pool[gap <= float(caliper)]
+            if pool.empty:
+                n_dropped_by_caliper += 1
+                dropped.append(case["case_id"])
+                continue
         d1 = (pool["r126"] - case["r126"]).abs().to_numpy(dtype=float)
         d2 = (pool["rv63"] - case["rv63"]).abs().to_numpy(dtype=float)
         order = np.lexsort((d2, d1))[:max_controls]
         for j in order:
             ctrl = pool.iloc[int(j)]
-            rows.append({
+            row = {
                 "case_id": case["case_id"], "segment": case["segment"],
                 "ticker": case["ticker"], "date": case["date"],
                 "control_segment": ctrl["segment"], "control_ticker": ctrl["ticker"],
@@ -2982,7 +3109,10 @@ def p1_matched_controls(cases: pd.DataFrame, control_candidates: pd.DataFrame, *
                 "d_rv63": float(ctrl["rv63"] - case["rv63"]),
                 "quarter": case["quarter"], "b_r126": case["b_r126"],
                 "b_rv63": case["b_rv63"], "b_dvol": case["b_dvol"],
-            })
+            }
+            if caliper is not None:
+                row["d_anchor"] = float(ctrl[caliper_col]) - float(case[caliper_col])
+            rows.append(row)
     pairs = pd.DataFrame(rows)
     n_matched = int(pairs["case_id"].nunique()) if not pairs.empty else 0
     diag = {
@@ -2994,6 +3124,21 @@ def p1_matched_controls(cases: pd.DataFrame, control_candidates: pd.DataFrame, *
         "stratum": stratum_col,
         "max_controls": int(max_controls),
     }
+    if caliper is not None:
+        gaps = (pairs["d_anchor"].abs() if not pairs.empty
+                else pd.Series(dtype="float64"))
+        diag.update({
+            "caliper": int(caliper),
+            "caliper_column": caliper_col,
+            "caliper_rule": (f"a control may serve a case only when |control "
+                             f"{caliper_col} − case {caliper_col}| <= {caliper} "
+                             "sessions; applied inside the neighbour step, on the "
+                             "case's own pool, with the frozen NN ordering untouched"),
+            "n_cases_dropped_by_the_caliper": int(n_dropped_by_caliper),
+            "n_cases_with_a_null_anchor": int(n_null_anchor_cases),
+            "realised_abs_anchor_gap": _describe(gaps),
+            "max_realised_abs_anchor_gap": (_num(gaps.max()) if len(gaps) else None),
+        })
     return pairs, diag
 
 
@@ -3241,6 +3386,183 @@ def p1_matching_diagnostic(construction: str, panel: str,
     }
 
 
+def p1_amv2_validity_clauses(median_delta: float | None, ci_lo: float | None,
+                             ci_hi: float | None) -> dict:
+    """AM-v2 §1's SIGNED validity rule, evaluated CLAUSE BY CLAUSE.
+
+    AM-v1 shipped a magnitude-only boolean, and a magnitude-only boolean is blind to
+    the exact failure it was supposed to catch: controls pinned at zero sat CLOSER to
+    fresh highs than cases measured at the {21,10,5} snapshots, the anchor asymmetry
+    REVERSED rather than collapsing, and `|delta| < |anchor|` still read True. So the
+    three clauses are separate printed fields and the reversal clause is signed:
+
+    (a) ``|point| <= 1.0`` session;
+    (b) the 95% CI lies WITHIN (−2.0, +2.0);
+    (c) NO REVERSAL — the point is not POSITIVE with a CI excluding zero (positive =
+        controls fresher than cases = AM-v1's failure; a small NEGATIVE residual is
+        the original asymmetry shrunk, which (a) and (b) already bound).
+
+    A missing point or CI is not a pass: the arm is not evaluable and `valid` is
+    False, with the reason printed.
+    """
+    vals = (median_delta, ci_lo, ci_hi)
+    ok = all(v is not None and np.isfinite(float(v)) for v in vals)
+    if not ok:
+        return {
+            "evaluable": False,
+            "clause_a_abs_point_within_1_0": None,
+            "clause_b_ci_within_2_0": None,
+            "clause_c_no_positive_reversal": None,
+            "valid": False,
+            "reason_not_evaluable": ("the anchor gap has no finite point estimate or "
+                                     "block-bootstrap CI on this arm"),
+        }
+    point, lo, hi = float(median_delta), float(ci_lo), float(ci_hi)
+    a = bool(abs(point) <= P1_AMV2_VALIDITY_MAX_ABS_POINT)
+    b = bool(lo > -P1_AMV2_VALIDITY_CI_BOUND and hi < P1_AMV2_VALIDITY_CI_BOUND)
+    c = bool(not (point > 0.0 and lo > 0.0))
+    return {
+        "evaluable": True,
+        "clause_a_abs_point_within_1_0": a,
+        "clause_b_ci_within_2_0": b,
+        "clause_c_no_positive_reversal": c,
+        "valid": bool(a and b and c),
+    }
+
+
+def p1_amv2_validity(stats: pd.DataFrame, *, panel: str, caliper: int,
+                     case_anchors: dict, control_anchors: dict,
+                     n_matched_episodes: int | None = None) -> dict:
+    """§1 — the validity diagnostic for ONE caliper arm, printed and never graded.
+
+    The diagnostic is the episode-first-collapsed `F3` gap (case − matched control)
+    with the same block bootstrap as every registered cell, so it is measured on the
+    same unit and the same draws as the numbers it governs.
+    """
+    feat = P1_FRESH_HIGH_FEATURE
+    anchor = P1_ANCHORS.get(panel, {}).get(feat)
+    r = (stats[stats["feature"] == feat] if stats is not None and not stats.empty
+         else None)
+    r = r.iloc[0].to_dict() if r is not None and not r.empty else {}
+    med, lo, hi = (_num(r.get("median_delta")), _num(r.get("ci_lo")),
+                   _num(r.get("ci_hi")))
+    clauses = p1_amv2_validity_clauses(med, lo, hi)
+    return {
+        "feature": feat,
+        "caliper": int(caliper),
+        "role": ("AM-v2 validity diagnostic — the anchor gap the caliper exists to "
+                 "close, read SIGNED under the §1 rule that GOVERNS this panel"),
+        "graded": False,
+        "median_delta": med,
+        "ci_lo": lo, "ci_hi": hi,
+        "n_episodes": int(r.get("n_episodes", 0) or 0),
+        "n_matched_episodes": (int(n_matched_episodes)
+                               if n_matched_episodes is not None else None),
+        "anchor_delta": _num(anchor),
+        "abs_ratio_to_anchor": _num(abs(med) / abs(anchor)
+                                    if med is not None and anchor not in (None, 0)
+                                    else None),
+        "magnitude_only_reading_is_non_governing": (
+            "printed for continuity with phase-1 only; AM-v1's magnitude-only boolean "
+            "was ruled NON-GOVERNING because it is blind to a sign flip"),
+        "thresholds": {"max_abs_point": P1_AMV2_VALIDITY_MAX_ABS_POINT,
+                       "ci_bound": P1_AMV2_VALIDITY_CI_BOUND},
+        "clauses": clauses,
+        "valid": bool(clauses["valid"]),
+        "rule": ("§1: VALID iff (a) |point| <= 1.0 session AND (b) the 95% CI lies "
+                 "within (−2.0, +2.0) AND (c) the point is not positive with a CI "
+                 "excluding zero"),
+        "case_anchors": case_anchors,
+        "control_anchors": control_anchors,
+    }
+
+
+def p1_amv2_governing_arm(validity_by_caliper: dict) -> dict:
+    """§1's PRE-REGISTERED escalation, applied mechanically — never discretion.
+
+    The `<= 2` arm is registered. If it fails validity on a panel, the always-computed
+    `<= 1` arm GOVERNS that panel under the same rule. If BOTH fail, the construction
+    FAILED there: the cells are still graded normally and carry
+    `UNDERPOWERED-BY-CONSTRUCTION-FAILURE` BESIDE the grade (the phase-1 carry law),
+    and the registered `<= 2` arm stays the one the summary mirrors — the escalation
+    only ever elevates an arm that can rescue validity, so a both-failed panel has no
+    arm to escalate TO.
+    """
+    reg, esc = P1_AMV2_CALIPER, P1_AMV2_CALIPER_ESCALATION
+    v_reg = bool((validity_by_caliper.get(reg) or {}).get("valid"))
+    v_esc = bool((validity_by_caliper.get(esc) or {}).get("valid"))
+    if v_reg:
+        governing, escalated, failure = reg, False, False
+    elif v_esc:
+        governing, escalated, failure = esc, True, False
+    else:
+        governing, escalated, failure = reg, False, True
+    return {
+        "registered_caliper": reg,
+        "escalation_caliper": esc,
+        "valid_by_caliper": {str(reg): v_reg, str(esc): v_esc},
+        "governing_caliper": governing,
+        "escalated_to_the_tighter_arm": escalated,
+        "construction_failure": failure,
+        "rule": ("§1 pre-registered escalation: the <= 2 arm is registered; if it "
+                 "fails validity the always-computed <= 1 arm governs the panel; if "
+                 "both fail the construction FAILED on this panel and every "
+                 "registered cell carries UNDERPOWERED-BY-CONSTRUCTION-FAILURE beside "
+                 "its own grade, which is still computed and printed"),
+        "both_failed_convention": ("plumbing operationalization, declared pre-results: "
+                                   "when neither arm is valid the summary keeps "
+                                   "mirroring the REGISTERED <= 2 arm, because the "
+                                   "escalation exists to elevate a VALID tighter arm "
+                                   "and there is none to elevate"),
+    }
+
+
+def p1_ungraded_leg(stats: pd.DataFrame, feature: str, panel: str, role: str) -> dict:
+    """One PRINTED, UNGRADED leg with its panel anchor (the DM diagnostic convention)."""
+    anchor = P1_ANCHORS.get(panel, {}).get(feature)
+    r = (stats[stats["feature"] == feature] if stats is not None and not stats.empty
+         else None)
+    r = r.iloc[0].to_dict() if r is not None and not r.empty else {}
+    med = _num(r.get("median_delta"))
+    return {
+        "feature": feature, "role": role, "graded": False,
+        "median_delta": med, "ci_lo": _num(r.get("ci_lo")),
+        "ci_hi": _num(r.get("ci_hi")),
+        "n_episodes": int(r.get("n_episodes", 0) or 0),
+        "anchor_delta": _num(anchor),
+        "abs_ratio_to_anchor": _num(abs(med) / abs(anchor)
+                                    if med is not None and anchor not in (None, 0)
+                                    else None),
+    }
+
+
+def p1_amv2_age_receipt(case_ages, control_ages, *, caliper: int) -> dict:
+    """§1's documented-bias receipt for AM2-AGEFREE: case vs control episode age.
+
+    The prereg states the bias DIRECTION before results: low anchor values correlate
+    with young episode moments and case anchors concentrate at 0–2, so AGEFREE control
+    ages skew young, which pushes the F1 delta (case − control) toward zero/positive —
+    AGAINST the registered negative direction. That makes AGEFREE F1 one-directional:
+    support survived an adverse bias; non-support is uninformative BY DESIGN. This
+    receipt is the measurement that lets a reader check the stated direction.
+    """
+    c_med = (case_ages or {}).get("median")
+    k_med = (control_ages or {}).get("median")
+    return {
+        "caliper": int(caliper),
+        "case_episode_age": dict(case_ages or {}),
+        "control_episode_age": dict(control_ages or {}),
+        "median_gap_case_minus_control": _num(
+            c_med - k_med if c_med is not None and k_med is not None else None),
+        "declared_bias_direction": (
+            "pre-results (§1): AGEFREE control ages skew YOUNG, which pushes the F1 "
+            "delta toward zero/positive, AGAINST the registered negative direction"),
+        "power_reading": ("one-directional by design: SUPPORTED is meaningful "
+                          "(survived despite the adverse bias); non-support is "
+                          "UNINFORMATIVE-BY-DESIGN and is never a kill"),
+    }
+
+
 def p1_out_json(panel: str, construction: str, quick: int | None = None) -> Path:
     """§6 deliverable path — panel AND construction ride in the FILENAME."""
     return _REPO / (f"data/research/top_anatomy_p1_{panel}_{construction}_summary"
@@ -3250,6 +3572,7 @@ def p1_out_json(panel: str, construction: str, quick: int | None = None) -> Path
 def p1_estimate(cases: pd.DataFrame, pool: pd.DataFrame, feats: pd.DataFrame,
                 eps: pd.DataFrame, *, construction: str, seed: int, b: int,
                 stratum_col: str | None, max_controls: int = ta.MAX_CONTROLS,
+                caliper: int | None = None,
                 features: Sequence[str] = ta.FEATURES) -> dict:
     """One matched estimate: match -> per-case deltas -> episode-first -> bootstrap.
 
@@ -3257,17 +3580,19 @@ def p1_estimate(cases: pd.DataFrame, pool: pd.DataFrame, feats: pd.DataFrame,
     substitutions, so a sensitivity and the registered cell differ only where the
     prereg says they differ.
     """
-    if construction == "am" and stratum_col is None:
+    if construction == "am" and stratum_col is None and caliper is None:
         pairs, diag = ta.matched_controls(cases, pool, max_controls=max_controls)
         diag = dict(diag)
         diag["stratum"] = None
         diag["max_controls"] = int(max_controls)
+        diag["caliper"] = None
         diag["matcher"] = "engine.top_anatomy.matched_controls (frozen W4 key)"
     else:
         pairs, diag = p1_matched_controls(cases, pool, stratum_col=stratum_col,
-                                          max_controls=max_controls)
+                                          max_controls=max_controls, caliper=caliper)
         diag["matcher"] = ("harness p1_matched_controls — the frozen W4 key on the "
-                           "engine's own bucketer, plus the declared stratum")
+                           "engine's own bucketer, plus the declared stratum and the "
+                           "declared anchor caliper")
     if pairs.empty:
         return {"matching": diag, "null_reason": "no matched pairs", "stats": None,
                 "ep_deltas": None}
@@ -3299,7 +3624,7 @@ def p1_sensitivity(name: str, why: str, *, cases: pd.DataFrame, race: pd.DataFra
                    eps: pd.DataFrame, construction: str, seed: int, b: int,
                    fresh_high_max: int | None, episode_first: bool,
                    stratum_col: str | None, age_edges: Sequence[float],
-                   max_controls: int) -> dict:
+                   max_controls: int, caliper: int | None = None) -> dict:
     """§5 — one printed, NON-BINDING sensitivity: point estimates + CIs, B declared."""
     pool, census = p1_control_candidates(race, dtp, feats, construction=construction,
                                          seed=seed, fresh_high_max=fresh_high_max,
@@ -3308,12 +3633,13 @@ def p1_sensitivity(name: str, why: str, *, cases: pd.DataFrame, race: pd.DataFra
     if stratum_col and not pool.empty:
         pool[stratum_col] = p1_assign_age_tercile(pool[P1_AGE_FEATURE], age_edges)
     out: dict = {"name": name, "why": why, "binding": False, "bootstrap_b": int(b),
-                 "candidate_census": census}
+                 "caliper": caliper, "candidate_census": census}
     if pool.empty:
         out["null_reason"] = "no control candidates under this sensitivity"
         return out
     est = p1_estimate(cases, pool, feats, eps, construction=construction, seed=seed,
-                      b=b, stratum_col=stratum_col, max_controls=max_controls)
+                      b=b, stratum_col=stratum_col, max_controls=max_controls,
+                      caliper=caliper)
     out["matching"] = est["matching"]
     if est.get("stats") is None:
         out["null_reason"] = est.get("null_reason", "no estimate")
@@ -3326,6 +3652,96 @@ def p1_sensitivity(name: str, why: str, *, cases: pd.DataFrame, race: pd.DataFra
                           "median_delta": _num(r.iloc[0]["median_delta"]),
                           "ci_lo": _num(r.iloc[0]["ci_lo"]),
                           "ci_hi": _num(r.iloc[0]["ci_hi"])} if not r.empty else None)
+    if construction in P1_AMV2_CONSTRUCTIONS and out["diagnostic"]:
+        out["validity_clauses"] = p1_amv2_validity_clauses(
+            out["diagnostic"]["median_delta"], out["diagnostic"]["ci_lo"],
+            out["diagnostic"]["ci_hi"])
+    return out
+
+
+def p1_amv2_arm_block(construction: str, panel: str, *, caliper: int, est: dict,
+                      blocks: Sequence[dict], n_topped_episodes: int, b: int,
+                      seed: int, construction_failure: bool, validity: dict,
+                      gates: pd.DataFrame | None = None,
+                      cases: pd.DataFrame | None = None,
+                      quick: bool = False) -> dict:
+    """ONE caliper arm of an AM-v2 cell block: tables, grades, eras, exploratory.
+
+    Both arms are assembled identically from their own matching, so the `<= 1`
+    escalation arm lands in the artifact as a COMPLETE registered-cell table and §1's
+    escalation can be applied without re-running the wave. `construction_failure` is
+    a PANEL property (both arms invalid), passed in rather than derived here, and it
+    rides BESIDE each grade — never instead of it.
+    """
+    out: dict = {"caliper": int(caliper),
+                 "is_registered_caliper": bool(caliper == P1_AMV2_CALIPER),
+                 "is_escalation_arm": bool(caliper == P1_AMV2_CALIPER_ESCALATION),
+                 "matching": est.get("matching"),
+                 "validity_diagnostic": validity}
+    if est.get("stats") is None:
+        out["null_reason"] = est.get("null_reason", "no matched pairs on this arm")
+        return out
+    stats, ep_deltas = est["stats"], est["ep_deltas"]
+    out["e1"] = est["e1"]
+    registered = [f for f, _ in P1_REGISTERED[construction]]
+    legs = list(dict.fromkeys(registered + [P1_FRESH_HIGH_FEATURE, P1_AGE_FEATURE]))
+    era = p1_era_cells(ep_deltas, legs, blocks, b=b, seed=seed)
+    out["era_cells"] = era
+    cells = []
+    for row in p1_confirmatory_table(stats, construction, b=b):
+        graded = p1_grade_cell(row, n_matched_episodes=int(len(ep_deltas)),
+                               n_topped_episodes=n_topped_episodes,
+                               era_cells=era["cells"].get(row["feature"], []),
+                               construction_failure=construction_failure)
+        cells.append({**row, **graded, "panel": panel, "construction": construction,
+                      "caliper": int(caliper),
+                      "anchor_delta": _num(P1_ANCHORS.get(panel, {})
+                                           .get(row["feature"])),
+                      "era": era["cells"].get(row["feature"], [])})
+    out["registered_cells"] = {
+        "family": ("BH-FDR q <= 0.10 within this (panel x construction) family of "
+                   f"exactly {len(P1_REGISTERED[construction])}"),
+        "family_size": len(P1_REGISTERED[construction]),
+        "q_threshold": ta.FDR_Q,
+        "one_sided_derivation": (w2_one_sided_p.__doc__ or "").strip().split("\n")[0],
+        "grades": ("P1-SUPPORTED / P1-NOT-SUPPORTED / P1-UNDERPOWERED per AM-v2 §3; "
+                   "P1-SUPPORTED-ERA-CAVEAT when the latest era block is wrong-signed; "
+                   "the §1 construction failure is carried BESIDE the grade"),
+        "table": cells,
+    }
+    out["b2_era_fade_fence"] = p1_b2_era_fade(era)
+    b2 = next((c for c in cells if c["feature"] == "B2_rsi14"), None)
+    if b2 is not None and panel in P1_B2_W2_INTERVAL:
+        lo, hi = P1_B2_W2_INTERVAL[panel]
+        med = b2.get("median_delta")
+        out["b2_anchor_comparison"] = {
+            "w2_duration_unmatched_ci": [lo, hi],
+            "p1_median_delta": _num(med),
+            "inside_w2_interval": bool(med is not None and lo <= med <= hi),
+            "point_estimate_ratio_to_w2_anchor": _num(
+                med / P1_ANCHORS[panel]["B2_rsi14"]
+                if med is not None and P1_ANCHORS[panel]["B2_rsi14"] else None),
+            "reading": ("registered READING, never a grade (AM-v2 §3): inside -> "
+                        "anchor artifacts do not explain W2's confirmation; "
+                        "below-but-supported -> a partial artifact share, quantified "
+                        "as the same-design point-estimate ratio"),
+        }
+    out["exploratory"] = p1_exploratory_table(stats, construction)
+    case_ages = (validity.get("case_anchors") or {}).get("episode_age", {})
+    control_ages = (validity.get("control_anchors") or {}).get("episode_age", {})
+    if p1_uses_age_stratum(construction):
+        out["f1_stratification_diagnostic"] = p1_ungraded_leg(
+            stats, P1_AGE_FEATURE, panel,
+            "AM2 stratification diagnostic — episode age, coarsely matched by the "
+            "tercile stratum; printed and never graded (the DM convention)")
+        out["f1_stratification_diagnostic"]["case_episode_age"] = dict(case_ages)
+        out["f1_stratification_diagnostic"]["control_episode_age"] = dict(control_ages)
+    else:
+        out["age_receipt"] = p1_amv2_age_receipt(case_ages, control_ages,
+                                                 caliper=caliper)
+    if gates is not None and cases is not None:
+        out["e4_sign_stability"] = _e4(ep_deltas, gates, cases, legs,
+                                       p1_eras_for_e4(blocks), seed=seed, quick=quick)
     return out
 
 
@@ -3512,7 +3928,7 @@ def run_p1(panel_name: str, construction: str, panel: dict, meta: dict, *, seed:
         return out
 
     stratum_col, age_edges = None, []
-    if construction == "dm":
+    if p1_uses_age_stratum(construction):
         pooled = pd.concat([cases[P1_AGE_FEATURE], pool[P1_AGE_FEATURE]],
                            ignore_index=True)
         age_edges, age_info = p1_age_terciles(pooled)
@@ -3526,8 +3942,18 @@ def run_p1(panel_name: str, construction: str, panel: dict, meta: dict, *, seed:
             str(k): int(v) for k, v in
             pool[stratum_col].value_counts(dropna=False).sort_index().to_dict().items()}
         age_info["n_cases_with_null_stratum"] = int(cases[stratum_col].isna().sum())
-        out["dm_age_stratum"] = age_info
-        say(f"[{tag}] DM age-tercile edges {[round(e, 3) for e in age_edges]}")
+        age_info["cut_within_this_construction"] = construction
+        out["dm_age_stratum" if construction == "dm" else "age_stratum"] = age_info
+        say(f"[{tag}] {construction} age-tercile edges "
+            f"{[round(e, 3) for e in age_edges]}")
+
+    caliper = p1_caliper_for(construction)
+    if caliper is not None:
+        return _run_p1_amv2(out, tag, panel_name, construction, cases=cases, pool=pool,
+                            feats=feats, eps=eps, gates=gates, race=race, dtp=dtp,
+                            blocks=blocks, topped_eps=topped_eps,
+                            stratum_col=stratum_col, age_edges=age_edges, seed=seed,
+                            b=b, quick=quick, wave_start=wave_start)
 
     say(f"[{tag}] matching {len(cases)} cases vs {len(pool)} candidates")
     est = p1_estimate(cases, pool, feats, eps, construction=construction, seed=seed,
@@ -3645,13 +4071,185 @@ def run_p1(panel_name: str, construction: str, panel: dict, meta: dict, *, seed:
     return out
 
 
+def _p1_arm_anchor_receipts(est: dict, cases: pd.DataFrame,
+                            feats: pd.DataFrame) -> tuple[dict, dict]:
+    """Case-side and control-side anchor/age distributions AS MATCHED on one arm.
+
+    The case side is restricted to the case snapshots that actually matched under this
+    arm's caliper, because the caliper drops cases and an unrestricted case receipt
+    would describe a population the estimate never used.
+    """
+    pairs = est.get("pairs")
+    empty = {"fresh_high_lag": _describe([]), "episode_age": _describe([])}
+    if pairs is None or pairs.empty:
+        return ({**empty, "unit": "matched case snapshots on this arm"},
+                {**empty, "unit": "distinct control days used on this arm"})
+    matched = cases[cases["case_id"].isin(set(pairs["case_id"]))]
+    ctrl_days = pairs[["control_segment", "control_date"]].drop_duplicates()
+    ctrl_days.columns = ["segment", "date"]
+    ctrl_feats = _pick(feats[["segment", "date", P1_AGE_FEATURE,
+                              P1_FRESH_HIGH_FEATURE]], ctrl_days)
+    return (
+        {"fresh_high_lag": _describe(matched[P1_FRESH_HIGH_FEATURE]),
+         "episode_age": _describe(matched[P1_AGE_FEATURE]),
+         "unit": "matched case snapshots on this arm"},
+        {"fresh_high_lag": _describe(ctrl_feats[P1_FRESH_HIGH_FEATURE]),
+         "episode_age": _describe(ctrl_feats[P1_AGE_FEATURE]),
+         "unit": "distinct control days used on this arm"},
+    )
+
+
+def _run_p1_amv2(out: dict, tag: str, panel_name: str, construction: str, *,
+                 cases: pd.DataFrame, pool: pd.DataFrame, feats: pd.DataFrame,
+                 eps: pd.DataFrame, gates: pd.DataFrame, race: pd.DataFrame,
+                 dtp: pd.DataFrame, blocks: Sequence[dict], topped_eps: pd.DataFrame,
+                 stratum_col: str | None, age_edges: Sequence[float], seed: int,
+                 b: int, quick: bool, wave_start: float) -> dict:
+    """The AM-v2 tail of `run_p1`: BOTH caliper arms, then §1's escalation.
+
+    The `<= 2` arm is registered and the `<= 1` arm is the registered escalation, so
+    both are computed in EVERY run — the adjudicator applies §1 off the artifact and
+    never needs a second wave. The two arms share everything upstream of the neighbour
+    step (the same episodes, the same seeded episode-first candidate draw, the same
+    pooled age-tercile edges), so the caliper really is the only variable that moves
+    between them.
+    """
+    n_topped = int(len(topped_eps))
+    out["caliper"] = P1_AMV2_CALIPER
+    out["caliper_escalation"] = P1_AMV2_CALIPER_ESCALATION
+    out["caliper_definition"] = (
+        f"|control {P1_FRESH_HIGH_FEATURE} − case {P1_FRESH_HIGH_FEATURE}| <= caliper "
+        "sessions, both read at the days entering the feature delta, applied at NN "
+        "time on each case snapshot's own control pool")
+    arms_est: dict[int, dict] = {}
+    validity: dict[int, dict] = {}
+    receipts: dict[int, tuple[dict, dict]] = {}
+    for cal in (P1_AMV2_CALIPER, P1_AMV2_CALIPER_ESCALATION):
+        if _p1_wall_exceeded(wave_start):
+            out["deferral"] = _p1_deferral(
+                panel_name, construction, f"before the caliper <= {cal} arm",
+                wave_start, [f"{f}@caliper{cal}" for f, _ in P1_REGISTERED[construction]])
+            break
+        say(f"[{tag}] caliper <= {cal}: matching {len(cases)} cases vs "
+            f"{len(pool)} candidates")
+        est = p1_estimate(cases, pool, feats, eps, construction=construction,
+                          seed=seed, b=b, stratum_col=stratum_col, caliper=cal)
+        arms_est[cal] = est
+        receipts[cal] = _p1_arm_anchor_receipts(est, cases, feats)
+        ep_deltas = est.get("ep_deltas")
+        validity[cal] = p1_amv2_validity(
+            est.get("stats"), panel=panel_name, caliper=cal,
+            case_anchors=receipts[cal][0], control_anchors=receipts[cal][1],
+            n_matched_episodes=(int(len(ep_deltas)) if ep_deltas is not None else None))
+        say(f"[{tag}] caliper <= {cal}: anchor gap "
+            f"{validity[cal]['median_delta']} "
+            f"[{validity[cal]['ci_lo']}, {validity[cal]['ci_hi']}] "
+            f"valid={validity[cal]['valid']}")
+
+    governing = p1_amv2_governing_arm(validity)
+    out["governing_arm"] = governing
+    failure = bool(governing["construction_failure"])
+    out["caliper_arms"] = {}
+    for cal, est in arms_est.items():
+        out["caliper_arms"][str(cal)] = p1_amv2_arm_block(
+            construction, panel_name, caliper=cal, est=est, blocks=blocks,
+            n_topped_episodes=n_topped, b=b, seed=seed, construction_failure=failure,
+            validity=validity[cal], gates=gates, cases=cases, quick=quick)
+
+    reg_arm = out["caliper_arms"].get(str(P1_AMV2_CALIPER), {})
+    out["top_level_mirrors_caliper"] = P1_AMV2_CALIPER
+    out["top_level_mirror_note"] = (
+        "the keys below mirror the REGISTERED <= 2 arm so the artifact keeps the "
+        "phase-1 shape; `governing_arm` names which arm §1's escalation puts in "
+        "charge and `caliper_arms` carries BOTH arms in full")
+    for key in ("matching", "e1", "era_cells", "registered_cells",
+                "b2_era_fade_fence", "b2_anchor_comparison", "exploratory",
+                "e4_sign_stability", "f1_stratification_diagnostic", "age_receipt",
+                "null_reason"):
+        if key in reg_arm:
+            out[key] = reg_arm[key]
+    if "validity_diagnostic" in reg_arm:
+        out["diagnostic"] = reg_arm["validity_diagnostic"]
+    if "matching" in out:
+        out["matching"]["bin_edges"] = ("quintile/tercile edges cut WITHIN CALENDAR "
+                                        "QUARTER over this panel's own case+candidate "
+                                        "union (prereg §2: bins are population-relative)")
+
+    out["sensitivities"] = []
+    sens_specs = [
+        dict(name=f"caliper_{P1_AMV2_CALIPER_SENSITIVITY}",
+             why=(f"§5: anchor caliper <= {P1_AMV2_CALIPER_SENSITIVITY} (the LOOSEN "
+                  f"direction; the registration is <= {P1_AMV2_CALIPER} and "
+                  f"<= {P1_AMV2_CALIPER_ESCALATION} is the §1 registered ESCALATION, "
+                  "not a sensitivity)"),
+             caliper=P1_AMV2_CALIPER_SENSITIVITY, episode_first=True,
+             max_controls=ta.MAX_CONTROLS),
+        dict(name=f"nn_cap_{P1_NN_CAP_SENSITIVITY}",
+             why=(f"§5: NN cap {P1_NN_CAP_SENSITIVITY} (the frozen cap is "
+                  f"{ta.MAX_CONTROLS})"),
+             caliper=P1_AMV2_CALIPER, episode_first=True,
+             max_controls=P1_NN_CAP_SENSITIVITY),
+    ]
+    if construction == "am2":
+        sens_specs.append(dict(
+            name="am2_day_weighted_sampling",
+            why=("§5: AM2 with DAY-WEIGHTED candidate sampling — phase-1 located "
+                 "B3-primary's death in the sampling half (day-weighted restored "
+                 "+1.371 under DM), so this says whether that location replicates "
+                 "under anchor matching. Mechanism language only, never a grade"),
+            caliper=P1_AMV2_CALIPER, episode_first=False,
+            max_controls=ta.MAX_CONTROLS))
+    for spec in sens_specs:
+        if _p1_wall_exceeded(wave_start):
+            out["sensitivity_deferral"] = _p1_deferral(
+                panel_name, construction, f"before sensitivity {spec['name']}",
+                wave_start, [s["name"] for s in sens_specs])
+            break
+        say(f"[{tag}] sensitivity {spec['name']}")
+        out["sensitivities"].append(p1_sensitivity(
+            spec["name"], spec["why"], cases=cases, race=race, dtp=dtp, feats=feats,
+            gates=gates, eps=eps, construction=construction, seed=seed, b=b,
+            fresh_high_max=None, episode_first=spec["episode_first"],
+            stratum_col=stratum_col, age_edges=age_edges,
+            max_controls=spec["max_controls"], caliper=spec["caliper"]))
+    return out
+
+
+def _p1_assert_identity(summary: dict, panel: str, construction: str,
+                        caliper: int | None) -> None:
+    """§2 identity: the artifact's OWN keys must be PRESENT and EQUAL to the run's.
+
+    The `ext_variant` precedent, one layer further down again. AM-v2 adds the caliper
+    because the construction key alone cannot separate the registered `<= 2` arm from
+    the `<= 1` escalation arm, and a summary that silently carried the wrong one would
+    be unfalsifiable after the fact. A missing key is a mismatch, not a pass.
+    """
+    want = {"panel": panel, "construction": construction, "caliper": caliper}
+    for scope, block in (("summary", summary), ("result", summary.get("result") or {})):
+        if scope == "result" and block.get("null_reason") and "caliper" not in block:
+            continue
+        for key, value in want.items():
+            if scope == "result" and key == "caliper" and caliper is None:
+                continue
+            if key not in block:
+                raise ValueError(f"{scope} identity stamp {key!r} is ABSENT — the "
+                                 "check is present-and-equal, and an absent stamp is "
+                                 "a mismatch")
+            if block[key] != value:
+                raise ValueError(f"{scope} identity stamp {key!r} is {block[key]!r}, "
+                                 f"this run is {value!r}")
+
+
 def _main_p1(a, *, quick: bool) -> int:
     """The `--p1-panel/--p1-construction` entry point: one cell block, one summary."""
     panel_name, construction = a.p1_panel, a.p1_construction
     if a.track not in ("W", "both"):
         raise SystemExit("phase-1 runs track W only (prereg §2) — drop --track or pass W")
     wave_start = a.p1_wave_start_epoch if a.p1_wave_start_epoch else _T0
-    prereg = _REPO / P1_PREREG
+    amv2 = construction in P1_AMV2_CONSTRUCTIONS
+    caliper = p1_caliper_for(construction)
+    prereg_rel = p1_prereg_for(construction)
+    prereg = _REPO / prereg_rel
     cache = a.data_root / CACHE_SUBDIR / (f"W_quick{a.quick}" if quick else "W")
     default_out = _REPO / "data/research/top_anatomy_p0_summary.json"
     out_json = a.out_json if a.out_json != default_out \
@@ -3660,13 +4258,18 @@ def _main_p1(a, *, quick: bool) -> int:
         "family": P1_FAMILY,
         "panel": panel_name,
         "construction": construction,
+        "caliper": caliper,
+        "caliper_escalation": (P1_AMV2_CALIPER_ESCALATION if amv2 else None),
+        "caliper_sensitivity": (P1_AMV2_CALIPER_SENSITIVITY if amv2 else None),
         "run_date": pd.Timestamp.now("UTC").strftime("%Y-%m-%d"),
         "run_timestamp_utc": pd.Timestamp.now("UTC").isoformat(),
         "git_sha": _git_sha(),
-        "prereg": P1_PREREG,
-        "prereg_frozen": "2026-08-11",
+        "prereg": prereg_rel,
+        "prereg_frozen": ("2026-08-12" if amv2 else "2026-08-11"),
         "prereg_sha256": _sha256(prereg),
-        "prereg_frozen_commit": _last_commit_for(P1_PREREG),
+        "prereg_frozen_commit": _last_commit_for(prereg_rel),
+        "phase1_prereg": P1_PREREG,
+        "phase1_prereg_sha256": _sha256(_REPO / P1_PREREG),
         "phase0_prereg": "research/top_anatomy/TOPA_PHASE0_PREREG.md",
         "w2_prereg": W2_PREREG,
         "phase0_summary": "data/research/top_anatomy_p0_summary.json",
@@ -3693,10 +4296,16 @@ def _main_p1(a, *, quick: bool) -> int:
         "allow_stale": bool(a.allow_stale),
         "engine_frozen": ("engine/top_anatomy.py is byte-frozen at main for this wave; "
                           "every phase-1 move lives in this harness"),
-        "moved_variable": ("control observation SELECTION and STRATIFICATION only "
-                           "(prereg §1); episodes, races, peaks, features, the "
-                           "{21,10,5} case snapshots, the episode-first collapse and "
-                           "the episode-peak-month block bootstrap are unchanged"),
+        "moved_variable": (
+            ("the per-case-snapshot anchor CALIPER at NN time (AM-v2 §1), on top of "
+             "the phase-1 DM path it inherits byte-for-byte; episodes, races, peaks, "
+             "features, the {21,10,5} case snapshots, the episode-first collapse, the "
+             "NN ordering and the episode-peak-month block bootstrap are unchanged")
+            if amv2 else
+            ("control observation SELECTION and STRATIFICATION only "
+             "(prereg §1); episodes, races, peaks, features, the "
+             "{21,10,5} case snapshots, the episode-first collapse and "
+             "the episode-peak-month block bootstrap are unchanged")),
         "tier": ("research/display tier, zero scored authority; AVOID-not-SHORT; "
                  "no rank, no size, no gate, no exit rule"),
         "wall_limit_seconds": P1_WALL_LIMIT_SECONDS,
@@ -3707,6 +4316,7 @@ def _main_p1(a, *, quick: bool) -> int:
     summary["result"] = run_p1(panel_name, construction, built["panel"], built["meta"],
                                seed=a.seed, quick=quick, n_files=n_files,
                                wave_start=wave_start)
+    _p1_assert_identity(summary, panel_name, construction, caliper)
     summary["wall_seconds"] = time.time() - _T0
     summary["wave_elapsed_seconds"] = time.time() - wave_start
     out_json.parent.mkdir(parents=True, exist_ok=True)
@@ -4790,10 +5400,13 @@ def main(argv=None) -> int:
                     help="run the phase-1 anchor-matched wave on one panel "
                          f"({P1_PREREG}); needs --p1-construction, track W only")
     ap.add_argument("--p1-construction", choices=P1_CONSTRUCTIONS, default=None,
-                    help="phase-1 control construction: am = anchor-matched "
-                         "(fresh-high control days, episode-first draw), dm = "
-                         "duration-matched (episode-age tercile stratum, "
-                         "episode-first draw); needs --p1-panel")
+                    help="control construction: am = anchor-matched (fresh-high "
+                         "control days, episode-first draw), dm = duration-matched "
+                         "(episode-age tercile stratum, episode-first draw), am2 = "
+                         "AM-v2 anchor-distribution (DM plus the per-case-snapshot "
+                         "anchor caliper), am2_agefree = am2 without the age stratum; "
+                         f"the AM-v2 pair is registered in {P1_AMV2_PREREG}. "
+                         "Needs --p1-panel")
     ap.add_argument("--p1-wave-start-epoch", type=float, default=None,
                     help="unix epoch the 12 h phase-1 WAVE wall is measured from "
                          "(prereg §6 is a wave budget across all six runs, not a "
@@ -4815,8 +5428,9 @@ def main(argv=None) -> int:
                     default=_REPO / "reports/top-anatomy-phase0.md")
     ap.add_argument("--seed", type=int, default=None,
                     help="default 20260810 (phase-0/W2); the phase-1 path defaults to "
-                         f"{P1_SEED}, the fresh seed prereg §2 declared before any "
-                         "phase-1 number existed")
+                         f"{P1_SEED} and the AM-v2 constructions to {P1_AMV2_SEED}, "
+                         "each the fresh seed its own prereg §2 declared before any of "
+                         "its numbers existed")
     a = ap.parse_args(argv)
 
     quick = a.quick is not None
@@ -4826,7 +5440,7 @@ def main(argv=None) -> int:
                          "without a construction names no control population, and a "
                          "construction without a panel names no cohort")
     if a.seed is None:
-        a.seed = P1_SEED if p1 else 20260810
+        a.seed = p1_seed_for(a.p1_construction) if p1 else 20260810
     if a.w2_roster_read is not None:
         if not a.w2_arm:
             raise SystemExit("--w2-roster-read needs --w2-arm to name the arm")

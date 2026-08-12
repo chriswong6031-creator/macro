@@ -28,6 +28,11 @@ from typing import NamedTuple
 
 import yaml
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts.workflow_run_source import resolve_run_source  # noqa: E402
+
 # ---------------------------------------------------------------------------
 # Types
 # ---------------------------------------------------------------------------
@@ -92,6 +97,10 @@ _RUN_PY_RE = re.compile(
 _BRUN_RE = re.compile(
     r'brun\s+\w+\s+"[^"]*"\s+([\w.]+)',
 )
+_BRUN_VAR_RE = re.compile(
+    r'brun\s+\w+\s+"[^"]*"\s+"?\$\{?(\w+)\}?"?',
+)
+_MODULE_VAR_RE = re.compile(r'^\s*(\w+)=["\']([\w.]+)["\']\s*$', re.MULTILINE)
 _PYTHON_M_RE = re.compile(
     r'python(?:3)?\s+-m\s+([\w.]+)',
 )
@@ -124,14 +133,20 @@ def _extract_steps_from_run(run_body: str) -> list[Step]:
     # Extract cluster function definitions and map name -> [modules].
     # Also record the character spans of each function body so the line-level scanner
     # can skip those regions (avoiding double-counting).
+    module_vars = dict(_MODULE_VAR_RE.findall(run_body))
     cluster_funcs: dict[str, list[str]] = {}
     cluster_func_spans: list[tuple[int, int]] = []  # (start, end) byte offsets to skip
     for match in _CLUSTER_FUNC_RE.finditer(run_body):
         fname = match.group(1)
         body = match.group(2)
         cluster_mods: list[str] = []
-        for m in _BRUN_RE.finditer(body):
-            cluster_mods.append(m.group(1))
+        brun_modules = [(m.start(), m.group(1)) for m in _BRUN_RE.finditer(body)]
+        brun_modules.extend(
+            (m.start(), module_vars[m.group(1)])
+            for m in _BRUN_VAR_RE.finditer(body)
+            if m.group(1) in module_vars
+        )
+        cluster_mods.extend(module for _, module in sorted(brun_modules))
         for m in _RUN_PY_RE.finditer(body):
             cluster_mods.append(m.group(1))
         for m in _PYTHON_M_RE.finditer(body):
@@ -218,6 +233,10 @@ def _extract_steps_from_run(run_body: str) -> list[Step]:
             if m:
                 result.append(Step(id="", module=m.group(1), cluster=None))
                 continue
+            m = _BRUN_VAR_RE.search(stripped)
+            if m and m.group(1) in module_vars:
+                result.append(Step(id="", module=module_vars[m.group(1)], cluster=None))
+                continue
             # python -m
             m = _PYTHON_M_RE.search(stripped)
             if m:
@@ -228,16 +247,33 @@ def _extract_steps_from_run(run_body: str) -> list[Step]:
     return _collect(run_body, set())
 
 
-def _parse_workflow(wf_path: Path) -> dict[str, list[Step]]:
-    """Parse one workflow file; return {job_name: [Step, ...]} with cluster membership."""
+def _parse_workflow(
+    wf_path: Path, repo_root: Path | None = None
+) -> dict[str, list[Step]]:
+    """Parse one workflow file; return {job_name: [Step, ...]} with cluster membership.
+
+    A step whose body was extracted to ``scripts/ci/<name>.sh`` is resolved back
+    to that script's shell source first (see ``scripts/workflow_run_source``).
+    Without that, every module invocation inside an extracted block would read
+    as ABSENT here and the lane would report a wall of undeclared removals —
+    which is what blocked the daily.yml size diet before this seam existed.
+
+    ``repo_root`` defaults to the workflow's own repo (``<root>/.github/
+    workflows/<file>``), so existing single-argument callers keep working.
+    """
     raw = yaml.safe_load(wf_path.read_text())
+    root = (
+        repo_root
+        if repo_root is not None
+        else wf_path.resolve().parent.parent.parent
+    )
     result: dict[str, list[Step]] = {}
     jobs = raw.get("jobs", {})
     for job_name, job_body in jobs.items():
         steps = job_body.get("steps", [])
         all_steps: list[Step] = []
         for step in steps:
-            run_body = step.get("run", "")
+            run_body = resolve_run_source(step.get("run", ""), root)
             if run_body:
                 all_steps.extend(_extract_steps_from_run(run_body))
         result[job_name] = all_steps
@@ -531,7 +567,7 @@ def run_conformance(repo_root: Path, verbose: bool = False) -> int:
             )
             continue
         try:
-            job_steps = _parse_workflow(wf_path)
+            job_steps = _parse_workflow(wf_path, repo_root)
         except Exception as exc:  # noqa: BLE001
             all_errors.append(f"  PARSE ERROR {lane.workflow}: {exc}")
             continue

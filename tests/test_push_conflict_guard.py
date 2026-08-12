@@ -42,6 +42,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from scripts.workflow_run_source import resolve_run_source
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LIB = REPO_ROOT / "scripts" / "ci" / "push_retry.sh"
 
@@ -302,7 +304,7 @@ def _steps(workflow: str, job: str) -> list[dict]:
 def _step_script(workflow: str, job: str, name: str) -> str:
     for step in _steps(workflow, job):
         if step.get("name") == name:
-            return step.get("run", "")
+            return resolve_run_source(step.get("run", ""), REPO_ROOT)
     raise AssertionError(f"{workflow}:{job} step {name!r} not found")
 
 
@@ -329,7 +331,14 @@ def _loop_scripts() -> list[tuple[str, str]]:
         doc = yaml.safe_load((WF / wf_name).read_text(encoding="utf-8"))
         for job_name, job in doc["jobs"].items():
             for step in job.get("steps", []):
-                code = _code(step.get("run") or "")
+                # Resolve bodies extracted to scripts/ci/<name>.sh back to their
+                # shell source FIRST. Without this an extracted commit step drops
+                # out of the census silently — the exact blindness the comment
+                # below warns about, but caused by the file move rather than by a
+                # narrow discriminator. See scripts/workflow_run_source.
+                code = _code(
+                    resolve_run_source(step.get("run") or "", REPO_ROOT)
+                )
                 # TWO rebase spellings count, and both must, or this census goes
                 # blind: the original `git pull --rebase --autostash`, and the
                 # explicit `push_fetch_main_for_rebase` + `git rebase --autostash
