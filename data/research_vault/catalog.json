@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T23:39:36.879136+00:00",
-  "count": 1022,
+  "generated_at": "2026-08-12T23:54:44.529448+00:00",
+  "count": 1023,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -881,6 +881,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5rptbpn39ar-f024ec",
+      "title": "Rocket Lab Corp. (RKLB) 2Q26 First Take Progress on Neutron continues",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T03:15:33Z",
+      "summary_points": [
+        "**Cash Flow Collapse**: Operating cash flow plummeted from $1,165.3M to $105.0M (91% decline), signaling severe near-term liquidity risks despite positive net debt/EBITDA (cash exceeds debt).",
+        "**Neutron Catalyst**: Stage 1 tank production aligns with Q4 launch pad delivery, critical for growth trajectory amid Q3 EBITDA guidance below consensus.",
+        "**Target Price Surge & Overvaluation Risk**: $77 target (1,611% rise from $4.50) implies strong bullish sentiment, but $0.27 target-closing gap and aggressive growth assumptions heighten overvaluation risk if execution falters.",
+        "**EBITDA Volatility & Miss**: Q2 EBITDA ($57.5M actual vs.",
+        "$52.9M GS estimate) and EBITDA volatility (104.8 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
