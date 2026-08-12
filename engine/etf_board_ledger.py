@@ -108,6 +108,15 @@ _FROZEN_PRICE_COLS = [
     "mdd", "price_source", "bench_price_source", "graded_at",
 ]
 
+#: The BENCHMARK leg's share of the list above (m11). Split out because the two
+#: legs mature independently: a name can grade while SPY's own window is not
+#: resolvable yet (a missing bench series, a board date the bench panel does not
+#: reach). Freezing those columns on the strength of the NAME's `ret` writes the
+#: bench leg's nulls in permanently, so the row could never gain the comparison
+#: it is published to make.
+_BENCH_FROZEN_COLS = ["bench_entry_price", "bench_fwd_price", "bench_ret",
+                      "bench_price_source"]
+
 
 # --------------------------------------------------------------------------- #
 # paths + lane gate
@@ -472,6 +481,18 @@ def freeze_graded_prices(fresh: pd.DataFrame, stored: pd.DataFrame) -> pd.DataFr
     Same law as ``scripts/grade_us_board.py::_freeze_graded_prices``: an already-graded
     row is a published claim and is write-once. Rows whose stored ``ret`` is null are
     still open and take the fresh grade — which is the entire point of re-running.
+
+    m11 — THE TWO LEGS FREEZE SEPARATELY. The name's own columns freeze on the
+    name's ``ret``; the benchmark columns freeze only where the stored ``bench_ret``
+    is itself present. A row can mature on the name and NOT on the benchmark (SPY
+    missing from that night's panel, a board date the bench series does not reach),
+    and freezing the bench leg on the name's maturity wrote those nulls in forever —
+    the row would sit graded-but-uncomparable for the rest of the ledger's life,
+    quietly shrinking the "x of y ahead of SPY" denominator with no disclosure.
+    ``excess_bench`` is then RE-DERIVED from whichever pair survived, so the printed
+    difference always equals the two numbers printed beside it. Where both legs were
+    already frozen this recomputes the same value it replaces; where only the bench
+    newly filled it publishes a first measurement, which is not a restatement.
     """
     if fresh is None or fresh.empty or stored is None or stored.empty:
         return fresh
@@ -491,10 +512,25 @@ def freeze_graded_prices(fresh: pd.DataFrame, stored: pd.DataFrame) -> pd.DataFr
     out = fresh.set_index(key_cols)
     common = out.index.intersection(prior.index)
     if len(common):
+        # rows whose stored BENCH leg is itself resolved — the only ones whose
+        # bench columns are a published claim
+        if "bench_ret" in prior.columns:
+            bench_frozen = prior.loc[common, "bench_ret"].notna()
+            bench_common = common[bench_frozen.to_numpy()]
+        else:
+            bench_common = common[:0]
         for c in cols:
             if c not in out.columns:
                 out[c] = None
-            out.loc[common, c] = prior.loc[common, c]
+            if c == "excess_bench":
+                continue                       # re-derived below, never copied
+            idx = bench_common if c in _BENCH_FROZEN_COLS else common
+            if len(idx):
+                out.loc[idx, c] = prior.loc[idx, c]
+        if "excess_bench" in out.columns and {"ret", "bench_ret"} <= set(out.columns):
+            r = pd.to_numeric(out.loc[common, "ret"], errors="coerce")
+            b = pd.to_numeric(out.loc[common, "bench_ret"], errors="coerce")
+            out.loc[common, "excess_bench"] = (r - b).round(6)
     out = out.reset_index()
     out.attrs.update(getattr(fresh, "attrs", {}))
     out.attrs["frozen_rows"] = int(len(common))
@@ -570,10 +606,21 @@ def _median(vals: list[float]) -> float | None:
 
 
 def _horizon_block(df: pd.DataFrame, h: int) -> dict:
-    """One horizon's forward-window summary. Plain counts; no composite, no score."""
+    """One horizon's forward-window summary. Plain counts; no composite, no score.
+
+    m10 — ``n_pending`` IS TWO POPULATIONS. A row is ungraded either because its
+    window has not closed yet (``n_immature`` — it will grade itself, on a known
+    date) or because the name has no price series anywhere (``n_unpriceable`` — a
+    delisting, an acquisition, a ticker the ladder cannot resolve, which will
+    NEVER grade and is the survivorship this ledger exists to keep visible). One
+    number for both reads as "be patient" while a growing share of it is really
+    "these are gone". ``n_pending`` stays published as their sum so no reader of
+    the artifact breaks; the split is what the panel should be counting.
+    """
     block = {
         "horizon": int(h),
-        "n_rows": 0, "n_graded": 0, "n_pending": 0, "n_boards": 0, "n_names": 0,
+        "n_rows": 0, "n_graded": 0, "n_pending": 0,
+        "n_immature": 0, "n_unpriceable": 0, "n_boards": 0, "n_names": 0,
         "n_vs_bench": 0, "n_ahead": None,
         "median_excess_bench": None, "mean_excess_bench": None,
         "median_ret": None, "state": "collecting",
@@ -585,8 +632,15 @@ def _horizon_block(df: pd.DataFrame, h: int) -> dict:
         return block
     block["n_rows"] = int(len(sub))
     graded = sub[sub["ret"].notna()] if "ret" in sub.columns else sub.iloc[0:0]
+    pending = sub[sub["ret"].isna()] if "ret" in sub.columns else sub
     block["n_graded"] = int(len(graded))
-    block["n_pending"] = int(len(sub) - len(graded))
+    block["n_pending"] = int(len(pending))
+    # `price_source` is null exactly when the ladder found no series for the name
+    # (see grade_snapshots): the one signal that separates "not yet" from "never".
+    unpriceable = (int(pending["price_source"].isna().sum())
+                   if "price_source" in pending.columns else 0)
+    block["n_unpriceable"] = unpriceable
+    block["n_immature"] = int(len(pending)) - unpriceable
     if graded.empty:
         return block
     block["n_boards"] = int(graded["as_of"].nunique())

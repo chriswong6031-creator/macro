@@ -1978,6 +1978,12 @@ etf_holdings:
   # entry above and is pinned equal to it by tests/test_etf_registry.py.
   # ARKK/ARKW are collected by collectors/holdings.py into data/holdings/ (they are
   # not in the universe above) but they ARE funds on this board, so they are listed.
+  #
+  # AUDIT DATE for the whole block below (masterplan §6c M2). Every row was
+  # re-checked against its sponsor's product line on this date; the per-fund
+  # verdicts are the table in research/ETF_DATA_SOURCES.md § "Registry type audit".
+  # Bump it in the same commit as any retype, never ahead of one.
+  registry_audited: "2026-08-12"
   registry:
     XBI:  {type: sector, sponsor: ssga, theme: biotech-genomics}
     XOP:  {type: sector, sponsor: ssga, theme: energy}
@@ -2022,13 +2028,13 @@ etf_holdings:
     CTEC: {type: thematic_passive, sponsor: globalx, theme: grid-power}
     MEME: {type: thematic_passive, sponsor: roundhill, theme: consumer-leisure}
     METV: {type: thematic_passive, sponsor: roundhill, theme: software-internet}
-    CHAT: {type: thematic_passive, sponsor: roundhill, theme: ai-compute}
+    CHAT: {type: active, sponsor: roundhill, theme: ai-compute}
     BETZ: {type: thematic_passive, sponsor: roundhill, theme: consumer-leisure}
     MARS: {type: thematic_passive, sponsor: roundhill, theme: space}
-    OZEM: {type: thematic_passive, sponsor: roundhill, theme: healthcare}
+    OZEM: {type: active, sponsor: roundhill, theme: healthcare}
     NERD: {type: thematic_passive, sponsor: roundhill, theme: consumer-leisure}
-    CABZ: {type: thematic_passive, sponsor: roundhill, theme: transport-mobility}
-    HUMN: {type: thematic_passive, sponsor: roundhill, theme: robotics}
+    CABZ: {type: active, sponsor: roundhill, theme: transport-mobility}
+    HUMN: {type: active, sponsor: roundhill, theme: robotics}
     TAN:  {type: thematic_passive, sponsor: invesco, theme: grid-power}
     PBW:  {type: thematic_passive, sponsor: invesco, theme: grid-power}
     PSI:  {type: sector, sponsor: invesco, theme: semis}

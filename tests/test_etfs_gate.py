@@ -528,6 +528,50 @@ def test_backdrop_tile_speaks_chinese_on_both_builds():
                 or '<div class="tv">AAA</div>' in shell), f"gated={gated}"
 
 
+def test_backdrop_tile_speaks_chinese_on_the_neutral_branch_too():
+    """The NEUTRAL branch, end-to-end through the REAL emitter.
+
+    The case above renders a hand-built fixture whose zh half is already correct,
+    so it could only ever catch a TEMPLATE regression. The leak that survived it
+    was in the emitter and on the default path: `_rotation` fell back to
+    `label_en` whenever the pulse carried no `label_zh` — which is every render
+    where etf_pulse.json is missing or stale, since it is rebuilt under render
+    scope `baskets` while this page bakes under `macro`. The zh hero of a page
+    Google indexes then read a bare "NEUTRAL".
+
+    Built from engine.etf_board.board_context with no pulse at all, so a revert
+    in the emitter reds here even though the fixture-based case stays green.
+    """
+    from engine.etf_board import board_context
+
+    for pulse in ({}, {"risk": {"label_en": "NEUTRAL", "tilt": 0.0}}):
+        real = board_context([], [], [], [], _COVERAGE, pulse)
+        assert real["tiles"][-1]["v"] == {"en": "NEUTRAL", "zh": "中性"}, pulse
+        for gated in (True, False):
+            shell = _render(gated=gated, board=real)
+            assert ('<div class="tv"><span class="l-en">NEUTRAL</span>'
+                    '<span class="l-zh">中性</span></div>') in shell, (
+                f"untranslated backdrop on the zh view (gated={gated}, pulse={pulse})")
+            assert ">NEUTRAL</span><span class=\"l-zh\">NEUTRAL<" not in shell
+
+
+def test_the_hero_tile_says_managers_disagree_not_contested():
+    """Designer flag: "contested" is Tier-1 jargon — our word for the state, not
+    the reader's. Asserted through the real emitter AND the real template, so
+    neither half can regress alone."""
+    from engine.etf_board import board_context
+
+    favored = [dict(_fav("AAA", 0), contested=True, n_accum=4, n_trim=2)]
+    real = board_context([], [], [], favored, _COVERAGE, {})
+    tile = real["tiles"][0]
+    assert "contested" not in tile["m"]["en"].lower()
+    assert tile["m"]["en"] == "4 funds building · managers disagree"
+    assert tile["m"]["zh"] == "4 只基金增持 · 经理人意见不一"
+    shell = _render(gated=False, board=real)
+    assert "managers disagree" in shell and "经理人意见不一" in shell
+    assert "· contested" not in shell
+
+
 def test_rotation_backdrop_is_dated_by_the_pulse_as_of_not_the_bake_stamp():
     """§B9.6: etf_pulse.json refreshes under render scope `baskets` while this
     page bakes under `macro`, so a macro-only render can rebake the page around

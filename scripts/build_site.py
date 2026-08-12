@@ -2946,7 +2946,13 @@ def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
 
     Carries a LEAN slice of the W1 decomposition — the dollar estimate, which
     component drove it and how persistent it is. This feed is per-stock and
-    ungated, so it stays a slice: the full roll-up lives on the consensus board."""
+    ungated, so it stays a slice: the full roll-up lives on the consensus board.
+
+    B1 (masterplan §6c): a fund leg the split guard flagged is a Tier-2 receipt,
+    so it is KEPT here rather than dropped — but it ships `split_adjusted: True`,
+    because its `conviction_pp` is a re-denomination and not a decision. The board
+    and the ledger already exclude it; a consumer of this feed that ranks or
+    describes these entries must read the flag."""
     by: dict[str, list[dict]] = {}
     for r in rows:
         by.setdefault(r["ticker"], []).append({
@@ -2959,6 +2965,7 @@ def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
             "total_usd": r.get("total_usd"), "flow_usd": r.get("flow_usd"),
             "selection_usd": r.get("selection_usd"), "driver": r.get("driver"),
             "streak": r.get("streak") or 0, "is_stale": bool(r.get("is_stale")),
+            "split_adjusted": bool(r.get("split_adjusted")),
         })
     for tk in by:
         by[tk].sort(key=lambda m: -abs(m.get("conviction_pp") or 0))
@@ -3014,11 +3021,15 @@ def _etf_flow_block(favored: list[dict]) -> dict[str, dict]:
     `usd_complete` is carried verbatim rather than dropped: a dollar total that
     covers 2 of a row's 4 funds is a partial number, and the row has to say so.
 
-    PAID SIDE ONLY. This block is written into premiumdata/etfs.json and never
-    into the free shell, so the lens costs the 130 KiB shell budget nothing. The
-    `weight_receipt` travels with `weighted_usd` deliberately — a weighted number
-    without its arithmetic is exactly the un-auditable "some funds count more"
-    the structural design exists to avoid (masterplan §4)."""
+    THE W2b FIELDS ARE PAID-SIDE ONLY (m19). This block is written into
+    premiumdata/etfs.json and never into the free shell, so the weighting lens
+    costs the 130 KiB shell budget nothing. That restriction is about THIS block
+    and the fields in it — it says nothing about the ETF plane generally, and in
+    particular `site/stockdata/fund_flows.json`, written a few lines below by
+    `build_etf_page`, is deliberately public and stays so. The `weight_receipt`
+    travels with `weighted_usd` deliberately — a weighted number without its
+    arithmetic is exactly the un-auditable "some funds count more" the structural
+    design exists to avoid (masterplan §4)."""
     return {
         r["ticker"]: {
             "total_usd": r.get("total_usd"), "flow_usd": r.get("flow_usd"),
@@ -3030,8 +3041,22 @@ def _etf_flow_block(favored: list[dict]) -> dict[str, dict]:
             "accel_pct_per_day": r.get("accel_pct_per_day"),
             "contested_components": r.get("contested_components"),
             "n_stale": r.get("n_stale"),
+            # B1: how many fund legs the split guard set aside on this row, so the
+            # receipt can explain a conviction number that does not match a move a
+            # reader remembers seeing.
+            "n_split_adjusted": r.get("n_split_adjusted"),
+            # M6: the row pools windows of different calendar lengths (40 snapshots
+            # is 25–64 days depending on the fund's publishing cadence).
+            "window_days_min": r.get("window_days_min"),
+            "window_days_max": r.get("window_days_max"),
             # W2b lens — secondary sort material for the UI, never the default.
+            # M3: `sign_diverges_from_total` travels WITH the weighted number,
+            # because the discount multiplies signed components and can therefore
+            # invert the raw read rather than merely shrink it. A UI that renders
+            # weighted_usd without this flag is presenting a contradiction as a
+            # refinement.
             "weighted_usd": r.get("weighted_usd"), "weighted_n": r.get("weighted_n"),
+            "sign_diverges_from_total": r.get("sign_diverges_from_total"),
             "weight_receipt": r.get("weight_receipt"),
         }
         for r in favored if r.get("ticker")

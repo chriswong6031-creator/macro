@@ -241,8 +241,9 @@ def test_the_receipt_carries_every_input_it_claims_to() -> None:
     assert set(g["weight_receipt"]) == {
         "mismatch_discount", "unattributed_weight", "n_funds_weighted",
         "n_active_selection", "n_passive_flow", "n_mismatched", "n_unattributed",
-        "n_stale_excluded", "n_funds_usd", "weighted_usd_complete",
-        "usd_matched", "usd_mismatched", "usd_mismatched_weighted"}
+        "n_stale_excluded", "n_split_excluded", "n_funds_usd",
+        "weighted_usd_complete", "usd_matched", "usd_mismatched",
+        "usd_mismatched_weighted", "usd_stale_excluded"}
     r = g["weight_receipt"]
     assert r["n_active_selection"] == 1 and r["n_passive_flow"] == 1
     assert r["n_mismatched"] == 0 and r["n_funds_weighted"] == 2
@@ -299,6 +300,177 @@ def test_the_discount_is_the_configured_one() -> None:
     assert g["weighted_usd"] == pytest.approx(500_000.0)
 
 
+def test_the_receipt_reconciles_against_the_unweighted_total() -> None:
+    """m20. The freshness gate removes a fund's dollars from the weighted read
+    while `total_usd` keeps counting them, so without `usd_stale_excluded` the
+    two printed numbers have an unexplained gap and a reader auditing the row has
+    to assume a bug. The identity closes only when the gate publishes its own
+    subtraction."""
+    fresh = _row("URA", flow_usd=1_000_000.0, selection_usd=250_000.0,
+                 total_usd=1_250_000.0)
+    stale = _row("XSD", flow_usd=9_000_000.0, selection_usd=-1_000_000.0,
+                 total_usd=8_000_000.0, is_stale=True)
+    g = _one([fresh, stale])
+    r = g["weight_receipt"]
+    assert r["usd_stale_excluded"] == pytest.approx(8_000_000.0)
+    assert g["total_usd"] == pytest.approx(
+        r["usd_matched"] + r["usd_mismatched"] + r["usd_stale_excluded"])
+    # and with nothing stale the new term is a plain zero, not a null
+    clean = _one([fresh])
+    assert clean["weight_receipt"]["usd_stale_excluded"] == 0.0
+
+
+# =============================================================================
+# B1 — a positively-identified split never counts on the ranked path (§6c)
+# =============================================================================
+
+def test_a_split_leg_is_excluded_from_every_counted_read() -> None:
+    """THE B1 case, in miniature: the ARKW/CRWD 3:1 shape. The guard positively
+    identified the split and the board published it anyway, as +1.6274pp of
+    conviction and one of three funds "building". Excluded now — counts, sums,
+    dollars and the lens."""
+    real = _row("BUG", ticker="CRWD", conviction_pp=5.5828, flow_usd=2_000_000.0,
+                selection_usd=500_000.0, total_usd=2_500_000.0)
+    split = _row("ARKK", ticker="CRWD", conviction_pp=1.6274, split_adjusted=True,
+                 driver="selection", flow_usd=10_000.0, selection_usd=90_000.0,
+                 total_usd=100_000.0)
+    g = _one([real, split])
+    assert g["n_accum"] == 1, "the split leg must not read as a fund building"
+    assert g["net_conviction_pp"] == pytest.approx(5.5828)
+    assert g["gross_conviction_pp"] == pytest.approx(5.5828)
+    assert g["n_split_adjusted"] == 1
+    assert g["n_funds_any"] == 1 and g["total_usd"] == pytest.approx(2_500_000.0)
+    assert g["weight_receipt"]["n_funds_weighted"] == 1
+    assert g["weight_receipt"]["n_split_excluded"] == 1
+
+
+def test_the_split_leg_stays_in_the_tier_2_receipt_labeled() -> None:
+    """Excluded is not deleted. The row still has to be able to explain itself:
+    a reader who remembers a 200% move needs to find it, marked as the
+    re-denomination it was."""
+    g = _one([_row("BUG", ticker="CRWD"),
+              _row("ARKK", ticker="CRWD", split_adjusted=True)])
+    legs = {f["fund"]: f for f in g["funds"]}
+    assert set(legs) == {"BUG", "ARKK"}
+    assert legs["ARKK"]["split_adjusted"] is True
+    assert legs["ARKK"]["counted"] is False
+    assert legs["ARKK"]["weight"] is None, "an excluded leg carries no lens weight"
+    assert legs["ARKK"]["conviction_pp"] == 1.0, "the raw number is still readable"
+    assert legs["BUG"]["counted"] is True and legs["BUG"]["split_adjusted"] is False
+
+
+def test_a_row_that_is_only_a_split_leaves_the_board() -> None:
+    """Nothing happened in that name. `min_funds` does the removal on its own once
+    the split stops counting — which is the tell that the exclusion reaches the
+    counts and not merely the display."""
+    only_split = [_row("ARKK", ticker="ZZZZ", split_adjusted=True)]
+    assert ec.consensus_favored(only_split, min_funds=1, registry=REG) == []
+    with_real = only_split + [_row("BUG", ticker="ZZZZ")]
+    assert [g["ticker"] for g in
+            ec.consensus_favored(with_real, min_funds=1, registry=REG)] == ["ZZZZ"]
+
+
+def test_the_ranked_accumulation_list_drops_split_events() -> None:
+    """The per-fund adds table ranks on the same conviction_pp, so the split has
+    to be gone from there too — it was the single largest "add" on that shelf."""
+    from engine.holdings_signals import split_by_conviction
+    rows = [_row("BUG", ticker="CRWD", conviction_pp=5.5828),
+            _row("ARKK", ticker="CRWD", conviction_pp=99.0, split_adjusted=True),
+            _row("XSD", ticker="AAA", conviction_pp=-3.0, direction="trimming"),
+            _row("URA", ticker="BBB", conviction_pp=-9.0, direction="trimming",
+                 split_adjusted=True)]
+    orig = config.load
+    config.load = lambda: {"etf_holdings": {}}
+    try:
+        out = split_by_conviction(rows)
+    finally:
+        config.load = orig
+    assert [r["etf"] for r in out["accumulation"]] == ["BUG"]
+    assert [r["etf"] for r in out["trims"]] == ["XSD"]
+
+
+# =============================================================================
+# M5 / M3 / M6 — the null contract, the signed-component hazard, the windows
+# =============================================================================
+
+def test_the_dollar_sums_are_absent_not_zero_when_nobody_published_values() -> None:
+    """M5. 27 of today's 200 board rows have no market values anywhere on them.
+    A printed 0 there reads as "no money moved"; the components are SIGNED, so a
+    real 0 (flow and selection cancelling) is a different, meaningful answer that
+    must not be confusable with a missing one."""
+    g = _one([_row("URA", flow_usd=None, selection_usd=None, total_usd=None,
+                   driver=None),
+              _row("XSD", flow_usd=None, selection_usd=None, total_usd=None,
+                   driver=None)])
+    assert g["n_funds_usd"] == 0
+    assert g["total_usd"] is None
+    assert g["flow_usd"] is None and g["selection_usd"] is None
+    assert g["weighted_usd"] is None
+    assert g["usd_complete"] is False
+    assert g["contested_components"] is False, "a null row cannot be contested"
+    # the equal-weight primary read is untouched — this is a $ null, not a row null
+    assert g["n_accum"] == 2 and g["net_conviction_pp"] == pytest.approx(2.0)
+    assert json.loads(json.dumps(g["total_usd"], default=str)) is None
+
+
+def test_a_genuine_zero_dollar_row_stays_a_zero() -> None:
+    """The other half of M5: with values published and the components cancelling,
+    0 is the measurement. Turning THAT into a null would be the same lie inverted."""
+    g = _one([_row("URA", flow_usd=1_000_000.0, selection_usd=-1_000_000.0,
+                   total_usd=0.0)])
+    assert g["n_funds_usd"] == 1
+    assert g["total_usd"] == 0.0 and g["total_usd"] is not None
+
+
+def test_sign_divergence_is_published_beside_the_weighted_read() -> None:
+    """M3. The discount multiplies a SIGNED component, so it is not a shrink
+    toward zero: discount a negative mismatched half against a positive matched
+    one and the weighted read grows, or flips. 19 live board rows do this today
+    (NVDA raw -$4.7M / weighted +$19.4M; TSM raw -$41.8M / weighted +$9.3M)."""
+    flipped = _one([_row("ARKK", driver="selection", flow_usd=-10_000_000.0,
+                         selection_usd=1_000_000.0, total_usd=-9_000_000.0)])
+    assert flipped["total_usd"] == pytest.approx(-9_000_000.0)
+    assert flipped["weighted_usd"] == pytest.approx(-2_500_000.0)  # 1.0M - 0.35×10M
+    assert flipped["sign_diverges_from_total"] is False            # both negative
+    same = _one([_row("ARKK", driver="selection", flow_usd=-1_000_000.0,
+                      selection_usd=800_000.0, total_usd=-200_000.0)])
+    assert same["total_usd"] < 0 < same["weighted_usd"]            # 0.8M - 0.35M
+    assert same["sign_diverges_from_total"] is True, (
+        "the weighted lens inverted the raw read and said nothing about it")
+
+
+def test_sign_divergence_is_false_not_none_when_the_dollars_are_absent() -> None:
+    """A flag the UI branches on must be a bool on every row, including the 27
+    that carry no dollars at all."""
+    g = _one([_row("URA", flow_usd=None, selection_usd=None, total_usd=None,
+                   driver=None)])
+    assert g["sign_diverges_from_total"] is False
+
+
+def test_consensus_rows_publish_the_calendar_spread_of_their_windows() -> None:
+    """M6. The scoring window is 40 SNAPSHOTS; funds publish on different
+    cadences, so one row pools windows spanning 25 to 64 calendar days on the live
+    board. The row states the spread rather than letting a reader assume one
+    clock."""
+    g = _one([_row("URA", window_days=25), _row("XSD", window_days=64),
+              _row("ARKK", driver="selection", window_days=40)])
+    assert g["window_days_min"] == 25 and g["window_days_max"] == 64
+    # a single-cadence row collapses to one number, not a fake range
+    solo = _one([_row("URA", window_days=40)])
+    assert solo["window_days_min"] == solo["window_days_max"] == 40
+    # and no cadence anywhere is a null, never a 0
+    blank = _one([_row("URA")])
+    assert blank["window_days_min"] is None and blank["window_days_max"] is None
+
+
+def test_a_split_leg_cannot_widen_the_published_window_spread() -> None:
+    """The excluded leg is excluded everywhere, including the metadata a reader
+    would use to judge the row's other numbers."""
+    g = _one([_row("URA", window_days=30),
+              _row("ARKK", window_days=64, split_adjusted=True)])
+    assert g["window_days_min"] == 30 and g["window_days_max"] == 30
+
+
 # =============================================================================
 # C) the default board is UNTOUCHED (the epistemics gate, masterplan §0.6)
 # =============================================================================
@@ -320,8 +492,13 @@ def test_the_golden_fixture_is_a_real_board() -> None:
     readme = " ".join(fx["_README"])
     assert "python3 tests/test_etf_weighting.py --regenerate" in readme, (
         "the fixture must carry its own regeneration contract")
-    assert "R1 LANDED" in readme, (
+    assert "R1 LANDED" in readme and "B1 LANDED" in readme, (
         "…and say which engine state these rows were frozen from")
+    assert "engine_head" not in fx, (
+        "m16: `git rev-parse HEAD` inside _regenerate can only ever name the "
+        "commit BEFORE the fixture it stamps, so the SHA pointed at a tree "
+        "without these rows in it. The _README ruling is the provenance."
+    )
 
 
 def test_default_ordering_is_byte_identical_to_the_pre_w2b_golden() -> None:
@@ -389,7 +566,13 @@ def test_payload_block_carries_the_lens_and_stays_json_safe() -> None:
     block = _etf_flow_block(favored)
     assert set(block) == {"NVDA"}
     entry = block["NVDA"]
-    for key in ("weighted_usd", "weighted_n", "weight_receipt"):
+    for key in ("weighted_usd", "weighted_n", "weight_receipt",
+                # M3: the hazard flag must travel WITH the number it qualifies —
+                # a UI that gets weighted_usd and not this renders a contradiction
+                # as if it were a refinement.
+                "sign_diverges_from_total",
+                # M6 / B1: the row's window spread and its set-aside split legs.
+                "window_days_min", "window_days_max", "n_split_adjusted"):
         assert key in entry, f"payload lost {key}"
     assert entry["weight_receipt"]["n_funds_weighted"] == 2
     dumped = json.dumps(block)
@@ -482,7 +665,6 @@ def test_an_empty_coverage_directory_drops_the_number_not_the_sentence() -> None
 def _regenerate() -> None:
     """Rebuild the golden fixture from the worktree's data/. See the file header
     of the fixture for WHEN this is the right thing to do (masterplan §6b R1)."""
-    import subprocess
     from engine.etf_board import drop_cash
     from engine.holdings_signals import all_etf_signals
 
@@ -490,7 +672,7 @@ def _regenerate() -> None:
             "weight_pct", "active_chg_pct", "conviction_pp", "is_new", "is_exit",
             "direction", "confirmed", "flow_usd", "selection_usd", "total_usd",
             "flow_pp", "selection_pp", "driver", "streak", "is_stale",
-            "split_adjusted", "exit_confirmed", "accel_pct_per_day")
+            "split_adjusted", "exit_confirmed", "accel_pct_per_day", "window_days")
     rows = drop_cash(all_etf_signals())
     min_funds = config.load()["etf_holdings"].get("consensus_min_funds", 2)
     board = ec.consensus_favored(rows, limit=10_000, min_funds=min_funds)
@@ -499,9 +681,12 @@ def _regenerate() -> None:
              for k, v in r.items() if k in keep and v is not None}
             for r in rows if r.get("ticker") in on_board]
     old = _golden()
+    # m16: no `engine_head`. `git rev-parse HEAD` here resolves to the commit
+    # BEFORE the one that ships the regenerated fixture, so the recorded SHA
+    # always named a tree in which this file's contents do not exist — provenance
+    # that is wrong by construction is worse than none. `_README` states which
+    # ruling the rows were frozen under; that is the auditable fact.
     fx = {"_README": old["_README"],
-          "engine_head": subprocess.run(["git", "rev-parse", "--short", "HEAD"],
-                                        capture_output=True, text=True).stdout.strip(),
           "min_funds": min_funds, "n_rows": len(lean),
           "ordering": [g["ticker"] for g in board], "rows": lean}
     assert [g["ticker"] for g in ec.consensus_favored(

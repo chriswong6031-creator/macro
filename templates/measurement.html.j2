@@ -1819,6 +1819,13 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       {% endfor %}
     </div>
 
+    {% if efw.pooling_note %}
+    <div class="mh-metric-note" style="margin-top:8px">
+      <span class="l-en">{{ efw.pooling_note.en }}</span>
+      <span class="l-zh">{{ efw.pooling_note.zh }}</span>
+    </div>
+    {% endif %}
+
     {% if efw.rows %}
     <div class="eg-table-wrap" style="margin-top:16px">
       <table class="eg-table">

@@ -188,3 +188,231 @@ critical-minerals REMX/XME/LIT/COPX/COPP/LITP/SETM/COPJ/EMET/METL · grid-power
 TAN/PBW/HYDR/GRID/CNRG/QCLN/CTEC/FAN.
 Still thin: **drones** (no parseable dedicated fund found) and **defense** (no new
 sponsor-parseable fund beyond the four already carried).
+
+
+---
+
+# 2026-08-12 — Registry type audit (ETF page upgrade, masterplan §6c M2)
+
+All **105** `etf_holdings.registry` rows re-checked against their sponsor's
+product line. Stamped in config as `etf_holdings.registry_audited: "2026-08-12"`;
+bump that key only in the same commit as a retype.
+
+**Why the audit happened.** Four Roundhill funds (CHAT, OZEM, CABZ, HUMN) shipped
+typed `thematic_passive` while this repo's own masterplan §2 and
+`docs/site_semantics/etfs.md` both used OZEM as the *worked example of an active
+fund*. A registry that disagrees with the glossary one directory away is not a
+typo, it is an unaudited block — and nothing in the suite could tell "checked and
+correct" from "never looked at".
+
+**Where the stakes actually are.** `engine.etf_consensus.PRIMARY_COMPONENT` maps
+`sector` and `thematic_passive` to the SAME primary component (`flow`), so that
+half of the taxonomy has zero effect on the weighting lens — it only groups the
+free fleet directory. The load-bearing axis is **active vs not-active**: typing an
+index fund `active` hands full weight to its per-name residual, which for a basket
+is mostly index reconstitution. A mistype in that direction promotes noise; the
+other direction merely discounts a real pick to 0.35. So the standing rule for an
+unresolved row is **leave it at the least-claiming default and flag it** — the same
+fail-soft contract `fund_registry()` itself runs on.
+
+**Evidence used** (no network; this is an audit of what the repo can prove):
+1. the sponsor's own product line, per `collectors/etf_holdings.py`'s adapter map;
+2. the fund's legal name in `etf_holdings.universe` — a sponsor that writes
+   "Active" into a name is telling us how the fund is run (now CI-pinned by
+   `tests/test_etf_registry.py::test_a_fund_whose_name_says_active_is_typed_active`);
+3. the `universe.<fund>.active` flag. **Caveat, and it is the audit's main
+   finding about method:** that flag and the registry `type` are hand-set in the
+   same file by the same edit, so when they agree they are *one* witness, not two.
+
+**Result: 97 confirmed · 4 retyped · 4 flagged.**
+
+| | Funds |
+|---|---|
+| **Retyped** `thematic_passive` → `active` | `CHAT` `OZEM` `CABZ` `HUMN` |
+| **Flagged, left as-is** | `MARS` `WARP` `NODE` (typed passive, may be active) · `BITQ` (typed active, may be passive) |
+| Confirmed | the other 97 |
+
+**Deliberately NOT changed.** The four retypes touch `etf_holdings.registry` only.
+The sibling `etf_holdings.universe.<fund>.active` flag stays false for them: it
+drives the `ACTIVE` chip and `is_active` on the per-fund rows, which is a
+designer-owned surface, and §6c M2 scopes the ruling to the registry. The two
+blocks are read for different jobs and `build_site.build_etf_page` already
+comments that the registry — not `is_active` — is what types a fund for the fleet
+directory. Reconciling the chip is a follow-up, not this wave.
+
+## Per-fund verdicts
+
+**globalx** (21 funds) — Global X — Solactive / Indxx / mirae thematic index funds
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `URA` | Global X Uranium | `thematic_passive` | confirmed |  |
+| `LIT` | Global X Lithium & Battery Tech | `thematic_passive` | confirmed |  |
+| `COPX` | Global X Copper Miners | `thematic_passive` | confirmed |  |
+| `SIL` | Global X Silver Miners | `thematic_passive` | confirmed |  |
+| `MLPX` | Global X MLP & Energy Infrastructure | `thematic_passive` | confirmed |  |
+| `PAVE` | Global X U.S. Infrastructure Dev | `thematic_passive` | confirmed |  |
+| `BOTZ` | Global X Robotics & AI | `thematic_passive` | confirmed |  |
+| `BUG` | Global X Cybersecurity | `thematic_passive` | confirmed |  |
+| `CLOU` | Global X Cloud Computing | `thematic_passive` | confirmed |  |
+| `HERO` | Global X Video Games & Esports | `thematic_passive` | confirmed |  |
+| `AIQ` | Global X AI & Technology | `thematic_passive` | confirmed |  |
+| `SNSR` | Global X Internet of Things | `thematic_passive` | confirmed |  |
+| `FINX` | Global X FinTech | `thematic_passive` | confirmed |  |
+| `DTCR` | Global X Data Center & Digital Infra | `thematic_passive` | confirmed |  |
+| `SHLD` | Global X Defense Tech | `thematic_passive` | confirmed |  |
+| `HYDR` | Global X Hydrogen | `thematic_passive` | confirmed |  |
+| `EBIZ` | Global X E-commerce | `thematic_passive` | confirmed |  |
+| `GNOM` | Global X Genomics & Biotechnology | `thematic_passive` | confirmed |  |
+| `BKCH` | Global X Blockchain | `thematic_passive` | confirmed |  |
+| `DRIV` | Global X Autonomous & Electric Vehicles | `thematic_passive` | confirmed |  |
+| `CTEC` | Global X CleanTech | `thematic_passive` | confirmed |  |
+
+**ssga** (20 funds) — SPDR — S&P Select Industry / S&P Kensho index funds; no active ETF in this set
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `XBI` | SPDR S&P Biotech | `sector` | confirmed |  |
+| `XOP` | SPDR S&P Oil & Gas E&P | `sector` | confirmed |  |
+| `XHB` | SPDR S&P Homebuilders | `sector` | confirmed |  |
+| `XRT` | SPDR S&P Retail | `sector` | confirmed |  |
+| `KRE` | SPDR S&P Regional Banking | `sector` | confirmed |  |
+| `KBE` | SPDR S&P Bank | `sector` | confirmed |  |
+| `XME` | SPDR S&P Metals & Mining | `sector` | confirmed |  |
+| `XSD` | SPDR S&P Semiconductor | `sector` | confirmed |  |
+| `XAR` | SPDR S&P Aerospace & Defense | `sector` | confirmed |  |
+| `XSW` | SPDR S&P Software & Services | `sector` | confirmed |  |
+| `XTN` | SPDR S&P Transportation | `sector` | confirmed |  |
+| `XPH` | SPDR S&P Pharmaceuticals | `sector` | confirmed |  |
+| `XES` | SPDR S&P Oil & Gas Equipment & Services | `sector` | confirmed |  |
+| `KCE` | SPDR S&P Capital Markets | `sector` | confirmed |  |
+| `XHE` | SPDR S&P Health Care Equipment | `sector` | confirmed |  |
+| `XTL` | SPDR S&P Telecom | `sector` | confirmed |  |
+| `ROKT` | SPDR S&P Kensho Final Frontiers | `thematic_passive` | confirmed |  |
+| `CNRG` | SPDR S&P Kensho Clean Power | `thematic_passive` | confirmed |  |
+| `HAIL` | SPDR S&P Kensho Smart Mobility | `thematic_passive` | confirmed |  |
+| `SIMS` | SPDR S&P Kensho Intelligent Structures | `thematic_passive` | confirmed |  |
+
+**vaneck** (14 funds) — VanEck — MarketVector / MVIS index funds; Morningstar index for MOAT
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `SMH` | VanEck Semiconductor | `sector` | confirmed |  |
+| `SMHX` | VanEck Fabless Semiconductor | `sector` | confirmed |  |
+| `GDX` | VanEck Gold Miners | `thematic_passive` | confirmed |  |
+| `GDXJ` | VanEck Junior Gold Miners | `thematic_passive` | confirmed |  |
+| `NLR` | VanEck Uranium & Nuclear | `thematic_passive` | confirmed |  |
+| `REMX` | VanEck Rare Earth & Strategic Metals | `thematic_passive` | confirmed |  |
+| `IBOT` | VanEck Robotics | `thematic_passive` | confirmed |  |
+| `MOAT` | VanEck Morningstar Wide Moat | `thematic_passive` | confirmed | a quality/factor index, not a theme; typed `thematic_passive`. Not active, which is the axis that matters. |
+| `OIH` | VanEck Oil Services | `sector` | confirmed |  |
+| `DAPP` | VanEck Digital Transformation | `thematic_passive` | confirmed |  |
+| `WARP` | VanEck Space | `thematic_passive` | flagged | VanEck 2025 launch; index vs active not resolvable from the collector config or the fund name. Left at the least-claiming default. |
+| `EMET` | VanEck Copper and Electrification | `thematic_passive` | confirmed |  |
+| `NODE` | VanEck Onchain Economy | `thematic_passive` | flagged | VanEck 2025 launch; same. Left at the least-claiming default. |
+| `BBH` | VanEck Biotech | `sector` | confirmed |  |
+
+**sprott** (11 funds) — Sprott — Nasdaq Sprott index funds, EXCEPT the two named 'Active'
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `URNM` | Sprott Uranium Miners | `thematic_passive` | confirmed |  |
+| `URNJ` | Sprott Junior Uranium Miners | `thematic_passive` | confirmed |  |
+| `COPP` | Sprott Copper Miners | `thematic_passive` | confirmed |  |
+| `LITP` | Sprott Lithium Miners | `thematic_passive` | confirmed |  |
+| `SGDM` | Sprott Gold Miners | `thematic_passive` | confirmed |  |
+| `SGDJ` | Sprott Junior Gold Miners | `thematic_passive` | confirmed |  |
+| `SETM` | Sprott Critical Materials | `thematic_passive` | confirmed |  |
+| `SLVR` | Sprott Silver Miners & Physical Silver | `thematic_passive` | confirmed |  |
+| `COPJ` | Sprott Junior Copper Miners | `thematic_passive` | confirmed |  |
+| `GBUG` | Sprott Active Gold & Silver Miners | `active` | confirmed |  |
+| `METL` | Sprott Active Metals Miners | `active` | confirmed |  |
+
+**roundhill** (9 funds) — Roundhill — MIXED: index funds pre-2024, actively-managed thematics after
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `MEME` | Roundhill MEME | `thematic_passive` | confirmed |  |
+| `METV` | Roundhill Ball Metaverse | `thematic_passive` | confirmed |  |
+| `CHAT` | Roundhill Generative AI & Tech | `active` | **RETYPED** | was `thematic_passive`; actively managed (§6c M2). |
+| `BETZ` | Roundhill Sports Betting & iGaming | `thematic_passive` | confirmed |  |
+| `MARS` | Roundhill Space | `thematic_passive` | flagged | same post-2024 Roundhill thematic cohort as the four retyped; no in-repo evidence either way. Left at the least-claiming default. |
+| `OZEM` | Roundhill GLP-1 & Weight Loss | `active` | **RETYPED** | was `thematic_passive`; actively managed (§6c M2). |
+| `NERD` | Roundhill Video Games | `thematic_passive` | confirmed |  |
+| `CABZ` | Roundhill Robotaxi & Autonomous | `active` | **RETYPED** | was `thematic_passive`; actively managed (§6c M2). |
+| `HUMN` | Roundhill Humanoid Robotics | `active` | **RETYPED** | was `thematic_passive`; actively managed (§6c M2). |
+
+**ark** (8 funds) — ARK — actively managed, EXCEPT the two index products (PRNT, IZRL)
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `ARKK` | ARK ARKK | `active` | confirmed |  |
+| `ARKW` | ARK ARKW | `active` | confirmed |  |
+| `ARKG` | ARK Genomic Revolution | `active` | confirmed |  |
+| `ARKQ` | ARK Autonomous Tech & Robotics | `active` | confirmed |  |
+| `ARKF` | ARK Blockchain & Fintech Innovation | `active` | confirmed |  |
+| `ARKX` | ARK Space & Defense Innovation | `active` | confirmed |  |
+| `PRNT` | The 3D Printing ETF | `thematic_passive` | confirmed |  |
+| `IZRL` | ARK Israel Innovative Technology | `thematic_passive` | confirmed |  |
+
+**firsttrust** (8 funds) — First Trust — Nasdaq CTA / ISE / Dow Jones index funds
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `SKYY` | First Trust Cloud Computing | `thematic_passive` | confirmed |  |
+| `CIBR` | First Trust NASDAQ Cybersecurity | `thematic_passive` | confirmed |  |
+| `FDN` | First Trust Dow Jones Internet | `sector` | confirmed |  |
+| `GRID` | First Trust Clean Edge Smart Grid | `thematic_passive` | confirmed |  |
+| `ROBT` | First Trust Nasdaq AI & Robotics | `thematic_passive` | confirmed |  |
+| `FTXL` | First Trust Nasdaq Semiconductor | `sector` | confirmed |  |
+| `QCLN` | First Trust NASDAQ Clean Edge Green Energy | `thematic_passive` | confirmed |  |
+| `FAN` | First Trust Global Wind Energy | `thematic_passive` | confirmed |  |
+
+**invesco** (5 funds) — Invesco — third-party index funds (MAC Solar, WilderHill, SPADE, Nasdaq)
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `TAN` | Invesco Solar | `thematic_passive` | confirmed |  |
+| `PBW` | Invesco WilderHill Clean Energy | `thematic_passive` | confirmed |  |
+| `PSI` | Invesco Semiconductors | `sector` | confirmed |  |
+| `PPA` | Invesco Aerospace & Defense | `sector` | confirmed | SPADE Defense Index is a theme, not an industry classification; typed `sector`. No-op for the lens (both types read FLOW). |
+| `PHO` | Invesco Water Resources | `sector` | confirmed | Nasdaq OMX US Water is a theme, not an industry classification; typed `sector`. No-op for the lens. |
+
+**etc** (4 funds) — Exchange Traded Concepts (white-label) — ROBO Global / Range index funds
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `NUKZ` | Range Nuclear Renaissance | `thematic_passive` | confirmed |  |
+| `ROBO` | ROBO Global Robotics & Automation | `thematic_passive` | confirmed |  |
+| `THNQ` | ROBO Global Artificial Intelligence | `thematic_passive` | confirmed |  |
+| `HTEC` | ROBO Global Healthcare Technology & Innovation | `thematic_passive` | confirmed |  |
+
+**amplify** (1 funds) — Amplify — BLOK is actively managed
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `BLOK` | Amplify Transformational Data Sharing | `active` | confirmed |  |
+
+**bitwise** (1 funds) — Bitwise — BITQ is benchmarked to an in-house 30-name index
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `BITQ` | Bitwise Crypto Industry Innovators | `active` | flagged | typed `active` on the strength of `universe.active: true` ALONE — and that flag and this row are hand-set in the same file, so they are not two independent witnesses. The name is index-shaped. Left as-is: changing a type on this evidence is the same mistake in reverse. |
+
+**defiance** (1 funds) — Defiance — BlueStar index funds
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `QTUM` | Defiance Quantum | `thematic_passive` | confirmed |  |
+
+**procure** (1 funds) — ProcureAM — S-Network Space Index
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `UFO` | Procure Space | `thematic_passive` | confirmed |  |
+
+**stockanalysis** (1 funds) — unofficial feed (no sponsor page in the collector)
+
+| Fund | Fund name | Type | Verdict | Note |
+|---|---|---|---|---|
+| `WGMI` | CoinShares Bitcoin Mining (WGMI) | `thematic_passive` | confirmed |  |

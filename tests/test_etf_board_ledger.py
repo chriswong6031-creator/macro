@@ -324,6 +324,62 @@ class TestFreeze:
         h5 = merged[merged["horizon"] == 5].iloc[0]
         assert pd.notna(h5["ret"]), "a matured window must fill in on the next run"
 
+    def test_a_bench_leg_that_was_null_can_still_fill_in(self, tmp_path, on_lane):
+        """m11. The two legs mature independently. A row that graded on the NAME
+        while the benchmark window was unresolvable used to have the bench leg's
+        nulls frozen in on the strength of the name's `ret` — so it sat graded and
+        permanently uncomparable, quietly shrinking the "x of y ahead of SPY"
+        denominator with nothing on the surface saying why."""
+        panel = _panel()
+        as_of = str(panel.index[10].date())
+        recs = [{"as_of": as_of, "ticker": "NVDA", "rank": 1}]
+
+        # night 1: the name grades, the benchmark leg does not resolve
+        blind = panel.drop(columns=[ebl.BENCH])
+        first = ebl.grade_snapshots(recs, panel=blind, price_source={"NVDA": "yahoo"})
+        stored = ebl.merge_grades(first, base_dir=tmp_path)
+        h5 = stored[stored["horizon"] == 5].iloc[0]
+        published = float(h5["ret"])
+        assert pd.notna(h5["ret"]) and pd.isna(h5["bench_ret"]), "fixture check"
+
+        # night 2: SPY is back in the panel
+        second = ebl.grade_snapshots(recs, panel=panel,
+                                     price_source={"NVDA": "yahoo", ebl.BENCH: "yahoo"})
+        merged = ebl.merge_grades(second, base_dir=tmp_path)
+        row = merged[merged["horizon"] == 5].iloc[0]
+        assert pd.notna(row["bench_ret"]), (
+            "the benchmark leg must be allowed to fill in — it was never published"
+        )
+        assert float(row["ret"]) == pytest.approx(published, rel=1e-12), (
+            "…while the NAME's published return stays frozen"
+        )
+        # abs, not rel: `excess_bench` is stored rounded to 6dp by design
+        assert float(row["excess_bench"]) == pytest.approx(
+            published - float(row["bench_ret"]), abs=1e-6), (
+            "the printed difference must equal the two numbers printed beside it"
+        )
+
+    def test_a_published_bench_leg_is_still_frozen(self, tmp_path, on_lane):
+        """The other half of m11: once BOTH legs are published the row is a claim
+        and a moved ladder must not restate either of them."""
+        panel = _panel()
+        as_of = str(panel.index[10].date())
+        recs = [{"as_of": as_of, "ticker": "NVDA", "rank": 1}]
+        stored = ebl.merge_grades(
+            ebl.grade_snapshots(recs, panel=panel, price_source={}), base_dir=tmp_path)
+        h5 = stored[stored["horizon"] == 5].iloc[0]
+        pub_ret, pub_bench = float(h5["ret"]), float(h5["bench_ret"])
+        assert pd.notna(pub_bench), "fixture check: the bench leg did publish"
+
+        bumped = panel.copy()
+        bumped.loc[bumped.index[16], [ebl.BENCH, "NVDA"]] = 999.0
+        merged = ebl.merge_grades(
+            ebl.grade_snapshots(recs, panel=bumped, price_source={}), base_dir=tmp_path)
+        row = merged[merged["horizon"] == 5].iloc[0]
+        assert float(row["ret"]) == pytest.approx(pub_ret, rel=1e-12)
+        assert float(row["bench_ret"]) == pytest.approx(pub_bench, rel=1e-12)
+        assert float(row["excess_bench"]) == pytest.approx(pub_ret - pub_bench, abs=1e-6)
+
     def test_merge_returns_the_full_store_when_nothing_matures(self, tmp_path, on_lane):
         panel = _panel()
         as_of = str(panel.index[10].date())
@@ -368,6 +424,36 @@ class TestTrackPayload:
         assert h5["n_ahead"] == 1, "NVDA beats SPY, the flat name does not"
         assert track["collecting"] is False
         assert track["benchmark"] == "SPY"
+
+    def test_pending_rows_split_into_immature_and_unpriceable(self):
+        """m10. One `n_pending` conflated "the window has not closed" with "this
+        name has no price series anywhere". The first resolves itself on a known
+        date; the second never will — it is a delisting or an unresolvable ticker,
+        i.e. exactly the survivorship this ledger is here to keep visible. Summed
+        into one number, a growing pile of dead names reads as patience."""
+        panel = _panel()
+        young = str(panel.index[-3].date())      # 2 forward bars — immature
+        old = str(panel.index[10].date())
+        recs = [{"as_of": young, "ticker": "NVDA", "rank": 1},
+                {"as_of": old, "ticker": "GHOST", "rank": 2}]   # no series at all
+        df = ebl.grade_snapshots(recs, panel=panel, price_source={"NVDA": "yahoo"})
+        blk = ebl.build_track(recs, df)["per_horizon"]["h5"]
+        assert blk["n_graded"] == 0
+        assert blk["n_pending"] == 2, "the published total is unchanged"
+        assert blk["n_immature"] == 1, "NVDA's window simply has not closed"
+        assert blk["n_unpriceable"] == 1, "GHOST has no price series and never will"
+        assert blk["n_immature"] + blk["n_unpriceable"] == blk["n_pending"]
+
+    def test_the_pending_split_is_zero_zero_when_nothing_is_pending(self):
+        panel = _panel()
+        as_of = str(panel.index[10].date())
+        recs = [{"as_of": as_of, "ticker": "NVDA", "rank": 1}]
+        df = ebl.grade_snapshots(recs, panel=panel, price_source={"NVDA": "yahoo"})
+        blk = ebl.build_track(recs, df)["per_horizon"]["h5"]
+        assert blk["n_pending"] == blk["n_immature"] == blk["n_unpriceable"] == 0
+        # …and the keys exist on the empty block too, so a reader never KeyErrors
+        empty = ebl.build_track([], pd.DataFrame())["per_horizon"]["h5"]
+        assert empty["n_immature"] == 0 and empty["n_unpriceable"] == 0
 
     def test_ahead_count_is_denominated_on_the_benchmark_leg(self):
         """n_ahead / n_vs_bench must not silently borrow the absolute-return count."""

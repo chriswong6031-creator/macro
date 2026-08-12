@@ -1059,14 +1059,49 @@ def all_etf_signals() -> list[dict]:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# B1 (masterplan §6c) — the split verdict reaches the RANKED path.
+#
+# `_split_adjust` already identifies a re-denomination and restates the prior
+# share count for the decomposition, so flow_pp/selection_pp read it correctly.
+# `conviction_pp` never did: it is computed off `active_changes_dir`'s own share
+# diff, which sees ARKW's 3:1 CRWD split as +207.93% of the position and books
+# +1.6274pp of manager conviction that nobody committed. The guard's own verdict
+# was published one column away from the number it disproves.
+#
+# So a positively-identified split is dropped from every RANKED input —
+# accumulation/trims, the consensus counts, the board and the ledger — and kept,
+# labeled, in the Tier-2 receipts (`funds[].split_adjusted`, the per-stock feed,
+# `n_split_adjusted`). Dropping beats restating: the split guard clears both a
+# value test and a simple-factor test before it fires (see `_split_adjust`), but
+# it cannot tell a pure split from a split plus a real trade in the same window
+# (masterplan §6b R4), so the honest read of a flagged event is "this number is
+# not a decision", not "this number is X instead".
+# --------------------------------------------------------------------------- #
+def is_split_event(row: dict | None) -> bool:
+    """True when this fund-ticker event's share change was positively identified
+    as a re-denomination rather than a manager decision."""
+    return bool((row or {}).get("split_adjusted"))
+
+
+def drop_split_events(rows: "list[dict] | None") -> list[dict]:
+    """Ranked-path filter: every row EXCEPT the positively-identified splits."""
+    return [r for r in (rows or []) if not is_split_event(r)]
+
+
 def split_by_conviction(rows: list[dict], n: int | None = None,
                         trims_n: int | None = None) -> dict[str, list[dict]]:
     """Split signal rows into a positive-first accumulation list (the actionable
     side the user cares about) and a smaller, de-emphasized trims list, each
-    ranked by conviction (pp of fund weight committed), NOT raw share %."""
+    ranked by conviction (pp of fund weight committed), NOT raw share %.
+
+    Positively-identified splits are excluded from BOTH lists (B1): a
+    re-denomination is not a decision, and it used to rank as one of the largest
+    ones on the page."""
     cfg = config.load()["etf_holdings"]
     n = n or cfg.get("page_top_n", 40)
     trims_n = trims_n if trims_n is not None else cfg.get("trims_top_n", 12)
+    rows = drop_split_events(rows)
     acc = sorted((r for r in rows if (r.get("conviction_pp") or 0) > 0),
                  key=lambda r: -r["conviction_pp"])[:n]
     trims = sorted((r for r in rows if (r.get("conviction_pp") or 0) < 0),

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import copy
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -101,6 +102,52 @@ def test_manager_run_funds_are_typed_active() -> None:
             assert reg[ticker]["type"] == "active", f"{ticker} is run by a manager"
     for ticker in cfg["holdings"]["watchlist"]:
         assert reg[ticker]["type"] == "active", f"{ticker} (ARK) is run by a manager"
+
+
+def _name_says_active(name: str) -> bool:
+    """A sponsor that puts "Active" in a fund's legal name is telling us how the
+    fund is run, in the one field we already read. Word-boundary matched so
+    "Interactive" / "Radioactive" cannot trigger it."""
+    return bool(re.search(r"\bactive(?:ly)?\b", str(name or ""), re.I))
+
+
+def test_a_fund_whose_name_says_active_is_typed_active() -> None:
+    """M2 pin (masterplan §6c). Four Roundhill funds shipped typed
+    `thematic_passive` while the repo's own §2 called one of them active, so the
+    audit added a date stamp — and a date stamp is a claim, not a guard. This is
+    the guard: the cheapest possible evidence, the sponsor's own fund name, must
+    never disagree with the type. Sprott's GBUG / METL are the live examples."""
+    cfg = config.load()
+    reg = fund_registry()
+    specs = {**(cfg["etf_holdings"].get("universe") or {}),
+             **(cfg["holdings"].get("watchlist") or {})}
+    named = {t: s.get("name") for t, s in specs.items()
+             if isinstance(s, dict) and _name_says_active(s.get("name"))}
+    assert named, "the pin is vacuous unless some fund name carries the word"
+    wrong = {t: (n, reg[t]["type"]) for t, n in named.items()
+             if reg[t]["type"] != "active"}
+    assert not wrong, f"fund name says active, registry does not: {wrong}"
+
+
+def test_the_active_name_pin_can_actually_fail() -> None:
+    """Mutation control on the gate above — and on its word boundary."""
+    assert _name_says_active("Sprott Active Gold & Silver Miners")
+    assert _name_says_active("Actively Managed Whatever ETF")
+    assert not _name_says_active("Global X Interactive Media")
+    assert not _name_says_active("VanEck Radioactive Materials")
+    assert not _name_says_active("Roundhill Video Games")
+
+
+def test_the_registry_block_carries_its_audit_date() -> None:
+    """M2. Every row was re-checked against its sponsor's product line on this
+    date and the per-fund verdicts live in research/ETF_DATA_SOURCES.md. The stamp
+    is what makes a NEXT auditor able to tell "checked and correct" from "never
+    looked at" — the state four Roundhill rows sat in until §6c."""
+    audited = (config.load().get("etf_holdings") or {}).get("registry_audited")
+    assert audited, "etf_holdings.registry_audited is missing"
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(audited)), audited
+    # …and it must not have leaked into the ticker map as a phantom fund
+    assert "registry_audited" not in fund_registry()
 
 
 # =============================================================================
@@ -238,6 +285,9 @@ if __name__ == "__main__":
         test_registry_rows_are_fully_populated,
         test_registry_sponsor_never_drifts_from_the_universe,
         test_manager_run_funds_are_typed_active,
+        test_a_fund_whose_name_says_active_is_typed_active,
+        test_the_active_name_pin_can_actually_fail,
+        test_the_registry_block_carries_its_audit_date,
         test_loader_tolerates_a_missing_registry_block,
         test_loader_tolerates_an_empty_and_a_null_registry_block,
         test_unknown_type_degrades_to_the_default,

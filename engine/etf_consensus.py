@@ -79,29 +79,54 @@ def _roll_decomposition(g: dict, r: dict) -> None:
         g["max_streak"] = streak
     if r.get("is_stale"):
         g["n_stale"] += 1
-    if r.get("split_adjusted"):
-        g["n_split_adjusted"] += 1
     if r.get("exit_confirmed"):
         g["n_exit_confirmed"] += 1
     accel = r.get("accel_pct_per_day")
     if accel is not None:
         g["_accel"].append(accel)
+    # M6: the 40-snapshot scoring window is 40 SNAPSHOTS, not 40 days, and the
+    # funds on one row publish on different cadences — so the row's dollars pool
+    # windows of genuinely different lengths. Publish the spread rather than let
+    # a reader assume one clock.
+    wd = r.get("window_days")
+    if wd is not None:
+        try:
+            g["_window_days"].append(int(wd))
+        except (TypeError, ValueError):
+            pass
 
 
 def _finish_decomposition(g: dict) -> None:
-    """Round the roll-up and set the two derived reads: whether the dollar
-    estimate covers every fund on the row, and whether investor flow and manager
-    selection point OPPOSITE ways — a real disagreement inside one stock that the
-    plain accum-vs-trim `contested` flag cannot see."""
-    for k in ("total_usd", "flow_usd", "selection_usd"):
-        g[k] = round(g[k], 2)
+    """Round the roll-up and set the derived reads: whether the dollar estimate
+    covers every fund on the row, the calendar spread of the pooled windows, and
+    whether investor flow and manager selection point OPPOSITE ways — a real
+    disagreement inside one stock that the plain accum-vs-trim `contested` flag
+    cannot see.
+
+    M5 (masterplan §6c): with no fund on the row publishing market values the
+    three dollar sums are ABSENT, not zero — the same null contract `weighted_usd`
+    already honoured one field away. A printed 0 there read as "no money moved"
+    on 27 of today's rows when the truth is "nobody published a value", and the
+    signed components make it worse: flow and selection can each be large and
+    cancel, so a real 0 is a meaningful answer that must not be confusable with a
+    missing one."""
+    windows = g.pop("_window_days", [])
+    g["window_days_min"] = min(windows) if windows else None
+    g["window_days_max"] = max(windows) if windows else None
+    if g["n_funds_usd"] == 0:
+        for k in ("total_usd", "flow_usd", "selection_usd"):
+            g[k] = None
+    else:
+        for k in ("total_usd", "flow_usd", "selection_usd"):
+            g[k] = round(g[k], 2)
     g["net_flow_pp"] = round(g["net_flow_pp"], 4)
     g["net_selection_pp"] = round(g["net_selection_pp"], 4)
     accel = g.pop("_accel", [])
     g["accel_pct_per_day"] = round(sum(accel) / len(accel), 4) if accel else None
     g["usd_complete"] = g["n_funds_usd"] == g["n_funds_any"]
     g["contested_components"] = bool(
-        g["flow_usd"] * g["selection_usd"] < 0
+        g["flow_usd"] is not None and g["selection_usd"] is not None
+        and g["flow_usd"] * g["selection_usd"] < 0
         and min(abs(g["flow_usd"]), abs(g["selection_usd"])) > 0.05 * abs(g["total_usd"] or 1.0))
 
 
@@ -189,6 +214,11 @@ def _roll_weighting(g: dict, r: dict, fund_type: str, w: dict) -> float | None:
     wt = g["_wt"]
     if r.get("is_stale"):
         wt["n_stale_excluded"] += 1
+        # m20: the dollars the freshness gate removed. `total_usd` still counts
+        # this fund (it is a real past decision), so without this the receipt's
+        # arithmetic cannot be reconciled against the unweighted total — a reader
+        # who tries lands on an unexplained gap and has to assume a bug.
+        wt["usd_stale_excluded"] += r.get("total_usd") or 0.0
         return None
 
     primary = primary_component(fund_type)
@@ -224,6 +254,13 @@ def _finish_weighting(g: dict, w: dict) -> None:
     input is printable, so a reader can re-derive the number by hand:
 
         weighted_usd = usd_matched + mismatch_discount × usd_mismatched
+
+    …and reconcile it against the unweighted total the row also prints:
+
+        total_usd    = usd_matched + usd_mismatched + usd_stale_excluded
+
+    Runs AFTER `_finish_decomposition`, because `sign_diverges_from_total` is a
+    comparison against that function's `total_usd`.
     """
     wt = g.pop("_wt")
     disc = w["mismatch_discount"]
@@ -233,6 +270,17 @@ def _finish_weighting(g: dict, w: dict) -> None:
     g["weighted_usd"] = (None if wt["n_funds_usd"] == 0
                          else round(round(wt["usd_matched"], 2) + mismatched_weighted, 2))
     g["weighted_n"] = round(g["weighted_n"], 3)
+    # M3: the discount applies to SIGNED components, so it is not a shrink toward
+    # zero — discounting a negative mismatched half against a positive matched one
+    # makes the weighted read LARGER than the raw one, and where the mismatched
+    # half carries the row it can flip the sign outright (live 2026-08-12: NVDA
+    # and TSM both read one way raw and the other way weighted). Machine-readable
+    # so the UI can never print the two side by side as if one merely refined the
+    # other; `total_usd` stays the primary $ column.
+    tot = g.get("total_usd")
+    g["sign_diverges_from_total"] = bool(
+        g["weighted_usd"] is not None and tot is not None
+        and g["weighted_usd"] * tot < 0)
     g["weight_receipt"] = {
         "mismatch_discount": disc,
         "unattributed_weight": w["unattributed_weight"],
@@ -242,11 +290,13 @@ def _finish_weighting(g: dict, w: dict) -> None:
         "n_mismatched": wt["n_mismatched"],
         "n_unattributed": wt["n_unattributed"],
         "n_stale_excluded": wt["n_stale_excluded"],
+        "n_split_excluded": wt["n_split_excluded"],
         "n_funds_usd": wt["n_funds_usd"],
         "weighted_usd_complete": wt["n_funds_usd"] == wt["n_funds"],
         "usd_matched": round(wt["usd_matched"], 2),
         "usd_mismatched": round(wt["usd_mismatched"], 2),
         "usd_mismatched_weighted": mismatched_weighted,
+        "usd_stale_excluded": round(wt["usd_stale_excluded"], 2),
     }
 
 
@@ -278,10 +328,19 @@ def consensus_favored(rows: list[dict] | None = None,
     accumulation, then net conviction — so none of this promotes anything.
 
     W2b adds the structural weighting lens beside them — ``weighted_usd``,
-    ``weighted_n`` and the ``weight_receipt`` that shows its arithmetic. It is a
-    SECONDARY read the UI may offer as an alternate sort; the ranking below is
-    the same equal-weight construction it has always been. Pass ``registry`` to
-    type the funds from an in-memory map instead of config.yml.
+    ``weighted_n``, ``sign_diverges_from_total`` and the ``weight_receipt`` that
+    shows its arithmetic. It is a SECONDARY read the UI may offer as an alternate
+    sort; the ranking below is the same equal-weight construction it has always
+    been. Pass ``registry`` to type the funds from an in-memory map instead of
+    config.yml.
+
+    B1 (masterplan §6c): a fund-ticker event the split guard positively flagged
+    (``split_adjusted``) is excluded from EVERY counted read on the row —
+    n_accum/n_trim/n_new/n_exit, the conviction sums, the W1 dollars and the W2b
+    lens — and stays in ``funds`` labeled ``split_adjusted``/``counted: False``,
+    with ``n_split_adjusted`` on the row saying how many were set aside. A row
+    whose events are ALL splits therefore falls below ``min_funds`` and leaves
+    the board, which is the correct outcome: nothing happened there.
     """
     cfg = _cfg()
     limit = limit or cfg.get("consensus_top_n", 40)
@@ -332,15 +391,20 @@ def consensus_favored(rows: list[dict] | None = None,
                 "n_funds_any": 0, "n_funds_flow": 0, "n_funds_selection": 0,
                 "n_funds_usd": 0, "breadth": 0, "max_streak": 0,
                 "n_stale": 0, "n_split_adjusted": 0, "n_exit_confirmed": 0,
-                "_accel": [],
+                "_accel": [], "_window_days": [],
                 # W2b structural lens (masterplan §4) — secondary to every count
                 # above it. `_wt` is scratch; _finish_weighting pops it into the
                 # published receipt.
                 "weighted_n": 0.0,
                 "_wt": {"usd_matched": 0.0, "usd_mismatched": 0.0, "n_funds": 0,
                         "n_funds_usd": 0, "n_active_selection": 0, "n_passive_flow": 0,
-                        "n_mismatched": 0, "n_unattributed": 0, "n_stale_excluded": 0},
+                        "n_mismatched": 0, "n_unattributed": 0, "n_stale_excluded": 0,
+                        "n_split_excluded": 0, "usd_stale_excluded": 0.0},
             }
+        # B1 (masterplan §6c): a positively-identified split is a re-denomination,
+        # not a decision. It is dropped from every counted read below and kept
+        # here, labeled, as the Tier-2 receipt that says why the row moved.
+        is_split = bool(r.get("split_adjusted"))
         # keep the richest name / sector / ladder we see for this ticker
         if r.get("name") and len(str(r.get("name"))) > len(str(g["name"])):
             g["name"] = r["name"]
@@ -348,13 +412,18 @@ def consensus_favored(rows: list[dict] | None = None,
             g["sector"] = r["sector"]
         if g["ladder"] is None and r.get("ladder"):
             g["ladder"] = r["ladder"]
-        g["confirmed"] = g["confirmed"] or bool(r.get("confirmed"))
-        g["is_active_any"] = g["is_active_any"] or bool(r.get("is_active"))
         # W2b: type the fund, then fold it into the weighted lens. A fund missing
         # from the registry types as the registry's own default rather than
         # dropping off the row — same fail-soft contract as fund_registry itself.
         ftype = (registry.get(str(r.get("etf") or "")) or {}).get("type") or DEFAULT_TYPE
-        ev_weight = _roll_weighting(g, r, ftype, wcfg)
+        if is_split:
+            g["n_split_adjusted"] += 1
+            g["_wt"]["n_split_excluded"] += 1
+            ev_weight = None
+        else:
+            g["confirmed"] = g["confirmed"] or bool(r.get("confirmed"))
+            g["is_active_any"] = g["is_active_any"] or bool(r.get("is_active"))
+            ev_weight = _roll_weighting(g, r, ftype, wcfg)
         g["funds"].append({
             "fund": r.get("etf"), "fund_name": r.get("etf_name", r.get("etf")),
             "category": r.get("category", ""), "is_active": bool(r.get("is_active")),
@@ -365,11 +434,15 @@ def consensus_favored(rows: list[dict] | None = None,
             "flow_usd": r.get("flow_usd"), "selection_usd": r.get("selection_usd"),
             "total_usd": r.get("total_usd"), "driver": r.get("driver"),
             "streak": r.get("streak") or 0, "is_stale": bool(r.get("is_stale")),
+            # B1 label: this fund-ticker event was excluded from the row's counts.
+            "split_adjusted": is_split, "counted": not is_split,
             # the two lens inputs for THIS fund, so the receipt is auditable per
-            # row rather than only in aggregate (`weight` is None when stale =
-            # excluded from the weighted read).
+            # row rather than only in aggregate (`weight` is None when the event
+            # was excluded — stale, or a split — from the weighted read).
             "fund_type": ftype, "weight": ev_weight,
         })
+        if is_split:
+            continue
         if conv > 0:
             g["n_accum"] += 1
         elif conv < 0:
@@ -426,23 +499,57 @@ def _fund_snapshot_dir(fund: str) -> Path | None:
     return None
 
 
+def _trajectory_snapshots(d: Path, k: int) -> list[Path]:
+    """The ``k`` newest snapshot files under ``d`` that the SCORED path would also
+    accept, oldest→newest (m12).
+
+    The sparkline used to take the last k files raw, so it drew its line over
+    snapshots the decomposition had already quarantined — a broken parse whose
+    weights sum to 40%, or a re-fetch written twice under two filenames for one
+    as-of date, both of which put a step in the picture that the numbers beside
+    it deny. `_usable_snapshots` is the shared gate that resolves both, and it
+    reads through the same per-process snapshot cache the scoring path filled, so
+    routing through it costs no extra parse. Degrades to the raw tail if the
+    engine import fails — a missing sparkline is worse than an unfiltered one."""
+    paths = sorted(d.glob("*.parquet"))
+    try:
+        from engine.holdings_signals import _usable_snapshots
+        by_stem = {p.stem: p for p in paths}
+        keep, _quarantined = _usable_snapshots(paths, k)
+        return [by_stem[s["path"]] for s in keep if s.get("path") in by_stem]
+    except Exception as e:  # noqa: BLE001 — the sparkline is additive, never fatal
+        log.warning("weight_trajectory: snapshot hygiene unavailable (%s) — raw tail", e)
+        return paths[-k:]
+
+
 def weight_trajectory(fund: str, ticker: str, k: int = 12) -> list[dict]:
     """Last ``k`` (as_of, weight_pct) points for one (fund, ticker), oldest→newest,
-    for a position-sizing sparkline. Reads the daily snapshots directly. Returns
-    [] on any problem (never raises). The weight column name varies by sponsor, so
-    we resolve it flexibly (weight_pct / weight / '% ...')."""
+    for a position-sizing sparkline. Returns [] on any problem (never raises). The
+    weight column name varies by sponsor, so we resolve it flexibly (weight_pct /
+    weight / '% ...').
+
+    m12: the snapshots come through `_trajectory_snapshots` (duplicate as-of dates
+    collapsed, weight-sum-broken snapshots quarantined) and each one through
+    `collectors.holdings._drop_non_equity` (cash/FX lines out) — the same two
+    hygiene gates the scored numbers on the row already passed, so the picture and
+    the number can no longer disagree about which constituent set is being read."""
     d = _fund_snapshot_dir(fund)
     if d is None:
         return []
-    snaps = sorted(d.glob("*.parquet"))[-k:]
+    try:
+        from collectors.holdings import _drop_non_equity
+    except Exception:  # noqa: BLE001 — hygiene is additive, never fatal
+        def _drop_non_equity(df):
+            return df
+    snaps = _trajectory_snapshots(d, k)
     tk = str(ticker)
     pts: list[dict] = []
     for p in snaps:
         try:
-            df = pd.read_parquet(p)
+            df = _drop_non_equity(pd.read_parquet(p))
         except Exception:  # noqa: BLE001 — a corrupt snapshot must not break the row
             continue
-        if "ticker" not in df.columns:
+        if df is None or df.empty or "ticker" not in df.columns:
             continue
         wcol = next((c for c in df.columns if "weight" in c.lower()), None)
         if wcol is None:
