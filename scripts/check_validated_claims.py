@@ -64,10 +64,16 @@ ALLOWLIST = ROOT / "data" / "regime" / "validated_claims_allowlist.json"
 # The scanned surfaces (D2 §4.3): templates (source), hand-written + generated site JS,
 # generated *_data.js, and the rendered site HTML. EN + zh both.
 SCAN_GLOBS = [
-    ("templates", ("*.j2", "*.js")),
+    # '*.html' covers the HAND-AUTHORED landing source templates/index.html, which is not a
+    # Jinja template and was therefore unscanned until 2026-08-11 — the source half of the
+    # landing-island breach (only three *.html files live here, all plain-copy site pairs).
+    ("templates", ("*.j2", "*.js", "*.html")),
     ("site", ("*.js", "*.html")),
-    # Prophet plan JSONs are rendered user-facing (terminal oracle-tab); scan them too.
-    ("site/prophet/plans", ("*.json",)),
+    # Prophet JSONs are rendered user-facing (terminal oracle-tab, landing showcase slice).
+    # scan() walks with rglob, so the whole tree is covered: plans/, states/, index.json and
+    # showcase.json — the last of which fed the 2026-08-11 landing island and was outside the
+    # old 'site/prophet/plans' root entirely.
+    ("site/prophet", ("*.json",)),
 ]
 
 # Python sources whose DISPLAY-COPY FIELDS are scanned (scan_python_copy). Not the whole
@@ -89,15 +95,46 @@ TOKEN = re.compile(r"validated|已验证|经验证|经过验证", re.IGNORECASE)
 # i18n token, NOT a displayed prose claim. BC-2 targets DISPLAYED CLAIMS, so these are skipped
 # BY CONSTRUCTION (not per-line allowlisted): re-litigating engine-stamped data values or CSS
 # class names would be scope creep the gate was never meant to cover.
-_STRUCTURAL = [
+#
+# THEY MASK IN PLACE — they do NOT kill the line (the 2026-08-11 gap, closed here). Every
+# entry below used to be a WHOLE-LINE skip, so one structural hit anywhere on a line made
+# every claim on that line invisible. That is fine for a CSS rule and catastrophic for a
+# one-line JSON blob: the anonymous landing page bakes a ~23k-char single-line
+# `<script id="ph-data">` island, the dropped `"(?:...|note)"\s*:.*validated` entry matched
+# a `"note":` key sitting somewhere inside it, and the bilingual claim pair
+# 'validated drawdown gate: size down' / '已验证的回撤门槛：减小仓位' shipped LIVE on
+# templates/index.html + site/index.html with the gate reading green. Masking is the same
+# remedy the 2026-07-29 _IDENT_MASK narrowing applied for the same reason (see its block
+# comment: "Whole-line suppression was half the reason the old rule was invisible") — only
+# the structural span itself is excised, with the _TP_CUT sentinel, and the rest of the line
+# is scanned normally. Splicing fails CLOSED: _TP_CUT sits outside every character class in
+# _NEG_EN / _NEG_ZH / TOKEN, so an excision can neither forge a token nor let a negation
+# lookback reach across the cut.
+#
+# THE DROPPED ENTRY. `"(?:absolute_trend_gate|weighting|timing|note)"\s*:.*validated` is gone
+# rather than converted: `.*validated` is unbounded, so as a mask it would still swallow an
+# arbitrary run of prose. Censused on the tree at this commit, nothing legitimate needs it —
+# `"absolute_trend_gate":"validated_risk_control …"` (×3) is masked by the
+# `validated_risk_control` entry below; `"weighting":"state-only (no validated pathway)…"`
+# (×49) passes as a NEGATED use ('no' directly precedes the token); `timing` has no
+# occurrences at all; and `note` values are exactly what must be SCANNED — the module comment
+# above _COPY_BARE already calls scanning `note` at the engine source "the other half of that
+# bargain", which only balances if the rendered half is a narrow mask and not a blanket skip.
+_STRUCTURAL_MASKS = [
     # engine-stamped reasoning-trace / scoring field values in generated data + their emitters
     re.compile(r'"tier"\s*:\s*"validated"'),
     re.compile(r'"verdict"\s*:\s*"validated"'),
     re.compile(r'"validated"\s*:\s*(?:true|false)'),          # a data field, not a claim
     re.compile(r"'validated'\s*:\s*(?:True|False)"),
+    # …and the same field read as an EQUALITY, the shape a pre-registered criterion uses to
+    # name its own gate: "artifact validated==true ⇔ n_eff≥40 per cell AND …" (BC-1, in
+    # scripts/build_measurement.py). Same family as the `_vs == 'validated'` comparisons
+    # below — the token is the FIELD NAME, and the sentence asserts what would make the
+    # field true, not that anything is. Surfaced 2026-08-11: measurement_data.js is one
+    # 208kB line, so the old whole-line kill hid every claim in the entire payload.
+    re.compile(r"\bvalidated\s*==\s*(?:true|false)", re.IGNORECASE),
     re.compile(r'"invalidated_membership"'),
     re.compile(r'validated_risk_control'),                    # engine gate-status enum value
-    re.compile(r'"(?:absolute_trend_gate|weighting|timing|note)"\s*:.*validated'),
     # (CSS class / DOM identifier TOKENS are handled by _IDENT_MASK below, not here: they
     # are masked in place rather than killing their whole line.)
     re.compile(r'class="[^"]*\bvalidated\b[^"]*"'),
@@ -115,10 +152,16 @@ _STRUCTURAL = [
     # comparison — is code, not a displayed prose claim (the displayed prose IS gated).
     re.compile(r"\bvalidated_tag\b"),                         # jinja var / attr interpolation
     re.compile(r"[=!]=\s*'validated'"),                       # {% if htag == 'validated' %}
-    # i18n token-map / lexicon dictionary entries: 'key': ['Validated','已验证'] (a label pair)
-    re.compile(r"['\"][^'\"]*['\"]\s*:\s*\[\s*['\"]Validated"),
-    re.compile(r"validated\s*:\s*\[\s*['\"]Validated"),
-    re.compile(r"'(?:go|event-edge|validated|context)'\s*:\s*\[\s*'Validated edge'"),
+    # i18n token-map / lexicon dictionary entries: 'key': ['Validated','已验证'] (a label pair).
+    # THESE SPAN THROUGH THE CLOSING BRACKET, unlike every other entry, because a mask that
+    # stopped at 'Validated' would excise the EN half of the pair and leave the ZH half
+    # (",'已验证']") exposed as a bare affirmative token — a false positive the whole-line
+    # skip never had. Label pairs are FLAT (two strings, no nesting), so `[^\]]*\]` cannot
+    # run past the entry it belongs to; the real lexicon puts two pairs on one line
+    # (templates/stockview.js:41 + its site/ twin) and each is masked independently.
+    re.compile(r"(['\"])[^'\"]*\1\s*:\s*\[\s*['\"]Validated[^\]]*\]"),
+    re.compile(r"validated\s*:\s*\[\s*['\"]Validated[^\]]*\]"),
+    re.compile(r"'(?:go|event-edge|validated|context)'\s*:\s*\[\s*'Validated edge'[^\]]*\]"),
 ]
 
 # ── SELECTOR / IDENTIFIER TOKENS — masked in place, NOT whole-line skipped ───────────
@@ -504,11 +547,15 @@ def _scan_line(line: str, allow: list[dict],
     '&amp;' rendered form, and an entity-bearing negation prefix ("isn&#39;t a
     validated") reads as an affirmative claim. Callers keep the raw line for
     reporting."""
-    if any(sp.search(line) for sp in _STRUCTURAL):
-        return 0, []                                    # structural non-claim line
-    # Selector / dotted-identifier tokens are excised, not whole-line skipped, so copy
-    # sharing a line with one is still gated (see the _IDENT_MASK block comment).
-    norm = _JSON_KEY_MASK.sub(_TP_CUT, html.unescape(line))
+    # Structural, JSON-key and selector/dotted-identifier tokens are all excised IN PLACE,
+    # never whole-line skipped, so copy sharing a line with one is still gated (see the
+    # _STRUCTURAL_MASKS and _IDENT_MASK block comments). Structural masks run first and on
+    # the unescaped text, so an autoescaped render ('&#34;tier&#34;: &#34;validated&#34;')
+    # is recognised as the same data field its template source is.
+    norm = html.unescape(line)
+    for sp in _STRUCTURAL_MASKS:
+        norm = sp.sub(_TP_CUT, norm)
+    norm = _JSON_KEY_MASK.sub(_TP_CUT, norm)
     norm = _IDENT_MASK.sub(_TP_CUT, norm)
     n_negated = 0
     hits: list[tuple[bool, dict | None]] = []
@@ -550,10 +597,15 @@ def _scan_line(line: str, allow: list[dict],
 # scan to the fields that ARE display copy reduces that to 10 real strings — all of which
 # this change resolves, so the rule ships with zero pre-existing debt.
 #
-# RELATION TO _STRUCTURAL. `"note": ...validated` is a structural skip on the RENDERED
-# side (an engine-stamped field inside a minified data blob, where one match suppresses a
-# whole 100kB line). Scanning `note` HERE is the other half of that bargain, not a
-# contradiction: the claim is gated once, at the source, where a human can fix it.
+# RELATION TO _STRUCTURAL_MASKS. `note` used to be a whole-LINE structural skip on the
+# rendered side, so scanning it HERE was described as "the other half of that bargain" —
+# gate the claim once, at the source, where a human can fix it. That bargain did not hold:
+# on 2026-08-11 a `"note":` key anywhere inside the landing page's ~23k-char one-line
+# `<script id="ph-data">` island suppressed the ENTIRE island, and a bilingual
+# 'validated drawdown gate' / '已验证的回撤门槛' pair shipped live with BC-2 green. The
+# rendered-side skip is gone (see the _STRUCTURAL_MASKS comment), so `note` is now gated on
+# BOTH sides — at its engine source AND on the page — which is what the bargain always
+# claimed to be worth.
 #
 # The house's display-copy marker is the bilingual `_en`/`_zh` suffix — there is no
 # reason to translate an internal note into Chinese — so ANY suffixed field counts. The
