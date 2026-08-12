@@ -55,17 +55,21 @@ ReadOnlyPaths=/var/lib/macro-market-memory/state/technicals-v1
 ReadWritePaths=/var/lib/macro-market-memory/state/experience-v1
 InaccessiblePaths=/var/lib/macro-market-memory-options
 InaccessiblePaths=/etc/macro-market-memory-options
-InaccessiblePaths=/var/lib/macro-market-memory/public/generations
+# The root tmpfs is mounted before systemd applies these nested defence-in-depth
+# masks, so every unbound sibling is absent from the service namespace.  A
+# leading "-" prevents that intentional absence from aborting namespace setup;
+# if a target is visible without the tmpfs, systemd still makes it inaccessible.
+InaccessiblePaths=-/var/lib/macro-market-memory/public/generations
 InaccessiblePaths=-/var/lib/macro-market-memory/public/objects
 InaccessiblePaths=-/var/lib/macro-market-memory/public/contexts
 InaccessiblePaths=-/var/lib/macro-market-memory/public/queries
-InaccessiblePaths=/var/lib/macro-market-memory/public/HEAD.json
-InaccessiblePaths=/var/lib/macro-market-memory/public/store_manifest.json
-InaccessiblePaths=/var/lib/macro-market-memory/state/sources
-InaccessiblePaths=/var/lib/macro-market-memory/state/context-projection
-InaccessiblePaths=/var/lib/macro-market-memory/state/identity-v1
-InaccessiblePaths=/var/lib/macro-market-memory/state/breadth-v1
-InaccessiblePaths=/var/lib/macro-market-memory/state/production-record-options-episode-v1
+InaccessiblePaths=-/var/lib/macro-market-memory/public/HEAD.json
+InaccessiblePaths=-/var/lib/macro-market-memory/public/store_manifest.json
+InaccessiblePaths=-/var/lib/macro-market-memory/state/sources
+InaccessiblePaths=-/var/lib/macro-market-memory/state/context-projection
+InaccessiblePaths=-/var/lib/macro-market-memory/state/identity-v1
+InaccessiblePaths=-/var/lib/macro-market-memory/state/breadth-v1
+InaccessiblePaths=-/var/lib/macro-market-memory/state/production-record-options-episode-v1
 InaccessiblePaths=-/opt/macro/.env
 InaccessiblePaths=-/var/lib/macro-api
 InaccessiblePaths=-/var/lib/macro-biocatalyst
