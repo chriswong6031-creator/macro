@@ -2659,6 +2659,27 @@ _NO_REACTION_PATTERNS: tuple[tuple[str, str], ...] = (
 _CASHTAG_STRIP_RE = re.compile(r"\$[A-Za-z]{1,5}(?:\.[A-Za-z])?\b")
 _LIST_MARKER_STRIP_RE = re.compile(r"(?:^|(?<=[\s(]))\d{1,2}[.)](?=\s)")
 _YEAR_STRIP_RE = re.compile(r"\b(?:19|20)\d{2}\b")
+# A month-day DATE is the anchor of a dated-precedent comparison, not a new
+# claim: "the prior record of 254.76 set on August 5" carries one figure the
+# reader has to hold, and a calendar day that says WHEN it was set. The v5
+# doctrine REQUIRES that anchor ("first time since", prior record + its date),
+# so a counter blind to dates taxes the doctrine's canonical form — on
+# 2026-08-11 it quarantined exactly that (item ob-2026-08-11-af48902190 died as
+# "5 numbers: 255.49, 1.03%, 0.29%, 254.76, 11" — four figures and the 11th of
+# August), and years were already stripped for the same reason one line up.
+#
+# CASE-SENSITIVE, and that is load-bearing: "may 5% move" is a modal verb in
+# front of a real figure, and a case-folded month list would delete the 5%.
+# Scope is deliberately narrow — only "<Month> <day>" with an optional
+# abbreviating period and an optional ordinal suffix. Bare numbers, slash dates
+# (8/11), day-first forms ("11 August") and month-year pairs are NOT stripped:
+# each needs its own evidence before it stops counting. The trailing lookahead
+# keeps a figure that merely follows a capitalised month from being eaten
+# ("May 5%", "August 11.5").
+_DATE_STRIP_RE = re.compile(
+    r"\b(?:January|February|March|April|May|June|July|August|September|"
+    r"October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|"
+    r"Nov|Dec)\.?\s+(?:3[01]|[12]\d|0?[1-9])(?:st|nd|rd|th)?\b(?![.,]?\d|%)")
 _NUMBER_TOKEN_RE = re.compile(r"(?<![\w.])\d{1,3}(?:,\d{3})*(?:\.\d+)?%?(?![\w])")
 
 
@@ -3132,7 +3153,21 @@ def uncomputed_stance(text: str) -> list[str]:
 #: It does NOT admit the six the fast lane used to emit (EPS pair, EPS surprise,
 #: revenue pair, revenue surprise) — that is a data dump, and the copy was
 #: rewritten to state the revenue leg in words instead.
-_NUMBER_BUDGET: dict[str, int] = {"receipt": 4, "earnings": 4}
+#:
+#: `breaking` joins 2026-08-11 on that same reasoning, and on measurement: it is
+#: 65% of recent supply (258 of the last 400 items) and its v5 contract is FOUR
+#: figures by construction — the print, its delta, the prior/reference level,
+#: and the gap between them. The canonical form is the item this fix exists for:
+#: "$AME hits a fresh all-time high of 255.49, up 1.03% right now, and sits
+#: 0.29% above the prior record of 254.76 set on August 5." Each number there is
+#: what the one before it is measured against, which is precisely the test the
+#: violation message states. The operator's "shut up with all of these numbers"
+#: was aimed at SPECULATIVE forward level-stacks ("I want 151 before leaning
+#: toward 190, then 228"), never at dated precedent — a breaking post with no
+#: prior level is not a smaller claim, it is an uncomparable one. Four, not
+#: more: a genuine dump still dies, and an eight-number group post is still a
+#: violation at this budget.
+_NUMBER_BUDGET: dict[str, int] = {"receipt": 4, "earnings": 4, "breaking": 4}
 _NUMBER_BUDGET_DEFAULT = 2
 
 
@@ -3164,7 +3199,9 @@ def number_soup_violations(text: str, limit: int | None = None, kind: str = "",
 
     Counts DISTINCT number tokens: a gain repeated in the headline and the body
     is one number the reader has to hold, not two. Cashtags, list enumerators
-    ("1)", "2)") and years are structure, not figures, and are stripped first.
+    ("1)", "2)"), years and month-day dates are structure, not figures, and are
+    stripped first — a date says WHEN a cited level was set, and the v5 doctrine
+    requires that anchor (see :data:`_DATE_STRIP_RE`).
 
     `shape` closes the 2026-07-31 autopsy's defect 2: the budget was flat at two
     for every shape while SHAPE_CONTRACT ordered three numbers for a stack and
@@ -3177,6 +3214,7 @@ def number_soup_violations(text: str, limit: int | None = None, kind: str = "",
     stripped = _CASHTAG_STRIP_RE.sub(" ", str(text or ""))
     stripped = _LIST_MARKER_STRIP_RE.sub(" ", stripped)
     stripped = _YEAR_STRIP_RE.sub(" ", stripped)
+    stripped = _DATE_STRIP_RE.sub(" ", stripped)
     found = list(dict.fromkeys(_NUMBER_TOKEN_RE.findall(stripped)))
     if len(found) > limit:
         return [

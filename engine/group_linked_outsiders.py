@@ -438,6 +438,46 @@ def load_pulse(site_root: Path | None = None) -> dict[str, Any] | None:
     return payload if isinstance(payload, Mapping) else None
 
 
+def pulse_session_date(pulse: Mapping[str, Any] | None) -> date | None:
+    """The DATA SESSION `pulse.json` was built for, or None when it carries no stamp.
+
+    The GR planes must agree on what "today" is.  `pulse.json` stamps the last session
+    present in the member tape (`engine/group_pulse.py`: ``as_of = panel["index"].max()``)
+    and `earnings_pulse.json` follows it, so a plane that stamped the WALL-CLOCK run date
+    instead read a session ahead of the tape its outsider moves are joined to — three days
+    ahead over a Monday run.  Audited 2026-08-10 (F-7 tail): pulse 08-07, this plane 08-10.
+    """
+    if not isinstance(pulse, Mapping):
+        return None
+    stamps: list[date] = []
+    for entry in pulse.values():
+        if not isinstance(entry, Mapping):
+            continue
+        raw = entry.get("as_of")
+        if not raw:
+            continue
+        try:
+            stamps.append(pd.Timestamp(str(raw)).date())
+        except Exception:  # noqa: BLE001, PERF203
+            continue
+    return max(stamps) if stamps else None
+
+
+def _resolve_stamp(as_of: str | date | None,
+                   pulse: Mapping[str, Any] | None) -> date:
+    """The session this run DESCRIBES: the caller's `as_of`, else the data session
+    `pulse.json` was built for, else — disclosed, never silent — the run date."""
+    if as_of is not None:
+        return _as_of_date(as_of)
+    session = pulse_session_date(pulse)
+    if session is not None:
+        return session
+    print("::warning title=linked-outsiders-as-of::pulse.json carries no readable as_of; "
+          "stamping this run with the wall-clock date, which can sit ahead of the tape "
+          "these outsider reads are joined to", flush=True)
+    return _as_of_date(None)
+
+
 # --------------------------------------------------------------------------
 # Rules
 # --------------------------------------------------------------------------
@@ -692,13 +732,15 @@ def compute(
     generated_at: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Build one `group_linked_outsiders.v1` object per US basket."""
-    stamp = _as_of_date(as_of)
     generated = generated_at or datetime.now(timezone.utc).isoformat()
     membership = load_membership(data_root)
     registry, snapshot = load_registry(data_root)
     events = load_events(data_root)
     if pulse is None:
         pulse = load_pulse(site_root)
+    # Pulse is loaded BEFORE the stamp: with no explicit as_of this plane takes its session
+    # from the sibling artifact rather than the clock, so the whole GR plane stamps one day.
+    stamp = _resolve_stamp(as_of, pulse)
 
     member_universe = {t for members in membership.values() for t in members}
     candidates, counts = candidate_edges(events, member_universe, stamp)
@@ -1042,7 +1084,10 @@ def run(
     site_root: Path | None = None,
 ) -> dict[str, Any]:
     """Nightly entry point: compute, write the artifact, advance the ledger."""
-    stamp = _as_of_date(as_of)
+    # One read of pulse.json, one stamp: the edge WINDOW and the artifact stamp are the
+    # same session by construction, so they cannot drift apart the way F-7 found them.
+    pulse = load_pulse(site_root)
+    stamp = _resolve_stamp(as_of, pulse)
     membership = load_membership(data_root)
     registry, _ = load_registry(data_root)
     events = load_events(data_root)
@@ -1050,7 +1095,7 @@ def run(
     candidates, _ = candidate_edges(events, member_universe, stamp)
     edges = resolve_edges(candidates, registry)
 
-    result = compute(as_of=stamp, data_root=data_root, site_root=site_root)
+    result = compute(as_of=stamp, data_root=data_root, site_root=site_root, pulse=pulse)
     path = write_site_artifact(result, site_root)
     appended = advance_edge_ledger(edges, data_root)
     return {

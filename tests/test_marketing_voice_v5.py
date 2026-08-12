@@ -446,6 +446,136 @@ def test_the_prompt_and_the_gate_state_the_same_law():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 4. The number budget must not tax the doctrine it enforces (2026-08-11)
+# ─────────────────────────────────────────────────────────────────────────────
+# THE LIVE LOSS. On 2026-08-11 the voice screen quarantined 26 items while 22
+# posts published, and the press-wire hot poll kept refilling the queue during a
+# hot tape, so seven consecutive post-now dispatch runs (14:42Z-15:15Z) ended
+# "NOTHING POSTED". Two independent defects in `number_soup_violations`, both
+# pinned below:
+#
+#   1. A month-day DATE counted as a figure. The counter already stripped
+#      cashtags, list enumerators and YEARS, but "set on August 5" contributed
+#      an 5 and "on August 11" an 11 — while v5 REQUIRES the dated precedent
+#      ("first time since", prior record + when it was set). The gate was
+#      taxing the exact form the doctrine commands.
+#   2. `breaking` sat on the default budget of 2 while it is 65% of recent
+#      supply (258 of the last 400 items) and its contract is four figures by
+#      construction: print, delta, prior/reference level, gap.
+#
+# These are REGRESSION pins for the two items below, quoted verbatim from
+# data/marketing/outbox/status_ledger.jsonl. Neither half is allowed to widen
+# further: the dump and default-budget cases below are the other side of it.
+
+#: item ob-2026-08-11-af48902190, kind=breaking, account=mastermind_news.
+#: Ledger note: "number soup (5 numbers: 255.49, 1.03%, 0.29%, 254.76, 11,
+#: budget 2 ...)" — four real figures and the ELEVENTH OF AUGUST.
+QUARANTINED_AME = (
+    "$AME hits a fresh all-time high of 255.49, up 1.03% right now, and sits "
+    "0.29% above the prior record of 254.76 set on August 5. Ametek crosses "
+    "its ATH on August 11."
+)
+#: item ob-2026-08-11-9549c24a57, same kind and account.
+#: Ledger note: "number soup (4 numbers: 161.28, 0.93%, 160, 11, budget 2 ...)".
+QUARANTINED_XOM = (
+    "ExxonMobil $XOM trades at $161.28 right now, up 0.93% and holding above "
+    "the $160 round level. The stock crossed that mark on August 11."
+)
+
+
+@pytest.mark.parametrize("text", [QUARANTINED_AME, QUARANTINED_XOM])
+def test_the_two_items_the_gate_killed_today_now_pass(text):
+    """The whole point of the fix, stated as the artifacts it lost."""
+    assert cw.number_soup_violations(text, kind="breaking") == [], text
+
+
+#: Every one of these is TWO figures plus a date. If the date counted, each
+#: would be three and would die at the default budget of 2 — which is exactly
+#: what shipped before this fix.
+DATED_PRECEDENT = (
+    "Two figures, 4.1% and 2.2%, and the level was set on August 11.",
+    "Two figures, 4.1% and 2.2%, and the level was set on Aug. 5.",
+    "Two figures, 4.1% and 2.2%, and the level was set on August 5th.",
+    "Two figures, 4.1% and 2.2%, the widest since July 23.",
+)
+
+
+@pytest.mark.parametrize("text", DATED_PRECEDENT)
+def test_a_month_day_date_is_not_a_figure(text):
+    assert cw.number_soup_violations(text) == [], text
+
+
+@pytest.mark.parametrize("form", ["August 11", "Aug 5", "Aug. 5", "August 5th",
+                                  "since July 23", "Jan 1st", "December 31"])
+def test_the_date_strip_is_what_makes_those_pass(form):
+    """NOT redundant with the case above, and this is the trap: `August 5th`
+    was already uncounted for an unrelated reason (`_NUMBER_TOKEN_RE` refuses a
+    digit followed by a word character), so the end-to-end assertion alone
+    passes whether or not the strip exists. Pin the mechanism."""
+    assert cw._DATE_STRIP_RE.search(form) is not None, form
+
+
+def test_the_month_list_is_case_sensitive():
+    """Load-bearing: "may" is a modal verb sitting in front of a real figure
+    far more often than it is a month in this copy, and a case-folded list
+    would delete the 5% from "may 5% move"."""
+    assert cw._DATE_STRIP_RE.search("may 5 sessions") is None
+    assert cw._DATE_STRIP_RE.search("May 5 sessions") is not None
+    assert cw._DATE_STRIP_RE.search("august 11") is None
+
+
+def test_a_modal_may_before_a_percent_still_counts_that_percent():
+    """End to end, and non-vacuously: this text is three figures and dies at
+    the default budget. It reads clean only if "may 5%" was eaten as a date."""
+    text = "Bonds may 5% move, with 4.1% and 2.2% underneath."
+    violations = cw.number_soup_violations(text)
+    assert violations != [], text
+    assert "5%" in violations[0], violations
+
+
+def test_a_genuine_dump_still_dies_on_breaking():
+    """The budget moved to four; it did not move to "no limit". A group post
+    that lists eight names' prints is the form the operator's "shut up with all
+    of these numbers" was actually aimed at, and it is still a violation."""
+    dump = ("Group tape: 12.5 then 13.5 then 14.5 then 15.5 then 16.5 then "
+            "17.5 then 18.5 then 19.5 on August 11.")
+    violations = cw.number_soup_violations(dump, kind="breaking")
+    assert violations != [], dump
+    # 8, not 9: the date is stripped, so the message counts figures only.
+    assert "8 numbers" in violations[0], violations
+
+
+def test_the_default_budget_did_not_move():
+    """A kind the table does not name is untouched by this fix — three plain
+    figures on an unnamed kind is still soup at two."""
+    text = "It ran 4.1%, then 2.2%, then 6.3%."
+    assert cw.number_soup_violations(text, kind="") != [], text
+    assert cw.number_budget_for(kind="not_a_kind") == 2
+
+
+def test_the_year_strip_still_works():
+    """Regression pin on the sibling strip this one was modelled on: adding a
+    second `sub` in the same pipeline is exactly where an ordering mistake
+    would silently disarm the first."""
+    text = "Two figures, 4.1% and 2.2%, and 2026 is the year."
+    assert cw.number_soup_violations(text) == [], text
+
+
+def test_breaking_is_budgeted_four_and_the_max_rule_is_untouched():
+    """`number_budget_for` is the single source of truth for BOTH the gate and
+    the number the writer is handed, and it still takes the WIDER of kind and
+    shape rather than letting either win by precedence."""
+    assert cw.number_budget_for(kind="breaking") == 4
+    assert cw.number_budget_for(kind="BREAKING ") == 4, "kind is normalized"
+    assert cw.number_budget_for(kind="not_a_kind") == 2
+    assert cw.number_budget_for() == 2
+    # kind wider than shape, shape wider than kind, and neither clamped.
+    assert cw.number_budget_for(kind="breaking", shape="one_liner") == 4
+    assert cw.number_budget_for(kind="breaking", shape="list") == 6
+    assert cw.number_budget_for(kind="signal", shape="stack") == 3
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # The offer side. Every test above screens what the model WROTE; these three
 # screen what the house OFFERS it. A ban plus a standing offer of the banned
 # thing is the self-cancelling shape, and all three of these shipped that way

@@ -13,7 +13,12 @@
     try{briefcase=root.createGovernmentRevenueBriefcase({storage:root.localStorage})}catch(error){briefcase=null}
 
     function status(copy,warn){var el=get('briefcaseStatus');if(!el)return;el.className='briefcase-status'+(warn?' warn':'');el.textContent=copy}
-    function typeLabel(type){return{opportunity:tr('Opportunity change','机会变化'),award_change:tr('Award / action change','授标 / 行动变化'),recompete:tr('Derived expiry watch','推导到期观察')}[type]||type}
+    function typeLabel(type){return{opportunity:tr('Opportunity change','机会变化'),award_change:tr('Award / action change','授标 / 行动变化'),recompete:tr('Derived expiry watch','推导到期观察')}[type]||tr('Other change','其他变化')}
+    /* Alert receipts are written to device storage the moment they fire, so a message
+       translated at write time would freeze the language it was written in. Copy is
+       resolved HERE, at render time, from the stored type; the strings the state layer
+       persists stay untouched and only stand in for a type this build does not know. */
+    function alertText(item){var byType={opportunity:{message:tr('New matching opportunity.','发现新的匹配机会。'),warning:null},award_change:{message:tr('New matching award or action change.','发现新的授标或行动变化。'),warning:null},recompete:{message:tr('New matching expiry watch.','发现新的到期观察。'),warning:tr('Worked out from contract dates — not an official recompete date or solicitation.','根据合同日期推算——非官方重新竞标日期或招标公告。')}}[item.type];return byType||{message:text(item.message),warning:item.warning||null}}
     function selectedAlert(){if(!briefcase||!selectedView)return null;var type=get('alertType').value;return briefcase.listAlerts().find(function(row){return row.view_id===selectedView&&row.type===type})||null}
 
     function render(message,warn){
@@ -81,7 +86,7 @@
 
     function openInbox(){
       if(!briefcase)return;
-      var rows=briefcase.listInbox(),html=rows.map(function(item){return'<article class="receipt"><div class="receipt-kind">'+esc(typeLabel(item.type))+'</div><h3>'+esc(item.title||item.event_id)+'</h3><p>'+esc(item.message)+(item.warning?'<br><strong>'+esc(item.warning)+'</strong>':'')+'</p><div class="receipt-code">'+esc('event_id: '+text(item.event_id)+'\nobserved_at: '+text(item.observed_at)+'\nworkspace: '+text(item.workspace_bundle_id))+'</div></article>'}).join('')||'<div class="empty-state"><div><span class="empty-mark" aria-hidden="true">○</span><strong>'+esc(tr('No local alert receipts','暂无本地提醒凭证'))+'</strong><p>'+esc(tr('The first complete-workspace check establishes a baseline and never backfills historical alerts.','首次完整工作区检查仅建立基线，绝不回填历史提醒。'))+'</p></div></div>';
+      var rows=briefcase.listInbox(),html=rows.map(function(item){var ac=alertText(item);return'<article class="receipt"><div class="receipt-kind">'+esc(typeLabel(item.type))+'</div><h3>'+esc(item.title||item.event_id)+'</h3><p>'+esc(ac.message)+(ac.warning?'<br><strong>'+esc(ac.warning)+'</strong>':'')+'</p><div class="receipt-code">'+esc('event_id: '+text(item.event_id)+'\nobserved_at: '+text(item.observed_at)+'\nworkspace: '+text(item.workspace_bundle_id))+'</div></article>'}).join('')||'<div class="empty-state"><div><span class="empty-mark" aria-hidden="true">○</span><strong>'+esc(tr('No local alert receipts','暂无本地提醒凭证'))+'</strong><p>'+esc(tr('The first complete-workspace check establishes a baseline and never backfills historical alerts.','首次完整工作区检查仅建立基线，绝不回填历史提醒。'))+'</p></div></div>';
       api.openDrawer({title:tr('Local research inbox','本地研究收件箱'),html:html,focus:root.document.activeElement});
     }
 
