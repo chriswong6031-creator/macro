@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T08:23:29.017722+00:00",
-  "count": 998,
+  "generated_at": "2026-08-12T08:38:33.190566+00:00",
+  "count": 999,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -346,6 +346,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ax7epb2s5lu-056ff6",
+      "title": "Citi The Point for Europe Tuesday, 11 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T12:00:03Z",
+      "summary_points": [
+        "**Kingspan (KSP.I) - Earnings & TP Update**: \"Beat & raise\" 1H'26 results with €600m EBITDA forecast by '28 (vs prior), 27E trading profit +15.2% above consensus; TP raised to €133.5 despite unchanged multiples (11.7x EV/EBITDA), suspended buyback for balance sheet strength.",
+        "**GEA Group - Q2 Results**: Solid margin performance, base orders +12.6% YoY (dairy/NPE +30%+), FCF positive; EBITDA margin beat drives positive outlook amid strong order growth.",
+        "**Global Central Bank Tightening Bias**: 12/27 major central banks expected to hike rates in 2024 (vs 1 in 2023), central banks avoiding \"looking through\" inflation strategy; policy framing risks for inflation targets.",
+        "**Equity Short Pressure & Positioning Rebuild**: S&P 500 faces increased short pressure amid positioning rebuild; KOSPI deterioration and risk of abrupt covering if sentiment improves, creating volatility risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
