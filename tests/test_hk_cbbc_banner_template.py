@@ -308,6 +308,18 @@ def test_no_data_state_never_reads_balanced():
         )
 
 
+def test_zero_total_no_data_omits_ratio_bar_without_dividing():
+    """An honest 0+0 no-data row has no ratio to draw and must still render."""
+    zero = _make_bellwether(
+        leverage_state="no_data", bull_outstanding=0, bear_outstanding=0
+    )
+    html = _render(_make_cbbc_map(bellwethers=[zero, zero]))
+    for name, block in (("glance", _glance_slice(html)), ("dialog", _dialog_slice(html))):
+        assert 'class="hkx-bbar"' not in block, (
+            f"{name} surface must omit the bull/bear ratio bar when both totals are zero"
+        )
+
+
 # ---------------------------------------------------------------------------
 # (6) State-mapping pins (real engine vocabulary)
 # ---------------------------------------------------------------------------
