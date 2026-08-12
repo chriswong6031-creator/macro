@@ -56,7 +56,7 @@ ALLOWLIST: dict[str, tuple[str, str]] = {
         " fixture) — exactly the false crash split_adjust exists to prevent."
         " Disclosed as REVIEW-10 in research/PICK_FORWARD_DIST_PHASE0.md.",
     ),
-    "engine/top_maturation.py:266": (
+    "engine/top_maturation.py:347": (
         ".ffill().bfill()",
         "Split-repair back-adjustment factor, not a feature — the same construction"
         " as engine/pick_forward_dist.py:95 above, in the Winner Health trailing"
@@ -77,7 +77,22 @@ ALLOWLIST: dict[str, tuple[str, str]] = {
         " series rather than off close, and it is unchanged. It is also load-bearing"
         " (::test_split_repair_is_load_bearing_no_fabricated_crash_at_the_split):"
         " without the repair a 4:1 split prints as a -75% single-day crash. Display"
-        " tier — this panel feeds no score, rank, gate or size.",
+        " tier — this panel feeds no score, rank, gate or size."
+        " RE-REVIEWED 2026-08-11 (W2b three-tier board): the exemption moved from"
+        " line 266 to line 347 because that edit inserted the tier-model constants"
+        " and `_atr_distance` above this function and two high/low legs inside it —"
+        " the LINE ITSELF is byte-identical to origin/main and carries no `+`/`-` in"
+        " the diff, so this is a pure line-number shift and not a new construction."
+        " Re-reviewed at the new location rather than relocated on faith: the"
+        " backfill still fills only LEADING NaNs with the first known factor, and it"
+        " is point-in-time safe because a split-adjustment factor is a"
+        " back-adjustment CONSTANT between split events — a property of the corporate"
+        " action, not a market observation — so propagating the first priced bar's"
+        " factor backwards over unpriced rows cannot import a future price. The two"
+        " conditions the argument above rests on were re-checked and both hold: the"
+        " frame still ends `.dropna(subset=['close'])` (the newly added high/low"
+        " columns ride the same factor and are dropped on the same rows), and all"
+        " three measured tests cited above still pass.",
     ),
 }
 

@@ -51,6 +51,9 @@ a{color:var(--link);text-decoration:none}
 /* per-state accent binding — one class, four hues, everything downstream
    reads var(--mc). Also gives every state its RULE STYLE (see .rule). */
 .m1{--mc:var(--m1)} .m2{--mc:var(--m2)} .m3{--mc:var(--m3)} .m4{--mc:var(--m4)}
+/* NOT a fifth rung on the ramp — it is the ABSENCE of a rung, and it must never
+   be given a hue. "Not enough to compare" is not a stage of wear. */
+.m0{--mc:var(--muted)}
 
 /* ── page header ─────────────────────────────────────────────────────────── */
 .pghead{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;
@@ -160,6 +163,60 @@ a{color:var(--link);text-decoration:none}
 .thm .tmat{font-size:11.5px;font-weight:650;font-variant-numeric:tabular-nums}
 .thm .tmat.on{color:var(--m3)} .thm .tmat.off{color:var(--muted)}
 
+/* ── THE SHELF — three kinds of winner, compared honestly ─────────────────── */
+.shelf{display:grid;margin:20px 0 0}
+.sh-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 20px;
+  align-items:baseline;padding:14px 6px 16px;border-top:1px solid var(--hair);
+  text-decoration:none;color:inherit;border-radius:10px;transition:background .16s}
+.sh-row:first-child{border-top:none;padding-top:4px}
+.sh-row:hover{background:color-mix(in srgb,var(--text) 4%,transparent)}
+.sh-row:focus-visible{outline:2px solid color-mix(in srgb,var(--link) 70%,transparent);
+  outline-offset:2px}
+.sh-nm{font-size:15px;font-weight:750;letter-spacing:-.016em;color:var(--text)}
+.sh-n{font-size:12px;font-weight:700;color:var(--muted-strong);white-space:nowrap}
+.sh-n b{font-variant-numeric:tabular-nums}
+.sh-def{font-size:12.5px;color:var(--muted-strong);min-width:0}
+.sh-sum{font-size:12px;color:var(--muted);white-space:nowrap}
+.sh-sum b{font-variant-numeric:tabular-nums;color:var(--muted-strong);font-weight:650}
+.sh-bar{grid-column:1 / -1;margin-top:10px}
+.sh-bar .bar{height:10px;border-radius:3px}
+@media(max-width:620px){
+  .sh-row{grid-template-columns:minmax(0,1fr) auto}
+  .sh-sum{grid-column:1;justify-self:start;margin-top:2px}
+}
+
+/* ── TIER SECTION — position, name and size distinguish a tier. Never a hue:
+      on this page colour means wear, and a tier is not a severity. ────────── */
+.tier{margin:48px 0 0;scroll-margin-top:12px}
+.tier-hd{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
+  border-top:1px solid var(--line);padding-top:20px}
+.tier-hd h2{margin:0;font-size:21px;font-weight:800;letter-spacing:-.026em;color:var(--text)}
+.tier-def{margin:6px 0 0;font-size:13px;color:var(--muted-strong);max-width:64ch}
+.tier .ladder{margin-top:18px}
+/* the OFF-LADDER line. The ramp is a wear sequence; "not enough to compare" sits
+   outside it, so it takes no ramp hue and no decaying rule — a neutral hairline. */
+.rung.m0{--mc:var(--muted);margin-top:8px;padding-top:12px;border-top:1px solid var(--hair);
+  border-radius:0 0 9px 9px}
+.rung.m0 .rule{background:var(--hair);opacity:1;background-image:none}
+/* the mixed-cohort disclosure: quiet inset, NO state tint — a tinted banner reads
+   as an alarm, and this is a disclosure. */
+.mixnote{margin:16px 0 0;padding:12px 15px;border-radius:11px;max-width:80ch;
+  border:1px solid color-mix(in srgb,var(--text) 10%,transparent);
+  background:color-mix(in srgb,var(--text) 3.5%,transparent);
+  font-size:12.5px;line-height:1.58;color:var(--muted-strong)}
+.mixnote b{color:var(--text);font-weight:750}
+html[data-theme="light"] .mixnote{background:color-mix(in srgb,var(--text) 4.5%,transparent);
+  border-color:color-mix(in srgb,var(--text) 14%,transparent)}
+/* tier-level null band — quieter than the page hero, which outranks it */
+.tnull{margin:18px 0 0;border:1px solid var(--line);border-radius:14px;padding:20px 22px;
+  background:color-mix(in srgb,var(--panel) 72%,transparent)}
+.tnull h3{margin:0;font-size:17px;font-weight:750;letter-spacing:-.02em;color:var(--text)}
+.tnull p{margin:9px 0 0;font-size:13px;line-height:1.6;color:var(--muted-strong);max-width:62ch}
+.tnull p b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+.tnull .nullstance{color:var(--m1)}
+html[data-theme="light"] .tnull{background:var(--panel);
+  box-shadow:0 1px 2px rgba(20,32,64,.05),0 10px 26px -18px rgba(20,32,64,.28)}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    THE BOARD
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -182,6 +239,39 @@ a{color:var(--link);text-decoration:none}
     var(--mc) 21px 26px,transparent 26px 41px)}
 .grp-hd .cnt{font-size:12px;font-weight:700;color:var(--mc);font-variant-numeric:tabular-nums;
   white-space:nowrap}
+/* Twelve sticky group headers stack down a three-tier page, so each carries the
+   tier it belongs to. ONE token per group header, never a per-row badge. */
+.grp-hd .tkick{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--muted);white-space:nowrap}
+.grp-hd .tkick::after{content:"·";margin-left:9px;color:var(--line)}
+/* the m0 group's rule is a neutral hairline — it is NOT a fifth rung on the ramp.
+   Without this it inherits the --mc-tinted border and reads as a wear stage. */
+.grp.m0 .grp-hd{border-bottom-color:var(--line)}
+.grp.m0 .grp-hd .rule{background:var(--hair);opacity:1;background-image:none}
+/* REQUIRED (measured — §14.2): the tier kicker overflows the sticky header at
+   390px. It takes its own line there, and drops its separator with it. Without
+   this block the page side-scrolls on a phone. */
+@media(max-width:620px){
+  .grp-hd{flex-wrap:wrap;gap:5px 12px;padding-bottom:8px}
+  .grp-hd .tkick{flex:0 0 100%;order:-1}
+  .grp-hd .tkick::after{content:none}
+  .grp-hd h2{white-space:normal;font-size:16px}
+  .grp-hd .cnt{margin-left:auto}
+}
+.rollup{margin:8px 0 0;padding:13px 6px 15px;font-size:12.5px;line-height:1.5;
+  color:var(--muted);border-bottom:1px solid var(--hair)}
+/* compact rows: the sparkline cell is the only thing that leaves. Words, wear
+   marks, hovers and the library card all stay — the picture is what gets dropped
+   under load, never the reading. */
+.grp.compact .row{grid-template-columns:minmax(150px,1.15fr) 92px minmax(220px,2.1fr) auto}
+@media(max-width:820px){.grp.compact .row{grid-template-columns:minmax(0,1fr) auto}}
+/* the trend distance is a DISTANCE, not a direction — permanent green (permanent
+   red in ZH) would be a false directional cue. */
+.c-gain .fig.neutral{color:var(--text)}
+/* stale tape */
+.asof .lag{display:block;margin-top:4px;color:var(--muted);cursor:help;
+  border-bottom:1px dotted color-mix(in srgb,var(--text) 22%,transparent)}
+.asof .lag b{color:var(--muted-strong);font-weight:650}
 .grp-sub{margin:8px 0 2px;font-size:12.5px;color:var(--muted-strong);display:flex;gap:10px;
   align-items:baseline;flex-wrap:wrap}
 .grp-sub .stance{font-size:12px;font-weight:700;color:var(--mc);white-space:nowrap}
@@ -255,7 +345,12 @@ a.tk:hover{color:var(--link)}
   .rise,.rise.d1,.rise.d2,.rise.d3,
   .rise::before,.rise::after,
   .rung,.rung::before,.rung::after,
+  .sh-row,.sh-row::before,.sh-row::after,
   .row,.row::before,.row::after,
   .grp-hd::before,.grp-hd::after,
+  .tier-hd::before,.tier-hd::after,
+  .mixnote::before,.mixnote::after,
+  .rollup::before,.rollup::after,
+  .tnull::before,.tnull::after,
   .thm::before,.thm::after{animation:none!important;transition:none!important}
 }

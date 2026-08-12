@@ -214,9 +214,16 @@ class FixedCohortTransportLimits:
         """Bind the sibling harness's JSON-tree bounds to this byte envelope."""
 
         return DiscoveryLimits(
-            page_size=FIXED_COHORT_MAX_NCT_IDS,
+            # Request one sentinel slot beyond the largest legal cohort.  The
+            # source currently emits nextPageToken when pageSize equals the
+            # exact result count, even though no record remains.  The spare
+            # slot preserves the fail-closed continuation check without
+            # increasing membership: reconciliation below still rejects any
+            # record outside the at-most-25 declared identifiers.
+            page_size=FIXED_COHORT_MAX_NCT_IDS + 1,
             page_cap=1,
-            max_records=FIXED_COHORT_MAX_NCT_IDS,
+            max_records=FIXED_COHORT_MAX_NCT_IDS + 1,
+            max_page_records=FIXED_COHORT_MAX_NCT_IDS,
             max_response_bytes=self.max_response_bytes,
             max_total_response_bytes=self.max_run_bytes,
         )
@@ -345,7 +352,9 @@ def fixed_cohort_query_params(cohort: Mapping[str, Any]) -> tuple[tuple[str, str
     """Return the one deterministic bounded query this lane is allowed to send.
 
     ``query.id`` is the cohort's own comma-joined membership.  Nothing widens it:
-    there is no filter, no date window, and no continuation parameter.
+    there is no filter, no date window, and no continuation parameter.  One
+    extra page slot is a source-pagination sentinel, not membership capacity;
+    every returned identifier is still reconciled against the fixed cohort.
     """
 
     nct_ids = cohort["nct_ids"]
@@ -353,7 +362,7 @@ def fixed_cohort_query_params(cohort: Mapping[str, Any]) -> tuple[tuple[str, str
         ("query.id", cohort["query_id"]),
         ("fields", FIXED_COHORT_FIELDS_PARAM),
         ("format", "json"),
-        ("pageSize", str(len(nct_ids))),
+        ("pageSize", str(len(nct_ids) + 1)),
         ("countTotal", "true"),
     )
 
