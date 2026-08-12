@@ -43,7 +43,7 @@
 <title>{% block seo_title %}{{ page.title }} — {{ brand }}{% endblock %}</title>
 {# theme + language bootstrap: paint the stored / auto-detected mode before first
    layout so there is no flash. zh auto-detect mirrors the ticker dossier idiom. #}
-<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script>
 
 {#-- SEO head (subdir-safe; mirrors _seo_head.html.j2 but uses page.canonical) --#}
 <meta name="description" content="{{ page.description }}">
@@ -140,7 +140,7 @@ html body.estate{
   -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
 }
 html,body{overflow-x:clip;}                                 /* 390px bleed guard */
-body.estate a{color:var(--ink-link, var(--link)); text-decoration:none;}
+body.estate a{color:var(--link); text-decoration:none;}
 body.estate a:hover{text-decoration:underline; text-underline-offset:3px;}
 .mono,body.estate .mono{font-family:var(--num); font-variant-numeric:tabular-nums;
   font-feature-settings:"tnum" 1;}
@@ -231,8 +231,8 @@ body.estate a:hover{text-decoration:underline; text-underline-offset:3px;}
   white-space:nowrap; pointer-events:none;
   /* faint theme-aware halo so labels stay legible where they sit over strokes */
   text-shadow:0 0 3px var(--tile), 0 0 3px var(--tile), 0 0 5px var(--tile);}
-.sig-stage .sig-lbl.up{color:var(--ink-up, var(--up));} .sig-stage .sig-lbl.down{color:var(--ink-down, var(--down));}
-.sig-stage .sig-lbl.pivot{color:var(--ink-link, var(--link));}
+.sig-stage .sig-lbl.up{color:var(--up);} .sig-stage .sig-lbl.down{color:var(--down);}
+.sig-stage .sig-lbl.pivot{color:var(--link);}
 .sig-stage .sig-lbl.big{font-size:12.5px; font-weight:700; letter-spacing:0;}
 .sig-stage .sig-lbl.axis{color:var(--ink-3); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;}
 .sig-stage .sig-lbl.lead{text-align:left; transform:translate(0,-50%);}
@@ -349,13 +349,13 @@ html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
   font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
 .est-prose .callout p{margin:6px 0;} .est-prose .callout > :first-child.co-h + p{margin-top:0;}
 .est-prose .callout.lead{border-left:4px solid var(--link);}
-.est-prose .callout.lead .co-h{color:var(--ink-link, var(--link));}
+.est-prose .callout.lead .co-h{color:var(--link);}
 .est-prose .callout.warn{border-left:4px solid var(--warn);
   background:color-mix(in srgb,var(--warn) 8%,var(--panel2));}
-.est-prose .callout.warn .co-h{color:var(--ink-warn, var(--warn));}
+.est-prose .callout.warn .co-h{color:var(--warn);}
 .est-prose .callout.key{border-left:4px solid var(--ok);
   background:color-mix(in srgb,var(--ok) 9%,var(--panel2));}
-.est-prose .callout.key .co-h{color:var(--ink-ok, var(--ok));}
+.est-prose .callout.key .co-h{color:var(--ok);}
 
 /* formula — the desk's chalk line. Mono, on a faint tile with an accent edge. */
 .est-prose .formula{font-family:var(--num); font-variant-numeric:tabular-nums;
@@ -363,7 +363,7 @@ html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
   border:1px solid var(--hair-strong); border-left:3px solid var(--rail);
   border-radius:var(--r-md); padding:16px 18px; margin:18px 0; overflow-x:auto;
   max-width:var(--measure); color:var(--ink-1); letter-spacing:.005em;}
-.est-prose .formula strong{color:var(--ink-link, var(--link)); font-weight:700;}
+.est-prose .formula strong{color:var(--link); font-weight:700;}
 
 /* worked example — a machined tile with a mono heading + top hairline. */
 .est-prose .worked{border:1px solid var(--hair-strong); border-radius:var(--r-md); margin:18px 0;
@@ -399,7 +399,7 @@ html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
 .est-relcard:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--hair-strong));
   box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
 .est-relcard .rc-kind{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.09em;
-  text-transform:uppercase; color:var(--ink-link, var(--link));}
+  text-transform:uppercase; color:var(--link);}
 .est-relcard .rc-title{display:block; margin-top:4px; font-family:var(--font-ui); font-size:var(--fs-md);
   font-weight:700; color:var(--ink-1); line-height:1.32; letter-spacing:-.005em;}
 
@@ -409,7 +409,7 @@ html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
     var(--panel); box-shadow:var(--ms); display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
 .est-cta-block .cta-copy{flex:1 1 260px; min-width:0;}
 .est-cta-block .cta-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.08em;
-  text-transform:uppercase; color:var(--ink-link, var(--link));}
+  text-transform:uppercase; color:var(--link);}
 .est-cta-block .cta-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
   margin:3px 0 0; line-height:1.3; letter-spacing:-.01em; color:var(--ink-1);}
 .est-cta-block .gbtn{flex:none; font-family:var(--font-ui);}
@@ -434,7 +434,7 @@ html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
 .plot-line, .est-kicker-plot{display:none !important;}
 .est-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
 .est-kicker{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:var(--trk);
-  text-transform:uppercase; color:var(--ink-link, var(--link)); display:inline-flex; align-items:center; gap:9px;
+  text-transform:uppercase; color:var(--link); display:inline-flex; align-items:center; gap:9px;
   margin:0 0 12px;}
 .est-kicker::before{content:""; width:22px; height:2px; border-radius:1px;
   background:linear-gradient(90deg, var(--link), color-mix(in srgb,var(--link) 20%,transparent));}

@@ -87,17 +87,17 @@
   .co-main .co-unit{font-family:var(--font-ui); font-size:var(--fs-md); font-weight:600; color:var(--ink-3);}
   /* Law 3: the big number ALWAYS carries a plain-word interpretation sentence */
   .co-plain{font-family:var(--font-ui); font-size:var(--fs-md); line-height:1.5; color:var(--ink-1); margin:10px 0 0; max-width:60ch;}
-  .co-plain.warn{color:var(--ink-warn, var(--warn));}
+  .co-plain.warn{color:var(--warn);}
   .co-rows{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 20px;
     margin:16px 0 0; padding-top:14px; border-top:1px solid var(--hair);}
   .co-rows > div{display:flex; flex-direction:column; gap:2px;}
   .co-rows dt{font-family:var(--num); font-size:var(--fs-label); color:var(--ink-3); letter-spacing:.04em; text-transform:uppercase;}
   .co-rows dd{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-num-lg); font-weight:800;
     color:var(--ink-1); margin:0; line-height:1.1;}
-  .co-rows dd.pos{color:var(--ink-up, var(--up));} .co-rows dd.neg{color:var(--ink-down, var(--down));}
+  .co-rows dd.pos{color:var(--up);} .co-rows dd.neg{color:var(--down);}
 
   .calc-actions{margin:16px 0 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
-  .calc-actions .copied{font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--ink-ok, var(--ok)); opacity:0;
+  .calc-actions .copied{font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--ok); opacity:0;
     transition:opacity .2s;}
   .calc-actions .copied.show{opacity:1;}
   .calc-actions .gbtn{font-family:var(--font-ui);}
