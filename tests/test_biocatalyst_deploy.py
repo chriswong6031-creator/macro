@@ -137,7 +137,7 @@ def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
     assert "Group=macro-biocatalyst" in service
     assert "ConditionPathExists=/etc/macro-biocatalyst.env" in service
     assert "EnvironmentFile=/etc/macro-biocatalyst.env" in service
-    assert "Environment=BIOCATALYST_HISTORY_ENABLED=0" in service
+    assert "Environment=BIOCATALYST_HISTORY_ENABLED=" not in service
     assert "Environment=BIOCATALYST_STATE_ROOT=/var/lib/macro-biocatalyst/state" in service
     assert "Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public" in service
     assert "Environment=BIOCATALYST_ACTIVATION_ROOT=/var/lib/macro-biocatalyst/activation" in service
@@ -150,7 +150,8 @@ def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
         "/var/lib/macro-biocatalyst/activation/heartbeat.json"
     ) in service
     assert (
-        "ExecStart=/opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker "
+        "ExecStart=/usr/bin/env BIOCATALYST_HISTORY_ENABLED=0 "
+        "/opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker "
         "--mode canary_poll"
     ) in service
     timeout = int(re.search(r"^TimeoutStartSec=(\d+)$", service, re.MULTILINE).group(1))
@@ -302,10 +303,11 @@ def test_history_refresh_is_a_separate_daily_operator_armed_lane():
     assert "User=macro-biocatalyst" in service
     assert "Group=macro-biocatalyst" in service
     assert "EnvironmentFile=/etc/macro-biocatalyst.env" in service
-    assert "Environment=BIOCATALYST_HISTORY_ENABLED=1" in service
+    assert "Environment=BIOCATALYST_HISTORY_ENABLED=" not in service
     assert (
-        "ExecStart=/opt/macro-biocatalyst/current/bin/python -m "
-        "scripts.biocatalyst_worker --mode canary_poll"
+        "ExecStart=/usr/bin/env BIOCATALYST_HISTORY_ENABLED=1 "
+        "/opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker "
+        "--mode canary_poll"
     ) in service
     assert "TimeoutStartSec=2700" in service
     for setting in (
