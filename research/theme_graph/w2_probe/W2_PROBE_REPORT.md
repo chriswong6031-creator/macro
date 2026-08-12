@@ -486,7 +486,7 @@ about reconstruction-era membership, not about an observed tape of membership ch
 **Q1 — does the H2 result survive with the volatility ratio removed? Yes, and it
 strengthens.** All 3 computable companion pairs read MEASURABLY-DISAGREE
 — including `attention_share.us.flare.v0`, which was only PARTIALLY-DISTINCT on the frozen beta
-pair. 
+pair.
 The LHB pair moves furthest: median |rho| 0.045 on co-movement against 0.387 on beta — near-orthogonal once the vol term is gone. So the residual agreement between
 beta and attention was carried substantially BY the volatility ratio (volatile names
 score high on both), not by co-movement. The frozen H2 finding is not an artifact of the
