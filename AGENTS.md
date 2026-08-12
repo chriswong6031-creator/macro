@@ -176,6 +176,46 @@ blocks: an absence of red is not a pass (#4779), and releasing on a head that
 nothing proves ORPHANS the work, because the sweeper will refuse it for exactly
 the same reason.
 
+## Runner routing policy (operator charter 2026-08-12)
+
+Trusted CI runs SELF-HOSTED by default; GitHub-hosted compute is a registered
+exception. Design doc: `research/CI_SELFHOSTED_MIGRATION_WAVE1.md`.
+
+- **Trusted = same-repo pull requests and main proofs.** `ci.yml`'s `ci-pack` and
+  `fences.yml`'s `fence-pack` run on `[self-hosted, Linux, X64, render-linux]` —
+  which is ONE physical 24-core / 31 GiB host (`winpc`) exposing four runner
+  slots, not four machines (canary run 31595700406). Charter §6 partitions it
+  2 CI / 1 render / 1 control-burst, which is why `ci-pack` carries
+  `strategy.max-parallel: 2`. Do not raise that number from a runner COUNT; the
+  count is slots, and the host is one box.
+- **Fork/untrusted heads NEVER run self-hosted.** This repository is PUBLIC, so
+  that is load-bearing rather than theoretical. Three independent layers hold it:
+  the fork branch of `ci-pack`'s `runs-on` expression, `fence-pack`'s same-repo
+  `if:` (fork PRs take the hosted `fork-*` fallbacks instead), and the repository's
+  `approval_policy: all_external_contributors` (verified live 2026-08-12).
+- **Every GitHub-hosted job must be registered** in `.github/runner-policy.yml`
+  with a `{workflow, job, class, reason}` entry. `scripts/check_runner_policy.py`
+  fails closed on an unregistered hosted job, on a self-hosted job in a
+  `pull_request` workflow with no same-repo guard, and on `pull_request_target`
+  anywhere (no override). It is wired into the `workflow-yaml` legacy job and
+  `integration-baseline.yml`. An OPAQUE `runs-on` expression — one naming neither
+  a hosted label nor `self-hosted` — also needs an entry: being unable to prove a
+  job is self-hosted is not evidence that it is.
+- `ci-plan` / `ci-gate` stay hosted as registered `cheap-orchestration`
+  exceptions: they are the serial head/tail of every run and ~2-3% of its minutes,
+  and at ~20 ci runs/hr they would otherwise hold ~1.7 of the host's 4 slots.
+- **`pending-migration` entries are the Wave-2 worklist** (43 jobs at Wave 1,
+  mostly scheduled publish/collect lanes). That list should only ever shrink.
+- **Fleet-down recovery lever:**
+  `gh workflow run ci.yml --ref main -f runner_pool=hosted` routes the packs back
+  to `ubuntu-latest` for that dispatch only. It is inert on non-dispatch events
+  because `inputs` is empty there. Preflight for an in-flight main baseline first
+  — a re-dispatch cancels the proof every pinned session is waiting on.
+- Why it matters even though CI bills $0 today: measured month-to-date 2026-08,
+  this repo metered 267,066 Actions Linux minutes ($1,602.40 gross) discounted to
+  **net $0.00** solely because the repo is PUBLIC. The migration is the
+  prerequisite for taking Mastermind private without ~$130+/day of real spend.
+
 ## Definition of done
 
 SYSTEM done for a substantive, verified change is the full delivery chain, which
@@ -245,8 +285,9 @@ with packs still pending).
 the pull request, run `gh pr edit <n> --add-label merge-on-green`, then
 `python3 scripts/ci_handoff.py`, emit the `CI_HANDOFF=` marker, and stop
 (§CI handoff is terminal).
-`.github/workflows/merge-on-green.yml` (GitHub-hosted `ubuntu-latest`, every 10 minutes,
-deliberately off every self-hosted render pool) squash-merges the
+`.github/workflows/merge-on-green.yml` (the dedicated `[self-hosted, macOS, ARM64,
+merge-control]` runner — mac-builder-4 — every 10 minutes, deliberately off every
+render pool so a saturated render lane can never stall the merge train) squash-merges the
 pull request once every check has CONCLUDED clean, with the known-spurious
 `Workers Builds: macro` X excluded. A genuine red or a merge conflict gets the
 `merge-blocked` label plus ONE explanatory comment instead of a merge; the

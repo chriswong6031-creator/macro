@@ -19,6 +19,20 @@ WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 MANIFEST = ROOT / ".github" / "ci" / "legacy-jobs.yml"
 FENCES = ROOT / ".github" / "workflows" / "fences.yml"
 
+# The ci-pack trust-routing expression, written out ONCE (operator charter
+# 2026-08-12). YAML parses it as a plain string, so this is an exact compare.
+# Read it as three ordered branches:
+#   1. fork pull_request           -> 'ubuntu-latest'   (untrusted head)
+#   2. dispatch runner_pool=hosted -> 'ubuntu-latest'   (fleet-down recovery)
+#   3. everything else             -> the render-linux self-hosted pool
+# Branch 1 is a security boundary on a PUBLIC repository, not a preference.
+CI_PACK_RUNS_ON = (
+    "${{ (github.event_name == 'pull_request' && "
+    "github.event.pull_request.head.repo.full_name != github.repository) && "
+    "'ubuntu-latest' || inputs.runner_pool == 'hosted' && 'ubuntu-latest' || "
+    "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"render-linux\"]') }}"
+)
+
 SPEC = importlib.util.spec_from_file_location(
     "run_ci_pack", ROOT / "scripts" / "run_ci_pack.py"
 )
@@ -1173,7 +1187,7 @@ def test_pack_command_folds_to_exactly_one_shell_command() -> None:
         assert command.rstrip().endswith("--execute")
 
 
-def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
+def test_ci_pack_routes_trusted_runs_to_selfhosted_and_forks_to_hosted() -> None:
     workflow = _yaml(WORKFLOW)
     # This job set was EXACTLY {"ci-pack"} until Wave B (2026-08-11) added the
     # planner and the aggregate. Pinned as a subset, not as equality: the
@@ -1202,34 +1216,67 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
         static = matrix["pack"]
         assert static == list(range(len(static)))
         assert len(static) == 12
-    # EVERY event runs on the hosted pool — one `runs-on`, no event-dependent routing,
-    # so main's baseline and a pull request prove the packs the SAME way.
+    # ROUTING BY TRUST (operator charter 2026-08-12). This file used to pin
+    # `runs-on == "ubuntu-latest"` and BAN the substrings self-hosted /
+    # render-linux / macstudio. Those bans described the 2026-08-09 posture, where
+    # abundant Enterprise hosted capacity made one flat `runs-on` strictly better
+    # than the self-hosted detour it replaced. Cost now rules the key instead:
+    # 267,066 metered Linux minutes month-to-date, discounted to $0.00 only
+    # because this repository is currently PUBLIC, and ~$130+/day the moment it
+    # goes private. So the property being defended MOVED — from "one runner for
+    # every event" to "trusted events self-hosted, untrusted heads never".
     #
-    # This replaces the 2026-08-09 self-hosted detour. Main's proof was briefly routed
-    # to `["self-hosted","render-linux"]` because it sat `queued` 30+ minutes behind 133
-    # queued runs while that pool idled, and a starved main proof blocks the whole fleet
-    # (`merge_on_green.main_proof` reads the newest CONCLUDED ci.yml run on main, so
-    # without one the base-inherited-red refresh cannot fire). The repository then moved
-    # to the MastermindX enterprise org and hosted capacity became large enough to start
-    # all twelve packs together. There is nothing left to escape, and the detour cost
-    # more than it saved: `render-linux` is FOUR runners shared with render.yml,
-    # engine-render.yml and merge-on-green.yml, so even four packs took the entire pool
-    # and starved the sweeper that merges every armed pull request.
-    assert pack["runs-on"] == "ubuntu-latest"
-    # The self-hosted pools are the render/nightly lanes and must never absorb CI packs.
+    # No safety assert was dropped to get here. The old bans were about pool
+    # starvation; the new pins are about a fork PR reaching a persistent home
+    # runner, which is strictly the more serious of the two.
+    assert pack["runs-on"] == CI_PACK_RUNS_ON
     runs_on = " ".join(str(pack["runs-on"]).split())
-    assert "macstudio" not in runs_on
-    assert "render-linux" not in runs_on
-    assert "self-hosted" not in runs_on
-    assert pack["strategy"]["fail-fast"] is False
-    # No `max-parallel`: it existed only to stop main's packs from taking all four
-    # `render-linux` runners. With no shared pool to protect, throttling would only
-    # double main's proof (~26 min -> ~50 min), and it cannot help against the hosted
-    # ceiling because that limit is ACCOUNT-wide, not per-matrix.
-    assert "max-parallel" not in pack["strategy"], (
-        "reintroducing max-parallel only slows main's proof; the hosted concurrency "
-        "ceiling is account-wide and this key cannot raise it"
+    # Branch 1 — the fork boundary. Without this comparison every fork PR on a
+    # PUBLIC repository executes attacker-authored code on the operator's own
+    # machine. It is the single most important string in this workflow.
+    assert (
+        "github.event.pull_request.head.repo.full_name != github.repository" in runs_on
+    ), "the fork branch is the security boundary — a fork head must resolve hosted"
+    # Branches 1 and 2 both land on hosted runners: the fork fallback and the
+    # fleet-down recovery lever.
+    assert runs_on.count("'ubuntu-latest'") == 2, (
+        "expected exactly two hosted branches: the fork fallback and the "
+        "runner_pool=hosted recovery lever"
     )
+    assert "inputs.runner_pool == 'hosted'" in runs_on
+    # Branch 3 — the trusted default. `fromJSON` because a runs-on expression
+    # must yield a real array, not a string that looks like one.
+    assert (
+        "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"render-linux\"]')" in runs_on
+    )
+    # The macstudio pool is the render/nightly lane and must never absorb CI packs
+    # (CLAUDE.md — render budget is law). That ban is unchanged.
+    assert "macstudio" not in runs_on
+    assert pack["strategy"]["fail-fast"] is False
+    # `max-parallel: 2` is REQUIRED again, and the reason is a measurement rather
+    # than a preference: canary run 31595700406 (2026-08-12) reported the same
+    # hostname `winpc` and machine_id `da9bccd5` from all four matrix slots —
+    # pc-render-1..4 are four runner SLOTS on ONE physical 24-core / 31 GiB host.
+    # Charter §6 partitions that host 2 CI / 1 render / 1 control-burst. Unlike
+    # 2026-08-09 this cannot starve the sweeper: merge-on-green.yml is no longer
+    # co-resident, it holds the dedicated merge-control runner.
+    assert pack["strategy"]["max-parallel"] == 2, (
+        "render-linux is ONE physical 24-core host with four runner slots (canary "
+        "31595700406); charter §6 gives CI two of them"
+    )
+    # The recovery lever must be DECLARED, or `inputs.runner_pool` is always empty
+    # and branch 2 is dead code that reads live.
+    triggers_block = workflow.get("on") or workflow.get(True)
+    runner_pool = triggers_block["workflow_dispatch"]["inputs"]["runner_pool"]
+    assert runner_pool["options"] == ["selfhosted", "hosted"]
+    assert runner_pool["default"] == "selfhosted"
+    # ci-plan and ci-gate stay hosted in Wave 1 as REGISTERED cheap-orchestration
+    # exceptions (.github/runner-policy.yml): they are the serial head/tail of
+    # every run, ~2-3% of its minutes, and at ~20 ci runs/hr the plan jobs alone
+    # would hold ~1.7 of the host's 4 slots — capacity the packs need.
+    # tests/test_runner_policy.py owns the registry side of that contract.
+    assert workflow["jobs"]["ci-plan"]["runs-on"] == "ubuntu-latest"
+    assert workflow["jobs"]["ci-gate"]["runs-on"] == "ubuntu-latest"
     # The closed-event fence must LEAD the condition. Wave B appends
     # `&& needs.ci-plan.outputs.has_work == 'true'`; anything that replaces the
     # fence instead of extending it re-allocates a runner for every merged-close.
@@ -1340,7 +1387,21 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
         "fork-grader-manifest",
     }
     pack = jobs["fence-pack"]
-    assert pack["runs-on"] == "ubuntu-latest"
+    # SELF-HOSTED since the operator charter 2026-08-12. This job needs no trust
+    # expression in `runs-on` because the `if:` above already IS the boundary: a
+    # fork PR fails it and the job never exists for that head (the fork-* jobs
+    # below take it, and they stay hosted). scripts/check_runner_policy.py fails
+    # closed if that guard is ever weakened.
+    assert pack["runs-on"] == ["self-hosted", "Linux", "X64", "render-linux"]
+    assert "head.repo.full_name == github.repository" in " ".join(pack["if"].split())
+    # A cold first checkout on this pool is the expensive one — integration-baseline
+    # measured >12 min updating the ~60k-path index on the same host — against a job
+    # that otherwise finishes in 1-2. 30 is a hang bound, not a budget.
+    assert pack["timeout-minutes"] == 30
+    # A self-hosted runner REUSES its workspace, so a sibling's sparse checkout can
+    # leave this job with a partial tree and a GREEN "Set up job". The clear must be
+    # FIRST: anything before it (a checkout, most of all) runs against the poison.
+    assert "clear any sparse checkout" in pack["steps"][0]["name"]
     checkout = next(
         step
         for step in pack["steps"]

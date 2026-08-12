@@ -194,6 +194,16 @@ on:
       - "tests/test_seo_meta_rollout.py"
       - ".github/workflows/ci.yml"
       - ".github/ci/legacy-jobs.yml"
+      # Runner-routing policy guard (operator charter 2026-08-12): guard, registry,
+      # and suite — each must be able to start the job that runs them (#3488 both halves).
+      - "scripts/check_runner_policy.py"
+      - ".github/runner-policy.yml"
+      - "tests/test_runner_policy.py"
+      # Rider heal (2026-08-12): #5458's odometer suite shipped with no run: step —
+      # now carried by ftr-tape-surfaces. Test-only edits must still start the pack
+      # that executes it (ci-test-whitelist-rot idiom); subjects ride templates/**
+      # and site/** above.
+      - "tests/test_odometer_light_mode_surface.py"
       # Research Vault (RV W1) ingestion spine: sidecar contract, corpus FTS,
       # catalog, and the idempotent never-raise ingest pipeline. (RV W3) adds the
       # SSR page builder + its render test + the page template.
@@ -3935,6 +3945,14 @@ on:
       # this whole job exists to end.
       - "tests/test_price_basis_graders.py"
   workflow_dispatch:
+    inputs:
+      runner_pool:
+        description: "Runner pool for the CI packs. selfhosted = render-linux pool (default; operator charter 2026-08-12). hosted = GitHub-hosted recovery lane for when the self-hosted fleet is down (GITHUB-HOSTED EXCEPTION: recovery)."
+        type: choice
+        options:
+          - selfhosted
+          - hosted
+        default: selfhosted
 
 permissions:
   contents: read
@@ -4035,6 +4053,7 @@ jobs:
     # workflow-level concurrency side effect above.
     if: github.event.action != 'closed'
     name: ci-plan
+    # GITHUB-HOSTED EXCEPTION (cheap-orchestration): serial head/tail of every run, ~2-3% of minutes; registered in .github/runner-policy.yml; Wave-2 migration candidate.
     runs-on: ubuntu-latest
     # Planning loads one manifest and diffs one base; 30 minutes is a hang bound,
     # not a budget. `ci-pack` keeps its own 180.
@@ -4141,47 +4160,83 @@ jobs:
     # about the twelve-way PARTITION moved: `--pack-count 12` is still passed here
     # and in `ci-plan`, and the same greedy balance produces the same packs.
     name: ci-pack-${{ matrix.pack }}
-    # EVERY event runs on the hosted pool. The self-hosted detour is retired.
+    # TRUSTED EVENTS RUN SELF-HOSTED; UNTRUSTED HEADS NEVER DO (operator charter
+    # 2026-08-12). These comments are executable provenance: this key has now moved
+    # three times, and every act below is kept because the NEXT person to move it
+    # needs the constraints that were true each time, not just the current answer.
     #
-    # History, because the reversal is the point: main's proof was moved to
-    # `["self-hosted","render-linux"]` earlier on 2026-08-09 because it sat `queued`
-    # 30+ minutes behind 133 queued runs and never started, while `pc-render-1..4`
-    # idled. That starved run blocked the whole fleet — `merge_on_green.main_proof`
-    # answers "is main green on ci-pack-N" from the newest CONCLUDED ci.yml run on
-    # main, so with no fresh proof the base-inherited-red refresh cannot fire and every
-    # armed pull request that inherited a since-healed red stays blocked.
+    # ── PRIOR ACT 1 (2026-08-09, morning): hosted -> self-hosted ────────────────
+    # Main's proof was moved to `["self-hosted","render-linux"]` because it sat
+    # `queued` 30+ minutes behind 133 queued runs and never started, while
+    # `pc-render-1..4` idled. That starved run blocked the whole fleet —
+    # `merge_on_green.main_proof` answers "is main green on ci-pack-N" from the newest
+    # CONCLUDED ci.yml run on main, so with no fresh proof the base-inherited-red
+    # refresh cannot fire and every armed pull request that inherited a since-healed
+    # red stays blocked.
     #
-    # That fix was correct for its constraint, and the constraint is now GONE. The
+    # ── PRIOR ACT 2 (2026-08-09, later): self-hosted -> hosted ──────────────────
+    # That fix was correct for its constraint, and the constraint went away. The
     # repository moved to the MastermindX enterprise organization on 2026-08-09 and its
-    # paid Enterprise plan now carries GitHub's 500-standard-hosted-job ceiling instead
-    # of the 20-job Free ceiling. The measured backlog that caused the starvation was
-    # ~195 hosted jobs, so it now fits inside one wave; observed four-pack jobs begin
-    # within the same second. There is no longer anything to escape.
+    # paid Enterprise plan carries GitHub's 500-standard-hosted-job ceiling instead of
+    # the 20-job Free ceiling. The measured backlog that caused the starvation was ~195
+    # hosted jobs, so it fit inside one wave; observed four-pack jobs began within the
+    # same second. The detour also cost real capacity while it lasted:
+    #   * `render-linux` is FOUR runner slots shared with `render.yml`,
+    #     `engine-render.yml` and, at the time, `merge-on-green.yml`. Main's four packs
+    #     took the entire pool, starving both renders and the sweeper.
+    #   * `max-parallel: 2` was deleted with it, because on hosted runners there was no
+    #     shared pool left to protect.
+    #   * One `runs-on` for every event removed event-dependent routing entirely.
     #
-    # Routing back is strictly better than leaving it:
-    #   * `render-linux` is FOUR runners shared with `render.yml`, `engine-render.yml`
-    #     and, at the time, `merge-on-green.yml`. Main's four packs took the entire
-    #     pool, starving both renders and the sweeper. The packs and sweeper now use
-    #     hosted runners; all four self-hosted slots are back with render workloads.
-    #   * The `max-parallel: 2` that bounded that damage is deleted with it — on hosted
-    #     runners the hosted packs run concurrently again. With paid Enterprise
-    #     capacity, twelve balanced packs reduce the measured 40-55 minute
-    #     four-pack tail without competing with render workers.
-    #   * One `runs-on` for every event removes the event-dependent routing entirely,
-    #     so main's baseline and a pull request now prove the packs the SAME way.
+    # ── THIS ACT (2026-08-12): hosted -> TRUSTED-ROUTED, self-hosted by default ──
+    # The Enterprise ceiling did not come back, but COST now rules the key. Measured
+    # against the org billing API month-to-date 2026-08: Actions Linux 267,066 minutes
+    # gross-metered ($1,602.40), discounted to net $0.00 — fully discounted ONLY
+    # because this repository is currently PUBLIC. The operator's stated intent is to
+    # take Mastermind private, and the same 267k minutes bill ~$130+/day the moment
+    # visibility flips. This migration is the PREREQUISITE for that flip, not a
+    # reaction to a bill that already arrived.
     #
-    # NOT the macstudio pool, unchanged: that is the render/nightly lane and is
-    # routinely saturated (CLAUDE.md — render budget is law).
-    runs-on: ubuntu-latest
+    # The routing expression below therefore splits by TRUST, not by capacity:
+    #   * Same-repo `pull_request` and every `workflow_dispatch` (main's baseline) are
+    #     trusted -> `["self-hosted","Linux","X64","render-linux"]`.
+    #   * A `pull_request` whose head repo full_name differs from this repository is a
+    #     FORK -> `ubuntu-latest` (GITHUB-HOSTED EXCEPTION: untrusted fork code must
+    #     never execute on persistent home runners — this repo is PUBLIC, so that is
+    #     load-bearing, not theoretical). The YAML is the first of three layers; the
+    #     repository also holds `approval_policy: all_external_contributors` (verified
+    #     live 2026-08-12) and a read-only default workflow token.
+    #   * `inputs.runner_pool == 'hosted'` is the FLEET-DOWN RECOVERY LEVER
+    #     (`gh workflow run ci.yml --ref main -f runner_pool=hosted`). It is inert on
+    #     every non-dispatch event because `inputs` is empty there, so it can never
+    #     accidentally route a pull request.
+    # `scripts/check_runner_policy.py` + `.github/runner-policy.yml` keep this shape
+    # from silently regressing; the fork branch and the recovery value are both
+    # registered exceptions there.
+    #
+    # NOT the macstudio pool, unchanged across all three acts: that is the
+    # render/nightly lane and is routinely saturated (CLAUDE.md — render budget is law).
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && 'ubuntu-latest' || inputs.runner_pool == 'hosted' && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","X64","render-linux"]') }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
-      # NO `max-parallel`. It existed only to stop main's four packs from taking all
-      # four `render-linux` runners and starving `merge-on-green.yml`, then co-resident
-      # on that pool. With both control/proof lanes hosted there is no shared pool to
-      # protect, and throttling would only make main's proof twice as slow (~26 min
-      # unthrottled vs ~50 min at 2). Do not reintroduce one without a shared-pool
-      # reason; the hosted ceiling is an ACCOUNT-wide limit that this key cannot help.
+      # `max-parallel: 2` RETURNS (2026-08-12), because the shared-pool reason that
+      # justified deleting it returned with the self-hosted routing above. The deletion
+      # note said "do not reintroduce one without a shared-pool reason" — this is that
+      # reason, measured rather than assumed.
+      #
+      # `render-linux` is not four machines. Canary run 31595700406 (2026-08-12,
+      # .github/workflows/runner-canary.yml, four matrix slots) reported the SAME
+      # hostname `winpc` and the SAME machine_id `da9bccd5` from every slot, with four
+      # `Runner.Listener` processes on that host: pc-render-1..4 are four runner SLOTS
+      # on ONE physical 24-core / 31 GiB box. Twelve concurrent packs would therefore
+      # be twelve pack processes on 24 cores with four checkouts of a ~60k-path tree.
+      #
+      # Charter §6 one-PC posture partitions that host: 2 CI / 1 render / 1
+      # control-burst. `max-parallel: 2` is the CI half of that partition, and unlike
+      # 2026-08-09 it does not starve the sweeper — `merge-on-green.yml` is no longer
+      # co-resident here, it runs on the dedicated `[self-hosted, macOS, ARM64,
+      # merge-control]` runner (mac-builder-4). The render lanes keep the other slots.
       #
       # The literal `pack: [0..11]` list that stood here until Wave B (2026-08-11) is
       # now the PLAN's, emitted by `ci-plan` as {"include": [{"pack": N}, ...]} over
@@ -4191,6 +4246,7 @@ jobs:
       # here and in `ci-plan`. Under the default shadow matrix mode the plan emits
       # all twelve indices regardless of selection, so this reads identically to the
       # old literal until CI_DYNAMIC_MATRIX_MODE is switched to `active`.
+      max-parallel: 2
       matrix: ${{ fromJSON(needs.ci-plan.outputs.matrix) }}
     steps:
       # A self-hosted runner REUSES its workspace between jobs, and a sibling job that
@@ -4319,6 +4375,7 @@ jobs:
     if: always() && github.event.action != 'closed'
     name: ci-gate
     needs: [ci-plan, ci-pack]
+    # GITHUB-HOSTED EXCEPTION (cheap-orchestration): serial head/tail of every run, ~2-3% of minutes; registered in .github/runner-policy.yml; Wave-2 migration candidate.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

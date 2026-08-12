@@ -1650,6 +1650,61 @@ checks:
       owns the US one — and in each it is ordered AFTER that lane's snapshot
       writer so it grades this run's stamp rather than the previous night's.
 
+  - law_id: ops.runner_routing_policy
+    summary: >
+      Trusted CI runs SELF-HOSTED and every GitHub-hosted job is a registered
+      exception in .github/runner-policy.yml (operator charter 2026-08-12). Three
+      fail-closed rules: (R1) any job whose runs-on CAN resolve to a hosted label
+      — including an OPAQUE expression naming neither a hosted label nor
+      self-hosted — must carry a {workflow, job, class, reason} entry; (R2) any
+      job that can resolve to self-hosted inside a pull_request-triggered
+      workflow must carry a same-repo guard, in the runs-on expression
+      (ci.yml/ci-pack) or the job if: (fences.yml/fence-pack), because this
+      repository is PUBLIC and the fleet is four runner slots on one machine in
+      the operator's home; (R3) pull_request_target is forbidden outright with no
+      registry override. A stale entry matching no job is a warning, not a red.
+      The cost half: 267,066 metered Actions Linux minutes month-to-date 2026-08,
+      $1,602.40 gross, net $0.00 only because the repo is public — the migration
+      is the prerequisite for going private without ~$130+/day of real spend.
+    source_ref:
+      - scripts/check_runner_policy.py
+      - .github/runner-policy.yml
+      - research/CI_SELFHOSTED_MIGRATION_WAVE1.md
+    severity: hard
+    check_script: scripts/check_runner_policy.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Static YAML analysis only. It cannot see GitHub-side settings — fork-PR
+        approval policy, runner-group scoping, or which physical machine a label
+        actually resolves to; those were verified live 2026-08-12 and recorded in
+        the design doc, not by this guard.
+      - >-
+        The same-repo guard check is TEXTUAL: it looks for
+        `head.repo.full_name != github.repository` in the runs-on expression or
+        `head.repo.full_name == github.repository` in the job if:. A semantically
+        equivalent guard written differently would be reported as missing.
+      - >-
+        A job whose runs-on comes from a reusable-workflow call (uses: with no
+        runs-on) is skipped; local callees under .github/workflows are walked
+        directly, so coverage is lost only for callees hosted in another repo.
+      - >-
+        pending-migration entries pass the gate by construction. The registry
+        records hosted DEBT honestly; it does not force the debt down.
+    owner_program: ci-selfhosted-migration
+    notes: >
+      Also wired post-merge in .github/workflows/integration-baseline.yml (both
+      the guard and tests/test_runner_policy.py), which is what catches a routing
+      regression reaching main through a lane ci.yml's paths: filter does not
+      gate. The three new files carry explicit ci.yml paths: entries so the job
+      that runs them can be started by editing them (#3488 both halves).
+
   - law_id: ops.workflow_yaml_parses
     summary: >
       Every file under .github/workflows/ must load as YAML and carry an on:

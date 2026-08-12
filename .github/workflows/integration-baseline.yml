@@ -114,8 +114,19 @@ jobs:
         run: python scripts/check_workflow_yaml.py --selftest
       - name: every workflow must parse
         run: python scripts/check_workflow_yaml.py .github/workflows
-      - name: hosted-runner packing and merge-train contracts
+      - name: CI packing and merge-train contracts
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
+      # Post-merge coverage for the runner-routing policy (operator charter
+      # 2026-08-12). The PR-side twin lives in the workflow-yaml legacy job; this
+      # copy is what catches a routing regression that reached main through a lane
+      # ci.yml's paths: filter does not gate — the same both-halves reasoning that
+      # put the packing contract above here.
+      - name: runner-routing policy gate (trusted=self-hosted; hosted=registered exceptions)
+        run: |
+          python scripts/check_runner_policy.py --selftest
+          python scripts/check_runner_policy.py
+      - name: runner policy suite
+        run: python -m pytest tests/test_runner_policy.py -q
       - name: skip-only detector selftest
         run: python scripts/check_skip_only_suites.py --selftest
       - name: no named suite may skip in every owning job

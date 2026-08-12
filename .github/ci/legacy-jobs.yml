@@ -1749,7 +1749,19 @@ jobs:
       - name: ci-plan/ci-pack/ci-gate workflow structure contract
         run: python -m pytest tests/test_ci_plan_workflow.py -q
       - name: hosted-runner packing contract
-        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
+        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_runner_policy.py -q
+      # RUNNER-ROUTING POLICY (operator charter 2026-08-12), wired into the same job
+      # for the same reason as the two steps above: its subject is .github/workflows/
+      # and its deps are pytest+pyyaml, already installed. Trusted CI now runs on the
+      # self-hosted render-linux host and GitHub-hosted compute is a registered
+      # exception — a routing regression is a ONE-TOKEN edit (`runs-on: ubuntu-latest`)
+      # that breaks nothing visible, and on the fork branch it is a public repo handing
+      # attacker-authored code to a persistent home runner. The selftest runs first so
+      # the live gate is never trusted from a guard that has stopped detecting anything.
+      - name: runner-policy selftest + live gate
+        run: |
+          python scripts/check_runner_policy.py --selftest
+          python scripts/check_runner_policy.py
       # The terminal CI handoff (`mastermind.ci_handoff.v1`) — the rule deciding WHEN a
       # worker stops. Same subject as the packing step above: the sweeper that step
       # already pins via tests/test_merge_on_green.py is the party that owns the merge
@@ -3138,6 +3150,13 @@ jobs:
         run: pip install pytest jinja2
       - name: FTR tape-surface template guards
         run: python -m pytest tests/test_ftr_w1_template_markup.py tests/test_ftr_w3_ui.py -q
+      # Rider heal (2026-08-12): #5458 shipped this suite with no run: step anywhere —
+      # the audit_unrun_tests gate reds every full-suite run until it is wired. It
+      # belongs HERE by subject: pure template/theme surface pins (the light-mode
+      # odometer needle contract across five report templates + the theme.css copy
+      # pair), same shape and same dependency set as the FTR guards above.
+      - name: light-mode odometer needle contract (five report templates + theme copy pair)
+        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
 
   live-flow-ops:
     if: ${{ false }}

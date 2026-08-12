@@ -68,8 +68,52 @@ jobs:
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    # ROUTED SELF-HOSTED per the operator charter 2026-08-12 (trusted CI consumes
+    # self-hosted compute; GitHub-hosted becomes a registered exception). Unlike
+    # ci.yml's `ci-pack`, this job needs no trust expression in `runs-on`, because the
+    # `if:` above ALREADY IS the security boundary: a fork PR fails that condition and
+    # this job never exists for it (the fork-* fallbacks below take those heads, and
+    # they stay hosted). Pushes to main are trusted by construction. Deleting or
+    # weakening that `if:` therefore does two things at once — it breaks the fork
+    # check-context fallback AND it lets untrusted code onto the persistent home
+    # fleet on a PUBLIC repository. scripts/check_runner_policy.py fails closed on
+    # exactly that: a self-hosted-resolvable job in a pull_request workflow must carry
+    # a same-repo guard.
+    runs-on: [self-hosted, Linux, X64, render-linux]
+    # This lane runs on EVERY PR and EVERY main push, so its first checkout on a cold
+    # runner is the expensive one: integration-baseline measured >12 minutes updating
+    # the ~60k-path index on this same pool, against a job that used to finish in 1-2.
+    # 30 minutes is a hang bound, not a budget — the same number and the same reason
+    # as integration-baseline.yml.
+    timeout-minutes: 30
     steps:
+      # VERBATIM from ci.yml's `ci-pack` (same shared workspace, same failure). A
+      # self-hosted runner REUSES its workspace between jobs, and a sibling job that
+      # checked out sparsely leaves `core.sparseCheckout=true` behind in the SAME
+      # directory; `actions/checkout@v4` does not clear that when its own
+      # `sparse-checkout` input is absent, so the next job silently gets a partial
+      # tree and dies on a missing source file after a GREEN "Set up job". Keep both
+      # halves: `disable` re-materialises the paths, the `config --unset-all` is what
+      # actually ends the outage (checkout unsets `extensions.worktreeConfig`, which
+      # makes the repo-scoped flag visible and effective again). Hosted runners get a
+      # fresh VM per job and cannot hit this, hence the guard.
+      - name: clear any sparse checkout a sibling job left in this shared workspace
+        if: runner.environment != 'github-hosted'
+        shell: bash
+        run: |
+          if [ -d "${{ github.workspace }}/.git" ]; then
+            git -C "${{ github.workspace }}" sparse-checkout disable || echo "::warning title=sparse-clear::sparse-checkout disable failed — this workspace may still hold a partial tree"
+            # `--unset-all` exits 5 when there is nothing to unset: that is the normal
+            # clean case and must never fail the job. Exit 0 means this workspace really
+            # WAS poisoned, which is worth one line in the run summary.
+            rc=0
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || rc=$?
+            if [ "$rc" = 0 ]; then
+              echo "::notice title=sparse-clear::cleared an inherited core.sparseCheckout in this shared workspace"
+            elif [ "$rc" != 5 ]; then
+              echo "::warning title=sparse-clear::core.sparseCheckout unset exited $rc — this workspace may still be sparse"
+            fi
+          fi
       - uses: actions/checkout@v4
         with:
           # The repository keeps generated site releases in Git. The fences
@@ -255,6 +299,7 @@ jobs:
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name != github.repository
+    # GITHUB-HOSTED EXCEPTION: untrusted fork code boundary — fork heads must never execute on persistent home runners.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -288,6 +333,7 @@ jobs:
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name != github.repository
+    # GITHUB-HOSTED EXCEPTION: untrusted fork code boundary — fork heads must never execute on persistent home runners.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -303,6 +349,7 @@ jobs:
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name != github.repository
+    # GITHUB-HOSTED EXCEPTION: untrusted fork code boundary — fork heads must never execute on persistent home runners.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

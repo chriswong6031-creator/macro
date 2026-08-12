@@ -1,0 +1,68 @@
+name: runner-canary
+# Diagnostic probe of the self-hosted CI pool. READ-ONLY: no checkout, no writes,
+# no secrets, no network beyond what the runner already has. Nothing depends on
+# this workflow — deleting it costs only the ability to answer "what is actually
+# behind the `render-linux` label?" without SSHing to the host.
+#
+# WHY IT EXISTS. `pc-render-1..4` read as four runners in the GitHub UI, and the
+# 2026-08-09 capacity reasoning treated them as four MACHINES. Run 31595700406
+# (2026-08-12) settled it: all four matrix slots reported hostname `winpc`,
+# machine_id `da9bccd5`, and four `Runner.Listener` processes on the same host —
+# four runner SLOTS on ONE physical 24-core / 31 GiB box. That measurement is why
+# ci.yml's `ci-pack` carries `max-parallel: 2` (charter §6: 2 CI / 1 render /
+# 1 control-burst). Re-run this before any future capacity argument rather than
+# re-deriving the topology from runner NAMES, which do not carry it.
+#
+# The four-way matrix plus the trailing `sleep` is the method, not decoration: a
+# job that finishes instantly is handed back to the same slot, so consecutive
+# runs sample ONE runner. Holding each slot for ~20 s forces the four jobs onto
+# four distinct listeners, which is what makes the "same machine_id" reading mean
+# something.
+#
+# workflow_dispatch ONLY. A push/schedule trigger would put a diagnostic on the
+# CI pool's critical path forever, for a question that is asked twice a year.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: probe-${{ matrix.slot }}
+    runs-on: [self-hosted, Linux, X64, render-linux]
+    timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      matrix:
+        slot: [0, 1, 2, 3]
+    steps:
+      # Every command is `|| echo`-guarded: this probe exists to REPORT what a
+      # runner has, so a missing tool is a finding to print, never a red job.
+      - name: describe this runner
+        shell: bash
+        run: |
+          echo "runner_name=${RUNNER_NAME:-unknown}"
+          echo "runner_os=${RUNNER_OS:-unknown} runner_arch=${RUNNER_ARCH:-unknown}"
+          echo "matrix_slot=${{ matrix.slot }}"
+          echo "hostname=$(hostname 2>/dev/null || echo unknown)"
+          echo "machine_id=$(cut -c1-8 /etc/machine-id 2>/dev/null || echo absent)"
+          echo "nproc=$(nproc 2>/dev/null || echo unknown)"
+          echo "--- memory ---"
+          free -h 2>/dev/null | head -2 || echo "free: absent"
+          echo "--- disk (workspace fs) ---"
+          df -h . 2>/dev/null || echo "df: absent"
+          echo "--- kernel ---"
+          uname -a 2>/dev/null || echo "uname: absent"
+          echo "runner_listeners_on_host=$(pgrep -fc 'Runner.Listener' 2>/dev/null || echo unknown)"
+          echo "--- toolchain ---"
+          echo "python3=$(python3 --version 2>&1 || echo absent)"
+          echo "node=$(node --version 2>&1 || echo absent)"
+          echo "docker=$(docker --version 2>&1 || echo absent)"
+          echo "git=$(git --version 2>&1 || echo absent)"
+          echo "--- runner tool cache ($RUNNER_TOOL_CACHE) ---"
+          ls -1 "${RUNNER_TOOL_CACHE:-/opt/hostedtoolcache}" 2>/dev/null || echo "tool cache: absent"
+          echo "--- uptime ---"
+          uptime 2>/dev/null || echo "uptime: absent"
+          # Hold the slot so the four matrix jobs cannot be served by one listener.
+          sleep 20

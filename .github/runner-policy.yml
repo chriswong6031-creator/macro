@@ -1,0 +1,340 @@
+# Runner-routing policy — the registry of every GitHub-HOSTED job in this repo.
+#
+# PROVENANCE: operator charter 2026-08-12 ("Mastermind GitHub CI Cost + Flow
+# Migration"). Routine trusted CI must consume SELF-HOSTED compute by default;
+# GitHub-hosted compute is now an EXCEPTION that has to be written down here.
+# Design doc: research/CI_SELFHOSTED_MIGRATION_WAVE1.md.
+#
+# WHY A REGISTRY AND NOT A RULE: "prefer self-hosted" decays into "whatever the
+# last person typed" within a month, and the decay is invisible — a job that
+# quietly went back to `ubuntu-latest` still passes every existing check. So the
+# default is inverted and made fail-closed: scripts/check_runner_policy.py walks
+# .github/workflows/**, resolves every job's `runs-on`, and any job that CAN
+# resolve to a hosted label without an entry below is a hard error. An expression
+# it cannot decide (no hosted label, no `self-hosted` literal — e.g.
+# `${{ inputs.runner || 'render-linux' }}`) is OPAQUE and also requires an entry:
+# not being able to prove a job is self-hosted is not evidence that it is.
+#
+# The measured stake (org billing API, month-to-date 2026-08): 267,066 Actions
+# Linux minutes gross-metered, discounted to net $0.00 ONLY because this
+# repository is currently PUBLIC. The same volume bills ~$130+/day once the
+# operator takes Mastermind private, which is the stated intent. Registered
+# hosted debt below is therefore a DOLLAR figure waiting to be charged, not a
+# style preference.
+#
+# HOW TO ADD AN EXCEPTION
+#   1. Add a `{workflow, job, class, reason}` entry to `hosted_exceptions`. The
+#      workflow path is repo-relative; the job key is the YAML job id, NOT the
+#      published check name.
+#   2. `class` must be one of:
+#        fork-fallback     — untrusted external head; a persistent home runner
+#                            must never execute it. This is a SECURITY class and
+#                            is not migratable in any wave.
+#        recovery          — an operator-selectable hosted path that exists so a
+#                            self-hosted outage cannot wedge the fleet.
+#        cheap-orchestration — tiny serial head/tail work where hosted pickup
+#                            (2-3 s) beats pool queue-wait, and the minutes are
+#                            a rounding error.
+#        pending-migration — DEBT. Not justified, just not migrated yet. This is
+#                            the Wave-2 worklist (charter §11); the list should
+#                            only ever shrink.
+#   3. `reason` is one sentence a future reader can audit. "Because it was" is
+#      not a reason; name the constraint.
+#
+# Removing the self-hosted DEFAULT, or converting a fork-fallback entry into
+# anything else, is an operator decision — not a maintenance edit.
+
+schema: runner_policy.v1
+updated: "2026-08-12"
+
+# Every job not registered below must resolve to self-hosted labels.
+default: self-hosted
+
+# Any `runs-on` value (or expression substring) matching one of these is a
+# GitHub-hosted runner. The guard also treats any bare `^(ubuntu|macos|windows)-`
+# label as hosted, so a future `ubuntu-26.04` is caught before it is listed here.
+hosted_labels:
+  - ubuntu-latest
+  - ubuntu-24.04
+  - ubuntu-22.04
+  - macos-latest
+  - macos-14
+  - macos-15
+  - windows-latest
+
+hosted_exceptions:
+  # ── ci.yml ────────────────────────────────────────────────────────────────
+  - workflow: .github/workflows/ci.yml
+    job: ci-pack
+    class: fork-fallback
+    reason: >-
+      The fork branch of the routing expression resolves a pull_request whose
+      head.repo.full_name differs from this repository to ubuntu-latest. This
+      repo is PUBLIC, so an untrusted head reaching the persistent 24-core home
+      runner would be arbitrary code execution on the fleet; the same expression
+      also carries the recovery value below.
+  - workflow: .github/workflows/ci.yml
+    job: ci-pack
+    class: recovery
+    reason: >-
+      `workflow_dispatch` input runner_pool=hosted forces the packs back onto
+      ubuntu-latest when the render-linux host is down or being rebuilt
+      (`gh workflow run ci.yml --ref main -f runner_pool=hosted`). Inert on
+      non-dispatch events because `inputs` is empty there.
+  - workflow: .github/workflows/ci.yml
+    job: ci-plan
+    class: cheap-orchestration
+    reason: >-
+      Serial HEAD of every ci.yml run (~4-5 min, one manifest load + one diff).
+      Hosted pickup is 2-3 s against a pool queue-wait that would be paid twice
+      per PR, and at the measured ~20 ci runs/hr the plan jobs alone would hold
+      ~1.7 of the host's 4 runner slots — capacity the packs need. Wave-2
+      candidate once the host carries dedicated ci-linux slots.
+  - workflow: .github/workflows/ci.yml
+    job: ci-gate
+    class: cheap-orchestration
+    reason: >-
+      Serial TAIL of every ci.yml run (<1 min of shell adjudication). Same
+      argument as ci-plan; together they are ~2-3% of the workflow's minutes.
+
+  # ── fences.yml ────────────────────────────────────────────────────────────
+  - workflow: .github/workflows/fences.yml
+    job: fork-self-mod-fence
+    class: fork-fallback
+    reason: >-
+      Runs ONLY for a pull_request from a fork (job `if:` gate) and exists so
+      external contributors still publish the required self-mod-fence context.
+      Untrusted head — must stay hosted permanently.
+  - workflow: .github/workflows/fences.yml
+    job: fork-capability-broker
+    class: fork-fallback
+    reason: >-
+      Fork-only fallback publishing the required capability-broker context.
+      Untrusted head — must stay hosted permanently.
+  - workflow: .github/workflows/fences.yml
+    job: fork-grader-manifest
+    class: fork-fallback
+    reason: >-
+      Fork-only fallback publishing the required grader-manifest context.
+      Untrusted head — must stay hosted permanently.
+
+  # ── already-routed lanes whose hosted branch is deliberate ────────────────
+  - workflow: .github/workflows/integration-baseline.yml
+    job: baseline
+    class: recovery
+    reason: >-
+      Main's circuit-breaker proof runs self-hosted; an OFF-MAIN dispatch falls
+      back to ubuntu-latest on purpose, because an arbitrary ref must not
+      execute inside the production-adjacent persistent workspace.
+  - workflow: .github/workflows/engine-render.yml
+    job: engine-render
+    class: recovery
+    reason: >-
+      `runs-on: ${{ github.event.inputs.runner || 'render-linux' }}` is an
+      operator-selectable label, so a dispatch may legitimately resolve it to a
+      hosted runner when the render pool is unavailable. Opaque to static
+      analysis, hence registered rather than assumed.
+  - workflow: .github/workflows/key-pool-probe.yml
+    job: probe
+    class: recovery
+    reason: >-
+      Diagnostic probe with an explicit `inputs.runner == 'ubuntu-latest'`
+      branch, so the operator can compare key-pool behaviour from outside the
+      home network when the macstudio pool is suspect.
+
+  # ── pending-migration: the Wave-2 worklist (charter §11) ───────────────────
+  # DEBT, not justification. Every entry below is a hosted job that simply has
+  # not been migrated yet. Wave 2 migrates or explicitly justifies each one.
+  # Census 2026-08-12: 43 jobs across 30 workflows — overwhelmingly scheduled
+  # publish/collect lanes (marketing-press-wire */5, live-quotes */5 weekdays,
+  # vps-live-heartbeat */10, ci-main-heartbeat 11 jobs x4/day), which is where
+  # the hosted minutes actually go once ci+fences are off the meter.
+  - workflow: .github/workflows/btc-live.yml
+    job: snapshot
+    class: pending-migration
+    reason: Wave-2 worklist — scheduled lane, not yet migrated.
+  - workflow: .github/workflows/buffer-channels.yml
+    job: list
+    class: pending-migration
+    reason: Wave-2 worklist — scheduled lane, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: chronicle-suite
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: contract-drift
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: dag-conformance
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: data-base-shim
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: engine-render-guards
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: font-ui-defined
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: free-content-estate
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: nav-gap
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: template-site-sync
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: tier-gate
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/ci-main-heartbeat.yml
+    job: workflow-yaml
+    class: pending-migration
+    reason: Wave-2 worklist — six-hourly main heartbeat job, not yet migrated.
+  - workflow: .github/workflows/closing-bell.yml
+    job: publish
+    class: pending-migration
+    reason: Wave-2 worklist — publish tail of the closing-bell lane, not yet migrated.
+  - workflow: .github/workflows/company-intelligence.yml
+    job: refresh
+    class: pending-migration
+    reason: Wave-2 worklist — scheduled refresh lane, not yet migrated.
+  - workflow: .github/workflows/cycle-calibration.yml
+    job: calibrate
+    class: pending-migration
+    reason: Wave-2 worklist — scheduled calibration lane, not yet migrated.
+  - workflow: .github/workflows/daily-engine-setup-retry.yml
+    job: retry-setup-cancelled-engine
+    class: pending-migration
+    reason: Wave-2 worklist — nightly retry watchdog, not yet migrated.
+  - workflow: .github/workflows/daily.yml
+    job: et_gate
+    class: pending-migration
+    reason: >-
+      Wave-2 worklist — tiny ET clock gate at the head of the nightly graph. The
+      render budget is law (CLAUDE.md), so any daily.yml routing change is a
+      Wave-2 decision taken with the render lane, never a drive-by edit.
+  - workflow: .github/workflows/daily.yml
+    job: publish
+    class: pending-migration
+    reason: >-
+      Wave-2 worklist — nightly publish tail. Same constraint as et_gate: this
+      lane's routing belongs to the render-budget conversation.
+  - workflow: .github/workflows/deploy-analytics.yml
+    job: deploy
+    class: pending-migration
+    reason: Wave-2 worklist — deploy lane, not yet migrated.
+  - workflow: .github/workflows/earnings-evidence-graph.yml
+    job: refresh
+    class: pending-migration
+    reason: Wave-2 worklist — scheduled earnings lane, not yet migrated.
+  - workflow: .github/workflows/earnings-public-wire.yml
+    job: publish
+    class: pending-migration
+    reason: Wave-2 worklist — scheduled earnings publish lane, not yet migrated.
+  - workflow: .github/workflows/earnings-story-packets.yml
+    job: audit
+    class: pending-migration
+    reason: Wave-2 worklist — scheduled earnings packet lane, not yet migrated.
+  - workflow: .github/workflows/earnings-story-packets.yml
+    job: initialize-journal
+    class: pending-migration
+    reason: Wave-2 worklist — scheduled earnings packet lane, not yet migrated.
+  - workflow: .github/workflows/earnings-story-packets.yml
+    job: project
+    class: pending-migration
+    reason: Wave-2 worklist — scheduled earnings packet lane, not yet migrated.
+  - workflow: .github/workflows/earnings-story-press-stage.yml
+    job: stage
+    class: pending-migration
+    reason: Wave-2 worklist — scheduled earnings press stage, not yet migrated.
+  - workflow: .github/workflows/geo-enrich.yml
+    job: enrich
+    class: pending-migration
+    reason: Wave-2 worklist — enrichment lane, not yet migrated.
+  - workflow: .github/workflows/live-quotes.yml
+    job: snapshot
+    class: pending-migration
+    reason: >-
+      Wave-2 worklist — */5 weekday snapshot lane, one of the largest hosted
+      minute consumers outside ci+fences.
+  - workflow: .github/workflows/marketing-copy-dryrun.yml
+    job: dryrun
+    class: pending-migration
+    reason: Wave-2 worklist — marketing lane, not yet migrated.
+  - workflow: .github/workflows/marketing-earnings-wire.yml
+    job: earnings
+    class: pending-migration
+    reason: Wave-2 worklist — marketing lane, not yet migrated.
+  - workflow: .github/workflows/marketing-hot-tape.yml
+    job: radar
+    class: pending-migration
+    reason: >-
+      Wave-2 worklist — market-hours 5-minute radar, a top hosted minute
+      consumer outside ci+fences.
+  - workflow: .github/workflows/marketing-media-backfill.yml
+    job: backfill
+    class: pending-migration
+    reason: Wave-2 worklist — marketing lane, not yet migrated.
+  - workflow: .github/workflows/marketing-press-wire.yml
+    job: wire
+    class: pending-migration
+    reason: >-
+      Wave-2 worklist — */5 press wire (~288 runs/day), the single largest
+      scheduled hosted lane measured 2026-08-12.
+  - workflow: .github/workflows/marketing-x-intel.yml
+    job: harvest
+    class: pending-migration
+    reason: Wave-2 worklist — marketing intel lane, not yet migrated.
+  - workflow: .github/workflows/metabolism-immune.yml
+    job: immune
+    class: pending-migration
+    reason: Wave-2 worklist — immune lane, not yet migrated.
+  - workflow: .github/workflows/pages.yml
+    job: publish
+    class: pending-migration
+    reason: Wave-2 worklist — manual Pages mirror publish, not yet migrated.
+  - workflow: .github/workflows/press-publish.yml
+    job: emit
+    class: pending-migration
+    reason: Wave-2 worklist — press publish lane, not yet migrated.
+  - workflow: .github/workflows/press-publish.yml
+    job: stage
+    class: pending-migration
+    reason: Wave-2 worklist — press publish lane, not yet migrated.
+  - workflow: .github/workflows/prophet-live.yml
+    job: evaluate
+    class: pending-migration
+    reason: >-
+      Wave-2 worklist — market-hours 5-minute evaluation lane, a top hosted
+      minute consumer outside ci+fences.
+  - workflow: .github/workflows/public-render.yml
+    job: render
+    class: pending-migration
+    reason: Wave-2 worklist — public render lane, not yet migrated.
+  - workflow: .github/workflows/research-triage.yml
+    job: triage
+    class: pending-migration
+    reason: Wave-2 worklist — research triage lane, not yet migrated.
+  - workflow: .github/workflows/vps-live-heartbeat.yml
+    job: health
+    class: pending-migration
+    reason: >-
+      Wave-2 worklist — but note this one is an EXTERNAL dead-man on the VPS and
+      the Mac fleet (docs: ops.vps_live_freshness). Migrating it onto the fleet
+      it watches would let an offline fleet report itself healthy; Wave 2 must
+      justify keeping it hosted rather than move it.
+  - workflow: .github/workflows/weekly.yml
+    job: publish
+    class: pending-migration
+    reason: Wave-2 worklist — weekly publish tail, not yet migrated.
