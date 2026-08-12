@@ -13,6 +13,27 @@
   'use strict';
 
   var KEY = 'mdash.watchlist.v1';
+
+  /* ---- multi-list binding seam (W1a; UWP W2.5 preconditions) ---------------
+     `listId === null` is the ANONYMOUS / default binding: the storage key, the share
+     fragment and every observable behaviour are byte-identical to before this wave.
+     A non-null binding points the same blob machinery at that registered list's own
+     cache `mdash.wl.<listId>.v1` — the exact key watchstore.js writes, in the exact
+     same blob shape, so a rebind is a plain re-read.
+
+     NOTHING in W1a sets a non-null binding. These are the three seams UWP W2.5 named
+     as its preconditions ("no UI ships until those seams are in place"): the storage
+     KEY, `listId` inside stateSig, and the share fragment. The list switcher itself is
+     W2. */
+  var listId = null;
+  var listName = '';
+
+  function storageKey() { return listId ? ('mdash.wl.' + listId + '.v1') : KEY; }
+  // share fragment: `#wl=` for the default binding (every link in the wild keeps
+  // working); `#wl.<name>=` for a named list, so a scoped link can only ever be
+  // consumed by the list it was exported from.
+  function shareParam() { return listId ? ('wl.' + encodeURIComponent(listName || listId)) : 'wl'; }
+
   // states that mean "a low/buy is near" — the bottoming / buy-soon cohort the
   // user explicitly cares about (drives the accent border + header counter)
   var BUYSOON = { 'TURN SIGNALED': 1, 'FRESH BUY': 1, 'BOTTOM WATCH': 1 };
@@ -109,13 +130,13 @@
   }
   function readStorage() {
     try {
-      var raw = localStorage.getItem(KEY);
+      var raw = localStorage.getItem(storageKey());
       return raw ? migrate(JSON.parse(raw)) : defaultBlob();
     } catch (e) { return defaultBlob(); }
   }
   var persist = debounce(function () {
     try {
-      localStorage.setItem(KEY, JSON.stringify(blob));
+      localStorage.setItem(storageKey(), JSON.stringify(blob));
       if (!storageOK) { storageOK = true; hideBanner(); }
     } catch (e) {
       // quota / private mode: keep working in-memory but tell the user once
@@ -129,11 +150,16 @@
   // peer doc re-bumps `updated` + re-persists on every storage event, so two open
   // tabs ping-pong writes forever (the watchlist "spasm" — constant re-render +
   // re-fetch as each tab's write retriggers the other's storage handler).
+  // `listId` leads the signature so a REBIND counts as a real state change even when
+  // the two lists happen to hold identical symbols — otherwise switching lists would
+  // compare equal and skip the re-render. stateSig is an in-memory comparison only
+  // (never persisted, never transmitted), so the extra leading field is invisible to
+  // storage bytes, the DOM and the network; for the default binding it is `null`.
   function stateSig(b) {
     var its = b.items.map(function (it) {
       return [it.t, it.added || '', it.note || ''];
     }).sort(function (a, c) { return a[0] < c[0] ? -1 : a[0] > c[0] ? 1 : 0; });
-    return JSON.stringify([its, b.order || [], b.settings.sort, !!b.settings.buySoonOnly]);
+    return JSON.stringify([listId, its, b.order || [], b.settings.sort, !!b.settings.buySoonOnly]);
   }
   function has(t) { return blob.items.some(function (it) { return it.t === t; }); }
   function add(t) {
@@ -436,7 +462,16 @@
   }
 
   // ---- export / import / share-link --------------------------------------
-  function exportCode() { return b64enc(JSON.stringify(blob)); }
+  // The exported blob records WHICH list it came from (by name — never the row id, which
+  // has no business in a public URL). Omitted entirely for the default binding, so an
+  // anonymous export is byte-identical to before this wave.
+  function exportCode() {
+    if (!listId) return b64enc(JSON.stringify(blob));
+    var b = {};
+    Object.keys(blob).forEach(function (k) { b[k] = blob[k]; });
+    b.list = listName || '';
+    return b64enc(JSON.stringify(b));
+  }
   function wireShare() {
     var ta = document.getElementById('wl_export');
     var imp = document.getElementById('wl_import');
@@ -444,7 +479,7 @@
     refresh();
     document.addEventListener('wl-changed', refresh);
     document.getElementById('wl_copylink').addEventListener('click', function () {
-      var url = location.origin + location.pathname + '#wl=' + exportCode();
+      var url = location.origin + location.pathname + '#' + shareParam() + '=' + exportCode();
       var done = function () { toast(L('copied')); };
       if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { ta.select(); });
       else { ta.value = url; ta.select(); document.execCommand && document.execCommand('copy'); refresh(); done(); }
@@ -457,17 +492,30 @@
     if (!code) return;
     var other;
     try {
-      var m = code.match(/#?wl=([^&]+)/);   // accept a full share URL or a bare code
+      // accept a full share URL (`#wl=` or a list-scoped `#wl.Name=`) or a bare code
+      var m = code.match(/#?wl(?:\.[^=]*)?=([^&]+)/);
       other = JSON.parse(b64dec(m ? m[1] : code));
     } catch (e) { toast(L('importBad'), true); return; }
     if (!other || typeof other !== 'object' || !Array.isArray(other.items)) { toast(L('importBad'), true); return; }
     var n = mergeInto(migrate(other));
     render(); pushCloud(); toast(L('imported')(n));
   }
-  // a pasted share URL lands here on load — merge then strip the fragment
+  /* A pasted share URL lands here on load — merge into the CURRENTLY BOUND list, then
+     strip the fragment (one shot per page load, so a later rebind can never re-consume
+     it into a different list). A bare `#wl=` is unscoped and merges into whatever is
+     bound; a `#wl.<name>=` link is scoped and is only consumed by the list of that
+     name. An unmatched fragment is left alone rather than merged into the wrong list. */
   function consumeShareHash() {
-    var m = (location.hash || '').match(/^#wl=(.+)$/);
-    if (!m) return;
+    var h = location.hash || '';
+    var m = h.match(/^#wl=(.+)$/);
+    if (!m) {
+      var scoped = h.match(/^#wl\.([^=]*)=(.+)$/);
+      if (!scoped) return;
+      var want = '';
+      try { want = decodeURIComponent(scoped[1]); } catch (e) { want = scoped[1]; }
+      if (want !== (listName || '')) return;   // not this list's link — leave it be
+      m = [scoped[0], scoped[2]];
+    }
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
     importCode(m[1]);
   }
@@ -500,12 +548,18 @@
   // ---- cloud seam (watchstore.js attaches here; no-op when not configured) -------
   function pushCloud() {
     document.dispatchEvent(new CustomEvent('wl-changed'));
-    if (window.WLCloud && window.WLCloud.push) window.WLCloud.push(blob);
+    // The blob is pushed WITH its binding, so the diff can never be applied to a list
+    // this blob did not come from. `null` (the default binding) means "the store's
+    // active list", which is how today's single-list page keeps working unchanged.
+    if (window.WLCloud && window.WLCloud.push) window.WLCloud.push(blob, listId);
   }
 
   // ---- cross-tab sync: another tab wrote -> reload + merge + render --------
+  // Scoped to the BOUND list's key: a peer tab editing a different list must not pull
+  // its rows into this one. For the default binding storageKey() === KEY, so this is
+  // the identical comparison it has always been.
   function onStorage(e) {
-    if (e.key && e.key !== KEY) return;
+    if (e.key && e.key !== storageKey()) return;
     var sigBefore = stateSig(blob);
     mergeInto(readStorage());     // union, never blind-overwrite
     if (stateSig(blob) !== sigBefore) render();   // re-render only on a real peer change
@@ -519,7 +573,23 @@
     add: function (t) { if (add(t)) { render(); } },
     remove: function (t) { remove(t); render(); },
     render: render,
-    onLocalChange: function (cb) { document.addEventListener('wl-changed', cb); }
+    onLocalChange: function (cb) { document.addEventListener('wl-changed', cb); },
+    /* Rebind to a registered list (W1a seam; W2 drives it, nothing calls it today).
+       Re-reads from that list's own cache — it does NOT carry the previous list's
+       blob across, which under a full-membership diff push would be a wipe of the
+       list being switched to. `bindList(null)` returns to the anonymous store. */
+    bindList: function (id, name) {
+      var nextId = id || null;
+      if (nextId === listId) { listName = nextId ? (name || listName) : ''; return listId; }
+      listId = nextId;
+      listName = nextId ? (name || '') : '';
+      blob = readStorage();
+      render();
+      return listId;
+    },
+    listId: function () { return listId; },
+    storageKey: storageKey,
+    shareParam: shareParam
   };
 
   // ---- init ---------------------------------------------------------------
@@ -576,10 +646,21 @@
 
   // does setItem actually work? (Safari private mode throws on write, not read)
   function storageProbe() {
-    try { localStorage.setItem(KEY + '.probe', '1'); localStorage.removeItem(KEY + '.probe');
+    try { localStorage.setItem(storageKey() + '.probe', '1'); localStorage.removeItem(storageKey() + '.probe');
       return true; } catch (e) { storageOK = false; return false; }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+
+  /* Node-test surface for the multi-list binding seams (storage key, stateSig, share
+     fragment). `module` is undefined in the browser, so none of this exists at runtime
+     on the site — the same guard watchstore.js / risk_core.js use. */
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      consumeShareHash: consumeShareHash,
+      exportCode: exportCode,
+      stateSig: function () { return stateSig(blob); }
+    };
+  }
 })();

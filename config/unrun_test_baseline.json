@@ -918,7 +918,6 @@
   "tests/test_w6_readiness_monitor.py",
   "tests/test_walk_forward_tf_bars.py",
   "tests/test_washout_counterread.py",
-  "tests/test_watchlist_books_js.py",
   "tests/test_watchlist_card.py",
   "tests/test_watchlist_logo_contrast.py",
   "tests/test_whitehouse_brain.py",
