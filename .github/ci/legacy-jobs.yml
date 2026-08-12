@@ -613,6 +613,12 @@ jobs:
         run: python3 scripts/check_trial_registration.py
       - name: reliability-contract guard (no gated field rendered directionally, audit #46)
         run: python3 scripts/check_reliability_contract.py
+      # A ticker rename is a ledger-key migration, not a fresh company. This
+      # suite owns the track-record ingest guard, duplicate detector, and
+      # losslessness receipt; keep it ahead of the broader grading invocation
+      # so an unrelated grading failure cannot leave identity enforcement dark.
+      - name: track-record company-key identity + lossless migration guard
+        run: python -m pytest tests/test_ledger_identity.py -q
       - name: grading rebuild + trial ledger tests
         run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py tests/test_universe_history.py -q
       - name: promotion-stat DISPLAY gate — the published DSR must be the computed one
