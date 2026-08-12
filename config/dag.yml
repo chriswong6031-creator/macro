@@ -4558,3 +4558,25 @@ modules:
       all raw responses remain private. Empty producers record unavailable coverage,
       never fabricated clocks or abstentions. Every score, rank, issue, trade, publication, training,
       Prophet, Neural Web, and completion authority flag is false.
+
+  # User-session browser companion. Chrome invokes the native receiver only
+  # while an authenticated terminal page is open; this node is deliberately
+  # disjoint from the cohort producer and every coverage/promotion lane.
+  - module: scripts.momoedge_browser_receiver
+    reads:
+      - chrome-native-message://com.mastermind.optionsnbbocohort.momoedge_observe/options.momoedge_browser_observation/v1
+    writes:
+      - /Users/chriswong/.mastermind_private/momoedge_browser_observe_v1/raw/sha256/
+      - /Users/chriswong/.mastermind_private/momoedge_browser_observe_v1/journal/
+      - /Users/chriswong/.mastermind_private/momoedge_browser_observe_v1/quarantine/
+      - /Users/chriswong/.mastermind_private/momoedge_browser_observe_v1/.receiver.lock
+    impure: true
+    needs_secrets: false
+    event_driven: true
+    note: >
+      Observe-only native-messaging receiver. The origin-scoped extension calls
+      the page's existing authenticated runtime but never reads or persists
+      credentials, cookies, browser storage, or request headers. Raw response
+      bodies stay private 0600; journals are debranded. Missing slots remain
+      gaps, coverage_eligible is always false, and every enroll, score, rank,
+      size, gate, trade, publication, and promotion authority is false.
