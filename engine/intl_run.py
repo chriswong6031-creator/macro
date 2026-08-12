@@ -100,6 +100,11 @@ def run() -> dict:
         # (melt-up/KOSPI class). Display-only until this market's own forward log
         # matures (can_force); append is idempotent by as-of (nightly is the sole
         # advancer; re-render lanes dedupe). Never fatal.
+        # The snapshot is persisted ADDITIVELY as rec["risk_radar"] and is read by
+        # engine/risk_radar_intl_audit (forward_log) and by the five international
+        # dashboards, which render it as the shared .rrx Risk Radar card
+        # (scripts/build_international_macro._radar_display -> market_state._radar_to_rd).
+        # A market that raises below keeps its record and simply renders no card.
         try:
             from engine import risk_radar_intl as _rri
             _prof = _rri.PROFILES.get(_RADAR_KEYS.get(cc, ""))
