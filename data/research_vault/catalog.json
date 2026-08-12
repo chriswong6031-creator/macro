@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T07:23:18.936605+00:00",
-  "count": 995,
+  "generated_at": "2026-08-12T07:38:21.380490+00:00",
+  "count": 996,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -245,6 +245,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fwszdz60r3e-79c4c2",
+      "title": "Legal & General Group (LGEN.L) Downgrade to Sell Sequencing risk skews risk reward to the downside",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:27Z",
+      "summary_points": [
+        "**Balance Sheet Deterioration**: Total shareholders' equity declined from £2,312m to £2,064m (12/25 → 12/26E), leverage ratio surged to 130.5%, indicating structural risk despite rising ROE (45.2% → 69.2%).",
+        "**UK BPA Market Oversupply**: >50% of earnings from bulk annuities faces £70bn insurer supply vs.",
+        "£40-50bn 2026 demand, intensifying competition from new entrants/PE M&A (e.g., PIC by Athora), pressuring margins.",
+        "**Credit Leverage Sell-Off Risk**: Sector-leading credit exposure causes negative correlation (-0.20) with corporate spreads; spread widening triggers immediate share sell-offs despite fundamental upside (19% downside vs.",
+        "sector +1% upside)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
       "language": "en",
       "needs_metadata": false
     },
