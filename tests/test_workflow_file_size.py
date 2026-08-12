@@ -34,10 +34,12 @@ module's provenance marker in its first 5 lines, or resolution fails
 closed). Extract more the same way; do not delete comments to fit.
 """
 
+import re
 from pathlib import Path
 
 BUDGET_BYTES = 487_000
-WORKFLOWS_DIR = Path(__file__).resolve().parents[1] / ".github" / "workflows"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 
 
 def test_workflow_files_stay_under_processing_cap():
@@ -53,4 +55,24 @@ def test_workflow_files_stay_under_processing_cap():
         "no error anywhere (2026-08-12 daily.yml incident — see this file's "
         "docstring). Shrink the file by extracting inline scripts or splitting "
         "steps into a chained workflow; do not delete documentation comments."
+    )
+
+
+def test_workflow_size_guard_is_owned_and_triggerable_in_ci():
+    """The cap guard must execute, not merely exist beside the incident note."""
+
+    manifest = (REPO_ROOT / ".github/ci/legacy-jobs.yml").read_text()
+    ci = (REPO_ROOT / ".github/workflows/ci.yml").read_text()
+    run_steps = re.findall(r"^\s*run:\s*(.+)$", manifest, flags=re.MULTILINE)
+    assert any("tests/test_workflow_file_size.py" in step for step in run_steps)
+    assert '      - "tests/test_workflow_file_size.py"' in ci
+    assert '      - ".github/workflows/**"' in ci
+
+
+def test_daily_workflow_keeps_safety_margin_after_campaign_restore():
+    daily = WORKFLOWS_DIR / "daily.yml"
+    assert daily.stat().st_size <= BUDGET_BYTES
+    assert daily.stat().st_size <= 508_000, (
+        "campaign-v2 restoration must retain at least a 1,000-byte review margin "
+        "below the enforced workflow budget; extract more shell into scripts/ci"
     )
