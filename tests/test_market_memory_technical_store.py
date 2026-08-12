@@ -879,9 +879,15 @@ def test_explicit_generation_identity_and_receipt_byte_bound_fail_closed(
 ) -> None:
     root, stored = _capture(tmp_path, monkeypatch)
     generation = store.load_technical_actual_output_generation(root)
-    fake_id = "mmactualgeneration_" + "f" * 64
-    fake_path = root / "generations" / "ff" / f"{fake_id}.json"
-    fake_path.parent.mkdir(parents=True)
+    generation_prefix = "mmactualgeneration_"
+    real_digest = stored.generation_id.removeprefix(generation_prefix)
+    replacement = "0" if real_digest[2] != "0" else "1"
+    fake_id = generation_prefix + real_digest[:2] + replacement + real_digest[3:]
+    fake_path = store._generation_path(root, fake_id)
+    assert fake_path.parent.is_dir(), (
+        "the forged identity deliberately shares the real generation's shard; "
+        "multiple immutable objects in one shard are valid store topology"
+    )
     _write_canonical(fake_path, generation)
     with pytest.raises(store.MarketMemoryTechnicalStoreError):
         store.load_technical_actual_output_generation(root, generation_id=fake_id)
