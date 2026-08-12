@@ -37,6 +37,13 @@ SCHEMA = vs.load_schema()
 FIXTURES = Path(__file__).parent / "fixtures" / "us_early_turn"
 #: Both committed fixtures, so the producer pins are not a one-name anecdote.
 PRODUCER_FIXTURES = ("STLD", "NEM")
+#: The committed store, resolved from THIS file rather than the CWD. A relative glob is
+#: silently empty whenever pytest runs from anywhere but the repo root, and an empty glob is
+#: the exact reading the census below must never mistake for "every file carries the key".
+SIGNAL_STORE = Path(__file__).resolve().parents[1] / "site" / "signals"
+#: The ONLY stem that may lawfully lack `early_signal_dates` — ENUMERATED, never counted.
+#: The retention is adjudicated in the test that reads this; do not widen it to go green.
+FOSSIL_NON_CARRIERS = frozenset({"SATS"})
 
 
 def _frame(ticker: str) -> pd.DataFrame:
@@ -200,6 +207,79 @@ def test_conditional_emission_keeps_the_registration_optional():
         assert "early_signal_dates" not in entry["schema_fields"], (
             f"early_signal_dates is in schema_fields while {len(non_carriers)} live "
             f"file(s) lawfully lack it (e.g. {non_carriers[:3]})")
+
+
+def test_the_non_carrier_set_is_EXACTLY_the_enumerated_fossil():
+    """The census above asserts a property *conditioned on* non-carriers existing. This one
+    pins WHICH names those are, which is what lights its two blind spots — both measured by
+    mutation on 2026-08-12, both of which ran 19-passed:
+
+      * removing `early_signal_dates` from a carrier (site/signals/AAPL.json) stayed green,
+        so a nightly that silently stopped stamping live files was invisible to the suite;
+      * giving SATS the key stayed green with the conditional block SKIPPED, so at the exact
+        graduation moment the census became a no-op instead of demanding the graduation.
+
+    The allowed set is ENUMERATED rather than sized, because a count cannot tell a fossil
+    from a regression. A new straggler is not a licence to widen it: the store is rebuilt
+    nightly from `data/stocks/*.parquet`, so a name the producer still writes must carry the
+    key unless the emission law itself changed.
+
+    WHY THE SATS FOSSIL IS RETAINED (adjudicated 2026-08-12 under the ticker-hygiene
+    conventions — a ticker STRING is not a stable identity, and an exit is not a death):
+
+      * IDENTITY — a KEY MIGRATION, not a delisting. EchoStar Corp renamed SATS->ECHO
+        effective 2026-06-24, an identity already operator-ratified in `config.yml`
+        `quality.reused_ticker_acks['ECHO']` (NASDAQ directory + EDGAR CIK 1415404 + OpenFIGI
+        BBG000TGLV00). The entity trades on: `site/signals/ECHO.json` is live and carries the
+        field, so nothing about this fossil is a missing name.
+      * WHY IT IS FROZEN — `data/stocks/SATS.parquet` is gone (ECHO.parquet now holds
+        EchoStar's spliced history back to 2008) and `build_signal_quality.py` iterates that
+        directory, so the nightly no longer regenerates this file. It is stuck at `asof`
+        2026-07-17, which predates the stamp.
+      * WHY IT IS NOT SWEPT — nothing owns the deletion. `build_signal_quality.py` is
+        write-only over `site/signals/`, and the repo carries no prune or GC for that
+        directory, so disposal could only be a hand-deletion of a committed file the nightly
+        cannot recreate. `scripts/check_symbol_rename_drift.py` states the convention that
+        would break: historical filings and point-in-time membership keep the symbols they
+        actually carried.
+      * WHY DELETION WOULD COST SOMETHING — `engine/track_record.py`'s orphan-maturation pass
+        grades a logged row only while tonight's stream carries its ticker (`stream =
+        tonight.get(row["ticker"])`, `None` -> `continue`). The committed
+        `data/signal_archive/track_record.parquet` holds 128 SATS rows, 4 of them still null
+        on `fwd_ret_180`; removing this file would foreclose their repair permanently — the
+        survivorship shape a published record must never acquire.
+      * RETENTION IS FREE — no `signals/SATS.json` reference exists anywhere in the tree and
+        there is no `site/stocks/SATS.html` (ECHO.html exists), so the fossil costs no
+        inbound link, no page and no publish-path 404.
+    """
+    if not SIGNAL_STORE.is_dir():  # pragma: no cover - sparse checkout, store not materialized
+        pytest.skip(f"{SIGNAL_STORE} is not checked out — the non-carrier set is unmeasurable")
+    live = sorted(SIGNAL_STORE.glob("*.json"))
+    assert live, (
+        f"{SIGNAL_STORE} exists but holds no *.json — that is a broken store, not a uniform "
+        f"one, and every set claim below it would be vacuously true")
+
+    non_carriers = {p.stem for p in live
+                    if "early_signal_dates" not in json.loads(p.read_text())}
+
+    strangers = non_carriers - FOSSIL_NON_CARRIERS
+    assert not strangers, (
+        f"{len(strangers)} of {len(live)} committed signal file(s) lack early_signal_dates "
+        f"beyond the enumerated fossil: {sorted(strangers)}. Do NOT widen "
+        f"FOSSIL_NON_CARRIERS to make this pass. Either the nightly stopped stamping a name "
+        f"it still writes — the producer emits ALL-OR-NOTHING per name, so a single "
+        f"unresolved bucket drops the whole key — or that name is a newly frozen fossil, "
+        f"which is an adjudication (identity, who still reads it), never a list edit.")
+
+    assert non_carriers, (
+        f"all {len(live)} committed signal files now carry early_signal_dates: the "
+        f"{sorted(FOSSIL_NON_CARRIERS)} fossil is disposed and the OPTIONAL registration has "
+        f"outlived the counterfactual it was built on. Graduate it in this same change — "
+        f"move 'early_signal_dates' from optional_fields into schema_fields in "
+        f"scripts/export_signal_contracts.py, bump that entry's schema_version 1.3.0 -> "
+        f"1.4.0, regenerate the committed manifest (python -m scripts.export_signal_contracts) "
+        f"and flip the two registration tests above. An optional registration with nothing "
+        f"conditional left under it is a contract that no longer describes the artifact.")
 
 
 # ---- the producer ----------------------------------------------------------
