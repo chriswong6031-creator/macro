@@ -1007,6 +1007,25 @@ jobs:
       # ci.yml on the test files; templates are covered by "templates/**" (#3488).
       - name: theme deep-link contract + sector-intelligence consolidation invariants
         run: python -m pytest tests/test_theme_hash_deeplink.py tests/test_sector_intelligence_page.py -q
+      # Wired 2026-08-12: tests/test_odometer_light_mode_surface.py arrived with #5458
+      # (light-mode odometer needles) named by NO run: step in any workflow, which is
+      # the one thing check_unrun_suites.py hard-fails on — so main went red on
+      # ci-pack-10 the moment it merged, and the suite itself never executed anywhere.
+      # It belongs in this job for the same reason as the two steps above: it is a
+      # stdlib text guard over templates/theme.css + site/theme.css and the five report
+      # templates that carry the compact regime gauge (dashboard / canada / china / hk /
+      # china_policy_watch), all of which this job already covers, and it needs none of
+      # the fat deps installed here. Its subject is a five-way COPY — the guard exists
+      # so one country cannot silently fall back to the old black blade — which is
+      # exactly the class that rots unseen while unrun. Ordered BEFORE the ~100-file
+      # sweep below for the reason documented on the group-flow step: run_ci_pack.py
+      # abandons a job's remaining steps once one exits non-zero, so a trailing guard
+      # is unreachable whenever anything in that sweep is red. No ci.yml path entry is
+      # needed — "tests/**", "templates/**" and "site/**" are all already in the
+      # workflow's paths list, so both halves of the trigger fire (#3488), and
+      # run_ci_pack.py infers this job's scope from the step body naming the file.
+      - name: light-mode odometer needle twins (five-report copy guard)
+        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       # Wired 2026-08-05: tests/test_flow_velocity.py was named by NO job in ANY
       # workflow (`grep -rn test_flow_velocity .github/` returned nothing), so the
       # suite written specifically to catch a pinned-by-construction flow readout
