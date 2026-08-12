@@ -1048,11 +1048,12 @@ jobs:
         run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       # #5480 added this express-render ownership guard to main but omitted a
       # run: owner, so audit_unrun_tests correctly found it dark on the very
-      # next check-definition refresh. It belongs beside the render-lane
-      # contracts above: the suite pins both render workflows and the
-      # data-pristine --site-only builder boundary.
+      # next check-definition refresh. #5481 folded the focused render-lane
+      # module into the canonical China Policy Watch suite; keep that canonical
+      # suite here because it pins both render workflows and the data-pristine
+      # --site-only builder boundary.
       - name: China Policy Watch express-render ownership + data-pristine mode
-        run: python -m pytest tests/test_china_policy_watch_render_lane.py -q
+        run: python -m pytest tests/test_china_policy_watch.py -q
       # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
       # pinned SEC source objects into filing packages, Company Facts ledgers,
       # and deterministic B4 binding plans. Keep these security/provenance
