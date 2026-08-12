@@ -98,7 +98,7 @@ Claude sessions learned.
 
 ---
 
-## Phase 2 — Status generator and CEO brief
+## Phase 2 — Status generator and CEO brief  *(IMPLEMENTED)*
 
 **Objective.** One generated page answers "what is happening". Closes **G5**.
 
@@ -115,12 +115,24 @@ Claude sessions learned.
 
 **Agent class.** Opus `builder`.
 
-**Validation.**
-- Generator is a pure function: run twice, byte-identical output (a CI test, mirroring the
-  existing byte-identity test on `MASTERMIND_SYSTEM_MAP.md`).
-- Fail-open proof: run with `gh` unavailable and with a sibling repo absent → exit 0, `degraded`
-  populated, previous outputs untouched.
-- Fail-closed proof: one malformed record → `validate` exit 1.
+**Validation — all in `tests/test_agentos_status.py`, all green:**
+- Pure function, PARTITIONED: whole-file byte identity with `--now` pinned, plus records-section
+  identity with the wall clock live. The envelope (`generated_at`, `inputs.worktrees`,
+  `inputs.active_builds_age_hours`, `inputs.degraded`) is excluded — a byte-identity test that
+  needed a frozen clock to pass at all would hide nondeterminism inside the records.
+- Fail-open proof, four ways: absent `active_builds.json`, absent sibling repo, unwritable
+  output (previous artifact byte-unchanged), absent store → exit 0 with `degraded` populated.
+- Fail-closed proof: a malformed record reds `validate` (exit 1) while `status` still reports
+  the remaining records and names the excluded one in `degraded`.
+- Zero network, proven twice: statically (no network module reaches `sys.modules`; no `gh`
+  token in the source) and at runtime (`status` completes with `socket` disabled).
+- I1: `status` and `brief` exit 0 on every input the suite can construct, including a store
+  containing a file that is not even frontmatter.
+
+**One regenerator.** The nightly, and only the nightly (`daily.yml`, immediately after
+`build_active_build_map.py`, which is its PR-state input). No drift guard — see
+`DEC:AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR` for why a per-PR guard would reintroduce the
+shared-write conflict I2 exists to prevent.
 
 **What becomes possible.** The CEO stops reconstructing state by hand. `needs_ceo` becomes a
 filter instead of a reading exercise.

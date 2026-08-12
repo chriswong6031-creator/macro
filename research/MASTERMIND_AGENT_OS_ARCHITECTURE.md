@@ -116,6 +116,23 @@ the third control plane.
 > (sessions). **This is the test that distinguishes it from a control plane, and it is the
 > reason it does not violate `duplicate_control_planes`.**
 
+**I1 acceptance gate, phrased so a reviewer can check it rather than believe it.** For
+any phase: *no runtime, scheduler, hook, or seat consumes `agent_os_state.v1` or
+`ceo_brief.v1` to decide what to RUN.* The brief is a human-read view. Note this test is
+BROADER than "can it block" — Mastermind `config/strategic_state.yml:13-18` defines a
+second control plane as **any execution path that reads an artifact to decide what to
+run**, so a scheduled task or push transport that consumed the brief would qualify even
+though it blocks nothing. Adding one is a separate recorded ruling, not an implementation
+detail.
+
+Phase 2's own answer, stated for the record: `status` and `brief` read records,
+`data/governance/active_builds.json` and `git worktree list`; they write two derived
+files and exit 0 unconditionally; nothing reads those files at runtime. `validate` is the
+one component that can exit non-zero, and its hard rules were narrowed to malformation
+for exactly this reason — a state-keyed hard rule made a knowledge record able to red
+every armed PR in the fleet, which made I1 operationally false while the document still
+claimed it (reproduced: two individually-valid records, one clean merge, exit 1).
+
 > **I2 — One writer per fact, one file per record.**
 > No record is written by two mechanisms. No two records may be appended to the same file.
 > This is not style: with 20–50 concurrent workers across worktrees, a shared append target
@@ -455,7 +472,7 @@ Agent OS adds exactly one thing: an **advisory claim** on the workstream record.
 claim:
   by: claude/prophet-entry-timing-a1b2c3    # branch or worktree name
   at: 2026-08-12T14:00:00Z
-  expires: 2026-08-15T00:00:00Z             # default +72h
+  expires: 2026-08-12T22:00:00Z             # default +12h — session scale, not day scale
 ```
 
 It is a **note, not a lock** (I1): it has no enforcement, blocks nothing, and expires by
@@ -463,6 +480,22 @@ wall-clock with no heartbeat, no daemon, and no liveness probe. A session reads 
 starting and is *warned*; it is never stopped. An expired claim reports `unclaimed` — a stale
 claim is a signal to look, not a blocker. This is the smallest thing that answers "is someone
 already on this?" without becoming the session-tracking service the census forbids.
+
+**What a claim can and cannot prevent — stated, because the difference is large.** A claim
+is a file in a git repository, so it is unreadable by any other session until it MERGES:
+PR, CI, and a sweeper cycle that runs every 10 minutes, unbounded when main is red. The
+honest claim is therefore that it prevents **day-scale** collisions — "someone took this
+workstream on Tuesday and is still on it" — and prevents **nothing** at the same-hour
+scale. Same-hour collision prevention already comes free and instantly from
+`git worktree list`, which is layer 2 above and needs no merge.
+
+Two consequences follow. First, `expires` defaults to **12 hours**, not 72: a claim that
+outlives the session that wrote it by three days describes a session that no longer
+exists, and the org's own measured session scale is hours, not days. Second, `status`
+joins each claim against live worktree occupancy and reports `worktree_live: false` when
+the claiming branch has no checkout — a claim with no live worktree is the cheap,
+immediate tell that the holder is gone, and it costs one local git call rather than a
+heartbeat service.
 
 ---
 
@@ -556,7 +589,7 @@ of validator/generator, and four schema files.
 
 ---
 
-## §13 What NOT to build — and two conflicts the CEO must rule on
+## §13 What NOT to build — and three conflicts the CEO must rule on
 
 **Not building (settled by prior adjudication, restated so no future session re-proposes):**
 
@@ -571,8 +604,8 @@ of validator/generator, and four schema files.
 7. **No Kubernetes, no agent social network, no Git replacement, no speculative AI scheduler.**
    The brief's PART XVIII list, adopted verbatim.
 
-**Two genuine conflicts between the commissioning brief and the merged census. I am flagging
-rather than silently resolving them, because both are the Chairman's call:**
+**Three genuine conflicts. I am flagging rather than silently resolving them, because all
+three are the Chairman's call:**
 
 > **C1 — Task registry.** The brief (PART II, PART XVI) asks for a first-class Task entity with
 > ~20 fields. Census §5.6 ruled sub-PR granularity unnecessary and a task queue an explicit
@@ -581,6 +614,19 @@ rather than silently resolving them, because both are the Chairman's call:**
 > 20. **What would flip me:** if the CEO wants work items that exist *before* any PR and are
 > assigned to specific workers by someone other than the worker, a real task store is required.
 > That is a dispatcher, and it would need to live in `control_plane/`, not here.
+
+> **C3 — Ranked work.** The CEO brief's START NEXT is a deterministic ranked list of next
+> work. Mastermind `config/strategic_state.yml:16` assigns that concept to
+> `brain/improvement_agenda.py` — "owns the ranked work queue" — inside a comment block
+> that names Charter P7 as the reason the file exists, and census §5.3 calls the agenda
+> "the only ranked, evidence-cited priority engine in the org". **My recommendation: keep
+> START NEXT as a stated READINESS view and leave priority with the agenda.** They are
+> different concepts computed from different inputs, and the brief now says so in prose on
+> every render rather than presenting a rival ordering silently. **What would flip me:** if
+> the CEO wants one list, it should be the agenda's, extended with a readiness column fed
+> by `agent_os_state.v1` — that retires START NEXT here rather than duplicating it.
+> Recorded with alternatives and evidence in
+> `agentos/decisions/DEC-AGENTOS-START-NEXT-VS-AGENDA.md`.
 
 > **C2 — Session tracking.** The brief (PART VII, PART XIV) asks for active-session tracking,
 > heartbeats, and stale-task detection. Census §6.3 forbids a session tracking service and names

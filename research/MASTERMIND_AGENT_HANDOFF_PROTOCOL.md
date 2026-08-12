@@ -110,8 +110,8 @@ unverified:
   - claim: "Entry-timing delta is measurable on the held-out set."
     what_would_verify: "Run scripts/prophet_entry_delta.py --holdout 2026-Q2; not run — W2 not started."
 
-decisions: [DEC-BAKE-PARTIAL-IS-FAILURE]
-discoveries: [DSC-FIRST-RUN-BOMB]
+decisions: [DEC:BAKE-PARTIAL-IS-FAILURE]     # colon, not hyphen — the hyphen form
+discoveries: [DSC:FIRST-RUN-BOMB]           # can never resolve and is a hard error
 
 unresolved:
   - "Whether the 3-slice gap seen on 08-10 was the same partial-bake class or a distinct fault."
@@ -167,15 +167,24 @@ What you deliberately did not do, and why. Prevents the next session from
 A handoff fails review if any of these is true. These are the observed failure modes, made
 checkable:
 
-| # | Failure | Why it fails |
-|---|---|---|
-| 1 | A `verified` claim names no command | "Tests pass" is testimony, not evidence. The next session cannot re-run a claim with no command. |
-| 2 | `unverified` is absent | Absent ≠ empty. An empty list is a real answer; a missing key means nobody asked. |
-| 3 | `danger_areas` is empty on a session that hit any surprise | If something surprised you, it will surprise the next reader. |
-| 4 | `next_actions` contains a goal, not an action | "Improve entry timing" is the workstream objective. "Run X with args Y" is a next action. |
-| 5 | Any "see above" / "as discussed" / undefined mid-session codename | Fails the cold-stranger test by construction. |
-| 6 | `do_not_redo` omits an investigation that consumed real time | The single highest-value field: the org's own measure is that 55–80% of proposals duplicate settled work. |
-| 7 | `changed` lists paths with no `what` | A diff is already in git; the handoff exists to say *why* each path moved. |
+Four of the seven are MACHINE-CHECKED by `python3 scripts/agentos.py validate`, which is
+what makes them a floor rather than an aspiration; the other three require knowing what
+surprised you and are marked as reviewer judgment rather than dressed up as checkable.
+
+| # | Failure | Enforced | Why it fails |
+|---|---|---|---|
+| 1 | A `verified` claim names no command | ✅ `unbacked-verification` | "Tests pass" is testimony, not evidence. The next session cannot re-run a claim with no command. |
+| 2 | `unverified` is absent | ✅ `required-field` | Absent ≠ empty. An empty list is a real answer; a missing key means nobody asked. |
+| 3 | `danger_areas` is empty on a session that hit any surprise | reviewer | Machine-uncheckable as worded — the checker cannot know what surprised you. The field's PRESENCE is required; its adequacy is a human call. |
+| 4 | `next_actions` contains a goal, not an action | reviewer | "Improve entry timing" is the workstream objective. "Run X with args Y" is a next action. |
+| 5 | Any "see above" / "as discussed" / undefined mid-session codename | ✅ `context-free-handoff` (literal phrases) | Fails the cold-stranger test by construction. The undefined-codename half stays reviewer judgment. |
+| 6 | `do_not_redo` omits an investigation that consumed real time | reviewer | The single highest-value field: the org's own measure is that 55–80% of proposals duplicate settled work. Presence is required; completeness is a human call. |
+| 7 | `changed` lists paths with no `what` | ✅ `bad-changed-entry` | A diff is already in git; the handoff exists to say *why* each path moved. |
+
+**Who reviews.** The reviewer of items 3, 4 and 6 is the next session to claim the
+workstream — it is the only reader whose interest is aligned, and it finds out
+immediately whether the handoff was any good. A handoff that fails one of them is
+amended in place by that session, not sent back.
 
 ---
 

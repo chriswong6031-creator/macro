@@ -15,7 +15,6 @@ blast_radius: reversible
 ambiguity: open
 owns_paths:
   - engine/prophet_*.py
-  - engine/cn_prophet_audit.py
 waves:
   - id: W0
     title: Queue drain + backfill
@@ -37,8 +36,6 @@ landmines:
 do_not_redo:
   - "Queue drain was root-caused and fixed in #5370 — do not re-diagnose the queue."
 next_action: Verify the 22:30Z bake (W1).
-created: 2026-08-05
-updated: 2026-08-12
 ---
 
 ## Context

@@ -1,0 +1,513 @@
+"""Agent OS Phase 2 — `agentos.py status` and `agentos.py brief`.
+
+What is pinned here, and why each one is worth a test:
+
+* **I1** — nothing added can gate, block, dispatch, or start execution.  Both commands
+  exit 0 on every input this suite can construct, including a malformed record set, and
+  no artifact they write is read by a runtime.
+* **I3** — the generated artifacts carry a DO-NOT-EDIT banner and are a PURE FUNCTION of
+  their inputs.  The comparison is partitioned: `generated_at`, `inputs.worktrees`,
+  `inputs.active_builds_age_hours` and `inputs.degraded` sit in an ENVELOPE and are
+  excluded, because a byte-identity test that needed a frozen clock to pass would hide
+  real nondeterminism in the records themselves.  With the clock frozen, the whole file
+  is compared.
+* **I4** — fail-OPEN on join (missing active_builds, absent sibling repo, unwritable
+  output), fail-CLOSED on schema.  Both directions.
+* **Zero network** — proven twice: statically (no network module is importable from the
+  new code paths) and at runtime (the command completes with sockets disabled).  The
+  5,000/hr REST bucket is shared with `ship_loop_guard.py`, which fails CLOSED when it
+  is exhausted, so a CEO command that burned quota could block the Stop it reports on.
+* The **record-vs-execution join** — the one thing this generator adds that nothing else
+  in the org has.
+"""
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+REPO = Path(__file__).resolve().parent.parent
+STORE = REPO / "agentos"
+CLI = REPO / "scripts" / "agentos.py"
+GENERATOR = REPO / "scripts" / "agentos.py"
+
+pytestmark = pytest.mark.skipif(
+    not STORE.exists(),
+    reason="agentos/ outside this sparse checkout — run: git sparse-checkout add agentos",
+)
+
+FROZEN = "2026-08-12T14:00:00Z"
+
+
+@pytest.fixture()
+def store(tmp_path: Path) -> Path:
+    work = tmp_path / "agentos"
+    shutil.copytree(STORE, work)
+    return work
+
+
+def _run(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    environ = dict(os.environ)
+    # Pin the sibling lookups so the result does not depend on which checkouts happen to
+    # exist on the machine running the suite.
+    environ.setdefault("MACRO_TERMINAL_REPO", "/nonexistent-terminal-checkout")
+    environ.setdefault("MACRO_MASTERMIND_REPO", "/nonexistent-mastermind-checkout")
+    if env:
+        environ.update(env)
+    return subprocess.run(
+        [sys.executable, str(CLI), *args],
+        capture_output=True, text=True, cwd=REPO, env=environ,
+    )
+
+
+def _status(store_root: Path, out: Path, *extra: str, **kwargs) -> subprocess.CompletedProcess[str]:
+    return _run(
+        "status", "--root", str(store_root),
+        "--json-out", str(out), "--md-out", str(out.with_suffix(".md")),
+        *extra, **kwargs,
+    )
+
+
+def _state(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+ACTIVE_BUILDS = {
+    "schema": "active_builds.v1",
+    "generated_at": "2026-08-12T06:00:00+00:00",
+    "base": {"sha": "deadbeef"},
+    "merged_days": 14,
+    "merged_truncated": False,
+    "open_prs": [
+        {"number": 5438, "title": "CN P-A1", "head_ref": "cn/p-a1",
+         "updated_at": "2026-08-12T05:00:00Z", "is_draft": False,
+         "merge_state": "CLEAN", "files": []},
+    ],
+    "collisions": [],
+    "recent_merged": [
+        {"number": 5370, "title": "Prophet queue drain", "merged_at": "2026-08-12T03:00:00Z"},
+        {"number": 5402, "title": "GMI R1", "merged_at": "2026-08-11T09:00:00Z"},
+        {"number": 5457, "title": "Watchlist W0", "merged_at": "2026-08-10T09:00:00Z"},
+        {"number": 5463, "title": "Watchlist husk", "merged_at": "2026-08-12T08:00:00Z"},
+    ],
+}
+
+
+@pytest.fixture()
+def builds(tmp_path: Path) -> Path:
+    path = tmp_path / "active_builds.json"
+    path.write_text(json.dumps(ACTIVE_BUILDS), encoding="utf-8")
+    return path
+
+
+# ------------------------------------------------------------------ I3: purity
+
+
+def test_status_output_is_byte_identical_with_a_frozen_clock(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """Whole-file identity: with the clock pinned, nothing else may vary."""
+    first, second = tmp_path / "one.json", tmp_path / "two.json"
+    assert _status(store, first, "--now", FROZEN, "--active-builds", str(builds)).returncode == 0
+    assert _status(store, second, "--now", FROZEN, "--active-builds", str(builds)).returncode == 0
+    assert first.read_bytes() == second.read_bytes()
+    assert first.with_suffix(".md").read_bytes() == second.with_suffix(".md").read_bytes()
+
+
+def test_records_section_is_identical_without_a_frozen_clock(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """The PARTITION is the real claim: the pure half must not move with the clock.
+
+    Freezing the clock is a convenience for the whole-file test above.  This one runs
+    the generator twice with the wall clock live and compares only the section that is
+    supposed to be a pure function — which is what makes the split honest rather than a
+    way to make a flaky test pass.
+    """
+    first, second = tmp_path / "a.json", tmp_path / "b.json"
+    assert _status(store, first, "--active-builds", str(builds)).returncode == 0
+    assert _status(store, second, "--active-builds", str(builds)).returncode == 0
+    one, two = _state(first), _state(second)
+    pure = ("schema", "generator", "workstreams", "needs_ceo", "start_next", "warnings")
+    for section in pure:
+        assert one[section] == two[section], f"{section} is not a pure function of its inputs"
+
+
+def test_generated_artifacts_carry_the_do_not_edit_banner(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "state.json"
+    _status(store, out, "--now", FROZEN, "--active-builds", str(builds))
+    markdown = out.with_suffix(".md").read_text(encoding="utf-8")
+    assert markdown.startswith("<!-- GENERATED — DO NOT EDIT BY HAND.")
+    assert "scripts/agentos.py status" in markdown
+    assert _state(out)["generator"] == "scripts/agentos.py status"
+    assert _state(out)["schema"] == "agent_os_state.v1"
+
+
+# ---------------------------------------------------------- I4: fail-open join
+
+
+def test_absent_active_builds_degrades_and_still_reports(
+    store: Path, tmp_path: Path
+) -> None:
+    """The common LOCAL case: data/ is outside a sparse worktree entirely."""
+    out = tmp_path / "state.json"
+    result = _status(store, out, "--now", FROZEN,
+                     "--active-builds", str(tmp_path / "no-such-file.json"))
+    assert result.returncode == 0, result.stdout + result.stderr
+    state = _state(out)
+    assert state["workstreams"], "records must still be reported without PR state"
+    assert any("absent" in item for item in state["inputs"]["degraded"])
+    assert state["inputs"]["active_builds_age_hours"] is None
+
+
+def test_brief_renders_without_active_builds(store: Path, tmp_path: Path) -> None:
+    result = _run("brief", "--root", str(store), "--now", FROZEN, "--no-remember",
+                  "--active-builds", str(tmp_path / "no-such-file.json"))
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "MASTERMIND STATUS" in result.stdout
+    assert "DEGRADED" in result.stdout, "a missing input must never render as quiet"
+    assert "active_builds MISSING" in result.stdout
+
+
+def test_absent_sibling_repo_degrades_and_neutralises_p0(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "state.json"
+    result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds),
+                     env={"MACRO_MASTERMIND_REPO": str(tmp_path / "gone")})
+    assert result.returncode == 0
+    state = _state(out)
+    assert any("p0" in item for item in state["inputs"]["degraded"])
+    assert all(row["p0_active"] is None for row in state["workstreams"] if row["p0"])
+
+
+def test_unwritable_output_leaves_the_previous_artifact_untouched(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """`degraded` is the report; the last good view is NOT clobbered."""
+    out = tmp_path / "locked" / "state.json"
+    out.parent.mkdir()
+    out.write_text('{"schema": "agent_os_state.v1", "sentinel": true}\n', encoding="utf-8")
+    before = out.read_bytes()
+    out.chmod(0o444)
+    try:
+        result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds))
+    finally:
+        out.chmod(0o644)
+    assert result.returncode == 0, "an unwritable output must never fail the nightly"
+    assert out.read_bytes() == before, "the previous artifact was overwritten"
+    assert "could not write" in result.stdout
+
+
+def test_missing_store_exits_zero_and_writes_nothing(tmp_path: Path) -> None:
+    out = tmp_path / "state.json"
+    result = _status(tmp_path / "no-store", out, "--now", FROZEN)
+    assert result.returncode == 0
+    assert not out.exists()
+
+
+# --------------------------------------------------------- I4: fail-closed schema
+
+
+def test_schema_stays_fail_closed_while_the_view_stays_fail_open(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """A malformed record reds `validate` and is EXCLUDED from — never blanks — the view."""
+    target = store / "workstreams" / "WS-GMI-THEME-GRAPH.md"
+    target.write_text(
+        target.read_text(encoding="utf-8").replace("status: blocked", "status: humming", 1),
+        encoding="utf-8",
+    )
+    validated = _run("validate", "--root", str(store))
+    assert validated.returncode == 1, "schema must still fail closed"
+
+    out = tmp_path / "state.json"
+    result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds))
+    assert result.returncode == 0, "the VIEW must not go dark because one record is bad"
+    state = _state(out)
+    assert any("malformed" in item for item in state["inputs"]["degraded"])
+    assert [row["key"] for row in state["workstreams"]], "the other records still report"
+
+
+# ------------------------------------------------------------- I1: no execution
+
+
+def test_status_and_brief_always_exit_zero(store: Path, tmp_path: Path) -> None:
+    """Nothing added here can block anything, including on a store full of garbage."""
+    (store / "workstreams" / "WS-GARBAGE.md").write_text("not even frontmatter\n",
+                                                         encoding="utf-8")
+    out = tmp_path / "state.json"
+    assert _status(store, out, "--now", FROZEN).returncode == 0
+    assert _run("brief", "--root", str(store), "--now", FROZEN,
+                "--no-remember").returncode == 0
+
+
+def test_generator_holds_no_gate_vocabulary() -> None:
+    """A reviewer's check that I1 is structural: no dispatch/exec surface exists here."""
+    source = GENERATOR.read_text(encoding="utf-8")
+    for forbidden in ("subprocess.Popen", "os.execv", "os.system", "sys.exit(1)"):
+        assert forbidden not in source, f"{forbidden} has no business in a knowledge plane"
+    # The only subprocess use is local git, read-only.
+    assert source.count("subprocess.run") == 1, "one local-git call site, no others"
+
+
+# ----------------------------------------------------------------- zero network
+
+
+NETWORK_MODULES = ("requests", "urllib.request", "urllib3", "http.client", "httpx", "aiohttp")
+
+
+def test_no_network_module_is_imported_by_the_new_code_paths() -> None:
+    """Static half: the module cannot reach the network because it never imports it."""
+    probe = (
+        "import sys; sys.path.insert(0, %r);"
+        "import importlib; importlib.import_module('scripts.agentos');"
+        "bad=[m for m in %r if m in sys.modules];"
+        "print('LOADED:'+','.join(bad))" % (str(REPO), NETWORK_MODULES)
+    )
+    result = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True,
+                            cwd=REPO)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "LOADED:", (
+        f"a network module reached sys.modules: {result.stdout}"
+    )
+
+
+def test_no_gh_invocation_in_the_generator() -> None:
+    """PR state comes ONLY from the local active_builds.json."""
+    source = GENERATOR.read_text(encoding="utf-8")
+    for line in source.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#") or stripped.startswith("*"):
+            continue
+        assert '"gh"' not in stripped and "'gh'" not in stripped, (
+            f"gh invocation found — the REST bucket is shared with ship_loop_guard.py: {line}"
+        )
+
+
+def test_status_completes_with_sockets_disabled(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """Runtime half: block the socket layer and the command must still succeed."""
+    sitedir = tmp_path / "nonet"
+    sitedir.mkdir()
+    (sitedir / "sitecustomize.py").write_text(
+        "import socket\n"
+        "def _deny(*a, **k):\n"
+        "    raise RuntimeError('network access attempted by a zero-network command')\n"
+        "socket.socket = _deny\n"
+        "socket.create_connection = _deny\n"
+        "socket.getaddrinfo = _deny\n",
+        encoding="utf-8",
+    )
+    out = tmp_path / "state.json"
+    result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds),
+                     env={"PYTHONPATH": str(sitedir)})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "network access attempted" not in (result.stdout + result.stderr)
+    assert _state(out)["workstreams"]
+
+
+# ------------------------------------------------- the record-vs-execution join
+
+
+def test_merged_pr_under_an_unfinished_wave_is_reported(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """The join nothing else in the org performs.
+
+    ABM knows PR state and never reads the record; the record knows the intent and never
+    reads the PR.  A wave left `in_progress` behind a merged PR is invisible to both.
+    """
+    record = store / "workstreams" / "WS-PROPHET-US-ENTRY-TIMING.md"
+    record.write_text(
+        record.read_text(encoding="utf-8").replace(
+            "    title: Queue drain + backfill\n    status: done",
+            "    title: Queue drain + backfill\n    status: in_progress", 1),
+        encoding="utf-8",
+    )
+    out = tmp_path / "state.json"
+    assert _status(store, out, "--now", FROZEN, "--active-builds", str(builds)).returncode == 0
+    warnings = _state(out)["warnings"]
+    assert any("record_disagrees_with_execution" in w and "#5370" in w for w in warnings), warnings
+
+
+def test_wave_pr_absent_from_active_builds_is_reported(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    payload = json.loads(builds.read_text(encoding="utf-8"))
+    payload["recent_merged"] = [m for m in payload["recent_merged"] if m["number"] != 5370]
+    builds.write_text(json.dumps(payload), encoding="utf-8")
+    out = tmp_path / "state.json"
+    assert _status(store, out, "--now", FROZEN, "--active-builds", str(builds)).returncode == 0
+    warnings = _state(out)["warnings"]
+    assert any("#5370" in w and "absent from active_builds.v1" in w for w in warnings), warnings
+
+
+def test_staleness_comes_from_git_not_from_a_typed_field(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """`updated` is DERIVED; no record may still be carrying a hand-typed one."""
+    for record in (STORE / "workstreams").glob("*.md"):
+        head = record.read_text(encoding="utf-8").split("---", 2)[1]
+        assert "\nupdated:" not in head, f"{record.name} still hand-types `updated`"
+        assert "\ncreated:" not in head, f"{record.name} still hand-types `created`"
+    out = tmp_path / "state.json"
+    _status(STORE, out, "--now", FROZEN, "--active-builds", str(builds))
+    rows = _state(out)["workstreams"]
+    assert any(row["updated"] for row in rows), "git dates did not resolve for any record"
+
+
+# ----------------------------------------------------------------- ranking
+
+
+def test_start_next_only_offers_waves_whose_dependencies_are_satisfied(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "state.json"
+    _status(store, out, "--now", FROZEN, "--active-builds", str(builds))
+    state = _state(out)
+    by_key = {row["key"]: row for row in state["workstreams"]}
+    for item in state["start_next"]:
+        row = by_key[item["workstream"]]
+        wave = next(w for w in row["wave_detail"] if w["id"] == item["wave"])
+        assert wave["status"] == "todo"
+        assert wave["deps_satisfied"], f"{item['workstream']} {item['wave']} is not unblocked"
+        assert row["status"] not in {"blocked", "parked", "killed", "done"}
+
+
+def test_start_next_states_that_it_is_not_the_priority_queue(store: Path) -> None:
+    """P7: two ranked lists that do not say which question they answer is the failure."""
+    text = _run("brief", "--root", str(store), "--now", FROZEN, "--no-remember").stdout
+    assert "improvement_agenda.py" in text
+    assert "NOT the company's priority order" in text
+    payload = json.loads(
+        _run("brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json").stdout
+    )
+    assert "improvement_agenda.py" in payload["start_next_scope"]
+
+
+def test_start_next_ranks_active_p0_above_a_bigger_unblock_count(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """Rank order is P0 alignment FIRST, then unblock count — not the reverse."""
+    strategic = tmp_path / "mm" / "config"
+    strategic.mkdir(parents=True)
+    (strategic / "strategic_state.yml").write_text(
+        "p0:\n  - id: US_PROPHET_ENTRY_TIMING\n    status: active\n", encoding="utf-8")
+    # Unblock W1 of the P0 workstream by finishing its predecessor.
+    record = store / "workstreams" / "WS-PROPHET-US-ENTRY-TIMING.md"
+    record.write_text(
+        record.read_text(encoding="utf-8").replace(
+            "    title: Verify the 22:30Z bake lands clean after backfill\n    status: in_progress",
+            "    title: Verify the 22:30Z bake lands clean after backfill\n    status: done", 1),
+        encoding="utf-8",
+    )
+    out = tmp_path / "state.json"
+    result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds),
+                     env={"MACRO_MASTERMIND_REPO": str(tmp_path / "mm")})
+    assert result.returncode == 0, result.stdout
+    ordering = _state(out)["start_next"]
+    assert ordering, "the P0 wave should now be unblocked"
+    assert ordering[0]["workstream"] == "PROPHET-US-ENTRY-TIMING", ordering
+    assert ordering[0]["p0_active"] is True
+
+
+# ------------------------------------------------------------------- claims
+
+
+def test_expired_claim_reports_unclaimed_and_blocks_nothing(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    record = store / "workstreams" / "WS-MACRO-CONTEXT-INDEX.md"
+    record.write_text(
+        record.read_text(encoding="utf-8").replace(
+            "landmines:",
+            "claim:\n  by: claude/long-gone\n  at: 2026-01-01\n"
+            "  expires: 2026-01-02\nlandmines:", 1),
+        encoding="utf-8",
+    )
+    out = tmp_path / "state.json"
+    assert _status(store, out, "--now", FROZEN, "--active-builds", str(builds)).returncode == 0
+    state = _state(out)
+    row = next(r for r in state["workstreams"] if r["key"] == "MACRO-CONTEXT-INDEX")
+    assert row["claim"]["stale"] is True
+    assert row["claim"]["worktree_live"] is False
+
+
+# -------------------------------------------------------- house annotation law
+
+
+def test_annotations_start_the_line(store: Path, tmp_path: Path) -> None:
+    """Emitted by a bare print or GitHub silently drops them (five prior incidents)."""
+    result = _status(store, tmp_path / "state.json", "--now", FROZEN,
+                     "--active-builds", str(tmp_path / "missing.json"))
+    annotations = [ln for ln in result.stdout.splitlines()
+                   if "::warning" in ln or "::error" in ln]
+    assert annotations, "a degraded input emitted no annotation"
+    for line in annotations:
+        assert line.startswith("::"), f"annotation does not start the line: {line!r}"
+
+
+# ------------------------------------------------------------------ brief shape
+
+
+def test_brief_json_is_the_documented_schema(store: Path, builds: Path) -> None:
+    payload = json.loads(_run(
+        "brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json",
+        "--active-builds", str(builds),
+    ).stdout)
+    assert payload["schema"] == "ceo_brief.v1"
+    for field in ("generated_at", "since", "counts", "inputs", "needs_ceo", "blocked",
+                  "finished", "start_next", "warnings"):
+        assert field in payload, f"ceo_brief.v1 is missing {field}"
+    for field in ("total", "active", "awaiting_ci", "blocked", "done_in_window"):
+        assert field in payload["counts"]
+
+
+def test_brief_finished_window_uses_merge_time_not_a_typed_field(
+    store: Path, builds: Path
+) -> None:
+    """FINISHED is windowed on the PR's merged_at, so it cannot be gamed by a record."""
+    wide = json.loads(_run(
+        "brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json",
+        "--since", "30d", "--active-builds", str(builds),
+    ).stdout)
+    narrow = json.loads(_run(
+        "brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json",
+        "--since", "1h", "--active-builds", str(builds),
+    ).stdout)
+    assert wide["counts"]["done_in_window"] > narrow["counts"]["done_in_window"]
+    assert narrow["counts"]["done_in_window"] == 0
+    assert all(item["done_at"] for item in wide["finished"])
+
+
+def test_brief_needs_ceo_is_authored_never_inferred(store: Path, builds: Path) -> None:
+    """Escalation is a declared field.  Nothing heuristic may promote a workstream."""
+    payload = json.loads(_run(
+        "brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json",
+        "--active-builds", str(builds),
+    ).stdout)
+    authored = {
+        path.stem[3:] for path in (store / "workstreams").glob("*.md")
+        if "needs_ceo:" in path.read_text(encoding="utf-8")
+    }
+    assert {item["key"] for item in payload["needs_ceo"]} == authored
+
+
+def test_brief_does_not_write_the_check_in_marker_when_asked_not_to(
+    store: Path, builds: Path
+) -> None:
+    marker = REPO / "data" / "governance" / ".ceo_brief_last"
+    before = marker.read_bytes() if marker.exists() else None
+    _run("brief", "--root", str(store), "--now", FROZEN, "--no-remember",
+         "--active-builds", str(builds))
+    after = marker.read_bytes() if marker.exists() else None
+    assert before == after

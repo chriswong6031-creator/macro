@@ -7,7 +7,7 @@ objective: >
   workstreams, decisions, discoveries, and handoffs are written by live sessions, and
   the CEO reads one generated page instead of reconstructing state by hand.
 status: active
-program: project-active-build-control
+program: agent-os
 p0: EXECUTIVE_OS
 repos: [macro]
 owner: chairman
@@ -31,8 +31,11 @@ waves:
     depends_on: [W0]
   - id: W2
     title: "Phase 2 — status generator + mastermind status CEO brief"
-    status: todo
+    status: in_progress
     depends_on: [W0]
+    next_action: >
+      Land the status generator and CEO brief; then rule on C3 (START NEXT vs the
+      improvement agenda) alongside C1 and C2.
   - id: W3
     title: "Phase 3 — compile-context over the existing context index"
     status: todo
@@ -45,6 +48,8 @@ decisions:
   - DEC:AGENTOS-NO-TASK-STORE
   - DEC:AGENTOS-FILE-PER-RECORD
   - DEC:AGENTOS-HOME-IS-MACRO
+  - DEC:AGENTOS-START-NEXT-VS-AGENDA
+  - DEC:AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR
 discoveries:
   - DSC:GOVERNANCE-JSONL-NOT-TRACKED
   - DSC:EXECUTIVE-OS-NO-PROGRAM-ROW
@@ -63,13 +68,16 @@ artifacts:
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 needs_ceo:
   question: >
-    Two conflicts between the Agent OS brief and the merged Phase 0 census. C1 — task
+    Three conflicts. C1 — task
     registry: the brief asks for a first-class Task entity; census §5.6 ruled sub-PR
     granularity a non-goal. C2 — session tracking: the brief asks for heartbeats and
-    stale-task detection; census §6.3 forbids a session-tracking service.
+    stale-task detection; census §6.3 forbids a session-tracking service. C3 — ranked
+    work: the CEO brief's START NEXT is a ranked next-work list, and
+    config/strategic_state.yml:16 gives that concept to brain/improvement_agenda.py.
   options:
-    - "Side with the census: waves inside workstreams (C1), advisory claim (C2)"
+    - "Side with the census on C1/C2; keep START NEXT as readiness-only on C3"
     - "Override the census: build a real task store and a session registry"
+    - "Fold readiness into the improvement agenda and retire START NEXT here"
   recommendation: >
     Side with the census on both. Waves supply the dependency graph and next-action the
     brief actually needs at ~4 fields instead of 20; the advisory claim plus git worktree
@@ -77,9 +85,7 @@ needs_ceo:
     items assigned to workers by someone other than the worker — that is a dispatcher, and
     it belongs in control_plane/.
   by_when: 2026-08-19
-next_action: Land Phase 0, then rule on C1 and C2.
-created: 2026-08-12
-updated: 2026-08-12
+next_action: Land Phase 2, then rule on C1, C2 and C3.
 ---
 
 ## Context

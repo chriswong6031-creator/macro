@@ -31,10 +31,18 @@ Four rules:
 
 ```bash
 python3 scripts/agentos.py brief                      # since last invocation
-python3 scripts/agentos.py brief --since 24h          # or 1h / overnight / 2026-08-11
+python3 scripts/agentos.py brief --since 24h          # or 1h / 7d / overnight / 2026-08-11
 python3 scripts/agentos.py brief --full               # include autonomous detail
 python3 scripts/agentos.py brief --json               # ceo_brief.v1
+python3 scripts/agentos.py brief --now <iso>          # freeze the clock (reproducibility)
+python3 scripts/agentos.py brief --no-remember        # do not record this check-in
+python3 scripts/agentos.py brief --scan-uncommitted   # add the per-worktree dirty scan
 ```
+
+`--scan-uncommitted` is OPT-IN because it costs one `git status` per checkout: measured
+276 live worktrees on the primary host, most carrying a multi-GB `data/` tree, which put
+a plain `brief` past 120 seconds. Its absence is stated in `degraded` rather than
+silently skipped — a CEO command nobody waits for is a CEO command nobody runs.
 
 Reads only local artifacts: `agentos/`, `data/governance/active_builds.json`, `git worktree list`,
 `git log`. **No network call, no GitHub API hit** — the freshness of PR state is inherited from
@@ -47,66 +55,110 @@ could contribute to blocking the fleet would be a bad trade for a few minutes of
 
 ---
 
-## §2 Exact output — current Mastermind workstreams, 2026-08-12
+## §2 Exact output — REGENERATED FROM THE STORE, not hand-written
+
+Reproduce it exactly:
+
+```bash
+python3 scripts/agentos.py brief --now 2026-08-12T14:00:00Z --since 7d --no-remember
+```
 
 ```
 MASTERMIND STATUS — 2026-08-12 14:00 UTC
-since your last check-in (2026-08-11 19:30 UTC, 18h ago)
+since the last 7d (2026-08-05 14:00 UTC, 168h ago)
 
-  24 workstreams:  16 active · 3 awaiting CI · 2 blocked · 3 done this window
-  Inputs: workstreams@14:00 · active_builds@06:00 (8h old) · 31 worktrees
+  6 workstreams:  4 active · 0 awaiting CI · 2 blocked · 0 done this window
+  Inputs: active_builds 36h old · 244 worktrees
+  ⚠ DEGRADED (4) — this brief is incomplete:
+      active_builds.v1 merged window is TRUNCATED — a merged PR may
+      read 'unknown'
+      mastermind:config/strategic_state.yml absent — p0 ids
+      unvalidated, P0 ranking neutral (this Mastermind checkout
+      predates config/strategic_state.yml)
+      uncommitted-work scan skipped over 244 worktrees (one `git
+      status` each) — re-run with --scan-uncommitted for stranded
+      work
+      active_builds.v1 is 36h old — PR state predates the last
+      nightly sweep
 
-━━ WHAT NEEDS YOU ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━ WHAT NEEDS YOU ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
- 1. WS:WATCHLIST-PORTFOLIO-CEO — product decision, blocks W1
+ 1. WS:WATCHLIST-PORTFOLIO-CEO — blocks 1 wave(s)
     Portfolio and Watchlist persistence: one table or two?
-      A) Single positions table + kind discriminator  ← recommended
-         Terminal /portfolio already has zero portfolio_positions references,
-         so the migration cost is near zero today and rises once W1 ships.
-      B) Separate tables, join at read time
-    Wanted by 2026-08-14 · 2 waves queued behind this
+      A) Single positions table with a kind discriminator  ← recommended
+      B) Separate tables, joined at read time
+    Recommendation:
+      Single positions table with a kind discriminator. Terminal
+      /portfolio currently has zero portfolio_positions
+      references, so the migration cost is near zero today and
+      rises once W1 ships against either shape.
+    Wanted by 2026-08-14
     → agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md
+ 2. WS:AGENT-OS — blocks 5 wave(s)
+    Three conflicts. C1 — task registry: the brief asks for a
+    first-class Task entity; census §5.6 ruled sub-PR granularity
+    a non-goal. C2 — session tracking: the brief asks for
+    heartbeats and stale-task detection; census §6.3 forbids a
+    session-tracking service. C3 — ranked work: the CEO brief's
+    START NEXT is a ranked next-work list, and
+    config/strategic_state.yml:16 gives that concept to
+    brain/improvement_agenda.py.
+      A) Side with the census on C1/C2; keep START NEXT as readiness-only on C3
+      B) Override the census: build a real task store and a session registry
+      C) Fold readiness into the improvement agenda and retire START NEXT here
+    Recommendation:
+      Side with the census on both. Waves supply the dependency
+      graph and next-action the brief actually needs at ~4
+      fields instead of 20; the advisory claim plus git worktree
+      list and PR-collision data cover the collision goal.
+      Override C1 only if you want work items assigned to
+      workers by someone other than the worker — that is a
+      dispatcher, and it belongs in control_plane/.
+    Wanted by 2026-08-19
+    → agentos/workstreams/WS-AGENT-OS.md
 
- 2. WS:AGENT-OS — scope ruling, blocks Phase 1
-    Two conflicts between your Agent OS brief and the merged Phase 0 census:
-      C1  Task registry: brief asks for one, census §5.6 ruled it a non-goal.
-          Recommend siding with the census (waves inside workstreams).
-      C2  Session tracking: brief asks for heartbeats, census §6.3 forbids
-          the service. Recommend the advisory claim instead.
-    → research/MASTERMIND_AGENT_OS_ARCHITECTURE.md §13
+━━ BLOCKED ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━ BLOCKED ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
- • WS:CN-LIMIT-ALPHA — STOP-SHIP held since 08-10, by your ruling.
-   W1–W3 must not be cited. P-A2 is accrual-gated. Not stale; holding correctly.
- • WS:GMI-THEME-GRAPH — waiting on the Sat 2026-08-15 scrape. External, on time.
-
-━━ FINISHED (18h) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
- ✅ WS:EXECUTIVE-OS         1C-A secure launchd supervisor        #25
- ✅ WS:WATCHLIST-PORTFOLIO  P0 husk cured — 6-file shell          #5463
- ✅ WS:PROPHET-US           queue drained, backfill complete      #5370
+ • WS:CN-LIMIT-ALPHA — China limit-up alpha research
+   STOP-SHIP held since 2026-08-10 by operator ruling: grade
+   NEITHER arm, and never cite the pre-charter research waves
+   (see the landmine below for what those are).
+ • WS:GMI-THEME-GRAPH — Global Market Intelligence theme graph
+   Waiting on the scheduled Saturday 2026-08-15 scrape. External
+   dependency, on time — not stalled.
 
 ━━ RUNNING (no action needed) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
- 16 active · 9 progressing autonomously · 3 awaiting CI (2 armed
- merge-on-green, 1 in packs) · 4 awaiting review.
- Oldest unmerged armed PR: 4h. No stale claims.
-                                          → mastermind status --full
+ 4 active · 0 awaiting CI · 0 awaiting review · 0 proposed.
+ 0 open PR(s) cited by a wave. 0 stale claim(s); 0 claim(s) with no live worktree.
+                                     → agentos.py brief --full
 
-━━ START NEXT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━ START NEXT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
- 1. WS:PROPHET-US W2 — entry-timing delta on held-out episodes.
-    Unblocked by #5370. P0 US_PROPHET_ENTRY_TIMING. Highest-value open wave.
- 2. WS:AGENT-OS Phase 1 — adoption. Unblocked once C1/C2 are ruled.
- 3. WS:WATCHLIST-PORTFOLIO W1 — blocked on decision 1 above.
+ Readiness only — which waves CAN start (dependencies satisfied).
+ It is NOT the company's priority order:
+ brain/improvement_agenda.py owns the ranked work queue (Charter
+ P7). Ask that list what matters most; ask this one what is
+ unblocked.
+
+ 1. WS:WATCHLIST-PORTFOLIO-CEO W1 — Persistence model implementation
+    agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md
+
+ 1 hygiene warning(s) — agentos.py brief --full
 ```
 
-**Verification note.** The window counts and the shape are illustrative of the format. Every
-*named* item is real and traceable: PR #5463 (Watchlist P0 husk), #5370 (Prophet backfill),
-#25 (Executive OS Phase 1C-A, 2026-08-12 03:53), the CN limit-up STOP-SHIP of 2026-08-10, and
-the 2026-08-15 GMI scrape date. Phase 2's implementation computes all counts from
-`agent_os_state.v1` rather than asserting them.
+**Why this section is generated and not illustrated.** The hand-written version of this
+section shipped three defects that a regenerated one cannot have: a `WS:EXECUTIVE-OS`
+line for a workstream that does not exist in the store, workstream keys truncated to fit
+the column, and `blocks_waves: 2` against a single real queued wave. A worked example
+that disagrees with the artifact is worse than no example, because it teaches the reader
+a shape the tool does not produce. Regenerate this block whenever the format changes.
+
+**Read the DEGRADED block as part of the output, not as noise.** The run above was taken
+on a developer machine where `active_builds.json` was 36h stale, the Mastermind sibling
+checkout carried no `strategic_state.yml`, and the worktree scan was skipped. Every one
+of those facts is printed. That is §0 rule 4 working: the same brief with those lines
+suppressed would be indistinguishable from a brief where nothing is happening.
 
 ---
 
@@ -125,6 +177,25 @@ the 2026-08-15 GMI scrape date. Phase 2's implementation computes all counts fro
 **START NEXT ranking**, in order: (1) all `depends_on` satisfied; (2) maps to an active P0 in
 `strategic_state.yml`; (3) unblocks the most other waves; (4) not currently claimed. Deterministic
 — no model in the loop, so the brief is reproducible and arguable.
+
+**START NEXT is NOT the company's ranked work queue, and the section says so on every
+render.** Charter P7 (one source of truth per concept) gives the ranked-queue concept to
+Mastermind `brain/improvement_agenda.py`, and census §5.3 calls it "the only ranked,
+evidence-cited priority engine in the org". Readiness and priority are different
+concepts with different inputs — readiness comes from the wave dependency graph, which
+only Agent OS holds; priority comes from accountability-fused evidence, which only the
+agenda holds. A wave can be perfectly ready and correctly last in line. The failure P7
+guards against is two lists that both claim to answer the same question and disagree, so
+the fix is that each list states its question: a fixed scope line renders above the
+items in both the text and JSON forms (`start_next_scope`), and the direction of truth
+is stated — **priority wins; START NEXT is only telling you the work is startable.**
+Full reasoning, alternatives, and what would reverse it:
+`agentos/decisions/DEC-AGENTOS-START-NEXT-VS-AGENDA.md`. Escalated as conflict **C3**.
+
+Deriving the section from the agenda instead was rejected on evidence: `data/agenda/` is
+gitignored and VPS-authoritative, absent in a fresh checkout, and the alternative read
+path is the live VPS API — which would break the zero-network contract in §1 for the
+sake of a list this command is not trying to produce.
 
 ---
 
@@ -175,3 +246,6 @@ renderers. P7.
 | CEO becomes the dispatcher | START NEXT is *unblocked work*, not assignments. Nothing is assigned to anyone. |
 | Brief burns GitHub quota | Zero network calls; PR state inherited from the nightly sweep (§1) |
 | Brief disagrees with reality | Every line cites a file or PR the CEO can open; the artifact wins over the summary |
+| Two ranked lists disagree | START NEXT renders its scope line every time and defers to the improvement agenda on priority (§3, `DEC:AGENTOS-START-NEXT-VS-AGENDA`) |
+| Record says one thing, execution did another | `record_disagrees_with_execution` warnings: a wave not `done` behind a merged PR, or a `waves[].pr` absent from `active_builds.v1` |
+| Worked example drifts from the tool | §2 is regenerated from the store by a printed command, never hand-written |

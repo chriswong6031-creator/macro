@@ -39,7 +39,9 @@ not here.
    workers a shared append target is a guaranteed merge conflict. New files merge cleanly.
 2. **Keys are UPPER-KEBAB, unique, and never reused or renumbered.** Cite as `WS:<KEY>`,
    `DEC:<KEY>`, `DSC:<KEY>` — **never** by row or line number. Row-number citations have
-   already mis-resolved in this org (2026-08-05).
+   already mis-resolved in this org (2026-08-05). **The colon is not decoration:** a bare
+   `depends_on: [FOO]` is a hard error, because the tolerant version dropped the edge
+   silently (0 errors, 0 warnings) and left the dependency graph quietly incomplete.
 3. **Frontmatter is machine truth; the body is human truth.** Both in one file so they cannot
    drift apart.
 4. **Every factual claim carries provenance** — `verified_by` naming a command, a `file:line`,
@@ -51,7 +53,13 @@ not here.
    `so_what` (what a future session does differently). Missing either means it is a log line,
    not memory.
 7. **`docs/AGENT_OS_STATE.md` and `data/governance/agent_os_state.json` are generated.**
-   Never hand-edit them.
+   Never hand-edit them. The **nightly is the only regenerator** — do not add a drift guard
+   that makes every record-touching PR commit a regenerated copy, which would put two
+   independent record edits into conflict on a shared file (see
+   `decisions/DEC-AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR.md`).
+8. **Do not write `created` or `updated`.** They are derived from `git log` by the
+   generator. Hand-typing them made every session rewrite the same line and made
+   staleness circular.
 
 ---
 
@@ -61,9 +69,34 @@ not here.
 python3 scripts/agentos.py validate
 ```
 
-Exit 1 on a malformed record (**fail-closed on schema** — a bad record is a lie about the
-organization). Exit 0 with warnings on a missing join input (**fail-open on join** — a missing
-sibling repo or a rate-limited `gh` must never red the nightly).
+Exit 1 on a **malformed** record (fail-closed on schema — a bad record is a lie about the
+organization). Exit 0 with warnings on a missing join input (fail-open on join — a missing
+sibling repo must never red the nightly).
+
+**Work STATE never hard-fails.** `validate` runs unscoped on every PR in the fleet, over the
+whole store, so a hard rule keyed on state would be a fleet-wide gate on a knowledge record —
+and it is reachable with no bad record anywhere: two sessions each marking a different wave
+done merge cleanly and the merged tree used to exit 1. Status-vs-wave rollup,
+`blocked`/`blocked_by` pairing, staleness, claim expiry and record-vs-execution disagreement
+are all warnings, reported by `status` and `brief`.
+
+---
+
+## Read the state
+
+```bash
+python3 scripts/agentos.py status          # writes both generated artifacts
+python3 scripts/agentos.py status --dry-run
+python3 scripts/agentos.py brief           # the CEO view
+python3 scripts/agentos.py brief --full --since 7d
+python3 scripts/agentos.py brief --json    # ceo_brief.v1
+```
+
+Both **always exit 0** (invariant I1) and make **zero network calls**: PR state comes only
+from the local `data/governance/active_builds.json` written by the nightly ABM sweep. The
+5,000/hr REST bucket is shared with `ship_loop_guard.py`, which fails CLOSED when it is
+exhausted, so a status command that burned quota could block the Stop it was reporting on.
+Anything unreadable lands in `degraded` and is printed, never suppressed.
 
 ---
 
@@ -87,6 +120,13 @@ git worktree list        # a PR-only collision check is incomplete
 A `claim` on a workstream is **advisory**: it warns you, it never stops you, and it expires by
 wall-clock with no heartbeat. An expired claim reports `unclaimed` — a signal to look, not a
 takeover.
+
+**Know what a claim can actually prevent.** It is a file in git, so no other session can read
+it until it MERGES — PR, CI, and a sweeper cycle that runs every 10 minutes and is unbounded
+when main is red. It prevents **day-scale** collisions and prevents **nothing** at the
+same-hour scale; `git worktree list` above is what covers the same hour, instantly and for
+free. That is why `expires` defaults to +12h rather than +72h, and why `status` reports
+`worktree_live: false` when a claiming branch has no live checkout.
 
 ---
 

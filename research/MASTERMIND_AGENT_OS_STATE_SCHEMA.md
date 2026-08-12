@@ -17,6 +17,14 @@ Cited as `WS:<KEY>` / `DEC:<KEY>` / `DSC:<KEY>` — never by row or line number.
 verbatim from the `DNR:<KEY>` convention, which exists because row-number citations have already
 mis-resolved in production (2026-08-05).
 
+**There is exactly ONE citation shape, and a bare key is a hard error.** `depends_on: [FOO]`
+is not a citation; it must be `depends_on: [WS:FOO]`. This is enforced rather than tolerated
+because the tolerant version failed silently in the worst available way: a bare key in
+`depends_on` was DROPPED with 0 errors and 0 warnings (verified — `depends_on:
+[TOTALLY-NONEXISTENT]` exited 0), while the same key written `WS:TOTALLY-NONEXISTENT`
+hard-errored. The dropped edge never reached the cycle check or the START NEXT readiness walk,
+so the dependency graph the whole design rests on was quietly incomplete with no signal.
+
 **Timestamps.** ISO-8601 UTC (`2026-08-12T14:00:00Z`). Dates alone as `YYYY-MM-DD`. Relative
 dates ("last Tuesday") are a validation error — they are unreadable six months later.
 
@@ -47,7 +55,7 @@ action. Target cardinality **20–40 live**. This is the join key that makes eve
 | `objective` | ✅ | string | 1–3 sentences: what "done" means in observable terms. |
 | `status` | ✅ | enum | `proposed` · `active` · `blocked` · `awaiting_ci` · `awaiting_review` · `done` · `parked` · `killed` |
 | `program` | ✅ | string | Key from `config/mastermind_programs.yml`. Validated to exist. |
-| `p0` | ◻ | string | P0 id from Mastermind `config/strategic_state.yml`. Validated when the sibling repo is present. |
+| `p0` | ◻ | string | P0 id from Mastermind `config/strategic_state.yml`. Joined by `status` when that sibling checkout is present: an unknown id warns, an absent checkout populates `degraded` and leaves P0 ranking neutral (fail-open, I4). `validate` does not touch it — a record's validity must not depend on which checkouts exist on the machine. |
 | `repos` | ✅ | list | Any of `macro` · `terminal` · `mastermind`. |
 | `owner` | ✅ | string | Accountable seat/human — `chairman`, `coo-fable`, `codex`, `claude-fleet`. Not a session id. |
 | `class` | ✅ | enum | `research` · `build` · `design` · `adjudication` · `mechanical`. Routing input (§10 architecture). |
@@ -66,7 +74,7 @@ action. Target cardinality **20–40 live**. This is the join key that makes eve
 | `claim` | ◻ | object | `{by, at, expires}`. **Advisory only — blocks nothing.** |
 | `needs_ceo` | ◻ | object | `{question, options, recommendation, by_when}`. Presence promotes it into the CEO brief. |
 | `next_action` | ✅ | string | The single next concrete action. Not a goal — a command, a file, or a decision. |
-| `created` / `updated` | ✅ | date | |
+| `created` / `updated` | ✖ | — | **DERIVED, never authored.** The generator computes them from `git log` over the record file. Writing them by hand made every session touching a record rewrite the same line — the one verified concurrent-edit conflict site in this schema — and made staleness circular, since the field asserting freshness was typed by the session claiming it. |
 
 ### §1.1 Wave (inline)
 
@@ -298,7 +306,10 @@ of this class are gitignored and the file is absent from `git ls-files`. ...
 ## §4 Handoff — `agentos/handoffs/<WS-KEY>-<YYYY-MM-DD>.md`
 
 Full specification, including the prose body template and the quality floor:
-`MASTERMIND_AGENT_HANDOFF_PROTOCOL.md`. Frontmatter contract:
+`MASTERMIND_AGENT_HANDOFF_PROTOCOL.md`. Handoffs **are** validated and counted (§6 rule
+12) and their `DSC:` citations count toward the discovery citation total — a finding
+whose only reader was a handoff used to age into a 90-day GC candidate. Frontmatter
+contract:
 
 | Field | Req | Notes |
 |---|---|---|
@@ -364,6 +375,24 @@ command produced it.
 `degraded` and `warnings` are first-class: a view that silently omits a missing input reads as
 "everything is fine," which is the failure I4 exists to prevent.
 
+**Envelope vs pure section.** `generated_at`, `inputs.worktrees`,
+`inputs.active_builds_age_hours` and `inputs.degraded` are the ENVELOPE — volatile, and
+excluded from the byte-identity guarantee. `workstreams`, `needs_ceo`, `start_next` and
+`warnings` are a pure function of the authored records plus the join inputs, and are
+compared byte-for-byte across runs by `tests/test_agentos_status.py`. The split is what
+makes the test meaningful: a byte-identity test that required a frozen clock to pass at
+all would hide real nondeterminism inside the records themselves. Both are proven — the
+whole file with `--now` pinned, and the pure section with the wall clock live.
+
+**One regenerator: the nightly, and only the nightly.** `daily.yml` runs
+`scripts/agentos.py status` immediately after `build_active_build_map.py`, whose output
+is its PR-state input. There is deliberately **no** CI drift guard forcing every
+record-touching PR to commit a regenerated copy: that would put two independent record
+edits into conflict on a shared generated file neither author wrote, which is precisely
+the write pattern invariant I2 exists to prevent. The artifacts may be up to ~24h stale
+and they print their own input ages, so staleness is visible rather than assumed away.
+Reasoning: `agentos/decisions/DEC-AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR.md`.
+
 ### `docs/AGENT_OS_STATE.md`
 
 Human mirror of the same data, DO-NOT-EDIT banner, regenerated by the same command. Same
@@ -373,25 +402,53 @@ authored-vs-generated discipline as `docs/MASTERMIND_SYSTEM_MAP.md` and `docs/AC
 
 ## §6 Validation rules (`scripts/agentos.py validate`)
 
-**Hard-fail (exit 1) — schema integrity:**
+**The line is MERGE REACHABILITY, and it is where it is for a measured reason.**
+`validate` runs on every PR in the fleet, unscoped, over the WHOLE store — job
+`self-mod-fence` in `.github/ci/legacy-jobs.yml`, which `infer_job_scopes()` gives an
+empty path scope. So a hard rule that keys on the *state* of the work is a fleet-wide
+fail-closed gate on a knowledge record, which makes invariant I1 operationally false.
+It is also reachable with no bad record anywhere. Reproduced end to end on the
+pre-change code: branch A marks one wave `done` (exit 0), branch B marks another
+`dropped` (exit 0), `git merge` is clean, and the merged tree exits **1** on
+`active-but-complete`. Two green PRs, a red main, and nothing to fix.
 
-1. Unknown or missing required field; wrong enum value.
+Hard-fail is therefore reserved for properties a clean textual merge of two
+individually-valid records **cannot produce**.
+
+**Hard-fail (exit 1) — malformation only:**
+
+1. Unparseable frontmatter; unknown or missing required field; wrong enum value.
 2. Duplicate key within a type; filename ≠ `key`.
-3. `program` not present in `config/mastermind_programs.yml`.
+3. `program` not present in `config/mastermind_programs.yml`. (A registry rename reds
+   the renaming PR's own run, where the record is fixed — not a stranger's.)
 4. Cycle in workstream `depends_on`, or in wave `depends_on`.
-5. `status: blocked` with empty `blocked_by`, or the reverse.
+5. **Citation shape**: a bare key where a `PREFIX:KEY` citation belongs.
 6. Dangling `DEC:`/`DSC:`/`WS:` reference to a key that does not exist.
 7. `superseded_by` not reciprocated by `supersedes`.
 8. Relative date strings; missing `verified_by` on a discovery.
 9. `alternatives` empty on a decision.
-10. No wave on a workstream, or `status: active` with every wave `done`.
+10. No wave on a workstream.
+11. **Discovery admission gates, as SHAPE**: `verified_by` and `falsifier` must each
+    carry something runnable or openable — a command, a `file:line`, a `#PR`, or a URL.
+    A non-empty check passes `falsifier: "no"` and `verified_by: vibes`, which is
+    exactly the record the gates exist to refuse. Shape only: this cannot judge whether
+    the command is the *right* one and does not pretend to.
+12. **Handoff frontmatter**: required fields, `unverified` PRESENT (an empty list is a
+    valid answer, its absence is not), every `verified[i]` naming its `command`, every
+    `changed[i]` naming its `what`, and a body that does not say "see above" to a reader
+    who cannot see above.
 
-**Warn (exit 0) — hygiene, never blocking:**
+**Warn (exit 0) — work STATE and hygiene, never blocking. Reported by `status`/`brief`:**
 
+- `status: active` while every wave is `done`/`dropped`.
+- `status: blocked` with empty `blocked_by`, or the reverse.
+- `record_disagrees_with_execution`: a wave that is not `done` behind a merged PR, or a
+  `waves[].pr` absent from `active_builds.v1`.
+- Workstream not touched in git for >30d while `status: active` (git-derived, not
+  self-reported).
 - Claim expired (`unclaimed`).
 - Discovery >90d with zero `cited_by` (GC candidate).
 - Decision past `review_by`.
-- Workstream `updated` >30d while `status: active`.
 - `owns_paths` overlapping another active workstream (collision signal).
 - Referenced PR absent from `active_builds.v1` (may just be stale — fail-open per I4).
 - **Phantom citation**: an `artifacts:` entry, or the static base of an `owns_paths:` glob, that

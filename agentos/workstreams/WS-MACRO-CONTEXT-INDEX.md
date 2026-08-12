@@ -30,8 +30,6 @@ waves:
 landmines:
   - "Advisory status is load-bearing: cited sources must be opened before acting on them, per CXI-R19."
 next_action: Drive the benchmark gates green (W1).
-created: 2026-07-15
-updated: 2026-08-12
 ---
 
 ## Context

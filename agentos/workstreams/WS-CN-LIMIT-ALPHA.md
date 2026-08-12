@@ -12,7 +12,9 @@ class: research
 blast_radius: reversible
 ambiguity: open
 blocked_by:
-  - "STOP-SHIP held since 2026-08-10 by operator ruling: grade NEITHER arm; W1-W3 must not be cited anywhere."
+  - >-
+    STOP-SHIP held since 2026-08-10 by operator ruling: grade NEITHER arm, and never
+    cite the pre-charter research waves (see the landmine below for what those are).
 waves:
   - id: W-P0
     title: Charter + P0 scope
@@ -27,14 +29,19 @@ waves:
     depends_on: [P-A1]
     next_action: Accrual-gated; do not start until P-A1 accrues.
 landmines:
-  - "W1-W3 results are under STOP-SHIP and must never be cited as evidence, including in passing."
+  - >-
+    The STOP-SHIP covers the PRE-CHARTER research waves the program called W1-W3.
+    They are NOT waves of this record — this record starts at W-P0 (charter + P0
+    scope), and no wave here carries those ids. That is deliberate: the ids are
+    unresolvable inside this store on purpose, because the results behind them must
+    never be cited as evidence, including in passing. If you found this landmine
+    while hunting for a wave called W1, stop hunting — there is nothing here to read.
 next_action: Hold. P-A1 is armed; P-A2 is accrual-gated.
-created: 2026-07-30
-updated: 2026-08-12
 ---
 
 ## Context
 
 Under an explicit operator STOP-SHIP since 2026-08-10. The charter and W-P0 merged
 2026-08-12; P-A1 (#5438) is armed. The block is a deliberate ruling, not a defect — it is
-recorded here so no future session "helpfully" grades an arm or cites W1–W3.
+recorded here so no future session "helpfully" grades an arm or cites the pre-charter
+waves. Those waves are outside this record by design — see the landmine.

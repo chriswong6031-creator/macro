@@ -16,12 +16,19 @@ required:
   ambiguity:    {enum: [specified, scoped, open]}
   waves:        {type: list, min: 1, items: wave}
   next_action:  {type: string, note: an action, never a goal}
-  created:      {type: date}
-  updated:      {type: date}
+derived:
+  # NEVER authored. scripts/agentos.py status computes these from git log over the
+  # record file. Hand-typing them made every session touching a record rewrite the same
+  # line (the one verified concurrent-edit conflict site here), and made staleness
+  # circular: the field asserting freshness was typed by the session claiming it.
+  created:      {type: date, source: "git log --diff-filter=A --format=%as -- <path>"}
+  updated:      {type: date, source: "git log -1 --format=%as -- <path>"}
 optional:
   p0:           {type: string, note: id from Mastermind config/strategic_state.yml}
   owns_paths:   {type: list, items: glob}
-  depends_on:   {type: list, items: "WS:<KEY>", note: cycles are a hard error}
+  depends_on:   {type: list, items: "WS:<KEY>",
+                 note: "cycles are a hard error; a BARE key is a hard error too - one
+                        citation shape exists, and a bare key used to be dropped silently"}
   blocked_by:   {type: list, note: present iff status == blocked}
   decisions:    {type: list, items: "DEC:<KEY>"}
   discoveries:  {type: list, items: "DSC:<KEY>"}
@@ -29,7 +36,10 @@ optional:
   do_not_redo:  {type: list}
   artifacts:    {type: list, items: repo-relative-path}
   runtime_ref:  {type: object, fields: [service, deployed_sha, freshness_artifact]}
-  claim:        {type: object, fields: [by, at, expires], note: ADVISORY ONLY - blocks nothing (I1)}
+  claim:        {type: object, fields: [by, at, expires],
+                 note: "ADVISORY ONLY - blocks nothing (I1). Unreadable by other sessions
+                        until it merges, so it prevents DAY-scale collisions, not
+                        same-hour ones; expires defaults to +12h (session scale)"}
   needs_ceo:    {type: object, fields: [question, options, recommendation, by_when]}
 wave:
   required: {id: string, title: string, status: {enum: [todo, in_progress, awaiting_ci, done, dropped]}}

@@ -38,8 +38,6 @@ needs_ceo:
     W1 ships against either shape.
   by_when: 2026-08-14
 next_action: Obtain the persistence-model ruling, then start W1.
-created: 2026-08-08
-updated: 2026-08-12
 ---
 
 ## Context

@@ -1,6 +1,9 @@
 # agentos/schema/handoff.schema.yml
 # Machine mirror of research/MASTERMIND_AGENT_HANDOFF_PROTOCOL.md.
 # Contract: a competent stranger with no access to your session can continue from this text alone.
+# ENFORCED by scripts/agentos.py validate (check_handoff): required fields, the
+# unverified-present rule, verified[].command, changed[].what, citation shape, and a
+# literal scan for 'see above' / 'as discussed' in the body.
 schema: agentos.handoff.v1
 file: agentos/handoffs/<WS-KEY>-<YYYY-MM-DD>.md
 required:
