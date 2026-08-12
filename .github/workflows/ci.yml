@@ -234,6 +234,19 @@ on:
       - "docs/runbooks/OPTIONS_NBBO_COHORT.md"
       - "tests/test_options_nbbo_cohort.py"
       - "tests/test_options_nbbo_cohort_deploy.py"
+      # Authenticated-page MomoEdge companion: observe-only extension, private
+      # native receiver, immutable contracts, and synthetic security tests.
+      - "browser/momoedge_capture/**"
+      - "contracts/options/options.momoedge_browser_observation.v1.schema.json"
+      - "contracts/options/options.momoedge_browser_observe_journal.v1.schema.json"
+      - "engine/options_momoedge_browser_adapter.py"
+      - "scripts/momoedge_browser_receiver.py"
+      - "ops/native_messaging/com.mastermind.optionsnbbocohort.momoedge_observe.json"
+      - "ops/native_messaging/run_momoedge_browser_host.sh"
+      - "docs/runbooks/MOMOEDGE_BROWSER_COMPANION.md"
+      - "tests/test_momoedge_browser_adapter.py"
+      - "tests/test_momoedge_capture_extension_static.py"
+      - "tests/test_momoedge_capture_deploy.py"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
