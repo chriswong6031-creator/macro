@@ -2674,8 +2674,8 @@ function renderBTable(){
   // The ordering rule is printed where it orders — never a hidden weighting.
   const rl=document.getElementById('btbl-gr-rule');
   if(rl) rl.innerHTML=gp?L(
-    'Group pulse: how many members are actually moving, and whether that count is broadening or narrowing. Sorting by it orders on state change, then breadth of movement, then agreement — no composite score. Baskets with no read tonight sit at the end. Context only: it never ranks, sizes or gates a position.',
-    '「整体动向」：有多少成分股真正在动，以及这个数量在扩散还是收窄。按它排序的依据为：参与度变化，其次是在动成分股的广度，再次是方向一致度 — 不使用任何综合评分。今晚没有读数的篮子排在最后。仅为背景：不参与排序权重、仓位或准入。'):'';
+    'Group pulse: how many members are actually moving, and whether that count is broadening or narrowing. Sorting by it orders on state change, then breadth of movement, then agreement — no composite score. Agreement counts only where at least four members are moving; a basket without one sorts below a basket that has one. Baskets with no read tonight sit at the end. Context only: it never ranks, sizes or gates a position.',
+    '「整体动向」：有多少成分股真正在动，以及这个数量在扩散还是收窄。按它排序的依据为：参与度变化，其次是在动成分股的广度，再次是方向一致度 — 不使用任何综合评分。方向一致度仅在至少四只成分股在动时才计入；没有该读数的篮子排在有读数的之后。今晚没有读数的篮子排在最后。仅为背景：不参与排序权重、仓位或准入。'):'';
   tbl.querySelectorAll('th[data-c]').forEach(h=>h.onclick=()=>{ const c=h.dataset.c;
     if(c===btblSort.col) btblSort.dir*=-1; else btblSort={col:c,dir:c==='name'?1:-1};
     localStorage.setItem('fw-btbl-sort',JSON.stringify(btblSort)); renderBTable(); });
