@@ -2,8 +2,8 @@
  "study": "stop-curvature context study",
  "charter": "research/prophet_us_audit/STOP_CURVATURE_CHARTER_2026-08-11.md",
  "parent": "research/prophet_us_audit/EARLY_ADMISSION_BAKEOFF_2026-08-11.md",
- "started": "2026-08-12T20:56:19.167018Z",
- "finished": "2026-08-12T20:56:35.822633Z",
+ "started": "2026-08-12T21:27:58.867755Z",
+ "finished": "2026-08-12T21:28:16.652444Z",
  "seed": 20260812,
  "anchor_era": "sq-abs-session-2026-08-06",
  "price_root": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/baskets/ohlcv",
@@ -30,6 +30,9 @@
   "rows": 12940,
   "hist_seen": 12940,
   "hist_match": 12940,
+  "close_seen": 12940,
+  "close_match": 12940,
+  "close_worst_abs_dev": 0.0,
   "m3_session_anchored_match": 12940,
   "m3_phased_match": 12859,
   "m3_seen": 12940,
@@ -42,7 +45,7 @@
   "truncation_checked": 12940,
   "truncation_violations": 0,
   "worst_abs_dev": 0.0,
-  "truncation_seconds": 8.4,
+  "truncation_seconds": 8.6,
   "knowability_checked": 12940,
   "knowability_violations": 0,
   "deepest_window": 23
@@ -85,9 +88,9 @@
   }
  },
  "g5_ordering": {
-  "started": "2026-08-12T20:56:31.081702Z",
-  "concluded": "2026-08-12T20:56:31.082589Z",
-  "unsealed": "2026-08-12T20:56:31.082599Z",
+  "started": "2026-08-12T21:28:11.228284Z",
+  "concluded": "2026-08-12T21:28:11.229402Z",
+  "unsealed": "2026-08-12T21:28:11.229414Z",
   "reads_before_unseal": 0
  },
  "coverage": {
@@ -373,8 +376,74 @@
     "n_events": 38195
    },
    "quintile": {
-    "spread_pp": -3.80288768168235,
-    "quintiles_used": 3
+    "variants": {
+     "kept cells, UNWEIGHTED": -3.80288768168235,
+     "kept cells, cohort-WEIGHTED": -6.34045560067163,
+     "all cells, UNWEIGHTED": -8.024383230131404,
+     "all cells, cohort-WEIGHTED": -7.616009454435024
+    },
+    "cells": [
+     {
+      "q": 0,
+      "nt": 9,
+      "nf": 2549,
+      "a": 0.2222222222222222,
+      "b": 0.42604943114947036,
+      "sp": -20.382720892724816,
+      "keep": false,
+      "cell_all": 0.4253322908522283
+     },
+     {
+      "q": 1,
+      "nt": 7,
+      "nf": 2550,
+      "a": 0.2857142857142857,
+      "b": 0.36901960784313725,
+      "sp": -8.330532212885156,
+      "keep": false,
+      "cell_all": 0.36879155260070395
+     },
+     {
+      "q": 2,
+      "nt": 13,
+      "nf": 2544,
+      "a": 0.38461538461538464,
+      "b": 0.3651729559748428,
+      "sp": 1.9442428640541853,
+      "keep": true,
+      "cell_all": 0.36527180289401645
+     },
+     {
+      "q": 3,
+      "nt": 28,
+      "nf": 2529,
+      "a": 0.2857142857142857,
+      "b": 0.3202846975088968,
+      "sp": -3.457041179461112,
+      "keep": true,
+      "cell_all": 0.3199061400078217
+     },
+     {
+      "q": 4,
+      "nt": 53,
+      "nf": 2504,
+      "a": 0.16981132075471697,
+      "b": 0.2687699680511182,
+      "sp": -9.895864729640122,
+      "keep": true,
+      "cell_all": 0.26671881110676576
+     }
+    ],
+    "quintiles_kept": 3,
+    "quintiles_total": 5,
+    "true_events_in_kept": 94,
+    "true_events_total": 110,
+    "range_pp": [
+     -8.024383230131404,
+     -3.80288768168235
+    ],
+    "registered": false,
+    "note": "break-depth quintiles are a SUBSTITUTE for the charter's entry-distance lens; outcome-correlated binning variable; no pre-registered weighting or inclusion rule; no CI computed"
    },
    "raw_spread_pp": -11.382569781118221
   }
@@ -424,7 +493,7 @@
  "eligible_forms": [],
  "notes": [
   "NO enumerated form cleared G5. Per charter \u00a71 every form is disqualified ex ante and no outcome row is read for any of them \u2014 the family's row in the ore ledger is a DEFINITION-VALIDITY null, not a tape null.",
-  "Running the R9d battery on the parent's already-published R4b strict split (hist_rising) as machinery validation. That lens' outcome is already public (23.6% vs 35.0%, \u221211.4pp) \u2014 re-reading it auditions no new construction."
+  "Running the R9d battery on the parent's already-published R4b strict split (hist_rising). The RAW row is machinery validation \u2014 reproducing a published number from an independently recomputed histogram. The three LENS rows are UNREGISTERED EXPLORATORY: charter \u00a74.2 registered this battery to test a curvature lift, not to re-read hist_rising, so they license nothing and correct no published number. The magnitude question they raise is OPEN and needs its own pre-registration (weighting rule, lens definition, CI)."
  ],
  "deferred": [],
  "outcome_reads_after_unseal": 8,
@@ -441,7 +510,15 @@
    ],
    "rows": [
     [
-     "1D MACD-RSI histogram -> hist_rising (2-step strict)",
+     "1D MACD-RSI histogram -> hist_rising (ORDERING only)",
+     12940,
+     12940,
+     0,
+     100.0,
+     "PASS"
+    ],
+    [
+     "price series identity -> stored close (LEVEL; worst |\u0394| 0.000e+00)",
      12940,
      12940,
      0,
@@ -465,7 +542,7 @@
      "phase-defect mimic (charter \u00a74.6 reconciliation row)"
     ]
    ],
-   "notes": "BLOCKING on hist_rising: a divergent series measures nothing, so the run aborts (exit 3) rather than proceeding on it. The 3D rows are diagnostic: they establish which grid phase the stored m3_bull column actually holds."
+   "notes": "BLOCKING on hist_rising AND close. WHAT EACH LEG CAN AND CANNOT PROVE: hist_rising is a strict-ORDERING predicate, so it is invariant to any positive affine transform of the histogram \u2014 it pins the replay's ordering, not its levels, and K1/K3 are level-dependent. The close leg supplies the level identity the ordering leg cannot. The 3D rows are diagnostic: they establish which grid phase the stored m3_bull column actually holds."
   },
   "RC.pit": {
    "title": "PIT LEAK TEST \u2014 every feature input <= the confirm-bar close",
@@ -596,7 +673,7 @@
    "notes": "hist = 1D MACD-RSI histogram, the R4 replay's own series (RC.parity-locked)."
   },
   "RC.g5.crosscheck": {
-   "title": "CROSS-CHECK RECEIPT \u2014 textbook MACD(12,26,9) histogram at the same exemplars",
+   "title": "DEFINITION-VALIDITY PROBE (unregistered) \u2014 textbook MACD(12,26,9) at the same exemplars",
    "columns": [
     "ticker",
     "confirm",
@@ -604,7 +681,7 @@
     "hist[T-1]",
     "hist[T]",
     "tmin_w=15 (excl T)",
-    "reading"
+    "K1-shaped reading"
    ],
    "rows": [
     [
@@ -635,7 +712,7 @@
      "AT/BELOW (fresh low)"
     ]
    ],
-   "notes": "RECEIPT ONLY, on the 3 exemplars whose outcomes are already public. Defines no form, classifies no cohort, reads no outcome, licenses nothing. Its only job is to tell a successor charter whether a G5 miss is a property of the house MACD-RSI series or of the daily bar itself."
+   "notes": "NOT a neutral receipt: the last column applies K1's OWN above-trailing-min test to a series the charter never registered, on 3 exemplars whose outcomes are already public. It reads no outcome column and classifies no cohort, but it is a probe with a verdict shape and it is unregistered \u2014 so it licenses nothing and pre-decides nothing. It is printed for ONE purpose: a successor charter should know the level fact (both series sat at a fresh low here) before choosing a substrate. Any actual test of this series needs its own pre-registration."
   },
   "RC.g5.ordering": {
    "title": "ORDERING PROOF \u2014 G5 concluded before outcomes were readable",
@@ -647,31 +724,31 @@
    "rows": [
     [
      "outcome columns SEALED at load",
-     "2026-08-12T20:56:19.220587Z",
+     "2026-08-12T21:27:59.035947Z",
      0.0
     ],
     [
      "G5 exemplar gate started",
-     "2026-08-12T20:56:31.081702Z",
+     "2026-08-12T21:28:11.228284Z",
      0.0
     ],
     [
      "G5 exemplar gate concluded",
-     "2026-08-12T20:56:31.082589Z",
-     0.0009
+     "2026-08-12T21:28:11.229402Z",
+     0.0011
     ],
     [
      "outcome columns UNSEALED",
-     "2026-08-12T20:56:31.082599Z",
-     0.0009
+     "2026-08-12T21:28:11.229414Z",
+     0.0011
     ],
     [
-     "outcome reads before unseal",
-     "0 (enforced \u2014 OutcomeSealError)",
+     "vault.reads snapshot at G5 close = 0",
+     "(counter read from the vault, not asserted)",
      "-"
     ]
    ],
-   "notes": "The outcome columns are physically sealed inside OutcomeVault until the unseal below; any earlier read raises OutcomeSealError. This table is the receipt that the sequence in the code is the sequence that ran."
+   "notes": "The outcome columns are physically sealed inside OutcomeVault until the unseal below; any earlier read raises OutcomeSealError. The read counter is SNAPSHOTTED from the vault at G5's close, not asserted."
   },
   "RC.frame": {
    "title": "FRAME reconciliation (charter \u00a73) \u2014 nothing silently re-windowed",
@@ -1082,10 +1159,38 @@
      "-"
     ]
    ],
-   "notes": "Lens A = fixed \u22128% off the trailing 21-session max close; lens B = same anchor \u2212 2.0\u00d7ATR14; lens C = the real structure stops, split within break-depth quintiles. A sign flip or a collapse to under half the raw lift is stop-width arithmetic, named as such."
+   "notes": "Lens A = fixed \u22128% off the trailing 21-session max close; lens B = same anchor \u2212 2.0\u00d7ATR14; lens C = the real structure stops split within break-depth quintiles (a SUBSTITUTE for the charter's entry-distance lens \u2014 see RC.r9d*.cells). Lens A and B anchors are this study's disclosed translation of the parent's entry-anchored stops onto an entry-free frame, not charter terms."
+  },
+  "RC.r9d.cells": {
+   "title": "Break-depth quintile CELLS \u2014 the estimator's whole input, printed",
+   "columns": [
+    "form",
+    "quintile",
+    "n TRUE",
+    "n FALSE",
+    "TRUE near-low%",
+    "FALSE near-low%",
+    "cell spread (pp)",
+    "cell near-low% (all)",
+    "kept (>= 10 per arm)?"
+   ],
+   "rows": [],
+   "notes": "Printed because the summary statistic is not robust to which of these rows it is computed over. The right-hand column shows the outcome-correlation of the binning variable itself (disclosure ii)."
+  },
+  "RC.r9d.estimators": {
+   "title": "Break-depth quintile \u2014 ALL FOUR defensible estimators (none is primary)",
+   "columns": [
+    "form",
+    "estimator",
+    "spread (pp)",
+    "vs raw",
+    "would read as"
+   ],
+   "rows": [],
+   "notes": "The charter pre-registered neither the cell-inclusion rule nor the weighting rule for this lens, so no one of these is THE answer. The spread across them IS the finding: this lens cannot presently support a magnitude claim, and any future use must pre-declare weighting, inclusion and a CI before it may touch a published number."
   },
   "RC.r9d.control": {
-   "title": "RISK-EQUALIZATION BATTERY (control) \u2014 charter \u00a74.2 / parent R9d",
+   "title": "UNREGISTERED EXPLORATORY \u2014 battery re-pointed at the parent's already-published R4b split \u2014 charter \u00a74.2 / parent R9d",
    "columns": [
     "form",
     "lens",
@@ -1129,16 +1234,129 @@
     ],
     [
      "R4b(hist_rising)",
-     "C break-depth quintiles (3/5 usable)",
+     "C break-depth quintiles (3/5 kept)",
      "-",
      "-",
-     -3.8,
+     "see .estimators",
      110,
-     "+0.33x",
-     "COLLAPSES (<half retained) \u2014 stop-width arithmetic"
+     "-8.02..-3.80pp across 4 estimators",
+     "NO SINGLE VALUE \u2014 estimator-dependent, unregistered lens"
     ]
    ],
-   "notes": "Lens A = fixed \u22128% off the trailing 21-session max close; lens B = same anchor \u2212 2.0\u00d7ATR14; lens C = the real structure stops, split within break-depth quintiles. A sign flip or a collapse to under half the raw lift is stop-width arithmetic, named as such."
+   "notes": "Lens A = fixed \u22128% off the trailing 21-session max close; lens B = same anchor \u2212 2.0\u00d7ATR14; lens C = the real structure stops split within break-depth quintiles (a SUBSTITUTE for the charter's entry-distance lens \u2014 see RC.r9d*.cells). Lens A and B anchors are this study's disclosed translation of the parent's entry-anchored stops onto an entry-free frame, not charter terms.  ||  STATUS: charter \u00a74.2 registered this battery to test a CURVATURE lift. No chartered form survived G5, so these rows re-read `hist_rising` instead \u2014 three UNREGISTERED outcome reads on the frozen frame. They license NOTHING and correct no published number. The RAW row is different in kind: reproducing the parent's own published figure from an independently recomputed histogram is a machinery check, and it is the only row here that carries weight."
+  },
+  "RC.r9d.control.cells": {
+   "title": "Break-depth quintile CELLS \u2014 the estimator's whole input, printed",
+   "columns": [
+    "form",
+    "quintile",
+    "n TRUE",
+    "n FALSE",
+    "TRUE near-low%",
+    "FALSE near-low%",
+    "cell spread (pp)",
+    "cell near-low% (all)",
+    "kept (>= 10 per arm)?"
+   ],
+   "rows": [
+    [
+     "R4b(hist_rising)",
+     "q0",
+     9,
+     2549,
+     22.22,
+     42.6,
+     -20.38,
+     42.53,
+     "DROPPED (thin)"
+    ],
+    [
+     "R4b(hist_rising)",
+     "q1",
+     7,
+     2550,
+     28.57,
+     36.9,
+     -8.33,
+     36.88,
+     "DROPPED (thin)"
+    ],
+    [
+     "R4b(hist_rising)",
+     "q2",
+     13,
+     2544,
+     38.46,
+     36.52,
+     1.94,
+     36.53,
+     "kept"
+    ],
+    [
+     "R4b(hist_rising)",
+     "q3",
+     28,
+     2529,
+     28.57,
+     32.03,
+     -3.46,
+     31.99,
+     "kept"
+    ],
+    [
+     "R4b(hist_rising)",
+     "q4",
+     53,
+     2504,
+     16.98,
+     26.88,
+     -9.9,
+     26.67,
+     "kept"
+    ]
+   ],
+   "notes": "Printed because the summary statistic is not robust to which of these rows it is computed over. The right-hand column shows the outcome-correlation of the binning variable itself (disclosure ii)."
+  },
+  "RC.r9d.control.estimators": {
+   "title": "Break-depth quintile \u2014 ALL FOUR defensible estimators (none is primary)",
+   "columns": [
+    "form",
+    "estimator",
+    "spread (pp)",
+    "vs raw",
+    "would read as"
+   ],
+   "rows": [
+    [
+     "R4b(hist_rising)",
+     "kept cells, UNWEIGHTED",
+     -3.8,
+     "+0.33x",
+     "COLLAPSES (<half retained) \u2014 stop-width arithmetic"
+    ],
+    [
+     "R4b(hist_rising)",
+     "kept cells, cohort-WEIGHTED",
+     -6.34,
+     "+0.56x",
+     "survives this lens"
+    ],
+    [
+     "R4b(hist_rising)",
+     "all cells, UNWEIGHTED",
+     -8.02,
+     "+0.70x",
+     "survives this lens"
+    ],
+    [
+     "R4b(hist_rising)",
+     "all cells, cohort-WEIGHTED",
+     -7.62,
+     "+0.67x",
+     "survives this lens"
+    ]
+   ],
+   "notes": "The charter pre-registered neither the cell-inclusion rule nor the weighting rule for this lens, so no one of these is THE answer. The spread across them IS the finding: this lens cannot presently support a magnitude claim, and any future use must pre-declare weighting, inclusion and a CI before it may touch a published number."
   },
   "RC.gates": {
    "title": "PROMOTION GATES per form (charter \u00a75) \u2014 judged on the PRE-DECLARED primary cell, never a scanned max",

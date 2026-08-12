@@ -16,6 +16,16 @@ if the gate were simply hard-wired to fail. ``test_g5_passes_when_a_form_really_
 _exemplars`` plants a name whose histogram genuinely arches on both exemplar dates and
 requires G5 to PASS, so the null is a measurement and not a stuck switch.
 
+That pair is necessary and NOT sufficient, which a red-team pass demonstrated by mutating
+``all(...)`` to ``any(...)`` in the G5 verdict and watching this suite stay green: ``all``
+and ``any`` agree on every uniform input, so an all-TRUE test and an all-FALSE test cannot
+tell them apart. The verdict that actually occurred is MIXED (K4/K5 are TRUE at May-19 and
+FALSE at Jan-07), and under ``any`` those two forms would clear G5 and take outcome rows —
+the study's headline would invert. ``test_g5_requires_ALL_exemplars_not_any`` pins that
+case. The general lesson, recorded here because it generalizes past this file: a mutation
+survives when every test feeds the code inputs on which the mutant and the original agree.
+
+
 Everything here is SYNTHETIC — hand-built frames, planted paths, no network and no ``data/``
 (CI packs carry no data tree). The one real-store test skips with a reason and its shape is
 pinned synthetically by a twin that never skips, per the house pattern in
@@ -303,6 +313,60 @@ def test_g5_passes_when_a_form_really_covers_the_exemplars(monkeypatch):
     assert ordering["unsealed"] is not None
 
 
+def test_g5_requires_ALL_exemplars_not_any(monkeypatch):
+    """MUTATION: `all(...)` -> `any(...)` at the G5 verdict.
+
+    This is charter §1's "May-19 AND Jan-07" semantics, and it is the mutation that decides
+    the whole study: K4 and K5's REAL cells are mixed — TRUE at May-19, FALSE at Jan-07 —
+    so under `any` both clear G5, take outcome rows, and the headline flips from "all five
+    disqualified" to "two proceed to the tape". The all-TRUE and all-FALSE tests below and
+    above cannot see this: `all` and `any` agree on uniform inputs. Only a MIXED verdict
+    separates them, which is exactly the verdict that actually occurred.
+    """
+    name = _mk("EXEMPLAR")
+    d1, d2 = name.idx[300], name.idx[340]
+    _plant(name, 300, [-2.0, -3.0, -2.5])       # first exemplar: K1 TRUE
+    name.m3_sa[300] = True                       # ... and K4 TRUE
+    _plant(name, 340, [-2.0, -2.5, -3.0])       # second exemplar: K1 FALSE (fresh low)
+    name.m3_sa[340] = False                      # ... and K4 FALSE  -> MIXED, the real shape
+    monkeypatch.setattr(S, "EXEMPLARS", (("EXEMPLAR", str(d1.date())),
+                                         ("EXEMPLAR", str(d2.date()))))
+    monkeypatch.setattr(S, "EXEMPLAR_NARRATIVE", ("EXEMPLAR", str(name.idx[360].date())))
+    _, vault = S.OutcomeVault.seal(pd.DataFrame({"near_low_stop": [True], "fwd10": [0.0],
+                                                 "fwd21": [0.0], "gap": [0],
+                                                 "argmin_date": [d1]}))
+    verdicts, _ = S.g5_exemplar_gate({"EXEMPLAR": name}, vault)
+
+    for f in ("K1", "K4", "K5"):
+        assert set(verdicts[f]["cells"].values()) == {True, False}, "the fixture must be MIXED"
+        assert verdicts[f]["pass"] is False, (
+            f"{f} covers one exemplar and misses the other — charter §1 is a conjunction, "
+            "so this must FAIL. If this assertion passes with `any`, the gate is not the "
+            "charter's gate.")
+
+
+def test_g5_aborts_when_an_exemplar_cannot_be_resolved(monkeypatch):
+    """An unresolvable exemplar must RAISE, never read as 'disqualified'.
+
+    A store gap, a ticker rename or a shifted holiday would otherwise manufacture this
+    study's exact five-form null with no diagnostic — an absence of evidence rendered as
+    evidence of absence, in the one gate carrying the study's whole load.
+    """
+    name = _mk("EXEMPLAR")
+    monkeypatch.setattr(S, "EXEMPLARS", (("EXEMPLAR", str(name.idx[300].date())),
+                                         ("GHOST", "2026-01-07")))
+    _, vault = S.OutcomeVault.seal(pd.DataFrame({"near_low_stop": [True], "fwd10": [0.0],
+                                                 "fwd21": [0.0], "gap": [0],
+                                                 "argmin_date": [name.idx[0]]}))
+    with pytest.raises(S.ExemplarUnresolved, match="GHOST"):
+        S.g5_exemplar_gate({"EXEMPLAR": name}, vault)
+
+    # ... and the same for a name that exists but lacks the bar
+    monkeypatch.setattr(S, "EXEMPLARS", (("EXEMPLAR", "1999-01-04"),))
+    with pytest.raises(S.ExemplarUnresolved, match="date absent"):
+        S.g5_exemplar_gate({"EXEMPLAR": name}, vault)
+
+
 def test_g5_fails_when_the_exemplar_bar_is_a_fresh_low(monkeypatch):
     """The measured shape of the real STLD receipts, reproduced synthetically so the finding
     stays pinned on a runner with no store."""
@@ -320,6 +384,90 @@ def test_g5_fails_when_the_exemplar_bar_is_a_fresh_low(monkeypatch):
                                                  "argmin_date": [d1]}))
     verdicts, _ = S.g5_exemplar_gate({"EXEMPLAR": name}, vault)
     assert [verdicts[f]["pass"] for f in S.FORMS] == [False] * 5
+
+
+# ---------------------------------------------------------------- R9d battery (charter §4.2)
+def test_g3_retention_threshold_actually_decides():
+    """MUTATION: `G3_LIFT_RETAINED` 0.5 -> 0.0 must change a verdict.
+
+    Charter §4.2 calls the battery "where the verdict lives", and this constant is the whole
+    of G3's "retains >= half the raw lift". It had ZERO coverage: the battery's only caller
+    in the shipped run produced no rows, so the threshold could be zeroed silently.
+    """
+    assert S.G3_LIFT_RETAINED == 0.5, "charter §5 G3: >= HALF the raw lift"
+    assert "COLLAPSES" in S._reads_as(-10.0, -4.0)          # 0.40x -> under the threshold
+    assert S._reads_as(-10.0, -6.0) == "survives this lens"  # 0.60x -> over it
+    assert "SIGN FLIP" in S._reads_as(-10.0, +6.0)
+    # the boundary is the constant, not a coincidence of these numbers
+    assert "COLLAPSES" in S._reads_as(-10.0, -10.0 * (S.G3_LIFT_RETAINED - 0.01))
+    assert S._reads_as(-10.0, -10.0 * (S.G3_LIFT_RETAINED + 0.01)) == "survives this lens"
+
+
+def test_min_cell_n_governs_which_quintile_cells_are_kept():
+    """MUTATION: `MIN_CELL_N` 20 -> 0 must change what the quintile lens reports.
+
+    This is the filter the red-team showed drives the lens' headline (it dropped the two
+    most negative cells), so it must not be silently editable.
+    """
+    assert S.MIN_CELL_N == 20 and S.QUINTILES == 5
+    rows = [{"nt": 9, "nf": 2549}, {"nt": 7, "nf": 2550}, {"nt": 13, "nf": 2544},
+            {"nt": 28, "nf": 2529}, {"nt": 53, "nf": 2504}]     # the measured shape
+    keep = [r for r in rows if r["nt"] >= S.MIN_CELL_N // 2 and r["nf"] >= S.MIN_CELL_N // 2]
+    assert len(keep) == 3, "at MIN_CELL_N=20 exactly the two thin TRUE arms drop out"
+    assert sum(r["nt"] for r in keep) == 94 and sum(r["nt"] for r in rows) == 110
+
+
+def test_quintile_lens_reports_every_estimator_and_designates_none(nd):
+    """The lens must expose its own fragility rather than resolve it silently.
+
+    The four cell-inclusion x weighting combinations span ~2x on the real frame, so a single
+    printed number would be an authorial choice wearing the clothes of a measurement.
+    """
+    n = 400
+    frame = pd.DataFrame({
+        "ticker": ["SYNTH"] * n, "date": nd.idx[:n],
+        "close": np.linspace(90, 110, n), "stop_level": np.linspace(100, 100, n),
+        "hist_rising": ([True] * 40 + [False] * 360),
+    })
+    _, vault = S.OutcomeVault.seal(frame.assign(
+        near_low_stop=([True, False] * (n // 2)), gap=0, argmin_date=nd.idx[0],
+        fwd10=0.0, fwd21=0.0))
+    vault.unseal()
+    flags = {S.CONTROL_FORM: np.array([bool(x) for x in frame["hist_rising"]], dtype=object)}
+    out = S.r9d_battery(frame, np.arange(n), {"SYNTH": nd}, flags, vault,
+                        [S.CONTROL_FORM], ".unit")
+    q = out[S.CONTROL_FORM]["quintile"]
+    assert set(q["variants"]) == {"kept cells, UNWEIGHTED", "kept cells, cohort-WEIGHTED",
+                                  "all cells, UNWEIGHTED", "all cells, cohort-WEIGHTED"}
+    assert q["registered"] is False
+    assert "spread_pp" not in q, "no single value may be presented as THE lens result"
+    assert q["cells"], "the estimator's input cells must be published, not just its output"
+
+
+def test_pre_declared_constants_are_pinned_to_the_charter_literals():
+    """MUTATION: the pre-declared primary cells must not be silently editable.
+
+    Every other test reads these constants, so a test that also reads them follows the
+    mutation and stays green (`K1_W_PRIMARY` 15 -> 3 and `NEAR_TOL_PRIMARY` 2 -> 5 both
+    survived the reviewer's pass for exactly this reason). These assertions are against the
+    LITERALS in STOP_CURVATURE_CHARTER_2026-08-11.md §2/§3/§5 — if the charter changes, this
+    test is supposed to fail and be re-read against it.
+    """
+    assert S.K1_W_PRIMARY == 15                    # §2 K1 "Primary w=15"
+    assert S.K1_W_GRID == (10, 15, 21)             # §2 K1 "sensitivity w in {10, 21}"
+    assert S.K2_M_PRIMARY == 3                     # §2 K2 "Primary m=3"
+    assert S.K2_M_GRID == (3, 5)                   # §2 K2 "sensitivity m=5"
+    assert S.K2_MAX_NEG_FIRST_DIFF == 1            # §2 K2 "at most one negative first-difference"
+    assert S.K3_PRIMARY == (0.30, 15)              # §2 K3 "Primary θ=0.30, w=15"
+    assert S.NEAR_WIN_PRIMARY == 10                # §3 "+/-10-session local low"
+    assert S.NEAR_TOL_PRIMARY == 2                 # §3 "within +/-2 sessions"
+    assert S.NEAR_WIN_GRID == (5, 10, 15)          # §3 "window-grid sensitivity +/-5/+/-10/+/-15"
+    assert S.G1_COVERAGE_MIN == 0.05               # §5 G1 ">=5% of confirms"
+    assert S.G2_LIFT_MIN_PP == 8.0                 # §5 G2 ">= +8pp over the 34.9% base"
+    assert S.G2_CI_LOWER_MIN_PP == 2.0             # §5 G2 "CI lower bound > +2pp"
+    assert S.G4_FWD10_MIN == 0.02                  # §5 G4 "median fwd10 >= +2%"
+    assert S.BASE_PUBLISHED == 0.349 and S.NULL_PUBLISHED == 0.157   # §1 load-bearing fact
+    assert S.ALT_STOP_FIX == 0.08 and S.ALT_STOP_ATR == 2.0          # §4.2 lenses
 
 
 # ---------------------------------------------------------------- 3D legs
@@ -351,9 +499,41 @@ def test_stld_exemplars_reproduce_the_published_g5_receipt():
     name = S.NameCurv("STLD", df, src)
     for d in ("2026-05-19", "2026-01-07"):
         T = name.pos[pd.Timestamp(d)]
-        assert name.hist[T] <= name.tmin(T, S.K1_W_PRIMARY)
-        assert name.k1(T, S.K1_W_PRIMARY) is False
-        assert name.k2(T, S.K2_M_PRIMARY) is False
-        assert name.k3(T, theta=S.K3_PRIMARY[0], w=S.K3_PRIMARY[1]) is False
+        # LITERALS, not the module constants: a test that reads the constant it checks
+        # follows a mutation of that constant and stays green.
+        assert name.hist[T] <= name.tmin(T, 15)
+        assert name.k1(T, 15) is False
+        assert name.k2(T, 3) is False
+        assert name.k3(T, theta=0.30, w=15) is False
     assert name.k4(name.pos[pd.Timestamp("2026-05-19")]) is True
     assert name.k4(name.pos[pd.Timestamp("2026-01-07")]) is False
+
+
+@pytest.mark.skipif(not (STORE / "STLD.parquet").exists(),
+                    reason="adjusted OHLCV store absent (CI packs carry no data/ tree)")
+def test_k2_dies_on_the_STAIRCASE_clause_at_may19_not_on_the_fresh_low():
+    """The correction the red-team forced, pinned so it cannot silently regress.
+
+    K2 never references `tmin`. At May-19 its CURVATURE condition PASSES (mean second
+    difference +0.027014 >= 0) and what kills it is the anti-staircase clause (3 negative
+    first differences, limit 1). "Second-difference curvature passed at the flagship
+    exemplar and died on the staircase clause" is a materially different handover fact from
+    "everything died on the fresh low", and the artifact previously stated the latter.
+    """
+    df, src = S.load_ohlc("STLD", STORE, STORE.parents[1] / "stocks")
+    name = S.NameCurv("STLD", df, src)
+
+    T = name.pos[pd.Timestamp("2026-05-19")]
+    seg = name.hist[T - 3: T + 1]
+    d1 = np.diff(seg)
+    assert float(np.mean(np.diff(d1))) == pytest.approx(0.027014, abs=1e-5)
+    assert float(np.mean(np.diff(d1))) >= 0.0, "curvature clause PASSES here"
+    assert int((d1 < 0).sum()) == 3 > 1, "the staircase clause is what fails"
+    assert name.k2(T, 3) is False
+
+    T2 = name.pos[pd.Timestamp("2026-01-07")]
+    seg2 = name.hist[T2 - 3: T2 + 1]
+    d1b = np.diff(seg2)
+    assert float(np.mean(np.diff(d1b))) < 0.0, "at Jan-07 the curvature clause fails too"
+    assert int((d1b < 0).sum()) == 2 > 1
+    assert name.k2(T2, 3) is False

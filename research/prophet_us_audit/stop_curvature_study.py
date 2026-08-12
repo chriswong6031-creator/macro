@@ -32,9 +32,15 @@ only — no per-bar histogram series — so K1–K3 need the 1D histogram path r
 recomputation reuses the parent's OWN loader (``early_admission_bakeoff.load_ohlc``) and
 the same engine primitives ``NameData`` used (``engine.signal_quality._rsi_macd`` for the
 1D MACD-RSI histogram, ``_tf_grid``+``_rsi_macd`` for the session-anchored 3D leg), and it
-is GATED: RC.parity must reproduce the stored ``hist_rising`` column on every row of the
-frame or the run aborts (exit 3). A study run on a series that disagrees with the replay's
-own column measures nothing.
+is GATED: RC.parity must reproduce the stored ``hist_rising`` AND ``close`` columns on every
+row of the frame or the run aborts (exit 3).
+
+Both legs are needed and neither is sufficient. ``hist_rising`` is a strict-ORDERING
+predicate — invariant under any positive affine transform of the histogram — so it pins the
+replay's ordering while K1 (``hist < 0``, ``hist > tmin``) and K3 (normalized recovery) are
+level-dependent; a uniformly shifted histogram would sail through it and move K1's coverage.
+The stored ``close`` supplies the level identity that the ordering leg cannot. Together they
+establish that the recomputed series is the replay's series; separately, each leaves a hole.
 
 3D PHASE (charter §2 K4 dependency / §4.6). The defect the parent found in R4.hl_phase is
 charting-app ``confluence_v2``'s first-timestamp-phased ``resample`` — MACRO-side the 3D
@@ -156,6 +162,16 @@ class OutcomeSealError(RuntimeError):
     """Raised when an outcome column is read before the G5 exemplar gate concludes."""
 
 
+class ExemplarUnresolved(RuntimeError):
+    """Raised when a §1 exemplar cannot be located — an ABORT, never a G5 failure.
+
+    The two states are opposite in meaning and identical in appearance if conflated: "the
+    lens does not see this chart" is the study's finding; "we could not find this chart" is
+    a broken run. Since a missing frame or a shifted date would silently produce the same
+    five-form null this study actually measured, it must be impossible to confuse them.
+    """
+
+
 class OutcomeVault:
     """The frame's OUTCOME columns, physically unreadable until G5 has concluded.
 
@@ -261,13 +277,17 @@ class NameCurv:
         return (daily >= 0.5).to_numpy(), src.to_numpy(dtype="datetime64[ns]")
 
     def _m3_phased(self) -> np.ndarray:
-        """The SAME leg on a first-timestamp-phased grid — the R4.hl_phase defect class.
+        """A PROXY for the R4.hl_phase defect class — not a port of ``confluence_v2``.
 
-        ``confluence_v2`` cuts its 3D grid with a pandas resample whose bin edges anchor to
-        the SERIES' first timestamp, so the bucket a date lands in depends on how much
-        leading history the caller handed in. Reproduced here as positional bucketing
-        (``position_in_THIS_series // 3``) — the same leading-history dependence — so the
-        divergence against the absolute anchor can be measured instead of assumed.
+        The real defect is a pandas ``resample`` whose BUSINESS-DAY bin edges anchor to the
+        series' first timestamp; this is positional bucketing
+        (``position_in_THIS_series // 3``). The two share the property under test — the
+        bucket a date lands in depends on the caller's leading history — but they are not
+        the same computation: the pandas version also mis-splits buckets spanning market
+        holidays, which positional bucketing cannot reproduce. So the divergence measured
+        against this proxy is a LOWER-BOUND indication of the phasing class' footprint on
+        this frame, NOT a measurement of the charting-app defect. Measuring that one
+        requires importing charting-app's own module, which is out of scope here.
         """
         false_arr = np.zeros(len(self.idx), dtype=bool)
         b = np.arange(len(self.idx)) // BUCKET_N
@@ -464,6 +484,8 @@ def parity_gate(stops: pd.DataFrame, nds: dict[str, NameCurv]) -> tuple[bool, di
     n = len(stops)
     hr_match = hr_seen = 0
     m3sa_match = m3ph_match = m3_seen = 0
+    close_seen = close_match = 0
+    close_worst = 0.0
     unresolved = []
     hr_bad, m3_bad = [], []
     for r in stops.itertuples(index=False):
@@ -486,6 +508,16 @@ def parity_gate(stops: pd.DataFrame, nds: dict[str, NameCurv]) -> tuple[bool, di
                            bool(r.hist_rising), recomputed,
                            [None if not np.isfinite(x) else round(float(x), 6)
                             for x in h[max(0, T - 2): T + 1]]))
+        # LEVEL identity, not just ordering: hist_rising is a strict-ordering predicate and
+        # is invariant to any positive affine transform of hist, so it alone cannot prove
+        # the recomputed SERIES is the replay's series — while K1 (hist<0, hist>tmin) and
+        # K3 (normalized recovery) are level-dependent. The stored close is the level anchor.
+        close_seen += 1
+        dc = abs(float(nd.c[T]) - float(r.close))
+        close_worst = max(close_worst, dc)
+        if dc <= 1e-9:
+            close_match += 1
+
         m3_seen += 1
         if bool(nd.m3_sa[T]) == bool(r.m3_bull):
             m3sa_match += 1
@@ -498,12 +530,19 @@ def parity_gate(stops: pd.DataFrame, nds: dict[str, NameCurv]) -> tuple[bool, di
     tb = Table("RC.parity",
                "PARITY GATE — recomputed series vs the R4 replay's own stored columns",
                ["leg", "rows compared", "matches", "mismatches", "match%", "verdict"],
-               "BLOCKING on hist_rising: a divergent series measures nothing, so the run "
-               "aborts (exit 3) rather than proceeding on it. The 3D rows are diagnostic: "
-               "they establish which grid phase the stored m3_bull column actually holds.")
-    tb.add("1D MACD-RSI histogram -> hist_rising (2-step strict)", hr_seen, hr_match,
+               "BLOCKING on hist_rising AND close. WHAT EACH LEG CAN AND CANNOT PROVE: "
+               "hist_rising is a strict-ORDERING predicate, so it is invariant to any "
+               "positive affine transform of the histogram — it pins the replay's ordering, "
+               "not its levels, and K1/K3 are level-dependent. The close leg supplies the "
+               "level identity the ordering leg cannot. The 3D rows are diagnostic: they "
+               "establish which grid phase the stored m3_bull column actually holds.")
+    tb.add("1D MACD-RSI histogram -> hist_rising (ORDERING only)", hr_seen, hr_match,
            hr_seen - hr_match, pct(hr_match / hr_seen if hr_seen else None),
            "PASS" if hr_seen == n and hr_match == hr_seen else "FAIL")
+    tb.add(f"price series identity -> stored close (LEVEL; worst |Δ| {close_worst:.3e})",
+           close_seen, close_match, close_seen - close_match,
+           pct(close_match / close_seen if close_seen else None),
+           "PASS" if close_seen == n and close_match == close_seen else "FAIL")
     tb.add("3D macd>=sig, SESSION-ANCHORED -> m3_bull", m3_seen, m3sa_match,
            m3_seen - m3sa_match, pct(m3sa_match / m3_seen if m3_seen else None),
            "matches stored" if m3sa_match == m3_seen else "diverges from stored")
@@ -532,8 +571,11 @@ def parity_gate(stops: pd.DataFrame, nds: dict[str, NameCurv]) -> tuple[bool, di
             mb.add(*b)
         mb.emit()
 
-    ok = (not unresolved) and hr_seen == n and hr_match == hr_seen
+    ok = ((not unresolved) and hr_seen == n and hr_match == hr_seen
+          and close_seen == n and close_match == close_seen)
     return ok, {"rows": n, "hist_seen": hr_seen, "hist_match": hr_match,
+                "close_seen": close_seen, "close_match": close_match,
+                "close_worst_abs_dev": close_worst,
                 "m3_session_anchored_match": m3sa_match, "m3_phased_match": m3ph_match,
                 "m3_seen": m3_seen, "unresolved": len(unresolved),
                 "hist_mismatch_examples": hr_bad, "m3_mismatch_examples": m3_bad}
@@ -666,12 +708,29 @@ def g5_exemplar_gate(nds: dict[str, NameCurv], vault: OutcomeVault) -> tuple[dic
                ["form"] + [f"{t} {d}" for t, d in EXEMPLARS] + ["G5", "consequence"],
                "Checked at the exemplars' own confirm-bar closes on information available "
                "then. FAIL = DISQUALIFIED ex ante; the form gets no outcome row at all.")
+    # An exemplar that cannot be RESOLVED is an infrastructure failure, never a verdict.
+    # Resolving it to None would fall through `all(...)` as False and manufacture exactly
+    # this study's five-form null out of a store gap, a ticker rename or a shifted holiday —
+    # with no diagnostic. G5 carries the study's whole load, so it raises instead.
+    for tkr, d in EXEMPLARS:
+        nd = nds.get(tkr)
+        if nd is None:
+            raise ExemplarUnresolved(
+                f"exemplar {tkr} {d}: no price frame built. G5 cannot be evaluated, and an "
+                "unevaluated exemplar must NOT be reported as a failed one.")
+        if nd.pos.get(pd.Timestamp(d)) is None:
+            raise ExemplarUnresolved(
+                f"exemplar {tkr} {d}: date absent from the price frame "
+                f"({nd.idx[0].date()}..{nd.idx[-1].date()}, {len(nd.idx)} bars). G5 cannot "
+                "be evaluated; a missing bar is not a disqualified form.")
+
     for f in FORMS:
         cells = {}
         for tkr, d in EXEMPLARS:
-            nd = nds.get(tkr)
-            T = None if nd is None else nd.pos.get(pd.Timestamp(d))
-            cells[d] = None if T is None else nd.form(f, T)
+            nd = nds[tkr]
+            cells[d] = nd.form(f, nd.pos[pd.Timestamp(d)])
+        # charter §1 is a conjunction: May-19 AND Jan-07. The real verdicts are MIXED for
+        # K4/K5 ({True, False}), so an `any` here would pass them straight to the tape.
         passed = bool(cells) and all(v is True for v in cells.values())
         verdicts[f] = {"cells": dict(cells), "pass": passed}
         tb.add(FORM_LABEL[f].split(" —")[0], *[_cell(cells[d]) for _, d in EXEMPLARS],
@@ -710,13 +769,18 @@ def g5_exemplar_gate(nds: dict[str, NameCurv], vault: OutcomeVault) -> tuple[dic
     # histogram generally. Textbook MACD(12,26,9) on close is the obvious rival serialization
     # of "the histogram" the operator would be looking at.
     cb = Table("RC.g5.crosscheck",
-               "CROSS-CHECK RECEIPT — textbook MACD(12,26,9) histogram at the same exemplars",
+               "DEFINITION-VALIDITY PROBE (unregistered) — textbook MACD(12,26,9) at the "
+               "same exemplars",
                ["ticker", "confirm", "hist[T-2]", "hist[T-1]", "hist[T]",
-                f"tmin_w={K1_W_PRIMARY} (excl T)", "reading"],
-               "RECEIPT ONLY, on the 3 exemplars whose outcomes are already public. Defines "
-               "no form, classifies no cohort, reads no outcome, licenses nothing. Its only "
-               "job is to tell a successor charter whether a G5 miss is a property of the "
-               "house MACD-RSI series or of the daily bar itself.")
+                f"tmin_w={K1_W_PRIMARY} (excl T)", "K1-shaped reading"],
+               "NOT a neutral receipt: the last column applies K1's OWN above-trailing-min "
+               "test to a series the charter never registered, on 3 exemplars whose outcomes "
+               "are already public. It reads no outcome column and classifies no cohort, but "
+               "it is a probe with a verdict shape and it is unregistered — so it licenses "
+               "nothing and pre-decides nothing. It is printed for ONE purpose: a successor "
+               "charter should know the level fact (both series sat at a fresh low here) "
+               "before choosing a substrate. Any actual test of this series needs its own "
+               "pre-registration.")
     for tkr, d in list(EXEMPLARS) + [EXEMPLAR_NARRATIVE]:
         nd = nds.get(tkr)
         T = None if nd is None else nd.pos.get(pd.Timestamp(d))
@@ -736,27 +800,31 @@ def g5_exemplar_gate(nds: dict[str, NameCurv], vault: OutcomeVault) -> tuple[dic
     cb.emit()
 
     concluded = _utc()
+    # Snapshot the COUNTER, not a literal. A hard-coded 0 here would be a receipt written
+    # from the author's belief rather than from the run (house memory: a receipt derived
+    # from what it checks cannot fail). The enforcement is the seal; this is its meter.
+    reads_at_g5_close = vault.reads
     vault.unseal()
     ob = Table("RC.g5.ordering", "ORDERING PROOF — G5 concluded before outcomes were readable",
                ["event", "wall clock (UTC)", "monotonic offset (s)"],
                "The outcome columns are physically sealed inside OutcomeVault until the "
-               "unseal below; any earlier read raises OutcomeSealError. This table is the "
-               "receipt that the sequence in the code is the sequence that ran.")
+               "unseal below; any earlier read raises OutcomeSealError. The read counter is "
+               "SNAPSHOTTED from the vault at G5's close, not asserted.")
     ob.add("outcome columns SEALED at load", vault.sealed_at, 0.0)
     ob.add("G5 exemplar gate started", started, round(t_start - t_start, 4))
     ob.add("G5 exemplar gate concluded", concluded, round(time.perf_counter() - t_start, 4))
     ob.add("outcome columns UNSEALED", vault.unsealed_at,
            round(time.perf_counter() - t_start, 4))
-    ob.add("outcome reads before unseal", "0 (enforced — OutcomeSealError)", "-")
+    ob.add(f"vault.reads snapshot at G5 close = {reads_at_g5_close}",
+           "(counter read from the vault, not asserted)", "-")
     ob.emit()
     return verdicts, {"started": started, "concluded": concluded,
                       "unsealed": vault.unsealed_at,
-                      "reads_before_unseal": 0}
+                      "reads_before_unseal": int(reads_at_g5_close)}
 
 
 # ---------------------------------------------------------------- coverage (lens geometry)
-def coverage_table(frame: pd.DataFrame, nds: dict[str, NameCurv],
-                   flags: dict[str, np.ndarray]) -> dict:
+def coverage_table(frame: pd.DataFrame, flags: dict[str, np.ndarray]) -> dict:
     """Coverage is LENS GEOMETRY, not tape — it is what the form sees, not what happened.
 
     Printed for every form including the G5-disqualified ones: it reads no outcome column,
@@ -963,15 +1031,26 @@ def r9d_battery(frame: pd.DataFrame, fpos: np.ndarray, nds: dict[str, NameCurv],
     within quintiles (the parent's ``within_quintile_spread``, re-pointed at this metric).
     """
     near = vault.get("near_low_stop", fpos)
-    tb = Table(f"RC.r9d{label}",
-               f"RISK-EQUALIZATION BATTERY ({'G5 survivors' if label == '' else label.strip('.')}) "
-               "— charter §4.2 / parent R9d",
+    exploratory = label == ".control"
+    head = ("UNREGISTERED EXPLORATORY — battery re-pointed at the parent's already-published "
+            "R4b split" if exploratory else "RISK-EQUALIZATION BATTERY (G5 survivors)")
+    notes = (f"Lens A = fixed −{ALT_STOP_FIX:.0%} off the trailing {ALT_ANCHOR_WIN}-session "
+             f"max close; lens B = same anchor − {ALT_STOP_ATR}×ATR14; lens C = the real "
+             "structure stops split within break-depth quintiles (a SUBSTITUTE for the "
+             "charter's entry-distance lens — see RC.r9d*.cells). Lens A and B anchors are "
+             "this study's disclosed translation of the parent's entry-anchored stops onto "
+             "an entry-free frame, not charter terms.")
+    if exploratory:
+        notes += (
+            "  ||  STATUS: charter §4.2 registered this battery to test a CURVATURE lift. "
+            "No chartered form survived G5, so these rows re-read `hist_rising` instead — "
+            "three UNREGISTERED outcome reads on the frozen frame. They license NOTHING and "
+            "correct no published number. The RAW row is different in kind: reproducing the "
+            "parent's own published figure from an independently recomputed histogram is a "
+            "machinery check, and it is the only row here that carries weight.")
+    tb = Table(f"RC.r9d{label}", f"{head} — charter §4.2 / parent R9d",
                ["form", "lens", "TRUE near-low%", "FALSE near-low%", "spread (pp)",
-                "n TRUE", "vs raw spread", "reads as"],
-               f"Lens A = fixed −{ALT_STOP_FIX:.0%} off the trailing {ALT_ANCHOR_WIN}-session "
-               f"max close; lens B = same anchor − {ALT_STOP_ATR}×ATR14; lens C = the real "
-               "structure stops, split within break-depth quintiles. A sign flip or a "
-               "collapse to under half the raw lift is stop-width arithmetic, named as such.")
+                "n TRUE", "vs raw spread", "reads as"], notes)
     out: dict[str, dict] = {}
 
     # ---- raw spread on the structure frame, for the retention comparison ----
@@ -1023,35 +1102,105 @@ def r9d_battery(frame: pd.DataFrame, fpos: np.ndarray, nds: dict[str, NameCurv],
                    None if sp is None else round(sp, 2), len(tl),
                    _retention(raw[f], sp), _reads_as(raw[f], sp))
 
-    # ---- lens C: real events, break depth held fixed within quintiles ----
+    # ---- lens C: real events, BREAK DEPTH held fixed within quintiles ----
+    # THREE disclosures this lens must carry, all of them load-bearing (red-team R1):
+    #  (i)  SUBSTITUTION. Charter §4.2 registers *entry-distance* quintiles, and the parent
+    #       bins on `entry_vs_low` — an EPISODE quantity ("stop DISTANCE held roughly
+    #       fixed", early_admission_bakeoff.py:1222-1230). A stop-confirm frame has no
+    #       entry, so this bins on break depth at the trigger bar instead. That is a
+    #       different quantity: it is NOT stop width, and a result from it may not be
+    #       described as stop-width arithmetic.
+    #  (ii) OVER-CONTROL. Break depth is outcome-correlated (the per-cell near-low rate
+    #       falls monotonically across the quintiles — printed below): a hard break is
+    #       mechanically likelier to BE the window low. Conditioning on it removes label
+    #       variance from every cohort, real or spurious, so a shrinking spread here is
+    #       weak evidence about the effect and strong evidence about the binning variable.
+    #  (iii) ESTIMATOR FRAGILITY. With a thin TRUE arm the cell-inclusion rule and the
+    #       weighting rule move the answer by ~2x. All four combinations are computed and
+    #       printed; NONE is designated primary, because the charter pre-registered neither.
     depth = (frame["close"].to_numpy() / frame["stop_level"].to_numpy()) - 1.0
     try:
         qs = pd.qcut(pd.Series(depth), QUINTILES, labels=False, duplicates="drop").to_numpy()
     except Exception:
         qs = np.full(len(depth), np.nan)
+
+    cells_tb = Table(f"RC.r9d{label}.cells",
+                     "Break-depth quintile CELLS — the estimator's whole input, printed",
+                     ["form", "quintile", "n TRUE", "n FALSE", "TRUE near-low%",
+                      "FALSE near-low%", "cell spread (pp)", "cell near-low% (all)",
+                      f"kept (>= {MIN_CELL_N // 2} per arm)?"],
+                     "Printed because the summary statistic is not robust to which of these "
+                     "rows it is computed over. The right-hand column shows the "
+                     "outcome-correlation of the binning variable itself (disclosure ii).")
+    est_tb = Table(f"RC.r9d{label}.estimators",
+                   "Break-depth quintile — ALL FOUR defensible estimators (none is primary)",
+                   ["form", "estimator", "spread (pp)", "vs raw", "would read as"],
+                   "The charter pre-registered neither the cell-inclusion rule nor the "
+                   "weighting rule for this lens, so no one of these is THE answer. The "
+                   "spread across them IS the finding: this lens cannot presently support a "
+                   "magnitude claim, and any future use must pre-declare weighting, "
+                   "inclusion and a CI before it may touch a published number.")
+
     for f in forms_to_test:
         v = flags[f]
         avail = ~pd.isna(v)
         tr = np.where(avail, v, False).astype(bool)
         fa = avail & ~tr
-        sps, used = [], 0
+        rows = []
         for qi in sorted(set(x for x in qs if not pd.isna(x))):
             m = (qs == qi)
+            nt, nf = int((tr & m).sum()), int((fa & m).sum())
             a, b = rate(near[tr & m]), rate(near[fa & m])
             if a is None or b is None:
                 continue
-            if int((tr & m).sum()) < MIN_CELL_N // 2 or int((fa & m).sum()) < MIN_CELL_N // 2:
-                continue
-            sps.append((a - b) * 100)
-            used += 1
-        sp = float(np.mean(sps)) if sps else None
-        out.setdefault(f, {})["quintile"] = {"spread_pp": sp, "quintiles_used": used}
-        tb.add(f, f"C break-depth quintiles ({used}/{QUINTILES} usable)", "-", "-",
-               None if sp is None else round(sp, 2), int(tr.sum()),
-               _retention(raw[f], sp), _reads_as(raw[f], sp))
+            keep = nt >= MIN_CELL_N // 2 and nf >= MIN_CELL_N // 2
+            rows.append({"q": int(qi), "nt": nt, "nf": nf, "a": a, "b": b,
+                         "sp": (a - b) * 100, "keep": keep,
+                         "cell_all": float(np.mean(near[m].astype(bool)))})
+            cells_tb.add(f, f"q{int(qi)}", nt, nf, pct(a), pct(b), round((a - b) * 100, 2),
+                         pct(rows[-1]["cell_all"]), "kept" if keep else "DROPPED (thin)")
+
+        kept = [r for r in rows if r["keep"]]
+
+        def _agg(rs, weighted):
+            if not rs:
+                return None
+            if not weighted:
+                return float(np.mean([r["sp"] for r in rs]))
+            w = sum(r["nt"] for r in rs)
+            return None if not w else float(sum(r["sp"] * r["nt"] for r in rs) / w)
+
+        variants = {
+            "kept cells, UNWEIGHTED": _agg(kept, False),
+            "kept cells, cohort-WEIGHTED": _agg(kept, True),
+            "all cells, UNWEIGHTED": _agg(rows, False),
+            "all cells, cohort-WEIGHTED": _agg(rows, True),
+        }
+        for kname, val in variants.items():
+            est_tb.add(f, kname, None if val is None else round(val, 2),
+                       _retention(raw[f], val), _reads_as(raw[f], val))
+
+        vals = [x for x in variants.values() if x is not None]
+        out.setdefault(f, {})["quintile"] = {
+            "variants": variants, "cells": rows,
+            "quintiles_kept": len(kept), "quintiles_total": len(rows),
+            "true_events_in_kept": sum(r["nt"] for r in kept),
+            "true_events_total": sum(r["nt"] for r in rows),
+            "range_pp": None if not vals else [min(vals), max(vals)],
+            "registered": False,
+            "note": ("break-depth quintiles are a SUBSTITUTE for the charter's "
+                     "entry-distance lens; outcome-correlated binning variable; no "
+                     "pre-registered weighting or inclusion rule; no CI computed"),
+        }
+        tb.add(f, f"C break-depth quintiles ({len(kept)}/{len(rows)} kept)", "-", "-",
+               "see .estimators" if vals else None, int(tr.sum()),
+               f"{min(vals):+.2f}..{max(vals):+.2f}pp across 4 estimators" if vals else "-",
+               "NO SINGLE VALUE — estimator-dependent, unregistered lens")
     if not forms_to_test:
         tb.add("(none)", "-", "-", "-", "-", 0, "-", "-")
     tb.emit()
+    cells_tb.emit()
+    est_tb.emit()
     for f in forms_to_test:
         out.setdefault(f, {})["raw_spread_pp"] = raw[f]
     return out
@@ -1103,10 +1252,20 @@ def gates_table(cov: dict, prim: dict, fwd: dict, r9d: dict, g5: dict) -> dict:
         rr = r9d.get(f, {})
         raw = rr.get("raw_spread_pp")
         lens_ok = []
-        for k in ("fix8", "atr2", "quintile"):
+        for k in ("fix8", "atr2"):
             a = (rr.get(k) or {}).get("spread_pp")
             lens_ok.append(bool(raw and a is not None and np.sign(a) == np.sign(raw)
                                 and abs(a) >= abs(raw) * G3_LIFT_RETAINED))
+        # The quintile lens has no pre-registered weighting or cell-inclusion rule and its
+        # four defensible estimators span ~2x (red-team R1). A promotion gate may not be
+        # settled by an author's choice among them, so this study's rule — declared here,
+        # pending its own pre-registration — is the CONSERVATIVE one: every estimator must
+        # clear. Promotion should require robustness, not a favourable reading.
+        qv = [x for x in ((rr.get("quintile") or {}).get("variants") or {}).values()
+              if x is not None]
+        lens_ok.append(bool(raw and qv and all(
+            np.sign(x) == np.sign(raw) and abs(x) >= abs(raw) * G3_LIFT_RETAINED
+            for x in qv)))
         g3 = all(lens_ok)
         g4 = bool(fwd.get(f, {}).get("g4_pass"))
         verdict = "PROMOTION-ELIGIBLE (gauntlet only)" if (g5p and c["g1_pass"] and g2 and g3
@@ -1255,6 +1414,12 @@ def main() -> int:
         return 4
 
     # ---- frame selection (STRUCTURAL — full_window/addon are not outcome columns) ----
+    # Inherited from the parent, and neither flag is outcome-derived: `full_window` says the
+    # +/-10-session window FITS inside the price series (a geometry fact about the frame's
+    # edges, decided by bar count, not by what the tape did), and `addon` marks names with
+    # no site/signals file, which the parent never pooled. Filtering on them is therefore
+    # frame construction, not outcome contamination — it is the same 12,786-row frame the
+    # 34.9% base and the R4b CIs were read on.
     keep = (stops["full_window"] & ~stops["addon"]).to_numpy()
     fpos = np.flatnonzero(keep)
     frame = stops[keep].reset_index(drop=True)
@@ -1297,7 +1462,7 @@ def main() -> int:
     fb.emit()
 
     substrate_table()
-    cov = coverage_table(frame, nds, flags)
+    cov = coverage_table(frame, flags)
     grids = sensitivity_grids(frame, nds, positions)
 
     prim = primary_table(frame, fpos, flags, vault, eligible)
@@ -1311,8 +1476,12 @@ def main() -> int:
     ctrl = {}
     if not eligible:
         note("Running the R9d battery on the parent's already-published R4b strict split "
-             "(hist_rising) as machinery validation. That lens' outcome is already public "
-             "(23.6% vs 35.0%, −11.4pp) — re-reading it auditions no new construction.")
+             "(hist_rising). The RAW row is machinery validation — reproducing a published "
+             "number from an independently recomputed histogram. The three LENS rows are "
+             "UNREGISTERED EXPLORATORY: charter §4.2 registered this battery to test a "
+             "curvature lift, not to re-read hist_rising, so they license nothing and "
+             "correct no published number. The magnitude question they raise is OPEN and "
+             "needs its own pre-registration (weighting rule, lens definition, CI).")
         ctrl_flags = {CONTROL_FORM: np.array(
             [bool(x) for x in frame["hist_rising"].to_numpy()], dtype=object)}
         ctrl = r9d_battery(frame, fpos, nds, ctrl_flags, vault, [CONTROL_FORM], ".control")
