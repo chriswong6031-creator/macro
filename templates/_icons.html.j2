@@ -43,7 +43,14 @@
   'accel':     '<path d="M3.6 19.2c5.2-.4 11.6-3.6 16.6-13"/><polyline points="14.8,5.6 20.6,5.6 20.6,11.4"/>',
   'coil':      '<line x1="3.4" y1="6.6" x2="12.6" y2="6.6"/><line x1="5.2" y1="12" x2="12.6" y2="12"/><line x1="7" y1="17.4" x2="12.6" y2="17.4"/><line x1="17.6" y1="19.6" x2="17.6" y2="5.4"/><polyline points="14.2,8.8 17.6,5.4 21,8.8"/>',
   'sector':    '<path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/>',
+  'inflow':    '<line x1="2.8" y1="6.6" x2="11.4" y2="6.6"/><polyline points="8.9,4.1 11.4,6.6 8.9,9.1"/><line x1="2.8" y1="12" x2="15.4" y2="12"/><polyline points="12.9,9.5 15.4,12 12.9,14.5"/><line x1="2.8" y1="17.4" x2="9.4" y2="17.4"/><polyline points="6.9,14.9 9.4,17.4 6.9,19.9"/><line x1="19.6" y1="3.6" x2="19.6" y2="20.4"/>',
+  'radar':     '<circle cx="5.2" cy="18.8" r="1.5" fill="currentColor" stroke="none"/><path d="M5.2 13.3a5.5 5.5 0 0 1 5.5 5.5"/><path d="M5.2 8.2a10.6 10.6 0 0 1 10.6 10.6"/><path d="M5.2 3.1a15.7 15.7 0 0 1 15.7 15.7"/>',
 } %}
+{#- inflow (2026-08-12) is the Fund Flows desk's masthead mark — three currents of
+    different size arriving at one book — and radar is its coverage/fleet mark, the
+    monoline replacements for the 🐳 and 📡 emoji that were doing that duty on
+    etfs.html (doctrine §5.8: emoji are not UI icons). Both are drawn SERVER-SIDE
+    only, so like `sector` they are deliberately NOT mirrored into subsectors.js. -#}
 {%- macro icon(name, cls='') -%}
 <svg class="ic-svg{{ ' ' ~ cls if cls else '' }}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{{ _ICON_PATHS.get(name, '') | safe }}</svg>
 {%- endmacro -%}

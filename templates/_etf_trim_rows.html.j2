@@ -4,9 +4,10 @@
    entitled build's exact markup — summary included.
 
    Params: `rows` (trims). No tier logic. #}
-{% from "_etf_macros.html.j2" import t, logo, spark, stance %}
+{% from "_etf_macros.html.j2" import t, logo, spark, stance, money, srcword %}
+{% from "_icons.html.j2" import icon %}
 <details>
-  <summary><span class="sh-ic">🔻</span>{{ t('Being trimmed', '正在减持') }} <span class="sh-sub">— {{ t('positions managers are actively cutting (secondary signal)', '经理人正在主动削减的仓位（次要信号）') }}</span><span class="sh-caret">▶</span></summary>
+  <summary><span class="sh-ic">{{ icon('profits') }}</span>{{ t('Being trimmed', '正在减持') }} <span class="sh-sub">— {{ t('what managers are cutting — a weaker tell than buying', '经理人正在削减的仓位——其信号强度弱于买入') }}</span><span class="sh-caret">▸</span></summary>
   <div class="sh-body">
     <div class="atbl-wrap">
     <table class="atbl">
@@ -19,8 +20,10 @@
       {% set cp = r.conviction_pp or 0 %}
       <tr>
         <td><div class="stock-cell">{{ logo(r.ticker) }}<span class="st-txt"><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a><span class="nm">{{ clean_name(r.name) }}</span></span></div></td>
-        <td class="fundcell"><b>{{ r.etf }}</b><br><span class="themetag">{{ td(r.category) if r.category else (td(r.sector) if r.sector else '—') }}</span></td>
-        <td class="r"><span class="conv d">{{ "%+.2f" | format(cp) }}pp</span>{% if r.is_exit %} <span class="mini exit">{{ t('EXITED', '清仓') }}</span>{% endif %}</td>
+        <td class="fundcell"><b>{{ r.etf }}</b>{% if r.is_active %} <i class="am" data-tip-en="Actively managed fund — a person chooses the holdings, so its moves are picks rather than flows" data-tip-zh="主动管理基金——持仓由经理人挑选，其动作属于选股而非资金流">{{ t('active', '主动') }}</i>{% endif %}<br><span class="themetag">{{ td(r.category) if r.category else (td(r.sector) if r.sector else '—') }}</span></td>
+        <td class="r"><span class="conv d">{{ "%+.2f" | format(cp) }}<i>pp</i></span>{% if r.is_exit %} <span class="mini exit">{{ t('all out', '清仓') }}</span>{% endif %}
+          <div class="tsz">{{ money(r.get('total_usd'), r.get('mv_available', true)) }}{{ srcword(r.get('driver')) }}</div>
+        </td>
         <td class="hide-sm">{{ spark(r.weight_series) }}</td>
         <td>{{ stance(r.stance) }}</td>
       </tr>

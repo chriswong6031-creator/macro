@@ -3,6 +3,7 @@
    render from the SAME source as this page — the tier-preview split's one-source
    rule (docs/TIER_PREVIEW_PATTERN.md §checklist-1). Call sites are unchanged. #}
 {% from "_etf_macros.html.j2" import t, b, help, logo, spark, stance, breadth, presbar, hero_verdict, hero_tiles %}
+{% from "_icons.html.j2" import icon %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,6 +31,14 @@
   --faint:color-mix(in srgb,var(--muted) 72%,var(--bg));
   --amber:#fbbf24;--teal:#2dd4bf;--ch-a:#8b96f8;--ch-b:#2dd4bf;--ch-c:#fbbf24;
   --lift:#54c39a;--drag:#e58a97;--accent:var(--ch-b);
+  /* ── the money-source pair (W1 decomposition) ────────────────────────────
+     Two kinds of buying, so two marks. They are CATEGORY inks, not direction
+     inks: investor money takes the market hue, and a manager's pick takes the
+     page's own INK — a filing is signed by a person. Because neither is
+     derived from --up/--down, neither flips under 中文 红涨绿跌, which is
+     exactly right: "who was buying" is not a direction. */
+  --flow:#8b96f8;
+  --pick:color-mix(in srgb,var(--ink) 74%,var(--bg));
   /* glass surface tokens for the tier wall's floating card. special_situations
      defines these locally too — theme.css ships no --surface family, so pasting
      the wall CSS without them renders a transparent-but-working card, which is
@@ -39,13 +48,33 @@
   --surface-brd: color-mix(in srgb, var(--text) 13%, transparent);
   --surface-shadow: 0 20px 52px -22px rgba(3,7,18,.66), 0 6px 18px -10px rgba(3,7,18,.44),
                     inset 0 1px 0 color-mix(in srgb,#fff 7%,transparent)}
+/* Light is a design target, not a token swap (Doctrine §5.8). theme.css hands
+   this page #f7f8fa canvas against #ffffff panels — panel≈bg, the flatness bug —
+   so the canvas is deepened HERE and the panels are lifted off it with a soft
+   shadow and a crisper hairline, the reference light treatment. */
 html[data-theme="light"]{--ink:#141b26;--faint:color-mix(in srgb,var(--muted) 82%,var(--bg));
   --amber:#b45309;--teal:#0f766e;--ch-a:#4559dc;--ch-b:#0f766e;--ch-c:#b45309;
   --lift:#2f9270;--drag:#c65b6e;
+  --flow:#4559dc;
+  --pick:color-mix(in srgb,var(--ink) 80%,transparent);
+  --lift-shadow:0 1px 2px rgba(20,32,64,.05),0 10px 26px -18px rgba(20,32,64,.30);
   --surface: color-mix(in srgb, var(--card) 72%, transparent);
   --surface-brd: color-mix(in srgb, var(--ink) 12%, transparent);
   --surface-shadow: 0 14px 36px -20px rgba(20,32,64,.22), 0 4px 12px -6px rgba(20,32,64,.12),
                     inset 0 1px 0 rgba(255,255,255,.72)}
+html[data-theme="light"] body{background:#e9ecf3}
+/* The panel LIFT and the panel RAIL are both box-shadows, so light mode has to
+   restate the rail or the second declaration silently deletes it — which is
+   exactly what a "just add a shadow for light" patch does, and it renders as a
+   page that quietly loses its accent system on white. Every railed surface
+   carries its colour in --rail so one pair of rules covers all of them. */
+.card{--rail:var(--accent)}.tile{--rail:var(--tc,var(--accent))}
+.rrc{--rail:var(--rc,var(--accent))}.fc{--rail:var(--lift)}
+.card,.tile,.rrc,.fc{box-shadow:inset 3px 0 0 var(--rail)}
+html[data-theme="light"] .card,html[data-theme="light"] .tile,
+html[data-theme="light"] .rrc,html[data-theme="light"] .fc{
+  box-shadow:inset 3px 0 0 var(--rail),var(--lift-shadow)}
+html[data-theme="light"] .shelf details{box-shadow:var(--lift-shadow)}
 /* zh 红涨绿跌 (operator ruling): accumulate/trim are DIRECTION reads → swap. */
 html[data-lang="zh"]{--lift:#e58a97;--drag:#54c39a}
 html[data-theme="light"][data-lang="zh"]{--lift:#c65b6e;--drag:#2f9270}
@@ -56,47 +85,64 @@ body{margin:0;padding:18px 0 0;background:var(--bg);color:var(--text);
 a{color:var(--link);text-decoration:none}
 .faint{color:var(--faint)}.muted{color:var(--muted)}
 .pos{color:var(--lift)}.neg{color:var(--drag)}
+/* ── the page's type scale ────────────────────────────────────────────────
+   One eyebrow, one display size, one row voice, one micro voice. Figures are
+   tabular everywhere; the MONO face is reserved for money, which keeps the two
+   number classes audibly different — the bold pp is a row's headline, the mono
+   dollar figure is its receipt (masterplan R2, one primary number per row). */
+.eyebrow{font-size:10px;font-weight:800;letter-spacing:.115em;text-transform:uppercase;color:var(--muted)}
+.ic-svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;display:block}
 
 /* ═══ hero ═══ */
 .eh{padding:26px 0 6px;animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
-.eh-brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.eh-brand{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.eh-mark{display:inline-flex;width:30px;height:30px;border-radius:9px;flex:none;
+  align-items:center;justify-content:center;font-size:19px;color:var(--ch-b);
+  background:color-mix(in srgb,var(--ch-b) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--ch-b) 26%,transparent)}
 .eh-brand h1{margin:0;font-size:25px;font-weight:800;letter-spacing:-.022em;color:var(--ink)}
-.eh-brand .gn{background:linear-gradient(94deg,var(--ch-a),var(--ch-b) 52%,var(--ch-c));-webkit-background-clip:text;background-clip:text;color:transparent}
-.eh-brand .tag{font-size:13px;color:var(--muted)}
-.eh-verdict{font-size:clamp(20px,3vw,28px);font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1.3;margin:16px 0 8px;max-width:920px}
-.eh-verdict b{background:linear-gradient(94deg,var(--ch-a),var(--ch-b) 60%,var(--ch-c));-webkit-background-clip:text;background-clip:text;color:transparent}
+.eh-brand .tag{font-size:13px;color:var(--muted);flex:1 1 220px;min-width:0}
+.eh-verdict{font-size:clamp(21px,2.9vw,29px);font-weight:800;color:var(--ink);letter-spacing:-.022em;line-height:1.28;margin:18px 0 4px;max-width:940px;text-wrap:balance}
 /* T5 stance line — the free build's Law-1 read, from rotation context only.
    Its highlight IS directional (risk-on / risk-off), so it rides --lift/--drag
    and flips correctly under 中文; the neutral case takes plain ink. */
-.stance-line{font-size:16px;line-height:1.5;color:var(--ink);font-weight:600;margin:16px 0 8px;max-width:760px}
+.stance-line{font-size:16px;line-height:1.5;color:var(--ink);font-weight:600;margin:18px 0 4px;max-width:760px}
 .stance-line .st.u{color:var(--lift)}.stance-line .st.d{color:var(--drag)}.stance-line .st.n{color:var(--ink)}
-.eh-asof{display:block;font-size:12.5px;color:var(--muted);line-height:1.7}
-.eh-asof .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lift);animation:txBreathe 2.8s ease-in-out infinite;vertical-align:middle;margin-right:5px}
+/* the as-of strip: the sanctioned self-labeling .dtp chip idiom (Doctrine §3).
+   The state token IS its own label, there is exactly ONE as-of on the page, and
+   the cycle dot takes a FIXED ink — a data-freshness mark must not ride
+   --up/--down, which 中文 would flip. */
+.eh-tape{margin-top:16px;border:1px solid var(--grid);border-radius:13px;
+  background:color-mix(in srgb,var(--card) 62%,transparent)}
+.eh-tape .dtp-dot{background:#1FA971}
+.eh-tape .dtp-asof{display:inline-flex;align-items:center;gap:2px}
+.eh-tape b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
 /* hero tiles */
-.eh-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}
+.eh-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
 @media(max-width:760px){.eh-tiles{grid-template-columns:1fr}}
-.tile{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:16px 18px;overflow:hidden;
+.tile{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:15px 17px;
   animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
 .tile:nth-child(2){animation-delay:.06s}.tile:nth-child(3){animation-delay:.12s}
-.tile::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--tc,var(--accent))}
 .tile.t-lift{--tc:var(--lift)}.tile.t-drag{--tc:var(--drag)}.tile.t-accent{--tc:var(--ch-a)}.tile.t-neutral{--tc:var(--faint)}
 /* the free build's honest-total tile: a count is not a direction, so it takes
    the brand link ink rather than an up/down one that 中文 would flip */
 .tile.t-link{--tc:var(--link)}
-.tile .tk{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.tile .tv{font-size:27px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.1;margin:5px 0 2px;font-variant-numeric:tabular-nums}
-.tile .tm{font-size:12px;color:var(--faint);line-height:1.4}
-.tile .tstance{margin-top:9px}
+.tile .tk{font-size:10px;font-weight:800;letter-spacing:.115em;text-transform:uppercase;color:var(--muted)}
+/* a step below the verdict on purpose: the sentence is the page's thesis and
+   the tiles support it, so they must not tie with it for first read */
+.tile .tv{font-size:24px;font-weight:800;letter-spacing:-.025em;color:var(--ink);line-height:1.12;margin:6px 0 3px;font-variant-numeric:tabular-nums}
+.tile .tm{font-size:12px;color:var(--faint);line-height:1.45}
+.tile .tstance{margin-top:10px}
 
 /* ═══ section chrome ═══ */
-.sec{margin-top:38px}
-.sec-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 3px}
-.sec-head .sh-dot{width:8px;height:8px;border-radius:3px;background:var(--sc,var(--accent));align-self:center;flex:none}
-.sec-head h2{margin:0;font-size:13px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em}
-.sec-sub{font-size:13px;color:var(--muted);margin:0 0 15px;max-width:760px;line-height:1.5}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px 22px;position:relative;overflow:hidden;
+.sec{margin-top:40px}
+.sec-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 4px}
+.sec-head .sh-dot{width:7px;height:7px;border-radius:2px;background:var(--sc,var(--accent));flex:none}
+.sec-head h2{margin:0;font-size:12.5px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.115em}
+.sec-sub{font-size:13.5px;color:var(--muted);margin:0 0 16px;max-width:720px;line-height:1.5}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:18px 20px;position:relative;
   animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
-.card::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--accent)}
 
 /* ═══ stance pill ═══ */
 .stpill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;cursor:help;
@@ -106,42 +152,86 @@ a{color:var(--link);text-decoration:none}
 .st-ready{--sp:var(--teal)}.st-watch{--sp:var(--link)}.st-trim{--sp:var(--amber)}.st-aside{--sp:var(--faint)}.st-ignore{--sp:var(--faint)}
 
 /* ═══ breadth constellation ═══ */
-.bdots{display:inline-flex;align-items:center;gap:3px;line-height:1}
+.bdots{display:inline-flex;align-items:center;gap:3px;line-height:1;cursor:help}
 .bdots i{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
 .bdots i.up{background:var(--lift)}.bdots i.dn{background:var(--drag)}
 .bdots i.sep{width:1px;height:12px;border-radius:0;background:var(--grid);margin:0 2px}
 .bdots i.ov{width:auto;height:auto;border-radius:0;font-size:10px;font-weight:800;color:var(--lift);font-style:normal;margin-left:1px}
 
 /* ═══ pressure bar ═══ */
-.pbar{position:relative;display:block;height:8px;background:color-mix(in srgb,var(--grid) 55%,var(--card));border-radius:999px;width:100%}
-.pb-mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint);opacity:.45}
+.pbar{position:relative;display:block;height:7px;background:color-mix(in srgb,var(--grid) 42%,var(--card));border-radius:999px;width:100%;overflow:hidden}
+.pb-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--muted);opacity:.72;z-index:1}
 .pb-fill{position:absolute;top:0;bottom:0;border-radius:999px;animation:txGrow .8s cubic-bezier(.2,.7,.3,1) both}
 .pb-fill.u{left:50%;transform-origin:left;background:linear-gradient(90deg,color-mix(in srgb,var(--lift) 22%,transparent),color-mix(in srgb,var(--lift) 62%,transparent))}
 .pb-fill.d{right:50%;transform-origin:right;background:linear-gradient(270deg,color-mix(in srgb,var(--drag) 22%,transparent),color-mix(in srgb,var(--drag) 62%,transparent))}
 
+/* ═══ the money-source marks (the page's signature) ═══════════════════════════
+   One rail, two segments, sized by how many funds were on each side. It rides
+   fund COUNTS rather than dollars on purpose: counts are this page's primary
+   and least manipulable lens, they survive a sponsor that publishes no market
+   values, and they cannot be misread as a second reading of the pp headline.
+   1px gap + track border so the segments stay separate on white (Doctrine §5.8). */
+.srail{display:inline-flex;width:32px;height:5px;border-radius:3px;overflow:hidden;flex:none;
+  background:color-mix(in srgb,var(--grid) 62%,var(--card));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--grid) 75%,transparent)}
+.srail i{display:block;height:100%}
+.sr-f{background:var(--flow);border-right:1px solid var(--card)}
+.sr-s{flex:1;background:var(--pick)}
+.sw{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:6px;flex:none;vertical-align:-1px}
+.sw-f{background:var(--flow)}.sw-s{background:var(--pick)}
+.src{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.src-t{color:var(--faint)}
+.sc-f .src-t{color:color-mix(in srgb,var(--flow) 62%,var(--muted))}
+.sc-s .src-t{color:color-mix(in srgb,var(--ink) 55%,var(--muted))}
+/* money: mono, quiet, never bold, never directional — the receipt voice */
+.mny{font-family:var(--font-mono),ui-monospace,monospace;font-size:11px;font-weight:600;
+  color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:-.015em;white-space:nowrap}
+.mny .pl{font-style:normal;font-weight:800;color:var(--faint);cursor:help}
+.mny.none{color:var(--faint)}
+/* one persistence chip, outlined and quiet — a streak is context, not a call */
+.prs{display:inline-block;padding:0 6px;border-radius:6px;font-size:10px;font-weight:700;
+  color:var(--muted);border:1px solid var(--grid);white-space:nowrap}
+/* the small-caps "active manager" mark: a person picks these holdings, so it
+   takes the same ink the manager's-pick segment does */
+.am{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--ink) 62%,var(--muted));cursor:help}
+
 /* ═══ consensus board (signature) ═══ */
-.cb-head,.cb-row{display:grid;grid-template-columns:30px minmax(148px,1.35fr) 116px minmax(116px,1fr) 168px;gap:16px;align-items:center}
-.cb-head{padding:0 2px 9px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--grid)}
+.cb-card{padding:0}
+.cb-legend{display:flex;align-items:baseline;gap:7px 16px;flex-wrap:wrap;padding:12px 20px 11px;
+  border-bottom:1px solid var(--grid);font-size:11.5px;color:var(--muted);line-height:1.45}
+.cb-legend .lg-k{font-size:10.5px;font-weight:800;letter-spacing:.02em;color:var(--ink);white-space:nowrap}
+.cb-legend .lg-t{flex:1 1 300px;min-width:0}
+.cb-legend .lg-m{font-size:10.5px;color:var(--faint);white-space:nowrap}
+.cb-head,.cb-row{display:grid;grid-template-columns:28px minmax(146px,1.3fr) 116px minmax(158px,1.15fr) 172px;gap:16px;align-items:center}
+.cb-head{padding:9px 20px 8px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--grid)}
 .cb-head .r{text-align:right}
-.cb-row{padding:12px 2px}
-.cb-row+.cb-row{border-top:1px solid color-mix(in srgb,var(--grid) 62%,transparent)}
-.cb-rank{font-size:14px;font-weight:800;color:var(--faint);font-variant-numeric:tabular-nums;text-align:center}
-.cb-row:nth-child(-n+4) .cb-rank{color:var(--accent)}
+.cb-row{padding:12px 20px}
+.cb-row+.cb-row{border-top:1px solid color-mix(in srgb,var(--grid) 55%,transparent)}
+.cb-row:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.cb-rank{font-size:13px;font-weight:800;color:var(--faint);font-variant-numeric:tabular-nums;text-align:center}
+.cb-row:nth-child(-n+6) .cb-rank{color:var(--accent)}
 .stock-cell{display:flex;align-items:center;gap:9px;min-width:0}
 .stock-cell .st-txt{min-width:0}
-.stock-cell .st-txt b{display:block;font-size:14px;color:var(--ink);line-height:1.15}
+.stock-cell .st-txt b{display:block;font-size:14px;color:var(--ink);line-height:1.15;letter-spacing:-.005em}
 .stock-cell .st-txt .nm{display:block;font-size:11.5px;color:var(--muted);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
-.themetag{display:inline-block;margin-top:2px;padding:0 7px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.01em;
+.themetag{display:inline-block;margin-top:3px;padding:0 7px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.01em;
   background:color-mix(in srgb,var(--muted) 13%,var(--card));color:var(--muted)}
+.cb-breadth{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
 .cb-net{text-align:right;font-variant-numeric:tabular-nums}
-.cb-net .v{font-size:13.5px;font-weight:800}.cb-net .v.u{color:var(--lift)}.cb-net .v.d{color:var(--drag)}
-.cb-pres{display:flex;flex-direction:column;gap:5px}
-.cb-flags{display:flex;gap:5px;flex-wrap:wrap;margin-top:3px}
-.mini{display:inline-block;padding:0 7px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.02em}
+.cb-net .v{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.cb-net .v.u{color:var(--lift)}.cb-net .v.d{color:var(--drag)}
+.cb-pres{display:flex;flex-direction:column;gap:6px}
+.cb-src{display:flex;align-items:center;gap:9px;flex-wrap:wrap;cursor:help}
+.cb-flags{display:flex;gap:5px;flex-wrap:wrap}
+.cb-flags:empty{display:none}
+.mini{display:inline-block;padding:0 7px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.02em;white-space:nowrap}
 .mini.new{background:color-mix(in srgb,var(--lift) 16%,var(--card));color:var(--lift)}
 .mini.exit{background:color-mix(in srgb,var(--drag) 15%,var(--card));color:var(--drag)}
-.mini.contested{background:color-mix(in srgb,var(--amber) 16%,var(--card));color:var(--amber)}
-.mini.active{background:color-mix(in srgb,var(--ch-a) 15%,var(--card));color:var(--ch-a)}
+/* disagreement is a FACT about the fund count, so it sits with the dots and is
+   outlined rather than filled — it must not shout louder than the stance */
+.mini.split{color:var(--amber);border:1px solid color-mix(in srgb,var(--amber) 34%,var(--grid));font-weight:700}
+.mini.old{color:var(--muted);border:1px solid var(--grid);font-weight:700;cursor:help}
 /* the whose-conviction hover popover */
 .cb-who{position:relative;display:inline-flex}
 .cb-who .who-src{font-size:11px;color:var(--muted);cursor:help;border-bottom:1px dashed var(--grid)}
@@ -151,62 +241,73 @@ a{color:var(--link);text-decoration:none}
 .who-pop .wl{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
 .who-pop .wl b{color:var(--ink)}
 .who-pop .wl .wv.u{color:var(--lift)}.who-pop .wl .wv.d{color:var(--drag)}
+/* the size lens — below the ranking, never instead of it */
+.cb-size{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;padding:11px 20px 12px;
+  border-top:1px solid var(--grid);background:color-mix(in srgb,var(--grid) 14%,transparent)}
+.cb-size .cs-k{font-size:10px;font-weight:800;letter-spacing:.115em;text-transform:uppercase;color:var(--muted)}
+.cb-size .cs-i{display:inline-flex;align-items:baseline;gap:6px;color:var(--text)}
+.cb-size .cs-i b{font-size:12px;font-weight:800;color:var(--ink)}
+.cb-size .cs-i:hover b{color:var(--link)}
+.cb-size .cs-n{font-size:11px;color:var(--faint);cursor:help;border-bottom:1px dashed var(--grid);margin-left:auto}
 @media(max-width:720px){
   .cb-head{display:none}
-  .cb-row{grid-template-columns:26px 1fr auto;gap:11px;row-gap:9px;padding:13px 2px}
-  .cb-net,.cb-pres{grid-column:2/-1}
+  .cb-row{grid-template-columns:26px 1fr auto;gap:11px;row-gap:9px;padding:13px 16px}
+  .cb-legend,.cb-size{padding-left:16px;padding-right:16px}
+  .cb-pres{grid-column:2/-1}
   .cb-stance-cell{grid-column:2/-1}
 }
 
 /* ═══ fresh conviction cards ═══ */
-.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px}
-.fc{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:15px;padding:15px 16px;overflow:hidden;
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:14px}
+.fc{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:14px 16px;
   animation:txUp .5s cubic-bezier(.2,.7,.3,1) both}
-.fc::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--lift)}
 .fc-top{display:flex;align-items:center;gap:9px}
+.fc-top .st-txt{flex:1;min-width:0}
 .fc-top .st-txt b{display:block;font-size:14.5px;color:var(--ink);line-height:1.1}
 .fc-top .st-txt .nm{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
-.fc-mid{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 9px}
-.fc-mid .fund-n{font-size:12px;color:var(--muted)}
-.fc-mid .fund-n b{color:var(--ink);font-weight:800}
-.fc-conv{font-size:12px;font-weight:800;color:var(--lift);font-variant-numeric:tabular-nums}
-.fc-funds{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.fc-conv{flex:none;font-size:14px;font-weight:800;color:var(--lift);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.fc-conv i{font-style:normal;font-size:10px;font-weight:700;color:var(--faint);margin-left:1px}
+.fc-mid{font-size:11.5px;color:var(--muted);margin:11px 0 8px}
+.fc-mid b{color:var(--ink);font-weight:800}
+.fc-funds{display:flex;flex-wrap:wrap;gap:4px}
 .fchip{padding:1px 7px;border-radius:6px;font-size:10.5px;font-weight:700;background:color-mix(in srgb,var(--muted) 13%,var(--card));color:var(--muted)}
-.fchip.act{background:color-mix(in srgb,var(--ch-a) 14%,var(--card));color:var(--ch-a)}
-.fc-foot{margin-top:11px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+/* an ACTIVE manager's chip takes the manager's-pick ink: a person chose it */
+.fchip.act{background:color-mix(in srgb,var(--ink) 15%,var(--card));color:var(--ink);cursor:help}
+.fchip.more{background:transparent;border:1px solid var(--grid);color:var(--faint)}
+.fc-foot{margin-top:12px;padding-top:11px;border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
 
 /* ═══ rotation rail (market backdrop) ═══ */
-.rr{display:grid;grid-template-columns:1.05fr 1.25fr 1.05fr;gap:16px}
+.rr{display:grid;grid-template-columns:1.05fr 1.25fr 1.05fr;gap:16px;align-items:start}
 @media(max-width:900px){.rr{grid-template-columns:1fr}}
-.rrc{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:19px 20px;overflow:hidden;
+.rrc{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:17px 19px;
   animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
 .rrc:nth-child(2){animation-delay:.06s}.rrc:nth-child(3){animation-delay:.12s}
-.rrc::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--rc,var(--accent))}
 .rrc.c-risk{--rc:var(--ch-a)}.rrc.c-sect{--rc:var(--ch-b)}.rrc.c-style{--rc:var(--ch-c)}
-.rrc .rr-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--rc,var(--accent))}
-.rrc .rr-state{font-size:23px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.1;margin:8px 0 3px}
+.rrc .rr-eyebrow{font-size:10px;font-weight:800;letter-spacing:.115em;text-transform:uppercase;color:var(--rc,var(--accent))}
+.rrc .rr-state{font-size:23px;font-weight:800;letter-spacing:-.025em;color:var(--ink);line-height:1.1;margin:9px 0 3px}
+.rrc .rr-sub{font-size:14px;font-weight:700;letter-spacing:-.01em;color:var(--ink);margin:9px 0 3px;display:flex;align-items:center}
 .rrc .rr-read{font-size:12px;color:var(--muted);line-height:1.45}
 .rr-legs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .leg{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:600;background:color-mix(in srgb,var(--grid) 45%,var(--card));color:var(--text)}
 .leg .ar{font-size:9px}.leg.u{color:var(--lift)}.leg.d{color:var(--drag)}
 /* sector ladder */
 .slad{display:flex;flex-direction:column;gap:7px;margin-top:11px}
-.slad .sl{display:grid;grid-template-columns:20px 74px 1fr auto;gap:9px;align-items:center;font-size:12px}
-.slad .sl .rk{font-size:10.5px;font-weight:800;color:var(--faint);text-align:center;font-variant-numeric:tabular-nums}
+.slad .sl{display:grid;grid-template-columns:18px 74px 1fr auto;gap:9px;align-items:center;font-size:12px}
+.slad .sl .rk{font-size:10px;font-weight:800;color:var(--faint);text-align:center;font-variant-numeric:tabular-nums}
 .slad .sl .nm{font-weight:700;color:var(--ink)}
-.slad .sl .track{position:relative;height:7px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card))}
+.slad .sl .track{position:relative;height:6px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card))}
 .slad .sl .track i{position:absolute;left:50%;top:0;bottom:0;border-radius:999px;animation:txGrow .7s ease both}
 .slad .sl .track i.u{transform-origin:left;background:color-mix(in srgb,var(--lift) 55%,transparent)}
 .slad .sl .track i.d{right:50%;left:auto;transform-origin:right;background:color-mix(in srgb,var(--drag) 55%,transparent)}
 .slad .sl .mv{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;min-width:44px}
 .slad .sl .mv.u{color:var(--lift)}.slad .sl .mv.d{color:var(--drag)}
 /* style tug-of-war */
-.tug{display:flex;flex-direction:column;gap:11px;margin-top:6px}
+.tug{display:flex;flex-direction:column;gap:11px;margin-top:8px}
 .tug .tw{font-size:12px}
 .tug .tw .lab{display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}
 .tug .tw .lab .nm{font-weight:700;color:var(--ink)}
 .tug .tw .lab .ld{font-size:11px;font-weight:700;color:var(--ch-c)}
-.tug .tw .bar{position:relative;height:8px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card))}
+.tug .tw .bar{position:relative;height:7px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card))}
 .tug .tw .bar .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint);opacity:.4}
 .tug .tw .bar i{position:absolute;left:50%;top:0;bottom:0;border-radius:999px;animation:txGrow .7s ease both;
   background:color-mix(in srgb,var(--ch-c) 48%,transparent)}
@@ -214,38 +315,87 @@ a{color:var(--link);text-decoration:none}
 .tug .tw .bar i.d{right:50%;left:auto;transform-origin:right}
 
 /* ═══ accumulation table ═══ */
+.atbl-card{padding:6px 14px}
 .atbl{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
-.atbl th{text-align:left;padding:0 10px 9px;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--grid)}
-.atbl td{padding:10px;border-bottom:1px solid color-mix(in srgb,var(--grid) 60%,transparent);vertical-align:middle}
+.atbl th{text-align:left;padding:10px 10px 9px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--grid)}
+.atbl td{padding:11px 10px;border-bottom:1px solid color-mix(in srgb,var(--grid) 55%,transparent);vertical-align:middle}
 .atbl tr:last-child td{border-bottom:none}
+.atbl tbody tr:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
 .atbl th.r,.atbl td.r{text-align:right}
-.atbl .conv{font-weight:800}.atbl .conv.u{color:var(--lift)}.atbl .conv.d{color:var(--drag)}
+.atbl .conv{font-weight:800;font-size:14px;letter-spacing:-.02em}
+.atbl .conv i{font-style:normal;font-size:10px;font-weight:700;color:var(--faint);margin-left:1px}
+.atbl .conv.u{color:var(--lift)}.atbl .conv.d{color:var(--drag)}
+.atbl .tsz{display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:4px}
 .fundcell b{color:var(--ink)}
 .atbl-wrap{overflow-x:auto}
 @media(max-width:640px){.atbl .hide-sm{display:none}}
 
-/* ═══ shelf (trims / coverage) ═══ */
-.shelf details{background:var(--card);border:1px solid var(--grid);border-radius:16px;margin-bottom:12px;overflow:hidden}
-.shelf summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;color:var(--ink);transition:background .18s}
+/* ═══ shelf (trims / the fleet) ═══ */
+.shelf details{background:var(--card);border:1px solid var(--grid);border-radius:15px;margin-bottom:12px}
+.shelf summary{list-style:none;cursor:pointer;padding:14px 20px;display:flex;align-items:center;gap:11px;font-size:14px;font-weight:700;color:var(--ink);transition:background .18s;border-radius:15px}
 .shelf summary::-webkit-details-marker{display:none}
 .shelf summary:hover{background:color-mix(in srgb,var(--accent) 5%,var(--card))}
-.shelf summary .sh-ic{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+.shelf summary .sh-ic{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;
+  color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card))}
 .shelf summary .sh-sub{font-weight:500;color:var(--muted);font-size:12.5px}
 .shelf summary .sh-caret{margin-left:auto;flex:none;font-size:11px;color:var(--faint);transition:transform .25s}
+.shelf details[open] summary{border-radius:15px 15px 0 0}
 .shelf details[open] summary .sh-caret{transform:rotate(90deg)}
 .shelf .sh-body{padding:4px 20px 20px;border-top:1px solid var(--grid)}
-.fdot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:6px}
+.fdot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;flex:none}
 /* Freshness is a DATA-QUALITY status, not a market direction. It must NOT ride
    --lift/--drag: those flip under html[data-lang="zh"] (红涨绿跌), which painted
    "fresh" red and "stale" green in the first ZH render of the W2 mockup. Fixed
    semantic inks, identical in both languages. Same rule for any pass/fail tint. */
 .fdot.fresh{background:#1FA971}.fdot.aging{background:#f0b429}.fdot.stale{background:#e06464}
 .fdot.none{background:var(--muted)}
-.fstale{color:#e06464}
-.tag3p{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10px;font-weight:700;background:color-mix(in srgb,var(--muted) 13%,var(--card));color:var(--muted);border:1px solid var(--grid)}
+
+/* ═══ the fleet directory ═══════════════════════════════════════════════════
+   Was a 105-row, six-column table: a spreadsheet, not a directory, and 58 KiB
+   of the free shell's weight on its own (R3). It is now a grouped directory —
+   and the grouping is the point: the three groups ARE the flow-vs-selection
+   rule, so a reader who never pays still learns why an active manager's move
+   and a theme fund's move mean different things. Everything constant (what the
+   dots mean, what the small number is) is stated once in the legend, never per
+   row (Doctrine Law 4). */
+/* the fleet shelf is data quality, not distribution: it takes the page accent,
+   not the trims shelf's --drag. Keyed on the summary rather than on the
+   <details> so the element stays a bare `<details open>` — the tier suite pins
+   that literal, because a coverage directory that ships collapsed may never be
+   crawled (T-B3). */
+.fl-sum .sh-ic{color:var(--ch-b);background:color-mix(in srgb,var(--ch-b) 10%,var(--card))}
+.fl-sum:hover{background:color-mix(in srgb,var(--ch-b) 5%,var(--card))}
+.fl-stats{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin:14px 0 4px}
+.fl-s{display:inline-flex;align-items:baseline;gap:6px;padding:5px 11px;border-radius:999px;
+  border:1px solid var(--grid);background:color-mix(in srgb,var(--grid) 16%,transparent);
+  font-size:11.5px;color:var(--muted)}
+.fl-s b{font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.fl-lg{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--faint);margin-left:auto}
+.fl-lg .fdot{margin-left:7px}
+.fl-lg .fdot:first-child{margin-left:0}
+.fl-g{margin-top:18px}
+.fl-gh{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;padding-bottom:7px;border-bottom:1px solid var(--grid)}
+.fl-gn{font-size:10.5px;font-weight:800;letter-spacing:.115em;text-transform:uppercase;color:var(--ink)}
+.fl-gc{font-size:10.5px;font-weight:800;color:var(--ch-b);font-variant-numeric:tabular-nums}
+.fl-gr{font-size:11.5px;color:var(--muted)}
+.fl-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:1px 18px;margin-top:8px}
+.fu{display:flex;align-items:center;gap:7px;padding:4px 0;font-size:12px;min-width:0;line-height:1.35}
+/* The row's freshness dot is a ::before rather than a .fdot element: at 105
+   funds that markup was 3 KiB of the free shell on its own. It carries the SAME
+   fixed inks as the legend's .fdot swatches — never --lift/--drag, which 中文
+   flips — and tests/test_etfs_gate pins the two sets to identical values so the
+   pair cannot drift. */
+.fu::before{content:'';width:8px;height:8px;border-radius:50%;flex:none;background:var(--muted)}
+.fu.s1::before{background:#1FA971}.fu.s2::before{background:#f0b429}.fu.s3::before{background:#e06464}
+.fu b{font-weight:800;color:var(--ink);flex:none;font-size:11.5px;letter-spacing:.01em}
+.fu span{flex:1;min-width:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fu i{font-style:normal;font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums;flex:none}
+.fu u{text-decoration:none;font-size:9.5px;font-weight:700;color:var(--faint);
+  border:1px solid var(--grid);border-radius:5px;padding:0 4px;flex:none}
+.fl-foot{margin-top:16px;font-size:11.5px;color:var(--faint);line-height:1.55}
 
 /* ═══ disclosure ═══ */
-.disc{font-size:12px;color:var(--muted);margin:30px 0 0;padding-top:16px;border-top:1px solid var(--grid);line-height:1.6}
+.disc{font-size:12px;color:var(--muted);margin:32px 0 0;padding-top:16px;border-top:1px solid var(--grid);line-height:1.6}
 .disc b{color:var(--ink)}
 
 /* ═══ tk logo ═══ */
@@ -254,17 +404,22 @@ a{color:var(--link);text-decoration:none}
 .tk-logo img{width:26px;height:26px;object-fit:contain;display:block}
 /* Fallback for a ticker with no CDN icon (the .png 404s → onerror swaps this in).
    At 9px the 4-character ticker overran the 26px tile and the parent's
-   overflow:hidden sheared it on BOTH sides; size the type to the tile instead. */
-.tk-fb{font-size:8px;font-weight:800;letter-spacing:-.04em;line-height:1;white-space:nowrap;color:var(--muted);align-items:center;justify-content:center;width:26px;height:26px}
+   overflow:hidden sheared it on BOTH sides; size the type to the tile instead.
+   It reads as a monogram plate rather than a failed image. */
+.tk-fb{font-size:8.5px;font-weight:800;letter-spacing:-.04em;line-height:1;white-space:nowrap;
+  color:var(--muted);align-items:center;justify-content:center;width:26px;height:26px;
+  border:1px solid var(--grid);border-radius:6px;background:color-mix(in srgb,var(--grid) 22%,transparent)}
 .spark{display:inline-block;vertical-align:middle}
 
 /* ═══ ? tip ═══ */
 .txq{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
   border:1px solid var(--grid);color:var(--muted);font-size:10px;font-weight:700;cursor:help;flex:none;margin-left:5px;vertical-align:middle}
-.txq .txq-tip{display:none;position:absolute;top:22px;right:-8px;z-index:50;width:266px;padding:10px 12px;border-radius:11px;
+.txq .txq-tip{display:none;position:absolute;top:22px;left:-8px;z-index:50;width:294px;padding:11px 13px;border-radius:11px;
   background:var(--card);border:1px solid var(--grid);box-shadow:0 14px 34px -14px rgba(9,17,40,.42);
-  font-size:12px;font-weight:500;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0;text-align:left}
+  font-size:12px;font-weight:500;color:var(--text);line-height:1.55;text-transform:none;letter-spacing:0;text-align:left}
 .txq:hover .txq-tip,.txq:focus .txq-tip{display:block}
+.txq:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+@media(max-width:520px){.txq .txq-tip{left:auto;right:-8px;width:min(290px,84vw)}}
 
 /* ═══ tier gate (SEO Supercharge W2 — docs/TIER_PREVIEW_PATTERN.md) ═══
    Transliterated from the shipped special_situations idiom into THIS page's
@@ -336,7 +491,10 @@ a{color:var(--link);text-decoration:none}
 @keyframes txGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @media (prefers-reduced-motion:reduce){
   .eh,.tile,.card,.rrc,.fc{animation:none}
-  .pb-fill,.slad .sl .track i,.tug .tw .bar i,.eh-asof .dot,.stdot{animation:none}
+  .pb-fill,.slad .sl .track i,.tug .tw .bar i,.stdot{animation:none}
+  /* the as-of strip's cycle dot pulses from theme.css's own keyframe — kill it
+     by name here too, the wildcard below only covers transitions */
+  .eh-tape .dtp-dot{animation:none}
   /* the tier gate's skeleton shimmer is decorative — kill it by name, not by
      hoping the wildcard below covers animations (it only covers transitions) */
   .gh{animation:none}
@@ -354,7 +512,8 @@ a{color:var(--link);text-decoration:none}
 {# ═══════════════ HERO ═══════════════ #}
   <header class="eh">
     <div class="eh-brand">
-      <h1>🐳 {{ t('Real fund moves', '基金真实动作') }}</h1>
+      <span class="eh-mark">{{ icon('inflow') }}</span>
+      <h1>{{ t('Real fund moves', '基金真实动作') }}</h1>
       <span class="tag">{{ t('where thematic & active managers are building conviction', '主题与主动经理人积累信念之处') }}</span>
     </div>
     {# Hero read. Entitled: the graded verdict line (which themes managers are
@@ -372,12 +531,18 @@ a{color:var(--link);text-decoration:none}
       {{ hero_verdict(board.verdict) }}
       {%- endif %}
     </div>
-    <div class="eh-asof"><span class="dot"></span>
-      {% if board and board.coverage %}{{ t('Tracking', '追踪') }} <b>{{ board.coverage.funds }}</b>&nbsp;{{ t('curated & active funds', '精选与主动基金') }} · {% endif %}
-      {{ t('updated each filing cycle', '每个披露周期更新') }} · {{ generated_utc }} UTC
+    {# ONE as-of on the page, in the sanctioned self-labeling .dtp chip idiom:
+       the state token IS its label, the count is a fact, the stamp sits at the
+       end, and the mechanics live behind the ? (Doctrine §3, Law 4). #}
+    <div class="eh-tape"><div class="dtp-row">
+      <span class="dtp-token"><span class="dtp-dot"></span>{{ t('Filing cycle', '披露周期') }}</span>
+      {% if board and board.coverage %}<span class="dtp-chip">{{ t('tracking', '追踪') }}&nbsp;<b>{{ board.coverage.funds }}</b>&nbsp;{{ t('curated & active funds', '精选与主动基金') }}</span>{% endif %}
+      <span class="dtp-chip">{{ t('one full holdings read per fund, per day', '每只基金每日一次完整持仓读取') }}</span>
+      <span class="dtp-asof">{{ generated_utc }} UTC
       {{ help("Universe = curated THEMATIC / industry funds (SPDR sector, Global X, VanEck, First Trust, Sprott, Amplify, Defiance, Bitwise, Invesco, Roundhill) plus ACTIVELY managed funds (ARK). Broad-index trackers (SPY/QQQ) are excluded — their moves are reconstitution noise, not a curated read. We diff each fund's daily holdings, strip out mechanical creation/redemption flow AND the price move, and keep the manager's actual conviction per name, measured in percentage POINTS of fund weight committed. Cash & money-market lines are excluded. Lagged filing data — context, never a buy list.",
       "范围 = 精选主题／行业基金（SPDR 板块、Global X、VanEck、First Trust、Sprott、Amplify、Defiance、Bitwise、Invesco、Roundhill）加主动管理基金（ARK）。宽基指数基金（SPY/QQQ）已排除——其动作是再平衡噪音而非精选解读。我们比对每只基金的每日持仓，剔除机械性申购／赎回资金流及价格变动，留下经理人对每只个股的真实信念，以投入的基金权重百分点衡量。现金与货币市场科目已排除。此为滞后的披露数据——仅供参考，非买入清单。") }}
-    </div>
+      </span>
+    </div></div>
 
     {# Three honest tiles — no ghost ever opens this page (T-B1). On the gated
        build the builder has already swapped tile 1 from the graded
@@ -388,11 +553,13 @@ a{color:var(--link);text-decoration:none}
   </header>
 
 {# ═══════════════ CONSENSUS BOARD (signature) ═══════════════ #}
-  <section class="sec" style="--sc:var(--ch-b)">
+  <section class="sec" style="--sc:var(--ch-b);--accent:var(--ch-b)">
     <div class="sec-head"><span class="sh-dot"></span>
       <h2>{{ t('The consensus board', '共识看板') }}</h2>
+      {{ help('Sorted by how many funds are buying the same name at once, then by how much conviction sits behind it. A name reaches the board only when at least two separately-managed funds have touched it. Breadth comes first on purpose: a count cannot be inflated by one large fund, one large position or one loud sponsor, which makes it the hardest number on this page to manipulate.',
+      '先按有多少只基金同时买入同一个股排序，再看背后的信念规模。只有当至少两只独立管理的基金触及该个股时，它才会进入看板。广度优先是刻意的：数量无法被单只大基金、单个大仓位或某家高调发行商操纵，因此它是本页最难被扭曲的数字。') }}
       {% if gate and gate.total %}<span class="gate-pill">{{ t('Essential', 'Essential') }}</span>{% endif %}</div>
-    <p class="sec-sub">{{ t('Stocks the most funds are accumulating at once — a name many managers back together is a far stronger read than one fund’s bet. Sorted by how broad the agreement is, then how much conviction sits behind it.', '被最多基金同时增持的个股——多位经理人共同押注，其信号远强于单只基金的下注。先按共识广度排序，再看背后的信念规模。') }}</p>
+    <p class="sec-sub">{{ t('Which stocks are the most managers backing at the same time?', '哪些个股正被最多经理人同时买入？') }}</p>
     {# `gate.total` and not just `gate`: with a genuinely empty board there is
        nothing withheld, so the honest "Building —" state below must still be
        reachable on a gated build (B§9.11). #}
@@ -445,8 +612,10 @@ a{color:var(--link);text-decoration:none}
   {% if (board and board.fresh) or (gate and gate.has_fresh) %}
   <section class="sec" style="--sc:var(--lift)" id="etf-fresh-sec"{% if gate %} hidden{% endif %}>
     <div class="sec-head"><span class="sh-dot"></span>
-      <h2>{{ t('Fresh conviction', '全新建仓') }}</h2></div>
-    <p class="sec-sub">{{ t('Brand-new positions managers just opened this cycle — a manager starting a fresh stake is a stronger tell than adding to an old one.', '经理人本轮刚刚开立的全新仓位——开一笔新仓比加码旧仓更能说明问题。') }}</p>
+      <h2>{{ t('Fresh conviction', '全新建仓') }}</h2>
+      {{ help('A brand-new position is the highest-information version of an add: a manager who did not own a name and now does has made a decision that cannot be explained by drift, rebalancing or index maintenance. Two or more funds opening the same name in the same window is the strongest cross-manager read on this page. One fund opening it is a lead, not a signal — and nothing here says the entry is timed.',
+      '全新建仓是信息量最大的增持形式：此前不持有、现在持有，这个决定无法用漂移、再平衡或指数维护来解释。两只及以上基金在同一窗口内建立同一仓位，是本页最强的跨经理人解读。仅一只基金建仓属于线索而非信号——此处也不代表入场时机已到。') }}</div>
+    <p class="sec-sub">{{ t('Positions opened from zero this cycle — the strongest single tell.', '本轮从零开立的仓位——最强的单一信号。') }}</p>
     <div id="etf-fresh-mount">{% if not gate %}{% with rows = board.fresh %}{% include "_etf_fresh_cards.html.j2" %}{% endwith %}{% endif %}</div>
   </section>
   {% endif %}
@@ -456,8 +625,10 @@ a{color:var(--link);text-decoration:none}
   {% set ro = board.rotation %}
   <section class="sec" style="--sc:var(--ch-a)">
     <div class="sec-head"><span class="sh-dot"></span>
-      <h2>{{ t('The market they’re buying into', '他们正买入的市场') }}</h2></div>
-    <p class="sec-sub">{{ t('The rotation backdrop for every move above — accumulation into a supportive tape confirms; against it, be more skeptical. Descriptive momentum context, never a buy list.', '上述每一笔动作的轮动情况——顺势增持是确认，逆势增持则需更谨慎。描述性动量背景，非买入清单。') }}</p>
+      <h2>{{ t('The tape behind it', '背后的行情') }}</h2>
+      {{ help('Trailing ratio momentum across public ETF pairs — what the market has been rewarding lately. It is CONTEXT for the fund decisions above, not an input to them: no name is re-ranked because the backdrop is risk-on. Accumulation with the backdrop is easier to hold; accumulation against it needs a longer horizon and a smaller size.',
+      '公开 ETF 配对的滚动比值动量——市场近期在奖励什么。它是上方基金决策的背景，而非其输入：不会因为环境偏risk-on而对任何个股重新排序。顺势增持更容易持有；逆势增持则需要更长的持有期与更小的仓位。') }}</div>
+    <p class="sec-sub">{{ t('Buying with the tape confirms; buying against it needs patience.', '顺势买入是确认；逆势买入则需要耐心。') }}</p>
     <div class="rr">
       {# risk #}
       <div class="rrc c-risk">
@@ -474,7 +645,7 @@ a{color:var(--link);text-decoration:none}
       {# sector leadership #}
       <div class="rrc c-sect">
         <div class="rr-eyebrow">{{ t('Sector leadership', '板块领导力') }}</div>
-        <div class="rr-state" style="font-size:16px">{{ t('60-day momentum', '60日动量') }}{{ help('Trailing 60-session price momentum for each of the 11 GICS sector SPDRs, ranked. Positive = the sector has been leading; the bar grows from the centre. A sector leading here is a tailwind for funds accumulating names inside it.', '11 个 GICS 板块 SPDR 的过去 60 个交易日价格动量排名。正值=该板块一直领先；柱状从中心生长。领先的板块对增持其成分股的基金构成顺风。') }}</div>
+        <div class="rr-sub">{{ t('60-day momentum', '60日动量') }}{{ help('Trailing 60-session price momentum for each of the 11 GICS sector SPDRs, ranked. Positive = the sector has been leading; the bar grows from the centre. A sector leading here is a tailwind for funds accumulating names inside it.', '11 个 GICS 板块 SPDR 的过去 60 个交易日价格动量排名。正值=该板块一直领先；柱状从中心生长。领先的板块对增持其成分股的基金构成顺风。') }}</div>
         <div class="slad">
           {% set mx = ro.sector.mom_max or 1 %}
           {% for r in ro.sector.rows %}
@@ -491,7 +662,7 @@ a{color:var(--link);text-decoration:none}
       {# style tug of war #}
       <div class="rrc c-style">
         <div class="rr-eyebrow">{{ t('Style rotation', '风格轮动') }}</div>
-        <div class="rr-state" style="font-size:16px">{{ t('who’s leading', '谁在领先') }}{{ help('Trailing ratio momentum between paired style ETFs (e.g. IWM/SPY = small vs large). The bar leans toward whichever side is leading over the last ~20 sessions. Tells you the style regime the fund moves are happening inside.', '成对风格 ETF 之间的比值动量（如 IWM/SPY = 小盘对大盘）。柱状偏向过去约 20 个交易日领先的一侧。它告诉你基金动作所处的风格环境。') }}</div>
+        <div class="rr-sub">{{ t('who’s leading', '谁在领先') }}{{ help('Trailing ratio momentum between paired style ETFs (e.g. IWM/SPY = small vs large). The bar leans toward whichever side is leading over the last ~20 sessions. Tells you the style regime the fund moves are happening inside.', '成对风格 ETF 之间的比值动量（如 IWM/SPY = 小盘对大盘）。柱状偏向过去约 20 个交易日领先的一侧。它告诉你基金动作所处的风格环境。') }}</div>
         <div class="tug">
           {% for s in ro.style %}
           {% set tl = s.tilt or 0 %}{% set c20 = s.chg20 or 0 %}
@@ -512,7 +683,7 @@ a{color:var(--link);text-decoration:none}
        the pulse's as_of — never be implied by the hero's bake stamp. A stale
        backdrop then shows its real date instead of masquerading as current;
        no as_of, no date line. #}
-    <p class="faint" style="font-size:11.5px;margin:11px 2px 0">{{ b(ro.disclaimer) }}{% if ro.as_of %} · {{ t('prices through', '数据截至') }} {{ ro.as_of }}{% endif %}</p>
+    <p class="faint" style="font-size:11.5px;margin:12px 2px 0">{{ b(ro.disclaimer) }}{% if ro.as_of %} · {{ t('prices through', '数据截至') }} {{ ro.as_of }}{% endif %}</p>
   </section>
   {% endif %}
 
@@ -520,8 +691,10 @@ a{color:var(--link);text-decoration:none}
   <section class="sec" style="--sc:var(--accent)">
     <div class="sec-head"><span class="sh-dot"></span>
       <h2>{{ t('Every add, by fund', '逐基金增持明细') }}</h2>
+      {{ help("Each fund's strongest add this cycle, highest conviction first. Conviction is the weight the manager actively committed, after stripping the price move and creation/redemption flow. Read the number next to the fund's identity, never on its own: 1pp from a concentrated 40-holding thematic fund is a much bigger statement than 1pp from a 300-holding sector fund.",
+      '每只基金本轮最强的增持，信念最高者优先。信念＝剔除价格变动与申购／赎回资金流后，经理人主动投入的权重。请结合基金本身来读这个数字，切勿孤立看待：持仓 40 只的集中型主题基金投入 1 个百分点，其含义远大于持仓 300 只的行业基金的 1 个百分点。') }}
       {% if gate and gate.n_buys %}<span class="gate-pill">{{ t('Essential', 'Essential') }}</span>{% endif %}</div>
-    <p class="sec-sub">{{ t('The individual buys behind the board — each fund’s strongest add this cycle, highest conviction first. Conviction is the weight the manager actively committed, after stripping price and flows.', '看板背后的单笔买入——每只基金本轮最强增持，信念最高者优先。信念=剔除价格与资金流后经理人主动投入的权重。') }}</p>
+    <p class="sec-sub">{{ t('Whose buy was it, in what theme, and how big?', '这笔买入出自谁、属于什么主题、规模多大？') }}</p>
     <div id="etf-accum-mount">
     {# `gate.n_buys` and not just `gate` — same empty-state guard as the board. #}
     {% if gate and gate.n_buys %}
@@ -569,49 +742,65 @@ a{color:var(--link);text-decoration:none}
     </div>
   </section>
 
-{# ═══════════════ SHELF — trims + coverage ═══════════════ #}
+{# ═══════════════ SHELF — trims + the fleet ═══════════════ #}
   <section class="sec shelf" style="--accent:var(--drag)">
     {# Trims are graded and explicitly secondary — walled and omitted, with the
        mount kept so hydration restores the entitled shelf in place. #}
     <div id="etf-trims-mount">{% if not gate and trims %}{% with rows = trims %}{% include "_etf_trim_rows.html.j2" %}{% endwith %}{% endif %}</div>
 
-    {# Coverage & freshness — the free tier's anchor, and the one block a crawler
-       most needs to see: 77 named funds, each with a theme, a snapshot count and
-       an honest freshness state. No score, no ranking, no call. It opens by
-       DEFAULT on both builds (T-B3 ruling): a collapsed <details> may never be
-       crawled, and unifying the state keeps the two builds structurally
-       identical rather than differing in a way a reader could notice. #}
+    {# The fleet — the free tier's anchor, and the one block a crawler most needs
+       to see: every named fund, its freshness, and how much history we hold. It
+       opens by DEFAULT on both builds (T-B3 ruling): a collapsed <details> may
+       never be crawled, and unifying the state keeps the two builds structurally
+       identical rather than differing in a way a reader could notice.
+
+       Grouped by how the fund is READ, not alphabetically — because that
+       grouping IS the flow-vs-selection rule, so the free page teaches the
+       distinction the paid board depends on. It also put the shell back inside
+       its 130 KiB budget: the old six-column table was 58 KiB of the page (R3).
+       `fund_type` is marshalled onto the coverage rows by build_etf_page; with
+       it absent every non-active fund simply lands in the theme group. #}
     <details open>
-      <summary><span class="sh-ic">📡</span>{{ t('Coverage & freshness', '覆盖范围与新鲜度') }} <span class="sh-sub">— {{ t('every tracked fund; any stale feed surfaces here', '所有已追踪基金；任何陈旧数据源都会在此暴露') }}{% if coverage %} · {{ t('all', '共显示') }} {{ coverage | length }} {{ t('shown', '只') }}{% endif %}</span><span class="sh-caret">▶</span></summary>
+      <summary class="fl-sum"><span class="sh-ic">{{ icon('radar') }}</span>{{ t('The fleet', '基金阵容') }} <span class="sh-sub">— {{ t('every fund we read, and how current each one is', '我们读取的每一只基金，以及各自的数据新鲜度') }}</span>{{ help('The small figure after each fund is how many daily holdings reads we hold for it: a shallow history means that fund’s numbers exist but have no context yet, a deep one means a streak on that fund is meaningful. Freshness is measured against the newest fund in the fleet rather than against the clock, because sponsors publish on different calendars and a timezone would otherwise manufacture staleness. A fund with no reads at all is a broken feed, not a quiet fund.',
+      '每只基金后的小数字，是我们为其保存的每日持仓读取次数：历史越浅，说明该基金的数字虽然存在但尚无参照；历史越深，其连续动作才具备意义。新鲜度以基金阵容中最新的一只为基准衡量，而非以时钟为准——各发行商的披露日历不同，按时钟计会凭空制造出「陈旧」。完全没有读取记录的基金代表数据源中断，而不是该基金没有动作。') }}<span class="sh-caret">▸</span></summary>
       <div class="sh-body">
         {% if coverage %}
-        <div class="atbl-wrap">
-        <table class="atbl">
-          <thead><tr>
-            <th>{{ t('fund', '基金') }}</th><th class="hide-sm">{{ t('name', '名称') }}</th>
-            <th>{{ t('theme', '主题') }}</th><th class="r">{{ t('snapshots', '快照') }}</th>
-            <th class="hide-sm">{{ t('latest', '最新') }}</th><th>{{ t('freshness', '新鲜度') }}</th>
-          </tr></thead>
-          <tbody>
-          {% for c in coverage %}
-          <tr>
-            <td><b>{{ c.fund }}</b>{% if c.unofficial %} <span class="tag3p">{{ t('3rd-party', '第三方') }}</span>{% endif %}</td>
-            <td class="hide-sm muted">{{ c.fund_name }}</td>
-            <td>{% if c.is_active %}<span class="mini active">{{ t('active', '主动') }}</span>{% elif c.category %}<span class="themetag">{{ td(c.category) }}</span>{% else %}<span class="faint">—</span>{% endif %}</td>
-            <td class="r muted">{{ c.n_snapshots }}</td>
-            <td class="hide-sm muted">{{ c.latest_asof if c.latest_asof else '—' }}</td>
-            <td>
-              {% if c.n_snapshots == 0 %}<span class="fdot none"></span><span class="muted">{{ t('no data yet', '暂无数据') }}</span>
-              {% elif c.stale_days is not none and c.stale_days <= 3 %}<span class="fdot fresh"></span><span class="muted">{{ t('fresh', '新鲜') }}</span>
-              {% elif c.stale_days is not none and c.stale_days <= 10 %}<span class="fdot aging"></span><span class="muted">{{ t('aging', '渐旧') }}{% if c.stale_days %} · {{ c.stale_days }}{{ t('d', '天') }}{% endif %}</span>
-              {% else %}<span class="fdot stale"></span><span class="fstale"><b>{{ t('stale', '陈旧') }}</b></span>{% if c.stale_days is not none %} <span class="muted">· {{ c.stale_days }}{{ t('d', '天') }}</span>{% endif %}{% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-          </tbody>
-        </table>
+        {#- `fleet_group` is marshalled by build_etf_page off the fund registry.
+            A coverage row that never saw the builder (a hermetic template test)
+            has no group at all, so it falls through to the theme list rather
+            than vanishing from the directory. -#}
+        {%- set fl_active = coverage | selectattr('fleet_group', 'equalto', 'active') | list -%}
+        {%- set fl_sector = coverage | selectattr('fleet_group', 'equalto', 'sector') | list -%}
+        {%- set fl_theme = (coverage | selectattr('fleet_group', 'equalto', 'theme') | list)
+                         + (coverage | rejectattr('fleet_group', 'defined') | list) -%}
+        {%- set fl_current = coverage | rejectattr('stale_days', 'none') | selectattr('stale_days', 'le', 3) | list -%}
+        <div class="fl-stats">
+          <span class="fl-s"><b>{{ coverage | length }}</b>{{ t('funds tracked', '只基金在追踪') }}</span>
+          <span class="fl-s"><b>{{ fl_current | length }}</b>{{ t('filed in the last three days', '近三日已披露') }}</span>
+          <span class="fl-s"><b>{{ coverage | map(attribute='sponsor') | select | unique | list | length }}</b>{{ t('sponsors', '家发行商') }}</span>
+          <span class="fl-lg"><span class="fdot fresh"></span>{{ t('current', '最新') }}<span class="fdot aging"></span>{{ t('a few days behind', '落后数日') }}<span class="fdot stale"></span>{{ t('stale', '陈旧') }}</span>
         </div>
-        {% else %}<p class="muted" style="margin:0">{{ t('No funds registered in the coverage directory yet.', '覆盖目录中尚未登记任何基金。') }}</p>{% endif %}
+        {%- for grp in [
+              {'rows': fl_active, 'en': 'Active managers', 'zh': '主动管理基金',
+               'ren': 'read on what the manager picks', 'rzh': '看经理人选了什么'},
+              {'rows': fl_theme, 'en': 'Theme funds', 'zh': '主题基金',
+               'ren': 'read on where the money goes', 'rzh': '看资金流向哪里'},
+              {'rows': fl_sector, 'en': 'Sector funds', 'zh': '行业基金',
+               'ren': 'read on where the money goes', 'rzh': '看资金流向哪里'}] -%}
+        {%- if grp.rows %}
+        <div class="fl-g">
+          <div class="fl-gh"><span class="fl-gn">{{ t(grp.en, grp.zh) }}</span><span class="fl-gc">{{ grp.rows | length }}</span><span class="fl-gr">{{ t(grp.ren, grp.rzh) }}</span></div>
+          <div class="fl-list">
+          {%- for c in grp.rows|sort(attribute='fund') -%}
+          {#- a fund whose registry name IS its ticker (the ARK feeds) prints the
+              ticker once, not twice -#}
+          <span class="fu {% if not c.n_snapshots %}s0{% elif c.stale_days is not none and c.stale_days <= 3 %}s1{% elif c.stale_days is not none and c.stale_days <= 10 %}s2{% else %}s3{% endif %}"><b>{{ c.fund }}</b><span>{% if c.fund_name and c.fund_name != c.fund %}{{ c.fund_name }}{% endif %}</span>{% if c.unofficial %}<u>{{ t('3rd', '第三方') }}</u>{% endif %}{% if c.stale_days and c.stale_days > 3 %}<u>{{ c.stale_days }}d</u>{% endif %}<i>{{ c.n_snapshots }}</i></span>
+          {%- endfor -%}
+          </div>
+        </div>
+        {%- endif -%}
+        {%- endfor %}
+        {% else %}<p class="muted" style="margin:14px 0 0">{{ t('No funds registered in the coverage directory yet.', '覆盖目录中尚未登记任何基金。') }}</p>{% endif %}
       </div>
     </details>
   </section>
@@ -696,11 +885,13 @@ a{color:var(--link);text-decoration:none}
     var note = document.getElementById('etf-board-note');
     if(note) note.remove();
     document.querySelectorAll('.gate-pill').forEach(function(el){ el.remove(); });
-    /* The ? tips and the .cb-who popovers need no re-wiring: the tips are the
-       site-wide LENS, which is delegated from document, and .cb-who opens on
-       CSS :hover. There are no <select>s or placeholders on this page, so there
-       is nothing for an i18n relabel pass to do either — the bilingual spans
-       are .l-en/.l-zh, which CSS switches. */
+    /* The ? tips need no re-wiring (page-local CSS :hover) and neither do the
+       .cb-who popovers. The hydrated rows DO carry LENS [data-tip-en] targets —
+       the breadth constellation, the money-source line, the size strip — and
+       LENS is delegated from document, so those bind with nothing to do here.
+       There are no <select>s or placeholders on this page either, so an i18n
+       relabel pass has no work: the bilingual spans are .l-en/.l-zh, which CSS
+       switches. */
   }
 
   whenAuthSettled()

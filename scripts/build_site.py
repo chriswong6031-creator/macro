@@ -3130,6 +3130,28 @@ def build_etf_page(env: Environment, site: Path, generated: str,
         attach_trajectories(split["trims"], cap=cap)
         favored = consensus_favored(rows)
         coverage = fund_coverage()
+        # Marshal the registry's structural fund type onto each coverage row as
+        # a display grouping. The fleet directory groups by how a fund is READ —
+        # an active manager's move is a pick, a theme or sector fund's move is
+        # money arriving — which is the same rule the board's flow/selection
+        # split runs on, so the free directory teaches the distinction the paid
+        # board depends on.
+        #
+        # The registry, not `is_active`: fund_coverage flags only the two funds
+        # that arrive through data/holdings (ARKK, ARKW), while the registry
+        # types ten funds active — ARKF, ARKG, ARKQ, ARKX and IZRL are stock
+        # pickers that were landing in the theme group and being described as
+        # "read on where the money goes", which is the wrong read for them.
+        # Presentation only: nothing ranks, gates or sizes off this, and
+        # fund_registry() is the cached config read the consensus roll-up above
+        # has already done, so it adds no I/O to the render path.
+        from engine.etf_registry import fund_registry
+        _reg = fund_registry()
+        for _c in coverage:
+            _t = (_reg.get(_c.get("fund")) or {}).get("type")
+            _c["fleet_group"] = ("active" if (_t == "active" or
+                                              (_t is None and _c.get("is_active")))
+                                 else "sector" if _t == "sector" else "theme")
     except Exception as e:  # noqa: BLE001 — consensus/coverage are additive, never fatal
         log.error("etf consensus/coverage failed: %s", e)
     # rotation backdrop + Tier-1 synthesis (verdict, stance, fresh conviction)
