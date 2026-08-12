@@ -209,6 +209,48 @@ _IDENT_MASK = re.compile(r"\.(?=[A-Za-z_])[\w-]*validated[\w-]*")
 # sibling values must remain visible to the claim gate.
 _JSON_KEY_MASK = re.compile(r"([\"'])validated\1(?=\s*:)", re.IGNORECASE)
 
+# ── ASCII-ESCAPED ZH — the other half of scanning JSON (2026-08-11) ──────────────────
+#
+# `json.dump(..., ensure_ascii=True)` is the stdlib DEFAULT, and it stores 已验证 as three
+# pure-ASCII escapes (backslash-u 5df2, backslash-u 9a8c, backslash-u 8bc1). TOKEN matches
+# CHARACTERS, and html.unescape decodes HTML ENTITIES — neither one sees a JSON escape. So
+# a file can sit in SCAN_GLOBS, be read, be scanned, report findings, and still be
+# structurally incapable of ever yielding a ZH one: the glob buys EN-ONLY coverage,
+# silently.
+#
+# MEASURED on the tree at this commit, feeding the gate the exact landing-breach pair:
+# literal-ZH blob → 2 findings (EN+ZH); the same blob at ensure_ascii=True → 1 (EN only);
+# a ZH-ONLY claim escaped → 0. The EN twin is what rescued the bilingual case, so the hole
+# bites exactly where a ZH string has no English sibling. site/prophet/showcase.json — the
+# artifact that fed the breach — serializes at ensure_ascii=True, so the ZH half of the very
+# pair this change exists to catch would not have been caught on recurrence.
+#
+# NON-ASCII ONLY, and surrogate PAIRS joined. Decoding an escaped newline (backslash-u
+# 000a) would forge a real line break and desynchronise every line number the findings
+# report; decoding an escaped quote (backslash-u 0022) would forge a quote and could split
+# a mask's span. Escapes below U+0080 are therefore left exactly as they
+# are, and so is a LONE surrogate (chr() of one is unencodable and would crash the scan on
+# a malformed payload). Only real non-ASCII text is decoded — which is all a token match
+# needs. Same family as the html.unescape() call beside it: normalise the transport
+# encoding, then scan the text a human would actually read.
+_UNICODE_ESCAPE = re.compile(r"\\u([0-9a-fA-F]{4})(?:\\u([0-9a-fA-F]{4}))?")
+
+
+def _decode_unicode_escapes(text: str) -> str:
+    """`\\uXXXX` → the character, for non-ASCII codepoints only (see block comment)."""
+    def sub(m: re.Match) -> str:
+        hi = int(m.group(1), 16)
+        lo = int(m.group(2), 16) if m.group(2) else None
+        if 0xD800 <= hi <= 0xDBFF and lo is not None and 0xDC00 <= lo <= 0xDFFF:
+            return chr(0x10000 + ((hi - 0xD800) << 10) + (lo - 0xDC00))
+        # a trailing second escape was consumed by the optional group — re-scan it
+        rest = _decode_unicode_escapes(m.group(0)[6:]) if lo is not None else ""
+        if hi < 0x80 or 0xD800 <= hi <= 0xDFFF:
+            return m.group(0)[:6] + rest
+        return chr(hi) + rest
+    return _UNICODE_ESCAPE.sub(sub, text)
+
+
 # ── QUOTED THIRD-PARTY RESEARCH — structural non-claims, same family as _STRUCTURAL ──
 #
 # The research vault mirrors syndicated institutional notes (Goldman, BofA, …) into three
@@ -552,7 +594,10 @@ def _scan_line(line: str, allow: list[dict],
     # _STRUCTURAL_MASKS and _IDENT_MASK block comments). Structural masks run first and on
     # the unescaped text, so an autoescaped render ('&#34;tier&#34;: &#34;validated&#34;')
     # is recognised as the same data field its template source is.
-    norm = html.unescape(line)
+    # ensure_ascii=True JSON hides every ZH token behind a \uXXXX escape; decode the
+    # non-ASCII ones first so the ZH half of a bilingual claim is visible at all (see the
+    # _UNICODE_ESCAPE block comment — line numbers are preserved by construction).
+    norm = _decode_unicode_escapes(html.unescape(line))
     for sp in _STRUCTURAL_MASKS:
         norm = sp.sub(_TP_CUT, norm)
     norm = _JSON_KEY_MASK.sub(_TP_CUT, norm)

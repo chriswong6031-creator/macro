@@ -147,3 +147,65 @@ def test_landing_source_template_is_in_scan_scope() -> None:
     """
     assert "*.html" in dict(SCAN_GLOBS)["templates"], (
         f"templates/*.html must be scanned; got {dict(SCAN_GLOBS)['templates']}")
+
+
+# ── ASCII-ESCAPED ZH ─────────────────────────────────────────────────────────────────
+#
+# Putting a file in SCAN_GLOBS does not mean the gate can READ it. json.dump defaults to
+# ensure_ascii=True, which stores 已验证 as three pure-ASCII escapes, and neither TOKEN
+# (character matching) nor html.unescape (HTML entities) sees one. site/prophet/
+# showcase.json — the artifact that fed the landing breach — serializes that way, so
+# scanning it bought EN-only coverage until the escapes were decoded.
+_SHOWCASE = "site/prophet/showcase.json"
+_ESC_ZH_RISK = "\\u5df2\\u9a8c\\u8bc1\\u98ce\\u9669\\u95e8\\u69db"     # 已验证风险门槛
+_ESC_ZH_DRAWDOWN = "\\u5df2\\u9a8c\\u8bc1\\u7684\\u56de\\u64a4"        # 已验证的回撤
+
+
+def test_escaped_zh_claim_is_visible_to_the_gate() -> None:
+    """A bilingual pair serialized at ensure_ascii=True must report BOTH halves.
+
+    Before the decode the EN twin was the only thing that ever fired, so the ZH half of
+    the very pair this file exists to catch would have sailed through on recurrence.
+    """
+    line = ('{"note":"DISPLAY-ONLY.","flags":[["Basket is deteriorating - validated risk '
+            f'gate: trim.","{_ESC_ZH_RISK}"]]}}')
+    found, _ = scan_text(_SHOWCASE, line, NO_ALLOW)
+    assert len(found) == 2, (
+        f"EN and escaped-ZH claims must both be reported; got {len(found)}: {found}")
+
+
+def test_escaped_zh_only_claim_is_not_invisible() -> None:
+    """The shape the EN twin cannot rescue — a ZH string with no English sibling.
+
+    This is the case that returned ZERO findings before the decode: total blindness, not
+    a half-count, so nothing in the output hinted the gate had missed anything.
+    """
+    found, _ = scan_text(_SHOWCASE, f'{{"note":"x","flag_zh":"{_ESC_ZH_DRAWDOWN}"}}', NO_ALLOW)
+    assert len(found) == 1, f"a ZH-only escaped claim must be reported, got {found}"
+
+
+def test_ascii_escapes_are_left_alone_so_line_numbers_survive() -> None:
+    """Only NON-ASCII escapes decode.
+
+    Decoding an escaped newline would forge a real line break and desynchronise every
+    line number the findings report; decoding an escaped quote could split a mask's span.
+    The claim here sits on the gate's line 1 and must be reported as line 1.
+    """
+    line = ('{"a":"first\\u000asecond","b":"q\\u0022uote",'
+            f'"c":"{_ESC_ZH_RISK}"}}')
+    found, _ = scan_text(_SHOWCASE, line, NO_ALLOW)
+    assert len(found) == 1, f"expected the ZH claim only, got {found}"
+    assert found[0]["line_no"] == 1, (
+        f"escaped newlines must not shift reported line numbers; got {found[0]['line_no']}")
+
+
+def test_surrogate_escapes_do_not_crash_the_scan() -> None:
+    """Astral escapes come in PAIRS; a lone half is unencodable and must not reach chr().
+
+    A malformed payload must fail to be a claim, never fail the scan itself.
+    """
+    for payload in (f'{{"emoji":"\\ud83d\\ude00 ok","zh":"{_ESC_ZH_RISK}"}}',
+                    f'{{"broken":"\\ud83d lone","zh":"{_ESC_ZH_RISK}"}}'):
+        found, _ = scan_text(_SHOWCASE, payload, NO_ALLOW)
+        assert len(found) == 1, f"expected the ZH claim only, got {found}"
+        found[0]["text"].encode("utf-8")      # a lone surrogate would raise here
