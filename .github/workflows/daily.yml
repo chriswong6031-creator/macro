@@ -4061,7 +4061,17 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_options_signal_episode
+      - name: OIP campaign v2 — exact-contract revision and anchored-outcome accrual
+        id: options_signal_campaign
+        # Consumes only the immutable episode/outcome prefixes produced above. It
+        # owns a separate revision/outcome/checkpoint namespace, preserves the legacy
+        # v1 cohort bytes, and grants no selector, training, or trading authority.
+        if: always() && steps.options_signal_episode.outcome == 'success'
+        timeout-minutes: 10
+        continue-on-error: true
+        run: python -m scripts.build_options_signal_campaign
       - name: OIP PIT — checkpoint the five durable episode ledgers
+        id: options_signal_episode_publish
         if: always() && steps.options_signal_episode.outcome == 'success'
         timeout-minutes: 10
         continue-on-error: true
@@ -4072,90 +4082,20 @@ jobs:
         # The metadata replay overlays their object IDs on current origin/main in
         # a temporary index, so it never rebases, checks out, stashes, cleans, or
         # otherwise touches the thousands of unrelated dirty render outputs.
-        run: |
-          set -euo pipefail
-          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
-          git config user.name "dashboard-bot"
-          git config user.email "actions@users.noreply.github.com"
-
-          OIP_LEDGER_PATHS=(
-            data/options_signal_episode/checkpoint.json
-            data/options_signal_episode/episodes.jsonl
-            data/options_signal_episode/outcomes_h60.jsonl
-            data/options_signal_episode/outcomes_session.jsonl
-            data/options_signal_episode/campaigns.jsonl
-          )
-          PUSH_ALARM=120
-          PUSH_BUDGET_SECS=420
-          PUSH_MAX_ATTEMPTS=12
-          push_retry_init "options PIT episode ledgers"
-          push_on_main_ok || exit 0
-
-          # A foreign staged path would ride `git commit` even though this step's
-          # own add is narrow. Refuse that state instead of widening ownership.
-          if ! git diff --cached --quiet; then
-            echo "::error title=options PIT checkpoint index dirty::foreign staged paths predate the narrow checkpoint; refusing to publish"
-            exit 1
-          fi
-          for OIP_PATH in "${OIP_LEDGER_PATHS[@]}"; do
-            if [ ! -f "$OIP_PATH" ] || [ -L "$OIP_PATH" ]; then
-              echo "::error title=options PIT checkpoint path rejected::$OIP_PATH is missing or a symlink"
-              exit 1
-            fi
-          done
-          git add -- "${OIP_LEDGER_PATHS[@]}"
-          if git diff --cached --quiet; then
-            echo "options PIT episode ledgers unchanged"
-            exit 0
-          fi
-          while IFS= read -r OIP_PATH; do
-            case "$OIP_PATH" in
-              data/options_signal_episode/checkpoint.json|\
-              data/options_signal_episode/episodes.jsonl|\
-              data/options_signal_episode/outcomes_h60.jsonl|\
-              data/options_signal_episode/outcomes_session.jsonl|\
-              data/options_signal_episode/campaigns.jsonl) ;;
-              *)
-                echo "::error title=options PIT checkpoint scope violation::staged path $OIP_PATH is outside the five-file allowlist"
-                exit 1
-                ;;
-            esac
-          done < <(git diff --cached --name-only)
-          push_staged_clean "${OIP_LEDGER_PATHS[@]}" || exit 1
-
-          OIP_PARENT=$(git rev-parse HEAD)
-          git commit -m "options-pit: durable episode checkpoint $(date -u +%F)"
-          OIP_COMMIT=$(git rev-parse HEAD)
-          OIP_MESSAGE=$(git log -1 --format=%B "$OIP_COMMIT")
-          OIP_REPLAY_INDEX="${RUNNER_TEMP:-/tmp}/options-pit-replay-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}.idx"
-
-          while push_attempt; do
-            if ! perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin \
-              +refs/heads/main:refs/remotes/origin/main; then
-              PUSH_FAIL_CLASS="sync"
-              push_backoff
-              continue
-            fi
-            if OIP_PUBLISH=$(push_metadata_replay_commit "$OIP_PARENT" origin/main \
-                "$OIP_COMMIT" "$OIP_MESSAGE" "$OIP_REPLAY_INDEX"); then
-              if [ "$(git rev-parse "$OIP_PUBLISH^{tree}")" = "$(git rev-parse origin/main^{tree})" ]; then
-                echo "options PIT episode content already on origin/main — nothing to push"
-                push_won
-                exit 0
-              fi
-              if push_do origin "$OIP_PUBLISH:refs/heads/main"; then
-                echo "pushed options PIT episode ledgers on attempt $PUSH_ATTEMPT (metadata replay — dirty render tree untouched)"
-                push_won
-                exit 0
-              fi
-            else
-              PUSH_FAIL_CLASS="rebase-conflict"
-            fi
-            push_backoff
-          done
-          push_lost
-          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the five ledgers remain only in the local engine commit fallback"
-          exit 1
+        # The extracted helper keeps the five-file candidate unreachable until the
+        # metadata replay is accepted, and keeps this workflow below GitHub's cap.
+        run: bash scripts/ci/options_signal_nightly.sh publish-episode
+      - name: OIP campaign v2 — checkpoint the exact three canonical ledgers
+        id: options_signal_campaign_publish
+        if: >-
+          always() &&
+          steps.options_signal_episode_publish.outcome == 'success' &&
+          steps.options_signal_campaign.outcome == 'success'
+        timeout-minutes: 10
+        continue-on-error: true
+        # Campaign publication is interruption-safe and exact-path: the helper
+        # never advances HEAD before origin/main accepts all three canonical files.
+        run: bash scripts/ci/options_signal_nightly.sh publish-campaign
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
         # named US thematic baskets. Ported from China #2634. Reads sector_cycles
@@ -5427,6 +5367,12 @@ jobs:
           # reset above. Remove only this dedicated directory; append-only
           # correction ledgers elsewhere under data/prophet remain untouched.
           git clean -fd -- data/prophet/origination_receipts
+          # The episode and campaign ledgers have immediate exact-path publishers.
+          # Exclude all eight paths from this broad data/ commit so it cannot bypass
+          # a skipped/refused narrow publication. The extracted helper preserves the
+          # interruption safety for both publishers, restores tracked paths from
+          # HEAD, and cleans only campaign-v2-owned additions.
+          bash scripts/ci/options_signal_nightly.sh exclude-broad
           # W0b (2026-07-08 stale-HK incident): US engine job must NOT commit asia-owned
           # data/ paths — asia-close.yml is the sole writer of all china*/hk* stores.
           # The GHA cache restore above (data/hk_stocks, restore-keys: hk-stocks-ohlc-)
@@ -5639,6 +5585,16 @@ jobs:
             echo "### ❌ R2 data plane STALE/DARK — publish_r2 failed or was skipped (expired R2_* secrets?); the live site keeps serving OLD per-ticker data. See scripts/audit_r2.py." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+      - name: OIP PIT — fail closed after unrelated rendering completes
+        if: always()
+        env:
+          OIP_EPISODE_BUILD_OUTCOME: ${{ steps.options_signal_episode.outcome }}
+          OIP_EPISODE_PUBLISH_OUTCOME: ${{ steps.options_signal_episode_publish.outcome }}
+          OIP_CAMPAIGN_BUILD_OUTCOME: ${{ steps.options_signal_campaign.outcome }}
+          OIP_CAMPAIGN_PUBLISH_OUTCOME: ${{ steps.options_signal_campaign_publish.outcome }}
+        # continue-on-error above lets unrelated rendering finish; this terminal gate
+        # makes any missing/failed build or exact-path publication fail the engine job.
+        run: bash scripts/ci/options_signal_nightly.sh assert-integrity
       - name: timings ledger + 85% budget tripwire (W2)
         if: always()   # DELIBERATELY AHEAD of the two delivery steps below — this is the ONLY job where the finish step is not last, and the exception is load-bearing. `if: always()` steps DO run after a timeout-cancel, but only inside the runner's ~5-minute force-termination grace, and this job's tail is the most expensive always() tail in the workflow. Evidence, run 31067383446 (2026-08-06): engine started 10:05:45Z, completed 13:30:46Z = 205.0m = the 200m cap + exactly 5m of grace; steps 117-121 (commit engine outputs → feeds → R2 publish → verify → strip) all ran post-cancel, step 122 "upload pages artifact" burned what was left and ended `failure`, and step 123 — this one — WAS NEVER SCHEDULED AT ALL (the GH jobs API step list jumps straight from 122 to the Post steps). Result: data/ops/nightly_timings/engine.jsonl carried ONE row, source `backfill-gh-api`, while all 15 sibling jobs had native rows — the 85% tripwire was structurally dark for the ONE job whose creep caused the Jul31-Aug6 outage, and dark on exactly the nights it existed to pre-announce. Ordering it here costs a healthy night nothing (both steps still run to completion) and on a cancel night trades an artifact upload that is already failing for the telemetry that explains WHY the night died. The row + the ::warning land in this step's first second; only its bounded commit/push can be cut short. Pinned by tests/test_nightly_timings.py::test_finish_step_is_not_stranded_behind_the_pages_artifact_upload — do not move it back below the upload.
         run: bash scripts/ci/nightly_timings_finish.sh 300
