@@ -2347,6 +2347,16 @@ jobs:
         run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
       - name: altdata reboot W2 — per-channel family routing + placebo tests
         run: python -m pytest tests/test_altdata_reboot_families.py -q
+      # Metric-validity invariants (epistemics.qledger_metric_validity). grades.excess
+      # is RAW, not direction-signed, so a pooled signed excess_mean over a
+      # mixed-direction family measures universe drift rather than skill; a salience
+      # family has no hit rate; a verdict may only be read at the declared horizon.
+      # The selftest carries negative controls, so it fails if the auditor flags
+      # everything as readily as if it flags nothing.
+      - name: qledger metric-validity invariants
+        run: python -m pytest tests/test_qledger_validity.py -q
+      - name: qledger metric-validity guard selftest
+        run: python scripts/check_qledger_metric_validity.py --selftest
 
   altdata-new-sources:
     if: ${{ false }}
