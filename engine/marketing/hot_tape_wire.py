@@ -261,11 +261,20 @@ def check_text_numbers(text: str, packet: Any) -> list[str]:
 #: Session marker by phase. "at the close" is deliberately ONLY in after_hours:
 #: the radar's window opens five minutes before the bell, so a 09:27 ET post
 #: that said "at the close" would be describing a session that has not started
-#: (reviewer M7). pre_open gets its own pair rather than borrowing rth's "so far
-#: today", which reads as intraday.
+#: (reviewer M7). pre_open gets its own pair rather than borrowing an intraday
+#: marker, which is what it would read as.
+#:
+#: "SO FAR TODAY" WAS RETIRED FROM `rth` (v5 ban 6, #5291 follow-up 5). It was
+#: 79 items of the 679-item shipped census and it buys nothing: inside the
+#: session "today" ALREADY means so far today, and the post carries a timestamp.
+#: `voice_v5_violations` rejects the phrase on the wire too — the wire exemption
+#: covers the pronoun and question screens only — so this table was handing the
+#: composer a phrase the post-time gate drops. `market_clock` keeps it in its
+#: DETECTOR list ON PURPOSE and that is not an inconsistency: a phrase the desk
+#: no longer writes still has to be RECOGNISED in relayed and archived copy.
 _LIVE_MARKERS: dict[str, tuple[str, ...]] = {
     "pre_open": ("in premarket trading", "before the bell"),
-    "rth": ("so far today", "right now"),
+    "rth": ("today", "right now"),
     "after_hours": ("today", "at the close"),
 }
 _DIR_VERB = {"up": "is up", "down": "is down"}

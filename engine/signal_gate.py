@@ -25,12 +25,18 @@ Tiers (ranked; take is always above every anticipation — CHARTER §2/§7):
                                        empirically WORSE entry quality (CONFLUENCE_TUNING.md
                                        §3), so it only makes a name ELIGIBLE to surface — it
                                        is never a take and never fed to conviction/auto-trade.
-  not eligible       blocked buy, flat (last marker is a sell/cut), no buy signal, or
-                     insufficient history (analyze() returned None -> graceful skip).
+  not eligible       blocked buy, flat (last marker is a sell/cut), no buy signal,
+                     insufficient history (analyze() returned None -> graceful skip), or
+                     ENGINE ERROR (analyze() RAISED -> graceful skip, separately labelled).
+                     The last two are both refusals but not the same claim, and they are
+                     deliberately not interchangeable: one is a fact about the tape, the
+                     other is a fact about this run. See gate().
 
 signal_quality is CLOSE-ONLY by construction (it stochs the RSI of close; it never needs
 high/low), so this gate runs on every market's close-only price store and self-degrades to
-"insufficient history" on thin names instead of crashing.
+"insufficient history" on thin names instead of crashing. A name whose analyze() RAISES
+degrades too — the gate still never crashes — but it degrades to "engine error", so a
+broken input can never be read as a market fact about the name.
 
 REASONS vs REASON. Every verdict carries BOTH `reason` (the single first-match label, unchanged
 and back-compatible) and `reasons` (the ordered, exhaustive account, `reasons[0] == reason`
@@ -59,6 +65,14 @@ from engine import session_anchor     # absolute session-calendar anchor (per-ma
 TAKE = "take"
 ANTICIPATION = "anticipation"
 _BUY_TYPES = ("buy", "rebuy")
+
+# The refusal a CRASHED analyze() earns, kept distinct from the thin-history one.
+# Both are non-eligible refusals, but they are not the same claim: "insufficient history"
+# says the tape was read and had too little in it, while this says the tape was never
+# graded at all. Reusing the thin label for both made an infra failure indistinguishable
+# from a genuinely thin name — see gate() for the measured incident. Exported so a caller
+# tells them apart by identity rather than by matching a literal.
+ENGINE_ERROR = "engine error"
 
 # tier sort order: take above every anticipation; within anticipation, a fired-but-pending
 # buy ranks above the pre-cross early warning (it is "more formed"). 0 = best.
@@ -318,6 +332,44 @@ def _waiver_receipt(ticker: str, daily_close, marker: dict | None) -> dict | Non
             "era": "us_prophet_v2"}
 
 
+# Distinct analyze() failures already disclosed this process, and the ceiling on how many
+# get their own annotation. gate() is called once per NAME — a broken shared input (a missing
+# session reference, an unreadable store) fails identically for every one of thousands of
+# tickers, so emitting per call would bury the Actions summary under one repeated line. The
+# signature is the exception's identity, not the ticker's, so that whole storm collapses to
+# a single warning naming the first name that hit it. The cap bounds the pathological case
+# where a message embeds the ticker and every name is therefore its own signature.
+_ENGINE_ERROR_SEEN: set[str] = set()
+_ENGINE_ERROR_ANNOTATION_CAP = 20
+
+
+def _disclose_engine_error(ticker: str, exc: BaseException) -> None:
+    """Announce a swallowed analyze() failure to the Actions summary, once per signature.
+
+    Emitted as a BARE print at line start, never through a logger: every builder here logs
+    with a prefixing format, and GitHub only parses '::' at column 0 — routed through a
+    logger this reviews as an alarm, runs clean and produces nothing (CLAUDE.md; pinned by
+    tests/test_gh_annotation_line_start.py). ``flush`` is load-bearing because stdout is
+    block-buffered when piped in CI.
+
+    Fail-soft by construction: the caller's contract is that gate() never raises, and a
+    disclosure that broke that would be a worse bug than the one it reports.
+    """
+    try:
+        detail = " / ".join(str(exc).splitlines()).strip() or "no detail"
+        signature = f"{type(exc).__name__}:{detail}"
+        if signature in _ENGINE_ERROR_SEEN:
+            return
+        _ENGINE_ERROR_SEEN.add(signature)
+        if len(_ENGINE_ERROR_SEEN) > _ENGINE_ERROR_ANNOTATION_CAP:
+            return
+        print(f"::warning title=signal-gate-engine-error::{ticker} and any name sharing "
+              f"this failure graded '{ENGINE_ERROR}', NOT a verdict: "
+              f"{type(exc).__name__}: {detail[:400]}", flush=True)
+    except Exception:   # noqa: BLE001,S110 — a disclosure may never break the gate it reports
+        pass
+
+
 def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=None,
          washout_waiver: bool = True) -> dict:
     """analyze() the close series, then return the verdict PLUS the raw analyze() result
@@ -339,12 +391,36 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=Non
     ``event_latch`` (engine.confluence_latch.EventLatch) makes the T2 event history immutable
     so the incomplete trailing bucket cannot un-fire an event on a bar that already printed.
     DEFAULT None = unchanged for every caller that does not opt in."""
+    # NEVER-CRASH is deliberate and kept: a nightly that degrades on one bad name beats one
+    # that dies mid-board. What is NOT kept is grading the failure as a domain verdict. The
+    # crash and the thin-history refusal used to land on the identical "insufficient history"
+    # label, so a broken shared input read as a market fact about every name — MEASURED
+    # 2026-08-12 (PR #5446 lane): with data/hk/_HSI.parquet absent, session_anchor raises,
+    # every HK name graded 'insufficient history' INCLUDING 0700.HK on a 5,470-close series,
+    # and the fixture check reported 155 refusals as an engine regression that did not exist.
+    # A run whose session reference went stale would publish a board that looks legitimately
+    # empty, which is precisely the silent null this repo's epistemics forbid.
+    #
+    # This is the twin of a fix the cascade half already carries: confluence_tiers returns
+    # `evaluated=False` on a crash for the same reason (audit F2 2026-08-06 — its blank read
+    # as clean-and-fresh and admitted a data failure at weight 0.9). analyze() was the half
+    # that never got it.
+    engine_error = None
     try:
         res = analyze(ticker, daily_close, reclaim_veto=reclaim_veto,
                       washout_waiver=washout_waiver)
-    except Exception:
+    except Exception as exc:    # noqa: BLE001 — never-crash is the contract; see above
         res = None
+        engine_error = exc
     v = verdict(res)
+    if engine_error is not None:
+        # Reason ONLY — eligibility, tier and every other field stay exactly where verdict()
+        # and the cascade below put them. The cascade grades the same tape independently, so
+        # a name it can still measure keeps the tier it earned (and may legitimately overwrite
+        # this label when it extends eligibility); `result` stays None either way, and the
+        # annotation fires regardless, so the failure is never invisible to the operator.
+        _set_reason(v, ENGINE_ERROR)
+        _disclose_engine_error(ticker, engine_error)
     # Emitted ONLY when the waiver actually decided the verdict, so a run in which nothing
     # was waived serializes exactly as it did pre-change.
     _wr = _waiver_receipt(ticker, daily_close, v.get("last"))
