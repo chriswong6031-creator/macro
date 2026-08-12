@@ -2931,7 +2931,13 @@ def test_indexed_refresh_generation_is_not_double_counted_as_a_reservation(
         assert "head_sha=" + ("b" * 40) in url
         return 200, {
             "total_count": 1,
-            "workflow_runs": [{"head_sha": "b" * 40, "status": "in_progress"}],
+            "workflow_runs": [
+                {
+                    "head_sha": "b" * 40,
+                    "status": "in_progress",
+                    "event": "pull_request",
+                }
+            ],
         }
 
     monkeypatch.setattr(MOG, "_request", fake_request)
@@ -2946,7 +2952,23 @@ def test_indexed_refresh_generation_is_not_double_counted_as_a_reservation(
         (502, None),
         (200, {}),
         (200, {"total_count": 0, "workflow_runs": []}),
-        (200, {"total_count": 1, "workflow_runs": [{"head_sha": "c" * 40}]}),
+        (200, {"total_count": 1, "workflow_runs": ["malformed"]}),
+        (
+            200,
+            {
+                "total_count": 1,
+                "workflow_runs": [
+                    {"head_sha": "c" * 40, "event": "pull_request"}
+                ],
+            },
+        ),
+        (
+            200,
+            {
+                "total_count": 1,
+                "workflow_runs": [{"head_sha": "b" * 40, "event": "push"}],
+            },
+        ),
     ],
 )
 def test_unreadable_or_unindexed_refresh_generation_keeps_its_reservation(
