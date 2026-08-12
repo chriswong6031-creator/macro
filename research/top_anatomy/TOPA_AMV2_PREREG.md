@@ -198,3 +198,24 @@ first).
   NN cap 8 — run for both).
   (f) **Store access** is the read-only mirror at the primary checkout `data/`, exactly as §2
   declares; this worktree's `data/` carries no store.
+- 2026-08-12 — EXECUTION RECEIPTS (append-only; builder record, no adjudication). All six
+  registered cells ran clean (`rc=0`) inside one wave: wave start 2026-08-12T00:32:44Z, wave
+  complete 00:48:33Z, **949.9 s wave-elapsed against the §6 budget of 12 h**. Per-cell
+  `wall_seconds`: am2 primary 189.95 / r63 97.52 / atrz 195.88; am2_agefree primary 167.68 /
+  r63 96.01 / atrz 196.82. Seed 20260812 and caliper 2 (escalation 1) stamped in every summary;
+  `_p1_assert_identity` passed present-and-equal on all six. **Commit-order proof:** plumbing
+  `cf898eb74cb` (17:31:30 PDT) and this §7 entry's predecessor `58d04e11a0b` (17:33:31 PDT)
+  both PRECEDE the first result artifact on disk (`..._primary_am2_summary.json`, 17:35:54 PDT).
+  **Stamp discontinuity, disclosed:** the am2/primary process started at 17:32:44 PDT, i.e.
+  between the two commits, so that ONE summary records `git_sha=cf898eb74cb` and the
+  pre-append `prereg_sha256`, while the other five record `58d04e11a0b` and the post-append
+  hash. Only §7 differs between the two hashes — every frozen section is byte-identical, and no
+  registered quantity is affected. **Determinism:** `am2/r63_disjoint` was re-run from the same
+  frozen inputs and its summary compared leaf-by-leaf against the wave artifact — **3 differing
+  leaves, all clock fields** (`run_timestamp_utc`, `wall_seconds`, `wave_elapsed_seconds`);
+  every scientific value, including both caliper arms' matchings, validity clauses, registered
+  cells, era cells and full exploratory tables, is identical. **Suite:** `tests/test_top_anatomy.py`
+  164 → 196 under `TZ=UTC`, with the new coverage mutation-checked (disabling the caliper filter
+  reds 4 tests; flipping validity clause (c)'s sign reds 4 tests; both reverted clean to HEAD).
+  The NaN-safe-emitter chip did not land during the wave, so the §2 absorption path was not
+  exercised.
