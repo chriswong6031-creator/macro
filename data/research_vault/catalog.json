@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T08:23:29.017722+00:00",
-  "count": 998,
+  "generated_at": "2026-08-12T08:59:05.690182+00:00",
+  "count": 1000,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -350,6 +350,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ax7epb2s5lu-056ff6",
+      "title": "Citi The Point for Europe Tuesday, 11 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T12:00:03Z",
+      "summary_points": [
+        "**Kingspan (KSP.I) - Earnings & TP Update**: \"Beat & raise\" 1H'26 results with €600m EBITDA forecast by '28 (vs prior), 27E trading profit +15.2% above consensus; TP raised to €133.5 despite unchanged multiples (11.7x EV/EBITDA), suspended buyback for balance sheet strength.",
+        "**GEA Group - Q2 Results**: Solid margin performance, base orders +12.6% YoY (dairy/NPE +30%+), FCF positive; EBITDA margin beat drives positive outlook amid strong order growth.",
+        "**Global Central Bank Tightening Bias**: 12/27 major central banks expected to hike rates in 2024 (vs 1 in 2023), central banks avoiding \"looking through\" inflation strategy; policy framing risks for inflation targets.",
+        "**Equity Short Pressure & Positioning Rebuild**: S&P 500 faces increased short pressure amid positioning rebuild; KOSPI deterioration and risk of abrupt covering if sentiment improves, creating volatility risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-qnyqnuroxjh-253cda",
       "title": "JPM Delta One Flows",
       "institution": "J.P. Morgan",
@@ -659,6 +679,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-orhpiqvctdn-48e5d8",
+      "title": "Commodity Monthly Review July 2026",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T00:10:18Z",
+      "summary_points": [
+        "**Energy Sector Divergence**: Crude (+15.2% July) surged on Middle East supply/OPEC output, while natural gas (-14% July) collapsed due to heat-driven demand spikes, Freeport maintenance, and storage overhang.",
+        "**Geopolitical Supply Chain Disruptions**: Houthi attacks on Saudi infrastructure, Black Sea drone strikes (CPC exports to zero), and US-Iran blockade (Iranian loadings -4.9mb) intensified supply constraints and price volatility.",
+        "**Copper Supply Constraints**: LME copper rose 3.2% ($13,885/t) amid Indonesian disruptions, Chinese concentrate tightness, and Escondida strike (20-40kt loss), confirmed by physical market spreads and smelter charges.",
+        "**Aluminum Physical Tightness**: LME aluminum up 3.5% as inventories declined (17% below March highs), Chinese exports hit record 710kt, and Emirates Global Aluminum restarted production.",
+        "**Nickel Supply-Demand Tension**: Indonesia’s MHP export suspension and Philippines’ rains caused tightness (LME front-month $16,150/t), though inventories hit 8-year highs (378kt) signaling stabilization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
       "language": "en",
       "needs_metadata": false
     },
