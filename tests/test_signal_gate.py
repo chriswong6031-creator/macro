@@ -233,3 +233,161 @@ class TestT2AboveT1OperatorReweight:
         assert ordered[0] == "T1_item"
         assert ordered[1] == "T3_item"
         assert ordered[2] == "T4_item"
+
+
+# ---------------------------------------------------------------------------
+# An ENGINE ERROR is not a thin name (2026-08-12)
+# ---------------------------------------------------------------------------
+class TestEngineErrorIsDistinguishableFromThinHistory:
+    """gate() still never raises — but a crash inside analyze() may not be graded as the
+    same refusal a genuinely thin tape earns.
+
+    MEASURED (PR #5446 lane): with data/hk/_HSI.parquet absent, engine.session_anchor
+    raises, the exception propagated through signal_quality.analyze into gate()'s broad
+    catch, and EVERY HK name graded {'eligible': False, 'reason': 'insufficient history'}
+    — including 0700.HK on a 5,470-close series. Downstream that surfaced as 155 fixture
+    refusals reading as an engine regression that did not exist. A stale session reference
+    on a nightly would publish a board that looks legitimately empty, which is the silent
+    null this repo's epistemics forbid.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _clear_disclosure_dedup(self):
+        """The seen-signature set is module state that outlives a single gate() call."""
+        from engine import signal_gate as sg
+        sg._ENGINE_ERROR_SEEN.clear()
+        yield
+        sg._ENGINE_ERROR_SEEN.clear()
+
+    @pytest.fixture
+    def _blank_cascade(self, monkeypatch):
+        """The cascade's OWN crash return, so the tier half cannot rescue the verdict.
+
+        This models the real incident rather than an invented one: the missing session
+        reference broke signal_quality AND confluence_tiers, because both bucket against
+        it. Built from the production `_BLANK` (not a hand-copied literal) so a future
+        field added there travels here instead of silently drifting. The stub absorbs
+        **kw on purpose — gate() forwards optional event/latch kwargs, and a stub whose
+        signature drifts raises TypeError into the very catch under test.
+        """
+        from engine import confluence_tiers as ct
+        monkeypatch.setattr(
+            ct, "cascade",
+            lambda close, **kw: dict(ct._BLANK, null_legs={}, evaluated=False))
+
+    def _long_tape(self):
+        """The 0700.HK shape from the incident — a name nobody would call thin."""
+        import numpy as np
+        import pandas as pd
+        idx = pd.bdate_range("2004-01-01", periods=5470)
+        return pd.Series(np.linspace(100.0, 400.0, 5470), index=idx, dtype=float)
+
+    def _thin_tape(self):
+        """40 closes — analyze() genuinely returns None here. Not stubbed: this half of
+        the contrast must stay the REAL thin path, or the comparison proves nothing."""
+        import numpy as np
+        import pandas as pd
+        idx = pd.bdate_range("2024-01-01", periods=40)
+        return pd.Series(np.linspace(100.0, 120.0, 40), index=idx, dtype=float)
+
+    @staticmethod
+    def _raise_missing_reference(*_a, **_kw):
+        raise FileNotFoundError(
+            "session_anchor: the HK session reference data/hk/_HSI.parquet is missing "
+            "— HK bucketing cannot be anchored without it")
+
+    def test_a_raising_analyze_does_not_grade_like_a_thin_series(
+            self, monkeypatch, _blank_cascade):
+        """THE pin: the two refusals must not be the same verdict."""
+        from engine import signal_gate as sg
+
+        thin = sg.gate("TEST", self._thin_tape())
+        assert thin["reason"] == "insufficient history", (
+            "the genuine thin-history refusal moved — this change may only ADD a "
+            "distinct label, never relabel the tape-is-short case")
+
+        monkeypatch.setattr(sg, "analyze", self._raise_missing_reference)
+        broken = sg.gate("0700.HK", self._long_tape())
+
+        assert broken["reason"] != thin["reason"], (
+            "a crashed analyze() is indistinguishable from a genuinely thin name — an "
+            "infra failure is being published as a market fact")
+        assert broken["reason"] == sg.ENGINE_ERROR
+
+    def test_the_gate_still_never_raises_and_still_refuses(
+            self, monkeypatch, _blank_cascade):
+        """Never-crash is the property being PRESERVED, not traded away."""
+        from engine import signal_gate as sg
+        monkeypatch.setattr(sg, "analyze", self._raise_missing_reference)
+
+        v = sg.gate("0700.HK", self._long_tape())          # must not propagate
+        assert v["eligible"] is False                       # fail CLOSED, as before
+        assert v["tier"] is None
+        assert v["result"] is None
+
+    def test_the_account_stays_in_lockstep_with_the_label(
+            self, monkeypatch, _blank_cascade):
+        """`reasons[0] == reason` is a module-wide invariant; the new label keeps it."""
+        from engine import signal_gate as sg
+        monkeypatch.setattr(sg, "analyze", self._raise_missing_reference)
+
+        v = sg.gate("0700.HK", self._long_tape())
+        assert v["reasons"] == [sg.ENGINE_ERROR]
+        assert v["reasons"][0] == v["reason"]
+        assert sg.compact(v)["reason"] == sg.ENGINE_ERROR   # it reaches the board card
+
+    def test_the_failure_is_announced_to_the_actions_summary(
+            self, monkeypatch, capsys, _blank_cascade):
+        """A GitHub annotation, parseable: '::' must sit at COLUMN 0.
+
+        Asserted on the line's start rather than on its wording, so this pins the defect
+        (an annotation GitHub silently drops) and not the message text.
+        """
+        from engine import signal_gate as sg
+        monkeypatch.setattr(sg, "analyze", self._raise_missing_reference)
+
+        sg.gate("0700.HK", self._long_tape())
+        lines = capsys.readouterr().out.splitlines()
+
+        hits = [ln for ln in lines if "signal-gate-engine-error" in ln]
+        assert hits, "the swallowed failure was never disclosed"
+        for line in hits:
+            assert line.startswith("::warning "), (
+                f"GitHub only parses '::' at column 0 — this is dropped: {line!r}")
+        assert "0700.HK" in hits[0] and "FileNotFoundError" in hits[0]
+
+    def test_one_broken_input_does_not_flood_the_summary(
+            self, monkeypatch, capsys, _blank_cascade):
+        """gate() runs once per NAME. A shared broken input fails identically for
+        thousands of tickers, so the storm must collapse to a single annotation."""
+        from engine import signal_gate as sg
+        monkeypatch.setattr(sg, "analyze", self._raise_missing_reference)
+
+        tape = self._long_tape()
+        for ticker in ("0700.HK", "0005.HK", "9988.HK", "0388.HK", "1299.HK"):
+            assert sg.gate(ticker, tape)["reason"] == sg.ENGINE_ERROR
+
+        hits = [ln for ln in capsys.readouterr().out.splitlines()
+                if "signal-gate-engine-error" in ln]
+        assert len(hits) == 1, f"5 names sharing one failure emitted {len(hits)} warnings"
+
+    def test_a_healthy_run_is_untouched(self, monkeypatch, capsys):
+        """The no-error path may not change at all — no relabel, no annotation."""
+        from engine import signal_gate as sg
+        res = {"markers": [{"date": "2025-01-06", "type": "buy", "quality": "take"}],
+               "state": "long-bias", "above200": True, "weekly_bull": True,
+               "early_now": False, "asof": "2025-02-01"}
+        monkeypatch.setattr(sg, "analyze", lambda t, c, **kw: res)
+
+        v = sg.gate("TEST", self._long_tape())
+        assert v["reason"] != sg.ENGINE_ERROR
+        assert v["result"] is res
+        assert "signal-gate-engine-error" not in capsys.readouterr().out
+
+    def test_the_thin_refusal_still_reaches_a_thin_name_when_analyze_is_healthy(self):
+        """Guard against over-reach: the new branch fires ONLY on a raised exception,
+        never on analyze() legitimately returning None."""
+        from engine import signal_gate as sg
+        v = sg.gate("TEST", self._thin_tape())
+        assert v["reason"] == "insufficient history"
+        assert v["eligible"] is False
