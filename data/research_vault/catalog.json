@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T07:23:18.936605+00:00",
-  "count": 995,
+  "generated_at": "2026-08-12T07:53:48.167328+00:00",
+  "count": 997,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -245,6 +245,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fwszdz60r3e-79c4c2",
+      "title": "Legal & General Group (LGEN.L) Downgrade to Sell Sequencing risk skews risk reward to the downside",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:27Z",
+      "summary_points": [
+        "**Balance Sheet Deterioration**: Total shareholders' equity declined from £2,312m to £2,064m (12/25 → 12/26E), leverage ratio surged to 130.5%, indicating structural risk despite rising ROE (45.2% → 69.2%).",
+        "**UK BPA Market Oversupply**: >50% of earnings from bulk annuities faces £70bn insurer supply vs.",
+        "£40-50bn 2026 demand, intensifying competition from new entrants/PE M&A (e.g., PIC by Athora), pressuring margins.",
+        "**Credit Leverage Sell-Off Risk**: Sector-leading credit exposure causes negative correlation (-0.20) with corporate spreads; spread widening triggers immediate share sell-offs despite fundamental upside (19% downside vs.",
+        "sector +1% upside)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
       "language": "en",
       "needs_metadata": false
     },
@@ -944,6 +965,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tw7g5fetffr-8417ec",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T14:59:59Z",
+      "summary_points": [
+        "**Equity Strategy**: Bullish on cyclicals (Banks, Mining, Industrials, Consumer) driven by Fed \"bad is good\" reaction, yield curve steepening, and equity indices targeting fresh highs.",
+        "**Infineon Technologies**: Maintaining Overweight with TP raised to €96, leveraging AI power leadership and premium multiple as key fundamentals.",
+        "**European Utilities**: Low gas storage underpins earnings momentum, critical fundamental driver for sector positioning.",
+        "**EU Monetary Policy Shift**: Rates reset and refreshed risks demand immediate focus for interest rate sensitivity and risk management.",
+        "**MENA Geopolitical Focus**: Heavy emphasis on Saudi Vision 2030 via MENA H2 Fireside Series, signaling policy-driven opportunities and regional market expansion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
