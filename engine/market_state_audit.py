@@ -143,8 +143,18 @@ def _entry_from_snapshot(ms: dict) -> dict | None:
         "verdict": ms.get("verdict"),
         "score": ms.get("score"),
         "raw_score": ms.get("raw_score"),
+        # Preserve whether the displayed verdict was the measured blend or a policy override.
+        # This is essential for grading false Mixed/Risk-off caps separately from tape errors.
+        "score_source": ms.get("score_source"),
+        "score_ceiling": ms.get("score_ceiling"),
+        "score_caps": list(ms.get("score_caps") or []),
         "radar_state": rd.get("state"),
         "radar_top": rd.get("top_score"),
+        "radar_can_force": bool(rd.get("can_force")),
+        "radar_binding": bool(rd.get("binding")),
+        "radar_authority_reason": (rd.get("authority") or {}).get("reason"),
+        "radar_monitor_fresh": bool(((rd.get("track") or {}).get("monitoring") or {})
+                                     .get("log_fresh")),
         "amp": rd.get("amp"),
         "amp_keys": list(rd.get("amp_keys") or []),
         "severe_gated": bool(rd.get("severe_gated")),

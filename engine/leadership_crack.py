@@ -1,6 +1,6 @@
 """Leadership Crack — DISPLAY-ONLY organ (RSR-R2/R4).
 
-Watches the AI-hardware leadership cohort (ai_semiconductors + ai_infra +
+Watches a tracked AI-hardware damage cohort (ai_semiconductors + ai_infra +
 memory_storage + semicap_equipment) for three signs of a cracking leadership:
 
   LEG-1  VELOCITY: 5-day excess return of the cohort vs SPY, z-scored against
@@ -211,9 +211,10 @@ def _compute(mat_fresh: pd.DataFrame, spy: pd.Series | None) -> dict[str, Any]:
     spy_roll_max = spy_aligned.rolling(_SPY_ROLL_WIN, min_periods=1).max()
     spy_prox = spy_aligned / spy_roll_max.replace(0, np.nan)
 
-    # SPY drawdown from its own 252d high (index_dd)
-    spy_max252 = spy_aligned.rolling(252, min_periods=63).max()
-    spy_dd_series = (spy_aligned / spy_max252.replace(0, np.nan)) - 1.0
+    # SPY comparison on the SAME 63-session high window as cohort members. The prior 252-session
+    # index high made the bar/tick comparison mix horizons and overstate relative cohort damage.
+    spy_max = spy_aligned.rolling(_CARNAGE_WINDOW, min_periods=_CARNAGE_WINDOW).max()
+    spy_dd_series = (spy_aligned / spy_max.replace(0, np.nan)) - 1.0
 
     return {
         "z_series": z_series,
@@ -374,6 +375,9 @@ def _build() -> dict | None:
     snap: dict[str, Any] = {
         "schema": SCHEMA,
         "asof": str(asof.date()),
+        "cohort_role": "tracked_ai_hardware_damage_monitor",
+        "cohort_keys": list(COHORT_KEYS),
+        "high_window_sessions": _CARNAGE_WINDOW,
         "state": state,
         "z_vel": round(z_vel, 4) if z_vel is not None else None,
         "med_dd": round(med_dd, 4) if med_dd is not None else None,
