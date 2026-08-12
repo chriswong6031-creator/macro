@@ -1,0 +1,850 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/options/options.prospective_nbbo_cohort.v1.schema.json",
+  "title": "Host-private prospective exact-option OPRA NBBO cohort",
+  "description": "Create-only enrollment/terminal events, admitted or unavailable NBBO observations, and aggregate private snapshots. The contract carries no signal, selector, issue, trade, training, publication, Prophet, Neural Web, or completion authority.",
+  "oneOf": [
+    {"$ref": "#/$defs/event"},
+    {"$ref": "#/$defs/captureReceipt"},
+    {"$ref": "#/$defs/observation"},
+    {"$ref": "#/$defs/snapshot"},
+    {"$ref": "#/$defs/head"}
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "decimal": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_originate_signal",
+        "may_score",
+        "may_rank",
+        "may_select",
+        "may_issue",
+        "may_size",
+        "may_trade",
+        "may_publish_pick",
+        "may_train_prophet",
+        "may_feed_neural_web",
+        "may_claim_completion"
+      ],
+      "properties": {
+        "may_originate_signal": {"const": false},
+        "may_score": {"const": false},
+        "may_rank": {"const": false},
+        "may_select": {"const": false},
+        "may_issue": {"const": false},
+        "may_size": {"const": false},
+        "may_trade": {"const": false},
+        "may_publish_pick": {"const": false},
+        "may_train_prophet": {"const": false},
+        "may_feed_neural_web": {"const": false},
+        "may_claim_completion": {"const": false}
+      }
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root",
+        "expiration",
+        "right",
+        "strike",
+        "strike_millis",
+        "occ_symbol"
+      ],
+      "properties": {
+        "root": {"type": "string", "pattern": "^[A-Z0-9]{1,6}$"},
+        "expiration": {"type": "string", "format": "date"},
+        "right": {"enum": ["call", "put"]},
+        "strike": {
+          "type": "string",
+          "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]{1,3})?$"
+        },
+        "strike_millis": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99999999
+        },
+        "occ_symbol": {
+          "type": "string",
+          "minLength": 21,
+          "maxLength": 21,
+          "pattern": "^[A-Z0-9 ]{6}[0-9]{6}[CP][0-9]{8}$"
+        }
+      }
+    },
+    "eventPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "sha256"],
+      "properties": {
+        "event_id": {"type": "string", "pattern": "^nbboevt_[0-9a-f]{64}$"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "observationPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observation_id", "sha256", "bytes"],
+      "properties": {
+        "observation_id": {
+          "type": "string",
+          "pattern": "^nbboobs_[0-9a-f]{64}$"
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "event_id",
+        "kind",
+        "system",
+        "stable_signal_id",
+        "cohort_rule_id",
+        "benchmark_digest_sha256",
+        "benchmark_effective_freeze_at",
+        "phase",
+        "contract",
+        "event_at",
+        "available_at",
+        "enrollment_event_id",
+        "terminal_reason",
+        "rule_digests",
+        "private_evidence",
+        "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.prospective_nbbo_cohort_event/v1"},
+        "event_id": {"type": "string", "pattern": "^nbboevt_[0-9a-f]{64}$"},
+        "kind": {"enum": ["enroll", "terminal"]},
+        "system": {
+          "enum": ["mastermindx_prophet", "mastermindx_selector", "momoedge"]
+        },
+        "stable_signal_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "cohort_rule_id": {"const": "momoedge_same_basis_opra_nbbo/v1"},
+        "benchmark_digest_sha256": {
+          "const": "20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42"
+        },
+        "benchmark_effective_freeze_at": {
+          "const": "2026-08-11T15:47:06.000000Z"
+        },
+        "phase": {"const": "prospective_after_benchmark_freeze"},
+        "contract": {"$ref": "#/$defs/contract"},
+        "event_at": {"$ref": "#/$defs/utc"},
+        "available_at": {"$ref": "#/$defs/utc"},
+        "enrollment_event_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^nbboevt_[0-9a-f]{64}$"}
+          ]
+        },
+        "terminal_reason": {
+          "oneOf": [
+            {"type": "null"},
+            {"enum": ["lifecycle_terminal", "expiry_liquidation_1555_et"]}
+          ]
+        },
+        "rule_digests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision_rule_sha256",
+            "lifecycle_rule_sha256",
+            "quote_rule_sha256"
+          ],
+          "properties": {
+            "decision_rule_sha256": {"$ref": "#/$defs/sha256"},
+            "lifecycle_rule_sha256": {"$ref": "#/$defs/sha256"},
+            "quote_rule_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "private_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema", "object_sha256", "object_bytes"],
+          "properties": {
+            "schema": {"type": "string", "minLength": 1},
+            "object_sha256": {"$ref": "#/$defs/sha256"},
+            "object_bytes": {"type": "integer", "minimum": 1}
+          }
+        },
+        "authority": {"$ref": "#/$defs/authority"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "enroll"}}},
+          "then": {
+            "properties": {
+              "enrollment_event_id": {"const": null},
+              "terminal_reason": {"const": null}
+            }
+          },
+          "else": {
+            "properties": {
+              "enrollment_event_id": {
+                "type": "string",
+                "pattern": "^nbboevt_[0-9a-f]{64}$"
+              },
+              "terminal_reason": {
+                "enum": ["lifecycle_terminal", "expiry_liquidation_1555_et"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "captureReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "capture_receipt_id",
+        "cohort_rule_id",
+        "capture_rule_id",
+        "benchmark_digest_sha256",
+        "benchmark_effective_freeze_at",
+        "phase",
+        "comparison_system",
+        "session_date",
+        "scheduled_at",
+        "attempted_at",
+        "completed_at",
+        "capture_event_at",
+        "disposition",
+        "reason",
+        "evidence_authenticated",
+        "observed_new_call_count",
+        "new_enrollment_event_ids",
+        "producer_rule_sha256",
+        "private_evidence",
+        "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.prospective_nbbo_capture_receipt/v1"},
+        "capture_receipt_id": {
+          "type": "string",
+          "pattern": "^nbbocap_[0-9a-f]{64}$"
+        },
+        "cohort_rule_id": {"const": "momoedge_same_basis_opra_nbbo/v1"},
+        "capture_rule_id": {"const": "two_system_authenticated_rth_capture_300s/v1"},
+        "benchmark_digest_sha256": {
+          "const": "20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42"
+        },
+        "benchmark_effective_freeze_at": {
+          "const": "2026-08-11T15:47:06.000000Z"
+        },
+        "phase": {"const": "prospective_after_benchmark_freeze"},
+        "comparison_system": {"enum": ["mastermindx", "momoedge"]},
+        "session_date": {"type": "string", "format": "date"},
+        "scheduled_at": {"$ref": "#/$defs/utc"},
+        "attempted_at": {"$ref": "#/$defs/utc"},
+        "completed_at": {"$ref": "#/$defs/utc"},
+        "capture_event_at": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]
+        },
+        "disposition": {
+          "enum": [
+            "new_calls_observed",
+            "no_new_calls_observed",
+            "selector_abstained",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "enum": [
+                "AUTHENTICATED_CAPTURE_NOT_CONFIGURED",
+                "PRECISE_PRODUCER_NOT_CONFIGURED",
+                "SOURCE_UNAVAILABLE",
+                "PRODUCER_OUTPUT_INVALID",
+                "NO_CAPTURE_RECEIPT_FOR_SLOT"
+              ]
+            }
+          ]
+        },
+        "evidence_authenticated": {"type": "boolean"},
+        "observed_new_call_count": {"type": "integer", "minimum": 0},
+        "new_enrollment_event_ids": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^nbboevt_[0-9a-f]{64}$"
+          }
+        },
+        "producer_rule_sha256": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
+        },
+        "private_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema", "object_sha256", "object_bytes"],
+          "properties": {
+            "schema": {"type": "string", "minLength": 1},
+            "object_sha256": {"$ref": "#/$defs/sha256"},
+            "object_bytes": {"type": "integer", "minimum": 1, "maximum": 67108864}
+          }
+        },
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_at",
+        "available_at",
+        "bid",
+        "ask",
+        "bid_size",
+        "ask_size",
+        "bid_exchange",
+        "ask_exchange",
+        "bid_condition",
+        "ask_condition",
+        "selected_side",
+        "selected_price",
+        "event_to_available_lag_seconds"
+      ],
+      "properties": {
+        "event_at": {"$ref": "#/$defs/utc"},
+        "available_at": {"$ref": "#/$defs/utc"},
+        "bid": {"$ref": "#/$defs/decimal"},
+        "ask": {"$ref": "#/$defs/decimal"},
+        "bid_size": {"type": "integer", "minimum": 0},
+        "ask_size": {"type": "integer", "minimum": 0},
+        "bid_exchange": {"type": "integer", "minimum": 0},
+        "ask_exchange": {"type": "integer", "minimum": 0},
+        "bid_condition": {"type": "integer", "minimum": 0},
+        "ask_condition": {"type": "integer", "minimum": 0},
+        "selected_side": {"enum": ["ask", "bid"]},
+        "selected_price": {"$ref": "#/$defs/decimal"},
+        "event_to_available_lag_seconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 600
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "observation_id",
+        "role",
+        "status",
+        "reason",
+        "cohort_rule_id",
+        "benchmark_digest_sha256",
+        "benchmark_effective_freeze_at",
+        "phase",
+        "event",
+        "system",
+        "stable_signal_id",
+        "contract",
+        "boundary_at",
+        "observed_at",
+        "source",
+        "quote",
+        "source_error_class",
+        "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.prospective_nbbo_observation/v1"},
+        "observation_id": {
+          "type": "string",
+          "pattern": "^nbboobs_[0-9a-f]{64}$"
+        },
+        "role": {"enum": ["entry", "exit"]},
+        "status": {"enum": ["admitted", "unavailable"]},
+        "reason": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "enum": [
+                "BOUNDARY_NOT_YET_AVAILABLE",
+                "BOUNDARY_OUTSIDE_RTH",
+                "SOURCE_UNAVAILABLE",
+                "NO_VALID_NBBO_AFTER_BOUNDARY",
+                "QUOTE_WINDOW_CLOSED",
+                "FIRST_QUOTE_AVAILABLE_TOO_LATE"
+              ]
+            }
+          ]
+        },
+        "cohort_rule_id": {"const": "momoedge_same_basis_opra_nbbo/v1"},
+        "benchmark_digest_sha256": {
+          "const": "20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42"
+        },
+        "benchmark_effective_freeze_at": {
+          "const": "2026-08-11T15:47:06.000000Z"
+        },
+        "phase": {"const": "prospective_after_benchmark_freeze"},
+        "event": {"$ref": "#/$defs/eventPointer"},
+        "system": {
+          "enum": ["mastermindx_prophet", "mastermindx_selector", "momoedge"]
+        },
+        "stable_signal_id": {"type": "string", "minLength": 1, "maxLength": 200},
+        "contract": {"$ref": "#/$defs/contract"},
+        "boundary_at": {"$ref": "#/$defs/utc"},
+        "observed_at": {"$ref": "#/$defs/utc"},
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "endpoint",
+            "source_class",
+            "interval",
+            "request_attempted",
+            "requested_at",
+            "query_ceiling_at",
+            "query",
+            "query_sha256",
+            "response",
+            "raw_response_retained_private",
+            "private_only",
+            "nbbo",
+            "executable_fill_claim"
+          ],
+          "properties": {
+            "endpoint": {"const": "/v3/option/history/quote"},
+            "source_class": {
+              "const": "licensed_opra_nbbo_with_event_and_available_clocks"
+            },
+            "interval": {"const": "tick"},
+            "request_attempted": {"type": "boolean"},
+            "requested_at": {
+              "oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]
+            },
+            "query_ceiling_at": {"$ref": "#/$defs/utc"},
+            "query": {
+              "oneOf": [
+                {"type": "null"},
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "symbol",
+                    "expiration",
+                    "strike",
+                    "right",
+                    "date",
+                    "start_time",
+                    "end_time",
+                    "interval",
+                    "format"
+                  ],
+                  "properties": {
+                    "symbol": {"type": "string", "pattern": "^[A-Z0-9]{1,6}$"},
+                    "expiration": {"type": "string", "pattern": "^[0-9]{8}$"},
+                    "strike": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{3}$"},
+                    "right": {"enum": ["call", "put"]},
+                    "date": {"type": "string", "pattern": "^[0-9]{8}$"},
+                    "start_time": {"type": "string", "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"},
+                    "end_time": {"type": "string", "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"},
+                    "interval": {"const": "tick"},
+                    "format": {"const": "json"}
+                  }
+                }
+              ]
+            },
+            "query_sha256": {
+              "oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
+            },
+            "response": {
+              "oneOf": [
+                {"type": "null"},
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["sha256", "bytes"],
+                  "properties": {
+                    "sha256": {"$ref": "#/$defs/sha256"},
+                    "bytes": {"type": "integer", "minimum": 1, "maximum": 67108864}
+                  }
+                }
+              ]
+            },
+            "raw_response_retained_private": {"type": "boolean"},
+            "private_only": {"const": true},
+            "nbbo": {"const": true},
+            "executable_fill_claim": {"const": false}
+          }
+        },
+        "quote": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/quote"}]},
+        "source_error_class": {
+          "oneOf": [{"type": "null"}, {"type": "string", "minLength": 1}]
+        },
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "cohortRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system",
+        "stable_signal_id",
+        "enrollment_event_id",
+        "terminal_event_id",
+        "contract",
+        "entry_observation",
+        "exit_observation",
+        "net_return_pct",
+        "quote_complete",
+        "complete",
+        "completion_reason"
+      ],
+      "properties": {
+        "system": {
+          "enum": ["mastermindx_prophet", "mastermindx_selector", "momoedge"]
+        },
+        "stable_signal_id": {"type": "string", "minLength": 1},
+        "enrollment_event_id": {
+          "type": "string",
+          "pattern": "^nbboevt_[0-9a-f]{64}$"
+        },
+        "terminal_event_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^nbboevt_[0-9a-f]{64}$"}
+          ]
+        },
+        "contract": {"$ref": "#/$defs/contract"},
+        "entry_observation": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/observationPointer"}]
+        },
+        "exit_observation": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/observationPointer"}]
+        },
+        "net_return_pct": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"}
+          ]
+        },
+        "quote_complete": {"type": "boolean"},
+        "complete": {"type": "boolean"},
+        "completion_reason": {
+          "enum": [
+            "COMPLETE",
+            "ENTRY_UNAVAILABLE",
+            "TERMINAL_PENDING",
+            "EXIT_UNAVAILABLE",
+            "ENTRY_AFTER_TERMINAL",
+            "UNCOVERED_CAPTURE_SESSION"
+          ]
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enrollment_count",
+        "terminal_count",
+        "complete_outcome_count",
+        "incomplete_outcome_count",
+        "quote_complete_outcome_count",
+        "uncovered_quote_complete_count",
+        "silent_drop_count",
+        "by_system",
+        "session_coverage"
+      ],
+      "properties": {
+        "enrollment_count": {"type": "integer", "minimum": 0},
+        "terminal_count": {"type": "integer", "minimum": 0},
+        "complete_outcome_count": {"type": "integer", "minimum": 0},
+        "incomplete_outcome_count": {"type": "integer", "minimum": 0},
+        "quote_complete_outcome_count": {"type": "integer", "minimum": 0},
+        "uncovered_quote_complete_count": {"type": "integer", "minimum": 0},
+        "silent_drop_count": {"type": "integer", "minimum": 0},
+        "by_system": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mastermindx_prophet", "mastermindx_selector", "momoedge"],
+          "properties": {
+            "mastermindx_prophet": {"$ref": "#/$defs/systemCoverage"},
+            "mastermindx_selector": {"$ref": "#/$defs/systemCoverage"},
+            "momoedge": {"$ref": "#/$defs/systemCoverage"}
+          }
+        },
+        "session_coverage": {"$ref": "#/$defs/sessionCoverage"}
+      }
+    },
+    "systemCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enrollment_count",
+        "terminal_count",
+        "complete_outcome_count",
+        "incomplete_outcome_count",
+        "quote_complete_outcome_count",
+        "uncovered_quote_complete_count"
+      ],
+      "properties": {
+        "enrollment_count": {"type": "integer", "minimum": 0},
+        "terminal_count": {"type": "integer", "minimum": 0},
+        "complete_outcome_count": {"type": "integer", "minimum": 0},
+        "incomplete_outcome_count": {"type": "integer", "minimum": 0},
+        "quote_complete_outcome_count": {"type": "integer", "minimum": 0},
+        "uncovered_quote_complete_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "captureSystemCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_count",
+        "unavailable_attempt_count",
+        "successful_slot_count",
+        "new_call_slot_count",
+        "zero_new_call_slot_count",
+        "expected_slot_count",
+        "capture_coverage_ratio",
+        "maximum_capture_gap_seconds",
+        "observed_new_call_count",
+        "producer_rule_sha256"
+      ],
+      "properties": {
+        "attempt_count": {"type": "integer", "minimum": 0},
+        "unavailable_attempt_count": {"type": "integer", "minimum": 0},
+        "successful_slot_count": {"type": "integer", "minimum": 0},
+        "new_call_slot_count": {"type": "integer", "minimum": 0},
+        "zero_new_call_slot_count": {"type": "integer", "minimum": 0},
+        "expected_slot_count": {"type": "integer", "minimum": 1},
+        "capture_coverage_ratio": {
+          "type": "string",
+          "pattern": "^(?:0\\.[0-9]{6}|1\\.000000)$"
+        },
+        "maximum_capture_gap_seconds": {
+          "oneOf": [{"type": "null"}, {"type": "integer", "minimum": 0}]
+        },
+        "observed_new_call_count": {"type": "integer", "minimum": 0},
+        "producer_rule_sha256": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
+        }
+      }
+    },
+    "sessionCoverageRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "session_date",
+        "session_open_at",
+        "session_close_at",
+        "finalized",
+        "expected_slot_count",
+        "common_successful_slot_count",
+        "common_capture_coverage_ratio",
+        "common_maximum_capture_gap_seconds",
+        "event_reconciliation",
+        "covered",
+        "exclusion_reasons",
+        "by_system"
+      ],
+      "properties": {
+        "session_date": {"type": "string", "format": "date"},
+        "session_open_at": {"$ref": "#/$defs/utc"},
+        "session_close_at": {"$ref": "#/$defs/utc"},
+        "finalized": {"type": "boolean"},
+        "expected_slot_count": {"type": "integer", "minimum": 1},
+        "common_successful_slot_count": {"type": "integer", "minimum": 0},
+        "common_capture_coverage_ratio": {
+          "type": "string",
+          "pattern": "^(?:0\\.[0-9]{6}|1\\.000000)$"
+        },
+        "common_maximum_capture_gap_seconds": {
+          "oneOf": [{"type": "null"}, {"type": "integer", "minimum": 0}]
+        },
+        "event_reconciliation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "missing_enrollment_reference_count",
+            "duplicate_enrollment_reference_count",
+            "invalid_enrollment_reference_count"
+          ],
+          "properties": {
+            "missing_enrollment_reference_count": {"type": "integer", "minimum": 0},
+            "duplicate_enrollment_reference_count": {"type": "integer", "minimum": 0},
+            "invalid_enrollment_reference_count": {"type": "integer", "minimum": 0}
+          }
+        },
+        "covered": {"type": "boolean"},
+        "exclusion_reasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "PARTIAL_FREEZE_SESSION",
+              "SESSION_IN_PROGRESS",
+              "COMMON_CAPTURE_COVERAGE_BELOW_95_PERCENT",
+              "NO_COMMON_AUTHENTICATED_CAPTURE",
+              "COMMON_CAPTURE_GAP_OVER_900_SECONDS",
+              "EVENT_RECONCILIATION_INCOMPLETE"
+            ]
+          }
+        },
+        "by_system": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mastermindx", "momoedge"],
+          "properties": {
+            "mastermindx": {"$ref": "#/$defs/captureSystemCoverage"},
+            "momoedge": {"$ref": "#/$defs/captureSystemCoverage"}
+          }
+        }
+      }
+    },
+    "sessionCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capture_rule_id",
+        "capture_cadence_seconds",
+        "maximum_authenticated_capture_gap_seconds",
+        "minimum_capture_coverage_ratio",
+        "eligible_finalized_session_count",
+        "covered_session_count",
+        "excluded_finalized_session_count",
+        "covered_session_ratio",
+        "covered_session_dates",
+        "sessions"
+      ],
+      "properties": {
+        "capture_rule_id": {"const": "two_system_authenticated_rth_capture_300s/v1"},
+        "capture_cadence_seconds": {"const": 300},
+        "maximum_authenticated_capture_gap_seconds": {"const": 900},
+        "minimum_capture_coverage_ratio": {"const": "0.95"},
+        "eligible_finalized_session_count": {"type": "integer", "minimum": 0},
+        "covered_session_count": {"type": "integer", "minimum": 0},
+        "excluded_finalized_session_count": {"type": "integer", "minimum": 0},
+        "covered_session_ratio": {
+          "type": "string",
+          "pattern": "^(?:0\\.[0-9]{6}|1\\.000000)$"
+        },
+        "covered_session_dates": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "format": "date"}
+        },
+        "sessions": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {"$ref": "#/$defs/sessionCoverageRow"}
+        }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "snapshot_id",
+        "cohort_rule_id",
+        "quote_rule_id",
+        "benchmark_digest_sha256",
+        "benchmark_effective_freeze_at",
+        "phase",
+        "built_at",
+        "event_ledger",
+        "capture_ledger",
+        "observation_objects",
+        "coverage",
+        "rows",
+        "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.prospective_nbbo_cohort_snapshot/v1"},
+        "snapshot_id": {
+          "type": "string",
+          "pattern": "^nbbosnap_[0-9a-f]{64}$"
+        },
+        "cohort_rule_id": {"const": "momoedge_same_basis_opra_nbbo/v1"},
+        "quote_rule_id": {
+          "const": "first_role_side_firm_known_exchange_opra_nbbo_tick/v1"
+        },
+        "benchmark_digest_sha256": {
+          "const": "20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42"
+        },
+        "benchmark_effective_freeze_at": {
+          "const": "2026-08-11T15:47:06.000000Z"
+        },
+        "phase": {"const": "prospective_after_benchmark_freeze"},
+        "built_at": {"$ref": "#/$defs/utc"},
+        "event_ledger": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sha256", "bytes", "row_count"],
+          "properties": {
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "bytes": {"type": "integer", "minimum": 0},
+            "row_count": {"type": "integer", "minimum": 0, "maximum": 4096}
+          }
+        },
+        "capture_ledger": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sha256", "bytes", "row_count"],
+          "properties": {
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "bytes": {"type": "integer", "minimum": 0},
+            "row_count": {"type": "integer", "minimum": 0, "maximum": 100000}
+          }
+        },
+        "observation_objects": {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {"$ref": "#/$defs/observationPointer"}
+        },
+        "coverage": {"$ref": "#/$defs/coverage"},
+        "rows": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {"$ref": "#/$defs/cohortRow"}
+        },
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "head": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "snapshot_id", "sha256", "bytes", "coverage", "authority"],
+      "properties": {
+        "schema": {"const": "options.prospective_nbbo_cohort_head/v1"},
+        "snapshot_id": {
+          "type": "string",
+          "pattern": "^nbbosnap_[0-9a-f]{64}$"
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "coverage": {"$ref": "#/$defs/coverage"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    }
+  }
+}
