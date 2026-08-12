@@ -76,7 +76,7 @@ a fixed order, so a diff of the file is a diff of facts.
 | `data_sources` | Reserved for v2 — `[]` in v1. Deriving the data behind a page is separate work. |
 | `access_shell` | Who can reach the shell: `anonymous` \| `signed_in` \| `paid` \| `admin` \| `operator` \| `unknown` |
 | `payload_tier` | What the DATA behind it costs: `public` \| `public_shell_premium_payload` \| `premium` \| `internal` \| `unknown` |
-| `nav_family` | Which nav group links it (`product_nav.china`, `public_nav.public`, `app_nav.rail`), or `none` when nothing links it. `none` is a finding, not a gap. |
+| `nav_family` | Which link inventory names it (`product_nav.china` from `templates/_navlinks.html.j2`, `public_nav.public` from `templates/_public_nav.html.j2`, `footer.legal` from `templates/_public_footer.html.j2`, `app_nav.rail` from the terminal's `AppNav.tsx`), or `none` when nothing links it. The navs outrank the footer, so a page takes its footer column only when no nav names it. `none` is a finding, not a gap. |
 | `archetype` | Overlay only. Default `unclassified`. |
 | `primary_user_question` | Overlay only. Default `""`. |
 | `owner` | Overlay only. Default `unowned` — and it is `unowned` everywhere in v1 on purpose. |
