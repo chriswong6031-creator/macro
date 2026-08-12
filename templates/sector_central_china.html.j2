@@ -71,7 +71,7 @@
   .si-side-out { display:flex; align-items:center; gap:10px; margin-top:8px; padding:11px 10px 0;
     border-top:1px solid var(--line); text-decoration:none;
     font-size:12.5px; font-weight:600; color:var(--muted); }
-  .si-side-out:hover { color:var(--link); }
+  .si-side-out:hover { color:var(--ink-link, var(--link)); }
   /* provenance lives with the navigation — visible from every view */
   .si-side-foot { margin-top:auto; padding-top:10px; border-top:1px solid var(--line);
     display:flex; flex-direction:column; gap:3px;
@@ -149,7 +149,7 @@
   .rg-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
   .rg-v { font-size: 19px; font-weight: 760; margin-top: 3px; font-variant-numeric: tabular-nums; }
   .rg-d { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
-  .rg-on { color: var(--up); } .rg-off { color: var(--down); } .rg-mix { color: var(--warn); }
+  .rg-on { color: var(--ink-up, var(--up)); } .rg-off { color: var(--ink-down, var(--down)); } .rg-mix { color: var(--ink-warn, var(--warn)); }
   .rg-bar { height: 7px; border-radius: 5px; margin-top: 7px; overflow: hidden; background: var(--line); }
   .rg-bar i { display: block; height: 100%; }
   /* W0.4: regime-cap notice — shown when the gate pins the top tier unreachable */
@@ -158,33 +158,33 @@
     border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line));
     border-left: 3px solid var(--warn); border-radius: 11px;
     background: color-mix(in srgb, var(--warn) 6%, var(--panel)); color: var(--text); }
-  .rg-cap-notice .rg-cap-ic { flex: none; color: var(--warn); font-size: 15px; margin-top: 1px; }
-  .rg-cap-notice b { color: var(--warn); }
+  .rg-cap-notice .rg-cap-ic { flex: none; color: var(--ink-warn, var(--warn)); font-size: 15px; margin-top: 1px; }
+  .rg-cap-notice b { color: var(--ink-warn, var(--warn)); }
   /* W0.4: staleness warning — shown when a regime-leg input file is overdue */
   .rg-stale-notice { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 9px;
     font-size: 12.5px; line-height: 1.5; padding: 9px 14px; margin-top: 2px;
     border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line));
     border-left: 3px solid var(--down); border-radius: 11px;
     background: color-mix(in srgb, var(--down) 5%, var(--panel)); color: var(--text); }
-  .rg-stale-notice .rg-stale-ic { flex: none; color: var(--down); font-size: 15px; margin-top: 1px; }
+  .rg-stale-notice .rg-stale-ic { flex: none; color: var(--ink-down, var(--down)); font-size: 15px; margin-top: 1px; }
   /* plain-language headline row spanning the full regime grid */
   .regime .rg-headline-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px;
     font-size: 14.5px; font-weight: 650; line-height: 1.4; padding: 11px 14px; border: 1px solid var(--line);
     border-radius: 12px; background: var(--panel); }
   .rg-headline-row .rg-hl-ic { font-size: 16px; flex: none; }
   .rg-headline-row.rg-hl-on { border-color: color-mix(in srgb, var(--up) 42%, var(--line)); }
-  .rg-headline-row.rg-hl-on .rg-hl-ic { color: var(--up); }
+  .rg-headline-row.rg-hl-on .rg-hl-ic { color: var(--ink-up, var(--up)); }
   .rg-headline-row.rg-hl-off { border-color: color-mix(in srgb, var(--down) 42%, var(--line)); }
-  .rg-headline-row.rg-hl-off .rg-hl-ic { color: var(--down); }
-  .rg-headline-row.rg-hl-mix .rg-hl-ic { color: var(--warn); }
+  .rg-headline-row.rg-hl-off .rg-hl-ic { color: var(--ink-down, var(--down)); }
+  .rg-headline-row.rg-hl-mix .rg-hl-ic { color: var(--ink-warn, var(--warn)); }
   /* in zh the up/down colour convention flips (red = up) — match it for banner + badges */
   html[data-lang="zh"] .rg-headline-row.rg-hl-on { border-color: color-mix(in srgb, var(--down) 42%, var(--line)); }
-  html[data-lang="zh"] .rg-headline-row.rg-hl-on .rg-hl-ic { color: var(--down); }
+  html[data-lang="zh"] .rg-headline-row.rg-hl-on .rg-hl-ic { color: var(--ink-down, var(--down)); }
   html[data-lang="zh"] .rg-headline-row.rg-hl-off { border-color: color-mix(in srgb, var(--up) 42%, var(--line)); }
-  html[data-lang="zh"] .rg-headline-row.rg-hl-off .rg-hl-ic { color: var(--up); }
-  html[data-lang="zh"] .rg-v.rg-on { color: var(--down); } html[data-lang="zh"] .rg-v.rg-off { color: var(--up); }
-  html[data-lang="zh"] .conv-badge.tier-up { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
-  html[data-lang="zh"] .conv-badge.tier-down { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); border-color: color-mix(in srgb, var(--up) 40%, var(--line)); }
+  html[data-lang="zh"] .rg-headline-row.rg-hl-off .rg-hl-ic { color: var(--ink-up, var(--up)); }
+  html[data-lang="zh"] .rg-v.rg-on { color: var(--ink-down, var(--down)); } html[data-lang="zh"] .rg-v.rg-off { color: var(--ink-up, var(--up)); }
+  html[data-lang="zh"] .conv-badge.tier-up { color: var(--ink-down, var(--down)); background: color-mix(in srgb, var(--down) 14%, transparent); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
+  html[data-lang="zh"] .conv-badge.tier-down { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 14%, transparent); border-color: color-mix(in srgb, var(--up) 40%, var(--line)); }
   /* collapse the redundant inner chart title on the hub */
   .scc-page #sc-hero-title { display: none; }
   {# The board toggle used to hide under 880px as "redundant with the page-level one".
@@ -214,13 +214,13 @@
   .conv-badge { font-size: 11.5px; font-weight: 800; letter-spacing: .03em; padding: 3px 9px; border-radius: 7px; }
   .conv-score { font-size: 23px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; margin-top: 3px; }
   .conv-sub { font-size: 10.5px; color: var(--muted); }
-  .tier-up { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); border: 1px solid color-mix(in srgb, var(--up) 40%, var(--line)); }
-  .tier-down { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line)); }
+  .tier-up { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 14%, transparent); border: 1px solid color-mix(in srgb, var(--up) 40%, var(--line)); }
+  .tier-down { color: var(--ink-down, var(--down)); background: color-mix(in srgb, var(--down) 14%, transparent); border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line)); }
   .tier-flat { color: var(--muted); background: var(--panel2, transparent); border: 1px solid var(--line); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 9px 0; }
   .chip2 { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; }
   .chip2 b { color: var(--text); font-variant-numeric: tabular-nums; }
-  .chip2.early { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
+  .chip2.early { color: var(--ink-warn, var(--warn)); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
   .mini-cyc { margin: 7px 0 5px; position: relative; }
   .mini-cyc-cap { font-size: 10px; color: var(--muted); margin-bottom: 2px; letter-spacing: .02em; }
   .mini-cyc svg { display: block; width: 100%; height: 52px; }
@@ -232,7 +232,7 @@
   .mc-x { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--muted); opacity: 0.5; pointer-events: none; display: none; }
   .mc-hov { position: absolute; width: 7px; height: 7px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; }
   .conflu { font-size: 10.5px; color: var(--muted); margin-top: 8px; }
-  .conflu b.high { color: var(--up); } .conflu b.moderate { color: var(--warn); } .conflu b\.low\/mixed { color: var(--muted); }
+  .conflu b.high { color: var(--ink-up, var(--up)); } .conflu b.moderate { color: var(--ink-warn, var(--warn)); } .conflu b\.low\/mixed { color: var(--muted); }
   /* grader */
   .grader { margin-top: 26px; border: 1px solid var(--line); border-radius: 13px; padding: 14px 16px; background: var(--panel); }
   .grader h2 { font-size: 15px; margin: 0 0 4px; }
@@ -274,9 +274,9 @@
   table.scc-desk-tbl tbody tr:hover td { background: color-mix(in srgb, var(--link) 6%, transparent); }
   .scc-desk-tbl .nm { font-weight: 700; } .scc-desk-tbl .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 10px; }
   .scc-desk-tbl .nm a { color: inherit; border-bottom: 1px dotted color-mix(in srgb, var(--link) 45%, transparent); }
-  .scc-desk-tbl .nm a:hover { color: var(--link); border-bottom-color: var(--link); }
-  .scc-desk-tbl .up { color: var(--up); } .scc-desk-tbl .dn { color: var(--down); } .scc-desk-tbl .na { color: var(--muted); }
-  html[data-lang="zh"] .scc-desk-tbl .up { color: var(--down); } html[data-lang="zh"] .scc-desk-tbl .dn { color: var(--up); }
+  .scc-desk-tbl .nm a:hover { color: var(--ink-link, var(--link)); border-bottom-color: var(--link); }
+  .scc-desk-tbl .up { color: var(--ink-up, var(--up)); } .scc-desk-tbl .dn { color: var(--ink-down, var(--down)); } .scc-desk-tbl .na { color: var(--muted); }
+  html[data-lang="zh"] .scc-desk-tbl .up { color: var(--ink-down, var(--down)); } html[data-lang="zh"] .scc-desk-tbl .dn { color: var(--ink-up, var(--up)); }
   .scc-mbar { width: 60px; height: 7px; border-radius: 999px; position: relative; display: inline-block; vertical-align: middle;
     background: linear-gradient(90deg, color-mix(in srgb,var(--down) 55%,transparent), color-mix(in srgb,var(--muted) 20%,transparent), color-mix(in srgb,var(--up) 55%,transparent)); }
   html[data-lang="zh"] .scc-mbar { background: linear-gradient(90deg, color-mix(in srgb,var(--up) 55%,transparent), color-mix(in srgb,var(--muted) 20%,transparent), color-mix(in srgb,var(--down) 55%,transparent)); }
@@ -294,7 +294,7 @@
   .scc-tabs-board .scc-tab i { font-style: normal; font-variant-numeric: tabular-nums; color: var(--muted); margin-left: 2px; }
   /* conviction card name link */
   .card-nm a { color: inherit; border-bottom: 1px dotted color-mix(in srgb, var(--link) 45%, transparent); transition: color .15s, border-color .15s; }
-  .card-nm a:hover { color: var(--link); border-bottom-color: var(--link); }
+  .card-nm a:hover { color: var(--ink-link, var(--link)); border-bottom-color: var(--link); }
   /* mobile: pack the live-desk quick-read chips 2-up so they don't push the chart down */
   @media (max-width: 880px) {
     .scc-rail { gap: 7px; }
@@ -312,7 +312,7 @@
   h2 .idx { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
   h3.cat { font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:20px 0 9px; border-bottom:1px solid var(--line); padding-bottom:5px; }
   .muted { color:var(--muted); } .sm { font-size:12px; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
+  .pos { color:var(--ink-up, var(--up)); } .neg { color:var(--ink-down, var(--down)); }
   .topline { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:6px; margin-top:8px; }
   .panel.pad { padding:14px; }
@@ -335,7 +335,7 @@
   th.sel { color:var(--text); }
   .bname { font-weight:600; }
   .blink { font-weight:650; color:inherit; text-decoration:none; }
-  .blink:hover { color:var(--link); text-decoration:underline; text-underline-offset:2px; }
+  .blink:hover { color:var(--ink-link, var(--link)); text-decoration:underline; text-underline-offset:2px; }
   .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:middle; }
   #chart { height:420px; width:100%; }
   .legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; max-height:156px; overflow:auto; padding-right:3px; }
@@ -376,7 +376,7 @@
   .refline { font-size:12px; color:var(--muted); margin:2px 0 9px; }
   .why { color:var(--muted); font-size:12px; white-space:normal; max-width:46ch; }
   details > summary { cursor:pointer; font-size:12.5px; color:var(--muted); margin:6px 0; }
-  .warn { display:inline-block; font-size:11px; padding:1px 7px; margin:2px 5px 2px 0; border-radius:7px; background:rgba(250,204,21,.12); border:1px solid rgba(250,204,21,.4); color:var(--warn); }
+  .warn { display:inline-block; font-size:11px; padding:1px 7px; margin:2px 5px 2px 0; border-radius:7px; background:rgba(250,204,21,.12); border:1px solid rgba(250,204,21,.4); color:var(--ink-warn, var(--warn)); }
   .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
   .clog { margin:6px 0 0; padding-left:18px; font-size:12px; color:var(--muted); }
   .clog li { margin:2px 0; }
@@ -399,7 +399,7 @@
     border:1px solid var(--line); border-radius:7px; background:var(--bg); }
   .sleeve-strategy-card .sc-stat b { color:var(--text); font-variant-numeric:tabular-nums; }
   .sleeve-strategy-card .sc-link { display:inline-block; font-size:12.5px; font-weight:650;
-    color:var(--up); text-decoration:none; margin-top:6px; }
+    color:var(--ink-up, var(--up)); text-decoration:none; margin-top:6px; }
   .sleeve-strategy-card .sc-link:hover { text-decoration:underline; }
   .sleeve-strategy-card .sc-note { font-size:11px; color:var(--muted); margin:5px 0 0; }
   .sleeve-strategy-card .sc-tag { display:inline-block; font-size:10.5px; font-weight:700;
@@ -411,7 +411,7 @@
   .semis-chip .sx-tag { font-size:10.5px; color:var(--muted); font-style:italic; }
   .semis-badge { display:inline-block; font-size:10px; font-weight:650; border:1px solid var(--line);
     border-radius:6px; padding:0 6px; margin-left:6px; color:var(--muted); vertical-align:1px; }
-  .semis-badge.on { color:var(--up); border-color:color-mix(in srgb, var(--up) 40%, var(--line)); }
+  .semis-badge.on { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb, var(--up) 40%, var(--line)); }
   /* ---- score badge ---- */
   .score-badge { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700;
     padding:1px 7px; border-radius:7px; border:1px solid var(--line); font-variant-numeric:tabular-nums;
@@ -429,7 +429,7 @@
   /* ---- signal tier chip ---- */
   .sig-fresh { color:#4ade80; font-size:8px; vertical-align:middle; margin-left:2px; }
   .sig-chip { display:inline-block; font-size:10px; font-weight:700; padding:0 5px;
-    border-radius:5px; vertical-align:1px; color:var(--up);
+    border-radius:5px; vertical-align:1px; color:var(--ink-up, var(--up));
     border:1px solid color-mix(in srgb,var(--up) 40%,var(--line)); margin-left:4px; }
   /* ---- entry radar strip ---- */
   .entry-radar { background:var(--panel); border:1px solid var(--line); border-left:3px solid #fb923c;
@@ -456,16 +456,16 @@
   .tc-chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; padding:3px 9px;
     border-radius:20px; border:1px solid; white-space:nowrap; text-decoration:none; color:inherit; }
   .tc-chip:hover { opacity:.85; }
-  .tc-chip.up  { background:rgba(74,222,128,.12); border-color:rgba(74,222,128,.35); color:var(--up); }
-  .tc-chip.dn  { background:rgba(248,113,113,.10); border-color:rgba(248,113,113,.30); color:var(--down); }
+  .tc-chip.up  { background:rgba(74,222,128,.12); border-color:rgba(74,222,128,.35); color:var(--ink-up, var(--up)); }
+  .tc-chip.dn  { background:rgba(248,113,113,.10); border-color:rgba(248,113,113,.30); color:var(--ink-down, var(--down)); }
   .tc-chip.was1{ font-size:9.5px; padding:0 5px; opacity:.75; border-radius:5px; margin-left:3px;
-                 background:rgba(248,113,113,.08); border-color:rgba(248,113,113,.25); color:var(--down); }
-  .tc-chip.mig { background:rgba(93,139,255,.10); border-color:rgba(93,139,255,.25); color:var(--link); }
-  .tc-chip.aln { background:rgba(74,222,128,.08); border-color:rgba(74,222,128,.25); color:var(--up); }
+                 background:rgba(248,113,113,.08); border-color:rgba(248,113,113,.25); color:var(--ink-down, var(--down)); }
+  .tc-chip.mig { background:rgba(93,139,255,.10); border-color:rgba(93,139,255,.25); color:var(--ink-link, var(--link)); }
+  .tc-chip.aln { background:rgba(74,222,128,.08); border-color:rgba(74,222,128,.25); color:var(--ink-up, var(--up)); }
   .tc-chip.rcpt{ background:var(--panel2); border-color:var(--line); color:var(--muted); }
   .tc-receipt-tip { cursor:default; }
   .tc-days  { font-size:11px; color:var(--muted); align-self:center; }
-  .tc-pb-link { display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--link);
+  .tc-pb-link { display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--ink-link, var(--link));
     border:1px solid var(--line); border-radius:20px; padding:3px 10px; margin-top:4px; text-decoration:none; }
   .tc-pb-link:hover { border-color:var(--link); }
   /* leg-toggle (All / None legend buttons) */
@@ -555,7 +555,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   background:currentColor;opacity:.5;flex:none}
 .rvx-chips.ctx > .rvx-chip{color:var(--muted)}
 .rvx-chips:not(.ctx) .rvx-chip{color:var(--muted);gap:5px}
-a.rvx-chip{color:var(--link)}
+a.rvx-chip{color:var(--ink-link, var(--link))}
 /* strength / breaking name chips keep their tinted pill treatment inside the hero */
 .rvx-names{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
 .rvx-names-l{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
@@ -619,9 +619,9 @@ html[data-theme="light"] .si-side {
    a hard seam — never reintroduce one. */
 .si-stage { background:transparent; }
 .si-vb-g { width:19px; height:19px; flex:none; }
-.si-vr-g { width:16px; height:16px; flex:none; margin-top:1px; color:var(--link); }
+.si-vr-g { width:16px; height:16px; flex:none; margin-top:1px; color:var(--ink-link, var(--link)); }
 .si-view-btn .si-vb-g { color:var(--muted); }
-.si-view-btn.on .si-vb-g, .si-view-btn:hover .si-vb-g { color:var(--link); }
+.si-view-btn.on .si-vb-g, .si-view-btn:hover .si-vb-g { color:var(--ink-link, var(--link)); }
 .si-side-out .si-vb-g { color:var(--muted); }
 .si-side { padding:14px 11px; }
 .si-view-btn { font-size:13px; padding:8.5px 11px; }
@@ -713,23 +713,23 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
   /* zh 红涨绿跌: T2 bullish tier badge swaps green→red */
   html[data-lang="zh"] #si-confluence .tier.T2{ background:#d04545; }
   #si-confluence .pill { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:9px; border:1px solid var(--line); }
-  #si-confluence .pill.buy{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
-  #si-confluence .pill.avoid{ color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
+  #si-confluence .pill.buy{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
+  #si-confluence .pill.avoid{ color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
   #si-confluence .pill.neutral{ color:var(--muted); }
-  #si-confluence .pill.tactical,#si-confluence .pill.late{ color:var(--orange); border-color:color-mix(in srgb,var(--orange) 45%,transparent); }
+  #si-confluence .pill.tactical,#si-confluence .pill.late{ color:var(--ink-orange, var(--orange)); border-color:color-mix(in srgb,var(--orange) 45%,transparent); }
   #si-confluence table.tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
   #si-confluence table.tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding:6px 9px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; }
   #si-confluence table.tbl td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
   #si-confluence table.tbl tr:hover td { background:var(--panel); }
   #si-confluence .sc-card-hidden { display:none !important; }
-  #si-confluence .sc-more { margin:9px 2px 0; font:600 12px/1.4 inherit; color:var(--link); background:none; border:1px solid var(--line); border-radius:8px; padding:5px 12px; cursor:pointer; transition:border-color .12s,background .12s; }
+  #si-confluence .sc-more { margin:9px 2px 0; font:600 12px/1.4 inherit; color:var(--ink-link, var(--link)); background:none; border:1px solid var(--line); border-radius:8px; padding:5px 12px; cursor:pointer; transition:border-color .12s,background .12s; }
   #si-confluence .sc-more:hover { border-color:var(--link); background:color-mix(in srgb,var(--link) 8%,transparent); }
   #si-confluence .tk { font-weight:700; }
   #si-confluence .num { font-variant-numeric:tabular-nums; }
-  #si-confluence .pos{ color:var(--up); } #si-confluence .neg{ color:var(--down); }
+  #si-confluence .pos{ color:var(--ink-up, var(--up)); } #si-confluence .neg{ color:var(--ink-down, var(--down)); }
   #si-confluence .scbar { display:inline-block; height:7px; border-radius:4px; background:var(--up); vertical-align:middle; }
   #si-confluence .relb { font-size:9.5px; font-weight:800; padding:0 5px; border-radius:6px; letter-spacing:.02em; vertical-align:middle; white-space:nowrap; }
-  #si-confluence .rel-low { color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 45%,transparent); }
+  #si-confluence .rel-low { color:var(--ink-orange, var(--orange)); border:1px solid color-mix(in srgb,var(--orange) 45%,transparent); }
   #si-confluence .rel-med { color:var(--muted); }
   #si-confluence .npc { color:var(--muted); font-size:10.5px; font-variant-numeric:tabular-nums; }
   #si-confluence details.thin { margin:14px 2px 0; border:1px dashed var(--line); border-radius:10px; padding:0 12px 12px; background:color-mix(in srgb,var(--orange) 4%,transparent); }
@@ -918,7 +918,7 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
             data-tip-en="Trailing-momentum rank names {{ _tc_tl.name | e }} first; skips the most recent ~3 weeks by construction; suggested weights unchanged. Shape read only — not a forecast."
             data-tip-zh="趋势动量排名以{{ _tc_tl.name_zh | e }}居首；设计上跳过最近约3周数据；建议权重不变。仅为形态读数，非预测。">ⓘ {{ t('How this works', '原理说明') }}</span>
       {% if theme_context.alignment is defined and theme_context.alignment.sector_rotation_agrees %}
-      <span class="rvx-chip" style="color:var(--up)"
+      <span class="rvx-chip" style="color:var(--ink-up, var(--up))"
             data-tip-en="{{ theme_context.alignment.note_en | e }}"
             data-tip-zh="{{ theme_context.alignment.note_zh | e }}">✓ {{ t('sector rotation agrees', '板块轮动一致') }}</span>
       {% endif %}
@@ -1104,8 +1104,8 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
   .rc-title-cn { font-weight:800; font-size:13.5px; }
   .rc-sev-cn { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:6px;
     background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); letter-spacing:.04em; }
-  .rc-sev-cn.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
-  .rc-sev-cn.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  .rc-sev-cn.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--ink-warn, var(--warn)); }
+  .rc-sev-cn.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--ink-link, var(--link)); }
   .rc-day-cn { font-size:11px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; }
   .rc-copy-cn { font-size:12.5px; line-height:1.55; }
   .rc-receipts-cn { margin-top:6px; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }

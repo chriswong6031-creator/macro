@@ -18,7 +18,7 @@
 <title>Signal Lab — does each signal actually work?</title>
 {% set seo_title = "Signal Lab — Mastermind" %}{% set seo_desc = "Does each signal actually work? Hit rates, forward returns and honest nulls for every signal Mastermind runs." %}{% set seo_path = "signal_lab.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -39,7 +39,7 @@
           vertical-align:top; }
   th { color:var(--muted); font-weight:500; white-space:nowrap; }
   td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
+  .pos { color:var(--ink-up, var(--up)); } .neg { color:var(--ink-down, var(--down)); }
   .sig { font-weight:600; } .mkt { font-size:11px; color:var(--muted); }
   .src { font-size:10.5px; color:var(--muted); }
   .extra { font-size:11px; color:var(--muted); margin-top:2px; }
@@ -64,17 +64,17 @@
   .chip b { font-size:14px; }
   .pill { font-size:10.5px; font-weight:700; padding:1px 8px; border-radius:8px; white-space:nowrap;
           border:1px solid var(--line); }
-  .v-scored    { color:var(--up);   border-color:color-mix(in srgb,var(--up) 50%,var(--line)); }
-  .v-confirmer { color:var(--link); border-color:color-mix(in srgb,var(--link) 50%,var(--line)); }
+  .v-scored    { color:var(--ink-up, var(--up));   border-color:color-mix(in srgb,var(--up) 50%,var(--line)); }
+  .v-confirmer { color:var(--ink-link, var(--link)); border-color:color-mix(in srgb,var(--link) 50%,var(--line)); }
   .v-display   { color:var(--muted); }
-  .v-killed    { color:var(--down); border-color:color-mix(in srgb,var(--down) 50%,var(--line)); }
+  .v-killed    { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 50%,var(--line)); }
   .v-pending   { color:#b8860b; border-color:#b8860b66; }
   .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
   .d-scored{background:var(--up);} .d-confirmer{background:var(--link);}
   .d-display{background:var(--muted);} .d-killed{background:var(--down);} .d-pending{background:#b8860b;}
   .tierhead { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:2px 0 8px; }
   .tierhead h2 { margin:0; } .tierhead .bl { font-size:12px; color:var(--muted); max-width:64ch; }
-  .yes { color:var(--up); font-weight:700; } .no { color:var(--muted); }
+  .yes { color:var(--ink-up, var(--up)); font-weight:700; } .no { color:var(--muted); }
   .grave { border-left:3px solid var(--down); }
   .win   { border-left:3px solid var(--up); }
   details.method summary { cursor:pointer; font-weight:600; }
@@ -118,9 +118,9 @@
   .fable-chip.tested-accrue { background:color-mix(in srgb,#aaf 20%,transparent); color:#33a; border:1px solid #55c; }
   /* A1: DSR provenance chips */
   .dsr-prov { font-size:10px; padding:1px 6px; border-radius:6px; margin-left:4px; font-weight:600; vertical-align:middle; }
-  .dsr-prov.ledger   { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 50%,var(--line)); }
+  .dsr-prov.ledger   { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--ink-up, var(--up)); border:1px solid color-mix(in srgb,var(--up) 50%,var(--line)); }
   .dsr-prov.frozen   { background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); border:1px solid var(--line); }
-  .dsr-prov.expired  { background:color-mix(in srgb,var(--down) 20%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 50%,var(--line)); }
+  .dsr-prov.expired  { background:color-mix(in srgb,var(--down) 20%,transparent); color:var(--ink-down, var(--down)); border:1px solid color-mix(in srgb,var(--down) 50%,var(--line)); }
   /* A5: expandable row */
   .row-expand-btn { cursor:pointer; background:none; border:none; color:var(--muted);
     font-size:13px; padding:0 3px; vertical-align:middle; line-height:1; }
@@ -131,7 +131,7 @@
   .row-detail .why-full { font-size:12.5px; line-height:1.5; max-width:80ch; }
   .row-detail .meta-row { font-size:11.5px; color:var(--muted); margin-top:6px; }
   .anchor-link { color:var(--muted); font-size:11px; text-decoration:none; margin-left:4px; opacity:0.5; }
-  .anchor-link:hover { opacity:1; color:var(--link); }
+  .anchor-link:hover { opacity:1; color:var(--ink-link, var(--link)); }
   /* A9: warning banner */
   .warn-banner { background:color-mix(in srgb,#f80 15%,var(--panel)); border:1px solid #c70;
     border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12.5px; color:#a50; }
@@ -147,7 +147,7 @@
   .cross-link-chip { display:inline-flex; align-items:center; gap:6px; font-size:11.5px;
     padding:3px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel2);
     color:var(--muted); margin-left:auto; }
-  .cross-link-chip a { color:var(--link); }
+  .cross-link-chip a { color:var(--ink-link, var(--link)); }
   /* Frontier count badge */
   .frontier-count { font-size:11px; color:var(--muted); margin-top:4px; }
   /* D2: Signal Foundry machine-lane panel */
@@ -162,7 +162,7 @@
   .sf-lane-chip { font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:8px;
     border:1px solid var(--line); margin-left:8px; }
   .sf-lane-armed  { background:color-mix(in srgb,var(--up) 15%,transparent);
-    color:var(--up); border-color:color-mix(in srgb,var(--up) 50%,var(--line)); }
+    color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 50%,var(--line)); }
   .sf-lane-paused { background:color-mix(in srgb,var(--muted) 12%,transparent);
     color:var(--muted); }
   /* SF verdict chips */

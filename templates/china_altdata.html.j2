@@ -94,11 +94,11 @@
   /* ---- small tinted chips ---- */
   .cad-chip{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 9px;
     border-radius:100px; white-space:nowrap; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
-  .cad-chip.c-up{ color:var(--up); border-color:color-mix(in srgb,var(--up) 30%,transparent); background:color-mix(in srgb,var(--up) 11%,transparent); }
-  .cad-chip.c-down{ color:var(--down); border-color:color-mix(in srgb,var(--down) 30%,transparent); background:color-mix(in srgb,var(--down) 11%,transparent); }
-  .cad-chip.c-warn{ color:var(--warn); border-color:color-mix(in srgb,var(--warn) 32%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
+  .cad-chip.c-up{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 30%,transparent); background:color-mix(in srgb,var(--up) 11%,transparent); }
+  .cad-chip.c-down{ color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 30%,transparent); background:color-mix(in srgb,var(--down) 11%,transparent); }
+  .cad-chip.c-warn{ color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 32%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
   .cad-chip.c-gold{ color:var(--cad-gold); border-color:color-mix(in srgb,var(--cad-gold) 40%,transparent); background:color-mix(in srgb,var(--cad-gold) 12%,transparent); }
-  .cad-chip.c-info{ color:var(--info); border-color:color-mix(in srgb,var(--info) 30%,transparent); background:color-mix(in srgb,var(--info) 11%,transparent); }
+  .cad-chip.c-info{ color:var(--ink-info, var(--info)); border-color:color-mix(in srgb,var(--info) 30%,transparent); background:color-mix(in srgb,var(--info) 11%,transparent); }
 
   /* ---- jump nav (homepage index) ---- */
   .cad-jump{ display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 2px; }
@@ -137,7 +137,7 @@
   .cvband{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; white-space:nowrap;
     background:color-mix(in srgb,var(--cb,var(--muted)) 13%,transparent); color:color-mix(in srgb,var(--cb,var(--muted)) 92%,var(--text)); }
   .cvband.cv-pos{ --cb:var(--up); } .cvband.cv-neg{ --cb:var(--down); }
-  .flag{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:var(--warn);
+  .flag{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:var(--ink-warn, var(--warn));
     background:color-mix(in srgb,var(--warn) 13%,transparent); white-space:nowrap; }
 
   /* ---- the SEAL-STRIP signature (7 independent feeds, lit by contribution sign) ---- */
@@ -160,15 +160,15 @@
   .cad-tier{ background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:13px 15px; }
   .cad-tier h3{ margin:0 0 9px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
   .cad-tier .tbadge{ font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
-  .t-scored .tbadge{ color:var(--up); background:color-mix(in srgb,var(--up) 15%,transparent); }
-  .t-confirmer .tbadge{ color:var(--info); background:color-mix(in srgb,var(--info) 15%,transparent); }
+  .t-scored .tbadge{ color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 15%,transparent); }
+  .t-confirmer .tbadge{ color:var(--ink-info, var(--info)); background:color-mix(in srgb,var(--info) 15%,transparent); }
   .t-display .tbadge{ color:var(--muted); background:var(--panel2); }
-  .t-pending .tbadge{ color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,transparent); }
-  .t-killed .tbadge{ color:var(--down); background:color-mix(in srgb,var(--down) 14%,transparent); }
+  .t-pending .tbadge{ color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 15%,transparent); }
+  .t-killed .tbadge{ color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 14%,transparent); }
   .cad-tier .row{ padding:7px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent); }
   .cad-tier .row:last-child{ border-bottom:0; }
   .cad-tier .nm{ font-weight:600; font-size:12.5px; }
-  .cad-tier .wired{ font:10px/1 var(--font-mono,monospace); color:var(--link); }
+  .cad-tier .wired{ font:10px/1 var(--font-mono,monospace); color:var(--ink-link, var(--link)); }
   .cad-tier .nt{ font-size:11px; color:var(--muted); line-height:1.5; margin-top:2px; }
 
   .cad-callout{ border-radius:13px; padding:12px 15px; margin:14px 0; border:1px solid var(--line);

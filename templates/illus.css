@@ -9,7 +9,7 @@
   width: 100%;
   height: var(--ilx-h, 190px);
   margin: 0;
-  color: var(--info);                 /* fallback accent; overridden inline per chart */
+  color: var(--ink-info, var(--info));                 /* fallback accent; overridden inline per chart */
   font-variant-numeric: tabular-nums;
 }
 .ilx svg {

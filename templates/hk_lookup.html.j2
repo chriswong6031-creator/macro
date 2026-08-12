@@ -10,7 +10,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HK analyzer — cycle &amp; momentum</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -77,15 +77,15 @@
   .mtf b { color:var(--text); }
   .gb-tilt { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
              border-radius:9px; border:1px solid var(--line); white-space:nowrap; }
-  .gb-favored { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+  .gb-favored { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up));
                 border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .gb-exposed { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
+  .gb-exposed { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--ink-down, var(--down));
                 border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .gb-lag,.gb-neutral { background:var(--panel2,var(--panel)); color:var(--muted); }
   /* ---- fundamentals panel (descriptive context) --------------------------- */
   .fnd-arch { display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px;
               border-radius:8px; background:color-mix(in srgb,var(--link) 14%,var(--panel2));
-              color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
+              color:var(--ink-link, var(--link)); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
   .fnd-desc { font-size:13px; color:var(--text); margin:9px 0 4px; line-height:1.55; }
   .fnd-meta { font-size:12px; color:var(--muted); margin:2px 0 4px; line-height:1.5; }
   .fnd-grid { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
@@ -101,10 +101,10 @@
   .fnd-score { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700;
                padding:3px 9px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); margin-right:8px; }
   .fnd-score b { font-size:14px; }
-  .fnd-score.good { color:var(--up); border-color:color-mix(in srgb,var(--up) 34%,var(--line)); }
-  .fnd-score.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 38%,var(--line)); }
-  .fnd-score.bad { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
-  .cagr-up { color:var(--up); } .cagr-dn { color:var(--down); }
+  .fnd-score.good { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 34%,var(--line)); }
+  .fnd-score.warn { color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 38%,var(--line)); }
+  .fnd-score.bad { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cagr-up { color:var(--ink-up, var(--up)); } .cagr-dn { color:var(--ink-down, var(--down)); }
   /* analyst-consensus bar (HK-unique) */
   .cons-bar { display:flex; height:8px; border-radius:5px; overflow:hidden; margin:6px 0 4px; background:var(--panel2); }
   .cons-bar i { display:block; } .cons-buy { background:var(--up); } .cons-hold { background:var(--muted); } .cons-sell { background:var(--down); }
@@ -116,11 +116,11 @@
   .cv-head { display:flex; align-items:center; gap:11px; }
   .cv-score { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; min-width:48px;
               text-align:center; padding:3px 9px; border-radius:10px; border:1px solid var(--line); }
-  .cv-score.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+  .cv-score.band-high { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
                         background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
   .cv-score.band-constructive { color:var(--g-cold); border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
   .cv-score.band-neutral { color:var(--muted); }
-  .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cv-score.band-low { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
   .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
   .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
   .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
@@ -132,14 +132,14 @@
   .cax .caxv { font-weight:700; font-variant-numeric:tabular-nums; }
   .cv-cau { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
-                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+                  color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
   .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
   .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
              border-radius:11px; font-size:12.5px; font-weight:700; cursor:help;
              border:1px solid var(--line); white-space:nowrap; }
   .eqbadge .eqg { font-weight:500; opacity:.8; }
-  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
   #result { display:none; }
   /* ---- hover tooltips (the ? help icons) — section prose condensed into hover boxes ---- */
@@ -173,7 +173,7 @@
   #r_summary { display:none; }
   #r_cal tr.cal-cur td { background:color-mix(in srgb, var(--warn) 13%, transparent); }
   #r_cal tr.cal-cur td:first-child { box-shadow:inset 3px 0 var(--warn); font-weight:700; }
-  .cal-here { color:var(--warn); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
+  .cal-here { color:var(--ink-warn, var(--warn)); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
 {% include "_stock_decision.css.j2" %}
 </style>
 </head>

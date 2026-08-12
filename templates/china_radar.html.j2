@@ -21,7 +21,7 @@
 
 {% block base_css %}
   .rd-hero { max-width:1060px; margin:18px auto 0; }
-  .rd-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .rd-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-link, var(--link)); font-weight:600; margin:0 0 8px; }
   .rd-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
   html[data-lang="zh"] .rd-hero h1 { letter-spacing:0; }
   .rd-hero .lens { font-size:12px; color:var(--muted); }
@@ -44,7 +44,7 @@
   .dcard .det { font-size:12px; color:var(--muted); margin:5px 0; }
   .dcard .rs { font-size:12px; font-variant-numeric:tabular-nums; }
   .dcard .hyp { font-size:12.5px; line-height:1.5; border-left:2px solid var(--link); padding-left:9px; margin-top:8px; opacity:.92; }
-  .dcard .cvx { margin-left:auto; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--link); }
+  .dcard .cvx { margin-left:auto; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--ink-link, var(--link)); }
   .dcard .cand { font-size:11.5px; color:var(--muted); margin-top:7px; }
   .dcard .hd { justify-content:flex-start; }
   .strength { height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; margin-top:8px; }

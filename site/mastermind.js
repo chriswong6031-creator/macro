@@ -77,7 +77,7 @@
       s += '<polyline points="' + pathFor(navs) + '" fill="none" stroke="var(--link)" stroke-width="2"/>';
     s += "</svg>";
     var L = tt();
-    s += '<div class="spark-leg"><span style="color:var(--link)">▬ ' + esc(L.book) +
+    s += '<div class="spark-leg"><span style="color:var(--ink-link, var(--link))">▬ ' + esc(L.book) +
          '</span> &nbsp; <span style="color:var(--muted)">┄ ' + esc(benchSym || L.bench) + "</span></div>";
     return '<div class="sparkwrap">' + s + "</div>";
   }

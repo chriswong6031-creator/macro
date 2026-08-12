@@ -162,13 +162,13 @@
   .ab-chip--wrap { white-space: normal; line-height: 1.3; flex: 0 1 auto; min-width: 0; max-width: 100%; }
   /* gate-override ✓ pill */
   .ab-chip--gate { background: color-mix(in srgb, var(--up) 10%, transparent);
-                   color: var(--up); border: 1px solid color-mix(in srgb, var(--up) 22%, transparent);
+                   color: var(--ink-up, var(--up)); border: 1px solid color-mix(in srgb, var(--up) 22%, transparent);
                    font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
                    line-height: 15px; flex: none; cursor: help; }
   /* theme item star/check/lens glyphs */
   .ai-book { flex: none; margin-left: 4px; font-size: 10px; font-weight: 800; cursor: help;
-             color: var(--up); white-space: nowrap; }
-  .ai-val { flex: none; margin-left: 4px; font-size: 10.5px; font-weight: 800; color: var(--up); cursor: help; }
+             color: var(--ink-up, var(--up)); white-space: nowrap; }
+  .ai-val { flex: none; margin-left: 4px; font-size: 10.5px; font-weight: 800; color: var(--ink-up, var(--up)); cursor: help; }
   .ai-lens { flex: none; margin-left: 4px; font-size: 11px; color: var(--muted); cursor: help; }
   /* theme item name */
   .actitem.ai-theme .act-row-name { font-weight: 700; }

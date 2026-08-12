@@ -26,9 +26,9 @@
     '#nr-scorecard .nrc-chips{margin:8px 0 6px}' +
     '#nr-scorecard .nrc-chip{display:inline-block;font-size:11px;padding:1px 7px;margin:0 4px 4px 0;border-radius:7px;' +
       'background:var(--panel2);border:1px solid var(--line);color:var(--muted)}' +
-    '#nr-scorecard .nrc-chip.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:var(--up)}' +
-    '#nr-scorecard .nrc-chip.hot{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:var(--down)}' +
-    /* zh 红涨绿跌: ok=bullish durable chip bg/border swap green→red tint; color:var(--up) auto-flips via theme.css */
+    '#nr-scorecard .nrc-chip.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:var(--ink-up, var(--up))}' +
+    '#nr-scorecard .nrc-chip.hot{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:var(--ink-down, var(--down))}' +
+    /* zh 红涨绿跌: ok=bullish durable chip bg/border swap green→red tint; color:var(--ink-up, var(--up)) auto-flips via theme.css */
     'html[data-lang="zh"] #nr-scorecard .nrc-chip.ok{background:rgba(224,85,85,.12);border-color:rgba(224,85,85,.4)}' +
     '#nr-scorecard .nrc-chip.dom{background:rgba(124,92,255,.12);border-color:rgba(124,92,255,.4)}' +
     '#nr-scorecard .nrc-read{font-size:12.5px;color:var(--muted);line-height:1.5;margin:6px 0 0;max-width:70ch}' +

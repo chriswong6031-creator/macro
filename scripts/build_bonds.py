@@ -39,7 +39,7 @@ log = logging.getLogger("build_bonds")
 # shared Glassnode light palette (same as build_forex for a consistent product)
 C = {
     "blue": "#285FFF", "indigo": "#4559DC", "ink": "#0B1733", "text": "#344054",
-    "muted": "#6F6F6F", "faint": "#A0A0A0", "red": "#D30B0B", "redfill": "#FEB5B5",
+    "muted": "#4C5A6C", "faint": "#5F6A7A", "red": "#D30B0B", "redfill": "#FEB5B5",
     "amber": "#F5AD42", "green": "#1a7f43", "grid": "#EAECF0", "card": "#FFFFFF",
     "bg": "#F7F8FA", "gold": "#C8A53B", "teal": "#1F8A70",
 }

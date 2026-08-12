@@ -24,7 +24,7 @@
   .ci-wrap { max-width:1060px; margin:0 auto; padding:0 0 60px; }
   /* ── hero ── */
   .ci-hero { max-width:1060px; margin:18px auto 0; }
-  .ci-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .ci-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-link, var(--link)); font-weight:600; margin:0 0 8px; }
   .ci-hero h1 { font-size:30px; margin:0 0 8px; letter-spacing:-.01em; }
   html[data-lang="zh"] .ci-hero h1 { letter-spacing:0; }
   .ci-hero .lens { font-size:12px; color:var(--muted); }
@@ -36,7 +36,7 @@
     border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
   .cmdbar .mc b { color:var(--text); font-weight:700; }
   .cmdbar .mc span { color:var(--muted); }
-  .cmdbar .mc.hot { border-color:color-mix(in srgb,var(--link) 50%,var(--line)); color:var(--link); }
+  .cmdbar .mc.hot { border-color:color-mix(in srgb,var(--link) 50%,var(--line)); color:var(--ink-link, var(--link)); }
   .cmdbar .mc.warn { border-color:color-mix(in srgb,#e0973a 50%,var(--line)); color:#e0973a; }
   .mode-badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:999px;
     background:color-mix(in srgb,var(--muted) 15%,transparent);
@@ -62,8 +62,8 @@
     border:1px solid; white-space:nowrap; vertical-align:middle; }
   .ql-chip-ungraded { background:color-mix(in srgb,var(--muted) 12%,transparent); color:var(--muted); border-color:color-mix(in srgb,var(--muted) 28%,transparent); }
   .ql-chip-accruing { background:color-mix(in srgb,#e0973a 14%,transparent); color:#e0973a; border-color:color-mix(in srgb,#e0973a 35%,transparent); }
-  .ql-chip-graded-pos { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
-  .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
+  .ql-chip-graded-pos { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
+  .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
   /* ── section headers ── */
   h2.sec { font-size:18px; margin:26px 0 8px; border-top:1px solid var(--line); padding-top:16px; display:flex; align-items:baseline; gap:9px; }
   /* ── what matters / changed ── */
@@ -86,7 +86,7 @@
   .pp-gloss { font-size:11px; color:var(--muted); margin-top:2px; }
   .pp-meta { font-size:10px; color:var(--muted); margin-left:auto; white-space:nowrap; }
   .pp-cold { font-size:11px; color:var(--muted); padding:6px 0; font-style:italic; }
-  .pp-more > summary { cursor:pointer; font-size:11px; color:var(--link); margin-top:6px; list-style:none; }
+  .pp-more > summary { cursor:pointer; font-size:11px; color:var(--ink-link, var(--link)); margin-top:6px; list-style:none; }
   .pp-more > summary::-webkit-details-marker { display:none; }
   /* ── narrative divergence chip ── */
   .nd-chip { display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin:12px 0; font-size:13px; flex-wrap:wrap; }
@@ -113,7 +113,7 @@
   .b-elevated{color:#5b8def;background:color-mix(in srgb,#5b8def 13%,transparent)}
   .b-moderate,.b-low,.b-none{color:var(--muted);background:var(--panel2)}
   /* ── surfaces/flags ── */
-  .surf { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--link); margin-right:3px; }
+  .surf { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--ink-link, var(--link)); margin-right:3px; }
   .sgn-pos{color:#1f9a55} .sgn-neg{color:#d23f3f}
   html[data-lang="zh"] .sgn-pos{color:#d23f3f} html[data-lang="zh"] .sgn-neg{color:#1f9a55}
   .flags { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
@@ -135,7 +135,7 @@
   /* ── misc ── */
   .digest { white-space:pre-wrap; font:12px/1.55 ui-monospace,Menlo,monospace; background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--link); border-radius:12px; padding:13px 15px; margin:12px 0; }
   .xmit { border-radius:12px; padding:13px 16px; margin:16px 0; border:1px solid var(--line); background:var(--panel2); font-size:13px; line-height:1.6; }
-  .xmit code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--link); }
+  .xmit code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--ink-link, var(--link)); }
   .strip { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
   .sx { font-size:11.5px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
   .sx b { color:#e0973a; }
@@ -152,7 +152,7 @@
   table.cmd-tbl th { text-align:left; padding:6px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); white-space:nowrap; }
   table.cmd-tbl td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:middle; }
   table.cmd-tbl tr:last-child td { border-bottom:none; }
-  .cmd-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--link); font-weight:700; white-space:nowrap; }
+  .cmd-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--ink-link, var(--link)); font-weight:700; white-space:nowrap; }
   .cmd-name { font-size:12px; font-weight:600; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .cmd-desk-dots { display:flex; gap:3px; align-items:center; }
   .cmd-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
@@ -173,17 +173,17 @@
   .edge-bar > i { display:block; height:100%; background:var(--link); border-radius:3px; }
   .opp-score { font-weight:800; font-variant-numeric:tabular-nums; font-size:13px; }
   .rs-chip { font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; white-space:nowrap; }
-  .rs-pos { color:var(--up); background:color-mix(in srgb,var(--up) 12%,transparent); }
-  .rs-neg { color:var(--down); background:color-mix(in srgb,var(--down) 12%,transparent); }
+  .rs-pos { color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 12%,transparent); }
+  .rs-neg { color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 12%,transparent); }
   .rs-neu { color:var(--muted); background:var(--panel2); }
   .cmd-read { font-size:11px; color:var(--muted); max-width:240px; line-height:1.4; }
   .cmd-fals { font-size:10px; color:#e0973a; margin-top:2px; }
-  .cmd-expander { font-size:11.5px; color:var(--link); cursor:pointer; margin-top:8px; display:inline-block; }
+  .cmd-expander { font-size:11.5px; color:var(--ink-link, var(--link)); cursor:pointer; margin-top:8px; display:inline-block; }
   /* ── discovery queue ── */
   .disc-queue { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; margin:12px 0; }
   .disc-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
   .disc-card.off-desk { border-left:3px solid #8b5cf6; }
-  .disc-card .disc-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--link); font-weight:700; }
+  .disc-card .disc-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--ink-link, var(--link)); font-weight:700; }
   .disc-card .disc-name { font-size:12.5px; font-weight:700; margin:3px 0; }
   .disc-card .disc-reason { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
   .disc-card .disc-meta { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; align-items:center; }
@@ -210,7 +210,7 @@
   a.scard .v { font-size:20px; font-weight:800; margin-top:5px; }
   a.scard .s { font-size:11.5px; color:var(--muted); margin-top:3px; }
   a.scard .age { font-size:10px; color:var(--muted); margin-top:6px; }
-  a.scard .go { font-size:11px; color:var(--link); margin-top:7px; }
+  a.scard .go { font-size:11px; color:var(--ink-link, var(--link)); margin-top:7px; }
   /* ── suite directory ── */
   .suite { margin:14px 0 20px; }
   .suite-group { margin-bottom:18px; }
@@ -316,7 +316,7 @@
         · <b>{{ _pp.n_events_recent }}</b> {{ t('events','条') }}
       </span>
       <span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · salience-only</span><span class="l-zh">累积中 · 仅显著性</span></span>
-      <a href="china_policy_watch.html" style="font-size:11px;color:var(--link);text-decoration:none;margin-left:auto">{{ t('See policy watch →','查看政策观察 →') }}</a>
+      <a href="china_policy_watch.html" style="font-size:11px;color:var(--ink-link, var(--link));text-decoration:none;margin-left:auto">{{ t('See policy watch →','查看政策观察 →') }}</a>
     </div>
     {%- if _pp.cold_start_organs %}
     <p class="pp-cold">{{ t('Cold-start feeds (no prior window yet — cannot detect APPEARED/DROPPED):','刚启动的数据源（还没有历史窗口，无法判断新增或消失）：') }} {{ _pp.cold_start_organs | join(', ') }}</p>
@@ -713,7 +713,7 @@
         <span class="lane-chip">{{ t((_LANE_EN.get(c.source) or c.source), (_LANE_ZH.get(c.source) or c.source)) }}</span>
         {%- if c.experimental %}<span class="exp-chip">{{ t('Experimental','实验性') }}</span>{%- endif %}
         {%- if c.off_desk %}<span class="offdesk-chip">{{ t('Off-desk','离板块') }}</span>{%- endif %}
-        {%- if c.venue %}<span class="lane-chip" style="color:var(--link)">{{ c.venue }}</span>{%- endif %}
+        {%- if c.venue %}<span class="lane-chip" style="color:var(--ink-link, var(--link))">{{ c.venue }}</span>{%- endif %}
       </div>
       <div class="disc-score-bar" style="width:{{ (c.disc_score or 0)*100 }}%"></div>
       {%- if c.experimental %}
@@ -764,7 +764,7 @@
     {%- endif %}
     {%- if _an.analogs %}
     <details style="margin-top:8px">
-      <summary style="cursor:pointer;font-size:11.5px;color:var(--link)">{{ t('Analog periods','类比区间') }} ({{ _an.n_analogs or 0 }}) ▸</summary>
+      <summary style="cursor:pointer;font-size:11.5px;color:var(--ink-link, var(--link))">{{ t('Analog periods','类比区间') }} ({{ _an.n_analogs or 0 }}) ▸</summary>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px">
       {%- for a in _an.analogs[:12] %}
         <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">

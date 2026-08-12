@@ -9,7 +9,7 @@
 <title>Research Vault — Institutional Desk Research | MastermindX</title>
 {% set seo_title = "Research Vault — Institutional Desk Research | MastermindX" %}{% set seo_desc = "A gated vault of third-party institutional research — buy-side and sell-side desk reports, indexed and readable in one place. Reference only, not investment advice." %}{% set seo_path = "research_vault.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}document.documentElement.classList.add('rv-awaiting-live');window.__rvShellTimer=setTimeout(function(){var r=document.documentElement;r.classList.remove('rv-awaiting-live');var en=document.getElementById('rv-status-en'),zh=document.getElementById('rv-status-zh'),ven=document.getElementById('v-en-lead'),vzh=document.getElementById('v-zh-lead'),sh=document.getElementById('feed-shell');if(en)en.textContent='Saved snapshot · live refresh delayed';if(zh)zh.textContent='已保存快照 · 实时更新延迟';if(ven)ven.textContent='Showing the latest saved institutional reports.';if(vzh)vzh.textContent='正在显示最近保存的机构研报。';if(sh)sh.setAttribute('aria-busy','false');},15000);</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}document.documentElement.classList.add('rv-awaiting-live');window.__rvShellTimer=setTimeout(function(){var r=document.documentElement;r.classList.remove('rv-awaiting-live');var en=document.getElementById('rv-status-en'),zh=document.getElementById('rv-status-zh'),ven=document.getElementById('v-en-lead'),vzh=document.getElementById('v-zh-lead'),sh=document.getElementById('feed-shell');if(en)en.textContent='Saved snapshot · live refresh delayed';if(zh)zh.textContent='已保存快照 · 实时更新延迟';if(ven)ven.textContent='Showing the latest saved institutional reports.';if(vzh)vzh.textContent='正在显示最近保存的机构研报。';if(sh)sh.setAttribute('aria-busy','false');},15000);</script>
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="onboard.css">
 <style>
@@ -543,7 +543,7 @@ html[data-theme="light"] .vstage{ background:radial-gradient(600px 400px at 50% 
 .vdl-meter{ width:74px; height:6px; border-radius:6px; background:color-mix(in srgb,var(--text) 10%,transparent); overflow:hidden; flex:none; }
 .vdl-meter i{ display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,var(--rv),var(--rv-2)); transition:width .3s ease; }
 .vdl-txt b{ font-weight:800; color:var(--text); font-family:var(--num); } .vdl-txt{ color:var(--muted); }
-.vdl-txt.warnc b{ color:var(--warn); }
+.vdl-txt.warnc b{ color:var(--ink-warn, var(--warn)); }
 .btn.block{ padding:9px 16px; }
 .btn.primary:disabled{ opacity:.5; cursor:default; filter:none; box-shadow:none; background:color-mix(in srgb,var(--panel2) 55%,transparent); border:1px solid var(--mx5-glass-border); color:var(--muted); }
 .btn.upgrade{ background:linear-gradient(120deg,var(--gold),color-mix(in srgb,var(--gold) 60%,var(--rv-2))); border:0; color:#241a05; }

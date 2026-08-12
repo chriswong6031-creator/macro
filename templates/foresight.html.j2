@@ -115,7 +115,7 @@
                    animation:fxBreathe 2.8s ease-in-out infinite; flex:none; }
   .fx-mode{ display:inline-flex; align-items:center; gap:7px; margin-top:11px; padding:7px 14px; border-radius:10px;
             font-size:12.5px; font-weight:600; line-height:1.4;
-            color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);
+            color:var(--ink-warn, var(--warn)); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);
             background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
   .fx-mode .fxdot{ background:var(--warn); }
 
@@ -173,7 +173,7 @@
   .fx-gate-ic{ font-size:17px; }
   .fx-gate-k{ font-size:10.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
   .fx-gate-v{ font-size:15px; font-weight:800; color:var(--text); }
-  .fx-gate.open .fx-gate-v{ color:var(--up); }
+  .fx-gate.open .fx-gate-v{ color:var(--ink-up, var(--up)); }
   .fx-gate-d{ font-size:12px; color:var(--muted); flex:1 1 260px; line-height:1.4; }
 
   /* ---------- section chrome (shared, matches transmission) ---------- */
@@ -203,7 +203,7 @@
            background:color-mix(in srgb,var(--fx-dawn1) 11%,transparent); text-transform:capitalize; }
   .fx-heat-meta{ font-size:11px; color:var(--muted); line-height:1.4; }
   .fx-heat-meta b{ color:var(--text); font-weight:700; }
-  .fx-heat-conf{ color:var(--up); font-weight:700; }
+  .fx-heat-conf{ color:var(--ink-up, var(--up)); font-weight:700; }
   .fx-meta-card{ grid-column:1/-1; border-left:4px solid var(--warn); background:color-mix(in srgb,var(--warn) 6%,var(--panel)); }
   .fx-meta-card::before{ background:var(--warn); }
   .fx-empty{ border:1px dashed var(--line); border-radius:14px; background:var(--panel); padding:16px 18px;
@@ -246,14 +246,14 @@
   .fx-chips{ display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-top:11px; }
   .fx-chip{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:5px 11px;
             border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); cursor:default; }
-  .fx-chip.entry.ready{ color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,transparent);
+  .fx-chip.entry.ready{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 38%,transparent);
                         background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
-  .fx-chip.size-add,.fx-chip.size-core{ color:var(--up); border-color:color-mix(in srgb,var(--up) 34%,transparent); background:color-mix(in srgb,var(--up) 9%,var(--panel)); }
-  .fx-chip.size-starter{ color:var(--info); border-color:color-mix(in srgb,var(--info) 34%,transparent); background:color-mix(in srgb,var(--info) 9%,var(--panel)); }
-  .fx-chip.size-trim,.fx-chip.size-exit,.fx-chip.exit{ color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,transparent); background:color-mix(in srgb,var(--down) 10%,var(--panel)); }
-  .fx-chip.conf.lit{ color:var(--info); border-color:color-mix(in srgb,var(--info) 34%,transparent); background:color-mix(in srgb,var(--info) 9%,var(--panel)); }
-  .fx-chip.feed-warn{ color:var(--warn); border-color:color-mix(in srgb,var(--warn) 36%,transparent); background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
-  .fx-chip.feed-cool{ color:var(--down); border-color:color-mix(in srgb,var(--down) 36%,transparent); background:color-mix(in srgb,var(--down) 9%,var(--panel)); }
+  .fx-chip.size-add,.fx-chip.size-core{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 34%,transparent); background:color-mix(in srgb,var(--up) 9%,var(--panel)); }
+  .fx-chip.size-starter{ color:var(--ink-info, var(--info)); border-color:color-mix(in srgb,var(--info) 34%,transparent); background:color-mix(in srgb,var(--info) 9%,var(--panel)); }
+  .fx-chip.size-trim,.fx-chip.size-exit,.fx-chip.exit{ color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 38%,transparent); background:color-mix(in srgb,var(--down) 10%,var(--panel)); }
+  .fx-chip.conf.lit{ color:var(--ink-info, var(--info)); border-color:color-mix(in srgb,var(--info) 34%,transparent); background:color-mix(in srgb,var(--info) 9%,var(--panel)); }
+  .fx-chip.feed-warn{ color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 36%,transparent); background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
+  .fx-chip.feed-cool{ color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 36%,transparent); background:color-mix(in srgb,var(--down) 9%,var(--panel)); }
   .fx-cap{ font-size:10.5px; color:var(--muted); margin-top:8px; font-style:italic; }
 
   /* ---------- inline stance legend (themes header) ---------- */
@@ -296,7 +296,7 @@
   .fx-cand-h{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
   .fx-cand-nm{ font-size:14px; font-weight:800; color:var(--text); line-height:1.2; }
   .fx-cand-sic{ font-size:10px; font-weight:700; color:var(--muted); }
-  .fx-cand-vel{ font-size:10.5px; font-weight:800; color:var(--up); margin-left:auto; }
+  .fx-cand-vel{ font-size:10.5px; font-weight:800; color:var(--ink-up, var(--up)); margin-left:auto; }
   .fx-cand-meta{ font-size:11.5px; color:var(--muted); margin:7px 0; } .fx-cand-meta b{ color:var(--fx-dawn1); }
   .fx-cand-tk{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:7px; }
   .fx-tk{ font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:6px; background:var(--panel2);
@@ -328,13 +328,13 @@
   .fx-ai-conf{ font-size:8.5px; font-weight:800; text-transform:uppercase; padding:1px 6px; border-radius:5px;
                background:color-mix(in srgb,var(--cc,var(--muted)) 16%,transparent); color:var(--cc,var(--muted)); }
   .c-high{ --cc:var(--up); } .c-medium{ --cc:var(--info); } .c-low{ --cc:var(--muted); }
-  .fx-ai-no{ font-size:11.5px; color:var(--info); margin-top:3px; } .fx-ai-kill{ font-size:10.5px; color:var(--muted); margin-top:4px; }
+  .fx-ai-no{ font-size:11.5px; color:var(--ink-info, var(--info)); margin-top:3px; } .fx-ai-kill{ font-size:10.5px; color:var(--muted); margin-top:4px; }
   .fx-kc{ display:inline-block; font-size:10px; padding:1px 6px; margin:1px 4px 1px 0; border-radius:5px; background:var(--panel2); border:1px solid var(--line); }
   .fx-mon{ display:inline-flex; align-items:center; gap:9px; flex-wrap:wrap; padding:8px 13px; border-radius:10px;
            border:1px solid var(--line); background:var(--panel2); font-size:12px; margin:2px 0 10px; }
   .fx-mon.broken{ border-color:color-mix(in srgb,var(--down) 40%,transparent); background:color-mix(in srgb,var(--down) 8%,var(--panel)); }
   .fx-mon.weak{ border-color:color-mix(in srgb,var(--warn) 40%,transparent); background:color-mix(in srgb,var(--warn) 8%,var(--panel)); }
-  .fx-mon b.mb{ color:var(--down); } .fx-mon b.mw{ color:var(--warn); } .fx-mon b.mo{ color:var(--up); }
+  .fx-mon b.mb{ color:var(--ink-down, var(--down)); } .fx-mon b.mw{ color:var(--ink-warn, var(--warn)); } .fx-mon b.mo{ color:var(--ink-up, var(--up)); }
   /* divergence mini-cards */
   .fx-div-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin:6px 0 10px; }
   .fx-div-card{ border:1px solid var(--line); border-left:4px solid var(--c,var(--line)); border-radius:11px; padding:11px 12px;
@@ -342,7 +342,7 @@
   .q-hidden_opportunity{ --c:var(--up); } .q-confirmed{ --c:var(--info); } .q-hype_risk{ --c:var(--down); } .q-ignore{ opacity:.5; }
   .fx-div-nm{ font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .fx-div-q{ font-size:12.5px; font-weight:800; color:var(--c,var(--text)); margin:3px 0 6px; }
-  .fx-div-exp{ font-size:9.5px; font-weight:800; color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,transparent);
+  .fx-div-exp{ font-size:9.5px; font-weight:800; color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 12%,transparent);
                border-radius:5px; padding:2px 6px; margin-bottom:5px; display:inline-block; }
   .fx-div-bars{ display:flex; flex-direction:column; gap:4px; }
   .fx-div-br{ display:flex; align-items:center; gap:6px; font-size:9.5px; color:var(--muted); }
@@ -363,13 +363,13 @@
   .fx-rstage.fx-t-RE-RATING{ --st:var(--fx-late); } .fx-rstage.fx-t-GLUT-RISK{ --st:var(--fx-fade); }
   .fx-rstage.fx-t-WATCH,.fx-rstage.fx-t-UNKNOWN{ --st:var(--muted); }
   tr.pol-urgent td{ background:color-mix(in srgb,var(--down) 7%,transparent); } tr.pol-soon td{ background:color-mix(in srgb,var(--warn) 5%,transparent); }
-  .fx-scar{ font-weight:800; color:var(--warn); cursor:help; }
+  .fx-scar{ font-weight:800; color:var(--ink-warn, var(--warn)); cursor:help; }
   /* health strip (demoted to study) */
   .fx-hchips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; }
   .fx-hchip{ display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:700; padding:3px 9px; border-radius:7px;
              border:1px solid var(--line); background:var(--panel2); color:var(--muted); cursor:help; }
-  .fx-hchip.hl-LIVE{ color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
-  .fx-hchip.hl-PARTIAL{ color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,transparent); }
+  .fx-hchip.hl-LIVE{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
+  .fx-hchip.hl-PARTIAL{ color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 35%,transparent); }
   .fx-hchip .hdot{ width:6px; height:6px; border-radius:50%; background:currentColor; flex:none; }
 
   /* ---------- ?-help tip (CSS-only bilingual popover) ---------- */
@@ -497,7 +497,7 @@
         <span class="fx-heat-nm">{{ md.cluster_name }}</span>
         <span class="fx-heat-badge" style="--st:var(--warn)">{{ t('shared driver', '共同驱动') }}</span>
       </div>
-      <div class="fx-heat-src">{% for src in md.shared_sources %}<span class="fx-src" style="color:var(--warn);background:color-mix(in srgb,var(--warn) 11%,transparent)">{{ src.replace('_',' ') }}</span>{% endfor %}</div>
+      <div class="fx-heat-src">{% for src in md.shared_sources %}<span class="fx-src" style="color:var(--ink-warn, var(--warn));background:color-mix(in srgb,var(--warn) 11%,transparent)">{{ src.replace('_',' ') }}</span>{% endfor %}</div>
       <div class="fx-heat-meta"><b>{{ md.n_members }} {{ t('themes moving together', '个主题同步') }}</b>: {{ md.member_names|join(' · ') }}{% if md.driver_sentence %} — {{ md.driver_sentence }}{% endif %}</div>
     </div>
     {% endfor %}
@@ -720,7 +720,7 @@
       <div class="sh-body">
         <p>{{ t('Is the money moving before the story? Each theme ranked on narrative (news + filing language) vs money (federal spend + estimate breadth). Money rising while the story is quiet is the hidden-opportunity front-run.', '资金是否先于故事在动？每个主题按叙事（新闻＋备案文本）与资金（联邦支出＋预期广度）排名。资金上升而故事平静即隐藏机会的前沿卡位。') }}</p>
         {% if divergence_board.thin_cross_section %}
-        <p style="color:var(--warn)">{{ t('Cross-section too thin for reliable ranks', '跨截面样本量不足') }} (n={{ divergence_board.n_cross_section }} &lt; 6) — {{ t('accruing', '累积中') }}</p>
+        <p style="color:var(--ink-warn, var(--warn))">{{ t('Cross-section too thin for reliable ranks', '跨截面样本量不足') }} (n={{ divergence_board.n_cross_section }} &lt; 6) — {{ t('accruing', '累积中') }}</p>
         {% else %}
         <div class="fx-div-grid">
           {% for it in divergence_board['items'] %}{% if not it.excluded %}
@@ -791,8 +791,8 @@
     <details>
       <summary><span class="sh-ic">⚖️</span>{{ t('Sizing & concentration', '仓位与集中度') }}<span class="sh-hint">{{ t('display-only', '仅供展示') }}</span><span class="sh-car">▶</span></summary>
       <div class="sh-body">
-        <p>{{ cascade.sizing.effective_note }}{% if cascade.sizing.n_derisk %} · <b style="color:var(--down)">⚠ {{ cascade.sizing.n_derisk }} {{ t('forced de-risk', '强制减仓') }}</b>{% endif %}</p>
-        {% if cascade.sizing.enb_note %}<p>{{ t('Independent bets', '有效独立押注') }}: {{ cascade.sizing.enb_note }}{% if cascade.sizing.concentration_flag %} · <b style="color:var(--warn)">{{ t('concentrated', '集中') }}</b>{% endif %}</p>{% endif %}
+        <p>{{ cascade.sizing.effective_note }}{% if cascade.sizing.n_derisk %} · <b style="color:var(--ink-down, var(--down))">⚠ {{ cascade.sizing.n_derisk }} {{ t('forced de-risk', '强制减仓') }}</b>{% endif %}</p>
+        {% if cascade.sizing.enb_note %}<p>{{ t('Independent bets', '有效独立押注') }}: {{ cascade.sizing.enb_note }}{% if cascade.sizing.concentration_flag %} · <b style="color:var(--ink-warn, var(--warn))">{{ t('concentrated', '集中') }}</b>{% endif %}</p>{% endif %}
       </div>
     </details>
     {% endif %}

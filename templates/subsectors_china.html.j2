@@ -9,7 +9,7 @@
 <title>Subsector Confluence (China) — 同花顺概念</title>
 {% set seo_title = "China Subsector Confluence — Mastermind" %}{% set seo_desc = "China concept and subsector boards ranked by signal confluence — where money and momentum agree. Updated after each Asia close." %}{% set seo_path = "subsectors_china.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -38,23 +38,23 @@
   /* zh 红涨绿跌: T2 bullish tier badge swaps green→red */
   html[data-lang="zh"] .tier.T2{ background:#d04545; }
   .pill { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:9px; border:1px solid var(--line); }
-  .pill.buy{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
-  .pill.avoid{ color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
+  .pill.buy{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
+  .pill.avoid{ color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
   .pill.neutral{ color:var(--muted); }
-  .pill.tactical,.pill.late{ color:var(--orange); border-color:color-mix(in srgb,var(--orange) 45%,transparent); }
+  .pill.tactical,.pill.late{ color:var(--ink-orange, var(--orange)); border-color:color-mix(in srgb,var(--orange) 45%,transparent); }
   table.tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
   table.tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding:6px 9px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; }
   table.tbl td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
   table.tbl tr:hover td { background:var(--panel); }
   .sc-card-hidden { display:none !important; }
-  .sc-more { margin:9px 2px 0; font:600 12px/1.4 inherit; color:var(--link); background:none; border:1px solid var(--line); border-radius:8px; padding:5px 12px; cursor:pointer; transition:border-color .12s,background .12s; }
+  .sc-more { margin:9px 2px 0; font:600 12px/1.4 inherit; color:var(--ink-link, var(--link)); background:none; border:1px solid var(--line); border-radius:8px; padding:5px 12px; cursor:pointer; transition:border-color .12s,background .12s; }
   .sc-more:hover { border-color:var(--link); background:color-mix(in srgb,var(--link) 8%,transparent); }
   .tk { font-weight:700; }
   .num { font-variant-numeric:tabular-nums; }
-  .pos{ color:var(--up); } .neg{ color:var(--down); }
+  .pos{ color:var(--ink-up, var(--up)); } .neg{ color:var(--ink-down, var(--down)); }
   .scbar { display:inline-block; height:7px; border-radius:4px; background:var(--up); vertical-align:middle; }
   .relb { font-size:9.5px; font-weight:800; padding:0 5px; border-radius:6px; letter-spacing:.02em; vertical-align:middle; white-space:nowrap; }
-  .rel-low { color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 45%,transparent); }
+  .rel-low { color:var(--ink-orange, var(--orange)); border:1px solid color-mix(in srgb,var(--orange) 45%,transparent); }
   .rel-med { color:var(--muted); }
   .npc { color:var(--muted); font-size:10.5px; font-variant-numeric:tabular-nums; }
   details.thin { margin:14px 2px 0; border:1px dashed var(--line); border-radius:10px; padding:0 12px 12px; background:color-mix(in srgb,var(--orange) 4%,transparent); }

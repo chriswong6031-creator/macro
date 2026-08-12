@@ -10,7 +10,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% include "_interfonts.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Forex Vector — {{ as_of }}</title>
 {% set seo_title = 'Forex Vector — US Dollar Regime and FX Transmission | Mastermind' %}{% set seo_desc = 'An FX hub tracking the US dollar regime, major currency crosses and how currency moves transmit into equities and macro.' %}{% set seo_path = 'forex.html' %}
 {% include "_seo_head.html.j2" %}
@@ -28,7 +28,7 @@ html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsof
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 a{color:var(--blue);text-decoration:none}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--red:#e06464;--r1:#1b2740;--r2:#243352}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#828b9c;--red:#e06464;--r1:#1b2740;--r2:#243352}
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1.05fr .95fr}.cols-3{grid-template-columns:repeat(3,1fr)}
 @media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}

@@ -111,7 +111,7 @@
      Custom properties inherit from this root to every .obm-* descendant. */
   --bg:#f7f8fa; --panel:#ffffff; --panel-2:#fbfcfd;
   --hair:#eaecf0; --hair-2:#dfe3e9;
-  --ink:#1c2430; --ink-soft:#34404f; --muted:#5d6b7e; --faint:#8a95a4;
+  --ink:#1c2430; --ink-soft:#34404f; --muted:#5d6b7e; --faint:#5f6a7a;
   --blue:#285fff; --blue-ink:#1c47cc; --blue-wash:#eef2ff;
   --q-green:#1f8b41; --q-gold:#b07d05; --q-red:#c12f2f;
   --green-wash:#e9f5ec; --red-wash:#faeceb; --gold-wash:#faf3e2;
@@ -147,7 +147,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-scrim[data-obm-skin="dark"]{
   --bg:#0b0f19; --panel:#141b2b; --panel-2:#111726;
   --hair:#232d43; --hair-2:#2f3b55;
-  --ink:#e9eef8; --ink-soft:#c6cfe0; --muted:#93a1b8; --faint:#6f7e98;
+  --ink:#e9eef8; --ink-soft:#c6cfe0; --muted:#93a1b8; --faint:#828b9c;
   --blue:#5b8cff; --blue-ink:#8bb0ff; --blue-wash:rgba(91,140,255,.16);
   --q-green:#3ecf8e; --q-gold:#e3b950; --q-red:#ff7b7b;
   --green-wash:rgba(62,207,142,.13); --red-wash:rgba(255,123,123,.11); --gold-wash:rgba(227,185,80,.13);

@@ -21,13 +21,13 @@
    inbound link are stable; only the human-facing name moves. #}
 {% set seo_title = "Theme Tracker — Mastermind" %}{% set seo_desc = "The market's themes ranked by health — which stories are gaining money and breadth, which are early and under-owned, and which are losing support. Updated nightly." %}{% set seo_path = "state_of_themes.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;margin:0;padding:18px 0 60px;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1200px;margin:0 auto;padding:0 20px}
-a{color:var(--link);text-decoration:none}
+a{color:var(--ink-link, var(--link));text-decoration:none}
 :focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:6px}
 
 /* ── design tokens: stance-health + lifecycle spectrum (zh-STABLE — these are
@@ -148,7 +148,7 @@ html[data-theme="dark"]{
 .health-word b{color:var(--good)}
 .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
 .badge.opp{background:color-mix(in srgb,var(--early) 14%,var(--panel));color:var(--early)}
-.badge.crowd{background:color-mix(in srgb,var(--warn) 16%,var(--panel));color:var(--warn)}
+.badge.crowd{background:color-mix(in srgb,var(--warn) 16%,var(--panel));color:var(--ink-warn, var(--warn))}
 .badge.fired{background:color-mix(in srgb,var(--bad) 15%,var(--panel));color:var(--bad)}
 .badge.clean{background:color-mix(in srgb,var(--good) 12%,var(--panel));color:var(--good)}
 .tc-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 17px 15px}
@@ -172,7 +172,7 @@ html[data-theme="dark"]{
 .pathway-flow{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:12.5px}
 .pnode{padding:3px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel);font-weight:600;white-space:nowrap}
 .pnode.driver{border-color:color-mix(in srgb,var(--early) 40%,var(--line));color:var(--early)}
-.pnode.bottleneck{border-color:color-mix(in srgb,var(--warn) 40%,var(--line));color:var(--warn)}
+.pnode.bottleneck{border-color:color-mix(in srgb,var(--warn) 40%,var(--line));color:var(--ink-warn, var(--warn))}
 .pnode.winner{border-color:color-mix(in srgb,var(--good) 40%,var(--line));color:var(--good)}
 .pnode.avoid{border-color:color-mix(in srgb,var(--bad) 40%,var(--line));color:var(--bad)}
 .parrow{color:var(--muted);font-size:15px}
@@ -182,7 +182,7 @@ html[data-theme="dark"]{
 .fals-table tr:last-child td{border-bottom:none}
 .fals-state{font-size:10px;font-weight:800;padding:1px 6px;border-radius:5px;white-space:nowrap;text-transform:uppercase}
 .fals-state.FIRED{background:color-mix(in srgb,var(--bad) 18%,var(--panel));color:var(--bad)}
-.fals-state.ARMED{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:var(--warn)}
+.fals-state.ARMED{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:var(--ink-warn, var(--warn))}
 .fals-state.qualitative,.fals-state.data_missing{background:var(--panel2);color:var(--muted)}
 .evid-list{font-size:12px;color:var(--muted);margin:4px 0 0;padding:0;list-style:none;line-height:1.6}
 .evid-list li::before{content:"· "}

@@ -31,7 +31,7 @@
 <title>Support — MastermindX</title>
 {% set seo_title = "Support — MastermindX" %}{% set seo_desc = "Write to MastermindX support and get a real answer by email — usually within one business day. Billing, account, data and bug requests, in English or 中文." %}{% set seo_path = "support.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
 /* ── /support.html page CSS — ported from mockups/support_email/support_page.html
@@ -45,7 +45,7 @@
 body{ margin:0; padding-top:18px;            /* 18px top gap — house law, plans.html.j2 */
   background:var(--bg); color:var(--text); font:14.5px/1.55 var(--font-ui);
   -webkit-font-smoothing:antialiased; }
-a{ color:var(--link); text-decoration:none; }
+a{ color:var(--ink-link, var(--link)); text-decoration:none; }
 
 :root{
   --surface:color-mix(in srgb, var(--panel) 96%, var(--text));
@@ -111,9 +111,9 @@ html[data-lang="zh"] .slip .k{ letter-spacing:.04em;
   font-size:13.4px; line-height:1.35; border-top:1px solid var(--line);
   transition:color .16s ease; }
 .fast a:first-of-type{ border-top:0; }
-.fast a:hover{ color:var(--link); }
+.fast a:hover{ color:var(--ink-link, var(--link)); }
 .fast a .chev{ margin-left:auto; flex:none; color:var(--muted); transition:transform .16s ease; }
-.fast a:hover .chev{ transform:translateX(2px); color:var(--link); }
+.fast a:hover .chev{ transform:translateX(2px); color:var(--ink-link, var(--link)); }
 .fast a .chev svg{ display:block; width:13px; height:13px; }
 
 /* what happens next — quiet, unboxed, hairline rail */
@@ -154,7 +154,7 @@ html[data-form="success"] .tk-ref{ display:none; }
 .tk-head .st-done{ display:none; }
 html[data-form="success"] .tk-head .st-open{ display:none; }
 html[data-form="success"] .tk-head .st-done{ display:inline; }
-html[data-form="success"] .tk-head .mlab{ color:var(--ok); }
+html[data-form="success"] .tk-head .mlab{ color:var(--ink-ok, var(--ok)); }
 @keyframes stamp{ from{ opacity:0; transform:translateY(-2px) scale(1.06); letter-spacing:.26em; }
   to{ opacity:1; transform:none; letter-spacing:.06em; } }
 
@@ -184,7 +184,7 @@ select.inp{ appearance:none; -webkit-appearance:none; cursor:pointer; padding-ri
   background-repeat:no-repeat; background-position:right 12px center; background-size:15px; }
 .inp:invalid{ box-shadow:none; }            /* never shout before submit */
 .f.bad .inp{ border-color:var(--act); }
-.f.bad .fmsg{ color:var(--act); }
+.f.bad .fmsg{ color:var(--ink-act, var(--act)); }
 .fmsg{ display:block; margin-top:6px; font-size:12.2px; line-height:1.4; color:var(--muted); }
 /* The pin renders no helper copy under a healthy field (see crops/), and the JS
    only fills .fmsg on a failed submit — so an empty one must take no space at
@@ -201,11 +201,11 @@ select.inp{ appearance:none; -webkit-appearance:none; cursor:pointer; padding-ri
 .who{ display:inline-flex; align-items:center; gap:9px; padding:8px 13px 8px 11px;
   border:1px solid var(--line); border-radius:10px; background:var(--panel2);
   font:500 14px/1 var(--font-ui); color:var(--text); max-width:100%; }
-.who .tick{ flex:none; width:16px; height:16px; color:var(--ok); }
+.who .tick{ flex:none; width:16px; height:16px; color:var(--ink-ok, var(--ok)); }
 .who .addr{ font-family:var(--font-mono); font-size:13px; overflow:hidden;
   text-overflow:ellipsis; white-space:nowrap; }
 .who .pill{ flex:none; font:600 9.5px/1 var(--font-mono); letter-spacing:.1em;
-  text-transform:uppercase; color:var(--ok); padding:3px 7px; border-radius:999px;
+  text-transform:uppercase; color:var(--ink-ok, var(--ok)); padding:3px 7px; border-radius:999px;
   background:color-mix(in srgb,var(--ok) 13%,transparent);
   border:1px solid color-mix(in srgb,var(--ok) 32%,transparent); }
 
@@ -216,7 +216,7 @@ select.inp{ appearance:none; -webkit-appearance:none; cursor:pointer; padding-ri
   padding:10px 12px; border-radius:10px; font-size:12.9px; line-height:1.45;
   color:var(--muted); background:color-mix(in srgb,var(--info) 7%,transparent);
   border:1px solid color-mix(in srgb,var(--info) 22%,transparent); }
-.hint .ic{ flex:none; width:15px; height:15px; margin-top:1px; color:var(--info); }
+.hint .ic{ flex:none; width:15px; height:15px; margin-top:1px; color:var(--ink-info, var(--info)); }
 .hint .ic svg{ display:block; width:15px; height:15px; }
 .hint b{ color:var(--text); font-weight:600; }
 
@@ -225,7 +225,7 @@ select.inp{ appearance:none; -webkit-appearance:none; cursor:pointer; padding-ri
 .shortcut{ display:none; margin:-4px 0 16px; font-size:12.6px; color:var(--muted);
   padding-left:19px; position:relative; line-height:1.45; }
 .shortcut.on{ display:block; }
-.shortcut::before{ content:"→"; position:absolute; left:0; top:0; color:var(--info);
+.shortcut::before{ content:"→"; position:absolute; left:0; top:0; color:var(--ink-info, var(--info));
   font-family:var(--font-mono); font-size:12px; }
 .shortcut a{ font-weight:600; }
 
@@ -269,7 +269,7 @@ select.inp{ appearance:none; -webkit-appearance:none; cursor:pointer; padding-ri
   border:1px solid color-mix(in srgb,var(--act) 45%,var(--line));
   background:color-mix(in srgb,var(--act) 10%,transparent); }
 html[data-form="error"] .err{ display:flex; }
-.err .ic{ flex:none; width:16px; height:16px; margin-top:1px; color:var(--act); }
+.err .ic{ flex:none; width:16px; height:16px; margin-top:1px; color:var(--ink-act, var(--act)); }
 .err .ic svg{ display:block; width:16px; height:16px; }
 /* keep the fallback address whole — a mid-address break reads as a typo */
 .err a, .tk-done .after a{ white-space:nowrap; }
@@ -294,7 +294,7 @@ html[data-form="success"] .tk-form{ display:none; }
 .tk-done{ display:none; }
 html[data-form="success"] .tk-done{ display:block; }
 .tk-done .seal{ width:38px; height:38px; border-radius:50%; display:grid; place-items:center;
-  color:var(--ok); background:color-mix(in srgb,var(--ok) 13%,transparent);
+  color:var(--ink-ok, var(--ok)); background:color-mix(in srgb,var(--ok) 13%,transparent);
   border:1px solid color-mix(in srgb,var(--ok) 34%,transparent); margin-bottom:14px; }
 .tk-done .seal svg{ width:19px; height:19px; }
 .tk-done h2{ font:700 21px/1.2 var(--font-ui); letter-spacing:-.01em; margin:0 0 8px; }
@@ -309,7 +309,7 @@ html[data-form="success"] .tk-done{ display:block; }
 .slip .k{ font:600 10px/1 var(--font-mono); letter-spacing:.14em; text-transform:uppercase;
   color:var(--muted); flex:none; width:78px; }
 .slip .v{ font:500 13.2px/1.3 var(--font-mono); color:var(--text); font-variant-numeric:tabular-nums; }
-.slip .v.big{ font-size:15px; font-weight:600; letter-spacing:.06em; color:var(--ok);
+.slip .v.big{ font-size:15px; font-weight:600; letter-spacing:.06em; color:var(--ink-ok, var(--ok));
   animation:stamp .42s cubic-bezier(.2,.8,.3,1) both; }
 .tk-done .after{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:18px; }
 .tk-done .after .note{ font-size:12.2px; color:var(--muted); flex:1; min-width:190px; line-height:1.45; }

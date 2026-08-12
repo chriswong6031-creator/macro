@@ -16,7 +16,7 @@
 <title>Which Stocks Fund Managers Are Buying — MastermindX</title>
 {% set seo_title = "Which Stocks Fund Managers Are Buying — MastermindX" %}{% set seo_desc = "Track which stocks 77 thematic and active ETFs are accumulating — cross-fund consensus, brand-new positions and the sector rotation backdrop, updated each filing cycle." %}{% set seo_path = "etfs.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
 /* ═══ tokens: layered on theme.css (dark default) — components inherit light/dark ═══ */
@@ -47,7 +47,7 @@ html[data-theme="light"][data-lang="zh"]{--lift:#c65b6e;--drag:#2f9270}
 body{margin:0;padding:18px 0 0;background:var(--bg);color:var(--text);
   font-family:var(--font-ui),Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 64px}
-a{color:var(--link);text-decoration:none}
+a{color:var(--ink-link, var(--link));text-decoration:none}
 .faint{color:var(--faint)}.muted{color:var(--muted)}
 .pos{color:var(--lift)}.neg{color:var(--drag)}
 
@@ -293,7 +293,7 @@ a{color:var(--link);text-decoration:none}
   font-size:12.5px;line-height:1.5;color:var(--muted);
   background:color-mix(in srgb,#8b5cf6 7%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent)}
 .gate-note svg{width:14px;height:14px;flex:none;margin-top:2px;color:#8b5cf6}
-.gate-note a{color:var(--link)}
+.gate-note a{color:var(--ink-link, var(--link))}
 /* the page's ONE tier wall, at "Every add, by fund" — after the free backdrop */
 .tier-wall{position:relative;margin:6px 0 4px;isolation:isolate}
 .tw-ghosts{display:flex;flex-direction:column;gap:10px;padding-top:4px}
@@ -316,7 +316,7 @@ a{color:var(--link);text-decoration:none}
 .tw-btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px -10px color-mix(in srgb,#8b5cf6 80%,transparent)}
 .tw-note{font-size:11px;color:var(--faint)}
 .tw-signed{margin-top:12px;font-size:12px}
-.tw-signed a{color:var(--link);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
+.tw-signed a{color:var(--ink-link, var(--link));text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
 @media(max-width:900px){
   /* Below the ghost stack's usable width the absolute card overlaps the lede
      above it; drop the ghosts and let the card flow. */

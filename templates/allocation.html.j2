@@ -19,7 +19,7 @@
 {% set seo_title = "US Theme Allocation — Mastermind" %}{% set seo_desc = "Where money is rotating across US themes — narrative strength, crowding and entry timing to guide allocation. Updated nightly." %}{% set seo_path = "allocation.html" %}
 {%- endif %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -40,21 +40,21 @@
   .rotwrap2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; }
   @media (max-width:680px){ .rotwrap2{ grid-template-columns:1fr; } }
   .pcol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; }
-  .pcol h4 { margin:0 0 4px; font-size:13px; } .pcol h4.buy { color:var(--up); } .pcol h4.sell { color:var(--down); }
+  .pcol h4 { margin:0 0 4px; font-size:13px; } .pcol h4.buy { color:var(--ink-up, var(--up)); } .pcol h4.sell { color:var(--ink-down, var(--down)); }
   .prow { display:flex; align-items:center; gap:9px; padding:7px 4px; border-top:1px solid var(--line); color:inherit; border-radius:7px; }
   .prow:first-of-type { border-top:0; } .prow:hover { background:var(--panel2); }
   .pverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
   .prow .pn { font-weight:650; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .sb-badge { font-size:10px; font-weight:700; color:var(--warn); margin-left:5px;
+  .sb-badge { font-size:10px; font-weight:700; color:var(--ink-warn, var(--warn)); margin-left:5px;
               padding:0 4px; border-radius:6px; background:color-mix(in srgb, var(--warn) 12%, transparent); }
   .prow .pw { font-variant-numeric:tabular-nums; font-weight:700; }
   .palert { display:flex; gap:9px; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px; }
   .palert:first-of-type { border-top:0; }
   .palert .pdt { color:var(--muted); width:84px; flex:0 0 84px; font-variant-numeric:tabular-nums; }
-  .sev-high { color:var(--down); } .sev-medium { color:var(--warn); }
+  .sev-high { color:var(--ink-down, var(--down)); } .sev-medium { color:var(--ink-warn, var(--warn)); }
   .riskbig { font-size:34px; font-weight:740; font-variant-numeric:tabular-nums; line-height:1; }
   .chip.warn { background:color-mix(in srgb,var(--warn) 12%,transparent); border-color:color-mix(in srgb,var(--ink-warn,var(--warn)) 45%,var(--line)); color:var(--ink-warn,var(--warn)); }
-  .chip.ok { background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.4); color:var(--up); }
+  .chip.ok { background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.4); color:var(--ink-up, var(--up)); }
   .chip.hot { background:color-mix(in srgb,var(--down) 9%,transparent); border-color:color-mix(in srgb,var(--ink-down,var(--down)) 45%,var(--line)); color:var(--ink-down,var(--down)); }
   .asof { font-size:12px; color:var(--muted); margin-left:auto; }
   .pfx { color:var(--muted); }
@@ -87,16 +87,16 @@
   td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
   tr.inelig td { opacity:.5; }
   .stage { font-size:11px; padding:1px 6px; border-radius:6px; border:1px solid var(--line); }
-  .stage.lead { background:rgba(90,167,255,.14); border-color:rgba(90,167,255,.45); color:var(--link); }
+  .stage.lead { background:rgba(90,167,255,.14); border-color:rgba(90,167,255,.45); color:var(--ink-link, var(--link)); }
   .minibars { display:flex; gap:3px; align-items:flex-end; height:18px; }
   .minibars i { width:7px; background:var(--muted); border-radius:1px; display:inline-block; opacity:.85; }
   .dbar { display:inline-block; width:46px; height:6px; background:var(--grid,var(--panel2)); border-radius:4px; overflow:hidden; vertical-align:middle; }
   .dbar > i { display:block; height:100%; background:var(--up); }
   .legrow { font-size:11.5px; color:var(--muted); }
   a.tlink { cursor:pointer; border-bottom:1px dashed var(--line); }
-  a.tlink:hover { color:var(--link); border-bottom-color:var(--link); }
+  a.tlink:hover { color:var(--ink-link, var(--link)); border-bottom-color:var(--link); }
   a.tlink .jump { font-size:10px; color:var(--muted); margin-left:3px; }
-  a.tlink:hover .jump { color:var(--link); }
+  a.tlink:hover .jump { color:var(--ink-link, var(--link)); }
   details > summary { cursor:pointer; font-size:12.5px; color:var(--muted); margin:8px 0 2px; }
   .kpis { display:flex; flex-wrap:wrap; gap:20px; margin:6px 0; }
   .kpis .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
@@ -159,7 +159,7 @@ fetch('live/shock_state.json',{cache:'no-cache'})
     var msg=isZh()?
       ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。冲击期的剧烈反转多难持续：历史26次中约六成在一天内消退。'):
       ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Sharp reversals during shocks usually don&#39;t hold: in 26 past cases about 6 in 10 faded within a day.');
-    el.innerHTML='<div class="banner" style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--warn)">'+msg+'</div>';
+    el.innerHTML='<div class="banner" style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--ink-warn, var(--warn))">'+msg+'</div>';
   }).catch(function(){/* absent file → no banner */});
 // Policy-lever chip
 fetch('policy_lever.json',{cache:'no-cache'})
@@ -208,7 +208,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
     color: color-mix(in srgb, var(--warn) 92%, var(--text));
     border: 1px solid color-mix(in srgb, var(--warn) 46%, var(--line));
     margin-left: auto; white-space: nowrap; flex: none; }
-  .hkrv-why-toggle { font-size: 11.5px; color: var(--link); cursor: pointer;
+  .hkrv-why-toggle { font-size: 11.5px; color: var(--ink-link, var(--link)); cursor: pointer;
     background: none; border: none; padding: 0; font: inherit;
     text-decoration: underline; text-decoration-style: dotted; }
   .hkrv-pop { display: none; margin-top: 6px; padding: 11px 14px;
@@ -469,9 +469,9 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
         +'</div>';}
       var moversEl=document.getElementById('ftr-alloc-movers');
       if(moversEl){
-        moversEl.innerHTML='<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--up);margin-bottom:4px">'+L('Top 3 leaders','前3领涨')+'</div>'
+        moversEl.innerHTML='<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-up, var(--up));margin-bottom:4px">'+L('Top 3 leaders','前3领涨')+'</div>'
           +top3.map(function(b){return mrow(b);}).join('')+'</div>'
-          +'<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--down);margin-bottom:4px">'+L('Bottom 3 laggards','后3领跌')+'</div>'
+          +'<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-down, var(--down));margin-bottom:4px">'+L('Bottom 3 laggards','后3领跌')+'</div>'
           +bot3.map(function(b){return mrow(b);}).join('')+'</div>';
       }
       // Disagreement vs strategic leader: only in live mode (FT-R12).
@@ -517,7 +517,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
     <div class="arow" data-sid="{{ w.id }}">
       <span class="nm">#{{ w.rank }} {{ t(w.name, w.name_zh) }}
         {% if w.crowded %}<span class="chip hot" style="margin-left:4px">{{ t('crowded', '拥挤') }}</span>{% endif %}
-        {% if w.val_upgrade %}<span class="chip" style="margin-left:4px;color:var(--up);border-color:var(--up)" title="real-activity radar: independent activity is running ahead of price — promoted one slot earlier">🛰️ {{ t('activity ahead ⬆', '活动领先 ⬆') }}</span>{% endif %}</span>
+        {% if w.val_upgrade %}<span class="chip" style="margin-left:4px;color:var(--ink-up, var(--up));border-color:var(--up)" title="real-activity radar: independent activity is running ahead of price — promoted one slot earlier">🛰️ {{ t('activity ahead ⬆', '活动领先 ⬆') }}</span>{% endif %}</span>
       <span class="bar"><span class="fill" style="width:{{ ((w.weight/0.35*100) if w.weight>0 else 0)|round(1) }}%"></span></span>
       <span class="wv">{{ (w.weight*100)|round|int }}%</span>
     </div>
@@ -615,13 +615,13 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
   <tr class="{{ '' if r.eligible else 'inelig' }}">
     <td><b><a class="tlink" href="{% if d.region == 'us' %}basket/{{ r.id }}.html{% else %}{{ BASKETS_PAGE }}#b-{{ r.id }}{% endif %}">{{ t(r.name, r.name_zh) }}<span class="jump" title="Open theme detail">↗</span></a></b>
       {% if r.rank==1 %}<span class="stage lead">{{ t('LEADER', '领跑') }}</span>{% endif %}
-      {% if r.val_upgrade %}<span class="stage" style="color:var(--up)" title="real-activity radar: activity ahead of price">🛰️ {{ t('activity ⬆', '活动领先⬆') }}</span>
-      {% elif r.val_state == 'fading' %}<span class="stage" style="color:var(--warn)" title="real-activity radar: activity behind price">🛰️ {{ t('fading', '退潮') }}</span>{% endif %}
+      {% if r.val_upgrade %}<span class="stage" style="color:var(--ink-up, var(--up))" title="real-activity radar: activity ahead of price">🛰️ {{ t('activity ⬆', '活动领先⬆') }}</span>
+      {% elif r.val_state == 'fading' %}<span class="stage" style="color:var(--ink-warn, var(--warn))" title="real-activity radar: activity behind price">🛰️ {{ t('fading', '退潮') }}</span>{% endif %}
       <div class="legrow">{{ r.category }} · {{ r.n_live }} {{ t('names', '只') }}</div></td>
     <td class="num"><b>{{ '%.2f'|format(r.score) if r.score is not none else '—' }}</b></td>
     {% set r10 = r.get('r10') %}
     <td class="num">{% if r10 is not none %}<span class="{{ 'pos' if r10 >= 0 else 'neg' }}">{{ '%+.1f'|format(r10*100) }}%</span>{% else %}<span class="muted">—</span>{% endif %}</td>
-    <td>{% if r.eligible %}<span class="stage" style="color:var(--up)">▲ {{ t('in trend', '趋势内') }}</span>{% else %}<span class="stage" style="color:var(--muted)">▽ {{ t('off trend', '趋势外') }}</span>{% endif %}</td>
+    <td>{% if r.eligible %}<span class="stage" style="color:var(--ink-up, var(--up))">▲ {{ t('in trend', '趋势内') }}</span>{% else %}<span class="stage" style="color:var(--muted)">▽ {{ t('off trend', '趋势外') }}</span>{% endif %}</td>
     <td class="num">{% if du.bar is not none %}<span class="dbar"><i style="width:{{ (du.bar*100)|round|int }}%"></i></span> {{ (du.bar*100)|round|int }}{% else %}—{% endif %}</td>
     <td class="num">{{ du.hurst if du.hurst is not none else '—' }}{% if du.hurst_tag %}<span class="muted sm"> {{ {'trend':'↗','mean-revert':'↺','mixed':'~'}.get(du.hurst_tag,'') }}</span>{% endif %}</td>
     <td class="num">{{ (du.breadth*100)|round|int if du.breadth is not none else '—' }}{% if du.breadth is not none %}%{% endif %}</td>
@@ -780,7 +780,7 @@ function renderEntries(){
   const held=new Set((alloc.weights||[]).map(w=>w.id));
   // BUY/HOLD: the de-overlapped trending book + (US) clean-entry buys not already held
   let buy=(alloc.weights||[]).map(w=>`<a class="prow" href="${bkHref(w.id)}">
-    <span class="pverb" style="color:var(--up);border-color:var(--up)">${L('HOLD / ADD','持有/加仓')}</span>
+    <span class="pverb" style="color:var(--ink-up, var(--up));border-color:var(--up)">${L('HOLD / ADD','持有/加仓')}</span>
     <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}${sbBadge(w.id)}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
   if(an && an.buy){ an.buy.filter(x=>!held.has(x.id)).forEach(x=>{
     const v=x.action==='enter'?['ENTER','建仓']:['ACCUMULATE','加仓'];
@@ -789,14 +789,14 @@ function renderEntries(){
   // in-favour themes WITHOUT a clean entry (the honest act_now split) — shown, never hidden,
   // with a muted "wait for a pullback" verb. Descriptive presentation, not a signal.
   if(an && an.add_on_pullback){ an.add_on_pullback.filter(x=>!held.has(x.id)).forEach(x=>{
-    buy.push(`<a class="prow" href="${bkHref(x.id)}" title="${esc(x.reason_en||'in favour, but no clean-entry setup right now')}"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('WAIT — PULLBACK','等待回调')}</span>
+    buy.push(`<a class="prow" href="${bkHref(x.id)}" title="${esc(x.reason_en||'in favour, but no clean-entry setup right now')}"><span class="pverb" style="color:var(--ink-warn, var(--warn));border-color:var(--warn)">${L('WAIT — PULLBACK','等待回调')}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // REDUCE/AVOID: (US) act_now reduce + crowded held + de-overlapped displaced (context)
   let sell=[];
   if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];const vc=sellColor(v[2]);
     sell.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:${vc};border-color:${vc}">${L(v[0],v[1])}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
-  (alloc.weights||[]).filter(w=>w.crowded).forEach(w=>sell.push(`<div class="prow"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('SIZE DOWN','降仓')}</span><span class="pn">${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${L('crowded','拥挤')}</span></div>`));
+  (alloc.weights||[]).filter(w=>w.crowded).forEach(w=>sell.push(`<div class="prow"><span class="pverb" style="color:var(--ink-warn, var(--warn));border-color:var(--warn)">${L('SIZE DOWN','降仓')}</span><span class="pn">${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${L('crowded','拥挤')}</span></div>`));
   if(!sell.length) sell.push(`<div class="muted" style="padding:10px 2px;font-size:12px">${L('Nothing flagged to reduce right now.','当前无需减仓的标的。')}</div>`);
   const moreBtn=n=>n>5?`<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">${L('Show more','显示更多')} ▾</span><span class="lm-hide">${L('Show less','收起')} ▴</span></button>`:'';
   const pCol=(cls,head,arr,empty)=>`<div class="pcol lst-wrap"><h4 class="${cls}">${head} <span class="muted" style="font-size:11px">(${arr.length})</span></h4>${arr.length?`<div class="plist lst-collapse is-collapsed">${arr.join('')}</div>${moreBtn(arr.length)}`:empty}</div>`;
@@ -817,7 +817,7 @@ function renderRiskTime(){
     <div><div class="riskbig" style="color:${posture[2]}">${cash==null?'—':Math.round(cash*100)+'%'}</div><div class="muted" style="font-size:11px">${L('suggested cash','建议现金')}</div></div>
     <div><div style="font-size:16px;font-weight:700;color:${posture[2]}">${L(posture[0],posture[1])}</div><div class="muted" style="font-size:11px">${L('risk posture now','当前风险姿态')}</div></div>
     <div style="margin-left:auto">${spark}<div class="muted" style="font-size:10.5px">${L('cash % over time','现金% 历时')}</div></div>
-  </div>${crash?`<div class="muted" style="font-size:12px;margin-top:8px;color:var(--down)">🛑 ${L('Momentum-crash de-risk active — book halved to cash.','动量崩盘去风险激活 — 组合减半至现金。')}</div>`:''}`;
+  </div>${crash?`<div class="muted" style="font-size:12px;margin-top:8px;color:var(--ink-down, var(--down))">🛑 ${L('Momentum-crash de-risk active — book halved to cash.','动量崩盘去风险激活 — 组合减半至现金。')}</div>`:''}`;
 }
 
 function renderRotAlerts(){

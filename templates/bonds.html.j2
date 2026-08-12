@@ -29,7 +29,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% include "_interfonts.html.j2" %}
-<script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Bonds & Bond Health — {{ as_of }}</title>
 {% set seo_title = 'Bonds and Bond Health — Yields, Curve and Credit | Mastermind' %}{% set seo_desc = 'A bonds hub tracking Treasury yields, the yield curve, credit spreads and bond-market health with regime-aware reads.' %}{% set seo_path = 'bonds.html' %}
 {% include "_seo_head.html.j2" %}
@@ -66,7 +66,7 @@
 }
 html[data-theme="dark"]{
   --bg:#0a0d12; --card:#141821; --grid:#242a36; --ink:#eaeff6; --text:#d3d9e2; --muted:#8b93a1;
-  --faint:#6b7280; --red:#e06464; --green:#45b873; --teal:#3bb597;
+  --faint:#828b9c; --red:#e06464; --green:#45b873; --teal:#3bb597;
   --info:#5b9bf0; --orange:#e0955a; --panel:#141821; --panel2:#1b2029; --line:#242a36;
   --accent:#6f8bf0; --card-brd:#232a37;
   --card-shadow:0 1px 0 rgba(255,255,255,.03), 0 14px 34px -18px rgba(0,0,0,.66);

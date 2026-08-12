@@ -40,7 +40,7 @@
     display:flex; align-items:center; gap:9px;}
   .est-prose .selfcheck > summary::-webkit-details-marker{display:none;}
   .est-prose .selfcheck > summary::before{content:"?"; font-family:var(--font-mono); font-weight:700;
-    color:var(--link); width:20px; height:20px; border:1px solid color-mix(in srgb,var(--link) 40%,var(--line));
+    color:var(--ink-link, var(--link)); width:20px; height:20px; border:1px solid color-mix(in srgb,var(--link) 40%,var(--line));
     border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; flex:none;}
   .est-prose .selfcheck[open] > summary{border-bottom:1px solid var(--line);}
   .est-prose .selfcheck .sc-body{padding:6px 18px 16px;}
@@ -49,7 +49,7 @@
     border:1px dashed var(--rule); border-radius:10px; padding:11px 14px; margin:16px 0 0;
     max-width:var(--measure); display:flex; gap:9px; align-items:baseline;}
   .art-objective .ob-k{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em;
-    text-transform:uppercase; color:var(--link); flex:none;}
+    text-transform:uppercase; color:var(--ink-link, var(--link)); flex:none;}
 
   @media (max-width:900px){
     .art-layout{grid-template-columns:1fr; gap:12px;}

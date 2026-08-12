@@ -79,7 +79,7 @@ html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsof
 html body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);
   font:14px/1.5 var(--font-display);
   -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-a{color:var(--link);text-decoration:none}
+a{color:var(--ink-link, var(--link));text-decoration:none}
 .tnum{font-variant-numeric:tabular-nums}
 .mut{color:var(--muted)}
 .wrap{max-width:1440px;margin:0 auto;padding:0 26px 96px;position:relative;z-index:1}
@@ -132,7 +132,7 @@ html[data-theme="light"] .arc-state .accent{color:color-mix(in srgb,var(--accent
 .arc-stance .em{color:var(--muted-strong)}
 .stancepill{display:inline-flex;align-items:center;gap:7px;padding:6px 15px;border-radius:999px;
   font-size:13px;font-weight:700;border:1px solid var(--line)}
-.stancepill.act{color:var(--up);border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+.stancepill.act{color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 45%,var(--line));
   background:color-mix(in srgb,var(--up) 12%,transparent)}
 .stancepill.watch{color:var(--s3);border-color:color-mix(in srgb,var(--s3) 45%,var(--line));
   background:color-mix(in srgb,var(--s3) 12%,transparent)}
@@ -166,7 +166,7 @@ html[data-theme="light"] .arc-state .accent{color:color-mix(in srgb,var(--accent
   box-shadow:0 1px 0 color-mix(in srgb,var(--text) 6%,transparent),0 6px 18px -12px rgba(0,0,0,.5)}
 .tab .tnum{font-family:var(--font-display);font-size:12px;font-weight:700;color:var(--muted);
   border:1px solid var(--line);border-radius:6px;padding:0 5px;line-height:16px}
-.tab[aria-selected="true"] .tnum{color:var(--info);border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
+.tab[aria-selected="true"] .tnum{color:var(--ink-info, var(--info));border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
 .tab:focus-visible{outline:2px solid color-mix(in srgb,var(--info) 70%,transparent);outline-offset:2px}
 
 .controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:16px 0 4px}
@@ -220,7 +220,7 @@ table.screener{border-collapse:separate;border-spacing:0;width:100%;min-width:11
   font-weight:700;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;text-align:left;
   padding:11px 10px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
 .screener thead th:hover{color:var(--text)}
-.screener thead th .caret{opacity:0;font-size:9px;margin-left:3px;color:var(--info)}
+.screener thead th .caret{opacity:0;font-size:9px;margin-left:3px;color:var(--ink-info, var(--info))}
 .screener thead th[data-dir] .caret{opacity:1}
 .screener thead th.num{text-align:right}
 .screener thead th.sticky-l,.screener td.sticky-l{position:sticky;left:0;z-index:2;background:var(--panel)}
@@ -239,7 +239,7 @@ table.screener{border-collapse:separate;border-spacing:0;width:100%;min-width:11
 .exp-btn{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;
   padding:2px 4px;line-height:1;transition:transform .18s,color .16s}
 .exp-btn:hover{color:var(--text)}
-tr.open .exp-btn{transform:rotate(90deg);color:var(--info)}
+tr.open .exp-btn{transform:rotate(90deg);color:var(--ink-info, var(--info))}
 .exp-btn:focus-visible{outline:2px solid color-mix(in srgb,var(--info) 70%,transparent);outline-offset:1px;border-radius:4px}
 
 /* score chips — shared ramp. --c set inline per band. */
@@ -252,7 +252,7 @@ tr.open .exp-btn{transform:rotate(90deg);color:var(--info)}
 .chip.c-steel{--c:var(--s1)} .chip.c-info{--c:var(--info)} .chip.c-mut{--c:var(--muted)}
 .chip.plain{background:none;border:none;color:var(--muted);font-weight:600;min-width:0;padding:0}
 .delta{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
-.delta.up{color:var(--up)} .delta.dn{color:var(--down)} .delta.flat{color:var(--muted)}
+.delta.up{color:var(--ink-up, var(--up))} .delta.dn{color:var(--ink-down, var(--down))} .delta.flat{color:var(--muted)}
 
 /* stage chip (the star of the row) */
 .stagechip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 8px;border-radius:8px;
@@ -268,8 +268,8 @@ tr.open .exp-btn{transform:rotate(90deg);color:var(--info)}
 .tagcell{display:inline-flex;gap:4px;flex-wrap:nowrap}
 .tagpill{font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:999px;
   border:1px solid var(--line);color:var(--muted);background:var(--panel2);white-space:nowrap}
-.tagpill.pos{color:var(--up);border-color:color-mix(in srgb,var(--up) 35%,var(--line))}
-.tagpill.neg{color:var(--down);border-color:color-mix(in srgb,var(--down) 35%,var(--line))}
+.tagpill.pos{color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 35%,var(--line))}
+.tagpill.neg{color:var(--ink-down, var(--down));border-color:color-mix(in srgb,var(--down) 35%,var(--line))}
 .tagmore{font-size:10.5px;color:var(--muted)}
 /* seed-provenance chip on EU/Asia rows sourced from the EquityDesk backfill
    (no live non-US price feed yet). Muted amber, cursor:help → hover receipt. */
@@ -281,8 +281,8 @@ tr.open .exp-btn{transform:rotate(90deg);color:var(--info)}
 html[data-theme="light"] .seedtag{color:color-mix(in srgb,var(--s3) 55%,var(--text))}
 .addbtn{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:7px;
   width:24px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}
-.addbtn:hover{color:var(--up);border-color:color-mix(in srgb,var(--up) 45%,var(--line))}
-.addbtn.on{color:var(--up);border-color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent)}
+.addbtn:hover{color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 45%,var(--line))}
+.addbtn.on{color:var(--ink-up, var(--up));border-color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent)}
 
 /* row-expand panel */
 tr.detail-row td{padding:0;background:var(--panel2);border-bottom:1px solid var(--line)}
@@ -418,13 +418,13 @@ table.heat{border-collapse:separate;border-spacing:0;font-size:11px;font-variant
   border-radius:10px;background:var(--panel2);padding:9px 13px;max-width:70ch}
 .boardnote b{color:var(--text);font-weight:700}
 .gatechip{display:inline-flex;align-items:center;padding:1px 7px;border-radius:6px;font-size:10.5px;
-  font-weight:700;border:1px solid color-mix(in srgb,var(--info) 38%,var(--line));color:var(--info);
+  font-weight:700;border:1px solid color-mix(in srgb,var(--info) 38%,var(--line));color:var(--ink-info, var(--info));
   background:color-mix(in srgb,var(--info) 10%,transparent);cursor:help}
 .gatechip.t1{border-color:color-mix(in srgb,var(--s2) 42%,var(--line));color:var(--s2);
   background:color-mix(in srgb,var(--s2) 11%,transparent)}
 .evchip{font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap}
 .rschip{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
-.rschip.up{color:var(--up)} .rschip.dn{color:var(--down)} .rschip.flat{color:var(--muted)}
+.rschip.up{color:var(--ink-up, var(--up))} .rschip.dn{color:var(--ink-down, var(--down))} .rschip.flat{color:var(--muted)}
 
 /* =====================================================================
    EARNINGS CALLS · ALT-DATA · RESEARCH — same visual system as above.
@@ -455,10 +455,10 @@ table.heat{border-collapse:separate;border-spacing:0;font-size:11px;font-variant
 /* highlight-count mini pills in the calls table (green / red) */
 .hicount{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
   font-variant-numeric:tabular-nums}
-.hicount.pos{color:var(--up)} .hicount.neg{color:var(--down)}
+.hicount.pos{color:var(--ink-up, var(--up))} .hicount.neg{color:var(--ink-down, var(--down))}
 .hicount .g{width:7px;height:7px;border-radius:2px;background:currentColor;opacity:.85}
 .callrow{cursor:pointer}
-.callrow:hover .tk{color:var(--info)}
+.callrow:hover .tk{color:var(--ink-info, var(--info))}
 .readcue{font-size:10.5px;color:var(--muted);opacity:0;transition:opacity .14s}
 .callrow:hover .readcue{opacity:1}
 
@@ -482,7 +482,7 @@ table.heat{border-collapse:separate;border-spacing:0;font-size:11px;font-variant
 .reader-terminal{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:0 13px;border:1px solid color-mix(in srgb,var(--info) 48%,var(--line));border-radius:9px;background:color-mix(in srgb,var(--info) 12%,var(--panel2));color:var(--text);font-size:11.5px;font-weight:750;text-decoration:none;transition:border-color .16s ease,background .16s ease,transform .16s ease}
 .reader-terminal:hover{border-color:color-mix(in srgb,var(--info) 75%,var(--line));background:color-mix(in srgb,var(--info) 18%,var(--panel2));transform:translateY(-1px)}
 .reader-terminal:focus-visible{outline:2px solid color-mix(in srgb,var(--info) 70%,transparent);outline-offset:2px}
-.reader-terminal .arr{color:var(--info);font-size:14px}
+.reader-terminal .arr{color:var(--ink-info, var(--info));font-size:14px}
 .reader-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:9px;
   border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:17px;line-height:1;
   cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -510,7 +510,7 @@ table.heat{border-collapse:separate;border-spacing:0;font-size:11px;font-variant
 .hlist.neg li{border-left:3px solid var(--down)}
 .hlist li .n{font-family:var(--font-display);font-weight:700;font-size:11px;margin-right:6px;
   color:var(--muted)}
-.hlist.pos li .n{color:var(--up)} .hlist.neg li .n{color:var(--down)}
+.hlist.pos li .n{color:var(--ink-up, var(--up))} .hlist.neg li .n{color:var(--ink-down, var(--down))}
 .quoteblock{margin:0;padding:14px 16px 14px 18px;border-radius:12px;position:relative;
   border:1px solid var(--line);background:color-mix(in srgb,var(--info) 6%,var(--panel));
   border-left:3px solid var(--info);font-size:14px;line-height:1.6;color:var(--text);font-style:italic}
@@ -536,7 +536,7 @@ table.heat{border-collapse:separate;border-spacing:0;font-size:11px;font-variant
   border-radius:999px;border:1px solid color-mix(in srgb,var(--s3) 40%,var(--line));color:var(--s3);
   background:color-mix(in srgb,var(--s3) 10%,transparent);cursor:help}
 .altcol-head .liveflag{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 8px;
-  border-radius:999px;border:1px solid color-mix(in srgb,var(--up) 34%,var(--line));color:var(--up);
+  border-radius:999px;border:1px solid color-mix(in srgb,var(--up) 34%,var(--line));color:var(--ink-up, var(--up));
   background:color-mix(in srgb,var(--up) 9%,transparent);cursor:help}
 .altlist{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:2px;
   max-height:520px;overflow-y:auto;scrollbar-width:thin}
@@ -549,11 +549,11 @@ table.heat{border-collapse:separate;border-spacing:0;font-size:11px;font-variant
 .altitem .typ{font-size:10px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:5px;
   padding:0 5px;white-space:nowrap;flex:0 0 auto}
 .altitem .yoy{grid-column:2;grid-row:1;align-self:center;font-family:var(--font-display);font-size:12.5px;
-  font-weight:700;font-variant-numeric:tabular-nums;color:var(--up);white-space:nowrap}
-.altitem .yoy.dn{color:var(--down)}
+  font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-up, var(--up));white-space:nowrap}
+.altitem .yoy.dn{color:var(--ink-down, var(--down))}
 .altitem .match{grid-column:1;display:flex;align-items:center;gap:6px;min-width:0;margin-top:1px}
 .altitem .match .arrow{color:var(--muted);font-size:11px}
-.altitem .mtk{font-size:11px;font-weight:700;font-family:var(--font-display);color:var(--info);flex:0 0 auto}
+.altitem .mtk{font-size:11px;font-weight:700;font-family:var(--font-display);color:var(--ink-info, var(--info));flex:0 0 auto}
 .altitem .mco{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .altitem .add2{grid-column:2;grid-row:2;justify-self:end;align-self:center}
 
@@ -569,17 +569,17 @@ table.heat{border-collapse:separate;border-spacing:0;font-size:11px;font-variant
 .modelbadges{display:inline-flex;gap:4px;flex:0 0 auto}
 .mbadge{font-size:9.5px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border-radius:6px;
   border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:help}
-.mbadge.g{color:var(--info);border-color:color-mix(in srgb,var(--info) 38%,var(--line))}
+.mbadge.g{color:var(--ink-info, var(--info));border-color:color-mix(in srgb,var(--info) 38%,var(--line))}
 .mbadge.o{color:var(--s2);border-color:color-mix(in srgb,var(--s2) 38%,var(--line))}
 .mbadge.c{color:var(--s3);border-color:color-mix(in srgb,var(--s3) 38%,var(--line))}
 .rescard .thesis{font-size:12.5px;line-height:1.6;color:var(--text);margin:0;
   display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .rescard.open .thesis{-webkit-line-clamp:unset;overflow:visible}
 .rescard-foot{display:flex;align-items:center;gap:10px;margin-top:auto}
-.rescard .more{border:none;background:none;color:var(--info);font-size:11.5px;font-weight:600;cursor:pointer;
+.rescard .more{border:none;background:none;color:var(--ink-info, var(--info));font-size:11.5px;font-weight:600;cursor:pointer;
   padding:0}
 .rescard .more:hover{text-decoration:underline}
-.rescard .rlink{font-size:11.5px;color:var(--link);font-weight:600}
+.rescard .rlink{font-size:11.5px;color:var(--ink-link, var(--link));font-weight:600}
 .rescount{font-size:12px;color:var(--muted-strong);margin:2px 0 12px}
 .rescount b{color:var(--text);font-weight:700}
 

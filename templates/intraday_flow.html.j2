@@ -17,7 +17,7 @@
 <title>Intraday Flow · 盘中资金流</title>
 {% set seo_title = "Intraday Flow Tracker — Mastermind" %}{% set seo_desc = "Which washed-out market leaders (Mag 7, AI, semis, defense, power grid) are being bought back on real volume right now — with a plain-word call on each." %}{% set seo_path = "intraday_flow.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   /* ══ Intraday Flow — mx5 desk design (macro.html visual language, kinetic-desk signature) ══ */
@@ -51,7 +51,7 @@
   @media (min-width:1100px){ body.page-intraday-flow{ padding:24px max(40px,calc((100vw - 1440px)/2)); } }
   a { text-decoration:none; color:inherit; }
   .muted { color:var(--muted); } .sm { font-size:var(--fs-sm); } .xs { font-size:var(--fs-micro); }
-  .pos { color:var(--up); } .neg { color:var(--down); }
+  .pos { color:var(--ink-up, var(--up)); } .neg { color:var(--ink-down, var(--down)); }
   .tabnum, .num { font-variant-numeric:tabular-nums; font-family:var(--num); }
   .soft-tag { display:inline-block; font-size:9.5px; font-style:italic; color:var(--orange,#e08b45); margin-left:3px; vertical-align:1px; }
   .delayed-tag { display:inline-block; font-size:var(--fs-micro); background:color-mix(in srgb,var(--panel2) 70%,transparent); border:1px solid var(--hair); border-radius:5px; padding:1px 6px; color:var(--muted); letter-spacing:.02em; }
