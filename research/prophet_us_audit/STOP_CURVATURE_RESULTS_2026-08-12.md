@@ -1,10 +1,33 @@
 # Stop-curvature context study — results (2026-08-12)
 
-> **DRAFT — RED-TEAM ROUND 1 APPLIED, PENDING FINAL ADJUDICATION.** Charter §7 makes an Opus
-> reviewer pass mandatory before this doc lands; round 1 is complete and its four
-> ship-blocking findings are incorporated below. Verdict adjudication still belongs to the
-> commissioning main loop. Nothing here is adjudicated. No promotion, no engine change, no
-> display copy follows from this document in its current state.
+> **ADJUDICATED 2026-08-12 by the commissioning main loop (ANTICIPATION lane).** Charter §7's
+> mandatory Opus reviewer pass is complete, its four ship-blocking findings are incorporated,
+> and the repairs were verified at source rather than accepted on report. **Verdict: the
+> five-form family is CLOSED on a definition-validity null — no promotion, no engine change,
+> no rank/size consequence, and no display copy follows.** The display-tier watch surface
+> keeps shipping under §6.6 word budgets with plain-word null disclosure, per charter §0.
+>
+> **What the null is, precisely.** The chartered family never reached the tape: no form could
+> see the operator's own motivating receipts, so each was disqualified ex ante by G5 and
+> correctly received no outcome row. That is a statement about the CONSTRUCTIONS, not about
+> the market — the load-bearing §R9f fact (34.9% of stop confirms land within ±2 sessions of
+> the ±10-session local low vs a 15.7% null) is untouched and the search space stays open.
+> **"Not found yet" ≠ "does not exist."** The open question this hands forward is not "which
+> form next" — anything outside the enumerated five is a NEW charter — but what the operator
+> was actually reading when they described "arching up off the histogram low", because at
+> both exemplars the 1D histogram was making a fresh low on the confirm bar itself, under
+> both this house's serialization and textbook MACD(12,26,9).
+>
+> **On the withdrawn magnitude claim (§4).** The main loop answers §9.1 **no**: R4b's kill
+> stands, its published −11.4pp anchor stands unchanged, and this study corrects neither. The
+> three lens rows are unregistered exploratory reads that license nothing. The magnitude
+> question is a live ore-ledger row requiring its own pre-registration — weighting rule, lens
+> definition, and CI declared in advance — before it may touch a published number. Recording
+> why this mattered: the first draft's headline was itself an instance of the trap this
+> program memorialized in the parent's §RT, reached the same way (one estimator, chosen after
+> the fact, on a substituted lens). The house rule earned here is that a promotion gate must
+> not be settled by an author's choice among defensible estimators, which is now enforced in
+> the script — G3's quintile leg requires all four to clear.
 >
 > **What round 1 changed.** The **core G5 result survived unchanged** — the reviewer
 > recomputed the exemplar arithmetic from the raw parquet without importing this study,
