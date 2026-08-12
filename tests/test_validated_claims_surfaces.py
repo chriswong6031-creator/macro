@@ -226,7 +226,9 @@ def test_selector_and_identifier_tokens_are_not_claims(line):
 ])
 def test_hyphenated_prose_is_a_claim(line):
     """The defect itself. Each of these shipped invisible to BC-2 — the hyphen made the rule
-    read an English adjective as a CSS class, and a _STRUCTURAL hit kills the whole line."""
+    read an English adjective as a CSS class, and a structural hit killed the whole line.
+    (Whole-line kills are gone as of 2026-08-11; every structural rule masks in place now —
+    see tests/test_validated_claims_structural_scope.py.)"""
     _, hits = _scan_line(line, ALLOW, _PROBE)
     assert hits and not any(backed for backed, _ in hits), f"ungated prose claim: {line}"
 
