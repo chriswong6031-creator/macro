@@ -286,12 +286,80 @@ def test_card_renders_too_few_when_hit_rate_null():
 # 8b. Stale-ledger message when monitoring.log_fresh is false
 # --------------------------------------------------------------------------- #
 def test_card_renders_stale_message_when_not_fresh():
+    """A log that has not been appended lately is disclosed ON the same line, as a fact.
+
+    Rewritten 2026-08-11 (W4 review): the clause used to REPLACE the track sentence with
+    "Monitoring paused — ledger stale", which (a) leaked the internal word "ledger" at
+    glance tier (DESIGN_DOCTRINE Law 2) and (b) flatly contradicted the self-audit line
+    printed directly above it on euro_area.html / united_kingdom.html / india.html. The
+    staleness must now RIDE the one merged line, never displace its verdict.
+    """
     env = _jinja_env()
     tmpl = env.get_template("_risk_radar_card.html.j2")
     rd = _minimal_rd(track=_scorecard_market(log_fresh=False))
     html = tmpl.module.risk_radar_card(rd, [])
     assert "rrx-trk" in html
-    assert "stale" in html.lower() or "Monitoring paused" in html
+    assert "no new entries for 3 days" in html and "已 3 天无新增记录" in html
+    # the verdict survives alongside the staleness clause instead of being replaced
+    assert "a ≥5% drop followed within a month" in html
+    # and the retired copy cannot come back
+    assert "Monitoring paused" not in html and "ledger" not in html.lower()
+
+
+def test_card_merges_the_self_audit_and_track_lines_into_one():
+    """DESIGN_DOCTRINE Law 4 — one footnote per panel, merge never stack.
+
+    On a young ledger the two lines said the same thing twice (measured on the shipped
+    japan.html / south_korea.html: "Self-audit … accruing — grades begin once calls mature
+    (~21 trading days)" immediately above "Graded calls accruing — check back once alerts
+    mature (~21 trading days)"). One row, one sentence, now.
+    """
+    env = _jinja_env()
+    tmpl = env.get_template("_risk_radar_card.html.j2")
+    rd = _minimal_rd(track=_scorecard_market(graded_n=0, tp=0, hit_rate=None))
+    rd["forward_log"] = {"n_graded": 0, "can_force": False, "market": "jp"}
+    html = tmpl.module.risk_radar_card(rd, [])
+    assert html.count('class="rrx-trk"') == 1
+    assert 'class="rrx-audit"' not in html          # the second line is gone for good
+    assert html.count("21 trading days") == 1
+    assert "Graded calls accruing" not in html
+
+
+def test_card_shows_a_stance_on_calm_and_watch_states():
+    """DESIGN_DOCTRINE Law 1 — every panel answers "so what do I do", even when calm.
+
+    The action line used to be gated on `rd.is_loud`, so the calm and watch cards on the
+    international dashboards shipped with no stance at all. The wording is the engine's
+    own (`_RADAR_DO` in engine/market_state.py); nothing is invented in the template.
+    """
+    env = _jinja_env()
+    tmpl = env.get_template("_risk_radar_card.html.j2")
+    for state, do_en in (("calm", "Normal exposure."),
+                         ("watch", "A risk is building — stay normal, just watch it.")):
+        rd = _minimal_rd()
+        rd.update(state=state, is_loud=False, do_en=do_en, do_zh="正常仓位。")
+        html = tmpl.module.risk_radar_card(rd, [])
+        assert 'class="rrx-do"' in html, state
+        assert do_en in html, state
+
+
+def test_leading_evidence_percentile_is_grammatical_and_bilingual():
+    """"73th" shipped live on euro_area.html: the ordinal suffix was hard-coded "th", and
+    the token was language-invariant so the ZH view read an English ordinal."""
+    env = _jinja_env()
+    tmpl = env.get_template("_risk_radar_card.html.j2")
+    rd = _minimal_rd()
+    rd["label_en"] = "credit"
+    scares = [{"label_en": "credit", "label_zh": "信用", "score": 70.0, "band": "caution",
+               "firing_legs": [{"leg": "credit_oas_roc", "pctile": p} for p in (0.73,)]}]
+    html = tmpl.module.risk_radar_card(rd, scares)
+    assert ">73rd<" in html and "第73百分位" in html
+    assert "73th" not in html
+    # 11/12/13 keep "th"; 1/2/3 elsewhere do not
+    for pct, en in ((0.11, "11th"), (0.21, "21st"), (0.22, "22nd"), (0.23, "23rd")):
+        scares[0]["firing_legs"] = [{"leg": "credit_oas_roc", "pctile": pct}]
+        out = tmpl.module.risk_radar_card(rd, scares)
+        assert f">{en}<" in out, en
 
 
 # --------------------------------------------------------------------------- #
