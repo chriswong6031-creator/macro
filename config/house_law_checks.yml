@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-11"
+updated: 2026-08-12
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -2590,3 +2590,150 @@ checks:
       llm_proposed_ratified edges exist today, and the point of the check is that the
       first one cannot land quietly. Fixture dates in --selftest are constants with no
       relation to the wall clock — a guard whose fixtures age is a scheduled red.
+
+  - law_id: governance.intelligence_registry_integrity
+    summary: >
+      The Mastermind engine registry (data/intelligence_registry.json) must be DERIVED
+      and rebuildable, never hand-authored. Its spine is a pure function of
+      config/synapse.yml, the engine/*_ledger.py inventory, an AST scan of producer
+      source, data/species/ and data/qledger/; only four curated keys may live in
+      config/intelligence_registry_overlay.yml. This law fires ONLY on properties of the
+      registry's own files: structural drift from a fresh regeneration, non-idempotent
+      regeneration, an overlay key outside the four-key allowlist, an overlay row for an
+      engine_id the builder did not generate (orphan), an unknown enum value, a missing
+      required field, a null ledger, an exclusion with an empty reason, or a synapse
+      artifact mapping to zero or more than one engine. The key allowlist IS the
+      executable form of DNR:KILL-PARALLEL-KNOWLEDGE-BASE — without it the overlay
+      silently becomes the hand-authored engine list that row forbids.
+    source_ref:
+      - engine/intelligence_registry.py
+      - scripts/build_intelligence_registry.py
+      - scripts/check_intelligence_registry.py
+      - config/intelligence_registry_overlay.yml
+      - data/intelligence_registry.json
+      - docs/MASTERMIND_INTELLIGENCE_REGISTRY.md
+      - research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md
+    severity: hard
+    check_script: scripts/check_intelligence_registry.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: neural-web
+        lane: pr_ci
+    selftest: true
+    allowlist: config/intelligence_registry_overlay.yml
+    ratchet: null
+    known_limits:
+      - >-
+        The HARD drift comparison is over the STRUCTURAL PROJECTION, not the whole file.
+        data/qledger/claims.jsonl is append-only and data/species/registry.json moves
+        independently of any PR, so pinning corpus-sourced fields by equality would be a
+        SCHEDULED red — the first nightly row written to a currently-empty desk would
+        flip a field and red every open PR for a property nobody introduced. The volatile
+        paths are declared in meta.volatile_fields inside the artifact itself, so the
+        projection is self-describing and the guard cannot silently narrow it. A stale
+        corpus snapshot is a warn-tier content finding instead.
+      - >-
+        An ABSENT registry, or an unreadable data/ store, exits 0 with a ::notice and the
+        drift comparison is SKIPPED rather than reported clean. Sparse agent worktrees
+        carry no data/ on disk while ~39,900 data paths are tracked in HEAD; "I could not
+        look" must never render as "I looked and it was clean".
+      - >-
+        The engine unit is (producer, owner_program). 32 of 378 engines mix artifact
+        tiers, so the engine-level authority roll-up (a MAX) OVERSTATES authority for the
+        low-tier siblings in those cells. A consumer acting per-artifact must read
+        artifacts[].artifact_authority, not the roll-up.
+      - >-
+        The qledger desk literal is extracted by AST from register()/register_batch()/
+        make_claim() call sites. A dynamic or indirect desk value does not resolve (1
+        producer measured 2026-08-12: engine/china_special_situations.py); those engines
+        fall through to ledger waterfall rules 3-5. The builder emits a ::notice naming
+        them, so the gap is counted rather than invisible.
+      - >-
+        Species-to-engine binding is by ledger path, so several species sharing one
+        ledger collapse to one engine. Measured 2026-08-12: 17 species bind to
+        us_board_ledger, so the conservative least-advanced rule renders that engine
+        phase0 even though 6 of the bound species are validated. The full bound set is
+        recorded in validation_state_evidence.
+    owner_program: qualitative-intelligence
+    notes: >
+      Split from epistemics.engine_authority_evidence deliberately. One entry would force
+      one severity, so either integrity ships too weak to protect the registry or the
+      pre-existing C-1 backlog reds main fleet-wide on arrival. Every condition this law
+      fires on is green by construction on the PR that generates the file, and none can
+      be tripped by a pre-existing corpus condition — which is what makes `hard` legitimate
+      here: the blast radius is the registry itself. Extends the existing neural-web
+      legacy job rather than adding a new one (run_ci_pack.py balances 185 jobs by weight,
+      so a new job rebalances every pack).
+
+  - law_id: epistemics.engine_authority_evidence
+    summary: >
+      An engine holding authority over a human must point at the evidence that earned it.
+      Measured 2026-08-12 (Finding C-1): four of the five tier=scored synapse artifacts —
+      vector-calibration, hazard-model, vol-regime-gate, vol-regime-basket-overlay-gate —
+      carry NO qual_ladder_ref, so things with rank/size/gate authority do not name their
+      prereg. Finding C-2: synapse `tier` does not express authority over a human at all —
+      site-us-standouts (the Prophet board that orders what a paying user sees) carried
+      the same tier=display as a decorative chip. This law reports every engine with
+      authority > display and evidence_ref == null, every gate-tripping engine with no
+      curated output_class, a graded_by_design value contradicting a resolved ledger, a
+      registered qledger desk with zero rows in the claim corpus, and the
+      scored_path_surfaces completeness flag (an artifact read by an Article-2 enforcer
+      module while declaring no surfaces — the measured prophet-index case).
+    source_ref:
+      - engine/intelligence_registry.py
+      - scripts/check_intelligence_registry.py
+      - docs/MASTERMIND_INTELLIGENCE_REGISTRY.md
+      - research/MASTERMIND_INTELLIGENCE_CATALOG.md
+      - research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md
+    severity: warn
+    check_script: scripts/check_intelligence_registry.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: neural-web
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Advisory by default (exit 0 with ::warning annotations); only --strict exits
+        non-zero, and --strict is deliberately NOT passed in CI yet. The findings are
+        PRE-EXISTING CONDITIONS of the corpus (154 on the 2026-08-12 registry: 21 C-1, 88
+        missing output_class, 45 completeness flags), not regressions any PR author
+        caused.
+      - >-
+        Derived authority UNDER-COUNTS on day one because its input is under-populated:
+        only 11 of 642 synapse artifacts carry a non-empty scored_path_surfaces, and
+        prophet-index is a confirmed false negative (tier=display, no surfaces, yet
+        consumed by scripts/build_site.py). The correct claim is "authority is derived and
+        auditable", NEVER "all authority-bearing engines are identified".
+      - >-
+        The scored_path_surfaces completeness detector is low-precision BY CONSTRUCTION:
+        scripts/build_site.py is a consumer on 37 artifacts and scripts/build_stock_library.py
+        on 14, so consumer-membership in an Article-2 module is far too wide to carry
+        authority. It PROPOSES (45 engines flagged) and never promotes — deriving
+        user_ranking from it was rejected on that measurement.
+      - >-
+        output_class is the only field with a real human cost (88 engines require one).
+        It is deliberately left null rather than guessed: output_class selects the metric
+        contract, and a wrong metric contract is worse than a null one. The builder's
+        --proposals flag emits derived proposals to a review file that is never
+        auto-applied.
+      - >-
+        ANNOTATION BUDGET: C-1 findings are annotated per engine (each names its concrete
+        heal); every other code is aggregated into one annotation with a count, with full
+        detail on stdout. 154 individual annotations would bury the actionable rows.
+    owner_program: qualitative-intelligence
+    notes: >
+      warn was chosen over the sibling precedent epistemics.qledger_metric_validity's
+      manual + ci_wiring:[]. VALID_SEVERITIES permits empty ci_wiring only for
+      manual/discipline/known_spurious, so `manual` means the audit never runs against the
+      real corpus unless a human remembers. `warn` requires real wiring, so the C-1
+      backlog is visible as ::warning annotations on every PR and the count is trackable.
+      DATED PROMOTION PLAN: promote to `hard` with --strict in the same PR that drives the
+      authority>display evidence_ref backlog to zero, owned by T7 of
+      research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md. An upgrade needs no ruling; a
+      downgrade does. The prescribed C-1 heal is to fill qual_ladder_ref in
+      config/synapse.yml — it repairs the canonical source rather than papering over the
+      gap in a side file. T1 deliberately did NOT invent those citations: a prereg pointer
+      that does not exist is worse than a null one.
