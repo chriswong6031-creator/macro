@@ -26,6 +26,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT))
 
 from engine import prophet_stage_fusion as psf  # noqa: E402
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 
 log = logging.getLogger("run_prophet_stage_fusion")
 
@@ -333,7 +334,8 @@ def main(argv: list[str] | None = None) -> int:
 
     out_json = _REPO_ROOT / "data" / "research" / "prophet_stage_fusion_results.json"
     out_json.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(results, indent=2, default=str))
+    out_json.write_text(json.dumps(sanitize_non_finite(results), indent=2,
+                                   default=str, allow_nan=False))
     log.info("PSF: wrote %s", out_json)
 
     if not args.no_report:
