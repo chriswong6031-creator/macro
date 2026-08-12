@@ -30,17 +30,15 @@ wiring anything in. The verdict was sobering and is the reason this file is a *m
 
 So the ONLY genuinely non-collinear, directionally-consistent edge is narrow: in a midterm
 Apr-Oct window WHILE THE TAPE IS STILL RISK-ON (SPY above its 200dMA), >=5% pullbacks have
-arrived at ~1.25x the base rate (32.5% vs 26.0%) — i.e. the calendar flags risk *before
-price reveals it*. That, and only that, is the sensitivity nudge below. Everything else is
-display + a small sizing prior.
+arrived at ~1.25x the base rate (32.5% vs 26.0%). That is useful as a small sizing prior,
+but the independent sample is too weak to change a measured signal's band. Everything here
+is therefore display + sizing only.
 
-WHAT THIS FILE DOES (all at the modulator/display tier — the evidence gate is untouched):
+WHAT THIS FILE DOES (all at the sizing/display tier — the evidence gate is untouched):
   context()    — where we are in the 4-yr cycle + the Hirsch midterm-drawdown window, with the
                  MEASURED odds (not assumed) printed so the chip can never imply false certainty.
-  modulation() — the Risk-Radar nudge: lowers ONLY the early (watch/caution) bands, and ONLY in
-                 the risk-ON midterm window (the 1.25x cut); plus a small gross (sizing) trim
-                 across the window. It can NEVER manufacture a loud (elevated+) banner — that
-                 still requires the broad tape to break (the radar's #1 validated FP lever).
+  modulation() — a small gross (sizing) trim across the window. It NEVER changes a Risk-Radar
+                 band or manufactures an alert; measured market evidence owns those decisions.
   sector_bias()— display-only defensive-rotation tilt for a midterm H2, labelled as mostly
                  generic seasonality.
 
@@ -70,10 +68,7 @@ _TROUGH_END = (10, 31)  # Oct  — the historical bottoming zone
 
 # ---- the ONE measured edge that survived the backtest ----------------------
 # Midterm Apr-Oct window AND SPY risk-ON -> >=5% pullback at 32.5% vs 26.0% base = ~1.25x.
-# Translate that into a SMALL early-tier band nudge. Lowering the watch/caution thresholds a
-# few points makes the QUIET tiers fire earlier; the loud (elevated/risk-off) bands are left
-# untouched, so the calendar can never originate a loud banner.
-_BAND_NUDGE = 4.0       # points to subtract from the watch + caution thresholds, risk-ON slice only
+# The small, suggestive sample may adjust SIZE but not a measured signal's band.
 # Small sizing prior across the whole midterm Apr-Oct window (DD ~1.4x deeper on average). The
 # engine's own philosophy: de-risk = SIZING, not selection. Floored by the radar's gross floor.
 _GROSS_MULT = 0.97
@@ -91,11 +86,11 @@ _SLICE_EN = ("The one measured edge: while the market still looks healthy (S&P a
              "early heads-up for position size, never a trigger.")
 _SLICE_ZH = ("唯一可量化的优势：当大盘仍健康（标普高于 200 日均线）时，该窗口出现回撤的频率约为平常的 "
              "1.25 倍——仅作提前提醒、用于仓位，绝非买卖触发。")
-_CAVEAT_EN = ("Calendar context only — it gently adjusts position size and alert sensitivity, "
-              "and can never raise an alarm by itself. And ignore the folk story that the "
+_CAVEAT_EN = ("Calendar context only — it gently adjusts position size and never changes a "
+              "signal band or raises an alarm. And ignore the folk story that the "
               "dollar firms up in midterm second halves: history shows the opposite, so trust "
               "the measured dollar and rate gauges, not the year.")
-_CAVEAT_ZH = ("仅为日历背景——只轻微调整仓位与预警灵敏度，绝不单独拉响警报。至于「中期下半年美元走强」"
+_CAVEAT_ZH = ("仅为日历背景——只轻微调整仓位，不改变信号等级，也绝不单独拉响警报。至于「中期下半年美元走强」"
               "的坊间说法：历史恰好相反，请相信实测的美元与利率指标，而非年份本身。")
 
 # ---- sector rotation (display-only) ----------------------------------------
@@ -173,10 +168,8 @@ def context(asof=None) -> dict:
 
 def modulation(asof=None, spy_risk_on=None) -> dict:
     """The Risk-Radar modulation. Returns:
-      band_delta — points to LOWER the watch + caution thresholds (early tiers only). Non-zero
-                   ONLY in a midterm Apr-Oct window AND spy_risk_on (the measured non-collinear
-                   1.25x cut). It can NEVER touch the elevated/risk-off bands, so the calendar
-                   cannot originate a loud banner.
+      band_delta — always 0.0. Retained for payload compatibility; the calendar has no band
+                   authority.
       gross_mult — small sizing trim (<=1.0) applied across the whole midterm Apr-Oct window
                    (a position-sizing prior; the deeper-drawdown season). 1.0 otherwise.
       active     — whether anything is being modulated.
@@ -186,25 +179,20 @@ def modulation(asof=None, spy_risk_on=None) -> dict:
     except Exception:
         d = _dt.date.today()
     in_window = (year_in_term(d.year) == 2) and _in_span(d, _WIN_START, _WIN_END)
-    # band nudge ONLY in the risk-ON slice (when risk-OFF, midterm is near-collinear with price
-    # already weak — adding sensitivity there would just double-count the radar's own read).
     risk_on = bool(spy_risk_on) if spy_risk_on is not None else False
-    band_delta = _BAND_NUDGE if (in_window and risk_on) else 0.0
+    band_delta = 0.0
     gross_mult = _GROSS_MULT if in_window else 1.0
     reason_en = reason_zh = None
     if in_window:
-        if band_delta > 0:
-            reason_en = ("Midterm risk-on window — early-tier sensitivity raised (~1.25× base) "
-                         "and gross trimmed; loud banner still requires the broad tape to break.")
-            reason_zh = "中期选举「风险开」窗口——提高早期预警灵敏度（约 1.25 倍）并小幅降仓；响亮警报仍需大盘破位。"
-        else:
-            reason_en = "Midterm drawdown window — gross trimmed as a sizing prior (deeper-drawdown season)."
-            reason_zh = "中期回撤窗口——按季节性偏深回撤的先验小幅降仓。"
+        reason_en = ("Midterm drawdown window — gross trimmed as a sizing prior; the calendar "
+                     "does not change Risk-Radar bands.")
+        reason_zh = "中期回撤窗口——仅按季节性先验小幅降仓；日历不改变风险雷达等级。"
     return {
         "band_delta": float(band_delta),
         "gross_mult": float(gross_mult),
         "active": bool(in_window),
-        "risk_on_slice": bool(band_delta > 0),
+        "risk_on_slice": bool(in_window and risk_on),
+        "sizing_only": True,
         "reason_en": reason_en,
         "reason_zh": reason_zh,
     }

@@ -1,9 +1,8 @@
 """Tests for engine/election_cycle.py + its wiring into engine/risk_radar.py.
 
-The load-bearing invariant: the election cycle is a MODULATOR, never an alert originator.
-These tests pin (1) the cycle math, (2) that the sensitivity nudge fires ONLY in the
-risk-ON midterm window, (3) that it can NEVER manufacture a loud (elevated+) banner — the
-context gate still rules — and (4) that it can't conjure an alert from a calm tape.
+The load-bearing invariant: the election cycle is sizing/display context, never an alert
+originator or band modifier. These tests pin the cycle math, sizing-only authority, and that
+it cannot conjure an alert from a calm tape.
 """
 from __future__ import annotations
 
@@ -36,13 +35,13 @@ def test_context_flags():
 
 
 # --- modulation: the one defensible slice ------------------------------------
-def test_modulation_band_nudge_only_risk_on_window():
-    # risk-ON inside the midterm window = the measured ~1.25x cut -> nudge fires
+def test_modulation_is_sizing_only_in_midterm_window():
+    # risk-ON inside the midterm window: descriptive slice + small sizing prior, no band authority
     on = ec.modulation("2026-08-15", spy_risk_on=True)
-    assert on["band_delta"] > 0 and on["risk_on_slice"] and on["active"]
+    assert on["band_delta"] == 0.0 and on["risk_on_slice"] and on["active"]
+    assert on["sizing_only"] is True
     assert on["gross_mult"] < 1.0
-    # risk-OFF inside the window = near-collinear with price-already-weak -> NO band nudge,
-    # but the small sizing prior still applies (window-wide)
+    # risk-OFF inside the window: same small sizing prior, still no band change
     off = ec.modulation("2026-08-15", spy_risk_on=False)
     assert off["band_delta"] == 0.0 and not off["risk_on_slice"]
     assert off["active"] and off["gross_mult"] < 1.0
@@ -80,14 +79,15 @@ def test_cycle_cannot_manufacture_loud_banner_when_risk_on():
     out = rr.compute(sigs=sigs, asof="2026-08-15", gate=_RISK_ON)
     assert out["cycle_context"] and out["cycle_context"]["is_midterm"]
     assert out["cycle_context"]["modulation"]["risk_on_slice"] is True
+    assert out["cycle_context"]["modulation"]["band_delta"] == 0.0
     # the loud banner is still gated: capped at caution, NOT elevated/risk-off
     assert out["state"] == "caution"
     assert out["alert"] is False
 
 
-def test_cycle_nudge_cannot_conjure_alert_from_calm():
+def test_cycle_cannot_conjure_alert_from_calm():
     out = rr.compute(sigs=_sigs(credit_oas_roc=0.20, rates_move=0.20), asof="2026-08-15", gate=_RISK_ON)
-    assert out["state"] == "calm"   # nudged bands still far above a calm tape
+    assert out["state"] == "calm"
 
 
 def test_normal_elevated_behavior_preserved_when_risk_off():

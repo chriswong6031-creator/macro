@@ -50,7 +50,7 @@ _LEG_NAMES: dict[str, tuple[str, str]] = {
     "credit_hyg_tlt":    ("HY bonds lagging Treasuries", "高收益债跑输国债"),
     "rates_move":        ("Bond-market volatility (MOVE)", "债市波动率（MOVE）"),
     "rates_realrate":    ("Real yields jumping", "实际利率跳升"),
-    "bubble_ext":        ("S&P stretched vs 200-day", "标普超买（>200日线）"),
+    "bubble_ext":        ("S&P trend extension vs 200-day", "标普相对200日线趋势延伸"),
     "bubble_leadership": ("Narrow leadership (semis)", "领涨过窄（半导体）"),
     "growth_defensives": ("Defensives outperforming", "防御股跑赢"),
     "growth_cyc_def":    ("Cyclicals fading vs defensives", "周期股弱于防御"),

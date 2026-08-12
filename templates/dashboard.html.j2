@@ -6142,7 +6142,22 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 }
 @keyframes rlxGrow{to{transform:scaleX(1);}}
 
-/* — 3. US Leaders chart block (mono tickers, animated gradient bars, count chip) — */
+/* — 3. Leadership rotation + tracked-cohort damage block — */
+.rkc-rot-head,.rkc-cohort-kicker{display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  font:750 10px/1.3 var(--font-ui,inherit);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-2,rgba(255,255,255,.68));margin:2px 0 8px;}
+.rkc-rot-head small,.rkc-cohort-kicker small{font-size:9px;font-weight:500;letter-spacing:.02em;text-transform:none;color:var(--ink-3,rgba(255,255,255,.4));}
+.rkc-rot-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:6px;margin-bottom:4px;}
+.rkc-rot-chip{display:flex;align-items:center;justify-content:space-between;gap:7px;min-width:0;padding:7px 9px;
+  border-radius:8px;text-decoration:none;color:var(--ink-2,rgba(255,255,255,.72));
+  background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);}
+[data-theme="light"] .rkc-rot-chip{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.07);}
+.rkc-rot-chip.up{border-color:color-mix(in srgb,var(--up,#22c55e) 34%,transparent);background:color-mix(in srgb,var(--up,#22c55e) 7%,transparent);}
+.rkc-rot-chip.down{border-color:color-mix(in srgb,var(--down,#ef4444) 28%,transparent);background:color-mix(in srgb,var(--down,#ef4444) 5%,transparent);}
+.rkc-rot-name{font:650 10.5px/1.25 var(--font-ui,inherit);min-width:0;}
+.rkc-rot-meta{flex:0 0 auto;font:700 9.5px/1 var(--font-mono,ui-monospace,monospace);color:var(--ink-3,rgba(255,255,255,.46));}
+.rkc-rot-chip.up .rkc-rot-meta{color:var(--up,#22c55e);}.rkc-rot-chip.down .rkc-rot-meta{color:var(--down,#ef4444);}
+.rkc-cohort-kicker{margin-top:14px;padding-top:11px;border-top:1px solid var(--line,rgba(255,255,255,.08));}
 .rkc-ldr-head{display:flex;align-items:center;gap:9px;margin:2px 0 10px;}
 .rkc-ldr-state{flex:1;min-width:0;font:600 13px/1.4 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.9));}
 .rkc-ldr-count{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:6px;font:800 14px/1 var(--font-ui,inherit);
@@ -7588,7 +7603,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
            risk_state_live.js may append a PROVISIONAL intraday point beyond it, and
            "last graded <date>" stays true when it does. #}
         {% set _ph_last_d = _mx5_hist[-1].asof if (_mx5_hist and _mx5_hist[-1].asof is defined and _mx5_hist[-1].asof and _mx5_hist[-1].asof | length >= 10) else none %}
-        <span class="mx5-path-meta">{% if _ph_last_d %}<span class="l-en">Score vs time &middot; last graded {{ _mx5_mos_en[_ph_last_d[5:7]|int] }} {{ _ph_last_d[8:10]|int }}</span><span class="l-zh">综合评分 · 时序 &middot; 最后评级 {{ _ph_last_d[5:7]|int }}月{{ _ph_last_d[8:10]|int }}日</span>{% else %}<span class="l-en">Score vs time</span><span class="l-zh">综合评分 · 时序</span>{% endif %}</span>
+        <span class="mx5-path-meta">{% if _ph_last_d %}<span class="l-en">Measured blend &middot; last graded {{ _mx5_mos_en[_ph_last_d[5:7]|int] }} {{ _ph_last_d[8:10]|int }}</span><span class="l-zh">实测合成分 · 最后评级 {{ _ph_last_d[5:7]|int }}月{{ _ph_last_d[8:10]|int }}日</span>{% else %}<span class="l-en">Measured blend</span><span class="l-zh">实测合成分</span>{% endif %}</span>
       </div>
       {% if _mx5_hist %}
       {# ── Legit chart geometry (Order 1) ──────────────────────────────────
@@ -7663,7 +7678,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
            data-points='{{ _ph_json | tojson }}'
            data-px0="{{ PX0 }}" data-pxw="{{ PXW }}" data-py0="{{ PY0 }}" data-pyb="{{ PYB }}"
            data-vbw="1000" data-vbh="224"
-           role="img" aria-label="{{ _mx5_hist_n }}-session macro score path, {{ _mx5_hist[0].score }} to {{ _mx5_hist[-1].score }}">
+           role="img" aria-label="{{ _mx5_hist_n }}-session measured blend path, {{ _mx5_hist[0].score }} to {{ _mx5_hist[-1].score }}">
         <defs>
           {# band gradient (see the stop build above). The area-fill gradient it replaces
              washed the WHOLE 20-session area in today's colour — a single-band claim over
@@ -12034,8 +12049,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {%- set _l1ord = ('th' if (11 <= (_l1p % 100) <= 13) else {1:'st',2:'nd',3:'rd'}.get(_l1p % 10, 'th')) if _l1p is not none else '' -%}
           {#- Plain fallback (trigger hook + JS-off): single fact, kept short. Rich .lens-src
              below carries the two-leg percentile position bars (built from _l0p/_l1p). -#}
-          {%- set _rk_lead_tip_en = 'Leading leg at the ' ~ _l0p ~ _l0ord ~ ' percentile of its 5-year range — higher = more stretched.' -%}
-          {%- set _rk_lead_tip_zh = '领先因素处于其 5 年区间的 ' ~ _l0p ~ ' 分位——越高越极端。' -%}
+          {%- set _rk_lead_tip_en = 'Leading leg at the ' ~ _l0p ~ _l0ord ~ ' percentile of its trailing 504-session range — higher = more stretched.' -%}
+          {%- set _rk_lead_tip_zh = '领先因素处于其过去 504 个交易日区间的 ' ~ _l0p ~ ' 分位——越高越极端。' -%}
           <div class="rkc-sig" style="--rkc-c:var(--isle-risk,#e05c5c)" data-lens-kind="caution" data-tip-en="{{ _rk_lead_tip_en }}" data-tip-zh="{{ _rk_lead_tip_zh }}">
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('leading') }}</span>
             <div class="rkc-sig-body">
@@ -12050,7 +12065,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 <span class="lens-ill">{{ rkc_sig_glyph('leading') }}</span>
                 <span class="lens-hgroup">
                   <span class="lens-kick"><span class="l-en">LEADING PRESSURE</span><span class="l-zh">领先压力</span></span>
-                  <span class="lens-title"><span class="l-en">How stretched, vs 5 years</span><span class="l-zh">相对5年区间的极端度</span></span>
+                  <span class="lens-title"><span class="l-en">How stretched, vs 504 sessions</span><span class="l-zh">相对504个交易日的极端度</span></span>
                 </span>
               </div>
               <div class="rlx-viz" style="--rlx-c:var(--isle-risk,#e05c5c)">
@@ -12066,7 +12081,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   </div>
                   {% endif %}
                 </div>
-                <div class="rlx-viz-cap"><span class="l-en">Bars sit further right the more stretched a leg is vs its own 5-year range.</span><span class="l-zh">越靠右，代表该因素相对其自身 5 年区间越极端。</span></div>
+                <div class="rlx-viz-cap"><span class="l-en">Bars sit further right the more stretched a leg is vs its trailing 504 sessions.</span><span class="l-zh">越靠右，代表该因素相对其过去 504 个交易日越极端。</span></div>
               </div>
               <div class="rlx-rows">
                 <div class="rlx-row">
@@ -12075,8 +12090,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 </div>
               </div>
               <div class="lens-receipt">
-                <span class="l-en">{{ _l0p }}{{ _l0ord }} pctile{% if _l1p is not none %} · second at {{ _l1p }}{{ _l1ord }}{% endif %} · 5-year window · display context</span>
-                <span class="l-zh">{{ _l0p }} 分位{% if _l1p is not none %} · 次高 {{ _l1p }} 分位{% endif %} · 5 年区间 · 展示背景</span>
+                <span class="l-en">{{ _l0p }}{{ _l0ord }} pctile{% if _l1p is not none %} · second at {{ _l1p }}{{ _l1ord }}{% endif %} · trailing 504 sessions · display context</span>
+                <span class="l-zh">{{ _l0p }} 分位{% if _l1p is not none %} · 次高 {{ _l1p }} 分位{% endif %} · 过去 504 个交易日 · 展示背景</span>
               </div>
             </span>{# end .lens-src #}
           </div>
@@ -12149,7 +12164,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 </div>
                 <div class="rlx-row">
                   <span class="rlx-k"><span class="l-en">What it does</span><span class="l-zh">作用</span></span>
-                  <span class="rlx-v"><span class="l-en">Nudges position sizing <b>smaller</b> and early alerts <b>sooner</b> — never raises the loud banner.</span><span class="l-zh">将仓位<b>略调小</b>、早期预警<b>略提前</b>——绝不拉响响亮警报。</span></span>
+                  <span class="rlx-v"><span class="l-en">Nudges position sizing <b>smaller</b>. It never changes a signal band or the measured Market State.</span><span class="l-zh">仅将仓位<b>略调小</b>，绝不改变信号等级或实测市场状态。</span></span>
                 </div>
               </div>
               {% if _rk_cy.sector_bias %}
@@ -12369,22 +12384,45 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
         {% endif %}
 
-        {# — 4. US Leaders section — #}
-        {% if leadership_crack is defined and leadership_crack and leadership_crack.state is defined and leadership_crack.state != 'INTACT' %}
-        {% set _lc = leadership_crack %}
+        {# — 4. Current rotation + tracked AI-hardware damage cohort — #}
+        {% set _rot = (sector_heat.get('rotation') or []) if (sector_heat is defined and sector_heat) else [] %}
+        {% set _show_lc = leadership_crack is defined and leadership_crack and leadership_crack.state is defined and leadership_crack.state != 'INTACT' %}
+        {% if _rot or _show_lc %}
+        {% set _lc = leadership_crack if _show_lc else none %}
         <div class="mx5-dlg-sep"></div>
-        <div class="mx5-dlg-eyebrow">{{ t('US Leaders','美股龙头') }}</div>
+        <div class="mx5-dlg-eyebrow">{{ t('Leadership & rotation','领涨与轮动') }}</div>
         <div class="rsx-leaders">
+          {# Current theme pulse: this is today's rotation read. It is deliberately separate from
+             the tracked damage cohort below, which preserves continuity through a washout. #}
+          {% if _rot %}
+          <div class="rkc-rot-head">
+            <span>{{ t('Current theme pulse','当前主题脉搏') }}</span>
+            {% if sector_heat.get('as_of') %}<small>{{ t('as of','截至') }} {{ sector_heat.as_of }}</small>{% endif %}
+          </div>
+          <div class="rkc-rot-grid">
+            {% for rt in _rot %}
+            {% set _rt_tone = 'up' if rt.heat in ['heating','hot'] else ('down' if rt.heat in ['cooling','broken'] else 'flat') %}
+            <a class="rkc-rot-chip {{ _rt_tone }}" href="basket/{{ rt.id }}.html">
+              <span class="rkc-rot-name"><span class="l-en">{{ rt.short_name }}</span><span class="l-zh">{{ rt.short_name_zh or rt.short_name }}</span></span>
+              <span class="rkc-rot-meta">#{{ rt.rank if rt.rank is not none else '—' }}{% if rt.rank_delta_5d is not none %} · {{ '▲' if rt.rank_delta_5d > 0 else ('▼' if rt.rank_delta_5d < 0 else '•') }}{{ rt.rank_delta_5d|abs }} 5d{% endif %}</span>
+            </a>
+            {% endfor %}
+          </div>
+          <div class="rkc-ldr-sub"><span class="l-en">Compare live rank and five-session momentum across software, semis and prior hardware leaders. Descriptive rotation only — not a forecast or Market-State input.</span><span class="l-zh">对比软件、半导体与此前硬件龙头的实时排名及五个交易日动量。仅描述轮动——不是预测，也不参与市场状态评分。</span></div>
+          {% endif %}
+
+          {% if _show_lc %}
+          <div class="rkc-cohort-kicker">{{ t('Tracked AI-hardware damage cohort','跟踪中的 AI 硬件受损群组') }}{% if _lc.asof is defined and _lc.asof %}<small>{{ t('as of','截至') }} {{ _lc.asof }}</small>{% endif %}</div>
           {# Header row: engine state line (verbatim) + count chip (N names 30%+ off) #}
           {% set _lc_n30h = ((_lc.share30 * _lc.n_total) | round | int) if (_lc.share30 is defined and _lc.share30 is not none and _lc.n_total is defined) else none %}
           <div class="rkc-ldr-head">
             <div class="rkc-ldr-state">
               {% if _lc.state == 'BROKEN' %}
-              <span class="l-en">Leaders broken — the median AI-hardware leader is {% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}%{% else %}well{% endif %} off its high while the index still holds.</span>
-              <span class="l-zh">龙头受损——AI硬件龙头中位数已较高点回撤{% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}%{% else %}明显{% endif %}，而指数仍稳。</span>
+              <span class="l-en">Residual damage — this tracked cohort's median name is {% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}%{% else %}well{% endif %} below its {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }}-session high. It is not today's leader roster or a broad-market veto.</span>
+              <span class="l-zh">残余受损——该跟踪群组中位数较过去 {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }} 个交易日高点回撤{% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}%{% else %}明显{% endif %}。它不是当下龙头名单，也不否决大盘状态。</span>
               {% else %}
-              <span class="l-en">Leaders cracking — early stress in the AI-hardware leaders{% if _lc.med_dd is defined and _lc.med_dd is not none %}, the median name {{ (_lc.med_dd * 100)|abs|round|int }}% off its high{% endif %}.</span>
-              <span class="l-zh">龙头出现裂痕——AI硬件龙头初显压力{% if _lc.med_dd is defined and _lc.med_dd is not none %}，中位数较高点回撤{{ (_lc.med_dd * 100)|abs|round|int }}%{% endif %}。</span>
+              <span class="l-en">Damage watch — early stress remains in the tracked AI-hardware cohort{% if _lc.med_dd is defined and _lc.med_dd is not none %}, with the median name {{ (_lc.med_dd * 100)|abs|round|int }}% below its {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }}-session high{% endif %}.</span>
+              <span class="l-zh">受损观察——跟踪中的 AI 硬件群组仍有早期压力{% if _lc.med_dd is defined and _lc.med_dd is not none %}，中位数较过去 {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }} 个交易日高点回撤 {{ (_lc.med_dd * 100)|abs|round|int }}%{% endif %}。</span>
               {% endif %}
             </div>
             {% if _lc_n30h is not none %}
@@ -12423,17 +12461,18 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% set _lc_n10 = (_lc.share10 * _lc.n_total) | round | int %}
           {% set _lc_n30 = (_lc.share30 * _lc.n_total) | round | int %}
           <div class="rkc-ldr-sub">
-            <span class="l-en"><b>{{ _lc_n10 }}</b> of {{ _lc.n_total }} names are 10%+ off their highs — the breadth behind the broken leaders above.</span>
-            <span class="l-zh">{{ _lc.n_total }}个成分中<b>{{ _lc_n10 }}</b>个较高点跌超10%——即上方龙头受损背后的广度。</span>
+            <span class="l-en"><b>{{ _lc_n10 }}</b> of {{ _lc.n_total }} tracked names are 10%+ below their {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }}-session highs — residual cohort damage, not current market breadth.</span>
+            <span class="l-zh">{{ _lc.n_total }} 个跟踪标的中有 <b>{{ _lc_n10 }}</b> 个较过去 {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }} 个交易日高点下跌逾 10%——这是群组残余受损，并非当前大盘广度。</span>
           </div>
           {% endif %}
           {# Receipt fields in data-tip-en/zh #}
           {% set _lc_tip_en %}State since {{ _lc.state_since if (_lc.state_since is defined and _lc.state_since) else '—' }}. Velocity z={{ ((_lc.z_vel)|round(1)) if (_lc.z_vel is defined and _lc.z_vel is not none) else '—' }}. Carnage share EMA {{ ((_lc.carnage_share_ema * 100)|round|int ~ '%') if (_lc.carnage_share_ema is defined and _lc.carnage_share_ema is not none) else '—' }}. Accrual-only display — see pick-lab for forward grading.{% endset %}
           {% set _lc_tip_zh %}自{{ _lc.state_since if (_lc.state_since is defined and _lc.state_since) else '—' }}起。速度 z={{ ((_lc.z_vel)|round(1)) if (_lc.z_vel is defined and _lc.z_vel is not none) else '—' }}。灾情份额 EMA {{ ((_lc.carnage_share_ema * 100)|round|int ~ '%') if (_lc.carnage_share_ema is defined and _lc.carnage_share_ema is not none) else '—' }}。仅积累展示，前瞻评分见选股实验室。{% endset %}
           <div class="rkc-ldr-sub" style="margin-top:5px" data-tip-en="{{ _lc_tip_en | trim }}" data-tip-zh="{{ _lc_tip_zh | trim }}">
-            <span class="l-en">Watch — don't chase.</span>
-            <span class="l-zh">观望，勿追高。</span>
+            <span class="l-en">Continuity monitor — compare with the current rotation pulse above.</span>
+            <span class="l-zh">连续性监测——请与上方当前轮动脉搏对照。</span>
           </div>
+          {% endif %}
         </div>
         {% endif %}
 

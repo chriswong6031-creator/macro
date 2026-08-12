@@ -301,6 +301,10 @@ def build(offline: bool = False) -> dict:
         "score": (live_blk.get("score") if live_active
                   else (nightly_blk.get("score") if nightly_blk.get("score") is not None
                         else live_blk.get("score"))),
+        # The gauge uses policy-adjusted score; the history chart uses the measured blend.
+        "raw_score": (live_blk.get("raw_score") if live_active
+                      else (nightly_blk.get("raw_score") if nightly_blk.get("raw_score") is not None
+                            else live_blk.get("raw_score"))),
         "band_changed": deb.get("band_changed", False),
         "pending": deb.get("pending"),
     }

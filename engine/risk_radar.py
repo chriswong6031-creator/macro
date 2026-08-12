@@ -894,13 +894,9 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
     ts = asof or subs.dropna(how="all").index[-1]
     sigrow = sigs.reindex([subs.dropna(how="all").index[-1]]).iloc[-1]
 
-    # ELECTION-CYCLE MODULATOR (engine/election_cycle.py) — a calendar MODULATOR, never an
-    # originating leg (the midterm edge is suggestive-not-significant; see that file's docstring
-    # for the backtest). In the ONE non-collinear slice — a midterm Apr-Oct window while the tape
-    # is still risk-ON — it LOWERS the early (watch/caution) bands a few points so the QUIET tiers
-    # fire earlier (the measured ~1.25x cut). It NEVER touches the elevated/risk-off bands, so the
-    # calendar can NEVER manufacture a loud banner (that still requires the broad tape to break).
-    # Plus a small gross (sizing) trim across the window. Additive, never fatal.
+    # ELECTION-CYCLE CONTEXT (engine/election_cycle.py) — sizing/display only. The midterm edge
+    # is suggestive-not-significant, so it may trim gross modestly but may not lower a measured
+    # signal band. Additive, never fatal.
     gate = gate if gate is not None else context_gate_live()
     cyc = None
     mod = {"band_delta": 0.0, "gross_mult": 1.0, "active": False, "risk_on_slice": False}
@@ -909,10 +905,6 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         risk_on = (gate.get("spy_below_200dma") is False)
         cyc = _ec.context(asof=ts)
         mod = _ec.modulation(asof=ts, spy_risk_on=risk_on)
-        if mod["band_delta"] > 0:
-            d = mod["band_delta"]
-            bands = {**bands, "watch": max(0.0, bands["watch"] - d),
-                     "caution": max(0.0, bands["caution"] - d)}
         if cyc is not None:
             cyc["modulation"] = mod
     except Exception as e:  # noqa: BLE001 — modulator, never fatal
@@ -960,8 +952,14 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         # lift-weighted score: a LEADING leg (high measured lift) outranks a coincident one
         # (e.g. the weak vol-level leg) when picking the dominant/named scare. Display keeps raw score.
         best_lift = max([float(l.get("lift_2020") or 1.0) for l in firing], default=1.0)
+        label_en, label_zh = _SCARE_LABEL[scare]
+        # A sub-confirmation extension percentile is a trend/exposure watch, not evidence that a
+        # speculative blow-off is already unwinding. Keep the stable scare key for history while
+        # reserving the alarmist label for at least one confirmed bubble leg.
+        if scare == "bubble" and not any(leg.get("confirmed") for leg in firing):
+            label_en, label_zh = "Trend extension watch", "趋势延伸观察"
         scares.append({"scare": scare, "tier": spec["tier"],
-                       "label_en": _SCARE_LABEL[scare][0], "label_zh": _SCARE_LABEL[scare][1],
+                       "label_en": label_en, "label_zh": label_zh,
                        "score": round(sc, 1), "band": band, "firing_legs": firing,
                        "lead_weighted": round(sc * best_lift, 1),
                        # disclosure only — see the COMPOSITION COVERAGE note above
@@ -1067,7 +1065,8 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         gross = round(max(_GROSS["floor"], gross * float(mod["gross_mult"])), 3)
     mod["gross_applied"] = bool(gross_applied)
     prob = _drawdown_prob(state, len(hotA), calib)
-    head_en, head_zh = _headline(state, dominant, hotA)
+    head_en, head_zh = _headline(state, dominant, hotA, prob)
+    authority = _market_state_authority(state, bool(alert), scares, prob, calib)
     traj = trajectory(subs, calib)
     deesc = _deescalation(dominant["scare"] if dominant else None, subs, traj, prob)
 
@@ -1107,6 +1106,10 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         "asof": str(pd.Timestamp(ts).date()),
         "state": state,
         "alert": bool(alert),
+        # Explicit cross-module authority contract. Quiet early tiers can size/display, but only
+        # an above-base loud state backed by a confirmed, validated Tier-A leg may cap Market State.
+        "can_force": bool(authority["can_force"]),
+        "authority": authority,
         "dominant_scare": dominant["scare"] if dominant else None,
         "dominant_label_en": dominant["label_en"] if dominant else None,
         "dominant_label_zh": dominant["label_zh"] if dominant else None,
@@ -1128,7 +1131,7 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         # "risk receding" verdict is DERIVED here, beside the scares it must agree
         # with — the recovery panel renders green only when eligible=true.
         "deescalation": deesc,
-        "cycle_context": cyc,   # election-cycle MODULATOR (display + sizing; never originates an alert)
+        "cycle_context": cyc,   # election-cycle context (display + sizing; never changes a band)
         "counterread": counterread,  # RC-R11 washout counter-read (display context; never suppresses)
         "favor_entries": _STATE_ORDER.index(state) >= _STATE_ORDER.index("caution"),
         "cap_leadership": bool(cap_leadership),
@@ -1193,16 +1196,83 @@ def _gross_for(state: str) -> float:
     return round(max(_GROSS["floor"], g), 3)
 
 
-def _headline(state, dominant, hot):
+def _market_state_authority(state: str, alert: bool, scares: list[dict], prob: dict,
+                            calib: dict | None = None) -> dict:
+    """Return the radar's explicit authority over the measured Market-State blend.
+
+    A watch/caution read remains useful for sizing, but it is not a veto. Binding authority
+    requires all three independent gates: the final (context-gated) state is loud, that state's
+    measured 21-session pullback rate is above the unconditional base rate, and at least one
+    confirmed Tier-A firing leg has cleared its holdout validation bar. This prevents a calendar
+    prior, an unconfirmed percentile, or a below-base early flag from becoming a hard score cap.
+    """
+    confirmed = []
+    for scare in scares or []:
+        # The evidence must be active in the hot Tier-A set that produced or corroborated the
+        # loud state. A confirmed leg sitting inside an otherwise calm, unrelated scare cannot
+        # lend veto authority to a different unconfirmed scare.
+        if (scare.get("tier") != "A"
+                or scare.get("band") not in ("caution", "elevated", "risk-off")):
+            continue
+        for leg in scare.get("firing_legs") or []:
+            key = leg.get("leg")
+            if key and leg.get("confirmed") and _is_validated(key, calib):
+                confirmed.append(key)
+    confirmed = list(dict.fromkeys(confirmed))
+    above_base = bool(prob.get("state_above_base"))
+    loud = bool(alert and state in ("elevated", "risk-off"))
+    can_force = bool(loud and above_base and confirmed)
+    if can_force:
+        reason = "confirmed_validated_loud_edge"
+        note_en = "Binding guard — confirmed leading risk may cap the measured tape."
+        note_zh = "约束性护栏——已确认的领先风险可压低实测盘面评分。"
+    elif not loud:
+        reason = "early_tier_advisory"
+        note_en = "Advisory — sizes risk; does not override the measured tape."
+        note_zh = "提示性信号——仅调整仓位，不覆盖实测盘面。"
+    elif not above_base:
+        reason = "no_above_base_edge"
+        note_en = "Advisory — this state's measured odds do not beat the base rate."
+        note_zh = "提示性信号——该等级的实测概率未高于基准。"
+    else:
+        reason = "no_confirmed_validated_leg"
+        note_en = "Advisory — no confirmed validated leading leg, so the tape keeps authority."
+        note_zh = "提示性信号——尚无已确认且经验证的领先分项，盘面评分保留主导权。"
+    return {
+        "tier": "binding" if can_force else "advisory",
+        "can_force": can_force,
+        "reason": reason,
+        "note_en": note_en,
+        "note_zh": note_zh,
+        "state_above_base": above_base,
+        "confirmed_validated_legs": confirmed,
+        "requires": ["elevated_or_risk_off", "above_base_rate",
+                     "confirmed_validated_leg_in_hot_tier_a_scare"],
+    }
+
+
+def _headline(state, dominant, hot, prob=None):
     if state == "calm" or not dominant:
         return ("Risk radar: calm — no scare-type elevated.", "风险雷达：平静 — 无升级的风险类型。")
+    prob = prob or {}
     name = dominant["label_en"]
     name_zh = dominant["label_zh"]
     legs = ", ".join(f"{l['leg']}({l['pctile']:.0%})" for l in dominant["firing_legs"][:3])
     conj = " + " + " × ".join(h["label_en"] for h in hot[:2]) if len(hot) >= 2 else ""
+    p21 = prob.get("h21")
+    base = prob.get("base_h21")
+    lift = prob.get("lift_h21")
+    odds_en = (f" 21-session pullback odds {p21:.0%} vs {base:.0%} normal"
+               + (f" ({lift:.1f}x)." if lift is not None else ".")) if p21 is not None and base is not None else ""
+    odds_zh = (f" 21 日回撤概率 {p21:.0%}，常态 {base:.0%}"
+               + (f"（{lift:.1f} 倍）。" if lift is not None else "。")) if p21 is not None and base is not None else ""
+    action_en = (" De-risk sizing; favour entries." if prob.get("state_above_base") else
+                 " Early flag, not a measured edge; avoid chasing without fighting the tape.")
+    action_zh = (" 按仓位降险，择优入场。" if prob.get("state_above_base") else
+                 " 属早期提示而非实测优势；避免追高，但不逆势。")
     en = (f"{state.upper()}: {name} ({dominant['score']:.0f}/100){conj}. Leading: {legs}."
-          f" Modest odds (~1.5-2x) — de-risk, favor entries.")
-    zh = f"{state.upper()}：{name}（{dominant['score']:.0f}/100）。降低风险敞口、择优入场。"
+          f"{odds_en}{action_en}")
+    zh = f"{state.upper()}：{name_zh}（{dominant['score']:.0f}/100）。{odds_zh}{action_zh}"
     return en, zh
 
 
@@ -1320,14 +1390,11 @@ def trajectory(subs: pd.DataFrame | None = None, calib: dict | None = None,
         # matches what the card would have shown. Only the window is mapped to odds (not all history).
         states = odds = None
         try:
-            from engine.risk_radar_backtest import state_series, band_delta_series
+            from engine.risk_radar_backtest import state_series
             states = state_series(subs, calib).reindex(intensity.index).tail(window)
-            # the conjunction count must use the SAME election-cycle-nudged caution cut that
-            # state_series (and compute()) use, or the states and the hot-count that together
-            # produce the odds series come from two different calibrations (audit 2026-07-29).
-            _caut = (bands["caution"]
-                     - band_delta_series(subs.index).reindex(subs.index).fillna(0.0)).clip(lower=0.0)
-            nhot = sum((subs[s] >= _caut).astype(int) for s in tierA
+            # Calendar context is sizing-only; the measured caution cut is identical in the
+            # live engine and this causal replica.
+            nhot = sum((subs[s] >= bands["caution"]).astype(int) for s in tierA
                        ).reindex(intensity.index).fillna(0).astype(int).tail(window)
             odds = pd.Series(
                 [_drawdown_prob(st, int(n), calib)["h21"] for st, n in zip(states, nhot)],

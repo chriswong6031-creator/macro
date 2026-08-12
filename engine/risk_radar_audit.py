@@ -88,6 +88,7 @@ def _entry_from_snapshot(snap: dict) -> dict | None:
     # the UN-gated state beside the gated one makes the clamped days gradeable as the alerts they
     # would have been — the gate itself is untouched, this is pure accounting.
     gate = snap.get("context_gate") or {}
+    authority = snap.get("authority") or {}
     ungated = snap.get("state_ungated")
     return {
         "asof": str(snap["asof"]),
@@ -103,8 +104,24 @@ def _entry_from_snapshot(snap: dict) -> dict | None:
                          "breadth_weak": gate.get("breadth_weak")},
         "dominant_scare": snap.get("dominant_scare"),
         "top_score": snap.get("top_score"),
+        # Authority provenance is part of the forward claim. Without it, a future review cannot
+        # distinguish a visible advisory from a day that actually overrode Market State, nor
+        # reconstruct which evidence had passed the confirmation/validation gate at the time.
+        "can_force": bool(snap.get("can_force")),
+        "authority_tier": authority.get("tier"),
+        "authority_reason": authority.get("reason"),
+        "confirmed_validated_legs": list(authority.get("confirmed_validated_legs") or []),
         "conjunction_n": (snap.get("drawdown_prob") or {}).get("conjunction_n"),
-        "scares": {s["scare"]: {"score": s.get("score"), "band": s.get("band")}
+        "scares": {s["scare"]: {
+                       "score": s.get("score"), "band": s.get("band"),
+                       "firing_legs": [
+                           {"leg": leg.get("leg"), "pctile": leg.get("pctile"),
+                            "confirmed": bool(leg.get("confirmed")),
+                            "era_robust": bool(leg.get("era_robust")),
+                            "lift_2020": leg.get("lift_2020")}
+                           for leg in (s.get("firing_legs") or [])
+                       ],
+                   }
                    for s in (snap.get("scares") or [])},
         "drawdown_prob": snap.get("drawdown_prob"),
         # de-escalation trajectory (engine/risk_radar.trajectory) — slim record so a future
