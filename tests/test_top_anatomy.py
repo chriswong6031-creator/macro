@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -1508,3 +1509,550 @@ def test_w2_roster_read_cli_requires_the_arm_it_is_writing_into():
     """`--w2-roster-read` without `--w2-arm` cannot know which arm it is amending."""
     with pytest.raises(SystemExit):
         rh.main(["--data-root", "/nonexistent", "--w2-roster-read", "/tmp/x.json"])
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Phase-1 control constructions — research/top_anatomy/TOPA_PHASE1_PREREG.md
+#
+# Phase-1 moves ONE thing: how control observations are selected and stratified.
+# Everything else is the frozen phase-0/W2 chain, so these pin (a) that the frozen
+# half really is frozen — the stratified matcher reproduces the engine matcher
+# exactly when no stratum is asked for — and (b) that the moved half does what the
+# prereg says: the AM restriction, the episode-first draw, the DM tercile edges, the
+# floors, the era partition, and the construction-keyed cache stamp. Synthetic
+# frames only — no store, no clock.
+# ══════════════════════════════════════════════════════════════════════════════
+def _p1_pool(n: int, *, seed: int = 3, n_episodes: int | None = None) -> pd.DataFrame:
+    """A candidate frame in `matched_controls` shape, with the phase-1 extra columns."""
+    rng = np.random.default_rng(seed)
+    idx = _cal(n)
+    eps = n_episodes if n_episodes is not None else max(1, n // 4)
+    return pd.DataFrame({
+        "case_id": [f"p{i}" for i in range(n)],
+        "segment": [f"S{i % 11}" for i in range(n)],
+        "ticker": [f"S{i % 11}" for i in range(n)],
+        "date": idx,
+        "r126": rng.normal(0.5, 0.3, n),
+        "rv63": rng.normal(0.6, 0.2, n),
+        "dvol21": rng.lognormal(16.0, 0.8, n),
+        "episode_id": [f"E{i % eps}" for i in range(n)],
+        "F1_episode_age": rng.integers(0, 60, n).astype(float),
+        "F3_days_since_63d_high": rng.integers(0, 8, n).astype(float),
+    })
+
+
+def _p1_cases(n: int, *, seed: int = 9) -> pd.DataFrame:
+    c = _p1_pool(n, seed=seed)
+    c["case_id"] = [f"c{i}" for i in range(n)]
+    c["segment"] = [f"T{i % 7}" for i in range(n)]
+    c["ticker"] = [f"T{i % 7}" for i in range(n)]
+    return c
+
+
+def test_p1_inventory_matches_the_frozen_prereg():
+    """§1–§5 inventory: two constructions, three panels, 18 cells, both floors, seed."""
+    assert rh.P1_CONSTRUCTIONS == ("am", "dm")
+    assert rh.P1_PANELS == ("primary", "r63_disjoint", "atrz_disjoint")
+    assert rh.P1_SEED == 20260811, "prereg §2 declares a FRESH seed for phase-1"
+    # 3 legs per construction x 2 constructions x 3 panels = 18 registered cells.
+    assert all(len(v) == 3 for v in rh.P1_REGISTERED.values())
+    assert len(rh.P1_REGISTERED) * 3 * len(rh.P1_PANELS) == 18
+    assert dict(rh.P1_REGISTERED["am"]) == {
+        "F1_episode_age": -1, "B3_rsi14_chg10": 1, "B2_rsi14": 1}
+    assert dict(rh.P1_REGISTERED["dm"]) == {
+        "F3_days_since_63d_high": -1, "B3_rsi14_chg10": 1, "B2_rsi14": 1}
+    # The diagnostic of each construction is the leg the OTHER one registers.
+    assert rh.P1_DIAGNOSTIC == {"am": "F3_days_since_63d_high", "dm": "F1_episode_age"}
+    assert rh.P1_DIAGNOSTIC["am"] not in dict(rh.P1_REGISTERED["am"])
+    assert rh.P1_DIAGNOSTIC["dm"] not in dict(rh.P1_REGISTERED["dm"])
+    # The declared sides are the OBSERVED ones, not the engine's — F1/F3/B3 separate
+    # against `ta.FEATURE_DIRECTION`, which is exactly what WRONG_SIGN_EXHIBITS says.
+    for feat in ("F1_episode_age", "F3_days_since_63d_high", "B3_rsi14_chg10"):
+        assert feat in rh.WRONG_SIGN_EXHIBITS
+    assert ta.FEATURE_DIRECTION["F1_episode_age"] == 1
+    assert dict(rh.P1_REGISTERED["am"])["F1_episode_age"] == -1
+    # Floors and the multiplicity budget.
+    assert rh.P1_MIN_MATCHED_EPISODES == 100 and ta.MIN_EPISODE_MONTHS == 12
+    assert ta.FDR_Q == 0.10 and ta.BOOTSTRAP_B == 2000
+    assert rh.P1_WALL_LIMIT_SECONDS == 12 * 3600
+    assert rh.P1_N_ERA_BLOCKS == 3
+
+
+def test_p1_summary_paths_are_panel_and_construction_keyed():
+    """§6: the only persisted phase-1 artifact carries BOTH keys in the FILENAME."""
+    seen = {rh.p1_out_json(p, c).name
+            for p in rh.P1_PANELS for c in rh.P1_CONSTRUCTIONS}
+    assert len(seen) == 6, "six cell blocks may never collide on one path"
+    assert rh.p1_out_json("primary", "am").name == \
+        "top_anatomy_p1_primary_am_summary.json"
+    assert "quick7" in rh.p1_out_json("primary", "am", 7).name
+
+
+def test_p1_matching_reproduces_the_frozen_matcher_without_a_stratum():
+    """The frozen half must be FROZEN: no stratum -> byte-identical to the engine.
+
+    DM adds a stratum to the W4 key, and the only honest way to do that without
+    re-cutting the frozen bin edges is to key on them directly. That means the
+    harness owns a second copy of the neighbour loop, and a second copy is a
+    divergence waiting to happen — so this pins the two together on a frame with
+    ties, same-ticker candidates and unmatchable buckets.
+    """
+    cases, pool = _p1_cases(60), _p1_pool(400)
+    want_pairs, want_diag = ta.matched_controls(cases, pool)
+    got_pairs, got_diag = rh.p1_matched_controls(cases, pool, stratum_col=None)
+    pd.testing.assert_frame_equal(got_pairs.reset_index(drop=True),
+                                  want_pairs.reset_index(drop=True))
+    for k in ("n_cases", "n_matched", "n_dropped_no_control", "n_pairs",
+              "controls_per_case_mean", "dropped_case_ids"):
+        assert got_diag[k] == want_diag[k], k
+    assert got_diag["stratum"] is None
+
+
+def test_p1_stratum_narrows_the_key_and_never_crosses_it():
+    """DM's stratum is a KEY column: a control may only serve a case in its stratum."""
+    cases, pool = _p1_cases(60), _p1_pool(400)
+    edges, info = rh.p1_age_terciles(pd.concat([cases["F1_episode_age"],
+                                                pool["F1_episode_age"]]))
+    for fr in (cases, pool):
+        fr["b_age"] = rh.p1_assign_age_tercile(fr["F1_episode_age"], edges)
+    pairs, diag = rh.p1_matched_controls(cases, pool, stratum_col="b_age")
+    assert diag["stratum"] == "b_age"
+    strat = {(s, pd.Timestamp(d)): a for s, d, a in
+             zip(pool["segment"], pool["date"], pool["b_age"])}
+    case_strat = dict(zip(cases["case_id"], cases["b_age"]))
+    assert pairs.shape[0] > 0, "the fixture must actually produce pairs to check"
+    for r in pairs.itertuples():
+        key = (r.control_segment, pd.Timestamp(r.control_date))
+        assert strat[key] == case_strat[r.case_id], "a pair crossed the age stratum"
+    # Adding a key column can only ever REMOVE candidates, never add them.
+    _, unstrat = rh.p1_matched_controls(cases, pool, stratum_col=None)
+    assert diag["n_matched"] <= unstrat["n_matched"]
+
+
+def test_p1_am_restricts_control_candidates_to_fresh_high_days():
+    """§1 AM: every control candidate day is a FRESH 63d high, and one per episode."""
+    idx = _cal(40)
+    race = pd.DataFrame([{"segment": f"S{s}", "ticker": f"S{s}", "date": d,
+                          "label": "CONTINUED"} for s in range(4) for d in idx])
+    dtp = pd.DataFrame([{"segment": f"S{s}", "date": d, "episode_id": f"S{s}|e"}
+                        for s in range(4) for d in idx])
+    rng = np.random.default_rng(11)
+    feats = dtp.copy()
+    feats["F3_days_since_63d_high"] = rng.integers(0, 6, len(feats)).astype(float)
+    feats["F1_episode_age"] = rng.integers(0, 50, len(feats)).astype(float)
+    feats = feats.drop(columns=["episode_id"])
+    pool, census = rh.p1_control_candidates(race, dtp, feats, construction="am",
+                                            seed=rh.P1_SEED)
+    assert not pool.empty
+    assert (pool["F3_days_since_63d_high"] == 0).all(), \
+        "an AM control candidate that is not at a fresh 63d high is the artifact"
+    assert pool["episode_id"].is_unique, "episode-first means ONE day per episode"
+    assert census["n_after_restriction"] < census["n_with_episode_key"]
+    assert census["fresh_high_max"] == rh.P1_AM_FRESH_HIGH_MAX == 0
+    assert census["episode_first"] is True and census["seed"] == rh.P1_SEED
+    # DM keeps every day and still draws episode-first.
+    dm, dcens = rh.p1_control_candidates(race, dtp, feats, construction="dm",
+                                         seed=rh.P1_SEED)
+    assert dcens["n_after_restriction"] == dcens["n_with_episode_key"]
+    assert dm["episode_id"].is_unique
+    assert dcens["fresh_high_max"] is None
+    # The §5 tolerance sensitivity widens the restriction and NEVER narrows it.
+    tol, tcens = rh.p1_control_candidates(
+        race, dtp, feats, construction="am", seed=rh.P1_SEED,
+        fresh_high_max=rh.P1_AM_TOLERANCE_SENSITIVITY)
+    assert (tol["F3_days_since_63d_high"] <= 2).all()
+    assert tcens["n_after_restriction"] >= census["n_after_restriction"]
+    # The day-weighted sensitivity keeps EVERY qualifying day (the W2 geometry).
+    dw, dwcens = rh.p1_control_candidates(race, dtp, feats, construction="dm",
+                                          seed=rh.P1_SEED, episode_first=False)
+    assert len(dw) == dwcens["n_with_episode_key"] > len(dm)
+    assert dwcens["episode_first"] is False
+
+
+def test_p1_episode_first_draw_is_seeded_and_order_independent():
+    """The draw must be reproducible AND immune to the row order it is handed."""
+    rng = np.random.default_rng(5)
+    cand = pd.DataFrame({
+        "segment": [f"S{i % 6}" for i in range(120)],
+        "date": _cal(120),
+        "episode_id": [f"E{i % 15}" for i in range(120)],
+    })
+    a = rh.p1_episode_first_draw(cand, seed=rh.P1_SEED)
+    b = rh.p1_episode_first_draw(cand, seed=rh.P1_SEED)
+    shuffled = cand.sample(frac=1.0, random_state=7).reset_index(drop=True)
+    c = rh.p1_episode_first_draw(shuffled, seed=rh.P1_SEED)
+    assert a["episode_id"].is_unique and len(a) == cand["episode_id"].nunique()
+    pd.testing.assert_frame_equal(a.reset_index(drop=True), b.reset_index(drop=True))
+    pd.testing.assert_frame_equal(a.reset_index(drop=True), c.reset_index(drop=True))
+    # A different seed is allowed to pick differently — otherwise the seed is a lie.
+    d = rh.p1_episode_first_draw(cand, seed=rh.P1_SEED + 1)
+    assert not d[["segment", "date"]].equals(a[["segment", "date"]])
+    assert rng is not None  # keep the fixture honest about its own determinism
+
+
+def test_p1_age_terciles_are_cut_on_the_pooled_set_and_printed():
+    """§1 DM: edges come from cases PLUS controls, and they are in the artifact."""
+    cases = pd.Series([1.0, 2.0, 3.0])
+    controls = pd.Series(np.arange(0.0, 100.0))
+    edges, info = rh.p1_age_terciles(pd.concat([cases, controls], ignore_index=True))
+    assert len(edges) == 2 and edges[0] < edges[1]
+    assert info["edges"] == edges, "the edges must be PRINTED, not just applied"
+    assert info["n_pooled"] == 103
+    only_controls, _ = rh.p1_age_terciles(controls)
+    assert edges != only_controls, \
+        "cutting on the control arm alone is a different, unregistered stratum"
+    # Membership is monotone in age and a null age yields a null stratum.
+    v = pd.Series([0.0, edges[0], edges[0] + 1e-9, edges[1] + 1.0, np.nan])
+    t = rh.p1_assign_age_tercile(v, edges)
+    assert list(t[:4]) == [0.0, 0.0, 1.0, 2.0]
+    assert pd.isna(t.iloc[4])
+    # A degenerate distribution collapses to one stratum rather than raising.
+    flat_edges, flat_info = rh.p1_age_terciles(pd.Series([7.0] * 50))
+    assert flat_info["degenerate"] is True
+    assert set(rh.p1_assign_age_tercile(pd.Series([7.0, 7.0]), flat_edges)) == {0.0}
+
+
+def test_p1_era_blocks_are_contiguous_equal_and_cover_the_panel():
+    """§5: three CONTIGUOUS calendar blocks, near-equal counts, printed edges, union."""
+    months = [str(p) for p in pd.period_range("2022-07", "2026-06", freq="M")]
+    blocks = rh.p1_era_blocks(months)
+    assert len(blocks) == 3
+    sizes = [b["n_peak_months"] for b in blocks]
+    assert sum(sizes) == len(months) and max(sizes) - min(sizes) <= 1
+    flat = [m for b in blocks for m in b["peak_months"]]
+    assert flat == months, "blocks must be contiguous, ordered and non-overlapping"
+    assert len(set(flat)) == len(flat)
+    for b in blocks:
+        assert b["first_peak_month"] == b["peak_months"][0]
+        assert b["last_peak_month"] == b["peak_months"][-1]
+        assert b["start_date"] and b["end_date"]
+    # A ragged month count still splits as evenly as it can.
+    ragged = rh.p1_era_blocks([str(p) for p in pd.period_range("2022-07", periods=13,
+                                                              freq="M")])
+    assert [b["n_peak_months"] for b in ragged] == [5, 4, 4]
+    # Fewer months than blocks yields fewer blocks, never an empty one.
+    thin = rh.p1_era_blocks(["2023-01", "2023-02"])
+    assert len(thin) == 2 and all(b["n_peak_months"] >= 1 for b in thin)
+    assert rh.p1_era_blocks([]) == []
+    # The `_e4` era shape is derived from the SAME blocks — one definition.
+    eras = rh.p1_eras_for_e4(blocks)
+    assert [e[0] for e in eras] == [b["name"] for b in blocks]
+
+
+def test_p1_floors_send_a_thin_cell_to_underpowered_with_no_directional_claim():
+    """§5: below EITHER floor a cell is P1-UNDERPOWERED whatever the estimate says."""
+    good = {"declared_direction": -1, "n_episodes": 400, "n_blocks": 40,
+            "sign_matches_declared": True, "passes_q": True, "median_delta": -2.0}
+    ok = rh.p1_grade_cell(good, n_matched_episodes=400, n_topped_episodes=500,
+                          era_cells=[], construction_failure=False)
+    assert ok["grade"] == "P1-SUPPORTED" and ok["floors"]["floors_met"] is True
+    # 99 matched episodes is under the NEW floor even with 40 peak-months.
+    thin = rh.p1_grade_cell({**good, "n_episodes": 99}, n_matched_episodes=99,
+                            n_topped_episodes=500, era_cells=[],
+                            construction_failure=False)
+    assert thin["grade"] == "P1-UNDERPOWERED"
+    assert thin["floors"]["meets_matched_episode_floor"] is False
+    assert thin["floors"]["meets_peak_month_floor"] is True
+    # 11 peak-months is under the inherited floor even with 400 episodes.
+    few = rh.p1_grade_cell({**good, "n_blocks": 11}, n_matched_episodes=400,
+                           n_topped_episodes=500, era_cells=[],
+                           construction_failure=False)
+    assert few["grade"] == "P1-UNDERPOWERED"
+    # Floors met, criteria unmet -> NOT-SUPPORTED (including a wrong sign).
+    wrong = rh.p1_grade_cell({**good, "sign_matches_declared": False},
+                             n_matched_episodes=400, n_topped_episodes=500,
+                             era_cells=[], construction_failure=False)
+    assert wrong["grade"] == "P1-NOT-SUPPORTED"
+    unq = rh.p1_grade_cell({**good, "passes_q": False}, n_matched_episodes=400,
+                           n_topped_episodes=500, era_cells=[],
+                           construction_failure=False)
+    assert unq["grade"] == "P1-NOT-SUPPORTED"
+
+
+def test_p1_match_rate_is_printed_and_starvation_rides_alongside_the_grade():
+    """§5: match rate on every cell; <50% adds MATCH-STARVED without changing it."""
+    row = {"declared_direction": 1, "n_episodes": 400, "n_blocks": 40,
+           "sign_matches_declared": True, "passes_q": True, "median_delta": 3.0}
+    fat = rh.p1_grade_cell(row, n_matched_episodes=400, n_topped_episodes=500,
+                           era_cells=[], construction_failure=False)
+    assert fat["match_rate"] == pytest.approx(0.8) and fat["match_starved"] is False
+    lean = rh.p1_grade_cell(row, n_matched_episodes=200, n_topped_episodes=500,
+                            era_cells=[], construction_failure=False)
+    assert lean["match_rate"] == pytest.approx(0.4) and lean["match_starved"] is True
+    assert lean["grade"] == "P1-SUPPORTED", "starvation is a caveat, not a grade"
+
+
+def test_p1_latest_era_wrong_sign_adds_the_declared_era_caveat():
+    """§5 grade modifier: a SUPPORTED cell whose LATEST era is wrong-signed is caveated."""
+    row = {"declared_direction": -1, "n_episodes": 400, "n_blocks": 40,
+           "sign_matches_declared": True, "passes_q": True, "median_delta": -2.0}
+    eras_ok = [{"median_delta": -3.0}, {"median_delta": -2.0}, {"median_delta": -1.0}]
+    eras_flip = [{"median_delta": -3.0}, {"median_delta": -2.0}, {"median_delta": +0.5}]
+    assert rh.p1_grade_cell(row, n_matched_episodes=400, n_topped_episodes=500,
+                            era_cells=eras_ok,
+                            construction_failure=False)["grade"] == "P1-SUPPORTED"
+    caveat = rh.p1_grade_cell(row, n_matched_episodes=400, n_topped_episodes=500,
+                              era_cells=eras_flip, construction_failure=False)
+    assert caveat["grade"] == "P1-SUPPORTED-ERA-CAVEAT"
+    assert caveat["latest_era_wrong_sign"] is True
+    # The modifier reads the LATEST block only — an early wrong sign is not it.
+    early = [{"median_delta": +0.5}, {"median_delta": -2.0}, {"median_delta": -1.0}]
+    assert rh.p1_grade_cell(row, n_matched_episodes=400, n_topped_episodes=500,
+                            era_cells=early,
+                            construction_failure=False)["grade"] == "P1-SUPPORTED"
+    # A null latest era cannot manufacture a caveat out of missing data.
+    null = [{"median_delta": -3.0}, {"median_delta": -2.0}, {"median_delta": None}]
+    assert rh.p1_grade_cell(row, n_matched_episodes=400, n_topped_episodes=500,
+                            era_cells=null,
+                            construction_failure=False)["grade"] == "P1-SUPPORTED"
+
+
+def test_p1_construction_failure_is_carried_beside_the_grade_never_instead_of_it():
+    """§1: an AM construction failure must not erase the cell's own reading."""
+    row = {"declared_direction": 1, "n_episodes": 400, "n_blocks": 40,
+           "sign_matches_declared": True, "passes_q": True, "median_delta": 3.0}
+    out = rh.p1_grade_cell(row, n_matched_episodes=400, n_topped_episodes=500,
+                           era_cells=[], construction_failure=True)
+    assert out["grade"] == "P1-SUPPORTED"
+    assert out["grade_with_construction_modifier"] == \
+        "P1-UNDERPOWERED-BY-CONSTRUCTION-FAILURE"
+    assert out["construction_failure"] is True
+
+
+def test_p1_confirmatory_bh_runs_over_exactly_three_legs():
+    """§3 multiplicity: BH over the (panel x construction) family of 3, one-sided."""
+    stats = _w2_stats([
+        {"feature": "F1_episode_age", "median_delta": -9.0, "p_value": 0.004},
+        {"feature": "B3_rsi14_chg10", "median_delta": +1.4, "p_value": 0.020},
+        {"feature": "B2_rsi14", "median_delta": +1.3, "p_value": 0.060},
+        {"feature": "F3_days_since_63d_high", "median_delta": -2.2, "p_value": 0.002},
+        {"feature": "A4_r252", "median_delta": -0.1, "p_value": 0.001},
+    ])
+    am = rh.p1_confirmatory_table(stats, "am", b=ta.BOOTSTRAP_B)
+    assert [r["feature"] for r in am] == ["F1_episode_age", "B3_rsi14_chg10",
+                                          "B2_rsi14"]
+    p1 = [r["p_value_one_sided"] for r in am]
+    assert p1 == pytest.approx([0.002, 0.010, 0.030])
+    assert [r["q_value_one_sided"] for r in am] == \
+        pytest.approx(list(ta.bh_fdr(np.array(p1))))
+    # BH over THREE, not five: the same p's under a family of 5 give bigger q's.
+    assert am[-1]["q_value_one_sided"] < float(ta.bh_fdr(np.array(p1 + [0.5, 0.5]))[2])
+    dm = rh.p1_confirmatory_table(stats, "dm", b=ta.BOOTSTRAP_B)
+    assert [r["feature"] for r in dm] == ["F3_days_since_63d_high", "B3_rsi14_chg10",
+                                          "B2_rsi14"]
+    # A wrong-signed leg gets the COMPLEMENT tail, never a small p.
+    flipped = _w2_stats([
+        {"feature": "F1_episode_age", "median_delta": +9.0, "p_value": 0.004},
+        {"feature": "B3_rsi14_chg10", "median_delta": +1.4, "p_value": 0.020},
+        {"feature": "B2_rsi14", "median_delta": +1.3, "p_value": 0.060},
+    ])
+    bad = rh.p1_confirmatory_table(flipped, "am", b=ta.BOOTSTRAP_B)[0]
+    assert bad["sign_matches_declared"] is False
+    assert bad["p_value_one_sided"] == pytest.approx(0.998)
+    assert bad["passes_q"] is False
+    # An absent feature is reported as absent rather than silently dropped.
+    absent = rh.p1_confirmatory_table(_w2_stats([
+        {"feature": "B2_rsi14", "median_delta": 1.0, "p_value": 0.01}]), "am",
+        b=ta.BOOTSTRAP_B)
+    assert len(absent) == 3
+    assert absent[0]["reason_absent"]
+
+
+def test_p1_exploratory_prints_all_36_and_spends_the_budget_once():
+    """§3: the FULL table is printed; registered legs are shown but not re-BH'd."""
+    rows = [{"feature": f, "median_delta": 0.4, "p_value": 0.01} for f in ta.FEATURES]
+    out = rh.p1_exploratory_table(_w2_stats(rows), "am")
+    assert out["n_features"] == 36 == len(ta.FEATURES)
+    printed = {r["feature"] for r in out["table"]}
+    assert printed == set(ta.FEATURES), "the whole table is printed, always"
+    reg = dict(rh.P1_REGISTERED["am"])
+    for r in out["table"]:
+        if r["feature"] in reg:
+            assert r["registered_in_this_construction"] is True
+            assert r["q_value_p1_exploratory"] is None, \
+                "a registered leg may not spend its trial budget twice"
+            assert r["separates"] is False
+        else:
+            assert r["q_value_p1_exploratory"] is not None
+    assert out["ranked"] is False and "EXPLORATORY-DISCOVERY" in out["grade_cap"]
+    assert all(r["grade"] == "" for r in out["table"])
+    assert out["read_the_full_table_not_this_list"]
+    assert set(out["registered_legs_excluded_from_bh"]) == set(reg)
+
+
+def test_p1_am_diagnostic_reads_collapse_against_the_panels_own_anchor():
+    """§1: the matching leg is PRINTED with its anchor, and never graded."""
+    stats = _w2_stats([{"feature": "F3_days_since_63d_high", "median_delta": -0.5,
+                        "p_value": 0.4}])
+    got = rh.p1_matching_diagnostic("am", "primary", stats, {}, {})
+    assert got["feature"] == "F3_days_since_63d_high" and got["graded"] is False
+    assert got["anchor_delta"] == pytest.approx(-2.25)
+    assert got["abs_ratio_to_anchor"] == pytest.approx(0.5 / 2.25)
+    assert got["collapsed_by_magnitude"] is True
+    # A delta that did NOT shrink is a construction failure, printed as one.
+    big = _w2_stats([{"feature": "F3_days_since_63d_high", "median_delta": -3.0,
+                      "p_value": 0.4}])
+    assert rh.p1_matching_diagnostic("am", "primary", big, {}, {})[
+        "collapsed_by_magnitude"] is False
+    # DM's diagnostic is F1, and DM never claims a construction failure on it.
+    dm = rh.p1_matching_diagnostic(
+        "dm", "atrz_disjoint",
+        _w2_stats([{"feature": "F1_episode_age", "median_delta": -1.0,
+                    "p_value": 0.4}]), {}, {})
+    assert dm["feature"] == "F1_episode_age"
+    assert dm["construction_failure_if_not_collapsed"] is False
+    assert dm["anchor_delta"] == pytest.approx(-17.0)
+
+
+def test_p1_b2_era_fade_fence_reads_magnitude_not_sign():
+    """§5: the phase-0 fence asks whether |B2| shrinks era over era — printed either way."""
+    fading = {"cells": {"B2_rsi14": [{"name": "era1", "median_delta": 4.0},
+                                     {"name": "era2", "median_delta": 2.0},
+                                     {"name": "era3", "median_delta": 0.5}]}}
+    assert rh.p1_b2_era_fade(fading)["fades_era_over_era"] is True
+    steady = {"cells": {"B2_rsi14": [{"name": "era1", "median_delta": 1.0},
+                                     {"name": "era2", "median_delta": 3.0},
+                                     {"name": "era3", "median_delta": 2.0}]}}
+    out = rh.p1_b2_era_fade(steady)
+    assert out["fades_era_over_era"] is False
+    assert [m["abs_median_delta"] for m in out["magnitude_by_era"]] == [1.0, 3.0, 2.0]
+    # A sign flip does not hide from the fence: magnitude is what is read.
+    flip = {"cells": {"B2_rsi14": [{"name": "era1", "median_delta": -4.0},
+                                   {"name": "era2", "median_delta": 2.0},
+                                   {"name": "era3", "median_delta": -0.5}]}}
+    assert rh.p1_b2_era_fade(flip)["fades_era_over_era"] is True
+    # A missing era prints as a null rather than collapsing the check silently.
+    gap = {"cells": {"B2_rsi14": [{"name": "era1", "median_delta": None}]}}
+    assert rh.p1_b2_era_fade(gap)["n_eras_with_an_estimate"] == 0
+
+
+def test_p1_era_cells_print_a_thin_era_instead_of_hiding_it():
+    """§5: every registered cell reports per-era estimates — nulls printed, not dropped."""
+    idx = _cal(120)
+    ep = pd.DataFrame({
+        "episode_id": [f"E{i}" for i in range(120)],
+        "ticker": [f"T{i % 9}" for i in range(120)],
+        "peak_date": idx, "date": idx,
+        "n_snapshots": 3,
+        "B2_rsi14": np.linspace(-1.0, 3.0, 120),
+        "F1_episode_age": np.linspace(-20.0, 5.0, 120),
+    })
+    months = sorted(pd.to_datetime(ep["peak_date"]).dt.to_period("M").astype(str)
+                    .unique())
+    blocks = rh.p1_era_blocks(months)
+    out = rh.p1_era_cells(ep, ["B2_rsi14", "F1_episode_age"], blocks, b=200, seed=1)
+    assert set(out["cells"]) == {"B2_rsi14", "F1_episode_age"}
+    for feat, cells in out["cells"].items():
+        assert len(cells) == len(blocks), f"{feat} must report EVERY era block"
+        assert [c["block"] for c in cells] == [b["block"] for b in blocks]
+        assert all("median_delta" in c and "ci_lo" in c for c in cells)
+    assert out["bootstrap_b"] == 200
+    # An empty panel still emits the structure with a stated reason.
+    empty = rh.p1_era_cells(ep.iloc[0:0], ["B2_rsi14"], blocks, b=200, seed=1)
+    assert empty["cells"] == {} and "note" in empty
+
+
+@pytest.mark.parametrize("meta,want,hit,why", [
+    ({"residual_up_ratio_break": 3.0}, None, True,
+     "a panel carries no control construction, so it serves the None request"),
+    ({"residual_up_ratio_break": 3.0, "p1_construction": None}, None, True,
+     "an explicit null stamp is the same statement"),
+    ({"residual_up_ratio_break": 3.0}, "am", False,
+     "a panel-only cache may never serve a construction's downstream artifacts"),
+    ({"residual_up_ratio_break": 3.0, "p1_construction": "am"}, "am", True,
+     "same construction is a hit"),
+    ({"residual_up_ratio_break": 3.0, "p1_construction": "am"}, "dm", False,
+     "AM's controls may never be read off DM's cache, or the reverse"),
+    ({"residual_up_ratio_break": 3.0, "p1_construction": "dm"}, "am", False,
+     "and the reverse"),
+    ({"residual_up_ratio_break": 3.0, "p1_construction": "am"}, None, False,
+     "a construction-built cache may not serve the construction-free request"),
+])
+def test_p1_cache_stamp_is_construction_keyed(tmp_path, meta, want, hit, why):
+    """§2 — the identity hard check now carries the control construction too."""
+    idx = _cal(4)
+    for leg in rh._REQUIRED_PANEL_LEGS:
+        pd.DataFrame({"T": pd.Series(np.linspace(10.0, 11.0, 4), index=idx)}).to_parquet(
+            tmp_path / f"panel_{leg}.parquet")
+    (tmp_path / "meta.json").write_text(json.dumps(meta))
+    got = rh._load_cached(tmp_path, residual_up_ratio_break=3.0, p1_construction=want)
+    assert (got is not None) is hit, why
+
+
+def test_p1_cache_stamp_is_written_by_the_panel_finisher():
+    """The stamp must be WRITTEN, not just checked — an unwritten key is not a check."""
+    import inspect
+    src = inspect.getsource(rh._finish_panel)
+    assert '"p1_construction": p1_construction' in src
+    assert "p1_construction" in inspect.signature(rh._finish_panel).parameters
+    assert "p1_construction" in inspect.signature(rh._load_cached).parameters
+
+
+def test_p1_cli_pairs_the_panel_and_the_construction_and_defaults_the_seed():
+    """§2/§4: neither flag means anything alone, and phase-1's seed is the fresh one."""
+    for argv in (["--p1-panel", "primary"], ["--p1-construction", "am"]):
+        with pytest.raises(SystemExit):
+            rh.main(["--data-root", "/nonexistent", *argv])
+    import inspect
+    ap_src = inspect.getsource(rh.main)
+    assert '"--p1-panel"' in ap_src and '"--p1-construction"' in ap_src
+    assert "P1_SEED if p1 else 20260810" in ap_src, \
+        "phase-0/W2 keep 20260810; phase-1 defaults to the fresh declared seed"
+    # The phase-1 path must forward the stale-mirror override, never hardcode it.
+    p1_src = inspect.getsource(rh._main_p1)
+    assert "allow_stale=a.allow_stale" in p1_src
+    assert "allow_stale=True" not in p1_src
+
+
+def test_p1_wall_deferral_names_the_unrun_cells_and_never_subsamples():
+    """§6: past the 12 h WAVE wall the remaining cells are named, not thinned."""
+    assert rh.P1_WALL_LIMIT_SECONDS == 12 * 3600
+    d = rh._p1_deferral("atrz_disjoint", "am", "before the control construction",
+                        time.time() - 13 * 3600, ["B2_rsi14", "B3_rsi14_chg10"])
+    assert d["deferred"] is True
+    assert d["subsampled"] is False and d["capped"] is False
+    assert d["unrun_cells"] == ["B2_rsi14", "B3_rsi14_chg10"]
+    assert "atrz_disjoint" in d["reason"] and d["wall_limit_hours"] == 12.0
+    assert rh._p1_wall_exceeded(time.time() - 13 * 3600) is True
+    assert rh._p1_wall_exceeded(time.time()) is False
+
+
+def test_p1_panels_reuse_the_frozen_cohorts_rather_than_defining_new_ones():
+    """§4: the three panels are phase-0's primary cohort and W2's two DISJOINT ones."""
+    assert rh.P1_PANEL_SPEC["primary"] == ("primary", False)
+    assert rh.P1_PANEL_SPEC["r63_disjoint"] == ("r63", True)
+    assert rh.P1_PANEL_SPEC["atrz_disjoint"] == ("atrz", True)
+    for variant, _ in rh.P1_PANEL_SPEC.values():
+        assert variant == "primary" or variant in rh.W2_ARMS
+    # The disjoint classification is W2's, reused through W2's own function.
+    import inspect
+    src = inspect.getsource(rh.run_p1)
+    assert "w2_episode_overlap" in src and "w2_panel_slice" in src
+    # Cases stay on the FROZEN offsets — phase-1 moves the control side only.
+    assert "ta.CASE_OFFSETS" in src and ta.CASE_OFFSETS == (21, 10, 5)
+
+
+def test_p1_b2_anchor_comparison_intervals_are_the_w2_ones():
+    """§3: the registered B2 reading is against W2's duration-UNMATCHED intervals."""
+    assert rh.P1_B2_W2_INTERVAL["r63_disjoint"] == (2.56, 5.25)
+    assert rh.P1_B2_W2_INTERVAL["atrz_disjoint"] == (2.80, 4.79)
+    assert "primary" not in rh.P1_B2_W2_INTERVAL, \
+        "the phase-0 primary panel is supporting evidence, never the decider"
+    # The §3 anchor table is transcribed for every panel x every registered leg.
+    for panel in rh.P1_PANELS:
+        for construction in rh.P1_CONSTRUCTIONS:
+            for feat, _ in rh.P1_REGISTERED[construction]:
+                assert feat in rh.P1_ANCHORS[panel]
+            assert rh.P1_DIAGNOSTIC[construction] in rh.P1_ANCHORS[panel]
+
+
+def test_p1_harness_text_carries_no_directional_or_exit_language():
+    """The phase-1 emitters inherit the same fence as the engine and the W2 harness."""
+    src = (REPO / "scripts" / "research_top_anatomy_phase0.py").read_text()
+    low = src.lower()
+    for banned in ("validated", "sell signal", "go short", "short position",
+                   "stop loss", "stop-loss", "take profit", "price target"):
+        assert banned not in low, f"forbidden phrase in the harness: {banned!r}"
+    # And the phase-1 block states its own tier rather than inheriting it silently.
+    p1_block = src[src.index("PHASE 1 — anchor-matched"):]
+    assert "AVOID-not-SHORT" in p1_block and "zero scored authority" in p1_block
