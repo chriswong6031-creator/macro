@@ -1,0 +1,197 @@
+# config/product_experience/page_registry_overrides.yml
+#
+# The ONLY hand-maintained input to data/product_experience/page_registry.json.
+# Everything else in that file is derived from repo sources by
+# scripts/build_product_page_registry.py and re-derived on every run.
+#
+# THE LAW
+#   1. Judgment-only fields live here and are NEVER derived: `priority`,
+#      `archetype`, `primary_user_question`, `owner`, plus lifecycle rulings and
+#      the access/entitlement facts a static reader cannot honestly see (a guest
+#      mode, a middleware redirect, an entitlement resolved at request time).
+#   2. Every entry SHOULD carry `evidence: [paths]` — the file(s) that make the
+#      claim checkable.  An entry with no evidence is a claim with no receipt.
+#      `note:` is appended to the row's notes so the reason travels with the row.
+#   3. An override on a page_id that no longer exists is a HARD ERROR: the build
+#      exits non-zero and prints a `::error` annotation.  Stale overrides are how
+#      a registry starts describing pages that were deleted a year ago.
+#   4. Only the fields in OVERRIDABLE (see the script) may be set here.  An
+#      override can never invent a route, a builder, or a source template — those
+#      are derived-only, so the registry cannot be talked into a page that the
+#      code does not actually render.
+#
+# Regenerate after editing:
+#   python3 scripts/build_product_page_registry.py --as-of <ISO8601>
+#
+# PRIORITY SCOPE (v1).  Only the P0 set is assigned here — the surfaces that
+# carry acquisition, activation, or the paid product itself.  P1–P3 assignment
+# is a separate work item and everything else stays `unclassified` rather than
+# being filled in by whoever ran the script last.
+
+version: 1
+
+pages:
+
+  # ── macro · P0 acquisition + activation ────────────────────────────────────
+  macro:index:
+    priority: P0
+    archetype: marketing_landing
+    primary_user_question: "What is this product and why should I trust it?"
+    evidence: ["templates/index.html", "templates/_public_nav.html.j2"]
+    note: "hand-authored flagship landing; mirrors the public chrome family"
+
+  macro:start:
+    priority: P0
+    archetype: command_center
+    primary_user_question: "Where do I start today?"
+    evidence: ["config/site_access.yml", "templates/_navlinks.html.j2"]
+    note: "brand-slot entry point in the product nav and the public nav"
+
+  macro:macro:
+    priority: P0
+    primary_user_question: "What is the macro regime right now?"
+    evidence: ["config/site_access.yml"]
+
+  macro:us_stocks:
+    priority: P0
+    archetype: ranked_decision_board
+    primary_user_question: "Which US stocks are set up right now?"
+    evidence: ["config/site_access.yml", "templates/dashboard.html.j2"]
+    note: "anonymous=1 / Free=3 / paid=full summary preview via tier_preview.js"
+
+  macro:plans:
+    priority: P0
+    archetype: pricing
+    primary_user_question: "What do I get, and what does it cost?"
+    evidence: ["config/site_access.yml", "templates/plans.html.j2"]
+
+  macro:research_vault:
+    priority: P0
+    primary_user_question: "What has the research desk published?"
+    evidence: ["config/site_access.yml"]
+    note: "anonymous visitors see the latest three summaries; PDFs stay behind the authenticated /api/research routes"
+
+  macro:confluence_screener:
+    priority: P0
+    archetype: ranked_decision_board
+    primary_user_question: "Which names line up across the signal stack today?"
+    evidence: ["config/site_access.yml"]
+    note: "free signal-stack lead magnet: rank 1 exposed, paid rows omitted server-side"
+
+  macro:china:
+    priority: P0
+    primary_user_question: "What is the China regime right now?"
+    evidence: ["templates/_navlinks.html.j2"]
+
+  macro:hk:
+    priority: P0
+    primary_user_question: "What is the Hong Kong regime right now?"
+    evidence: ["templates/_navlinks.html.j2"]
+
+  macro:products_index:
+    priority: P0
+    archetype: marketing_landing
+    primary_user_question: "What products are there?"
+    evidence: ["templates/_public_nav.html.j2"]
+
+  macro:products_market_terminal:
+    priority: P0
+    archetype: marketing_landing
+    primary_user_question: "What is the Market Terminal and should I sign up?"
+    evidence: ["lib/pages.py", "templates/_public_nav.html.j2"]
+
+  macro:products_mastermind_ai:
+    priority: P0
+    archetype: marketing_landing
+    primary_user_question: "What does the AI actually do for me?"
+    evidence: ["lib/pages.py", "templates/_public_nav.html.j2"]
+
+  macro:products_market_dashboards:
+    priority: P0
+    archetype: marketing_landing
+    primary_user_question: "What do the dashboards cover?"
+    evidence: ["lib/pages.py", "templates/_public_nav.html.j2"]
+
+  # ── terminal · access facts that are not statically derivable ──────────────
+  # The page modules carry NO gate marker for these routes.  Absence of a marker
+  # is not proof of anonymity, so the derived layer leaves them "unknown" and the
+  # fact is recorded here against the code that shows it.
+
+  terminal:landing:
+    access_shell: anonymous
+    payload_tier: public
+    archetype: marketing_landing
+    evidence: ["terminal/app/page.tsx"]
+    note: "anonymous landing; middleware redirects signed-in users to /terminal"
+
+  terminal:terminal:
+    priority: P0
+    access_shell: anonymous
+    payload_tier: public_shell_premium_payload
+    archetype: chart_workspace
+    primary_user_question: "What is this instrument doing?"
+    evidence: ["terminal/app/terminal/page.tsx", "terminal/lib/subscriptionTier.ts"]
+    note: "guest mode: an anonymous visitor gets the guestSymbols watchlist; tier-gated indicators sit behind free|essential|pro"
+
+  terminal:discover:
+    priority: P0
+    primary_user_question: "What is worth looking at right now?"
+    evidence: ["terminal/components/gates/SignupGate.tsx"]
+
+  terminal:options:
+    priority: P0
+    primary_user_question: "Where is the options market positioned?"
+    evidence: ["terminal/lib/entitlement.ts"]
+    note: "terminal_live_options feature — essential + pro (incl. trial); anonymous and free get OptionsPaywall"
+
+  terminal:portfolio:
+    priority: P0
+    primary_user_question: "How is my book doing?"
+    evidence: ["terminal/components/gates/SignupGate.tsx"]
+
+  terminal:scripts:
+    payload_tier: public_shell_premium_payload
+    evidence: ["terminal/app/(shell)/scripts/page.tsx", "terminal/lib/entitlement.ts"]
+    note: "signed-in to open the editor; isPaidTier() gates saving/editing beyond the locked flagship script"
+
+  terminal:login:
+    access_shell: anonymous
+    payload_tier: public
+    evidence: ["terminal/app/login/page.tsx"]
+
+  terminal:learn:
+    access_shell: anonymous
+    payload_tier: public
+    evidence: ["terminal/app/learn/page.tsx"]
+    note: "static content page, no server-side data reads (revalidate 300)"
+
+  terminal:embed_chart:
+    access_shell: anonymous
+    payload_tier: public
+    evidence: ["terminal/app/embed/chart/page.tsx"]
+    note: "iframe widget for the dossier pages; robots noindex; nests inside the dark root layout but applies its own ?theme=/?lang= params to the chart surface"
+
+  terminal:x_slug:
+    access_shell: anonymous
+    payload_tier: public
+    evidence: ["terminal/app/x/[slug]/page.tsx"]
+
+  # ── mastermind · lifecycle rulings ─────────────────────────────────────────
+  # Every GET is unauthenticated (app/auth.py removed the browser login), so the
+  # derived access facts stand.  What the derivation cannot see is that two of
+  # these views are ops observability rather than customer product.
+
+  mastermind:portfolio_desk:
+    priority: P0
+    primary_user_question: "What is the desk holding and why?"
+    evidence: ["app/web.py"]
+
+  mastermind:desk:
+    lifecycle: internal
+    evidence: ["app/web.py"]
+    note: "desk observability view — operator surface served on the read mirror, not customer product"
+
+  mastermind:agenda:
+    lifecycle: internal
+    evidence: ["app/web.py"]
+    note: "weekly self-critique mirror (advisory only); a maintenance session bookmarks it"

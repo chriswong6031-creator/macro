@@ -30,6 +30,14 @@ from scripts.check_dag_conformance import (
     _run_selftest,
     run_conformance,
 )
+from scripts.workflow_run_source import (
+    LEGACY_UNMARKED,
+    MARKER,
+    MARKER_SCAN_LINES,
+    WorkflowRunSourceError,
+    resolve_run_source,
+    resolved_workflow_text,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -867,7 +875,11 @@ class TestBrunOrderVisibility:
             path = REPO_ROOT / ".github" / "workflows" / wf
             if not path.exists():  # lane retired — not this test's business
                 continue
-            text = path.read_text()
+            # Resolved text, not the raw file. A band block extracted to
+            # scripts/ci/ still runs in this lane, and its brun calls and its
+            # ORDER string move out together — a raw read would see neither and
+            # this guard would go blind.
+            text = resolved_workflow_text(path, REPO_ROOT)
             slugs = set(re.findall(r"^\s*brun\s+([A-Za-z0-9_]+)\s", text, flags=re.M))
             assert slugs, f"{wf}: no brun calls parsed — did the lane change shape?"
             ordered: set[str] = set()
@@ -879,4 +891,259 @@ class TestBrunOrderVisibility:
         assert unwatched == {}, (
             "builders that run but are never reported (add the slug to that lane's "
             f"ORDER string): {unwatched}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# scripts/workflow_run_source — the extraction seam
+# ---------------------------------------------------------------------------
+#
+# daily.yml sits against GitHub's silent ~512,000-byte processing cap, so
+# inline `run: |` bodies get extracted to scripts/ci/<name>.sh. Every guard
+# that reads step bodies (this checker, the push-conflict census, the
+# render-options ordering gate) resolves them back through ONE function so the
+# move is invisible. These tests pin that seam, including the fail-closed
+# behaviour — a resolver that quietly returned "" would make this very checker
+# report zero modules and read GREEN.
+
+
+class TestWorkflowRunSourceResolution:
+    """scripts/workflow_run_source.resolve_run_source contract."""
+
+    MARKED_BODY = (
+        "#!/usr/bin/env bash\n"
+        "# EXTRACTED-VERBATIM-FROM: .github/workflows/daily.yml\n"
+        "set -e\n"
+        'run_py() { local label="$1"; local mod="$2"; python -m "$mod"; }\n'
+        'run_py "resolved step" scripts.mod_resolved\n'
+    )
+
+    @staticmethod
+    def _repo(tmp_path, name, text):
+        ci = tmp_path / "scripts" / "ci"
+        ci.mkdir(parents=True, exist_ok=True)
+        (ci / name).write_text(text)
+        return tmp_path
+
+    def test_marked_script_resolves_to_its_contents(self, tmp_path):
+        root = self._repo(tmp_path, "daily_x.sh", self.MARKED_BODY)
+        assert (
+            resolve_run_source("bash scripts/ci/daily_x.sh", root)
+            == self.MARKED_BODY
+        )
+
+    def test_trailing_args_still_resolve(self, tmp_path):
+        root = self._repo(tmp_path, "daily_x.sh", self.MARKED_BODY)
+        assert (
+            resolve_run_source("bash scripts/ci/daily_x.sh 300 --flag", root)
+            == self.MARKED_BODY
+        )
+
+    def test_missing_script_raises_rather_than_returning_empty(self, tmp_path):
+        with pytest.raises(WorkflowRunSourceError, match="does not exist"):
+            resolve_run_source("bash scripts/ci/nope.sh", tmp_path)
+
+    def test_unmarked_non_legacy_script_raises(self, tmp_path):
+        root = self._repo(tmp_path, "daily_x.sh", "#!/usr/bin/env bash\nset -e\n")
+        with pytest.raises(WorkflowRunSourceError, match="no.*EXTRACTED-VERBATIM"):
+            resolve_run_source("bash scripts/ci/daily_x.sh", root)
+
+    @pytest.mark.parametrize("legacy", sorted(LEGACY_UNMARKED))
+    def test_legacy_helpers_pass_through_unchanged(self, tmp_path, legacy):
+        root = self._repo(tmp_path, legacy, "#!/usr/bin/env bash\necho legacy\n")
+        run = f"bash scripts/ci/{legacy} 300"
+        assert resolve_run_source(run, root) == run
+
+    def test_multiline_body_beginning_with_a_bash_call_is_untouched(self, tmp_path):
+        """\\s in the pattern would match the newline and swallow the rest."""
+        root = self._repo(tmp_path, "daily_x.sh", self.MARKED_BODY)
+        body = "bash scripts/ci/daily_x.sh\necho after\n"
+        assert resolve_run_source(body, root) == body
+
+    def test_ordinary_bodies_are_returned_unchanged(self, tmp_path):
+        for body in (
+            "python -m scripts.build_site\n",
+            "bash scripts/other/thing.sh\n",
+            "",
+        ):
+            assert resolve_run_source(body, tmp_path) == body
+
+    def test_live_repo_resolution_is_a_no_op_for_every_legacy_call(self):
+        """Today's 19 `bash scripts/ci/*.sh` steps must parse exactly as before."""
+        import yaml
+
+        wf_dir = REPO_ROOT / ".github" / "workflows"
+        for wf in sorted(wf_dir.glob("*.yml")):
+            doc = yaml.safe_load(wf.read_text())
+            if not isinstance(doc, dict):
+                continue
+            for job in (doc.get("jobs") or {}).values():
+                for step in job.get("steps") or []:
+                    run = step.get("run")
+                    if isinstance(run, str) and run.strip().startswith("bash scripts/ci/"):
+                        # resolves without raising; either passthrough (legacy)
+                        # or the marked script's own text
+                        assert resolve_run_source(run, REPO_ROOT)
+
+
+class TestDagParserSeesThroughExtraction:
+    """MUTATION-grade: the parsed module list differs IFF resolution happens."""
+
+    WF = """\
+name: synthetic
+jobs:
+  build:
+    steps:
+      - name: inline
+        run: |
+          python -m scripts.mod_inline
+      - name: extracted
+        run: bash scripts/ci/daily_extracted.sh
+"""
+
+    SCRIPT = (
+        "#!/usr/bin/env bash\n"
+        "# EXTRACTED-VERBATIM-FROM: .github/workflows/daily.yml\n"
+        "set -e\n"
+        "python -m scripts.mod_extracted\n"
+    )
+
+    def _build(self, tmp_path, script_text):
+        wf_dir = tmp_path / ".github" / "workflows"
+        wf_dir.mkdir(parents=True)
+        (wf_dir / "synthetic.yml").write_text(self.WF)
+        ci = tmp_path / "scripts" / "ci"
+        ci.mkdir(parents=True)
+        (ci / "daily_extracted.sh").write_text(script_text)
+        return wf_dir / "synthetic.yml"
+
+    def test_extracted_module_is_visible_to_the_parser(self, tmp_path):
+        wf = self._build(tmp_path, self.SCRIPT)
+        modules = [s.module for s in _parse_workflow(wf, tmp_path)["build"]]
+        # scripts.mod_extracted is present ONLY if the indirection was followed:
+        # the YAML text contains the string nowhere.
+        assert "scripts.mod_extracted" not in self.WF
+        assert modules == ["scripts.mod_inline", "scripts.mod_extracted"]
+
+    def test_dropping_the_marker_fails_closed_instead_of_losing_the_module(
+        self, tmp_path
+    ):
+        wf = self._build(
+            tmp_path, self.SCRIPT.replace("# EXTRACTED-VERBATIM-FROM:", "# from:")
+        )
+        with pytest.raises(WorkflowRunSourceError):
+            _parse_workflow(wf, tmp_path)
+
+    def test_marker_must_sit_in_the_head_of_the_file(self, tmp_path):
+        buried = (
+            "#!/usr/bin/env bash\n" + "# pad\n" * MARKER_SCAN_LINES
+            + f"# {MARKER}\n" + "python -m scripts.mod_extracted\n"
+        )
+        wf = self._build(tmp_path, buried)
+        with pytest.raises(WorkflowRunSourceError):
+            _parse_workflow(wf, tmp_path)
+
+
+class TestResolvedWorkflowText:
+    """resolved_workflow_text splices bodies back IN PLACE (positional reads)."""
+
+    WF = """\
+name: synthetic
+jobs:
+  build:
+    steps:
+      - name: first
+        run: |
+          python -m scripts.mod_first
+      - name: extracted
+        run: bash scripts/ci/daily_extracted.sh
+      - name: last
+        run: |
+          python -m scripts.mod_last
+"""
+
+    SCRIPT = (
+        "#!/usr/bin/env bash\n"
+        "# EXTRACTED-VERBATIM-FROM: .github/workflows/daily.yml\n"
+        "set -e\n"
+        "python -m scripts.mod_middle\n"
+        'ORDER="alpha beta"\n'
+    )
+
+    def _build(self, tmp_path, script_text=None):
+        wf_dir = tmp_path / ".github" / "workflows"
+        wf_dir.mkdir(parents=True)
+        (wf_dir / "synthetic.yml").write_text(self.WF)
+        ci = tmp_path / "scripts" / "ci"
+        ci.mkdir(parents=True)
+        (ci / "daily_extracted.sh").write_text(
+            self.SCRIPT if script_text is None else script_text
+        )
+        return wf_dir / "synthetic.yml"
+
+    def test_body_is_spliced_at_the_call_site_preserving_order(self, tmp_path):
+        wf = self._build(tmp_path)
+        text = resolved_workflow_text(wf, tmp_path)
+        for token in ("scripts.mod_first", "scripts.mod_middle", "scripts.mod_last"):
+            assert token in text
+        # the whole point: a positional assertion reads the same as it did
+        # before the body was extracted
+        assert (
+            text.index("scripts.mod_first")
+            < text.index("scripts.mod_middle")
+            < text.index("scripts.mod_last")
+        )
+
+    def test_content_only_reachable_through_the_script_is_present(self, tmp_path):
+        wf = self._build(tmp_path)
+        assert 'ORDER="alpha beta"' not in self.WF
+        assert 'ORDER="alpha beta"' in resolved_workflow_text(wf, tmp_path)
+
+    def test_surrounding_yaml_is_untouched(self, tmp_path):
+        wf = self._build(tmp_path)
+        text = resolved_workflow_text(wf, tmp_path)
+        for line in ("name: synthetic", "  build:", "      - name: extracted"):
+            assert line in text
+        assert "bash scripts/ci/daily_extracted.sh" not in text
+
+    def test_legacy_call_lines_are_left_as_written(self, tmp_path):
+        wf_dir = tmp_path / ".github" / "workflows"
+        wf_dir.mkdir(parents=True)
+        (wf_dir / "synthetic.yml").write_text(
+            "jobs:\n  build:\n    steps:\n      - name: t\n"
+            "        run: bash scripts/ci/nightly_timings_finish.sh 300\n"
+        )
+        ci = tmp_path / "scripts" / "ci"
+        ci.mkdir(parents=True)
+        (ci / "nightly_timings_finish.sh").write_text("#!/usr/bin/env bash\necho hi\n")
+        text = resolved_workflow_text(wf_dir / "synthetic.yml", tmp_path)
+        assert "bash scripts/ci/nightly_timings_finish.sh 300" in text
+        assert "echo hi" not in text
+
+    def test_live_daily_yml_resolves_and_recovers_the_extracted_builders(self):
+        """The real file: extracted module invocations must be visible again."""
+        text = resolved_workflow_text(
+            REPO_ROOT / ".github" / "workflows" / "daily.yml", REPO_ROOT
+        )
+        raw = (REPO_ROOT / ".github" / "workflows" / "daily.yml").read_text()
+        for token in ("engine.run", "scripts.build_site", "scripts.build_ticker_pages"):
+            assert token in text, token
+        assert len(text) > len(raw)
+
+    def test_theme_graph_guard_argument_drives_the_delegated_invocation(self):
+        daily = (REPO_ROOT / ".github" / "workflows" / "daily.yml").read_text()
+        helper = (
+            REPO_ROOT / "scripts" / "ci" / "daily_engine_regional_desk_builders.sh"
+        ).read_text()
+        module = "scripts.check_theme_graph_contracts"
+        assert (
+            "bash scripts/ci/daily_engine_regional_desk_builders.sh " + module
+            in daily
+        )
+        assert 'THEME_GRAPH_GUARD_MODULE="scripts.check_theme_graph_contracts"' in helper
+        assert '"${1:-}" != "$THEME_GRAPH_GUARD_MODULE"' in helper
+        assert (
+            'brun theme_graph_guard "theme graph contract guard '
+            '(check_theme_graph_contracts)" "$THEME_GRAPH_GUARD_MODULE"'
+            in helper
         )
