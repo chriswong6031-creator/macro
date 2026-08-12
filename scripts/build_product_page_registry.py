@@ -20,7 +20,8 @@ macro       git-tracked ``site/**/*.html`` (the shipped inventory — site/ is
             committed even though the working tree here is sparse), attributed
             to builders/templates by an AST scan of ``write_page()`` call sites
             in ``scripts/*.py``; nav membership from
-            ``templates/_navlinks.html.j2`` + ``templates/_public_nav.html.j2``;
+            ``templates/_navlinks.html.j2`` + ``templates/_public_nav.html.j2``
+            + ``templates/_public_footer.html.j2``;
             serving tiers from ``config/site_access.yml``; hand-authored pages
             from ``lib/pages.py``; sitemap exclusions from ``lib/seo.py``.
 terminal    ``terminal/app/**/page.tsx`` read from a git REF (default
@@ -230,6 +231,9 @@ _HREF_RE = re.compile(r'href="([^"]*)"')
 _NAV_LINK_RE = re.compile(r'class="nav-link[^"]*"')
 _NAV_GROUP_LABEL_RE = re.compile(r"t\(\s*'([^']+)'")
 _TEMPLATE_VAR_RE = re.compile(r"\{\{[^}]*\}\}")
+# A footer COLUMN heading is a bare ``<p>…</p>``; the brand tagline carries a
+# class (``<p class="ft">``) and so is not one.
+_FOOTER_HEADING_RE = re.compile(r"<p>\s*(.*?)\s*</p>")
 
 
 def _slugify(text: str) -> str:
@@ -280,6 +284,37 @@ def parse_public_nav(text: str, *, group_prefix: str) -> dict[str, str]:
         route = _normalize_href(href)
         if route:
             families.setdefault(route, f"{group_prefix}.public")
+    return families
+
+
+def parse_footer(text: str, *, group_prefix: str) -> dict[str, str]:
+    """Map route -> ``<group_prefix>.<column_slug>`` for the public footer.
+
+    The footer is written per COLUMN: a ``<div class="f-col">`` opens with a
+    bare heading paragraph (``<p>{{ t('Legal', '法律') }}</p>``) and every href
+    after it belongs to that column until the next heading.  The ``f-bot`` strip
+    repeats privacy/terms/disclaimer under no heading at all, so FIRST
+    occurrence wins and those routes keep the Legal column that named them —
+    the same ``setdefault`` rule the two nav parsers use.
+
+    The footer is a real link inventory, not decoration: five live pages
+    (about, about-research, privacy, terms, disclaimer) are reachable ONLY from
+    here, and reading nothing but the two navs reported them as orphans.
+    """
+    families: dict[str, str] = {}
+    group = "brand"
+    for line in text.splitlines():
+        heading = _FOOTER_HEADING_RE.search(line)
+        if heading:
+            label = _NAV_GROUP_LABEL_RE.search(heading.group(1))
+            slug = _slugify(label.group(1) if label
+                            else _TEMPLATE_VAR_RE.sub("", heading.group(1)))
+            if slug:
+                group = slug
+        for href in _HREF_RE.findall(line):
+            route = _normalize_href(href)
+            if route:
+                families.setdefault(route, f"{group_prefix}.{group}")
     return families
 
 
@@ -571,6 +606,8 @@ def derive_macro(root: Path, *, site_dir: Optional[Path] = None,
                     group_prefix="product_nav")
     public_nav = parse_public_nav(_read(templates_dir / "_public_nav.html.j2"),
                                  group_prefix="public_nav")
+    footer = parse_footer(_read(templates_dir / "_public_footer.html.j2"),
+                          group_prefix="footer")
     access = _load_site_access(root / "config" / "site_access.yml")
     hand_authored = set(_literal_collection(root / "lib" / "pages.py",
                                             "HAND_AUTHORED_PAGES"))
@@ -618,7 +655,7 @@ def derive_macro(root: Path, *, site_dir: Optional[Path] = None,
             writes = [s for pattern, s in family_patterns if pattern.match("/" + name)]
             via_family = bool(writes)
         _fill_macro_common(row, site_dir, templates_dir, stem, name, route, writes,
-                           access, nav, public_nav, hand_authored, excluded,
+                           access, nav, public_nav, footer, hand_authored, excluded,
                            exclude_prefixes, tracked_page=page in tracked_set,
                            via_family=via_family)
         rows.append(row)
@@ -643,7 +680,8 @@ def derive_macro(root: Path, *, site_dir: Optional[Path] = None,
         row["payload_tier"] = _macro_payload_tier(f"/{directory}/", access,
                                                   chrome=chrome)
         row["nav_family"] = nav.get(f"/{directory}/index.html") \
-            or public_nav.get(f"/{directory}/index.html") or "none"
+            or public_nav.get(f"/{directory}/index.html") \
+            or footer.get(f"/{directory}/index.html") or "none"
         row["lifecycle"] = "live"
         row["builder"] = sorted({s.builder for s in fam_writes})
         row["generated"] = True if fam_writes else UNKNOWN
@@ -719,7 +757,8 @@ def _macro_payload_tier(route: str, access: dict[str, Any], *, chrome: str) -> s
 def _fill_macro_common(row: dict, site_dir: Optional[Path], templates_dir: Path, stem: str,
                        name: str, route: str, writes: list[_WriteSite],
                        access: dict[str, Any], nav: dict[str, str],
-                       public_nav: dict[str, str], hand_authored: set[str],
+                       public_nav: dict[str, str], footer: dict[str, str],
+                       hand_authored: set[str],
                        excluded: set[str], exclude_prefixes: Iterable[str],
                        *, tracked_page: bool, via_family: bool = False) -> None:
     lookup = "/" + name  # the access policy keys index.html by its file name
@@ -796,12 +835,19 @@ def _fill_macro_common(row: dict, site_dir: Optional[Path], templates_dir: Path,
                 and not _in_bucket(lookup, access["deny"]):
             row["known_contracts"].append("site_access.v1:default_insider")
 
-    row["nav_family"] = nav.get(lookup) or public_nav.get(lookup) or (
-        nav.get(route) or public_nav.get(route) or "none")
+    # The footer is the LOWEST-precedence inventory: a page the product nav or
+    # the public nav names keeps that family, and only a page nothing else links
+    # takes its footer column.
+    row["nav_family"] = nav.get(lookup) or public_nav.get(lookup) \
+        or footer.get(lookup) or (
+            nav.get(route) or public_nav.get(route) or footer.get(route) or "none")
     if row["nav_family"] != "none":
-        row["source_evidence"].append(
-            "templates/_navlinks.html.j2" if lookup in nav
-            else "templates/_public_nav.html.j2")
+        if lookup in nav or route in nav:
+            row["source_evidence"].append("templates/_navlinks.html.j2")
+        elif lookup in public_nav or route in public_nav:
+            row["source_evidence"].append("templates/_public_nav.html.j2")
+        else:
+            row["source_evidence"].append("templates/_public_footer.html.j2")
     if lookup in nav and lookup in public_nav:
         row["notes"].append("linked from both the product nav and the public nav")
 

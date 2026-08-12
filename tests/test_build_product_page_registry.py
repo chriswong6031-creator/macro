@@ -133,6 +133,33 @@ PUBLIC_NAV = """
 <nav><a href="{{ rel }}index.html">Home</a><a href="{{ rel }}alpha.html">Alpha</a></nav>
 """
 
+# Mirrors the real footer's shape: a brand tagline that is NOT a column heading,
+# per-column bare `<p>` headings (one translated, one plain), a link the navs
+# also carry, and a bottom strip that repeats links under no heading at all.
+PUBLIC_FOOTER = """
+<footer class="public-footer">
+  <div class="f-brand">
+    <p class="ft">{{ t('A tagline, not a column heading.', '一句标语。') }}</p>
+  </div>
+  <div class="f-cols">
+    <div class="f-col">
+      <p>{{ t('Platform', '平台') }}</p>
+      <a href="{{ rel }}alpha.html">Alpha</a>
+      <a href="{{ rel }}delta.html">Delta</a>
+    </div>
+    <div class="f-col">
+      <p>Legal</p>
+      <a href="{{ rel }}products/handmade.html">Handmade</a>
+    </div>
+  </div>
+  <div class="f-bot">
+    <span>© 2026</span>
+    <span class="f-legal"><a href="{{ rel }}products/handmade.html">Handmade</a>
+      · <a href="{{ rel }}delta.html">Delta</a></span>
+  </div>
+</footer>
+"""
+
 BUILDER = '''
 from lib.pages import write_page
 
@@ -184,6 +211,7 @@ def macro_repo(tmp_path: Path) -> Path:
     _write(root / "config" / "site_access.yml", SITE_ACCESS)
     _write(root / "templates" / "_navlinks.html.j2", NAVLINKS)
     _write(root / "templates" / "_public_nav.html.j2", PUBLIC_NAV)
+    _write(root / "templates" / "_public_footer.html.j2", PUBLIC_FOOTER)
     _write(root / "templates" / "alpha.html.j2",
            "<html data-theme='light'>{{ t('Hi', '你好') }}</html>")
     _write(root / "templates" / "beta.html.j2", "<html>plain</html>")
@@ -240,8 +268,55 @@ def test_macro_nav_family_comes_from_the_nav_templates(macro_repo):
     assert index["macro:gamma"]["nav_family"] == "product_nav.research"
     # index.html is only in the public nav
     assert index["macro:index"]["nav_family"] == "public_nav.public"
-    # A page no nav names is an ORPHAN and says so — it is not "unknown".
+    # A page no nav and no footer names is an ORPHAN and says so — it is not
+    # "unknown".
     assert index["macro:alpha_lab"]["nav_family"] == "none"
+
+
+def test_macro_footer_rescues_a_page_the_navs_do_not_link(macro_repo):
+    """The public footer is a link inventory too, so a page only IT names is
+    not an orphan — and it carries the footer COLUMN that names it."""
+    index = rows_by_id(reg.derive_macro(macro_repo, git=fake_git())[0])
+    assert index["macro:delta"]["nav_family"] == "footer.platform"
+    # a column heading with no t() helper reads just as well
+    assert index["macro:products_handmade"]["nav_family"] == "footer.legal"
+
+
+def test_macro_nav_outranks_the_footer_for_the_same_route(macro_repo):
+    """alpha.html sits in both navs AND in the footer: the footer is the
+    lowest-precedence source, so it never overwrites a nav family."""
+    index = rows_by_id(reg.derive_macro(macro_repo, git=fake_git())[0])
+    alpha = index["macro:alpha"]
+    assert alpha["nav_family"] == "product_nav.united_states"
+    assert "templates/_public_footer.html.j2" not in alpha["source_evidence"]
+
+
+def test_macro_footer_sourced_row_cites_the_footer_template(macro_repo):
+    """The family and the file it came from move together."""
+    evidence = rows_by_id(reg.derive_macro(macro_repo, git=fake_git())[0])[
+        "macro:delta"]["source_evidence"]
+    assert "templates/_public_footer.html.j2" in evidence
+    assert "templates/_navlinks.html.j2" not in evidence
+    assert "templates/_public_nav.html.j2" not in evidence
+
+
+def test_footer_bottom_strip_never_moves_a_route_to_another_column():
+    """The `f-bot` strip repeats links under no heading; FIRST occurrence wins,
+    so a repeated route keeps the column that named it rather than the column
+    that happens to be open when the strip is reached."""
+    footer = reg.parse_footer(PUBLIC_FOOTER, group_prefix="footer")
+    assert footer["/products/handmade.html"] == "footer.legal"
+    assert footer["/delta.html"] == "footer.platform"
+
+
+def test_footer_reads_only_a_bare_paragraph_as_a_column_heading():
+    """`<p class="ft">` is the brand tagline, not a heading — letting it open a
+    group would file the first column under a marketing sentence."""
+    footer = reg.parse_footer(PUBLIC_FOOTER, group_prefix="footer")
+    assert set(footer.values()) == {"footer.platform", "footer.legal"}
+    # a link that precedes every heading still lands somewhere honest
+    assert reg.parse_footer('<a href="x.html">X</a>', group_prefix="footer") == \
+        {"/x.html": "footer.brand"}
 
 
 def test_macro_lifecycle_from_lab_suffix_and_deny_bucket(macro_repo):
