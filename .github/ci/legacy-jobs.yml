@@ -1988,6 +1988,11 @@ jobs:
       # nightly with nothing going red — the same silent class as the two above.
       - name: daily ET regime gate (DST pair disambiguator + wiring pins)
         run: python -m pytest tests/test_daily_et_gate.py -q
+      # 2026-08-12 (#5416): a workflow FILE over ~512,000 bytes stops being
+      # processed SILENTLY — cron stops firing and dispatched runs queue with
+      # zero jobs, uncancellable. The budget test reds growth before the cap.
+      - name: workflow file size stays under GitHub's silent processing cap
+        run: python -m pytest tests/test_workflow_file_size.py -q
 
   push-retry-policy:
     if: ${{ false }}
