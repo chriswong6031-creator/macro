@@ -26,9 +26,10 @@ log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
 # Non-equity holding lines that must NEVER be treated as a stock position: cash,
-# FX/currency, money-market, equivalents, derivatives, receivables/payables.
-# Their "shares" are a dollar/units BALANCE that swings arbitrarily on a near-zero
-# base, so a flow-normalized share-diff explodes into absurd % (the radar's
+# FX/currency, money-market, equivalents, derivatives (incl. index-futures
+# overlays), receivables/payables. Their "shares" are a dollar/units BALANCE or a
+# contract count, not an ownership stake, so a flow-normalized share-diff over
+# them is meaningless — it explodes into absurd % (the radar's
 # "CHATS Cash&Other −15,116,065%" / "BETZ Euro −338,977%" bug). This predicate is
 # shared by the diff engine (active_changes_dir) AND the collector
 # (collectors.etf_holdings._normalize), because already-stored snapshots are
@@ -67,12 +68,57 @@ _NON_EQUITY_NAME_RE = re.compile(
 # uses, so a fund whose true scale was 1.0242 measured 0.9743 and EVERY
 # constituent published a phantom +5.12% active change.
 _CASH_SLEEVE_TICKER_RE = re.compile(r"^-\s*[A-Z]{3}[\s_-]*CASH\b[\s-]*$")
+# Index-FUTURES overlay lines (masterplan §6c). A fund equitizes its uninvested
+# cash with index futures so the sleeve tracks the benchmark, and the sponsor
+# files that overlay as a HOLDING beside the equities. Its "shares" are a
+# CONTRACT COUNT, so nothing the share-diff engine computes about it carries the
+# meaning it carries for a stock — and the contract ROLLS every quarter, which
+# is the same defect class R1 fixed for cash, arriving on the lifecycle path
+# instead of the denominator. Measured on the live feeds 2026-08-12:
+#   * BOTZ filed "NQM6 Index / NASDAQ 100 E-MINI JUN26" through 2026-06-15 and
+#     "NQU6 Index / … SEP26" from 2026-06-16. The engine reads that rollover as
+#     a full EXIT of a 0.43%-weight position PLUS a brand-new 0.44% one — the
+#     two strongest signals the board publishes, both above min_position_pct,
+#     manufactured quarterly out of a roll that moved no money. BOTZ and BUG are
+#     in the shipped universe today, so this is a live defect, not a latent one.
+#   * Between rolls the count still moves (BOTZ 28 -> 25 contracts on
+#     2026-06-26), publishing as a -10.7% "manager trim" of a futures overlay.
+#   * QQQ files the overlay as an offsetting PAIR, "NQM6" and "NQM6_", the second
+#     carrying NEGATIVE shares (-900) and a negative weight; XOP's "IXPM6 / XAE
+#     ENERGY JUN26" legs are negative-weight too. RSP's "LWEM6" is 1,220
+#     contracts worth $208.7M — 0.226% of the fund, above min_position_pct.
+#
+# CONSERVATISM. The equity side is the binding constraint, not the futures side.
+# "FutureFuel Corp" and "Option Care Health Inc" are real live holdings, so the
+# name rule never keys on a bare "future"/"option" substring, and never on the
+# singular "future" alone (Future plc is a listed issuer). It keys on the plural,
+# on "index future(s)", on "future(s) contract", on the E-MINI product name, and
+# on a contract-month token ("JUN26") — the forms the live files actually use.
+# The ticker rule keys ONLY on the Bloomberg " Index" suffix, which no listed
+# equity carries; it exists because R1's lesson was that a sponsor can put the
+# marker in the ticker and leave the name column empty.
+# DELIBERATELY REFUSED: a bare CME root+month+year ticker shape
+# (^[A-Z]{2,4}[FGHJKMNQUVXZ]\d$, which would match NQM6/LWEM6/IXPM6 directly).
+# It is indistinguishable from Latin-American local tickers — CMIG4 (Cemig) and
+# BRKM5 (Braskem) are letters + a CME month code + a digit — and silently
+# dropping a real equity is a far worse failure than keeping a futures line,
+# because a dropped name leaves no trace in any output. Every futures row in the
+# live corpus is already caught by name, so the shape rule buys nothing. Both
+# rules were swept over all 55,612 rows of data/etf_holdings + data/holdings:
+# 7 distinct hits, all genuine futures, zero real issuers flagged.
+_FUTURES_NAME_RE = re.compile(
+    r"\bfutures\b|\bindex\s+futures?\b|\bfutures?\s+contract|\be[\s-]?mini\b|"
+    r"\bfut\b|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\d{2}\b",
+    re.IGNORECASE,
+)
+_FUTURES_TICKER_RE = re.compile(r"^[A-Z0-9]{1,6}\s+INDEX$")
 
 
 def is_non_equity_holding(ticker, name: str = "") -> bool:
-    """True if a holdings row is cash / FX / money-market / a derivative /
-    receivable — anything whose share count is a balance, not an equity position.
-    Used to weed the radar's erroneous near-zero-base blow-ups."""
+    """True if a holdings row is cash / FX / money-market / a derivative / an
+    index-futures overlay / receivable — anything whose share count is a balance
+    or a contract count, not an equity position. Used to weed the radar's
+    erroneous near-zero-base blow-ups and phantom lifecycle rows."""
     tk = str(ticker).strip().upper()
     if tk in _NON_EQUITY_TICKERS:
         return True
@@ -81,7 +127,11 @@ def is_non_equity_holding(ticker, name: str = "") -> bool:
         return True
     if _CASH_SLEEVE_TICKER_RE.match(tk):            # e.g. "-USD CASH-" (name NaN)
         return True
+    if _FUTURES_TICKER_RE.match(tk):                # e.g. "NQU6 Index" (Bloomberg)
+        return True
     nm = str(name).strip()
+    if nm and _FUTURES_NAME_RE.search(nm):          # e.g. "… E-MINI SEP26"
+        return True
     return bool(nm and _NON_EQUITY_NAME_RE.search(nm))
 
 
