@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-11T23:21:40.869823+00:00",
-  "count": 953,
+  "generated_at": "2026-08-12T01:07:06.749039+00:00",
+  "count": 958,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -51,6 +51,7 @@
     "The Market Ear",
     "The Punchline",
     "UBS",
+    "WGC",
     "Week Ahead",
     "Weekly Preview",
     "William Blair",
@@ -59,6 +60,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-f5fryndrqbq-cc1e4d",
+      "title": "JPM US Market Intelligence Afternoon Briefing Aug 11",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T22:35:33Z",
+      "summary_points": [
+        "**CPI Core MoM & SPX Impact**: Core MoM +0.22% (2.5% YoY); 5% probability of Core MoM >0.30% triggers 1.5%-2.5% SPX decline, 25% probability of 0.15%-0.20% yields 50bp-1% SPX gain.",
+        "**US/Iran Geopolitical Tensions**: Elevated tensions pushing WTI to $83.42 (+1.6% 1D); Strait of Hormuz closure concerns and U.S.",
+        "strikes heighten oil volatility and trade flow risks.",
+        "**NVDA Institutional Flows**: $500B+ PE deal (Apollo, BlackRock) driving 26% elevated tech buying; NVDA using balance sheet to sustain compute demand amid FCF concerns.",
+        "**China Tech Earnings Dispersion**: JPM cut FY26 EPS by 5% due to AI/depreciation costs; China Tech rally faces divergence as AI roadmaps diverge post-short covering."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-gbjaregqbxy-f1fd18",
       "title": "JPM Europe Equity Research | Today’s Morning Meeting",
@@ -140,6 +162,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bvoto8w71rs-6aa092",
+      "title": "WilliamBlair Economics Weekly",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-10T23:56:56Z",
+      "summary_points": [
+        "**Fed's Price Discovery Shift**: Chair Warsh moves from \"molly-coddling\" markets to prioritizing price discovery (volatility), signaling fundamental policy communication shift as markets react to real-time data over Fed guidance.",
+        "**CPI/PPI Data Misses**: July CPI (-0.4% vs 0.2% consensus) and PPI (-0.3% vs 0.2% consensus) miss expectations, indicating faster-than-expected inflation cooling and potential Fed policy timing shift.",
+        "**Yield Curve Steepening**: 10-year T-note yield and curve steepened significantly (Exhibits 1-2), with longer-term yields rising more than short-term, pricing tighter financial conditions amid Fed tightening to 6.75% (Taylor Rule).",
+        "**Forward Guidance Credibility Erosion**: Central banks face heightened credibility risks in volatile, supply-constrained environment (e.g., Fed 2021 QE misstep, ECB 2022 rate guidance failure), reducing reliance on forward guidance.",
+        "**M2 Money Supply Decline**: Sharp drop in annualized M2 growth (Aug-19 to Aug-25) signals potential liquidity contraction, critical for assessing market liquidity and policy response."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-lwx52b2fpsp-b07ab0",
       "title": "market monitor",
       "institution": "Goldman Sachs",
@@ -156,6 +199,48 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ygjxxrqbdi6-5210a5",
+      "title": "WMM 10 August 2026 Unwedged",
+      "institution": "WGC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:41:01Z",
+      "summary_points": [
+        "**WGC Weekly Gold Data Release**: Critical for tracking gold fundamentals and flows as of 10 August 2026, directly impacting portfolio positioning.",
+        "**Geopolitical & Gold Technicals**: Middle East resolution risk looms despite Strait of Hormuz talks easing; gold broke $4,000 wedge via ETF buying (flows), supported by weak non-farm payrolls (data) and Fed repricing doubts (policy).",
+        "**China's Demand Surge**: 61 new gold ETFs added, Shanghai net longs rose; gold broke July range with next resistance at $4,493/oz (200-day avg), signaling strong institutional flows.",
+        "**Critical Resistance & Support**: Gold broke 200-day avg at $4,493; immediate support at $4,186-$4,145 (55/13-day averages) essential for trend continuation.",
+        "**USD Rejection & Gold Catalyst**: DXY rejected 1229/1231 resistance, breaking 55/200-day support; USD weakness signals gold rise toward $4,186, with 1231 as critical USD base."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-i3rixppb0fj-180efe",
+      "title": "JPM US Market Intelligence | Afternoon Briefing: Stocks closed lower; CPI Scenario Analysis: August 10, 2026",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:13:32Z",
+      "summary_points": [
+        "**CPI Inflation Trajectory**: Feroli's Headline MoM +0.12% (3.4% YoY) and Core MoM +0.22% (2.5% YoY) signal persistent inflation, directly impacting Fed policy expectations and portfolio duration decisions.",
+        "**USD/JPY Reversal & CPI Catalyst**: USD/JPY at 159.25 post-JPY reversal; next CPI print (Aug 12) critical for Fed hike probability and JPY above 160, with JPM target at 164.",
+        "**Geopolitical Energy Risk**: Houthi attacks on Saudi Aramco and UAE missile accusations drive oil/energy surge (2.25%); unresolved Iran deal expectations create immediate energy market volatility.",
+        "**iPhone 18 BOM Cost Surge**: 38% YoY BOM cost increase (memory 10%→34% of BOM) forces Apple margin compression, directly impacting tech sector valuation and earnings outlook.",
+        "**Mag7 Valuation Gap**: Mag7/hyperscalers trading 2 SD below 2018Q3–2024 mean (forward P/E), with 30% upside to 1 SD, driven by AI backlog growth (150% YoY to $1.7T)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
@@ -321,6 +406,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ku6snn4ql3i-c05068",
+      "title": "Take Two Interactive Software Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T03:06:23Z",
+      "summary_points": [
+        "**GTA VI as Near-Term Catalyst**: Pre-orders (Q1), August 27 Netflix extended look, and holiday 2026 anticipation drive FY27 bookings beyond guidance, directly supporting Goldman Sachs' price target upgrade.",
+        "**Exponential Q1 Fundamentals**: 18.2% revenue growth, 102.4% EBITDA growth, and $1.15B operating cash flow signal robust operational momentum and capacity for strategic investments.",
+        "**Valuation Justified by Growth Metrics**: High P/E (55.3x) aligns with explosive EBITDA growth (102.4% in 3/26) and low net debt/EBITDA (0.8x), validating BUY rating despite elevated valuation.",
+        "**Regulatory Policy Risk**: Government regulation on loot boxes/microtransactions poses direct threat to key IP revenue streams and margin stability.",
+        "**Macroeconomic Exposure**: Heightened consumer spend headwinds from sustained macro volatility and growth stock risk appetite directly impact GTA/Red Dead/NBA2K sales."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
