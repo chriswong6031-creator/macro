@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T08:59:05.690182+00:00",
-  "count": 1000,
+  "generated_at": "2026-08-12T09:23:40.095662+00:00",
+  "count": 1001,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -742,6 +742,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u6b8sghhu3l-7af92c",
+      "title": "Middle East",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:48:39Z",
+      "summary_points": [
+        "**Oil Geopolitics & Supply Constraints**: Hormuz Strait tensions (Iran-Oman deal unresolved, Houthi attacks) sustain Brent above $84/b and WTI near $79/b, with limited supply buffers despite Chinese demand and emergency releases; geopolitical premium persists despite diplomatic progress.",
+        "**Gold Supported by Weak US Data & Demand**: Gold holds above $4,300/oz amid weak US jobs data easing rate hike fears, driven by hedge fund positioning to six-month highs, Chinese gold-backed ETF inflows, and PBoC adding 640,000oz to reserves in July.",
+        "**Sovereign Bond & FX Risks**: Extreme negative signals in UAE 2027 short-term bond YTD (-0.78%) and USD/ILS 1yr fwd YTD (-229.22%), alongside Bahrain 2028 G-spread at 280.20 bp, highlight acute emerging market bond volatility and currency hedging risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
