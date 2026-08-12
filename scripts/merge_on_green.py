@@ -320,10 +320,10 @@ MAX_PULL_CAP = 100
 # live bucket is partly spent. These are deliberately pessimistic: the merge writes
 # normally charge MERGE_TOKEN, not READ_TOKEN, but counting them here makes an
 # admitted window affordable even on the fallback token.
-FULL_SWEEP_FIXED_REQUESTS = 80
+FULL_SWEEP_FIXED_REQUESTS = 81
 MAX_REQUESTS_PER_PULL = 19
-# A 25-pull reference pass now needs 80 fixed + 25 x up-to-19 + refresh headroom =
-# 535 in its pessimistic shape, so the floor funds useful work while preserving
+# A 25-pull reference pass now needs 81 fixed + 25 x up-to-19 + refresh headroom =
+# 536 in its pessimistic shape, so the floor funds useful work while preserving
 # room for other lanes in the ordinary cheaper shape. Larger buckets do
 # not need a proportionally larger dead zone: `pull_cap` shrinks to what the
 # remaining requests can actually afford.
@@ -1477,6 +1477,71 @@ def in_flight_pr_proofs(repo: str, token: str) -> int | None:
             return None
         total += count
     return total
+
+
+def refresh_lease_reservation_count(
+    repo: str,
+    token: str,
+    lease: "RefreshLease",
+    pulls: list[dict[str, Any]],
+) -> int:
+    """Unindexed controller workload represented only by the durable lease.
+
+    The global Actions census already counts an owner's current ``ci.yml`` run as
+    soon as GitHub registers it.  Counting the same workload again as a durable
+    reservation underfills the eight-proof pool for the entire 30-90 minute run:
+    seven real proofs plus one double-counted owner looked full in production.
+
+    Keep the reservation only across the actual update-branch -> Actions indexing
+    gap.  An unreadable or malformed run lookup is conservatively unindexed.  Once
+    an exact-current-head CI run is visible, its queued/in-progress state is already
+    in :func:`in_flight_pr_proofs`; a completed run consumes no hosted capacity and
+    the ordinary owner reconciliation releases the lease later in this sweep.
+    """
+    if lease.owner_number is None:
+        return 0
+    owner = next(
+        (pull for pull in pulls if str(pull.get("number")) == str(lease.owner_number)),
+        None,
+    )
+    current_head = str((((owner or {}).get("head") or {}).get("sha")) or "").lower()
+    generation_head = str(lease.generation_head_sha or "").lower()
+    if (
+        len(current_head) != 40
+        or len(generation_head) != 40
+        or current_head == generation_head
+    ):
+        return 1
+
+    query = urllib.parse.urlencode(
+        {
+            "event": "pull_request",
+            "head_sha": current_head,
+            "per_page": "1",
+        }
+    )
+    try:
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/actions/workflows/ci.yml/runs?{query}",
+            token,
+        )
+    except Exception:
+        return 1
+    runs = (payload or {}).get("workflow_runs") if isinstance(payload, dict) else None
+    count = (payload or {}).get("total_count") if isinstance(payload, dict) else None
+    if (
+        status >= 400
+        or not isinstance(count, int)
+        or isinstance(count, bool)
+        or count < 0
+        or not isinstance(runs, list)
+    ):
+        return 1
+    if count == 0 or not runs:
+        return 1
+    observed_head = str(((runs[0] or {}).get("head_sha")) or "").lower()
+    return 0 if observed_head == current_head else 1
 
 
 def serialized_refresh_authority(
@@ -4958,12 +5023,15 @@ def main() -> int:
         active_pr_proofs = None
         refresh_load_detail = f"census failed ({exc}); new refreshes paused"
     budget.refresh_lease = refresh_lease
-    # A durable owner closes the update-branch -> Actions indexing gap.  Count it
-    # conservatively in addition to GitHub's run index; once the run is indexed this
-    # may underfill by one slot, but can never oversubscribe the shared workload.
+    # A durable owner closes the update-branch -> Actions indexing gap. Count only
+    # the unindexed gap as an extra reservation: once an exact-current-head ci.yml
+    # run is visible, GitHub's active-run census already includes that workload.
+    reservation_count = refresh_lease_reservation_count(
+        repo, read_token, refresh_lease, pulls
+    )
     effective_active_proofs = (
         active_pr_proofs
-        + (1 if refresh_lease.owner_number is not None else 0)
+        + reservation_count
         if active_pr_proofs is not None
         else None
     )
@@ -4978,7 +5046,7 @@ def main() -> int:
         budget.requires_refresh_lease = True
         refresh_load_detail = (
             f"{active_pr_proofs} indexed pull-request ci run(s) plus "
-            f"{1 if refresh_lease.owner_number is not None else 0} durable "
+            f"{reservation_count} unindexed durable "
             f"reservation(s), global cap "
             f"{MAX_IN_FLIGHT_PR_PROOFS}; one durable high-load refresh lane "
             + (
@@ -4994,7 +5062,7 @@ def main() -> int:
         budget.max_refreshes = min(budget.max_refreshes, available_refreshes)
         refresh_load_detail = (
             f"{active_pr_proofs} indexed pull-request ci run(s) plus "
-            f"{1 if refresh_lease.owner_number is not None else 0} durable "
+            f"{reservation_count} unindexed durable "
             f"reservation(s), global cap "
             f"{MAX_IN_FLIGHT_PR_PROOFS}, {budget.max_refreshes} refresh attempt(s) "
             "available this sweep"

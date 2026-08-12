@@ -26,6 +26,7 @@ import scripts.merge_on_green as MOG
 
 ROOT = Path(__file__).resolve().parents[1]
 REAL_IN_FLIGHT_PR_PROOFS = MOG.in_flight_pr_proofs
+REAL_REFRESH_LEASE_RESERVATION_COUNT = MOG.refresh_lease_reservation_count
 REAL_PREPARE_REFRESH_LEASE = MOG.prepare_refresh_lease
 REAL_SERIALIZED_REFRESH_AUTHORITY = MOG.serialized_refresh_authority
 REAL_ENSURE_SELF_WAKE = MOG.ensure_self_wake
@@ -72,6 +73,7 @@ def _no_unstubbed_http(monkeypatch):
     # The repo-wide Actions census is another main()-only read. Healthy/idle is the
     # neutral default; tests about global refresh backpressure override it.
     monkeypatch.setattr(MOG, "in_flight_pr_proofs", lambda *_a: 0)
+    monkeypatch.setattr(MOG, "refresh_lease_reservation_count", lambda *_a: 0)
     monkeypatch.setattr(MOG, "serialized_refresh_authority", lambda *_a: True)
     monkeypatch.setattr(
         MOG,
@@ -2900,6 +2902,77 @@ def test_an_unreadable_proof_census_never_claims_zero_load(
     assert REAL_IN_FLIGHT_PR_PROOFS("acme/widgets", "read") is None
 
 
+def _refresh_owner(*, current_head="b" * 40):
+    pull = _pull(
+        999,
+        labels=(MOG.MERGE_ON_GREEN_LABEL, MOG.REFRESH_LEASE_LABEL),
+    )
+    pull["head"]["sha"] = current_head
+    lease = MOG.RefreshLease(
+        "acme/widgets",
+        "read",
+        "write",
+        owner_number=999,
+        owner_updated_at="2026-08-12T01:00:00Z",
+        generation_head_sha="a" * 40,
+        generation_id="1a2b3c4d5e6f",
+    )
+    return pull, lease
+
+
+def test_indexed_refresh_generation_is_not_double_counted_as_a_reservation(
+    monkeypatch,
+):
+    pull, lease = _refresh_owner()
+
+    def fake_request(method, url, token, payload=None):
+        assert method == "GET" and token == "read" and payload is None
+        assert "actions/workflows/ci.yml/runs?" in url
+        assert "head_sha=" + ("b" * 40) in url
+        return 200, {
+            "total_count": 1,
+            "workflow_runs": [{"head_sha": "b" * 40, "status": "in_progress"}],
+        }
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    assert REAL_REFRESH_LEASE_RESERVATION_COUNT(
+        "acme/widgets", "read", lease, [pull]
+    ) == 0
+
+
+@pytest.mark.parametrize(
+    "status,payload",
+    [
+        (502, None),
+        (200, {}),
+        (200, {"total_count": 0, "workflow_runs": []}),
+        (200, {"total_count": 1, "workflow_runs": [{"head_sha": "c" * 40}]}),
+    ],
+)
+def test_unreadable_or_unindexed_refresh_generation_keeps_its_reservation(
+    monkeypatch, status, payload
+):
+    pull, lease = _refresh_owner()
+    monkeypatch.setattr(MOG, "_request", lambda *_a, **_k: (status, payload))
+    assert REAL_REFRESH_LEASE_RESERVATION_COUNT(
+        "acme/widgets", "read", lease, [pull]
+    ) == 1
+
+
+def test_unadvanced_refresh_generation_keeps_reservation_without_an_api_read(
+    monkeypatch,
+):
+    pull, lease = _refresh_owner(current_head="a" * 40)
+    monkeypatch.setattr(
+        MOG,
+        "_request",
+        lambda *_a, **_k: (_ for _ in ()).throw(AssertionError("unexpected read")),
+    )
+    assert REAL_REFRESH_LEASE_RESERVATION_COUNT(
+        "acme/widgets", "read", lease, [pull]
+    ) == 1
+
+
 def test_refresh_mutation_authority_is_the_in_progress_serialized_main_workflow(
     monkeypatch,
 ):
@@ -2978,6 +3051,47 @@ def test_repo_wide_active_proofs_clamp_update_branch_capacity(
         assert "new refreshes paused" in out
     else:
         assert f"{active} indexed pull-request ci run(s)" in out
+
+
+@pytest.mark.parametrize(
+    "reservation_count,expected_allowance,requires_lease",
+    [
+        (0, 1, False),
+        (1, MOG.HIGH_LOAD_FAIR_REFRESHES, True),
+    ],
+    ids=("owner-run-indexed", "owner-run-not-yet-indexed"),
+)
+def test_existing_owner_only_consumes_extra_capacity_until_its_run_is_indexed(
+    monkeypatch, reservation_count, expected_allowance, requires_lease
+):
+    owner, lease = _refresh_owner()
+    _main_harness(monkeypatch, [owner])
+    monkeypatch.setattr(
+        MOG,
+        "prepare_refresh_lease",
+        lambda *_a: (lease, [owner]),
+    )
+    monkeypatch.setattr(
+        MOG,
+        "in_flight_pr_proofs",
+        lambda *_a: MOG.MAX_IN_FLIGHT_PR_PROOFS - 1,
+    )
+    monkeypatch.setattr(
+        MOG,
+        "refresh_lease_reservation_count",
+        lambda *_a: reservation_count,
+    )
+    observed: list[tuple[int, bool]] = []
+
+    def inspect_budget(
+        _repo, _pull_payload, _read, _write, _fresh, _proof, budget, _blocked
+    ):
+        observed.append((budget.max_refreshes, budget.requires_refresh_lease))
+        return "pending"
+
+    monkeypatch.setattr(MOG, "sweep_pull", inspect_budget)
+    assert MOG.main() == 0
+    assert observed == [(expected_allowance, requires_lease)]
 
 
 def test_every_update_branch_call_is_behind_the_refresh_admission_gateway():
