@@ -57,12 +57,38 @@ A 24–27% annual discount is at the low end of what pulls annual mix. More impo
 $1,308 the Pro annual reads as **$109/month**, which is above the psychological $99 line and
 sits awkwardly close to the $149 monthly.
 
-**Recommendation: reprice Pro annual $1,308 → $1,188** ($99/month-equivalent, **save 34%**).
+**Recommendation: a three-line reprice that removes the dominance instead of removing a product.**
 
-Three reasons: $99/mo-equivalent is a threshold number and reads materially cheaper than $109;
-34% is a savings badge worth showing (the plans page computes it from config, so this is a
-one-line change); and it opens a clean, explicable gap to Founding Pro at $900/$75 — the founder
-saves a further $288, which is a real number rather than a rounding difference.
+| | Now | Recommended | Why |
+|---|---|---|---|
+| Pro annual | $1,308 ($109/mo) | **$1,188 ($99/mo, save 34%)** | $99/mo-equivalent is a threshold number; 34% is a badge worth showing |
+| Essential annual | $900 ($75/mo) | **$828 ($69/mo, save 22%)** | **This is the fix for Finding A.** At $69 it is no longer priced identically to Founding Pro, so nothing is dominated and nothing has to be withdrawn |
+| Essential monthly | $99 | **$89** (secondary) | Keeps the ladder monotone once Pro annual reads $99/mo: $89 < $99 < $149 |
+
+The first draft of this document recommended *withdrawing* Essential annual instead. That was
+worse on two counts. It is not a config edit — deleting `products.essential.prices.annual` makes
+both builders default the missing `unit_amount` to `0` and the page renders "$0 /mo billed
+annually", "Billed $0 a year", "SAVE 100% VS MONTHLY" with a live Subscribe button that then
+400s. And it solved a pricing problem by deleting a product, when moving one number solves it
+without touching the catalog's shape.
+
+**The resulting ladder has no dominated cell and one obvious pull:**
+
+```
+Free  $0
+Essential   $89/mo   ·  $828/yr  ($69/mo)
+Pro        $149/mo   ·  $1,188/yr ($99/mo, save 34%)
+Founding Pro          ·  $900/yr  ($75/mo, forever)
+```
+
+Founding Pro sits **$72/year above Essential annual** and gives the whole system, permanently.
+That is the strongest honest nudge in the table, and it exists only because Essential annual
+came down rather than going away.
+
+**Cost:** ~9% lower Pro annual ARPU and ~8% lower Essential annual ARPU. **Expected return:**
+annual mix — annual subscribers pay cash up front and churn at a fraction of monthly rates.
+*Confidence: moderate. This is the recommendation I would most want revisited with 90 days of
+mix data.*
 
 **Cost:** ~9% lower annual ARPU. **Expected return:** annual mix. Annual subscribers pay cash up
 front and churn at a fraction of monthly rates; a 10-point shift in annual mix is worth
@@ -91,14 +117,17 @@ this document I would most want to see revisited with 90 days of mix data.*
 The three-price shape should read as **one obvious choice with two flanks**:
 
 ```
-   Essential $99/mo          Pro $149/mo  ·  $99/mo billed annually        Founding $75/mo
+   Essential $89/mo          Pro $149/mo  ·  $99/mo billed annually        Founding $75/mo
    the research desk         the whole system                              annually, forever
    ─ the flank ─             ─ THE CHOICE ─                                ─ the reward ─
 ```
 
-Pro annual at $99/month-equivalent is the same headline number as Essential monthly. That is the
-whole trick, and it is honest: *the full product, billed annually, costs the same per month as
-the smaller product billed monthly.* One sentence, no asterisk.
+Read left to right the per-month numbers are $89 → $99 → $149, and the only way below $89 is a
+twelve-month commitment to the *bigger* product. Every step buys something; no step is a worse
+deal than the one beside it. An earlier draft set Essential monthly at $99 so it would match
+Pro-annual's headline — a nice line that put two $99/month products side by side, one of them a
+strict superset. Cleverness that invites "why would I ever pick the smaller one" is not
+positioning; it is Finding A again, one cell over.
 
 ---
 
@@ -224,17 +253,28 @@ Architecture 2 ("Research vs Execution"), from `…ARCHITECTURE.md` §5.2. Expre
 |---|---|---|---|
 | Who | Anyone building a habit | The Allocator (P3) | The Operator (P2) + Builder (P4) |
 | One sentence | "The market, read every night." | "Everything the engines compute, in full, with your holdings watched." | "Everything, plus live and in time to act." |
-| Price | $0 | **$99/mo** · annual withdrawn during the founder window (then $828/yr, $69/mo-equiv) | **$149/mo** · **$1,188/yr** ($99/mo-equiv, save 34%) |
+| Price | $0 | **$89/mo** · **$828/yr** ($69/mo-equiv, save 22%) | **$149/mo** · **$1,188/yr** ($99/mo-equiv, save 34%) |
 | Trial | — | none (bought outright) | 7 days, card required |
 | Features | — | `site_full`, `board_full`, `history_full`, `watch_pro` | + `alerts_realtime`, `chat_deep`, `terminal_live_options`, `export_api` |
 | Ceiling | 1 list / 15 symbols / 3 rows / 20 chat a week / 7d history | 10 lists / 250 symbols / EOD alerts / 300 fast + 10 deep chat | unlimited / intraday / uncapped fast + 150 deep |
 
 **Why `terminal_live_options` moves to Pro:** it is the clearest timeliness capability in the
 product, and moving it is what converts Essential↔Pro from a size split into a segment split.
-Existing Essential subscribers keep it permanently (matrix §6). *This is the recommendation I
-hold least tightly — if the operator judges that Essential without live options is not sellable
-at $99, then Architecture 1 (kill Essential, Free → Pro) is the better answer than a
-differentiator-free Essential.*
+
+**But it must not be the first move, and it is not a config edit.** Adversarial review found
+both halves of the mechanism missing: `app/billing.py:799` prefers Stripe's ActiveEntitlements
+over the catalog and `stripe_bootstrap._attach_features` never detaches, so deleting the key
+from `config/plans.yml` changes nothing for real subscribers; and the promised grandfather has
+no carrier, because `terminal/lib/entitlement.ts::hasLiveOptions` tests a hardcoded
+`"terminal_live_options"` literal in another repository. `MASTERMIND_ENTITLEMENT_MATRIX.md` §6
+now specifies the two mechanisms that would work, both of which are ordered two-repo migrations.
+
+**Sequencing consequence:** ship the Essential/Pro split on the capabilities that already
+differentiate — the **Research Vault is Pro-only today** (`app/research.py::_VIEW_TIERS =
+{"pro"}`), the deep chat lane is 15× larger on Pro, and the indicator ladder is 15 vs 31 and
+already enforced. Live options moves later, deliberately, or not at all. *That is also what
+un-confounds the §7 test: an Essential that keeps live options and gains an honest annual price
+is a tier being measured, not a tier being starved.*
 
 **Why Essential keeps no trial:** the trial exists to sell the tier with the compelling
 demonstration. Essential's value accrues over weeks; a 7-day window undersells it.
@@ -263,29 +303,51 @@ Stated now so it cannot be rationalized later. **Sixty days after paid launch:**
 
 > If Essential is **<15% of new paid subscriptions** AND the Essential→Pro upgrade rate is
 > **<10%**, Essential is not a segment — it is a discount. Delete it, migrate existing Essential
-> subscribers to Pro at their current price for as long as they stay, and move to Architecture 1
-> (Free → Pro).
+> subscribers to Pro at their current price for as long as they stay, and move to
+> Architecture 1 (Free → Pro).
 
 Conversely, if Essential clears both bars, the two-tier split is doing real work and Pro should
 be *widened* (exports, API, higher deep-chat allowance) rather than Essential narrowed.
 
-**Decision date, decision rule, and both outcomes are fixed in advance.** The failure mode this
-guards against is the one every SaaS company hits: a tier that never justifies itself but never
-gets killed either, because killing it feels like losing revenue.
+**The test only returns information if Essential is a fair contestant.** An earlier draft would
+have run it against an Essential that had been stripped of live options, had its annual SKU
+withdrawn, had no trial, had no CN payment rail, and was labelled "the flank" on its own pricing
+page — a tier that failed under those conditions would have proved nothing except that we
+starved it. The four conditions below are therefore part of the pre-registration, not
+commentary:
+
+1. Essential keeps `terminal_live_options` for the whole measurement window (§5).
+2. Essential has a real annual SKU at $828 and is purchasable on the same rails as Pro,
+   including the CN annual one-time price (§6).
+3. Neither tier's card carries language that ranks them ("the flank", "most popular") during
+   the window.
+4. The measurement needs an event that **does not exist yet**: `checkout.completed` carries the
+   new tier but not the previous one, so an Essential→Pro upgrade is indistinguishable from a
+   new Pro subscription. Add `subscription.tier_changed {from_tier, to_tier, days_at_previous}`
+   to `config/growth_events.yml` before launch, or criterion two is unmeasurable.
+
+**Decision date, decision rule, both outcomes, and the conditions that make the test valid are
+fixed in advance.** The failure mode this guards against is the one every SaaS company hits: a
+tier that never justifies itself but never gets killed either, because killing it feels like
+losing revenue.
 
 ---
 
 ## 8. Summary of config changes
 
-| Change | File | Operator decision required |
+| Change | Where | Operator decision |
 |---|---|---|
-| Withdraw Essential annual from sale during the founder window | `config/plans.yml`, `templates/plans.html.j2` | **Yes** |
-| Pro annual $1,308 → $1,188 | `config/plans.yml` (`unit_amount: 118800`) + new Stripe price | **Yes** |
+| Essential annual $900 → $828 | `config/plans.yml` + new Stripe price | **Yes** — this is the Finding A fix |
+| Pro annual $1,308 → $1,188 | `config/plans.yml` + new Stripe price | **Yes** |
+| Essential monthly $99 → $89 | `config/plans.yml` + new Stripe price | **Yes** (secondary — ladder monotonicity) |
 | Founder cap 2,000 → 500 | `config/plans.yml` (`max_redemptions`) | **Yes** |
-| Remove `allotment_pacing` | `config/plans.yml` | **Yes** |
+| Remove `allotment_pacing` | `config/plans.yml` + `app/billing.py` | **Yes** |
 | Publish a founder close date + the four founder benefits | `templates/plans.html.j2` | **Yes** |
-| Post-window Essential annual at $828 | `config/plans.yml` | Later |
-| New feature keys (`board_full`, `history_full`, `watch_pro`, `alerts_realtime`, `chat_deep`, `export_api`) | `config/plans.yml` + Stripe Entitlements | With Wave 2 |
+| `subscription.tier_changed` event | `config/growth_events.yml` + `app/billing.py` | No — required by §7 |
+| New feature keys (`board_full`, `history_full`, `watch_pro`, `alerts_realtime`, `chat_deep`, `export_api`) | Stripe **first**, then `config/plans.yml` | With Wave 2 |
+
+**No product is withdrawn from sale in this table**, which is why none of it needs the template
+branch and the raise-on-missing-price builder change that a withdrawal would have required.
 
 Every price in the product is already derived from `config/plans.yml` by both plans builders and
 re-derived client-side from the same cents in `data-` attributes, so repricing is genuinely a

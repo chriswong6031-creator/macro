@@ -19,6 +19,13 @@ check is chrome. If the content is what you charge for, **the shipped bytes must
 CSS hiding, no `display:none`, no JS filtering of a payload the browser already has.
 *(Existing law: `docs/TIER_PREVIEW_PATTERN.md`, MNZ-R6.)*
 
+**The estate does not satisfy this rule today, and the exception is the biggest one.** The
+anonymous=1 / Free=3 ranked-board cap — the limit quoted in every tier table, including §5 of
+the entitlement matrix — is `templates/tier_preview.js` blurring and hiding rows that are
+already in the public HTML. `docs/ops/site-access.md` calls it "presentation-gated"; this
+document calls it a marketing wall. Converting it to a split build is the single largest
+enforcement gap between the recommended matrix and the shipped one.
+
 **PW-2 — Never hide the existence of value.** Every gated surface shows four things without
 exception: **what it is**, **how it is computed**, **how much of it there is** (honest totals),
 and **a genuinely readable sample**. A count names nobody; the member rows are the product.
@@ -40,6 +47,12 @@ wrong altitude — gate the page's payload once, in one place.
 which is the least persuasive possible statement. Use a **labelled locked slot**: the count, the
 kind, and one line naming what the rows would tell them.
 
+**PW-6b — Classification order is part of the gate.** `app/paywall.py` evaluates
+`deny → public → free → premium` and returns `204` for anything classified `free` **before** it
+consults `enforced_early(path)`. So a path listed in *both* `free_registered` and
+`premium.enforced_early` is FREE, silently, and no test covers the interaction. Anyone widening
+`free_registered` must diff it against `enforced_early` first, and ship the test that pins it.
+
 **PW-7 — Locked is never silently absent.** A gated JSON route returns
 `403 {"locked": true, "tier": "<required>", "surface": "<id>"}` and the panel renders an explicit
 locked state. A missing panel and a gated panel must never look the same. *(MNZ-R6.)*
@@ -59,7 +72,7 @@ Seven mechanisms. Pick by the decision table; do not invent an eighth.
 
 | Mechanism | Use when | Never use when | Reference implementation |
 |---|---|---|---|
-| **Preview slice (`◐ n`)** | Ordered board, list, or feed | The list has <5 items — a 3-of-4 preview is a joke | `templates/tier_preview.js` + split build |
+| **Preview slice (`◐ n`)** | Ordered board, list, or feed | The list has <5 items — a 3-of-4 preview is a joke | The **split build** (`docs/TIER_PREVIEW_PATTERN.md`, `special_situations`). **Not** `templates/tier_preview.js` on its own: that file caps rows by adding `mx-tier-blurred` / `mx-tier-hidden` in the browser, over rows the server already put in the public shell. It is the right *chrome* for a split build and a marketing wall without one |
 | **Shell preview (`◔`)** | A desk whose every row is proprietary | The page has free-standing market context that could be shown | `special_situations` (the ratified reference) |
 | **History window** | Any time series or state history | The series is <30 points | *(to build — `history_full`)* |
 | **Detail limitation** | Summary is legible alone and evidence is the depth | The summary is meaningless without the evidence — that is a broken surface, not a gate | Ticker page evidence drawer |
@@ -255,7 +268,8 @@ A short, absolute list. Anything on it that acquires a gate is a bug.
    notes. These load-bear on trust and on the freshness sentinel's dead-man switch.
 4. **Legal, support, unsubscribe, about.** Already public by ruling, for structural reasons.
 5. **The chat launcher itself.** The allowance may be zero; the *presence* of the capability is
-   an acquisition surface. *(Today it 401s for anonymous — see `…ARCHITECTURE.md` C5.)*
+   an acquisition surface. *(`mm_brain.js` became public on 2026-08-12; the guest lane it
+   talks to is still switched off, so the launcher opens and the first question 402s.)*
 6. **Anything a search crawler must read to rank a page we want ranked.** A 302 to `/?signin=1`
    is a soft-404 to Googlebot; `config/site_access.yml` already records that lesson.
 
@@ -302,7 +316,7 @@ looks split while the builder still bakes every row into the shell.
 | A wall over content that is free | "A wall over content that is free would be a lie" | `site_access.yml`, china_heatmap block |
 | Five walls on one page | "would be nagging" | same block |
 | A marketing claim with no enforcer | Sells something we do not deliver | `terminal_indicators` 1/15/31, unenforced |
-| A quota copy string that is a literal | It is right until someone reprices the lane, then it is silently wrong and no test notices | Eight hand-typed chat cells across the plans page, landing and onboarding sheet — correct on 2026-08-12, bound to nothing until this PR |
+| A quota copy string that is a literal | It is right until someone reprices the lane, then it is silently wrong and no test notices | ~20 hand-typed chat cells across **five** surfaces — plans page, landing, onboarding sheet, and `theme.js`'s signed-in billing summary. All correct on 2026-08-12, all bound to nothing until this PR. The fifth surface was found only by adversarial review, after the first four were pinned — which is the argument for deriving rather than pinning wherever a build step exists |
 
 The last two are the ones to watch, because they fail *silently* and only the customer finds out.
 
@@ -323,8 +337,19 @@ data", because `free_registered` in `config/site_access.yml` currently lists 11 
    cache-bypass on both schemes, and the GitHub Pages mirror decision.
 4. **Then, and only then,** `PAYWALL_ENABLED=1`.
 
-**The mirror is a hard blocker, not a caveat.** The nightly GitHub Pages mirror republishes the
-entire site including every premium artifact; while it exists, the wall is bypassable by anyone
-who finds the URL. MNZ-OD3 recorded this as an operator-accepted risk *before* there was a paid
-product. Once real money is charged for what the mirror gives away, that acceptance should be
-revisited explicitly rather than inherited.
+**Publication is a hard blocker, not a caveat — and the mirror is only half of it.** Two
+addresses serve the premium payloads without ever touching Caddy:
+1. **The repository is PUBLIC** (`gh repo view --json visibility` → `PUBLIC`, since 2026-08-12
+   for CI billing), and `site/premiumdata/{etfs,special_situations,china_special_situations,
+   confluence_screener}.json`, `site/allocationdata/special_situations.json`,
+   `site/chinaspecialdata/special.json` and `site/capital-structure-data/` are all git-tracked.
+   Those are exactly the paths `config/site_access.yml` promises to "403 for anonymous AND
+   Free". One `git clone` returns them.
+2. **The nightly GitHub Pages mirror** uploads `site/` on every run; its prune step removes only
+   the bulk per-ticker trees.
+
+MNZ-OD3 recorded the mirror as an operator-accepted risk *before* there was a paid product, and
+the public-repo half is newer than that ruling and has never been adjudicated against it.
+Until both are closed — by gitignoring/pruning those payloads, or by the repo going private —
+`PAYWALL_ENABLED=1` gates a door in a building with no walls, and W3's acceptance criteria are
+unfalsifiable as *commercial* boundaries even when they pass at the edge.

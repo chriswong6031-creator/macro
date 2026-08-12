@@ -519,6 +519,23 @@ events:
       days_subscribed: int
       paid_activated: bool
 
+  - name: subscription.tier_changed
+    wire: subscription.tier_changed
+    status: planned
+    source: server
+    funnel: paid
+    purpose: >
+      Upgrades and downgrades between paid tiers. Required by the pre-registered 60-day
+      Essential test (MASTERMIND_PRICING_AND_PACKAGING.md §7): `checkout.completed` carries
+      only the NEW tier, so without this an Essential→Pro upgrade is indistinguishable from a
+      new Pro subscription and the test's second criterion cannot be computed at all.
+    properties:
+      from_tier: enum:tier
+      to_tier: enum:tier
+      from_interval: enum:interval
+      to_interval: enum:interval
+      days_at_previous: int
+
   - name: subscription.reactivated
     wire: subscription.reactivated
     status: planned

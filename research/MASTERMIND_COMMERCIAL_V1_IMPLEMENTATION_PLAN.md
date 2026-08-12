@@ -74,63 +74,89 @@ the same test**, so a reprice reds CI on all four surfaces at once.
 every entry is well-formed; no tier enum contains `insider`.
 **Status:** done.
 
-### W0-3 — Remove or enforce the indicator ladder ⚠️ NOT SHIPPED — **operator decision**
-**Objective.** `config/plans.yml terminal_indicators.access` advertises 1/15/31 and **nothing
-enforces it** (`PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md:735` already names the gap).
-Two lawful outcomes; ship one before launch:
-- **(a) Enforce** — Terminal repo, `terminal/lib/indicators.ts` + `IndicatorsModal.tsx`, gated by
-  a new `indicators_advanced` entitlement resolved through `terminal/lib/entitlement.ts`.
-- **(b) Withdraw the claim** — remove the ladder from plans/landing/onboarding copy until (a) ships.
-**Recommendation: (b) now, (a) in W7.** Shipping a paid launch with an advertised, unenforced
-ladder is a claim with no enforcer at all — a strictly worse defect than an unbound literal — and (a) is a cross-repo build.
-**Model.** (b) builder (Opus), macro repo. (a) builder (Opus), Terminal repo.
-**Dependencies.** (a) needs `MASTERMIND_ENTITLEMENT_MATRIX.md` §2.2 keys.
-**Pre-launch:** **required** (either outcome).
+### W0-3 — ~~Remove or enforce the indicator ladder~~ ❌ WITHDRAWN — the premise was false
+**What this task said.** That `config/plans.yml terminal_indicators.access` advertises 1/15/31
+and nothing enforces it, citing `PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md:735`.
 
----
+**What is true.** The ladder is enforced and the counts match the catalog exactly.
+`terminal/lib/suites/*` carries a per-module `tier`: 1 `free` (`trend/candlePainter.ts`), 14
+`essential`, 16 `pro` — cumulative 1 / 15 / 31. Three points enforce it against the tier
+resolved from macro-api `/api/me`: the renderer drops non-entitled modules, the picker locks
+their rows, the toggle refuses to enable them. `config/plans.yml:33` states the binding in a
+comment. A signed-out or Free user sees exactly one module.
+
+**How the error happened, since it is the more useful output:** the claim was inherited from a
+masterplan line rather than re-derived, and the confirming search stopped at `indicators.ts` and
+`IndicatorsModal.tsx` — the ladder lives in `lib/suites/`. A cited "known gap" is testimony, not
+observation.
+
+**What survives as real work,** demoted from pre-launch blocker to hardening:
+- **W0-3a — server-side recheck for the indicator ladder.** Enforcement is client-side only and
+  a `mm.devTier` localStorage override exists. That is acceptable for a *product* ladder and
+  not for anything we would call a boundary. Terminal repo, post-launch.
+- **W0-3b — correct one real copy defect found alongside it.** `templates/theme.js`
+  `SD_PLAN_FEATURES` tells signed-in Free users "The Terminal — 3 indicators" while the catalog
+  grants 1 and the Terminal enforces 1. It is on the billing summary, so a paying customer reads
+  it. Macro repo; paired plain-copy change (`site/theme.js`), `immutable`-cached — small, but not
+  a one-file edit. **Pre-launch.**
 
 ## W1 — The stranger's first 90 seconds  ◄ HIGHEST LEVERAGE
 
 Four tasks. Together they are the difference between the journey in
 `…ARCHITECTURE.md` §12 happening and not happening. None is large.
 
-### W1-1 — Make the chat reachable by anonymous visitors
-**Objective.** `mm_brain.js` is not in the public allowlist, so the chat launcher 401s on 12 of 12
-measured pages for anonymous visitors (`PRODUCT_PAGE_CENSUS_2026-08.md` §Exec ¶1) — while
-`scripts/check_hub_a11y.py:45` asserts it mounts "on EVERY page". The best acquisition surface in
-the product never runs for a stranger.
-**Scope.** Promote `mm_brain.js` (and only it — audit its transitive fetches first) to `public` in
-`config/site_access.yml`, byte-aligned with the Caddyfile exclusion list.
-**Not in scope.** Any brain **API** route. Every `/api/brain/*` route keeps its own auth and
-quota. This promotes the *workbench*, never the *work* — the same standard the
-`fundamental_forensics.css/js` block in that file already states.
-**Acceptance.** Anonymous load of five macro pages shows the launcher and **zero** console
-errors; `/api/brain/*` still refuses an unauthenticated caller; `check_hub_a11y.py` passes for
-the tier it asserts.
-**Code areas.** `config/site_access.yml`, `app/deploy/Caddyfile`,
-`tests/test_site_access_boundary.py`.
-**Model.** builder (Opus). **Dependencies.** none. **Pre-launch:** **required.**
+### W1-1 — ~~Make the chat reachable by anonymous visitors~~ ✅ LANDED ON MAIN 2026-08-12
+`/mm_brain.js` is in `config/site_access.yml` `public.exact` (#5409, #5463), so the launcher
+mounts for anonymous visitors on every root-level page. Nothing to build.
 
-### W1-2 — Turn on the guest chat lane
-**Objective.** Anonymous chat is default-OFF (`brain_gateway._GUEST_CFG_DEFAULT =
-{enabled: False, daily_limit: 30}`). A visitor from X cannot ask a single question.
-**Scope.** Operator action, not code: set `admin/brain_guest_access.json` to
-`{"enabled": true, "daily_limit": 3}`. Untracked, hot-reloaded within ~20s, no deploy, reversible
-in seconds.
+**Two remainders, both smaller than the original task:**
+- **W1-1a — the SEO subtrees.** `theme.js` injects the widget with a *document-relative* `src`,
+  so pages under the SEO subtrees request a path the allowlist does not cover. Named in
+  `config/site_access.yml` as a known, pre-existing gap. Pre-launch if those pages are campaign
+  landing targets; otherwise post-launch.
+- **W1-1b — the boundary test is narrower than the boundary.**
+  `tests/test_site_access_boundary.py` compares `public` against `@reg_asset` only; it never
+  checks `@reg_asset_err` or the other matchers in the Caddyfile, so a future promotion can be
+  half-applied and still pass. Widen the test. Pre-launch, small.
+
+### W1-2 — Turn on the guest chat lane  ◄ **now the whole of W1's headline value**
+**Objective.** With `mm_brain.js` public, the launcher opens for a stranger and the first
+question 402s: `brain_gateway._GUEST_CFG_DEFAULT` is `{enabled: False, daily_limit: 30}`.
+**Scope.** Set `admin/brain_guest_access.json` to `{"enabled": true, "daily_limit": 3}` —
+untracked, hot-reloaded within ~20s, no deploy, reversible in seconds.
+
+**It is NOT "operator action, not code", and an earlier draft was wrong to say so.** Four things
+must land first; three are code:
+1. **Accumulate token usage across tool rounds.** `config/brain.yml` sets `tool_budget` 5/10/20,
+   so one "question" is up to 6/11/21 model calls — and `brain_gateway` assigns `usage_dict`
+   from the *final* response instead of accumulating, so every earlier round is invisible to
+   both the ceiling and the `lib/ai_costs.py` ledger. Turning on an unmetered lane while the
+   meter under-reads by 2–20× is the wrong order.
+2. **Add `claude-opus-5` and `gpt-5.6-sol` to `config/ai_pricing.yml`** — `estimate_cost_usd`
+   returns `None` for both today, so the admin cost panel cannot price what it records.
+3. **Give the guest lane a token ceiling and a global daily spend cap.**
+   `_check_and_increment_guest_quota` checks two request counters and never reads
+   `token_ceilings`. Collapse IPv6 to a /64 before hashing while you are there — the IP half of
+   the anti-farm is IPv4-only today.
+4. **Decide the guest/Free interaction deliberately.** `_get_allowance` short-circuits: whenever
+   guest access is on, the FREE tier's fast lane returns the *guest* daily limit, before
+   `quotas.free.fast` is read. So this flip silently re-writes the Free allowance too. Either
+   split the two in code, or choose one number for both and say so.
 **Acceptance.** Anonymous visitor gets 3 fast answers/day; the 4th returns a `402` with the
-registration CTA, not an error; guest quota is enforced on **both** the `mm_aid` cookie hash and
-the IP hash; cost per day is bounded and observable in the admin cost panel for one week
-before launch.
-**Risk & mitigation.** Abuse/cost. Both quota keys already exist
-(`_guest_cookie_quota_file`, `_guest_ip_quota_file`), the config clamps `daily_limit` to
-[1, 500], and the monthly token ceiling backstops the lane. Start at 3/day, raise on evidence.
-**Model.** operator + builder (Opus) for the CTA-on-exhaustion copy.
-**Pre-launch:** **required.** *(This is the single highest impact-to-effort item in the program.)*
+registration CTA, not an error; the quota holds on both the `mm_aid` cookie hash and the
+/64-collapsed IP hash; and **one week of measured cost-per-turn from the ledger** (p50/p95
+rounds and tokens per guest turn) exists before launch. Plus a test pinning
+`_get_allowance('free','active','fast')` under the flip — there is none today.
+**Model.** builder (Opus) for 1–4; operator for the flip. **Pre-launch:** **required.**
 
 ### W1-3 — The create-before-register module
 **Objective.** The anonymous watchlist works and folds into the account on first sign-in
-(`watchstore.js`, `mdash.watchstore.folded.v1`) — and **nothing in the product ever invites a
-visitor to use it.**
+(`watchstore.js`, `mdash.watchstore.folded.v1`) — as of 2026-08-12, when #5463 promoted the five
+funnel-shell scripts. Two gaps remain: **nothing in the product invites a visitor to use it**,
+and **Mastermind says nothing about the list once built** — `stockdata.js` and the three
+decision-rule modules stay gated for anonymous visitors by design. The second is the one the
+pattern turns on, and it is a disclosure decision: this task builds the **regime-and-context
+read with no graded per-ticker claim**, which needs none of the four gated modules.
 **Scope.** A reusable inline module for deep-link landing surfaces (theme, cohort, ticker,
 board pages): "add the tickers you actually hold", one-tap suggestions drawn from the page's own
 names, an instant read of the resulting 3–5 names against the current regime, and **one line
@@ -217,18 +243,29 @@ silently deletes a funnel step and nobody notices until a monthly review.
 Free collapses to "shells with no data". There is currently **no configuration in which Free is a
 real product.**
 **Scope.** Expand to the Free set in `MASTERMIND_ENTITLEMENT_MATRIX.md` §4.
+**The trap this task must not fall into.** `app/paywall.py` classifies `deny → public → free →
+premium` and returns `204` for anything classified `free` **before** it calls
+`enforced_early(path)`. So adding a path to `free_registered` silently un-gates it even when it
+is listed in `premium.enforced_early` — verified by execution, and no test covers the
+interaction. Diff the new `free_registered` against `enforced_early` before merging.
 **Acceptance.** With `PAYWALL_ENABLED=1` **in staging**, a signed-in Free account loads every
 launch-critical surface with real content and meets a wall only at the four documented ceilings;
 an anonymous visitor still meets the anonymous boundary; the boundary test and the Caddy
-byte-alignment check both pass.
+byte-alignment check both pass; and a **new test asserts that no path appears in both
+`free_registered` and `premium.enforced_early`**, with a synthetic overlap proving it reds.
 **Model.** builder (Opus) + **reviewer (Opus)** — this is the highest-blast-radius config change
 in the program.
 **Pre-launch:** **required, and it must land before the switch, not with it.**
 
 ### W3-2 — The four Free ceilings
-**Scope.** Watchlist capacity (1 list / 15 symbols), board depth (3 rows — already built in
-`tier_preview.js`), chat allowance (`config/brain.yml` 5/wk → 20/wk), history window (7 days).
-History is the only genuinely new enforcement.
+**Scope.** Watchlist capacity (1 list / 15 symbols), board depth (3 rows), chat allowance
+(`config/brain.yml` 5/wk → 20/wk — see W1-2 item 4, this interacts with the guest flip), history
+window (7 days).
+**Two of these are new enforcement, not one.** The 3-row board cap is *presentation* today:
+`tier_preview.js` adds `mx-tier-blurred` / `mx-tier-hidden` to rows the server already put in
+the public shell, so they are one view-source away. Converting it to the split build
+(`docs/TIER_PREVIEW_PATTERN.md`) is real work and it is the only Free ceiling quoted in the
+entitlement matrix that nothing enforces.
 **Acceptance.** Each ceiling refuses server-side, emits `paywall.encountered` with its stable
 surface id, and renders a labelled locked state — never a blur, never an empty panel. A Free
 account at the ceiling and an Essential account past it produce **different bytes**.
@@ -303,10 +340,13 @@ one-line config changes plus a Stripe-side price/coupon.
 
 | # | Change | Files | Pre-launch |
 |---|---|---|---|
-| W6-1 | Withdraw Essential annual while Founding Pro is live | `config/plans.yml`, `templates/plans.html.j2` | **required** — it is a dominated purchase on our own page |
-| W6-2 | Pro annual $1,308 → $1,188 | `config/plans.yml` + new Stripe `lookup_key`; old key into `legacy_lookup_keys` | required if adopted |
-| W6-3 | Founder cap 2,000 → 500; remove `allotment_pacing`; publish a close date + the four founder benefits | `config/plans.yml`, `app/billing.py` (pacing removal), `templates/plans.html.j2` | required if adopted |
-| W6-4 | New feature keys + Stripe Entitlements | `config/plans.yml`, `scripts/stripe_bootstrap.py` | with W7 |
+| W6-1 | **Essential annual $900 → $828** ($69/mo-equiv) | `config/plans.yml` + new Stripe price; old key into `legacy_lookup_keys` | **required** — this is the Finding A fix, and it replaces the earlier "withdraw Essential annual", which was not a config change: deleting the price block ships "$0 /mo", "SAVE 100%" and a Subscribe button that 400s, because both builders default a missing `unit_amount` to `0` |
+| W6-2 | Pro annual $1,308 → $1,188 | same | required if adopted |
+| W6-3 | Essential monthly $99 → $89 | same | secondary — keeps the ladder monotone |
+| W6-4 | Founder cap 2,000 → 500; remove `allotment_pacing`; publish a close date + the four founder benefits | `config/plans.yml`, `app/billing.py`, `templates/plans.html.j2` | required if adopted |
+| W6-5 | `subscription.tier_changed` event | `config/growth_events.yml` (added) + `app/billing.py` emitter | **required** — without it the pre-registered Essential test's second criterion cannot be computed |
+| W6-6 | Make the builders **raise** on a missing price instead of defaulting to `0` | `scripts/build_site.py`, `scripts/build_public_pages.py` | recommended — it is what made W6-1's alternative dangerous |
+| W6-7 | Feature moves between tiers (e.g. `terminal_live_options`) | **Stripe first**, catalog second | deferred past launch — see the matrix §6; the catalog edit alone is a no-op and the grandfather has no carrier |
 
 **Acceptance for all of W6.** Repricing changes **no** displayed literal — the savings badges
 recompute from config (MNZ-R12), verified by a test that changes a price fixture and asserts the
@@ -341,35 +381,54 @@ a test asserts an old key still maps to its tier.
 
 ## 2. Pre-launch critical path
 
-Ordered. Everything else can follow.
+**PL-0 — CLOSE THE PUBLICATION BYPASS. Nothing else on this list matters until it is done.**
+
+`gh repo view --json visibility` returns **PUBLIC**, and every payload
+`config/site_access.yml` promises to "403 for anonymous AND Free" is git-tracked:
+`site/premiumdata/{etfs,special_situations,china_special_situations,confluence_screener}.json`,
+`site/allocationdata/special_situations.json`, `site/chinaspecialdata/special.json`,
+`site/capital-structure-data/`. The nightly Pages mirror uploads `site/` on every run and its
+prune step removes only the bulk per-ticker trees. So the paid boundary is bypassable today by
+anyone who clones the repository — no session, no URL to guess.
+
+MNZ-OD3 accepted the *mirror* leak as a recorded risk in July, **before there was a paid
+product**, and the repo went public on 2026-08-12 for CI billing, after that ruling. Neither
+decision was made in the presence of the other. Options, any of which closes it:
+gitignore those payloads and serve them from R2 like the other private artifacts; prune them in
+`daily.yml`/`weekly.yml` before `upload-pages-artifact`; or take the repo private.
+Until one lands, **every W3 acceptance criterion is unfalsifiable as a commercial boundary** —
+it can pass at Caddy and be false on the internet. Owner: operator + builder. Blocks payment,
+not the build.
+
+Then, ordered:
 
 ```
-W0-3  decide + ship (remove or enforce the indicator claim)   ← operator
-W1-1  mm_brain.js public                                       ← 1 PR
-W1-2  guest chat on at 3/day                                   ← operator, seconds
-W2-1  registry → beacon whitelist                              ← 1 PR
-W2-2/3 emitters                                                ← 2 PRs
-W1-3  create-before-register module                            ← designer + builder
-W3-1  grow free_registered                                     ← 1 PR + reviewer
-W3-2  the four Free ceilings                                   ← 2 PRs
-W4-1/2 contextual upgrade contract + ladder                    ← 2 PRs
-W6-1  withdraw Essential annual                                ← operator + 1 PR
-W6-3  founder cap + pacing + close date                        ← operator + 1 PR
-      ── ops checklist (docs/ops/site-access.md) ──
-      PAYWALL_ENABLED=1
-W5-1  since-you-were-last-here                                 ← within 2 weeks
+W0-3b  fix "The Terminal — 3 indicators" on the billing summary       ← 1 PR (paired asset)
+W1-2   guest chat: meter fix, pricing rows, guest ceiling, then flip  ← 3 PRs + operator
+W2-1   registry → beacon whitelist (keyed on `wire`, never `name`)    ← 1 PR
+W2-2/3 emitters                                                       ← 2 PRs
+W1-3   create-before-register module + the anonymous-safe read        ← designer + builder
+W3-1   grow free_registered (+ the free/enforced_early overlap test)  ← 1 PR + reviewer
+W3-2   the four Free ceilings (incl. converting the board cap to a
+       split build — it is presentation today, not enforcement)       ← 2–3 PRs
+W4-1/2 contextual upgrade contract + escalation ladder                ← 2 PRs
+W6-1/2/5 Essential annual $828, Pro annual $1,188, tier_changed event ← operator + 2 PRs
+W6-4   founder cap + pacing + close date                              ← operator + 1 PR
+       ── ops checklist (docs/ops/site-access.md) ──
+       ── PL-0 CONFIRMED CLOSED ──
+       PAYWALL_ENABLED=1
+W5-1   since-you-were-last-here                                       ← within 2 weeks
 ```
 
-**Two blockers that are not tasks in this plan, and must be resolved by their owners:**
+**One more blocker that is not a task here:** MNZ-R2 gates all content gating on email
+verification, custom SMTP and CAPTCHA being live. Verify the current state rather than assuming
+it; this plan did not re-derive it.
 
-1. **The GitHub Pages mirror** republishes the entire site nightly, including every premium
-   artifact. MNZ-OD3 recorded it as an accepted risk *before* there was a paid product. It is
-   already on the launch checklist in `docs/ops/site-access.md`; it needs an explicit decision
-   now that real money is involved, not an inherited one.
-2. **Email verification + custom SMTP + CAPTCHA** — MNZ-R2 gates all content gating on these.
-   Verify the current state before assuming it is done.
-
----
+**What changed in this section after review.** The first draft opened with W1-1 (promote
+`mm_brain.js`) and filed the mirror as a parallel note. `mm_brain.js` landed on main the same
+day, and the mirror turned out to be the smaller half of a publication problem whose larger half
+— a public repository — postdates the ruling that accepted it. The critical path now leads with
+the thing that must be true before money changes hands.
 
 ## 3. Estimation and sequencing notes
 

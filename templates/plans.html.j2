@@ -26,28 +26,38 @@
     silently, with no test to catch it. MNZ-R13 closes that the way prices already
     were closed.
 
+    THE PERIOD IS DERIVED TOO, not just the number. An earlier cut interpolated only
+    `.limit` into hardcoded "a week" / "每周" strings, so flipping
+    quotas.free.fast.period to `month` rendered "5 quick questions a week" on the card
+    and "5 / mo" in the matrix — same page, contradictory, config ignored. `day` is a
+    real value here: brain_gateway._get_allowance returns {period: "day"} for the FREE
+    fast lane whenever guest access is enabled, so a day-blind template would break the
+    moment that toggle flips.
+
     Two sentinels the macros hide from the markup:
       limit < 0  → uncapped  ("Unlimited"; quotas.pro.fast is -1 by the operator
-                   ruling of 2026-07-28, backstopped by token_ceilings, not by a
-                   request cap — and a fair-use ceiling is not an allowance, so it
-                   is deliberately not advertised)
+                   ruling of 2026-07-28, backstopped by token_ceilings rather than by
+                   a request cap — a fair-use ceiling is not an allowance, so it is
+                   deliberately not advertised)
       limit == 0 → the lane is absent at that tier (renders ✗, never "0 a month")
 
-    `chatline` is the tier-card phrasing ("300 a month"); `chatcell` is the compact
-    matrix phrasing ("300/ mo"). Both take one lane dict. -#}
-{% macro chatper(period, short=false) -%}
-{%- if period == 'week' %}{{ t('week', '周') }}{% elif period == 'day' %}{{ t('day', '天') }}
-{%- elif short %}{{ t('mo', '月') }}{% else %}{{ t('month', '月') }}{% endif -%}
-{%- endmacro -%}
-{% macro chatline(lane) -%}
+    `chatqty` is the tier-card phrasing ("300 a month", "5 quick questions a week");
+    `chattd` emits a whole comparison-matrix cell, because the ✗ case needs a different
+    `<td>` class and a macro that returned only the inner text could not express it. -#}
+{% set PER_LONG_EN = {'week': 'a week', 'month': 'a month', 'day': 'a day'} -%}
+{% set PER_LONG_ZH = {'week': '每周', 'month': '每月', 'day': '每天'} -%}
+{% set PER_CELL_EN = {'week': 'week', 'month': 'mo', 'day': 'day'} -%}
+{% set PER_CELL_ZH = {'week': '周', 'month': '月', 'day': '天'} -%}
+{% macro chatqty(lane, noun_en='', noun_zh='') -%}
 {%- if lane.uncapped %}{{ t('unlimited', '无限量') }}
 {%- elif lane.none %}{{ t('not included', '不含') }}
-{%- elif lane.period == 'week' %}{{ t(lane.limit ~ ' a week', '每周 ' ~ lane.limit ~ ' 次') }}
-{%- else %}{{ t(lane.limit ~ ' a month', '每月 ' ~ lane.limit ~ ' 次') }}{% endif -%}
+{%- else %}{{ t(lane.limit ~ noun_en ~ ' ' ~ PER_LONG_EN[lane.period],
+                PER_LONG_ZH[lane.period] ~ ' ' ~ lane.limit ~ noun_zh) }}{% endif -%}
 {%- endmacro -%}
-{% macro chatcell(lane) -%}
-{%- if lane.uncapped %}{{ t('Unlimited', '无限量') }}
-{%- else %}{{ lane.limit }}<small>/ {{ chatper(lane.period, true) }}</small>{% endif -%}
+{% macro chattd(lane) -%}
+{%- if lane.none %}<td class="no">✗</td>
+{%- elif lane.uncapped %}<td class="val">{{ t('Unlimited', '无限量') }}</td>
+{%- else %}<td class="val">{{ lane.limit }}<small>/ {{ t(PER_CELL_EN[lane.period], PER_CELL_ZH[lane.period]) }}</small></td>{% endif -%}
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -456,7 +466,7 @@
           <li>{{ t('One research report', '一份研究报告') }}</li>
           <li>{{ t('Special situations', '特殊事件') }} — <b>{{ t('the 3 newest filings', '最新 3 份披露文件') }}</b></li>
           <li>{{ t('Committee &amp; brief — a teaser', '委员会与简报 — 预览') }}</li>
-          <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t(chat_quotas.free.fast.limit ~ ' quick questions a week', '每周 ' ~ chat_quotas.free.fast.limit ~ ' 个快速提问') }}</b></li>
+          <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ chatqty(chat_quotas.free.fast, ' quick questions', ' 个快速提问') }}</b></li>
           <li>{{ t('Terminal charting', 'Terminal 图表') }} — <b>{{ terminal_indicators.core_count }} {{ t('core indicators', '个核心指标') }}</b> + {{ t('Candle Painter', 'K 线着色器') }}</li>
         </ul>
         <button class="btn" data-act="free" type="button"><span class="btxt">{{ t('Sign in — it’s free', '登录 — 完全免费') }}</span></button>
@@ -484,7 +494,7 @@
           <li><b>{{ t('Every research report', '全部研究报告') }}</b> + {{ t('the intelligence hub', '情报中心') }}</li>
           <li><b>{{ t('The special situations desk', '完整特殊事件交易台') }}</b> — {{ t('activist, M&amp;A, spin-offs, take-privates', '维权、并购、分拆、私有化') }}</li>
           <li>{{ t('Committee, brief &amp; track record', '委员会、简报与业绩记录') }} — {{ t('in full', '完整版') }}</li>
-          <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ chatline(chat_quotas.essential.fast) }}</b></li>
+          <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ chatqty(chat_quotas.essential.fast, '', ' 次') }}</b></li>
           <li><b>{{ terminal_indicators.access.essential }} / {{ terminal_indicators.advanced_total }} {{ t('advanced indicator modules', '个高级指标模块') }}</b> — {{ t('Trend Engine, market structure &amp; oscillator signals', '趋势引擎、市场结构与振荡器信号') }}</li>
           <li>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></li>
         </ul>
@@ -523,8 +533,8 @@
         </div>
         <ul class="tf">
           <li><b>{{ t('Everything in Essential', 'Essential 全部内容') }}</b></li>
-          <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ chatline(chat_quotas.pro.fast) }}</b></li>
-          <li><b>{{ t('Deep Opus chat', '深度 Opus 对话') }}</b> — {{ chatline(chat_quotas.pro.deep) }}</li>
+          <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ chatqty(chat_quotas.pro.fast, '', ' 次') }}</b></li>
+          <li><b>{{ t('Deep Opus chat', '深度 Opus 对话') }}</b> — {{ chatqty(chat_quotas.pro.deep, '', ' 次') }}</li>
           <li>{{ t('Priority research answers', '优先研究回答') }}</li>
           <li><b>{{ t('All', '全部') }} {{ terminal_indicators.access.pro }} {{ t('advanced indicator modules', '个高级指标模块') }}</b> — {{ t('all five suites', '5 套工具组全解锁') }}</li>
           <li>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></li>
@@ -618,15 +628,15 @@
           <tr class="grp"><td colspan="4">MASTERMIND AI</td></tr>
           <tr>
             <td class="feat has-tip"><span class="ft">{{ t('Mastermind chat', '操盘大脑对话') }}</span><span class="tipbox">{{ t('The fast lane — quick market questions, answered on any page.', '快速通道——在任意页面提出快速市场问题。') }}</span></td>
-            <td class="val">{{ chatcell(chat_quotas.free.fast) }}</td>
-            <td class="val">{{ chatcell(chat_quotas.essential.fast) }}</td>
-            <td class="val">{{ chatcell(chat_quotas.pro.fast) }}</td>
+            {{ chattd(chat_quotas.free.fast) }}
+            {{ chattd(chat_quotas.essential.fast) }}
+            {{ chattd(chat_quotas.pro.fast) }}
           </tr>
           <tr>
             <td class="feat has-tip"><span class="ft">{{ t('Deep Opus chat', '深度 Opus 对话') }}</span><span class="mchip">{{ essential.name }}</span><span class="tipbox">{{ t('The heavyweight research lane — long answers with receipts.', '重量级研究通道——附出处的长篇分析。') }}</span></td>
-            {% if chat_quotas.free.deep.none %}<td class="no">✗</td>{% else %}<td class="val">{{ chatcell(chat_quotas.free.deep) }}</td>{% endif %}
-            <td class="val">{{ chatcell(chat_quotas.essential.deep) }}</td>
-            <td class="val">{{ chatcell(chat_quotas.pro.deep) }}</td>
+            {{ chattd(chat_quotas.free.deep) }}
+            {{ chattd(chat_quotas.essential.deep) }}
+            {{ chattd(chat_quotas.pro.deep) }}
           </tr>
 
           <tr class="grp"><td colspan="4">TERMINAL</td></tr>

@@ -100,7 +100,17 @@ def chat_allowance_view_model(root: Path | None = None) -> dict[str, dict[str, d
             spec = bucket.get(cfg_lane)
             if not isinstance(spec, dict) or "limit" not in spec:
                 raise ValueError(f"{path}: quotas.{tier}.{cfg_lane}.limit missing")
-            limit = int(spec["limit"])
+            try:
+                limit = int(spec["limit"])
+            except (TypeError, ValueError) as exc:
+                # `limit:` with no value parses as YAML null, and a bare int() would raise
+                # TypeError — outside the ValueError contract this module documents and the
+                # callers catch. Normalize it so every malformed-config path exits the same
+                # way, whether the key is missing, null, or a string.
+                raise ValueError(
+                    f"{path}: quotas.{tier}.{cfg_lane}.limit is not an integer "
+                    f"({spec['limit']!r})"
+                ) from exc
             lanes[display_lane] = {
                 "limit": limit,
                 "period": str(spec.get("period", "month")),

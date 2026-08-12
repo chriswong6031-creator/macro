@@ -19,7 +19,7 @@ Access values:
 | Symbol | Meaning |
 |---|---|
 | **●** | Full access |
-| **◐ n** | Partial — n rows / n items / n days, server-enforced |
+| **◐ n** | Partial — n rows / n items / n days. Server-enforced **unless the row's Enforced-by cell says otherwise** — three rows below are client-side presentation gates, and the difference is the whole boundary |
 | **◔** | Preview only — shell, methodology, honest totals, one sample; no member rows |
 | **○** | Not available; shown as a labelled locked state naming what and how much |
 | **✕** | Not present in the product at this tier at all |
@@ -51,7 +51,7 @@ a sentence a customer would recognize. **No key is proposed for something we can
 | `history_full` | essential, pro | history beyond the Free 7-day window | The cheapest, clearest "there is more here" signal we own |
 | `watch_pro` | essential, pro | >1 watchlist, >15 symbols, portfolio positions, concentration/correlation reads | The P3 (Allocator) core |
 | `alerts_realtime` | pro | push/email alerts with intraday latency | Real delivery cost; the P2 (Operator) core |
-| `chat_deep` | pro | deep lane (rename of `chat_opus` — the model behind it has already changed once, from Opus 4.8 to GPT-5.6 Sol with Opus 5 backup, and the key should not name a vendor) | Real marginal token cost |
+| `chat_deep` | essential, pro | **access** to the deep lane; the per-tier *volume* stays in `config/brain.yml` (Essential 10/mo, Pro 150/mo). Renamed from `chat_opus` because the model behind it has already changed once — Opus 4.8 → GPT-5.6 Sol with an Opus 5 backup — and a key must not name a vendor. **Not Pro-only:** an earlier draft made it Pro-only, which contradicted every tier table in this document set that promises Essential 10 deep chats a month | Real marginal token cost, metered by quota rather than by key |
 | `export_api` | pro | CSV/JSON export, API keys | P4 (Builder) ceiling-raiser |
 
 `site_full` is retained unchanged as the estate-wide gate so no existing enforcement path has
@@ -69,25 +69,26 @@ hypothetical one.
 | Every `*.html` page shell | ● | ● | ● | ● | 2026-08-04 ruling — the `@reg_html` matchers were removed |
 | Server-rendered page content | ● | ● | ● | ● | same |
 | Non-public assets (JSON/JS/CSS) | ○ 401 | ● | ● | ● | `app/regwall.py::_deny` |
-| Ranked-board preview rows | ◐ 1 | ◐ 3 | ● | ● | `templates/tier_preview.js::capFor` |
+| Ranked-board preview rows | ◐ 1 | ◐ 3 | ● | ● | `templates/tier_preview.js::capFor` — **client-side presentation gate, not a server gate.** Every row is server-rendered into the public shell and only blurred / `display:none`-d in the browser (`tier_preview.js` + `tier_preview.css`), so the capped rows are one view-source away. `docs/ops/site-access.md:8` calls it "presentation-gated"; `docs/TIER_PREVIEW_PATTERN.md` calls the shape "a marketing wall, not a gate" |
 | Special Situations desk | ◔ | ◔ | ● | ● | `config.yml:6818 gated:true` + `premium.enforced_early` |
 | China Special Situations | ◔ | ◔ | ● | ● | `config.yml:6834` |
 | ETFs / fund conviction | ◔ | ◔ | ● | ● | `config.yml:1767` |
 | Capital Structure | ◔ | ◔ | ● | ● | `/capital-structure-data/` prefix |
-| Research Vault | ◐ 3 newest | ◐ 3 newest | ● | ● | `site_access.yml` — PDFs behind `/api/research/*` |
+| Research Vault | ◐ 3 newest | ◐ 3 newest | **◐ 3 newest** | ● | `app/research.py::_can_view` — `_VIEW_TIERS = frozenset({"pro"})`. Catalog, search, view and download are **Pro-only**; Essential gets exactly the anonymous 3-report preview and a `402 paid_required`. `config/site_access.yml` only classifies the shell + client as anonymous-public |
 | Confluence screener | ◐ rank 1 | ◐ rank 1 | ● | ● | server-side row omission |
-| us_stocks summary | ◐ 1 | ◐ 3 | ● | ● | `tier_preview.js` |
+| us_stocks summary | ◐ 1 | ◐ 3 | ● | ● | `tier_preview.js` — same client-side presentation gate, not server-enforced |
 | **Everything else on the estate** | ○ assets 401 | ● | ● | ● | — **this is the problem** |
 | Fast chat | ○ (guest default OFF) | ◐ 5/wk | ◐ 300/mo | ● uncapped | `config/brain.yml quotas` — Pro fast is `limit: -1` (operator ruling 2026-07-28), backstopped by `token_ceilings.fast` 5M tokens/mo |
 | Deep chat | ✕ | ○ 0 | ◐ 10/mo | ◐ 150/mo | same |
 | Chat launcher present at all | ✕ | ● | ● | ● | `mm_brain.js` absent from public allowlist |
 | Terminal charting | ● | ● | ● | ● | free by ruling MNZ-OD4 |
 | Terminal live options | ○ | ○ | ● | ● | `hasLiveOptions()` |
-| Terminal advanced indicators | ● all 31 | ● all 31 | ● all 31 | ● all 31 | **nothing** — the 1/15/31 ladder is advertised and unenforced |
+| Terminal advanced indicators | ◐ 1 | ◐ 1 | ◐ 15 | ● 31 | `terminal/lib/suites/*` per-module `tier` (1 free / 14 essential / 16 pro), enforced at three points against the tier from `/api/me`. Matches `config/plans.yml` exactly. **Client-side only** — no server recheck, and a `mm.devTier` localStorage override exists — so it is a product ladder, not a boundary |
 | Pine script save | ○ | ○ | ● | ● | `isPaidTier()` |
 | Alerts | ○ | ○ | ● | ● | `isPaidTier()` — Essential and Pro identical |
-| Watchlist (local) | ● | ● | ● | ● | `templates/watchlist.js` localStorage |
-| Watchlist cloud sync | ✕ | ● | ● | ● | `templates/watchstore.js` |
+| Watchlist (local) | ● | ● | ● | ● | `templates/watchlist.js` localStorage. **Anonymous since 2026-08-12 only** (#5463 promoted `watchlist.js`, `watchstore.js`, `market_books.js`, `portfolio.js`, `mtf.js`); before that every one of the page's ten scripts was default-deny and anonymous production served a cached husk |
+| Watchlist cloud sync | ✕ | ● | ● | ● | `templates/watchstore.js`, one-time fold on first sign-in |
+| Watchlist — signal stack attached | ○ | ● | ● | ● | `stockdata.js` + `watchlist_risk.js` / `risk_core.js` / `factor_exposure.js` stay gated: the first would render graded per-ticker output to signed-out visitors through the page's `data_base` shim, the other three **are** the calibrated decision rule in code form. So the anonymous list persists and Mastermind says nothing about it |
 | Watchlist count / size limit | none | none | none | none | **no limit exists at any tier** |
 | History depth | full | full | full | full | **no limit exists at any tier** |
 | Export / API | ✕ | ✕ | ✕ | ✕ | not built |
@@ -169,8 +170,9 @@ built today.
 | Capability | Anon | Free | Essential | Pro | Rationale |
 |---|---|---|---|---|---|
 | Track record, calibration lab, receipts | ● | ● | ● | ● | Never gated. Full stop |
+| Research Vault — full catalog + PDFs | ◐ 3 newest | ◐ 3 newest | ◐ 3 newest | ● | **Unchanged, and it is the clearest Pro/Essential differentiator that already exists.** `app/research.py` already ships Pro-only. Essential's plans-page copy ("Every research report — the intelligence hub") does not match it and must be corrected before launch |
 | Terminal — charting | ● | ● | ● | ● | Free for everyone, incl. unregistered (MNZ-OD4) |
-| Terminal — advanced indicator suites | ◐ 1 | ◐ 1 | ◐ 15 | ● 31 | **Requires building the enforcement that `config/plans.yml` already advertises.** Until it exists, the claim must come off the plans page |
+| Terminal — advanced indicator suites | ◐ 1 | ◐ 1 | ◐ 15 | ● 31 | **Already shipped, byte-for-byte.** No build, no copy withdrawal. The only open item is that enforcement is client-side; a server recheck is a hardening task, not a commercial one |
 | Terminal — live options | ○ | ○ | ○ | ● | **Change from today.** Live options is the clearest "timeliness" capability we own and it belongs to the execution tier. Moving it Pro-only is what makes Essential/Pro a segment split rather than a size split |
 | Pine scripts — run | ● | ● | ● | ● | — |
 | Pine scripts — save | ○ | ◐ 1 | ◐ 5 | ● | `isPaidTier` today; a small Free allowance costs nothing and hooks P4 |
@@ -206,9 +208,25 @@ someone can say which line it belongs on.
 Non-negotiable: **no existing paying customer loses a capability they are currently paying for.**
 
 - Anyone holding an `essential` entitlement at the cutover date keeps `terminal_live_options`
-  permanently, via a grandfather feature key written by the migration
-  (`essential_legacy_live_options`) rather than by a code branch. New Essential subscriptions
-  after the cutover do not receive it.
+  permanently. **There is no mechanism for this today and inventing a new feature key does not
+  create one:** the gate is `terminal/lib/entitlement.ts::hasLiveOptions`, which tests
+  `e.features.includes("terminal_live_options")` — a hardcoded string literal in a different
+  repository. A new key is invisible to it.
+  Two mechanisms that would actually work, in preference order:
+  1. **A second Stripe Product ("Essential Legacy")** that retains the `terminal_live_options`
+     ProductFeature while the current Essential Product drops it, with the existing price
+     `lookup_key`s moved to `legacy_lookup_keys` so live subscriptions keep resolving. No code
+     in either repo changes.
+  2. **Widen the Terminal gate first** to accept either key, merged and deployed in the
+     charting-app repo **before** the `config/plans.yml` edit lands.
+  Either way this is a two-repo, ordered migration, not a catalog edit — and it is the reason
+  §5.2 of the architecture document holds this recommendation least tightly.
+- **Deleting a feature from `config/plans.yml` does not revoke it.** `app/billing.py:799` reads
+  `features = list(entitlement_keys) if entitlement_keys else _tier_features(tier)` — when
+  Stripe returns ActiveEntitlements the catalog is not consulted at all — and
+  `scripts/stripe_bootstrap.py::_attach_features` is attach-only, with no detach path. So the
+  catalog edit is a **no-op** for every subscriber whose Stripe entitlements are non-empty.
+  Any feature move is a Stripe-side migration first, a YAML edit second.
 - The `insider` → `essential` alias in `lib/tiers.py` stays permanent and untouched. Nothing in
   this document may emit `insider`.
 - Founding Pro's `duration: forever` grandfather is honored regardless of any later repricing.
@@ -218,19 +236,39 @@ Non-negotiable: **no existing paying customer loses a capability they are curren
 
 ## 7. Cost, licensing, and the surfaces that constrain this matrix
 
-**Marginal cost per active user (rough, order-of-magnitude, for tiering decisions only):**
+**Marginal cost per active user — and why the first draft of this section was wrong.**
 
-| Capability | Cost driver | Rough monthly cost at cap |
+An adversarial pass on 2026-08-12 falsified three "bounded" claims that were here. They are
+recorded rather than deleted, because each is a live prerequisite:
+
+| Claim (withdrawn) | What the code does |
+|---|---|
+| "Pro deep chat cost is bounded by construction via `token_ceilings.pro = 2M`" | **A question is not a call.** `config/brain.yml` sets `tool_budget` 5 (fast) / 10 (pro) / 20 (research), so one turn is up to 6 / 11 / 21 `messages.create` calls, each re-sending the prefix. `brain_gateway` **assigns** `usage_dict` from the *final* response instead of accumulating across rounds, so every earlier round is invisible to both the ceiling and the `lib/ai_costs.py` ledger. Output is undercounted by roughly the round count; input by 2–4×. The ceiling is real but bounds a number that is not the spend |
+| "For the uncapped Pro fast lane the admin cost panel is the control" | The panel cannot price the two models that actually serve the lanes: `config/ai_pricing.yml` carries `claude-opus-4-8` but neither `claude-opus-5` nor `gpt-5.6-sol`, and `estimate_cost_usd` returns `None` for both (prefix matching does not rescue it) |
+| "Anonymous chat is bounded by the daily cap, the `mm_aid`/IP quota files, and `_GUEST_CFG_HI = 500`" | `_check_and_increment_guest_quota` checks two **request** counters and never reads `token_ceilings` — the signed-in path's only real backstop does not exist for guests. And `_GUEST_CFG_HI` clamps the per-guest *daily limit*: it permits 500 questions/day/visitor. It is a ceiling on generosity, not on spend. Separately, the IP half of the anti-farm is IPv4-only — the hash is over the full address, and one residential IPv6 /64 is 2^64 buckets |
+
+**What is actually true about cost, and what it implies:**
+
+| Capability | Cost driver | Posture |
 |---|---|---|
-| Deep chat, Pro | 150 msgs × frontier model | The dominant per-user cost. `config/brain.yml` sets `token_ceilings.pro = 2M`, and `_check_and_increment_quota` enforces it as a backstop — so the cost is *bounded by construction*, which is the right design |
-| Fast chat, Pro | uncapped msgs × DeepSeek/Haiku | **The request cap is off (`limit: -1`); the 5M-token monthly ceiling is the only bound.** That is the right shape — a fair-use ceiling rather than a counted allowance — but it means Pro fast-lane cost is bounded by tokens alone, so the admin cost panel is the control, not the config |
-| Live options | Vendor feed, largely fixed | Near-zero marginal per user; the constraint is licensing, not compute |
-| Everything else | Nightly batch, already paid | ~Zero marginal. **This is why gating breadth is the wrong lever** — we are not saving anything by hiding a page that was already rendered |
-| Anonymous chat (new) | 3/day × guest | The one new cost this matrix introduces. Bounded by the existing daily cap + `mm_aid`/IP quota files, and by `_GUEST_CFG_HI = 500` |
+| Deep chat, Pro | frontier tokens × rounds | The dominant per-user cost, and currently **under-measured**, not unbounded-by-design |
+| Fast chat, Pro | uncapped requests × cheap model × rounds | The request cap is off (`limit: -1`); the token ceiling is the only bound, and it under-counts |
+| Live options | vendor feed, largely fixed | Near-zero marginal per user; the constraint is licensing, not compute |
+| Everything else | nightly batch, already paid | ~Zero marginal. **This is why gating breadth is the wrong lever** — hiding an already-rendered page saves nothing |
+| Anonymous chat (proposed) | 3/day × guests | The one new cost this matrix introduces, and the only one that is **unbounded in token terms today** |
 
-**The unit-economics rule that follows:** meter what costs money per call (chat, AI analysis,
-exports); do **not** meter what is already computed (pages, boards, history). Today's matrix does
-the opposite — it gates cheap breadth and leaves expensive chat generous at every tier.
+**Three prerequisites before the guest lane is switched on** (they are cheap, and they are the
+difference between a measured bet and an unmetered one):
+1. **Accumulate usage across tool rounds** in `brain_gateway` rather than assigning from the
+   final response — otherwise every cost number we look at afterwards is wrong by 2–20×.
+2. **Add `claude-opus-5` and `gpt-5.6-sol` to `config/ai_pricing.yml`**, so the ledger can price
+   what it records.
+3. **Give the guest lane a token ceiling and a global daily spend cap**, and collapse IPv6 to a
+   /64 before hashing. Start at 3/day and raise on measured evidence.
+
+**The unit-economics rule that survives unchanged:** meter what costs money per call (chat, AI
+analysis, exports); do **not** meter what is already computed (pages, boards, history). Today's
+matrix does the opposite.
 
 **Licensing — flagged, not concluded.** Three surfaces need verification before their row above
 is final. This document does not resolve them and should not be read as legal advice:
@@ -249,20 +287,28 @@ public data.
 
 ---
 
-## 8. What has to change in config to get from §3 to §4
+## 8. What has to change to get from §3 to §4
 
-Ordered by risk, lowest first. Each is a config edit, not a rewrite.
+Ordered by risk, lowest first. **Two of these are not config edits at all**, and an earlier
+draft of this table said they were.
 
-| # | Change | File | Risk |
+| # | Change | Where | Risk / note |
 |---|---|---|---|
-| 1 | Turn on the guest chat lane at 3/day | `admin/brain_guest_access.json` (untracked, hot-reloaded, no deploy) | Low — reversible in 20s |
-| 2 | Add `mm_brain.js` to the public allowlist | `config/site_access.yml` + the Caddyfile byte-aligned list | Low — payload-free client; every brain API route keeps its own auth |
-| 3 | Free fast-chat 5/wk → 20/wk | `config/brain.yml` | Low |
-| 4 | Grow `free_registered` to the §4 set | `config/site_access.yml` | Medium — this is the change that makes Free a product, and it must land **before** `PAYWALL_ENABLED=1` |
-| 5 | Withdraw Essential annual from sale | `config/plans.yml` + plans template | Low, operator decision |
-| 6 | New feature keys + tier membership | `config/plans.yml` + Stripe Entitlements | Medium — requires the Stripe-side products to match |
-| 7 | Watchlist / history / alert limits | new enforcement, macro-api + Terminal | High — real code, Waves 2–3 |
-| 8 | Indicator ladder enforcement | Terminal repo | High — **or remove the claim.** Do not ship launch with an advertised, unenforced ladder |
+| 1 | Turn on the guest chat lane at 3/day | `admin/brain_guest_access.json` (untracked, hot-reloaded, no deploy) | Low to reverse, **not low to arm** — the three §7 prerequisites come first. And note item 2: this flip is not independent of it |
+| 2 | Free fast-chat 5/wk → 20/wk | `config/brain.yml` | **Item 1 OVERRIDES this.** `brain_gateway._get_allowance` short-circuits: whenever guest access is enabled, the FREE tier's fast lane returns `{limit: <guest daily_limit>, period: "day"}` *before* `quotas.free.fast` is read. So turning on guest chat silently re-writes the Free allowance to the guest number. Decide the two together, or split the guest cap from the free cap in code |
+| 3 | ~~Add `mm_brain.js` to the public allowlist~~ | — | **Done on main 2026-08-12** (#5409/#5463). Remaining: the SEO subtrees, whose document-relative injector still misses |
+| 4 | Grow `free_registered` to the §4 set | `config/site_access.yml` | **Medium–high, and it has a trap.** `app/paywall.py` returns `204` for anything classified `free` **before** it consults `enforced_early(path)`, so putting a premium path in `free_registered` silently un-gates it — and no test covers the interaction. Add that test with the change |
+| 5 | **Reprice** Essential annual $900 → $828 | `config/plans.yml` + a new Stripe price | Low — and it is the Finding A fix. *Withdrawing* it instead (the first draft's answer) is NOT a one-line edit: deleting the price block renders "$0 /mo", "Billed $0 a year", "SAVE 100%" and a Subscribe button that 400s, because both builders default a missing `unit_amount` to `0` |
+| 6 | Move a feature between tiers | Stripe **first**, `config/plans.yml` second | **Not a config edit.** `app/billing.py:799` prefers Stripe ActiveEntitlements over the catalog, and `stripe_bootstrap._attach_features` never detaches. See §6 |
+| 7 | Convert the ranked-board row cap from presentation to enforcement | `scripts/build_*` + `premium.enforced_early` | **High, and it is the only Free ceiling in §5 that is not enforced today.** The rows ship in the public shell and are hidden client-side |
+| 8 | Watchlist / history / alert limits | macro-api + Terminal | High — real code, Waves 2–3 |
+| 9 | Attach a read to the anonymous watchlist | product decision + `config/site_access.yml` | The gated renderers **are** the calibrated decision rule. This is a disclosure ruling, not a boundary edit — see §4.4 |
 
-Items 1–3 are the ones that change a stranger's first 90 seconds, and they are all reversible
-within a minute. They should not wait for the rest.
+Items 1 and 2 are what change a stranger's first ninety seconds, and both are reversible within
+a minute — once the §7 prerequisites are in place. Item 4 is the one that makes Free a product,
+and it must land **before** `PAYWALL_ENABLED=1`, never with it.
+
+**And one thing that is not on this list because it is upstream of all of them:** the repository
+is PUBLIC and every `premium.enforced_early` payload is git-tracked, so the boundary this table
+tunes is bypassable today by anyone who clones it. That is a hard predecessor to charging money
+— see the implementation plan's critical path.

@@ -101,6 +101,40 @@ def test_names_and_wires_are_unique_and_well_formed():
     assert len(wires) == len(set(wires)), "duplicate wire value"
     for name in names:
         assert _NAME_RE.match(name), f"malformed event name: {name}"
+    # `wire` was previously checked only for uniqueness (and, for live entries, beacon
+    # membership), so `wire: 42`, `wire:` (null — `{None}` stays unique) or a value with
+    # spaces all passed. The wire value is what lands in `analytics_events.event_type`
+    # and what every downstream query joins on.
+    for wire in wires:
+        assert isinstance(wire, str) and _NAME_RE.match(wire), f"malformed wire: {wire!r}"
+
+
+#: The live name↔wire pairs, pinned explicitly. Set equality alone cannot catch a SWAP
+#: (exchanging two live entries' wires keeps the set identical while silently re-pointing
+#: two metrics at each other's history). These eleven are frozen: the rows already in
+#: `analytics_events` carry these strings.
+_LIVE_PAIRS = {
+    "session.start": "session_start",
+    "page.viewed": "pageview",
+    "route.changed": "route",
+    "ad.exposed": "ad_exposure",
+    "ticker.viewed": "ticker_view",
+    "search.performed": "search",
+    "terminal.jumped": "terminal_jump",
+    "element.clicked": "click",
+    "page.scrolled": "scroll",
+    "session.heartbeat": "heartbeat",
+    "session.exit": "exit",
+}
+
+
+def test_live_name_to_wire_mapping_is_frozen():
+    reg = _registry()
+    live = {e["name"]: e["wire"] for e in reg["events"] if e["status"] == "live"}
+    assert live == _LIVE_PAIRS, (
+        "a live event's wire value moved. Rows already in analytics_events carry the old "
+        "string, so re-pointing one silently splits (or merges) a metric's history."
+    )
 
 
 def test_every_event_declares_source_status_funnel_and_purpose():
@@ -140,6 +174,11 @@ def test_no_enum_carries_the_legacy_insider_tier():
     """
     reg = _registry()
     for key, values in reg["enums"].items():
+        # Type-check FIRST. `tier: "anon,free,essential,pro"` (a scalar — YAML accepts it)
+        # would turn both assertions below into substring tests over a string, and the
+        # positive one would still pass, so the guard would silently stop guarding.
+        assert isinstance(values, list) and values, f"enums.{key} must be a non-empty list"
+        assert all(isinstance(v, str) for v in values), f"enums.{key} must be strings"
         assert "insider" not in values, (
             f"enums.{key} lists 'insider' — normalize to 'essential' at the emitter "
             "(lib/tiers.normalize_tier / normTier) instead of widening the enum"

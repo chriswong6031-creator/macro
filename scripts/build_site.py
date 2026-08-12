@@ -3573,7 +3573,17 @@ def build_plans_page(env: Environment, site: Path, generated: str) -> None:
     client-side; nothing here reaches the network at build time.
     Additive + graceful: never fatal to the build.
     """
-    vm = _plans_view_model()
+    try:
+        vm = _plans_view_model()
+    except Exception as exc:  # noqa: BLE001 — annotate, then let the caller stay non-fatal
+        # The caller wraps this in `except Exception: log.error(...)` so a bad config would
+        # otherwise be ONE log line while site/plans.html silently keeps its previous bytes —
+        # a pricing page serving allowances the serving spine no longer honours, which is the
+        # exact drift lib/chat_allowance.py exists to close. GitHub annotations must START the
+        # line and bypass the logger (CLAUDE.md §GitHub annotations).
+        print(f"::error title=plans-config::plans page NOT rebuilt, stale bytes retained — {exc}",
+              flush=True)
+        raise
     # Splat the view model rather than re-listing its keys: this template is rendered
     # from THREE places (here, scripts/build_public_pages, and the pricing guards), and
     # a hand-listed kwarg set means every new view-model key breaks the two call sites

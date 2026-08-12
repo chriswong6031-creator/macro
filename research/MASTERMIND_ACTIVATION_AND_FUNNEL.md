@@ -194,25 +194,47 @@ first time we have five candidate themes from their behavior.
 
 ## 5. PART XIV — The watchlist as activation engine
 
-This is the most important surface in the funnel and it is **already ~70% built**.
+This is the most important surface in the funnel, and as of 2026-08-12 its **capture and
+state-transfer halves are built and anonymous-capable**. Its *read* half is not, deliberately.
 
-**What exists:** `templates/watchlist.js` is pure client state in a versioned `localStorage`
-blob, with an empty-state that renders **starter chips** validated against the live index.
-`templates/watchstore.js` is the Supabase sync adapter; it folds the local blob into the account
-on first sign-in via a one-time `mdash.watchstore.folded.v1` marker, merging rather than
-overwriting. The page is anonymous-reachable and its `access_shell` is `anonymous`.
+**What exists, as of 2026-08-12:** `templates/watchlist.js` is pure client state in a versioned
+`localStorage` blob, with an empty-state that renders **starter chips** validated against the
+live index. `templates/watchstore.js` is the Supabase sync adapter; it folds the local blob into
+the account on first sign-in via a one-time `mdash.watchstore.folded.v1` marker, inserting only
+missing tickers — a merge, not an overwrite.
 
-**What is missing is not the machinery — it is the invitation.** Nothing anywhere in the product
-tells a visitor to build a list. `watchlist.html` is a nav item you must already want.
+**It became anonymous-capable that morning, and only just.** Until #5463 all ten of the page's
+scripts were default-deny, so anonymous production served a publicly cached husk: no empty
+state, no CTA, and zero console errors because nothing ran. `access_shell: anonymous` was true
+of the page the whole time and meant nothing — every `*.html` has read that value since the
+2026-08-04 ruling, including pages whose every asset 401s. **A shell is not a surface.**
+
+**What is missing now is two different things, and only one of them is an invitation:**
+
+1. **The invitation.** Nothing anywhere in the product tells a visitor to build a list.
+   `watchlist.html` is a nav item you must already want.
+2. **The read.** The four scripts that would attach Mastermind's signal stack are still gated,
+   deliberately: `stockdata.js` because the page's `data_base` shim would otherwise render
+   graded per-ticker output — conviction band, ladder state, entry urgency — to signed-out
+   visitors, and `watchlist_risk.js` / `risk_core.js` / `factor_exposure.js` because they *are*
+   the calibrated decision rule in code form. So an anonymous visitor can build a list, watch it
+   persist, and be told nothing about it.
+
+That second gap is the one that matters for this funnel, because "Mastermind immediately
+analyzes it" is the step the whole pattern turns on — and it is a **disclosure decision**, not a
+boundary edit. The recommendation is to give the anonymous list a **regime-and-context read
+carrying no graded per-ticker claim**: what kind of market these names are in, what they share,
+what is coming for them. That is buildable from artifacts already public, it needs none of the
+four gated modules, and it leaves the calibrated rule where it is.
 
 ### 5.1 The flow, and where each step lives today
 
 | Step | Today | Change needed |
 |---|---|---|
-| 1. User enters a ticker | Only on `watchlist.html` | **Add an inline "add your tickers" module to the deep-link landing surfaces** (theme, cohort, ticker pages) with the page's own names as one-tap suggestions |
-| 2. Mastermind analyzes it | Works — the signal stack attaches | none |
+| 1. User enters a ticker | Works anonymously since 2026-08-12, but only on `watchlist.html` | **Add an inline "add your tickers" module to the deep-link landing surfaces** (theme, cohort, ticker pages) with the page's own names as one-tap suggestions |
+| 2. Mastermind analyzes it | **Signed-in only.** The four renderers that attach the stack stay gated for anonymous visitors, by design | Build the **anonymous regime-and-context read** (no graded per-ticker claim) — the disclosure decision above |
 | 3. User adds more | Works | none |
-| 4. Cross-security relationships | Partly — `watchlist_risk.js` renders a regime rail | **Add the one-line "what these three share" read.** This is the moment that reads as magic and it is one sentence |
+| 4. Cross-security relationships | Signed-in only (`watchlist_risk.js` is gated for anonymous) | **Add the one-line "what these three share" read** in the anonymous-safe form. This is the moment that reads as magic and it is one sentence |
 | 5. Creates a watchlist | Works, locally | none |
 | 6. Register to save | **Missing** | The save prompt, fired on the 3rd symbol or on leave-intent — never on arrival |
 | 7. Intelligence changes over time | Engines already do this nightly | none |

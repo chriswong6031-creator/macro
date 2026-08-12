@@ -20,9 +20,18 @@ The product has a competent first-party analytics beacon and **no commercial tel
   key, deny-all RLS; geo is backfilled off the hot path by `scripts/geo_enrich.py`.
 - Per-IP burst throttle on the anonymous beacon.
 
-**The whitelist** (`app/main.py::_MM_EVENT_TYPES`) — eleven types:
+**The whitelist** (`app/main.py::_MM_EVENT_TYPES`) — eleven types ACCEPTED:
 `pageview · route · ticker_view · search · terminal_jump · click · scroll · session_start ·
 heartbeat · exit · ad_exposure`
+
+**Nine of them are actually EMITTED.** Nothing in either repo emits `heartbeat` or `scroll` as
+an event *type*: scroll depth rides as an integer column on `exit` (macro) and on `route`
+(Terminal), and no heartbeat timer exists. The whitelist is an accept-list, not an inventory —
+a distinction worth keeping, because "eleven event types" is the number people quote and nine is
+the number that has data behind it.
+
+**A second whitelist exists.** The Terminal has its own independent `TYPES` set in
+`terminal/app/api/collect/route.ts`. Both must move together or a cross-app funnel splits.
 
 **What is missing.** Not one event for: registration, activation, paywall encounter, upgrade
 click, plans view, checkout, trial, cancellation, watchlist creation, chat usage, or evidence
@@ -57,7 +66,7 @@ throttling, storage — are done. What is needed is a vocabulary and about a doz
 
 ## 3. The canonical events
 
-39 events total: the 11 live ones (unchanged) plus 28 new. Full property schemas are in
+41 events total: the 11 live ones (wire values frozen) plus 30 new. Full property schemas are in
 `config/growth_events.yml`; this section is the map.
 
 ### 3.1 Acquisition
@@ -142,6 +151,7 @@ that answer.
 |---|---|---|---|
 | `subscription.past_due` **new** | server | `tier`, `interval` | Involuntary churn |
 | `subscription.canceled` **new** | server | `tier`, `interval`, `reason_code`, `days_subscribed`, `paid_activated` | Voluntary churn, joined to behavior |
+| `subscription.tier_changed` **new** | server | `from_tier`, `to_tier`, `from_interval`, `to_interval`, `days_at_previous` | **Upgrades and downgrades between paid tiers.** Required by the pre-registered Essential test: `checkout.completed` carries only the NEW tier, so without this an Essential→Pro upgrade is indistinguishable from a new Pro subscription |
 | `subscription.reactivated` **new** | server | `tier`, `days_churned` | Win-back |
 
 `paid_activated` on the cancellation row is what makes churn analysis possible *at the moment of
@@ -216,9 +226,15 @@ LARGEST LEAK    Visitors arriving on the homepage instead of a specific
 ## 6. Implementation notes
 
 ### 6.1 Wiring order
-1. **Extend the whitelist.** `app/main.py::_MM_EVENT_TYPES` is a closed set; unknown types are
-   dropped. Add the client-emitted names from the registry there first, or every emitter you
-   build is silently a no-op. *(This is the single most likely way this program ships dead.)*
+1. **Extend the whitelist — keyed on `wire`, never on `name`.** `app/main.py::_MM_EVENT_TYPES`
+   is a closed set and unknown types are dropped silently, so every emitter built before this
+   lands is a no-op. *(This is the single most likely way this program ships dead.)*
+   **The registry carries both `name` and `wire` precisely because they differ for the live
+   events** — the beacon has been storing `ticker_view` and `session_start` since long before
+   this file. Generating the whitelist from `name` would delete all existing telemetry by
+   silently rejecting the eleven strings already in `analytics_events`.
+   The Terminal's own `TYPES` set in `terminal/app/api/collect/route.ts` is a second, separate
+   whitelist; W2-1's scope is the macro one, and the Terminal's is its own task.
 2. **Client emitters** ride `window.mmTrack` (already exposed in `templates/theme.js`).
 3. **Server emitters** go through the same `analytics_events` insert path `app/main.py` uses,
    with the verified `user_id` — never via a client round-trip.
@@ -245,6 +261,10 @@ An instrumentation program that cannot fail is not instrumented. Three gates:
    activate and asserts every expected event landed in `analytics_events`. Without this, a
    whitelist edit or a template refactor silently deletes a funnel step and nobody notices
    until a monthly review.
+   **It cannot run from localhost or a CI runner as written:** `app/main.py` gates the whole
+   insert on `_mm_is_loggable_ip`, which rejects loopback and private addresses, so a scripted
+   run lands zero rows and passes vacuously. Run it against staging from a routable address, or
+   give the sink an explicit test-mode bypass that the test asserts it is using.
 
 ---
 
