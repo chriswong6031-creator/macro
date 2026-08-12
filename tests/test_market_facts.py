@@ -53,18 +53,17 @@ _INDICATOR_VOCAB = re.compile(
     re.IGNORECASE,
 )
 
-_NUMBER_RE = re.compile(
-    r"""
-    [+-]?\d+\.?\d*%            # percentage: +12.3% or -5.5%
-    |
-    \d+\.?\d*x                 # multiplier: 3x or 2.5x
-    |
-    \b\d{2,4}\.\d{2}\b        # price: 226.50 or 19.54
-    |
-    \b\d{3,6}\b               # bare integer >=3 digits
-    """,
-    re.VERBOSE,
-)
+# Imported rather than re-defined (W2D, 2026-08-12 fix): this module used to
+# carry its OWN copy of the number regex, frozen at an older shape — missing
+# both the 1-decimal display-form price branch ("34.4") Content Studio W1
+# added and the compact k/m/b suffix branch W2D added. A fact whose only
+# number was one of those two forms was silently never checked by
+# `_all_numbers_in_whitelist` / `test_no_invented_numbers_in_macro_posts`
+# below — the exact "slips the gate entirely" failure mode this test exists
+# to catch, this time inside the TEST rather than the product. Importing the
+# real thing is what makes this suite prove anything about
+# `market_facts._claims_level_words`'s new "199k" register.
+from engine.marketing.copywriter import _NUMBER_RE
 
 
 def _fact_shape_ok(fd: dict) -> bool:
@@ -564,6 +563,72 @@ def test_no_invented_numbers_in_macro_posts():
         f"Invented numbers in macro post body: {invented}\n"
         f"body={body!r}\nwhitelist={sorted(wl)}"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W2D (2026-08-12): _claims_level_words producer switch, "203k" not
+# "203 thousand". These are the dedicated, deterministic rendering tests for
+# the producer named in docs/marketing_voice_doctrine_v5.md Hard Ban #9 — the
+# generic test above exercises whatever data/regime/latest.json happens to
+# hold right now (or skips), so it alone cannot pin the register a specific
+# claims level renders in.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_claims_level_words_writes_the_compact_k_register():
+    from engine.marketing.market_facts import _claims_level_words
+    assert _claims_level_words(199_000.0) == ("199k", "199k")
+    assert _claims_level_words(203_000.0) == ("203k", "203k")
+
+
+def test_claims_level_words_million_band_uses_the_compact_m_register():
+    """The million arm is not hypothetical: 4-week average initial claims
+    peaked near 5.8 MILLION in 2020."""
+    from engine.marketing.market_facts import _claims_level_words
+    assert _claims_level_words(5_800_000.0) == ("5.8m", "5.8m")
+
+
+def test_print_jobless_claims_renders_the_compact_register_and_is_gate_clean():
+    """The actual producer-switch rendering test: the fact _print_jobless_claims
+    hands the writer must itself pass the whitelist it ships alongside — no
+    hand-built ctx, build_context runs for real."""
+    from engine.marketing.copywriter import build_context, validate_copy
+    from engine.marketing.market_facts import _print_jobless_claims
+
+    regime = {"conditions": {"labor_nowcast": {
+        "initial_claims_4wk": 199_000.0, "claims_yoy_pct": 3.2,
+    }}}
+    fact = _print_jobless_claims(regime)
+    assert fact is not None
+    assert "199k" in fact["text"], fact["text"]
+    assert "203k" not in fact["text"]  # not a rounding accident
+    assert "199k" in fact["numbers"]
+
+    ctx = build_context(
+        {"ticker": "", "type": "macro", "account": "flagship"},
+        facts={"facts": [fact], "numbers_whitelist": []},
+    )
+    assert validate_copy("", fact["text"], ctx) == []
+
+
+def test_print_jobless_claims_flat_yoy_variant_is_also_gate_clean():
+    """The no-yoy-line branch (abs(yoy) < 0.05) renders a shorter sentence with
+    the same level token — covered separately since it is a distinct template."""
+    from engine.marketing.copywriter import build_context, validate_copy
+    from engine.marketing.market_facts import _print_jobless_claims
+
+    regime = {"conditions": {"labor_nowcast": {
+        "initial_claims_4wk": 221_000.0, "claims_yoy_pct": 0.0,
+    }}}
+    fact = _print_jobless_claims(regime)
+    assert fact is not None
+    assert fact["text"] == "Jobless claims are averaging 221k a week this month."
+    assert fact["numbers"] == ["221k"]
+
+    ctx = build_context(
+        {"ticker": "", "type": "macro", "account": "flagship"},
+        facts={"facts": [fact], "numbers_whitelist": []},
+    )
+    assert validate_copy("", fact["text"], ctx) == []
 
 
 def test_no_indicator_vocab_in_macro_event_watchlist_posts():

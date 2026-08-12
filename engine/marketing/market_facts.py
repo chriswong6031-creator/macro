@@ -397,25 +397,34 @@ def _pct1(v: float) -> str:
 def _claims_level_words(lvl: float) -> tuple[str, str]:
     """(display phrase, whitelist token) for a claims level.
 
-    "203 thousand", NOT "203,000". A comma-grouped integer is TWO tokens to
-    ``copywriter._NUMBER_RE`` ("203" and "000"), so the whitelist would refuse
-    the fact this module wrote — caught by
-    ``test_market_facts.test_no_invented_numbers_in_macro_posts``, which is
-    exactly the gate-rejects-obedience failure the number budget already cost
-    this house once. "203k" is the natural X register but goes the other way:
-    the whitelist tokenizer cannot see it AT ALL (no word boundary before the
-    "k"), so an invented "213k" would sail through. A bare 3-6 digit integer is
-    the one form the invention gate actually screens.
+    "203k", not "203 thousand" (W2D, 2026-08-12). Through 2026-08-12 this
+    deliberately emitted the spelled-out word: a comma-grouped "203,000" is TWO
+    tokens to ``copywriter._NUMBER_RE`` ("203" and "000"), and a bare "203k"
+    was invisible to it entirely (no word boundary before the "k"), so an
+    invented "213k" would have sailed through ungated — caught by
+    ``test_market_facts.test_no_invented_numbers_in_macro_posts``, the same
+    gate-rejects-obedience failure the number budget already cost this house
+    once. ``copywriter._NUMBER_RE`` now carries a compact-suffix branch and
+    ``build_context`` licenses the compact spelling of every whitelisted count
+    >= 1,000 (``_compact_display_variants``), so the register traders actually
+    use is checked exactly as strictly as the spelled-out form was — see the
+    mutation matrix in ``tests/test_copywriter.py``. Voice doctrine v5 Hard Ban
+    #9 no longer carries a spelled-out-thousands exception.
+
+    tok == the display phrase now (not a bare integer): the producer is
+    self-consistent by construction, so a real "203k" in the text always finds
+    itself verbatim in the whitelist regardless of whether the general
+    compact-variant finishing pass also ran.
 
     The million arm is not hypothetical padding: the 4-week average of initial
     claims peaked near 5.8 MILLION in 2020, and the day this print matters most
-    is the day "5800 thousand" would be the sentence.
+    is the day "5.8m" would be the sentence.
     """
     if lvl >= 1_000_000:
-        tok = f"{lvl / 1e6:.1f}"
-        return f"{tok} million", tok
-    tok = f"{int(round(lvl / 1000.0))}"
-    return f"{tok} thousand", tok
+        tok = f"{lvl / 1e6:.1f}m"
+        return tok, tok
+    tok = f"{int(round(lvl / 1000.0))}k"
+    return tok, tok
 
 
 def _print_jobless_claims(regime: dict) -> dict | None:

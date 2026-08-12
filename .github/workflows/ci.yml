@@ -2307,6 +2307,12 @@ on:
       # listed so adding a driver without a translation trips the census.
       - "tests/test_marketing_event_language.py"
       - "engine/market_drivers.py"
+      # tests/test_market_facts.py joins 2026-08-12 (W2D): another
+      # unrun-suite-rot grandfather closed on contact, now run in
+      # marketing-engine. The subject code is already covered by
+      # engine/marketing/** above; listed by name so a TEST-ONLY edit (a new
+      # market_facts producer pin, say) still reaches its own guard.
+      - "tests/test_market_facts.py"
       - "data/marketing/opportunities.jsonl"
       - "data/marketing/claims.jsonl"
       # content-studio + admin marketing-panel suites — co-run in the

@@ -247,6 +247,96 @@ def test_validate_invented_number():
     assert number_v, f"Expected number violation for 226.50, got: {violations}"
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# W2D (2026-08-12): k/m/b compact-suffix mutation matrix
+#
+# PR #5291 review rejected switching a producer to "199k" because the
+# tokenizer could not parse a k-suffix: "199k" either slipped the general
+# screen entirely (zero tokens extracted — no word boundary before "k") or, in
+# a price slot, degraded to the bare invented number "199". The fix teaches
+# BOTH halves the compact register — `_NUMBER_RE`/`price_slot_tokens` extract
+# the suffixed token, `build_context`'s whitelist finishing pass licenses the
+# compact spelling of every whitelisted count >= 1,000
+# (`_compact_display_variants`) — and this section proves the gate still
+# catches every invention shape the review was worried about, not just the
+# new legal ones. Uses `build_context` (not a hand-built whitelist) so the
+# finishing pass itself is under test, exactly like
+# `test_a_round_percent_is_licensed_in_its_display_spelling_too` above it in
+# spirit.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _macro_ctx_with_whitelist(raw_number: str):
+    from engine.marketing.copywriter import build_context
+    return build_context(
+        {"ticker": "", "type": "macro", "account": "flagship"},
+        facts={"facts": [], "numbers_whitelist": [raw_number]},
+    )
+
+
+def test_199k_is_legal_when_199000_is_whitelisted():
+    """ROUND-TRIP: the compact register is licensed exactly when its expansion
+    is the whitelisted fact — the positive half of the review's worry."""
+    from engine.marketing.copywriter import validate_copy
+    ctx = _macro_ctx_with_whitelist("199,000")
+    assert "199k" in ctx["numbers_whitelist"], ctx["numbers_whitelist"]
+    violations = validate_copy("", "Jobless claims averaging 199k a week.", ctx)
+    assert violations == [], f"199k should be legal, got: {violations}"
+
+
+def test_199k_is_invented_when_only_19900_is_whitelisted():
+    """MUTATION 1: a suffixed number NOT covered by the whitelist is still an
+    invention. 19,900 (and its own compact spelling 19.9k) does not license
+    199k — a 10x-different value must not sneak through just because both
+    happen to carry a "k"."""
+    from engine.marketing.copywriter import validate_copy
+    ctx = _macro_ctx_with_whitelist("19,900")
+    assert "199k" not in ctx["numbers_whitelist"], ctx["numbers_whitelist"]
+    violations = validate_copy("", "Jobless claims averaging 199k a week.", ctx)
+    number_v = [v for v in violations if "199k" in v]
+    assert number_v, f"Expected invention violation for 199k, got: {violations}"
+
+
+def test_199m_wrong_suffix_is_invented_when_199000_is_whitelisted():
+    """MUTATION 2: the suffix is not free to vary. 199m == 199,000,000, a
+    1000x miss from the whitelisted 199,000 — rejected exactly like the 10x
+    miss above, not licensed by sharing a mantissa with a legal token."""
+    from engine.marketing.copywriter import validate_copy
+    ctx = _macro_ctx_with_whitelist("199,000")
+    violations = validate_copy("", "Payrolls printed 199m this month.", ctx)
+    number_v = [v for v in violations if "199m" in v]
+    assert number_v, f"Expected invention violation for 199m, got: {violations}"
+
+
+def test_bare_199_is_still_invented_when_199000_is_whitelisted():
+    """MUTATION 3: the PRE-FIX escape hatch stays closed. Licensing the
+    compact spelling of 199,000 must never ALSO license the bare integer
+    "199" — that names a different (1000x smaller) fact, and this is the
+    exact defect `market_facts._claims_level_words` used to dodge by
+    whitelisting the bare token on purpose."""
+    from engine.marketing.copywriter import validate_copy
+    ctx = _macro_ctx_with_whitelist("199,000")
+    violations = validate_copy("", "Claims printed at 199 this week.", ctx)
+    number_v = [v for v in violations if v == "number '199' not in whitelist"]
+    assert number_v, f"Expected invention violation for bare 199, got: {violations}"
+
+
+def test_compact_round_trips_legal_when_their_expansion_is_whitelisted():
+    """ROUND-TRIP matrix: 45k / 1.2m / $7.6B are legal exactly when their
+    expanded value is the whitelisted fact — k, m and b all exercised, plus
+    the "$" prefix dropping out of the matched token like every other
+    _NUMBER_RE branch."""
+    from engine.marketing.copywriter import validate_copy
+    cases = (
+        ("45,000", "Volume ran to 45k contracts."),
+        ("1,200,000", "Enrollment crossed 1.2m members."),
+        ("7,600,000,000", "Market cap topped $7.6B."),
+    )
+    for raw_whitelist, body in cases:
+        ctx = _macro_ctx_with_whitelist(raw_whitelist)
+        violations = validate_copy("", body, ctx)
+        assert violations == [], f"{body!r} (wl={raw_whitelist}) should be legal, got: {violations}"
+
+
 # These two tests used to pin the OPPOSITE law: that a signal post is REJECTED
 # unless it carries an invalidation phrase and an honesty caveat. That mandate is
 # what produced the machine voice — "37.1 is my trigger, 30.9 proves me wrong.

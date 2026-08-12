@@ -1361,6 +1361,68 @@ def test_format_display_pct_is_the_single_definition_of_the_legal_form():
     assert cw._pct_display_variants("122") == []
 
 
+# ── compact k/m/b suffix tokenizer (W2D, 2026-08-12) ─────────────────────────
+#
+# Before this landed, EVERY branch of `_NUMBER_RE` required a word boundary
+# right after its last digit, and digit-to-letter is never one — so "199k" was
+# invisible to the regex end to end (`_extract_number_tokens` found zero
+# tokens; the price-slot rule swallowed only the bare "199" and left the "k"
+# to fall out into ordinary text). See docs/marketing_voice_doctrine_v5.md
+# Hard Ban #9 and `market_facts._claims_level_words`.
+
+def test_number_regex_sees_compact_kmb_suffixes():
+    assert cw._extract_number_tokens("jobless claims 199k this week") == ["199k"]
+    assert cw._extract_number_tokens("enrollment crossed 1.2m members") == ["1.2m"]
+    assert cw._extract_number_tokens("market cap near 45B today") == ["45B"]
+    # The "$" is never part of the match, exactly like every other _NUMBER_RE
+    # branch (a bare "122" token never carries its "$" either).
+    assert cw._extract_number_tokens("market cap topped $7.6B today") == ["7.6B"]
+    # Case-insensitive suffix.
+    assert cw._extract_number_tokens("printed at 199K this week") == ["199K"]
+
+
+def test_number_regex_bare_and_spaced_forms_are_unchanged():
+    """Pre-fix behaviour is a regression pin, not a new law.
+
+    A bare "199" is still a bare 3-digit token (the OLD, still-legal spelling
+    the general screen has always seen). A SPACED suffix ("199 k") is
+    explicitly out of scope for W2D and must keep reading as two ordinary
+    tokens — "199" (a bare integer) and nothing else, since a lone "k" is not
+    a number at all.
+    """
+    assert cw._extract_number_tokens("printed at 199 this week") == ["199"]
+    assert cw._extract_number_tokens("printed at 199 k this week") == ["199"]
+
+
+def test_price_slot_rule_sees_a_suffixed_level():
+    """A crypto-register level ("target 120k") is a level like any other.
+
+    Before this fix the slot rule swallowed only "120" (the digits stopped at
+    the first non-digit character) and let the "k" fall out into ordinary
+    text — the price-slot twin of the general-screen bug above.
+    """
+    assert cw.price_slot_tokens("target 120k") == ["120k"]
+    assert cw.price_slot_tokens("entry 1.2m") == ["1.2m"]
+    assert cw.price_slot_tokens("stop below $7.6B") == ["7.6B"]
+    # Existing, unsuffixed slot behaviour is untouched.
+    assert cw.price_slot_tokens("target 44") == ["44"]
+    assert cw.price_slot_tokens("leaning toward 228") == []
+
+
+def test_compact_display_variants_is_the_single_definition_of_the_legal_form():
+    assert cw._compact_display_variants("199,000") == ["199K", "199k"]
+    assert cw._compact_display_variants("7,600,000,000") == ["7.6B", "7.6b"]
+    assert cw._compact_display_variants("1,200,000") == ["1.2M", "1.2m"]
+    # Below the 1,000 floor, a compact spelling is not a real register.
+    assert cw._compact_display_variants("45") == []
+    assert cw._compact_display_variants("122") == []
+    # A bare 4-digit 19xx/20xx token is a YEAR, never a magnitude.
+    assert cw._compact_display_variants("2024") == []
+    # Percent and multiplier tokens have their own variant story.
+    assert cw._compact_display_variants("-14.0%") == []
+    assert cw._compact_display_variants("1.80x") == []
+
+
 # ── dash hygiene (finding 11) ────────────────────────────────────────────────
 
 _DASHES = ("—", "–", "―")
