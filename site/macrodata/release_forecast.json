@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast.v2",
-  "asof": "2026-08-10T03:32:18Z",
+  "asof": "2026-08-12T01:23:10Z",
   "display_only": true,
   "authority": {
     "can_score": false,
@@ -10,8 +10,9 @@
   "methodology_status": {
     "forecast_epoch": "legacy_cross_vintage_training_target_experimental",
     "forecast_points_changed_by_wave1": false,
-    "coherent_target_refit_status": "not_started_requires_shadow_backfill_and_parity",
-    "next_required_step": "train_and_forward_score_new_coherent_target_shadow_slug",
+    "coherent_target_refit_status": "shadow_candidate_active_forward_evidence_pending",
+    "coherent_current_projection_n": 2,
+    "next_required_step": "accrue_clean_forward_scores_then_manual_adjudication",
     "official_actuals_ref": "data/release_forecast/official_actuals.jsonl",
     "canonical_target_store": "data/fred_vintage/release_targets/",
     "clean_forward_cpi_n": 0,
@@ -24,7 +25,7 @@
       "schema": 2,
       "row_type": "scored",
       "model": null,
-      "asof_night": "2026-08-09",
+      "asof_night": "2026-08-11",
       "release": "cpi_headline",
       "period": "2026-06",
       "release_date": "2026-07-14",
@@ -34,9 +35,9 @@
       "actual_basis": "same_release_vintage_published_proxy",
       "actual_source": "alfred_full_vintage",
       "actual_source_url": "https://fred.stlouisfed.org/",
-      "actual_source_sha256": "3a2cb1dd155f74386d06da0ccb2b5a38e98495bdd25646ab053f519b984fd133",
-      "actual_observed_at": "2026-08-09",
-      "actual_receipt_id": "same_vintage:3a2cb1dd155f74386d06da0c",
+      "actual_source_sha256": "695f15a20c3378186df943e6df1b4bdb670cfd77590951960aa8425cfb77333c",
+      "actual_observed_at": "2026-08-11",
+      "actual_receipt_id": "same_vintage:695f15a20c3378186df943e6",
       "exact_target_id": "cpi_headline_mom",
       "frozen_asof_night": "2026-07-13",
       "frozen_projection_point": 0.0818,
@@ -67,28 +68,29 @@
         "basis": "structured_defect_notices_v1"
       },
       "frozen_prediction_id": "CPI:2026-06:first:2026-07-13:v1",
-      "score_receipt_id": "score:31b69156e248c25cda2f7932",
+      "score_receipt_id": "score:d50d150d9525121b9d4a196b",
       "supersedes_score_receipt_ids": [
-        "score:0aca2d5ee9c52f923214a506"
+        "score:0aca2d5ee9c52f923214a506",
+        "score:31b69156e248c25cda2f7932"
       ]
     },
     {
       "schema": 2,
       "row_type": "scored",
       "model": null,
-      "asof_night": "2026-08-09",
+      "asof_night": "2026-08-11",
       "release": "cpi_core",
       "period": "2026-06",
       "release_date": "2026-07-14",
-      "actual": -0.0,
-      "actual_first": -0.0,
+      "actual": 0.0,
+      "actual_first": 0.0,
       "raw_initial_print": 336.065,
       "actual_basis": "same_release_vintage_published_proxy",
       "actual_source": "alfred_full_vintage",
       "actual_source_url": "https://fred.stlouisfed.org/",
-      "actual_source_sha256": "f46db46f64084e9fb18361cf1cec18d056f32fabf2f77b5f3aae31968781aebc",
-      "actual_observed_at": "2026-08-09",
-      "actual_receipt_id": "same_vintage:f46db46f64084e9fb18361cf",
+      "actual_source_sha256": "22d211c1286918b77071f9b4e25100cb7f42af8b88fe3635384d876c61275771",
+      "actual_observed_at": "2026-08-11",
+      "actual_receipt_id": "same_vintage:22d211c1286918b77071f9b4",
       "exact_target_id": "cpi_core_mom",
       "frozen_asof_night": "2026-07-13",
       "frozen_projection_point": 0.2167,
@@ -119,9 +121,10 @@
         "basis": "structured_defect_notices_v1"
       },
       "frozen_prediction_id": "CPI_CORE:2026-06:first:2026-07-13:v1",
-      "score_receipt_id": "score:8db70a550635d6c613aeebce",
+      "score_receipt_id": "score:eaf5c7906b2450161dbea589",
       "supersedes_score_receipt_ids": [
-        "score:c1f04edbd9c94fd74894f3f5"
+        "score:c1f04edbd9c94fd74894f3f5",
+        "score:8db70a550635d6c613aeebce"
       ]
     },
     {
@@ -177,7 +180,7 @@
       "schema": 2,
       "row_type": "scored",
       "model": null,
-      "asof_night": "2026-08-09",
+      "asof_night": "2026-08-11",
       "release": "nfp",
       "period": "2026-07",
       "release_date": "2026-08-07",
@@ -187,9 +190,9 @@
       "actual_basis": "same_release_vintage_published_proxy",
       "actual_source": "alfred_full_vintage",
       "actual_source_url": "https://fred.stlouisfed.org/",
-      "actual_source_sha256": "b4db34f6bc0d578a8f89583bb46adf7520b3720a49cd6b2043d314afd8ea4daa",
-      "actual_observed_at": "2026-08-09",
-      "actual_receipt_id": "same_vintage:b4db34f6bc0d578a8f89583b",
+      "actual_source_sha256": "1e17579f6139445817a995771ff5b3d4cd2566d3113b40d37258f0bef8f560e7",
+      "actual_observed_at": "2026-08-11",
+      "actual_receipt_id": "same_vintage:1e17579f6139445817a99577",
       "exact_target_id": "nfp_payroll_change",
       "frozen_asof_night": "2026-08-06",
       "frozen_projection_point": null,
@@ -219,29 +222,30 @@
         "basis": "structured_defect_notices_v1"
       },
       "frozen_prediction_id": "NFP:2026-07:first:2026-08-06:v1",
-      "score_receipt_id": "score:d29c247ea21e23cb049f217d",
+      "score_receipt_id": "score:7cbf66d7b548845d172b96d3",
       "supersedes_score_receipt_ids": [
-        "score:8f58e6ba1e03b91d859d57cb"
+        "score:8f58e6ba1e03b91d859d57cb",
+        "score:d29c247ea21e23cb049f217d"
       ]
     },
     {
       "schema": 2,
       "row_type": "scored",
       "model": null,
-      "asof_night": "2026-08-09",
+      "asof_night": "2026-08-11",
       "release": "pce_headline",
       "period": "2026-06",
       "release_date": "2026-07-30",
       "actual": -0.1,
       "actual_first": -0.1,
-      "raw_initial_print": -0.1,
-      "actual_basis": "official_published_metric",
-      "actual_source": "official_release_document",
-      "actual_source_url": "https://www.bea.gov/news/2026/personal-income-and-outlays-june-2026",
-      "actual_source_sha256": "29ae0bad7d568ca7ea59be2f74461b5dcf5da4393ff816544254cd47507f13e1",
-      "actual_observed_at": "2026-07-30T12:30:56.032836+00:00",
-      "actual_receipt_id": "official_actual:0492229833dc679fdb39494f",
-      "exact_target_id": "pce_headline_mom_printed_first",
+      "raw_initial_print": 131.392,
+      "actual_basis": "same_release_vintage_published_proxy",
+      "actual_source": "alfred_full_vintage",
+      "actual_source_url": "https://fred.stlouisfed.org/",
+      "actual_source_sha256": "3063d94684c6face559726f4de871d9c0d8b6ed47679e1ee8d191b48a07527f3",
+      "actual_observed_at": "2026-08-11",
+      "actual_receipt_id": "same_vintage:3063d94684c6face559726f4",
+      "exact_target_id": "pce_headline_mom",
       "frozen_asof_night": "2026-07-29",
       "frozen_projection_point": -0.2864,
       "frozen_projection_p10": -0.4111,
@@ -270,26 +274,29 @@
         "basis": "structured_defect_notices_v1"
       },
       "frozen_prediction_id": "PCE:2026-06:first:2026-07-29:v1",
-      "score_receipt_id": "score:4b282abf090473fcbab1edc7"
+      "score_receipt_id": "score:593029b43e3768d8fb1cb3a0",
+      "supersedes_score_receipt_ids": [
+        "score:4b282abf090473fcbab1edc7"
+      ]
     },
     {
       "schema": 2,
       "row_type": "scored",
       "model": null,
-      "asof_night": "2026-08-09",
+      "asof_night": "2026-08-11",
       "release": "pce_core",
       "period": "2026-06",
       "release_date": "2026-07-30",
       "actual": 0.1,
       "actual_first": 0.1,
-      "raw_initial_print": 0.1,
-      "actual_basis": "official_published_metric",
-      "actual_source": "official_release_document",
-      "actual_source_url": "https://www.bea.gov/news/2026/personal-income-and-outlays-june-2026",
-      "actual_source_sha256": "29ae0bad7d568ca7ea59be2f74461b5dcf5da4393ff816544254cd47507f13e1",
-      "actual_observed_at": "2026-07-30T12:30:56.032836+00:00",
-      "actual_receipt_id": "official_actual:3af69117d78be4d9ea46b002",
-      "exact_target_id": "pce_core_mom_printed_first",
+      "raw_initial_print": 130.266,
+      "actual_basis": "same_release_vintage_published_proxy",
+      "actual_source": "alfred_full_vintage",
+      "actual_source_url": "https://fred.stlouisfed.org/",
+      "actual_source_sha256": "911f10cad0a52ea87b7cfa0d669015b66ff0e907520fa340e686bf7acb10d262",
+      "actual_observed_at": "2026-08-11",
+      "actual_receipt_id": "same_vintage:911f10cad0a52ea87b7cfa0d",
+      "exact_target_id": "pce_core_mom",
       "frozen_asof_night": "2026-07-29",
       "frozen_projection_point": -0.0299,
       "frozen_projection_p10": -0.1598,
@@ -318,13 +325,16 @@
         "basis": "structured_defect_notices_v1"
       },
       "frozen_prediction_id": "PCE_CORE:2026-06:first:2026-07-29:v1",
-      "score_receipt_id": "score:fba1228fd55e80eade98c601"
+      "score_receipt_id": "score:b8c4dac11169d5e4cf7cd8c3",
+      "supersedes_score_receipt_ids": [
+        "score:fba1228fd55e80eade98c601"
+      ]
     },
     {
       "schema": 2,
       "row_type": "scored",
       "model": null,
-      "asof_night": "2026-08-09",
+      "asof_night": "2026-08-11",
       "release": "ppi_finaldemand",
       "period": "2026-06",
       "release_date": "2026-07-15",
@@ -334,9 +344,9 @@
       "actual_basis": "same_release_vintage_published_proxy",
       "actual_source": "alfred_full_vintage",
       "actual_source_url": "https://fred.stlouisfed.org/",
-      "actual_source_sha256": "176aae27ce2a729690e4e65cdc16e0eda8b87c9dbe0f7bf50e76f6d1c7cccb10",
-      "actual_observed_at": "2026-08-09",
-      "actual_receipt_id": "same_vintage:176aae27ce2a729690e4e65c",
+      "actual_source_sha256": "7ea3e29cfa7abdaa4682dd149f5521db5bf206b9637b47ade95f711ddd32d15a",
+      "actual_observed_at": "2026-08-11",
+      "actual_receipt_id": "same_vintage:7ea3e29cfa7abdaa4682dd14",
       "exact_target_id": "ppi_final_demand_mom",
       "frozen_asof_night": "2026-07-13",
       "frozen_projection_point": 0.3579,
@@ -366,7 +376,10 @@
         "basis": "structured_defect_notices_v1"
       },
       "frozen_prediction_id": "PPI:2026-06:first:2026-07-13:v1",
-      "score_receipt_id": "score:1e589fe05b748dfbf3301dac"
+      "score_receipt_id": "score:142009c7dffc4ac3102da731",
+      "supersedes_score_receipt_ids": [
+        "score:1e589fe05b748dfbf3301dac"
+      ]
     }
   ],
   "enrichments": [
@@ -378,6 +391,7 @@
     "coverage_flags",
     "input_snapshot_ref",
     "shadows",
+    "coherent_ridge_v1",
     "cutoff_label",
     "print_integrity",
     "revision_context",
@@ -389,7 +403,7 @@
       "release_type": "cpi_headline",
       "period": "2026-07",
       "release_date": "2026-08-12",
-      "days_to": 3,
+      "days_to": 1,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.0451,
@@ -462,7 +476,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -500,7 +514,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": {
         "p_hot": 0.04,
         "p_cold": 0.75,
@@ -533,7 +547,7 @@
         "cpi_median_se_trend": "falling",
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -548,7 +562,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_2026-07_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_2026-07_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.7777777777777778,
@@ -558,25 +572,25 @@
       "shadows": {
         "v3_factor": {
           "display_only": true,
-          "inputs_hash": "ad83f1ef086cb381fad40a46012fd579a11e32dda3cc81a40dc3d313b87e2421",
+          "inputs_hash": "6cf36169f1ce411db67fd382b1d9a55790b6c575f316954cb30f91b4548dba4a",
           "model_epoch": "v3_factor_legacy_target_v1",
           "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-          "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
-          "point": -0.16,
-          "p10": -0.407,
-          "p25": -0.2684,
-          "p50": -0.1373,
-          "p75": -0.0101,
-          "p90": 0.0919,
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
+          "point": -0.1027,
+          "p10": -0.3497,
+          "p25": -0.2111,
+          "p50": -0.08,
+          "p75": 0.0472,
+          "p90": 0.1492,
           "confidence": null,
           "input_completeness": 0.9091
         },
         "cpi_bridge": {
           "display_only": true,
-          "inputs_hash": "14027401c23e7e3d4ffc2852edfc20c7777e0982e156ed8729c67ec94d5053b6",
+          "inputs_hash": "0bba7ec3a1799eff483d0c919a8cb11fc4114a90c43ce4a83ac074ffae2854ab",
           "model_epoch": "cpi_bridge_legacy_target_v1",
           "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-          "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
           "point": -0.1127,
           "components": [
             {
@@ -685,7 +699,7 @@
           "inputs_hash": "b653a06feac93c030cf8d75c88e23c578ec57a4945293fb9d4e0918d8ce49660",
           "model_epoch": "mf_energy_legacy_target_v1",
           "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-          "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
           "point": 0.0734,
           "p10": -0.087,
           "p25": 0.0089,
@@ -697,7 +711,7 @@
           "mf_energy_components": {
             "gasoline_mom": -2.8978170683524263,
             "energy_contrib": -0.11399949189433523,
-            "exenergy_ar": 0.15020927297626005,
+            "exenergy_ar": 0.15020927297625986,
             "gasoline_ri_weight": 2.895,
             "gamma": 0.039339782051580785,
             "n_gasoline_weeks_published": 4,
@@ -706,15 +720,495 @@
             "gasoline_wti_beta_intercept": 0.0013263564306145257,
             "gasoline_wti_n_train": 1865
           }
+        },
+        "coherent_ridge_v1": {
+          "schema": "release_cpi_coherent_shadow.v1",
+          "status": "shadow_candidate",
+          "release": "cpi_headline",
+          "period": "2026-07",
+          "release_date": "2026-08-12",
+          "asof": "2026-08-11",
+          "model": "coherent_ridge_v1",
+          "model_epoch": "coherent_ridge_v1",
+          "target_epoch": "alfred_same_release_vintage_proxy_v1",
+          "point": -0.1,
+          "point_raw": -0.06847024989372984,
+          "p10": -0.3,
+          "p25": -0.3,
+          "p50": -0.1,
+          "p75": 0.1,
+          "p90": 0.2,
+          "confidence": null,
+          "input_completeness": 1.0,
+          "inputs_hash": "06ebaea937f12c34df633bcf21bbc58e2835c276c2e825a267321e27ad295e52",
+          "input_manifest": {
+            "schema": "release_cpi_coherent_input_manifest.v1",
+            "release": "cpi_headline",
+            "period": "2026-07",
+            "decision_asof": "2026-08-11",
+            "feature_order": [
+              "cpi_hl_mom_lag1",
+              "cpi_hl_mom_lag2",
+              "cpi_hl_mom_lag3",
+              "sticky_mom_lag1",
+              "median_mom_lag1",
+              "flex_mom_lag1",
+              "gasoline_mom",
+              "ppi_mom_lag1"
+            ],
+            "values": {
+              "cpi_hl_mom_lag1": -0.4,
+              "cpi_hl_mom_lag2": 0.5,
+              "cpi_hl_mom_lag3": 0.6,
+              "sticky_mom_lag1": 0.0676495,
+              "median_mom_lag1": 0.17412399936844736,
+              "flex_mom_lag1": -1.774278179,
+              "gasoline_mom": -2.8978170683524263,
+              "ppi_mom_lag1": -0.6932683830291886
+            },
+            "feature_receipts": {
+              "cpi_hl_mom_lag1": {
+                "source": "coherent_target_history",
+                "source_period": "2026-06",
+                "available_at": "2026-07-14",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 1
+              },
+              "cpi_hl_mom_lag2": {
+                "source": "coherent_target_history",
+                "source_period": "2026-05",
+                "available_at": "2026-06-10",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 2
+              },
+              "cpi_hl_mom_lag3": {
+                "source": "coherent_target_history",
+                "source_period": "2026-04",
+                "available_at": "2026-05-12",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 3
+              },
+              "sticky_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "STICKCPIM157SFRBATL",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "direct_monthly_percent",
+                "raw_value": 0.0676495
+              },
+              "median_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "MEDCPIM158SFRBCLE",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "annual_rate_to_monthly_compound",
+                "raw_value": 2.10961524352649
+              },
+              "flex_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "FLEXCPIM157SFRBATL",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "direct_monthly_percent",
+                "raw_value": -1.774278179
+              },
+              "gasoline_mom": {
+                "source": "FRED",
+                "series_id": "GASREGW",
+                "source_period": "2026-07",
+                "prior_source_period": "2026-06",
+                "transform": "month_average_pct_change",
+                "observation_timestamp_operator": "<",
+                "decision_cutoff": "2026-08-11",
+                "target_month_observations": 4,
+                "prior_month_observations": 5,
+                "target_month_last_observation": "2026-07-27",
+                "prior_month_last_observation": "2026-06-29"
+              },
+              "ppi_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "PPIFIS",
+                "source_period": "2026-06",
+                "prior_source_period": "2026-05",
+                "transform": "exact_month_level_pct_change",
+                "current_vintage": {
+                  "source": "FRED/ALFRED",
+                  "series_id": "PPIFIS",
+                  "source_period": "2026-06",
+                  "realtime_start": "2026-07-15",
+                  "realtime_start_operator": "<=",
+                  "decision_cutoff": "2026-08-11",
+                  "vintage_selection": "latest_known_for_exact_period",
+                  "realtime_end": "9999-12-31 00:00:00"
+                },
+                "prior_vintage": {
+                  "source": "FRED/ALFRED",
+                  "series_id": "PPIFIS",
+                  "source_period": "2026-05",
+                  "realtime_start": "2026-06-11",
+                  "realtime_start_operator": "<=",
+                  "decision_cutoff": "2026-08-11",
+                  "vintage_selection": "latest_known_for_exact_period",
+                  "realtime_end": "2026-07-14 00:00:00"
+                }
+              }
+            },
+            "source_artifacts": {
+              "alfred_vintages": {
+                "path": "data/fred_vintage/vintages.parquet",
+                "sha256": "e39c134d7295e20deec210e5086c7ac60f1a4c9598aad92cca1b56ec8e7af9fc",
+                "bytes": 230301
+              },
+              "gasregw": {
+                "path": "data/fred/GASREGW.parquet",
+                "sha256": "0c45e0bef772e07f7bb4101e661fecd71c0150e563fec71e9442c57d0044e71b",
+                "bytes": 27283
+              }
+            },
+            "complete_case": true,
+            "sha256": "06ebaea937f12c34df633bcf21bbc58e2835c276c2e825a267321e27ad295e52"
+          },
+          "model_receipt": {
+            "schema": "release_cpi_coherent_model_receipt.v1",
+            "model_id": "coherent_ridge_v1",
+            "model_epoch": "coherent_ridge_v1",
+            "registry": {
+              "path": "config/release_forecast_model_registry.yml",
+              "sha256": "1f2d07bac8672f20fe33edccb26060c3a457a2dac2cc01c0eca2aa9abdb83791",
+              "bytes": 7232
+            },
+            "preregistration": {
+              "path": "research/release_forecast/PREREG_COHERENT_RIDGE_V1.md",
+              "sha256": "19ba1a2f958536ce3f59a9a07d5ef38962daf30a9ea1e0c8894ef488641b5b6f",
+              "bytes": 6352
+            },
+            "frozen_at": "2026-08-11",
+            "attempt": 1,
+            "ridge_lambda": 1.0,
+            "minimum_complete_prior_rows": 60,
+            "minimum_prior_oos_residuals": 24,
+            "feature_order": {
+              "cpi_headline": [
+                "cpi_hl_mom_lag1",
+                "cpi_hl_mom_lag2",
+                "cpi_hl_mom_lag3",
+                "sticky_mom_lag1",
+                "median_mom_lag1",
+                "flex_mom_lag1",
+                "gasoline_mom",
+                "ppi_mom_lag1"
+              ],
+              "cpi_core": [
+                "cpi_core_mom_lag1",
+                "cpi_core_mom_lag2",
+                "cpi_core_mom_lag3",
+                "sticky_mom_lag1",
+                "median_mom_lag1",
+                "flex_mom_lag1",
+                "ppi_mom_lag1"
+              ]
+            },
+            "sha256": "cba9345b5c31e4c77a25d90b50a8fa7fd01dfcdf10f52afed74fc4aef3d31bd1"
+          },
+          "truth_receipt": {
+            "schema": "release_cpi_coherent_truth_receipt.v1",
+            "target_epoch": "alfred_same_release_vintage_proxy_v1",
+            "history": {
+              "path": "data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json",
+              "sha256": "6c32da1fb3bf3a8ee864e0b51c668cf418c519260529d856b1749d2097fa0645",
+              "bytes": 1307468,
+              "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0"
+            },
+            "parity": {
+              "path": "data/release_forecast/cpi_truth/parity_report.json",
+              "sha256": "4a2916e408e91304bac32d91ee3719d7e329f458636a5dc0798ec8650cac5e91",
+              "bytes": 38472
+            },
+            "completion": {
+              "path": "data/release_forecast/cpi_truth/build_completion.json",
+              "sha256": "ed901dab5521000ab0995b5f36fecaed50ffb7e8eac2ef7c44d71dd35994556a",
+              "bytes": 24251,
+              "evidence_available_at": "2026-08-11T04:24:57+00:00"
+            },
+            "candidate_data_asof": "2026-08-10T03:31:09+00:00",
+            "official_first_print_epoch": "withheld",
+            "sha256": "1fad5695250435d32b76c99b020c81954595deb918df72e23faace9c2ad08bbd"
+          },
+          "training_receipt": {
+            "schema": "release_cpi_coherent_training_receipt.v1",
+            "release": "cpi_headline",
+            "period": "2026-07",
+            "model_epoch": "coherent_ridge_v1",
+            "target_epoch": "alfred_same_release_vintage_proxy_v1",
+            "input_manifest_sha256": "06ebaea937f12c34df633bcf21bbc58e2835c276c2e825a267321e27ad295e52",
+            "method": "expanding_ridge",
+            "decision_cutoff": "2026-08-11",
+            "feature_order": [
+              "cpi_hl_mom_lag1",
+              "cpi_hl_mom_lag2",
+              "cpi_hl_mom_lag3",
+              "sticky_mom_lag1",
+              "median_mom_lag1",
+              "flex_mom_lag1",
+              "gasoline_mom",
+              "ppi_mom_lag1"
+            ],
+            "target_value_field": "published_proxy_1dp",
+            "n": 140,
+            "minimum_required": 60,
+            "eligible_label_release_date_max": "2026-07-14",
+            "training_period_min": "2014-04",
+            "training_period_max": "2026-06",
+            "excluded_incomplete_rows": 213,
+            "training_rows_sha256": "e3d214bd3e68c1f27bdda7713449597c399dd778084f592a74c764bdd2568de6",
+            "standardization": {
+              "scope": "train_only",
+              "sample_std_ddof": 1,
+              "zero_variance_scale": 1.0,
+              "means": [
+                0.2407142857142857,
+                0.23642857142857138,
+                0.2278571428571428,
+                0.26596323844285713,
+                0.28056019050271663,
+                0.22401094100714283,
+                0.31911403275836064,
+                0.24233908596908715
+              ],
+              "scales": [
+                0.3031955535283165,
+                0.3061035500455073,
+                0.30323622748748646,
+                0.13459704723662044,
+                0.13449191684773723,
+                0.9326611893354005,
+                6.341123192394373,
+                0.45633490575754854
+              ]
+            },
+            "ridge_lambda": 1.0,
+            "intercept_penalized": false,
+            "coefficients": [
+              -0.012550000707807747,
+              -0.023147889489920737,
+              0.06202695315818585,
+              0.11103017438250426,
+              -0.021979908861058516,
+              0.0566150728656285,
+              0.20690117007522965,
+              0.0066919506738571674
+            ],
+            "intercept": 0.23499999999999993,
+            "solver": "numpy_solve",
+            "sha256": "5730b694140df16abd436bcec1fccc13caf05ca961fbdb07acdb01283aff5cf5"
+          },
+          "interval_receipt": {
+            "schema": "release_cpi_coherent_interval_receipt.v1",
+            "release": "cpi_headline",
+            "period": "2026-07",
+            "model_epoch": "coherent_ridge_v1",
+            "target_epoch": "alfred_same_release_vintage_proxy_v1",
+            "training_receipt_sha256": "5730b694140df16abd436bcec1fccc13caf05ca961fbdb07acdb01283aff5cf5",
+            "point_raw": -0.06847024989372984,
+            "method": "empirical_prior_oos_residual_quantiles",
+            "residual": "actual_raw_target_minus_raw_ridge_point",
+            "quantiles": [
+              0.1,
+              0.25,
+              0.5,
+              0.75,
+              0.9
+            ],
+            "interpolation": "numpy_linear",
+            "n": 80,
+            "minimum_required": 24,
+            "oos_period_min": "2019-06",
+            "oos_period_max": "2026-06",
+            "oos_residuals_sha256": "0520087d3c05fb7301a3b772f8ac210f9841b875afc206b0e26915539092fba3",
+            "residual_quantiles_raw": [
+              -0.22662834648414124,
+              -0.13190577850601648,
+              -0.006032313894508187,
+              0.13014202675937758,
+              0.22752004781806137
+            ],
+            "bounds_raw": [
+              -0.29509859637787106,
+              -0.20037602839974633,
+              -0.07450256378823802,
+              0.061671776865647746,
+              0.15904979792433155
+            ],
+            "published_rounding": {
+              "point_and_p50": "decimal_round_half_up_1dp",
+              "p10_p25": "decimal_round_floor_1dp",
+              "p75_p90": "decimal_round_ceiling_1dp"
+            },
+            "strictly_prior_to_live": true,
+            "sha256": "2c2b290f263ee5bf3f6aff1aa759ddb596917a1f412e70572b80db31be955f20"
+          },
+          "pit_provenance": {
+            "schema": "release_cpi_coherent_pit_provenance.v1",
+            "decision_cutoff": "2026-08-11",
+            "decision_cutoff_rule": "release_date_minus_1_calendar_day",
+            "training_label_release_date_operator": "<=",
+            "live_release_date_operator": ">",
+            "exact_calendar_source_periods": true,
+            "candidate_data_asof": "2026-08-10T03:31:09+00:00",
+            "evidence_available_at": "2026-08-11T04:24:57+00:00",
+            "feature_receipts": {
+              "cpi_hl_mom_lag1": {
+                "source": "coherent_target_history",
+                "source_period": "2026-06",
+                "available_at": "2026-07-14",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 1
+              },
+              "cpi_hl_mom_lag2": {
+                "source": "coherent_target_history",
+                "source_period": "2026-05",
+                "available_at": "2026-06-10",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 2
+              },
+              "cpi_hl_mom_lag3": {
+                "source": "coherent_target_history",
+                "source_period": "2026-04",
+                "available_at": "2026-05-12",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 3
+              },
+              "sticky_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "STICKCPIM157SFRBATL",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "direct_monthly_percent",
+                "raw_value": 0.0676495
+              },
+              "median_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "MEDCPIM158SFRBCLE",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "annual_rate_to_monthly_compound",
+                "raw_value": 2.10961524352649
+              },
+              "flex_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "FLEXCPIM157SFRBATL",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "direct_monthly_percent",
+                "raw_value": -1.774278179
+              },
+              "gasoline_mom": {
+                "source": "FRED",
+                "series_id": "GASREGW",
+                "source_period": "2026-07",
+                "prior_source_period": "2026-06",
+                "transform": "month_average_pct_change",
+                "observation_timestamp_operator": "<",
+                "decision_cutoff": "2026-08-11",
+                "target_month_observations": 4,
+                "prior_month_observations": 5,
+                "target_month_last_observation": "2026-07-27",
+                "prior_month_last_observation": "2026-06-29"
+              },
+              "ppi_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "PPIFIS",
+                "source_period": "2026-06",
+                "prior_source_period": "2026-05",
+                "transform": "exact_month_level_pct_change",
+                "current_vintage": {
+                  "source": "FRED/ALFRED",
+                  "series_id": "PPIFIS",
+                  "source_period": "2026-06",
+                  "realtime_start": "2026-07-15",
+                  "realtime_start_operator": "<=",
+                  "decision_cutoff": "2026-08-11",
+                  "vintage_selection": "latest_known_for_exact_period",
+                  "realtime_end": "9999-12-31 00:00:00"
+                },
+                "prior_vintage": {
+                  "source": "FRED/ALFRED",
+                  "series_id": "PPIFIS",
+                  "source_period": "2026-05",
+                  "realtime_start": "2026-06-11",
+                  "realtime_start_operator": "<=",
+                  "decision_cutoff": "2026-08-11",
+                  "vintage_selection": "latest_known_for_exact_period",
+                  "realtime_end": "2026-07-14 00:00:00"
+                }
+              }
+            },
+            "vintaged_legs": [
+              "cpi_hl_mom_lag1",
+              "cpi_hl_mom_lag2",
+              "cpi_hl_mom_lag3",
+              "sticky_mom_lag1",
+              "median_mom_lag1",
+              "flex_mom_lag1",
+              "ppi_mom_lag1"
+            ],
+            "unrevised_legs": [
+              "gasoline_mom"
+            ],
+            "revision_optimistic_legs": [],
+            "absent_legs": [],
+            "display_only": true,
+            "authority": false
+          },
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
+          "display_only": true,
+          "authority": false,
+          "promotion_authorized": false
         }
       },
       "combined": {
-        "combined_point": -0.031577,
-        "p10": -0.325789,
-        "p25": -0.18642,
-        "p50": -0.031577,
-        "p75": 0.123265,
-        "p90": 0.262635,
+        "combined_point": -0.020117,
+        "p10": -0.3075,
+        "p25": -0.171366,
+        "p50": -0.020117,
+        "p75": 0.131131,
+        "p90": 0.267265,
         "combined_components": {
           "inputs_used": [
             "champion",
@@ -725,7 +1219,7 @@
           ],
           "points": {
             "champion": -0.0451,
-            "v3_factor": -0.16,
+            "v3_factor": -0.1027,
             "cpi_bridge": -0.1127,
             "mf_energy": 0.0734,
             "cleveland": 0.086513
@@ -753,23 +1247,23 @@
           },
           "MAE_pool": null,
           "sigma_champion": 0.2075,
-          "Var_w": 0.00964434,
-          "sigma_combined": 0.229566,
+          "Var_w": 0.00722622,
+          "sigma_combined": 0.224238,
           "cold_start": true,
           "k": 3.0,
           "input_hashes": {
             "champion": "bf86f265c70007abeb1ad73f294106f2186c2631c0135fddf46a355b04245b88",
-            "v3_factor": "ad83f1ef086cb381fad40a46012fd579a11e32dda3cc81a40dc3d313b87e2421",
-            "cpi_bridge": "14027401c23e7e3d4ffc2852edfc20c7777e0982e156ed8729c67ec94d5053b6",
+            "v3_factor": "6cf36169f1ce411db67fd382b1d9a55790b6c575f316954cb30f91b4548dba4a",
+            "cpi_bridge": "0bba7ec3a1799eff483d0c919a8cb11fc4114a90c43ce4a83ac074ffae2854ab",
             "mf_energy": "b653a06feac93c030cf8d75c88e23c578ec57a4945293fb9d4e0918d8ce49660",
             "cleveland": "b86803ad00421bc1e3d570ef8e0ba7e2068f8cb82e8d848d2d1908b06e28c974"
           }
         },
         "n_scored_basis": 0,
-        "inputs_hash": "8d960fa3a141383012d118dfdee257ab85977517c9b5b93303c1d5917e66ea62",
+        "inputs_hash": "c912c8c171765c919bc69ff84ebca91ea4083e01e1497aaec2701dd77d6a3285",
         "model_epoch": "combined_v1_legacy_target_v1",
         "target_epoch": "mixed_legacy_cross_vintage_v0",
-        "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+        "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
         "display_only": true,
         "authority": false
       },
@@ -783,7 +1277,7 @@
       "release_type": "cpi_core",
       "period": "2026-07",
       "release_date": "2026-08-12",
-      "days_to": 3,
+      "days_to": 1,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.0104,
@@ -805,8 +1299,8 @@
           "event_key": "cpi_print",
           "event_title": "Core CPI MoM - July 2026",
           "implied": "0.2%",
-          "prob_top": 0.4835,
-          "asof": "2026-08-08"
+          "prob_top": 0.5475,
+          "asof": "2026-08-10"
         }
       },
       "surprise_skew": {
@@ -860,7 +1354,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -893,7 +1387,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": {
         "p_hot": 0.0,
         "p_cold": 0.96,
@@ -904,8 +1398,8 @@
         "event_key": "cpi_print",
         "event_title": "Core CPI MoM - July 2026",
         "implied": "0.2%",
-        "prob_top": 0.4835,
-        "asof": "2026-08-08"
+        "prob_top": 0.5475,
+        "asof": "2026-08-10"
       },
       "expectation_read": {
         "tag": "below_expectations",
@@ -933,7 +1427,7 @@
         "cpi_median_se_trend": "falling",
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -948,7 +1442,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_CORE_2026-07_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_CORE_2026-07_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.875,
@@ -958,27 +1452,468 @@
       "shadows": {
         "v3_factor": {
           "display_only": true,
-          "inputs_hash": "cd8cc47b59b0efe702d48703de5b5ff021eb4840f976bdbc3d96db9d7f24a48b",
+          "inputs_hash": "c8becb734a8dcfdc7d86de6a6d0993949448ca0f67b5a06eee4de149828e954b",
           "model_epoch": "v3_factor_legacy_target_v1",
           "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-          "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
-          "point": 0.055,
-          "p10": -0.0887,
-          "p25": -0.0127,
-          "p50": 0.056,
-          "p75": 0.1265,
-          "p90": 0.1878,
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
+          "point": 0.0683,
+          "p10": -0.0754,
+          "p25": 0.0007,
+          "p50": 0.0693,
+          "p75": 0.1398,
+          "p90": 0.2011,
           "confidence": null,
           "input_completeness": 0.9
+        },
+        "coherent_ridge_v1": {
+          "schema": "release_cpi_coherent_shadow.v1",
+          "status": "shadow_candidate",
+          "release": "cpi_core",
+          "period": "2026-07",
+          "release_date": "2026-08-12",
+          "asof": "2026-08-11",
+          "model": "coherent_ridge_v1",
+          "model_epoch": "coherent_ridge_v1",
+          "target_epoch": "alfred_same_release_vintage_proxy_v1",
+          "point": 0.0,
+          "point_raw": -0.004615141535099079,
+          "p10": -0.2,
+          "p25": -0.1,
+          "p50": 0.0,
+          "p75": 0.2,
+          "p90": 0.2,
+          "confidence": null,
+          "input_completeness": 1.0,
+          "inputs_hash": "adb216c3f349e6b19e6196bb02d2b8034ceba6221097753c86edd5c4d9296399",
+          "input_manifest": {
+            "schema": "release_cpi_coherent_input_manifest.v1",
+            "release": "cpi_core",
+            "period": "2026-07",
+            "decision_asof": "2026-08-11",
+            "feature_order": [
+              "cpi_core_mom_lag1",
+              "cpi_core_mom_lag2",
+              "cpi_core_mom_lag3",
+              "sticky_mom_lag1",
+              "median_mom_lag1",
+              "flex_mom_lag1",
+              "ppi_mom_lag1"
+            ],
+            "values": {
+              "cpi_core_mom_lag1": 0.0,
+              "cpi_core_mom_lag2": 0.2,
+              "cpi_core_mom_lag3": 0.4,
+              "sticky_mom_lag1": 0.0676495,
+              "median_mom_lag1": 0.17412399936844736,
+              "flex_mom_lag1": -1.774278179,
+              "ppi_mom_lag1": -0.6932683830291886
+            },
+            "feature_receipts": {
+              "cpi_core_mom_lag1": {
+                "source": "coherent_target_history",
+                "source_period": "2026-06",
+                "available_at": "2026-07-14",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 1
+              },
+              "cpi_core_mom_lag2": {
+                "source": "coherent_target_history",
+                "source_period": "2026-05",
+                "available_at": "2026-06-10",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 2
+              },
+              "cpi_core_mom_lag3": {
+                "source": "coherent_target_history",
+                "source_period": "2026-04",
+                "available_at": "2026-05-12",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 3
+              },
+              "sticky_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "STICKCPIM157SFRBATL",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "direct_monthly_percent",
+                "raw_value": 0.0676495
+              },
+              "median_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "MEDCPIM158SFRBCLE",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "annual_rate_to_monthly_compound",
+                "raw_value": 2.10961524352649
+              },
+              "flex_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "FLEXCPIM157SFRBATL",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "direct_monthly_percent",
+                "raw_value": -1.774278179
+              },
+              "ppi_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "PPIFIS",
+                "source_period": "2026-06",
+                "prior_source_period": "2026-05",
+                "transform": "exact_month_level_pct_change",
+                "current_vintage": {
+                  "source": "FRED/ALFRED",
+                  "series_id": "PPIFIS",
+                  "source_period": "2026-06",
+                  "realtime_start": "2026-07-15",
+                  "realtime_start_operator": "<=",
+                  "decision_cutoff": "2026-08-11",
+                  "vintage_selection": "latest_known_for_exact_period",
+                  "realtime_end": "9999-12-31 00:00:00"
+                },
+                "prior_vintage": {
+                  "source": "FRED/ALFRED",
+                  "series_id": "PPIFIS",
+                  "source_period": "2026-05",
+                  "realtime_start": "2026-06-11",
+                  "realtime_start_operator": "<=",
+                  "decision_cutoff": "2026-08-11",
+                  "vintage_selection": "latest_known_for_exact_period",
+                  "realtime_end": "2026-07-14 00:00:00"
+                }
+              }
+            },
+            "source_artifacts": {
+              "alfred_vintages": {
+                "path": "data/fred_vintage/vintages.parquet",
+                "sha256": "e39c134d7295e20deec210e5086c7ac60f1a4c9598aad92cca1b56ec8e7af9fc",
+                "bytes": 230301
+              }
+            },
+            "complete_case": true,
+            "sha256": "adb216c3f349e6b19e6196bb02d2b8034ceba6221097753c86edd5c4d9296399"
+          },
+          "model_receipt": {
+            "schema": "release_cpi_coherent_model_receipt.v1",
+            "model_id": "coherent_ridge_v1",
+            "model_epoch": "coherent_ridge_v1",
+            "registry": {
+              "path": "config/release_forecast_model_registry.yml",
+              "sha256": "1f2d07bac8672f20fe33edccb26060c3a457a2dac2cc01c0eca2aa9abdb83791",
+              "bytes": 7232
+            },
+            "preregistration": {
+              "path": "research/release_forecast/PREREG_COHERENT_RIDGE_V1.md",
+              "sha256": "19ba1a2f958536ce3f59a9a07d5ef38962daf30a9ea1e0c8894ef488641b5b6f",
+              "bytes": 6352
+            },
+            "frozen_at": "2026-08-11",
+            "attempt": 1,
+            "ridge_lambda": 1.0,
+            "minimum_complete_prior_rows": 60,
+            "minimum_prior_oos_residuals": 24,
+            "feature_order": {
+              "cpi_headline": [
+                "cpi_hl_mom_lag1",
+                "cpi_hl_mom_lag2",
+                "cpi_hl_mom_lag3",
+                "sticky_mom_lag1",
+                "median_mom_lag1",
+                "flex_mom_lag1",
+                "gasoline_mom",
+                "ppi_mom_lag1"
+              ],
+              "cpi_core": [
+                "cpi_core_mom_lag1",
+                "cpi_core_mom_lag2",
+                "cpi_core_mom_lag3",
+                "sticky_mom_lag1",
+                "median_mom_lag1",
+                "flex_mom_lag1",
+                "ppi_mom_lag1"
+              ]
+            },
+            "sha256": "cba9345b5c31e4c77a25d90b50a8fa7fd01dfcdf10f52afed74fc4aef3d31bd1"
+          },
+          "truth_receipt": {
+            "schema": "release_cpi_coherent_truth_receipt.v1",
+            "target_epoch": "alfred_same_release_vintage_proxy_v1",
+            "history": {
+              "path": "data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json",
+              "sha256": "6c32da1fb3bf3a8ee864e0b51c668cf418c519260529d856b1749d2097fa0645",
+              "bytes": 1307468,
+              "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0"
+            },
+            "parity": {
+              "path": "data/release_forecast/cpi_truth/parity_report.json",
+              "sha256": "4a2916e408e91304bac32d91ee3719d7e329f458636a5dc0798ec8650cac5e91",
+              "bytes": 38472
+            },
+            "completion": {
+              "path": "data/release_forecast/cpi_truth/build_completion.json",
+              "sha256": "ed901dab5521000ab0995b5f36fecaed50ffb7e8eac2ef7c44d71dd35994556a",
+              "bytes": 24251,
+              "evidence_available_at": "2026-08-11T04:24:57+00:00"
+            },
+            "candidate_data_asof": "2026-08-10T03:31:09+00:00",
+            "official_first_print_epoch": "withheld",
+            "sha256": "1fad5695250435d32b76c99b020c81954595deb918df72e23faace9c2ad08bbd"
+          },
+          "training_receipt": {
+            "schema": "release_cpi_coherent_training_receipt.v1",
+            "release": "cpi_core",
+            "period": "2026-07",
+            "model_epoch": "coherent_ridge_v1",
+            "target_epoch": "alfred_same_release_vintage_proxy_v1",
+            "input_manifest_sha256": "adb216c3f349e6b19e6196bb02d2b8034ceba6221097753c86edd5c4d9296399",
+            "method": "expanding_ridge",
+            "decision_cutoff": "2026-08-11",
+            "feature_order": [
+              "cpi_core_mom_lag1",
+              "cpi_core_mom_lag2",
+              "cpi_core_mom_lag3",
+              "sticky_mom_lag1",
+              "median_mom_lag1",
+              "flex_mom_lag1",
+              "ppi_mom_lag1"
+            ],
+            "target_value_field": "published_proxy_1dp",
+            "n": 140,
+            "minimum_required": 60,
+            "eligible_label_release_date_max": "2026-07-14",
+            "training_period_min": "2014-04",
+            "training_period_max": "2026-06",
+            "excluded_incomplete_rows": 213,
+            "training_rows_sha256": "500ace2448d38f1a01dbc9dadcd8bde6aaf788a8cd3ef41223c309e73ca0f939",
+            "standardization": {
+              "scope": "train_only",
+              "sample_std_ddof": 1,
+              "zero_variance_scale": 1.0,
+              "means": [
+                0.24214285714285713,
+                0.23928571428571424,
+                0.23714285714285716,
+                0.26596323844285713,
+                0.28056019050271663,
+                0.22401094100714283,
+                0.24233908596908715
+              ],
+              "scales": [
+                0.1795549482610142,
+                0.18219146722528456,
+                0.1816561924371717,
+                0.13459704723662044,
+                0.13449191684773723,
+                0.9326611893354005,
+                0.45633490575754854
+              ]
+            },
+            "ridge_lambda": 1.0,
+            "intercept_penalized": false,
+            "coefficients": [
+              0.059700712600090446,
+              -0.015137717737062859,
+              -0.012516190203448537,
+              0.05449696267403283,
+              0.015376895293622317,
+              0.03742705985646697,
+              -0.008051042700214887
+            ],
+            "intercept": 0.23999999999999996,
+            "solver": "numpy_solve",
+            "sha256": "c8e69d64c573e3d4027567d8b25882151d1991af28ea95bbed88d5cce3376378"
+          },
+          "interval_receipt": {
+            "schema": "release_cpi_coherent_interval_receipt.v1",
+            "release": "cpi_core",
+            "period": "2026-07",
+            "model_epoch": "coherent_ridge_v1",
+            "target_epoch": "alfred_same_release_vintage_proxy_v1",
+            "training_receipt_sha256": "c8e69d64c573e3d4027567d8b25882151d1991af28ea95bbed88d5cce3376378",
+            "point_raw": -0.004615141535099079,
+            "method": "empirical_prior_oos_residual_quantiles",
+            "residual": "actual_raw_target_minus_raw_ridge_point",
+            "quantiles": [
+              0.1,
+              0.25,
+              0.5,
+              0.75,
+              0.9
+            ],
+            "interpolation": "numpy_linear",
+            "n": 80,
+            "minimum_required": 24,
+            "oos_period_min": "2019-06",
+            "oos_period_max": "2026-06",
+            "oos_residuals_sha256": "d44097812b41b46194f9629369e5819ed98b6332567757dbb8b3698d349020a8",
+            "residual_quantiles_raw": [
+              -0.16876047931836985,
+              -0.07680766124248807,
+              0.026674963467341176,
+              0.10821434143952299,
+              0.18375635072365057
+            ],
+            "bounds_raw": [
+              -0.17337562085346891,
+              -0.08142280277758715,
+              0.022059821932242096,
+              0.10359919990442391,
+              0.17914120918855148
+            ],
+            "published_rounding": {
+              "point_and_p50": "decimal_round_half_up_1dp",
+              "p10_p25": "decimal_round_floor_1dp",
+              "p75_p90": "decimal_round_ceiling_1dp"
+            },
+            "strictly_prior_to_live": true,
+            "sha256": "0adc9dab8f6f32e14a203a0c77f6893fbb1ba185845fb1d10c9a778e1987ed03"
+          },
+          "pit_provenance": {
+            "schema": "release_cpi_coherent_pit_provenance.v1",
+            "decision_cutoff": "2026-08-11",
+            "decision_cutoff_rule": "release_date_minus_1_calendar_day",
+            "training_label_release_date_operator": "<=",
+            "live_release_date_operator": ">",
+            "exact_calendar_source_periods": true,
+            "candidate_data_asof": "2026-08-10T03:31:09+00:00",
+            "evidence_available_at": "2026-08-11T04:24:57+00:00",
+            "feature_receipts": {
+              "cpi_core_mom_lag1": {
+                "source": "coherent_target_history",
+                "source_period": "2026-06",
+                "available_at": "2026-07-14",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 1
+              },
+              "cpi_core_mom_lag2": {
+                "source": "coherent_target_history",
+                "source_period": "2026-05",
+                "available_at": "2026-06-10",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 2
+              },
+              "cpi_core_mom_lag3": {
+                "source": "coherent_target_history",
+                "source_period": "2026-04",
+                "available_at": "2026-05-12",
+                "value_field": "published_proxy_1dp",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+                "history_hash": "sha256:fe8eb9ae161fb363a9c19dad93e17d4ff8e5035d455525f458328c7347aae3b0",
+                "exact_calendar_lag": 3
+              },
+              "sticky_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "STICKCPIM157SFRBATL",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "direct_monthly_percent",
+                "raw_value": 0.0676495
+              },
+              "median_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "MEDCPIM158SFRBCLE",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "annual_rate_to_monthly_compound",
+                "raw_value": 2.10961524352649
+              },
+              "flex_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "FLEXCPIM157SFRBATL",
+                "source_period": "2026-06",
+                "realtime_start": "2026-07-14",
+                "realtime_start_operator": "<=",
+                "decision_cutoff": "2026-08-11",
+                "vintage_selection": "latest_known_for_exact_period",
+                "realtime_end": "9999-12-31 00:00:00",
+                "transform": "direct_monthly_percent",
+                "raw_value": -1.774278179
+              },
+              "ppi_mom_lag1": {
+                "source": "FRED/ALFRED",
+                "series_id": "PPIFIS",
+                "source_period": "2026-06",
+                "prior_source_period": "2026-05",
+                "transform": "exact_month_level_pct_change",
+                "current_vintage": {
+                  "source": "FRED/ALFRED",
+                  "series_id": "PPIFIS",
+                  "source_period": "2026-06",
+                  "realtime_start": "2026-07-15",
+                  "realtime_start_operator": "<=",
+                  "decision_cutoff": "2026-08-11",
+                  "vintage_selection": "latest_known_for_exact_period",
+                  "realtime_end": "9999-12-31 00:00:00"
+                },
+                "prior_vintage": {
+                  "source": "FRED/ALFRED",
+                  "series_id": "PPIFIS",
+                  "source_period": "2026-05",
+                  "realtime_start": "2026-06-11",
+                  "realtime_start_operator": "<=",
+                  "decision_cutoff": "2026-08-11",
+                  "vintage_selection": "latest_known_for_exact_period",
+                  "realtime_end": "2026-07-14 00:00:00"
+                }
+              }
+            },
+            "vintaged_legs": [
+              "cpi_core_mom_lag1",
+              "cpi_core_mom_lag2",
+              "cpi_core_mom_lag3",
+              "sticky_mom_lag1",
+              "median_mom_lag1",
+              "flex_mom_lag1",
+              "ppi_mom_lag1"
+            ],
+            "unrevised_legs": [],
+            "revision_optimistic_legs": [],
+            "absent_legs": [],
+            "display_only": true,
+            "authority": false
+          },
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
+          "display_only": true,
+          "authority": false,
+          "promotion_authorized": false
         }
       },
       "combined": {
-        "combined_point": 0.085344,
-        "p10": -0.119768,
-        "p25": -0.022605,
-        "p50": 0.085344,
-        "p75": 0.193294,
-        "p90": 0.290456,
+        "combined_point": 0.089777,
+        "p10": -0.114413,
+        "p25": -0.017687,
+        "p50": 0.089777,
+        "p75": 0.197242,
+        "p90": 0.293968,
         "combined_components": {
           "inputs_used": [
             "champion",
@@ -987,7 +1922,7 @@
           ],
           "points": {
             "champion": -0.0104,
-            "v3_factor": 0.055,
+            "v3_factor": 0.0683,
             "cleveland": 0.211432
           },
           "weights": {
@@ -1007,21 +1942,21 @@
           },
           "MAE_pool": null,
           "sigma_champion": 0.1302,
-          "Var_w": 0.00866198,
-          "sigma_combined": 0.160044,
+          "Var_w": 0.00843223,
+          "sigma_combined": 0.159324,
           "cold_start": true,
           "k": 3.0,
           "input_hashes": {
             "champion": "0063a143e7f4dbbd170f3185d24202c09cb10c672abd8f29f783a69540adcded",
-            "v3_factor": "cd8cc47b59b0efe702d48703de5b5ff021eb4840f976bdbc3d96db9d7f24a48b",
+            "v3_factor": "c8becb734a8dcfdc7d86de6a6d0993949448ca0f67b5a06eee4de149828e954b",
             "cleveland": "30906584d00c6d414acf3ae5cb6820d8cf3915a0179801f63dc4b82878bcbe2f"
           }
         },
         "n_scored_basis": 0,
-        "inputs_hash": "a987f1acb1fc6fecd095c46df33e6ba98c627133fafa35284ec5b46e12b4ebc7",
+        "inputs_hash": "85b1996609fd2583e578398cef43b39081d0d864426bf8ee7b1ca29882f22400",
         "model_epoch": "combined_v1_legacy_target_v1",
         "target_epoch": "mixed_legacy_cross_vintage_v0",
-        "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+        "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
         "display_only": true,
         "authority": false
       },
@@ -1035,7 +1970,7 @@
       "release_type": "ppi_finaldemand",
       "period": "2026-07",
       "release_date": "2026-08-13",
-      "days_to": 4,
+      "days_to": 2,
       "target": "mom_sa_pct",
       "projection": {
         "point": 0.4173,
@@ -1084,7 +2019,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -1095,7 +2030,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": {
         "p_hot": 0.79,
         "p_cold": 0.12,
@@ -1111,7 +2046,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -1126,7 +2061,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PPI_2026-07_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PPI_2026-07_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.8,
@@ -1140,7 +2075,7 @@
       "release_type": "claims",
       "period": "2026-08-13",
       "release_date": "2026-08-13",
-      "days_to": 4,
+      "days_to": 2,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1173,7 +2108,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -1184,7 +2119,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "official_initial_level_v1",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -1196,7 +2131,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -1241,7 +2176,7 @@
         },
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-13_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-13_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -1255,7 +2190,7 @@
       "release_type": "claims",
       "period": "2026-08-20",
       "release_date": "2026-08-20",
-      "days_to": 11,
+      "days_to": 9,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1288,7 +2223,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -1299,7 +2234,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "official_initial_level_v1",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -1311,7 +2246,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -1356,7 +2291,7 @@
         },
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-20_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-20_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -1370,7 +2305,7 @@
       "release_type": "pce_headline",
       "period": "2026-07",
       "release_date": "2026-08-26",
-      "days_to": 17,
+      "days_to": 15,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.2335,
@@ -1427,7 +2362,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -1438,7 +2373,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": {
         "p_hot": 0.0,
         "p_cold": 1.0,
@@ -1463,7 +2398,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -1478,7 +2413,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_2026-07_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_2026-07_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.875,
@@ -1492,7 +2427,7 @@
       "release_type": "pce_core",
       "period": "2026-07",
       "release_date": "2026-08-26",
-      "days_to": 17,
+      "days_to": 15,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.0325,
@@ -1546,7 +2481,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -1557,7 +2492,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": {
         "p_hot": 0.0,
         "p_cold": 1.0,
@@ -1582,7 +2517,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -1597,7 +2532,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_CORE_2026-07_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_CORE_2026-07_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -1611,7 +2546,7 @@
       "release_type": "claims",
       "period": "2026-08-27",
       "release_date": "2026-08-27",
-      "days_to": 18,
+      "days_to": 16,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1644,7 +2579,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -1655,7 +2590,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "official_initial_level_v1",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -1667,7 +2602,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -1712,7 +2647,7 @@
         },
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-27_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-27_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -1726,7 +2661,7 @@
       "release_type": "claims",
       "period": "2026-09-03",
       "release_date": "2026-09-03",
-      "days_to": 25,
+      "days_to": 23,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1759,7 +2694,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -1770,7 +2705,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "official_initial_level_v1",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -1782,7 +2717,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -1827,7 +2762,7 @@
         },
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-09-03_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-09-03_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -1841,7 +2776,7 @@
       "release_type": "nfp",
       "period": "2026-08",
       "release_date": "2026-09-04",
-      "days_to": 26,
+      "days_to": 24,
       "target": "change_thousands",
       "projection": {
         "point": null,
@@ -1892,21 +2827,21 @@
         "n_train": 355,
         "n_features_used": 5
       },
-      "inputs_hash": "137b0f09cacf207ccf82c63272c0da6aa5023f200665885ea0ac7b0cca2fcfa7",
+      "inputs_hash": "cdc4ee527bde9fc39d55b7994b24914a62149cfaaf7627f9fdf2f73201211157",
       "input_manifest": {
         "nfp_change_lag1": -126.0,
         "nfp_change_lag2": -17.0,
         "nfp_change_lag3": 265.0,
         "claims_survey_week_icsa": null,
         "claims_survey_week_ccsa": null,
-        "withheld_tax_yoy": -17.3143916451003,
+        "withheld_tax_yoy": -13.960317897325769,
         "awhman_mom": 0.0,
         "adp_change": null
       },
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -1930,7 +2865,7 @@
       },
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -1956,7 +2891,7 @@
           2022,
           2023
         ],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -2018,7 +2953,7 @@
         },
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/NFP_2026-08_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/NFP_2026-08_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.625,
         "fresh_proxy_coverage": 0.375,
@@ -2028,10 +2963,10 @@
       "shadows": {
         "v3_factor": {
           "display_only": true,
-          "inputs_hash": "df80173a75fd402da924802a1ad48c49ae744c13f2abee392043d2e92834a6f8",
+          "inputs_hash": "bec165e83df6a0b58bbec47beda8d6c48b7591e13764822e9ef8e39357deaf56",
           "model_epoch": "v3_factor_legacy_target_v1",
           "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-          "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
           "point": null,
           "p10": -378.612,
           "p25": -167.2446,
@@ -2050,7 +2985,7 @@
       "release_type": "ppi_finaldemand",
       "period": "2026-08",
       "release_date": "2026-09-10",
-      "days_to": 32,
+      "days_to": 30,
       "target": "mom_sa_pct",
       "projection": {
         "point": 0.6957,
@@ -2099,7 +3034,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -2110,7 +3045,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": {
         "p_hot": 0.87,
         "p_cold": 0.03,
@@ -2126,7 +3061,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -2141,7 +3076,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PPI_2026-08_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PPI_2026-08_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.8,
@@ -2155,7 +3090,7 @@
       "release_type": "claims",
       "period": "2026-09-10",
       "release_date": "2026-09-10",
-      "days_to": 32,
+      "days_to": 30,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -2188,7 +3123,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -2199,7 +3134,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "official_initial_level_v1",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -2211,7 +3146,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -2256,7 +3191,7 @@
         },
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-09-10_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-09-10_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -2270,7 +3205,7 @@
       "release_type": "cpi_headline",
       "period": "2026-08",
       "release_date": "2026-09-11",
-      "days_to": 33,
+      "days_to": 31,
       "target": "mom_sa_pct",
       "projection": {
         "point": 0.165,
@@ -2343,7 +3278,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -2381,7 +3316,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": {
         "p_hot": 0.13,
         "p_cold": 0.63,
@@ -2414,7 +3349,7 @@
         "cpi_median_se_trend": "falling",
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -2429,7 +3364,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_2026-08_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_2026-08_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.7777777777777778,
@@ -2439,25 +3374,25 @@
       "shadows": {
         "v3_factor": {
           "display_only": true,
-          "inputs_hash": "e688d08dc330464f1818d39aee09740aadcc6c7ad6f64ea43a21e135566570ad",
+          "inputs_hash": "07939a8aa5b9576517b534e74042262cca0d2dd88bf9eed7b2e03d47bd79bcc3",
           "model_epoch": "v3_factor_legacy_target_v1",
           "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-          "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
-          "point": -0.0332,
-          "p10": -0.2802,
-          "p25": -0.1416,
-          "p50": -0.0105,
-          "p75": 0.1167,
-          "p90": 0.2187,
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
+          "point": 0.024,
+          "p10": -0.223,
+          "p25": -0.0844,
+          "p50": 0.0467,
+          "p75": 0.174,
+          "p90": 0.276,
           "confidence": null,
           "input_completeness": 0.9091
         },
         "cpi_bridge": {
           "display_only": true,
-          "inputs_hash": "41d26962aa06e4108c45bb9f31fba3639d91a780a8619801b0d1d663376c0270",
+          "inputs_hash": "ab0bb47761078df9ccd3c3013a959cfd762f0b54381b7877fd21e5c56a59e089",
           "model_epoch": "cpi_bridge_legacy_target_v1",
           "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-          "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
           "point": 0.0826,
           "components": [
             {
@@ -2563,26 +3498,26 @@
         },
         "mf_energy": {
           "display_only": true,
-          "inputs_hash": "fb7e6d68745c09063399563a955e19ced03a6ce6af02d0b26ca1c37e800030b5",
+          "inputs_hash": "563b20f2bff72d007af83d9ddc024ab2dbf69c6f8196ce3b9e7a98e36543b6ff",
           "model_epoch": "mf_energy_legacy_target_v1",
           "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-          "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
-          "point": 0.4108,
-          "p10": 0.2504,
-          "p25": 0.3463,
-          "p50": 0.4242,
-          "p75": 0.5301,
-          "p90": 0.6217,
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
+          "point": 0.416,
+          "p10": 0.2556,
+          "p25": 0.3515,
+          "p50": 0.4294,
+          "p75": 0.5353,
+          "p90": 0.6269,
           "confidence": 0.428,
           "input_completeness": 1.0,
           "mf_energy_components": {
-            "gasoline_mom": 3.6148447524304794,
-            "energy_contrib": 0.14220720471091555,
-            "exenergy_ar": 0.19671500123653962,
+            "gasoline_mom": 3.7319600737491188,
+            "energy_contrib": 0.14681449592649168,
+            "exenergy_ar": 0.1967150012365395,
             "gasoline_ri_weight": 2.895,
             "gamma": 0.039339782051580785,
             "n_gasoline_weeks_published": 1,
-            "n_gasoline_weeks_projected": 1,
+            "n_gasoline_weeks_projected": 0,
             "gasoline_wti_beta_slope": 0.0041738352956733355,
             "gasoline_wti_beta_intercept": 0.001432745558863198,
             "gasoline_wti_n_train": 1869
@@ -2590,12 +3525,12 @@
         }
       },
       "combined": {
-        "combined_point": 0.200515,
-        "p10": -0.143646,
-        "p25": 0.019385,
-        "p50": 0.200515,
-        "p75": 0.381645,
-        "p90": 0.544675,
+        "combined_point": 0.212995,
+        "p10": -0.120486,
+        "p25": 0.037485,
+        "p50": 0.212995,
+        "p75": 0.388504,
+        "p90": 0.546476,
         "combined_components": {
           "inputs_used": [
             "champion",
@@ -2606,9 +3541,9 @@
           ],
           "points": {
             "champion": 0.165,
-            "v3_factor": -0.0332,
+            "v3_factor": 0.024,
             "cpi_bridge": 0.0826,
-            "mf_energy": 0.4108,
+            "mf_energy": 0.416,
             "cleveland": 0.377373
           },
           "weights": {
@@ -2634,23 +3569,23 @@
           },
           "MAE_pool": null,
           "sigma_champion": 0.2075,
-          "Var_w": 0.02905729,
-          "sigma_combined": 0.26854,
+          "Var_w": 0.02465132,
+          "sigma_combined": 0.260207,
           "cold_start": true,
           "k": 3.0,
           "input_hashes": {
             "champion": "4ec54cdf73c9c502c34399ae2ff55b5593afec2185668f43fbe1081bafdd99a8",
-            "v3_factor": "e688d08dc330464f1818d39aee09740aadcc6c7ad6f64ea43a21e135566570ad",
-            "cpi_bridge": "41d26962aa06e4108c45bb9f31fba3639d91a780a8619801b0d1d663376c0270",
-            "mf_energy": "fb7e6d68745c09063399563a955e19ced03a6ce6af02d0b26ca1c37e800030b5",
+            "v3_factor": "07939a8aa5b9576517b534e74042262cca0d2dd88bf9eed7b2e03d47bd79bcc3",
+            "cpi_bridge": "ab0bb47761078df9ccd3c3013a959cfd762f0b54381b7877fd21e5c56a59e089",
+            "mf_energy": "563b20f2bff72d007af83d9ddc024ab2dbf69c6f8196ce3b9e7a98e36543b6ff",
             "cleveland": "088b22ab938ff7ca788f089b18a2ffd2c13519e7a0cd929e83c62771f0442c55"
           }
         },
         "n_scored_basis": 0,
-        "inputs_hash": "a485cb9134fb1a4d29d213c9fdb52da7cb32cdbb7fafe9e09ebe3a6365fca582",
+        "inputs_hash": "7a063757201b471b7afcfd23c16bf473205e1906e438e1e3ba7e17fd48be134e",
         "model_epoch": "combined_v1_legacy_target_v1",
         "target_epoch": "mixed_legacy_cross_vintage_v0",
-        "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+        "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
         "display_only": true,
         "authority": false
       },
@@ -2664,7 +3599,7 @@
       "release_type": "cpi_core",
       "period": "2026-08",
       "release_date": "2026-09-11",
-      "days_to": 33,
+      "days_to": 31,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.0102,
@@ -2686,8 +3621,8 @@
           "event_key": "cpi_print",
           "event_title": "Core CPI MoM - July 2026",
           "implied": "0.2%",
-          "prob_top": 0.4835,
-          "asof": "2026-08-08"
+          "prob_top": 0.5475,
+          "asof": "2026-08-10"
         }
       },
       "surprise_skew": {
@@ -2741,7 +3676,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -2774,7 +3709,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": {
         "p_hot": 0.0,
         "p_cold": 0.95,
@@ -2785,8 +3720,8 @@
         "event_key": "cpi_print",
         "event_title": "Core CPI MoM - July 2026",
         "implied": "0.2%",
-        "prob_top": 0.4835,
-        "asof": "2026-08-08"
+        "prob_top": 0.5475,
+        "asof": "2026-08-10"
       },
       "expectation_read": {
         "tag": "below_expectations",
@@ -2814,7 +3749,7 @@
         "cpi_median_se_trend": "falling",
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -2829,7 +3764,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_CORE_2026-08_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_CORE_2026-08_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.875,
@@ -2839,27 +3774,27 @@
       "shadows": {
         "v3_factor": {
           "display_only": true,
-          "inputs_hash": "257faef3aa70b7a5f95f36d8cf224d91caff751689de9338501a48a740e9e8b3",
+          "inputs_hash": "44f8adfaecef7a8e79d9e09d9b36a7df0ea37018e3b7be41c11d42e1b398f5a1",
           "model_epoch": "v3_factor_legacy_target_v1",
           "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-          "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
-          "point": 0.0552,
-          "p10": -0.0885,
-          "p25": -0.0125,
-          "p50": 0.0562,
-          "p75": 0.1267,
-          "p90": 0.188,
+          "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
+          "point": 0.0685,
+          "p10": -0.0752,
+          "p25": 0.0009,
+          "p50": 0.0695,
+          "p75": 0.14,
+          "p90": 0.2013,
           "confidence": null,
           "input_completeness": 0.9
         }
       },
       "combined": {
-        "combined_point": 0.082669,
-        "p10": -0.119586,
-        "p25": -0.023777,
-        "p50": 0.082669,
-        "p75": 0.189116,
-        "p90": 0.284925,
+        "combined_point": 0.087103,
+        "p10": -0.114322,
+        "p25": -0.018906,
+        "p50": 0.087103,
+        "p75": 0.193112,
+        "p90": 0.288528,
         "combined_components": {
           "inputs_used": [
             "champion",
@@ -2868,7 +3803,7 @@
           ],
           "points": {
             "champion": -0.0102,
-            "v3_factor": 0.0552,
+            "v3_factor": 0.0685,
             "cleveland": 0.203008
           },
           "weights": {
@@ -2888,21 +3823,21 @@
           },
           "MAE_pool": null,
           "sigma_champion": 0.1302,
-          "Var_w": 0.00795358,
-          "sigma_combined": 0.157815,
+          "Var_w": 0.00774932,
+          "sigma_combined": 0.157167,
           "cold_start": true,
           "k": 3.0,
           "input_hashes": {
             "champion": "7a7231e471ab39c9c1016afa159f4b6620d3fbfc507dcab9f02f64555c73d924",
-            "v3_factor": "257faef3aa70b7a5f95f36d8cf224d91caff751689de9338501a48a740e9e8b3",
+            "v3_factor": "44f8adfaecef7a8e79d9e09d9b36a7df0ea37018e3b7be41c11d42e1b398f5a1",
             "cleveland": "05225c33f176638e17014bf96c4c7ae6450ce6db9566143c7105af114811ff4e"
           }
         },
         "n_scored_basis": 0,
-        "inputs_hash": "2d4bab9e60500c168807166c7215353a17d878be722660c7d8a9de634382fbbf",
+        "inputs_hash": "20cf739c44e059c155c96635e4a9446c70fbcc530f0be4074bad5e99b5601014",
         "model_epoch": "combined_v1_legacy_target_v1",
         "target_epoch": "mixed_legacy_cross_vintage_v0",
-        "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+        "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
         "display_only": true,
         "authority": false
       },
@@ -2916,7 +3851,7 @@
       "release_type": "claims",
       "period": "2026-09-17",
       "release_date": "2026-09-17",
-      "days_to": 39,
+      "days_to": 37,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -2949,7 +3884,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -2960,7 +3895,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "official_initial_level_v1",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -2972,7 +3907,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -3017,7 +3952,7 @@
         },
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-09-17_first_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-09-17_first_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -3070,7 +4005,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 3,
+        "gap_bp": 6,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
         "guidance_direction": "on_hold"
@@ -3081,7 +4016,7 @@
       "revision_risk": null,
       "model_epoch": "champion_legacy_target_v1",
       "target_epoch": "legacy_cross_vintage_initial_levels_v0",
-      "code_receipt": "sha256:0feb1bc5bf702c239032c70f1bcc543829c85e04ff8eef5a2f8ba8186e7e0a57",
+      "code_receipt": "sha256:07ac6017e02c447ef613d67b2ed9d84468378a597078d9d2d012f76c0f40986c",
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -3093,7 +4028,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-08-09",
+        "as_of": "2026-08-11",
         "display_only": true,
         "authority": false
       },
@@ -3108,7 +4043,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/retail_sales_2026-08-09_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/retail_sales_2026-08-11_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.0,
         "fresh_proxy_coverage": 0.0,
@@ -3171,13 +4106,13 @@
   ],
   "scoreboard_ref": "data/release_forecast/scoreboard.json",
   "capture_health": {
-    "asof": "2026-08-09",
-    "last_nightly_asof": "2026-08-09",
+    "asof": "2026-08-11",
+    "last_nightly_asof": "2026-08-11",
     "nightly_gap_days": 0,
     "past_due_unscored": [],
     "enricher_staleness": {
-      "kalshi_releases_asof": "2026-08-10",
-      "cleveland_nowcast_asof": "2026-08-07",
+      "kalshi_releases_asof": "2026-08-11",
+      "cleveland_nowcast_asof": "2026-08-11",
       "work_stoppages_asof": "2024-10-01",
       "print_integrity_asof": "2024-01-01"
     },

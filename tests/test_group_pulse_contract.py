@@ -569,3 +569,46 @@ def test_the_ledger_gate_uses_the_shared_house_definition():
     # sentinel is a second definition, and the two drift the day one lane changes.
     assert not re.search(r"os\.environ|os\.getenv|getenv\(", src), \
         "the gate must be read through ledger_lane, not by sniffing the env here"
+
+
+# ---------------------------------------------------------------------------
+# (10) the episode block — an open episode inside its grace window
+# ---------------------------------------------------------------------------
+
+
+def test_an_inactive_session_inside_the_grace_window_keeps_its_start_date():
+    """`active_now: false` carrying a `current_start` is the CONTRACT, not a contradiction.
+
+    EPISODE_MAX_GAP (2) lets an open episode survive a couple of inactive sessions, so
+    "the episode has not closed, but the basket is not participating today" is a real
+    state — and a state with a start date, because the episode it belongs to is still
+    the open one.  The 2026-08-10 competitive audit read the pair as an inconsistency
+    (F-9d) and proposed nulling `current_start` whenever `active_now` is false.  That
+    would delete the only record of WHICH episode is open, and would leave
+    `sessions_active` — read from the very same open row — printing a positive count
+    against no start date: a worse contradiction than the one it set out to remove.
+    Pinned here so the "fix" cannot be applied by a later wave reading that audit.
+    """
+    tk = [f"M{i:02d}" for i in range(8)]
+    panel, _ = _panel(tk, _idx())
+    basket = _basket(tk)
+    as_of = panel["index"].max()
+    frames = GP.basket_frames(basket, panel, as_of)
+    sessions = list(frames["daily"].index)
+    # An OPEN episode whose last ACTIVE session is two before as_of: inside the grace
+    # window, so it has not closed, while today itself reads inactive.
+    start, last_active = sessions[-6], sessions[-3]
+    eps = [{"episode_id": f"grace:{start:%Y-%m-%d}", "closed": False,
+            "start_date": f"{start:%Y-%m-%d}", "end_date": f"{last_active:%Y-%m-%d}",
+            "sessions_active": 4}]
+    obj = GP.basket_pulse("grace", basket, panel, as_of,
+                          GP.member_washouts(panel["closes"]),
+                          {t: 2 for t in panel["closes"].columns},
+                          "2026-06-30T00:00:00+00:00", frames, eps)
+    episode = obj["episode"]
+    assert episode["active_now"] is False, "as_of is not an active session of the episode"
+    assert episode["current_start"] == f"{start:%Y-%m-%d}", \
+        "the open episode lost its start date — see the docstring before 'fixing' this"
+    assert episode["sessions_active"] == 4
+    # and the pair is LEGAL: the contract validator does not treat it as a violation
+    assert GP.validate_pulse(obj) == []

@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Mastermind MomoEdge Observe-Only Companion",
+  "description": "Captures fresh, debranded signal evidence from an already authenticated MomoEdge terminal tab. Observe-only; never supplies cohort coverage.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "102",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxS/Z8rP1Iao66jAQBn4xTEHSxSfqLLvJmLfi1Lkt/uzBosSYj1rf22F1R06Z9nC0pSVl4Q87sdclXMSS5eTh2lDdnkj2Z6BysnXCW+Qq6419+w406p/K4dTTF/bnGGGtuzrTShhBjMJzO1Mq7IgJsJtDtvZ4yhGIFctxHNhPJCBsGZE7sPe1a6fEZ36cFxJhWhUFjQqk97plCOtmKHwki2NKYed9GRrGawX0KdYHS0Kju/AQQepdGFm+bqjfAwIWKC/asLaq1OTkHElUANNK0fp33gFMfvZbW+SQho0boiv9dregcszwrpYv+Esfm2yZotcyilpvQp6sIOl3XhPGlwIDAQAB",
+  "permissions": [
+    "alarms",
+    "nativeMessaging",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://momoedge.ai/*"
+  ],
+  "background": {
+    "service_worker": "service_worker.js"
+  }
+}

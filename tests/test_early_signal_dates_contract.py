@@ -173,18 +173,33 @@ def test_the_committed_manifest_agrees_with_the_producer():
     assert "early_signal_dates" not in entry["schema_fields"]
 
 
-def test_the_live_store_does_not_carry_the_field_yet_so_required_would_be_drift():
+def test_conditional_emission_keeps_the_registration_optional():
     """The counterfactual this registration exists to avoid, measured on the committed
-    store rather than argued: not one published signal file carries the key today, so a
-    REQUIRED registration is `removed` drift on every one of them."""
+    store rather than argued. Originally that measurement was "no file carries the key"
+    (pre-rebuild); the 2026-08-12 01:46Z engine-render rebuilt the store with the merged
+    union-admission producer and 240/241 files now carry it — while SATS, whose right
+    edge is stale, lawfully does NOT: the producer stamps all-or-nothing per name
+    (`stamped = all(...)` in signal_quality.analyze), so any name with an unknowable dot
+    ships without the key. While even one live file can lawfully lack the key, a
+    REQUIRED registration is `removed` drift on that file — optional is the structural
+    home of a conditionally-emitted field, not a convergence state to graduate out of,
+    unless the emission law itself changes."""
     live = sorted(Path("site/signals").glob("*.json"))
     if not live:  # pragma: no cover - the store is committed
         pytest.skip("no committed site/signals sample in this checkout")
-    carriers = sum(1 for p in live[:40]
-                   if "early_signal_dates" in json.loads(p.read_text()))
-    assert carriers == 0, (
-        f"{carriers} sampled live signal files already carry early_signal_dates — the "
-        f"registration can graduate to schema_fields once the store is rebuilt")
+    non_carriers = [p.name for p in live
+                    if "early_signal_dates" not in json.loads(p.read_text())]
+    from scripts.export_signal_contracts import ARTIFACT_MANIFEST
+    entry = _signal_manifest_entry(ARTIFACT_MANIFEST)
+    if non_carriers:
+        assert "early_signal_dates" in entry.get("optional_fields", []), (
+            f"{len(non_carriers)} live signal file(s) lack early_signal_dates "
+            f"(e.g. {non_carriers[:3]}) yet the field is not registered optional — "
+            f"conditional emission makes a REQUIRED registration `removed` drift on "
+            f"each of them")
+        assert "early_signal_dates" not in entry["schema_fields"], (
+            f"early_signal_dates is in schema_fields while {len(non_carriers)} live "
+            f"file(s) lawfully lack it (e.g. {non_carriers[:3]})")
 
 
 # ---- the producer ----------------------------------------------------------
