@@ -238,7 +238,9 @@ unparseable is `null`.
 
 `p0_evidence_manifest.v1 → v2`: `console_errors` entries went from bare strings to
 `{"text", "source_url"}`, and pages gained `failed_responses`. Any reader of a v1
-artifact must be re-pointed rather than fed a v2 one.
+artifact must be re-pointed rather than fed a v2 one. `tool.version` moved `1.0.0
+→ 1.1.0` in the same step: it is stamped into every artifact as provenance, so two
+byte-different manifest shapes must never claim one version.
 
 Runs are deterministic — same registry, same driver, same `--as-of` produces
 byte-identical JSON, so a re-run diffs cleanly.

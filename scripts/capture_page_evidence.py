@@ -79,7 +79,10 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol, Sequence
 
 MODULE_REF = "scripts/capture_page_evidence.py"
-TOOL_VERSION = "1.0.0"
+# 1.1.0: attributed console errors, failed_responses, honest --routes selection.
+# This is stamped into every artifact as provenance, so it moves whenever the
+# emitted shape does — two byte-different manifests must never claim one version.
+TOOL_VERSION = "1.1.0"
 
 # v2: a console error carries the asset it came from, and a page carries the
 # responses that failed. v1 recorded bare error strings, which the census could
