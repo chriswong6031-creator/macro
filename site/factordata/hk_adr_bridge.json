@@ -15,12 +15,12 @@
       "lag_days": 2,
       "state": "fresh"
     },
-    "TCOM": {
+    "BIDU": {
       "asof": "2026-08-10",
       "lag_days": 2,
       "state": "fresh"
     },
-    "BABA": {
+    "KWEB": {
       "asof": "2026-08-10",
       "lag_days": 2,
       "state": "fresh"
@@ -35,12 +35,12 @@
       "lag_days": 2,
       "state": "fresh"
     },
-    "BIDU": {
+    "FXI": {
       "asof": "2026-08-10",
       "lag_days": 2,
       "state": "fresh"
     },
-    "FXI": {
+    "BABA": {
       "asof": "2026-08-10",
       "lag_days": 2,
       "state": "fresh"
