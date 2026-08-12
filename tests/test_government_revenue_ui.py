@@ -42,6 +42,8 @@ def _run_runtime(
     mapping_backlog_tickers: list[str] | None = None,
     mapping_backlog_states: dict[str, str] | None = None,
     exact_candidate_availability: str = "available",
+    candidate_status: str = "ok",
+    fetch_status: int = 200,
     ticker_routes: list[str] | None = None,
     location_search: str = "",
 ) -> dict:
@@ -57,6 +59,8 @@ def _run_runtime(
         var CANDIDATE_BACKLOG_TICKERS = %(candidate_backlog_tickers)s;
         var CANDIDATE_BACKLOG_STATES = %(candidate_backlog_states)s;
         var EXACT_CANDIDATE_AVAILABILITY = %(exact_candidate_availability)s;
+        var CANDIDATE_STATUS = %(candidate_status)s;
+        var FETCH_STATUS = %(fetch_status)s;
         var TICKER_ROUTES = %(ticker_routes)s;
         var LOCATION_SEARCH = %(location_search)s;
         var fetchCalls = 0;
@@ -80,38 +84,57 @@ def _run_runtime(
         node('gov-data').textContent = JSON.stringify(PAYLOAD);
         node('workspaceDegraded').hidden = true;
         node('workspaceRetry').hidden = true;
+        node('workspaceUnlock').hidden = true;
+        var LANG = 'en';
+        var docListeners = {};
         var document = {
-          documentElement:{getAttribute:function(){return'en'}}, activeElement:null,
+          documentElement:{getAttribute:function(){return LANG}}, activeElement:null,
           getElementById:node, querySelectorAll:function(){return[]},
-          addEventListener:function(){}, dispatchEvent:function(){return true}
+          addEventListener:function(name, fn){(docListeners[name]=docListeners[name]||[]).push(fn)},
+          dispatchEvent:function(){return true}
         };
         var location = {href:'https://example.test/government_revenue.html'+LOCATION_SEARCH, pathname:'/government_revenue.html', search:LOCATION_SEARCH, hash:''};
         var history = {replaceState:function(){}};
         var navigator = {clipboard:null};
         var window = {location:location, history:history, navigator:navigator, innerWidth:1440};
         if(CANDIDATE_ROWS!==null)window.createGovernmentRevenueCandidateRadar=function(api){return {
-          load:function(){api.onRows(CANDIDATE_ROWS,{status:'ok',total:CANDIDATE_ROWS.length,mapping_backlog_total:CANDIDATE_BACKLOG,mapping_backlog_tickers:CANDIDATE_BACKLOG_TICKERS,mapping_backlog_states:CANDIDATE_BACKLOG_STATES,freshness:{exact_candidate_availability:EXACT_CANDIDATE_AVAILABILITY}});return Promise.resolve(CANDIDATE_ROWS)},
+          load:function(){api.onRows(CANDIDATE_ROWS,{status:CANDIDATE_STATUS,total:CANDIDATE_ROWS.length,mapping_backlog_total:CANDIDATE_BACKLOG,mapping_backlog_tickers:CANDIDATE_BACKLOG_TICKERS,mapping_backlog_states:CANDIDATE_BACKLOG_STATES,freshness:{exact_candidate_availability:EXACT_CANDIDATE_AVAILABILITY}});return Promise.resolve(CANDIDATE_ROWS)},
           refresh:function(){return this.load()}, render:function(){}, invalidate:function(){}, state:function(){return 'ok'}, crosschecks:function(){return ''}
         }};
-        var fetch = function(){fetchCalls += 1; return Promise.resolve({ok:true,json:function(){return Promise.resolve(FULL_WORKSPACE)}})};
+        var fetch = function(){fetchCalls += 1; return Promise.resolve({ok:FETCH_STATUS >= 200 && FETCH_STATUS < 300,status:FETCH_STATUS,json:function(){return Promise.resolve(FULL_WORKSPACE)}})};
         function CustomEvent(name, init){this.type=name;this.detail=init&&init.detail}
         %(page_runtime)s
+        function bannerSnapshot(){
+          return {hidden:node('workspaceDegraded').hidden, copy:node('workspaceDegradedCopy').textContent,
+                  retryHidden:node('workspaceRetry').hidden, unlockHidden:node('workspaceUnlock').hidden,
+                  state:node('workspaceDegraded').dataset.state || null};
+        }
         setTimeout(function(){
-          var initial = {hidden:node('workspaceDegraded').hidden, copy:node('workspaceDegradedCopy').textContent,
-                         retryHidden:node('workspaceRetry').hidden};
+          var initial = bannerSnapshot();
           node('workspaceRetry').fire('click');
           setTimeout(function(){
             var runtime = window.__governmentRevenueRuntime;
             var freshness = runtime.effectiveFreshnessState(PAYLOAD, PAYLOAD.procurement_workspace, NOW_MS);
             var tickerStates=TICKER_ROUTES===null?null:TICKER_ROUTES.map(function(ticker){return runtime.tickerRailState(ticker)});
             var tickerRoutes=TICKER_ROUTES===null?null:TICKER_ROUTES.map(function(ticker){return runtime.openTickerFilmstrip(ticker)});
-            process.stdout.write(JSON.stringify({initial:initial, afterRetry:{hidden:node('workspaceDegraded').hidden,
-              copy:node('workspaceDegradedCopy').textContent, retryHidden:node('workspaceRetry').hidden},
+            var afterRetry = bannerSnapshot();
+            // Everything below is language-sensitive, so snapshot it BEFORE the
+            // langchange re-render swaps the whole desk into Chinese.
+            var result = {initial:initial, afterRetry:afterRetry,
               fetchCalls:fetchCalls, freshness:freshness,
               bundlesMatch:runtime.workspaceBundleMatches(PAYLOAD.procurement_workspace, FULL_WORKSPACE),
               rows:runtime.workspaceRows(), tickerStates:tickerStates, tickerRoutes:tickerRoutes,
               selection:runtime.currentSelection(), inspectorHtml:node('inspector').innerHTML,
-              queueHtml:node('queueList').innerHTML}));
+              queueHtml:node('queueList').innerHTML, queueSummary:node('queueSummary').textContent,
+              filmstripHtml:node('companyFilmstrip').innerHTML};
+            LANG = 'zh';
+            var langError = null;
+            try { (docListeners['langchange']||[]).forEach(function(fn){fn({type:'langchange'})}); }
+            catch (e) { langError = String(e && e.message || e); }
+            result.afterLangChange = bannerSnapshot();
+            result.afterLangChange.error = langError;
+            result.zhFilmstripHtml = node('companyFilmstrip').innerHTML;
+            process.stdout.write(JSON.stringify(result));
           }, 8);
         }, 8);
         """
@@ -124,6 +147,8 @@ def _run_runtime(
         "candidate_backlog_tickers": json.dumps(mapping_backlog_tickers or []),
         "candidate_backlog_states": json.dumps(mapping_backlog_states or {}),
         "exact_candidate_availability": json.dumps(exact_candidate_availability),
+        "candidate_status": json.dumps(candidate_status),
+        "fetch_status": json.dumps(fetch_status),
         "ticker_routes": json.dumps(ticker_routes) if ticker_routes is not None else "null",
         "location_search": json.dumps(location_search),
         "page_runtime": page_runtime,
@@ -235,6 +260,46 @@ def test_candidate_radar_loads_every_candidate_and_mapping_page(tmp_path: Path) 
         "LMT": "mapping_needed",
         "RTX": "partial_identifier_coverage",
     }
+
+
+@needs_node
+def test_candidate_radar_reports_an_unentitled_lane_as_locked(tmp_path: Path) -> None:
+    """PR #5432 made /api/government-revenue/* a paid surface router-wide.
+
+    The desk branches its copy on this status, so collapsing a 401 into
+    `unavailable` is what made an unentitled visitor read "the candidate ledger
+    could not be verified" — a verification failure that never happened.
+    """
+
+    def run(status: int) -> dict:
+        script = textwrap.dedent(
+            """
+            var window={};
+            window.fetch=function(){return Promise.resolve({ok:false,status:%(status)s,
+              json:function(){return Promise.resolve({})}})};
+            %(candidate_source)s
+            var published=null;
+            var radar=window.createGovernmentRevenueCandidateRadar({obj:function(x){return !!x&&typeof x==='object'&&!Array.isArray(x)},arr:function(x){return Array.isArray(x)?x:[]},esc:String,text:function(x,f){return x==null?f:String(x)},n:function(x){var v=Number(x);return Number.isFinite(v)?v:null},money:String,date:String,tr:function(en){return en},safeUrl:function(){return''},host:function(){return null},onRows:function(rows,meta){published={rows:rows.length,meta:meta}}});
+            radar.load().then(function(){process.stdout.write(JSON.stringify({published:published,state:radar.state()}))});
+            """
+        ) % {"candidate_source": CANDIDATE_RADAR, "status": status}
+        path = tmp_path / f"candidate_locked_{status}.js"
+        path.write_text(script, encoding="utf-8")
+        result = subprocess.run(["node", str(path)], capture_output=True, text=True, timeout=30)
+        assert result.returncode == 0, result.stderr
+        return json.loads(result.stdout)
+
+    for status in (401, 403):
+        out = run(status)
+        assert out["state"] == "locked", status
+        assert out["published"]["meta"]["status"] == "locked", status
+        assert out["published"]["rows"] == 0, status
+
+    # Everything else is still an honest outage, not a sales opportunity.
+    for status in (404, 500, 503):
+        out = run(status)
+        assert out["state"] == "unavailable", status
+        assert out["published"]["meta"]["status"] == "unavailable", status
 
 
 def test_company_ticker_filmstrip_stays_honest_and_routes_to_the_right_dossier() -> None:
@@ -711,6 +776,199 @@ def test_runtime_ages_quiet_sources_and_exposes_retry_on_bundle_mismatch(tmp_pat
     assert out["fetchCalls"] == 2
     assert out["freshness"]["status"] == "stale"
     assert out["freshness"]["aged"] is True
+
+
+def _locked_shell() -> tuple[dict, dict]:
+    """A shell that still needs hydration, plus the full cut it will ask for."""
+    shell_workspace = {
+        "schema_version": "government_procurement_workspace.v1",
+        "bundle_id": "grw1-" + "a" * 24,
+        "total": 9,
+        "next_cursor": "0",
+        "events": [],
+        "freshness": {"status": "ok"},
+        "coverage": {},
+        "limitations": [],
+    }
+    payload = {
+        "companies": [{"ticker": "ACME", "name": "Acme Defense Systems"}],
+        "market": {},
+        "freshness": {"status": "ok"},
+        "opportunity_intelligence": {"market": {}},
+        "procurement_workspace": shell_workspace,
+    }
+    return payload, {**shell_workspace, "next_cursor": None, "events": [{}]}
+
+
+@needs_node
+def test_runtime_reads_an_unentitled_workspace_as_locked_not_as_missing_data(tmp_path: Path) -> None:
+    """A 401/403 on the governed payload is an authorization fact, never a data fact.
+
+    site/government-revenue-data/ is default-deny in config/site_access.yml, so the
+    ordinary reason a visitor never receives the full workspace is that they are not
+    entitled to it — not that the desk failed to build one. The pre-existing default
+    arm ("the complete workspace is unavailable") asserted the build fact, and an
+    unentitled visitor read it as "there is nothing here" instead of "you cannot see
+    this". Pin the distinction at the only place that can make it: the status code.
+    """
+    payload, full_workspace = _locked_shell()
+
+    for status in (401, 403):
+        out = _run_runtime(
+            tmp_path, payload, full_workspace, 1_785_548_460_000, fetch_status=status
+        )
+        banner = out["initial"]
+        assert banner["hidden"] is False, status
+        assert banner["state"] == "locked", status
+        # Reads as locked, and offers the upgrade path...
+        assert "part of a membership" in banner["copy"], status
+        assert banner["unlockHidden"] is False, status
+        # ...rather than a data/build claim the page is in no position to make.
+        assert "unavailable" not in banner["copy"], status
+        assert "integrity checks" not in banner["copy"], status
+        assert "different evidence cut" not in banner["copy"], status
+        # Retrying an authorization failure is not the action on offer.
+        assert banner["retryHidden"] is True, status
+
+        # The banner is painted with textContent, so — unlike the l-en/l-zh spans
+        # around it — it does not follow a language switch by itself. Before the
+        # repaint it stayed English for a zh reader through every arm, locked
+        # included (caught in a browser, not by this harness).
+        zh = out["afterLangChange"]
+        assert zh["error"] is None, zh["error"]
+        assert zh["state"] == "locked", status
+        assert "完整工作区包含在会员权益中。" in zh["copy"], status
+        assert "part of a membership" not in zh["copy"], status
+
+    # A genuine transport/server failure keeps the honest degraded wording, keeps
+    # Retry, and offers no upgrade — otherwise the new arm would just swallow the
+    # old one and every outage would read as a sales pitch.
+    degraded = _run_runtime(
+        tmp_path, payload, full_workspace, 1_785_548_460_000, fetch_status=503
+    )["initial"]
+    assert degraded["state"] == "degraded"
+    assert "unavailable" in degraded["copy"]
+    assert "membership" not in degraded["copy"]
+    assert degraded["unlockHidden"] is True
+    assert degraded["retryHidden"] is False
+
+
+@needs_node
+def test_runtime_reads_a_locked_candidate_ledger_as_members_only(tmp_path: Path) -> None:
+    """/api/government-revenue/* is a paid surface router-wide (PR #5432).
+
+    So the candidate lane's own 401/403 lands in the same trap: "Link status
+    unavailable" and "The candidate ledger could not be verified" both assert a
+    verification failure where the real cause is entitlement.
+    """
+    payload, full_workspace = _locked_shell()
+    now = 1_785_548_460_000
+
+    rail = _run_runtime(
+        tmp_path, payload, full_workspace, now,
+        candidate_rows=[], candidate_status="locked", ticker_routes=["ACME"],
+    )
+    assert rail["tickerStates"] == ["locked"]
+    assert "Members only" in rail["filmstripHtml"]
+    assert "state-locked" in rail["filmstripHtml"]
+    assert "Link status unavailable" not in rail["filmstripHtml"]
+    # The rail re-renders on a language switch, so it must carry its zh pair too.
+    assert "会员可见" in rail["zhFilmstripHtml"]
+    assert "Members only" not in rail["zhFilmstripHtml"]
+
+    desk = _run_runtime(
+        tmp_path, payload, full_workspace, now,
+        candidate_rows=[], candidate_status="locked", location_search="?mode=candidates",
+    )
+    assert "Candidate Radar is locked" in desk["queueHtml"]
+    assert "part of a membership" in desk["queueHtml"]
+    assert "could not be verified" not in desk["queueHtml"]
+    assert desk["queueSummary"] == "Candidate ledger locked"
+    # The upgrade path, in place of counts that are only zero because we cannot
+    # read them — "0 exact candidates" under a lock is a number, not a fact.
+    assert 'href="plans.html"' in desk["queueHtml"]
+    assert "View membership plans" in desk["queueHtml"]
+    assert "exact candidates" not in desk["queueHtml"]
+
+    # The genuine unavailable path is untouched: same shape, different cause.
+    # (Kept in two runs because openTickerFilmstrip routes the desk to `companies`,
+    # which would replace the candidates empty state before queueHtml is read.)
+    down_rail = _run_runtime(
+        tmp_path, payload, full_workspace, now,
+        candidate_rows=[], candidate_status="unavailable", ticker_routes=["ACME"],
+    )
+    assert down_rail["tickerStates"] == ["unavailable"]
+    assert "Link status unavailable" in down_rail["filmstripHtml"]
+    assert "Members only" not in down_rail["filmstripHtml"]
+
+    down_desk = _run_runtime(
+        tmp_path, payload, full_workspace, now,
+        candidate_rows=[], candidate_status="unavailable", location_search="?mode=candidates",
+    )
+    assert "could not be verified" in down_desk["queueHtml"]
+    assert down_desk["queueSummary"] == "Candidate ledger unavailable"
+    assert "plans.html" not in down_desk["queueHtml"]
+
+
+def test_locked_arms_are_bilingual_and_keep_translations_out_of_title_attributes() -> None:
+    """Every string the locked arms add ships with its zh pair (house law)."""
+    implementation = TEMPLATE + CANDIDATE_RADAR
+    for english, chinese in (
+        ("View membership plans", "查看会员方案"),
+        ("Members only", "会员可见"),
+        ("Candidate Radar is locked", "候选雷达已锁定"),
+        ("Candidate ledger locked", "候选账本已锁定"),
+        (
+            " governed records. The complete workspace is part of a membership.",
+            " 条受治理记录。完整工作区包含在会员权益中。",
+        ),
+        (
+            "The exact-linked candidate ledger is part of a membership.",
+            "精确关联候选账本包含在会员权益中。",
+        ),
+    ):
+        assert english in implementation, english
+        assert chinese in implementation, chinese
+
+    # Neither locked CTA may smuggle copy into a title= attribute (CI-guarded law).
+    for chunk in re.findall(r'title="[^"]*"', implementation):
+        assert not re.search(r"[一-鿿]", chunk), chunk
+
+    # The upgrade path is an element, not a string: `workspaceBanner` writes its
+    # copy with textContent and so can never carry a link, and the runtime harness
+    # auto-creates any id it is asked for — so only the source can prove the anchor
+    # ships. (A bare "View membership plans" substring is satisfied by the queue
+    # empty state's own link and pins nothing here.)
+    assert (
+        '<a class="tool-btn" id="workspaceUnlock" href="plans.html" hidden>'
+        "{{ t('View membership plans','查看会员方案') }}</a>"
+    ) in TEMPLATE
+
+    # The locked arm is a product statement, not an alarm: it must not borrow the
+    # warn rung the degraded arm owns. Pin whole declarations — the bare selector
+    # `[data-state="locked"]` also matches the dot rule two lines down, so a
+    # substring check here goes vacuous the moment either rule exists alone.
+    assert (
+        '.workspace-degraded[data-state="locked"]{border-bottom-color:'
+        "color-mix(in srgb,var(--gr-accent) 38%,var(--gr-line));"
+    ) in TEMPLATE
+    assert (
+        '.workspace-degraded[data-state="locked"] .workspace-degraded-copy '
+        "i{background:var(--gr-accent)}"
+    ) in TEMPLATE
+    assert ".company-ticker.state-locked .company-ticker-state{color:var(--gr-accent)}" in TEMPLATE
+
+    # `hidden` is inert on these buttons without this rule: `.tool-btn` sets an
+    # author `display:inline-flex`, which outranks the UA sheet's `[hidden]
+    # {display:none}` — the same trap `.workspace-degraded[hidden]` already
+    # exists to patch one level up. Verified in a browser: without it the upgrade
+    # link stays on screen through every degraded/invalid/bundle-mismatch state,
+    # so an outage renders as a sales pitch. No DOM-stub test can see this.
+    assert ".workspace-degraded .tool-btn[hidden]{display:none}" in TEMPLATE
+
+    # Falsifier/refutation vocabulary is never front-facing (operator 2026-07-27).
+    for banned in ("falsifier", "refuted", "证伪", "Refutation"):
+        assert banned not in implementation, banned
 
 
 @needs_node

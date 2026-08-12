@@ -59,7 +59,8 @@
       if(typeof api.onRows==='function')api.onRows(value.rows,{status:loadState,total:value.total,mapping_backlog_total:value.mappingBacklog,mapping_backlog_tickers:value.mappingBacklogTickers,mapping_backlog_states:value.mappingBacklogStates,content_id:value.contentId,known_at:value.knownAt,as_of:value.asOf,freshness:value.freshness,limitations:value.limitations});
       return value.rows;
     }
-    function unavailable(){listing=null;loadState='unavailable';if(typeof api.onRows==='function')api.onRows([],{status:'unavailable',total:0,mapping_backlog_total:0,mapping_backlog_tickers:null,mapping_backlog_states:null,content_id:null,freshness:{exact_candidate_availability:'unavailable'}});return[]}
+    function unavailable(reason){listing=null;loadState=reason==='locked'?'locked':'unavailable';if(typeof api.onRows==='function')api.onRows([],{status:loadState,total:0,mapping_backlog_total:0,mapping_backlog_tickers:null,mapping_backlog_states:null,content_id:null,freshness:{exact_candidate_availability:'unavailable'}});return[]}
+    function lockedFailure(error){var message=error&&error.message||'';return message==='http_401'||message==='http_403'}
     function pageEnvelope(value,kind){
       if(!obj(value)||value.contract!=='government_revenue_candidate_queue.v1'||value.schema_version!=='1.0.0'||!/^grcq1-[a-f0-9]{24}$/.test(requiredText(value.content_id))||!validAuthority(value.authority))throw new Error(kind+'_contract');
       var items=Array.isArray(value.items)?value.items:null,total=n(value.total),cursor=value.next_cursor;
@@ -97,7 +98,7 @@
         if(candidatePages.contentId!==mappingPages.contentId||expectedBacklog==null||expectedBacklog!==mappingPages.total)throw new Error('candidate_mapping_generation_drift');
         value.items=candidatePages.items;value.total=candidatePages.total;value.next_cursor=null;value.mapping_backlog_total=mappingPages.total;value.mapping_backlog_tickers=Array.from(new Set(mappingPages.items.map(function(row){return row.ticker}))).sort();value.mapping_backlog_states=mappingPages.items.reduce(function(states,row){states[row.ticker]=row.mapping_state;return states},{});
         return publish(queueRows(value));
-      }).catch(function(){if(ticket!==epoch)return[];return unavailable()});
+      }).catch(function(error){if(ticket!==epoch)return[];return unavailable(lockedFailure(error)?'locked':'')});
     }
     function crosscheckEntry(value){
       var state=typeof value==='string'?value:obj(value)?scalar(value.state||value.status||value.label,''):'';
