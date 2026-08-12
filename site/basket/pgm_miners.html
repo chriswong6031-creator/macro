@@ -334,7 +334,7 @@ fetch('../policy_lever.json',{cache:'no-cache'})
 
 <footer>
   <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-08-12 05:44 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-08-12 06:00 UTC</span>.
 </footer>
 
 <script>
@@ -739,9 +739,13 @@ function grArcRail(p){
     var lab=grArcWords(k)[2];
     return `<div class="gpr-stop${i===lit?' on':''}"><div class="gpr-dot"></div><span class="lbl">${L(esc(lab),esc(GR_ARC_ZH[lab]||lab))}</span></div>`;
   }).join('');
+  // The contract counts TRADING SESSIONS, not calendar days (engine/group_pulse.py: "the
+  // unit is sessions, not calendar days"). 90 sessions is ~126 calendar days, so printing
+  // "days" understated every page by ~40%. The unit word is pinned by
+  // tests/test_group_read_surface.py::test_the_capitulation_age_prints_sessions_not_days.
   var age=arc.capitulation_median_age_d;
   var note=age!=null
-    ? L(`The typical member's low was about <b>${age}</b> days ago. Context, not a signal.`,`成分股的低点中位数约在 <b>${age}</b> 天前。仅为背景，不是信号。`)
+    ? L(`The typical member's low was about <b>${age}</b> trading session${age===1?'':'s'} ago. Context, not a signal.`,`成分股的低点中位数约在 <b>${age}</b> 个交易日前。仅为背景，不是信号。`)
     : L('Context, not a signal.','仅为背景，不是信号。');
   var off=(lit<0)?` <span class="muted">${L('— this group is not on the arc right now.','— 这组目前不处于上述任何一段。')}</span>`:'';
   return `<div class="gpr-arc">

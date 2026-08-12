@@ -739,9 +739,13 @@ function grArcRail(p){
     var lab=grArcWords(k)[2];
     return `<div class="gpr-stop${i===lit?' on':''}"><div class="gpr-dot"></div><span class="lbl">${L(esc(lab),esc(GR_ARC_ZH[lab]||lab))}</span></div>`;
   }).join('');
+  // The contract counts TRADING SESSIONS, not calendar days (engine/group_pulse.py: "the
+  // unit is sessions, not calendar days"). 90 sessions is ~126 calendar days, so printing
+  // "days" understated every page by ~40%. The unit word is pinned by
+  // tests/test_group_read_surface.py::test_the_capitulation_age_prints_sessions_not_days.
   var age=arc.capitulation_median_age_d;
   var note=age!=null
-    ? L(`The typical member's low was about <b>${age}</b> days ago. Context, not a signal.`,`成分股的低点中位数约在 <b>${age}</b> 天前。仅为背景，不是信号。`)
+    ? L(`The typical member's low was about <b>${age}</b> trading session${age===1?'':'s'} ago. Context, not a signal.`,`成分股的低点中位数约在 <b>${age}</b> 个交易日前。仅为背景，不是信号。`)
     : L('Context, not a signal.','仅为背景，不是信号。');
   var off=(lit<0)?` <span class="muted">${L('— this group is not on the arc right now.','— 这组目前不处于上述任何一段。')}</span>`:'';
   return `<div class="gpr-arc">
