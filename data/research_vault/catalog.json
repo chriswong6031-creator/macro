@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T22:09:24.997929+00:00",
-  "count": 1018,
+  "generated_at": "2026-08-12T22:28:45.703270+00:00",
+  "count": 1019,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -938,6 +938,27 @@
         "**US Growth ETFs Rally on AI Earnings & Fed Easing**: Palantir +29% (93% YoY revenue) and lower rate expectations (10-yr yield drop) fueled US Growth ETFs, as lower discount rates increase present value of future earnings for long-duration assets.",
         "**Risk-on Rebound Led by Gold, US Growth & Japan**: Gold (+7.2%), US Growth (+3.2%), and Japan Equities (+4.9%) showed strongest weekly returns, directly tied to softer US jobs data and policy easing, positioning them in the Aggressive camp (high return, low volatility).",
         "**Gold Miners & Private Credit Dominate Returns vs Oil Vulnerability**: Gold Miners ETFs surged +25.4% (e.g., Sprott Junior Gold Miners), while Crude Oil ETFs fell -4.9%, highlighting sector-specific resilience from geopolitical easing (Strait of Hormuz) and policy shifts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-guw58p6nteu-040887",
+      "title": "ETF Positioning Value and Financials Gain Favour as AI Flows Moderate in July",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T00:10:39Z",
+      "summary_points": [
+        "**Value Rotation Shift**: July saw significant ETF inflows into Russell 1000 Value, MSCI World Financials, and S&P Global 1200 Energy, while AI-heavy and quality/ESG strategies (e.g., S&P 500 Quality FCF Aristocrats) faced redemptions (-84.1% monthly flow ratio), signaling tactical rebalancing away from AI.",
+        "**Quality vs.",
+        "ESG Divergence**: Extreme outflows from S&P 500 Quality CFC Aristocrats (-$835M, -84.1%) contrasted sharply with strong inflows into ESG-themed ETFs (e.g., MSCI ACWI IMI Semi & Semi Eq ESG Scr Cap, 164.9% YTD ratio), highlighting shifting investor sentiment on quality versus ESG themes.",
+        "**S&P 500 Dominance & Bond Dynamics**: S&P 500 ETFs drove record July inflows ($24.7B monthly, $195B YTD), while government bonds gained amid rate uncertainty (sovereign duration preference), and investment grade bonds lagged, indicating reduced credit risk appetite.",
+        "**Record Flow Momentum**: July recorded 2024’s highest ETF inflows (passive and active strategies), with equity allocations (US/EM) exceeding historical averages, reflecting constructive equity exposure balanced by selective government bond positioning."
       ],
       "tags": [],
       "tickers": [],
