@@ -548,6 +548,55 @@ def test_R1_branch3_zero_list_account_creates_watchlist_and_binds_it():
 
 
 @needs_node
+def test_R1_branch2_end_to_end_never_deletes_the_bound_lists_existing_rows():
+    """The whole W1a machine on the branch-2 cohort, driven by the REAL watchlist.js
+    rather than a merge stub — bind, merge, fold, then the ongoing push.
+
+    This is the integration the unit tests cannot see. `pull()` unions the bound list's
+    cloud rows into the local blob BEFORE any push can diff against it; without that
+    ordering the full-membership diff sees `Default`'s existing `SPY` as "absent
+    locally" and DELETES it. (Observed directly while writing this: stub out
+    `WL.merge` and `SPY` is gone, one delete issued.) So the ordering is load-bearing,
+    and this pins it end to end: zero deletes, `SPY` survives, local notes survive."""
+    out = _run(
+        """
+        require(%s);
+        var WS = require(%s);
+        // the visitor's local book (init() cannot run under the shim — seed via the seam)
+        window.WL.replace({v: 1, updated: '2026-08-01T00:00:00.000Z',
+          items: [{t: 'AAPL', added: '2026-07-01T00:00:00.000Z', note: 'my note'}],
+          order: ['AAPL'], settings: {}});
+        var db = makeDb({watchlists: [{id: 'L-DEF', user_id: 'u1', name: 'Default', position: 0}],
+                         watchlist_symbols: [
+                           {id: 'd1', watchlist_id: 'L-DEF', symbol: 'SPY', position: 0}]});
+        WS._setTestSession(USER, db.client);
+        WS.pull().then(function () {
+          window.WLCloud.push(window.WL.getBlob());   // the push any later edit triggers
+          return wait(1000).then(function () {
+            var w = db.tables.watchlists.filter(function (l) { return l.name === 'Watchlist'; })[0];
+            OUT({bound: WS._testState().activeId,
+                 local: window.WL.getBlob().items.map(function (i) { return i.t; }).sort(),
+                 note: (window.WL.getBlob().items.filter(function (i) {
+                   return i.t === 'AAPL'; })[0] || {}).note,
+                 Default: symbolsOf(db, 'L-DEF'),
+                 Watchlist: w ? symbolsOf(db, w.id) : null,
+                 deletes: db.ops.filter(function (o) { return o.kind === 'delete'; }).length});
+          });
+        });
+        """ % (json.dumps(str(WATCHLIST)), json.dumps(str(WATCHSTORE))),
+        {"USER": USER},
+    )
+    assert out["deletes"] == 0                        # nothing is ever deleted here
+    assert out["Default"] == ["AAPL", "SPY"]          # the pre-existing row SURVIVES
+    assert out["bound"] == "L-DEF"                    # ruling R1 branch 2
+    assert out["local"] == ["AAPL", "SPY"]            # pull unioned cloud into local
+    assert out["note"] == "my note"                   # local-only notes are not erased
+    # Both lists converge on the union — additive, non-destructive, and honestly
+    # surfaced once W2 ships the switcher.
+    assert out["Watchlist"] == ["AAPL", "SPY"]
+
+
+@needs_node
 def test_R1_binding_never_creates_a_list_for_an_account_with_nothing_to_fold():
     """The property the ruling is really buying, stated directly: signing in repeatedly
     on a device with an empty local book must never grow the account's list count."""
