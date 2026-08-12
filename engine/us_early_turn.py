@@ -56,6 +56,7 @@ from engine.confluence_tiers import (
     _to_daily,
     _xup,
 )
+from engine.session_anchor import session_positions   # absolute session-calendar anchor
 
 log = logging.getLogger(__name__)
 
@@ -612,6 +613,463 @@ def reset_band(price_history: Any, asof: str | None = None,
 
 
 # ---------------------------------------------------------------------------
+# UNION ADMISSION — the measured recall spine (bake-off §A2)
+# ---------------------------------------------------------------------------
+#: Era stamp for the admission CLASS this leg mints (#4942 era-stamp law).  A row that
+#: admitted under a different construction must never be compared with one that admitted
+#: under this one without the stamp being visible on both.
+UNION_ADMISSION_ERA = "union-admission-v1-2026-08-11"
+
+#: Both 3D StochRSI lines strictly under this AT THE CROSS BAR.  This is the operator's
+#: "the crossover must be done under the 20 line", measured in the bake-off as C1.
+UNION_OS_BAND: float = 20.0
+#: The 1D MACD-RSI confirm may already be IN FORCE at the 3D knowability date, provided
+#: its last cross-up printed within this many sessions.
+UNION_1D_RECENT_SESSIONS: int = 5
+#: Otherwise the confirm may still ARRIVE: the first fresh 1D cross-up within this many
+#: sessions after knowability fires the admission at THAT session.
+UNION_1D_WAIT_SESSIONS: int = 10
+#: Context badge only (§A2 "proximity, not durability"): the deepest 3D %K print in the
+#: buckets before the cross, and the threshold that reads as a zero-bound tag.
+UNION_ZERO_BOUND: float = 2.0
+UNION_ZERO_LOOKBACK_BARS: int = 10
+#: Context badges: the decline the fire sits in, and the relative-strength window.
+UNION_DECLINE_WINDOW: int = 126
+UNION_RS_WINDOW: int = 63
+UNION_MA_LEN: int = 200
+
+#: The two legs of the measured union.  ``relaxed_cross`` is the recall spine; ``early_dot``
+#: is the anticipation chip the store already publishes.  Named, never numbered.
+UNION_LEG_CROSS = "relaxed_cross"
+UNION_LEG_DOT = "early_dot"
+UNION_LEGS: tuple[str, ...] = (UNION_LEG_CROSS, UNION_LEG_DOT)
+
+
+def _evaluation_date(close: "pd.Series", asof: Any = None) -> "pd.Timestamp":
+    """The date the read is being made ON.  ``asof`` when the caller named one (knowability
+    is a property of the MARKET calendar, not of whether this name happened to trade), else
+    the last bar of the already-PIT-truncated series."""
+    if asof is not None:
+        try:
+            stamp = pd.Timestamp(asof).normalize()
+            if not pd.isna(stamp):
+                return stamp
+        except Exception:  # noqa: BLE001 — an unparseable asof falls back to the tape
+            pass
+    return pd.Timestamp(close.index[-1]).normalize()
+
+
+def _completed_bucket_mask(tf_index: Any, timeframe: int,
+                           asof: "pd.Timestamp") -> "np.ndarray":
+    """Which rows of a :func:`_tf_bars` grid are COMPLETE — hence FINAL — at ``asof``.
+
+    ``_tf_bars`` groups by ABSOLUTE bucket id and takes ``.last()``, so its TRAILING row is
+    the still-OPEN bucket whenever ``asof`` is not that bucket's final session slot: its
+    close, and therefore its %K/%D, keeps moving until the bucket completes.  A fire read
+    off that row is NOT knowable — it appears one night and is gone the next, re-dated to
+    the bucket's real last session (measured on this module's own committed fixtures: STLD's
+    2026-07-10 fire re-dates to 2026-07-14; NEM printed five such ghosts over 150 walk-
+    forward sessions).  G0.4 is a claim about COMPLETED buckets ONLY, and this is what
+    keeps that claim true.
+
+    A row whose bucket id is ``B`` is admissible at ``asof`` iff
+
+      * ``B < bucket(asof)`` — every earlier bucket has closed; or
+      * ``B == bucket(asof)`` AND ``position(asof) % timeframe == timeframe - 1`` AND the
+        row's own date IS ``asof`` — the trailing bucket, but only on its deterministic
+        final session slot, at whose close the value is final and knowable.
+
+    Both halves are functions of ``(reference calendar, date)`` alone, so this inherits the
+    session-anchor start-invariance: a date is admissible or not no matter how much leading
+    history the caller passed.
+    """
+    di = pd.DatetimeIndex(pd.to_datetime(tf_index)).normalize()
+    if len(di) == 0:
+        return np.zeros(0, dtype=bool)
+    asof_ts = pd.Timestamp(asof).normalize()
+    pos_asof = int(session_positions(pd.DatetimeIndex([asof_ts]), "US")[0])
+    bucket_asof = pos_asof // timeframe
+    buckets = session_positions(di, "US") // timeframe
+    final_slot = (pos_asof % timeframe) == (timeframe - 1)
+    return np.asarray(
+        (buckets < bucket_asof)
+        | ((buckets == bucket_asof) & final_slot & np.asarray(di == asof_ts)))
+
+
+def _union_relaxed_cross_fires(close: "pd.Series",
+                               asof: Any = None) -> "list[tuple[int, int, dict]]":
+    """Fire positions for the RELAXED washout-cross leg, on the daily index.
+
+    Returns ``[(fire_pos, cross_bar_row, badge_inputs)]``.  The 3D grid comes from
+    :func:`engine.confluence_tiers._tf_bars`, whose index IS each bucket's last session —
+    so a COMPLETED 3D bucket's event is stamped at the close on which it became knowable
+    (G0.4) with no open-label round trip.
+
+    The grid's trailing row is the still-OPEN bucket, whose %K/%D recompute on every new
+    session, so it is EXCLUDED until its final session slot closes
+    (:func:`_completed_bucket_mask`).  The measured object this leg reproduces is a ledger
+    of completed-bucket fires; an open-bucket fire is unmeasured and, worse, transient.
+    """
+    tf_close, _known = _tf_bars(close, TF_3D, "US")
+    if tf_close is None or len(tf_close) < 40:
+        return []
+    k, d = _stoch_rsi_kd(tf_close)
+    deep = (k < UNION_OS_BAND) & (d < UNION_OS_BAND)
+    sel = (_xup(k, d) & deep).fillna(False).to_numpy()
+    # Every rolling/EWM input above is causal, so masking AFTER the computation is exactly
+    # equivalent to truncating the grid first — and it keeps one code path for both.
+    sel = sel & _completed_bucket_mask(tf_close.index, TF_3D,
+                                       _evaluation_date(close, asof))
+    if not sel.any():
+        return []
+    # deepest %K in the buckets BEFORE the cross — the zero-bound context badge
+    k_prior_min = k.shift(1).rolling(UNION_ZERO_LOOKBACK_BARS, min_periods=1).min()
+
+    macd1, sig1 = _rsi_macd(close)
+    in_force = (macd1 >= sig1).fillna(False).to_numpy()
+    xup1 = _xup(macd1, sig1).fillna(False).to_numpy()
+    di = close.index
+    kn_pos = di.searchsorted(pd.DatetimeIndex(tf_close.index), side="left")
+
+    out: list[tuple[int, int, dict]] = []
+    for row in np.flatnonzero(sel):
+        i = int(kn_pos[row])
+        if i >= len(di) or di[i] != tf_close.index[row]:
+            continue                      # bucket-last not a session of THIS series
+        badges = {"k_at_cross": float(k.iloc[row]) if np.isfinite(k.iloc[row]) else None,
+                  "d_at_cross": float(d.iloc[row]) if np.isfinite(d.iloc[row]) else None,
+                  "k_prior_min": (float(k_prior_min.iloc[row])
+                                  if np.isfinite(k_prior_min.iloc[row]) else None)}
+        prior = np.flatnonzero(xup1[: i + 1])
+        recent = prior.size and (i - int(prior[-1])) <= UNION_1D_RECENT_SESSIONS
+        if in_force[i] and recent:
+            out.append((i, int(row), {**badges, "confirm": "in_force"}))
+            continue
+        nxt = np.flatnonzero(xup1[i + 1: i + 1 + UNION_1D_WAIT_SESSIONS])
+        if nxt.size:
+            j = i + 1 + int(nxt[0])
+            out.append((j, int(row), {**badges, "confirm": "arrived",
+                                      "wait_sessions": j - i}))
+        # no confirm inside the window: the washout cross alone never admits
+    return out
+
+
+def _union_early_dot_fires(close: "pd.Series",
+                           asof: Any = None) -> "list[tuple[int, int, dict]]":
+    """Fire positions for the DOT leg, read from the engine's own ``early`` column.
+
+    The dot is NOT re-derived here: :func:`engine.signal_quality.signal_frame` owns that
+    definition and this reads its output, so the deck and the published store can never
+    disagree about whether a name dotted.  ``signal_frame`` is close-driven for this leg,
+    so a close-only history is exact.
+
+    The dot's 3D context carries the SAME open-bucket defect as the cross leg — its frame
+    is the same bucketing — so the identical completeness rule applies here
+    (:func:`_completed_bucket_mask`).  Excluding it in one leg only would just move the
+    ghost from one leg name to the other.
+    """
+    try:
+        from engine.signal_quality import signal_frame
+    except Exception as exc:  # noqa: BLE001
+        log.info("us_early_turn: dot leg unavailable (%s)", exc)
+        return []
+    try:
+        frame = signal_frame(close, market="US")
+    except Exception as exc:  # noqa: BLE001
+        log.info("us_early_turn: signal_frame failed (%s)", exc)
+        return []
+    if frame is None or len(frame) == 0 or "early" not in frame:
+        return []
+    tf_close, _known = _tf_bars(close, TF_3D, "US")
+    if tf_close is None or len(tf_close) != len(frame):
+        # The two grids are the same bucketing; a length mismatch means one of them saw a
+        # different history and the honest move is to skip the leg rather than guess.
+        return []
+    sel = frame["early"].fillna(False).to_numpy().astype(bool)
+    sel = sel & _completed_bucket_mask(tf_close.index, TF_3D,
+                                       _evaluation_date(close, asof))
+    di = close.index
+    kn_pos = di.searchsorted(pd.DatetimeIndex(tf_close.index), side="left")
+    out: list[tuple[int, int, dict]] = []
+    for row in np.flatnonzero(sel):
+        i = int(kn_pos[row])
+        if i < len(di) and di[i] == tf_close.index[row]:
+            out.append((i, int(row), {}))
+    return out
+
+
+def _union_badges(close: "pd.Series", pos: int, cross: Mapping[str, Any] | None,
+                  benchmark: "pd.Series | None") -> dict[str, Any]:
+    """DISPLAY-tier context carried on an admitted row.
+
+    Every value here is texture, never a rank or tier input: the bake-off's §R8 ledger
+    plus the footprint study's §A3 found no static feature that survives risk
+    equalization, so nothing on this row may imply reliability or ordering.
+    """
+    c = close.to_numpy(dtype="float64")
+    spot = float(c[pos])
+    badges: dict[str, Any] = {
+        "era": UNION_ADMISSION_ERA,
+        "k_at_cross": None, "zero_bound": None, "decline_depth": None,
+        "above_200": None, "rs_63": None,
+    }
+    if cross:
+        kx = cross.get("k_at_cross")
+        badges["k_at_cross"] = round(float(kx), 2) if kx is not None else None
+        kmin = cross.get("k_prior_min")
+        badges["zero_bound"] = (bool(kmin <= UNION_ZERO_BOUND) if kmin is not None
+                                else None)
+    a = max(0, pos - UNION_DECLINE_WINDOW)
+    hi = float(np.nanmax(c[a: pos + 1]))
+    if np.isfinite(hi) and hi > 0:
+        badges["decline_depth"] = round(spot / hi - 1.0, 4)
+    if pos + 1 >= UNION_MA_LEN:
+        ma = float(np.nanmean(c[pos + 1 - UNION_MA_LEN: pos + 1]))
+        if np.isfinite(ma) and ma > 0:
+            badges["above_200"] = bool(spot > ma)
+    if pos >= UNION_RS_WINDOW and c[pos - UNION_RS_WINDOW] > 0:
+        own = spot / c[pos - UNION_RS_WINDOW] - 1.0
+        if benchmark is None or len(benchmark) == 0:
+            badges["rs_63"] = None            # no benchmark loaded: a null, never a zero
+        else:
+            di = close.index
+            b = pd.Series(benchmark).dropna()
+            i1 = int(b.index.searchsorted(di[pos], side="right")) - 1
+            i0 = int(b.index.searchsorted(di[pos - UNION_RS_WINDOW], side="right")) - 1
+            if i0 >= 0 and i1 > i0 and float(b.iloc[i0]) > 0:
+                badges["rs_63"] = round(
+                    float(own - (float(b.iloc[i1]) / float(b.iloc[i0]) - 1.0)), 4)
+    return badges
+
+
+def union_admission(price_history: Any, asof: str | None = None, *,
+                    benchmark: Any = None) -> dict[str, Any]:
+    """The UNION admission signature (bake-off §A2) — the measured recall spine.
+
+    ``fired`` when the most recent union fire at or before ``asof`` is no older than
+    :data:`SIGNATURE_MAX_AGE_BARS` — the same liveness scope every other signature in this
+    module uses, so "live now" means one thing on the deck.
+
+    The union is the two measured legs:
+
+      (a) **relaxed washout cross** — a 3D StochRSI %K x %D bull cross with BOTH lines
+          under 20 at the cross bar, confirmed by the 1D MACD-RSI either already in force
+          (its last cross-up within 5 sessions) at the bucket's last close, or by the first
+          fresh 1D cross-up within the next 10 sessions.  Fires at the confirming session.
+      (b) **the dot** — the engine's own ``early`` leg, read from
+          :func:`engine.signal_quality.signal_frame`, retained as the anticipation chip.
+
+    BOTH legs read COMPLETED 3D buckets only (:func:`_completed_bucket_mask`).  The grid's
+    trailing bucket is still open until its final session slot closes, and a fire read off
+    it is not knowable: it prints one night and vanishes or re-dates the next.
+
+    STARTER GRADE ONLY.  This mints an admission CLASS; it never touches the scored gate,
+    a tier, or a rank, and the badges it carries are texture (§A2: proximity, not
+    durability — no durability tier is licensed by any measured feature).
+    """
+    out: dict[str, Any] = {
+        "fired": False, "era": UNION_ADMISSION_ERA, "legs": [], "fire_date": None,
+        "age_bars": None, "confirm": None, "wait_sessions": None,
+        "badges": None, "reason": None, "asof": asof,
+    }
+    close = _close_series(price_history, asof)
+    if close is None:
+        out["reason"] = f"fewer than {MIN_BARS} usable daily closes through {asof}"
+        return out
+    try:
+        cross_fires = _union_relaxed_cross_fires(close, asof)
+        dot_fires = _union_early_dot_fires(close, asof)
+    except Exception as exc:  # noqa: BLE001 — one unreadable name never kills a run
+        log.info("us_early_turn: union admission failed: %s", exc)
+        out["reason"] = f"union admission unavailable: {exc}"
+        return out
+    if not cross_fires and not dot_fires:
+        out["reason"] = "no washout cross with a 1D confirm, and no dot, in this history"
+        return out
+
+    by_pos: dict[int, dict[str, Any]] = {}
+    for pos, _row, meta in cross_fires:
+        e = by_pos.setdefault(pos, {"legs": [], "cross": None})
+        e["legs"].append(UNION_LEG_CROSS)
+        e["cross"] = meta
+    for pos, _row, _meta in dot_fires:
+        e = by_pos.setdefault(pos, {"legs": [], "cross": None})
+        e["legs"].append(UNION_LEG_DOT)
+
+    last_pos = max(by_pos)
+    entry = by_pos[last_pos]
+    age = int(len(close) - 1 - last_pos)
+    bench = None
+    if benchmark is not None:
+        try:
+            bench = _close_series(benchmark, asof)
+        except Exception:  # noqa: BLE001
+            bench = None
+    out["legs"] = [leg for leg in UNION_LEGS if leg in entry["legs"]]
+    out["fire_date"] = str(pd.Timestamp(close.index[last_pos]).date())
+    out["age_bars"] = age
+    out["confirm"] = (entry["cross"] or {}).get("confirm")
+    out["wait_sessions"] = (entry["cross"] or {}).get("wait_sessions")
+    out["badges"] = _union_badges(close, last_pos, entry["cross"], bench)
+    out["fired"] = age <= SIGNATURE_MAX_AGE_BARS
+    if not out["fired"]:
+        out["reason"] = (f"most recent union admission is {age} sessions old "
+                         f"(live window is {SIGNATURE_MAX_AGE_BARS})")
+    return out
+
+
+# ---------------------------------------------------------------------------
+# SETUP GEOMETRY — the early lane's own score (operator ruling 2026-08-11)
+# ---------------------------------------------------------------------------
+# A GEOMETRY score, never a probability score.  It answers "how good is the trade
+# available RIGHT NOW", from three things a chart shows and nothing a backtest inferred:
+#
+#   (a) how far today's entry sits above the structural stop      (lower = better)
+#   (b) whether the low that stop hangs under is a CONFIRMED pivot (cleaner = better)
+#   (c) how far price has already travelled from the fire         (a chase = worse)
+#
+# (c) is why this is scored today and not on the signal's birthday: a fire that has run
+# +10% off its low is a chase, and it must sort BELOW a fresh one no matter how good the
+# original signature looked.
+#
+# What is deliberately NOT in here, and is test-pinned absent: any durability or P(win)
+# claim, the §8 / footprint features that were nulled under risk-equalization, member-share
+# theme breadth, and the retracted repeat-fire flag.  The basket TURNING/CONFIRMED read may
+# sit BESIDE a row as display context — it has its own forward ledger — but it is not an
+# input here.
+#: Risk this far above the structural stop scores zero on the risk leg.  Not a threshold
+#: anyone may act on — the ordering key's floor, so the leg cannot run away.
+GEOMETRY_RISK_CAP: float = 0.15
+#: Travel from the fire that fully spends the freshness leg (the operator's "+10% is a
+#: chase" example).
+GEOMETRY_CHASE_CAP: float = 0.10
+#: How much of the score the freshness leg may take away.
+GEOMETRY_DECAY_WEIGHT: float = 0.45
+#: What a CONFIRMED reference pivot is worth against an unconfirmed raw low.
+GEOMETRY_CONFIRMED_BONUS: float = 8.0
+#: The decline-low lookback the structural stop hangs under, and the stop's own haircut —
+#: the same P_low x 0.99 basis the bake-off measured stop-A survival on.
+GEOMETRY_LOW_LOOKBACK: int = 45
+GEOMETRY_STOP_K: float = 0.99
+#: Radius of the confirmed swing low the stop-structure flag reads.
+PIVOT_RADIUS_R3: int = 3
+
+#: The stage a row is at.  A FACT column, never a score and never blended into one: the
+#: early lane's geometry score and the confirmed lane's own score stay two numbers.
+STAGE_EARLY = "EARLY"
+STAGE_CONFIRMING = "CONFIRMING"
+STAGE_CONFIRMED = "CONFIRMED"
+
+
+def _confirmed_pivot_low(low: "np.ndarray", end: int) -> tuple[float | None, int | None]:
+    """The most recent r3-CONFIRMED swing low knowable at ``end`` (pivot at p, strict min
+    of lows[p-3..p+3], knowable at p+3)."""
+    for p in range(end - PIVOT_RADIUS_R3, PIVOT_RADIUS_R3 - 1, -1):
+        w = low[p - PIVOT_RADIUS_R3: p + PIVOT_RADIUS_R3 + 1]
+        if len(w) < 2 * PIVOT_RADIUS_R3 + 1 or not np.isfinite(w).all():
+            continue
+        if low[p] < np.min(np.delete(w, PIVOT_RADIUS_R3)):
+            return float(low[p]), int(p)
+    return None, None
+
+
+def setup_geometry(price_history: Any, asof: str | None = None, *,
+                   union: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """The early lane's GEOMETRY score — the trade available today, not the signal's age.
+
+    Returns the three legs as data plus ``score`` (0-100, an ORDERING KEY for the deck's
+    sort).  It is not a probability, it is not calibrated, and it never claims a name will
+    work: two rows with the same score have the same geometry, nothing more.
+    """
+    out: dict[str, Any] = {
+        "score": None, "risk_pct": None, "stop": None, "reference_low": None,
+        "stop_confirmed": None, "chase_pct": None, "age_bars": None,
+        "basis": "distance to the structural stop, how clean that stop is, "
+                 "and how far price has travelled since the fire",
+        "reason": None,
+    }
+    close = _close_series(price_history, asof)
+    if close is None:
+        out["reason"] = f"fewer than {MIN_BARS} usable daily closes through {asof}"
+        return out
+    lows = _low_series(price_history, close)
+    c = close.to_numpy(dtype="float64")
+    end = len(c) - 1
+    spot = float(c[end])
+    if not np.isfinite(spot) or spot <= 0:
+        out["reason"] = "last close is not a positive finite price"
+        return out
+
+    a = max(0, end - GEOMETRY_LOW_LOOKBACK)
+    raw_low = float(np.nanmin(lows[a: end + 1]))
+    pivot_low, pivot_pos = _confirmed_pivot_low(lows, end)
+    # The stop hangs under the decline low that is actually in force. When the most recent
+    # CONFIRMED pivot is that same low, the stop is structurally clean; otherwise it is
+    # hanging under a raw low the tape has not yet defended, and the row says so.
+    confirmed = bool(pivot_low is not None and np.isfinite(raw_low)
+                     and abs(pivot_low - raw_low) <= 1e-9)
+    if not np.isfinite(raw_low) or raw_low <= 0:
+        out["reason"] = "no usable decline low in the lookback"
+        return out
+    stop = raw_low * GEOMETRY_STOP_K
+    if stop >= spot:
+        out["reason"] = "price is at or below its own structural stop"
+        return out
+    risk = (spot - stop) / spot
+
+    chase = None
+    age = None
+    # The chase leg is gated on a LIVE fire, never on the mere presence of a `fire_date`:
+    # `union_admission` reports the last fire it found even when that fire is months dead,
+    # and keying off the date alone put a "already run from where it turned" chip on rows
+    # whose fire expired 2.5 months earlier — including confirmed-lane `buy_now` rows that
+    # never belonged to this lane at all.
+    if isinstance(union, Mapping) and union.get("fired") and union.get("fire_date"):
+        try:
+            fire_pos = int(close.index.searchsorted(pd.Timestamp(union["fire_date"]),
+                                                    side="left"))
+            if 0 <= fire_pos <= end and float(c[fire_pos]) > 0:
+                chase = float(spot / float(c[fire_pos]) - 1.0)
+                age = int(end - fire_pos)
+        except Exception:  # noqa: BLE001
+            chase = None
+
+    risk_leg = 100.0 * max(0.0, 1.0 - risk / GEOMETRY_RISK_CAP)
+    decay_leg = 0.0
+    if chase is not None and chase > 0:
+        decay_leg = (100.0 * GEOMETRY_DECAY_WEIGHT
+                     * min(1.0, chase / GEOMETRY_CHASE_CAP))
+    score = risk_leg + (GEOMETRY_CONFIRMED_BONUS if confirmed else 0.0) - decay_leg
+    out.update({
+        "score": round(max(0.0, min(100.0, score)), 2),
+        "risk_pct": round(risk, 4),
+        "stop": round(stop, 4),
+        "reference_low": round(raw_low, 4),
+        "stop_confirmed": confirmed,
+        "confirmed_pivot_low": (round(pivot_low, 4) if pivot_low is not None else None),
+        "chase_pct": (round(chase, 4) if chase is not None else None),
+        "age_bars": age,
+    })
+    return out
+
+
+def _low_series(price_history: Any, close: "pd.Series") -> "np.ndarray":
+    """Daily lows aligned to ``close``; falls back to the close when no low is carried
+    (a close-only name has no intrabar low to hang a stop under, and pretending otherwise
+    would place the stop tighter than the tape can honour)."""
+    try:
+        if isinstance(price_history, pd.DataFrame):
+            for name in ("low", "Low", "l"):
+                if name in price_history.columns:
+                    s = pd.Series(price_history[name]).astype(float)
+                    s.index = pd.DatetimeIndex(s.index).tz_localize(None).normalize()
+                    return s.reindex(close.index).to_numpy(dtype="float64")
+    except Exception:  # noqa: BLE001
+        pass
+    return close.to_numpy(dtype="float64")
+
+
+# ---------------------------------------------------------------------------
 # The admission decision
 # ---------------------------------------------------------------------------
 
@@ -623,6 +1081,7 @@ def assess_early_turn(
     membership: Mapping[str, Mapping[str, Any]] | None = None,
     leader_states: Mapping[str, Mapping[str, Any]] | None = None,
     board_row: Mapping[str, Any] | None = None,
+    benchmark: Any = None,
 ) -> dict[str, Any]:
     """Does this name qualify for the EARLY-TURN starter class?
 
@@ -648,6 +1107,13 @@ def assess_early_turn(
     """
     daily = turn_signature(price_history, asof=asof, timeframe=TF_DAILY)
     two_day = turn_signature(price_history, asof=asof, timeframe=TF_2D)
+    union = union_admission(price_history, asof=asof, benchmark=benchmark)
+    # THE EARLY LANE IS THE UNION LANE.  Geometry — and every other early-lane key below —
+    # is computed only for a row that is actually on it; a confirmed-lane row must not be
+    # handed a setup score, a stage, or a chase chip belonging to a lane it is not in.
+    early_lane = bool(union.get("fired"))
+    geometry = (setup_geometry(price_history, asof=asof, union=union)
+                if early_lane else None)
     washout = basket_turn_context(ticker, membership)
     leader = leader_pullback_context(ticker, price_history=price_history, asof=asof,
                                      states=leader_states)
@@ -659,7 +1125,11 @@ def assess_early_turn(
             board_washout = True
             board_reason = "board lane=bottoming"
 
-    signature_fired = bool(daily.get("fired") or two_day.get("fired"))
+    # The UNION is an additional SIGNATURE leg, not a bypass: §A2 wires it in as the recall
+    # spine, and this module's standing law that a naked signature never admits is unchanged
+    # — a union fire still needs a licensing context, exactly like the dot signature does.
+    signature_fired = bool(daily.get("fired") or two_day.get("fired")
+                           or union.get("fired"))
     # Ordered by CONTEXT_SOURCES so the disclosure is stable across runs, and BOTH names
     # survive when both licensed the row — "washout" alone would hide the second read.
     context_sources = [
@@ -680,7 +1150,7 @@ def assess_early_turn(
     else:
         reason = daily.get("reason") or "no signature"
 
-    return {
+    row: dict[str, Any] = {
         "schema": SCHEMA,
         "authority": AUTHORITY,
         "ticker": str(ticker or "").strip().upper(),
@@ -693,6 +1163,13 @@ def assess_early_turn(
         "signature_timeframes": [
             tf for tf, sig in ((TF_DAILY, daily), (TF_2D, two_day)) if sig.get("fired")
         ],
+        # The measured recall spine, on EVERY row — including the ones it declined, whose
+        # `union["reason"]` is the named null.  A disclosed null is the house form; hiding
+        # the read entirely would make "no union fire" and "the union was never run"
+        # indistinguishable.
+        "union": union,
+        "union_fired": bool(union.get("fired")),
+        "union_legs": list(union.get("legs") or []),
         "daily": daily,
         "two_day": two_day,
         "washout": washout,
@@ -702,3 +1179,45 @@ def assess_early_turn(
         "board_washout_reason": board_reason,
         "reason": reason,
     }
+    if not early_lane:
+        # ── CONFIRMED LANE: no early-lane keys at all ────────────────────────────
+        # ABSENCE, never nulls.  The keys below are the early lane's own vocabulary and a
+        # row that is not on that lane has no answer for them — a `deck_admitted: False`
+        # beside a `plan_licensed: True` is what inverted the deck ⊇ plan invariant in the
+        # first place (measured: 114 STLD fixture sessions read `fired=True`,
+        # `deck_admitted=False`, `admission_era=None` at once).  A consumer must ask
+        # whether the block is there, not read a null out of it.
+        return row
+    # ── TWO SURFACES, ONE READ (operator ruling 2026-08-11) ──────────────────────
+    # The WATCH DECK is the recall tier (§6.9 R8: it optimizes recall + context density,
+    # not precision), so it drops the CONTEXT LICENCE — a union fire reaches the deck with
+    # no washout/leader-pullback behind it.  It does NOT drop the candidate scope: this
+    # function is called by `prophet_bridge` strictly AFTER `select_candidates`, so the
+    # shipped deck is `union ∩ select_candidates`, never the naked universe.  The bake-off's
+    # measured coverage/lead numbers are NAKED-UNION numbers over the full universe and are
+    # therefore NOT a property of this deck — quoting them as such would overstate it by the
+    # size of the candidate filter.  Full-universe intake is chartered separately.
+    # STARTER-PLAN ORIGINATION is the larger authority step and keeps the context licence:
+    # `plan_licensed` is a SUBSET of `deck_admitted` by construction here, which is the
+    # whole invariant.  The licence is not hidden by the split — it rides on the row as a
+    # stated fact.
+    row.update({
+        # Era-stamped on every early-lane row, never None (#4942 era-stamp law): a row
+        # admitted under this construction must be comparable only with its own cohort.
+        "admission_era": UNION_ADMISSION_ERA,
+        "context_badges": union.get("badges"),
+        # The early lane's OWN score — geometry, and the deck's sort key for this lane.
+        # It is never blended with the confirmed lane's score; `stage` is the fact column
+        # that says which lane a row is reading from.
+        "setup_geometry": geometry,
+        "stage": STAGE_EARLY,
+        "deck_admitted": True,
+        "plan_licensed": fired,
+        "licensing": {
+            "licensed": fired,
+            "reason": (reason if fired else
+                       "no licensing context — carried on the watch deck, but a starter "
+                       "plan needs a washout-mature basket or a leader pullback"),
+        },
+    })
+    return row
