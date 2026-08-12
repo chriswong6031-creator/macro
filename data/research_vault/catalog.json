@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T05:22:40.672489+00:00",
-  "count": 990,
+  "generated_at": "2026-08-12T05:53:02.729744+00:00",
+  "count": 991,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -944,6 +944,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vd4taryxext-8187e9",
+      "title": "Eli Lilly & Co. (LLY) Commercial Momentum, Uninterrupted",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:33Z",
+      "summary_points": [
+        "**Medicare Obesity Coverage Unlock**: July 1st Medicare bridge program driving 80% injectable volume surge, accelerating revenue growth beyond expectations (Q2 beat/raise +4.5% vs DRG +1.9%); revenue guidance raised to $88.5bn (2026).",
+        "**Foundry Launch & OUS Momentum**: Q2 revenue $98mn (vs $40mn adj.), OUS sales $31mn reflecting pent-up demand; 2026 revenue estimate up to $847mn (vs $805mn), US prescriber base doubling.",
+        "**Forward Catalysts & M&A**: Elora + tirzepide combo Ph2 data (late Sept EASD) for diabetes/obesity; $7.8bn CNTA acquisition (largest since 2019) accelerating M&A for near-Ph3 assets and unmet needs.",
+        "**Valuation Upside & EPS Growth**: Buy rating with 16.9% upside ($1,367 target vs $1,169.86 current); FY26 EPS revised to $36.71 (vs $33.77), driven by revenue expansion (115.756B by 2028) and margin improvement.",
+        "**Critical Risk Factor**: Downside risk from greater-than-expected obesity pricing decline (e.g., Medicare coverage pricing pressure) or pipeline underperformance compressing long-term estimates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
