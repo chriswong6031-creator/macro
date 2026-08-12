@@ -30,7 +30,7 @@
   /* W4 stock-personality slim chips in holdings table (display-only, R-SP13) */
   .sp-td-chip,.sp-td-mode{display:inline-block;font-size:9.5px;font-weight:600;padding:0px 5px;border-radius:5px;cursor:help;white-space:nowrap}
   .sp-td-chip{background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
-  .sp-td-mode{background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--info,var(--link));border:1px solid color-mix(in srgb,var(--info,var(--link)) 28%,transparent)}
+  .sp-td-mode{background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--ink-info, var(--info,var(--link)));border:1px solid color-mix(in srgb,var(--info,var(--link)) 28%,transparent)}
   /* within-theme member context chip (basket_member_context.py band — display-only cohort read) */
   .mc-chip{display:inline-block;font-size:9.5px;font-weight:600;padding:0px 5px;border-radius:5px;white-space:nowrap;cursor:help}
   .mc-chip.pos{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
@@ -1559,7 +1559,7 @@ function liveStripHtml(pb, tw, totalBaskets, pulseMode){
     var twTipEn='Fast-turn context: '+(isIgn?'strong sign':'early sign')+'. In 26 past cases, about 6 in 10 sharp one-day flips faded within a day. Slow ratings are unchanged; context only, not a buy signal.'+cfTip;
     var twTipZh='快速拐点参考：'+(isIgn?'较强迹象':'初步迹象')+'。历史26次剧烈单日反转中，约六成在一天内消退。慢速评级不变；仅供参考，不是买入信号。'+cfTipZh;
     html+='<span data-tip-en="'+esc(twTipEn)+'" data-tip-zh="'+esc(twTipZh)+'" style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;'
-      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--orange,#f97316)':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--ink-warn, var(--warn))')+'">&#9889;'+L(isIgn?'STRONG SIGN':'EARLY SIGN',isIgn?'较强迹象':'初步迹象')+'</span>';
+      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--ink-orange, var(--orange,#f97316))':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--ink-warn, var(--warn))')+'">&#9889;'+L(isIgn?'STRONG SIGN':'EARLY SIGN',isIgn?'较强迹象':'初步迹象')+'</span>';
   }
   html+='<span style="font-size:10.5px;color:var(--muted);margin-left:auto">'+L('15-min delayed','15分钟延迟')+'</span>';
   html+='</div>';

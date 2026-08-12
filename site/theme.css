@@ -757,7 +757,7 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
   .nav-dd:hover .nav-sub > a.nav-sub-trig .caret-r,
   .nav-dd:focus-within .nav-sub > a.nav-sub-trig .caret-r { animation: navCaretBreath 2.6s ease-in-out infinite; } }
 .nav-dd-menu .nav-sub:hover > a.nav-sub-trig .caret-r { animation: none; opacity: 1; transform: translateX(3px);
-  color: var(--link, var(--blue, #5b9dff));
+  color: var(--ink-link, var(--link, var(--blue, #5b9dff)));
   filter: drop-shadow(0 0 5px color-mix(in srgb, var(--link, var(--blue, #5b9dff)) 65%, transparent)); }
 /* nav-sub-text: emoji+title+description column inside the flex .nav-sub-trig row
    — makes fly-out triggers visually identical to leaf links while the flex
@@ -1818,3 +1818,21 @@ span.help.help-upgraded { font-size: 9.5px; font-weight: 700;
   .dtp-col + .dtp-col { border-left:none; border-top:1px solid var(--line); }
   .dtp-mname { font-size:12px; }
 }
+
+/* ---- public nav: the primary CTA was a blank pill ---------------------------
+   `.public-nav-cta` sets `color:#fff` at specificity (0,1,0). Every article shell
+   ships `body.estate a { color: … }` at (0,2,1), which therefore WON: the "Start
+   free" button rendered its label in the link blue on the blue pill — 1.0:1, an
+   empty button, on every public and editorial page in both themes. Nothing about
+   the palette was wrong; the button just never got to set its own ink.
+   The :link/:visited pair is the classic link-colour idiom and lands at (0,3,1),
+   above any body-scoped `a` rule. It lives HERE rather than in
+   _public_chrome_css.html.j2 because that partial is inlined into seo_base, i.e.
+   inside the free-content estate's byte-for-byte render contract, and a linked
+   sheet is outside it. */
+.public-nav a.public-nav-cta:link, .public-nav a.public-nav-cta:visited,
+.public-nav a.public-nav-cta:hover, .public-nav a.public-nav-cta:focus { color: #fff; }
+.public-nav a.public-nav-login:link, .public-nav a.public-nav-login:visited { color: #5d6b7e; }
+.public-nav a.public-nav-login:hover, .public-nav a.public-nav-login:focus { color: #1c2430; }
+html[data-theme="dark"] .public-nav a.public-nav-login:link,
+html[data-theme="dark"] .public-nav a.public-nav-login:visited { color: var(--muted); }

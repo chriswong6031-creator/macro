@@ -149,7 +149,7 @@ body { padding-bottom:56px; }
 /* ── Cortex memo panel ── */
 .probation-banner { background:color-mix(in srgb,var(--warn) 14%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 40%,transparent); border-radius:9px; padding:10px 14px; margin-bottom:12px; font-size:13px; }
 .probation-banner strong { color:var(--ink-warn, var(--warn)); }
-.is-context-badge { display:inline-block; background:color-mix(in srgb,var(--info,#5b9dff) 14%,var(--panel2)); color:var(--info,#5b9dff); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; letter-spacing:.05em; vertical-align:middle; margin-left:8px; }
+.is-context-badge { display:inline-block; background:color-mix(in srgb,var(--info,#5b9dff) 14%,var(--panel2)); color:var(--ink-info, var(--info,#5b9dff)); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; letter-spacing:.05em; vertical-align:middle; margin-left:8px; }
 .memo-summary-card { background:color-mix(in srgb,var(--link) 8%,var(--panel2)); border-left:3px solid var(--link); border-radius:0 9px 9px 0; padding:12px 16px; margin:10px 0 14px; font-size:14px; line-height:1.7; }
 .fired-list { margin:8px 0; padding-left:18px; }
 .fired-list li { margin:3px 0; font-size:13px; color:var(--muted); }
@@ -257,12 +257,12 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
 .tr-item:last-child { border-bottom:none; }
 .tr-sev { font-size:10px; font-weight:700; padding:2px 6px; border-radius:5px; flex:none; }
 .tr-sev-P1 { background:color-mix(in srgb,var(--down) 18%,var(--panel2)); color:var(--ink-down, var(--down)); }
-.tr-sev-P2 { background:color-mix(in srgb,var(--warn) 18%,var(--panel2)); color:var(--warn,#e6a817); }
+.tr-sev-P2 { background:color-mix(in srgb,var(--warn) 18%,var(--panel2)); color:var(--ink-warn, var(--warn,#e6a817)); }
 .tr-sev-P3 { background:var(--panel2); color:var(--muted); }
 .tr-attn-block { margin-bottom:12px; }
 .tr-contra-block { margin-bottom:12px; }
 .tr-stale-count { font-size:12px; color:var(--muted); margin-bottom:10px; }
-.tr-degraded-line { font-size:12px; color:var(--warn,#e6a817); padding:6px 10px; border-radius:7px; background:color-mix(in srgb,var(--warn) 10%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 30%,transparent); display:none; }
+.tr-degraded-line { font-size:12px; color:var(--ink-warn, var(--warn,#e6a817)); padding:6px 10px; border-radius:7px; background:color-mix(in srgb,var(--warn) 10%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 30%,transparent); display:none; }
 .tr-degraded-line.visible { display:block; }
 .tr-loading { font-size:13px; color:var(--muted); padding:8px 0; }
 .tr-empty { font-size:13px; color:var(--muted); font-style:italic; }
@@ -315,7 +315,10 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
 .page-committee{
   --lobe-core:#e2e8f0; --lobe-us:#4da3ff; --lobe-cn:#f0883e;
   --lobe-sig:#a78bfa; --lobe-macro:#2dd4bf;
-  --nw-ink:#eaf0fb;
+  /* Third ink for the neural-web chapter. #eaf0fb is a DARK-plane text value and
+     was serving both themes — 1.21:1 on the light panel where it carries the
+     active chapter tab. --text already re-keys per theme. */
+  --nw-ink:var(--text);
   --nw-mono:var(--font-mono, ui-monospace,SFMono-Regular,Menlo,monospace);
   --nw-hair:color-mix(in srgb,var(--line) 72%,transparent);
   --nw-glass-brd:color-mix(in srgb,var(--line) 90%,transparent);
@@ -3389,9 +3392,9 @@ html{ scroll-behavior:smooth; }
       if (regimeItem) {
         if (regimeChipEl) {
           regimeChipEl.textContent = '';
-          regimeChipEl.innerHTML = '<span class="l-en" style="color:var(--warn,#e6a817)">'
+          regimeChipEl.innerHTML = '<span class="l-en" style="color:var(--ink-warn, var(--warn,#e6a817))">'
             + escB(regimeItem.summary_en) + '</span>'
-            + '<span class="l-zh" style="color:var(--warn,#e6a817)">'
+            + '<span class="l-zh" style="color:var(--ink-warn, var(--warn,#e6a817))">'
             + escB(regimeItem.summary_zh) + '</span>';
         }
         if (regimeRowEl) regimeRowEl.classList.add('tr-regime-low');
@@ -3729,7 +3732,7 @@ html{ scroll-behavior:smooth; }
       // rs.status === 'warn': context may be stale — amber notice, not a failure
       var rs = memo.run_status || {};
       html += '<div style="margin-bottom:10px;padding:6px 10px;border-radius:6px;font-size:12px;'
-        + 'border:1px solid var(--warn,#e6a817);color:var(--warn,#e6a817)">'
+        + 'border:1px solid var(--warn,#e6a817);color:var(--ink-warn, var(--warn,#e6a817))">'
         + '<span class="l-en"><strong>Context notice:</strong> '
         + esc(rs.degradation_reason || 'Cortex context may be stale.')
         + (rs.context_stale ? ' Context as-of: ' + esc(rs.context_as_of || '') + '.' : '')

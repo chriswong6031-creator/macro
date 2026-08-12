@@ -187,8 +187,8 @@
   /* status chip — HEALTH read, never flips in zh */
   .ssx-chip{ display:inline-flex; align-items:center; gap:4px; font:700 8.5px/1 ui-monospace,Menlo,monospace;
     letter-spacing:.06em; text-transform:uppercase; padding:3px 7px; border-radius:6px; border:1px solid; white-space:nowrap; flex:0 0 auto; }
-  .ssx-chip.ok{ color:var(--ok,#3fc07e); background:color-mix(in srgb,var(--ok,#3fc07e) 12%,transparent); border-color:color-mix(in srgb,var(--ok,#3fc07e) 30%,transparent); }
-  .ssx-chip.stale{ color:var(--warn,#e0a63a); background:color-mix(in srgb,var(--warn,#e0a63a) 13%,transparent); border-color:color-mix(in srgb,var(--warn,#e0a63a) 32%,transparent); }
+  .ssx-chip.ok{ color:var(--ink-ok, var(--ok,#3fc07e)); background:color-mix(in srgb,var(--ok,#3fc07e) 12%,transparent); border-color:color-mix(in srgb,var(--ok,#3fc07e) 30%,transparent); }
+  .ssx-chip.stale{ color:var(--ink-warn, var(--warn,#e0a63a)); background:color-mix(in srgb,var(--warn,#e0a63a) 13%,transparent); border-color:color-mix(in srgb,var(--warn,#e0a63a) 32%,transparent); }
   .ssx-chip.missing{ color:var(--ink-3); background:var(--q-dim); border-color:var(--gl-bd); }
   .ssx-asof{ font-size:10.5px; color:var(--ink-3); flex:0 0 auto; }
   /* Phone: the head is title + chips + a full sentence, which cannot share one
@@ -224,7 +224,7 @@
   /* reply / open-question tag */
   .ssx-tag{ font-size:9px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:6px; white-space:nowrap; }
   .ssx-tag.open{ color:var(--ask); background:var(--ask-dim); border:1px solid color-mix(in srgb,var(--ask) 32%,transparent); }
-  .ssx-tag.replied{ color:var(--ok,#3fc07e); background:color-mix(in srgb,var(--ok,#3fc07e) 12%,transparent); border:1px solid color-mix(in srgb,var(--ok,#3fc07e) 28%,transparent); }
+  .ssx-tag.replied{ color:var(--ink-ok, var(--ok,#3fc07e)); background:color-mix(in srgb,var(--ok,#3fc07e) 12%,transparent); border:1px solid color-mix(in srgb,var(--ok,#3fc07e) 28%,transparent); }
   /* large flag — a real supply event marker (severity, not direction) */
   .ssx-lg{ font-size:8.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px;
     color:var(--e); background:var(--e-dim); border:1px solid color-mix(in srgb,var(--e) 32%,transparent); white-space:nowrap; }

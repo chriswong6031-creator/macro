@@ -313,7 +313,7 @@ html[data-lang="zh"] .nav-mega-h { letter-spacing: .02em; }
 }
 
 .nav-drill-trigger:hover .nav-drill-arrow {
-  color: var(--link, #5b79ff);
+  color: var(--ink-link, var(--link, #5b79ff));
   transform: translateX(3px);
 }
 
@@ -735,7 +735,7 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
 
 .search-pagination button.active {
   border-color: color-mix(in srgb, var(--link, #5b79ff) 52%, var(--nr-line));
-  color: var(--link, #5b79ff);
+  color: var(--ink-link, var(--link, #5b79ff));
   background: color-mix(in srgb, var(--link, #5b79ff) 10%, var(--nr-soft));
 }
 
@@ -766,7 +766,7 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   padding: 4px 11px;
   border: 1px solid color-mix(in srgb, var(--link, #5b79ff) 40%, var(--nr-line));
   border-radius: 999px;
-  color: var(--link, #5b79ff);
+  color: var(--ink-link, var(--link, #5b79ff));
   background: color-mix(in srgb, var(--link, #5b79ff) 9%, var(--nr-soft));
   font: inherit;
   font-size: 11px;
@@ -1313,7 +1313,7 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
 }
 
 .nav-market-rail-item:hover .nav-market-arrow {
-  color: var(--link, #5b79ff);
+  color: var(--ink-link, var(--link, #5b79ff));
   transform: translate(2px, -2px);
 }
 

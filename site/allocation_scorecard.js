@@ -49,7 +49,7 @@
     '#nr-scorecard .nrc-honest{font-size:10.5px;color:var(--muted);margin-top:6px;text-align:center}' +
     '#nr-scorecard .nrc-falter{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;' +
       'padding:2px 8px;margin:4px 0 2px;border-radius:7px;background:rgba(239,68,68,.12);' +
-      'border:1px solid rgba(245,158,11,.6);color:var(--down,#ef4444)}' +
+      'border:1px solid rgba(245,158,11,.6);color:var(--ink-down, var(--down,#ef4444))}' +
     '#nr-scorecard .nrc-exp{font-size:10.5px;margin-top:8px;padding:2px 8px;display:inline-block;' +
       'border-radius:7px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.45);color:#d97706}';
   document.head.appendChild(st);

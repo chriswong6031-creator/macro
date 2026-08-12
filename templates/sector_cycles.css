@@ -230,7 +230,7 @@ html[data-theme="light"] .sc-mbtn.on, html[data-theme="light"] .sc-sbtn.on { col
 /* "⟲ handoff active" — a live first-class rotation event inside this sector. Link-toned
    by default; amber (warn) when the event is MAJOR (a cap-share-dominant leg). */
 .cc-rot { font-size: 10.5px; font-weight: 750; letter-spacing: .03em; padding: 2px 8px;
-  border-radius: 6px; line-height: 1.45; white-space: nowrap; color: var(--link, #38bdf8);
+  border-radius: 6px; line-height: 1.45; white-space: nowrap; color: var(--ink-link, var(--link, #38bdf8));
   background: color-mix(in srgb, var(--link, #38bdf8) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--link, #38bdf8) 45%, var(--line)); }
 .cc-rot.cc-rot-major { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 14%, transparent);

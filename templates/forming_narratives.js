@@ -84,7 +84,7 @@
       font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap}
     #forming-narratives .ne-pop-sub{font-size:10.5px;color:var(--muted);line-height:1.4}
     #forming-narratives .ne-flags{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
-    #forming-narratives .ne-flag{font-size:11px;color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:1px 7px}`;
+    #forming-narratives .ne-flag{font-size:11px;color:var(--ink-warn, var(--warn,#f59e0b));background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:1px 7px}`;
     const st = document.createElement('style'); st.id = 'ne-styles'; st.textContent = css;
     document.head.appendChild(st);
   }
