@@ -2,17 +2,17 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-08-11",
-  "generated_at": "2026-08-12T20:58:51+00:00",
+  "as_of": "2026-08-12",
+  "generated_at": "2026-08-12T22:13:22+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 63919.36,
-    "change_24h_pct": 0.01,
+    "price": 63496.43,
+    "change_24h_pct": -0.66,
     "stance_en": "NEUTRAL",
     "stance_zh": "中性",
-    "summary_en": "The big picture reads neutral. Support comes from fundamentals and the risk gauge; the drag comes from momentum and futures positioning. Day-to-day direction is a coin flip — watch the dip-risk read below.",
-    "summary_zh": "大方向中性。支撑来自基本面与风险读数；拖累来自动量与期货持仓。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
-    "master_score": -3,
+    "summary_en": "The big picture reads neutral. Support comes from the risk gauge and fundamentals; the drag comes from momentum and futures positioning. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向中性。支撑来自风险读数与基本面；拖累来自动量与期货持仓。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": -7,
     "exposure_pct": 0,
     "gate_active": true
   },
@@ -38,9 +38,9 @@
           "label_en": "Structure",
           "label_zh": "结构",
           "source": "master.board.structure",
-          "state_en": "Constructive",
-          "state_zh": "偏多",
-          "tone": "bull",
+          "state_en": "Neutral",
+          "state_zh": "中性",
+          "tone": "neutral",
           "grade": "DIRECTIONAL"
         },
         {
@@ -153,7 +153,7 @@
         "state_en": "Low",
         "state_zh": "低",
         "tone": "bull",
-        "as_of": "2026-08-11"
+        "as_of": "2026-08-12"
       },
       "spark_source": "signals.oi_mcap_ratio",
       "receipt_members": [
