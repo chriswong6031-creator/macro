@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T04:37:34.063509+00:00",
-  "count": 987,
+  "generated_at": "2026-08-12T05:22:40.672489+00:00",
+  "count": 990,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -102,6 +102,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-urmoidwn5ej-5e7287",
+      "title": "Aegonam global fixed income midyear outlook final",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-11T23:09:04Z",
+      "summary_points": [
+        "**Iran Conflict & Energy Shock**: Prolonged oil/gas price surge from Middle East conflict drives global inflation, creates terms-of-trade shocks in Europe, and delays growth recovery to 2026–2027 despite ECB hiking rates twice to 2.5%.",
+        "**Fed Policy Divergence**: Hawkish shift (50/50 FOMC split, Chairman abstaining) amid oil volatility prioritizes short-term inflation over long-term risks, with Fed holding rates into 2027 (higher-for-longer yields).",
+        "**Valuation-Fundamentals Mismatch**: Robust credit fundamentals (resilient economies, strong balance sheets) contrast with stretched valuations (tight spreads, limited compression), demanding active selection over passive exposure.",
+        "**EM Debt Strategy**: USD-denominated EM debt favored over local currency due to Fed policy anchoring carry, with performance driven by fiscal discipline, reform momentum, and country differentiation.",
+        "**Europe Energy Vulnerability**: Elevated gas prices persist post-US-Iran deal, creating fiscal constraints and debt limit pressures, while ECB hikes rates amid sticky inflation from energy shock."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-f5fryndrqbq-cc1e4d",
       "title": "JPM US Market Intelligence Afternoon Briefing Aug 11",
       "institution": "J.P. Morgan",
@@ -186,6 +207,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-yj7jfih70ze-6c7281",
+      "title": "US Daily July CPI Preview",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:33Z",
+      "summary_points": [
+        "**Core CPI Miss**: Core CPI forecast at 0.19% MoM (vs.",
+        "2% consensus), YoY 2.47% (vs.",
+        "5%), driven by lower energy and mixed auto/shelter trends.",
+        "**Auto Insurance Disinflation**: Auto insurance CPI decline of 0.5% MoM SA, reflecting lower premiums amid mixed auto sector inflation (used cars +0.5%, new cars +0.1%).",
+        "**Geopolitical Inflation Impact**: Iran War-driven jet fuel spike caused 2.0% MoM SA airfare surge (travel services), offset by 1.0% MoM SA hotel price decline (World Cup effect reversal)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-e6iqxljorzl-d9490e",
       "title": "InterContinental Hotels Group (IHG.L) 1H26 Strong net system growth of 5",
       "institution": "Goldman Sachs",
@@ -203,6 +245,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2d9rq0xceea-3b9054",
+      "title": "Americas Investment Banks Structural M&A growth persists, but expenses continue to rise, with valuation upside less likely",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:09Z",
+      "summary_points": [
+        "**Underperformance driven by M&A trends & expenses**: Americas IBank stocks underperformed S&P 500 by 5pp pre-2026 EPS due to M&A trend-driven estimate downgrades, rising expenses, and structural negative leverage reducing valuation upside.",
+        "**Sector bifurcation critical for allocation**: Stark divergence between high-performing banks (LCLN, MC, PWT with positive YoY revenue/margins) and struggling peers (EVR, HLI, LAZ with negative YoY revenue/margins) necessitates selective positioning.",
+        "**Sponsor M&A volume contraction**: 2026 sponsor M&A volumes at 26% of total market (below 5-yr avg 35%), signaling strategic realignment or market contraction, contrasting with strategic M&A growth (56% volume/fee growth).",
+        "**Non-M&A advisory structural growth**: Secondaries/restructuring to reach 18% of 2025 IBank revenue, with GP-led volumes up 35% YoY; EVR and PJT best positioned for structural tailwinds.",
+        "**Structural negative operating leverage**: Elevated comp leverage (80bps/90bps in 2026E/2027E) and non-comp growth (1% above Street) compressing margins, with EVR/LCLN margins projected 11.7%/12.8% below 2021 levels."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 40,
       "language": "en",
       "needs_metadata": false
     },
