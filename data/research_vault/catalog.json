@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T06:38:33.644080+00:00",
-  "count": 993,
+  "generated_at": "2026-08-12T06:53:14.307556+00:00",
+  "count": 994,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -884,6 +884,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-n21qbzfd5pe-9de07e",
+      "title": "JPM US Market Intelligence | Trading CPI: August 2026",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T15:21:15Z",
+      "summary_points": [
+        "**Core MoM Inflation & SPX Volatility**: 40% probability of 0.20%–0.25% Core MoM prints driving 50bp–1.25% SPX moves; options pricing reflects ~0.9% move (August 12 expiry), directly impacting equity positioning.",
+        "**Geopolitical/China PPI as Fed Catalyst**: Middle East conflict inflation risk and China’s PPI (3-month low) as US CPI precursor shape September Fed hike probability; hawkish prints trigger larger bond market moves than dovish.",
+        "**Housing Inflation Measurement Gap**: CPI Shelter (BLS) shows lower rent growth than Zillow/Moody’s data (2021–2022), creating critical lag risk for real estate portfolios and inflation-sensitive allocations.",
+        "**Core Services vs.",
+        "Goods Divergence**: Persistent core services inflation (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
