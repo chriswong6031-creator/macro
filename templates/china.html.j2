@@ -1262,15 +1262,10 @@
   [data-theme="light"] body.page-china .mx5-gauge-svg > text{fill:rgba(10,16,24,.62);}
   [data-theme="light"] body.page-china .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
   [data-theme="light"] body.page-china .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
-  /* The needle itself, which the three rules above cannot reach: `> text` stops at the
-     needle <g>, and `g[stroke]` matches only the tick group (it carries a stroke
-     ATTRIBUTE; the needle group does not). So the pointer kept its dark-mode ink and
-     went white-on-white on the light .cnx-card — the dial rendered as an arc with no
-     reading on it. The hub ring / core / tip already paint from --up/--warn/--down and
-     stay as they are. Identical twin rule on body.page-macro. */
-  [data-theme="light"] body.page-china .cnx-gauge-needle line{stroke:rgba(10,16,24,.20);}
-  [data-theme="light"] body.page-china .cnx-gauge-needle polygon{fill:rgba(10,16,24,.82);}
-  [data-theme="light"] body.page-china .cnx-gauge-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
+  /* theme.css owns the shared light pointer; bind it to the arc's semantic state. */
+  body.page-china .cnx-gauge-needle{--odo-accent:var(--warn)}
+  body.page-china .ms-green .cnx-gauge-needle{--odo-accent:var(--up)}
+  body.page-china .ms-red .cnx-gauge-needle{--odo-accent:var(--down)}
   /* Regime pill (sizes to content, never clips) */
   body.page-china .mx5-regime-pill{
     display:inline-flex;align-items:center;gap:6px;
@@ -1710,11 +1705,11 @@
           {# Needle — rotation baked by Jinja; live JS patches via data attrs. Core/tip/
              numeral fills are CSS-driven (.cnx-needle-core/tip, #mx5-score-numeral) so they
              follow --mx5-gauge and flip in zh; the white stem stays neutral. #}
-          <g class="cnx-gauge-needle" id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#cnxNeedleGlow)">
+          <g class="cnx-gauge-needle odo-needle odo-needle--compact" id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#cnxNeedleGlow)">
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
             <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
             <circle cx="70" cy="75" r="7"  fill="rgba(255,255,255,.10)"/>
-            <circle class="cnx-needle-ring" cx="70" cy="75" r="4.5" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
+            <circle class="cnx-needle-ring odo-needle-hub" cx="70" cy="75" r="4.5" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
             <circle class="cnx-needle-core" cx="70" cy="75" r="2"/>
             <circle class="cnx-needle-tip" cx="70" cy="25.5" r="2.5"/>
           </g>
