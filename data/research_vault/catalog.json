@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T01:22:05.314312+00:00",
-  "count": 959,
+  "generated_at": "2026-08-12T02:07:10.650030+00:00",
+  "count": 961,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -78,6 +78,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uoxvdsmjyu7-04f25d",
+      "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 11, 2026 as of 5 30 AM ET",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:38:14Z",
+      "summary_points": [
+        "**US CPI Preview**: Critical fundamental macro indicator directly impacting Fed policy expectations, interest rate trajectories, and equity valuations; requires monitoring for inflation trends and policy shifts.",
+        "**AI Investment Crowding Out**: US Economics Analyst highlights potential crowding out of investments due to AI, signaling sector rotation risks and technical volatility requiring tactical portfolio adjustments.",
+        "**US-China Trade Policy Risk**: Debate on potential US import restrictions on Chinese optical transceivers poses geopolitical risk to optical networking sector fundamentals.",
+        "**China NEV Retail Data**: July 2026 NEV retail narrowed to -2% YoY (vs.",
+        "9% in June), signaling demand stabilization but persistent weakness; critical fundamental indicator for auto sector positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
@@ -386,6 +407,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ktk03rzwgke-aa2a5c",
+      "title": "GS EUROPEAN EXPRESS Multi Industry Autos Interparfums Auto1 Lotus Bakeries Macro Global Corporate Access",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:14Z",
+      "summary_points": [
+        "**Europe Multi-Industry: Prysmian/Nexans Buy Reiteration** 30% upside, FY26-28E EBITDA guidance upgrades (Prysmian +5%, Nexans +5.7%), PT raised 4%, below sector PEG ratio.",
+        "**Lotus Bakeries (LOTB.BR): Growth acceleration with upgraded EPS forecasts** H1 26 organic growth +16%, EBITDA margin +120bps, 14% EPS CAGR to 2030, FY26-28 EPS forecasts upgraded +7-9%, 22% upside.",
+        "**Oil Services Geopolitical Risk & 2027 Upside** Middle East disruptions weigh on H226, but deepwater/US pricing supports 2027 upside; reiterate Buy on Vallourec.",
+        "**China Inflation & Japan BOJ** China CPI/PPI inflation surprised downward in July; Japan BOJ sees upside risks to underlying inflation from July MPM—critical for global inflation dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
