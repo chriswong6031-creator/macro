@@ -2,23 +2,45 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-08-10",
-  "generated_utc": "2026-08-12T20:18:38Z",
+  "generated_utc": "2026-08-12T21:22:07Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 5,
-    "n_eff": 4.06,
+    "n": 6,
+    "n_eff": 3.89,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 5 candidates \u2248 4.06 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 6 candidates \u2248 3.89 independent bets."
   },
-  "same_thesis_groups": [],
-  "earnings_coverage_frac": 0.8,
+  "same_thesis_groups": [
+    {
+      "members": [
+        "AYI",
+        "DGII",
+        "YETI"
+      ],
+      "size": 3,
+      "basis": "factor-cosine",
+      "label": "shared-membership"
+    }
+  ],
+  "earnings_coverage_frac": 0.667,
   "by_ticker": {
-    "UAMY": {
+    "ALM": {
       "verdict": "new",
-      "max_similarity": 0.0,
+      "max_similarity": 0.3333,
       "basis": "membership-only:no-beta",
       "nearest": [
+        {
+          "ticker": "UAMY",
+          "combined": 0.3333,
+          "membership_jaccard": 0.3333,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:both-missing",
+          "shared_groups": [
+            "basket:critical_minerals"
+          ],
+          "same_earnings_week": true
+        },
         {
           "ticker": "ASTS",
           "combined": 0.0,
@@ -36,44 +58,82 @@
           "factor_basis": "beta-read-thin:insufficient-factors",
           "shared_groups": [],
           "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-13",
+        "same_week_peers": [
+          "ASTS",
+          "UAMY",
+          "YETI"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Distinct bet \u2014 nearest peer UAMY at 33% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 UAMY\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
+    },
+    "UAMY": {
+      "verdict": "new",
+      "max_similarity": 0.3333,
+      "basis": "membership-only:no-beta",
+      "nearest": [
+        {
+          "ticker": "ALM",
+          "combined": 0.3333,
+          "membership_jaccard": 0.3333,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:both-missing",
+          "shared_groups": [
+            "basket:critical_minerals"
+          ],
+          "same_earnings_week": true
         },
         {
-          "ticker": "YETI",
+          "ticker": "ASTS",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:both-missing",
+          "shared_groups": [],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "AYI",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:insufficient-factors",
           "shared_groups": [],
-          "same_earnings_week": true
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
         "next_date": "2026-08-11",
         "same_week_peers": [
+          "ALM",
           "ASTS",
           "YETI"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer ASTS at 0% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 ASTS\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer ALM at 33% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 ALM\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
     },
     "ASTS": {
       "verdict": "new",
-      "max_similarity": 0.3333,
+      "max_similarity": 0.0,
       "basis": "membership-only:no-beta",
       "nearest": [
         {
-          "ticker": "NTES",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
+          "ticker": "ALM",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:both-missing",
-          "shared_groups": [
-            "sector:Communication Services"
-          ],
-          "same_earnings_week": false
+          "shared_groups": [],
+          "same_earnings_week": true
         },
         {
           "ticker": "UAMY",
@@ -97,20 +157,30 @@
       "earnings_leg": {
         "next_date": "2026-08-10",
         "same_week_peers": [
+          "ALM",
           "UAMY",
           "YETI"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer NTES at 33% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 NTES\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer ALM at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 ALM\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     },
     "AYI": {
       "verdict": "duplicate",
-      "max_similarity": 0.6847,
+      "max_similarity": 0.913,
       "basis": "membership+high-tier-factor",
       "nearest": [
+        {
+          "ticker": "DGII",
+          "combined": 0.913,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.913,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
         {
           "ticker": "YETI",
           "combined": 0.6847,
@@ -121,16 +191,7 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "UAMY",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:insufficient-factors",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "ASTS",
+          "ticker": "ALM",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -145,8 +206,50 @@
         "has_data": false
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as YETI \u2014 shared factor profile (similarity 68%).",
-      "why_zh": "\u4e0e YETI \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 68%\uff09\u3002"
+      "why_en": "Same bet as DGII \u2014 shared factor profile (similarity 91%).",
+      "why_zh": "\u4e0e DGII \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 91%\uff09\u3002"
+    },
+    "DGII": {
+      "verdict": "duplicate",
+      "max_similarity": 0.913,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "AYI",
+          "combined": 0.913,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.913,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "YETI",
+          "combined": 0.4634,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.4634,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "ALM",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:insufficient-factors",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as AYI \u2014 shared factor profile (similarity 91%).",
+      "why_zh": "\u4e0e AYI \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 91%\uff09\u3002"
     },
     "YETI": {
       "verdict": "duplicate",
@@ -163,16 +266,16 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "UAMY",
-          "combined": 0.0,
+          "ticker": "DGII",
+          "combined": 0.4634,
           "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:insufficient-factors",
+          "factor_cosine": 0.4634,
+          "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
-          "same_earnings_week": true
+          "same_earnings_week": false
         },
         {
-          "ticker": "ASTS",
+          "ticker": "ALM",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -184,6 +287,7 @@
       "earnings_leg": {
         "next_date": "2026-08-13",
         "same_week_peers": [
+          "ALM",
           "ASTS",
           "UAMY"
         ],
@@ -192,53 +296,46 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as AYI \u2014 shared factor profile (similarity 68%).",
       "why_zh": "\u4e0e AYI \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 68%\uff09\u3002"
-    },
-    "NTES": {
-      "verdict": "new",
-      "max_similarity": 0.3333,
-      "basis": "membership-only:no-beta",
-      "nearest": [
-        {
-          "ticker": "ASTS",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:both-missing",
-          "shared_groups": [
-            "sector:Communication Services"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "UAMY",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:both-missing",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "AYI",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:insufficient-factors",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-20",
-        "same_week_peers": [],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer ASTS at 33% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 ASTS\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
     }
   },
   "pair_basis": {
+    "ALM__UAMY": {
+      "membership_jaccard": 0.3333,
+      "factor_cosine": null,
+      "combined": 0.3333,
+      "factor_basis": "beta-read-thin:both-missing",
+      "shared_groups": [
+        "basket:critical_minerals"
+      ]
+    },
+    "ALM__ASTS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:both-missing",
+      "shared_groups": []
+    },
+    "ALM__AYI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
+    "ALM__DGII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
+    "ALM__YETI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
     "UAMY__ASTS": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -253,6 +350,13 @@
       "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
+    "UAMY__DGII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
     "UAMY__YETI": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -260,14 +364,14 @@
       "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
-    "UAMY__NTES": {
+    "ASTS__AYI": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:both-missing",
+      "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
-    "ASTS__AYI": {
+    "ASTS__DGII": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -281,14 +385,12 @@
       "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
-    "ASTS__NTES": {
-      "membership_jaccard": 0.3333,
-      "factor_cosine": null,
-      "combined": 0.3333,
-      "factor_basis": "beta-read-thin:both-missing",
-      "shared_groups": [
-        "sector:Communication Services"
-      ]
+    "AYI__DGII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.913,
+      "combined": 0.913,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
     },
     "AYI__YETI": {
       "membership_jaccard": 0.0,
@@ -297,18 +399,11 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "AYI__NTES": {
+    "DGII__YETI": {
       "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
-    "YETI__NTES": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
+      "factor_cosine": 0.4634,
+      "combined": 0.4634,
+      "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     }
   },
@@ -320,8 +415,8 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 3.0,
-    "setting_up": 2.0
+    "entry_open": 3.6,
+    "setting_up": 1.0
   },
   "source_passport": {
     "factor_betas": {
