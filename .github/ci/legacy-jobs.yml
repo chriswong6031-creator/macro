@@ -812,7 +812,10 @@ jobs:
         # app.main mounts app.market_memory, whose authenticated stock-data
         # reader imports requests at module scope.  Keep the serving-boundary
         # lane's isolated environment closed over that production import.
-        run: pip install pytest pyyaml jinja2 fastapi httpx requests
+        # ETF board synthesis imports the rotation constants from etf_pulse,
+        # which imports numpy at module scope.  Keep this isolated environment
+        # closed over the real production import graph.
+        run: pip install pytest pyyaml jinja2 fastapi httpx requests numpy
       - name: tier-preview split contract (no paid row in the free shell)
         run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py -q
       - name: public dashboard preview-tier contracts (anon shell allowlist + controller caps)
@@ -6493,7 +6496,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        # pandas.read_html is exercised by the ETF sponsor-registry parser;
+        # pandas alone does not provide an HTML parser on a clean runner.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn lxml
       - name: spotlight tilt — W9-B US demotion is display-only + the tilt still moves weighted markets
         run: python -m pytest tests/test_spotlight.py -q
       - name: etf_pulse sector leg + analyst delta channel — each pins the data branch it exercises
