@@ -562,11 +562,51 @@ def test_index_gex_history_has_the_deep_history_fences():
 
 
 def test_min_files_override_does_not_loosen_the_other_data_dirs():
-    """The override is per-dir: the big per-ticker stores keep the 100-file floor."""
+    """The override is per-dir: the big per-ticker stores keep the 100-file floor.
+
+    The set is pinned exhaustively on purpose — every entry is a store whose file
+    count is fixed and tiny, and each one has to be argued for individually (an
+    override added by reflex is how the 100-file partial-checkout fence gets
+    hollowed out for a store that should have kept it).
+    """
     from scripts.publish_r2 import _DATA_DIR_MIN_FILES_OVERRIDE
-    assert set(_DATA_DIR_MIN_FILES_OVERRIDE) == {"index_gex_history"}
+    assert set(_DATA_DIR_MIN_FILES_OVERRIDE) == {"index_gex_history", "price_pressure"}
     assert not _data_dir_syncable("massive_stock_day", 5)[0]
     assert not _data_dir_syncable("thetadata_eod", 5)[0]
+
+
+def test_price_pressure_floors_separate_a_restored_store_from_a_bare_checkout():
+    """DRL W1's events.parquet is gitignored and R2-canonical, so publish_r2 is its
+    delivery path. A checkout of data/price_pressure holds only the TRACKED JSON
+    sidecars — latest.json + base_rates.json (+ completion_receipts.jsonl once the
+    §10.1 pass files one) — and publishing that tree would replace the 35k-row
+    ledger with nothing. Two floors, because the count alone stops being sharp the
+    night the receipts file is first committed: 3 files, and 4 MB.
+
+    Deliberately NOT append-only: the parquet is rewritten whole every night (a
+    re-grade can recompress smaller), so a per-FILE shrink guard would refuse
+    honest nights. The builder's ledger.restore_status compares CONTENT dates
+    instead, which is the check that actually fits this store.
+    """
+    from scripts.publish_r2 import (_APPEND_ONLY_DIRS, _DATA_DIR_MIN_BYTES,
+                                    _DATA_DIR_MIN_FILES_OVERRIDE, _DATA_DIRS,
+                                    DEFAULT_DIRS, _append_only_guarded)
+    assert "price_pressure" in _DATA_DIRS
+    assert "price_pressure" not in DEFAULT_DIRS   # only the gated nightly lane publishes it
+    assert "price_pressure" not in _APPEND_ONLY_DIRS
+    assert not _append_only_guarded("price_pressure", 11_000_000, 11_300_000)
+    assert _DATA_DIR_MIN_FILES_OVERRIDE["price_pressure"] == 3
+    assert _DATA_DIR_MIN_BYTES["price_pressure"] == 4_000_000
+
+    # sidecars-only checkout: refused by the count …
+    ok, why = _data_dir_syncable("price_pressure", 2, total_bytes=73_000)
+    assert not ok and "partial checkout" in why
+    # … and once completion_receipts.jsonl is tracked the count passes, so the
+    # bytes floor is the one that still has to refuse it.
+    ok, why = _data_dir_syncable("price_pressure", 3, total_bytes=80_000)
+    assert not ok and "shallow rebuild" in why
+    # the restored store (3 files, ~11.4 MB) syncs
+    assert _data_dir_syncable("price_pressure", 3, total_bytes=11_400_000)[0]
 
 
 # ── connection-pool sizing ────────────────────────────────────────────────────
