@@ -1,9 +1,10 @@
 """Tests for engine/china_microstructure.py — fully offline, synthetic fixtures.
 
 Covers:
-  - Board classification + era-aware limit widths
+  - Board classification + era-aware limit widths (incl. launch-era ChiNext ST = 5%)
   - ST flag application (main only, ST_STORE_COVERAGE_DATE gate)
-  - IPO exclusion windows (STAR/ChiNext first-5, pre-2014 first-1)
+  - IPO exclusion windows (STAR/ChiNext first-5, registration-era main first-5, pre-2014
+    first-1), keyed to the name's own first store bar so a windowed scan keeps its head bars
   - Ex-div suspect suppression
   - Event detection: sealed_up, failed_up_seal, sealed_down, failed_down_seal
   - lianban_count accumulation
@@ -25,6 +26,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine.china_microstructure import (
     CHINEXT_WIDE_DATE,
     LIMIT_TAPE_START_DATE,
+    MAIN_REG_IPO_DATE,
+    MAIN_REG_IPO_WINDOW,
     ST_STORE_COVERAGE_DATE,
     _board_from_ticker,
     _detect_limit_events,
@@ -52,6 +55,14 @@ def _ohlcv(
     lo = np.array(lows, dtype=float) if lows is not None else c
     return pd.DataFrame({"open": o, "close": c, "high": h, "low": lo,
                          "volume": np.ones(n) * 1e6}, index=idx)
+
+
+def _bdays_before(anchor: pd.Timestamp, n: int) -> str:
+    """Return the _ohlcv `start` that puts `anchor` at bar index n.
+
+    Uses the same business-day generator as _ohlcv so the pad bars line up exactly.
+    """
+    return pd.bdate_range(end=anchor, periods=n + 1)[0].strftime("%Y-%m-%d")
 
 
 # ── board classification ───────────────────────────────────────────────────────
@@ -119,6 +130,19 @@ class TestLimitWidthForDate:
 
     def test_chinext_st_stays_20_after_cutoff(self):
         assert limit_width_for_date("chinext", CHINEXT_WIDE_DATE + pd.Timedelta(30), is_st=True) == 0.20
+
+    def test_chinext_st_pre_cutoff_takes_main_st_band(self):
+        # Launch-era ChiNext (2009-10-30 → 2020-08-23) traded main-board widths, and that
+        # included the ±5% risk-warning band; the 2020-08-24 registration reform
+        # (szse.cn/aboutus/trends/news/t20200729_580056.html) widened ChiNext ST names to
+        # ±20% along with everything else.  Returning 10% here mis-sizes the band on every
+        # launch-era ChiNext ST bar.
+        d = CHINEXT_WIDE_DATE - pd.Timedelta(days=1)
+        assert limit_width_for_date("chinext", d, is_st=True) == 0.05
+
+    def test_chinext_st_on_cutoff_stays_20(self):
+        # Boundary: the reform date itself is already wide-era.
+        assert limit_width_for_date("chinext", CHINEXT_WIDE_DATE, is_st=True) == 0.20
 
 
 # ── event detection — sealed_up ───────────────────────────────────────────────
@@ -262,9 +286,12 @@ class TestSTFlag:
     def test_st_main_gets_5pct(self):
         # ST on main board, post-coverage date: 5% limit
         # prev close = 10.0 → lim_up = round(10*1.05, 2) = 10.50
-        start = ST_STORE_COVERAGE_DATE.strftime("%Y-%m-%d")
-        closes = [10.0, 10.0, 10.5]
-        highs  = [10.0, 10.0, 10.6]
+        # 5 leading sessions pad the registration-era IPO window: a main-board frame whose
+        # first store bar is on/after MAIN_REG_IPO_DATE is a fresh listing, and its first 5
+        # sessions are no-limit bars.  The scored bars still start at ST_STORE_COVERAGE_DATE.
+        start = _bdays_before(ST_STORE_COVERAGE_DATE, 5)
+        closes = [10.0] * 5 + [10.0, 10.0, 10.5]
+        highs  = [10.0] * 5 + [10.0, 10.0, 10.6]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
         events, _, _ = _detect_limit_events(
             "000001.SZ", df, "main", frozenset(["000001.SZ"])
@@ -274,10 +301,11 @@ class TestSTFlag:
         assert su[0]["limit_width"] == 5.0
 
     def test_non_st_ticker_not_in_set(self):
-        # Not in ST set → 10% limit
-        start = ST_STORE_COVERAGE_DATE.strftime("%Y-%m-%d")
-        closes = [10.0, 10.0, 11.0]
-        highs  = [10.0, 10.0, 11.1]
+        # Not in ST set → 10% limit.  5 leading sessions pad the registration-era IPO
+        # window (see test_st_main_gets_5pct).
+        start = _bdays_before(ST_STORE_COVERAGE_DATE, 5)
+        closes = [10.0] * 5 + [10.0, 10.0, 11.0]
+        highs  = [10.0] * 5 + [10.0, 10.0, 11.1]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
         events, _, _ = _detect_limit_events(
             "000001.SZ", df, "main", frozenset()   # not in ST set
@@ -309,6 +337,79 @@ class TestIPOExclusion:
         df     = _ohlcv(closes=closes, highs=highs, start=start)
         events, ipo_excl, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
         assert ipo_excl == 1
+
+    def test_main_reg_ipo_constants(self):
+        # Full-market registration reform: main-board listings from this date trade their
+        # first 5 sessions with no daily band (szse.cn/lawrules/rule/stock/t20230306_599093.html).
+        assert MAIN_REG_IPO_DATE == pd.Timestamp("2023-04-10")
+        assert MAIN_REG_IPO_WINDOW == 5
+
+    def test_main_post_reform_first_5_sessions_excluded(self):
+        # Registration-era main-board listing: bars 0-4 have no limit at all, so scoring
+        # them against ±10% fabricates limit events.  Mirror of the STAR case above.
+        start = "2023-06-01"
+        closes = [10.0] * 7 + [11.0]   # bar 7 seals vs prev close 10.0 → lim_up = 11.0
+        highs  = [10.0] * 7 + [11.1]
+        df     = _ohlcv(closes=closes, highs=highs, start=start)
+        events, ipo_excl, _ = _detect_limit_events("600519.SS", df, "main", frozenset())
+        assert ipo_excl == 5
+        su = [e for e in events if e["event"] == "sealed_up"]
+        assert len(su) == 1
+
+    def test_main_pre_reform_listing_gets_no_window(self):
+        # First store bar 2023-04-03, before the reform: a 2014→2023-04-09 main listing
+        # keeps the old no-window behaviour (its day-1 collar bar is unreachable anyway —
+        # the first bar has no prev_close).
+        start = "2023-04-03"
+        closes = [10.0, 10.0, 11.0]
+        highs  = [10.0, 10.0, 11.1]
+        df     = _ohlcv(closes=closes, highs=highs, start=start)
+        events, ipo_excl, _ = _detect_limit_events("600519.SS", df, "main", frozenset())
+        assert ipo_excl == 0
+        assert len([e for e in events if e["event"] == "sealed_up"]) == 1
+
+    def test_windowed_scan_does_not_ipo_exclude_seasoned_main(self):
+        # Both production callers pass the FULL per-ticker frame plus a start_date
+        # (scripts/build_china_microstructure.py, scripts/backfill_china_limit_tape.py), so
+        # the listing proxy must be the name's own first STORE bar, not the first bar of
+        # the lookback window.  Keyed to the filtered frame, every seasoned main-board name
+        # would read as a fresh registration-era IPO and lose 5 head-of-window sessions.
+        n = 900
+        closes = [10.0] * (n - 1) + [11.0]
+        highs  = [10.0] * (n - 1) + [11.1]
+        df     = _ohlcv(closes=closes, highs=highs, start="2020-01-02")
+        assert df.index[0] < MAIN_REG_IPO_DATE <= df.index[-4]   # window edge is post-reform
+        events, ipo_excl, _ = _detect_limit_events(
+            "600519.SS", df, "main", frozenset(), start_date=df.index[-4]
+        )
+        assert ipo_excl == 0
+        assert len([e for e in events if e["event"] == "sealed_up"]) == 1
+
+    def test_windowed_scan_does_not_ipo_exclude_seasoned_star(self):
+        # Same guarantee for STAR/ChiNext: the old positional `i < ipo_window` skip dropped
+        # the first 5 bars of EVERY windowed scan, seasoned names included.
+        n = 30
+        closes = [10.0] * (n - 1) + [12.0]   # STAR band 20% → lim_up = round(10*1.20, 2) = 12.0
+        highs  = [10.0] * (n - 1) + [12.1]
+        df     = _ohlcv(closes=closes, highs=highs, start="2022-01-04")
+        events, ipo_excl, _ = _detect_limit_events(
+            "688981.SS", df, "star", frozenset(), start_date=df.index[-4]
+        )
+        assert ipo_excl == 0
+        assert len([e for e in events if e["event"] == "sealed_up"]) == 1
+
+    def test_windowed_scan_still_excludes_true_ipo_bars(self):
+        # A genuinely young name keeps its listing window even when the scan starts inside
+        # it: sessions 3-5 of an 8-bar registration-era listing are still no-limit bars.
+        start = "2023-06-01"
+        closes = [10.0] * 7 + [11.0]
+        highs  = [10.0] * 7 + [11.1]
+        df     = _ohlcv(closes=closes, highs=highs, start=start)
+        events, ipo_excl, _ = _detect_limit_events(
+            "600519.SS", df, "main", frozenset(), start_date=df.index[2]
+        )
+        assert ipo_excl == 3   # store bars 2, 3, 4 — still inside the 5-session window
+        assert len([e for e in events if e["event"] == "sealed_up"]) == 1
 
 
 # ── ex-div suspect suppression ────────────────────────────────────────────────

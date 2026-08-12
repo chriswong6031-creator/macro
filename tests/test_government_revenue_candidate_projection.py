@@ -24,6 +24,7 @@ from tests.government_revenue_candidate_fixture import (
     ROOT,
     canonical_fixture_root,
     canonical_frozen_at,
+    rewound,
     shifted,
     utc_date,
 )
@@ -38,7 +39,10 @@ NEXT_RUN_AT = shifted(FROZEN_AT, hours=1)
 #: An observation known between the two runs above -- appendable, not a backfill.
 BETWEEN_RUNS_KNOWN_AT = shifted(FROZEN_AT, minutes=30)
 #: One second behind the first run: the writer's clock must refuse to regress.
-BEFORE_FROZEN_AT = shifted(FROZEN_AT, seconds=-1)
+#: Nominal on a healthy vintage; on a tight one it is pulled to the midpoint of
+#: (newest source instant, run clock) so the canonical clock guard can never
+#: preempt the regression refusal under test.
+BEFORE_FROZEN_AT = rewound(FROZEN_AT, seconds=1)
 #: A source known after the run that reads it -- the monotonicity guard's target.
 FUTURE_KNOWN_AT = shifted(FROZEN_AT, hours=9)
 # The first successful post-heal materialization issued this reviewed cohort at
@@ -60,17 +64,25 @@ _ISSUED_RECOVERY_COHORT_SHA256 = (
     "a6a93726a9cde15da97e5d883d6f16c7c5ab6efe0ca07eecf0e414f0bef148ab"
 )
 # Replay clocks for the exact 5fc incident reconstructed below.  The predecessor
-# queue/state bytes stay historically frozen, but the canonical latest/workspace
-# inputs are intentionally today's committed generation (see
+# queue/state/ledger bytes stay historically frozen, but the canonical latest/
+# workspace inputs are intentionally today's committed generation (see
 # government_revenue_candidate_fixture.py).  Anchor the replay to that coherent
 # source clock so a later collection cannot fail before the incident assertions.
 CORRECTION_ACTIVATED_AT = FROZEN_AT
 CORRECTION_REPEAT_AT = shifted(CORRECTION_ACTIVATED_AT, minutes=1)
-FORWARD_DURING_ACTIVATION_AT = shifted(CORRECTION_ACTIVATED_AT, minutes=-3)
+#: A hostile row known just before the activation run.  Nominal on a healthy
+#: vintage; on a tight one it is pulled to the midpoint of (newest source
+#: instant, run clock) so the canonical clock guard can never preempt the
+#: forward-append refusal under test.
+FORWARD_DURING_ACTIVATION_AT = rewound(CORRECTION_ACTIVATED_AT, minutes=3)
 _INCIDENT_FIXTURE_DIRECTORY = (
     ROOT
     / "tests/fixtures/government_revenue/issuance_incident_5fc18d5"
 )
+#: The issued ledger exactly as the incident left it, frozen beside the queue and
+#: state blobs it is bound to.  See :func:`_incident_correction_root` for why the
+#: incident replay may never read the live append-only store instead.
+_INCIDENT_LEDGER_FIXTURE = _INCIDENT_FIXTURE_DIRECTORY / "candidate_ledger.jsonl"
 
 
 def _issued_recovery_cohort(rows: list[dict]) -> list[dict]:
@@ -110,7 +122,30 @@ def _artifact_bytes(root: Path) -> dict[str, bytes | None]:
 
 
 def _incident_correction_root(tmp_path: Path) -> Path:
-    """Install the exact raw 5fc incident predecessor from bounded fixtures."""
+    """Install the exact raw 5fc incident predecessor from bounded fixtures.
+
+    The incident is a closed historical fact with fixed bytes -- first issuance,
+    run 31354784751, commit ``5fc18d5aac8``, 2026-08-10T04:15Z -- so its ledger
+    is the frozen 8-row / 50,790-byte vintage
+    ``920d840a328b6be88600230f93c8353af30520172c682b25b7302fd4124f7820`` carried
+    beside the queue/state blobs under :data:`_INCIDENT_FIXTURE_DIRECTORY`.
+
+    **An incident test may never read the live ``candidate_ledger.jsonl``.**
+    That store is append-only and grows: the next real candidate issuance adds a
+    row, and the frozen predecessor state fixture below binds the ledger by
+    ``byte_count``/``sha256``, so a live read makes
+    ``_validate_ledger_state_binding`` -- and every incident assertion behind it
+    -- fail on a night no code changed.  This is the same class of scheduled
+    failure ``tests/government_revenue_candidate_fixture`` was written to end,
+    one store over.  The live artifact keeps its own append-safe probe (a
+    ``>=``-length, 50,790-byte *prefix* digest) in the grader suite, which is
+    where a human is meant to re-read it.
+
+    The canonical ``latest``/``workspace``/``recipient_entity_graph`` inputs
+    copied by :func:`canonical_fixture_root` stay deliberately live-vintage: they
+    are the materializer's input boundary, and the derived run clock is computed
+    from exactly those documents, so freezing them is what would break.
+    """
     root = canonical_fixture_root(tmp_path)
     copied = (
         "config/government_revenue/candidate_historical_suppressions.v1.json",
@@ -119,12 +154,15 @@ def _incident_correction_root(tmp_path: Path) -> Path:
         "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json",
         "contracts/government_revenue/government_revenue_candidate_historical_suppressions.v1.schema.json",
         "contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json",
-        "data/government_revenue/candidate_ledger.jsonl",
     )
     for relative in copied:
         destination = root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / relative, destination)
+    shutil.copy2(
+        _INCIDENT_LEDGER_FIXTURE,
+        root / "data/government_revenue/candidate_ledger.jsonl",
+    )
     manifest, _manifest_sha = load_candidate_issuance_correction_manifest(root)
     incident = manifest["incident"]
     ledger = projection.load_candidate_ledger(
@@ -615,11 +653,18 @@ def test_current_fixture_projects_honest_source_queue_and_byte_identical_twins(t
 
 
 def test_issued_cohort_digest_ignores_later_observation_of_existing_candidate() -> None:
-    """A candidate history may grow without changing the frozen issuance digest."""
-    ledger_path = ROOT / "data/government_revenue/candidate_ledger.jsonl"
+    """A candidate history may grow without changing the frozen issuance digest.
+
+    Read from the frozen incident vintage, not the live store.  The growth this
+    test demonstrates is *synthesized* below, so a second copy arriving in the
+    live ledger is not extra coverage -- it is the ``== 2`` count pin's own
+    falsification, and it would red the pack for doing exactly the thing the
+    docstring calls legitimate.  Live append-only integrity keeps its append-safe
+    probe in the grader suite.
+    """
     rows = [
         json.loads(line)
-        for line in ledger_path.read_text(encoding="utf-8").splitlines()
+        for line in _INCIDENT_LEDGER_FIXTURE.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     later = deepcopy(_issued_recovery_cohort(rows)[0])

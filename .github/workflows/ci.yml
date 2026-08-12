@@ -234,6 +234,19 @@ on:
       - "docs/runbooks/OPTIONS_NBBO_COHORT.md"
       - "tests/test_options_nbbo_cohort.py"
       - "tests/test_options_nbbo_cohort_deploy.py"
+      # Authenticated-page MomoEdge companion: observe-only extension, private
+      # native receiver, immutable contracts, and synthetic security tests.
+      - "browser/momoedge_capture/**"
+      - "contracts/options/options.momoedge_browser_observation.v1.schema.json"
+      - "contracts/options/options.momoedge_browser_observe_journal.v1.schema.json"
+      - "engine/options_momoedge_browser_adapter.py"
+      - "scripts/momoedge_browser_receiver.py"
+      - "ops/native_messaging/com.mastermind.optionsnbbocohort.momoedge_observe.json"
+      - "ops/native_messaging/run_momoedge_browser_host.sh"
+      - "docs/runbooks/MOMOEDGE_BROWSER_COMPANION.md"
+      - "tests/test_momoedge_browser_adapter.py"
+      - "tests/test_momoedge_capture_extension_static.py"
+      - "tests/test_momoedge_capture_deploy.py"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
@@ -2242,6 +2255,52 @@ on:
       - "scripts/marketing_copy_dryrun.py"
       - "scripts/marketing_press_wire.py"
       - "scripts/x_intel_harvest.py"
+
+      # Unrun-baseline batch join 2026-08-11: 33 marketing suites that sat in
+      # config/unrun_test_baseline.json named by NO run step, wired into their
+      # owning jobs in the same PR (30 -> marketing-engine, 3 -> marketing-social-
+      # publisher). test_marketing_metrics_poll_quota.py was part of the triage but
+      # is yielded to armed PR #5368, which wires it into marketing-social-publisher
+      # and adds its own paths entry.
+      # Listed by name so a TEST-ONLY edit still reaches its own guard —
+      # the subject code is already covered by engine/marketing/** and
+      # scripts/marketing_publisher.py above. test_marketing_copy_review.py is part
+      # of the batch but was already listed in the Content Studio block above, so it
+      # is not repeated here.
+      # -> marketing-engine
+      - "tests/test_marketing_ad_central.py"
+      - "tests/test_marketing_allies.py"
+      - "tests/test_marketing_anchor_law.py"
+      - "tests/test_marketing_attribution.py"
+      - "tests/test_marketing_breaking_card.py"
+      - "tests/test_marketing_card_ticker_agreement.py"
+      - "tests/test_marketing_cold_read.py"
+      - "tests/test_marketing_earnings_call_lane.py"
+      - "tests/test_marketing_emitted_kind_ownership.py"
+      - "tests/test_marketing_lane_rerun.py"
+      - "tests/test_marketing_links.py"
+      - "tests/test_marketing_macro_print_tier.py"
+      - "tests/test_marketing_mover_stance.py"
+      - "tests/test_marketing_next_review.py"
+      - "tests/test_marketing_rejections.py"
+      - "tests/test_marketing_relay_hygiene.py"
+      - "tests/test_marketing_reply_elements.py"
+      - "tests/test_marketing_reply_pacing.py"
+      - "tests/test_marketing_reply_register.py"
+      - "tests/test_marketing_reply_shape.py"
+      - "tests/test_marketing_reply_targets.py"
+      - "tests/test_marketing_rewrite.py"
+      - "tests/test_marketing_source_authority.py"
+      - "tests/test_marketing_tape_reaction_basket.py"
+      - "tests/test_marketing_telemetry.py"
+      - "tests/test_marketing_wire_dehandle.py"
+      - "tests/test_marketing_wire_single_statement.py"
+      - "tests/test_marketing_wire_story.py"
+      - "tests/test_marketing_wire_volume.py"
+      # -> marketing-social-publisher (these three import the publisher itself)
+      - "tests/test_marketing_approval_desk.py"
+      - "tests/test_marketing_card_earns_pixels.py"
+      - "tests/test_marketing_wire_expiry.py"
 
       # D08 age ramp + chart-CTA + send-time jitter (2026-07-27). Listed by name
       # so a TEST-ONLY edit reaches its own guard: the subject code is already
