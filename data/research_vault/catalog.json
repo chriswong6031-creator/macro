@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T05:53:02.729744+00:00",
-  "count": 991,
+  "generated_at": "2026-08-12T06:53:14.307556+00:00",
+  "count": 994,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -367,6 +367,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6z2wfo0audq-05ac76",
+      "title": "TPL Aug 8 26",
+      "institution": "The Punchline",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:31:15Z",
+      "summary_points": [
+        "**Housing Crisis Fundamentals**: Explicit \"HIGH HOME PRICES + HIGH MORTGAGE RATES\" with Fed survey showing \"WEAK!\" mortgage demand (net negative), confirming severe sector stress and heightened default risk.",
+        "**Labor Market Revisions**: Revised May-June nonfarm payrolls total -103,000 (vs.",
+        "initial reports), signaling deeper fragility; unemployment rate improvement masked by unemployed declining faster than employed (178k vs 87k).",
+        "**AI Investment Bust Risk**: BIS warns of AI 'exuberance' culminating in prolonged investment bust, amplifying macroeconomic dislocation risks amid chip stock sell-off and AI-driven credit confidence decline.",
+        "**Geopolitical Oil Shock**: Iran tensions escalate (67 ships attacked, 17 seafarers killed), driving oil prices higher; China’s oil imports to Iran decline to 785K/523K bpd (June/July), signaling trade risk amplification."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
       "language": "en",
       "needs_metadata": false
     },
@@ -867,6 +888,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-n21qbzfd5pe-9de07e",
+      "title": "JPM US Market Intelligence | Trading CPI: August 2026",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T15:21:15Z",
+      "summary_points": [
+        "**Core MoM Inflation & SPX Volatility**: 40% probability of 0.20%–0.25% Core MoM prints driving 50bp–1.25% SPX moves; options pricing reflects ~0.9% move (August 12 expiry), directly impacting equity positioning.",
+        "**Geopolitical/China PPI as Fed Catalyst**: Middle East conflict inflation risk and China’s PPI (3-month low) as US CPI precursor shape September Fed hike probability; hawkish prints trigger larger bond market moves than dovish.",
+        "**Housing Inflation Measurement Gap**: CPI Shelter (BLS) shows lower rent growth than Zillow/Moody’s data (2021–2022), creating critical lag risk for real estate portfolios and inflation-sensitive allocations.",
+        "**Core Services vs.",
+        "Goods Divergence**: Persistent core services inflation (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-knyv6slrn7p-a37db9",
       "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
       "institution": "RBC",
@@ -923,6 +965,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mwiwpzg95ra-ca24c9",
+      "title": "Japan SMID Monitor Next Generation TOPIX inclusion exclusion end game",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:40Z",
+      "summary_points": [
+        "**TOPIX Structural Shift**: 681 exclusions, 35 inclusions (index down to 991), 27% of near-removed firms executing buybacks; 42% of buyback-announcing firms risk exclusion, signaling index weighting changes.",
+        "**AI/Semi De-risking Flows**: Short-cover rally in AI-losers/Defensives (+17%/+13% mom) vs.",
+        "Semis/FA (-19%/-14% mom); foreigners net sold TSE Growth/Standard (-¥31.6bn/-¥45.1bn), individuals net bought (+¥44.4bn/+¥35.3bn).",
+        "**Liquidity Threshold Risks**: 12 companies below 3M ADTV face exclusion; McDonalds Japan (2702) has 4% short interest (1.8 days to cover), 10% of firms show 12% short interest (e.g., GNI Group).",
+        "**Valuation-Risk Mismatch**: High P/B (e.g., Internet Initiative Japan at 20.5) with moderate ROE (16.1) suggests overvaluation; Nippon Steel (P/B 7.3, ROE 12.2) indicates value trap."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
       "language": "en",
       "needs_metadata": false
     },
