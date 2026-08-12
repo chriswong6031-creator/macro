@@ -2372,6 +2372,9 @@ lanes:
             - scripts.build_discovery
           cl_china:
             - scripts.build_china
+            # Page-only re-bake from committed inputs; --site-only keeps this
+            # express lane from advancing data/china_policy/latest.json.
+            - scripts.build_china_policy_watch
           cl_hk:
             - scripts.build_hk
           cl_gex:
@@ -2609,6 +2612,9 @@ lanes:
             - scripts.build_macro_context
           cl_china:
             - scripts.build_china
+            # Page-only re-bake from committed inputs; --site-only keeps this
+            # express lane from advancing data/china_policy/latest.json.
+            - scripts.build_china_policy_watch
           cl_hk:
             - scripts.build_hk
           cl_gex:

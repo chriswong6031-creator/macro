@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,7 +83,7 @@
 
 
 <link rel="stylesheet" href="illus.css?v=8032719c">
-<link rel="stylesheet" href="assets/css/ede149e0.css?v=ede149e0">
+<link rel="stylesheet" href="assets/css/d8792147.css?v=d8792147">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=65bba21c">
 </head>
@@ -1651,43 +1652,331 @@
   </div>
 </div>
 
-<!-- Pullback Risk dialog -->
-<div class="cax-dlg" id="cax-dlg-risk">
+
+<div class="cax-dlg" id="cax-dlg-risk" role="dialog" aria-modal="true" aria-labelledby="cax-dlg-risk-ttl">
   <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
   <div class="cax-dlg-panel">
     <div class="cax-dlg-head">
-      <span class="cax-dlg-title"><span class="l-en">Pullback Risk Radar</span><span class="l-zh">回撤风险雷达</span></span>
-      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+      <span class="cax-dlg-title" id="cax-dlg-risk-ttl"><span class="l-en">Pullback Risk — Radar & Gauges</span><span class="l-zh">回撤风险 — 雷达与仪表</span></span>
+      <button class="cax-dlg-close" type="button" onclick="caxCloseDlg()" aria-label="Close">&#xd7;</button>
     </div>
-    <div class="cax-dlg-body">
+    <div class="cax-dlg-body rrd">
+
       
-      <div class="cax-eyebrow"><span class="l-en">CA External Risk Monitor</span><span class="l-zh">加拿大外部风险监控</span></div>
-      <div style="font-size:28px;font-weight:750;color:var(--act)">68<span style="font-size:14px;color:var(--muted)">/100</span></div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:12px"><span class="l-en">USD strength</span><span class="l-zh">美元走强</span></div>
+      <div class="rrd-hd tone-muted">
+        <div class="rrd-hd-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div class="rrd-hd-txt">
+          <div class="rrd-hd-label"><span class="l-en">USD strength</span><span class="l-zh">美元走强</span></div>
+          
+          <div class="rrd-hd-sub"><span class="l-en">A risk is building — stay normal, just watch it.</span><span class="l-zh">风险在积累 — 保持正常，留意即可。</span></div>
+          
+          
+          <div class="rrd-hd-sub"><span class="l-en">Intensity</span><span class="l-zh">强度</span> <b>68</b>/100</div>
+          
+        </div>
+      </div>
+
+      <div class="rrx rrx-watch" style="--rc:var(--info)">
+  
+  <div class="rrx-main">
+  <div class="rrx-hd">
+    <span class="rrx-ic">🌤️</span>
+    <div class="rrx-id">
+      <div class="rrx-ttl"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>
+        <span class="rrx-badge"><span class="l-en">WATCH</span><span class="l-zh">观察</span> · 68/100</span>
+        <span class="help">?<span class="tip"><span class="l-en">Pullback-risk gauge. Use high readings to trim risk, not to pick stocks.</span><span class="l-zh">回撤风险仪表。高读数用于降风险，不用于选股。</span></span></span>
+      </div>
+      <div class="rrx-dom"><span class="l-en">USD strength</span><span class="l-zh">美元走强</span></div>
       
-      <div class="cax-frow">
-        <span><span class="l-en">USD strength</span><span class="l-zh">美元走强</span></span>
-        <div class="cax-fbar"><i style="width:82%;background:var(--act)"></i></div>
-        <span class="cax-fscore cax-tt-dn">82</span>
+      <div class="rrx-authority is-advisory">
+        <span class="l-en">Advisory — sizes risk; does not override the measured tape.</span><span class="l-zh">提示性信号——仅调整仓位，不覆盖实测盘面。</span>
       </div>
       
-      <div class="cax-frow">
-        <span><span class="l-en">Breadth breakdown</span><span class="l-zh">广度破位</span></span>
-        <div class="cax-fbar"><i style="width:68%;background:var(--act)"></i></div>
-        <span class="cax-fscore cax-tt-dn">68</span>
+      
+    </div>
+    <div class="rrx-gross"><span class="gv">×0.97</span><span class="gn"><span class="l-en">gross</span><span class="l-zh">建议仓位</span></span></div>
+  </div>
+
+  
+  <div class="rrx-odds">
+    <div class="rrx-odds-l">
+      <div class="rrx-cap"><span class="l-en">Pullback odds</span><span class="l-zh">回撤概率</span> <span class="rrx-cap-sub"><span class="l-en">≥5% drop · measured vs normal</span><span class="l-zh">≥5% · 实测对比常态</span></span></div>
+      <div class="rrx-big">16<span class="pct">%</span><span class="rrx-hz"><span class="l-en">within 21 days</span><span class="l-zh">21 日内</span></span></div>
+      <div class="rrx-vsn"><b>1.03×</b> <span class="l-en">vs normal</span><span class="l-zh">对比常态</span> 16%</div>
+    </div>
+    <div class="rrx-ramp"><div class="rrx-col">
+        <span class="rrx-v">3%</span>
+        <div class="rrx-tk">
+          <div class="rrx-norm" style="height:14%"></div>
+          <div class="rrx-fill" style="height:15%"></div>
+        </div>
+        <span class="rrx-hl"><span class="l-en">5d</span><span class="l-zh">5日</span></span>
+      </div>
+      <div class="rrx-col">
+        <span class="rrx-v">7%</span>
+        <div class="rrx-tk">
+          <div class="rrx-norm" style="height:35%"></div>
+          <div class="rrx-fill" style="height:36%"></div>
+        </div>
+        <span class="rrx-hl"><span class="l-en">10d</span><span class="l-zh">10日</span></span>
+      </div>
+      <div class="rrx-col is-hd">
+        <span class="rrx-v">16%</span>
+        <div class="rrx-tk">
+          <div class="rrx-norm" style="height:79%"></div>
+          <div class="rrx-fill" style="height:82%"></div>
+        </div>
+        <span class="rrx-hl"><span class="l-en">21d</span><span class="l-zh">21日</span></span>
       </div>
       
-      <div class="cax-frow">
-        <span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span>
-        <div class="cax-fbar"><i style="width:65%;background:var(--act)"></i></div>
-        <span class="cax-fscore cax-tt-dn">65</span>
+      <span class="rrx-leg"><span class="rrx-leg-n"></span><span class="l-en">normal</span><span class="l-zh">常态</span></span>
+    </div>
+  </div>
+  
+  </div>
+
+  <div class="rrx-side">
+  
+  <div class="rrx-rec" style="--rvc:var(--ok)">
+    <div class="rrx-rec-hd">
+      <span class="rrx-rec-ar">↘</span>
+      <span class="rrx-rec-ttl"><span class="l-en">Risk receding — pullback odds rolling over</span><span class="l-zh">风险回落 — 回撤概率见顶回落</span></span>
+      
+      <span class="help">?<span class="tip"><span class="l-en">Illustrative context, not a buy trigger. It reads the radar's own intensity trajectory (leak-free) plus the display-only central-bank liquidity series; unlike the alert legs it is not forward-tested yet, and risk can re-accelerate. The de-risk → re-risk response is sizing, scaled in deliberately. BoJ enters only via the aggregate global central-bank tide (no isolated BoJ feed).</span><span class="l-zh">仅为示意性背景，并非买入信号。它读取雷达自身的强度轨迹（无未来函数）以及仅供展示的央行流动性序列；不同于警报腿，此读数尚未经前瞻检验，风险可能再度加速。降险→回补的应对是仓位管理、分批进行。日本央行仅通过全球央行总潮汐体现（无独立日本数据源）。</span></span></span>
+    </div>
+    <div class="rrx-rec-mid">
+      
+      <svg class="rrx-rec-spark" viewBox="0 0 96 26" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points="3.0,7.8 6.9,5.9 10.8,5.0 14.7,4.7 18.7,3.4 22.6,4.1 26.5,4.8 30.4,5.6 34.3,8.0 38.2,4.8 42.1,4.6 46.0,4.7 50.0,3.9 53.9,3.0 57.8,3.9 61.7,6.8 65.6,8.3 69.5,7.8 73.4,5.1 77.3,14.7 81.3,23.0 85.2,16.5 89.1,20.7 93.0,15.1" fill="none" stroke="var(--rvc)" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle class="pk" cx="53.9" cy="3.0" r="1.6"/>
+        <circle class="lx" cx="93.0" cy="15.1" r="2.1"/>
+      </svg>
+      
+      <span class="rrx-rec-sub"><span class="l-en">Pullback odds 19% → 16% (peaked 10 days ago).</span><span class="l-zh">回撤概率 19% → 16%（10 日前见顶）。</span></span>
+    </div>
+    
+    <div class="rrx-rec-cats none"><span class="l-en">No liquidity catalyst yet — risk easing on its own; watch for a policy / liquidity turn to confirm.</span><span class="l-zh">尚无流动性催化 — 风险自行回落；留意政策／流动性转向以确认。</span></div>
+    
+    <div class="rrx-rec-do"><span class="rrx-rec-do-k"><span class="l-en">Do</span><span class="l-zh">应对</span></span><span class="l-en">Odds are rolling over but no liquidity catalyst yet. Stop forced de-grossing; ready a buy plan and wait for a liquidity turn to confirm.</span><span class="l-zh">概率回落，但尚无流动性催化。停止被动减仓；备好买入计划，待流动性转向确认。</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="rrx-ev"><span class="rrx-ev-k"><span class="l-en">Leading</span><span class="l-zh">领先信号</span></span><span class="l-en">US dollar strength</span><span class="l-zh">美元走强</span> <span class="rrx-ev-p"><span class="l-en">82nd</span><span class="l-zh">第82百分位</span></span></div>
+  
+  
+
+  
+  
+  <div class="rrx-do"><span class="rrx-do-k"><span class="l-en">Do</span><span class="l-zh">应对</span></span><span class="l-en">A risk is building — stay normal, just watch it.</span><span class="l-zh">风险在积累 — 保持正常，留意即可。</span></div>
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  <div class="rrx-cyc rrx-cgl">
+    <span class="rrx-cyc-k"><span class="l-en">Overseas pressure</span><span class="l-zh">境外传导</span></span>
+    <span class="chip ok" style="font-size:10px;padding:1px 6px;"><span class="l-en">Low</span><span class="l-zh">低</span></span>
+    <span class="l-en">Pressure from abroad: low</span>
+    <span class="l-zh">海外传导压力：低</span>
+    <span class="rrx-rec-chip"><span class="l-en">South Korea</span><span class="l-zh">韩国</span></span>
+    <span class="help">?<span class="tip"><span class="l-en">South Korea: connection 6.8%, 14.9% off its 21-day high, -5.8% in 10 sessions | Japan: connection 10.5%, 3.6% off its 21-day high, 2.1% in 10 sessions | Taiwan: connection 8.5%, 3.1% off its 21-day high, 1.3% in 10 sessions</span><span class="l-zh">韩国：关联6.8%，近21日高点回落14.9%，近10日-5.8%；日本：关联10.5%，近21日高点回落3.6%，近10日2.1%；台湾：关联8.5%，近21日高点回落3.1%，近10日1.3%</span></span></span>
+  </div>
+  <div class="rrx-cyc rrx-fxc">
+    <span class="rrx-cyc-k"><span class="l-en">Yuan pressure</span><span class="l-zh">人民币压力</span></span>
+    <span class="chip ok" style="font-size:10px;padding:1px 6px;"><span class="l-en">Normal</span><span class="l-zh">正常</span></span>
+    <span class="l-en">Offshore yuan: no unusual pressure</span><span class="l-zh">离岸人民币：无异常压力</span>
+  </div><div class="rrx-cyc rrx-fxc">
+    <span class="rrx-cyc-k"><span class="l-en">Dollar</span><span class="l-zh">美元</span></span>
+    <span class="chip warn" style="font-size:10px;padding:1px 6px;"><span class="l-en">Rising</span><span class="l-zh">走强</span></span>
+    <span class="l-en">Dollar rising — headwind for EM</span><span class="l-zh">美元走强 — 新兴市场逆风</span>
+  </div>
+
+  
+
+  <div class="rrx-trk">
+    <span class="rrx-audit-k">🧾 <span class="l-en">Track record</span><span class="l-zh">往绩</span></span><span>5 <span class="l-en">graded</span><span class="l-zh">已评分</span> · <span class="l-en">not yet moving the verdict</span><span class="l-zh">尚未参与定调</span></span><span class="l-en">· no new entries for 5 days</span><span class="l-zh">· 已 5 天无新增记录</span>
+    
+    <span class="help">?<span class="tip"><span class="l-en">Past-year hit rate: too few graded alerts yet (daily readings — consecutive days overlap) | Watch/caution: on 0 of 5 watch/caution days a drop followed | Recovery: too few graded</span><span class="l-zh">过去一年命中率：暂无足够评分记录（按日读数——连续日期相互重叠） | 观察/谨慎：5 个观察/谨慎日中有 0 天先于下跌 | 修复信号：暂无足够评分</span></span></span>
+  </div>
+  
+  </div>
+</div>
+
+      
+      <div class="rrd-tiles">
+
+        
+        <div class="rrd-tile tone-down" data-tip-en="Where the index sits against its own 200-day average. The further above, the more there is to give back." data-tip-zh="指数当前点位相对自身200日均线的位置。高出越多，可回吐的空间越大。">
+          <span class="rrd-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>
+          <div class="rrd-tile-body">
+            <div class="rrd-tile-lbl"><span class="l-en">Leading</span><span class="l-zh">领先信号</span></div>
+            <div class="rrd-tile-state"><span class="l-en">The TSX <b>10%</b> above its 200-day average</span>
+              <span class="l-zh">多伦多综指高于200日均线 <b>10%</b></span><span class="rrd-tile-chip"><span class="l-en">US dollar strength</span><span class="l-zh">美元走强</span></span>
+            </div>
+          </div>
+          <span class="rrd-tile-tip">?</span>
+        </div>
+        
+
+        
+        <div class="rrd-tile tone-up" data-tip-en="How far the markets that trade with Canada have fallen from their own recent highs: South Korea 15% off · Japan 4% off · Taiwan 3% off" data-tip-zh="与加拿大关联最深的市场距各自近期高点的回撤：韩国 15%；日本 4%；台湾 3%">
+          <span class="rrd-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="10" r="7"/><path d="M5 10h14M12 3a12 12 0 010 14"/><path d="M12 17v4"/></svg></span>
+          <div class="rrd-tile-body">
+            <div class="rrd-tile-lbl"><span class="l-en">Overseas</span><span class="l-zh">境外</span></div>
+            <div class="rrd-tile-state">
+              <span class="l-en">Pressure from abroad</span><span class="l-zh">海外传导压力</span>
+              <span class="rrd-tile-chip"><span class="l-en">Low</span><span class="l-zh">低</span></span>
+            </div>
+          </div>
+          <span class="rrd-tile-tip">?</span>
+        </div>
+        
+
+        
+        <div class="rrd-tile tone-muted">
+          <span class="rrd-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l3 3v15l-2.5-1.5L13 20l-2.5-1.5L8 20l-2-1.5V2z"/><path d="M9 7h6M9 11h6M9 15h3"/></svg></span>
+          <div class="rrd-tile-body">
+            <div class="rrd-tile-lbl"><span class="l-en">Track record</span><span class="l-zh">往绩</span></div>
+            <div class="rrd-tile-state">
+              
+              <span class="l-en">Grading calls as they mature</span><span class="l-zh">评分随信号成熟展开</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        
+
+      </div>
+      
+
+      
+      
+      <div class="rrd-sep"></div>
+      <div class="rrd-eyebrow"><span class="l-en">Risk ladder — what to watch</span><span class="l-zh">风险梯度 — 需关注的因素</span></div>
+      <div class="rrd-ladder">
+        <div class="rrd-lrow tone-down">
+          <span class="rrd-lname"><span class="l-en">USD strength</span><span class="l-zh">美元走强</span></span>
+          <span class="rrd-fbar"><i style="width:82%"></i></span>
+          <span class="rrd-lscore">82</span>
+          <span class="rrd-lband"><span class="l-en">Elevated</span><span class="l-zh">偏高</span></span>
+        </div>
+        <div class="rrd-lrow tone-warn">
+          <span class="rrd-lname"><span class="l-en">Breadth breakdown</span><span class="l-zh">广度破位</span></span>
+          <span class="rrd-fbar"><i style="width:68%"></i></span>
+          <span class="rrd-lscore">68</span>
+          <span class="rrd-lband"><span class="l-en">Caution</span><span class="l-zh">谨慎</span></span>
+        </div>
+        <div class="rrd-lrow tone-warn">
+          <span class="rrd-lname"><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span>
+          <span class="rrd-fbar"><i style="width:65%"></i></span>
+          <span class="rrd-lscore">65</span>
+          <span class="rrd-lband"><span class="l-en">Watch</span><span class="l-zh">留意</span></span>
+        </div>
+        
+      </div>
+      
+
+      
+      
+      <div class="rrd-sep"></div>
+      <div class="rrd-chips">
+        <span class="rrd-chips-k"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+        
+        <span class="rrd-chip tone-muted" data-tip-en="No move either way — watch the data for the next one." data-tip-zh="暂无动作——观察数据等待下一步。">
+          <span class="l-en">Policy stance</span><span class="l-zh">政策取向</span>
+          <b><span class="l-en">On hold</span><span class="l-zh">暂停</span></b>
+        </span>
+        
+        <span class="rrd-chip tone-up" data-tip-en="Canadian dollars per US dollar, -1.5% over the last month — a falling rate means a firmer Canadian dollar, which usually means commodities are bid." data-tip-zh="每美元兑加元的汇率，近一个月 -1.5%——数值下行代表加元走强，通常意味着大宗商品需求旺盛。">
+          <span class="l-en">Canadian dollar</span><span class="l-zh">加元</span>
+          <b><span class="l-en">1.3951, firm</span><span class="l-zh">1.3951，走强</span></b>
+        </span>
+        
+      </div>
+      
+
+      
+      
+      <div class="rrd-sep"></div>
+      
+      <div class="rrd-eyebrow"><span class="l-en">The local backdrop</span><span class="l-zh">本地背景</span></div>
+      
+      <div class="rrd-frows">
+        
+        <div class="rrd-frow tone-muted" data-tip-en="Energy and materials are about a third of the Toronto market, so their prices move the index directly." data-tip-zh="能源与材料约占多伦多市场三分之一，其价格直接带动指数。">
+          <span class="rrd-fname"><span class="l-en">Oil (WTI)</span><span class="l-zh">原油（WTI）</span></span><span></span>
+          <span class="rrd-fval">$82</span>
+          <span class="rrd-fread"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+        </div>
+        
+        <div class="rrd-frow tone-up" data-tip-en="Energy and materials are about a third of the Toronto market, so their prices move the index directly." data-tip-zh="能源与材料约占多伦多市场三分之一，其价格直接带动指数。">
+          <span class="rrd-fname"><span class="l-en">Gold</span><span class="l-zh">黄金</span></span><span></span>
+          <span class="rrd-fval">$4,459</span>
+          <span class="rrd-fread"><span class="l-en">supportive</span><span class="l-zh">支撑</span></span>
+        </div>
+        
+        <div class="rrd-frow tone-down" data-tip-en="Copper priced against gold over the last 20 sessions — money moving toward copper says growth, toward gold says shelter." data-tip-zh="近20个交易日铜相对黄金的比值变化——资金流向铜代表看好增长，流向黄金代表避险。">
+          <span class="rrd-fname"><span class="l-en">Copper vs gold</span><span class="l-zh">铜金比</span></span><span></span>
+          <span class="rrd-fval">-4.6%</span>
+          <span class="rrd-fread"><span class="l-en">a drag</span><span class="l-zh">拖累</span></span>
+        </div>
+        
+        <div class="rrd-frow tone-up" data-tip-en="Share of Toronto names trading above their own 200-day average — the plain count of who is participating. The risk ladder above measures the same breadth against this market's own history, where the TSX normally runs higher, so a level that looks broad here can still sit in its cautious range. Different questions, both honest." data-tip-zh="多伦多市场中股价高于自身200日均线的个股占比——即参与度的直接统计。上方风险梯度衡量的是同一广度相对本市场自身历史的位置；多伦多指数历来通常更高，因此看似普遍的水平仍可能落在其偏谨慎的区间。两者回答的是不同的问题。">
+          <span class="rrd-fname"><span class="l-en">Participation</span><span class="l-zh">参与度</span></span><span class="rrd-fbar"><i style="width:71%"></i></span>
+          <span class="rrd-fval">71%</span>
+          <span class="rrd-fread"><span class="l-en">broad</span><span class="l-zh">普遍</span></span>
+        </div>
+        
       </div>
       
       
-      <div style="margin-top:12px;font-size:12.5px"><span class="l-en">~16% ≥5% pullback probability within 21d</span><span class="l-zh">未来21日内≥5%回撤概率约16%</span></div>
+      
+      <div class="rrd-fnote"><span class="l-en">Taken together the commodity complex is a tailwind for Canada right now.</span><span class="l-zh">整体来看，大宗商品目前对加拿大构成顺风。</span></div>
+      
+      
+
+      
+      <div class="rrd-sep"></div>
+      <div class="rrd-eyebrow"><span class="l-en">Leaders</span><span class="l-zh">龙头</span></div>
+      
+      
+      <div class="rrd-absent"><span class="l-en">Leader coverage building — breadth carries the read for now.</span><span class="l-zh">龙头数据积累中——当前以广度为主要读数。</span></div>
+      
+      
+
+      
+      
+      <div class="rrd-sep"></div>
+      <div class="rrd-eyebrow"><span class="l-en">Currency backdrop</span><span class="l-zh">汇率背景</span></div>
+      <div class="rrd-fx">
+        
+        <div class="rrd-fxrow tone-down">
+          <span class="rrd-fxk"><span class="l-en">Dollar</span><span class="l-zh">美元</span></span>
+          <span class="rrd-fxv">
+            <span class="rrd-tile-chip"><span class="l-en">Rising</span><span class="l-zh">走强</span></span><span class="l-en">A headwind for this market</span><span class="l-zh">对本市场构成逆风</span></span>
+        </div>
+        
+      </div>
       
       
       
+
+      <div class="rrd-sep"></div>
+      <div class="rrd-foot"><span class="l-en">As of 2026-08-10. </span><span class="l-zh">数据截至 2026-08-10。</span><span class="l-en">The Toronto market follows commodities more than Wall Street, so these drivers nudge it rather than drive it — the lightest of our three country reads, and one that has only started to show up in the last few years. </span><span class="l-zh">多伦多市场更多跟随大宗商品，而非美股，因此这些驱动因素只是推力而非主导——在三个市场读数中最轻，且这一规律近几年才开始显现。</span><span class="l-en">These are windows, not certainties — re-drawn nightly. The response is sizing, not stock picking; forward records are still accruing.</span>
+        <span class="l-zh">这些是概率窗口而非定论——每晚重算。应对是仓位控制而非选股；前瞻记录仍在积累中。</span>
+      </div>
+
     </div>
   </div>
 </div>
@@ -2400,7 +2689,7 @@
 </div>
 
 
-<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-12 16:41 UTC</p>
+<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-12 19:33 UTC</p>
 
 </div>
 
