@@ -710,8 +710,11 @@ checks:
         signed excess in its own code is invisible here; T3 of the V1 plan
         retires the known emitter (scripts/grade_qledger.py per-family excess_mean).
       - >
-        The default run is advisory (exit 0). Only --strict exits non-zero, and
-        nothing runs it in CI yet.
+        The default run is advisory (exit 0); only --strict exits non-zero.
+        CI runs the guard's --selftest and its pytest suite (legacy job
+        qledger-cluster-honest-ci), which proves the auditor works — it does NOT
+        run the audit against the real corpus as a gate. ci_wiring is therefore
+        [] on purpose: the guard is unit-proven in CI but not yet enforcing.
       - >
         V3 compares the family's declared ruler against horizons present in the
         grade corpus; it cannot distinguish "not yet matured" from "grading
