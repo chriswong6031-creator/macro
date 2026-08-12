@@ -224,6 +224,16 @@ on:
       - "scripts/research/momoedge_oracle_history_replay.py"
       - "tests/test_momoedge_oracle_history_replay.py"
       - "research/momoedge/history_replay_wave0_receipt.json"
+      # Host-private prospective same-basis OPRA NBBO cohort. Raw capture and
+      # quote bytes never enter git; this trigger owns only code/contracts/tests.
+      - "contracts/options/options.prospective_nbbo_cohort.v1.schema.json"
+      - "engine/options_nbbo_cohort.py"
+      - "scripts/capture_options_nbbo_cohort.py"
+      - "ops/launchd/com.mastermind.optionsnbbocohort.plist"
+      - "ops/launchd/run_options_nbbo_cohort_loop.sh"
+      - "docs/runbooks/OPTIONS_NBBO_COHORT.md"
+      - "tests/test_options_nbbo_cohort.py"
+      - "tests/test_options_nbbo_cohort_deploy.py"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
