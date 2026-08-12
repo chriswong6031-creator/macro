@@ -25,78 +25,81 @@ One row per intelligence **engine** — the unit of account the Evaluation OS sc
 | authority | `engine_input` | 12 |
 | authority | `user_ranking` | 6 |
 | authority | `gate_size` | 5 |
-| graded_by_design | no — not yet | 195 |
-| graded_by_design | yes | 112 |
-| graded_by_design | no — descriptive | 71 |
+| graded_by_design | no — not yet | 200 |
+| graded_by_design | yes | 106 |
+| graded_by_design | no — descriptive | 72 |
 | validation_state | `phase0` | 376 |
 | validation_state | `validated` | 1 |
 | validation_state | `accruing` | 1 |
-| ledger waterfall rule | 1 | 38 |
+| ledger waterfall rule | 1 | 35 |
 | ledger waterfall rule | 2 | 1 |
-| ledger waterfall rule | 3 | 65 |
-| ledger waterfall rule | 4 | 8 |
-| ledger waterfall rule | 5 | 266 |
+| ledger waterfall rule | 3 | 67 |
+| ledger waterfall rule | 4 | 7 |
+| ledger waterfall rule | 5 | 268 |
 
 ## Content findings (law `epistemics.engine_authority_evidence`, warn-tier)
 
 | Code | Engines |
 |---|---|
 | `AUTHORITY_WITHOUT_EVIDENCE` | 21 |
-| `OUTPUT_CLASS_MISSING` | 88 |
+| `OUTPUT_CLASS_MISSING` | 113 |
 | `SCORED_PATH_SURFACES_INCOMPLETE` | 45 |
+| `SPECIES_UNBOUND` | 2 |
 
 These are PRE-EXISTING CONDITIONS of the corpus, not regressions any PR author caused. That is why the owning law is warn-tier and exits non-zero only under `--strict`.
 
 ### C-1 — authority above `display` with no evidence pointer
 
-| Engine | Authority | Heal |
-|---|---|---|
-| `engine/ai_desk.py::qualitative-intelligence` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `ai-desk-theses` |
-| `engine/china_radar_ledger.py::china-alpha` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `china-radar-ledger` |
-| `engine/china_sector_cycles.py::china-alpha` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `china-sector-cycles-forward-log` |
-| `engine/china_standout_track.py::china-alpha` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `china-board-ledger` |
-| `engine/demand_ledger.py::qualitative-intelligence` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `demand-chain-theses` |
-| `engine/name_score_grader.py::china-alpha` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `name-score-calls` |
-| `engine/policy_intent_desk.py::qualitative-intelligence` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `policy-intent-theses` |
-| `engine/run.py::engine-fix` | `user_ranking` | add `qual_ladder_ref` to `config/synapse.yml` for `regime-latest` |
-| `engine/spine.py::qualitative-intelligence` | `user_ranking` | add `qual_ladder_ref` to `config/synapse.yml` for `spine-predictions` |
-| `engine/stock_desk.py::qualitative-intelligence` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `stock-desk-theses` |
-| `engine/thematic_desk.py::qualitative-intelligence` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `thematic-desk-theses` |
-| `engine/track_record.py::setup-species` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `signal-archive-track-record` |
-| `scripts/backtest_vol_overlay.py::options-alpha` | `gate_size` | add `qual_ladder_ref` to `config/synapse.yml` for `vol-regime-basket-overlay-gate` |
-| `scripts/build_baskets.py::sector-pulse` | `user_ranking` | add `qual_ladder_ref` to `config/synapse.yml` for `site-baskets-json` |
-| `scripts/build_china_library.py::china-alpha` | `user_ranking` | add `qual_ladder_ref` to `config/synapse.yml` for `site-china-standouts` |
-| `scripts/build_sector_cycles.py::cycle-intelligence` | `engine_input` | add `qual_ladder_ref` to `config/synapse.yml` for `sector-cycles-forward-log` |
-| `scripts/build_signal_quality.py::setup-species` | `user_ranking` | add `qual_ladder_ref` to `config/synapse.yml` for `signal-archive-mtf` |
-| `scripts/build_stock_library.py::us-stocks-prebreakout` | `user_ranking` | add `qual_ladder_ref` to `config/synapse.yml` for `site-signal-gate` |
-| `scripts/calibrate_vector.py::btc-vector` | `gate_size` | add `qual_ladder_ref` to `config/synapse.yml` for `vector-calibration` |
-| `scripts/fit_cycle_hazard.py::cycle-intelligence` | `gate_size` | add `qual_ladder_ref` to `config/synapse.yml` for `hazard-model` |
-| `scripts/validate_vol_regime.py::options-alpha` | `gate_size` | add `qual_ladder_ref` to `config/synapse.yml` for `vol-regime-gate` |
+| Engine | Authority | Unevidenced artifacts | Heal |
+|---|---|---|---|
+| `engine/ai_desk.py::qualitative-intelligence` | `engine_input` | `ai-desk-theses` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/china_radar_ledger.py::china-alpha` | `engine_input` | `china-radar-ledger` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/china_sector_cycles.py::china-alpha` | `engine_input` | `china-sector-cycles-forward-log` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/china_standout_track.py::china-alpha` | `engine_input` | `china-board-ledger` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/demand_ledger.py::qualitative-intelligence` | `engine_input` | `demand-chain-theses` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/name_score_grader.py::china-alpha` | `engine_input` | `name-score-calls` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/policy_intent_desk.py::qualitative-intelligence` | `engine_input` | `policy-intent-theses` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/run.py::engine-fix` | `user_ranking` | `regime-latest` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/spine.py::qualitative-intelligence` | `user_ranking` | `spine-predictions` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/stock_desk.py::qualitative-intelligence` | `engine_input` | `stock-desk-theses` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/thematic_desk.py::qualitative-intelligence` | `engine_input` | `thematic-desk-theses` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `engine/track_record.py::setup-species` | `engine_input` | `signal-archive-track-record` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `scripts/backtest_vol_overlay.py::options-alpha` | `gate_size` | `vol-regime-basket-overlay-gate` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `scripts/build_baskets.py::sector-pulse` | `user_ranking` | `site-baskets-json` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `scripts/build_china_library.py::china-alpha` | `user_ranking` | `site-china-standouts` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `scripts/build_sector_cycles.py::cycle-intelligence` | `engine_input` | `sector-cycles-forward-log` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `scripts/build_signal_quality.py::setup-species` | `user_ranking` | `signal-archive-mtf`, `site-signals-per-ticker` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `scripts/build_stock_library.py::us-stocks-prebreakout` | `user_ranking` | `site-signal-gate`, `site-us-standouts` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `scripts/calibrate_vector.py::btc-vector` | `gate_size` | `vector-calibration` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `scripts/fit_cycle_hazard.py::cycle-intelligence` | `gate_size` | `hazard-model` | add `qual_ladder_ref` to `config/synapse.yml` for each |
+| `scripts/validate_vol_regime.py::options-alpha` | `gate_size` | `vol-regime-gate` | add `qual_ladder_ref` to `config/synapse.yml` for each |
 
-The prescribed heal fills `qual_ladder_ref` in `config/synapse.yml` — it repairs the canonical source rather than papering over the gap in a side file.
+The prescribed heal fills `qual_ladder_ref` in `config/synapse.yml` — it repairs the canonical source rather than papering over the gap in a side file. The finding is gated on the PER-ARTIFACT list, never on the cell-wide `evidence_ref` union: a union clears on any sibling's pointer, including a decorative `display` sibling's, so healing one artifact would close a finding while an authority-bearing sibling stayed bare.
 
 ## Excluded cells
 
-| Engine id | Source | Reason |
-|---|---|---|
-| `::options-intelligence-program` | derived | derived: empty producer token — no code advances this artifact |
-| `<HAND_MAINTAINED>::neural-web` | derived | derived: placeholder producer token '<HAND_MAINTAINED>' — not a repo module |
-| `<MANUAL>::ird` | derived | derived: placeholder producer token '<MANUAL>' — not a repo module |
-| `<MANUAL>::macro-release-intel` | derived | derived: placeholder producer token '<MANUAL>' — not a repo module |
-| `<MASTERMIND_EXTERNAL>::mastermind-feedback-contract` | derived | derived: placeholder producer token '<MASTERMIND_EXTERNAL>' — not a repo module |
-| `<RESEARCH_FACTORY_INGEST>::research-factory` | derived | derived: placeholder producer token '<RESEARCH_FACTORY_INGEST>' — not a repo module |
-| `<RESEARCH_FACTORY_MONITOR>::research-factory` | derived | derived: placeholder producer token '<RESEARCH_FACTORY_MONITOR>' — not a repo module |
+| Engine id | Source | Would-be authority | Reason |
+|---|---|---|---|
+| `::options-intelligence-program` | derived | `display` | derived: empty producer token — no code advances this artifact |
+| `<HAND_MAINTAINED>::neural-web` | derived | `display` | derived: placeholder producer token '<HAND_MAINTAINED>' — not a repo module |
+| `<MANUAL>::ird` | derived | `display` | derived: placeholder producer token '<MANUAL>' — not a repo module |
+| `<MANUAL>::macro-release-intel` | derived | `display` | derived: placeholder producer token '<MANUAL>' — not a repo module |
+| `<MASTERMIND_EXTERNAL>::mastermind-feedback-contract` | derived | `display` | derived: placeholder producer token '<MASTERMIND_EXTERNAL>' — not a repo module |
+| `<RESEARCH_FACTORY_INGEST>::research-factory` | derived | `display` | derived: placeholder producer token '<RESEARCH_FACTORY_INGEST>' — not a repo module |
+| `<RESEARCH_FACTORY_MONITOR>::research-factory` | derived | `display` | derived: placeholder producer token '<RESEARCH_FACTORY_MONITOR>' — not a repo module |
+
+An exclusion is DERIVED FIRST and excluded second, so it records what it deletes. A **curated** exclusion whose `would_be_authority` is above `display`, or whose cell holds a `scored`/`confirmer`/`shadow` artifact, is a HARD violation — the overlay is not a deletion hatch. Excluded rows are also still audited for content findings, so an exclusion cannot deflate the backlog.
 
 ## Engines above `display` authority
 
 | Engine | Authority | Rule | Ledger | Graded by design | Evidence |
 |---|---|---|---|---|---|
 | `engine/ai_desk.py::qualitative-intelligence` | `engine_input` | c | `data/ai_desk/theses.jsonl` | yes | **null** |
-| `engine/altdata_ledger.py::qualitative-intelligence` | `engine_input` | c | `engine/altdata_ledger.py` | yes | altdata.action, altdata.signal_score |
+| `engine/altdata_ledger.py::qualitative-intelligence` | `engine_input` | c | `data/altdata/theses.jsonl` | yes | altdata.action, altdata.signal_score |
 | `engine/china_radar_ledger.py::china-alpha` | `engine_input` | c | `data/china_radar/ledger.parquet` | yes | **null** |
 | `engine/china_sector_cycles.py::china-alpha` | `engine_input` | c | `data/china_sector_cycles/forward_log.parquet` | yes | **null** |
 | `engine/china_standout_track.py::china-alpha` | `engine_input` | c | `data/china_standout_track/board.parquet` | yes | **null** |
-| `engine/demand_ledger.py::qualitative-intelligence` | `engine_input` | c | `engine/demand_ledger.py` | yes | **null** |
+| `engine/demand_ledger.py::qualitative-intelligence` | `engine_input` | c | `data/demand_chain/theses.jsonl` | yes | **null** |
 | `engine/name_score_grader.py::china-alpha` | `engine_input` | c | `data/name_score/us_calls.parquet` | yes | **null** |
 | `engine/policy_intent_desk.py::qualitative-intelligence` | `engine_input` | c | `data/policy_intent/theses.jsonl` | yes | **null** |
 | `engine/run.py::engine-fix` | `user_ranking` | b | `data/board_ledger/ca_board.parquet` | yes | **null** |
@@ -125,24 +128,32 @@ The prescribed heal fills `qual_ladder_ref` in `config/synapse.yml` — it repai
 | `evidence_ref` | `qual_ladder_ref` | no |
 | `ledger`, `ledger_evidence` | ledger-module glob, AST desk scan, tier, consumer hop | no |
 | `declared_horizon` | `horizon_role` + qledger `horizon_d` | no |
-| `graded_by_design` | `ledger` + all-infrastructure test | overlay may make ONE transition |
+| `graded_by_design` | a STORE-shaped `ledger` + all-infrastructure test | overlay may make ONE transition |
 | `validation_state` | `data/species/registry.json` | overlay may ratify terminal states only |
 | `output_class` | — (no canonical source encodes it) | yes, required only when the evaluation gate trips |
 | `not_an_engine` | placeholder/frozen producers | yes, for judgment exclusions |
 
 `authority` and `evidence_ref` are deliberately NOT curated. `_REQUIRED_ARTIFACT_KEYS` (`engine/neuralweb/synapse.py:52`) is a required-key set, not an exact-key set, so a hand-typed `authority:` key in `synapse.yml` would land as unenforced free text next to the already-unenforced `scored_path_surfaces` — reproducing the exact defect class C-1 and C-2 are instances of, one field later.
 
-## Volatile fields and the split drift law
+## Why this file carries no corpus-derived value
 
-`data/qledger/claims.jsonl` is append-only and `data/species/registry.json` moves independently of any PR. A byte-equality gate over fields sourced from them would be a scheduled red — the first nightly row written to a currently-empty desk would flip a field and red every open PR. So the HARD law (`governance.intelligence_registry_integrity`) compares the STRUCTURAL PROJECTION (this file with the volatile paths stripped), and a stale corpus snapshot is a warn-tier content finding instead.
+`data/qledger/claims.jsonl` is APPEND-ONLY — 13 automated commits in 14 days. Any field derived from it goes stale on its own, with no code change. Pinning such a field by equality in a committed artifact is a SCHEDULED fleet-wide red: main reds daily for a property no PR author caused, and a guard that reds the fleet for nobody's fault gets routed around instead of obeyed.
 
-Volatile paths, declared in `meta.volatile_fields` so the projection is self-describing:
+So the committed artifact carries **none** of them. These paths are computed at READ time by `engine.intelligence_registry.volatile_view()` and are never serialised — `assert_no_volatile()` makes their absence a HARD violation:
 
 - `declared_horizon.horizon_d`
 - `ledger_evidence.corpus_rows`
 - `ledger_evidence.corpus_checked`
-- `validation_state`
-- `validation_state_evidence`
+- `meta.corpus`
 
-Corpus read on the last regeneration: species=True (n=27), qledger=True (n_desks=13).
+Everything that remains moves only when a PR moves it: `config/synapse.yml`, `config/qual_ladder.yml`, `data/species/registry.json` (ONE commit in the repo's history, no automated writer), the producer set, the `engine/*_ledger.py` inventory, or the overlay. That is what makes ONE byte-exact comparison both sound and complete, and what makes `hard` severity legitimate: every heal is a single command on the PR that caused it.
+
+There is deliberately **no nightly regeneration lane**, and one must not be added. A nightly rewrite of a git-tracked JSON this size would push a storm into the wire lanes for zero information, and the heal would be valid only until the next append. The fix is that nothing an automated lane can move lives in the file.
+
+**Unbound species** — a species whose `ledger_binding` matches no engine ledger. Either an engine's `validation_state` is understated, or the species is orphaned; both are worth naming.
+
+| Species | validation_status |
+|---|---|
+| `EI-F1D-RW` | `accruing` |
+| `F3_ANTICHASE` | `accruing` |
 

@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: 2026-08-12
+updated: "2026-08-12"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -2595,13 +2595,17 @@ checks:
     summary: >
       The Mastermind engine registry (data/intelligence_registry.json) must be DERIVED
       and rebuildable, never hand-authored. Its spine is a pure function of
-      config/synapse.yml, the engine/*_ledger.py inventory, an AST scan of producer
-      source, data/species/ and data/qledger/; only four curated keys may live in
+      config/synapse.yml, config/qual_ladder.yml, the engine/*_ledger.py inventory, an AST
+      scan of producer source, and data/species/registry.json — every one of which moves
+      ONLY via a PR. It deliberately carries NOTHING derived from data/qledger/, which is
+      append-only. Only four curated keys may live in
       config/intelligence_registry_overlay.yml. This law fires ONLY on properties of the
-      registry's own files: structural drift from a fresh regeneration, non-idempotent
-      regeneration, an overlay key outside the four-key allowlist, an overlay row for an
-      engine_id the builder did not generate (orphan), an unknown enum value, a missing
-      required field, a null ledger, an exclusion with an empty reason, or a synapse
+      registry's own files: BYTE drift from a fresh regeneration, non-idempotent
+      regeneration, the presence of any corpus-derived path in the committed file, an
+      overlay key outside the four-key allowlist, an overlay row for a cell the partition
+      does not contain (orphan), a curated not_an_engine exclusion of an AUTHORITY-BEARING
+      cell, an unknown enum value, a missing required field, a null ledger, an exclusion
+      with an empty reason or one that does not record what it deletes, or a synapse
       artifact mapping to zero or more than one engine. The key allowlist IS the
       executable form of DNR:KILL-PARALLEL-KNOWLEDGE-BASE — without it the overlay
       silently becomes the hand-authored engine list that row forbids.
@@ -2624,19 +2628,51 @@ checks:
     ratchet: null
     known_limits:
       - >-
-        The HARD drift comparison is over the STRUCTURAL PROJECTION, not the whole file.
-        data/qledger/claims.jsonl is append-only and data/species/registry.json moves
-        independently of any PR, so pinning corpus-sourced fields by equality would be a
-        SCHEDULED red — the first nightly row written to a currently-empty desk would
-        flip a field and red every open PR for a property nobody introduced. The volatile
-        paths are declared in meta.volatile_fields inside the artifact itself, so the
-        projection is self-describing and the guard cannot silently narrow it. A stale
-        corpus snapshot is a warn-tier content finding instead.
+        The HARD comparison is ONE byte-exact comparison of the whole file, and that is
+        sound ONLY because the committed artifact carries no corpus-derived value. An
+        earlier version compared a STRUCTURAL PROJECTION (the file with the volatile paths
+        stripped) and that was wrong twice over: the CI-wired test
+        tests/test_check_intelligence_registry.py::test_builder_check_mode_reports_no_drift
+        asserts `build_intelligence_registry.py --check` exits 0, and --check compares the
+        WHOLE file — so the append-only scheduled red came straight back in through the
+        test the projection was meant to prevent; and stripping a field before comparing
+        it made a hand-edit of that field INVISIBLE, which is how a tamper of
+        validation_state (the display-only-until-validated axis) produced byte-identical
+        guard output. Both are fixed at the source: ledger_evidence.corpus_rows,
+        ledger_evidence.corpus_checked, declared_horizon.horizon_d and meta.corpus are
+        computed at read time by volatile_view() and never serialised, and their PRESENCE
+        in the committed file is itself a hard violation (assert_no_volatile).
       - >-
-        An ABSENT registry, or an unreadable data/ store, exits 0 with a ::notice and the
+        There is deliberately NO regeneration lane for data/intelligence_registry.json and
+        one must not be added — `grep -rn build_intelligence_registry .github/` returns
+        nothing. A nightly that rewrote a ~800 KB git-tracked JSON would push a storm into
+        the wire lanes for zero information, and the heal would be valid only until the
+        next claim append. The reason no lane is needed is that every remaining input
+        (config/synapse.yml, config/qual_ladder.yml, data/species/registry.json — ONE
+        commit in the repo's history and no automated writer — the producer set, the
+        overlay) moves only via a PR, so every possible drift is PR-caused with a
+        one-command heal. That is what makes `hard` legitimate.
+      - >-
+        An ABSENT registry, or an unreadable STABLE input, exits 0 with a ::notice and the
         drift comparison is SKIPPED rather than reported clean. Sparse agent worktrees
         carry no data/ on disk while ~39,900 data paths are tracked in HEAD; "I could not
-        look" must never render as "I looked and it was clean".
+        look" must never render as "I looked and it was clean". Every read — including
+        producer SOURCE, the engine/*_ledger.py inventory, and the qual_ladder_ref path
+        probe — goes through the git-show ladder, and a producer readable from neither the
+        worktree nor HEAD is announced with a ::notice rather than silently skipped.
+      - >-
+        The curated-exclusion count is pinned at ZERO by a test
+        (tests/test_intelligence_registry.py::test_the_live_overlay_carries_ZERO_curated_exclusions),
+        not by this entry's `ratchet:` field — that field's schema is a {date, action}
+        pair for a severity flip, not a count. `not_an_engine` is the most destructive of
+        the four overlay keys and was the least gated: a 3-character reason removed an
+        authority-bearing engine with both laws green (measured 2026-08-12: 378 -> 376
+        engines, gate_size 5 -> 4, content findings 109 -> 106). It now requires
+        ratified_by, a date, a >=40-character reason and a DNR:<KEY>-shaped citation if it
+        cites one; exclusions are derived BEFORE being excluded so each records its
+        would_be_authority; a curated exclusion of an authority-bearing or
+        scored/confirmer/shadow cell is a HARD violation; and excluded rows are still
+        audited for content findings, so an exclusion cannot deflate the backlog.
       - >-
         The engine unit is (producer, owner_program). 32 of 378 engines mix artifact
         tiers, so the engine-level authority roll-up (a MAX) OVERSTATES authority for the
@@ -2673,12 +2709,16 @@ checks:
       carry NO qual_ladder_ref, so things with rank/size/gate authority do not name their
       prereg. Finding C-2: synapse `tier` does not express authority over a human at all —
       site-us-standouts (the Prophet board that orders what a paying user sees) carried
-      the same tier=display as a decorative chip. This law reports every engine with
-      authority > display and evidence_ref == null, every gate-tripping engine with no
-      curated output_class, a graded_by_design value contradicting a resolved ledger, a
-      registered qledger desk with zero rows in the claim corpus, and the
-      scored_path_surfaces completeness flag (an artifact read by an Article-2 enforcer
-      module while declaring no surfaces — the measured prophet-index case).
+      the same tier=display as a decorative chip. This law reports every ARTIFACT above
+      display authority with no RESOLVABLE qual_ladder_ref (AUTHORITY_WITHOUT_EVIDENCE),
+      every qual_ladder_ref that resolves to neither a config/qual_ladder.yml key nor an
+      existing repo path (AUTHORITY_EVIDENCE_UNRESOLVABLE), every gate-tripping engine
+      with no curated output_class, a graded_by_design value contradicting a resolved
+      ledger, a species whose ledger_binding matches no engine (SPECIES_UNBOUND), a
+      registered qledger desk with zero rows in the claim corpus (computed at read time
+      from the live corpus, never from the committed file), and the scored_path_surfaces
+      completeness flag (an artifact read by an Article-2 enforcer module while declaring
+      no surfaces — the measured prophet-index case).
     source_ref:
       - engine/intelligence_registry.py
       - scripts/check_intelligence_registry.py
@@ -2698,9 +2738,29 @@ checks:
       - >-
         Advisory by default (exit 0 with ::warning annotations); only --strict exits
         non-zero, and --strict is deliberately NOT passed in CI yet. The findings are
-        PRE-EXISTING CONDITIONS of the corpus (154 on the 2026-08-12 registry: 21 C-1, 88
-        missing output_class, 45 completeness flags), not regressions any PR author
-        caused.
+        PRE-EXISTING CONDITIONS of the corpus (181 on the 2026-08-12 registry: 21 C-1, 113
+        missing output_class, 45 completeness flags, 2 unbound species, 0 unresolvable
+        refs), not regressions any PR author caused.
+      - >-
+        HONEST BEFORE/AFTER of the 2026-08-12 remediation: the C-1 gate moved from the
+        cell-wide evidence_ref UNION to the per-ARTIFACT list and gained a resolvability
+        probe, and BOTH changes were measured to add ZERO findings on arrival — no engine
+        was masked by a sibling ref, and all 10 live qual_ladder_ref values resolve (9
+        config/qual_ladder.yml keys + 1 existing repo path). C-1 therefore stayed at 21.
+        OUTPUT_CLASS_MISSING moved 88 -> 113: the gate now trips on a resolved ledger, so
+        the 26 engines the registry itself marked graded_by_design='yes' while recording
+        output_class_reason='not_required_display_only' (scripts/build_prophet.py::momoedge
+        among them) stopped being exempt — net +25 after the ~7 that lost a bogus ledger to
+        the store test. Both counts are pinned by name in tests/test_intelligence_registry.py.
+      - >-
+        graded_by_design='yes' requires a STORE-shaped ledger and moved 112 -> 106. The 6
+        that moved are pinned BY NAME (shrink-direction control — a detector that quietly
+        shrinks is a detector going blind): config/lobe_charters.yml (a charter config),
+        four unexpanded template/glob paths, and one rule-4 hop that landed on
+        engine/demand_ledger.py (a Python module cannot hold a graded row). The three
+        engine/*_ledger.py SELF-REFERENCES created by the deleted `else producer` fallback
+        now resolve real stores and are pinned as STILL graded. Directory paths
+        (data/metabolism/agenda/) count as stores.
       - >-
         Derived authority UNDER-COUNTS on day one because its input is under-populated:
         only 11 of 642 synapse artifacts carry a non-empty scored_path_surfaces, and
@@ -2722,7 +2782,13 @@ checks:
       - >-
         ANNOTATION BUDGET: C-1 findings are annotated per engine (each names its concrete
         heal); every other code is aggregated into one annotation with a count, with full
-        detail on stdout. 154 individual annotations would bury the actionable rows.
+        detail on stdout. 181 individual annotations would bury the actionable rows.
+      - >-
+        Resolvability is NOT adequacy. AUTHORITY_EVIDENCE_UNRESOLVABLE proves only that a
+        qual_ladder_ref points at something real — a key in config/qual_ladder.yml or a
+        file that exists. It cannot prove that the document pre-registers anything. That
+        judgment belongs to T7's backlog drain; this only closes the hole where the C-1
+        backlog was drainable to zero with arbitrary non-empty strings.
     owner_program: qualitative-intelligence
     notes: >
       warn was chosen over the sibling precedent epistemics.qledger_metric_validity's
