@@ -31,6 +31,7 @@ from engine.i18n import prettify as _prettify, t as T  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
 from engine.market_gamma import view as market_gamma_view  # noqa: E402 — SHARED deriver: FE banner + contract (engine/run.py) call the SAME function so they can't drift
 from lib import config, site_assets, store  # noqa: E402
+from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -3554,6 +3555,12 @@ def _plans_view_model() -> dict:
         "pro": _tier_vm("pro"),
         "founding": founding,
         "terminal_indicators": catalog.get("terminal_indicators", {}),
+        # Chat allowances derived from config/brain.yml — the SAME file
+        # brain_gateway._get_allowance enforces (MNZ-R13). Every chat number on the
+        # page used to be a hand-typed literal; they were correct, but nothing bound
+        # them, so a repriced lane would have left the promise behind. See
+        # lib/chat_allowance.py.
+        "chat_quotas": chat_allowance_view_model(),
     }
 
 
@@ -3566,16 +3573,27 @@ def build_plans_page(env: Environment, site: Path, generated: str) -> None:
     client-side; nothing here reaches the network at build time.
     Additive + graceful: never fatal to the build.
     """
-    vm = _plans_view_model()
-    html = env.get_template("plans.html.j2").render(
-        generated_utc=generated,
-        currency=vm["currency"],
-        essential=vm["essential"],
-        pro=vm["pro"],
-        founding=vm["founding"],
-        terminal_indicators=vm["terminal_indicators"],
-    )
-    write_page(site / "plans.html", html)
+    # Everything that can leave site/plans.html at its PREVIOUS bytes belongs inside this
+    # guard, not just the config read: the caller wraps build_plans_page in
+    # `except Exception: log.error(...)`, so a template UndefinedError or a write failure
+    # produces the identical silent-stale outcome. A pricing page serving allowances the
+    # serving spine no longer honours is the exact drift lib/chat_allowance.py exists to
+    # close. Annotations must START the line and bypass the logger (CLAUDE.md); first line
+    # only, because a yaml ScannerError is multi-line and GitHub keeps just the first —
+    # which is the one carrying the file, line and column.
+    #
+    # The view model is SPLATTED rather than re-listed: this template is rendered from
+    # three places (here, scripts/build_public_pages, and the pricing guards), and a
+    # hand-listed kwarg set means every new view-model key breaks the call sites that
+    # forget it. Measured 2026-08-12 when `chat_quotas` landed.
+    try:
+        vm = _plans_view_model()
+        html = env.get_template("plans.html.j2").render(generated_utc=generated, **vm)
+        write_page(site / "plans.html", html)
+    except Exception as exc:  # noqa: BLE001 — annotate, then let the caller stay non-fatal
+        print(f"::error title=plans-config::plans page NOT rebuilt, stale bytes retained — "
+              f"{str(exc).splitlines()[0] if str(exc) else type(exc).__name__}", flush=True)
+        raise
     log.info("wrote plans.html (essential $%s/$%s save %s%% · pro $%s/$%s save %s%%)",
              vm["essential"]["monthly_pm"], vm["essential"]["annual_pm"], vm["essential"]["save_pct"],
              vm["pro"]["monthly_pm"], vm["pro"]["annual_pm"], vm["pro"]["save_pct"])
