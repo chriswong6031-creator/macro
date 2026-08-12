@@ -159,6 +159,81 @@ def read_ledger(data_root: Path) -> pd.DataFrame:
     return _coerce(df)
 
 
+def restore_status(data_root: Path) -> dict:
+    """Is the on-disk ledger fit to be ADVANCED, or did its restore come up empty?
+
+    ``events.parquet`` is R2-canonical (gitignored since 2026-08-11; ~10.8 MB
+    rewritten every night = ~4 GB/yr of binary git churn if tracked).  The nightly
+    therefore RESTORES it before building — and a restore is a network call, so
+    "the file is not there" and "the file is last month's copy" are now live
+    failure modes that used to be impossible when git carried it.
+
+    Both are silent by construction if unguarded.  ``read_ledger`` returns an
+    empty typed frame for an absent or torn parquet, so a failed restore would
+    make the nightly re-fork the ledger FROM NOTHING: it would harvest its
+    catch-up window against an empty stored frame, write a few hundred rows over
+    the 35k-row history, and publish that back to R2 as the new canonical copy.
+    Nothing in the pipeline can tell that apart from a legitimate first night.
+
+    The tracked truth is ``latest.json``: it is git-committed, so every checkout
+    has it, and its ``asof`` is written as ``ledger["date"].max()`` by the same
+    run that wrote the parquet (``artifact.build``).  A healthy restore therefore
+    satisfies ``parquet max date >= latest.json asof``; anything less means the
+    restored bytes are older than the ledger this checkout knows was published.
+
+    Fail-CLOSED on the parquet (absent / zero-row / unreadable -> refuse), and
+    tolerant only where there is nothing to compare against: no ``latest.json``,
+    or a null ``asof``, is the genuine pre-seed state and cannot be an evidence
+    of staleness either way.
+
+    Returns ``{"ok", "reason", "ledger_max", "artifact_asof", "rows"}``; never
+    raises — the caller's contract is to warn and leave artifacts untouched.
+    """
+    from engine.price_pressure.artifact import artifact_path  # noqa: PLC0415 — artifact imports ledger
+
+    out: dict = {"ok": False, "reason": None, "ledger_max": None,
+                 "artifact_asof": None, "rows": 0}
+    p = ledger_path(data_root)
+    asof = None
+    ap = artifact_path(data_root)
+    if ap.exists():
+        try:
+            import json  # noqa: PLC0415 — only this seam needs it
+
+            asof = (json.loads(ap.read_text(encoding="utf-8")) or {}).get("asof")
+        except Exception:  # noqa: BLE001 — a torn artifact is not a staleness verdict
+            asof = None
+    out["artifact_asof"] = str(asof) if asof else None
+
+    if not p.exists():
+        out["reason"] = ("ledger events.parquet absent — the R2 restore did not land "
+                         "(python -m scripts.fetch_r2 --dirs price_pressure)")
+        return out
+    stored = read_ledger(data_root)
+    out["rows"] = int(len(stored))
+    if stored.empty or stored["date"].isna().all():
+        out["reason"] = "ledger events.parquet holds no dated rows (empty or unreadable restore)"
+        return out
+    ledger_max = pd.Timestamp(stored["date"].max())
+    out["ledger_max"] = str(ledger_max.date())
+    if not asof:
+        out["ok"] = True
+        out["reason"] = "no tracked asof to compare against (pre-seed artifact)"
+        return out
+    try:
+        asof_ts = pd.Timestamp(str(asof)).normalize()
+    except Exception:  # noqa: BLE001 — an unparsable asof is not a staleness verdict
+        out["ok"] = True
+        out["reason"] = f"tracked asof {asof!r} is unparsable — not treated as evidence"
+        return out
+    if ledger_max < asof_ts:
+        out["reason"] = ("restored ledger is OLDER than the tracked artifact — "
+                         "stale or partial R2 restore")
+        return out
+    out["ok"] = True
+    return out
+
+
 def _coerce(df: pd.DataFrame) -> pd.DataFrame:
     """Force the canonical column set, order and dtypes — the byte-stability seam."""
     out = pd.DataFrame(index=df.index)

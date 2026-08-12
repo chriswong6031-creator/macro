@@ -17,9 +17,13 @@ Two modes:
         The one-shot historical seed + frozen base rates.  Operator-run, local,
         OFF CI and off the render path.  Never invoked by a workflow.
 
-Refuse-to-run gate: a missing or stale bar store prints a workflow annotation and
-exits 0 WITHOUT touching any artifact — a short run must never overwrite a good
-ledger.  The annotation goes out through a bare ``print`` at the start of the
+TWO refuse-to-run gates, both fail-closed, both non-fatal: a missing or stale bar
+store, and a missing or stale ``events.parquet`` (``ledger.restore_status`` — the
+ledger is R2-canonical and gitignored, so a failed restore would otherwise re-fork
+it from nothing).  Either prints a workflow annotation and exits 0 WITHOUT touching
+any artifact — a short run must never overwrite a good ledger.  Store restore:
+``python -m scripts.fetch_r2 --dirs massive_stock_day,price_pressure``.
+The annotation goes out through a bare ``print`` at the start of the
 line: every builder here logs with a prefixing format, so an annotation emitted
 through ``log.warning`` reads as an alarm in review and produces nothing in the
 Actions summary (house law, ``tests/test_gh_annotation_line_start.py``).
@@ -81,6 +85,7 @@ def _nightly(args: argparse.Namespace) -> int:
     from engine.price_pressure import artifact as pp_artifact
     from engine.price_pressure import base_rates as pp_base
     from engine.price_pressure import detect as pp_detect
+    from engine.price_pressure import ledger as pp_ledger
     from engine.price_pressure import panel as pp_panel
     from engine.price_pressure import pipeline as pp_pipeline
 
@@ -90,6 +95,23 @@ def _nightly(args: argparse.Namespace) -> int:
         print(f"::warning title=price-pressure-store-stale::bar store unusable at {store} "
               f"({pre['reason'] or 'unknown'}) — artifacts left untouched", flush=True)
         log.warning("price_pressure: refusing to run (%s)", pre["reason"])
+        return 0
+
+    # The LEDGER's own restore gate.  events.parquet is R2-canonical (gitignored),
+    # so an empty or stale `fetch_r2 --dirs price_pressure` is a live failure mode
+    # that git used to make impossible — and read_ledger's empty-frame fallback
+    # would turn it into a SILENT re-fork of the ledger from nothing (see
+    # ledger.restore_status).  Same non-fatal posture as the bar-store gate above:
+    # annotate at line start, touch no artifact, exit 0.  Placed BEFORE prepare()
+    # so a failed restore costs seconds instead of the 45-60s panel build.
+    fresh = pp_ledger.restore_status(data_dir)
+    if not fresh["ok"]:
+        print(f"::warning title=price-pressure-ledger-stale::{fresh['reason']} "
+              f"(events.parquet max date {fresh['ledger_max'] or 'none'} vs "
+              f"latest.json asof {fresh['artifact_asof'] or 'none'}) — "
+              "artifacts left untouched", flush=True)
+        log.warning("price_pressure: refusing to advance (%s; ledger_max=%s asof=%s)",
+                    fresh["reason"], fresh["ledger_max"], fresh["artifact_asof"])
         return 0
 
     cache_ctx = None
