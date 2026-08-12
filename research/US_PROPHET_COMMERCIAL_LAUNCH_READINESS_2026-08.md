@@ -118,9 +118,10 @@ published work does not reach (see §11 strengths). The **wiring is not** — an
 commercial launch surface today, for six reasons that are independent of each other and each
 sufficient:
 
-0. **The release candidate's wiring ships a fresh instance of the exact defect it was written
-   to close.** PR #5370 admits on the still-open 3D bucket, so a name renders
-   "Early turn — watch, don't chase" and is erased the next session with no receipt — 4 ghosts
+0. **At the audited #5370 head, the release candidate's wiring carried a fresh instance of
+   the exact defect it was written to close.** That head admitted on the still-open 3D bucket,
+   so a name rendered
+   "Early turn — watch, don't chase" and was erased the next session with no receipt — 4 ghosts
    of 8 live fires on STLD, 13 of 20 on NEM, measured on the PR's own fixtures, with the
    study's headline example (STLD 2026-07-10) double-stamped (B-15, §5.4). A repaint is
    disqualifying for a product whose entire pitch is *timing*, and fatal to any proof board.
@@ -206,6 +207,17 @@ records; `docs/DESIGN_DOCTRINE.md`; `research/DO_NOT_REBUILD.md`; the live paylo
 #5370 head `edaf501ae7e4e1547e6124d50dd1b59e3cb17954` — note this is **not** the `ed658de2c55`
 head named in my commissioning brief; #5370's head moved (a main merge, `Merge branch 'main'
 into claude/prophet-us-union-admission-wiring`). Studies read from the PR head refs.
+
+**Post-review status correction (2026-08-12):** #5370 subsequently added
+`05d24b608b9a64ad9c5ac8a55c4469b03198cfad`, the explicit J-14/J-15/J-17/J-18 repair,
+and was squash-merged as `f079300a74c0ad2df63cc2867b882ece50668db8` at
+2026-08-11T23:52:22Z. B-15 through B-19 below remain the independent audit findings against
+`edaf501ae7e4e1547e6124d50dd1b59e3cb17954`; they are not current-main status assertions.
+That repair supersedes the pre-merge status of J-14, J-15, J-17, and J-18; it does not close
+J-16/B-17 or the broader readiness case. The operating action is now immediate post-merge
+verification of the shipped repair receipts, with any failed receipt returning to remediation
+before private-beta entry. Merge is not launch-readiness evidence, release approval, or new
+signal authority; the **PRIVATE BETA ONLY** ruling is unchanged.
 
 **New computation:** none. Every number below is read from a frozen artifact or from a live
 committed payload. Where I disagree with a study, I disagree from its own frozen tables.
@@ -484,7 +496,8 @@ the *durability* half of the case, and any launch packet must cite the corrected
 
 Source of truth for "what the payload encodes": `site/prophet/index.json` (schema
 `prophet.index/v1`, `asof` 2026-08-10, live main) and `engine/prophet_bridge.py`. Where PR
-#5370 changes the answer it is marked *(#5370, unmerged)*.
+#5370's audit-time head changes the answer it is marked *(#5370, audit-time head; later
+repaired and merged)*.
 
 | 04 §3 stage | payload key(s) that could carry it | literal values observed live (n=140 plans) | verdict |
 |---|---|---|---|
@@ -499,7 +512,7 @@ Source of truth for "what the payload encodes": `site/prophet/index.json` (schem
 | — | `integrity_status` | `null` 110 / `audited_current` 27 / `audited_mixed_vintage` 3 | present, mostly null |
 | — | `signal_date_basis` | `null` 83 / **`legacy_formation_alias` 30** / `tier_event_date` 27 | **material to §9** — for 30 plans the "signal date" is an alias for the formation date, and for 83 the basis is unknown |
 | — | `stage_tilt.provisional` | `true` on every populated row; `eligible: false`; `ec_source_state: 'unavailable'` | see B-11 |
-| *(#5370)* | `deck_admitted` vs `fired`; `union_fired`; `licensing_chip`; `stage`; `early_signal_dates` | not on main. `stage` literals `EARLY`/`CONFIRMING`/`CONFIRMED` exist in `STAGE_SIZING_COPY` (`engine/us_early_turn.py:886-887`) but **only `EARLY` is ever assigned** (`:1093`) | adds the deck-vs-fired distinction (which inverts — B-18) and a bucket-last date list. **CONFIRMING and CONFIRMED are declared and unreachable; AGING and EXTENDED are still absent.** No template reads `licensing_chip` |
+| *(#5370 audit-time head)* | `deck_admitted` vs `fired`; `union_fired`; `licensing_chip`; `stage`; `early_signal_dates` | not on the audit-time main. `stage` literals `EARLY`/`CONFIRMING`/`CONFIRMED` exist in `STAGE_SIZING_COPY` (`engine/us_early_turn.py:886-887`) but **only `EARLY` is ever assigned** (`:1093`) | adds the deck-vs-fired distinction (which inverts — B-18) and a bucket-last date list. **CONFIRMING and CONFIRMED are declared and unreachable; AGING and EXTENDED are still absent.** No template reads `licensing_chip` |
 
 ### §5.2 Verdict on the stage model
 
@@ -1071,10 +1084,13 @@ Owner lane per `06_EXECUTION_DOCKET…` §3 and CLAUDE.md §Model routing. Sizes
 
 Sequence I would hold the executive decision to:
 
-0. **Before #5370 merges at all:** J-14, J-15, J-17, J-18. B-15 (ghost fires) and B-16
-   (scheduled contract red) are merge blockers, not launch blockers — the first puts a repaint
-   into the nightly, the second reds main on the next manifest regeneration. #5370 should be
-   held, not armed, until J-14 and J-15 land in it.
+0. **Immediate post-merge verification/remediation for #5370:** the audited PR later landed
+   J-14, J-15, J-17, and J-18 in `05d24b608b9a64ad9c5ac8a55c4469b03198cfad`
+   before its squash merge as `f079300a74c0ad2df63cc2867b882ece50668db8`. Re-run those
+   receipts on current main before private-beta entry; any missing or failing receipt returns
+   to immediate remediation. These are no longer future pre-merge instructions. The merge
+   itself is not launch-readiness evidence, release approval, or signal authority and does not
+   relax steps 1–4.
 1. **Immediately (not beta-deferrable, live defects on anonymous surfaces):** J-1, J-2, J-9,
    J-13. Until these land, the public landing teaser and the public proof surface should be
    withdrawn.

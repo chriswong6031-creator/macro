@@ -26,7 +26,7 @@
   'credit_hyg_tlt':   ('HY bonds lagging Treasuries','高收益债跑输国债'),
   'rates_move':       ('Bond-market volatility (MOVE)','债市波动率（MOVE）'),
   'rates_realrate':   ('Real yields jumping','实际利率跳升'),
-  'bubble_ext':       ('S&P stretched vs 200-day','标普超买（>200日线）'),
+  'bubble_ext':       ('S&P trend extension vs 200-day','标普相对200日线趋势延伸'),
   'bubble_leadership':('Narrow leadership (semis)','领涨过窄（半导体）'),
   'growth_defensives':('Defensives outperforming','防御股跑赢'),
   'growth_cyc_def':   ('Cyclicals fading vs defensives','周期股弱于防御'),
@@ -68,6 +68,11 @@
         {{ help('Pullback-risk gauge. Use high readings to trim risk, not to pick stocks.', '回撤风险仪表。高读数用于降风险，不用于选股。') }}
       </div>
       {% if rd.label_en %}<div class="rrx-dom">{{ t(rd.label_en, rd.label_zh) }}</div>{% endif %}
+      {% if rd.authority and rd.state in ['watch','caution','elevated','risk-off'] %}
+      <div class="rrx-authority{{ ' is-binding' if rd.binding else ' is-advisory' }}">
+        {{ t(rd.authority.note_en, rd.authority.note_zh) }}
+      </div>
+      {% endif %}
       {% if rd.amp and rd.amp > 0 %}<div class="rrx-amp">▲ {{ t('Amplified','放大') }} — <span class="l-en">{{ rd.amp_flags_en|join(' · ') }}</span><span class="l-zh">{{ rd.amp_flags_zh|join(' · ') }}</span></div>{% endif %}
     </div>
     {% if rd.gross is not none and rd.gross < 1 %}<div class="rrx-gross"><span class="gv">×{{ '%.2f'|format(rd.gross) }}</span><span class="gn">{{ t('gross','建议仓位') }}</span></div>{% endif %}
@@ -76,7 +81,7 @@
   {% if rd.dd21 is not none %}
   <div class="rrx-odds">
     <div class="rrx-odds-l">
-      <div class="rrx-cap">{{ t('Pullback odds','回撤概率') }} <span class="rrx-cap-sub">{{ t('≥5% drop · escalating','≥5% · 递增') }}</span></div>
+      <div class="rrx-cap">{{ t('Pullback odds','回撤概率') }} <span class="rrx-cap-sub">{{ t('≥5% drop · measured vs normal','≥5% · 实测对比常态') }}</span></div>
       <div class="rrx-big">{{ (rd.dd21*100)|round|int }}<span class="pct">%</span><span class="rrx-hz">{{ t('within 21 days','21 日内') }}</span></div>
       <div class="rrx-vsn">{% if rd.dd_lift is not none %}<b>{{ rd.dd_lift }}×</b> {% endif %}{{ t('vs normal','对比常态') }} {{ (base.h21*100)|round|int }}%</div>
     </div>
@@ -230,7 +235,7 @@
   {% endif %}{% endfor %}
   {% endif %}
 
-  {% if rd.is_loud and rd.do_en %}
+  {% if rd.is_warning and rd.do_en %}
   <div class="rrx-do"><span class="rrx-do-k">{{ t('Do','应对') }}</span>{{ t(rd.do_en, rd.do_zh) }}</div>
   {% endif %}
 
@@ -242,7 +247,7 @@
   {% if rd.cycle and rd.cycle.show %}{% set cy = rd.cycle %}
   <div class="rrx-cyc">
     <span class="rrx-cyc-k">{{ t(cy.label_en, cy.label_zh) }}{% if cy.in_drawdown_window %} · {{ t('Apr–Oct window','4–10月窗口') }}{% endif %}</span><button class="lens-q" type="button" aria-label="Explain" data-lens-kind="record" data-tip-en="{{ cy.stat_en }} {{ cy.slice_en }}" data-tip-zh="{{ cy.stat_zh }} {{ cy.slice_zh }}" data-tip-rc-en="8 midterm cases · weak edge (p≈.09) · calendar adjusts sizing only — never raises an alarm" data-tip-rc-zh="8 个中期年样本 · 优势较弱（p≈.09）· 日历仅微调仓位，绝不单独报警">?</button>
-    {% if cy.modulation and cy.modulation.risk_on_slice %}<span class="rrx-cyc-tag">▲ {{ t('early-warning sensitivity raised','已提高预警灵敏度') }}</span>{% elif cy.modulation and cy.modulation.gross_applied %}<span class="rrx-cyc-tag">{{ t('sizing trimmed','已小幅降仓') }}</span>{% endif %}
+    {% if cy.modulation and cy.modulation.gross_applied %}<span class="rrx-cyc-tag">{{ t('sizing prior only','仅仓位先验') }}</span>{% endif %}
     {% if cy.trough_window_en %}<div class="rrx-cyc-sub">{{ t(cy.trough_window_en, cy.trough_window_zh) }}</div>{% endif %}
     {% if cy.sector_bias %}{% set sb = cy.sector_bias %}
     <div class="rrx-cyc-sec">{{ t('Favor','偏好') }} {% for f in sb.favor %}{% if not loop.first %} · {% endif %}{{ f.ticker }}{% endfor %} · {{ t('trim','减持') }} {% for a in sb.avoid %}{% if not loop.first %} · {% endif %}{{ a.ticker }}{% endfor %}</div>
