@@ -2383,12 +2383,13 @@ def pull_cap_for_budget(
 class SweepBudget:
     """How much API budget this sweep may spend, asked repeatedly as it spends it.
 
-    One object per sweep. Four questions, four answers:
+    One object per sweep. Five bounded decisions:
 
       `preflight()`   — may this sweep start at all?
       `pull_cap`      — how wide may this live-quota sweep be?
       `may_continue()`— may it evaluate another pull request?
       `take_refresh()`— may it spend an `update-branch` (a write AND a CI run)?
+      `refund_refresh()`— did an affirmative no-op return that CI capacity?
 
     Every method fails OPEN on an unreadable budget, for the reason in
     `core_rate_limit`. None of them can ever authorise a merge that the check
@@ -2404,6 +2405,7 @@ class SweepBudget:
         reserve: int = RATE_LIMIT_RESERVE,
         recheck_every: int = BUDGET_RECHECK_EVERY,
         max_refreshes: int = MAX_REFRESHES_PER_SWEEP,
+        max_refresh_attempts: int = MAX_REFRESHES_PER_SWEEP,
     ) -> None:
         self.token = token
         self.floor = floor
@@ -2411,7 +2413,9 @@ class SweepBudget:
         self.reserve = reserve
         self.recheck_every = max(1, recheck_every)
         self.max_refreshes = max_refreshes
+        self.max_refresh_attempts = max_refresh_attempts
         self.refreshes_used = 0
+        self.refresh_attempts_used = 0
         self.refresh_context = ""
         self.refresh_lease: RefreshLease | None = None
         self.requires_refresh_lease = False
@@ -2479,14 +2483,19 @@ class SweepBudget:
         return True, ""
 
     def take_refresh(self, pull: dict[str, Any] | None = None) -> bool:
-        """Consume one `update-branch` slot. False when this sweep has spent them.
+        """Reserve one workload slot and one bounded `update-branch` attempt.
 
-        Consumed on the ATTEMPT, not on success. The slot bounds API calls as well
-        as triggered CI runs, and a refused attempt still spent a call; a sweep that
-        could retry indefinitely on 422s would bound neither. At saturation, the
-        durable lease must be affirmed before the attempt is consumed or sent.
+        The workload slot is refundable when GitHub affirmatively proves that the
+        write created no CI run (for example, a real merge conflict). The separate
+        attempt counter is never refunded, so a sweep still cannot hammer an
+        arbitrary number of conflicting heads. At saturation, the durable lease must
+        be affirmed before either counter is consumed or a write is sent.
         """
-        if not self.refresh_authorized or self.refreshes_used >= self.max_refreshes:
+        if (
+            not self.refresh_authorized
+            or self.refreshes_used >= self.max_refreshes
+            or self.refresh_attempts_used >= self.max_refresh_attempts
+        ):
             return False
         if self.requires_refresh_lease:
             if pull is None or self.refresh_lease is None:
@@ -2494,7 +2503,13 @@ class SweepBudget:
             if not self.refresh_lease.claim(pull):
                 return False
         self.refreshes_used += 1
+        self.refresh_attempts_used += 1
         return True
+
+    def refund_refresh(self) -> None:
+        """Return workload capacity after a definitive no-op; keep attempt charged."""
+        if self.refreshes_used > 0:
+            self.refreshes_used -= 1
 
 
 def sweep_order(
@@ -3916,7 +3931,15 @@ def attempt_update_branch(
                 "before update-branch; no write attempted.",
             )
             return "lease-lost"
-    return update_branch(repo, live, token)
+    result = update_branch(repo, live, token)
+    if result in {"declined", "already-merged", "already-closed"}:
+        # These are affirmative no-workload outcomes: GitHub either proved a real
+        # content conflict or the pull request had already settled. The API attempt
+        # remains charged by `refresh_attempts_used`, but keeping the scarce CI slot
+        # charged would let the same conflicting PR starve every valid stale head
+        # behind it on every sweep (observed live with #5333 at 7/8 active proofs).
+        budget.refund_refresh()
+    return result
 
 
 def refresh_deferred(
@@ -3934,8 +3957,13 @@ def refresh_deferred(
         "merge-on-green",
         f"PR #{number}: {why}, but this sweep has "
         + (
-            f"{budget.refreshes_used}/{budget.max_refreshes} effective "
-            "`update-branch` attempt(s) in use"
+            (
+                f"spent {budget.refresh_attempts_used}/"
+                f"{budget.max_refresh_attempts} bounded `update-branch` attempt(s)"
+                if budget.refresh_attempts_used >= budget.max_refresh_attempts
+                else f"{budget.refreshes_used}/{budget.max_refreshes} effective "
+                "CI workload slot(s) in use"
+            )
             if budget is not None
             else f"spent its {MAX_REFRESHES_PER_SWEEP} `update-branch` slots"
         )
@@ -5108,7 +5136,7 @@ def main() -> int:
             f"{active_pr_proofs} indexed pull-request ci run(s) plus "
             f"{reservation_count} unindexed durable "
             f"reservation(s), global cap "
-            f"{MAX_IN_FLIGHT_PR_PROOFS}, {budget.max_refreshes} refresh attempt(s) "
+            f"{MAX_IN_FLIGHT_PR_PROOFS}, {budget.max_refreshes} CI workload slot(s) "
             "available this sweep"
         )
     budget.refresh_context = refresh_load_detail
@@ -5401,7 +5429,9 @@ def main() -> int:
         + ", ".join(f"{count} {verdict}" for verdict, count in sorted(tally.items()))
         + f" ({freshness.commit_file_reads} main commit(s) classified, "
         + f"{budget.refreshes_used}/{budget.max_refreshes} effective refresh "
-        f"slot(s) used ({budget.refresh_context}), "
+        f"slot(s) used across {budget.refresh_attempts_used}/"
+        f"{budget.max_refresh_attempts} bounded update attempt(s) "
+        f"({budget.refresh_context}), "
         + f"~{budget.last_seen if budget.last_seen is not None else '?'} API requests left"
         + f"; {proof.describe()}; baseline: {baseline}"
         + f"; source-baseline: {source_baseline}; self-wake: {self_wake})",

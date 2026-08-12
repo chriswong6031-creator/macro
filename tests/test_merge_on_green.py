@@ -5428,6 +5428,72 @@ def test_the_refresh_budget_is_capped_because_each_one_launches_a_ci_run(
     assert budget.refreshes_used == 2
 
 
+def test_a_definitive_conflict_refunds_workload_capacity_but_not_attempt_budget(
+    monkeypatch,
+):
+    """A no-op conflict must not consume the sole CI slot for every later PR.
+
+    The live failure was #5333 at 7/8 active proofs: its affirmative conflict used
+    the one free slot, so every actually refreshable head behind it was deferred on
+    every sweep even though #5333 launched no workload.
+    """
+    budget = MOG.SweepBudget("read", max_refreshes=1, max_refresh_attempts=2)
+    budget.refresh_authorized = True
+    pulls = [_pull(5333), _pull(5339), _pull(5340)]
+    monkeypatch.setattr(
+        MOG, "live_authorized_pull", lambda _r, pull, _t: (pull, "authorized")
+    )
+    outcomes = iter(("declined", "updated"))
+    monkeypatch.setattr(MOG, "update_branch", lambda *_a, **_k: next(outcomes))
+
+    assert MOG.attempt_update_branch(
+        "acme/widgets", pulls[0], "write", budget, "stale proof"
+    ) == "declined"
+    assert budget.refreshes_used == 0
+    assert budget.refresh_attempts_used == 1
+
+    assert MOG.attempt_update_branch(
+        "acme/widgets", pulls[1], "write", budget, "stale proof"
+    ) == "updated"
+    assert budget.refreshes_used == 1
+    assert budget.refresh_attempts_used == 2
+    assert MOG.attempt_update_branch(
+        "acme/widgets", pulls[2], "write", budget, "stale proof"
+    ) == "refresh-deferred"
+
+
+def test_refunded_conflicts_still_obey_the_per_sweep_attempt_ceiling(monkeypatch):
+    """Refunding CI capacity must not turn a page of conflicts into write spam."""
+    budget = MOG.SweepBudget("read", max_refreshes=1, max_refresh_attempts=3)
+    budget.refresh_authorized = True
+    monkeypatch.setattr(
+        MOG, "live_authorized_pull", lambda _r, pull, _t: (pull, "authorized")
+    )
+    calls = []
+
+    def declined(*args, **kwargs):
+        calls.append((args, kwargs))
+        return "declined"
+
+    monkeypatch.setattr(MOG, "update_branch", declined)
+    verdicts = [
+        MOG.attempt_update_branch(
+            "acme/widgets", _pull(number), "write", budget, "stale proof"
+        )
+        for number in range(1, 6)
+    ]
+    assert verdicts == [
+        "declined",
+        "declined",
+        "declined",
+        "refresh-deferred",
+        "refresh-deferred",
+    ]
+    assert len(calls) == 3
+    assert budget.refreshes_used == 0
+    assert budget.refresh_attempts_used == 3
+
+
 def test_the_DEFAULT_budget_caps_refreshes_at_the_constant(monkeypatch):
     """The cap that actually ships is the DEFAULT one, and `main()` builds its budget
     with no `max_refreshes` argument.
@@ -5438,6 +5504,10 @@ def test_the_DEFAULT_budget_caps_refreshes_at_the_constant(monkeypatch):
     which is the exact 84-CI-runs-from-one-sweep failure this cap exists to prevent.
     """
     assert MOG.SweepBudget("read").max_refreshes == MOG.MAX_REFRESHES_PER_SWEEP
+    assert (
+        MOG.SweepBudget("read").max_refresh_attempts
+        == MOG.MAX_REFRESHES_PER_SWEEP
+    )
 
     pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
     calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
@@ -5487,7 +5557,7 @@ def test_a_refresh_deferred_pull_request_is_never_labeled_or_accused(
     assert not [c for c in calls if c[1].endswith("/update-branch")]
     assert any(
         line.startswith("::notice")
-        and "effective `update-branch` attempt(s)" in line
+        and "effective CI workload slot(s)" in line
         for line in capsys.readouterr().out.splitlines()
     ), "the deferral must be logged, never silent"
 
