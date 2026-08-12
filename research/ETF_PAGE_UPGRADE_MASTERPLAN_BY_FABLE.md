@@ -87,6 +87,14 @@ Question (operator): should some funds count more in consensus?
 - Bilingual EN/ZH; no zh in `title=` attrs (CI-guarded).
 - `data/` writes only on nightly path; intraday lanes discard them.
 
+## §6b Mid-program adjudications (Fable, 2026-08-12, on W1's findings)
+
+- **R1 — VanEck cash-line defect: FIX IN THIS PR** (dedicated commit after W2b integrates). `is_non_equity_holding` misses the `-USD CASH-` ticker form (NaN name); the cash line's share count corrupts the sum-ratio scale, publishing phantom active-change on every constituent of 15 funds (SMH worst: 21 names at phantom +5.12%, incl. NVDA +1.078pp conviction on the live board). This is a truthfulness bug fix, display-tier, no gauntlet; conviction_pp values will move and the PR body says so plainly. Golden ordering fixtures regenerate in the same commit.
+- **R2 — one primary number per row**: the board ranks and headlines conviction_pp (trustworthy post-R1); flow/selection is the plain-word explanation + `driver` label, Tier-2 receipts carry the split. Never two competing bold numbers on a row (designer-binding).
+- **R3 — shell budget at 103 funds**: fresh render = 160.6 KiB vs 130 KiB gate (coverage directory grew with the universe). The UI wave MUST land the shell back ≤130 KiB (lean coverage treatment; full registry detail belongs behind the gate or a detail view). Without this the first post-merge bake reds `test_free_shell_stays_inside_its_weight_budget`.
+- **R4 — split-guard adjacent-snapshot upgrade**: future work (needs off-render-path reads); a combined split+add (~2:1 plus real 7% add) is currently missed by design — miss = status quo, false positive = deleted live signal.
+- **R5 — no git-level file reverts in this shared worktree** for the remainder of the program (a builder's brief `checkout HEAD --` A/B window can eat a sibling's concurrent write).
+
 ## §7 Rollout & verification
 
 1. W1 → W2 → W3 built sequentially by opus `builder` agents in this worktree (branch `claude/etf-page-upgrade-20260812`), each wave with tests green before the next starts.

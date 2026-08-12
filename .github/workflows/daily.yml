@@ -4018,6 +4018,35 @@ jobs:
           python -m scripts.grade_us_board --nightly; rc=$?
           if [ "$rc" -ne 0 ]; then echo "::warning title=grade_us_board::rc=$rc (non-fatal)"; fi
           exit 0
+      - name: ETF consensus board ledger (snapshot tonight's board + grade matured windows vs SPY)
+        # ETF page masterplan §3 W3. Recomputes the etfs.html consensus board from the
+        # committed holdings snapshots (engine.holdings_signals -> engine.etf_consensus,
+        # no network calls), appends its top-20 to data/etf_board_ledger/snapshots.jsonl
+        # keep-FIRST per (as_of, ticker), then grades every matured board row at 5/21/63
+        # sessions (next-bar fill, adjusted-first ladder, vs SPY) into retro_grades.parquet
+        # and projects site/factordata/etf_board_track.json for the Calibration Lab's
+        # forward-windows panel. The commit step below (git add data/ site/) lands all
+        # three. Idempotent per board date: a re-run appends zero rows and leaves the
+        # fire log byte-identical.
+        #
+        # Both data/ writes are gated on COLLECT_LANE=nightly (job-level env above) —
+        # nightly is the sole advancer of forward ledgers, and this step is the only
+        # writer of that ledger anywhere in the repo.
+        #
+        # NON-FATAL by the same reasoning as grade_us_board directly above: this step
+        # sits deep in the engine job with non-always() steps after it whose ledgers the
+        # nightly is also the sole advancer of, so a raise here would silently freeze
+        # several unrelated forward ledgers for the night. First-run tolerance matters
+        # too — the ledger does not exist until this runs once. `set +e` + a named rc
+        # keeps the failure visible in the Actions summary instead of `|| true`'s
+        # ran-clean/crashed/no-op indistinguishability; the module prints its own
+        # zero-accrual annotation on a night that logs nothing.
+        timeout-minutes: 15
+        run: |
+          set +e
+          python -m scripts.grade_etf_board --nightly; rc=$?
+          if [ "$rc" -ne 0 ]; then echo "::warning title=grade_etf_board::rc=$rc (non-fatal)"; fi
+          exit 0
       - name: Opportunity timeline (durable Prophet candidate receipts for Terminal)
         # Pure projection over the four committed track_ledger/v1 artifacts.  It runs
         # after grade_us_board so tonight's US episode marks are present; CN/HK are
