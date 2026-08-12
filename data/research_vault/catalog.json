@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-11T23:06:40.378857+00:00",
-  "count": 952,
+  "generated_at": "2026-08-11T23:36:44.763347+00:00",
+  "count": 954,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -59,6 +59,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-f5fryndrqbq-cc1e4d",
+      "title": "JPM US Market Intelligence Afternoon Briefing Aug 11",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T22:35:33Z",
+      "summary_points": [
+        "**CPI Core MoM & SPX Impact**: Core MoM +0.22% (2.5% YoY); 5% probability of Core MoM >0.30% triggers 1.5%-2.5% SPX decline, 25% probability of 0.15%-0.20% yields 50bp-1% SPX gain.",
+        "**US/Iran Geopolitical Tensions**: Elevated tensions pushing WTI to $83.42 (+1.6% 1D); Strait of Hormuz closure concerns and U.S.",
+        "strikes heighten oil volatility and trade flow risks.",
+        "**NVDA Institutional Flows**: $500B+ PE deal (Apollo, BlackRock) driving 26% elevated tech buying; NVDA using balance sheet to sustain compute demand amid FCF concerns.",
+        "**China Tech Earnings Dispersion**: JPM cut FY26 EPS by 5% due to AI/depreciation costs; China Tech rally faces divergence as AI roadmaps diverge post-short covering."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-gbjaregqbxy-f1fd18",
       "title": "JPM Europe Equity Research | Today’s Morning Meeting",
@@ -259,6 +280,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-keuiyhvmikc-2bf1df",
+      "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 10, 2026 as of 5 30 AM ET",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:39Z",
+      "summary_points": [
+        "**China Strategy Shift**: AI-driven rotation/diversification and unique debt issuance dynamics impacting fundamentals/credit.",
+        "**Europe Oil & Rates**: Middle East disruptions pressuring OCTG producers; global rates breaking new ground (geopolitics/macro).",
+        "**Korea Flows & Macro**: KRW strong inflows signaling capital rotation into Korean assets amid MXAPJ decline, foreign outflows, and softer Asian data.",
+        "**China Geopolitics**: A-shares tech rebounded 7% on US import restrictions, HK SFC/CSRC measures, and falling unofficial PMIs.",
+        "**EM Earnings & Flows**: EM cyclicals gained; 2Q median profits up 17% yoy, with mixed flows (Korea selling vs India inflows)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 27,
       "language": "en",
       "needs_metadata": false
     },
