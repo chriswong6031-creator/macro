@@ -48,7 +48,11 @@
   var cloud = {};
   var pullPending = false; // pull in progress
   var pullDoneAt = 0;      // epoch ms of last successful pull
-  var queuedPush = null;   // {listId, blob} queued before that list had been read
+  /* listId -> the ticker ARRAY captured at enqueue time, for lists that had not been
+     read when their push fired. Per-list, like _pushTimers: a single global slot let a
+     second unread list's push silently overwrite the first one's edit. Never holds a
+     blob — see WLCloud.push for why a live object may not be read later. */
+  var queuedPushes = {};
   var foldMarkerKey = 'mdash.watchstore.folded.v1'; // localStorage marker for one-time fold
 
   var SECTION = 'Watchlist';
@@ -239,11 +243,17 @@
     });
   }
 
+  /* A bare `.limit(1)` with no ORDER BY is nondeterministic in Postgres even when a
+     unique index makes a duplicate impossible today — and a nondeterministic bind is
+     how two tabs end up pushing full-membership diffs at two different lists. The
+     order is stated explicitly here for the same reason listsFetch sorts twice. */
   function _findListByName(name) {
     return sb.from('watchlists')
-      .select('id, name, position')
+      .select('id, name, position, created_at')
       .eq('user_id', user.id)
       .eq('name', name)
+      .order('position')
+      .order('created_at', { ascending: true })
       .limit(1)
       .then(function (res) {
         if (res.error) throw res.error;
@@ -407,20 +417,31 @@
     });
   }
 
+  /* READ-FIRST, matching pushList's refusal policy rather than opposing it. An unread
+     list has no known membership, and `watchlist_symbols` carries NO unique index on
+     (watchlist_id, symbol) — 0001_init.sql indexes watchlist_id alone — so a blind
+     insert leaves a real duplicate row that only read-time dedupe hides. Reading first
+     makes the dedupe authoritative instead of cosmetic. */
   function symbolAdd(listId, symbol) {
     var t = String(symbol == null ? '' : symbol).trim();
     if (!listId || !t) return Promise.reject(new Error('bad-args'));
     return _listsGuard().then(function () {
-      var c = _cloudOf(listId);
-      if (c && c.set[t]) return { symbol: t, skipped: true };
-      return sb.from('watchlist_symbols')
-        .insert({ watchlist_id: listId, symbol: t, section: SECTION, position: _nextPos(listId) })
-        .then(function (res) {
-          if (res.error) throw res.error;
-          _noteInserted(listId, [t]);
-          return { symbol: t };
-        });
+      if (_cloudOf(listId)) return _symbolInsert(listId, t);
+      return symbolsFetch(listId).then(function () { return _symbolInsert(listId, t); });
     });
+  }
+
+  function _symbolInsert(listId, t) {
+    var c = _cloudOf(listId);
+    if (!c) return { symbol: t, skipped: true };     // unread -> refuse, never blind-insert
+    if (c.set[t]) return { symbol: t, skipped: true };
+    return sb.from('watchlist_symbols')
+      .insert({ watchlist_id: listId, symbol: t, section: SECTION, position: _nextPos(listId) })
+      .then(function (res) {
+        if (res.error) throw res.error;
+        _noteInserted(listId, [t]);
+        return { symbol: t };
+      });
   }
 
   function symbolRemove(listId, symbol) {
@@ -465,12 +486,21 @@
         });
         var symbols = rows.map(function (r) { return r.symbol; });
 
+        /* Capture what the ANONYMOUS visitor accumulated locally BEFORE the cloud merge
+           touches the blob (ruling R1.1). Under R1 the BOUND list and the FOLD target
+           can be different rows — bound 'Default', folding into a newly created
+           'Watchlist'. Folding the post-merge blob therefore planted the bound list's
+           entire membership into a list the user never asked for. The fold delivers
+           what the visitor accumulated, and nothing else. */
+        var localBeforeMerge = _tickersOf(
+          (window.WL && window.WL.getBlob) ? window.WL.getBlob() : null);
+
         // Merge cloud rows into the local blob (union: cloud wins for membership)
         if (window.WL && window.WL.merge && items.length > 0) {
           window.WL.merge({ v: 1, updated: nowISO(), items: items, order: symbols, settings: {} });
         }
 
-        return _foldLocalIntoCloud();
+        return _foldLocalIntoCloud(localBeforeMerge);
       })
       .then(function () {
         // fold the anonymous local book into the user's own rows (one shot, on
@@ -488,12 +518,7 @@
         pullPending = false;
         setPill('synced');
         // flush any push that arrived before its list had been read
-        if (queuedPush) {
-          var q = queuedPush;
-          queuedPush = null;
-          var target = q.listId || wlId;
-          if (target && _cloudOf(target)) pushList(target, _tickersOf(q.blob));
-        }
+        _flushQueuedPushes();
       })
       .catch(function (err) {
         pullPending = false;
@@ -513,7 +538,7 @@
      BEFORE the target is resolved, so an account with nothing to fold never triggers
      the create-if-absent path. That is what makes creation here on-demand rather than
      spurious, and it is why resolveBoundList() above is free to create nothing. */
-  function _foldLocalIntoCloud() {
+  function _foldLocalIntoCloud(localTickers) {
     // Only fold once per device (not per session) to avoid repeated inserts on
     // every sign-in after the ongoing diff-push is the real mechanism.
     var already = false;
@@ -521,8 +546,10 @@
     if (already) return Promise.resolve();
     if (!user || !sb) return Promise.resolve();
 
-    var blob = window.WL && window.WL.getBlob ? window.WL.getBlob() : null;
-    if (!blob || !Array.isArray(blob.items) || blob.items.length === 0) {
+    // `localTickers` is the PRE-MERGE capture from pull(). It is a parameter and not a
+    // re-read of window.WL precisely so this function cannot see the merged blob.
+    var tickers = (localTickers || []).filter(function (t) { return !!t; });
+    if (tickers.length === 0) {
       // Do NOT mark folded: local is empty (fresh device or signed-out-built list).
       // Marking here would permanently consume the one-shot fold before any items exist.
       // Nor resolve a target: there is nothing to deliver, so nothing to create.
@@ -534,32 +561,35 @@
     return resolveFoldTarget()
       .then(function (id) {
         foldTargetId = id;
-        if (_cloudOf(id)) return _foldInsert(blob);
-        return symbolsFetch(id).then(function () { return _foldInsert(blob); });
+        if (_cloudOf(id)) return _foldInsert(tickers);
+        return symbolsFetch(id).then(function () { return _foldInsert(tickers); });
       })
       .catch(function (err) {
         warnOnce('fold', 'one-time fold failed: ' + (err && err.message || err));
       });
   }
 
-  function _foldInsert(blob) {
+  function _foldInsert(tickers) {
+    // Dedupe base and insert target are BOTH the fold target — never the bound list.
+    // Under R1 divergence those are different rows, and using the bound list for
+    // either one plants (or suppresses) the wrong symbols.
     var c = _cloudOf(foldTargetId);
     if (!c) return Promise.resolve();
 
-    var toInsert = blob.items.filter(function (it) { return it && it.t && !c.set[it.t]; });
+    var toInsert = tickers.filter(function (t) { return !c.set[t]; });
     if (toInsert.length === 0) { _markFolded(); return Promise.resolve(); }
 
     // Insert sequentially; use maxPos+1 to avoid collisions after delete+add cycles
     var base = _nextPos(foldTargetId);
-    var rows = toInsert.map(function (it, i) {
-      return { watchlist_id: foldTargetId, symbol: it.t, section: SECTION, position: base + i };
+    var rows = toInsert.map(function (t, i) {
+      return { watchlist_id: foldTargetId, symbol: t, section: SECTION, position: base + i };
     });
 
     return sb.from('watchlist_symbols')
       .insert(rows)
       .then(function (res) {
         if (res.error) throw res.error;
-        _noteInserted(foldTargetId, toInsert.map(function (it) { return it.t; }));
+        _noteInserted(foldTargetId, toInsert);
         _markFolded();
       })
       .catch(function (err) {
@@ -606,17 +636,30 @@
 
   function _cancelPush(listId) {
     if (_pushTimers[listId]) { clearTimeout(_pushTimers[listId]); delete _pushTimers[listId]; }
-    if (queuedPush && String(queuedPush.listId) === String(listId)) queuedPush = null;
+    delete queuedPushes[listId];
   }
 
-  function _schedulePush(listId, blob) {
+  // `tickers` is already a captured array — never a live blob (see WLCloud.push).
+  function _schedulePush(listId, tickers) {
     clearTimeout(_pushTimers[listId]);
     _pushTimers[listId] = setTimeout(function () {
       delete _pushTimers[listId];
       // Never diff against a list we have not read: queue it for the pull to flush.
-      if (!_cloudOf(listId)) { queuedPush = { listId: listId, blob: blob }; return; }
-      pushList(listId, _tickersOf(blob));
+      if (!_cloudOf(listId)) { queuedPushes[listId] = tickers; return; }
+      pushList(listId, tickers);
     }, 600);
+  }
+
+  /* Flush pushes that fired before their list had been read. Each entry carries the
+     ticker set captured at ENQUEUE time under its OWN key, so nothing is re-targeted
+     here — a set whose owner was unknown was refused at enqueue and can never appear. */
+  function _flushQueuedPushes() {
+    Object.keys(queuedPushes).forEach(function (id) {
+      var tickers = queuedPushes[id];
+      delete queuedPushes[id];
+      if (!id || id === 'null' || id === 'undefined') return;   // defensive: never a null target
+      if (_cloudOf(id)) pushList(id, tickers);
+    });
   }
 
   function pushList(listId, symbols) {
@@ -684,8 +727,16 @@
     // A pending push against the list we are leaving is NOT cancelled: it is already
     // bound to that list, so it is a real edit of it, not stale state. Cancelling here
     // silently discarded the user's last change to the list they switched away from.
-    wlId = listId;
     return symbolsFetch(listId).then(function (rows) {
+      /* `wlId` is published ONLY here, in the same synchronous step as the event that
+         tells watchlist.js to rebind — never up front. Assigning it before the fetch
+         resolved opened a window in which WLCloud.push(blob) — a caller that names no
+         list, i.e. today's page — resolved its target to the NEW list while the blob
+         still held the OLD list's membership. The full-membership diff then deleted the
+         new list's rows and inserted the old list's (measured: 3 sibling rows deleted
+         plus a foreign insert). Listeners run synchronously on dispatch, so no push can
+         interleave between the assignment and the rebind. */
+      wlId = listId;
       try {
         document.dispatchEvent(new CustomEvent('wl-list-change', { detail: { listId: listId } }));
       } catch (e) {}
@@ -700,8 +751,23 @@
     push: function (blob, listId) {
       if (!user || !sb) return;
       var target = listId || wlId;
-      if (!target) { queuedPush = { listId: null, blob: blob }; return; }
-      _schedulePush(target, blob);
+      /* The ticker SET is captured HERE, paired with the target it was captured for.
+         The blob is a LIVE object: watchlist.js mutates it in place (mergeInto) and
+         REASSIGNS it on a rebind, so reading it later — at debounce fire, or worse at
+         pull-flush time — can apply one list's membership to another. Capturing at
+         enqueue is what makes the pairing immutable. */
+      var tickers = _tickersOf(blob);
+      if (!target) {
+        /* No list is bound yet (the sign-in pull window). A ticker set with no known
+           owner can NEVER be safely applied, so it is refused outright rather than
+           queued for whatever `wlId` later becomes — that queue-then-resolve shape is
+           a full-membership diff aimed at an arbitrary list. Nothing durable is lost:
+           the set still lives in localStorage, and the next edit (or the next pull's
+           merge) syncs it against a list that is actually bound. */
+        warnOnce('push-unbound', 'push before any list was bound — refused, not queued');
+        return;
+      }
+      _schedulePush(target, tickers);
     },
     activeListId: function () { return wlId; }
   };
@@ -1030,7 +1096,7 @@
       Object.keys(_pushTimers).forEach(function (k) { clearTimeout(_pushTimers[k]); });
       _pushTimers = {};
       pullDoneAt = 0;
-      queuedPush = null;
+      queuedPushes = {};
       portfolioOk = true;
       showSignedOut();
       document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: null } }));

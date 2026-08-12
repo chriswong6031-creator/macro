@@ -52,6 +52,12 @@ does not add one. Server `position` is the order authority.
   - *Folding* — always the list named `Watchlist`, created if absent. That resolution
     runs only **after** the one-shot marker and empty-book checks, so it fires only
     when there is content to deliver; creation there is on-demand, never spurious.
+  - *What the fold delivers* (R1.1) — the ticker set captured from the local blob
+    **before** the pull's cloud merge touches it. Binding and folding can be different
+    lists, and `pull()` merges the **bound** list's rows into the local blob first, so
+    folding the merged blob would plant the bound list's membership into a list the user
+    never asked for. The fold delivers what the anonymous visitor accumulated, and
+    nothing else.
 - Lists created elsewhere (the Terminal seeds one called `Default`) are kept, never
   renamed and never deleted.
 - `push` is a full-membership diff that deletes cloud rows absent locally, so it is

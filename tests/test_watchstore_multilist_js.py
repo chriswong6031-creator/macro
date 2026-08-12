@@ -79,7 +79,10 @@ function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 # `db.ops` so a test can assert on the SHAPE of the statement, not just its effect.
 # ---------------------------------------------------------------------------
 FAKE_DB = """
-function makeDb(seed) {
+function makeDb(seed, opts) {
+  // `opts.ignoreOrder` drops server-side ordering, so a test can pin the CLIENT-side
+  // sort that ruling R1 branch 2's determinism rests on.
+  var ignoreOrder = !!(opts && opts.ignoreOrder);
   var db = {
     tables: {
       watchlists: (seed && seed.watchlists || []).slice(),
@@ -154,7 +157,7 @@ function makeDb(seed) {
             var rows = db.tables[table];
             if (op.kind === 'select') {
               var hit = rows.filter(function (r) { return matches(r, filters); });
-              sorts.slice().reverse().forEach(function (s) {
+              if (!ignoreOrder) sorts.slice().reverse().forEach(function (s) {
                 hit.sort(function (a, b) {
                   var x = a[s.col], y = b[s.col];
                   if (x === y) return 0;
@@ -591,9 +594,59 @@ def test_R1_branch2_end_to_end_never_deletes_the_bound_lists_existing_rows():
     assert out["bound"] == "L-DEF"                    # ruling R1 branch 2
     assert out["local"] == ["AAPL", "SPY"]            # pull unioned cloud into local
     assert out["note"] == "my note"                   # local-only notes are not erased
-    # Both lists converge on the union — additive, non-destructive, and honestly
-    # surfaced once W2 ships the switcher.
+    # Ruling R1.1: the fold delivers the PRE-MERGE local set only. `SPY` reached the
+    # local blob from Default via the merge, so it must NOT be planted into the list
+    # the fold created — that was the duplication defect R1.1 corrects.
+    assert out["Watchlist"] == ["AAPL"]
+
+
+@needs_node
+def test_R1_1_fold_delivers_only_the_pre_merge_local_set_under_divergence():
+    """Ruling R1.1. Under R1 the BOUND list and the FOLD target diverge, and `pull()`
+    merges the bound list's cloud rows into the local blob BEFORE the fold runs. Folding
+    the merged blob therefore planted the bound list's whole membership into a list the
+    user never asked for. The fold must deliver what the anonymous visitor accumulated
+    locally — the PRE-MERGE set — and nothing else.
+
+    The fixture is built so both halves of the fold are observable:
+      bound `Default` = [SPY, TLT];  visitor's local book = [AAPL, SPY]
+      -> post-merge blob = [AAPL, SPY, TLT], but the fold must plant exactly [AAPL, SPY].
+    `TLT` is the tell: it exists only in the bound list, so it appearing in 'Watchlist'
+    means the fold read the merged blob. `SPY` is in BOTH the local book and the bound
+    list, which is what makes the dedupe-base mutation in 5b detectable."""
+    out = _run(
+        """
+        require(%s);
+        var WS = require(%s);
+        window.WL.replace({v: 1, updated: '2026-08-01T00:00:00.000Z',
+          items: [{t: 'AAPL', added: '2026-07-01T00:00:00.000Z', note: ''},
+                  {t: 'SPY',  added: '2026-07-02T00:00:00.000Z', note: ''}],
+          order: ['AAPL', 'SPY'], settings: {}});
+        var db = makeDb({watchlists: [{id: 'L-DEF', user_id: 'u1', name: 'Default', position: 0}],
+                         watchlist_symbols: [
+                           {id: 'd1', watchlist_id: 'L-DEF', symbol: 'SPY', position: 0},
+                           {id: 'd2', watchlist_id: 'L-DEF', symbol: 'TLT', position: 1}]});
+        WS._setTestSession(USER, db.client);
+        WS.pull().then(function () {
+          var st = WS._testState();
+          var w = db.tables.watchlists.filter(function (l) { return l.name === 'Watchlist'; })[0];
+          OUT({bound: st.activeId, foldTarget: st.foldTargetId,
+               diverged: String(st.activeId) !== String(st.foldTargetId),
+               Watchlist: w ? symbolsOf(db, w.id) : null,
+               Default: symbolsOf(db, 'L-DEF'),
+               localAfterMerge: window.WL.getBlob().items.map(function (i) { return i.t; }).sort(),
+               marker: localStorage.getItem('mdash.watchstore.folded.v1')});
+        });
+        """ % (json.dumps(str(WATCHLIST)), json.dumps(str(WATCHSTORE))),
+        {"USER": USER},
+    )
+    assert out["diverged"] is True                    # the case the ruling is about
+    assert out["bound"] == "L-DEF"
+    assert out["localAfterMerge"] == ["AAPL", "SPY", "TLT"]   # merge did happen
+    # the fold plants the PRE-merge set only: TLT never reaches the created list
     assert out["Watchlist"] == ["AAPL", "SPY"]
+    assert out["Default"] == ["SPY", "TLT"]           # bound list untouched by the fold
+    assert out["marker"] == "1"
 
 
 @needs_node
@@ -678,7 +731,16 @@ def test_fold_does_not_consume_the_one_shot_on_an_empty_local_book():
 @needs_node
 def test_fold_is_not_marked_when_the_insert_fails_so_it_retries():
     """Kept behaviour: marking a FAILED fold as done silently discards the visitor's
-    whole list. Reproduced here by making the symbol insert error."""
+    whole list. Reproduced by making the symbol insert fail.
+
+    THE STUB SHAPE IS THE TEST. postgrest-js RESOLVES with `{data, error}` — it does not
+    throw. An earlier version of this stub invoked the callback synchronously inside
+    `Promise.resolve(f(...))`, so `throw res.error` escaped `.then()` before `.catch`
+    was attached: `_foldInsert`'s own catch never ran, the outer catch swallowed it, and
+    mutating `_foldInsert`'s catch to call `_markFolded()` left the whole suite green —
+    a regression that permanently discards the anonymous visitor's entire watchlist
+    would have shipped green. Resolving (never throwing) is what puts the rejection on
+    the chain `.catch` actually guards."""
     out = _ws(
         WL_STUB + """
         installWL(BLOB);
@@ -688,23 +750,26 @@ def test_fold_is_not_marked_when_the_insert_fails_so_it_retries():
         db.client.from = function (table) {
           var api = realFrom(table);
           if (table === 'watchlist_symbols') {
-            var realInsert = api.insert;
-            api.insert = function (rows) {
-              realInsert(rows);
-              return { then: function (f) { return Promise.resolve(f({error: {message: 'rls denied'}})); },
-                       catch: function () { return Promise.resolve(); } };
+            api.insert = function () {
+              // real postgrest shape: a RESOLVED promise carrying `error`, and the rows
+              // never land (a failed insert must not mutate the table)
+              return Promise.resolve({data: null, error: {code: '42501', message: 'rls denied'}});
             };
           }
           return api;
         };
         WS._setTestSession(USER, db.client);
         WS.pull().then(function () {
-          OUT({marker: localStorage.getItem('mdash.watchstore.folded.v1')});
+          OUT({marker: localStorage.getItem('mdash.watchstore.folded.v1'),
+               rowsLanded: db.tables.watchlist_symbols.length,
+               localKept: (window.WL.getBlob().items || []).map(function (i) { return i.t; })});
         });
         """,
         {"USER": USER, "BLOB": LOCAL_BLOB},
     )
-    assert out["marker"] is None
+    assert out["marker"] is None          # NOT marked -> retried next session
+    assert out["rowsLanded"] == 0         # the failed insert landed nothing
+    assert out["localKept"] == ["AAPL", "MSFT"]   # the visitor's book is intact
 
 
 # ===========================================================================
@@ -785,28 +850,172 @@ def test_a_list_that_was_never_read_is_never_diffed():
 
 
 @needs_node
-def test_switching_the_active_list_never_pushes_the_old_blob_at_the_new_list():
-    """A switch that carried the previous list's membership across would be the
-    full-diff wipe wearing a different hat."""
+def test_a_push_issued_during_the_setActive_window_never_lands_on_the_new_list():
+    """The switch window, which the previous version of this test could not see.
+
+    `setActiveList` used to assign `wlId` SYNCHRONOUSLY and only fire `wl-list-change`
+    after its fetch resolved. In between, `WLCloud.push(blob)` — a caller that names no
+    list, i.e. today's page — resolved its target to the NEW list while the blob still
+    held the OLD list's membership, and the full-membership diff deleted the new list's
+    rows and inserted the old list's. Measured before the fix: 3 sibling rows deleted
+    plus a foreign insert.
+
+    So: issue the push DURING the fetch window (before setActive's promise settles) and
+    require that it landed on the OLD list — or nowhere. Never on the new one."""
     out = _ws(
         """
         var db = makeDb(SEED);
         WS._setTestSession(USER, db.client);
-        WS.symbols.list('L-AI').then(function () {
-          return WS.lists.setActive('L-GOLD').then(function () {
-            OUT({active: WS.lists.activeId(),
-                 ai: symbolsOf(db, 'L-AI'), gold: symbolsOf(db, 'L-GOLD'),
-                 writes: db.ops.filter(function (o) {
-                   return o.kind === 'insert' || o.kind === 'delete'; }).length});
+        Promise.all([WS.symbols.list('L-AI'), WS.symbols.list('L-GOLD')]).then(function () {
+          return WS.lists.setActive('L-AI');
+        }).then(function () {
+          var goldBefore = symbolsOf(db, 'L-GOLD');
+          var p = WS.lists.setActive('L-GOLD');      // fetch in flight, NOT yet settled
+          // the page pushes its still-unrebound blob, naming no list
+          window.WLCloud.push({items: [{t: 'NVDA'}]});
+          var targetedAtSwitchTime = window.WLCloud.activeListId();
+          return p.then(function () {
+            return wait(900).then(function () {
+              OUT({targetedAtSwitchTime: targetedAtSwitchTime,
+                   activeAfter: WS.lists.activeId(),
+                   goldBefore: goldBefore, goldAfter: symbolsOf(db, 'L-GOLD'),
+                   ai: symbolsOf(db, 'L-AI'),
+                   deletesOnGold: db.ops.filter(function (o) {
+                     return o.kind === 'delete' && o.filters.some(function (f) {
+                       return f.col === 'watchlist_id' && String(f.val) === 'L-GOLD'; });
+                   }).length});
+            });
           });
         });
         """,
         {"USER": USER, "SEED": TWO_LISTS},
     )
-    assert out["active"] == "L-GOLD"
-    assert out["ai"] == ["AVGO", "NVDA"]
-    assert out["gold"] == ["AEM", "NEM"]
-    assert out["writes"] == 0
+    # during the window the store still reports the OLD list, so the push bound to it
+    assert out["targetedAtSwitchTime"] == "L-AI"
+    assert out["activeAfter"] == "L-GOLD"          # the switch still completes
+    # the new list is untouched: no delete ever aimed at it, membership unchanged
+    assert out["deletesOnGold"] == 0
+    assert out["goldAfter"] == out["goldBefore"] == ["AEM", "NEM"]
+    # and the push did what it meant to do, against the list it was issued for
+    assert out["ai"] == ["NVDA"]
+
+
+@needs_node
+def test_two_unread_lists_each_keep_their_own_queued_push():
+    """`queuedPush` was a single global slot, so a second unread list's push silently
+    overwrote the first one's — list A's edit discarded with no error anywhere. The
+    queue is per-list now, like the debounce timers."""
+    out = _ws(
+        """
+        var db = makeDb(SEED);
+        WS._setTestSession(USER, db.client);
+        WS._setTestLists({activeId: 'L-AI'});      // bound, but NEITHER list read yet
+        window.WLCloud.push({items: [{t: 'NVDA'}, {t: 'AVGO'}, {t: 'GOOGL'}]}, 'L-AI');
+        window.WLCloud.push({items: [{t: 'NEM'}, {t: 'AEM'}, {t: 'GOLD'}]}, 'L-GOLD');
+        wait(900).then(function () {
+          // both were queued (unread), and nothing was written yet
+          var wroteEarly = db.ops.filter(function (o) { return o.kind === 'insert'; }).length;
+          // a pull reads the lists and flushes; read the second list too so both can land
+          return WS.symbols.list('L-GOLD').then(function () {
+            return WS.pull().then(function () {
+              return wait(300).then(function () {
+                OUT({wroteEarly: wroteEarly,
+                     ai: symbolsOf(db, 'L-AI'), gold: symbolsOf(db, 'L-GOLD')});
+              });
+            });
+          });
+        });
+        """,
+        {"USER": USER, "SEED": TWO_LISTS},
+    )
+    assert out["wroteEarly"] == 0          # unread lists are never diffed
+    # BOTH queued edits survive — neither overwrote the other
+    assert out["ai"] == ["AVGO", "GOOGL", "NVDA"]
+    assert out["gold"] == ["AEM", "GOLD", "NEM"]
+
+
+@needs_node
+def test_a_push_with_no_bound_list_is_refused_not_queued_for_whatever_binds_later():
+    """A ticker set whose owner is unknown can never be safely applied. It used to be
+    queued with a null target and re-resolved at FLUSH time against whatever `wlId` had
+    become by then — a full-membership diff aimed at an arbitrary list. Refused now."""
+    out = _ws(
+        WL_STUB + """
+        installWL(BLOB);
+        var db = makeDb({watchlists: [{id: 'L-W', user_id: 'u1', name: 'Watchlist', position: 0}],
+                         watchlist_symbols: [
+                           {id: 'w1', watchlist_id: 'L-W', symbol: 'SPY', position: 0},
+                           {id: 'w2', watchlist_id: 'L-W', symbol: 'TLT', position: 1},
+                           {id: 'w3', watchlist_id: 'L-W', symbol: 'GLD', position: 2}]});
+        WS._setTestSession(USER, db.client);
+        // no list bound yet (the sign-in pull window): push a set that names no list
+        window.WLCloud.push({items: [{t: 'AAPL'}]});
+        WS.pull().then(function () {
+          return wait(900).then(function () {
+            OUT({rows: symbolsOf(db, 'L-W'),
+                 deletes: db.ops.filter(function (o) { return o.kind === 'delete'; }).length});
+          });
+        });
+        """,
+        {"USER": USER, "BLOB": LOCAL_BLOB},
+    )
+    # the unowned set never became a diff against the list that later bound: the three
+    # pre-existing rows survive (the fold adds its own, which is a separate mechanism)
+    assert out["deletes"] == 0
+    for t in ("SPY", "TLT", "GLD"):
+        assert t in out["rows"], f"{t} was wiped by an unowned push"
+
+
+@needs_node
+def test_lists_are_sorted_client_side_even_when_the_server_returns_them_unordered():
+    """Ruling R1 branch 2 binds "the FIRST list by (position, created_at)", so that
+    ordering decides which list a returning user is bound to. The query asks for it AND
+    `listsFetch` sorts again — this pins the second half, which the server-ordered
+    fixtures cannot see. Here the double deliberately ignores `.order()`."""
+    out = _ws(
+        """
+        var db = makeDb({watchlists: [
+          {id: 'L-C', user_id: 'u1', name: 'C', position: 5, created_at: '2026-05-01T00:00:00.000Z'},
+          {id: 'L-A', user_id: 'u1', name: 'A', position: 1, created_at: '2026-01-01T00:00:00.000Z'},
+          {id: 'L-B', user_id: 'u1', name: 'B', position: 1, created_at: '2026-02-01T00:00:00.000Z'}
+        ], watchlist_symbols: []}, {ignoreOrder: true});
+        WS._setTestSession(USER, db.client);
+        WS.lists.refresh().then(function (all) {
+          OUT({order: all.map(function (l) { return l.id; })});
+        });
+        """,
+        {"USER": USER},
+    )
+    # position asc, then created_at asc as the tie-break between L-A and L-B
+    assert out["order"] == ["L-A", "L-B", "L-C"]
+
+
+@needs_node
+def test_symbol_add_reads_an_unread_list_first_instead_of_blind_inserting():
+    """`watchlist_symbols` has NO unique index on (watchlist_id, symbol), so a blind
+    insert against an unread list leaves a real duplicate row that only read-time dedupe
+    hides. Same refusal policy as pushList: read first."""
+    out = _ws(
+        """
+        var db = makeDb(SEED);
+        WS._setTestSession(USER, db.client);
+        // NVDA is already in L-AI, but the list has never been read
+        WS.symbols.add('L-AI', 'NVDA').then(function (r) {
+          return WS.symbols.add('L-AI', 'GOOGL').then(function () {
+            OUT({dupResult: r,
+                 rows: db.tables.watchlist_symbols
+                   .filter(function (x) { return x.watchlist_id === 'L-AI'; })
+                   .map(function (x) { return x.symbol; }).sort(),
+                 nvdaRows: db.tables.watchlist_symbols.filter(function (x) {
+                   return x.watchlist_id === 'L-AI' && x.symbol === 'NVDA'; }).length});
+          });
+        });
+        """,
+        {"USER": USER, "SEED": TWO_LISTS},
+    )
+    assert out["dupResult"]["skipped"] is True    # recognised as already present
+    assert out["nvdaRows"] == 1                   # exactly one row, no duplicate
+    assert out["rows"] == ["AVGO", "GOOGL", "NVDA"]
 
 
 @needs_node

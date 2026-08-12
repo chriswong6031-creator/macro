@@ -2633,6 +2633,14 @@ jobs:
       # docstrings in scripts/externalize_css.py.
       - name: inline-CSS externalization units + pair-skip guards
         run: python -m pytest tests/test_externalize_css.py -q
+      # Shared light-mode odometer needle: a pure contract over templates/theme.css,
+      # its site/ twin, and the five report templates that copy the compact gauge.
+      # It landed in #5458 wired to NO run: step in any workflow — an orphan that
+      # reddened `workflow-yaml` (which runs scripts/audit_unrun_tests.py) for every
+      # PR whose diff scope reaches that pack, while the suite itself passes. Homed
+      # here because this job already owns the templates/ <-> site/ theme.css pair.
+      - name: light-mode odometer needle — theme.css + five report templates
+        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
 
   data-base-shim:
     if: ${{ false }}
