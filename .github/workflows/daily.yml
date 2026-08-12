@@ -51,7 +51,11 @@ concurrency:
   # processing the workflow SILENTLY — cron does not fire and dispatched runs sit
   # queued with zero jobs forever (uncancellable, HTTP 500). Guard:
   # tests/test_workflow_file_size.py. Shrink by extraction, never by deleting docs.
-  group: pipeline-daily
+  # Versioned AWAY from "pipeline-daily": that group holds unkillable zombie records
+  # from the oversized-file era, and the server cancelled every healed run started in
+  # it (see PR for receipts). Restores #5414's sidestep, undone by #5416's revert.
+  # Never rename back while zombies exist; "-2" skipped (also bound by a wedged run).
+  group: pipeline-daily-3
   cancel-in-progress: false
 
 jobs:
