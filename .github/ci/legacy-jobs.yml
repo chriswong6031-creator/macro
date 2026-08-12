@@ -2954,6 +2954,8 @@ jobs:
         run: python -m scripts.check_font_ui_defined templates
       - name: font-ui guard unit tests (violating + passing fixtures per check)
         run: python -m pytest tests/test_check_font_ui_defined.py -q
+      - name: fund-page typography contract (word labels stay on the shared UI face)
+        run: python -m pytest tests/test_fund_page_typography.py -q
 
   ratio-lens:
     if: ${{ false }}
