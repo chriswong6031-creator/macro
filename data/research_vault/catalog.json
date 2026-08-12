@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T06:08:07.514681+00:00",
-  "count": 992,
+  "generated_at": "2026-08-12T07:23:18.936605+00:00",
+  "count": 995,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -119,6 +119,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wgc7hphso8b-8b4e49",
+      "title": "Emerging market bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T22:52:09Z",
+      "summary_points": [
+        "**UAE Banks: Margin Compression & Geopolitical Vulnerability**: Lending margins declined to 2.7% (down 40bps YoY), with further compression expected due to geopolitical tensions and rising funding costs; Middle East conflict weakens borrower repayment capacity despite median NPLs at 2.15% (strongest in decade).",
+        "**Sovereign Risk as Systemic Threat**: Material sovereign support dilution and potential UAE sovereign rating downgrade pose critical threats to capital buffers, credit quality, and profitability across all major banks (ADIB, EI, ENBD, FAB).",
+        "**Capital Adequacy Buffer Under Pressure**: Median CAR improved to 16.3% (adequate), but high credit growth (e.g., ADIB’s 18-20% FY26 guidance) and geopolitical shocks risk eroding capital adequacy and forcing capital-raising.",
+        "**Critical Risk Exposure**: Geopolitical tensions, sovereign downgrade risk, and asset quality deterioration (e.g., ADIB’s cost-of-risk rising to 40-60bps) threaten to reverse resilient balance sheets and margin resilience.",
+        "**Performance Divergence in Key Banks**: ENBD (NIM 6.87%, NPL coverage 152%) and FAB (profit +14% QoQ, NIM 1.99%) show mixed resilience; ENBD faces oil volatility risks, while FAB’s capitalization pressured by credit growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
@@ -367,6 +388,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6z2wfo0audq-05ac76",
+      "title": "TPL Aug 8 26",
+      "institution": "The Punchline",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:31:15Z",
+      "summary_points": [
+        "**Housing Crisis Fundamentals**: Explicit \"HIGH HOME PRICES + HIGH MORTGAGE RATES\" with Fed survey showing \"WEAK!\" mortgage demand (net negative), confirming severe sector stress and heightened default risk.",
+        "**Labor Market Revisions**: Revised May-June nonfarm payrolls total -103,000 (vs.",
+        "initial reports), signaling deeper fragility; unemployment rate improvement masked by unemployed declining faster than employed (178k vs 87k).",
+        "**AI Investment Bust Risk**: BIS warns of AI 'exuberance' culminating in prolonged investment bust, amplifying macroeconomic dislocation risks amid chip stock sell-off and AI-driven credit confidence decline.",
+        "**Geopolitical Oil Shock**: Iran tensions escalate (67 ships attacked, 17 seafarers killed), driving oil prices higher; China’s oil imports to Iran decline to 785K/523K bpd (June/July), signaling trade risk amplification."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
       "language": "en",
       "needs_metadata": false
     },
@@ -863,6 +905,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-n21qbzfd5pe-9de07e",
+      "title": "JPM US Market Intelligence | Trading CPI: August 2026",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T15:21:15Z",
+      "summary_points": [
+        "**Core MoM Inflation & SPX Volatility**: 40% probability of 0.20%–0.25% Core MoM prints driving 50bp–1.25% SPX moves; options pricing reflects ~0.9% move (August 12 expiry), directly impacting equity positioning.",
+        "**Geopolitical/China PPI as Fed Catalyst**: Middle East conflict inflation risk and China’s PPI (3-month low) as US CPI precursor shape September Fed hike probability; hawkish prints trigger larger bond market moves than dovish.",
+        "**Housing Inflation Measurement Gap**: CPI Shelter (BLS) shows lower rent growth than Zillow/Moody’s data (2021–2022), creating critical lag risk for real estate portfolios and inflation-sensitive allocations.",
+        "**Core Services vs.",
+        "Goods Divergence**: Persistent core services inflation (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },

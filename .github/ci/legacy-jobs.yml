@@ -7226,3 +7226,53 @@ jobs:
           python -m pytest
           tests/test_options_nbbo_cohort.py
           tests/test_options_nbbo_cohort_deploy.py -q -rs
+
+  product-experience-registry:
+    if: ${{ false }}
+    # HANDOFF C (Operation Institutionalize), half one: the cross-repo page
+    # registry census. Pure pytest, no browser anywhere near it.
+    #
+    # This job's inferred scope is HONESTLY broad: the builder censuses the real
+    # site/ and templates/ trees, so a tree traversal is what it is FOR and the
+    # analyzer's wide fallback is correct here. It is split from the capture half
+    # precisely so that breadth cannot be inherited by a suite that does not need
+    # it — one job unioning both scopes is what pushed the ci_pack narrow-diff
+    # contract over its threshold (tripwires selected 145 of 181 jobs, cap 144).
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install product-experience test deps
+        run: pip install pytest pyyaml
+      - name: page registry — committed-JSON drift guard + derivation contracts
+        run: TZ=UTC python -m pytest tests/test_build_product_page_registry.py -q
+
+  product-experience-capture:
+    if: ${{ false }}
+    # HANDOFF C (Operation Institutionalize), half two: the browser evidence
+    # capture harness. The suite is pure pytest with an injected fake driver —
+    # playwright is deliberately NOT installed here and must never be: a missing
+    # browser is a nonzero "verifier_unavailable" outcome locally, and CI proves
+    # only the driver-independent contracts.
+    #
+    # LOAD-BEARING: scripts/capture_page_evidence.py contains NO subprocess call
+    # and NO filesystem-enumeration call (glob/iterdir/listdir/walk/scandir). Both
+    # are opaque edges to scripts/ci_scope_dependencies.py, which then widens this
+    # job to every scan root the module names — data/** included — and re-reds
+    # tests/test_ci_pack.py::test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs.
+    # Reintroducing one (a `git rev-parse` for provenance, a `glob("*.png")` in the
+    # self-check) breaks ci_pack packing, not this suite: it will still pass here.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install product-experience test deps
+        run: pip install pytest pyyaml
+      - name: evidence capture — fake-driver harness contracts
+        run: TZ=UTC python -m pytest tests/test_capture_page_evidence.py -q
