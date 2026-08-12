@@ -2528,7 +2528,8 @@ def _flip_confirmation_view() -> dict | None:
 
 def _sector_heat_view() -> dict | None:
     """Compact sector-heat strip for the macro.html dashboard: up to 4 heating themes
-    and up to 4 cooling/broken themes, each linking straight to basket/<id>.html.
+    and up to 4 cooling/broken themes, plus a fixed-ID/current-data software-to-hardware
+    rotation lane for the risk dialog; each links straight to basket/<id>.html.
     DISPLAY-ONLY — data comes from engine.sector_pulse.build_pulse('us') at build time.
     Returns None (never raises) so the strip is simply hidden when pulse is unavailable."""
     try:
@@ -2539,8 +2540,6 @@ def _sector_heat_view() -> dict | None:
         themes = pulse.get("themes") or []
         heating = [t for t in themes if t.get("heat") in ("heating", "hot")][:4]
         cooling = [t for t in themes if t.get("heat") in ("cooling", "broken")][:4]
-        if not heating and not cooling:
-            return None
         def _row(t):
             return {
                 "id": t.get("id"),
@@ -2551,11 +2550,40 @@ def _sector_heat_view() -> dict | None:
                 "rank_delta_5d": t.get("rank_delta_5d"),
                 "label": t.get("label"),
                 "reco": t.get("reco"),
+                "score": t.get("score"),
             }
+        # Current rotation lane for the Risk dialog. This is deliberately data-driven and keeps
+        # the old AI-hardware damage cohort separate from today's leadership. Ordered for a stable
+        # software -> semis -> legacy-hardware comparison, never for ranking or score authority.
+        rotation_order = (
+            "ai_software", "ai_agents", "non_ai_software", "ai_semiconductors",
+            "ai_infra", "semicap_equipment", "memory_storage",
+        )
+        rotation_short = {
+            "ai_software": ("AI Software", "AI 软件"),
+            "ai_agents": ("AI Agents", "AI 智能体"),
+            "non_ai_software": ("Other Software", "其他软件"),
+            "ai_semiconductors": ("AI Semis", "AI 半导体"),
+            "ai_infra": ("AI Infrastructure", "AI 基础设施"),
+            "semicap_equipment": ("Semicap Equipment", "半导体设备"),
+            "memory_storage": ("Memory & Storage", "存储与内存"),
+        }
+        by_id = {t.get("id"): t for t in themes if t.get("id")}
+        rotation = []
+        for theme_id in rotation_order:
+            t = by_id.get(theme_id)
+            if not t:
+                continue
+            row = _row(t)
+            row["short_name"], row["short_name_zh"] = rotation_short[theme_id]
+            rotation.append(row)
+        if not heating and not cooling and not rotation:
+            return None
         return {
             "as_of": pulse.get("as_of"),
             "heating": [_row(t) for t in heating],
             "cooling": [_row(t) for t in cooling],
+            "rotation": rotation,
         }
     except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
         log.warning("sector_heat_view failed (%s)", e)
@@ -4200,7 +4228,8 @@ def alloc_card_state() -> dict:
 
 def _ms_history_view(current: dict | None = None) -> list[dict] | None:
     """Last up-to-60 sessions from market_state/forward_log.jsonl.
-    Returns list of {asof, score} dicts (de-duped by asof, keep last), or None
+    Returns list of {asof, score} dicts using the measured `raw_score` when present
+    (de-duped by asof, keep last), or None
     when the file is absent/unreadable.  Graceful — never fatal.
 
     `current` is THIS build's market_state snapshot, and it settles a conflict the
@@ -4212,8 +4241,9 @@ def _ms_history_view(current: dict | None = None) -> list[dict] | None:
     disagree, the card ships two numbers for the same date: on 2026-07-31 the
     gauge baked 69 / Risk-on while the chart's endpoint baked 66, and the header's
     "last graded <date>" stamp disclosed nothing, because the two dates matched.
-    The DISPLAY endpoint therefore follows the board it sits next to; the logged
-    row on disk is left exactly as it was written."""
+    The DISPLAY endpoint therefore follows the measured blend on the board it sits next to;
+    the logged row on disk is left exactly as it was written. Legacy rows without raw_score
+    fall back to score."""
     try:
         p = config.data_dir() / "market_state" / "forward_log.jsonl"
         if not p.exists():
@@ -4226,7 +4256,9 @@ def _ms_history_view(current: dict | None = None) -> list[dict] | None:
             try:
                 obj = json.loads(line)
                 asof = obj.get("asof")
-                score = obj.get("score")
+                score = obj.get("raw_score")
+                if score is None:
+                    score = obj.get("score")
                 if asof and score is not None:
                     rows[asof] = int(score)
             except Exception:  # noqa: BLE001
@@ -4235,10 +4267,12 @@ def _ms_history_view(current: dict | None = None) -> list[dict] | None:
             return None
         out = [{"asof": k, "score": v} for k, v in sorted(rows.items())[-60:]]
         cur_asof = str((current or {}).get("asof") or "")
-        cur_score = (current or {}).get("score")
+        cur_score = (current or {}).get("raw_score")
+        if cur_score is None:
+            cur_score = (current or {}).get("score")
         if cur_asof and cur_score is not None and cur_asof == out[-1]["asof"] \
                 and int(cur_score) != out[-1]["score"]:
-            log.info("ms_history: display endpoint %s %d -> %d (board score; "
+            log.info("ms_history: display endpoint %s %d -> %d (measured board blend; "
                      "forward_log row untouched)",
                      cur_asof, out[-1]["score"], int(cur_score))
             out[-1] = {"asof": cur_asof, "score": int(cur_score)}
@@ -5677,7 +5711,7 @@ def main() -> int:
         fear_euphoria=fear_euphoria_synthesis(latest, f),
         regime_snap=_rs_view,
         market_state=_us_ms_view,  # Green/Yellow/Red market-state command-center (display-only)
-        ms_history=_ms_history_view(_us_ms_view),  # v5 scorecard: last ≤60 sessions {asof,score} — endpoint reconciled to the board
+        ms_history=_ms_history_view(_us_ms_view),  # v5 scorecard: measured blend, last <=60 sessions
         idx_spark=_idx_spark_view(),      # v5 scorecard: 20-point sparklines SPY/QQQ/^DJI/^RUT — graceful absent
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
         vol_shock=_vol_shock_view(latest, event_risk),  # forward vol-shock risk gauge (display-only)
