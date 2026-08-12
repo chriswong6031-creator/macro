@@ -863,5 +863,12 @@ class TestDagWiring:
             "'commit engine outputs' step is what lands on main")
 
     def test_the_workflow_invokes_it_with_the_nightly_flag(self):
-        text = (REPO / ".github" / "workflows" / "daily.yml").read_text()
+        # Read through the extraction seam: this step's body is inline today, but a
+        # later 512KB-cap diet that moves it to scripts/ci/ would otherwise red this
+        # assertion for a reason that has nothing to do with the nightly flag.
+        from scripts.workflow_run_source import resolved_workflow_text
+
+        text = resolved_workflow_text(
+            REPO / ".github" / "workflows" / "daily.yml", REPO
+        )
         assert "python -m scripts.grade_us_prophet_candidates --nightly" in text

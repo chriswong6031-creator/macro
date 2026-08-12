@@ -87,6 +87,7 @@ from scripts.run_ci_pack import (  # noqa: E402
     dependency_command,
     load_legacy_jobs,
 )
+from scripts.workflow_run_source import resolve_run_source  # noqa: E402
 
 REQUIREMENTS = ROOT / "requirements.txt"
 
@@ -454,6 +455,13 @@ def workflow_jobs() -> list[dict]:
     reads jobs through the same fail-closed validator that executes them, and takes
     the install line from ``dependency_command`` — the exact string whose byte
     identity decides venv reuse.
+
+    Step bodies extracted to ``scripts/ci/<name>.sh`` resolve back to their shell
+    source (``scripts/workflow_run_source``). Both halves of a job view depend on
+    it: the suite names a job runs, and the ``pip install`` line that decides
+    whether those suites can import what they need. Resolution sits outside the
+    ``yaml.YAMLError`` guard so an unresolvable indirection raises rather than
+    silently yielding a job with no tests and no install line.
     """
     jobs: list[dict] = []
     for path in sorted(WORKFLOWS.glob("*.yml")):
@@ -464,7 +472,11 @@ def workflow_jobs() -> list[dict]:
         if not isinstance(payload, dict) or not isinstance(payload.get("jobs"), dict):
             continue
         for job_id, definition in payload["jobs"].items():
-            runs = [str(s["run"]) for s in _steps_of(definition) if "run" in s]
+            runs = [
+                resolve_run_source(str(s["run"]), ROOT)
+                for s in _steps_of(definition)
+                if "run" in s
+            ]
             installs = [r for r in runs if _PIP_INSTALL.search(r)]
             jobs.append(
                 _job_view(

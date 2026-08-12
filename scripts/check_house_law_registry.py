@@ -46,6 +46,11 @@ from typing import Any
 
 import yaml
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts.workflow_run_source import resolve_run_source  # noqa: E402
+
 # ── Constants ────────────────────────────────────────────────────────────────
 
 REGISTRY_PATH = "config/house_law_checks.yml"
@@ -76,7 +81,9 @@ def _load_registry(root: Path) -> dict[str, Any]:
     return data
 
 
-def _load_workflow_jobs(workflow_path: Path) -> dict[str, str]:
+def _load_workflow_jobs(
+    workflow_path: Path, repo_root: Path | None = None
+) -> dict[str, str]:
     """Return logical CI jobs and concatenated run commands.
 
     PyYAML parses the workflow's `on:` key as boolean True — harmless here,
@@ -89,7 +96,21 @@ def _load_workflow_jobs(workflow_path: Path) -> dict[str, str]:
     roughly one hundred skipped check runs per PR. Merge that manifest into
     the logical view used by the registry, while preserving standalone fixture
     workflows used by this script's self-test.
+
+    A step whose body was extracted to ``scripts/ci/<name>.sh`` under the
+    512KB-cap diet is resolved back to that script's shell source first (see
+    ``scripts/workflow_run_source``). Without that seam this census reads the
+    *invocation line* rather than the body, so a hard law invoked only from
+    inside an extracted block reports as UNWIRED — and the fix reached for
+    under deadline is to plumb the module name back into the YAML as an
+    argument, which buys one law and leaves the next extraction to red again.
+    Resolution happens outside the parse ``try`` below on purpose: an
+    unresolvable indirection must raise, never fall into that fail-open.
     """
+    if repo_root is None:
+        # `<root>/.github/{workflows,ci}/<file>.yml` — three levels up is the root.
+        repo_root = workflow_path.resolve().parent.parent.parent
+
     sources = [workflow_path]
     manifest_path = workflow_path.parent.parent / "ci" / "legacy-jobs.yml"
     if workflow_path.name == "ci.yml" and manifest_path.exists():
@@ -112,7 +133,7 @@ def _load_workflow_jobs(workflow_path: Path) -> dict[str, str]:
             continue
         steps = job_val.get("steps", [])
         run_bodies = [
-            str(step.get("run", ""))
+            resolve_run_source(str(step.get("run", "")), repo_root)
             for step in steps
             if isinstance(step, dict)
         ]
@@ -249,7 +270,7 @@ def pass_c_wiring(checks: list[dict], root: Path, findings: list[str]) -> None:
 
             # Load job map (cached)
             if workflow_rel not in wf_cache:
-                wf_cache[workflow_rel] = _load_workflow_jobs(wf_path)
+                wf_cache[workflow_rel] = _load_workflow_jobs(wf_path, root)
             job_map = wf_cache[workflow_rel]
 
             # Job must exist
