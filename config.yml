@@ -1886,10 +1886,181 @@ etf_holdings:
     # --- stockanalysis.com — NON-OFFICIAL third-party fallback (Finnhub-sourced),
     #     used only where the issuer feed is JS/anti-bot walled. Labelled on the page. -
     WGMI: {sponsor: stockanalysis, unofficial: true, name: "CoinShares Bitcoin Mining (WGMI)", category: "Bitcoin Miners"}
+    # ======================= 2026-08-12 W2 expansion (ETF page upgrade) ============
+    # Every fund below shipped with a REAL parsed snapshot receipt taken in the build
+    # worktree (research/ETF_DATA_SOURCES.md § 2026-08-12). Themes follow the operator
+    # priority list: space, AI/data-center, nuclear/uranium, robotics, defense, crypto
+    # infrastructure (equity only), semis, gold/silver miners, biotech/genomics,
+    # rare-earths/critical minerals, grid/electrification.
+    # --- Global X (dated CSV; forward-collected AND backfillable) ---------------
+    GNOM: {sponsor: globalx, name: "Global X Genomics & Biotechnology", category: "Genomics"}
+    BKCH: {sponsor: globalx, name: "Global X Blockchain", category: "Blockchain"}
+    DRIV: {sponsor: globalx, name: "Global X Autonomous & Electric Vehicles", category: "Autonomous / EV"}
+    CTEC: {sponsor: globalx, name: "Global X CleanTech", category: "CleanTech"}
+    # --- SSGA / SPDR S&P Kensho (daily XLSX incl. Shares Held; forward only) ----
+    ROKT: {sponsor: ssga, name: "SPDR S&P Kensho Final Frontiers", category: "Space / Deep Sea"}
+    CNRG: {sponsor: ssga, name: "SPDR S&P Kensho Clean Power", category: "Clean Power"}
+    HAIL: {sponsor: ssga, name: "SPDR S&P Kensho Smart Mobility", category: "Smart Mobility"}
+    SIMS: {sponsor: ssga, name: "SPDR S&P Kensho Intelligent Structures", category: "Smart Infrastructure"}
+    # --- VanEck (XLSX; slug per fund; forward only) -----------------------------
+    SMHX: {sponsor: vaneck, slug: "fabless-semiconductor-etf-smhx", name: "VanEck Fabless Semiconductor", category: "Semiconductors"}
+    IBOT: {sponsor: vaneck, slug: "robotics-etf-ibot", name: "VanEck Robotics", category: "Robotics"}
+    WARP: {sponsor: vaneck, slug: "space-etf-warp", name: "VanEck Space", category: "Space"}
+    EMET: {sponsor: vaneck, slug: "copper-and-electrification-etf-emet", name: "VanEck Copper and Electrification", category: "Copper / Electrification"}
+    NODE: {sponsor: vaneck, slug: "onchain-economy-etf-node", name: "VanEck Onchain Economy", category: "Crypto Industry"}
+    BBH:  {sponsor: vaneck, slug: "biotech-etf-bbh", name: "VanEck Biotech", category: "Biotech"}
+    # --- Sprott (data-URI CSV; forward only). GBUG/METL are ACTIVELY managed ----
+    SGDM: {sponsor: sprott, slug: "sgdm-sprott-gold-miners-etf", name: "Sprott Gold Miners", category: "Gold Miners"}
+    SGDJ: {sponsor: sprott, slug: "sgdj-sprott-junior-gold-miners-etf", name: "Sprott Junior Gold Miners", category: "Junior Gold Miners"}
+    SETM: {sponsor: sprott, slug: "setm-sprott-critical-materials-etf", name: "Sprott Critical Materials", category: "Critical Materials"}
+    SLVR: {sponsor: sprott, slug: "slvr-sprott-silver-miners-physical-silver-etf", name: "Sprott Silver Miners & Physical Silver", category: "Silver Miners"}
+    COPJ: {sponsor: sprott, slug: "copj-sprott-junior-copper-miners-etf", name: "Sprott Junior Copper Miners", category: "Junior Copper Miners"}
+    GBUG: {sponsor: sprott, active: true, slug: "gbug-sprott-active-gold-silver-miners-etf", name: "Sprott Active Gold & Silver Miners", category: "Gold / Silver Miners"}
+    METL: {sponsor: sprott, active: true, slug: "metl-sprott-active-metals-miners-etf", name: "Sprott Active Metals Miners", category: "Metals Miners"}
+    # --- First Trust (server-rendered HTML grid; forward only). The grid ships its
+    #     header as an unmarked first ROW, so _pick_html_table needed the row-0
+    #     promotion fallback (2026-08-12) — until then SKYY/CIBR/FDN/GRID collected
+    #     NOTHING despite being configured. -------------------------------------
+    ROBT: {sponsor: firsttrust, name: "First Trust Nasdaq AI & Robotics", category: "AI / Robotics"}
+    FTXL: {sponsor: firsttrust, name: "First Trust Nasdaq Semiconductor", category: "Semiconductors"}
+    QCLN: {sponsor: firsttrust, name: "First Trust NASDAQ Clean Edge Green Energy", category: "Clean Energy"}
+    FAN:  {sponsor: firsttrust, name: "First Trust Global Wind Energy", category: "Wind"}
+    # --- Exchange Traded Concepts / ROBO Global (JSON CMS; forward only) --------
+    ROBO: {sponsor: etc, name: "ROBO Global Robotics & Automation", category: "Robotics / Automation"}
+    THNQ: {sponsor: etc, name: "ROBO Global Artificial Intelligence", category: "AI"}
+    HTEC: {sponsor: etc, name: "ROBO Global Healthcare Technology & Innovation", category: "Healthcare Tech"}
+    # Probed and REJECTED 2026-08-12 (receipts in research/ETF_DATA_SOURCES.md):
+    #   RAYS/WNDY (Global X) — feeds 404, funds closed.
+    #   SOXX/IBB/ITA/IRBO/ICLN — the stockanalysis.com fallback serves only the TOP
+    #     25 holdings ("Showing 25 of 252"), so every name outside the top 25 would
+    #     read as a phantom exit. Only funds with <=25 holdings are safe there.
+    #   NIKL (Sprott) — 2.7% of weight in US-listed lines (every incumbent is >=11.9%).
+    #   NCLD/DRAM/LYTE (Roundhill) — swap-implemented and/or foreign-listed baskets.
+    #   SOXQ (Invesco) — needs a CUSIP; the id-resolution endpoints 406 without a browser.
     # iShares/BlackRock (IVV/IWM/EFA...) and Invesco non-flagship: Akamai/consent
     # walls block direct HTTP (recon 2026-06-13, D71) — need a headless browser, so
     # they are intentionally NOT seeded. Vanguard publishes no free daily feed.
     # _fetch_ishares stays in the collector for a future headless/proxy path.
+  # --- Fund registry (W2, masterplan §3) ---------------------------------------
+  # Per-fund metadata read by engine/etf_registry.py::fund_registry(). `type` says
+  # WHICH signal the fund's snapshot diffs primarily carry (masterplan §2):
+  #   active           — a manager picks the names, so per-constituent share moves
+  #                      beyond the fund's common scale factor are SELECTION.
+  #   thematic_passive — a bespoke theme/commodity basket; creations/redemptions
+  #                      move every constituent pro-rata, so the signal is FLOW.
+  #   sector           — tracks a conventional industry classification (S&P Select
+  #                      Industry, Nasdaq/ICB industry); also FLOW, but the basket
+  #                      is not a curated theme, so a "new name" carries less.
+  # `theme` is the coverage-table grouping key. `sponsor` mirrors the universe
+  # entry above and is pinned equal to it by tests/test_etf_registry.py.
+  # ARKK/ARKW are collected by collectors/holdings.py into data/holdings/ (they are
+  # not in the universe above) but they ARE funds on this board, so they are listed.
+  registry:
+    XBI:  {type: sector, sponsor: ssga, theme: biotech-genomics}
+    XOP:  {type: sector, sponsor: ssga, theme: energy}
+    XHB:  {type: sector, sponsor: ssga, theme: housing}
+    XRT:  {type: sector, sponsor: ssga, theme: consumer-leisure}
+    KRE:  {type: sector, sponsor: ssga, theme: fintech-financials}
+    KBE:  {type: sector, sponsor: ssga, theme: fintech-financials}
+    XME:  {type: sector, sponsor: ssga, theme: critical-minerals}
+    XSD:  {type: sector, sponsor: ssga, theme: semis}
+    XAR:  {type: sector, sponsor: ssga, theme: defense}
+    XSW:  {type: sector, sponsor: ssga, theme: software-internet}
+    XTN:  {type: sector, sponsor: ssga, theme: transport-mobility}
+    XPH:  {type: sector, sponsor: ssga, theme: healthcare}
+    XES:  {type: sector, sponsor: ssga, theme: energy}
+    KCE:  {type: sector, sponsor: ssga, theme: fintech-financials}
+    XHE:  {type: sector, sponsor: ssga, theme: healthcare}
+    XTL:  {type: sector, sponsor: ssga, theme: telecom}
+    ROKT: {type: thematic_passive, sponsor: ssga, theme: space}
+    CNRG: {type: thematic_passive, sponsor: ssga, theme: grid-power}
+    HAIL: {type: thematic_passive, sponsor: ssga, theme: transport-mobility}
+    SIMS: {type: thematic_passive, sponsor: ssga, theme: industrials-infra}
+    URA:  {type: thematic_passive, sponsor: globalx, theme: nuclear-uranium}
+    LIT:  {type: thematic_passive, sponsor: globalx, theme: critical-minerals}
+    COPX: {type: thematic_passive, sponsor: globalx, theme: critical-minerals}
+    SIL:  {type: thematic_passive, sponsor: globalx, theme: precious-miners}
+    MLPX: {type: thematic_passive, sponsor: globalx, theme: energy}
+    PAVE: {type: thematic_passive, sponsor: globalx, theme: industrials-infra}
+    BOTZ: {type: thematic_passive, sponsor: globalx, theme: robotics}
+    BUG:  {type: thematic_passive, sponsor: globalx, theme: cyber}
+    CLOU: {type: thematic_passive, sponsor: globalx, theme: ai-compute}
+    HERO: {type: thematic_passive, sponsor: globalx, theme: consumer-leisure}
+    AIQ:  {type: thematic_passive, sponsor: globalx, theme: ai-compute}
+    SNSR: {type: thematic_passive, sponsor: globalx, theme: ai-compute}
+    FINX: {type: thematic_passive, sponsor: globalx, theme: fintech-financials}
+    DTCR: {type: thematic_passive, sponsor: globalx, theme: data-center}
+    SHLD: {type: thematic_passive, sponsor: globalx, theme: defense}
+    HYDR: {type: thematic_passive, sponsor: globalx, theme: grid-power}
+    EBIZ: {type: thematic_passive, sponsor: globalx, theme: software-internet}
+    GNOM: {type: thematic_passive, sponsor: globalx, theme: biotech-genomics}
+    BKCH: {type: thematic_passive, sponsor: globalx, theme: crypto-infra}
+    DRIV: {type: thematic_passive, sponsor: globalx, theme: transport-mobility}
+    CTEC: {type: thematic_passive, sponsor: globalx, theme: grid-power}
+    MEME: {type: thematic_passive, sponsor: roundhill, theme: consumer-leisure}
+    METV: {type: thematic_passive, sponsor: roundhill, theme: software-internet}
+    CHAT: {type: thematic_passive, sponsor: roundhill, theme: ai-compute}
+    BETZ: {type: thematic_passive, sponsor: roundhill, theme: consumer-leisure}
+    MARS: {type: thematic_passive, sponsor: roundhill, theme: space}
+    OZEM: {type: thematic_passive, sponsor: roundhill, theme: healthcare}
+    NERD: {type: thematic_passive, sponsor: roundhill, theme: consumer-leisure}
+    CABZ: {type: thematic_passive, sponsor: roundhill, theme: transport-mobility}
+    HUMN: {type: thematic_passive, sponsor: roundhill, theme: robotics}
+    TAN:  {type: thematic_passive, sponsor: invesco, theme: grid-power}
+    PBW:  {type: thematic_passive, sponsor: invesco, theme: grid-power}
+    PSI:  {type: sector, sponsor: invesco, theme: semis}
+    PPA:  {type: sector, sponsor: invesco, theme: defense}
+    PHO:  {type: sector, sponsor: invesco, theme: industrials-infra}
+    ARKK: {type: active, sponsor: ark, theme: broad-innovation}
+    ARKW: {type: active, sponsor: ark, theme: software-internet}
+    ARKG: {type: active, sponsor: ark, theme: biotech-genomics}
+    ARKQ: {type: active, sponsor: ark, theme: robotics}
+    ARKF: {type: active, sponsor: ark, theme: fintech-financials}
+    ARKX: {type: active, sponsor: ark, theme: space}
+    PRNT: {type: thematic_passive, sponsor: ark, theme: industrials-infra}
+    IZRL: {type: thematic_passive, sponsor: ark, theme: broad-innovation}
+    SMH:  {type: sector, sponsor: vaneck, theme: semis}
+    SMHX: {type: sector, sponsor: vaneck, theme: semis}
+    GDX:  {type: thematic_passive, sponsor: vaneck, theme: precious-miners}
+    GDXJ: {type: thematic_passive, sponsor: vaneck, theme: precious-miners}
+    NLR:  {type: thematic_passive, sponsor: vaneck, theme: nuclear-uranium}
+    REMX: {type: thematic_passive, sponsor: vaneck, theme: critical-minerals}
+    IBOT: {type: thematic_passive, sponsor: vaneck, theme: robotics}
+    MOAT: {type: thematic_passive, sponsor: vaneck, theme: quality-moat}
+    OIH:  {type: sector, sponsor: vaneck, theme: energy}
+    DAPP: {type: thematic_passive, sponsor: vaneck, theme: crypto-infra}
+    WARP: {type: thematic_passive, sponsor: vaneck, theme: space}
+    EMET: {type: thematic_passive, sponsor: vaneck, theme: critical-minerals}
+    NODE: {type: thematic_passive, sponsor: vaneck, theme: crypto-infra}
+    BBH:  {type: sector, sponsor: vaneck, theme: biotech-genomics}
+    SKYY: {type: thematic_passive, sponsor: firsttrust, theme: ai-compute}
+    CIBR: {type: thematic_passive, sponsor: firsttrust, theme: cyber}
+    FDN:  {type: sector, sponsor: firsttrust, theme: software-internet}
+    GRID: {type: thematic_passive, sponsor: firsttrust, theme: grid-power}
+    ROBT: {type: thematic_passive, sponsor: firsttrust, theme: robotics}
+    FTXL: {type: sector, sponsor: firsttrust, theme: semis}
+    QCLN: {type: thematic_passive, sponsor: firsttrust, theme: grid-power}
+    FAN:  {type: thematic_passive, sponsor: firsttrust, theme: grid-power}
+    URNM: {type: thematic_passive, sponsor: sprott, theme: nuclear-uranium}
+    URNJ: {type: thematic_passive, sponsor: sprott, theme: nuclear-uranium}
+    COPP: {type: thematic_passive, sponsor: sprott, theme: critical-minerals}
+    LITP: {type: thematic_passive, sponsor: sprott, theme: critical-minerals}
+    SGDM: {type: thematic_passive, sponsor: sprott, theme: precious-miners}
+    SGDJ: {type: thematic_passive, sponsor: sprott, theme: precious-miners}
+    SETM: {type: thematic_passive, sponsor: sprott, theme: critical-minerals}
+    SLVR: {type: thematic_passive, sponsor: sprott, theme: precious-miners}
+    COPJ: {type: thematic_passive, sponsor: sprott, theme: critical-minerals}
+    GBUG: {type: active, sponsor: sprott, theme: precious-miners}
+    METL: {type: active, sponsor: sprott, theme: critical-minerals}
+    BLOK: {type: active, sponsor: amplify, theme: crypto-infra}
+    QTUM: {type: thematic_passive, sponsor: defiance, theme: ai-compute}
+    BITQ: {type: active, sponsor: bitwise, theme: crypto-infra}
+    UFO:  {type: thematic_passive, sponsor: procure, theme: space}
+    NUKZ: {type: thematic_passive, sponsor: etc, theme: nuclear-uranium}
+    WGMI: {type: thematic_passive, sponsor: stockanalysis, theme: crypto-infra}
+    ROBO: {type: thematic_passive, sponsor: etc, theme: robotics}
+    THNQ: {type: thematic_passive, sponsor: etc, theme: ai-compute}
+    HTEC: {type: thematic_passive, sponsor: etc, theme: healthcare}
 
 fundamentals:
   enabled: true                   # LOW CONFIDENCE module — engine must work without it
