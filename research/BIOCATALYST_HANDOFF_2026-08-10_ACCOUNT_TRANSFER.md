@@ -1,205 +1,162 @@
-# BioCatalyst — account-transfer handoff, 2026-08-10
+# BioCatalyst — production/account transfer state, updated 2026-08-12
 
-**Read this first. It is the single document a new session needs.** Everything else is context.
+This is the operational companion to `BIOCATALYST_HANDOFF_TO_CODEX_2026-08-10.md`. It records
+paths and non-secret state only. Never copy credential values into a handoff.
 
-| Field | Value |
+## Production host and runtime
+
+| Item | Value |
 |---|---|
-| Written | 2026-08-10, by the session that ran the first live canary |
-| Purpose | Move this program to a different account with zero loss of state |
-| Prior docs | `BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md` (why), `BIOCATALYST_OVERNIGHT_RUN_REPORT_2026-08-07.md` (what), `BIOCATALYST_OPERATOR_RULING_2026-08-07.md` (authority), `BIOCATALYST_AUTONOMOUS_RUN_BRIEF_2026-08-07.md` (how to work) |
+| Host | `root@146.190.142.17` |
+| Repository | `/opt/macro` |
+| Primary runtime | `/opt/macro-biocatalyst/current` |
+| Primary state | `/var/lib/macro-biocatalyst` |
+| Fixed-cohort runtime | `/opt/macro-biocatalyst-fixed-cohort/current` |
+| Fixed-cohort state | `/var/lib/macro-biocatalyst-fixed-cohort` |
+| Fixed-cohort membership root | `/etc/macro-biocatalyst-fixed-cohort` |
 
----
+Production health and the VPS checkout were verified at a descendant of BioCatalyst merge
+`2f30530edeb359b6a99d29ec1336a5b2d4149b3b`. The public product asset exactly matched the
+committed SHA-256
+`e7200305da4863de5e9650022fd1d05ead5659ccb3f3c76764e1ff0b4cf6f607`.
 
-## 1. THE HEADLINE — the pipeline works end to end, and stopped exactly where it should
+## Root-owned environment state
 
-On 2026-08-10 the first ever live BioCatalyst canary poll ran on the production VPS. It:
+`/etc/macro-biocatalyst.env` is root-owned, mode `0600`. Credential values are present and
+verified but deliberately omitted here.
 
-- **fetched all four configured trials** from ClinicalTrials.gov,
-- **parsed them** into `biocatalyst_trial_source_state.v1` records with real source timestamps,
-  attribution, license class and modification disclosure,
-- **mirrored them to R2 with verified receipts** at exactly the intended prefix:
-
-```
-biocatalyst/raw/clinicaltrials/v2/NCT04528082/cad07a79….json   18,895 bytes
-biocatalyst/raw/clinicaltrials/v2/NCT05020236/6fefeb86….json   32,298 bytes
-```
-
-- then **refused to publish the generation** and dead-lettered it, ending `state: quarantined`.
-
-**The operator's R2 credentials are proven working.** `r2_mirror_state: mirror_receipt_verified`.
-
-### The publication refusal, and the leading hypothesis
-
-`public/health.json` reports `observed_nct_count: 0` — that counts the **published** generation,
-not the fetch. The fetch succeeded; publication was refused.
-
-Leading hypothesis, from the recorded evidence and **NOT yet confirmed**:
-
-- every fetched record carries `source_dataset_timestamp_raw: "2026-08-07T09:00:05"`
-- `public/health.json` carries `freshness_budget_seconds: 7200` (2 hours)
-- the run happened at `2026-08-10T05:52Z` — roughly **69 hours** after that dataset stamp
-
-If publication enforces the freshness budget against the source dataset timestamp, a ~69-hour-old
-stamp against a 2-hour budget explains the refusal exactly, and the system behaved correctly.
-
-**Do not "fix" this by widening the budget until the cause is confirmed.** Two readings are open
-and they have opposite remedies:
-
-1. ClinicalTrials.gov genuinely publishes its dataset stamp on a multi-day cadence → the 2-hour
-   budget is mis-specified for this source and should be re-derived from observed cadence.
-2. The stamp means something other than "dataset freshness" → the budget is fine and the
-   comparison is wrong.
-
-**First action for the next session: read the publication code path and determine which.**
-Start at `engine/biocatalyst/publication.py`, find where `freshness_budget_seconds` and
-`source_dataset_timestamp_raw` are compared, and confirm or kill the hypothesis. The evidence is
-all on the VPS under
-`/var/lib/macro-biocatalyst/state/dead-letter/attempt_20260810T055235959556Z_b4e57dc858e6/`.
-
----
-
-## 2. VPS STATE — exact, as of 2026-08-10T05:55Z
-
-Host `root@146.190.142.17` (`ubuntu-s-mastermindx`). Reach it with:
-
-```bash
-ssh -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17
-```
-
-Repo checkout is `/opt/macro`. Runtime is `/opt/macro-biocatalyst/current`.
-
-### `/etc/macro-biocatalyst.env` — now fully configured, `0600 root:root`
-
-| Key | State |
+| Key | Current non-secret state |
 |---|---|
-| `BIOCATALYST_R2_ENDPOINT` / `_BUCKET` / `_ACCESS_KEY_ID` / `_SECRET_ACCESS_KEY` | **operator-supplied, verified working** |
 | `BIOCATALYST_ENABLED` | `1` |
-| `BIOCATALYST_HISTORY_ENABLED` | **`0`** — rights cleared by ruling, staged off until the canary is green |
+| `BIOCATALYST_HISTORY_ENABLED` | `1` in the shared file; service process prefixes enforce hourly=0 and daily-history=1 |
 | `BIOCATALYST_PROSPECTIVE_ENABLED` | `0` |
-| `BIOCATALYST_CANARY_NCTS` | `NCT04528082,NCT05020236,NCT06602479,NCT07218380` |
+| `BIOCATALYST_CANARY_NCTS` | Four sorted, explicit NCT identifiers |
 | `BIOCATALYST_USER_AGENT` | `MastermindX-BioCatalyst/1.0 (biocatalyst@mastermind-x.com)` |
+| R2 endpoint/bucket/access keys | Present; live conditional-create and read-back receipts verified |
 
-Backup of the pre-change file: `/etc/macro-biocatalyst.env.bak.20260810T054647Z`.
+`biocatalyst@mastermind-x.com` was confirmed by the operator as a routed address.
 
-**Two traps found the hard way — both cost a failed run:**
+`/etc/macro-biocatalyst-fixed-cohort.env` is root-owned, mode `0600`:
 
-1. **`BIOCATALYST_USER_AGENT` must contain an `@`.** `scripts/biocatalyst_worker.py:377` requires
-   it — a contact **email**, not a URL. A URL-only UA fails `BIOCATALYST_USER_AGENT_INVALID`.
-2. **`BIOCATALYST_CANARY_NCTS` must be sorted ascending.** `scripts/biocatalyst_worker.py:372`
-   asserts `tuple(sorted(nct_ids)) == nct_ids`. An unsorted list fails
-   `BIOCATALYST_CANARY_NCTS_INVALID`.
-
-**`biocatalyst-setup.sh --verify-prereqs` passes on BOTH of those broken values.** It checks key
-shapes, not the worker's own validation. Do not treat a green verify as proof the worker will
-start. That gap is worth closing.
-
-### `biocatalyst@mastermind-x.com` may not route — OPERATOR DECISION
-
-The worker forces an email into the UA. A non-routing contact is worse than useless under the
-source's terms, since the whole point is reachability. **Confirm that address routes, or replace
-it.** Deliberately not set to the operator's personal Gmail — sending a personal address to a
-government site in every request header was not a call to make unilaterally.
-
-### Units — installed, DISABLED, never armed
-
-```
-macro-biocatalyst.service   static,   inactive
-macro-biocatalyst.timer     disabled, inactive
-```
-
-Arming the timer is still **B1S2c**: an operator decision plus a fourteen-day soak. The canary
-runs above were manual one-shots (`systemctl start macro-biocatalyst.service`), not arming.
-
----
-
-## 3. REPOSITORY STATE
-
-Main is green for BioCatalyst. Baseline: **`pytest tests/ -k biocatalyst` → 1061 passed** on
-`origin/main` before this session's PRs. Hand that to builders as a constant; do not re-measure.
-
-### Merged earlier (7 PRs)
-`#4796` design ruling + parity ledger · `#4810` F0-delta + closed-beta manifest · `#4814` BC-O1a
-persistence + M0a policy · `#4820` B1S2a bounded transport · `#4822` N0a producer + N0b reader ·
-`#4825` v2 acceptance contract + browser verifier · `#4831` D0b premium trial product.
-
-### Open and armed `merge-on-green` — verify state with `gh pr list`
-
-| PR | Lane |
+| Key | Current state |
 |---|---|
-| 4937 | Signal-path strategy + autonomous run brief |
-| 4940 | Sponsor→ticker candidate map |
-| 4944 | BC-O1b forward store + M0a clock evaluator |
-| 4945 | theme_clinical PIT rollup + coverage disclosure |
-| 4946 | B1S4 coverage-epoch machinery (dark) |
-| 4947 | Change Tape exact values + declared correction lineage |
-| 4957 | B1S2b privileged deployment package |
-| 4958 | Ruling execution (rights enable + 29 admissions) |
-| 4959 | The operator ruling document |
-| 5002 | Group B — four subsidiary admissions |
+| `BIOCATALYST_FIXED_COHORT_TRANSPORT_ENABLED` | `1` |
+| `BIOCATALYST_FIXED_COHORT_USER_AGENT` | `MastermindX-BioCatalyst/1.0 (biocatalyst@mastermind-x.com)` |
 
-**They form a dependency chain**, roughly `4959 → 4940 → 4958 → 5002`, and **all BioCatalyst PRs
-conflict on `.github/ci/legacy-jobs.yml`** because
-`test_biocatalyst_deploy.py::test_biocatalyst_ci_uses_bounded_complete_lanes_with_no_unowned_test_file`
-forces every new `test_biocatalyst_*.py` to be registered there. **Merge serially**: merge one,
-fetch main, rebase the next, resolve that YAML block as a union taken from
-`git show origin/main:<file>` — never with a regex over conflict markers.
+Membership is forbidden in that environment file. It exists only in immutable root-owned
+manifests. Active cohort:
 
-At last check several were `merge-blocked` on a **fleet-wide** main red that is **not** ours:
-zero BioCatalyst failures among the twelve failing suites (`exit_policy_study`, `nav_hover_bridge`,
-`ob_mask_start_invariance`, `rendered_ticker_links`, `government_revenue_candidate_*`, …). Other
-programs own those. The armed labels persist, so they merge when main greens.
+- ID `ctgov_fixed_cohort_ec83219c405a1eec0ec86324`;
+- four exact NCT members;
+- file SHA-256 `c1d8bdd27607ea32333e8021131b61ca8bd0bca803ad5189aed04afc521d624f`;
+- rotation receipt under
+  `/var/lib/macro-biocatalyst-fixed-cohort/receipts/rotations/2026/08/`.
 
----
+## Installed units
 
-## 4. WHAT THE OPERATOR STILL OWNS
+| Unit | Role | Boundary |
+|---|---|---|
+| `macro-biocatalyst.service` | hourly current-record publication | process-forced history=0, timeout 900s |
+| `macro-biocatalyst.timer` | hourly opportunity scheduler | operator-armed only |
+| `macro-biocatalyst-history.service` | daily history refresh | process-forced history=1, timeout 2700s |
+| `macro-biocatalyst-history.timer` | daily history scheduler | 02:20 UTC plus bounded jitter, operator-armed only |
+| `macro-biocatalyst-fixed-cohort.service` | private exact-cohort source proof | no R2/publication credentials, timeout 600s |
+| `macro-biocatalyst-fixed-cohort.timer` | daily fixed-cohort scheduler | operator-armed only |
+| `macro-biocatalyst-activation-heartbeat.timer` | prospective R2 activation heartbeat | disabled while prospective collection remains off |
 
-1. **Confirm `biocatalyst@mastermind-x.com` routes**, or supply an address that does (§2).
-2. **The 16 still-ambiguous sponsor rows.** 8 outside the declared universe, 3 renamed entities,
-   and one each private / ADR-ambiguous / CRO / multi-match / joint-venture. Each needs a per-case
-   call or an explicit ruling to leave them permanently unresolved. Group B (the 4 subsidiaries →
-   DHR, RHHBY, JNJ, MRK) is already admitted in `#5002`.
-3. **`B1S2c`** — arming the timer plus a fourteen-day soak. Not compressible.
-4. **Bucket scoping.** `research` is shared with other lanes and R2 tokens scope to a bucket, not
-   a prefix, so the BioCatalyst key can write all of `research`. Broader than the setup script
-   intends. A dedicated bucket would match the token's blast radius to its job.
+The process prefix is load-bearing. systemd `EnvironmentFile=` values override `Environment=`
+settings even when the latter appears later in the unit. The correct `ExecStart` boundaries are:
 
----
+```text
+/usr/bin/env BIOCATALYST_HISTORY_ENABLED=0 /opt/macro-biocatalyst/current/bin/python ...
+/usr/bin/env BIOCATALYST_HISTORY_ENABLED=1 /opt/macro-biocatalyst/current/bin/python ...
+```
 
-## 5. WHAT NO SESSION CAN FINISH — do not re-plan these
+Production `/proc/<pid>/environ` inspection proved both values. Do not replace these with
+`Environment=BIOCATALYST_HISTORY_ENABLED=...`.
 
-- **W3 identity** — needs an executable versioned point-in-time contract from a plane BioCatalyst
-  does not own. Measured: 2 of 6 shared-plane adapters eligible.
-- **`C2` / `MKT0` / `EST1`** — Capital Structure PIT, licensed market/options, licensed estimates.
-  Contracts that do not exist.
-- **`P3`** — deliberately unscheduled. First possible authority is shrink-only.
+## Live proof receipts
 
----
+### Current-record/R2 publication
 
-## 6. THE STRATEGIC PICTURE, IN FIVE LINES
+- run `ctgov_run_20260811T232226512533Z_e679bb3d2518`;
+- 4 configured / 4 observed;
+- 15 mirrored objects, 517,157 bytes;
+- verified at `2026-08-11T23:22:27.023317Z`;
+- committed generation and `current.json` pointer present.
 
-- **A contextual layer already exists and is already live**, and it is *not* BioCatalyst:
-  `engine/theme_clinical.py` aggregates trials to a theme, joins that theme to baskets, and feeds
-  Mastermind — reaching price with **no per-company identity at all**.
-- It is correctly fenced: `is_context_only`, display-tier, never scored, never folded into
-  `fused_obs_z`.
-- **There is no authorized signal, and there will not be one before 2027** even in the best case.
-  Forward accrual needs 12–24 months before a pre-registered test is possible.
-- The retrospective ClinicalTrials.gov store is **look-ahead-selected pre-2019 and cannot be
-  cleaned**, which is why forward accrual is the only clean evidence this program will ever have.
-- **No outcome-family clock is open, deliberately.** A clock over a source that is not yet
-  collecting accrues nothing while later reading as "accruing since <date>" — the exact
-  fabrication this program exists to prevent. Clocks open through an activation receipt, never a
-  config edit.
+### Fixed cohort
 
----
+- run `ctgov_fixed_cohort_transport_run_c5958b366c8b7859a18cb95a`;
+- `complete`, `exact_fixed_cohort_match`;
+- 4 requested / 4 returned;
+- source API version `2.0.5`, matching before/after dataset timestamps;
+- no error code and no public projection.
 
-## 7. FIRST THREE ACTIONS FOR THE NEXT SESSION
+### Outcome-family activation
 
-1. **Confirm or kill the freshness hypothesis** in `engine/biocatalyst/publication.py` (§1), using
-   the dead-letter evidence on the VPS. Do not widen any budget before the cause is known.
-2. **Land the open PR chain** serially (§3), rebasing each onto a green main.
-3. **Re-run the canary** once the publication cause is fixed:
-   `systemctl start macro-biocatalyst.service`, then read
-   `/var/lib/macro-biocatalyst/public/health.json` — success looks like `observed_nct_count: 4`
-   and a non-null `last_success_at`. Only after that is green should
-   `BIOCATALYST_HISTORY_ENABLED` go to `1`, and only then does arming become a live question.
+The primary operational store has nine immutable family-clock activation receipts. Three are
+open from `2026-08-11T20:20:43.514252Z`:
+
+- `trial_progression_termination`;
+- `timing_slip`;
+- `enrollment_site_change`.
+
+The other six remain closed on their declared blockers. Re-running the same activation is
+idempotent and must not fabricate a new accrual start.
+
+## Soak state
+
+The immutable launch-SLO manifest is
+`biocatalyst_launch_slo_6424cdec9e0568bac6486b91`, content SHA-256
+`6424cdec9e0568bac6486b9106e98bb75a610529d8fbb203ea381baf8754a86c`.
+Its scheduled window is:
+
+```text
+2026-08-12T02:00:00Z through 2026-08-26T02:00:00Z
+```
+
+All three pre-window proofs are green. The dedicated history run
+`ctgov_run_20260811T232756727443Z_e679bb3d2518` committed 381 verified R2 objects / 10,796,970
+bytes, exactly 366 of them history objects, under the 45-minute boundary.
+
+Two transient root-owned timers held the exact activation act:
+
+- `macro-biocatalyst-soak-arm.timer` → at `2026-08-12T02:00:00Z`, enable and start the hourly,
+  daily-history and fixed-cohort timers;
+- `macro-biocatalyst-soak-first-opportunity.timer` → at the same microsecond-accuracy boundary,
+  start the first launch-critical hourly opportunity.
+
+Both fired successfully at `2026-08-12T02:00:00Z`. The hourly, daily-history and fixed-cohort
+timers are now `enabled` and `active`. The first hourly service ran from 02:00:00 through 02:03:02
+UTC as `ctgov_run_20260812T020019608850Z_e679bb3d2518`, publishing 15 verified R2 objects /
+517,157 bytes. Its mirror receipt was verified at `2026-08-12T02:00:20.178377Z`, manifest
+SHA-256 `7a45e2ee47ca3826f99fc02a5d698acd2200bf0f90a3452db750072873d91e90`.
+
+The first scheduled history opportunity ran from 02:21:04 through 02:36:56 UTC as
+`ctgov_run_20260812T022116101655Z_e679bb3d2518`. It committed 381 verified R2 objects /
+10,796,970 bytes, exactly 366 history objects, manifest SHA-256
+`b0a6eb89f97c2f45ee639affb6c6baf74f3adba73178042b012dd36b1ec9f570`. These are the first
+prospective launch-window observations. At window close, no closed-beta claim is valid until the
+launch-SLO evidence verifier consumes the full scheduled denominator and passes.
+
+## Verification baseline
+
+- `pytest -q tests/ -k biocatalyst`: **1377 passed**, 68,969 deselected;
+- focused activation-boundary suites: **258 passed**;
+- CI manifest: 180 legacy jobs validated;
+- unrun audit: zero strictly dark suites;
+- post-merge integration baseline: green.
+
+## Non-negotiable traps
+
+1. User agents require a routable contact containing `@`.
+2. Main canary identifiers must remain sorted and explicit.
+3. Fixed-cohort membership may never enter an environment variable or command-line membership
+   option.
+4. A systemd success caused by worker-lock overlap is not a history proof; verify a committed
+   history generation.
+5. Do not widen the fifteen-minute opportunity or the 7200-second freshness SLO to convert a
+   runtime defect into green telemetry.
+6. The fixed-cohort lane has no public/R2 authority; the launch-critical lane has no scoring,
+   Prophet or Neural Web authority.
