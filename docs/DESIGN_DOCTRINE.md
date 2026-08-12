@@ -169,7 +169,8 @@ upgrade).
    (become pastel stains), blur-teasers over locked content (become dirty smudges —
    ghost them: `saturate(.35)`, opacity ≤ .5), accent-tinted highlight rows (become
    highlighter smears — quiet tint + 3px rail + deepened ink), panel-on-canvas depth
-   (light needs white panels on a deeper canvas `#e8ebf1` + soft shadow — panel≈bg is
+   (light needs white panels on a perceptibly deeper canvas — the shipped value is
+   `--bg:#f7f8fa`, superseding this note's earlier `#e8ebf1`; panel≈bg is
    the flatness bug), and colored segment bars (neutral segments vanish on white; add
    1px gaps + track border). Emoji are not UI icons — they read as clip-art on white
    and render inconsistently headless; use the monoline set in

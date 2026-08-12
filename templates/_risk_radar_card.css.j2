@@ -39,6 +39,9 @@
          background: color-mix(in srgb, var(--rc) 16%, transparent);
          border: 1px solid color-mix(in srgb, var(--rc) 38%, transparent); }
   .rrx .rrx-dom { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+  .rrx .rrx-authority { font-size: 10.5px; line-height: 1.35; margin-top: 3px; font-weight: 600; }
+  .rrx .rrx-authority.is-advisory { color: var(--muted); }
+  .rrx .rrx-authority.is-binding { color: var(--rc); }
   .rrx .rrx-amp { color: var(--rc); font-weight: 600; font-size: 11px; margin-top: 3px; }
   .rrx .rrx-gross { flex: none; text-align: center; padding: 3px 11px; border-radius: 9px;
          background: color-mix(in srgb, var(--rc) 12%, transparent);
@@ -204,15 +207,19 @@
      action/cycle) on EVERY market's .ms-front board, not just the US macro one —
      roughly halves the card height vs the single-column stack. The US dashboard
      keeps its own (higher-specificity, identical) copy; this is what reaches the
-     China / HK / Canada boards that only load this shared partial. */
+     China / HK / Canada boards that only load this shared partial.
+     `.imd-radar` is the international dashboards' section wrapper (JP/KR/EZ/GB/IN,
+     templates/international_macro.html.j2) — a full-page-width placement, so it takes
+     the same wide board instead of stranding the ramp beside an empty middle. Inert
+     on every page that has no such wrapper. */
   @media (min-width: 1100px) {
-    .ms-front > .rrx { grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    :is(.ms-front, .imd-radar) > .rrx { grid-template-columns: minmax(0,1fr) minmax(0,1fr);
       column-gap: 22px; row-gap: 0; align-items: stretch; }
-    .ms-front > .rrx > .rrx-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-    .ms-front > .rrx > .rrx-main .rrx-odds { flex: 1 1 auto; }
-    .ms-front > .rrx > .rrx-main .rrx-ramp { align-items: stretch; }
-    .ms-front > .rrx > .rrx-main .rrx-tk { height: auto; flex: 1 1 auto; min-height: 64px; }
-    .ms-front > .rrx > .rrx-side { display: flex; flex-direction: column; justify-content: center;
+    :is(.ms-front, .imd-radar) > .rrx > .rrx-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    :is(.ms-front, .imd-radar) > .rrx > .rrx-main .rrx-odds { flex: 1 1 auto; }
+    :is(.ms-front, .imd-radar) > .rrx > .rrx-main .rrx-ramp { align-items: stretch; }
+    :is(.ms-front, .imd-radar) > .rrx > .rrx-main .rrx-tk { height: auto; flex: 1 1 auto; min-height: 64px; }
+    :is(.ms-front, .imd-radar) > .rrx > .rrx-side { display: flex; flex-direction: column; justify-content: center;
       gap: 9px; min-width: 0; padding-left: 22px;
       border-left: 1px solid color-mix(in srgb, var(--rc) 22%, var(--line)); }
     body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx > .rrx-main .rrx-odds { flex: 0 0 auto; }

@@ -705,6 +705,13 @@ PUBLIC_EXACT = frozenset({
     # behind require_site_full_user (401 signed out, 403 unentitled). This changes
     # who can read the WORKBENCH, never who can read the WORK.
     "/fundamental_forensics.css", "/fundamental_forensics.js",
+    # Stock analyzer workbench clients. These carry presentation and bounded
+    # fetch logic only; every per-ticker analysis payload and /api/brain/* call
+    # remains behind the registration or Bearer-authenticated data plane. Keep
+    # this explicit list aligned with site_access.yml so a new public path can
+    # never inherit the promotion accidentally.
+    "/lightweight-charts-v5.js", "/chart.js", "/stockview.js",
+    "/stockbrief.js", "/mtf.js", "/aidesk_lean.js", "/mm_brain.js",
     # Market Memory is the same public-shell/private-work split: these assets
     # contain presentation and a bounded API client only. All analytical
     # payloads remain behind the paid /api/market-memory/v1/* routes.
@@ -789,6 +796,49 @@ PUBLIC_EXACT = frozenset({
     # public HTML and illus.js makes no network call, so the pair moves no data.
     "/illus.css",
     "/illus.js",
+    # Watchlist page funnel shell (watchlist.html) — P0 anonymous-husk fix,
+    # 2026-08-12 (Watchlist/Portfolio W0 commissioning packet §2.7). The
+    # 2026-08-04 *.html change opened the shell but left ALL TEN of the page's
+    # scripts default-deny, so anonymous production served a publicly cached
+    # husk: no empty state, no sign-in CTA, and zero console errors because
+    # nothing ran. These SIX are the funnel, and they qualify on this set's own
+    # standard because the page's store is the VISITOR'S OWN list (localStorage;
+    # Supabase only after sign-in) — the empty state, the add-holding UI and the
+    # "Sign in to sync" CTA all render with zero gated reads. Network surface
+    # verified file by file: watchlist.js, watchstore.js, market_books.js and
+    # mtf.js make no network calls at all; portfolio.js reads only the gated
+    # data/portfolio_ctx.json (401 -> stage rows omit, and only once a modeled
+    # position exists); mm_brain.js speaks only to the Bearer-authenticated
+    # /api/brain/* gateway. Presentation and payload-free clients, same as the
+    # forensics pair — this changes who can read the WORKBENCH, not the WORK.
+    #
+    # FOUR of the page's ten scripts were examined and REFUSED, which is the
+    # half of this record that matters most:
+    #   * stockdata.js — and note that the census rationale recorded above
+    #     ("every data source they read stays gated, so promotion would be
+    #     net-zero") is SUPERSEDED for this file, not merely repeated. Pages
+    #     carrying the data_base fetch shim (watchlist.html, sector_heatmap.html)
+    #     divert its <market>stockdata/* reads to the anonymously READABLE public
+    #     R2 bucket, so the origin's default-deny gates a path production never
+    #     requests: promoting it would make an open shell RENDER graded
+    #     per-ticker output (conviction band, ladder state, entry urgency) to
+    #     signed-out visitors. The refusal stands and its reason is stronger —
+    #     the wall on this file is the only thing preventing anonymous graded
+    #     render on the page. A future session must not read "net-zero" here and
+    #     conclude the promotion is free.
+    #   * watchlist_risk.js, risk_core.js, factor_exposure.js — payload-free, but
+    #     they ARE the calibrated decision rule in code form (thresholds,
+    #     escalation ladder, score->label boundaries). Publishing the rule is a
+    #     product disclosure the W2 flagship wave must decide deliberately
+    #     against its anonymous-funnel exit gate, never inherit as a husk-fix
+    #     side effect. Anonymously they could draw nothing anyway —
+    #     factor_betas.json and transmission_chains.json stay gated and 401.
+    "/watchlist.js",
+    "/watchstore.js",
+    "/market_books.js",
+    "/portfolio.js",
+    "/mtf.js",
+    "/mm_brain.js",
     "/factordata/tech_lab.json",
 })
 

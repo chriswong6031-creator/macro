@@ -679,6 +679,61 @@ checks:
 
   # ── Epistemics guards ──────────────────────────────────────────────────────
 
+  - law_id: epistemics.qledger_metric_validity
+    summary: >
+      Three readings of the Universal Scoreboard produce impressive numbers that
+      do not mean what they appear to mean, and all three are silent. (V1)
+      grades.excess is RAW subject-minus-control return, not direction-signed —
+      hit carries direction — so a correct bearish call contributes NEGATIVE
+      excess and a pooled signed excess_mean over a mixed-direction family
+      measures universe drift, not skill. (V2) a direction==0 claim asserts
+      salience, not direction, so hit is undefined and a hit rate over such a
+      family is a ratio over an empty verdict set; 71% of the live corpus is
+      salience. (V3) grading emits every shorter in-scope horizon as it matures,
+      so a family declaring horizon_d=63 accrues 5d/21d rows long before its own
+      ruler resolves — reading those as its record is DNR:KILL-OFFHORIZON-VERDICTS.
+    source_ref:
+      - engine/qledger_validity.py
+      - scripts/check_qledger_metric_validity.py
+      - tests/test_qledger_validity.py
+      - research/MASTERMIND_EVALUATION_STANDARDS.md
+      - research/MASTERMIND_INTELLIGENCE_CATALOG.md
+    severity: manual
+    check_script: scripts/check_qledger_metric_validity.py
+    ci_wiring: []
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >
+        Audits the STORE, not the emitters. A consumer that recomputes a pooled
+        signed excess in its own code is invisible here; T3 of the V1 plan
+        retires the known emitter (scripts/grade_qledger.py per-family excess_mean).
+      - >
+        The default run is advisory (exit 0); only --strict exits non-zero.
+        CI runs the guard's --selftest and its pytest suite (legacy job
+        qledger-cluster-honest-ci), which proves the auditor works — it does NOT
+        run the audit against the real corpus as a gate. ci_wiring is therefore
+        [] on purpose: the guard is unit-proven in CI but not yet enforcing.
+      - >
+        V3 compares the family's declared ruler against horizons present in the
+        grade corpus; it cannot distinguish "not yet matured" from "grading
+        broken". Both are correctly reported as zero verdicts at the ruler.
+      - >
+        An absent store exits 0 with a ::notice. Sparse agent worktrees have no
+        data/ on disk while the paths are tracked in HEAD.
+    owner_program: qualitative-intelligence
+    notes: >
+      Deliberately unwired and severity=manual on arrival. The findings are
+      PRE-EXISTING CONDITIONS of the corpus (18 findings across 11 families on the
+      2026-08-12 store), not regressions any PR author caused; wiring it hard on
+      day one would red main fleet-wide for a property nobody introduced, which is
+      how a guard gets routed around instead of obeyed. T3 of
+      research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md retires the invalid emitters
+      and, in the same PR, wires this into pr_ci with --strict and upgrades severity
+      to hard. Precedent for arriving manual-then-upgrading: governance.adjudication_packet
+      (an upgrade needs no ruling; a downgrade does).
+
   - law_id: epistemics.validated_claims
     summary: >
       Every affirmative use of the word "validated" (EN + ZH "已验证") in
