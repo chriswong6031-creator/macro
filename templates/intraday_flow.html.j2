@@ -42,7 +42,7 @@
     margin:0; padding:18px;
   }
   html[data-theme="light"] body.page-intraday-flow {
-    --bg:#f5f7fb; --panel:#ffffff; --panel2:#eef1f6;
+    --bg:#e8ebf1; --panel:#ffffff; --panel2:#eef1f6;
     --glass:color-mix(in srgb, #ffffff 72%, transparent);
     --glass-2:color-mix(in srgb, #ffffff 80%, transparent);
     --glass-line:color-mix(in srgb, #1c2430 8%, transparent);
@@ -138,10 +138,14 @@
   .stance-card .sc-count { font-family:var(--num); font-size:27px; font-weight:800; margin-top:5px; line-height:1; color:var(--lane); }
   .stance-card .sc-sub { font-size:var(--fs-micro); color:var(--muted); margin-top:3px; line-height:1.3; }
   /* lane colors — stance/mood colors are fixed across languages (only in_favour flips, per ruling) */
-  .lane-act    { --lane:var(--ok,#3da564); }
+  /* Buy-now and In-favour BOTH mean long, so both take --up and both flip together.
+     The shipped code pinned buy-now to a HEALTH token (--ok, which by law never
+     flips) and hand-rolled the flip for in-favour alone, so under zh the buy lane
+     painted green and the in-favour lane red in the same row — the buy lane read as
+     SELL to a Chinese reader, and contradicted us_stocks one click away. */
+  .lane-act    { --lane:var(--up,#3da564); }
   .lane-ready  { --lane:var(--info,#5b9bf0); }
-  .lane-fav    { --lane:#3fb37a; }
-  html[data-lang="zh"] .lane-fav { --lane:#e06464; }
+  .lane-fav    { --lane:var(--up,#3da564); }
   .lane-profit { --lane:var(--orange,#e08b45); }
   .lane-watch  { --lane:var(--warn,#e0a030); }
   .lane-aside  { --lane:var(--muted); }

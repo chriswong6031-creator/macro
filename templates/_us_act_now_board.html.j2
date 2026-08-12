@@ -115,7 +115,14 @@
              text-decoration: none; color: inherit; cursor: pointer;
              transition: background 0.1s; position: relative; }
   .actitem:last-child { border-bottom: none; }
-  .actitem:hover, .actitem:focus { background: color-mix(in srgb, var(--panel2) 55%, transparent); outline: none; }
+  /* `outline:none` here is (0,2,0) and theme.css's focus ring is a deliberate
+     low-specificity :where() at (0,1,0) — so this line silently removed the ring
+     from all 45 rows on us_stocks while the estate believed it was compliant
+     (design system §14: a focus-visible ring on EVERY interactive element).
+     Hover keeps its wash; the ring is restored for keyboard only. */
+  .actitem:hover, .actitem:focus { background: color-mix(in srgb, var(--panel2) 55%, transparent); }
+  .actitem:focus:not(:focus-visible) { outline: none; }
+  .actitem:focus-visible { outline: 2px solid color-mix(in srgb, var(--link) 78%, transparent); outline-offset: -2px; }
   .actitem.hovered { background: color-mix(in srgb, var(--panel2) 80%, transparent); }
   .act-row-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
   /* Row kind mark. --muted, not text-at-85%: it is a type label (fund vs basket),

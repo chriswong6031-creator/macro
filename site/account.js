@@ -764,7 +764,7 @@
     var s = document.createElement('script');
     // nav_market.js owns the runtime menu composition, so it must never inherit
     // a stale year-cached response after a navigation release.
-    s.src = pfx + 'nav_market.js?v=20260810-stocks-hub-movers';
+    s.src = pfx + 'nav_market.js?v=20260812-ui-audit-ink-grades';
     s.async = true;
     (document.head || document.documentElement).appendChild(s);
   })();

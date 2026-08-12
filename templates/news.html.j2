@@ -893,7 +893,7 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
     {% if SYN.top_tickers or SYN.top_channels %}
     <div class="nx-rail-card">
       <div class="nx-rail-hd">{{ t('In focus','焦点') }}</div>
-      {% if SYN.top_tickers %}<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">{% for tk in SYN.top_tickers[:8] %}<span class="nx-tk">{{ tk }}</span>{% endfor %}</div>{% endif %}
+      {% if SYN.top_tickers %}<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">{% for tk in SYN.top_tickers[:8] %}{% set _t = tk.ticker if tk is mapping else tk %}<a class="nx-tk" href="stock.html#{{ _t|e }}">{{ _t }}</a>{% endfor %}</div>{% endif %}
       {% if NS_STATE %}<div class="nx-rail-note">{{ t('News tone','新闻情绪') }}: <b style="color:{{ 'var(--up)' if NS_STATE in ['optimistic','positive'] else 'var(--down)' }};">{{ t('upbeat','偏乐观') if NS_STATE in ['optimistic','positive'] else t('cautious','偏谨慎') }}</b>{% if NS_Z is not none %} <span class="num">(z {{ NS_Z|round(1) }})</span>{% endif %}</div>{% endif %}
     </div>
     {% endif %}
