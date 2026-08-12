@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T01:07:06.749039+00:00",
-  "count": 958,
+  "generated_at": "2026-08-12T01:22:05.314312+00:00",
+  "count": 959,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -116,6 +116,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pbe5nntoagu-bab4be",
+      "title": "FSA FI Daily Commentary 10 August 2026",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:32:20Z",
+      "summary_points": [
+        "**US Treasury yields broadly lower**: UST 2Y/10Y/30Y declines signal easing monetary policy expectations, contrasting with JGB 10Y rise (+0.031) and China 10Y fall (-0.007), highlighting divergent global rate trends critical for portfolio positioning.",
+        "**US Labor & Inflation Data**: July nonfarm payrolls -23k (vs +80k consensus), unemployment 4.1% (below forecast), hourly earnings growth slowed to 0.1% m-o-m; NY Fed inflation expectations at 3.63% (below forecast), signaling potential Fed policy shift.",
+        "**Macau Casino Revenue Collapse**: 8.4% YoY revenue drop (16th consecutive month), driven by Beijing capital controls (taxation on offshore trusts, cross-border brokerage crackdown), posing severe risk for Macau-focused investments amid geopolitical tensions.",
+        "**Zurich Insurance Recommendation Downgrade**: Shift from OP to MP signals deteriorating credit outlook, critical for fixed income risk assessment and portfolio rebalancing.",
+        "**Goodyear's FY26 Cash Burn Intensifies**: $200–$300M free cash flow burn (vs $30M in FY25), with FY27 expected $100M burn; liquidity ($4.0B) covers burn but volume stabilization not translating to earnings recovery, indicating fundamental stress."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
