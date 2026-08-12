@@ -4,11 +4,11 @@
   "sources": {
     "macro": {
       "available": true,
-      "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/opus-subagents-codex-registry-aaf279",
+      "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/strange-burnell-f79f47",
       "ref": "HEAD",
-      "sha": "6560d5a809bf75bd925eae08037e9118daff44c9",
+      "sha": "e8dfc53d776cecd89a6ac7fe75d8f2c197af4ffd",
       "page_inventory": "git ls-files site/*.html",
-      "tracked_html_pages": 4585,
+      "tracked_html_pages": 4637,
       "write_page_sites": 151,
       "write_page_unresolved": 33,
       "unresolved_write_sites": [
@@ -47,7 +47,7 @@
       "root": "/Users/chriswong/Documents/Cluade/charting-app",
       "ref": "origin/master",
       "available": true,
-      "sha": "32f4254f11d3abc26ad891bbb14e4395b0ec6e82",
+      "sha": "b383d8c3579faeca1cdbcd29063535081aabf35b",
       "page_modules": 15
     },
     "mastermind": {
@@ -171,7 +171,7 @@
       "data_sources": [],
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
-      "nav_family": "none",
+      "nav_family": "footer.research",
       "archetype": "unclassified",
       "primary_user_question": "",
       "owner": "unowned",
@@ -187,7 +187,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "site/about-research.html"
+        "site/about-research.html",
+        "templates/_public_footer.html.j2"
       ],
       "notes": [
         "no write_page() call site resolves to this route; builder unknown"
@@ -203,7 +204,7 @@
       "data_sources": [],
       "access_shell": "anonymous",
       "payload_tier": "public",
-      "nav_family": "none",
+      "nav_family": "footer.resources",
       "archetype": "unclassified",
       "primary_user_question": "",
       "owner": "unowned",
@@ -225,6 +226,7 @@
         "config/site_access.yml:1",
         "scripts/check_template_site_sync.py",
         "site/about.html",
+        "templates/_public_footer.html.j2",
         "templates/about.html"
       ],
       "notes": [
@@ -2709,7 +2711,7 @@
       "data_sources": [],
       "access_shell": "anonymous",
       "payload_tier": "public",
-      "nav_family": "none",
+      "nav_family": "footer.legal",
       "archetype": "unclassified",
       "primary_user_question": "",
       "owner": "unowned",
@@ -2723,7 +2725,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "site/disclaimer.html"
+        "site/disclaimer.html",
+        "templates/_public_footer.html.j2"
       ],
       "notes": [
         "no write_page() call site resolves to this route; builder unknown"
@@ -6606,7 +6609,7 @@
       "data_sources": [],
       "access_shell": "anonymous",
       "payload_tier": "public",
-      "nav_family": "none",
+      "nav_family": "footer.legal",
       "archetype": "unclassified",
       "primary_user_question": "",
       "owner": "unowned",
@@ -6620,7 +6623,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "site/privacy.html"
+        "site/privacy.html",
+        "templates/_public_footer.html.j2"
       ],
       "notes": [
         "no write_page() call site resolves to this route; builder unknown"
@@ -7227,7 +7231,7 @@
         "templates/research_report.html.j2"
       ],
       "notes": [
-        "937 committed pages under site/research/"
+        "989 committed pages under site/research/"
       ]
     },
     {
@@ -10812,7 +10816,7 @@
       "data_sources": [],
       "access_shell": "anonymous",
       "payload_tier": "public",
-      "nav_family": "none",
+      "nav_family": "footer.legal",
       "archetype": "unclassified",
       "primary_user_question": "",
       "owner": "unowned",
@@ -10826,7 +10830,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "site/terms.html"
+        "site/terms.html",
+        "templates/_public_footer.html.j2"
       ],
       "notes": [
         "no write_page() call site resolves to this route; builder unknown"
