@@ -763,6 +763,20 @@ def scan_python_copy(rel_path: str, text: str, allow: list[dict]) -> tuple[list[
     return unearned, stats
 
 
+def _reportable(raw: str) -> str:
+    """The finding text a human can act on.
+
+    Normally the RAW line, deliberately: it is the bytes in the file, so it can be
+    grepped. But an ensure_ascii=True payload renders a ZH claim as escape soup
+    (`\\u6240\\u5c5e…`) — six characters per glyph, so the 160-char budget shows perhaps
+    twenty of them and none are readable. A CI failure nobody can read is a CI failure
+    nobody can fix, and the escapes are not greppable as text either, so nothing is lost
+    by decoding. `file` + `line_no` remain the way to locate it.
+    """
+    decoded = _decode_unicode_escapes(raw)
+    return decoded.strip() if decoded != raw else raw.strip()
+
+
 def scan_text(rel_path: str, text: str, allow: list[dict]) -> tuple[list[dict], dict]:
     """Scan one file's `text` as if it lived at repo-relative `rel_path`.
 
@@ -792,7 +806,7 @@ def scan_text(rel_path: str, text: str, allow: list[dict]) -> tuple[list[dict], 
                                     else "artifact validated:true"))
             else:
                 unearned.append({"file": rel_path, "line_no": i,
-                                 "text": raw.strip()[:160]
+                                 "text": _reportable(raw)[:160]
                                  + _surface_hint(vis, allow, surfs)})
     return unearned, stats
 
