@@ -705,15 +705,23 @@ def test_the_same_item_posts_on_the_session_it_describes(monkeypatch, tmp_path):
 #: earlier ordering here (a different macro print in front of each) described a
 #: post nobody wrote. Four posts each leading on a DIFFERENT print are four
 #: different lead facts and are supposed to ship.
+#:
+#: TAILS ARE v5 REGISTER (subject = market, no first person — PR #5291, and
+#: likewise for every fixture below that must POST). The publisher's voice gate
+#: screens queue-vintage text ahead of nothing: a first-person tail here
+#: quarantines the would-be OWNER for its voice, the fan-out gate then holds
+#: the whole family against a dead owner, and every assertion about the gate
+#: under test reports the wrong law. Varied on purpose — four identical tails
+#: would re-converge the family for the template-frame gate.
 FAMILY_C_ANCHORED: tuple[tuple[str, str], ...] = (
     ("macro", "4 of 11 sectors closed green while jobless claims printed "
-              "214,000. I am not leaning on a tape this split."),
+              "214,000. A tape this split backs no lean."),
     ("event", "Only 4 of 11 sectors managed green; claims at 214,000 barely "
-              "moved the board. I am watching, not deciding."),
+              "moved the board. Nothing in that mix forces a direction."),
     ("macro", "4 of 11 sectors finished higher with GDPNow at 2.1%. "
-              "Too split for me to size anything on."),
+              "Too split a board to size anything on."),
     ("event", "4 of 11 sectors closed green behind a 3.2% median CPI print. "
-              "I would rather wait for one side to win a day."),
+              "One side has to win a day first."),
 )
 
 
@@ -759,11 +767,11 @@ def test_the_fanout_receipt_names_the_keys_OWN_cooldown(monkeypatch, tmp_path):
     _publish_cfg(tmp_path)
     a = _bypass_queue(tmp_path, text=(
         "Claims printed 214,000 this month while 4 of 11 sectors closed green. "
-        "I am not leaning on a tape this split."),
+        "A tape this split backs no lean."),
         as_of="2026-08-03", kind="macro", now=MONDAY_RTH)
     b = _bypass_queue(tmp_path, text=(
         "214,000 jobless claims, and only 4 of 11 sectors managed green. "
-        "I would rather wait for one side to win a day."),
+        "One side has to win a day first."),
         as_of="2026-08-03", kind="macro", account="kelly", now=MONDAY_RTH)
     backend = _FakeBackend()
     assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
@@ -784,12 +792,12 @@ def test_a_new_lead_fact_posts_beside_the_older_one_it_quotes(monkeypatch, tmp_p
     _publish_cfg(tmp_path)
     a = _bypass_queue(tmp_path, text=(
         "Claims printed 214,000 this month while 4 of 11 sectors closed green. "
-        "I am not leaning on a tape this split."),
+        "A tape this split backs no lean."),
         as_of="2026-08-03", kind="macro", now=MONDAY_RTH)
     b = _bypass_queue(tmp_path, text=(
         "GDPNow just moved to a 5.9% annual rate.\n"
         "Claims are still printing 214,000 a week.\n"
-        "That is a faster economy than I was positioned for."),
+        "That is a faster economy than the street modeled."),
         as_of="2026-08-03", kind="macro", account="kelly", now=MONDAY_RTH)
     backend = _FakeBackend()
     assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
@@ -807,7 +815,7 @@ def test_the_fan_out_gate_leaves_unrelated_posts_alone(monkeypatch, tmp_path):
                       kind="macro", now=MONDAY_RTH)
     b = _bypass_queue(tmp_path, text=(
         "GDPNow revised up to 2.4%, the third straight lift this month. "
-        "That is the part of the tape I am willing to lean on."),
+        "The growth side of the tape keeps firming."),
         as_of="2026-08-03", kind="macro", now=MONDAY_RTH)
     backend = _FakeBackend()
     assert _run(monkeypatch, tmp_path, "2026-08-03T18:00:00Z", backend) == 0
@@ -998,11 +1006,11 @@ def test_a_held_sibling_does_not_stop_the_approved_post(monkeypatch, tmp_path):
 NEW_PRINT_CARRIER = (
     "Growth: 5.9% annual rate this quarter\n"
     "Inflation: 2.1% annual rate\n"
-    "I kept waiting for the economy to cool. It has not obliged.")
+    "The economy was supposed to cool. It has not obliged.")
 SECOND_CARRIER = (
     "GDPNow has growth at 5.9%\n\n"
-    "The economy is firm and the board is narrow. I would rather see the rest "
-    "of it join before I size anything up.")
+    "The economy is firm and the board is narrow. The rest of the board has "
+    "not joined yet.")
 
 
 #: A new lead in front of TWO already-owned prints, inside the voice law's

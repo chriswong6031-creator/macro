@@ -39,6 +39,12 @@
      boards). Same markup + CSS as the US Macro/Stocks pages; global theme tokens only. */
 {% include "_risk_radar_card.css.j2" %}
 
+  /* Shared country Risk Radar DIALOG (.rrd-) — the full US-style modal cloned from
+     #dlg-risk, opened from each country page's pullback-risk entry points. Markup:
+     _risk_radar_dlg.html.j2. Included here because this file is the one style include
+     china / hk / canada already share, and the dialog scopes its own .rrx overrides. */
+{% include "_risk_radar_dlg.css.j2" %}
+
   /* header strip */
   .cmd-hero .ms-head { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; margin: 0 0 4px; }
   .cmd-hero .ms-eyebrow { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap;
