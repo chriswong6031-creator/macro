@@ -846,7 +846,11 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
     # `early_markers` is a SECOND display-only date list (like risk_flags): the 2D-MACD pre-cross
     # advance-warning. Kept OUT of the validated trade stream; suppressed on a confirmed-buy bar
     # (then it is no longer "early"). Advance-warning ONLY — not every one is followed by a buy.
-    markers, risk_flags, early_markers = [], [], []
+    # `early_signal_dates` is the ADDITIVE knowability stamp for `early_markers` (§6.7
+    # signal-date family; the bake-off measured 3,756/3,760 dots carrying the bucket-OPEN
+    # label). The legacy list keeps its exact meaning and position so no consumer moves;
+    # this parallel list carries the SAME dots' last-session dates, index-aligned 1:1.
+    markers, risk_flags, early_markers, early_signal_dates = [], [], [], []
     # THE THREE DATES A MARKER HAS, named on the marker itself (§7 signal-date family).
     # They disagree by up to ~8 daily sessions and three separate surfaces were each
     # reading a different one as "the signal date" with no field saying which:
@@ -922,17 +926,25 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
             risk_flags.append(ds)
         if bool(sig["early"].iloc[i]) and not is_buy:
             early_markers.append(ds)
+            early_signal_dates.append(signal_date)
     last = sig.iloc[-1]
     state = ("long-bias" if (last["k"] >= last["d"] and last["macd"] >= last["sig"])
              else "short-bias" if (last["k"] < last["d"] and last["macd"] < last["sig"]) else "mixed")
     t_last = float(trail.iloc[-1])
-    return {"ticker": ticker, "asof": str(idx[-1].date()), "tf": "3D",
-            # the bucketing era this marker stream was drawn under (R-SQ3). It rides ON the
-            # payload so site/signals/<T>.json, the brain leaves, marker_integrity's cutover
-            # and the track-record ledger can all place a row in the right cohort forever.
-            "anchor_era": ANCHOR_ERA, "state": state,
-            "above200": bool(last["above200"]), "weekly_bull": bool(last["w_bull"]),
-            "trail_stop": round(t_last, 4) if pd.notna(t_last) else None,
-            "trail_breach": bool(pd.notna(t_last) and last["close"] < t_last),
-            "markers": markers, "risk_flags": risk_flags,
-            "early_markers": early_markers, "early_now": bool(last["early"])}
+    # Emitted ONLY when every dot resolved a last session, so a reader may rely on
+    # ``len(early_signal_dates) == len(early_markers)`` and on positional pairing. A
+    # partially-resolved list would be worse than none: it would silently re-index the pairs.
+    stamped = all(x is not None for x in early_signal_dates)
+    doc = {"ticker": ticker, "asof": str(idx[-1].date()), "tf": "3D",
+           # the bucketing era this marker stream was drawn under (R-SQ3). It rides ON the
+           # payload so site/signals/<T>.json, the brain leaves, marker_integrity's cutover
+           # and the track-record ledger can all place a row in the right cohort forever.
+           "anchor_era": ANCHOR_ERA, "state": state,
+           "above200": bool(last["above200"]), "weekly_bull": bool(last["w_bull"]),
+           "trail_stop": round(t_last, 4) if pd.notna(t_last) else None,
+           "trail_breach": bool(pd.notna(t_last) and last["close"] < t_last),
+           "markers": markers, "risk_flags": risk_flags,
+           "early_markers": early_markers, "early_now": bool(last["early"])}
+    if stamped:
+        doc["early_signal_dates"] = early_signal_dates
+    return doc

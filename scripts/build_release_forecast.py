@@ -62,6 +62,10 @@ _SHADOW_BRIDGE_TARGETS = {"cpi_headline"}  # cpi_core bridge killed/closed (MRI-
 # W11-G: mf_energy shadow (Track T, MRI-R36) — cpi_headline only
 _SHADOW_MF_ENERGY_TARGETS = {"cpi_headline"}
 
+# Wave 2B: coherent-target ridge challenger — CPI only.  This lane is kept
+# separate from combined_v1 until forward evidence earns an explicit promotion.
+_SHADOW_COHERENT_RIDGE_TARGETS = {"cpi_headline", "cpi_core"}
+
 # MRI-R40: combined_v1 combination layer — cpi_headline + cpi_core only (prereg §2.1)
 _SHADOW_COMBINED_V1_TARGETS = {"cpi_headline", "cpi_core"}
 
@@ -70,6 +74,7 @@ _MODEL_EPOCHS = {
     "v3_factor": "v3_factor_legacy_target_v1",
     "cpi_bridge": "cpi_bridge_legacy_target_v1",
     "mf_energy": "mf_energy_legacy_target_v1",
+    "coherent_ridge_v1": "coherent_ridge_v1",
     "combined_v1": "combined_v1_legacy_target_v1",
 }
 
@@ -78,6 +83,8 @@ def _target_epoch(release_type: str, model: str | None = None) -> str:
     """Name the target construction without implying unearned clean evidence."""
     if release_type == "claims":
         return "official_initial_level_v1"
+    if model == "coherent_ridge_v1":
+        return "alfred_same_release_vintage_proxy_v1"
     if model == "combined_v1":
         return "mixed_legacy_cross_vintage_v0"
     return "legacy_cross_vintage_initial_levels_v0"
@@ -91,6 +98,7 @@ def _code_receipt(root: Path) -> str:
         "engine/release_forecast_v3.py",
         "engine/release_cpi_bridge.py",
         "engine/release_mf_energy.py",
+        "engine/release_cpi_coherent_shadow.py",
         "engine/release_combined.py",
         "engine/release_market_context.py",
         "engine/release_provenance.py",
@@ -932,15 +940,272 @@ def _run_shadow_mf_energy(
         return None
 
 
+def _validate_coherent_ridge_result(
+    result: object,
+    release_type: str,
+    asof: date,
+    period_str: str | None,
+    release_date_obj: date | None,
+) -> dict:
+    """Validate the governed coherent-ridge handoff before it can be published.
+
+    The engine owns training and artifact verification.  The producer still
+    checks the authority wall and identity fields at the module boundary so a
+    partial, stale, or incompatible engine result cannot enter the public item
+    or append-only ledger.
+    """
+    if not isinstance(result, dict):
+        raise ValueError("engine result is not a mapping")
+    if release_type not in _SHADOW_COHERENT_RIDGE_TARGETS:
+        raise ValueError(f"unsupported coherent-ridge release {release_type!r}")
+    if not period_str:
+        raise ValueError("coherent-ridge period is absent")
+    if release_date_obj is None:
+        raise ValueError("coherent-ridge release_date is absent or invalid")
+    if release_date_obj <= asof:
+        raise ValueError("coherent-ridge release_date is not strictly after asof")
+
+    exact_fields = {
+        "status": "shadow_candidate",
+        "release": release_type,
+        "period": period_str,
+        "asof": asof.isoformat(),
+        "model": "coherent_ridge_v1",
+        "model_epoch": _MODEL_EPOCHS["coherent_ridge_v1"],
+        "target_epoch": _target_epoch(release_type, "coherent_ridge_v1"),
+    }
+    for field, expected in exact_fields.items():
+        if result.get(field) != expected:
+            raise ValueError(
+                f"engine result {field}={result.get(field)!r}, expected {expected!r}"
+            )
+
+    if result.get("schema") != "release_cpi_coherent_shadow.v1":
+        raise ValueError("engine result schema is incompatible")
+    if result.get("display_only") is not True:
+        raise ValueError("engine result display_only is not true")
+    if result.get("authority") is not False:
+        raise ValueError("engine result authority is not false")
+    if result.get("promotion_authorized") is not False:
+        raise ValueError("engine result promotion_authorized is not false")
+
+    returned_release_date = result.get("release_date")
+    expected_release_date = release_date_obj.isoformat()
+    if returned_release_date != expected_release_date:
+        raise ValueError(
+            "engine result release_date="
+            f"{returned_release_date!r}, expected {expected_release_date!r}"
+        )
+
+    numeric: dict[str, float] = {}
+    for field in ("point", "point_raw", "p10", "p25", "p50", "p75", "p90"):
+        value = result.get(field)
+        if value is None:
+            raise ValueError(f"engine result {field} is null")
+        if isinstance(value, bool):
+            raise ValueError(f"engine result {field} is boolean")
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"engine result {field} is not numeric") from exc
+        if not math.isfinite(parsed):
+            raise ValueError(f"engine result {field} is non-finite")
+        numeric[field] = parsed
+
+    ordered_quantiles = [
+        numeric[field]
+        for field in ("p10", "p25", "p50", "p75", "p90")
+        if field in numeric
+    ]
+    if any(left > right for left, right in zip(ordered_quantiles, ordered_quantiles[1:])):
+        raise ValueError("engine result quantiles are not ordered")
+
+    inputs_hash = result.get("inputs_hash")
+    if (
+        not isinstance(inputs_hash, str)
+        or len(inputs_hash) != 64
+        or any(char not in "0123456789abcdefABCDEF" for char in inputs_hash)
+    ):
+        raise ValueError("engine result inputs_hash is not a sha256 digest")
+
+    sealed_receipt_fields = (
+        "input_manifest",
+        "model_receipt",
+        "truth_receipt",
+        "training_receipt",
+        "interval_receipt",
+    )
+    for field in sealed_receipt_fields:
+        value = result.get(field)
+        if not isinstance(value, dict) or not value:
+            raise ValueError(f"engine result {field} is absent or empty")
+    try:
+        from engine.release_cpi_coherent_shadow import verify_sealed_receipt
+    except Exception as exc:
+        raise ValueError("coherent receipt verifier is unavailable") from exc
+    for field in sealed_receipt_fields:
+        if not verify_sealed_receipt(result[field]):
+            raise ValueError(f"engine result {field} seal is invalid")
+    if inputs_hash != result["input_manifest"].get("sha256"):
+        raise ValueError("engine result inputs_hash does not bind input_manifest")
+
+    input_manifest = result["input_manifest"]
+    input_identity = {
+        "schema": "release_cpi_coherent_input_manifest.v1",
+        "release": release_type,
+        "period": period_str,
+        "decision_asof": asof.isoformat(),
+    }
+    for field, expected in input_identity.items():
+        if input_manifest.get(field) != expected:
+            raise ValueError(
+                f"engine input_manifest {field}={input_manifest.get(field)!r}, "
+                f"expected {expected!r}"
+            )
+
+    model_receipt = result["model_receipt"]
+    for field, expected in {
+        "schema": "release_cpi_coherent_model_receipt.v1",
+        "model_id": "coherent_ridge_v1",
+        "model_epoch": _MODEL_EPOCHS["coherent_ridge_v1"],
+    }.items():
+        if model_receipt.get(field) != expected:
+            raise ValueError(f"engine model_receipt {field} is cross-wired")
+
+    truth_receipt = result["truth_receipt"]
+    for field, expected in {
+        "schema": "release_cpi_coherent_truth_receipt.v1",
+        "target_epoch": _target_epoch(release_type, "coherent_ridge_v1"),
+    }.items():
+        if truth_receipt.get(field) != expected:
+            raise ValueError(f"engine truth_receipt {field} is cross-wired")
+
+    training_receipt = result["training_receipt"]
+    for field, expected in {
+        "schema": "release_cpi_coherent_training_receipt.v1",
+        "release": release_type,
+        "period": period_str,
+        "model_epoch": _MODEL_EPOCHS["coherent_ridge_v1"],
+        "decision_cutoff": asof.isoformat(),
+        "target_epoch": _target_epoch(release_type, "coherent_ridge_v1"),
+        "input_manifest_sha256": input_manifest["sha256"],
+    }.items():
+        if training_receipt.get(field) != expected:
+            raise ValueError(f"engine training_receipt {field} is cross-wired")
+
+    interval_receipt = result["interval_receipt"]
+    for field, expected in {
+        "schema": "release_cpi_coherent_interval_receipt.v1",
+        "release": release_type,
+        "period": period_str,
+        "model_epoch": _MODEL_EPOCHS["coherent_ridge_v1"],
+        "target_epoch": _target_epoch(release_type, "coherent_ridge_v1"),
+        "training_receipt_sha256": training_receipt["sha256"],
+    }.items():
+        if interval_receipt.get(field) != expected:
+            raise ValueError(f"engine interval_receipt {field} is cross-wired")
+    interval_point_raw = interval_receipt.get("point_raw")
+    if isinstance(interval_point_raw, bool):
+        raise ValueError("engine interval_receipt point_raw is cross-wired")
+    try:
+        parsed_interval_point_raw = float(interval_point_raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("engine interval_receipt point_raw is cross-wired") from exc
+    if (
+        not math.isfinite(parsed_interval_point_raw)
+        or parsed_interval_point_raw != numeric["point_raw"]
+    ):
+        raise ValueError("engine interval_receipt point_raw is cross-wired")
+
+    pit_provenance = result.get("pit_provenance")
+    if not isinstance(pit_provenance, dict) or not pit_provenance:
+        raise ValueError("engine result pit_provenance is absent or empty")
+    if pit_provenance.get("schema") != "release_cpi_coherent_pit_provenance.v1":
+        raise ValueError("engine pit_provenance schema is incompatible")
+    if pit_provenance.get("decision_cutoff") != asof.isoformat():
+        raise ValueError("engine pit_provenance cutoff is cross-wired")
+    if pit_provenance.get("feature_receipts") != input_manifest.get("feature_receipts"):
+        raise ValueError("engine PIT and input-manifest feature receipts disagree")
+    if pit_provenance.get("display_only") is not True:
+        raise ValueError("engine pit_provenance display_only is not true")
+    if pit_provenance.get("authority") is not False:
+        raise ValueError("engine pit_provenance authority is not false")
+    if pit_provenance.get("candidate_data_asof") != truth_receipt.get(
+        "candidate_data_asof"
+    ):
+        raise ValueError("engine PIT and truth candidate-data clocks disagree")
+    truth_completion = truth_receipt.get("completion")
+    if not isinstance(truth_completion, dict) or pit_provenance.get(
+        "evidence_available_at"
+    ) != truth_completion.get("evidence_available_at"):
+        raise ValueError("engine PIT and truth evidence clocks disagree")
+
+    return dict(result)
+
+
+def _run_shadow_coherent_ridge(
+    release_type: str,
+    asof: date,
+    root: Path,
+    period_str: str | None,
+    release_date_obj: date | None,
+) -> dict | None:
+    """Run the coherent-target CPI challenger, withholding any invalid result.
+
+    Unlike legacy fail-open enrichments, this lane is fail-closed: missing code,
+    missing/tampered governed artifacts, or a contract mismatch emits no point
+    and therefore no ledger row.  Other forecast lanes continue unchanged.
+    """
+    if (
+        release_type not in _SHADOW_COHERENT_RIDGE_TARGETS
+        or not period_str
+        or release_date_obj is None
+        or release_date_obj <= asof
+    ):
+        return None
+    try:
+        from engine.release_cpi_coherent_shadow import project_cpi_coherent_shadow
+
+        result = project_cpi_coherent_shadow(
+            release=release_type,
+            asof=asof,
+            root=root,
+            period=period_str,
+            release_date=release_date_obj,
+        )
+        return _validate_coherent_ridge_result(
+            result,
+            release_type,
+            asof,
+            period_str,
+            release_date_obj,
+        )
+    except Exception as exc:
+        log.warning(
+            "shadow coherent_ridge_v1(%s, %s) withheld (fail-closed): %s",
+            release_type,
+            asof,
+            exc,
+        )
+        return None
+
+
 def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date) -> None:
     """Attach item["shadows"] to each upcoming item that has shadow models. In-place.
 
     Only cpi_headline, cpi_core, nfp receive v3_factor; only cpi_headline receives
-    cpi_bridge and mf_energy. pce/ppi/claims/retail do not receive shadows.
+    cpi_bridge and mf_energy; CPI headline/core receive coherent_ridge_v1.
+    pce/ppi/claims/retail do not receive shadows.
     Each shadow entry is display_only=True.
-    Fail-open: a shadow that errors is simply skipped (logged in _run_shadow_*).
+    Legacy shadows fail open. coherent_ridge_v1 fails closed and is omitted unless
+    its engine and governed artifact receipts pass the full boundary contract.
     """
-    _all_shadow_targets = _SHADOW_V3_TARGETS | _SHADOW_BRIDGE_TARGETS | _SHADOW_MF_ENERGY_TARGETS
+    _all_shadow_targets = (
+        _SHADOW_V3_TARGETS
+        | _SHADOW_BRIDGE_TARGETS
+        | _SHADOW_MF_ENERGY_TARGETS
+        | _SHADOW_COHERENT_RIDGE_TARGETS
+    )
     for item in upcoming_block:
         rt = item.get("release_type", "")
         if rt not in _all_shadow_targets:
@@ -1052,6 +1317,61 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
                     "confidence": mfe_result.get("confidence"),
                     "input_completeness": mfe_result.get("input_completeness"),
                     "mf_energy_components": mfe_result.get("mf_energy_components"),
+                }
+
+        # Wave 2B: coherent-target ridge challenger (CPI headline + core).
+        if rt in _SHADOW_COHERENT_RIDGE_TARGETS:
+            try:
+                coherent_result = _run_shadow_coherent_ridge(
+                    rt, today, root, period_str, release_date_obj
+                )
+                if coherent_result is not None:
+                    coherent_result = _validate_coherent_ridge_result(
+                        coherent_result,
+                        rt,
+                        today,
+                        period_str,
+                        release_date_obj,
+                    )
+            except Exception as exc:
+                log.warning(
+                    "attach coherent_ridge_v1(%s/%s) withheld (fail-closed): %s",
+                    rt,
+                    period_str,
+                    exc,
+                )
+                coherent_result = None
+            if coherent_result is not None:
+                shadows["coherent_ridge_v1"] = {
+                    "schema": coherent_result["schema"],
+                    "status": coherent_result["status"],
+                    "release": coherent_result["release"],
+                    "period": coherent_result["period"],
+                    "release_date": coherent_result["release_date"],
+                    "asof": coherent_result["asof"],
+                    "model": coherent_result["model"],
+                    "model_epoch": coherent_result["model_epoch"],
+                    "target_epoch": coherent_result["target_epoch"],
+                    "point": coherent_result["point"],
+                    "point_raw": coherent_result.get("point_raw"),
+                    "p10": coherent_result.get("p10"),
+                    "p25": coherent_result.get("p25"),
+                    "p50": coherent_result.get("p50"),
+                    "p75": coherent_result.get("p75"),
+                    "p90": coherent_result.get("p90"),
+                    "confidence": coherent_result.get("confidence"),
+                    "input_completeness": coherent_result.get("input_completeness"),
+                    "inputs_hash": coherent_result["inputs_hash"],
+                    "input_manifest": coherent_result["input_manifest"],
+                    "model_receipt": coherent_result["model_receipt"],
+                    "truth_receipt": coherent_result["truth_receipt"],
+                    "training_receipt": coherent_result["training_receipt"],
+                    "interval_receipt": coherent_result["interval_receipt"],
+                    "pit_provenance": coherent_result["pit_provenance"],
+                    "code_receipt": code_receipt,
+                    "display_only": True,
+                    "authority": False,
+                    "promotion_authorized": False,
                 }
 
         if shadows:
@@ -1223,10 +1543,13 @@ def _build_shadow_ledger_rows(
 
     Row shape mirrors champion projection rows with additions:
       - row_type = "shadow_projection"
-      - model = "v3_factor" | "cpi_bridge" | "mf_energy"
+      - model = "v3_factor" | "cpi_bridge" | "mf_energy" |
+        "coherent_ridge_v1" | "combined_v1"
       - prediction_id includes model slug
       - cpi_bridge carries components, coverage_residual_pp, prior_driven_share,
         degraded_blocks
+      - coherent_ridge_v1 freezes all governed engine/truth/training/interval
+        receipts copied from the exact item result; the engine is never rerun here
     """
     from engine.release_forecast import make_release_id, make_prediction_id
     asof_night = today.isoformat()
@@ -1234,7 +1557,8 @@ def _build_shadow_ledger_rows(
 
     _all_shadow_targets = (
         _SHADOW_V3_TARGETS | _SHADOW_BRIDGE_TARGETS
-        | _SHADOW_MF_ENERGY_TARGETS | _SHADOW_COMBINED_V1_TARGETS
+        | _SHADOW_MF_ENERGY_TARGETS | _SHADOW_COHERENT_RIDGE_TARGETS
+        | _SHADOW_COMBINED_V1_TARGETS
     )
     for item in upcoming_block:
         release_type = item.get("release_type")
@@ -1425,6 +1749,84 @@ def _build_shadow_ledger_rows(
                 rows.append(row_mfe)
             else:
                 log.debug("shadow_projection mf_energy skipped for %s/%s (None result)", release_type, period_str)
+
+        # Wave 2B: coherent-target ridge shadow row (CPI headline + core).
+        # Consume the already-validated item result so the public card and immutable
+        # ledger freeze one identical model/artifact evaluation.
+        if release_type in _SHADOW_COHERENT_RIDGE_TARGETS:
+            coherent_data = (item.get("shadows") or {}).get("coherent_ridge_v1")
+            if coherent_data is not None:
+                try:
+                    coherent_data = _validate_coherent_ridge_result(
+                        coherent_data,
+                        release_type,
+                        today,
+                        period_str,
+                        release_date_obj,
+                    )
+                except Exception as exc:
+                    log.warning(
+                        "shadow_projection coherent_ridge_v1(%s/%s) withheld "
+                        "(fail-closed): %s",
+                        release_type,
+                        period_str,
+                        exc,
+                    )
+                    coherent_data = None
+
+            if coherent_data is not None:
+                try:
+                    _pred_id_coherent = make_prediction_id(
+                        _release_id, f"{asof_night}:coherent_ridge_v1"
+                    ) if _release_id else None
+                except Exception:
+                    _pred_id_coherent = None
+
+                row_coherent: dict = {
+                    "schema": 2,
+                    "row_type": "shadow_projection",
+                    "model": "coherent_ridge_v1",
+                    "source_schema": coherent_data["schema"],
+                    "status": coherent_data["status"],
+                    "asof_night": asof_night,
+                    "release": release_type,
+                    "period": period_str,
+                    "release_date": release_date_str,
+                    "release_id": _release_id,
+                    "prediction_id": _pred_id_coherent,
+                    "inputs_hash": coherent_data["inputs_hash"],
+                    "input_manifest": coherent_data["input_manifest"],
+                    "horizon_days": _horizon_days,
+                    "projection_point": coherent_data["point"],
+                    "projection_point_raw": coherent_data.get("point_raw"),
+                    "projection_p10": coherent_data.get("p10"),
+                    "projection_p25": coherent_data.get("p25"),
+                    "projection_p50": coherent_data.get("p50"),
+                    "projection_p75": coherent_data.get("p75"),
+                    "projection_p90": coherent_data.get("p90"),
+                    "confidence": coherent_data.get("confidence"),
+                    "input_completeness": coherent_data.get("input_completeness"),
+                    "model_receipt": coherent_data["model_receipt"],
+                    "truth_receipt": coherent_data["truth_receipt"],
+                    "training_receipt": coherent_data["training_receipt"],
+                    "interval_receipt": coherent_data["interval_receipt"],
+                    "pit_provenance": coherent_data["pit_provenance"],
+                    "model_epoch": coherent_data["model_epoch"],
+                    "target_epoch": coherent_data["target_epoch"],
+                    "code_receipt": item.get("code_receipt") or _code_receipt(root),
+                    "cutoff_label": item.get("cutoff_label"),
+                    "display_only": True,
+                    "authority": False,
+                    "promotion_authorized": False,
+                }
+                rows.append(row_coherent)
+            else:
+                log.debug(
+                    "shadow_projection coherent_ridge_v1 skipped for %s/%s "
+                    "(no validated item result)",
+                    release_type,
+                    period_str,
+                )
 
         # MRI-R40: combined_v1 shadow row (cpi_headline + cpi_core)
         # combined data was attached by _attach_combined_to_items before this call.
@@ -2159,6 +2561,7 @@ def _check_release_day_capture(
             shadow_point = t1_shadow.get("projection_point")
             shadow_p10 = t1_shadow.get("projection_p10")
             shadow_p25 = t1_shadow.get("projection_p25")
+            shadow_p50 = t1_shadow.get("projection_p50")
             shadow_p75 = t1_shadow.get("projection_p75")
             shadow_p90 = t1_shadow.get("projection_p90")
 
@@ -2191,6 +2594,7 @@ def _check_release_day_capture(
                 "frozen_projection_point": shadow_point,
                 "frozen_projection_p10": shadow_p10,
                 "frozen_projection_p25": shadow_p25,
+                "frozen_projection_p50": shadow_p50,
                 "frozen_projection_p75": shadow_p75,
                 "frozen_projection_p90": shadow_p90,
                 "our_surprise": shadow_surprise,
@@ -2712,8 +3116,12 @@ def _build_scoreboard(
             g["interval_hits"].append(bool(ih))
 
         # interval_50_coverage: check if actual falls within [proj_p25, proj_p75]
-        p25 = row.get("frozen_projection_p25") or row.get("projection_p25")
-        p75 = row.get("frozen_projection_p75") or row.get("projection_p75")
+        p25 = row.get("frozen_projection_p25")
+        if p25 is None:
+            p25 = row.get("projection_p25")
+        p75 = row.get("frozen_projection_p75")
+        if p75 is None:
+            p75 = row.get("projection_p75")
         if actual is not None and p25 is not None and p75 is not None:
             g["interval_50_hits"].append(bool(p25 <= actual <= p75))
 
@@ -2732,7 +3140,12 @@ def _build_scoreboard(
             _pb_vals = {
                 "pinball_p10": (row.get("frozen_projection_p10"), 0.10),
                 "pinball_p25": (row.get("frozen_projection_p25"), 0.25),
-                "pinball_p50": (row.get("frozen_projection_point"), 0.50),  # p50 ≈ point
+                "pinball_p50": (
+                    row.get("frozen_projection_p50")
+                    if row.get("frozen_projection_p50") is not None
+                    else row.get("frozen_projection_point"),
+                    0.50,
+                ),
                 "pinball_p75": (row.get("frozen_projection_p75"), 0.75),
                 "pinball_p90": (row.get("frozen_projection_p90"), 0.90),
             }
@@ -2782,7 +3195,12 @@ def _build_scoreboard(
                 _pb_cut = {
                     "pinball_p10": (row.get("frozen_projection_p10"), 0.10),
                     "pinball_p25": (row.get("frozen_projection_p25"), 0.25),
-                    "pinball_p50": (row.get("frozen_projection_point"), 0.50),
+                    "pinball_p50": (
+                        row.get("frozen_projection_p50")
+                        if row.get("frozen_projection_p50") is not None
+                        else row.get("frozen_projection_point"),
+                        0.50,
+                    ),
                     "pinball_p75": (row.get("frozen_projection_p75"), 0.75),
                     "pinball_p90": (row.get("frozen_projection_p90"), 0.90),
                 }
@@ -2791,6 +3209,98 @@ def _build_scoreboard(
                         err = float(actual) - float(q_val)
                         pb = err * alpha if err >= 0 else err * (alpha - 1.0)
                         cg[pb_key].append(pb)
+
+    # Additive like-for-like shadow view.  The legacy per-(release, model)
+    # aggregate above is preserved for consumers, but it may span historical
+    # model/target amendments and is therefore disclosure-only.  New evidence
+    # is also accumulated into exact frozen epoch buckets.
+    per_shadow_epoch: dict[tuple[str, str, str, str], dict] = {}
+    for row in scored:
+        model = row.get("model")
+        if model is None:
+            continue
+        rt = row.get("release", "unknown")
+        model_epoch = str(row.get("model_epoch") or "legacy_unspecified")
+        target_epoch = str(row.get("target_epoch") or "legacy_unspecified")
+        epoch_key = (rt, str(model), model_epoch, target_epoch)
+        g = per_shadow_epoch.setdefault(epoch_key, _new_agg())
+        g["n"] += 1
+
+        actual = row.get("actual")
+        proj = row.get("frozen_projection_point")
+        if actual is not None and proj is not None:
+            g["our_abs_errors"].append(abs(actual - proj))
+
+        for bench_key, err_key in [
+            ("surprise_vs_naive", "naive_abs_errors"),
+            ("surprise_vs_trailing", "trailing_abs_errors"),
+            ("surprise_vs_ar", "ar_abs_errors"),
+            ("surprise_vs_cleveland", "cleveland_abs_errors"),
+        ]:
+            value = row.get(bench_key)
+            if value is not None:
+                g[err_key].append(abs(value))
+
+        interval_hit = row.get("interval_hit")
+        if interval_hit is not None:
+            g["interval_hits"].append(bool(interval_hit))
+        p25 = row.get("frozen_projection_p25")
+        if p25 is None:
+            p25 = row.get("projection_p25")
+        p75 = row.get("frozen_projection_p75")
+        if p75 is None:
+            p75 = row.get("projection_p75")
+        if actual is not None and p25 is not None and p75 is not None:
+            g["interval_50_hits"].append(bool(p25 <= actual <= p75))
+
+        skew_hit = row.get("skew_hit")
+        if skew_hit is not None:
+            g["skew_hits"].append(bool(skew_hit))
+        expectation_hit = row.get("expectation_hit")
+        if expectation_hit is not None:
+            g["expectation_hits"].append(bool(expectation_hit))
+
+        p50 = row.get("frozen_projection_p50")
+        if p50 is None:
+            p50 = proj
+        pinball_values = {
+            "pinball_p10": (row.get("frozen_projection_p10"), 0.10),
+            "pinball_p25": (row.get("frozen_projection_p25"), 0.25),
+            "pinball_p50": (p50, 0.50),
+            "pinball_p75": (row.get("frozen_projection_p75"), 0.75),
+            "pinball_p90": (row.get("frozen_projection_p90"), 0.90),
+        }
+        if actual is not None:
+            for pinball_key, (quantile_value, alpha) in pinball_values.items():
+                if quantile_value is not None:
+                    error = float(actual) - float(quantile_value)
+                    loss = error * alpha if error >= 0 else error * (alpha - 1.0)
+                    g[pinball_key].append(loss)
+
+        actual_latest = revision_latest.get((rt, row.get("period", "")))
+        if actual_latest is not None and proj is not None:
+            g["revision_errors"].append(abs(actual_latest - proj))
+
+        cutoff_label = row.get("cutoff_label")
+        if cutoff_label is not None:
+            cg = g["_by_cutoff"].setdefault(
+                cutoff_label,
+                {
+                    "n": 0,
+                    "our_abs_errors": [],
+                    "pinball_p10": [], "pinball_p25": [], "pinball_p50": [],
+                    "pinball_p75": [], "pinball_p90": [],
+                },
+            )
+            cg["n"] += 1
+            if actual is not None and proj is not None:
+                cg["our_abs_errors"].append(abs(actual - proj))
+            if actual is not None:
+                for pinball_key, (quantile_value, alpha) in pinball_values.items():
+                    if quantile_value is not None:
+                        error = float(actual) - float(quantile_value)
+                        loss = error * alpha if error >= 0 else error * (alpha - 1.0)
+                        cg[pinball_key].append(loss)
 
     def _agg_to_stats(rt: str, g: dict, model_label: str | None = None) -> dict:
         """Convert accumulator to scoreboard stats entry."""
@@ -2906,6 +3416,17 @@ def _build_scoreboard(
     for (rt, mdl), g in per_shadow.items():
         shadow_stats[f"{rt}:{mdl}"] = _agg_to_stats(rt, g, model_label=mdl)
 
+    shadow_epoch_stats: dict[str, dict] = {}
+    for (rt, mdl, model_epoch, target_epoch), g in per_shadow_epoch.items():
+        entry = _agg_to_stats(rt, g, model_label=mdl)
+        entry.update({
+            "model_epoch": model_epoch,
+            "target_epoch": target_epoch,
+            "evidence_scope": "like_for_like_forward_epoch",
+        })
+        key = f"{rt}:{mdl}:{model_epoch}:{target_epoch}"
+        shadow_epoch_stats[key] = entry
+
     # MRI-R40 §5: promotion_review entries — annotation only, no metric changes.
     # At n >= 12 scored combined_v1 prints AND any single input's forward MAE < combined's:
     # emit an entry naming the input. Pure adjudication trigger.
@@ -2985,6 +3506,11 @@ def _build_scoreboard(
         ),
         "by_release": release_stats,
         "by_shadow": shadow_stats,  # Round-2b: per-(release, model) shadow track records
+        "by_shadow_epoch": shadow_epoch_stats,
+        "by_shadow_epoch_note": (
+            "Like-for-like forward evidence segmented by exact model and target epochs. "
+            "The legacy by_shadow aggregate is retained for compatibility and may span epochs."
+        ),
         "promotion_review": promotion_review,  # MRI-R40 §5: annotation, no metric changes
         "all_forward": all_forward_summary,
         "evaluation_exclusions": {
@@ -3622,13 +4148,13 @@ def build(root: Path, dry_run: bool = False) -> dict:
     )
     log.info("provenance: coverage flags and snapshot refs attached to %d items", len(upcoming_block))
 
-    # 3c. Round-2b + W11-G: attach shadow projections to upcoming items (display-only, additive).
-    # Now includes mf_energy for cpi_headline (W11-G task 1).
-    # Fail-open per model: errors logged in _run_shadow_*/helpers, never break the build.
+    # 3c. Attach shadow projections to upcoming items (display-only, additive).
+    # Legacy lanes fail open. coherent_ridge_v1 fails closed within its lane: no
+    # validated governed artifacts means no candidate point or ledger row.
     _attach_shadows_to_items(upcoming_block, root, today)
     shadow_counts = {item.get("release_type", "?"): len(item.get("shadows", {}))
                      for item in upcoming_block if item.get("shadows")}
-    log.info("shadow projections attached (incl. mf_energy): %s", shadow_counts)
+    log.info("shadow projections attached (incl. coherent_ridge_v1): %s", shadow_counts)
 
     # 3c-R40: MRI-R40 combined_v1 combination layer (cpi_headline + cpi_core).
     # Must run AFTER _attach_shadows_to_items (needs tonight's shadow points) and
@@ -3645,10 +4171,10 @@ def build(root: Path, dry_run: bool = False) -> dict:
     # 5. Build today's projection ledger rows (champion, model=None)
     proj_ledger_rows = _build_projection_ledger_rows(today, upcoming_block, policy_backdrop)
 
-    # 5b. Round-2b + W11-G: Build shadow_projection ledger rows
-    # (model="v3_factor"|"cpi_bridge"|"mf_energy")
+    # 5b. Build shadow_projection ledger rows, including governed coherent-ridge
+    # receipts copied from the exact already-attached item result.
     shadow_ledger_rows = _build_shadow_ledger_rows(today, upcoming_block, root)
-    log.info("shadow ledger rows built: %d (incl. mf_energy)", len(shadow_ledger_rows))
+    log.info("shadow ledger rows built: %d (incl. coherent_ridge_v1)", len(shadow_ledger_rows))
 
     # 6. MRI-R32a: catch-up scoring sweep — score ANY unscored past-release projection
     # (champion + shadow) whose initial print is in vintages; 120d lookback, idempotent.
@@ -3760,6 +4286,17 @@ def build(root: Path, dry_run: bool = False) -> dict:
     last_scored = _latest_by_release(clean_scored)
     last_scored_all_forward = _latest_by_release(raw_scored_annotated)
 
+    coherent_current_projection_n = sum(
+        1
+        for item in upcoming_block
+        if (item.get("shadows") or {}).get("coherent_ridge_v1") is not None
+    )
+    coherent_target_refit_status = (
+        "shadow_candidate_active_forward_evidence_pending"
+        if coherent_current_projection_n
+        else "shadow_candidate_withheld_no_valid_current_projection"
+    )
+
     # 10. Assemble latest.json artifact (schema release_forecast.v2)
     latest = {
         "schema": "release_forecast.v2",
@@ -3773,8 +4310,9 @@ def build(root: Path, dry_run: bool = False) -> dict:
         "methodology_status": {
             "forecast_epoch": "legacy_cross_vintage_training_target_experimental",
             "forecast_points_changed_by_wave1": False,
-            "coherent_target_refit_status": "not_started_requires_shadow_backfill_and_parity",
-            "next_required_step": "train_and_forward_score_new_coherent_target_shadow_slug",
+            "coherent_target_refit_status": coherent_target_refit_status,
+            "coherent_current_projection_n": coherent_current_projection_n,
+            "next_required_step": "accrue_clean_forward_scores_then_manual_adjudication",
             "official_actuals_ref": _OFFICIAL_ACTUALS_RELPATH,
             "canonical_target_store": "data/fred_vintage/release_targets/",
             "clean_forward_cpi_n": sum(
@@ -3792,7 +4330,7 @@ def build(root: Path, dry_run: bool = False) -> dict:
         "enrichments": [
             "surprise_distribution", "market_implied", "reaction_sensitivity",
             "quirk_flags", "expectation_read", "coverage_flags", "input_snapshot_ref",
-            "shadows", "cutoff_label",
+            "shadows", "coherent_ridge_v1", "cutoff_label",
             # W11-G additions
             "print_integrity", "revision_context",
             # MRI-R40: combined_v1 combination layer

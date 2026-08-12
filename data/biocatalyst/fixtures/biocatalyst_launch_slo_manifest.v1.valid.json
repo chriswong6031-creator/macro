@@ -1,11 +1,11 @@
 {
   "contract_id": "biocatalyst_launch_slo_manifest.v1",
   "schema_version": "1.0.0",
-  "manifest_id": "biocatalyst_launch_slo_2231c14e8979c2e3ac6c11b3",
-  "state": "pre_soak_unarmed",
-  "effective_at": "2026-08-11T08:18:39Z",
-  "supersedes_manifest_id": "biocatalyst_launch_slo_b153344685605f6fa3dad028",
-  "supersedes_manifest_content_sha256": "b153344685605f6fa3dad028f78b53b57c501b3e7023490505b5ab8877eed354",
+  "manifest_id": "biocatalyst_launch_slo_6424cdec9e0568bac6486b91",
+  "state": "soak_scheduled",
+  "effective_at": "2026-08-11T20:50:00Z",
+  "supersedes_manifest_id": "biocatalyst_launch_slo_2231c14e8979c2e3ac6c11b3",
+  "supersedes_manifest_content_sha256": "2231c14e8979c2e3ac6c11b3b7ef07ca49f047d22cda019fa546bd270e97e731",
   "owner": "biocatalyst",
   "source_registry_ref": "config/biocatalyst_sources.yml",
   "source_registry_sha256": "bf19c50a80fc7611f8b53267e16acf4a234cfa7ca3a0afb6336a12781db41785",
@@ -14,7 +14,7 @@
       "source_id": "clinicaltrials_gov_v2",
       "owner": "biocatalyst",
       "severity": "critical",
-      "activation_state": "dark_unarmed",
+      "activation_state": "armed",
       "registry_binding": {
         "launch_critical": true,
         "production_ingest_allowed": true,
@@ -99,8 +99,8 @@
   ],
   "soak": {
     "required_duration_seconds": 1209600,
-    "window_start": null,
-    "window_end": null,
+    "window_start": "2026-08-12T02:00:00Z",
+    "window_end": "2026-08-26T02:00:00Z",
     "telemetry_generation_ref": null,
     "raw_telemetry_refs": [],
     "correction_replay_evidence_refs": [],
@@ -108,10 +108,7 @@
     "ci_validation_receipt_ref": null,
     "source_results": [],
     "aggregate_passed": false,
-    "scheduling_blockers": [
-      "root_sealed_retention_activation",
-      "operator_arming"
-    ]
+    "scheduling_blockers": []
   },
   "authority": {
     "authorizes_source_activation": false,
@@ -122,5 +119,5 @@
     "authorizes_prophet_behavior": false
   },
   "hash_scope": "canonical_payload_excluding_manifest_id_and_content_sha256",
-  "content_sha256": "2231c14e8979c2e3ac6c11b3b7ef07ca49f047d22cda019fa546bd270e97e731"
+  "content_sha256": "6424cdec9e0568bac6486b9106e98bb75a610529d8fbb203ea381baf8754a86c"
 }

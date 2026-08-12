@@ -2966,11 +2966,13 @@ def test_launch_slo_rejects_vague_denominators_missing_stage_gates_and_weighting
     assert "False was expected" in message
 
 
-def test_pre_soak_manifest_is_explicitly_unarmed_and_cannot_claim_release_pass() -> None:
+def test_scheduled_soak_manifest_is_armed_but_cannot_claim_release_pass() -> None:
     payload = _load_launch_slo_manifest()
-    assert payload["state"] == "pre_soak_unarmed"
-    assert payload["sources"][0]["activation_state"] == "dark_unarmed"
-    assert payload["soak"]["window_start"] is None
+    assert payload["state"] == "soak_scheduled"
+    assert payload["sources"][0]["activation_state"] == "armed"
+    assert payload["soak"]["window_start"] == "2026-08-12T02:00:00Z"
+    assert payload["soak"]["window_end"] == "2026-08-26T02:00:00Z"
+    assert payload["soak"]["scheduling_blockers"] == []
     assert payload["soak"]["source_results"] == []
     assert payload["soak"]["aggregate_passed"] is False
     assert all(value is False for value in payload["authority"].values())
@@ -2981,7 +2983,6 @@ def test_pre_soak_manifest_is_explicitly_unarmed_and_cannot_claim_release_pass()
     false_pass = _rebind_launch_slo_manifest(false_pass)
     with pytest.raises(ContractValidationError) as caught:
         validate_contract(false_pass, repo_root=ROOT)
-    assert "window_start" in str(caught.value)
     assert "telemetry_generation_ref" in str(caught.value)
     assert "source_results" in str(caught.value)
 

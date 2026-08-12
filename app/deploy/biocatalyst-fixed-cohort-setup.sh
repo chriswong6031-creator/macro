@@ -32,6 +32,8 @@ SERVICE_USER=macro-biocatalyst-fixed-cohort
 SERVICE_GROUP=macro-biocatalyst-fixed-cohort
 RUNTIME_ROOT=/opt/macro-biocatalyst-fixed-cohort
 RUNTIME_CURRENT="$RUNTIME_ROOT/current"
+REQUIREMENTS_SOURCE="$APP_DIR/app/deploy/biocatalyst-requirements.txt"
+RUNTIME_INSTALLER="$APP_DIR/app/deploy/biocatalyst-runtime.sh"
 
 # The B0a worker lane. This installer must never read, write, or reconcile it.
 B0A_STATE_ROOT=/var/lib/macro-biocatalyst
@@ -193,6 +195,12 @@ verify_paths() {
 	if ! grep -Eq '^BIOCATALYST_FIXED_COHORT_TRANSPORT_ENABLED=[01][[:space:]]*$' "$ENV_FILE"; then
 		die "$ENV_FILE must set BIOCATALYST_FIXED_COHORT_TRANSPORT_ENABLED to 0 or 1"
 	fi
+	if ! grep -Eq '^BIOCATALYST_FIXED_COHORT_USER_AGENT=.+$' "$ENV_FILE"; then
+		die "$ENV_FILE must set a non-empty BIOCATALYST_FIXED_COHORT_USER_AGENT contact string"
+	fi
+	if grep -Eq "^BIOCATALYST_FIXED_COHORT_USER_AGENT=([[:space:]]*|\"\"|'')$" "$ENV_FILE"; then
+		die "$ENV_FILE must set a non-empty BIOCATALYST_FIXED_COHORT_USER_AGENT contact string"
+	fi
 	if [ -L "$ACTIVE_POINTER" ]; then
 		die "$ACTIVE_POINTER must never be a symlink"
 	fi
@@ -213,6 +221,40 @@ verify_units() {
 	else
 		log "systemd-analyze unavailable; skipped unit verification"
 	fi
+}
+
+verify_runtime() {
+	bash "$RUNTIME_INSTALLER" --verify-fixed-cohort
+}
+
+ensure_runtime() {
+	bash "$RUNTIME_INSTALLER" --install-fixed-cohort "$REQUIREMENTS_SOURCE"
+}
+
+operational_store() {
+	local action="$1"
+	(
+		cd "$APP_DIR"
+		runuser -u "$SERVICE_USER" -- "$RUNTIME_CURRENT/bin/python" - "$action" "$OPERATIONAL_ROOT" <<'PY'
+from pathlib import Path
+import sys
+
+from engine.biocatalyst.operational_store import (
+    OperationalStore,
+    STORE_META_FILENAME,
+    provision_operational_store,
+)
+
+action, raw_root = sys.argv[1:]
+root = Path(raw_root)
+meta = root / STORE_META_FILENAME
+if action == "provision" and not meta.exists():
+    if any(root.iterdir()):
+        raise SystemExit("operational root is occupied but unprovisioned")
+    provision_operational_store(root)
+OperationalStore(root)
+PY
+	)
 }
 
 install_units() {
@@ -288,11 +330,15 @@ main() {
 	[ "$(id -u)" -eq 0 ] || die "must run as root"
 	[ -f "$SERVICE_SOURCE" ] || die "missing service source: $SERVICE_SOURCE"
 	[ -f "$TIMER_SOURCE" ] || die "missing timer source: $TIMER_SOURCE"
+	[ -f "$REQUIREMENTS_SOURCE" ] || die "missing requirements source: $REQUIREMENTS_SOURCE"
+	[ -f "$RUNTIME_INSTALLER" ] || die "missing runtime installer: $RUNTIME_INSTALLER"
 	assert_b0a_untouched
 
 	case "$action" in
 		--verify-prereqs)
 			verify_paths
+			verify_runtime
+			operational_store verify
 			verify_units
 			log "prerequisites verified; the timer remains disabled"
 			;;
@@ -305,6 +351,8 @@ main() {
 		--install)
 			ensure_service_identity
 			provision_paths
+			ensure_runtime
+			operational_store provision
 			assert_no_membership_in_env_file
 			verify_units
 			install_units

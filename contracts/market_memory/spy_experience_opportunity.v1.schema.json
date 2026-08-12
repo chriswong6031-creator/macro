@@ -20,12 +20,14 @@
     "cutoff": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["window_opens_at", "deadline_at", "actual_cutoff_at", "first_owner_observed_at", "reconciled_at", "clock_model"],
+      "required": ["window_opens_at", "deadline_at", "actual_cutoff_at", "first_owner_observed_at", "owner_attempted_window_session", "owner_attempted_at", "reconciled_at", "clock_model"],
       "properties": {
         "window_opens_at": {"$ref": "#/$defs/utc"},
         "deadline_at": {"$ref": "#/$defs/utc"},
         "actual_cutoff_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]},
         "first_owner_observed_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]},
+        "owner_attempted_window_session": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/session"}]},
+        "owner_attempted_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]},
         "reconciled_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]},
         "clock_model": {"const": "session_ordinal_only_no_fabricated_market_close_timestamp"}
       }
@@ -292,6 +294,8 @@
           "cutoff": {"properties": {
             "actual_cutoff_at": {"$ref": "#/$defs/utc"},
             "first_owner_observed_at": {"$ref": "#/$defs/utc"},
+            "owner_attempted_window_session": {"$ref": "#/$defs/session"},
+            "owner_attempted_at": {"$ref": "#/$defs/utc"},
             "reconciled_at": {"type": "null"}
           }},
           "claims": {"properties": {"source_generation_pins_authenticated": {"const": true}}}
@@ -324,10 +328,29 @@
         "cutoff": {"properties": {
           "actual_cutoff_at": {"$ref": "#/$defs/utc"},
           "first_owner_observed_at": {"$ref": "#/$defs/utc"},
+          "owner_attempted_window_session": {"$ref": "#/$defs/session"},
+          "owner_attempted_at": {"$ref": "#/$defs/utc"},
           "reconciled_at": {"type": "null"}
         }},
         "claims": {"properties": {"source_generation_pins_authenticated": {"const": true}}}
       }}
+    },
+    {
+      "if": {"properties": {"reason": {"const": "not_sealed_by_deadline"}}, "required": ["reason"]},
+      "then": {"properties": {"cutoff": {"properties": {
+        "owner_attempted_window_session": {"type": "null"},
+        "owner_attempted_at": {"type": "null"}
+      }}}}
+    },
+    {
+      "if": {"properties": {"reason": {"enum": [
+        "owner_pair_not_stable_by_deadline", "owner_unavailable_by_deadline",
+        "owner_integrity_failure_by_deadline", "owner_pin_cap_exceeded_by_deadline"
+      ]}}, "required": ["reason"]},
+      "then": {"properties": {"cutoff": {"properties": {
+        "owner_attempted_window_session": {"$ref": "#/$defs/session"},
+        "owner_attempted_at": {"$ref": "#/$defs/utc"}
+      }}}}
     }
   ]
 }

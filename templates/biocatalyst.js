@@ -399,6 +399,33 @@
     if (!Array.isArray(forbidden)) return false;
     return AUTHORITY_MUST_FORBID.every(function (use) { return forbidden.indexOf(use) >= 0; });
   }
+  function utf8Length(value) { return new TextEncoder().encode(value).length; }
+  function validTapeValueEntry(entry) {
+    if (!entry || typeof entry !== 'object' || Object.keys(entry).sort().join('|') !== 'state|unavailable_reason|value_byte_length|value_json|value_truncated') return false;
+    var entryState = clean(valueAt(entry, 'state')), valueJson = valueAt(entry, 'value_json'), byteLength = valueAt(entry, 'value_byte_length'), truncated = valueAt(entry, 'value_truncated'), reason = valueAt(entry, 'unavailable_reason');
+    if (!Number.isSafeInteger(byteLength) || byteLength < 0 || byteLength > 16777216 || typeof truncated !== 'boolean') return false;
+    if (entryState === 'present') {
+      if (typeof valueJson !== 'string' || !valueJson || reason !== null) return false;
+      var shownBytes = utf8Length(valueJson);
+      if (shownBytes > 4096) return false;
+      return truncated ? byteLength > 4096 : byteLength === shownBytes;
+    }
+    if (entryState === 'missing') return valueJson === null && byteLength === 0 && truncated === false && reason === null;
+    return entryState === 'unavailable' && valueJson === null && truncated === false && (reason === 'tape_value_budget_exhausted' || reason === 'value_bytes_not_representable');
+  }
+  function validTapeExtension(change, versions) {
+    var exact = valueAt(change, 'exact_values'), lineage = valueAt(change, 'correction_lineage');
+    if (typeof exact === 'undefined' && typeof lineage === 'undefined') return true;
+    if (!exact || typeof exact !== 'object' || !lineage || typeof lineage !== 'object') return false;
+    if (Object.keys(exact).sort().join('|') !== 'after|before|source_pointer' || Object.keys(lineage).sort().join('|') !== 'correction_assessed|predecessor_basis|predecessor_exact_operation_index|predecessor_source_version|relation') return false;
+    var operation = clean(valueAt(change, 'op')), beforeState = clean(valueAt(change, 'before_state')), afterState = clean(valueAt(change, 'after_state'));
+    var beforeValue = valueAt(exact, 'before'), afterValue = valueAt(exact, 'after'), pointer = valueAt(exact, 'source_pointer'), relation = clean(valueAt(lineage, 'relation')), basis = clean(valueAt(lineage, 'predecessor_basis')), predecessorVersion = valueAt(lineage, 'predecessor_source_version'), predecessorIndex = valueAt(lineage, 'predecessor_exact_operation_index'), beforeVersion = valueAt(versions, 'before');
+    if (typeof pointer !== 'string' || utf8Length(pointer) > 512 || !/^(?:\/(?:[^~/]|~[01])*)+$/.test(pointer) || !validTapeValueEntry(beforeValue) || !validTapeValueEntry(afterValue) || clean(valueAt(beforeValue, 'state')) !== beforeState || clean(valueAt(afterValue, 'state')) !== afterState || valueAt(lineage, 'correction_assessed') !== false) return false;
+    if (basis === 'none') return operation === 'add' && relation === 'no_prior_recorded_value' && predecessorVersion === null && predecessorIndex === null;
+    if (!Number.isSafeInteger(predecessorVersion) || predecessorVersion < 1 || predecessorVersion > beforeVersion || relation !== (operation === 'remove' ? 'clears_prior_recorded_value' : 'supersedes_prior_recorded_value')) return false;
+    if (basis === 'before_version_record') return operation !== 'add' && predecessorVersion === beforeVersion && predecessorIndex === null;
+    return basis === 'prior_tape_row' && Number.isSafeInteger(predecessorIndex) && predecessorIndex >= 0 && predecessorIndex < 4096;
+  }
   function validTapeChange(change) {
     var versions = valueAt(change, 'source_versions'), before = valueAt(versions, 'before'), after = valueAt(versions, 'after');
     var operation = clean(valueAt(change, 'op')), states = TAPE_OPS[operation], index = valueAt(change, 'exact_operation_index');
@@ -410,7 +437,7 @@
       Number.isSafeInteger(index) && index >= 0 && index < 4096 &&
       !!versions && typeof versions === 'object' && Number.isSafeInteger(before) && before >= 1 && Number.isSafeInteger(after) && after === before + 1 &&
       fullTimestamp(valueAt(change, 'observed_at')) &&
-      valueAt(change, 'protocol_change_asserted') === false && valueAt(change, 'materiality_assessed') === false && valueAt(change, 'correction_assessed') === false;
+      valueAt(change, 'protocol_change_asserted') === false && valueAt(change, 'materiality_assessed') === false && valueAt(change, 'correction_assessed') === false && validTapeExtension(change, versions);
   }
   function validTapeItem(item) {
     var trial = valueAt(item, 'trial');
@@ -1065,6 +1092,32 @@
     var labels = { add: ['Field added', '字段新增'], remove: ['Field removed', '字段移除'], replace: ['Field value replaced', '字段值被替换'] };
     var pair = labels[clean(operation)] || labels.replace; return tr(pair[0], pair[1]);
   }
+  function tapeValueLabel(entry) {
+    var entryState = clean(valueAt(entry, 'state'));
+    if (entryState === 'missing') return tr('Not on the record', '记录中无此字段');
+    if (entryState === 'unavailable') return tr('Not available to show', '暂不可展示');
+    return valueAt(entry, 'value_json');
+  }
+  function tapeValueSide(label, entry) {
+    var side = el('span', 'bci-tape-value is-' + clean(valueAt(entry, 'state')));
+    side.appendChild(el('small', '', label));
+    side.appendChild(el('code', '', tapeValueLabel(entry)));
+    if (valueAt(entry, 'value_truncated') === true) side.appendChild(el('em', '', tr('Prefix shown · original ', '显示精确前缀 · 原值 ') + valueAt(entry, 'value_byte_length') + tr(' bytes', ' 字节')));
+    return side;
+  }
+  function tapeExactDelta(exact, detail) {
+    var delta = el('span', 'bci-tape-exact' + (detail ? ' is-detail' : ''));
+    delta.appendChild(tapeValueSide(tr('Before', '之前'), valueAt(exact, 'before')));
+    delta.appendChild(el('b', '', '\u2192'));
+    delta.appendChild(tapeValueSide(tr('After', '之后'), valueAt(exact, 'after')));
+    return delta;
+  }
+  function tapeLineageLabel(lineage) {
+    var basis = clean(valueAt(lineage, 'predecessor_basis')), version = valueAt(lineage, 'predecessor_source_version'), index = valueAt(lineage, 'predecessor_exact_operation_index');
+    if (basis === 'none') return tr('No earlier recorded value', '没有更早的记录值');
+    if (basis === 'prior_tape_row') return lang() === 'zh' ? '接续 ' + 'V' + version + ' · 变更 ' + index : 'Supersedes V' + version + ' · change ' + index;
+    return lang() === 'zh' ? '接续 ' + 'V' + version + ' 中的记录值' : 'Supersedes the value in V' + version;
+  }
   function makeChangeRow(item, index) {
     var trial = item.trial, change = item.change, versions = change.source_versions, id = nctOf(trial);
     var rowKey = changeIdentity(item), selected = rowKey === state.selectedKey, button = el('button', 'bci-trial bci-tape-card' + (selected ? ' is-selected' : ''));
@@ -1075,11 +1128,8 @@
     if (change.review_state === 'needs_review') line.appendChild(el('span', 'bci-tape-review', tr('Not checked yet', '尚未核对')));
     main.appendChild(line);
     if (!index || nctOf(valueAt(state.rows[index - 1], 'trial')) !== id) main.appendChild(el('span', 'bci-trial-title', titleOf(trial)));
-    // A replacement carries no per-row state transition, so a sentence about
-    // it would read the same on every replace row. That instruction lives in
-    // the panel footer once; the row keeps only the field, the versions, and
-    // the two clocks — the things that actually differ between rows.
-    if (change.op !== 'replace') {
+    if (valueAt(change, 'exact_values')) main.appendChild(tapeExactDelta(valueAt(change, 'exact_values'), false));
+    else if (change.op !== 'replace') {
       var delta = el('span', 'bci-tape-delta');
       delta.setAttribute('aria-label', tapeOpLabel(change.op) + ' · ' + recordStateLabel(change.before_state) + ' \u2192 ' + recordStateLabel(change.after_state));
       delta.appendChild(el('span', '', recordStateLabel(change.before_state)));
@@ -1423,7 +1473,7 @@
   function paintPanelFoot() {
     var states = state.stateCodes || [], parts = [];
     parts.push(tr('Everything here is what ClinicalTrials.gov recorded from sponsor and investigator submissions — research context, no trade call.', '此处内容均为 ClinicalTrials.gov 记录的申办方与研究者提交材料，仅供研究参考，不作交易判断。'));
-    if (isChangeMode()) parts.push(tr('Each row names one field and the two submitted versions it changed between. Open a row to read the recorded values.', '每行标出一个字段以及它变化所跨的两个提交版本。打开某行可读取已记录的取值。'));
+    if (isChangeMode()) parts.push(tr('Each row shows one registry field and its exact recorded before / after value when the verified chain carries them. Open a row for the source position and recorded lineage.', '每行显示一个登记字段，以及核验链中可用的精确前后取值。打开某行可查看来源位置与记录沿革。'));
     if (isScreenMode()) parts.push(tr('Filters combine literally, with no widening and no ranking.', '筛选条件按字面组合，不扩展、不排序。'));
     if (isPeerMode()) parts.push(tr('This compares exactly the trials you listed. No peer is discovered for you.', '此处仅对照你列出的试验，不会替你发现同类试验。'));
     if (states.length > 1) parts.push(tr('Also on this page: ' + states.slice(1).map(stateLabel).join(' · '), '本页还包括：' + states.slice(1).map(stateLabel).join(' · ')));
@@ -1788,12 +1838,22 @@
     return section;
   }
   function tapeVersionSection(change, id) {
-    var versions = valueAt(change, 'source_versions'), section = el('section', 'bci-detail-section');
+    var versions = valueAt(change, 'source_versions'), exact = valueAt(change, 'exact_values'), lineage = valueAt(change, 'correction_lineage'), section = el('section', 'bci-detail-section');
     section.appendChild(el('h3', '', tr('The change on this page', '本页的这次变更')));
     var card = el('article', 'bci-endpoint');
     card.appendChild(el('strong', '', historyKindLabel(valueAt(change, 'field_class')) + ' · ' + tapeOpLabel(valueAt(change, 'op'))));
-    card.appendChild(el('p', '', tr('Before: ', '之前：') + recordStateLabel(valueAt(change, 'before_state'))));
-    card.appendChild(el('p', '', tr('After: ', '之后：') + recordStateLabel(valueAt(change, 'after_state'))));
+    if (exact && lineage) {
+      card.appendChild(tapeExactDelta(exact, true));
+      var disclosure = el('details', 'bci-tape-disclosure'), summary = el('summary', '', tr('Source & lineage', '来源与沿革'));
+      disclosure.appendChild(summary);
+      var source = el('p', ''); source.appendChild(el('span', '', tr('Source position', '来源位置'))); source.appendChild(el('code', '', valueAt(exact, 'source_pointer'))); disclosure.appendChild(source);
+      var predecessor = el('p', ''); predecessor.appendChild(el('span', '', tr('Recorded lineage', '记录沿革'))); predecessor.appendChild(el('strong', '', tapeLineageLabel(lineage))); disclosure.appendChild(predecessor);
+      var correction = el('p', ''); correction.appendChild(el('span', '', tr('Correction status', '更正状态'))); correction.appendChild(el('strong', '', tr('Not assessed', '未评估'))); disclosure.appendChild(correction);
+      card.appendChild(disclosure);
+    } else {
+      card.appendChild(el('p', '', tr('Before: ', '之前：') + recordStateLabel(valueAt(change, 'before_state'))));
+      card.appendChild(el('p', '', tr('After: ', '之后：') + recordStateLabel(valueAt(change, 'after_state'))));
+    }
     card.appendChild(el('p', '', tr('Verified at ', '核验于 ') + observationTimestampLabel(valueAt(change, 'observed_at'))));
     if (isTrialId(id) && Number.isSafeInteger(valueAt(versions, 'after'))) {
       var link = el('a', 'bci-detail-link', tr('Open submitted version ', '打开提交版本 ') + 'V' + valueAt(versions, 'after') + ' ↗');
@@ -1801,7 +1861,7 @@
       card.appendChild(link);
     }
     section.appendChild(card);
-    section.appendChild(el('p', 'bci-detail-note', tr('The recorded values for this pair of versions are listed under Registry record updates below.', '这对版本的已记录取值列在下方「登记记录更新」中。')));
+    section.appendChild(el('p', 'bci-detail-note', exact ? tr('These are the exact recorded JSON values. A registry edit is not a protocol change, business event, or assessed correction.', '这些是登记记录中的精确取值。登记修改不等于方案变更、业务事件或已评估的更正。') : tr('This older record does not carry exact value disclosure. No value is guessed.', '这条较早记录不含精确取值披露。不会猜测任何取值。')));
     return section;
   }
   function showInspectorEmpty(title, copy) { text(ui.inspectorTitle, title); clearChildren(ui.inspectorBody); var empty = el('div', 'bci-inspector-empty'); empty.appendChild(el('span', 'bci-empty-orbit')); empty.appendChild(el('p', '', copy)); ui.inspectorBody.appendChild(empty); }

@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast_scoreboard.v2",
-  "asof": "2026-08-10T03:33:56Z",
+  "asof": "2026-08-12T01:24:56Z",
   "forward_accrual_began": "2026-07-07",
   "note": "Forward-only: no backtest rows enter this scoreboard (MRI-R8). Primary metrics use evaluation-eligible rows only; all_forward preserves the immutable raw record.",
   "evaluation_basis": "clean_structured_defect_epochs_v1",
@@ -42,6 +42,8 @@
     }
   },
   "by_shadow": {},
+  "by_shadow_epoch": {},
+  "by_shadow_epoch_note": "Like-for-like forward evidence segmented by exact model and target epochs. The legacy by_shadow aggregate is retained for compatibility and may span epochs.",
   "promotion_review": [],
   "all_forward": {
     "claims:champion": {
@@ -114,9 +116,9 @@
     }
   },
   "score_receipts": {
-    "raw_n": 26,
+    "raw_n": 37,
     "canonical_n": 16,
-    "superseded_n": 10,
+    "superseded_n": 21,
     "note": "Official actual receipts supersede same-vintage proxies and legacy calculations for evaluation; every receipt remains in the ledger."
   },
   "defect_notices": [

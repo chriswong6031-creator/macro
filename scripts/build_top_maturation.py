@@ -139,9 +139,21 @@ def main(argv: list[str] | None = None) -> int:
                                      trailing=a.trailing, asof=a.asof, limit=a.limit,
                                      macro_backdrop=_macro_backdrop(src_root),
                                      log=lambda m: print(m, flush=True))
+        # PER TIER. Each tier's legs are cut from its own library, so one
+        # "library_vintage" would attest a provenance two of the three boards do
+        # not have. The primary keys stay for continuity with the existing stamp.
         thr = tm.load_thresholds(src_root)
         stamp["library_vintage"] = thr.get("vintage_utc")
         stamp["library_window"] = [thr.get("window_start"), thr.get("window_end")]
+        stamp["tier_libraries"] = {}
+        for key in tm.TIER_KEYS:
+            t = tm.load_thresholds(src_root, key)
+            stamp["tier_libraries"][key] = {
+                "vintage_utc": t.get("vintage_utc"),
+                "ext_variant": t.get("ext_variant"),
+                "window": [t.get("window_start"), t.get("window_end")],
+                "n_library_rows": t.get("n_library_rows"),
+            }
         ctx["_vintage"] = stamp
         ctx["_diagnostics"] = {k: v for k, v in diag.items() if k != "ledger_rows"}
     except Exception as e:  # noqa: BLE001 — fail-open: an honest null beats a dead page
@@ -164,19 +176,28 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     n_led = tm.append_forward_log(diag.get("ledger_rows") or [], out_root)
-    log.info("wrote %s — %d extended, %s; forward log +%d row(s); %.1fs",
-             p, ctx["extended_n"], diag.get("per_state"), n_led, time.time() - t0)
+    # Per tier, never summed: a name can clear more than one bar, so a total
+    # across tiers would be a number with no referent (design spec §0 G-2).
+    per_tier = ", ".join(
+        f"{k}: {(diag.get('tiers', {}).get(k) or {}).get('n_extended', 0)}"
+        f"{'' if (diag.get('tiers', {}).get(k) or {}).get('readable') else ' (unread)'}"
+        for k in tm.TIER_KEYS)
+    log.info("wrote %s — %s; forward log +%d row(s); %.1fs",
+             p, per_tier, n_led, time.time() - t0)
     if diag.get("n_excluded_non_stock_instruments"):
         log.info("instrument filter: %d non-stock instrument(s) excluded from the board "
                  "(%s)", diag["n_excluded_non_stock_instruments"],
                  ", ".join(diag.get("excluded_instruments", [])[:12]))
-    if not diag.get("thresholds_present"):
-        print("::warning title=top-maturation::no frozen thresholds at "
-              "data/top_anatomy/thresholds.json — every leg is dark and the board reads "
-              "all-healthy; run scripts.export_top_anatomy_library", flush=True)
-    if not diag.get("library_rows"):
-        print("::warning title=top-maturation::no analog library at "
-              "data/top_anatomy/library.parquet — every row prints 'no match'", flush=True)
+    # A tier that could not load its OWN library/thresholds renders an honest null
+    # band rather than a board of names nobody measured — but it is still a
+    # degraded night, so the lane says so by name.
+    for key in tm.TIER_KEYS:
+        td = (diag.get("tiers", {}) or {}).get(key) or {}
+        if not td.get("readable"):
+            print(f"::warning title=top-maturation::tier '{key}' has no frozen "
+                  f"thresholds/library at data/{tm._tier_rel(tm.THRESHOLDS_REL, key)} — "
+                  f"it renders as unread; run scripts.export_top_anatomy_library "
+                  f"--variant {key}", flush=True)
     return 0
 
 

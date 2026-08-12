@@ -43,6 +43,8 @@ from pathlib import Path
 
 import pytest
 
+from scripts.workflow_run_source import resolved_workflow_text
+
 ROOT = Path(__file__).resolve().parents[1]
 RENDER = (ROOT / ".github" / "workflows" / "render.yml").read_text()
 ENGINE_RENDER = (ROOT / ".github" / "workflows" / "engine-render.yml").read_text()
@@ -364,8 +366,13 @@ def test_every_workspace_store_producer_is_accounted_for(lane):
 
 def test_daily_still_builds_the_workspace_post_band():
     """Gate: this change must not touch the nightly's own (correct) placement."""
-    assert "python -m scripts.build_options_command" in DAILY
-    engine = DAILY.split("  engine:", 1)[1]
+    # Resolved text, same slice as before: the band wait barrier this asserts on
+    # lives inside the "regional + desk builders" body that was extracted to
+    # scripts/ci/. A raw read would fall through to a later, weaker occurrence of
+    # check_builder_failstreaks and pass for the wrong reason.
+    daily = resolved_workflow_text(ROOT / ".github" / "workflows" / "daily.yml", ROOT)
+    assert "python -m scripts.build_options_command" in daily
+    engine = daily.split("  engine:", 1)[1]
     assert engine.index("check_builder_failstreaks") < engine.index("scripts.build_options_command"), (
         "build_options_command must stay AFTER the band wait barrier in daily.yml"
     )

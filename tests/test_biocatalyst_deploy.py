@@ -17,6 +17,8 @@ CADDYFILE_PATH = DEPLOY / "Caddyfile"
 SERVICE_PATH = DEPLOY / "macro-biocatalyst.service"
 MACRO_API_SERVICE_PATH = DEPLOY / "macro-api.service"
 TIMER_PATH = DEPLOY / "macro-biocatalyst.timer"
+HISTORY_SERVICE_PATH = DEPLOY / "macro-biocatalyst-history.service"
+HISTORY_TIMER_PATH = DEPLOY / "macro-biocatalyst-history.timer"
 HEARTBEAT_SERVICE_PATH = DEPLOY / "macro-biocatalyst-activation-heartbeat.service"
 HEARTBEAT_TIMER_PATH = DEPLOY / "macro-biocatalyst-activation-heartbeat.timer"
 HEARTBEAT_RUNNER_PATH = DEPLOY / "biocatalyst-activation-heartbeat.sh"
@@ -135,6 +137,7 @@ def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
     assert "Group=macro-biocatalyst" in service
     assert "ConditionPathExists=/etc/macro-biocatalyst.env" in service
     assert "EnvironmentFile=/etc/macro-biocatalyst.env" in service
+    assert "Environment=BIOCATALYST_HISTORY_ENABLED=" not in service
     assert "Environment=BIOCATALYST_STATE_ROOT=/var/lib/macro-biocatalyst/state" in service
     assert "Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public" in service
     assert "Environment=BIOCATALYST_ACTIVATION_ROOT=/var/lib/macro-biocatalyst/activation" in service
@@ -147,7 +150,8 @@ def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
         "/var/lib/macro-biocatalyst/activation/heartbeat.json"
     ) in service
     assert (
-        "ExecStart=/opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker "
+        "ExecStart=/usr/bin/env BIOCATALYST_HISTORY_ENABLED=0 "
+        "/opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker "
         "--mode canary_poll"
     ) in service
     timeout = int(re.search(r"^TimeoutStartSec=(\d+)$", service, re.MULTILINE).group(1))
@@ -291,6 +295,45 @@ def test_timer_is_hourly_jittered_and_operator_armable():
     assert "operator-armed" in timer
 
 
+def test_history_refresh_is_a_separate_daily_operator_armed_lane():
+    service = _text(HISTORY_SERVICE_PATH)
+    timer = _text(HISTORY_TIMER_PATH)
+
+    assert "Type=oneshot" in service
+    assert "User=macro-biocatalyst" in service
+    assert "Group=macro-biocatalyst" in service
+    assert "EnvironmentFile=/etc/macro-biocatalyst.env" in service
+    assert "Environment=BIOCATALYST_HISTORY_ENABLED=" not in service
+    assert (
+        "ExecStart=/usr/bin/env BIOCATALYST_HISTORY_ENABLED=1 "
+        "/opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker "
+        "--mode canary_poll"
+    ) in service
+    assert "TimeoutStartSec=2700" in service
+    for setting in (
+        "UMask=0077",
+        "NoNewPrivileges=true",
+        "ProtectSystem=strict",
+        "ReadWritePaths=/var/lib/macro-biocatalyst/state",
+        "ReadWritePaths=/var/lib/macro-biocatalyst/public",
+        "ReadOnlyPaths=/var/lib/macro-biocatalyst/activation",
+        "InaccessiblePaths=/etc/macro-biocatalyst.env",
+        "InaccessiblePaths=/etc/macro-biocatalyst-control.env",
+        "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6",
+    ):
+        assert setting in service
+    assert re.search(r"^CapabilityBoundingSet=$", service, re.MULTILINE)
+    assert re.search(r"^AmbientCapabilities=$", service, re.MULTILINE)
+
+    assert "OnCalendar=*-*-* 02:20:00 UTC" in timer
+    assert "AccuracySec=1min" in timer
+    assert "RandomizedDelaySec=120s" in timer
+    assert "Persistent=false" in timer
+    assert "Unit=macro-biocatalyst-history.service" in timer
+    assert "WantedBy=timers.target" in timer
+    assert "operator-armed" in timer
+
+
 def test_root_heartbeat_is_read_only_hardened_and_disabled_by_default():
     service = _text(HEARTBEAT_SERVICE_PATH)
     timer = _text(HEARTBEAT_TIMER_PATH)
@@ -394,7 +437,7 @@ def test_setup_keeps_environment_root_only_and_requires_explicit_prereq_check():
 
     for key in (
         "BIOCATALYST_ENABLED",
-        "BIOCATALYST_HISTORY_ENABLED=0",
+        "BIOCATALYST_HISTORY_ENABLED=1",
         "BIOCATALYST_PROSPECTIVE_ENABLED=0",
         "BIOCATALYST_R2_ACTIVATION_ID",
         "BIOCATALYST_R2_ACCOUNT_ID",
@@ -411,6 +454,7 @@ def test_setup_keeps_environment_root_only_and_requires_explicit_prereq_check():
 
     assert "deprecated evidence only; never authorizes collection" in setup
     assert "BIOCATALYST_PROSPECTIVE_ENABLED must equal 0 or 1" in setup
+    assert "BIOCATALYST_HISTORY_ENABLED must equal 0 or 1" in setup
     assert "BIOCATALYST_R2_RETENTION_CONFIRMED must equal 0 or 1" in setup
     assert "BIOCATALYST_R2_ACTIVATION_ID must match activation gate" in setup
     assert "BIOCATALYST_R2_ACCOUNT_ID must match the root-only control account" in setup
@@ -427,6 +471,8 @@ def test_setup_keeps_environment_root_only_and_requires_explicit_prereq_check():
     assert "verify-activation" in setup
     assert 'install -m 0644 "$HEARTBEAT_SERVICE_SOURCE" "$HEARTBEAT_SERVICE_DEST"' in setup
     assert 'install -m 0644 "$HEARTBEAT_TIMER_SOURCE" "$HEARTBEAT_TIMER_DEST"' in setup
+    assert 'install -m 0644 "$HISTORY_SERVICE_SOURCE" "$HISTORY_SERVICE_DEST"' in setup
+    assert 'install -m 0644 "$HISTORY_TIMER_SOURCE" "$HISTORY_TIMER_DEST"' in setup
 
     executable_lines = [
         line.strip() for line in setup.splitlines()
@@ -785,16 +831,21 @@ def test_update_reconciles_only_a_fully_operator_installed_lane_without_arming_i
     assert "[ -f /etc/systemd/system/macro-biocatalyst.timer ]" in block
     assert 'cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.service"' in block
     assert 'cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.timer"' in block
+    assert 'cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-history.service"' in block
+    assert 'cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-history.timer"' in block
     assert 'cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service"' in block
     assert 'cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer"' in block
     assert "systemd-analyze verify" in block
     assert "systemctl daemon-reload" in block
     assert "BIOCATALYST_TIMER_WAS_ENABLED=0" in block
+    assert "BIOCATALYST_HISTORY_TIMER_WAS_ENABLED=0" in block
     assert "BIOCATALYST_HEARTBEAT_TIMER_WAS_ENABLED=0" in block
     assert "[ -f /etc/systemd/system/macro-biocatalyst.timer ]" in block
     assert "[ -f /etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer ]" in block
     assert "systemctl is-enabled --quiet macro-biocatalyst.timer" in block
     assert "systemctl restart macro-biocatalyst.timer" in block
+    assert "systemctl is-enabled --quiet macro-biocatalyst-history.timer" in block
+    assert "systemctl restart macro-biocatalyst-history.timer" in block
     assert "systemctl is-enabled --quiet macro-biocatalyst-activation-heartbeat.timer" in block
     assert "systemctl restart macro-biocatalyst-activation-heartbeat.timer" in block
     assert "BIOCATALYST_UNIT_UPDATED=1" in block

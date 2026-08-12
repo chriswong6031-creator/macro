@@ -101,6 +101,11 @@
           "description": "Ascending 3D bar-dates of the 2D-MACD pre-cross ADVANCE-WARNING (3D StochRSI bottom-turn while the faster 2D RSI-MACD histogram is only rising). Validated as m2d_s3d_early: fires ~5 trading days BEFORE the confirmed `buy` and ~2% cheaper, but acting on it early is empirically WORSE entry quality (deeper drawdown — see CONFLUENCE_TUNING.md §3/§5b). DISPLAY-ONLY context, kept OUT of `markers`, suppressed on a confirmed-buy bar, NEVER a buy/take, NEVER scored. Render as a faint/hollow pre-dot distinct from the green buy ▲.",
           "items": {"$ref": "#/$defs/date"}
         },
+        "early_signal_dates": {
+          "type": "array",
+          "description": "ADDITIVE knowability stamp for `early_markers`, positionally paired 1:1 with it: entry i is the LAST SESSION of the 3D bucket whose OPEN label is early_markers[i] — the close at which that dot became knowable. Same distinction `markers` already draws between `date` (bucket open label) and `signal_date` (bucket last session), now available for the dots (§6.7 signal-date family; measured 3,756/3,760 dots carrying the open label). OPTIONAL: a document written before this field existed is valid, and a document whose buckets could not all resolve a last session omits the field entirely rather than publishing a partially-resolved list that would silently re-index the pairs. Legacy readers keep reading `early_markers` unchanged. DISPLAY-ONLY, like the list it stamps: NEVER a buy and NEVER scored.",
+          "items": {"$ref": "#/$defs/date"}
+        },
         "early_now": {
           "type": "boolean",
           "description": "Is the latest bar an active 2D-MACD advance-warning. Display-only context, never an auto-buy."

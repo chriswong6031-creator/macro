@@ -58,9 +58,11 @@
     },
     "maturity_cutoff": {
       "type": "object", "additionalProperties": false,
-      "required": ["actual_pin_observed_at", "rule"],
+      "required": ["actual_pin_observed_at", "owner_attempted_window_session", "owner_attempted_at", "rule"],
       "properties": {
         "actual_pin_observed_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]},
+        "owner_attempted_window_session": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/session"}]},
+        "owner_attempted_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]},
         "rule": {"const": "target_session_following_calendar_day_same_registered_window"}
       }
     },
@@ -283,7 +285,11 @@
             "status": {"const": "observed"},
             "revision_kind": {"const": "initial_maturity_observation"},
             "reason": {"const": "owner_capture_observed_at_maturity"},
-            "maturity_cutoff": {"properties": {"actual_pin_observed_at": {"$ref": "#/$defs/utc"}}},
+            "maturity_cutoff": {"properties": {
+              "actual_pin_observed_at": {"$ref": "#/$defs/utc"},
+              "owner_attempted_window_session": {"type": "null"},
+              "owner_attempted_at": {"type": "null"}
+            }},
             "target_generation_pin": {"$ref": "#/$defs/targetGenerationPin"},
             "target_generation_progress": {"$ref": "#/$defs/targetGenerationProgress"},
             "target_capture": {"$ref": "#/$defs/technicalCapture"},
@@ -295,7 +301,11 @@
             "status": {"const": "unavailable"},
             "revision_kind": {"const": "initial_maturity_absence"},
             "reason": {"const": "target_capture_absent_at_maturity_cutoff"},
-            "maturity_cutoff": {"properties": {"actual_pin_observed_at": {"$ref": "#/$defs/utc"}}},
+            "maturity_cutoff": {"properties": {
+              "actual_pin_observed_at": {"$ref": "#/$defs/utc"},
+              "owner_attempted_window_session": {"type": "null"},
+              "owner_attempted_at": {"type": "null"}
+            }},
             "target_generation_pin": {"$ref": "#/$defs/targetGenerationPin"},
             "target_generation_progress": {"$ref": "#/$defs/targetGenerationProgress"},
             "target_capture": {"type": "null"}, "target_mark": {"type": "null"},
@@ -306,7 +316,11 @@
             "status": {"const": "censored"},
             "revision_kind": {"const": "initial_maturity_censoring"},
             "reason": {"const": "target_capture_clock_tie_censored"},
-            "maturity_cutoff": {"properties": {"actual_pin_observed_at": {"$ref": "#/$defs/utc"}}},
+            "maturity_cutoff": {"properties": {
+              "actual_pin_observed_at": {"$ref": "#/$defs/utc"},
+              "owner_attempted_window_session": {"type": "null"},
+              "owner_attempted_at": {"type": "null"}
+            }},
             "target_generation_pin": {"$ref": "#/$defs/targetGenerationPin"},
             "target_generation_progress": {"$ref": "#/$defs/targetGenerationProgress"},
             "target_capture": {"type": "null"}, "target_mark": {"type": "null"},
@@ -346,6 +360,24 @@
           }}
         ]
       }
+    },
+    {
+      "if": {"properties": {"reason": {"const": "maturity_owner_window_missed"}}, "required": ["reason"]},
+      "then": {"properties": {"maturity_cutoff": {"properties": {
+        "owner_attempted_window_session": {"type": "null"},
+        "owner_attempted_at": {"type": "null"}
+      }}}}
+    },
+    {
+      "if": {"properties": {"reason": {"enum": [
+        "maturity_owner_unavailable_by_deadline",
+        "maturity_owner_integrity_failure_by_deadline",
+        "maturity_owner_pin_cap_exceeded_by_deadline"
+      ]}}, "required": ["reason"]},
+      "then": {"properties": {"maturity_cutoff": {"properties": {
+        "owner_attempted_window_session": {"$ref": "#/$defs/session"},
+        "owner_attempted_at": {"$ref": "#/$defs/utc"}
+      }}}}
     },
     {
       "if": {"properties": {"target_generation_pin": {"type": "null"}}, "required": ["target_generation_pin"]},

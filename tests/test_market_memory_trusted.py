@@ -1126,6 +1126,65 @@ def _options_context_reader(
     return options_context.PinnedCompositeAsKnownAtReader(composite)
 
 
+def test_options_hourly_projector_pins_bounded_w1a_head_at_4096(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _options_context_candidate(monkeypatch, tmp_path)
+    _capture(candidate)
+    w1a_root = tmp_path / "options-cap-w1a"
+    rows = []
+    for index in range(pit._MAX_GENERATION_CAPTURES):
+        digest = f"{index:064x}"
+        rows.append(
+            {
+                "query_id": "mmquery_" + digest,
+                "context_id": "mmctx_" + digest,
+                "capture_id": "mmcapture_" + digest,
+                "packet_sha256": digest,
+            }
+        )
+    manifest = pit._new_store_manifest()
+    generation = pit._new_generation(
+        store_id=manifest["store_id"],
+        previous_generation_id="mmgeneration_" + "b" * 64,
+        captures=rows,
+    )
+    generation_body = pit._canonical_bytes(generation)
+    pit._mkdir_durable(w1a_root)
+    pit._write_create_once(
+        w1a_root,
+        pit._store_manifest_path(w1a_root),
+        pit._canonical_bytes(manifest),
+        label="projector cap manifest",
+    )
+    pit._write_create_once(
+        w1a_root,
+        pit._generation_path(w1a_root, generation["generation_id"]),
+        generation_body,
+        label="projector cap generation",
+    )
+    pit._replace_head(
+        w1a_root, pit._new_head(generation, generation_body=generation_body)
+    )
+    composite = trusted.CompositeAsKnownAtReader(w1a_root, candidate.public)
+    monkeypatch.setattr(
+        composite.w1a,
+        "read_pinned_generation",
+        lambda **_kwargs: pytest.fail(
+            "hourly projector must not replay W1A ancestry"
+        ),
+    )
+
+    reader = options_context.PinnedCompositeAsKnownAtReader(composite)
+    w1a_receipt = next(
+        row
+        for row in reader.generation_receipts()
+        if row["profile"] == pit.STORE_PROFILE
+    )
+    assert w1a_receipt["capture_count"] == 4_096
+    assert w1a_receipt["generation_id"] == generation["generation_id"]
+
+
 def test_options_context_reference_binds_only_the_exact_requested_as_of_capture(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

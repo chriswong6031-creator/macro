@@ -70,7 +70,8 @@ US_FUTURES = ["ES=F", "NQ=F", "YM=F", "RTY=F"]              # overnight, referen
 INTL_INDEXES = [
     "^HSI",        # Hang Seng (Hong Kong)
     "000001.SS",   # SSE Composite (Shanghai)
-    "510300.SS",   # CSI 300 ETF (Shanghai) — china page live tile
+    "000300.SS",   # CSI 300 index (Shanghai) — china page live tile (live-only: no bakeable history)
+    "399006.SZ",   # ChiNext index (Shenzhen) — china page live tile (live-only: no bakeable history)
     "399001.SZ",   # SZSE Component (Shenzhen)
     "^GSPTSE",     # S&P/TSX Composite (Canada)
     "^SPCDNX",     # S&P/TSX Venture Composite (Canada) — canada page live tile
@@ -114,7 +115,9 @@ DISPLAY_SYMBOLS = [
     *TAPE_SYMBOLS,                            # six-instrument macro tape
     "^IRX", "^FVX", "^TYX",                  # curve tenors (with ^TNX above) — brain market packet CURVE/FLAGS
     "^VIX",                                   # vol row for the brain packet TAPE line
-    "000001.SS", "510300.SS", "^HSI",        # china page live strip
+    "000001.SS", "000300.SS", "399006.SZ", "^HSI",   # china page live strip (CSI 300 /
+                                             # ChiNext tiles are LIVE-ONLY — no baked
+                                             # level, so absence here = permanent "—")
     "BTC-USD",                               # Bitcoin Vector header (24/7)
     "GC=F", "SI=F", "HG=F", "CL=F", "BZ=F",  # commodities strip (DXY is in the tape above)
     "EURUSD=X", "USDJPY=X", "GBPUSD=X", "USDCAD=X",       # forex strip

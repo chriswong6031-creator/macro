@@ -605,8 +605,18 @@ class TestTheWriterIsToldTheBudgetTheValidatorEnforces:
     def test_the_budget_table_is_byte_for_byte_what_it_was(self):
         """W4e is allowed to change what the writer is TOLD and nothing else.
         Pinned by value next to the fix, because that is where a 'while I'm
-        here' edit would land."""
-        assert cw._NUMBER_BUDGET == {"receipt": 4, "earnings": 4}
+        here' edit would land.
+
+        The table moved ONCE since, deliberately and with its own autopsy:
+        `breaking` joined at 4 on 2026-08-11 after the voice screen quarantined
+        26 items in a day (see tests/test_marketing_voice_v5.py §4 for the two
+        verbatim kills). This pin is doing its job — a budget edit has to come
+        with a reason written down here — so it moves WITH the table, never
+        ahead of it. The DEFAULT and the shape table are untouched by that fix,
+        which is the half that matters: no unnamed kind got wider.
+        """
+        assert cw._NUMBER_BUDGET == {"receipt": 4, "earnings": 4,
+                                     "breaking": 4}
         assert cw._NUMBER_BUDGET_DEFAULT == 2
         assert cw._SHAPE_NUMBER_BUDGET == {
             "one_liner": 2, "two_part": 2, "caption": 2, "stack": 3, "list": 6}

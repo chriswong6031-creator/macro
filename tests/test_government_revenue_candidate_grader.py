@@ -2325,8 +2325,27 @@ def test_amendment_window_is_closed_and_the_grader_remains_uncalled():
 
 
 def test_closed_window_guard_allows_a_later_observation_of_an_existing_candidate():
-    """Candidate IDs name histories; observation IDs name immutable ledger rows."""
-    ledger = ROOT / "data" / "government_revenue" / "candidate_ledger.jsonl"
+    """Candidate IDs name histories; observation IDs name immutable ledger rows.
+
+    The substrate is the frozen 5fc incident vintage, never the live append-only
+    store. The later observation is *synthesized* below, so the ``== 2`` count pin
+    is a setup precondition — it proves the duplicate condition was actually
+    constructed — but read against live bytes it silently also asserts that the
+    live ledger holds exactly ONE row for ``grc1-e2e57aacdde17def7eeb01d6``. A
+    genuine nightly re-observation of that candidate would then red this pack for
+    doing precisely the thing this test exists to call legal. Frozen, the pin is
+    exact forever. Live append-only integrity keeps its own append-safe witness in
+    ``test_amendment_window_is_closed_and_the_grader_remains_uncalled`` above
+    (``>=``-length, 50,790-byte prefix digest).
+    """
+    ledger = (
+        ROOT
+        / "tests"
+        / "fixtures"
+        / "government_revenue"
+        / "issuance_incident_5fc18d5"
+        / "candidate_ledger.jsonl"
+    )
     rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line]
     original = _assert_issued_recovery_observations(rows)
     later = copy.deepcopy(original[0])

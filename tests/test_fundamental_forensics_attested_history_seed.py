@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
-from pathlib import Path
 import sys
+from hashlib import sha256
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -18,15 +19,24 @@ from engine.fundamental_forensics.filing_attestation import CompanyFactsSourcePa
 from engine.fundamental_forensics.sec_document_spine import build_filing_manifests
 from engine.research_vault.r2_store import LocalStore
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = ROOT / "scripts" / "seed_fundamental_forensics_attested_history.py"
+VERIFIER_PATH = ROOT / "scripts" / "verify_fundamental_forensics_attested_history_seed_bundle.py"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "attested-history-aapl-seed.yml"
 LOCK_PATH = ROOT / "requirements" / "attested-history-macos-arm64-py312.lock"
 
 
 def _seed_module():
     spec = importlib.util.spec_from_file_location("_attested_history_seed_test", SCRIPT_PATH)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _verifier_module():
+    spec = importlib.util.spec_from_file_location("_attested_history_seed_verifier_test", VERIFIER_PATH)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -93,6 +103,167 @@ def _packet(seed):
         older_submissions=(older,),
         conversion_config=CompanyFactsLedgerConversionConfig(),
     )
+
+
+def _review_artifact(path: Path) -> dict:
+    content = path.read_bytes()
+    return {
+        "filename": path.name,
+        "sha256": sha256(content).hexdigest(),
+        "bytes": len(content),
+    }
+
+
+def _preflight_bytes(receipt: dict) -> bytes:
+    return json.dumps(
+        receipt,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+
+
+def _production_review_bundle(tmp_path):
+    seed = _seed_module()
+    verifier = _verifier_module()
+    output = tmp_path / "artifact"
+    output.mkdir(parents=True)
+    expected = verifier.ExpectedRun(
+        repository=verifier.EXPECTED_REPOSITORY,
+        sha="c" * 40,
+        ref=verifier.EXPECTED_REF,
+        run_id=31534160304,
+        run_attempt=1,
+        environment=verifier.EXPECTED_ENVIRONMENT,
+        workflow=verifier.EXPECTED_WORKFLOW,
+        dependency_lock_sha256="d" * 64,
+    )
+    packet = _packet(seed)
+    packet_path = output / verifier.PACKET_FILENAME
+    packet_path.write_bytes(seed.canonical_json(packet).encode("utf-8"))
+    preflight = {
+        "schema": "fundamental_forensics.attested_history_preflight_receipt/v1",
+        "status": "prepared",
+        "operator_verification_observed_at": "2026-08-11T20:41:57.100000Z",
+        "publication": {
+            "publication_performed": False,
+            "pointer_advanced": False,
+            "immutable_objects_written": False,
+            "storage_write_attempts": 0,
+        },
+        "redaction": {
+            "raw_source_payloads_included": False,
+            "storage_paths_included": False,
+            "storage_endpoints_included": False,
+            "storage_credentials_included": False,
+            "error_messages_included": False,
+        },
+        "nonclaims": [
+            "not_published",
+            "not_a_freshness_claim",
+            "not_a_filing_completeness_claim",
+            "not_investment_or_trading_authority",
+        ],
+        "inputs": {
+            "base_query_snapshot_id": packet["base_query_snapshot_id"],
+            "source_snapshot_id": packet["source_snapshot_id"],
+            "cik": packet["packet"]["cik"],
+            "accession": packet["packet"]["filing"]["accession"],
+            "filing_manifest_id": packet["packet"]["filing"]["manifest_id"],
+        },
+        "materialization": {
+            "filing_package_id": "ffpkg_" + "1" * 64,
+            "ixbrl_extraction_id": "ffxbrl_" + "2" * 64,
+            "filing_attestation_id": "ffatt_" + "3" * 64,
+            "companyfacts_conversion_receipt_id": "cffledger_" + "4" * 64,
+        },
+        "binding_plan": {
+            "binding_count": 1,
+            "candidate_leaf_count": 1,
+            "rejected_leaf_count": 0,
+            "rejection_reason_counts": {},
+            "coverage": [],
+        },
+        "candidate": {
+            "prepared_in_memory": True,
+            "candidate_snapshot_id": "ffqsv2_" + "5" * 64,
+            "candidate_published_at_is_not_an_actual_publication": True,
+        },
+    }
+    preflight_path = output / verifier.PREFLIGHT_FILENAME
+    preflight_path.write_bytes(_preflight_bytes(preflight))
+    seed_receipt = {
+        "schema": "fundamental_forensics.attested_history_aapl_seed/v1",
+        "status": "prepared",
+        "ticker": "AAPL",
+        "cik": "0000320193",
+        "source_snapshot_id": packet["source_snapshot_id"],
+        "base_query_snapshot_id": packet["base_query_snapshot_id"],
+        "clocks": {
+            "source_snapshot_at": "2026-08-11T20:41:56.000000Z",
+            "operator_verification_observed_at": "2026-08-11T20:41:57.100000Z",
+            "preflight_completed_at": "2026-08-11T20:41:58.200000Z",
+        },
+        "dependency_lock": {
+            "path": verifier.DEPENDENCY_LOCK_PATH,
+            "sha256": expected.dependency_lock_sha256,
+            "target": "CPython 3.12 macOS arm64",
+        },
+        "run_provenance": expected.as_provenance(),
+        "selected_occurrence_id": "rawfact_" + "6" * 64,
+        "selected_match_id": "ffatt_match_" + "7" * 64,
+        "declared_older_submissions_count": 1,
+        "archive_inventory_member_count": 2,
+        "archive_stored_member_count": 1,
+        "archive_not_requested_member_count": 1,
+        "storage_control_probe": {
+            "key": "fundamental_forensics/attested-history-seed-control/v1/" + "a" * 32,
+            "final_sha256": verifier._FINAL_CONTROL_SHA256,
+            "outcomes": {
+                "absent_before_create": True,
+                "absent_create_succeeded": True,
+                "conflicting_absent_create_rejected": True,
+                "exact_version_advance_succeeded": True,
+                "stale_version_advance_rejected": True,
+                "readonly_final_readback_verified": True,
+            },
+        },
+        "preflight": {"status": "prepared", "storage_write_attempts": 0},
+        "review_artifacts": {
+            "operator_packet": _review_artifact(packet_path),
+            "preflight_receipt": _review_artifact(preflight_path),
+        },
+        "nonclaims": [
+            "not_a_complete_filing_archive",
+            "not_a_dimensions_identity_claim",
+            "not_a_freshness_claim_after_preflight",
+            "not_investment_or_trading_authority",
+        ],
+    }
+    seed_path = output / verifier.SEED_FILENAME
+    seed_path.write_bytes(seed.canonical_json(seed_receipt).encode("utf-8"))
+    bundle = {
+        "schema": "fundamental_forensics.attested_history_aapl_seed_bundle/v1",
+        "status": "prepared",
+        "run_provenance": expected.as_provenance(),
+        "dependency_lock": {
+            "path": verifier.DEPENDENCY_LOCK_PATH,
+            "sha256": expected.dependency_lock_sha256,
+        },
+        "files": {
+            verifier.PACKET_FILENAME: _review_artifact(packet_path),
+            verifier.PREFLIGHT_FILENAME: _review_artifact(preflight_path),
+            verifier.SEED_FILENAME: _review_artifact(seed_path),
+        },
+        "assembled_at": "2026-08-11T20:41:59.300000Z",
+        "nonclaims": [
+            "review_artifact_not_canonical_publication",
+            "credential_separation_not_parent_iam_proof",
+        ],
+    }
+    (output / verifier.BUNDLE_FILENAME).write_bytes(seed.canonical_json(bundle).encode("utf-8"))
+    return seed, verifier, output, expected
 
 
 def _exercise_full_seed(monkeypatch, tmp_path, *, fail_stage: str | None = None):
@@ -478,6 +649,97 @@ def test_seed_behaviorally_preserves_latest_pointers_and_binds_review_bundle(mon
         assert artifact["bytes"] == len(content)
         assert artifact["sha256"] == seed.sha256(content).hexdigest()
     assert all("retrieved_at" not in kwargs for kwargs in calls["retrieval_kwargs"])
+
+
+def test_independent_seed_bundle_verifier_recomputes_and_cross_binds_all_four_artifacts(tmp_path):
+    _seed, verifier, output, expected = _production_review_bundle(tmp_path)
+    result = verifier.verify_seed_bundle(output, expected=expected)
+    assert result["status"] == "verified"
+    assert result["run_id"] == expected.run_id
+    assert result["issuer"] == {"ticker": "AAPL", "cik": "0000320193"}
+    assert result["zero_write_preflight"] is True
+    assert result["all_nonclaims_exact"] is True
+    assert set(result["artifacts"]) == verifier.EXPECTED_FILES
+    for filename, artifact in result["artifacts"].items():
+        content = (output / filename).read_bytes()
+        assert artifact == {
+            "bytes": len(content),
+            "sha256": sha256(content).hexdigest(),
+        }
+
+
+def test_independent_seed_bundle_verifier_requires_the_exact_successful_actions_run(tmp_path):
+    _seed, verifier, _output, expected = _production_review_bundle(tmp_path)
+    metadata = {
+        "id": expected.run_id,
+        "status": "completed",
+        "conclusion": "success",
+        "event": "workflow_dispatch",
+        "head_branch": "main",
+        "head_sha": expected.sha,
+        "run_attempt": expected.run_attempt,
+        "path": ".github/workflows/attested-history-aapl-seed.yml",
+        "head_repository": {"full_name": expected.repository},
+    }
+    verifier._verified_github_run_identity(
+        metadata,
+        expected_run_id=expected.run_id,
+        expected_sha=expected.sha,
+        expected_run_attempt=expected.run_attempt,
+    )
+    metadata["conclusion"] = "failure"
+    with pytest.raises(verifier.SeedBundleVerificationError, match="conclusion"):
+        verifier._verified_github_run_identity(
+            metadata,
+            expected_run_id=expected.run_id,
+            expected_sha=expected.sha,
+            expected_run_attempt=expected.run_attempt,
+        )
+
+
+def test_independent_seed_bundle_verifier_rejects_byte_tampering_and_file_smuggling(tmp_path):
+    _seed, verifier, output, expected = _production_review_bundle(tmp_path)
+    packet = output / verifier.PACKET_FILENAME
+    packet.write_bytes(packet.read_bytes() + b" ")
+    with pytest.raises(verifier.SeedBundleVerificationError, match="canonical|sha256"):
+        verifier.verify_seed_bundle(output, expected=expected)
+
+    _seed, verifier, output, expected = _production_review_bundle(tmp_path / "second")
+    (output / "unreviewed.txt").write_text("smuggled", encoding="utf-8")
+    with pytest.raises(verifier.SeedBundleVerificationError, match="exactly the four"):
+        verifier.verify_seed_bundle(output, expected=expected)
+
+
+def test_independent_seed_bundle_verifier_rejects_rehashed_write_and_provenance_tampering(tmp_path):
+    seed, verifier, output, expected = _production_review_bundle(tmp_path)
+    preflight_path = output / verifier.PREFLIGHT_FILENAME
+    seed_path = output / verifier.SEED_FILENAME
+    bundle_path = output / verifier.BUNDLE_FILENAME
+
+    preflight = json.loads(preflight_path.read_text(encoding="utf-8"))
+    preflight["publication"]["storage_write_attempts"] = 1
+    preflight_path.write_bytes(_preflight_bytes(preflight))
+    seed_receipt = json.loads(seed_path.read_text(encoding="utf-8"))
+    seed_receipt["review_artifacts"]["preflight_receipt"] = _review_artifact(preflight_path)
+    seed_path.write_bytes(seed.canonical_json(seed_receipt).encode("utf-8"))
+    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+    bundle["files"][verifier.PREFLIGHT_FILENAME] = _review_artifact(preflight_path)
+    bundle["files"][verifier.SEED_FILENAME] = _review_artifact(seed_path)
+    bundle_path.write_bytes(seed.canonical_json(bundle).encode("utf-8"))
+    with pytest.raises(verifier.SeedBundleVerificationError, match="zero-write"):
+        verifier.verify_seed_bundle(output, expected=expected)
+
+    seed, verifier, output, expected = _production_review_bundle(tmp_path / "second")
+    seed_path = output / verifier.SEED_FILENAME
+    bundle_path = output / verifier.BUNDLE_FILENAME
+    seed_receipt = json.loads(seed_path.read_text(encoding="utf-8"))
+    seed_receipt["run_provenance"]["run_id"] += 1
+    seed_path.write_bytes(seed.canonical_json(seed_receipt).encode("utf-8"))
+    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+    bundle["files"][verifier.SEED_FILENAME] = _review_artifact(seed_path)
+    bundle_path.write_bytes(seed.canonical_json(bundle).encode("utf-8"))
+    with pytest.raises(verifier.SeedBundleVerificationError, match="reviewed GitHub run"):
+        verifier.verify_seed_bundle(output, expected=expected)
 
 
 @pytest.mark.parametrize("fail_stage", ["after_source", "after_base"])

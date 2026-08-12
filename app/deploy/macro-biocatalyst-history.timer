@@ -1,0 +1,16 @@
+# B2 history refresh is deliberately slower than the B1 hourly freshness lane.
+# This timer is installed disabled and only an operator may arm it.
+[Unit]
+Description=Refresh BioCatalyst ClinicalTrials.gov history daily (operator-armed only)
+
+[Timer]
+# Twenty minutes after the soak's UTC start/hourly boundary leaves the fast B1
+# poll uncontested while keeping the archive transaction well before 03:00 UTC.
+OnCalendar=*-*-* 02:20:00 UTC
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=false
+Unit=macro-biocatalyst-history.service
+
+[Install]
+WantedBy=timers.target

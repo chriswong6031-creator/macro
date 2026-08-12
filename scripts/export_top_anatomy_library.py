@@ -40,10 +40,19 @@ appended without re-reading this docstring.
 PURITY. Reads the harness's cached panel parquets and `engine.top_anatomy`.
 Writes only under `--root`. Never touches the harness cache.
 
+PER-TIER LIBRARIES (W2b). `--variant` cuts the whole pipeline through one of the
+three §4.1 extension definitions and writes a SUFFIXED pair
+(`library_r63.parquet` + `thresholds_r63.json`, and the `atrz` siblings). The
+primary pair keeps its unsuffixed names. Nothing is shared between them: each
+tier's thresholds are the P90/P10 of ITS OWN CONTINUED-labelled days, which is
+what lets the surface promise that no threshold ever crosses a tier boundary.
+
 Usage:
     python -m scripts.export_top_anatomy_library --data-root <primary>/data
     python -m scripts.export_top_anatomy_library --data-root <...>/data \
         --root <...>/data --track W
+    python -m scripts.export_top_anatomy_library --data-root <...>/data \
+        --root <...>/data --variant r63
 """
 from __future__ import annotations
 
@@ -87,6 +96,12 @@ _FEATURE_MAP = {
     "ppe_chg21": "D4_ppe_chg21",
     "updown_dvol": "D3_updown_dvol_ratio21",
     "semivol_ratio": "C3_semivol_ratio63",
+    #: Backs the W2b `running_hot` leg ("hotter than most like it") on the two
+    #: WIDENED tiers only. Carried for every variant so a tier's own P90 can be
+    #: cut from its own CONTINUED days; whether the leg RENDERS is a per-tier
+    #: decision in `engine.top_maturation`, never a function of a threshold
+    #: happening to exist here.
+    "rsi14": "B2_rsi14",
 }
 
 #: leg key -> (library column, quantile). The direction is the leg's own firing
@@ -100,6 +115,7 @@ THRESHOLD_SPEC = {
     "vol_asymmetry_p90": ("semivol_ratio", 0.90),
     "late_verticality_p90": ("late_gain_share", 0.90),
     "episode_age_p90": ("episode_age", 0.90),
+    "running_hot_p90": ("rsi14", 0.90),
 }
 
 #: The "fell back hard" barrier the analog card prints, and its horizon. Both are
@@ -231,8 +247,26 @@ def post_peak_drawdowns(close_df: pd.DataFrame, episodes: pd.DataFrame,
 # ══════════════════════════════════════════════════════════════════════════════
 # the library
 # ══════════════════════════════════════════════════════════════════════════════
-def build_library(panel: dict[str, pd.DataFrame], track: str) -> tuple[pd.DataFrame, dict]:
-    """EXT → episodes → race → peaks → the sampled analog library."""
+def build_library(panel: dict[str, pd.DataFrame], track: str,
+                  variant: str = "primary") -> tuple[pd.DataFrame, dict]:
+    """EXT → episodes → race → peaks → the sampled analog library.
+
+    ``variant`` selects the §4.1 EXTENSION DEFINITION this library is cut through
+    (`engine.top_anatomy.extended_mask`): `primary` (r126>=+0.50), `r63`
+    (r63>=+0.35) or `atrz` ((close-MA200)/ATR63>=6). EVERYTHING downstream — the
+    episodes, the race labels, the peaks, the sampled days and therefore every
+    P90/P10 cut in `build_thresholds` — is re-derived from that mask, so a tier's
+    library and its thresholds are cut from that tier's own history and from no
+    other's. That is the whole point: the surface may never borrow a threshold
+    across tiers, so the artifacts may not either.
+
+    The PANEL is deliberately shared across variants and this is sound, not a
+    shortcut: `research_top_anatomy_phase0._finish_panel` documents that panel
+    content is UPSTREAM of every EXT mask (`repair_bars` and
+    `split_identity_segments` read raw prints and tape gaps only), which is why a
+    panel is honestly stamped `ext_variant: None`. Re-running the harness per arm
+    would rebuild byte-identical panel frames.
+    """
     close = panel["close"]
     volume = panel.get("volume")
     dvol = ((close * volume).reindex_like(close)
@@ -249,8 +283,8 @@ def build_library(panel: dict[str, pd.DataFrame], track: str) -> tuple[pd.DataFr
     elig = ta.eligibility_mask(close, dvol, **floors)
     eqw = ta.equal_weight_median_index(close, elig, min_names=20)
 
-    say(f"[{track}] §4.1 EXT mask")
-    ext = ta.extended_mask(close, dvol, high_df=panel.get("high"),
+    say(f"[{track}] §4.1 EXT mask (variant={variant})")
+    ext = ta.extended_mask(close, dvol, variant=variant, high_df=panel.get("high"),
                            low_df=panel.get("low"), **floors)
     n_ext = int(ext.to_numpy().sum())
     say(f"[{track}] {n_ext} EXT days on {int((ext.sum() > 0).sum())} segments")
@@ -332,12 +366,20 @@ def build_library(panel: dict[str, pd.DataFrame], track: str) -> tuple[pd.DataFr
 
 
 def build_thresholds(lib: pd.DataFrame, track: str, diag: dict,
-                     panel_stamp: dict | None = None) -> dict:
+                     panel_stamp: dict | None = None,
+                     variant: str = "primary") -> dict:
     """P90/P10 of each leg feature over the library's CONTINUED-labelled days.
 
     CONTINUED is the reference population on purpose: a leg should fire when a
     name looks unlike the runs that KEPT GOING, so the yardstick is drawn from
     those runs and not from the pooled tape (which already contains the tops).
+
+    ``ext_variant`` is stamped into the artifact because these constants are
+    FROZEN into the nightly per tier. A reader — and
+    `engine.top_maturation.load_thresholds` — must be able to tell which
+    extension definition a threshold was cut through WITHOUT trusting a filename;
+    the surface's one hard rule is that no threshold crosses a tier boundary, and
+    a stamp is what makes that auditable after the fact.
     """
     ref = lib[lib["race_label"] == "CONTINUED"]
     if len(ref) < 200:                       # too thin to cut a tail on
@@ -354,6 +396,7 @@ def build_thresholds(lib: pd.DataFrame, track: str, diag: dict,
     return {
         "vintage_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "track": track,
+        "ext_variant": variant,
         "source": "scripts/export_top_anatomy_library.py",
         # WHICH PANEL these frozen constants were cut from. Carried in the
         # artifact so a reader can tell a run-1 threshold from a run-3 one without
@@ -382,12 +425,20 @@ def main(argv=None) -> int:
                     help="data root to WRITE into (default: this repo's data/)")
     ap.add_argument("--track", default="W", choices=("W", "D"),
                     help="which harness track's cache to export (default W)")
+    ap.add_argument("--variant", default="primary", choices=("primary", "r63", "atrz"),
+                    help="which §4.1 extension definition to cut this library through "
+                         "(default primary). Non-primary variants write SUFFIXED "
+                         "artifacts and never overwrite the frozen primary pair.")
     a = ap.parse_args(argv)
 
     out_root = a.root if a.root is not None else (_REPO / "data")
     out_dir = out_root / "top_anatomy"
     out_dir.mkdir(parents=True, exist_ok=True)
     cache = a.data_root / CACHE_SUBDIR / a.track
+    # The primary pair keeps its historical unsuffixed names — it is a frozen,
+    # committed artifact the nightly already reads, and renaming it would be a
+    # silent re-cut of the live board.
+    sfx = "" if a.variant == "primary" else f"_{a.variant}"
 
     say(f"reading harness panel cache {cache}")
     stamp = panel_identity_stamp(cache)
@@ -395,17 +446,19 @@ def main(argv=None) -> int:
     panel = load_panel(cache)
     say(f"panel: {panel['close'].shape[0]} sessions x {panel['close'].shape[1]} segments")
 
-    lib, diag = build_library(panel, a.track)
-    lib_path = out_dir / "library.parquet"
+    lib, diag = build_library(panel, a.track, variant=a.variant)
+    diag["ext_variant"] = a.variant
+    lib_path = out_dir / f"library{sfx}.parquet"
     lib.to_parquet(lib_path, index=False, compression="snappy")
     size_mb = lib_path.stat().st_size / 1e6
 
-    thr = build_thresholds(lib, a.track, diag, panel_stamp=stamp)
+    thr = build_thresholds(lib, a.track, diag, panel_stamp=stamp, variant=a.variant)
     thr["library_bytes"] = int(lib_path.stat().st_size)
-    (out_dir / "thresholds.json").write_text(json.dumps(thr, indent=2) + "\n")
+    thr_path = out_dir / f"thresholds{sfx}.json"
+    thr_path.write_text(json.dumps(thr, indent=2) + "\n")
 
     say(f"wrote {lib_path} — {len(lib)} rows, {size_mb:.1f} MB")
-    say(f"wrote {out_dir / 'thresholds.json'}")
+    say(f"wrote {thr_path}")
     for k, v in thr["thresholds"].items():
         say(f"  {k:24s} = {'null' if v is None else f'{v:.5g}'}")
     if size_mb > 10.0:

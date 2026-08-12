@@ -3670,3 +3670,1301 @@ class TestNaiveTimestampEventTs:
         assert ts_et == lf._minute_key(naive, BATCH_TS) == "11:07", (
             f"event ts→ET ({ts_et}) must equal the minute key "
             f"({lf._minute_key(naive, BATCH_TS)}) for the same trade_timestamp")
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# 37. Prospective owner-time Market Memory capture
+# ────────────────────────────────────────────────────────────────────────
+
+
+class TestProspectiveOptionsMarketMemoryCapture:
+    SESSION = "2026-08-12"
+    ANCHOR_TIME = datetime(2026, 8, 12, 13, 25, tzinfo=timezone.utc)
+    EVENT_TIME = "2026-08-12T13:40:00Z"
+    AVAILABLE_AT = "2026-08-12T13:41:01Z"
+
+    @staticmethod
+    def _event(root: str = "SPY") -> dict[str, Any]:
+        return {
+            "avg_price": 11.0,
+            "baseline_source": "floor",
+            "decision_at": "2026-08-12T13:41:00Z",
+            "dte": 0,
+            "dte_bucket": "0d",
+            "exp": "2026-08-12",
+            "group": "Index/ETF",
+            "group_zh": "指数/ETF",
+            "id": "abcdef1234567890",
+            "mny_bucket": "atm",
+            "n_prints": 10,
+            "observed_at": "2026-08-12T13:40:30Z",
+            "oi_vintage": "2026-08-11",
+            "premium": 1_100_000.0,
+            "premium_z": None,
+            "repeated": False,
+            "right": "C",
+            "root": root,
+            "selection_floor_usd": 1_000_000,
+            "selection_root_class": "etf_anchor",
+            "selection_rule": "premium_floor/v1",
+            "side": "mixed",
+            "signing_source": "tape",
+            "size": 1_000,
+            "strike": 700.0,
+            "swept": False,
+            "ts": TestProspectiveOptionsMarketMemoryCapture.EVENT_TIME,
+            "vol_gt_oi": True,
+            "zerodte": True,
+        }
+
+    @classmethod
+    def _enriched_event(cls, root: str = "SPY") -> dict[str, Any]:
+        event = cls._event(root)
+        event.update(
+            {
+                "available_at": cls.AVAILABLE_AT,
+                "published_at": None,
+                "source_snapshot_asof": cls.AVAILABLE_AT,
+                "anchor_strategy": "durable_available_at",
+            }
+        )
+        return event
+
+    @classmethod
+    def _anchor(cls) -> dict[str, Any]:
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        config_path = Path(__file__).resolve().parent.parent / "config" / "market_memory_canary.v1.json"
+        return capture._anchor_projection(
+            session_date=cls.SESSION,
+            config_body=config_path.read_bytes(),
+            observed_at=cls.ANCHOR_TIME,
+        )
+
+    def test_preopen_anchor_is_private_create_once_and_not_backfillable(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        config_path = Path(__file__).resolve().parent.parent / "config" / "market_memory_canary.v1.json"
+        root = tmp_path / "private-outbox"
+        monkeypatch.setattr(capture, "_utc_now", lambda: self.ANCHOR_TIME)
+        anchor = capture.create_or_load_session_anchor(
+            root, session_date=self.SESSION, config_path=config_path,
+        )
+        anchor_path = root / "anchors" / f"{self.SESSION}.json"
+        assert stat.S_IMODE(root.stat().st_mode) == 0o700
+        assert stat.S_IMODE(anchor_path.stat().st_mode) == 0o600
+        assert capture.validate_session_anchor(anchor) == anchor
+
+        # A restart after open can reuse exact pre-open bytes, but a fresh root
+        # cannot manufacture a same-session identity vintage after the fact.
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 31, tzinfo=timezone.utc),
+        )
+        assert capture.create_or_load_session_anchor(
+            root, session_date=self.SESSION, config_path=config_path,
+        ) == anchor
+        with pytest.raises(capture.OptionsEpisodeContextCaptureError, match="before the market open"):
+            capture.create_or_load_session_anchor(
+                tmp_path / "late-root",
+                session_date=self.SESSION,
+                config_path=config_path,
+            )
+
+    def test_request_preserves_owner_clocks_and_has_zero_authority(self):
+        from engine.neuralweb import market_memory
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        request = capture.build_capture_request(
+            anchor=self._anchor(),
+            owner_event=self._enriched_event(),
+            session_date=self.SESSION,
+        )
+        assert request is not None
+        clean = capture.validate_capture_request(request)
+        packet = clean["packet"]
+        assert packet["clocks"] == {
+            "event_time": self.EVENT_TIME,
+            "as_known_at": self.AVAILABLE_AT,
+            "knowledge_cutoff": self.AVAILABLE_AT,
+        }
+        assert packet["clocks"]["event_time"] != packet["clocks"]["as_known_at"]
+        assert len(packet["feature_receipts"]) == len(
+            market_memory.CANONICAL_FEATURE_REGISTRY
+        )
+        assert all(row["status"] == "missing" for row in packet["feature_receipts"])
+        assert all(
+            row["observed_at"] == self.AVAILABLE_AT
+            and row["missing_reason"] == "adapter_not_implemented"
+            for row in packet["feature_receipts"]
+        )
+        assert packet["authority"]["proposal_weight"] == 0
+        assert all(
+            value is False
+            for key, value in packet["authority"].items()
+            if key.startswith("may_")
+        )
+        assert clean["evidence_policy"]["episode_ledger_write_allowed"] is False
+        assert clean["evidence_policy"]["selector_impact_allowed"] is False
+
+    def test_unsupported_ticker_never_enters_private_outbox(self):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        assert capture.build_capture_request(
+            anchor=self._anchor(),
+            owner_event=self._enriched_event("QQQ"),
+            session_date=self.SESSION,
+        ) is None
+
+    def test_stage_hook_precommits_then_promotes_after_availability_fsync(
+        self, tmp_path, monkeypatch,
+    ):
+        import scripts.live_flow_poller as poller
+
+        stage_root = tmp_path / "events"
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(stage_root))
+        calls: list[tuple[str, bytes]] = []
+        parent_syncs: list[Path] = []
+        real_parent_sync = poller._fsync_directory
+
+        def tracked_parent_sync(path):
+            real_parent_sync(path)
+            parent_syncs.append(path)
+
+        monkeypatch.setattr(poller, "_fsync_directory", tracked_parent_sync)
+
+        class Dispatcher:
+            def prepare(self, *, owner_event, session_date):
+                raw = (stage_root / f"{session_date}.jsonl").read_bytes()
+                assert b'"kind":"decision"' in raw
+                assert b'"kind":"availability"' not in raw
+                assert owner_event["available_at"] == self_outer.AVAILABLE_AT
+                return owner_event
+
+            def stage(self, owner_event):
+                raw = (stage_root / f"{self_outer.SESSION}.jsonl").read_bytes()
+                assert b'"kind":"availability"' not in raw
+                calls.append(("stage", raw))
+
+            def availability_binding(self, _owner_event):
+                return {
+                    "request_id": "mmoptrequest_" + "a" * 64,
+                    "request_sha256": "b" * 64,
+                }
+
+            def commit(self, owner_event, *, owner_binding):
+                raw = (stage_root / f"{self_outer.SESSION}.jsonl").read_bytes()
+                assert b'"kind":"availability"' in raw
+                assert raw.endswith(b"\n")
+                assert len(parent_syncs) >= 2
+                assert owner_event["available_at"] == self_outer.AVAILABLE_AT
+                assert owner_binding["request_id"].startswith("mmoptrequest_")
+                calls.append(("commit", raw))
+
+            def recover(self, *, owner_event, session_date, owner_binding):
+                assert owner_event["available_at"] == self_outer.AVAILABLE_AT
+                assert len(parent_syncs) >= 3
+                assert owner_binding["request_sha256"] == "b" * 64
+                calls.append(("recover", b""))
+
+        self_outer = self
+        monkeypatch.setattr(poller, "_OPTIONS_CONTEXT_DISPATCHER", Dispatcher())
+        times = iter(
+            [
+                datetime(2026, 8, 12, 13, 41, tzinfo=timezone.utc),
+                datetime(2026, 8, 12, 13, 41, 1, tzinfo=timezone.utc),
+            ]
+        )
+        staged = poller._stage_raw_events(
+            self.SESSION, [self._event()], now_fn=lambda: next(times),
+        )
+        assert staged[0]["available_at"] == self.AVAILABLE_AT
+        assert [kind for kind, _raw in calls] == ["stage", "commit"]
+        replay = poller._stage_raw_events(
+            self.SESSION,
+            [self._event()],
+            now_fn=lambda: datetime(2026, 8, 12, 13, 42, tzinfo=timezone.utc),
+        )
+        assert replay == staged
+        assert [kind for kind, _raw in calls] == ["stage", "commit", "recover"]
+
+    def test_replay_promotes_only_an_exact_preavailability_precommit(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "capture-key"
+        key.write_text("test-only-key")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request = dispatcher.prepare(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        )
+        assert request is not None
+        request_id = dispatcher.stage(request)
+        assert request_id is not None
+        assert (dispatcher.prepared / f"{request_id}.json").exists()
+        assert not (dispatcher.pending / f"{request_id}.json").exists()
+
+        assert dispatcher.recover(
+            owner_event=self._enriched_event(),
+            session_date=self.SESSION,
+            owner_binding=capture.owner_availability_binding(request),
+        ) == request_id
+        assert not (dispatcher.prepared / f"{request_id}.json").exists()
+        assert (dispatcher.pending / f"{request_id}.json").exists()
+
+        # A legacy replay with no binding cannot manufacture a request.
+        fresh = capture.OptionsContextDispatcher(
+            tmp_path / "fresh-outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        assert fresh.recover(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        ) is None
+        assert list(fresh.prepared.iterdir()) == []
+        assert list(fresh.pending.iterdir()) == []
+
+        # A bound owner obligation with missing precommit bytes becomes an
+        # explicit permanent abstention, never a reconstructed request.
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+        assert fresh.recover(
+            owner_event=self._enriched_event(),
+            session_date=self.SESSION,
+            owner_binding=capture.owner_availability_binding(request),
+        ) == request_id
+        receipt = json.loads((fresh.receipts / f"{request_id}.json").read_text())
+        assert receipt["status"] == "abstained_missing_proven_precommit"
+
+    def test_parent_durability_failure_keeps_precommit_non_sendable(
+        self, tmp_path, monkeypatch,
+    ):
+        import scripts.live_flow_poller as poller
+
+        stage_root = tmp_path / "events"
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(stage_root))
+        calls: list[str] = []
+
+        class Dispatcher:
+            def prepare(self, *, owner_event, session_date):
+                return owner_event
+
+            def stage(self, owner_event):
+                calls.append("stage")
+
+            def commit(self, owner_event):
+                calls.append("commit")
+
+        monkeypatch.setattr(poller, "_OPTIONS_CONTEXT_DISPATCHER", Dispatcher())
+        real_parent_sync = poller._fsync_directory
+
+        def fail_final_parent_sync(path):
+            stage_path = stage_root / f"{self.SESSION}.jsonl"
+            if stage_path.exists() and b'"kind":"availability"' in stage_path.read_bytes():
+                raise OSError("injected parent fsync failure")
+            real_parent_sync(path)
+
+        monkeypatch.setattr(poller, "_fsync_directory", fail_final_parent_sync)
+        times = iter(
+            [
+                datetime(2026, 8, 12, 13, 41, tzinfo=timezone.utc),
+                datetime(2026, 8, 12, 13, 41, 1, tzinfo=timezone.utc),
+            ]
+        )
+
+        with pytest.raises(OSError, match="parent fsync"):
+            poller._stage_raw_events(
+                self.SESSION, [self._event()], now_fn=lambda: next(times),
+            )
+        assert calls == ["stage"]
+
+    def test_forced_transport_acknowledges_only_exact_response(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+        from engine.neuralweb import market_memory_pit
+
+        key = tmp_path / "capture-key"
+        key.write_text("test-only-key")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request_id = dispatcher.enqueue(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        )
+        assert request_id is not None
+        pending = dispatcher.pending / f"{request_id}.json"
+        request = capture.validate_capture_request(
+            json.loads(pending.read_text())
+        )
+        packet = request["packet"]
+        query, _event_dt, _cutoff_dt = market_memory_pit._normalize_query(
+            subject=packet["subject"],
+            event_time=packet["clocks"]["event_time"],
+            as_known_at=packet["clocks"]["as_known_at"],
+            mode="operational_pit",
+            reject_future_cutoff=False,
+        )
+        response = {
+            "schema": capture.RESPONSE_SCHEMA,
+            "status": "captured",
+            "request_id": request_id,
+            "capture_id": "mmcapture_" + "a" * 64,
+            "query_id": market_memory_pit._query_id(query),
+            "context_id": packet["context_id"],
+            "packet_sha256": hashlib.sha256(
+                capture._canonical_bytes(packet)
+            ).hexdigest(),
+            "event_time": self.EVENT_TIME,
+            "as_known_at": self.AVAILABLE_AT,
+            "store_id": "mmstore_" + "c" * 64,
+            "generation_id": "mmgeneration_" + "d" * 64,
+            "generation_sha256": "e" * 64,
+            "generation_capture_count": 1,
+            "authority": packet["authority"],
+        }
+
+        seen: dict[str, Any] = {}
+
+        class Process:
+            returncode = 0
+
+            def communicate(self, *, input=None, timeout=None):
+                seen["input"] = input
+                return capture._canonical_bytes(response) + b"\n", b""
+
+        def popen(command, **kwargs):
+            seen["command"] = command
+            seen["popen_kwargs"] = kwargs
+            return Process()
+
+        monkeypatch.setattr(capture.subprocess, "Popen", popen)
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+        assert dispatcher.flush_pending() == {
+            "captured": 1, "expired": 0, "unknown": 0, "pending": 0,
+        }
+        assert seen["command"][-1] == "root@146.190.142.17"
+        assert "ClearAllForwardings=yes" in seen["command"]
+        assert request_id.encode() in seen["input"]
+        assert not pending.exists()
+        receipt_path = dispatcher.receipts / f"{request_id}.json"
+        assert stat.S_IMODE(receipt_path.stat().st_mode) == 0o600
+        receipt = json.loads(receipt_path.read_text())
+        assert capture.validate_transport_receipt(
+            receipt, request=request,
+        )["status"] == "captured"
+
+        # A crash after the terminal receipt fsync but before pending unlink is
+        # recoverable without changing the authenticated completion clock.
+        pending.write_bytes(capture._canonical_bytes(request))
+        pending.chmod(0o600)
+        original_receipt = receipt_path.read_bytes()
+        assert dispatcher.flush_pending() == {
+            "captured": 0, "expired": 0, "unknown": 0, "pending": 0,
+        }
+        assert receipt_path.read_bytes() == original_receipt
+
+    def test_unpromoted_precommit_expires_as_a_private_abstention(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "capture-key"
+        key.write_text("test-only-key")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request = dispatcher.prepare(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        )
+        assert request is not None
+        request_id = dispatcher.stage(request)
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 55, tzinfo=timezone.utc),
+        )
+        assert dispatcher.flush_pending() == {
+            "captured": 0, "expired": 1, "unknown": 0, "pending": 0,
+        }
+        receipt = json.loads(
+            (dispatcher.receipts / f"{request_id}.json").read_text()
+        )
+        assert capture.validate_transport_receipt(
+            receipt, request=request,
+        )["status"] == "expired_before_owner_availability"
+        assert list(dispatcher.prepared.glob("*.json")) == []
+
+    def test_lost_ack_is_durable_unknown_and_never_false_pretransport_expiry(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "capture-key"
+        key.write_text("test-only-key")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request_id = dispatcher.enqueue(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        )
+        assert request_id is not None
+        request = capture.validate_capture_request(
+            json.loads((dispatcher.pending / f"{request_id}.json").read_text())
+        )
+        clocks = iter(
+            [
+                datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+                datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+                datetime(2026, 8, 12, 13, 41, 32, tzinfo=timezone.utc),
+            ]
+        )
+        monkeypatch.setattr(capture, "_utc_now", lambda: next(clocks))
+        transport_calls = 0
+
+        class LostAckProcess:
+            returncode = None
+
+            def communicate(self, **_kwargs):
+                raise capture.subprocess.TimeoutExpired("ssh", 30)
+
+            def kill(self):
+                return None
+
+        def lose_ack(*_args, **_kwargs):
+            nonlocal transport_calls
+            transport_calls += 1
+            return LostAckProcess()
+
+        monkeypatch.setattr(capture.subprocess, "Popen", lose_ack)
+        assert dispatcher.flush_pending() == {
+            "captured": 0, "expired": 0, "unknown": 1, "pending": 0,
+        }
+        intent_paths = list(dispatcher.intents.glob("*.json"))
+        assert len(intent_paths) == 1
+        intent = json.loads(intent_paths[0].read_text())
+        assert capture.validate_transport_batch_intent(
+            intent, requests=[request],
+        )["status"] == "durable_transport_intent"
+        assert (dispatcher.intent_proofs / intent_paths[0].name).exists()
+        receipt_path = dispatcher.receipts / f"{request_id}.json"
+        receipt = json.loads(receipt_path.read_text())
+        assert capture.validate_transport_receipt(
+            receipt, request=request,
+        )["status"] == "outcome_unknown_after_durable_transport_intent"
+
+        original = receipt_path.read_bytes()
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 14, 5, tzinfo=timezone.utc),
+        )
+        assert dispatcher.flush_pending() == {
+            "captured": 0, "expired": 0, "unknown": 0, "pending": 0,
+        }
+        assert transport_calls == 1
+        assert receipt_path.read_bytes() == original
+
+    def test_drain_sends_fifteen_owner_requests_in_two_bounded_batches(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+        from engine.neuralweb import market_memory_pit
+
+        key = tmp_path / "capture-key"
+        key.write_text("test-only-key")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        for index in range(15):
+            event = self._enriched_event()
+            event["id"] = f"{index:016x}"
+            assert dispatcher.enqueue(
+                owner_event=event, session_date=self.SESSION,
+            ) is not None
+
+        batch_sizes: list[int] = []
+
+        def respond(batch: bytes) -> bytes:
+            requests = [
+                capture.validate_capture_request(json.loads(line))
+                for line in batch.splitlines()
+            ]
+            batch_sizes.append(len(requests))
+            responses = []
+            for request in requests:
+                packet = request["packet"]
+                query, _event_dt, _cutoff_dt = market_memory_pit._normalize_query(
+                    subject=packet["subject"],
+                    event_time=packet["clocks"]["event_time"],
+                    as_known_at=packet["clocks"]["as_known_at"],
+                    mode="operational_pit",
+                    reject_future_cutoff=False,
+                )
+                responses.append(
+                    {
+                        "schema": capture.RESPONSE_SCHEMA,
+                        "status": "captured",
+                        "request_id": request["request_id"],
+                        "capture_id": "mmcapture_"
+                        + request["request_id"].removeprefix("mmoptrequest_"),
+                        "query_id": market_memory_pit._query_id(query),
+                        "context_id": packet["context_id"],
+                        "packet_sha256": hashlib.sha256(
+                            capture._canonical_bytes(packet)
+                        ).hexdigest(),
+                        "event_time": packet["clocks"]["event_time"],
+                        "as_known_at": packet["clocks"]["as_known_at"],
+                        "store_id": "mmstore_" + "c" * 64,
+                        "generation_id": "mmgeneration_" + "d" * 64,
+                        "generation_sha256": "e" * 64,
+                        "generation_capture_count": 15,
+                        "authority": packet["authority"],
+                    }
+                )
+            return b"".join(
+                capture._canonical_bytes(response) + b"\n"
+                for response in responses
+            )
+
+        class Process:
+            returncode = 0
+
+            def communicate(self, *, input=None, timeout=None):
+                return respond(input), b""
+
+        monkeypatch.setattr(
+            capture.subprocess, "Popen", lambda *_args, **_kwargs: Process()
+        )
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+
+        assert dispatcher.drain_pending() == {
+            "captured": 15, "expired": 0, "unknown": 0, "pending": 0,
+        }
+        assert batch_sizes == [8, 7]
+        assert len(list(dispatcher.receipts.glob("*.json"))) == 15
+
+    def test_remote_writer_is_idempotent_and_exact(self, tmp_path, monkeypatch):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+        from engine.neuralweb import market_memory_pit
+        from scripts import capture_market_memory_context as writer
+
+        request = capture.build_capture_request(
+            anchor=self._anchor(),
+            owner_event=self._enriched_event(),
+            session_date=self.SESSION,
+        )
+        assert request is not None
+        monkeypatch.setattr(
+            market_memory_pit,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+        body = capture._canonical_bytes(request) + b"\n"
+        first, rejected = writer.capture_options_request_batch(
+            body, store=tmp_path / "w1a"
+        )
+        second, rejected_again = writer.capture_options_request_batch(
+            body, store=tmp_path / "w1a"
+        )
+        assert rejected == rejected_again == 0
+        assert first == second
+        assert first[0]["event_time"] == self.EVENT_TIME
+        assert first[0]["as_known_at"] == self.AVAILABLE_AT
+        reader = market_memory_pit.FileAsKnownAtReader(tmp_path / "w1a")
+        stored = reader.read_stored_as_known_at(
+            subject=request["packet"]["subject"],
+            event_time=self.EVENT_TIME,
+            as_known_at=self.AVAILABLE_AT,
+        )
+        assert stored.packet["context_id"] == request["packet"]["context_id"]
+
+    def test_remote_batch_responses_share_one_final_cached_active_head(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+        from engine.neuralweb import market_memory_pit
+        from scripts import capture_market_memory_context as writer
+
+        first = capture.build_capture_request(
+            anchor=self._anchor(),
+            owner_event=self._enriched_event(),
+            session_date=self.SESSION,
+        )
+        second_event = self._enriched_event()
+        second_event.update(
+            {
+                "id": "abcdef1234567891",
+                "ts": "2026-08-12T13:40:10Z",
+                "observed_at": "2026-08-12T13:40:40Z",
+                "decision_at": "2026-08-12T13:41:10Z",
+                "available_at": "2026-08-12T13:41:11Z",
+                "source_snapshot_asof": "2026-08-12T13:41:11Z",
+            }
+        )
+        second = capture.build_capture_request(
+            anchor=self._anchor(),
+            owner_event=second_event,
+            session_date=self.SESSION,
+        )
+        assert first is not None and second is not None
+        monkeypatch.setattr(
+            market_memory_pit,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 12, tzinfo=timezone.utc),
+        )
+        active_reads = 0
+        real_read = market_memory_pit.FileAsKnownAtReader.read_active_generation
+
+        def tracked_read(reader):
+            nonlocal active_reads
+            active_reads += 1
+            return real_read(reader)
+
+        monkeypatch.setattr(
+            market_memory_pit.FileAsKnownAtReader,
+            "read_active_generation",
+            tracked_read,
+        )
+        responses, rejected = writer.capture_options_request_batch(
+            capture._canonical_bytes(first)
+            + b"\n"
+            + capture._canonical_bytes(second)
+            + b"\n",
+            store=tmp_path / "w1a",
+        )
+        assert rejected == 0
+        assert len(responses) == 2
+        assert active_reads == 1
+        assert {row["generation_id"] for row in responses} == {
+            responses[0]["generation_id"]
+        }
+        assert {row["generation_sha256"] for row in responses} == {
+            responses[0]["generation_sha256"]
+        }
+        assert {row["generation_capture_count"] for row in responses} == {2}
+
+    def test_private_outbox_mkdir_chain_is_parent_durable_and_mode_checked(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        synced: list[Path] = []
+        real_sync = capture._fsync_directory
+
+        def track(path):
+            real_sync(path)
+            synced.append(path)
+
+        monkeypatch.setattr(capture, "_fsync_directory", track)
+        root = tmp_path / "nested" / "private" / "outbox"
+        key = tmp_path / "key"
+        key.write_text("test")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            root,
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        assert root.parent in synced
+        assert root in synced
+        assert stat.S_IMODE(root.stat().st_mode) == 0o700
+        dispatcher.prepared.chmod(0o755)
+        with pytest.raises(
+            capture.OptionsEpisodeContextCaptureError,
+            match="owned private directory",
+        ):
+            capture.OptionsContextDispatcher(
+                root,
+                anchor=self._anchor(),
+                ssh_target="root@146.190.142.17",
+                ssh_key=key,
+            )
+
+    def test_interrupted_private_mkdir_is_reproved_on_retry(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        root = tmp_path / "nested" / "outbox"
+        real_sync = capture._fsync_directory
+        failed = False
+
+        def fail_root_link_once(path):
+            nonlocal failed
+            if path == root.parent and root.exists() and not failed:
+                failed = True
+                raise OSError("injected mkdir parent fsync")
+            real_sync(path)
+
+        monkeypatch.setattr(capture, "_fsync_directory", fail_root_link_once)
+        with pytest.raises(OSError, match="mkdir parent"):
+            capture._private_directory(root)
+        assert root.exists()
+        monkeypatch.setattr(capture, "_fsync_directory", real_sync)
+        assert capture._private_directory(root) == root
+        assert stat.S_IMODE(root.stat().st_mode) == 0o700
+
+    @pytest.mark.parametrize(
+        "fault",
+        ["file_fsync", "link", "link_parent_fsync", "temp_cleanup_fsync"],
+    )
+    def test_create_once_fault_matrix_never_leaves_a_temp_or_false_success(
+        self, tmp_path, monkeypatch, fault,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        root = capture._private_directory(tmp_path / "outbox")
+        child = capture._private_child(root, "prepared")
+        path = child / ("mmoptrequest_" + "a" * 64 + ".json")
+        body = b'{"request":"bounded"}'
+        if fault == "file_fsync":
+            real_fsync = capture.os.fsync
+            failed = False
+
+            def fail_file_once(descriptor):
+                nonlocal failed
+                if stat.S_ISREG(capture.os.fstat(descriptor).st_mode) and not failed:
+                    failed = True
+                    raise OSError("injected file fsync")
+                real_fsync(descriptor)
+
+            monkeypatch.setattr(capture.os, "fsync", fail_file_once)
+        elif fault == "link":
+            monkeypatch.setattr(
+                capture.os,
+                "link",
+                lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                    OSError("injected link")
+                ),
+            )
+        else:
+            real_sync = capture._fsync_directory
+            calls = 0
+
+            def fail_selected_parent(directory):
+                nonlocal calls
+                if (
+                    fault == "link_parent_fsync"
+                    and directory == child
+                    and path.exists()
+                ) or (
+                    fault == "temp_cleanup_fsync"
+                    and directory == child / capture._TEMP_DIRECTORY
+                    and path.exists()
+                ):
+                    calls += 1
+                    if calls == 1:
+                        raise OSError(f"injected {fault}")
+                real_sync(directory)
+
+            monkeypatch.setattr(capture, "_fsync_directory", fail_selected_parent)
+
+        with pytest.raises(capture.OptionsEpisodeContextCaptureError):
+            capture._write_create_once(path, body, label="fault matrix object")
+        temporary_files = list(
+            (child / capture._TEMP_DIRECTORY).glob("*.tmp")
+        )
+        assert temporary_files == []
+        if fault in {"link_parent_fsync", "temp_cleanup_fsync"}:
+            assert path.exists()
+        else:
+            assert not path.exists()
+
+    def test_unproven_anchor_visible_after_failed_parent_sync_abstains_after_open(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        root = tmp_path / "outbox"
+        config_path = (
+            Path(__file__).resolve().parent.parent
+            / "config"
+            / "market_memory_canary.v1.json"
+        )
+        monkeypatch.setattr(capture, "_utc_now", lambda: self.ANCHOR_TIME)
+        real_sync = capture._fsync_directory
+        failed = False
+
+        def fail_anchor_parent_once(path):
+            nonlocal failed
+            anchor_path = root / "anchors" / f"{self.SESSION}.json"
+            if path == root / "anchors" and anchor_path.exists() and not failed:
+                failed = True
+                raise OSError("injected anchor parent fsync")
+            real_sync(path)
+
+        monkeypatch.setattr(capture, "_fsync_directory", fail_anchor_parent_once)
+        with pytest.raises(
+            capture.OptionsEpisodeContextCaptureError, match="publish immutable"
+        ):
+            capture.create_or_load_session_anchor(
+                root, session_date=self.SESSION, config_path=config_path
+            )
+        assert (root / "anchors" / f"{self.SESSION}.json").exists()
+        assert not (root / "anchor_proofs" / f"{self.SESSION}.json").exists()
+
+        monkeypatch.setattr(capture, "_fsync_directory", real_sync)
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 31, tzinfo=timezone.utc),
+        )
+        with pytest.raises(
+            capture.OptionsEpisodeContextCaptureError,
+            match="unproven session anchor after open",
+        ):
+            capture.create_or_load_session_anchor(
+                root, session_date=self.SESSION, config_path=config_path
+            )
+
+    def test_temporary_unlink_failure_is_reconciled_without_jamming_state_scan(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "key"
+        key.write_text("test")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request = dispatcher.prepare(
+            owner_event=self._enriched_event(), session_date=self.SESSION
+        )
+        assert request is not None
+        real_unlink = capture.Path.unlink
+        failed = False
+
+        def fail_temporary_unlink_once(path, *args, **kwargs):
+            nonlocal failed
+            if path.parent.name == capture._TEMP_DIRECTORY and not failed:
+                failed = True
+                raise OSError("injected temporary unlink failure")
+            return real_unlink(path, *args, **kwargs)
+
+        monkeypatch.setattr(capture.Path, "unlink", fail_temporary_unlink_once)
+        with pytest.raises(
+            capture.OptionsEpisodeContextCaptureError,
+            match="clean temporary",
+        ):
+            dispatcher.stage(request)
+        assert list((dispatcher.prepared / capture._TEMP_DIRECTORY).glob("*.tmp"))
+
+        monkeypatch.setattr(capture.Path, "unlink", real_unlink)
+        assert dispatcher.stage(request) == request["request_id"]
+        assert [path.name for path in dispatcher._files(dispatcher.prepared)] == [
+            f"{request['request_id']}.json"
+        ]
+        assert not list(
+            (dispatcher.prepared / capture._TEMP_DIRECTORY).glob("*.tmp")
+        )
+
+    def test_unproven_precommit_after_owner_availability_is_terminal_abstention(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "key"
+        key.write_text("test")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request = dispatcher.prepare(
+            owner_event=self._enriched_event(), session_date=self.SESSION
+        )
+        assert request is not None
+        real_sync = capture._fsync_directory
+        failed = False
+
+        def fail_prepared_parent_once(path):
+            nonlocal failed
+            final = dispatcher.prepared / f"{request['request_id']}.json"
+            if path == dispatcher.prepared and final.exists() and not failed:
+                failed = True
+                raise OSError("injected prepared parent fsync")
+            real_sync(path)
+
+        monkeypatch.setattr(capture, "_fsync_directory", fail_prepared_parent_once)
+        with pytest.raises(capture.OptionsEpisodeContextCaptureError):
+            dispatcher.stage(request)
+        monkeypatch.setattr(capture, "_fsync_directory", real_sync)
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+        assert not (
+            dispatcher.prepared_proofs / f"{request['request_id']}.json"
+        ).exists()
+        owner_path = dispatcher.owner_available / f"{request['request_id']}.json"
+        capture._write_create_once(
+            owner_path,
+            capture._canonical_bytes(capture._owner_availability_receipt(request)),
+            label="owner availability receipt",
+            recover_existing=True,
+        )
+        with pytest.raises(
+            capture.OptionsEpisodeContextCaptureError,
+            match="cannot repair.*after owner availability",
+        ):
+            dispatcher.stage(request)
+        assert dispatcher.commit(
+            request, owner_binding=capture.owner_availability_binding(request)
+        ) == request["request_id"]
+        receipt = json.loads(
+            (dispatcher.receipts / f"{request['request_id']}.json").read_text()
+        )
+        assert receipt["status"] == "abstained_unproven_precommit"
+        assert not (dispatcher.prepared / f"{request['request_id']}.json").exists()
+
+    def test_visible_pending_after_failed_parent_sync_is_reproved_from_owner_receipt(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "key"
+        key.write_text("test")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request = dispatcher.prepare(
+            owner_event=self._enriched_event(), session_date=self.SESSION
+        )
+        assert request is not None
+        dispatcher.stage(request)
+        real_sync = capture._fsync_directory
+        failed = False
+
+        def fail_pending_parent_once(path):
+            nonlocal failed
+            final = dispatcher.pending / f"{request['request_id']}.json"
+            if path == dispatcher.pending and final.exists() and not failed:
+                failed = True
+                raise OSError("injected pending parent fsync")
+            real_sync(path)
+
+        monkeypatch.setattr(capture, "_fsync_directory", fail_pending_parent_once)
+        with pytest.raises(capture.OptionsEpisodeContextCaptureError):
+            dispatcher.commit(
+                request, owner_binding=capture.owner_availability_binding(request)
+            )
+        monkeypatch.setattr(capture, "_fsync_directory", real_sync)
+        assert dispatcher.commit(
+            request, owner_binding=capture.owner_availability_binding(request)
+        ) == request["request_id"]
+        assert (dispatcher.pending / f"{request['request_id']}.json").exists()
+        assert (
+            dispatcher.pending_proofs / f"{request['request_id']}.json"
+        ).exists()
+
+    def test_visible_terminal_receipt_must_resync_parent_before_state_delete(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "key"
+        key.write_text("test")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request_id = dispatcher.enqueue(
+            owner_event=self._enriched_event(), session_date=self.SESSION
+        )
+        assert request_id is not None
+        pending = dispatcher.pending / f"{request_id}.json"
+        request = capture.validate_capture_request(json.loads(pending.read_text()))
+        receipt = dispatcher._transport_receipt(
+            request=request,
+            status="pretransport_spawn_error",
+            response=None,
+            completed_at=datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+        receipt_path = dispatcher.receipts / f"{request_id}.json"
+        receipt_path.write_bytes(capture._canonical_bytes(receipt))
+        receipt_path.chmod(0o600)
+        real_sync = capture._fsync_directory
+
+        def fail_receipt_sync(path):
+            if path == dispatcher.receipts:
+                raise OSError("injected receipt parent fsync")
+            real_sync(path)
+
+        monkeypatch.setattr(capture, "_fsync_directory", fail_receipt_sync)
+        with pytest.raises(OSError, match="receipt parent"):
+            dispatcher.flush_pending()
+        assert pending.exists()
+
+    def test_owner_binding_survives_commit_error_and_replays_before_wal_clear(
+        self, tmp_path, monkeypatch,
+    ):
+        import scripts.live_flow_poller as poller
+
+        stage_root = tmp_path / "events"
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(stage_root))
+        calls: list[tuple[str, dict]] = []
+
+        class Dispatcher:
+            def prepare(self, *, owner_event, session_date):
+                return owner_event
+
+            def stage(self, owner_event):
+                return owner_event["id"]
+
+            def availability_binding(self, _owner_event):
+                return {
+                    "request_id": "mmoptrequest_" + "a" * 64,
+                    "request_sha256": "b" * 64,
+                }
+
+            def commit(self, owner_event, *, owner_binding):
+                calls.append(("commit", dict(owner_binding)))
+                raise RuntimeError("injected commit failure")
+
+            def recover(self, *, owner_event, session_date, owner_binding):
+                calls.append(("recover", dict(owner_binding)))
+
+        dispatcher = Dispatcher()
+        monkeypatch.setattr(poller, "_OPTIONS_CONTEXT_DISPATCHER", dispatcher)
+        times = iter(
+            [
+                datetime(2026, 8, 12, 13, 41, tzinfo=timezone.utc),
+                datetime(2026, 8, 12, 13, 41, 1, tzinfo=timezone.utc),
+            ]
+        )
+        with pytest.raises(RuntimeError, match="commit failure"):
+            poller._stage_raw_events(
+                self.SESSION, [self._event()], now_fn=lambda: next(times)
+            )
+        records = [json.loads(line) for line in (
+            stage_root / f"{self.SESSION}.jsonl"
+        ).read_text().splitlines()]
+        binding = records[-1]["context_capture"]
+        assert binding == {
+            "status": "prepared",
+            "request_id": "mmoptrequest_" + "a" * 64,
+            "request_sha256": "b" * 64,
+        }
+
+        dispatcher.commit = lambda *_args, **_kwargs: None
+        poller._stage_raw_events(
+            self.SESSION,
+            [self._event()],
+            now_fn=lambda: datetime(2026, 8, 12, 13, 42, tzinfo=timezone.utc),
+        )
+        assert calls[-1] == (
+            "recover",
+            {
+                "request_id": "mmoptrequest_" + "a" * 64,
+                "request_sha256": "b" * 64,
+            },
+        )
+
+    @pytest.mark.parametrize(
+        ("failure", "expected_status", "expected_unknown"),
+        [
+            ("intent", "pretransport_intent_publication_error", 0),
+            ("spawn", "pretransport_spawn_error", 0),
+            (
+                "timeout",
+                "outcome_unknown_after_durable_transport_intent",
+                1,
+            ),
+            (
+                "communicate_oserror",
+                "outcome_unknown_after_durable_transport_intent",
+                1,
+            ),
+        ],
+    )
+    def test_transport_fault_statuses_never_invent_a_launch(
+        self, tmp_path, monkeypatch, failure, expected_status, expected_unknown,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "key"
+        key.write_text("test")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / failure,
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request_id = dispatcher.enqueue(
+            owner_event=self._enriched_event(), session_date=self.SESSION
+        )
+        assert request_id is not None
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+        launched = 0
+        if failure == "intent":
+            real_publish = capture._write_proven_create_once
+
+            def fail_intent(path, body, **kwargs):
+                if kwargs.get("label") == "transport batch intent":
+                    capture._write_create_once(
+                        path, body, label="partial transport batch intent"
+                    )
+                    raise capture.OptionsEpisodeContextCaptureError(
+                        "injected intent publication error"
+                    )
+                return real_publish(path, body, **kwargs)
+
+            monkeypatch.setattr(capture, "_write_proven_create_once", fail_intent)
+
+            def must_not_launch(*_args, **_kwargs):
+                raise AssertionError("partial intent must not launch transport")
+
+            monkeypatch.setattr(capture.subprocess, "Popen", must_not_launch)
+        elif failure == "spawn":
+            def spawn_error(*_args, **_kwargs):
+                nonlocal launched
+                launched += 1
+                raise OSError("exec did not spawn")
+
+            monkeypatch.setattr(capture.subprocess, "Popen", spawn_error)
+        else:
+            class BrokenProcess:
+                returncode = None
+
+                def communicate(self, **_kwargs):
+                    if failure == "timeout":
+                        raise capture.subprocess.TimeoutExpired("ssh", 30)
+                    raise OSError("injected communicate failure after spawn")
+
+                def kill(self):
+                    return None
+
+            def spawned(*_args, **_kwargs):
+                nonlocal launched
+                launched += 1
+                return BrokenProcess()
+
+            monkeypatch.setattr(capture.subprocess, "Popen", spawned)
+
+        result = dispatcher.flush_pending()
+        assert result["unknown"] == expected_unknown
+        receipt = json.loads(
+            (dispatcher.receipts / f"{request_id}.json").read_text()
+        )
+        assert receipt["status"] == expected_status
+        assert launched == (0 if failure == "intent" else 1)
+
+    def test_restart_at_durable_intent_spawn_seam_is_exact_unknown_without_launch(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "key"
+        key.write_text("test")
+        key.chmod(0o600)
+        root = tmp_path / "outbox"
+        dispatcher = capture.OptionsContextDispatcher(
+            root,
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request_id = dispatcher.enqueue(
+            owner_event=self._enriched_event(), session_date=self.SESSION
+        )
+        assert request_id is not None
+        request = capture.validate_capture_request(
+            json.loads((dispatcher.pending / f"{request_id}.json").read_text())
+        )
+        intended = datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc)
+        dispatcher._start_batch_intent(requests=[request], intended_at=intended)
+
+        restarted = capture.OptionsContextDispatcher(
+            root,
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        monkeypatch.setattr(capture, "_utc_now", lambda: intended)
+        monkeypatch.setattr(
+            capture.subprocess,
+            "Popen",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("restart must not retry a durable intent")
+            ),
+        )
+        assert restarted.flush_pending()["unknown"] == 1
+        receipt = json.loads(
+            (restarted.receipts / f"{request_id}.json").read_text()
+        )
+        assert receipt["status"] == (
+            "outcome_unknown_after_durable_transport_intent"
+        )
+
+    def test_launchd_arms_only_the_forced_private_lane(self):
+        import plistlib
+
+        repo = Path(__file__).resolve().parent.parent
+        payload = plistlib.loads(
+            (repo / "ops/launchd/com.mastermind.liveflow.plist").read_bytes()
+        )
+        env = payload["EnvironmentVariables"]
+        assert env["MARKET_MEMORY_OPTIONS_CONTEXT_CAPTURE"] == "1"
+        assert env["MARKET_MEMORY_OPTIONS_CONTEXT_SSH_TARGET"] == "root@146.190.142.17"
+        assert env["MARKET_MEMORY_OPTIONS_CONTEXT_SSH_KEY"].endswith(
+            "/.ssh/market_memory_options_context_capture"
+        )

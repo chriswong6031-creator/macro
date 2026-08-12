@@ -1,0 +1,62 @@
+{
+  "vintage_utc": "2026-08-11T18:25:28Z",
+  "track": "W",
+  "ext_variant": "r63",
+  "source": "scripts/export_top_anatomy_library.py",
+  "panel_identity": {
+    "residual_up_ratio_break": 3.0,
+    "repair_arm": "sanity-segmented",
+    "n_segments": 9725,
+    "n_tickers": 8317
+  },
+  "reference_population": "CONTINUED-labelled days in the library",
+  "n_reference_rows": 14638,
+  "n_library_rows": 29801,
+  "n_library_episodes": 6734,
+  "window_start": "2022-07-18",
+  "window_end": "2026-07-02",
+  "fell_back_hard_drawdown_pct": 20,
+  "fell_back_hard_horizon_td": 63,
+  "post_peak_window_td": 126,
+  "thresholds": {
+    "rs_peak_lag_p90": 17.0,
+    "rs_decel_p10": -0.011791552416980267,
+    "effort_result_p10": -0.2202281802892685,
+    "updown_volume_p10": 0.9624897241592407,
+    "vol_asymmetry_p90": 1.005782961845398,
+    "late_verticality_p90": 0.9222153425216675,
+    "episode_age_p90": 61.0,
+    "running_hot_p90": 79.20891571044922
+  },
+  "coverage": {
+    "rs_peak_lag_p90": 1.0,
+    "rs_decel_p10": 1.0,
+    "effort_result_p10": 0.9794,
+    "updown_volume_p10": 0.9999,
+    "vol_asymmetry_p90": 0.9998,
+    "late_verticality_p90": 1.0,
+    "episode_age_p90": 1.0,
+    "running_hot_p90": 1.0
+  },
+  "diagnostics": {
+    "n_ext_days": 151325,
+    "n_episodes": 8244,
+    "n_sampled_days": 30265,
+    "n_rows": 29801,
+    "n_dropped_incomplete_knn_dims": 464,
+    "n_names": 3175,
+    "n_library_episodes": 6734,
+    "race_label_counts": {
+      "CONTINUED": 14638,
+      "TOPPED": 11966,
+      "CENSORED": 3197
+    },
+    "episode_outcome_counts": {
+      "TOPPED": 18914,
+      "SURVIVED": 10887
+    },
+    "fell_back_hard_rate": 0.5179356397436328,
+    "ext_variant": "r63"
+  },
+  "library_bytes": 2187175
+}

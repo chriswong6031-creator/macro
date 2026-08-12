@@ -1057,6 +1057,76 @@ def test_a_collect_run_binds_the_active_manifest_and_appends_the_o1a_receipt(
     ).hexdigest()
 
 
+def test_collect_uses_the_root_owned_environment_contact(lane, cohort_a):
+    lane.activate(cohort_a)
+    captured = {}
+
+    def transport_factory(**kwargs):
+        captured.update(kwargs)
+        return FakeTransport(COHORT_A)
+
+    code, _, err = _run_cli(
+        lane,
+        environ={
+            "BIOCATALYST_FIXED_COHORT_TRANSPORT_ENABLED": "1",
+            "BIOCATALYST_FIXED_COHORT_USER_AGENT": (
+                "MastermindX-BioCatalyst/1.0 (biocatalyst@mastermind-x.com)"
+            ),
+        },
+        transport_factory=transport_factory,
+    )
+
+    assert code == cli.EXIT_OK, err
+    assert captured["user_agent"] == (
+        "MastermindX-BioCatalyst/1.0 (biocatalyst@mastermind-x.com)"
+    )
+
+
+def test_explicit_user_agent_overrides_the_environment_contact(lane, cohort_a):
+    lane.activate(cohort_a)
+    captured = {}
+
+    def transport_factory(**kwargs):
+        captured.update(kwargs)
+        return FakeTransport(COHORT_A)
+
+    code, _, err = _run_cli(
+        lane,
+        environ={
+            "BIOCATALYST_FIXED_COHORT_TRANSPORT_ENABLED": "1",
+            "BIOCATALYST_FIXED_COHORT_USER_AGENT": "environment contact",
+        },
+        extra=["--user-agent", "explicit contact"],
+        transport_factory=transport_factory,
+    )
+
+    assert code == cli.EXIT_OK, err
+    assert captured["user_agent"] == "explicit contact"
+
+
+def test_an_invalid_environment_contact_fails_before_transport(lane, cohort_a):
+    lane.activate(cohort_a)
+    constructed = False
+
+    def transport_factory(**_):
+        nonlocal constructed
+        constructed = True
+        return FakeTransport(COHORT_A)
+
+    code, _, err = _run_cli(
+        lane,
+        environ={
+            "BIOCATALYST_FIXED_COHORT_TRANSPORT_ENABLED": "1",
+            "BIOCATALYST_FIXED_COHORT_USER_AGENT": "",
+        },
+        transport_factory=transport_factory,
+    )
+
+    assert code == cli.EXIT_PRECONDITION_FAILED
+    assert json.loads(err)["error_code"] == "USER_AGENT_INVALID"
+    assert constructed is False
+
+
 def test_a_receipt_store_outage_fails_closed_before_any_collection(lane, cohort_a):
     lane.activate(cohort_a)
     (lane.operational_root / "store_meta.json").unlink()
@@ -1371,10 +1441,36 @@ def test_the_installer_provisions_least_privilege_ownership_and_modes():
     assert 'chmod 0600 "$ENV_FILE"' in setup
     assert '[ "$mode" = "600" ]' in setup
     assert '[ "$owner" = "root:root" ]' in setup
+    assert "must set a non-empty BIOCATALYST_FIXED_COHORT_USER_AGENT" in setup
+    assert 'bash "$RUNTIME_INSTALLER" --install-fixed-cohort "$REQUIREMENTS_SOURCE"' in setup
+    assert 'bash "$RUNTIME_INSTALLER" --verify-fixed-cohort' in setup
+    assert 'runuser -u "$SERVICE_USER" -- "$RUNTIME_CURRENT/bin/python"' in setup
+    assert "provision_operational_store(root)" in setup
+    assert "OperationalStore(root)" in setup
+    assert "operational_store provision" in setup
+    assert "operational_store verify" in setup
+    assert setup.index("ensure_service_identity") < setup.index("ensure_runtime")
     # The active pointer is a real file. A symlink is a membership bypass.
     assert 'die "$ACTIVE_POINTER must never be a symlink"' in setup
     # Least privilege: this identity must not inherit the B0a lane's group.
     assert "must not be a member of the B0a macro-biocatalyst group" in setup
+
+
+def test_the_fixed_cohort_runtime_is_transactional_and_separately_owned():
+    runtime = _text(ROOT / "app" / "deploy" / "biocatalyst-runtime.sh")
+
+    for token in (
+        "--install-fixed-cohort",
+        "--verify-fixed-cohort",
+        "SERVICE_USER=macro-biocatalyst-fixed-cohort",
+        "SERVICE_GROUP=macro-biocatalyst-fixed-cohort",
+        "RUNTIME_ROOT=/opt/macro-biocatalyst-fixed-cohort",
+        "SETUP_SCRIPT=biocatalyst-fixed-cohort-setup.sh",
+    ):
+        assert token in runtime
+    assert 'mv -Tf "$next_link" "$CURRENT_LINK"' in runtime
+    assert 'chown -hR root:"$SERVICE_GROUP" "$staging_runtime"' in runtime
+    assert 'rm -f -- "$CURRENT_LINK"' not in runtime
 
 
 def test_the_installer_and_unit_do_not_overlap_the_b0a_worker_lane():

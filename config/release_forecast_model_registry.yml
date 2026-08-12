@@ -1,0 +1,215 @@
+schema: release_forecast_model_registry.v1
+frozen_at: "2026-08-11"
+owner_program: macro-release-intel
+models:
+  coherent_ridge_v1:
+    model_id: coherent_ridge_v1
+    model_epoch: coherent_ridge_v1
+    callable: engine.release_cpi_coherent_shadow.project_cpi_coherent_shadow
+    output_schema: release_cpi_coherent_shadow.v1
+    status: shadow_candidate
+    releases:
+      - cpi_headline
+      - cpi_core
+
+    preregistration:
+      path: research/release_forecast/PREREG_COHERENT_RIDGE_V1.md
+      attempt: 1
+      maximum_attempts_for_epoch: 1
+      frozen_before_forward_accrual: true
+      observed_performance_allowed_in_spec: false
+      amendment_requires_new_model_epoch: true
+
+    target:
+      epoch: alfred_same_release_vintage_proxy_v1
+      value_field: published_proxy_1dp
+      official_first_print_epoch: withheld
+      history_path: data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json
+      parity_path: data/release_forecast/cpi_truth/parity_report.json
+      completion_path: data/release_forecast/cpi_truth/build_completion.json
+      require_completed_parity: true
+      require_exact_release_calendar_lags: true
+      cross_vintage_target_reconstruction_allowed: false
+      artifact_gates:
+        history:
+          schema: release_cpi_target_history.v1
+          status: candidate
+          display_only: true
+          authority: false
+        parity:
+          schema: release_cpi_truth_parity.v1
+          status: passed
+          display_only: true
+          authority: false
+        completion:
+          schema: release_cpi_truth_build_completion.v1
+          status: complete
+          completion_boundary: true
+          display_only: true
+          authority: false
+        exact_candidate_target_epoch_required: true
+        official_first_print_status_required: withheld
+      truth_receipt_bindings:
+        history:
+          - path
+          - sha256
+          - bytes
+          - history_hash
+        parity:
+          - path
+          - sha256
+          - bytes
+        completion:
+          - path
+          - sha256
+          - bytes
+          - evidence_available_at
+
+    feature_order:
+      cpi_headline:
+        - cpi_hl_mom_lag1
+        - cpi_hl_mom_lag2
+        - cpi_hl_mom_lag3
+        - sticky_mom_lag1
+        - median_mom_lag1
+        - flex_mom_lag1
+        - gasoline_mom
+        - ppi_mom_lag1
+      cpi_core:
+        - cpi_core_mom_lag1
+        - cpi_core_mom_lag2
+        - cpi_core_mom_lag3
+        - sticky_mom_lag1
+        - median_mom_lag1
+        - flex_mom_lag1
+        - ppi_mom_lag1
+
+    feature_provenance:
+      own_target_lags:
+        source: coherent_target_history
+        value_field: published_proxy_1dp
+        period_rule: exact_calendar_prior_months
+        release_date_lte_decision_asof: true
+      sticky_mom_lag1:
+        series: STICKCPIM157SFRBATL
+        source: alfred_vintage
+        source_units: percent_change_seasonally_adjusted_monthly
+        transform: identity
+        period_rule: exact_target_minus_1_calendar_month
+      median_mom_lag1:
+        series: MEDCPIM158SFRBCLE
+        source: alfred_vintage
+        source_units: percent_change_at_annual_rate_seasonally_adjusted_monthly
+        transform: compound_annual_rate_to_monthly_percent
+        formula: "((1 + value / 100) ** (1 / 12) - 1) * 100"
+        period_rule: exact_target_minus_1_calendar_month
+      flex_mom_lag1:
+        series: FLEXCPIM157SFRBATL
+        source: alfred_vintage
+        source_units: percent_change_seasonally_adjusted_monthly
+        transform: identity
+        period_rule: exact_target_minus_1_calendar_month
+      ppi_mom_lag1:
+        series: PPIFIS
+        source: alfred_vintage
+        source_units: index_level_seasonally_adjusted_monthly
+        transform: adjacent_calendar_levels_percent_change
+        formula: "(level_t / level_t_minus_1 - 1) * 100"
+        period_rule: exact_target_minus_1_and_minus_2_calendar_month_pair
+      gasoline_mom:
+        series: GASREGW
+        source: unrevised_timestamp_filtered
+        source_units: dollars_per_gallon_weekly
+        transform: reference_month_average_percent_change
+        formula: "(mean(target_month_observations) / mean(prior_month_observations) - 1) * 100"
+        target_month: forecast_target_period
+        prior_month: exact_calendar_prior_month
+        observation_timestamp_lt_decision_asof: true
+        target_month_must_be_complete: true
+        prior_month_must_be_complete: true
+        releases:
+          - cpi_headline
+      common_cutoff_rules:
+        realtime_start_lte_decision_asof: true
+        alfred_source_period_strictly_before_target: true
+      excluded_features:
+        - shelter_nowcast
+        - zori
+        - revision_optimistic_parquet_legs
+
+    training:
+      method: expanding_ridge
+      chronological_refit_each_step: true
+      complete_case: true
+      column_dropping_allowed: false
+      imputation_allowed: false
+      baseline_fallback_allowed: false
+      minimum_complete_prior_rows: 60
+      ridge_lambda: 1.0
+      standardization:
+        scope: train_only
+        sample_std_ddof: 1
+        zero_variance_scale: 1.0
+      intercept:
+        included: true
+        penalized: false
+      solver:
+        primary: numpy_solve
+        numerical_singularity_fallback: numpy_lstsq
+      decision_cutoff: release_date_minus_1_calendar_day
+      decision_cutoff_must_equal_requested_asof: true
+      training_label_release_date_lte_prediction_cutoff: true
+      live_release_date_strictly_after_asof: true
+      live_period_rule: exact_calendar_month_after_latest_eligible_target
+      numeric_features_must_be_finite: true
+      missing_contract_behavior: fail_closed_no_output
+
+    intervals:
+      method: empirical_prior_oos_residual_quantiles
+      residual: actual_raw_target_minus_raw_ridge_point
+      quantiles:
+        - 0.10
+        - 0.25
+        - 0.50
+        - 0.75
+        - 0.90
+      interpolation: numpy_linear
+      strictly_prior_oos_residuals_only: true
+      minimum_prior_oos_residuals: 24
+      live_uses_all_prior_oos_residuals: true
+      fallback_allowed: false
+      band_construction: raw_point_plus_residual_quantile
+      published_rounding:
+        p10_p25: decimal_round_floor_1dp
+        p50: decimal_round_half_up_1dp
+        p75_p90: decimal_round_ceiling_1dp
+
+    output:
+      point_raw_preserved: true
+      published_rounding: decimal_round_half_up_1dp
+      ledger_row_type: shadow_projection
+      forward_evaluation_scoring: true
+      scoring_target_epoch_must_match: true
+      scoring_rows_must_be_genuinely_forward: true
+      historical_backfill_to_forward_ledger_allowed: false
+      display_only: true
+      authority: false
+      promotion_authorized: false
+
+    authority_fence:
+      rank_assets: false
+      score_assets: false
+      gate_signals: false
+      size_positions: false
+      escalate_alerts: false
+      trade: false
+      prophet_authority: false
+      neural_web_authority: false
+
+    ensemble_exclusions:
+      combined_v1_input_allowed: false
+      combined_v1_weight: 0.0
+      internal_ensemble_v1_input_allowed: false
+      internal_ensemble_v1_weight: 0.0
+      automatic_promotion_allowed: false
+      promotion_review_allowed: false

@@ -23,9 +23,9 @@ decision-time rows from later outcome rows:
     v1 contract.
 
 ``data/options_signal_episode/campaigns.jsonl``
-    Immutable, exact-contract first-threshold cohorts. Membership is formed only
-    from point-in-time episode prefixes and binds one reference-only H+60 anchor;
-    outcome status and values never participate in membership or payload bytes.
+    Frozen legacy v1 retrospective threshold cohort. The active episode writer
+    no longer advances it; canonical campaign revisions and outcomes live under
+    ``data/options_signal_campaign/`` with an independent nightly writer.
 
 Authority is intentionally zero.  A notable live-flow event is a ``watch``
 episode, not a stock pick.  Nothing here ranks, gates, sizes, escalates, or
@@ -51,6 +51,12 @@ import pandas as pd
 from jsonschema import Draft202012Validator, FormatChecker
 
 from engine.ledger_lane import nightly_advance_enabled
+from engine.options_signal_episode_contract import (
+    EpisodeSourceContractError,
+    validate_episode_pit,
+    validate_h60_outcome_join,
+    validate_session_outcome_join,
+)
 from engine.session_digest import ET, session_window_et
 from lib import nyse_calendar
 
@@ -115,6 +121,14 @@ CAMPAIGN_FALSE_AUTHORITY = {
 
 class ContractError(ValueError):
     """A row violates the point-in-time contract."""
+
+
+def _shared_contract(callable_, *args: object) -> None:
+    """Keep the neutral producer/consumer semantic seam under this error type."""
+    try:
+        callable_(*args)
+    except EpisodeSourceContractError as exc:
+        raise ContractError(str(exc)) from exc
 
 
 @lru_cache(maxsize=4)
@@ -700,6 +714,7 @@ def validate_episode(row: dict[str, Any]) -> None:
         raise ContractError("v1 admits only exact event-level availability stamps")
     if row["quality"].get("source_baseline") != "floor":
         raise ContractError("v1 contract episodes are floor-selected only")
+    _shared_contract(validate_episode_pit, row)
 
 
 def validate_outcome(row: dict[str, Any]) -> None:
@@ -969,6 +984,7 @@ def validate_outcome_against_episode(
             raise ContractError(
                 "complete outcome price source must match the episode ticker parquet"
             )
+        _shared_contract(validate_h60_outcome_join, outcome, episode)
         return
 
     reason = outcome["reason"]
@@ -982,6 +998,7 @@ def validate_outcome_against_episode(
         )
     if reason != expected_reason:
         raise ContractError("terminal outcome reason disagrees with episode session clocks")
+    _shared_contract(validate_h60_outcome_join, outcome, episode)
 
 
 def _campaign_rule() -> dict[str, Any]:
@@ -1671,6 +1688,7 @@ def validate_session_outcome_against_episode(
             raise ContractError("session outcome price source must match the episode ticker")
     elif outcome["horizon"] != "eod" or available < target:
         raise ContractError("terminal session outcome is not reproducible from episode clocks")
+    _shared_contract(validate_session_outcome_join, outcome, episode)
 
 
 def episode_from_live_event(

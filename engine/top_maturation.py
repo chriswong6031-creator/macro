@@ -80,12 +80,13 @@ __all__ = [
     "MEMBERSHIP_WINDOW_SESSIONS",
     "LEG_ORDER", "COUNTING_LEGS", "MAX_LEGS", "BREAKING_LEAD_LEGS",
     "KNN_K", "THIN_ANALOG_N",
+    "TIER_KEYS", "TIER_SPEC", "HOT_LEG", "tier_leg_order", "tier_counting_legs",
     "build_panel", "load_thresholds", "load_library", "load_us_stock_metadata",
     "classify", "order_legs", "build_context", "null_context", "ledger_lane_armed",
     "append_forward_log",
 ]
 
-SCHEMA = "winner_health.v1"
+SCHEMA = "winner_health.v2"
 
 #: House lobe convention (`engine/neuralweb/mastermind_context.py`): the payload
 #: carries its own standing law so a downstream reader — the chat brain
@@ -140,7 +141,10 @@ LEGS_PROVENANCE = {
 PANEL_TRAILING_SESSIONS = 760
 STORE_REL = "massive_stock_day"
 PANEL_CACHE_REL = "top_maturation/_panel_cache"
-_CACHE_VERSION = 2
+#: 3 (W2b): the cached bars frame gained `high`/`low`, which the ATRZ bar needs.
+#: A version bump throws the old cache away rather than mixing layouts — one cold
+#: rebuild, and never a panel whose ATR is silently computed from |Δclose|.
+_CACHE_VERSION = 3
 #: Harness pre-filter (`build_panel_w`) — a STRICT SUPERSET of the §3 floors, so a
 #: name is dropped only when it can never clear a floor on any day. Held identical
 #: to the library's so the two populations are the same population.
@@ -187,6 +191,75 @@ BELOW_50D_MIN_SESSIONS = 3
 DRAWDOWN_FROM_HIGH_TRIGGER = -0.10
 DIP_TRIGGER_FRAC = 0.95    # the >=5% intra-episode dip F5 tracks
 MA_SLOW = 50
+
+# ── the three tiers (W2b) ─────────────────────────────────────────────────────
+#: The W2b tier model: three answers to "what counts as a winner?", NOT three
+#: severities and not three confidence levels (design spec §2). ORDER IS LAW —
+#: `primary -> r63 -> atrz` is narrowest bar first, it is the order in which each
+#: bar admits more names, and it is never re-ordered by count, wear share or
+#: anything else that moves nightly.
+TIER_KEYS: tuple[str, ...] = ("primary", "r63", "atrz")
+
+#: The new leg the two WIDENED tiers carry and the primary board does not. It is
+#: absent from `primary` because that board is frozen by the no-regression
+#: constraint (spec §5) — adding it there would silently re-state the live board
+#: the night W2b ships. The surface discloses the resulting disagreement in plain
+#: words ("the same name can read differently in another group").
+HOT_LEG = "running_hot"
+
+#: Per tier: which §4.1 extension definition admits it, which row figure it
+#: prints, which artifact pair it reads, how its groups are ordered, and whether
+#: it carries `running_hot`.
+#:
+#: `suffix` is the ONE place a tier's artifact names are decided. The primary pair
+#: keeps its historical unsuffixed names because it is a frozen committed artifact
+#: the nightly already reads.
+TIER_SPEC: dict[str, dict[str, Any]] = {
+    "primary": {"figure": "r126",  "suffix": "",      "sort": "gain",   "hot": False},
+    "r63":     {"figure": "r63",   "suffix": "_r63",  "sort": "ticker", "hot": True},
+    "atrz":    {"figure": "atr_x", "suffix": "_atrz", "sort": "ticker", "hot": True},
+}
+
+#: leg -> (feature column, frozen threshold key). A LIBRARY-CUT leg needs BOTH to
+#: be finite before the tier can evaluate it at all; a leg whose threshold could
+#: not be cut for a tier does NOT fire on that tier and is never borrowed from
+#: another (spec §5, the single hardest rule). This table is the shared source of
+#: truth for `_fire_legs` and `_checks_evaluated`, so "what fires" and "what could
+#: be evaluated" can never drift apart — the drift is what would let an
+#: unmeasured name print as `Still running`.
+LIBRARY_CUT_LEGS: dict[str, tuple[str, str]] = {
+    "rs_peak_lag":      ("E3f_rs_peak_lag",        "rs_peak_lag_p90"),
+    "rs_decel":         ("E5f_rs_decel",           "rs_decel_p10"),
+    "effort_result":    ("D4_ppe_chg21",           "effort_result_p10"),
+    "updown_volume":    ("D3_updown_dvol_ratio21", "updown_volume_p10"),
+    "vol_asymmetry":    ("C3_semivol_ratio63",     "vol_asymmetry_p90"),
+    "late_verticality": ("A7_late_gain_share",     "late_verticality_p90"),
+    HOT_LEG:            ("B2_rsi14",               "running_hot_p90"),
+}
+#: Cut from NO library — identical in every tier, so they are not a cross-tier
+#: threshold reuse and the surface says so in as many words (spec §4.6).
+FIXED_RULE_LEGS: tuple[str, ...] = ("dip_unreclaimed", "below_50d",
+                                    "drawdown_from_high")
+
+
+def tier_leg_order(tier: str) -> tuple[str, ...]:
+    """Render/key order for one tier's legs.
+
+    The frozen W1 order is unchanged for the ten shared legs. On the widened
+    tiers `running_hot` is inserted FIRST — a DISPLAY order, not a severity
+    ranking (same reasoning as the `breaking` lead pair): it is the one check
+    those groups' own history actually speaks to, and appended last it would be
+    cut by the three-leg cap on every busy row, which is a check made and never
+    shown.
+    """
+    if TIER_SPEC.get(tier, {}).get("hot"):
+        return (HOT_LEG, *LEG_ORDER)
+    return LEG_ORDER
+
+
+def tier_counting_legs(tier: str) -> tuple[str, ...]:
+    """The legs that COUNT toward a state on this tier. `episode_age` never does."""
+    return tuple(k for k in tier_leg_order(tier) if k != "episode_age")
 
 # ── analog memory ─────────────────────────────────────────────────────────────
 KNN_K = 40                 # distinct EPISODES, not days (spec §5 note 6)
@@ -256,6 +329,14 @@ def _repair_tail(df: pd.DataFrame, trailing: int) -> pd.DataFrame | None:
     raw_c = pd.to_numeric(df["close"], errors="coerce")
     raw_v = (pd.to_numeric(df["volume"], errors="coerce") if "volume" in df.columns
              else pd.Series(np.nan, index=df.index))
+    # HIGH/LOW carry the ATRZ bar and nothing else. They ride the SAME split
+    # factor as the close (they are prices), and a name whose file has no
+    # high/low keeps them null — `top_anatomy._true_range` then degrades to
+    # |Δclose| for that name alone, which is the documented honest degrade.
+    raw_h = (pd.to_numeric(df["high"], errors="coerce") if "high" in df.columns
+             else pd.Series(np.nan, index=df.index))
+    raw_l = (pd.to_numeric(df["low"], errors="coerce") if "low" in df.columns
+             else pd.Series(np.nan, index=df.index))
     px = raw_c.dropna()
     if px.empty or float(px.max()) < ta.MIN_CLOSE:
         return None
@@ -268,6 +349,8 @@ def _repair_tail(df: pd.DataFrame, trailing: int) -> pd.DataFrame | None:
         factor = pd.Series(1.0, index=df.index)
     return pd.DataFrame({
         "close": raw_c / factor,
+        "high": raw_h / factor,
+        "low": raw_l / factor,
         "volume": raw_v * factor,
         "raw_close": raw_c,
         "raw_dvol": raw_c * raw_v,
@@ -352,9 +435,16 @@ def build_panel(data_root: Path, *, cache_dir: Path | None = None,
     for p in stale:
         n_read += 1
         try:
-            df = pd.read_parquet(p, columns=["close", "volume"])
-        except Exception:  # noqa: BLE001 — one torn vendor file must not blind the read
-            continue
+            df = pd.read_parquet(p, columns=["close", "high", "low", "volume"])
+        except Exception:  # noqa: BLE001
+            # A store file predating high/low (or missing one) is READ ANYWAY on
+            # the two legs that were always there. Dropping it would silently
+            # shrink the whole board — including the primary tier, which does not
+            # use high/low at all — to fix a column only the ATRZ bar needs.
+            try:
+                df = pd.read_parquet(p, columns=["close", "volume"])
+            except Exception:  # noqa: BLE001 — one torn vendor file must not blind the read
+                continue
         rep = _repair_tail(df, trailing)
         if rep is None or rep.empty:
             continue
@@ -368,7 +458,9 @@ def build_panel(data_root: Path, *, cache_dir: Path | None = None,
 
     bars = pd.concat(frames, ignore_index=True)
     bars["date"] = pd.to_datetime(bars["date"])
-    for c in ("close", "volume", "raw_close", "raw_dvol"):
+    for c in ("close", "high", "low", "volume", "raw_close", "raw_dvol"):
+        if c not in bars.columns:
+            bars[c] = np.nan
         bars[c] = pd.to_numeric(bars[c], errors="coerce").astype("float32")
     bars["split_day"] = bars["split_day"].fillna(False).astype(bool)
     t_scan = time.time() - t0
@@ -408,7 +500,7 @@ def build_panel(data_root: Path, *, cache_dir: Path | None = None,
     bars["segment"] = seg
 
     panel: dict[str, pd.DataFrame] = {}
-    for col in ("close", "volume", "raw_close", "raw_dvol", "split_day"):
+    for col in ("close", "high", "low", "volume", "raw_close", "raw_dvol", "split_day"):
         fr = bars.pivot(index="date", columns="segment", values=col)
         panel[col] = fr.reindex(calendar)
     panel["split_day"] = panel["split_day"].fillna(False).astype(bool)
@@ -436,18 +528,47 @@ def build_panel(data_root: Path, *, cache_dir: Path | None = None,
 # ══════════════════════════════════════════════════════════════════════════════
 # frozen constants
 # ══════════════════════════════════════════════════════════════════════════════
-def load_thresholds(data_root: Path) -> dict:
-    """The frozen leg thresholds. Missing/unreadable -> `{}` (every leg goes dark)."""
-    p = Path(data_root) / THRESHOLDS_REL
+def _tier_rel(rel: str, tier: str) -> str:
+    """`top_anatomy/library.parquet` -> `top_anatomy/library_r63.parquet`.
+
+    ONE place decides a tier's artifact path, so a tier can never be pointed at
+    another tier's file by a typo in a call site.
+    """
+    sfx = TIER_SPEC.get(tier, {}).get("suffix", "")
+    if not sfx:
+        return rel
+    stem, dot, ext = rel.rpartition(".")
+    return f"{stem}{sfx}{dot}{ext}"
+
+
+def load_thresholds(data_root: Path, tier: str = "primary") -> dict:
+    """One tier's frozen leg thresholds. Missing/unreadable -> `{}`.
+
+    `{}` is what makes a tier UNREADABLE (spec §6 C): with no thresholds every
+    library-cut leg goes dark, and a board of names nobody measured would
+    otherwise print as `Still running · Nothing to do`. The caller checks this and
+    renders the tier's null band instead — it never falls back to another tier's
+    constants.
+    """
+    p = Path(data_root) / _tier_rel(THRESHOLDS_REL, tier)
     try:
-        return json.loads(p.read_text())
+        thr = json.loads(p.read_text())
     except Exception:  # noqa: BLE001
         return {}
+    # A tier's artifact must say which extension definition it was cut through.
+    # An unstamped file is accepted only for `primary`, whose committed artifact
+    # predates the stamp; a MISMATCHED stamp is refused outright, because reading
+    # one tier's constants under another tier's name is the exact failure the
+    # no-cross-tier rule exists to prevent.
+    stamped = thr.get("ext_variant")
+    if stamped is not None and str(stamped) != tier:
+        return {}
+    return thr
 
 
-def load_library(data_root: Path) -> pd.DataFrame | None:
-    """The analog library. Missing -> None (every row renders `no match`, honestly)."""
-    p = Path(data_root) / LIBRARY_REL
+def load_library(data_root: Path, tier: str = "primary") -> pd.DataFrame | None:
+    """One tier's analog library. Missing -> None (the tier reads as unread)."""
+    p = Path(data_root) / _tier_rel(LIBRARY_REL, tier)
     if not p.exists():
         return None
     try:
@@ -530,7 +651,10 @@ def _name_detail(bars: pd.DataFrame, eqw: pd.Series, ep_start, ep_end,
         v = v.where(v > 0)
     cv = c.to_numpy(dtype=float)
     n = len(cv)
-    out: dict[str, Any] = {"episode_left_censored": bool(ep_left_censored)}
+    # Carried so `_checks_evaluated` can tell "this rule says clear" from "this
+    # rule could not be measured on a name with too few bars".
+    out: dict[str, Any] = {"episode_left_censored": bool(ep_left_censored),
+                           "n_bars": int(n)}
 
     # relative strength vs the PIT equal-weight median index (E-family's own rs)
     if eqw is not None and len(eqw):
@@ -597,6 +721,32 @@ def _name_detail(bars: pd.DataFrame, eqw: pd.Series, ep_start, ep_end,
     return out
 
 
+def _atr_distance(close: pd.Series, high: pd.Series | None,
+                  low: pd.Series | None) -> float | None:
+    """How far the last close sits above its 200-day average, in units of the
+    name's own ATR63 — the `atrz` bar's OWN measure, at the same window.
+
+    Deliberately computed through `top_anatomy._true_range` and NOT through the
+    `A6_ext_ma200_atr21` feature, which looks like the same quantity and is not:
+    A6 divides by ATR21. Printing A6 beside a bar defined on ATR63 would put a
+    figure on the row that disagrees with the rule that admitted the name — the
+    reader would see `4.8x` under a heading that says "at least six".
+
+    Returns a positive distance (>= the bar by construction) or None.
+    """
+    c = pd.to_numeric(close, errors="coerce")
+    c = c[c.notna()]
+    if len(c) < 200:
+        return None
+    h = pd.to_numeric(high, errors="coerce").reindex(c.index) if high is not None else None
+    lo = pd.to_numeric(low, errors="coerce").reindex(c.index) if low is not None else None
+    tr = ta._true_range(c, h, lo)
+    atr63 = tr.rolling(63, min_periods=63).mean()
+    ma200 = c.rolling(200, min_periods=200).mean()
+    z = ((c - ma200) / atr63.replace(0.0, np.nan)).iloc[-1]
+    return float(z) if pd.notna(z) and np.isfinite(z) else None
+
+
 def _up_sessions(c: pd.Series, n: int) -> int:
     """How many of the last `n` sessions closed higher than the one before."""
     if n <= 0 or len(c) < 2:
@@ -623,7 +773,7 @@ def _leg(key: str, en: str, zh: str, tip_en: str | None = None,
 
 
 def _fire_legs(f: Mapping[str, Any], d: Mapping[str, Any], thr: Mapping[str, Any],
-               lib_age: np.ndarray | None,
+               lib_age: np.ndarray | None, *, hot: bool = False,
                ) -> tuple[list[dict], list[str], dict | None]:
     """Every firing leg, in the spec §4.3 key order, with the numbers substituted.
 
@@ -648,6 +798,24 @@ def _fire_legs(f: Mapping[str, Any], d: Mapping[str, Any], thr: Mapping[str, Any
     def cut(name: str) -> float:
         x = (thr.get("thresholds") or {}).get(name)
         return float(x) if x is not None else float("nan")
+
+    # 0 ── running_hot — WIDENED TIERS ONLY (spec §4.6/§5).
+    # Gated on the caller's tier, never on "a threshold happens to exist": the
+    # exporter cuts this P90 for every variant, so keying the leg off threshold
+    # presence would quietly light it up on the frozen primary board.
+    if hot:
+        b2, c_b2 = val("B2_rsi14"), cut("running_hot_p90")
+        if np.isfinite(b2) and np.isfinite(c_b2) and b2 >= c_b2:
+            fired.append(HOT_LEG)
+            legs.append(_leg(
+                HOT_LEG, "hotter than most like it", "热度高于同类多数",
+                "Its recent buying pressure sits above the level nine in ten days "
+                "reached in past runs here that kept going. In this group's history, "
+                "runs that later topped out ran hotter than those that carried on — "
+                "history, not a forecast.",
+                "它近期的买盘热度，高于本分组历史行情中「后来继续上行」那一批十分之九的"
+                "交易日。在本分组的历史里，后来见顶回落的行情，热度普遍高于继续上行的"
+                "行情 —— 这是历史，不是预测。"))
 
     # 1 ── rs_peak_lag
     e3, c_e3 = val("E3f_rs_peak_lag"), cut("rs_peak_lag_p90")
@@ -794,7 +962,75 @@ def _fire_legs(f: Mapping[str, Any], d: Mapping[str, Any], thr: Mapping[str, Any
              f"10 runs of this kind in the library.") if ok else None,
             (f"本轮行情起于 {start}，至今 {int(f1)} 个交易日 —— 比资料库中十分之 {p} 的"
              f"同类行情都长。") if ok else None)
+    # PROVENANCE CLASS, stamped once from the one table that defines it. The
+    # surface appends a different sentence to a library-cut leg's hover ("cut
+    # from past runs in {this group} only") than to a fixed rule's ("the same in
+    # every group"), and that promise is only worth anything if the split is
+    # read from the same place `_checks_evaluated` reads it. The tier NAME is
+    # display copy and stays in the template; the CLASS is engine truth.
+    for g in legs:
+        g["cut"] = "library" if g["key"] in LIBRARY_CUT_LEGS else "fixed"
+    if age_leg is not None:
+        age_leg["cut"] = "library"
     return legs, fired, age_leg
+
+
+def _checks_evaluated(f: Mapping[str, Any], d: Mapping[str, Any],
+                      thr: Mapping[str, Any], tier: str) -> tuple[int, int]:
+    """How many of this tier's counting checks could actually be MADE on this name.
+
+    Spec §6 B. The current engine returns `{}` for missing thresholds and
+    `classify([])` returns `extended_healthy`, so a tier with a half-loaded
+    library would print a confident board of "Still running · Nothing to do" for
+    names nobody measured. This function is what lets the caller refuse to do
+    that: a check is EVALUATED only when everything needed to decide it was
+    present — for a library-cut leg both the feature and this tier's own
+    threshold, for a fixed rule its own input.
+
+    A missing threshold therefore counts as NOT EVALUATED rather than as "clear",
+    which is the whole point: silence contributes to the unreadable rule, never
+    to a clean reading.
+    """
+    counting = tier_counting_legs(tier)
+    thresholds = thr.get("thresholds") or {}
+    evaluated = 0
+
+    def _finite(x: Any) -> bool:
+        try:
+            return bool(np.isfinite(float(x)))
+        except (TypeError, ValueError):
+            return False
+
+    for key in counting:
+        if key in LIBRARY_CUT_LEGS:
+            feat, cut_key = LIBRARY_CUT_LEGS[key]
+            if _finite(f.get(feat)) and _finite(thresholds.get(cut_key)):
+                evaluated += 1
+        elif key == "dip_unreclaimed":
+            # A fixed rule, but it still needs its own input: F5 is null where the
+            # episode grammar could not measure a dip at all.
+            if f.get(ta.F5_UNRECLAIMED_COL) is not None:
+                evaluated += 1
+        elif key == "below_50d":
+            # Needs enough bars for a 50-day average to exist.
+            if int(d.get("n_bars") or 0) >= MA_SLOW:
+                evaluated += 1
+        elif key == "drawdown_from_high":
+            if _finite(f.get("F2_drawdown_in_episode")) or _finite(d.get("f2_off_band")):
+                evaluated += 1
+    return evaluated, len(counting)
+
+
+def is_readable_row(evaluated: int, total: int) -> bool:
+    """§6 B, PINNED: a name is readable when a MAJORITY of this tier's counting
+    checks could be made on it — `evaluated >= ceil(total / 2)`.
+
+    The engine lane may raise that floor with evidence; it may never lower it,
+    and it may never route an unevaluated name into a wear state.
+    """
+    if total <= 0:
+        return False
+    return evaluated >= -(-total // 2)
 
 
 def order_legs(legs: Sequence[Mapping[str, Any]], state: str) -> list[dict]:
@@ -1076,17 +1312,14 @@ def build_context(data_root: Path, *, out_root: Path | None = None,
     t_mask = time.time()
     elig = ta.eligibility_mask(close, dvol, **floors)
     eqw = ta.equal_weight_median_index(close, elig, min_names=20)
-    ext = ta.extended_mask(close, dvol, **floors)
-    episodes = ta.extract_episodes(ext, close)
-    say(f"masks: {int(ext.to_numpy().sum())} EXT days · {len(episodes)} episodes "
-        f"in {time.time() - t_mask:.1f}s")
+    say(f"shared eligibility + PIT index in {time.time() - t_mask:.1f}s")
 
     # The instrument filter (operator ruling). The MASKS, the index and the
-    # features above are computed on the WHOLE tape on purpose: the equal-weight
+    # features are computed on the WHOLE tape on purpose: the equal-weight
     # median index the RS legs are measured against — and therefore the frozen
     # thresholds cut from the library — is a whole-market object, so narrowing the
     # panel first would silently re-base every relative-strength number. The
-    # roster is narrowed here, at the display boundary, and nowhere earlier.
+    # roster is narrowed at the display boundary, inside each tier, never earlier.
     meta = load_us_stock_metadata(data_root)
     if not meta:
         raise RuntimeError(
@@ -1095,24 +1328,141 @@ def build_context(data_root: Path, *, out_root: Path | None = None,
             "cannot tell a company from an exchange-traded product, so it does not print")
 
     last_day = close.index.max()
-    today = ext.loc[last_day] if last_day in ext.index else pd.Series(dtype=bool)
-    live = close.loc[last_day].notna() if last_day in close.index else pd.Series(dtype=bool)
+    live_now = ((close.loc[last_day].notna() if last_day in close.index
+                 else pd.Series(dtype=bool)).fillna(False))
+    screened = sorted({ta.segment_ticker(s).upper() for s in close.columns} & set(meta))
+    names_zh = _load_names_zh()
+    themes = _load_us_themes(data_root)
+    have_pages = _rendered_ticker_pages(repo_root)
 
-    # BOARD MEMBERSHIP (operator ruling). A name is a CANDIDATE iff it printed at
-    # least one EXT day in the trailing `MEMBERSHIP_WINDOW_SESSIONS`. Candidates
-    # split two ways and are treated differently on purpose:
-    #   · EXT TODAY      -> the full four-state machine, unchanged.
-    #   · RECENTLY EXT   -> eligible for `breaking` and NOTHING else. If it does
-    #                       not qualify, it drops off the board entirely.
-    # The asymmetry is the honest one. The EXT definition pins a close within ~10%
-    # of its trailing-252 max, so `drawdown_from_high` (F2 <= -0.10) is almost
-    # unreachable while a name is still IN the band — the terminal state was
-    # bounded away by the very condition it was conditioned on. The night a name
-    # falls out of the band is precisely the night that measure becomes readable.
-    # Showing any OTHER state for a name that has left would be worse than
-    # dropping it: "still running" would be false, and "showing wear" would call a
-    # departure a wobble.
-    live_now = live.fillna(False)
+    # THE THREE TIERS. Each one re-derives its own EXT mask, its own episodes, its
+    # own board membership and its own features, and reads its OWN library and
+    # thresholds. Nothing is shared but the panel, the eligibility floors and the
+    # whole-market index — none of which is downstream of any extension
+    # definition. That is what lets the surface promise that no threshold ever
+    # crosses a tier boundary (spec §0 G-1).
+    tiers: list[dict] = []
+    tier_diag: dict[str, dict] = {}
+    primary_ledger: list[dict] = []
+    for tier in TIER_KEYS:
+        t_ctx, t_diag, t_ledger = _build_tier(
+            tier, data_root=data_root, panel=panel, close=close, dvol=dvol,
+            floors=floors, eqw=eqw, meta=meta, last_day=last_day, live_now=live_now,
+            names_zh=names_zh, themes=themes, have_pages=have_pages, log=say)
+        tiers.append(t_ctx)
+        tier_diag[tier] = t_diag
+        if tier == "primary":
+            # The forward ledger stays the PRIMARY board's, unchanged. It is
+            # idempotent by (asof, ticker) with first-writer-wins, so feeding it
+            # three tiers would silently keep one row per name and drop the other
+            # two — a ledger that looks complete and is not. Widening it is a
+            # separate, gradeable act.
+            primary_ledger = t_ledger
+
+    ctx = {
+        "schema": SCHEMA,
+        "_STANDING_LAW": STANDING_LAW,
+        "_LEGS_PROVENANCE": LEGS_PROVENANCE,
+        "asof": asof or _now_utc().date().isoformat(),
+        "data_last_day": pd.Timestamp(last_day).date().isoformat(),
+        "tape_lag_sessions": _tape_lag_sessions(last_day, asof),
+        # POST-INTERSECTION screen count: the US names the board could have
+        # printed, not the raw instrument-file count.
+        "universe_n": len(screened),
+        "null_state": False,
+        "macro_backdrop": dict(macro_backdrop) if macro_backdrop else dict(_EMPTY_BACKDROP),
+        # ORDERED, narrowest bar first. There is deliberately NO top-level
+        # `extended_n`, no union count and no cross-tier total anywhere in this
+        # payload (spec §8 note 2): a name can clear more than one bar, so a total
+        # would be a number with no referent.
+        "tiers": tiers,
+    }
+    diag = {
+        **pdiag,
+        # The primary tier's diagnostics stay at the top level — it is the board
+        # the forward ledger grades and the operator log reads.
+        **tier_diag["primary"],
+        "n_us_stock_metadata": len(meta),
+        "n_screened_post_intersection": len(screened),
+        "membership_window_sessions": int(MEMBERSHIP_WINDOW_SESSIONS),
+        "tiers": tier_diag,
+        "total_seconds": round(time.time() - t0, 2),
+        "ledger_rows": primary_ledger,
+    }
+    say(f"context built in {diag['total_seconds']:.1f}s — "
+        + " · ".join(f"{k}: {tier_diag[k]['n_extended']}"
+                     f"{'' if tier_diag[k]['readable'] else ' (unread)'}"
+                     for k in TIER_KEYS))
+    return ctx, diag
+
+
+def _tape_lag_sessions(last_day, asof: str | None) -> int | None:
+    """Completed US sessions between the priced tape and tonight's read.
+
+    Sessions, never calendar days (spec §8 note 8) — a three-day weekend is not
+    three sessions behind. `engine.session_anchor` owns the US session reference;
+    if it cannot be read this returns None and the surface simply does not draw
+    the chip, which is the honest degrade for a number we could not establish.
+    """
+    try:
+        from engine import session_anchor  # noqa: PLC0415
+        idx = pd.DatetimeIndex(session_anchor.reference_sessions("US"))
+        end = pd.Timestamp(asof) if asof else pd.Timestamp(_now_utc().date())
+        return int(((idx > pd.Timestamp(last_day)) & (idx <= end)).sum())
+    except Exception:  # noqa: BLE001 — a missing calendar never fails the read
+        return None
+
+
+def _build_tier(tier: str, *, data_root: Path, panel: Mapping[str, pd.DataFrame],
+                close: pd.DataFrame, dvol: pd.DataFrame, floors: Mapping[str, Any],
+                eqw: pd.Series, meta: Mapping[str, str], last_day,
+                live_now: pd.Series, names_zh: Mapping[str, str],
+                themes: Mapping[str, dict], have_pages,
+                log: Callable[[str], None]) -> tuple[dict, dict, list[dict]]:
+    """One tier's whole read: mask -> membership -> features -> rows -> states.
+
+    Everything measured here is cut from THIS tier's own history. The tier's
+    thresholds and analog library are loaded by tier key, and if either is absent
+    the tier reports `readable: false` and ships NO populated state lists — it
+    never falls back to another tier's constants, and it never prints a board of
+    names nobody measured (spec §6 C).
+    """
+    say = log
+    spec = TIER_SPEC[tier]
+    t_tier = time.time()
+
+    thr = load_thresholds(data_root, tier)
+    lib_df = load_library(data_root, tier)
+    readable = bool(thr.get("thresholds")) and lib_df is not None and len(lib_df) > 0
+    states: dict[str, list[dict]] = {k: [] for k in
+                                     ("extended_healthy", "extended_watch", "thinning",
+                                      "breaking", "no_read")}
+    library_block = {
+        "track": str(thr.get("track") or "W"),
+        "window_start": (str(thr.get("window_start"))[:7] if thr.get("window_start")
+                         else None),
+        "window_end": (str(thr.get("window_end"))[:7] if thr.get("window_end") else None),
+        "horizon_td": int(thr.get("fell_back_hard_horizon_td") or 63),
+        "drawdown_pct": int(thr.get("fell_back_hard_drawdown_pct") or 20),
+    }
+    if not readable:
+        say(f"[{tier}] library/thresholds did not load — tier renders unread")
+        return ({"key": tier, "readable": False, "extended_n": 0,
+                 "figure": spec["figure"], "library": library_block,
+                 "states": states},
+                {"readable": False, "n_extended": 0, "per_state":
+                 {k: 0 for k in states}, "n_no_read": 0,
+                 "tier_seconds": round(time.time() - t_tier, 2)}, [])
+
+    ext = ta.extended_mask(close, dvol, variant=tier, high_df=panel.get("high"),
+                           low_df=panel.get("low"), **floors)
+    episodes = ta.extract_episodes(ext, close)
+
+    # BOARD MEMBERSHIP (operator ruling), applied per tier over the SAME 21-session
+    # window. The window is law and is NOT widened for a wider bar
+    # (`DNR:KILL-FRESH-TICKS-WINDOW`); each tier gets its own extension bar
+    # instead, which is a different act.
+    today = ext.loc[last_day] if last_day in ext.index else pd.Series(dtype=bool)
     ext_now = today.fillna(False).reindex(live_now.index, fill_value=False) & live_now
     window = ext.tail(MEMBERSHIP_WINDOW_SESSIONS)
     ext_recent = (window.fillna(False).any(axis=0).reindex(live_now.index, fill_value=False)
@@ -1125,13 +1475,13 @@ def build_context(data_root: Path, *, out_root: Path | None = None,
     off_band_segments = {s for s in raw_off if ta.segment_ticker(s).upper() in meta}
     excluded = [ta.segment_ticker(s).upper() for s in raw_board
                 if ta.segment_ticker(s).upper() not in meta]
-    screened = sorted({ta.segment_ticker(s).upper() for s in close.columns} & set(meta))
-    say(f"extended on {pd.Timestamp(last_day).date()}: {len(ext_segments)} candidate "
-        f"segments ({len(ext_segments) - len(off_band_segments)} EXT today, "
-        f"{len(off_band_segments)} recently EXT — breaking-only) · {len(excluded)} "
-        f"non-stock instruments excluded, {len(screened)} names screened")
+    say(f"[{tier}] {int(ext.to_numpy().sum())} EXT days · {len(episodes)} episodes · "
+        f"{len(ext_segments)} candidates ({len(off_band_segments)} recently EXT)")
 
-    # features — EXT segments only, the latest day only (never all 36 x all names)
+    # features — this tier's segments only, the latest day only. Deliberately
+    # close+volume ONLY: the panel now carries high/low for the ATRZ bar, and
+    # feeding them to `feature_library` would re-cut every range-based feature and
+    # silently re-state the FROZEN primary board (spec §0 G-3).
     bars_by_seg: dict[str, pd.DataFrame] = {}
     for s in ext_segments:
         c = close[s]
@@ -1139,41 +1489,26 @@ def build_context(data_root: Path, *, out_root: Path | None = None,
         if c.empty:
             continue
         d = {"close": c}
-        if volume is not None and not volume.empty and s in volume.columns:
-            d["volume"] = volume[s].reindex(c.index)
+        vol = panel.get("volume")
+        if vol is not None and not vol.empty and s in vol.columns:
+            d["volume"] = vol[s].reindex(c.index)
         bars_by_seg[s] = pd.DataFrame(d)
     asof_days = pd.DataFrame({"segment": list(bars_by_seg),
                               "date": [last_day] * len(bars_by_seg)})
-    t_feat = time.time()
     feats = (ta.feature_library(bars_by_seg, eqw, asof_days, episodes=episodes)
              if bars_by_seg else pd.DataFrame())
-    say(f"features: {len(feats)} rows in {time.time() - t_feat:.1f}s")
 
-    thr = load_thresholds(data_root)
-    lib_df = load_library(data_root)
-    lib = _library_arrays(lib_df) if lib_df is not None and len(lib_df) else None
-    track = str((thr.get("track") or "W"))
-    drawdown_pct = int(thr.get("fell_back_hard_drawdown_pct") or 20)
-    horizon_td = int(thr.get("fell_back_hard_horizon_td") or 63)
-
-    names_zh = _load_names_zh()
-    themes = _load_us_themes(data_root)
-    have_pages = _rendered_ticker_pages(repo_root)
-
-    ep_by_seg = {seg: g for seg, g in episodes.groupby("segment", sort=False)} \
-        if not episodes.empty else {}
+    lib = _library_arrays(lib_df)
+    track = library_block["track"]
+    drawdown_pct = library_block["drawdown_pct"]
+    ep_by_seg = ({seg: g for seg, g in episodes.groupby("segment", sort=False)}
+                 if not episodes.empty else {})
     feat_by_seg = {r["segment"]: r for _, r in feats.iterrows()} if len(feats) else {}
-    lib_age = lib["age"] if lib is not None else None
+    lib_age = lib["age"]
 
-    states: dict[str, list[dict]] = {k: [] for k in
-                                     ("extended_healthy", "extended_watch", "thinning",
-                                      "breaking")}
     by_ticker_state: dict[str, str] = {}
     ledger_rows: list[dict] = []
-    n_censored = 0
-    n_off_band_kept = 0
-    n_off_band_dropped = 0
-    t_rows = time.time()
+    n_censored = n_off_band_kept = n_off_band_dropped = 0
     for seg in ext_segments:
         f = feat_by_seg.get(seg)
         if f is None:
@@ -1194,151 +1529,158 @@ def build_context(data_root: Path, *, out_root: Path | None = None,
         off_band = seg in off_band_segments
         d = _name_detail(bars, eqw, ep_start, ep_end, censored, off_band=off_band)
 
-        legs, fired, age_leg = _fire_legs(f, d, thr, lib_age)
-        state = classify(fired)
-        if off_band:
-            # The breaking-only rule. A name that has left the band and does not
-            # read as `breaking` is not demoted to a gentler group — it leaves the
-            # board, because none of the other three states is true of it.
-            if state != "breaking":
-                n_off_band_dropped += 1
-                continue
-            n_off_band_kept += 1
-        # `episode_age` is context, so it is never allowed to put a wear mark on a
-        # row whose group header says nothing has slipped.
-        if age_leg is not None and state != "extended_healthy":
-            legs = legs + [age_leg]
-        # Order BEFORE the cap — the whole point of the §4.3 amendment is that a
-        # terminal row's own evidence survives the truncation.
-        legs = order_legs(legs, state)[:MAX_LEGS]
-
         base = ta.segment_ticker(seg)
         c = d["_close"]
         spark = [round(float(x), 4) for x in c.tail(SPARK_POINTS).to_numpy(dtype=float)]
-        vec = None
-        if lib is not None:
-            raw = np.array([float(f.get(k, np.nan)) for k in _KNN_FEATURES], dtype=np.float64)
-            vec = (raw - lib["mu"]) / lib["sd"]
-        analog = (_analog(vec, lib, base, drawdown_pct, track)
-                  if (lib is not None and vec is not None) else None)
-
-        r126 = float(f.get("A3_r126")) if pd.notna(f.get("A3_r126")) else None
-        r21 = float(f.get("A1_r21")) if pd.notna(f.get("A1_r21")) else None
-        f2 = float(f.get("F2_drawdown_in_episode")) if pd.notna(
-            f.get("F2_drawdown_in_episode")) else None
-        f1 = float(f.get("F1_episode_age")) if pd.notna(f.get("F1_episode_age")) else None
+        ev, tot = _checks_evaluated(f, d, thr, tier)
         row = {
             "ticker": base,
             "name": meta.get(base),
             "name_zh": _zh_lookup(names_zh, base),
             "href": f"/stocks/{base}.html" if base in have_pages else None,
+            "spark": spark,
+            "episode_high": (round(float(d["episode_high"]), 4)
+                             if d.get("episode_high") else None),
+        }
+        if not is_readable_row(ev, tot):
+            # §6 B. An off-band name is on the board ONLY to be shown as
+            # `breaking`; if this tier could not read it, that case was never
+            # established, so it leaves rather than joining an unreadable list it
+            # has no claim to be on.
+            if off_band:
+                n_off_band_dropped += 1
+                continue
+            row["checks"] = {"evaluated": int(ev), "total": int(tot)}
+            row["legs"] = []
+            row["analog"] = None
+            row["state"] = "no_read"
+            states["no_read"].append(row)
+            continue
+
+        legs, fired, age_leg = _fire_legs(f, d, thr, lib_age, hot=bool(spec["hot"]))
+        state = classify(fired)
+        if off_band:
+            if state != "breaking":
+                n_off_band_dropped += 1
+                continue
+            n_off_band_kept += 1
+        if age_leg is not None and state != "extended_healthy":
+            legs = legs + [age_leg]
+        legs = order_legs(legs, state)[:MAX_LEGS]
+
+        raw = np.array([float(f.get(k, np.nan)) for k in _KNN_FEATURES], dtype=np.float64)
+        vec = (raw - lib["mu"]) / lib["sd"]
+        analog = _analog(vec, lib, base, drawdown_pct, track)
+
+        r126 = float(f.get("A3_r126")) if pd.notna(f.get("A3_r126")) else None
+        r21 = float(f.get("A1_r21")) if pd.notna(f.get("A1_r21")) else None
+        r63 = float(f.get("A2_r63")) if pd.notna(f.get("A2_r63")) else None
+        f2 = float(f.get("F2_drawdown_in_episode")) if pd.notna(
+            f.get("F2_drawdown_in_episode")) else None
+        f1 = float(f.get("F1_episode_age")) if pd.notna(f.get("F1_episode_age")) else None
+        row.update({
             "r126": r126,
             "r21": r21,
             "days_in_episode": int(f1) if f1 is not None else None,
             "state": state,
-            "spark": spark,
-            "episode_high": (round(float(d["episode_high"]), 4)
-                             if d.get("episode_high") else None),
             "legs": legs,
             "analog": analog,
-        }
+        })
+        # The row figure each tier prints, and ONLY that tier's figure.
+        if spec["figure"] == "r63":
+            row["r63"] = r63
+        elif spec["figure"] == "atr_x":
+            hi = panel.get("high")
+            lo = panel.get("low")
+            dist = _atr_distance(
+                c, hi[seg] if hi is not None and seg in hi.columns else None,
+                lo[seg] if lo is not None and seg in lo.columns else None)
+            # The spec's "`atr_x` is >= the bar by construction" holds for a name
+            # that is EXT TODAY. It does NOT hold for the recently-EXT arm, which
+            # is on the board precisely because it has BROKEN: measured on the
+            # real tape, 79 of 532 atrz rows sit below the bar and 14 are
+            # NEGATIVE — the name is under its 200-day average. The caption on
+            # this cell asserts a direction ("ABOVE TREND"), so printing "-2.3x"
+            # there would be a false sentence, not merely an odd number. A name
+            # that is no longer above its trend has no distance above it, so the
+            # cell falls back to the honest dash §4.5 already pins, and the row's
+            # own receipt stays what §4.10 says it is — the give-back leg.
+            row["atr_x"] = dist if (dist is not None and dist >= 0) else None
         states[state].append(row)
         by_ticker_state[base] = state
         ledger_rows.append({
             "asof": pd.Timestamp(last_day).date().isoformat(),
             "ticker": base, "segment": seg, "state": state,
-            # Which membership arm this row came in on — a grader has to be able
-            # to separate "was extended and broke" from "had already left".
             "off_band": bool(off_band),
-            # `legs` is what the ROW SHOWS — frozen key order, capped at MAX_LEGS
-            # (spec §4.3), so it can and does omit the legs that decided the
-            # state: `below_50d` and `drawdown_from_high` sit last in that order
-            # and are the first to be truncated on a busy row. `fired` is the
-            # uncapped counting set `classify` actually read. A ledger that stored
-            # only the display list would be ungradeable — you could not tell why
-            # a row was terminal — so both are kept.
             "legs": [g["key"] for g in legs],
             "fired": list(fired),
             "r126": r126, "r21": r21, "dd_from_high": f2,
             "analog_n": (analog or {}).get("n"),
             "analog_topped": (analog or {}).get("topped_63td"),
         })
-    say(f"rows: {sum(len(v) for v in states.values())} built in {time.time() - t_rows:.1f}s")
 
-    # G-B: inside a group the order is trailing six-month gain — a FACT, not a rank.
+    # ORDER INSIDE A GROUP (spec §3.3). The primary board keeps its frozen
+    # gain-descending order — a fact about the past, disclosed as one. The two
+    # widened tiers sort A->Z by ticker: on a 500-row group the reader is looking
+    # for THEIR name, and "most stretched first" would make the top row a de-facto
+    # pick on a page that insists it ranks nothing.
     for key in states:
-        states[key].sort(key=lambda r: (r["r126"] is None, -(r["r126"] or 0.0)))
+        if spec["sort"] == "gain":
+            states[key].sort(key=lambda r: (r.get("r126") is None, -(r.get("r126") or 0.0)))
+        else:
+            states[key].sort(key=lambda r: str(r.get("ticker") or ""))
 
-    theme_counts = []
-    for bid, b in themes.items():
-        hits = {t: by_ticker_state[t] for t in b["members"] if t in by_ticker_state}
-        if not hits:
-            continue
-        theme_counts.append({
-            "basket": b["name"], "basket_zh": b.get("name_zh"),
-            "extended": len(hits),
-            "watch": sum(1 for s in hits.values() if s == "extended_watch"),
-            "thinning": sum(1 for s in hits.values() if s == "thinning"),
-            "breaking": sum(1 for s in hits.values() if s == "breaking"),
-        })
-    theme_counts.sort(key=lambda t: -t["extended"])
-
-    def _ym(x) -> str | None:
-        return str(x)[:7] if x else None
-
-    ctx = {
-        "schema": SCHEMA,
-        "_STANDING_LAW": STANDING_LAW,
-        "_LEGS_PROVENANCE": LEGS_PROVENANCE,
-        "asof": asof or _now_utc().date().isoformat(),
-        "data_last_day": pd.Timestamp(last_day).date().isoformat(),
-        # POST-INTERSECTION screen count: the US names the board could have
-        # printed, not the raw instrument-file count.
-        "universe_n": len(screened),
+    tier_ctx = {
+        "key": tier,
+        "readable": True,
         "extended_n": int(sum(len(v) for v in states.values())),
-        "null_state": False,
-        "macro_backdrop": dict(macro_backdrop) if macro_backdrop else dict(_EMPTY_BACKDROP),
-        "library": {
-            "track": track,
-            "window_start": _ym(thr.get("window_start")),
-            "window_end": _ym(thr.get("window_end")),
-            "horizon_td": horizon_td,
-            "drawdown_pct": drawdown_pct,
-        },
+        "figure": spec["figure"],
+        "library": library_block,
         "states": states,
-        "theme_counts": theme_counts,
     }
-    diag = {
-        **pdiag,
-        "n_us_stock_metadata": len(meta),
-        "n_screened_post_intersection": len(screened),
+    # ONE tomography on the page, and it belongs to the primary tier (spec §8
+    # note 7).
+    if tier == "primary":
+        theme_counts = []
+        for _bid, b in themes.items():
+            hits = {t: by_ticker_state[t] for t in b["members"] if t in by_ticker_state}
+            if not hits:
+                continue
+            theme_counts.append({
+                "basket": b["name"], "basket_zh": b.get("name_zh"),
+                "extended": len(hits),
+                "watch": sum(1 for s in hits.values() if s == "extended_watch"),
+                "thinning": sum(1 for s in hits.values() if s == "thinning"),
+                "breaking": sum(1 for s in hits.values() if s == "breaking"),
+            })
+        theme_counts.sort(key=lambda t: -t["extended"])
+        tier_ctx["theme_counts"] = theme_counts
+
+    tdiag = {
+        "readable": True,
+        "n_extended": tier_ctx["extended_n"],
+        "per_state": {k: len(v) for k, v in states.items()},
+        "n_no_read": len(states["no_read"]),
         "n_extended_pre_intersection": len(raw_ext),
         "n_board_candidates_pre_intersection": len(raw_board),
-        "membership_window_sessions": int(MEMBERSHIP_WINDOW_SESSIONS),
-        # post-intersection candidates, split by membership arm. The currently-EXT
-        # arm is never filtered, so `extended_n - n_off_band_on_board` must equal
-        # `n_current_ext_candidates` — the executable form of "names still in the
-        # band run the same state machine they always did".
         "n_current_ext_candidates": len(ext_segments) - len(off_band_segments),
         "n_off_band_candidates": len(off_band_segments),
         "n_off_band_on_board": int(n_off_band_kept),
         "n_off_band_dropped": int(n_off_band_dropped),
         "n_excluded_non_stock_instruments": len(excluded),
         "excluded_instruments": sorted(set(excluded)),
-        "n_extended": ctx["extended_n"],
-        "per_state": {k: len(v) for k, v in states.items()},
         "n_episode_left_censored": int(n_censored),
         "n_with_analog": sum(1 for v in states.values() for r in v if r.get("analog")),
-        "library_rows": int(len(lib_df)) if lib_df is not None else 0,
+        "library_rows": int(len(lib_df)),
         "thresholds_present": bool(thr.get("thresholds")),
-        "n_themes": len(theme_counts),
-        "total_seconds": round(time.time() - t0, 2),
-        "ledger_rows": ledger_rows,
+        "ext_variant_stamp": thr.get("ext_variant"),
+        "tier_seconds": round(time.time() - t_tier, 2),
     }
-    say(f"context built in {diag['total_seconds']:.1f}s — {ctx['extended_n']} on the "
-        f"board, {diag['per_state']} · recently-EXT: {n_off_band_kept} entered as "
-        f"breaking, {n_off_band_dropped} dropped")
-    return ctx, diag
+    if tier == "primary":
+        tdiag["n_themes"] = len(tier_ctx.get("theme_counts") or [])
+    say(f"[{tier}] {tier_ctx['extended_n']} on the board {tdiag['per_state']} "
+        f"in {tdiag['tier_seconds']:.1f}s")
+    return tier_ctx, tdiag, ledger_rows
 
 
 def null_context(reason: str, *, asof: str | None = None) -> dict:

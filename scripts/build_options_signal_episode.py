@@ -11,9 +11,9 @@ R2 facts; this nightly builder is the sole advancer of the committed split ledge
 The durable stage's notable events are recorded as ``watch`` episodes. They are
 not promoted into picks, and the option outcome stays null until a future source
 provides a complete executable bid/ask quote path.
-Exact-contract first-threshold campaigns are appended only after their H+60
-anchor is present in the persisted outcome ledger; they remain abstaining
-research cohorts and copy no outcome measurements.
+The historical v1 threshold cohort is preserved byte-for-byte but is no longer
+advanced here. Canonical campaign revisions and outcomes have an independent
+nightly writer under ``scripts.build_options_signal_campaign``.
 """
 from __future__ import annotations
 
@@ -38,7 +38,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.ledger_lane import nightly_advance_enabled
 from engine.options_signal_episode import (
-    CAMPAIGN_REL,
     EPISODE_REL,
     OUTCOME_REL,
     PRICE_BASIS,
@@ -47,18 +46,15 @@ from engine.options_signal_episode import (
     SESSION_OUTCOME_REL,
     TIMESTAMP_BASIS,
     ContractError,
-    append_campaigns,
     append_episodes,
     append_outcomes,
     append_session_outcomes,
     derive_h60_outcome,
-    derive_campaigns,
     derive_session_outcome,
     episode_from_live_event,
     load_jsonl,
     normalize_price_bars,
     validate_episode,
-    validate_campaign,
     validate_outcome,
     validate_outcome_against_episode,
     validate_session_outcome,
@@ -282,7 +278,10 @@ def _events_from_stage(
                 )
             decisions[event_id] = event
         elif kind == "availability":
-            if set(record) != {"schema", "kind", "event_id", "available_at"}:
+            if set(record) not in (
+                {"schema", "kind", "event_id", "available_at"},
+                {"schema", "kind", "event_id", "available_at", "context_capture"},
+            ):
                 raise ContractError(f"invalid availability receipt shape at line {lineno}")
             if event_id not in decisions:
                 raise ContractError(
@@ -293,6 +292,44 @@ def _events_from_stage(
             stamp = str(record.get("available_at") or "")
             if not stamp:
                 raise ContractError(f"invalid availability receipt at line {lineno}")
+            binding = record.get("context_capture")
+            if binding is not None:
+                if not isinstance(binding, dict):
+                    raise ContractError(
+                        f"invalid context capture binding at line {lineno}"
+                    )
+                if binding.get("status") == "prepared":
+                    if (
+                        set(binding) != {"status", "request_id", "request_sha256"}
+                        or not re.fullmatch(
+                            r"mmoptrequest_[a-f0-9]{64}",
+                            str(binding.get("request_id") or ""),
+                        )
+                        or not re.fullmatch(
+                            r"[a-f0-9]{64}",
+                            str(binding.get("request_sha256") or ""),
+                        )
+                    ):
+                        raise ContractError(
+                            f"invalid prepared context capture binding at line {lineno}"
+                        )
+                elif binding.get("status") == "abstained":
+                    if (
+                        set(binding) != {"status", "reason"}
+                        or binding.get("reason") not in {
+                            "capture_not_armed",
+                            "outside_predeclared_canary",
+                            "precommit_not_proven",
+                            "legacy_unbound",
+                        }
+                    ):
+                        raise ContractError(
+                            f"invalid context capture abstention at line {lineno}"
+                        )
+                else:
+                    raise ContractError(
+                        f"unknown context capture state at line {lineno}"
+                    )
             availability[event_id] = stamp
         else:
             raise ContractError(f"unknown event-stage receipt at line {lineno}")
@@ -564,7 +601,6 @@ def run(
     episode_path = data_root / EPISODE_REL
     outcome_path = data_root / OUTCOME_REL
     session_outcome_path = data_root / SESSION_OUTCOME_REL
-    campaign_path = data_root / CAMPAIGN_REL
     now = computed_at or datetime.now(timezone.utc)
     if now.tzinfo is None:
         raise ContractError("computed_at must be timezone-aware")
@@ -586,9 +622,6 @@ def run(
         "session_outcomes_terminal_incomplete": 0,
         "session_outcomes_pending": 0,
         "session_outcomes_appended": 0,
-        "campaigns_valid": 0,
-        "campaigns_pending_h60": 0,
-        "campaigns_appended": 0,
         "session_pending_reasons": {},
         "pending_reasons": {},
         "rejection_reasons": {},
@@ -829,48 +862,9 @@ def run(
         if appended < 0:
             summary["write_skipped"] = "COLLECT_LANE is not nightly"
 
-    # Campaign membership is computed only after every outcome family has had
-    # its append opportunity. On the advancing lane, reload the persisted H+60
-    # bytes before binding a reference: in-memory derivations cannot authorize a
-    # campaign row that the durable outcome ledger does not yet contain.
-    if dry_run:
-        campaign_episode_rows = list(by_episode.values())
-        campaign_h60_rows = [*existing_outcomes, *outcomes]
-    else:
-        campaign_episode_rows = load_jsonl(episode_path)
-        campaign_h60_rows = load_jsonl(outcome_path)
-    campaigns, pending_campaign_anchors = derive_campaigns(
-        campaign_episode_rows,
-        campaign_h60_rows,
-    )
-    summary["campaigns_valid"] = len(campaigns)
-    summary["campaigns_pending_h60"] = len(pending_campaign_anchors)
-
-    expected_campaigns: dict[str, dict[str, Any]] = {}
-    for row in campaigns:
-        campaign_id = row["campaign_id"]
-        if campaign_id in expected_campaigns:
-            raise ContractError(f"duplicate derived campaign row: {campaign_id}")
-        expected_campaigns[campaign_id] = row
-    existing_campaign_ids: set[str] = set()
-    for row in load_jsonl(campaign_path):
-        validate_campaign(row)
-        campaign_id = row["campaign_id"]
-        if campaign_id in existing_campaign_ids:
-            raise ContractError(f"duplicate existing campaign row: {campaign_id}")
-        if expected_campaigns.get(campaign_id) != row:
-            raise ContractError(f"existing campaign payload drift: {campaign_id}")
-        existing_campaign_ids.add(campaign_id)
-
     if not dry_run:
-        appended = append_campaigns(campaign_path, campaigns)
-        summary["campaigns_appended"] = max(0, appended)
-        if appended < 0:
-            summary["write_skipped"] = "COLLECT_LANE is not nightly"
-
-        # Episode, H+60, session, and campaign appends are idempotent. Advancing
-        # the source-prefix checkpoint last means any campaign failure leaves the
-        # stage replayable and cannot bless a partially consumed source prefix.
+        # Episode, H+60, and session appends are idempotent. The campaign layer
+        # independently consumes the durable episode prefix after this builder.
         for session_date in sorted(stages):
             _advance_checkpoint(
                 data_root / CHECKPOINT_REL,
@@ -885,7 +879,7 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
     parser = argparse.ArgumentParser(
         description=(
-            "Accrue PIT options episodes, H+60/session labels, and abstaining campaigns"
+            "Accrue PIT options episodes and H+60/session labels"
         )
     )
     parser.add_argument("--dry-run", action="store_true", help="derive and report; write nothing")

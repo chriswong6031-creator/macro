@@ -9,6 +9,7 @@ set -euo pipefail
 SERVICE_USER=macro-biocatalyst
 SERVICE_GROUP=macro-biocatalyst
 RUNTIME_ROOT=/opt/macro-biocatalyst
+SETUP_SCRIPT=biocatalyst-setup.sh
 RUNTIMES_ROOT="$RUNTIME_ROOT/runtimes"
 CURRENT_LINK="$RUNTIME_ROOT/current"
 RUNTIME_LOCK="$RUNTIME_ROOT/.runtime-install.lock"
@@ -28,20 +29,41 @@ usage() {
 	cat <<'USAGE'
 Usage: biocatalyst-runtime.sh --install [requirements-file]
        biocatalyst-runtime.sh --verify
+       biocatalyst-runtime.sh --install-fixed-cohort [requirements-file]
+       biocatalyst-runtime.sh --verify-fixed-cohort
 
 --install builds and verifies a new immutable, versioned virtualenv when the
 requirements hash differs or the current runtime is invalid.  It atomically
 switches /opt/macro-biocatalyst/current only after verification.
 
 --verify validates the already-published current runtime without changing it.
+
+The fixed-cohort forms apply the same transactional build and trust checks to
+the separately owned /opt/macro-biocatalyst-fixed-cohort runtime. They never
+share a group or mutable runtime with the primary BioCatalyst lane.
 USAGE
+}
+
+select_lane() {
+	local requested_mode="$1"
+	case "$requested_mode" in
+		--install-fixed-cohort|--verify-fixed-cohort)
+			SERVICE_USER=macro-biocatalyst-fixed-cohort
+			SERVICE_GROUP=macro-biocatalyst-fixed-cohort
+			RUNTIME_ROOT=/opt/macro-biocatalyst-fixed-cohort
+			SETUP_SCRIPT=biocatalyst-fixed-cohort-setup.sh
+			;;
+	esac
+	RUNTIMES_ROOT="$RUNTIME_ROOT/runtimes"
+	CURRENT_LINK="$RUNTIME_ROOT/current"
+	RUNTIME_LOCK="$RUNTIME_ROOT/.runtime-install.lock"
 }
 
 require_identity() {
 	getent group "$SERVICE_GROUP" >/dev/null 2>&1 || \
-		die "missing service group: $SERVICE_GROUP (run biocatalyst-setup.sh)"
+		die "missing service group: $SERVICE_GROUP (run $SETUP_SCRIPT)"
 	id -u "$SERVICE_USER" >/dev/null 2>&1 || \
-		die "missing service user: $SERVICE_USER (run biocatalyst-setup.sh)"
+		die "missing service user: $SERVICE_USER (run $SETUP_SCRIPT)"
 	[ "$(id -g "$SERVICE_USER")" = "$(getent group "$SERVICE_GROUP" | awk -F: '{print $3}')" ] || \
 		die "$SERVICE_USER must use $SERVICE_GROUP as its primary group"
 }
@@ -157,8 +179,15 @@ install_runtime() {
 }
 
 main() {
-	local mode="${1:-}"
+	local requested_mode="${1:-}" mode
 	local requirements_source="${2:-$DEFAULT_REQUIREMENTS}"
+	select_lane "$requested_mode"
+	case "$requested_mode" in
+		--install|--verify) mode="$requested_mode" ;;
+		--install-fixed-cohort) mode=--install ;;
+		--verify-fixed-cohort) mode=--verify ;;
+		*) mode="$requested_mode" ;;
+	esac
 
 	[ "$(id -u)" -eq 0 ] || die "must run as root"
 	require_identity
@@ -175,7 +204,7 @@ main() {
 		--install) install_runtime "$requirements_source" ;;
 		--verify) verify_current ;;
 		--help|-h) usage ;;
-		*) usage >&2; die "expected --install or --verify" ;;
+		*) usage >&2; die "expected a primary or fixed-cohort install/verify mode" ;;
 	esac
 }
 

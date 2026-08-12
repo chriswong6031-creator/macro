@@ -1830,6 +1830,7 @@ def _load_generation(
     visited: set[str] = set()
     depth = 0
     target_value: tuple[dict[str, Any], bytes] | None = None
+    collecting_target_ancestry = generation_id is None
     while True:
         current_id = str(current["generation_id"])
         if current_id in visited:
@@ -1837,11 +1838,12 @@ def _load_generation(
                 "actual-output generation ancestry contains a cycle"
             )
         visited.add(current_id)
-        if ancestry_generation_ids is not None:
-            ancestry_generation_ids.append(current_id)
         depth += 1
         if current_id == target:
             target_value = (copy.deepcopy(current), current_body)
+            collecting_target_ancestry = True
+        if ancestry_generation_ids is not None and collecting_target_ancestry:
+            ancestry_generation_ids.append(current_id)
         previous_id = current.get("previous_generation_id")
         if previous_id is None:
             if current["captures"]:

@@ -180,18 +180,28 @@ def test_always_commit_step_normalizes_inside_the_step(lane):
     success()-gated, and the always() `commit engine outputs` step committed the raw
     tree as 9a997e9da3f — 7 shipped-page guards red on every PR head in the repo.
     The normalize chain must live INSIDE the always() step, between its start and
-    its `git commit`, so the staged tree is normalized by construction."""
+    its authoritative commit boundary, so the staged tree is normalized by
+    construction. Daily uses the locked exact-tree helper; asia-close still uses
+    porcelain `git commit`."""
     lines = _lines(lane)
     starts = [i for i, ln in enumerate(lines) if "- name: commit engine outputs" in ln]
     assert starts, f"{lane}: 'commit engine outputs' step not found — did the step get renamed?"
     start = starts[0]
-    commits = [i for i in range(start, len(lines)) if 'git commit -m "engine:' in lines[i]]
-    assert commits, f"{lane}: no `git commit -m \"engine:` after the commit step start"
+    commit_markers = (
+        'git commit -m "engine:',
+        "options_signal_nightly.sh commit-broad-candidate",
+    )
+    commits = [
+        i
+        for i in range(start, len(lines))
+        if any(marker in lines[i] for marker in commit_markers)
+    ]
+    assert commits, f"{lane}: no authoritative engine commit after the commit step start"
     body = lines[start:commits[0]]
     for needle in (SHIM, EXTERNALIZE, STAMP):
         assert any(needle in ln and not ln.lstrip().startswith("#") for ln in body), (
             f"{lane}: the always() commit step no longer runs `{needle}` before its "
-            "`git commit` — a timeout-cancel that skips the normalize step would ship "
+            "the authoritative commit — a timeout-cancel that skips the normalize step would ship "
             "a raw tree to main again (9a997e9da3f)")
 
 

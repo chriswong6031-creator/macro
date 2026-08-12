@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Host-private same-basis OPRA NBBO cohort recorder.  Install as the macOS user
+  that owns Theta Terminal; do not run as root and do not load from Documents.
+
+  Follow docs/runbooks/OPTIONS_NBBO_COHORT.md.  It requires a clean dedicated
+  options-nbbo-ops-wt checkout, an adjacent swap, and exact installed hashes.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.mastermind.optionsnbbocohort</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>/Users/chriswong/options-nbbo-ops-wt/ops/launchd/run_options_nbbo_cohort_loop.sh</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/options-nbbo-ops-wt</string>
+
+  <key>StartInterval</key>
+  <integer>300</integer>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>/Users/chriswong/options-nbbo-ops-wt</string>
+    <key>OPTIONS_NBBO_COHORT_PRIVATE_ROOT</key>
+    <string>/Users/chriswong/.mastermind_private/options_nbbo_cohort_v1</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/optionsnbbocohort.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/optionsnbbocohort.stderr.log</string>
+
+  <key>KeepAlive</key>
+  <false/>
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+</dict>
+</plist>

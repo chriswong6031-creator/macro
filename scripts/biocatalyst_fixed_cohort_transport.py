@@ -45,6 +45,7 @@ from collectors.biocatalyst.clinicaltrials_fixed_cohort import (  # noqa: E402
     FixedCohortTransportError,
     FixedCohortTransportLimits,
     build_fixed_cohort_transport_run,
+    require_fixed_cohort_user_agent,
 )
 from engine.biocatalyst.fixed_cohort_runtime import (  # noqa: E402
     RUNTIME_ACTIVE_POINTER_NAME,
@@ -81,6 +82,7 @@ EXIT_OK = 0
 EXIT_PRECONDITION_FAILED = 2
 EXIT_RUN_QUARANTINED = 3
 EXIT_USAGE = 4
+FIXED_COHORT_USER_AGENT_ENV = "BIOCATALYST_FIXED_COHORT_USER_AGENT"
 
 # Nothing in this file may ever accept membership.  The deployment test asserts
 # that no parser option matches any of these, so adding one fails CI.
@@ -158,8 +160,32 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="rotate/rollback only: microsecond UTC Z stamp of the authorization",
     )
-    parser.add_argument("--user-agent", default=DEFAULT_USER_AGENT)
+    parser.add_argument(
+        "--user-agent",
+        default=None,
+        help=(
+            "descriptive source contact; defaults to "
+            f"{FIXED_COHORT_USER_AGENT_ENV}, then the bounded built-in fallback"
+        ),
+    )
     return parser
+
+
+def _resolved_user_agent(
+    configured: object, environ: Mapping[str, str]
+) -> str:
+    candidate = (
+        configured
+        if configured is not None
+        else environ.get(FIXED_COHORT_USER_AGENT_ENV, DEFAULT_USER_AGENT)
+    )
+    try:
+        return require_fixed_cohort_user_agent(candidate)
+    except (ValueError, UnicodeError) as exc:
+        raise RuntimeCliError(
+            "USER_AGENT_INVALID",
+            f"{FIXED_COHORT_USER_AGENT_ENV} or --user-agent is invalid",
+        ) from exc
 
 
 def _require_directory(path: Path, *, code: str, what: str) -> Path:
@@ -540,6 +566,8 @@ def main(
 
     try:
         assert_environment_carries_no_membership(values)
+        if args.mode == "collect":
+            args.user_agent = _resolved_user_agent(args.user_agent, values)
         store = (
             OperationalStore(Path(args.operational_root), repo_root=repo_root)
             if store_factory is None

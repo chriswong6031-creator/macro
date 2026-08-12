@@ -12051,14 +12051,16 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/release_cpi_coherent_shadow.py
     notes: >
       Manifest-bound headline/core CPI history reconstructed from T and T-1
       levels present on the same ALFRED release vintage. Rows retain latent MoM,
       half-up one-decimal print proxies, source-level coordinates and rejection
       disclosures. Top-level asof and candidate_data_asof both identify the
       bound ALFRED manifest completion clock. Candidate target epoch only; no
-      champion or combined weight.
+      champion or combined weight. coherent_ridge_v1 may consume it only with
+      the matching parity and completion receipts and remains display-only.
 
   release-cpi-truth-parity:
     path: data/release_forecast/cpi_truth/parity_report.json
@@ -12075,7 +12077,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/release_cpi_coherent_shadow.py
     notes: >
       Exact preregistered comparison between official archived BLS headline/core
       Table 1 release-edition observations and the same-release-vintage ALFRED
@@ -12101,7 +12104,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/release_cpi_coherent_shadow.py
     notes: >
       Publication boundary written and fsynced only after coherent history and
       parity artifacts succeed. Directly binds ALFRED manifest, official
@@ -12225,7 +12229,10 @@ artifacts:
       available). Keyed (release, period, row_type,
       asof_night) for idempotency — re-running the same night appends zero
       duplicate rows. New rows freeze model_epoch, target_epoch, code_receipt,
-      and input receipts. The nightly lane is the sole advancer (MRI-R8); no
+      and input receipts. coherent_ridge_v1 rows additionally freeze the governed
+      registry, preregistration, coherent-history, parity, completion, training,
+      and prior-OOS interval receipts; they remain excluded from combined_v1 and
+      carry no promotion authority. The nightly lane is the sole advancer (MRI-R8); no
       intraday or backtest lane writes here. Scored rows carry our MAE,
       benchmark MAEs, interval coverage hit, and skew-direction hit.
 
@@ -15232,6 +15239,8 @@ artifacts:
     consumers:
       - scripts/build_options_signal_episode.py
       - scripts/capture_market_memory_options_episodes.py
+      - scripts/audit_options_market_memory_context.py
+      - engine/options_signal_campaign.py
     external_consumers: []
     notes: >
       Immutable point-in-time option-flow decision episodes. Event, observation,
@@ -15241,10 +15250,11 @@ artifacts:
       reconstructed from a later cumulative feed. Current notable events are
       watch observations, not picks; authority to originate, rank, gate, size or
       escalate is false. Only the nightly lane may append committed rows. The
-      network-dark Market Memory production-record adapter is a read-only second
-      consumer: it binds exact committed bytes in a private zero-authority store,
-      never writes this owner ledger, and excludes the frozen initial prefix from
-      forward proof.
+      network-dark Market Memory production-record adapter is a read-only consumer:
+      it binds exact committed bytes in a private zero-authority store, never writes
+      this owner ledger, and excludes the frozen initial prefix from forward proof.
+      The context audit and canonical campaign engine also read the exact ledger but
+      receive no writer or decision authority.
 
   options-signal-episode-h60-outcomes:
     path: data/options_signal_episode/outcomes_h60.jsonl
@@ -15263,6 +15273,8 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_options_signal_episode.py
+      - scripts/audit_options_market_memory_context.py
+      - engine/options_signal_campaign.py
     external_consumers: []
     notes: >
       Append-only H+60 research outcomes keyed to immutable option-flow episodes.
@@ -15294,6 +15306,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_options_signal_episode.py
+      - engine/options_signal_campaign.py
     external_consumers: []
     notes: >
       Separate immutable EOD/1d/3d/5d/10d underlying outcomes keyed to the
@@ -15314,34 +15327,105 @@ artifacts:
   options-signal-campaigns:
     path: data/options_signal_episode/campaigns.jsonl
     format: jsonl
-    producer: scripts/build_options_signal_episode.py
+    producer: ""
     known_extra_writers: []
     owner_program: options-intelligence-program
-    cadence: daily-engine
+    cadence: on-demand
     storage: git
     asof_field: formed_at
-    freshness_sla_hours: 30
+    freshness_sla_hours: 99999
     schema: options.signal_campaign/v1
     tier: shadow
     horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
-      - scripts/build_options_signal_episode.py
+      - scripts/audit_options_market_memory_context.py
     external_consumers: []
     notes: >
-      Immutable zero-authority research cohorts over exact session, ticker,
-      expiration, strike, and right groups. Each row freezes the first ordered
-      episode prefix with at least two events and at least three million exact
-      rounded premium dollars, plus a digest of the complete source rows. A
-      reference-only H+60 anchor must already exist, but outcome status and values
-      cannot affect membership or campaign bytes. The rule froze at
-      2026-08-11T08:22:28Z after inspecting the initial 2026-08-10 corpus, so all
-      initial rows are explicitly retrospective discovery, not forward evidence;
-      later evaluation must stratify evidence_phase. Disposition is always abstain,
-      training eligibility and every selection, score, rank, gate, size, trade,
-      publication, option-return, origination, escalation, and model-training
-      authority remain false. The existing nightly builder is the sole writer.
+      Frozen eight-row retrospective threshold cohort preserved byte-for-byte for
+      audit history. No active producer may advance it; its only consumer is the
+      read-only context audit that authenticates the exact frozen bytes and source
+      joins. It is not the canonical campaign contract, is not prospective evidence,
+      and cannot support selector or promotion claims. Training eligibility and
+      every selection, score, rank, gate, size, trade, publication, option-return,
+      origination, escalation, Neural Web, Prophet, and model-training authority
+      remain false.
+
+  options-signal-campaign-revisions:
+    path: data/options_signal_campaign/campaigns.jsonl
+    format: jsonl
+    producer: engine/options_signal_campaign.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: formed_at
+    freshness_sla_hours: 30
+    schema: options.signal_campaign/v2
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_signal_campaign.py
+    external_consumers: []
+    notes: >
+      Append-only exact-contract/session campaign census. Every valid source group,
+      including singletons, receives a stable campaign identity; later source-prefix
+      extension creates a new immutable revision and preserves lineage. The nightly
+      campaign engine is the sole writer and consumer. All selection, ranking,
+      scoring, gating, sizing, trading, publication, training, Neural Web, and
+      Prophet authority remains false.
+
+  options-signal-campaign-outcomes:
+    path: data/options_signal_campaign/outcomes.jsonl
+    format: jsonl
+    producer: engine/options_signal_campaign.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: computed_at
+    freshness_sla_hours: 30
+    schema: options.signal_campaign_outcome/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_signal_campaign.py
+    external_consumers: []
+    notes: >
+      One immutable row per campaign revision and horizon, anchored causally to the
+      final member's availability clock and one exact receipt-bound source outcome.
+      Other member outcomes are reference-only coverage; option PnL remains null.
+      The nightly campaign engine is the sole writer and consumer. No row grants
+      selection, promotion, rank, gate, size, trade, training, or Prophet authority.
+
+  options-signal-campaign-checkpoint:
+    path: data/options_signal_campaign/checkpoint.json
+    format: json
+    producer: engine/options_signal_campaign.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: options.signal_campaign_checkpoint/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_signal_campaign.py
+    external_consumers: []
+    notes: >
+      Deterministic checkpoint written only after canonical campaign revisions and
+      outcomes are durably replaced. It binds exact immutable source and output
+      prefixes and fails closed on shrink or drift. The nightly campaign engine is
+      the sole writer and consumer and the checkpoint grants no downstream authority.
 
   options-signal-episode-checkpoint:
     path: data/options_signal_episode/checkpoint.json

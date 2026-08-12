@@ -98,6 +98,15 @@ STATE_DIR = "live_flow_state"
 EVENT_STAGE_SCHEMA = "live_flow.event_stage/v1"
 EVENT_STAGE_RETAIN_SESSIONS = 64
 
+# Prospective Market Memory capture is opt-in and private. The poller queues a
+# request only after both owner receipts are fsynced. Historical/manual runs
+# never initialize this boundary.
+OPTIONS_CONTEXT_CAPTURE_ENV = "MARKET_MEMORY_OPTIONS_CONTEXT_CAPTURE"
+OPTIONS_CONTEXT_CAPTURE_ROOT_ENV = "MARKET_MEMORY_OPTIONS_CONTEXT_OUTBOX"
+OPTIONS_CONTEXT_CAPTURE_TARGET_ENV = "MARKET_MEMORY_OPTIONS_CONTEXT_SSH_TARGET"
+OPTIONS_CONTEXT_CAPTURE_KEY_ENV = "MARKET_MEMORY_OPTIONS_CONTEXT_SSH_KEY"
+_OPTIONS_CONTEXT_DISPATCHER = None
+
 # Top tickers to publish per cycle (by day gross premium)
 TOP_TICKERS_N = 40
 
@@ -308,6 +317,67 @@ def _out_dir() -> Path:
 def _state_dir() -> Path:
     p = config.data_dir() / STATE_DIR
     return _ensure_directory_durable(p)
+
+
+def _initialize_options_context_dispatcher(
+    session_date: str, *, historical: bool,
+):
+    """Arm the private owner-time outbox, never a backdated run."""
+
+    if os.environ.get(OPTIONS_CONTEXT_CAPTURE_ENV, "0").strip() != "1":
+        return None
+    if historical:
+        log.warning(
+            "poller: option-context capture disabled for a historical --date run"
+        )
+        return None
+    try:
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        root_text = os.environ.get(OPTIONS_CONTEXT_CAPTURE_ROOT_ENV, "").strip()
+        root = (
+            Path(root_text)
+            if root_text
+            else _state_dir() / "market_memory_options_context"
+        )
+        target = os.environ.get(OPTIONS_CONTEXT_CAPTURE_TARGET_ENV, "").strip()
+        key = os.environ.get(OPTIONS_CONTEXT_CAPTURE_KEY_ENV, "").strip()
+        if not target or not key:
+            raise capture.OptionsEpisodeContextCaptureError(
+                "capture transport target/key path is not configured"
+            )
+        return capture.initialize_dispatcher(
+            root,
+            session_date=session_date,
+            config_path=_ROOT / "config" / "market_memory_canary.v1.json",
+            ssh_target=target,
+            ssh_key=key,
+        )
+    except Exception as exc:  # noqa: BLE001 - evidence must not stop live flow
+        log.warning(
+            "poller: prospective option-context capture is abstaining (%s)", exc,
+        )
+        return None
+
+
+def _flush_options_context_outbox() -> None:
+    """Bounded fail-soft transport; failed evidence remains durable."""
+
+    if _OPTIONS_CONTEXT_DISPATCHER is None:
+        return
+    try:
+        result = _OPTIONS_CONTEXT_DISPATCHER.drain_pending()
+        if result.get("captured") or result.get("expired") or result.get("unknown"):
+            log.info(
+                "poller: option-context outbox captured=%d expired=%d "
+                "unknown=%d pending=%d",
+                result.get("captured", 0),
+                result.get("expired", 0),
+                result.get("unknown", 0),
+                result.get("pending", 0),
+            )
+    except Exception as exc:  # noqa: BLE001 - evidence must not stop live flow
+        log.warning("poller: option-context outbox transport deferred (%s)", exc)
 
 
 def _utc_now_iso(now_fn=None) -> str:
@@ -527,7 +597,7 @@ def _parse_event_stage_bytes(
     *,
     path: Path,
     require_complete: bool,
-) -> tuple[dict[str, dict], dict[str, str]]:
+) -> tuple[dict[str, dict], dict[str, str], dict[str, dict]]:
     """Parse a stage as an ordered per-event state machine, failing closed."""
     if raw and not raw.endswith(b"\n"):
         raise RuntimeError(f"torn live-flow event stage: {path}")
@@ -535,6 +605,7 @@ def _parse_event_stage_bytes(
         raise RuntimeError(f"empty live-flow event stage: {path}")
     decisions: dict[str, dict] = {}
     available: dict[str, str] = {}
+    context_capture: dict[str, dict] = {}
     for lineno, line in enumerate(raw.splitlines(), start=1):
         try:
             receipt = _strict_json_loads(line)
@@ -564,7 +635,10 @@ def _parse_event_stage_bytes(
                 raise RuntimeError(f"decision receipt contains non-durable fields {event_id}")
             decisions[event_id] = event
         elif kind == "availability":
-            if set(receipt) != {"schema", "kind", "event_id", "available_at"}:
+            if set(receipt) not in (
+                {"schema", "kind", "event_id", "available_at"},
+                {"schema", "kind", "event_id", "available_at", "context_capture"},
+            ):
                 raise RuntimeError(f"invalid availability receipt shape {path}:{lineno}")
             if event_id not in decisions:
                 raise RuntimeError(
@@ -588,13 +662,43 @@ def _parse_event_stage_bytes(
                 raise RuntimeError(
                     f"staged availability leaves session date for {event_id}"
                 )
+            binding = receipt.get("context_capture")
+            if binding is None:
+                binding = {"status": "abstained", "reason": "legacy_unbound"}
+            if not isinstance(binding, dict):
+                raise RuntimeError(f"invalid context capture binding for {event_id}")
+            if binding.get("status") == "prepared":
+                if (
+                    set(binding) != {"status", "request_id", "request_sha256"}
+                    or not re.fullmatch(r"mmoptrequest_[a-f0-9]{64}", str(binding.get("request_id") or ""))
+                    or not re.fullmatch(r"[a-f0-9]{64}", str(binding.get("request_sha256") or ""))
+                ):
+                    raise RuntimeError(
+                        f"invalid prepared context capture binding for {event_id}"
+                    )
+            elif binding.get("status") == "abstained":
+                if (
+                    set(binding) != {"status", "reason"}
+                    or binding.get("reason") not in {
+                        "capture_not_armed",
+                        "outside_predeclared_canary",
+                        "precommit_not_proven",
+                        "legacy_unbound",
+                    }
+                ):
+                    raise RuntimeError(
+                        f"invalid context capture abstention for {event_id}"
+                    )
+            else:
+                raise RuntimeError(f"unknown context capture state for {event_id}")
             available[event_id] = stamp
+            context_capture[event_id] = dict(binding)
         else:
             raise RuntimeError(f"unknown event-stage receipt {path}:{lineno}")
     missing = set(decisions) - set(available)
     if require_complete and missing:
         raise RuntimeError(f"event stage has decisions without availability: {sorted(missing)}")
-    return decisions, available
+    return decisions, available, context_capture
 
 
 def _stage_raw_events(
@@ -627,7 +731,7 @@ def _stage_raw_events(
         try:
             fh.seek(0)
             raw = fh.read()
-            decisions, available = _parse_event_stage_bytes(
+            decisions, available, context_capture = _parse_event_stage_bytes(
                 session_date, raw, path=path, require_complete=False,
             )
             # An empty file means this call is creating the first durable source
@@ -675,6 +779,7 @@ def _stage_raw_events(
                     )
 
             enriched: list[dict] = []
+            context_promotions: list[tuple[str, object, str, dict]] = []
             for event_id, durable_event, needs_decision in resolved:
                 if needs_decision:
                     receipt = {
@@ -694,7 +799,10 @@ def _stage_raw_events(
                         needs_directory_fsync = False
                     decisions[event_id] = durable_event
                 stamp = available.get(event_id)
-                if stamp is None:
+                new_availability = stamp is None
+                prepared_context_request = None
+                capture_binding = {"status": "abstained", "reason": "capture_not_armed"}
+                if new_availability:
                     stamp = _utc_now_iso(clock)
                     stamp_dt = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
                     decision_dt = datetime.fromisoformat(
@@ -708,11 +816,56 @@ def _stage_raw_events(
                         raise RuntimeError(
                             f"durable availability leaves session date for {event_id}"
                         )
+                    enriched_event = dict(durable_event)
+                    enriched_event["available_at"] = stamp
+                    enriched_event["published_at"] = None
+                    enriched_event["source_snapshot_asof"] = stamp
+                    enriched_event["anchor_strategy"] = "durable_available_at"
+                    # Observe missingness at the newly sampled cutoff, after the
+                    # decision fsync but before any later clock can be confused
+                    # with owner-time evidence. The private precommit is not
+                    # transport-eligible; it only closes the crash seam until
+                    # the availability receipt below becomes durable.
+                    if _OPTIONS_CONTEXT_DISPATCHER is not None:
+                        try:
+                            prepared_context_request = (
+                                _OPTIONS_CONTEXT_DISPATCHER.prepare(
+                                    owner_event=enriched_event,
+                                    session_date=session_date,
+                                )
+                            )
+                            _OPTIONS_CONTEXT_DISPATCHER.stage(
+                                prepared_context_request
+                            )
+                            if prepared_context_request is None:
+                                capture_binding = {
+                                    "status": "abstained",
+                                    "reason": "outside_predeclared_canary",
+                                }
+                            else:
+                                capture_binding = {
+                                    "status": "prepared",
+                                    **_OPTIONS_CONTEXT_DISPATCHER.availability_binding(
+                                        prepared_context_request
+                                    ),
+                                }
+                        except Exception as exc:  # noqa: BLE001 - context abstains
+                            prepared_context_request = None
+                            capture_binding = {
+                                "status": "abstained",
+                                "reason": "precommit_not_proven",
+                            }
+                            log.warning(
+                                "poller: option-context observation abstained for %s (%s)",
+                                event_id,
+                                exc,
+                            )
                     receipt = {
                         "schema": EVENT_STAGE_SCHEMA,
                         "kind": "availability",
                         "event_id": event_id,
                         "available_at": stamp,
+                        "context_capture": capture_binding,
                     }
                     fh.write(json.dumps(
                         receipt, sort_keys=True, separators=(",", ":"), allow_nan=False,
@@ -720,11 +873,27 @@ def _stage_raw_events(
                     fh.flush()
                     os.fsync(fh.fileno())
                     available[event_id] = stamp
-                enriched_event = dict(durable_event)
-                enriched_event["available_at"] = stamp
-                enriched_event["published_at"] = None
-                enriched_event["source_snapshot_asof"] = stamp
-                enriched_event["anchor_strategy"] = "durable_available_at"
+                    if prepared_context_request is not None:
+                        context_promotions.append(
+                            ("commit", prepared_context_request, event_id, capture_binding)
+                        )
+                else:
+                    enriched_event = dict(durable_event)
+                    enriched_event["available_at"] = stamp
+                    enriched_event["published_at"] = None
+                    enriched_event["source_snapshot_asof"] = stamp
+                    enriched_event["anchor_strategy"] = "durable_available_at"
+                    if _OPTIONS_CONTEXT_DISPATCHER is not None:
+                        capture_binding = context_capture.get(
+                            event_id,
+                            {"status": "abstained", "reason": "legacy_unbound"},
+                        )
+                        if capture_binding.get("status") == "prepared":
+                            context_promotions.append(
+                                ("recover", enriched_event, event_id, capture_binding)
+                            )
+                # An already-available replay cannot manufacture a request. Only
+                # exact bytes precommitted at the first cutoff may retry transport.
                 enriched.append(enriched_event)
             # Reconfirm the complete visible prefix at the transaction boundary,
             # even when every receipt came from a prior attempt.  A failed fsync
@@ -735,6 +904,25 @@ def _stage_raw_events(
             fh.flush()
             os.fsync(fh.fileno())
             _fsync_directory(path.parent)
+            # Only this point proves both the complete availability-file bytes
+            # and their parent entry durable. A replay may promote an exact
+            # precommit after this proof, never merely because page-cache bytes
+            # parsed before the final fsync boundary.
+            for action, payload, event_id, capture_binding in context_promotions:
+                owner_binding = {
+                    "request_id": capture_binding["request_id"],
+                    "request_sha256": capture_binding["request_sha256"],
+                }
+                if action == "commit":
+                    _OPTIONS_CONTEXT_DISPATCHER.commit(
+                        payload, owner_binding=owner_binding
+                    )
+                else:
+                    _OPTIONS_CONTEXT_DISPATCHER.recover(
+                        owner_event=payload,
+                        session_date=session_date,
+                        owner_binding=owner_binding,
+                    )
             return enriched
         finally:
             fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
@@ -2538,6 +2726,8 @@ def _within_rth() -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
+    global _OPTIONS_CONTEXT_DISPATCHER
+
     parser = argparse.ArgumentParser(description="Live options-flow poller")
     parser.add_argument(
         "--once", action="store_true",
@@ -2570,6 +2760,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
 
     session_date = _session_date(args.date)
     log.info("poller: session_date=%s once=%s", session_date, args.once)
+    _OPTIONS_CONTEXT_DISPATCHER = _initialize_options_context_dispatcher(
+        session_date, historical=bool(args.date),
+    )
 
     # Recover the transaction seam before any network dependency or RTH exit.
     # A same-session restart can durably stage the exact pending decisions without
@@ -2596,6 +2789,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 event_stager=_stage_raw_events,
                 cutoff_ts=cutoff,
             )
+        _flush_options_context_outbox()
     except Exception as exc:  # noqa: BLE001
         log.error("poller: startup learning-WAL recovery failed: %s", exc, exc_info=True)
         return 1
@@ -2785,6 +2979,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 event_stager=_stage_raw_events,
                 cutoff_ts=cutoff,
             )
+            _flush_options_context_outbox()
             # The cumulative display envelope is published only after durable
             # availability receipts exist for every newly admitted learning event.
             committed_asof = _utc_now_iso()

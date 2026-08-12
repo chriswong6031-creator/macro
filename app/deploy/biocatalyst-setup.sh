@@ -8,11 +8,15 @@ set -euo pipefail
 APP_DIR=/opt/macro
 SERVICE_SOURCE="$APP_DIR/app/deploy/macro-biocatalyst.service"
 TIMER_SOURCE="$APP_DIR/app/deploy/macro-biocatalyst.timer"
+HISTORY_SERVICE_SOURCE="$APP_DIR/app/deploy/macro-biocatalyst-history.service"
+HISTORY_TIMER_SOURCE="$APP_DIR/app/deploy/macro-biocatalyst-history.timer"
 HEARTBEAT_SERVICE_SOURCE="$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service"
 HEARTBEAT_TIMER_SOURCE="$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer"
 HEARTBEAT_RUNNER="$APP_DIR/app/deploy/biocatalyst-activation-heartbeat.sh"
 SERVICE_DEST=/etc/systemd/system/macro-biocatalyst.service
 TIMER_DEST=/etc/systemd/system/macro-biocatalyst.timer
+HISTORY_SERVICE_DEST=/etc/systemd/system/macro-biocatalyst-history.service
+HISTORY_TIMER_DEST=/etc/systemd/system/macro-biocatalyst-history.timer
 HEARTBEAT_SERVICE_DEST=/etc/systemd/system/macro-biocatalyst-activation-heartbeat.service
 HEARTBEAT_TIMER_DEST=/etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer
 ENV_FILE=/etc/macro-biocatalyst.env
@@ -42,10 +46,11 @@ usage() {
 	cat <<'USAGE'
 Usage: biocatalyst-setup.sh [--verify-prereqs]
 
-Installs the BioCatalyst systemd service and timer without enabling either one.
+Installs the BioCatalyst hourly and daily-history services and timers without
+enabling any of them.
 The root-owned /etc/macro-biocatalyst.env file must contain:
   BIOCATALYST_ENABLED=1
-  BIOCATALYST_HISTORY_ENABLED=0  # optional B2 adapter; keep 0 until separately reviewed
+  BIOCATALYST_HISTORY_ENABLED=1  # daily B2 unit refreshes; hourly B1 unit forces 0
   BIOCATALYST_PROSPECTIVE_ENABLED=0  # B4E; default dark until the activation gate below
   BIOCATALYST_R2_ACTIVATION_ID=<r2_activation_24-hex-id>  # required only when prospective=1
   BIOCATALYST_R2_ACCOUNT_ID=<Cloudflare account id>  # required only when prospective=1
@@ -211,6 +216,10 @@ verify_prereqs() {
 	if ! grep -Eq '^BIOCATALYST_ENABLED=1([[:space:]]*)$' "$ENV_FILE"; then
 		missing+=("BIOCATALYST_ENABLED must equal 1")
 	fi
+	if grep -Eq '^BIOCATALYST_HISTORY_ENABLED=' "$ENV_FILE" && \
+		! grep -Eq '^BIOCATALYST_HISTORY_ENABLED=[01]([[:space:]]*)$' "$ENV_FILE"; then
+		missing+=("BIOCATALYST_HISTORY_ENABLED must equal 0 or 1")
+	fi
 	if grep -Eq '^BIOCATALYST_PROSPECTIVE_ENABLED=' "$ENV_FILE" && \
 		! grep -Eq '^BIOCATALYST_PROSPECTIVE_ENABLED=[01]([[:space:]]*)$' "$ENV_FILE"; then
 		missing+=("BIOCATALYST_PROSPECTIVE_ENABLED must equal 0 or 1")
@@ -277,6 +286,7 @@ verify_prereqs() {
 verify_units() {
 	if command -v systemd-analyze >/dev/null 2>&1; then
 		systemd-analyze verify "$SERVICE_SOURCE" "$TIMER_SOURCE" \
+			"$HISTORY_SERVICE_SOURCE" "$HISTORY_TIMER_SOURCE" \
 			"$HEARTBEAT_SERVICE_SOURCE" "$HEARTBEAT_TIMER_SOURCE"
 	else
 		log "systemd-analyze unavailable; skipped unit verification"
@@ -326,6 +336,8 @@ main() {
 	[ "$(id -u)" -eq 0 ] || die "must run as root"
 	[ -f "$SERVICE_SOURCE" ] || die "missing service source: $SERVICE_SOURCE"
 	[ -f "$TIMER_SOURCE" ] || die "missing timer source: $TIMER_SOURCE"
+	[ -f "$HISTORY_SERVICE_SOURCE" ] || die "missing history service source: $HISTORY_SERVICE_SOURCE"
+	[ -f "$HISTORY_TIMER_SOURCE" ] || die "missing history timer source: $HISTORY_TIMER_SOURCE"
 	[ -f "$HEARTBEAT_SERVICE_SOURCE" ] || die "missing heartbeat service source: $HEARTBEAT_SERVICE_SOURCE"
 	[ -f "$HEARTBEAT_TIMER_SOURCE" ] || die "missing heartbeat timer source: $HEARTBEAT_TIMER_SOURCE"
 	[ -f "$HEARTBEAT_RUNNER" ] || die "missing heartbeat runner: $HEARTBEAT_RUNNER"
@@ -366,6 +378,8 @@ main() {
 	command -v systemctl >/dev/null 2>&1 || die "systemctl is required to install units"
 	install -m 0644 "$SERVICE_SOURCE" "$SERVICE_DEST"
 	install -m 0644 "$TIMER_SOURCE" "$TIMER_DEST"
+	install -m 0644 "$HISTORY_SERVICE_SOURCE" "$HISTORY_SERVICE_DEST"
+	install -m 0644 "$HISTORY_TIMER_SOURCE" "$HISTORY_TIMER_DEST"
 	install -m 0644 "$HEARTBEAT_SERVICE_SOURCE" "$HEARTBEAT_SERVICE_DEST"
 	install -m 0644 "$HEARTBEAT_TIMER_SOURCE" "$HEARTBEAT_TIMER_DEST"
 	systemctl daemon-reload

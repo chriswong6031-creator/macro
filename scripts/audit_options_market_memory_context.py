@@ -27,6 +27,11 @@ from engine.neuralweb import market_memory_trusted  # noqa: E402
 _MAX_LEDGER_BYTES = 8 * 1024 * 1024
 _MAX_LEDGER_ROWS = 4_096
 _MAX_CONFIG_BYTES = 32 * 1024
+_FROZEN_LEGACY_CAMPAIGN_ROWS = 8
+_FROZEN_LEGACY_CAMPAIGN_BYTES = 10_492
+_FROZEN_LEGACY_CAMPAIGN_SHA256 = (
+    "db326f5c772ab417c43b8579ad50abb0434916922bda3a13c2da5b8303813910"
+)
 _COMMIT = re.compile(r"[a-f0-9]{40,64}\Z")
 
 
@@ -141,6 +146,33 @@ def _ledger(path: Path) -> tuple[bytes, list[dict]]:
     return body, rows
 
 
+def _validate_frozen_legacy_campaign_ledger(
+    *,
+    body: bytes,
+    campaigns: list[dict],
+    episodes: list[dict],
+    h60_outcomes: list[dict],
+) -> None:
+    """Authenticate the retired v1 bytes without treating future sources as v1 rows."""
+    if (
+        len(campaigns) != _FROZEN_LEGACY_CAMPAIGN_ROWS
+        or len(body) != _FROZEN_LEGACY_CAMPAIGN_BYTES
+        or hashlib.sha256(body).hexdigest() != _FROZEN_LEGACY_CAMPAIGN_SHA256
+    ):
+        raise AuditInputError(
+            "legacy campaign ledger differs from the frozen eight-row corpus"
+        )
+    try:
+        for campaign in campaigns:
+            options_signal_episode.validate_campaign_against_sources(
+                campaign, episodes, h60_outcomes
+            )
+    except options_signal_episode.ContractError as exc:
+        raise AuditInputError(
+            "frozen legacy campaign row differs from its historical source prefix"
+        ) from exc
+
+
 def build_live_audit_bundle(
     *,
     repository_root: Path,
@@ -193,6 +225,12 @@ def build_live_audit_bundle(
         raise AuditInputError(
             "options owner ledgers fail their frozen contracts"
         ) from exc
+    _validate_frozen_legacy_campaign_ledger(
+        body=campaign_body,
+        campaigns=campaigns,
+        episodes=episodes,
+        h60_outcomes=h60_outcomes,
+    )
 
     canary_identity = context_bridge.load_canary_identity_snapshot(config_path)
     if canary_identity.config_sha256 != hashlib.sha256(config_body).hexdigest():

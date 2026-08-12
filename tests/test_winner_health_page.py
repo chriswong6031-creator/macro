@@ -125,16 +125,22 @@ def test_full_board_renders(tmp_path):
 
 
 def test_clear_mode_renders_the_signature(tmp_path):
-    """Names extended, nothing maturing -> the page-scale high-water picture."""
+    """Names present, nothing aging -> the tier's own quiet band, and because
+    this fixture has ONE tier and it is quiet, the page-scale signature too.
+
+    W2b moved the null from page scale to tier scale: each tier resolves its own
+    state, and the flatline renders only when EVERY tier is clear (§4.8), so the
+    quiet-night picture stays rare and stays memorable.
+    """
     html = _render(tmp_path, _ctx({"extended_healthy": [_row("AVGO", 0.54, legs=[])]}))
-    assert "Nothing is maturing tonight" in html
+    assert "Nothing is aging in this group tonight" in html
     assert "flatline" in html
     assert "Still running" in html          # the group still renders below
 
 
 def test_none_mode_renders(tmp_path):
     html = _render(tmp_path, _ctx())
-    assert "No US name is extended right now" in html
+    assert "No name is in this group tonight" in html
     assert "1,506" in html                   # universe_n, thousands-separated
 
 

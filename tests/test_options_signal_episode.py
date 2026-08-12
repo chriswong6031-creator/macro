@@ -4,11 +4,13 @@ import copy
 import hashlib
 import json
 import math
+import os
+import re
 import stat
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
-from decimal import Decimal
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 
 import pandas as pd
@@ -27,12 +29,11 @@ from engine.options_signal_episode import (
     append_episodes,
     append_outcomes,
     append_session_outcomes,
-    episode_from_live_event,
     derive_campaigns,
+    episode_from_live_event,
     load_jsonl,
-    validate_episode,
     validate_campaign,
-    validate_campaign_against_sources,
+    validate_episode,
     validate_outcome,
     validate_outcome_against_episode,
     validate_session_outcome,
@@ -46,6 +47,7 @@ from engine.options_signal_episode import (
 )
 from engine.session_digest import session_window_et
 from lib import nyse_calendar
+from scripts import audit_options_market_memory_context as options_context_audit
 
 
 def _event(**overrides) -> dict:
@@ -562,10 +564,12 @@ def test_h60_requires_a_complete_declared_cadence_grid() -> None:
         episode,
         complete,
         computed_at=datetime(2026, 7, 2, 15, 32, tzinfo=timezone.utc),
-        price_source="fixture",
+        price_source="data/intraday/TEST.parquet",
         bar_seconds=60,
         price_delay_minutes=0,
     )
+    validate_outcome(row)
+    validate_outcome_against_episode(row, episode)
     assert row["status"] == "complete"
     assert row["measurement"]["target_aligned"] is True
     assert row["measurement"]["training_eligible"] is True
@@ -2791,10 +2795,16 @@ def test_options_pit_engine_and_adversarial_suites_are_ci_wired() -> None:
     manifest = (repo / ".github/ci/legacy-jobs.yml").read_text()
     for required in (
         '"engine/options_signal_episode.py"',
+        '"engine/options_signal_campaign.py"',
         '"contracts/options/options.signal_episode_session_outcome.v1.schema.json"',
         '"contracts/options/options.signal_campaign.v1.schema.json"',
+        '"contracts/options/options.signal_campaign.v2.schema.json"',
+        '"contracts/options/options.signal_campaign_outcome.v1.schema.json"',
+        '"contracts/options/options.signal_campaign_checkpoint.v1.schema.json"',
         '"data/options_signal_episode/campaigns.jsonl"',
+        '"data/options_signal_campaign/**"',
         '"research/options_estate/OPTIONS_SIGNAL_CAMPAIGNS_PREREG.md"',
+        '"research/options_estate/OPTIONS_SIGNAL_CAMPAIGN_V2_PREREG.md"',
         '"ops/LIVE_FLOW_RUNBOOK.md"',
         '"engine/live_flow.py"',
         '"tests/test_options_signal_episode.py"',
@@ -2802,6 +2812,7 @@ def test_options_pit_engine_and_adversarial_suites_are_ci_wired() -> None:
     ):
         assert required in workflow
     assert "python -m pytest tests/test_options_signal_episode.py -q" in manifest
+    assert "python -m pytest tests/test_options_signal_campaign.py -q" in manifest
     assert "python -m pytest tests/test_live_flow.py -q" in manifest
 
 
@@ -2846,35 +2857,60 @@ def test_committed_options_pit_ledgers_are_strict_valid_joined_shadow_data() -> 
 def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay() -> None:
     repo = Path(__file__).resolve().parents[1]
     workflow = (repo / ".github/workflows/daily.yml").read_text()
+    helper = (repo / "scripts/ci/options_signal_nightly.sh").read_text()
     builder_name = (
         "      - name: OIP PIT — durable episodes + H+60 and "
         "declared-session-close proxy accrual"
     )
+    campaign_builder_name = (
+        "      - name: OIP campaign v2 — exact-contract revision and "
+        "anchored-outcome accrual"
+    )
     checkpoint_name = (
         "      - name: OIP PIT — checkpoint the five durable episode ledgers"
+    )
+    campaign_checkpoint_name = (
+        "      - name: OIP campaign v2 — checkpoint the exact three canonical ledgers"
     )
     following_name = (
         "      - name: XSR W1 — US fast-sector rotation lens "
         "(build_us_sector_rotation)"
     )
     builder_start = workflow.index(builder_name)
+    campaign_builder_start = workflow.index(campaign_builder_name)
     checkpoint_start = workflow.index(checkpoint_name)
+    campaign_checkpoint_start = workflow.index(campaign_checkpoint_name)
     following_start = workflow.index(following_name)
-    builder_block = workflow[builder_start:checkpoint_start]
-    checkpoint_block = workflow[checkpoint_start:following_start]
+    builder_block = workflow[builder_start:campaign_builder_start]
+    campaign_builder_block = workflow[campaign_builder_start:checkpoint_start]
+    checkpoint_block = workflow[checkpoint_start:campaign_checkpoint_start]
+    campaign_checkpoint_block = workflow[campaign_checkpoint_start:following_start]
 
-    assert builder_start < checkpoint_start < following_start
+    assert (
+        builder_start
+        < campaign_builder_start
+        < checkpoint_start
+        < campaign_checkpoint_start
+        < following_start
+    )
     assert "id: options_signal_episode" in builder_block
     assert "continue-on-error: true" in builder_block
     assert "run: python -m scripts.build_options_signal_episode" in builder_block
+    assert "id: options_signal_campaign" in campaign_builder_block
+    assert "run: python -m scripts.build_options_signal_campaign" in campaign_builder_block
+    assert (
+        "if: always() && steps.options_signal_episode.outcome == 'success'"
+        in campaign_builder_block
+    )
     assert (
         "if: always() && steps.options_signal_episode.outcome == 'success'"
         in checkpoint_block
     )
-    assert "push_on_main_ok || exit 0" in checkpoint_block
-    assert "push_metadata_replay_commit" in checkpoint_block
-    assert 'git add -- "${OIP_LEDGER_PATHS[@]}"' in checkpoint_block
-    assert 'push_staged_clean "${OIP_LEDGER_PATHS[@]}"' in checkpoint_block
+    assert "id: options_signal_episode_publish" in checkpoint_block
+    assert (
+        "run: bash scripts/ci/options_signal_nightly.sh publish-episode"
+        in checkpoint_block
+    )
 
     expected_paths = {
         "data/options_signal_episode/checkpoint.json",
@@ -2883,17 +2919,1035 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         "data/options_signal_episode/outcomes_session.jsonl",
         "data/options_signal_episode/campaigns.jsonl",
     }
-    declared = checkpoint_block.split("OIP_LEDGER_PATHS=(", 1)[1].split(")", 1)[0]
+    declared = helper.split("readonly -a OIP_EPISODE_PATHS=(", 1)[1].split(")", 1)[0]
     assert {line.strip() for line in declared.splitlines() if line.strip()} == expected_paths
-    for forbidden in (
-        "git pull",
-        "git rebase",
-        "git checkout",
-        "git stash",
-        "git clean",
-        "git add data/options_signal_episode",
+    episode_helper = helper.split("publish_episode() {", 1)[1].split(
+        "\npublish_campaign() {", 1
+    )[0]
+    assert 'git add -- "${OIP_EPISODE_PATHS[@]}"' in episode_helper
+    assert 'push_staged_clean "${OIP_EPISODE_PATHS[@]}"' in episode_helper
+    assert "oip_exact_candidate_commit" in episode_helper
+    assert 'git reset -q -- "${OIP_EPISODE_PATHS[@]}"' in episode_helper
+    assert "git commit -m" not in episode_helper
+    assert "git pull" not in episode_helper
+    assert "git rebase" not in episode_helper
+    assert "git checkout" not in episode_helper
+    assert "git stash" not in episode_helper
+    assert "git clean" not in episode_helper
+
+    assert "id: options_signal_campaign_publish" in campaign_checkpoint_block
+    assert "steps.options_signal_episode_publish.outcome == 'success'" in (
+        campaign_checkpoint_block
+    )
+    assert "steps.options_signal_campaign.outcome == 'success'" in (
+        campaign_checkpoint_block
+    )
+    assert (
+        "run: bash scripts/ci/options_signal_nightly.sh publish-campaign"
+        in campaign_checkpoint_block
+    )
+    expected_campaign_paths = {
+        "data/options_signal_campaign/campaigns.jsonl",
+        "data/options_signal_campaign/outcomes.jsonl",
+        "data/options_signal_campaign/checkpoint.json",
+    }
+    declared_campaign = helper.split(
+        "readonly -a OIP_CAMPAIGN_PATHS=(", 1
+    )[1].split(")", 1)[0]
+    assert {
+        line.strip() for line in declared_campaign.splitlines() if line.strip()
+    } == expected_campaign_paths
+    campaign_helper = helper.split("publish_campaign() {", 1)[1].split(
+        "\nexclude_broad() {", 1
+    )[0]
+    assert 'git add -- "${OIP_CAMPAIGN_PATHS[@]}"' in campaign_helper
+    assert 'push_staged_clean "${OIP_CAMPAIGN_PATHS[@]}"' in campaign_helper
+    assert "oip_exact_candidate_commit" in campaign_helper
+    assert 'git reset -q -- "${OIP_CAMPAIGN_PATHS[@]}"' in campaign_helper
+    assert "git commit -m" not in campaign_helper
+
+    broad_start = workflow.index("      - name: commit engine outputs")
+    broad_end = workflow.index(
+        "      - name: assemble machine-consumable feeds", broad_start
+    )
+    broad_block = workflow[broad_start:broad_end]
+    assert "git add data/ site/ reports/" in broad_block
+    assert "bash scripts/ci/options_signal_nightly.sh exclude-broad" in broad_block
+    broad_add = broad_block.index("git add data/ site/ reports/")
+    exclusions = [
+        match.start()
+        for match in re.finditer(
+            "bash scripts/ci/options_signal_nightly.sh exclude-broad", broad_block
+        )
+    ]
+    assert len(exclusions) == 2
+    assert exclusions[0] < broad_add < exclusions[1]
+    assert "require-clean-broad-start" in broad_block
+    assert "commit-broad-candidate" in broad_block
+    assert "commit-render-sync" in broad_block
+    assert 'git commit -m "engine: regime update' not in broad_block
+    assert 'git commit -m "render-sync: post-rebase guards' not in broad_block
+    assert broad_block.index("data/prophet/origination_receipts") < (
+        broad_block.rindex("bash scripts/ci/options_signal_nightly.sh exclude-broad")
+    )
+    cleanup_helper = helper.split("exclude_broad() {", 1)[1].split(
+        "\nassert_integrity() {", 1
+    )[0]
+    assert 'git checkout HEAD -- "$root"' in cleanup_helper
+    assert 'git reset -q -- "${OIP_NARROW_ROOTS[@]}"' in cleanup_helper
+    assert 'git clean -fd -- "${OIP_NARROW_ROOTS[@]}"' in cleanup_helper
+
+    final_gate = workflow.index(
+        "      - name: OIP PIT — fail closed after unrelated rendering completes"
+    )
+    assert final_gate > following_start
+    final_gate_block = workflow[final_gate:]
+    assert "        if: always()" in final_gate_block
+    assert "OIP_EPISODE_BUILD_OUTCOME" in final_gate_block
+    assert "OIP_EPISODE_PUBLISH_OUTCOME" in final_gate_block
+    assert "OIP_CAMPAIGN_BUILD_OUTCOME" in final_gate_block
+    assert "OIP_CAMPAIGN_PUBLISH_OUTCOME" in final_gate_block
+    assert "run: bash scripts/ci/options_signal_nightly.sh assert-integrity" in (
+        final_gate_block
+    )
+    integrity_helper = helper.split("assert_integrity() {", 1)[1]
+    for outcome in (
+        "OIP_EPISODE_BUILD_OUTCOME",
+        "OIP_EPISODE_PUBLISH_OUTCOME",
+        "OIP_CAMPAIGN_BUILD_OUTCOME",
+        "OIP_CAMPAIGN_PUBLISH_OUTCOME",
     ):
-        assert forbidden not in checkpoint_block
+        assert f'${{{outcome}:-}}' in integrity_helper
+    assert "OIP PIT integrity passed" in integrity_helper
+    assert "return 1" in integrity_helper
+
+
+def test_narrow_commit_tree_candidate_cannot_advance_head_on_interruption(
+    tmp_path: Path,
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    origin = tmp_path / "origin.git"
+    lane = tmp_path / "lane"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", "--initial-branch=main", str(origin)],
+        check=True,
+    )
+    lane.mkdir()
+
+    def git(*args: str) -> str:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=lane,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        return result.stdout.strip()
+
+    git("init", "-b", "main")
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    git("remote", "add", "origin", str(origin))
+    campaign_paths = (
+        "data/options_signal_campaign/campaigns.jsonl",
+        "data/options_signal_campaign/outcomes.jsonl",
+        "data/options_signal_campaign/checkpoint.json",
+    )
+    for path in campaign_paths:
+        target = lane / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('{"version":1}\n')
+    git("add", *campaign_paths)
+    git("commit", "-m", "baseline")
+    git("push", "-u", "origin", "main")
+    parent = git("rev-parse", "HEAD")
+
+    for path in campaign_paths:
+        (lane / path).write_text('{"version":2}\n')
+    result = subprocess.run(
+        ["bash", str(helper), "publish-campaign"],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "GITHUB_RUN_ID": "campaign-test",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "pushed options campaign v2 ledgers on attempt 1" in result.stdout
+    remote_tip = subprocess.run(
+        ["git", "--git-dir", str(origin), "rev-parse", "main"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    assert git("rev-parse", "HEAD") == parent
+    assert remote_tip != parent
+    assert subprocess.run(
+        ["git", "--git-dir", str(origin), "rev-parse", f"{remote_tip}^"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip() == parent
+    for path in campaign_paths:
+        remote_bytes = subprocess.run(
+            ["git", "--git-dir", str(origin), "show", f"main:{path}"],
+            text=True,
+            capture_output=True,
+            check=True,
+        ).stdout
+        assert remote_bytes == '{"version":2}\n'
+        assert git("show", f"HEAD:{path}") == '{"version":1}'
+        assert (lane / path).read_text() == '{"version":2}\n'
+    assert subprocess.run(
+        ["git", "diff", "--cached", "--quiet"], cwd=lane, check=False
+    ).returncode == 0
+    assert subprocess.run(
+        ["git", "diff", "--quiet"], cwd=lane, check=False
+    ).returncode == 1
+
+
+def test_five_ledger_episode_helper_keeps_head_and_publishes_exact_scope(
+    tmp_path: Path,
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    origin = tmp_path / "origin.git"
+    lane = tmp_path / "lane"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", "--initial-branch=main", str(origin)],
+        check=True,
+    )
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=lane, text=True, capture_output=True, check=True
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    git("remote", "add", "origin", str(origin))
+    episode_paths = (
+        "data/options_signal_episode/checkpoint.json",
+        "data/options_signal_episode/episodes.jsonl",
+        "data/options_signal_episode/outcomes_h60.jsonl",
+        "data/options_signal_episode/outcomes_session.jsonl",
+        "data/options_signal_episode/campaigns.jsonl",
+    )
+    for path in episode_paths:
+        target = lane / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('{"version":1}\n')
+    foreign = lane / "data/foreign.json"
+    foreign.write_text("keep me unstaged\n")
+    git("add", *episode_paths)
+    git("commit", "-m", "baseline")
+    git("push", "-u", "origin", "main")
+    parent = git("rev-parse", "HEAD")
+
+    for path in episode_paths:
+        (lane / path).write_text('{"version":2}\n')
+    result = subprocess.run(
+        ["bash", str(helper), "publish-episode"],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "GITHUB_RUN_ID": "episode-test",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "pushed options PIT episode ledgers on attempt 1" in result.stdout
+    assert git("rev-parse", "HEAD") == parent
+    remote_tip = subprocess.run(
+        ["git", "--git-dir", str(origin), "rev-parse", "main"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    assert remote_tip != parent
+    assert subprocess.run(
+        ["git", "--git-dir", str(origin), "rev-parse", f"{remote_tip}^"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip() == parent
+    remote_tree = subprocess.run(
+        ["git", "--git-dir", str(origin), "rev-parse", "main^{tree}"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    assert remote_tree != git("rev-parse", "HEAD^{tree}")
+    for path in episode_paths:
+        remote_bytes = subprocess.run(
+            ["git", "--git-dir", str(origin), "show", f"main:{path}"],
+            text=True,
+            capture_output=True,
+            check=True,
+        ).stdout
+        assert remote_bytes == '{"version":2}\n'
+        assert git("show", f"HEAD:{path}") == '{"version":1}'
+        assert (lane / path).read_text() == '{"version":2}\n'
+    assert foreign.read_text() == "keep me unstaged\n"
+    assert "data/foreign.json" in git("status", "--porcelain")
+
+
+@pytest.mark.parametrize(
+    "refusal", ["foreign-staged", "owned-symlink", "owned-executable"]
+)
+def test_narrow_episode_helper_refuses_unsafe_publication(
+    tmp_path: Path, refusal: str
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    origin = tmp_path / "origin.git"
+    lane = tmp_path / "lane"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", "--initial-branch=main", str(origin)],
+        check=True,
+    )
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=lane, text=True, capture_output=True, check=True
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    git("remote", "add", "origin", str(origin))
+    episode_paths = (
+        "data/options_signal_episode/checkpoint.json",
+        "data/options_signal_episode/episodes.jsonl",
+        "data/options_signal_episode/outcomes_h60.jsonl",
+        "data/options_signal_episode/outcomes_session.jsonl",
+        "data/options_signal_episode/campaigns.jsonl",
+    )
+    for path in episode_paths:
+        target = lane / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('{"version":1}\n')
+    git("add", *episode_paths)
+    git("commit", "-m", "baseline")
+    git("push", "-u", "origin", "main")
+    parent = git("rev-parse", "HEAD")
+    for path in episode_paths:
+        (lane / path).write_text('{"version":2}\n')
+
+    if refusal == "foreign-staged":
+        foreign = lane / "data/foreign.json"
+        foreign.write_text('{"must_not_ride":true}\n')
+        git("add", "data/foreign.json")
+    elif refusal == "owned-symlink":
+        target = lane / episode_paths[-1]
+        target.unlink()
+        target.symlink_to("episodes.jsonl")
+    else:
+        target = lane / episode_paths[-1]
+        target.chmod(0o755)
+        git("add", episode_paths[-1])
+
+    result = subprocess.run(
+        ["bash", str(helper), "publish-episode"],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "GITHUB_RUN_ID": "refusal-test",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    diagnostics = result.stdout + result.stderr
+    assert "::error title=options PIT checkpoint" in diagnostics or (
+        "::error title=options candidate index rejected" in diagnostics
+    )
+    assert git("rev-parse", "HEAD") == parent
+    remote_tip = subprocess.run(
+        ["git", "--git-dir", str(origin), "rev-parse", "main"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    assert remote_tip == parent
+
+
+@pytest.mark.parametrize("publisher", ["episode", "campaign"])
+def test_narrow_publishers_isolate_foreign_index_toctou_race(
+    tmp_path: Path, publisher: str
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    origin = tmp_path / "origin.git"
+    lane = tmp_path / "lane"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", "--initial-branch=main", str(origin)],
+        check=True,
+    )
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=lane, text=True, capture_output=True, check=True
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    git("remote", "add", "origin", str(origin))
+    episode_paths = (
+        "data/options_signal_episode/checkpoint.json",
+        "data/options_signal_episode/episodes.jsonl",
+        "data/options_signal_episode/outcomes_h60.jsonl",
+        "data/options_signal_episode/outcomes_session.jsonl",
+        "data/options_signal_episode/campaigns.jsonl",
+    )
+    campaign_paths = (
+        "data/options_signal_campaign/campaigns.jsonl",
+        "data/options_signal_campaign/outcomes.jsonl",
+        "data/options_signal_campaign/checkpoint.json",
+    )
+    paths = episode_paths if publisher == "episode" else campaign_paths
+    for path in paths:
+        target = lane / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('{"version":1}\n')
+    git("add", *paths)
+    git("commit", "-m", "baseline")
+    git("push", "-u", "origin", "main")
+    parent = git("rev-parse", "HEAD")
+    for path in paths:
+        (lane / path).write_text('{"version":2}\n')
+    foreign = lane / "data/foreign.json"
+    foreign.write_text('{"must_not_ride":true}\n')
+
+    wrapper = tmp_path / f"run-{publisher}-race.sh"
+    wrapper.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "oip_after_scope_check() { git add -- data/foreign.json; }\n"
+        "export OIP_NIGHTLY_SOURCE_ONLY=1\n"
+        f'. "{helper}"\n'
+        f"publish_{publisher}\n"
+    )
+    wrapper.chmod(0o755)
+    result = subprocess.run(
+        ["bash", str(wrapper)],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "GITHUB_RUN_ID": f"{publisher}-race",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert git("rev-parse", "HEAD") == parent
+    remote_tip = subprocess.run(
+        ["git", "--git-dir", str(origin), "rev-parse", "main"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    assert remote_tip != parent
+    remote_paths = set(
+        subprocess.run(
+            ["git", "--git-dir", str(origin), "diff-tree", "--no-commit-id", "-r", "--name-only", remote_tip],
+            text=True,
+            capture_output=True,
+            check=True,
+        ).stdout.splitlines()
+    )
+    assert remote_paths == set(paths)
+    assert "data/foreign.json" not in remote_paths
+    assert subprocess.run(
+        ["git", "--git-dir", str(origin), "cat-file", "-e", "main:data/foreign.json"],
+        text=True,
+        capture_output=True,
+        check=False,
+    ).returncode != 0
+    assert git("diff", "--cached", "--name-only") == "data/foreign.json"
+
+
+@pytest.mark.parametrize("publisher", ["episode", "campaign"])
+def test_narrow_publishers_use_one_generation_when_allowed_paths_restage(
+    tmp_path: Path, publisher: str
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    origin = tmp_path / "origin.git"
+    lane = tmp_path / "lane"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", "--initial-branch=main", str(origin)],
+        check=True,
+    )
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=lane, text=True, capture_output=True, check=True
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    git("remote", "add", "origin", str(origin))
+    episode_paths = (
+        "data/options_signal_episode/checkpoint.json",
+        "data/options_signal_episode/episodes.jsonl",
+        "data/options_signal_episode/outcomes_h60.jsonl",
+        "data/options_signal_episode/outcomes_session.jsonl",
+        "data/options_signal_episode/campaigns.jsonl",
+    )
+    campaign_paths = (
+        "data/options_signal_campaign/campaigns.jsonl",
+        "data/options_signal_campaign/outcomes.jsonl",
+        "data/options_signal_campaign/checkpoint.json",
+    )
+    paths = episode_paths if publisher == "episode" else campaign_paths
+    for path in paths:
+        target = lane / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('{"generation":0}\n')
+    git("add", *paths)
+    git("commit", "-m", "baseline")
+    git("push", "-u", "origin", "main")
+    parent = git("rev-parse", "HEAD")
+    for path in paths:
+        (lane / path).write_text('{"generation":1}\n')
+
+    quoted_paths = " ".join(f"'{path}'" for path in paths)
+    wrapper = tmp_path / f"run-{publisher}-allowed-race.sh"
+    wrapper.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "oip_after_stage_snapshot() {\n"
+        f"  for path in {quoted_paths}; do printf '%s\\n' '{{\"generation\":2}}' > \"$path\"; done\n"
+        f"  git add -- {quoted_paths}\n"
+        "}\n"
+        "export OIP_NIGHTLY_SOURCE_ONLY=1\n"
+        f'. "{helper}"\n'
+        f"publish_{publisher}\n"
+    )
+    wrapper.chmod(0o755)
+    result = subprocess.run(
+        ["bash", str(wrapper)],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "GITHUB_RUN_ID": f"{publisher}-allowed-race",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert git("rev-parse", "HEAD") == parent
+    for path in paths:
+        remote_bytes = subprocess.run(
+            ["git", "--git-dir", str(origin), "show", f"main:{path}"],
+            text=True,
+            capture_output=True,
+            check=True,
+        ).stdout
+        assert remote_bytes == '{"generation":1}\n'
+        assert (lane / path).read_text() == '{"generation":2}\n'
+
+
+def test_broad_cleanup_removes_first_publication_campaign_additions(
+    tmp_path: Path,
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    lane = tmp_path / "lane"
+    lane.mkdir()
+
+    def git(*args: str) -> str:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=lane,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        return result.stdout.strip()
+
+    git("init", "-b", "main")
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    episode_paths = (
+        "data/options_signal_episode/checkpoint.json",
+        "data/options_signal_episode/episodes.jsonl",
+        "data/options_signal_episode/outcomes_h60.jsonl",
+        "data/options_signal_episode/outcomes_session.jsonl",
+        "data/options_signal_episode/campaigns.jsonl",
+    )
+    for path in episode_paths:
+        target = lane / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('{"safe":true}\n')
+    git("add", *episode_paths)
+    git("commit", "-m", "baseline")
+
+    for path in episode_paths:
+        (lane / path).write_text('{"unsafe":true}\n')
+
+    campaign_root = lane / "data/options_signal_campaign"
+    campaign_root.mkdir(parents=True)
+    paths = [
+        "data/options_signal_campaign/campaigns.jsonl",
+        "data/options_signal_campaign/outcomes.jsonl",
+        "data/options_signal_campaign/checkpoint.json",
+    ]
+    for path in paths:
+        (lane / path).write_text("{}\n")
+    extra_episode = lane / "data/options_signal_episode/unexpected.json"
+    extra_episode.write_text('{"must_not_ride":true}\n')
+    extra_campaign = lane / "data/options_signal_campaign/unexpected.json"
+    extra_campaign.write_text('{"must_not_ride":true}\n')
+    foreign = lane / "data/foreign.json"
+    foreign.write_text('{"keep":true}\n')
+    git("add", "data")
+    result = subprocess.run(
+        ["bash", str(helper), "exclude-broad"],
+        cwd=lane,
+        env={**os.environ, "GITHUB_WORKSPACE": str(repo)},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    assert not campaign_root.exists()
+    assert not extra_episode.exists()
+    assert not extra_campaign.exists()
+    for path in episode_paths:
+        assert (lane / path).read_text() == '{"safe":true}\n'
+    assert git("diff", "--cached", "--name-only") == "data/foreign.json"
+    assert foreign.read_text() == '{"keep":true}\n'
+
+
+@pytest.mark.parametrize(
+    "failed_name",
+    [
+        None,
+        "OIP_EPISODE_BUILD_OUTCOME",
+        "OIP_EPISODE_PUBLISH_OUTCOME",
+        "OIP_CAMPAIGN_BUILD_OUTCOME",
+        "OIP_CAMPAIGN_PUBLISH_OUTCOME",
+    ],
+)
+def test_terminal_integrity_helper_requires_all_four_successes(
+    tmp_path: Path, failed_name: str | None
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    names = (
+        "OIP_EPISODE_BUILD_OUTCOME",
+        "OIP_EPISODE_PUBLISH_OUTCOME",
+        "OIP_CAMPAIGN_BUILD_OUTCOME",
+        "OIP_CAMPAIGN_PUBLISH_OUTCOME",
+    )
+    # This formerly suppressed command dispatch entirely.  It is deliberately
+    # hostile here: execution must depend only on Bash's sourced-vs-executed
+    # identity, never on a caller-controlled environment variable.
+    env = {
+        **os.environ,
+        "GITHUB_WORKSPACE": str(repo),
+        "OIP_NIGHTLY_SOURCE_ONLY": "1",
+    }
+    env.update({name: "success" for name in names})
+    if failed_name is not None:
+        env[failed_name] = "failure"
+    result = subprocess.run(
+        ["bash", str(helper), "assert-integrity"],
+        cwd=repo,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if failed_name is None:
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "OIP PIT integrity passed" in result.stdout
+    else:
+        assert result.returncode != 0
+        assert result.stdout.startswith("::error title=OIP PIT integrity::")
+
+
+def test_narrow_publisher_hard_pins_symbolic_main_and_ignores_allowlist_env(
+    tmp_path: Path,
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    origin = tmp_path / "origin.git"
+    lane = tmp_path / "lane"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", "--initial-branch=main", str(origin)],
+        check=True,
+    )
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=lane, text=True, capture_output=True, check=True
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    git("remote", "add", "origin", str(origin))
+    paths = (
+        "data/options_signal_episode/checkpoint.json",
+        "data/options_signal_episode/episodes.jsonl",
+        "data/options_signal_episode/outcomes_h60.jsonl",
+        "data/options_signal_episode/outcomes_session.jsonl",
+        "data/options_signal_episode/campaigns.jsonl",
+    )
+    for path in paths:
+        target = lane / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('{"version":1}\n')
+    git("add", *paths)
+    git("commit", "-m", "base")
+    git("push", "-u", "origin", "main")
+    main = git("rev-parse", "HEAD")
+    git("checkout", "-q", "-b", "evil")
+    for path in paths:
+        (lane / path).write_text('{"version":2}\n')
+
+    result = subprocess.run(
+        ["bash", str(helper), "publish-episode"],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "RUNNER_TEMP": str(tmp_path),
+            "PUSH_MAIN_BRANCHES": "evil",
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "requires exact symbolic refs/heads/main" in result.stderr
+    remote = subprocess.run(
+        ["git", "--git-dir", str(origin), "rev-parse", "main"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    assert remote == main
+
+
+def test_narrow_candidate_refuses_reset_to_parent_at_snapshot_boundary(
+    tmp_path: Path,
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    origin = tmp_path / "origin.git"
+    lane = tmp_path / "lane"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", "--initial-branch=main", str(origin)],
+        check=True,
+    )
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=lane, text=True, capture_output=True, check=True
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    git("remote", "add", "origin", str(origin))
+    paths = (
+        "data/options_signal_campaign/campaigns.jsonl",
+        "data/options_signal_campaign/outcomes.jsonl",
+        "data/options_signal_campaign/checkpoint.json",
+    )
+    for path in paths:
+        target = lane / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('{"version":1}\n')
+    git("add", *paths)
+    git("commit", "-m", "base")
+    git("push", "-u", "origin", "main")
+    parent = git("rev-parse", "HEAD")
+    for path in paths:
+        (lane / path).write_text('{"version":2}\n')
+    wrapper = tmp_path / "empty-candidate.sh"
+    wrapper.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "oip_before_stage_snapshot() { git reset --hard -q HEAD; }\n"
+        f'. "{helper}"\n'
+        "publish_campaign\n"
+    )
+    wrapper.chmod(0o755)
+    result = subprocess.run(
+        ["bash", str(wrapper)],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "options candidate empty" in result.stderr
+    assert git("rev-parse", "HEAD") == parent
+    remote = subprocess.run(
+        ["git", "--git-dir", str(origin), "rev-parse", "main"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    assert remote == parent
+
+
+@pytest.mark.parametrize("command,allowed_root", [("commit-broad-candidate", "data"), ("commit-render-sync", "site")])
+def test_locked_commit_uses_frozen_allowed_tree_and_clears_index(
+    tmp_path: Path, command: str, allowed_root: str
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    lane = tmp_path / "lane"
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=lane, text=True, capture_output=True, check=True
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    target = lane / allowed_root / "owned.txt"
+    target.parent.mkdir(parents=True)
+    target.write_text("v1\n")
+    git("add", ".")
+    git("commit", "-m", "base")
+    parent = git("rev-parse", "HEAD")
+    target.write_text("v2\n")
+    git("add", str(target.relative_to(lane)))
+    result = subprocess.run(
+        ["bash", str(helper), command, "locked candidate"],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert git("rev-parse", "HEAD^") == parent
+    assert git("show", f"HEAD:{allowed_root}/owned.txt") == "v2"
+    assert git("status", "--porcelain") == ""
+    assert not (lane / ".git/index.lock").exists()
+
+
+def test_locked_broad_refusal_preserves_foreign_lock_and_sanitizes_owned_failure(
+    tmp_path: Path,
+) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    lane = tmp_path / "lane"
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=lane, text=True, capture_output=True, check=True
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    owned = lane / "data/owned.txt"
+    foreign = lane / "config/foreign.txt"
+    owned.parent.mkdir(parents=True)
+    foreign.parent.mkdir(parents=True)
+    owned.write_text("v1\n")
+    foreign.write_text("v1\n")
+    git("add", ".")
+    git("commit", "-m", "base")
+    parent = git("rev-parse", "HEAD")
+    owned.write_text("v2\n")
+    foreign.write_text("v2\n")
+    git("add", ".")
+    result = subprocess.run(
+        ["bash", str(helper), "commit-broad-candidate", "must fail"],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert git("rev-parse", "HEAD") == parent
+    assert git("diff", "--cached", "--name-only") == ""
+    assert not (lane / ".git/index.lock").exists()
+
+    (lane / ".git/index.lock").write_text("other-writer")
+    result = subprocess.run(
+        ["bash", str(helper), "commit-broad-candidate", "busy"],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert (lane / ".git/index.lock").read_text() == "other-writer"
+    assert git("rev-parse", "HEAD") == parent
+
+
+def test_locked_broad_snapshot_blocks_late_index_writer(tmp_path: Path) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    lane = tmp_path / "lane"
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=lane, text=True, capture_output=True, check=True
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    owned = lane / "data/owned.txt"
+    foreign = lane / "config/foreign.txt"
+    owned.parent.mkdir(parents=True)
+    foreign.parent.mkdir(parents=True)
+    owned.write_text("v1\n")
+    foreign.write_text("v1\n")
+    git("add", ".")
+    git("commit", "-m", "base")
+    owned.write_text("v2\n")
+    git("add", "data/owned.txt")
+    wrapper = tmp_path / "locked-race.sh"
+    wrapper.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "oip_after_locked_tree_snapshot() {\n"
+        "  printf 'v2\\n' > config/foreign.txt\n"
+        "  if git add config/foreign.txt >/dev/null 2>&1; then return 91; fi\n"
+        "  return 0\n"
+        "}\n"
+        f'. "{helper}"\n'
+        "oip_commit_locked_roots 'locked race' true data site reports templates\n"
+    )
+    wrapper.chmod(0o755)
+    result = subprocess.run(
+        ["bash", str(wrapper)],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert git("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD") == (
+        "data/owned.txt"
+    )
+    assert git("show", "HEAD:config/foreign.txt") == "v1"
+    assert git("diff", "--cached", "--name-only") == ""
+    assert git("diff", "--name-only") == "config/foreign.txt"
+
+
+def test_locked_broad_ref_cas_does_not_overwrite_newer_local_main(tmp_path: Path) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    helper = repo / "scripts/ci/options_signal_nightly.sh"
+    lane = tmp_path / "lane"
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str, input_text: str | None = None) -> str:
+        return subprocess.run(
+            ["git", *args],
+            cwd=lane,
+            text=True,
+            input=input_text,
+            capture_output=True,
+            check=True,
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    target = lane / "data/owned.txt"
+    target.parent.mkdir(parents=True)
+    target.write_text("v1\n")
+    git("add", ".")
+    git("commit", "-m", "base")
+    parent = git("rev-parse", "HEAD")
+    other = git("commit-tree", f"{parent}^{{tree}}", "-p", parent, input_text="other\n")
+    target.write_text("v2\n")
+    git("add", "data/owned.txt")
+    wrapper = tmp_path / "ref-race.sh"
+    wrapper.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "oip_after_locked_tree_snapshot() {\n"
+        "  git update-ref refs/heads/main \"$OTHER\" \"$PARENT\"\n"
+        "}\n"
+        f'. "{helper}"\n'
+        "oip_commit_locked_roots 'must lose ref race' true data site reports templates\n"
+    )
+    wrapper.chmod(0o755)
+    result = subprocess.run(
+        ["bash", str(wrapper)],
+        cwd=lane,
+        env={
+            **os.environ,
+            "GITHUB_WORKSPACE": str(repo),
+            "RUNNER_TEMP": str(tmp_path),
+            "PARENT": parent,
+            "OTHER": other,
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert git("rev-parse", "refs/heads/main") == other
+    assert git("diff", "--cached", "--name-only") == ""
+    assert not (lane / ".git/index.lock").exists()
 
 
 def test_session_outcome_registry_has_one_writer_no_authority_consumers() -> None:
@@ -2903,7 +3957,10 @@ def test_session_outcome_registry_has_one_writer_no_authority_consumers() -> Non
     artifact = registry["artifacts"]["options-signal-episode-session-outcomes"]
     assert artifact["producer"] == "scripts/build_options_signal_episode.py"
     assert artifact["known_extra_writers"] == []
-    assert artifact["consumers"] == ["scripts/build_options_signal_episode.py"]
+    assert artifact["consumers"] == [
+        "scripts/build_options_signal_episode.py",
+        "engine/options_signal_campaign.py",
+    ]
     assert artifact["external_consumers"] == []
     assert artifact["tier"] == "shadow"
     notes = artifact["notes"].lower()
@@ -4359,19 +5416,69 @@ def test_campaign_locked_append_is_concurrently_idempotent_and_conflict_strict(
     assert load_jsonl(path) == campaigns
 
 
-def test_committed_campaign_ledger_equals_live_recomputation_without_count_pin() -> None:
+def test_committed_campaign_ledger_is_exact_frozen_corpus_not_future_recomputation() -> None:
     repo = Path(__file__).resolve().parent.parent
     ledger_root = repo / "data/options_signal_episode"
+    campaign_body = (ledger_root / "campaigns.jsonl").read_bytes()
     episodes = load_jsonl(ledger_root / "episodes.jsonl")
     outcomes = load_jsonl(ledger_root / "outcomes_h60.jsonl")
     committed = load_jsonl(ledger_root / "campaigns.jsonl")
-    recomputed, pending = derive_campaigns(episodes, outcomes)
-    assert pending == []
-    assert committed
-    assert committed == recomputed
+    assert len(committed) == 8
+    assert len(campaign_body) == 10_492
+    assert hashlib.sha256(campaign_body).hexdigest() == (
+        "db326f5c772ab417c43b8579ad50abb0434916922bda3a13c2da5b8303813910"
+    )
     assert {row["evidence_phase"] for row in committed} == {"retrospective_discovery"}
-    for campaign in committed:
-        validate_campaign_against_sources(campaign, episodes, outcomes)
+    options_context_audit._validate_frozen_legacy_campaign_ledger(
+        body=campaign_body,
+        campaigns=committed,
+        episodes=episodes,
+        h60_outcomes=outcomes,
+    )
+
+    future_episodes = [
+        _campaign_episode(
+            "retired-v1-future-one",
+            1_500_000,
+            session_date="2026-08-12",
+            available_at="2026-08-12T14:31:00Z",
+            ticker="RETIRED",
+            expiration="2026-09-18",
+        ),
+        _campaign_episode(
+            "retired-v1-future-two",
+            1_500_000,
+            session_date="2026-08-12",
+            available_at="2026-08-12T14:32:00Z",
+            ticker="RETIRED",
+            expiration="2026-09-18",
+        ),
+    ]
+    future_outcomes = [_campaign_h60_outcome(row) for row in future_episodes]
+    expanded, pending = derive_campaigns(
+        [*episodes, *future_episodes], [*outcomes, *future_outcomes]
+    )
+    assert pending == []
+    assert len(expanded) == len(committed) + 1
+    assert {row["campaign_id"] for row in committed} < {
+        row["campaign_id"] for row in expanded
+    }
+    options_context_audit._validate_frozen_legacy_campaign_ledger(
+        body=campaign_body,
+        campaigns=committed,
+        episodes=[*episodes, *future_episodes],
+        h60_outcomes=[*outcomes, *future_outcomes],
+    )
+    with pytest.raises(
+        options_context_audit.AuditInputError,
+        match="frozen eight-row corpus",
+    ):
+        options_context_audit._validate_frozen_legacy_campaign_ledger(
+            body=campaign_body + b"\n",
+            campaigns=committed,
+            episodes=episodes,
+            h60_outcomes=outcomes,
+        )
 
 
 def test_campaign_registry_has_one_writer_and_no_authority_consumers() -> None:
@@ -4379,13 +5486,42 @@ def test_campaign_registry_has_one_writer_and_no_authority_consumers() -> None:
 
     repo = Path(__file__).resolve().parent.parent
     registry = yaml.safe_load((repo / "config/synapse.yml").read_text())
-    artifact = registry["artifacts"]["options-signal-campaigns"]
-    assert artifact["producer"] == "scripts/build_options_signal_episode.py"
-    assert artifact["known_extra_writers"] == []
-    assert artifact["consumers"] == ["scripts/build_options_signal_episode.py"]
-    assert artifact["external_consumers"] == []
-    assert artifact["weights"] == "none"
-    assert artifact["scored_path_surfaces"] == []
+    legacy = registry["artifacts"]["options-signal-campaigns"]
+    assert legacy["producer"] == ""
+    assert legacy["known_extra_writers"] == []
+    assert legacy["consumers"] == [
+        "scripts/audit_options_market_memory_context.py"
+    ]
+    assert legacy["external_consumers"] == []
+    assert legacy["weights"] == "none"
+    assert legacy["scored_path_surfaces"] == []
+
+    assert registry["artifacts"]["options-signal-episodes"]["consumers"] == [
+        "scripts/build_options_signal_episode.py",
+        "scripts/capture_market_memory_options_episodes.py",
+        "scripts/audit_options_market_memory_context.py",
+        "engine/options_signal_campaign.py",
+    ]
+    assert registry["artifacts"]["options-signal-episode-h60-outcomes"][
+        "consumers"
+    ] == [
+        "scripts/build_options_signal_episode.py",
+        "scripts/audit_options_market_memory_context.py",
+        "engine/options_signal_campaign.py",
+    ]
+
+    for artifact_id in (
+        "options-signal-campaign-revisions",
+        "options-signal-campaign-outcomes",
+        "options-signal-campaign-checkpoint",
+    ):
+        artifact = registry["artifacts"][artifact_id]
+        assert artifact["producer"] == "engine/options_signal_campaign.py"
+        assert artifact["known_extra_writers"] == []
+        assert artifact["consumers"] == ["engine/options_signal_campaign.py"]
+        assert artifact["external_consumers"] == []
+        assert artifact["weights"] == "none"
+        assert artifact["scored_path_surfaces"] == []
 
 
 def test_campaign_contract_carries_no_chain_heat_or_directional_projection_fields() -> None:
@@ -4402,7 +5538,7 @@ def test_campaign_contract_carries_no_chain_heat_or_directional_projection_field
         assert forbidden not in ledger
 
 
-def test_campaign_append_failure_blocks_checkpoint_advance(
+def test_episode_builder_preserves_legacy_campaign_bytes_and_has_no_campaign_summary(
     tmp_path: Path, monkeypatch,
 ) -> None:
     from scripts import build_options_signal_episode as builder
@@ -4419,42 +5555,19 @@ def test_campaign_append_failure_blocks_checkpoint_advance(
         avg_price=1.5,
         premium=1_500_000,
     )
-    second = _event(
-        id="campaign-builder-two",
-        ts="2026-07-02T19:29:00Z",
-        observed_at="2026-07-02T19:30:00Z",
-        decision_at="2026-07-02T19:30:00Z",
-        available_at="2026-07-02T19:30:00Z",
-        source_snapshot_asof="2026-07-02T19:30:00Z",
-        size=10_000,
-        avg_price=1.5,
-        premium=1_500_000,
-    )
-    stage = [*_stage_records(first), *_stage_records(second)]
-    real_append = builder.append_campaigns
-
-    def fail_campaign_append(*_args, **_kwargs):
-        raise ContractError("synthetic campaign append failure")
-
-    monkeypatch.setattr(builder, "append_campaigns", fail_campaign_append)
-    with pytest.raises(ContractError, match="campaign append failure"):
-        builder.run(
-            root_dir=tmp_path,
-            stages_by_session={"2026-07-02": stage},
-            computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
-        )
     ledger_root = tmp_path / "data/options_signal_episode"
-    assert len(load_jsonl(ledger_root / "episodes.jsonl")) == 2
-    assert len(load_jsonl(ledger_root / "outcomes_h60.jsonl")) == 2
-    assert not (ledger_root / "campaigns.jsonl").exists()
-    assert not (ledger_root / "checkpoint.json").exists()
-
-    monkeypatch.setattr(builder, "append_campaigns", real_append)
-    replay = builder.run(
+    ledger_root.mkdir(parents=True)
+    legacy_bytes = (
+        Path(__file__).resolve().parent.parent
+        / "data/options_signal_episode/campaigns.jsonl"
+    ).read_bytes()
+    (ledger_root / "campaigns.jsonl").write_bytes(legacy_bytes)
+    summary = builder.run(
         root_dir=tmp_path,
-        stages_by_session={"2026-07-02": stage},
+        stages_by_session={"2026-07-02": _stage_records(first)},
         computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
     )
-    assert replay["campaigns_appended"] == 1
-    assert len(load_jsonl(ledger_root / "campaigns.jsonl")) == 1
+    assert len(load_jsonl(ledger_root / "episodes.jsonl")) == 1
+    assert (ledger_root / "campaigns.jsonl").read_bytes() == legacy_bytes
+    assert not any(key.startswith("campaign") for key in summary)
     assert (ledger_root / "checkpoint.json").exists()
