@@ -828,6 +828,8 @@ jobs:
         run: python -m pytest tests/test_paywall_pro_gate.py -q
       - name: static serving boundary (Caddy <-> site_access.yml, no leaked artifacts)
         run: python -m pytest tests/test_site_access_boundary.py -q
+      - name: delivery-plane census (exact families, alternate origins, consumers, defaults)
+        run: python -m pytest tests/test_r2_delivery_plane_classification.py -q
       - name: registration wall (anonymous stage + /factordata /labdata JSON gate)
         run: python -m pytest tests/test_regwall.py tests/test_regwall_json_gate.py -q
       # #4409 shipped the member Earnings Wire API suite named only in
