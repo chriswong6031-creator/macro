@@ -4527,3 +4527,34 @@ modules:
       risk legs FORBIDDEN (DNR:KILL-CALENDAR-GATED-RISK). Pre-FOMC drift expected DEAD post-2016
       (house ruling). cl_gex cluster (daily.yml), after build_vol_regime so
       site/vol/regime.json is available.
+
+  # Host-private MomoEdge same-basis outcome lane. It is launchd-owned rather
+  # than a GitHub workflow and publishes no raw or exact competitor artifact.
+  - module: scripts.capture_options_nbbo_cohort
+    reads:
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/events.jsonl
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/captures.jsonl
+      - http://127.0.0.1:25503/v3/option/history/quote
+    writes:
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/events.jsonl
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/captures.jsonl
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/event_evidence/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/capture_evidence/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/HEAD.json
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/observations/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/source_responses/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/snapshots/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/.staging/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/.advance.lock
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/.store.lock
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/.events.lock
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/.captures.lock
+    impure: true
+    needs_secrets: false
+    event_driven: true
+    note: >
+      Five-minute M1 launchd lane. Licensed OPRA access is localhost-only; user-
+      controlled MomoEdge authentication remains outside this unarmed prerequisite;
+      all raw responses remain private. Empty producers record unavailable coverage,
+      never fabricated clocks or abstentions. Every score, rank, issue, trade, publication, training,
+      Prophet, Neural Web, and completion authority flag is false.
