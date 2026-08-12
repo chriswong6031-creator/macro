@@ -78,6 +78,14 @@ from pathlib import Path
 
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from scripts.workflow_run_source import (  # noqa: E402
+    WorkflowRunSourceError,
+    resolve_run_source,
+    resolved_workflow_text,
+)
+
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS = ROOT / ".github/workflows"
 CI_MANIFEST = ROOT / ".github/ci/legacy-jobs.yml"
@@ -260,6 +268,12 @@ def _workflow_blob() -> str:
 
     Fail-open per file: an unparseable workflow falls back to its raw text, because
     over-reporting coverage for one file is better than crashing a reporting tool.
+
+    A step body extracted to ``scripts/ci/<name>.sh`` (512KB-cap diet) is resolved
+    back to its shell source, so a suite named only inside an extracted block still
+    counts as run. ``WorkflowRunSourceError`` is re-raised past the fail-open below
+    on purpose: an unresolvable indirection is exactly the case where falling back
+    to raw text would under-report coverage and mark a covered suite dark.
     """
     paths = sorted(WORKFLOWS.glob("*.yml"))
     if CI_MANIFEST.exists():
@@ -275,11 +289,13 @@ def _workflow_blob() -> str:
                     continue
                 for step in job.get("steps") or []:
                     if isinstance(step, dict) and isinstance(step.get("run"), str):
-                        runs.append(step["run"])
+                        runs.append(resolve_run_source(step["run"], ROOT))
                     # reusable-workflow / composite indirection: keep `with:` values too
                     if isinstance(step, dict) and isinstance(step.get("with"), dict):
                         runs += [str(v) for v in step["with"].values()]
             chunks.append("\n".join(runs))
+        except WorkflowRunSourceError:
+            raise
         except Exception:  # noqa: BLE001 — reporting tool: never crash on one bad file
             chunks.append(raw)
     return "\n".join(chunks)
@@ -353,13 +369,23 @@ def _to_relpaths(mod: str) -> list[str]:
 
 
 def _pipeline_modules() -> set[str]:
-    """Modules invoked by the build/publish workflows (module and script forms)."""
+    """Modules invoked by the build/publish workflows (module and script forms).
+
+    Read through ``resolved_workflow_text`` so a builder invoked only from an
+    extracted ``scripts/ci/<name>.sh`` body still counts as on-pipeline. This is
+    a severity input, not a pass/fail one — ``census`` tiers a suite P0/P1 when a
+    subject module is on the pipeline — so losing modules here does not red
+    anything, it quietly DEMOTES suites out of the top tiers. Measured on the
+    2026-08-12 diet: 13 modules (``engine.shock_deescalation``,
+    ``scripts.build_options_prophet``, ``scripts.build_impulse``, ...) went
+    invisible with no failing check anywhere.
+    """
     out: set[str] = set()
     for name in PIPELINE_WORKFLOWS:
         p = WORKFLOWS / name
         if not p.exists():
             continue
-        src = p.read_text(errors="ignore")
+        src = resolved_workflow_text(p, ROOT)
         cands = set(
             m.group(1) for m in
             re.finditer(r'\b(?:python3?\s+-m\s+|run_py\s+"[^"]*"\s+)([\w.]+)', src)
