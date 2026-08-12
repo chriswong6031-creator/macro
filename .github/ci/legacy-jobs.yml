@@ -1211,6 +1211,7 @@ jobs:
           tests/test_validated_claims_thirdparty.py
           tests/test_validated_claims_engine.py
           tests/test_validated_claims_surfaces.py
+          tests/test_validated_claims_registry_source.py
           tests/test_validated_claims_structural_scope.py
           tests/test_intl_recovery_quality.py
           tests/test_sa_w5_v2_grader_hook.py
@@ -5346,7 +5347,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps plus the schema/API wheels
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi httpx2
       # Wave 9D: the admissibility fences on issuer graph expansion — exact
       # identifier + verbatim Exhibit 21 name only, no discovery_query_ticker, no
       # similarity, no LLM assertion; PIT; the proposed-edge-cannot-become-a-
@@ -5401,7 +5402,7 @@ jobs:
       # fixtures grew beyond this legacy lane's original eight-minute budget,
       # and keeping them here made the entire ownership lane time out.
       - name: award-event spine, candidates, entity + workspace contracts
-        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_bridge.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
+        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_api_auth.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_bridge.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
       # Recipient->issuer attribution: the Wave 9D discovery tool that proposes
       # candidates for the reviewed graph. Named by NO run: step until 2026-08-06 —
       # the proposal tool's 60 tests could not go red on main, which is the same

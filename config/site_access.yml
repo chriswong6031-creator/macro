@@ -28,6 +28,41 @@
 # Moving an ASSET into `public` is still a security-sensitive product change.
 # Keep the matching list in app/deploy/Caddyfile byte-for-byte aligned; the
 # boundary test fails if the two drift.
+# ── /api/* is NOT governed by this file ──────────────────────────────────────
+# Caddy excludes /api/* from @reg_asset (those paths are reverse-proxied to
+# macro-api before file serving), so an API router gates itself or not at all.
+# tests/test_site_access_boundary.py says as much and scopes itself out of it.
+#
+# That assumption went unchecked once and should not again. The 2026-08-11
+# serving-boundary census found `/api/government-revenue/*` answering 200 to an
+# anonymous reader across all 24 routes, while its sibling desk's
+# `/api/capital-structure/v1/coverage` answered 401. RULED (2026-08-11):
+# unintentional — auth was never wired, not removed (no commit in the file's
+# history ever carried `Depends`), no doc ever stated an access tier, and the
+# two routers that ARE deliberately public (app/hub.py,
+# app/company_intelligence.py) both say so in their module docstring, which
+# app/government_revenue.py did not. It is now site_full-gated router-wide and
+# proven over HTTP by tests/test_government_revenue_api_auth.py.
+#
+# The argument for leaving it open — "the underlying facts are public
+# USAspending records" — is true of the INPUTS and does not carry the payload:
+# the routes serve the resolved issuer<->UEI/CAGE graph, revision-aware award
+# history and house-scored fields (company `confidence` tiers; the weighted,
+# rank-ordered `company_candidates` rail), which the program's own masterplan
+# calls its moat. Public inputs do not make a derived product free.
+#
+# Note also that "authority tier: display/context only" in that masterplan is an
+# EPISTEMICS tier (may a signal rank/size/gate a trade — no), not an ACCESS tier
+# (must a reader be entitled — yes). Conflating the two is what left it open.
+#
+# KNOWN GAP, deliberately not closed here: `/government-revenue-data/` is
+# default-deny but NOT under `premium.enforced_early`, so while PAYWALL_ENABLED=0
+# a registered Free account can still direct-fetch the bulk artifacts the API now
+# gates (dossiers.json alone is ~42 MB). `/capital-structure-data/` is listed
+# below for exactly this reason. Closing it is a one-line prefix add, but this
+# file's own rule requires the matching plans-page line in the same PR — that is
+# a product/pricing statement, so it is flagged for the operator rather than
+# taken unilaterally.
 schema: site_access.v1
 
 public:
