@@ -42,7 +42,7 @@ a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
 .nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
 .nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
 .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
-.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--blue)}
+.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--ink-link, var(--blue))}
 .lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
 .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
 html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
@@ -107,7 +107,7 @@ html[data-theme="dark"] .score .s>div{background:var(--grid)}
 .score .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600}
 .score .v{font-size:21px;font-weight:800;color:var(--ink)}
 .score .v small{font-size:12px;font-weight:600;color:var(--muted)}
-.win{color:var(--green)} .lose{color:var(--red)}
+.win{color:var(--ink-ok, var(--green))} .lose{color:var(--ink-act, var(--red))}
 .tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 .tbl td,.tbl th{padding:7px 10px;border-bottom:1px solid var(--grid);text-align:left}
 .tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
@@ -115,9 +115,10 @@ html[data-theme="dark"] .score .s>div{background:var(--grid)}
 .note.r{border-color:var(--red)} .note.b{border-color:var(--blue)}
 .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
 /* zh 红涨绿跌 directional colour flips */
-html[data-lang="zh"] .win{color:var(--red)}
-html[data-lang="zh"] .lose{color:var(--green)}
-</style>{% include "_vector_polish.html.j2" %}
+html[data-lang="zh"] .win{color:var(--ink-act, var(--red))}
+html[data-lang="zh"] .lose{color:var(--ink-ok, var(--green))}
+</style>
+{% include "_state_inks.html.j2" %}{% include "_vector_polish.html.j2" %}
 </head>
 <body>
 {% include "_site_nav.html.j2" %}
@@ -163,7 +164,7 @@ html[data-lang="zh"] .lose{color:var(--green)}
   {% if overlay %}
   <!-- ===== LLM context / knife-veto overlay (advisory, never in the backtest) ===== -->
   <div class="card" style="margin-top:14px;{% if overlay.veto %}border-color:var(--red){% endif %}">
-    <h3 style="margin-bottom:6px">{% if overlay.veto %}<span style="color:var(--red)">⚠ {{ t('LLM knife-veto active','LLM 接刀否决生效') }}</span>{% else %}{{ t('LLM context / veto overlay','LLM 背景 / 否决叠加') }}{% if not overlay.enabled %} <span class="faint" style="font-weight:500">· {{ t('off','关闭') }}</span>{% endif %}{% endif %}</h3>
+    <h3 style="margin-bottom:6px">{% if overlay.veto %}<span style="color:var(--ink-act, var(--red))">⚠ {{ t('LLM knife-veto active','LLM 接刀否决生效') }}</span>{% else %}{{ t('LLM context / veto overlay','LLM 背景 / 否决叠加') }}{% if not overlay.enabled %} <span class="faint" style="font-weight:500">· {{ t('off','关闭') }}</span>{% endif %}{% endif %}</h3>
     {% if not overlay.enabled %}
     <div class="sub">{{ t('No DeepSeek key configured — the mechanical recommendation stands. When enabled, this firewalled layer digests the FOMC tone (and, on a stress day, the shock-reversibility read) and can veto a buyable-washout redeploy if it judges the shock a regime break. It is logged forward and NEVER enters the backtest or the score.','未配置 DeepSeek 密钥 —— 以机械建议为准。启用后，该防火墙层会消化 FOMC 基调（压力日则读取冲击可逆性），并在判断冲击为周期破裂时否决可买入恐慌底的再部署。它仅向前记录，绝不进入回测或评分。') }}</div>
     {% elif overlay.veto %}

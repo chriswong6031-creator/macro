@@ -40,7 +40,7 @@ html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
 body{margin:0;padding-top:18px;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:var(--blue);text-decoration:none}
+a{color:var(--ink-link, var(--blue));text-decoration:none}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:8px;position:sticky;top:0;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:saturate(160%) blur(12px);backdrop-filter:saturate(160%) blur(12px);z-index:20}
@@ -96,9 +96,9 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;border:1px solid var(--grid);background:var(--card);font-size:12px;font-weight:600;color:var(--muted)}
 .stance{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:800;letter-spacing:.01em;
   background:color-mix(in srgb,var(--acc) 13%,var(--card));color:var(--acc);border:1px solid color-mix(in srgb,var(--acc) 34%,var(--grid))}
-.stance.warn{background:color-mix(in srgb,var(--amber) 15%,var(--card));color:var(--amber);border-color:color-mix(in srgb,var(--amber) 38%,var(--grid))}
-.stance.red{background:color-mix(in srgb,var(--red) 14%,var(--card));color:var(--red);border-color:color-mix(in srgb,var(--red) 36%,var(--grid))}
-.stance.good{background:color-mix(in srgb,var(--green) 14%,var(--card));color:var(--green);border-color:color-mix(in srgb,var(--green) 36%,var(--grid))}
+.stance.warn{background:color-mix(in srgb,var(--amber) 15%,var(--card));color:var(--ink-warn, var(--amber));border-color:color-mix(in srgb,var(--amber) 38%,var(--grid))}
+.stance.red{background:color-mix(in srgb,var(--red) 14%,var(--card));color:var(--ink-act, var(--red));border-color:color-mix(in srgb,var(--red) 36%,var(--grid))}
+.stance.good{background:color-mix(in srgb,var(--green) 14%,var(--card));color:var(--ink-ok, var(--green));border-color:color-mix(in srgb,var(--green) 36%,var(--grid))}
 
 /* ---------- what changed ---------- */
 .changes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 2px}
@@ -161,7 +161,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 /* ---------- lock-up cliff ---------- */
 .cliff-lead{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:14px}
 .cliff-next{font-size:15px;font-weight:700;color:var(--ink)}
-.cliff-next b{color:var(--amber)}
+.cliff-next b{color:var(--ink-warn, var(--amber))}
 .cliff-meta{font-size:12.5px;color:var(--muted)}
 .timeline{position:relative;height:118px;margin:6px 4px 2px;border-radius:12px}
 .tl-axis{position:absolute;left:0;right:0;top:64px;height:2px;background:var(--grid)}
@@ -238,6 +238,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 @keyframes ipoBreathe{0%,100%{opacity:.55;transform:scale(.86)}50%{opacity:1;transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.hero,.tcard,.asof .dot{animation:none}}
 </style>
+{% include "_state_inks.html.j2" %}
 </head>
 <body>
 {# plain-word maps owned by the template (decoupled from the build view-models) so
@@ -308,7 +309,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="dotbar" aria-hidden="true">
         {% for i in range(window.n_expected or 6) %}<i class="{{ 'on' if i < window.constructive else ('warn' if i < (window.constructive + window.hostile) else '') }}"></i>{% endfor %}
       </div>
-      <div class="tc-sub" style="min-height:0;margin-top:2px">{{ window.constructive }}/{{ window.n_legs }} {{ t('legs supportive','分项偏好') }}{% if window.low_confidence %} · <span style="color:var(--amber)">{{ t('partial read','部分读数') }}</span>{% endif %}</div>
+      <div class="tc-sub" style="min-height:0;margin-top:2px">{{ window.constructive }}/{{ window.n_legs }} {{ t('legs supportive','分项偏好') }}{% if window.low_confidence %} · <span style="color:var(--ink-warn, var(--amber))">{{ t('partial read','部分读数') }}</span>{% endif %}</div>
       <div class="tc-foot">
         <span class="stance {{ 'warn' if window.band!='SHUT' else 'red' }}">{{ t(window.stance_en or 'Watch — don’t chase', window.stance_zh or '观望，别追') }}</span>
         <a class="xlink" href="transmission.html">{{ t('Drivers →','驱动 →') }}</a>
@@ -321,8 +322,8 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="tc-state" style="color:{% if aftermarket.verdict=='trails' %}var(--red){% elif aftermarket.verdict=='beats' %}var(--green){% else %}var(--amber){% endif %}">{% if aftermarket.verdict %}{{ t(aftermarket.verdict|capitalize, aftermarket.verdict_zh) }}{% else %}—{% endif %}</div>
       <div class="tc-sub">{{ t('“Own recent IPOs” has lagged simply owning the S&P.','“持有近期新股”跑输了单纯持有标普。') }}</div>
       <div class="tc-metrics">
-        <div class="tcm"><div class="tcm-v" style="color:var(--red)">{{ aftermarket.ipo_5y }}</div><div class="tcm-l">{{ t('IPO ETF 5y/yr','新股ETF 5年/年') }}</div></div>
-        <div class="tcm"><div class="tcm-v" style="color:var(--green)">{{ aftermarket.spy_5y }}</div><div class="tcm-l">{{ t('S&P 5y/yr','标普 5年/年') }}</div></div>
+        <div class="tcm"><div class="tcm-v" style="color:var(--ink-act, var(--red))">{{ aftermarket.ipo_5y }}</div><div class="tcm-l">{{ t('IPO ETF 5y/yr','新股ETF 5年/年') }}</div></div>
+        <div class="tcm"><div class="tcm-v" style="color:var(--ink-ok, var(--green))">{{ aftermarket.spy_5y }}</div><div class="tcm-l">{{ t('S&P 5y/yr','标普 5年/年') }}</div></div>
         <div class="tcm"><div class="tcm-v">{% if aftermarket.gap_5y %}{{ aftermarket.gap_5y }}{% else %}—{% endif %}</div><div class="tcm-l">{{ t('gap pp/yr','差距 个百分点/年') }}</div></div>
       </div>
       <div class="tc-foot">

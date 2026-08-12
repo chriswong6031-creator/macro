@@ -399,9 +399,11 @@
   body.page-canada .mx5-path-labels > span{position:absolute;white-space:nowrap}
   body.page-canada .mx5-pl-y{left:6px;transform:translateY(-50%);color:var(--muted);font-variant-numeric:tabular-nums}
   body.page-canada .mx5-pl-zone{right:14px;transform:translateY(-50%);font-weight:600}
-  body.page-canada .mx5-pl-zone.on{color:color-mix(in srgb,var(--up) 66%,transparent)}
-  body.page-canada .mx5-pl-zone.mid{color:color-mix(in srgb,var(--warn) 70%,transparent)}
-  body.page-canada .mx5-pl-zone.off{color:color-mix(in srgb,var(--down) 64%,transparent)}
+  /* Zone labels sit ON the chart panel, so alpha composited them to 2.27–2.67:1.
+     The ink rungs are the text grade of the same hues and stay opaque. */
+  body.page-canada .mx5-pl-zone.on{color:var(--ink-up, var(--up))}
+  body.page-canada .mx5-pl-zone.mid{color:var(--ink-warn, var(--warn))}
+  body.page-canada .mx5-pl-zone.off{color:var(--ink-down, var(--down))}
   body.page-canada .mx5-pl-x{top:96.4%;color:var(--muted)}
   body.page-canada .mx5-pl-today{width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);background:currentColor;box-shadow:0 0 6px currentColor}
   /* hover enhancement layer — hidden until JS shows */
@@ -444,15 +446,17 @@
   body.page-canada #cax-sentiment .mx5-card:focus-visible{outline:2px solid var(--link);outline-offset:2px}
   body.page-canada .mx5-card-title{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
   body.page-canada .mx5-sentiment-dial-wrap{text-align:center;margin-bottom:2px}
-  body.page-canada .mx5-sentiment-zone-text{font-size:15px;font-weight:700;text-align:center;margin-bottom:3px;color:var(--fg-col,var(--warn))}
+  body.page-canada .mx5-sentiment-zone-text{font-size:15px;font-weight:700;text-align:center;margin-bottom:3px;color:var(--fg-col-ink,var(--fg-col,var(--ink-warn, var(--warn))))}
   body.page-canada .mx5-sentiment-label{font-size:11px;color:var(--muted);text-align:center;margin-top:2px;line-height:1.35}
   body.page-canada .plf-open{display:inline-flex;align-items:center;gap:4px;margin-top:12px;font-size:11px;font-weight:650;color:var(--ink-link, var(--link));opacity:.72;align-self:flex-end;margin-left:auto;transition:opacity .18s,transform .18s}
   body.page-canada #cax-sentiment .mx5-card:hover .plf-open,body.page-canada #cax-sentiment .mx5-card:focus-within .plf-open{opacity:1;transform:translateX(2px)}
   /* zh 红涨绿跌 for the participation dial: broad=constructive→red, thin→green, mixed→amber.
      --fg-col routes through --up/--warn/--down so the SVG marks + zone word flip in zh. */
-  body.page-canada .fg-greed{--fg-col:var(--up)}
-  body.page-canada .fg-fear{--fg-col:var(--down)}
-  body.page-canada .fg-neutral{--fg-col:var(--warn)}
+  /* --fg-col is the FILL grade (SVG marks, ≥3:1 non-text); --fg-col-ink is the
+     TEXT grade the zone WORD takes — the raw hue measured 3.61:1 at 15px/700. */
+  body.page-canada .fg-greed{--fg-col:var(--up);--fg-col-ink:var(--ink-up, var(--up))}
+  body.page-canada .fg-fear{--fg-col:var(--down);--fg-col-ink:var(--ink-down, var(--down))}
+  body.page-canada .fg-neutral{--fg-col:var(--warn);--fg-col-ink:var(--ink-warn, var(--warn))}
   body.page-canada #cax-sentiment .fg-mark-s{stroke:var(--fg-col)}
   body.page-canada #cax-sentiment .fg-mark-f{fill:var(--fg-col)}
   body.page-canada #cax-sentiment .fg-lab-panic{fill:var(--down)}
@@ -602,7 +606,7 @@
   body.page-canada .cax-tkr-btn:hover{background:rgba(91,155,240,.22);border-color:rgba(91,155,240,.6)}
   body.page-canada .cax-stk .meta{flex:1;min-width:0;color:var(--muted);font-size:10.5px;line-height:1.35}
   body.page-canada .cax-stk .meta b{color:var(--text);font-weight:650;font-size:11.5px}
-  body.page-canada .cax-stage{flex:0 0 auto;font-size:9px;font-weight:700;letter-spacing:.6px;border-radius:5px;padding:2px 7px;background:rgba(69,184,115,.14);color:#8fd7ae;border:1px solid rgba(69,184,115,.35)}
+  body.page-canada .cax-stage{flex:0 0 auto;font-size:9px;font-weight:700;letter-spacing:.6px;border-radius:5px;padding:2px 7px;background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
   body.page-canada .cax-screener-btn{display:block;width:100%;text-align:center;margin-top:12px;background:linear-gradient(135deg,rgba(91,155,240,.18),rgba(69,184,115,.14));border:1px solid rgba(91,155,240,.4);color:var(--text);font-weight:700;font-size:12.5px;border-radius:12px;padding:10px 0;cursor:pointer;text-decoration:none;letter-spacing:.4px;transition:box-shadow .2s,transform .2s}
   body.page-canada .cax-screener-btn:hover{box-shadow:0 6px 22px rgba(91,155,240,.25);transform:translateY(-1px)}
   body.page-canada .cax-stword.ok{color:var(--ink-up, var(--up))}

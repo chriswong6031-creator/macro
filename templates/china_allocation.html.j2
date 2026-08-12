@@ -39,7 +39,7 @@ a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
 .nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
 .nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
 .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
-.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--blue)}
+.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--ink-link, var(--blue))}
 .lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
 .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
 html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
@@ -88,7 +88,7 @@ html[data-theme="dark"] .tag{background:#163024;color:#7fd6a6}
 .sleevetile .nm{font-size:12.5px;font-weight:700;color:var(--ink)}
 .sleevetile .px{font-size:18px;font-weight:800;color:var(--ink);margin-top:4px}
 .sleevetile .meta{font-size:11.5px;color:var(--muted);margin-top:3px}
-.win{color:var(--green)} .lose{color:var(--red)}
+.win{color:var(--ink-ok, var(--green))} .lose{color:var(--ink-act, var(--red))}
 .gtable{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
 .gtable td,.gtable th{padding:9px 8px;border:1px solid var(--grid);text-align:center}
 .gtable th{background:var(--bg);color:var(--muted);font-weight:600;font-size:12px}
@@ -107,7 +107,8 @@ html[data-theme="dark"] .tag{background:#163024;color:#7fd6a6}
 .minibar{height:24px;border-radius:7px;overflow:hidden;display:flex;font-size:11px;font-weight:700;color:#fff}
 .minibar div{display:flex;align-items:center;justify-content:center;min-width:0}
 .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
-</style>{% include "_vector_polish.html.j2" %}
+</style>
+{% include "_state_inks.html.j2" %}{% include "_vector_polish.html.j2" %}
 </head>
 <body>
 {% include "_site_nav.html.j2" %}
@@ -123,7 +124,7 @@ html[data-theme="dark"] .tag{background:#163024;color:#7fd6a6}
   <!-- ===== recommended split + headline stats ===== -->
   <div class="grid cols-2" style="margin-top:14px">
     <div class="card">
-      <h3>{{ t('Recommended allocation','建议仓位') }} · <span style="color:var(--blue)">{{ t(default_label_en, default_label_zh) }}</span></h3>
+      <h3>{{ t('Recommended allocation','建议仓位') }} · <span style="color:var(--ink-link, var(--blue))">{{ t(default_label_en, default_label_zh) }}</span></h3>
       <div class="allocbar">
         {% for s in split %}<div style="flex:{{ s.pct }};background:{{ s.color }}">{{ t(s.name_en, s.name_zh) }}<small>{{ s.pct }}%</small></div>{% endfor %}
       </div>
@@ -135,8 +136,8 @@ html[data-theme="dark"] .tag{background:#163024;color:#7fd6a6}
     <div class="card">
       <h3>{{ t('What this blend has delivered','该组合的历史表现') }} <span class="faint" style="font-weight:500">({{ stat.start }}→)</span></h3>
       <div class="bignums">
-        <div><div class="n" style="color:var(--green)">{{ stat.sharpe }}</div><div class="k">Sharpe</div><div class="vs">{{ t('CSI 300','沪深300') }} {{ bench_csi.sharpe }}</div></div>
-        <div><div class="n" style="color:var(--blue)">{{ stat.maxdd }}%</div><div class="k">{{ t('Max drawdown','最大回撤') }}</div><div class="vs">{{ t('CSI 300','沪深300') }} {{ bench_csi.maxdd }}%</div></div>
+        <div><div class="n" style="color:var(--ink-ok, var(--green))">{{ stat.sharpe }}</div><div class="k">Sharpe</div><div class="vs">{{ t('CSI 300','沪深300') }} {{ bench_csi.sharpe }}</div></div>
+        <div><div class="n" style="color:var(--ink-link, var(--blue))">{{ stat.maxdd }}%</div><div class="k">{{ t('Max drawdown','最大回撤') }}</div><div class="vs">{{ t('CSI 300','沪深300') }} {{ bench_csi.maxdd }}%</div></div>
         <div><div class="n">{{ stat.cagr }}%</div><div class="k">CAGR</div><div class="vs">{{ t('CSI 300','沪深300') }} {{ bench_csi.cagr }}%</div></div>
       </div>
       {% if stat.bootstrap and stat.bootstrap.sharpe_ci %}<div class="sub" style="margin-top:14px">{{ t('Bootstrap 95% CI on Sharpe','夏普自助法95%置信区间') }}: <b style="color:var(--ink)">{{ stat.bootstrap.sharpe_ci[0] }} – {{ stat.bootstrap.sharpe_ci[2] }}</b> · {{ t('vol','波动') }} {{ stat.vol }}% · {{ t('Sortino','索提诺') }} {{ stat.sortino }}</div>{% endif %}

@@ -288,7 +288,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-hero-tf{font-family:var(--display);font-weight:700;font-size:8px;letter-spacing:.12em;color:var(--st-faint);border:1px solid var(--st-hair-2);border-radius:5px;padding:1px 5px}
 .obm-hero-sig{margin-left:auto;font-family:var(--display);font-weight:800;font-size:7.5px;letter-spacing:.12em;color:#fff;background:var(--blue);border-radius:5px;padding:2.5px 7px;opacity:0;transform:translateY(-4px);transition:opacity .35s,transform .35s}
 .obm-desk.obm-armed .obm-hero-sig{opacity:1;transform:none}
-.obm-hero-zone{position:absolute;right:11px;bottom:14px;z-index:2;font-family:var(--display);font-weight:800;font-size:7.5px;letter-spacing:.14em;color:var(--blue);opacity:.8}
+.obm-hero-zone{position:absolute;right:11px;bottom:14px;z-index:2;font-family:var(--display);font-weight:800;font-size:7.5px;letter-spacing:.14em;color:var(--ink-link, var(--blue));opacity:.8}
 .obm-hero-note{position:absolute;left:11px;bottom:6px;z-index:2;font-family:var(--display);font-weight:700;font-size:7px;letter-spacing:.11em;color:var(--st-faint)}
 /* the line draws itself in (pathLength=1 → one normalized dashoffset sweep) */
 .obm-hero-line{stroke-dasharray:1;stroke-dashoffset:0}
@@ -385,7 +385,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-pane[data-step="4"] .obm-meter-track i{height:calc(10px + var(--h,0) * 1px);background:color-mix(in srgb,var(--blue) calc(20% + var(--h,0) * 3%),var(--st-hair-2))}
 .obm-pane[data-step="4"] .obm-meter-track i:last-child{background:var(--q-gold)}
 .obm-meter-foot{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:9px}
-.obm-meter-day{font-family:var(--display);font-weight:800;font-size:8px;letter-spacing:.11em;color:var(--blue)}
+.obm-meter-day{font-family:var(--display);font-weight:800;font-size:8px;letter-spacing:.11em;color:var(--ink-link, var(--blue))}
 .obm-meter-chg{font-family:var(--display);font-weight:800;font-size:8px;letter-spacing:.11em;color:var(--q-gold);text-align:right}
 .obm-meter-note{margin:9px 0 0;font-size:11px;line-height:1.45;color:var(--st-soft);transition:color .55s ease}
 
@@ -424,7 +424,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-step-lbl{font-size:11px;font-weight:600;letter-spacing:.004em;color:var(--faint);white-space:nowrap;transition:color .28s}
 .obm-step.obm-cur .obm-step-n{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 0 4px var(--blue-wash)}
 .obm-step.obm-cur .obm-step-lbl{color:var(--ink);font-weight:650}
-.obm-step.obm-past .obm-step-n{background:var(--blue-wash);border-color:var(--blue);color:var(--blue)}
+.obm-step.obm-past .obm-step-n{background:var(--blue-wash);border-color:var(--blue);color:var(--ink-link, var(--blue))}
 .obm-step.obm-past .obm-step-num{opacity:0}
 .obm-step.obm-past .obm-step-ck{opacity:1;transform:none}
 .obm-step.obm-past .obm-step-lbl{color:var(--muted)}
@@ -440,7 +440,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-mini-bar{height:3px;border-radius:3px;background:var(--hair-2);overflow:hidden}
 .obm-mini-bar i{display:block;height:100%;background:var(--blue);border-radius:3px;transition:width .45s cubic-bezier(.22,.8,.3,1)}
 .obm-mini-lbl{display:flex;align-items:baseline;gap:7px;margin-top:9px;font-size:12px;color:var(--muted)}
-.obm-mini-lbl b{font-family:var(--display);font-weight:800;font-size:9.5px;letter-spacing:.12em;color:var(--blue)}
+.obm-mini-lbl b{font-family:var(--display);font-weight:800;font-size:9.5px;letter-spacing:.12em;color:var(--ink-link, var(--blue))}
 .obm-mini-lbl span{font-weight:650;color:var(--ink)}
 
 /* ── the scrolling content region ──────────────────────────────────────── */
@@ -504,7 +504,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-quiet:disabled{opacity:.5;cursor:default}
 .obm-link{background:none;border:0;font:inherit;font-weight:600;font-size:13px;color:var(--muted);cursor:pointer;padding:2px 0;transition:color .15s}
 .obm-link:hover{color:var(--ink)}
-.obm-link.obm-brand-link{color:var(--blue)}
+.obm-link.obm-brand-link{color:var(--ink-link, var(--blue))}
 .obm-link.obm-brand-link:hover{color:var(--blue-ink)}
 
 /* OR divider */
@@ -599,7 +599,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 /* plan readout — what the stage just lit up. Three lines, never a wall: the
    full feature story is the lattice on the left, not a list on the right. */
 .obm-summary{margin-top:14px;border:1px solid var(--hair);border-radius:12px;background:var(--panel-2);padding:14px 16px}
-.obm-sum-hd{display:flex;align-items:center;gap:7px;font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--blue);margin:0 0 10px}
+.obm-sum-hd{display:flex;align-items:center;gap:7px;font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-link, var(--blue));margin:0 0 10px}
 .obm-sum-hd::before{content:"";width:6px;height:6px;border-radius:2px;background:currentColor;flex:none}
 .obm-sum-list{list-style:none;margin:0;padding:0}
 .obm-sum-list li{position:relative;padding:5px 0 5px 22px;font-size:12.5px;color:var(--ink-soft);line-height:1.45}
@@ -650,7 +650,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-up-pitch{margin:6px 0 0;font-size:11.5px;line-height:1.45;color:var(--ink-soft)}
 .obm-up-chev{flex:none;color:var(--faint);display:inline-flex;transition:transform .15s,color .15s}
 .obm-up-chev svg{width:16px;height:16px}
-.obm-up-lane:hover .obm-up-chev,.obm-up-lane.obm-confirming .obm-up-chev{color:var(--blue)}
+.obm-up-lane:hover .obm-up-chev,.obm-up-lane.obm-confirming .obm-up-chev{color:var(--ink-link, var(--blue))}
 .obm-up-lane.obm-confirming .obm-up-chev{transform:rotate(90deg)}
 /* progressive inline confirm — hidden until the lane is armed */
 .obm-up-confirm{display:none;grid-column:1/-1;margin-top:12px;border-top:1px dashed var(--hair-2);padding-top:12px}
@@ -659,7 +659,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-up-msg{margin-top:10px}
 /* best-plan panel — calm, no CTA beyond "Open the dashboard" */
 .obm-up-best{padding-top:8px}
-.obm-up-best-mark{background:var(--blue-wash);color:var(--blue)}
+.obm-up-best-mark{background:var(--blue-wash);color:var(--ink-link, var(--blue))}
 
 /* ── done ────────────────────────────────────────────────────────────────── */
 .obm-done{display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 0 8px}
@@ -809,7 +809,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-cmp-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px var(--obm-pad) 12px}
 .obm-cmp-grp{
   font-family:var(--display);font-weight:700;font-size:9px;letter-spacing:.13em;
-  text-transform:uppercase;color:var(--blue);margin:16px 0 4px;padding-top:8px;
+  text-transform:uppercase;color:var(--ink-link, var(--blue));margin:16px 0 4px;padding-top:8px;
   border-top:1px solid var(--hair);
 }
 .obm-cmp-grp:first-child{border-top:0;margin-top:8px;padding-top:0}

@@ -896,10 +896,10 @@
     --mx5-accent:        var(--up);
     --mx5-accent-glow:   color-mix(in srgb, var(--up) 30%, transparent);
     --mx5-accent-dim:    color-mix(in srgb, var(--up) 10%, transparent);
-    --mx5-accent-ink:    var(--up);
+    --mx5-accent-ink:    var(--ink-up, var(--up));
     --mx5-warn:          var(--warn);
     --mx5-warn-dim:      color-mix(in srgb, var(--warn) 10%, transparent);
-    --mx5-warn-ink:      var(--warn);
+    --mx5-warn-ink:      var(--ink-warn, var(--warn));
     --mx5-hover-bg:      rgba(22,29,38,.62);
     --mx5-hover-border:  rgba(255,255,255,.16);
     --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.25);
@@ -1483,7 +1483,7 @@
 
   /* ── D · Market Sentiment odometer (dial-only; lives in the cnx-rack cnx-card) ── */
   body.page-china .mx5-sentiment-dial-wrap{text-align:center;margin-bottom:4px;}
-  body.page-china .mx5-sentiment-zone-text{
+  body.page-china .mx5-sentiment-zone-text{color:var(--fg-col-ink, var(--ink-warn, var(--warn)));
     font-size:15px;font-weight:700;color:var(--mx5-accent-ink);text-align:center;margin-bottom:3px;
   }
   body.page-china .mx5-sentiment-label{
@@ -1491,9 +1491,9 @@
   }
   /* zh 红涨绿跌 for the sentiment gauge: Euphoria=bullish→red, Panic=bearish→green (neutral amber).
      --fg-col routes through --up/--warn/--down so it auto-flips in zh; SVG marks + zone word read it. */
-  body.page-china .fg-greed{--fg-col:var(--up)}
-  body.page-china .fg-fear{--fg-col:var(--down)}
-  body.page-china .fg-neutral{--fg-col:var(--warn)}
+  body.page-china .fg-greed{--fg-col:var(--up);--fg-col-ink:var(--ink-up, var(--up))}
+  body.page-china .fg-fear{--fg-col:var(--down);--fg-col-ink:var(--ink-down, var(--down))}
+  body.page-china .fg-neutral{--fg-col:var(--warn);--fg-col-ink:var(--ink-warn, var(--warn))}
   body.page-china #cnx-sentiment .fg-mark-s{stroke:var(--fg-col)}
   body.page-china #cnx-sentiment .fg-mark-f{fill:var(--fg-col)}
   body.page-china #cnx-sentiment .fg-lab-panic{fill:var(--down)}

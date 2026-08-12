@@ -2035,7 +2035,7 @@
   .dash-mtf-k { font-weight:700; font-variant-numeric:tabular-nums; font-size:11px; }
 
   /* ── TS-R6: two-reads reconciliation chip ───────────────────────────────── */
-  .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--info,var(--link)); cursor:help; }
+  .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--ink-info, var(--info,var(--link))); cursor:help; }
   .two-reads-chip .tr-sep { opacity:.45; margin:0 2px; }
 </style>
 {% if mode != 'stocks' %}
@@ -5537,7 +5537,7 @@ body.page-macro.mx4-grid .mx5-mkt-price{
   font-variant-numeric:tabular-nums;
 }
 body.page-macro.mx4-grid .mx5-mkt-delta{font-size:13px;font-weight:600;}
-body.page-macro.mx4-grid .mx5-mkt-delta.up{color:var(--up,#22d97a);}
+body.page-macro.mx4-grid .mx5-mkt-delta.up{color:var(--ink-up, var(--up,#22d97a));}
 body.page-macro.mx4-grid .mx5-mkt-delta.dn{color:var(--down,#ef4444);}
 /* live.js paintChg speaks up/down (not dn) — alias it into the same token path so a
    live-patched delta paints identically to a baked one (and flips in zh with it) */
@@ -5786,7 +5786,7 @@ body.page-macro.mx4-grid .mx5-tl-badge{
   font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;
   letter-spacing:.05em;text-align:center;margin-top:1px;
 }
-body.page-macro.mx4-grid .mx5-tl-badge.high{color:#ef4444;background:rgba(239,68,68,.12);}
+body.page-macro.mx4-grid .mx5-tl-badge.high{color:var(--ink-act, var(--act));background:color-mix(in srgb, var(--act) 12%, transparent);}
 body.page-macro.mx4-grid .mx5-tl-badge.med{color:var(--mx5-warn-ink);background:rgba(245,158,11,.12);}
 body.page-macro.mx4-grid .mx5-tl-badge.low{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.05);}
 /* staggered node entrance (reduced-motion snaps to final) */

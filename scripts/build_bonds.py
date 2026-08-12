@@ -43,24 +43,33 @@ C = {
     "amber": "#F5AD42", "green": "#1a7f43", "grid": "#EAECF0", "card": "#FFFFFF",
     "bg": "#F7F8FA", "gold": "#C8A53B", "teal": "#1F8A70",
 }
+# Chip fills that carry WHITE text must be TEXT grade, not fill grade. Measured
+# white-on-fill 2026-08-12: C["amber"] #F5AD42 = 1.92:1 and C["teal"] #1F8A70 =
+# 4.26:1 both fail AA; green/blue/red/muted already passed (5.0–7.0) and are
+# darkened here only so the band chips read as one calibrated set rather than a
+# mix of two grades. CHIP is the white-text-safe twin (5.6–11.1:1 on #fff); the
+# raw C values stay for charts, tints and strokes, where fill grade is correct.
+CHIP = {"green": "#15764f", "blue": "#1c4fe0", "amber": "#8a5c00", "red": "#b3252a",
+        "muted": "#4C5A6C", "teal": "#0f6d6a", "crisis": "#7a0d0d"}
+
 # band -> display color (shared across pillars)
-HEALTH_COLOR = {"healthy": C["green"], "mixed": C["amber"], "stressed": C["red"]}
-PHASE = {"recession": ("Recession", "衰退", C["red"]), "early": ("Early-cycle recovery", "周期早段复苏", C["green"]),
-         "mid": ("Mid-cycle", "周期中段", C["blue"]), "late": ("Late-cycle", "周期晚段", C["amber"])}
-CREDIT_BAND = {"tight": ("Tight", "偏紧", C["green"]), "normal": ("Normal", "正常", C["blue"]),
-               "elevated": ("Elevated", "升高", C["amber"]), "distress": ("Distress", "困境", C["red"]),
-               "crisis": ("Crisis", "危机", "#8B0000")}
-MOVE_BAND = {"calm": ("Calm", "平静", C["green"]), "normal": ("Normal", "正常", C["blue"]),
-             "elevated": ("Elevated", "升高", C["amber"]), "crisis": ("Crisis", "危机", C["red"])}
-CORR_REGIME = {"diversifying": ("Diversifying — bonds hedge", "分散化 — 债券对冲", C["green"]),
-               "mixed": ("Mixed", "中性", C["muted"]),
-               "breakdown": ("Breakdown — bonds not hedging", "失效 — 债券不对冲", C["red"])}
-TAX_COLOR = {"bull_steepener": C["green"], "bull_flattener": C["teal"],
-             "bear_steepener": C["amber"], "bear_flattener": C["red"]}
-FRAG_STATE = {"calm": ("Calm", "平静", C["green"]), "elevated": ("Elevated", "升高", C["amber"]),
-              "stress": ("Stress", "压力", C["red"])}
-JGB_STATE = {"steep": ("Steepening", "陡峭化", C["amber"]), "flat": ("Flat", "平坦", C["muted"]),
-             "inverted": ("Inverted", "倒挂", C["red"])}
+HEALTH_COLOR = {"healthy": CHIP["green"], "mixed": CHIP["amber"], "stressed": CHIP["red"]}
+PHASE = {"recession": ("Recession", "衰退", CHIP["red"]), "early": ("Early-cycle recovery", "周期早段复苏", CHIP["green"]),
+         "mid": ("Mid-cycle", "周期中段", CHIP["blue"]), "late": ("Late-cycle", "周期晚段", CHIP["amber"])}
+CREDIT_BAND = {"tight": ("Tight", "偏紧", CHIP["green"]), "normal": ("Normal", "正常", CHIP["blue"]),
+               "elevated": ("Elevated", "升高", CHIP["amber"]), "distress": ("Distress", "困境", CHIP["red"]),
+               "crisis": ("Crisis", "危机", CHIP["crisis"])}
+MOVE_BAND = {"calm": ("Calm", "平静", CHIP["green"]), "normal": ("Normal", "正常", CHIP["blue"]),
+             "elevated": ("Elevated", "升高", CHIP["amber"]), "crisis": ("Crisis", "危机", CHIP["red"])}
+CORR_REGIME = {"diversifying": ("Diversifying — bonds hedge", "分散化 — 债券对冲", CHIP["green"]),
+               "mixed": ("Mixed", "中性", CHIP["muted"]),
+               "breakdown": ("Breakdown — bonds not hedging", "失效 — 债券不对冲", CHIP["red"])}
+TAX_COLOR = {"bull_steepener": CHIP["green"], "bull_flattener": CHIP["teal"],
+             "bear_steepener": CHIP["amber"], "bear_flattener": CHIP["red"]}
+FRAG_STATE = {"calm": ("Calm", "平静", CHIP["green"]), "elevated": ("Elevated", "升高", CHIP["amber"]),
+              "stress": ("Stress", "压力", CHIP["red"])}
+JGB_STATE = {"steep": ("Steepening", "陡峭化", CHIP["amber"]), "flat": ("Flat", "平坦", CHIP["muted"]),
+             "inverted": ("Inverted", "倒挂", CHIP["red"])}
 LEG_LABEL = {"recession": ("Recession", "衰退"), "drawdown": ("Drawdown", "回撤"),
              "credit": ("Credit", "信用"), "rates_vol": ("Rates vol", "利率波动"),
              "plumbing": ("Plumbing", "资金管道")}

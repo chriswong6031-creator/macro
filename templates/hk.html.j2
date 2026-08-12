@@ -1412,15 +1412,20 @@
     --mx5-accent-dim:    color-mix(in srgb,var(--up) 10%,transparent);
     --mx5-warn:          var(--warn,#f59e0b);
     --mx5-warn-dim:      color-mix(in srgb,var(--warn) 10%,transparent);
-    --mx5-accent-ink:    var(--up);
-    --mx5-warn-ink:      var(--warn);
+    --mx5-accent-ink:    var(--ink-up, var(--up));
+    --mx5-warn-ink:      var(--ink-warn, var(--warn));
     --mx5-hover-bg:      rgba(22,29,38,.62);
     --mx5-hover-border:  rgba(255,255,255,.16);
     --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.25);
     --mx5-focus-ring:    0 0 0 2px color-mix(in srgb,var(--up) 55%,transparent);
     --ink-1: var(--text);
     --ink-2: var(--muted);
-    --ink-3: color-mix(in srgb,var(--muted) 70%,transparent);
+    /* Third ink = --muted, the same value china/intl/macro already use. The
+       70%-alpha form here composited to 3.43:1 on the light panel while
+       carrying axis ticks, tickers and eyebrows; a THIRD text grade lighter
+       than --muted cannot clear AA at all, so the hierarchy below --muted is
+       carried by size and weight, never by fading the ink. */
+    --ink-3: var(--muted);
   }
   [data-theme="light"] body.page-hk{
     --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
@@ -1524,11 +1529,11 @@
   /* ── D · Sentiment odometer (Mood & Fear) ── */
   /* HK dial = inverted VHSI: high fear → needle LEFT (panic). fg-fear→--down, fg-greed→--up,
      neutral→--warn; --fg-col routes through those so it flips 红涨绿跌 in zh. */
-  body.page-hk .fg-greed{--fg-col:var(--up)} body.page-hk .fg-fear{--fg-col:var(--down)} body.page-hk .fg-neutral{--fg-col:var(--warn)}
+  body.page-hk .fg-greed{--fg-col:var(--up);--fg-col-ink:var(--ink-up, var(--up))} body.page-hk .fg-fear{--fg-col:var(--down);--fg-col-ink:var(--ink-down, var(--down))} body.page-hk .fg-neutral{--fg-col:var(--warn);--fg-col-ink:var(--ink-warn, var(--warn))}
   body.page-hk #hkx-sentiment .fg-mark-s{stroke:var(--fg-col)} body.page-hk #hkx-sentiment .fg-mark-f{fill:var(--fg-col)}
   body.page-hk #hkx-sentiment .fg-lab-panic{fill:var(--down)} body.page-hk #hkx-sentiment .fg-lab-euph{fill:var(--up)}
   body.page-hk .mx5-sentiment-dial-wrap{text-align:center;margin-bottom:4px;}
-  body.page-hk .mx5-sentiment-zone-text{font-size:15px;font-weight:700;color:var(--fg-col,var(--warn));text-align:center;margin-bottom:3px;}
+  body.page-hk .mx5-sentiment-zone-text{font-size:15px;font-weight:700;color:var(--fg-col-ink,var(--fg-col,var(--ink-warn, var(--warn))));text-align:center;margin-bottom:3px;}
   body.page-hk .mx5-sentiment-label{font-size:11px;color:var(--ink-3);text-align:center;margin-top:2px;}
 
   /* ── AI BRIEF DIALOG — ABX v2 shared body (.aib2-*); ZH-safe blue accent by default ── */

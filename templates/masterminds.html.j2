@@ -38,7 +38,7 @@ a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
 .nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
 .nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
 .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
-.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--blue)}
+.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--ink-link, var(--blue))}
 .lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
 .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
 html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
@@ -75,12 +75,12 @@ html[data-theme="dark"] .exp{background:#3a1d2b;color:#f08bb4}
 html[data-theme="dark"] .metrics>div{background:var(--grid)}
 .m-k{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.03em}
 .m-v{display:block;font-size:18px;font-weight:800;color:var(--ink);margin-top:3px}
-.m-v.win{color:var(--green)} .m-v.lose{color:var(--red)}
+.m-v.win{color:var(--ink-ok, var(--green))} .m-v.lose{color:var(--ink-act, var(--red))}
 .m-sub{display:block;font-size:10.5px;color:var(--faint);margin-top:1px}
 .scard-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:6px;gap:10px;flex-wrap:wrap}
 .stance{font-size:12.5px;font-weight:700;color:var(--text);background:var(--bg);border:1px solid var(--grid);border-radius:8px;padding:5px 10px}
 html[data-theme="dark"] .stance{background:var(--grid)}
-.go{font-weight:700;color:var(--blue);font-size:14px}
+.go{font-weight:700;color:var(--ink-link, var(--blue));font-size:14px}
 .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:900px}
 /* ===== Mastermind Strategies — full-page enveloped UI ===== */
 body{background:radial-gradient(900px 480px at 12% -5%,rgba(31,169,113,.07),transparent 60%),radial-gradient(900px 480px at 88% -5%,rgba(40,95,255,.07),transparent 60%),var(--bg)}
@@ -121,7 +121,8 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
 .mm-d{display:block;font-size:10px;color:var(--faint)}
 .mm-thesis{color:var(--muted);font-size:12.5px;line-height:1.5;margin-bottom:14px;flex:1}
 .mm-go{font-size:13.5px;font-weight:800;color:var(--accent);margin-top:auto}
-</style>{% include "_vector_polish.html.j2" %}
+</style>
+{% include "_state_inks.html.j2" %}{% include "_vector_polish.html.j2" %}
 </head>
 <body>
 {% include "_site_nav.html.j2" %}

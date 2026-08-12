@@ -168,7 +168,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
     if(!d||!d.state)return;
     var el=document.getElementById('ftr-lever-chip');
     if(!el)return;
-    var s=d.state, c=s==='ARMED'?'var(--down)':s==='ELEVATED'?'var(--orange)':'var(--muted)';
+    var s=d.state, c=s==='ARMED'?'var(--ink-down, var(--down))':s==='ELEVATED'?'var(--ink-orange, var(--orange))':'var(--muted)';
     var sZh={'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}[s]||s;
     // Use framing/framing_zh from the JSON itself — single source of truth, immune to drift
     var disc=isZh()?(d.framing_zh||d.framing||''):(d.framing||'');
@@ -762,9 +762,9 @@ const STANDOUTS = {{ standouts_json|default('{}')|safe }};   // theme id -> # me
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 const isZh=()=>document.documentElement.getAttribute('data-lang')==='zh';
 // zh 红涨绿跌: swap buy-verb green (#16a34a/#22c55e) to red in zh mode
-const buyColor=()=>isZh()?'#ef4444':'#16a34a';
+const buyColor=()=>cssv('--ink-up')||cssv('--up')||(isZh()?'#b91c1c':'#15803d');
 // zh 红涨绿跌: swap avoid-verb red (#ef4444) to green in zh mode (amber TRIM left unchanged)
-const sellColor=c=>isZh()&&c==='#ef4444'?'#16a34a':c;
+const sellColor=c=>c==='#ef4444'?(cssv('--ink-down')||cssv('--down')||(isZh()?'#15803d':'#b91c1c')):c;
 // ★N badge: how many individual standouts back this theme (the allocation→stock bridge)
 const sbBadge = id => { const n=STANDOUTS[id]; return n?` <span class="sb-badge" title="${n} member(s) on the US Prophet buy board">★${n}</span>`:''; };
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -812,7 +812,7 @@ function renderRiskTime(){
   if(pts.length>=2){ const w=320,hh=46,mn=Math.min(...pts),mx=Math.max(...pts),sp=(mx-mn)||1;
     const d=pts.map((v,i)=>`${i?'L':'M'}${(i/(pts.length-1)*w).toFixed(1)} ${(hh-3-(v-mn)/sp*(hh-7)).toFixed(1)}`).join(' ');
     spark=`<svg width="${w}" height="${hh}" viewBox="0 0 ${w} ${hh}"><path d="${d}" fill="none" stroke="${cssv('--muted')}" stroke-width="1.6"/></svg>`; }
-  const posture = cash==null?['—','—',cssv('--muted')] : crash?['DE-RISKED','已去风险',cssv('--down')] : cash>=0.5?['DEFENSIVE','防守',cssv('--warn')] : cash>=0.25?['BALANCED','均衡',cssv('--text')] : ['RISK-ON','进攻',cssv('--up')];
+  const posture = cash==null?['—','—',cssv('--muted')] : crash?['DE-RISKED','已去风险',cssv('--ink-down')||cssv('--down')] : cash>=0.5?['DEFENSIVE','防守',cssv('--ink-warn')||cssv('--warn')] : cash>=0.25?['BALANCED','均衡',cssv('--text')] : ['RISK-ON','进攻',cssv('--ink-up')||cssv('--up')];
   el.innerHTML=`<div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
     <div><div class="riskbig" style="color:${posture[2]}">${cash==null?'—':Math.round(cash*100)+'%'}</div><div class="muted" style="font-size:11px">${L('suggested cash','建议现金')}</div></div>
     <div><div style="font-size:16px;font-weight:700;color:${posture[2]}">${L(posture[0],posture[1])}</div><div class="muted" style="font-size:11px">${L('risk posture now','当前风险姿态')}</div></div>
