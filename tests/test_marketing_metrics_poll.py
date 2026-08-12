@@ -19,6 +19,7 @@ Covers:
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -605,3 +606,40 @@ class TestPostingOutbidsTelemetry:
         assert MP._MAX_CALLS_PER_RUN <= 8, (
             "the publisher shares this token; a telemetry cap large enough to "
             "matter is a posting outage waiting for a busy day")
+
+    def _step(self, needle: str) -> dict:
+        import yaml
+
+        steps = yaml.safe_load(self.WF.read_text(encoding="utf-8"))["jobs"]["publish"]["steps"]
+        return [s for s in steps if needle in str(s.get("name", ""))][0]
+
+    def test_a_recall_dispatch_spends_nothing_on_telemetry(self):
+        """A recall is the KILL-SWITCH: the operator is cancelling posts already
+        booked at Buffer, and every one of those deletes is a call on this same
+        rolling 24h allowance. The post that cannot be PULLED is worse than the
+        post that cannot be sent, so telemetry may not stand in front of it.
+
+        Pinned as a NEGATED guard rather than by string equality: what matters is
+        that a recall dispatch turns the step OFF, not the spelling."""
+        poll_if = str(self._poll_step().get("if", ""))
+        assert "recall_pending" in poll_if, (
+            "the poll step must see the recall input to be able to skip on it — "
+            "a recall run polling telemetry is the 2026-08-03 failure class "
+            "pointed at an emergency stop")
+        assert re.search(r"!\s*\(.*recall_pending", poll_if, re.S), (
+            "the recall guard must NEGATE the dispatch (skip when recalling), "
+            f"not select for it: {poll_if!r}")
+
+    def test_the_publisher_and_the_poller_sit_out_the_same_recall(self):
+        """The two steps that spend Buffer calls must agree about a recall. If
+        the publisher's guard is ever reworded, the poller's moves with it —
+        otherwise the quieter half silently starts spending again."""
+        poll_if = str(self._poll_step().get("if", ""))
+        pub_if = str(self._step("run publisher").get("if", ""))
+        assert "recall_pending" in pub_if, (
+            "publisher recall guard vanished — re-derive the poller's from it")
+        assert re.search(r"!\s*\(.*recall_pending", pub_if, re.S), pub_if
+        clause = "github.event_name == 'workflow_dispatch' && inputs.recall_pending"
+        assert clause in pub_if and clause in poll_if, (
+            "both Buffer-spending steps carry the same recall clause so a "
+            f"recall run makes ZERO calls: publisher={pub_if!r} poll={poll_if!r}")
