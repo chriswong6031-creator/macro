@@ -199,6 +199,29 @@ def test_ascii_escapes_are_left_alone_so_line_numbers_survive() -> None:
         f"escaped newlines must not shift reported line numbers; got {found[0]['line_no']}")
 
 
+def test_an_escaped_zh_finding_is_reported_readably() -> None:
+    """Detecting a claim nobody can read is half a fix.
+
+    The raw line renders an escaped ZH claim as six characters per glyph, so the
+    160-char report budget shows a couple of dozen of them and none are legible. A CI
+    failure nobody can read is a CI failure nobody can fix.
+    """
+    found, _ = scan_text(_SHOWCASE, f'{{"note":"x","flag_zh":"{_ESC_ZH_DRAWDOWN}"}}', NO_ALLOW)
+    assert len(found) == 1, f"expected one finding, got {found}"
+    text = found[0]["text"]
+    assert "已验证" in text, f"the finding must show readable ZH, got {text!r}"
+    assert "\\u5df2" not in text, f"the finding must not show escape soup, got {text!r}"
+
+
+def test_unescaped_findings_still_report_the_raw_line() -> None:
+    """Decoding is only for lines that CARRY escapes — everything else reports verbatim,
+    so the finding text stays greppable in the file."""
+    line = '  <span>a validated selection edge</span>'
+    found, _ = scan_text("site/x.html", line, NO_ALLOW)
+    assert len(found) == 1 and found[0]["text"] == line.strip(), (
+        f"unescaped lines must report the raw text, got {found}")
+
+
 def test_surrogate_escapes_do_not_crash_the_scan() -> None:
     """Astral escapes come in PAIRS; a lone half is unencodable and must not reach chr().
 
