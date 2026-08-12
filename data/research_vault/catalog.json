@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T02:07:10.650030+00:00",
-  "count": 961,
+  "generated_at": "2026-08-12T02:22:11.920878+00:00",
+  "count": 962,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -99,6 +99,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e6iqxljorzl-d9490e",
+      "title": "InterContinental Hotels Group (IHG.L) 1H26 Strong net system growth of 5",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:15Z",
+      "summary_points": [
+        "**1H26 Results & Growth Beat**: Strong net system growth (+5.0% yoy), RevPAR growth (global +3.5% yoy, Americas +5.4% yoy), EPS +13% yoy despite 1H cost growth (+4%); management confirms FY26 consensus profit/earnings.",
+        "**GS Estimate Upgrade Momentum**: Goldman Sachs raises 2026-2030E estimates across RevPAR (+27bps), system growth (+15bps), revenue, EBIT, and EPS; consensus RevPAR growth 66bps above company forecast.",
+        "**Cash Flow & Margin Resilience**: Operating cash flow $1.137bn (12/26E), EBITDA margin expanding to 55.6% (12/26E); strong cash generation critical for dividends and growth amid cost moderation (1-3% full-year).",
+        "**Valuation & Technical Target**: P/E 24.2 (12/25) vs.",
+        "5 (12/26E) indicates moderate valuation; $190 target (GS BUY) exceeds current price ($172.75), signaling bullish technical positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
