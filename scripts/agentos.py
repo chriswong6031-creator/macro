@@ -1490,7 +1490,10 @@ def build_state(
         # ---- pure function of the authored records + join inputs ----
         "workstreams": records,
         "needs_ceo": [
-            {"key": row["key"], **row["needs_ceo"], "source": row["source"]}
+            # `workstream`, matching blocked/finished/start_next and the documented
+            # ceo_brief.v1 envelope.  It emitted `key` here alone, so the one section the
+            # CEO acts on was the one whose shape diverged from its own spec.
+            {"workstream": row["key"], **row["needs_ceo"], "source": row["source"]}
             for row in records if row["needs_ceo"]
         ],
         "start_next": rank_start_next(records),
@@ -1563,7 +1566,7 @@ def render_state_markdown(state: dict[str, Any]) -> str:
         for item in state["needs_ceo"]:
             when = f" · wanted by {item['by_when']}" if item["by_when"] else ""
             lines.append(
-                f"- **WS:{item['key']}** — {_md_cell(item['question'])}"
+                f"- **WS:{item['workstream']}** — {_md_cell(item['question'])}"
                 f" (blocks {item['blocks_waves']} wave(s){when}) — `{item['source']}`"
             )
         lines.append("")
@@ -1666,6 +1669,40 @@ CAP_BLOCKED = 5
 CAP_FINISHED = 8
 CAP_START_NEXT = 3
 
+
+def _overflow(out: list[str], total: int, shown: int, noun: str) -> None:
+    """Name what a cap dropped.  Silent truncation is the defect this exists to prevent.
+
+    A brief that prints 5 of 7 blocked workstreams and says nothing reads exactly like a
+    brief where only 5 are blocked — the CEO cannot tell, and the two dropped items are
+    invisible rather than deprioritized.  The architecture forbids this for compiled
+    context bundles for the same reason; the brief is held to its own rule.
+    """
+    if total > shown:
+        out.append(f"    … +{total - shown} more {noun} (--full)")
+
+
+def _recommended_option(options: list[str], recommendation: str) -> str | None:
+    """Which option the recommendation designates, or None when it is not unambiguous.
+
+    Marking the wrong option here is the single worst thing this brief can do: the CEO
+    acts on the arrow.  A substring test (``option in recommendation``) marks the REJECTED
+    option whenever the prose names it to reject it — "Ship now, rejecting Wait for the
+    nightly" marks both.  So the rule is deliberately strict: the recommendation must
+    OPEN with the option text, and exactly one option may qualify.  Ambiguous prose gets
+    no arrow at all, and the reader falls through to the Recommendation block below —
+    which is honest, where a confident wrong arrow is not.
+    """
+    if not recommendation:
+        return None
+
+    def _norm(text: str) -> str:
+        return " ".join((text or "").split()).rstrip(".").casefold()
+
+    head = _norm(recommendation)
+    hits = [opt for opt in options if opt and head.startswith(_norm(opt))]
+    return hits[0] if len(hits) == 1 else None
+
 # The brief is a READINESS view, not the company's ranked work queue.  Charter P7 gives
 # that concept to Mastermind `brain/improvement_agenda.py`, and two ranked lists that
 # disagree is exactly the failure P7 exists to prevent — so the brief SAYS SO in prose
@@ -1733,15 +1770,20 @@ def build_brief(
     finished.sort(key=lambda f: (f["done_at"] or "", f["workstream"]), reverse=True)
 
     blocked = [
+        # `record_stale_days`, NOT days-blocked: it is days since the record file was last
+        # committed (git_dates), which is all we can derive without an authored
+        # `blocked_since` or an -S walk for the transition into `status: blocked`.  Naming it
+        # `blocked_days` and ordering "longest blocked first" claimed a measurement nobody
+        # took — a record edited yesterday for an unrelated reason read as freshly blocked.
         {"workstream": row["key"], "title": row["title"], "blocked_by": row["blocked_by"],
-         "blocked_days": row["stale_days"], "source": row["source"]}
+         "record_stale_days": row["stale_days"], "source": row["source"]}
         for row in records if row["status"] == "blocked"
     ]
-    blocked.sort(key=lambda b: (-(b["blocked_days"] or 0), b["workstream"]))
+    blocked.sort(key=lambda b: (-(b["record_stale_days"] or 0), b["workstream"]))
 
     needs = sorted(
         state["needs_ceo"],
-        key=lambda n: (n["by_when"] or "9999-99-99", -n["blocks_waves"], n["key"]),
+        key=lambda n: (n["by_when"] or "9999-99-99", -n["blocks_waves"], n["workstream"]),
     )
 
     claims = [row for row in records if row["claim"]]
@@ -1836,11 +1878,13 @@ def render_brief(brief: dict[str, Any], *, full: bool, state: dict[str, Any]) ->
     if not brief["needs_ceo"]:
         out.append(" Nothing needs you.")
     for index, item in enumerate(brief["needs_ceo"][:CAP_NEEDS_CEO], start=1):
-        blocks = f" — blocks {item['blocks_waves']} wave(s)" if item["blocks_waves"] else ""
-        out.append(f" {index}. WS:{item['key']}{blocks}")
+        blocks = (f" — {item['blocks_waves']} unfinished wave(s)"
+                  if item["blocks_waves"] else "")
+        out.append(f" {index}. WS:{item['workstream']}{blocks}")
         out.extend(_wrap(item["question"], 62, "    "))
+        marked = _recommended_option(item["options"], item["recommendation"])
         for letter, option in zip("ABCDEFGH", item["options"]):
-            mark = "  ← recommended" if option and option in item["recommendation"] else ""
+            mark = "  ← recommended" if option == marked else ""
             out.append(f"      {letter}) {_md_cell(option)}{mark}")
         if item["recommendation"]:
             # Its own block, at the item indent — nested under the last option it reads
@@ -1858,19 +1902,23 @@ def render_brief(brief: dict[str, Any], *, full: bool, state: dict[str, Any]) ->
     if brief["blocked"]:
         out.append(f"━━ BLOCKED {RULE[:57]}")
         out.append("")
-        for item in brief["blocked"][:CAP_BLOCKED]:
+        cap = len(brief["blocked"]) if full else CAP_BLOCKED
+        for item in brief["blocked"][:cap]:
             out.append(f" • WS:{item['workstream']} — {item['title']}")
             for cause in item["blocked_by"]:
                 out.extend(_wrap(cause, 62, "   "))
+        _overflow(out, len(brief["blocked"]), cap, "blocked")
         out.append("")
 
     if brief["finished"]:
         out.append(f"━━ FINISHED ({brief['since_label']}) {RULE[:44]}")
         out.append("")
-        for item in brief["finished"][:CAP_FINISHED]:
+        cap = len(brief["finished"]) if full else CAP_FINISHED
+        for item in brief["finished"][:cap]:
             prs = " ".join(f"#{n}" for n in item["prs"]) or "—"
             out.append(f" ✅ WS:{item['workstream']} {item['wave']} — "
                        f"{_md_cell(item['title'] or '')}  {prs}")
+        _overflow(out, len(brief["finished"]), cap, "finished")
         out.append("")
 
     running = brief["running"]
@@ -1894,13 +1942,15 @@ def render_brief(brief: dict[str, Any], *, full: bool, state: dict[str, Any]) ->
     out.append("")
     if not brief["start_next"]:
         out.append(" Nothing is unblocked.")
-    for index, item in enumerate(brief["start_next"][:CAP_START_NEXT], start=1):
+    cap_next = len(brief["start_next"]) if full else CAP_START_NEXT
+    for index, item in enumerate(brief["start_next"][:cap_next], start=1):
         p0 = f" · P0 {item['p0']}" if item["p0_active"] else ""
         unblocks = f" · unblocks {item['unblocks']}" if item["unblocks"] else ""
         claimed = " · CLAIMED" if item["claimed"] else ""
         out.append(f" {index}. WS:{item['workstream']} {item['wave']} — "
                    f"{_md_cell(item['title'] or '')}")
         out.append(f"    {item['source']}{p0}{unblocks}{claimed}")
+    _overflow(out, len(brief["start_next"]), cap_next, "ready to start")
     out.append("")
 
     if full:

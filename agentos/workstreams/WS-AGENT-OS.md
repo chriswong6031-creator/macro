@@ -68,24 +68,32 @@ artifacts:
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 needs_ceo:
   question: >
-    Three conflicts. C1 — task
-    registry: the brief asks for a first-class Task entity; census §5.6 ruled sub-PR
-    granularity a non-goal. C2 — session tracking: the brief asks for heartbeats and
-    stale-task detection; census §6.3 forbids a session-tracking service. C3 — ranked
-    work: the CEO brief's START NEXT is a ranked next-work list, and
-    config/strategic_state.yml:16 gives that concept to brain/improvement_agenda.py.
+    Five conflicts, all requiring a Chairman ruling. C1 — task registry: the brief asks
+    for a first-class Task entity; census §5.6 ruled sub-PR granularity a non-goal.
+    C2 — session tracking: the brief asks for heartbeats and stale-task detection;
+    census §6.3 forbids a session-tracking service. C3 — ranked work: the CEO brief's
+    START NEXT is a ranked next-work list, and config/strategic_state.yml:16 gives that
+    concept to brain/improvement_agenda.py. C4 — census override: census §5.4 chose
+    governance.jsonl event types and declared "a new unified store" an explicit
+    non-goal; agentos/decisions/ overrides that, on the ground that governance.jsonl is
+    not git-tracked. C5 — standing kill: DNR:KILL-PARALLEL-KNOWLEDGE-BASE (CXI-R12)
+    forbids a second hand-maintained knowledge base for session knowledge, which is the
+    closest existing description of DSC-* records; only the operator can clear it.
   options:
-    - "Side with the census on C1/C2; keep START NEXT as readiness-only on C3"
+    - "Side with the census on C1/C2, readiness-only on C3, confirm C4, clear C5"
     - "Override the census: build a real task store and a session registry"
-    - "Fold readiness into the improvement agenda and retire START NEXT here"
+    - "Uphold DNR:KILL-PARALLEL-KNOWLEDGE-BASE — retire DSC-*, keep DEC-* and handoffs"
   recommendation: >
-    Side with the census on both. Waves supply the dependency graph and next-action the
-    brief actually needs at ~4 fields instead of 20; the advisory claim plus git worktree
-    list and PR-collision data cover the collision goal. Override C1 only if you want work
-    items assigned to workers by someone other than the worker — that is a dispatcher, and
-    it belongs in control_plane/.
+    Side with the census on C1/C2, readiness-only on C3, confirm C4, clear C5. Waves
+    supply the dependency graph and next-action the brief needs at ~4 fields instead of
+    20; the advisory claim plus git worktree list and PR-collision data cover the
+    collision goal; START NEXT stays a readiness view so the agenda keeps priority; the
+    C4 override rests on governance.jsonl being single-machine runtime state; and C5 has
+    new evidence CXI-R12 could not have weighed, since account-local memory is not repo
+    content and therefore not indexable. Uphold C5 instead if CXI plus masterplan prose
+    is judged sufficient for cross-account knowledge.
   by_when: 2026-08-19
-next_action: Land Phase 2, then rule on C1, C2 and C3.
+next_action: Land Phase 2, then rule on C1-C5 (C5 gates whether Phase 1 may mandate DSC-*).
 ---
 
 ## Context

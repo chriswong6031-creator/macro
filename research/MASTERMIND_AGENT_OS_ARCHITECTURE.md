@@ -41,9 +41,24 @@ The Executive OS Phase 0 census (`research/EXECUTIVE_OS_PHASE0_CENSUS.md`, merge
 > **Decision provenance distributed across four homes** (DNR rows, 52 adjudication docs,
 > masterplan amendments, account-local memory) with no single ledger.
 
-The census closes that gap "by *convention on existing stores*, not a new store" (§5.4) and
-defers the mechanism. **This document supplies the mechanism**, and only that. Concretely,
-six gaps survive everything that is built:
+**The census did not defer the mechanism — it chose one, and this document overrides that
+choice.** Saying it "deferred" was a misreading, corrected here: census §5 row 4 specifies
+precisely *"Add ~3 event types: `executive_decision`, `objective_set/retired`,
+`experiment_judged`"* on the existing `governance.jsonl`, with unification as *"a citation
+convention across three live ledgers"*, and it states **"Explicit non-goal: a new unified
+store."** `agentos/decisions/` is a new store. That is an override, and it is escalated as
+**conflict C4** in §13 rather than presented as filling a vacancy.
+
+The override has one specific ground, verified this session: **`governance.jsonl` is not
+git-tracked.** `control_plane/governance.py:70` resolves it to `data/governance/governance.jsonl`
+and `git ls-files` returns nothing for that path — it is single-machine runtime state, so it
+cannot carry cross-machine, cross-repo organizational memory no matter how many event types it
+gains. The census's mechanism is right for the *local authority audit trail* and stays; it
+cannot be right for the durable org record. Direction of truth, stated so the two do not fork:
+**the `executive_decision` event stays in `governance.jsonl` as the local audit row; `DEC:<KEY>`
+is the durable record, and the event cites the key.**
+
+Concretely, six gaps survive everything that is built:
 
 | # | Gap | Evidence |
 |---|---|---|
@@ -58,6 +73,46 @@ six gaps survive everything that is built:
 work-identity plane*. It is not a third control plane, and §2 makes that structurally
 enforceable rather than merely promised.
 
+### `DNR:KILL-PARALLEL-KNOWLEDGE-BASE` — the standing kill this design must clear
+
+House law requires citing `research/DO_NOT_REBUILD.md` before proposing new work. **The first
+draft of this architecture did not, and the omission was material** — one row is squarely on
+point (`research/DO_NOT_REBUILD.md`, §1, `CXI-R12`, 2026-07-18):
+
+> **KILL-PARALLEL-KNOWLEDGE-BASE** — *Second hand-maintained knowledge base / wiki / RAG memory
+> service parallel to canonical sources (agents required to write session knowledge into a
+> separate database).* **FORBIDDEN** — knowledge retrieval is the Macro Context Index (derived,
+> rebuildable, canonical-sources-keep-truth); a hand-curated parallel store is the ratified
+> program's named degenerate form.
+
+Read honestly, `DSC-*` is the closest thing in this design to the killed form: it is session
+knowledge, written by agents, into a store that did not exist before. The kill is not evaded by
+noting that `agentos/` is Markdown rather than a database — that would be a technicality, and
+the DNR preamble is explicit that a killed topic needs **new evidence and an explicit ruling**,
+not a re-description. Three properties distinguish this design from the killed form, and each
+is checkable:
+
+1. **Not parallel — canonical.** The kill's operative word is *parallel to canonical sources*.
+   `DEC-*` and `DSC-*` hold facts with **no other home**: a positive decision's rationale, and a
+   cross-account discovery. There is no canonical source they shadow, so there is no second copy
+   to drift. Where a canonical source *does* exist, this design defers to it by name — DNR keeps
+   kill authority, `mastermind_programs.yml` keeps the org chart, masterplans keep the prose,
+   `governance.jsonl` keeps the local audit trail.
+2. **Retrieval stays CXI.** The kill's stated ground is that *knowledge retrieval is the Macro
+   Context Index*. This design builds no retriever: §8 explicitly declines one, and Phase 3
+   registers `agentos/**` as a **corpus** for `context_index_query.py`. The index over these
+   records remains derived and rebuildable; only the records themselves are authored.
+3. **New evidence the ruling could not have weighed.** CXI-R12 ruled on 2026-07-18. **G2 — that
+   account-local Claude memory is structurally unreadable to Codex workers — is not a retrieval
+   problem and CXI cannot close it**, because CXI indexes repository content and account-local
+   memory is not repository content. A Codex session cannot read one of those files no matter
+   how good the index is.
+
+**This is an argument, not a ruling.** Per the DNR preamble, only the operator/Fable can clear a
+killed topic. It is escalated as **conflict C5** in §13 and carried on `WS:AGENT-OS` as a
+`needs_ceo` item. Until it is ruled: Phase 0 (records that exist) stands, and **Phase 1 must not
+mandate that sessions write `DSC-*`** — that mandate is the precise thing the row forbids.
+
 ### Binding constraints this design inherits
 
 Three already-adjudicated rulings constrain any answer, and this design honors all three:
@@ -68,8 +123,9 @@ Three already-adjudicated rulings constrain any answer, and this design honors a
    tracking service; no new schedulers, queues, or buses; no auto-arming authority anywhere.
 3. **Charter V2 P7 — one source of truth per concept.**
 
-Two parts of the commissioning brief collide with constraint 2, and I am flagging rather than
-silently resolving them. See §13.
+Parts of the commissioning brief collide with constraint 2, and this design overrides two
+prior adjudications (census §5.4 and a standing DNR kill). All five are flagged rather than
+silently resolved. See §13.
 
 ---
 
@@ -589,7 +645,7 @@ of validator/generator, and four schema files.
 
 ---
 
-## §13 What NOT to build — and three conflicts the CEO must rule on
+## §13 What NOT to build — and five conflicts the CEO must rule on
 
 **Not building (settled by prior adjudication, restated so no future session re-proposes):**
 
@@ -604,8 +660,9 @@ of validator/generator, and four schema files.
 7. **No Kubernetes, no agent social network, no Git replacement, no speculative AI scheduler.**
    The brief's PART XVIII list, adopted verbatim.
 
-**Three genuine conflicts. I am flagging rather than silently resolving them, because all
-three are the Chairman's call:**
+**Five genuine conflicts. I am flagging rather than silently resolving them, because all
+five are the Chairman's call. C4 and C5 were found by adversarial review of this document's
+own first draft — C5 is a standing DNR kill the draft failed to cite at all:**
 
 > **C1 — Task registry.** The brief (PART II, PART XVI) asks for a first-class Task entity with
 > ~20 fields. Census §5.6 ruled sub-PR granularity unnecessary and a task queue an explicit
@@ -635,6 +692,28 @@ three are the Chairman's call:**
 > **What would flip me:** repeated real collisions that the claim + worktree check demonstrably
 > failed to prevent. That is measurable; until it is measured, the heartbeat service is the more
 > expensive guess.
+
+> **C4 — Overriding census §5.4.** The census specified the mechanism for decision provenance —
+> ~3 new event types on the existing `governance.jsonl` plus a citation convention — and stated
+> **"Explicit non-goal: a new unified store."** `agentos/decisions/` overrides that. **My
+> recommendation: confirm the override**, on the one ground in §0: `governance.jsonl` is not
+> git-tracked (`control_plane/governance.py:70` → `data/governance/governance.jsonl`;
+> `git ls-files` empty), so it is single-machine runtime state and cannot hold cross-machine org
+> memory whatever event types it gains. **What would flip me:** a decision to make
+> `governance.jsonl` git-tracked and replicated — then the census's mechanism is strictly
+> simpler and `agentos/decisions/` should be retired into it.
+
+> **C5 — Clearing `DNR:KILL-PARALLEL-KNOWLEDGE-BASE`.** A standing kill (CXI-R12, 2026-07-18)
+> forbids "a second hand-maintained knowledge base … agents required to write session knowledge
+> into a separate database". `DSC-*` is the closest thing here to that form, and **only the
+> operator/Fable can clear a killed topic** — I cannot self-certify it. The argument is in §0:
+> the records are canonical rather than parallel, retrieval stays with CXI, and G2 (account-local
+> memory is unreadable to Codex) is new evidence the 2026-07-18 ruling could not have weighed,
+> because CXI indexes repo content and account-local memory is not repo content. **Until ruled:
+> Phase 0 stands, and Phase 1 must NOT mandate that sessions write `DSC-*`** — the mandate is
+> precisely what the row forbids. **What would flip me:** a ruling that the CXI corpus plus
+> masterplan prose is sufficient for cross-account knowledge, which would retire `DSC-*` and keep
+> `DEC-*` and handoffs.
 
 ---
 

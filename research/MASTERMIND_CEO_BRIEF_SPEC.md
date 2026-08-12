@@ -168,11 +168,11 @@ suppressed would be indistinguishable from a brief where nothing is happening.
 |---|---|---|---|---|
 | Header counts | `agent_os_state.v1` | — | — | never |
 | Inputs line | generator `inputs` block | — | — | never — staleness is load-bearing |
-| **WHAT NEEDS YOU** | `needs_ceo` present | `by_when`, then blocked-wave count | 5 (overflow counted) | empty → "Nothing needs you." |
-| BLOCKED | `status: blocked` | longest blocked first | 5 | empty |
-| FINISHED | waves→`done` in window | recency | 8 | empty |
+| **WHAT NEEDS YOU** | `needs_ceo` present | `by_when`, then unfinished-wave count | 5 + overflow line | empty → "Nothing needs you." |
+| BLOCKED | `status: blocked` | `record_stale_days` desc | 5 + overflow line | empty |
+| FINISHED | waves→`done` in window | recency | 8 + overflow line | empty |
 | RUNNING | everything else | — | rolled to counts | never |
-| START NEXT | `todo` waves, deps satisfied | P0 alignment, then unblock-count | 3 | empty |
+| START NEXT | `todo` waves, deps satisfied | P0 alignment, then unblock-count | 3 + overflow line | empty |
 
 **START NEXT ranking**, in order: (1) all `depends_on` satisfied; (2) maps to an active P0 in
 `strategic_state.yml`; (3) unblocks the most other waves; (4) not currently claimed. Deterministic
@@ -196,6 +196,24 @@ Deriving the section from the agenda instead was rejected on evidence: `data/age
 gitignored and VPS-authoritative, absent in a fresh checkout, and the alternative read
 path is the live VPS API — which would break the zero-network contract in §1 for the
 sake of a list this command is not trying to produce.
+
+
+### Two contracts the first implementation broke, now pinned by test
+
+**Every capped section names what it dropped.** A brief that prints 5 of 7 blocked
+workstreams and says nothing reads exactly like a brief where only 5 are blocked. Each
+capped section emits `… +N more <noun> (--full)`, and `--full` renders the complete list.
+Only `needs_ceo` had this originally; the other three truncated silently.
+
+**`record_stale_days`, not `blocked_days`.** The blocked ordering is by days since the
+record file was last committed — all that is derivable without an authored `blocked_since`.
+Calling it "days blocked" and the ordering "longest blocked first" claimed a measurement
+nobody took: a record edited yesterday for an unrelated reason read as freshly blocked.
+
+**The `← recommended` arrow is exact, never inferred by substring.** An option is marked
+only when the recommendation OPENS with it and exactly one option qualifies; ambiguous prose
+gets no arrow. The substring form marked the REJECTED option whenever the prose named it in
+order to reject it — and the arrow is the thing the CEO acts on.
 
 ---
 

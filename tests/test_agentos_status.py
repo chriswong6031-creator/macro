@@ -499,7 +499,7 @@ def test_brief_needs_ceo_is_authored_never_inferred(store: Path, builds: Path) -
         path.stem[3:] for path in (store / "workstreams").glob("*.md")
         if "needs_ceo:" in path.read_text(encoding="utf-8")
     }
-    assert {item["key"] for item in payload["needs_ceo"]} == authored
+    assert {item["workstream"] for item in payload["needs_ceo"]} == authored
 
 
 def test_brief_does_not_write_the_check_in_marker_when_asked_not_to(
@@ -511,3 +511,75 @@ def test_brief_does_not_write_the_check_in_marker_when_asked_not_to(
          "--active-builds", str(builds))
     after = marker.read_bytes() if marker.exists() else None
     assert before == after
+
+
+# ---------------------------------------------------------------- brief correctness
+#
+# Three defects found by adversarial review of the first Phase 2 build.  Each test below
+# FAILED on the code as originally written; they pin the fix, not the wording.
+
+
+def _load_cli():
+    """Import scripts/agentos.py as a module so pure helpers can be unit-tested."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("agentos_cli", CLI)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_recommendation_never_marks_an_option_it_rejects() -> None:
+    """The arrow is what the CEO acts on, so a wrong arrow is worse than none.
+
+    The original test was `option in recommendation` — a substring match — so prose that
+    names an option in order to REJECT it ("Ship now, rejecting Wait for the nightly")
+    marked both options as recommended.
+    """
+    agentos = _load_cli()
+
+    options = ["Ship the fix now", "Wait for the nightly"]
+
+    # The rejected option is named in the prose; only the opening option may be marked.
+    assert agentos._recommended_option(
+        options, "Ship the fix now, rejecting the option to Wait for the nightly."
+    ) == "Ship the fix now"
+
+    # Prose that opens with neither option designates nothing — no arrow at all.
+    assert agentos._recommended_option(
+        options, "Side with the census on both, for the reasons below."
+    ) is None
+
+    # Trailing punctuation and whitespace must not defeat the match.
+    assert agentos._recommended_option(
+        ["Single positions table"], "  Single positions table.  Migration cost is zero."
+    ) == "Single positions table"
+
+    assert agentos._recommended_option(options, "") is None
+
+
+def test_capped_sections_say_what_they_dropped() -> None:
+    """Silent truncation reads exactly like 'there were only N' — the CEO cannot tell."""
+    agentos = _load_cli()
+
+    out: list[str] = []
+    agentos._overflow(out, total=7, shown=5, noun="blocked")
+    assert out == ["    … +2 more blocked (--full)"]
+
+    out = []
+    agentos._overflow(out, total=5, shown=5, noun="blocked")
+    assert out == [], "nothing was dropped, so nothing may be announced"
+
+
+def test_ceo_brief_envelope_keys_match_the_spec(store: Path, builds: Path) -> None:
+    """Every section names its workstream the same way — `needs_ceo` diverged alone."""
+    payload = json.loads(_run(
+        "brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json",
+        "--active-builds", str(builds),
+    ).stdout)
+    for section in ("needs_ceo", "blocked", "finished", "start_next"):
+        for item in payload[section]:
+            assert "workstream" in item, f"{section} item lacks 'workstream': {sorted(item)}"
+            assert "key" not in item, f"{section} item still emits legacy 'key': {sorted(item)}"
+    for item in payload["blocked"]:
+        assert "record_stale_days" in item, "blocked must not claim an unmeasured block age"
+        assert "blocked_days" not in item
