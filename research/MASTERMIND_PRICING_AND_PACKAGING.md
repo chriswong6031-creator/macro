@@ -321,10 +321,11 @@ commentary:
    including the CN annual one-time price (§6).
 3. Neither tier's card carries language that ranks them ("the flank", "most popular") during
    the window.
-4. The measurement needs an event that **does not exist yet**: `checkout.completed` carries the
-   new tier but not the previous one, so an Essential→Pro upgrade is indistinguishable from a
-   new Pro subscription. Add `subscription.tier_changed {from_tier, to_tier, days_at_previous}`
-   to `config/growth_events.yml` before launch, or criterion two is unmeasurable.
+4. The measurement needs an event `checkout.completed` cannot provide — it carries the new tier
+   but not the previous one, so an Essential→Pro upgrade is indistinguishable from a new Pro
+   subscription. `subscription.tier_changed {from_tier, to_tier, from_interval, to_interval,
+   days_at_previous}` is **registered in `config/growth_events.yml` by this PR**; what remains
+   is the emitter in `app/billing.py` (W6-5). Until that lands, criterion two is unmeasurable.
 
 **Decision date, decision rule, both outcomes, and the conditions that make the test valid are
 fixed in advance.** The failure mode this guards against is the one every SaaS company hits: a
@@ -340,7 +341,7 @@ losing revenue.
 | Essential annual $900 → $828 | `config/plans.yml` + new Stripe price | **Yes** — this is the Finding A fix |
 | Pro annual $1,308 → $1,188 | `config/plans.yml` + new Stripe price | **Yes** |
 | Essential monthly $99 → $89 | `config/plans.yml` + new Stripe price | **Yes** (secondary — ladder monotonicity) |
-| Founder cap 2,000 → 500 | `config/plans.yml` (`max_redemptions`) | **Yes** |
+| Founder cap 2,000 → 500 | `config/plans.yml` (`max_redemptions`) **+ a new `promotion_code`** | **Yes** — `scripts/stripe_bootstrap.py` refuses to mutate a live promotion code's cap and `sys.exit`s with "choose a new code rather than silently changing a customer-visible offer". Retire the old code into `retire_promotion_codes`, exactly as `FOUNDINGPRO2026` already was |
 | Remove `allotment_pacing` | `config/plans.yml` + `app/billing.py` | **Yes** |
 | Publish a founder close date + the four founder benefits | `templates/plans.html.j2` | **Yes** |
 | `subscription.tier_changed` event | `config/growth_events.yml` + `app/billing.py` | No — required by §7 |
@@ -349,8 +350,13 @@ losing revenue.
 **No product is withdrawn from sale in this table**, which is why none of it needs the template
 branch and the raise-on-missing-price builder change that a withdrawal would have required.
 
-Every price in the product is already derived from `config/plans.yml` by both plans builders and
-re-derived client-side from the same cents in `data-` attributes, so repricing is genuinely a
-config change (MNZ-R12) — the savings badges recompute themselves. The Stripe side needs a new
+Every *number* is already derived from `config/plans.yml` by both plans builders and re-derived
+client-side from the same cents in `data-` attributes, so the badges recompute themselves
+(MNZ-R12). **One thing does not recompute: the prose.** Four places on the plans page assert the
+*relationship* this reprice destroys — "Founding Pro gives you every Pro feature for the
+Essential annual price" and its ZH twin, in the hero, the founding-terms line and the JS that
+re-renders it (`templates/plans.html.j2:450, 531-532, 832`). Once Essential annual is $828 and
+Founding Pro is $900 that sentence is simply false, and no view-model key touches it. Repricing
+is a config change plus a copy change, and the copy change is the part that can ship a lie. The Stripe side needs a new
 `lookup_key` per changed price, with the old key retained in `legacy_lookup_keys` so existing
 subscriptions keep resolving. That mechanism already exists and has been used twice.

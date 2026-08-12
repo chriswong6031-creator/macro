@@ -52,8 +52,24 @@ import yaml
 #: "trial tier" would be describing something the catalog does not sell.
 DISPLAY_TIERS = ("free", "essential", "pro")
 
+#: `unlimited` is a real entitlement string (operator comps — `app/paywall.py`, `/api/me`)
+#: but it is not a PRODUCT: it is never sold, never priced, and never appears on a plans
+#: surface, so it is correctly absent above. It has no `quotas` block either; the chat path
+#: bypasses metering for it in `_check_and_increment_quota` before any ledger I/O rather
+#: than reading an allowance.
+
 #: config lane key -> customer-facing lane key (see LANE NAMING above).
 _LANE_KEYS = {"fast": "fast", "pro": "deep"}
+
+#: Periods a customer surface knows how to render. `trial` is real in `config/brain.yml`
+#: (the `trial` bucket uses it) and is deliberately NOT here — a plans page cannot say
+#: "25 a trial". `day` IS here because `_get_allowance` returns it for the FREE fast lane
+#: whenever guest access is enabled. An unknown period used to pass straight through and
+#: render as an EMPTY word in both languages: `period: trial` shipped
+#: `<span class="l-en">5 quick questions </span>` — a published pricing string with a
+#: missing noun and no error anywhere. Validate rather than default: defaulting would put
+#: a WRONG period on the page, which is worse than refusing to build it.
+RENDERABLE_PERIODS = ("day", "week", "month")
 
 
 def _brain_config_path(root: Path | None = None) -> Path:
@@ -111,9 +127,15 @@ def chat_allowance_view_model(root: Path | None = None) -> dict[str, dict[str, d
                     f"{path}: quotas.{tier}.{cfg_lane}.limit is not an integer "
                     f"({spec['limit']!r})"
                 ) from exc
+            period = str(spec.get("period", "month"))
+            if period not in RENDERABLE_PERIODS:
+                raise ValueError(
+                    f"{path}: quotas.{tier}.{cfg_lane}.period is {period!r}; a customer "
+                    f"surface can only render {list(RENDERABLE_PERIODS)}"
+                )
             lanes[display_lane] = {
                 "limit": limit,
-                "period": str(spec.get("period", "month")),
+                "period": period,
                 "uncapped": limit < 0,
                 "none": limit == 0,
             }

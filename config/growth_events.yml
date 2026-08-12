@@ -26,6 +26,22 @@
 # Renaming a live wire value would orphan its own history, so `wire` is FROZEN for
 # anything `live` and only `name` is allowed to be tidy.
 #
+# RELATIONSHIP TO engine/marketing/events.py::GROWTH_EVENTS
+# ---------------------------------------------------------
+# That list is the marketing lobe's growth taxonomy (docket §12.1.A). It is DECLARATIVE in
+# exactly the same way this file is — `engine/marketing/state.py` publishes it into
+# `marketing_state.json` as `{"instrumented": [...], "observed": 0}` and nothing emits it.
+# Two declared vocabularies for one funnel is how a funnel becomes unjoinable: the same
+# transition would exist under two names in two stores, and any cross-cut would double-count.
+#
+# So the overlap is made explicit rather than left to collide. Seven events below carry a
+# `marketing_alias` naming their counterpart in GROWTH_EVENTS, and
+# `tests/test_growth_events_registry.py` asserts every alias resolves. When the emitters land
+# (W2-3), one emit satisfies both readers. The names that do NOT overlap are legitimate: this
+# registry has no counterpart for the lobe's share/embed/referral/creator surfaces (they are
+# W8 shareability), and the lobe has none for the paywall/upgrade/retention-loop events that
+# are the point of this file.
+#
 # ADDING AN EVENT
 # ---------------
 # State the funnel transition or decision it serves in `purpose`. No transition, no
@@ -125,6 +141,7 @@ events:
 
   - name: intelligence.viewed
     wire: intelligence.viewed
+    marketing_alias: first_value_reached
     status: planned
     source: client
     funnel: intelligence_experienced
@@ -228,6 +245,7 @@ events:
 
   - name: watchlist.saved
     wire: watchlist.saved
+    marketing_alias: watchlist_saved
     status: planned
     source: client
     funnel: activation
@@ -296,6 +314,7 @@ events:
   # ---- registration ----
   - name: account.created
     wire: account.created
+    marketing_alias: account_created
     status: planned
     source: server
     funnel: registration
@@ -361,6 +380,7 @@ events:
 
   - name: checkout.started
     wire: checkout.started
+    marketing_alias: checkout_started
     status: planned
     source: server
     funnel: upgrade_intent
@@ -373,6 +393,7 @@ events:
 
   - name: checkout.completed
     wire: checkout.completed
+    marketing_alias: subscription_created
     status: planned
     source: server
     funnel: paid
@@ -483,6 +504,7 @@ events:
 
   - name: alert.opened
     wire: alert.opened
+    marketing_alias: alert_opened
     status: planned
     source: server
     funnel: retained
@@ -506,6 +528,7 @@ events:
 
   - name: subscription.canceled
     wire: subscription.canceled
+    marketing_alias: cancellation
     status: planned
     source: server
     funnel: churn

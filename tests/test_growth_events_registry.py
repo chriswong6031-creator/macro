@@ -186,6 +186,43 @@ def test_no_enum_carries_the_legacy_insider_tier():
     assert "essential" in reg["enums"]["tier"]
 
 
+def test_marketing_aliases_resolve_to_the_existing_taxonomy():
+    """The repo already had a declared growth vocabulary; two of them cannot be joined.
+
+    `engine/marketing/events.py::GROWTH_EVENTS` is the marketing lobe's taxonomy, published
+    into `marketing_state.json` as `{"instrumented": [...], "observed": 0}` — declarative,
+    like this registry. Every `marketing_alias` here must name a real member of it, or the
+    two vocabularies drift apart the moment either is edited.
+    """
+    from engine.marketing.events import GROWTH_EVENTS
+
+    reg = _registry()
+    aliased = {e["name"]: e["marketing_alias"] for e in reg["events"] if "marketing_alias" in e}
+    assert aliased, "no marketing aliases declared — the reconciliation was removed"
+    unknown = {n: a for n, a in aliased.items() if a not in GROWTH_EVENTS}
+    assert not unknown, f"marketing_alias values absent from GROWTH_EVENTS: {unknown}"
+    # An alias must be 1:1 — two of our events pointing at one of theirs would double-count.
+    values = list(aliased.values())
+    assert len(values) == len(set(values)), f"duplicate marketing_alias: {values}"
+
+
+def test_tier_properties_must_use_the_enum_not_a_bare_string():
+    """The `insider` guard scans `enums`, so retyping a tier property to `string` escapes it.
+
+    One word — `enum:tier` -> `string` — would let an emitter publish the legacy tier value
+    with every guard still green, splitting every tier-segmented metric in two invisibly.
+    """
+    reg = _registry()
+    tierish = {"tier", "required_tier", "tier_seen", "from_tier", "to_tier"}
+    for event in reg["events"]:
+        for prop, decl in event["properties"].items():
+            if prop in tierish:
+                assert decl == "enum:tier", (
+                    f"{event['name']}.{prop} is {decl!r}; tier-valued properties must use "
+                    "enum:tier so the insider guard covers them"
+                )
+
+
 def test_the_funnel_stages_cover_the_documented_model():
     """The stages are the transitions in MASTERMIND_ACTIVATION_AND_FUNNEL.md §1."""
     reg = _registry()

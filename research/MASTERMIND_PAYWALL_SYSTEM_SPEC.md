@@ -268,8 +268,11 @@ A short, absolute list. Anything on it that acquires a gate is a bug.
    notes. These load-bear on trust and on the freshness sentinel's dead-man switch.
 4. **Legal, support, unsubscribe, about.** Already public by ruling, for structural reasons.
 5. **The chat launcher itself.** The allowance may be zero; the *presence* of the capability is
-   an acquisition surface. *(`mm_brain.js` became public on 2026-08-12; the guest lane it
-   talks to is still switched off, so the launcher opens and the first question 402s.)*
+   an acquisition surface. *(`mm_brain.js` became public on 2026-08-12; the guest lane it talks
+   to is still switched off, so the panel opens onto a sign-in gate with the composer hidden —
+   `/api/brain/me` 401s and `showChat(false)` renders "Sign in to begin". A stranger cannot ask
+   a first question at all; forced through, the route answers **401**, not 402 — per §6, `402`
+   is reserved for "your tier, spent", which an unauthenticated visitor can never be.)*
 6. **Anything a search crawler must read to rank a page we want ranked.** A 302 to `/?signin=1`
    is a soft-404 to Googlebot; `config/site_access.yml` already records that lesson.
 

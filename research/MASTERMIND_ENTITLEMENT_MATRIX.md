@@ -69,10 +69,10 @@ hypothetical one.
 | Every `*.html` page shell | ● | ● | ● | ● | 2026-08-04 ruling — the `@reg_html` matchers were removed |
 | Server-rendered page content | ● | ● | ● | ● | same |
 | Non-public assets (JSON/JS/CSS) | ○ 401 | ● | ● | ● | `app/regwall.py::_deny` |
-| Ranked-board preview rows | ◐ 1 | ◐ 3 | ● | ● | `templates/tier_preview.js::capFor` — **client-side presentation gate, not a server gate.** Every row is server-rendered into the public shell and only blurred / `display:none`-d in the browser (`tier_preview.js` + `tier_preview.css`), so the capped rows are one view-source away. `docs/ops/site-access.md:8` calls it "presentation-gated"; `docs/TIER_PREVIEW_PATTERN.md` calls the shape "a marketing wall, not a gate" |
-| Special Situations desk | ◔ | ◔ | ● | ● | `config.yml:6818 gated:true` + `premium.enforced_early` |
-| China Special Situations | ◔ | ◔ | ● | ● | `config.yml:6834` |
-| ETFs / fund conviction | ◔ | ◔ | ● | ● | `config.yml:1767` |
+| Ranked-board preview rows | ◐ 1 | ◐ 3 | ● | ● | `templates/tier_preview.js::capFor` — **client-side presentation gate, not a server gate.** Every row is server-rendered into the public shell and only blurred / `display:none`-d in the browser (`tier_preview.js` + `tier_preview.css`), so the capped rows are one view-source away. `docs/ops/site-access.md:9` calls it "presentation-gated"; `docs/TIER_PREVIEW_PATTERN.md` calls the shape "a marketing wall, not a gate" |
+| Special Situations desk | ◔ | ◔ | ● | ● | `config.yml` `special_situations.gated: true` + `premium.enforced_early` |
+| China Special Situations | ◔ | ◔ | ● | ● | `config.yml` `china_special_situations.gated: true` |
+| ETFs / fund conviction | ◔ | ◔ | ● | ● | `config.yml` `etfs.gated: true` |
 | Capital Structure | ◔ | ◔ | ● | ● | `/capital-structure-data/` prefix |
 | Research Vault | ◐ 3 newest | ◐ 3 newest | **◐ 3 newest** | ● | `app/research.py::_can_view` — `_VIEW_TIERS = frozenset({"pro"})`. Catalog, search, view and download are **Pro-only**; Essential gets exactly the anonymous 3-report preview and a `402 paid_required`. `config/site_access.yml` only classifies the shell + client as anonymous-public |
 | Confluence screener | ◐ rank 1 | ◐ rank 1 | ● | ● | server-side row omission |
@@ -80,13 +80,13 @@ hypothetical one.
 | **Everything else on the estate** | ○ assets 401 | ● | ● | ● | — **this is the problem** |
 | Fast chat | ○ (guest default OFF) | ◐ 5/wk | ◐ 300/mo | ● uncapped | `config/brain.yml quotas` — Pro fast is `limit: -1` (operator ruling 2026-07-28), backstopped by `token_ceilings.fast` 5M tokens/mo |
 | Deep chat | ✕ | ○ 0 | ◐ 10/mo | ◐ 150/mo | same |
-| Chat launcher present at all | ✕ | ● | ● | ● | `mm_brain.js` absent from public allowlist |
+| Chat launcher present at all | ● | ● | ● | ● | `/mm_brain.js` entered `config/site_access.yml` `public.exact` on 2026-08-12 (#5409/#5463). Anonymous visitors get the launcher on every root-level page; the SEO subtrees are a known remaining gap (document-relative injector) |
 | Terminal charting | ● | ● | ● | ● | free by ruling MNZ-OD4 |
 | Terminal live options | ○ | ○ | ● | ● | `hasLiveOptions()` |
 | Terminal advanced indicators | ◐ 1 | ◐ 1 | ◐ 15 | ● 31 | `terminal/lib/suites/*` per-module `tier` (1 free / 14 essential / 16 pro), enforced at three points against the tier from `/api/me`. Matches `config/plans.yml` exactly. **Client-side only** — no server recheck, and a `mm.devTier` localStorage override exists — so it is a product ladder, not a boundary |
 | Pine script save | ○ | ○ | ● | ● | `isPaidTier()` |
 | Alerts | ○ | ○ | ● | ● | `isPaidTier()` — Essential and Pro identical |
-| Watchlist (local) | ● | ● | ● | ● | `templates/watchlist.js` localStorage. **Anonymous since 2026-08-12 only** (#5463 promoted `watchlist.js`, `watchstore.js`, `market_books.js`, `portfolio.js`, `mtf.js`); before that every one of the page's ten scripts was default-deny and anonymous production served a cached husk |
+| Watchlist (local) | ● | ● | ● | ● | `templates/watchlist.js` localStorage. **Anonymous since 2026-08-12 only** (#5463 promoted `watchlist.js`, `watchstore.js`, `market_books.js`, `portfolio.js`, `mtf.js`); before that the nine page-specific scripts were default-deny (the tenth, `theme.js`, was already public) and anonymous production served a cached husk |
 | Watchlist cloud sync | ✕ | ● | ● | ● | `templates/watchstore.js`, one-time fold on first sign-in |
 | Watchlist — signal stack attached | ○ | ● | ● | ● | `stockdata.js` + `watchlist_risk.js` / `risk_core.js` / `factor_exposure.js` stay gated: the first would render graded per-ticker output to signed-out visitors through the page's `data_base` shim, the other three **are** the calibrated decision rule in code form. So the anonymous list persists and Mastermind says nothing about it |
 | Watchlist count / size limit | none | none | none | none | **no limit exists at any tier** |
@@ -243,8 +243,8 @@ recorded rather than deleted, because each is a live prerequisite:
 
 | Claim (withdrawn) | What the code does |
 |---|---|
-| "Pro deep chat cost is bounded by construction via `token_ceilings.pro = 2M`" | **A question is not a call.** `config/brain.yml` sets `tool_budget` 5 (fast) / 10 (pro) / 20 (research), so one turn is up to 6 / 11 / 21 `messages.create` calls, each re-sending the prefix. `brain_gateway` **assigns** `usage_dict` from the *final* response instead of accumulating across rounds, so every earlier round is invisible to both the ceiling and the `lib/ai_costs.py` ledger. Output is undercounted by roughly the round count; input by 2–4×. The ceiling is real but bounds a number that is not the spend |
-| "For the uncapped Pro fast lane the admin cost panel is the control" | The panel cannot price the two models that actually serve the lanes: `config/ai_pricing.yml` carries `claude-opus-4-8` but neither `claude-opus-5` nor `gpt-5.6-sol`, and `estimate_cost_usd` returns `None` for both (prefix matching does not rescue it) |
+| "Pro deep chat cost is bounded by construction via `token_ceilings.pro = 2M`" | **A question is not a call.** `config/brain.yml` sets `tool_budget` 5 (fast) / 10 (pro) / 20 (research) and the loop runs `while tool_call_count < tool_budget` plus one synthesis call, so a turn is at least budget+1 `messages.create` calls — more on the Terminal surface, which raises the budget at runtime. Each re-sends the prefix. `brain_gateway` **assigns** `usage_dict` from the *final* response instead of accumulating across rounds, so every earlier round is invisible to both the ceiling and the `lib/ai_costs.py` ledger. Output is undercounted by roughly the round count; input by 2–4×. The ceiling is real but bounds a number that is not the spend |
+| "For the uncapped Pro fast lane the admin cost panel is the control" | The panel cannot price the **deep** lane at all: `config/ai_pricing.yml` carries `claude-opus-4-8` but neither `claude-opus-5` nor `gpt-5.6-sol`, the two models `config/brain.yml` puts on the `pro` lane, and `estimate_cost_usd` returns `None` for both (prefix matching does not rescue it). The *fast* lane runs DeepSeek with a Haiku fallback and is priced — so the panel under-reads the expensive lane specifically, which is the wrong one to be blind to |
 | "Anonymous chat is bounded by the daily cap, the `mm_aid`/IP quota files, and `_GUEST_CFG_HI = 500`" | `_check_and_increment_guest_quota` checks two **request** counters and never reads `token_ceilings` — the signed-in path's only real backstop does not exist for guests. And `_GUEST_CFG_HI` clamps the per-guest *daily limit*: it permits 500 questions/day/visitor. It is a ceiling on generosity, not on spend. Separately, the IP half of the anti-farm is IPv4-only — the hash is over the full address, and one residential IPv6 /64 is 2^64 buckets |
 
 **What is actually true about cost, and what it implies:**
@@ -265,6 +265,16 @@ difference between a measured bet and an unmetered one):
    what it records.
 3. **Give the guest lane a token ceiling and a global daily spend cap**, and collapse IPv6 to a
    /64 before hashing. Start at 3/day and raise on measured evidence.
+
+**One more surface, found last and wrong when found.** `templates/chat.html`'s signed-out tier
+list advertised "1000 fast + 150 pro / month" for Pro — the value of `brain_gateway`'s hardcoded
+*fallback*, not of the live config that overrides it with `-1` — and still labelled Essential
+"Insider", the pre-rename tier name. Both are corrected in this PR and pinned by test. A
+seventh surface, `terminal/lib/i18n.tsx` in the charting-app repo, says "20 Pro AI dives a
+month" where the config says 10; it is cross-repo and remains open (see the implementation
+plan). The pattern is worth naming: **each surface was found only after the previous one was
+pinned.** That is the argument for deriving wherever a build step exists, and for treating a
+census of copy surfaces as a real task rather than a grep.
 
 **The unit-economics rule that survives unchanged:** meter what costs money per call (chat, AI
 analysis, exports); do **not** meter what is already computed (pages, boards, history). Today's

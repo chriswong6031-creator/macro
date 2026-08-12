@@ -3573,23 +3573,27 @@ def build_plans_page(env: Environment, site: Path, generated: str) -> None:
     client-side; nothing here reaches the network at build time.
     Additive + graceful: never fatal to the build.
     """
+    # Everything that can leave site/plans.html at its PREVIOUS bytes belongs inside this
+    # guard, not just the config read: the caller wraps build_plans_page in
+    # `except Exception: log.error(...)`, so a template UndefinedError or a write failure
+    # produces the identical silent-stale outcome. A pricing page serving allowances the
+    # serving spine no longer honours is the exact drift lib/chat_allowance.py exists to
+    # close. Annotations must START the line and bypass the logger (CLAUDE.md); first line
+    # only, because a yaml ScannerError is multi-line and GitHub keeps just the first —
+    # which is the one carrying the file, line and column.
+    #
+    # The view model is SPLATTED rather than re-listed: this template is rendered from
+    # three places (here, scripts/build_public_pages, and the pricing guards), and a
+    # hand-listed kwarg set means every new view-model key breaks the call sites that
+    # forget it. Measured 2026-08-12 when `chat_quotas` landed.
     try:
         vm = _plans_view_model()
+        html = env.get_template("plans.html.j2").render(generated_utc=generated, **vm)
+        write_page(site / "plans.html", html)
     except Exception as exc:  # noqa: BLE001 — annotate, then let the caller stay non-fatal
-        # The caller wraps this in `except Exception: log.error(...)` so a bad config would
-        # otherwise be ONE log line while site/plans.html silently keeps its previous bytes —
-        # a pricing page serving allowances the serving spine no longer honours, which is the
-        # exact drift lib/chat_allowance.py exists to close. GitHub annotations must START the
-        # line and bypass the logger (CLAUDE.md §GitHub annotations).
-        print(f"::error title=plans-config::plans page NOT rebuilt, stale bytes retained — {exc}",
-              flush=True)
+        print(f"::error title=plans-config::plans page NOT rebuilt, stale bytes retained — "
+              f"{str(exc).splitlines()[0] if str(exc) else type(exc).__name__}", flush=True)
         raise
-    # Splat the view model rather than re-listing its keys: this template is rendered
-    # from THREE places (here, scripts/build_public_pages, and the pricing guards), and
-    # a hand-listed kwarg set means every new view-model key breaks the two call sites
-    # that forget it. Measured 2026-08-12 when `chat_quotas` landed.
-    html = env.get_template("plans.html.j2").render(generated_utc=generated, **vm)
-    write_page(site / "plans.html", html)
     log.info("wrote plans.html (essential $%s/$%s save %s%% · pro $%s/$%s save %s%%)",
              vm["essential"]["monthly_pm"], vm["essential"]["annual_pm"], vm["essential"]["save_pct"],
              vm["pro"]["monthly_pm"], vm["pro"]["annual_pm"], vm["pro"]["save_pct"])

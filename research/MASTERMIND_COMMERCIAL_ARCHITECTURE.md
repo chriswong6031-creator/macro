@@ -126,17 +126,19 @@ The Free→Essential step is **three desks, a Terminal feature, and a chat quota
 a month. That is the central commercial problem, and it is a *packaging* problem, not a
 pricing problem.
 
-### 1.4 Finding C — five concrete inconsistencies between what we say and what we do
+### 1.4 Finding C — seven concrete inconsistencies between what we say and what we do
 
 Each was traced to a line; none is a security issue (that stream is separate).
 
 | # | Claim (customer-facing) | Code reality | Severity |
 |---|---|---|---|
 | C1 | Plans page quotas are hand-typed literals: "5 quick questions a week", "300 a month", "unlimited", "150 a month", plus four comparison-matrix cells (`templates/plans.html.j2:428, 456, 495, 496, 590-598`) | Every one of them is **correct today** — including "unlimited", which is the honest rendering of `config/brain.yml quotas.pro.fast.limit: -1`, the uncapped sentinel documented in `brain_gateway._get_allowance` and set by operator ruling 2026-07-28. But **nothing binds them.** Reprice the lane tomorrow and the page keeps its old promise, silently | **Latent, not live.** Same shape as the price-drift the derivation rule already prevents. Closed in this PR — see §8 |
-| C2 | Plans page: "All **31** advanced indicator modules — all five suites" (Pro), 15 (Essential), 1 (Free), driven by `config/plans.yml terminal_indicators.access` | **The ladder IS enforced, and the counts match exactly.** `terminal/lib/suites/*` carries a per-module `tier`: 1 `free` (`trend/candlePainter.ts`), 14 `essential`, 16 `pro` — cumulative **1 / 15 / 31**. Three independent points enforce it against the tier resolved from macro-api `/api/me`: the renderer drops non-entitled modules, the picker locks their rows, the toggle refuses to enable them. `config/plans.yml:33` states the binding out loud | **No defect. Retracted** — see §13. The surviving caveat is narrower: enforcement is **client-side only** (no server recheck, and a `mm.devTier` localStorage override exists), so it is a product ladder, not a security boundary |
+| C2 | Plans page: "All **31** advanced indicator modules — all five suites" (Pro), 15 (Essential), 1 (Free), driven by `config/plans.yml terminal_indicators.access` | **The ladder IS enforced, and the counts match exactly.** `terminal/lib/suites/*` carries a per-module `tier`: 1 `free` (`trend/candlePainter.ts`), 14 `essential`, 16 `pro` — cumulative **1 / 15 / 31**. Three independent points enforce it against the tier resolved from macro-api `/api/me`: the renderer drops non-entitled modules, the picker locks their rows, the toggle refuses to enable them. `config/plans.yml:33` states the binding out loud | **No defect. Retracted** — see §13. The surviving caveat is narrower: enforcement is **client-side only** — the tier comes from `/api/me` but is never rechecked server-side — so it is a product ladder, not a security boundary. (The `mm.devTier` localStorage override is *not* part of that caveat: it sits behind a `process.env.NODE_ENV === "production"` early return and constant-folds out of shipped builds.) |
 | C3 | Essential and Pro both advertise `terminal_live_options` and both are "paid"; the Terminal's Pine-script save gate, alerts gate and scripts page use `isPaidTier()` (any paid tier) | So Essential and Pro are *identical* in the Terminal except for the unenforced indicator count. `isProTier()` exists but is used by nothing outside alerts | Essential↔Pro differentiation is thinner than the page implies |
 | C4 | `mastermind:portfolio_desk` is docstringed as "session-auth-gated" (`app/web.py:2299-2303`) | `app/auth.py:11-13`: the browser login "has been REMOVED … requires NO login anywhere". The page is anonymous to anyone with the URL (`research/PRODUCT_PAGE_CENSUS_2026-08.md` §5.1) | A P0 surface documented as gated is open |
-| C5 | `scripts/check_hub_a11y.py:45` asserts the Brain launcher mounts "on EVERY page" | **Fixed on main the same day this was written** (#5409/#5463): `/mm_brain.js` is now in `config/site_access.yml` `public.exact`, so the launcher mounts for anonymous visitors on every root-level page. Two gaps survive: the **SEO subtrees** are still uncovered (the injector uses a document-relative `src`), and the **guest lane is still default-OFF** (`brain_gateway._GUEST_CFG_DEFAULT`), so the launcher opens and the first question 402s | **Half-resolved.** The script is now reachable; the *capability* is still switched off. See W1-2 |
+| C5 | `scripts/check_hub_a11y.py:45` asserts the Brain launcher mounts "on EVERY page" | **Fixed on main the same day this was written** (#5409/#5463): `/mm_brain.js` is now in `config/site_access.yml` `public.exact`, so the launcher mounts for anonymous visitors on every root-level page. Two gaps survive: the **SEO subtrees** are still uncovered (the injector uses a document-relative `src`), and the **guest lane is still default-OFF** (`brain_gateway._GUEST_CFG_DEFAULT`), so the launcher opens onto its signed-out gate and never sends a question at all: boot's `/api/brain/me` 401s, and `send()` opens the sign-in sheet instead of asking. Force a request through and the server answers **401**, not 402 — `_brain_user_or_guest` re-raises `require_user`'s 401 whenever guest access is off | **Half-resolved.** The script is now reachable; the *capability* is still switched off. See W1-2 |
+
+| C7 | Chat allowances appear on **seven** customer surfaces; each was found only after the previous one was pinned | Three carried wrong numbers when found. `templates/chat.html` advertised "1000 fast" for Pro — the value of `brain_gateway`'s hardcoded *fallback*, not of the live config that overrides it with `-1` — and still labelled Essential "**Insider**", the pre-rename tier name. `templates/theme.js` `SD_PLAN_FEATURES` tells Free users "The Terminal — 3 indicators" where the catalog grants 1. `terminal/lib/i18n.tsx` says "20 Pro AI dives a month" where the config says 10 | **chat.html fixed and pinned in this PR**; the other two are W0-3b. The general lesson is C7 itself: an unbound literal is not a defect *yet*, which is exactly why it survives review |
 
 | C6 | `config/site_access.yml` `premium.enforced_early` promises `/premiumdata/*` will "403 for anonymous AND Free" | **Two ordering/exposure defects.** (a) `app/paywall.py:364-365` returns `204` for anything classified `free` **before** `enforced_early(path)` is ever consulted — so adding a premium path to `free_registered` silently un-gates it, with no test covering the interaction. (b) The repository is **PUBLIC** (`gh repo view` → PUBLIC) and all six payloads are git-tracked, so they are downloadable today with no session, from GitHub and from the nightly Pages mirror | **The enforced_early boundary is decorative today.** This is a hard predecessor to charging money — see §10 and the implementation plan's critical path |
 
@@ -710,11 +712,12 @@ this document exists to serve it.
 Every item is traced, and every one was re-derived against `origin/main` after two same-day PRs
 moved the boundary. In order of how early it breaks the story:
 
-1. **The chat opens and cannot answer.** `/mm_brain.js` became public on 2026-08-12, so the
+1. **The chat opens onto a sign-in gate.** `/mm_brain.js` became public on 2026-08-12, so the
    launcher now mounts — but `brain_gateway._GUEST_CFG_DEFAULT` is `{enabled: False}`, so a
-   stranger's first question 402s. *Seconds 30–90 still do not happen.* One operator-editable
-   JSON file stands between the current state and the journey working — with the cost caveats
-   in the entitlement matrix §7 attached.
+   stranger's first question is never sent: the widget's boot `/api/brain/me` 401s, the gate
+   stays up, and `send()` bounces to the sign-in sheet. *Seconds 30–90 still do not happen.*
+   One operator-editable JSON file stands between the current state and the journey working —
+   with the three code prerequisites in the entitlement matrix §7 attached.
 2. **The anonymous watchlist saves but says nothing.** The funnel shell shipped the same day;
    the renderers that attach the read did not, deliberately (`stockdata.js` and the three
    decision-rule modules stay gated). *Minutes 2–5 produce a list, not intelligence* — and
@@ -764,7 +767,7 @@ as the enforcement. The live `config/brain.yml` sets `quotas.pro.fast.limit: -1`
 *A module's fallback is not its enforcement.*
 
 **Retraction 2 — "the 1/15/31 indicator ladder is advertised and enforced nowhere."** Wrong, and
-worse: I inherited it from `PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md:735` without
+worse: I inherited it from `PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md` §12 without
 re-deriving it, and my own search stopped at `indicators.ts` and `IndicatorsModal.tsx` while the
 ladder lives in `terminal/lib/suites/*`. It is enforced, at three points, and the counts match
 the catalog exactly. *A cited "known gap" is testimony, not observation.*
@@ -776,3 +779,37 @@ commits landed on main during this session.*
 
 Two smaller corrections: the MNZ price delta is +53%/+58%, not "68–80%"; and the count of
 hand-typed chat literals is roughly twenty across five surfaces, not eight across three.
+
+### Round 2 — verifying the corrections
+
+A second pass (6 agents) checked the corrections themselves and found **14 more defects, all
+introduced or left by the first correction pass.** The four that matter:
+
+**The status code was wrong in three places.** "The launcher opens and the first question 402s"
+— it does not. With the guest lane off the widget never sends: boot's `/api/brain/me` 401s and
+`send()` opens the sign-in sheet. Forced through, the server answers 401. Worse, the paywall
+spec asserted this fifteen lines below its own rule that `402` means "your tier, spent" — which
+an unauthenticated visitor can never be. *A corrected conclusion can still carry a wrong
+mechanism, and the mechanism is the checkable part.*
+
+**The `mm.devTier` override does not exist in production.** It sits behind a
+`process.env.NODE_ENV === "production"` early return and constant-folds away. Citing it as a
+live bypass overstated a caveat that was already true without it.
+
+**A test I said was missing already exists** (`tests/test_brain_guest.py::test_free_fast_flips_
+to_daily_when_enabled`). The genuinely missing one is narrower, and is now what W1-2 asks for.
+
+**Two citations were off by a line or a file** (`config.yml:6818` is a `llm_base_url`, not a
+gate switch; `docs/ops/site-access.md:8` is the wrong line). Both are now cited by key and by
+phrase rather than by line number, because line numbers move and this document will be read
+after they have.
+
+### What the two rounds cost, and what they were worth
+
+52 agents, ~6.7M tokens, 33 confirmed defects out of 52 reported — a 63% precision rate against
+adversarial reviewers instructed to default to refuting. Three of the 33 changed a
+recommendation; the rest changed a sentence. The three that mattered were all the same failure:
+**a claim inherited or derived once and never re-derived** — a stale masterplan line, a module's
+fallback read as its enforcement, and a base commit that aged out mid-session. None of them
+would have been caught by a careful re-reading, because re-reading confirms what is written.
+They were caught by re-deriving from source.

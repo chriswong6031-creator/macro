@@ -107,12 +107,26 @@ def build(site=None) -> None:
         autoescape=True,
     )
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
-    vm = plans_view_model()
 
-    # See the same splat in scripts/build_site.build_plans_page — one contract, one
-    # place, so a new view-model key cannot reach one renderer and miss another.
-    plans = env.get_template("plans.html.j2").render(generated_utc=generated, **vm)
-    write_page(site / "plans.html", plans)
+    # The plans page is the only one of the three that reads config. A malformed
+    # config/brain.yml or config/plans.yml must not take support.html, unsubscribe.html and
+    # the asset re-stamp down with it — scripts/ci/public_render.sh runs under `set -e`, so
+    # an unguarded raise here aborts the entire publish. Defer the failure instead: render
+    # everything that CAN be rendered, annotate, and exit non-zero at the end.
+    plans_error: Exception | None = None
+    try:
+        vm = plans_view_model()
+        # See the same splat in scripts/build_site.build_plans_page — one contract, one
+        # place, so a new view-model key cannot reach one renderer and miss another.
+        plans = env.get_template("plans.html.j2").render(generated_utc=generated, **vm)
+        write_page(site / "plans.html", plans)
+    except Exception as exc:  # noqa: BLE001 — re-raised after the other pages land
+        plans_error = exc
+        # Annotations must START the line and bypass the logger (CLAUDE.md). First line
+        # only: a yaml ScannerError is multi-line and GitHub keeps just the first, which
+        # would drop the file/line that says WHERE.
+        print(f"::error title=plans-config::plans page NOT rebuilt, stale bytes retained — "
+              f"{str(exc).splitlines()[0] if str(exc) else type(exc).__name__}", flush=True)
     write_page(
         site / "support.html",
         env.get_template("support.html.j2").render(generated_utc=generated),
@@ -123,6 +137,8 @@ def build(site=None) -> None:
             generated_utc=generated
         ),
     )
+    if plans_error is not None:
+        raise plans_error
     log.info(
         "wrote public pages (Essential $%s/$%s · Pro $%s/$%s · Founding $%s/year)",
         vm["essential"]["monthly_pm"],

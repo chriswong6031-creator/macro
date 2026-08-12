@@ -94,11 +94,17 @@ observation.
 - **W0-3a — server-side recheck for the indicator ladder.** Enforcement is client-side only and
   a `mm.devTier` localStorage override exists. That is acceptable for a *product* ladder and
   not for anything we would call a boundary. Terminal repo, post-launch.
-- **W0-3b — correct one real copy defect found alongside it.** `templates/theme.js`
-  `SD_PLAN_FEATURES` tells signed-in Free users "The Terminal — 3 indicators" while the catalog
-  grants 1 and the Terminal enforces 1. It is on the billing summary, so a paying customer reads
-  it. Macro repo; paired plain-copy change (`site/theme.js`), `immutable`-cached — small, but not
-  a one-file edit. **Pre-launch.**
+- **W0-3b — correct two real copy defects found alongside it.**
+  (a) `templates/theme.js` `SD_PLAN_FEATURES` tells signed-in Free users "The Terminal —
+  3 indicators" while the catalog grants 1 and the Terminal enforces 1. It is on the billing
+  summary, so a paying customer reads it. Macro repo; paired plain-copy change
+  (`site/theme.js`), `immutable`-cached. **Pre-launch.**
+  (b) `terminal/lib/i18n.tsx` (charting-app repo) says `obInsider2: ["20 Pro AI dives a month"]`
+  while `config/brain.yml` says Essential deep is **10**/month. Cross-repo, so
+  `tests/test_plans_chat_quota_truth.py` cannot reach it — the Terminal needs its own guard
+  reading the same contract. **Pre-launch**, Terminal repo.
+  *(`templates/chat.html` had a third defect of the same family — "1000 fast" for a lane the
+  config makes uncapped, plus the pre-rename "Insider" label. Both are FIXED in this PR.)*
 
 ## W1 — The stranger's first 90 seconds  ◄ HIGHEST LEVERAGE
 
@@ -114,14 +120,17 @@ mounts for anonymous visitors on every root-level page. Nothing to build.
   so pages under the SEO subtrees request a path the allowlist does not cover. Named in
   `config/site_access.yml` as a known, pre-existing gap. Pre-launch if those pages are campaign
   landing targets; otherwise post-launch.
-- **W1-1b — the boundary test is narrower than the boundary.**
-  `tests/test_site_access_boundary.py` compares `public` against `@reg_asset` only; it never
-  checks `@reg_asset_err` or the other matchers in the Caddyfile, so a future promotion can be
-  half-applied and still pass. Widen the test. Pre-launch, small.
+- **W1-1b — one boundary check is narrower than the others.**
+  `tests/test_site_access_boundary.py` does iterate the four matchers (`reg_asset`,
+  `gate_html`, `reg_asset_err`, `gate_html_err`) for structural assertions, but only
+  `@reg_asset` gets the set-equality check against `public`. A promotion applied to
+  `@reg_asset` and forgotten in `@reg_asset_err` therefore passes. Extend the set-equality
+  check to the error matcher. Pre-launch, small.
 
 ### W1-2 — Turn on the guest chat lane  ◄ **now the whole of W1's headline value**
-**Objective.** With `mm_brain.js` public, the launcher opens for a stranger and the first
-question 402s: `brain_gateway._GUEST_CFG_DEFAULT` is `{enabled: False, daily_limit: 30}`.
+**Objective.** With `mm_brain.js` public, the launcher opens for a stranger and then refuses to
+ask anything: `brain_gateway._GUEST_CFG_DEFAULT` is `{enabled: False, daily_limit: 30}`, boot's
+`/api/brain/me` 401s, and `send()` bounces to the sign-in sheet rather than sending.
 **Scope.** Set `admin/brain_guest_access.json` to `{"enabled": true, "daily_limit": 3}` —
 untracked, hot-reloaded within ~20s, no deploy, reversible in seconds.
 
@@ -143,10 +152,15 @@ must land first; three are code:
    `quotas.free.fast` is read. So this flip silently re-writes the Free allowance too. Either
    split the two in code, or choose one number for both and say so.
 **Acceptance.** Anonymous visitor gets 3 fast answers/day; the 4th returns a `402` with the
-registration CTA, not an error; the quota holds on both the `mm_aid` cookie hash and the
+registration CTA, not an error (402 is correct *here* — an accepted identity whose allowance is
+spent, per the paywall spec §6); the quota holds on both the `mm_aid` cookie hash and the
 /64-collapsed IP hash; and **one week of measured cost-per-turn from the ledger** (p50/p95
-rounds and tokens per guest turn) exists before launch. Plus a test pinning
-`_get_allowance('free','active','fast')` under the flip — there is none today.
+rounds and tokens per guest turn) exists before launch.
+*(An earlier draft asked for a test pinning `_get_allowance('free','active','fast')` under the
+flip and claimed none existed. `tests/test_brain_guest.py::test_free_fast_flips_to_daily_when_enabled`
+already covers it. What is genuinely missing is a test asserting the FREE tier's configured
+allowance is what a signed-in free user gets while guest access is ON — i.e. that item 4's
+decision, once made, holds.)*
 **Model.** builder (Opus) for 1–4; operator for the flip. **Pre-launch:** **required.**
 
 ### W1-3 — The create-before-register module
