@@ -360,3 +360,10 @@ declared absorption path was not exercised.
   confined to the interval clause; no ticker-based q exists, so no registered grade can be
   computed under it. Nits: the signed-anchor magnitude phrasing, two pass-2 edit
   restatements deduped. Applied in this revision; final verification pass commissioned.
+- 2026-08-12 — G0.5 final pass: **PRESENTABLE, 0 blockers / 0 must-fix / 0 nits.** All four
+  edits verified against the artifacts; cross-draft integrity check: the nine registered-cell
+  rows are byte-identical across all four drafts (the only table cell that moved in four
+  review passes was §3's −0.06 → −0.0625) — no grade, CI, q, census figure, or branch firing
+  changed under review; every correction landed in prose. Cumulative record: 8 blockers /
+  22 must-fix / 12 nits raised across passes, all resolved (one nit dispositioned cosmetic).
+  This text is the shipped report.
