@@ -41,8 +41,8 @@ coverage gate): the phase-0/W2 observations that motivated the ore body — topp
 looking *younger, fresher-high, faster-heating* than matched survivors on four panels — remain
 real measurements; what dies is their reading as top anatomy. A topped episode measured at the
 frozen {21,10,5} snapshots sits a median 1–2 sessions from its own 63d high, while an arbitrary
-surviving extension day sits staler by the registered F3 anchors (−2.25 / −2.25 / −2.75
-sessions). F3's separation *is* that measurement geometry by construction. For B3 the
+surviving extension day sits staler by 2.25 / 2.25 / 2.75 sessions (the registered F3 anchors,
+signed case − control). F3's separation *is* that measurement geometry by construction. For B3 the
 registered branch fires on anchor geometry because that is the rival AM-v2 tested — with
 controls at like anchors the confirming legs do not clear their bars — but this wave's own
 non-binding sampling arm locates B3's dependence in length-biased control sampling instead
@@ -122,10 +122,9 @@ the ≤1 arm clauses (a) and (b) both do. The empirical content of the pass is: 
 (controls could have clustered systematically fresher than cases inside the band); clause (a)
 on the ≤2 arm (the point could have reached 2.0); and the near-degenerate concentration at
 0.00 itself — which comes not from exact-anchor pairs (the realised per-pair |Δanchor| has
-median 1.0 on all six cells; p75 1.0 except 2.0 on AM2 × r63) but from symmetry: each delta is
-the case value minus the MEAN of its
-finite controls, residual gaps sit on both sides of the case anchor and cancel, and the
-episode-first median collapses what remains. The diagnostic's zero says the residual gaps are
+median 1.0 on all six cells; p75 1.0 except 2.0 on AM2 × r63) but from symmetry: residual gaps
+sit on both sides of the case anchor and cancel in the per-pair control mean (the delta
+definition above), and the episode-first median collapses what remains. The diagnostic's zero says the residual gaps are
 unbiased, not that they are absent. The
 residual asymmetry is at most 0.0625 sessions, 36× smaller than its panel's −2.25 anchor (the
 other panels' residuals are exactly 0.00). `governing_arm` = the registered ≤2 caliper on all
@@ -158,8 +157,11 @@ none changes it:
 - the same artifact's **ticker-clustered CI [+0.470, +2.721] excludes zero** on the declared
   side. The registered inference is the episode-peak-month block bootstrap, so the grade
   stands — and ticker clustering is nowhere a registered inference in this program. Under it,
-  the CI clause of the grade would have flipped; no ticker-side p or q is emitted, so whether
-  the full grade (which also needs BH q ≤ 0.10) would flip is not derivable;
+  the CI clause of the grade would have flipped, and the artifact's exploratory table carries a
+  ticker-side two-sided p of 0.003 for this cell — well inside any plausible bar. No
+  ticker-based q exists (BH runs off the block-bootstrap p in both the engine and the harness),
+  so no registered grade can be computed under ticker clustering; what the receipt does say is
+  that the cell's fragility is not confined to the interval;
 - per the program's own standard (W2 §3.1, phase-1 §4.3): only a CI that *excludes* the prior
   effect supports "shown absent." This cell supports **failure to confirm** — the registered
   kill's actual content — not demonstrated absence.
@@ -202,8 +204,8 @@ case snapshots, n=2,949 on primary, vs distinct control days, n=2,529): case epi
 registered estimates are the table's (+2.667 / +3.000 / +1.000), landing where the bias points;
 their ticker-clustered CIs exclude zero on the positive side on all three panels ([+1.625,
 +3.750] / [+1.667, +4.000] / [+0.167, +1.500]) — consistent with the documented bias
-DIRECTION; the wave measures no bias magnitude, so these receipts cannot say the bias accounts
-for the size of the read. It grades exactly as registered: NOT-SUPPORTED / UNDERPOWERED /
+DIRECTION, so these receipts cannot say the bias accounts for the size of the read. It grades
+exactly as registered: NOT-SUPPORTED / UNDERPOWERED /
 NOT-SUPPORTED, **UNINFORMATIVE-BY-DESIGN for the negative claim, never a kill.** What this wave can and cannot say about the instrument family:
 the caliper-width lever barely moves F1 (≤1 / ≤2 / ≤4 arms: +2.896/+2.667/+2.875 on primary;
 +3.000 flat on r63; +1.000/+1.000/+0.750 on atrz — a ≤0.25-session spread), but nothing in the
@@ -350,3 +352,11 @@ declared absorption path was not exercised.
   r63 `interpretable=False` disclosure; the F1 bias sentence limited to direction (no magnitude
   is measured); §1's anchor-census clause now carries the full-distribution rider.
   Verification pass 3 commissioned.
+- 2026-08-12 — G0.5 pass 3: all 12 pass-2 findings verified RESOLVED (registered tables
+  byte-identical across all three drafts); **NOT PRESENTABLE** on 1 blocker / 0 must-fix /
+  3 nits. The blocker: the pass-2 ticker sentence asserted "no ticker-side p is emitted" while
+  the artifact's exploratory table carries `ticker_p_value = 0.003` for the deciding cell — the
+  honest reading (now in §4.1) is that under ticker clustering the cell's fragility is not
+  confined to the interval clause; no ticker-based q exists, so no registered grade can be
+  computed under it. Nits: the signed-anchor magnitude phrasing, two pass-2 edit
+  restatements deduped. Applied in this revision; final verification pass commissioned.
