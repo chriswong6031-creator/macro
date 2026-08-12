@@ -641,6 +641,24 @@
       "at": "2026-08-11T22:05:02.512222+00:00",
       "activated": false,
       "importance": 28
+    },
+    "https://www.whitehouse.gov/?p=48207": {
+      "id": "wh-2026-08-12-expanding-capabilities-to-combat-transnational-cyber-enabled-crime",
+      "at": "2026-08-12T22:02:04.346511+00:00",
+      "activated": true,
+      "importance": 62
+    },
+    "https://www.whitehouse.gov/?p=48223": {
+      "id": "wh-2026-08-12-fact-sheet-president-donald-j-trump-expands-capabilities-to-combat-transnational",
+      "at": "2026-08-12T22:02:12.194570+00:00",
+      "activated": false,
+      "importance": 47
+    },
+    "https://www.whitehouse.gov/?p=48206": {
+      "id": "wh-2026-08-12-national-substance-use-primary-prevention-month-2026",
+      "at": "2026-08-12T22:02:19.549804+00:00",
+      "activated": false,
+      "importance": 8
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
