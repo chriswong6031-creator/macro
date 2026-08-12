@@ -84,6 +84,7 @@ on:
       # font-ui guard: body-level var(--font-ui) must resolve (theme.css or local def) — #2647.
       - "scripts/check_font_ui_defined.py"
       - "tests/test_check_font_ui_defined.py"
+      - "tests/test_fund_page_typography.py"
       - "site/theme.js"
       # analytics identity capture — registered-visitor email attribution (server reads the
       # shared Supabase session cookie off the beacon) + read-side coalescing.

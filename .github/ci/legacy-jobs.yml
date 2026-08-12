@@ -1126,6 +1126,8 @@ jobs:
           tests/test_risk_radar_scorecard.py
           tests/test_vsb_radar_alert.py
           tests/test_risk_radar_intl_profiles.py
+          tests/test_risk_radar_dlg_country_wiring.py
+          tests/test_risk_radar_dlg_partial.py
           tests/test_risk_state_live_copy_sync.py
           tests/test_build_china_risk_state.py
           tests/test_china_connect_leaderboard_render.py
@@ -2962,6 +2964,8 @@ jobs:
         run: python -m scripts.check_font_ui_defined templates
       - name: font-ui guard unit tests (violating + passing fixtures per check)
         run: python -m pytest tests/test_check_font_ui_defined.py -q
+      - name: fund-page typography contract (word labels stay on the shared UI face)
+        run: python -m pytest tests/test_fund_page_typography.py -q
 
   ratio-lens:
     if: ${{ false }}
