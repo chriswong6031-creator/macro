@@ -46,6 +46,7 @@ import pandas as pd
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 from lib import config  # noqa: E402
 from lib.procutil import hard_exit  # noqa: E402
 
@@ -465,7 +466,8 @@ def main() -> int:
     # 7. Write panel JSON
     # ------------------------------------------------------------------
     out_path_panel = _out_panel()
-    panel_bytes = json.dumps(panel_dict, indent=2, default=str)
+    panel_bytes = json.dumps(sanitize_non_finite(panel_dict), indent=2,
+                             default=str, allow_nan=False)
     out_path_panel.write_text(panel_bytes)
     log.info("Wrote %s (%d bytes)", out_path_panel, len(panel_bytes))
 
