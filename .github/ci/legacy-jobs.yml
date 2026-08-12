@@ -1734,8 +1734,45 @@ jobs:
         run: python scripts/check_workflow_yaml.py --selftest
       - name: "all workflow files must parse with on:/jobs: blocks"
         run: python scripts/check_workflow_yaml.py .github/workflows
+      # ci.yml's Wave B job graph (2026-08-11), wired here because the step above is
+      # the closest existing owner: both read .github/workflows/ as their subject and
+      # both need only pytest+pyyaml, already installed above. A parse gate proves the
+      # file LOADS; this proves it still says what it has to say. `ci-plan` now emits
+      # the pack matrix, so a PR may publish a SUBSET of ci-pack-0..11 and `ci-gate`
+      # is the only name that concludes on every non-closed event — the affirmative
+      # success `scripts/merge_on_green.py` requires (#4779, absence of red is not a
+      # pass). Deleting `ci-gate`, or swapping the immutable PR base SHA for a branch
+      # name in the planner's diff, are both one-token edits that stay green forever
+      # without this step. Executes ci-gate's shell for real (inline shell is
+      # untested code otherwise); no importorskip, no data/ or site/ reads, so it
+      # cannot skip its way to a green on a pack runner.
+      - name: ci-plan/ci-pack/ci-gate workflow structure contract
+        run: python -m pytest tests/test_ci_plan_workflow.py -q
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
+      # The terminal CI handoff (`mastermind.ci_handoff.v1`) — the rule deciding WHEN a
+      # worker stops. Same subject as the packing step above: the sweeper that step
+      # already pins via tests/test_merge_on_green.py is the party that owns the merge
+      # once a worker releases, so the release rule and the merger are guarded in one
+      # job or they drift apart. Both defect directions are silent. Released too early
+      # — head unproven or red — and the sweeper will never merge it, so the work is
+      # ORPHANED with nobody waiting on it. Released with a leak and the receipt's
+      # private continuation context reaches a surface on a PUBLIC repository, where it
+      # is world-readable forever. The suite is written as mutation pins rather than
+      # happy paths: deleting the exact-head comparison in the CLI, flipping
+      # classify_check_runs' skipped-only branch to `armed`, and admitting payload_ref
+      # into the public projection each turn it red.
+      #
+      # Deps are stdlib + pytest only (json, re, subprocess, sys, pathlib), so the
+      # install line above already covers it, and there is no importorskip anywhere —
+      # it cannot skip its way to a green. The git half runs against a REAL temporary
+      # repository with a file:// origin, identity set locally in the fixture so a
+      # runner carrying no global user.email still commits, and the one `gh` seam
+      # (ci_handoff._gh_json) is stubbed: no network, no checked-out caches, and every
+      # sentinel/receipt write is pointed at tmp_path rather than the real
+      # ~/.mastermind. Measured in this job's exact install string: 56 tests, ~13s.
+      - name: terminal CI handoff contract — release verdict and public-receipt leak gate
+        run: python -m pytest tests/test_ci_handoff.py -q
       # SUITE DISCOVERY, which all three darkness guards share. It was
       # `tests/`-only until 2026-08-06, so the suites most likely to be dark were
       # the ones no census could see: a research packet fenced to files-only writes

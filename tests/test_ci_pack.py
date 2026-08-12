@@ -478,6 +478,657 @@ def test_packs_stay_balanced_over_the_selected_subset() -> None:
     assert max(weights) - min(weights) <= max(job.weight for job in subset)
 
 
+# ── the plan is a contract between ci-plan and twelve packs ──────────────────
+#
+# Wave B (2026-08-11) moved the selection decision out of main() into
+# build_plan(): ci-plan publishes one hashed plan, and every pack RECOMPUTES it
+# and refuses when its own hash disagrees. So the tests below are not "does the
+# plan look sensible" — they are the two ways that arrangement goes silently
+# wrong.
+#
+#   1. THE PLAN NARROWS WHEN IT HAS NO RIGHT TO. `has_work: false` skips every
+#      pack, and ci-gate then publishes an affirmative success anyway (it must:
+#      merge_on_green requires a real pass, because absence of red is not a pass
+#      — #4779). So a plan that wrongly proves no-work merges a completely unrun
+#      PR green. Every widening rule is therefore re-pinned HERE, through
+#      build_plan, not only through select_jobs: the rules moved, and a rule that
+#      is correct in select_jobs but unreachable from build_plan is no rule.
+#   2. THE PLAN AND THE EXECUTION DISAGREE. Twelve runners each deriving the
+#      partition independently is exactly the shape a nondeterministic input
+#      splits, and the resulting green means nothing. The parity test walks EVERY
+#      index, because a divergence that only hits pack 7 is invisible to a test
+#      that checks pack 0.
+
+
+def _plan_job(
+    job_id: str,
+    ordinal: int,
+    *,
+    weight: int = 1,
+    paths: tuple[str, ...] = (),
+) -> object:
+    """A minimal LegacyJob fixture: id, order, weight, hand-written scope."""
+    return PACK.LegacyJob(
+        job_id=job_id,
+        definition={"if": PACK.DISABLED_IF, "runs-on": "ubuntu-latest", "steps": []},
+        ordinal=ordinal,
+        weight=weight,
+        paths=paths,
+    )
+
+
+def _freeze_scope_inference(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the fixtures' hand-written scopes; real inference would erase them.
+
+    infer_job_scopes derives ownership from a job's OWN commands, so a fixture
+    job with no steps comes back UNSCOPED — which means always-on — and every
+    selection assertion below would then pass for the wrong reason. It is also
+    the expensive half of a real plan (106 s over the 180-job manifest, measured
+    2026-08-11); a synthetic test must not pay it.
+    """
+    monkeypatch.setattr(
+        PACK, "infer_job_scopes", lambda jobs: (list(jobs), "fixture scopes")
+    )
+
+
+def _parse_github_output(text: str) -> dict[str, str]:
+    """Parse a `$GITHUB_OUTPUT` file the way the Actions runner does.
+
+    Only the heredoc form is accepted, on purpose. A bare `name=value` line
+    cannot carry the newline a multi-line ManifestError puts into `reason`, so
+    emitting one would truncate the value GitHub hands to ci-gate — and the
+    truncation would be invisible until a manifest actually broke.
+    """
+    values: dict[str, str] = {}
+    lines = text.splitlines()
+    index = 0
+    while index < len(lines):
+        head = lines[index]
+        assert "<<" in head, f"not a heredoc $GITHUB_OUTPUT entry: {head!r}"
+        name, delimiter = head.split("<<", 1)
+        index += 1
+        body: list[str] = []
+        while lines[index] != delimiter:
+            body.append(lines[index])
+            index += 1
+        values[name] = "\n".join(body)
+        index += 1
+    return values
+
+
+def _full_plan() -> object:
+    """The real manifest's baseline plan: no --changed-from, so no inference."""
+    return PACK.plan_from_workflow(
+        MANIFEST, changed_from=None, scope_mode="active", pack_count=12
+    )
+
+
+def _never_execute(*args: object, **kwargs: object) -> int:
+    raise AssertionError("execute_pack must not be reached on this path")
+
+
+def test_plan_is_deterministic() -> None:
+    first = _full_plan()
+    second = _full_plan()
+    assert first == second
+    assert first.plan_sha256 == second.plan_sha256
+    # Not satisfied by two empty plans agreeing about nothing.
+    assert any(first.pack_jobs)
+
+
+def test_plan_hash_covers_job_assignment_but_not_prose() -> None:
+    """The hash is what makes twelve independent derivations one decision."""
+    plan = _full_plan()
+    payload = PACK.plan_hash_payload(
+        changed_from=plan.changed_from,
+        scope_mode=plan.scope_mode,
+        pack_count=plan.pack_count,
+        eligible_job_ids=plan.eligible_job_ids,
+        pack_jobs=plan.pack_jobs,
+        pack_weights=plan.pack_weights,
+    )
+    assert PACK._canonical_digest(payload) == plan.plan_sha256
+
+    # Move ONE job to a different pack: same jobs, same membership, new plan.
+    moved = [list(pack) for pack in plan.pack_jobs]
+    assert moved[1], "fixture assumption: pack 1 carries jobs on the full suite"
+    moved[2].append(moved[1].pop())
+    assert PACK._canonical_digest({**payload, "pack_jobs": moved}) != plan.plan_sha256
+
+    # Reordering the eligible list changes nothing about MEMBERSHIP and
+    # everything about the partition: partition_jobs is greedy over
+    # (-weight, ordinal), so the sequence is an input, which is why the payload
+    # keeps plan order instead of sorting it.
+    reordered = list(reversed(plan.eligible_job_ids))
+    assert (
+        PACK._canonical_digest({**payload, "eligible_job_ids": reordered})
+        != plan.plan_sha256
+    )
+
+    # Prose is excluded BY CONSTRUCTION. If `reason` were hashed, rewording one
+    # diagnostic would make every pack refuse a plan selecting identical jobs.
+    assert "reason" not in payload
+    assert "scope_summary" not in payload
+
+
+def test_plan_keeps_the_fixed_twelve_pack_assignment() -> None:
+    """Wave B changed WHERE the partition is decided, never WHAT it decides."""
+    plan = _full_plan()
+    assert plan.pack_count == 12
+    assert len(plan.pack_jobs) == 12
+    assert len(plan.pack_weights) == 12
+    flattened = [job_id for pack in plan.pack_jobs for job_id in pack]
+    assert sorted(flattened) == sorted(plan.eligible_job_ids)
+    assert len(flattened) == len(set(flattened))
+    by_id = {job.job_id: job for job in plan.scoped_jobs}
+    for index, pack in enumerate(plan.pack_jobs):
+        assert plan.pack_weights[index] == sum(by_id[job_id].weight for job_id in pack)
+    # Same partition the standalone function produces from the same jobs.
+    packs = PACK.partition_jobs(
+        [by_id[job_id] for job_id in plan.eligible_job_ids], 12
+    )
+    assert plan.pack_jobs == tuple(
+        tuple(job.job_id for job in pack) for pack in packs
+    )
+
+
+def test_full_suite_plan_emits_all_twelve_packs() -> None:
+    """Main's baseline passes no --changed-from, so nothing may be narrowed."""
+    plan = _full_plan()
+    assert plan.reason == "full suite: changed-file set unavailable"
+    assert plan.nonempty_pack_indices == tuple(range(12))
+    assert plan.has_work is True
+    assert plan.matrix() == {"include": [{"pack": index} for index in range(12)]}
+    assert plan.skipped_job_ids == ()
+
+
+def test_only_non_empty_pack_indices_reach_the_matrix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("heavy", 0, weight=9),
+        _plan_job("middle", 1, weight=5),
+        _plan_job("light", 2, weight=3),
+    ]
+    plan = PACK.build_plan(
+        jobs, None, changed_from=None, scope_mode="active", pack_count=12
+    )
+    # The DOCUMENT still describes all twelve packs; only the MATRIX narrows.
+    assert len(plan.pack_jobs) == 12
+    assert plan.to_dict()["packs"][11] == {"index": 11, "weight": 0, "jobs": []}
+    assert plan.nonempty_pack_indices == (0, 1, 2)
+    assert plan.matrix() == {"include": [{"pack": 0}, {"pack": 1}, {"pack": 2}]}
+    assert plan.has_work is True
+
+
+def test_one_selected_job_emits_one_pack(monkeypatch: pytest.MonkeyPatch) -> None:
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("owner", 0, paths=("engine/**",)),
+        _plan_job("elsewhere", 1, paths=("site/**",)),
+    ]
+    plan = PACK.build_plan(
+        jobs,
+        ["engine/example.py"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=12,
+    )
+    assert plan.eligible_job_ids == ("owner",)
+    assert plan.skipped_job_ids == ("elsewhere",)
+    assert plan.nonempty_pack_indices == (0,)
+    assert plan.matrix() == {"include": [{"pack": 0}]}
+    assert plan.has_work is True
+
+
+def test_passive_unowned_markdown_can_plan_no_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The ONE lawful road to has_work=false: an affirmative empty selection.
+
+    Unreachable on the production manifest, which always carries unscoped
+    always-on jobs — so it is pinned on fixtures rather than left untested until
+    the day selection narrows enough to reach it in anger.
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("engine-owner", 0, paths=("engine/**",)),
+        _plan_job("site-owner", 1, paths=("site/**",)),
+    ]
+    plan = PACK.build_plan(
+        jobs,
+        ["research/CONTINUATION_HANDOFF.md"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=12,
+    )
+    assert plan.eligible_job_ids == ()
+    assert plan.nonempty_pack_indices == ()
+    assert plan.matrix() == {"include": []}
+    assert plan.has_work is False
+    document = plan.to_dict()
+    assert document["has_work"] is False
+    assert len(document["packs"]) == 12
+    assert all(entry["jobs"] == [] for entry in document["packs"])
+
+
+def test_unknown_top_level_path_widens_the_plan_to_the_full_suite(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("engine-owner", 0, paths=("engine/**",)),
+        _plan_job("site-owner", 1, paths=("site/**",)),
+    ]
+    plan = PACK.build_plan(
+        jobs,
+        ["brand_new_root/unowned_runtime.xyz"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=12,
+    )
+    assert set(plan.eligible_job_ids) == {"engine-owner", "site-owner"}
+    assert "no proven owner" in plan.reason
+    assert plan.has_work is True
+
+
+def test_global_invalidator_widens_the_plan_without_inferring_scopes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A global invalidator changes what any job MEANS — and short-circuits.
+
+    Skipping inference here is not an optimisation detail worth a comment
+    elsewhere: it is a minute of work whose entire answer select_jobs is about
+    to discard, paid on the one path where CI is already running everything.
+    """
+    calls: list[object] = []
+
+    def record(jobs: object) -> tuple[list[object], str]:
+        calls.append(jobs)
+        return list(jobs), "inference ran"
+
+    monkeypatch.setattr(PACK, "infer_job_scopes", record)
+    jobs = [
+        _plan_job("engine-owner", 0, paths=("engine/**",)),
+        _plan_job("site-owner", 1, paths=("site/**",)),
+    ]
+    plan = PACK.build_plan(
+        jobs,
+        ["scripts/run_ci_pack.py", "engine/market_state.py"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=12,
+    )
+    assert set(plan.eligible_job_ids) == {"engine-owner", "site-owner"}
+    assert "global invalidator" in plan.reason
+    assert plan.scope_summary == "scope inference not needed"
+    assert calls == []
+    assert plan.has_work is True
+
+
+def test_rename_plans_both_the_old_and_the_new_owner(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`--find-renames` emits BOTH sides; the plan must select both owners.
+
+    Deleting or renaming a subject has to re-run the job that owned its OLD
+    path — that job is often the only thing that would notice the subject went
+    away — while the new path selects its new owner.
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("owns-old", 0, paths=("engine/old.py",)),
+        _plan_job("owns-new", 1, paths=("engine/new.py",)),
+        _plan_job("elsewhere", 2, paths=("site/**",)),
+    ]
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    monkeypatch.setattr(
+        PACK, "changed_files", lambda base: ["engine/old.py", "engine/new.py"]
+    )
+    plan = PACK.plan_from_workflow(
+        MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
+    )
+    assert set(plan.eligible_job_ids) == {"owns-old", "owns-new"}
+    assert plan.skipped_job_ids == ("elsewhere",)
+
+    # Non-vacuity: with only the new side in the diff, the old owner is skipped.
+    monkeypatch.setattr(PACK, "changed_files", lambda base: ["engine/new.py"])
+    narrowed = PACK.plan_from_workflow(
+        MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
+    )
+    assert narrowed.eligible_job_ids == ("owns-new",)
+
+
+def test_planner_failure_never_emits_no_work(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """An exception is not a proof. It must launch everything, and exit 0.
+
+    This is the whole reason ci-plan is allowed to gate the matrix at all. If a
+    planner crash could emit `has_work: false`, ci-gate would publish a green
+    aggregate for a PR on which nothing ran.
+    """
+
+    def explode(path: object) -> object:
+        raise PACK.ManifestError("job 'x' is broken\njob 'y' is broken too")
+
+    monkeypatch.setattr(PACK, "load_legacy_jobs", explode)
+    output = tmp_path / "github_output"
+    assert (
+        PACK.main(
+            [
+                "--workflow", str(MANIFEST),
+                "--pack-count", "12",
+                "--plan-only",
+                "--github-output", str(output),
+            ]
+        )
+        == 0
+    )
+    outputs = _parse_github_output(output.read_text())
+    assert json.loads(outputs["matrix"]) == {
+        "include": [{"pack": index} for index in range(12)]
+    }
+    assert outputs["has_work"] == "true"
+    assert outputs["plan_sha"] == ""
+    assert outputs["reason"].startswith("full suite: planner error")
+    warning = next(
+        line
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith("::warning title=ci-plan-fallback::")
+    )
+    # A multi-line manifest error must not smuggle a newline into an annotation:
+    # GitHub reads only the line that STARTS with `::`, so the rest would vanish
+    # and the warning would under-report what broke.
+    assert "job 'x' is broken" in warning
+    assert "job 'y' is broken too" in warning
+
+
+def test_planner_failure_without_github_output_still_fails_loudly(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Only the ci-plan emission path widens; local validation stays fail-closed.
+
+    Otherwise `--plan-only` would become a way to make a broken manifest look
+    fine on a developer's machine.
+    """
+
+    def explode(path: object) -> object:
+        raise PACK.ManifestError("manifest is broken")
+
+    monkeypatch.setattr(PACK, "load_legacy_jobs", explode)
+    assert (
+        PACK.main(
+            ["--workflow", str(MANIFEST), "--pack-count", "12", "--plan-only"]
+        )
+        == 2
+    )
+    assert "manifest is broken" in capsys.readouterr().err
+
+
+def test_expect_plan_sha_mismatch_refuses_before_any_job_runs(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A pack that would run a different suite must not run a partial one first.
+
+    Half a divergent pack is worse than none: its check name says ci-pack-N
+    passed, and the sweeper reads that name as proof of the plan ci-plan
+    published, not of whatever this runner actually derived.
+    """
+    monkeypatch.setattr(PACK, "execute_pack", _never_execute)
+    assert (
+        PACK.main(
+            [
+                "--workflow", str(MANIFEST),
+                "--pack-index", "0",
+                "--pack-count", "12",
+                "--execute",
+                "--expect-plan-sha", "0" * 64,
+            ]
+        )
+        == 2
+    )
+    error = next(
+        line
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith("::error title=ci-plan-parity::")
+    )
+    assert "0" * 64 in error
+
+
+def test_plan_and_execution_select_the_exact_same_jobs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every index, not one: a divergence at pack 7 is invisible at pack 0.
+
+    This also pins that the plan hash does NOT depend on --pack-index. ci-plan
+    computes it without one (default 0) and each pack recomputes it with its
+    own; if the index ever entered the hashed payload, packs 1-11 would refuse
+    every plan ci-plan ever published and CI would be permanently red.
+    """
+    plan = _full_plan()
+    seen: list[str] = []
+    for index in range(12):
+        captured: list[str] = []
+
+        def capture(jobs: list[object], **kwargs: object) -> int:
+            captured.extend(job.job_id for job in jobs)
+            return 0
+
+        monkeypatch.setattr(PACK, "execute_pack", capture)
+        assert (
+            PACK.main(
+                [
+                    "--workflow", str(MANIFEST),
+                    "--pack-index", str(index),
+                    "--pack-count", "12",
+                    "--execute",
+                    "--expect-plan-sha", plan.plan_sha256,
+                ]
+            )
+            == 0
+        ), f"pack {index} refused the plan ci-plan published"
+        assert tuple(captured) == plan.pack_jobs[index], index
+        seen.extend(captured)
+    # Non-vacuity: the twelve packs together are the whole eligible set, so this
+    # cannot pass by every pack quietly executing nothing.
+    assert sorted(seen) == sorted(plan.eligible_job_ids)
+
+
+def test_github_output_is_byte_stable_and_parses_as_heredoc(tmp_path: Path) -> None:
+    first, second = tmp_path / "one", tmp_path / "two"
+    for path in (first, second):
+        assert (
+            PACK.main(
+                [
+                    "--workflow", str(MANIFEST),
+                    "--pack-count", "12",
+                    "--plan-only",
+                    "--github-output", str(path),
+                    "--matrix-mode", "active",
+                ]
+            )
+            == 0
+        )
+    assert first.read_text() == second.read_text()
+    outputs = _parse_github_output(first.read_text())
+    assert set(outputs) == {"matrix", "has_work", "plan_sha", "reason"}
+    assert json.loads(outputs["matrix"]) == {
+        "include": [{"pack": index} for index in range(12)]
+    }
+    assert outputs["has_work"] == "true"
+    assert len(outputs["plan_sha"]) == 64
+
+
+def test_matrix_mode_overrules_a_no_work_plan_without_changing_its_hash(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The dynamic matrix's kill switch, pinned where it is actually visible.
+
+    On the real 180-job manifest every diff still fills all twelve packs, so
+    `active` and `shadow` emit the SAME matrix and a test against the manifest
+    alone would pass without exercising the mode at all. Only a no-work plan
+    separates them.
+
+    The hash must be identical across modes: it is a plan input, and the mode is
+    an emission policy. If the mode entered the hash, flipping the repository
+    variable mid-run would make every in-flight pack refuse its own plan.
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("engine-owner", 0, paths=("engine/**",))]
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    monkeypatch.setattr(PACK, "changed_files", lambda base: ["research/NOTE.md"])
+    emitted: dict[str, dict[str, str]] = {}
+    for mode in ("active", "shadow", "off"):
+        path = tmp_path / mode
+        assert (
+            PACK.main(
+                [
+                    "--workflow", str(MANIFEST),
+                    "--pack-count", "12",
+                    "--plan-only",
+                    "--changed-from", "base-sha",
+                    "--matrix-mode", mode,
+                    "--github-output", str(path),
+                ]
+            )
+            == 0
+        )
+        emitted[mode] = _parse_github_output(path.read_text())
+
+    assert json.loads(emitted["active"]["matrix"]) == {"include": []}
+    assert emitted["active"]["has_work"] == "false"
+    for mode in ("shadow", "off"):
+        assert json.loads(emitted[mode]["matrix"]) == {
+            "include": [{"pack": index} for index in range(12)]
+        }
+        assert emitted[mode]["has_work"] == "true"
+        assert emitted[mode]["reason"].startswith(f"matrix {mode} (all 12 launch): ")
+    assert len({outputs["plan_sha"] for outputs in emitted.values()}) == 1
+    assert len(emitted["active"]["plan_sha"]) == 64
+
+
+def test_matrix_mode_defaults_to_shadow_and_reads_its_own_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Scope mode and matrix mode are separate switches with separate defaults."""
+    monkeypatch.delenv("CI_DYNAMIC_MATRIX_MODE", raising=False)
+    assert PACK.parse_args(["--workflow", str(MANIFEST)]).matrix_mode == "shadow"
+    monkeypatch.setenv("CI_DYNAMIC_MATRIX_MODE", "active")
+    assert PACK.parse_args(["--workflow", str(MANIFEST)]).matrix_mode == "active"
+    # Flipping the matrix switch must not move scope selection, or the emergency
+    # kill switch for one would silently be the kill switch for both.
+    monkeypatch.setenv("CI_SCOPE_MODE", "off")
+    args = PACK.parse_args(["--workflow", str(MANIFEST)])
+    assert (args.scope_mode, args.matrix_mode) == ("off", "active")
+
+
+def test_plan_only_never_executes_and_refuses_to_pair_with_execute(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(PACK, "execute_pack", _never_execute)
+    assert (
+        PACK.main(
+            ["--workflow", str(MANIFEST), "--pack-count", "12", "--plan-only"]
+        )
+        == 0
+    )
+    with pytest.raises(SystemExit):
+        PACK.parse_args(["--workflow", str(MANIFEST), "--plan-only", "--execute"])
+
+
+def test_emit_plan_json_prints_exactly_one_machine_line(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """`-` is a machine line in a human log, so a SECOND one would break parsers."""
+    assert (
+        PACK.main(
+            [
+                "--workflow", str(MANIFEST),
+                "--pack-count", "12",
+                "--plan-only",
+                "--emit-plan-json", "-",
+            ]
+        )
+        == 0
+    )
+    markers = [
+        line
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith(PACK.PLAN_MARKER)
+    ]
+    assert len(markers) == 1
+    document = json.loads(markers[0][len(PACK.PLAN_MARKER):])
+    assert set(document) == {
+        "schema", "changed_from", "scope_mode", "reason", "scope_summary",
+        "legacy_job_count", "eligible_job_count", "eligible_jobs",
+        "skipped_job_count", "skipped_jobs", "packs", "nonempty_pack_indices",
+        "matrix", "has_work", "plan_sha256",
+    }
+    assert document["schema"] == PACK.PLAN_SCHEMA == "ci.pack_plan.v1"
+    assert [entry["index"] for entry in document["packs"]] == list(range(12))
+
+    # A path gets the same document, indented, and no marker line on stdout.
+    path = tmp_path / "plan.json"
+    assert (
+        PACK.main(
+            [
+                "--workflow", str(MANIFEST),
+                "--pack-count", "12",
+                "--plan-only",
+                "--emit-plan-json", str(path),
+            ]
+        )
+        == 0
+    )
+    assert json.loads(path.read_text()) == document
+    assert PACK.PLAN_MARKER not in capsys.readouterr().out
+
+
+def test_the_pack_report_survived_the_plan_refactor(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The three lines every CI log is read by eye for, after the rewrite.
+
+    `pack weights=` is the one that nearly broke: the plan stores weights as a
+    TUPLE, and printing it directly would render `pack weights=(481, ...)` — a
+    silent cosmetic regression in the only summary a human reads when a pack
+    looks wrong.
+    """
+    plan = _full_plan()
+    assert (
+        PACK.main(
+            [
+                "--workflow", str(MANIFEST),
+                "--pack-index", "3",
+                "--pack-count", "12",
+                "--validate-only",
+            ]
+        )
+        == 0
+    )
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0] == (
+        f"::notice title=ci-pack-scope::{plan.reason}; {plan.scope_summary}"
+    )
+    validated = next(line for line in lines if line.startswith("Validated "))
+    assert validated.startswith(
+        f"Validated {plan.legacy_job_count} legacy jobs; "
+        f"{len(plan.eligible_job_ids)} in scope ({plan.reason}); "
+    )
+    assert f"pack weights={list(plan.pack_weights)};" in validated
+    assert f"selected pack 3 ({len(plan.pack_jobs[3])} jobs)." in validated
+    selected = next(line for line in lines if line.startswith("Selected jobs: "))
+    assert selected == "Selected jobs: " + ", ".join(plan.pack_jobs[3])
+
+
 def test_workflow_scopes_only_pull_requests() -> None:
     """Main's baseline must never pass --changed-from: it runs the full manifest."""
     pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
@@ -524,16 +1175,33 @@ def test_pack_command_folds_to_exactly_one_shell_command() -> None:
 
 def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     workflow = _yaml(WORKFLOW)
-    assert set(workflow["jobs"]) == {"ci-pack"}
+    # This job set was EXACTLY {"ci-pack"} until Wave B (2026-08-11) added the
+    # planner and the aggregate. Pinned as a subset, not as equality: the
+    # invariant this file defends is that CI does not fan back out (86 VMs, one
+    # per legacy suite), so a FOURTH job here is the regression — while the exact
+    # ci-plan/ci-gate shape belongs to tests/test_ci_plan_workflow.py, which owns
+    # it positively. Two suites asserting the same equality would only mean two
+    # places to edit, and the weaker one would win.
+    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "ci-gate"}
+    assert "ci-pack" in workflow["jobs"]
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
     # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
     # runners, never one job per legacy suite (86 VMs), and the matrix must
     # agree with the --pack-count handed to the runner or some packs' jobs
     # would execute nowhere.
-    matrix = pack["strategy"]["matrix"]["pack"]
-    assert matrix == list(range(len(matrix)))
-    assert len(matrix) == 12
+    #
+    # Wave B made the matrix the PLANNER's, so the list of indices is no longer
+    # in this file — `--pack-count 12` below is now the only place the twelve-way
+    # partition is written down, and run_ci_pack.py always emits exactly that
+    # many packs (tests/test_ci_pack.py::test_plan_keeps_the_fixed_twelve_pack_assignment).
+    matrix = pack["strategy"]["matrix"]
+    if isinstance(matrix, str):
+        assert "fromJSON(needs.ci-plan.outputs.matrix)" in " ".join(matrix.split())
+    else:
+        static = matrix["pack"]
+        assert static == list(range(len(static)))
+        assert len(static) == 12
     # EVERY event runs on the hosted pool — one `runs-on`, no event-dependent routing,
     # so main's baseline and a pull request prove the packs the SAME way.
     #
@@ -562,12 +1230,15 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
         "reintroducing max-parallel only slows main's proof; the hosted concurrency "
         "ceiling is account-wide and this key cannot raise it"
     )
-    assert pack["if"] == "github.event.action != 'closed'"
+    # The closed-event fence must LEAD the condition. Wave B appends
+    # `&& needs.ci-plan.outputs.has_work == 'true'`; anything that replaces the
+    # fence instead of extending it re-allocates a runner for every merged-close.
+    assert pack["if"].startswith("github.event.action != 'closed'")
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
     )
     assert "--workflow .github/ci/legacy-jobs.yml" in run_text
-    assert f"--pack-count {len(matrix)}" in run_text
+    assert "--pack-count 12" in run_text
 
     # A manifest edit must trigger CI even though GitHub does not interpret the
     # manifest itself as a workflow.
