@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T01:07:06.749039+00:00",
-  "count": 958,
+  "generated_at": "2026-08-12T02:22:11.920878+00:00",
+  "count": 962,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -82,6 +82,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-uoxvdsmjyu7-04f25d",
+      "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 11, 2026 as of 5 30 AM ET",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:38:14Z",
+      "summary_points": [
+        "**US CPI Preview**: Critical fundamental macro indicator directly impacting Fed policy expectations, interest rate trajectories, and equity valuations; requires monitoring for inflation trends and policy shifts.",
+        "**AI Investment Crowding Out**: US Economics Analyst highlights potential crowding out of investments due to AI, signaling sector rotation risks and technical volatility requiring tactical portfolio adjustments.",
+        "**US-China Trade Policy Risk**: Debate on potential US import restrictions on Chinese optical transceivers poses geopolitical risk to optical networking sector fundamentals.",
+        "**China NEV Retail Data**: July 2026 NEV retail narrowed to -2% YoY (vs.",
+        "9% in June), signaling demand stabilization but persistent weakness; critical fundamental indicator for auto sector positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e6iqxljorzl-d9490e",
+      "title": "InterContinental Hotels Group (IHG.L) 1H26 Strong net system growth of 5",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:15Z",
+      "summary_points": [
+        "**1H26 Results & Growth Beat**: Strong net system growth (+5.0% yoy), RevPAR growth (global +3.5% yoy, Americas +5.4% yoy), EPS +13% yoy despite 1H cost growth (+4%); management confirms FY26 consensus profit/earnings.",
+        "**GS Estimate Upgrade Momentum**: Goldman Sachs raises 2026-2030E estimates across RevPAR (+27bps), system growth (+15bps), revenue, EBIT, and EPS; consensus RevPAR growth 66bps above company forecast.",
+        "**Cash Flow & Margin Resilience**: Operating cash flow $1.137bn (12/26E), EBITDA margin expanding to 55.6% (12/26E); strong cash generation critical for dividends and growth amid cost moderation (1-3% full-year).",
+        "**Valuation & Technical Target**: P/E 24.2 (12/25) vs.",
+        "5 (12/26E) indicates moderate valuation; $190 target (GS BUY) exceeds current price ($172.75), signaling bullish technical positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gbjaregqbxy-f1fd18",
       "title": "JPM Europe Equity Research | Today’s Morning Meeting",
       "institution": "J.P. Morgan",
@@ -116,6 +158,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pbe5nntoagu-bab4be",
+      "title": "FSA FI Daily Commentary 10 August 2026",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:32:20Z",
+      "summary_points": [
+        "**US Treasury yields broadly lower**: UST 2Y/10Y/30Y declines signal easing monetary policy expectations, contrasting with JGB 10Y rise (+0.031) and China 10Y fall (-0.007), highlighting divergent global rate trends critical for portfolio positioning.",
+        "**US Labor & Inflation Data**: July nonfarm payrolls -23k (vs +80k consensus), unemployment 4.1% (below forecast), hourly earnings growth slowed to 0.1% m-o-m; NY Fed inflation expectations at 3.63% (below forecast), signaling potential Fed policy shift.",
+        "**Macau Casino Revenue Collapse**: 8.4% YoY revenue drop (16th consecutive month), driven by Beijing capital controls (taxation on offshore trusts, cross-border brokerage crackdown), posing severe risk for Macau-focused investments amid geopolitical tensions.",
+        "**Zurich Insurance Recommendation Downgrade**: Shift from OP to MP signals deteriorating credit outlook, critical for fixed income risk assessment and portfolio rebalancing.",
+        "**Goodyear's FY26 Cash Burn Intensifies**: $200–$300M free cash flow burn (vs $30M in FY25), with FY27 expected $100M burn; liquidity ($4.0B) covers burn but volume stabilization not translating to earnings recovery, indicating fundamental stress."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
@@ -365,6 +428,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ktk03rzwgke-aa2a5c",
+      "title": "GS EUROPEAN EXPRESS Multi Industry Autos Interparfums Auto1 Lotus Bakeries Macro Global Corporate Access",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:14Z",
+      "summary_points": [
+        "**Europe Multi-Industry: Prysmian/Nexans Buy Reiteration** 30% upside, FY26-28E EBITDA guidance upgrades (Prysmian +5%, Nexans +5.7%), PT raised 4%, below sector PEG ratio.",
+        "**Lotus Bakeries (LOTB.BR): Growth acceleration with upgraded EPS forecasts** H1 26 organic growth +16%, EBITDA margin +120bps, 14% EPS CAGR to 2030, FY26-28 EPS forecasts upgraded +7-9%, 22% upside.",
+        "**Oil Services Geopolitical Risk & 2027 Upside** Middle East disruptions weigh on H226, but deepwater/US pricing supports 2027 upside; reiterate Buy on Vallourec.",
+        "**China Inflation & Japan BOJ** China CPI/PPI inflation surprised downward in July; Japan BOJ sees upside risks to underlying inflation from July MPM—critical for global inflation dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
