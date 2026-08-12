@@ -249,7 +249,12 @@ def test_builder_is_registered_in_every_render_lane():
     dag = (ROOT / "config" / "dag.yml").read_text()
     assert dag.count("scripts.build_stock_seasonality_page") == dag.count("- scripts.build_seasonality\n")
     for wf in ("render.yml", "engine-render.yml", "daily.yml"):
-        text = (ROOT / ".github" / "workflows" / wf).read_text()
+        # Resolved: a band block extracted to scripts/ci/ carries its brun calls
+        # AND its ORDER string out of the YAML together, so a raw read would see
+        # neither. See scripts/workflow_run_source.
+        from scripts.workflow_run_source import resolved_workflow_text
+
+        text = resolved_workflow_text(ROOT / ".github" / "workflows" / wf, ROOT)
         assert "scripts.build_stock_seasonality_page" in text, wf
         # A slug absent from ORDER never has its log replayed and never raises its
         # rc!=0 ::error — the 2026-07-25 transmission_chains silent-failure defect.

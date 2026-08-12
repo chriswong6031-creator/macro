@@ -332,6 +332,94 @@ public:
     # public byte through them.
     - /fundamental_forensics.css
     - /fundamental_forensics.js
+    # ── Estate-wide sweep of the same defect (census:
+    # research/SITE_ACCESS_ASSET_CENSUS_2026_08_11.md) ────────────────────────
+    #
+    # fundamental_forensics above, and stock.html, were healed one page at a
+    # time. Censusing all 4,596 rendered pages found the class is estate-wide:
+    # 69 distinct gated assets are referenced by open shells. The entries below
+    # are the subset that meets the standard the forensics block states — pure
+    # presentation, or a fetch-client whose every signal-bearing read stays
+    # outside this allowlist. Promoting the WORKBENCH; the WORK does not move.
+    #
+    # Deliberately NOT promoted, though payload-free, because every data source
+    # they read stays gated and the bytes would draw nothing: wh_banner.js (both
+    # /wh_banner.json and /rr_banner.json carry graded rows), mm_charts.js (every
+    # spec source is a gated *_data.js), stockdata.js (reads the gated per-ticker
+    # store). And every *_data.js / *_engine.js stays gated on its merits — those
+    # ARE the payload, whatever their filename suggests.
+
+    # Unmodified third-party charting bundles, verified byte-identical (sha256)
+    # to the upstream npm artifacts rather than assumed: plotly.js@2.32.0
+    # dist/plotly.min.js and lightweight-charts@4.2.0
+    # dist/lightweight-charts.standalone.production.js. Single license banner,
+    # single IIFE, zero project identifiers, and no same-origin data read in
+    # either. These are real fixes rather than cosmetics: on both families the
+    # series are ALREADY inline in the public HTML shell (Plotly.newPlot(...) /
+    # createChart(...)+setData(...) with the payload baked in), so the charts
+    # simply draw once the renderer arrives — no data crosses the boundary,
+    # because it was already on the public side of it. Today the failure is
+    # SILENT: all 53 plotly pages install a queueing shim (window.__plotlyQ)
+    # that buffers every call until a bundle that 401s, so the charts vanish
+    # with no error and no empty state.
+    #
+    # lightweight-charts-v5.js is a SEPARATE file, not a replacement — the 21
+    # pages here load v4 and are untouched by the v5 promotion.
+    - /plotly-2.32.0.min.js
+    - /lightweight-charts.js
+    # Page stylesheets whose shells are open and server-rendered (8k-47k chars
+    # of already-public static text each) but which are being served UNSTYLED to
+    # every anonymous visitor. Each was checked for `content:` data, url() refs,
+    # entity-keyed selectors ([data-ticker]/[data-symbol]/[data-sector]) and
+    # numeric data custom props (--score/--rank/--pct): zero hits in every file,
+    # and none carries any url() at all, so none pulls a further gated asset in
+    # behind it. cycle.css and sector_cycles.css own `body` layout outright —
+    # scripts/check_nav_gap.py pins pages styled by cycle.css to inherit the nav
+    # gap from its body rule, so its 401 collapses the header gap too. odds.css
+    # defines its own --od-* palette including the zh 红涨绿跌 swap.
+    #
+    # Styling these pages is NOT the same as finishing them: where the renderer
+    # and its data are both legitimately gated, the page becomes styled-but-empty
+    # and still owes the visitor an honest locked state (census §"Flagged, NOT
+    # fixed here" #1). That is a per-page tier-preview build, not a boundary
+    # question — but an unstyled skeleton is strictly worse than a styled one,
+    # and the fix here is one allowlist line per file.
+    - /cycle.css
+    - /sector_cycles.css
+    - /macro-desk.css
+    - /markets.css
+    - /odds.css
+    - /capital_structure.css
+    - /government-revenue-parity.css
+    # These two are ONE unit and must never be promoted apart. illus.css:311-330
+    # puts the pre-reveal start state behind
+    # @media (prefers-reduced-motion: no-preference) — .ilx-path gets a
+    # stroke-dashoffset and .ilx-area/.ilx-dot/.ilx-bar get opacity:0 — and the
+    # ink only draws once .ilx-in lands (illus.css:332-338), of which illus.js is
+    # the SOLE writer. So CSS alone leaves every figure permanently blank, and JS
+    # alone leaves them solid black (fill:none never applied). Both, and they
+    # render. That black state is live today: computed style on bonds.html is
+    # `fill: rgb(0, 0, 0)`, the SVG default, so the yield-curve figure paints as
+    # a solid blob. illus.js makes zero network calls (one IntersectionObserver
+    # plus window.ilxMount/ilxReveal) and the path geometry is already inline in
+    # the public HTML, so the pair moves no data whatsoever.
+    - /illus.css
+    - /illus.js
+    #
+    # terminal_overlay.js LOOKS like the next mm_brain.js and is NOT — recorded
+    # here because the resemblance is the trap. theme.js does build
+    # `_mmOverlaySrc` (theme.js:288) and prewarmTerminal() does call
+    # loadTerminalOverlay() for every visitor (theme.js:352), and the standalone
+    # file does 401. But scripts/site_assets.py BUNDLES the overlay source into
+    # the emitted theme.js (see the block comment at theme.js:5475), where it
+    # runs as a top-level IIFE and sets window.MDXTerminalOverlay before any
+    # idle callback fires — so loadTerminalOverlay's guard (theme.js:295) short-
+    # circuits and the standalone URL is never requested. Verified against the
+    # LIVE theme.js, which is byte-identical to the repo copy and contains the
+    # inline definition. Promoting it would widen the boundary for a file
+    # production never fetches. Fetching /terminal_overlay.js by hand and seeing
+    # a 401 does NOT show the page needs it.
+    #
     # Existing Terminal ingest compatibility. Remove after the separate
     # Terminal session moves these fetches behind authenticated transport.
     - /factordata/tech_lab.json

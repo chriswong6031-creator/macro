@@ -627,6 +627,88 @@ def test_metadata_replay_reports_a_real_same_path_conflict(tmp_path):
     assert "fallback required" in r.stdout
 
 
+@pytest.mark.parametrize("partial", [False, True])
+def test_metadata_replay_rejects_failed_diff_enumeration_even_with_prefix(
+    tmp_path, partial
+):
+    repo = tmp_path / "repo"
+    _init_repo(repo)
+    (repo / "a").write_text("a0\n")
+    (repo / "b").write_text("b0\n")
+    _git_output(repo, "add", ".")
+    _git_output(repo, "commit", "-m", "base")
+    base = _git_output(repo, "rev-parse", "HEAD")
+    (repo / "a").write_text("a1\n")
+    (repo / "b").write_text("b1\n")
+    _git_output(repo, "commit", "-am", "candidate")
+    candidate = _git_output(repo, "rev-parse", "HEAD")
+
+    r = run_sh(
+        """
+        git() {
+          if [ "${1:-}" = diff-tree ]; then
+            if [ "$PARTIAL" = 1 ]; then printf 'M\\0a\\0'; fi
+            return 86
+          fi
+          command git "$@"
+        }
+        if push_metadata_replay_commit "$BASE" "$BASE" "$CANDIDATE" \
+             "must fail" "$INDEX"; then
+          echo unexpected-success
+          exit 1
+        fi
+        test ! -e "$INDEX"
+        """,
+        env={
+            "BASE": base,
+            "CANDIDATE": candidate,
+            "INDEX": str(tmp_path / "failed.index"),
+            "PARTIAL": "1" if partial else "0",
+        },
+        cwd=repo,
+    )
+    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+    assert "cannot enumerate" in r.stderr
+
+
+def test_exact_path_replay_rejects_mixed_checkpoint_generations(tmp_path):
+    repo = tmp_path / "repo"
+    _init_repo(repo)
+    (repo / "a").write_text("a0\n")
+    (repo / "b").write_text("b0\n")
+    _git_output(repo, "add", ".")
+    _git_output(repo, "commit", "-m", "base")
+    base = _git_output(repo, "rev-parse", "HEAD")
+
+    # Candidate changes only b, but its complete checkpoint still binds a=a0.
+    (repo / "b").write_text("b1\n")
+    _git_output(repo, "commit", "-am", "candidate")
+    candidate = _git_output(repo, "rev-parse", "HEAD")
+    _git_output(repo, "checkout", "-q", "-b", "onto", base)
+    (repo / "a").write_text("a2\n")
+    _git_output(repo, "commit", "-am", "onto")
+    onto = _git_output(repo, "rev-parse", "HEAD")
+
+    r = run_sh(
+        """
+        if push_exact_paths_replay_commit "$BASE" "$ONTO" "$CANDIDATE" \
+             "must refuse mixed generations" "$INDEX" a b; then
+          echo unexpected-success
+          exit 1
+        fi
+        """,
+        env={
+            "BASE": base,
+            "ONTO": onto,
+            "CANDIDATE": candidate,
+            "INDEX": str(tmp_path / "exact.index"),
+        },
+        cwd=repo,
+    )
+    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+    assert "exact metadata replay conflict" in r.stderr
+
+
 def test_abort_rebase_flags_a_conflict_only_when_a_rebase_is_in_progress(tmp_path):
     repo = tmp_path / "repo"
     _init_repo(repo)

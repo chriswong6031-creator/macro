@@ -56,9 +56,10 @@ permissions:
                          # the freshness bound therefore blocks the merges that would
                          # have refreshed it. Both dispatches are rate-floored in
                          # scripts/merge_on_green.py and never fail the sweep.
-  contents: write        # squash-merge, delete the merged head ref, and merge
-                         # main into a clean-but-stale head (update-branch)
+  contents: write        # squash-merge and merge main into a clean-but-stale
+                         # head (update-branch)
   pull-requests: write   # add/remove merge-blocked, post the explanatory comment
+  issues: write          # lazily create/add/remove the durable refresh-lease label
 
 # Concurrency belongs on the JOB, after its event gate, and only now that the job
 # has a runner no workload can saturate. A former workflow-wide constant group
@@ -79,21 +80,16 @@ jobs:
     # because a skipped job costs no runner, no queue slot, and no minutes, while
     # a cancelled one cost us the sweep itself.
     #
-    # A merge becomes possible only when a check goes GREEN. A triggering run that
-    # concluded `cancelled`, `failure`, or `skipped` cannot make any PR mergeable,
-    # and waking for those is what produced 0.86 runs/min. Measured on ci's last
-    # 100 completed runs: 51 failure, 25 cancelled, 18 skipped, 6 success — so this
-    # gate drops ~94% of the wake-ups while keeping every one that can actually
-    # unblock a merge. Expected volume is ~5-6 real sweeps/hour, at or below what
-    # the nominal 10-minute cron was always meant to cost.
+    # A merge becomes possible only when a check goes GREEN, so only `success` pays
+    # for a full backlog sweep. The other conclusions are admitted only to bounded
+    # special passes: `failure` marks one exact red head, while cancelled/skipped/
+    # neutral/etc. check whether a durable lease exists and only then request one
+    # serialized full reconciliation. Their shared special
+    # concurrency key coalesces bursts; special jobs never inspect or mutate the
+    # durable lease, eliminating cross-group ownership races.
     #
-    # What this trades away: prompt `merge-blocked` labelling on a fresh red. That
-    # ride now falls to the cron or to the next green anywhere in the repo. It fails
-    # SAFE in the only direction that matters — a red PR simply stays armed and
-    # unmerged, which is the correct outcome either way.
-    #
-    # THAT LAST PARAGRAPH IS DISPROVEN (2026-08-11, PR #5291), so `failure` is
-    # admitted again — for a bounded MARK-ONLY pass, never a sweep. "A red PR simply
+    # Failure used to be skipped too. That is DISPROVEN (2026-08-11, PR #5291), so
+    # it is admitted for a bounded MARK-ONLY pass, never a sweep. "A red PR simply
     # stays armed" assumed nothing else touches the label during the window in which
     # the red is real and unmarked. Measured: ci run 31449929887 concluded FAILURE at
     # 02:05:18Z; at 02:13:34Z another session removed `merge-on-green` with no
@@ -111,20 +107,25 @@ jobs:
     # against READ_TOKEN's 1,000/hr PER-REPOSITORY budget, so even at ~26 failure
     # wake-ups/hour it stays far inside the bucket a real sweep needs.
     #
-    # `cancelled` and `skipped` stay skipped. A cancelled run is a SUPERSEDED head,
-    # not a red, and a skipped one judged nothing at all — marking on either would
-    # accuse a pull request no check has actually failed.
+    # Every completed proof conclusion is admitted, but only success performs a
+    # full sweep and failure performs a marker pass. Cancelled/skipped/neutral/etc.
+    # perform an O(1) lease census and self-wake only for a live durable owner, so a
+    # vanished proof cannot strand the high-load lane and unrelated cancellations
+    # cannot recreate the sweep storm. Only the resulting serialized full sweep may
+    # add or remove the lease label.
     if: >-
       github.event_name != 'workflow_run'
-      || github.event.workflow_run.conclusion == 'success'
-      || github.event.workflow_run.conclusion == 'failure'
+      || github.event.workflow_run.conclusion != ''
 
     concurrency:
       group: >-
-        merge-on-green-${{ github.event_name == 'workflow_run'
-        && github.event.workflow_run.conclusion == 'failure'
+        merge-on-green-${{ github.event_name != 'workflow_run'
+        && 'sweep'
+        || github.event.workflow_run.conclusion == 'failure'
         && format('mark-{0}', github.event.workflow_run.head_sha)
-        || 'sweep' }}
+        || github.event.workflow_run.conclusion == 'success'
+        && 'sweep'
+        || 'lease-reconcile' }}
       cancel-in-progress: false
 
     # CONTROL PLANE, NOT WORKLOAD. On 2026-08-11 the hosted pool was hard-saturated
@@ -213,9 +214,11 @@ jobs:
           # within the cap and never passes a gate.
           TRIGGER_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           # HOW that run concluded. `failure` selects the bounded mark-only pass (see
-          # the `if:` essay above and `mark_only_pass` in the script); anything else,
-          # including the empty string a cron or dispatch supplies, runs the full
-          # sweep unchanged. The script reads the value rather than the workflow
-          # branching on it, so the routing is testable without an Actions run.
+          # the `if:` essay above and `mark_only_pass` in the script); another
+          # non-success conclusion only self-wakes a serialized sweep. The empty
+          # string a cron or dispatch supplies and `success` run the full sweep.
           TRIGGER_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          # Self-dispatch recovery must ignore the run currently making the
+          # decision while still coalescing with any different pending successor.
+          CURRENT_RUN_ID: ${{ github.run_id }}
         run: python3 scripts/merge_on_green.py
