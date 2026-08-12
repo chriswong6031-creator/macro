@@ -151,6 +151,39 @@ def test_an_unreadable_date_ships_the_chip_with_no_receipt(bad):
     assert "tip_en" not in note and "tip_zh" not in note
 
 
+#: Every language pair the note can ship. The invariant test below sweeps these, and its
+#: closing assertion forces any future key into this table — where it inherits the law.
+NOTE_PAIRS = (("en", "zh"), ("tip_en", "tip_zh"), ("date_en", "date_zh"))
+
+
+@pytest.mark.parametrize("row", [
+    _plan("A-BULL"),                                     # full receipt — all six keys
+    _plan("A-BULL", recorded_at=None),                   # fail-soft: no date at all
+    _plan("A-BULL", recorded_at="not-a-date"),           # fail-soft: unparseable day
+    _plan("A-BULL", recorded_at="2026-13-09"),           # fail-soft: impossible month
+    _plan("A-BULL", mode="outage_backfill_2027_01_02"),  # a second replay's stamp
+])
+def test_every_note_ships_each_field_in_both_languages_or_neither(row):
+    """The consumer contract, pinned at the producer (Terminal PR #399 review, 2026-08-11).
+
+    The Terminal renders ONE language of this note and by design falls to null — no
+    disclosure at all — when the selected language's string is empty (mastermind-terminal
+    ``SignalCard.tsx``, ``planOriginationNote``).  A note with a non-empty ``en`` and an
+    empty or missing ``zh`` therefore silently un-discloses a reconstructed pick to
+    Chinese readers.  §2's tests above pin exact copy on single paths; THIS one pins the
+    shape on every path the producer can emit: a field ships in BOTH languages,
+    non-empty, or in neither.
+    """
+    note = origination_note(row)
+    assert note is not None
+    assert note["en"] and note["zh"], "the chip itself is unconditional"
+    for en_key, zh_key in NOTE_PAIRS:
+        assert (en_key in note) == (zh_key in note), f"{en_key} without {zh_key}"
+        if en_key in note:
+            assert note[en_key] and note[zh_key], f"empty half in {en_key}/{zh_key}"
+    assert set(note) <= {key for pair in NOTE_PAIRS for key in pair}
+
+
 # --------------------------------------------------------------------------- #
 # 3. The board-level disclosure — absent, never zero
 # --------------------------------------------------------------------------- #
