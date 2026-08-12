@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T01:22:05.314312+00:00",
-  "count": 959,
+  "generated_at": "2026-08-12T01:52:27.192135+00:00",
+  "count": 960,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -386,6 +386,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ktk03rzwgke-aa2a5c",
+      "title": "GS EUROPEAN EXPRESS Multi Industry Autos Interparfums Auto1 Lotus Bakeries Macro Global Corporate Access",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:14Z",
+      "summary_points": [
+        "**Europe Multi-Industry: Prysmian/Nexans Buy Reiteration** 30% upside, FY26-28E EBITDA guidance upgrades (Prysmian +5%, Nexans +5.7%), PT raised 4%, below sector PEG ratio.",
+        "**Lotus Bakeries (LOTB.BR): Growth acceleration with upgraded EPS forecasts** H1 26 organic growth +16%, EBITDA margin +120bps, 14% EPS CAGR to 2030, FY26-28 EPS forecasts upgraded +7-9%, 22% upside.",
+        "**Oil Services Geopolitical Risk & 2027 Upside** Middle East disruptions weigh on H226, but deepwater/US pricing supports 2027 upside; reiterate Buy on Vallourec.",
+        "**China Inflation & Japan BOJ** China CPI/PPI inflation surprised downward in July; Japan BOJ sees upside risks to underlying inflation from July MPM—critical for global inflation dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
