@@ -1105,6 +1105,9 @@ jobs:
       # is its natural home. test_act_now_board_icons.py — the US original it is modelled
       # on — was referenced NOWHERE under .github/ and had never been run by CI; it is
       # wired here in the same edit, since there is no tests/-wide sweep in this repo.
+      # The Stock Connect leaderboard shape/render contract also lives here: it imports
+      # scripts/build_china.py and renders the real China template, using the pandas /
+      # pyarrow / jinja2 dependency set this job already owns.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1125,6 +1128,7 @@ jobs:
           tests/test_risk_radar_intl_profiles.py
           tests/test_risk_state_live_copy_sync.py
           tests/test_build_china_risk_state.py
+          tests/test_china_connect_leaderboard_render.py
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_winner_autopsy.py tests/test_admin_long_hold.py
           tests/test_falsifier_packet.py
