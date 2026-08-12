@@ -5407,7 +5407,7 @@ jobs:
       - name: install candidate contract dependencies
         run: pip install pytest pytest-xdist pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
       - name: candidate projection contract fixtures
-        run: python -m pytest -n 2 --dist load --max-worker-restart=0 tests/test_government_revenue_candidate_projection.py -q
+        run: python -m pytest -n 2 --dist load --max-worker-restart=0 tests/test_government_revenue_candidate_projection.py tests/test_government_revenue_candidate_fixture.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
