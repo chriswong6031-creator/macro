@@ -1,6 +1,6 @@
 # Risk Radar Country Port — CN · HK · CA (+ international card)
 
-Status: **BUILDING** (operator order 2026-08-11, this session). Owner session: risk-radar-macro-styling.
+Status: **BUILT — PR armed** (operator order 2026-08-11, same-day; W1-W4 landed, see §8). Owner session: risk-radar-macro-styling.
 Program note: radar core is unmapped in `config/mastermind_programs.yml` (nearest: `market-regime-risk`;
 `hk-canada` is an explicitly unresolved split label). This build proceeds under direct operator order;
 ownership mapping is flagged, not forced, here.
@@ -148,3 +148,29 @@ state so it becomes context/plane-aware. Any such build must keep A7: the LLM ma
 calibrated keys and narrate context — never originate signals, scores, or escalations. Natural home:
 a `risk_radar` section in the Live Market State Packet (`engine/neuralweb/market_packet.py`) +
 persistent per-market memo state graded like every other ledger. Charter separately before building.
+
+## §8 Shipped state + deferred follow-ups (2026-08-11)
+
+Waves landed: W1 `5382eb97c76` (popover de-dim; shared dialog; China), W2 `af850a15657` (HK; Canada
+incl. new USDCAD fx-context), W3 `72b3dc849c8` (intl compact cards ×5; leg-slug labels), W4
+`3d4e0ca2a10` (review fixes: accrual-line merge, ordinal grammar + zh percentile form, always-stance,
+CN gauge label↔source inversion corrected against `engine/china_conditions.py:601-635` with pinning
+tests, CN dialog z 60→200, FX as-of folded into the one footer, intl live-scare count filtered on
+engine band, "Behind the reading" eyebrow → "The local backdrop", caveat rewrites re-anchored to
+sample-era/effect-size substance, latent UndefinedError guards). Visual evidence:
+`mockups/refs/risk_radar_country_port/`. Note for future sessions: the CN recession/slowdown gauge
+charts were DEAD markup pre-port (wrong dict keys); resurrecting them exposed crossed labels — any
+resurrected display code must re-verify label↔source pairing, never trust the dead original.
+
+Deferred (recorded, deliberately not built here):
+- **Ladder row bar-vs-band tension kept as designed**: bar color follows the score, band word follows
+  the engine (`54 · CALM` amber next to `89 · RISK-OFF` is honest divergence; changing the band word
+  is an authority change — do not "fix" cosmetically).
+- **CN factor read-word cut points** are builder-local (margin 80/55 pctile, QVIX ±1σ, limit-up 60/25,
+  lianban 15/5/1, sealed 0.7/0.4) while HK/CA reuse page thresholds; align CN to page-level bands if
+  those stats ever get page-native banding. Inconsistency, not error.
+- **`.rrx-ev` bare percentile** (shared card, visible off-US only): grammar + zh fixed; a
+  meaning-qualifier ("top 11% of readings"-style) is a copy decision touching every surface — take it
+  as its own small pass.
+- `templates/_market_state_board.html.j2` is an orphan (nothing includes it) — chipped for separate
+  cleanup, outside this port.
