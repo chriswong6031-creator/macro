@@ -134,8 +134,10 @@ def test_committed_canonical_generation_still_satisfies_the_shipped_contract():
 
     #4951 made ``recipient_query_terms`` required without bumping the manifest
     version, invalidating the canonical generation for render, API, and candidate
-    readers. Main's #5131 compatibility fix is authoritative; this test preserves
-    #5141's unique tooth by validating the real committed bytes and naming paths.
+    readers; #5131 relaxed it until the committed bytes carried the field, and
+    requiredness returned on 2026-08-11 once they did. This test preserves #5141's
+    unique tooth by validating the real committed bytes and naming paths — it is
+    what makes a retightening evidence-led instead of retroactive.
     """
     latest = _committed("latest.json")
     workspace = _committed("workspace.json")
@@ -150,8 +152,15 @@ def test_committed_canonical_generation_still_satisfies_the_shipped_contract():
         )
 
 
-def test_coverage_manifest_reads_both_published_entity_shapes_but_stays_typed():
-    """Read old and enriched v1 entities while rejecting malformed variants."""
+def test_coverage_manifest_requires_query_terms_and_stays_typed():
+    """The enriched v1 entity is now the only entity shape the manifest reads.
+
+    ``recipient_query_terms`` returned to ``required`` on 2026-08-11, once every
+    entity of the committed manifest carried it — the precondition #5131 wrote
+    into the schema when it relaxed #4951's too-early requirement. The legacy
+    pre-field shape that the compatibility window admitted is therefore rejected
+    from here on, and the typed rejections keep the field itself honest.
+    """
     manifest_schema = _schema("government_procurement_workspace.v2.schema.json")["$defs"][
         "coverageManifest"
     ]
@@ -162,16 +171,19 @@ def test_coverage_manifest_reads_both_published_entity_shapes_but_stays_typed():
         ]
     )
     assert committed["entities"], "the committed coverage manifest declares no entities"
+    assert all(
+        entity.get("recipient_query_terms") for entity in committed["entities"]
+    ), "the committed manifest must carry recipient_query_terms on every entity"
+    assert not list(validator.iter_errors(committed))
+
+    enriched = deepcopy(committed)
+    for entity in enriched["entities"]:
+        entity["recipient_query_terms"] = [entity["recipient_search_text"]]
+    assert not list(validator.iter_errors(enriched))
 
     legacy = deepcopy(committed)
     for entity in legacy["entities"]:
         entity.pop("recipient_query_terms", None)
-    enriched = deepcopy(committed)
-    for entity in enriched["entities"]:
-        entity["recipient_query_terms"] = [entity["recipient_search_text"]]
-    assert not list(validator.iter_errors(legacy))
-    assert not list(validator.iter_errors(enriched))
-
     empty_terms = deepcopy(enriched)
     empty_terms["entities"][0]["recipient_query_terms"] = []
     non_string_terms = deepcopy(enriched)
@@ -180,5 +192,5 @@ def test_coverage_manifest_reads_both_published_entity_shapes_but_stays_typed():
     unknown_key["entities"][0]["recipient_query_terms_dropped"] = ["X"]
     missing_primary = deepcopy(enriched)
     missing_primary["entities"][0].pop("recipient_search_text")
-    for rejected in (empty_terms, non_string_terms, unknown_key, missing_primary):
+    for rejected in (legacy, empty_terms, non_string_terms, unknown_key, missing_primary):
         assert list(validator.iter_errors(rejected))
