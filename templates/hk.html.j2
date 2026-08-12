@@ -1442,14 +1442,8 @@
   [data-theme="light"] body.page-hk .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
   [data-theme="light"] body.page-hk .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
   [data-theme="light"] body.page-hk .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
-  /* The needle itself, which the three rules above cannot reach: `> text` stops at the
-     needle <g>, and `g[stroke]` matches only the tick group (it carries a stroke
-     ATTRIBUTE; the needle group does not). So the pointer kept its dark-mode ink and
-     went white-on-white on the light card — the dial rendered as an arc with no reading
-     on it. Identical twin rule on body.page-macro / .page-china / .page-canada. */
-  [data-theme="light"] body.page-hk #mx5-gauge-needle line{stroke:rgba(10,16,24,.20);}
-  [data-theme="light"] body.page-hk #mx5-gauge-needle polygon{fill:rgba(10,16,24,.82);}
-  [data-theme="light"] body.page-hk #mx5-gauge-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
+  /* The shared light pointer lives in theme.css and inherits this gauge's
+     state-driven --mx5-gauge token. Dark presentation attributes stay untouched. */
   /* CSS wins over SVG presentation attr → arc + numeral recolour by state (var() resolves here) */
   body.page-hk #mx5-gauge-arc-fill { stroke: var(--mx5-gauge, #f59e0b); }
   /* The big score beside the gauge already states the number; the in-arc numeral +
@@ -1644,11 +1638,13 @@
           <text x="126" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">100</text>
           {% if ms is defined and ms %}
           {# Needle — rotation baked by Jinja; accent parts recolour by state (.mx5-needle-*) #}
-          <g id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#mx5NeedleGlow)">
+          <g id="mx5-gauge-needle" class="odo-needle odo-needle--compact"
+             style="--odo-accent:var(--mx5-gauge,var(--warn))"
+             transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#mx5NeedleGlow)">
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
             <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
             <circle cx="70" cy="75" r="7"  fill="rgba(255,255,255,.10)"/>
-            <circle class="mx5-needle-ring" cx="70" cy="75" r="4.5" stroke="{{ _mx5_sc_col }}" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
+            <circle class="mx5-needle-ring odo-needle-hub" cx="70" cy="75" r="4.5" stroke="{{ _mx5_sc_col }}" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
             <circle class="mx5-needle-fill" cx="70" cy="75" r="2"  fill="{{ _mx5_sc_col }}"/>
             <circle class="mx5-needle-fill" cx="70" cy="25.5" r="2.5" fill="{{ _mx5_sc_col }}" style="filter:drop-shadow(0 0 4px {{ _mx5_sc_col }})"/>
           </g>
