@@ -278,7 +278,7 @@ REQUEST_TIMEOUT_SECONDS = 30
 # overhead and ~4 more for each clean-but-refused one.
 #
 # The historical 1,000/hour pool proved that 25 pull requests per sweep is
-# sustainable: fixed overhead is ~12 calls and the common case costs ~1 call per
+# sustainable: fixed overhead was ~12 calls and the common case costs ~1 call per
 # pull request. The Enterprise transfer raised this repository's live limit to
 # 15,000/hour, but the old fixed cap kept deferring a 29-pull backlog with 14,904
 # calls still available (run 31536402658). Scale from the proven 25/1,000 ratio,
@@ -291,10 +291,11 @@ MAX_PULL_CAP = 100
 # live bucket is partly spent. These are deliberately pessimistic: the merge writes
 # normally charge MERGE_TOKEN, not READ_TOKEN, but counting them here makes an
 # admitted window affordable even on the fallback token.
-FULL_SWEEP_FIXED_REQUESTS = 12
-MAX_REQUESTS_PER_PULL = 6
-# A 25-pull reference pass needs ~12 fixed + 25 x up-to-5 + a few writes ~= 150,
-# so 200 funds useful work and preserves room for other lanes. Larger buckets do
+FULL_SWEEP_FIXED_REQUESTS = 17
+MAX_REQUESTS_PER_PULL = 7
+# A 25-pull reference pass now needs 17 fixed + 25 x up-to-7 + refresh headroom =
+# 200 in its pessimistic shape, so the floor funds useful work while preserving
+# room for other lanes in the ordinary cheaper shape. Larger buckets do
 # not need a proportionally larger dead zone: `pull_cap` shrinks to what the
 # remaining requests can actually afford.
 RATE_LIMIT_FLOOR = 200
@@ -306,9 +307,9 @@ MARK_ONLY_RATE_LIMIT_FLOOR = 20
 # rather than a 403 half-way through.
 RATE_LIMIT_RESERVE = 60
 # Poll `GET /rate_limit` every N evaluated pull requests rather than every one. It
-# costs no core budget but it is still a round trip; at <=6 calls per pull request
-# (the clobbered-head compare read is the sixth) the reserve above comfortably
-# covers the at-most-30 calls spent between polls.
+# costs no core budget but it is still a round trip; at <=7 calls per pull request
+# (ancestry + the clobbered-head compare are the sixth and seventh) the reserve
+# above comfortably covers the at-most-35 calls spent between polls.
 BUDGET_RECHECK_EVERY = 5
 # Each `update-branch` is a write AND a fresh CI run on a saturated pool (36-91
 # minutes, 8 self-hosted runners). The base-inherited-red path makes most of a red
@@ -316,6 +317,16 @@ BUDGET_RECHECK_EVERY = 5
 # one 46-second sweep would queue ~84 pack runs and jam CI for days. 8 drains the
 # same backlog over ~11 sweeps, which at the observed sweep rate is under an hour.
 MAX_REFRESHES_PER_SWEEP = 8
+# A per-sweep cap is not a load cap when completed workflows wake nearly one full
+# sweep per minute.  Each refreshed pull request launches one ci.yml run with 12
+# hosted jobs (plus fences), and on 2026-08-11 the shared pool was already pinned at
+# 180/180.  Count every active pull-request ci.yml run — ordinary session work and
+# controller re-proofs alike — and add no refreshes above this repo-wide ceiling.
+# Eight proof runs are roughly half the hosted pool, leaving real capacity for the
+# sessions the controller exists to serve.  This is intentionally conservative:
+# an ordinary in-flight proof consumes the same runners as a controller-created one.
+MAX_IN_FLIGHT_PR_PROOFS = 8
+ACTIVE_PR_PROOF_STATUSES = ("queued", "in_progress", "pending", "requested", "waiting")
 # The rotation advances by the live pull cap every bucket, so every armed pull
 # request enters the window within ceil(N / cap) buckets — ~40 minutes for a
 # 93-PR backlog. Ten minutes matches the recovery cron; the sweeper keeps NO state
@@ -824,6 +835,12 @@ class ProofFreshness:
         self._commit_tree_shas: dict[str, str] = {}
         self._root_trees: dict[str, dict[str, tuple[str, str, str]]] = {}
         self._pr_files: dict[Any, list[str] | None] = {}
+        # Exact checked head -> newest main commit already contained by that head.
+        # This is the antidote to the timestamp-skew re-proof treadmill: the
+        # 30-minute queue allowance may deliberately put an already-contained main
+        # commit back inside the candidate window, but ancestry can prove that the
+        # exact head's checks necessarily included it.
+        self._merge_bases: dict[str, str | None] = {}
         self.commit_file_reads = 0
 
     # -- construction ---------------------------------------------------------
@@ -860,6 +877,11 @@ class ProofFreshness:
         return cls(repo, token, gates, commits)
 
     # -- reads ----------------------------------------------------------------
+
+    @property
+    def snapshot_tip(self) -> str:
+        """Exact main tip whose timeline this instance classified."""
+        return str((self.commits[0] if self.commits else {}).get("sha") or "")
 
     def _root_tree(self, tree_sha: str) -> dict[str, tuple[str, str, str]]:
         """Complete top-level tree entries keyed by path, cached by tree object ID.
@@ -1006,6 +1028,51 @@ class ProofFreshness:
         self._pr_files[number] = answer
         return answer
 
+    def included_main_base(self, pull: dict[str, Any]) -> str | None:
+        """Newest snapshot-main commit already contained by the exact checked head.
+
+        GitHub's pull-request payload exposes the base branch's *live* SHA, not the
+        historical base fixed when a workflow run was created.  Dating checks is
+        therefore still needed for main commits that are not in the head.  But a
+        three-dot compare gives one stronger fact: ``merge_base_commit`` is the
+        newest commit shared by this sweep's frozen main tip and the exact head SHA.
+
+        The read is an optimisation of a fail-closed timestamp decision, never a
+        prerequisite.  An unreadable or incomplete compare returns ``None`` and the
+        existing widened time window is used unchanged.  Only affirmative ancestry
+        can remove a commit from that window.
+        """
+        head_sha = str((pull.get("head") or {}).get("sha") or "")
+        if not head_sha:
+            return None
+        if head_sha in self._merge_bases:
+            return self._merge_bases[head_sha]
+
+        snapshot_tip = self.snapshot_tip
+        if not snapshot_tip:
+            self._merge_bases[head_sha] = None
+            return None
+        encoded_tip = urllib.parse.quote(snapshot_tip, safe="")
+        encoded_head = urllib.parse.quote(head_sha, safe="")
+        try:
+            status, payload = _request(
+                "GET",
+                f"{GITHUB_API}/repos/{self.repo}/compare/"
+                f"{encoded_tip}...{encoded_head}?per_page=1",
+                self.token,
+            )
+        except Exception:
+            answer = None
+        else:
+            answer = None
+            if status < 400 and isinstance(payload, dict):
+                candidate = str(
+                    ((payload.get("merge_base_commit") or {}).get("sha")) or ""
+                )
+                answer = candidate or None
+        self._merge_bases[head_sha] = answer
+        return answer
+
     # -- the decision ---------------------------------------------------------
 
     def surface_of(self, number: Any) -> set[str] | None:
@@ -1067,6 +1134,31 @@ class ProofFreshness:
         window = [commit for commit in self.commits if commit["when"] > when]
         if not window:
             return False, "main has taken no commits since the proof was computed"
+
+        # ``proof_instant`` deliberately reaches 30 minutes back from the oldest
+        # job start because Actions fixes a pull_request run's base when the run is
+        # created, before a saturated job receives a runner.  That safety margin
+        # used to create a permanent loop after ``update-branch``: the refreshed
+        # exact head contained commit C, fresh checks passed on that head, but C's
+        # timestamp was inside the widened window, so C invalidated the proof again.
+        #
+        # Trim only through an AFFIRMATIVELY shared main ancestor.  Every remaining
+        # commit is newer than the main content carried by the exact checked head and
+        # is still judged by the unchanged definition/surface rules below.
+        included_base = self.included_main_base(pull)
+        if included_base:
+            for index, commit in enumerate(window):
+                if commit["sha"] != included_base:
+                    continue
+                window = window[:index]
+                if not window:
+                    return False, (
+                        "the exact checked head already contains main through "
+                        f"{included_base[:12]}; the widened queue-time window adds "
+                        "no newer main commit"
+                    )
+                break
+
         if len(window) == len(self.commits) and len(self.commits) >= MAIN_TIMELINE_PAGE:
             return True, (
                 f"the proof predates all {len(self.commits)} main commits this sweep "
@@ -1154,6 +1246,45 @@ def labeled_pulls(repo: str, token: str) -> list[dict[str, Any]]:
     if status >= 400 or not isinstance(payload, list):
         raise _read_failed(status, payload, "pull-request listing failed")
     return [pull for pull in payload if MERGE_ON_GREEN_LABEL in label_names(pull)]
+
+
+def in_flight_pr_proofs(repo: str, token: str) -> int | None:
+    """Repo-wide active pull-request ``ci.yml`` runs, or ``None`` if unreadable.
+
+    This is the controller's workload circuit breaker.  A per-sweep refresh cap
+    does not bound anything when green workflow completions start another sweep
+    every minute; active Actions runs are the durable state shared by those sweeps.
+    Five tiny ``per_page=1`` reads use GitHub's own status index and ``total_count``
+    so proofs outside the pull-list/evaluation window still consume capacity.
+
+    Unreadable is deliberately ``None`` rather than zero.  The caller pauses only
+    NEW ``update-branch`` work while continuing to judge and merge already-proven
+    heads; an API blip must not be interpreted as an empty runner pool.
+    """
+    total = 0
+    for run_status in ACTIVE_PR_PROOF_STATUSES:
+        query = urllib.parse.urlencode(
+            {
+                "event": "pull_request",
+                "status": run_status,
+                "per_page": "1",
+            }
+        )
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/actions/workflows/ci.yml/runs?{query}",
+            token,
+        )
+        count = (payload or {}).get("total_count") if isinstance(payload, dict) else None
+        if (
+            status >= 400
+            or not isinstance(count, int)
+            or isinstance(count, bool)
+            or count < 0
+        ):
+            return None
+        total += count
+    return total
 
 
 # ── the API budget ───────────────────────────────────────────────────────────
@@ -1250,6 +1381,7 @@ class SweepBudget:
         self.recheck_every = max(1, recheck_every)
         self.max_refreshes = max_refreshes
         self.refreshes_used = 0
+        self.refresh_context = ""
         self.polls = 0
         self.last_seen: int | None = None
         self.last_limit: int | None = None
@@ -2337,8 +2469,10 @@ def delete_head_ref(repo: str, pull: dict[str, Any], token: str) -> None:
     )
 
 
-def live_diff_file_count(repo: str, pull: dict[str, Any], token: str) -> int | None:
-    """File count of the LIVE three-dot compare `base...head`. None when unreadable.
+def live_diff_state(
+    repo: str, pull: dict[str, Any], token: str
+) -> tuple[int, str] | None:
+    """``(file_count, live_base_sha)`` for the LIVE ``base...head`` compare.
 
     This is the GROUND-TRUTH answer to "what would this squash merge apply",
     computed from the refs as they stand NOW. The pull request's own `files` view
@@ -2349,11 +2483,20 @@ def live_diff_file_count(repo: str, pull: dict[str, Any], token: str) -> int | N
     a disagreement never occurs. Emptiness of this compare alone is the signal
     `sweep_pull` refuses on.
 
+    The base SHA is returned too because the merge endpoint's ``sha`` fence protects
+    only the PR HEAD.  If main moved after :class:`ProofFreshness` took its snapshot,
+    a long sweep could otherwise merge against a base it never classified.  The
+    caller requires this live base to equal the frozen snapshot tip and retries on
+    the next level-triggered sweep when it does not. GitHub exposes no atomic
+    base-SHA compare-and-swap on this merge endpoint, so a tiny read-to-PUT race
+    remains; eliminating that last gap requires branch protection/native merge
+    queue semantics, while the exact-head SHA fence still closes the head side.
+
     Cost: one READ_TOKEN GET per pull request that reaches the merge step, inside
-    RATE_LIMIT_RESERVE's headroom. `per_page=1` bounds the commits array; `files`
-    rides the first page, and only its EMPTINESS is consulted, so GitHub's
-    300-file truncation cannot flip the answer (truncation needs >=300 files, and
-    any answer above zero already means "proceed").
+    RATE_LIMIT_RESERVE's headroom. ``per_page=1`` bounds the commits array; ``files``
+    rides the first page, and only its EMPTINESS is consulted, so GitHub's 300-file
+    truncation cannot flip the answer (truncation needs >=300 files, and any answer
+    above zero already means "proceed").
 
     The head side is the exact SHA this sweep judged, not the branch name: the
     checks and the freshness gate were both computed for that SHA, and a branch
@@ -2375,9 +2518,16 @@ def live_diff_file_count(repo: str, pull: dict[str, Any], token: str) -> int | N
     if status >= 400 or not isinstance(payload, dict):
         return None
     files = payload.get("files")
-    if not isinstance(files, list):
+    live_base_sha = str(((payload.get("base_commit") or {}).get("sha")) or "")
+    if not isinstance(files, list) or not live_base_sha:
         return None
-    return len(files)
+    return len(files), live_base_sha
+
+
+def live_diff_file_count(repo: str, pull: dict[str, Any], token: str) -> int | None:
+    """Backward-compatible file-count view of :func:`live_diff_state`."""
+    state = live_diff_state(repo, pull, token)
+    return state[0] if state is not None else None
 
 
 def already_settled(repo: str, number: Any, token: str) -> tuple[bool, str]:
@@ -2595,7 +2745,9 @@ def update_branch(repo: str, pull: dict[str, Any], token: str) -> str:
     return "retry"
 
 
-def refresh_deferred(number: Any, why: str) -> str:
+def refresh_deferred(
+    number: Any, why: str, budget: "SweepBudget | None" = None
+) -> str:
     """Leave a pull request untouched because the refresh budget is spent.
 
     NOT a `merge-blocked`, deliberately. The pull request has done nothing wrong —
@@ -2606,9 +2758,19 @@ def refresh_deferred(number: Any, why: str) -> str:
     _annotate(
         "notice",
         "merge-on-green",
-        f"PR #{number}: {why}, but this sweep has spent its "
-        f"{MAX_REFRESHES_PER_SWEEP} `update-branch` slots. Left armed and unlabeled; "
-        "the next sweep picks it up.",
+        f"PR #{number}: {why}, but this sweep has "
+        + (
+            f"{budget.refreshes_used}/{budget.max_refreshes} effective "
+            "`update-branch` attempt(s) in use"
+            if budget is not None
+            else f"spent its {MAX_REFRESHES_PER_SWEEP} `update-branch` slots"
+        )
+        + (
+            f" ({budget.refresh_context})"
+            if budget is not None and budget.refresh_context
+            else ""
+        )
+        + ". Left armed and unlabeled; the next sweep picks it up.",
     )
     return "refresh-deferred"
 
@@ -2640,7 +2802,7 @@ def reprove(
     """
     number = pull.get("number")
     if budget is not None and not budget.take_refresh():
-        return refresh_deferred(number, f"its proof is stale ({reason})")
+        return refresh_deferred(number, f"its proof is stale ({reason})", budget)
     _annotate(
         "notice",
         "merge-on-green",
@@ -2820,6 +2982,7 @@ def sweep_pull(
                     return refresh_deferred(
                         number,
                         "its red checks are all green on main, so it needs a refresh",
+                        budget,
                     )
                 update_result = update_branch(repo, pull, merge_token)
                 if update_result == "updated":
@@ -2883,8 +3046,8 @@ def sweep_pull(
     # costs nothing. One live compare, after every cheaper gate has passed and
     # immediately before the irreversible step. Likely clobber source:
     # `update_branch`'s docstring.
-    live_files = live_diff_file_count(repo, pull, read_token)
-    if live_files is None:
+    live_state = live_diff_state(repo, pull, read_token)
+    if live_state is None:
         # Fail closed WITHOUT accusing: a broken read must never become
         # permission to merge, but a blip is not evidence of a clobber either —
         # and `mark_blocked`'s comment is one-shot, so a false accusation would
@@ -2897,6 +3060,17 @@ def sweep_pull(
             "information. Left armed for the next sweep.",
         )
         return "error"
+    live_files, live_base_sha = live_state
+    if not freshness.snapshot_tip or live_base_sha != freshness.snapshot_tip:
+        _annotate(
+            "notice",
+            "merge-on-green",
+            f"PR #{number}: main moved from freshness snapshot "
+            f"{freshness.snapshot_tip[:12] or '?'} to {live_base_sha[:12]} before "
+            "the merge call. The exact-head proof is intact, but this sweep has not "
+            "classified the new base; left armed for a fresh snapshot.",
+        )
+        return "main-moved"
     if live_files == 0:
         added = mark_blocked(
             repo,
@@ -2943,12 +3117,54 @@ def sweep_pull(
         )
         return "empty-diff"
 
-    status, body = _request(
-        "PUT",
-        f"{GITHUB_API}/repos/{repo}/pulls/{number}/merge",
-        merge_token,
-        {"merge_method": "squash", "sha": head_sha},
-    )
+    def finish_ambiguous_merge(cause: str) -> str:
+        """Consume this snapshot after a merge whose outcome is not definitive."""
+        # The server may have accepted the irreversible write before the response
+        # body/connection failed. Never continue this main snapshot on an ambiguous
+        # outcome: first ask the PR, then hand the whole snapshot to the next sweep
+        # even when that re-read also fails.
+        try:
+            settled, how = already_settled(repo, number, read_token)
+        except Exception as reread_exc:
+            settled, how = False, ""
+            detail = f"; disposition re-read also failed ({reread_exc})"
+        else:
+            detail = ""
+        if settled:
+            _annotate(
+                "notice",
+                "merge-on-green",
+                f"PR #{number}: merge response was ambiguous ({cause}), but the "
+                f"live pull request is already {how}. Treating the snapshot as "
+                "consumed.",
+            )
+            return f"already-{how}"
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"PR #{number}: merge response was ambiguous ({cause}) and its outcome "
+            f"could not be confirmed{detail}. No conflict/update action taken; "
+            "ending this snapshot so the next sweep can re-read live state.",
+        )
+        return "merge-unknown"
+
+    try:
+        status, body = _request(
+            "PUT",
+            f"{GITHUB_API}/repos/{repo}/pulls/{number}/merge",
+            merge_token,
+            {"merge_method": "squash", "sha": head_sha},
+        )
+    except Exception as exc:
+        return finish_ambiguous_merge(f"transport error: {exc}")
+
+    # GitHub or an intermediary can emit a server response after the merge write
+    # was accepted. A 5xx is therefore not affirmative refusal evidence; classify
+    # it exactly like a truncated connection and never keep using this base snapshot.
+    if 500 <= status < 600:
+        message = str((body or {}).get("message") or f"HTTP {status}")
+        return finish_ambiguous_merge(f"HTTP {status}: {message}")
+
     if status == 200:
         _annotate(
             "notice",
@@ -2956,8 +3172,22 @@ def sweep_pull(
             f"PR #{number}: every check concluded clean — squash-merged "
             f"({str((body or {}).get('sha') or '')[:12]}).",
         )
-        clear_blocked(repo, pull, merge_token)
-        delete_head_ref(repo, pull, merge_token)
+        # Cleanup is genuinely best-effort. A label/ref read can fail after GitHub
+        # has accepted the merge; that must never hide the `merged` verdict and let
+        # main() continue using a snapshot the accepted write already consumed.
+        for cleanup_name, cleanup in (
+            ("clear merge-blocked", clear_blocked),
+            ("delete merged head ref", delete_head_ref),
+        ):
+            try:
+                cleanup(repo, pull, merge_token)
+            except Exception as exc:
+                _annotate(
+                    "warning",
+                    "merge-on-green cleanup",
+                    f"PR #{number}: squash merge succeeded, but could not "
+                    f"{cleanup_name} ({exc}). Merge remains successful.",
+                )
         return "merged"
 
     if status in {405, 409}:
@@ -2981,7 +3211,9 @@ def sweep_pull(
         if budget is not None and not budget.take_refresh():
             # No slots left to fast-forward it, and the refusal may be nothing but
             # a stale base — so this must NOT fall through to `merge-blocked`.
-            return refresh_deferred(number, f"GitHub refused the merge ({detail})")
+            return refresh_deferred(
+                number, f"GitHub refused the merge ({detail})", budget
+            )
         update_result = update_branch(repo, pull, merge_token)
         if update_result == "updated":
             # The head now carries main. It is UNPROVEN until its fresh checks
@@ -3245,6 +3477,34 @@ def main() -> int:
         print(f"No open pull requests labeled {MERGE_ON_GREEN_LABEL}.", flush=True)
         return 0
 
+    # GLOBAL workload backpressure, before any branch mutation. The old cap of eight
+    # PER SWEEP still launched dozens of CI runs when completed workflows started a
+    # new full sweep roughly every minute. Active ci.yml runs are the durable state
+    # shared by those sweeps, so only the genuinely free repo-wide slots remain
+    # available to `take_refresh`. An unreadable census means zero NEW workload, not
+    # zero merging: already-proven heads continue through every correctness gate.
+    refresh_load_detail = ""
+    try:
+        active_pr_proofs = in_flight_pr_proofs(repo, read_token)
+    except Exception as exc:
+        active_pr_proofs = None
+        refresh_load_detail = f"census failed ({exc}); new refreshes paused"
+    if active_pr_proofs is None:
+        budget.max_refreshes = 0
+        refresh_load_detail = refresh_load_detail or (
+            "census unreadable; new refreshes paused"
+        )
+    else:
+        available_refreshes = max(0, MAX_IN_FLIGHT_PR_PROOFS - active_pr_proofs)
+        budget.max_refreshes = min(budget.max_refreshes, available_refreshes)
+        refresh_load_detail = (
+            f"{active_pr_proofs} active pull-request ci run(s), global cap "
+            f"{MAX_IN_FLIGHT_PR_PROOFS}, {budget.max_refreshes} refresh attempt(s) "
+            "available this sweep"
+        )
+    budget.refresh_context = refresh_load_detail
+    print(f"PR proof load: {refresh_load_detail}.", flush=True)
+
     try:
         baseline_state, baseline_detail = integration_baseline_state(repo, read_token)
     except RateLimited as exc:
@@ -3401,6 +3661,24 @@ def main() -> int:
             )
             verdict = "error"
         tally[verdict] = tally.get(verdict, 0) + 1
+        if verdict in {"merged", "already-merged", "main-moved", "merge-unknown"}:
+            # Main-dependent state above is one immutable snapshot. The merge just
+            # advanced main, so using that snapshot for a second PR would skip the
+            # first merge's definition/surface change. One merge consumes the
+            # snapshot; the next level-triggered sweep rebuilds it from live main.
+            left = len(considered) - index - 1
+            if left:
+                tally["snapshot-deferred"] = (
+                    tally.get("snapshot-deferred", 0) + left
+                )
+            _annotate(
+                "notice",
+                "merge-on-green",
+                f"PR #{pull.get('number')}: verdict {verdict} consumed or invalidated "
+                "this immutable main freshness snapshot; ending it before judging "
+                f"{left} remaining pull request(s).",
+            )
+            break
 
     # AFTER the pull-request pass, deliberately: the dispatch decision needs to see
     # what this sweep was actually unable to answer, which only exists once the pass
@@ -3411,7 +3689,8 @@ def main() -> int:
         "merge-on-green sweep complete: "
         + ", ".join(f"{count} {verdict}" for verdict, count in sorted(tally.items()))
         + f" ({freshness.commit_file_reads} main commit(s) classified, "
-        + f"{budget.refreshes_used}/{MAX_REFRESHES_PER_SWEEP} refresh slot(s) used, "
+        + f"{budget.refreshes_used}/{budget.max_refreshes} effective refresh "
+        f"slot(s) used ({budget.refresh_context}), "
         + f"~{budget.last_seen if budget.last_seen is not None else '?'} API requests left"
         + f"; {proof.describe()}; baseline: {baseline}"
         + f"; source-baseline: {source_baseline})",
