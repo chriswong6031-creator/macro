@@ -226,9 +226,11 @@ budget deferred DID run, correctly, so that exits 0.
 
 from __future__ import annotations
 
+import base64
 import datetime as dt
 import json
 import os
+import re
 import secrets
 import sys
 import time
@@ -320,10 +322,10 @@ MAX_PULL_CAP = 100
 # live bucket is partly spent. These are deliberately pessimistic: the merge writes
 # normally charge MERGE_TOKEN, not READ_TOKEN, but counting them here makes an
 # admitted window affordable even on the fallback token.
-FULL_SWEEP_FIXED_REQUESTS = 81
+FULL_SWEEP_FIXED_REQUESTS = 87
 MAX_REQUESTS_PER_PULL = 19
-# A 25-pull reference pass now needs 81 fixed + 25 x up-to-19 + refresh headroom =
-# 536 in its pessimistic shape, so the floor funds useful work while preserving
+# A 25-pull reference pass now needs 87 fixed + 25 x up-to-19 + refresh headroom =
+# 542 in its pessimistic shape, so the floor funds useful work while preserving
 # room for other lanes in the ordinary cheaper shape. Larger buckets do
 # not need a proportionally larger dead zone: `pull_cap` shrinks to what the
 # remaining requests can actually afford.
@@ -957,6 +959,8 @@ class ProofFreshness:
         self._commit_files: dict[str, tuple[list[str], bool]] = {}
         self._commit_tree_shas: dict[str, str] = {}
         self._root_trees: dict[str, dict[str, tuple[str, str, str]]] = {}
+        self._recursive_trees: dict[str, dict[str, tuple[str, str, str]]] = {}
+        self._blobs: dict[str, bytes] = {}
         self._pr_files: dict[Any, list[str] | None] = {}
         # Exact checked head -> newest main commit already contained by that head.
         # This is a compatibility fallback for older/external check records that do
@@ -1056,10 +1060,121 @@ class ProofFreshness:
         self._commit_tree_shas[commit_sha] = tree_sha
         return tree_sha
 
+    def _recursive_tree(self, tree_sha: str) -> dict[str, tuple[str, str, str]]:
+        """Complete descendants of one bounded subtree, cached by tree object ID."""
+        cached = self._recursive_trees.get(tree_sha)
+        if cached is not None:
+            return cached
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{self.repo}/git/trees/{tree_sha}?recursive=1",
+            self.token,
+        )
+        if status >= 400 or not isinstance(payload, dict):
+            raise _read_failed(
+                status, payload, f"recursive tree {tree_sha[:12]} unreadable"
+            )
+        if payload.get("truncated") is True:
+            raise RuntimeError(f"recursive tree {tree_sha[:12]} was truncated")
+        entries: dict[str, tuple[str, str, str]] = {}
+        for raw in payload.get("tree") or []:
+            entry = raw or {}
+            path = str(entry.get("path") or "")
+            if not path:
+                continue
+            entries[path] = (
+                str(entry.get("type") or ""),
+                str(entry.get("mode") or ""),
+                str(entry.get("sha") or ""),
+            )
+        self._recursive_trees[tree_sha] = entries
+        return entries
+
+    def _blob(self, blob_sha: str) -> bytes:
+        cached = self._blobs.get(blob_sha)
+        if cached is not None:
+            return cached
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{self.repo}/git/blobs/{blob_sha}",
+            self.token,
+        )
+        if status >= 400 or not isinstance(payload, dict):
+            raise _read_failed(status, payload, f"blob {blob_sha[:12]} unreadable")
+        if str(payload.get("encoding") or "") != "base64":
+            raise RuntimeError(f"blob {blob_sha[:12]} has unsupported encoding")
+        try:
+            encoded = "".join(str(payload.get("content") or "").split())
+            content = base64.b64decode(encoded, validate=True)
+        except (ValueError, TypeError) as exc:
+            raise RuntimeError(f"blob {blob_sha[:12]} has invalid base64") from exc
+        self._blobs[blob_sha] = content
+        return content
+
+    @staticmethod
+    def _without_asset_stamps(content: bytes) -> bytes:
+        """Normalize only optimizer-owned terminal ``?v=<8 hex>`` URL stamps."""
+        return re.sub(
+            rb"([?]v=)[0-9a-f]{8}([\"'])",
+            rb"\1__ASSET_STAMP__\2",
+            content,
+        )
+
+    def _template_stamp_only_change(
+        self,
+        parent_entry: tuple[str, str, str] | None,
+        current_entry: tuple[str, str, str] | None,
+    ) -> bool:
+        """Prove the complete templates subtree changed only owned cache stamps."""
+        if (
+            parent_entry is None
+            or current_entry is None
+            or parent_entry[0] != "tree"
+            or current_entry[0] != "tree"
+        ):
+            return False
+        try:
+            parent_tree = self._recursive_tree(parent_entry[2])
+            current_tree = self._recursive_tree(current_entry[2])
+        except RuntimeError:
+            return False
+        changed = {
+            path
+            for path in parent_tree.keys() | current_tree.keys()
+            if parent_tree.get(path) != current_tree.get(path)
+        }
+        if not changed:
+            return False
+        for path in changed:
+            before = parent_tree.get(path)
+            after = current_tree.get(path)
+            # The public renderer stamps plain-copy HTML files only. Adds, deletes,
+            # nested/Jinja files, modes, and non-blob changes remain source changes.
+            if (
+                "/" in path
+                or not path.endswith(".html")
+                or before is None
+                or after is None
+                or before[:2] != after[:2]
+                or before[0] != "blob"
+            ):
+                return False
+            try:
+                old_content = self._blob(before[2])
+                new_content = self._blob(after[2])
+            except RuntimeError:
+                return False
+            if old_content == new_content or (
+                self._without_asset_stamps(old_content)
+                != self._without_asset_stamps(new_content)
+            ):
+                return False
+        return True
+
     def _truncated_pipeline_paths(
         self, sha: str, payload: dict[str, Any]
     ) -> list[str] | None:
-        """Prove a truncated commit changed only complete pipeline subtrees.
+        """Prove a truncated commit was derived pipeline output/stamp maintenance.
 
         ``None`` means the proof could not be made and the caller must keep the
         commit truncated/fail-closed.  Synthetic paths are sufficient downstream:
@@ -1086,7 +1201,8 @@ class ProofFreshness:
             if current_entries.get(path) != parent_entries.get(path)
         }
         pipeline_roots = {prefix.rstrip("/") for prefix in PIPELINE_TREES}
-        if not changed_roots or not changed_roots <= pipeline_roots:
+        allowed_roots = pipeline_roots | {"templates"}
+        if not changed_roots or not changed_roots <= allowed_roots:
             return None
         # A pipeline root may be added/deleted, but whenever it exists it must still
         # be a tree. A tree-to-blob replacement named `data` is not `data/**`.
@@ -1094,7 +1210,14 @@ class ProofFreshness:
             for entry in (parent_entries.get(root), current_entries.get(root)):
                 if entry is not None and entry[0] != "tree":
                     return None
-        return [f"{root}/__bulk_pipeline_tree__" for root in sorted(changed_roots)]
+        if "templates" in changed_roots and not self._template_stamp_only_change(
+            parent_entries.get("templates"), current_entries.get("templates")
+        ):
+            return None
+        return [
+            f"{root}/__bulk_pipeline_tree__"
+            for root in sorted(changed_roots & pipeline_roots)
+        ]
 
     def files_of(self, sha: str) -> tuple[list[str], bool]:
         """``(files, truncated)`` for one main commit. Cached for the whole sweep."""

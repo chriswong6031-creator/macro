@@ -14,6 +14,7 @@ list so the four outcomes are provable without a network.
 from __future__ import annotations
 
 import ast
+import base64
 import datetime as dt
 import json
 from pathlib import Path
@@ -2611,6 +2612,96 @@ def test_a_truncated_pipeline_bake_is_proven_by_complete_root_trees(monkeypatch)
         _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
     )
     assert not stale, reason
+
+
+@pytest.mark.parametrize("substantive_template_edit", [False, True])
+def test_a_large_public_render_proves_only_owned_template_asset_stamps(
+    monkeypatch, substantive_template_edit
+):
+    """The real e0ed5f89 shape changed thousands of site files plus one cache stamp.
+
+    GitHub returned 300 site rows and hid templates/chat.html, so the prior controller
+    re-proved every green PR. Complete root/subtree IDs plus exact blob normalization
+    admit the optimizer-owned stamp only; any other template byte keeps fail-closed.
+    """
+    sha, parent = "a" * 40, "b" * 40
+    current_root, parent_root = "c" * 40, "d" * 40
+    current_site, parent_site = "1" * 40, "2" * 40
+    current_templates, parent_templates = "3" * 40, "4" * 40
+    current_blob, parent_blob = "5" * 40, "6" * 40
+    freshness = MOG.ProofFreshness(
+        "acme/widgets",
+        "read",
+        _gates(),
+        [{"sha": sha}],
+    )
+
+    old = b'<link rel="stylesheet" href="theme.css?v=aaaaaaaa">\n<title>Chat</title>\n'
+    title = b"Changed" if substantive_template_edit else b"Chat"
+    new = b'<link rel="stylesheet" href="theme.css?v=bbbbbbbb">\n<title>' + title + b"</title>\n"
+
+    def tree(path, object_sha):
+        return {"path": path, "type": "tree", "mode": "040000", "sha": object_sha}
+
+    def blob(path, object_sha):
+        return {"path": path, "type": "blob", "mode": "100644", "sha": object_sha}
+
+    def encoded(content):
+        raw = base64.b64encode(content).decode("ascii")
+        return raw[:20] + "\n" + raw[20:]
+
+    def fake_request(method, url, token, payload=None):
+        assert method == "GET" and token == "read" and payload is None
+        if url.endswith(f"/commits/{sha}") and "/git/" not in url:
+            return 200, {
+                "commit": {"tree": {"sha": current_root}},
+                "parents": [{"sha": parent}],
+                "files": [
+                    {"filename": f"site/page-{index}.html"} for index in range(300)
+                ],
+            }
+        if url.endswith(f"/git/commits/{parent}"):
+            return 200, {"tree": {"sha": parent_root}}
+        if url.endswith(f"/git/trees/{current_root}"):
+            return 200, {
+                "truncated": False,
+                "tree": [
+                    tree("site", current_site),
+                    tree("templates", current_templates),
+                ],
+            }
+        if url.endswith(f"/git/trees/{parent_root}"):
+            return 200, {
+                "truncated": False,
+                "tree": [
+                    tree("site", parent_site),
+                    tree("templates", parent_templates),
+                ],
+            }
+        if url.endswith(f"/git/trees/{current_templates}?recursive=1"):
+            return 200, {
+                "truncated": False,
+                "tree": [blob("chat.html", current_blob)],
+            }
+        if url.endswith(f"/git/trees/{parent_templates}?recursive=1"):
+            return 200, {
+                "truncated": False,
+                "tree": [blob("chat.html", parent_blob)],
+            }
+        if url.endswith(f"/git/blobs/{current_blob}"):
+            return 200, {"encoding": "base64", "content": encoded(new)}
+        if url.endswith(f"/git/blobs/{parent_blob}"):
+            return 200, {"encoding": "base64", "content": encoded(old)}
+        raise AssertionError(url)
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    files, truncated = freshness.files_of(sha)
+    if substantive_template_edit:
+        assert truncated, "a real template edit hidden beyond row 300 must re-prove"
+        assert len(files) == 300
+    else:
+        assert not truncated
+        assert files == ["site/__bulk_pipeline_tree__"]
 
 
 def test_a_truncated_commit_with_any_changed_source_root_stays_fail_closed(monkeypatch):
