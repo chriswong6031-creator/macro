@@ -102,9 +102,17 @@ EXTERNAL_BLOCKERS = {
 # Keep this list closed and hardcoded rather than environment-driven — it is a
 # hole in the dirty gate, so it has to be reviewable in the diff, and a lever
 # that could widen it to `/` would turn the gate off.
+#
+# 2026-08-11: `.codex/worktrees/` was missing and had grown to 55 live checkouts,
+# so a session that touched nothing blocked at Stop on another fleet's tree. The
+# same list is duplicated in `.gitignore` and `config/worktree_gc.json`; a root
+# added to one and not the others is invisible here (false block), untracked in
+# every `git status`, and unreachable by the GC. `tests/test_agent_worktree_roots.py`
+# pins the three in step — extend all three together.
 AGENT_WORKTREE_ROOTS = (
     ".claude/worktrees/",
     ".claire/worktrees/",
+    ".codex/worktrees/",
     ".codex-worktrees/",
 )
 # The pure CI-handoff contract (`mastermind.ci_handoff.v1`). Loaded BY FILE PATH,

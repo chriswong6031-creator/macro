@@ -47,6 +47,10 @@ concurrency:
   # uses a rebase-retry loop, so running concurrently with a batch job is race-safe.
   # cancel-in-progress stays false: a queued daily still runs (two simultaneous
   # dailies would simply dedup to the latest).
+  # 2026-08-12 incident note: when this FILE exceeds ~512,000 bytes GitHub stops
+  # processing the workflow SILENTLY — cron does not fire and dispatched runs sit
+  # queued with zero jobs forever (uncancellable, HTTP 500). Guard:
+  # tests/test_workflow_file_size.py. Shrink by extraction, never by deleting docs.
   group: pipeline-daily
   cancel-in-progress: false
 

@@ -974,13 +974,24 @@ lanes:
           live_flow event stage (never capped feed_current), validates the monotonic
           checkpoint, freezes exact decision episodes, and accrues explicitly labeled
           aligned-bar H+60 proxies plus separate EOD/1d/3d/5d/10d declared-session-close
-          outcomes from the same receipt-bound intraday cache. It then derives the
-          zero-authority exact-contract first-prefix campaign ledger from persisted
-          episodes and reloaded H+60 rows before advancing the checkpoint. The H+60
-          v1 ledger remains unchanged. All decision and training authority is false;
+          outcomes from the same receipt-bound intraday cache before advancing the
+          checkpoint. The H+60 v1 ledger and preserved legacy campaign bytes remain
+          unchanged. All decision and training authority is false;
           coarse/delayed measurements are training_eligible=false. Runs serially
           after build_session_digest and advances all committed ledgers before the
           source checkpoint, only in COLLECT_LANE=nightly. Non-fatal.
+      - id: build_options_signal_campaign
+        module: scripts.build_options_signal_campaign
+        note: >
+          OIP canonical campaign v2 learning seam. Runs only after the episode writer
+          succeeds and consumes exact immutable prefixes of episodes plus H+60 and
+          declared-session outcomes. Appends versioned exact-contract campaign
+          revisions and final-member-anchored causal outcome rows, then advances an
+          independent deterministic checkpoint last. The frozen v1 threshold cohort
+          is neither read nor written. All selection, score, rank, gate, sizing,
+          trading, publication, training, Neural Web, and Prophet authority remains
+          false. The normal nightly lane is the sole advancer; non-nightly invocation
+          fails closed.
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >
@@ -1317,9 +1328,17 @@ lanes:
           from persisted regime artifacts — no LLM calls). Runs AFTER collect
           (release-day capture needs same-night ALFRED vintage refresh).
           display_only=True; all authority booleans False (MRI-R7).
+          Wave 2B adds coherent_ridge_v1 as a fail-closed CPI shadow only after
+          the frozen model registry and complete Wave 2A history/parity receipt
+          validate. It has zero combined_v1 weight and no promotion authority.
           Ledger is append-only (MRI-R8); idempotent per asof_night.
           inputs: [data/fred_vintage/vintages.parquet,
                    data/fred_vintage/release_targets/manifest.json,
+                   data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json,
+                   data/release_forecast/cpi_truth/parity_report.json,
+                   data/release_forecast/cpi_truth/build_completion.json,
+                   config/release_forecast_model_registry.yml,
+                   research/release_forecast/PREREG_COHERENT_RIDGE_V1.md,
                    data/release_forecast/official_actuals.jsonl,
                    data/release_forecast/defect_notices.json,
                    data/cleveland_nowcast/nowcast.parquet,
@@ -3240,6 +3259,25 @@ divergences:
 
   # ── DOCUMENTED ──────────────────────────────────────────────────────────
 
+  # lanes carries both the workflow shorthand and the job name: the checker's
+  # divergence lookup matches on either, and for "<path> / <job>" lane keys the
+  # job-name branch is the one that resolves (see _covered_by_divergence).
+  - lanes: [daily, engine]
+    differs: >
+      engine job omits scripts.build_options_signal_campaign and its checkpoint
+      step (OIP campaign v2 deferred out of the live workflow)
+    reason: >
+      2026-08-12 workflow-size incident (#5416): daily.yml crossed GitHub's
+      silent ~512,000-byte processing cap and the nightly stranded jobless, so
+      the #5362 campaign-v2 steps were deferred out of the live workflow to get
+      back under the cap. The lane declaration is retained ON PURPOSE so this
+      divergence, the episode suite's deferral pin
+      (tests/test_options_signal_episode.py), and chip task_a1298313 all point
+      at the same restoration: diet daily.yml by extracting inline scripts,
+      then re-land the steps verbatim and delete this entry. Size guard:
+      tests/test_workflow_file_size.py.
+    evidence: "PR #5416; tests/test_workflow_file_size.py docstring"
+
   - lanes: [engine-render]
     differs: >
       cl_gex omits scripts.build_gex_board (daily/render include it)
@@ -4508,3 +4546,34 @@ modules:
       risk legs FORBIDDEN (DNR:KILL-CALENDAR-GATED-RISK). Pre-FOMC drift expected DEAD post-2016
       (house ruling). cl_gex cluster (daily.yml), after build_vol_regime so
       site/vol/regime.json is available.
+
+  # Host-private MomoEdge same-basis outcome lane. It is launchd-owned rather
+  # than a GitHub workflow and publishes no raw or exact competitor artifact.
+  - module: scripts.capture_options_nbbo_cohort
+    reads:
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/events.jsonl
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/captures.jsonl
+      - http://127.0.0.1:25503/v3/option/history/quote
+    writes:
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/events.jsonl
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/captures.jsonl
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/event_evidence/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/capture_evidence/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/HEAD.json
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/observations/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/source_responses/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/snapshots/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/.staging/
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/.advance.lock
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/.store.lock
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/.events.lock
+      - /Users/chriswong/.mastermind_private/options_nbbo_cohort_v1/.captures.lock
+    impure: true
+    needs_secrets: false
+    event_driven: true
+    note: >
+      Five-minute M1 launchd lane. Licensed OPRA access is localhost-only; user-
+      controlled MomoEdge authentication remains outside this unarmed prerequisite;
+      all raw responses remain private. Empty producers record unavailable coverage,
+      never fabricated clocks or abstentions. Every score, rank, issue, trade, publication, training,
+      Prophet, Neural Web, and completion authority flag is false.
