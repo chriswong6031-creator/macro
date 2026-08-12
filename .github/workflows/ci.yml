@@ -224,6 +224,16 @@ on:
       - "scripts/research/momoedge_oracle_history_replay.py"
       - "tests/test_momoedge_oracle_history_replay.py"
       - "research/momoedge/history_replay_wave0_receipt.json"
+      # Host-private prospective same-basis OPRA NBBO cohort. Raw capture and
+      # quote bytes never enter git; this trigger owns only code/contracts/tests.
+      - "contracts/options/options.prospective_nbbo_cohort.v1.schema.json"
+      - "engine/options_nbbo_cohort.py"
+      - "scripts/capture_options_nbbo_cohort.py"
+      - "ops/launchd/com.mastermind.optionsnbbocohort.plist"
+      - "ops/launchd/run_options_nbbo_cohort_loop.sh"
+      - "docs/runbooks/OPTIONS_NBBO_COHORT.md"
+      - "tests/test_options_nbbo_cohort.py"
+      - "tests/test_options_nbbo_cohort_deploy.py"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
@@ -1274,6 +1284,10 @@ on:
       # subject is .github/workflows/daily.yml (already covered above); this entry is
       # the other half — a PR editing only the gate's test must reach its own guard.
       - "tests/test_daily_et_gate.py"
+      # 2026-08-12 (#5416) workflow size cap: the guard test must reach its own
+      # suite when only the test itself is edited (same one-sided-trigger trap
+      # as the et_gate entry above; workflow files are already path-covered).
+      - "tests/test_workflow_file_size.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).

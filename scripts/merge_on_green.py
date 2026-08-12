@@ -54,22 +54,21 @@ one. The sweeper now asks GitHub to merge main into the head itself
 applied exactly as before. The merge gate is unchanged: an updated head is
 UNPROVEN until its fresh checks conclude, and a later sweep judges it on those.
 
-CONCURRENT SWEEPS ARE ALLOWED (2026-08-06). The workflow no longer serialises
-this lane. The old `concurrency: {group: merge-on-green, cancel-in-progress:
-false}` did not serialise WORK — it serialised the wait for a GitHub-hosted
-runner, which is 25-107 minutes here because `ci` and `fences` saturate the same
-pool, while the sweep itself takes 46 seconds. GitHub keeps one pending run per
-group and cancels it on each new arrival, so with triggers every 50 s the lane
-managed 0 successful sweeps in 100 consecutive runs. The full measurement is in
-.github/workflows/merge-on-green.yml.
+REDUNDANT FULL SWEEPS ARE COALESCED (2026-08-11). The old workflow-wide constant
+group did not serialise WORK — it serialised the 25-107 minute wait for a shared
+GitHub-hosted runner while triggers arrived every ~50 seconds, yielding 0
+successful sweeps in 100 runs. The job now has a dedicated runner and a job-level
+group: success/schedule/dispatch events share one level-triggered `sweep`, while
+failure marker passes are keyed by head SHA so different reds cannot swallow one
+another. The full measurement is in .github/workflows/merge-on-green.yml.
 
-Overlap is safe because this is a LEVEL-TRIGGERED RECONCILER: every run re-lists
-the labeled pull requests and re-derives every verdict from GitHub's live state,
-and no state is carried between runs. Losing a wake-up therefore costs nothing so
-long as some sweep runs; running two at once costs a few duplicate reads. The one
-genuine race — a losing sweep reading "another sweep already merged this" as a
-conflict and labelling a merged PR `merge-blocked` — is guarded by
-`already_settled`, which is called before any 405/409 is allowed to mean conflict.
+This remains a LEVEL-TRIGGERED RECONCILER: every full run re-lists the labeled
+pull requests and re-derives every verdict from GitHub's live state, carrying no
+state between runs. Losing a redundant full wake-up therefore costs nothing so
+long as one sweep runs. Live-state race guards remain defense in depth for
+pre-deploy jobs and out-of-band callers: `already_settled` and the expected-head
+reread prevent a stale actor from labeling a merged or newly advanced PR as a
+conflict.
 
 A GREEN CAN GO STALE WITHOUT GOING RED (operator ruling 2026-08-06). Everything
 above judges a head's checks. Nothing above asked WHEN they were computed, and a
@@ -154,11 +153,12 @@ starves, nothing merges, the backlog stays big.
 So the sweep is now BUDGET-AWARE, in three places. It preflights `GET
 /rate_limit` (which does not itself count against the core budget) and DEFERS —
 exit 0 with a notice, never a red run — when the remaining budget cannot fund a
-useful pass. It evaluates at most `MAX_PULLS_PER_SWEEP` pull requests per run,
-in a rotating order that no pull request can be starved out of, and it says which
-ones it deferred. And it re-reads the budget as it goes, stopping cleanly rather
-than dying half-way through on a 403. A deferred sweep merges strictly FEWER pull
-requests than a full one, never more.
+useful pass. It sizes the pull-request window from the live core limit (25 at the
+historical 1,000/hour limit, up to 100 on Enterprise), in a rotating order that no
+pull request can be starved out of, and it says which ones it deferred. And it
+re-reads the budget as it goes, stopping cleanly rather than dying half-way
+through on a 403. A deferred sweep merges strictly FEWER pull requests than a
+full one, never more.
 
 A COMMIT WALK CANNOT FIND MAIN'S PROOF ON A HIGH-VELOCITY BRANCH (measured
 2026-08-08). The base-inherited-red path below is the mechanism that drains the
@@ -277,27 +277,32 @@ REQUEST_TIMEOUT_SECONDS = 30
 # ~121 calls for 93 pull requests, i.e. ~1 call per pull request plus the fixed
 # overhead and ~4 more for each clean-but-refused one.
 #
-# MAX_PULLS_PER_SWEEP is the load-bearing one. The observed peak sweep rate is 28
-# non-skipped runs in an hour, so a sweep must cost at most 1000/28 = ~35 calls to
-# be sustainable at that rate. Fixed overhead against READ_TOKEN is ~9 (1 listing +
-# ~3 baseline + 1 main timeline + 4 for `main_proof` — two workflows x (newest run +
-# its jobs)); `ensure_main_baseline`'s 2 calls are charged to MERGE_TOKEN, a
-# different bucket, and are deliberately NOT counted here. The `fixed = 12` this
-# floor was sized against therefore now carries ~3 calls of headroom rather than
-# being exact, which is the safe direction. That leaves ~23. 25 is the chosen cap:
-# marginally above that steady-state
-# figure, because the sweep rate only peaks at 28 and RATE_LIMIT_RESERVE stops the
-# pass cleanly if a run does overshoot. Uncapped, the same 28 sweeps cost ~3,400
-# calls and empty the bucket in the first 8 of them.
-MAX_PULLS_PER_SWEEP = 25
-# Do not START a sweep below this. A capped pass needs ~12 fixed + 25 x up-to-5 +
-# a few writes ~= 150 in its worst shape, so 200 both funds the pass and leaves the
-# last fifth of the bucket to the OTHER lanes that read main with GITHUB_TOKEN —
-# a merge sweeper starving render.yml would just move the outage.
+# The historical 1,000/hour pool proved that 25 pull requests per sweep is
+# sustainable: fixed overhead is ~12 calls and the common case costs ~1 call per
+# pull request. The Enterprise transfer raised this repository's live limit to
+# 15,000/hour, but the old fixed cap kept deferring a 29-pull backlog with 14,904
+# calls still available (run 31536402658). Scale from the proven 25/1,000 ratio,
+# but stop at the pull-list API's 100-item page. If the quota cannot be read, the
+# known-safe 25 remains the fallback.
+REFERENCE_CORE_LIMIT = 1_000
+FALLBACK_PULL_CAP = 25
+MAX_PULL_CAP = 100
+# Fixed overhead and worst-case marginal cost used to shrink the window when the
+# live bucket is partly spent. These are deliberately pessimistic: the merge writes
+# normally charge MERGE_TOKEN, not READ_TOKEN, but counting them here makes an
+# admitted window affordable even on the fallback token.
+FULL_SWEEP_FIXED_REQUESTS = 12
+MAX_REQUESTS_PER_PULL = 6
+# A 25-pull reference pass needs ~12 fixed + 25 x up-to-5 + a few writes ~= 150,
+# so 200 funds useful work and preserves room for other lanes. Larger buckets do
+# not need a proportionally larger dead zone: `pull_cap` shrinks to what the
+# remaining requests can actually afford.
 RATE_LIMIT_FLOOR = 200
-# Stop MID-sweep below this. Covers the in-flight pull request's remaining reads
-# and writes (the pre-merge live-compare read, merge, label, comment, delete-ref)
-# plus the calls that can be spent between two budget polls, so the stop is clean
+# A mark-only failure wake-up costs ~4-8 calls and protects a correctness marker,
+# so it has a separate small floor instead of inheriting the full-sweep floor.
+MARK_ONLY_RATE_LIMIT_FLOOR = 20
+# Mid-sweep reserve. It covers the in-flight pull request's remaining reads and
+# writes plus the calls spendable between two budget polls, so the stop is clean
 # rather than a 403 half-way through.
 RATE_LIMIT_RESERVE = 60
 # Poll `GET /rate_limit` every N evaluated pull requests rather than every one. It
@@ -311,7 +316,7 @@ BUDGET_RECHECK_EVERY = 5
 # one 46-second sweep would queue ~84 pack runs and jam CI for days. 8 drains the
 # same backlog over ~11 sweeps, which at the observed sweep rate is under an hour.
 MAX_REFRESHES_PER_SWEEP = 8
-# The rotation advances by MAX_PULLS_PER_SWEEP every bucket, so every armed pull
+# The rotation advances by the live pull cap every bucket, so every armed pull
 # request enters the window within ceil(N / cap) buckets — ~40 minutes for a
 # 93-PR backlog. Ten minutes matches the recovery cron; the sweeper keeps NO state
 # between runs (it is a level-triggered reconciler), so the clock IS the cursor.
@@ -323,7 +328,12 @@ ROTATION_BUCKET_SECONDS = 600
 # changed the jobs, the packs, or the path filters themselves, so no pull request's
 # existing green still describes the checks that would run now. Always re-prove,
 # whatever the PR's own footprint is.
-CI_DEFINITION_TREES = (".github/workflows/", ".github/ci/")
+CI_DEFINITION_TREES = (".github/ci/",)
+# Stable proof publishers remain definitions even if the commit being classified
+# removed or broke their `pull_request` trigger. Dynamic gates below add future PR
+# workflows; this registry preserves historical identity for the two proofs the
+# merger itself consumes.
+MAIN_PROOF_WORKFLOWS = ("ci.yml", "fences.yml")
 # Trees this repository's OWN lanes rewrite on main, continuously, without a human
 # editing anything: render.yml bakes `site/` out of `templates/`, and the nightly is
 # the sole advancer of the `data/` ledgers (house law). A main commit whose ENTIRE
@@ -814,6 +824,18 @@ class ProofFreshness:
         self.repo = repo
         self.token = token
         self.gates = gates
+        # A workflow changes the PR proof only when it actually runs on pull
+        # requests. Dispatch-only/render/publisher workflow edits do not change
+        # what a PR's green means and must not send the entire queue through CI
+        # again. `load_pr_gates` is the source of truth, so a future PR workflow
+        # joins this set automatically.
+        self.ci_definition_files = {
+            f".github/workflows/{name}"
+            for gate in gates
+            if (name := str(gate.get("workflow") or ""))
+        } | {
+            f".github/workflows/{name}" for name in MAIN_PROOF_WORKFLOWS
+        }
         # Newest first, as GitHub returns them.
         self.commits = commits
         self._commit_files: dict[str, tuple[list[str], bool]] = {}
@@ -1085,7 +1107,11 @@ class ProofFreshness:
                     f"main commit {commit['sha'][:12]} changed too many files to list, "
                     "so it cannot be shown to be outside the surface"
                 )
-            if any(name.startswith(CI_DEFINITION_TREES) for name in files):
+            if any(
+                name.startswith(CI_DEFINITION_TREES)
+                or name in self.ci_definition_files
+                for name in files
+            ):
                 return True, (
                     f"main commit {commit['sha'][:12]} changed the check definitions "
                     "themselves, so no existing green describes the checks that run now"
@@ -1175,12 +1201,48 @@ def core_rate_limit(token: str) -> tuple[int, int] | None:
     return remaining, limit
 
 
+def pull_cap_for_limit(limit: Any) -> int:
+    """Pull requests a full sweep may inspect under an API core limit.
+
+    The 25-at-1,000 baseline is measured production behavior, not a guessed
+    request cost. Scaling that ratio preserves the old budget share after an
+    account-tier change; the 100 ceiling matches the single pull-list page and
+    keeps one reconciliation bounded. An unreadable or malformed limit falls
+    back to the known-safe baseline.
+    """
+    if not isinstance(limit, int) or isinstance(limit, bool) or limit <= 0:
+        return FALLBACK_PULL_CAP
+    return min(
+        MAX_PULL_CAP,
+        max(FALLBACK_PULL_CAP, limit * FALLBACK_PULL_CAP // REFERENCE_CORE_LIMIT),
+    )
+
+
+def pull_cap_for_budget(
+    remaining: Any,
+    limit: Any,
+    *,
+    reserve: int = RATE_LIMIT_RESERVE,
+    max_refreshes: int = MAX_REFRESHES_PER_SWEEP,
+) -> int:
+    """Quota-scaled cap narrowed to what the remaining bucket can afford."""
+    quota_cap = pull_cap_for_limit(limit)
+    if not isinstance(remaining, int) or isinstance(remaining, bool):
+        return quota_cap
+    spendable = (
+        remaining - reserve - FULL_SWEEP_FIXED_REQUESTS - max_refreshes
+    )
+    affordable = max(1, spendable // MAX_REQUESTS_PER_PULL)
+    return min(quota_cap, affordable)
+
+
 class SweepBudget:
     """How much API budget this sweep may spend, asked repeatedly as it spends it.
 
-    One object per sweep. Three questions, three answers:
+    One object per sweep. Four questions, four answers:
 
       `preflight()`   — may this sweep start at all?
+      `pull_cap`      — how wide may this live-quota sweep be?
       `may_continue()`— may it evaluate another pull request?
       `take_refresh()`— may it spend an `update-branch` (a write AND a CI run)?
 
@@ -1194,39 +1256,58 @@ class SweepBudget:
         token: str,
         *,
         floor: int = RATE_LIMIT_FLOOR,
+        mark_only_floor: int = MARK_ONLY_RATE_LIMIT_FLOOR,
         reserve: int = RATE_LIMIT_RESERVE,
         recheck_every: int = BUDGET_RECHECK_EVERY,
         max_refreshes: int = MAX_REFRESHES_PER_SWEEP,
     ) -> None:
         self.token = token
         self.floor = floor
+        self.mark_only_floor = mark_only_floor
         self.reserve = reserve
         self.recheck_every = max(1, recheck_every)
         self.max_refreshes = max_refreshes
         self.refreshes_used = 0
         self.polls = 0
         self.last_seen: int | None = None
+        self.last_limit: int | None = None
 
     def _poll(self) -> tuple[int, int] | None:
         reading = core_rate_limit(self.token)
         self.polls += 1
         if reading is not None:
-            self.last_seen = reading[0]
+            self.last_seen, self.last_limit = reading
         return reading
 
-    def preflight(self) -> tuple[bool, str]:
+    @property
+    def pull_cap(self) -> int:
+        """The current full-sweep window, safe-fallback when quota is unreadable."""
+        return pull_cap_for_budget(
+            self.last_seen,
+            self.last_limit,
+            reserve=self.reserve,
+            max_refreshes=self.max_refreshes,
+        )
+
+    def preflight(self, *, mark_only: bool = False) -> tuple[bool, str]:
         """``(may_sweep, detail)``. False means defer — exit 0, not a red run."""
         reading = self._poll()
         if reading is None:
             return True, "the rate limit could not be read; sweeping anyway"
         remaining, limit = reading
-        if remaining < self.floor:
+        floor = self.mark_only_floor if mark_only else self.floor
+        if remaining < floor:
+            work = "failure-marker pass" if mark_only else f"{self.pull_cap}-pull sweep"
             return False, (
                 f"only {remaining} of {limit} core API requests remain, below the "
-                f"{self.floor} a capped sweep needs. Nothing was swept and nothing "
+                f"{floor} a {work} needs. Nothing was swept and nothing "
                 "is broken — the budget refills hourly and the next trigger retries"
             )
-        return True, f"{remaining} of {limit} core API requests available"
+        work = "failure-marker pass" if mark_only else f"full-sweep cap {self.pull_cap}"
+        return True, (
+            f"{remaining} of {limit} core API requests available; "
+            f"{work}"
+        )
 
     def may_continue(self, evaluated: int) -> tuple[bool, str]:
         """``(keep_going, detail)`` before evaluating pull request number N.
@@ -1266,7 +1347,7 @@ def sweep_order(
     *,
     trigger_head_sha: str = "",
     now: float | None = None,
-    cap: int = MAX_PULLS_PER_SWEEP,
+    cap: int = FALLBACK_PULL_CAP,
     bucket_seconds: int = ROTATION_BUCKET_SECONDS,
 ) -> list[dict[str, Any]]:
     """Order the armed pull requests so a capped sweep is fair AND useful.
@@ -1532,8 +1613,8 @@ def ensure_integration_baseline(repo: str, token: str, baseline_state: str) -> s
     `INTEGRATION_BASELINE_MIN_INTERVAL_MINUTES` means one was ordered too recently to
     order another. That single rule covers the `requested`/`waiting`/`pending` statuses
     a `status=in_progress`+`status=queued` pair would miss, the read-then-write race
-    between overlapping sweeps (this workflow deliberately carries no `concurrency:`
-    block), and the window between a successful dispatch and the run becoming visible.
+    between pre-deploy/out-of-band sweeps, and the window between a successful
+    dispatch and the run becoming visible.
     See `INTEGRATION_BASELINE_MIN_INTERVAL_MINUTES` for why a raced dispatch is
     genuinely harmful here rather than merely wasteful. It is a BOUND, not a lock:
     two sweeps inside the same second still see the same pre-dispatch state, and what
@@ -1656,7 +1737,11 @@ def ensure_integration_baseline(repo: str, token: str, baseline_state: str) -> s
 #: from the other direction. `ci-gate` is the stable AGGREGATE name, published on every
 #: non-closed event by both sides; it is the one to hand branch protection or an
 #: external controller, since no individual `ci-pack-N` is guaranteed to appear.
-MAIN_PROOF_WORKFLOWS = ("ci.yml", "fences.yml")
+#:
+#: `MAIN_PROOF_WORKFLOWS` itself now lives with the tested-surface gate above (#5397,
+#: which needs it to build `.github/workflows/<name>` before this point in the file).
+#: This block stays here because it documents WHY those two workflows are the proof
+#: and what the anchor position means, which is what `MAIN_BASELINE_WORKFLOW` reads.
 MAIN_BASELINE_WORKFLOW = MAIN_PROOF_WORKFLOWS[0]
 #: How many completed runs to look back through, per workflow, for one that CONCLUDED.
 #: `status=completed` includes `cancelled`, and until 2026-08-09 `fences.yml` cancelled
@@ -1681,9 +1766,9 @@ MAIN_PROOF_MAX_AGE_HOURS = 3
 #: The floor between two sweeper-ordered baselines, and the STRUCTURAL bound on the
 #: dispatch rate — the one guard that does not depend on the proof being datable.
 #:
-#: Sweeps overlap by design (merge-on-green.yml carries no `concurrency:` block, and
-#: `ci`/`fences`/`integration-baseline` completions can wake three within seconds), so
-#: "is one already running?" is a read-then-write race that all of them can win. That
+#: The job-level group now coalesces full sweeps, but this interval remains defense in
+#: depth for pre-deploy jobs and out-of-band callers: "is one already running?" is a
+#: read-then-write race that more than one actor can win. That
 #: race used to be catastrophic rather than wasteful: ci.yml ran every ref under
 #: `cancel-in-progress: true`, so a dispatch on main landed in `ci-refs/heads/main`
 #: and a SECOND dispatch CANCELLED THE FIRST — 31148430602/31151246743 (2026-08-07,
@@ -2073,9 +2158,8 @@ def ensure_main_baseline(
     queries an earlier revision used, and the difference is not cosmetic:
 
       * those two left `requested`, `waiting` and `pending` entirely unchecked;
-      * they were a read-then-write race between overlapping sweeps (this workflow
-        deliberately carries no `concurrency:` block, and three wake-ups can arrive
-        within seconds); until 2026-08-09 a raced dispatch even CANCELLED the
+      * they were a read-then-write race between pre-deploy/out-of-band sweeps;
+        until 2026-08-09 a raced dispatch even CANCELLED the
         in-flight proof (ci.yml then cancelled newest-wins on every ref — #5136
         exempts dispatches, so the racing loser merely overwrites the queued
         pending slot);
@@ -2341,13 +2425,14 @@ def live_diff_file_count(repo: str, pull: dict[str, Any], token: str) -> int | N
 def already_settled(repo: str, number: Any, token: str) -> tuple[bool, str]:
     """Did this pull request already merge (or close) out from under this sweep?
 
-    WHY (2026-08-06). Sweeps may now overlap. The workflow-level `concurrency`
-    group that used to serialise them was removed because it did not serialise
+    WHY (2026-08-06). Sweeps could overlap, and pre-deploy or out-of-band runs can
+    still race. The workflow-level `concurrency` group that used to serialise them
+    was removed because it did not serialise
     work — it serialised a multi-hour wait for a GitHub-hosted runner, and killed
     98 of 100 consecutive sweeps in the pending slot while doing it (see the
     postmortem in .github/workflows/merge-on-green.yml).
 
-    Overlapping sweeps are safe by construction almost everywhere: this script is
+    Raced sweeps are safe by construction almost everywhere: this script is
     a level-triggered reconciler that re-reads every labeled pull request and
     re-derives every verdict from GitHub's live state, carrying nothing across
     runs. Re-reading a check twice costs a call and changes nothing; two sweeps
@@ -2381,8 +2466,58 @@ def already_settled(repo: str, number: Any, token: str) -> tuple[bool, str]:
     return False, ""
 
 
-def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
-    """Merge `main` into a clean-but-stale head. True when GitHub accepted it.
+def pull_disposition(
+    repo: str,
+    number: Any,
+    expected_head_sha: str,
+    token: str,
+) -> tuple[str, str, str]:
+    """Current PR disposition after a write raced live state.
+
+    Returns ``(kind, live_head_sha, mergeable_state)`` where kind is ``merged``,
+    ``closed``, ``head-moved``, ``open`` or ``unreadable``. A changed head is
+    deliberately distinct from a conflict: it proves only that another updater
+    or the owner moved the ref after this sweep judged it. The new head must be
+    checked on a later pass; accusing it of a content conflict would be stale.
+    """
+    status, payload = _request(
+        "GET", f"{GITHUB_API}/repos/{repo}/pulls/{number}", token
+    )
+    if status >= 400 or not isinstance(payload, dict):
+        return "unreadable", "", ""
+    if payload.get("merged") is True:
+        return "merged", "", ""
+    if str(payload.get("state") or "").lower() == "closed":
+        return "closed", "", ""
+    live_head = str(((payload.get("head") or {}).get("sha")) or "")
+    mergeable_state = str(payload.get("mergeable_state") or "").lower()
+    if expected_head_sha and live_head and live_head != expected_head_sha:
+        return "head-moved", live_head, mergeable_state
+    return "open", live_head, mergeable_state
+
+
+def expected_head_mismatch(detail: str) -> bool:
+    """Does GitHub definitively say the expected-SHA fence rejected a moved head?"""
+    normalized = " ".join(detail.lower().replace("’", "'").split())
+    mismatch = any(
+        phrase in normalized
+        for phrase in ("didn't match", "did not match", "does not match")
+    )
+    return (
+        "expected head sha" in normalized
+        and mismatch
+        and ("current head" in normalized or "head ref" in normalized)
+    )
+
+
+def update_branch_conflict(detail: str) -> bool:
+    """Affirmative conflict language, not a generic 422 validation response."""
+    normalized = " ".join(detail.lower().split())
+    return "merge conflict" in normalized or "merge conflicts" in normalized
+
+
+def update_branch(repo: str, pull: dict[str, Any], token: str) -> str:
+    """Merge `main` into a judged head and classify any live-state race.
 
     ONLY reached for a pull request whose every check already concluded clean and
     whose merge GitHub then refused. The refusal splits two ways and only one of
@@ -2391,8 +2526,11 @@ def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
       * the base moved under us — the head is fine, it is simply no longer merge-
         able against the newer main. GitHub can fast-forward that itself, and the
         resulting head re-runs CI before anything merges.
-      * a real content conflict — update-branch answers 422 and the caller falls
-        through to `merge-blocked`, exactly as before.
+      * another actor changed the head after this sweep read its checks — the
+        expected-SHA update is correctly refused, and the caller leaves the new
+        head armed and unblocked for a fresh judgment;
+      * a real content conflict — update-branch answers 422 while the head is
+        unchanged and the caller falls through to `merge-blocked`.
 
     This is the fix for the observed failure mode: main takes ~19 commits in 3
     hours while a pack run takes ~30 minutes, so a pull request can go green and
@@ -2426,11 +2564,12 @@ def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
     fleet's local tooling, and the invariant makes it non-catastrophic.
     """
     number = pull.get("number")
+    expected_head_sha = str((pull.get("head") or {}).get("sha") or "")
     status, body = _request(
         "PUT",
         f"{GITHUB_API}/repos/{repo}/pulls/{number}/update-branch",
         token,
-        {"expected_head_sha": str((pull.get("head") or {}).get("sha") or "")},
+        {"expected_head_sha": expected_head_sha},
     )
     if status in {200, 202}:
         _annotate(
@@ -2439,13 +2578,63 @@ def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
             f"PR #{number}: checks were clean but the base had moved — merged main "
             "into the head. Its fresh checks decide the merge on a later sweep.",
         )
-        return True
+        return "updated"
     detail = str((body or {}).get("message") or f"HTTP {status}")
-    print(
-        f"PR #{number}: update-branch declined ({detail}) — treating as a real conflict.",
-        flush=True,
+    if status == 422 and expected_head_mismatch(detail):
+        _annotate(
+            "notice",
+            "merge-on-green",
+            f"PR #{number}: expected head {expected_head_sha[:12]} was no longer "
+            "the current head when update-branch ran. Another updater "
+            "or the owner won the race; leaving the new head armed and unblocked "
+            "for its fresh checks.",
+        )
+        return "head-moved"
+    if status == 422:
+        disposition, live_head, mergeable_state = pull_disposition(
+            repo, number, expected_head_sha, token
+        )
+        if disposition in {"merged", "closed"}:
+            _annotate(
+                "notice",
+                "merge-on-green",
+                f"PR #{number}: already {disposition} by the time update-branch ran — "
+                "a concurrent sweep won the race. Nothing to do, nothing labeled.",
+            )
+            return f"already-{disposition}"
+        if disposition == "head-moved":
+            _annotate(
+                "notice",
+                "merge-on-green",
+                f"PR #{number}: head moved from {expected_head_sha[:12]} to "
+                f"{live_head[:12]} while update-branch was in flight. Another updater "
+                "or the owner won the race; leaving the new head armed and unblocked "
+                "for its fresh checks.",
+            )
+            return "head-moved"
+        if mergeable_state == "dirty" or update_branch_conflict(detail):
+            print(
+                f"PR #{number}: update-branch declined ({detail}) — treating as a real "
+                "conflict based on affirmative conflict evidence.",
+                flush=True,
+            )
+            return "declined"
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"PR #{number}: update-branch returned an unclassified 422 ({detail}); "
+            "GitHub also uses 422 for validation and endpoint throttling, so this "
+            "stays armed for retry instead of receiving a permanent conflict marker.",
+        )
+        return "retry"
+    _annotate(
+        "warning",
+        "merge-on-green",
+        f"PR #{number}: update-branch failed with HTTP {status} ({detail}); leaving "
+        "it armed and unlabeled for a later retry, not calling an API failure a "
+        "content conflict.",
     )
-    return False
+    return "retry"
 
 
 def refresh_deferred(number: Any, why: str) -> str:
@@ -2484,8 +2673,8 @@ def reprove(
     When GitHub declines the update the head genuinely conflicts with main, which no
     number of sweeps will fix, so it is labeled and explained exactly once.
 
-    …UNLESS another sweep merged it a second ago. Sweeps overlap by design, so two
-    of them can both judge this pull request clean and stale; the loser's
+    …UNLESS another sweep merged it a second ago. Pre-deploy or out-of-band sweeps
+    can both judge this pull request clean and stale; the loser's
     update-branch answers 422 because the pull request is MERGED, and labelling that
     `merge-blocked` with a one-shot "not merging" comment is #4647's hazard arriving
     through a new door. `already_settled` is asked before any accusation here for
@@ -2500,11 +2689,19 @@ def reprove(
         f"PR #{number}: checks are clean but the proof is stale — {reason}. Merging "
         "main into the head; its fresh checks decide on a later sweep.",
     )
-    if update_branch(repo, pull, merge_token):
+    update_result = update_branch(repo, pull, merge_token)
+    if update_result == "updated":
         # The branch is moving again, so any `merge-blocked` from an earlier pass
         # has stopped being true.
         clear_blocked(repo, pull, merge_token)
         return "re-proving"
+    if update_result == "head-moved":
+        clear_blocked(repo, pull, merge_token)
+        return update_result
+    if update_result == "retry":
+        return "update-retry"
+    if update_result.startswith("already-"):
+        return update_result
     settled, how = already_settled(repo, number, read_token)
     if settled:
         _annotate(
@@ -2666,7 +2863,8 @@ def sweep_pull(
                         number,
                         "its red checks are all green on main, so it needs a refresh",
                     )
-                if update_branch(repo, pull, merge_token):
+                update_result = update_branch(repo, pull, merge_token)
+                if update_result == "updated":
                     clear_blocked(repo, pull, merge_token)
                     print(
                         f"PR #{number}: red checks ({', '.join(sorted(bad_names)[:6])}) "
@@ -2675,6 +2873,13 @@ def sweep_pull(
                         flush=True,
                     )
                     return "rebased"
+                if update_result == "head-moved":
+                    clear_blocked(repo, pull, merge_token)
+                    return update_result
+                if update_result == "retry":
+                    return "update-retry"
+                if update_result.startswith("already-"):
+                    return update_result
 
         if blocked_names is not None:
             # What this sweep could not answer, for `ensure_main_baseline`.
@@ -2784,7 +2989,7 @@ def sweep_pull(
         "PUT",
         f"{GITHUB_API}/repos/{repo}/pulls/{number}/merge",
         merge_token,
-        {"merge_method": "squash"},
+        {"merge_method": "squash", "sha": head_sha},
     )
     if status == 200:
         _annotate(
@@ -2802,7 +3007,7 @@ def sweep_pull(
         # base that moved under us. Only the second is genuinely a human's
         # problem-free case, so try to clear it before reaching for a label.
         detail = str((body or {}).get("message") or f"HTTP {status}")
-        # ...but a THIRD shape produces the same 405/409 now that sweeps overlap:
+        # ...but a THIRD shape produces the same 405/409 when sweeps race:
         # another sweep merged this pull request between our check read and our
         # merge call. Treating that as a conflict would label a merged PR
         # `merge-blocked` and comment a falsehood on it. Ask before accusing.
@@ -2819,13 +3024,21 @@ def sweep_pull(
             # No slots left to fast-forward it, and the refusal may be nothing but
             # a stale base — so this must NOT fall through to `merge-blocked`.
             return refresh_deferred(number, f"GitHub refused the merge ({detail})")
-        if update_branch(repo, pull, merge_token):
+        update_result = update_branch(repo, pull, merge_token)
+        if update_result == "updated":
             # The head now carries main. It is UNPROVEN until its fresh checks
             # conclude, so nothing merges on this pass and the label stays armed
             # for the sweep that judges those checks. Any stale `merge-blocked`
             # from an earlier pass is cleared: the branch is moving again.
             clear_blocked(repo, pull, merge_token)
             return "updated"
+        if update_result == "head-moved":
+            clear_blocked(repo, pull, merge_token)
+            return update_result
+        if update_result == "retry":
+            return "update-retry"
+        if update_result.startswith("already-"):
+            return update_result
         mark_blocked(
             repo,
             pull,
@@ -3041,7 +3254,9 @@ def main() -> int:
     # deferral is a deliberate, logged no-op and exits 0, because a red run here is
     # noise that masks the genuine failures this lane also reports.
     budget = SweepBudget(read_token)
-    may_sweep, budget_detail = budget.preflight()
+    may_sweep, budget_detail = budget.preflight(
+        mark_only=trigger_conclusion == "failure"
+    )
     if not may_sweep:
         _annotate("notice", "merge-on-green", f"Sweep deferred: {budget_detail}.")
         return 0
@@ -3053,9 +3268,9 @@ def main() -> int:
     # in the repository — see `mark_only_pass` for the eight-minute window that made
     # the old skip unsafe. It must NOT fall through into the full sweep: a red run
     # cannot make anything mergeable, and these wake-ups are ~5x more frequent than
-    # the greens, so paying a 25-pull-request pass for each of them would put the
-    # 1,000/hr per-repository READ_TOKEN bucket back where 2026-08-07 found it. The
-    # budget preflight above still applies — a starved lane marks nothing either.
+    # the greens, so paying a full backlog pass for each of them would put the
+    # per-repository READ_TOKEN bucket back where 2026-08-07 found it. The budget
+    # preflight above still applies — a starved lane marks nothing either.
     if trigger_conclusion == "failure":
         return mark_only_pass(repo, read_token, merge_token, trigger_head_sha, budget)
 
@@ -3136,9 +3351,14 @@ def main() -> int:
     else:
         print(proof.describe() + ".", flush=True)
 
-    ordered = sweep_order(pulls, trigger_head_sha=trigger_head_sha)
-    considered = ordered[:MAX_PULLS_PER_SWEEP]
-    deferred = ordered[MAX_PULLS_PER_SWEEP:]
+    pull_cap = budget.pull_cap
+    ordered = sweep_order(
+        pulls,
+        trigger_head_sha=trigger_head_sha,
+        cap=pull_cap,
+    )
+    considered = ordered[:pull_cap]
+    deferred = ordered[pull_cap:]
 
     tally: dict[str, int] = {}
     # Filled by `sweep_pull` with the check names it had to leave a pull request
@@ -3155,9 +3375,11 @@ def main() -> int:
             "notice",
             "merge-on-green",
             f"Per-sweep cap: evaluating {len(considered)} of {len(ordered)} armed pull "
-            "requests. READ_TOKEN's quota is 1,000 requests/hour per repository and a "
-            f"full pass of this backlog costs ~{len(ordered)} of them, so an uncapped "
-            "sweep at this trigger rate empties the bucket and every later sweep 403s. "
+            f"requests. READ_TOKEN's observed core limit is "
+            f"{budget.last_limit if budget.last_limit is not None else 'unreadable'} "
+            f"requests/hour, which sets this pass's cap to {pull_cap}; an unreadable "
+            f"limit falls back to {FALLBACK_PULL_CAP}. An uncapped sweep at high trigger "
+            "volume can empty the bucket and make every later sweep 403. "
             f"The order rotates every {ROTATION_BUCKET_SECONDS // 60} minutes, so no "
             f"pull request can be starved. Deferred to a later sweep: {shown}{more}.",
         )

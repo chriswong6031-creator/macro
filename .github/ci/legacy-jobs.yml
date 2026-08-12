@@ -399,8 +399,13 @@ jobs:
       # first run in a freshly built venv reports ~13s, but that is pandas/numpy
       # cold-start — paid by whichever pytest step runs first, already on this
       # job's bill, and NOT an increment this suite adds.
+      # `early_signal_dates` (the additive dot knowability stamp) is registered HERE, in the
+      # job that already owns the §7 contract: its whole risk surface is the published
+      # per-ticker schema + the nightly validator, which is precisely what this step runs.
+      # A contract field whose pairing rule no job checks is a scheduled red the first time
+      # a producer drifts.
       - name: signal §7 contract tests + the marker-date look-ahead guard
-        run: python -m pytest tests/test_validate_signals.py tests/test_signal_quality_no_leak.py -q
+        run: python -m pytest tests/test_validate_signals.py tests/test_signal_quality_no_leak.py tests/test_early_signal_dates_contract.py -q
       # drives the REAL engine.signal_quality._buy_filter and analyze() over synthetic
       # series, so it needs pandas + numpy + pyyaml (lib.config, via engine.technicals) —
       # all present in the install line above, so no importorskip is needed and none is
@@ -882,6 +887,8 @@ jobs:
         run: python -m pytest tests/test_options_matrix.py -q
       - name: options PIT episodes (causal clocks, durable stage, H+60 + declared-session-close proxies, R2/checkpoint integrity)
         run: python -m pytest tests/test_options_signal_episode.py -q
+      - name: sparse exact-option selector preregistration (zero denominator, permanent retrospective fence, no authority)
+        run: python -m pytest tests/test_options_sparse_selector_prereg.py -q
       - name: options signal campaign v2 (immutable revisions, causal anchors, exact checkpoint)
         run: python -m pytest tests/test_options_signal_campaign.py -q
       - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
@@ -1995,6 +2002,11 @@ jobs:
       # nightly with nothing going red — the same silent class as the two above.
       - name: daily ET regime gate (DST pair disambiguator + wiring pins)
         run: python -m pytest tests/test_daily_et_gate.py -q
+      # 2026-08-12 (#5416): a workflow FILE over ~512,000 bytes stops being
+      # processed SILENTLY — cron stops firing and dispatched runs queue with
+      # zero jobs, uncancellable. The budget test reds growth before the cap.
+      - name: workflow file size stays under GitHub's silent processing cap
+        run: python -m pytest tests/test_workflow_file_size.py -q
 
   push-retry-policy:
     if: ${{ false }}
@@ -5807,6 +5819,13 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: anticipation intake (status-class admission, era stamps, entry zones, shadow-ledger lane gate)
         run: python -m pytest tests/test_prophet_anticipation_intake.py -q
+      # UNION ADMISSION (bake-off §A2) — registered in the job that already owns the
+      # EARLY-TURN admission gate, because that is what the union re-classes. The suite's
+      # load-bearing pin is the SCORED-gate zero-diff: this wiring is display-tier and a
+      # verdict that moved would be the failure mode worth catching on every push. Runs off
+      # two committed 700-row price fixtures, so it needs no data root and no network.
+      - name: union admission (recall spine, badges, scored-gate zero-diff)
+        run: python -m pytest tests/test_us_early_turn_union_admission.py -q
       # §6.9 R5 — the per-name "why not" receipts. Enumerated at BIRTH, in the job that
       # already owns the admission gate these receipts REPORT ON: the suite's core law is
       # that the headline reason is specificity-ordered rather than gate-ordered, which is
@@ -6769,7 +6788,7 @@ jobs:
     # transport is exercised only with bounded offline fixtures in this
     # zero-network lane.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -7128,3 +7147,35 @@ jobs:
       # as a Python import edge.
       - name: Winner Health inert surface design freeze
         run: python -m pytest tests/test_winner_health_design_freeze.py -q
+
+  options-nbbo-cohort:
+    # Frozen same-basis MomoEdge comparison infrastructure. The suite is fully
+    # offline: source responses and authenticated producer rows are synthetic,
+    # while raw production bytes remain host-private outside git.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - config/dag.yml
+      - contracts/options/options.prospective_nbbo_cohort.v1.schema.json
+      - docs/runbooks/OPTIONS_NBBO_COHORT.md
+      - engine/options_nbbo_cohort.py
+      - engine/session_digest.py
+      - lib/nyse_calendar.py
+      - ops/launchd/com.mastermind.optionsnbbocohort.plist
+      - ops/launchd/run_options_nbbo_cohort_loop.sh
+      - scripts/capture_options_nbbo_cohort.py
+      - tests/test_options_nbbo_cohort.py
+      - tests/test_options_nbbo_cohort_deploy.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest jsonschema pyyaml
+      - name: private OPRA NBBO cohort, capture coverage, and launchd contract
+        run: >-
+          python -m pytest
+          tests/test_options_nbbo_cohort.py
+          tests/test_options_nbbo_cohort_deploy.py -q -rs
