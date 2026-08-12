@@ -229,6 +229,15 @@
   function cardHTML(r) {
     var safe = esc(r.t);
     if (!r.rec) {
+      // Signed-out shell (stockdata.js is account-gated, so window.SD never
+      // exists here): we cannot know coverage, so claim NOTHING — a bare card
+      // with no state pill. "Dropped out of the library" below is only true
+      // when a live index actually answered without this ticker.
+      if (!window.SD) {
+        return '<div class="wl-card wl-gone" data-t="' + safe + '">' +
+          '<div class="wl-top"><a class="wl-name" href="stock.html#' + encodeURIComponent(r.t) +
+          '"><b>' + safe + '</b></a>' + rmBtn(r.t) + '</div></div>';
+      }
       // Tier-1 drop-out: never silently omit a watched ticker
       return '<div class="wl-card wl-gone" data-t="' + safe + '">' +
         '<div class="wl-top"><a class="wl-name" href="stock.html#' + encodeURIComponent(r.t) +
@@ -318,6 +327,7 @@
     listEl.querySelectorAll('.wl-card').forEach(function (c) { observer.observe(c); });
   }
   function enrich(el) {
+    if (!window.SD || !window.SD.loadTicker) return;  // signed-out shell: slot stays empty
     var t = el.getAttribute('data-enrich');
     window.SD.loadTicker(t).then(function (j) {
       el.__json = j;        // cache raw JSON so a language flip re-renders w/o refetch
@@ -549,7 +559,10 @@
     // the active book changed -> re-render the grid as a filtered VIEW of the same list
     document.addEventListener('bk-change', render);
 
-    // resolve the live universe across every market the saved list actually touches
+    // resolve the live universe across every market the saved list actually touches.
+    // Signed-out shell: stockdata.js is account-gated (window.SD absent) — take
+    // the same path as an index fetch failure and paint the list/empty state bare.
+    if (!window.SD || !window.SD.loadIndexes) { render(); return; }
     var markets = { us: 1 };
     if (window.MB) blob.items.forEach(function (it) { markets[window.MB.marketOf(it.t)] = 1; });
     window.SD.loadIndexes(Object.keys(markets)).then(function (r) {
