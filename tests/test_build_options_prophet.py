@@ -801,8 +801,13 @@ def test_disk_builder_consumes_optional_konseki_receipt_without_authority(tmp_pa
 
 
 def test_daily_dag_synapse_and_r2_contract_are_wired():
+    from scripts.workflow_run_source import resolved_workflow_text
+
     root = Path(__file__).resolve().parents[1]
-    daily = (root / ".github" / "workflows" / "daily.yml").read_text(encoding="utf-8")
+    # Resolved: the pick-lab and options-prophet run_py calls both live in a body
+    # extracted to scripts/ci/, and the assertions below are positional (order +
+    # an 800-char proximity bound). See scripts/workflow_run_source.
+    daily = resolved_workflow_text(root / ".github" / "workflows" / "daily.yml", root)
     dag = (root / "config" / "dag.yml").read_text(encoding="utf-8")
     synapse_path = root / "config" / "synapse.yml"
     synapse = synapse_path.read_text(encoding="utf-8")
