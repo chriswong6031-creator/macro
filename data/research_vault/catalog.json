@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T23:24:35.074843+00:00",
-  "count": 1021,
+  "generated_at": "2026-08-12T23:29:25.682882+00:00",
+  "count": 1022,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -839,6 +839,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e3xolyukjxc-dd59d4",
+      "title": "GS Lev Fin Weekend Reading and Observations the divides of summer",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T03:15:45Z",
+      "summary_points": [
+        "**HY/IG Divide: AI vs Non-AI**: 16 of 23 HY data center JV deals trade wide of new-issue yields (avg spread +377 vs median +154), with AI accounting for 18.4% of USD HY issuance YTD ($10-15bn potential pre-Labor Day), signaling imminent repricing risk toward wider cohorts.",
+        "**US Fiscal Risk Escalation**: US national debt surged $450bn since July 1, intensifying fiscal sustainability concerns and pressuring Treasury yields, directly impacting broader market liquidity and risk appetite.",
+        "**AI Capex Cycle Impact**: Leveraged finance drives external capital for AI build-out (critical next two weeks), with dispersion in spreads—not spreads themselves—becoming key as 2026 AI dynamics override seasonal trends, overriding traditional credit positioning.",
+        "**Leveraged Loans Stability**: Lev Loans maintain low Spread Current (328→332) and low Percentile All (5%→5%), indicating minimal stress versus HY/IG segments, offering relative safety amid broader credit volatility.",
+        "**Software Sector Underperformance**: Despite 11.22% MV weight, Software posted -4.73% YTD return (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
