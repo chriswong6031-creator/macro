@@ -1018,7 +1018,7 @@ pages:
 
   terminal:alerts:
     archetype: "chart_workspace"
-    why: "brief's blanket rule applied; the alerts/news family rule would read monitor — flagged for review"
+    why: "Terminal app view — chart_workspace records the governing doctrine (adjudicated divergence, census §3.4), not the view's function; re-keying by function would subject Terminal views to Macro archetype law. Adjudicated 2026-08-12, DS-PR-1 review."
 
   terminal:analysis:
     archetype: "chart_workspace"
@@ -1028,7 +1028,7 @@ pages:
     archetype: "chart_workspace"
     primary_user_question: "What is worth looking at right now?"
     evidence: [terminal/components/gates/SignupGate.tsx]
-    why: "brief's blanket rule (Terminal app routes -> chart_workspace) applied; its own function would read discovery_board — flagged for review"
+    why: "Terminal app view — chart_workspace records the governing doctrine (adjudicated divergence, census §3.4), not the view's function; re-keying by function would subject Terminal views to Macro archetype law. Adjudicated 2026-08-12, DS-PR-1 review."
 
   terminal:embed_chart:
     archetype: "chart_workspace"
@@ -1049,7 +1049,7 @@ pages:
     archetype: "chart_workspace"
     primary_user_question: "How is my book doing?"
     evidence: [terminal/components/gates/SignupGate.tsx]
-    why: "brief's blanket rule applied; its own function would read monitor (cf. mastermind:portfolio_desk) — flagged for review"
+    why: "Terminal app view — chart_workspace records the governing doctrine (adjudicated divergence, census §3.4), not the view's function; re-keying by function would subject Terminal views to Macro archetype law. Adjudicated 2026-08-12, DS-PR-1 review."
 
   terminal:scripts:
     archetype: "chart_workspace"

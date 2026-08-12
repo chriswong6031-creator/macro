@@ -2627,15 +2627,14 @@ checks:
     selftest: true
     allowlist: null
     ratchet:
-      date: "2026-11-30"
+      date: "2026-10-01"
       action: >-
         R0 is report-only. The R1 blocking flip is ONE later PR that changes this
         entry's severity to hard AND switches the wired step to `--mode enforce
         --registry` in lockstep — never one without the other, or the registry
-        describes teeth the job does not have. Review on this date whether enough
-        surfaces carry `design_system.compliant` for enforce to mean anything;
-        this date is a review reminder, not a deadline, and an expired ratchet
-        only warns.
+        describes teeth the job does not have. R1 blocking flip rides the first
+        migration-packet PR; if none has landed by this date, review whether the
+        Sol §J.9 chain is still blocked.
     known_limits:
       - >-
         Static text scan, not a rendered-DOM check: it cannot see a colour a
