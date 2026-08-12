@@ -312,6 +312,13 @@ html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB",
 .srch::placeholder{color:var(--muted)}
 .srch:focus{border-color:var(--link);box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 20%,transparent)}
 .tbl-tools{margin-left:auto;display:flex;gap:7px;align-items:center}
+/* The toolbar is ONE control block that may run to two lines: search + scope +
+   actions above, the market-book filter strip (§9) below, and a SINGLE hairline
+   under both — a filter belongs with the thing it filters, never in its own
+   section. Scoped to `.tbl-bar` so the watchlist's own `.tbl-top` — books-free
+   by rule — keeps its border untouched. */
+.tbl-bar{border-bottom:1px solid var(--line)}
+.tbl-bar > .tbl-top{border-bottom:0}
 
 .hold{width:100%;border-collapse:collapse;font-size:13px}
 .hold thead th{position:sticky;top:0;z-index:2;text-align:left;
@@ -460,7 +467,11 @@ details.lab .labbody{padding:0 20px 18px;font-size:12.5px;color:var(--muted);max
 @media(prefers-reduced-motion:reduce){details.lab summary .car{transition:none}}
 
 /* ══════════════════════════════════════════════════════════════════════════
-   9. MARKET BOOKS — chips are views of the ONE portfolio, never new books
+   9. MARKET BOOKS — chips are views of the ONE portfolio, never new books.
+      In Portfolio mode the strip is DOCKED IN THE HOLDINGS TOOLBAR (§7): it
+      filters the holdings table view only, and the scope line beside it names
+      the active book. `.books` on its own is still the standalone gallery the
+      anonymous "ready-made list" row uses.
    ══════════════════════════════════════════════════════════════════════════ */
 .books{display:flex;flex-wrap:wrap;gap:7px;padding:14px 16px}
 .bookchip{display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:999px;
@@ -475,7 +486,30 @@ details.lab .labbody{padding:0 20px 18px;font-size:12.5px;color:var(--muted);max
   background:color-mix(in srgb,var(--link) 12%,var(--gbtn-bg))}
 .bookchip[aria-pressed="true"] .n{color:var(--ink-link)}
 .bookchip:disabled{opacity:.45;cursor:default}
-.books-law{padding:0 16px 14px;font-size:11.5px;color:var(--muted)}
+
+/* ── the strip, docked in the holdings toolbar ─────────────────────────────
+   Second line of `.tbl-bar`: a compact label (its hover carries the
+   views-not-portfolios rule), the chips, and the never-mix-currencies law as
+   the strip's own trailing subline — reusing the `.tbl-foot` grammar of quiet
+   copy pushed right by `margin-left:auto`. */
+.tbl-books{display:flex;align-items:center;flex-wrap:wrap;gap:8px 11px;
+  padding:0 16px 11px}
+.books-lbl{flex:none;font-size:9.5px;font-weight:750;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted)}
+.books-strip{display:flex;flex-wrap:wrap;gap:7px;min-width:0}
+/* toolbar chips sit one rung down from the standalone gallery's, to sit level
+   with the `.gbtn-sm` actions on the line above */
+.books-strip .bookchip{padding:5px 12px;font-size:12px}
+.books-law{margin:0;margin-left:auto;min-width:0;font-size:11.5px;color:var(--muted)}
+@media(max-width:1080px){.books-law{margin-left:0;flex:1 1 100%}}
+@media(max-width:720px){
+  .tbl-books{padding:0 14px 11px;gap:9px}
+  /* the chips scroll INSIDE their own container — the page itself never
+     scrolls sideways. Same technique as `.rc-tabs` above, same result. */
+  .books-strip{flex:1 1 0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .books-strip::-webkit-scrollbar{display:none}
+  .books-strip .bookchip{flex:none}
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    10. ANONYMOUS ENTRY + tier locks (.mx-tier-* reused verbatim)
@@ -763,8 +797,8 @@ details.lab .labbody{padding:0 20px 18px;font-size:12.5px;color:var(--muted);max
         <span class="mx-tier-eyebrow"><span class="mx-tier-mark">◇</span>
           <span class="l-en">Free account</span><span class="l-zh">免费账户</span></span>
         <b><span class="l-en">The stage read for each of these 8 names</span><span class="l-zh">这 8 只票各自的阶段判断</span></b>
-        <small><span class="l-en">Where each name sits in its own cycle — early, confirming, confirmed, aging — updated every night. Your list stays yours, and it stops living only in this browser.</span>
-        <span class="l-zh">每只票现在处在自己周期的哪一段 —— 初现、确认中、已确认、转弱 —— 每晚更新。名单始终属于你，也不再只存在这个浏览器里。</span></small>
+        <small><span class="l-en">Where each name sits in its own cycle — early, confirming, confirmed, aging — updated every night. Your list stays yours, saved to your account instead of just this browser.</span>
+        <span class="l-zh">每只票现在处在自己周期的哪一段 —— 初现、确认中、已确认、转弱 —— 每晚更新。名单始终属于你，保存在账户里，不再只留在这个浏览器。</span></small>
       </div>
       <div class="mx-tier-actions">
         <button class="mx-tier-primary"><span class="l-en">Save + get alerts — Free</span><span class="l-zh">保存并接收提醒 —— 免费</span></button>
@@ -875,21 +909,46 @@ details.lab .labbody{padding:0 20px 18px;font-size:12.5px;color:var(--muted);max
       <span class="sec-sub"><span class="l-en">Your work surface — every position, no cap</span><span class="l-zh">主操作区 —— 全部持仓，不设上限</span></span>
     </div>
     <div class="panel" style="overflow:hidden">
-      <div class="tbl-top">
-        <input class="srch" type="search" data-ph-en="Filter 12 positions" data-ph-zh="筛选 12 只持仓">
-        <span class="tbl-scope">
-          <span class="l-en">Showing <b>all 12</b> · all books</span>
-          <span class="l-zh">显示 <b>全部 12 只</b> · 全部市场</span>
-        </span>
-        <span class="tbl-tools">
-          <button class="gbtn gbtn-sm"><span class="l-en">Add position</span><span class="l-zh">添加持仓</span></button>
-          <button class="gbtn gbtn-sm"><span class="l-en">Sort: Value</span><span class="l-zh">排序：市值</span></button>
-        </span>
+      <!-- ONE toolbar, two lines: controls above, the book filter below. The
+           chips filter THIS TABLE only; the scope line beside them is what
+           names the active book, so a persisted filter can never silently
+           shorten the list. -->
+      <div class="tbl-bar">
+        <div class="tbl-top">
+          <input class="srch" type="search" data-ph-en="Filter 12 positions" data-ph-zh="筛选 12 只持仓">
+          <span class="tbl-scope">
+            <span class="l-en">Showing <b>all 12</b> · all books</span>
+            <span class="l-zh">显示 <b>全部 12 只</b> · 全部市场</span>
+          </span>
+          <span class="tbl-tools">
+            <button class="gbtn gbtn-sm"><span class="l-en">Add position</span><span class="l-zh">添加持仓</span></button>
+            <button class="gbtn gbtn-sm"><span class="l-en">Sort: Value</span><span class="l-zh">排序：市值</span></button>
+          </span>
+        </div>
+        <div class="tbl-books">
+          <span class="books-lbl"
+                data-tip-en="Views of the same portfolio — never separate portfolios. Picking a book filters this table only; the read above, what needs attention, and the risk center always describe all 12 positions."
+                data-tip-zh="同一个组合的不同视角 —— 不是另外几个组合。选择某个市场只筛选这张表；上方的解读、「需要留意」和「风险中心」始终描述全部 12 只持仓。">
+            <span class="l-en">Books</span><span class="l-zh">分市场</span>
+          </span>
+          <div class="books-strip">
+            <button class="bookchip" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span><span class="n">12</span></button>
+            <button class="bookchip" aria-pressed="false"><span class="l-en">United States</span><span class="l-zh">美国</span><span class="n">11</span></button>
+            <button class="bookchip" aria-pressed="false"><span class="l-en">Crypto</span><span class="l-zh">加密</span><span class="n">1</span></button>
+            <button class="bookchip" disabled><span class="l-en">China</span><span class="l-zh">中国</span><span class="n">—</span></button>
+            <button class="bookchip" disabled><span class="l-en">Hong Kong</span><span class="l-zh">香港</span><span class="n">—</span></button>
+            <button class="bookchip" disabled><span class="l-en">Canada</span><span class="l-zh">加拿大</span><span class="n">—</span></button>
+          </div>
+          <span class="books-law">
+            <span class="l-en">Each book totals in its own currency. We never add two currencies into one number.</span>
+            <span class="l-zh">每个市场各自计价。我们绝不会把两种货币加成一个数字。</span>
+          </span>
+        </div>
       </div>
       <table class="hold" id="tbl-pf"></table>
       <div class="tbl-foot">
-        <span><span class="l-en">Since-entry figures use the entry price you saved. We never store or show what you paid to anyone else.</span>
-          <span class="l-zh">「持有以来」按你保存的买入价计算。你的成本价不会存储或展示给任何其他人。</span></span>
+        <span><span class="l-en">Since-entry figures use the entry price you saved. It stays in your account — it never feeds our signals and is never shown to anyone else.</span>
+          <span class="l-zh">「持有以来」按你保存的买入价计算。成本价只留在你的账户里 —— 不会进入我们的信号计算，也不会展示给任何其他人。</span></span>
         <span class="grow"><span class="l-en">12 rows</span><span class="l-zh">12 行</span></span>
       </div>
     </div>
@@ -942,28 +1001,6 @@ details.lab .labbody{padding:0 20px 18px;font-size:12.5px;color:var(--muted);max
           <span class="l-zh">输入一个代码和一个金额，就能看到本页数字在加仓前后的变化 —— 等效方向数、最大驱动因素的占比、以及它会和哪些票归为一组。默认金额为 <span class="fig">$15,350</span>，即你的平均单笔仓位，可自行修改。</span>
         </div>
       </details>
-    </div>
-  </section>
-
-  <!-- ── MARKET BOOKS ──────────────────────────────────────────────────── -->
-  <section class="sec">
-    <div class="sec-hd">
-      <span class="sec-eyebrow"><span class="l-en">Market books</span><span class="l-zh">分市场查看</span></span>
-      <span class="sec-sub"><span class="l-en">Views of the same portfolio — never separate portfolios</span><span class="l-zh">同一个组合的不同视角 —— 不是另外几个组合</span></span>
-    </div>
-    <div class="panel">
-      <div class="books">
-        <button class="bookchip" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span><span class="n">12</span></button>
-        <button class="bookchip" aria-pressed="false"><span class="l-en">United States</span><span class="l-zh">美国</span><span class="n">11</span></button>
-        <button class="bookchip" aria-pressed="false"><span class="l-en">Crypto</span><span class="l-zh">加密</span><span class="n">1</span></button>
-        <button class="bookchip" disabled><span class="l-en">China</span><span class="l-zh">中国</span><span class="n">—</span></button>
-        <button class="bookchip" disabled><span class="l-en">Hong Kong</span><span class="l-zh">香港</span><span class="n">—</span></button>
-        <button class="bookchip" disabled><span class="l-en">Canada</span><span class="l-zh">加拿大</span><span class="n">—</span></button>
-      </div>
-      <p class="books-law">
-        <span class="l-en">Each book totals in its own currency. We never add two currencies into one number.</span>
-        <span class="l-zh">每个市场各自计价。我们绝不会把两种货币加成一个数字。</span>
-      </p>
     </div>
   </section>
 </div>
