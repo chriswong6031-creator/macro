@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T03:37:21.314933+00:00",
-  "count": 984,
+  "generated_at": "2026-08-12T03:52:24.482727+00:00",
+  "count": 985,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -797,6 +797,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hhthzs4lt9x-820c08",
+      "title": "Tokyo Keiki (7721)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T13:13:16Z",
+      "summary_points": [
+        "**Earnings Beat & Guidance Raise**: 1Q3/27 operating loss of ¥250 mn (vs.",
+        "¥480 mn est.) driven by defense/communications segment strength; operating profit guidance raised 31% yoy to ¥7 bn on 63% yoy orders growth in defense/communications and 27% in marine systems.",
+        "**Defense Segment Geopolitical Tailwinds**: Q1 defense sales up ¥4.0bn (YoY), fueled by naval/aircraft equipment and Australia’s frigate program; orders +63% YoY despite Japan defense budget concerns, with sustained growth outlook.",
+        "**Marine Systems Upgrade & Maintenance Driver**: Q1 marine sales +16% YoY to ¥3.7bn, profits +27% to ¥400mn; FY3/27 sales/profit guidance revised up to ¥15.2bn/¥1.8bn, with after-sales maintenance as key medium-term earnings catalyst.",
+        "**Price Outperformance & Target Upside**: 7721.T up 53.2% in 12m vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
