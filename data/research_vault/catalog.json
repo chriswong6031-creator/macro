@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T04:37:34.063509+00:00",
-  "count": 987,
+  "generated_at": "2026-08-12T04:52:55.428189+00:00",
+  "count": 988,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -98,6 +98,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-urmoidwn5ej-5e7287",
+      "title": "Aegonam global fixed income midyear outlook final",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-11T23:09:04Z",
+      "summary_points": [
+        "**Iran Conflict & Energy Shock**: Prolonged oil/gas price surge from Middle East conflict drives global inflation, creates terms-of-trade shocks in Europe, and delays growth recovery to 2026–2027 despite ECB hiking rates twice to 2.5%.",
+        "**Fed Policy Divergence**: Hawkish shift (50/50 FOMC split, Chairman abstaining) amid oil volatility prioritizes short-term inflation over long-term risks, with Fed holding rates into 2027 (higher-for-longer yields).",
+        "**Valuation-Fundamentals Mismatch**: Robust credit fundamentals (resilient economies, strong balance sheets) contrast with stretched valuations (tight spreads, limited compression), demanding active selection over passive exposure.",
+        "**EM Debt Strategy**: USD-denominated EM debt favored over local currency due to Fed policy anchoring carry, with performance driven by fiscal discipline, reform momentum, and country differentiation.",
+        "**Europe Energy Vulnerability**: Elevated gas prices persist post-US-Iran deal, creating fiscal constraints and debt limit pressures, while ECB hikes rates amid sticky inflation from energy shock."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
       "language": "en",
       "needs_metadata": false
     },
