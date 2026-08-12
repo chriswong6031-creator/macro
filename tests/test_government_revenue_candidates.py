@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from copy import deepcopy
+from datetime import datetime
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -316,6 +317,15 @@ def test_current_source_truth_reconciles_against_the_ledger_and_the_correction()
     assert is_valid_candidate_queue(queue)
 
 
+def _suppression_identity(entry: dict) -> dict:
+    """One tombstone minus the graph-clock-derived field.
+
+    Built by EXCLUSION rather than from an allowlist, so a field added to the
+    entry contract is compared by default instead of silently escaping the gate.
+    """
+    return {key: value for key, value in entry.items() if key != "observed_known_at"}
+
+
 def test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_review() -> None:
     """The reviewed eight are derived truth, not a hand-transcribed allowlist.
 
@@ -331,7 +341,14 @@ def test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_revi
     issued forward, which is the correct disposition and the one the nightly
     already took (``candidate_projection_status`` ``status: ok``).  So partition
     the rebuild the way the engine itself partitions it -- quarantined vs active
-    -- and hold the reviewed cohort to byte equality on its own terms.
+    -- and hold the reviewed cohort to identity equality on its own terms.
+
+    ``observed_known_at`` is excluded from that equality: it tracks
+    ``graph_known_at`` and would red on every legitimate republish, inviting a
+    regen that stamps observation after the review act.  The engine already
+    binds by :func:`historical_suppression_entry_key` (graph/clock-independent)
+    and substitutes the reviewed entry's clock before comparing a current row.
+    The clock is still asserted present and offset-aware on both sides.
 
     The gate the count was standing in for is restored explicitly below: every
     row the source engine currently sees must be accounted for in the append-only
@@ -370,11 +387,21 @@ def test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_revi
         key=historical_suppression_entry_key,
     )
 
-    # The reviewed cohort rebuilds from live source, byte for byte, in bijection
-    # with the manifest.  A reviewed identity that stopped rebuilding, drifted a
-    # field, or gained a sibling still fails.
+    # The reviewed cohort rebuilds from live source in bijection with the
+    # manifest.  A reviewed identity that stopped rebuilding, drifted a field,
+    # or gained a sibling still fails.  Equality is the engine's
+    # graph/clock-independent identity plus every other field; the clock is
+    # asserted present rather than frozen to one graph vintage.
     assert len(entries) == len(manifest["entries"]) == len(quarantined)
-    assert entries == manifest["entries"]
+    assert [historical_suppression_entry_key(entry) for entry in entries] == [
+        historical_suppression_entry_key(entry) for entry in manifest["entries"]
+    ]
+    assert [_suppression_identity(entry) for entry in entries] == [
+        _suppression_identity(entry) for entry in manifest["entries"]
+    ]
+    for entry in (*entries, *manifest["entries"]):
+        observed_at = datetime.fromisoformat(entry["observed_known_at"])
+        assert observed_at.tzinfo is not None
     assert {row["source_event"]["source_rail"] for row in reviewed_rows} == {
         "usaspending_award_snapshot"
     }
