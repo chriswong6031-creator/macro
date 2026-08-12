@@ -7139,3 +7139,35 @@ jobs:
       # as a Python import edge.
       - name: Winner Health inert surface design freeze
         run: python -m pytest tests/test_winner_health_design_freeze.py -q
+
+  options-nbbo-cohort:
+    # Frozen same-basis MomoEdge comparison infrastructure. The suite is fully
+    # offline: source responses and authenticated producer rows are synthetic,
+    # while raw production bytes remain host-private outside git.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - config/dag.yml
+      - contracts/options/options.prospective_nbbo_cohort.v1.schema.json
+      - docs/runbooks/OPTIONS_NBBO_COHORT.md
+      - engine/options_nbbo_cohort.py
+      - engine/session_digest.py
+      - lib/nyse_calendar.py
+      - ops/launchd/com.mastermind.optionsnbbocohort.plist
+      - ops/launchd/run_options_nbbo_cohort_loop.sh
+      - scripts/capture_options_nbbo_cohort.py
+      - tests/test_options_nbbo_cohort.py
+      - tests/test_options_nbbo_cohort_deploy.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest jsonschema pyyaml
+      - name: private OPRA NBBO cohort, capture coverage, and launchd contract
+        run: >-
+          python -m pytest
+          tests/test_options_nbbo_cohort.py
+          tests/test_options_nbbo_cohort_deploy.py -q -rs
