@@ -12,6 +12,7 @@ digests to a Shanghai one — ``test_utc_runner_produces_shanghai_stamps`` pins 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from datetime import date, datetime, time, timedelta, timezone
@@ -36,6 +37,23 @@ TICKER = "600519.SS"
 VENDOR_TICKER = "600519.SH"
 OTHER_TICKER = "000001.SZ"
 OBSERVED_AT = datetime(ANCHOR_YEAR, 6, 1, 12, 0, tzinfo=timezone.utc)
+
+
+def _keyless_subprocess_env() -> dict[str, str]:
+    """Keep interpreter loader paths without forwarding vendor credentials.
+
+    ``actions/setup-python`` exports a loader path for its relocatable CPython on
+    self-hosted Linux runners.  Dropping it can load an incompatible system
+    ``libpython`` before the CLI reaches its keyless ``--help`` path.  Copy only
+    the platform loader variables; the deliberately tiny allowlist still excludes
+    ``TUSHARE_TOKEN`` and every other ambient secret.
+    """
+    env = {"PATH": "/usr/bin:/bin", "HOME": str(ROOT)}
+    for name in ("LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"):
+        value = os.environ.get(name)
+        if value:
+            env[name] = value
+    return env
 
 
 # --------------------------------------------------------------------------------------
@@ -1173,6 +1191,18 @@ def test_cli_spine_universe_is_explicitly_deferred(
     )
 
 
+def test_keyless_subprocess_env_preserves_only_loader_paths(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LD_LIBRARY_PATH", "/runner/python/lib")
+    monkeypatch.setenv("TUSHARE_TOKEN", "must-not-leak")
+
+    env = _keyless_subprocess_env()
+
+    assert env["LD_LIBRARY_PATH"] == "/runner/python/lib"
+    assert "TUSHARE_TOKEN" not in env
+
+
 def test_cli_module_entrypoint_runs_without_a_token() -> None:
     """A keyless invocation must produce usage text, never a traceback."""
     completed = subprocess.run(
@@ -1182,7 +1212,7 @@ def test_cli_module_entrypoint_runs_without_a_token() -> None:
         text=True,
         timeout=120,
         check=False,
-        env={"PATH": "/usr/bin:/bin", "HOME": str(ROOT)},
+        env=_keyless_subprocess_env(),
     )
     assert completed.returncode == 0
     assert "--verify" in completed.stdout
