@@ -7226,3 +7226,42 @@ jobs:
           python -m pytest
           tests/test_options_nbbo_cohort.py
           tests/test_options_nbbo_cohort_deploy.py -q -rs
+
+  momoedge-browser-observe:
+    # Observe-only authenticated-page companion. Tests are synthetic/static and
+    # never contact MomoEdge, inspect browser authentication, or write cohort
+    # coverage. Exact source bytes remain host-private outside git.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - .github/ci/legacy-jobs.yml
+      - .github/workflows/ci.yml
+      - browser/momoedge_capture/
+      - config/dag.yml
+      - contracts/options/options.momoedge_browser_observation.v1.schema.json
+      - contracts/options/options.momoedge_browser_observe_journal.v1.schema.json
+      - docs/runbooks/MOMOEDGE_BROWSER_COMPANION.md
+      - engine/options_momoedge_browser_adapter.py
+      - ops/native_messaging/com.mastermind.optionsnbbocohort.momoedge_observe.json
+      - ops/native_messaging/run_momoedge_browser_host.sh
+      - scripts/momoedge_browser_receiver.py
+      - tests/test_momoedge_browser_adapter.py
+      - tests/test_momoedge_capture_deploy.py
+      - tests/test_momoedge_capture_extension_static.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install minimal deps
+        run: pip install pytest jsonschema pyyaml
+      - name: observe-only browser, private receiver, and durability contracts
+        run: >-
+          python -m pytest
+          tests/test_momoedge_browser_adapter.py
+          tests/test_momoedge_capture_extension_static.py
+          tests/test_momoedge_capture_deploy.py -q -rs

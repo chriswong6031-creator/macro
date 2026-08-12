@@ -66,6 +66,43 @@ def test_observer_slice_does_not_import_or_modify_cohort_producer() -> None:
         assert marker not in receiver
 
 
+def test_observer_has_exact_ci_trigger_and_event_driven_dag_ownership() -> None:
+    import yaml
+
+    manifest = yaml.safe_load((ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text())
+    job = manifest["jobs"]["momoedge-browser-observe"]
+    run_text = "\n".join(
+        str(step.get("run", "")) for step in job["steps"] if isinstance(step, dict)
+    )
+    for suite in (
+        "tests/test_momoedge_browser_adapter.py",
+        "tests/test_momoedge_capture_extension_static.py",
+        "tests/test_momoedge_capture_deploy.py",
+    ):
+        assert suite in job["paths"]
+        assert suite in run_text
+
+    workflow_text = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
+    for path in job["paths"]:
+        if path == "config/dag.yml":
+            continue
+        trigger = f'      - "{path}"'
+        if path == "browser/momoedge_capture/":
+            trigger = '      - "browser/momoedge_capture/**"'
+        assert trigger in workflow_text
+
+    dag = yaml.safe_load((ROOT / "config" / "dag.yml").read_text())
+    node = next(
+        module for module in dag["modules"]
+        if module.get("module") == "scripts.momoedge_browser_receiver"
+    )
+    assert node["impure"] is True
+    assert node["needs_secrets"] is False
+    assert node["event_driven"] is True
+    assert all("options_nbbo_cohort_v1" not in path for path in node["writes"])
+    assert "coverage_eligible is always false" in node["note"]
+
+
 def test_receiver_malformed_frame_emits_one_protocol_only_bounded_ack(tmp_path: Path) -> None:
     tmp_path.chmod(0o700)
     private_root = tmp_path / "momoedge_browser_observe_v1"

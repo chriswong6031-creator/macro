@@ -32,6 +32,11 @@ The native host and private root are deliberately separate from the future
 cohort producer. A later reviewed integration may consume a frozen projection;
 this slice must not be wired into that path.
 
+Repository governance registers the native receiver as an event-driven,
+observe-only node in `config/dag.yml` and gives its three synthetic/static test
+suites a dedicated packed-CI owner. Registration does not schedule, arm, or
+grant coverage; Chrome remains the only caller.
+
 ## What constitutes a fresh observation
 
 The page bridge installs a temporary `window.fetch` wrapper, invokes the public
