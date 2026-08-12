@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ast
 import os
 import re
 import subprocess
@@ -13,6 +12,7 @@ from types import ModuleType, SimpleNamespace
 import pytest
 
 from scripts import accrue_market_memory_spy_experience as cli
+from tests import market_memory_repo_scan as repo_scan
 
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY = ROOT / "app" / "deploy"
@@ -210,21 +210,13 @@ def test_experience_cli_is_the_only_production_writer_and_passes_no_clock(
     assert result["opportunity_ids"] == ["mmspyexpopp_" + "c" * 64]
 
     production_callers: set[Path] = set()
-    for parent in (ROOT / "app", ROOT / "engine", ROOT / "scripts"):
-        for path in parent.rglob("*.py"):
-            tree = ast.parse(_text(path), filename=str(path))
-            for node in ast.walk(tree):
-                if not isinstance(node, ast.Call):
-                    continue
-                called = node.func
-                if (
-                    isinstance(called, ast.Name)
-                    and called.id == "accrue_spy_experience"
-                ) or (
-                    isinstance(called, ast.Attribute)
-                    and called.attr == "accrue_spy_experience"
-                ):
-                    production_callers.add(path.relative_to(ROOT))
+    for path in repo_scan.production_python_paths():
+        called = repo_scan.callee_names(path)
+        if (
+            "accrue_spy_experience" in called.direct
+            or "accrue_spy_experience" in called.attribute
+        ):
+            production_callers.add(path.relative_to(ROOT))
     assert production_callers == {
         Path("scripts/accrue_market_memory_spy_experience.py")
     }
