@@ -1,3 +1,4 @@
+{% from "_icons.html.j2" import icon %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
@@ -127,6 +128,15 @@
              border:1px solid var(--line); border-radius:9px; background:var(--panel2); }
   .fsearch input { flex:1; border:0; background:transparent; color:var(--text); font:13px var(--font-ui); outline:none; }
   .flabel { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-right:3px; }
+  /* monoline icon base (shared _icons.html.j2 set) — inline SVG, stroke=currentColor,
+     so every glyph inherits its chip's ink and rides theme + 红涨绿跌 for free. Replaces
+     the emoji that were doing filter-chip duty (doctrine §5.8: emoji are not UI icons —
+     they read as clip-art on white and render inconsistently headless). */
+  .ic-svg { width:1em; height:1em; display:inline-block; flex:none; fill:none; stroke:currentColor;
+    stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.135em; }
+  .fic { width:14px; height:14px; margin-right:1px; opacity:.9; }
+  .fsearch .fic { opacity:.65; }
+
   .fbtn { font:600 12px var(--font-ui); padding:5px 11px; border-radius:16px; border:1px solid var(--line);
           background:var(--panel2); color:var(--muted); cursor:pointer; user-select:none; transition:.12s; display:inline-flex; align-items:center; gap:6px; }
   .fbtn:hover { color:var(--text); }
@@ -269,7 +279,7 @@
       {% if s.gist %}<div class="st-gist">{{ t(s.gist, s.gist_zh) }}</div>{% endif %}
       <div class="st-line">{{ t(s.top_headline[:70], (s.top_headline_zh or s.top_headline)[:70]) }}</div>
       <div class="st-tags">
-        {% if s.act %}<span class="st-tag act">⚡ {{ s.act }} {{ t('act','执行') }}</span>{% endif %}
+        {% if s.act %}<span class="st-tag act">{{ icon('accel', 'fic') }} {{ s.act }} {{ t('act','执行') }}</span>{% endif %}
         {% if s.critical %}<span class="st-tag act">{{ s.critical }} {{ t('critical','关键') }}</span>{% endif %}
         {% if s.persisting %}<span class="st-tag persist">↻ {{ s.persisting }} {{ t('persisting','持续') }}</span>{% endif %}
         {% for tk in s.assets[:5] %}<span class="asset-chip">{{ tk }}</span>{% endfor %}
@@ -312,25 +322,25 @@
 <!-- ── FILTER BAR (sticky) ────────────────────────────────────────────── -->
 <div class="filterbar">
   <div class="row">
-    <label class="fsearch">🔍 <input type="text" id="q" autocomplete="off" placeholder="Filter by ticker, theme or keyword…" data-ph-zh="按代码、主题或关键词筛选…" aria-label="Filter alerts"></label>
-    <button type="button" class="fbtn quick" data-quick="new" aria-pressed="false">🆕 {{ t('new today','今日新增') }}</button>
-    <button type="button" class="fbtn quick" data-quick="persisting" aria-pressed="false">↻ {{ t('persisting','持续中') }}</button>
+    <label class="fsearch">{{ icon('search', 'fic') }} <input type="text" id="q" autocomplete="off" placeholder="Filter by ticker, theme or keyword…" data-ph-zh="按代码、主题或关键词筛选…" aria-label="Filter alerts"></label>
+    <button type="button" class="fbtn quick" data-quick="new" aria-pressed="false">{{ icon('spark', 'fic') }} {{ t('new today','今日新增') }}</button>
+    <button type="button" class="fbtn quick" data-quick="persisting" aria-pressed="false">{{ icon('swirl', 'fic') }} {{ t('persisting','持续中') }}</button>
     <span class="showing"><span id="showN" class="mono">{{ summary.total }}</span> {{ t('of','/') }} <b class="mono">{{ summary.total }}</b> {{ t('shown','显示') }} · <button type="button" class="freset" id="reset">{{ t('reset','重置') }}</button></span>
   </div>
   <div class="row" role="group" aria-label="Priority filter">
     <span class="flabel">{{ t('Priority','优先级') }}</span>
     <button type="button" class="fbtn on" data-f="all" data-grp="sev" aria-pressed="true">{{ t('all','全部') }}</button>
-    <button type="button" class="fbtn" data-f="act" data-grp="sev" aria-pressed="false">⚡ {{ t('act now','立即行动') }} <span class="cnt"></span></button>
+    <button type="button" class="fbtn" data-f="act" data-grp="sev" aria-pressed="false">{{ icon('accel', 'fic') }} {{ t('act now','立即行动') }} <span class="cnt"></span></button>
     <button type="button" class="fbtn" data-f="critical" data-grp="sev" aria-pressed="false">{{ t('critical','关键') }} <span class="cnt"></span></button>
     <button type="button" class="fbtn" data-f="major" data-grp="sev" aria-pressed="false">{{ t('major','重要') }} <span class="cnt"></span></button>
     <span style="flex:1"></span>
     <span class="flabel">{{ t('Story','脉络') }}</span>
     <button type="button" class="fbtn on" data-f="all" data-grp="cl" aria-pressed="true">{{ t('all','全部') }}</button>
-    <button type="button" class="fbtn cl-stress" data-f="stress" data-grp="cl" aria-pressed="false">🛑 {{ t('stress','压力') }} <span class="cnt"></span></button>
-    <button type="button" class="fbtn" data-f="regime" data-grp="cl" aria-pressed="false">🧭 {{ t('regime','机制') }} <span class="cnt"></span></button>
-    <button type="button" class="fbtn" data-f="liquidity" data-grp="cl" aria-pressed="false">💧 {{ t('liquidity','流动性') }} <span class="cnt"></span></button>
-    <button type="button" class="fbtn" data-f="rotation" data-grp="cl" aria-pressed="false">🔄 {{ t('rotation','轮动') }} <span class="cnt"></span></button>
-    <button type="button" class="fbtn" data-f="single_name" data-grp="cl" aria-pressed="false">🎯 {{ t('single-name','个股') }} <span class="cnt"></span></button>
+    <button type="button" class="fbtn cl-stress" data-f="stress" data-grp="cl" aria-pressed="false">{{ icon('stress', 'fic') }} {{ t('stress','压力') }} <span class="cnt"></span></button>
+    <button type="button" class="fbtn" data-f="regime" data-grp="cl" aria-pressed="false">{{ icon('map', 'fic') }} {{ t('regime','机制') }} <span class="cnt"></span></button>
+    <button type="button" class="fbtn" data-f="liquidity" data-grp="cl" aria-pressed="false">{{ icon('droplet', 'fic') }} {{ t('liquidity','流动性') }} <span class="cnt"></span></button>
+    <button type="button" class="fbtn" data-f="rotation" data-grp="cl" aria-pressed="false">{{ icon('swirl', 'fic') }} {{ t('rotation','轮动') }} <span class="cnt"></span></button>
+    <button type="button" class="fbtn" data-f="single_name" data-grp="cl" aria-pressed="false">{{ icon('target', 'fic') }} {{ t('single-name','个股') }} <span class="cnt"></span></button>
   </div>
 </div>
 

@@ -71,9 +71,12 @@
   .cv { font-weight:700; border-radius:6px; padding:1px 7px; font-size:12px; }
   /* confluence cascade tier badge (T1 master -> T4 earliest), ported from subsectors_china */
   .tier { display:inline-block; font-weight:800; font-size:10px; padding:1px 5px; border-radius:5px; letter-spacing:.02em; color:#fff; vertical-align:middle; }
-  .tier.T1 { background:var(--up); } .tier.T2 { background:#3da564; }
-  .tier.T3 { background:var(--info); } .tier.T4 { background:#6b7cc4; }
-  html[data-lang="zh"] .tier.T2 { background:#d04545; }
+  /* White text on the fill, so the FILL carries the text grade — the --ink-* rung
+     is identity in dark and lands 5.3–6.5:1 in light (see subsectors). */
+  .tier.T1 { background:var(--ink-up, var(--up)); }
+  .tier.T2 { background:color-mix(in srgb, var(--ink-up, var(--up)) 78%, var(--text)); }
+  .tier.T3 { background:var(--ink-info, var(--info)); } .tier.T4 { background:#4a5aa8; }
+  html[data-lang="zh"] .tier.T2 { background:color-mix(in srgb, var(--ink-up, var(--up)) 78%, var(--text)); }
   .tier .prov { font-weight:700; opacity:.8; margin-left:1px; }
   .why { color:var(--muted); font-size:11.5px; white-space:normal; max-width:42ch; }
   #hold { table-layout:fixed; }

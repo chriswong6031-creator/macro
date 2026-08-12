@@ -114,8 +114,9 @@
   .b-moderate,.b-low,.b-none{color:var(--muted);background:var(--panel2)}
   /* ── surfaces/flags ── */
   .surf { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--ink-link, var(--link)); margin-right:3px; }
-  .sgn-pos{color:#1f9a55} .sgn-neg{color:#d23f3f}
-  html[data-lang="zh"] .sgn-pos{color:#d23f3f} html[data-lang="zh"] .sgn-neg{color:#1f9a55}
+  .sgn-pos{color:var(--ink-up, var(--up))} .sgn-neg{color:var(--ink-down, var(--down))}
+  /* --up/--down already swap under 红涨绿跌, so the manual flip is gone: one source
+   of truth, and no way for the two to drift apart. */
   .flags { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
   .tk { display:inline-flex; flex-direction:column; gap:2px; padding:7px 12px; border-radius:10px; background:var(--panel); border:1px solid var(--line); }
   .tk .nm { font-weight:700; font-size:13px; }

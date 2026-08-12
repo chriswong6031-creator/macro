@@ -1,3 +1,4 @@
+{% from "_icons.html.j2" import icon %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
@@ -33,6 +34,12 @@
   .pos { color:var(--ink-up,var(--up)); } .neg { color:var(--ink-down,var(--down)); }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:14px; margin-top:8px; }
   .tagline { color:var(--muted); font-size:12.5px; max-width:94ch; margin:4px 0 0; line-height:1.5; }
+  /* monoline icon base (shared _icons.html.j2 set) — stroke=currentColor, so a mark
+     inherits its banner's ink and rides theme + 红涨绿跌 for free (doctrine §5.8). */
+  .ic-svg { width:1em; height:1em; display:inline-block; flex:none; fill:none; stroke:currentColor;
+    stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.135em; }
+  .bic { width:15px; height:15px; margin-right:2px; }
+
   .sub { color:var(--muted); font-size:12.5px; margin:2px 0 10px; max-width:94ch; }
   .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
   .chip.ok2 { color:var(--ink-up,var(--up)); } .chip.hot2 { color:var(--ink-down,var(--down)); }
@@ -230,7 +237,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
 {%- set _ldr_fwd = _ldr.get('study_hsi_fwd40_mean') -%}
 <div class="hkrv-banner" id="hkrv-banner-alloc">
   <div class="hkrv-banner-top">
-    <span class="hkrv-banner-icon">⚡</span>
+    <span class="hkrv-banner-icon">{{ icon('accel') }}</span>
     <div>
       <div class="hkrv-banner-title">
         <span class="l-en">Leaders moving first</span><span class="l-zh">龙头先行</span>
@@ -497,27 +504,37 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 {% endif %}{# FTR W3 tape panel — us/hk regions only #}
 
 {% if d.allocation.crash_overlay.active %}
-<div class="banner crash">⚠ <b>{{ t('Momentum-crash state', '动量崩盘状态') }}</b> — {{ t(
+<div class="banner crash">{{ icon('alert', 'bic') }} <b>{{ t('Momentum-crash state', '动量崩盘状态') }}</b> — {{ t(
 	  'broad trend is broken and volatility is high. Exposure is cut to cash.',
 	  '大盘趋势破坏且波动偏高。敞口已降至现金。') }}</div>
 {% endif %}
 
 {% if d.rotation.one_narrative %}
-<div class="banner dom">🧲 <b>{{ t('One narrative vs everything', '单一叙事 vs 其他') }}</b> ({{ t('absorption', '共动') }} {{ (d.rotation.absorption*100)|round|int }}%) — {{ t(
+<div class="banner dom">{{ icon('magnet', 'bic') }} <b>{{ t('One narrative vs everything', '单一叙事 vs 其他') }}</b> ({{ t('absorption', '共动') }} {{ (d.rotation.absorption*100)|round|int }}%) — {{ t(
 	  'leadership is concentrated. The leader is capped; the rest goes to broadening themes.',
 	  '领跑集中。领跑者封顶，其余配置给正在扩散的主题。') }}</div>
 {% endif %}
 
 <!-- ============ 01 SUGGESTED ALLOCATION ============ -->
 <h2><span class="idx">01</span>{{ t('Suggested allocation', '建议配置') }}</h2>
-<p class="sub">{{ d.allocation.rule|truncate(150, true, '...') }}</p>
+{#- The rule sentence is MECHANICS, so it belongs on Tier 2 (DOCTRINE §1). It used
+    to be printed at rest through `|truncate(150)`, which cut it mid-word — "…so
+    t…" — the exact failure Law 4 names: if the copy does not fit the budget the
+    content is mis-tiered, so demote it rather than compressing it. Tier 1 keeps a
+    one-line plain statement of what the board is; the full rule is one hover away
+    and is no longer truncated at all. -#}
+<p class="sub">{{ t('The four themes with the strongest trend, held equally, one per family.',
+                    '趋势最强的四个主题，等权持有，每个族系只取一个。') }}
+  <span class="faint" style="cursor:help;margin-left:4px"
+        data-tip-en="{{ d.allocation.rule }}"
+        data-tip-zh="{{ d.allocation.rule_zh if d.allocation.rule_zh is defined and d.allocation.rule_zh else d.allocation.rule }}">{{ t('how it is built', '构建方式') }} ⓘ</span></p>
 <div class="panel">
   <div class="alloc">
     {% for w in d.allocation.weights %}
     <div class="arow" data-sid="{{ w.id }}">
       <span class="nm">#{{ w.rank }} {{ t(w.name, w.name_zh) }}
         {% if w.crowded %}<span class="chip hot" style="margin-left:4px">{{ t('crowded', '拥挤') }}</span>{% endif %}
-        {% if w.val_upgrade %}<span class="chip" style="margin-left:4px;color:var(--ink-up, var(--up));border-color:var(--up)" title="real-activity radar: independent activity is running ahead of price — promoted one slot earlier">🛰️ {{ t('activity ahead ⬆', '活动领先 ⬆') }}</span>{% endif %}</span>
+        {% if w.val_upgrade %}<span class="chip" style="margin-left:4px;color:var(--ink-up, var(--up));border-color:var(--up)" title="real-activity radar: independent activity is running ahead of price — promoted one slot earlier">{{ icon('signals', 'bic') }} {{ t('activity ahead', '活动领先') }}</span>{% endif %}</span>
       <span class="bar"><span class="fill" style="width:{{ ((w.weight/0.35*100) if w.weight>0 else 0)|round(1) }}%"></span></span>
       <span class="wv">{{ (w.weight*100)|round|int }}%</span>
     </div>
@@ -532,9 +549,12 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 	    'Equal-weight by design. The rank tells where to look; trend decides whether to hold.' + (' Crowding is shown as caution only; it is not a weight cut yet.' if not d.allocation.crowd_trim_gate.scored else ' Crowded themes are trimmed and redistributed to other leaders.'),
 	    '刻意等权。排名说明看哪里，趋势决定是否持有。' + ('拥挤度仅作提示；尚不削减权重。' if not d.allocation.crowd_trim_gate.scored else '拥挤主题被削减，并再分配给其他领跑者。')) }}</p>
   {% if d.allocation.de_overlapped %}
-  <p class="tagline" style="margin-top:6px">🧮 {{ t('De-overlapped for diversification', '为分散去重叠') }} — {{ t(
-	    'keeps the book from becoming one trade in several labels. Displaced',
-	    '避免组合变成同一笔交易的多个标签。被替换') }}: {% for x in d.allocation.de_overlapped %}<span class="chip">{{ x.name }}</span>{% endfor %}</p>
+  {#- Was "🧮 De-overlapped for diversification" — an internal verb in an emoji
+      slot. Same rule, same displaced list, said in words a reader already owns
+      (DOCTRINE Law 2: rewrite, don't delete). -#}
+  <p class="tagline" style="margin-top:6px">{{ t(
+	    'Only one theme per family, so the book is not the same trade under several names. Left out',
+	    '同一族系只保留一个主题，避免组合变成同一笔交易的多个名字。已剔除') }}: {% for x in d.allocation.de_overlapped %}<span class="chip">{{ x.name }}</span>{% endfor %}</p>
   {% endif %}
 </div>
 
@@ -661,7 +681,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
   <span class="muted">({{ B.sectors.span[0] }} → {{ B.sectors.span[1] }})</span></p>
 
 {% if B.gate_helps == False %}
-<div class="banner crash">⚠ <b>{{ t('Experimental in this market', '本市场属实验性') }}</b> — {{ t(
+<div class="banner crash">{{ icon('alert', 'bic') }} <b>{{ t('Experimental in this market', '本市场属实验性') }}</b> — {{ t(
 	  'local history did not prove the trend gate. Treat this allocation as experimental.',
 	  '本地历史未证明趋势门有效。请将此配置视为实验性。') }}</div>
 {% endif %}
