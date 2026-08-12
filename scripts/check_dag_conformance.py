@@ -28,6 +28,12 @@ from typing import NamedTuple
 
 import yaml
 
+try:  # package import (tests, `python -m scripts.check_dag_conformance`)
+    from scripts.workflow_run_source import resolve_run_source
+except ImportError:  # direct invocation: `python scripts/check_dag_conformance.py`
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from scripts.workflow_run_source import resolve_run_source
+
 # ---------------------------------------------------------------------------
 # Types
 # ---------------------------------------------------------------------------
@@ -228,16 +234,33 @@ def _extract_steps_from_run(run_body: str) -> list[Step]:
     return _collect(run_body, set())
 
 
-def _parse_workflow(wf_path: Path) -> dict[str, list[Step]]:
-    """Parse one workflow file; return {job_name: [Step, ...]} with cluster membership."""
+def _parse_workflow(
+    wf_path: Path, repo_root: Path | None = None
+) -> dict[str, list[Step]]:
+    """Parse one workflow file; return {job_name: [Step, ...]} with cluster membership.
+
+    A step whose body was extracted to ``scripts/ci/<name>.sh`` is resolved back
+    to that script's shell source first (see ``scripts/workflow_run_source``).
+    Without that, every module invocation inside an extracted block would read
+    as ABSENT here and the lane would report a wall of undeclared removals —
+    which is what blocked the daily.yml size diet before this seam existed.
+
+    ``repo_root`` defaults to the workflow's own repo (``<root>/.github/
+    workflows/<file>``), so existing single-argument callers keep working.
+    """
     raw = yaml.safe_load(wf_path.read_text())
+    root = (
+        repo_root
+        if repo_root is not None
+        else wf_path.resolve().parent.parent.parent
+    )
     result: dict[str, list[Step]] = {}
     jobs = raw.get("jobs", {})
     for job_name, job_body in jobs.items():
         steps = job_body.get("steps", [])
         all_steps: list[Step] = []
         for step in steps:
-            run_body = step.get("run", "")
+            run_body = resolve_run_source(step.get("run", ""), root)
             if run_body:
                 all_steps.extend(_extract_steps_from_run(run_body))
         result[job_name] = all_steps
@@ -531,7 +554,7 @@ def run_conformance(repo_root: Path, verbose: bool = False) -> int:
             )
             continue
         try:
-            job_steps = _parse_workflow(wf_path)
+            job_steps = _parse_workflow(wf_path, repo_root)
         except Exception as exc:  # noqa: BLE001
             all_errors.append(f"  PARSE ERROR {lane.workflow}: {exc}")
             continue
