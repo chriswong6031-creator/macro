@@ -7338,3 +7338,33 @@ jobs:
           tests/test_momoedge_browser_adapter.py
           tests/test_momoedge_capture_extension_static.py
           tests/test_momoedge_capture_deploy.py -q -rs
+
+  mastermindx-selector-capture-attestation:
+    # Capture-only, globally inactive selector-registration attestation. The
+    # tests are synthetic and cannot arm a selector, inspect candidate data,
+    # write private evidence, or dispatch any workflow.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - .github/ci/legacy-jobs.yml
+      - .github/workflows/ci.yml
+      - contracts/options/options.mastermindx_selector_capture_attestation.v1.schema.json
+      - engine/__init__.py
+      - engine/options_mastermindx_capture.py
+      - engine/session_digest.py
+      - lib/__init__.py
+      - lib/nyse_calendar.py
+      - research/options_estate/sparse_selector_preregistration_receipt_v1.json
+      - tests/test_options_mastermindx_capture.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest jsonschema
+      - name: frozen MastermindX selector capture-only attestation contracts
+        run: >-
+          PYTHONDONTWRITEBYTECODE=1 python -m pytest
+          tests/test_options_mastermindx_capture.py -q -rs
