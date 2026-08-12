@@ -11,9 +11,13 @@ has always been. Three sections carry that claim:
   B) the lens on synthetic rows — type match, dollar magnitude, freshness
      exclusion, and a receipt whose numbers close by hand;
   C) the DEFAULT ORDER IS UNTOUCHED — replayed against a golden fixture frozen
-     from real data/ before the lens existed, plus a mutation control (flip every
-     fund's type and the board must not move) and a non-vacuity control (the two
-     orderings genuinely differ on this fixture, so the pin constrains something);
+     from real data/ through the registry-less (default) construction, plus a
+     mutation control (flip every fund's type and the board must not move) and a
+     non-vacuity control (the two orderings genuinely differ on this fixture, so
+     the pin constrains something). The fixture was refrozen 2026-08-12 when
+     masterplan §6b R1 landed — the VanEck cash-line fix moved the underlying
+     conviction values, which is a DATA correction, not a construction change;
+     see the fixture's own _README for the standing regeneration contract;
   D) payload wiring — the lens is premium-payload-only, so the free shell's
      130 KiB budget pays nothing for it;
   E) the SEO fund count, which is now counted rather than typed.
@@ -313,8 +317,11 @@ def test_the_golden_fixture_is_a_real_board() -> None:
     fx = _golden()
     assert len(fx["ordering"]) >= 100, "a tiny fixture cannot pin an ordering"
     assert fx["rows"] and fx["n_rows"] == len(fx["rows"])
-    assert "REGENERATE AFTER R1" in " ".join(fx["_README"]), (
+    readme = " ".join(fx["_README"])
+    assert "python3 tests/test_etf_weighting.py --regenerate" in readme, (
         "the fixture must carry its own regeneration contract")
+    assert "R1 LANDED" in readme, (
+        "…and say which engine state these rows were frozen from")
 
 
 def test_default_ordering_is_byte_identical_to_the_pre_w2b_golden() -> None:

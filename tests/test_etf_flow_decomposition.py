@@ -29,6 +29,7 @@ Run: python3 -m pytest tests/test_etf_flow_decomposition.py -q
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -37,6 +38,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import collectors.holdings as ch  # noqa: E402
 from engine import etf_consensus as ec  # noqa: E402
 from engine import holdings_signals as hs  # noqa: E402
 
@@ -64,15 +66,17 @@ def _shares(**over) -> pd.Series:
 
 def _write(d: Path, asof: str, shares: pd.Series, *, price=PRICE,
            mv: pd.Series | None = None, weights: pd.Series | None = None,
-           stem: str | None = None) -> Path:
+           names: dict | None = None, stem: str | None = None) -> Path:
     """One holdings snapshot in the shipped schema. Weights default to the real
     share of market value, so a fixture is inside the sanity bounds unless it is
-    deliberately corrupt."""
+    deliberately corrupt. `names` overrides the display name per ticker — the
+    cash-sleeve fixtures need a NaN one, which is how the real feed ships it."""
     market_value = mv if mv is not None else shares * price
     w = weights if weights is not None else 100.0 * market_value / market_value.sum()
+    names = names or {}
     df = pd.DataFrame({
         "ticker": list(shares.index),
-        "name": [f"{t} Corp" for t in shares.index],
+        "name": [names.get(t, f"{t} Corp") for t in shares.index],
         "weight_pct": [float(w.get(t, 0.0)) for t in shares.index],
         "shares": shares.astype(float).values,
         "market_value": [float(market_value.get(t, 0.0)) for t in shares.index],
@@ -437,6 +441,101 @@ def test_a_fund_with_one_snapshot_yields_nothing(tmp_path) -> None:
     d = tmp_path / "NEW"
     _write(d, "2026-06-01", _shares())
     assert hs.fund_flow_decomposition(d, 10, fund="NEW") is None
+
+
+# --- guard: the sponsor cash sleeve (masterplan §6b R1) ----------------------
+#
+# VanEck files its cash sleeve as a HOLDING: ticker "-USD CASH-", name column
+# empty, "shares" = a dollar balance at $1 apiece. That balance is huge next to
+# an equity share count (SMH: 28.5M against a 296M-share book) and near-nothing
+# next to the fund's value, so leaving it inside the SUM-ratio denominator
+# `active_changes_dir` uses moves the fund's whole scale estimate — and the
+# entire constituent list then publishes an active change it never made.
+
+CASH_TK = "-USD CASH-"
+PICK_PRICE = 100.0
+# Weights are the real share of market value INCLUDING the cash sleeve, and the
+# same numbers are handed to both funds below, so the ground-truth comparison
+# tests the scale basis rather than an accident of weight normalization.
+_W0 = pd.Series({"BAL1": 22.222222, "BAL2": 17.777778, "BAL3": 13.333333,
+                 "BAL4": 8.888889, "BAL5": 4.444444, "BAL6": 2.222222,
+                 "PICK": 22.222222, CASH_TK: 8.888889})
+_W1 = pd.Series({"BAL1": 20.833333, "BAL2": 16.666667, "BAL3": 12.5,
+                 "BAL4": 8.333333, "BAL5": 4.166667, "BAL6": 2.083333,
+                 "PICK": 31.25, CASH_TK: 4.166667})
+
+
+def _cash_sleeve_fund(tmp_path, name: str, *, with_cash: bool) -> Path:
+    """One fund, twice: the manager takes PICK from 100 to 150 shares (+50%) while
+    the equity book is otherwise flat. `with_cash` adds the sponsor's cash line,
+    which spends 4,000 dollars down to 2,000 over the same pair — a 55% swing in
+    a balance that is 56% of the reported "share" count and 8.9% of the value."""
+    parent = tmp_path / name
+    d = parent / name
+    cash0 = {CASH_TK: 4000.0} if with_cash else {}
+    cash1 = {CASH_TK: 2000.0} if with_cash else {}
+    s0 = pd.Series({**BALLAST, "PICK": 100.0, **cash0})
+    s1 = pd.Series({**BALLAST, "PICK": 150.0, **cash1})
+    mv = {t: v * PRICE for t, v in BALLAST.items()}
+    _write(d, "2026-06-01", s0, weights=_W0, names={CASH_TK: float("nan")},
+           mv=pd.Series({**mv, "PICK": 100.0 * PICK_PRICE, **cash0}))
+    _write(d, "2026-06-11", s1, weights=_W1, names={CASH_TK: float("nan")},
+           mv=pd.Series({**mv, "PICK": 150.0 * PICK_PRICE, **cash1}))
+    return parent
+
+
+def _sleeve_rows(tmp_path, name: str, *, with_cash: bool) -> dict:
+    parent = _cash_sleeve_fund(tmp_path, name, with_cash=with_cash)
+    rows = hs.etf_signals(name, base_dir=parent, meta={"name": name},
+                          fleet_latest="2026-06-11")
+    return {r["ticker"]: r for r in rows}
+
+
+def test_a_nameless_cash_sleeve_is_kept_out_of_the_scale_basis(tmp_path) -> None:
+    """R1. The cash line must not reach the denominator, and the fund must read
+    exactly as it does when the sponsor never filed the line at all."""
+    with_cash = _sleeve_rows(tmp_path, "SLEEVE", with_cash=True)
+    truth = _sleeve_rows(tmp_path, "CLEAN", with_cash=False)
+    assert CASH_TK not in with_cash, "the cash line was published as a holding"
+    assert set(with_cash) == set(truth) == {"PICK"}, (
+        "a flat ballast book must publish nothing; anything else is phantom")
+    for field in ("conviction_pp", "active_chg_pct", "weight_pct",
+                  "flow_pp", "selection_pp", "total_pp"):
+        assert with_cash["PICK"][field] == pytest.approx(truth["PICK"][field]), field
+    # …and the surviving number is the manager's real +50%, flow-normalized on an
+    # equity-only book that grew 1.56% (3200 -> 3250 shares).
+    assert with_cash["PICK"]["active_chg_pct"] == pytest.approx(47.69, abs=0.01)
+    assert with_cash["PICK"]["conviction_pp"] == pytest.approx(10.09, abs=0.01)
+    assert with_cash["PICK"]["total_pp"] == pytest.approx(
+        with_cash["PICK"]["flow_pp"] + with_cash["PICK"]["selection_pp"], abs=1e-4)
+
+
+def test_the_cash_sleeve_guard_is_what_removes_the_phantom(tmp_path, monkeypatch) -> None:
+    """Mutation control. Blind the predicate to the ticker form and the defect
+    comes straight back: the six ballast names never traded, and every one of
+    them publishes a +37% accumulation off a scale factor the cash balance set."""
+    monkeypatch.setattr(ch, "_CASH_SLEEVE_TICKER_RE", re.compile(r"(?!x)x"))
+    broken = _sleeve_rows(tmp_path, "SLEEVE", with_cash=True)
+    assert set(broken) > {"PICK"}, "the mutation must reproduce the defect"
+    assert sorted(t for t in broken if t.startswith("BAL")) == \
+        [f"BAL{i}" for i in range(1, 7)]
+    assert broken["BAL1"]["active_chg_pct"] == pytest.approx(37.14, abs=0.01)
+    assert broken["BAL1"]["conviction_pp"] > 5.0          # invented out of nothing
+    assert broken["PICK"]["conviction_pp"] == pytest.approx(16.06, abs=0.01)
+    # the median-scale read W1 ships was already immune — it is the SUM ratio the
+    # shipped conviction score uses that the balance moves.
+    assert broken["PICK"]["fund_scale_pct"] == pytest.approx(
+        _sleeve_rows(tmp_path, "CLEAN", with_cash=False)["PICK"]["fund_scale_pct"],
+        abs=0.01)
+
+
+def test_the_cash_sleeve_predicate_leaves_real_tickers_alone() -> None:
+    """Conservatism. The rule keys on a LEADING HYPHEN plus a CASH token — a form
+    no listed equity carries — so tickers that merely contain the letters stay."""
+    for tk in ("-USD CASH-", "-EUR CASH-", "-CZK CASH-", "-TWD CASH-"):
+        assert ch.is_non_equity_holding(tk, float("nan")), tk
+    for tk in ("CASH.TO", "CASHX", "XCASH", "USDX", "X", "NVDA", "000720 KS"):
+        assert not ch.is_non_equity_holding(tk, ""), tk
 
 
 # --- integration: the shipped signal rows -----------------------------------
