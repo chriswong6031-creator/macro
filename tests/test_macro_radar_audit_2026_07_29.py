@@ -160,11 +160,14 @@ def test_flip_names_a_hard_force_override_when_that_is_the_binding_cap():
 # 2 — ceiling vs blend provenance + structurally-disarmed amplifiers
 # ===========================================================================
 
-def test_score_source_distinguishes_the_ceiling_constant_from_the_blend():
+def test_score_source_distinguishes_the_ceiling_constant_from_the_blend(monkeypatch):
     """On a radar-capped day the displayed number is the ceiling CONSTANT, not a measurement.
     raw_score was already in the payload but nothing said which one the dial showed."""
+    monkeypatch.setattr(ms, "_rr_scorecard_track",
+                        lambda _market: {"monitoring": {"log_fresh": True}})
     latest = {"date": "2026-07-29", "conditions": {}, "liquidity_overlay": "expanding",
-              "risk_radar": {"state": "caution", "top_score": 77, "drawdown_prob": {}}}
+              "risk_radar": {"state": "elevated", "top_score": 82, "drawdown_prob": {},
+                             "can_force": True}}
     overrides = []
     rd = ms._radar_override(latest, overrides)
     assert rd["ceiling"] is not None
@@ -185,9 +188,8 @@ def test_snapshot_publishes_score_provenance_keys():
 
 
 def test_disarmed_amplifiers_are_named_not_silently_absent():
-    """complacency needs a calm surface and breadth_div needs the index near its 1y high —
-    both DISARM in a decline, which is why the amplified ceiling could RISE on a down day.
-    A silent gauge must be reported as silent-by-construction, not read as reassuring."""
+    """Breadth divergence needs the index near its 1y high. A silent scoring gauge must be
+    reported as silent-by-construction, while display-only complacency stays out of the ladder."""
     latest = {
         "date": "2026-07-29",
         "conditions": {
@@ -200,7 +202,7 @@ def test_disarmed_amplifiers_are_named_not_silently_absent():
     }
     un = ms._amp_unavailable(latest)
     keys = [u["key"] for u in un]
-    assert "complacency" in keys and "breadth_div" in keys, keys
+    assert "complacency" not in keys and "breadth_div" in keys, keys
     for u in un:
         assert u["note_en"] and u["note_zh"], u
         # the note must say WHY it cannot fire, not merely that it did not
@@ -671,39 +673,33 @@ def test_9g_global_breadth_stale_guard_uses_the_frames_asof(monkeypatch, tmp_pat
     assert "_global_breadth_raw(asof=" in inspect.getsource(rr.leading_signals)
 
 
-def test_9h_backtest_replica_applies_the_election_band_modulation():
-    """state_series is consumed by trajectory() as 'what the card would have shown', and its
-    odds_delta gates de-escalation eligibility — so a replica missing the live band nudge was
-    systematically less escalated for ~7 months of every midterm year."""
-    from engine import election_cycle as ec
+def test_9h_backtest_replica_keeps_calendar_out_of_signal_bands():
+    """Calendar context is sizing-only in both live computation and the causal replica."""
     idx = pd.bdate_range("2026-05-01", periods=40)      # midterm year, inside Apr-Oct
     d = rrb.band_delta_series(idx)
     assert len(d) == len(idx)
-    assert set(np.unique(d.to_numpy())) <= {0.0, float(ec._BAND_NUDGE)}
+    assert (d == 0.0).all()
 
     # outside the window the nudge is always zero
     off = rrb.band_delta_series(pd.bdate_range("2025-05-01", periods=20))   # not a midterm year
     assert (off == 0.0).all()
 
-    # a sub-score sitting between the nudged and un-nudged caution cut must band differently
+    # a sub-score just below caution remains watch; seasonality cannot promote it
     calib = {"bands": dict(rr._DEFAULT_BANDS),
              "legs": {"credit_oas_roc": {}},
              "scares": {"credit": {"tier": "A", "legs": [("credit_oas_roc", 1.0)]}}}
-    between = (rr._DEFAULT_BANDS["caution"] + rr._DEFAULT_BANDS["watch"]) / 2
-    mid = rr._DEFAULT_BANDS["caution"] - 1.0        # inside the 4-point nudge
+    mid = rr._DEFAULT_BANDS["caution"] - 1.0
     subs = pd.DataFrame({"credit": mid}, index=idx)
     states = rrb.state_series(subs, calib)
     assert states.notna().all()
-    assert between < mid < rr._DEFAULT_BANDS["caution"]
+    assert (states == "watch").all()
 
 
-def test_9h_band_delta_series_never_touches_the_loud_cuts():
-    """The calendar may lower watch/caution only — it can NEVER manufacture a loud banner."""
+def test_9h_calendar_never_touches_any_band_cut():
+    """The calendar may size/display only; state_series uses the fixed measured bands."""
     import inspect
     src = inspect.getsource(rrb.state_series)
-    assert '"watch": (bands["watch"] - _d)' in src
-    assert '"caution": (bands["caution"] - _d)' in src
-    assert '"elevated"' not in src.split("bands = {**bands,")[1].split("}")[0]
+    assert "band_delta_series" not in src
 
 
 # ---------------------------------------------------------------------------
