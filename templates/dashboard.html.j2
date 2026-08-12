@@ -4179,21 +4179,8 @@ body.page-macro.mx4-grid .mx5-gauge-svg{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.62);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
-/* THE NEEDLE. The three rules above repaint track / ticks / scale labels and CANNOT
-   reach it: `> text` is a child selector so it stops at the needle <g>, and `g[stroke]`
-   matches only the tick group (which carries a stroke ATTRIBUTE — the needle group does
-   not). So the pointer kept its dark-mode ink — `stroke="rgba(255,255,255,.30)"` on the
-   soft backing line and `fill="white"` on the blade — and composited to 1.0:1 on the
-   white light-mode .panel: the dial rendered as an arc with no reading on it, which is
-   the one thing on the gauge that has to be legible. Presentation attributes lose to any
-   author rule, so this repaints without touching the markup (the hub ring / core / tip
-   carry inline style="" fills from the state colour and stay as they are — they read
-   fine on white). Same weights as the dark design, inverted: a wide soft backing under a
-   crisp blade. .82 blade = 11.2:1 on white. Twins: body.page-china / .page-canada /
-   .page-hk / .sh-needle carry the identical markup — keep them in step. */
-[data-theme="light"] body.page-macro.mx4-grid #mx5-gauge-needle line{stroke:rgba(10,16,24,.20);}
-[data-theme="light"] body.page-macro.mx4-grid #mx5-gauge-needle polygon{fill:rgba(10,16,24,.82);}
-[data-theme="light"] body.page-macro.mx4-grid #mx5-gauge-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
+/* The shared light-mode pointer treatment lives in theme.css (`.odo-needle`).
+   Dark mode keeps the original white blade + state-coloured hub below. */
 /* Regime pill (Order 3: smaller + never clips — sizes to content, no fixed width) */
 body.page-macro.mx4-grid .mx5-regime-pill{
   display:inline-flex;align-items:center;gap:6px;
@@ -7223,11 +7210,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <text x="70"  y="10" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">50</text>
           <text x="126" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">100</text>
           {# Needle — rotation baked by Jinja; JS patches via data attr #}
-          <g id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#mx5NeedleGlow)">
+          <g id="mx5-gauge-needle" class="odo-needle odo-needle--compact"
+             style="--odo-accent:var(--mx5-gauge,var(--warn))"
+             transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#mx5NeedleGlow)">
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
             <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
             <circle cx="70" cy="75" r="7"  fill="rgba(255,255,255,.10)"/>
-            <circle cx="70" cy="75" r="4.5" style="stroke:{{ _mx5_sc_col }}" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
+            <circle class="odo-needle-hub" cx="70" cy="75" r="4.5" style="stroke:{{ _mx5_sc_col }}" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
             <circle cx="70" cy="75" r="2"  style="fill:{{ _mx5_sc_col }}"/>
             <circle cx="70" cy="25.5" r="2.5" style="fill:{{ _mx5_sc_col }};filter:drop-shadow(0 0 4px {{ _mx5_sc_col }})"/>
           </g>

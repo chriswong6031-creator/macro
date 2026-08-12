@@ -115,6 +115,17 @@ AGENT_WORKTREE_ROOTS = (
     ".codex/worktrees/",
     ".codex-worktrees/",
 )
+# The pure CI-handoff contract (`mastermind.ci_handoff.v1`). Loaded BY FILE PATH,
+# never through `sys.path`, so consulting it cannot drag the application import
+# graph into a Stop hook — see `_ci_handoff_contract`. Two consumers hold this
+# classifier: this hook (the Claude safety net) and `scripts/ci_handoff.py` (the
+# universal CLI). They must never disagree, because a session released on a head
+# the sweeper will refuse waits forever for a merge that never comes.
+_CONTRACT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "ci_handoff_contract.py"
+# One-slot cache. `_is_spurious_check` is called once per check run and a head can
+# carry 100+ of them, so re-executing the module per call would be absurd. A failed
+# load is cached too — retrying it 130 times cannot make it succeed.
+_CONTRACT_CACHE: list[Any] = []
 
 
 def _emit(value: dict[str, Any]) -> None:
@@ -618,15 +629,78 @@ def _latest_merged_pr(owner: str, repo: str, branch: str) -> dict[str, Any] | No
     return max(merged, key=lambda pull: pull.get("merged_at") or "") if merged else None
 
 
+def _ci_handoff_contract() -> Any | None:
+    """`scripts/ci_handoff_contract.py`, loaded by PATH, or None when unavailable.
+
+    Same discipline as `_plain_copy_pairs`: loaded from a file LOCATION, and any
+    `sys.path` mutation the load performs is rolled back — reading the shared
+    classifier must not leave a repo root on the import path of whatever process
+    is asking. The contract imports only the standard library precisely so this
+    stays true, and nothing here goes near the application import graph.
+
+    It DIFFERS from `_plain_copy_pairs` in one mechanical detail: the module is
+    registered in `sys.modules` under a private name BEFORE `exec_module`, which
+    is the recipe the importlib docs give for a direct file import. That is not
+    cosmetic. `HandoffVerdict` is a `@dataclass` and the contract carries
+    `from __future__ import annotations`, so class creation resolves its string
+    annotations through `dataclasses._is_type`, which does
+    `sys.modules.get(cls.__module__).__dict__` — an unregistered module makes that
+    `None.__dict__` and the whole load dies with `AttributeError` (measured here on
+    CPython 3.12). A hook that silently degraded on that would fail closed and pin
+    every session, so the registration is load-bearing. A failed load removes the
+    entry again rather than leaving a half-executed module behind for someone else
+    to import.
+
+    The registration name is per-HOOK, not per-contract. Two hooks sharing one key
+    would take turns evicting each other's module whenever both run in one process
+    (they do, under pytest), and an evicted module whose last reference goes away
+    has its globals cleared — so the OTHER hook's cached handle silently rots
+    mid-call. Separate keys make that impossible instead of unlikely.
+
+    Unlike `_plain_copy_pairs`, every CALLER of this fails CLOSED (see
+    `_is_spurious_check`, `_handoff_verdict`, `_check_ci`). A missing contract is
+    ignorance, and ignorance may pin a session but must never release one.
+    """
+    if _CONTRACT_CACHE:
+        return _CONTRACT_CACHE[0]
+    module: Any | None = None
+    name = "_mm_ci_handoff_contract_ship_loop_guard"
+    saved_path = list(sys.path)
+    try:
+        spec = importlib.util.spec_from_file_location(name, _CONTRACT_PATH)
+        if spec is not None and spec.loader is not None:
+            candidate = importlib.util.module_from_spec(spec)
+            sys.modules[name] = candidate
+            try:
+                spec.loader.exec_module(candidate)
+            except BaseException:
+                sys.modules.pop(name, None)
+                raise
+            module = candidate
+    except Exception:
+        module = None
+    finally:
+        sys.path[:] = saved_path
+    _CONTRACT_CACHE.append(module)
+    return module
+
+
 def _is_spurious_check(name: str) -> bool:
     """The known-spurious Cloudflare check both CI gates have always ignored.
 
-    One definition for `_check_ci` and the labeled handoff below, so the rule can
-    never drift between "what pins a merged session" and "what releases an armed
-    one". `scripts/merge_on_green.py` carries the same predicate for the sweeper.
+    A thin adapter over `ci_handoff_contract.is_spurious_check`, so `_check_ci`,
+    the labeled handoff below, `scripts/ci_handoff.py`, and `merge_on_green.py`
+    all read ONE predicate: the rule can never drift between "what pins a merged
+    session", "what releases an armed one", and "what the sweeper merges".
+
+    Fails CLOSED. With no contract every name is non-spurious, so a red is CONSIDERED
+    rather than waved through — the cost of a missing contract is a session held,
+    never a red ignored.
     """
-    lowered = name.lower()
-    return "workers builds" in lowered and "macro" in lowered
+    contract = _ci_handoff_contract()
+    if contract is None:
+        return False
+    return bool(contract.is_spurious_check(name))
 
 
 def _open_pull(owner: str, repo: str, branch: str) -> dict[str, Any] | None:
@@ -668,31 +742,55 @@ def _handoff_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
     shapes a MESSAGE to a session that can act on a red immediately, so telling it
     early is pure benefit, whereas the sweeper gates an irreversible merge and a
     one-shot comment and therefore waits for full information.
+
+    THE RULE ITSELF LIVES IN `scripts/ci_handoff_contract.classify_check_runs`.
+    This is a thin adapter that keeps the hook's historic `(verdict, names)` shape
+    (callers and tests pin it) over the shared classifier, so the Claude Stop hook
+    and the universal `scripts/ci_handoff.py` CLI cannot answer the same question
+    two ways. Fails CLOSED: with no contract the answer is `unproven`, which falls
+    through to the ordinary `unmerged` block rather than releasing anything.
     """
-    considered = [run for run in runs if not _is_spurious_check(str(run.get("name") or ""))]
-    if not considered:
+    contract = _ci_handoff_contract()
+    if contract is None:
         return "unproven", []
-    red = [
-        f"{run.get('name') or 'unnamed check'} ({run.get('conclusion')})"
-        for run in considered
-        if run.get("status") == "completed"
-        and run.get("conclusion") not in {"success", "neutral", "skipped"}
-    ]
-    if red:
-        return "red", red
-    # An absence of red is not a pass — see the #4779 measurement in
-    # `decide_verdict`. Gated on nothing PENDING, which is the one place this
-    # differs from the sweeper's copy: there the pending branch has already
-    # returned by the time the affirmative-pass rule is reached, whereas `armed`
-    # deliberately covers a head whose packs are still running. A queued ci-pack
-    # with no success yet is exactly what the sweeper is for and must stay `armed`;
-    # only a head that has FINISHED proving nothing may pin the session.
-    still_running = any(run.get("status") != "completed" for run in considered)
-    if not still_running and not any(
-        run.get("conclusion") == "success" for run in considered
-    ):
-        return "unproven", []
-    return "armed", []
+    verdict = contract.classify_check_runs(runs)
+    return verdict.state, list(verdict.red)
+
+
+def _handoff_marker(
+    owner: str, repo: str, branch: str, number: Any, head_sha: str, runs: list[dict[str, Any]]
+) -> str:
+    """The single `CI_HANDOFF=` line that ends a worker's life, or "" on any failure.
+
+    Built through `ci_handoff_contract.build_receipt` -> `terminal_marker` rather
+    than formatted here, so this hook's marker and the CLI's marker are byte-
+    identical in SHAPE: one controller parser has to read both. The hook knows the
+    repo, the pull request, the branch, and the head; `base_sha` and the
+    continuation are things it cannot cheaply learn, and `build_receipt` tolerates
+    their absence (the marker's public projection carries a continuation
+    IDENTIFIER only, never a body — Macro is a public repository).
+
+    Returns "" rather than raising: the ARMED release is the load-bearing
+    behaviour and a marker that cannot be built must not cost a session its stop.
+    """
+    contract = _ci_handoff_contract()
+    if contract is None:
+        return ""
+    try:
+        receipt = contract.build_receipt(
+            repo=f"{owner}/{repo}",
+            pr_number=number,
+            branch=branch,
+            base_ref="main",
+            base_sha="",
+            head_sha=head_sha,
+            verdict=contract.classify_check_runs(runs),
+            accepted_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            continuation_id=None,
+        )
+        return contract.terminal_marker(receipt)
+    except Exception:
+        return ""
 
 
 def _merge_on_green_handoff(
@@ -721,7 +819,8 @@ def _merge_on_green_handoff(
     if not head_sha or head_sha != head:
         return "none", ""
 
-    verdict, names = _handoff_verdict(_head_check_runs(owner, repo, head_sha))
+    runs = _head_check_runs(owner, repo, head_sha)
+    verdict, names = _handoff_verdict(runs)
     if verdict == "unproven":
         return "none", ""
     if verdict == "red":
@@ -733,7 +832,7 @@ def _merge_on_green_handoff(
             f"the head is clean), or remove the `{MERGE_ON_GREEN_LABEL}` label and finish "
             "the merge by hand."
         )
-    return "armed", (
+    explanation = (
         f"Ship-loop handoff: pull request #{number} is armed with "
         f"`{MERGE_ON_GREEN_LABEL}` and carries no concluded red checks, so this session "
         "may stop here. The `merge-on-green` workflow sweeps every 10 minutes and "
@@ -743,6 +842,13 @@ def _merge_on_green_handoff(
         "merge is unchanged: the VPS pulls main every 3 minutes and the nightly "
         "`scope=all` re-render is the backstop."
     )
+    # The machine half of the same fact. The human paragraph above is for the
+    # session; this line is for the controller, which matches `CI_HANDOFF=` at the
+    # START of a line — so it gets its own line, never wrapped and never appended
+    # mid-paragraph. A marker split across lines is a marker nothing can see.
+    marker = _handoff_marker(owner, repo, branch, number, head_sha, runs)
+    detail = f"{explanation}\n\n{marker}" if marker else explanation
+    return "armed", detail
 
 
 def _failing_ci_message(display: list[str]) -> str:
@@ -1034,6 +1140,16 @@ def _check_ci(
     runs = _head_check_runs(owner, repo, head_sha)
     if not runs:
         return False, "No CI check runs were found for the pull-request head."
+    # ONE definition of "not a red", shared with `_handoff_verdict`, the CLI, and
+    # the sweeper. Fails CLOSED to the historic literal rather than to an empty
+    # set: with no contract this gate must behave exactly as it always has, and an
+    # empty set would read every concluded check — including `success` — as a red.
+    contract = _ci_handoff_contract()
+    non_red = (
+        contract.NON_RED_CONCLUSIONS
+        if contract is not None
+        else frozenset({"success", "neutral", "skipped"})
+    )
     bad: list[tuple[str, str]] = []
     pending: list[str] = []
     failure_starts: list[str] = []
@@ -1043,7 +1159,7 @@ def _check_ci(
             continue
         if run.get("status") != "completed":
             pending.append(name)
-        elif run.get("conclusion") not in {"success", "neutral", "skipped"}:
+        elif run.get("conclusion") not in non_red:
             conclusion = str(run.get("conclusion"))
             bad.append((name, conclusion))
             if conclusion == "failure":

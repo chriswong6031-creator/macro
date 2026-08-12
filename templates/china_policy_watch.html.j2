@@ -71,14 +71,8 @@
   .pw .sh-needle-hub{fill:var(--panel,#0e1013);stroke:var(--sh-accent);stroke-width:1.5}
   .pw .sh-needle-core,.pw .sh-needle-tip{fill:var(--sh-accent)}
   .pw .sh-needle-tip{filter:drop-shadow(0 0 3.5px var(--sh-accent))}
-  /* Light mode: the needle's backing line and blade ship as dark-mode presentation
-     attributes (rgba(255,255,255,.30) / white) and composited to ~1:1 on the light
-     .cnx-card (rgba(255,255,255,.82)) — the dial rendered as an arc with no reading on
-     it. Hub / core / tip already paint from --sh-accent above. Twin rules on
-     body.page-macro / .page-china / .page-canada / .page-hk — same component. */
-  [data-theme="light"] .pw .sh-needle line{stroke:rgba(10,16,24,.20);}
-  [data-theme="light"] .pw .sh-needle polygon{fill:rgba(10,16,24,.82);}
-  [data-theme="light"] .pw .sh-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
+  /* theme.css owns the light pointer; policy-watch supplies its direction-neutral
+     pressure-state accent through --sh-accent. */
   .pw .sh-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   .pw .sh-big{font-size:60px;font-weight:800;line-height:.9;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--sh-accent);text-shadow:0 0 34px var(--sh-glow)}
   @media(max-width:560px){.pw .sh-big{font-size:40px}}
@@ -228,11 +222,11 @@
           <text x="14" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">0</text>
           <text x="70" y="10" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">50</text>
           <text x="126" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">100</text>
-          <g class="sh-needle" transform="rotate({{ needle }} 70 75)" filter="url(#shNeedleGlow)">
+          <g class="sh-needle odo-needle odo-needle--compact" style="--odo-accent:var(--sh-accent)" transform="rotate({{ needle }} 70 75)" filter="url(#shNeedleGlow)">
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
             <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
             <circle cx="70" cy="75" r="7" fill="rgba(255,255,255,.10)"/>
-            <circle class="sh-needle-hub" cx="70" cy="75" r="4.5"/>
+            <circle class="sh-needle-hub odo-needle-hub" cx="70" cy="75" r="4.5"/>
             <circle class="sh-needle-core" cx="70" cy="75" r="2"/>
             <circle class="sh-needle-tip" cx="70" cy="25.5" r="2.5"/>
           </g>
