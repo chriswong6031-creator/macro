@@ -368,9 +368,14 @@ public:
     # Deliberately NOT promoted, though payload-free, because every data source
     # they read stays gated and the bytes would draw nothing: wh_banner.js (both
     # /wh_banner.json and /rr_banner.json carry graded rows), mm_charts.js (every
-    # spec source is a gated *_data.js), stockdata.js (reads the gated per-ticker
-    # store). And every *_data.js / *_engine.js stays gated on its merits — those
-    # ARE the payload, whatever their filename suggests.
+    # spec source is a gated *_data.js), stockdata.js (STRONGER than the census's
+    # original "reads the gated per-ticker store": pages carrying the data_base
+    # fetch shim — watchlist.html, sector_heatmap.html — divert its
+    # <market>stockdata/* reads to the anonymously readable public R2 bucket,
+    # so promoting the file would make an open shell RENDER graded per-ticker
+    # output to signed-out visitors; adversarial review 2026-08-12, watchlist
+    # husk fix). And every *_data.js / *_engine.js stays gated on its merits —
+    # those ARE the payload, whatever their filename suggests.
 
     # Unmodified third-party charting bundles, verified byte-identical (sha256)
     # to the upstream npm artifacts rather than assumed: plotly.js@2.32.0
@@ -428,6 +433,54 @@ public:
     # the public HTML, so the pair moves no data whatsoever.
     - /illus.css
     - /illus.js
+    # ── Watchlist page funnel shell (watchlist.html) — P0 anonymous-husk fix,
+    # 2026-08-12 (Watchlist/Portfolio W0 commissioning packet §2.7 / §0
+    # "Anonymous funnel" precondition; chipped ahead of the W2 flagship
+    # rebuild) ───────────────────────────────────────────────────────────────
+    #
+    # The 2026-08-04 *.html change opened the shell, but ALL TEN of the page's
+    # scripts stayed default-deny, so anonymous production served a publicly
+    # cached husk: no empty state, no sign-in CTA, zero console errors because
+    # nothing ran. These SIX are the funnel shell: the page's own store is the
+    # visitor's list (localStorage; Supabase after sign-in), so the empty
+    # state, add-holding UI and the #wl_signin "Sign in to sync" CTA render
+    # with zero gated reads. Network surface, verified file by file plus an
+    # adversarial red-team pass (2026-08-12): watchlist.js, watchstore.js,
+    # market_books.js and mtf.js make no network calls; portfolio.js reads
+    # only gated data/portfolio_ctx.json (401 → stage rows omit, and only
+    # after a modeled position exists).
+    #
+    # FOUR of the page's scripts are deliberately NOT here, and the difference
+    # is the whole boundary:
+    #   * stockdata.js — the page ships a data_base fetch shim that diverts
+    #     every <market>stockdata/* read to the public R2 bucket, so with
+    #     window.SD present an open shell RENDERS graded per-ticker output
+    #     (conviction band, ladder state, entry urgency) to signed-out
+    #     visitors. The anonymous shell therefore boots WITHOUT window.SD —
+    #     watchlist.js carries the signed-out guards (same PR) and draws no
+    #     signal claims at all.
+    #   * watchlist_risk.js + risk_core.js + factor_exposure.js — payload-free
+    #     but they ARE the calibrated decision rule (thresholds, escalation
+    #     ladder, score→label boundaries) in code form; publishing the rule is
+    #     a product disclosure the W2 flagship wave must decide deliberately
+    #     against its anonymous-funnel exit gate, not inherit as a husk-fix
+    #     side effect. Anonymously they could draw nothing anyway:
+    #     factor_betas.json and transmission_chains.json stay gated and
+    #     401 → null.
+    - /watchlist.js
+    - /watchstore.js
+    - /market_books.js
+    - /portfolio.js
+    - /mtf.js
+    # The unified chat widget client — public theme.js injects it on every
+    # root-level page for every visitor (document-relative src, so the SEO
+    # subtrees are a separate, pre-existing gap), and its 401 was killing the
+    # anonymous chat launcher on all of them, not just here. Its data plane is
+    # the Bearer-authenticated /api/brain/* gateway plus the public R2 bar
+    # store; the script carries no signals or customer data. Also promoted by
+    # the in-flight stock.html heal (#5409) — listed in both so each stands
+    # alone; dedupe on whichever lands second.
+    - /mm_brain.js
     #
     # terminal_overlay.js LOOKS like the next mm_brain.js and is NOT — recorded
     # here because the resemblance is the trap. theme.js does build
