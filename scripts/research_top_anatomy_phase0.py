@@ -99,6 +99,7 @@ sys.path.insert(0, str(_REPO))
 from collectors.massive_stock_day import (  # noqa: E402
     StaleLocalMirrorError, check_local_mirror_freshness)
 from engine import price_ladder, top_anatomy as ta  # noqa: E402
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 from scripts.replay_standout_pipeline import split_adjust  # noqa: E402
 
 FAMILY = "top_anatomy_p0"
@@ -4320,7 +4321,7 @@ def _main_p1(a, *, quick: bool) -> int:
     summary["wall_seconds"] = time.time() - _T0
     summary["wave_elapsed_seconds"] = time.time() - wave_start
     out_json.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(summary, indent=2, default=str))
+    _write_summary_json(out_json, summary)
     say(f"wrote {out_json}")
     say(f"done in {summary['wall_seconds']:.0f}s")
     return 0
@@ -5290,6 +5291,25 @@ def w2_out_json(arm: str, quick: int | None = None) -> Path:
                     + (f"_quick{quick}" if quick else "") + ".json")
 
 
+def _write_summary_json(path: Path, summary: dict) -> None:
+    """The ONE write path for every committed summary artifact — strict JSON only.
+
+    All three summary emitters (phase-0 `main`, `--w2-arm`, `--w2-roster-read`) route
+    here so the encoding contract is stated once and testable once.
+
+    A leg with no fires yields NaN ruler stats (`fwd_63_excess` and friends), and
+    `default=str` does NOT catch them — it only fires for objects the encoder can't
+    serialize, and a NaN float serializes fine, as the bare token `NaN`. That is not
+    JSON: jq and every browser reject the file. So non-finite floats are mapped to
+    `null` at write time (`engine.json_strict`, which copies rather than mutating —
+    `summary` is still read afterwards by `write_report`), and `allow_nan=False`
+    enforces that nothing non-finite survived. Encoding only: no value the sanitizer
+    leaves alone is touched, and no computation upstream of here changes.
+    """
+    path.write_text(json.dumps(sanitize_non_finite(summary), indent=2,
+                               default=str, allow_nan=False))
+
+
 def _main_w2_roster_read(a, *, quick: bool) -> int:
     """`--w2-roster-read`: add the post-hoc roster read to an ALREADY-WRITTEN summary.
 
@@ -5314,7 +5334,7 @@ def _main_w2_roster_read(a, *, quick: bool) -> int:
                           f"{a.data_root} --w2-arm {arm} --w2-roster-read {path}"
                           + (" --allow-stale" if a.allow_stale else ""))
     summary["vintage_roster_b2_read"] = block
-    path.write_text(json.dumps(summary, indent=2, default=str))
+    _write_summary_json(path, summary)
     say(f"wrote the post-hoc roster read into {path}")
     return 0
 
@@ -5380,7 +5400,7 @@ def _main_w2(a, *, quick: bool) -> int:
                                        seed=a.seed, quick=quick, n_files=n_files)
     summary["wall_seconds"] = time.time() - _T0
     out_json.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(summary, indent=2, default=str))
+    _write_summary_json(out_json, summary)
     say(f"wrote {out_json}")
     say(f"done in {summary['wall_seconds']:.0f}s")
     return 0
@@ -5520,7 +5540,7 @@ def main(argv=None) -> int:
 
     summary["wall_seconds"] = time.time() - _T0
     a.out_json.parent.mkdir(parents=True, exist_ok=True)
-    a.out_json.write_text(json.dumps(summary, indent=2, default=str))
+    _write_summary_json(a.out_json, summary)
     write_report(a.out_report, summary)
     say(f"wrote {a.out_json}")
     say(f"wrote {a.out_report}")

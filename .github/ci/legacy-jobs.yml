@@ -1211,6 +1211,7 @@ jobs:
           tests/test_validated_claims_thirdparty.py
           tests/test_validated_claims_engine.py
           tests/test_validated_claims_surfaces.py
+          tests/test_validated_claims_registry_source.py
           tests/test_validated_claims_structural_scope.py
           tests/test_intl_recovery_quality.py
           tests/test_sa_w5_v2_grader_hook.py
@@ -7035,8 +7036,10 @@ jobs:
     #                   show-more row cap it would otherwise leave pointing at the old
     #                   card positions.
     #
-    # Template-only suite: no pandas, no pyarrow, no network — it reads two templates and
-    # one plain-copy JS asset and shells node.
+    # The surface probes import engine/group_pulse.py to exercise its published
+    # denominator/arc contract, so NumPy and pandas are real import dependencies.
+    # No pyarrow or network — it otherwise reads two templates, one plain-copy JS
+    # asset, and shells node.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
     timeout-minutes: 6
     runs-on: ubuntu-latest
@@ -7049,7 +7052,7 @@ jobs:
         with:
           node-version: "20"
       - name: install minimal deps
-        run: pip install pytest
+        run: pip install pytest numpy pandas pyyaml
       - name: basket read band + board group-pulse column (GR1)
         run: python -m pytest tests/test_group_read_surface.py -q -rs
 
@@ -7170,6 +7173,7 @@ jobs:
       - scripts/export_top_anatomy_library.py
       - tests/test_alert_zh_completeness.py
       - tests/test_falsifier_tripwires.py
+      - tests/test_json_strict.py
       - tests/test_massive_local_staleness.py
       - tests/test_price_pressure.py
       - tests/test_top_anatomy.py
@@ -7234,6 +7238,14 @@ jobs:
       # Phase-0 contract.  The derived scope follows its engine/script/read closure.
       - name: TOP ANATOMY point-in-time engine and preregistration contracts
         run: python -m pytest tests/test_top_anatomy.py -q
+      # The same harness's JSON write path, so it belongs to the same owner rather
+      # than a second overlapping job. `default=str` does NOT catch NaN — it only
+      # fires for values the encoder cannot serialize — so three shipped
+      # top_anatomy summaries carried bare `NaN` tokens that no strict parser will
+      # read. This pins the sanitizer and that every summary emitter routes through
+      # the one write path; an unregistered encoding guard is a dead guard.
+      - name: strict-JSON research summary encoding — non-finite sanitizer and emitter
+        run: python -m pytest tests/test_json_strict.py -q
       # Local research entrypoints must refuse a massive_stock_day mirror frozen
       # past the declared trading-session ceiling while staying inert in Actions.
       # The packed selector derives this suite's full import/path-literal closure,
