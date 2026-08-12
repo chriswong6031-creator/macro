@@ -265,6 +265,21 @@ def test_us_feed_ahead_of_the_render_appends_a_provisional_point(js):
 
 
 @needs_node
+@US_PAGES
+def test_us_null_measured_and_display_scores_preserve_the_baked_path(js):
+    """JS must not coerce an explicit null score to zero and invent a Risk-off point."""
+    feed = _us_feed(BAKED_SESSION, 44, "MIXED", live=True,
+                    built=f"{BAKED_SESSION} 14:05:00 UTC")
+    feed["display"]["score"] = None
+    feed["display"]["raw_score"] = None
+    out = _harness(js.read_text(encoding="utf-8"), feed, "us")
+    assert not out.get("error"), out["error"]
+    assert out["score"] == str(BAKED_SCORE)
+    assert out["chart_last"]["s"] == BAKED_SCORE
+    assert out["chart_last"]["v"] == BAKED_WORD
+
+
+@needs_node
 @CN_PAGES
 def test_cn_feed_on_the_rendered_session_still_patches(js):
     out = _harness(js.read_text(encoding="utf-8"),
