@@ -828,6 +828,8 @@ jobs:
         run: python -m pytest tests/test_paywall_pro_gate.py -q
       - name: static serving boundary (Caddy <-> site_access.yml, no leaked artifacts)
         run: python -m pytest tests/test_site_access_boundary.py -q
+      - name: delivery-plane census (exact families, alternate origins, consumers, defaults)
+        run: python -m pytest tests/test_r2_delivery_plane_classification.py -q
       - name: registration wall (anonymous stage + /factordata /labdata JSON gate)
         run: python -m pytest tests/test_regwall.py tests/test_regwall_json_gate.py -q
       # #4409 shipped the member Earnings Wire API suite named only in
@@ -1029,6 +1031,15 @@ jobs:
       # is not a guard (#3488).
       - name: flow-velocity measure guards + flow-desk staleness alarm (frozen-leg detection, heartbeat liveness)
         run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py -q
+      # The market-score authority suite spans engine contracts, dashboard projection,
+      # and forward-ledger provenance, so this render/engine guard job owns it. Keep it
+      # ahead of the broad sweep: an unrelated render failure must not leave the veto
+      # firewall dark. The odometer suite is the paired template/site light-mode guard
+      # merged by #5458; naming it explicitly closes the same unrun-suite gap on main.
+      - name: US market-score authority firewall (calendar, Radar, history, provenance)
+        run: python -m pytest tests/test_market_score_authority_2026_08_12.py -q
+      - name: shared light-mode odometer semantic needle contract
+        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
       # pinned SEC source objects into filing packages, Company Facts ledgers,
       # and deterministic B4 binding plans. Keep these security/provenance
@@ -6015,6 +6026,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: macro desk surface, typography, glance + action-board hover cards
         run: python -m pytest tests/test_macro_desk_surface.py tests/test_macro_primary_typography.py tests/test_macro_what_to_do_glance.py tests/test_action_board_hover_cards.py tests/test_board_copy_and_controls_guard.py -q
+      - name: shared light-mode odometer needle across five report templates
+        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       - name: dashboard cold-load budget + stocktable bootstrap + logo adapter + globe overlays
         run: python -m pytest tests/test_dashboard_cold_load_budget.py tests/test_stocktable_load_order.py tests/test_stock_logo_system.py tests/test_globe_tooltip_behavior.py -q
       - name: radar page boot + reports timeline + bilingual span-leak scan
