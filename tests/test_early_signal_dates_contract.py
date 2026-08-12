@@ -173,18 +173,37 @@ def test_the_committed_manifest_agrees_with_the_producer():
     assert "early_signal_dates" not in entry["schema_fields"]
 
 
-def test_the_live_store_does_not_carry_the_field_yet_so_required_would_be_drift():
+def test_the_live_store_is_not_uniform_so_required_would_still_be_drift():
     """The counterfactual this registration exists to avoid, measured on the committed
-    store rather than argued: not one published signal file carries the key today, so a
-    REQUIRED registration is `removed` drift on every one of them."""
+    store rather than argued: at least one published signal file does NOT carry the key,
+    so a REQUIRED registration is `removed` drift on that file.
+
+    MEASURED OVER THE WHOLE STORE, NOT PINNED TO A MOMENT. The first form of this test
+    asserted that NO file carried the field "yet" and sampled `live[:40]`. Both halves
+    expired the moment the producer shipped: the rebuild stamped 240 of 241 files, and
+    the sole hold-out — SATS.json, a delisted symbol whose file is no longer rebuilt —
+    sorts at index 188, where a 40-file slice cannot see it. The suite then failed
+    `40 == 0` claiming the field was absent from a store that was 99.6% carriers, and
+    because `signal-contract` is a hard pre-merge gate the whole fleet inherited that red
+    (main 2026-08-12T02:09Z, packs 6/7/9/10). A guard whose premise the nightly lane is
+    guaranteed to invalidate is a SCHEDULED red, not a contract.
+
+    The invariant that actually justifies `optional_fields` was never "zero carriers" —
+    it is "not every file is a carrier", which is exactly the condition under which a
+    required registration would be `removed` drift. That survives any rebuild, and it
+    still fails loudly in the one case that genuinely warrants attention: a store that
+    has gone uniform, where graduating to `schema_fields` finally becomes safe.
+    """
     live = sorted(Path("site/signals").glob("*.json"))
     if not live:  # pragma: no cover - the store is committed
         pytest.skip("no committed site/signals sample in this checkout")
-    carriers = sum(1 for p in live[:40]
-                   if "early_signal_dates" in json.loads(p.read_text()))
-    assert carriers == 0, (
-        f"{carriers} sampled live signal files already carry early_signal_dates — the "
-        f"registration can graduate to schema_fields once the store is rebuilt")
+    non_carriers = [p.name for p in live
+                    if "early_signal_dates" not in json.loads(p.read_text())]
+    assert non_carriers, (
+        f"all {len(live)} published signal files now carry early_signal_dates — the "
+        f"registration can graduate from optional_fields to schema_fields; bump the "
+        f"exporter's schema_version and update "
+        f"test_the_field_is_registered_as_OPTIONAL_not_as_always_present with it")
 
 
 # ---- the producer ----------------------------------------------------------
