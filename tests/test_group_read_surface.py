@@ -354,6 +354,47 @@ def test_the_arc_read_discloses_its_null_verbatim_in_both_languages():
     assert js.count("GR_P8_EN") >= 3 and js.count("GR_P8_ZH") >= 3   # tile + rail + reuse
 
 
+def _rail_note(html: str) -> tuple[str, str]:
+    """The sentence under the arc rail — not the stop labels and not the hover."""
+    m = re.search(r'<div class="gpr-arc-note">.*?<span>(.*?)</span>', html, re.S)
+    assert m, f"the rail has no note: {html[:300]!r}"
+    return _langs(m.group(1))
+
+
+@needs_node
+def test_the_arc_rail_refuses_the_capitulation_age_under_the_coverage_floor():
+    """Belt and braces over the engine-side null. `capitulation_median_age_d` is a
+    MEDIAN over a cross-section the state has declined to read, and the rail was
+    printing it — "the typical member's low was about 90 trading sessions ago" — beside
+    a tile that refuses. The engine nulls it, but only when the artifact is REBUILT, so
+    the first fixture below is the exact shape sitting in site/basketdata/pulse.json
+    right now: a refused state carrying a live age.
+
+    Gating on the STATE also holds against any future artifact that publishes a value
+    under a refusal — the page never has to trust the producer for this."""
+    out = _run("""
+        var o = {};
+        o.stale = grArcRail({arc: {state: 'insufficient_coverage',
+                                   capitulation_median_age_d: 90}});
+        o.fresh = grArcRail({arc: {state: 'insufficient_coverage',
+                                   capitulation_median_age_d: null}});
+        o.real  = grArcRail({arc: {state: 'turning', capitulation_median_age_d: 8}});
+        process.stdout.write(JSON.stringify(o));
+    """)
+    for key in ("stale", "fresh"):
+        en, zh = _rail_note(out[key])
+        assert not re.search(r"\d", en), f"{key}: a figure survived the refusal: {en!r}"
+        assert not re.search(r"\d", zh), f"{key}: a figure survived the refusal: {zh!r}"
+        assert "trading session" not in en and "交易日" not in zh, (key, en, zh)
+        assert en == "Context, not a signal." and zh == "仅为背景，不是信号。", (key, en, zh)
+        for blob in (en, zh):
+            assert "undefined" not in blob and "NaN" not in blob and "null" not in blob
+    # above the floor the age is still the whole point of the note
+    en, zh = _rail_note(out["real"])
+    assert "8 trading sessions ago" in en, en
+    assert "8 个交易日前" in zh, zh
+
+
 @needs_node
 def test_the_capitulation_age_prints_sessions_not_days():
     """F-2 (audit 2026-08-10, MAJOR/correctness) — `capitulation_median_age_d` counts TRADING
@@ -380,6 +421,305 @@ def test_the_capitulation_age_prints_sessions_not_days():
     # and the unit agrees with itself on either side of the plural
     assert "1 trading session ago" in _langs(rows[0])[0]
     assert "9 trading sessions ago" in _langs(rows[1])[0]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 2b — the tiles divide by the denominator the engine divided by (G0-10 / F-4)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _pulse(**over) -> dict:
+    """A pulse object carrying the FULL key set, including the denominators the
+    coverage-floor pass added. `_legacy_pulse` below is the same object as emitted
+    before them — both shapes reach the page during the transition."""
+    p = {"n_members": 16, "n_covered": 14, "as_of": "2026-08-11",
+         "participation": {"activity_share": 0.5, "activity_n": 7,
+                           "trend_share_50d": 0.6, "trend_n_50d": 11,
+                           "trend_share_200d": 0.5, "trend_n_200d": 10,
+                           "activity_basis": {"ret_only": 2, "ret_and_volume": 5}},
+         "direction": {"agreement_pct": 0.42, "n_active": 7, "sign": "up",
+                       "median_move_spy_adj": 0.012, "cohesion": 0.3,
+                       "leader": None, "strongest": None, "weakest": None},
+         "arc": {"state": "turning", "washed_out_share": 0.8182, "washed_out_n": 9,
+                 "washout_readable_n": 11, "reclaimed_20d_share": 1.0,
+                 "reclaimed_readable_n": 3, "capitulation_median_age_d": 8,
+                 "stage2_share": 0.5, "stage4_share": 0.1, "staged_n": 12,
+                 "drawdown_pctile_own_history": 0.94, "null_disclosure": "oracle_p8"},
+         "episode": {"active_now": True, "current_start": "2026-08-04",
+                     "sessions_active": 3, "state_change": "steady"},
+         "coverage_warnings": []}
+    for block, vals in over.items():
+        p[block] = {**p[block], **vals} if isinstance(p.get(block), dict) else vals
+    return p
+
+
+#: The keys the artifact did not carry before this pass — a page that has fetched
+#: last night's pulse.json sees exactly this shape.
+_NEW_KEYS = ("trend_n_50d", "trend_n_200d", "n_active",
+             "washout_readable_n", "reclaimed_readable_n", "staged_n")
+
+
+def _legacy_pulse(**over) -> dict:
+    p = _pulse(**over)
+    for block in ("participation", "direction", "arc"):
+        p[block] = {k: v for k, v in p[block].items() if k not in _NEW_KEYS}
+    return p
+
+
+def _tiles(p: dict) -> list[str]:
+    """The four rendered tiles, in order: participation, direction, arc, earnings."""
+    html = _run("""
+        process.stdout.write(JSON.stringify(grTiles(%s, null)));
+    """ % json.dumps(p))
+    parts = str(html).split('<div class="gpr-tile">')
+    assert len(parts) == 5, f"expected 4 tiles, got {len(parts) - 1}"
+    return parts[1:]
+
+
+def _detail(tile: str) -> tuple[str, str]:
+    """The tile's small-print line — the `d` div, not the hover and not the headline."""
+    m = re.search(r'<div class="d">(.*?)</div>', tile, re.S)
+    assert m, f"tile has no detail line: {tile[:200]!r}"
+    return _langs(m.group(1))
+
+
+@needs_node
+def test_the_washout_line_divides_by_the_members_it_was_computed_over():
+    """F-4 (audit 2026-08-10) — the state was decided on 9 of the 11 members with a
+    readable washout (0.82) while the tile printed "9 of 14", the covered count, which
+    reads 0.64. The tile and the arc word disagreed on every basket holding a member
+    too young for the 308-session read."""
+    en, zh = _detail(_tiles(_pulse())[2])
+    assert "9 of 11" in en, en
+    assert "of 14" not in en, f"the covered count is back as the denominator: {en!r}"
+    assert "11" in zh and "9" in zh, zh
+    assert "14" not in zh, f"ZH still divides by the covered count: {zh!r}"
+    assert "enough history" in en, "the denominator is printed without saying what it is"
+
+
+@needs_node
+def test_the_reclaimed_count_uses_its_own_denominator():
+    """`reclaimed_20d_share` is a share of the washed-out members that HAVE a 20-day
+    line (3 here), never of washed_out_n (9) — multiplying it back by 9 invents six
+    members that reclaimed nothing."""
+    en, _zh = _detail(_tiles(_pulse())[2])
+    assert "3 back above their 20-day line" in en, en
+    assert "9 back above" not in en
+
+
+@needs_node
+def test_the_trend_line_divides_by_the_members_that_have_the_line():
+    """Same defect, the other tile: 0.6 of the 11 members with a 50-day line is 7, and
+    0.6 of the 14 covered is 8. The two legs also carry DIFFERENT denominators."""
+    en, zh = _detail(_tiles(_pulse())[0])
+    assert "7 of 11" in en and "5 of 10" in en, en
+    assert "of 14" not in en, f"trend shares are back on the covered count: {en!r}"
+    assert "11" in zh and "10" in zh, zh
+
+
+@needs_node
+def test_a_basket_with_no_200_day_line_drops_the_clause_instead_of_printing_a_hole():
+    en, zh = _detail(_tiles(_pulse(participation={"trend_share_200d": None,
+                                                  "trend_n_200d": 0}))[0])
+    assert "200-day" not in en and "200日线" not in zh
+    assert "50-day line: 7 of 11" in en
+    for blob in (en, zh):
+        assert "null" not in blob and "NaN" not in blob and "undefined" not in blob
+
+
+@needs_node
+def test_the_arc_tile_refuses_with_no_figure_at_all():
+    """G0-10 — the refusal branch was dead: it tested `washed_out_n == null`, a count
+    the engine never nulls, so "Not enough covered" always shipped with a confident
+    number underneath it. Under the floor the detail must carry NO digit."""
+    refused = _pulse(arc={"state": "insufficient_coverage", "washed_out_share": None,
+                          "washed_out_n": 2, "washout_readable_n": 4,
+                          "reclaimed_20d_share": None, "reclaimed_readable_n": 2,
+                          "stage2_share": None, "stage4_share": None, "staged_n": 4,
+                          "drawdown_pctile_own_history": None})
+    tile = _tiles(refused)[2]
+    en, zh = _detail(tile)
+    assert not re.search(r"\d", en), f"a figure survived the refusal: {en!r}"
+    assert not re.search(r"\d", zh), f"a figure survived the refusal: {zh!r}"
+    assert "Too few members are covered" in en
+    assert "太少" in zh
+    # the refusal WORD still stands in the headline — the tile refuses, it does not blank
+    head = _langs(re.search(r'<div class="v">(.*?)</div>', tile, re.S).group(1))
+    assert head[0] and head[1] and head[0] != head[1]
+
+
+@needs_node
+def test_a_stale_artifact_under_the_floor_still_refuses_on_the_state():
+    """The page refuses on the STATE, not on the nulls — so last night's bytes, which
+    still carry numeric legs under `insufficient_coverage`, refuse too rather than
+    printing the numbers the engine has since stopped standing behind."""
+    stale = _legacy_pulse(arc={"state": "insufficient_coverage"})
+    en, zh = _detail(_tiles(stale)[2])
+    assert not re.search(r"\d", en), en
+    assert not re.search(r"\d", zh), zh
+
+
+def _headline(tile: str) -> tuple[str, str]:
+    """The tile's largest type — the `v` div."""
+    m = re.search(r'<div class="v">(.*?)</div>', tile, re.S)
+    assert m, f"tile has no headline: {tile[:200]!r}"
+    return _langs(m.group(1))
+
+
+@needs_node
+def test_a_refused_agreement_never_renders_a_dash_placeholder_as_the_headline():
+    """The two floors do not coincide: at exactly three movers the tile is ABOVE its own
+    movers floor (so it prints a direction word) and BELOW the engine's agreement floor
+    (so there is no band to append). The band's null form is an em-dash, and it was
+    landing in the tile's largest type as "Up — —" on six live baskets.
+
+    The sign word now stands alone; the refusal is spoken in the small print below."""
+    p = _pulse(participation={"activity_n": 3},
+               direction={"agreement_pct": None, "n_active": 3, "sign": "up"})
+    en, zh = _headline(_tiles(p)[1])
+    assert en == "Up", f"headline is not the bare sign word: {en!r}"
+    assert zh == "上行", f"ZH headline is not the bare sign word: {zh!r}"
+    for blob in (en, zh):
+        assert "—" not in blob and "-" not in blob, f"placeholder in the headline: {blob!r}"
+    # ...and the band still renders when there IS an agreement figure to band
+    en2, zh2 = _headline(_tiles(_pulse(participation={"activity_n": 3}))[1])
+    assert "—" in en2 and "—" in zh2, "the band clause vanished for a real read"
+    assert "mostly the same way" in en2 and "多数同向" in zh2
+
+
+@needs_node
+def test_the_direction_hover_names_both_floors_in_plain_words():
+    """The floor's Tier-2 receipt has to live where the floor fires. The board caption
+    says four; the tile's own visible refusal line says three — a reader who sees the
+    percentage withheld needs both numbers in one place, or the page contradicts
+    itself."""
+    from engine import group_pulse as GP
+    tile = _tiles(_pulse(direction={"agreement_pct": None, "n_active": 3}))[1]
+    en = re.search(r'data-tip-en="([^"]*)"', tile).group(1)
+    zh = re.search(r'data-tip-zh="([^"]*)"', tile).group(1)
+    assert "at least 3 members moving" in en, en
+    assert f"needs at least {GP.AGREEMENT_MIN_N}" in en, en
+    assert "至少需要 3 只在动" in zh, zh
+    assert f"至少需要 {GP.AGREEMENT_MIN_N} 只" in zh, zh
+    assert not re.search(r"[一-鿿]", en), "ZH leaked into the EN tip"
+    for blob in (en, zh):
+        assert "AGREEMENT_MIN_N" not in blob and "GR_MIN_MOVERS" not in blob
+
+
+def test_the_template_agreement_floor_tracks_the_engine_constant():
+    """The tile hardcodes the engine's floor to speak it in plain words. Bumping
+    AGREEMENT_MIN_N without the template would silently start lying to the reader."""
+    from engine import group_pulse as GP
+    m = re.search(r"var GR_MIN_AGREEMENT_N=(\d+);", DETAIL.read_text(encoding="utf-8"))
+    assert m, "the template no longer declares its agreement floor"
+    assert int(m.group(1)) == GP.AGREEMENT_MIN_N
+
+
+@needs_node
+def test_the_watch_list_does_not_watch_a_figure_that_was_refused():
+    """"agreement fading below a third of the movers" was firing on every basket whose
+    agreement is null — 43 of 49 live — watching a number the engine declined to
+    compute. With nothing to fade, the condition is the movers never converging."""
+    rows = _run("""
+        var out = {};
+        [null, 0.42].forEach(function (ag, i) {
+          out[i] = grWatchList({participation: {activity_share: 0.5, activity_n: 3},
+                                direction: {sign: 'up', agreement_pct: ag},
+                                arc: {state: 'quiet'}, episode: {active_now: true}});
+        });
+        process.stdout.write(JSON.stringify(out));
+    """)
+    refused, real = rows["0"], rows["1"]
+    flat = " ".join(x for pair in refused["down"] for x in pair)
+    assert "fading" not in flat, f"a refused figure is still being watched: {flat}"
+    assert "never settling into one direction" in flat, flat
+    assert "始终无法收敛" in flat, flat
+    # the real read keeps the original condition
+    assert "fading" in " ".join(x for pair in real["down"] for x in pair)
+    # and the same words never appear in both columns
+    for row in (refused, real):
+        assert not ({tuple(x) for x in row["up"]} & {tuple(x) for x in row["down"]})
+
+
+@needs_node
+def test_a_refused_agreement_reads_as_plain_words_in_both_languages():
+    """`agreement_pct` is null below the engine's movers floor. "Agreement pending"
+    said the figure was on its way; it is not coming, and the tile says why."""
+    en, zh = _detail(_tiles(_pulse(direction={"agreement_pct": None, "n_active": 3}))[1])
+    assert "Too few members moving to read agreement" in en, en
+    assert "在动的个股太少" in zh, zh
+    assert "median" in en, "the SPY-adjusted median is a different leg and survives"
+    for blob in (en, zh):
+        assert "NaN" not in blob and "undefined" not in blob and "null" not in blob
+    # the median move is the ONLY figure left; no agreement percentage is reconstructed
+    assert "net agreement" not in en and "净一致度" not in zh
+    assert re.findall(r"[\d.]+%", en) == ["1.2%"], en
+
+
+@needs_node
+def test_the_tiles_render_clean_against_last_nights_artifact():
+    """Transition — the denominators appear only after the next nightly re-emits
+    pulse.json. Until then every tile must render without junk and without inventing
+    a denominator it does not have."""
+    tiles = _tiles(_legacy_pulse())
+    for i, tile in enumerate(tiles[:3]):
+        en, zh = _detail(tile)
+        for blob in (en, zh):
+            assert "undefined" not in blob and "NaN" not in blob, (i, blob)
+            assert "null" not in blob, (i, blob)
+    arc_en, _ = _detail(tiles[2])
+    assert "9" in arc_en, "the washout count itself is still printed"
+    assert " of " not in arc_en, f"a denominator was invented for a legacy object: {arc_en!r}"
+    # The trend line drops rather than borrowing n_covered: substituting it invents the
+    # NUMERATOR too — 0.6 x 14 renders "8 of 14" where the truth is 7 of 11.
+    trend_en, trend_zh = _detail(tiles[0])
+    assert "Trend coverage pending" in trend_en, trend_en
+    assert "趋势读数待补" in trend_zh, trend_zh
+    for blob in (trend_en, trend_zh):
+        assert not re.search(r"\d", blob), f"a count was fabricated: {blob!r}"
+
+
+@needs_node
+def test_no_tile_leaks_a_slug_or_a_banned_word():
+    for p in (_pulse(), _legacy_pulse(),
+              _pulse(arc={"state": "insufficient_coverage", "washed_out_share": None,
+                          "reclaimed_20d_share": None, "stage2_share": None,
+                          "stage4_share": None,
+                          "drawdown_pctile_own_history": None}),
+              _pulse(direction={"agreement_pct": None, "n_active": 2})):
+        for tile in _tiles(p):
+            en, zh = _langs(tile)
+            for blob in (en, zh):
+                for bad in BANNED:
+                    assert bad.lower() not in blob.lower(), f"banned {bad!r} in {blob!r}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 2c — a refused agreement must not out-sort a real one
+# ══════════════════════════════════════════════════════════════════════════════
+
+@needs_node
+def test_a_refused_agreement_sorts_below_a_real_one_on_the_board():
+    """The tiebreak reads `agreement_pct` raw. Now that the leg is nullable, a basket
+    the engine declined to read must not sort ABOVE one it did read — a null that
+    coalesced to 1.0 would put the least-readable baskets at the top of the board."""
+    board = BOARD.read_text(encoding="utf-8")
+    rule = _region(board, "let GPULSE=null;", "function renderGroupPulseCol")
+    order = _run("""
+        %s
+        %s
+        GPULSE = {real: {episode: {state_change: 'steady'},
+                         participation: {activity_share: 0.5},
+                         direction: {agreement_pct: 0.1}},
+                  refused: {episode: {state_change: 'steady'},
+                            participation: {activity_share: 0.5},
+                            direction: {agreement_pct: null}},
+                  absent: {episode: {state_change: 'steady'},
+                           participation: {activity_share: 0.5}, direction: {}}};
+        var ids = [{id: 'refused'}, {id: 'absent'}, {id: 'real'}];
+        ids.sort(grCmp);
+        process.stdout.write(JSON.stringify(ids.map(function (r) { return r.id; })));
+    """ % (HARNESS_PRELUDE, rule))
+    assert order[0] == "real", f"a refused agreement out-sorted a real read: {order}"
 
 
 def _uncommented(js: str) -> str:
@@ -410,6 +750,27 @@ def test_board_orders_by_a_disclosed_rule_and_prints_it():
     assert "state change, then breadth of movement, then agreement" in src
     assert "no composite score" in src
     assert "参与度变化，其次是在动成分股的广度，再次是方向一致度" in src
+    # G0-10 — a leg that REFUSES below a floor is part of the rule. A caption that
+    # names agreement as a tiebreak without saying when agreement exists describes an
+    # ordering the reader cannot reproduce on the baskets where it is null.
+    assert "sorts below a basket that has one" in src
+
+
+#: The caption says the floor in WORDS (glance tier prints no bare constants), so the
+#: link back to the engine is this map. Bumping AGREEMENT_MIN_N reds the test below by
+#: name until the caption and this row are updated together.
+_FLOOR_WORDS = {4: ("four", "四")}
+
+
+def test_the_board_caption_names_the_floor_the_engine_actually_uses():
+    from engine import group_pulse as GP
+    assert GP.AGREEMENT_MIN_N in _FLOOR_WORDS, (
+        f"AGREEMENT_MIN_N moved to {GP.AGREEMENT_MIN_N} — update the board caption in "
+        "templates/sector_central.html.j2 (EN + ZH) and add the word to _FLOOR_WORDS")
+    en_word, zh_word = _FLOOR_WORDS[GP.AGREEMENT_MIN_N]
+    src = BOARD.read_text(encoding="utf-8")
+    assert f"Agreement counts only where at least {en_word} members are moving" in src
+    assert f"方向一致度仅在至少{zh_word}只成分股在动时才计入" in src
     # the default sort is untouched: the reader opts in by clicking the column
     assert """btblSort = JSON.parse(localStorage.getItem('fw-btbl-sort')||'{"col":"20d","dir":-1}')""" in src
     # and the rule's legs are the artifact's own named fields, in that order

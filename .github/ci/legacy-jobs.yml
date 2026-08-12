@@ -1105,6 +1105,9 @@ jobs:
       # is its natural home. test_act_now_board_icons.py — the US original it is modelled
       # on — was referenced NOWHERE under .github/ and had never been run by CI; it is
       # wired here in the same edit, since there is no tests/-wide sweep in this repo.
+      # The Stock Connect leaderboard shape/render contract also lives here: it imports
+      # scripts/build_china.py and renders the real China template, using the pandas /
+      # pyarrow / jinja2 dependency set this job already owns.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1125,6 +1128,7 @@ jobs:
           tests/test_risk_radar_intl_profiles.py
           tests/test_risk_state_live_copy_sync.py
           tests/test_build_china_risk_state.py
+          tests/test_china_connect_leaderboard_render.py
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_winner_autopsy.py tests/test_admin_long_hold.py
           tests/test_falsifier_packet.py
@@ -4103,7 +4107,13 @@ jobs:
         # multi-account tests were asserting behaviour the fix deliberately
         # narrows. Unrun, that would have been a silent rot. Same deps as the
         # rest of this lane, verified green.
-        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_outbox_single_composition.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py -q
+        # test_marketing_market_clock joins (2026-08-11): the publish-time
+        # clock + lead-fact fan-out gate suite sat in the unrun baseline, and
+        # voice v5 (#5291) rotted seven of its fixtures unseen — first-person
+        # tails, the register v5 retired, not the gates under test. It drives
+        # scripts/marketing_publisher.py end to end, so it lives with the
+        # publisher lane it exercises.
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_outbox_single_composition.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py tests/test_marketing_market_clock.py -q
       - name: stale backlog quarantine + optional publish-time phrase fallback
         run: python -m pytest tests/test_marketing_stale_purge.py tests/test_publish_time_llm_phrase.py -q
       - name: liveness tripwire rule engine (the green-and-dark alarm)
@@ -7036,8 +7046,10 @@ jobs:
     #                   show-more row cap it would otherwise leave pointing at the old
     #                   card positions.
     #
-    # Template-only suite: no pandas, no pyarrow, no network — it reads two templates and
-    # one plain-copy JS asset and shells node.
+    # The surface probes import engine/group_pulse.py to exercise its published
+    # denominator/arc contract, so NumPy and pandas are real import dependencies.
+    # No pyarrow or network — it otherwise reads two templates, one plain-copy JS
+    # asset, and shells node.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
     timeout-minutes: 6
     runs-on: ubuntu-latest
@@ -7050,7 +7062,7 @@ jobs:
         with:
           node-version: "20"
       - name: install minimal deps
-        run: pip install pytest
+        run: pip install pytest numpy pandas pyyaml
       - name: basket read band + board group-pulse column (GR1)
         run: python -m pytest tests/test_group_read_surface.py -q -rs
 
@@ -7171,6 +7183,7 @@ jobs:
       - scripts/export_top_anatomy_library.py
       - tests/test_alert_zh_completeness.py
       - tests/test_falsifier_tripwires.py
+      - tests/test_json_strict.py
       - tests/test_massive_local_staleness.py
       - tests/test_price_pressure.py
       - tests/test_top_anatomy.py
@@ -7235,6 +7248,14 @@ jobs:
       # Phase-0 contract.  The derived scope follows its engine/script/read closure.
       - name: TOP ANATOMY point-in-time engine and preregistration contracts
         run: python -m pytest tests/test_top_anatomy.py -q
+      # The same harness's JSON write path, so it belongs to the same owner rather
+      # than a second overlapping job. `default=str` does NOT catch NaN — it only
+      # fires for values the encoder cannot serialize — so three shipped
+      # top_anatomy summaries carried bare `NaN` tokens that no strict parser will
+      # read. This pins the sanitizer and that every summary emitter routes through
+      # the one write path; an unregistered encoding guard is a dead guard.
+      - name: strict-JSON research summary encoding — non-finite sanitizer and emitter
+        run: python -m pytest tests/test_json_strict.py -q
       # Local research entrypoints must refuse a massive_stock_day mirror frozen
       # past the declared trading-session ceiling while staying inert in Actions.
       # The packed selector derives this suite's full import/path-literal closure,
@@ -7375,3 +7396,33 @@ jobs:
           tests/test_momoedge_browser_adapter.py
           tests/test_momoedge_capture_extension_static.py
           tests/test_momoedge_capture_deploy.py -q -rs
+
+  mastermindx-selector-capture-attestation:
+    # Capture-only, globally inactive selector-registration attestation. The
+    # tests are synthetic and cannot arm a selector, inspect candidate data,
+    # write private evidence, or dispatch any workflow.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - .github/ci/legacy-jobs.yml
+      - .github/workflows/ci.yml
+      - contracts/options/options.mastermindx_selector_capture_attestation.v1.schema.json
+      - engine/__init__.py
+      - engine/options_mastermindx_capture.py
+      - engine/session_digest.py
+      - lib/__init__.py
+      - lib/nyse_calendar.py
+      - research/options_estate/sparse_selector_preregistration_receipt_v1.json
+      - tests/test_options_mastermindx_capture.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest jsonschema
+      - name: frozen MastermindX selector capture-only attestation contracts
+        run: >-
+          PYTHONDONTWRITEBYTECODE=1 python -m pytest
+          tests/test_options_mastermindx_capture.py -q -rs
