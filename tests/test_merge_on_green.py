@@ -14,6 +14,7 @@ list so the four outcomes are provable without a network.
 from __future__ import annotations
 
 import ast
+import base64
 import datetime as dt
 import json
 from pathlib import Path
@@ -26,6 +27,7 @@ import scripts.merge_on_green as MOG
 
 ROOT = Path(__file__).resolve().parents[1]
 REAL_IN_FLIGHT_PR_PROOFS = MOG.in_flight_pr_proofs
+REAL_REFRESH_LEASE_RESERVATION_COUNT = MOG.refresh_lease_reservation_count
 REAL_PREPARE_REFRESH_LEASE = MOG.prepare_refresh_lease
 REAL_SERIALIZED_REFRESH_AUTHORITY = MOG.serialized_refresh_authority
 REAL_ENSURE_SELF_WAKE = MOG.ensure_self_wake
@@ -72,6 +74,7 @@ def _no_unstubbed_http(monkeypatch):
     # The repo-wide Actions census is another main()-only read. Healthy/idle is the
     # neutral default; tests about global refresh backpressure override it.
     monkeypatch.setattr(MOG, "in_flight_pr_proofs", lambda *_a: 0)
+    monkeypatch.setattr(MOG, "refresh_lease_reservation_count", lambda *_a: 0)
     monkeypatch.setattr(MOG, "serialized_refresh_authority", lambda *_a: True)
     monkeypatch.setattr(
         MOG,
@@ -2611,6 +2614,96 @@ def test_a_truncated_pipeline_bake_is_proven_by_complete_root_trees(monkeypatch)
     assert not stale, reason
 
 
+@pytest.mark.parametrize("substantive_template_edit", [False, True])
+def test_a_large_public_render_proves_only_owned_template_asset_stamps(
+    monkeypatch, substantive_template_edit
+):
+    """The real e0ed5f89 shape changed thousands of site files plus one cache stamp.
+
+    GitHub returned 300 site rows and hid templates/chat.html, so the prior controller
+    re-proved every green PR. Complete root/subtree IDs plus exact blob normalization
+    admit the optimizer-owned stamp only; any other template byte keeps fail-closed.
+    """
+    sha, parent = "a" * 40, "b" * 40
+    current_root, parent_root = "c" * 40, "d" * 40
+    current_site, parent_site = "1" * 40, "2" * 40
+    current_templates, parent_templates = "3" * 40, "4" * 40
+    current_blob, parent_blob = "5" * 40, "6" * 40
+    freshness = MOG.ProofFreshness(
+        "acme/widgets",
+        "read",
+        _gates(),
+        [{"sha": sha}],
+    )
+
+    old = b'<link rel="stylesheet" href="theme.css?v=aaaaaaaa">\n<title>Chat</title>\n'
+    title = b"Changed" if substantive_template_edit else b"Chat"
+    new = b'<link rel="stylesheet" href="theme.css?v=bbbbbbbb">\n<title>' + title + b"</title>\n"
+
+    def tree(path, object_sha):
+        return {"path": path, "type": "tree", "mode": "040000", "sha": object_sha}
+
+    def blob(path, object_sha):
+        return {"path": path, "type": "blob", "mode": "100644", "sha": object_sha}
+
+    def encoded(content):
+        raw = base64.b64encode(content).decode("ascii")
+        return raw[:20] + "\n" + raw[20:]
+
+    def fake_request(method, url, token, payload=None):
+        assert method == "GET" and token == "read" and payload is None
+        if url.endswith(f"/commits/{sha}") and "/git/" not in url:
+            return 200, {
+                "commit": {"tree": {"sha": current_root}},
+                "parents": [{"sha": parent}],
+                "files": [
+                    {"filename": f"site/page-{index}.html"} for index in range(300)
+                ],
+            }
+        if url.endswith(f"/git/commits/{parent}"):
+            return 200, {"tree": {"sha": parent_root}}
+        if url.endswith(f"/git/trees/{current_root}"):
+            return 200, {
+                "truncated": False,
+                "tree": [
+                    tree("site", current_site),
+                    tree("templates", current_templates),
+                ],
+            }
+        if url.endswith(f"/git/trees/{parent_root}"):
+            return 200, {
+                "truncated": False,
+                "tree": [
+                    tree("site", parent_site),
+                    tree("templates", parent_templates),
+                ],
+            }
+        if url.endswith(f"/git/trees/{current_templates}?recursive=1"):
+            return 200, {
+                "truncated": False,
+                "tree": [blob("chat.html", current_blob)],
+            }
+        if url.endswith(f"/git/trees/{parent_templates}?recursive=1"):
+            return 200, {
+                "truncated": False,
+                "tree": [blob("chat.html", parent_blob)],
+            }
+        if url.endswith(f"/git/blobs/{current_blob}"):
+            return 200, {"encoding": "base64", "content": encoded(new)}
+        if url.endswith(f"/git/blobs/{parent_blob}"):
+            return 200, {"encoding": "base64", "content": encoded(old)}
+        raise AssertionError(url)
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    files, truncated = freshness.files_of(sha)
+    if substantive_template_edit:
+        assert truncated, "a real template edit hidden beyond row 300 must re-prove"
+        assert len(files) == 300
+    else:
+        assert not truncated
+        assert files == ["site/__bulk_pipeline_tree__"]
+
+
 def test_a_truncated_commit_with_any_changed_source_root_stays_fail_closed(monkeypatch):
     """Root-tree proof is conjunctive: one changed source subtree defeats it even
     when all 300 visible file rows happen to be under ``data/``."""
@@ -3019,6 +3112,99 @@ def test_an_unreadable_proof_census_never_claims_zero_load(
     assert REAL_IN_FLIGHT_PR_PROOFS("acme/widgets", "read") is None
 
 
+def _refresh_owner(*, current_head="b" * 40):
+    pull = _pull(
+        999,
+        labels=(MOG.MERGE_ON_GREEN_LABEL, MOG.REFRESH_LEASE_LABEL),
+    )
+    pull["head"]["sha"] = current_head
+    lease = MOG.RefreshLease(
+        "acme/widgets",
+        "read",
+        "write",
+        owner_number=999,
+        owner_updated_at="2026-08-12T01:00:00Z",
+        generation_head_sha="a" * 40,
+        generation_id="1a2b3c4d5e6f",
+    )
+    return pull, lease
+
+
+def test_indexed_refresh_generation_is_not_double_counted_as_a_reservation(
+    monkeypatch,
+):
+    pull, lease = _refresh_owner()
+
+    def fake_request(method, url, token, payload=None):
+        assert method == "GET" and token == "read" and payload is None
+        assert "actions/workflows/ci.yml/runs?" in url
+        assert "head_sha=" + ("b" * 40) in url
+        return 200, {
+            "total_count": 1,
+            "workflow_runs": [
+                {
+                    "head_sha": "b" * 40,
+                    "status": "in_progress",
+                    "event": "pull_request",
+                }
+            ],
+        }
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    assert REAL_REFRESH_LEASE_RESERVATION_COUNT(
+        "acme/widgets", "read", lease, [pull]
+    ) == 0
+
+
+@pytest.mark.parametrize(
+    "status,payload",
+    [
+        (502, None),
+        (200, {}),
+        (200, {"total_count": 0, "workflow_runs": []}),
+        (200, {"total_count": 1, "workflow_runs": ["malformed"]}),
+        (
+            200,
+            {
+                "total_count": 1,
+                "workflow_runs": [
+                    {"head_sha": "c" * 40, "event": "pull_request"}
+                ],
+            },
+        ),
+        (
+            200,
+            {
+                "total_count": 1,
+                "workflow_runs": [{"head_sha": "b" * 40, "event": "push"}],
+            },
+        ),
+    ],
+)
+def test_unreadable_or_unindexed_refresh_generation_keeps_its_reservation(
+    monkeypatch, status, payload
+):
+    pull, lease = _refresh_owner()
+    monkeypatch.setattr(MOG, "_request", lambda *_a, **_k: (status, payload))
+    assert REAL_REFRESH_LEASE_RESERVATION_COUNT(
+        "acme/widgets", "read", lease, [pull]
+    ) == 1
+
+
+def test_unadvanced_refresh_generation_keeps_reservation_without_an_api_read(
+    monkeypatch,
+):
+    pull, lease = _refresh_owner(current_head="a" * 40)
+    monkeypatch.setattr(
+        MOG,
+        "_request",
+        lambda *_a, **_k: (_ for _ in ()).throw(AssertionError("unexpected read")),
+    )
+    assert REAL_REFRESH_LEASE_RESERVATION_COUNT(
+        "acme/widgets", "read", lease, [pull]
+    ) == 1
+
+
 def test_refresh_mutation_authority_is_the_in_progress_serialized_main_workflow(
     monkeypatch,
 ):
@@ -3097,6 +3283,47 @@ def test_repo_wide_active_proofs_clamp_update_branch_capacity(
         assert "new refreshes paused" in out
     else:
         assert f"{active} indexed pull-request ci run(s)" in out
+
+
+@pytest.mark.parametrize(
+    "reservation_count,expected_allowance,requires_lease",
+    [
+        (0, 1, False),
+        (1, MOG.HIGH_LOAD_FAIR_REFRESHES, True),
+    ],
+    ids=("owner-run-indexed", "owner-run-not-yet-indexed"),
+)
+def test_existing_owner_only_consumes_extra_capacity_until_its_run_is_indexed(
+    monkeypatch, reservation_count, expected_allowance, requires_lease
+):
+    owner, lease = _refresh_owner()
+    _main_harness(monkeypatch, [owner])
+    monkeypatch.setattr(
+        MOG,
+        "prepare_refresh_lease",
+        lambda *_a: (lease, [owner]),
+    )
+    monkeypatch.setattr(
+        MOG,
+        "in_flight_pr_proofs",
+        lambda *_a: MOG.MAX_IN_FLIGHT_PR_PROOFS - 1,
+    )
+    monkeypatch.setattr(
+        MOG,
+        "refresh_lease_reservation_count",
+        lambda *_a: reservation_count,
+    )
+    observed: list[tuple[int, bool]] = []
+
+    def inspect_budget(
+        _repo, _pull_payload, _read, _write, _fresh, _proof, budget, _blocked
+    ):
+        observed.append((budget.max_refreshes, budget.requires_refresh_lease))
+        return "pending"
+
+    monkeypatch.setattr(MOG, "sweep_pull", inspect_budget)
+    assert MOG.main() == 0
+    assert observed == [(expected_allowance, requires_lease)]
 
 
 def test_every_update_branch_call_is_behind_the_refresh_admission_gateway():
@@ -5292,6 +5519,72 @@ def test_the_refresh_budget_is_capped_because_each_one_launches_a_ci_run(
     assert budget.refreshes_used == 2
 
 
+def test_a_definitive_conflict_refunds_workload_capacity_but_not_attempt_budget(
+    monkeypatch,
+):
+    """A no-op conflict must not consume the sole CI slot for every later PR.
+
+    The live failure was #5333 at 7/8 active proofs: its affirmative conflict used
+    the one free slot, so every actually refreshable head behind it was deferred on
+    every sweep even though #5333 launched no workload.
+    """
+    budget = MOG.SweepBudget("read", max_refreshes=1, max_refresh_attempts=2)
+    budget.refresh_authorized = True
+    pulls = [_pull(5333), _pull(5339), _pull(5340)]
+    monkeypatch.setattr(
+        MOG, "live_authorized_pull", lambda _r, pull, _t: (pull, "authorized")
+    )
+    outcomes = iter(("declined", "updated"))
+    monkeypatch.setattr(MOG, "update_branch", lambda *_a, **_k: next(outcomes))
+
+    assert MOG.attempt_update_branch(
+        "acme/widgets", pulls[0], "write", budget, "stale proof"
+    ) == "declined"
+    assert budget.refreshes_used == 0
+    assert budget.refresh_attempts_used == 1
+
+    assert MOG.attempt_update_branch(
+        "acme/widgets", pulls[1], "write", budget, "stale proof"
+    ) == "updated"
+    assert budget.refreshes_used == 1
+    assert budget.refresh_attempts_used == 2
+    assert MOG.attempt_update_branch(
+        "acme/widgets", pulls[2], "write", budget, "stale proof"
+    ) == "refresh-deferred"
+
+
+def test_refunded_conflicts_still_obey_the_per_sweep_attempt_ceiling(monkeypatch):
+    """Refunding CI capacity must not turn a page of conflicts into write spam."""
+    budget = MOG.SweepBudget("read", max_refreshes=1, max_refresh_attempts=3)
+    budget.refresh_authorized = True
+    monkeypatch.setattr(
+        MOG, "live_authorized_pull", lambda _r, pull, _t: (pull, "authorized")
+    )
+    calls = []
+
+    def declined(*args, **kwargs):
+        calls.append((args, kwargs))
+        return "declined"
+
+    monkeypatch.setattr(MOG, "update_branch", declined)
+    verdicts = [
+        MOG.attempt_update_branch(
+            "acme/widgets", _pull(number), "write", budget, "stale proof"
+        )
+        for number in range(1, 6)
+    ]
+    assert verdicts == [
+        "declined",
+        "declined",
+        "declined",
+        "refresh-deferred",
+        "refresh-deferred",
+    ]
+    assert len(calls) == 3
+    assert budget.refreshes_used == 0
+    assert budget.refresh_attempts_used == 3
+
+
 def test_the_DEFAULT_budget_caps_refreshes_at_the_constant(monkeypatch):
     """The cap that actually ships is the DEFAULT one, and `main()` builds its budget
     with no `max_refreshes` argument.
@@ -5302,6 +5595,10 @@ def test_the_DEFAULT_budget_caps_refreshes_at_the_constant(monkeypatch):
     which is the exact 84-CI-runs-from-one-sweep failure this cap exists to prevent.
     """
     assert MOG.SweepBudget("read").max_refreshes == MOG.MAX_REFRESHES_PER_SWEEP
+    assert (
+        MOG.SweepBudget("read").max_refresh_attempts
+        == MOG.MAX_REFRESHES_PER_SWEEP
+    )
 
     pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
     calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
@@ -5351,7 +5648,7 @@ def test_a_refresh_deferred_pull_request_is_never_labeled_or_accused(
     assert not [c for c in calls if c[1].endswith("/update-branch")]
     assert any(
         line.startswith("::notice")
-        and "effective `update-branch` attempt(s)" in line
+        and "effective CI workload slot(s)" in line
         for line in capsys.readouterr().out.splitlines()
     ), "the deferral must be logged, never silent"
 

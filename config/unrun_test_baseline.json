@@ -532,7 +532,6 @@
   "tests/test_market_state_persist_freshness.py",
   "tests/test_market_state_tune.py",
   "tests/test_market_state_tune_lane_gate.py",
-  "tests/test_marketing_metrics_poll_quota.py",
   "tests/test_massive_stock_day_fence.py",
   "tests/test_massive_stock_day_state.py",
   "tests/test_mechanism_pathways.py",
