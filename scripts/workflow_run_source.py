@@ -64,6 +64,7 @@ __all__ = [
     "MARKER_SCAN_LINES",
     "WorkflowRunSourceError",
     "resolve_run_source",
+    "resolved_workflow_text",
 ]
 
 #: Literal provenance marker an extracted script must carry.
@@ -146,3 +147,41 @@ def resolve_run_source(run: str, repo_root: Path) -> str:
         "docstring) so DAG conformance and the push-conflict census can still "
         "read the body; otherwise extracting it makes those guards go blind."
     )
+
+
+_RUN_CALL_LINE_RE = re.compile(
+    r"^(?P<indent>[ \t]*)run:[ \t]+(?P<call>bash[ \t]+scripts/ci/[^\n]*?)[ \t]*$"
+)
+
+
+def resolved_workflow_text(wf_path: Path, repo_root: Path) -> str:
+    """The workflow file's text with every extracted body spliced back IN PLACE.
+
+    Many guards read a workflow with a plain ``path.read_text()`` and then assert
+    on ORDER — ``text.index(a) < text.index(b)``, a regex sweep for ``brun``
+    slugs, a proximity bound between two calls. Those reads are positional, so
+    handing them a concatenation of run bodies would not preserve what they
+    measure.
+
+    This returns the file verbatim except that each ``run: bash
+    scripts/ci/<name>.sh`` line is replaced by that script's body, indented under
+    where the call sat. Document order is therefore identical to the
+    pre-extraction file and index-based assertions keep their meaning.
+
+    Same fail-closed contract as :func:`resolve_run_source`.
+    """
+    text = Path(wf_path).read_text(encoding="utf-8")
+    out: list[str] = []
+    for line in text.splitlines(keepends=True):
+        match = _RUN_CALL_LINE_RE.match(line.rstrip("\n"))
+        if match is None:
+            out.append(line)
+            continue
+        resolved = resolve_run_source(match.group("call"), repo_root)
+        if resolved.strip() == match.group("call").strip():
+            out.append(line)  # legacy helper — leave the call as written
+            continue
+        pad = match.group("indent") + "  "
+        for body_line in resolved.splitlines():
+            out.append(f"{pad}{body_line}\n" if body_line.strip() else "\n")
+    return "".join(out)

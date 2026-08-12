@@ -43,7 +43,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.workflow_run_source import resolve_run_source
+from scripts.workflow_run_source import resolved_workflow_text
 
 ROOT = Path(__file__).resolve().parents[1]
 RENDER = (ROOT / ".github" / "workflows" / "render.yml").read_text()
@@ -364,27 +364,15 @@ def test_every_workspace_store_producer_is_accounted_for(lane):
 # --------------------------------------------------------------- nightly unchanged
 
 
-def _resolved_engine_source() -> str:
-    """daily.yml's engine job as one shell-source string, in step order.
-
-    Step bodies extracted to scripts/ci/<name>.sh are resolved back to their
-    real source (scripts/workflow_run_source), so the ordering assertion below
-    still reads the band wait barrier that lives inside the extracted
-    "regional + desk builders" block rather than silently falling through to a
-    later, weaker occurrence of the same token.
-    """
-    import yaml
-
-    steps = yaml.safe_load(DAILY)["jobs"]["engine"]["steps"]
-    return "\n".join(
-        resolve_run_source(step.get("run") or "", ROOT) for step in steps
-    )
-
-
 def test_daily_still_builds_the_workspace_post_band():
     """Gate: this change must not touch the nightly's own (correct) placement."""
-    engine = _resolved_engine_source()
-    assert "python -m scripts.build_options_command" in engine
+    # Resolved text, same slice as before: the band wait barrier this asserts on
+    # lives inside the "regional + desk builders" body that was extracted to
+    # scripts/ci/. A raw read would fall through to a later, weaker occurrence of
+    # check_builder_failstreaks and pass for the wrong reason.
+    daily = resolved_workflow_text(ROOT / ".github" / "workflows" / "daily.yml", ROOT)
+    assert "python -m scripts.build_options_command" in daily
+    engine = daily.split("  engine:", 1)[1]
     assert engine.index("check_builder_failstreaks") < engine.index("scripts.build_options_command"), (
         "build_options_command must stay AFTER the band wait barrier in daily.yml"
     )

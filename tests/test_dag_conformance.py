@@ -36,6 +36,7 @@ from scripts.workflow_run_source import (
     MARKER_SCAN_LINES,
     WorkflowRunSourceError,
     resolve_run_source,
+    resolved_workflow_text,
 )
 
 
@@ -869,23 +870,16 @@ class TestBrunOrderVisibility:
 
     def test_every_brun_slug_is_in_its_lane_order(self):
         import re
-
-        import yaml
         unwatched: dict[str, list[str]] = {}
         for wf in self.LANES:
             path = REPO_ROOT / ".github" / "workflows" / wf
             if not path.exists():  # lane retired — not this test's business
                 continue
-            # Read the lane's SHELL SOURCE, not the YAML text. A band block
-            # extracted to scripts/ci/ still runs in this lane, and its brun
-            # calls and its ORDER string move together — reading the raw file
-            # would see neither and this guard would go blind.
-            doc = yaml.safe_load(path.read_text())
-            text = "\n".join(
-                resolve_run_source(step.get("run") or "", REPO_ROOT)
-                for job in (doc.get("jobs") or {}).values()
-                for step in (job.get("steps") or [])
-            )
+            # Resolved text, not the raw file. A band block extracted to
+            # scripts/ci/ still runs in this lane, and its brun calls and its
+            # ORDER string move out together — a raw read would see neither and
+            # this guard would go blind.
+            text = resolved_workflow_text(path, REPO_ROOT)
             slugs = set(re.findall(r"^\s*brun\s+([A-Za-z0-9_]+)\s", text, flags=re.M))
             assert slugs, f"{wf}: no brun calls parsed — did the lane change shape?"
             ordered: set[str] = set()
@@ -1048,3 +1042,90 @@ jobs:
         wf = self._build(tmp_path, buried)
         with pytest.raises(WorkflowRunSourceError):
             _parse_workflow(wf, tmp_path)
+
+
+class TestResolvedWorkflowText:
+    """resolved_workflow_text splices bodies back IN PLACE (positional reads)."""
+
+    WF = """\
+name: synthetic
+jobs:
+  build:
+    steps:
+      - name: first
+        run: |
+          python -m scripts.mod_first
+      - name: extracted
+        run: bash scripts/ci/daily_extracted.sh
+      - name: last
+        run: |
+          python -m scripts.mod_last
+"""
+
+    SCRIPT = (
+        "#!/usr/bin/env bash\n"
+        "# EXTRACTED-VERBATIM-FROM: .github/workflows/daily.yml\n"
+        "set -e\n"
+        "python -m scripts.mod_middle\n"
+        'ORDER="alpha beta"\n'
+    )
+
+    def _build(self, tmp_path, script_text=None):
+        wf_dir = tmp_path / ".github" / "workflows"
+        wf_dir.mkdir(parents=True)
+        (wf_dir / "synthetic.yml").write_text(self.WF)
+        ci = tmp_path / "scripts" / "ci"
+        ci.mkdir(parents=True)
+        (ci / "daily_extracted.sh").write_text(
+            self.SCRIPT if script_text is None else script_text
+        )
+        return wf_dir / "synthetic.yml"
+
+    def test_body_is_spliced_at_the_call_site_preserving_order(self, tmp_path):
+        wf = self._build(tmp_path)
+        text = resolved_workflow_text(wf, tmp_path)
+        for token in ("scripts.mod_first", "scripts.mod_middle", "scripts.mod_last"):
+            assert token in text
+        # the whole point: a positional assertion reads the same as it did
+        # before the body was extracted
+        assert (
+            text.index("scripts.mod_first")
+            < text.index("scripts.mod_middle")
+            < text.index("scripts.mod_last")
+        )
+
+    def test_content_only_reachable_through_the_script_is_present(self, tmp_path):
+        wf = self._build(tmp_path)
+        assert 'ORDER="alpha beta"' not in self.WF
+        assert 'ORDER="alpha beta"' in resolved_workflow_text(wf, tmp_path)
+
+    def test_surrounding_yaml_is_untouched(self, tmp_path):
+        wf = self._build(tmp_path)
+        text = resolved_workflow_text(wf, tmp_path)
+        for line in ("name: synthetic", "  build:", "      - name: extracted"):
+            assert line in text
+        assert "bash scripts/ci/daily_extracted.sh" not in text
+
+    def test_legacy_call_lines_are_left_as_written(self, tmp_path):
+        wf_dir = tmp_path / ".github" / "workflows"
+        wf_dir.mkdir(parents=True)
+        (wf_dir / "synthetic.yml").write_text(
+            "jobs:\n  build:\n    steps:\n      - name: t\n"
+            "        run: bash scripts/ci/nightly_timings_finish.sh 300\n"
+        )
+        ci = tmp_path / "scripts" / "ci"
+        ci.mkdir(parents=True)
+        (ci / "nightly_timings_finish.sh").write_text("#!/usr/bin/env bash\necho hi\n")
+        text = resolved_workflow_text(wf_dir / "synthetic.yml", tmp_path)
+        assert "bash scripts/ci/nightly_timings_finish.sh 300" in text
+        assert "echo hi" not in text
+
+    def test_live_daily_yml_resolves_and_recovers_the_extracted_builders(self):
+        """The real file: extracted module invocations must be visible again."""
+        text = resolved_workflow_text(
+            REPO_ROOT / ".github" / "workflows" / "daily.yml", REPO_ROOT
+        )
+        raw = (REPO_ROOT / ".github" / "workflows" / "daily.yml").read_text()
+        for token in ("engine.run", "scripts.build_site", "scripts.build_ticker_pages"):
+            assert token in text, token
+        assert len(text) > len(raw)
