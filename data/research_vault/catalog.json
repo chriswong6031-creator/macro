@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-11T23:36:44.763347+00:00",
-  "count": 954,
+  "generated_at": "2026-08-12T00:06:49.233361+00:00",
+  "count": 955,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -51,6 +51,7 @@
     "The Market Ear",
     "The Punchline",
     "UBS",
+    "WGC",
     "Week Ahead",
     "Weekly Preview",
     "William Blair",
@@ -177,6 +178,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ygjxxrqbdi6-5210a5",
+      "title": "WMM 10 August 2026 Unwedged",
+      "institution": "WGC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:41:01Z",
+      "summary_points": [
+        "**WGC Weekly Gold Data Release**: Critical for tracking gold fundamentals and flows as of 10 August 2026, directly impacting portfolio positioning.",
+        "**Geopolitical & Gold Technicals**: Middle East resolution risk looms despite Strait of Hormuz talks easing; gold broke $4,000 wedge via ETF buying (flows), supported by weak non-farm payrolls (data) and Fed repricing doubts (policy).",
+        "**China's Demand Surge**: 61 new gold ETFs added, Shanghai net longs rose; gold broke July range with next resistance at $4,493/oz (200-day avg), signaling strong institutional flows.",
+        "**Critical Resistance & Support**: Gold broke 200-day avg at $4,493; immediate support at $4,186-$4,145 (55/13-day averages) essential for trend continuation.",
+        "**USD Rejection & Gold Catalyst**: DXY rejected 1229/1231 resistance, breaking 55/200-day support; USD weakness signals gold rise toward $4,186, with 1231 as critical USD base."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
       "language": "en",
       "needs_metadata": false
     },
