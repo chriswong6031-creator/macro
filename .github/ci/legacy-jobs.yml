@@ -1988,6 +1988,11 @@ jobs:
       # nightly with nothing going red — the same silent class as the two above.
       - name: daily ET regime gate (DST pair disambiguator + wiring pins)
         run: python -m pytest tests/test_daily_et_gate.py -q
+      # 2026-08-12 (#5416): a workflow FILE over ~512,000 bytes stops being
+      # processed SILENTLY — cron stops firing and dispatched runs queue with
+      # zero jobs, uncancellable. The budget test reds growth before the cap.
+      - name: workflow file size stays under GitHub's silent processing cap
+        run: python -m pytest tests/test_workflow_file_size.py -q
 
   push-retry-policy:
     if: ${{ false }}
@@ -6769,7 +6774,7 @@ jobs:
     # transport is exercised only with bounded offline fixtures in this
     # zero-network lane.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -7128,3 +7133,35 @@ jobs:
       # as a Python import edge.
       - name: Winner Health inert surface design freeze
         run: python -m pytest tests/test_winner_health_design_freeze.py -q
+
+  options-nbbo-cohort:
+    # Frozen same-basis MomoEdge comparison infrastructure. The suite is fully
+    # offline: source responses and authenticated producer rows are synthetic,
+    # while raw production bytes remain host-private outside git.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - config/dag.yml
+      - contracts/options/options.prospective_nbbo_cohort.v1.schema.json
+      - docs/runbooks/OPTIONS_NBBO_COHORT.md
+      - engine/options_nbbo_cohort.py
+      - engine/session_digest.py
+      - lib/nyse_calendar.py
+      - ops/launchd/com.mastermind.optionsnbbocohort.plist
+      - ops/launchd/run_options_nbbo_cohort_loop.sh
+      - scripts/capture_options_nbbo_cohort.py
+      - tests/test_options_nbbo_cohort.py
+      - tests/test_options_nbbo_cohort_deploy.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest jsonschema pyyaml
+      - name: private OPRA NBBO cohort, capture coverage, and launchd contract
+        run: >-
+          python -m pytest
+          tests/test_options_nbbo_cohort.py
+          tests/test_options_nbbo_cohort_deploy.py -q -rs

@@ -28,6 +28,20 @@ CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 EXPERIENCE_ROOT = "/var/lib/macro-market-memory/state/experience-v1"
 TRUSTED_ROOT = "/var/lib/macro-market-memory/public/trusted-v1"
 TECHNICAL_ROOT = "/var/lib/macro-market-memory/state/technicals-v1"
+NAMESPACE_ROOT = "/var/lib/macro-market-memory"
+MASKED_MARKET_MEMORY_SIBLINGS = {
+    "/var/lib/macro-market-memory/public/generations",
+    "/var/lib/macro-market-memory/public/objects",
+    "/var/lib/macro-market-memory/public/contexts",
+    "/var/lib/macro-market-memory/public/queries",
+    "/var/lib/macro-market-memory/public/HEAD.json",
+    "/var/lib/macro-market-memory/public/store_manifest.json",
+    "/var/lib/macro-market-memory/state/sources",
+    "/var/lib/macro-market-memory/state/context-projection",
+    "/var/lib/macro-market-memory/state/identity-v1",
+    "/var/lib/macro-market-memory/state/breadth-v1",
+    "/var/lib/macro-market-memory/state/production-record-options-episode-v1",
+}
 SIBLING_PROFILES = ("source", "context", "identity", "breadth", "technicals")
 
 
@@ -444,6 +458,52 @@ def test_experience_service_is_network_dark_credential_free_and_path_exact() -> 
         assert "MARKET_MEMORY_EXPERIENCE" not in source
 
 
+def test_experience_namespace_tolerates_exact_masked_siblings() -> None:
+    service = _text(SERVICE)
+    inaccessible = _setting_values(service, "InaccessiblePaths")
+
+    # systemd applies the root tmpfs before its sorted nested path masks.  Every
+    # unbound sibling is therefore intentionally absent at namespace setup.
+    # Leading "-" tolerates that absence but still masks a target when present.
+    nested_masks = {
+        value
+        for value in inaccessible
+        if value.removeprefix("-").startswith("/var/lib/macro-market-memory/")
+    }
+    assert nested_masks == {
+        f"-{path}" for path in MASKED_MARKET_MEMORY_SIBLINGS
+    }
+
+    # The authenticated owner roots remain mandatory bind inputs, and the
+    # empty hierarchy mount remains the default deny for every unbound sibling.
+    assert _setting_values(service, "TemporaryFileSystem") == [
+        "/var/lib/macro-market-memory:ro"
+    ]
+    assert _setting_values(service, "BindReadOnlyPaths") == [
+        TRUSTED_ROOT,
+        TECHNICAL_ROOT,
+    ]
+    assert _setting_values(service, "BindPaths") == [EXPERIENCE_ROOT]
+    assert not any(
+        value.startswith("-")
+        for setting in ("BindReadOnlyPaths", "BindPaths")
+        for value in _setting_values(service, setting)
+    )
+
+    # External deny anchors are real, preprovisioned directories and remain
+    # mandatory.  Optionalizing them would weaken deployment drift detection.
+    assert "/var/lib/macro-market-memory-options" in inaccessible
+    assert "/etc/macro-market-memory-options" in inaccessible
+    assert "-/var/lib/macro-market-memory-options" not in inaccessible
+    assert "-/etc/macro-market-memory-options" not in inaccessible
+
+    # Audit all related units too: none combines the empty-tree namespace with
+    # nested path masks, so none needs the same missing-target treatment.
+    for profile in (*SIBLING_PROFILES, "production-records", "options"):
+        sibling = _text(DEPLOY / f"macro-market-memory-{profile}.service")
+        assert _setting_values(sibling, "TemporaryFileSystem") == []
+
+
 def test_experience_timer_is_exact_and_calendar_is_not_the_denominator() -> None:
     timer = _text(TIMER)
     assert _setting_values(timer, "ConditionPathExists") == []
@@ -499,8 +559,14 @@ def test_setup_and_updater_install_attest_run_and_arm_experience_lane() -> None:
     update = _text(UPDATE)
 
     setup_verify = setup.index("systemd-analyze verify")
-    setup_root = setup.index(f"install -d -m 0700 {EXPERIENCE_ROOT}")
-    assert setup_root < setup_verify
+    required_namespace_paths = (
+        NAMESPACE_ROOT,
+        TRUSTED_ROOT,
+        TECHNICAL_ROOT,
+        EXPERIENCE_ROOT,
+    )
+    for path in required_namespace_paths:
+        assert setup.index(f"install -d -m 0700 {path}\n") < setup_verify
     for name in (
         "macro-market-memory-experience.service",
         "macro-market-memory-experience.timer",
@@ -519,11 +585,18 @@ def test_setup_and_updater_install_attest_run_and_arm_experience_lane() -> None:
     assert "mm_loaded_unit_ready" in setup
     assert "NeedDaemonReload" in setup
 
-    update_root = update.index(f"install -d -m 0700 {EXPERIENCE_ROOT}")
+    update_verify = update.index(
+        'systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"'
+    )
     block_start = update.index("MARKET_MEMORY_EXPERIENCE_UNIT_UPDATED=0")
     block_end = update.index("# W1B.5 private", block_start)
     block = update[block_start:block_end]
-    assert update_root < block_start
+    for path in required_namespace_paths:
+        assert (
+            update.index(f"install -d -m 0700 {path}\n")
+            < update_verify
+            < block_start
+        )
     for token in (
         "macro-market-memory-experience.service",
         "macro-market-memory-experience.timer",
@@ -951,6 +1024,9 @@ w2c_reconcile_timer
 def test_market_memory_ci_owns_every_experience_contract_and_trigger() -> None:
     body = _legacy_job_body(_text(LEGACY_JOBS), "market-memory-contract")
     workflow = _text(CI_WORKFLOW)
+    assert re.findall(
+        r"^    timeout-minutes: ([0-9]+)$", body, re.MULTILINE
+    ) == ["15"]
     for test in (
         "tests/test_market_memory_experience_accrual.py",
         "tests/test_market_memory_experience_deploy.py",
