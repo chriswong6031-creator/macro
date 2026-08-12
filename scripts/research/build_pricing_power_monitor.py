@@ -53,6 +53,7 @@ import pandas as pd
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 from lib import config  # noqa: E402
 from lib.procutil import hard_exit  # noqa: E402
 
@@ -414,7 +415,9 @@ def main() -> int:
     # Write manifest
     out_mf = _out_manifest()
     out_mf.parent.mkdir(parents=True, exist_ok=True)
-    out_mf.write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
+    out_mf.write_text(
+        json.dumps(sanitize_non_finite(manifest), indent=2, default=str,
+                   allow_nan=False), encoding="utf-8")
     log.info("Wrote %s", out_mf)
 
     print(f"\nOutputs written:")
