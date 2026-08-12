@@ -248,7 +248,8 @@ def test_private_store_is_hidden_from_api_and_every_other_writer() -> None:
     assert "InaccessiblePaths=/var/lib/macro-market-memory/state" in _text(API_SERVICE)
     for profile in RECIPROCAL_PROFILES[:-1]:
         service = _text(DEPLOY / f"macro-market-memory-{profile}.service")
-        assert f"InaccessiblePaths={STORE_ROOT}" in service
+        optional = "-" if profile == "experience" else ""
+        assert f"InaccessiblePaths={optional}{STORE_ROOT}" in service
 
     production_records = _text(SERVICE)
     assert (
