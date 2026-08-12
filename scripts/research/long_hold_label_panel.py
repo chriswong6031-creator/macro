@@ -65,6 +65,8 @@ import pandas as pd
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from engine.json_strict import sanitize_non_finite  # noqa: E402
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -1585,7 +1587,8 @@ def run(
     labeled.to_parquet(_OUT_PARQUET, index=False)
 
     log.info("Writing %s...", _OUT_MANIFEST)
-    _OUT_MANIFEST.write_text(json.dumps(manifest, indent=2, default=str))
+    _OUT_MANIFEST.write_text(json.dumps(sanitize_non_finite(manifest), indent=2,
+                                        default=str, allow_nan=False))
 
     log.info("=== DONE: runtime=%.1fs ===", runtime)
     log.info("Label distribution: %s", manifest["label_distribution"])

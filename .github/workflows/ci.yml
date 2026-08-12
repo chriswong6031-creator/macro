@@ -2233,6 +2233,9 @@ on:
       # XG-W1 wired it into marketing-social-publisher; it guards which accounts
       # the per-call read lane may draw, which is exactly what XG-W1 narrowed.
       - "tests/test_marketing_publish_time_read.py"
+      # Publish-time clock + lead-fact fan-out gates (2026-08-11): unrun until
+      # voice v5 rotted its fixtures unseen; runs in marketing-social-publisher.
+      - "tests/test_marketing_market_clock.py"
       # Marketing lobe engine unit suite (see the marketing-engine job). Whitelisted
       # 2026-07-23 after it rotted red on main: opportunities.jsonl is a forward
       # ledger the nightly radar fills with live radar-* rows, but the seed round-trip
@@ -2808,6 +2811,7 @@ on:
       - "tests/test_baskets_china_ths.py"
       - "tests/test_canada_branch_b.py"
       - "tests/test_china_analogs.py"
+      - "tests/test_china_connect_leaderboard_render.py"
       - "tests/test_china_fx_context_render.py"
       - "tests/test_china_stf_facets.py"
       - "tests/test_hk_closes_fallback.py"

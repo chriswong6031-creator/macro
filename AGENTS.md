@@ -48,6 +48,17 @@ provide a relative `nav_prefix`, but page CSS must not change the global
 header's width, typography, menu dimensions, search behavior, breakpoints or
 motion. Change the appropriate shared family and its parity tests instead.
 
+## Design system (any user-facing surface)
+
+`research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md` is the binding visual/composition
+law: archetype per route, canonical components (registry = the specimen at
+`mockups/design_system/specimen.html`), tokens only (extend `templates/theme.css`,
+never a parallel token root), density budgets, dark+light as two art directions,
+EN/ZH parity. Content law stays with `docs/DESIGN_DOCTRINE.md` (wins on conflict).
+Migration work follows `research/DESIGN_MIGRATION_FACTORY_V1.md`: builders execute
+a committed migration packet exactly and never invent design language — a builder
+that believes the packet is wrong stops and escalates.
+
 ## Workspace and git
 
 - The canonical project home is `/Users/chriswong/Documents/Cluade`.
