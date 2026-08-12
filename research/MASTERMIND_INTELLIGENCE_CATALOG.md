@@ -15,7 +15,7 @@ and where the evaluation is missing or misleading.
 Mastermind does not have an evaluation problem of the usual kind. The usual kind is "nobody
 measured anything." Here the opposite is true: the repository contains a **prereg culture, a
 kill registry, a matched-control grading substrate, a placebo tape, a champion-vs-challenger
-shadow harness, and 19 freshness monitors.** By the standards of most quant shops this is
+shadow harness, and 16 freshness/health monitors under `scripts/`.** By the standards of most quant shops this is
 already upper-decile infrastructure.
 
 The problem is three-fold and specific:

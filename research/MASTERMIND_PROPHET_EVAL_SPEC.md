@@ -14,7 +14,7 @@ a single metric has never fit it and never will.
 
 | Surface | Output class | Artifact | Graded by | Benchmark? |
 |---|---|---|---|---|
-| **A — The Board** | Ranking | `site/factordata/us_standouts.json` (committed daily, ~90 revisions since 2026-06-16) | `scripts/grade_us_board.py` → `data/us_board_ledger/retro_grades.parquet` | **yes** — vs SPY *and* the name's sector ETF, at 5/10/21/63d, per lane, with precision@k and Wilson CIs |
+| **A — The Board** | Ranking | `site/factordata/us_standouts.json` (committed daily; ~90 revisions since 2026-06-16 per the grader's own docstring — not independently counted here) | `scripts/grade_us_board.py` → `data/us_board_ledger/retro_grades.parquet` | **yes** — vs SPY *and* the name's sector ETF, at 5/10/21/63d, per lane, with precision@k and Wilson CIs |
 | **B — The Plan** | Predictive (dated, directional, with targets) | `data/prophet/ledger.jsonl` | closure rules + `reconcile_prophet_live.py` | **no** — `stock_result_pct` is raw return |
 | **C — Live states** | Detection / state machine | R2 armed pack → served live plane | `engine/prophet_live/live_states.py`, 5-min pass | n/a — intraday state, not a return claim |
 

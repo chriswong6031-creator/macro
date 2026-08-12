@@ -14,7 +14,7 @@ already has to be joined, named, and made answerable to one question.**
 
 The reconnaissance (catalog §1–§5) found a matched-control grading substrate, a live placebo
 tape, a prospective champion-vs-challenger harness, a code-enforced promotion lifecycle, a
-kill registry with receipts, a contradiction detector, and 19 freshness monitors. What it did
+kill registry with receipts, a contradiction detector, and 16 freshness/health monitors under scripts/. What it did
 not find is anything that can answer *"which parts of Mastermind are working, and how do you
 know?"* — because there is no unit of account. The registries count **artifacts** (642),
 **setups** (27), and **programs** (99). None counts **engines**, and none records whether an
@@ -30,7 +30,7 @@ evaluation system.**
 | Do not build | Because it exists | Location |
 |---|---|---|
 | A prediction ledger | Universal Scoreboard: PIT levels, falsifier, matched control, embargo, Wilson CI, placebo slot | `engine/qledger.py` |
-| A backtest framework | 40+ calibration/backtest harnesses with pre-registered gates | `scripts/calibrate_*.py`, `backtest_*.py` |
+| A backtest framework | 37 calibration/backtest harnesses (26 `calibrate_*` + 11 `backtest*`) with pre-registered gates | `scripts/calibrate_*.py`, `backtest_*.py` |
 | A version-regression harness | Prospective champion-vs-challenger shadow arena | `engine/prophet_arena.py` |
 | A contradiction detector | 7 typed signal pairs, display-only, fail-open | `engine/neuralweb/contradictions.py` |
 | A generative-answer rubric | 3-tier: mechanical → LLM judge (8 axes) → frozen benchmark | `engine/neuralweb/response_eval.py` |
@@ -130,7 +130,7 @@ meaningless without the matched-universe base rate; the `qledger` matched-contro
 ### L3 — JUDGE: gates, gauntlet, regression
 
 The promotion gauntlet exists and is genuinely good (`oracle_gauntlet_*`, the species
-lifecycle, ~40 prereg documents). Two things are missing:
+lifecycle, 54 `*PREREG*.md` documents). Two things are missing:
 
 **(a) Gate tiering.** Per handoff PART XIX, and calibrated so research does not stop:
 
