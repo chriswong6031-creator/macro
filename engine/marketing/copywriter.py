@@ -156,6 +156,29 @@ _BANNED_CHEESE_WORDS: tuple[str, ...] = (
 # a whitelist of ["34.4", "41.2", "45"] licensed a post that wrote "Entry 77.7,
 # target 99.9" with zero violations. Invented levels in the band the rounding law
 # was written for were the one thing it could not catch.
+#: THE k/m/b COMPACT-SUFFIX BRANCH (W2D, 2026-08-12). Every branch above needs a
+#: WORD BOUNDARY right after its last digit, and digit-to-letter is never one —
+#: so "199k" was invisible to this regex end to end (even the bare-integer
+#: branch could not partial-match the "199", for the identical \b reason on its
+#: far side). `_extract_number_tokens` found ZERO tokens in "jobless claims
+#: 199k", so the invention screen never looked at it: an invented "213k" would
+#: have cleared the gate exactly as cleanly as a real one. See
+#: docs/marketing_voice_doctrine_v5.md Hard Ban #9 and
+#: `market_facts._claims_level_words`, which spelled out "203 thousand"
+#: specifically to dodge this hole until the tokenizer could see the register
+#: traders actually write. `(?![A-Za-z0-9])` after the suffix stops "199king" /
+#: "199k2" reading as a suffixed number; the leading \b keeps a
+#: ticker-adjacent run ("Q199k") from donating its tail digits, same as every
+#: branch above. The "$" in "$7.6B" is never PART of the match, same as every
+#: branch above — \b already sits on the non-word/word edge regardless of what
+#: precedes the digit, so nothing extra is needed to drop it.
+#:
+#: Case-insensitive by construction (`[kKmMbB]`, not a flag) — the file has no
+#: `re.IGNORECASE` on this pattern and the `x` multiplier branch above is
+#: deliberately lowercase-only ("2.5X" does not match it), so a blanket flag
+#: would silently widen that branch too. No space is accepted between the
+#: digits and the suffix ("199 k" stays two ordinary tokens) — that spelling is
+#: not the register this closes and is explicitly out of scope.
 _NUMBER_RE = re.compile(
     r"""
     [+-]?\d+\.?\d*%            # percentage: +12.3% or -5.5%
@@ -167,6 +190,8 @@ _NUMBER_RE = re.compile(
     \b\d{1,4}\.\d\b           # display-form price: 34.4, 81.4, 4.9
     |
     \b\d{3,6}\b               # bare integer: e.g. 1000 (share count not typically needed)
+    |
+    \b\d+\.?\d*[kKmMbB](?![A-Za-z0-9])  # compact count/money: 199k, 1.2m, 45B, $7.6B
     """,
     re.VERBOSE,
 )
@@ -181,7 +206,14 @@ _PRICE_SLOT_RE = re.compile(
     r"[\s:=]*\$?\s*"
     # Thousands separators only between digit groups: a trailing comma belongs
     # to the sentence ("in at 101, looking for 121"), not to the number.
-    r"(\d+(?:,\d{3})*(?:\.\d+)?)(?![\d.]*\s*(?:%|x\b))",
+    # The optional [kKmMbB] (W2D, 2026-08-12) rides on the SAME digit run, no
+    # space — a crypto-register level ("target 120k") is a level like any
+    # other, and without it the slot swallowed only "120", handing the
+    # whitelist a number nobody wrote while the "k" fell out into ordinary
+    # text (the twin of the bug _NUMBER_RE's compact-suffix branch closes on
+    # the general screen). Its own (?![A-Za-z]) keeps "target 120king" from
+    # donating a "k" the way the group above keeps a bare suffix from doing so.
+    r"(\d+(?:,\d{3})*(?:\.\d+)?(?:[kKmMbB](?![A-Za-z]))?)(?![\d.]*\s*(?:%|x\b))",
     re.IGNORECASE,
 )
 
@@ -539,6 +571,60 @@ def _pct_display_variants(token: str) -> list[str]:
     sign, digits = m.group(1), m.group(2)
     disp = format_display_pct(f"{sign}{digits}", signed=bool(sign))
     return [disp] if disp else []
+
+
+#: A whitelist token shaped like a bare count or money figure: optional "$",
+#: digit groups (comma-grouped or not), optional decimal tail. A percent
+#: (trailing "%") or multiplier (trailing "x") token never matches — those have
+#: their own variant story — so this can run over the WHOLE whitelist without
+#: double-licensing either family.
+_COMPACT_WHITELIST_RE = re.compile(r"^\$?(\d[\d,]*)(?:\.(\d+))?$")
+
+
+def _compact_display_variants(token: str) -> list[str]:
+    """Compact k/m/b spellings of a whitelist NUMBER, same value as *token*.
+
+    Mirrors `_pct_display_variants` (W2D, 2026-08-12): the whitelist already
+    licenses "203,000" (or "199000", or "7600000000"), so it also licenses
+    "203k" / "199k" / "7.6B" — the SAME computed number, spelled the way a desk
+    writes a big count or dollar figure in a wire line (contract §Rounding;
+    voice doctrine v5 Hard Ban #9). Nothing is invented: a producer that
+    switches a count to the compact register does not need a second whitelist
+    entry, and a model that writes "199k" for a packet that already licenses
+    "199,000" is not punished for quoting the same fact in the register the
+    house actually writes it in.
+
+    Threshold-gated at 1,000 — below that a compact spelling is not a real
+    register ("0.4k" is not a thing anyone writes). A bare 4-digit 19xx/20xx
+    token is excluded outright: it is a YEAR (the same shape `build_context`
+    already auto-whitelists one from), never a magnitude, and "2.02K" is not a
+    legal spelling of "2024" under any reading of the rounding law. A mantissa
+    that would round to 4 digits at a given band ("999999.5" -> "1000.00" at
+    the K band) is skipped rather than carried up a band — the caller already
+    has the full-precision entry, so a rare edge losing its compact variant is
+    safe; a wrong one ("1000K") is not.
+    """
+    raw = str(token or "").strip()
+    m = _COMPACT_WHITELIST_RE.match(raw)
+    if not m:
+        return []
+    whole, frac = m.group(1), m.group(2)
+    digits = whole.replace(",", "")
+    if frac is None and len(digits) == 4 and digits[:2] in ("19", "20"):
+        return []  # a year, not a magnitude
+    try:
+        value = float(f"{digits}.{frac}" if frac else digits)
+    except ValueError:
+        return []
+    for scale, suffix in ((1_000_000_000.0, "B"), (1_000_000.0, "M"), (1_000.0, "K")):
+        if value < scale:
+            continue
+        mantissa = round(value / scale, 2)
+        if mantissa >= 1000:
+            continue  # would print a 4-digit mantissa — see docstring
+        m_str = f"{mantissa:.2f}".rstrip("0").rstrip(".")
+        return [f"{m_str}{suffix}", f"{m_str}{suffix.lower()}"]
+    return []
 
 
 def display_round_text(text: str) -> str:
@@ -991,6 +1077,18 @@ def build_context(
     #     for. See _pct_display_variants.
     for _tok in list(whitelist):
         for _variant in _pct_display_variants(_tok):
+            if _variant not in whitelist:
+                whitelist.append(_variant)
+    # (a2) Every count/money figure >= 1,000 is ALSO licensed in the compact
+    #      k/m/b spelling a desk actually writes it in ("199,000" -> "199k";
+    #      "7,600,000,000" -> "7.6B") — voice doctrine v5 Hard Ban #9 (W2D,
+    #      2026-08-12). Same pattern as (a): the same computed number, no new
+    #      fact. This is what lets a producer switch a JOBS/claims-style count
+    #      to the compact register without minting a second whitelist entry,
+    #      and what makes an LLM-written "199k" legal exactly when "199,000"
+    #      already is. See _compact_display_variants.
+    for _tok in list(whitelist):
+        for _variant in _compact_display_variants(_tok):
             if _variant not in whitelist:
                 whitelist.append(_variant)
     # (b) PLAN LEVELS FIRST. The writer payload sends a TRUNCATED whitelist to
