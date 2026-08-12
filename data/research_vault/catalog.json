@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T22:54:32.262563+00:00",
-  "count": 1020,
+  "generated_at": "2026-08-12T23:24:35.074843+00:00",
+  "count": 1021,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -506,6 +506,26 @@
         "**Agentic AI Demand Surge**: 10pp rise in Agentic AI queries could increase datacenter power needs by 25% (2030-35), accelerating demand for utilities and players like Nabiax (140 MW expansion).",
         "**Power Demand Upgrade**: Goldman Sachs raises power demand assumptions to 1.5–2% pa (from 1–1.5%) due to AI/electrification, lifting Electric Utilities target P/E above mid-cycle (c.",
         "16x)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9wrng0jozpq-66b5e9",
+      "title": "Alcon Inc. (ALCC)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:24Z",
+      "summary_points": [
+        "**FY26 Guidance Upgrade**: Core operating margin guidance raised to 90-190bps (vs 70-170bps) and core EPS growth to 12-15% (vs 10-13%), driven by $60m tariff refunds reinvested into business.",
+        "**Q2 Segment Performance**: Vision Care sales +7% (beat consensus), Equipment +25% (vs 17.7% consensus), Ocular Health +12% (vs 10.1% consensus), highlighting strong demand in high-margin segments.",
+        "**Critical Risk Factors**: Key downside risks include Implantables share loss, consumer slowdown, product launch delays, and tariff-driven margin pressure impacting near-term execution.",
+        "**Valuation Efficiency**: EV/EBITDA down (17.4→10.2), CROCI up (6.1%→6.5%), signaling improving profitability and valuation efficiency despite elevated target price multiples."
       ],
       "tags": [],
       "tickers": [],
