@@ -4044,7 +4044,7 @@ jobs:
       - name: OIP PIT — durable episodes + H+60 and declared-session-close proxy accrual
         id: options_signal_episode
         # Consumes only the date-keyed live_flow/events/{DATE}.jsonl raw stage,
-        # never capped/overwritten feed_current. The monotonic checkpoint and all four
+        # never capped/overwritten feed_current. The monotonic checkpoint and three
         # committed JSONL ledgers advance only in COLLECT_LANE=nightly. H+60 v1 stays
         # frozen; EOD/1d/3d/5d/10d close rows accrue separately from the same exact
         # Polygon receipt. Session outcomes and coarse H+60 measurements remain
@@ -4061,14 +4061,24 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_options_signal_episode
-      - name: OIP PIT — checkpoint the five durable episode ledgers
+      - name: OIP campaign v2 — exact-contract revision and anchored-outcome accrual
+        id: options_signal_campaign
+        # Consumes only the immutable episode/outcome prefixes committed above. It
+        # owns a separate revision/outcome/checkpoint namespace, preserves the legacy
+        # v1 cohort bytes, and grants no selector, training, or trading authority.
+        if: always() && steps.options_signal_episode.outcome == 'success'
+        timeout-minutes: 10
+        continue-on-error: true
+        run: python -m scripts.build_options_signal_campaign
+      - name: OIP PIT — checkpoint the four durable episode ledgers
+        id: options_signal_episode_publish
         if: always() && steps.options_signal_episode.outcome == 'success'
         timeout-minutes: 10
         continue-on-error: true
         # This checkpoint is deliberately immediate and success-only. The broad
         # engine commit is hours later and may lose its push race or hit the job
         # cap; these append-only PIT rows cannot be reconstructed after the raw
-        # dated event stage ages out. Publish only the five builder-owned files.
+        # dated event stage ages out. Publish only the four builder-owned files.
         # The metadata replay overlays their object IDs on current origin/main in
         # a temporary index, so it never rebases, checks out, stashes, cleans, or
         # otherwise touches the thousands of unrelated dirty render outputs.
@@ -4083,7 +4093,6 @@ jobs:
             data/options_signal_episode/episodes.jsonl
             data/options_signal_episode/outcomes_h60.jsonl
             data/options_signal_episode/outcomes_session.jsonl
-            data/options_signal_episode/campaigns.jsonl
           )
           PUSH_ALARM=120
           PUSH_BUDGET_SECS=420
@@ -4113,10 +4122,9 @@ jobs:
               data/options_signal_episode/checkpoint.json|\
               data/options_signal_episode/episodes.jsonl|\
               data/options_signal_episode/outcomes_h60.jsonl|\
-              data/options_signal_episode/outcomes_session.jsonl|\
-              data/options_signal_episode/campaigns.jsonl) ;;
+              data/options_signal_episode/outcomes_session.jsonl) ;;
               *)
-                echo "::error title=options PIT checkpoint scope violation::staged path $OIP_PATH is outside the five-file allowlist"
+                echo "::error title=options PIT checkpoint scope violation::staged path $OIP_PATH is outside the four-file allowlist"
                 exit 1
                 ;;
             esac
@@ -4124,9 +4132,14 @@ jobs:
           push_staged_clean "${OIP_LEDGER_PATHS[@]}" || exit 1
 
           OIP_PARENT=$(git rev-parse HEAD)
-          git commit -m "options-pit: durable episode checkpoint $(date -u +%F)"
-          OIP_COMMIT=$(git rev-parse HEAD)
-          OIP_MESSAGE=$(git log -1 --format=%B "$OIP_COMMIT")
+          OIP_MESSAGE="options-pit: durable episode checkpoint $(date -u +%F)"
+          # Build an unreachable candidate commit without advancing HEAD. A
+          # timeout/cancellation anywhere before a verified push therefore cannot
+          # leave an unpublished commit for the later broad engine lane to smuggle.
+          OIP_TREE=$(git write-tree)
+          OIP_COMMIT=$(printf '%s\n' "$OIP_MESSAGE" | \
+            git commit-tree "$OIP_TREE" -p "$OIP_PARENT")
+          git reset -q -- "${OIP_LEDGER_PATHS[@]}"
           OIP_REPLAY_INDEX="${RUNNER_TEMP:-/tmp}/options-pit-replay-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}.idx"
 
           while push_attempt; do
@@ -4154,7 +4167,99 @@ jobs:
             push_backoff
           done
           push_lost
-          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the five ledgers remain only in the local engine commit fallback"
+          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); HEAD never advanced and the run will stay red"
+          exit 1
+      - name: OIP campaign v2 — checkpoint the exact three canonical ledgers
+        id: options_signal_campaign_publish
+        if: >-
+          always() &&
+          steps.options_signal_episode_publish.outcome == 'success' &&
+          steps.options_signal_campaign.outcome == 'success'
+        timeout-minutes: 10
+        continue-on-error: true
+        # Publish only the canonical revision, anchored-outcome, and checkpoint
+        # artifacts. The frozen v1 cohort stays outside both writer namespaces.
+        run: |
+          set -euo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          OIP_CAMPAIGN_PATHS=(
+            data/options_signal_campaign/campaigns.jsonl
+            data/options_signal_campaign/outcomes.jsonl
+            data/options_signal_campaign/checkpoint.json
+          )
+          PUSH_ALARM=120
+          PUSH_BUDGET_SECS=420
+          PUSH_MAX_ATTEMPTS=12
+          push_retry_init "options campaign v2 ledgers"
+          push_on_main_ok || exit 0
+
+          if ! git diff --cached --quiet; then
+            echo "::error title=options campaign checkpoint index dirty::foreign staged paths predate the narrow checkpoint; refusing to publish"
+            exit 1
+          fi
+          for OIP_PATH in "${OIP_CAMPAIGN_PATHS[@]}"; do
+            if [ ! -f "$OIP_PATH" ] || [ -L "$OIP_PATH" ]; then
+              echo "::error title=options campaign checkpoint path rejected::$OIP_PATH is missing or a symlink"
+              exit 1
+            fi
+          done
+          git add -- "${OIP_CAMPAIGN_PATHS[@]}"
+          if git diff --cached --quiet; then
+            echo "options campaign v2 ledgers unchanged"
+            exit 0
+          fi
+          while IFS= read -r OIP_PATH; do
+            case "$OIP_PATH" in
+              data/options_signal_campaign/campaigns.jsonl|\
+              data/options_signal_campaign/outcomes.jsonl|\
+              data/options_signal_campaign/checkpoint.json) ;;
+              *)
+                echo "::error title=options campaign checkpoint scope violation::staged path $OIP_PATH is outside the three-file allowlist"
+                exit 1
+                ;;
+            esac
+          done < <(git diff --cached --name-only)
+          push_staged_clean "${OIP_CAMPAIGN_PATHS[@]}" || exit 1
+
+          OIP_PARENT=$(git rev-parse HEAD)
+          OIP_MESSAGE="options-campaign-v2: durable checkpoint $(date -u +%F)"
+          # Keep the candidate unreachable until origin/main accepts it. This is
+          # interruption-safe: neither timeout nor cancellation can dirty HEAD.
+          OIP_TREE=$(git write-tree)
+          OIP_COMMIT=$(printf '%s\n' "$OIP_MESSAGE" | \
+            git commit-tree "$OIP_TREE" -p "$OIP_PARENT")
+          git reset -q -- "${OIP_CAMPAIGN_PATHS[@]}"
+          OIP_REPLAY_INDEX="${RUNNER_TEMP:-/tmp}/options-campaign-v2-replay-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}.idx"
+
+          while push_attempt; do
+            if ! perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin \
+              +refs/heads/main:refs/remotes/origin/main; then
+              PUSH_FAIL_CLASS="sync"
+              push_backoff
+              continue
+            fi
+            if OIP_PUBLISH=$(push_metadata_replay_commit "$OIP_PARENT" origin/main \
+                "$OIP_COMMIT" "$OIP_MESSAGE" "$OIP_REPLAY_INDEX"); then
+              if [ "$(git rev-parse "$OIP_PUBLISH^{tree}")" = "$(git rev-parse origin/main^{tree})" ]; then
+                echo "options campaign v2 content already on origin/main — nothing to push"
+                push_won
+                exit 0
+              fi
+              if push_do origin "$OIP_PUBLISH:refs/heads/main"; then
+                echo "pushed options campaign v2 ledgers on attempt $PUSH_ATTEMPT (metadata replay — dirty render tree untouched)"
+                push_won
+                exit 0
+              fi
+            else
+              PUSH_FAIL_CLASS="rebase-conflict"
+            fi
+            push_backoff
+          done
+          push_lost
+          echo "::error title=options campaign checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); HEAD never advanced and the run will stay red"
           exit 1
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
@@ -5393,7 +5498,8 @@ jobs:
           # engine rebase would otherwise defeat that refusal; even without a
           # commit, the always() Pages upload would serve the stale local index.
           # Restore HEAD (the known main-ancestry checkout) into both index and
-          # worktree, then unstage every Prophet-owned root. Using origin/main
+          # worktree, unstage every Prophet-owned root, then clean builder-owned
+          # additions that did not exist in HEAD. Using origin/main
           # here would leave an unstaged A->B Prophet delta when main advanced;
           # the broad push loop's later autostash/rebase could replay that delta
           # over a still-newer correction and a follow-up `git add site/` could
@@ -5406,27 +5512,59 @@ jobs:
             site/prophet \
             data/prophet/ledger.jsonl \
             data/prophet/ledger_quarantine.json \
+            data/prophet/origination_receipts \
+            data/prophet/legacy_shadow \
             data/prophet_arena \
             data/prophet_stage_shadow; then
             echo "::error title=Prophet safe restore failed::could not restore checkout-time Prophet publications; aborting the broad commit rather than publishing an uncheckpointed tree"
             exit 1
           fi
-          # New plan/state/arena files do not exist in the safe ref, so checkout
-          # cannot remove them. These roots are builder-owned and not ignored;
-          # scoped clean removes only the uncheckpointed additions.
-          git clean -fd -- \
-            site/prophet \
-            data/prophet_arena \
-            data/prophet_stage_shadow
           git reset -q -- \
             site/prophet \
             data/prophet \
             data/prophet_arena \
             data/prophet_stage_shadow
-          # A refused receipt is build-owned and may now be untracked after the
-          # reset above. Remove only this dedicated directory; append-only
-          # correction ledgers elsewhere under data/prophet remain untouched.
-          git clean -fd -- data/prophet/origination_receipts
+          # New plan/state/arena files do not exist in the safe ref, so checkout
+          # cannot remove them. Reset first converts broad-staged additions back
+          # to untracked files; this scoped clean then removes only those refused
+          # builder outputs while preserving correction inputs under data/prophet.
+          git clean -fd -- \
+            site/prophet \
+            data/prophet_arena \
+            data/prophet_stage_shadow
+          # Refused receipts and legacy-shadow day parts are build-owned and may
+          # now be untracked after the reset above. Remove only these dedicated
+          # directories; correction ledgers elsewhere under data/prophet remain
+          # untouched.
+          git clean -fd -- \
+            data/prophet/origination_receipts \
+            data/prophet/legacy_shadow
+          # OIP episode and campaign ledgers have immediate, exact-path publishers
+          # above. Never let this broad data/ commit bypass a refused, skipped, or
+          # failed narrow publication. Paths already committed locally by a winning
+          # publisher are restored from HEAD; uncommitted canonical-v2 additions are
+          # removed from this disposable runner only. The legacy v1 campaigns file is
+          # intentionally absent: no active builder is allowed to touch it at all.
+          OIP_NARROW_PATHS=(
+            data/options_signal_episode/checkpoint.json
+            data/options_signal_episode/episodes.jsonl
+            data/options_signal_episode/outcomes_h60.jsonl
+            data/options_signal_episode/outcomes_session.jsonl
+            data/options_signal_campaign/campaigns.jsonl
+            data/options_signal_campaign/outcomes.jsonl
+            data/options_signal_campaign/checkpoint.json
+          )
+          OIP_TRACKED_PATHS=()
+          for OIP_PATH in "${OIP_NARROW_PATHS[@]}"; do
+            if git cat-file -e "HEAD:$OIP_PATH" 2>/dev/null; then
+              OIP_TRACKED_PATHS+=("$OIP_PATH")
+            fi
+          done
+          if [ "${#OIP_TRACKED_PATHS[@]}" -gt 0 ]; then
+            git checkout HEAD -- "${OIP_TRACKED_PATHS[@]}"
+          fi
+          git reset -q -- "${OIP_NARROW_PATHS[@]}"
+          git clean -fd -- data/options_signal_campaign
           # W0b (2026-07-08 stale-HK incident): US engine job must NOT commit asia-owned
           # data/ paths — asia-close.yml is the sole writer of all china*/hk* stores.
           # The GHA cache restore above (data/hk_stocks, restore-keys: hk-stocks-ohlc-)
@@ -5639,6 +5777,23 @@ jobs:
             echo "### ❌ R2 data plane STALE/DARK — publish_r2 failed or was skipped (expired R2_* secrets?); the live site keeps serving OLD per-ticker data. See scripts/audit_r2.py." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+      - name: OIP PIT — fail closed after unrelated rendering completes
+        if: always()
+        env:
+          OIP_EPISODE_BUILD_OUTCOME: ${{ steps.options_signal_episode.outcome }}
+          OIP_EPISODE_PUBLISH_OUTCOME: ${{ steps.options_signal_episode_publish.outcome }}
+          OIP_CAMPAIGN_BUILD_OUTCOME: ${{ steps.options_signal_campaign.outcome }}
+          OIP_CAMPAIGN_PUBLISH_OUTCOME: ${{ steps.options_signal_campaign_publish.outcome }}
+        run: |
+          if [ "$OIP_EPISODE_BUILD_OUTCOME" = success ] && \
+             [ "$OIP_EPISODE_PUBLISH_OUTCOME" = success ] && \
+             [ "$OIP_CAMPAIGN_BUILD_OUTCOME" = success ] && \
+             [ "$OIP_CAMPAIGN_PUBLISH_OUTCOME" = success ]; then
+            echo "OIP PIT integrity passed"
+            exit 0
+          fi
+          echo "::error title=OIP PIT integrity::episode/campaign build or narrow publication failed"
+          exit 1
       - name: timings ledger + 85% budget tripwire (W2)
         if: always()   # DELIBERATELY AHEAD of the two delivery steps below — this is the ONLY job where the finish step is not last, and the exception is load-bearing. `if: always()` steps DO run after a timeout-cancel, but only inside the runner's ~5-minute force-termination grace, and this job's tail is the most expensive always() tail in the workflow. Evidence, run 31067383446 (2026-08-06): engine started 10:05:45Z, completed 13:30:46Z = 205.0m = the 200m cap + exactly 5m of grace; steps 117-121 (commit engine outputs → feeds → R2 publish → verify → strip) all ran post-cancel, step 122 "upload pages artifact" burned what was left and ended `failure`, and step 123 — this one — WAS NEVER SCHEDULED AT ALL (the GH jobs API step list jumps straight from 122 to the Post steps). Result: data/ops/nightly_timings/engine.jsonl carried ONE row, source `backfill-gh-api`, while all 15 sibling jobs had native rows — the 85% tripwire was structurally dark for the ONE job whose creep caused the Jul31-Aug6 outage, and dark on exactly the nights it existed to pre-announce. Ordering it here costs a healthy night nothing (both steps still run to completion) and on a cancel night trades an artifact upload that is already failing for the telemetry that explains WHY the night died. The row + the ::warning land in this step's first second; only its bounded commit/push can be cut short. Pinned by tests/test_nightly_timings.py::test_finish_step_is_not_stranded_behind_the_pages_artifact_upload — do not move it back below the upload.
         run: bash scripts/ci/nightly_timings_finish.sh 300
