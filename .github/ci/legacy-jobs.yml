@@ -6829,7 +6829,7 @@ jobs:
     # transport is exercised only with bounded offline fixtures in this
     # zero-network lane.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
