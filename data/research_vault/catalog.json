@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T05:53:02.729744+00:00",
-  "count": 991,
+  "generated_at": "2026-08-12T06:08:07.514681+00:00",
+  "count": 992,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -923,6 +923,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mwiwpzg95ra-ca24c9",
+      "title": "Japan SMID Monitor Next Generation TOPIX inclusion exclusion end game",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:40Z",
+      "summary_points": [
+        "**TOPIX Structural Shift**: 681 exclusions, 35 inclusions (index down to 991), 27% of near-removed firms executing buybacks; 42% of buyback-announcing firms risk exclusion, signaling index weighting changes.",
+        "**AI/Semi De-risking Flows**: Short-cover rally in AI-losers/Defensives (+17%/+13% mom) vs.",
+        "Semis/FA (-19%/-14% mom); foreigners net sold TSE Growth/Standard (-¥31.6bn/-¥45.1bn), individuals net bought (+¥44.4bn/+¥35.3bn).",
+        "**Liquidity Threshold Risks**: 12 companies below 3M ADTV face exclusion; McDonalds Japan (2702) has 4% short interest (1.8 days to cover), 10% of firms show 12% short interest (e.g., GNI Group).",
+        "**Valuation-Risk Mismatch**: High P/B (e.g., Internet Initiative Japan at 20.5) with moderate ROE (16.1) suggests overvaluation; Nippon Steel (P/B 7.3, ROE 12.2) indicates value trap."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
       "language": "en",
       "needs_metadata": false
     },
