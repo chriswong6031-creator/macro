@@ -1317,14 +1317,15 @@
   }
   body.page-china .mx5-score-yellow .mx5-sub-line{color:var(--mx5-warn-ink);}
   body.page-china .mx5-score-red .mx5-sub-line{color:var(--ink-down, var(--down));}
-  /* In-gauge score numeral + needle inner-ring are mx5-only elements — paint them from the
-     zh-flipping --up/--warn/--down pair directly (as #3174 does for .cnx-gauge-fill/.cnx-needle-*
-     /.cnx-big-score/.cnx-verdict/.cnx-sub-line), so "risk-off = GREEN" in zh (operator ruling
-     2026-07-21). Default amber (Mixed); the .ms-* rules below override. */
-  body.page-china #mx5-score-numeral{fill:var(--warn);}
-  body.page-china .ms-green  #mx5-score-numeral{fill:var(--up);}
-  body.page-china .ms-red    #mx5-score-numeral{fill:var(--down);}
-  body.page-china .ms-yellow #mx5-score-numeral{fill:var(--warn);}
+  /* The big score beside the gauge already states the number; the in-arc numeral sat at
+     y=62 with its "/ 100" at y=73 over a needle hub at cy=75, so the 24px figure printed
+     ON the needle blade and the "/ 100" overprinted the "100" axis label — the same number
+     twice, two inches apart (DOCTRINE Law 4 / design system §9.5 one-integer law). Hidden,
+     not deleted: china_risk_state_live.js patches #mx5-score-numeral by id and needs the
+     node alive. macro, hk and canada each killed this independently; china was the last.
+     Byte-for-byte the same rule as hk.html.j2. */
+  body.page-china #mx5-score-numeral,
+  body.page-china .mx5-gauge-svg text:last-of-type{ display:none; }
   /* needle inner ring: accent STROKE, dark fill (kept from the presentation attr) */
   body.page-china .cnx-needle-ring{stroke:var(--warn);}
   body.page-china .ms-green .cnx-needle-ring{stroke:var(--up);}

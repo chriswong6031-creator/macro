@@ -154,10 +154,19 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 
 /* ── HERO ─── */
 .hero { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; margin-bottom: 14px; }
+/* min-width:0 is the load-bearing half. A grid item's default min-width is AUTO —
+   its own min-content — so collapsing to one column at 780px did not stop the hero
+   panel from holding a 411px floor against a 390px viewport and scrolling the page
+   sideways (§15: the page never scrolls horizontally, any viewport, ever). */
+.hero > * { min-width: 0; }
 @media(max-width:780px){ .hero { grid-template-columns: 1fr; } }
 
 /* Big stance word — the anchor */
 .big-stance {
+/* 390w is the design floor (§15). At 36px the stance headline set the hero's
+   minimum width and the page scrolled sideways, amputating the sentence
+   mid-word — a reader's first impression cut in half by the screen edge. */
+@media(max-width:430px){.big-stance{font-size:28px;line-height:1.05;overflow-wrap:break-word}}
   font-size: 50px; font-weight: 800; letter-spacing: -.025em;
   line-height: .95; margin: 4px 0 10px;
 }
@@ -173,7 +182,7 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
   display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
   font-size: 12px; color: var(--faint); border: 1px solid var(--line2);
   border-radius: 20px; padding: 4px 11px;
-}
+ flex-wrap:wrap; max-width:100%; }
 
 /* Quadrant tooltip text injected via data-tip-en/zh — plain words per quadrant */
 

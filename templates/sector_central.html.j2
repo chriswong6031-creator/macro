@@ -374,7 +374,7 @@
   .tc-stance-sub { color:var(--muted); font-size:13px; line-height:1.5; margin:4px 0 10px; max-width:80ch; }
   .tc-chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
   .tc-chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; padding:3px 9px;
-    border-radius:20px; border:1px solid; white-space:nowrap; text-decoration:none; color:inherit; }
+    border-radius:20px; border:1px solid; white-space:normal;max-width:100%; text-decoration:none; color:inherit; }
   .tc-chip:hover { opacity:.85; }
   .tc-chip.up  { background:rgba(74,222,128,.12); border-color:rgba(74,222,128,.35); color:var(--ink-up, var(--up)); }
   .tc-chip.dn  { background:rgba(248,113,113,.10); border-color:rgba(248,113,113,.30); color:var(--ink-down, var(--down)); }
@@ -1173,7 +1173,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     .si-side { position:sticky; top:0; height:auto; flex-direction:row; gap:0; padding:0;
       margin:0 -18px 14px; overflow-x:auto;
       border-right:0; border-bottom:1px solid var(--line); }
-    .si-view-btn { flex:1 1 0; min-width:0; flex-direction:column; gap:3px; justify-content:center;
+    .si-view-btn { flex:0 0 auto;min-width:84px; min-width:0; flex-direction:column; gap:3px; justify-content:center;
       padding:8px 2px; text-align:center; border-radius:0;
       border-left:0; border-bottom:3px solid transparent; }
     .si-view-btn .si-vb-l { display:block; font-size:10.5px; font-weight:600; }

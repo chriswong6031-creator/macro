@@ -232,6 +232,10 @@ fetch('policy_lever.json',{cache:'no-cache'})
   .hkrv-pop-row:last-child { border-bottom: none; }
   .hkrv-pop-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .07em; color: var(--muted); display: block; margin-bottom: 1px; }
+  /* §15 + the design system's named anti-pattern: .arow .nm was flex:0 0 200px and
+     .wv flex:0 0 56px, unshrinkable at EVERY width, so the weight percentage sat
+     permanently off-screen on a phone. The row re-composes instead of squeezing. */
+  @media(max-width:640px){.arow{flex-wrap:wrap}.arow .nm{flex:1 1 100%;white-space:normal}.arow .bar{flex:1 1 auto;min-width:0}}
 </style>
 {%- set _ldr = hk_leadership -%}
 {%- set _ldr_members = _ldr.get('members') or [] -%}

@@ -1224,7 +1224,12 @@
     border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);margin-top:4px;}
   .ird-twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   @media(max-width:860px){.ird-twocol{grid-template-columns:1fr;}}
-  .ird-dial-wrap{display:flex;align-items:center;gap:16px;margin:12px 0;}
+  /* §15: this row is a fixed-size dial + a text column and it never wrapped, so its
+     intrinsic floor (653px) set the whole panel's width and the page was 82% wider
+     than the phone reading it. Wrap + min-width:0 is the shrink pair. */
+  .ird-dial-wrap{display:flex;align-items:center;gap:16px;margin:12px 0;flex-wrap:wrap;min-width:0;}
+  .ird-dial-wrap > *{min-width:0;}
+  @media(max-width:520px){.ird-dial-wrap{gap:10px}.ird-dial-wrap > svg{max-width:100%;height:auto}}
   .ird-dial-circle{width:80px;height:80px;border-radius:50%;display:flex;flex-direction:column;
     align-items:center;justify-content:center;border:3px solid color-mix(in srgb,var(--warn) 60%,var(--line));
     background:color-mix(in srgb,var(--warn) 8%,var(--panel2));flex-shrink:0;}
@@ -1281,6 +1286,10 @@
   .ird-frag-desc{font-size:12px;color:var(--muted);display:block;margin-top:1px;}
   .ird-frag-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
   .ird-asof{font-size:11px;color:var(--muted);margin-top:8px;}
+  /* §15: these two tracks stepped 4->2 at 720/900 and stopped, so at 390 they
+     resolved to 653px and dragged every sibling panel to 691px — the page was
+     82% wider than the phone reading it. */
+  @media(max-width:520px){.ird-spread-grid,.ird-hchips{grid-template-columns:1fr}}
 </style>
 
 <!-- ===== IRD HERO STRIP ===== -->

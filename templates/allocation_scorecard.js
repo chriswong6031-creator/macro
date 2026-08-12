@@ -53,7 +53,11 @@
       'padding:2px 8px;margin:4px 0 2px;border-radius:7px;background:rgba(239,68,68,.12);' +
       'border:1px solid rgba(245,158,11,.6);color:var(--ink-down, var(--down,#ef4444))}' +
     '#nr-scorecard .nrc-exp{font-size:10.5px;margin-top:8px;padding:2px 8px;display:inline-block;' +
-      'border-radius:7px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.45);color:#d97706}';
+
+    // 390w is the design floor (§15). This widget shipped with ZERO media queries and
+    // three unshrinkable flex bases, so on a phone the weight column sat off-screen.
+    '@media(max-width:640px){#nr-scorecard .nrc-side,#nr-scorecard .nrc-row .nm,#nr-scorecard .nrc-row .wv{flex:1 1 100%}' +
+    '#nr-scorecard .nrc-row{flex-wrap:wrap}#nr-scorecard .nrc-row .fill,#nr-scorecard .nrc-row .bar{min-width:0}}' +      'border-radius:7px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.45);color:#d97706}';
   document.head.appendChild(st);
 
   fetch('allocationdata/' + alloc + '?cb=' + Date.now())
