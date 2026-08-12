@@ -7,6 +7,8 @@ import re
 import subprocess
 from pathlib import Path
 
+from tests import market_memory_repo_scan as repo_scan
+
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY = ROOT / "app" / "deploy"
 SERVICE = DEPLOY / "macro-market-memory-breadth.service"
@@ -66,21 +68,12 @@ def _breadth_update_block() -> str:
 
 def _production_calls(function_name: str) -> set[Path]:
     callers: set[Path] = set()
-    for parent in (ROOT / "app", ROOT / "engine", ROOT / "scripts"):
-        for path in parent.rglob("*.py"):
-            tree = ast.parse(_text(path), filename=str(path))
-            for node in ast.walk(tree):
-                if not isinstance(node, ast.Call):
-                    continue
-                called = node.func
-                is_named_call = (
-                    isinstance(called, ast.Name) and called.id == function_name
-                )
-                is_attribute_call = (
-                    isinstance(called, ast.Attribute) and called.attr == function_name
-                )
-                if is_named_call or is_attribute_call:
-                    callers.add(path.relative_to(ROOT))
+    for path in repo_scan.production_python_paths():
+        called = repo_scan.callee_names(path)
+        is_named_call = function_name in called.direct
+        is_attribute_call = function_name in called.attribute
+        if is_named_call or is_attribute_call:
+            callers.add(path.relative_to(ROOT))
     return callers
 
 

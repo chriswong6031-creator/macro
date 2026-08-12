@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T04:52:55.428189+00:00",
-  "count": 988,
+  "generated_at": "2026-08-12T09:53:56.876381+00:00",
+  "count": 1003,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -123,6 +123,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-wgc7hphso8b-8b4e49",
+      "title": "Emerging market bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T22:52:09Z",
+      "summary_points": [
+        "**UAE Banks: Margin Compression & Geopolitical Vulnerability**: Lending margins declined to 2.7% (down 40bps YoY), with further compression expected due to geopolitical tensions and rising funding costs; Middle East conflict weakens borrower repayment capacity despite median NPLs at 2.15% (strongest in decade).",
+        "**Sovereign Risk as Systemic Threat**: Material sovereign support dilution and potential UAE sovereign rating downgrade pose critical threats to capital buffers, credit quality, and profitability across all major banks (ADIB, EI, ENBD, FAB).",
+        "**Capital Adequacy Buffer Under Pressure**: Median CAR improved to 16.3% (adequate), but high credit growth (e.g., ADIB’s 18-20% FY26 guidance) and geopolitical shocks risk eroding capital adequacy and forcing capital-raising.",
+        "**Critical Risk Exposure**: Geopolitical tensions, sovereign downgrade risk, and asset quality deterioration (e.g., ADIB’s cost-of-risk rising to 40-60bps) threaten to reverse resilient balance sheets and margin resilience.",
+        "**Performance Divergence in Key Banks**: ENBD (NIM 6.87%, NPL coverage 152%) and FAB (profit +14% QoQ, NIM 1.99%) show mixed resilience; ENBD faces oil volatility risks, while FAB’s capitalization pressured by credit growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-f5fryndrqbq-cc1e4d",
       "title": "JPM US Market Intelligence Afternoon Briefing Aug 11",
       "institution": "J.P. Morgan",
@@ -140,6 +161,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0rlygivjcaa-c2ab8c",
+      "title": "US EQUITIES COLOR UNCH",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T22:34:18Z",
+      "summary_points": [
+        "Fed Policy Shift**: Q3 CPI data confirms persistent inflation, delaying rate cuts to Q1 2025; bond yields surge 25bps on hawkish Fed pivot **Ukraine Conflict Escalation**: Russian strikes on Ukrainian energy infrastructure disrupt EU gas flows, triggering 12% price spike and rerouting LNG contracts **ETF Outflows**: $18B equity ETF net outflows in 72 hours, accelerating technicals in S&P 500 futures and widening volatility index (VIX) to 22.5"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
       "language": "en",
       "needs_metadata": false
     },
@@ -207,6 +245,69 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-yj7jfih70ze-6c7281",
+      "title": "US Daily July CPI Preview",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:33Z",
+      "summary_points": [
+        "**Core CPI Miss**: Core CPI forecast at 0.19% MoM (vs.",
+        "2% consensus), YoY 2.47% (vs.",
+        "5%), driven by lower energy and mixed auto/shelter trends.",
+        "**Auto Insurance Disinflation**: Auto insurance CPI decline of 0.5% MoM SA, reflecting lower premiums amid mixed auto sector inflation (used cars +0.5%, new cars +0.1%).",
+        "**Geopolitical Inflation Impact**: Iran War-driven jet fuel spike caused 2.0% MoM SA airfare surge (travel services), offset by 1.0% MoM SA hotel price decline (World Cup effect reversal)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fwszdz60r3e-79c4c2",
+      "title": "Legal & General Group (LGEN.L) Downgrade to Sell Sequencing risk skews risk reward to the downside",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:27Z",
+      "summary_points": [
+        "**Balance Sheet Deterioration**: Total shareholders' equity declined from £2,312m to £2,064m (12/25 → 12/26E), leverage ratio surged to 130.5%, indicating structural risk despite rising ROE (45.2% → 69.2%).",
+        "**UK BPA Market Oversupply**: >50% of earnings from bulk annuities faces £70bn insurer supply vs.",
+        "£40-50bn 2026 demand, intensifying competition from new entrants/PE M&A (e.g., PIC by Athora), pressuring margins.",
+        "**Credit Leverage Sell-Off Risk**: Sector-leading credit exposure causes negative correlation (-0.20) with corporate spreads; spread widening triggers immediate share sell-offs despite fundamental upside (19% downside vs.",
+        "sector +1% upside)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-a65oj3o1mr3-2f8e26",
+      "title": "GS Utilities Daily Italy enacts FerX scheme with c.37 GW RES quotas Siemens Energy to supply power generation and gas com...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:26Z",
+      "summary_points": [
+        "**Italy's FerX Renewable Mandate**: 37 GW renewable target with €23bn state aid and fixed CFDs (€80/MWh solar, €85/MWh wind) drives immediate infrastructure demand, positioning Siemens Energy for key contracts.",
+        "**Electrification Acceleration**: Europe’s post-energy crunch policy pivot fuels 5% annual power demand growth and €3.5tn infrastructure spending (2026-35), favoring utilities with strong balance sheets (RWE, Ørsted, EDP).",
+        "**Agentic AI Demand Surge**: 10pp rise in Agentic AI queries could increase datacenter power needs by 25% (2030-35), accelerating demand for utilities and players like Nabiax (140 MW expansion).",
+        "**Power Demand Upgrade**: Goldman Sachs raises power demand assumptions to 1.5–2% pa (from 1–1.5%) due to AI/electrification, lifting Electric Utilities target P/E above mid-cycle (c.",
+        "16x)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-e6iqxljorzl-d9490e",
       "title": "InterContinental Hotels Group (IHG.L) 1H26 Strong net system growth of 5",
       "institution": "Goldman Sachs",
@@ -228,6 +329,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-2d9rq0xceea-3b9054",
+      "title": "Americas Investment Banks Structural M&A growth persists, but expenses continue to rise, with valuation upside less likely",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:09Z",
+      "summary_points": [
+        "**Underperformance driven by M&A trends & expenses**: Americas IBank stocks underperformed S&P 500 by 5pp pre-2026 EPS due to M&A trend-driven estimate downgrades, rising expenses, and structural negative leverage reducing valuation upside.",
+        "**Sector bifurcation critical for allocation**: Stark divergence between high-performing banks (LCLN, MC, PWT with positive YoY revenue/margins) and struggling peers (EVR, HLI, LAZ with negative YoY revenue/margins) necessitates selective positioning.",
+        "**Sponsor M&A volume contraction**: 2026 sponsor M&A volumes at 26% of total market (below 5-yr avg 35%), signaling strategic realignment or market contraction, contrasting with strategic M&A growth (56% volume/fee growth).",
+        "**Non-M&A advisory structural growth**: Secondaries/restructuring to reach 18% of 2025 IBank revenue, with GP-led volumes up 35% YoY; EVR and PJT best positioned for structural tailwinds.",
+        "**Structural negative operating leverage**: Elevated comp leverage (80bps/90bps in 2026E/2027E) and non-comp growth (1% above Street) compressing margins, with EVR/LCLN margins projected 11.7%/12.8% below 2021 levels."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 40,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gbjaregqbxy-f1fd18",
       "title": "JPM Europe Equity Research | Today’s Morning Meeting",
       "institution": "J.P. Morgan",
@@ -241,6 +363,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ax7epb2s5lu-056ff6",
+      "title": "Citi The Point for Europe Tuesday, 11 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T12:00:03Z",
+      "summary_points": [
+        "**Kingspan (KSP.I) - Earnings & TP Update**: \"Beat & raise\" 1H'26 results with €600m EBITDA forecast by '28 (vs prior), 27E trading profit +15.2% above consensus; TP raised to €133.5 despite unchanged multiples (11.7x EV/EBITDA), suspended buyback for balance sheet strength.",
+        "**GEA Group - Q2 Results**: Solid margin performance, base orders +12.6% YoY (dairy/NPE +30%+), FCF positive; EBITDA margin beat drives positive outlook amid strong order growth.",
+        "**Global Central Bank Tightening Bias**: 12/27 major central banks expected to hike rates in 2024 (vs 1 in 2023), central banks avoiding \"looking through\" inflation strategy; policy framing risks for inflation targets.",
+        "**Equity Short Pressure & Positioning Rebuild**: S&P 500 faces increased short pressure amid positioning rebuild; KOSPI deterioration and risk of abrupt covering if sentiment improves, creating volatility risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
@@ -325,6 +467,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6z2wfo0audq-05ac76",
+      "title": "TPL Aug 8 26",
+      "institution": "The Punchline",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:31:15Z",
+      "summary_points": [
+        "**Housing Crisis Fundamentals**: Explicit \"HIGH HOME PRICES + HIGH MORTGAGE RATES\" with Fed survey showing \"WEAK!\" mortgage demand (net negative), confirming severe sector stress and heightened default risk.",
+        "**Labor Market Revisions**: Revised May-June nonfarm payrolls total -103,000 (vs.",
+        "initial reports), signaling deeper fragility; unemployment rate improvement masked by unemployed declining faster than employed (178k vs 87k).",
+        "**AI Investment Bust Risk**: BIS warns of AI 'exuberance' culminating in prolonged investment bust, amplifying macroeconomic dislocation risks amid chip stock sell-off and AI-driven credit confidence decline.",
+        "**Geopolitical Oil Shock**: Iran tensions escalate (67 ships attacked, 17 seafarers killed), driving oil prices higher; China’s oil imports to Iran decline to 785K/523K bpd (June/July), signaling trade risk amplification."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
       "language": "en",
       "needs_metadata": false
     },
@@ -537,6 +700,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-orhpiqvctdn-48e5d8",
+      "title": "Commodity Monthly Review July 2026",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T00:10:18Z",
+      "summary_points": [
+        "**Energy Sector Divergence**: Crude (+15.2% July) surged on Middle East supply/OPEC output, while natural gas (-14% July) collapsed due to heat-driven demand spikes, Freeport maintenance, and storage overhang.",
+        "**Geopolitical Supply Chain Disruptions**: Houthi attacks on Saudi infrastructure, Black Sea drone strikes (CPC exports to zero), and US-Iran blockade (Iranian loadings -4.9mb) intensified supply constraints and price volatility.",
+        "**Copper Supply Constraints**: LME copper rose 3.2% ($13,885/t) amid Indonesian disruptions, Chinese concentrate tightness, and Escondida strike (20-40kt loss), confirmed by physical market spreads and smelter charges.",
+        "**Aluminum Physical Tightness**: LME aluminum up 3.5% as inventories declined (17% below March highs), Chinese exports hit record 710kt, and Emirates Global Aluminum restarted production.",
+        "**Nickel Supply-Demand Tension**: Indonesia’s MHP export suspension and Philippines’ rains caused tightness (LME front-month $16,150/t), though inventories hit 8-year highs (378kt) signaling stabilization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-nal7r2gm25q-0e6c2a",
       "title": "JPM US Market Intelligence Afternoon Briefing Aug 10",
       "institution": "J.P. Morgan",
@@ -575,6 +759,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u6b8sghhu3l-7af92c",
+      "title": "Middle East",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:48:39Z",
+      "summary_points": [
+        "**Oil Geopolitics & Supply Constraints**: Hormuz Strait tensions (Iran-Oman deal unresolved, Houthi attacks) sustain Brent above $84/b and WTI near $79/b, with limited supply buffers despite Chinese demand and emergency releases; geopolitical premium persists despite diplomatic progress.",
+        "**Gold Supported by Weak US Data & Demand**: Gold holds above $4,300/oz amid weak US jobs data easing rate hike fears, driven by hedge fund positioning to six-month highs, Chinese gold-backed ETF inflows, and PBoC adding 640,000oz to reserves in July.",
+        "**Sovereign Bond & FX Risks**: Extreme negative signals in UAE 2027 short-term bond YTD (-0.78%) and USD/ILS 1yr fwd YTD (-229.22%), alongside Bahrain 2028 G-spread at 280.20 bp, highlight acute emerging market bond volatility and currency hedging risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
@@ -825,6 +1028,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-uyr13hzwckz-4e964d",
+      "title": "Investor Positioning and Flows Aug 10",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T17:13:37Z",
+      "summary_points": [
+        "**S&P 500 Trend Channel Strength**: 23% annualized uptrend (Oct 2022–Mar 2025), retesting 4-year channel bottom; sustained momentum despite short-term volatility.",
+        "**Tech Positioning Extremes**: Large-cap Tech at 95th percentile (not yet at June/October highs), signaling overbought risk and critical concentration risk for portfolios.",
+        "**Earnings Gap Undervaluation**: Positioning significantly below earnings growth (39% correlation since 2012), indicating potential for higher returns as normalization occurs.",
+        "**Systematic Strategies Dominance**: Systematic equity positioning at 73rd percentile (vs.",
+        "43rd discretionary), with 77% correlation to S&P 500 volatility—heightening systemic risk exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 54,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-n21qbzfd5pe-9de07e",
+      "title": "JPM US Market Intelligence | Trading CPI: August 2026",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T15:21:15Z",
+      "summary_points": [
+        "**Core MoM Inflation & SPX Volatility**: 40% probability of 0.20%–0.25% Core MoM prints driving 50bp–1.25% SPX moves; options pricing reflects ~0.9% move (August 12 expiry), directly impacting equity positioning.",
+        "**Geopolitical/China PPI as Fed Catalyst**: Middle East conflict inflation risk and China’s PPI (3-month low) as US CPI precursor shape September Fed hike probability; hawkish prints trigger larger bond market moves than dovish.",
+        "**Housing Inflation Measurement Gap**: CPI Shelter (BLS) shows lower rent growth than Zillow/Moody’s data (2021–2022), creating critical lag risk for real estate portfolios and inflation-sensitive allocations.",
+        "**Core Services vs.",
+        "Goods Divergence**: Persistent core services inflation (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-knyv6slrn7p-a37db9",
       "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
       "institution": "RBC",
@@ -839,6 +1084,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tw7g5fetffr-8417ec",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T14:59:59Z",
+      "summary_points": [
+        "**Equity Strategy**: Bullish on cyclicals (Banks, Mining, Industrials, Consumer) driven by Fed \"bad is good\" reaction, yield curve steepening, and equity indices targeting fresh highs.",
+        "**Infineon Technologies**: Maintaining Overweight with TP raised to €96, leveraging AI power leadership and premium multiple as key fundamentals.",
+        "**European Utilities**: Low gas storage underpins earnings momentum, critical fundamental driver for sector positioning.",
+        "**EU Monetary Policy Shift**: Rates reset and refreshed risks demand immediate focus for interest rate sensitivity and risk management.",
+        "**MENA Geopolitical Focus**: Heavy emphasis on Saudi Vision 2030 via MENA H2 Fireside Series, signaling policy-driven opportunities and regional market expansion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
@@ -885,6 +1151,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-mwiwpzg95ra-ca24c9",
+      "title": "Japan SMID Monitor Next Generation TOPIX inclusion exclusion end game",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:40Z",
+      "summary_points": [
+        "**TOPIX Structural Shift**: 681 exclusions, 35 inclusions (index down to 991), 27% of near-removed firms executing buybacks; 42% of buyback-announcing firms risk exclusion, signaling index weighting changes.",
+        "**AI/Semi De-risking Flows**: Short-cover rally in AI-losers/Defensives (+17%/+13% mom) vs.",
+        "Semis/FA (-19%/-14% mom); foreigners net sold TSE Growth/Standard (-¥31.6bn/-¥45.1bn), individuals net bought (+¥44.4bn/+¥35.3bn).",
+        "**Liquidity Threshold Risks**: 12 companies below 3M ADTV face exclusion; McDonalds Japan (2702) has 4% short interest (1.8 days to cover), 10% of firms show 12% short interest (e.g., GNI Group).",
+        "**Valuation-Risk Mismatch**: High P/B (e.g., Internet Initiative Japan at 20.5) with moderate ROE (16.1) suggests overvaluation; Nippon Steel (P/B 7.3, ROE 12.2) indicates value trap."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-keuiyhvmikc-2bf1df",
       "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 10, 2026 as of 5 30 AM ET",
       "institution": "Goldman Sachs",
@@ -902,6 +1189,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vd4taryxext-8187e9",
+      "title": "Eli Lilly & Co. (LLY) Commercial Momentum, Uninterrupted",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:33Z",
+      "summary_points": [
+        "**Medicare Obesity Coverage Unlock**: July 1st Medicare bridge program driving 80% injectable volume surge, accelerating revenue growth beyond expectations (Q2 beat/raise +4.5% vs DRG +1.9%); revenue guidance raised to $88.5bn (2026).",
+        "**Foundry Launch & OUS Momentum**: Q2 revenue $98mn (vs $40mn adj.), OUS sales $31mn reflecting pent-up demand; 2026 revenue estimate up to $847mn (vs $805mn), US prescriber base doubling.",
+        "**Forward Catalysts & M&A**: Elora + tirzepide combo Ph2 data (late Sept EASD) for diabetes/obesity; $7.8bn CNTA acquisition (largest since 2019) accelerating M&A for near-Ph3 assets and unmet needs.",
+        "**Valuation Upside & EPS Growth**: Buy rating with 16.9% upside ($1,367 target vs $1,169.86 current); FY26 EPS revised to $36.71 (vs $33.77), driven by revenue expansion (115.756B by 2028) and margin improvement.",
+        "**Critical Risk Factor**: Downside risk from greater-than-expected obesity pricing decline (e.g., Medicare coverage pricing pressure) or pipeline underperformance compressing long-term estimates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
