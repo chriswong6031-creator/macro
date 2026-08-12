@@ -100,11 +100,18 @@ function makeDb(seed) {
     from: function (table) {
       var filters = [];
       var op = { table: table, filters: filters };
+      var sorts = [];
       var api = {
         eq: function (c, v) { filters.push({ op: 'eq', col: c, val: v }); return api; },
         in: function (c, v) { filters.push({ op: 'in', col: c, val: v }); return api; },
-        limit: function () { return api; },
-        order: function () { return api; },
+        limit: function (n) { api.__limit = n; return api; },
+        // PostgREST applies .order() server-side and returns rows in that order. The
+        // double models it, otherwise any assertion about "the FIRST list by
+        // (position, created_at)" would pass on insertion order and prove nothing.
+        order: function (col, opts) {
+          sorts.push({ col: col, asc: !(opts && opts.ascending === false) });
+          return api;
+        },
         single: function () { api.__single = true; return api; },
         select: function (cols) {
           if (op.kind === 'insert' || op.kind === 'update') { op.returning = cols; return api; }
@@ -147,6 +154,16 @@ function makeDb(seed) {
             var rows = db.tables[table];
             if (op.kind === 'select') {
               var hit = rows.filter(function (r) { return matches(r, filters); });
+              sorts.slice().reverse().forEach(function (s) {
+                hit.sort(function (a, b) {
+                  var x = a[s.col], y = b[s.col];
+                  if (x === y) return 0;
+                  if (x === undefined || x === null) return 1;
+                  if (y === undefined || y === null) return -1;
+                  return (x < y ? -1 : 1) * (s.asc ? 1 : -1);
+                });
+              });
+              if (api.__limit !== undefined) hit = hit.slice(0, api.__limit);
               return { data: api.__single ? (hit[0] || null) : hit, error: null };
             }
             if (op.kind === 'insert') {
@@ -379,7 +396,11 @@ def test_fold_targets_the_list_named_watchlist_not_whatever_sorts_first():
     """The retarget this wave ships. The account's FIRST list is 'Default' (the Terminal
     seeds one); the previous `.order(position).limit(1)` resolution folded the visitor's
     local book into it. The fold now lands in the list NAMED 'Watchlist' — created if
-    absent — and 'Default' is left exactly as it was (server-only lists are kept)."""
+    absent — and 'Default' is left exactly as it was (server-only lists are kept).
+
+    Note the two resolutions are separate under ruling R1: this account BINDS 'Default'
+    (branch 2, no creation) while the fold — which has content to deliver — creates and
+    fills 'Watchlist'."""
     out = _ws(
         WL_STUB + """
         installWL(BLOB);
@@ -390,8 +411,9 @@ def test_fold_targets_the_list_named_watchlist_not_whatever_sorts_first():
         WS.pull().then(function () {
           var st = WS._testState();
           var created = db.tables.watchlists.filter(function (l) { return l.name === 'Watchlist'; })[0];
-          OUT({primaryName: (db.tables.watchlists.filter(function (l) {
-                 return String(l.id) === String(st.primaryId); })[0] || {}).name,
+          OUT({foldTargetName: (db.tables.watchlists.filter(function (l) {
+                 return String(l.id) === String(st.foldTargetId); })[0] || {}).name,
+               boundId: st.activeId,
                createdWatchlist: !!created,
                defaultUntouched: symbolsOf(db, 'L-DEF'),
                folded: created ? symbolsOf(db, created.id) : null,
@@ -400,7 +422,8 @@ def test_fold_targets_the_list_named_watchlist_not_whatever_sorts_first():
         """,
         {"USER": USER, "BLOB": LOCAL_BLOB},
     )
-    assert out["primaryName"] == "Watchlist"
+    assert out["foldTargetName"] == "Watchlist"
+    assert out["boundId"] == "L-DEF"              # ruling R1 branch 2: bound to Default
     assert out["createdWatchlist"] is True
     assert out["defaultUntouched"] == ["SPY"]      # the pre-existing list is not touched
     assert out["folded"] == ["AAPL", "MSFT"]
@@ -410,7 +433,7 @@ def test_fold_targets_the_list_named_watchlist_not_whatever_sorts_first():
 @needs_node
 def test_fold_retarget_is_a_no_op_for_an_account_macro_itself_created():
     """The shipped auto-create already NAMED that first list 'Watchlist' — so for the
-    common (Macro-only) account the retarget resolves to the identical row."""
+    common (Macro-only) account both resolutions land on the identical row."""
     out = _ws(
         WL_STUB + """
         installWL(BLOB);
@@ -418,16 +441,133 @@ def test_fold_retarget_is_a_no_op_for_an_account_macro_itself_created():
                          watchlist_symbols: []});
         WS._setTestSession(USER, db.client);
         WS.pull().then(function () {
-          OUT({primaryId: WS._testState().primaryId,
+          var st = WS._testState();
+          OUT({foldTargetId: st.foldTargetId, boundId: st.activeId,
                listRows: db.tables.watchlists.length,
                folded: symbolsOf(db, 'L-W')});
         });
         """,
         {"USER": USER, "BLOB": LOCAL_BLOB},
     )
-    assert out["primaryId"] == "L-W"    # adopted, not re-created
+    assert out["foldTargetId"] == "L-W"    # adopted, not re-created
+    assert out["boundId"] == "L-W"
     assert out["listRows"] == 1
     assert out["folded"] == ["AAPL", "MSFT"]
+
+
+# ---------------------------------------------------------------------------
+# Commissioning ruling R1 — the three BIND branches.
+#
+# Binding and folding are separate resolutions. Binding creates a list ONLY when the
+# account has none; folding creates 'Watchlist' when absent, but only ever after it has
+# content to deliver. The pair is what keeps a Terminal-native account from both
+# (a) seeing an empty page on a fresh device and (b) collecting a spurious empty
+# 'Watchlist' row in the list picker W1b is about to make server-backed.
+# ---------------------------------------------------------------------------
+EMPTY_BLOB = {"v": 1, "updated": "", "items": [], "order": [], "settings": {}}
+
+
+@needs_node
+def test_R1_branch2_terminal_default_only_account_binds_default_and_creates_nothing():
+    """(a) The cohort the ruling exists for: the account's only list is the Terminal's
+    'Default'. Bind it, and mint NOTHING."""
+    out = _ws(
+        WL_STUB + """
+        installWL(BLOB);
+        var db = makeDb({watchlists: [{id: 'L-DEF', user_id: 'u1', name: 'Default', position: 0}],
+                         watchlist_symbols: [
+                           {id: 'd1', watchlist_id: 'L-DEF', symbol: 'SPY', position: 0}]});
+        WS._setTestSession(USER, db.client);
+        WS.pull().then(function () {
+          OUT({boundId: WS._testState().activeId,
+               lists: db.tables.watchlists.map(function (l) { return l.name; }),
+               inserts: db.ops.filter(function (o) {
+                 return o.kind === 'insert' && o.table === 'watchlists'; }).length,
+               visible: symbolsOf(db, 'L-DEF')});
+        });
+        """,
+        {"USER": USER, "BLOB": EMPTY_BLOB},
+    )
+    assert out["boundId"] == "L-DEF"       # the page shows their real list, not an empty one
+    assert out["lists"] == ["Default"]     # no spurious 'Watchlist' row
+    assert out["inserts"] == 0             # and no list insert was even attempted
+    assert out["visible"] == ["SPY"]
+
+
+@needs_node
+def test_R1_branch2_multi_list_account_binds_first_by_position_and_creates_nothing():
+    """(b) Several lists, none named 'Watchlist' → bind the first by (position,
+    created_at). `listsFetch` orders by exactly that, so 'first' is well-defined."""
+    out = _ws(
+        WL_STUB + """
+        installWL(BLOB);
+        var db = makeDb({watchlists: [
+                           {id: 'L-B', user_id: 'u1', name: 'Space', position: 2,
+                            created_at: '2026-03-01T00:00:00.000Z'},
+                           {id: 'L-A', user_id: 'u1', name: 'Gold Miners', position: 1,
+                            created_at: '2026-02-01T00:00:00.000Z'}],
+                         watchlist_symbols: [
+                           {id: 'g1', watchlist_id: 'L-A', symbol: 'NEM', position: 0}]});
+        WS._setTestSession(USER, db.client);
+        WS.pull().then(function () {
+          OUT({boundId: WS._testState().activeId,
+               lists: db.tables.watchlists.map(function (l) { return l.name; }).sort(),
+               inserts: db.ops.filter(function (o) {
+                 return o.kind === 'insert' && o.table === 'watchlists'; }).length});
+        });
+        """,
+        {"USER": USER, "BLOB": EMPTY_BLOB},
+    )
+    assert out["boundId"] == "L-A"                      # lowest position, not insertion order
+    assert out["lists"] == ["Gold Miners", "Space"]     # nothing minted
+    assert out["inserts"] == 0
+
+
+@needs_node
+def test_R1_branch3_zero_list_account_creates_watchlist_and_binds_it():
+    """(c) A genuinely new account has no list to bind, so one is created — this is the
+    only branch in which BINDING creates anything."""
+    out = _ws(
+        WL_STUB + """
+        installWL(BLOB);
+        var db = makeDb({watchlists: [], watchlist_symbols: []});
+        WS._setTestSession(USER, db.client);
+        WS.pull().then(function () {
+          var st = WS._testState();
+          OUT({boundId: st.activeId,
+               lists: db.tables.watchlists.map(function (l) { return l.name; }),
+               boundIsTheCreatedRow: String(st.activeId) ===
+                 String((db.tables.watchlists[0] || {}).id)});
+        });
+        """,
+        {"USER": USER, "BLOB": EMPTY_BLOB},
+    )
+    assert out["lists"] == ["Watchlist"]
+    assert out["boundIsTheCreatedRow"] is True
+    assert out["boundId"] is not None
+
+
+@needs_node
+def test_R1_binding_never_creates_a_list_for_an_account_with_nothing_to_fold():
+    """The property the ruling is really buying, stated directly: signing in repeatedly
+    on a device with an empty local book must never grow the account's list count."""
+    out = _ws(
+        WL_STUB + """
+        installWL(BLOB);
+        var db = makeDb({watchlists: [{id: 'L-DEF', user_id: 'u1', name: 'Default', position: 0}],
+                         watchlist_symbols: []});
+        WS._setTestSession(USER, db.client);
+        WS.pull().then(function () {
+          return WS.pull().then(function () {
+            OUT({lists: db.tables.watchlists.map(function (l) { return l.name; }),
+                 marker: localStorage.getItem('mdash.watchstore.folded.v1')});
+          });
+        });
+        """,
+        {"USER": USER, "BLOB": EMPTY_BLOB},
+    )
+    assert out["lists"] == ["Default"]
+    assert out["marker"] is None     # and the one-shot fold is still unspent
 
 
 @needs_node

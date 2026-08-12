@@ -20,7 +20,7 @@ The session is kept in **permanent cookies** (~390-day, `Path=/`, `SameSite=Lax`
 | Self-hosted SDK (CDN is blocked in mainland China) | `templates/supabase.js` → `site/supabase.js` |
 | Config (public URL + publishable key) | `config.yml` → `watchlist.supabase` |
 | Build-time bake | `scripts/build_site.py` replaces the `/*__SUPABASE_CFG__*/null` token in `theme.js` with the config, so **every** page gets `window.SUPABASE_CFG` |
-| Per-user data isolation (RLS) | `templates/watchlist_supabase.sql` |
+| Per-user data isolation (RLS) | `watchlists`/`watchlist_symbols`: mastermind-terminal repo, `supabase/migrations/0001_init.sql`. `portfolio_positions`: `templates/uwp_supabase.sql` |
 
 The Supabase **publishable (anon) key is PUBLIC by design** — it ships in the client.
 Per-user isolation is enforced entirely by Row-Level-Security against the caller's
@@ -57,9 +57,12 @@ Project: `https://fsldfzlxyavsuwqbceod.supabase.co` (dashboard → that project)
    - OAuth + the implicit flow return to the page the user started on, so the page's
      exact origin must be allow-listed here.
 
-4. **Run the SQL** once (SQL Editor) if not already done:
-   `templates/watchlist_supabase.sql` — creates the `watchlists` table + RLS policies
-   used by the watchlist cloud-sync.
+4. **Run the SQL** once (SQL Editor) if not already done. Schema authority lives in
+   the **mastermind-terminal** repo under `supabase/migrations/` — `0001_init.sql`
+   creates `watchlists` + `watchlist_symbols` and their RLS policies. This repo owns
+   only `templates/uwp_supabase.sql`, the four own-row policies for
+   `portfolio_positions`. (There is no `templates/watchlist_supabase.sql`; older
+   references to one were wrong and were corrected in W1a.)
 
 5. **Turn on Attack Protection** (recommended — the anon key is public, so the auth
    endpoints are reachable by anyone): Authentication → **Attack Protection** →
@@ -117,7 +120,8 @@ Until then the button renders but shows a polite "coming soon" notice.
 
 - **Cookie size:** a Supabase session JSON can exceed the ~4 KB single-cookie limit,
   so `COOKIE_STORAGE` in `theme.js` chunks it (`<key>` = count, `<key>.0..n`).
-- **Free-tier pause:** free projects sleep after ~7 days idle. A nightly keep-alive
-  curl is documented at the bottom of `templates/watchlist_supabase.sql`.
+- **Free-tier pause:** free projects sleep after ~7 days idle. If that becomes a
+  problem, add a scheduled anon-key REST ping to `.github/workflows/daily.yml`
+  (needs `SUPABASE_URL` + `SUPABASE_ANON_KEY` repo secrets).
 - **Changing project/keys:** edit `config.yml → watchlist.supabase`; the next render
   bakes the new values into `theme.js` and `watchlist.html`.

@@ -42,9 +42,18 @@ does not add one. Server `position` is the order authority.
   The schema carries a unique `(user_id, name)` index, so a racing create adopts the
   existing row rather than failing.
 - `WatchStore.symbols.{list,add,remove,push}` — every symbol op names its list.
-- The **primary** list is the one named `Watchlist`, created if absent. It is the
-  target of the one-shot local→cloud fold. Lists created elsewhere (the Terminal seeds
-  one called `Default`) are kept, never renamed and never deleted.
+- **Which list the page is bound to, and where the fold delivers, are two separate
+  questions** (commissioning ruling R1, 2026-08-12):
+  - *Binding* — a list named exactly `Watchlist` if one exists; else the **first list
+    by `(position, created_at)`, creating nothing**; else (no lists at all) create
+    `Watchlist` and bind it. Branch 2 is a deliberate non-creation: a Terminal-native
+    account's only list is `Default`, and minting an empty `Watchlist` for it would
+    both show this page an empty list and leave a spurious row in the list picker.
+  - *Folding* — always the list named `Watchlist`, created if absent. That resolution
+    runs only **after** the one-shot marker and empty-book checks, so it fires only
+    when there is content to deliver; creation there is on-demand, never spurious.
+- Lists created elsewhere (the Terminal seeds one called `Default`) are kept, never
+  renamed and never deleted.
 - `push` is a full-membership diff that deletes cloud rows absent locally, so it is
   **strictly list-scoped**: the target is captured at enqueue time, debounce timers are
   per list, delete candidates come only from that list's *server* read, and every
@@ -55,12 +64,12 @@ does not add one. Server `position` is the order authority.
 The multi-list *UI* is a later wave. `templates/watchlist.js` carries the binding seams
 (`WL.bindList`, per-list storage key, `listId` in `stateSig`, storage-event and
 share-fragment scoping); nothing sets a non-null binding yet, so the page runs against
-the primary list and signed-out behaviour is unchanged.
+the list the store binds and signed-out behaviour is unchanged.
 
 ### One-shot folds (anonymous → account)
 
 On the first successful sign-in, the local books fold into the user's own rows:
-`mdash.watchlist.v1` → the primary list (marker `mdash.watchstore.folded.v1`), and
+`mdash.watchlist.v1` → the `Watchlist` list (marker `mdash.watchstore.folded.v1`), and
 `mdash.pf.v1` → `portfolio_positions` (marker `mdash.watchstore.pf_folded.v1`). Both
 markers are written **only on success**, and **never on an empty local book** — either
 mistake silently discards the visitor's work. Re-running a fold plans nothing.

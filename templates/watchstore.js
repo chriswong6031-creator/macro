@@ -38,8 +38,8 @@
   var user = null;         // current auth user
   var lastAuthUid = undefined;  // dedup guard: undefined = never seen; null = signed-out
   var listsCache = [];     // [{id,name,position}] — last server read of the user's lists
-  var primaryId = null;    // id of the list NAMED 'Watchlist' (the fold target)
-  var wlId = null;         // ACTIVE list id — defaults to primaryId; a UI may switch it
+  var wlId = null;         // ACTIVE (bound) list id — see resolveBoundList()
+  var foldTargetId = null; // id of the list NAMED 'Watchlist' — resolved ON DEMAND by the fold
   /* Server-read membership, keyed by list id: { set:{sym:true}, order:[sym], maxPos:n }.
      This map is the ONLY delete authority in the module. It is written by symbolsFetch()
      (a real server read of that one list) and never by a localStorage cache — see the
@@ -202,7 +202,18 @@
     listsCache.push(row);
     return row;
   }
-  function _row(r) { return { id: r.id, name: r.name, position: r.position || 0 }; }
+  function _row(r) {
+    return { id: r.id, name: r.name, position: r.position || 0, created_at: r.created_at || '' };
+  }
+  /* Ruling R1's branch 2 binds "the FIRST list by (position, created_at)", so that
+     ordering is load-bearing for a RULING, not decoration. The query already asks for
+     it; sorting again where it is consumed means a future refactor that drops an
+     `.order()` cannot silently change which list a returning user is bound to. */
+  function _byPositionThenCreated(a, b) {
+    if ((a.position || 0) !== (b.position || 0)) return (a.position || 0) - (b.position || 0);
+    var x = a.created_at || '', y = b.created_at || '';
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
   // Postgres 23505 on the schema's unique (user_id, name) index — two tabs (or a tab
   // and the Terminal) racing the same create. Adopt the winner instead of failing.
   function _isDuplicateName(err) {
@@ -222,7 +233,8 @@
         .order('created_at', { ascending: true });
     }).then(function (res) {
       if (res.error) throw res.error;
-      listsCache = (res.data || []).filter(function (r) { return r && r.id; }).map(_row);
+      listsCache = (res.data || []).filter(function (r) { return r && r.id; })
+        .map(_row).sort(_byPositionThenCreated);
       return listsCache.slice();
     });
   }
@@ -272,10 +284,11 @@
     }).then(function (res) {
       if (res.error) throw res.error;
       var row = _rememberList(_row(res.data));
-      // renaming AWAY from 'Watchlist' un-primaries the list; the next pull re-resolves
-      // (and re-creates 'Watchlist' if it is now absent) rather than folding into a
-      // list the user has renamed to something else.
-      if (String(primaryId) === String(listId) && row.name !== LIST_NAME) primaryId = null;
+      // Renaming AWAY from 'Watchlist' drops the cached fold target: a later fold
+      // re-resolves (creating 'Watchlist' again if it is now absent) rather than
+      // delivering into a list the user has renamed to something else. The BOUND list
+      // is unaffected — a rename does not move the user off the list they are viewing.
+      if (String(foldTargetId) === String(listId) && row.name !== LIST_NAME) foldTargetId = null;
       return row;
     });
   }
@@ -293,36 +306,63 @@
       delete cloud[listId];
       _cancelPush(listId);
       listsCache = listsCache.filter(function (l) { return String(l.id) !== String(listId); });
-      if (String(primaryId) === String(listId)) primaryId = null;
+      if (String(foldTargetId) === String(listId)) foldTargetId = null;
       if (String(wlId) === String(listId)) wlId = null;
       return { id: listId };
     });
   }
 
-  /* Primary list = the list NAMED 'Watchlist', created if absent.
-
-     Before this wave this resolved to the user's FIRST list
-     (`.order('position').order('created_at').limit(1)`) — soloism that bound Macro to
-     whatever row happened to sort first. For an account Macro itself created the
-     resolution is UNCHANGED: the old auto-create already named that first list
-     'Watchlist'. It differs only for an account whose first list came from elsewhere
-     (the Terminal seeds one called 'Default'), where the fold target was previously
-     non-deterministic. Server-only lists are kept, never renamed and never deleted. */
-  function resolvePrimaryList() {
-    function create() {
-      return listCreate(LIST_NAME).then(function (created) {
-        if (!created || !created.id) throw new Error('list-create-failed');
-        return created.id;
-      });
-    }
-    // pull() runs listsFetch() first, so the answer is usually already in hand — a
-    // second name query would just be a redundant round trip on every sign-in.
+  function _createPrimary() {
+    return listCreate(LIST_NAME).then(function (created) {
+      if (!created || !created.id) throw new Error('list-create-failed');
+      return created.id;
+    });
+  }
+  function _namedPrimary() {
     for (var i = 0; i < listsCache.length; i++) {
-      if (listsCache[i].name === LIST_NAME) return Promise.resolve(listsCache[i].id);
+      if (listsCache[i].name === LIST_NAME) return listsCache[i].id;
     }
-    if (listsCache.length > 0) return create();     // fetched, and it is genuinely absent
+    return null;
+  }
+
+  /* WHICH LIST THIS PAGE IS BOUND TO — Commissioning ruling R1 (2026-08-12), which
+     supersedes the packet's bare "created if absent" for BINDING. The FOLD's
+     create-if-absent is a separate question, resolved below.
+
+       1. a list named exactly 'Watchlist' exists -> bind it
+       2. else the user has >= 1 list            -> bind the FIRST by (position,
+                                                    created_at) and CREATE NOTHING
+       3. else (zero lists)                      -> create 'Watchlist' and bind it
+
+     Branch 2 is the ruling's substance, and it is a deliberate non-creation. A
+     Terminal-native account's only list is called 'Default'. Minting an empty
+     'Watchlist' for it would (a) show this page an empty list on a fresh device until
+     the W2 switcher ships, and (b) leave a spurious empty row in every such account's
+     list picker once W1b makes lists server-backed. Binding the first list is exactly
+     the pre-W1a behaviour for that cohort, and W2's switcher makes the choice explicit.
+
+     PRECONDITION: listsFetch() has run — pull() always calls it first, and its ordering
+     (`position`, then `created_at`) is what makes "first" well-defined here. */
+  function resolveBoundList() {
+    var named = _namedPrimary();
+    if (named) return Promise.resolve(named);
+    if (listsCache.length > 0) return Promise.resolve(listsCache[0].id);
+    return _createPrimary();
+  }
+
+  /* WHERE THE ONE-SHOT FOLD DELIVERS — the list named 'Watchlist', created if absent.
+     Unchanged by ruling R1, because this resolution only ever runs when the fold has
+     content to deliver (see _foldLocalIntoCloud: the marker and empty-book checks come
+     FIRST). Creating a list at that moment is on-demand, never spurious — which is
+     exactly the distinction that lets branch 2 above create nothing. */
+  function resolveFoldTarget() {
+    var named = _namedPrimary();
+    if (named) return Promise.resolve(named);
+    // listsCache is populated by pull()'s listsFetch(); if it is genuinely empty we
+    // still ask the server by name before minting a second one.
+    if (listsCache.length > 0) return _createPrimary();
     return _findListByName(LIST_NAME).then(function (row) {
-      return row ? row.id : create();
+      return row ? row.id : _createPrimary();
     });
   }
 
@@ -411,11 +451,11 @@
     setPill('syncing');
 
     return listsFetch()
-      .then(function () { return resolvePrimaryList(); })
+      .then(function () { return resolveBoundList(); })
       .then(function (id) {
-        primaryId = id;
-        // No list switcher ships in this wave, so the ACTIVE list is the primary one.
-        // A later UI switches it via lists.setActive(); the fold stays bound to primary.
+        // No list switcher ships in this wave, so the bound list is whatever ruling R1
+        // resolves. A later UI switches it via lists.setActive(); the FOLD is resolved
+        // separately and on demand, so nothing here creates a list speculatively.
         if (!wlId) wlId = id;
         return symbolsFetch(wlId);
       })
@@ -463,56 +503,63 @@
   }
 
   // ---- one-time fold: local tickers not in cloud -> insert -------------------
-  /* Retargeted in W1a: the fold lands in the list NAMED 'Watchlist' (primaryId,
-     created if absent), not in "whatever list sorted first". Both shipped behaviours
-     are kept verbatim: ONE shot per device via the marker, and the marker is NOT
-     written on an empty local book (that would consume the one-shot before the
-     visitor ever built a list) nor on an error (so a failed fold retries). */
+  /* Retargeted in W1a: the fold lands in the list NAMED 'Watchlist' (created if
+     absent), not in "whatever list sorted first". Both shipped behaviours are kept
+     verbatim: ONE shot per device via the marker, and the marker is NOT written on an
+     empty local book (that would consume the one-shot before the visitor ever built a
+     list) nor on an error (so a failed fold retries).
+
+     ORDER IS LOAD-BEARING (ruling R1). The marker check and the empty-book check come
+     BEFORE the target is resolved, so an account with nothing to fold never triggers
+     the create-if-absent path. That is what makes creation here on-demand rather than
+     spurious, and it is why resolveBoundList() above is free to create nothing. */
   function _foldLocalIntoCloud() {
     // Only fold once per device (not per session) to avoid repeated inserts on
     // every sign-in after the ongoing diff-push is the real mechanism.
     var already = false;
     try { already = !!localStorage.getItem(foldMarkerKey); } catch (e) {}
     if (already) return Promise.resolve();
-    if (!user || !sb || !primaryId) return Promise.resolve();
+    if (!user || !sb) return Promise.resolve();
 
     var blob = window.WL && window.WL.getBlob ? window.WL.getBlob() : null;
     if (!blob || !Array.isArray(blob.items) || blob.items.length === 0) {
       // Do NOT mark folded: local is empty (fresh device or signed-out-built list).
       // Marking here would permanently consume the one-shot fold before any items exist.
+      // Nor resolve a target: there is nothing to deliver, so nothing to create.
       return Promise.resolve();
     }
 
-    // The fold diffs against the PRIMARY list's server rows — never the active list's.
-    // If a UI has switched away, read the primary list before planning anything.
-    if (!_cloudOf(primaryId)) {
-      return symbolsFetch(primaryId)
-        .then(function () { return _foldInsert(blob); })
-        .catch(function (err) {
-          warnOnce('fold', 'one-time fold failed: ' + (err && err.message || err));
-        });
-    }
-    return _foldInsert(blob);
+    // There IS content to deliver — now resolve (and if necessary create) the target,
+    // and diff against ITS server rows, never the bound list's.
+    return resolveFoldTarget()
+      .then(function (id) {
+        foldTargetId = id;
+        if (_cloudOf(id)) return _foldInsert(blob);
+        return symbolsFetch(id).then(function () { return _foldInsert(blob); });
+      })
+      .catch(function (err) {
+        warnOnce('fold', 'one-time fold failed: ' + (err && err.message || err));
+      });
   }
 
   function _foldInsert(blob) {
-    var c = _cloudOf(primaryId);
+    var c = _cloudOf(foldTargetId);
     if (!c) return Promise.resolve();
 
     var toInsert = blob.items.filter(function (it) { return it && it.t && !c.set[it.t]; });
     if (toInsert.length === 0) { _markFolded(); return Promise.resolve(); }
 
     // Insert sequentially; use maxPos+1 to avoid collisions after delete+add cycles
-    var base = _nextPos(primaryId);
+    var base = _nextPos(foldTargetId);
     var rows = toInsert.map(function (it, i) {
-      return { watchlist_id: primaryId, symbol: it.t, section: SECTION, position: base + i };
+      return { watchlist_id: foldTargetId, symbol: it.t, section: SECTION, position: base + i };
     });
 
     return sb.from('watchlist_symbols')
       .insert(rows)
       .then(function (res) {
         if (res.error) throw res.error;
-        _noteInserted(primaryId, toInsert.map(function (it) { return it.t; }));
+        _noteInserted(foldTargetId, toInsert.map(function (it) { return it.t; }));
         _markFolded();
       })
       .catch(function (err) {
@@ -939,9 +986,9 @@
       rename: listRename,
       remove: listRemove,
       setActive: setActiveList,
-      primaryId: function () { return primaryId; },
+      foldTargetId: function () { return foldTargetId; },
       activeId: function () { return wlId; },
-      primaryName: function () { return LIST_NAME; },
+      foldTargetName: function () { return LIST_NAME; },
       cacheKey: cacheKey,
       cached: cacheRead
     },
@@ -973,7 +1020,7 @@
     if (!user) {
       sb = null;
       wlId = null;
-      primaryId = null;
+      foldTargetId = null;
       listsCache = [];
       // Drop every server-read membership: nothing may be diffed (or deleted) against
       // a set that belonged to the account that just signed out. The per-list
@@ -1072,7 +1119,8 @@
       symbols: window.WatchStore.symbols,
       pull: pull,
       pushList: pushList,
-      resolvePrimaryList: resolvePrimaryList,
+      resolveBoundList: resolveBoundList,
+      resolveFoldTarget: resolveFoldTarget,
       cacheKey: cacheKey, cacheRead: cacheRead, cacheWrite: cacheWrite,
       tickersOf: _tickersOf,
       _setTestSession: function (u, client) { user = u; sb = client; },
@@ -1080,12 +1128,13 @@
       _setTestLists: function (s) {
         if (!s) return;
         if ('lists' in s) listsCache = (s.lists || []).slice();
-        if ('primaryId' in s) primaryId = s.primaryId;
+        if ('foldTargetId' in s) foldTargetId = s.foldTargetId;
         if ('activeId' in s) wlId = s.activeId;
         if ('cloud' in s) cloud = s.cloud || {};
       },
       _testState: function () {
-        return { primaryId: primaryId, activeId: wlId, lists: listsCache.slice(), cloud: cloud };
+        return { foldTargetId: foldTargetId, activeId: wlId,
+                 lists: listsCache.slice(), cloud: cloud };
       }
     };
   }
