@@ -7036,8 +7036,10 @@ jobs:
     #                   show-more row cap it would otherwise leave pointing at the old
     #                   card positions.
     #
-    # Template-only suite: no pandas, no pyarrow, no network — it reads two templates and
-    # one plain-copy JS asset and shells node.
+    # The surface probes import engine/group_pulse.py to exercise its published
+    # denominator/arc contract, so NumPy and pandas are real import dependencies.
+    # No pyarrow or network — it otherwise reads two templates, one plain-copy JS
+    # asset, and shells node.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
     timeout-minutes: 6
     runs-on: ubuntu-latest
@@ -7050,7 +7052,7 @@ jobs:
         with:
           node-version: "20"
       - name: install minimal deps
-        run: pip install pytest
+        run: pip install pytest numpy pandas pyyaml
       - name: basket read band + board group-pulse column (GR1)
         run: python -m pytest tests/test_group_read_surface.py -q -rs
 
