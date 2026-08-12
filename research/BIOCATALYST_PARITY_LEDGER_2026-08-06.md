@@ -6,8 +6,8 @@
 | Authority | Reporting artifact. Authorizes nothing; activates nothing; promotes nothing |
 | Denominator source | `research/BIOCATALYST_FULL_PARITY_SUPERINTELLIGENCE_BUILD_HANDOFF_FOR_FABLE_2026-08-02.md` §5, lines 308–344 — a **32-row** benchmark job matrix |
 | Completion test applied | `research/BIOCATALYST_REMAINING_BUILD_WAVES_HANDOFF_FOR_CLAUDE_2026-08-06.md` §17 "Functional benchmark parity" |
-| Audited base | `origin/main` at `b70deb5cf817c5ed32d6de2f07bfaa82717c51d8`, 2026-08-06 |
-| Production observed | `https://www.mastermind-x.com/biocatalyst.html` → 200 / 61,226 bytes; `/api/health` checkout `cbee4e0e7ff`; anonymous `/api/biocatalyst/v1/trials` → **401**, `private, no-store`, `Vary: Authorization` |
+| Audited base | `origin/main` including BioCatalyst activation-boundary merge `2f30530edeb359b6a99d29ec1336a5b2d4149b3b`, 2026-08-12 |
+| Production observed | VPS checkout was a descendant of `2f30530edeb3`; exact `site/biocatalyst.js` SHA-256 `e7200305da4863de5e9650022fd1d05ead5659ccb3f3c76764e1ff0b4cf6f607`; anonymous product/API requests remain authentication-gated |
 
 Handoff §17 requires every benchmark job to be **implemented with an eligible source**,
 **explicitly licensed-later with an honest unavailable state**, or **formally excluded by a
@@ -23,16 +23,17 @@ document exists because that ledger had never been written, which made "complete
 | **Formally excluded** by an existing product ruling | 2 | yes |
 | **Licensed-later**, with an honest unavailable state required | 1 | yes |
 | **Correct by design** — deliberately not wired | 1 | yes |
-| **Implemented** at display/context tier with an eligible source | 2 | yes |
-| **Partial** — backend eligible, product surface incomplete | 6 | **no** |
-| **Blocked on another plane** that publishes no executable versioned PIT contract | 13 | **no** |
-| **Not built** — in-program model/domain work needing forward evidence | 7 | **no** |
-| **Total** | **32** | **6 of 32 satisfy §17 today** |
+| **Implemented** at display/context tier with an eligible source | 4 | yes |
+| **Partial** — backend eligible, product surface incomplete | 3 | **no** |
+| **Blocked on another plane or rights decision** | 15 | **no** |
+| **Not built** — in-program model/domain work | 6 | **no** |
+| **Total** | **32** | **8 of 32 satisfy §17 today** |
 
-**Parity is not achieved, and cannot be achieved by any amount of BioCatalyst-side work
-alone.** Thirteen rows are gated on planes BioCatalyst does not own and must not duplicate;
-seven more need forward evidence that accrues on a calendar, not in a session. That is a
-structural fact about the program, not a work backlog.
+The previous tally said 6/32 but its own row table contained only five satisfying rows. This
+revision fixes that arithmetic and then promotes rows 1, 3 and 4 on live browser consumption:
+five plus three is **8/32**, not nine. Parity is still not achievable through BioCatalyst-only
+work: fifteen rows are gated on adjacent owners or rights decisions that BioCatalyst must not
+silently duplicate or assume.
 
 ---
 
@@ -43,10 +44,10 @@ Legend — **EXCL** formally excluded · **LIC** licensed-later · **DESIGN** co
 
 | # | Benchmark job | Bucket | Precise blocker / state | Who must move it |
 |---:|---|---|---|---|
-| 1 | Trial search / screening | PART | `GET /trials:screen` + `/facets` shipped (#4449, #4453); the browser consumes neither | BioCatalyst — D0b/W2 |
+| 1 | Trial search / screening | IMPL | The live browser consumes `GET /trials:screen` and `/facets`; the authenticated entitlement boundary remains intact | — |
 | 2 | Trial milestones | IMPL | Registry milestone view shipped and served. Display tier only — a registry milestone is not a market catalyst | — |
-| 3 | Trial revision intelligence | PART | Exact-diff + prospective + replay-verified Change Tape shipped (#4434); browser still calls the legacy `/trials/changes` | BioCatalyst — D0b/W2 |
-| 4 | Trial peer landscape | PART | Explicit-NCT facts-only resolver shipped (#4367); no Peer Matrix UI | BioCatalyst — D0b/W2 |
+| 3 | Trial revision intelligence | IMPL | The live Change Tape renders exact before/after values, source versions and declared correction lineage while preserving replay verification | — |
+| 4 | Trial peer landscape | IMPL | The live Peer Matrix consumes the explicit-NCT, facts-only resolver; no dynamic cohort authority was added | — |
 | 5 | Company / pipeline screen | BLOCK | Company **PIT identity is blocked**. Current Company Intelligence context is not a point-in-time identity service | Company Intelligence owner |
 | 6 | Company dossier (Bio lens) | BLOCK | Same PIT identity blocker; a Bio lens without it would infer issuer from an NCT record, which the authority boundary forbids | Company Intelligence owner |
 | 7 | Asset × Indication dossier | BLOCK | Needs the W3 temporal asset/ownership graph, which needs the PIT identity bridge | Identity owners, then BioCatalyst W3 |
@@ -105,10 +106,11 @@ change without widening any Capital Structure capability or authority.
 
 ## 3. What the blockers actually have in common
 
-Eleven of the thirteen BLOCK rows reduce to **one missing thing**: no adjacent plane publishes
-an *executable, versioned, point-in-time contract with defined ambiguity and unavailable
-behavior*. Rows 5, 6, 7, 12, 13, 19, 20, 23, 24, 25, and 29 are all waiting on that same shape
-from a different owner.
+Ten of the fifteen BLOCK rows reduce to **one missing thing**: no adjacent plane publishes an
+*executable, versioned, point-in-time contract with defined ambiguity and unavailable
+behavior*. Rows 5, 6, 7, 12, 13, 20, 23, 24, 25, and 29 are waiting on that shape from a
+different owner; partial row 19 shares the same document-span boundary. The other five BLOCK
+rows are source-rights or market-data decisions (8, 9, 10, 17 and 27).
 
 This is the highest-leverage observation in the ledger. **The fastest route to parity is not
 more BioCatalyst code — it is one owning plane publishing one PIT read contract.** Each one
@@ -120,9 +122,9 @@ Two failure modes this ledger exists to prevent:
 1. **Manufacturing eligibility.** Marking an adapter eligible because a module could be
    imported, rather than because a versioned PIT contract exists, converts a blocked row into
    a silently wrong one. A reconciliation that changes nothing is a correct result.
-2. **Counting partial rows as parity.** Rows 1, 3, 4, and 31 all have a shipped, tested backend
-   and no user-reachable surface. That is genuinely valuable substrate and it is genuinely not
-   parity. A capability the user cannot reach has not shipped.
+2. **Counting partial rows as parity.** Rows 19, 21 and 31 still have useful substrate without a
+   complete user-reachable benchmark job. Rows 1, 3 and 4 moved only after their live surfaces
+   consumed the eligible APIs. A capability the user cannot reach has not shipped.
 
 ---
 
@@ -132,8 +134,8 @@ Three different claims are available, and they must not be conflated:
 
 - **Biopharma closed beta** (handoff §17) — reachable, but gated on an operator arming decision
   and **fourteen continuous days** of soak. No session can compress that; it is a calendar.
-- **Functional benchmark parity** — requires all 32 rows in a §17 bucket. **26 are not**, and
-  20 of those depend on decisions or contracts outside BioCatalyst's control.
+- **Functional benchmark parity** — requires all 32 rows in a §17 bucket. **24 are not**:
+  15 blocked, 6 not built and 3 partial.
 - **BioCatalyst superiority** — point-in-time evidence, correction lineage, cross-source
   temporal identity, calibrated forward evidence. Depends on parity plus months of accrual.
 
