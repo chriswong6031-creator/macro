@@ -6513,6 +6513,8 @@ jobs:
         run: python -m pytest tests/test_etf_board_ledger.py -q
       - name: etf board windows tile — three states, zh parity, vocab
         run: python -m pytest tests/test_etf_board_windows_tile.py -q
+      - name: etf weighting lens — discount identity, golden default ordering, receipts
+        run: python -m pytest tests/test_etf_weighting.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
 

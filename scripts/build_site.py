@@ -3008,10 +3008,17 @@ def _etf_free_tile(total: int) -> dict:
 
 
 def _etf_flow_block(favored: list[dict]) -> dict[str, dict]:
-    """Per-ticker flow/selection roll-up for the consensus board rows (W1).
+    """Per-ticker flow/selection roll-up for the consensus board rows (W1) plus
+    the W2b structural weighting lens.
 
     `usd_complete` is carried verbatim rather than dropped: a dollar total that
-    covers 2 of a row's 4 funds is a partial number, and the row has to say so."""
+    covers 2 of a row's 4 funds is a partial number, and the row has to say so.
+
+    PAID SIDE ONLY. This block is written into premiumdata/etfs.json and never
+    into the free shell, so the lens costs the 130 KiB shell budget nothing. The
+    `weight_receipt` travels with `weighted_usd` deliberately — a weighted number
+    without its arithmetic is exactly the un-auditable "some funds count more"
+    the structural design exists to avoid (masterplan §4)."""
     return {
         r["ticker"]: {
             "total_usd": r.get("total_usd"), "flow_usd": r.get("flow_usd"),
@@ -3023,6 +3030,9 @@ def _etf_flow_block(favored: list[dict]) -> dict[str, dict]:
             "accel_pct_per_day": r.get("accel_pct_per_day"),
             "contested_components": r.get("contested_components"),
             "n_stale": r.get("n_stale"),
+            # W2b lens — secondary sort material for the UI, never the default.
+            "weighted_usd": r.get("weighted_usd"), "weighted_n": r.get("weighted_n"),
+            "weight_receipt": r.get("weight_receipt"),
         }
         for r in favored if r.get("ticker")
     }

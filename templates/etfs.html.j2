@@ -14,7 +14,13 @@
    suffix kept, <title> and seo_title unified (they used to disagree), and the h1
    is deliberately UNCHANGED — the voice stays on the page, only the SERP moves. #}
 <title>Which Stocks Fund Managers Are Buying — MastermindX</title>
-{% set seo_title = "Which Stocks Fund Managers Are Buying — MastermindX" %}{% set seo_desc = "Track which stocks 77 thematic and active ETFs are accumulating — cross-fund consensus, brand-new positions and the sector rotation backdrop, updated each filing cycle." %}{% set seo_path = "etfs.html" %}
+{# The fund count is COUNTED, never typed: it said 77 while the universe was 103,
+   and a hardcoded number in the SERP line goes stale on the quiet side (nothing
+   renders wrong, the description just starts lying). Counted the same way the
+   page's own "Tracking N" line counts — funds with at least one snapshot — so
+   the two can never disagree. Falls back to the number-free phrasing rather than
+   printing 0 or 1 when the coverage directory is empty. #}
+{% set seo_title = "Which Stocks Fund Managers Are Buying — MastermindX" %}{% set seo_n_funds = (coverage | selectattr('n_snapshots') | list | length) if coverage else 0 %}{% set seo_desc = ("Track which stocks " ~ seo_n_funds ~ " thematic and active ETFs are accumulating" if seo_n_funds > 1 else "Track which stocks thematic and active ETFs are accumulating") ~ " — cross-fund consensus, brand-new positions and the sector rotation backdrop, updated each filing cycle." %}{% set seo_path = "etfs.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">

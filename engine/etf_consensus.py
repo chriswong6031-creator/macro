@@ -39,6 +39,10 @@ try:  # pragma: no cover - trivial import guard
 except Exception:  # noqa: BLE001
     BULLISH_STATES = {"FRESH BUY", "TURN SIGNALED", "RALLY ON", "BOTTOM WATCH"}
 
+# W2b: which KIND of fund each ticker is. Config-only reader, no engine imports,
+# so this cannot cycle back through holdings_signals.
+from engine.etf_registry import DEFAULT_TYPE, fund_registry  # noqa: E402
+
 
 def _cfg() -> dict:
     return config.load().get("etf_holdings", {}) or {}
@@ -102,11 +106,157 @@ def _finish_decomposition(g: dict) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# W2b structural weighting lens (masterplan §4) — a SECOND WAY TO READ the same
+# board, never the board's order.
+#
+# The operator's question was "should some funds count more?". Fitting weights to
+# forward returns is the obvious answer and the wrong one here: most funds carry
+# weeks of history, so a fitted weight is a promotion-to-authority move on an
+# honest-N of nearly nothing (§4, rejected; the W3 ledger accrues what a future
+# gauntlet would need). What IS defensible is structural — three mechanical
+# factors, no parameter learned from any outcome:
+#
+#   (a) SIGNAL-TYPE MATCH. Each fund type only really reports one of the two
+#       components W1 separates. A passive basket's "selection" is mostly index
+#       reconstitution and an active fund's "flow" is mostly its sponsor's
+#       marketing, so the MISMATCHED component is kept — it is not noise-free
+#       zero — at `mismatch_discount`.
+#   (b) $ MAGNITUDE. Aggregation runs on the dollars W1 already computed, so a
+#       $4B fund moving 0.5pp stops reading like a $30M fund moving 0.5pp. The
+#       equal-weight COUNTS are untouched beside it: breadth is the most
+#       manipulation-resistant stat on the page and stays the primary read.
+#   (c) FRESHNESS. A fund that has not published since last month is not part of
+#       "this cycle" — its events are excluded from the weighted aggregates and
+#       counted in the receipt, rather than silently aging into the number.
+#
+# Everything here is additive. `consensus_favored`'s sort key does not read one
+# field of it, and a test pins that the default board is byte-identical.
+# --------------------------------------------------------------------------- #
+
+#: The component each KIND of fund is actually built to report (masterplan §2).
+PRIMARY_COMPONENT: dict[str, str] = {
+    "active": "selection",          # a manager picks the names
+    "thematic_passive": "flow",     # creations/redemptions move the whole basket
+    "sector": "flow",               # ditto, on a conventional industry basket
+}
+#: Weight for the component a fund type does NOT report. Structural, not fitted:
+#: mechanically noisier, but a real move often hides in it, so never 0.
+MISMATCH_DISCOUNT = 0.35
+#: Weight for an event whose decomposition is missing entirely (one snapshot, a
+#: quarantined pair, a sponsor with no share column). Unattributed evidence is
+#: not disproved evidence — it is discounted and disclosed, never dropped.
+UNATTRIBUTED_WEIGHT = 0.35
+
+
+def weighting_cfg(cfg: dict | None = None) -> dict:
+    """Resolve the lens knobs from `etf_holdings.weighting`, clamped to [0, 1].
+
+    A bogus value falls back to the module default rather than propagating: a
+    discount of 40 (someone typing percent) would turn the secondary lens into a
+    40× amplifier of exactly the component we distrust."""
+    block = (cfg if cfg is not None else _cfg()).get("weighting") or {}
+
+    def _frac(key: str, default: float) -> float:
+        try:
+            v = float(block.get(key, default))
+        except (TypeError, ValueError):
+            return default
+        return v if 0.0 <= v <= 1.0 else default
+
+    return {"mismatch_discount": _frac("mismatch_discount", MISMATCH_DISCOUNT),
+            "unattributed_weight": _frac("unattributed_weight", UNATTRIBUTED_WEIGHT)}
+
+
+def primary_component(fund_type: str | None) -> str:
+    """The component this fund type reports. An unknown/absent type reads as the
+    registry's own default (thematic_passive) — a metadata gap must degrade, not
+    hand the mismatched component a full weight."""
+    return PRIMARY_COMPONENT.get(str(fund_type or ""), PRIMARY_COMPONENT[DEFAULT_TYPE])
+
+
+def component_weight(fund_type: str | None, component: str,
+                     discount: float = MISMATCH_DISCOUNT) -> float:
+    """1.0 when `component` is the one this kind of fund reports, else `discount`."""
+    return 1.0 if component == primary_component(fund_type) else discount
+
+
+def _roll_weighting(g: dict, r: dict, fund_type: str, w: dict) -> float | None:
+    """Fold one fund's event into the ticker's weighted lens.
+
+    Returns the event's COUNT weight (what it contributes to `weighted_n`) so the
+    per-fund row can carry its own weight for the Tier-2 receipt, or None when the
+    event was excluded for staleness."""
+    wt = g["_wt"]
+    if r.get("is_stale"):
+        wt["n_stale_excluded"] += 1
+        return None
+
+    primary = primary_component(fund_type)
+    flow_usd, sel_usd = r.get("flow_usd"), r.get("selection_usd")
+    matched, mismatched = ((flow_usd, sel_usd) if primary == "flow"
+                           else (sel_usd, flow_usd))
+    wt["usd_matched"] += matched or 0.0
+    wt["usd_mismatched"] += mismatched or 0.0
+    wt["n_funds"] += 1
+    if r.get("total_usd") is not None:
+        wt["n_funds_usd"] += 1
+
+    # The COUNT side weights the event by the component that actually drove it
+    # (W1's `driver`), so one fund is one event — the dollars above are where a
+    # big fund outweighs a small one, not here.
+    driver = r.get("driver")
+    if driver not in ("flow", "selection"):
+        wt["n_unattributed"] += 1
+        weight = w["unattributed_weight"]
+    elif driver == primary:
+        wt["n_active_selection" if fund_type == "active" else "n_passive_flow"] += 1
+        weight = 1.0
+    else:
+        wt["n_mismatched"] += 1
+        weight = w["mismatch_discount"]
+    g["weighted_n"] += weight
+    return weight
+
+
+def _finish_weighting(g: dict, w: dict) -> None:
+    """Close the lens: the weighted dollar total, and the receipt that shows its
+    arithmetic. The receipt is the whole point of a structural weighting — every
+    input is printable, so a reader can re-derive the number by hand:
+
+        weighted_usd = usd_matched + mismatch_discount × usd_mismatched
+    """
+    wt = g.pop("_wt")
+    disc = w["mismatch_discount"]
+    mismatched_weighted = round(disc * wt["usd_mismatched"], 2)
+    # No fund on this row published market values: the weighted dollar read is
+    # ABSENT, not zero. A printed null beats a confident 0 that means "unknown".
+    g["weighted_usd"] = (None if wt["n_funds_usd"] == 0
+                         else round(round(wt["usd_matched"], 2) + mismatched_weighted, 2))
+    g["weighted_n"] = round(g["weighted_n"], 3)
+    g["weight_receipt"] = {
+        "mismatch_discount": disc,
+        "unattributed_weight": w["unattributed_weight"],
+        "n_funds_weighted": wt["n_funds"],
+        "n_active_selection": wt["n_active_selection"],
+        "n_passive_flow": wt["n_passive_flow"],
+        "n_mismatched": wt["n_mismatched"],
+        "n_unattributed": wt["n_unattributed"],
+        "n_stale_excluded": wt["n_stale_excluded"],
+        "n_funds_usd": wt["n_funds_usd"],
+        "weighted_usd_complete": wt["n_funds_usd"] == wt["n_funds"],
+        "usd_matched": round(wt["usd_matched"], 2),
+        "usd_mismatched": round(wt["usd_mismatched"], 2),
+        "usd_mismatched_weighted": mismatched_weighted,
+    }
+
+
+# --------------------------------------------------------------------------- #
 # 1. Cross-fund consensus — favored stocks
 # --------------------------------------------------------------------------- #
 def consensus_favored(rows: list[dict] | None = None,
                       limit: int | None = None,
-                      min_funds: int | None = None) -> list[dict]:
+                      min_funds: int | None = None,
+                      registry: dict[str, dict] | None = None) -> list[dict]:
     """Aggregate every flagged fund decision by the underlying stock.
 
     Input rows are ``engine.holdings_signals.all_etf_signals()`` output (or a
@@ -126,10 +276,23 @@ def consensus_favored(rows: list[dict] | None = None,
     ``breadth``/``max_streak``/``accel_pct_per_day`` (persistence) and
     ``contested_components``. Ranking is unchanged — still breadth of
     accumulation, then net conviction — so none of this promotes anything.
+
+    W2b adds the structural weighting lens beside them — ``weighted_usd``,
+    ``weighted_n`` and the ``weight_receipt`` that shows its arithmetic. It is a
+    SECONDARY read the UI may offer as an alternate sort; the ranking below is
+    the same equal-weight construction it has always been. Pass ``registry`` to
+    type the funds from an in-memory map instead of config.yml.
     """
     cfg = _cfg()
     limit = limit or cfg.get("consensus_top_n", 40)
     min_funds = min_funds if min_funds is not None else cfg.get("consensus_min_funds", 1)
+    wcfg = weighting_cfg(cfg)
+    if registry is None:
+        try:
+            registry = fund_registry()
+        except Exception as e:  # noqa: BLE001 — the lens is additive, never fatal
+            log.error("consensus_favored: fund_registry failed: %s", e)
+            registry = {}
 
     if rows is None:
         try:
@@ -170,6 +333,13 @@ def consensus_favored(rows: list[dict] | None = None,
                 "n_funds_usd": 0, "breadth": 0, "max_streak": 0,
                 "n_stale": 0, "n_split_adjusted": 0, "n_exit_confirmed": 0,
                 "_accel": [],
+                # W2b structural lens (masterplan §4) — secondary to every count
+                # above it. `_wt` is scratch; _finish_weighting pops it into the
+                # published receipt.
+                "weighted_n": 0.0,
+                "_wt": {"usd_matched": 0.0, "usd_mismatched": 0.0, "n_funds": 0,
+                        "n_funds_usd": 0, "n_active_selection": 0, "n_passive_flow": 0,
+                        "n_mismatched": 0, "n_unattributed": 0, "n_stale_excluded": 0},
             }
         # keep the richest name / sector / ladder we see for this ticker
         if r.get("name") and len(str(r.get("name"))) > len(str(g["name"])):
@@ -180,6 +350,11 @@ def consensus_favored(rows: list[dict] | None = None,
             g["ladder"] = r["ladder"]
         g["confirmed"] = g["confirmed"] or bool(r.get("confirmed"))
         g["is_active_any"] = g["is_active_any"] or bool(r.get("is_active"))
+        # W2b: type the fund, then fold it into the weighted lens. A fund missing
+        # from the registry types as the registry's own default rather than
+        # dropping off the row — same fail-soft contract as fund_registry itself.
+        ftype = (registry.get(str(r.get("etf") or "")) or {}).get("type") or DEFAULT_TYPE
+        ev_weight = _roll_weighting(g, r, ftype, wcfg)
         g["funds"].append({
             "fund": r.get("etf"), "fund_name": r.get("etf_name", r.get("etf")),
             "category": r.get("category", ""), "is_active": bool(r.get("is_active")),
@@ -190,6 +365,10 @@ def consensus_favored(rows: list[dict] | None = None,
             "flow_usd": r.get("flow_usd"), "selection_usd": r.get("selection_usd"),
             "total_usd": r.get("total_usd"), "driver": r.get("driver"),
             "streak": r.get("streak") or 0, "is_stale": bool(r.get("is_stale")),
+            # the two lens inputs for THIS fund, so the receipt is auditable per
+            # row rather than only in aggregate (`weight` is None when stale =
+            # excluded from the weighted read).
+            "fund_type": ftype, "weight": ev_weight,
         })
         if conv > 0:
             g["n_accum"] += 1
@@ -216,10 +395,14 @@ def consensus_favored(rows: list[dict] | None = None,
         # a stock is "contested" when funds disagree — worth flagging honestly
         g["contested"] = g["n_accum"] > 0 and g["n_trim"] > 0
         _finish_decomposition(g)
+        _finish_weighting(g, wcfg)
         out.append(g)
 
     # headline ranking: breadth of accumulation first, then net conviction. A name
     # several funds are adding to outranks one fund's large idiosyncratic add.
+    # DELIBERATELY blind to every W1/W2b field: the dollars and the structural
+    # weights are lenses the UI may offer, and a lens that quietly re-ordered the
+    # board would be a promotion nobody voted for (masterplan §0.6, §4).
     out.sort(key=lambda g: (-g["n_accum"], -g["net_conviction_pp"], -g["gross_conviction_pp"]))
     return out[:limit]
 

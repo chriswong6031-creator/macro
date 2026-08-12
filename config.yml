@@ -1774,6 +1774,29 @@ etf_holdings:
   flow_flat_frac: 0.0001          # |selection| under this fraction of the position reads as
                                   # flat, so float noise can't manufacture a streak
   flow_stale_days: 7              # no snapshot within N days of the fleet's newest => stale
+  # --- W2b structural weighting lens (engine/etf_consensus.py) ---------------
+  # A SECONDARY read only. The board's default order is the equal-weight
+  # breadth-then-conviction construction and does not read one key below; these
+  # feed `weighted_usd` / `weighted_n` / `weight_receipt`, which the UI may offer
+  # as an alternate sort. Nothing here is fitted to any outcome — a fitted weight
+  # would be a promotion needing prereg + gauntlet, and per-fund history is far
+  # too short for that (masterplan §4; the W3 ledger is what accrues the evidence).
+  weighting:
+    mismatch_discount: 0.35       # weight for the component a fund type does NOT report
+                                  # (passive "selection" is mostly index reconstitution;
+                                  # active "flow" is mostly sponsor marketing). Kept well
+                                  # above 0 because a real move does sometimes hide there —
+                                  # this is a discount, not a filter. 0.35 is a judgment
+                                  # call, not a measurement: it is the value a reader can
+                                  # see in weight_receipt and re-derive the number from.
+    unattributed_weight: 0.35     # weight for an event with NO decomposition at all (one
+                                  # snapshot, quarantined pair, sponsor with no share
+                                  # column). Unattributed evidence is not disproved
+                                  # evidence — discounted and disclosed, never dropped.
+                                  # Freshness is the third factor and needs no knob: it
+                                  # reuses flow_stale_days above, so a fund excluded from
+                                  # the weighted read is exactly the one the coverage
+                                  # table already prints as stale.
   # Tier-preview split for etfs.html (SEO Supercharge W2, docs/TIER_PREVIEW_PATTERN.md).
   # ON: the page ships the FREE half only — header, honest totals, the non-graded
   # stance line, the whole rotation backdrop, the full fund coverage directory and
