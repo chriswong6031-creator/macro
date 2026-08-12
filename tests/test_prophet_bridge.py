@@ -1354,6 +1354,7 @@ def test_originate_plans_does_not_truncate_at_n_candidates(tmp_path):
         "zone_extension_unavailable": len(buys),
         "wait_reset": [],
         "early_turn_starters": [],
+        "early_turn_watch": [],
         "leader_pullback_source": ["unavailable"],
         # "leader_pullback_coverage" is popped and asserted above — see the note there.
     }
