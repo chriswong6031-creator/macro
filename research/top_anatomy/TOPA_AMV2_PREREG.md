@@ -219,3 +219,32 @@ first).
   reds 4 tests; flipping validity clause (c)'s sign reds 4 tests; both reverted clean to HEAD).
   The NaN-safe-emitter chip did not land during the wave, so the §2 absorption path was not
   exercised.
+- 2026-08-12 — ADJUDICATION (commissioning session; every decision-bearing number re-read from
+  the artifacts before ruling). (1) **Validity:** all six (construction × panel) cells VALID at
+  both calipers; `governing_arm` = the registered ≤2 caliper everywhere, mechanically —
+  `escalated_to_the_tighter_arm=False`, `construction_failure=False` on every cell. No
+  escalation fired, no override was needed; the §1 rule governed as designed. (2) **The
+  registered kill FIRES:** B3 `P1-NOT-SUPPORTED` on the only floor-clearing disjoint panel
+  (ATRZ +1.530 [−0.884, +3.604] q=0.1165) and on primary (+0.133 [−1.142, +1.040] q=0.455)
+  under a valid instrument → per §3, "B3's separation is anchor geometry, not anatomy," and
+  **the ore-body anatomy claim is CLOSED on this tape as a cluster claim** (B3 killed; F3
+  dissolved into the instrument; F1 undecidable within the family — see (4)). Scope per the ore
+  law: these constructions, this tape; out-of-time replication is the only reopening evidence;
+  the features remain display-tier confluence inputs. (3) **B2 branches:** ATRZ =
+  below-but-supported (+1.499 [+0.473, +2.389] q=0.011, OUTSIDE W2's [+2.80, +4.79],
+  ratio 0.38×; 0.52× vs DM's +2.885 same-panel) — anchor artifacts do not eliminate W2's
+  confirmation and carry roughly half-to-two-thirds of its magnitude there. R63 comparison
+  prints inside (ratio 0.87) but the cell is UNDERPOWERED (31 episodes) and decides nothing.
+  **The §7.2 surface-copy revival does NOT fire** (it required NOT-SUPPORTED on a floor-clearing
+  disjoint panel); W2b copy untouched; the obligation is DISCHARGED-BY-RESULT unless out-of-time
+  evidence reopens B2. (4) **F1:** mechanical grades as registered (NOT-SUPPORTED / UNDERPOWERED
+  at 99 episodes / NOT-SUPPORTED); the pre-registered one-directional-power reading applies —
+  the documented bias realized (control ages skew young: median gaps +14.0 / +5.0 / +11.0), so
+  these cells are UNINFORMATIVE-BY-DESIGN for the negative claim, never a kill. F1's
+  anchor-clean status is UNDECIDABLE within the matching-instrument family; no AM-v3 is
+  chartered. (5) **Era:** zero latest-era wrong-sign flags; no ERA-CAVEAT earned. B2 fade fence
+  fires on primary only (0.64 → 0.27 → 0.26); ATRZ stable (1.38 / 2.22 / 2.15). (6) **Match
+  starvation is the instrument's printed cost:** seven of nine registered cells MATCH-STARVED;
+  AM2 × r63 unreadable (31 episodes, 12 peak-months) — floors did the honest work, no redesign.
+  (7) Report: `reports/top-anatomy-amv2.md`. G0.5 adversarial review to follow before
+  presenting, per §6.
