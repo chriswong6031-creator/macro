@@ -612,6 +612,12 @@ on:
       - "tests/test_risk_radar_scorecard.py"
       - "engine/risk_radar_scorecard.py"
       - "tests/test_rr_scorecard_card.py"
+      # Market-score authority firewall: the engine/template subjects are already
+      # covered by engine/** and templates/**; name the suite so a test-only edit
+      # still starts the owner job. The odometer suite is the same two-halves fix
+      # for #5458's shared template/site light-mode contract.
+      - "tests/test_market_score_authority_2026_08_12.py"
+      - "tests/test_odometer_light_mode_surface.py"
       # VSB W6: corr_floor_break + ai_breadth_divergence Tier-B legs + corr alert
       - "tests/test_vsb_radar_alert.py"
       - "engine/risk_radar.py"
