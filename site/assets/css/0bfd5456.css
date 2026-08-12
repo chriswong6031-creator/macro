@@ -6,6 +6,15 @@
   .points { margin:6px 0; padding-left:18px; } .points li { margin:2px 0; }
   .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
               font-size:13px; line-height:1.6; }
+  /* Locked-payload CTA row (signed-out view) — same accent language as the
+     site-wide tier gate (tier_preview.css .mx-tier-primary). */
+  .lock-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .lock-cta { font:inherit; font-size:12.5px; font-weight:760; line-height:1; cursor:pointer;
+              padding:11px 16px; border-radius:10px; border:1px solid var(--link);
+              background:var(--link); color:#fff;
+              transition:transform .16s ease, filter .16s ease; }
+  .lock-cta:hover { transform:translateY(-1px); filter:brightness(1.06); }
+  .lock-cta--ghost { background:transparent; border-color:var(--line); color:var(--text); }
   .regline { margin:-2px -4px 6px; padding:6px 9px; border-radius:7px;
              border-left:3px solid var(--muted); }
   .regline.rl-bear { border-left-color:var(--down);
