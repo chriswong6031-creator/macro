@@ -168,6 +168,32 @@ html[data-theme="light"][data-lang="zh"] {
   --q1: #c12f2f;
   --q3: #1f8b41;
 }
+/* ---- odo-needle: shared light-mode odometer pointer -------------------------
+   Dark mode's white blade + coloured hub already reads beautifully. The country
+   dashboards used to replace that blade with near-black in light mode, which made
+   the most important mark on the dial look like a stray SVG rule. Keep dark mode
+   byte-untouched; in light, turn the pointer into a two-tone instrument: a crisp
+   state-coloured blade, a softer colour bloom, and a white hub that belongs on the
+   card. --odo-accent is supplied by each gauge from its existing semantic state
+   token, so EN/zh direction swaps remain automatic. */
+html[data-theme="light"] .odo-needle {
+  filter:
+    drop-shadow(0 1px 1px rgba(23,32,55,.16))
+    drop-shadow(0 0 5px color-mix(in srgb,var(--odo-accent,var(--warn)) 22%,transparent));
+}
+html[data-theme="light"] .odo-needle--compact > line {
+  stroke:color-mix(in srgb,var(--odo-accent,var(--warn)) 44%,transparent);
+}
+html[data-theme="light"] .odo-needle--compact > polygon {
+  fill:color-mix(in srgb,var(--odo-accent,var(--warn)) 94%,var(--panel,#fff));
+  opacity:1;
+}
+html[data-theme="light"] .odo-needle--compact > circle:first-of-type {
+  fill:color-mix(in srgb,var(--odo-accent,var(--warn)) 12%,transparent);
+}
+html[data-theme="light"] .odo-needle--compact > .odo-needle-hub {
+  fill:var(--panel,#fff);
+}
 /* ---- Text-grade state INKS (estate pass 2026-08-03; method = SI V2 W3 audit) --
    The state palette is FILL-grade, not TEXT-grade: on light, --up #1f9a55 tops
    out at 3.61:1 on pure white (3.00 on the estate's darkest common surface
