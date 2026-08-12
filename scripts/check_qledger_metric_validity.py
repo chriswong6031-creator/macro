@@ -34,7 +34,11 @@ Options
   --root PATH   Repo root holding data/qledger/{claims,grades}.jsonl
                 (default: parent of scripts/).
   --strict      Exit 1 when any finding has severity 'invalid'.
-  --json        Emit findings as JSON to stdout instead of annotations.
+  --json        Emit a JSON object to stdout instead of annotations. ALWAYS an
+                object, never a bare list: {store_absent, missing, claims,
+                grades, findings}. When the store is absent, `findings` is null
+                rather than [] — an empty list would render "could not look" as
+                "looked and clean" (standards §9.2).
   --selftest    Inject synthetic corpora proving the auditor catches each
                 invariant AND stays silent on a clean corpus. Exits 0 if every
                 expected finding is caught, 1 otherwise.
@@ -83,20 +87,49 @@ def _read_jsonl(path: Path) -> list[dict]:
     return rows
 
 
-def _emit(findings: list[Finding], as_json: bool) -> None:
+def _json_payload(
+    findings: list[Finding] | None,
+    *,
+    store_absent: bool,
+    n_claims: int | None = None,
+    n_grades: int | None = None,
+    missing: list[str] | None = None,
+) -> str:
+    """The --json contract: ALWAYS an object, never a bare list.
+
+    `store_absent` is a first-class field rather than an empty findings list,
+    because an empty list would render "I could not look" as "I looked and it
+    was clean" — the exact substitution research/MASTERMIND_EVALUATION_STANDARDS.md
+    §9.2 forbids. A consumer must be able to tell the two apart without parsing
+    prose, so `findings` is null (not []) when nothing was audited.
+    """
+    return json.dumps(
+        {
+            "store_absent": store_absent,
+            "missing": missing or [],
+            "claims": n_claims,
+            "grades": n_grades,
+            "findings": None
+            if findings is None
+            else [
+                {
+                    "code": f.code,
+                    "family": f.family,
+                    "severity": f.severity,
+                    "detail": f.detail,
+                }
+                for f in findings
+            ],
+        },
+        indent=2,
+    )
+
+
+def _emit(findings: list[Finding], as_json: bool, n_claims: int, n_grades: int) -> None:
     if as_json:
         print(
-            json.dumps(
-                [
-                    {
-                        "code": f.code,
-                        "family": f.family,
-                        "severity": f.severity,
-                        "detail": f.detail,
-                    }
-                    for f in findings
-                ],
-                indent=2,
+            _json_payload(
+                findings, store_absent=False, n_claims=n_claims, n_grades=n_grades
             ),
             flush=True,
         )
@@ -185,15 +218,21 @@ def main() -> int:
     missing = [p for p in (claims_path, grades_path) if not p.exists()]
     if missing:
         # Absent store: say so out loud, exit 0. Never render as "clean".
-        for path in missing:
-            print(f"::notice title=qledger-metric-validity::store absent, not audited: {path}", flush=True)
+        if args.json:
+            print(
+                _json_payload(None, store_absent=True, missing=[str(p) for p in missing]),
+                flush=True,
+            )
+        else:
+            for path in missing:
+                print(f"::notice title=qledger-metric-validity::store absent, not audited: {path}", flush=True)
         return 0
 
     claims = _read_jsonl(claims_path)
     grades = _read_jsonl(grades_path)
     findings = audit(claims, grades)
 
-    _emit(findings, args.json)
+    _emit(findings, args.json, len(claims), len(grades))
     invalid = [f for f in findings if f.severity == SEVERITY_INVALID]
     if not args.json:
         print(

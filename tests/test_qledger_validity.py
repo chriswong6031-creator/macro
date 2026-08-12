@@ -7,6 +7,8 @@ controls prove this one discriminates.
 """
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from engine.qledger_validity import (
@@ -157,3 +159,41 @@ def test_may_report_hit_rate_requires_a_directional_claim():
     assert not may_report_hit_rate(profiles["s"])
     profiles = profile_families([_claim("d", "e", -1)])
     assert may_report_hit_rate(profiles["d"])
+
+
+# --------------------------------------------------------------------------- #
+# The --json contract (pins a defect found while testing the documented
+# reproduce command: --json emitted ::notice lines, not JSON, when the store was
+# absent — which is exactly the sparse-worktree and CI case).
+# --------------------------------------------------------------------------- #
+def _load_cli():
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "scripts" / "check_qledger_metric_validity.py"
+    spec = importlib.util.spec_from_file_location("_qmv_cli", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_json_payload_is_always_an_object_with_the_same_keys():
+    cli = _load_cli()
+    absent = json.loads(cli._json_payload(None, store_absent=True, missing=["a", "b"]))
+    present = json.loads(cli._json_payload([], store_absent=False, n_claims=3, n_grades=4))
+    assert absent.keys() == present.keys()
+    for payload in (absent, present):
+        assert isinstance(payload, dict)
+
+
+def test_absent_store_reports_null_findings_not_an_empty_list():
+    """"Could not look" must never be encodable as "looked and clean" (§9.2)."""
+    cli = _load_cli()
+    absent = json.loads(cli._json_payload(None, store_absent=True, missing=["x"]))
+    assert absent["store_absent"] is True
+    assert absent["findings"] is None
+    assert absent["missing"] == ["x"]
+
+    clean = json.loads(cli._json_payload([], store_absent=False, n_claims=0, n_grades=0))
+    assert clean["store_absent"] is False
+    assert clean["findings"] == []
