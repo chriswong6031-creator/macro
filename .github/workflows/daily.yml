@@ -5321,6 +5321,8 @@ jobs:
           # autostash apply from an earlier push loop in THIS job was staged
           # wholesale — 1,704 pages shipped markers)
           bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
+          bash scripts/ci/options_signal_nightly.sh exclude-broad
+          bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
           git add data/ site/ reports/
           # separate + tolerant: `git add site/ templates/` exits 128 when a pathspec
           # matches nothing, and this step runs under `-eo pipefail` — a missing
@@ -5367,11 +5369,7 @@ jobs:
           # reset above. Remove only this dedicated directory; append-only
           # correction ledgers elsewhere under data/prophet remain untouched.
           git clean -fd -- data/prophet/origination_receipts
-          # The episode and campaign ledgers have immediate exact-path publishers.
-          # Exclude all eight paths from this broad data/ commit so it cannot bypass
-          # a skipped/refused narrow publication. The extracted helper preserves the
-          # interruption safety for both publishers, restores tracked paths from
-          # HEAD, and cleans only campaign-v2-owned additions.
+          # Re-exclude both exact-published namespaces after the broad add.
           bash scripts/ci/options_signal_nightly.sh exclude-broad
           # W0b (2026-07-08 stale-HK incident): US engine job must NOT commit asia-owned
           # data/ paths — asia-close.yml is the sole writer of all china*/hk* stores.
@@ -5451,7 +5449,8 @@ jobs:
             exit 1
           fi
           if git diff --cached --quiet; then echo "no engine output changes after conflict heal"; exit 0; fi
-          git commit -m "engine: regime update $(date -u +%F)"
+          bash scripts/ci/options_signal_nightly.sh commit-broad-candidate \
+            "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded
           # artifact, so it never depends on this commit landing.
           PUSH_ALARM=420
@@ -5516,7 +5515,8 @@ jobs:
                 git add site/
                 git add templates/ 2>/dev/null || true
                 if push_staged_clean site/ templates/; then
-                  git commit -m "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
+                  bash scripts/ci/options_signal_nightly.sh commit-render-sync \
+                    "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
                     || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
                 else
                   git reset -q -- site/ templates/ || true

@@ -39,6 +39,19 @@ readonly -a OIP_CAMPAIGN_PATHS=(
   data/options_signal_campaign/outcomes.jsonl
   data/options_signal_campaign/checkpoint.json
 )
+readonly -a OIP_NARROW_ROOTS=(
+  data/options_signal_episode
+  data/options_signal_campaign
+)
+
+oip_require_main_branch() {
+  local symbolic=""
+  symbolic=$(git symbolic-ref -q HEAD 2>/dev/null) || symbolic=""
+  if [ "$symbolic" != refs/heads/main ]; then
+    echo "::error title=options nightly wrong ref::authoritative publication requires exact symbolic refs/heads/main; found ${symbolic:-detached-or-unreadable}" >&2
+    return 1
+  fi
+}
 
 oip_require_clean_index() {
   local title="$1"
@@ -98,6 +111,13 @@ oip_after_scope_check() {
 }
 fi
 
+if ! declare -F oip_before_stage_snapshot >/dev/null 2>&1; then
+oip_before_stage_snapshot() {
+  # Test-only boundary immediately before the one-process index snapshot.
+  return 0
+}
+fi
+
 if ! declare -F oip_after_stage_snapshot >/dev/null 2>&1; then
 oip_after_stage_snapshot() {
   # Test-only race hook at the boundary after the one-process allowed-entry
@@ -123,6 +143,7 @@ oip_exact_candidate_commit() {
   # One git process snapshots every allowed entry. Per-path invocations would let
   # a concurrent writer re-stage one allowed path between reads and create a
   # mixed-generation candidate even though no foreign path could enter it.
+  oip_before_stage_snapshot
   if ! git ls-files --stage -- "${allowed[@]}" > "$snapshot_path"; then
     rm -f -- "$snapshot_path"
     echo "::error title=options candidate snapshot failed::cannot atomically enumerate the exact allowed index entries" >&2
@@ -180,6 +201,10 @@ oip_exact_candidate_commit() {
   if [ "$rc" -eq 0 ]; then
     tree=$(GIT_INDEX_FILE="$index_path" git write-tree --missing-ok) || rc=$?
   fi
+  if [ "$rc" -eq 0 ] && [ "$tree" = "$(git rev-parse "$parent^{tree}")" ]; then
+    echo "::error title=options candidate empty::the frozen exact snapshot contains no change from its parent" >&2
+    rc=1
+  fi
   if [ "$rc" -eq 0 ]; then
     commit=$(printf '%s\n' "$message" | git commit-tree "$tree" -p "$parent") || rc=$?
   fi
@@ -191,6 +216,8 @@ oip_exact_candidate_commit() {
 oip_replay_and_push() {
   local parent="$1" candidate="$2" message="$3" replay_index="$4"
   local label="$5" success_subject="$6" fallback_message="$7"
+  shift 7
+  local -a exact_paths=("$@")
   local publish=""
 
   while push_attempt; do
@@ -200,8 +227,9 @@ oip_replay_and_push() {
       push_backoff
       continue
     fi
-    if publish=$(push_metadata_replay_commit \
-        "$parent" origin/main "$candidate" "$message" "$replay_index"); then
+    if publish=$(push_exact_paths_replay_commit \
+        "$parent" origin/main "$candidate" "$message" "$replay_index" \
+        "${exact_paths[@]}"); then
       if [ "$(git rev-parse "$publish^{tree}")" = \
            "$(git rev-parse origin/main^{tree})" ]; then
         echo "$label content already on origin/main — nothing to push"
@@ -230,7 +258,7 @@ publish_episode() {
   PUSH_BUDGET_SECS=420
   PUSH_MAX_ATTEMPTS=12
   push_retry_init "options PIT episode ledgers"
-  push_on_main_ok || return 0
+  oip_require_main_branch
 
   oip_require_clean_index "options PIT checkpoint"
   oip_require_regular_files "options PIT checkpoint" "${OIP_EPISODE_PATHS[@]}"
@@ -258,7 +286,8 @@ publish_episode() {
     "$parent" "$commit" "$message" "$replay_index" \
     "options PIT checkpoint" \
     "options PIT episode ledgers" \
-    "HEAD never advanced and the run will stay red"
+    "HEAD never advanced and the run will stay red" \
+    "${OIP_EPISODE_PATHS[@]}"
 }
 
 publish_campaign() {
@@ -268,7 +297,7 @@ publish_campaign() {
   PUSH_BUDGET_SECS=420
   PUSH_MAX_ATTEMPTS=12
   push_retry_init "options campaign v2 ledgers"
-  push_on_main_ok || return 0
+  oip_require_main_branch
 
   oip_require_clean_index "options campaign checkpoint"
   oip_require_regular_files "options campaign checkpoint" "${OIP_CAMPAIGN_PATHS[@]}"
@@ -296,25 +325,174 @@ publish_campaign() {
     "$parent" "$commit" "$message" "$replay_index" \
     "options campaign checkpoint" \
     "options campaign v2 ledgers" \
-    "HEAD never advanced and the run will stay red"
+    "HEAD never advanced and the run will stay red" \
+    "${OIP_CAMPAIGN_PATHS[@]}"
 }
 
 exclude_broad() {
-  local -a tracked=()
-  local path
-  for path in "${OIP_EPISODE_PATHS[@]}" "${OIP_CAMPAIGN_PATHS[@]}"; do
-    if git cat-file -e "HEAD:$path" 2>/dev/null; then
-      tracked+=("$path")
+  local root
+  # Both namespaces are wholly owned by these builders.  Restore every tracked
+  # member and reset the complete roots before cleaning: git-clean intentionally
+  # ignores staged additions, so an unexpected extra output must be unstaged
+  # before it can be removed.
+  for root in "${OIP_NARROW_ROOTS[@]}"; do
+    if git cat-file -e "HEAD:$root" 2>/dev/null; then
+      git checkout HEAD -- "$root"
     fi
   done
-  if [ "${#tracked[@]}" -gt 0 ]; then
-    git checkout HEAD -- "${tracked[@]}"
+  git reset -q -- "${OIP_NARROW_ROOTS[@]}"
+  git clean -fd -- "${OIP_NARROW_ROOTS[@]}"
+}
+
+oip_require_clean_broad_start() {
+  if ! git diff --cached --quiet; then
+    echo "::error title=engine broad index dirty::staged state remains after narrow-root cleanup; refusing the broad publisher" >&2
+    return 1
   fi
-  git reset -q -- "${OIP_EPISODE_PATHS[@]}" "${OIP_CAMPAIGN_PATHS[@]}"
-  # This entire directory is owned by the campaign-v2 builder.  Cleaning the
-  # precise root removes first-publication additions without touching the frozen
-  # legacy v1 corpus in data/options_signal_episode/campaigns.jsonl.
-  git clean -fd -- data/options_signal_campaign
+}
+
+if ! declare -F oip_after_locked_tree_snapshot >/dev/null 2>&1; then
+oip_after_locked_tree_snapshot() {
+  # Test-only boundary.  The real index lock is already owned, so another git
+  # writer must fail and cannot alter the frozen candidate.
+  return 0
+}
+fi
+
+oip_restore_locked_index() {
+  local parent="$1" lock_path="$2" index_path="$3" clean_index="$4"
+  [ -n "$clean_index" ] || return 1
+  rm -f -- "$clean_index" "$clean_index.lock"
+  if GIT_INDEX_FILE="$clean_index" git read-tree "$parent" \
+      && cp -- "$clean_index" "$lock_path" \
+      && mv -f -- "$lock_path" "$index_path"; then
+    rm -f -- "$clean_index" "$clean_index.lock"
+    return 0
+  fi
+  # Leave the lock in place on failure.  This process owns it; retaining it is
+  # the fail-closed outcome because every later git writer will refuse to run.
+  rm -f -- "$clean_index" "$clean_index.lock"
+  return 1
+}
+
+# Commit the exact live index snapshot while owning Git's real index lock.
+# The same primitive is used for the broad engine tree and the later render-sync
+# tree with different root allowlists.  No validation-then-commit window exists:
+# the lock is acquired before the index copy and released only after the
+# expected-parent ref update and atomic index installation.
+oip_commit_locked_roots() {
+  local message="$1" reject_narrow="$2"
+  shift 2
+  local -a allowed_roots=("$@")
+  local symbolic parent parent_tree index_path lock_path snapshot="" clean_index=""
+  local diff_path="" tree="" candidate="" restore_target="" status path root matched rc=0 owned=0
+
+  oip_require_main_branch || return 1
+  parent=$(git rev-parse 'refs/heads/main^{commit}') || return 1
+  parent_tree=$(git rev-parse "$parent^{tree}") || return 1
+  index_path=$(git rev-parse --git-path index) || return 1
+  case "$index_path" in /*) ;; *) index_path="$(pwd)/$index_path" ;; esac
+  lock_path="${index_path}.lock"
+  if ! ( set -o noclobber; : > "$lock_path" ) 2>/dev/null; then
+    echo "::error title=engine index busy::cannot acquire the authoritative Git index lock" >&2
+    return 1
+  fi
+  owned=1
+  snapshot=$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/oip-locked-index.XXXXXX") \
+    || rc=1
+  clean_index=$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/oip-clean-index.XXXXXX") \
+    || rc=1
+  diff_path=$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/oip-locked-diff.XXXXXX") \
+    || rc=1
+  if [ "$rc" -eq 0 ]; then
+    rm -f -- "$snapshot"
+    if [ -f "$index_path" ]; then
+      cp -- "$index_path" "$snapshot" || rc=$?
+    else
+      GIT_INDEX_FILE="$snapshot" git read-tree "$parent" || rc=$?
+    fi
+  fi
+  if [ "$rc" -eq 0 ]; then
+    tree=$(GIT_INDEX_FILE="$snapshot" git write-tree --missing-ok) || rc=$?
+  fi
+  oip_after_locked_tree_snapshot || rc=$?
+  if [ "$rc" -eq 0 ] && [ "$tree" = "$parent_tree" ]; then
+    echo "::error title=engine candidate empty::the locked index snapshot contains no change" >&2
+    rc=1
+  fi
+  if [ "$rc" -eq 0 ] && ! git diff-tree -r --no-commit-id --no-renames \
+      --name-status -z "$parent" "$tree" > "$diff_path"; then
+    echo "::error title=engine candidate unreadable::cannot enumerate the locked tree" >&2
+    rc=1
+  fi
+  if [ "$rc" -eq 0 ]; then
+    while [ "$rc" -eq 0 ]; do
+      status=""
+      if ! IFS= read -r -d '' status; then
+        [ -z "$status" ] || rc=1
+        break
+      fi
+      path=""
+      if ! IFS= read -r -d '' path || [ -z "$status" ] || [ -z "$path" ]; then
+        rc=1
+        break
+      fi
+      case "$status" in A|M|D|T) ;; *) rc=1; break ;; esac
+      if [ "$reject_narrow" = true ]; then
+        case "$path" in
+          data/options_signal_episode|data/options_signal_episode/*|data/options_signal_campaign|data/options_signal_campaign/*)
+            echo "::error title=engine narrow-path escape::$path entered the locked broad tree" >&2
+            rc=1
+            break
+            ;;
+        esac
+      fi
+      matched=false
+      for root in "${allowed_roots[@]}"; do
+        case "$path" in "$root"|"$root"/*) matched=true; break ;; esac
+      done
+      if [ "$matched" != true ]; then
+        echo "::error title=engine scope escape::$path is outside the locked commit allowlist" >&2
+        rc=1
+        break
+      fi
+    done < "$diff_path"
+  fi
+  if [ "$rc" -eq 0 ]; then
+    candidate=$(printf '%s\n' "$message" | git commit-tree "$tree" -p "$parent") || rc=$?
+  fi
+  # Prepare the exact post-commit index in our owned lock before the ref CAS.
+  if [ "$rc" -eq 0 ]; then
+    cp -- "$snapshot" "$lock_path" || rc=$?
+  fi
+  if [ "$rc" -eq 0 ]; then
+    git update-ref -m "$message" refs/heads/main "$candidate" "$parent" || rc=$?
+  fi
+  if [ "$rc" -eq 0 ]; then
+    if mv -f -- "$lock_path" "$index_path"; then
+      owned=0
+    else
+      # Normal command failures must leave the ref at its original value.  If
+      # rollback itself fails, retain our lock so no later writer can proceed.
+      git update-ref -m "rollback failed index install" refs/heads/main "$parent" "$candidate" \
+        || true
+      rc=1
+    fi
+  else
+    restore_target=$(git rev-parse 'refs/heads/main^{commit}' 2>/dev/null || true)
+    [ -n "$restore_target" ] || restore_target="$parent"
+    if oip_restore_locked_index "$restore_target" "$lock_path" "$index_path" "$clean_index"; then
+      owned=0
+    fi
+  fi
+  [ -z "$snapshot" ] || rm -f -- "$snapshot" "$snapshot.lock"
+  [ -z "$clean_index" ] || rm -f -- "$clean_index" "$clean_index.lock"
+  [ -z "$diff_path" ] || rm -f -- "$diff_path"
+  # owned==1 here means the ref/index transaction could not be restored.  Keep
+  # the lock this invocation created as a fail-closed recovery marker; never
+  # remove a lock merely because the ref still happens to equal the parent.
+  [ "$rc" -eq 0 ] || return "$rc"
+  printf '%s\n' "$candidate"
 }
 
 assert_integrity() {
@@ -329,14 +507,23 @@ assert_integrity() {
   return 1
 }
 
-if [ "${OIP_NIGHTLY_SOURCE_ONLY:-0}" != 1 ]; then
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   case "${1:-}" in
     publish-episode) publish_episode ;;
     publish-campaign) publish_campaign ;;
     exclude-broad) exclude_broad ;;
+    require-clean-broad-start) oip_require_clean_broad_start ;;
+    commit-broad-candidate)
+      shift
+      oip_commit_locked_roots "$*" true data site reports templates
+      ;;
+    commit-render-sync)
+      shift
+      oip_commit_locked_roots "$*" false site templates
+      ;;
     assert-integrity) assert_integrity ;;
     *)
-      echo "usage: $0 {publish-episode|publish-campaign|exclude-broad|assert-integrity}" >&2
+      echo "usage: $0 {publish-episode|publish-campaign|exclude-broad|require-clean-broad-start|commit-broad-candidate|commit-render-sync|assert-integrity}" >&2
       exit 64
       ;;
   esac
