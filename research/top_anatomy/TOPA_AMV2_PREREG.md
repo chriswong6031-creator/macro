@@ -248,3 +248,28 @@ first).
   AM2 × r63 unreadable (31 episodes, 12 peak-months) — floors did the honest work, no redesign.
   (7) Report: `reports/top-anatomy-amv2.md`. G0.5 adversarial review to follow before
   presenting, per §6.
+- 2026-08-12 — G0.5 PASS 1: **NOT PRESENTABLE** (6 blockers / 15 must-fix / 5 nits; every
+  transcribed number reproduced exactly — the defects were adjudication-level). CORRECTIONS
+  BINDING ON THE PREVIOUS ENTRY (append-only; the entry above is superseded where it
+  conflicts): (a) its "0.52× vs DM's +2.885 same-panel" is a **cross-design ratio and is
+  withdrawn** — DM and AM2 are different matched designs (different caliper AND different
+  declared seed 20260811→20260812 AND different matched cohort), and §3 registers same-design
+  ratios only; the compliant decomposition is the two registered ratios 0.74× (DM, phase-1) →
+  0.38× (AM2), joint matched-design share ≈62% of W2's ATRZ magnitude, the DM→AM2 step un-CI'd
+  and carrying re-draw noise. (b) Its clause (2) fired the cluster branch HARDENED ("the
+  ore-body … is matching geometry") — the registered cluster word is **CLOSED** (claim not
+  established); the affirmative sentence is registered for B3 only, and the deciding cell's
+  fragility (CI contains DM's +3.268 and overlaps W2's interval; q missed by 0.0165; the same
+  artifact's ticker-clustered CI [+0.470, +2.721] excludes zero) is now printed beside it —
+  NOT-SUPPORTED is failure to confirm, not demonstrated absence. (c) Its clause (4)'s "biases
+  it beyond use … no AM-v3 is chartered" overreached: the bias magnitude is unmeasured (the
+  caliper ≤1/≤2/≤4 arms move F1 by ≤0.25 sessions and measure nothing about the bias); F1 is
+  UNDECIDED-HERE with readability left open, and the no-further-construction decision stands as
+  a program choice (out-of-time first), not as proven impossibility. (d) Its clause (3)'s
+  revival status is **dormant, not retired** ("DISCHARGED-BY-RESULT" was an undefined status);
+  phase-1's era-separation debt on B2 is NOT discharged — B2-primary's AM2 CI [−0.753, +0.955]
+  still contains DM's +0.952, so the discovery cohort is unreadable-at-this-power, and the debt
+  transfers to panels where B2 stands. (e) The report's "only moved variable" licensing
+  sentence was false — the SEED also moved (declared in §2 here, but the report must carry it
+  as a second moved variable wherever DM↔AM2 contrasts are read). All findings applied in the
+  report revision committed with this entry; verification pass 2 commissioned.
