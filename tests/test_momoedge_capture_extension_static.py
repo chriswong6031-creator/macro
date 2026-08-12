@@ -108,7 +108,7 @@ global.performance = performance;
 global.crypto = webcrypto;
 global.btoa = (value) => Buffer.from(value, 'binary').toString('base64');
 global.Date.now = () => {now_ms};
-const body = {json.dumps(body)};
+const body = require('fs').readFileSync(0, 'utf8');
 let receivedCache = null;
 const originalFetch = async (_input, requestInit) => {{
   receivedCache = requestInit && requestInit.cache;
@@ -152,6 +152,7 @@ captureFreshMomoEdgeSignals().then((result) => {{
         ["node", "-e", script],
         check=True,
         capture_output=True,
+        input=body,
         text=True,
         timeout=10,
         env={"PATH": os.environ["PATH"], "TZ": "America/Vancouver"},
