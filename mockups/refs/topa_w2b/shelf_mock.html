@@ -1,0 +1,189 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');}catch(e){}</script>
+<link rel="stylesheet" href="http://127.0.0.1:8899/theme.css">
+<style>
+:root{--m1:#6ba2b2;--m2:#c1954f;--m3:#c47a45;--m4:#9a8cb8;
+ --font-display:-apple-system,BlinkMacSystemFont,'SF Pro Display',Inter,system-ui,sans-serif;
+ --hair:color-mix(in srgb,var(--text) 8%,transparent);
+ --muted-strong:color-mix(in srgb,var(--text) 55%,var(--muted))}
+html[data-theme="light"]{--m1:#3a6d7e;--m2:#83601f;--m3:#8a4c1f;--m4:#645786}
+*,*::before,*::after{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none} html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",Inter,sans-serif}
+html body{margin:0;padding:26px 0 60px;background:var(--bg);color:var(--text);font:14px/1.55 var(--font-display);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1260px;margin:0 auto;padding:0 26px}
+.m1{--mc:var(--m1)}.m2{--mc:var(--m2)}.m3{--mc:var(--m3)}.m4{--mc:var(--m4)}.m0{--mc:var(--muted)}
+.kick{font-size:10.5px;font-weight:700;letter-spacing:.19em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
+h1{margin:0;font-size:27px;font-weight:800;letter-spacing:-.028em;line-height:1.14}
+.sub{margin:7px 0 0;font-size:13.5px;color:var(--muted-strong);max-width:50ch}
+.asof{font-size:11.5px;color:var(--muted);text-align:right;float:right}
+.asof b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+.asof .l2{display:block;margin-top:3px}
+.asof .lag{display:block;margin-top:4px;color:var(--muted);cursor:help;border-bottom:1px dotted color-mix(in srgb,var(--text) 22%,transparent)}
+.asof .lag b{color:var(--muted-strong);font-weight:650}
+.hero{margin:22px 0 0;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 94%,transparent),var(--panel2));padding:22px 26px 22px}
+.hero-lede{font-size:15.5px;line-height:1.5;color:var(--text);margin:0 0 8px;max-width:80ch}
+.hero-lede .q{color:var(--muted-strong)}
+.shelf{display:grid;margin:20px 0 0}
+.sh-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 20px;align-items:baseline;padding:14px 6px 16px;border-top:1px solid var(--hair);text-decoration:none;color:inherit;border-radius:10px;transition:background .16s}
+.sh-row:first-child{border-top:none;padding-top:4px}
+.sh-row:hover{background:color-mix(in srgb,var(--text) 4%,transparent)}
+.sh-nm{font-size:15px;font-weight:750;letter-spacing:-.016em;color:var(--text)}
+.sh-n{font-size:12px;font-weight:700;color:var(--muted-strong);white-space:nowrap}
+.sh-n b{font-variant-numeric:tabular-nums}
+.sh-def{font-size:12.5px;color:var(--muted-strong);min-width:0}
+.sh-sum{font-size:12px;color:var(--muted);white-space:nowrap}
+.sh-sum b{font-variant-numeric:tabular-nums;color:var(--muted-strong);font-weight:650}
+.sh-bar{grid-column:1 / -1;margin-top:10px}
+.bar{height:10px;border-radius:3px;display:flex;gap:1px;overflow:hidden;background:color-mix(in srgb,var(--text) 6%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 9%,transparent)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--m1)}.bar .b2{background:var(--m2)}.bar .b3{background:var(--m3)}.bar .b4{background:var(--m4)}
+html[data-theme="light"] .bar{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 15%,transparent)}
+.tier{margin:48px 0 0}
+.tier-hd{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:20px}
+.tier-hd h2{margin:0;font-size:21px;font-weight:800;letter-spacing:-.026em;color:var(--text)}
+.tier-def{margin:6px 0 0;font-size:13px;color:var(--muted-strong);max-width:64ch}
+.mixnote{margin:16px 0 0;padding:12px 15px;border-radius:11px;max-width:80ch;border:1px solid color-mix(in srgb,var(--text) 10%,transparent);background:color-mix(in srgb,var(--text) 3.5%,transparent);font-size:12.5px;line-height:1.58;color:var(--muted-strong)}
+.mixnote b{color:var(--text);font-weight:750}
+html[data-theme="light"] .mixnote{background:color-mix(in srgb,var(--text) 4.5%,transparent);border-color:color-mix(in srgb,var(--text) 14%,transparent)}
+.ladder{display:grid;gap:2px;margin-top:18px}
+.rung{display:flex;align-items:center;gap:14px;padding:9px 2px;text-decoration:none;color:inherit;border-radius:9px}
+.rung .n{flex:0 0 auto;min-width:2.6ch;text-align:right;font-size:23px;font-weight:700;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--mc)}
+.rung .nm2{flex:0 0 auto;font-size:14.5px;font-weight:700;letter-spacing:-.012em;color:var(--text)}
+.rung .rule{flex:1 1 auto;min-width:24px;height:1px;background:var(--mc);opacity:.62}
+.rung .stance{flex:0 0 auto;font-size:12px;font-weight:600;color:var(--mc)}
+.rung.m2 .rule{background:none;background-image:repeating-linear-gradient(90deg,var(--mc) 0 5px,transparent 5px 9px)}
+.rung.m3 .rule{background:none;background-image:repeating-linear-gradient(90deg,var(--mc) 0 2px,transparent 2px 7px)}
+.rung.m4 .rule{background:none;background-image:repeating-linear-gradient(90deg,var(--mc) 0 13px,transparent 13px 21px,var(--mc) 21px 26px,transparent 26px 41px)}
+.rung.m0{--mc:var(--muted);margin-top:8px;padding-top:12px;border-top:1px solid var(--hair)}
+.rung.m0 .rule{background:var(--hair);opacity:1;background-image:none}
+.grp{margin:30px 0 0}
+.grp-hd{display:flex;align-items:center;gap:14px;padding:11px 0 9px;background:var(--bg);border-bottom:1px solid color-mix(in srgb,var(--mc) 34%,var(--line))}
+.grp-hd .tkick{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.grp-hd .tkick::after{content:"·";margin-left:9px;color:var(--line)}
+.grp-hd h2{margin:0;font-size:17px;font-weight:800;letter-spacing:-.024em;color:var(--text);white-space:nowrap}
+.grp-hd .rule{flex:1 1 auto;min-width:20px;height:1px;background:var(--mc);opacity:.55}
+.grp.m1 .grp-hd .rule{background:var(--mc)}
+.grp.m2 .grp-hd .rule{background:none;background-image:repeating-linear-gradient(90deg,var(--mc) 0 5px,transparent 5px 9px)}
+.grp-hd .cnt{font-size:12px;font-weight:700;color:var(--mc);font-variant-numeric:tabular-nums;white-space:nowrap}
+.grp-sub{margin:8px 0 2px;font-size:12.5px;color:var(--muted-strong);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.grp-sub .stance{font-size:12px;font-weight:700;color:var(--mc);white-space:nowrap}
+.grp-sub .stance::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;transform:translateY(-1px)}
+.rollup{margin:8px 0 0;padding:13px 6px 15px;font-size:12.5px;line-height:1.5;color:var(--muted);border-bottom:1px solid var(--hair)}
+.rows{margin-top:4px}
+.row{display:grid;grid-template-columns:minmax(150px,1.15fr) 92px minmax(220px,2.1fr) auto;gap:16px;align-items:center;padding:11px 6px;border-bottom:1px solid var(--hair)}
+.tk{font-size:14px;font-weight:750;letter-spacing:-.012em;color:var(--text)}
+.nm{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+.c-gain .fig{display:block;font-size:15px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink-up,var(--up))}
+.c-gain .fig.neutral{color:var(--text)}
+.c-gain .cap{display:block;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.c-legs{display:flex;align-items:center;gap:11px;min-width:0}
+.wear{flex:0 0 auto;display:inline-flex;gap:2.5px}
+.wear i{display:block;width:5px;height:13px;border-radius:1.5px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 17%,transparent)}
+.wear i.on{background:var(--mc);box-shadow:none}
+.legs{min-width:0;font-size:12.5px;color:var(--muted-strong);line-height:1.45}
+.leg{border-bottom:1px dotted color-mix(in srgb,var(--text) 20%,transparent)}
+.leg + .leg::before{content:"·";margin:0 7px;color:var(--line);border:none}
+.c-lib{text-align:right;white-space:nowrap;font-size:11.5px;font-weight:650;color:var(--muted-strong);font-variant-numeric:tabular-nums}
+.noread{color:var(--muted)}
+.tnull{margin:18px 0 0;border:1px solid var(--line);border-radius:14px;padding:20px 22px;background:color-mix(in srgb,var(--panel) 72%,transparent)}
+.tnull h3{margin:0;font-size:17px;font-weight:750;letter-spacing:-.02em;color:var(--text)}
+.tnull p{margin:9px 0 0;font-size:13px;line-height:1.6;color:var(--muted-strong);max-width:62ch}
+html[data-theme="light"] .tnull{background:var(--panel);box-shadow:0 1px 2px rgba(20,32,64,.05),0 10px 26px -18px rgba(20,32,64,.28)}
+
+@media(max-width:620px){
+  .grp-hd{flex-wrap:wrap;gap:5px 12px;padding-bottom:8px}
+  .grp-hd .tkick{flex:0 0 100%;order:-1}
+  .grp-hd .tkick::after{content:none}
+  .grp-hd h2{white-space:normal;font-size:16px}
+  .grp-hd .cnt{margin-left:auto}
+  .sh-sum{grid-column:1;justify-self:start;margin-top:2px}
+}
+@media(max-width:820px){
+  .row{grid-template-columns:minmax(0,1fr) auto;gap:5px 14px;padding:13px 4px;align-items:baseline}
+  .row > div:first-child{grid-column:1;grid-row:1}
+  .c-gain{grid-column:2;grid-row:1;text-align:right}
+  .c-gain .cap{margin-top:0}
+  .c-legs{grid-column:1;grid-row:2;align-items:flex-start;padding-top:3px}
+  .c-lib{grid-column:1 / -1;grid-row:3;text-align:left;margin-top:2px}
+  .legs{white-space:normal}
+  .asof{float:none;text-align:left;margin-bottom:10px}
+}
+</style></head><body><div class="wrap">
+<div class="asof"><span class="l-en">Priced <b>2026-07-02</b></span><span class="l-zh">价格截至 <b>2026-07-02</b></span>
+ <span class="l2"><span class="l-en">Re-read every night</span><span class="l-zh">每晚重新判读</span></span>
+ <span class="lag"><span class="l-en">Prices are <b>26</b> sessions behind</span><span class="l-zh">价格落后 <b>26</b> 个交易日</span></span></div>
+<div class="kick"><span class="l-en">Winner Health</span><span class="l-zh">持仓健康度</span></div>
+<h1><span class="l-en">Has your winner changed character?</span><span class="l-zh">你的赢家，性质变了吗？</span></h1>
+<p class="sub"><span class="l-en">US names near their highs, grouped by how the move is aging.</span><span class="l-zh">处于高位附近的美股，按行情老化的程度分组。</span></p>
+
+<section class="hero">
+ <div class="hero-lede"><span class="l-en"><b>Three kinds of winner, each read against its own history.</b> <span class="q">A name can be in more than one, so these counts do not add up to a total. Every name here is within 10% of its highest close in the past year.</span></span>
+ <span class="l-zh"><b>三类赢家，各自对照自身历史来判读。</b> <span class="q">同一只个股可能同时属于多类，因此这些数字不能相加。这里的每一只个股，收盘价都在过去一年最高收盘价的 10% 以内。</span></span></div>
+ <div class="shelf">
+  <a class="sh-row" href="#a">
+   <span class="sh-nm"><span class="l-en">Big six-month gains</span><span class="l-zh">半年大涨</span></span>
+   <span class="sh-n"><span class="l-en"><b>122</b> names</span><span class="l-zh"><b>122</b> 只</span></span>
+   <span class="sh-def"><span class="l-en">Up 50% or more over six months</span><span class="l-zh">半年内上涨 50% 或以上</span></span>
+   <span class="sh-sum"><span class="l-en"><b>86</b> of them aging</span><span class="l-zh">其中 <b>86</b> 只在老化</span></span>
+   <span class="sh-bar"><span class="bar" style="width:14.4%"><i class="b1" style="flex:36"></i><i class="b2" style="flex:42"></i><i class="b3" style="flex:5"></i><i class="b4" style="flex:39"></i></span></span>
+  </a>
+  <a class="sh-row" href="#b">
+   <span class="sh-nm"><span class="l-en">Fast three-month runs</span><span class="l-zh">三个月急涨</span></span>
+   <span class="sh-n"><span class="l-en"><b>295</b> names</span><span class="l-zh"><b>295</b> 只</span></span>
+   <span class="sh-def"><span class="l-en">Up 35% or more over the last three months</span><span class="l-zh">近三个月上涨 35% 或以上</span></span>
+   <span class="sh-sum"><span class="l-en"><b>181</b> of them aging</span><span class="l-zh">其中 <b>181</b> 只在老化</span></span>
+   <span class="sh-bar"><span class="bar" style="width:34.8%"><i class="b1" style="flex:114"></i><i class="b2" style="flex:96"></i><i class="b3" style="flex:19"></i><i class="b4" style="flex:66"></i></span></span>
+  </a>
+  <a class="sh-row" href="#c">
+   <span class="sh-nm"><span class="l-en">Far above trend</span><span class="l-zh">远高于自身均线</span></span>
+   <span class="sh-n"><span class="l-en"><b>848</b> names</span><span class="l-zh"><b>848</b> 只</span></span>
+   <span class="sh-def"><span class="l-en">At least six of its own typical daily moves above its 200-day average price</span><span class="l-zh">股价高出自身 200 日均价的幅度，至少相当于它自己 6 个交易日的正常波动</span></span>
+   <span class="sh-sum"><span class="l-en"><b>512</b> of them aging</span><span class="l-zh">其中 <b>512</b> 只在老化</span></span>
+   <span class="sh-bar"><span class="bar" style="width:100%"><i class="b1" style="flex:332"></i><i class="b2" style="flex:284"></i><i class="b3" style="flex:58"></i><i class="b4" style="flex:170"></i></span></span>
+  </a>
+ </div>
+</section>
+
+<section class="tier" id="c">
+ <div class="tier-hd"><h2><span class="l-en">Far above trend</span><span class="l-zh">远高于自身均线</span></h2></div>
+ <p class="tier-def"><span class="l-en">At least six of its own typical daily moves above its 200-day average price.</span><span class="l-zh">股价高出自身 200 日均价的幅度，至少相当于它自己 6 个交易日的正常波动。</span></p>
+ <div class="mixnote"><span class="l-en"><b>A mixed group.</b> The bar is set in each name's own trading range, so a slow, steady name can clear it without a big gain. Everything below reads a name against the others in this mix.</span><span class="l-zh"><b>这是一个混合分组。</b> 门槛按每只个股自身的波动幅度来定，因此走势平稳、涨幅不大的个股也可能入选。下面的每一项判读，都是在这个混合分组内部相互比较得出的。</span></div>
+ <div class="ladder">
+  <a class="rung m1" href="#"><span class="n">332</span><span class="nm2"><span class="l-en">Still running</span><span class="l-zh">仍在延续</span></span><span class="rule"></span><span class="stance"><span class="l-en">Nothing to do</span><span class="l-zh">无需动作</span></span></a>
+  <a class="rung m2" href="#"><span class="n">284</span><span class="nm2"><span class="l-en">Showing wear</span><span class="l-zh">势头转弱</span></span><span class="rule"></span><span class="stance"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察 —— 别追高</span></span></a>
+  <a class="rung m3" href="#"><span class="n">58</span><span class="nm2"><span class="l-en">Thinning out</span><span class="l-zh">买盘转薄</span></span><span class="rule"></span><span class="stance"><span class="l-en">Watch closely</span><span class="l-zh">密切观察</span></span></a>
+  <a class="rung m4" href="#"><span class="n">170</span><span class="nm2"><span class="l-en">Character changed</span><span class="l-zh">走势已变</span></span><span class="rule"></span><span class="stance"><span class="l-en">Worth a review</span><span class="l-zh">值得复核</span></span></a>
+  <a class="rung m0" href="#"><span class="n">4</span><span class="nm2"><span class="l-en">Not enough to compare</span><span class="l-zh">无可比样本</span></span><span class="rule"></span><span class="stance"><span class="l-en">No read tonight</span><span class="l-zh">今晚不作判读</span></span></a>
+ </div>
+ <section class="grp m1">
+  <div class="grp-hd"><span class="tkick"><span class="l-en">Far above trend</span><span class="l-zh">远高于自身均线</span></span><h2><span class="l-en">Still running</span><span class="l-zh">仍在延续</span></h2><span class="rule"></span><span class="cnt"><span class="l-en">332 names</span><span class="l-zh">332 只</span></span></div>
+  <p class="grp-sub"><span class="stance"><span class="l-en">Nothing to do</span><span class="l-zh">无需动作</span></span><span><span class="l-en">Big gains, still close to their highs. Nothing here has slipped yet.</span><span class="l-zh">涨幅可观，仍在高点附近。目前没有任何环节转弱。</span></span></p>
+  <p class="rollup"><span class="l-en">Not listed one by one — nothing has slipped on any of them tonight.</span><span class="l-zh">不逐只列出 —— 今晚它们没有任何环节转弱。</span></p>
+ </section>
+ <section class="grp m2">
+  <div class="grp-hd"><span class="tkick"><span class="l-en">Far above trend</span><span class="l-zh">远高于自身均线</span></span><h2><span class="l-en">Showing wear</span><span class="l-zh">势头转弱</span></h2><span class="rule"></span><span class="cnt"><span class="l-en">284 names</span><span class="l-zh">284 只</span></span></div>
+  <p class="grp-sub"><span class="stance"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察 —— 别追高</span></span><span><span class="l-en">Still up, but one or two things have started to slip.</span><span class="l-zh">仍在上行，但已有一两个环节开始转弱。</span></span></p>
+  <div class="rows">
+   <div class="row"><div><span class="tk">ABBV</span><span class="nm"><span class="l-en">AbbVie</span><span class="l-zh">艾伯维</span></span></div>
+    <div class="c-gain"><span class="fig neutral">7.2×</span><span class="cap"><span class="l-en">Above trend</span><span class="l-zh">高于均线</span></span></div>
+    <div class="c-legs"><span class="wear"><i class="on"></i><i class="on"></i><i></i></span><span class="legs"><span class="leg"><span class="l-en">hotter than most like it</span><span class="l-zh">热度高于同类多数</span></span><span class="leg"><span class="l-en">swings getting wider</span><span class="l-zh">波动明显放大</span></span></span></div>
+    <div class="c-lib"><span class="l-en">40 like this</span><span class="l-zh">40 例相似</span></div></div>
+   <div class="row"><div><span class="tk">ALL</span><span class="nm"><span class="l-en">Allstate</span><span class="l-zh">好事达保险</span></span></div>
+    <div class="c-gain"><span class="fig neutral">6.4×</span><span class="cap"><span class="l-en">Above trend</span><span class="l-zh">高于均线</span></span></div>
+    <div class="c-legs"><span class="wear"><i class="on"></i><i></i><i></i></span><span class="legs"><span class="leg"><span class="l-en">selling days now heavier</span><span class="l-zh">下跌日成交更重</span></span></span></div>
+    <div class="c-lib"><span class="l-en">40 like this</span><span class="l-zh">40 例相似</span></div></div>
+  </div>
+ </section>
+ <section class="grp m0">
+  <div class="grp-hd"><span class="tkick"><span class="l-en">Far above trend</span><span class="l-zh">远高于自身均线</span></span><h2><span class="l-en">Not enough to compare</span><span class="l-zh">无可比样本</span></h2><span class="rule" style="background:var(--hair);opacity:1"></span><span class="cnt"><span class="l-en">4 names</span><span class="l-zh">4 只</span></span></div>
+  <p class="grp-sub"><span class="stance"><span class="l-en">No read tonight</span><span class="l-zh">今晚不作判读</span></span><span><span class="l-en">On the board, but with no similar past runs in this group to read them against.</span><span class="l-zh">它们在看板上，但本分组内没有可供对照的相似历史行情。</span></span></p>
+  <div class="rows"><div class="row"><div><span class="tk">NVEC</span><span class="nm"><span class="l-en">NVE Corp</span><span class="l-zh">NVE 公司</span></span></div>
+    <div class="c-gain"><span class="fig neutral">6.9×</span><span class="cap"><span class="l-en">Above trend</span><span class="l-zh">高于均线</span></span></div>
+    <div class="c-legs"><span class="legs noread"><span class="l-en">no similar runs to compare</span><span class="l-zh">没有可比的历史行情</span></span></div>
+    <div class="c-lib"><span class="l-en">no match</span><span class="l-zh">无相似样本</span></div></div></div>
+ </section>
+ <div class="tnull"><h3><span class="l-en">This group was not read tonight</span><span class="l-zh">今晚未对该分组作判读</span></h3>
+  <p><span class="l-en">The history this group is measured against did not load, so nothing is shown for it. Nothing is being withheld, and the other groups are unaffected.</span><span class="l-zh">该分组所对照的历史资料本次未能载入，因此这里不显示任何内容。没有任何内容被隐藏，其他分组不受影响。</span></p></div>
+</section>
+</div></body></html>
