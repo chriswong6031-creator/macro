@@ -1048,11 +1048,12 @@ jobs:
         run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       # #5480 added this express-render ownership guard to main but omitted a
       # run: owner, so audit_unrun_tests correctly found it dark on the very
-      # next check-definition refresh. It belongs beside the render-lane
-      # contracts above: the suite pins both render workflows and the
-      # data-pristine --site-only builder boundary.
+      # next check-definition refresh. #5481 folded the focused render-lane
+      # module into the canonical China Policy Watch suite; keep that canonical
+      # suite here because it pins both render workflows and the data-pristine
+      # --site-only builder boundary.
       - name: China Policy Watch express-render ownership + data-pristine mode
-        run: python -m pytest tests/test_china_policy_watch_render_lane.py -q
+        run: python -m pytest tests/test_china_policy_watch.py -q
       # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
       # pinned SEC source objects into filing packages, Company Facts ledgers,
       # and deterministic B4 binding plans. Keep these security/provenance
@@ -2378,6 +2379,16 @@ jobs:
         run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
       - name: altdata reboot W2 — per-channel family routing + placebo tests
         run: python -m pytest tests/test_altdata_reboot_families.py -q
+      # Metric-validity invariants (epistemics.qledger_metric_validity). grades.excess
+      # is RAW, not direction-signed, so a pooled signed excess_mean over a
+      # mixed-direction family measures universe drift rather than skill; a salience
+      # family has no hit rate; a verdict may only be read at the declared horizon.
+      # The selftest carries negative controls, so it fails if the auditor flags
+      # everything as readily as if it flags nothing.
+      - name: qledger metric-validity invariants
+        run: python -m pytest tests/test_qledger_validity.py -q
+      - name: qledger metric-validity guard selftest
+        run: python scripts/check_qledger_metric_validity.py --selftest
 
   altdata-new-sources:
     if: ${{ false }}

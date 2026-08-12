@@ -218,3 +218,111 @@ def test_an_unmeasured_caller_is_not_upgraded_into_the_new_alarm(capsys):
     keep the ORIGINAL verdict rather than being handed an alarm it cannot answer."""
     cs._alarm_on_starved_receipts([], 6, 30, TODAY)
     assert capsys.readouterr().out.strip() == ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE RECEIPT FLOOR (W2C-1, 2026-08-11)
+#
+# Receipts are the track-record spine — hits AND misses — so a night that HAS a
+# graded outcome must ship one. The floor makes that guarantee EXPLICIT and
+# testable. It is deliberately a no-op against the shipped tilts (measured: 1-7
+# receipt rungs per desk at per_day 9/28/55, carried by _largest_remainder's own
+# >=1 rule), and earns its keep on the blind spot that rule has — the guarantee is
+# SKIPPED outright when `len(positive) > total_slots`, so a short ladder or a
+# retuned tilt can silently drop receipts to zero on a night with real outcomes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The nine-kind tilt, evenly weighted, on a ladder too short for the >=1
+#: guarantee to run (`len(positive) > total_slots`) — the state the floor covers.
+def _even_tilt() -> dict:
+    return {k: 1.0 / len(cs._TYPE_IDS) for k in cs._TYPE_IDS}
+
+
+def test_the_short_ladder_blind_spot_is_real_before_the_floor_is_asked_about_it():
+    """Guard the guard: prove `_largest_remainder` really can return zero receipts,
+    or the floor tests below pass for the wrong reason."""
+    alloc = cs._largest_remainder(_even_tilt(), 4)          # 9 kinds, 4 slots
+    assert sum(alloc.values()) == 4
+    assert alloc.get("receipt", 0) == 0, (
+        "the >=1 guarantee now covers this case; re-derive the floor's blind spot")
+
+
+def test_a_non_empty_receipt_pool_forces_a_receipt_rung(_fixture_is_disjoint):
+    """THE FLOOR. A graded outcome is on the board, so the plan must carry one."""
+    plans = [_live_plan("LIVE"), _resolved_plan("DONE")]
+    items = cs.plan_account(
+        account={"id": "flagship", "tilt": _even_tilt()},
+        plans=plans, n_days=1, per_day=4, seed=0,
+        receipt_plans=[_resolved_plan("DONE")])
+    receipts = [i for i in items if i.type == "receipt"]
+    assert receipts, (
+        "a resolved plan was in the pool and the ladder carried no receipt rung — "
+        "the track record is the one thing that must not lose a lottery")
+    assert {i.ticker for i in receipts} == {"DONE"}
+
+
+def test_the_floor_preserves_the_rung_count():
+    """The floor REALLOCATES, it never adds — the ladder length is the contract."""
+    plans = [_live_plan("LIVE"), _resolved_plan("DONE")]
+    for per_day in (4, 6, 9):
+        items = cs.plan_account(
+            account={"id": "flagship", "tilt": _even_tilt()},
+            plans=plans, n_days=1, per_day=per_day, seed=0,
+            receipt_plans=[_resolved_plan("DONE")])
+        slots = [i.slot for i in items]
+        assert len(slots) == len(set(slots)), f"duplicate slot at per_day={per_day}"
+        assert len(slots) <= per_day, f"{len(slots)} items for {per_day} rungs"
+
+
+def test_an_empty_pool_leaves_the_plan_byte_for_byte_unchanged(_fixture_is_disjoint):
+    """The OTHER half of the contract, and the one that makes this shippable.
+
+    With nothing resolved, the floor must not fire at all: forcing a rung would
+    draw a coverage ticker and be reallocated to `watchlist` downstream, i.e. buy a
+    watchlist post wearing a receipt's name. Compared as full item dicts on a fixed
+    seed, so a perturbation of the deterministic LCG shuffle would show up here.
+    """
+    plans = [_live_plan("LIVE"), _resolved_plan("DONE")]
+    kw = dict(account={"id": "flagship", "tilt": _even_tilt()},
+              plans=plans, n_days=1, per_day=4, seed=0)
+    none_pool = cs.plan_account(receipt_plans=None, **kw)
+    empty_pool = cs.plan_account(receipt_plans=[], **kw)
+    assert ([i.as_dict() for i in none_pool]
+            == [i.as_dict() for i in empty_pool]), (
+        "an EMPTY receipt pool diverged from an ABSENT one — the floor fired on a "
+        "night with nothing to show")
+
+
+def test_a_banned_receipt_is_never_resurrected_by_the_floor():
+    """The floor is a floor, not a tilt override.
+
+    A desk whose ramp tier or drop_types removed `receipt` has made a decision, and
+    a full pool must not overturn it — same contract as
+    test_a_zero_weight_kind_is_never_resurrected in the ladder-collapse suite.
+
+    Note the zeroing must go through `banned_kinds`/`drop_types`, NOT through a
+    `tilt` of 0.0: plan_account's tilt merge only applies overrides that are `> 0`
+    (content_studio.py, "if k in tilt and tilt[k] > 0"), so a 0.0 leaves the
+    DEFAULT weight standing. Both removal paths are covered below.
+    """
+    plans = [_live_plan("LIVE"), _resolved_plan("DONE")]
+    for kw in ({"banned_kinds": {"receipt"}}, {"drop_types": {"receipt"}}):
+        items = cs.plan_account(
+            account={"id": "flagship", "tilt": _even_tilt()},
+            plans=plans, n_days=1, per_day=9, seed=0,
+            receipt_plans=[_resolved_plan("DONE")], **kw)
+        assert not [i for i in items if i.type == "receipt"], (
+            f"a removed receipt was resurrected by the floor via {kw}")
+
+
+def test_the_cooldown_outranks_the_floor(_fixture_is_disjoint):
+    """A cooled ticker is not supply. The floor reads the COOLED pool, so a desk
+    that just posted DONE must not be handed it again by the floor."""
+    items = cs.plan_account(
+        account={"id": "flagship", "tilt": _even_tilt()},
+        plans=[_live_plan("LIVE"), _resolved_plan("DONE")],
+        n_days=1, per_day=4, seed=0,
+        receipt_plans=[_resolved_plan("DONE")],
+        cooled_watch=["DONE"])
+    assert not [i for i in items if i.type == "receipt" and i.ticker == "DONE"], (
+        "the floor reached past the cross-day cooldown")

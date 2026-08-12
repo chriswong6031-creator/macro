@@ -1025,7 +1025,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | altdata-by-ticker | `data/altdata/by_ticker.json` | json | daily-engine | display | 15 | 0 |
-| qledger-claims | `data/qledger/claims.jsonl` | jsonl | daily-engine | shadow | 14 | 0 |
+| qledger-claims | `data/qledger/claims.jsonl` | jsonl | daily-engine | shadow | 15 | 0 |
 | qbus-items | `data/qbus/items.parquet` | parquet | daily-engine | infrastructure | 10 | 0 |
 | site-altdata-mastermind | `site/altdata/mastermind.json` | json | daily-engine | display | 8 | 2 |
 | site-altdata-by-ticker | `site/altdata/by_ticker.json` | json | daily-engine | display | 8 | 0 |
@@ -1312,6 +1312,13 @@ flowchart LR
     C_engine_altdata_confirmers_py["engine/altdata_confirmers.py"]
     C_engine_altdata_signals_py["engine/altdata_signals.py"]
     OVF_altdata_by_ticker["...+11 more"]
+    P_engine_qledger_py(("engine/qledger.py"))
+    A_qledger_claims["qledger-claims"]
+    C_scripts_check_qledger_metric_validity_py["scripts/check_qledger_metric_validity.py"]
+    C_engine_communique_diff_py["engine/communique_diff.py"]
+    C_engine_missing_tape_py["engine/missing_tape.py"]
+    C_engine_neuralweb_query_py["engine/neuralweb/query.py"]
+    OVF_qledger_claims["...+11 more"]
     P_engine_neuralweb_world_state_py(("engine/neuralweb/world_state.py"))
     A_world_state["world-state"]
     C_scripts_build_feeds_py["scripts/build_feeds.py"]
@@ -1319,13 +1326,6 @@ flowchart LR
     C_scripts_build_impulse_py["scripts/build_impulse.py"]
     C_engine_etf_pulse_py["engine/etf_pulse.py"]
     OVF_world_state["...+11 more"]
-    P_engine_qledger_py(("engine/qledger.py"))
-    A_qledger_claims["qledger-claims"]
-    C_engine_communique_diff_py["engine/communique_diff.py"]
-    C_engine_missing_tape_py["engine/missing_tape.py"]
-    C_engine_neuralweb_query_py["engine/neuralweb/query.py"]
-    C_engine_qledger_ui_py["engine/qledger_ui.py"]
-    OVF_qledger_claims["...+10 more"]
     P_scripts_midsmall_pit_py(("scripts/midsmall_pit.py"))
     A_breadth_sp1500_pit["breadth-sp1500-pit"]
     C_engine_grading_py["engine/grading.py"]
@@ -1404,18 +1404,18 @@ flowchart LR
     A_altdata_by_ticker --> C_engine_altdata_signals_py
     A_altdata_by_ticker --> C_engine_briefing_py
     A_altdata_by_ticker --> OVF_altdata_by_ticker
+    P_engine_qledger_py --> A_qledger_claims
+    A_qledger_claims --> C_scripts_check_qledger_metric_validity_py
+    A_qledger_claims --> C_engine_communique_diff_py
+    A_qledger_claims --> C_engine_missing_tape_py
+    A_qledger_claims --> C_engine_neuralweb_query_py
+    A_qledger_claims --> OVF_qledger_claims
     P_engine_neuralweb_world_state_py --> A_world_state
     A_world_state --> C_scripts_build_feeds_py
     A_world_state --> C_scripts_notify_py
     A_world_state --> C_scripts_build_impulse_py
     A_world_state --> C_engine_etf_pulse_py
     A_world_state --> OVF_world_state
-    P_engine_qledger_py --> A_qledger_claims
-    A_qledger_claims --> C_engine_communique_diff_py
-    A_qledger_claims --> C_engine_missing_tape_py
-    A_qledger_claims --> C_engine_neuralweb_query_py
-    A_qledger_claims --> C_engine_qledger_ui_py
-    A_qledger_claims --> OVF_qledger_claims
     P_scripts_midsmall_pit_py --> A_breadth_sp1500_pit
     A_breadth_sp1500_pit --> C_engine_grading_py
     A_breadth_sp1500_pit --> C_engine_group_flow_py
