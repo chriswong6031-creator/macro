@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T10:38:55.057507+00:00",
-  "count": 1005,
+  "generated_at": "2026-08-12T11:09:07.507824+00:00",
+  "count": 1006,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -78,6 +78,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kdouvcxzk04-0782be",
+      "title": "JPM Europe Equity Research Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T10:06:05Z",
+      "summary_points": [
+        "**European Staples Momentum**: 15/21 companies beat Q2 organic sales (volumes-driven), with top picks ABi, BN, ULVR, GIVN, KERRY; EMs drive results but insufficient for re-rating.",
+        "**Ocado Valuation Catalyst**: Target raised to 290p (FY27 cash flow positive) on improving execution and deal flow (CFC/SBA solutions).",
+        "**Diageo EPS Growth**: FY27 EPS raised 7% post-new MT guide, signaling fundamental growth catalyst in consumer staples.",
+        "**Fresnillo Sentiment Risk**: YTD de-rating despite improving projects indicates sentiment-driven risk; monitor project execution/cash flow.",
+        "**Back-to-School Event Flow**: 20+ virtual events (Sep 2026) across energy (Shell, OMV), industrials (Vinci), healthcare (Roche) driving institutional flows toward cyclical sectors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
       "language": "en",
       "needs_metadata": false
     },
