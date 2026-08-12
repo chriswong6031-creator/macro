@@ -167,6 +167,13 @@ SUITE_REFERENCE_RE = re.compile(
     r"(?<![\w/.-])((?:[\w.-]+/)*(?:test_[\w-]+|[\w-]+_test)\.py)"
     r"(?![\w])"
 )
+# A scope that ``narrow_to_suffixes`` produced: `<parent>/**/*.<ext>`, its
+# `/**` directory-subtree companion, or the `*.<ext>` repository-root form. The
+# tail carries no glob metacharacter, so every such pattern matches a strict
+# subset of `<parent>/**`.
+SUFFIX_NARROWED_RE = re.compile(
+    r"(?:(?P<parent>[^*?]+)/\*\*/)?\*\.[A-Za-z0-9_]{1,8}(?:/\*\*)?"
+)
 PROVIDED_ACTION_PREFIXES = (
     "actions/checkout@",
     "actions/setup-python@",
@@ -245,6 +252,102 @@ def _glob_to_regex(pattern: str) -> re.Pattern[str]:
 
 def _matches_any(patterns: Iterable[str], path: str) -> bool:
     return any(_glob_to_regex(pattern).match(path) for pattern in patterns)
+
+
+def _ambiguity_roots(item: str) -> tuple[str, ...] | None:
+    """The repository trees one opaque construct can reach, or None if unknown."""
+    if "filesystem roots=" in item:
+        raw = item.split("filesystem roots=", 1)[1]
+        return tuple(f"{root}/**" for root in raw.split(",") if root)
+    if "subprocess roots=" in item:
+        raw = item.split("subprocess roots=", 1)[1]
+        return tuple(f"{root}/**" for root in raw.split(",") if root)
+    if item.endswith("filesystem code traversal"):
+        return CODE_SCAN_ROOTS
+    if item.endswith("filesystem artifact traversal"):
+        return ARTIFACT_SCAN_ROOTS
+    if item.endswith("filesystem glob"):
+        return OPAQUE_IO_ROOTS
+    if item.endswith("subprocess invocation"):
+        return SUBPROCESS_ROOTS
+    if item.endswith("dynamic import"):
+        # The target expression is opaque. Widen across every repository tree
+        # that can carry importable code, including research/tools helpers and
+        # test plugins, rather than guessing one package.
+        return CODE_SCAN_ROOTS
+    return None
+
+
+def narrow_to_suffixes(
+    patterns: Iterable[str], suffixes: Iterable[str]
+) -> tuple[str, ...]:
+    """Intersect a root claim with the filename kinds a traversal can yield.
+
+    ``d.glob("*.parquet")`` enumerates parquet files wherever ``d`` points, so a
+    ``.json`` or ``.py`` edit cannot change its result even when the directory is
+    statically unknown. The old classifier read the pattern only to pick the root
+    SET and then claimed every file under it — measured 2026-08-11, that is what
+    made a single parquet scan in a hub module hand ``data/**`` to 90 of the 181
+    legacy jobs, and left the narrow-diff contract at exactly zero headroom.
+
+    The result is a strict SUBSET of ``patterns``: ``data/**/*.parquet`` matches
+    only paths ``data/**`` already matched. No suffixes means no narrowing.
+
+    A glob can also match a DIRECTORY whose name carries the suffix — pyarrow
+    writes partitioned datasets as ``x.parquet/part-0.parquet`` — so the subtree
+    under a matched entry is claimed alongside it. Without that, an edit inside
+    such a directory would silently lose its owner.
+    """
+    suffixes = tuple(suffixes)
+    if not suffixes:
+        return tuple(patterns)
+    narrowed: set[str] = set()
+    for pattern in patterns:
+        if pattern.endswith("/**"):
+            stems = [f"{pattern[:-3]}/**/*{suffix}" for suffix in suffixes]
+        elif pattern == "*":
+            stems = [f"*{suffix}" for suffix in suffixes]
+        else:
+            narrowed.add(pattern)
+            continue
+        narrowed.update(stems)
+        narrowed.update(f"{stem}/**" for stem in stems)
+    return tuple(sorted(narrowed))
+
+
+def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
+    """Can an edit to something ``pattern`` covers start the gating workflow?
+
+    Literal membership in ci.yml's `paths` filter remains the rule for every
+    root-level scope. A suffix-narrowed pattern is startable BY CONSTRUCTION when
+    its unnarrowed parent is a trigger: ``data/**/*.parquet`` matches a strict
+    subset of ``data/**``, so any edit that reaches the job also starts the run.
+
+    Checking the parent instead of demanding a literal entry per (root, suffix)
+    pair keeps this guard exactly as strict — a scope rooted at an untriggerable
+    tree still fails — while keeping the trigger list closed. Minting an entry
+    per pair would red an unrelated pull request the first time any module globbed
+    a new extension.
+    """
+    triggers = tuple(triggers)
+    if pattern in triggers:
+        return True
+    narrowed = SUFFIX_NARROWED_RE.fullmatch(pattern)
+    if narrowed:
+        parent = narrowed.group("parent")
+        pattern = f"{parent}/**" if parent else "*"
+        if pattern in triggers:
+            return True
+    if not pattern.endswith("/**"):
+        return False
+    # A subtree scope is startable when an ANCESTOR subtree is a trigger, for the
+    # same reason: `data/smart_money/**` matches a subset of `data/**`.
+    segments = pattern[: -len("/**")].split("/")
+    while len(segments) > 1:
+        segments.pop()
+        if "/".join(segments) + "/**" in triggers:
+            return True
+    return False
 
 
 def _scope_coverage_findings(job_id: str, definition: dict[str, Any],
@@ -380,36 +483,20 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
         closure cannot see, so the caller owns the statically visible scan roots;
         an unresolved scan widens to every established root. Dynamic imports own
         every importable code root rather than guessing a particular module.
+
+        A traversal that reports ``suffixes=`` has narrowed itself: its glob
+        pattern is literal, so it can only ever enumerate those filename kinds no
+        matter which directory it walks. The root claim stands; the file kinds it
+        can carry are intersected with it (see ``narrow_to_suffixes``).
         """
         fallbacks: set[str] = set()
         for item in ambiguities:
-            if "filesystem roots=" in item:
-                raw = item.split("filesystem roots=", 1)[1]
-                fallbacks.update(f"{root}/**" for root in raw.split(",") if root)
-                continue
-            if "subprocess roots=" in item:
-                raw = item.split("subprocess roots=", 1)[1]
-                fallbacks.update(f"{root}/**" for root in raw.split(",") if root)
-                continue
-            if item.endswith("filesystem code traversal"):
-                fallbacks.update(CODE_SCAN_ROOTS)
-                continue
-            if item.endswith("filesystem artifact traversal"):
-                fallbacks.update(ARTIFACT_SCAN_ROOTS)
-                continue
-            if item.endswith("filesystem glob"):
-                fallbacks.update(OPAQUE_IO_ROOTS)
-                continue
-            if item.endswith("subprocess invocation"):
-                fallbacks.update(SUBPROCESS_ROOTS)
-                continue
-            if item.endswith("dynamic import"):
-                # The target expression is opaque. Widen across every repository
-                # tree that can carry importable code, including research/tools
-                # helpers and test plugins, rather than guessing one package.
-                fallbacks.update(CODE_SCAN_ROOTS)
-                continue
-            return None
+            head, _, suffix_field = item.partition(" suffixes=")
+            suffixes = tuple(part for part in suffix_field.split(",") if part)
+            roots = _ambiguity_roots(head)
+            if roots is None:
+                return None
+            fallbacks.update(narrow_to_suffixes(roots, suffixes))
         return tuple(sorted(fallbacks))
 
     def infer_job_paths(definition: dict[str, Any]) -> tuple[str, ...] | None:

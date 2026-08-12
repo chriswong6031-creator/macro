@@ -50,6 +50,44 @@ _SCAN_ROOTS = {
     "tests", "tools", "worker",
 }
 
+# A code suffix must end a filename, not merely appear inside one.  The former
+# substring test made ``.js`` match every ``*.json`` glob, so an artifact scan of
+# a JSON directory was classified as a CODE traversal and claimed every Python
+# file in eleven roots.  Measured 2026-08-11: that one character promoted 69
+# json-only scans, including the hub modules 67 of the 181 legacy jobs import.
+_CODE_SUFFIX_RE = re.compile(r"\.(?:py|js|mjs|cjs|ts|tsx|jsx)(?![A-Za-z0-9_])")
+
+# Names that reach the filesystem.  A bare ``walk(...)`` is only ``os.walk`` when
+# it was imported as such — ``engine/sector_intelligence/contracts.py`` defines a
+# recursive JSON ``walk()`` that this classifier read as a tree scan and charged
+# with four repository roots on 35 jobs.
+_TRAVERSAL_LABELS = {
+    "glob", "iglob", "rglob", "walk", "iterdir", "listdir", "scandir",
+}
+# Traversals that enumerate a directory wholesale: no filename pattern exists to
+# constrain them, so they keep the full root claim.
+_UNPATTERNED_TRAVERSALS = {"iterdir", "walk", "listdir", "scandir"}
+
+# A traversal's PATTERN is statically legible even when its directory is not:
+# ``d.glob("*.parquet")`` can only ever enumerate parquet files, wherever ``d``
+# points, so a ``.json`` or ``.py`` edit cannot change what it returns.  The old
+# classifier used the pattern only to pick a root SET and then claimed every file
+# under those roots -- the single widest source of false ownership measured
+# across the 181-job manifest (2026-08-11).
+#
+# The vocabulary is CLOSED on purpose: these are the artifact and code families
+# this repository actually stores, so a derived scope stays reviewable and a
+# stray extension cannot mint a pattern nobody expected.  An unlisted suffix
+# stays UNCONSTRAINED -- the pre-existing behaviour -- so entries here can only
+# ever narrow a claim, never widen one.
+SCAN_SUFFIXES = frozenset({
+    ".parquet", ".json", ".jsonl", ".ndjson", ".csv", ".tsv",
+    ".yml", ".yaml", ".toml", ".md", ".txt", ".log",
+    ".html", ".j2", ".css", ".js", ".mjs", ".py",
+    ".png", ".svg", ".webp", ".woff2", ".gz", ".zip", ".pkl", ".sql", ".xml",
+})
+_SUFFIX_RE = re.compile(r"\.([A-Za-z0-9_]{1,8})$")
+
 
 @dataclass(frozen=True)
 class DependencyClosure:
@@ -356,6 +394,108 @@ def _all_existing_import_reads(rel: str, tree: ast.Module) -> set[str]:
     return out
 
 
+def _traversal_provenance(tree: ast.Module) -> tuple[set[str], set[str]]:
+    """Names that prove a bare traversal call really is ``os``/``glob``.
+
+    Returns the names imported FROM ``os``/``glob`` and the names bound to a
+    module-local callable.  A bare name in neither set is treated as a traversal,
+    because an unknown callable must not be assumed inert.
+    """
+    imported: set[str] = set()
+    local: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module in {"os", "glob", "os.path"}:
+            imported.update(
+                alias.asname or alias.name
+                for alias in node.names
+                if alias.name in _TRAVERSAL_LABELS
+            )
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if node.name in _TRAVERSAL_LABELS:
+                local.add(node.name)
+        elif isinstance(node, ast.Assign):
+            local.update(
+                target.id
+                for target in node.targets
+                if isinstance(target, ast.Name) and target.id in _TRAVERSAL_LABELS
+            )
+    return imported, local
+
+
+def _is_traversal_call(node: ast.Call, imported: set[str], local: set[str]) -> bool:
+    """Whether this call really reaches the filesystem."""
+    func = node.func
+    if isinstance(func, ast.Attribute):
+        return func.attr in _TRAVERSAL_LABELS
+    name = getattr(func, "id", "")
+    if name not in _TRAVERSAL_LABELS:
+        return False
+    return name in imported or name not in local
+
+
+def _pattern_suffix(value: str) -> str | None:
+    """The filename suffix a glob pattern can yield, when it is literal.
+
+    The last component must actually be a PATTERN. A fixed name such as
+    ``glob("v1.2")`` names one entry that may well be a directory, and reading
+    its ``.2`` as a file kind would under-claim everything inside it.
+    """
+    tail = value.replace("\\", "/").rsplit("/", 1)[-1]
+    if not any(char in tail for char in "*?["):
+        return None
+    match = _SUFFIX_RE.search(tail)
+    if not match:
+        return None
+    suffix = f".{match.group(1)}"
+    return suffix if suffix in SCAN_SUFFIXES else None
+
+
+def _literal_pattern(node: ast.expr) -> str | None:
+    """The literal tail of a glob pattern argument, if it has one.
+
+    ``str(base / "holdings" / "*" / "*.parquet")`` and f-strings both end in the
+    constant that bounds the filename, so the tail is what is read here.
+    """
+    while True:
+        if isinstance(node, ast.Call) and node.args and (
+            getattr(node.func, "id", "") in {"str", "fspath"}
+            or getattr(node.func, "attr", "") in {"as_posix", "__str__"}
+        ):
+            node = node.args[0]
+            continue
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+            node = node.right
+            continue
+        break
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.JoinedStr) and node.values:
+        tail = node.values[-1]
+        if isinstance(tail, ast.Constant) and isinstance(tail.value, str):
+            return tail.value
+    return None
+
+
+def _traversal_suffixes(node: ast.Call) -> frozenset[str]:
+    """Suffixes this traversal can enumerate; empty means unconstrained.
+
+    ``iterdir``/``walk``/``listdir``/``scandir`` enumerate a directory wholesale
+    and take no filename pattern, so they are never constrained here.
+    """
+    func = node.func
+    label = func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", "")
+    if label in _UNPATTERNED_TRAVERSALS or not node.args:
+        return frozenset()
+    suffixes: list[str] = []
+    for argument in node.args:
+        raw = _literal_pattern(argument)
+        suffix = _pattern_suffix(raw) if raw is not None else None
+        if suffix is None:
+            return frozenset()
+        suffixes.append(suffix)
+    return frozenset(suffixes)
+
+
 def _source_ambiguities(path: Path, tree: ast.Module) -> set[str]:
     """Opaque edges that require an always-on job instead of a guessed scope."""
     findings: set[str] = set()
@@ -390,27 +530,19 @@ def _source_ambiguities(path: Path, tree: ast.Module) -> set[str]:
             "data_dir", "data_root",
         }:
             module_scan_roots.add("data")
-    traversal_labels = {
-        "glob", "iglob", "rglob", "walk", "iterdir", "listdir", "scandir",
-    }
-    code_suffixes = (".py", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx")
+    imported_traversals, local_traversals = _traversal_provenance(tree)
     module_has_code_scan = False
     for candidate in ast.walk(tree):
         if not isinstance(candidate, ast.Call):
             continue
-        label = (
-            candidate.func.attr
-            if isinstance(candidate.func, ast.Attribute)
-            else getattr(candidate.func, "id", "")
-        )
-        if label not in traversal_labels:
+        if not _is_traversal_call(candidate, imported_traversals, local_traversals):
             continue
         strings = [
             inner.value.lower()
             for inner in ast.walk(candidate)
             if isinstance(inner, ast.Constant) and isinstance(inner.value, str)
         ]
-        if any(any(suffix in value for suffix in code_suffixes) for value in strings):
+        if any(_CODE_SUFFIX_RE.search(value) for value in strings):
             module_has_code_scan = True
 
     for node in ast.walk(tree):
@@ -435,7 +567,7 @@ def _source_ambiguities(path: Path, tree: ast.Module) -> set[str]:
                 )
             else:
                 findings.add(f"{rel}:{node.lineno}: subprocess invocation")
-        if label in traversal_labels:
+        if _is_traversal_call(node, imported_traversals, local_traversals):
             strings = [
                 inner.value.lower()
                 for inner in ast.walk(node)
@@ -444,13 +576,16 @@ def _source_ambiguities(path: Path, tree: ast.Module) -> set[str]:
             if module_scan_roots:
                 kind = f"filesystem roots={','.join(sorted(module_scan_roots))}"
             elif module_has_code_scan or any(
-                any(suffix in value for suffix in code_suffixes) for value in strings
+                _CODE_SUFFIX_RE.search(value) for value in strings
             ):
                 kind = "filesystem code traversal"
             elif strings:
                 kind = "filesystem artifact traversal"
             else:
                 kind = "filesystem glob"
+            suffixes = _traversal_suffixes(node)
+            if suffixes:
+                kind += f" suffixes={','.join(sorted(suffixes))}"
             findings.add(f"{rel}:{node.lineno}: {kind}")
     return findings
 
