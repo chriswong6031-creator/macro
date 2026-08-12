@@ -500,6 +500,10 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      # Reads the store via a path tuple, so the static read-gate cannot see the
+      # literal; declared by hand because the read is real. Guard registry entry:
+      # epistemics.qledger_metric_validity.
+      - scripts/check_qledger_metric_validity.py
       - engine/communique_diff.py
       - engine/missing_tape.py
       - engine/neuralweb/query.py
