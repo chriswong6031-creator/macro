@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T05:07:58.801466+00:00",
-  "count": 989,
+  "generated_at": "2026-08-12T05:22:40.672489+00:00",
+  "count": 990,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -245,6 +245,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2d9rq0xceea-3b9054",
+      "title": "Americas Investment Banks Structural M&A growth persists, but expenses continue to rise, with valuation upside less likely",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:09Z",
+      "summary_points": [
+        "**Underperformance driven by M&A trends & expenses**: Americas IBank stocks underperformed S&P 500 by 5pp pre-2026 EPS due to M&A trend-driven estimate downgrades, rising expenses, and structural negative leverage reducing valuation upside.",
+        "**Sector bifurcation critical for allocation**: Stark divergence between high-performing banks (LCLN, MC, PWT with positive YoY revenue/margins) and struggling peers (EVR, HLI, LAZ with negative YoY revenue/margins) necessitates selective positioning.",
+        "**Sponsor M&A volume contraction**: 2026 sponsor M&A volumes at 26% of total market (below 5-yr avg 35%), signaling strategic realignment or market contraction, contrasting with strategic M&A growth (56% volume/fee growth).",
+        "**Non-M&A advisory structural growth**: Secondaries/restructuring to reach 18% of 2025 IBank revenue, with GP-led volumes up 35% YoY; EVR and PJT best positioned for structural tailwinds.",
+        "**Structural negative operating leverage**: Elevated comp leverage (80bps/90bps in 2026E/2027E) and non-comp growth (1% above Street) compressing margins, with EVR/LCLN margins projected 11.7%/12.8% below 2021 levels."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 40,
       "language": "en",
       "needs_metadata": false
     },
