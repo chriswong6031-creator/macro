@@ -81,6 +81,13 @@ OBSERVED = {
 }
 
 
+# A console error travels with the asset that emitted it: the 2026-08 census hit a
+# bare "401" on 12 of 13 P0 pages and could not name the request behind it.
+CONSOLE_ERRORS: tuple[dict[str, Any], ...] = (
+    {"text": "TypeError: x is not a function", "source_url": "https://cdn.invalid/assets/app.js"},
+)
+
+
 class FakeDriver:
     """In-memory driver. Same seam as ``playwright_page_driver``; no browser."""
 
@@ -91,12 +98,18 @@ class FakeDriver:
         fail_routes: tuple[str, ...] = (),
         per_theme_bytes: bool = False,
         applied_override: dict[str, str] | None = None,
+        console_errors: tuple[dict[str, Any], ...] | None = None,
+        failed_responses: tuple[dict[str, Any], ...] = (),
+        per_cell_failures: bool = False,
     ) -> None:
         self.calls: list[tuple[str, str]] = []
         self._observed = dict(observed or OBSERVED)
         self._fail_routes = fail_routes
         self._per_theme_bytes = per_theme_bytes
         self._applied_override = applied_override or {}
+        self._console_errors = CONSOLE_ERRORS if console_errors is None else console_errors
+        self._failed_responses = failed_responses
+        self._per_cell_failures = per_cell_failures
         self.closed = False
 
     def capture(self, *, url: str, cell, timeout_s: float):
@@ -104,12 +117,17 @@ class FakeDriver:
         if any(route in url for route in self._fail_routes):
             raise TimeoutError(f"navigation timed out after {timeout_s}s")
         fill = (7 if cell.theme == "dark" else 240) if self._per_theme_bytes else 128
+        failures = [dict(item) for item in self._failed_responses]
+        if self._per_cell_failures:
+            # One failure only this cell sees, so page-level aggregation is visible.
+            failures.append({"url": f"https://api.invalid/{cell.theme}.json", "status": 404})
         return cpe.CellObservation(
             cell_id=cell.cell_id,
             loaded=True,
             screenshot_png=_png(6, 4, fill),
             observed=dict(self._observed),
-            console_errors=("TypeError: x is not a function",),
+            console_errors=tuple(dict(item) for item in self._console_errors),
+            failed_responses=tuple(failures),
             request_count=41,
             payload_bytes_total=1_234_567,
             applied_theme=self._applied_override.get("theme", cell.theme),
@@ -334,6 +352,55 @@ def test_max_pages_caps_the_run(tmp_path: Path, registry: Path):
 
 
 # --------------------------------------------------------------------------- #
+# honesty: what actually selected these pages
+# --------------------------------------------------------------------------- #
+
+
+def test_routes_mode_records_no_filter_it_did_not_apply(tmp_path: Path, registry: Path):
+    """--routes replaces registry selection, so priority/repo describe nothing.
+
+    The committed terminal manifest claimed repo "macro" while capturing
+    app.mastermind-x.com — the parser defaults echoed into a field that had not
+    filtered anything. Here the filters passed are deliberately the WRONG ones for
+    the row: the page is captured regardless, and the manifest says why.
+    """
+
+    _code, manifest = _run(
+        tmp_path,
+        registry,
+        FakeDriver(),
+        "--routes",
+        "/terminal.html",
+        "--viewports",
+        "desktop",
+        "--repo",
+        "charting-app",
+        "--priority",
+        "P1",
+    )
+    assert manifest["pages"][0]["page_id"] == "terminal"  # a P0/macro row, captured anyway
+    selection = manifest["selection"]
+    assert selection["mode"] == "explicit_routes"
+    assert selection["priority"] is None and selection["repo"] is None
+    assert "--routes" in selection["note"]
+    assert selection["explicit_routes"] == ["/terminal.html"]
+    assert selection["selected"] == 1
+    assert set(selection) >= {"max_pages", "registry", "registry_rows", "explicit_routes", "selected"}
+
+
+def test_registry_mode_records_the_filters_it_did_apply(tmp_path: Path, registry: Path):
+    _code, manifest = _run(
+        tmp_path, registry, FakeDriver(), "--viewports", "desktop", "--repo", "macro", "--priority", "P0"
+    )
+    selection = manifest["selection"]
+    assert selection["mode"] == "registry"
+    assert selection["priority"] == "P0" and selection["repo"] == "macro"
+    assert selection["explicit_routes"] == []
+    assert selection["registry_rows"] == len(REGISTRY_DOC["pages"])
+    assert "note" not in selection, "a filter that ran needs no excuse"
+
+
+# --------------------------------------------------------------------------- #
 # honesty: gaps, anonymity
 # --------------------------------------------------------------------------- #
 
@@ -419,7 +486,69 @@ def test_metrics_pass_through_the_observer_unchanged(tmp_path: Path, registry: P
         "access": "anonymous",
     }
     assert set(metrics["by_viewport"]) == {"desktop", "tablet", "mobile"}
-    assert manifest["pages"][0]["console_errors"] == ["TypeError: x is not a function"]
+    assert manifest["pages"][0]["console_errors"] == [
+        {"text": "TypeError: x is not a function", "source_url": "https://cdn.invalid/assets/app.js"}
+    ]
+
+
+def test_console_errors_name_the_asset_that_emitted_them(tmp_path: Path, registry: Path):
+    """One text, two sources, is two findings — and still one distinct text.
+
+    The census recorded a bare "401" on 12 of 13 P0 pages with nothing to fix it
+    by. Attribution is the whole point of the entry shape; the *metric* keeps its
+    published meaning ("distinct console 'error' texts") so the number does not
+    silently change definition underneath a committed report.
+    """
+
+    driver = FakeDriver(
+        console_errors=(
+            {"text": "401", "source_url": "https://api.invalid/v1/quota"},
+            {"text": "401", "source_url": "https://api.invalid/v1/watchlist"},
+        )
+    )
+    _code, manifest = _run(tmp_path, registry, driver, "--routes", "/macro.html", "--viewports", "desktop")
+    page = manifest["pages"][0]
+    assert page["console_errors"] == [
+        {"text": "401", "source_url": "https://api.invalid/v1/quota"},
+        {"text": "401", "source_url": "https://api.invalid/v1/watchlist"},
+    ], "the same text from two assets is two attributions, not one"
+    assert page["metrics"]["console_error_count"] == 1
+    assert len(page["states"]) == 4, "four cells emitted these; the page carries them once"
+
+
+def test_an_unattributable_console_error_says_so_rather_than_guessing(tmp_path: Path, registry: Path):
+    driver = FakeDriver(console_errors=({"text": "pageerror: Error: boom", "source_url": None},))
+    _code, manifest = _run(tmp_path, registry, driver, "--routes", "/macro.html", "--viewports", "desktop")
+    assert manifest["pages"][0]["console_errors"] == [
+        {"text": "pageerror: Error: boom", "source_url": None}
+    ]
+
+
+def test_failed_responses_are_recorded_deduped_and_aggregated(tmp_path: Path, registry: Path):
+    driver = FakeDriver(
+        failed_responses=(
+            {"url": "https://api.invalid/v1/quota", "status": 401},
+            {"url": "https://api.invalid/v1/quota", "status": 401},
+            {"url": "https://api.invalid/v1/quota", "status": 500},
+            {"url": "https://cdn.invalid/missing.css", "status": 404},
+        ),
+        per_cell_failures=True,
+    )
+    _code, manifest = _run(
+        tmp_path, registry, driver, "--routes", "/macro.html", "--viewports", "desktop", "--locales", "en"
+    )
+    page = manifest["pages"][0]
+    assert page["failed_responses"] == [
+        # First-seen order, deduped on (url, status): the same URL failing two
+        # different ways is two facts, the same fact twice is one.
+        {"url": "https://api.invalid/v1/quota", "status": 401},
+        {"url": "https://api.invalid/v1/quota", "status": 500},
+        {"url": "https://cdn.invalid/missing.css", "status": 404},
+        {"url": "https://api.invalid/light.json", "status": 404},
+        {"url": "https://api.invalid/dark.json", "status": 404},
+    ], "per-cell failures aggregate onto the page"
+    # A failed response is not a console error, and does not inflate that count.
+    assert page["metrics"]["console_error_count"] == 1
 
 
 def test_no_metric_is_a_score_or_a_verdict(tmp_path: Path, registry: Path):
@@ -533,14 +662,16 @@ def test_as_of_pins_the_run_byte_for_byte(tmp_path: Path, registry: Path):
 
 def test_manifest_schema_is_complete(tmp_path: Path, registry: Path):
     _code, manifest = _run(tmp_path, registry, FakeDriver(fail_routes=("/terminal.html",)), "--viewports", "desktop")
-    assert manifest["schema"] == "mastermind.p0_evidence.v1"
+    assert manifest["schema"] == "mastermind.p0_evidence.v2"
     for key in ("generated_at", "tool", "target", "axes", "selection", "excluded", "outcome", "totals", "honesty", "pages"):
         assert key in manifest, key
     assert set(manifest["target"]) >= {"base_url", "site_dir", "resolved_sha_or_none"}
     assert manifest["target"]["resolved_sha_or_none"] is None  # a live origin cannot be pinned
 
     for page in manifest["pages"]:
-        for key in ("page_id", "route", "states", "metrics", "console_errors", "gaps"):
+        for key in (
+            "page_id", "route", "states", "metrics", "console_errors", "failed_responses", "gaps"
+        ):
             assert key in page, key
         # Every metric key is present even for a page that captured nothing.
         assert set(cpe.METRIC_KEYS) <= set(page["metrics"])
@@ -569,6 +700,106 @@ def test_markdown_leads_with_the_disclaimer_and_sorts_by_route(tmp_path: Path, r
     assert cpe.MD_DISCLAIMER in text.split("| route |")[0]
     routes = [line.split("|")[1].strip() for line in text.splitlines() if line.startswith("| /")]
     assert routes == sorted(routes)
+
+
+# --------------------------------------------------------------------------- #
+# provenance: git HEAD read by hand, never shelled out to
+# --------------------------------------------------------------------------- #
+#
+# ``git rev-parse`` would be the obvious implementation and is exactly what was
+# removed: a subprocess is an opaque edge to the CI scope analyzer, which widens
+# this suite's owning job to every ``data/**`` path the module names. So these
+# layouts are built with plain file writes and read back with plain file reads —
+# no ``git`` binary is invoked here or in the module under test.
+
+SHA = "0123456789abcdef0123456789abcdef01234567"
+OTHER_SHA = "fedcba9876543210fedcba9876543210fedcba98"
+
+
+def _write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def test_git_head_sha_reads_a_loose_ref(tmp_path: Path):
+    _write(tmp_path / ".git" / "HEAD", "ref: refs/heads/main\n")
+    _write(tmp_path / ".git" / "refs" / "heads" / "main", SHA + "\n")
+    assert cpe._git_head_sha(tmp_path) == SHA
+
+
+def test_git_head_sha_reads_a_detached_head(tmp_path: Path):
+    _write(tmp_path / ".git" / "HEAD", SHA + "\n")
+    assert cpe._git_head_sha(tmp_path) == SHA
+
+
+def test_git_head_sha_resolves_from_a_subdirectory(tmp_path: Path):
+    """--site-dir is usually a build directory inside the checkout, not its root."""
+
+    _write(tmp_path / ".git" / "HEAD", "ref: refs/heads/main\n")
+    _write(tmp_path / ".git" / "refs" / "heads" / "main", SHA + "\n")
+    deep = tmp_path / "build" / "nested" / "deeper"
+    deep.mkdir(parents=True)
+    assert cpe._git_head_sha(deep) == SHA
+
+
+def test_git_head_sha_follows_a_linked_worktree_to_the_common_dir(tmp_path: Path):
+    """A worktree keeps its own HEAD but shares refs — this repo's whole fleet layout."""
+
+    main = tmp_path / "checkout"
+    worktree_gitdir = main / ".git" / "worktrees" / "feature"
+    _write(worktree_gitdir / "HEAD", "ref: refs/heads/feature\n")
+    _write(worktree_gitdir / "commondir", "../..\n")
+    _write(main / ".git" / "refs" / "heads" / "feature", SHA + "\n")
+    # The worktree's own gitdir carries no such ref; only the common dir does.
+    linked = tmp_path / "linked"
+    linked.mkdir()
+    _write(linked / ".git", f"gitdir: {worktree_gitdir}\n")
+    assert cpe._git_head_sha(linked) == SHA
+
+
+def test_git_head_sha_falls_back_to_packed_refs_with_a_relative_gitdir(tmp_path: Path):
+    main = tmp_path / "checkout"
+    worktree_gitdir = main / ".git" / "worktrees" / "feature"
+    _write(worktree_gitdir / "HEAD", "ref: refs/heads/feature\n")
+    _write(worktree_gitdir / "commondir", "../..\n")
+    _write(
+        main / ".git" / "packed-refs",
+        "# pack-refs with: peeled fully-peeled sorted\n"
+        f"{OTHER_SHA} refs/heads/main\n"
+        f"{SHA} refs/heads/feature\n"
+        f"^{OTHER_SHA}\n",
+    )
+    linked = tmp_path / "linked"
+    linked.mkdir()
+    _write(linked / ".git", "gitdir: ../checkout/.git/worktrees/feature\n")
+    assert cpe._git_head_sha(linked) == SHA
+
+
+@pytest.mark.parametrize(
+    "head,ref_body",
+    [
+        ("ref: refs/heads/missing\n", None),  # symbolic ref that resolves nowhere
+        ("not a sha and not a ref\n", None),  # unparseable HEAD
+        ("ref: refs/heads/main\n", "clearly-not-a-sha\n"),  # ref file carrying junk
+        (SHA[:12] + "\n", None),  # a short sha is not a sha
+    ],
+)
+def test_git_head_sha_returns_none_rather_than_guessing(tmp_path: Path, head: str, ref_body):
+    _write(tmp_path / ".git" / "HEAD", head)
+    if ref_body is not None:
+        _write(tmp_path / ".git" / "refs" / "heads" / "main", ref_body)
+    assert cpe._git_head_sha(tmp_path) is None
+
+
+def test_git_head_sha_is_none_without_a_checkout_or_with_a_broken_pointer(tmp_path: Path):
+    bare = tmp_path / "nowhere"
+    bare.mkdir()
+    assert cpe._git_head_sha(bare) is None
+
+    broken = tmp_path / "broken"
+    broken.mkdir()
+    _write(broken / ".git", "this is not a gitdir pointer\n")
+    assert cpe._git_head_sha(broken) is None
 
 
 # --------------------------------------------------------------------------- #
@@ -603,6 +834,41 @@ def test_playwright_is_imported_only_inside_the_driver_factory():
     assert set(_playwright_imports(tree)) == inside, (
         "playwright may only be imported lazily inside playwright_page_driver"
     )
+
+
+def test_the_module_carries_no_subprocess_or_enumeration_edge():
+    """An opaque edge here re-reds ci_pack packing, not this suite.
+
+    ``scripts/ci_scope_dependencies.py`` widens any module carrying a subprocess
+    call or a directory enumeration to every scan root that module names — here
+    that is ``data/**``, which then matches unrelated data-only diffs. That is how
+    the tripwires case came to select 145 of 181 jobs against a cap of 144. Both
+    edges were removed by hand (``_git_head_sha`` reads ``.git``; the self-check
+    tracks what it wrote), and this is the check that notices them coming back.
+    """
+
+    tree = ast.parse(MODULE_PATH.read_text(encoding="utf-8"))
+    enumeration = {"glob", "iglob", "rglob", "walk", "iterdir", "listdir", "scandir"}
+    offenders: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            offenders += [
+                f"line {node.lineno}: import {alias.name}"
+                for alias in node.names
+                if alias.name.split(".")[0] == "subprocess"
+            ]
+        elif isinstance(node, ast.ImportFrom):
+            if (node.module or "").split(".")[0] == "subprocess":
+                offenders.append(f"line {node.lineno}: from subprocess import ...")
+        elif isinstance(node, ast.Call):
+            label = (
+                node.func.attr
+                if isinstance(node.func, ast.Attribute)
+                else getattr(node.func, "id", "")
+            )
+            if label in enumeration:
+                offenders.append(f"line {node.lineno}: {label}()")
+    assert not offenders, offenders
 
 
 def test_a_full_self_check_run_never_imports_playwright():

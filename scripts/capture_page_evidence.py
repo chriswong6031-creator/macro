@@ -31,6 +31,17 @@ Contract
 6. **Screenshots are content-addressed and local.** ``evidence/<sha256[:16]>.png``
    is gitignored; only the manifest + smell report (which carry the digests) are
    committed.
+7. **A console error names the asset it came from.** Each entry is
+   ``{"text": ..., "source_url": ...}`` and every response the page took a 4xx/5xx
+   on is listed separately in ``failed_responses``. The 2026-08 census recorded a
+   bare ``"401"`` on 12 of 13 P0 pages and could not say which request produced
+   it — an unattributable error is a dead end for the human who has to fix it.
+8. **No subprocess, no directory enumeration, anywhere in this module.** Both are
+   statically opaque edges, and ``scripts/ci_scope_dependencies.py`` widens a
+   module carrying one to every ``data/**`` path it mentions — which re-reds the
+   ci_pack narrow-diff contract through the ``product-experience-capture`` job.
+   ``_git_head_sha`` therefore reads ``.git`` by hand and the self-check tracks
+   the files it wrote instead of globbing for them.
 
 Locale/theme are applied the way the site's own toggle applies them
 (``templates/theme.js``): ``setTheme`` sets ``data-theme`` on ``<html>`` and
@@ -58,7 +69,6 @@ import json
 import os
 import socketserver
 import struct
-import subprocess
 import sys
 import tempfile
 import threading
@@ -71,7 +81,10 @@ from typing import Any, Callable, Mapping, Protocol, Sequence
 MODULE_REF = "scripts/capture_page_evidence.py"
 TOOL_VERSION = "1.0.0"
 
-MANIFEST_SCHEMA = "mastermind.p0_evidence.v1"
+# v2: a console error carries the asset it came from, and a page carries the
+# responses that failed. v1 recorded bare error strings, which the census could
+# not attribute to anything.
+MANIFEST_SCHEMA = "mastermind.p0_evidence.v2"
 SMELL_SCHEMA = "mastermind.ux_smell_report.v1"
 REGISTRY_SCHEMA = "mastermind.page_registry.v1"
 
@@ -104,6 +117,13 @@ SYNTHETIC_PAGE_STATE_REASON = "state not synthesizable against static output"
 FAMILY_ROUTE_KINDS = frozenset({"family", "template", "pattern", "dynamic", "parameterized"})
 EXEMPLAR_FIELDS: tuple[str, ...] = ("exemplar_route", "exemplar_url", "exemplar")
 _ROUTE_PLACEHOLDERS: tuple[str, ...] = ("{", "<", "*", "/:")
+
+# --routes replaces registry selection wholesale, so the parser's --priority /
+# --repo defaults describe a filter that never ran. Recording them anyway is how a
+# terminal manifest came to claim repo "macro" while capturing app.mastermind-x.com.
+ROUTES_SELECTION_NOTE = (
+    "--routes overrode registry selection; the --priority and --repo filters were not applied"
+)
 
 OUTCOME_CAPTURED = "captured"
 OUTCOME_PARTIAL = "partial"
@@ -212,7 +232,13 @@ class CellObservation:
     error: str | None = None
     screenshot_png: bytes = b""
     observed: Mapping[str, Any] = field(default_factory=dict)
-    console_errors: tuple[str, ...] = ()
+    # ``{"text": str, "source_url": str | None}`` — an error nobody can attribute
+    # to an asset is a dead end, so the source URL travels with the text and is
+    # null only when the driver genuinely had none (a pageerror has no location).
+    console_errors: tuple[Mapping[str, Any], ...] = ()
+    # ``{"url": str, "status": int}`` for every response the page took a 4xx/5xx
+    # on. This is what turns a bare "401" console line into a named request.
+    failed_responses: tuple[Mapping[str, Any], ...] = ()
     request_count: int = 0
     payload_bytes_total: int = 0
     applied_theme: str | None = None
@@ -259,20 +285,76 @@ def _png_dimensions(png: bytes) -> tuple[int, int] | None:
     return int(width), int(height)
 
 
-def _git_head_sha(start: Path) -> str | None:
+def _is_hex_sha(value: str) -> bool:
+    return len(value) == 40 and all(char in "0123456789abcdef" for char in value.lower())
+
+
+def _read_text(path: Path) -> str | None:
+    """One known path, read or not. No enumeration, no subprocess — see docstring §8."""
+
     try:
-        proc = subprocess.run(
-            ["git", "-C", str(start), "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=15,
-            check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
+        return path.read_text(encoding="utf-8", errors="ignore").strip()
+    except OSError:
         return None
-    if proc.returncode != 0:
+
+
+def _git_head_sha(start: Path) -> str | None:
+    """Resolve the checkout's HEAD by reading ``.git`` by hand. Best-effort, never guessed.
+
+    ``git rev-parse`` used to do this, but a subprocess is an opaque edge to the CI
+    scope analyzer and widens this module's suite to every ``data/**`` path it names.
+    The walk is upward because ``--site-dir`` is usually a subdirectory of the
+    checkout. Anything unexpected — no ``.git``, a symbolic ref that resolves
+    nowhere, content that is not a sha — returns None: this field is provenance,
+    and a wrong sha is worse than an honest null.
+    """
+
+    gitdir: Path | None = None
+    for candidate in (start, *start.parents):
+        marker = candidate / ".git"
+        if marker.is_dir():
+            gitdir = marker
+            break
+        if marker.is_file():  # linked worktree: ".git" is a pointer file
+            pointer = _read_text(marker)
+            if not pointer or not pointer.startswith("gitdir:"):
+                return None
+            target = Path(pointer.split(":", 1)[1].strip())
+            gitdir = target if target.is_absolute() else marker.parent / target
+            break
+    if gitdir is None:
         return None
-    return proc.stdout.strip() or None
+
+    head = _read_text(gitdir / "HEAD")
+    if head is None:
+        return None
+    if _is_hex_sha(head):
+        return head  # detached HEAD
+    if not head.startswith("ref:"):
+        return None
+    ref = head.split(":", 1)[1].strip()
+
+    # A linked worktree keeps its own HEAD but shares refs with the common dir.
+    common = gitdir
+    pointer = _read_text(gitdir / "commondir")
+    if pointer:
+        target = Path(pointer)
+        common = target if target.is_absolute() else gitdir / target
+
+    for base in (gitdir, common):
+        loose = _read_text(base / ref)
+        if loose is not None:
+            return loose if _is_hex_sha(loose) else None
+
+    packed = _read_text(common / "packed-refs")
+    for line in (packed or "").splitlines():
+        line = line.strip()
+        if not line or line.startswith(("#", "^")):  # comment / peeled tag
+            continue
+        sha, _, name = line.partition(" ")
+        if name.strip() == ref and _is_hex_sha(sha):
+            return sha
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -577,11 +659,13 @@ def _page_metrics(
     captured: Sequence[tuple[CaptureCell, CellObservation]],
     *,
     attempted: int,
-    console_error_texts: Sequence[str],
+    console_errors: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
     metrics = _null_metrics()
     metrics["screenshot_completion"] = round(len(captured) / attempted, 4) if attempted else 0.0
-    metrics["console_error_count"] = len(console_error_texts)
+    # The metric note says "distinct console 'error' TEXTS", and it keeps that
+    # meaning under attribution: one message emitted by two assets is one text.
+    metrics["console_error_count"] = len({str(entry.get("text") or "") for entry in console_errors})
     if not captured:
         return metrics
 
@@ -654,13 +738,22 @@ def run_capture(
 
     manifest_pages: list[dict[str, Any]] = []
     smell_pages: list[dict[str, Any]] = []
+    # What this run actually wrote, recorded at the call site. The self-check
+    # verifies its files from this ledger instead of enumerating the output
+    # directory — see the module docstring §8 on why no glob lives here.
+    written_pngs: set[str] = set()
 
     for row in rows:
         cells, axis_gaps = state_matrix(row, viewports=viewports, locales=locales, themes=themes)
         gaps: list[dict[str, Any]] = list(axis_gaps) + access_and_page_state_gaps()
         states: list[dict[str, Any]] = []
         captured: list[tuple[CaptureCell, CellObservation]] = []
-        console_texts: list[str] = []
+        # Deduped per page in first-seen order: the same error from two assets is
+        # two entries, the same error from one asset in six states is one.
+        console_entries: list[dict[str, Any]] = []
+        console_seen: set[tuple[str, str | None]] = set()
+        failed_responses: list[dict[str, Any]] = []
+        failed_seen: set[tuple[str, int]] = set()
         # A route that failed to load once is not hammered five more times; the
         # remaining cells are recorded as not attempted, with the load error.
         page_failure: str | None = None
@@ -710,6 +803,7 @@ def run_capture(
                 continue
 
             path, digest = write_screenshot(png, output_dir)
+            written_pngs.add(path.name)
             dimensions = _png_dimensions(png)
             entry.update(
                 {
@@ -742,11 +836,23 @@ def run_capture(
                 )
             states.append(entry)
             captured.append((cell, observation))
-            for text in observation.console_errors:
-                if text not in console_texts:
-                    console_texts.append(text)
+            for error in observation.console_errors:
+                text = str(error.get("text") or "")
+                source_url = error.get("source_url") or None
+                key = (text, source_url)
+                if key in console_seen:
+                    continue
+                console_seen.add(key)
+                console_entries.append({"text": text, "source_url": source_url})
+            for failure in observation.failed_responses:
+                url = str(failure.get("url") or "")
+                status = int(failure.get("status") or 0)
+                if (url, status) in failed_seen:
+                    continue
+                failed_seen.add((url, status))
+                failed_responses.append({"url": url, "status": status})
 
-        metrics = _page_metrics(captured, attempted=len(cells), console_error_texts=console_texts)
+        metrics = _page_metrics(captured, attempted=len(cells), console_errors=console_entries)
         page_payload = {
             "page_id": row["page_id"],
             "route": row["capture_route"],
@@ -754,7 +860,8 @@ def run_capture(
             "route_kind": row.get("route_kind") or "",
             "states": states,
             "metrics": metrics,
-            "console_errors": list(console_texts),
+            "console_errors": [dict(entry) for entry in console_entries],
+            "failed_responses": [dict(entry) for entry in failed_responses],
             "gaps": gaps,
         }
         manifest_pages.append(page_payload)
@@ -817,7 +924,9 @@ def run_capture(
         "metric_notes": dict(METRIC_NOTES),
         "pages": smell_pages,
     }
-    return {"manifest": manifest, "smells": smells}
+    # ``written_pngs`` is a run receipt, not manifest content: the self-check
+    # byte-compares two manifests, and the file set is not part of the schema.
+    return {"manifest": manifest, "smells": smells, "written_pngs": sorted(written_pngs)}
 
 
 # ---------------------------------------------------------------------------
@@ -1090,10 +1199,38 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
         # IIFE with the state literal baked in.
         context.add_init_script(f"({_STATE_SEED_SCRIPT.strip()})({json.dumps(state)})")
         page = context.new_page()
-        console_errors: list[str] = []
+        console_errors: list[dict[str, Any]] = []
+        failed_responses: list[dict[str, Any]] = []
         counters = {"requests": 0, "bytes": 0}
-        page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
-        page.on("pageerror", lambda err: console_errors.append(f"pageerror: {err}"))
+
+        def _on_console(msg: Any) -> None:
+            if msg.type != "error":
+                return
+            # msg.location is a dict in the sync API, but a console message can
+            # arrive without one; an unattributed error is recorded as such rather
+            # than dropped.
+            try:
+                source_url = (msg.location or {}).get("url") or None
+            except Exception:
+                source_url = None
+            console_errors.append({"text": msg.text, "source_url": source_url})
+
+        def _on_response(response: Any) -> None:
+            try:
+                if response.status >= 400:
+                    failed_responses.append(
+                        {"url": response.url, "status": int(response.status)}
+                    )
+            except Exception:
+                # A response object the driver cannot read is not evidence of a
+                # failure; it is simply not recorded.
+                pass
+
+        page.on("console", _on_console)
+        # A pageerror is an uncaught exception, not a resource: it has no URL, and
+        # claiming one would be a fabricated attribution.
+        page.on("pageerror", lambda err: console_errors.append({"text": f"pageerror: {err}", "source_url": None}))
+        page.on("response", _on_response)
         page.on("request", lambda _req: counters.__setitem__("requests", counters["requests"] + 1))
 
         def _on_finished(request: Any) -> None:
@@ -1124,6 +1261,7 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
                 screenshot_png=screenshot,
                 observed=observed,
                 console_errors=tuple(console_errors),
+                failed_responses=tuple(failed_responses),
                 request_count=int(counters["requests"]),
                 payload_bytes_total=int(counters["bytes"]),
                 applied_theme=applied.get("theme"),
@@ -1191,7 +1329,12 @@ class _SelfCheckDriver:
                 "asof_present": True,
                 "source_present": False,
             },
-            console_errors=("TypeError: canned",),
+            # Attributed console error + a failing response, so the self-check
+            # exercises the attribution path end to end and not just the shape.
+            console_errors=(
+                {"text": "TypeError: canned", "source_url": "http://127.0.0.1:0/assets/canned.js"},
+            ),
+            failed_responses=({"url": "http://127.0.0.1:0/api/canned", "status": 401},),
             request_count=31,
             payload_bytes_total=812_345,
             applied_theme=cell.theme,
@@ -1246,7 +1389,7 @@ def self_check() -> tuple[bool, dict[str, Any]]:
                 timeout_s=5,
                 generated_at="2026-01-01T00:00:00Z",
                 target={"kind": "self_check", "base_url": None, "site_dir": None, "resolved_sha_or_none": None},
-                selection={"priority": "P0", "repo": "macro"},
+                selection={"mode": "registry", "priority": "P0", "repo": "macro"},
             )
             for _ in range(2)
         ]
@@ -1277,20 +1420,53 @@ def self_check() -> tuple[bool, dict[str, Any]]:
                 findings.append(f"{page['page_id']}: gated access states not recorded as gaps")
             if any(state.get("access") != ACCESS_ANONYMOUS for state in page["states"]):
                 findings.append(f"{page['page_id']}: a state claims a non-anonymous access tier")
+            if not all(
+                set(error) == {"text", "source_url"} for error in page["console_errors"]
+            ):
+                findings.append(f"{page['page_id']}: a console error lost its attribution shape")
+            if not all(
+                set(failure) == {"url", "status"} for failure in page["failed_responses"]
+            ):
+                findings.append(f"{page['page_id']}: a failed response lost its url/status shape")
 
-        pngs = sorted(output_dir.glob("*.png"))
-        for path in pngs:
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()
-            if path.name != f"{digest[:16]}.png":
-                findings.append(f"{path.name} is not addressed by its own content")
+        # Content-addressing is checked against the run's own write ledger and the
+        # paths the manifest names — never by enumerating the directory (docstring
+        # §8). Reading a known path is fine; discovering one is the opaque edge.
         shas = {
             state["sha256"]
             for page in manifest["pages"]
             for state in page["states"]
             if state.get("captured")
         }
-        if len(pngs) != len(shas):
-            findings.append(f"{len(pngs)} files for {len(shas)} distinct digests: addressing is not 1:1")
+        expected = {f"{sha[:16]}.png" for sha in shas}
+        if len(expected) != len(shas):
+            findings.append(
+                f"{len(shas)} distinct digests collapse onto {len(expected)} file names: "
+                "the 16-hex prefix collided"
+            )
+        for index, payload in enumerate(payloads, start=1):
+            if set(payload["written_pngs"]) != expected:
+                findings.append(
+                    f"run {index} wrote {sorted(payload['written_pngs'])}, "
+                    f"the manifest names {sorted(expected)}"
+                )
+        for page in manifest["pages"]:
+            for state in page["states"]:
+                if not state.get("captured"):
+                    continue
+                name = Path(state["file"]).name
+                try:
+                    body = (output_dir / name).read_bytes()
+                except OSError as exc:
+                    findings.append(f"{name}: the file this state names is unreadable: {exc}")
+                    continue
+                digest = hashlib.sha256(body).hexdigest()
+                if name != f"{digest[:16]}.png":
+                    findings.append(f"{name} is not addressed by its own content")
+                if digest != state["sha256"]:
+                    findings.append(
+                        f"{name}: manifest digest {state['sha256'][:16]} does not match the bytes on disk"
+                    )
 
         markdown = render_markdown(payloads[0]["smells"])
         if MD_DISCLAIMER not in markdown:
@@ -1500,6 +1676,23 @@ def main(
 
     manifest_path = Path(args.manifest)
     smells_path = Path(args.smells)
+    # What actually selected these pages. Under --routes the registry filters never
+    # ran, so priority/repo are null with the reason attached rather than echoing
+    # parser defaults — a manifest that claims repo "macro" while capturing another
+    # origin is a false provenance claim, which is exactly what this tool refuses.
+    selection: dict[str, Any] = {
+        "max_pages": args.max_pages,
+        "registry": str(registry_path),
+        "registry_rows": len(registry_rows),
+        "explicit_routes": explicit_routes,
+        "selected": len(rows),
+    }
+    if explicit_routes:
+        selection.update(
+            {"mode": "explicit_routes", "priority": None, "repo": None, "note": ROUTES_SELECTION_NOTE}
+        )
+    else:
+        selection.update({"mode": "registry", "priority": args.priority, "repo": args.repo})
     try:
         payloads = run_capture(
             rows=rows,
@@ -1515,15 +1708,7 @@ def main(
             generated_at=(args.as_of or _utc_now()),
             target=target,
             excluded=excluded,
-            selection={
-                "priority": args.priority,
-                "repo": args.repo,
-                "max_pages": args.max_pages,
-                "registry": str(registry_path),
-                "registry_rows": len(registry_rows),
-                "explicit_routes": explicit_routes,
-                "selected": len(rows),
-            },
+            selection=selection,
         )
     finally:
         close = getattr(driver, "close", None)

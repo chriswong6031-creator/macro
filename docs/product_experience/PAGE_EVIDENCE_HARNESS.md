@@ -67,6 +67,13 @@ This is the smoke-test mode. If a registry *does* exist and a `--routes` entry
 matches one of its rows, that row is reused — so a registry-declared dark-only page
 stays dark-only even when named explicitly.
 
+`--routes` replaces registry selection **entirely**, so `--priority` / `--repo` never
+run. The manifest's `selection` block says so rather than echoing the parser
+defaults: `mode: "explicit_routes"` with `priority: null`, `repo: null`, and a `note`.
+Registry selection records `mode: "registry"` with the filters it actually applied.
+(v1 recorded the defaults either way, which is how the committed terminal manifest
+came to claim repo `macro` while capturing `app.mastermind-x.com`.)
+
 ---
 
 ## 2. State matrix
@@ -157,6 +164,15 @@ These are the point of the tool, not decoration.
    Both the JSON and the markdown lead with the disclaimer.
 7. **Every heuristic publishes its own false-positive risk** in `metric_notes`,
    which travels inside the committed report.
+8. **An error names its source.** Every console error is
+   `{"text": ..., "source_url": ...}` and every 4xx/5xx response the page took is
+   listed in the page's `failed_responses` as `{"url": ..., "status": ...}`. The
+   2026-08 census found a bare `"401"` on 12 of 13 P0 pages and could not say
+   which request produced it — an unattributable finding is a dead end for whoever
+   has to fix it. `source_url` is null only where the driver genuinely has none
+   (an uncaught `pageerror` has no location); a URL is never guessed.
+9. **The `selection` block records what actually selected the pages**, never the
+   parser defaults for a filter that did not run (see `--routes` above).
 
 ---
 
@@ -179,10 +195,15 @@ bilingual DOM is excluded automatically for the locale that is not showing.
 | `todo_placeholder_hits` / `_count` | `TODO\|FIXME\|PLACEHOLDER\|lorem ipsum`, case-insensitive, visible | |
 | `horizontal_overflow` | `scrollWidth > clientWidth` | |
 | `elements_wider_than_viewport` | visible elements wider than the viewport (+1px tolerance) | |
-| `console_error_count` | distinct console `error` texts across every captured state | |
+| `console_error_count` | distinct console `error` **texts** across every captured state | one text emitted by two assets is two entries in `console_errors` but still one text here |
 | `request_count` / `payload_bytes_total` | driver request/response listeners, reference state | bytes exclude responses the driver cannot size |
 | `asof_present` / `source_present` | selector **or** case-insensitive text probe (`[data-asof]`, `.asof`, `.freshness`; "as of", "数据截至") | approximate contract probe; absence is a prompt to look, not a verdict |
 | `screenshot_completion` | captured states / attempted states | registry-excluded axes are not attempted |
+
+Two per-page lists sit beside the metrics rather than inside them, because neither
+is a count: `console_errors` (`{"text", "source_url"}`, deduped on the pair, first-seen
+order) and `failed_responses` (`{"url", "status"}`, deduped on the pair). Both
+aggregate across every captured state of the page.
 
 Scalar metrics come from the **reference state** — the first captured cell in matrix
 order, named in `metrics.measured_in`. One page load is one measurement; a blend of
@@ -198,7 +219,7 @@ Lists are capped at 25 distinct samples so a committed artifact stays bounded.
 | path | committed? | contents |
 | --- | --- | --- |
 | `data/product_experience/evidence/<sha256[:16]>.png` | **no** (gitignored) | content-addressed full-page screenshots; identical bytes collapse onto one file |
-| `data/product_experience/p0_evidence_manifest.json` | yes | schema `mastermind.p0_evidence.v1` — target, axes, selection, per-page states (with each shot's full sha256, byte size, and pixel dimensions), metrics, console errors, gaps |
+| `data/product_experience/p0_evidence_manifest.json` | yes | schema `mastermind.p0_evidence.v2` — target, axes, selection, per-page states (with each shot's full sha256, byte size, and pixel dimensions), metrics, attributed console errors, failed responses, gaps |
 | `data/product_experience/ux_smell_report.json` | yes | schema `mastermind.ux_smell_report.v1` — per-page metrics, metric notes, disclaimer, zero interpretation |
 | `--emit-md` target | your choice | the same report as a table sorted by route |
 
@@ -209,7 +230,15 @@ regenerate it.
 
 `target.resolved_sha_or_none` carries the checkout's git HEAD in `--site-dir` mode
 and is `null` for `--base-url`: a live origin does not disclose the commit it is
-serving, and guessing would be a fabricated provenance claim.
+serving, and guessing would be a fabricated provenance claim. It is read out of
+`.git` **by hand** — walk up for `.git`, follow a linked worktree's `gitdir:`
+pointer and `commondir`, read the loose ref or fall back to `packed-refs` — not by
+shelling out to `git rev-parse`, for the CI-scope reason in §7. Anything
+unparseable is `null`.
+
+`p0_evidence_manifest.v1 → v2`: `console_errors` entries went from bare strings to
+`{"text", "source_url"}`, and pages gained `failed_responses`. Any reader of a v1
+artifact must be re-pointed rather than fed a v2 one.
 
 Runs are deterministic — same registry, same driver, same `--as-of` produces
 byte-identical JSON, so a re-run diffs cleanly.
@@ -250,6 +279,29 @@ no socket, and no file outside `tmp_path`. The driver is an injected in-memory
 > that `playwright` is imported only inside `playwright_page_driver`, and a
 > subprocess run of `--self-check` asserting `playwright` never enters
 > `sys.modules`.
+
+### The suite's owner job, and why the module has no subprocess
+
+The manifest job is `product-experience-capture` in `.github/ci/legacy-jobs.yml`
+(the registry census runs as its own `product-experience-registry` job). The split
+is load-bearing: `scripts/run_ci_pack.py` derives each job's scope from the *union*
+of its commands' read closures, and the registry builder is honestly broad — it
+censuses the real `site/` and `templates/` trees. Unioned with the capture suite,
+that breadth became the capture suite's too.
+
+`scripts/capture_page_evidence.py` therefore contains **no subprocess call and no
+filesystem-enumeration call** (`glob` / `rglob` / `iterdir` / `listdir` / `walk` /
+`scandir`). `scripts/ci_scope_dependencies.py` treats both as opaque edges and
+widens the owning job to every scan root the module's string literals name — for
+this module `data/**`, which then matches data-only diffs that cannot touch it. The
+measured cost when it did: the representative narrow-diff contract in
+`tests/test_ci_pack.py` selected 145 of 181 jobs against a cap of 144, and
+`ci-pack-9` went red. Hence `_git_head_sha` reads `.git` by hand and `self_check`
+verifies the files `run_capture` reports having written (`written_pngs`, a run
+receipt kept out of the manifest so the byte-comparison stays honest) instead of
+globbing the output directory. Reading a known path is fine; *discovering* one is
+the opaque edge. `test_the_module_carries_no_subprocess_or_enumeration_edge` fails
+the moment either comes back.
 
 Run it with `TZ=UTC python3 -m pytest tests/test_capture_page_evidence.py -q`
 (CI runs UTC; the suite is TZ-agnostic because every fixture pins `--as-of`).
