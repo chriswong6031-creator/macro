@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T05:22:40.672489+00:00",
-  "count": 990,
+  "generated_at": "2026-08-12T06:08:07.514681+00:00",
+  "count": 992,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -927,6 +927,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-mwiwpzg95ra-ca24c9",
+      "title": "Japan SMID Monitor Next Generation TOPIX inclusion exclusion end game",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:40Z",
+      "summary_points": [
+        "**TOPIX Structural Shift**: 681 exclusions, 35 inclusions (index down to 991), 27% of near-removed firms executing buybacks; 42% of buyback-announcing firms risk exclusion, signaling index weighting changes.",
+        "**AI/Semi De-risking Flows**: Short-cover rally in AI-losers/Defensives (+17%/+13% mom) vs.",
+        "Semis/FA (-19%/-14% mom); foreigners net sold TSE Growth/Standard (-¥31.6bn/-¥45.1bn), individuals net bought (+¥44.4bn/+¥35.3bn).",
+        "**Liquidity Threshold Risks**: 12 companies below 3M ADTV face exclusion; McDonalds Japan (2702) has 4% short interest (1.8 days to cover), 10% of firms show 12% short interest (e.g., GNI Group).",
+        "**Valuation-Risk Mismatch**: High P/B (e.g., Internet Initiative Japan at 20.5) with moderate ROE (16.1) suggests overvaluation; Nippon Steel (P/B 7.3, ROE 12.2) indicates value trap."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-keuiyhvmikc-2bf1df",
       "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 10, 2026 as of 5 30 AM ET",
       "institution": "Goldman Sachs",
@@ -944,6 +965,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vd4taryxext-8187e9",
+      "title": "Eli Lilly & Co. (LLY) Commercial Momentum, Uninterrupted",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:33Z",
+      "summary_points": [
+        "**Medicare Obesity Coverage Unlock**: July 1st Medicare bridge program driving 80% injectable volume surge, accelerating revenue growth beyond expectations (Q2 beat/raise +4.5% vs DRG +1.9%); revenue guidance raised to $88.5bn (2026).",
+        "**Foundry Launch & OUS Momentum**: Q2 revenue $98mn (vs $40mn adj.), OUS sales $31mn reflecting pent-up demand; 2026 revenue estimate up to $847mn (vs $805mn), US prescriber base doubling.",
+        "**Forward Catalysts & M&A**: Elora + tirzepide combo Ph2 data (late Sept EASD) for diabetes/obesity; $7.8bn CNTA acquisition (largest since 2019) accelerating M&A for near-Ph3 assets and unmet needs.",
+        "**Valuation Upside & EPS Growth**: Buy rating with 16.9% upside ($1,367 target vs $1,169.86 current); FY26 EPS revised to $36.71 (vs $33.77), driven by revenue expansion (115.756B by 2028) and margin improvement.",
+        "**Critical Risk Factor**: Downside risk from greater-than-expected obesity pricing decline (e.g., Medicare coverage pricing pressure) or pipeline underperformance compressing long-term estimates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
