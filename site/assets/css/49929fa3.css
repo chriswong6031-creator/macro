@@ -441,7 +441,7 @@ footer{padding:18px 24px;margin-top:8px;}
 .receipt-chip.on.ignition{background:rgba(59,130,246,0.18);color:#93c5fd;}
 .receipt-chip.on.suppressed{background:rgba(107,114,128,0.18);color:#9ca3af;}
 .receipt-chip.null{background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border);opacity:0.7;font-style:italic;}
-.receipt-machine-state{font-size:0.68rem;color:var(--text-dim);font-family:'SF Mono',monospace;padding:4px 8px;background:rgba(255,255,255,0.03);border-radius:5px;margin-top:8px;}
+.receipt-machine-state{font-size:0.68rem;color:var(--text-dim);font-family:var(--num);padding:4px 8px;background:rgba(255,255,255,0.03);border-radius:5px;margin-top:8px;}
 .receipt-seeding-note{font-size:0.7rem;color:var(--text-muted);margin-top:8px;padding:6px 8px;background:rgba(255,200,0,0.07);border:1px solid rgba(255,200,0,0.14);border-radius:6px;}
 .receipt-context-line{font-size:0.72rem;color:var(--text-secondary);margin-top:4px;padding:2px 8px;}
 /* ── RESPONSIVE ── */

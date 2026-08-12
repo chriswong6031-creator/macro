@@ -51,7 +51,11 @@ concurrency:
   # processing the workflow SILENTLY — cron does not fire and dispatched runs sit
   # queued with zero jobs forever (uncancellable, HTTP 500). Guard:
   # tests/test_workflow_file_size.py. Shrink by extraction, never by deleting docs.
-  group: pipeline-daily
+  # Versioned AWAY from "pipeline-daily": that group holds unkillable zombie records
+  # from the oversized-file era, and the server cancelled every healed run started in
+  # it (see PR for receipts). Restores #5414's sidestep, undone by #5416's revert.
+  # Never rename back while zombies exist; "-2" skipped (also bound by a wedged run).
+  group: pipeline-daily-3
   cancel-in-progress: false
 
 jobs:
@@ -2091,223 +2095,8 @@ jobs:
           # quotes-worker URL to turn ON browser live prices — build_site bakes it into
           # site/live_config.js. Empty -> live layer stays dormant (no-op). No code edit needed.
           LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
-        run: |
-          set +e
-          # Marker for the libraries-rebuild guard further down. The four non-US search
-          # libraries are each built by their dashboard step (build_china / build_hk /
-          # build_canada, and build_intl via build_vector) AND again by the resilient rebuild
-          # step at the end — duplicate per-name analyze() work (~11m/run). Any
-          # <mkt>stockdata/index.json newer than this marker was (re)built FRESH this run,
-          # so the rebuild step skips it; a market whose dashboard failed keeps its older
-          # (pulled) index.json and is still rebuilt. Set BEFORE any builder runs.
-          touch "$RUNNER_TEMP/engine_libs_marker"
-          run_py() {
-            local label="$1"; local mod="$2"
-            echo "::group::$label"
-            python -m "$mod" > "$RUNNER_TEMP/step.log" 2>&1; local rc=$?
-            cat "$RUNNER_TEMP/step.log"
-            echo "::endgroup::"
-            if [ "$rc" -ne 0 ]; then
-              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/step.log" | tr '\n' ' ' | tail -c 600)"
-              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 "$RUNNER_TEMP/step.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
-            fi
-          }
-          run_py "regime engine (engine.run)" engine.run
-          # Shock de-escalation protocol (policy-shock W2-E / D3) — must run AFTER engine.run
-          # so market_drivers.append_log has written coherence_state to the log.  Writes
-          # data/reflexes/shock_deescalation/firings.jsonl (keep-first) + site/live/shock_state.json.
-          # Non-fatal: exits 0 on any error so this can NEVER break the render. PS-R7 guard
-          # is enforced inside engine.shock_deescalation.build_nightly().
-          run_py "shock de-escalation (shock_deescalation)" engine.shock_deescalation
-          # S&P allocation deep-dive (spvector.html) + data/regime/spvector_latest.json,
-          # BEFORE build_site so the macro page's allocation card reads live numbers.
-          run_py "S&P allocation vector (build_spvector)" scripts.build_spvector
-          # Deep-history (2011-2026) leak-free IC scorecard -> data/edgar/ic_scorecard.json, read by
-          # build_site's factors page. --deep reads the offline deep close panel (data/edgar/
-          # sue_deep_closes.parquet — gitignored, NOT rebuilt in daily CI); when it is absent the step
-          # exits WITHOUT writing, keeping the committed deep scorecard rather than clobbering it with a
-          # shallow ~3y run. Regenerate offline: python -m scripts.sue_deep_phase0 (backfill the panel)
-          # then python -m scripts.factor_ic_scorecard --deep --start 2011. Additive (never blocks build).
-          python -m scripts.factor_ic_scorecard --deep || echo "ic scorecard skipped (additive)"
-          # NOTE: build_factor_series (the ~22-min month-end walk = compute_factors x ~38
-          # month-ends x 2 universes) was MOVED to its own parallel `factor_series` job
-          # below — it, NOT residual-alpha, was the real engine bottleneck. build_site reads
-          # the COMMITTED factor_series.json (degrade-never-raise), so a <=1-run-old series
-          # is fine and the deep walk no longer gates the daily dashboard/deploy.
-          # Alt-data desk BEFORE build_site so today's convergence alerts are already in
-          # data/altdata/alerts.jsonl when build_site assembles the Alert Center. Reads the
-          # collect job's committed data/quiver/* (no API key needed here); returns 0 on error.
-          run_py "alternative data desk (build_alt_data)" scripts.build_alt_data
-          # 13F Smart-Money Trade Tracker — grades curated super-investor 13F moves by
-          # SPY-relative forward return (engine.manager_trades). Reads the committed
-          # data/smart_money/* snapshots + the breadth/yahoo price caches; returns 0 on error.
-          run_py "13F smart-money tracker (build_smart_money)" scripts.build_smart_money
-          # Policy-Shock W2-F — ARMED/QUIET conditions-arming card (site artifact only, PS-R7).
-          # Reads CL=F via yahoo store + data/whitehouse/alerts.jsonl (READ ONLY).
-          # Non-fatal: main() always returns 0; a missing artifact degrades gracefully on the page.
-          run_py "policy-lever card (build_policy_lever)" scripts.build_policy_lever
-          # NWS-01 fix: build_news must run BEFORE build_site so that build_site
-          # renders news.html against the CURRENT macro_releases.json (not the
-          # previous run's artifact).  build_news is display-tier/leaf (context-only);
-          # measured 4.3–5.9 min serial wall-time here (W3 re-measure 2026-08-06:
-          # feeds + DeepSeek enrichment ~2-3m, plus ~2m of GDELT 429 ladder — the
-          # one arming pass per night that opens gdelt_client's circuit breaker;
-          # everything after it short-circuits).  Do NOT relocate this into the
-          # parallel band to chase those minutes — that re-creates the desync'd
-          # board NWS-01 fixed, for a ~5m saving.  The site no longer ships a
-          # desync'd board.
-          # news_calib (grade_news_events) runs immediately after — it writes
-          # site/news/calibration.json which build_site also reads (W3 side-artifact).
-          run_py "news suite (build_news)" scripts.build_news
-          run_py "news event calibration (grade_news_events)" scripts.grade_news_events
-          # OEU M-FIX (same class as the NWS-01 fix above): MSP W1 data spine must
-          # run BEFORE build_site, because build_site renders market_structure.html
-          # from data/market_structure/latest.json. It used to sit in the parallel
-          # cl_gex band AFTER build_site, so the page was always one generation
-          # stale — the Weekly Range / gamma / systematic blocks described the
-          # previous night. Cheap (<10s wall); reads gex_SPX.parquet + _GSPC.parquet,
-          # both committed by the collect job, so it has no dependency on the band.
-          # Lane-gated ledger (COLLECT_LANE=nightly) is unaffected by the move.
-          run_py "MSP W1 — market structure data spine (build_market_structure)" scripts.build_market_structure
-          # Filing Forensics broad-universe projection — deterministic, display/context only.
-          # Reads the committed SEC quarterly/annual panels, atomically writes a gitignored
-          # private state plus public shell/assets, and never fetches network data here. The
-          # accession-aware raw engine is advanced separately once object storage is bound.
-          run_py "filing forensics workbench (build_fundamental_forensics)" scripts.build_fundamental_forensics
-          run_py "macro dashboard + US stocks (build_site)" scripts.build_site
-          # Ticker dossier pages (v2) — engine-internal, reads fresh site/stockdata/*.json
-          # written by build_site above; rides the engine "commit engine outputs" git add.
-          # Non-fatal: ::warning on failure, never aborts the render.
-          python -m scripts.build_ticker_pages || echo "::warning title=ticker_pages::dossier render failed (non-fatal)"
-          # Index Leadership rotation board — DEAD-WIRE FIX 2026-07-16: this builder had NO
-          # workflow caller since its 2026-07-01 hand-run, so site/marketdata/index_leadership.json
-          # (subsectors.html client fetch + group_context's 0.10-weight rotation source + the
-          # tolerant readers in build_stock_board_v2 below) froze 15 days stale. SIDECAR FIX
-          # 2026-08-03: the 07-16 wiring was STILL dead — this comment used to claim the
-          # subsectorohlc sidecars "are written by build_site's render pass", which is false
-          # (only build_subsector_confluence's heavy main/main_index entrypoints in the
-          # parallel band BELOW emit them; the render-lane build/build_nasdaq/build_russell
-          # never do), so on this job's fresh checkout the gitignored sidecar dirs were empty,
-          # compute() found zero tabs, and the builder skipped silently for 18 more nightlies
-          # (snapshots.jsonl frozen at its 2026-06-30 seed). Its inputs are the PREVIOUS
-          # night's generation: subsector_confluence*.json + regime_timeline.json (committed)
-          # and the subsectorohlc* sidecars (restored from R2 by the "restore subsector OHLC
-          # sidecars" step above). Runs AFTER build_site and BEFORE build_stock_board_v2
-          # (consumer). Reads committed/restored artifacts only — no APIs, no keys.
-          # COLLECT_LANE=nightly arms its snapshots.jsonl forward-ledger append (the writer
-          # self-gates per house law; provisional lanes leave the env unset and no-op).
-          # A skip now exits rc=1 -> run_py raises ::error + a step-summary row.
-          COLLECT_LANE=nightly run_py "index leadership rotation board (build_index_leadership)" scripts.build_index_leadership
-          # Buy Board 2.0 — SHADOW (W6-US, us_standouts_v2). AFTER build_site: it REUSES the
-          # freshly-written factordata/us_standouts.json + setups.json (no recompute, ~0.4s) and
-          # the rotation artifacts (sector_central / subsector_confluence / index_leadership /
-          # subsector_rotation / baskets) through tolerant readers. Writes an UNLINKED preview
-          # (us_stocks_v2.html) + the shadow JSON — nothing live consumes it. main() swallows all
-          # failures and returns 0, so this can NEVER break the render.
-          run_py "buy board 2.0 shadow (build_stock_board_v2)" scripts.build_stock_board_v2
-          # Flow Leaders Desk — BEFORE pick-lab (plab_flow_leader/plab_flow_washout consume
-          # leaders.json artifact). Reads flow_store/tape_flow/chains/options-entry stores;
-          # writes site/flowleaders/leaders.json + renders site/flow_leaders.html.
-          # Display-only; exit 0 always; never breaks the render.
-          run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders
-          # L3 dispersion regime lens — NW Rails W2 PR-4 (§5). Emits data/dispersion/regime.json
-          # from the breadth close caches (same panel as build_stock_library). Display-only;
-          # gross_mult_live clamped 1.0. Seconds. build() never raises, but a DEGRADED emit
-          # (state=null — it overwrites the committed regime.json that leader radar reads
-          # same-night) now exits rc=1 -> run_py raises ::error + a step-summary row, plus
-          # bare-print ::warning at each quiet degrade site (the logger-only warnings here
-          # were invisible to Actions — same silent-skip shape as index_leadership, #4363).
-          # ORDERING NOTE: moved BEFORE build_leader_radar (LR PR-A Item 8) so that
-          # regime.json is same-night data when build_leader_radar reads it.
-          # build_dispersion_regime reads only breadth close caches (no dependency on
-          # any intervening step between its original position and here).
-          run_py "L3 dispersion regime lens (build_dispersion_regime)" scripts.build_dispersion_regime
-          # Leader Radar — LR W2a. AFTER build_flow_leaders + build_dispersion_regime
-          # (plab_leader_precipice/plab_leader_onset consume radar.json).
-          # Resolves universe (mag7+AI+Dow-30+NDX ∩ ohlcv); builds/appends
-          # data/rs_series/<T>.parquet (full-history backfill on first run);
-          # persists data/leader_radar/state_history.parquet + revisions_history.parquet;
-          # writes site/leaderradar/radar.json (schema leader_radar.v2).
-          # Absent stores → honest nulls. Always exits 0; never breaks the render.
-          # ALSO RUNS IN BOTH EXPRESS RENDER LANES at scope=all (#3612, 2026-07-26) —
-          # serial post-band, after spine(). The 2026-07-25 "deliberately absent" verdict
-          # that stood here is DEAD: the two bake-side blockers it named were FIXED in
-          # #3578, not accepted as risks. (1) pick_lab's _load_radar_json
-          # (engine/pick_lab/candidates.py) gates radar.json on as_of ==
-          # data/yahoo/SPY.parquet's data-through — the same anchor this builder derives
-          # as_of from — so a stale express artifact resolves to [] and express-computed
-          # fires can never advance the forward pick ledger. (2) Off-nightly,
-          # built_at/elapsed_s are carried from the committed artifact when the payload is
-          # otherwise byte-identical, so an untouched rebake commits nothing and the
-          # dead-man reading of built_at stays honest. (#3578 also added the rs_series lag
-          # disclosure + the PIT state/fire view caps that make a rebake reproduce the
-          # nightly bake.) data/ writes stay COLLECT_LANE=nightly-gated (HOUSE-U5) and the
-          # express lanes commit site/ ONLY, so this nightly remains the sole advancer of
-          # the radar's forward stores.
-          # LIVE-VERIFICATION: the 22:30 UTC nightly is NOT the only path to a fresh
-          # site/leaderradar/radar.json. render.yml's region_of maps both
-          # scripts/build_leader_radar.py (via scripts/build_*.py) and
-          # templates/leader_radar.html.j2 (via templates/*) to `all`, and one `all`-mapped
-          # dirty file forces scope=all — so a leader-radar change always carries its own
-          # express rebake. engine-render.yml has no scope picker: an engine/** push (e.g.
-          # engine/leader_lifecycle.py) runs with the default scope=all, which calls
-          # leaderradar too. Narrow scopes do NOT call it — an unrelated
-          # scope=china/hk/markets/… render leaves radar.json at its last bake.
-          run_py "leader radar (build_leader_radar)" scripts.build_leader_radar
-          # Pick Lab nightly runner — AFTER build_stock_board_v2 (producer-core snapshot already
-          # written by build_stock_library, which runs inside build_site above). Enriches the
-          # snapshot from tonight's regime/latest.json, fires all 27 books with refire lockout,
-          # grades matured picks from the breadth close caches, computes scoreboards, and writes
-          # site/labdata/pick_lab.json + pick_lab_longhold.json + renders site/us_stocks_lab.html.
-          # Outputs are covered by the existing `git add data/ site/` commit step.
-          # main() swallows all failures and returns 0, so this can NEVER break the render.
-          run_py "pick lab nightly runner (build_pick_lab)" scripts.build_pick_lab
-          # Options Prophet shadow projection — immediately after Pick Lab so the
-          # artifact can expose only ledger-admitted plab_flow_leader / flow_washout
-          # fires. Reuses Flow Leaders ordering; creates no score, direction, contract,
-          # trajectory, or Macro weight. Missing inputs publish explicit not-ready gates.
-          run_py "options prophet shadow (build_options_prophet)" scripts.build_options_prophet
-          # Reflexivity overlay — W4, Signal Commons. Runs AFTER build_stock_board_v2 (reads
-          # us_standouts_v2.json) and AFTER build_site (reads factor_betas.json). Writes
-          # site/factordata/reflexivity_overlay.json — display-only duplicate-exposure read.
-          # returns 0 always, never breaks the render.
-          run_py "reflexivity overlay (build_reflexivity_overlay)" scripts.build_reflexivity_overlay
-          # Impulse Tracker — AFTER build_site (a US-stocks sibling page): writes impulse.html +
-          # factordata/impulse.json from the breadth close/volume caches + the regime read
-          # (engine.run, above). Reactive early-ignition momentum screen; display/context only.
-          # Reads only committed/cached data; returns 0 on error so it can never break the site.
-          run_py "impulse tracker (build_impulse)" scripts.build_impulse
-          # DT-NW-1: aggregate per-ticker dt_contra chip state into data/neuralweb/dt_contra_state.json.
-          # AFTER build_site (which calls build_stock_library to write site/stockdata/*.json).
-          # Display-only NW artifact. Seconds. build() never raises, but an absent/empty
-          # stockdata dir HERE is a real fault (build_site just wrote it, and the degraded
-          # JSON empties the committed census) — that now exits rc=1 -> run_py raises
-          # ::error + a step-summary row, plus bare-print ::warning at each quiet degrade
-          # site (logger-only warnings are invisible to Actions — #4363 sibling sweep).
-          run_py "DT-NW-1 dt_contra state aggregator (build_dt_contra_state)" scripts.build_dt_contra_state
-          # Congressional / politician disclosed-trades desk — AFTER build_alt_data (refreshes
-          # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
-          # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.
-          run_py "congressional trades desk (build_congress)" scripts.build_congress
-          # Odds Desk — historical base-rate analyzer + factor match (research/ODDS_DESK.md).
-          # Backfills/upserts the data/odds_ohlcv store (yfinance; the preamble's R2 restore
-          # step materialises it first, so the normal path is a cheap 1mo upsert — the cold
-          # 119×period="max" backfill runs only when the restore came up empty), recomputes the
-          # per-ticker factor matrices (site/oddsmatrix -> R2) + site/oddsdata catalog/factor_match
-          # JSON, and renders odds.html. Display-only; returns 0 on error — never breaks the render.
-          # DELIBERATELY absent from the render/engine-render express lanes (vetted 2026-07-25):
-          # it is a network collector every run, its store is gitignored + R2-restored only
-          # in this job, and its R2 matrices only publish here — see the omission comments in both lanes.
-          run_py "odds desk (build_odds)" scripts.build_odds
-          # Technical Lab hub — screener + lab profile page. Reads site/factordata/tech_screener.json
-          # + tech_lab.json (written by nightly tech signal engine). Falls back to sample fixture if
-          # absent; returns 0 on error — never breaks the build.
-          run_py "technical lab hub (build_tech_lab)" scripts.build_tech_lab
-          # Thematic Foresight Desk — AFTER build_site (regime latest.json carries the
-          # dislocation entry-overlay) + the engines' bottleneck/revision/demand leaves.
-          # Reads only committed data; returns 0 on error.
-          run_py "thematic foresight desk (build_foresight)" scripts.build_foresight
-          exit 0
+        # Body extracted verbatim to scripts/ci/daily_engine_regime_dashboard.sh (512KB processing-cap diet 2026-08-12 — tests/test_workflow_file_size.py).
+        run: bash scripts/ci/daily_engine_regime_dashboard.sh
       - name: publish the provisional → nightly confirmation delta (R2 artifact)
         # W-L1. Runs HERE, after the build step, because that is the first moment
         # site/factordata/us_standouts.json is tonight's board of record — the same
@@ -3729,226 +3518,10 @@ jobs:
           # Without these env vars the hook hits dark mode (no webhook → exit 0).
           DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          set +e
-          ART="$RUNNER_TEMP/band"; rm -rf "$ART"; mkdir -p "$ART"
-          # brun <slug> <label> <module> [args…] — run one builder resiliently into its
-          # OWN scratch files (never shared across the parallel subshells), recording the
-          # exit code + wall-seconds. Output (incl. stderr) is buffered, replayed later.
-          brun() {
-            local slug="$1" label="$2" mod="$3"; shift 3
-            local t0 t1 rc
-            t0=$(date +%s)
-            { echo "$label"; python -m "$mod" "$@" 2>&1; } > "$ART/$slug.log"; rc=$?
-            t1=$(date +%s)
-            echo "$rc"          > "$ART/$slug.rc"
-            echo "$((t1 - t0))" > "$ART/$slug.sec"
-          }
-          # --- clusters: each internally ORDERED by its data deps; clusters mutually independent ---
-          cl_markets() {
-            brun commodities  "build commodity vector (build_commodities)"         scripts.build_commodities
-            brun spr          "build strategic reserves (build_spr)"               scripts.build_spr
-            brun forex        "build forex vector (build_forex)"                   scripts.build_forex
-            brun bonds        "build bonds & bond-health (build_bonds)"            scripts.build_bonds
-            brun crossasset   "cross-asset vector (build_crossasset)"              scripts.build_crossasset
-            brun transmission "rate & inflation transmission (build_transmission)" scripts.build_transmission
-            # TXI W1: staged-cascade chain episode tracker. Runs AFTER build_transmission
-            # (reads data/transmission/latest.json + forex/regime latest.json + the parquet
-            # store). Display-only; nightly is the sole advancer of chain_episodes.jsonl.
-            # Cheap (<10s wall). No-ops gracefully when upstream artifacts are absent.
-            brun transmission_chains "TXI W1 — transmission chain episodes (run_transmission_chains)" scripts.run_transmission_chains
-            brun discovery    "discovery leaderboard (build_discovery)"            scripts.build_discovery
-          }
-          # cl_china / cl_hk MOVED to .github/workflows/asia-close.yml — rebuilt after the
-          # Asia cash close (~08:30 UTC) so CN/HK render SETTLED marks, not the stale ones a
-          # US-evening run would lock in. They are self-recomputing (no US-regime dependency).
-          cl_gex() {
-            brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board
-            brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
-            # build_market_structure MOVED OUT of this band to just BEFORE build_site
-            # (OEU M-FIX). It ran here, i.e. AFTER build_site had already rendered
-            # market_structure.html from build_site.py's MSP block — so the page
-            # always shipped the PREVIOUS run's data/market_structure/latest.json.
-            # Its only inputs (data/cboe/gex_SPX.parquet, data/yahoo/_GSPC.parquet)
-            # come from the collect job, so nothing in this band feeds it.
-            # W4 EVW: event-window snapshot + forward-log stamp (RIC program, P3).
-            # Runs AFTER vol_regime so site/vol/regime.json (gamma_regime proxy) is present.
-            # No ThetaData reads; cheap committed-artifact join (~15s wall).
-            brun event_windows "W4 EVW — event-window calendar (build_event_windows)" scripts.build_event_windows
-            brun darkpool     "dark pool desk (build_darkpool_desk)"        scripts.build_darkpool_desk
-            brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
-            brun flow_desk    "group flow heatmap & market tide (build_flow_desk)" scripts.build_flow_desk
-            brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
-            brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
-            # AFTER skew+ivspread: it joins both ledgers into the neutralised feature panel.
-            brun options_dislocation "options information-dislocation panel (build_options_dislocation)" scripts.build_options_dislocation
-            brun options_screener "US options screener page (build_options_screener)" scripts.build_options_screener
-            brun options_entry "options entry state fusion table (build_options_entry_state)" scripts.build_options_entry_state
-            brun intraday_flow "intraday flow tracker nightly base (build_intraday_flow)" scripts.build_intraday_flow --mode nightly
-          }
-          cl_baskets() {
-            brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
-            # GMI W1a: point-in-time US basket membership. data/baskets/membership.json is a
-            # single MUTABLE document and basket_freeze stores only membership HASHES, so
-            # before this there was no way to answer "who was in this basket on that date"
-            # for the US suite at all. Content-deduped (a dated side-car only when membership
-            # changed) + keep-first in the parquet, so a re-run is a no-op; the cadence stamp
-            # is rewritten every run so a deduping writer and an unwired one look different
-            # on disk. NIGHTLY ONLY — the PIT store is append-only and keep-FIRST per
-            # snapshot_date, so whoever stamps a date owns it forever (COLLECT_LANE=nightly,
-            # job-level env above, is the fail-closed gate). Deliberately NOT added to
-            # closing-bell / earlyclose / engine-render / render: those are data/-discarding
-            # lanes and nightly is the sole advancer.
-            brun baskets_snapshot "US basket membership snapshot (build_baskets --snapshot)" scripts.build_baskets --snapshot
-            # GMI W1b: the theme-graph semantic spine (nodes/edges/evidence). Runs AFTER
-            # baskets_snapshot because it materializes from the membership documents that
-            # step has just stamped, so tonight's graph describes tonight's membership.
-            # Nightly diff mode: it recomputes the view and appends ONLY what changed,
-            # era=observed, belief_time=today. NIGHTLY ONLY for the same reason as the
-            # snapshot above — the store is append-only and bitemporal, and
-            # COLLECT_LANE=nightly (job-level env) is the fail-closed gate; render,
-            # closing-bell and earlyclose leave it unset and so compute and discard.
-            # The guard follows immediately and is ADVISORY here (rc 0 on a breach, one
-            # ::warning): the plane is display-tier with all six authority booleans
-            # false, so a contract breach must not take the collect lane down. CI runs
-            # the same guard with --strict.
-            brun theme_graph "theme graph nightly materialization (build_theme_graph)" scripts.build_theme_graph
-            brun theme_graph_guard "theme graph contract guard (check_theme_graph_contracts)" scripts.check_theme_graph_contracts
-            brun subsector_conf "subsector confluence desk + double-gated funnel (build_subsector_confluence)" scripts.build_subsector_confluence
-            brun subsector_conf_ndx "nasdaq-100 subsector confluence desk (build_subsector_confluence --nasdaq)" scripts.build_subsector_confluence --nasdaq
-            brun subsector_conf_rut "russell-2000 subsector confluence desk (build_subsector_confluence --russell)" scripts.build_subsector_confluence --russell
-            # W0.4 Setup-Species: cohort-context metrics (display-only; reads committed subsector_confluence.json)
-            brun cohort_metrics "W0.4 cohort metrics — peer washout/reclaim/MACD-turn + Rubber-Band Score (build_cohort_metrics)" scripts.build_cohort_metrics
-            # Blocked-entry override A1b, RATIFIED @25% (prereg §5 / RATIFICATION_PACKET §4):
-            # peer-median 252d drawdown per thematic basket + the per-name lookup, so a surface
-            # can show the SAME number the study graded on. Display-tier support only — the live
-            # enter-mask conditional stays behind its own two gates (production-feed re-grade +
-            # signal-era fence). ~5s: reads only the names it needs, one close column each.
-            brun basket_washout "blocked-entry basket washout state (build_basket_washout_state)" scripts.build_basket_washout_state
-            # Rotation Command W1 (RC-R1/R6): first-class rotation events + sector-fragmentation board (display-only)
-            brun rotation_events "Rotation Command W1 — rotation events + sector fragmentation (build_rotation_events)" scripts.build_rotation_events
-            # RLT-R2 Rebalance Pulse: mechanical volume day-classifier (display/context, off render path)
-            brun rebalance_pulse "RLT-R2 rebalance pulse — calendar × volume classifier (build_rebalance_pulse)" scripts.build_rebalance_pulse
-            # build_news + news_calib moved BEFORE build_site (NWS-01 fix — see above)
-            brun methodology "methodology page (build_methodology)"    scripts.build_methodology
-            brun nasdaq_internals "nasdaq-100 archetype-group internals (build_nasdaq_internals)" scripts.build_nasdaq_internals
-          }
-          cl_special() { brun special "special situations desk (build_special_situations)" scripts.build_special_situations; }
-          cl_stage() {
-            # SGA W1 (research/STAGE_ANALYSIS_MASTERPLAN.md): Weinstein stage engine over
-            # the ~2.8k-name baskets/ohlcv ∪ SP1500 universe (~10 min at 4 cores), hidden
-            # under the special-sits cluster's ~28-min ceiling — zero critical-path cost.
-            # Reads TONIGHT's signal_gate.json (build_site above) for the T-tier chip and
-            # joins earnings-call scores fetched from R2 (fail-open: absent scores just
-            # print the plain-word null). Page renders from the fresh context artifact.
-            python -m scripts.fetch_earnings_scores || echo "::warning title=fetch_earnings_scores::rc≠0 (non-fatal — earnings context absent this render)"
-            brun stage_analysis "Stage Analysis context engine (build_stage_analysis)" scripts.build_stage_analysis
-            brun stage_analysis_page "Stage Analysis page (build_stage_analysis_page)" scripts.build_stage_analysis_page
-            # TOP ANATOMY W1 (research/TOP_ANATOMY_MASTERPLAN_BY_FABLE.md §5-W1):
-            # Winner Health — the nightly maturation read over the massive_stock_day
-            # tape, display tier with zero authority. Data builder FIRST (it writes
-            # data/top_maturation/latest.json and advances the forward log), page
-            # builder second (pure SSR from that artifact). Both fail-open: a bad
-            # read writes a null_state artifact and the page renders its designed
-            # warming-up state rather than failing the band. The panel is
-            # incrementally cached under data/top_maturation/_panel_cache/
-            # (gitignored), so only source files the store actually touched are
-            # re-read. Engine is daily-only — nightly is the sole ledger advancer.
-            brun top_maturation "Winner Health context engine (build_top_maturation)" scripts.build_top_maturation
-            brun winner_health_page "Winner Health page (build_winner_health_page)" scripts.build_winner_health_page
-          }
-          cl_misc() {
-            brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
-            brun stock_seasonality_page "stock seasonality page (build_stock_seasonality_page)" scripts.build_stock_seasonality_page
-            brun reports       "research reports section (build_reports)"     scripts.build_reports
-            brun research_vault "research vault page (build_research_vault)"   scripts.build_research_vault
-            brun cycle         "cycle intelligence page (build_cycle)"        scripts.build_cycle
-            brun sectorcyc     "sector cycle intelligence (build_sector_cycles)" scripts.build_sector_cycles
-            brun countrycyc    "country cycle intelligence (build_country_cycles)" scripts.build_country_cycles
-            # markets_engine.js is a pure splice of country_cycles.json, so it must re-run
-            # whenever countrycyc does — otherwise markets.html freezes on the previous
-            # vintage and the cycle-consistency PR gate fails on same-tape pos/phase skew
-            # (render.yml already pairs them; cl_misc is sequential so ordering holds).
-            brun markets       "global market cycles shell (build_markets)"    scripts.build_markets
-            brun sync_gauge    "sync gauge appender (append_sync_gauge)"      scripts.append_sync_gauge
-            brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
-            brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
-            brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
-            # CPI P2: live-view rebuild runs LAST in cl_misc so today's forward-log stamps
-            # from build_sector_cycles and build_country_cycles (both above) are present.
-            # Placement inside cl_misc (not post-band) is intentional: the dependency is
-            # only on these two intra-cluster steps; the band barrier would be correct but
-            # wastes the ~28-min special-situations wait. cl_misc is fully sequential so
-            # the ordering guarantee holds without any additional wait.
-            brun cycle_pattern_live "CPI live-view adapter (build_cycle_pattern_live)" scripts.build_cycle_pattern_live
-            # CPI P6: the NW adapter artifact compacts the live view + hazard gate
-            # ledger + truth registry, so it runs AFTER cycle_pattern_live (sequential
-            # within cl_misc — same ordering guarantee as the live-view step above).
-            brun cycle_pattern_state "CPI NW adapter (build_cycle_pattern_state)" scripts.build_cycle_pattern_state
-            # Stock seasonality calendar clock (research/STOCK_SEASONALITY_LANE2_DESIGN_SPEC.md).
-            # DAILY-ONLY and LAST in cl_misc: the 2645-window family and its independent
-            # circular year-shift null (B=2000, raw + market-neutral) are the heavy leg, and
-            # the render budget is law. The null is cached against the complete-year panel
-            # hash, so a normal night is a panel re-fold plus a JSON rewrite (~1 min) and the
-            # full recompute lands once a year when the panels roll over. Per-symbol entity
-            # JSON is gitignored and rides the R2 publish below; index/methodology are the
-            # committed half.
-            brun stock_seasonality "stock seasonality calendar clock (build_stock_seasonality)" scripts.build_stock_seasonality
-            brun biopharma_seasonality "seasonality methodology manifest (build_biopharma_seasonality)" scripts.build_biopharma_seasonality
-            # Lane 6 shadow lobe + the SOLE nightly advancer of its forward ledger.
-            # Must stay in this sequential cluster AFTER build_stock_seasonality: it
-            # reads the fresh entity JSONs from the working tree, and those are
-            # gitignored except SPY, so no other lane can supply them. Sub-minute —
-            # it only reads artifacts (28 symbols, one baseline sweep each).
-            brun seasonality_shadow "Lane 6 NW shadow state + forward ledger (build_seasonality_shadow_state)" scripts.build_seasonality_shadow_state
-            # Measurement hub — moved AFTER seasonality_shadow (2026-08-07). It now
-            # renders the seasonal forward-record line from
-            # data/seasonality/nw_forward_ledger.jsonl, and seasonality_shadow is that
-            # ledger's SOLE nightly advancer. Built earlier in this sequential cluster,
-            # the public page carried the PREVIOUS night's counts: on the night the first
-            # window is scored, measurement.html would still say "0 scored so far" for
-            # another 24h while the same night's program_watch.json said otherwise — two
-            # readings of one ledger disagreeing on the same commit. Nothing later in
-            # cl_misc consumed measurement's outputs, so this is a pure ordering move; the
-            # side effect is that measurement now reads the night's own sync gauge and
-            # cycle-pattern artifacts instead of yesterday's, which is the same direction
-            # of fix.
-            brun measurement   "cycle measurement hub (build_measurement)"    scripts.build_measurement
-            # Program watch — LAST in the seasonality run because it reads what the
-            # two builders above just wrote (the forward ledger counts in
-            # particular); earlier, it would report the PREVIOUS night's ledger.
-            # Pure stdlib, sub-second: one JSON write plus a ::notice per fired
-            # tripwire. Fail-open — it never takes the nightly down.
-            brun program_watch "seasonality program watch (build_program_watch)" scripts.build_program_watch
-          }
-          # launch every cluster concurrently, then barrier before the hub (build_vector, below)
-          cl_markets & cl_gex & cl_baskets & cl_special & cl_misc & cl_stage &
-          wait
-          # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
-          #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          # transmission_chains added 2026-07-25: it was brun'd at :1133 but absent
-          # here, and this loop is what prints a builder's log + raises its rc!=0
-          # ::error. Milder here than in the render lanes (this lane also runs
-          # check_builder_failstreaks, which globs *.rc and so catches a >=2-night
-          # streak regardless of ORDER) — but a FIRST failure still passed silently,
-          # with no log and no step-summary line for the TXI W1 chain tracker.
-          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets baskets_snapshot theme_graph theme_graph_guard subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page top_maturation winner_health_page"
-          echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
-          for slug in $ORDER; do
-            [ -f "$ART/$slug.log" ] || continue
-            label=$(head -n1 "$ART/$slug.log")
-            rc=$(cat "$ART/$slug.rc" 2>/dev/null || echo "?")
-            sec=$(cat "$ART/$slug.sec" 2>/dev/null || echo "?")
-            echo "::group::$label  [${sec}s, rc=$rc]"
-            tail -n +2 "$ART/$slug.log"
-            echo "::endgroup::"
-            echo "- ${label} — ${sec}s (rc=${rc})" >> "$GITHUB_STEP_SUMMARY"
-            if [ "$rc" != "0" ] && [ "$rc" != "?" ]; then
-              echo "::error title=${label} failed (rc=${rc})::$(tail -n 2 "$ART/$slug.log" | tr '\n' ' ' | tail -c 600)"
-              { echo "### ❌ ${label} failed (rc=${rc})"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 40 "$ART/$slug.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
-            fi
-          done
-          exit 0
+        # Body extracted verbatim to scripts/ci/daily_engine_regional_desk_builders.sh (512KB processing-cap diet 2026-08-12 — tests/test_workflow_file_size.py).
+        # Pass the delegated hard-law module explicitly: the helper validates this
+        # argument, and the registry census can verify the workflow-to-guard wiring.
+        run: bash scripts/ci/daily_engine_regional_desk_builders.sh scripts.check_theme_graph_contracts
       # Runs AFTER the band that contains `build_baskets --snapshot`, so it grades THIS
       # run's stamp rather than last night's. The plane it watches can die with every
       # signal green: both snapshot writers are content-deduped, so "membership has not
@@ -4044,7 +3617,7 @@ jobs:
       - name: OIP PIT — durable episodes + H+60 and declared-session-close proxy accrual
         id: options_signal_episode
         # Consumes only the date-keyed live_flow/events/{DATE}.jsonl raw stage,
-        # never capped/overwritten feed_current. The monotonic checkpoint and all four
+        # never capped/overwritten feed_current. The monotonic checkpoint and three
         # committed JSONL ledgers advance only in COLLECT_LANE=nightly. H+60 v1 stays
         # frozen; EOD/1d/3d/5d/10d close rows accrue separately from the same exact
         # Polygon receipt. Session outcomes and coarse H+60 measurements remain
@@ -4061,101 +3634,41 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_options_signal_episode
+      - name: OIP campaign v2 — exact-contract revision and anchored-outcome accrual
+        id: options_signal_campaign
+        # Consumes only the immutable episode/outcome prefixes produced above. It
+        # owns a separate revision/outcome/checkpoint namespace, preserves the legacy
+        # v1 cohort bytes, and grants no selector, training, or trading authority.
+        if: always() && steps.options_signal_episode.outcome == 'success'
+        timeout-minutes: 10
+        continue-on-error: true
+        run: python -m scripts.build_options_signal_campaign
       - name: OIP PIT — checkpoint the five durable episode ledgers
+        id: options_signal_episode_publish
         if: always() && steps.options_signal_episode.outcome == 'success'
         timeout-minutes: 10
         continue-on-error: true
         # This checkpoint is deliberately immediate and success-only. The broad
         # engine commit is hours later and may lose its push race or hit the job
         # cap; these append-only PIT rows cannot be reconstructed after the raw
-        # dated event stage ages out. Publish only the five builder-owned files.
+        # dated event stage ages out. Publish only the four builder-owned files.
         # The metadata replay overlays their object IDs on current origin/main in
         # a temporary index, so it never rebases, checks out, stashes, cleans, or
         # otherwise touches the thousands of unrelated dirty render outputs.
-        run: |
-          set -euo pipefail
-          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
-          git config user.name "dashboard-bot"
-          git config user.email "actions@users.noreply.github.com"
-
-          OIP_LEDGER_PATHS=(
-            data/options_signal_episode/checkpoint.json
-            data/options_signal_episode/episodes.jsonl
-            data/options_signal_episode/outcomes_h60.jsonl
-            data/options_signal_episode/outcomes_session.jsonl
-            data/options_signal_episode/campaigns.jsonl
-          )
-          PUSH_ALARM=120
-          PUSH_BUDGET_SECS=420
-          PUSH_MAX_ATTEMPTS=12
-          push_retry_init "options PIT episode ledgers"
-          push_on_main_ok || exit 0
-
-          # A foreign staged path would ride `git commit` even though this step's
-          # own add is narrow. Refuse that state instead of widening ownership.
-          if ! git diff --cached --quiet; then
-            echo "::error title=options PIT checkpoint index dirty::foreign staged paths predate the narrow checkpoint; refusing to publish"
-            exit 1
-          fi
-          for OIP_PATH in "${OIP_LEDGER_PATHS[@]}"; do
-            if [ ! -f "$OIP_PATH" ] || [ -L "$OIP_PATH" ]; then
-              echo "::error title=options PIT checkpoint path rejected::$OIP_PATH is missing or a symlink"
-              exit 1
-            fi
-          done
-          git add -- "${OIP_LEDGER_PATHS[@]}"
-          if git diff --cached --quiet; then
-            echo "options PIT episode ledgers unchanged"
-            exit 0
-          fi
-          while IFS= read -r OIP_PATH; do
-            case "$OIP_PATH" in
-              data/options_signal_episode/checkpoint.json|\
-              data/options_signal_episode/episodes.jsonl|\
-              data/options_signal_episode/outcomes_h60.jsonl|\
-              data/options_signal_episode/outcomes_session.jsonl|\
-              data/options_signal_episode/campaigns.jsonl) ;;
-              *)
-                echo "::error title=options PIT checkpoint scope violation::staged path $OIP_PATH is outside the five-file allowlist"
-                exit 1
-                ;;
-            esac
-          done < <(git diff --cached --name-only)
-          push_staged_clean "${OIP_LEDGER_PATHS[@]}" || exit 1
-
-          OIP_PARENT=$(git rev-parse HEAD)
-          git commit -m "options-pit: durable episode checkpoint $(date -u +%F)"
-          OIP_COMMIT=$(git rev-parse HEAD)
-          OIP_MESSAGE=$(git log -1 --format=%B "$OIP_COMMIT")
-          OIP_REPLAY_INDEX="${RUNNER_TEMP:-/tmp}/options-pit-replay-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}.idx"
-
-          while push_attempt; do
-            if ! perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin \
-              +refs/heads/main:refs/remotes/origin/main; then
-              PUSH_FAIL_CLASS="sync"
-              push_backoff
-              continue
-            fi
-            if OIP_PUBLISH=$(push_metadata_replay_commit "$OIP_PARENT" origin/main \
-                "$OIP_COMMIT" "$OIP_MESSAGE" "$OIP_REPLAY_INDEX"); then
-              if [ "$(git rev-parse "$OIP_PUBLISH^{tree}")" = "$(git rev-parse origin/main^{tree})" ]; then
-                echo "options PIT episode content already on origin/main — nothing to push"
-                push_won
-                exit 0
-              fi
-              if push_do origin "$OIP_PUBLISH:refs/heads/main"; then
-                echo "pushed options PIT episode ledgers on attempt $PUSH_ATTEMPT (metadata replay — dirty render tree untouched)"
-                push_won
-                exit 0
-              fi
-            else
-              PUSH_FAIL_CLASS="rebase-conflict"
-            fi
-            push_backoff
-          done
-          push_lost
-          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the five ledgers remain only in the local engine commit fallback"
-          exit 1
+        # The extracted helper keeps the five-file candidate unreachable until the
+        # metadata replay is accepted, and keeps this workflow below GitHub's cap.
+        run: bash scripts/ci/options_signal_nightly.sh publish-episode
+      - name: OIP campaign v2 — checkpoint the exact three canonical ledgers
+        id: options_signal_campaign_publish
+        if: >-
+          always() &&
+          steps.options_signal_episode_publish.outcome == 'success' &&
+          steps.options_signal_campaign.outcome == 'success'
+        timeout-minutes: 10
+        continue-on-error: true
+        # Campaign publication is interruption-safe and exact-path: the helper
+        # never advances HEAD before origin/main accepts all three canonical files.
+        run: bash scripts/ci/options_signal_nightly.sh publish-campaign
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
         # named US thematic baskets. Ported from China #2634. Reads sector_cycles
@@ -5381,6 +4894,8 @@ jobs:
           # autostash apply from an earlier push loop in THIS job was staged
           # wholesale — 1,704 pages shipped markers)
           bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
+          bash scripts/ci/options_signal_nightly.sh exclude-broad
+          bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
           git add data/ site/ reports/
           # separate + tolerant: `git add site/ templates/` exits 128 when a pathspec
           # matches nothing, and this step runs under `-eo pipefail` — a missing
@@ -5393,7 +4908,8 @@ jobs:
           # engine rebase would otherwise defeat that refusal; even without a
           # commit, the always() Pages upload would serve the stale local index.
           # Restore HEAD (the known main-ancestry checkout) into both index and
-          # worktree, then unstage every Prophet-owned root. Using origin/main
+          # worktree, unstage every Prophet-owned root, then clean builder-owned
+          # additions that did not exist in HEAD. Using origin/main
           # here would leave an unstaged A->B Prophet delta when main advanced;
           # the broad push loop's later autostash/rebase could replay that delta
           # over a still-newer correction and a follow-up `git add site/` could
@@ -5406,27 +4922,35 @@ jobs:
             site/prophet \
             data/prophet/ledger.jsonl \
             data/prophet/ledger_quarantine.json \
+            data/prophet/origination_receipts \
+            data/prophet/legacy_shadow \
             data/prophet_arena \
             data/prophet_stage_shadow; then
             echo "::error title=Prophet safe restore failed::could not restore checkout-time Prophet publications; aborting the broad commit rather than publishing an uncheckpointed tree"
             exit 1
           fi
-          # New plan/state/arena files do not exist in the safe ref, so checkout
-          # cannot remove them. These roots are builder-owned and not ignored;
-          # scoped clean removes only the uncheckpointed additions.
-          git clean -fd -- \
-            site/prophet \
-            data/prophet_arena \
-            data/prophet_stage_shadow
           git reset -q -- \
             site/prophet \
             data/prophet \
             data/prophet_arena \
             data/prophet_stage_shadow
-          # A refused receipt is build-owned and may now be untracked after the
-          # reset above. Remove only this dedicated directory; append-only
-          # correction ledgers elsewhere under data/prophet remain untouched.
-          git clean -fd -- data/prophet/origination_receipts
+          # New plan/state/arena files do not exist in the safe ref, so checkout
+          # cannot remove them. Reset first converts broad-staged additions back
+          # to untracked files; this scoped clean then removes only those refused
+          # builder outputs while preserving correction inputs under data/prophet.
+          git clean -fd -- \
+            site/prophet \
+            data/prophet_arena \
+            data/prophet_stage_shadow
+          # Refused receipts and legacy-shadow day parts are build-owned and may
+          # now be untracked after the reset above. Remove only these dedicated
+          # directories; correction ledgers elsewhere under data/prophet remain
+          # untouched.
+          git clean -fd -- \
+            data/prophet/origination_receipts \
+            data/prophet/legacy_shadow
+          # Re-exclude both exact-published namespaces after the broad add.
+          bash scripts/ci/options_signal_nightly.sh exclude-broad
           # W0b (2026-07-08 stale-HK incident): US engine job must NOT commit asia-owned
           # data/ paths — asia-close.yml is the sole writer of all china*/hk* stores.
           # The GHA cache restore above (data/hk_stocks, restore-keys: hk-stocks-ohlc-)
@@ -5505,7 +5029,8 @@ jobs:
             exit 1
           fi
           if git diff --cached --quiet; then echo "no engine output changes after conflict heal"; exit 0; fi
-          git commit -m "engine: regime update $(date -u +%F)"
+          bash scripts/ci/options_signal_nightly.sh commit-broad-candidate \
+            "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded
           # artifact, so it never depends on this commit landing.
           PUSH_ALARM=420
@@ -5570,7 +5095,8 @@ jobs:
                 git add site/
                 git add templates/ 2>/dev/null || true
                 if push_staged_clean site/ templates/; then
-                  git commit -m "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
+                  bash scripts/ci/options_signal_nightly.sh commit-render-sync \
+                    "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
                     || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
                 else
                   git reset -q -- site/ templates/ || true
@@ -5639,6 +5165,16 @@ jobs:
             echo "### ❌ R2 data plane STALE/DARK — publish_r2 failed or was skipped (expired R2_* secrets?); the live site keeps serving OLD per-ticker data. See scripts/audit_r2.py." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+      - name: OIP PIT — fail closed after unrelated rendering completes
+        if: always()
+        env:
+          OIP_EPISODE_BUILD_OUTCOME: ${{ steps.options_signal_episode.outcome }}
+          OIP_EPISODE_PUBLISH_OUTCOME: ${{ steps.options_signal_episode_publish.outcome }}
+          OIP_CAMPAIGN_BUILD_OUTCOME: ${{ steps.options_signal_campaign.outcome }}
+          OIP_CAMPAIGN_PUBLISH_OUTCOME: ${{ steps.options_signal_campaign_publish.outcome }}
+        # continue-on-error above lets unrelated rendering finish; this terminal gate
+        # makes any missing/failed build or exact-path publication fail the engine job.
+        run: bash scripts/ci/options_signal_nightly.sh assert-integrity
       - name: timings ledger + 85% budget tripwire (W2)
         if: always()   # DELIBERATELY AHEAD of the two delivery steps below — this is the ONLY job where the finish step is not last, and the exception is load-bearing. `if: always()` steps DO run after a timeout-cancel, but only inside the runner's ~5-minute force-termination grace, and this job's tail is the most expensive always() tail in the workflow. Evidence, run 31067383446 (2026-08-06): engine started 10:05:45Z, completed 13:30:46Z = 205.0m = the 200m cap + exactly 5m of grace; steps 117-121 (commit engine outputs → feeds → R2 publish → verify → strip) all ran post-cancel, step 122 "upload pages artifact" burned what was left and ended `failure`, and step 123 — this one — WAS NEVER SCHEDULED AT ALL (the GH jobs API step list jumps straight from 122 to the Post steps). Result: data/ops/nightly_timings/engine.jsonl carried ONE row, source `backfill-gh-api`, while all 15 sibling jobs had native rows — the 85% tripwire was structurally dark for the ONE job whose creep caused the Jul31-Aug6 outage, and dark on exactly the nights it existed to pre-announce. Ordering it here costs a healthy night nothing (both steps still run to completion) and on a cancel night trades an artifact upload that is already failing for the telemetry that explains WHY the night died. The row + the ::warning land in this step's first second; only its bounded commit/push can be cut short. Pinned by tests/test_nightly_timings.py::test_finish_step_is_not_stranded_behind_the_pages_artifact_upload — do not move it back below the upload.
         run: bash scripts/ci/nightly_timings_finish.sh 300
@@ -6393,73 +5929,8 @@ jobs:
           echo "::warning title=marketing_learning::could not push learning artifacts (they advance again tomorrow)"
           exit 0
       - name: commit standout audit US artifacts
-        run: |
-          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
-          git config user.name "dashboard-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add data/standout_audit/us_attribution.parquet 2>/dev/null || true
-          git add data/standout_audit/us_evidence.jsonl 2>/dev/null || true
-          git add data/standout_audit/us_audit_state.json 2>/dev/null || true
-          git add data/standout_audit/pick_autopsies/us 2>/dev/null || true
-          git add site/factordata/us_audit_scoreboard.json 2>/dev/null || true
-          git add data/metabolism/fitness/standouts_us.json 2>/dev/null || true
-          git add site/factordata/us_track_history.json 2>/dev/null || true
-          git add site/us_track_record.html 2>/dev/null || true
-          git add data/neuralweb/prophet_status.json 2>/dev/null || true
-          git add data/neuralweb/prophet_suggestions.json 2>/dev/null || true
-          git add data/neuralweb/marketing_state.json 2>/dev/null || true
-          git add site/neuralwebdata/marketing_lobe.json 2>/dev/null || true
-          git add data/marketing/sentinel_report.json 2>/dev/null || true
-          git add data/marketing/content_plan.json 2>/dev/null || true
-          git add data/marketing/hot_tape_pack.json 2>/dev/null || true
-          git add data/marketing/cashtag_tiers.json 2>/dev/null || true
-          git add data/marketing/radar_report.json 2>/dev/null || true
-          git add data/marketing/opportunities.jsonl 2>/dev/null || true
-          git add data/marketing/radar_plan_history.json 2>/dev/null || true
-          git add data/marketing/outbox 2>/dev/null || true
-          # Ad Central arena ledgers — forward-only, advanced by the ingest step above.
-          git add data/marketing/ad_central 2>/dev/null || true
-          # Persona memory ledgers (XG-W3) — forward-only, advanced by the
-          # consolidate step above. The host spool (data/marketing/personas_host/)
-          # is gitignored and must never appear here.
-          git add data/marketing/personas 2>/dev/null || true
-          # THE MARKETING LANES' AI SPEND AND RUNG HEALTH (W2, 2026-08-08).
-          # Every marketing LLM lane already books an ai_costs row per served
-          # call (engine/llm_auth._capture_usage, usage_lane=marketing-*) and
-          # NOTHING IN THIS JOB EVER STAGED THEM: the two jobs whose broad
-          # `git add data/` sweeps usage.jsonl in are `engine:` and asia-close's
-          # `asia:`, so the marketing rows were written to this job's checkout
-          # and then discarded by the next actions/checkout. The committed
-          # ledger consequently held 3,372 rows on 2026-08-08 with ZERO from any
-          # marketing lane, which read as "the copywriter books no usage" and is
-          # in fact "the copywriter's usage is never committed". Same reason for
-          # provider_health.jsonl, the new per-rung ledger: an artifact nobody
-          # commits cannot answer a question a week later.
-          git add data/ai_costs 2>/dev/null || true
-          if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
-          # Fail-closed conflict gate (P0 d29e4dd44d/#4167): the marketing
-          # learning push above runs while these paths sit dirty — if its pull
-          # machinery ever regresses to a conflicted autostash apply, this add
-          # would stage the markers. Heal display paths, die on ledger paths.
-          push_staged_heal data/ site/ || exit 1
-          if git diff --cached --quiet; then echo "no standout audit US changes after conflict heal"; exit 0; fi
-          git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
-          # best-effort rebase-push (own files — no other job writes these paths)
-          PUSH_ALARM=420
-          push_retry_init "standout audit US artifacts"
-          while push_attempt; do
-            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
-            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
-                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
-              | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
-              if push_do; then echo "pushed standout audit US artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
-            fi
-            push_abort_rebase
-            push_backoff
-          done
-          push_lost
-          echo "::warning::could not push standout audit US artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+        # Body extracted verbatim to scripts/ci/daily_standout_audit_us_commit.sh (512KB processing-cap diet 2026-08-12 — tests/test_workflow_file_size.py).
+        run: bash scripts/ci/daily_standout_audit_us_commit.sh
       - name: timings ledger + 85% budget tripwire (W2)
         if: always()
         run: bash scripts/ci/nightly_timings_finish.sh 40
@@ -6991,68 +6462,8 @@ jobs:
           if [ "$rc" -ne 0 ]; then echo "::warning title=orchestrator_log::rc=$rc (non-fatal)"; fi
           exit 0
       - name: commit cortex outputs
-        run: |
-          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
-          git config user.name "dashboard-bot"
-          git config user.email "actions@users.noreply.github.com"
-          # Own commit lane (W7b PR2 + P1-D): all cortex + factor_attention subtrees — STAGING LAW
-          git add data/reflexes/cortex_attention/ 2>/dev/null || true
-          git add data/reflexes/factor_attention/grades.jsonl 2>/dev/null || true
-          git add data/reflexes/factor_attention/probation.json 2>/dev/null || true
-          git add data/neuralweb/cortex/ 2>/dev/null || true
-          git add data/neuralweb/machine_registry.jsonl 2>/dev/null || true
-          git add data/neuralweb/governance.jsonl 2>/dev/null || true
-          # trial_ledger: metabolism declares 1 budget row per accepted registration
-          # (log_declared_budget family='cortex'); unstaged it dies with this checkout
-          # and the DSR haircut undercounts.
-          git add data/trial_ledger.jsonl 2>/dev/null || true
-          git add site/neuralweb/ 2>/dev/null || true
-          # PR-C: NW health refresh (cortex_source=current_run) — two-phase health surface
-          git add data/neuralweb/health.json 2>/dev/null || true
-          git add site/neuralwebdata/health.json 2>/dev/null || true
-          # PR-D: NW daily brief finalize (phase=final + history row) — two-phase brief surface
-          git add data/neuralweb/daily_brief.json 2>/dev/null || true
-          git add site/neuralwebdata/daily_brief.json 2>/dev/null || true
-          git add data/neuralweb/daily_brief_history.jsonl 2>/dev/null || true
-          # W-AI: orchestrator run log + N-run reviews (recorded in THIS job — same commit lane)
-          git add data/neuralweb/orchestrator_runlog.jsonl 2>/dev/null || true
-          git add data/neuralweb/orchestrator_reviews.jsonl 2>/dev/null || true
-          git add site/neuralwebdata/orchestrator_runlog.json 2>/dev/null || true
-          # R-CI7: nw-context-intelligence W3 personality risk lens (display-only)
-          git add data/neuralweb/context_risk.json 2>/dev/null || true
-          git add site/neuralwebdata/context_risk.json 2>/dev/null || true
-          # W4 context scanner: narrow git-add of context_candidates.jsonl only (R-CI6)
-          git add data/neuralweb/context_candidates.jsonl 2>/dev/null || true
-          if git diff --cached --quiet; then echo "no cortex output changes"; exit 0; fi
-          git commit -m "cortex: attention grades + A2 earn-in + hypothesis metabolism $(date -u +%F)"
-          # Retry-rebase push loop (stock_briefs pattern)
-          PUSH_ALARM=420
-          push_retry_init "cortex outputs"
-          while push_attempt; do
-            # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
-            # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
-            # refuses ("untracked working tree files would be overwritten") and --autostash can't
-            # clear it (it parks tracked modifications only), so every retry dies identically.
-            # Everything this step publishes is already committed above, so a path untracked HERE
-            # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
-            # Gitignored files and untracked paths origin/main doesn't track never enter the
-            # intersection (runner-local stores and caches are untouched).
-            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
-            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
-                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
-              | while IFS= read -r f; do rm -f -- "$f" || true; done
-            # F3 FIX: plain rebase (no -X theirs) so an adjacent-append conflict
-            # on shared JSONL paths (trial_ledger, governance, machine_registry)
-            # surfaces as a conflict → the retry re-runs cleanly instead of
-            # silently dropping the causal job's committed rows.
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && push_autostash_ok; then
-              if push_do; then echo "pushed cortex outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
-            fi
-            push_abort_rebase
-            push_backoff
-          done
-          push_lost
-          echo "::warning::could not push cortex after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — downstream reads last committed)"
+        # Body extracted verbatim to scripts/ci/daily_cortex_commit.sh (512KB processing-cap diet 2026-08-12 — tests/test_workflow_file_size.py).
+        run: bash scripts/ci/daily_cortex_commit.sh
       - name: timings ledger + 85% budget tripwire (W2)
         if: always()
         run: bash scripts/ci/nightly_timings_finish.sh 30
