@@ -41,13 +41,26 @@ worse than a missed warning.
      the in-flight run is an orphan (queued > 40 min), and fail-OPEN on any
      probe error: this guard is anti-waste, and a fail-closed deny would wedge
      the very recovery lever it protects.
+  5. ANY CI observation once the worker has HANDED CI OFF (Wave A). Shapes 1-3
+     throttle babysitting; this one ends it. A worker that pushed an exact head,
+     armed `merge-on-green`, and wrote a handoff sentinel is TERMINAL — the
+     sweeper owns the merge and a controller event owns the resume. Every poll
+     after that point is a worker spending shared quota to learn a fact it is no
+     longer allowed to act on, and the model burn of the wait is strictly larger
+     than the burn of a fresh continuation session (CLAUDE.md: Fable burn is
+     CONTEXT x TURNS). The sentinel is keyed on (repo, branch, head), so a NEW
+     commit invalidates it automatically and babysitting becomes legal again the
+     moment the worker has un-handed-off work. Fails OPEN in every direction:
+     unresolvable git, unloadable contract, unreadable sentinel -> allow.
 """
 import datetime as dt
+import importlib.util
 import json
 import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 MIN_SLEEP = 90       # seconds between gh polls in a loop
 MIN_WATCH_INTERVAL = 60
@@ -148,6 +161,159 @@ def dispatch_target(args: str):
     return workflow, ref
 
 
+# ── Shape 5: CI observation after a terminal handoff ────────────────────────
+#
+# The CHEAP half of the gate. Nothing below this line spends a subprocess until
+# one of these matches: a command that is not CI observation must cost exactly
+# the regex scan it would have cost before this rule existed.
+#
+# `gh pr checks` is listed WITHOUT --watch on purpose. Its only use is reading a
+# head's check state, which is precisely the fact a handed-off worker is no
+# longer allowed to act on; the `--watch` variant is merely the loud version.
+OBSERVE_RES = (
+    re.compile(CMD_POS + r"gh\s+run\s+(?:watch|view)\b"),
+    re.compile(CMD_POS + r"gh\s+pr\s+checks\b"),
+    re.compile(
+        CMD_POS + r"gh\s+api\b[^|;&\n]*(?:check-runs|check_runs|/jobs|actions/runs)"
+    ),
+)
+#: The pure handoff contract. Loaded BY FILE PATH — this guard must not acquire
+#: the application import graph, and the contract imports only the stdlib so it
+#: never needs to.
+CONTRACT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "ci_handoff_contract.py"
+#: One-slot cache for the loaded contract (a failed load caches None too).
+CONTRACT_CACHE = []
+#: Local git only — no network. Bounded so a wedged git cannot hang the harness.
+GIT_TIMEOUT_S = 10
+#: The two sentences a handed-off worker must read, verbatim. The controller's
+#: contract with the worker is that these words mean STOP, so they are pinned by
+#: test rather than paraphrased per call site.
+HANDOFF_TERMINAL_TEXT = (
+    "CI ownership was handed to merge-on-green at {head}. This worker is terminal.\n"
+    "Start a fresh repair/continuation session only after the controller emits an event."
+)
+
+
+def observes_ci(cmd: str) -> bool:
+    """Whether `cmd` reads CI state — the cheap regex gate for shape 5.
+
+    Two shapes: a direct observation command, or a shell loop with any gh API call
+    inside it. The loop arm catches the wrapper form (`until ...; do gh pr view
+    --json state; sleep 300; done`), which is babysitting even when the inner
+    command would be innocent once.
+    """
+    if any(rx.search(cmd) for rx in OBSERVE_RES):
+        return True
+    return any(GH_API_RE.search(body) for body in loop_bodies(cmd))
+
+
+def ci_handoff_contract():
+    """`scripts/ci_handoff_contract.py` loaded by path, or None. FAILS OPEN.
+
+    Registered in `sys.modules` under a private name before `exec_module` because
+    the contract's `HandoffVerdict` is a `@dataclass` under
+    `from __future__ import annotations`: class creation resolves its annotations
+    via `dataclasses._is_type`, which dereferences
+    `sys.modules.get(cls.__module__)` and dies on an unregistered module. Any
+    `sys.path` mutation is rolled back; a failed load leaves nothing behind.
+
+    The name is per-HOOK. `ship_loop_guard.py` loads the same file, and two hooks
+    sharing one `sys.modules` key evict each other whenever both run in one
+    process — an evicted module with no remaining reference has its globals set to
+    None, which rots the other hook's handle mid-call. Cached for the same reason
+    plus the obvious one: a re-exec per call would be pure waste.
+    """
+    if CONTRACT_CACHE:
+        return CONTRACT_CACHE[0]
+    name = "_mm_ci_handoff_contract_gh_quota_guard"
+    module = None
+    saved_path = list(sys.path)
+    try:
+        spec = importlib.util.spec_from_file_location(name, CONTRACT_PATH)
+        if spec is not None and spec.loader is not None:
+            candidate = importlib.util.module_from_spec(spec)
+            sys.modules[name] = candidate
+            try:
+                spec.loader.exec_module(candidate)
+            except BaseException:
+                sys.modules.pop(name, None)
+                raise
+            module = candidate
+    except Exception as exc:
+        warn(f"could not load the CI handoff contract ({exc.__class__.__name__})")
+        module = None
+    finally:
+        sys.path[:] = saved_path
+    CONTRACT_CACHE.append(module)
+    return module
+
+
+def git_out(root, *args: str) -> str:
+    """One local git read, or "" — never raises, never touches the network."""
+    try:
+        proc = subprocess.run(
+            ["git", *args], cwd=str(root), capture_output=True, timeout=GIT_TIMEOUT_S
+        )
+    except Exception:
+        return ""
+    if proc.returncode != 0:
+        return ""
+    return proc.stdout.decode("utf-8", errors="replace").strip()
+
+
+def handoff_sentinel(cwd=None):
+    """The ACTIVE handoff sentinel for the checkout at `cwd`, or None.
+
+    "Active" is the contract's word and it includes the head: `active_sentinel`
+    returns None for a sentinel written against an OLDER head, so a worker that
+    has committed since handing off is free to watch CI again — it has work the
+    sweeper was never given.
+
+    Costs three local git reads and one small file read, all of them fail-open.
+    Only ever called after `observes_ci` has already matched.
+    """
+    contract = ci_handoff_contract()
+    if contract is None:
+        return None
+    try:
+        root = Path(str(cwd) if cwd else os.getcwd())
+        if not root.is_dir():
+            return None
+        repo = contract.normalize_repo(git_out(root, "config", "--get", "remote.origin.url"))
+        branch = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
+        head = git_out(root, "rev-parse", "HEAD")
+        if not repo or not branch or not head:
+            return None
+        return contract.active_sentinel(repo, branch, head)
+    except Exception as exc:
+        warn(f"could not resolve the handoff sentinel ({exc.__class__.__name__})")
+        return None
+
+
+def handoff_deny_reason(sentinel) -> str:
+    """Deny reason for observing CI after the handoff. Names the head, always."""
+    head = str(sentinel.get("head_sha") or "")
+    number = sentinel.get("pr_number")
+    pr = f"#{number}" if number else "the armed pull request"
+    return (
+        "CI HANDOFF IN EFFECT: this command observes CI, and CI is no longer this "
+        "worker's to observe.\n\n"
+        + HANDOFF_TERMINAL_TEXT.format(head=head)
+        + "\n\n"
+        f"{pr} is armed with `merge-on-green`. The sweeper merges it once every check "
+        "CONCLUDES clean and labels it `merge-blocked` with an explanatory comment if "
+        "one is genuinely red — either way a controller event, not a poll, is what "
+        "resumes the work. Polling from here spends the shared 5,000/hr REST pool (one "
+        "bucket for every session and for ship_loop_guard.py, which fails closed when "
+        "rate-limited) to learn a fact this worker may not act on, and it holds a long "
+        "context open across the 30-34 minutes a ci.yml run takes — the most expensive "
+        "shape there is.\n\n"
+        "Print your terminal `CI_HANDOFF=` marker and stop. If you have since made NEW "
+        "commits, push them: the sentinel is keyed to the handed-off head, so a moved "
+        "HEAD releases this guard on its own."
+    )
+
+
 def warn(msg: str):
     """Loud, but never a deny. Stdout is the harness's decision channel — an ALLOW
     must print nothing there — so the fail-open notice goes to stderr."""
@@ -242,9 +408,20 @@ def deny(reason):
     sys.exit(0)
 
 
-def check(raw: str):
+def check(raw: str, cwd=None):
     """Return a deny reason, or None to allow."""
     cmd = strip_heredocs(raw)
+
+    # 5. CI observation after a terminal handoff. FIRST, because "you are done" is
+    # a better answer than "poll slower" — but strictly regex-gated: `observes_ci`
+    # is pure string work, and only a command that already IS CI babysitting may
+    # spend the local git reads behind `handoff_sentinel`. A command this guard has
+    # no business in must cost nothing.
+    if observes_ci(cmd):
+        sentinel = handoff_sentinel(cwd)
+        if sentinel:
+            return handoff_deny_reason(sentinel)
+
     # 1. gh run watch at a hot interval
     m = WATCH_RE.search(cmd)
     if m:
@@ -319,8 +496,13 @@ def main():
     cmd = str(ti.get("command") or "")
     if "gh " not in cmd:
         allow()
+    # The harness names the invoking checkout; `check` falls back to this process's
+    # cwd, which the harness sets to the same place. Either way the sentinel is
+    # keyed on the REMOTE repo and branch, so a sibling worktree of the same branch
+    # resolves the same handoff.
+    cwd = payload.get("cwd")
     try:
-        reason = check(cmd)
+        reason = check(cmd, str(cwd) if cwd else None)
     except Exception:
         allow()          # fail open
     if reason:
