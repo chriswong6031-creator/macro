@@ -1,14 +1,14 @@
 {
   "schema": "agent_os_state.v1",
   "generator": "scripts/agentos.py status",
-  "generated_at": "2026-08-12T22:07:29Z",
+  "generated_at": "2026-08-12T22:17:38Z",
   "inputs": {
     "workstreams": 6,
     "decisions": 5,
     "discoveries": 3,
     "handoffs": 0,
     "active_builds": "data/governance/active_builds.json@2026-08-11T01:48:44.205959+00:00",
-    "active_builds_age_hours": 44.3,
+    "active_builds_age_hours": 44.5,
     "worktrees": 244,
     "uncommitted_worktrees": [],
     "degraded": [

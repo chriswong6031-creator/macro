@@ -1525,6 +1525,8 @@ def render_state_markdown(state: dict[str, Any]) -> str:
     for row in state["workstreams"]:
         counts[row["status"]] = counts.get(row["status"], 0) + 1
     rollup = " · ".join(f"{counts[k]} {k}" for k in sorted(counts)) or "no workstreams"
+    hours = inputs["active_builds_age_hours"]
+    age_cell = "—" if hours is None else f"{hours}h"
     lines += [
         f"Generated: {state['generated_at']}  |  {len(state['workstreams'])} workstreams "
         f"({rollup})",
@@ -1532,8 +1534,7 @@ def render_state_markdown(state: dict[str, Any]) -> str:
         "| Input | Value |",
         "|---|---|",
         f"| active_builds | {inputs['active_builds'] or '_absent_'} |",
-        f"| active_builds age | "
-        f"{'—' if inputs['active_builds_age_hours'] is None else str(inputs['active_builds_age_hours']) + 'h'} |",
+        f"| active_builds age | {age_cell} |",
         f"| worktrees | {inputs['worktrees']} |",
         f"| records | {inputs['workstreams']} WS · {inputs['decisions']} DEC · "
         f"{inputs['discoveries']} DSC · {inputs['handoffs']} handoffs |",
