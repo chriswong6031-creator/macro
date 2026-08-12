@@ -20,6 +20,15 @@
   .points { margin:6px 0; padding-left:18px; } .points li { margin:2px 0; }
   .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
               font-size:13px; line-height:1.6; }
+  /* Locked-payload CTA row (signed-out view) — same accent language as the
+     site-wide tier gate (tier_preview.css .mx-tier-primary). */
+  .lock-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .lock-cta { font:inherit; font-size:12.5px; font-weight:760; line-height:1; cursor:pointer;
+              padding:11px 16px; border-radius:10px; border:1px solid var(--link);
+              background:var(--link); color:#fff;
+              transition:transform .16s ease, filter .16s ease; }
+  .lock-cta:hover { transform:translateY(-1px); filter:brightness(1.06); }
+  .lock-cta--ghost { background:transparent; border-color:var(--line); color:var(--text); }
   .regline { margin:-2px -4px 6px; padding:6px 9px; border-radius:7px;
              border-left:3px solid var(--muted); }
   .regline.rl-bear { border-left-color:var(--down);
@@ -865,6 +874,9 @@
   var T = {
     en: { asof: 'data through', notlib: 'NOT IN LIBRARY',
           notlibmsg: 'Not in the nightly library (S&P 500 + tracked ETFs/commodities/crypto). Add it in one line: config.yml → stock_search.extra_tickers.',
+          locked: 'SIGN IN TO VIEW',
+          lockedmsg: 'This name is in the library. The full analysis — the decision read, cycle timing, momentum across timeframes and financial health — is included with a free account.',
+          lockedcta: 'Create free account', lockedcta2: 'Sign in',
           season: 'Seasonality', failed: '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.',
           next: 'Next:', cu: ' just crossed up', cd: ' just crossed down',
           bullx: ' bars to bull cross', bearx: ' bars to bear cross',
@@ -878,6 +890,9 @@
                    'August', 'September', 'October', 'November', 'December'] },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（标普500 ＋ 跟踪的 ETF／大宗商品／加密货币）。一行即可添加：config.yml → stock_search.extra_tickers。',
+          locked: '登录后查看',
+          lockedmsg: '该标的已在库中。完整分析——决策读数、周期时机、跨周期动量与财务健康——注册免费账户即可查看。',
+          lockedcta: '创建免费账户', lockedcta2: '登录',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
           next: '下一步：', cu: ' 刚上穿', cd: ' 刚下穿',
           bullx: ' 根K线后金叉', bearx: ' 根K线后死叉',
@@ -1905,6 +1920,20 @@
     return s < 20 ? '0-20' : s < 40 ? '20-40' : s < 60 ? '40-60' : '60+';
   }
 
+  // stock.html?ticker=X is a real entry-link shape (nav_market.js "Bitcoin
+  // Terminal" → stock.html?ticker=BTC-USD), but every reader on this page —
+  // this boot, the live-price bridge, the anticipation panel at the bottom —
+  // keys on location.hash. Canonicalize the query form to the #hash ONCE,
+  // before any of them boot. replaceState fires no hashchange, so each
+  // listener still runs exactly once from its own initial call.
+  if (!location.hash) {
+    try {
+      var _qt = new URLSearchParams(location.search).get('ticker');
+      if (_qt && _qt.trim()) {
+        history.replaceState(null, '', location.pathname + '#' + encodeURIComponent(_qt.trim()));
+      }
+    } catch (e) { /* very old browsers keep the search-first empty state */ }
+  }
   function fromHash() {
     var t = decodeURIComponent((location.hash || '').slice(1));
     if (t) load(t);
@@ -2041,22 +2070,65 @@
     return { open: open, close: close };
   })();
 
+  // The chart + momentum panels and the deep-detail block carry no message of
+  // their own, so the no-analysis catch below hides them; a later successful
+  // load (hash navigation to a covered name) must get them back.
+  function noDataPanels() {
+    var tv = document.getElementById('tvbox');
+    return [document.querySelector('details.sv-deep'),
+            document.getElementById('panel_mtf'),
+            document.getElementById('panel_cal'),
+            tv && tv.closest ? tv.closest('.panel') : null]
+      .concat([].slice.call(document.querySelectorAll('details.sv-group')))
+      .filter(Boolean);
+  }
   function load(t) {
     var safe = t.replace('=', '_').replace('^', '_');
     if (window.loadStockBrief) window.loadStockBrief(safe);   // 🧠 AI brief (hidden if absent)
     if (window.loadAiLean) window.loadAiLean(t);              // ⚖️ accountable lean (top picks only)
+    noDataPanels().forEach(function (p) { p.style.display = ''; });
     fetch('stockdata/' + safe + '.json').then(function (r) {
+      // The per-ticker payload is account-gated (config/site_access.yml): an
+      // anonymous visitor gets a 401 here BY DESIGN. That is a locked door,
+      // not a missing name — telling a signed-out visitor that GPCR is "NOT
+      // IN LIBRARY" while us_stocks.html features it is a lie about our own
+      // coverage, so the two failures get different UI.
+      if (r.status === 401 || r.status === 403) throw new Error('locked');
       if (!r.ok) throw new Error('not in library');
       return r.json();
-    }).then(render).catch(function () {
+    }).then(render).catch(function (err) {
+      var locked = !!(err && err.message === 'locked');
       document.getElementById('result').style.display = 'block';
       document.getElementById('r_name').textContent = t;
-      document.getElementById('r_state').textContent = L('notlib');
+      document.getElementById('r_state').textContent = locked ? L('locked') : L('notlib');
       document.getElementById('r_state').className = 'state';
       document.getElementById('r_afbtn').style.display = 'none';
       if (afCtl) afCtl.close();
       document.getElementById('r_points').innerHTML = '';
-      document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
+      document.getElementById('r_cyclebox').innerHTML = '';
+      // Speak in the PRIMARY slot: r_cyclebox lives inside the collapsed
+      // "Cycle & timing detail" details block, so a message written there is
+      // invisible until expanded — the CTA a signed-out visitor needs must not
+      // hide behind a disclosure triangle.
+      var sd = document.getElementById('sv-decision');
+      if (locked) {
+        sd.innerHTML = '<p class="muted" style="margin:6px 0 2px">' + L('lockedmsg') + '</p>' +
+          '<div class="lock-row">' +
+          '<button type="button" class="lock-cta" data-auth="signup">' + L('lockedcta') + '</button>' +
+          '<button type="button" class="lock-cta lock-cta--ghost" data-auth="signin">' + L('lockedcta2') + '</button>' +
+          '</div>';
+        [].forEach.call(sd.querySelectorAll('.lock-cta'), function (b) {
+          b.addEventListener('click', function () {
+            var mode = b.getAttribute('data-auth');
+            if (window.MMOnboard && typeof window.MMOnboard.open === 'function') window.MMOnboard.open(mode, {});
+            else if (window.MDXAuth && typeof window.MDXAuth.open === 'function') window.MDXAuth.open(mode);
+            else location.href = mode === 'signup' ? '/?signup=1' : '/?signin=1';
+          });
+        });
+      } else {
+        sd.innerHTML = '<p class="muted" style="margin:6px 0 2px">' + L('notlibmsg') + '</p>';
+      }
+      noDataPanels().forEach(function (p) { p.style.display = 'none'; });
       hideFundamentals();
     });
   }

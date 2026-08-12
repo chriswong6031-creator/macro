@@ -332,6 +332,29 @@ public:
     # public byte through them.
     - /fundamental_forensics.css
     - /fundamental_forensics.js
+    # Stock analyzer (stock.html) presentation + client scripts, promoted for
+    # the same reason fundamental_forensics.css/js above were: the 2026-08-04
+    # *.html change opened the page shell, but these were never promoted with
+    # it, so the analyzer served a 200 whose renderer scripts all 401'd for
+    # anonymous visitors — the primary slot died with "Could not render the
+    # analysis" and the gated stockdata/ fetch's 401 rendered as NOT IN
+    # LIBRARY. All of them are presentation/fetch clients with no embedded
+    # payload: every signal-bearing path they request (per-ticker stockdata/,
+    # stockbrief/, ohlc/, anticipationdata/, flowtracker/) stays outside this
+    # allowlist and keeps its default-deny gate, so promoting the WORKBENCH
+    # changes nothing about who can read the WORK.
+    - /lightweight-charts-v5.js
+    - /chart.js
+    - /stockview.js
+    - /stockbrief.js
+    - /mtf.js
+    - /aidesk_lean.js
+    # The unified chat widget client. theme.js (public) injects it on every
+    # page for every visitor, so its 401 was silently killing the anonymous
+    # chat launcher estate-wide, not just on stock.html. The widget's data
+    # plane is the Bearer-authenticated /api/brain/* gateway, which is
+    # unchanged; the script itself carries no signals or customer data.
+    - /mm_brain.js
     # Existing Terminal ingest compatibility. Remove after the separate
     # Terminal session moves these fetches behind authenticated transport.
     - /factordata/tech_lab.json
