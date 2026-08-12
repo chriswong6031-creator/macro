@@ -1,0 +1,320 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.mastermindx_selector_capture_attestation/v1",
+  "title": "MastermindX frozen-selector operational capture attestation",
+  "description": "A closed private same-process receipt that the exact externally reviewed release, tree, all authority-source bytes, and globally inactive selector registration were observed during one current five-minute slot. It does not inspect the candidate source and is not standalone proof of host occurrence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "attestation_id",
+    "mode",
+    "authentication_basis",
+    "comparison_system",
+    "scheduled_at",
+    "attempted_at",
+    "completed_at",
+    "capture_event_at",
+    "disposition",
+    "emitted_enrollment_event_count",
+    "emitted_enrollment_event_ids",
+    "producer_rule_sha256",
+    "release_policy_sha256",
+    "checkout",
+    "selector_registration",
+    "observation",
+    "claim_boundary",
+    "occurrence_trust",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.mastermindx_selector_capture_attestation/v1"},
+    "attestation_id": {"type": "string", "pattern": "^mxcap_[a-f0-9]{64}$"},
+    "mode": {"const": "capture_only_registration_inactive"},
+    "authentication_basis": {
+      "const": "reviewed_exact_release_tree_owner_bound_timed_lock_triple_snapshot/v2"
+    },
+    "comparison_system": {"const": "mastermindx"},
+    "scheduled_at": {"$ref": "#/$defs/utcMicros"},
+    "attempted_at": {"$ref": "#/$defs/utcMicros"},
+    "completed_at": {"$ref": "#/$defs/utcMicros"},
+    "capture_event_at": {"$ref": "#/$defs/utcMicros"},
+    "disposition": {"const": "registered_selector_inactive"},
+    "emitted_enrollment_event_count": {"const": 0},
+    "emitted_enrollment_event_ids": {"type": "array", "maxItems": 0},
+    "producer_rule_sha256": {"$ref": "#/$defs/sha256"},
+    "release_policy_sha256": {"$ref": "#/$defs/sha256"},
+    "checkout": {"$ref": "#/$defs/checkout"},
+    "selector_registration": {"$ref": "#/$defs/selectorRegistration"},
+    "observation": {"$ref": "#/$defs/observation"},
+    "claim_boundary": {"$ref": "#/$defs/claimBoundary"},
+    "occurrence_trust": {"$ref": "#/$defs/occurrenceTrust"},
+    "authority": {"$ref": "#/$defs/falseAuthority"}
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "utcMicros": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+    },
+    "fileReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "object_sha256", "object_bytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 300},
+        "object_sha256": {"$ref": "#/$defs/sha256"},
+        "object_bytes": {"type": "integer", "minimum": 0, "maximum": 2097152}
+      }
+    },
+    "checkout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "head_sha",
+        "tree_sha",
+        "producer_release_sha",
+        "release_policy_sha256",
+        "selector_merge_sha",
+        "nbbo_cohort_merge_sha",
+        "owner_uid",
+        "root_device",
+        "root_inode",
+        "root_mode",
+        "detached_head",
+        "tracked_worktree_matches_head",
+        "ordinary_untracked_absent",
+        "ignored_cache_policy",
+        "authority_sources"
+      ],
+      "properties": {
+        "path": {"const": "/Users/chriswong/options-nbbo-ops-wt"},
+        "head_sha": {"$ref": "#/$defs/sha"},
+        "tree_sha": {"$ref": "#/$defs/sha"},
+        "producer_release_sha": {"$ref": "#/$defs/sha"},
+        "release_policy_sha256": {"$ref": "#/$defs/sha256"},
+        "selector_merge_sha": {"const": "6ba8e7f368a1674b7114d5bd867aa721bd0472f8"},
+        "nbbo_cohort_merge_sha": {"const": "9056d844667ed1a293b29c6deec99521e5f58f7a"},
+        "owner_uid": {"type": "integer", "minimum": 1},
+        "root_device": {"type": "integer", "minimum": 1},
+        "root_inode": {"type": "integer", "minimum": 1},
+        "root_mode": {"const": "0700"},
+        "detached_head": {"const": true},
+        "tracked_worktree_matches_head": {"const": true},
+        "ordinary_untracked_absent": {"const": true},
+        "ignored_cache_policy": {
+          "const": "bounded_owned_nonexecutable_pytest_cache_only"
+        },
+        "authority_sources": {"$ref": "#/$defs/authoritySources"}
+      }
+    },
+    "authoritySources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capture_module",
+        "engine_package_init",
+        "schema_contract",
+        "session_window_source",
+        "nyse_calendar_source",
+        "lib_package_init"
+      ],
+      "properties": {
+        "capture_module": {
+          "allOf": [
+            {"$ref": "#/$defs/fileReceipt"},
+            {"properties": {"path": {"const": "engine/options_mastermindx_capture.py"}}}
+          ]
+        },
+        "engine_package_init": {
+          "allOf": [
+            {"$ref": "#/$defs/fileReceipt"},
+            {"properties": {"path": {"const": "engine/__init__.py"}}}
+          ]
+        },
+        "schema_contract": {
+          "allOf": [
+            {"$ref": "#/$defs/fileReceipt"},
+            {"properties": {"path": {"const": "contracts/options/options.mastermindx_selector_capture_attestation.v1.schema.json"}}}
+          ]
+        },
+        "session_window_source": {
+          "allOf": [
+            {"$ref": "#/$defs/fileReceipt"},
+            {"properties": {"path": {"const": "engine/session_digest.py"}}}
+          ]
+        },
+        "nyse_calendar_source": {
+          "allOf": [
+            {"$ref": "#/$defs/fileReceipt"},
+            {"properties": {"path": {"const": "lib/nyse_calendar.py"}}}
+          ]
+        },
+        "lib_package_init": {
+          "allOf": [
+            {"$ref": "#/$defs/fileReceipt"},
+            {"properties": {"path": {"const": "lib/__init__.py"}}}
+          ]
+        }
+      }
+    },
+    "selectorRegistration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "object_sha256",
+        "object_bytes",
+        "receipt_id",
+        "selector_rule_sha256",
+        "activation_manifest_id",
+        "selector_effective_freeze_at",
+        "registration_state",
+        "historical_activation_action",
+        "historical_activation_reason_codes",
+        "current_slot_reason_code",
+        "candidate_source_examined",
+        "current_candidate_count_known",
+        "future_rows_policy",
+        "registered_receipt_is_covered_session_evidence"
+      ],
+      "properties": {
+        "path": {
+          "const": "research/options_estate/sparse_selector_preregistration_receipt_v1.json"
+        },
+        "object_sha256": {
+          "const": "49d0fa742383e86d8907fec60e47d733788d8879e394d85c8e6a6ac0d3f1a878"
+        },
+        "object_bytes": {"const": 16050},
+        "receipt_id": {
+          "const": "ossr_9309cd0e7a70c28c0f0fd36ba74330bcc4dd4abcaf87c7f41436162b30d1e838"
+        },
+        "selector_rule_sha256": {
+          "const": "a98d3b92e1ebe069c141d5f79ee9260eeb2b8eeee4f90f574ef0069c062ad20b"
+        },
+        "activation_manifest_id": {
+          "const": "ossm_da48d6a53a3cbdd2f7baf1f53b6f454cc4503608cb12c49a8e02e263766d9695"
+        },
+        "selector_effective_freeze_at": {"const": "2026-08-12T13:30:00Z"},
+        "registration_state": {"const": "globally_inactive"},
+        "historical_activation_action": {"const": "abstain"},
+        "historical_activation_reason_codes": {
+          "type": "array",
+          "prefixItems": [{"const": "NO_PROSPECTIVE_CANDIDATES"}],
+          "minItems": 1,
+          "maxItems": 1
+        },
+        "current_slot_reason_code": {"const": "REGISTERED_SELECTOR_INACTIVE"},
+        "candidate_source_examined": {"const": false},
+        "current_candidate_count_known": {"const": false},
+        "future_rows_policy": {"const": "new_governed_implementation_required"},
+        "registered_receipt_is_covered_session_evidence": {"const": false}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "basis",
+        "candidate_source_examined",
+        "candidate_count_known",
+        "candidate_count",
+        "candidate_events_inferred",
+        "event_producer_armed",
+        "emitted_enrollment_event_count",
+        "emitted_enrollment_event_ids"
+      ],
+      "properties": {
+        "basis": {
+          "const": "registration_inactive_candidate_source_not_examined"
+        },
+        "candidate_source_examined": {"const": false},
+        "candidate_count_known": {"const": false},
+        "candidate_count": {"type": "null"},
+        "candidate_events_inferred": {"const": false},
+        "event_producer_armed": {"const": false},
+        "emitted_enrollment_event_count": {"const": 0},
+        "emitted_enrollment_event_ids": {"type": "array", "maxItems": 0}
+      }
+    },
+    "claimBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_source_observed",
+        "current_candidate_absence_observed",
+        "candidate_event_inference",
+        "event_enrollment",
+        "public_output",
+        "prospective_selector_evidence",
+        "satisfies_sparse_gate",
+        "static_registration_is_slot_coverage",
+        "trade_or_return_claim",
+        "training_eligible"
+      ],
+      "properties": {
+        "candidate_source_observed": {"const": false},
+        "current_candidate_absence_observed": {"const": false},
+        "candidate_event_inference": {"const": false},
+        "event_enrollment": {"const": false},
+        "public_output": {"const": false},
+        "prospective_selector_evidence": {"const": false},
+        "satisfies_sparse_gate": {"const": false},
+        "static_registration_is_slot_coverage": {"const": false},
+        "trade_or_return_claim": {"const": false},
+        "training_eligible": {"const": false}
+      }
+    },
+    "occurrenceTrust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "basis",
+        "host_clock_cryptographically_attested",
+        "platform_and_tzdata_attested",
+        "standalone_replay_proves_host_occurrence",
+        "outer_private_append_receipt_required"
+      ],
+      "properties": {
+        "basis": {"const": "same_process_host_clock_only"},
+        "host_clock_cryptographically_attested": {"const": false},
+        "platform_and_tzdata_attested": {"const": false},
+        "standalone_replay_proves_host_occurrence": {"const": false},
+        "outer_private_append_receipt_required": {"const": true}
+      }
+    },
+    "falseAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_originate_signal",
+        "may_score",
+        "may_rank",
+        "may_select",
+        "may_issue",
+        "may_size",
+        "may_trade",
+        "may_publish_pick",
+        "may_train_prophet",
+        "may_feed_neural_web",
+        "may_claim_completion"
+      ],
+      "properties": {
+        "may_originate_signal": {"const": false},
+        "may_score": {"const": false},
+        "may_rank": {"const": false},
+        "may_select": {"const": false},
+        "may_issue": {"const": false},
+        "may_size": {"const": false},
+        "may_trade": {"const": false},
+        "may_publish_pick": {"const": false},
+        "may_train_prophet": {"const": false},
+        "may_feed_neural_web": {"const": false},
+        "may_claim_completion": {"const": false}
+      }
+    }
+  }
+}
