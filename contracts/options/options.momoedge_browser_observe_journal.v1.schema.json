@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/options/options.momoedge_browser_observe_journal.v1.schema.json",
+  "title": "Private debranded MomoEdge observe-only journal",
+  "description": "A private immutable journal with exact raw-byte references and permanently false coverage and authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "mode", "extension_version", "scheduled_at", "attempted_at", "completed_at",
+    "disposition", "reason", "message_sha256", "capture", "coverage_eligible", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.momoedge_browser_observe_journal/v1"},
+    "mode": {"const": "observe_only"},
+    "extension_version": {"const": "0.1.0"},
+    "scheduled_at": {"type": "string", "format": "date-time"},
+    "attempted_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": "string", "format": "date-time"},
+    "disposition": {"enum": ["fresh_response", "unavailable"]},
+    "reason": {"oneOf": [{"$ref": "#/$defs/unavailableReason"}, {"type": "null"}]},
+    "message_sha256": {"$ref": "#/$defs/sha256"},
+    "capture": {"oneOf": [{"$ref": "#/$defs/capture"}, {"type": "null"}]},
+    "coverage_eligible": {"const": false},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"disposition": {"const": "fresh_response"}}},
+      "then": {
+        "properties": {
+          "reason": {"type": "null"},
+          "capture": {"$ref": "#/$defs/capture"}
+        }
+      },
+      "else": {
+        "properties": {
+          "reason": {"$ref": "#/$defs/unavailableReason"},
+          "capture": {"type": "null"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "unavailableReason": {
+      "enum": [
+        "alarm_late", "capture_in_flight", "capture_timeout", "fetch_wrapper_restore_failed",
+        "fresh_request_not_observed", "http_error", "invalid_fresh_response",
+        "invalid_response_json", "invalid_response_shape", "multiple_matching_responses",
+        "no_matching_tab", "page_execution_failed", "page_fetch_missing", "page_load_failed",
+        "page_origin_path_mismatch", "page_runtime_missing", "response_too_large", "runtime_fallback_or_missing",
+        "runtime_response_mismatch", "sensitive_key_rejected", "tab_not_ready"
+      ]
+    },
+    "nullableText": {"type": ["string", "null"], "maxLength": 128},
+    "clock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["utc", "epoch_ms"],
+      "properties": {
+        "utc": {"type": "string", "format": "date-time"},
+        "epoch_ms": {"type": ["number", "string"]}
+      }
+    },
+    "proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fresh_request_observed", "active_and_source_today_closed_scope",
+        "complete_new_york_day_proven", "runtime_response_reconciled",
+        "sensitive_keys_absent", "fetch_wrapper_restored"
+      ],
+      "properties": {
+        "fresh_request_observed": {"const": true},
+        "active_and_source_today_closed_scope": {"const": true},
+        "complete_new_york_day_proven": {"const": false},
+        "runtime_response_reconciled": {"const": true},
+        "sensitive_keys_absent": {"const": true},
+        "fetch_wrapper_restored": {"const": true}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["may_count_coverage", "may_enroll", "may_score", "may_rank", "may_size", "may_gate"],
+      "properties": {
+        "may_count_coverage": {"const": false},
+        "may_enroll": {"const": false},
+        "may_score": {"const": false},
+        "may_rank": {"const": false},
+        "may_size": {"const": false},
+        "may_gate": {"const": false}
+      }
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "option_type", "right", "strike", "expiry", "premium"],
+      "properties": {
+        "root": {"$ref": "#/$defs/nullableText"},
+        "option_type": {"$ref": "#/$defs/nullableText"},
+        "right": {"enum": ["C", "P", null]},
+        "strike": {"$ref": "#/$defs/nullableText"},
+        "expiry": {"$ref": "#/$defs/nullableText"},
+        "premium": {"$ref": "#/$defs/nullableText"}
+      }
+    },
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stable_signal_id", "source_row_sha256", "state", "ticker", "direction",
+        "issued_at", "closed_at", "option_symbol", "option_contracts"
+      ],
+      "properties": {
+        "stable_signal_id": {"$ref": "#/$defs/sha256"},
+        "source_row_sha256": {"$ref": "#/$defs/sha256"},
+        "state": {"enum": ["active", "closed"]},
+        "ticker": {"$ref": "#/$defs/nullableText"},
+        "direction": {"$ref": "#/$defs/nullableText"},
+        "issued_at": {"type": "string", "format": "date-time"},
+        "closed_at": {"oneOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]},
+        "option_symbol": {"$ref": "#/$defs/nullableText"},
+        "option_contracts": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/contract"}}
+      }
+    },
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "debranded", "signals"],
+      "properties": {
+        "schema": {"const": "options.momoedge_browser_projection/v1"},
+        "debranded": {"const": true},
+        "signals": {"type": "array", "maxItems": 2000, "items": {"$ref": "#/$defs/signal"}}
+      }
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_contract", "response_schema", "source_closed_cutoff_at", "request_started_at",
+        "response_completed_at", "http_status", "raw_ref", "row_count", "active_count",
+        "closed_count", "proof", "projection"
+      ],
+      "properties": {
+        "request_contract": {"const": "signals_active_plus_source_today_closed_fresh_fetch/v1"},
+        "response_schema": {"const": "momoedge_signals_json_array/v1"},
+        "source_closed_cutoff_at": {"type": "string", "format": "date-time"},
+        "request_started_at": {"$ref": "#/$defs/clock"},
+        "response_completed_at": {"$ref": "#/$defs/clock"},
+        "http_status": {"type": "integer", "minimum": 200, "maximum": 299},
+        "raw_ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sha256", "byte_count", "relative_path"],
+          "properties": {
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "byte_count": {"type": "integer", "minimum": 1, "maximum": 600000},
+            "relative_path": {"type": "string", "pattern": "^raw/sha256/[a-f0-9]{2}/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"}
+          }
+        },
+        "row_count": {"type": "integer", "minimum": 0, "maximum": 2000},
+        "active_count": {"type": "integer", "minimum": 0, "maximum": 2000},
+        "closed_count": {"type": "integer", "minimum": 0, "maximum": 2000},
+        "proof": {"$ref": "#/$defs/proof"},
+        "projection": {"$ref": "#/$defs/projection"}
+      }
+    }
+  }
+}
