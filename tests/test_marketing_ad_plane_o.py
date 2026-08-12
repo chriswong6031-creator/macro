@@ -27,6 +27,7 @@ import pytest
 
 from engine.marketing import ad_arena
 from engine.marketing.ad_arena import _unit_hash
+from scripts.workflow_run_source import resolved_workflow_text
 
 
 def _worktree_root() -> Path:
@@ -540,7 +541,7 @@ WORKFLOW = ROOT / ".github" / "workflows" / "daily.yml"
 
 def test_the_runner_is_actually_wired_into_the_nightly():
     """A nightly script nobody calls is dead code that looks like a feature."""
-    wf = WORKFLOW.read_text(encoding="utf-8")
+    wf = resolved_workflow_text(WORKFLOW, ROOT)
     assert "scripts.ad_ingest_run" in wf, "the ingest step is not in daily.yml"
     assert "SUPABASE_ACCESS_TOKEN" in wf and "SUPABASE_PROJECT_REF" in wf
     # …and the ledgers it advances must actually be committed, or every night's

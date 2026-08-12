@@ -7,6 +7,8 @@ from pathlib import Path
 import yaml
 
 
+from scripts.workflow_run_source import resolved_workflow_text
+
 ROOT = Path(__file__).resolve().parents[1]
 RENDER_PATH = ROOT / ".github" / "workflows" / "render.yml"
 ENGINE_RENDER_PATH = ROOT / ".github" / "workflows" / "engine-render.yml"
@@ -90,5 +92,7 @@ def test_ticker_builder_is_owned_and_narrowed_to_macro():
 
 
 def test_nightly_order_remains_build_site_then_ticker_pages():
-    daily = DAILY_PATH.read_text(encoding="utf-8")
+    # Resolved: both builders live in a body extracted to scripts/ci/, and
+    # this assertion is positional — see scripts/workflow_run_source.
+    daily = resolved_workflow_text(DAILY_PATH, ROOT)
     assert daily.index("scripts.build_site") < daily.index("scripts.build_ticker_pages")
