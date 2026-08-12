@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T04:52:55.428189+00:00",
-  "count": 988,
+  "generated_at": "2026-08-12T05:07:58.801466+00:00",
+  "count": 989,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -203,6 +203,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yj7jfih70ze-6c7281",
+      "title": "US Daily July CPI Preview",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:33Z",
+      "summary_points": [
+        "**Core CPI Miss**: Core CPI forecast at 0.19% MoM (vs.",
+        "2% consensus), YoY 2.47% (vs.",
+        "5%), driven by lower energy and mixed auto/shelter trends.",
+        "**Auto Insurance Disinflation**: Auto insurance CPI decline of 0.5% MoM SA, reflecting lower premiums amid mixed auto sector inflation (used cars +0.5%, new cars +0.1%).",
+        "**Geopolitical Inflation Impact**: Iran War-driven jet fuel spike caused 2.0% MoM SA airfare surge (travel services), offset by 1.0% MoM SA hotel price decline (World Cup effect reversal)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
