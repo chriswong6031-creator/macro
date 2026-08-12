@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T08:59:05.690182+00:00",
-  "count": 1000,
+  "generated_at": "2026-08-12T09:53:56.876381+00:00",
+  "count": 1003,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -161,6 +161,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0rlygivjcaa-c2ab8c",
+      "title": "US EQUITIES COLOR UNCH",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T22:34:18Z",
+      "summary_points": [
+        "Fed Policy Shift**: Q3 CPI data confirms persistent inflation, delaying rate cuts to Q1 2025; bond yields surge 25bps on hawkish Fed pivot **Ukraine Conflict Escalation**: Russian strikes on Ukrainian energy infrastructure disrupt EU gas flows, triggering 12% price spike and rerouting LNG contracts **ETF Outflows**: $18B equity ETF net outflows in 72 hours, accelerating technicals in S&P 500 futures and widening volatility index (VIX) to 22.5"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
       "language": "en",
       "needs_metadata": false
     },
@@ -746,6 +763,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-u6b8sghhu3l-7af92c",
+      "title": "Middle East",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:48:39Z",
+      "summary_points": [
+        "**Oil Geopolitics & Supply Constraints**: Hormuz Strait tensions (Iran-Oman deal unresolved, Houthi attacks) sustain Brent above $84/b and WTI near $79/b, with limited supply buffers despite Chinese demand and emergency releases; geopolitical premium persists despite diplomatic progress.",
+        "**Gold Supported by Weak US Data & Demand**: Gold holds above $4,300/oz amid weak US jobs data easing rate hike fears, driven by hedge fund positioning to six-month highs, Chinese gold-backed ETF inflows, and PBoC adding 640,000oz to reserves in July.",
+        "**Sovereign Bond & FX Risks**: Extreme negative signals in UAE 2027 short-term bond YTD (-0.78%) and USD/ILS 1yr fwd YTD (-229.22%), alongside Bahrain 2028 G-spread at 280.20 bp, highlight acute emerging market bond volatility and currency hedging risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-lwx52b2fpsp-b07ab0",
       "title": "market monitor",
       "institution": "Goldman Sachs",
@@ -988,6 +1024,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uyr13hzwckz-4e964d",
+      "title": "Investor Positioning and Flows Aug 10",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T17:13:37Z",
+      "summary_points": [
+        "**S&P 500 Trend Channel Strength**: 23% annualized uptrend (Oct 2022–Mar 2025), retesting 4-year channel bottom; sustained momentum despite short-term volatility.",
+        "**Tech Positioning Extremes**: Large-cap Tech at 95th percentile (not yet at June/October highs), signaling overbought risk and critical concentration risk for portfolios.",
+        "**Earnings Gap Undervaluation**: Positioning significantly below earnings growth (39% correlation since 2012), indicating potential for higher returns as normalization occurs.",
+        "**Systematic Strategies Dominance**: Systematic equity positioning at 73rd percentile (vs.",
+        "43rd discretionary), with 77% correlation to S&P 500 volatility—heightening systemic risk exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 54,
       "language": "en",
       "needs_metadata": false
     },
