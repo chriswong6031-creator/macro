@@ -41,18 +41,25 @@ coverage gate): the phase-0/W2 observations that motivated the ore body — topp
 looking *younger, fresher-high, faster-heating* than matched survivors on four panels — remain
 real measurements; what dies is their reading as top anatomy. A topped episode measured at the
 frozen {21,10,5} snapshots sits a median 1–2 sessions from its own 63d high, while an arbitrary
-surviving extension day sits far staler — the separations track that measurement geometry, and
-when controls are placed at like anchors the confirming legs do not clear their bars. For the
+surviving extension day sits staler by the registered F3 anchors (−2.25 / −2.25 / −2.75
+sessions). F3's separation *is* that measurement geometry by construction. For B3 the
+registered branch fires on anchor geometry because that is the rival AM-v2 tested — with
+controls at like anchors the confirming legs do not clear their bars — but this wave's own
+non-binding sampling arm locates B3's dependence in length-biased control sampling instead
+(§5): both readings agree the leg is not established anatomy, and neither mechanism is proven.
+For the
 current regime nothing on any surface changes (Winner Health counts descriptive legs against
 per-tier libraries and claims no anatomy), but the research-side reading changes now:
 "younger/fresher/faster-heating" is not to be cited as top anatomy from this program while the
 kill stands. Who is missing from the deciding evidence: the R63 panel (dark under AM2), and the
-upper half of the case anchor distribution (§2) — the kill is a statement about
-near-63d-high case snapshots, which is where the frozen pipeline measures cases.
+upper half of the case anchor distribution (§2) — the kill is a statement about near-63d-high
+case snapshots, where the case MEDIAN sits (1–2 sessions), but the case census spans the full
+distribution (p75 = 8/4/6), so it is not an estimate over the full case-set census.
 
 ## §2 Constructions, censuses, and walls
 
-**Two variables move vs phase-1 DM** (prereg §2, both declared pre-results): the hard anchor
+**Two variables move vs phase-1 DM** (caliper: prereg §1; seed: prereg §2 — both declared
+pre-results): the hard anchor
 caliper `|control days_since_63d_high − case days_since_63d_high| ≤ 2` applied per case
 snapshot at NN time (the frozen matcher pairs per `episode_id@days_to_peak`), and the fresh
 seed (20260811 → 20260812) governing the episode-first control draw and the bootstrap. DM↔AM2
@@ -67,7 +74,8 @@ Units, labeled (phase-1 §2 discipline): *case snapshot sets* = `matching.n_matc
 left unmatched by key+ticker+caliper jointly); *matched / eligible episodes* = `e1.n_episodes` /
 `episodes.n_topped_e1_eligible` (this ratio is the printed match rate); *cell n* = matched
 topped episodes surviving per-cell coverage; *cell peak-months* = distinct peak months among
-the cell's own matched episodes (panel-level counts are higher: 47/22/47 AM2, 47/29/47 AGEFREE).
+the cell's own matched episodes (panel-level counts are equal or higher: 47/22/47 AM2,
+47/29/47 AGEFREE).
 
 | cell (caliper ≤2) | case-sets matched / total | matched / eligible episodes | cell n | cell peak-months | match rate | wall s |
 |---|---|---|---|---|---|---|
@@ -109,11 +117,16 @@ failure." AM-v2's signed diagnostic (episode-first-collapsed F3 gap, case − co
 **Which clauses could have failed, stated honestly:** the per-pair delta is the case value minus
 the mean of its finite controls, and the caliper bounds every control's anchor within ±caliper
 of the case's — so on the ≤2 arm, clause (b) (CI ⊂ (−2, +2)) holds **by construction**, and on
-the ≤1 arm clause (a) (|point| ≤ 1.0) likewise. The empirical content of the pass is: clause
+the ≤1 arm clauses (a) and (b) both do. The empirical content of the pass is: clause
 (c) — no positive reversal, AM-v1's actual failure mode, which the caliper does NOT preclude
 (controls could have clustered systematically fresher than cases inside the band); clause (a)
 on the ≤2 arm (the point could have reached 2.0); and the near-degenerate concentration at
-0.00 itself, which says exact-anchor controls existed for almost every matched case. The
+0.00 itself — which comes not from exact-anchor pairs (the realised per-pair |Δanchor| has
+median 1.0 on all six cells; p75 1.0 except 2.0 on AM2 × r63) but from symmetry: each delta is
+the case value minus the MEAN of its
+finite controls, residual gaps sit on both sides of the case anchor and cancel, and the
+episode-first median collapses what remains. The diagnostic's zero says the residual gaps are
+unbiased, not that they are absent. The
 residual asymmetry is at most 0.0625 sessions, 36× smaller than its panel's −2.25 anchor (the
 other panels' residuals are exactly 0.00). `governing_arm` = the registered ≤2 caliper on all
 six (construction × panel) cells, `escalated_to_the_tighter_arm = False`,
@@ -144,12 +157,16 @@ none changes it:
   well as the caliper;
 - the same artifact's **ticker-clustered CI [+0.470, +2.721] excludes zero** on the declared
   side. The registered inference is the episode-peak-month block bootstrap, so the grade
-  stands; a different registered clustering would have called this cell the other way;
+  stands — and ticker clustering is nowhere a registered inference in this program. Under it,
+  the CI clause of the grade would have flipped; no ticker-side p or q is emitted, so whether
+  the full grade (which also needs BH q ≤ 0.10) would flip is not derivable;
 - per the program's own standard (W2 §3.1, phase-1 §4.3): only a CI that *excludes* the prior
   effect supports "shown absent." This cell supports **failure to confirm** — the registered
   kill's actual content — not demonstrated absence.
 
-On the discovery cohort B3 is flatly gone (+0.133; ticker CI [−1.011, +0.728] agrees), and the
+On the discovery cohort B3 is not supported (+0.133; ticker CI [−1.011, +0.728] agrees; the
+block CI still contains DM's +0.429, so the cohort is unreadable-at-this-power rather than
+shown-flat), and the
 non-governing ≤1 escalation arm swings it NEGATIVE (−1.028 [−1.970, −0.239]) — a
 caliper-to-caliper sign swing incompatible with a stable positive reading there. Nothing here
 contradicts phase-1: DM alone had already killed B3-primary; AM-v2 removes the anchor rival
@@ -184,10 +201,10 @@ case snapshots, n=2,949 on primary, vs distinct control days, n=2,529): case epi
 22.0 vs control 8.0 on primary (marginal gap +14.0 sessions; r63 +5.0; atrz +11.0). The paired
 registered estimates are the table's (+2.667 / +3.000 / +1.000), landing where the bias points;
 their ticker-clustered CIs exclude zero on the positive side on all three panels ([+1.625,
-+3.750] / [+1.667, +4.000] / [+0.167, +1.500]) — under the documented adverse bias, a
-wrong-direction read this stable is what the bias predicts, and it grades exactly as
-registered: NOT-SUPPORTED / UNDERPOWERED / NOT-SUPPORTED, **UNINFORMATIVE-BY-DESIGN for the
-negative claim, never a kill.** What this wave can and cannot say about the instrument family:
++3.750] / [+1.667, +4.000] / [+0.167, +1.500]) — consistent with the documented bias
+DIRECTION; the wave measures no bias magnitude, so these receipts cannot say the bias accounts
+for the size of the read. It grades exactly as registered: NOT-SUPPORTED / UNDERPOWERED /
+NOT-SUPPORTED, **UNINFORMATIVE-BY-DESIGN for the negative claim, never a kill.** What this wave can and cannot say about the instrument family:
 the caliper-width lever barely moves F1 (≤1 / ≤2 / ≤4 arms: +2.896/+2.667/+2.875 on primary;
 +3.000 flat on r63; +1.000/+1.000/+0.750 on atrz — a ≤0.25-session spread), but nothing in the
 wave **measures the bias magnitude** — only its direction was documented. F1 is therefore
@@ -210,8 +227,10 @@ in era3). Zero latest-era wrong-sign flags on any registered cell, either arm. N
   +4.480] q=0.0235 where the registered cell is dark. Phase-1's caution carries verbatim: the
   switch also moves n (894 → 1,969 on primary) and control composition, so it **locates** the
   sampling dependence rather than proving it, and it is non-binding by prereg §5. The honest
-  composite: under episode-first sampling — the registered design, which weights each surviving
-  episode once — B3 clears no bar anywhere; under length-biased day-weighting it reads positive
+  composite: under episode-first sampling WITH ANCHORS MATCHED — the registered design, which
+  weights each surviving episode once — B3 clears no bar anywhere (under episode-first DM
+  without the caliper, B3-atrz had cleared its bar at +3.268); under length-biased
+  day-weighting it reads positive
   on all three panels even with anchors matched. B3's separation, where it exists, lives in
   giving long surviving episodes more weight, not in anchor geometry alone — consistent with
   phase-1's location of the same dependence under DM.
@@ -229,8 +248,9 @@ in era3). Zero latest-era wrong-sign flags on any registered cell, either arm. N
   in both constructions — is any feature wrong-signed with a CI excluding zero on all three
   panels? — and the answer is no (maximum 2/3: `F4_deepest_dip21_vs_max63`, whose r63 CI spans
   zero). Nearest adjacent pattern, noted without a claim: `A7_late_gain_share` under AGEFREE
-  separates on all three panels with a sign flip (−0.050 / +0.105 / −0.042) — the
-  "sign-unstable separator" shape W2 §4 named. Read from the full tables, never survivor lists.
+  has a CI excluding zero on all three panels with a sign flip (−0.050 / +0.105 / −0.042; the
+  r63 row is floor-dropped, `interpretable=False`) — the sign-unstable shape W2 §4 named. Read
+  from the full tables, never survivor lists.
 
 ## §6 Instrument and gates
 
@@ -255,7 +275,10 @@ declared absorption path was not exercised.
    on this tape as a cluster claim** — B3's separation is anchor geometry rather than anatomy
    (the pre-written B3 branch, fired on grades: NOT-SUPPORTED on ATRZ, the only floor-clearing
    disjoint panel, with R63 dark at 31 episodes; §4.1 prints the fragility receipts and the
-   failure-to-confirm-not-absence rider); F3 is the matching variable and was never separately
+   failure-to-confirm-not-absence rider; the branch names the rival AM-v2 tested, while §5's
+   non-binding sampling arm locates B3's dependence in length-biased sampling instead — both
+   readings agree the leg is not established anatomy, neither mechanism is proven); F3 is the
+   matching variable and was never separately
    gradeable; F1 is undecided within this wave (§4.3). Per the ore law the kill closes these
    constructions on this tape; out-of-time replication (the store-refresh workstream) is the
    only evidence that can reopen it, and the cluster's features remain display-tier confluence
@@ -311,3 +334,19 @@ declared absorption path was not exercised.
   distribution), the B2-primary "dead" overstatement (CI contains DM's point), the undefined
   DISCHARGED-BY-RESULT status (now: dormant), clause-teeth disclosure in §3, and unit
   relabelings. Verification pass 2 commissioned on this revision.
+- 2026-08-12 — G0.5 pass 2 (same reviewer, fresh eyes on the revision): all 26 pass-1 findings
+  verified RESOLVED, every new number reproduced — verdict **NOT PRESENTABLE** on 1 blocker /
+  7 must-fix / 4 nits, all introduced by the rewrite, all applied in this revision. The
+  blocker: the new §1 coverage paragraph attributed B3's separation to measurement geometry
+  while §5's own day-weighted receipts show B3 positive on all three panels WITH anchors
+  matched — §1 and §7.1 now carry the reconciliation (the registered branch names the rival
+  tested; the sampling arm locates the dependence; both agree the leg is not established
+  anatomy, neither mechanism proven). Must-fixes: the 0.00 diagnostic explained by symmetry of
+  residual gaps (realised per-pair |Δanchor| median 1.0), not exact-anchor pairs; the
+  ticker-clustering counterfactual narrowed to the CI clause (no ticker-side q exists; ticker
+  clustering is unregistered); B3-primary and the §5 episode-first claim given the same
+  unreadable-at-this-power / with-anchors-matched riders the rest of the report uses; A7's
+  "separates" wording (a sign-gated survivor-list term) replaced with the CI statement plus its
+  r63 `interpretable=False` disclosure; the F1 bias sentence limited to direction (no magnitude
+  is measured); §1's anchor-census clause now carries the full-distribution rider.
+  Verification pass 3 commissioned.

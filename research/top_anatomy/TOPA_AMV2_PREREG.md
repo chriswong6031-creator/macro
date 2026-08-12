@@ -273,3 +273,12 @@ first).
   sentence was false — the SEED also moved (declared in §2 here, but the report must carry it
   as a second moved variable wherever DM↔AM2 contrasts are read). All findings applied in the
   report revision committed with this entry; verification pass 2 commissioned.
+- 2026-08-12 — G0.5 PASS 2: all 26 pass-1 findings verified RESOLVED; **NOT PRESENTABLE** on
+  1 blocker / 7 must-fix / 4 nits, all introduced by the pass-1 rewrite (sharpest: the new §1
+  coverage paragraph attributed B3's separation to measurement geometry while the report's own
+  §5 day-weighted receipts show B3 positive on all three panels WITH anchors matched — the
+  mechanism attribution now carries the reconciliation in §1 and §7.1: the registered branch
+  names the rival tested, the non-binding sampling arm locates the dependence, both readings
+  agree the leg is not established anatomy, neither mechanism proven). All applied in the
+  revision committed with this entry; verification pass 3 commissioned. No grade, verdict, or
+  registered branch changed in either pass.
