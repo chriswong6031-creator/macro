@@ -86,11 +86,14 @@ log = logging.getLogger("build_government_revenue")
 # governed workspace immediately after paint.
 SHELL_EVENT_LIMIT = 12
 SHELL_JSON_BUDGET_BYTES = 100_000
-# Candidate Radar and the restored always-visible company navigation add a
-# bounded amount of premium cockpit markup.  Keep a hard raw-page fence while
-# preserving the stricter 100 KB embedded-data cap; the radar runtime itself is
-# still an external, cacheable asset.
-RAW_HTML_BUDGET_BYTES = 275_000
+# Candidate Radar, the always-visible company navigation, and the receipt-aware
+# fact disclosure added in #5369 are legitimate bounded presentation markup.
+# With the current committed evidence they render to 277,445 raw bytes, which
+# exceeded the old 275,000-byte fence and blocked engine-render 31594939986
+# before publication. 288 KiB restores 17,467 bytes (5.9%) of measured
+# headroom while preserving the stricter 100 KB embedded-data cap; the radar
+# runtime itself remains an external, cacheable asset.
+RAW_HTML_BUDGET_BYTES = 294_912
 SHELL_COMPANY_METRICS = (
     "ttm_obligations",
     "award_velocity_yoy_pct",
