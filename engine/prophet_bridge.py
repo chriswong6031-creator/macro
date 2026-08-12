@@ -191,6 +191,160 @@ ADMISSION_CLASS_CONFIRMATION = "confirmation"
 #: signature fires under washout/leader-pullback context (engine/us_early_turn.py).
 #: It never widens admission on its own — see :func:`select_candidates`.
 ADMISSION_CLASS_EARLY_TURN = "early_turn_starter"
+#: TURN WATCH texture for a UNION-admitted row (bake-off §A2 copy law).
+#:
+#: The glance tier says WHAT was seen and what to do about it, in plain words. The numbers
+#: that produced it ride as data on the row and are never spelled into the copy — an
+#: untranslated statistic on a deck row is a stat nobody reads twice.
+#:
+#: The pre-trough line is the honest cost of a recall surface and it lives at Tier-2 depth
+#: ONLY (hover / detail), never in the headline: measured, fires that precede the low
+#: survive a stop ~1 in 10, and the operator's stop is what caps that. It is stated as a
+#: cost, not as a refutation — nothing here says a read was wrong.
+UNION_CHIP_EN = "Early turn — watch, don't chase"
+UNION_CHIP_ZH = "早期转向 — 观察，不要追高"
+UNION_WINDOW_NOTE_EN = "Windows, not certainties — re-drawn nightly."
+UNION_WINDOW_NOTE_ZH = "这是窗口，不是定论 — 每晚重新绘制。"
+UNION_PRETROUGH_NOTE_EN = ("Early fires that come before the low mostly stop out; "
+                           "the stop under the low is what caps the cost.")
+UNION_PRETROUGH_NOTE_ZH = "先于低点出现的早期信号多数会被止损；低点下方的止损用来限制成本。"
+#: Plain-word context chips, one per badge the admission carries. Proximity texture only —
+#: §A2 and the footprint study's §A3 both found no measured feature that licenses a
+#: durability read, so none of these may imply reliability, ordering, or a better outcome.
+UNION_BADGE_COPY = {
+    "zero_bound": ("Washed to the floor", "洗至底部"),
+    "deep_cross": ("Turned from deep", "自深处转向"),
+    "above_200": ("Above its 200-day line", "位于200日线上方"),
+    "below_200": ("Below its 200-day line", "位于200日线下方"),
+    "deep_decline": ("Well off its 6-month high", "远低于半年高点"),
+    "leads_market": ("Leading the market lately", "近期强于大盘"),
+    "lags_market": ("Lagging the market lately", "近期弱于大盘"),
+}
+#: A decline this deep reads as "well off" its 6-month high in the chip copy.
+UNION_DEEP_DECLINE = -0.15
+
+#: The early lane's score is a GEOMETRY score and the copy says so in the label itself —
+#: "setup geometry", not "quality", not "conviction", not a percentage anyone could read
+#: as a chance of working. The hover carries the whole contract: what it measures, what it
+#: is NOT, and the cost that stops are there to cap.
+GEOMETRY_LABEL_EN = "Setup geometry"
+GEOMETRY_LABEL_ZH = "入场结构"
+GEOMETRY_HOVER_EN = ("Distance to the structural stop and how clean that stop is — "
+                     "geometry, not a probability. Early entries mostly stop out; "
+                     "the stop is what caps the cost.")
+GEOMETRY_HOVER_ZH = ("到结构性止损的距离，以及该止损是否干净 — 这是结构，不是概率。"
+                     "早期入场多数会被止损；止损用来限制成本。")
+#: The stop-structure flag, in plain words.
+GEOMETRY_STOP_CLEAN_EN = "Stop sits under a low the tape has defended"
+GEOMETRY_STOP_CLEAN_ZH = "止损位于已被确认的低点下方"
+GEOMETRY_STOP_RAW_EN = "Stop sits under a low the tape has not defended yet"
+GEOMETRY_STOP_RAW_ZH = "止损位于尚未被确认的低点下方"
+#: Freshness, in plain words — the operator's "a fire +10% off its low is a chase".
+GEOMETRY_FRESH_EN = "Still near where it turned"
+GEOMETRY_FRESH_ZH = "仍接近转向位置"
+GEOMETRY_CHASED_EN = "Already run from where it turned — chasing"
+GEOMETRY_CHASED_ZH = "已远离转向位置 — 属于追高"
+#: Travel from the fire past which the copy calls it a chase (half the decay cap).
+GEOMETRY_CHASED_AT = 0.05
+
+#: Sizing guidance is a STAGE statement, never a size number: the row says which stage it
+#: is at and what that stage is for.
+STAGE_SIZING_COPY = {
+    "EARLY": ("Starter size — add only if it confirms", "试仓 — 确认后再加"),
+    "CONFIRMING": ("Confirming — size on the confirmation, not before",
+                   "确认中 — 待确认后再定仓位"),
+    "CONFIRMED": ("Confirmed — this is the add", "已确认 — 此处加仓"),
+}
+
+
+#: The watch deck is the RECALL tier and carries every union fire; only some of those are
+#: licensed to mint a starter plan. The licence is shown as a context chip rather than
+#: silently splitting the surfaces — a reader can see which rows are watch-only and why.
+LICENCE_YES_EN = "Licensed for a starter plan"
+LICENCE_YES_ZH = "可开立试仓计划"
+LICENCE_NO_EN = "Watch only — not licensed for a starter plan"
+LICENCE_NO_ZH = "仅观察 — 尚不可开立试仓计划"
+LICENCE_NO_WHY_EN = "needs a washed-out basket or a leader pullback behind it"
+LICENCE_NO_WHY_ZH = "需要板块已完成洗盘，或属于龙头回调"
+
+
+def starter_licence_chip(licensing: Mapping[str, Any] | None) -> dict[str, Any]:
+    """The one chip that keeps the two-surface split honest on the deck."""
+    if not isinstance(licensing, Mapping) or licensing.get("licensed") is None:
+        return {}
+    if licensing.get("licensed"):
+        return {"licensed": True,
+                "chip": {"en": LICENCE_YES_EN, "zh": LICENCE_YES_ZH}}
+    return {"licensed": False,
+            "chip": {"en": LICENCE_NO_EN, "zh": LICENCE_NO_ZH},
+            "why": {"en": LICENCE_NO_WHY_EN, "zh": LICENCE_NO_WHY_ZH}}
+
+
+def setup_geometry_texture(geometry: Mapping[str, Any] | None,
+                           stage: str | None = None) -> dict[str, Any]:
+    """Deck copy for the early lane's geometry score.
+
+    The score itself is an ORDERING KEY. This turns it into words a reader can act on
+    without ever implying a likelihood — the hover says "geometry, not a probability" in
+    both languages, and the stage line says what the stage is FOR.
+    """
+    if not isinstance(geometry, Mapping) or geometry.get("score") is None:
+        return {}
+    chips: list[dict[str, str]] = []
+    if geometry.get("stop_confirmed") is True:
+        chips.append({"en": GEOMETRY_STOP_CLEAN_EN, "zh": GEOMETRY_STOP_CLEAN_ZH})
+    elif geometry.get("stop_confirmed") is False:
+        chips.append({"en": GEOMETRY_STOP_RAW_EN, "zh": GEOMETRY_STOP_RAW_ZH})
+    chase = geometry.get("chase_pct")
+    if isinstance(chase, (int, float)):
+        chased = chase >= GEOMETRY_CHASED_AT
+        chips.append({"en": GEOMETRY_CHASED_EN if chased else GEOMETRY_FRESH_EN,
+                      "zh": GEOMETRY_CHASED_ZH if chased else GEOMETRY_FRESH_ZH})
+    out: dict[str, Any] = {
+        "label": {"en": GEOMETRY_LABEL_EN, "zh": GEOMETRY_LABEL_ZH},
+        "hover": {"en": GEOMETRY_HOVER_EN, "zh": GEOMETRY_HOVER_ZH},
+        "chips": chips,
+    }
+    sizing = STAGE_SIZING_COPY.get(str(stage or "").upper())
+    if sizing:
+        out["sizing"] = {"en": sizing[0], "zh": sizing[1]}
+    return out
+
+
+def union_admission_texture(union: Mapping[str, Any] | None) -> dict[str, Any]:
+    """TURN WATCH texture for a union-admitted row: chips + the Tier-2 honesty notes.
+
+    Returns ``{}`` when nothing admitted, so a caller can spread it unconditionally.
+    DISPLAY ONLY — the chips carry no ordering and the badges they read are context.
+    """
+    if not isinstance(union, Mapping) or not union.get("fired"):
+        return {}
+    badges = union.get("badges") or {}
+    keys: list[str] = []
+    if badges.get("zero_bound"):
+        keys.append("zero_bound")
+    k_at_cross = badges.get("k_at_cross")
+    if isinstance(k_at_cross, (int, float)) and not badges.get("zero_bound"):
+        keys.append("deep_cross")
+    above = badges.get("above_200")
+    if above is not None:
+        keys.append("above_200" if above else "below_200")
+    decline = badges.get("decline_depth")
+    if isinstance(decline, (int, float)) and decline <= UNION_DEEP_DECLINE:
+        keys.append("deep_decline")
+    rs = badges.get("rs_63")
+    if isinstance(rs, (int, float)):
+        keys.append("leads_market" if rs > 0 else "lags_market")
+    return {
+        "chip": {"en": UNION_CHIP_EN, "zh": UNION_CHIP_ZH},
+        "context_chips": [{"en": UNION_BADGE_COPY[k][0], "zh": UNION_BADGE_COPY[k][1]}
+                          for k in keys],
+        # Tier-2 depth: hover / detail. Never the headline.
+        "note": {"en": UNION_WINDOW_NOTE_EN, "zh": UNION_WINDOW_NOTE_ZH},
+        "cost_note": {"en": UNION_PRETROUGH_NOTE_EN, "zh": UNION_PRETROUGH_NOTE_ZH},
+    }
+
+
 PATIENCE_STATUSES = frozenset({"bounce_wait", "wait_pullback", "hold"})
 CONFIRMATION_STATUSES = frozenset({"buy_now", "partial"})
 ADMITTED_STATUSES = PATIENCE_STATUSES | CONFIRMATION_STATUSES
@@ -4024,6 +4178,9 @@ def originate_plans(
     plans: list[dict] = []
     stale_basis_skipped: list[str] = []
     early_turn_plans: list[str] = []
+    #: The recall-tier roster: every union fire, whether or not it is licensed to mint a
+    #: starter plan. A superset of `early_turn_plans` by construction.
+    early_turn_watch: list[str] = []
     wait_reset_plans: list[str] = []
     for b, ticker, formation_date, plan_id in candidates:
         direction = "BULL"  # all dir="up" entries
@@ -4155,9 +4312,63 @@ def originate_plans(
         # zone_conversion_class; the board's `coiled.washout_ctx` flag is deliberately
         # NOT an input (measured near-constant — see zone_conversion_class).
         washout_ctx = bool((early.get("washout") or {}).get("washout_context"))
+        # The WATCH DECK is the recall tier and carries every union fire among the SCORED
+        # CANDIDATES, licensed or not (operator ruling 2026-08-11) — this read runs after
+        # select_candidates, so the deck is `union ∩ candidates`, not the naked universe,
+        # and the bake-off's naked-union coverage numbers are not its property. Plan
+        # ORIGINATION below is unchanged and stays context-licensed — the two surfaces are
+        # populated from one read, never merged. `deck_admitted` is ABSENT (not False) on a
+        # confirmed-lane row, so `.get` is load-bearing here.
+        if early.get("deck_admitted"):
+            early_turn_watch.append(ticker)
         if early.get("fired"):
             candidate_class = ADMISSION_CLASS_EARLY_TURN
             early_turn_plans.append(ticker)
+
+        # ── the plan's EARLY-TURN disclosure ──────────────────────────────────
+        # The §6.9 R3 half (did the signature fire, under what context, and why) rides on
+        # EVERY plan — including the ones it declined, whose `reason` is the named null.
+        # The EARLY-LANE half below rides ONLY on a row that is on that lane, by ABSENCE
+        # rather than by nulls: a confirmed-lane row has no stage, no setup geometry, no
+        # chase chip and no licence, because none of those are statements about it.
+        early_turn_block: dict[str, Any] = {
+            "fired": bool(early.get("fired")),
+            "reason": early.get("reason"),
+            "timeframes": early.get("signature_timeframes") or [],
+            "washout_state": (early.get("washout") or {}).get("state"),
+            "leader_pullback_source": (
+                early.get("leader_pullback") or {}).get("source"),
+            # ── §A2 UNION ADMISSION — the measured recall spine ───────────────
+            # The union READ is disclosed on every row (a null that is named beats a key
+            # that vanished); the badges and texture below are what only an admitted row
+            # has. The badges are DISPLAY context (proximity, not durability) and the
+            # texture is the copy law: plain words at glance, the pre-trough cost at
+            # Tier-2 depth. Neither ever reaches a rank, tier or score.
+            "union_fired": bool(early.get("union_fired")),
+            "union_legs": early.get("union_legs") or [],
+            "union_texture": union_admission_texture(early.get("union")),
+            "basket_context_chip": (early.get("washout") or {}).get("state"),
+        }
+        if early.get("deck_admitted"):
+            early_turn_block.update({
+                "admission_era": early.get("admission_era"),
+                "context_badges": early.get("context_badges"),
+                # ── the early lane's OWN score (operator ruling 2026-08-11) ───────
+                # Geometry, never probability. It is THIS lane's deck sort key and is
+                # never blended with the confirmed lane's score — `stage` is the fact
+                # column that says which lane a row is reading from. The basket state
+                # sits beside it as display context (its own forward ledger), never in it.
+                "setup_geometry": early.get("setup_geometry"),
+                "geometry_score": (early.get("setup_geometry") or {}).get("score"),
+                "stage": early.get("stage"),
+                "geometry_texture": setup_geometry_texture(
+                    early.get("setup_geometry"), early.get("stage")),
+                # Which surface this row is on, stated rather than inferred.
+                "deck_admitted": True,
+                "plan_licensed": bool(early.get("plan_licensed")),
+                "licensing": early.get("licensing"),
+                "licensing_chip": starter_licence_chip(early.get("licensing")),
+            })
 
         entry_zone = build_entry_zone(
             b,
@@ -4372,14 +4583,7 @@ def originate_plans(
             # fill.  The ZONE is what the plan acts on, and its stance is what the copy
             # says out loud.
             "entry_zone": entry_zone,
-            "early_turn": {
-                "fired": bool(early.get("fired")),
-                "reason": early.get("reason"),
-                "timeframes": early.get("signature_timeframes") or [],
-                "washout_state": (early.get("washout") or {}).get("state"),
-                "leader_pullback_source": (
-                    early.get("leader_pullback") or {}).get("source"),
-            },
+            "early_turn": early_turn_block,
         }
 
         if government_revenue_ctx:
@@ -4520,6 +4724,9 @@ def originate_plans(
         }
         intake_stats["wait_reset"] = sorted(wait_reset_plans)
         intake_stats["early_turn_starters"] = sorted(early_turn_plans)
+        # The recall-tier roster, printed BESIDE the licensed one so the gap between what
+        # the deck watches and what mints a plan is a visible number, never an inference.
+        intake_stats["early_turn_watch"] = sorted(early_turn_watch)
         # A starved extension read fails OPEN for the anti-chase guard (a name we could
         # not measure keeps its board zone), so the count is printed rather than left to
         # be inferred from a silent zero — the #4979 ext_z blackout in miniature.
