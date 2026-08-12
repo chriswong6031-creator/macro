@@ -550,6 +550,125 @@ def test_a_red_beside_a_skip_is_still_named_as_blocked():
     assert names == ["ci-pack-1 (failure)"]
 
 
+# --- the DYNAMIC pack matrix (Wave B) -----------------------------------------
+#
+# ci.yml stopped launching a fixed `ci-pack-0..11` on every head. `ci-plan` now
+# computes the pack plan once and publishes a matrix; `ci-pack` carries
+# `needs.ci-plan.outputs.has_work == 'true'` on top of its old `action != 'closed'`
+# fence, so a PR may publish ANY SUBSET of the twelve pack names — including none at
+# all — while main's `workflow_dispatch` baseline passes no `--changed-from` and so
+# still publishes all twelve. `ci-gate` is the one name published on every non-closed
+# event, and it is what makes the whole thing safe here.
+#
+# This shifted the ground under `decide_verdict` WITHOUT changing a line of it: the
+# function has always been name-agnostic, so nothing in it enumerates pack names or
+# counts them. That is precisely why these pins exist. The dangerous edit is not one
+# that breaks a pack name; it is a future "the sweeper should require the full pack
+# set" hardening, which would read as a tightening and would silently make every
+# path-scoped PR permanently unmergeable. The six shapes below are the whole
+# interface the sweeper now depends on, asserted against the pure function.
+
+
+def test_a_no_work_pr_head_is_proven_by_the_plan_and_the_gate():
+    """The shape Wave B invented: a PR the planner proved needs NO pack work.
+
+    `ci-plan` succeeds, proves the changed paths own no legacy job, and emits
+    `has_work=false`; `ci-pack` never launches (GitHub reports the skipped matrix
+    job); `ci-gate` takes the no-work exit-0 branch and succeeds. Two real successes,
+    so the affirmative-pass rule (#4779) is satisfied by `ci-plan`/`ci-gate` rather
+    than by a pack — which is the entire reason `ci-gate` is required to publish on
+    every non-closed event. Were it allowed to be absent, this head would carry one
+    success and one skip today and could be argued down to `unproven` tomorrow, and
+    the no-work PR — the fast path the whole conversion exists to create — would be
+    the one shape that can never merge.
+    """
+    assert MOG.decide_verdict(
+        [
+            _run("ci-plan", conclusion="success"),
+            _run("ci-pack", conclusion="skipped"),
+            _run("ci-gate", conclusion="success"),
+        ]
+    ) == ("clean", [])
+
+
+def test_a_head_carrying_only_the_plan_and_the_gate_is_clean():
+    """The same no-work PR when GitHub publishes no check for the skipped matrix.
+
+    A `strategy.matrix` that resolves to zero entries does not always leave a named
+    `ci-pack` check behind — an `if:`-gated job with an empty matrix can simply not
+    appear. So the no-work head must read `clean` on the two names alone, with no
+    third check to lean on. Split from the test above deliberately: if the verdict
+    ever came to depend on a skipped pack being PRESENT, that test would still pass
+    and this one would red, which is the correct place for the failure to land.
+    """
+    assert MOG.decide_verdict(
+        [_run("ci-plan", conclusion="success"), _run("ci-gate", conclusion="success")]
+    ) == ("clean", [])
+
+
+def test_a_selected_pack_red_blocks_and_names_the_pack_and_the_gate():
+    """A red in the dynamic matrix must stay a red, and stay DIAGNOSABLE.
+
+    `ci-gate` aggregates — it reports `failure` whenever any selected pack did not
+    succeed — but aggregation must not cost the per-pack name. `merge-blocked`'s
+    one-shot comment quotes this list, and "ci-gate (failure)" alone would tell the
+    session nothing about WHICH pack to look at, on a workflow whose packs are
+    rebalanced by weight and therefore not stable across commits (`ci-pack-N` is not
+    a stable job identity). Directive §6.8: prefer ADDING `ci-gate` to the proof
+    interpretation over deleting the per-pack diagnostics.
+    """
+    verdict, names = MOG.decide_verdict(
+        [
+            _run("ci-plan", conclusion="success"),
+            _run("ci-pack-5", conclusion="success"),
+            _run("ci-pack-9", conclusion="failure"),
+            _run("ci-gate", conclusion="failure"),
+        ]
+    )
+    assert verdict == "blocked"
+    assert "ci-pack-9 (failure)" in names, "the failing pack must stay nameable"
+    assert "ci-gate (failure)" in names, "the aggregate must stay visible too"
+
+
+def test_a_subset_of_packs_is_clean_because_an_unselected_pack_is_not_missing():
+    """The load-bearing consequence: a name that never launched is not a gap.
+
+    Under the static matrix every head carried all twelve packs, so "absent" and
+    "unproven" were never distinguishable and nothing had to decide between them.
+    Under the dynamic matrix a scoped PR publishes only the packs its changed paths
+    selected — here `ci-pack-3` and `ci-pack-7` — and the other ten names exist
+    nowhere on the head. `decide_verdict` reads the runs that ARE there and holds no
+    expected-name list, so this reads `clean`. A future "require the full set" rule
+    would invert that into a permanent block on every scoped PR while looking, in
+    review, like a tightening of the merge gate.
+    """
+    assert MOG.decide_verdict(
+        [
+            _run("ci-plan", conclusion="success"),
+            _run("ci-pack-3", conclusion="success"),
+            _run("ci-pack-7", conclusion="success"),
+            _run("ci-gate", conclusion="success"),
+        ]
+    ) == ("clean", [])
+
+
+def test_a_skipped_plan_and_gate_is_unproven_not_clean():
+    """#4779 survives the conversion: `skipped` is still not a pass.
+
+    The new names do not get a pass the old ones never had. A `closed` event skips
+    every job in ci.yml, and an outage or a dropped webhook can leave the same
+    shape — two named checks, both `skipped`, neither one evidence of anything. The
+    spurious filter does not know `ci-plan` or `ci-gate`, so `considered` is
+    non-empty and the zero-checks branch never fires; nothing is pending; `skipped`
+    is in CLEAN_CONCLUSIONS so `bad` is empty. Only the affirmative-pass rule stands
+    between this head and a squash-merge on zero CI evidence — which is exactly the
+    outcome #4779 measured. Deleting that rule makes THIS test red.
+    """
+    assert MOG.decide_verdict(
+        [_run("ci-plan", conclusion="skipped"), _run("ci-gate", conclusion="skipped")]
+    ) == ("unproven", [])
+
+
 @pytest.mark.parametrize("conclusion", ["cancelled", "stale"])
 def test_superseded_checks_are_incomplete_never_accused(conclusion):
     assert MOG.decide_verdict(
@@ -4346,6 +4465,40 @@ def test_main_proof_reads_the_packs_off_a_run_no_commit_window_could_reach(
         _authorized_budget(),
     ) == "rebased"
     assert any(call[1].endswith("/update-branch") for call in calls)
+
+
+def test_the_dynamic_matrix_does_not_weaken_mains_full_baseline(monkeypatch):
+    """Main's dispatch still proves all twelve packs, plus the two new names.
+
+    The dynamic matrix narrows what a PULL REQUEST publishes; it must not narrow
+    what MAIN proves, because main's clean set is the only thing that can excuse a
+    base-inherited red (`bad_names <= proof.clean_names`). The mechanism that keeps
+    them separate lives in ci.yml — a `workflow_dispatch` on main passes no
+    `--changed-from`, so the planner has no changed-file set, widens to the full
+    suite by the fail-safe rule, and emits all twelve indices — but the property
+    worth pinning HERE is that the sweeper side collects whatever the run published,
+    verbatim and without a name list of its own. `_run_clean_jobs` reads the job
+    names straight off the API, so `ci-plan` and `ci-gate` join the proof for free
+    and a pack red on a PR still finds its excuse.
+
+    A narrowed baseline is the silent version of the 2026-08-08 backlog: main proves
+    fewer names, `bad_names <= clean_names` stops holding, and the armed PRs stop
+    draining — with a green main and nothing in the sweep log to explain it.
+    """
+    packs = [(f"ci-pack-{index}", "success") for index in range(12)]
+    runs, jobs = _both_workflows(
+        [("ci-plan", "success"), *packs, ("ci-gate", "success")]
+    )
+    _proof_api(monkeypatch, runs=runs, jobs=jobs)
+
+    proof = MOG.main_proof("acme/widgets", "read")
+    expected = {f"ci-pack-{index}" for index in range(12)} | {"ci-plan", "ci-gate"}
+    assert expected <= proof.clean_names, (
+        "main's full baseline must still prove every pack name a scoped PR can go "
+        f"red on; missing {sorted(expected - proof.clean_names)}"
+    )
+    assert len(expected) == 14
+    assert proof.proved_at is not None, "an undatable proof cannot excuse anything"
 
 
 def test_every_proof_workflow_names_a_file_that_actually_exists():
