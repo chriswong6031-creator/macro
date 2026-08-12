@@ -73,7 +73,7 @@
   .pos { color: var(--ink-up, var(--up)); } .neg { color: var(--ink-down, var(--down)); }
   .chip { display:inline-block; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; background:var(--panel2); border:1px solid var(--line); }
   .chip.warn { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 36%,transparent); }
-  .chip.caut { background:color-mix(in srgb,#d4a017 16%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 38%,transparent); }
+  .chip.caut { background:color-mix(in srgb,#d4a017 16%,transparent); color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,#d4a017 38%,transparent); }
   .chip.ok { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 34%,transparent); }
   /* quad chip */
   .quad { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9px; font-weight:800; font-size:12px; color:#fff; }
@@ -281,7 +281,9 @@
   .seg { display:inline-flex; gap:3px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:3px; }
   .seg button { background:none; border:0; color:var(--muted); font:inherit; font-size:12px; font-weight:700; padding:5px 12px;
     border-radius:7px; cursor:pointer; transition:color .15s, background .15s; }
-  .seg button.on { background:var(--link); color:#fff; }
+  /* white label on the fill, so the fill takes the SOLID grade — dark --link is a
+     pale text-on-graphite blue (#7aa7e0) and white on it measures 2.49:1. */
+  .seg button.on { background:var(--fill-link, var(--link)); color:#fff; }
   .seg button:hover:not(.on) { color:var(--text); }
 
   /* ===== USD performance leaderboard ===== */
@@ -390,13 +392,13 @@
   .tb-state { display:inline-block; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; white-space:nowrap; margin-bottom:5px; }
   .tb-state.ts-crash { background:color-mix(in srgb,var(--down) 20%,transparent); color:var(--ink-down, var(--down)); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
   .tb-state.ts-breaking { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--ink-down, var(--down)); border:1px solid color-mix(in srgb,var(--down) 35%,transparent); }
-  .tb-state.ts-topping { background:color-mix(in srgb,#d4a017 18%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 40%,transparent); }
-  .tb-state.ts-parabolic { background:color-mix(in srgb,#d4a017 14%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 35%,transparent); }
-  .tb-state.ts-extended { background:color-mix(in srgb,#d4a017 10%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 28%,transparent); }
+  .tb-state.ts-topping { background:color-mix(in srgb,#d4a017 18%,transparent); color:var(--ink-warn, var(--warn)); border:1px solid color-mix(in srgb,#d4a017 40%,transparent); }
+  .tb-state.ts-parabolic { background:color-mix(in srgb,#d4a017 14%,transparent); color:var(--ink-warn, var(--warn)); border:1px solid color-mix(in srgb,#d4a017 35%,transparent); }
+  .tb-state.ts-extended { background:color-mix(in srgb,#d4a017 10%,transparent); color:var(--ink-warn, var(--warn)); border:1px solid color-mix(in srgb,#d4a017 28%,transparent); }
   .tb-state.ts-uptrend { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--ink-up, var(--up)); border:1px solid color-mix(in srgb,var(--up) 34%,transparent); }
   .tb-state.ts-recovery { background:color-mix(in srgb,var(--up) 10%,transparent); color:var(--ink-up, var(--up)); border:1px solid color-mix(in srgb,var(--up) 28%,transparent); }
   .tb-state.ts-recovery-confirmed { background:color-mix(in srgb,var(--up) 12%,transparent); color:var(--ink-up, var(--up)); border:1px solid color-mix(in srgb,var(--up) 32%,transparent); }
-  .tb-state.ts-repair-attempt { background:color-mix(in srgb,#d4a017 10%,transparent); color:#b37a00; border:1px solid color-mix(in srgb,#d4a017 30%,transparent); }
+  .tb-state.ts-repair-attempt { background:color-mix(in srgb,#d4a017 10%,transparent); color:var(--ink-warn, var(--warn)); border:1px solid color-mix(in srgb,#d4a017 30%,transparent); }
   .tb-state.ts-rollover-risk { background:color-mix(in srgb,var(--down) 11%,transparent); color:var(--ink-down, var(--down)); border:1px solid color-mix(in srgb,var(--down) 30%,transparent); }
   .tb-state.ts-failed-rebound { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--ink-down, var(--down)); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
   .tb-state.ts-basing { background:color-mix(in srgb,var(--info) 10%,transparent); color:var(--ink-info, var(--info)); border:1px solid color-mix(in srgb,var(--info) 28%,transparent); }
@@ -422,9 +424,9 @@
   .ts-chip { display:inline-block; padding:1px 6px; border-radius:6px; font-size:10px; font-weight:700; white-space:nowrap; border:1px solid transparent; }
   .ts-chip.ts-crash { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
   .ts-chip.ts-breaking { background:color-mix(in srgb,var(--down) 12%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 30%,transparent); }
-  .ts-chip.ts-topping { background:color-mix(in srgb,#d4a017 14%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 35%,transparent); }
-  .ts-chip.ts-parabolic { background:color-mix(in srgb,#d4a017 10%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 28%,transparent); }
-  .ts-chip.ts-extended { background:color-mix(in srgb,#d4a017 8%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 24%,transparent); }
+  .ts-chip.ts-topping { background:color-mix(in srgb,#d4a017 14%,transparent); color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,#d4a017 35%,transparent); }
+  .ts-chip.ts-parabolic { background:color-mix(in srgb,#d4a017 10%,transparent); color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,#d4a017 28%,transparent); }
+  .ts-chip.ts-extended { background:color-mix(in srgb,#d4a017 8%,transparent); color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,#d4a017 24%,transparent); }
   .ts-chip.ts-uptrend { background:color-mix(in srgb,var(--up) 12%,transparent); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 28%,transparent); }
   .ts-chip.ts-recovery { background:color-mix(in srgb,var(--up) 8%,transparent); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 24%,transparent); }
   .ts-chip.ts-basing { background:color-mix(in srgb,var(--info) 8%,transparent); color:var(--ink-info, var(--info)); border-color:color-mix(in srgb,var(--info) 24%,transparent); }
@@ -436,8 +438,8 @@
   .tb-rd-lb { font-size:10.5px; font-weight:600; color:var(--muted); letter-spacing:.02em; }
   .tb-rd-chip { display:inline-block; padding:1px 7px; border-radius:7px; font-size:10px; font-weight:700; white-space:nowrap; border:1px solid transparent; margin-left:auto; }
   .tb-rd-chip.rd-calm { background:var(--panel2); color:var(--muted); border-color:var(--line); }
-  .tb-rd-chip.rd-watch { background:color-mix(in srgb,#d4a017 8%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 22%,transparent); }
-  .tb-rd-chip.rd-caution { background:color-mix(in srgb,#d4a017 14%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 35%,transparent); }
+  .tb-rd-chip.rd-watch { background:color-mix(in srgb,#d4a017 8%,transparent); color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,#d4a017 22%,transparent); }
+  .tb-rd-chip.rd-caution { background:color-mix(in srgb,#d4a017 14%,transparent); color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,#d4a017 35%,transparent); }
   .tb-rd-chip.rd-elevated { background:color-mix(in srgb,var(--down) 12%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 30%,transparent); }
   .tb-rd-chip.rd-risk-off { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .tb-rd-line { font-size:11px; color:var(--text); line-height:1.35; margin-top:5px; }

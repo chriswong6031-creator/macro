@@ -7,7 +7,7 @@
 .mx-tier-hidden{display:none!important}
 .mx-tier-gate{
   --mx-tier-accent:var(--link);
-  --mx-tier-fill:var(--ink-link, var(--link));
+  --mx-tier-fill:var(--fill-link, var(--link));
   --ink-tier:var(--ink-link, var(--link));
   position:relative;isolation:isolate;overflow:hidden;
   display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;

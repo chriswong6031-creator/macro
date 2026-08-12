@@ -194,7 +194,11 @@ html[data-theme="dark"] .flag.warn{color:#e0a840}
 .gl-name{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
 .gl-state{font-size:16px;font-weight:800;color:var(--sc,var(--ink));line-height:1.1;letter-spacing:-.01em}
 .gl-mean{font-size:11.5px;color:var(--muted);line-height:1.4;margin-top:4px}
-.gl-good{--sc:var(--green)} .gl-mid{--sc:var(--blue)} .gl-warn{--sc:var(--amber)} .gl-bad{--sc:var(--red)}
+/* --sc is the state hue for the big score and the band word — TEXT, at 64px and 20px
+   and 16px. The raw tokens are fill grade (the amber measured 1.92:1 on white), so
+   the text consumers read the ink rungs; anything that FILLS still takes --sc. */
+.gl-good{--sc:var(--ink-ok, var(--green))} .gl-mid{--sc:var(--ink-link, var(--blue))}
+.gl-warn{--sc:var(--ink-warn, var(--amber))} .gl-bad{--sc:var(--ink-act, var(--red))}
 
 /* ═══════ KEY LEVELS strip ════════════════════════════════════════════════ */
 .klv{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin:2px 0}

@@ -2248,7 +2248,7 @@ html[data-lang="zh"] .card-h{letter-spacing:0}
 .bar i{display:block;height:100%;border-radius:999px}
 .bar.b-risk i{background:linear-gradient(90deg,var(--act),var(--warn))}
 .bar.b-health i{background:linear-gradient(90deg,var(--warn),var(--ok))}
-.go{margin-top:auto;font-weight:700;color:var(--accent);font-size:12px}
+/* .go is TEXT on the card's white face. The raw hub accents measure 2.30-4.67:1 there (orange #f7931a is the worst); mixing 58% of the accent with --text keeps each card's identity and lands 4.9-7.9:1. Same idiom as the .pill rule below, which was already doing this at 48% and is left alone. */.go{margin-top:auto;font-weight:700;color:color-mix(in srgb,var(--accent) 58%,var(--text));font-size:12px}
 .go::after{content:' →'}
 /* market cards: header chip + two clearly-labelled split BUTTONS (Macro / Stock) */
 .card .pill.hd{margin-left:auto}
@@ -2749,7 +2749,7 @@ html[data-theme="light"] #sky-sun{display:none}
 # fold these rules back into _GLOBE_HUB_CSS, or the next render goes red again.
 _HUB_CRITICAL_CSS = r"""<style>
 body{padding:22px max(20px,env(safe-area-inset-right)) calc(56px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
-html[data-theme="light"] .pill{color:color-mix(in srgb,var(--accent) 48%,var(--text))}
+html[data-theme="light"] .pill{color:color-mix(in srgb,var(--accent) 42%,var(--text))}
 </style>"""
 
 _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global macro regime globe">

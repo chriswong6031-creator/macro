@@ -37,13 +37,13 @@
   .cmdbar .mc b { color:var(--text); font-weight:700; }
   .cmdbar .mc span { color:var(--muted); }
   .cmdbar .mc.hot { border-color:color-mix(in srgb,var(--link) 50%,var(--line)); color:var(--ink-link, var(--link)); }
-  .cmdbar .mc.warn { border-color:color-mix(in srgb,#e0973a 50%,var(--line)); color:#e0973a; }
+  .cmdbar .mc.warn { border-color:color-mix(in srgb,#e0973a 50%,var(--line)); color:var(--ink-warn, var(--warn)); }
   .mode-badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:999px;
     background:color-mix(in srgb,var(--muted) 15%,transparent);
     border:1px solid color-mix(in srgb,var(--muted) 30%,transparent); color:var(--muted); }
   .stale-chip { font-size:10px; font-weight:700; padding:3px 9px; border-radius:999px;
     background:color-mix(in srgb,#e0973a 15%,transparent);
-    border:1px solid color-mix(in srgb,#e0973a 35%,transparent); color:#e0973a; }
+    border:1px solid color-mix(in srgb,#e0973a 35%,transparent); color:var(--ink-warn, var(--warn)); }
   /* ── desk status board ── */
   .desks { display:grid; gap:11px; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); margin:16px 0 6px; }
   .desk { padding:12px 14px; border-radius:14px; text-decoration:none; display:block; transition:.16s ease;
@@ -61,7 +61,7 @@
     letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px;
     border:1px solid; white-space:nowrap; vertical-align:middle; }
   .ql-chip-ungraded { background:color-mix(in srgb,var(--muted) 12%,transparent); color:var(--muted); border-color:color-mix(in srgb,var(--muted) 28%,transparent); }
-  .ql-chip-accruing { background:color-mix(in srgb,#e0973a 14%,transparent); color:#e0973a; border-color:color-mix(in srgb,#e0973a 35%,transparent); }
+  .ql-chip-accruing { background:color-mix(in srgb,#e0973a 14%,transparent); color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,#e0973a 35%,transparent); }
   .ql-chip-graded-pos { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
   .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
   /* ── section headers ── */
@@ -91,11 +91,11 @@
   /* ── narrative divergence chip ── */
   .nd-chip { display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin:12px 0; font-size:13px; flex-wrap:wrap; }
   .nd-z { font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
-  .nd-z.risk { color:#e0973a; }
+  .nd-z.risk { color:var(--ink-warn, var(--warn)); }
   .nd-z.ok { color:var(--muted); }
   .nd-label { font-size:11.5px; color:var(--muted); line-height:1.5; flex:1; }
   .nd-badge { font-size:9px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:6px;
-    background:color-mix(in srgb,#e0973a 15%,transparent); border:1px solid color-mix(in srgb,#e0973a 35%,transparent); color:#e0973a; white-space:nowrap; }
+    background:color-mix(in srgb,#e0973a 15%,transparent); border:1px solid color-mix(in srgb,#e0973a 35%,transparent); color:var(--ink-warn, var(--warn)); white-space:nowrap; }
   /* ── synthesis table ── */
   table.syn { border-collapse:collapse; width:100%; font-size:12.5px; margin:8px 0; }
   table.syn th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
@@ -128,7 +128,7 @@
   .chain .hd { display:flex; align-items:center; gap:9px; font-weight:700; font-size:13.5px; }
   .chband { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
   .ch-aligned{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
-  .ch-forming{color:#e0973a;background:color-mix(in srgb,#e0973a 13%,transparent)}
+  .ch-forming{color:var(--ink-warn, var(--warn));background:color-mix(in srgb,#e0973a 13%,transparent)}
   .ch-dormant{color:var(--muted);background:var(--panel2)}
   .legs { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .leg { font-size:11px; padding:3px 8px; border-radius:7px; background:var(--panel2); border:1px solid var(--line); }
@@ -139,7 +139,7 @@
   .xmit code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--ink-link, var(--link)); }
   .strip { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
   .sx { font-size:11.5px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
-  .sx b { color:#e0973a; }
+  .sx b { color:var(--ink-warn, var(--warn)); }
   .band { display:inline-block; font-size:13px; font-weight:700; padding:2px 9px; border-radius:999px; }
   .band.supportive,.band.easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
@@ -166,8 +166,8 @@
   .stage-early { color:#5b8def; background:color-mix(in srgb,#5b8def 14%,transparent); border:1px solid #5b8def40; }
   .stage-consensus { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
   .stage-exhausted { color:#d23f3f; background:color-mix(in srgb,#d23f3f 12%,transparent); border:1px solid #d23f3f40; }
-  .stage-faltering { color:#e0973a; background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
-  .stage-distribution { color:#e0973a; background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
+  .stage-faltering { color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
+  .stage-distribution { color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
   .stage-quiet { color:var(--muted); background:var(--panel2); border:1px solid var(--line); opacity:.6; }
   .stage-discovery { color:#8b5cf6; background:color-mix(in srgb,#8b5cf6 13%,transparent); border:1px solid #8b5cf640; }
   .edge-bar { display:inline-block; width:48px; height:5px; background:var(--panel2); border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:4px; }
@@ -178,7 +178,7 @@
   .rs-neg { color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 12%,transparent); }
   .rs-neu { color:var(--muted); background:var(--panel2); }
   .cmd-read { font-size:11px; color:var(--muted); max-width:240px; line-height:1.4; }
-  .cmd-fals { font-size:10px; color:#e0973a; margin-top:2px; }
+  .cmd-fals { font-size:10px; color:var(--ink-warn, var(--warn)); margin-top:2px; }
   .cmd-expander { font-size:11.5px; color:var(--ink-link, var(--link)); cursor:pointer; margin-top:8px; display:inline-block; }
   /* ── discovery queue ── */
   .disc-queue { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; margin:12px 0; }
@@ -189,7 +189,7 @@
   .disc-card .disc-reason { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
   .disc-card .disc-meta { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; align-items:center; }
   .lane-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; text-transform:uppercase; letter-spacing:.04em; background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
-  .exp-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); border:1px solid #e0973a44; }
+  .exp-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,#e0973a 13%,transparent); border:1px solid #e0973a44; }
   .offdesk-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:#8b5cf6; background:color-mix(in srgb,#8b5cf6 13%,transparent); border:1px solid #8b5cf640; }
   .disc-score-bar { height:3px; border-radius:2px; background:var(--link); margin-top:5px; }
   /* ── cycle-context regime chips (W5) ── muted/neutral only, no up/down coloring ── */
@@ -533,7 +533,7 @@
         </div>
         <div class="age">{{ _ss.asof }}</div>
         {%- if _ss.top_unlock and _ss.top_unlock.large_flag %}
-          <div style="font-size:10px;color:#e0973a;margin-top:3px">⚠ {{ t('large unlock flagged','大宗解禁预警') }}</div>
+          <div style="font-size:10px;color:var(--ink-warn, var(--warn));margin-top:3px">⚠ {{ t('large unlock flagged','大宗解禁预警') }}</div>
         {%- endif %}
       {% else %}<div class="v">—</div>{% endif %}
       <div class="go">{{ t('Open special sits →','打开特殊情景 →') }}</div>
@@ -568,7 +568,7 @@
     &nbsp;{{ t('Universe','覆盖') }}: {{ _cmd.n_universe or '—' }} &nbsp;·&nbsp;
     {{ t('Emerging','萌芽') }}: {{ (_cmd.counts or {}).get('emerging',0) }} &nbsp;·&nbsp;
     {{ t('Early','早期') }}: {{ (_cmd.counts or {}).get('early',0) }}
-    {%- if (_cmd.counts or {}).get('veto_blind') %} &nbsp;·&nbsp; <span style="color:#e0973a">{{ t('No-price','无价格') }}: {{ (_cmd.counts or {}).get('veto_blind',0) }}</span>{%- endif %}
+    {%- if (_cmd.counts or {}).get('veto_blind') %} &nbsp;·&nbsp; <span style="color:var(--ink-warn, var(--warn))">{{ t('No-price','无价格') }}: {{ (_cmd.counts or {}).get('veto_blind',0) }}</span>{%- endif %}
   </p>
   {%- set _rows = _cmd.command %}
   {%- set _show_n = [15, _rows|length]|min %}
@@ -718,7 +718,7 @@
       </div>
       <div class="disc-score-bar" style="width:{{ (c.disc_score or 0)*100 }}%"></div>
       {%- if c.experimental %}
-      <div style="font-size:10px;color:#e0973a;margin-top:4px">{{ t('⚠ Phase-0 accruing — not yet in ranking','⚠ 阶段0积累中——暂不计入排名') }}</div>
+      <div style="font-size:10px;color:var(--ink-warn, var(--warn));margin-top:4px">{{ t('⚠ Phase-0 accruing — not yet in ranking','⚠ 阶段0积累中——暂不计入排名') }}</div>
       {%- endif %}
     </div>
     {%- endfor %}

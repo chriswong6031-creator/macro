@@ -159,7 +159,8 @@ body::before{
   gap:6px;
 }
 .hero-breadcrumb a{color:var(--ink-link, var(--link));text-decoration:none}
-.hero-breadcrumb span{color:var(--line)}
+/* was color:var(--line) — a BORDER token printed as text, 1.46:1 in light */
+  .hero-breadcrumb span{color:var(--muted)}
 
 .hero-title{
   font-size:28px;

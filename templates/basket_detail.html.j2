@@ -73,10 +73,10 @@
   .tier { display:inline-block; font-weight:800; font-size:10px; padding:1px 5px; border-radius:5px; letter-spacing:.02em; color:#fff; vertical-align:middle; }
   /* White text on the fill, so the FILL carries the text grade — the --ink-* rung
      is identity in dark and lands 5.3–6.5:1 in light (see subsectors). */
-  .tier.T1 { background:var(--ink-up, var(--up)); }
-  .tier.T2 { background:color-mix(in srgb, var(--ink-up, var(--up)) 78%, var(--text)); }
-  .tier.T3 { background:var(--ink-info, var(--info)); } .tier.T4 { background:#4a5aa8; }
-  html[data-lang="zh"] .tier.T2 { background:color-mix(in srgb, var(--ink-up, var(--up)) 78%, var(--text)); }
+  .tier.T1 { background:var(--fill-up, var(--up)); }
+  .tier.T2 { background:color-mix(in srgb, var(--fill-up, var(--up)) 84%, #000); }
+  .tier.T3 { background:var(--fill-info, var(--info)); } .tier.T4 { background:#3c4a8c; }
+  html[data-lang="zh"] .tier.T2 { background:color-mix(in srgb, var(--fill-up, var(--up)) 84%, #000); }
   .tier .prov { font-weight:700; opacity:.8; margin-left:1px; }
   .why { color:var(--muted); font-size:11.5px; white-space:normal; max-width:42ch; }
   #hold { table-layout:fixed; }
@@ -134,12 +134,12 @@
   .ftr-leg-fill { position:absolute; top:0; bottom:0; border-radius:3px; }
   .ftr-leg-fill.pos { left:50%; background:var(--up); }
   .ftr-leg-fill.neg { right:50%; background:var(--down); }
-  .ftr-leg-fill.crowd { left:50%; background:var(--amber,#fb923c); }
+  .ftr-leg-fill.crowd { left:50%; background:var(--ink-warn, var(--amber,#fb923c)); }
   .ftr-leg-val { font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; text-align:right; }
   .ftr-leg-src { font-size:10.5px; color:var(--muted); text-align:right; }
   .ftr-anatomy-ft { padding:9px 16px; border-top:1px solid var(--line); background:rgba(251,146,60,.03);
     display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .ftr-crowd-note { background:rgba(251,146,60,.10); border:1px solid rgba(251,146,60,.30); color:var(--amber,#fb923c); padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700; }
+  .ftr-crowd-note { background:rgba(251,146,60,.10); border:1px solid rgba(251,146,60,.30); color:var(--ink-warn, var(--amber,#fb923c)); padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700; }
   /* ---- sector-cycle mini-chart ---- */
   .cyc-readrow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:9px; }
   .cyc-pchip { font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:7px; }
@@ -1415,7 +1415,7 @@ function anatomyPanelHtml(th){
   if(posEn.length) why+=L('<strong>'+posEn.join(' + ')+'</strong> fired. ','<strong>'+posZh.join(' + ')+'</strong>发力。');
   if(negEn.length) why+=L('<span style="color:var(--ink-down, var(--down))">'+negEn.join(' + ')+'</span> dragging. ','<span style="color:var(--ink-down, var(--down))">'+negZh.join(' + ')+'</span>拖累。');
   if(macroAbsent) why+=L('Macro leg absent — score renormalises over available legs. ','宏观缺失 — 评分在现有腿上重新归一化。');
-  if(crowdPenActive) why+=L('<span style="color:var(--amber,#fb923c)">Crowding penalty active (rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+')</span>. ','<span style="color:var(--amber,#fb923c)">拥挤惩罚生效（rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+'）</span>。');
+  if(crowdPenActive) why+=L('<span style="color:var(--ink-warn, var(--amber,#fb923c))">Crowding penalty active (rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+')</span>. ','<span style="color:var(--ink-warn, var(--amber,#fb923c))">拥挤惩罚生效（rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+'）</span>。');
 
   var html='<div class="ftr-anatomy-card">'
     +'<div class="ftr-anatomy-hd">'
@@ -1440,11 +1440,11 @@ function anatomyPanelHtml(th){
     // Bar fill: center=0, pos goes right, neg goes left; crowding amber
     var barFillPct = absent?0:Math.min(50,Math.abs(v)*35);
     var barClass = isCrowd?'crowd':(v>=0?'pos':'neg');
-    var valColor = absent?'var(--muted)':isCrowd?'var(--amber,#fb923c)':(v>=0?'var(--up)':'var(--down)');
+    var valColor = absent?'var(--muted)':isCrowd?'var(--ink-warn, var(--amber,#fb923c))':(v>=0?'var(--up)':'var(--down)');
     var crowdStyle = isCrowd?'background:rgba(251,146,60,.04);border-radius:6px;padding:4px 0;':'';
     html+='<div class="ftr-leg-row" style="'+crowdStyle+'">'
-      +'<div><div class="ftr-leg-lbl"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>'+L(ll[0],ll[1])+'</div>'
-      +'<div class="ftr-leg-wt"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
+      +'<div><div class="ftr-leg-lbl"'+(isCrowd?' style="color:var(--ink-warn, var(--amber,#fb923c))"':'')+'>'+L(ll[0],ll[1])+'</div>'
+      +'<div class="ftr-leg-wt"'+(isCrowd?' style="color:var(--ink-warn, var(--amber,#fb923c))"':'')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
       +'<div class="ftr-leg-bar"><div class="ftr-leg-bar-ctr"></div>'
       +(absent?'':'<div class="ftr-leg-fill '+barClass+'" style="width:'+barFillPct.toFixed(1)+'%"></div>')
       +'</div>'

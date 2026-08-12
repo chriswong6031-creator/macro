@@ -245,6 +245,38 @@ html[data-theme="light"][data-lang="zh"] {
   --ink-link:   color-mix(in srgb, var(--link)   var(--ink-mix-link),   var(--text));
   --ink-info:   color-mix(in srgb, var(--info)   var(--ink-mix-info),   var(--text));
 }
+/* ---- SOLID fills that carry WHITE text --------------------------------------
+   The third grade, and the one the estate was missing. --up/--down/… are FILL
+   grade for TINTS (a 13% wash under ink-grade text, >=3:1 non-text) and --ink-*
+   is TEXT grade. Neither is right for the solid chip — the filled pill, the tier
+   badge, the primary CTA — where the hue IS the background and the label is #fff.
+
+   Measured white-on-raw-token 2026-08-12, and it fails in BOTH themes:
+
+       token    dark   light        token    dark   light
+       --up     2.51   3.61         --act    3.75   5.14
+       --down   3.40   4.71         --link   2.49   5.03
+       --warn   2.27   3.61         --info   2.84   5.03
+       --ok     3.10   4.30         --orange 2.64   3.47
+
+   Reaching for --ink-* here is the trap: --ink-mix-* is 100% on :root, so in DARK
+   the rung IS the raw token and a "fix" that reads correct in light leaves dark
+   exactly as broken (the tier badges and the tier-gate CTA both landed there).
+   Mixing toward black instead is theme-independent by construction — 64% keeps
+   the hue plainly recognisable and lands white at 5.14-10.19:1 across all eight
+   tokens in both themes, worst case --warn/dark. Consumers write
+   var(--fill-x, var(--x)) so a cache-stale theme.css degrades to today's colour. */
+:root {
+  --fill-mix: 64%;
+  --fill-up:     color-mix(in srgb, var(--up)     var(--fill-mix), #000);
+  --fill-down:   color-mix(in srgb, var(--down)   var(--fill-mix), #000);
+  --fill-warn:   color-mix(in srgb, var(--warn)   var(--fill-mix), #000);
+  --fill-ok:     color-mix(in srgb, var(--ok)     var(--fill-mix), #000);
+  --fill-act:    color-mix(in srgb, var(--act)    var(--fill-mix), #000);
+  --fill-orange: color-mix(in srgb, var(--orange) var(--fill-mix), #000);
+  --fill-link:   color-mix(in srgb, var(--link)   var(--fill-mix), #000);
+  --fill-info:   color-mix(in srgb, var(--info)   var(--fill-mix), #000);
+}
 /* prophet-card verb inks. English keeps the original hue calibration; the light+zh
    twin below re-keys the percentages after bullish becomes red and bearish green.
 

@@ -130,11 +130,11 @@
     text-shadow:0 1px 2px rgba(0,0,0,.4); }
   .sc-seg.narrow .sc-seg-t { display:none; }
   .sc-seg.tiny .sc-seg-n { font-size:12px; }
-  .sc-seg.entry   { background:linear-gradient(180deg,var(--ink-up, var(--up)),color-mix(in srgb,var(--ink-up, var(--up)) 78%,#000)); box-shadow:inset 0 0 20px color-mix(in srgb,#fff 22%,transparent); }
-  .sc-seg.tailwind{ background:linear-gradient(180deg,color-mix(in srgb,var(--ink-up, var(--up)) 62%,var(--ink-info, var(--info))),color-mix(in srgb,var(--ink-up, var(--up)) 44%,var(--ink-info, var(--info)))); }
+  .sc-seg.entry   { background:linear-gradient(180deg,var(--fill-up, var(--up)),color-mix(in srgb,var(--fill-up, var(--up)) 78%,#000)); box-shadow:inset 0 0 20px color-mix(in srgb,#fff 22%,transparent); }
+  .sc-seg.tailwind{ background:linear-gradient(180deg,color-mix(in srgb,var(--fill-up, var(--up)) 62%,var(--fill-info, var(--info))),color-mix(in srgb,var(--fill-up, var(--up)) 44%,var(--fill-info, var(--info)))); }
   .sc-seg.neutral { background:color-mix(in srgb,var(--g-mid) 82%,var(--panel)); color:var(--muted); }
-  .sc-seg.late    { background:linear-gradient(180deg,var(--ink-orange, var(--orange)),color-mix(in srgb,var(--ink-orange, var(--orange)) 78%,#000)); }
-  .sc-seg.headwind{ background:linear-gradient(180deg,var(--ink-down, var(--down)),color-mix(in srgb,var(--ink-down, var(--down)) 76%,#000)); }
+  .sc-seg.late    { background:linear-gradient(180deg,var(--fill-orange, var(--orange)),color-mix(in srgb,var(--fill-orange, var(--orange)) 78%,#000)); }
+  .sc-seg.headwind{ background:linear-gradient(180deg,var(--fill-down, var(--down)),color-mix(in srgb,var(--fill-down, var(--down)) 76%,#000)); }
   .sc-seg.entry, .sc-seg.headwind { position:relative; }
   .sc-seg.entry::after, .sc-seg.headwind::after { content:""; position:absolute; inset:0; opacity:.0;
     background:linear-gradient(90deg,transparent,color-mix(in srgb,#fff 40%,transparent),transparent); animation:sc-sheen 4.5s ease-in-out infinite; }
@@ -194,15 +194,16 @@
 
   /* tier + regime + entry pills */
   .tier { font-family:var(--sc-num); font-weight:800; font-size:11px; padding:2px 7px; border-radius:6px; letter-spacing:.02em; color:#fff; }
-  /* White text on a fill means the FILL has to reach text grade: white on the light
-     --up measured 3.61:1, on #3da564 3.10:1. The --ink-* rung is identity in dark
-     (--ink-mix-*: 100%) so this repaints nothing there, and lands 5.3–6.5:1 in light. */
-  .tier.T1{ background:var(--ink-up, var(--up)); }
-  .tier.T2{ background:color-mix(in srgb, var(--ink-up, var(--up)) 78%, var(--text)); }
-  .tier.T3{ background:var(--ink-info, var(--info)); }
-  .tier.T4{ background:#4a5aa8; }
+  /* White text on a fill needs the SOLID grade, not the ink rung: --ink-* is identity
+     in dark by construction, so an ink-filled badge stays 2.5:1 there. --fill-* mixes
+     the hue toward black instead, which is theme-independent — white lands 5.1–8.1:1
+     on these four in both themes (was 3.61 / 3.10 light, 2.51 / 2.2 dark). */
+  .tier.T1{ background:var(--fill-up, var(--up)); }
+  .tier.T2{ background:color-mix(in srgb, var(--fill-up, var(--up)) 84%, #000); }
+  .tier.T3{ background:var(--fill-info, var(--info)); }
+  .tier.T4{ background:#3c4a8c; }
   .tier.none{ background:var(--g-mid); color:var(--muted); }
-  html[data-lang="zh"] .tier.T2{ background:color-mix(in srgb, var(--ink-up, var(--up)) 78%, var(--text)); }
+  html[data-lang="zh"] .tier.T2{ background:color-mix(in srgb, var(--fill-up, var(--up)) 84%, #000); }
   .pill { font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid var(--line); white-space:nowrap; }
   .pill.buy{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 45%,transparent); background:color-mix(in srgb,var(--up) 8%,transparent); }
   .pill.avoid{ color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 45%,transparent); background:color-mix(in srgb,var(--down) 7%,transparent); }

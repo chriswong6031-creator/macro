@@ -43,7 +43,9 @@
     '#nr-scorecard .nrc-g{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}' +
     '#nr-scorecard .nrc-g .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}' +
     '#nr-scorecard .nrc-g .v{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}' +
-    '#nr-scorecard .nrc-btn{display:block;text-align:center;background:var(--accent,#5aa7ff);color:#fff;font-weight:650;' +
+    // --accent is defined nowhere in the estate, so this always painted the literal
+    // #5aa7ff — white on it is 2.55:1 in BOTH themes. --fill-link is the solid grade.
+    '#nr-scorecard .nrc-btn{display:block;text-align:center;background:var(--fill-link,var(--link,#1c4fe0));color:#fff;font-weight:650;' +
       'font-size:13px;padding:9px 12px;border-radius:9px;margin-top:auto}' +
     '#nr-scorecard .nrc-btn:hover{filter:brightness(1.08)}' +
     '#nr-scorecard .nrc-honest{font-size:10.5px;color:var(--muted);margin-top:6px;text-align:center}' +
