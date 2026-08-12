@@ -1029,6 +1029,15 @@ jobs:
       # is not a guard (#3488).
       - name: flow-velocity measure guards + flow-desk staleness alarm (frozen-leg detection, heartbeat liveness)
         run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py -q
+      # The market-score authority suite spans engine contracts, dashboard projection,
+      # and forward-ledger provenance, so this render/engine guard job owns it. Keep it
+      # ahead of the broad sweep: an unrelated render failure must not leave the veto
+      # firewall dark. The odometer suite is the paired template/site light-mode guard
+      # merged by #5458; naming it explicitly closes the same unrun-suite gap on main.
+      - name: US market-score authority firewall (calendar, Radar, history, provenance)
+        run: python -m pytest tests/test_market_score_authority_2026_08_12.py -q
+      - name: shared light-mode odometer semantic needle contract
+        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
       # pinned SEC source objects into filing packages, Company Facts ledgers,
       # and deterministic B4 binding plans. Keep these security/provenance
