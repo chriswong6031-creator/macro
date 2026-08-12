@@ -172,3 +172,29 @@ first).
   20260812, caliper ≤2 with registered ≤1 escalation, 9 registered cells, signed governing
   validity rule declared. Operator direction to proceed: "okay go" (2026-08-11, after phase-1 +
   W2b shipped).
+- 2026-08-12 — PLUMBING OPERATIONALIZATIONS (append-only; declared PRE-RESULTS, in and
+  alongside the plumbing commit `cf898eb74cb`, which precedes every result artifact on this
+  branch). None of these moves a registered quantity; each records a choice §1–§6 left open:
+  (a) **Both-arms-invalid mirror.** §1 says the ≤1 arm governs when ≤2 fails and that a
+  both-failed panel is a construction FAILURE with the carry beside each grade, but it does not
+  say which arm's numbers the artifact then presents. The plumbing keeps the summary's top-level
+  keys mirroring the REGISTERED ≤2 arm in that case, because the escalation exists to elevate a
+  VALID tighter arm and a both-failed panel has none to elevate; both arms are emitted in full
+  under `caliper_arms` either way, and `governing_arm` records the mechanical determination.
+  (b) **Per-arm era/E4.** Era cells, the B2 fade fence, the B2 anchor comparison, the full
+  36-feature exploratory table and E3/E4 are computed for BOTH caliper arms rather than for the
+  registered arm alone — strictly more printed, so the ≤1 escalation arm is a complete
+  registered-cell table and no adjudicator needs a second wave to apply §1.
+  (c) **Validity anchor receipts are arm-restricted.** The case-side anchor/age receipt beside
+  each arm's validity diagnostic describes the case snapshots that arm actually MATCHED, not
+  every eligible case: the caliper drops cases, and an unrestricted case receipt would describe
+  a population the estimate never used. The control side is the distinct control DAYS that arm
+  used. The panel-level unrestricted case-anchor census stays in `result.cases`.
+  (d) **Era-cell/E4 leg list.** Both arms' era cells and E3/E4 run over the construction's
+  registered legs PLUS `F3` and `F1`, so the validity diagnostic and the stratification
+  diagnostic carry era receipts too.
+  (e) **Day-weighted sensitivity scope.** §5 names the day-weighted arm for AM2; it is therefore
+  run for `am2` only and not for `am2_agefree` (§5's other two sensitivities — caliper ≤4 and
+  NN cap 8 — run for both).
+  (f) **Store access** is the read-only mirror at the primary checkout `data/`, exactly as §2
+  declares; this worktree's `data/` carries no store.
