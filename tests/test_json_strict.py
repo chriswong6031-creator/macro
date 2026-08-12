@@ -227,5 +227,6 @@ def test_write_summary_json_is_the_only_summary_write_path():
     assert "sanitize_non_finite(summary)" in helper
     assert "allow_nan=False" in helper
 
-    # all three emitters go through it: roster-read, --w2-arm, phase-0 main
-    assert len([ln for ln in src.splitlines() if "_write_summary_json(" in ln]) == 4
+    # all four emitters go through it: phase-1, roster-read, --w2-arm, phase-0 main
+    # (plus the helper definition itself).
+    assert len([ln for ln in src.splitlines() if "_write_summary_json(" in ln]) == 5
