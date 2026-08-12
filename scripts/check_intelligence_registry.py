@@ -7,12 +7,14 @@ C-1 backlog reds main fleet-wide on arrival.
 
 (A) governance.intelligence_registry_integrity — HARD, wired to pr_ci.
     Properties of the registry's OWN FILES only:
-      * the committed structural projection differs from a fresh regeneration (drift)
+      * the committed file differs BYTE-FOR-BYTE from a fresh regeneration (drift)
       * regeneration is not idempotent
+      * a corpus-derived path is present in the committed file at all (assert_no_volatile)
       * an overlay key outside the four-key allowlist, or a forbidden derived key
-      * an overlay row for an engine_id the builder did not generate (orphan)
+      * an overlay row for a cell the partition does not contain (orphan)
+      * a curated `not_an_engine` exclusion of an AUTHORITY-BEARING cell
       * an unknown enum value, a missing required field, a null ledger
-      * an exclusion with an empty or missing reason
+      * an exclusion with an empty reason, or one that does not say what it deletes
       * an artifact mapping to zero or more than one engine
     Every one of these is green by construction on the PR that generates the file, and
     none can be tripped by a pre-existing corpus condition. HARD is legitimate precisely
@@ -40,15 +42,26 @@ C-1 backlog reds main fleet-wide on arrival.
     research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md. An upgrade needs no ruling; a
     downgrade does.
 
-WHY THE DRIFT COMPARISON IS A PROJECTION, NOT THE WHOLE FILE
------------------------------------------------------------
-`data/qledger/claims.jsonl` is append-only and `data/species/registry.json` moves
-independently of any PR. Pinning the whole file by equality is a SCHEDULED red: the first
-nightly row written to a currently-empty desk flips a field and reds every open PR. So the
-HARD law compares `structural_projection()` — the file with `meta.volatile_fields` paths
-stripped — and a stale corpus snapshot is a warn-tier content finding. The volatile set is
-declared inside the artifact, so the projection is self-describing and this guard cannot
-silently narrow it.
+WHY THE DRIFT COMPARISON IS ONE BYTE-EXACT COMPARISON
+-----------------------------------------------------
+`data/qledger/claims.jsonl` is APPEND-ONLY, so any committed field derived from it is a
+SCHEDULED fleet-wide red — it goes stale with no code change and reds main daily for a
+property no PR author caused.
+
+The first design tried to survive that by comparing a STRUCTURAL PROJECTION: the file with
+the corpus-derived paths stripped before comparing. That was unsound twice over. (i) The
+CI-wired test `tests/test_check_intelligence_registry.py::test_builder_check_mode_reports_no_drift`
+asserts `build_intelligence_registry.py --check` exits 0, and `--check` compares the WHOLE
+file — so the scheduled red came straight back in through the test the projection was
+supposed to protect. (ii) A gate that strips a field before comparing it is BLIND to a
+hand-edit of that field; `validation_state` — the display-only-until-validated axis — was
+tamperable with the guard reporting byte-identical output.
+
+Both are fixed at the source: the committed artifact carries NO corpus-derived field.
+Volatile values are computed at read time by `volatile_view()`, `assert_no_volatile()`
+makes their PRESENCE a hard violation, and this guard makes ONE byte-exact comparison that
+is now both sound and complete. There is deliberately no nightly regeneration lane — the
+answer is that nothing an automated lane can move lives in the file.
 
 Annotations are emitted with a bare `print` and `flush=True` per CLAUDE.md §"GitHub
 annotations must START the line" — a logger would prefix the line and GitHub would
@@ -77,11 +90,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from engine.intelligence_registry import (  # noqa: E402
     SCHEMA,
+    assert_no_volatile,
     audit_content,
+    audit_corpus,
+    resolve_qual_ladder_ref,
     serialise,
-    structural_projection,
     validate_overlay,
     validate_structure,
+    volatile_view,
 )
 from engine.species_registry import VALID_VALIDATION_STATUSES  # noqa: E402
 from scripts.build_intelligence_registry import (  # noqa: E402
@@ -102,20 +118,31 @@ TITLE_B = "engine-authority-evidence"
 # Law A — integrity (hard)
 # ---------------------------------------------------------------------------
 
-def check_integrity(root: Path) -> tuple[list[str], dict | None, bool]:
-    """Returns (violations, committed_registry, corpus_complete)."""
+def check_integrity(root: Path) -> tuple[list[str], dict | None, dict | None]:
+    """Returns (violations, committed_registry, report).
+
+    ONE byte-exact comparison, in both directions, because the committed artifact carries
+    no corpus-derived field. The first version compared a STRUCTURAL PROJECTION — the file
+    with the volatile paths stripped — which was unsound twice: the CI-wired
+    ``--check`` test still pinned the WHOLE file (so the append-only scheduled red came
+    back through the test), and stripping a field before comparing it made a hand-edit of
+    that field invisible. Absence is now ASSERTED by ``assert_no_volatile`` inside
+    ``validate_structure``, so byte-exact is both sound and complete.
+    """
     registry_path = root / REGISTRY_REL
     if not registry_path.exists():
-        return ([], None, False)
+        return ([], None, None)
 
     try:
         committed = json.loads(registry_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        return ([f"{REGISTRY_REL}: not valid JSON ({exc})"], None, False)
+        return ([f"{REGISTRY_REL}: not valid JSON ({exc})"], None, None)
 
     violations = validate_structure(
         committed, valid_validation_statuses=VALID_VALIDATION_STATUSES
     )
+
+    regenerated, report = build(root)
 
     overlay_path = root / OVERLAY_REL
     overlay = (
@@ -123,23 +150,26 @@ def check_integrity(root: Path) -> tuple[list[str], dict | None, bool]:
         if overlay_path.exists()
         else None
     )
+    # ORPHAN CHECK AGAINST THE FRESH CELL SET, not against the committed registry's own
+    # ids. Feeding it `engines + excluded` from the committed file let a `not_an_engine`
+    # row SELF-LEGITIMATE: the row created the excluded entry that proved it was not an
+    # orphan. partition_artifacts() is pre-exclusion, so it cannot be gamed that way.
     violations += validate_overlay(
         overlay,
-        [r.get("engine_id") for r in committed.get("engines") or []]
-        + [r.get("engine_id") for r in committed.get("excluded") or []],
+        report["cell_ids"],
         valid_validation_statuses=VALID_VALIDATION_STATUSES,
     )
 
-    # Drift + idempotence. Regenerating requires the derivation inputs; if a data store
-    # is unreadable we say so and skip rather than reporting a false drift.
-    regenerated, _ = build(root)
-    corpus = regenerated["meta"]["corpus"]
-    corpus_complete = bool(corpus["species_read"] and corpus["qledger_read"])
+    if not report["stable_complete"]:
+        # "Could not look" is not "looked and it was clean". Skipping is the only honest
+        # option — a comparison against a registry we could not fully derive would report
+        # a false drift, and the natural "fix" for a false red is to weaken the gate.
+        return (violations, committed, report)
 
-    if structural_projection(regenerated) != structural_projection(committed):
+    if serialise(regenerated) != serialise(committed):
         violations.append(
-            f"{REGISTRY_REL}: committed structural projection differs from a fresh "
-            f"regeneration — HEAL: python3 scripts/build_intelligence_registry.py"
+            f"{REGISTRY_REL}: committed file differs from a fresh regeneration — "
+            f"HEAL: python3 scripts/build_intelligence_registry.py"
         )
 
     # Idempotence: the generator must be a function, not a process with memory.
@@ -151,12 +181,12 @@ def check_integrity(root: Path) -> tuple[list[str], dict | None, bool]:
     expected_doc = render_doc(regenerated, audit_content(regenerated))
     if not doc_path.exists():
         violations.append(f"{DOC_REL}: missing — HEAL: python3 scripts/build_intelligence_registry.py")
-    elif corpus_complete and doc_path.read_text(encoding="utf-8") != expected_doc:
+    elif doc_path.read_text(encoding="utf-8") != expected_doc:
         violations.append(
             f"{DOC_REL}: stale — HEAL: python3 scripts/build_intelligence_registry.py"
         )
 
-    return (violations, committed, corpus_complete)
+    return (violations, committed, report)
 
 
 # ---------------------------------------------------------------------------
@@ -174,10 +204,14 @@ def _good_registry() -> dict:
             "n_excluded": 1,
             "n_artifacts": 2,
             "n_artifacts_mapped": 2,
-            "volatile_fields": ["validation_state"],
-            "volatile_meta_keys": ["corpus"],
+            "volatile_fields_excluded": [
+                "declared_horizon.horizon_d",
+                "ledger_evidence.corpus_rows",
+                "ledger_evidence.corpus_checked",
+            ],
+            "volatile_meta_keys_excluded": ["corpus"],
             "authority_order": ["display", "engine_input", "user_ranking", "gate_size"],
-            "corpus": {"species_read": True, "qledger_read": True, "n_species": 0, "n_desks": 0},
+            "unbound_species": [],
         },
         "engines": [
             {
@@ -195,6 +229,7 @@ def _good_registry() -> dict:
                         "storage": "git",
                         "scored_path_surfaces": [],
                         "qual_ladder_ref": "research/PREREG.md",
+                        "qual_ladder_ref_resolution": "repo_path",
                         "artifact_authority": "gate_size",
                     }
                 ],
@@ -204,24 +239,24 @@ def _good_registry() -> dict:
                 "authority": "gate_size",
                 "authority_evidence": {
                     "rule": "a",
-                    "artifact_id": "art-a",
+                    "artifact_ids": ["art-a"],
                     "surfaces": [],
                     "completeness_flag": False,
                     "completeness_detail": [],
+                    "unevidenced_artifacts": [],
+                    "unresolvable_artifacts": [],
                 },
                 "ledger": "data/a_ledger.jsonl",
                 "ledger_evidence": {
                     "rule": 1,
                     "desk": None,
                     "via": None,
-                    "corpus_rows": None,
-                    "corpus_checked": False,
+                    "shape": "store",
                 },
                 "graded_by_design": "yes",
                 "graded_by_design_source": "derived: has a ledger",
                 "declared_horizon": {
                     "horizon_role": ["context"],
-                    "horizon_d": None,
                     "horizon_role_homogeneous": True,
                 },
                 "validation_state": "phase0",
@@ -237,6 +272,12 @@ def _good_registry() -> dict:
                 "artifacts": ["art-b"],
                 "reason": "derived: placeholder producer token",
                 "source": "derived",
+                "would_be_authority": "display",
+                "would_be_tiers": ["display"],
+                "would_be_artifact_authorities": ["display"],
+                "would_be_ledger": "none",
+                "would_be_output_class_reason": "not_required_display_only",
+                "would_be_unevidenced_artifacts": [],
             }
         ],
     }
@@ -308,6 +349,32 @@ def _selftest() -> int:
     def _mismatched_id(r):
         r["engines"][0]["engine_id"] = "engine/z.py::prog"
 
+    def _commit_a_volatile_path(r):
+        # THE SCHEDULED-RED TRIPWIRE. corpus_rows is a function of the append-only claim
+        # store; a committed copy of it reds every open PR on the next nightly append.
+        r["engines"][0]["ledger_evidence"]["corpus_rows"] = 88
+
+    def _commit_a_volatile_meta_key(r):
+        r["meta"]["corpus"] = {"qledger_read": True, "n_desks": 13}
+
+    def _commit_a_volatile_horizon(r):
+        r["engines"][0]["declared_horizon"]["horizon_d"] = [5, 21]
+
+    def _curated_exclusion_of_an_authority_cell(r):
+        row = r["excluded"][0]
+        row["source"] = "curated"
+        row["reason"] = "judgment call: this is a rail, not an intelligence engine at all"
+        row["would_be_authority"] = "gate_size"
+
+    def _curated_exclusion_of_a_scored_cell(r):
+        row = r["excluded"][0]
+        row["source"] = "curated"
+        row["reason"] = "judgment call: this is a rail, not an intelligence engine at all"
+        row["would_be_tiers"] = ["scored"]
+
+    def _exclusion_that_does_not_say_what_it_deletes(r):
+        r["excluded"][0].pop("would_be_authority")
+
     rejects("NEGATIVE — unknown authority enum", _set_bad_authority)
     rejects("NEGATIVE — unknown graded_by_design value", _set_bad_graded)
     rejects("NEGATIVE — unknown output_class", _set_bad_output_class)
@@ -319,6 +386,33 @@ def _selftest() -> int:
     rejects("NEGATIVE — an artifact dropped from the partition", _drop_artifact)
     rejects("NEGATIVE — wrong schema string", _bad_schema)
     rejects("NEGATIVE — engine_id not equal to producer::owner_program", _mismatched_id)
+    rejects(
+        "NEGATIVE — a corpus-derived ledger_evidence.corpus_rows is COMMITTED "
+        "(the append-only scheduled red)",
+        _commit_a_volatile_path,
+    )
+    rejects("NEGATIVE — a corpus-derived meta.corpus block is COMMITTED", _commit_a_volatile_meta_key)
+    rejects("NEGATIVE — a corpus-derived declared_horizon.horizon_d is COMMITTED", _commit_a_volatile_horizon)
+    rejects(
+        "NEGATIVE — a CURATED exclusion of an authority-bearing cell (the overlay is not "
+        "a deletion hatch)",
+        _curated_exclusion_of_an_authority_cell,
+    )
+    rejects("NEGATIVE — a CURATED exclusion of a tier=scored cell", _curated_exclusion_of_a_scored_cell)
+    rejects(
+        "NEGATIVE — an exclusion that does not record what it deletes",
+        _exclusion_that_does_not_say_what_it_deletes,
+    )
+
+    # The same exclusion is LEGAL when derived — a <PLACEHOLDER> token is not a repo
+    # module and has no code that could hold authority.
+    derived_authority = copy.deepcopy(good)
+    derived_authority["excluded"][0]["would_be_authority"] = "gate_size"
+    checks.append((
+        "POSITIVE CONTROL — a DERIVED placeholder exclusion is not refused by the "
+        "authority rule",
+        validate_structure(derived_authority, valid_validation_statuses=statuses) == [],
+    ))
 
     # ---- overlay negative controls ----
     known = ["engine/a.py::prog"]
@@ -378,6 +472,46 @@ def _selftest() -> int:
         "NEGATIVE — not_an_engine with an empty reason",
         {"schema_version": 1, "engines": {"engine/a.py::prog": {"not_an_engine": {"reason": ""}}}},
     )
+    # CENSUS-DELETION HATCH. `not_an_engine: {reason: "nah"}` used to remove an
+    # authority-bearing engine with both laws green (reproduced 2026-08-12: 378 -> 376
+    # engines, gate_size 5 -> 4, findings 109 -> 106, validate_overlay() == []). The most
+    # destructive of the four keys was the least gated; it now matches validation_state.
+    overlay_rejects(
+        "NEGATIVE — not_an_engine with a 3-character reason (the census-deletion hatch)",
+        {"schema_version": 1, "engines": {"engine/a.py::prog": {"not_an_engine": {
+            "reason": "nah", "ratified_by": "someone", "date": "2026-08-12"}}}},
+    )
+    overlay_rejects(
+        "NEGATIVE — not_an_engine with a real reason but NO ratified_by/date",
+        {"schema_version": 1, "engines": {"engine/a.py::prog": {"not_an_engine": {
+            "reason": "this cell is an operational rail with no intelligence output at all"}}}},
+    )
+    overlay_rejects(
+        "NEGATIVE — not_an_engine citing a DNR row by number instead of DNR:<KEY>",
+        {"schema_version": 1, "engines": {"engine/a.py::prog": {"not_an_engine": {
+            "reason": "this cell is an operational rail with no intelligence output at all",
+            "dnr_key": "row 42", "ratified_by": "operator", "date": "2026-08-12"}}}},
+    )
+    checks.append((
+        "POSITIVE CONTROL — a fully cited not_an_engine exclusion is accepted",
+        validate_overlay(
+            {"schema_version": 1, "engines": {"engine/a.py::prog": {"not_an_engine": {
+                "reason": "this cell is an operational rail with no intelligence output at all",
+                "dnr_key": "DNR:KILL-EXAMPLE", "ratified_by": "operator", "date": "2026-08-12"}}}},
+            known,
+        ) == [],
+    ))
+    # Issue-12 branch, now REACHABLE: with a restricted status set the overlay may not
+    # ratify a terminal state species_registry.py no longer recognises.
+    checks.append((
+        "NEGATIVE — terminal ratification of a state the species registry no longer has",
+        bool(validate_overlay(
+            {"schema_version": 1, "engines": {"engine/a.py::prog": {"validation_state": {
+                "value": "falsified", "dnr_key": "DNR:X", "ratified_by": "x", "date": "2026-08-12"}}}},
+            known,
+            valid_validation_statuses=["phase0", "accruing", "validated", "retired"],
+        )),
+    ))
 
     # ---- overlay POSITIVE controls: legal curation must be ACCEPTED ----
     checks.append((
@@ -405,13 +539,107 @@ def _selftest() -> int:
     # ---- content-audit controls (law B) ----
     c1 = copy.deepcopy(good)
     c1["engines"][0]["evidence_ref"] = None
+    c1["engines"][0]["artifacts"][0]["qual_ladder_ref"] = None
+    c1["engines"][0]["artifacts"][0]["qual_ladder_ref_resolution"] = None
+    c1["engines"][0]["authority_evidence"]["unevidenced_artifacts"] = ["art-a"]
     codes = {f.code for f in audit_content(c1)}
-    checks.append(("NEGATIVE — C-1: authority>display with a null evidence_ref is flagged", "AUTHORITY_WITHOUT_EVIDENCE" in codes))
+    checks.append(("NEGATIVE — C-1: an authority-bearing artifact with no prereg pointer is flagged", "AUTHORITY_WITHOUT_EVIDENCE" in codes))
+
+    # THE BLOCKER. A union over the cell clears on ANY sibling's ref, so a gate_size
+    # artifact with no pointer went unflagged whenever a decorative `display` sibling
+    # carried one. Reproduced live 2026-08-12 on
+    # scripts/build_basket_washout_state.py::blocked-entry-override.
+    sibling = copy.deepcopy(good)
+    row = sibling["engines"][0]
+    row["artifacts"][0]["qual_ladder_ref"] = None
+    row["artifacts"][0]["qual_ladder_ref_resolution"] = None
+    row["artifacts"].append({
+        "id": "art-decorative", "path": "site/chip.json", "tier": "display",
+        "horizon_role": "context", "freshness_sla_hours": 24, "storage": "git",
+        "scored_path_surfaces": [], "qual_ladder_ref": "research/UNRELATED_DISPLAY_NOTE.md",
+        "qual_ladder_ref_resolution": "repo_path", "artifact_authority": "display",
+    })
+    row["evidence_ref"] = ["research/UNRELATED_DISPLAY_NOTE.md"]  # the union is NON-empty
+    row["authority_evidence"]["unevidenced_artifacts"] = ["art-a"]
+    codes = {f.code for f in audit_content(sibling)}
+    checks.append((
+        "NEGATIVE — C-1 fires even when a DISPLAY sibling's ref makes evidence_ref non-null",
+        "AUTHORITY_WITHOUT_EVIDENCE" in codes,
+    ))
+
+    # "No pointer" and "pointer at nothing" are different defects with different heals.
+    unresolvable = copy.deepcopy(good)
+    unresolvable["engines"][0]["artifacts"][0]["qual_ladder_ref"] = "lol/does_not_exist.md"
+    unresolvable["engines"][0]["artifacts"][0]["qual_ladder_ref_resolution"] = "unresolved"
+    unresolvable["engines"][0]["authority_evidence"]["unresolvable_artifacts"] = ["art-a"]
+    unresolvable["engines"][0]["authority_evidence"]["unevidenced_artifacts"] = ["art-a"]
+    codes = {f.code for f in audit_content(unresolvable)}
+    checks.append((
+        "NEGATIVE — a qual_ladder_ref pointing at a NON-EXISTENT file is reported",
+        "AUTHORITY_EVIDENCE_UNRESOLVABLE" in codes and "AUTHORITY_WITHOUT_EVIDENCE" in codes,
+    ))
+
+    checks.append((
+        "POSITIVE CONTROL — a ref that IS a config/qual_ladder.yml key resolves",
+        resolve_qual_ladder_ref(
+            "altdata.action", qual_ladder_keys={"altdata.action"}, path_exists=lambda p: False
+        ) == "qual_ladder_key",
+    ))
+    checks.append((
+        "POSITIVE CONTROL — a ref that IS an existing repo path resolves",
+        resolve_qual_ladder_ref(
+            "research/PREREG.md", qual_ladder_keys=set(), path_exists=lambda p: True
+        ) == "repo_path",
+    ))
+    checks.append((
+        "NEGATIVE — a ref that is neither a ladder key nor an existing path is 'unresolved'",
+        resolve_qual_ladder_ref(
+            "lol/nope.md", qual_ladder_keys={"altdata.action"}, path_exists=lambda p: False
+        ) == "unresolved",
+    ))
+    checks.append((
+        "POSITIVE CONTROL — an UNPROBED ref is 'unchecked', never 'unresolved' "
+        "('could not look' != 'looked and found nothing')",
+        resolve_qual_ladder_ref("research/PREREG.md") == "unchecked",
+    ))
+
+    # An EXCLUDED cell that would have held authority still reports its findings —
+    # otherwise a three-word overlay reason silently deflates the backlog T1 exists for.
+    hatched = copy.deepcopy(good)
+    hatched["excluded"][0].update({
+        "source": "curated",
+        "would_be_authority": "gate_size",
+        "would_be_unevidenced_artifacts": ["art-b"],
+        "would_be_output_class_reason": "required_but_uncurated",
+    })
+    codes = {f.code for f in audit_content(hatched)}
+    checks.append((
+        "NEGATIVE — an EXCLUDED authority-bearing cell still reports C-1 and the missing "
+        "metric contract (an exclusion cannot buy silence)",
+        "AUTHORITY_WITHOUT_EVIDENCE" in codes and "OUTPUT_CLASS_MISSING" in codes,
+    ))
+
+    unbound = copy.deepcopy(good)
+    unbound["meta"]["unbound_species"] = [
+        {"species_id": "F3_ANTICHASE", "validation_status": "accruing"}
+    ]
+    codes = {f.code for f in audit_content(unbound)}
+    checks.append(("NEGATIVE — a species bound to no engine ledger is named", "SPECIES_UNBOUND" in codes))
+
+    could_not_look = copy.deepcopy(good)
+    could_not_look["meta"]["unbound_species"] = None
+    codes = {f.code for f in audit_content(could_not_look)}
+    checks.append((
+        "POSITIVE CONTROL — an UNREAD species store reports no unbound species "
+        "('could not look' != 'looked and found nothing')",
+        "SPECIES_UNBOUND" not in codes,
+    ))
 
     display_ok = copy.deepcopy(good)
     display_ok["engines"][0]["authority"] = "display"
     display_ok["engines"][0]["artifacts"][0]["artifact_authority"] = "display"
     display_ok["engines"][0]["evidence_ref"] = None
+    display_ok["engines"][0]["authority_evidence"]["unevidenced_artifacts"] = []
     codes = {f.code for f in audit_content(display_ok)}
     checks.append(("POSITIVE CONTROL — a display engine with no evidence_ref is NOT flagged", "AUTHORITY_WITHOUT_EVIDENCE" not in codes))
 
@@ -432,22 +660,41 @@ def _selftest() -> int:
     codes = {f.code for f in audit_content(stale)}
     checks.append(("NEGATIVE — graded_by_design contradicting a real ledger is flagged", "GRADED_BY_DESIGN_CONTRADICTS_LEDGER" in codes))
 
-    empty_desk = copy.deepcopy(good)
-    empty_desk["engines"][0]["ledger_evidence"] = {
-        "rule": 2, "desk": "ghost_desk", "via": None, "corpus_rows": 0, "corpus_checked": True,
+    # The corpus half — computed at READ time, never from the committed file.
+    desk_reg = copy.deepcopy(good)
+    desk_reg["engines"][0]["ledger"] = "qledger:ghost_desk"
+    desk_reg["engines"][0]["ledger_evidence"] = {
+        "rule": 2, "desk": "ghost_desk", "via": None, "shape": None,
     }
-    codes = {f.code for f in audit_content(empty_desk)}
+    codes = {
+        f.code
+        for f in audit_corpus(desk_reg, volatile_view(desk_reg, qledger_desk_rows={}))
+    }
     checks.append(("NEGATIVE — a registered qledger desk with zero rows is flagged", "LEDGER_DECLARED_BUT_EMPTY" in codes))
 
-    unread = copy.deepcopy(good)
-    unread["engines"][0]["ledger_evidence"] = {
-        "rule": 2, "desk": "ghost_desk", "via": None, "corpus_rows": None, "corpus_checked": False,
+    codes = {
+        f.code
+        for f in audit_corpus(desk_reg, volatile_view(desk_reg, qledger_desk_rows=None))
     }
-    codes = {f.code for f in audit_content(unread)}
     checks.append((
         "POSITIVE CONTROL — an UNREAD corpus is not reported as an empty desk "
         "('could not look' != 'looked and found nothing')",
         "LEDGER_DECLARED_BUT_EMPTY" not in codes,
+    ))
+    codes = {
+        f.code
+        for f in audit_corpus(
+            desk_reg, volatile_view(desk_reg, qledger_desk_rows={"ghost_desk": 88})
+        )
+    }
+    checks.append((
+        "POSITIVE CONTROL — a desk WITH rows is not flagged as empty",
+        "LEDGER_DECLARED_BUT_EMPTY" not in codes,
+    ))
+    checks.append((
+        "the corpus audit never reads the committed file — a written corpus_rows is "
+        "ignored, because it is not supposed to be there at all",
+        audit_corpus(desk_reg, None) == [],
     ))
 
     flag = copy.deepcopy(good)
@@ -456,28 +703,33 @@ def _selftest() -> int:
     codes = {f.code for f in audit_content(flag)}
     checks.append(("NEGATIVE — the scored_path_surfaces completeness flag is reported", "SCORED_PATH_SURFACES_INCOMPLETE" in codes))
 
-    # ---- the projection must actually STRIP, and must not strip everything ----
-    projected = structural_projection(good)
+    # ---- the ABSENCE contract, in both directions ----
     checks.append((
-        "structural projection strips the declared volatile field",
-        "validation_state" not in projected["engines"][0],
+        "POSITIVE CONTROL — a clean registry carries no corpus-derived path",
+        assert_no_volatile(good) == [],
     ))
+    for label, mutate in (
+        ("ledger_evidence.corpus_rows", _commit_a_volatile_path),
+        ("meta.corpus", _commit_a_volatile_meta_key),
+        ("declared_horizon.horizon_d", _commit_a_volatile_horizon),
+    ):
+        dirty = copy.deepcopy(good)
+        mutate(dirty)
+        checks.append((
+            f"NEGATIVE — assert_no_volatile catches a committed {label}",
+            bool(assert_no_volatile(dirty)),
+        ))
+
+    # THE TAMPER THAT USED TO BE INVISIBLE. validation_state is the
+    # display-only-until-validated axis; the old projection STRIPPED it before comparing,
+    # so a hand-edit to "validated" produced byte-identical guard output. It is stable
+    # (data/species/registry.json has one commit ever and no automated writer), so it is
+    # now committed and equality-guarded like anything else.
+    tampered = copy.deepcopy(good)
+    tampered["engines"][0]["validation_state"] = "validated"
     checks.append((
-        "structural projection keeps the structural fields",
-        projected["engines"][0].get("authority") == "gate_size"
-        and projected["engines"][0].get("ledger") == "data/a_ledger.jsonl",
-    ))
-    volatile_only = copy.deepcopy(good)
-    volatile_only["engines"][0]["validation_state"] = "validated"
-    checks.append((
-        "a volatile-only difference does NOT read as structural drift (no scheduled red)",
-        structural_projection(volatile_only) == structural_projection(good),
-    ))
-    structural_diff = copy.deepcopy(good)
-    structural_diff["engines"][0]["authority"] = "display"
-    checks.append((
-        "NEGATIVE — a STRUCTURAL difference IS caught by the projection",
-        structural_projection(structural_diff) != structural_projection(good),
+        "NEGATIVE — a hand-edited validation_state is a REAL difference, not a stripped one",
+        serialise(tampered) != serialise(good) and assert_no_volatile(tampered) == [],
     ))
 
     ok = True
@@ -525,15 +777,29 @@ def main() -> int:
             )
         return 0
 
-    violations, committed, corpus_complete = check_integrity(root)
+    violations, committed, report = check_integrity(root)
     findings = audit_content(committed) if committed else []
+    if committed and report:
+        # The corpus half runs against the LIVE claim store, computed fresh — it is never
+        # read from the committed file, because nothing corpus-derived is in there.
+        findings = findings + audit_corpus(
+            committed,
+            volatile_view(
+                committed,
+                qledger_desk_rows=report["qledger_desk_rows"],
+                qledger_desk_horizons=report["qledger_desk_horizons"],
+            ),
+        )
+        findings.sort(key=lambda f: (f.code, f.engine_id))
+    stable_complete = bool(report and report["stable_complete"])
 
     if args.json:
         print(
             json.dumps(
                 {
                     "registry_absent": False,
-                    "corpus_complete": corpus_complete,
+                    "stable_complete": stable_complete,
+                    "qledger_read": bool(report and report["qledger_read"]),
                     "integrity": violations,
                     "content": [
                         {"code": f.code, "engine_id": f.engine_id, "detail": f.detail}
@@ -577,10 +843,17 @@ def main() -> int:
         if finding.code != "AUTHORITY_WITHOUT_EVIDENCE":
             print(f"  [{finding.code}] {finding.engine_id}: {finding.detail}", flush=True)
 
-    if not corpus_complete:
+    if not stable_complete:
         print(
-            f"::notice title={TITLE_A}::a data store could not be read — corpus-sourced "
-            f"fields were NOT compared (this is 'could not look', not 'looked and clean')",
+            f"::notice title={TITLE_A}::a STABLE input could not be read, so the drift "
+            f"comparison was SKIPPED (this is 'could not look', not 'looked and clean')",
+            flush=True,
+        )
+    elif report and not report["qledger_read"]:
+        print(
+            f"::notice title={TITLE_A}::the claim corpus could not be read — the read-time "
+            f"corpus audit is NULL, not empty. The drift comparison is unaffected: the "
+            f"committed artifact carries no corpus-derived field",
             flush=True,
         )
 

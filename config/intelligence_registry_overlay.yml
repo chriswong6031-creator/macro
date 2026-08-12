@@ -29,8 +29,28 @@
 #                      under engine/species_registry.py::_ALLOWED_TRANSITIONS. A detector
 #                      must not be able to terminate an engine's lifecycle.
 #
-#   not_an_engine:     {reason: "<why this cell is not an intelligence engine>"}
-#                      A non-empty reason is mandatory. Nothing is excluded silently.
+#   not_an_engine:     {reason: "<>=40 chars: why this cell is not an intelligence
+#                       engine>", ratified_by: "<who>", date: "<YYYY-MM-DD>",
+#                       dnr_key: "DNR:<KEY>"  # only if it cites a standing kill}
+#                      THE MOST DESTRUCTIVE KEY, GATED LIKE ONE. It deletes a whole cell
+#                      from the census, so it carries the SAME citation contract as a
+#                      terminal validation_state ratification. Measured 2026-08-12 before
+#                      that parity landed: `not_an_engine: {reason: "nah"}` took the
+#                      registry 378 -> 376 engines and gate_size 5 -> 4 with BOTH laws
+#                      returning zero violations — a three-character string deleted an
+#                      engine holding size authority over a human.
+#                      TWO FURTHER REFUSALS, both mechanical:
+#                        * exclusions are DERIVED FIRST and excluded second, so every
+#                          excluded row records `would_be_authority` / `would_be_tiers` /
+#                          `would_be_ledger`. A CURATED exclusion whose would_be_authority
+#                          is above `display`, or whose cell holds a scored/confirmer/
+#                          shadow artifact, is a HARD violation. The overlay is not a
+#                          deletion hatch.
+#                        * excluded rows are STILL audited for content findings, so an
+#                          exclusion cannot deflate the C-1/C-2 backlog this registry
+#                          exists to produce.
+#                      Curated exclusions are pinned at ZERO by a test, so the first one
+#                      is a deliberate reviewed act rather than a diff nobody reads.
 #
 # MAY NEVER CONTAIN: engine_id, producer, artifacts, consumers, owner_program,
 # owner_program_span, authority, authority_evidence, ledger, ledger_evidence,

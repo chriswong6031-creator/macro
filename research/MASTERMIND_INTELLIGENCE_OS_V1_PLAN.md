@@ -74,7 +74,7 @@ when registration does, and no later effort recovers a day not recorded.
 | **Objective** | One derived row per intelligence engine: output class, authority, ledger, declared horizon, validation state, evidence, and `graded_by_design` |
 | **Dependencies** | none |
 | **Files** | new `engine/intelligence_registry.py` (pure derivation), `scripts/build_intelligence_registry.py`, `scripts/check_intelligence_registry.py` (gate), `config/intelligence_registry_overlay.yml` (curated fields only), generated `docs/MASTERMIND_INTELLIGENCE_REGISTRY.md` + `data/intelligence_registry.json`; reads `config/synapse.yml`, `data/species/registry.json`, `data/qledger/claims.jsonl`, `research/DO_NOT_REBUILD.md` |
-| **Output** | Registry regenerated nightly; drift gate like `check_blocklist_drift.py` |
+| **Output** | Registry regenerated ON THE PR THAT CHANGES ITS INPUTS — **not nightly**; drift gate like `check_blocklist_drift.py` |
 | **Agent** | `builder` (opus) — build; `Explore` (**sonnet**) for the output-class census sweep |
 | **Validation** | Regeneration is idempotent; **every `synapse` ARTIFACT maps to exactly one engine** (total, disjoint partition of all 642), and every producer maps to **one or more** engines or carries an explicit `not_an_engine` exclusion with a reason |
 | **Acceptance** | Not done unless: spine is **derived** (overlay holds only fields absent from canonical sources); every engine above `display` authority has a non-null `evidence_ref` **or appears in the generator's machine-readable missing-evidence report**; `graded_by_design` is set for 100% of rows so "ungraded by design" is distinguishable from "ungraded by neglect"; `authority` distinguishes `user_ranking` from `engine_input` (catalog Finding C-2) |
@@ -282,8 +282,12 @@ reliably than any rubric axis.**
 
 ## §4 Definition of done for V1
 
-- [ ] T1 registry generated nightly; every engine has `output_class`, `authority`,
-      `graded_by_design`, and — above `display` — `evidence_ref`
+- [ ] T1 registry regenerated on every PR that moves one of its (PR-only) inputs — **not
+      nightly, deliberately**: it carries nothing derived from the append-only claim
+      corpus, so there is nothing an automated lane could move, and a nightly rewrite of a
+      ~800 KB tracked JSON would be a push storm for zero information. Every engine has
+      `output_class`, `authority`, `graded_by_design`, and — above `display` —
+      `evidence_ref`
 - [ ] T2 Prophet plans carry direction-signed benchmark excess and MFE/MAE
 - [ ] T3 `check_qledger_metric_validity.py --strict` green in CI
 - [ ] T4 every engine output resolves a health state from the reader's view

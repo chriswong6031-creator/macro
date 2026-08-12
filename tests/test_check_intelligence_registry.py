@@ -73,7 +73,9 @@ def test_selftest_covers_both_directions():
         ("validate_overlay accepts everything", ("validate_overlay", lambda *a, **k: [])),
         ("validate_overlay rejects everything", ("validate_overlay", lambda *a, **k: ["x"])),
         ("audit_content finds nothing", ("audit_content", lambda *a, **k: [])),
-        ("structural_projection strips nothing", ("structural_projection", lambda r: dict(r))),
+        ("audit_corpus finds nothing", ("audit_corpus", lambda *a, **k: [])),
+        ("assert_no_volatile accepts everything", ("assert_no_volatile", lambda r: [])),
+        ("resolve_qual_ladder_ref always resolves", ("resolve_qual_ladder_ref", lambda r, **k: "repo_path")),
     ],
 )
 def test_selftest_fails_when_the_validator_is_broken(monkeypatch, name, stub):
@@ -139,18 +141,36 @@ def test_guard_source_never_routes_an_annotation_through_a_logger():
 
 
 def test_annotation_volume_is_budgeted():
-    """154 findings on the 2026-08-12 corpus. One annotation each would bury the
-    actionable C-1 rows; every non-C-1 code is aggregated to a single annotation."""
+    """181 findings on the 2026-08-12 corpus. One annotation each would bury the
+    actionable C-1 rows; every non-C-1 code is aggregated to a single annotation.
+
+    ONE SUBPROCESS. This used to compare counts across TWO independent guard invocations,
+    each rebuilding from the live tree — a cross-invocation equality assertion over a
+    shared checkout, observed failing once in 8 runs (assert 23 == 22 + 2) while the repo's
+    MM_DATA_GUARD simultaneously reported data/intelligence_registry.json modified. The
+    mechanism was never explained, which is precisely the argument: a racy structure is
+    wrong regardless of which race it loses. Reading both halves out of the SAME stdout
+    removes the race by construction, and halves the guard cost (~3s per invocation).
+    """
     result = _run()
     if "registry absent" in result.stdout:
         pytest.skip("registry absent in this checkout")
-    payload = json.loads(_run("--json").stdout)
-    non_c1_codes = {
-        f["code"] for f in payload["content"] if f["code"] != "AUTHORITY_WITHOUT_EVIDENCE"
-    }
     warnings = [line for line in result.stdout.splitlines() if line.startswith("::warning")]
-    c1 = sum(1 for f in payload["content"] if f["code"] == "AUTHORITY_WITHOUT_EVIDENCE")
-    assert len(warnings) == c1 + len(non_c1_codes)
+    per_engine = [w for w in warnings if "[AUTHORITY_WITHOUT_EVIDENCE]" in w]
+    aggregated = [w for w in warnings if "engine(s) — detail in" in w]
+    assert warnings, result.stdout[-2000:]
+    assert len(warnings) == len(per_engine) + len(aggregated), (
+        "every annotation is either one C-1 row or one aggregated count"
+    )
+    # Each aggregated annotation stands for MANY stdout detail lines — that is the budget.
+    detail_lines = [
+        line for line in result.stdout.splitlines()
+        if line.startswith("  [") and "AUTHORITY_WITHOUT_EVIDENCE" not in line
+    ]
+    assert len(detail_lines) >= len(aggregated), "full detail must still reach stdout"
+    assert len(aggregated) < len(detail_lines), (
+        "aggregation must actually compress — otherwise the budget is decorative"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -232,6 +252,15 @@ def test_overlay_forbidden_key_names_the_dnr_row():
 # ---------------------------------------------------------------------------
 
 def test_builder_check_mode_reports_no_drift():
+    """This assertion is CORRECT AS WRITTEN and stays.
+
+    It used to be a scheduled fleet-wide red: `--check` compares the WHOLE registry text,
+    and the committed registry carried `ledger_evidence.corpus_rows` derived from the
+    append-only claim corpus, so the first nightly claim landing on main failed this test
+    on every open PR's merge ref. The fix was at the SOURCE — nothing append-only is
+    committed any more — not here. Weakening this assertion would have hidden the defect
+    rather than removed it.
+    """
     result = subprocess.run(
         [sys.executable, str(REPO / "scripts" / "build_intelligence_registry.py"), "--check"],
         cwd=REPO, capture_output=True, text=True, check=False,
@@ -248,17 +277,72 @@ def test_regeneration_is_idempotent():
     assert serialise(first) == serialise(second)
 
 
-def test_a_stale_committed_copy_cannot_pass():
-    """The drift law must actually see a mutated committed file."""
-    from engine.intelligence_registry import structural_projection
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("authority", "gate_size"),
+        # THE TAMPER THAT USED TO BE INVISIBLE. validation_state is the
+        # display-only-until-validated axis; it sat in VOLATILE_ENGINE_PATHS and was
+        # STRIPPED before comparing, so a hand-edit produced byte-identical guard output.
+        ("validation_state", "validated"),
+        ("graded_by_design", "yes"),
+        ("output_class", "predictive"),
+    ],
+)
+def test_a_stale_committed_copy_cannot_pass(field, value):
+    """The drift law must actually see a mutated committed file, on EVERY field."""
+    from engine.intelligence_registry import serialise
     from scripts.build_intelligence_registry import build
 
     fresh, _ = build(REPO)
     stale = copy.deepcopy(fresh)
     if not stale["engines"]:
         pytest.skip("no engines")
-    stale["engines"][0]["authority"] = "gate_size"
-    assert structural_projection(stale) != structural_projection(fresh)
+    row = next((r for r in stale["engines"] if r[field] != value), None)
+    if row is None:
+        pytest.skip(f"every engine already has {field}={value!r}")
+    row[field] = value
+    assert serialise(stale) != serialise(fresh)
+
+
+def test_the_committed_registry_carries_no_corpus_derived_field():
+    """B-RED, stated as a property of the shipped artifact rather than of the builder."""
+    from engine.intelligence_registry import assert_no_volatile
+
+    path = REPO / "data" / "intelligence_registry.json"
+    if not path.exists():
+        pytest.skip("registry absent in this checkout")
+    assert assert_no_volatile(json.loads(path.read_text(encoding="utf-8"))) == []
+
+
+def test_a_corpus_derived_field_in_the_committed_file_is_a_HARD_violation():
+    from engine.intelligence_registry import validate_structure
+    from scripts.build_intelligence_registry import build
+
+    registry, _ = build(REPO)
+    if not registry["engines"]:
+        pytest.skip("no engines")
+    registry["engines"][0]["ledger_evidence"]["corpus_rows"] = 88
+    assert any("corpus_rows" in v for v in validate_structure(registry))
+
+
+def test_the_overlay_orphan_rule_reads_the_PARTITION_not_the_committed_ids():
+    """A `not_an_engine` row used to SELF-LEGITIMATE: it created the excluded row that
+    proved it was not an orphan, so the orphan rule could never fire on it."""
+    from scripts.build_intelligence_registry import build
+
+    _, report = build(REPO)
+    committed = json.loads((REPO / "data" / "intelligence_registry.json").read_text("utf-8"))
+    excluded_ids = {r["engine_id"] for r in committed["excluded"]}
+    assert excluded_ids, "the fixture needs at least one excluded cell"
+    assert excluded_ids <= set(report["cell_ids"]), (
+        "cell_ids is the PRE-EXCLUSION partition, so an excluded id is still a real cell"
+    )
+    assert validate_overlay(
+        {"schema_version": 1, "engines": {"engine/ghost.py::nowhere": {"not_an_engine": {
+            "reason": "x" * 50, "ratified_by": "y", "date": "2026-08-12"}}}},
+        report["cell_ids"],
+    ), "a row for a cell the partition does not contain must still be an orphan"
 
 
 def test_content_audit_is_pure_over_a_loaded_registry():

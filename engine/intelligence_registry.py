@@ -53,15 +53,33 @@ would land as unenforced free text sitting next to the already-unenforced
 of, one field later. Instead both derive from fields synapse ALREADY carries, so the C-1
 heal repairs the canonical source rather than papering over it in a side file.
 
+STABLE vs VOLATILE — THE ONE STRUCTURAL DECISION
+------------------------------------------------
+:func:`build_registry` emits ONLY fields whose sources move via a PR. Anything derived
+from the append-only claim corpus is computed at read time by :func:`volatile_view` and
+never serialised, and its presence in a committed file is a hard violation
+(:func:`assert_no_volatile`). The long argument is in the volatile block below; the short
+version is that a committed field derived from an append-only store is a scheduled
+fleet-wide red, and a guard that reds the fleet for nobody's fault gets routed around
+instead of obeyed.
+
+Two audits, matching that split: :func:`audit_content` (STABLE — safe to render into a
+byte-pinned doc) and :func:`audit_corpus` (needs the live corpus — stdout and annotations
+only, never a committed artifact).
+
 WHAT THIS MODULE IS
 -------------------
 Pure functions over already-loaded objects. It reads no files and writes no files, so it
 is cheap to test with synthetic input and cannot be broken by a store-layout change. File
 I/O and the sparse-worktree ladder live in ``scripts/build_intelligence_registry.py``; the
-CI gate lives in ``scripts/check_intelligence_registry.py``.
+CI gate lives in ``scripts/check_intelligence_registry.py``. Where a derivation needs the
+filesystem — resolving a ``qual_ladder_ref`` against a repo path — the probe is INJECTED
+(``path_exists``) so the caller can route it through the git ladder rather than through
+``os.path.exists``, which goes blind on a sparse cone.
 
 Per house epistemics a null never blocks: absent inputs produce ``None`` sentinels that
-render as "could not look", never as "looked and found nothing".
+render as "could not look", never as "looked and found nothing". That is why an unprobed
+``qual_ladder_ref`` resolves to ``"unchecked"`` and never to ``"unresolved"``.
 """
 from __future__ import annotations
 
@@ -69,7 +87,7 @@ import ast
 import json
 import re
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 SCHEMA = "intelligence_registry.v1"
 
@@ -152,26 +170,61 @@ OVERLAY_GRADED_TRANSITION = (GRADED_NOT_YET, GRADED_DESCRIPTIVE)
 #: Terminal states the overlay may ratify, each requiring a DNR citation.
 OVERLAY_TERMINAL_STATES = frozenset({"falsified", "retired"})
 
-# ---------------------------------------------------------------------------
-# Volatile fields — why the drift gate is split in two
-# ---------------------------------------------------------------------------
+#: Minimum length of a ``not_an_engine`` reason. "nah" removed a gate_size engine with
+#: both laws green (reproduced 2026-08-12); a census deletion has to carry an argument.
+NOT_AN_ENGINE_MIN_REASON_CHARS = 40
 
-#: Dotted paths inside an engine row whose value is sourced from an APPEND-ONLY or
-#: nightly-mutated data store (data/qledger/, data/species/). A byte-equality gate over
-#: these is a scheduled red: the moment a nightly lane writes the first row of a desk
-#: that currently has none, every open PR goes red for a property nobody introduced
-#: (the append-only-store-pinned-by-equality trap). So the HARD drift law compares the
-#: STRUCTURAL PROJECTION — this file with these paths stripped — and a stale corpus
-#: snapshot is a WARN-tier content finding instead.
+#: Artifact tiers that make a cell authority-bearing regardless of the derived roll-up.
+#: A curated exclusion may never remove a cell holding one — see ``validate_structure``.
+EXCLUSION_FORBIDDEN_TIERS = frozenset({"scored", "confirmer", "shadow"})
+
+# ---------------------------------------------------------------------------
+# Volatile fields — WHY THE COMMITTED ARTIFACT CARRIES NONE OF THEM
+# ---------------------------------------------------------------------------
+#
+# ``data/qledger/claims.jsonl`` is APPEND-ONLY: 13 automated commits in 14 days, named
+# things like "whitehouse: alert update 2026-08-11T21:04Z". Any field derived from it goes
+# stale on its own, with no code change. Pinning such a field by equality in a committed
+# artifact is the house's "append-only store pinned by equality is a scheduled red" trap:
+# main reds daily for a property no PR author caused, and a guard that reds the fleet for
+# nobody's fault gets routed around instead of obeyed.
+#
+# The FIRST design of this module tried to survive that by comparing a STRUCTURAL
+# PROJECTION — the committed file with the volatile paths stripped before comparing. That
+# was unsound twice over: (i) the CI-wired test asserted ``--check`` (a byte comparison of
+# the WHOLE file) exits 0, so the scheduled red came straight back through the test; and
+# (ii) a gate that strips a field before comparing it is BLIND to a hand-edit of that
+# field, which is exactly how a tamper of ``validation_state`` — the
+# display-only-until-validated axis — became invisible.
+#
+# So: the committed artifact carries NO corpus-derived field at all. Volatile values are
+# computed at READ time by :func:`volatile_view` and never serialised. The committed file
+# is therefore identical to its own projection, one byte-exact comparison is sound, and
+# the guard ASSERTS the absence of these paths (:func:`assert_no_volatile`) instead of
+# stripping them.
+#
+# THERE IS NO REGENERATION LANE, AND ONE MUST NOT BE ADDED. ``grep -rn
+# build_intelligence_registry .github/`` returns nothing; a nightly that rewrote a ~750 KB
+# git-tracked JSON would add a push storm to the wire lanes for zero information, and the
+# heal would be valid only until the next append. The answer is not to automate the
+# regeneration — it is that nothing an automated lane can move lives in the file.
+
+#: Dotted paths that MUST NOT appear in a committed engine row. Not a strip list — an
+#: assertion. Each is a pure function of the append-only claim corpus.
 VOLATILE_ENGINE_PATHS: tuple[str, ...] = (
     "declared_horizon.horizon_d",
     "ledger_evidence.corpus_rows",
     "ledger_evidence.corpus_checked",
-    "validation_state",
-    "validation_state_evidence",
 )
 
-#: Top-level registry keys that are likewise corpus-sourced.
+#: Top-level ``meta`` keys that must likewise never be committed.
+#:
+#: ``validation_state`` and ``validation_state_evidence`` were in the volatile set and are
+#: NOT any more. ``data/species/registry.json`` has ONE commit in the whole repo history
+#: and no automated writer (``engine/species_registry.py::save`` has zero non-test
+#: callers), so it moves only via a PR — which makes those two fields STABLE, committed,
+#: and equality-guarded. That is the point: a hand-edit of a validity claim is now
+#: structural drift, not an invisible write.
 VOLATILE_META_KEYS: tuple[str, ...] = ("corpus",)
 
 # ---------------------------------------------------------------------------
@@ -184,9 +237,12 @@ SEVERITY_CONTENT = "content"       # law B — warn
 FINDING_CODES = (
     # law B (content, warn) — pre-existing conditions of the corpus
     "AUTHORITY_WITHOUT_EVIDENCE",
+    "AUTHORITY_EVIDENCE_UNRESOLVABLE",
     "OUTPUT_CLASS_MISSING",
     "GRADED_BY_DESIGN_CONTRADICTS_LEDGER",
     "SCORED_PATH_SURFACES_INCOMPLETE",
+    "SPECIES_UNBOUND",
+    # computed at READ time from the live corpus (audit_corpus), never from the file
     "LEDGER_DECLARED_BUT_EMPTY",
 )
 
@@ -199,6 +255,51 @@ class Finding:
     severity: str
     engine_id: str
     detail: str
+
+
+# ---------------------------------------------------------------------------
+# qual_ladder_ref resolution — "a pointer at nothing" is not evidence
+# ---------------------------------------------------------------------------
+
+#: The four resolution states. ``unchecked`` is the epistemic null: the resolver was not
+#: given the inputs it needs, so it did not look. It must never be reported as a failure.
+QUAL_LADDER_RESOLUTIONS = ("qual_ladder_key", "repo_path", "unresolved", "unchecked")
+
+
+def resolve_qual_ladder_ref(
+    ref: Any,
+    *,
+    qual_ladder_keys: Iterable[str] | None = None,
+    path_exists: Callable[[str], bool] | None = None,
+) -> str | None:
+    """Resolve one ``qual_ladder_ref`` value. ``None`` means there was no ref at all.
+
+    The live corpus mixes exactly two legal shapes and BOTH are checkable (measured over
+    all 10 refs in ``config/synapse.yml``, 2026-08-12): 9 are keys in
+    ``config/qual_ladder.yml`` (``altdata.signal_score`` ×4, ``china_intel.news_dir`` ×3,
+    ``altdata.action`` ×2) and 1 is a repo path that exists
+    (``research/RECLAIM_VETO_CONDITIONAL_PREREG.md``).
+
+    ``path_exists`` is INJECTED so this module stays pure and file-free — and so the
+    caller can route the probe through the sparse-worktree git ladder. A bare
+    ``os.path.exists`` would go blind on a sparse cone and silently call a real prereg
+    missing, reproducing the "could not look rendered as looked and found nothing" bug
+    inside the fix for it.
+
+    SCOPE: resolvability is not adequacy. A resolvable pointer does not prove the document
+    it names pre-registers anything — that judgment is T7's backlog drain. This guarantees
+    only that the pointer is real.
+    """
+    text = str(ref).strip() if ref is not None else ""
+    if not text:
+        return None
+    if qual_ladder_keys is None or path_exists is None:
+        return "unchecked"
+    if text in set(qual_ladder_keys):
+        return "qual_ladder_key"
+    if path_exists(text):
+        return "repo_path"
+    return "unresolved"
 
 
 # ---------------------------------------------------------------------------
@@ -395,13 +496,56 @@ def max_authority(values: Iterable[str]) -> str:
 _LEDGER_PATH_RE = re.compile(r"ledger", re.IGNORECASE)
 _GRADER_RE = re.compile(r"grade|ledger", re.IGNORECASE)
 
+#: A grading ledger is a STORE. Measured 2026-08-12: without this test, 6-7 of the 112
+#: ``graded_by_design: yes`` engines had a "ledger" that could not hold a graded row —
+#: three ``engine/*_ledger.py`` SELF-REFERENCES (the ``else producer`` fallback deleted
+#: below), a charter CONFIG (``config/lobe_charters.yml``), a rule-4 hop that landed on a
+#: ``.py`` module, and two UNEXPANDED template globs. An evaluability claim derived from a
+#: filename substring is exactly the unearned claim ``OVERLAY_GRADED_TRANSITION`` refuses
+#: to let the overlay write by hand.
+_STORE_SUFFIXES = frozenset({".jsonl", ".parquet", ".json", ".csv", ".db", ".sqlite"})
+
+#: Glob/template tokens. A path carrying one names a FAMILY of stores, not a store — it
+#: cannot be opened, so it cannot be evidence that grading happens.
+_TEMPLATE_TOKEN_RE = re.compile(r"[*?]|<[^>]*>|\{[^}]*\}")
+
+LEDGER_SHAPE_STORE = "store"
+LEDGER_SHAPE_TEMPLATE = "template"
+LEDGER_SHAPE_NOT_A_STORE = "not_a_store"
+
+
+def ledger_shape(path: str | None) -> str:
+    """Classify a candidate ledger path. Structural — extension, trailing slash, globs.
+
+    A DIRECTORY path (trailing ``/``) is a store: ``data/metabolism/agenda/`` is a real
+    store location that holds graded rows, and 5 live engines declare their ledger that
+    way. Refusing it would be the shrink-direction failure this tightening exists to avoid
+    — a detector that goes blind reads exactly like a detector getting stricter.
+    """
+    text = str(path or "").strip()
+    if not text:
+        return LEDGER_SHAPE_NOT_A_STORE
+    if _TEMPLATE_TOKEN_RE.search(text):
+        return LEDGER_SHAPE_TEMPLATE
+    if text.endswith("/"):
+        return LEDGER_SHAPE_STORE
+    suffix = text[text.rfind("."):] if "." in text.rsplit("/", 1)[-1] else ""
+    return LEDGER_SHAPE_STORE if suffix.lower() in _STORE_SUFFIXES else LEDGER_SHAPE_NOT_A_STORE
+
+
+def _store_shaped(path: str | None) -> bool:
+    """True for a path that could actually hold graded rows (store or store template)."""
+    return ledger_shape(path) in (LEDGER_SHAPE_STORE, LEDGER_SHAPE_TEMPLATE)
+
 
 def _cell_ledger_paths(artifact_entries: Sequence[Mapping[str, Any]]) -> list[str]:
     return sorted(
         {
             str(e.get("path"))
             for e in artifact_entries
-            if e.get("path") and _LEDGER_PATH_RE.search(str(e.get("path")))
+            if e.get("path")
+            and _LEDGER_PATH_RE.search(str(e.get("path")))
+            and _store_shaped(e.get("path"))
         }
     )
 
@@ -413,59 +557,63 @@ def derive_ledger(
     ledger_modules: frozenset[str],
     desk_scan: DeskScan | None,
     producer_ledger_index: Mapping[str, str],
-    qledger_desk_rows: Mapping[str, int] | None,
 ) -> dict[str, Any]:
     """Resolve the engine's grading ledger. Waterfall, first hit wins. Never null.
 
-    1. producer is an ``engine/*_ledger.py`` module, or the cell writes a ``*ledger*``
-       path -> that path.
+    1. the cell writes a ``*ledger*`` path THAT IS STORE-SHAPED -> that path.
     2. producer statically imports ``engine.qledger`` and a desk literal resolves by AST
        -> ``qledger:<desk>``.
-    3. any artifact in the cell is tier shadow/scored/confirmer -> that artifact path
-       (synapse tier_vocabulary defines shadow as "computed + claim-registered + graded
-       nightly").
-    4. a grader-shaped consumer that is itself the producer of a ledger artifact, EVEN
-       CROSS-PROGRAM -> that consumer's ledger path. This hop is what catches
-       ``us-stocks-prebreakout``, graded by ``scripts/grade_us_board.py`` which lives
-       under ``owner_program=setup-species``.
+    3. any artifact in the cell is tier shadow/scored/confirmer AND its path is
+       store-shaped -> that artifact path (synapse tier_vocabulary defines shadow as
+       "computed + claim-registered + graded nightly").
+    4. a grader-shaped consumer that is itself the producer of a store-shaped ledger
+       artifact, EVEN CROSS-PROGRAM -> that consumer's ledger path. This hop is what
+       catches ``us-stocks-prebreakout``, graded by ``scripts/grade_us_board.py`` which
+       lives under ``owner_program=setup-species``.
     5. else the literal string ``'none'``, mirroring data/species/registry.json's own
        ``ledger_binding`` convention.
 
+    THE ``else producer`` FALLBACK IS DELETED (2026-08-12). Rule 1 used to read
+    ``path = ledger_paths[0] if ledger_paths else producer``, so an ``engine/*_ledger.py``
+    module with no ledger-shaped artifact became its OWN ledger and earned
+    ``graded_by_design: yes`` — a Python module cannot hold a graded row. Three engines
+    were self-referencing that way. A ledger module with no store now falls through to
+    rules 3-5 like anything else. ``ledger_modules`` is retained as an INPUT because rule
+    1 is still the right home for a module that does write one.
+
     DEVIATION FROM THE BRIEF, deliberate: the brief made rule 2 conditional on the desk
     having >0 rows in ``data/qledger/claims.jsonl``, demoting a zero-row desk down the
-    waterfall. That would (i) make ``ledger`` a function of an append-only store, so a
-    nightly lane writing a desk's first row would flip the field and red every open PR
-    on the byte-drift gate, and (ii) SILENTLY hide the very gap it detected. Instead the
-    desk resolves structurally and the row count is recorded as EVIDENCE, with a
-    zero-row desk raised as the ``LEDGER_DECLARED_BUT_EMPTY`` content finding — measured
-    live on ``engine/basket_turn_cohort.py`` (desk ``basket_turn``) and
-    ``collectors/special_situations.py`` (desk ``extraction_8k``). A registered desk that
-    has never been written is a fact worth naming, not one worth burying.
+    waterfall. That would (i) make ``ledger`` a function of an APPEND-ONLY store, so a
+    nightly lane writing a desk's first row would flip a committed field and red every
+    open PR on the byte-drift gate, and (ii) SILENTLY hide the very gap it detected. So
+    the desk resolves structurally here and the row count is computed at READ time by
+    :func:`volatile_view`, with a zero-row desk raised by :func:`audit_corpus` as
+    ``LEDGER_DECLARED_BUT_EMPTY``. That deviation is load-bearing for the whole drift
+    design and stays. Its honest measurement (2026-08-12, live corpus): exactly ONE engine
+    resolves a desk at all — ``scripts/build_whitehouse.py::whitehouse-desk``, 88 rows —
+    and ZERO desks are empty, so the finding fires on nothing today. A zero-firing
+    detector over a live corpus is not dead code; it is a tripwire whose condition has not
+    occurred. (An earlier version of this docstring cited
+    ``engine/basket_turn_cohort.py`` and ``collectors/special_situations.py`` as measured
+    firings. Neither module is a synapse producer, so neither can ever be an engine row:
+    that citation was fabricated and has been deleted.)
     """
     # Rule 1
     ledger_paths = _cell_ledger_paths(artifact_entries)
-    if producer in ledger_modules or ledger_paths:
-        path = ledger_paths[0] if ledger_paths else producer
-        return {"ledger": path, "rule": 1, "desk": None}
+    if ledger_paths:
+        return {"ledger": ledger_paths[0], "rule": 1, "desk": None}
 
     # Rule 2
     if desk_scan is not None and desk_scan.imports_qledger and desk_scan.desks:
         desk = desk_scan.desks[0]
-        rows = None if qledger_desk_rows is None else int(qledger_desk_rows.get(desk, 0))
-        return {
-            "ledger": f"qledger:{desk}",
-            "rule": 2,
-            "desk": desk,
-            "corpus_rows": rows,
-            "corpus_checked": qledger_desk_rows is not None,
-        }
+        return {"ledger": f"qledger:{desk}", "rule": 2, "desk": desk}
 
     # Rule 3
     graded = sorted(
         {
             str(e.get("path"))
             for e in artifact_entries
-            if e.get("tier") in _TIER_EVALUATED and e.get("path")
+            if e.get("tier") in _TIER_EVALUATED and e.get("path") and _store_shaped(e.get("path"))
         }
     )
     if graded:
@@ -505,6 +653,38 @@ def _species_tokens(binding: str) -> list[str]:
     return [p for p in parts if p and not p.lower().startswith("none")]
 
 
+def species_token_matches_ledger(token: str, engine_ledger: str) -> bool:
+    """Anchored match of one species token against one engine ledger.
+
+    A token binds when it equals the whole ledger, equals one PATH SEGMENT of it, equals
+    the basename with its extension removed, or equals a resolved ``qledger:<desk>`` desk.
+
+    The previous rule was an unanchored bidirectional substring
+    (``token in engine_ledger or engine_ledger in token``) — the same fuzzy-matching class
+    the overlay comment correctly refuses for DNR-to-engine mapping, applied to the
+    validation_state axis. SHRINK-DIRECTION CONTROL: 5 engines bind species today and all
+    5 survive this rule; ``tests/test_intelligence_registry.py`` pins that exact set BY
+    NAME, because a matcher that quietly binds fewer things is a detector going blind, not
+    a detector getting stricter.
+    """
+    token = (token or "").strip()
+    ledger = (engine_ledger or "").strip()
+    if not token or not ledger:
+        return False
+    if token == ledger:
+        return True
+    if ledger.startswith("qledger:"):
+        return token == ledger.split(":", 1)[1]
+    segments = ledger.split("/")
+    # segments[1:] — the leading segment is the store ROOT ("data", "site"), shared by
+    # thousands of paths. A token equal to it would bind one species to every engine.
+    if token in segments[1:]:
+        return True
+    base = segments[-1]
+    stem = base.rsplit(".", 1)[0] if "." in base else base
+    return token == stem
+
+
 def bind_species(
     engine_ledger: str,
     species: Sequence[Mapping[str, Any]] | None,
@@ -524,7 +704,7 @@ def bind_species(
     for row in species:
         binding = ((row.get("ledger_binding") or {}).get("ledger")) or ""
         for token in _species_tokens(binding):
-            if token in engine_ledger or engine_ledger in token:
+            if species_token_matches_ledger(token, engine_ledger):
                 bound.append(
                     {
                         "species_id": str(row.get("species_id")),
@@ -559,20 +739,28 @@ def build_registry(
     desk_scans: Mapping[str, DeskScan] | None = None,
     article2_modules: Iterable[str] = (),
     species: Sequence[Mapping[str, Any]] | None = None,
-    qledger_desk_rows: Mapping[str, int] | None = None,
-    qledger_desk_horizons: Mapping[str, Sequence[int]] | None = None,
+    qual_ladder_keys: Iterable[str] | None = None,
+    path_exists: Callable[[str], bool] | None = None,
 ) -> dict[str, Any]:
     """Build the whole registry. Pure — no file I/O, deterministic, sorted throughout.
 
-    ``species`` / ``qledger_desk_rows`` / ``qledger_desk_horizons`` may be ``None``,
-    meaning the store was not readable. That is recorded as a first-class flag; it never
-    renders as an empty result.
+    Every field emitted here is STABLE: it moves only when a PR moves ``config/synapse.yml``,
+    ``config/qual_ladder.yml``, ``data/species/registry.json``, the producer set, the
+    repo's ledger-module inventory, or the overlay. NOTHING derived from the append-only
+    claim corpus is emitted — see the volatile-fields block at the top of this module and
+    :func:`volatile_view`, which computes those at read time.
+
+    ``species`` may be ``None``, meaning the store was not readable; that renders as
+    ``validation_state: None`` ("could not look"), never as ``phase0``. Likewise
+    ``qual_ladder_keys`` / ``path_exists`` absent yields resolution ``"unchecked"`` rather
+    than ``"unresolved"`` — the builder must not accuse a ref it never probed.
     """
     artifacts: Mapping[str, Any] = synapse.get("artifacts") or {}
     overlay_rows: Mapping[str, Any] = (overlay or {}).get("engines") or {}
     ledger_module_set = frozenset(ledger_modules)
     desk_scans = desk_scans or {}
     article2 = frozenset(article2_modules)
+    ladder_keys = None if qual_ladder_keys is None else set(qual_ladder_keys)
 
     cells = partition_artifacts(synapse)
     artifact_authority = derive_artifact_authority(synapse)
@@ -586,44 +774,36 @@ def build_registry(
             span.setdefault(entry.get("producer") or "", set()).add(entry.get("owner_program") or "")
 
     # First pass over cells to build producer -> ledger index, needed by waterfall rule 4.
+    # Store-shaped only, and NEVER the producer module itself — a rule-4 hop that lands on
+    # a `.py` file is how `scripts/seed_us_sector_baskets.py::sector-pulse` came to be
+    # "graded by" engine/demand_ledger.py.
     producer_ledger_index: dict[str, str] = {}
     for eid, artifact_ids in cells.items():
         producer = eid.split(ENGINE_ID_SEP, 1)[0]
         entries = [artifacts[a] for a in artifact_ids]
         paths = _cell_ledger_paths(entries)
-        if producer in ledger_module_set or paths:
-            producer_ledger_index.setdefault(producer, paths[0] if paths else producer)
+        if paths:
+            producer_ledger_index.setdefault(producer, paths[0])
 
     engines: list[dict[str, Any]] = []
     excluded: list[dict[str, Any]] = []
+    bound_species_ids: set[str] = set()
 
     for eid, artifact_ids in cells.items():
         producer, owner_program = eid.split(ENGINE_ID_SEP, 1)
         entries = [artifacts[a] for a in artifact_ids]
         row_overlay = overlay_rows.get(eid) or {}
 
-        # --- not_an_engine ------------------------------------------------
-        derived_exclusion = placeholder_reason(producer)
-        curated_exclusion = row_overlay.get("not_an_engine")
-        if derived_exclusion or curated_exclusion:
-            reason = derived_exclusion or (curated_exclusion or {}).get("reason")
-            excluded.append(
-                {
-                    "engine_id": eid,
-                    "producer": producer,
-                    "owner_program": owner_program,
-                    "artifacts": artifact_ids,
-                    "reason": reason,
-                    "source": "derived" if derived_exclusion else "curated",
-                }
-            )
-            continue
-
         # --- artifacts (unit of EVIDENCE) ---------------------------------
+        # DERIVED BEFORE ANY EXCLUSION DECISION. The first version hit `continue` here, so
+        # nothing ever knew WHAT was being deleted: a 3-character `not_an_engine` reason
+        # removed a gate_size engine and both laws stayed green. An exclusion must be
+        # self-describing, which means the row has to exist before it can be excluded.
         artifact_rows = []
         for aid in artifact_ids:
             entry = artifacts[aid]
             auth = artifact_authority.get(aid, {"authority": "display", "rule": "d", "surfaces": []})
+            ref = entry.get("qual_ladder_ref")
             artifact_rows.append(
                 {
                     "id": aid,
@@ -633,18 +813,20 @@ def build_registry(
                     "freshness_sla_hours": entry.get("freshness_sla_hours"),
                     "storage": entry.get("storage"),
                     "scored_path_surfaces": sorted(entry.get("scored_path_surfaces") or []),
-                    "qual_ladder_ref": entry.get("qual_ladder_ref"),
+                    "qual_ladder_ref": ref,
+                    "qual_ladder_ref_resolution": resolve_qual_ladder_ref(
+                        ref, qual_ladder_keys=ladder_keys, path_exists=path_exists
+                    ),
                     "artifact_authority": auth["authority"],
                 }
             )
 
         # --- authority + evidence -----------------------------------------
         authority = max_authority(r["artifact_authority"] for r in artifact_rows)
-        winner = next(
-            (r for r in artifact_rows if r["artifact_authority"] == authority),
-            artifact_rows[0],
-        )
-        winner_rule = artifact_authority.get(winner["id"], {}).get("rule", "d")
+        winners = [r for r in artifact_rows if r["artifact_authority"] == authority] or [
+            artifact_rows[0]
+        ]
+        winner_rule = artifact_authority.get(winners[0]["id"], {}).get("rule", "d")
 
         # Completeness flag — PROPOSES, never promotes. The measured prophet-index case:
         # consumed by an Article-2 enforcer module while declaring no scored_path_surfaces.
@@ -657,12 +839,36 @@ def build_registry(
             if hits:
                 completeness.append(f"{aid} read by {', '.join(hits)} with no scored_path_surfaces")
 
+        # THE C-1 GATE INPUT, AT THE ARTIFACT LEVEL. `evidence_ref` below keeps its union
+        # semantics because a roll-up is useful, but it is NO LONGER what the gate reads:
+        # a union clears on ANY sibling's ref, so an unevidenced gate_size artifact went
+        # unflagged whenever a decorative `display` sibling carried a pointer. Reproduced
+        # live 2026-08-12 on scripts/build_basket_washout_state.py::blocked-entry-override.
+        unevidenced = sorted(
+            r["id"]
+            for r in artifact_rows
+            if r["artifact_authority"] != "display"
+            and (not r["qual_ladder_ref"] or r["qual_ladder_ref_resolution"] == "unresolved")
+        )
+        unresolvable = sorted(
+            r["id"]
+            for r in artifact_rows
+            if r["qual_ladder_ref"] and r["qual_ladder_ref_resolution"] == "unresolved"
+        )
+
         authority_evidence = {
             "rule": winner_rule,
-            "artifact_id": winner["id"],
-            "surfaces": winner["scored_path_surfaces"],
+            # PLURAL. The singular `artifact_id` named only the first sorted winner, so on
+            # the two multi-winner cells the prescribed heal pointed at the wrong artifact
+            # — for scripts/build_stock_library.py::us-stocks-prebreakout it named
+            # site-signal-gate rather than site-us-standouts, the artifact the entire C-2
+            # defect statement is about.
+            "artifact_ids": sorted(r["id"] for r in winners),
+            "surfaces": sorted({s for r in winners for s in r["scored_path_surfaces"]}),
             "completeness_flag": bool(completeness),
             "completeness_detail": sorted(completeness),
+            "unevidenced_artifacts": unevidenced,
+            "unresolvable_artifacts": unresolvable,
         }
 
         # --- ledger -------------------------------------------------------
@@ -673,21 +879,28 @@ def build_registry(
             ledger_modules=ledger_module_set,
             desk_scan=scan,
             producer_ledger_index=producer_ledger_index,
-            qledger_desk_rows=qledger_desk_rows,
         )
         ledger = ledger_info["ledger"]
         ledger_evidence = {
             "rule": ledger_info["rule"],
             "desk": ledger_info.get("desk"),
             "via": ledger_info.get("via"),
-            "corpus_rows": ledger_info.get("corpus_rows"),
-            "corpus_checked": ledger_info.get("corpus_checked", False),
+            "shape": None if ledger == LEDGER_NONE or ledger_info.get("desk") else ledger_shape(ledger),
         }
 
         # --- graded_by_design ---------------------------------------------
-        if ledger != LEDGER_NONE:
+        # A TEMPLATE ledger (`options_structure/structural/<ROOT>.json`) names a family of
+        # stores, not a store. It cannot be opened, so it is not evidence that grading
+        # happens — it is a gap worth naming, which is what 'no — not yet' says.
+        if ledger != LEDGER_NONE and ledger_evidence["shape"] != LEDGER_SHAPE_TEMPLATE:
             graded = GRADED_YES
             graded_source = "derived: has a ledger"
+        elif ledger_evidence["shape"] == LEDGER_SHAPE_TEMPLATE:
+            graded = GRADED_NOT_YET
+            graded_source = (
+                "derived: the resolved ledger is an unexpanded template path, not a store "
+                "that can be opened"
+            )
         elif all(e.get("tier") == "infrastructure" for e in entries):
             graded = GRADED_DESCRIPTIVE
             graded_source = "derived: every artifact is tier=infrastructure (operational rail, not a signal)"
@@ -700,8 +913,15 @@ def build_registry(
             graded_source = "curated: " + str((row_overlay.get("graded_by_design") or {}).get("reason") or "")
 
         # --- output_class --------------------------------------------------
-        gate_tripped = authority != "display" or any(
-            e.get("tier") in _TIER_EVALUATED for e in entries
+        # `or ledger != LEDGER_NONE` added 2026-08-12. Keying only on authority and tier
+        # exempted 26 engines the registry itself marks graded_by_design='yes' — including
+        # scripts/build_prophet.py::momoedge (ledger=data/prophet/ledger.jsonl), recorded
+        # as "not_required_display_only". An Evaluation OS whose unit of account is the
+        # metric contract cannot declare the contract not required for a graded engine.
+        gate_tripped = (
+            authority != "display"
+            or any(e.get("tier") in _TIER_EVALUATED for e in entries)
+            or ledger != LEDGER_NONE
         )
         overlay_class = (row_overlay.get("output_class") or {}).get("value")
         if overlay_class:
@@ -717,21 +937,19 @@ def build_registry(
             output_class_reason = "not_required_display_only"
 
         # --- declared_horizon ---------------------------------------------
+        # `horizon_d` is NOT here: it is a function of the append-only claim corpus, so it
+        # is computed at read time by volatile_view(). See the volatile block up top.
         roles = sorted({e.get("horizon_role") for e in entries if e.get("horizon_role")})
-        desk = ledger_evidence["desk"]
-        if qledger_desk_horizons is None or desk is None:
-            horizon_d = None
-        else:
-            horizon_d = sorted({int(h) for h in (qledger_desk_horizons.get(desk) or [])}) or None
         declared_horizon = {
             "horizon_role": roles,
-            "horizon_d": horizon_d,
             "horizon_role_homogeneous": len(roles) <= 1,
         }
 
         # --- validation_state ---------------------------------------------
         binding = bind_species(ledger, species)
         validation_state = binding["validation_state"]
+        for entry_bound in binding["bound"] or []:
+            bound_species_ids.add(entry_bound["species_id"])
         validation_evidence: dict[str, Any] = {
             "bound_species": binding["bound"],
             "reason": binding["reason"],
@@ -748,8 +966,45 @@ def build_registry(
             }
 
         # --- evidence_ref (fixes C-1) -------------------------------------
-        refs = sorted({str(e["qual_ladder_ref"]) for e in artifact_rows if e["qual_ladder_ref"]})
+        # A roll-up of the RESOLVABLE refs in the cell. Useful to read; deliberately NOT
+        # the gate input any more (see authority_evidence.unevidenced_artifacts above).
+        refs = sorted(
+            {
+                str(e["qual_ladder_ref"])
+                for e in artifact_rows
+                if e["qual_ladder_ref"] and e["qual_ladder_ref_resolution"] != "unresolved"
+            }
+        )
         evidence_ref = refs or None
+
+        # --- not_an_engine, decided LAST so the exclusion can describe itself ----
+        derived_exclusion = placeholder_reason(producer)
+        curated_exclusion = row_overlay.get("not_an_engine")
+        if derived_exclusion or curated_exclusion:
+            reason = derived_exclusion or (curated_exclusion or {}).get("reason")
+            excluded.append(
+                {
+                    "engine_id": eid,
+                    "producer": producer,
+                    "owner_program": owner_program,
+                    "artifacts": artifact_ids,
+                    "reason": reason,
+                    "source": "derived" if derived_exclusion else "curated",
+                    # What the overlay is DELETING. validate_structure() refuses a curated
+                    # exclusion whose would_be_authority is above display, and
+                    # audit_content() still counts these rows, so the C-1/C-2 backlog this
+                    # registry exists to produce cannot be deflated by an exclusion.
+                    "would_be_authority": authority,
+                    "would_be_tiers": sorted({str(r["tier"]) for r in artifact_rows}),
+                    "would_be_artifact_authorities": sorted(
+                        {r["artifact_authority"] for r in artifact_rows}
+                    ),
+                    "would_be_ledger": ledger,
+                    "would_be_output_class_reason": output_class_reason,
+                    "would_be_unevidenced_artifacts": unevidenced,
+                }
+            )
+            continue
 
         engines.append(
             {
@@ -782,6 +1037,29 @@ def build_registry(
     n_artifacts = sum(1 for e in artifacts.values() if isinstance(e, dict))
     covered = sum(len(r["artifacts"]) for r in engines) + sum(len(r["artifacts"]) for r in excluded)
 
+    # THE INVERSE OF bind_species. A species whose ledger_binding matches no engine was
+    # dropped in complete silence — nothing in this module, the guard, or the doc named it.
+    # Measured 2026-08-12: 2 of 27 species are unbound and BOTH are `accruing`
+    # (F3_ANTICHASE, EI-F1D-RW). validation_state is the axis the display-only-until-
+    # validated law hangs on, so an unbound accruing species is either an understated
+    # engine or an orphaned species — a fact worth naming either way, exactly the argument
+    # this module already makes for LEDGER_DECLARED_BUT_EMPTY.
+    if species is None:
+        unbound: list[dict[str, str]] | None = None
+    else:
+        unbound = sorted(
+            (
+                {
+                    "species_id": str(row.get("species_id")),
+                    "validation_status": str(row.get("validation_status")),
+                }
+                for row in species
+                if str(row.get("species_id")) not in bound_species_ids
+                and _species_tokens(((row.get("ledger_binding") or {}).get("ledger")) or "")
+            ),
+            key=lambda r: r["species_id"],
+        )
+
     return {
         "schema": SCHEMA,
         "meta": {
@@ -791,18 +1069,60 @@ def build_registry(
             "n_excluded": len(excluded),
             "n_artifacts": n_artifacts,
             "n_artifacts_mapped": covered,
-            "volatile_fields": list(VOLATILE_ENGINE_PATHS),
-            "volatile_meta_keys": list(VOLATILE_META_KEYS),
+            # Declared here as an ABSENCE contract: these paths are computed at read time
+            # and must never appear in this file. assert_no_volatile() enforces it.
+            "volatile_fields_excluded": list(VOLATILE_ENGINE_PATHS),
+            "volatile_meta_keys_excluded": list(VOLATILE_META_KEYS),
             "authority_order": list(AUTHORITY_ORDER),
-            "corpus": {
-                "species_read": species is not None,
-                "qledger_read": qledger_desk_rows is not None,
-                "n_species": None if species is None else len(species),
-                "n_desks": None if qledger_desk_rows is None else len(qledger_desk_rows),
-            },
+            "unbound_species": unbound,
         },
         "engines": engines,
         "excluded": excluded,
+    }
+
+
+# ---------------------------------------------------------------------------
+# The volatile view — computed at READ time, never serialised
+# ---------------------------------------------------------------------------
+
+def volatile_view(
+    registry: Mapping[str, Any],
+    *,
+    qledger_desk_rows: Mapping[str, int] | None = None,
+    qledger_desk_horizons: Mapping[str, Sequence[int]] | None = None,
+) -> dict[str, Any]:
+    """Corpus-derived values for a registry, computed FRESH from the live claim corpus.
+
+    This is everything the committed artifact deliberately does not carry. T7/T8 consumers
+    call it; the builder prints it; nothing writes it to disk. ``qledger_desk_rows is
+    None`` means the corpus could not be read, which renders as ``corpus_checked: False``
+    and ``corpus_rows: None`` — "could not look", never "looked and found nothing".
+    """
+    checked = qledger_desk_rows is not None
+    engines: dict[str, dict[str, Any]] = {}
+    for row in registry.get("engines") or []:
+        desk = (row.get("ledger_evidence") or {}).get("desk")
+        if desk is None:
+            rows = None
+            horizon_d = None
+        else:
+            rows = None if qledger_desk_rows is None else int(qledger_desk_rows.get(desk, 0))
+            horizon_d = (
+                None
+                if qledger_desk_horizons is None
+                else (sorted({int(h) for h in (qledger_desk_horizons.get(desk) or [])}) or None)
+            )
+        engines[str(row.get("engine_id"))] = {
+            "corpus_rows": rows,
+            "corpus_checked": checked and desk is not None,
+            "horizon_d": horizon_d,
+        }
+    return {
+        "corpus": {
+            "qledger_read": checked,
+            "n_desks": None if qledger_desk_rows is None else len(qledger_desk_rows),
+        },
+        "engines": engines,
     }
 
 
@@ -811,27 +1131,88 @@ def build_registry(
 # ---------------------------------------------------------------------------
 
 def audit_content(registry: Mapping[str, Any]) -> list[Finding]:
-    """Content findings about the CORPUS, not about the registry's own files.
+    """STABLE content findings about the CORPUS, not about the registry's own files.
 
     Every one of these is a PRE-EXISTING CONDITION no PR author caused, which is why the
     owning house law is warn-tier and only exits non-zero under ``--strict``. Wiring them
     hard on arrival would red main fleet-wide for a property nobody introduced — the
     failure mode ``epistemics.qledger_metric_validity`` documents in its own notes.
+
+    Every finding here is a function of the COMMITTED artifact alone, so the rendered doc
+    can carry their counts without becoming a scheduled red. The one corpus-dependent
+    finding (``LEDGER_DECLARED_BUT_EMPTY``) lives in :func:`audit_corpus`.
     """
     findings: list[Finding] = []
-    for row in registry.get("engines") or []:
-        eid = row.get("engine_id", "?")
 
-        # C-1 — authority without a pointer to the prereg that earned it.
-        if row.get("authority") != "display" and not row.get("evidence_ref"):
+    # EXCLUDED ROWS ARE AUDITED TOO. `audit_content` used to iterate `engines` only, so a
+    # `not_an_engine` overlay row silenced every finding for that cell — the backlog this
+    # registry exists to produce could be deflated by a three-word reason string. Belt and
+    # braces with the HARD refusal in validate_structure(): even if that were bypassed, an
+    # exclusion cannot buy silence.
+    for row in registry.get("excluded") or []:
+        eid = row.get("engine_id", "?")
+        if row.get("would_be_authority") in (None, "display"):
+            continue
+        if row.get("would_be_unevidenced_artifacts"):
             findings.append(
                 Finding(
                     "AUTHORITY_WITHOUT_EVIDENCE",
                     SEVERITY_CONTENT,
                     eid,
-                    f"authority={row.get('authority')} but evidence_ref is null — "
-                    f"HEAL: add qual_ladder_ref to config/synapse.yml for "
-                    f"{row.get('authority_evidence', {}).get('artifact_id')}",
+                    f"EXCLUDED ({row.get('source')}) but would hold "
+                    f"authority={row.get('would_be_authority')} — unevidenced artifact(s): "
+                    f"{', '.join(row['would_be_unevidenced_artifacts'])}. HEAL: add "
+                    f"qual_ladder_ref to config/synapse.yml for each",
+                )
+            )
+        if row.get("would_be_output_class_reason") == "required_but_uncurated":
+            findings.append(
+                Finding(
+                    "OUTPUT_CLASS_MISSING",
+                    SEVERITY_CONTENT,
+                    eid,
+                    f"EXCLUDED ({row.get('source')}) but would trip the evaluation gate "
+                    f"with no output_class — the metric contract is undefined",
+                )
+            )
+
+    for row in registry.get("engines") or []:
+        eid = row.get("engine_id", "?")
+        evidence = row.get("authority_evidence") or {}
+
+        # C-1 — authority without a RESOLVABLE pointer to the prereg that earned it.
+        # Gated on the per-ARTIFACT list, not on the cell-wide evidence_ref union: the
+        # union clears on any sibling's ref, including a decorative display sibling's.
+        if evidence.get("unevidenced_artifacts"):
+            findings.append(
+                Finding(
+                    "AUTHORITY_WITHOUT_EVIDENCE",
+                    SEVERITY_CONTENT,
+                    eid,
+                    f"authority={row.get('authority')} but "
+                    f"{len(evidence['unevidenced_artifacts'])} artifact(s) above display "
+                    f"carry no resolvable qual_ladder_ref — HEAL: add qual_ladder_ref to "
+                    f"config/synapse.yml for "
+                    f"{', '.join(evidence['unevidenced_artifacts'])}",
+                )
+            )
+
+        # "No pointer" and "pointer at nothing" need different heals, so they are
+        # different codes. A ref that resolves to neither a config/qual_ladder.yml key nor
+        # an existing repo path is not evidence — it is a string.
+        if evidence.get("unresolvable_artifacts"):
+            findings.append(
+                Finding(
+                    "AUTHORITY_EVIDENCE_UNRESOLVABLE",
+                    SEVERITY_CONTENT,
+                    eid,
+                    "qual_ladder_ref present but resolves to neither a "
+                    "config/qual_ladder.yml key nor an existing repo path: "
+                    + "; ".join(
+                        f"{a['id']} -> {a.get('qual_ladder_ref')!r}"
+                        for a in row.get("artifacts") or []
+                        if a.get("id") in set(evidence["unresolvable_artifacts"])
+                    ),
                 )
             )
 
@@ -852,9 +1233,15 @@ def audit_content(registry: Mapping[str, Any]) -> list[Finding]:
         # reachable — and load-bearing — when this audit runs against the COMMITTED file,
         # which is what the gate does: it catches a stale or hand-edited registry claiming
         # an engine is ungraded while its ledger says otherwise.
-        if row.get("graded_by_design") in (GRADED_NOT_YET, GRADED_DESCRIPTIVE) and row.get(
-            "ledger"
-        ) not in (LEDGER_NONE, None):
+        # A TEMPLATE ledger is not a contradiction: `no — not yet` is the CORRECT value
+        # for a path that names a family of stores rather than a store, and the derivation
+        # says exactly that in graded_by_design_source. Without this exemption the
+        # template rule would manufacture its own finding.
+        if (
+            row.get("graded_by_design") in (GRADED_NOT_YET, GRADED_DESCRIPTIVE)
+            and row.get("ledger") not in (LEDGER_NONE, None)
+            and (row.get("ledger_evidence") or {}).get("shape") != LEDGER_SHAPE_TEMPLATE
+        ):
             findings.append(
                 Finding(
                     "GRADED_BY_DESIGN_CONTRADICTS_LEDGER",
@@ -865,7 +1252,6 @@ def audit_content(registry: Mapping[str, Any]) -> list[Finding]:
                 )
             )
 
-        evidence = row.get("authority_evidence") or {}
         if evidence.get("completeness_flag"):
             findings.append(
                 Finding(
@@ -876,22 +1262,51 @@ def audit_content(registry: Mapping[str, Any]) -> list[Finding]:
                 )
             )
 
-        ledger_evidence = row.get("ledger_evidence") or {}
-        if (
-            ledger_evidence.get("corpus_checked")
-            and ledger_evidence.get("desk")
-            and ledger_evidence.get("corpus_rows") == 0
-        ):
+    for row in (registry.get("meta") or {}).get("unbound_species") or []:
+        findings.append(
+            Finding(
+                "SPECIES_UNBOUND",
+                SEVERITY_CONTENT,
+                f"species:{row.get('species_id')}",
+                f"species {row.get('species_id')!r} (validation_status="
+                f"{row.get('validation_status')!r}) declares a ledger_binding that matches "
+                f"no engine ledger — either an engine's validation_state is understated or "
+                f"the species is orphaned",
+            )
+        )
+
+    findings.sort(key=lambda f: (f.code, f.engine_id))
+    return findings
+
+
+def audit_corpus(
+    registry: Mapping[str, Any], volatile: Mapping[str, Any] | None
+) -> list[Finding]:
+    """Content findings that require the LIVE claim corpus, computed at read time.
+
+    Split out of :func:`audit_content` on purpose. These values move with an append-only
+    store, so anything derived from them must never reach a committed artifact or a
+    committed doc — the moment it does, the finding count is pinned by equality and every
+    open PR reds on the next nightly append.
+    """
+    findings: list[Finding] = []
+    if not volatile:
+        return findings
+    per_engine = volatile.get("engines") or {}
+    for row in registry.get("engines") or []:
+        eid = row.get("engine_id", "?")
+        desk = (row.get("ledger_evidence") or {}).get("desk")
+        state = per_engine.get(eid) or {}
+        if desk and state.get("corpus_checked") and state.get("corpus_rows") == 0:
             findings.append(
                 Finding(
                     "LEDGER_DECLARED_BUT_EMPTY",
                     SEVERITY_CONTENT,
                     eid,
-                    f"registers qledger desk {ledger_evidence['desk']!r} but the claim "
-                    f"corpus holds zero rows for it",
+                    f"registers qledger desk {desk!r} but the claim corpus holds zero rows "
+                    f"for it",
                 )
             )
-
     findings.sort(key=lambda f: (f.code, f.engine_id))
     return findings
 
@@ -906,6 +1321,14 @@ _REQUIRED_ENGINE_KEYS = frozenset({
     "authority_evidence", "ledger", "ledger_evidence", "graded_by_design",
     "graded_by_design_source", "declared_horizon", "validation_state",
     "validation_state_evidence", "evidence_ref",
+})
+
+#: An exclusion must SAY WHAT IT DELETES. Without these the excluded rows are opaque and
+#: the hard refusal below has nothing to read.
+_REQUIRED_EXCLUDED_KEYS = frozenset({
+    "engine_id", "producer", "owner_program", "artifacts", "reason", "source",
+    "would_be_authority", "would_be_tiers", "would_be_artifact_authorities",
+    "would_be_ledger", "would_be_output_class_reason", "would_be_unevidenced_artifacts",
 })
 
 
@@ -987,38 +1410,66 @@ def validate_overlay(
 
         vs = row.get("validation_state")
         if vs is not None:
-            if not isinstance(vs, dict) or vs.get("value") not in OVERLAY_TERMINAL_STATES:
+            # ONE predicate, not a chain. The old `elif vs.get('value') not in terminal_ok`
+            # branch was DEAD: OVERLAY_TERMINAL_STATES is a subset of
+            # VALID_VALIDATION_STATUSES, so the preceding test already rejected everything
+            # it could have caught. Intersecting the two keeps the live cross-check — if
+            # engine/species_registry.py ever drops 'falsified' or 'retired', the overlay
+            # may no longer ratify it — without a branch no test can reach.
+            ratifiable = set(OVERLAY_TERMINAL_STATES) & terminal_ok
+            if not isinstance(vs, dict) or vs.get("value") not in ratifiable:
                 violations.append(
                     f"overlay[{eid}]: validation_state may only ratify "
-                    f"{sorted(OVERLAY_TERMINAL_STATES)}"
-                )
-            elif vs.get("value") not in terminal_ok:
-                violations.append(
-                    f"overlay[{eid}]: validation_state {vs.get('value')!r} is not a valid "
-                    f"species status"
+                    f"{sorted(ratifiable)} (terminal states that are also valid species "
+                    f"statuses)"
                 )
             else:
-                for field in ("dnr_key", "ratified_by", "date"):
-                    if not str(vs.get(field) or "").strip():
-                        violations.append(
-                            f"overlay[{eid}]: terminal validation_state requires {field!r}"
-                        )
-                key = str(vs.get("dnr_key") or "")
-                if key and not key.startswith("DNR:"):
-                    violations.append(
-                        f"overlay[{eid}]: dnr_key {key!r} must be cited as DNR:<KEY> "
-                        f"(row numbers shift on every append)"
-                    )
+                violations += _citation_violations(eid, "terminal validation_state", vs)
 
         nae = row.get("not_an_engine")
         if nae is not None:
-            if not isinstance(nae, dict) or not str(nae.get("reason") or "").strip():
-                violations.append(
-                    f"overlay[{eid}]: not_an_engine requires a non-empty reason — nothing "
-                    f"is ever excluded silently"
-                )
+            # CITATION PARITY WITH validation_state. `not_an_engine` is the most
+            # destructive of the four keys — it deletes a whole engine from the census —
+            # and it used to be the LEAST gated: a 3-character reason removed a gate_size
+            # engine with both laws green. It now demands what a terminal ratification
+            # demands, plus a reason long enough to be an argument rather than a shrug.
+            if not isinstance(nae, dict):
+                violations.append(f"overlay[{eid}]: not_an_engine must be a mapping")
+            else:
+                reason = str(nae.get("reason") or "").strip()
+                if not reason:
+                    violations.append(
+                        f"overlay[{eid}]: not_an_engine requires a non-empty reason — "
+                        f"nothing is ever excluded silently"
+                    )
+                elif len(reason) < NOT_AN_ENGINE_MIN_REASON_CHARS:
+                    violations.append(
+                        f"overlay[{eid}]: not_an_engine reason is {len(reason)} chars — "
+                        f"deleting an engine from the census requires at least "
+                        f"{NOT_AN_ENGINE_MIN_REASON_CHARS}, so the argument is on the "
+                        f"record and not a shrug"
+                    )
+                violations += _citation_violations(eid, "not_an_engine", nae, require_dnr=False)
 
     return violations
+
+
+def _citation_violations(
+    eid: str, label: str, block: Mapping[str, Any], *, require_dnr: bool = True
+) -> list[str]:
+    """Shared citation contract: who ratified it, when, and under which standing kill."""
+    out: list[str] = []
+    required = ("dnr_key", "ratified_by", "date") if require_dnr else ("ratified_by", "date")
+    for field in required:
+        if not str(block.get(field) or "").strip():
+            out.append(f"overlay[{eid}]: {label} requires {field!r}")
+    key = str(block.get("dnr_key") or "")
+    if key and not key.startswith("DNR:"):
+        out.append(
+            f"overlay[{eid}]: dnr_key {key!r} must be cited as DNR:<KEY> "
+            f"(row numbers shift on every append)"
+        )
+    return out
 
 
 def validate_structure(
@@ -1098,6 +1549,33 @@ def validate_structure(
         eid = row.get("engine_id", "?")
         if not str(row.get("reason") or "").strip():
             violations.append(f"{eid}: excluded with an empty reason — nothing is excluded silently")
+
+        missing_exclusion = _REQUIRED_EXCLUDED_KEYS - set(row)
+        if missing_exclusion:
+            violations.append(
+                f"{eid}: excluded row is missing required field(s) "
+                f"{sorted(missing_exclusion)} — an exclusion must describe what it deletes"
+            )
+        elif row.get("source") == "curated":
+            # THE OVERLAY IS NOT A DELETION HATCH. This is legitimately HARD: it can only
+            # fire on a hand-edit to config/intelligence_registry_overlay.yml, so it is
+            # PR-caused by construction, and it ships GREEN (the overlay is `engines: {}`).
+            # DERIVED exclusions are exempt — a `<PLACEHOLDER>` token is not a repo module
+            # and has no code that could hold authority.
+            tiers = set(row.get("would_be_tiers") or [])
+            if row.get("would_be_authority") not in (None, "display"):
+                violations.append(
+                    f"{eid}: an authority-bearing cell may not be excluded by overlay "
+                    f"(would_be_authority={row.get('would_be_authority')!r}) — the overlay "
+                    f"is not a deletion hatch"
+                )
+            elif tiers & EXCLUSION_FORBIDDEN_TIERS:
+                violations.append(
+                    f"{eid}: an evaluated cell may not be excluded by overlay "
+                    f"(would_be_tiers={sorted(tiers & EXCLUSION_FORBIDDEN_TIERS)}) — the "
+                    f"overlay is not a deletion hatch"
+                )
+
         for aid in row.get("artifacts") or []:
             if aid in artifact_owner:
                 violations.append(f"{eid}: excluded artifact {aid!r} also mapped to {artifact_owner[aid]!r}")
@@ -1111,6 +1589,8 @@ def validate_structure(
             f"meta.n_artifacts={n_artifacts} — an artifact was dropped silently"
         )
 
+    violations += assert_no_volatile(registry)
+
     return violations
 
 
@@ -1118,36 +1598,41 @@ def validate_structure(
 # Serialisation + the structural projection the HARD drift law compares
 # ---------------------------------------------------------------------------
 
-def _strip_path(obj: Any, dotted: str) -> None:
+def _has_path(obj: Any, dotted: str) -> bool:
     head, _, rest = dotted.partition(".")
     if not isinstance(obj, dict) or head not in obj:
-        return
-    if rest:
-        _strip_path(obj[head], rest)
-    else:
-        obj.pop(head, None)
+        return False
+    return _has_path(obj[head], rest) if rest else True
 
 
-def structural_projection(registry: Mapping[str, Any]) -> dict[str, Any]:
-    """The registry with every corpus-sourced (volatile) field stripped.
+def assert_no_volatile(registry: Mapping[str, Any]) -> list[str]:
+    """Violations for every corpus-derived path present in a COMMITTED registry.
 
-    This is what the HARD drift law compares. Comparing the FULL file byte-for-byte would
-    be a scheduled red: ``data/qledger/claims.jsonl`` is append-only and
-    ``data/species/registry.json`` moves independently, so the first nightly row written
-    to a currently-empty desk would flip a field and red every open PR for a property
-    nobody introduced. The volatile set is declared in ``meta.volatile_fields`` inside the
-    artifact itself, so the projection is self-describing and a guard cannot silently
-    narrow it.
+    This replaces the old ``structural_projection()``, which STRIPPED these paths before
+    comparing. Stripping was unsound in both directions: it left the byte-equality pin in
+    place through the CI-wired ``--check`` test (so the append-only scheduled red survived
+    anyway), and it made the guard blind to a hand-edit of any stripped field. Asserting
+    the ABSENCE instead means the committed file is identical to its own projection, so
+    ONE byte-exact comparison is both sound and complete.
     """
-    clone = json.loads(json.dumps(registry))
-    meta = clone.get("meta")
+    violations: list[str] = []
+    meta = registry.get("meta")
     if isinstance(meta, dict):
         for key in VOLATILE_META_KEYS:
-            meta.pop(key, None)
-    for row in clone.get("engines") or []:
+            if key in meta:
+                violations.append(
+                    f"meta.{key} is corpus-derived and must not be committed — it is "
+                    f"computed at read time by volatile_view()"
+                )
+    for row in registry.get("engines") or []:
         for dotted in VOLATILE_ENGINE_PATHS:
-            _strip_path(row, dotted)
-    return clone
+            if _has_path(row, dotted):
+                violations.append(
+                    f"{row.get('engine_id', '?')}: {dotted} is derived from the "
+                    f"APPEND-ONLY claim corpus and must not be committed — pinning it by "
+                    f"equality is a scheduled fleet-wide red"
+                )
+    return violations
 
 
 def serialise(registry: Mapping[str, Any]) -> str:

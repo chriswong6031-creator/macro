@@ -1898,6 +1898,30 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml
+      # Eval OS T1 — the engine registry. Extends this job rather than adding a new one:
+      # run_ci_pack.py balances 185 jobs by weight, so a new job rebalances every pack,
+      # and neural-web is the closest domain match (it already hosts test_synapse_registry
+      # and the entity-thesis registry guard). Two laws, two severities, one script:
+      # governance.intelligence_registry_integrity is HARD (drift/idempotence/overlay
+      # allowlist/partition — all green by construction on the PR that generates the file)
+      # and epistemics.engine_authority_evidence is WARN (pre-existing corpus conditions;
+      # --strict is deliberately NOT passed here, see the registry entry's notes).
+      #
+      # PLACED FIRST, IMMEDIATELY AFTER `install minimal deps`, AND IT MUST STAY THERE.
+      # scripts/run_ci_pack.py::_run_job RETURNS on the first non-zero step, so an appended
+      # step goes DARK behind any earlier red in the same job — these two were originally
+      # steps 7 and 8 of 9, sitting behind five siblings including the sparse-worktree-
+      # adjacent test_admin_neural_web.py. A step-level `if: always()` is NOT available:
+      # run_ci_pack.py:56 ALLOWED_STEP_KEYS = {name, run, uses, with}, so `if:` on a step
+      # is a hard manifest error. Ordering is the only lever. Safe in the other direction
+      # too: the HARD guard is green by construction and the T1 suite is hermetic, so
+      # nothing here can red ahead of the suites that used to precede it.
+      - name: "HARD | intelligence engine registry integrity (Eval OS T1)"
+        run: |
+          python3 scripts/check_intelligence_registry.py --selftest
+          python3 scripts/check_intelligence_registry.py
+      - name: intelligence engine registry derivation + gate tests
+        run: python -m pytest tests/test_intelligence_registry.py tests/test_check_intelligence_registry.py -q
       - name: neural-web registry + envelope + bus-doc freshness tests
         run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_admin_metabolism.py tests/test_admin_metabolism_history.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py tests/test_nw_lobe_descriptions.py tests/test_synapse_registry_contract.py -q
       - name: Neural Web constitution A0-A7 regression (A7 refusal + Wilson-gate sweep)
@@ -1908,20 +1932,6 @@ jobs:
         run: |
           python3 -m scripts.check_entity_thesis_registry --selftest
           python3 -m scripts.check_entity_thesis_registry
-      # Eval OS T1 — the engine registry. Extends this job rather than adding a new one:
-      # run_ci_pack.py balances 185 jobs by weight, so a new job rebalances every pack,
-      # and neural-web is the closest domain match (it already hosts test_synapse_registry
-      # and the entity-thesis registry guard). Two laws, two severities, one script:
-      # governance.intelligence_registry_integrity is HARD (drift/idempotence/overlay
-      # allowlist/partition — all green by construction on the PR that generates the file)
-      # and epistemics.engine_authority_evidence is WARN (pre-existing corpus conditions;
-      # --strict is deliberately NOT passed here, see the registry entry's notes).
-      - name: "HARD | intelligence engine registry integrity (Eval OS T1)"
-        run: |
-          python3 scripts/check_intelligence_registry.py --selftest
-          python3 scripts/check_intelligence_registry.py
-      - name: intelligence engine registry derivation + gate tests
-        run: python -m pytest tests/test_intelligence_registry.py tests/test_check_intelligence_registry.py -q
 
   neural-web-core:
     if: ${{ false }}
