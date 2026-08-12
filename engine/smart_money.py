@@ -181,7 +181,25 @@ def name_ticker_map(membership: pd.DataFrame | None = None) -> dict[str, str]:
 def cusip_ticker_seed() -> dict[str, str]:
     """Exact CUSIP -> ticker pairs harvested from the ARK holdings snapshots we
     already store (the only repo source carrying both). Small (~60) but precise;
-    used as the high-confidence first pass before name matching."""
+    used as the high-confidence first pass before name matching.
+
+    EXEMPT from the cash/FX weeding (collectors.holdings.drop_non_equity) that the
+    etf_holdings readers apply, for three independent reasons — audited 2026-08-12:
+      1. WRONG STORE. This reads `data/holdings` (the ARK sponsor CSVs), not
+         `data/etf_holdings`. The 488-row cash-sleeve population lives in the
+         latter. Swept: 1,465 ARK rows, ZERO rows the predicate flags — ARK's feed
+         carries no cash line at all, and `_fetch_ark` already drops null tickers.
+      2. WRONG COLUMN. A cash sleeve has no CUSIP. The `if c and ...` guard below
+         already discards a blank/NaN one, so a cash row cannot enter the map even
+         if ARK began filing them.
+      3. NO PUBLISHED SURFACE for a bad key. The map is consumed as
+         `cusip_map.get(<cusip from a 13F line>)`; a cash-derived key could only
+         surface if an SEC filer reported that CUSIP, and `setdefault` means the
+         precise seed is written once and never overwritten.
+    Read it as: filtering here would be a no-op with a false implication that the
+    ARK store needs weeding. If ARK ever ships a cash line WITH a cusip, reason 2
+    is the one that breaks first — route through drop_non_equity at that point.
+    """
     import glob
     out: dict[str, str] = {}
     for f in glob.glob(str(config.data_dir() / "holdings" / "*" / "*.parquet")):

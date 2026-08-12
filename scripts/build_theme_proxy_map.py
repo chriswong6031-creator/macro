@@ -53,6 +53,7 @@ import pandas as pd
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
+from collectors.holdings import drop_non_equity  # noqa: E402
 from engine.marketing import theme_proxy  # noqa: E402
 
 log = logging.getLogger("build_theme_proxy_map")
@@ -141,6 +142,14 @@ def load_holdings() -> dict[str, dict]:
             continue
         if "ticker" not in df.columns or "weight_pct" not in df.columns:
             continue
+        # Stored snapshots RETAIN the sponsor's cash/FX/derivative sleeve rows —
+        # weed them with the shared predicate before the weights are summed. The
+        # space-filter below drops "USD CASH"-shaped lines as a side effect of
+        # dropping foreign listings, but never a BARE code ("USD", "CASH_USD").
+        # Inert while no cash string collides with a real ticker; `CASH` is both
+        # a cash sentinel and a live published ticker (Pathward Financial), and a
+        # collision would silently inflate a theme's holdings-coverage score.
+        df = drop_non_equity(df)
         df = df[df["ticker"].notna()].copy()
         df["ticker"] = df["ticker"].astype(str).str.strip().str.upper()
         # Foreign listings arrive as "NST AU" / "1234 HK". They are real holdings
