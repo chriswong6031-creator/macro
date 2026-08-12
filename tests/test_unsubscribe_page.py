@@ -705,6 +705,13 @@ PUBLIC_EXACT = frozenset({
     # behind require_site_full_user (401 signed out, 403 unentitled). This changes
     # who can read the WORKBENCH, never who can read the WORK.
     "/fundamental_forensics.css", "/fundamental_forensics.js",
+    # Stock analyzer workbench clients. These carry presentation and bounded
+    # fetch logic only; every per-ticker analysis payload and /api/brain/* call
+    # remains behind the registration or Bearer-authenticated data plane. Keep
+    # this explicit list aligned with site_access.yml so a new public path can
+    # never inherit the promotion accidentally.
+    "/lightweight-charts-v5.js", "/chart.js", "/stockview.js",
+    "/stockbrief.js", "/mtf.js", "/aidesk_lean.js", "/mm_brain.js",
     # Market Memory is the same public-shell/private-work split: these assets
     # contain presentation and a bounded API client only. All analytical
     # payloads remain behind the paid /api/market-memory/v1/* routes.
@@ -749,6 +756,46 @@ PUBLIC_EXACT = frozenset({
     # gitignore/R2 split has broken — that is the finding, not the frozen set.
     "/seasonalitydata/index.json",
     "/seasonalitydata/entities/SPY.json",
+    # Estate-wide sweep of the unpromoted-presentation defect that
+    # fundamental_forensics.css/js and stock.html were each healed for one at a
+    # time (census: research/SITE_ACCESS_ASSET_CENSUS_2026_08_11.md). Every entry
+    # below is presentation or a payload-free client whose signal-bearing reads
+    # all stay outside this set — the same standard as the forensics pair.
+    #
+    # Ratified here deliberately rather than loosened: this guard is the reason
+    # the widening had to be argued file by file. What it must keep catching is a
+    # PAYLOAD arriving in `public.exact`, so note what was examined and REFUSED
+    # even though it is payload-free — wh_banner.js, mm_charts.js and stockdata.js
+    # (every data source they read stays gated, so promotion would be net-zero) —
+    # and, on the payload side, every *_data.js / *_engine.js. measurement_data.js
+    # in particular was argued for promotion on the grounds that its content was
+    # already in the public shell; 214 of its 617 wordy string literals appear
+    # nowhere in measurement.html, so it stays gated. If one of THOSE names ever
+    # shows up in this diff, the finding is the leak, not the frozen set.
+    #
+    # Two vendor charting bundles, verified byte-identical (sha256) to the
+    # upstream npm artifacts rather than assumed. Their series are already inline
+    # in the public HTML shell, so the promotion moves a renderer, not data.
+    "/plotly-2.32.0.min.js",
+    "/lightweight-charts.js",
+    # Page stylesheets for open, server-rendered shells that are currently served
+    # UNSTYLED to anonymous visitors. Each checked for `content:` data, url()
+    # refs, entity-keyed selectors and numeric data custom props — zero hits, and
+    # no url() at all, so none drags a further gated asset in behind it.
+    "/cycle.css",
+    "/sector_cycles.css",
+    "/macro-desk.css",
+    "/markets.css",
+    "/odds.css",
+    "/capital_structure.css",
+    "/government-revenue-parity.css",
+    # ONE unit — never promote apart. illus.css holds the pre-reveal start state
+    # (opacity:0 / stroke-dashoffset) and illus.js is the sole writer of the
+    # .ilx-in class that releases it: CSS alone leaves every figure blank, JS
+    # alone leaves them solid black. The path geometry is already inline in the
+    # public HTML and illus.js makes no network call, so the pair moves no data.
+    "/illus.css",
+    "/illus.js",
     "/factordata/tech_lab.json",
 })
 
