@@ -343,6 +343,13 @@ on:
       - "engine/trial_ledger.py"
       - "engine/grading.py"
       - "engine/track_record.py"
+      # Track-record company identity: one ledger key per company across ticker
+      # renames. Name both the executable subjects and the suite explicitly so
+      # a test-only or migration-tool edit starts the packed owner (#3488).
+      - "engine/ledger_identity.py"
+      - "scripts/audit_reused_tickers.py"
+      - "scripts/migrate_track_record_keys.py"
+      - "tests/test_ledger_identity.py"
       - "engine/sector_signals.py"
       - "engine/meta_label.py"
       - "tests/test_grading.py"
@@ -2325,6 +2332,12 @@ on:
       # listed so adding a driver without a translation trips the census.
       - "tests/test_marketing_event_language.py"
       - "engine/market_drivers.py"
+      # tests/test_market_facts.py joins 2026-08-12 (W2D): another
+      # unrun-suite-rot grandfather closed on contact, now run in
+      # marketing-engine. The subject code is already covered by
+      # engine/marketing/** above; listed by name so a TEST-ONLY edit (a new
+      # market_facts producer pin, say) still reaches its own guard.
+      - "tests/test_market_facts.py"
       - "data/marketing/opportunities.jsonl"
       - "data/marketing/claims.jsonl"
       # content-studio + admin marketing-panel suites — co-run in the

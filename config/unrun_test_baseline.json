@@ -527,7 +527,6 @@
   "tests/test_marker_integrity.py",
   "tests/test_market_books_js.py",
   "tests/test_market_drivers.py",
-  "tests/test_market_facts.py",
   "tests/test_market_state_audit.py",
   "tests/test_market_state_persist_freshness.py",
   "tests/test_market_state_tune.py",

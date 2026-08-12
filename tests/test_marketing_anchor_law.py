@@ -117,7 +117,7 @@ def test_a_concretized_packet_fact_passes():
     assert cw.anchorless_macro_violations(
         "Michigan sentiment 55.2, beat. Growth data is firming.", "macro") == []
     assert cw.anchorless_macro_violations(
-        "Jobless claims are averaging 203 thousand a week this month, 8.6% "
+        "Jobless claims are averaging 203k a week this month, 8.6% "
         "below a year ago. Growth data's firming up a little while inflation "
         "readings are still warm.", "macro") == []
 
@@ -208,7 +208,7 @@ FULL_REGIME = {
 
 EXPECTED_PRINTS = {
     "print_jobless_claims":
-        "Jobless claims are averaging 203 thousand a week this month, 8.6% "
+        "Jobless claims are averaging 203k a week this month, 8.6% "
         "below a year ago.",
     "print_gdpnow":
         "The Atlanta Fed's GDPNow has the economy growing at a 5.0% annual "
@@ -240,12 +240,13 @@ def test_every_builder_renders_its_documented_units():
 
 def test_a_print_never_quotes_a_number_it_does_not_whitelist():
     """The whitelist is the invented-number gate; a fact whose text carries a
-    figure its `numbers` omits licenses nothing and breaks the gate."""
-    num_re = re.compile(r"\d{1,3}(?:,\d{3})*(?:\.\d+)?%?")
+    figure its `numbers` omits licenses nothing and breaks the gate. Use the
+    production tokenizer rather than a second regex: otherwise this test can
+    silently stop seeing the exact compact register the gate must police."""
     for build in mf._NAMED_PRINT_BUILDERS:
         out = build(FULL_REGIME)
         wl = set(out["numbers"])
-        for tok in num_re.findall(out["text"]):
+        for tok in cw._extract_number_tokens(out["text"]):
             if re.fullmatch(r"\d{1,2}", tok):
                 continue  # bare small integers are prose ("2-year", "4-week")
             assert tok in wl, (out["id"], tok, out["numbers"])
@@ -492,8 +493,8 @@ def test_a_negative_print_reads_as_english_not_as_a_minus_sign():
         "The Atlanta Fed's GDPNow has the economy shrinking at a 2.4% annual "
         "rate this quarter.")
     surge = {"conditions": {"labor_nowcast": {"initial_claims_4wk": 5_800_000.0,
-                                              "claims_yoy_pct": 420.0}}}
-    assert "5.8 million a week" in mf._print_jobless_claims(surge)["text"]
+                                                "claims_yoy_pct": 420.0}}}
+    assert "5.8m a week" in mf._print_jobless_claims(surge)["text"]
 
 
 def test_the_anchored_lead_still_fits_a_deterministic_post(tmp_path):

@@ -63,6 +63,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from engine import grading  # W1c: one shared next-bar/survivorship-aware grader
+from engine import ledger_identity  # ticker renames: one key per company, not per string
 from engine import regime_vector as _rv  # W0-stageB: vector stamping
 
 logger = logging.getLogger(__name__)
@@ -937,6 +938,15 @@ def update_track_record(
     # R-SQ8: the era floor's view of the ledger, snapshotted BEFORE ingestion.
     era_index = _era_index(existing_keys)
     era_skips: dict[str, int] = {}
+    # Ticker renames: a superseded string is not a valid ledger key. The era floor cannot
+    # cover this — it is scoped per-ticker-STRING and a renamed name has no logged rows,
+    # so it reads as a fresh name and the whole re-dated history is admitted (SATS/ECHO,
+    # 2026-06-29: BOTH strings were new in the SAME run, and `_era_index` is snapshotted
+    # before ingestion by design, so neither could ever see the other). Counted and named,
+    # never a silent `continue`.
+    _migrations = ledger_identity.load_migrations()
+    _superseded = ledger_identity.superseded_keys(_migrations)
+    migration_skips: dict[str, int] = {}
 
     # W0-stageB: load species registry once per run and build mtype→species map
     registry = _load_species_registry(repo_root, data_dir=data_dir)
@@ -959,6 +969,13 @@ def update_track_record(
     tonight: dict[str, list[dict]] = {}
     visited: set[tuple] = set()
     for ticker, markers, file_era in _iter_marker_files(signals_dir):
+        # Checked BEFORE the price load on purpose: at the moment of a rename BOTH files
+        # exist and BOTH resolve prices (that is exactly how the double count happened),
+        # so a guard that only fires once the old store rots is a guard that fires years
+        # late. The map is operator-ratified — the old string is simply not a key here.
+        if ticker in _superseded:
+            migration_skips[ticker] = migration_skips.get(ticker, 0) + len(markers)
+            continue
         close = _load_close(ticker, stocks_dir, dead_prices)
         if close is None or close.empty:
             logger.debug("No price data for %s — skipping", ticker)
@@ -1149,6 +1166,20 @@ def update_track_record(
         )
         logger.info("track_record: era-floor skips %s", era_skips)
 
+    # Same disclosure discipline for the rename guard: a signal file still rendering under
+    # a superseded key is a live re-log attempt, and silence is how 128 duplicate EchoStar
+    # rows accrued unnoticed for six weeks. Bare print at column 0 (house law).
+    if migration_skips:
+        pairs = {t: _migrations[t] for t in migration_skips}
+        print(
+            f"::notice title=track-record-key-migration::{sum(migration_skips.values())} "
+            f"marker(s) refused under superseded ticker key(s) {pairs} — already logged "
+            f"under the current key (quality.ticker_key_migrations); re-logging them "
+            f"would double-weight one company",
+            flush=True,
+        )
+        logger.info("track_record: migration skips %s", migration_skips)
+
     return {
         "new_rows": len(new_rows),
         "matured_rows": matured_rows,
@@ -1156,6 +1187,8 @@ def update_track_record(
         "skipped_pending": skipped_pending,
         "skipped_pre_era": sum(era_skips.values()),
         "era_floor_skips": dict(era_skips),
+        "skipped_superseded_key": sum(migration_skips.values()),
+        "migration_skips": dict(migration_skips),
         "out_path": str(out_path),
         "unstamped_count": unstamped_count,
     }
@@ -1225,7 +1258,13 @@ def log_near_misses(
         existing_keys[(rec.get("ticker"), rec.get("date"), rec.get("type"))] = rec
 
     out = {"n_submitted": len(near or []), "n_new": 0, "n_duplicate": 0,
-           "n_rejected_reason": 0, "n_no_price": 0}
+           "n_rejected_reason": 0, "n_no_price": 0, "n_key_migrated": 0}
+    # Ticker renames. Unlike the marker loop above — where a superseded file carries a
+    # WHOLE re-dated history and re-logging it is the double count — `near` is one live
+    # observation per row, so the honest repair is to RE-KEY it onto the company's current
+    # key, not to drop it. Keep-FIRST on the resolved key then collapses a submission that
+    # arrives under both strings, instead of filing it twice.
+    _nm_migrations = ledger_identity.load_migrations()
     close_cache: dict[str, Any] = {}
     for nm in (near or []):
         tkr = nm.get("ticker")
@@ -1234,6 +1273,12 @@ def log_near_misses(
         if not tkr or not d:
             out["n_rejected_reason"] += 1
             continue
+        resolved = ledger_identity.current_key(tkr, _nm_migrations)
+        if resolved != tkr:
+            logger.info("log_near_misses: %s is a superseded key — logging under %s",
+                        tkr, resolved)
+            out["n_key_migrated"] += 1
+            tkr = resolved
         if reason not in grading.REJECTION_TAXONOMY:
             logger.warning("log_near_misses: %s carries non-taxonomy reason %r — "
                            "REJECTED (Appendix A is a closed set)", tkr, reason)
