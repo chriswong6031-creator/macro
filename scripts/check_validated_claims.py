@@ -44,6 +44,11 @@ ENGINE SOURCE COPY is scanned too — see _COPY_BARE / scan_python_copy below. A
 authored in engine/ used to be gated only once a nightly render carried it onto a page,
 which is a day late and on somebody else's PR (#3765 → #3790).
 
+PUBLISHED REGISTRY DATA is scanned on the same principle — see DATA_COPY_SPECS /
+scan_json_copy. A claim authored in a data/ registry ROW reaches users through the
+builder that copies it into a site payload, so it is gated at the row rather than a
+nightly later on the generated half (found 2026-08-11 alongside #5413).
+
 Run:  python -m scripts.check_validated_claims          # scan; exit 1 on any unearned claim
       python -m scripts.check_validated_claims --list    # list every affirmative claim + status
       python -m scripts.check_validated_claims --selftest # prove the gate fires on a synthetic EN+zh
@@ -56,7 +61,9 @@ import html
 import json
 import re
 import sys
+from functools import partial
 from pathlib import Path
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parent.parent
 ALLOWLIST = ROOT / "data" / "regime" / "validated_claims_allowlist.json"
@@ -74,6 +81,82 @@ SCAN_GLOBS = [
 # file — see the _COPY_BARE comment for why.
 PY_COPY_GLOBS = [
     ("engine", ("*.py",)),
+]
+
+
+class DataSpec(NamedTuple):
+    """One registry DATA file whose PUBLISHED fields are scanned (scan_json_copy).
+
+    `glob`     repo-relative glob of the registry (epoch variants are siblings, so the
+               live copy and its `.<epoch>.` twin are both covered by one entry).
+    `fields`   the record field names the builder copies out. None = every string.
+    `payload`  the user-facing artifact the builder writes them into. This is what makes
+               the entry auditable — and it is also where the claim's SURFACE comes from
+               (see the block comment below).
+    `builder`  the module that performs the copy, so a reviewer can check the pair.
+    """
+    glob: str
+    fields: frozenset[str] | None
+    payload: str
+    builder: str
+
+
+# ── PUBLISHED REGISTRY DATA (DATA_COPY_SPECS) ────────────────────────────────────────
+#
+# WHY THIS EXISTS. Same bargain as PY_COPY_GLOBS, one layer further back. A claim
+# authored in a research-registry ROW was gated only AFTER a nightly render carried it
+# onto a page — a day late, on somebody else's PR — because SCAN_GLOBS covered no data/
+# file at all. Found live 2026-08-11 while fixing the BC-2 landing breach (#5413): that
+# change had to reword one claim TWICE, in data/cycle_pattern/truths.jsonl AND in the
+# generated site/measurementdata/measurement_data.js, because only the generated half was
+# gated. scripts/build_measurement.py publishes the registry's `statement` / `ci_summary`
+# / `notes` verbatim into the null_library payload, so the row IS the copy.
+#
+# WHY FIELD-RESTRICTED, NOT WHOLE-FILE (the PY_COPY_GLOBS argument, re-derived). The
+# estate tracks 22k data/*.json(l) files; a registry row carries far more bookkeeping
+# than it publishes — falsifiers, stop rules, human-review questions, evidence refs. BC-2
+# targets DISPLAYED CLAIMS, so each entry names the fields its builder actually copies
+# out. `fields=None` means the builder publishes the record whole.
+#
+# WHY THE SURFACE COMES FROM THE PAYLOAD, NOT THE REGISTRY PATH. A claim's surface is the
+# page a reader sees it on. Deriving it from `payload` (rather than from the .jsonl's own
+# basename) means an allowlist entry that already earns the phrase on the rendered page
+# earns it at the source too — the gate moves EARLIER without inventing a second,
+# duplicate justification for the same sentence. It also fails honestly the other way: a
+# phrase justified for some other page still does not license the registry row.
+#
+# WHAT IS DELIBERATELY *NOT* HERE (censused 2026-08-11; 20 registries publish token-
+# bearing prose into site/, only these four are gateable AT THE ROW):
+#   • MACHINE-EMITTED artifacts — data/regime/latest.json, regime/ai_desk.json,
+#     neuralweb/*, altdata/mastermind.json, master_brain/track_record.json,
+#     strategies/thematic_rotation_phase0*.json, vector/alerts.jsonl. A builder rewrites
+#     these nightly, so the row is not the source of record: the sentence is a literal in
+#     engine/, which PY_COPY_GLOBS already gates. Gating the artifact would red main on a
+#     regeneration nobody can fix at the file.
+#   • data/us_board_ledger/snapshots.jsonl — user-facing (its `cautions` reach the landing
+#     island through derive_showcase_card) but an APPEND-ONLY ledger of fossilised board
+#     snapshots: 510 historical rows carry the phrase and cannot be rewritten. #5413 put
+#     the gate in the right place for it — the emitter sanitizes at one choke point.
+#   • data/experiments/registry_seed.json, species/registry.json,
+#     neuralweb/evidence_clock.json — published to site/marketdata/experiments.json, which
+#     is read ONLY by the admin console's Experiments tab (engine/experiments_registry.py
+#     docstring, admin/experiments.py:19). Not a user-facing surface, so not BC-2's.
+#   • data/research_vault/{catalog,excerpts}.json — syndicated third-party research, the
+#     structural non-claim _THIRD_PARTY_PAGES already covers on the render side.
+DATA_COPY_SPECS = [
+    DataSpec("data/cycle_pattern/truths.jsonl",
+             frozenset({"statement", "ci_summary", "notes"}),
+             "site/measurementdata/measurement_data.js", "scripts.build_measurement"),
+    DataSpec("data/sector_cycles/narratives*.json",
+             frozenset({"body", "headline", "title"}),
+             "site/sector_cycles_narr_data.js", "scripts.build_sector_cycles"),
+    DataSpec("data/sector_cycles/cycle_dna*.json", None,
+             "site/sector_cycles_dna_data.js", "scripts.build_sector_cycles"),
+    DataSpec("data/china_sector_cycles/narratives*.json",
+             frozenset({"body", "headline", "title"}),
+             "site/sector_cycles_china_narr_data.js", "scripts.build_china_sector_cycles"),
+    DataSpec("data/china_sector_cycles/cycle_dna*.json", None,
+             "site/sector_cycles_china_dna_data.js", "scripts.build_china_sector_cycles"),
 ]
 
 TOKEN = re.compile(r"validated|已验证|经验证|经过验证", re.IGNORECASE)
@@ -558,10 +641,20 @@ def _scan_line(line: str, allow: list[dict],
 # The house's display-copy marker is the bilingual `_en`/`_zh` suffix — there is no
 # reason to translate an internal note into Chinese — so ANY suffixed field counts. The
 # bare names below are the display-copy fields the codebase also uses unsuffixed.
-# DELIBERATELY EXCLUDED (checked against the census, all internal): `notes` (plural —
-# engine/intl_claims research-registry bookkeeping, "W4-C7 VERDICT: CONTEXT (do NOT
-# wire)"), `description` (LLM tool schemas in engine/neuralweb), and `reason` / `tier` /
+# DELIBERATELY EXCLUDED (checked against the census): `notes` (plural — see the caveat
+# below), `description` (LLM tool schemas in engine/neuralweb), and `reason` / `tier` /
 # `verdict` / `status` (scoring enums and trace fields).
+#
+# THE `notes` EXCLUSION IS SCOPED TO PYTHON SOURCES, NOT TO THE WORD (corrected
+# 2026-08-11). It was written as "research-registry bookkeeping, all internal" — true of
+# engine/intl_claims' "W4-C7 VERDICT: CONTEXT (do NOT wire)", and false as a general
+# claim: registry bookkeeping does NOT stay internal. scripts/build_measurement.py
+# publishes data/cycle_pattern/truths.jsonl's `notes` verbatim into the null_library of
+# site/measurementdata/measurement_data.js, a user-facing payload. That channel is gated
+# by DATA_COPY_SPECS above — at the ROW, where a human can fix it — so the exclusion here
+# stays correct for its actual scope (a `notes=` binding in engine/ Python) without
+# leaving the published half ungated. Before adding a bare name back to this set, or
+# removing one, check both halves: a field can be bookkeeping in code and copy in data.
 _COPY_BARE = frozenset({
     "label", "caveat", "blurb", "headline", "summary", "detail", "read",
     "note", "disclaimer", "tooltip", "takeaway", "subtitle",
@@ -666,6 +759,103 @@ def scan_python_copy(rel_path: str, text: str, allow: list[dict]) -> tuple[list[
     return unearned, stats
 
 
+def _published_strings(obj: object, fields: frozenset[str] | None) -> list[tuple[str, str]]:
+    """Every string the builder publishes, as (field, value).
+
+    The field name propagates THROUGH lists, because the estate's published prose fields
+    are routinely list-valued (`cautions: [...]`, `summary_points: [...]`) and each
+    element is one displayed sentence, not a nested record.
+    """
+    out: list[tuple[str, str]] = []
+
+    def walk(node: object, field: str) -> None:
+        if isinstance(node, dict):
+            for k, v in node.items():
+                walk(v, str(k))
+        elif isinstance(node, list):
+            for v in node:
+                walk(v, field)
+        elif isinstance(node, str) and (fields is None or field in fields):
+            out.append((field, node))
+
+    walk(obj, "")
+    return out
+
+
+def _value_line(lines: list[str], value: str, hint: int = 0) -> int:
+    """Best-effort 1-based line of `value` in the raw file, for the error report.
+
+    Both JSON encodings are tried: the estate writes some registries with
+    ensure_ascii=True, where a Chinese claim is stored as \\uXXXX escapes and the literal
+    text appears nowhere in the file (see the 2026-08-11 BC-2 finding on ASCII-escaped zh).
+    """
+    needles = [json.dumps(value, ensure_ascii=False)[1:-1][:120],
+               json.dumps(value, ensure_ascii=True)[1:-1][:120],
+               value[:120]]
+    for i in range(hint, len(lines)):
+        for nd in needles:
+            if nd and nd in lines[i]:
+                return i + 1
+    return hint + 1
+
+
+def scan_json_copy(rel_path: str, text: str, allow: list[dict],
+                   spec: DataSpec) -> tuple[list[dict], dict]:
+    """Scan the PUBLISHED fields of one registry data file. Same contract as scan_text.
+
+    The claim is judged under the surface of `spec.payload` — the artifact the builder
+    copies these fields into — not under the registry's own basename (see the
+    DATA_COPY_SPECS block comment).
+
+    Fails CLOSED on unparseable JSON: a malformed registry is reported as a finding
+    rather than skipped, so the gate can never be bypassed by a file it cannot read.
+    """
+    stats = {"claims": 0, "backed": 0, "negated": 0, "third_party": 0, "ok": []}
+    lines = text.splitlines()
+    records: list[tuple[object, int]] = []          # (record, 0-based line hint)
+    if rel_path.endswith(".jsonl"):
+        for i, raw in enumerate(lines):
+            raw = raw.strip()
+            if not raw:
+                continue
+            try:
+                records.append((json.loads(raw), i))
+            except json.JSONDecodeError as e:
+                return ([{"file": rel_path, "line_no": i + 1,
+                          "text": f"UNPARSEABLE ({e.msg}) — cannot prove it carries "
+                                  "no unearned claim"}], stats)
+    else:
+        try:
+            records.append((json.loads(text), 0))
+        except json.JSONDecodeError as e:
+            return ([{"file": rel_path, "line_no": e.lineno or 1,
+                      "text": f"UNPARSEABLE ({e.msg}) — cannot prove it carries "
+                              "no unearned claim"}], stats)
+
+    surfs = _surfaces_of(spec.payload)
+    unearned: list[dict] = []
+    for record, hint in records:
+        for field, value in _published_strings(record, spec.fields):
+            if not TOKEN.search(value):
+                continue
+            line_no = hint + 1 if rel_path.endswith(".jsonl") else _value_line(lines, value)
+            n_neg, hits = _scan_line(value, allow, surfs)
+            stats["negated"] += n_neg
+            for backed, entry in hits:
+                stats["claims"] += 1
+                if backed:
+                    stats["backed"] += 1
+                    stats["ok"].append((line_no, ("allow:" + entry["match"]) if entry
+                                        else "artifact validated:true"))
+                else:
+                    unearned.append({
+                        "file": rel_path, "line_no": line_no,
+                        "text": f"[{field}] " + value.strip()[:160]
+                                + f"  → published to {spec.payload} by {spec.builder}"
+                                + _surface_hint(value, allow, surfs)})
+    return unearned, stats
+
+
 def scan_text(rel_path: str, text: str, allow: list[dict]) -> tuple[list[dict], dict]:
     """Scan one file's `text` as if it lived at repo-relative `rel_path`.
 
@@ -707,7 +897,25 @@ def scan(list_all: bool = False) -> list[dict]:
     unearned: list[dict] = []
     n_claims = n_negated = n_backed = n_tp = 0
     # Rendered surfaces are scanned whole-file; Python sources only through their
-    # display-copy fields (scan_python_copy) — same reporting shape either way.
+    # display-copy fields (scan_python_copy); registry data only through the fields its
+    # builder publishes (scan_json_copy) — same reporting shape for all three.
+    def consume(f: Path, scanner) -> None:
+        nonlocal n_claims, n_backed, n_negated, n_tp
+        try:
+            text = f.read_text(encoding="utf-8")
+        except Exception:  # noqa: BLE001
+            return
+        rel = f.relative_to(ROOT).as_posix()
+        found, st = scanner(rel, text, allow)
+        n_claims += st["claims"]; n_backed += st["backed"]
+        n_negated += st["negated"]; n_tp += st["third_party"]
+        unearned.extend(found)
+        if list_all:
+            for i, why in st["ok"]:
+                print(f"  OK   {rel}:{i}  [{why}]")
+            for r in found:
+                print(f"  MISS {rel}:{r['line_no']}  {r['text'][:120]}")
+
     surfaces = ([(sub, pats, scan_text) for sub, pats in SCAN_GLOBS]
                 + [(sub, pats, scan_python_copy) for sub, pats in PY_COPY_GLOBS])
     for sub, pats, scanner in surfaces:
@@ -718,20 +926,14 @@ def scan(list_all: bool = False) -> list[dict]:
             for f in sorted(base.rglob(pat)):
                 if "node_modules" in str(f):
                     continue
-                try:
-                    text = f.read_text(encoding="utf-8")
-                except Exception:  # noqa: BLE001
-                    continue
-                rel = f.relative_to(ROOT).as_posix()
-                found, st = scanner(rel, text, allow)
-                n_claims += st["claims"]; n_backed += st["backed"]
-                n_negated += st["negated"]; n_tp += st["third_party"]
-                unearned.extend(found)
-                if list_all:
-                    for i, why in st["ok"]:
-                        print(f"  OK   {rel}:{i}  [{why}]")
-                    for r in found:
-                        print(f"  MISS {rel}:{r['line_no']}  {r['text'][:120]}")
+                consume(f, scanner)
+    # Registry DATA sources — one glob per spec, each with its own published-field scope.
+    # A spec whose glob resolves to nothing scans nothing; tests/test_validated_claims_
+    # registry_source.py pins every glob against the tree so a renamed registry reds CI
+    # instead of quietly narrowing the gate.
+    for spec in DATA_COPY_SPECS:
+        for f in sorted(ROOT.glob(spec.glob)):
+            consume(f, partial(scan_json_copy, spec=spec))
     if list_all:
         print(f"\naffirmative claims: {n_claims}  backed: {n_backed}  "
               f"negated/hedged (ignored): {n_negated}  "
