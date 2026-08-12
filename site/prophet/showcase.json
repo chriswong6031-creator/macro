@@ -22,8 +22,8 @@
       "date": "2026-07-17",
       "flags": [
         [
-          "Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 validated risk gate: trim / size down.",
-          "\u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u5df2\u9a8c\u8bc1\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002"
+          "Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 measured risk gate: trim / size down.",
+          "\u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u5b9e\u6d4b\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002"
         ]
       ],
       "triage": false,
@@ -72,8 +72,8 @@
           "8\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3"
         ],
         [
-          "Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 validated risk gate: trim / size down.",
-          "\u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u5df2\u9a8c\u8bc1\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002"
+          "Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 measured risk gate: trim / size down.",
+          "\u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u5b9e\u6d4b\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002"
         ]
       ],
       "triage": false,
@@ -117,8 +117,8 @@
           "1\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3"
         ],
         [
-          "Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 validated risk gate: trim / size down.",
-          "\u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u5df2\u9a8c\u8bc1\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002"
+          "Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 measured risk gate: trim / size down.",
+          "\u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u5b9e\u6d4b\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002"
         ]
       ],
       "triage": true,
@@ -144,8 +144,8 @@
           "\u8d22\u62a5\u4e34\u8fd1 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3"
         ],
         [
-          "Narrative basket (Consumer Discretionary (Equal-Weight)) is below its long-term trend \u2014 validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).",
-          "\u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u975e\u5fc5\u9700\u6d88\u8d39\uff08\u7b49\u6743\uff09\uff09\u5df2\u8dcc\u7834\u957f\u671f\u8d8b\u52bf \u2014 \u5df2\u9a8c\u8bc1\u7684\u56de\u64a4\u95e8\u69db\uff1a\u51cf\u5c0f\u4ed3\u4f4d\u3002"
+          "Narrative basket (Consumer Discretionary (Equal-Weight)) is below its long-term trend \u2014 measured drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).",
+          "\u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u975e\u5fc5\u9700\u6d88\u8d39\uff08\u7b49\u6743\uff09\uff09\u5df2\u8dcc\u7834\u957f\u671f\u8d8b\u52bf \u2014 \u5b9e\u6d4b\u56de\u64a4\u95e8\u69db\uff1a\u51cf\u5c0f\u4ed3\u4f4d\u3002"
         ]
       ],
       "triage": false,

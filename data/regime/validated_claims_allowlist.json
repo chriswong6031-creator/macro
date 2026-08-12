@@ -904,11 +904,12 @@
   },
   {
    "match": "'validated', '已验证'",
-   "backing": "SCORED-chip label pair: the ✓ Validated pill renders ONLY when the underlying read scored=True (engine.vol_regime / signal_lab / sector_central set the flag). The chip is hidden otherwise — the label is engine-gated, not free prose.",
+   "backing": "SCORED-chip label pair: the ✓ Validated pill renders ONLY when the underlying read scored=True (engine.vol_regime / signal_lab / sector_central set the flag). The chip is hidden otherwise — the label is engine-gated, not free prose. Surfaces extended 2026-08-11, when the structural WHOLE-LINE kills were narrowed to in-place masks: sector_central's tripwire-verdict column renders the identical engine-gated label pair through the spaced spelling (`tr.verdict === 'validated' ? L('Validated', '已验证')`, templates/sector_central.html.j2 + its render). The unspaced spelling of the same pair was already allowlisted for this surface; only the space kept this line on a different entry, and a whole-line kill on the `verdict === 'validated'` comparison beside it hid the miss.",
    "surfaces": [
     "gex",
     "stock",
-    "vector"
+    "vector",
+    "sector_central"
    ]
   },
   {
@@ -1185,12 +1186,13 @@
   },
   {
    "match": "note\":\"validated forward-drawdown",
-   "backing": "engine-stamped data note — the China external-driver radar registry entry ('Validated forward-drawdown component'; engine/risk_radar_intl). Display-only metadata. The same engine-stamped note rides the CN basket payload (site/baskets_china.html const BASKETS) and the CN sector-cycles payload (window.SECTOR_CYCLES) — one minified line each, same display-only metadata.",
+   "backing": "engine-stamped data note — the China external-driver radar registry entry ('Validated forward-drawdown component'; engine/risk_radar_intl). Display-only metadata. The same engine-stamped note rides the CN basket payload (site/baskets_china.html const BASKETS) and the CN sector-cycles payload (window.SECTOR_CYCLES) — one minified line each, same display-only metadata. Surfaces extended 2026-08-11, when the structural WHOLE-LINE kills were narrowed to in-place masks: the same engine-stamped note also rides the CN sector-central payload (window.SECTOR_CENTRAL, site/sector_central_china_data.js), which was invisible while a sibling `\"note\":` key on that one-line blob suppressed the whole file.",
    "surfaces": [
     "china",
     "measurement",
     "baskets_china",
-    "sector_cycles_china_data"
+    "sector_cycles_china_data",
+    "sector_central_china_data"
    ]
   },
   {
@@ -1648,6 +1650,22 @@
     "macro",
     "dashboard",
     "macro_signals"
+   ]
+  },
+  {
+   "match": "t('validated','已验证')",
+   "backing": "engine.cn_ai_semis_confirmer / china_narrative_radar (#773) — the AI-semis chip's honesty tag, emitted as 'validated' ONLY for baskets where the t=3.27 univariate survives the horse race (ths_cpo; SPY + CN controls, pre-2024 split survives); every other basket carries partial/2024+-only/weak instead, and no pill renders without a tag ({% if htag == 'validated' %}). Same claim of record as the 'validated weekly directional confirmer' and 'cpo basket return (validated #773' entries already registered for this surface — this covers the Jinja source form of the LABEL PAIR, which was invisible until 2026-08-11 because the `class=\"ai-tag validated\"` structural rule killed its whole line instead of masking just the class attribute. It is deliberately NOT an extension of the scored=True SCORED-chip entries that carry the same phrase: the construction matches but the engine and the study do not. Validation script: scripts/china_global_theme_backtest.py.",
+   "surfaces": [
+    "narrative_radar",
+    "china_narrative_radar"
+   ]
+  },
+  {
+   "match": ">✓ <span class=\"l-en\">validated</span><span class=\"l-zh\">已验证</span>",
+   "backing": "engine.cn_ai_semis_confirmer / china_narrative_radar (#773) — the AI-semis chip's honesty tag, emitted as 'validated' ONLY for baskets where the t=3.27 univariate survives the horse race (ths_cpo; SPY + CN controls, pre-2024 split survives); every other basket carries partial/2024+-only/weak instead, and no pill renders without a tag ({% if htag == 'validated' %}). Same claim of record as the 'validated weekly directional confirmer' and 'cpo basket return (validated #773' entries already registered for this surface — this covers the rendered dual-span form of the LABEL PAIR, which was invisible until 2026-08-11 because the `class=\"ai-tag validated\"` structural rule killed its whole line instead of masking just the class attribute. It is deliberately NOT an extension of the scored=True SCORED-chip entries that carry the same phrase: the construction matches but the engine and the study do not. Validation script: scripts/china_global_theme_backtest.py.",
+   "surfaces": [
+    "narrative_radar",
+    "china_narrative_radar"
    ]
   }
  ]

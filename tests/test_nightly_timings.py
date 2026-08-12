@@ -35,7 +35,9 @@ Run: .venv/bin/python -m pytest tests/test_nightly_timings.py -q
 from __future__ import annotations
 
 import json
+import os
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -960,6 +962,88 @@ def test_finish_script_annotations_start_the_line():
         assert text.startswith("::"), (
             f"annotation is not at column 0 of the echoed string: {text!r}"
         )
+
+
+def test_finish_publishes_only_its_exact_ledger_with_foreign_index_state(
+    tmp_path: Path,
+) -> None:
+    origin = tmp_path / "origin.git"
+    lane = tmp_path / "lane"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", "--initial-branch=main", str(origin)],
+        check=True,
+    )
+    subprocess.run(["git", "init", "-q", "-b", "main", str(lane)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=lane, text=True, capture_output=True, check=True
+        ).stdout.strip()
+
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    git("remote", "add", "origin", str(origin))
+    ledger = lane / "data/ops/nightly_timings/engine.jsonl"
+    foreign = lane / "config/foreign.txt"
+    ledger.parent.mkdir(parents=True)
+    foreign.parent.mkdir(parents=True)
+    ledger.write_text('{"run":1}\n')
+    foreign.write_text("safe\n")
+    git("add", ".")
+    git("commit", "-m", "base")
+    git("push", "-u", "origin", "main")
+    parent = git("rev-parse", "HEAD")
+    foreign.write_text("must-not-ride\n")
+    git("add", "config/foreign.txt")
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_python = fake_bin / "python3"
+    fake_python.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -e\n"
+        "mkdir -p data/ops/nightly_timings\n"
+        "printf '%s\\n' '{\"run\":2}' >> data/ops/nightly_timings/${GITHUB_JOB}.jsonl\n"
+    )
+    fake_python.chmod(0o755)
+    result = subprocess.run(
+        ["bash", str(FINISH_SH), "300"],
+        cwd=lane,
+        env={
+            **os.environ,
+            "PATH": f"{fake_bin}:{os.environ['PATH']}",
+            "GITHUB_ACTIONS": "true",
+            "GITHUB_WORKSPACE": str(ROOT),
+            "GITHUB_JOB": "engine",
+            "GITHUB_RUN_ID": "timing-test",
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "pushed nightly timings (engine)" in result.stdout
+    assert git("rev-parse", "HEAD") == parent
+    remote = subprocess.run(
+        ["git", "--git-dir", str(origin), "rev-parse", "main"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    changed = subprocess.run(
+        ["git", "--git-dir", str(origin), "diff-tree", "--no-commit-id", "-r", "--name-only", remote],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.splitlines()
+    assert changed == ["data/ops/nightly_timings/engine.jsonl"]
+    assert subprocess.run(
+        ["git", "--git-dir", str(origin), "show", "main:config/foreign.txt"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout == "safe\n"
 
 
 @pytest.mark.parametrize("workflow", INSTRUMENTED_WORKFLOWS, ids=lambda p: p.name)

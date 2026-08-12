@@ -44,13 +44,12 @@ pre-existing helper, RAISES.  It never returns ``run`` unchanged as a
 is precisely the blindness this module exists to prevent — the guard would
 report zero modules / zero census members and read GREEN.
 
-The ``LEGACY_UNMARKED`` allowlist pins the four ``scripts/ci`` helpers that
-predate this contract.  They are invoked as whole-step bodies today
-(``nightly_timings_finish.sh`` ×18 steps, ``public_render.sh`` ×1) or sourced
-from inside other bodies (``push_retry.sh``, ``strip_conflict_markers.sh``),
-they were never extracted verbatim from a workflow, and their contents are not
-step source.  They pass through unchanged, which is what keeps this module a
-strict no-op until the first marked script appears.
+The ``LEGACY_UNMARKED`` allowlist pins the ``scripts/ci`` helpers whose files
+are not extracted verbatim step bodies. They are invoked as whole-step bodies
+today (including ``nightly_timings_finish.sh``, ``public_render.sh``, and the
+atomic options publisher) or sourced from inside other bodies
+(``push_retry.sh``, ``strip_conflict_markers.sh``). Their contents are not
+workflow step source, so they pass through unchanged.
 """
 
 from __future__ import annotations
@@ -78,6 +77,7 @@ MARKER_SCAN_LINES = 5
 LEGACY_UNMARKED = frozenset(
     {
         "nightly_timings_finish.sh",
+        "options_signal_nightly.sh",
         "public_render.sh",
         "push_retry.sh",
         "strip_conflict_markers.sh",
