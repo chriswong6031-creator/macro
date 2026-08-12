@@ -253,6 +253,20 @@ def test_freshness_gate_keeps_near_stale():
     assert "B" in result.columns
 
 
+def test_index_and_members_use_the_same_63_session_high_window():
+    """The comparison tick and member bars must measure drawdown over the same horizon."""
+    idx = pd.bdate_range("2025-01-02", periods=130)
+    values = np.linspace(100.0, 200.0, len(idx))
+    # Both series peak 70 sessions before the end, then recover to the same current/prox ratio.
+    values[-70] = 240.0
+    mat = pd.DataFrame({"A": values, "B": values}, index=idx)
+    spy = pd.Series(values, index=idx)
+    out = lc._compute(mat, spy)
+    asof = idx[-1]
+    member_dd = float(out["dd"].loc[asof, "A"])
+    assert float(out["spy_dd_series"].loc[asof]) == pytest.approx(member_dd)
+
+
 # --------------------------------------------------------------------------- #
 # Fail-open: missing inputs
 # --------------------------------------------------------------------------- #
@@ -339,18 +353,23 @@ def test_forward_log_idempotent_by_asof(tmp_path, monkeypatch):
 # --------------------------------------------------------------------------- #
 # Real-data smoke test (skipped when data absent)
 # --------------------------------------------------------------------------- #
-def test_real_data_schema():
+def test_real_data_schema(tmp_path, monkeypatch):
     """Real data: snap has all required keys and sensible values."""
+    monkeypatch.setattr(lc, "_out_dir", lambda: tmp_path)
+    monkeypatch.delenv("COLLECT_LANE", raising=False)
+    monkeypatch.delenv("US_LANE", raising=False)
     result = lc.build()
     if result is None:
         pytest.skip("real data unavailable or insufficient history")
     required_keys = ["schema", "asof", "state", "z_vel", "med_dd",
                      "carnage_share_ema", "share10", "share30",
                      "n_fresh", "n_total", "worst_members",
-                     "index_dd", "dislocation", "state_since"]
+                     "index_dd", "dislocation", "state_since",
+                     "cohort_role", "cohort_keys", "high_window_sessions"]
     for k in required_keys:
         assert k in result, f"missing key: {k}"
     assert result["schema"] == "leadership_crack.v1"
+    assert result["high_window_sessions"] == lc._CARNAGE_WINDOW == 63
     assert result["state"] in {"INTACT", "CRACKING", "BROKEN"}
     assert isinstance(result["dislocation"], bool)
     assert isinstance(result["worst_members"], list)
