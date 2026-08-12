@@ -6772,6 +6772,11 @@ jobs:
         run: python -m pytest tests/test_etf_board_windows_tile.py -q
       - name: etf weighting lens — discount identity, golden default ordering, receipts
         run: python -m pytest tests/test_etf_weighting.py -q
+      # W3 partial-NAV sleeve support: pins the declared nav_equity_frac bounds,
+      # both ranked-consumer call sites, and the conservative sweep/swap filters.
+      # Uses pandas+pyarrow for the on-disk sponsor receipt; both are above.
+      - name: etf partial-NAV sleeve — declared bounds and sweep/swap guards
+        run: python -m pytest tests/test_etf_partial_nav_sleeve.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
 
