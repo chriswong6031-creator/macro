@@ -30,10 +30,15 @@ from pathlib import Path
 
 import pytest
 
+from scripts.workflow_run_source import resolved_workflow_text
+
 ROOT = Path(__file__).resolve().parents[1]
 RENDER = (ROOT / ".github" / "workflows" / "render.yml").read_text()
 ENGINE_RENDER = (ROOT / ".github" / "workflows" / "engine-render.yml").read_text()
-DAILY = (ROOT / ".github" / "workflows" / "daily.yml").read_text()
+# Resolved: builder bodies extracted to scripts/ci/ still run in this lane.
+DAILY = resolved_workflow_text(
+    ROOT / ".github" / "workflows" / "daily.yml", ROOT
+)
 DAG = (ROOT / "config" / "dag.yml").read_text()
 
 EXPRESS_LANES = {"render.yml": RENDER, "engine-render.yml": ENGINE_RENDER}
