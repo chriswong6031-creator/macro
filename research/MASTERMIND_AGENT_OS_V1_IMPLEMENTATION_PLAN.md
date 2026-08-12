@@ -71,7 +71,7 @@ masterplans, and memory. Context compilation becomes a graph walk rather than a 
 ## Phase 1 — Adoption
 
 **Objective.** Records get written by real sessions doing real work, not backfilled by a
-scaffolding session. Closes **G1** (WHY) and **G2** (cross-account discoveries).
+scaffolding session. Closes **G1** (WHY) and **G2** (cross-account discoveries). **Unblocked 2026-08-12:** `DNR:KILL-PARALLEL-KNOWLEDGE-BASE` was overruled by the Chairman, so this phase may require sessions to write `DSC-*` (see `DEC:AGENTOS-CXI-R12-OVERRULED`).
 
 **Dependencies.** Phase 0.
 

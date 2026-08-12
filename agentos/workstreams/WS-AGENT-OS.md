@@ -45,6 +45,7 @@ waves:
     status: todo
     depends_on: [W1, W2]
 decisions:
+  - DEC:AGENTOS-CXI-R12-OVERRULED
   - DEC:AGENTOS-NO-TASK-STORE
   - DEC:AGENTOS-FILE-PER-RECORD
   - DEC:AGENTOS-HOME-IS-MACRO
@@ -69,32 +70,28 @@ artifacts:
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 needs_ceo:
   question: >
-    Five conflicts, all requiring a Chairman ruling. C1 — task registry: the brief asks
-    for a first-class Task entity; census §5.6 ruled sub-PR granularity a non-goal.
-    C2 — session tracking: the brief asks for heartbeats and stale-task detection;
-    census §6.3 forbids a session-tracking service. C3 — ranked work: the CEO brief's
-    START NEXT is a ranked next-work list, and config/strategic_state.yml:16 gives that
-    concept to brain/improvement_agenda.py. C4 — census override: census §5.4 chose
-    governance.jsonl event types and declared "a new unified store" an explicit
-    non-goal; agentos/decisions/ overrides that, on the ground that governance.jsonl is
-    not git-tracked. C5 — standing kill: DNR:KILL-PARALLEL-KNOWLEDGE-BASE (CXI-R12)
-    forbids a second hand-maintained knowledge base for session knowledge, which is the
-    closest existing description of DSC-* records; only the operator can clear it.
+    Four open conflicts (C5 was RULED on 2026-08-12 — see DEC:AGENTOS-CXI-R12-OVERRULED).
+    C1 — task registry: the brief asks for a first-class Task entity; census §5.6 ruled
+    sub-PR granularity a non-goal. C2 — session tracking: the brief asks for heartbeats
+    and stale-task detection; census §6.3 forbids a session-tracking service. C3 — ranked
+    work: the CEO brief's START NEXT is a ranked next-work list, and
+    config/strategic_state.yml:16 gives that concept to brain/improvement_agenda.py.
+    C4 — census override: census §5.4 chose governance.jsonl event types and declared "a
+    new unified store" an explicit non-goal; agentos/decisions/ overrides that, on the
+    ground that governance.jsonl is not git-tracked.
   options:
-    - "Side with the census on C1/C2, readiness-only on C3, confirm C4, clear C5"
+    - "Side with the census on C1/C2, readiness-only on C3, confirm the C4 override"
     - "Override the census: build a real task store and a session registry"
-    - "Uphold DNR:KILL-PARALLEL-KNOWLEDGE-BASE — retire DSC-*, keep DEC-* and handoffs"
+    - "Reverse C4: make governance.jsonl git-tracked and retire agentos/decisions/ into it"
   recommendation: >
-    Side with the census on C1/C2, readiness-only on C3, confirm C4, clear C5. Waves
+    Side with the census on C1/C2, readiness-only on C3, confirm the C4 override. Waves
     supply the dependency graph and next-action the brief needs at ~4 fields instead of
     20; the advisory claim plus git worktree list and PR-collision data cover the
-    collision goal; START NEXT stays a readiness view so the agenda keeps priority; the
-    C4 override rests on governance.jsonl being single-machine runtime state; and C5 has
-    new evidence CXI-R12 could not have weighed, since account-local memory is not repo
-    content and therefore not indexable. Uphold C5 instead if CXI plus masterplan prose
-    is judged sufficient for cross-account knowledge.
+    collision goal; START NEXT stays a readiness view so the improvement agenda keeps
+    priority; and the C4 override rests on governance.jsonl being single-machine runtime
+    state that cannot carry cross-machine memory.
   by_when: 2026-08-19
-next_action: Land Phase 2, then rule on C1-C5 (C5 gates whether Phase 1 may mandate DSC-*).
+next_action: Land the C5 ruling, then rule on C1-C4; Phase 1 is now unblocked to mandate DSC-*.
 ---
 
 ## Context

@@ -73,7 +73,7 @@ Concretely, six gaps survive everything that is built:
 work-identity plane*. It is not a third control plane, and §2 makes that structurally
 enforceable rather than merely promised.
 
-### `DNR:KILL-PARALLEL-KNOWLEDGE-BASE` — the standing kill this design must clear
+### `DNR:KILL-PARALLEL-KNOWLEDGE-BASE` — RULED: overruled by the Chairman, 2026-08-12
 
 House law requires citing `research/DO_NOT_REBUILD.md` before proposing new work. **The first
 draft of this architecture did not, and the omission was material** — one row is squarely on
@@ -108,10 +108,22 @@ is checkable:
    memory is not repository content. A Codex session cannot read one of those files no matter
    how good the index is.
 
-**This is an argument, not a ruling.** Per the DNR preamble, only the operator/Fable can clear a
-killed topic. It is escalated as **conflict C5** in §13 and carried on `WS:AGENT-OS` as a
-`needs_ceo` item. Until it is ruled: Phase 0 (records that exist) stands, and **Phase 1 must not
-mandate that sessions write `DSC-*`** — that mandate is the precise thing the row forbids.
+**RULED — the argument above was escalated as C5 and the Chairman overruled the row**
+(2026-08-12: *"override CXI-R12, this is an old law and we overrule it"*). The kill is lifted as
+a whole, not narrowed to this program. Authored knowledge records are permitted and **Phase 1 may
+mandate that sessions write them**; the restriction that previously blocked that is removed.
+
+Recorded per house law: the DNR row is amended in place with the override and a pointer (its key
+retained, since keys are never reused), the compiled blocklists are regenerated in the same PR,
+and the grounds live in `DEC:AGENTOS-CXI-R12-OVERRULED`. Two things that ruling deliberately does
+**not** do: it does not pre-approve a future parallel **retrieval/RAG service** — CXI-R12's ground
+survives as guidance, so such a proposal is now adjudicated on its merits rather than pre-refused —
+and it does not change this design's own commitment to build no retriever (§8; Phase 3 registers
+`agentos/**` as a corpus for the existing index).
+
+*Process note:* the registry documents how to add a kill but has no documented path for clearing
+one, so this was recorded by amending the row's verdict. Worth making explicit in the registry if
+clearings recur.
 
 ### Binding constraints this design inherits
 
@@ -123,9 +135,9 @@ Three already-adjudicated rulings constrain any answer, and this design honors a
    tracking service; no new schedulers, queues, or buses; no auto-arming authority anywhere.
 3. **Charter V2 P7 — one source of truth per concept.**
 
-Parts of the commissioning brief collide with constraint 2, and this design overrides two
-prior adjudications (census §5.4 and a standing DNR kill). All five are flagged rather than
-silently resolved. See §13.
+Parts of the commissioning brief collide with constraint 2, and this design overrides two prior
+adjudications (census §5.4, and a standing DNR kill the Chairman has since overruled outright).
+All are flagged rather than silently resolved. See §13.
 
 ---
 
@@ -645,7 +657,7 @@ of validator/generator, and four schema files.
 
 ---
 
-## §13 What NOT to build — and five conflicts the CEO must rule on
+## §13 What NOT to build — and the conflicts the CEO must rule on (C5 RULED)
 
 **Not building (settled by prior adjudication, restated so no future session re-proposes):**
 
@@ -660,9 +672,10 @@ of validator/generator, and four schema files.
 7. **No Kubernetes, no agent social network, no Git replacement, no speculative AI scheduler.**
    The brief's PART XVIII list, adopted verbatim.
 
-**Five genuine conflicts. I am flagging rather than silently resolving them, because all
-five are the Chairman's call. C4 and C5 were found by adversarial review of this document's
-own first draft — C5 is a standing DNR kill the draft failed to cite at all:**
+**Five genuine conflicts, of which C5 is now RULED. The remaining four are flagged rather than
+silently resolved, because each is the Chairman's call. C4 and C5 were found by adversarial review
+of this document's own first draft — C5 is a standing DNR kill the draft failed to cite at all,
+and it has since been overruled:**
 
 > **C1 — Task registry.** The brief (PART II, PART XVI) asks for a first-class Task entity with
 > ~20 fields. Census §5.6 ruled sub-PR granularity unnecessary and a task queue an explicit
@@ -703,17 +716,19 @@ own first draft — C5 is a standing DNR kill the draft failed to cite at all:**
 > `governance.jsonl` git-tracked and replicated — then the census's mechanism is strictly
 > simpler and `agentos/decisions/` should be retired into it.
 
-> **C5 — Clearing `DNR:KILL-PARALLEL-KNOWLEDGE-BASE`.** A standing kill (CXI-R12, 2026-07-18)
+> **C5 — RULED 2026-08-12: OVERRULED by the Chairman.** *(kept for provenance; no longer open)*
+> A standing kill (CXI-R12, 2026-07-18)
 > forbids "a second hand-maintained knowledge base … agents required to write session knowledge
 > into a separate database". `DSC-*` is the closest thing here to that form, and **only the
 > operator/Fable can clear a killed topic** — I cannot self-certify it. The argument is in §0:
 > the records are canonical rather than parallel, retrieval stays with CXI, and G2 (account-local
 > memory is unreadable to Codex) is new evidence the 2026-07-18 ruling could not have weighed,
-> because CXI indexes repo content and account-local memory is not repo content. **Until ruled:
-> Phase 0 stands, and Phase 1 must NOT mandate that sessions write `DSC-*`** — the mandate is
-> precisely what the row forbids. **What would flip me:** a ruling that the CXI corpus plus
-> masterplan prose is sufficient for cross-account knowledge, which would retire `DSC-*` and keep
-> `DEC-*` and handoffs.
+> because CXI indexes repo content and account-local memory is not repo content. **Outcome:** the
+> Chairman overruled the row outright — *"this is an old law and we overrule it"* — so the kill is
+> lifted, Phase 1 may mandate `DSC-*`, and the row is amended in place with the compiled blocklists
+> regenerated. Grounds and scope: `DEC:AGENTOS-CXI-R12-OVERRULED`. **What would still reverse it:**
+> a ruling that the CXI corpus plus masterplan prose suffices for cross-account knowledge, which
+> would retire `DSC-*` and keep `DEC-*` and handoffs.
 
 ---
 

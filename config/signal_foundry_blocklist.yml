@@ -543,10 +543,10 @@ entries:
       any_of:
         - 'second.{0,30}hand.{0,30}maintained'
     reason: >
-      FORBIDDEN — knowledge retrieval is the Macro Context Index
-      (derived, rebuildable, canonical-sources-keep-truth); a
-      hand-curated parallel store is the ratified program's named
-      degenerate form
+      **OVERRULED 2026-08-12 by Chairman ruling** ("this is an old law
+      and we overrule it") — the kill is LIFTED, and lifted as a whole
+      rather than narrowed to one program. Authored knowledge records
+      are pe
     source: 'CXI-R12, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` (2026-07-18)'
 
   - id: BL-G027
