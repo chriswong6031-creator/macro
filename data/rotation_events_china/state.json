@@ -6,7 +6,7 @@
    "from_leg": "cn_semis",
    "to_leg": "cn_ai_compute",
    "started": "2026-08-04",
-   "lapse_count": 1,
+   "lapse_count": 2,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-07-09",

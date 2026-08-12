@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T09:23:40.095662+00:00",
-  "count": 1001,
+  "generated_at": "2026-08-12T09:38:51.498711+00:00",
+  "count": 1002,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1007,6 +1007,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uyr13hzwckz-4e964d",
+      "title": "Investor Positioning and Flows Aug 10",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T17:13:37Z",
+      "summary_points": [
+        "**S&P 500 Trend Channel Strength**: 23% annualized uptrend (Oct 2022–Mar 2025), retesting 4-year channel bottom; sustained momentum despite short-term volatility.",
+        "**Tech Positioning Extremes**: Large-cap Tech at 95th percentile (not yet at June/October highs), signaling overbought risk and critical concentration risk for portfolios.",
+        "**Earnings Gap Undervaluation**: Positioning significantly below earnings growth (39% correlation since 2012), indicating potential for higher returns as normalization occurs.",
+        "**Systematic Strategies Dominance**: Systematic equity positioning at 73rd percentile (vs.",
+        "43rd discretionary), with 77% correlation to S&P 500 volatility—heightening systemic risk exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 54,
       "language": "en",
       "needs_metadata": false
     },
