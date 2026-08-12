@@ -342,6 +342,13 @@ on:
       - "engine/trial_ledger.py"
       - "engine/grading.py"
       - "engine/track_record.py"
+      # Track-record company identity: one ledger key per company across ticker
+      # renames. Name both the executable subjects and the suite explicitly so
+      # a test-only or migration-tool edit starts the packed owner (#3488).
+      - "engine/ledger_identity.py"
+      - "scripts/audit_reused_tickers.py"
+      - "scripts/migrate_track_record_keys.py"
+      - "tests/test_ledger_identity.py"
       - "engine/sector_signals.py"
       - "engine/meta_label.py"
       - "tests/test_grading.py"
