@@ -3583,6 +3583,38 @@ quality:
     AHRT: "Same instrument as its registry rows on the 16-day overlap (ret corr 1.00, constant 0.954 adjustment ratio; overlap just under the 20-row receipt bar) — registry-side contamination (live 'AH Realty Trust' tape under a dead-name resolution), not a store zombie."
   delisted_printing_acks:
     - RHHBY                      # OTC ADR (Roche) — never in the NASDAQ/NYSE listing directory by design
+  # --- ticker key migrations (engine/ledger_identity) ---
+  # The MACHINE-READABLE half of the ack text above. The acks say a rename happened in
+  # prose; nothing could read "under its 2026-06-24 SATS->ECHO rename" and act on it, so
+  # the rename's damage walked straight past the acks into the append-only ledgers.
+  #
+  # `old key: the key the stack stores the entity under today`. A ledger keyed on
+  # (ticker, date, type) has no way to know two strings are one company: the new string
+  # is a key with NO logged history, so every "have I logged this?" guard answers no and
+  # the SAME physical fires are appended a second time. Measured 2026-08-12 on
+  # data/signal_archive/track_record.parquet: SATS 128 rows and ECHO 128 rows with
+  # IDENTICAL (date, type) key sets (2008-11-25 -> 2026-04-23, zero keys unique to
+  # either) and all 39 identity/entry columns byte-identical — one fire logged twice, so
+  # every per-row statistic weights EchoStar DOUBLE. Not the survivorship trap (a
+  # missing name); a live over-weighting of a present one.
+  #
+  # This is a CONTINUATION map (two symbols, one company -> the keys must MERGE). Its
+  # mirror image, config/theme_graph_identity_breaks.yml, records BREAKS (one symbol,
+  # two companies -> the node must SPLIT). Neither is ever written by a detector:
+  # scripts/audit_reused_tickers proposes candidates, an operator ratifies the row.
+  #
+  # ADDING A ROW DOES NOT REPAIR AN ALREADY-DUPLICATED LEDGER — it stops the next
+  # append and makes the existing duplicate visible. The committed parquet is
+  # append-only by charter (RC-R2 / keep-FIRST); repair is the separate, gated act
+  # `python scripts/migrate_track_record_keys.py --apply`, which refuses to run unless
+  # its own losslessness receipt is clean.
+  ticker_key_migrations:
+    SATS: ECHO   # EchoStar Corp renamed SATS->ECHO effective 2026-06-24 (NASDAQ dir
+                 # 'EchoStar Corporation'; EDGAR CIK 1415404; FIGI BBG000TGLV00 — the
+                 # same receipts as the ECHO ack above). ECHO is the key the stack now
+                 # stores: data/stocks/SATS.parquet no longer exists and SATS is absent
+                 # from the dead-name registry, so the SATS copies can never mature
+                 # again, while ECHO's keep grading.
   # --- governance gate (collect.py) ---
   abort_fail_pct: 5              # > this % of a universe failing aborts the collect run
   warn_fail_pct: 1               # 1-5% only warns + logs

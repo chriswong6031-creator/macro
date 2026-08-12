@@ -255,3 +255,89 @@ def test_zombie_is_a_flag_never_a_fail(tmp_path):
     doc = _run(tmp_path)
     assert doc["totals"]["zombie"] == 1
     assert doc["n_failed"] == 0  # CSP-R1: disclosure, never fail-dark
+
+
+# --------------------------------------------------------------------------- #
+# ledger identity: what a ratified rename did DOWNSTREAM of the stores
+#
+# The blind spot this closes (2026-08-12): every class above audits a per-ticker price
+# STORE. Acking ECHO silenced the store alarm while 128 EchoStar fires sat logged twice
+# in track_record.parquet — once under SATS, once under ECHO — double-weighting one
+# company in every per-row statistic.
+# --------------------------------------------------------------------------- #
+
+def _write_ledger(path: Path, rows: list[tuple[str, str, str]]) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{"ticker": t, "date": d, "type": ty} for t, d, ty in rows]).to_parquet(path)
+    return path
+
+
+def _dupe_rows(a: str, b: str, n: int = 8) -> list[tuple[str, str, str]]:
+    return [(t, f"2020-01-{i + 1:02d}", "buy") for i in range(n) for t in (a, b)]
+
+
+def test_undeclared_ledger_identity_warns(tmp_path, capsys):
+    """Two strings, identical (date, type) key sets, no ratified identity — the exact
+    signature the EchoStar rename left, found WITHOUT knowing the rename."""
+    _write_registry(tmp_path / "data", {})
+    led = _write_ledger(tmp_path / "data" / "signal_archive" / "track_record.parquet",
+                        _dupe_rows("SATS", "ECHO"))
+    doc = _run(tmp_path, ledger_path=led)
+
+    assert doc["undeclared_ledger_identities"] == ["ECHO/SATS"]
+    assert doc["n_failed"] == 0                      # CSP-R1: disclosure, never fail-dark
+    warns = _lines(capsys, "::warning title=ledger identity::")
+    assert len(warns) == 1 and "ECHO/SATS" in warns[0]
+
+
+def test_ratified_rename_is_a_notice_not_a_warning(tmp_path, capsys):
+    """Once ratified it stops being an open question and becomes a pending repair —
+    the same tier the ack doctrine gives every operator-ratified identity."""
+    _write_registry(tmp_path / "data", {})
+    led = _write_ledger(tmp_path / "data" / "signal_archive" / "track_record.parquet",
+                        _dupe_rows("SATS", "ECHO"))
+    doc = _run(tmp_path, ledger_path=led,
+               quality_raw={"ticker_key_migrations": {"SATS": "ECHO"}})
+
+    assert doc["undeclared_ledger_identities"] == []
+    # ONE readouterr — capsys drains on read, so a second call would see an empty buffer.
+    out = capsys.readouterr().out.splitlines()
+    assert [ln for ln in out if ln.startswith("::warning title=ledger identity::")] == []
+    notices = [ln for ln in out if ln.startswith("::notice title=ledger identity::")]
+    assert len(notices) == 1 and "SATS->ECHO (8 rows)" in notices[0]
+    sec = doc["ledger_identity"]
+    assert sec["declared_duplicates"][0]["shared_keys"] == 8
+
+
+def test_migrated_ledger_is_silent(tmp_path, capsys):
+    """After the gated repair the superseded key carries nothing — the clean state."""
+    _write_registry(tmp_path / "data", {})
+    led = _write_ledger(tmp_path / "data" / "signal_archive" / "track_record.parquet",
+                        [("ECHO", f"2020-01-{i + 1:02d}", "buy") for i in range(8)])
+    doc = _run(tmp_path, ledger_path=led,
+               quality_raw={"ticker_key_migrations": {"SATS": "ECHO"}})
+
+    assert doc["ledger_identity"]["declared_duplicates"] == []
+    assert doc["undeclared_ledger_identities"] == []
+    out = capsys.readouterr().out.splitlines()
+    assert [ln for ln in out if ln.startswith("::warning title=ledger identity::")] == []
+    assert [ln for ln in out if ln.startswith("::notice title=ledger identity::")] == []
+
+
+def test_absent_ledger_skips_quietly(tmp_path, capsys):
+    """A sparse/CI-lite checkout has no data/ — that must not read as a clean ledger."""
+    _write_registry(tmp_path / "data", {})
+    doc = _run(tmp_path, ledger_path=tmp_path / "nope" / "track_record.parquet")
+    assert doc["ledger_identity"]["skipped"] == "ledger absent"
+    assert _lines(capsys, "::warning title=ledger identity::") == []
+
+
+def test_unreadable_ledger_darkens_loudly(tmp_path, capsys):
+    """A corrupt ledger must announce that the detector is DARK, never look clean."""
+    _write_registry(tmp_path / "data", {})
+    bad = tmp_path / "data" / "signal_archive" / "track_record.parquet"
+    bad.parent.mkdir(parents=True, exist_ok=True)
+    bad.write_text("not a parquet")
+    doc = _run(tmp_path, ledger_path=bad)
+    assert doc["ledger_identity"]["ledger_dark"] is True
+    assert len(_lines(capsys, "::warning title=ledger identity::")) == 1
