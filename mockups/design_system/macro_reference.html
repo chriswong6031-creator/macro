@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dense Intelligence Dashboard — reference (US Macro, Archetype D)</title>
+<!-- THE DENSE-DASHBOARD REFERENCE (Wave 0, mockup tier — nothing imports this).
+     Candidate ruling: macro.html selected over china.html (rationale in
+     MASTER_PRODUCT_DESIGN_SYSTEM_V1.md §10 / factory docket P0 #8; china follows
+     as the first Archetype-D migration consumer of this same contract).
+     Numbers are ILLUSTRATIVE mockup values — internally consistent by the
+     one-integer law, not live data. Links real theme.css; proposed DS-PR-0
+     tokens inline below (deleted when landed). -->
+<link rel="stylesheet" href="../../templates/theme.css">
+<style>
+/* ═══ PROPOSED — DS-PR-0 tokens (same block as specimen.html) ═══ */
+:root{
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px; --fs-h2:17px;
+  --fs-md:15px; --fs-body:14px; --fs-h3:14px; --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-7:32px; --sp-8:44px;
+  --r-ctl:8px; --r-btn:10px; --r-card:12px; --r-panel:14px; --r-pill:999px;
+  --t-fast:.16s; --t-med:.2s; --t-slow:.55s;
+  --ease-std:ease; --ease-lift:cubic-bezier(.2,.7,.3,1);
+  --shadow-hover:0 14px 30px -16px color-mix(in srgb, var(--link) 40%, transparent);
+  --ser-1:#5b9bf0; --ser-2:#d4a017; --ser-3:#0ea5e9; --ser-4:#e08b45;
+}
+html[data-theme="light"]{ --ser-1:#2f63c4; --ser-2:#8f6a04; --ser-3:#0284c7; --ser-4:#b06a25; }
+
+/* ═══ mockup scaffolding ═══ */
+body{ margin:0; background:var(--bg); color:var(--text); font-size:var(--fs-body); line-height:1.55; }
+.wrap{ max-width:1180px; margin:0 auto; padding:0 var(--sp-4) var(--sp-8); }
+.bar{ position:sticky; top:0; z-index:50; display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2);
+  padding:9px var(--sp-4); background:var(--glass-bg); border-bottom:1px solid var(--glass-brd);
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); }
+.bar .brand{ font-weight:900; letter-spacing:.07em; font-size:13.5px; }
+.bar .navsim{ display:flex; gap:2px; margin-right:auto; }
+.bar .navsim a{ color:var(--muted); text-decoration:none; font-size:var(--fs-sm); font-weight:500; padding:6px 10px; border-radius:9px; }
+.bar .navsim a.on{ color:var(--text); background:color-mix(in srgb, var(--link) 12%, var(--panel2)); }
+.bar .navsim a:hover{ color:var(--text); }
+.mockchip{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-warn); border:1px solid color-mix(in srgb, var(--warn) 34%, transparent);
+  background:color-mix(in srgb, var(--warn) 12%, var(--panel)); border-radius:var(--r-pill); padding:3px 9px; flex:none; }
+
+.panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel); padding:16px 18px; box-shadow:var(--card-shadow); }
+.sec-h{ display:flex; align-items:baseline; gap:8px; margin:0 0 10px; }
+.sec-h .eyebrow{ margin:0; }
+.sec-h h2{ font-size:var(--fs-h2); font-weight:700; letter-spacing:-.01em; margin:0; }
+.sec-h .asof{ margin-left:auto; color:var(--muted); font-size:var(--fs-micro); font-variant-numeric:tabular-nums; }
+.sec{ margin-top:var(--sp-6); }
+
+/* hero */
+.vh{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:var(--sp-6); align-items:center; padding:var(--sp-6) 0 var(--sp-4); }
+.vh-word{ font-size:var(--fs-display); font-weight:800; letter-spacing:-.03em; line-height:.95; margin:4px 0 8px; color:var(--ink-up); }
+.vh-clause{ font-size:var(--fs-md); max-width:56ch; }
+.vh-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-3); margin-top:12px; }
+.stance{ display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:var(--fs-sm);
+  padding:4px 11px; border-radius:var(--r-pill); border:1px solid color-mix(in srgb, var(--c,var(--muted)) 34%, transparent);
+  background:color-mix(in srgb, var(--c,var(--muted)) 12%, var(--panel)); color:var(--c,var(--muted)); }
+.callout{ border-left:3px solid var(--c,var(--ink-warn)); border-radius:0 var(--r-ctl) var(--r-ctl) 0;
+  background:color-mix(in srgb, var(--c,var(--ink-warn)) 8%, var(--panel)); padding:8px 12px;
+  font-size:var(--fs-sm); margin-top:12px; max-width:56ch; }
+.callout b{ color:var(--c,var(--ink-warn)); }
+/* the dial — one gauge, weight-led, direction-ink needle */
+.dial{ text-align:center; }
+.dial svg{ width:100%; max-width:280px; }
+.dial .dial-读{ font-size:var(--fs-sm); color:var(--muted); }
+
+/* what changed rows */
+.chg-row{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line); text-decoration:none; color:inherit; }
+.chg-row:last-child{ border-bottom:none; }
+.chg-when{ flex:none; width:56px; color:var(--muted); font-size:var(--fs-micro); font-variant-numeric:tabular-nums; }
+.chg-name{ font-weight:700; font-size:var(--fs-md); flex:none; min-width:110px; }
+.chg-what{ color:var(--text); font-size:var(--fs-sm); flex:1; min-width:0; }
+.chg-row .stance{ flex:none; font-size:var(--fs-micro); padding:3px 9px; }
+.chg-chev{ color:var(--muted); flex:none; }
+
+/* drivers */
+.drivers{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media (max-width:860px){ .drivers{ grid-template-columns:1fr; } .vh{ grid-template-columns:1fr; } }
+.drv-read{ font-size:var(--fs-sm); margin:0 0 10px; max-width:64ch; }
+.drv-read b{ font-weight:700; }
+.mtiles2{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+@media (max-width:640px){ .mtiles2{ grid-template-columns:repeat(2,1fr); } }
+.mtile{ background:var(--panel2); border:1px solid var(--line); border-radius:var(--r-btn); padding:9px 11px; }
+.mtile-lbl{ font-size:var(--fs-sm); color:var(--muted); }
+.mtile-val{ font-size:var(--fs-num-lg); font-weight:700; margin:2px 0 1px; font-variant-numeric:tabular-nums; }
+.mtile-chg{ font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
+.spark{ margin-top:10px; }
+.spark svg{ width:100%; height:44px; display:block; }
+.spark .lbl{ display:flex; justify-content:space-between; font-size:var(--fs-micro); color:var(--muted); font-variant-numeric:tabular-nums; }
+
+/* lock (Shape B on a premium driver) */
+.lockdemo{ position:relative; border-radius:var(--r-card); overflow:hidden; margin-top:10px; }
+.lock-ghost{ filter:blur(5px) saturate(.35); opacity:.46; user-select:none; pointer-events:none; }
+.lock-sheet{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; text-align:center; padding:12px; }
+.lock-eyebrow{ font-size:var(--fs-micro); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.lock-what{ font-weight:700; font-size:var(--fs-sm); }
+.lock-plan{ font-size:var(--fs-sm); color:#7c5cff; font-weight:600; }
+
+/* watching band */
+.watch{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+@media (max-width:860px){ .watch{ grid-template-columns:1fr; } }
+.watch .panel{ border-radius:var(--r-card); padding:12px 14px; }
+.watch-cond{ font-size:var(--fs-sm); }
+.watch-cond b{ display:block; font-size:var(--fs-md); margin-bottom:3px; }
+.watch-foot{ color:var(--muted); font-size:var(--fs-micro); margin-top:10px; }
+
+/* depth links */
+.depth{ display:flex; flex-wrap:wrap; gap:10px; }
+.depth a{ display:inline-flex; align-items:center; gap:7px; text-decoration:none; color:var(--text);
+  border:1px solid var(--line); background:var(--panel); border-radius:var(--r-btn); padding:9px 14px;
+  font-size:var(--fs-sm); font-weight:600;
+  transition:transform var(--t-med) var(--ease-lift), border-color var(--t-med) var(--ease-std), box-shadow var(--t-med) var(--ease-std); }
+.depth a:hover{ transform:translateY(-1px); border-color:color-mix(in srgb, var(--link) 45%, var(--line)); box-shadow:var(--shadow-hover); }
+.depth a small{ color:var(--muted); font-weight:400; }
+.dtp-inline{ display:inline-flex; }
+@media (prefers-reduced-motion: reduce){ .depth a, .depth a:hover{ transform:none; } }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="brand">MASTERMIND</span>
+  <nav class="navsim" aria-hidden="true">
+    <a href="#"><span class="l-en">Today</span><span class="l-zh">今日</span></a>
+    <a href="#"><span class="l-en">Discover</span><span class="l-zh">发现</span></a>
+    <a href="#"><span class="l-en">Analyze</span><span class="l-zh">分析</span></a>
+    <a class="on" href="#"><span class="l-en">Research</span><span class="l-zh">研究</span></a>
+  </nav>
+  <span class="mockchip"><span class="l-en">Reference mockup</span><span class="l-zh">参考样机</span></span>
+  <button class="gbtn gbtn-sm" id="t-theme">Dark/Light</button>
+  <button class="gbtn gbtn-sm" id="t-lang">EN/中文</button>
+</div>
+
+<div class="wrap">
+
+<!-- ══ 1 · VERDICT HERO — the page's one answer ══ -->
+<header class="vh">
+  <div>
+    <span class="eyebrow l-en">US Macro · Regime read</span>
+    <span class="eyebrow l-zh">美国宏观 · 状态判读</span>
+    <h1 class="vh-word"><span class="l-en">EXPANSION, LATE</span><span class="l-zh">扩张后段</span></h1>
+    <p class="vh-clause l-en">Growth is holding while inflation cools; the tape agrees with the data this week.</p>
+    <p class="vh-clause l-zh">增长企稳、通胀降温；本周行情与数据方向一致。</p>
+    <div class="vh-meta">
+      <span class="stance" style="--c:var(--ink-up)"><span class="l-en">In favour — stay invested</span><span class="l-zh">顺风环境——保持持仓</span></span>
+      <span class="dtp-chip dtp-chip--live dtp-inline"><i></i><span class="l-en">LIVE</span><span class="l-zh">实时</span></span>
+      <span class="asof" style="color:var(--muted);font-size:var(--fs-micro)">as-of 08-12 09:31 ET</span>
+    </div>
+    <div class="callout"><b class="l-en">Read the dial with care:</b><b class="l-zh">读数注意：</b>
+      <span class="l-en"> the composite is capped at 50 while one input rebuilds — the uncapped blend reads 77. The caveat lives here, beside the number it changes.</span>
+      <span class="l-zh"> 综合读数在一项输入重建期间被封顶为 50——未封顶为 77。该注意事项就放在它所影响的数字旁边。</span></div>
+  </div>
+  <figure class="dial" aria-label="Regime dial">
+    <svg viewBox="0 0 200 120">
+      <path d="M20 110 A80 80 0 0 1 180 110" fill="none" stroke="var(--line)" stroke-width="10" stroke-linecap="round"/>
+      <path d="M20 110 A80 80 0 0 1 130 36" fill="none" stroke="color-mix(in srgb, var(--up) 55%, transparent)" stroke-width="10" stroke-linecap="round"/>
+      <line x1="100" y1="110" x2="128" y2="42" stroke="var(--ink-up)" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="100" cy="110" r="5" fill="var(--ink-up)"/>
+      <text x="100" y="86" text-anchor="middle" font-size="26" font-weight="700" fill="var(--text)" style="font-variant-numeric:tabular-nums">50</text>
+      <text x="22" y="118" font-size="8" fill="var(--muted)"><tspan class="l-en">Contraction</tspan><tspan class="l-zh">收缩</tspan></text>
+      <text x="178" y="118" text-anchor="end" font-size="8" fill="var(--muted)"><tspan class="l-en">Expansion</tspan><tspan class="l-zh">扩张</tspan></text>
+    </svg>
+    <figcaption class="dial-读 l-en">One dial, anchored in words — capped this week (see note)</figcaption>
+    <figcaption class="dial-读 l-zh">唯一仪表，配文字锚点——本周封顶（见注）</figcaption>
+  </figure>
+</header>
+
+<!-- ══ 2 · WHAT CHANGED ══ -->
+<section class="sec panel">
+  <div class="sec-h"><h2 class="l-en">What changed</h2><h2 class="l-zh">最近变化</h2></div>
+  <a class="chg-row" href="#"><span class="chg-when tnum">08-12</span>
+    <span class="chg-name l-en">Inflation</span><span class="chg-name l-zh">通胀</span>
+    <span class="chg-what l-en">core CPI slowed a second month — the cooling is now a trend, not a print</span><span class="chg-what l-zh">核心 CPI 连续第二个月放缓——降温已成趋势，而非单月数据</span>
+    <span class="stance" style="--c:var(--ink-up)"><span class="l-en">Supports the read</span><span class="l-zh">支持当前判读</span></span><span class="chg-chev">›</span></a>
+  <a class="chg-row" href="#"><span class="chg-when tnum">08-11</span>
+    <span class="chg-name l-en">Rates</span><span class="chg-name l-zh">利率</span>
+    <span class="chg-what l-en">the market moved its landing spot for the funds rate down to 4.06%</span><span class="chg-what l-zh">市场将联邦基金利率的落点下移至 4.06%</span>
+    <span class="stance" style="--c:var(--muted)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span><span class="chg-chev">›</span></a>
+  <a class="chg-row" href="#"><span class="chg-when tnum">08-08</span>
+    <span class="chg-name l-en">Breadth</span><span class="chg-name l-zh">广度</span>
+    <span class="chg-what l-en">participation narrowed — 4 in 10 stocks above their 50-day, down from 6</span><span class="chg-what l-zh">参与度收窄——50日线上个股占比从六成降至四成</span>
+    <span class="stance" style="--c:var(--ink-warn)"><span class="l-en">Watch — don’t chase</span><span class="l-zh">观察，勿追</span></span><span class="chg-chev">›</span></a>
+</section>
+
+<!-- ══ 3 · DRIVERS (four panels; the compression) ══ -->
+<section class="sec">
+  <div class="sec-h"><span class="eyebrow l-en">Why — four drivers</span><span class="eyebrow l-zh">为什么 — 四大驱动</span></div>
+  <div class="drivers">
+    <div class="panel">
+      <div class="sec-h"><h2 class="l-en">Growth</h2><h2 class="l-zh">增长</h2><span class="asof tnum">08-12</span></div>
+      <p class="drv-read l-en"><b>Holding.</b> The economy is growing near trend; hiring cooled but did not crack.</p>
+      <p class="drv-read l-zh"><b>企稳。</b>经济增长接近趋势水平；招聘降温但未失速。</p>
+      <div class="mtiles2">
+        <div class="mtile"><div class="mtile-lbl l-en">GDP now-read</div><div class="mtile-lbl l-zh">GDP 即时估读</div><div class="mtile-val tnum">2.3%</div><div class="mtile-chg" style="color:var(--muted)"><span class="l-en">near trend</span><span class="l-zh">接近趋势</span></div></div>
+        <div class="mtile"><div class="mtile-lbl l-en">Payrolls 3-mo avg</div><div class="mtile-lbl l-zh">非农三月均值</div><div class="mtile-val tnum">142k</div><div class="mtile-chg" style="color:var(--muted)"><span class="l-en">cooling, positive</span><span class="l-zh">降温但为正</span></div></div>
+        <div class="mtile"><div class="mtile-lbl l-en">Claims trend</div><div class="mtile-lbl l-zh">初请趋势</div><div class="mtile-val tnum">231k</div><div class="mtile-chg pos"><span class="l-en">steady</span><span class="l-zh">平稳</span></div></div>
+      </div>
+      <div class="spark"><svg viewBox="0 0 300 44" preserveAspectRatio="none"><path d="M0 30 L30 28 L60 31 L90 26 L120 27 L150 22 L180 24 L210 20 L240 21 L270 18 L300 19" fill="none" stroke="var(--ser-1)" stroke-width="2"/></svg>
+      <div class="lbl"><span class="l-en">12-mo growth pulse</span><span class="l-zh">12个月增长脉冲</span><span class="tnum">2025-08 → 2026-08</span></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="sec-h"><h2 class="l-en">Inflation</h2><h2 class="l-zh">通胀</h2><span class="asof tnum">08-12</span></div>
+      <p class="drv-read l-en"><b>Cooling.</b> Core prices rose 2.7% over the year — a second month of slowing, and the part the Fed watches slowed most.</p>
+      <p class="drv-read l-zh"><b>降温。</b>核心物价同比上涨 2.7%——连续第二个月放缓，且美联储最关注的分项降得最快。</p>
+      <div class="mtiles2">
+        <div class="mtile"><div class="mtile-lbl l-en">Core CPI y/y</div><div class="mtile-lbl l-zh">核心 CPI 同比</div><div class="mtile-val tnum">2.7%</div><div class="mtile-chg pos tnum">−0.2pt</div></div>
+        <div class="mtile"><div class="mtile-lbl l-en">Sticky services</div><div class="mtile-lbl l-zh">粘性服务项</div><div class="mtile-val tnum">3.4%</div><div class="mtile-chg pos"><span class="l-en">slowing</span><span class="l-zh">放缓中</span></div></div>
+        <div class="mtile"><div class="mtile-lbl l-en">Breakevens 5y</div><div class="mtile-lbl l-zh">五年盈亏平衡通胀</div><div class="mtile-val tnum">2.2%</div><div class="mtile-chg" style="color:var(--muted)"><span class="l-en">anchored</span><span class="l-zh">已锚定</span></div></div>
+      </div>
+      <div class="spark"><svg viewBox="0 0 300 44" preserveAspectRatio="none"><path d="M0 10 L30 12 L60 11 L90 15 L120 17 L150 16 L180 20 L210 23 L240 25 L270 28 L300 30" fill="none" stroke="var(--ser-1)" stroke-width="2"/></svg>
+      <div class="lbl"><span class="l-en">Core CPI path</span><span class="l-zh">核心CPI路径</span><span class="tnum">2025-08 → 2026-08</span></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="sec-h"><h2 class="l-en">Policy &amp; rates</h2><h2 class="l-zh">政策与利率</h2><span class="asof tnum">08-12</span></div>
+      <p class="drv-read l-en"><b>Easing ahead.</b> The funds rate sits at 4.33%; the market prices its landing spot at <b class="tnum">4.06%</b> by January. Long yields drifted down with inflation.</p>
+      <p class="drv-read l-zh"><b>宽松在途。</b>联邦基金利率现为 4.33%；市场定价明年 1 月落点 <b class="tnum">4.06%</b>。长端收益率随通胀回落。</p>
+      <div class="mtiles2">
+        <div class="mtile"><div class="mtile-lbl l-en">Funds rate</div><div class="mtile-lbl l-zh">基金利率</div><div class="mtile-val tnum">4.33%</div><div class="mtile-chg" style="color:var(--muted)"><span class="l-en">on hold</span><span class="l-zh">按兵不动</span></div></div>
+        <div class="mtile"><div class="mtile-lbl l-en">Priced landing (Jan)</div><div class="mtile-lbl l-zh">定价落点（1月）</div><div class="mtile-val tnum">4.06%</div><div class="mtile-chg pos"><span class="l-en">one cut priced</span><span class="l-zh">已定价一次降息</span></div></div>
+        <div class="mtile"><div class="mtile-lbl l-en">10y yield</div><div class="mtile-lbl l-zh">十年期收益率</div><div class="mtile-val tnum">4.06%</div><div class="mtile-chg pos tnum">−3bp</div></div>
+      </div>
+      <p class="drv-read" style="margin:10px 0 0;color:var(--muted);font-size:var(--fs-micro)">
+        <span class="l-en">One landing-spot number on this page; every mention quotes it (one-integer law).</span>
+        <span class="l-zh">全页只有一个落点数字；任何提及一律引用它（唯一计数法则）。</span></p>
+    </div>
+
+    <div class="panel">
+      <div class="sec-h"><h2 class="l-en">Liquidity &amp; flows</h2><h2 class="l-zh">流动性与资金</h2><span class="asof tnum">08-12</span></div>
+      <p class="drv-read l-en"><b>Supportive.</b> Reserves ample; credit spreads tight. The detailed flow decomposition is a Pro read.</p>
+      <p class="drv-read l-zh"><b>偏支持。</b>准备金充裕；信用利差收窄。资金流细分是 Pro 内容。</p>
+      <div class="lockdemo">
+        <div class="lock-ghost">
+          <div class="mtiles2">
+            <div class="mtile"><div class="mtile-lbl">████</div><div class="mtile-val">██%</div></div>
+            <div class="mtile"><div class="mtile-lbl">██████</div><div class="mtile-val">███</div></div>
+            <div class="mtile"><div class="mtile-lbl">█████</div><div class="mtile-val">██</div></div>
+          </div>
+        </div>
+        <div class="lock-sheet">
+          <span class="lock-eyebrow l-en">You’re seeing 2 of 5 liquidity reads</span><span class="lock-eyebrow l-zh">您正在查看 5 项流动性读数中的 2 项</span>
+          <span class="lock-what l-en">Flow decomposition is locked</span><span class="lock-what l-zh">资金流细分已锁定</span>
+          <span class="lock-plan l-en">Included with Pro — $75/mo billed yearly</span><span class="lock-plan l-zh">Pro 版包含 — 每月 $75，按年计费</span>
+          <span style="display:flex;gap:8px;margin-top:4px"><a class="gbtn gbtn-cta gbtn-sm" href="#"><span class="l-en">See plans</span><span class="l-zh">查看方案</span></a><a class="gbtn gbtn-quiet gbtn-sm" href="#"><span class="l-en">Sign in</span><span class="l-zh">登录</span></a></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 4 · WHAT WE'RE WATCHING (archetype D identity band) ══ -->
+<section class="sec">
+  <div class="sec-h"><span class="eyebrow l-en">What we’re watching</span><span class="eyebrow l-zh">我们在盯什么</span></div>
+  <div class="watch">
+    <div class="panel watch-cond">
+      <b class="l-en">Breadth below 4-in-10 for a week</b><b class="l-zh">广度跌破四成并持续一周</b>
+      <span class="l-en">…would move the stance to “Protect gains”.</span><span class="l-zh">…立场将转为「保护收益」。</span>
+    </div>
+    <div class="panel watch-cond">
+      <b class="l-en">Sticky services re-accelerating</b><b class="l-zh">粘性服务项通胀再加速</b>
+      <span class="l-en">…would put the cutting path in doubt and cap the read.</span><span class="l-zh">…将动摇降息路径并压制判读。</span>
+    </div>
+    <div class="panel watch-cond">
+      <b class="l-en">Claims trend above 260k</b><b class="l-zh">初请趋势升破 26 万</b>
+      <span class="l-en">…would be the first crack in growth worth acting on.</span><span class="l-zh">…将是增长面第一道值得行动的裂缝。</span>
+    </div>
+  </div>
+  <p class="watch-foot l-en">Windows, not certainties — re-drawn nightly.</p>
+  <p class="watch-foot l-zh">是窗口，不是定论——每晚重新校准。</p>
+</section>
+
+<!-- ══ 5 · GO DEEPER (demotion landings; capability preserved) ══ -->
+<section class="sec">
+  <div class="sec-h"><span class="eyebrow l-en">Go deeper</span><span class="eyebrow l-zh">深入研究</span></div>
+  <div class="depth">
+    <a href="#"><span class="l-en">Breadth &amp; participation</span><span class="l-zh">市场广度与参与度</span><small>→</small></a>
+    <a href="#"><span class="l-en">Rates &amp; curve</span><span class="l-zh">利率与期限结构</span><small>→</small></a>
+    <a href="#"><span class="l-en">Sector rotation</span><span class="l-zh">板块轮动</span><small>→</small></a>
+    <a href="#"><span class="l-en">Full data tables</span><span class="l-zh">完整数据表</span><small>→</small></a>
+    <a href="#"><span class="l-en">Methodology</span><span class="l-zh">方法论</span><small>→</small></a>
+  </div>
+  <p class="watch-foot l-en" style="max-width:74ch">Every module the old page showed at first level lives behind one of these named landings —
+  demoted, not deleted. The engine still knows 400 things; this page answers one question with five sections.</p>
+  <p class="watch-foot l-zh" style="max-width:74ch">旧页面一级陈列的每个模块都收进上述命名入口——降级，而非删除。引擎依然掌握 400 件事；本页用五个区块回答一个问题。</p>
+</section>
+
+</div>
+
+<script>
+var root=document.documentElement;
+document.getElementById('t-theme').onclick=function(){ root.setAttribute('data-theme', root.getAttribute('data-theme')==='light'?'dark':'light'); };
+document.getElementById('t-lang').onclick=function(){ root.setAttribute('data-lang', root.getAttribute('data-lang')==='zh'?'en':'zh'); };
+</script>
+</body>
+</html>
