@@ -2592,6 +2592,17 @@ jobs:
         run: python3 scripts/check_interfonts_sync.py --selftest
       - name: _interfonts partial @font-face blocks must match templates/theme.css
         run: python3 scripts/check_interfonts_sync.py
+      # ui.odometer_light_mode: the compact regime gauge is copied across five
+      # report templates (dashboard/canada/china/hk/china_policy_watch) and its
+      # light-mode pointer derives from each report's semantic state token, while
+      # the dark presentation stays neutral-white. Same twin-drift class as the two
+      # gates above and the same pair (templates/theme.css + site/theme.css), so it
+      # belongs to this job: one country falling back to the old black blade is
+      # exactly the silent divergence template-site-sync exists to catch. Landed
+      # unwired with #5458 and was caught by workflow-yaml's baseline-gated
+      # zero-run:-step gate, which only main's full baseline can see.
+      - name: light-mode odometer needles must stay synchronized across the five report twins
+        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       # ui.data_base_shim: same page-asset drift family, and it had NO CI lane at
       # all — which is how scripts/build_leader_radar.py sat red on main writing
       # site/leader_radar.html with a raw write_text instead of lib.pages.write_page
