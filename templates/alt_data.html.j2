@@ -171,7 +171,7 @@
   {# brain_usable: brain ran successfully AND is not degraded; when False scores are deterministic only #}
   {% set brain_usable = mastermind.brain_usable if mastermind else false %}
   <section class="sid-sec">
-    <h2>🎯 {{ t('Conviction board', '置信榜') }}
+    <h2>{{ t('Conviction board', '置信榜') }}
       {% if brain_usable %}
       <span class="h-note">{{ t('ranked actionable signals — convergence × affiliation × AI conviction, graded vs SPY', '已排名的可操作信号——汇聚×关联×AI置信，对标普评分') }}</span>
       {% else %}
@@ -226,7 +226,7 @@
   {# ---------- BROKEN NAMES STRIP (attention on crashing names — NOT entries) ---------- #}
   {% if mastermind and mastermind.get('broken_signals') %}
   <section class="sid-sec broken-strip">
-    <h2>⚠ <span class="l-en">Attention on broken names — crowd activity, NOT entries</span><span class="l-zh">问题标的受关注——仅为人气聚焦，非入场信号</span>
+    <h2><span class="l-en">Attention on broken names — crowd activity, NOT entries</span><span class="l-zh">问题标的受关注——仅为人气聚焦，非入场信号</span>
       <span class="h-note mut">{{ t('rolling-over: off 252d high ≤ −15% AND 20d return < 0 AND below 50dma — conviction-ranked but excluded from the main board', '下行趋势：较252日高点 ≤ −15% 且20日收益<0 且低于50日均线——已按置信度排序但排除在主榜之外') }}</span></h2>
     <div class="conv-list broken-list">
       {% for sg in mastermind.broken_signals[:8] %}
@@ -257,7 +257,7 @@
   {# ---------- INFLUENCE GRAPH ---------- #}
   {% if influence and influence.watch %}
   <section class="sid-sec">
-    <h2>🕸️ {{ t('Influence graph', '影响力图谱') }}
+    <h2>{{ t('Influence graph', '影响力图谱') }}
       <span class="h-note">{{ t('important actors → the names they control, hold, talk about, or partner with', '重要人物→他们控制、持有、谈论或合作的标的') }}</span></h2>
 
     <div class="sid-card">
@@ -317,7 +317,7 @@
   {# ---------- ACCOUNTABLE LEDGER ---------- #}
   {% if track and (track.scored_total is not none) %}
   <section class="sid-sec">
-    <h2>📊 {{ t('Track record', '战绩') }}
+    <h2>{{ t('Track record', '战绩') }}
       <span class="h-note">{{ t('every convergence logged as a dated, checkable thesis vs SPY', '每次汇聚记为带日期、可检验的对标普论点') }}</span></h2>
     <div class="sid-card">
       <div class="sid-meta">
@@ -342,53 +342,53 @@
 
   {# ---------- SIGNAL CARDS (per-feed derived signals) ---------- #}
   <section class="sid-sec">
-    <h2>🔬 {{ t('Signal feeds', '信号源') }}
+    <h2>{{ t('Signal feeds', '信号源') }}
       <span class="h-note">{{ t('each feed as its derived signal — Quiver + federal grants · SEC 8-K · FDA · clinical · options · short interest · analyst revisions · earnings clock · retail · AI-adoption', '每个数据源呈现为其衍生信号 —— Quiver + 联邦补助 · SEC 8-K · FDA · 临床 · 期权 · 空头持仓 · 分析师修正 · 财报临近 · 散户 · AI采用') }}</span></h2>
     <div class="sid-grid">
 
-      <div class="sid-card"><h3>📜 {{ t('Gov-contract leaders','政府合同领先') }} <span class="mut" style="font-size:11px;">30d</span></h3>
+      <div class="sid-card"><h3>{{ t('Gov-contract leaders','政府合同领先') }} <span class="mut" style="font-size:11px;">30d</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Awarded','授予') }}</th><th class="num">{{ t('Accel','加速') }}</th><th>{{ t('Top agency','主要机构') }}</th></tr></thead>
         <tbody>{% for r in s.gov_contracts[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ money(r.total_usd) }}</td>
           <td class="num">{% if r.accel_x %}{{ '%.1f'|format(r.accel_x) }}×{% else %}—{% endif %}</td><td class="mut">{{ r.top_agency or '—' }}</td></tr>{% endfor %}</tbody></table></div>
 
-      <div class="sid-card"><h3>🏛️ {{ t('Congress net buying','国会净买入') }} <span class="mut" style="font-size:11px;">90d</span></h3>
+      <div class="sid-card"><h3>{{ t('Congress net buying','国会净买入') }} <span class="mut" style="font-size:11px;">90d</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Net','净') }}</th><th class="num">{{ t('Members','人数') }}</th><th class="num">{{ t('Est.$','估值') }}</th></tr></thead>
         <tbody>{% for r in s.political.buys[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">+{{ r.net }}</td><td class="num">{{ r.members }}</td><td class="num">{{ money(r.est_usd) }}</td></tr>{% endfor %}</tbody></table></div>
 
-      <div class="sid-card"><h3>👔 {{ t('Insider net buying','内部人净买入') }} <span class="mut" style="font-size:11px;">90d</span></h3>
+      <div class="sid-card"><h3>{{ t('Insider net buying','内部人净买入') }} <span class="mut" style="font-size:11px;">90d</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Net $','净额') }}</th><th class="num">{{ t('Buyers','买家') }}</th></tr></thead>
         <tbody>{% for r in s.insiders.buys[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num r-pos">{{ money(r.net_usd) }}</td><td class="num">{{ r.buyers }}</td></tr>{% endfor %}</tbody></table></div>
 
-      <div class="sid-card"><h3>📱 {{ t('App-store demand','应用商店需求') }}</h3>
+      <div class="sid-card"><h3>{{ t('App-store demand','应用商店需求') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Rating','评分') }}</th><th class="num">{{ t('Reviews','评论') }}</th><th>{{ t('App','应用') }}</th></tr></thead>
         <tbody>{% for r in s.app_ratings[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ r.rating }}★</td><td class="num">{{ '{:,.0f}'.format(r.reviews) }}</td><td class="mut">{{ r.top_app }}</td></tr>{% endfor %}</tbody></table></div>
 
-      <div class="sid-card"><h3>🔬 {{ t('Patent clusters','专利集群') }}</h3>
+      <div class="sid-card"><h3>{{ t('Patent clusters','专利集群') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Grants','授权') }}</th><th class="num">{{ t('IPC','分类') }}</th></tr></thead>
         <tbody>{% for r in s.patents[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ r.patents }}</td><td class="num">{{ r.ipc_classes }}</td></tr>{% endfor %}</tbody></table></div>
 
-      <div class="sid-card"><h3>💼 {{ t('Lobbying spend','游说支出') }} <span class="mut" style="font-size:11px;">45d</span></h3>
+      <div class="sid-card"><h3>{{ t('Lobbying spend','游说支出') }} <span class="mut" style="font-size:11px;">45d</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Spend','支出') }}</th><th class="num">{{ t('Spike','激增') }}</th></tr></thead>
         <tbody>{% for r in s.lobbying[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ money(r.spend_usd) }}</td><td class="num">{% if r.spike_x %}{{ '%.1f'|format(r.spike_x) }}×{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
 
-      <div class="sid-card"><h3>🏦 {{ t('Institutional 13F adds','机构13F加仓') }}</h3>
+      <div class="sid-card"><h3>{{ t('Institutional 13F adds','机构13F加仓') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Fund','基金') }}</th><th class="num">{{ t('Δ $','变化') }}</th></tr></thead>
         <tbody>{% for r in s.inst_13f.adds[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="mut">{{ r.fund }}</td><td class="num">{{ money(r.chg_usd) }}</td></tr>{% endfor %}</tbody></table></div>
 
-      <div class="sid-card"><h3>📑 {{ t('Bill catalysts','法案催化') }}</h3>
+      <div class="sid-card"><h3>{{ t('Bill catalysts','法案催化') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Sector','板块') }}</th><th>{{ t('Bill','法案') }}</th><th>{{ t('Action','进展') }}</th></tr></thead>
         <tbody>{% for r in s.bills[:8] %}<tr><td>{{ r.sector }}</td><td class="mut">{% if r.url %}<a href="{{ r.url }}">{{ r.bill }}</a>{% else %}{{ r.bill }}{% endif %}</td><td class="mut">{{ r.last_action_date }}</td></tr>{% endfor %}</tbody></table></div>
 
       {# ---- beyond-Quiver feeds (auto-hide when a source has no data / no key) ---- #}
       {% if s.gov_grants %}
-      <div class="sid-card"><h3>🏗️ {{ t('Federal grants / loans','联邦补助/贷款') }} <span class="mut" style="font-size:11px;">CHIPS·DOE·IRA</span></h3>
+      <div class="sid-card"><h3>{{ t('Federal grants / loans','联邦补助/贷款') }} <span class="mut" style="font-size:11px;">CHIPS·DOE·IRA</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Amount','金额') }}</th><th class="num">{{ t('Accel','加速') }}</th></tr></thead>
         <tbody>{% for r in s.gov_grants[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ money(r.total_usd) }}</td>
           <td class="num">{% if r.accel_x %}{{ '%.1f'|format(r.accel_x) }}×{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.fda %}
-      <div class="sid-card"><h3>💊 {{ t('FDA catalysts','FDA催化') }}</h3>
+      <div class="sid-card"><h3>{{ t('FDA catalysts','FDA催化') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Event','事件') }}</th><th>{{ t('Drug','药物') }}</th></tr></thead>
         <tbody>{% for r in s.fda[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
           <td class="mut">{{ t('New approval','新批准') if r.kind=='approval' else t('Label exp.','适应症扩展') }}</td>
@@ -396,20 +396,20 @@
       {% endif %}
 
       {% if s.clinical %}
-      <div class="sid-card"><h3>🧬 {{ t('Phase-3 pipeline','三期管线') }}</h3>
+      <div class="sid-card"><h3>{{ t('Phase-3 pipeline','三期管线') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('P3 starts','三期启动') }}</th><th class="num">{{ t('Halts','中止') }}</th></tr></thead>
         <tbody>{% for r in s.clinical[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num r-pos">{{ r.phase3_starts }}</td>
           <td class="num">{% if r.halts %}<span class="r-neg">{{ r.halts }}</span>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.material_8k %}
-      <div class="sid-card"><h3>📄 {{ t('Material 8-K clusters','重大8-K集群') }} <span class="mut" style="font-size:11px;">30d</span></h3>
+      <div class="sid-card"><h3>{{ t('Material 8-K clusters','重大8-K集群') }} <span class="mut" style="font-size:11px;">30d</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Count','数量') }}</th><th>{{ t('Items','条目') }}</th></tr></thead>
         <tbody>{% for r in s.material_8k[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ r.count }}</td><td class="mut">{{ r['items'] }}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.unusual_options %}
-      <div class="sid-card"><h3>🧲 {{ t('Unusual options flow','异常期权流') }}</h3>
+      <div class="sid-card"><h3>{{ t('Unusual options flow','异常期权流') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Vol/OI ×','量/持仓×') }}</th><th>{{ t('Lean','倾向') }}</th></tr></thead>
         <tbody>{% for r in s.unusual_options[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
           <td class="num">{% if r.hot %}<span class="r-pos">{{ '%.1f'|format(r.mult) }}×</span>{% else %}{{ '%.1f'|format(r.mult) }}×{% endif %}</td>
@@ -417,21 +417,21 @@
       {% endif %}
 
       {% if s.hf %}
-      <div class="sid-card"><h3>🤖 {{ t('AI model adoption','AI模型采用') }} <span class="mut" style="font-size:11px;">HF dl WoW</span></h3>
+      <div class="sid-card"><h3>{{ t('AI model adoption','AI模型采用') }} <span class="mut" style="font-size:11px;">HF dl WoW</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Downloads','下载量') }}</th><th class="num">{{ t('WoW','周环比') }}</th></tr></thead>
         <tbody>{% for r in s.hf[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ '{:,.0f}'.format(r.downloads_30d) }}</td>
           <td class="num">{% if r.wow_pct and r.wow_pct>0 %}<span class="r-pos">+{{ r.wow_pct }}%</span>{% else %}{{ r.wow_pct }}%{% endif %}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.github %}
-      <div class="sid-card"><h3>⭐ {{ t('Developer adoption','开发者采用') }} <span class="mut" style="font-size:11px;">GitHub stars WoW</span></h3>
+      <div class="sid-card"><h3>{{ t('Developer adoption','开发者采用') }} <span class="mut" style="font-size:11px;">GitHub stars WoW</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Stars','星标') }}</th><th class="num">{{ t('WoW','周环比') }}</th></tr></thead>
         <tbody>{% for r in s.github[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ '{:,.0f}'.format(r.stars) }}</td>
           <td class="num">{% if r.wow_pct and r.wow_pct>0 %}<span class="r-pos">+{{ r.wow_pct }}%</span>{% else %}{{ r.wow_pct }}%{% endif %}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.analyst %}
-      <div class="sid-card"><h3>📈 {{ t('Analyst estimate revisions','分析师预期上调') }} <span class="mut" style="font-size:11px;">30d</span></h3>
+      <div class="sid-card"><h3>{{ t('Analyst estimate revisions','分析师预期上调') }} <span class="mut" style="font-size:11px;">30d</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Net rev.','净上调') }}</th><th class="num">{{ t('Breadth','广度') }}</th><th class="num">{{ t('Est Δ','预期') }}</th></tr></thead>
         <tbody>{% for r in s.analyst[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
           <td class="num">{% if r.get('net_up_30d') is not none %}{% if r.net_up_30d>0 %}<span class="r-pos">+{{ r.net_up_30d }}</span>{% else %}{{ r.net_up_30d }}{% endif %}{% else %}—{% endif %}</td>
@@ -440,14 +440,14 @@
       {% endif %}
 
       {% if s.insider_mspr %}
-      <div class="sid-card"><h3>🧭 {{ t('Insider sentiment (MSPR)','内部人情绪(MSPR)') }}</h3>
+      <div class="sid-card"><h3>{{ t('Insider sentiment (MSPR)','内部人情绪(MSPR)') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('MSPR','MSPR') }}</th></tr></thead>
         <tbody>{% for r in s.insider_mspr[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
           <td class="num">{% if r.mspr>0 %}<span class="r-pos">{{ r.mspr }}</span>{% else %}{{ r.mspr }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.earnings %}
-      <div class="sid-card"><h3>⚡ {{ t('Earnings imminent','财报临近') }} <span class="mut" style="font-size:11px;">{{ t('binary catalyst — watch, not a buy','二元催化 — 观察，非买入') }}</span></h3>
+      <div class="sid-card"><h3>{{ t('Earnings imminent','财报临近') }} <span class="mut" style="font-size:11px;">{{ t('binary catalyst — watch, not a buy','二元催化 — 观察，非买入') }}</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Reports','公布') }}</th><th class="num">{{ t('Cons. EPS','预期EPS') }}</th></tr></thead>
         <tbody>{% for r in s.earnings[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
           <td class="num">{% if r.days_to==0 %}<b>{{ t('today','今天') }}</b>{% elif r.days_to==1 %}{{ t('1 day','1天') }}{% else %}{{ r.days_to }}{{ t('d','天') }}{% endif %}</td>
@@ -455,13 +455,13 @@
       {% endif %}
 
       {% if s.news_sentiment %}
-      <div class="sid-card"><h3>📰 {{ t('Bullish news flow','看多新闻流') }}</h3>
+      <div class="sid-card"><h3>{{ t('Bullish news flow','看多新闻流') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Bullish','看多占比') }}</th><th class="num">{{ t('Articles','文章') }}</th></tr></thead>
         <tbody>{% for r in s.news_sentiment[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ (r.bull_ratio*100)|round|int }}%</td><td class="num">{{ r.articles }}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.short_interest %}
-      <div class="sid-card"><h3>🩳 {{ t('Short-interest crowding','空头拥挤') }} <span class="mut" style="font-size:11px;">{{ t('squeeze fuel — not a buy','挤压燃料——非买入') }}</span></h3>
+      <div class="sid-card"><h3>{{ t('Short-interest crowding','空头拥挤') }} <span class="mut" style="font-size:11px;">{{ t('squeeze fuel — not a buy','挤压燃料——非买入') }}</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Days to cover','回补天数') }}</th><th class="num">{{ t('SI Δ','空头变化') }}</th></tr></thead>
         <tbody>{% for r in s.short_interest[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
           <td class="num">{% if r.days_to_cover>=5 %}<b>{{ r.days_to_cover }}</b>{% else %}{{ r.days_to_cover }}{% endif %}</td>
@@ -469,7 +469,7 @@
       {% endif %}
 
       {% if s.stocktwits %}
-      <div class="sid-card"><h3>💬 {{ t('StockTwits retail buzz','StockTwits散户热度') }}</h3>
+      <div class="sid-card"><h3>{{ t('StockTwits retail buzz','StockTwits散户热度') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Bullish','看多占比') }}</th><th class="num">{{ t('Watchers','关注者') }}</th></tr></thead>
         <tbody>{% for r in s.stocktwits[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
           <td class="num">{% if r.bull_ratio>=0.65 %}<span class="r-pos">{{ (r.bull_ratio*100)|round|int }}%</span>{% else %}{{ (r.bull_ratio*100)|round|int }}%{% endif %}</td>
@@ -499,7 +499,7 @@
 
   {# ---------- NEWS CROSS-SURFACE (additive; client-fetched — no server coupling) ---------- #}
   <section class="sid-sec">
-    <h2>📰 <span class="l-en">News on these names</span><span class="l-zh">这些标的的新闻</span>
+    <h2><span class="l-en">News on these names</span><span class="l-zh">这些标的的新闻</span>
       <span class="h-note"><span class="l-en">the demand-side tape beside the supply-side signal — context only, never blended</span><span class="l-zh">需求侧舆情与供给侧信号并列——仅供参考，绝不混合</span></span></h2>
     <div id="sid-news" class="sid-card"><p class="mut" style="font-size:12px"><span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
   </section>

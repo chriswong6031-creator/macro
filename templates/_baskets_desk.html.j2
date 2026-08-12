@@ -284,7 +284,7 @@
   </style>
   <section id="ignition-section" style="margin-top:8px">
     <div class="ign-hdr">
-      <h2 style="margin:0"><span class="idx">★</span>🔥 {{ t('Sector ignition', '板块点火') }}
+      <h2 style="margin:0">{{ t('Sector ignition', '板块点火') }}
         <span class="sect-tag">{{ t('turn evidence · not trailing strength', '拐点证据 · 非追涨强度') }}</span></h2>
       <span class="ign-asof">{{ t('basket prices as of', '篮子价格截至') }} <b id="ign-asof">—</b></span>
       <span class="ign-stale" id="ign-stale" style="display:none"></span>
@@ -355,7 +355,7 @@
   })();
   </script>
 {% endif %}{% if not si_hide_actnow_desk|default(false) %}  <section id="actnow-section" style="margin-top:6px">
-    <h2><span class="idx">★</span>✅ {{ t('What to act on now', '现在该做什么') }}
+    <h2>{{ t('What to act on now', '现在该做什么') }}
       <span class="sect-tag">{{ t('buy now · wait for a pullback · reduce / avoid', '立即买入 · 等待回调 · 减仓回避') }}</span>
       {# W8b cross-link to the Act-Now v2 four-lane board on the stock dashboard #}
       <a href="china_stocks.html#act-now" style="font-size:12px;font-weight:600;color:var(--ink-link, var(--link));margin-left:10px;text-transform:none;letter-spacing:0;vertical-align:middle">{{ t('stock board →', '个股面板 →') }}</a>
@@ -367,7 +367,7 @@
   </section>{% endif %}
 
   <section id="theme-desk-section" style="margin-top:6px">
-    <h2><span class="idx">★</span>🧭 {{ t('Theme Rotation Desk', '主题轮动台') }}
+    <h2>{{ t('Theme Rotation Desk', '主题轮动台') }}
       <span class="sect-tag">{{ t('scored · labeled · actionable', '评分 · 标注 · 可执行') }}</span></h2>
     <p class="sub">{{ t(
       'Each theme gets a 0–100 score, a trend label and an action read based on trend, breadth, impulse, macro support and crowding.',
@@ -382,7 +382,7 @@
   </section>
 
   <section id="concentration-section">
-    <h2><span class="idx">★</span>🛑 {{ t('Market concentration & theme leadership', '市场集中度与主题领导力') }}
+    <h2>{{ t('Market concentration & theme leadership', '市场集中度与主题领导力') }}
       <span class="sect-tag">{{ t('who owns the advance vs the decline', '谁主导上涨 vs 谁在下跌') }}</span></h2>
     <p class="sub">{{ t(
       'Shows whether leadership is broad or narrow, and which themes own the advance or the decline.',
@@ -391,7 +391,7 @@
   </section>
 
   <section id="rotation-section">
-    <h2><span class="idx">★</span>📆 {{ t('5-Day Theme Rotation', '5日主题轮动') }}
+    <h2>{{ t('5-Day Theme Rotation', '5日主题轮动') }}
       <span class="sect-tag">{{ t('weekly climbers & fallers', '本周上升与下降') }}</span></h2>
     <p class="sub">{{ t(
       'Weekly movers ranked by 5-day return versus ' ~ (bench_en|default('S&P 500')) ~ ', plus the change in 20-day relative-strength rank.',
@@ -400,7 +400,7 @@
   </section>
 
   <section id="impulse-section">
-    <h2><span class="idx">★</span>⚡ {{ t('Impulse & Extremes', '脉冲与极值') }}
+    <h2>{{ t('Impulse & Extremes', '脉冲与极值') }}
       <span class="sect-tag">{{ t('across the thematic universe', '覆盖全部主题成分') }}</span></h2>
     <p class="sub">{{ t(
       'Daily breadth across basket members: big movers and new 52-week highs or lows.',

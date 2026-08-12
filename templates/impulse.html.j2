@@ -96,7 +96,7 @@
 <body>
 {% include "_site_nav.html.j2" %}
 
-<h1>🚀 {{ t('Impulse Tracker', '冲量追踪') }}</h1>
+<h1>{{ t('Impulse Tracker', '冲量追踪') }}</h1>
 <p class="lead">{{ t('A fast, reactive screen for momentum / velocity / acceleration of price and volume across the US tape — built to catch names where the impulse is JUST starting to fire, while an entry still exists. Stocks that already ran are demoted, not surfaced. Reactive timing context, regime-aware; not a validated alpha signal and never a P(up) — short-horizon direction is a coin-flip and momentum decays in stress.',
   '一个对全美股价格与成交量的动量／速度／加速度进行快速、灵敏扫描的工具 — 专门捕捉冲量刚刚启动、入场窗口仍在的个股。已经大涨的股票会被降权而非展示。这是对时机的灵敏背景判断，并感知市场状态；并非经验证的阿尔法信号，也从不给出涨跌概率 — 短周期方向接近抛硬币，且动量在承压行情中衰减。') }}</p>
 
@@ -121,7 +121,7 @@
 {% else %}<p class="empty">{{ t('Nothing freshly igniting in this regime — the screen stays patient rather than forcing a pick.', '当前行情下无新点火标的 — 宁可空仓等待，也不强行选股。') }}</p>{% endif %}
 
 {% if d.igniting %}
-<div class="sec"><h2>🟩 {{ t('Accelerating — momentum building', '加速中 — 动能积累') }}</h2><span class="cnt">{{ d.igniting|length }}</span></div>
+<div class="sec"><h2>{{ t('Accelerating — momentum building', '加速中 — 动能积累') }}</h2><span class="cnt">{{ d.igniting|length }}</span></div>
 <p class="sub">{{ t('Still accelerating, but already up enough that the freshest entry has passed. Trail / wait for a pullback.', '仍在加速，但已上涨到错过最佳入场点。可跟踪或等回调。') }}</p>
 <div class="grid">{% for c in d.igniting %}{{ card(c, 'igniting') }}{% endfor %}</div>
 {% endif %}
@@ -139,13 +139,13 @@
 {% endif %}
 
 {% if d.fading %}
-<div class="sec"><h2>🔴 {{ t('Fading — rolling over', '转弱 — 动能消退') }}</h2><span class="cnt">{{ d.fading|length }}</span></div>
+<div class="sec"><h2>{{ t('Fading — rolling over', '转弱 — 动能消退') }}</h2><span class="cnt">{{ d.fading|length }}</span></div>
 <p class="sub">{{ t('Acceleration is turning down / the trend is weakening. The opposite of an entry — avoid.', '加速度转向下行／趋势走弱。与入场相反 — 回避。') }}</p>
 <div class="grid">{% for c in d.fading %}{{ card(c, 'fading') }}{% endfor %}</div>
 {% endif %}
 
 <div class="panel">
-  <div class="sec" style="margin:0 0 4px"><h2>📐 {{ t('How the impulse score is built', '冲量分如何计算') }}</h2></div>
+  <div class="sec" style="margin:0 0 4px"><h2>{{ t('How the impulse score is built', '冲量分如何计算') }}</h2></div>
   <div class="legend">
     <div class="lg"><b>⚡ {{ t('Acceleration','加速度') }}</b> — {{ t('fast (5d) return slope pulling above the slow (20d) slope, normalised by the name’s own volatility, plus a denoised MACD-histogram impulse.','5日收益斜率上穿20日斜率，按个股自身波动归一，并叠加去噪的MACD柱状冲量。') }}</div>
     <div class="lg"><b>📊 {{ t('Volume confirmation','成交量确认') }}</b> — {{ t('relative volume vs the 20-day median and a short/slow volume ratio — is participation waking up?','相对成交量 vs 20日中位数，及短／长量比 — 参与度是否被唤醒？') }}</div>

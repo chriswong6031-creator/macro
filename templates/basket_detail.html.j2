@@ -958,7 +958,7 @@ function grBand(bid){
 
 function grEpisodesSection(bid){
   var rows=(GRH&&GRH[bid])||null, p=GRP&&GRP[bid];
-  var h=`<h2><span class="idx">↺</span>${L('Has this happened before','以前发生过吗')} <span class="chip">${L('closed group episodes','已结束的整体行情')}</span></h2>`;
+  var h=`<h2>${L('Has this happened before','以前发生过吗')} <span class="chip">${L('closed group episodes','已结束的整体行情')}</span></h2>`;
   if(!rows||!rows.length){
     var since=p&&p.as_of?esc(p.as_of):null;
     return h+`<div class="panel"><div class="muted sm">${rows?
@@ -1112,7 +1112,7 @@ function render(){
 
   // ---- WHAT TO ACT ON NOW (stock level, gated by theme health) ----
   const an=d.act_now||{};
-  h+=`<h2><span class="idx">★</span>${L('What to act on now','现在该做什么')} <span class="chip">${L('gated by theme health','按主题健康度筛选')}</span></h2><div class="panel">`;
+  h+=`<h2>${L('What to act on now','现在该做什么')} <span class="chip">${L('gated by theme health','按主题健康度筛选')}</span></h2><div class="panel">`;
   if(an.status==='ok' && (an.buys||[]).length){
     h+=`<div class="muted sm" style="margin-bottom:8px">${L('Member stocks with a clean entry right now — buy/add verdict, cycle not blocking, decent entry price. Ranked by entry quality.','当前具备干净入场点的成分股 — 买入/加仓结论、周期未阻断、入场价尚可。按入场质量排序。')}</div>
     <div class="ts"><table class="act-table"><thead><tr><th class="act-name">${L('Stock','个股')}</th><th class="num act-conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num act-entry">${L('Entry','入场')}</th><th class="num act-5d">5d</th><th class="num act-20d">20d</th></tr></thead><tbody>`+

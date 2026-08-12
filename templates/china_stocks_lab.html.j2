@@ -180,7 +180,7 @@
   <!-- ── Page header ── -->
   <div class="pl-hd">
     <p class="pl-eyebrow">{{ t('CN Pick Lab · Display-only · ACCRUING', 'CN选股实验室 · 仅展示 · 累积中') }}</p>
-    <h1 class="pl-title">🧪 {{ t('A-Share Candidate Pick Engines', 'A股候选选股引擎') }}</h1>
+    <h1 class="pl-title">{{ t('A-Share Candidate Pick Engines', 'A股候选选股引擎') }}</h1>
     <p class="pl-sub">{{ t('20 shadow books running on forward ledgers — measured against a random-control yardstick and the CSI 300. Ruler: 21-session CSI 300 excess (T+1 fill, hl2 proxy). All data is display-only; nothing here drives live selection or gating.', '20个影子书在前向账本上运行 — 与随机控制基准和沪深300对比衡量。标尺：21节沪深300超额（T+1入场，最高最低均价代理）。所有数据仅供展示；这里没有任何内容会影响实时选股。') }}</p>
     {% if as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ as_of }} · {{ t('Built', '生成时间') }} {{ built }}</p>{% endif %}
     <a class="pl-back" href="china_stocks.html">← {{ t('Back to A-Share Dashboard', '返回A股看板') }}</a>

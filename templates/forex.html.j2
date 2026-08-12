@@ -245,6 +245,16 @@ html[data-lang="zh"] .hero-state.tone-usd_up{color:var(--ink-act, var(--red));te
 html[data-lang="zh"] .hero-state.tone-usd_dn{color:#285FFF;text-shadow:0 0 32px rgba(40,95,255,.22),0 0 8px rgba(40,95,255,.13)}
 html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_up{color:var(--ink-act, var(--red));text-shadow:0 0 32px rgba(224,100,100,.34),0 0 8px rgba(224,100,100,.2)}
 html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_dn{text-shadow:0 0 32px rgba(40,95,255,.38),0 0 8px rgba(40,95,255,.22)}
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  .hero-state.tone-usd_up,
+  .hero-state.tone-usd_dn,
+  .hero-state.tone-mixed
+) { text-shadow:none; }
+html[data-lang="zh"][data-theme="light"] .hero-state.tone-usd_up { text-shadow:none; }
+html[data-lang="zh"][data-theme="light"] .hero-state.tone-usd_dn { text-shadow:none; }
 </style>
 {% include "_state_inks.html.j2" %}
 {% include "_vector_polish.html.j2" %}

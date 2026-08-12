@@ -203,7 +203,7 @@
 
 <div class="panel">
   <div class="topline">
-    <h1>🔬 {{ t('Signal Lab', '信号实验室') }}</h1>
+    <h1>{{ t('Signal Lab', '信号实验室') }}</h1>
     <span class="muted sm">{{ t('Every signal, and whether it actually survives validation',
                                 '每个信号，以及它是否真正通过验证') }}</span>
     {# A13: cross-link to China signal lab surface #}
@@ -371,7 +371,7 @@
 {%- set sf = foundry if foundry is defined else {'present': False} %}
 <div class="panel" id="sf-foundry">
   <div class="topline">
-    <h1>🤖 {{ t('Signal Foundry — machine lane', '机器信号道 — Signal Foundry') }}
+    <h1>{{ t('Signal Foundry — machine lane', '机器信号道 — Signal Foundry') }}
       {%- if sf.present %}
         {%- set ls = sf.lane_status if sf.lane_status is defined else {} %}
         {%- set armed = (ls.get('auto_loop') == True or ls.get('armed') == True) if ls else False %}
@@ -561,7 +561,7 @@
 {% for s in surv %}{% set _ = snames.append(s.name ~ ' (' ~ ('+' if (s.ic or 0) > 0 else '−') ~ ')') %}{% endfor %}
 <div class="panel {{ 'grave' if not surv }}">
   <div class="tierhead">
-    <h2>🧮 {{ t('US equity factor cross-section — leak-free, point-in-time','美股因子横截面 — 无泄漏、时点') }}</h2>
+    <h2>{{ t('US equity factor cross-section — leak-free, point-in-time','美股因子横截面 — 无泄漏、时点') }}</h2>
     <span class="bl">{{ t(
       'The honest centerpiece. Quarterly cross-sectional rank-IC of each factor z-score vs the '
       ~ (factor_meta.horizon_d or 63) ~ 'd forward return, fully point-in-time (EDGAR + prices '

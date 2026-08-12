@@ -131,7 +131,7 @@
 
 <header>
   <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:12px">
-    <h1>🔄 {{ t('Narrative Rotation', '主题轮动') }} <span class="muted" style="font-weight:400">· {{ t(d.market_en, d.market_zh) }}</span></h1>
+    <h1>{{ t('Narrative Rotation', '主题轮动') }} <span class="muted" style="font-weight:400">· {{ t(d.market_en, d.market_zh) }}</span></h1>
     <span class="asof"><span class="pfx">{{ t('as of', '截至') }} </span>{{ d.as_of }} · {{ t('vs', '对标') }} {{ t(d.bench_label, d.bench_label_zh) }}</span>
   </div>
   <p class="tagline">{{ t(
@@ -542,7 +542,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 {% set vo = d.allocation.vol_overlay %}
 {% set ddci = vo.measured.dd_reduction_pp_ci or [None, None, None] %}
 <!-- ============ 01a DE-RISK OVERLAY (calibrated vol-target) ============ -->
-<h2><span class="idx">⚖</span>{{ t('Optional de-risk overlay', '可选降风险叠加') }}
+<h2>{{ t('Optional de-risk overlay', '可选降风险叠加') }}
   <span class="chip">{{ t('backtested · offered, not forced', '已回测 · 可选而非强制') if not vo.applied else t('backtested · applied', '已回测 · 已应用') }}</span></h2>
 <div class="panel">
   <div class="gauge" style="margin-bottom:8px">
@@ -564,7 +564,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 {% endif %}
 
 <!-- ============ 01b PLAYBOOK: BUY & SELL ENTRIES ============ -->
-<h2><span class="idx">★</span>🎯 {{ t('Buy & sell entries — the playbook', '买卖入场 — 操作手册') }}
+<h2>{{ t('Buy & sell entries — the playbook', '买卖入场 — 操作手册') }}
   <span class="chip">{{ t('discipline, not advice', '纪律，非建议') }}</span></h2>
 <p class="sub">{{ t(
 	  'What to add, reduce or avoid. Click a theme for its stocks.',
@@ -572,7 +572,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 <div id="playbook-entries" class="rotwrap2"></div>
 
 <!-- ============ 01c RISK OVER TIME ============ -->
-<h2><span class="idx">★</span>🌡️ {{ t('Risk over time', '风险随时间') }}
+<h2>{{ t('Risk over time', '风险随时间') }}
   <span class="chip">{{ t('cash dial & de-risk events', '现金刻度与去风险事件') }}</span></h2>
 <p class="sub">{{ t(
 	  'Suggested cash over time. Higher cash means more defensive.',
@@ -580,7 +580,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 <div id="risk-time" class="panel"></div>
 
 <!-- ============ 01d ROTATION ALERTS ============ -->
-<h2><span class="idx">★</span>🔔 {{ t('Rotation alerts', '轮动警报') }}
+<h2>{{ t('Rotation alerts', '轮动警报') }}
   <span class="chip">{{ t('book & leadership changes', '组合与领涨变化') }}</span></h2>
 <p class="sub">{{ t(
 	  'Book changes, leadership rotation, trend flips and risk-dial swings.',

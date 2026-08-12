@@ -348,7 +348,7 @@ a{color:var(--ink-link, var(--link));text-decoration:none}
 {# ═══════════════ HERO ═══════════════ #}
   <header class="eh">
     <div class="eh-brand">
-      <h1>🐳 {{ t('Real fund moves', '基金真实动作') }}</h1>
+      <h1>{{ t('Real fund moves', '基金真实动作') }}</h1>
       <span class="tag">{{ t('where thematic & active managers are building conviction', '主题与主动经理人积累信念之处') }}</span>
     </div>
     {# Hero read. Entitled: the graded verdict line (which themes managers are
@@ -576,7 +576,7 @@ a{color:var(--ink-link, var(--link));text-decoration:none}
        crawled, and unifying the state keeps the two builds structurally
        identical rather than differing in a way a reader could notice. #}
     <details open>
-      <summary><span class="sh-ic">📡</span>{{ t('Coverage & freshness', '覆盖范围与新鲜度') }} <span class="sh-sub">— {{ t('every tracked fund; any stale feed surfaces here', '所有已追踪基金；任何陈旧数据源都会在此暴露') }}{% if coverage %} · {{ t('all', '共显示') }} {{ coverage | length }} {{ t('shown', '只') }}{% endif %}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('Coverage & freshness', '覆盖范围与新鲜度') }} <span class="sh-sub">— {{ t('every tracked fund; any stale feed surfaces here', '所有已追踪基金；任何陈旧数据源都会在此暴露') }}{% if coverage %} · {{ t('all', '共显示') }} {{ coverage | length }} {{ t('shown', '只') }}{% endif %}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
         {% if coverage %}
         <div class="atbl-wrap">

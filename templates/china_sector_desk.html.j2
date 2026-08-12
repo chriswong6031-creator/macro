@@ -160,7 +160,7 @@ html[data-lang="zh"] .poskey .pk-lo{background:color-mix(in srgb,var(--green) 70
 
   <div class="note">{{ t('The GSXAC* tickers are Goldman Sachs proprietary baskets, licensed only through Bloomberg — not redistributable. This desk reconstructs the same exposures from free, keyless data (Shenwan indices + sector ETFs + curated constituents). It is descriptive context, not investment advice.','GSXAC* 代码为高盛专有篮子，仅通过彭博授权，不可再分发。本桌面以免费、无密钥数据（申万指数 + 行业 ETF + 精选成分股）重建相同的敞口。仅仅作描述，非投资建议。') }}</div>
 
-  <div class="sec-h"><h2>📊 {{ t('Live Sector Board','行业实时看板') }}</h2>
+  <div class="sec-h"><h2>{{ t('Live Sector Board','行业实时看板') }}</h2>
     <span class="sub">{{ t('all 16 sectors · Shenwan index + live ETF tape · tap a name for its cycle · as of','全部16个行业 · 申万指数 + ETF实时行情 · 点击名称查看周期 · 截至') }} {{ desk.as_of }}</span></div>
   {% if desk.summary %}
   <div class="chips">
@@ -211,7 +211,7 @@ html[data-lang="zh"] .poskey .pk-lo{background:color-mix(in srgb,var(--green) 70
   <div class="poskey">{{ t('Cycle position','周期位置') }}: <span class="pk pk-lo"></span> {{ t('beaten down (near lows)','超跌（接近低位）') }} → <span class="pk pk-hi"></span> {{ t('overheated (near highs)','过热（接近高位）') }} · {{ t('green = doing well, red = doing poorly','绿=表现强，红=表现弱') }}</div>
 
   {% if pathway and pathway.sectors %}
-  <div class="sec-h"><h2>🧭 {{ t('Pathway Desk — GS Sectors','路径桌面 — GS 行业') }}</h2>
+  <div class="sec-h"><h2>{{ t('Pathway Desk — GS Sectors','路径桌面 — GS 行业') }}</h2>
     <span class="sub">{{ t('cycle position · major turns · conditional forward tilt','周期位置 · 主要拐点 · 条件化前瞻倾向') }}</span></div>
   <div class="pgrid">
     {% for s in pathway.sectors %}

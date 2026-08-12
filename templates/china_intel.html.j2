@@ -275,7 +275,7 @@
     ('sector',            '🗂️', t('Sector Desk','板块台'),     'china_sector_desk.html',          t('Sector momentum desk','板块动能台'))
   ] %}
   {%- set _DESK_SURF_KEY = {'news':'news','policy':'policy','altdata':'altdata','radar':'radar','special_situations':'special_situations'} %}
-  <h2 class="sec">🖥️ {{ t('Desk Status Board', '面板状态') }}</h2>
+  <h2 class="sec">{{ t('Desk Status Board', '面板状态') }}</h2>
   <div class="desks">
     {%- for key, icon, label, href, desc in _DESKS %}
       {%- set _surf_key = _DESK_SURF_KEY.get(key) %}
@@ -308,7 +308,7 @@
   {# ── C. POLICY PHRASE SHIFTS CARD (new v4) ── #}
   {% if b.policy_phrase %}
   {%- set _pp = b.policy_phrase %}
-  <h2 class="sec">📜 {{ t('Policy Phrase Shifts', '政策表述变化') }}</h2>
+  <h2 class="sec">{{ t('Policy Phrase Shifts', '政策表述变化') }}</h2>
   <div class="pp-card">
     <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px">
       <span style="font-size:12px;color:var(--muted)">
@@ -380,7 +380,7 @@
   {# ── D. NARRATIVE DIVERGENCE CHIP (new v4) ── #}
   {% if b.narrative_divergence %}
   {%- set _nd = b.narrative_divergence %}
-  <h2 class="sec">🌐 {{ t('Onshore / Offshore Narrative Divergence', '境内/境外叙事背离') }}</h2>
+  <h2 class="sec">{{ t('Onshore / Offshore Narrative Divergence', '境内/境外叙事背离') }}</h2>
   <div class="nd-chip">
     <div>
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">{{ t('Tone divergence z','语调背离z值') }}</div>
@@ -424,7 +424,7 @@
 
   {# ── F. CENTRAL SYNTHESIS ── #}
   {% if b.conviction %}
-  <h2 class="sec">🧩 {{ t('Cross-surface conviction','跨面板共振') }}</h2>
+  <h2 class="sec">{{ t('Cross-surface conviction','跨面板共振') }}</h2>
   <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Independence-weighted confluence across radar · alt-data · news · policy · risk-appetite, ranked by OPPORTUNITY (edge-remaining × leading-gap) — leading ideas promoted, priced/confirmed ones demoted. Context salience, never a position size.','跨雷达·另类数据·新闻·政策·风险偏好的独立性加权共振，按机会度（剩余空间×领先差）排序——领先的提升、已定价的降级。仅为显著性，绝非仓位。') }}</p>
   <table class="syn">
     <thead><tr><th>{{ t('Sector','板块') }}</th><th>{{ t('Opportunity','机会度') }}</th><th>{{ t('Stage','阶段') }}</th><th>{{ t('Conviction','置信') }}</th><th>{{ t('Edge left','剩余空间') }}</th><th>{{ t('Surfaces','面板') }}</th><th>{{ t('Read','解读') }}</th></tr></thead>
@@ -460,7 +460,7 @@
 
   {# ── G. FLAGGED TICKERS ── #}
   {% if b.flagged_tickers %}
-  <h2 class="sec">🏷️ {{ t('Flagged tickers','标记个股') }}</h2>
+  <h2 class="sec">{{ t('Flagged tickers','标记个股') }}</h2>
   <p style="font-size:12px;color:var(--muted);margin:2px 0 4px">{{ t('Names lit by ≥2 surfaces (alt-data accumulation inside a radar-lit, news-covered theme). Context watchlist, not a recommendation.','被≥2个面板点亮的个股（位于雷达点亮、新闻覆盖主题内的另类数据吸筹）。背景自选，非推荐。') }}</p>
   <div class="flags">
     {% for f in b.flagged_tickers %}
@@ -474,7 +474,7 @@
 
   {# ── H. CAUSAL CHAINS ── #}
   {% if b.analysis and b.analysis.chains %}
-  <h2 class="sec">🔗 {{ t('Transmission chains','传导链条') }}</h2>
+  <h2 class="sec">{{ t('Transmission chains','传导链条') }}</h2>
   {% for ch in b.analysis.chains %}
   <div class="chain">
     <div class="hd"><span class="chband ch-{{ ch.band }}">{{ t(ch.band|capitalize, ({'aligned':'一致','forming':'形成中','dormant':'休眠'}).get(ch.band, ch.band)) }}</span> {{ bl(ch.label_en, ch.label_zh) }} <span class="mut" style="font-weight:400">{{ ch.k }}/{{ ch.n }}</span></div>
@@ -491,7 +491,7 @@
   {% endif %}
 
   {# ── I. INTELLIGENCE SPOKE CARDS ── #}
-  <h2 class="sec">🗂️ {{ t('Intelligence Surfaces','情报面板') }}</h2>
+  <h2 class="sec">{{ t('Intelligence Surfaces','情报面板') }}</h2>
   <div class="cards">
     <a class="scard" href="china_news.html">
       <div class="ic">📰</div><div class="nm">{{ t('China News','中国财经新闻') }}</div>
@@ -541,13 +541,13 @@
 
   {# ── J. NEXT CATALYSTS + STANDING CALLS ── #}
   {% if b.news and b.news.scheduled_ahead %}
-  <h2 class="sec">📅 {{ t('Next catalysts','即将催化') }}</h2>
+  <h2 class="sec">{{ t('Next catalysts','即将催化') }}</h2>
   <div class="strip">
     {% for ev in b.news.scheduled_ahead %}<span class="sx"><b>{{ ev.md }}</b> · {{ bl(ev.name_en, ev.name_zh) }}</span>{% endfor %}
   </div>
   {% endif %}
   {% if b.policy and b.policy.predictions %}
-  <h2 class="sec">🔮 {{ t('Standing policy calls','政策预测') }}</h2>
+  <h2 class="sec">{{ t('Standing policy calls','政策预测') }}</h2>
   <div class="strip">
     {% for p in b.policy.predictions %}<span class="sx">{{ p }}</span>{% endfor %}
   </div>
@@ -560,7 +560,7 @@
   {# cmd_full is the full command.json artifact loaded separately by the builder #}
   {%- if cmd_full and cmd_full.command %}
   {%- set _cmd = cmd_full %}
-  <h2 class="sec">⚡ {{ t('China Command List','中国指挥清单') }}</h2>
+  <h2 class="sec">{{ t('China Command List','中国指挥清单') }}</h2>
   <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
     {{ t('Ranked by opportunity = signal × edge-remaining × leading-gap — NOT by desk agreement. Emerging = altdata/radar leading while news/board are still quiet.','按机会评分排序 = 信号 × 剩余边际 × 领先差值 — 非按共识排序。萌芽 = 另类数据/雷达领先，新闻/买入板尚静。') }}
     <span class="mode-badge">{{ t('context only','仅供参考') }}</span>
@@ -697,7 +697,7 @@
 
   {# ── K3. DISCOVERY QUEUE ── #}
   {%- if cmd_full and cmd_full.discovery %}
-  <h2 class="sec">🔭 {{ t('Discovery Queue','发现队列') }}</h2>
+  <h2 class="sec">{{ t('Discovery Queue','发现队列') }}</h2>
   <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
     {{ t('Off-desk leading signals — names not yet on any desk. Margin Velocity lane is experimental (Phase-0 accruing, contributes zero to ranking).','离板块领先信号——尚未出现在任何台的个股。融资速度栏为实验性（阶段0积累，不计入排名）。') }}
   </p>
@@ -727,7 +727,7 @@
   {# ── K4. ANALOGS CARD (degrade-safe; hidden when artifact absent) ── #}
   {%- if b.analogs %}
   {%- set _an = b.analogs %}
-  <h2 class="sec">🕰️ {{ t('Cycle Context & Historical Analogs','周期背景与历史类比') }}</h2>
+  <h2 class="sec">{{ t('Cycle Context & Historical Analogs','周期背景与历史类比') }}</h2>
   <div class="analogs-card">
     <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
       {{ t('Historical analog periods sharing the current macro fingerprint. Descriptive fan only — not a forecast.','与当前宏观指纹相近的历史类比区间。仅为描述性分布——非预测。') }}
@@ -782,7 +782,7 @@
   {%- endif %}
 
   {# ── L. CHINA SUITE DIRECTORY ── #}
-  <h2 class="sec">🗺️ {{ t('China Suite Directory','中国页面目录') }}</h2>
+  <h2 class="sec">{{ t('China Suite Directory','中国页面目录') }}</h2>
   <div class="suite">
 
     <div class="suite-group">

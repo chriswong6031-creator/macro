@@ -167,7 +167,7 @@
   <!-- ── Page header ── -->
   <div class="pl-hd">
     <p class="pl-eyebrow">{{ t('HK Pick Lab · Display-only · ACCRUING', 'HK选股实验室 · 仅展示 · 累积中') }}</p>
-    <h1 class="pl-title">🧪 {{ t('HK Candidate Pick Engines', '港股候选选股引擎') }}</h1>
+    <h1 class="pl-title">{{ t('HK Candidate Pick Engines', '港股候选选股引擎') }}</h1>
     <p class="pl-sub">{{ t('20 shadow books running on forward ledgers — measured against a random-control yardstick and the Hang Seng Index. Ruler: 21-session ^HSI excess (next HK session fill, close basis). All data is display-only; nothing here drives live selection or gating.', '20个影子书在前向账本上运行 — 与随机控制基准和恒生指数对比衡量。标尺：21节恒生超额（下一港股交易日入场，收盘价基准）。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。') }}</p>
     {% if as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ as_of }} · {{ t('Built', '生成时间') }} {{ built }}</p>{% endif %}
     <a class="pl-back" href="hk_stocks.html">← {{ t('Back to HK Stock Desk', '返回港股研判台') }}</a>

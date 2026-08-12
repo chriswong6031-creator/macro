@@ -308,6 +308,12 @@ html[data-theme="dark"] .kpi{background:var(--panel2)}
   .kpi{min-width:0;flex:1 1 42%}
   .sec-head{margin:32px 0 13px}
 }
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  .bh-score
+) { text-shadow:none; }
 </style>
 {% include "_state_inks.html.j2" %}
 {% include "_vector_polish.html.j2" %}

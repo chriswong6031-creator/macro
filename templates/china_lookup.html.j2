@@ -213,7 +213,7 @@
   {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
-      <h1>🔎 {{ t('A-Share analyzer', 'A股分析') }}</h1>
+      <h1>{{ t('A-Share analyzer', 'A股分析') }}</h1>
       <div class="searchwrap">
         <input id="q" placeholder="搜索任意 A 股 / 板块ETF / 指数… (e.g. 600519, 茅台 ticker, Banks)" autocomplete="off">
         <div id="sugg"></div>
@@ -264,7 +264,7 @@
     <div id="sv-evidence"></div>
     <div id="sv-country"></div>
     <!-- ===== Deep layer — collapsed disclosure groups (off the glance path) ===== -->
-    <details class="sv-group"><summary>{{ t('📊 Fundamentals, analyst &amp; positioning', '📊 基本面、分析师与持仓') }}</summary>
+    <details class="sv-group"><summary>{{ t('Fundamentals, analyst &amp; positioning', '基本面、分析师与持仓') }}</summary>
     <div class="panel" id="r_alpha_panel" style="display:none">
       <h2>{{ t('Relative strength & mean-reversion', '相对强度与均值回归') }} <span class="note" style="text-transform:none">· {{ t('sector-neutral residual', '板块中性残差') }}</span></h2>
       <div id="r_alpha" class="mtf"></div>
@@ -285,13 +285,13 @@
       <div id="r_vband" class="fnd-grid"></div>
     </div>
     <div class="panel" id="r_analyst_panel" style="display:none">
-      <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span>{{ help(
+      <h2>{{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span>{{ help(
         'Eastmoney sell-side aggregate: 6-month institutional rating mix (买入/增持/中性/减持/卖出), coverage breadth, and forward EPS forecasts; forward P/E uses the live price. Sell-side opinion shown as coverage context, NOT an endorsement — high coverage and a bullish skew are not a validated edge.',
         '东方财富卖方汇总：近6个月机构评级分布（买入／增持／中性／减持／卖出）、覆盖广度，以及预测每股收益；前瞻市盈率用实时价格计算。卖方观点仅说明覆盖范围，并非推荐——高覆盖与看多倾向并非有效优势。') }}</h2>
       <div id="r_analyst"></div>
     </div>
     <div class="panel" id="r_earn_panel" style="display:none">
-      <h2>📅 {{ t('Earnings &amp; disclosure', '财报披露') }}</h2>
+      <h2>{{ t('Earnings &amp; disclosure', '财报披露') }}</h2>
       <div id="r_earn"></div>
     </div>
     <div class="panel" id="r_pos_panel" style="display:none">

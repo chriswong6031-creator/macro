@@ -183,7 +183,7 @@
   {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
-      <h1>🔎 {{ t('HK analyzer', '港股分析') }}</h1>
+      <h1>{{ t('HK analyzer', '港股分析') }}</h1>
       <div class="searchwrap">
         <input id="q" placeholder="Search any HK stock / sector / index… (e.g. 0700, Tencent, Banks)" autocomplete="off">
         <div id="sugg"></div>
@@ -230,7 +230,7 @@
     <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
     <div id="sv-evidence"></div>
     <div id="sv-country"></div>
-    <details class="sv-group"><summary>{{ t('📊 Fundamentals, analyst &amp; positioning', '📊 基本面、分析师与持仓') }}</summary>
+    <details class="sv-group"><summary>{{ t('Fundamentals, analyst &amp; positioning', '基本面、分析师与持仓') }}</summary>
     <div class="panel" id="r_gbeta_panel" style="display:none">
       <h2>{{ t('Global-risk beta', '全球风险贝塔') }} <span class="note" style="text-transform:none">· {{ t('amplifier vs cushion', '放大器 vs 缓冲') }}</span>{{ help(
         'This name\'s beta to global risk (S&P 500, lagged one day for the overnight US→HK transmission). HK has no idiosyncratic stock-selection edge, so the honest per-name read is RISK EXPOSURE: a high beta (<b>amplifier</b> — global cyclical) moves more with the risk-on/off regime; a low beta (<b>cushion</b> — domestic-defensive) moves less. The tag conditions on the live global risk state (favored / exposed / lags). Measured edge is modest — risk context for sizing within the validated regime, NOT a forecast or a buy signal. Beta is a descriptive exposure, not an alpha.',

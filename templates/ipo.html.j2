@@ -286,7 +286,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   <!-- ============ AVOID panel — the honest deliverable ============ -->
   {% if avoid and avoid['items'] %}
   <div class="avoid">
-    <h3>⚠ {{ t('What to avoid right now','当前应规避') }}</h3>
+    <h3>{{ t('What to avoid right now','当前应规避') }}</h3>
     <div class="ah-sub">{{ t('The honest edge in IPOs is discipline about what NOT to buy. Assembled from the calendar — display-only, never a trade.','新股中诚实的优势在于「不买什么」的纪律。取自日历 —— 仅供展示，非交易。') }}</div>
     <div class="avoid-list">
       {% for it in avoid['items'] %}
@@ -421,7 +421,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 
     <!-- window legs -->
     <details>
-      <summary><span class="sh-ic">🧭</span>{{ t('What the window read is made of','窗口读数的构成') }}<span class="sh-hint">{{ window.constructive }}/{{ window.n_legs }} {{ t('supportive','偏好') }}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('What the window read is made of','窗口读数的构成') }}<span class="sh-hint">{{ window.constructive }}/{{ window.n_legs }} {{ t('supportive','偏好') }}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
         <div class="tbl-wrap">
           <table class="legtbl">
@@ -444,7 +444,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     <!-- recently priced -->
     {% if recent %}
     <details>
-      <summary><span class="sh-ic">🧾</span>{{ t('Recently priced','近期定价') }}<span class="sh-hint">{{ t('last 120 days','最近120天') }}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('Recently priced','近期定价') }}<span class="sh-hint">{{ t('last 120 days','最近120天') }}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
         <div class="tbl-wrap">
           <table class="tbl">
@@ -500,7 +500,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 
     <!-- methodology (Tier-3 home for the academic depth) -->
     <details>
-      <summary><span class="sh-ic">📚</span>{{ t('Why this is context, not a prediction','为何这是背景而非预测') }}<span class="sh-hint">{{ t('methodology','方法') }}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('Why this is context, not a prediction','为何这是背景而非预测') }}<span class="sh-hint">{{ t('methodology','方法') }}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
         <h4>{{ t('The honest thesis','诚实的论点') }}</h4>
         <div class="mini" style="font-size:13px;color:var(--text)">{{ t(

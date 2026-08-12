@@ -453,7 +453,7 @@
     <div class="cad-grid">
       {% if special.unlocks and special.unlocks.events %}
       <div class="cad-card">
-        <h3>🔓 {{ t('Share unlocks','限售解禁') }} <span class="cad-chip">{{ special.unlocks.n_large or special.unlocks.n_events_30d or 0 }}</span></h3>
+        <h3>{{ t('Share unlocks','限售解禁') }} <span class="cad-chip">{{ special.unlocks.n_large or special.unlocks.n_events_30d or 0 }}</span></h3>
         <p class="sub">{{ t('Insiders freed to sell in the next 30 days — supply overhang.', '未来30天内可减持——供给压力。') }}</p>
         {% for e in special.unlocks.events[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -466,7 +466,7 @@
 
       {% if special.inquiry and special.inquiry.letters %}
       <div class="cad-card">
-        <h3>📩 {{ t('Exchange inquiries','交易所问询') }} <span class="cad-chip c-warn">{{ special.inquiry.n_letters or 0 }}</span></h3>
+        <h3>{{ t('Exchange inquiries','交易所问询') }} <span class="cad-chip c-warn">{{ special.inquiry.n_letters or 0 }}</span></h3>
         <p class="sub">{{ t('Regulators asking hard questions — a risk flag, not a verdict.', '监管层发问——风险信号，非定论。') }}</p>
         {% for e in special.inquiry.letters[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -479,7 +479,7 @@
 
       {% if special.buyback and special.buyback.top %}
       <div class="cad-card">
-        <h3>♻️ {{ t('Active buybacks','进行中回购') }} <span class="cad-chip c-up">{{ special.buyback.n_active or 0 }}</span></h3>
+        <h3>{{ t('Active buybacks','进行中回购') }} <span class="cad-chip c-up">{{ special.buyback.n_active or 0 }}</span></h3>
         <p class="sub">{{ t('Companies buying their own shares — an insider conviction floor.', '公司回购自家股份——内部人信心的底。') }}</p>
         {% for e in special.buyback.top[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -492,7 +492,7 @@
 
       {% if special.pledge and special.pledge.top %}
       <div class="cad-card">
-        <h3>⚠️ {{ t('Pledge stress','质押压力') }} <span class="cad-chip c-warn">{{ special.pledge.n_high or 0 }}</span></h3>
+        <h3>{{ t('Pledge stress','质押压力') }} <span class="cad-chip c-warn">{{ special.pledge.n_high or 0 }}</span></h3>
         <p class="sub">{{ t('Controlling shareholders heavily pledged — forced-sale tail risk.', '大股东高比例质押——被迫平仓的尾部风险。') }}</p>
         {% for e in special.pledge.top[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -505,7 +505,7 @@
 
       {% if special.st and (special.st.additions or special.st.top_current) %}
       <div class="cad-card">
-        <h3>🚩 {{ t('ST board','ST板') }} <span class="cad-chip c-down">{{ special.st.count or 0 }}</span></h3>
+        <h3>{{ t('ST board','ST板') }} <span class="cad-chip c-down">{{ special.st.count or 0 }}</span></h3>
         <p class="sub">{{ t('Special-treatment names — delisting-risk watch. Avoid unless you know why.', 'ST（特别处理）个股——退市风险观察。除非明确原因，否则回避。') }}</p>
         {% for e in (special.st.additions or special.st.top_current)[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -517,7 +517,7 @@
 
       {% if special.preannounce and special.preannounce.top_movers %}
       <div class="cad-card">
-        <h3>📣 {{ t('Earnings pre-announcements','业绩预告') }} <span class="cad-chip">{{ special.preannounce.n_total or 0 }}</span></h3>
+        <h3>{{ t('Earnings pre-announcements','业绩预告') }} <span class="cad-chip">{{ special.preannounce.n_total or 0 }}</span></h3>
         <p class="sub">{{ t('Companies flagging results early — the biggest guided swings.', '提前预告业绩的公司——预告变动最大者。') }}</p>
         {% for e in special.preannounce.top_movers[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -586,7 +586,7 @@
     <div class="cad-grid">
       {% if broker_gold %}
       <div class="cad-card">
-        <h3>🏅 {{ t('Broker gold-stock picks','券商金股') }} <span class="cad-chip c-gold">{{ broker_gold[0].month }}</span></h3>
+        <h3>{{ t('Broker gold-stock picks','券商金股') }} <span class="cad-chip c-gold">{{ broker_gold[0].month }}</span></h3>
         <p class="sub">{{ t('Most-picked names this month, as a pick-count tally — a discrete monthly list, distinct from the ~97%-buy ratings.', '当月被推荐最多的个股，按推荐家数计——离散月度名单，区别于近97%“买入”评级。') }}</p>
         <table class="cad-tbl" style="margin-top:2px">
           <tbody>
@@ -604,7 +604,7 @@
 
       {% if guidance and (guidance.up or guidance.down) %}
       <div class="cad-card">
-        <h3>📣 {{ t('Earnings-guidance surprises','业绩预告') }}</h3>
+        <h3>{{ t('Earnings-guidance surprises','业绩预告') }}</h3>
         <p class="sub">{{ t('Company-guided profit direction. A real ~3-month post-announcement drift has been measured (right sign) — tracked, never scored here.', '公司预告的利润方向。已测得真实的约3个月公告后漂移（符号正确）——此处跟踪，不评分。') }}</p>
         {% for col, items, cls in [(t('▲ Positive','▲ 正面'), guidance.up, 'r-pos'), (t('▼ Negative','▼ 负面'), guidance.down, 'r-neg')] %}
         {% if items %}

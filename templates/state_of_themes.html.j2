@@ -479,7 +479,7 @@ html[data-theme="dark"] body::before{
 <p class="sec-sub">{{ t('How to read the board, and the receipts behind it.', '如何解读看板，及其背后的依据。') }}</p>
 <div class="shelf">
   <details>
-    <summary><span class="sh-ic">🎯</span>{{ t('How to read a theme', '如何解读一个主题') }}<span class="sh-hint">{{ t('lanes · stages · setup legs', '分组 · 阶段 · 结构腿') }}</span><span class="sh-caret">▶</span></summary>
+    <summary>{{ t('How to read a theme', '如何解读一个主题') }}<span class="sh-hint">{{ t('lanes · stages · setup legs', '分组 · 阶段 · 结构腿') }}</span><span class="sh-caret">▶</span></summary>
     <div class="sh-body">
       <p>{{ t('Each theme sits in one <b>lane</b> — a plain read of what to do: gaining ground, early and under-owned, crowded, in question, or quiet. The <b>stage</b> pill is where it is in its life (Watch → Broadening → Re-rating → Accelerating → Precipice → Correcting). The seven dots are its <b>setup legs</b>:', '每个主题位于一个<b>分组</b>——直白告诉你怎么做：正在奏效、早期低关注、拥挤、存疑或平静。<b>阶段</b>标签表示它处于生命周期的哪一步（观察→扩张→重估→加速→临界→回调）。七个圆点是它的<b>结构腿</b>：') }}</p>
       <div class="legend-grid" style="margin-top:12px">
@@ -501,7 +501,7 @@ html[data-theme="dark"] body::before{
     </div>
   </details>
   <details>
-    <summary><span class="sh-ic">🧾</span>{{ t('Method & honesty', '方法与诚实声明') }}<span class="sh-hint">{{ t('display-tier context, never a signal', '展示层背景，非交易信号') }}</span><span class="sh-caret">▶</span></summary>
+    <summary>{{ t('Method & honesty', '方法与诚实声明') }}<span class="sh-hint">{{ t('display-tier context, never a signal', '展示层背景，非交易信号') }}</span><span class="sh-caret">▶</span></summary>
     <div class="sh-body">
       <p>{{ t('This board is <b>context, not trade calls</b>. Lanes and stances are a plain-word re-expression of the engine\'s lifecycle stage, break-rules, crowding and divergence reads — they surface what to look at, never a buy or sell instruction. "Gaining ground" describes breadth, not a forecast.', '本看板为<b>背景，而非交易信号</b>。分组与结论只是把引擎的生命周期阶段、否定条件、拥挤度与背离读数用直白语言重新表达——用于提示关注点，而非买卖指令。「正在奏效」描述的是参与面，而非预测。') }}</p>
       {% if n_stale_legs %}<p class="shelf-note">{{ t('Data freshness: ' ~ n_stale_legs ~ ' setup leg(s) are running on older data and shown dashed until they refresh on a coming nightly build.', '数据新鲜度：' ~ n_stale_legs ~ ' 条结构腿使用较旧数据，以虚线显示，将在后续夜间构建中刷新。') }}</p>{% endif %}

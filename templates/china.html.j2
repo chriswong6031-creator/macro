@@ -1506,6 +1506,17 @@
      brief fallback text keeps a local class. ──────────────────────────────────── */
   body.page-china .aib-empty{font-size:13px;color:var(--muted);line-height:1.6;margin:4px 0;}
 {% include "_aibrief_css.j2" %}
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  body.page-china .cnx-big-score,
+  body.page-china .ms-green .cnx-big-score,
+  body.page-china .ms-red .cnx-big-score,
+  body.page-china .mx5-big-score
+) { text-shadow:none; }
+html[data-lang="zh"][data-theme="light"] body.page-china .ms-green .cnx-big-score { text-shadow:none; }
+html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score { text-shadow:none; }
 </style>
 </head>
 <body class="{{ 'page-china-stocks' if mode == 'stocks' else 'page-china mx4-grid' }}">
@@ -3893,8 +3904,7 @@
 
     {% if _late %}
     <details class="cn-depth late" data-stf="ran">
-      <summary>
-        <span>⚠ {{ t('Wait / unfillable / do not chase', '等待 / 无法成交 / 勿追涨') }}
+      <summary>{{ t('Wait / unfillable / do not chase', '等待 / 无法成交 / 勿追涨') }}
           <span class="cn-depth-sub">{{ t('the signal exists, but lifecycle, extension or A-share execution checks block a featured entry', '信号存在，但生命周期、过度延伸或A股成交检查阻止其进入精选区') }}</span>
         </span>
         <span class="cn-depth-n">{{ _late|length }}</span>
@@ -3996,7 +4006,7 @@
   <!-- ===================== STOCK SCREENER (consolidated · toggle) ===================== -->
   {% if scoreboard and scoreboard.modes %}
   <div class="panel span12" id="stock-screener">
-    <h2>{{ t('🎯 Stock screener — one board, two validated lenses', '🎯 选股面板 — 一板双镜') }}
+    <h2>{{ t('Stock screener — one board, two validated lenses', '选股面板 — 一板双镜') }}
       <span class="note" style="text-transform:none">· {{ t('switch the lens; the table re-sorts', '切换视角；表格随之重排') }}{% if scoreboard.as_of %} · {{ scoreboard.as_of }}{% endif %}</span>
       {{ help("Two validated lenses: within-sector mean reversion and low-vol defensive. Sortable context, not a buy list.", "两种已验证视角：板块内均值回归与防御低波。可排序背景，非买入清单。") }}
     </h2>
@@ -4165,7 +4175,7 @@
   <div class="panel span12" id="reversion-desk">
     {# lane header #}
     <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px">
-      <h2 style="margin:0">🔄 {{ t('Reversion Desk', '回归台') }}
+      <h2 style="margin:0">{{ t('Reversion Desk', '回归台') }}
         {{ help("Stocks that fell the most within their own sector over the last 3 months — historically the deepest fallers tend to snap back. Ranked by how deep the fall is, with bonus credit for A-share-specific signs (a 2-week washout, a coiled volatility squeeze). Scored against the CSI 300 over the next 21 sessions, entering at the next day's price (T+1). Track record still accruing — display context, not a signal and not a buy list (CNPL-R1/R3/R4).", "同行业内近3个月跌幅最深的个股——历史上跌得最深的往往反弹也快。按跌幅深度排序，并对A股特有迹象（2周洗盘、波动压缩蓄势）加分。以次日价格入场（T+1）、未来21个交易日对沪深300的超额收益计分。成绩仍在累积——仅供展示参考，非信号、非买入清单（CNPL-R1/R3/R4）。") }}
       </h2>
       <span class="chip c-muted" style="font-size:11px;font-weight:600">{{ t('display-only', '仅展示') }}</span>

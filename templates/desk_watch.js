@@ -95,7 +95,7 @@
     if(document.getElementById('desk-watch')) return true;
     host.innerHTML=''
       +'<section id="desk-watch" aria-label="Desk watch">'
-      +'<h3>🎯 '+L('Desk watch — armed windows &amp; earliest signs','值守台 — 已武装窗口与最早信号')+'</h3>'
+      +'<h3>'+L('Desk watch — armed windows &amp; earliest signs','值守台 — 已武装窗口与最早信号')+'</h3>'
       +'<p class="dw-sub">'+L(
           'Sectors in an open entry window, and sectors whose momentum just jumped before any rotation has formed. Watch material — don’t chase.',
           '处于入场窗口的板块，以及在轮动成形前动量刚刚跳升的板块。仅供观察——不要追高。')+'</p>'

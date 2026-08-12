@@ -167,6 +167,13 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
 .warmup b{display:block;font-size:17px;color:var(--mut);font-weight:700;margin-bottom:8px}
 /* ── responsive ── */
 @media(max-width:760px){.hero-state{font-size:22px}.glass{padding:18px}.panel{padding:16px}}
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  .hero-state.tone-long,
+  .hero-state.tone-short
+) { text-shadow:none; }
 </style>
 {% include "_state_inks.html.j2" %}
 </head>

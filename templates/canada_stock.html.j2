@@ -173,7 +173,7 @@
   {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
-      <h1>🔎 {{ t('TSX analyzer', 'TSX 个股分析') }}</h1>
+      <h1>{{ t('TSX analyzer', 'TSX 个股分析') }}</h1>
       <div class="searchwrap">
         <input id="q" placeholder="Search any TSX stock / sector ETF / index… (e.g. RY, Shopify, Energy)" autocomplete="off">
         <div id="sugg"></div>
@@ -219,7 +219,7 @@
     <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
     <div id="sv-evidence"></div>
     <div id="sv-country"></div>
-    <details class="sv-group"><summary>{{ t('📊 Fundamentals, analyst &amp; positioning', '📊 基本面、分析师与持仓') }}</summary>
+    <details class="sv-group"><summary>{{ t('Fundamentals, analyst &amp; positioning', '基本面、分析师与持仓') }}</summary>
     <!-- legacy conviction panel — populated only as a FALLBACK if stockview.js fails -->
     <div class="panel" id="r_conviction_panel" style="display:none">
       <h2>{{ t('Conviction profile', '确信度画像') }} <span class="note" style="text-transform:none">· {{ t('unified verdict — cycle caps it', '统一结论 — 周期封顶') }}</span></h2>
@@ -239,13 +239,13 @@
       <div id="r_fund"></div>
     </div>
     <div class="panel" id="r_analyst_panel" style="display:none">
-      <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span>{{ help(
+      <h2>{{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span>{{ help(
         'yfinance sell-side aggregate: the consensus rating, mean price target with its high/low range, the implied upside vs the current price, and coverage breadth. Sell-side opinion shown as coverage context, NOT an endorsement — a target is a forecast, not a validated edge.',
         'yfinance 卖方汇总：一致评级、目标价中位及其高/低区间、相对现价的隐含上行空间，以及覆盖广度。卖方观点仅说明覆盖范围，并非推荐——目标价是预测，并非有效优势。') }}</h2>
       <div id="r_analyst"></div>
     </div>
     <div class="panel" id="r_earn_panel" style="display:none">
-      <h2>📅 {{ t('Earnings', '财报') }}</h2>
+      <h2>{{ t('Earnings', '财报') }}</h2>
       <div id="r_earn"></div>
     </div>
     <div class="panel" id="r_pos_panel" style="display:none">
@@ -255,7 +255,7 @@
       <div id="r_pos"></div>
     </div>
     <div class="panel" id="r_insider_panel" style="display:none">
-      <h2>👤 {{ t('Insider activity', '内部人交易') }} <span class="note" style="text-transform:none">· {{ t('SEDI open-market filings (yfinance)', 'SEDI 公开市场披露（yfinance）') }}</span>{{ help(
+      <h2>{{ t('Insider activity', '内部人交易') }} <span class="note" style="text-transform:none">· {{ t('SEDI open-market filings (yfinance)', 'SEDI 公开市场披露（yfinance）') }}</span>{{ help(
         'Personal insider open-market buys / sells from SEDI (Canada\'s insider-filing system), via yfinance — issuer buybacks and option exercises are excluded. CONTEXT, not a validated signal: SEDI filings lag the trade by up to ~5 days and TSX insider breadth is thin, so read net buying / selling as a conviction tell, not a timing trigger. Coverage is best-effort per name.',
         '来自 SEDI（加拿大内部人披露系统）的个人内部人公开市场买入／卖出，经 yfinance 获取——已剔除公司回购与期权行权。背景，而非已验证信号：SEDI 披露相对交易最多滞后约5天，且 TSX 内部人样本稀疏，故净买入／卖出应作为信念参考，而非择时触发。覆盖为尽力而为，逐名而定。') }}</h2>
       <div id="r_insider"></div>

@@ -279,6 +279,12 @@
     .hide-narrow { display:none; }
     .stance-card { flex-basis:calc(50% - 5px); min-width:0; }
   }
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  .hs-num
+) { text-shadow:none; }
 </style>
 </head>
 <body class="page-intraday-flow tape-quiet">

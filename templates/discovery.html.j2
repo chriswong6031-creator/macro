@@ -185,7 +185,7 @@
 
 <div class="panel">
   <div class="topline">
-    <h1>🏆 {{ t('Top Picks', '精选股') }}</h1>
+    <h1>{{ t('Top Picks', '精选股') }}</h1>
     <span class="muted sm">{{ t('holistic conviction across the S&P 1500 — ranked by what to own, flagged for when to buy', '覆盖标普 1500 的综合信念 — 按“持有什么”排名，并标注“何时买入”') }}</span>
   </div>
   <p class="muted sm note">{{ t(
@@ -209,7 +209,7 @@
 {% endif %}
 
 <div class="panel">
-  <h2>{{ t('⭐ Buy-zone picks', '⭐ 可建仓精选') }}
+  <h2>{{ t('Buy-zone picks', '可建仓精选') }}
     {{ help('The sweet spot: high-conviction Top Picks whose entry signal has also actually fired, or is about to. A name only appears here if it is genuinely buyable today — a strong name that is rolling over is not shown, however high its conviction.', '最佳交集：既是高信念精选，入场信号也确实已经触发、或者马上要触发。只有今天确实能买的标的才会出现在这里——无论信念多高，已经在回落的就不显示。') }}</h2>
   {% if buyzone %}
   <div class="bz-strip">

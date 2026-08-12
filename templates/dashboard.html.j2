@@ -3673,6 +3673,12 @@ body.page-macro .evs-flat{color:var(--ink-warn, var(--warn))}
 [data-theme="light"] body.page-macro .idx-stat.ok{color:#157a42}
 [data-theme="light"] body.page-macro .idx-card-chg.up{color:#157a42}
 [data-theme="light"] body.page-macro .idx-stat.wn{color:#7a4500}
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  body.page-macro .mx2-score-block .v-score
+) { text-shadow:none; }
 </style>
 {% endif %}
 {% if mode != 'stocks' %}
@@ -6863,6 +6869,15 @@ body.page-macro .mx5-dlg-hm-mobile-link{display:none;margin-top:10px;text-align:
 body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97a);font-weight:600;}
 @media(max-width:700px){body.page-macro .mx5-dlg-hm-mobile-link{display:block;}}
 
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  body.page-macro.mx4-grid .mx5-big-score,
+  body.page-macro.mx4-grid.ms-green-page .mx5-big-score, body.page-macro.mx4-grid .mx5-score-green .mx5-big-score,
+  body.page-macro.mx4-grid.ms-yellow-page .mx5-big-score, body.page-macro.mx4-grid .mx5-score-yellow .mx5-big-score,
+  body.page-macro.mx4-grid.ms-red-page .mx5-big-score, body.page-macro.mx4-grid .mx5-score-red .mx5-big-score
+) { text-shadow:none; }
 </style>
 {% endif %}
     {% set _ol = {

@@ -99,7 +99,7 @@ function render() {
   // member table
   const ms = g.members || [];
   if (ms.length) {
-    h += `<h2>📊 ${L('Members — which names are firing', '成分——哪些个股在触发')}</h2>`;
+    h += `<h2>${L('Members — which names are firing', '成分——哪些个股在触发')}</h2>`;
     h += `<table class="tbl"><thead><tr><th>${L('Ticker', '代码')}</th><th>${L('Price', '价格')}</th><th>${L('Own tier', '自身层级')}</th><th>${L('20d', '20日')}</th><th>${L('vs subsector', '相对子行业')}</th><th>${L('Regime', '状态')}</th></tr></thead><tbody>`;
     h += ms.map(m => `<tr class="${m.stock_buyable ? 'buyable' : ''}"><td class="tk"><a href="${DETAIL.stock_base || '../stock.html#'}${encodeURIComponent(m.ticker)}">${esc(m.ticker)}</a>${m.name_zh ? ` <span style="color:var(--muted);font-weight:400;font-size:.85em">${esc(m.name_zh)}</span>` : ''}</td>`
       + `<td class="num">${m.price == null ? '–' : m.price.toFixed(2)}</td>`

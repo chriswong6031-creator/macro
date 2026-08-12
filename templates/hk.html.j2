@@ -1538,6 +1538,20 @@
 
   /* ── AI BRIEF DIALOG — ABX v2 shared body (.aib2-*); ZH-safe blue accent by default ── */
 {% include "_aibrief_css.j2" %}
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  body.page-hk .hkx-big-score,
+  body.page-hk .ms-green .hkx-big-score,
+  body.page-hk .ms-red .hkx-big-score,
+  body.page-hk .mx5-big-score,
+  body.page-hk .mx5-score-green .mx5-big-score,
+  body.page-hk .mx5-score-yellow .mx5-big-score,
+  body.page-hk .mx5-score-red .mx5-big-score
+) { text-shadow:none; }
+html[data-lang="zh"][data-theme="light"] body.page-hk .ms-green .hkx-big-score { text-shadow:none; }
+html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { text-shadow:none; }
 </style>
 </head>
 <body{% if mode != 'stocks' %} class="page-hk"{% endif %}>
@@ -3243,7 +3257,7 @@
   <div class="panel span12 anv2-board" id="act-now">
     {{ dc.dc_css() }}
     <div class="anv2-hd">
-      <h2>⚡ {{ t('What to Act On Now', '现在行动') }}
+      <h2>{{ t('What to Act On Now', '现在行动') }}
         <span class="anv2-v2pill">v2</span>
         {{ lens.lens(
           kind='read', ill=lens.ILL_LANES,
@@ -3722,7 +3736,7 @@
   {%- endif -%}{%- endfor -%}
   {%- set _hk_xu_allfeat = (_hk_xu_c.feat > 0 and _hk_xu_c.feat_unknown == _hk_xu_c.feat) -%}
   <div class="panel span12" id="standouts">
-    <h2>⚡ {{ t('Prophet — HK stock signals', 'Prophet — 港股信号') }}
+    <h2>{{ t('Prophet — HK stock signals', 'Prophet — 港股信号') }}
       <span class="note" style="text-transform:none">· {% if _hsg.any %}{{ t('Ranked by readiness — what to act on, and what to leave alone', '按就绪度排序 —— 哪些可以动手，哪些放着别碰') }}{% else %}{{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}{% endif %}</span>
       {% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, " ~ _hk_ext_en ~ ", capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The " ~ _hk_def ~ " forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、" ~ _hk_ext_zh ~ "，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。" ~ _hk_def ~ " 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}
       {# W8-G: grid/table view toggle #}
@@ -4531,7 +4545,7 @@
   {% if _vd %}
   <!-- ===================== 1D VELOCITY DESK (fast movers, HK native 1D signal) ===================== -->
   <div class="panel span12" id="hk-velocity-desk">
-    <h2 style="margin:0 0 4px">⚡ {{ t('Fast movers — 1-day momentum', '快速异动 — 1日动能') }}
+    <h2 style="margin:0 0 4px">{{ t('Fast movers — 1-day momentum', '快速异动 — 1日动能') }}
       {{ help("HK names that set off several same-day momentum triggers — a fresh cross, an overnight gap on the US listing, or a turn off a washout — and then ran. Hong Kong has no daily price limits, so a name that runs the same day is showing real demand. A heads-up, not a buy signal.", "今天同时触发了几个盘中动量信号的港股 —— 信号刚上穿、美股 ADR 隔夜跳空，或者从低位转上来 —— 然后就直接涨了。港股没有涨跌停，当天就能拉起来说明需求是真的。这是提示，不是买入信号。") }}
     </h2>
     {% set _vd_asof = _vd.get('as_of') %}
@@ -4592,7 +4606,7 @@
   {% set _ww_hot = (_ww | selectattr('state', 'equalto', 'ignition_watch') | list) if _ww else [] %}
   {% set _ww_cold = (_ww | rejectattr('state', 'equalto', 'ignition_watch') | list) if _ww else [] %}
   <div class="panel span12" id="washout-watch">
-    <h2>🔥 {{ t('Washout Watch — deep decliners trying to turn', '洗盘观察 — 深跌股尝试转身') }}
+    <h2>{{ t('Washout Watch — deep decliners trying to turn', '洗盘观察 — 深跌股尝试转身') }}
       <span class="note" style="text-transform:none">· {{ t("High risk, unconfirmed — watch, don't chase.", '高风险、未确认 — 观察，勿追。') }}</span>
     </h2>
     <div class="ww-strip">
@@ -4865,7 +4879,7 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
   {% if hk_scoreboard and hk_scoreboard.modes and hk_scoreboard.modes.all %}
   {% set RS = hk_scoreboard.risk_state %}
   <div class="panel span12" id="hk-screener">
-    <h2>🌐 {{ t('Global-risk screener', '全球风险筛选') }}
+    <h2>{{ t('Global-risk screener', '全球风险筛选') }}
       <span class="note" style="text-transform:none">· {{ t('Who amplifies global risk, who cushions it — the full HK list', '谁放大全球风险、谁缓冲 —— 完整港股名单') }}{% if hk_scoreboard.as_of %} · {{ hk_scoreboard.as_of }}{% endif %}</span>
       {{ help("HK single names are mostly risk exposures. Amplifiers (high beta) move more with global risk; cushions (low beta) move less. Beta measured to the S&P 500 overnight. Descriptive exposure, not a return forecast.", "港股个股主要是风险敞口。放大器（高贝塔）更随全球风险波动；缓冲股（低贝塔）波动较小。贝塔以隔夜标普500衡量。描述性敞口，非收益预测。") }}
     </h2>

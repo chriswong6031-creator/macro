@@ -704,7 +704,7 @@ html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
 
     {% if yc %}
     <details id="shelf-yc">
-      <summary><span class="sh-ic">📈</span>{{ t('Yield curve — the full read', '收益率曲线——完整解读') }}<span class="sh-hint">{{ t('shape · regime · recession · signals', '形态 · 状态 · 衰退 · 信号') }}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('Yield curve — the full read', '收益率曲线——完整解读') }}<span class="sh-hint">{{ t('shape · regime · recession · signals', '形态 · 状态 · 衰退 · 信号') }}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
       <p class="sub" style="margin:12px 0 14px">{{ b(yc.signals.core_macro) }}</p>
       <div class="grid cols-3">
@@ -821,7 +821,7 @@ html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
     {% endif %}
 
     <details id="shelf-infl">
-      <summary><span class="sh-ic">🌡️</span>{{ t('Inflation & expectations — the deep read', '通胀与预期——深入解读') }}<span class="sh-hint">{{ t('decomposition · breakeven velocity', '分解 · 盈亏平衡速度') }}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('Inflation & expectations — the deep read', '通胀与预期——深入解读') }}<span class="sh-hint">{{ t('decomposition · breakeven velocity', '分解 · 盈亏平衡速度') }}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
       {% set D = tx.inflation_decomposition %}
       <div class="card" style="margin-top:12px">
@@ -882,7 +882,7 @@ html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
     </details>
 
     <details id="shelf-gate">
-      <summary><span class="sh-ic">🧾</span>{{ t('How we measure — receipts & caveats', '测量方法——依据与告诫') }}<span class="sh-hint">{{ t('every tested signal, including the failures', '每个被检验的信号，包括失败的') }}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('How we measure — receipts & caveats', '测量方法——依据与告诫') }}<span class="sh-hint">{{ t('every tested signal, including the failures', '每个被检验的信号，包括失败的') }}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
       <p class="note" style="margin-top:12px">{{ t('We tested every rate and inflation driver on this page for real predictive edge. None passed the bar to be scored — so everything here is shown as context to explain moves, never as a signal to trade on. The table below is the full honest record.', '我们对页面上每个利率与通胀驱动都做了预测优势检验，无一通过计分门槛——因此本页内容仅为解释行情的背景，绝非交易信号。下表为完整的诚实记录。') }}</p>
       <div class="flag info" style="display:block;margin-bottom:10px"><span class="l-en">{{ tx.scored_status.en }}</span><span class="l-zh">{{ tx.scored_status.zh }}</span></div>

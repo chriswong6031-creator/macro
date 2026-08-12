@@ -234,7 +234,7 @@
   <!-- ── Page header ── -->
   <div class="pl-hd">
     <p class="pl-eyebrow">{{ t('Pick Lab · Display-only · ACCRUING', 'Pick Lab · 仅展示 · 累积中') }}</p>
-    <h1 class="pl-title">🧪 {{ t('Candidate Pick Engines', '候选选股引擎') }}</h1>
+    <h1 class="pl-title">{{ t('Candidate Pick Engines', '候选选股引擎') }}</h1>
     <p class="pl-sub">{{ t('23 shadow books running on forward ledgers — measured against a random-control yardstick before any book earns operator attention. All data is display-only; nothing here drives live selection or gating.', '23个影子书在前向账本上运行 — 在任何书获得操作员关注之前，均与随机控制基准对比衡量。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。') }}</p>
     {% if as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ as_of }} · {{ t('Built', '生成时间') }} {{ built }}</p>{% endif %}
     {% if not empty and regime %}

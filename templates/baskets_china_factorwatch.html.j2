@@ -249,7 +249,7 @@
 
       {# ── Top row: H1 + as-of ── #}
       <div class="tc-toprow">
-        <h1 style="font-size:21px;margin:0">🧺 {{ t('China thematic baskets', 'A股主题篮子') }}</h1>
+        <h1 style="font-size:21px;margin:0">{{ t('China thematic baskets', 'A股主题篮子') }}</h1>
         <span class="asof" style="margin-left:auto"><span class="pfx">{{ t('as of', '截至') }} </span><span id="asof">—</span></span>
       </div>
       <p class="story" id="story" style="font-size:14.5px;margin:4px 0 8px;line-height:1.5"></p>
@@ -351,7 +351,7 @@
   {# ── Plain header fallback when theme_context absent or lite variant ── #}
   <header>
     <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:12px">
-      <h1>🧺 {{ t('China thematic baskets', 'A股主题篮子') }}{% if lite %} <span style="font-size:.62em;opacity:.75;font-weight:600">· {{ t('同花顺 themes', '同花顺主题') }}</span>{% endif %}</h1>
+      <h1>{{ t('China thematic baskets', 'A股主题篮子') }}{% if lite %} <span style="font-size:.62em;opacity:.75;font-weight:600">· {{ t('同花顺 themes', '同花顺主题') }}</span>{% endif %}</h1>
       <span class="asof"><span class="pfx">{{ t('as of', '截至') }} </span><span id="asof">—</span></span>
     </div>
     <p class="story" id="story"></p>

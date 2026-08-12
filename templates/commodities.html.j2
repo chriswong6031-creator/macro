@@ -461,6 +461,15 @@ html[data-lang="zh"] .pill.u  { background:rgba(211,11,11,.10); }
 html[data-lang="zh"] .lean-pos { background:rgba(211,11,11,.10); }
 html[data-lang="zh"] .v-conf  { background:rgba(211,11,11,.10); }
 html[data-lang="zh"] .bcolb .ic { background:rgba(211,11,11,.10); }
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  .big-stance.t-watch,
+  .big-stance.t-protect,
+  .big-stance.t-getready,
+  .big-stance.t-act
+) { text-shadow:none; }
 </style>
 {% include "_state_inks.html.j2" %}
 {% include "_vector_polish.html.j2" %}

@@ -654,7 +654,7 @@
   {% if subsectors and subsectors.subsectors %}
   <div class="fx-study" style="margin-top:14px">
     <details>
-      <summary><span class="sh-ic">📡</span>{{ t('Subsector radar — the whole market at sub-industry granularity', '子行业雷达——以子行业粒度覆盖全市场') }}<span class="sh-hint">{{ subsectors.n_scarcity_aligned }} / {{ subsectors.all_count }} {{ t('aligned', '共振') }}</span><span class="sh-car">▶</span></summary>
+      <summary>{{ t('Subsector radar — the whole market at sub-industry granularity', '子行业雷达——以子行业粒度覆盖全市场') }}<span class="sh-hint">{{ subsectors.n_scarcity_aligned }} / {{ subsectors.all_count }} {{ t('aligned', '共振') }}</span><span class="sh-car">▶</span></summary>
       <div class="sh-body">
         <p>{{ t('The same supply × estimates read run over all 113 sub-industries, not just the curated themes — a screen to investigate, not a confirmed call. Supply here is a text-only proxy from filings.', '将同一"供给 × 预期"读数运行于全部113个子行业，而非仅精选主题——待查筛选，非确认判断。此处供给为来自备案的纯文本代理。') }}</p>
         <table class="fx-tbl">
@@ -688,7 +688,7 @@
     {# ---- AI analyst + thesis monitor ---- #}
     {% if (analyst and analyst.regime_read) or (monitor and (monitor.n_open or monitor.n_broken or monitor.n_weakening)) %}
     <details>
-      <summary><span class="sh-ic">🧠</span>{{ t('Analyst read & thesis monitor', '分析师解读与论点监视') }}<span class="sh-hint">{{ t('what could break it', '何种情况会改变判断') }}</span><span class="sh-car">▶</span></summary>
+      <summary>{{ t('Analyst read & thesis monitor', '分析师解读与论点监视') }}<span class="sh-hint">{{ t('what could break it', '何种情况会改变判断') }}</span><span class="sh-car">▶</span></summary>
       <div class="sh-body">
         {% if monitor and (monitor.n_open or monitor.n_broken or monitor.n_weakening) %}
         <div class="fx-mon {{ 'broken' if monitor.n_broken else 'weak' if monitor.n_weakening else '' }}">
@@ -716,7 +716,7 @@
     {# ---- narrative ↔ money divergence ---- #}
     {% if divergence_board %}
     <details>
-      <summary><span class="sh-ic">🧭</span>{{ t('Narrative vs money — who’s early', '叙事 vs 资金——谁更早') }}<span class="sh-hint">{{ divergence_board.n_cross_section }} {{ t('themes', '主题') }}</span><span class="sh-car">▶</span></summary>
+      <summary>{{ t('Narrative vs money — who’s early', '叙事 vs 资金——谁更早') }}<span class="sh-hint">{{ divergence_board.n_cross_section }} {{ t('themes', '主题') }}</span><span class="sh-car">▶</span></summary>
       <div class="sh-body">
         <p>{{ t('Is the money moving before the story? Each theme ranked on narrative (news + filing language) vs money (federal spend + estimate breadth). Money rising while the story is quiet is the hidden-opportunity front-run.', '资金是否先于故事在动？每个主题按叙事（新闻＋备案文本）与资金（联邦支出＋预期广度）排名。资金上升而故事平静即隐藏机会的前沿卡位。') }}</p>
         {% if divergence_board.thin_cross_section %}
@@ -746,7 +746,7 @@
     {# ---- policy catalyst calendar ---- #}
     {% if policy_calendar and policy_calendar.themes %}
     <details>
-      <summary><span class="sh-ic">🏛️</span>{{ t('Policy catalyst calendar', '政策催化日历') }}<span class="sh-hint">{{ t('dated, known in advance', '有日期、提前可知') }}</span><span class="sh-car">▶</span></summary>
+      <summary>{{ t('Policy catalyst calendar', '政策催化日历') }}<span class="sh-hint">{{ t('dated, known in advance', '有日期、提前可知') }}</span><span class="sh-car">▶</span></summary>
       <div class="sh-body">
         <p>{{ t('Federal rule-making and export-control events are hard, dated, and public weeks-to-months before money lands or the media narrates. Display-only, forward-graded.', '联邦规则制定与出口管制事件是硬性、有日期、公开的，早于资金落地或媒体报道数周至数月。仅供展示，前瞻评分。') }}</p>
         {% set upcoming = policy_calendar.upcoming_events %}
@@ -789,7 +789,7 @@
     {# ---- sizing & concentration ---- #}
     {% if cascade.sizing %}
     <details>
-      <summary><span class="sh-ic">⚖️</span>{{ t('Sizing & concentration', '仓位与集中度') }}<span class="sh-hint">{{ t('display-only', '仅供展示') }}</span><span class="sh-car">▶</span></summary>
+      <summary>{{ t('Sizing & concentration', '仓位与集中度') }}<span class="sh-hint">{{ t('display-only', '仅供展示') }}</span><span class="sh-car">▶</span></summary>
       <div class="sh-body">
         <p>{{ cascade.sizing.effective_note }}{% if cascade.sizing.n_derisk %} · <b style="color:var(--ink-down, var(--down))">⚠ {{ cascade.sizing.n_derisk }} {{ t('forced de-risk', '强制减仓') }}</b>{% endif %}</p>
         {% if cascade.sizing.enb_note %}<p>{{ t('Independent bets', '有效独立押注') }}: {{ cascade.sizing.enb_note }}{% if cascade.sizing.concentration_flag %} · <b style="color:var(--ink-warn, var(--warn))">{{ t('concentrated', '集中') }}</b>{% endif %}</p>{% endif %}
@@ -799,7 +799,7 @@
 
     {# ---- forward-graded track record ---- #}
     <details>
-      <summary><span class="sh-ic">📊</span>{{ t('Track record — graded forward vs SPY', '记录——对标普前瞻评分') }}<span class="sh-hint">{{ t('survivorship-free', '免幸存者偏差') }}</span><span class="sh-car">▶</span></summary>
+      <summary>{{ t('Track record — graded forward vs SPY', '记录——对标普前瞻评分') }}<span class="sh-hint">{{ t('survivorship-free', '免幸存者偏差') }}</span><span class="sh-car">▶</span></summary>
       <div class="sh-body">
         <p>{{ t('Every stage flag is logged when it fires and graded forward against SPY at 30 / 60 / 90 days — survivorship-free, point-in-time membership, with a confidence interval and a false-discovery gate so a small lucky sample can’t read as skill. Hit-rates exist only for the directional stages; Late / Watching are control arms (their forward return checks the “don’t chase” rule but is never scored as skill).', '每个阶段标记在触发时记录，并对标普在30/60/90天前瞻评分——免幸存者偏差、时点成分，附置信区间与错误发现门槛，使小样本侥幸不被读作技能。命中率仅适用于方向性阶段；偏晚/观察为对照组（其前瞻收益检验"勿追高"，绝不计为技能）。') }}</p>
         <div class="fx-recgrid">
@@ -834,7 +834,7 @@
     {# ---- data health (the old 13-leg telemetry, demoted here) ---- #}
     {% if health %}
     <details>
-      <summary><span class="sh-ic">🩺</span>{{ t('Data health — which signals are live tonight', '数据健康——今晚哪些信号在线') }}<span class="sh-hint mode-{{ health.mode }}">{{ t('Full', '完整') if health.mode == 'FULL' else t('Confirmers only', '仅确认') }}</span><span class="sh-car">▶</span></summary>
+      <summary>{{ t('Data health — which signals are live tonight', '数据健康——今晚哪些信号在线') }}<span class="sh-hint mode-{{ health.mode }}">{{ t('Full', '完整') if health.mode == 'FULL' else t('Confirmers only', '仅确认') }}</span><span class="sh-car">▶</span></summary>
       <div class="sh-body">
         <p>{{ t('Per-source status for tonight’s build. Dark sources are dropped from the read, never faked — an honest gap beats a filled-in guess.', '今晚构建的各数据源状态。暗源直接从读数中舍弃，绝不伪造——诚实的缺口胜过填补的猜测。') }}</p>
         {%- set _leg_labels = {'t1_fred':'Supply (FRED)','t1_text':'Supply (text)','t1_fingerprint':'Supply (filings)','t2_demand':'Demand','t3_guidance':'Guidance','t4_level':'Estimates','t4_accel':'Estimates trend','glut':'Fade watch','power':'Power','confirmers':'Alt-data','analyst':'Analyst','monitor':'Monitor','grading':'Grading'} -%}
@@ -851,7 +851,7 @@
 
     {# ---- methodology & honesty ---- #}
     <details>
-      <summary><span class="sh-ic">🧾</span>{{ t('How we measure — method & honesty', '测量方法——方法与诚实') }}<span class="sh-hint">{{ t('display-only, no scored signal', '仅供展示，非评分信号') }}</span><span class="sh-car">▶</span></summary>
+      <summary>{{ t('How we measure — method & honesty', '测量方法——方法与诚实') }}<span class="sh-hint">{{ t('display-only, no scored signal', '仅供展示，非评分信号') }}</span><span class="sh-car">▶</span></summary>
       <div class="sh-body">
         <p><b>{{ t('Display-only.', '仅供展示。') }}</b> {{ t('Nothing here is a scored signal or a sized position. The relay reads free public data: supply tightness from FRED capacity, inventories, orders and industry prices plus SEC filing language (the leading leg); demand from the hyperscaler-capex pool (capex leads beneficiary revenue ~2–4 quarters); guidance from SEC 8-K “raising / lowering” language (management pre-signalling, days-to-weeks ahead); and estimate breadth from analyst EPS revisions (the confirmation gauge, never the entry).', '此处任何内容都不是评分信号或仓位。接力读取免费公开数据：供给紧张来自 FRED 产能、库存、订单与行业价格＋ SEC 备案文本（领先腿）；需求来自云厂商资本开支池（资本开支领先受益方营收约2–4个季度）；指引来自 SEC 8-K "上调／下调"文本（管理层预示，领先数日至数周）；预期广度来自分析师 EPS 修正（确认指标，绝非入场）。') }}</p>
         <p>{{ t('The desk builds a watchlist and confirms a thesis — it does not time entries. The 2024 memory call was right and ~9 months early, so the buy is deferred to a market dislocation (buy the flush, not the pop). Fade-risk inverts the supply read and takes precedence: a forming glut while estimates stay high is the trim / exit clock. No point-dates — turn detection is coincident, so risk reads are banded.', '本台构建观察名单并确认论点——不择时入场。2024年的存储判断正确但早约9个月，故买点交由市场错位（买回调，不买冲高）。退潮风险与供给读数相反且优先：预期仍高而过剩正在形成即为减仓／退出倒计时。不给精确日期——拐点检测为同步指标，故风险读数以区间呈现。') }}</p>

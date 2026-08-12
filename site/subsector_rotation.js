@@ -852,7 +852,7 @@
 
     el.innerHTML='<div class="sr-turns">'
       +'<div class="sr-tw-hd">'
-        +'<h3>🔄 '+L('Turns this week','本周转向')+'</h3>'
+        +'<h3>'+L('Turns this week','本周转向')+'</h3>'
         +'<span class="rcf-help sr-tw-q" tabindex="0" role="button"'
           +' data-tip-t-en="How a turn is scored" data-tip-t-zh="转向如何评分"'
           +' data-tip-en="'+esc(howEn)+'" data-tip-zh="'+esc(howZh)+'"'

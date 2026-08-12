@@ -3499,7 +3499,7 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
       var held = mac.severity === 'risk_off' ? L(' — coil calls held back (let washouts confirm)', ' — 蓄势信号已收敛（待清洗确认）') : '';
       macLine = '<div class="lead-macro">' + L('Macro backdrop', '宏观背景') + ': ' + dot + ' ' + L(mac.label_en || mac.verdict || '—', mac.label_zh || mac.verdict || '—') + (mac.score != null ? ' <span style="color:var(--muted)">(' + mac.score + '/100)</span>' : '') + held + '</div>';
     }
-    el.innerHTML = '<div class="lead-head"><h2>🧭 ' + L('Index leadership rotation', '指数领导轮动') + '</h2><span class="asof">' + L('as of ' + (d.as_of || '—'), '截至 ' + (d.as_of || '—')) + '</span></div>' + hero + macLine + tbl + drivers + trackBox(d.track_record);
+    el.innerHTML = '<div class="lead-head"><h2>' + L('Index leadership rotation', '指数领导轮动') + '</h2><span class="asof">' + L('as of ' + (d.as_of || '—'), '截至 ' + (d.as_of || '—')) + '</span></div>' + hero + macLine + tbl + drivers + trackBox(d.track_record);
     wrapTbls(el);
   }
   fetch('marketdata/index_leadership.json', { cache: 'no-cache' })

@@ -193,7 +193,7 @@
     if(d) return d;
     host.innerHTML=''
       +'<details class="tm-details" id="tm-details">'
-      +'<summary>⏱ '+L('Rotation Time Machine — replay 25 years of rotation','轮动时光机 — 回放25年轮动史')+'</summary>'
+      +'<summary>'+L('Rotation Time Machine — replay 25 years of rotation','轮动时光机 — 回放25年轮动史')+'</summary>'
       +'<div class="tm-body" id="tm-body"></div>'
       +'</details>';
     return document.getElementById('tm-details');

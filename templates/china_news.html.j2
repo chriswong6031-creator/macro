@@ -340,7 +340,7 @@
 
     <aside class="cn-side">
       <section class="side-card">
-        <h2 class="sc-h"><span>📅</span>{{ t('Scheduled catalysts', '排定催化') }}</h2>
+        <h2 class="sc-h">{{ t('Scheduled catalysts', '排定催化') }}</h2>
         {% for c in calendar[:8] %}
         {% set soon = (c.days_until is defined and c.days_until is not none and c.days_until <= 3) %}
         <div class="cal-row">
@@ -354,7 +354,7 @@
 
       {% if SYN_TICKERS %}
       <section class="side-card">
-        <h2 class="sc-h"><span>🎯</span>{{ t('Exposures on the tape', '相关标的') }}</h2>
+        <h2 class="sc-h">{{ t('Exposures on the tape', '相关标的') }}</h2>
         <div class="exp-pills">
           {% for tk in SYN_TICKERS[:8] %}
           {% set tn = TKN.get(tk.ticker) %}
