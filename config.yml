@@ -1754,6 +1754,26 @@ etf_holdings:
   consensus_top_n: 40             # favored-stocks (cross-fund consensus) rows shown
   consensus_min_funds: 2          # min # funds touching a name to appear (page copy promises 2+)
   sparkline_cap: 60               # rows that get a weight-trajectory sparkline (bounds parquet reads)
+  # --- W1 flow-vs-selection decomposition (engine/holdings_signals.py) --------
+  # Creation/redemption scales every constituent by a common factor; anything
+  # beyond it is the manager's own decision. See
+  # research/ETF_PAGE_UPGRADE_MASTERPLAN_BY_FABLE.md §2.
+  flow_min_scale_n: 5             # continuing constituents needed before the MEDIAN share
+                                  # ratio is trusted; below it fall back to the sum ratio
+  flow_split_min_ratio: 1.5       # |share ratio| that qualifies as a possible split…
+  flow_split_mv_tol: 0.03         # …and ONLY when the position kept its market VALUE within
+                                  # this fraction of flat. Deliberately tight: measured
+                                  # 2026-08-12, a 25% window flagged 8 positions of which
+                                  # 6 were dip-buys / sell-into-strength trims, and a false
+                                  # split DELETES a real decision the board ships today.
+  flow_split_ratio_tol: 0.04      # …at a simple re-denomination factor (2:1, 3:1, 3:2 …)
+  flow_streak_snaps: 4            # snapshots read per fund for streak/acceleration (3 intervals).
+                                  # Every one is an extra parquet read on the render
+                                  # path, and the etf section's whole budget is ~2× its
+                                  # pre-W1 cost — 3 intervals is what fits.
+  flow_flat_frac: 0.0001          # |selection| under this fraction of the position reads as
+                                  # flat, so float noise can't manufacture a streak
+  flow_stale_days: 7              # no snapshot within N days of the fleet's newest => stale
   # Tier-preview split for etfs.html (SEO Supercharge W2, docs/TIER_PREVIEW_PATTERN.md).
   # ON: the page ships the FREE half only — header, honest totals, the non-graded
   # stance line, the whole rotation backdrop, the full fund coverage directory and

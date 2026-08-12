@@ -2942,7 +2942,11 @@ BUY_ZONE_STATES = ("FRESH BUY", "TURN SIGNALED")
 def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
     """Group every fund decision by the STOCK it touched, so each ticker's page
     can answer "which thematic/active funds are buying or selling me". Sorted by
-    conviction magnitude within each ticker."""
+    conviction magnitude within each ticker.
+
+    Carries a LEAN slice of the W1 decomposition — the dollar estimate, which
+    component drove it and how persistent it is. This feed is per-stock and
+    ungated, so it stays a slice: the full roll-up lives on the consensus board."""
     by: dict[str, list[dict]] = {}
     for r in rows:
         by.setdefault(r["ticker"], []).append({
@@ -2952,6 +2956,9 @@ def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
             "weight_pct": r.get("weight_pct"), "active_chg_pct": r.get("active_chg_pct"),
             "is_new": r.get("is_new", False), "is_exit": r.get("is_exit", False),
             "window": r.get("window", ""),
+            "total_usd": r.get("total_usd"), "flow_usd": r.get("flow_usd"),
+            "selection_usd": r.get("selection_usd"), "driver": r.get("driver"),
+            "streak": r.get("streak") or 0, "is_stale": bool(r.get("is_stale")),
         })
     for tk in by:
         by[tk].sort(key=lambda m: -abs(m.get("conviction_pp") or 0))
@@ -3000,6 +3007,27 @@ def _etf_free_tile(total: int) -> dict:
             "tone": "link"}
 
 
+def _etf_flow_block(favored: list[dict]) -> dict[str, dict]:
+    """Per-ticker flow/selection roll-up for the consensus board rows (W1).
+
+    `usd_complete` is carried verbatim rather than dropped: a dollar total that
+    covers 2 of a row's 4 funds is a partial number, and the row has to say so."""
+    return {
+        r["ticker"]: {
+            "total_usd": r.get("total_usd"), "flow_usd": r.get("flow_usd"),
+            "selection_usd": r.get("selection_usd"),
+            "n_funds_flow": r.get("n_funds_flow"),
+            "n_funds_selection": r.get("n_funds_selection"),
+            "n_funds_usd": r.get("n_funds_usd"), "usd_complete": r.get("usd_complete"),
+            "breadth": r.get("breadth"), "max_streak": r.get("max_streak"),
+            "accel_pct_per_day": r.get("accel_pct_per_day"),
+            "contested_components": r.get("contested_components"),
+            "n_stale": r.get("n_stale"),
+        }
+        for r in favored if r.get("ticker")
+    }
+
+
 def _write_etf_payload(env, site: Path, gate: dict | None, *, favored: list[dict],
                        fresh: list[dict], accumulation: list[dict],
                        trims: list[dict], verdict: dict | None,
@@ -3020,7 +3048,7 @@ def _write_etf_payload(env, site: Path, gate: dict | None, *, favored: list[dict
         payload = {"schema": "tier_payload.v1", "page": "etfs", "gated": False,
                    "built": built, "board_html": "", "fresh_html": "",
                    "accumulation_html": "", "trims_html": "",
-                   "verdict_html": "", "tiles_html": ""}
+                   "verdict_html": "", "tiles_html": "", "flows": {}}
     else:
         macros = env.get_template("_etf_macros.html.j2").module
         payload = {
@@ -3047,6 +3075,10 @@ def _write_etf_payload(env, site: Path, gate: dict | None, *, favored: list[dict
                            if trims else ""),
             "verdict_html": str(macros.hero_verdict(verdict)) if verdict else "",
             "tiles_html": str(macros.hero_tiles(tiles)) if tiles else "",
+            # W1 machine-readable roll-up for the board rows, so the UI wave can
+            # render the $ / breadth columns without re-deriving them client-side.
+            # Paid side only — it is the same graded board, in numbers.
+            "flows": _etf_flow_block(favored),
         }
     path.write_text(json.dumps(payload), encoding="utf-8")
     log.info("etfs: premium payload %s (%d board rows, %d adds, %d trims)",

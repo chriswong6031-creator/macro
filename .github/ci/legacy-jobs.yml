@@ -6492,6 +6492,15 @@ jobs:
       # are already in this job's venv line.
       - name: etf board synthesis — bilingual backdrop tile + pulse-dated rotation (zh-leak / §B9.6 pins)
         run: python -m pytest tests/test_etf_board.py -q
+      # W1 flow-vs-selection (2026-08-12): the decomposition identity plus every
+      # robustness guard standing between a raw sponsor file and a published
+      # dollar figure — split / duplicate-day / weight-sum / cadence / exit
+      # continuity, each with its own adversarial fixture. Registered on arrival
+      # rather than added to the unrun census. Needs pandas+pyarrow (parquet
+      # fixtures) and imports scripts.build_site for the payload wiring; this
+      # job's venv line already carries both.
+      - name: etf flow/selection decomposition — identity, $ estimates, robustness guards
+        run: python -m pytest tests/test_etf_flow_decomposition.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
 

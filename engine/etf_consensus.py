@@ -45,6 +45,63 @@ def _cfg() -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# W1 roll-up helpers — the flow/selection decomposition each fund row carries
+# (engine.holdings_signals), aggregated across the funds touching one stock. The
+# equal-weight fund COUNTS stay the primary read (masterplan §4: breadth is the
+# most manipulation-resistant stat); dollars and the flow/selection split are the
+# secondary lens beside them, and every one of them degrades to a printed null
+# when the sponsor publishes no market values.
+# --------------------------------------------------------------------------- #
+def _roll_decomposition(g: dict, r: dict) -> None:
+    """Accumulate one fund's decomposition into the ticker's group."""
+    g["n_funds_any"] += 1
+    driver = r.get("driver")
+    if driver == "flow":
+        g["n_funds_flow"] += 1
+    elif driver == "selection":
+        g["n_funds_selection"] += 1
+    total_usd = r.get("total_usd")
+    if total_usd is not None:
+        g["n_funds_usd"] += 1
+        g["total_usd"] += total_usd
+        g["flow_usd"] += r.get("flow_usd") or 0.0
+        g["selection_usd"] += r.get("selection_usd") or 0.0
+    g["net_flow_pp"] += r.get("flow_pp") or 0.0
+    g["net_selection_pp"] += r.get("selection_pp") or 0.0
+    streak = int(r.get("streak") or 0)
+    if streak > 0:
+        g["breadth"] += 1
+    if abs(streak) > abs(g["max_streak"]):
+        g["max_streak"] = streak
+    if r.get("is_stale"):
+        g["n_stale"] += 1
+    if r.get("split_adjusted"):
+        g["n_split_adjusted"] += 1
+    if r.get("exit_confirmed"):
+        g["n_exit_confirmed"] += 1
+    accel = r.get("accel_pct_per_day")
+    if accel is not None:
+        g["_accel"].append(accel)
+
+
+def _finish_decomposition(g: dict) -> None:
+    """Round the roll-up and set the two derived reads: whether the dollar
+    estimate covers every fund on the row, and whether investor flow and manager
+    selection point OPPOSITE ways — a real disagreement inside one stock that the
+    plain accum-vs-trim `contested` flag cannot see."""
+    for k in ("total_usd", "flow_usd", "selection_usd"):
+        g[k] = round(g[k], 2)
+    g["net_flow_pp"] = round(g["net_flow_pp"], 4)
+    g["net_selection_pp"] = round(g["net_selection_pp"], 4)
+    accel = g.pop("_accel", [])
+    g["accel_pct_per_day"] = round(sum(accel) / len(accel), 4) if accel else None
+    g["usd_complete"] = g["n_funds_usd"] == g["n_funds_any"]
+    g["contested_components"] = bool(
+        g["flow_usd"] * g["selection_usd"] < 0
+        and min(abs(g["flow_usd"]), abs(g["selection_usd"])) > 0.05 * abs(g["total_usd"] or 1.0))
+
+
+# --------------------------------------------------------------------------- #
 # 1. Cross-fund consensus — favored stocks
 # --------------------------------------------------------------------------- #
 def consensus_favored(rows: list[dict] | None = None,
@@ -61,6 +118,14 @@ def consensus_favored(rows: list[dict] | None = None,
 
     ``min_funds`` (default 1) filters out single-fund names from the headline
     board — a name multiple funds touch is the stronger cross-manager read.
+
+    Each row additionally carries the W1 roll-up: ``total_usd``/``flow_usd``/
+    ``selection_usd`` (with ``n_funds_usd``/``usd_complete`` disclosing how much
+    of the row the dollar estimate actually covers), ``n_funds_flow`` vs
+    ``n_funds_selection`` (which component drove each fund's move),
+    ``breadth``/``max_streak``/``accel_pct_per_day`` (persistence) and
+    ``contested_components``. Ranking is unchanged — still breadth of
+    accumulation, then net conviction — so none of this promotes anything.
     """
     cfg = _cfg()
     limit = limit or cfg.get("consensus_top_n", 40)
@@ -97,6 +162,14 @@ def consensus_favored(rows: list[dict] | None = None,
                 "n_accum": 0, "n_trim": 0, "n_new": 0, "n_exit": 0,
                 "net_conviction_pp": 0.0, "gross_conviction_pp": 0.0,
                 "is_active_any": False,
+                # W1 decomposition roll-up (masterplan §3): dollars beside the
+                # equal-weight counts, and flow kept apart from selection.
+                "total_usd": 0.0, "flow_usd": 0.0, "selection_usd": 0.0,
+                "net_flow_pp": 0.0, "net_selection_pp": 0.0,
+                "n_funds_any": 0, "n_funds_flow": 0, "n_funds_selection": 0,
+                "n_funds_usd": 0, "breadth": 0, "max_streak": 0,
+                "n_stale": 0, "n_split_adjusted": 0, "n_exit_confirmed": 0,
+                "_accel": [],
             }
         # keep the richest name / sector / ladder we see for this ticker
         if r.get("name") and len(str(r.get("name"))) > len(str(g["name"])):
@@ -114,6 +187,9 @@ def consensus_favored(rows: list[dict] | None = None,
             "weight_pct": r.get("weight_pct"),
             "is_new": bool(r.get("is_new")), "is_exit": bool(r.get("is_exit")),
             "active_chg_pct": r.get("active_chg_pct"),
+            "flow_usd": r.get("flow_usd"), "selection_usd": r.get("selection_usd"),
+            "total_usd": r.get("total_usd"), "driver": r.get("driver"),
+            "streak": r.get("streak") or 0, "is_stale": bool(r.get("is_stale")),
         })
         if conv > 0:
             g["n_accum"] += 1
@@ -125,6 +201,7 @@ def consensus_favored(rows: list[dict] | None = None,
             g["n_exit"] += 1
         g["net_conviction_pp"] += conv
         g["gross_conviction_pp"] += abs(conv)
+        _roll_decomposition(g, r)
 
     out = []
     for g in by_ticker.values():
@@ -138,6 +215,7 @@ def consensus_favored(rows: list[dict] | None = None,
                           else "distributing" if g["net_conviction_pp"] < 0 else "mixed")
         # a stock is "contested" when funds disagree — worth flagging honestly
         g["contested"] = g["n_accum"] > 0 and g["n_trim"] > 0
+        _finish_decomposition(g)
         out.append(g)
 
     # headline ranking: breadth of accumulation first, then net conviction. A name
