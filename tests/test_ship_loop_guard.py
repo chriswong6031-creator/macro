@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -3488,6 +3489,247 @@ def test_the_spurious_check_rule_is_one_definition(monkeypatch, tmp_path):
     assert GUARD._is_spurious_check("workers builds: MACRO (preview)") is True
     assert GUARD._is_spurious_check("Workers Builds: charting-app") is False
     assert GUARD._is_spurious_check("ci-pack-1") is False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The shared CI-handoff contract (scripts/ci_handoff_contract.py)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The classifier that decides whether a worker may stop used to live ONLY here,
+# as a Claude-shaped rule expressed in this hook. It now lives in a pure module
+# both this hook and the universal `scripts/ci_handoff.py` CLI load, because the
+# two silently disagreeing is how work gets ORPHANED: a session released on a head
+# the sweeper will refuse waits forever for a merge that never comes.
+#
+# The contract is loaded here INDEPENDENTLY of the hook's own loader on purpose.
+# Comparing the hook against a module the hook handed us would be vacuous — it
+# would pass just as well if someone re-inlined a private copy of the classifier.
+
+CONTRACT_PATH = ROOT / "scripts" / "ci_handoff_contract.py"
+_CONTRACT_SPEC = importlib.util.spec_from_file_location(
+    "_test_ci_handoff_contract", CONTRACT_PATH
+)
+assert _CONTRACT_SPEC and _CONTRACT_SPEC.loader
+CONTRACT = importlib.util.module_from_spec(_CONTRACT_SPEC)
+# `HandoffVerdict` is a @dataclass under `from __future__ import annotations`, and
+# dataclass creation resolves annotations through `sys.modules[cls.__module__]`.
+# An unregistered module makes that None and the load dies — the same trap the
+# hook's own loader documents.
+sys.modules["_test_ci_handoff_contract"] = CONTRACT
+_CONTRACT_SPEC.loader.exec_module(CONTRACT)
+
+
+#: Every check-run shape whose classification anyone has ever gotten wrong here,
+#: plus the boundaries around them. Both classifiers must answer identically on
+#: ALL of them — one case would pin nothing, since drift shows up at an edge.
+_PARITY_RUNS = [
+    [],
+    [_run_stub("Workers Builds: macro", conclusion="failure")],
+    [_run_stub("workers builds: MACRO (preview)", conclusion="failure")],
+    [_run_stub("Workers Builds: charting-app", conclusion="failure")],
+    [_run_stub("ci-pack-1", conclusion="success")],
+    [_run_stub("ci-pack-1", conclusion="failure")],
+    [_run_stub("ci-pack-1", conclusion="cancelled")],
+    [_run_stub("ci-pack-1", conclusion="timed_out")],
+    [_run_stub("ci-pack-1", conclusion="action_required")],
+    [_run_stub("ci-pack-1", conclusion=None)],
+    [_run_stub("ci-pack-1", "queued")],
+    [_run_stub("ci-pack-1", "in_progress")],
+    [_run_stub("ci-pack-1", "waiting")],
+    [_run_stub("Supabase Preview", conclusion="skipped")],
+    [_run_stub("Supabase Preview", conclusion="neutral")],
+    [_run_stub("a", conclusion="skipped"), _run_stub("b", conclusion="neutral")],
+    [_run_stub("a", conclusion="skipped"), _run_stub("b", "in_progress")],
+    [_run_stub("a", conclusion="success"), _run_stub("b", conclusion="skipped")],
+    [_run_stub("a", conclusion="failure"), _run_stub("b", "in_progress")],
+    [_run_stub("a", conclusion="failure"), _run_stub("b", conclusion="success")],
+    [_run_stub("a", conclusion="failure"), _run_stub("b", conclusion="timed_out")],
+    [
+        _run_stub("Workers Builds: macro", conclusion="failure"),
+        _run_stub("ci-pack-2", "in_progress"),
+    ],
+    [
+        _run_stub("Supabase Preview", conclusion="skipped"),
+        _run_stub("Workers Builds: macro", conclusion="failure"),
+    ],
+    [{"name": None, "status": "completed", "conclusion": "failure"}],
+    [{"status": "completed", "conclusion": "failure"}],
+    [{"name": "ci-pack-1"}],
+]
+
+
+@pytest.mark.parametrize("runs", _PARITY_RUNS, ids=range(len(_PARITY_RUNS)))
+def test_the_hook_and_the_contract_classify_a_head_identically(runs):
+    """THE ANTI-DRIFT PIN. Re-inline the classifier here and this table fires.
+
+    `_handoff_verdict` keeps its historic `(verdict, names)` tuple because callers
+    and the tests above pin that shape — but the DECISION must come from the
+    contract, so a rule change lands in both consumers at once or in neither.
+    """
+    expected = CONTRACT.classify_check_runs(runs)
+    assert GUARD._handoff_verdict(runs) == (expected.state, list(expected.red))
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Workers Builds: macro",
+        "workers builds: MACRO (preview)",
+        "WORKERS BUILDS: macro-dashboard",
+        "Workers Builds: charting-app",
+        "Cloudflare Workers Builds",
+        "macro",
+        "ci-pack-1",
+        "",
+        "unnamed check",
+    ],
+)
+def test_the_hook_and_the_contract_agree_on_the_spurious_check(name):
+    """Widening the spurious allowlist is a ruling, not a refactor — and it may
+    never happen on one side only: a broadened predicate waves a REAL red through."""
+    assert GUARD._is_spurious_check(name) is CONTRACT.is_spurious_check(name)
+
+
+def test_the_adapter_still_returns_the_historic_tuple_shape():
+    """Parity alone would be satisfied by two identically-wrong classifiers."""
+    assert GUARD._handoff_verdict([]) == ("unproven", [])
+    assert GUARD._handoff_verdict([_run_stub("ci-pack-1", "queued")]) == ("armed", [])
+    verdict, names = GUARD._handoff_verdict(
+        [_run_stub("ci-pack-1", conclusion="failure"), _run_stub("nav-gap", "in_progress")]
+    )
+    assert (verdict, names) == ("red", ["ci-pack-1 (failure)"])
+    assert isinstance(names, list), "callers slice this; a tuple would still index"
+
+
+def test_the_armed_handoff_detail_carries_a_parseable_terminal_marker(monkeypatch):
+    """The machine half of the release. A human paragraph tells the session; the
+    `CI_HANDOFF=` line tells the controller, and it must survive verbatim.
+
+    Byte-identical in SHAPE to the CLI's marker because both are built by
+    `contract.terminal_marker` over `contract.build_receipt` — one parser reads
+    both, and a marker only this hook can emit is a marker nothing consumes.
+    """
+    head = "a" * 40
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: _armed_pr(head))
+    monkeypatch.setattr(
+        GUARD, "_head_check_runs", lambda *_a: [_run_stub("ci-pack-1", "in_progress")]
+    )
+
+    verdict, detail = GUARD._merge_on_green_handoff("acme", "widgets", "claude/feature", head)
+    assert verdict == "armed"
+
+    # The human explanation is not replaced by the marker, it is joined by it.
+    assert "#4242" in detail and "10 minutes" in detail and "CONCLUDED" in detail
+
+    marker_lines = [
+        line for line in detail.splitlines() if line.startswith(CONTRACT.MARKER_PREFIX)
+    ]
+    assert len(marker_lines) == 1, f"the marker must occupy exactly one line: {detail!r}"
+    assert marker_lines[0] == marker_lines[0].strip(), "no wrapping, no indent"
+
+    parsed = CONTRACT.parse_terminal_marker(detail)
+    assert parsed, "the controller's own parser must read what the hook emits"
+    assert parsed["head_sha"] == head
+    assert parsed["pr_number"] == 4242
+    assert parsed["state"] == CONTRACT.STATE_WAITING_CI
+    assert parsed["schema"] == CONTRACT.PUBLIC_SCHEMA
+    # Public surface: an identifier, never a body, a path, or a branch.
+    CONTRACT.assert_public_safe({k: v for k, v in parsed.items() if k != "state"})
+
+
+def test_a_red_handoff_carries_no_terminal_marker(monkeypatch):
+    """A red worker is NOT terminal — it owns the fix. Marking it done would hand
+    the controller a receipt for work the sweeper is never going to merge."""
+    head = "a" * 40
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: _armed_pr(head))
+    monkeypatch.setattr(
+        GUARD, "_head_check_runs", lambda *_a: [_run_stub("ci-pack-1", conclusion="failure")]
+    )
+
+    verdict, detail = GUARD._merge_on_green_handoff("acme", "widgets", "claude/feature", head)
+    assert verdict == "red"
+    assert "ci-pack-1 (failure)" in detail, "naming the check is the value of blocking"
+    assert CONTRACT.MARKER_PREFIX not in detail
+    assert CONTRACT.parse_terminal_marker(detail) is None
+
+
+def test_an_unloadable_contract_fails_closed_and_never_releases_a_session(
+    monkeypatch, tmp_path, capsys
+):
+    """FAIL CLOSED. `_plain_copy_pairs` may fail open; this may not.
+
+    An unreadable classifier is ignorance about whether the sweeper will merge
+    this head, and ignorance must pin a session, never release one — a session
+    released on a head nothing proves ORPHANS its own work. It must also never
+    crash: a Stop hook that tracebacks is worse than one that blocks.
+    """
+    monkeypatch.setattr(GUARD, "_CONTRACT_CACHE", [])
+    monkeypatch.setattr(GUARD, "_CONTRACT_PATH", tmp_path / "gone" / "contract.py")
+    assert GUARD._ci_handoff_contract() is None
+
+    # The shape that WOULD have released the session now reads unproven.
+    assert GUARD._handoff_verdict([_run_stub("ci-pack-1", "in_progress")]) == ("unproven", [])
+    assert GUARD._handoff_verdict([_run_stub("ci-pack-1", conclusion="success")]) == (
+        "unproven",
+        [],
+    )
+    # An unrecognized name is CONSIDERED, not waved through as spurious.
+    assert GUARD._is_spurious_check("Workers Builds: macro") is False
+    assert GUARD._handoff_marker("acme", "widgets", "b", 1, "a" * 40, []) == ""
+
+    # End to end: an armed pull request with pending checks keeps the session.
+    repo, state_path, head = _pushed_unmerged_session(tmp_path)
+    monkeypatch.setattr(
+        GUARD, "_head_check_runs", lambda *_a: [_run_stub("ci-pack-1", "in_progress")]
+    )
+    verdict = _stop_verdict(
+        monkeypatch, capsys, repo, state_path, merged_pr=None, open_pull=_armed_pr(head)
+    )
+    assert verdict == "unmerged", f"an unloadable contract must not release, got {verdict}"
+
+
+def test_an_unloadable_contract_leaves_check_ci_judging_exactly_as_before(
+    monkeypatch, tmp_path
+):
+    """`_check_ci` reads the contract's NON_RED_CONCLUSIONS, so its degraded path
+    has to be the historic literal — an empty set would read `success` as a red and
+    block every merged session on the planet."""
+    monkeypatch.setattr(GUARD, "_CONTRACT_CACHE", [])
+    monkeypatch.setattr(GUARD, "_CONTRACT_PATH", tmp_path / "gone" / "contract.py")
+    monkeypatch.setattr(
+        GUARD,
+        "_head_check_runs",
+        lambda *_a: [
+            _run_stub("ci-pack-1", conclusion="success"),
+            _run_stub("legacy", conclusion="skipped"),
+            _run_stub("third-party", conclusion="neutral"),
+        ],
+    )
+    assert GUARD._check_ci(tmp_path, "acme", "widgets", "a" * 40, "b" * 40, "", "") == (True, "")
+
+
+def test_the_contract_is_loaded_by_path_and_leaves_sys_path_alone(monkeypatch, tmp_path):
+    """The hook must not acquire the application import graph to ask one question.
+
+    A repo root left on `sys.path` would let any later import in the hook process
+    resolve against the application — the exact coupling loading BY PATH exists to
+    avoid. Proven against a module that DOES insert one, since the real contract
+    is stdlib-only and would pass this vacuously.
+    """
+    assert GUARD._CONTRACT_PATH == CONTRACT_PATH, "the contract is the real file"
+    before = list(sys.path)
+    assert GUARD._ci_handoff_contract() is not None
+    assert sys.path == before
+
+    intruder = tmp_path / "intruder.py"
+    intruder.write_text(
+        "import sys\nsys.path.insert(0, '/definitely/not/on/the/path')\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(GUARD, "_CONTRACT_CACHE", [])
+    monkeypatch.setattr(GUARD, "_CONTRACT_PATH", intruder)
+    assert GUARD._ci_handoff_contract() is not None
+    assert "/definitely/not/on/the/path" not in sys.path
+    assert sys.path == before
 
 
 def test_settings_wire_session_start_and_stop():

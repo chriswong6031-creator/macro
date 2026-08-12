@@ -828,6 +828,8 @@ jobs:
         run: python -m pytest tests/test_paywall_pro_gate.py -q
       - name: static serving boundary (Caddy <-> site_access.yml, no leaked artifacts)
         run: python -m pytest tests/test_site_access_boundary.py -q
+      - name: delivery-plane census (exact families, alternate origins, consumers, defaults)
+        run: python -m pytest tests/test_r2_delivery_plane_classification.py -q
       - name: registration wall (anonymous stage + /factordata /labdata JSON gate)
         run: python -m pytest tests/test_regwall.py tests/test_regwall_json_gate.py -q
       # #4409 shipped the member Earnings Wire API suite named only in
@@ -1029,6 +1031,15 @@ jobs:
       # is not a guard (#3488).
       - name: flow-velocity measure guards + flow-desk staleness alarm (frozen-leg detection, heartbeat liveness)
         run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py -q
+      # The market-score authority suite spans engine contracts, dashboard projection,
+      # and forward-ledger provenance, so this render/engine guard job owns it. Keep it
+      # ahead of the broad sweep: an unrelated render failure must not leave the veto
+      # firewall dark. The odometer suite is the paired template/site light-mode guard
+      # merged by #5458; naming it explicitly closes the same unrun-suite gap on main.
+      - name: US market-score authority firewall (calendar, Radar, history, provenance)
+        run: python -m pytest tests/test_market_score_authority_2026_08_12.py -q
+      - name: shared light-mode odometer semantic needle contract
+        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
       # pinned SEC source objects into filing packages, Company Facts ledgers,
       # and deterministic B4 binding plans. Keep these security/provenance
@@ -1734,8 +1745,45 @@ jobs:
         run: python scripts/check_workflow_yaml.py --selftest
       - name: "all workflow files must parse with on:/jobs: blocks"
         run: python scripts/check_workflow_yaml.py .github/workflows
+      # ci.yml's Wave B job graph (2026-08-11), wired here because the step above is
+      # the closest existing owner: both read .github/workflows/ as their subject and
+      # both need only pytest+pyyaml, already installed above. A parse gate proves the
+      # file LOADS; this proves it still says what it has to say. `ci-plan` now emits
+      # the pack matrix, so a PR may publish a SUBSET of ci-pack-0..11 and `ci-gate`
+      # is the only name that concludes on every non-closed event — the affirmative
+      # success `scripts/merge_on_green.py` requires (#4779, absence of red is not a
+      # pass). Deleting `ci-gate`, or swapping the immutable PR base SHA for a branch
+      # name in the planner's diff, are both one-token edits that stay green forever
+      # without this step. Executes ci-gate's shell for real (inline shell is
+      # untested code otherwise); no importorskip, no data/ or site/ reads, so it
+      # cannot skip its way to a green on a pack runner.
+      - name: ci-plan/ci-pack/ci-gate workflow structure contract
+        run: python -m pytest tests/test_ci_plan_workflow.py -q
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
+      # The terminal CI handoff (`mastermind.ci_handoff.v1`) — the rule deciding WHEN a
+      # worker stops. Same subject as the packing step above: the sweeper that step
+      # already pins via tests/test_merge_on_green.py is the party that owns the merge
+      # once a worker releases, so the release rule and the merger are guarded in one
+      # job or they drift apart. Both defect directions are silent. Released too early
+      # — head unproven or red — and the sweeper will never merge it, so the work is
+      # ORPHANED with nobody waiting on it. Released with a leak and the receipt's
+      # private continuation context reaches a surface on a PUBLIC repository, where it
+      # is world-readable forever. The suite is written as mutation pins rather than
+      # happy paths: deleting the exact-head comparison in the CLI, flipping
+      # classify_check_runs' skipped-only branch to `armed`, and admitting payload_ref
+      # into the public projection each turn it red.
+      #
+      # Deps are stdlib + pytest only (json, re, subprocess, sys, pathlib), so the
+      # install line above already covers it, and there is no importorskip anywhere —
+      # it cannot skip its way to a green. The git half runs against a REAL temporary
+      # repository with a file:// origin, identity set locally in the fixture so a
+      # runner carrying no global user.email still commits, and the one `gh` seam
+      # (ci_handoff._gh_json) is stubbed: no network, no checked-out caches, and every
+      # sentinel/receipt write is pointed at tmp_path rather than the real
+      # ~/.mastermind. Measured in this job's exact install string: 56 tests, ~13s.
+      - name: terminal CI handoff contract — release verdict and public-receipt leak gate
+        run: python -m pytest tests/test_ci_handoff.py -q
       # SUITE DISCOVERY, which all three darkness guards share. It was
       # `tests/`-only until 2026-08-06, so the suites most likely to be dark were
       # the ones no census could see: a research packet fenced to files-only writes
@@ -5980,6 +6028,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: macro desk surface, typography, glance + action-board hover cards
         run: python -m pytest tests/test_macro_desk_surface.py tests/test_macro_primary_typography.py tests/test_macro_what_to_do_glance.py tests/test_action_board_hover_cards.py tests/test_board_copy_and_controls_guard.py -q
+      - name: shared light-mode odometer needle across five report templates
+        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       - name: dashboard cold-load budget + stocktable bootstrap + logo adapter + globe overlays
         run: python -m pytest tests/test_dashboard_cold_load_budget.py tests/test_stocktable_load_order.py tests/test_stock_logo_system.py tests/test_globe_tooltip_behavior.py -q
       - name: radar page boot + reports timeline + bilingual span-leak scan

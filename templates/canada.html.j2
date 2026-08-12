@@ -333,14 +333,11 @@
   body.page-canada .ms-green .cax-gauge-fill{stroke:var(--up)}
   body.page-canada .ms-yellow .cax-gauge-fill{stroke:var(--warn)}
   body.page-canada .ms-red .cax-gauge-fill{stroke:var(--down)}
-  /* Light mode: the needle's backing line and blade ship as dark-mode presentation
-     attributes (rgba(255,255,255,.30) / white) and composited to ~1:1 on the light
-     .cax-card — the dial rendered as an arc with no reading on it. The hub / core / tip
-     already paint from --up/--warn/--down below and stay as they are. Twin rules on
-     body.page-macro / .page-china / .page-hk — the dial is the same component. */
-  [data-theme="light"] body.page-canada .cax-gauge-needle line{stroke:rgba(10,16,24,.20);}
-  [data-theme="light"] body.page-canada .cax-gauge-needle polygon{fill:rgba(10,16,24,.82);}
-  [data-theme="light"] body.page-canada .cax-gauge-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
+  /* theme.css owns the shared light pointer; these bindings keep it on the same
+     semantic state colour as the arc (and therefore preserve the zh swap). */
+  body.page-canada .cax-gauge-needle{--odo-accent:var(--warn)}
+  body.page-canada .ms-green .cax-gauge-needle{--odo-accent:var(--up)}
+  body.page-canada .ms-red .cax-gauge-needle{--odo-accent:var(--down)}
   /* needle accents follow the same .ms-* class (US idiom) */
   body.page-canada .cax-needle-hub{fill:var(--panel,rgba(8,12,18,.85));stroke:var(--warn);stroke-width:1.5}
   body.page-canada .cax-needle-core,body.page-canada .cax-needle-tip{fill:var(--warn)}
@@ -1054,11 +1051,11 @@
         <text x="70"  y="10" fill="rgba(255,255,255,.30)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">50</text>
         <text x="126" y="95" fill="rgba(255,255,255,.30)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">100</text>
         {# Needle #}
-        <g class="cax-gauge-needle" transform="rotate({{ _needle_deg }} 70 75)" filter="url(#caxNeedleGlow)">
+        <g class="cax-gauge-needle odo-needle odo-needle--compact" transform="rotate({{ _needle_deg }} 70 75)" filter="url(#caxNeedleGlow)">
           <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
           <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
           <circle cx="70" cy="75" r="7" fill="rgba(255,255,255,.10)"/>
-          <circle class="cax-needle-hub" cx="70" cy="75" r="4.5"/>
+          <circle class="cax-needle-hub odo-needle-hub" cx="70" cy="75" r="4.5"/>
           <circle class="cax-needle-core" cx="70" cy="75" r="2"/>
           <circle class="cax-needle-tip" cx="70" cy="25.5" r="2.5"/>
         </g>
