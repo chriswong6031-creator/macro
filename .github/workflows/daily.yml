@@ -47,7 +47,14 @@ concurrency:
   # uses a rebase-retry loop, so running concurrently with a batch job is race-safe.
   # cancel-in-progress stays false: a queued daily still runs (two simultaneous
   # dailies would simply dedup to the latest).
-  group: pipeline-daily
+  # 2026-08-12: key renamed from "pipeline-daily" — that group's server-side state
+  # wedged at GitHub (runs 31543112462 / 31550077044 / 31551232668 sat queued with
+  # ZERO jobs for hours; no in-progress/waiting holder existed; cancel AND
+  # force-cancel both returned HTTP 500, delete 403). A new key evaluates the
+  # group fresh and sidesteps the stranded state. The zombie runs stay queued on
+  # the old key; if GitHub ever revives them, the dedup-to-latest property above
+  # makes the overlap harmless. Do not rename back without checking those runs.
+  group: pipeline-daily-2
   cancel-in-progress: false
 
 jobs:

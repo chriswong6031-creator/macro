@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T00:21:58.217659+00:00",
-  "count": 956,
+  "generated_at": "2026-08-12T01:22:05.314312+00:00",
+  "count": 959,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -120,6 +120,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-pbe5nntoagu-bab4be",
+      "title": "FSA FI Daily Commentary 10 August 2026",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:32:20Z",
+      "summary_points": [
+        "**US Treasury yields broadly lower**: UST 2Y/10Y/30Y declines signal easing monetary policy expectations, contrasting with JGB 10Y rise (+0.031) and China 10Y fall (-0.007), highlighting divergent global rate trends critical for portfolio positioning.",
+        "**US Labor & Inflation Data**: July nonfarm payrolls -23k (vs +80k consensus), unemployment 4.1% (below forecast), hourly earnings growth slowed to 0.1% m-o-m; NY Fed inflation expectations at 3.63% (below forecast), signaling potential Fed policy shift.",
+        "**Macau Casino Revenue Collapse**: 8.4% YoY revenue drop (16th consecutive month), driven by Beijing capital controls (taxation on offshore trusts, cross-border brokerage crackdown), posing severe risk for Macau-focused investments amid geopolitical tensions.",
+        "**Zurich Insurance Recommendation Downgrade**: Shift from OP to MP signals deteriorating credit outlook, critical for fixed income risk assessment and portfolio rebalancing.",
+        "**Goodyear's FY26 Cash Burn Intensifies**: $200–$300M free cash flow burn (vs $30M in FY25), with FY27 expected $100M burn; liquidity ($4.0B) covers burn but volume stabilization not translating to earnings recovery, indicating fundamental stress."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-vko7e4zekvn-09bb9d",
       "title": "JPM US Market Intelligence Morning Briefing Aug 11",
       "institution": "J.P. Morgan",
@@ -162,6 +183,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bvoto8w71rs-6aa092",
+      "title": "WilliamBlair Economics Weekly",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-10T23:56:56Z",
+      "summary_points": [
+        "**Fed's Price Discovery Shift**: Chair Warsh moves from \"molly-coddling\" markets to prioritizing price discovery (volatility), signaling fundamental policy communication shift as markets react to real-time data over Fed guidance.",
+        "**CPI/PPI Data Misses**: July CPI (-0.4% vs 0.2% consensus) and PPI (-0.3% vs 0.2% consensus) miss expectations, indicating faster-than-expected inflation cooling and potential Fed policy timing shift.",
+        "**Yield Curve Steepening**: 10-year T-note yield and curve steepened significantly (Exhibits 1-2), with longer-term yields rising more than short-term, pricing tighter financial conditions amid Fed tightening to 6.75% (Taylor Rule).",
+        "**Forward Guidance Credibility Erosion**: Central banks face heightened credibility risks in volatile, supply-constrained environment (e.g., Fed 2021 QE misstep, ECB 2022 rate guidance failure), reducing reliance on forward guidance.",
+        "**M2 Money Supply Decline**: Sharp drop in annualized M2 growth (Aug-19 to Aug-25) signals potential liquidity contraction, critical for assessing market liquidity and policy response."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-lwx52b2fpsp-b07ab0",
       "title": "market monitor",
       "institution": "Goldman Sachs",
@@ -199,6 +241,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-i3rixppb0fj-180efe",
+      "title": "JPM US Market Intelligence | Afternoon Briefing: Stocks closed lower; CPI Scenario Analysis: August 10, 2026",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:13:32Z",
+      "summary_points": [
+        "**CPI Inflation Trajectory**: Feroli's Headline MoM +0.12% (3.4% YoY) and Core MoM +0.22% (2.5% YoY) signal persistent inflation, directly impacting Fed policy expectations and portfolio duration decisions.",
+        "**USD/JPY Reversal & CPI Catalyst**: USD/JPY at 159.25 post-JPY reversal; next CPI print (Aug 12) critical for Fed hike probability and JPY above 160, with JPM target at 164.",
+        "**Geopolitical Energy Risk**: Houthi attacks on Saudi Aramco and UAE missile accusations drive oil/energy surge (2.25%); unresolved Iran deal expectations create immediate energy market volatility.",
+        "**iPhone 18 BOM Cost Surge**: 38% YoY BOM cost increase (memory 10%→34% of BOM) forces Apple margin compression, directly impacting tech sector valuation and earnings outlook.",
+        "**Mag7 Valuation Gap**: Mag7/hyperscalers trading 2 SD below 2018Q3–2024 mean (forward P/E), with 30% upside to 1 SD, driven by AI backlog growth (150% YoY to $1.7T)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
