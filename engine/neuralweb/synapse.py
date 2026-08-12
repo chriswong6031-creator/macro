@@ -255,6 +255,29 @@ def validate_registry(reg: dict, root: str | Path | None = None) -> list[str]:
                     f"explaining the gauntlet evidence (Article 3 honesty)"
                 )
 
+        # 2k2. scored_path_surfaces values must be real Article-2 surfaces.
+        # VALIDATE-WHEN-PRESENT, deliberately NOT added to _REQUIRED_ARTIFACT_KEYS:
+        # requiring the key would demand it on all 642 artifacts and change this check's
+        # behaviour for every open PR. But leaving the VALUES unchecked is how Finding
+        # C-2 happened — `scored_path_surfaces` is the field the engine registry derives
+        # `authority: user_ranking` from (engine/intelligence_registry.py), and an
+        # unvalidated authority input is the defect class, not the fix. All 11 current
+        # values are already valid, so this is green on arrival.
+        surfaces = entry.get("scored_path_surfaces")
+        if surfaces is not None:
+            valid_surfaces = set(meta.get("article2_surfaces") or [])
+            if not isinstance(surfaces, list):
+                violations.append(
+                    f"{prefix}: scored_path_surfaces must be a list, got {type(surfaces).__name__}"
+                )
+            elif valid_surfaces:
+                for surface in surfaces:
+                    if surface not in valid_surfaces:
+                        violations.append(
+                            f"{prefix}: scored_path_surfaces value {surface!r} not in "
+                            f"meta.article2_surfaces {sorted(valid_surfaces)}"
+                        )
+
         # 2l. weights='hand' requires notes naming the debt
         if weights == "hand" and not entry.get("notes"):
             violations.append(

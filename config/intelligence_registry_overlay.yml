@@ -1,0 +1,72 @@
+# config/intelligence_registry_overlay.yml — the CURATED half of the engine registry.
+#
+# The registry SPINE is derived (scripts/build_intelligence_registry.py). This file holds
+# ONLY the fields that genuinely exist nowhere in a canonical source. A hand-authored
+# engine list is the pattern DNR:KILL-PARALLEL-KNOWLEDGE-BASE forbids, so the four-key
+# allowlist below is enforced MECHANICALLY by scripts/check_intelligence_registry.py —
+# that allowlist IS the executable form of the DNR row. Without it this file silently
+# becomes the parallel store.
+#
+# A row may carry EXACTLY these four keys and nothing else:
+#
+#   output_class:      {value: <one of the 7 catalog §2 classes>, rationale: "<why>"}
+#                      Required only when the engine trips the evaluation gate
+#                      (authority > display, or any artifact tier in
+#                      {shadow, scored, confirmer}). Otherwise leave it out.
+#
+#   graded_by_design:  {value: "no — descriptive", reason: "<why>"}
+#                      The ONE legal transition: "no — not yet" -> "no — descriptive".
+#                      Writing "yes" is a hard error — that must be earned by a real
+#                      ledger. Writing "no — not yet" is a hard error — that is the safe
+#                      default, not a claim.
+#
+#   validation_state:  {value: falsified|retired, dnr_key: "DNR:<KEY>",
+#                       ratified_by: "<who>", date: "<YYYY-MM-DD>"}
+#                      Terminal ratification ONLY. DO_NOT_REBUILD matching is a DETECTOR:
+#                      config/compiled_kill_registry.yml carries no owner_program,
+#                      engine_id, artifact_id or path field, so the DNR-to-engine mapping
+#                      is pure fuzzy text matching — and falsified/retired are TERMINAL
+#                      under engine/species_registry.py::_ALLOWED_TRANSITIONS. A detector
+#                      must not be able to terminate an engine's lifecycle.
+#
+#   not_an_engine:     {reason: "<why this cell is not an intelligence engine>"}
+#                      A non-empty reason is mandatory. Nothing is excluded silently.
+#
+# MAY NEVER CONTAIN: engine_id, producer, artifacts, consumers, owner_program,
+# owner_program_span, authority, authority_evidence, ledger, ledger_evidence,
+# declared_horizon, evidence_ref. All of those are DERIVED. In particular `authority` and
+# `evidence_ref` were deliberately kept out of curation: they derive from `tier`,
+# `scored_path_surfaces` and `qual_ladder_ref`, which already live in config/synapse.yml.
+# Enriching canon is what the DNR row wants; a parallel authority table beside it is what
+# it forbids.
+#
+# ORPHAN RULE: a row keyed by an engine_id the builder did not generate is a HARD error.
+# Otherwise this file accumulates rows for deleted engines and becomes a shadow store of
+# dead state. Orphan detection is also the tripwire for a producer file being deleted and
+# its engine vanishing unnoticed.
+#
+# A curated field that later becomes derivable must be DELETED from the allowlist in
+# engine/intelligence_registry.py in the same PR that adds its derivation.
+#
+# NEW ENGINES NEED NO ENTRY HERE. A (producer, owner_program) pair appearing in
+# config/synapse.yml generates a complete row with zero human touch: authority derives,
+# ledger derives, graded_by_design = "no — not yet", validation_state = "phase0",
+# evidence_ref = null, declared_horizon derives. The integrity gate stays GREEN for a new
+# display-tier engine; it becomes a warn-tier CONTENT finding only if it arrives carrying
+# authority (tier scored/confirmer, or a declared scored_path_surfaces). That asymmetry is
+# the safety property: a decorative artifact costs nobody anything, an authority-bearing
+# one is loud on the first PR that ships it.
+
+schema_version: 1
+updated: "2026-08-12"
+
+engines: {}
+
+# Deliberately EMPTY on arrival.
+#
+# output_class is the single largest human cost in T1 — the builder reports the engines
+# that require one, and `--proposals PATH` emits a derived proposal per engine for review.
+# Those proposals are NOT ratified here yet. A wrong metric contract is worse than a null
+# one, so no output_class is guessed to make a gate green; the warn-tier law
+# `epistemics.engine_authority_evidence` reports the gap on every PR and the count is
+# trackable. Ratification is T7's work in research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md.

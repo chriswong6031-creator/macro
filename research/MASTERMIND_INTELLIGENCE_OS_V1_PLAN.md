@@ -73,15 +73,41 @@ when registration does, and no later effort recovers a day not recorded.
 |---|---|
 | **Objective** | One derived row per intelligence engine: output class, authority, ledger, declared horizon, validation state, evidence, and `graded_by_design` |
 | **Dependencies** | none |
-| **Files** | new `scripts/build_intelligence_registry.py`, `config/intelligence_registry_overlay.yml` (curated fields only), generated `docs/MASTERMIND_INTELLIGENCE_REGISTRY.md` + `data/intelligence_registry.json`; reads `config/synapse.yml`, `data/species/registry.json`, `research/DO_NOT_REBUILD.md` |
+| **Files** | new `engine/intelligence_registry.py` (pure derivation), `scripts/build_intelligence_registry.py`, `scripts/check_intelligence_registry.py` (gate), `config/intelligence_registry_overlay.yml` (curated fields only), generated `docs/MASTERMIND_INTELLIGENCE_REGISTRY.md` + `data/intelligence_registry.json`; reads `config/synapse.yml`, `data/species/registry.json`, `data/qledger/claims.jsonl`, `research/DO_NOT_REBUILD.md` |
 | **Output** | Registry regenerated nightly; drift gate like `check_blocklist_drift.py` |
 | **Agent** | `builder` (opus) — build; `Explore` (**sonnet**) for the output-class census sweep |
-| **Validation** | Regeneration is idempotent; every `synapse` producer maps to exactly one engine or an explicit `not_an_engine` exclusion with a reason |
-| **Acceptance** | Not done unless: spine is **derived** (overlay holds only fields absent from canonical sources); every engine above `display` authority has a non-null `evidence_ref`; `graded_by_design` is set for 100% of rows so "ungraded by design" is distinguishable from "ungraded by neglect"; `authority` distinguishes `user_ranking` from `engine_input` (catalog Finding C-2) |
+| **Validation** | Regeneration is idempotent; **every `synapse` ARTIFACT maps to exactly one engine** (total, disjoint partition of all 642), and every producer maps to **one or more** engines or carries an explicit `not_an_engine` exclusion with a reason |
+| **Acceptance** | Not done unless: spine is **derived** (overlay holds only fields absent from canonical sources); every engine above `display` authority has a non-null `evidence_ref` **or appears in the generator's machine-readable missing-evidence report**; `graded_by_design` is set for 100% of rows so "ungraded by design" is distinguishable from "ungraded by neglect"; `authority` distinguishes `user_ranking` from `engine_input` (catalog Finding C-2) |
 
 **Why this is the keystone.** Without a unit of account there is no scorecard (T7), no CEO view
 (T8) and no tier routing (T12). It is also the fix for Finding C-1: four of the five
 authority-tier artifacts carry no pointer to the prereg that earned them authority.
+
+#### T1 as shipped (2026-08-12) — two amendments to the criteria above
+
+**The producer-level validation criterion was wrong and is corrected above.** The unit of
+account is the **`(producer, owner_program)` pair** — 642 artifacts partition into **385
+cells (378 engines + 7 excluded)**. 15 producers span more than one `owner_program`, so
+"every producer maps to exactly one engine" is provably false under the shipped code. The
+correct and stronger invariant is *artifact*-level: the partition is total and disjoint
+over all 642, which is what `scripts/check_intelligence_registry.py` enforces. Leaving the
+old wording would have handed a future reviewer a criterion the code cannot satisfy.
+
+**`evidence_ref` is reported, not backfilled.** The C-1 backlog (21 engines above `display`
+authority with a null `evidence_ref` on the 2026-08-12 corpus) is surfaced by the
+generator's missing-evidence report and by the warn-tier law
+`epistemics.engine_authority_evidence`, each naming its concrete heal: add
+`qual_ladder_ref` to `config/synapse.yml`. T1 deliberately did **not** invent those
+citations — a prereg pointer that does not exist is worse than a null one. Draining the
+backlog and promoting that law to `hard --strict` is **T7's** work.
+
+Two further properties worth carrying forward: `authority` and `evidence_ref` are
+**derived, not curated** (a hand-typed `authority:` key in `synapse.yml` would be
+unenforced free text, since `_REQUIRED_ARTIFACT_KEYS` is a required-key set, not an
+exact-key set — reproducing the C-1/C-2 defect class one field later); and the HARD drift
+law compares a **structural projection**, because `data/qledger/claims.jsonl` is
+append-only and pinning corpus-sourced fields by byte equality would be a scheduled
+fleet-wide red.
 
 ---
 

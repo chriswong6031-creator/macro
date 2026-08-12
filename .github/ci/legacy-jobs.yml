@@ -1908,6 +1908,20 @@ jobs:
         run: |
           python3 -m scripts.check_entity_thesis_registry --selftest
           python3 -m scripts.check_entity_thesis_registry
+      # Eval OS T1 — the engine registry. Extends this job rather than adding a new one:
+      # run_ci_pack.py balances 185 jobs by weight, so a new job rebalances every pack,
+      # and neural-web is the closest domain match (it already hosts test_synapse_registry
+      # and the entity-thesis registry guard). Two laws, two severities, one script:
+      # governance.intelligence_registry_integrity is HARD (drift/idempotence/overlay
+      # allowlist/partition — all green by construction on the PR that generates the file)
+      # and epistemics.engine_authority_evidence is WARN (pre-existing corpus conditions;
+      # --strict is deliberately NOT passed here, see the registry entry's notes).
+      - name: "HARD | intelligence engine registry integrity (Eval OS T1)"
+        run: |
+          python3 scripts/check_intelligence_registry.py --selftest
+          python3 scripts/check_intelligence_registry.py
+      - name: intelligence engine registry derivation + gate tests
+        run: python -m pytest tests/test_intelligence_registry.py tests/test_check_intelligence_registry.py -q
 
   neural-web-core:
     if: ${{ false }}
