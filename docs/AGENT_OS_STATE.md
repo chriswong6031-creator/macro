@@ -2,12 +2,12 @@
 
 # Agent OS state
 
-Generated: 2026-08-12T22:48:01Z  |  6 workstreams (4 active · 2 blocked)
+Generated: 2026-08-12T22:52:50Z  |  6 workstreams (4 active · 2 blocked)
 
 | Input | Value |
 |---|---|
 | active_builds | data/governance/active_builds.json@2026-08-11T01:48:44.205959+00:00 |
-| active_builds age | 45.0h |
+| active_builds age | 45.1h |
 | worktrees | 244 |
 | records | 6 WS · 5 DEC · 3 DSC · 0 handoffs |
 
@@ -22,7 +22,7 @@ Generated: 2026-08-12T22:48:01Z  |  6 workstreams (4 active · 2 blocked)
 
 | Key | Status | Owner | Program | Waves | PRs | Next action |
 |---|---|---|---|---|---|---|
-| [`WS:AGENT-OS`](../agentos/workstreams/WS-AGENT-OS.md) | active | chairman | agent-os | in_progress:2 todo:3 | — | Land Phase 2, then rule on C1-C5 (C5 gates whether Phase 1 may mandate DSC-*). |
+| [`WS:AGENT-OS`](../agentos/workstreams/WS-AGENT-OS.md) | active | chairman | project-active-build-control | in_progress:2 todo:3 | — | Land Phase 2, then rule on C1-C5 (C5 gates whether Phase 1 may mandate DSC-*). |
 | [`WS:CN-LIMIT-ALPHA`](../agentos/workstreams/WS-CN-LIMIT-ALPHA.md) | blocked | chairman | china-system | awaiting_ci:1 done:1 todo:1 | #5438(unknown) | Hold. P-A1 is armed; P-A2 is accrual-gated. |
 | [`WS:GMI-THEME-GRAPH`](../agentos/workstreams/WS-GMI-THEME-GRAPH.md) | blocked | coo-fable | gmi-theme-graph | done:2 todo:1 | #5402(unknown) | Wait for the 2026-08-15 scrape; then start the transmission layer. |
 | [`WS:MACRO-CONTEXT-INDEX`](../agentos/workstreams/WS-MACRO-CONTEXT-INDEX.md) | active | coo-fable | macro-context-index | done:1 in_progress:1 todo:1 | — | Drive the benchmark gates green (W1). |

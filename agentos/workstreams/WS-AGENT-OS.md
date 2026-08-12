@@ -7,7 +7,7 @@ objective: >
   workstreams, decisions, discoveries, and handoffs are written by live sessions, and
   the CEO reads one generated page instead of reconstructing state by hand.
 status: active
-program: agent-os
+program: project-active-build-control
 p0: EXECUTIVE_OS
 repos: [macro]
 owner: chairman
@@ -55,6 +55,7 @@ discoveries:
   - DSC:EXECUTIVE-OS-NO-PROGRAM-ROW
   - DSC:CENSUS-POSTDATES-PHASE1B
 landmines:
+  - "PROVISIONAL PARENT: project-active-build-control's registry row says it does_not_own 'Durable program truth', which is exactly what this workstream owns. No agent-os row exists (see DSC:EXECUTIVE-OS-NO-PROGRAM-ROW for the same gap). Minting one was reverted deliberately: config/mastermind_programs.yml and its generated docs/MASTERMIND_SYSTEM_MAP.md belong to the semantic-system-mapping workstream, which the commissioning brief marks ALREADY ASSIGNED, and editing the generated map conflicted with main within hours. The row is that owner's to add."
   - "Two execution control planes already exist. Anything that gates or dispatches belongs in Mastermind control_plane/ or the Macro hook layer — see invariant I1."
   - "Census §6 non-goals are binding and postdate Phase 1A/1B — see DSC:CENSUS-POSTDATES-PHASE1B."
 do_not_redo:
