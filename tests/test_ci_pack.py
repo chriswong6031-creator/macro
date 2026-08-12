@@ -32,6 +32,23 @@ def _yaml(path: Path) -> dict:
     return yaml.safe_load(path.read_text())
 
 
+def _closure_of(source: str) -> SimpleNamespace:
+    """Classify a synthetic module the way the selector classifies a real one.
+
+    ``_source_ambiguities`` reads the parsed tree and uses the path only to label
+    findings, so a probe needs no file on disk — and must not leave one behind in
+    a checkout the pack runner hard-resets between jobs.
+    """
+    import ast
+
+    from scripts import ci_scope_dependencies as DEPS
+
+    findings = DEPS._source_ambiguities(
+        ROOT / "engine" / "_ci_scope_probe.py", ast.parse(source)
+    )
+    return SimpleNamespace(ambiguities=tuple(sorted(findings)))
+
+
 def test_all_legacy_jobs_are_disabled_and_packable() -> None:
     jobs = PACK.load_legacy_jobs(MANIFEST)
     assert len(jobs) >= 86
@@ -306,6 +323,103 @@ def test_whole_tree_glob_job_owns_every_scanned_code_root() -> None:
     assert export_guard in selected
 
 
+def test_a_glob_pattern_bounds_the_file_kinds_its_scan_can_reach() -> None:
+    """`d.glob("*.parquet")` cannot be changed by a `.json` or `.py` edit.
+
+    The classifier used to read a traversal's pattern only to pick a root SET and
+    then claim every file under those roots.  Measured across the 181-job manifest
+    on 2026-08-11, that is what handed `data/**` to 90 jobs off one parquet scan in
+    a hub module and pinned the narrow-diff contract at exactly zero headroom.
+
+    The narrowing is a strict subset, never a new claim: every path
+    `data/**/*.parquet` matches, `data/**` already matched.
+    """
+    narrowed = PACK.narrow_to_suffixes(("data/**", "site/**", "*"), (".parquet",))
+    assert "data/**/*.parquet" in narrowed
+    assert "site/**/*.parquet" in narrowed
+    assert "*.parquet" in narrowed
+    assert "data/**" not in narrowed
+    # pyarrow writes partitioned datasets as `x.parquet/part-0.parquet`, so the
+    # subtree under a matched entry keeps its owner.
+    assert "data/**/*.parquet/**" in narrowed
+    for covered in ("data/x.parquet", "data/a/b/x.parquet", "data/a/x.parquet/p.json"):
+        assert PACK._matches_any(narrowed, covered), covered
+        assert PACK._matches_any(("data/**",), covered), covered
+    for outside in ("data/cycle_ontology/falsifiers.json", "data/a/b.py"):
+        assert not PACK._matches_any(narrowed, outside), outside
+    # No suffix evidence means no narrowing at all.
+    assert PACK.narrow_to_suffixes(("data/**",), ()) == ("data/**",)
+
+
+def test_traversal_pattern_evidence_is_read_only_when_it_is_literal() -> None:
+    """An unreadable or unlisted pattern keeps the full root claim."""
+    closure = _closure_of(
+        "from pathlib import Path\n"
+        "import config\n"
+        "def a(pattern):\n"
+        "    return list((config.data_dir() / 'x').glob(pattern))\n"
+        "def b():\n"
+        "    return list((config.data_dir() / 'x').glob('*.parquet'))\n"
+        "def c():\n"
+        "    return list((config.data_dir() / 'x').glob('*.unlisted'))\n"
+        "def d():\n"
+        "    return list((config.data_dir() / 'x').iterdir())\n"
+        "def e():\n"
+        "    return list((config.data_dir() / 'x').glob('v1.2'))\n"
+    )
+    kinds = {int(item.split(":")[1]): item for item in closure.ambiguities}
+    # a: runtime pattern; c: suffix outside the closed vocabulary; d: iterdir has
+    # no pattern; e: a FIXED name that may well be a directory whose contents
+    # would then lose their owner.  All four keep the unnarrowed claim.
+    for line in (4, 8, 10, 12):
+        assert " suffixes=" not in kinds[line], kinds[line]
+    assert kinds[6].endswith(" suffixes=.parquet"), kinds[6]
+
+
+def test_a_module_local_walk_is_not_a_filesystem_traversal() -> None:
+    """`walk()` over a JSON document is not `os.walk` over the repository.
+
+    `engine/sector_intelligence/contracts.py` defines a recursive document
+    `walk()`; the label-only classifier read all five call sites as tree scans and
+    charged four repository roots to the 35 jobs that import it.
+    """
+    document = _closure_of(
+        "def walk(value, path):\n"
+        "    if isinstance(value, dict):\n"
+        "        for key, nested in value.items():\n"
+        "            walk(nested, (*path, key))\n"
+        "def check(document):\n"
+        "    walk(document, ())\n"
+    )
+    assert not document.ambiguities, document.ambiguities
+    # An imported os.walk with the same name is still a traversal.
+    imported = _closure_of(
+        "from os import walk\n"
+        "def scan(root):\n"
+        "    return list(walk(root))\n"
+    )
+    assert any("filesystem" in item for item in imported.ambiguities)
+
+
+def test_a_code_suffix_must_end_a_filename_not_merely_appear_in_one() -> None:
+    """`.js` inside `*.json` promoted artifact scans to whole-tree code scans.
+
+    A json-only traversal claimed every Python file in eleven code roots because
+    the classifier used a substring test.
+    """
+    artifact = _closure_of(
+        "def scan(root):\n"
+        "    return list(root.glob('*.json'))\n"
+    )
+    assert any("artifact traversal" in item for item in artifact.ambiguities)
+    assert not any("code traversal" in item for item in artifact.ambiguities)
+    code = _closure_of(
+        "def scan(root):\n"
+        "    return list(root.rglob('*.py'))\n"
+    )
+    assert any("code traversal" in item for item in code.ambiguities)
+
+
 def test_derived_scopes_are_startable_by_the_ci_workflow() -> None:
     """A job owner is useless when its dependency edit cannot start ci.yml."""
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
@@ -315,11 +429,41 @@ def test_derived_scopes_are_startable_by_the_ci_workflow() -> None:
     for job in jobs:
         for path in job.paths:
             if any(char in path for char in "*?"):
-                if path not in triggers:
+                if not PACK.scope_pattern_is_startable(path, triggers):
                     gaps.append((job.job_id, path))
             elif not PACK._matches_any(triggers, path):
                 gaps.append((job.job_id, path))
     assert not gaps, gaps[:25]
+
+
+def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
+    """A derived scope may skip the trigger list only when a parent covers it.
+
+    Literal membership used to be the whole rule, which forced one ci.yml entry
+    per derived pattern.  With suffix- and subtree-narrowed scopes that vocabulary
+    is open-ended, and a missing entry would red an unrelated pull request the
+    first time any module globbed a new extension.  The replacement is a
+    containment PROOF, not a relaxation: `data/**/*.parquet` and
+    `data/smart_money/**` each match a strict subset of `data/**`, so an edit that
+    reaches the job always starts the run.  A tree no trigger covers still fails.
+    """
+    triggers = ("data/**", "engine/**", "*", "config/dag.yml")
+    for covered in (
+        "data/**",                      # literal member
+        "data/**/*.parquet",            # suffix-narrowed child of data/**
+        "data/**/*.parquet/**",         # its directory-subtree companion
+        "data/smart_money/**",          # subtree-narrowed child of data/**
+        "data/a/b/c/**",                # deeper subtree
+        "*.json",                       # repository-root form, `*` is a trigger
+    ):
+        assert PACK.scope_pattern_is_startable(covered, triggers), covered
+    for uncovered in (
+        "brand_new_root/**",            # no ancestor is a trigger
+        "brand_new_root/**/*.json",     # narrowing an untriggerable tree
+        "brand_new_root/deep/**",
+        "site/**",                      # a real root that this filter omits
+    ):
+        assert not PACK.scope_pattern_is_startable(uncovered, triggers), uncovered
 
 
 def test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs() -> None:
