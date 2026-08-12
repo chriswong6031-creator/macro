@@ -68,6 +68,15 @@ Question (operator): should some funds count more in consensus?
 - Designer (opus) pass, doctrine + frontend-design skill loaded, aligned with macro.html's design language; I (Fable) pin the spec before build.
 - Keep: partial architecture (tier-wall parity), stance system, zh dual-span, ≤130KiB shell, premium gate, disclosure footer.
 - Elevate: glance-tier hero (state + plain-word stance); consensus board readability (the $ and breadth columns become first-class); flow-vs-selection presented as plain words ("investors are pouring in" vs "managers are picking it"); persistence chips; coverage table → fund registry view; hover receipts for every stat (Tier-2, own banned-list).
+- **Doctrine pins (from docs/DESIGN_DOCTRINE.md, binding):**
+  - Tier budgets hard: title ≤4 words, subtitle ≤14, row ≤1 line; one as-of stamp per panel; ONE merged footnote; demote, don't compress.
+  - Any illustrative time-series (incl. upgraded sparklines) uses the ilx idiom — `lib/illus.py` SSR SVG + `illus.css`/`illus.js` — never Plotly, never hand-rolled canvas.
+  - Tape-like strips use the sanctioned `.dtp` self-labeling chip idiom; no rank-number pills, no stacked disclaimers.
+  - Tier-2 receipts via LENS `data-tip-en/zh` (+ `data-tip-rc-en/zh` receipt lines); `?` help tip on panel h2 is the sanctioned mechanics home.
+  - Light mode is a design target, not a token swap: white panels on deeper canvas (#e8ebf1-class), no glow backdrops in light, ghosted blur-teasers (saturate .35, opacity ≤.5), 1px gaps + track borders on segment bars; both-theme screenshots judged as designs.
+  - Icons: monoline set `templates/_icons.html.j2` (stroke=currentColor) — emoji are not UI icons.
+  - Directional color through `--up`/`--down` tokens only (zh 红涨绿跌 flips them); position/measurement markers never take a category hue.
+  - 5-second test on every panel; question-as-subheading framing and number-with-meaning pairing are the canonized patterns.
 - Proof: light/dark/zh screenshots in PR body (§0.8).
 
 ## §6 Constraints (standing)
