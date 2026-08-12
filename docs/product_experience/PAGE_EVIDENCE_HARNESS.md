@@ -171,8 +171,16 @@ These are the point of the tool, not decoration.
    which request produced it — an unattributable finding is a dead end for whoever
    has to fix it. `source_url` is null only where the driver genuinely has none
    (an uncaught `pageerror` has no location); a URL is never guessed.
-9. **The `selection` block records what actually selected the pages**, never the
-   parser defaults for a filter that did not run (see `--routes` above).
+9. **Evidence outlives the load.** A page that 401s and then times out settling —
+   the exact class this feature exists for — still publishes its console errors and
+   failed responses. The driver carries both out of a failed observation (including
+   a top-level 4xx/5xx and a `goto` that raised), and the run harvests them from
+   *every* observation before any state is skipped. The states are still
+   `captured: false` with the error text; nothing here fakes a capture.
+10. **Provenance is named, never asserted.** `resolved_sha_source` states which git
+    directory answered and what that does *not* prove — see §5.
+11. **The `selection` block records what actually selected the pages**, never the
+    parser defaults for a filter that did not run (see `--routes` above).
 
 ---
 
@@ -195,7 +203,7 @@ bilingual DOM is excluded automatically for the locale that is not showing.
 | `todo_placeholder_hits` / `_count` | `TODO\|FIXME\|PLACEHOLDER\|lorem ipsum`, case-insensitive, visible | |
 | `horizontal_overflow` | `scrollWidth > clientWidth` | |
 | `elements_wider_than_viewport` | visible elements wider than the viewport (+1px tolerance) | |
-| `console_error_count` | distinct console `error` **texts** across every captured state | one text emitted by two assets is two entries in `console_errors` but still one text here |
+| `console_error_count` | distinct console `error` **texts** across every **attempted** state, captured or not | one text emitted by two assets is two entries in `console_errors` but still one text here |
 | `request_count` / `payload_bytes_total` | driver request/response listeners, reference state | bytes exclude responses the driver cannot size |
 | `asof_present` / `source_present` | selector **or** case-insensitive text probe (`[data-asof]`, `.asof`, `.freshness`; "as of", "数据截至") | approximate contract probe; absence is a prompt to look, not a verdict |
 | `screenshot_completion` | captured states / attempted states | registry-excluded axes are not attempted |
@@ -203,7 +211,8 @@ bilingual DOM is excluded automatically for the locale that is not showing.
 Two per-page lists sit beside the metrics rather than inside them, because neither
 is a count: `console_errors` (`{"text", "source_url"}`, deduped on the pair, first-seen
 order) and `failed_responses` (`{"url", "status"}`, deduped on the pair). Both
-aggregate across every captured state of the page.
+aggregate across every state the driver **attempted**, captured or not — a state
+that failed to load is often the one carrying the evidence.
 
 Scalar metrics come from the **reference state** — the first captured cell in matrix
 order, named in `metrics.measured_in`. One page load is one measurement; a blend of
@@ -228,19 +237,33 @@ they are re-derivable, and the manifest's digests keep them citable without the
 bytes entering Git. **Cite a screenshot by its sha256**, and re-run the capture to
 regenerate it.
 
-`target.resolved_sha_or_none` carries the checkout's git HEAD in `--site-dir` mode
-and is `null` for `--base-url`: a live origin does not disclose the commit it is
-serving, and guessing would be a fabricated provenance claim. It is read out of
-`.git` **by hand** — walk up for `.git`, follow a linked worktree's `gitdir:`
-pointer and `commondir`, read the loose ref or fall back to `packed-refs` — not by
-shelling out to `git rev-parse`, for the CI-scope reason in §7. Anything
-unparseable is `null`.
+### Provenance: what the sha is, and what it is not
+
+`target.resolved_sha_or_none` carries a git HEAD in `--site-dir` mode and is `null`
+for `--base-url`: a live origin does not disclose the commit it is serving, and
+guessing would be a fabricated provenance claim. It is read out of `.git` **by
+hand** — walk up for `.git`, follow a linked worktree's `gitdir:` pointer and
+`commondir`, resolve the ref from the **common dir** (only `HEAD`, `refs/bisect/*`,
+`refs/worktree/*` and `refs/rewritten/*` are per-worktree) or fall back to
+`packed-refs` — not by shelling out to `git rev-parse`, for the CI-scope reason in
+§7. The sha is normalized to lowercase; anything unparseable is `null`.
+
+**The walk is unbounded, exactly like git's, so it finds the *nearest* git
+directory at or above `--site-dir` — which is not proof that that checkout produced
+the files being served.** A `--site-dir` outside any real checkout will land on
+whatever repository sits above it (on a dev Mac, `/Users/<user>` is often itself a
+repo). The manifest therefore prints `target.resolved_gitdir_or_none` — the git
+directory that actually answered — and `resolved_sha_source` names it and says what
+it does not prove. Read the pair, not the sha alone. The earlier text, "git HEAD of
+the checkout that produced `--site-dir`", asserted a relationship nothing checked.
 
 `p0_evidence_manifest.v1 → v2`: `console_errors` entries went from bare strings to
 `{"text", "source_url"}`, and pages gained `failed_responses`. Any reader of a v1
 artifact must be re-pointed rather than fed a v2 one. `tool.version` moved `1.0.0
 → 1.1.0` in the same step: it is stamped into every artifact as provenance, so two
-byte-different manifest shapes must never claim one version.
+byte-different manifest shapes must never claim one version. `1.1.0 → 1.2.0` is
+that rule again — the schema stays `v2` (`target` gained a key, additively, so a v2
+reader still parses), but the emitted bytes moved, so the version moved with them.
 
 Runs are deterministic — same registry, same driver, same `--as-of` produces
 byte-identical JSON, so a re-run diffs cleanly.
@@ -304,6 +327,28 @@ receipt kept out of the manifest so the byte-comparison stays honest) instead of
 globbing the output directory. Reading a known path is fine; *discovering* one is
 the opaque edge. `test_the_module_carries_no_subprocess_or_enumeration_edge` fails
 the moment either comes back.
+
+**What the write receipt trades away.** The receipt is filled by the same loop that
+fills each state's `sha256`, so comparing the two is a tautology on its own — the
+per-state **re-hash** (read the file the manifest names, re-digest it, compare) is
+what makes it a check, and on digest correctness it is stronger than the name-only
+`glob("*.png")` comparison it replaced. It is *weaker* in one direction: a ledger
+can only see files the manifest names, so a stray or half-written PNG that no state
+references is invisible to it, where the glob would have noticed. That is
+acceptable only because `self_check` runs entirely inside a fresh
+`TemporaryDirectory` nothing else writes to — it is not a general filesystem audit,
+and it must not be described as one.
+
+**The self-check must be able to fail.** Every manifest assertion in `self_check`
+is a set comparison or an `all(...)`, and all of them pass vacuously over an empty
+run: with a driver that captured nothing, `--self-check` once exited `0` with
+`findings: []` and zero screenshots written. It now asserts the run did its job
+first — `outcome: captured`, `states_captured > 0`, `states_captured ==
+states_attempted` (the canned driver captures every cell), at least one captured
+state per page, and at least one console error and one failed response surviving
+into the manifest, which is what makes the attribution-shape checks non-vacuous and
+covers the failed-load evidence path. Two tests monkeypatch `_SelfCheckDriver` to
+capture nothing and pin that the result is `ok: false`.
 
 Run it with `TZ=UTC python3 -m pytest tests/test_capture_page_evidence.py -q`
 (CI runs UTC; the suite is TZ-agnostic because every fixture pins `--as-of`).

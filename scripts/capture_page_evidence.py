@@ -36,12 +36,21 @@ Contract
    on is listed separately in ``failed_responses``. The 2026-08 census recorded a
    bare ``"401"`` on 12 of 13 P0 pages and could not say which request produced
    it — an unattributable error is a dead end for the human who has to fix it.
+   **Evidence outlives the load.** A page that 401s and then times out settling is
+   exactly the page this exists for, so console errors and failed responses are
+   carried out of a failed observation and harvested before any state is skipped.
 8. **No subprocess, no directory enumeration, anywhere in this module.** Both are
    statically opaque edges, and ``scripts/ci_scope_dependencies.py`` widens a
    module carrying one to every ``data/**`` path it mentions — which re-reds the
    ci_pack narrow-diff contract through the ``product-experience-capture`` job.
    ``_git_head_sha`` therefore reads ``.git`` by hand and the self-check tracks
-   the files it wrote instead of globbing for them.
+   the files it wrote instead of globbing for them. The tradeoff is real and is
+   stated where it applies (``self_check``): a write ledger cannot see a file the
+   manifest never names, which a glob could.
+9. **Provenance is named, never asserted.** ``_git_head_sha`` reports the git
+   directory that answered alongside the sha, and the manifest prints both — the
+   walk finds the *nearest* ``.git`` above ``--site-dir``, which is not proof that
+   that checkout produced the directory being served.
 
 Locale/theme are applied the way the site's own toggle applies them
 (``templates/theme.js``): ``setTheme`` sets ``data-theme`` on ``<html>`` and
@@ -80,9 +89,10 @@ from typing import Any, Callable, Mapping, Protocol, Sequence
 
 MODULE_REF = "scripts/capture_page_evidence.py"
 # 1.1.0: attributed console errors, failed_responses, honest --routes selection.
+# 1.2.0: failed-load evidence is kept, and target gains resolved_gitdir_or_none.
 # This is stamped into every artifact as provenance, so it moves whenever the
 # emitted shape does — two byte-different manifests must never claim one version.
-TOOL_VERSION = "1.1.0"
+TOOL_VERSION = "1.2.0"
 
 # v2: a console error carries the asset it came from, and a page carries the
 # responses that failed. v1 recorded bare error strings, which the census could
@@ -191,7 +201,7 @@ METRIC_NOTES: Mapping[str, str] = {
     "asof_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
     "source_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
     "payload_bytes_total": "sum of response body sizes reported by the driver for the reference state; excludes bodies the driver could not size",
-    "console_error_count": "distinct console 'error' texts across every captured state of the page",
+    "console_error_count": "distinct console 'error' texts across every state of the page the driver attempted, captured or not — a state that failed to load is often the one carrying the evidence",
     "screenshot_completion": "captured states / attempted states for this page; states the registry excludes are not attempted and are recorded as gaps",
 }
 
@@ -293,23 +303,56 @@ def _is_hex_sha(value: str) -> bool:
 
 
 def _read_text(path: Path) -> str | None:
-    """One known path, read or not. No enumeration, no subprocess — see docstring §8."""
+    """One known path, read or not. No enumeration, no subprocess — see docstring §8.
+
+    ``ValueError`` is caught alongside ``OSError`` because ``Path.read_text``
+    raises it *before* any syscall when the path carries an embedded NUL — and the
+    ref name handed to this function comes verbatim out of a ``.git/HEAD`` that may
+    be half-written. Anything unexpected returns None, as advertised.
+    """
 
     try:
         return path.read_text(encoding="utf-8", errors="ignore").strip()
-    except OSError:
+    except (OSError, ValueError):
         return None
 
 
-def _git_head_sha(start: Path) -> str | None:
-    """Resolve the checkout's HEAD by reading ``.git`` by hand. Best-effort, never guessed.
+# Only these ref namespaces are per-worktree; everything else — ``refs/heads/*``
+# above all — lives in the common dir and MUST be resolved from there first. The
+# inverse order returns a stale or planted sha where git returns the real one.
+PER_WORKTREE_REF_PREFIXES: tuple[str, ...] = (
+    "refs/bisect/",
+    "refs/worktree/",
+    "refs/rewritten/",
+)
+
+
+@dataclass(frozen=True)
+class GitHeadRead:
+    """What the hand-rolled ``.git`` reader resolved, and which git dir answered.
+
+    ``gitdir`` is reported even when ``sha`` is None: naming where the reader
+    looked is what makes the manifest's provenance line auditable rather than
+    asserted.
+    """
+
+    sha: str | None
+    gitdir: Path | None
+
+
+def _git_head_sha(start: Path) -> GitHeadRead:
+    """Resolve HEAD by reading ``.git`` by hand. Best-effort, never guessed.
 
     ``git rev-parse`` used to do this, but a subprocess is an opaque edge to the CI
     scope analyzer and widens this module's suite to every ``data/**`` path it names.
     The walk is upward because ``--site-dir`` is usually a subdirectory of the
-    checkout. Anything unexpected — no ``.git``, a symbolic ref that resolves
-    nowhere, content that is not a sha — returns None: this field is provenance,
-    and a wrong sha is worse than an honest null.
+    checkout — and, exactly like git, it is unbounded, so the git directory it
+    lands on is *the nearest one above the path* and nothing more. That is why the
+    answering gitdir travels back with the sha: the caller must be able to print
+    what actually answered instead of claiming a relationship nobody checked.
+    Anything unexpected — no ``.git``, a symbolic ref that resolves nowhere,
+    content that is not a sha — returns a null sha: this field is provenance, and a
+    wrong sha is worse than an honest null.
     """
 
     gitdir: Path | None = None
@@ -321,20 +364,20 @@ def _git_head_sha(start: Path) -> str | None:
         if marker.is_file():  # linked worktree: ".git" is a pointer file
             pointer = _read_text(marker)
             if not pointer or not pointer.startswith("gitdir:"):
-                return None
+                return GitHeadRead(None, None)
             target = Path(pointer.split(":", 1)[1].strip())
             gitdir = target if target.is_absolute() else marker.parent / target
             break
     if gitdir is None:
-        return None
+        return GitHeadRead(None, None)
 
     head = _read_text(gitdir / "HEAD")
     if head is None:
-        return None
+        return GitHeadRead(None, gitdir)
     if _is_hex_sha(head):
-        return head  # detached HEAD
+        return GitHeadRead(head.lower(), gitdir)  # detached HEAD
     if not head.startswith("ref:"):
-        return None
+        return GitHeadRead(None, gitdir)
     ref = head.split(":", 1)[1].strip()
 
     # A linked worktree keeps its own HEAD but shares refs with the common dir.
@@ -344,10 +387,11 @@ def _git_head_sha(start: Path) -> str | None:
         target = Path(pointer)
         common = target if target.is_absolute() else gitdir / target
 
-    for base in (gitdir, common):
+    per_worktree = ref.startswith(PER_WORKTREE_REF_PREFIXES)
+    for base in ((gitdir, common) if per_worktree else (common, gitdir)):
         loose = _read_text(base / ref)
         if loose is not None:
-            return loose if _is_hex_sha(loose) else None
+            return GitHeadRead(loose.lower() if _is_hex_sha(loose) else None, gitdir)
 
     packed = _read_text(common / "packed-refs")
     for line in (packed or "").splitlines():
@@ -356,8 +400,43 @@ def _git_head_sha(start: Path) -> str | None:
             continue
         sha, _, name = line.partition(" ")
         if name.strip() == ref and _is_hex_sha(sha):
-            return sha
-    return None
+            return GitHeadRead(sha.lower(), gitdir)
+    return GitHeadRead(None, gitdir)
+
+
+def site_dir_target(site_dir: Path) -> dict[str, Any]:
+    """The manifest's ``target`` block for ``--site-dir``, claiming only what was read.
+
+    The old text — "git HEAD of the checkout that produced --site-dir" — asserted a
+    relationship nothing ever checked: the walk lands on the NEAREST git directory
+    at or above the path (git's own rule), which may be a home-directory repo that
+    produced none of these files. So the gitdir that answered is printed next to
+    the sha and the source line names it. Kept a plain function, not inlined into
+    ``main``, so this claim is testable without opening the loopback server.
+    """
+
+    head = _git_head_sha(site_dir)
+    if head.gitdir is None:
+        source = "no git directory was found at or above --site-dir; nothing resolved"
+    elif head.sha is None:
+        source = (
+            "unresolved: HEAD of the nearest git directory at or above --site-dir "
+            f"({head.gitdir}) did not read back as a sha"
+        )
+    else:
+        source = (
+            f"HEAD of the nearest git directory at or above --site-dir: {head.gitdir} "
+            "(nearest-above is git's own rule; that this checkout produced --site-dir "
+            "is not verified)"
+        )
+    return {
+        "kind": "site_dir",
+        "base_url": None,
+        "site_dir": str(site_dir),
+        "resolved_sha_or_none": head.sha,
+        "resolved_gitdir_or_none": str(head.gitdir) if head.gitdir is not None else None,
+        "resolved_sha_source": source,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -790,6 +869,26 @@ def run_capture(
                     cell_id=cell.cell_id, loaded=False, error=f"{type(exc).__name__}: {exc}"
                 )
 
+            # Evidence is harvested from EVERY observation, before any state is
+            # skipped: an auth-gated page that 401s and then times out settling is
+            # the exact page this feature exists for, and harvesting below the
+            # ``continue``s published an empty console_errors for it.
+            for error in observation.console_errors:
+                text = str(error.get("text") or "")
+                source_url = error.get("source_url") or None
+                key = (text, source_url)
+                if key in console_seen:
+                    continue
+                console_seen.add(key)
+                console_entries.append({"text": text, "source_url": source_url})
+            for failure in observation.failed_responses:
+                failed_url = str(failure.get("url") or "")
+                status = int(failure.get("status") or 0)
+                if (failed_url, status) in failed_seen:
+                    continue
+                failed_seen.add((failed_url, status))
+                failed_responses.append({"url": failed_url, "status": status})
+
             if delay_ms > 0 and position < len(cells) - 1:
                 time.sleep(delay_ms / 1000.0)
 
@@ -839,21 +938,6 @@ def run_capture(
                 )
             states.append(entry)
             captured.append((cell, observation))
-            for error in observation.console_errors:
-                text = str(error.get("text") or "")
-                source_url = error.get("source_url") or None
-                key = (text, source_url)
-                if key in console_seen:
-                    continue
-                console_seen.add(key)
-                console_entries.append({"text": text, "source_url": source_url})
-            for failure in observation.failed_responses:
-                url = str(failure.get("url") or "")
-                status = int(failure.get("status") or 0)
-                if (url, status) in failed_seen:
-                    continue
-                failed_seen.add((url, status))
-                failed_responses.append({"url": url, "status": status})
 
         metrics = _page_metrics(captured, attempted=len(cells), console_errors=console_entries)
         page_payload = {
@@ -1245,14 +1329,32 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
                 pass
 
         page.on("requestfinished", _on_finished)
+
+        def _failed(error: str) -> CellObservation:
+            """A failed load still carries what the listeners already saw.
+
+            The 401-then-timeout page is the whole reason these listeners exist;
+            returning a bare error here published ``console_errors: []`` for it.
+            """
+
+            return CellObservation(
+                cell_id=cell.cell_id,
+                loaded=False,
+                error=error,
+                console_errors=tuple(console_errors),
+                failed_responses=tuple(failed_responses),
+                request_count=int(counters["requests"]),
+                payload_bytes_total=int(counters["bytes"]),
+            )
+
         try:
             response = page.goto(url, wait_until="load", timeout=timeout_s * 1000)
             if response is None:
-                return CellObservation(cell_id=cell.cell_id, loaded=False, error="no response")
+                return _failed("no response")
             if not response.ok:
-                return CellObservation(
-                    cell_id=cell.cell_id, loaded=False, error=f"HTTP {response.status}"
-                )
+                # A top-level 4xx/5xx is precisely a failed response worth naming;
+                # the listener already recorded it, and it travels out with this.
+                return _failed(f"HTTP {response.status}")
             page.wait_for_timeout(self._settle_ms)
             applied = page.evaluate(_APPLY_STATE_SCRIPT.strip(), state) or {}
             page.wait_for_timeout(self._settle_ms)
@@ -1271,9 +1373,7 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
                 applied_locale=applied.get("locale"),
             )
         except Exception as exc:
-            return CellObservation(
-                cell_id=cell.cell_id, loaded=False, error=f"{type(exc).__name__}: {exc}"
-            )
+            return _failed(f"{type(exc).__name__}: {exc}")
         finally:
             context.close()
 
@@ -1391,7 +1491,13 @@ def self_check() -> tuple[bool, dict[str, Any]]:
                 delay_ms=0,
                 timeout_s=5,
                 generated_at="2026-01-01T00:00:00Z",
-                target={"kind": "self_check", "base_url": None, "site_dir": None, "resolved_sha_or_none": None},
+                target={
+                    "kind": "self_check",
+                    "base_url": None,
+                    "site_dir": None,
+                    "resolved_sha_or_none": None,
+                    "resolved_gitdir_or_none": None,
+                },
                 selection={"mode": "registry", "priority": "P0", "repo": "macro"},
             )
             for _ in range(2)
@@ -1400,6 +1506,30 @@ def self_check() -> tuple[bool, dict[str, Any]]:
 
         if canonical_json_bytes(payloads[0]["manifest"]) != canonical_json_bytes(payloads[1]["manifest"]):
             findings.append("two runs with a pinned as-of produced different manifests")
+
+        # Did the run do its job at all? Every check below this line is a shape or
+        # set comparison, and all of them pass vacuously over an empty capture — a
+        # driver that captured nothing scored ok=True with zero screenshots on
+        # disk. A check that cannot fail is not a check, so the run's own totals
+        # are asserted first: ``_SelfCheckDriver`` captures EVERY cell it is
+        # handed, so anything short of that is a defect in the pipeline.
+        totals = manifest["totals"]
+        if manifest["outcome"] != OUTCOME_CAPTURED:
+            findings.append(
+                f"the self-check run reported outcome {manifest['outcome']!r}, not {OUTCOME_CAPTURED!r}"
+            )
+        if totals["states_captured"] <= 0:
+            findings.append(
+                "the self-check captured no state at all: the canned driver returned nothing "
+                "usable, and every remaining assertion would pass vacuously"
+            )
+        elif totals["states_captured"] != totals["states_attempted"]:
+            findings.append(
+                f"the canned driver captures every cell, but only {totals['states_captured']} of "
+                f"{totals['states_attempted']} attempted states were captured"
+            )
+        if totals["pages"] <= 0:
+            findings.append("the self-check produced no page at all")
 
         pages = {page["page_id"]: page for page in manifest["pages"]}
         dark_only = pages.get("dark_only")
@@ -1415,6 +1545,8 @@ def self_check() -> tuple[bool, dict[str, Any]]:
                 findings.append("excluded axes were not recorded as gaps")
 
         for page in manifest["pages"]:
+            if not any(state.get("captured") for state in page["states"]):
+                findings.append(f"{page['page_id']}: not one state was captured")
             missing = [key for key in METRIC_KEYS if key not in page["metrics"]]
             if missing:
                 findings.append(f"{page['page_id']}: metrics missing {missing}")
@@ -1432,9 +1564,32 @@ def self_check() -> tuple[bool, dict[str, Any]]:
             ):
                 findings.append(f"{page['page_id']}: a failed response lost its url/status shape")
 
+        # The canned driver emits one attributed console error and one failing
+        # response per cell, so an empty aggregate means the harvest path dropped
+        # them — the defect the 2026-08 review found on failed-load pages. Without
+        # this, the two shape checks above are ``all([])`` and always true.
+        if not any(page["console_errors"] for page in manifest["pages"]):
+            findings.append(
+                "no console error reached the manifest, so the attribution shape check above "
+                "asserted nothing: the canned driver emits one per cell"
+            )
+        if not any(page["failed_responses"] for page in manifest["pages"]):
+            findings.append(
+                "no failed response reached the manifest, so the url/status shape check above "
+                "asserted nothing: the canned driver emits one per cell"
+            )
+
         # Content-addressing is checked against the run's own write ledger and the
         # paths the manifest names — never by enumerating the directory (docstring
         # §8). Reading a known path is fine; discovering one is the opaque edge.
+        # Honest tradeoff against the ``glob("*.png")`` this replaced, in both
+        # directions: the ledger is filled by the same loop that fills ``sha256``,
+        # so on its own it is a tautology — the per-state re-hash below is what
+        # makes it a check, and *that* is stronger than the old name-only
+        # comparison. What no ledger can see is a file the manifest never names: a
+        # stray, a truncated leftover, another run's output. The glob could. This
+        # is acceptable only because the whole self-check runs inside a fresh
+        # TemporaryDirectory that nothing else writes to.
         shas = {
             state["sha256"]
             for page in manifest["pages"]
@@ -1629,15 +1784,13 @@ def main(
         if not site_dir.is_dir():
             print(f"error: --site-dir is not a directory: {site_dir}", file=sys.stderr)
             return EXIT_USAGE
+        # Provenance is read BEFORE the server exists: this runs outside the
+        # try/finally that shuts the socket down, so anything raising here used to
+        # leak a listening server (a half-written .git/HEAD did exactly that until
+        # ``_read_text`` learned to catch ValueError).
+        target = site_dir_target(site_dir)
         httpd, port = serve_site_dir(site_dir)
         base_url = f"http://127.0.0.1:{port}"
-        target = {
-            "kind": "site_dir",
-            "base_url": None,
-            "site_dir": str(site_dir),
-            "resolved_sha_or_none": _git_head_sha(site_dir),
-            "resolved_sha_source": "git HEAD of the checkout that produced --site-dir",
-        }
     else:
         base_url = str(args.base_url)
         target = {
@@ -1645,6 +1798,7 @@ def main(
             "base_url": base_url,
             "site_dir": None,
             "resolved_sha_or_none": None,
+            "resolved_gitdir_or_none": None,
             "resolved_sha_source": "unavailable: a live origin does not disclose the commit it is serving",
         }
 

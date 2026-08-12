@@ -101,6 +101,8 @@ class FakeDriver:
         console_errors: tuple[dict[str, Any], ...] | None = None,
         failed_responses: tuple[dict[str, Any], ...] = (),
         per_cell_failures: bool = False,
+        load_error: str | None = None,
+        blank_screenshot: bool = False,
     ) -> None:
         self.calls: list[tuple[str, str]] = []
         self._observed = dict(observed or OBSERVED)
@@ -110,6 +112,11 @@ class FakeDriver:
         self._console_errors = CONSOLE_ERRORS if console_errors is None else console_errors
         self._failed_responses = failed_responses
         self._per_cell_failures = per_cell_failures
+        # A driver that SAW things and then failed — the 401-then-timeout page, and
+        # the page that settles but hands back no bytes. Distinct from
+        # ``fail_routes``, which raises before the driver observed anything at all.
+        self._load_error = load_error
+        self._blank_screenshot = blank_screenshot
         self.closed = False
 
     def capture(self, *, url: str, cell, timeout_s: float):
@@ -121,10 +128,18 @@ class FakeDriver:
         if self._per_cell_failures:
             # One failure only this cell sees, so page-level aggregation is visible.
             failures.append({"url": f"https://api.invalid/{cell.theme}.json", "status": 404})
+        if self._load_error is not None:
+            return cpe.CellObservation(
+                cell_id=cell.cell_id,
+                loaded=False,
+                error=self._load_error,
+                console_errors=tuple(dict(item) for item in self._console_errors),
+                failed_responses=tuple(failures),
+            )
         return cpe.CellObservation(
             cell_id=cell.cell_id,
             loaded=True,
-            screenshot_png=_png(6, 4, fill),
+            screenshot_png=b"" if self._blank_screenshot else _png(6, 4, fill),
             observed=dict(self._observed),
             console_errors=tuple(dict(item) for item in self._console_errors),
             failed_responses=tuple(failures),
@@ -551,6 +566,59 @@ def test_failed_responses_are_recorded_deduped_and_aggregated(tmp_path: Path, re
     assert page["metrics"]["console_error_count"] == 1
 
 
+def test_a_page_that_failed_to_load_still_publishes_what_the_listeners_saw(
+    tmp_path: Path, registry: Path
+):
+    """The 401-then-timeout page is the whole reason this evidence exists.
+
+    Regression pin for the 2026-08 review: the aggregation loop sat *below* the
+    ``continue`` for ``not observation.loaded``, so an auth-gated page that fired
+    its listeners and then failed to settle published ``console_errors: []``,
+    ``failed_responses: []``, ``console_error_count: 0`` — an honest-looking silence
+    on exactly the page class the feature was built for.
+    """
+
+    driver = FakeDriver(
+        load_error="TimeoutError: page did not settle",
+        console_errors=({"text": "401", "source_url": "https://api.invalid/v1/quota"},),
+        failed_responses=({"url": "https://api.invalid/v1/quota", "status": 401},),
+    )
+    code, manifest = _run(
+        tmp_path, registry, driver, "--routes", "/macro.html", "--viewports", "desktop"
+    )
+    page = manifest["pages"][0]
+    assert code == cpe.EXIT_PARTIAL
+    assert all(state["captured"] is False for state in page["states"])
+    assert page["console_errors"] == [
+        {"text": "401", "source_url": "https://api.invalid/v1/quota"}
+    ], "evidence collected before the failure must survive the failure"
+    assert page["failed_responses"] == [{"url": "https://api.invalid/v1/quota", "status": 401}]
+    assert page["metrics"]["console_error_count"] == 1
+    # The load failure is still recorded as a failure; nothing here fakes a capture.
+    assert page["metrics"]["screenshot_completion"] == 0.0
+    assert "did not settle" in page["states"][0]["reason"]
+
+
+def test_a_capture_with_no_bytes_still_publishes_its_evidence(tmp_path: Path, registry: Path):
+    """Second half of the same defect: the ``continue`` for empty screenshot bytes."""
+
+    driver = FakeDriver(
+        blank_screenshot=True,
+        console_errors=({"text": "403", "source_url": "https://api.invalid/v1/watchlist"},),
+        failed_responses=({"url": "https://api.invalid/v1/watchlist", "status": 403},),
+    )
+    _code, manifest = _run(
+        tmp_path, registry, driver, "--routes", "/macro.html", "--viewports", "desktop"
+    )
+    page = manifest["pages"][0]
+    assert all(state["captured"] is False for state in page["states"])
+    assert all("no screenshot bytes" in state["reason"] for state in page["states"])
+    assert page["console_errors"] == [
+        {"text": "403", "source_url": "https://api.invalid/v1/watchlist"}
+    ]
+    assert page["failed_responses"] == [{"url": "https://api.invalid/v1/watchlist", "status": 403}]
+
+
 def test_no_metric_is_a_score_or_a_verdict(tmp_path: Path, registry: Path):
     _code, manifest = _run(tmp_path, registry, FakeDriver(), "--viewports", "desktop")
     banned = ("score", "grade", "rating", "rank", "severity", "verdict", "quality", "weight")
@@ -721,15 +789,35 @@ def _write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def test_git_head_sha_reads_a_loose_ref(tmp_path: Path):
+def test_git_head_sha_reads_a_loose_ref_and_names_the_gitdir_that_answered(tmp_path: Path):
     _write(tmp_path / ".git" / "HEAD", "ref: refs/heads/main\n")
     _write(tmp_path / ".git" / "refs" / "heads" / "main", SHA + "\n")
-    assert cpe._git_head_sha(tmp_path) == SHA
+    read = cpe._git_head_sha(tmp_path)
+    assert read.sha == SHA
+    # The walk is unbounded (git's own rule), so WHICH git dir answered is the only
+    # thing that makes the manifest's provenance line auditable.
+    assert read.gitdir == tmp_path / ".git"
 
 
 def test_git_head_sha_reads_a_detached_head(tmp_path: Path):
     _write(tmp_path / ".git" / "HEAD", SHA + "\n")
-    assert cpe._git_head_sha(tmp_path) == SHA
+    assert cpe._git_head_sha(tmp_path).sha == SHA
+
+
+def test_git_head_sha_returns_a_lowercase_sha(tmp_path: Path):
+    """A hand-written uppercase HEAD is the same commit; a non-canonical string is not.
+
+    ``_is_hex_sha`` lowercases to *test* the value, so the uppercase form used to
+    travel straight into the manifest and compare unequal to every CI-supplied sha.
+    """
+
+    _write(tmp_path / ".git" / "HEAD", SHA.upper() + "\n")
+    assert cpe._git_head_sha(tmp_path).sha == SHA
+
+    loose = tmp_path / "loose"
+    _write(loose / ".git" / "HEAD", "ref: refs/heads/main\n")
+    _write(loose / ".git" / "refs" / "heads" / "main", SHA.upper() + "\n")
+    assert cpe._git_head_sha(loose).sha == SHA
 
 
 def test_git_head_sha_resolves_from_a_subdirectory(tmp_path: Path):
@@ -739,7 +827,7 @@ def test_git_head_sha_resolves_from_a_subdirectory(tmp_path: Path):
     _write(tmp_path / ".git" / "refs" / "heads" / "main", SHA + "\n")
     deep = tmp_path / "build" / "nested" / "deeper"
     deep.mkdir(parents=True)
-    assert cpe._git_head_sha(deep) == SHA
+    assert cpe._git_head_sha(deep).sha == SHA
 
 
 def test_git_head_sha_follows_a_linked_worktree_to_the_common_dir(tmp_path: Path):
@@ -754,7 +842,48 @@ def test_git_head_sha_follows_a_linked_worktree_to_the_common_dir(tmp_path: Path
     linked = tmp_path / "linked"
     linked.mkdir()
     _write(linked / ".git", f"gitdir: {worktree_gitdir}\n")
-    assert cpe._git_head_sha(linked) == SHA
+    read = cpe._git_head_sha(linked)
+    assert read.sha == SHA
+    # The answering gitdir is the worktree's own, not the common dir: that is what
+    # identifies which checkout's HEAD was read.
+    assert read.gitdir == worktree_gitdir
+
+
+def test_a_per_worktree_heads_ref_never_shadows_the_common_dir(tmp_path: Path):
+    """``refs/heads/*`` is common-dir-only. Reading gitdir-first returns a WRONG sha.
+
+    Git resolves only ``HEAD``, ``refs/bisect/*``, ``refs/worktree/*`` and
+    ``refs/rewritten/*`` per worktree; everything else comes from the common dir.
+    A ``refs/heads/<branch>`` file planted under ``.git/worktrees/<name>/`` — stale
+    leftover or otherwise — made the reader answer with it while git answered with
+    the real branch tip.
+    """
+
+    main = tmp_path / "checkout"
+    worktree_gitdir = main / ".git" / "worktrees" / "feature"
+    _write(worktree_gitdir / "HEAD", "ref: refs/heads/feature\n")
+    _write(worktree_gitdir / "commondir", "../..\n")
+    _write(worktree_gitdir / "refs" / "heads" / "feature", OTHER_SHA + "\n")  # the impostor
+    _write(main / ".git" / "refs" / "heads" / "feature", SHA + "\n")  # what git answers
+    linked = tmp_path / "linked"
+    linked.mkdir()
+    _write(linked / ".git", f"gitdir: {worktree_gitdir}\n")
+    assert cpe._git_head_sha(linked).sha == SHA
+
+
+def test_a_genuinely_per_worktree_ref_still_resolves_from_the_worktree(tmp_path: Path):
+    """The other half of the rule: ``refs/bisect/*`` IS per-worktree, gitdir wins."""
+
+    main = tmp_path / "checkout"
+    worktree_gitdir = main / ".git" / "worktrees" / "feature"
+    _write(worktree_gitdir / "HEAD", "ref: refs/bisect/bad\n")
+    _write(worktree_gitdir / "commondir", "../..\n")
+    _write(worktree_gitdir / "refs" / "bisect" / "bad", SHA + "\n")
+    _write(main / ".git" / "refs" / "bisect" / "bad", OTHER_SHA + "\n")
+    linked = tmp_path / "linked"
+    linked.mkdir()
+    _write(linked / ".git", f"gitdir: {worktree_gitdir}\n")
+    assert cpe._git_head_sha(linked).sha == SHA
 
 
 def test_git_head_sha_falls_back_to_packed_refs_with_a_relative_gitdir(tmp_path: Path):
@@ -772,7 +901,7 @@ def test_git_head_sha_falls_back_to_packed_refs_with_a_relative_gitdir(tmp_path:
     linked = tmp_path / "linked"
     linked.mkdir()
     _write(linked / ".git", "gitdir: ../checkout/.git/worktrees/feature\n")
-    assert cpe._git_head_sha(linked) == SHA
+    assert cpe._git_head_sha(linked).sha == SHA
 
 
 @pytest.mark.parametrize(
@@ -782,24 +911,80 @@ def test_git_head_sha_falls_back_to_packed_refs_with_a_relative_gitdir(tmp_path:
         ("not a sha and not a ref\n", None),  # unparseable HEAD
         ("ref: refs/heads/main\n", "clearly-not-a-sha\n"),  # ref file carrying junk
         (SHA[:12] + "\n", None),  # a short sha is not a sha
+        # A half-written HEAD: ``Path.read_text`` raises ValueError on an embedded
+        # NUL *before* any syscall, so this used to escape as a traceback — and it
+        # did so after the loopback server had started but before the try/finally
+        # that shuts it down.
+        ("ref: refs/heads/ma\x00in\n", None),
     ],
 )
 def test_git_head_sha_returns_none_rather_than_guessing(tmp_path: Path, head: str, ref_body):
     _write(tmp_path / ".git" / "HEAD", head)
     if ref_body is not None:
         _write(tmp_path / ".git" / "refs" / "heads" / "main", ref_body)
-    assert cpe._git_head_sha(tmp_path) is None
+    assert cpe._git_head_sha(tmp_path).sha is None
+
+
+def test_read_text_reports_an_embedded_nul_as_a_miss_not_a_crash(tmp_path: Path):
+    assert cpe._read_text(tmp_path / "no\x00pe") is None
 
 
 def test_git_head_sha_is_none_without_a_checkout_or_with_a_broken_pointer(tmp_path: Path):
     bare = tmp_path / "nowhere"
     bare.mkdir()
-    assert cpe._git_head_sha(bare) is None
+    assert cpe._git_head_sha(bare) == cpe.GitHeadRead(None, None)
 
     broken = tmp_path / "broken"
     broken.mkdir()
     _write(broken / ".git", "this is not a gitdir pointer\n")
-    assert cpe._git_head_sha(broken) is None
+    assert cpe._git_head_sha(broken) == cpe.GitHeadRead(None, None)
+
+
+def test_site_dir_target_names_the_gitdir_instead_of_asserting_a_relationship(tmp_path: Path):
+    """The manifest may not claim "the checkout that produced --site-dir".
+
+    Nothing checks that relationship: the walk is unbounded and lands on whatever
+    repository is nearest above the path — on this machine ``/Users/<user>`` is
+    itself a git repo, so a --site-dir outside a real checkout would stamp the
+    home-dotfiles sha into a committed manifest, indistinguishable from a real one.
+    """
+
+    _write(tmp_path / ".git" / "HEAD", "ref: refs/heads/main\n")
+    _write(tmp_path / ".git" / "refs" / "heads" / "main", SHA + "\n")
+    site = tmp_path / "site"
+    site.mkdir()
+
+    target = cpe.site_dir_target(site)
+    assert target["resolved_sha_or_none"] == SHA
+    assert target["resolved_gitdir_or_none"] == str(tmp_path / ".git")
+    # The source line names what answered, and says what it does not prove.
+    assert str(tmp_path / ".git") in target["resolved_sha_source"]
+    assert "not verified" in target["resolved_sha_source"]
+    assert "the checkout that produced" not in target["resolved_sha_source"]
+
+
+def test_site_dir_target_is_null_and_says_why_when_nothing_answered(tmp_path: Path):
+    site = tmp_path / "site"
+    site.mkdir()
+    # No .git anywhere under tmp_path — but tmp_path's own parents are outside the
+    # walk's reach only by luck, so the assertion is on the pair, not on the sha.
+    target = cpe.site_dir_target(site)
+    if target["resolved_gitdir_or_none"] is None:
+        assert target["resolved_sha_or_none"] is None
+        assert "no git directory" in target["resolved_sha_source"]
+    else:
+        # A repo above the temp dir: the claim must still name it rather than
+        # asserting it produced --site-dir.
+        assert target["resolved_gitdir_or_none"] in target["resolved_sha_source"]
+        assert "the checkout that produced" not in target["resolved_sha_source"]
+
+    unreadable = tmp_path / "half"
+    unreadable.mkdir()
+    _write(unreadable / ".git" / "HEAD", "not a sha and not a ref\n")
+    target = cpe.site_dir_target(unreadable)
+    assert target["resolved_sha_or_none"] is None
+    assert target["resolved_gitdir_or_none"] == str(unreadable / ".git")
+    assert "unresolved" in target["resolved_sha_source"]
 
 
 # --------------------------------------------------------------------------- #
@@ -809,6 +994,45 @@ def test_git_head_sha_is_none_without_a_checkout_or_with_a_broken_pointer(tmp_pa
 
 def test_self_check_passes():
     assert cpe.main(["--self-check"]) == 0
+
+
+def test_self_check_fails_when_the_run_captured_nothing(monkeypatch: pytest.MonkeyPatch):
+    """A check that cannot fail is not a check.
+
+    Every assertion in ``self_check`` used to be a set comparison or an ``all(...)``
+    over the manifest, and all of them pass vacuously over an empty capture: with a
+    driver that captured nothing, ``--self-check`` exited 0 with ``findings: []``
+    and zero screenshots on disk. The run's own totals are now asserted first.
+    """
+
+    def _captures_nothing(_self, *, url: str, cell, timeout_s: float):
+        return cpe.CellObservation(
+            cell_id=cell.cell_id, loaded=False, error="canned driver captured nothing"
+        )
+
+    monkeypatch.setattr(cpe._SelfCheckDriver, "capture", _captures_nothing)
+    ok, summary = cpe.self_check()
+    assert ok is False and summary["ok"] is False
+    blob = " | ".join(summary["findings"])
+    assert "captured no state at all" in blob, blob
+    assert "not one state was captured" in blob, blob
+    assert "outcome 'partial'" in blob, blob
+    # The shape checks that were silently asserting nothing now say so themselves.
+    assert "no console error reached the manifest" in blob, blob
+    assert "no failed response reached the manifest" in blob, blob
+    assert cpe.main(["--self-check"]) == 1
+
+
+def test_self_check_fails_when_a_capture_yields_no_bytes(monkeypatch: pytest.MonkeyPatch):
+    """Loaded, observed, and no screenshot: still a zero-evidence run, still a fail."""
+
+    def _no_bytes(_self, *, url: str, cell, timeout_s: float):
+        return cpe.CellObservation(cell_id=cell.cell_id, loaded=True, screenshot_png=b"")
+
+    monkeypatch.setattr(cpe._SelfCheckDriver, "capture", _no_bytes)
+    ok, summary = cpe.self_check()
+    assert ok is False
+    assert "captured no state at all" in " | ".join(summary["findings"])
 
 
 def test_playwright_is_imported_only_inside_the_driver_factory():
