@@ -99,6 +99,20 @@ Defaults `etf_holdings.weighting.mismatch_discount: 0.35` and `unattributed_weig
 - **R4 — split-guard adjacent-snapshot upgrade**: future work (needs off-render-path reads); a combined split+add (~2:1 plus real 7% add) is currently missed by design — miss = status quo, false positive = deleted live signal.
 - **R5 — no git-level file reverts in this shared worktree** for the remainder of the program (a builder's brief `checkout HEAD --` A/B window can eat a sibling's concurrent write).
 
+## §6c Red-team rulings (Fable, 2026-08-12 — reviewer verdict: no-ship until fixed)
+
+W4 fix wave, binding:
+- **B1 (blocker)**: a split the guard positively identified (ARKW/CRWD 3:1, shares ×2.977, MV ×0.9856) still publishes +207.93% active change / +1.6274 conviction_pp and counts in n_accum. FIX: apply the decomposition's split verdict to the ranked path — any fund-ticker event with `split_adjusted=True` is dropped from conviction_pp/n_accum/board/ledger inputs (it remains in Tier-2 receipts, labeled). Golden fixture regenerates again. Glossary sentence "an affected position is normalised" becomes true.
+- **M2 (major)**: retype CHAT/OZEM/CABZ/HUMN to `active` (Roundhill actively-managed; repo already calls OZEM active in §2 + glossary); audit ALL 105 registry rows against sponsor lines, record `registry_audited: 2026-08-12` in the config block; add a pin flagging any fund whose name contains "Active" typed non-active.
+- **M5**: `total_usd/flow_usd/selection_usd` → None when `n_funds_usd == 0` (27 rows today), matching the W2b null contract; fixture for the all-None case; glossary "floor" sentence corrected for signed values.
+- **M3**: add machine-readable `sign_diverges_from_total: bool` beside weighted_usd; glossary discloses that the discount applies to signed components so the weighted read can exceed or invert the raw one (NVDA/TSM live examples); UI pin — total_usd is the primary $ column, weighted only ever renders WITH its receipt and never as "the better number".
+- **M4**: glossary section for the whole lens: weighted_usd/weighted_n/weight_receipt/mismatch_discount/unattributed_weight; 0.35 constants stated as judgment-set, not fitted; M3 hazard; M6 window heterogeneity; primary-read-stays-breadth.
+- **M6**: publish `window_days_min/max` on consensus rows; glossary states the 40-snapshot window spans 25–64 calendar days by fund; per-day aggregation deferred (future work note).
+- **M7**: §5 designer pin (already in the designer brief, now standing): any weighted ordering excludes net_conviction_pp<0 and renders n_accum/n_trim inline.
+- **Minors folded in**: m10 (n_immature vs n_unpriceable), m11 (bench freeze gated on bench_ret), m16 (drop engine_head from fixture provenance), m18 (corrupt artifact renders the same collecting state as missing), m20 (usd_stale_excluded receipt key), m12 (weight_trajectory routed through the same hygiene filters), m9 (tile copy disclosing pooled overlapping windows; n_names stays visible).
+- **Documented, not changed**: m8 (sum-vs-median estimator gap → glossary + future reconciliation decision), m13/m14/m15 (inert factors, sector flattening, discount-dominance — glossary honesty notes), m17/futures class (follow-up chip), m19 (fund_flows.json publicness kept; docstring corrected).
+- **M21**: rebase onto fresh origin/main before PR (upstream workflow-yaml job moved).
+
 ## §7 Rollout & verification
 
 1. W1 → W2 → W3 built sequentially by opus `builder` agents in this worktree (branch `claude/etf-page-upgrade-20260812`), each wave with tests green before the next starts.
