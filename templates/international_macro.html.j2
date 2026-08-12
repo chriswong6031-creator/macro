@@ -308,9 +308,17 @@ body.imd-lock{overflow:hidden}
         <div class="imd-face-top"><span class="imd-face-icon">⌾</span><span class="imd-open">{{ t('Open risk','打开风险') }} ↗</span></div>
         <h3>{{ t('Calibrated risk monitor','校准风险监测') }}</h3><p>{{ t('Forward pullback odds stay separate from the descriptive macro score.','前瞻回撤概率与描述性宏观分数严格分开。') }}</p>
         {# With the radar card on the page this face stops repeating its headline odds and
-           its dominant label, and counts what the receipt behind it actually adds. #}
+           its dominant label, and counts what the receipt behind it actually adds.
+           COUNT THE LIVE ONES (2026-08-11): `D.risk.scares|length` is the size of the
+           PROFILE — every family the radar tracks, including the ones sitting at calm —
+           so it printed "3 · Active scare families" on japan.html while one of the three
+           scored 16 and banded calm, and on south_korea.html it printed "3 active" beside
+           a card reading "Calm — no driver elevated". The band comes from the engine; this
+           only filters and shows the denominator so the number carries its meaning
+           (DESIGN_DOCTRINE Law 3). No new statistic is computed here. #}
         {% if RADAR %}
-        <div class="imd-face-kpi"><strong>{{ D.risk.scares|length }}</strong><span>{{ t('Active scare families','活跃风险类别') }}</span></div>
+        {% set _live = (D.risk.scares or []) | rejectattr('band', 'equalto', 'calm') | list %}
+        <div class="imd-face-kpi"><strong>{{ _live|length }} / {{ (D.risk.scares or [])|length }}</strong><span>{{ t('risk families above calm','高于平静的风险类别') }}</span></div>
         {% else %}
         <div class="imd-face-kpi"><strong>{% if D.risk.h21 is not none %}{{ (D.risk.h21*100)|round(1) }}%{% else %}N/A{% endif %}</strong><span>{{ t(D.risk.dominant_en or 'No dominant scare',D.risk.dominant_zh or '无主导风险') }}</span></div>
         {% endif %}

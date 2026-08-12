@@ -958,11 +958,16 @@ def _radar_dlg_vm(vm: dict, latest: dict) -> dict:
     # "least US-coupled of the three", "breadth breakdown") — internal framing and
     # vocabulary that Tier 1 bans (DESIGN_DOCTRINE Law 2). Same substance, said the
     # way a reader can use it.
+    # The trailing clause restores what the first rewrite dropped: CA_PROFILE says the
+    # link is "emerging-only ... only in the recent era", a sample-window disclosure, not
+    # jargon. Without it a weak, young relationship reads as a standing one. Said in plain
+    # words rather than with the profile's own phrase.
     ctx["caveat_en"] = ("The Toronto market follows commodities more than Wall Street, so "
                         "these drivers nudge it rather than drive it — the lightest of our "
-                        "three country reads.")
+                        "three country reads, and one that has only started to show up in "
+                        "the last few years.")
     ctx["caveat_zh"] = ("多伦多市场更多跟随大宗商品，而非美股，因此这些驱动因素只是推力而非主导——"
-                        "在三个市场读数中最轻。")
+                        "在三个市场读数中最轻，且这一规律近几年才开始显现。")
 
     # ── Leading tile: benchmark stretch vs its 200-day average + the loudest leg ──
     try:
@@ -1142,13 +1147,28 @@ def _radar_dlg_vm(vm: dict, latest: dict) -> dict:
                 "value": f"{pct:.0f}%", "read_en": w[0], "read_zh": w[1], "tone": w[2],
                 # an honest 0-100 scale — this one earns its bar
                 "pct": int(round(pct)),
-                "tip_en": ("Share of Toronto names trading above their own 200-day average. "
-                           "Broad participation confirms a move; a thin one makes rallies "
-                           "fragile. The risk ladder above scores how unusual this reading "
-                           "is against this market's own history, so the two can differ."),
-                "tip_zh": ("多伦多市场中股价高于自身200日均线的个股占比。参与广泛可确认行情；"
-                           "参与面窄则反弹脆弱。上方风险梯度衡量的是该读数相对本市场历史的异常程度，"
-                           "两者可能不同。"),
+                # DUAL-SOURCE, adjudicated 2026-08-11 and deliberately kept: this row is
+                # `_breadth()` (full S&P/TSX Composite universe via the XIC holdings cache,
+                # ~220 names) so it can never disagree with the page's own breadth card;
+                # the radar's `ca_breadth` leg reads the curated canada_breadth store
+                # (74 names, the series long enough for a history rank). Measured
+                # 2026-08-11 the two LEVELS agree to within a point (71.0 vs 71.6) — the
+                # apparent contradiction on this panel is not the universe but the LENS: a
+                # level of 71% reads "broad" here while the ladder shows where that level
+                # sits in the TSX's own distribution, which is its cautious range. Say that
+                # out loud, because "Participation broad" sitting under "Breadth breakdown
+                # 68 Caution" otherwise reads as the panel disagreeing with itself. The
+                # engine's store choice is untouched (no authority change).
+                "tip_en": ("Share of Toronto names trading above their own 200-day average "
+                           "— the plain count of who is participating. The risk ladder "
+                           "above measures the same breadth against this market's own "
+                           "history, where the TSX normally runs higher, so a level that "
+                           "looks broad here can still sit in its cautious range. Different "
+                           "questions, both honest."),
+                "tip_zh": ("多伦多市场中股价高于自身200日均线的个股占比——即参与度的直接统计。"
+                           "上方风险梯度衡量的是同一广度相对本市场自身历史的位置；多伦多指数"
+                           "历来通常更高，因此看似普遍的水平仍可能落在其偏谨慎的区间。"
+                           "两者回答的是不同的问题。"),
             })
     except Exception as e:  # noqa: BLE001
         log.warning("radar_dlg breadth row skipped (%s)", e)

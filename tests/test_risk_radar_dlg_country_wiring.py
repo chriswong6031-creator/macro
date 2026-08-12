@@ -404,7 +404,7 @@ class TestRendersThroughThePartial:
         html = self._render("hk", ctx)
         for token in ("Leading", "Overseas", "Track record", "Calendar",
                       "Peg distance", "联汇偏离", "Fear gauge", "Southbound flow",
-                      "Leverage bets", "Behind the reading", "Leaders"):
+                      "Leverage bets", "The local backdrop", "Leaders"):
             assert token in html, token
 
 
@@ -466,3 +466,181 @@ def test_page_wires_the_shared_partial_at_the_existing_dialog_id(page, px):
     # the JS the entry points call is untouched
     assert f"window.{px}OpenDlg={px}OpenDlg" in src
     assert f"{px}OpenDlg('{px}-dlg-risk')" in src
+
+
+# ---------------------------------------------------------------------------
+# 7. China's two conditions gauges — LABEL <-> SOURCE, pinned so it cannot swap
+#
+# The old bespoke `#cnx-dlg-risk` had them crossed: "Deep-drawdown gauge" over
+# `conditions.recession` (the macro SLOWDOWN gauge) and "Slowdown gauge" over
+# `conditions.drawdown` (the A-share DEEP-DRAWDOWN risk gauge). It went unnoticed for
+# months because both of its charts read `…​.chart_html`, a key scripts/build_china.py
+# never writes (it writes `recession_html` / `drawdown_html` ON `conditions`), so the
+# charts were dead markup. Porting the dialog made the crossed labels visible.
+# ---------------------------------------------------------------------------
+_CN_COND = {
+    "recession": {"score": 51.0, "label": "high"},
+    "drawdown_risk": {"score": 22.0, "band": "low"},
+    "recession_html": "<svg data-src=RECESSION></svg>",
+    "drawdown_html": "<svg data-src=DRAWDOWN></svg>",
+}
+
+
+def _cn_gauges():
+    from scripts.build_china import _radar_dlg_vm as cn_vm
+    ctx = cn_vm({"market_state": {"radar": _RD}},
+                {"date": "2026-08-11", "conditions": dict(_CN_COND)})
+    return {g["label_en"]: g for g in (ctx.get("gauges") or [])}
+
+
+def test_china_gauge_labels_match_the_series_they_draw():
+    g = _cn_gauges()
+    assert set(g) == {"Slowdown gauge", "Deep-drawdown gauge"}
+    # the macro slowdown legs (credit impulse / PPI / PMI / M1-M2 / property / GDP)
+    assert g["Slowdown gauge"]["chart_html"] == _CN_COND["recession_html"]
+    assert g["Slowdown gauge"]["score"] == 51
+    assert g["Slowdown gauge"]["label_zh"] == "放缓仪表"
+    # the A-share stress rank (slowdown + margin froth + flat CGB + QVIX + turnover)
+    assert g["Deep-drawdown gauge"]["chart_html"] == _CN_COND["drawdown_html"]
+    assert g["Deep-drawdown gauge"]["score"] == 22
+    assert g["Deep-drawdown gauge"]["label_zh"] == "深跌仪表"
+
+
+def test_china_gauge_premise_still_holds_in_the_engine():
+    """If the engine ever renames or repurposes these keys, this reds BEFORE the labels
+    silently start describing the wrong series again."""
+    from engine import china_conditions as cc
+    assert "slowdown / recession gauge" in cc.china_recession.__doc__
+    assert "drawdown-risk gauge" in cc.china_drawdown.__doc__
+    src = (ROOT / "scripts" / "build_china.py").read_text(encoding="utf-8")
+    # the chart the builder stamps as the slowdown chart is the recession series
+    assert 'cond["recession_html"] = _ilx(ch.get("recession")' in src
+    assert 'aria_en="Slowdown gauge chart"' in src
+    assert 'cond["drawdown_html"] = _ilx(ch.get("drawdown")' in src
+    assert 'aria_en="Drawdown gauge chart"' in src
+
+
+def test_china_gauge_read_words_come_from_the_engine_band_not_a_local_threshold():
+    """The first port re-banded the slowdown score at 60/40, cut points the gauge's own
+    history-anchored bands (_REC_BANDS = 26/45) contradict — a 51 read 'elevated' on one
+    scale and 'high' on the other."""
+    from engine import china_conditions as cc
+    assert cc._REC_BANDS == (26.0, 45.0)
+    src = (ROOT / "scripts" / "build_china.py").read_text(encoding="utf-8")
+    block = src[src.index("# ── Gauges:"):src.index("# ── Leaders:")]
+    assert '(60, "high"' not in block and '(40, "elevated"' not in block
+    assert 'rec.get("label")' in block and 'dd.get("band")' in block
+
+
+def test_china_says_the_local_rows_are_not_inputs_to_the_score():
+    """CN_PROFILE's caveat ends 'the internal froth legs are excluded (they mean-revert)':
+    margin, options fear, limit-up and southbound are NOT radar legs. The plain-word
+    rewrite dropped that, so the section read as a causal breakdown of the headline."""
+    from scripts.build_china import _radar_dlg_vm as cn_vm
+    ctx = cn_vm({"market_state": {"radar": _RD}}, {"date": "2026-08-11"})
+    assert "context" in ctx["factors_note_en"].lower()
+    assert "背景" in ctx["factors_note_zh"]
+    for banned in ("validated", "已验证", "falsifier", "证伪", "refuted"):
+        assert banned.lower() not in (ctx["factors_note_en"] + ctx["factors_note_zh"]).lower()
+
+
+# ---------------------------------------------------------------------------
+# 8. ONE as-of per dialog — a lagging FX feed is disclosed in the merged footer,
+#    never as a second timestamp inside the currency block.
+# ---------------------------------------------------------------------------
+def test_a_lagging_fx_feed_adds_no_second_asof_stamp():
+    env = Environment(loader=FileSystemLoader(str(ROOT / "templates")), autoescape=False)
+    tpl = env.from_string('{% import "_risk_radar_dlg.html.j2" as rrd %}'
+                          "{{ rrd.risk_radar_dlg('cn', rd, none, ctx) }}")
+    ctx = {"asof": "2026-08-11",
+           "fx": {"usd_dir": "strengthening", "stale": True, "built_date": "2026-08-08"}}
+    html = tpl.render(rd=_RD, ctx=ctx)
+    assert "Currency data as of" not in html and "汇率数据截至" not in html
+    # twice = once in the l-en span, once in the l-zh twin — one visible per language
+    assert html.count("2026-08-08") == 2
+    assert "As of 2026-08-11, currency readings from 2026-08-08." in html
+    assert "数据截至 2026-08-11，汇率读数为 2026-08-08。" in html
+    assert html.count('class="rrd-fnote"') == 0
+    # same date on both -> no clause at all, not the stamp printed twice
+    ctx["fx"]["built_date"] = "2026-08-11"
+    same = tpl.render(rd=_RD, ctx=ctx)
+    assert "currency readings from" not in same
+    assert same.count("As of 2026-08-11") == 1
+
+
+# ---------------------------------------------------------------------------
+# 9. China's ctx under the same copy law HK and Canada are held to (W1 shipped the
+#    CN builder with no test of its own — only the partial and the two W2 builders
+#    were covered).
+# ---------------------------------------------------------------------------
+_VM_CN = {
+    "market_state": {"radar": dict(_RD, label_en="Breadth breakdown (all-boats)", scares=[
+        {"label_en": "Breadth breakdown (all-boats)", "label_zh": "广度普跌（普跌）",
+         "score": 61.0, "band": "caution",
+         "firing_legs": [{"leg": "cn_breadth", "pctile": 0.8}]}])},
+    "index_health": [{"ticker": "000001.SS", "dist200": 7.1}],
+    "internals": {"pboc": {"bias": "easing", "rrr_big": 8.5},
+                  "margin": {"pctile": 62},
+                  "southbound": {"cum_20d": 24200.0, "pos_days_20": 13}},
+    "cn_market_state_json": {"external": {"usdcnh": {"quote": 7.21, "chg_pct": 0.12}}},
+    "cn_participation_json": {"margin_to_mcap": 2.44, "qvix": 18.2, "qvix_z": 0.6,
+                              "date": "2026-08-08"},
+    "cn_microstructure_json": {"latest_aggregate": {"limit_up_count": 58,
+                                                    "sealed_up_close": 31,
+                                                    "lianban_2plus": 9}},
+    "event_strip": [{"date": "2026-08-15", "name_en": "LPR fix", "name_zh": "LPR 报价"}],
+    "top_setups": [{"ticker": "600118.SS", "name": "China Satellite", "name_zh": "中国卫星"}],
+}
+_LATEST_CN = {"date": "2026-08-11", "conditions": dict(_CN_COND)}
+
+
+def _cn_ctx():
+    from scripts.build_china import _radar_dlg_vm as cn_vm
+    return cn_vm(dict(_VM_CN), dict(_LATEST_CN))
+
+
+@pytest.mark.parametrize("banned", [
+    "falsifier", "refuted", "证伪", "validated", "已验证",
+    "display-tier", "display-only", "gauntlet", "prereg", "z-score", "percentile",
+    "K-of-N", "risk-off", "pctile", "qvix_z", "latest_aggregate", "lianban",
+])
+def test_cn_banned_vocabulary_absent(banned):
+    assert banned.lower() not in " ".join(_strings(_cn_ctx())).lower(), banned
+
+
+def test_cn_strings_are_attribute_safe_and_have_zh_twins():
+    ctx = _cn_ctx()
+    # gauges[].chart_html is pre-rendered SVG passed through |safe — markup by design
+    ctx_no_svg = {k: v for k, v in ctx.items() if k != "gauges"}
+    for s in _strings(ctx_no_svg) + _strings(
+            [{k: v for k, v in g.items() if k != "chart_html"} for g in ctx["gauges"]]):
+        assert '"' not in s and "<" not in s and ">" not in s, s
+
+    def walk(node, path=""):
+        if isinstance(node, list):
+            for i, v in enumerate(node):
+                walk(v, f"{path}[{i}]")
+            return
+        if not isinstance(node, dict):
+            return
+        for k, v in node.items():
+            if isinstance(v, (dict, list)):
+                walk(v, f"{path}.{k}")
+            elif k.endswith("_en") and v and k != "chart_html":
+                twin = k[:-3] + "_zh"
+                assert node.get(twin), f"{path}.{k} has no {twin}"
+                assert re.search(r"[一-鿿]", str(node[twin])), f"{path}.{twin} is not Chinese"
+
+    walk({k: v for k, v in ctx.items() if k != "gauges"})
+    for g in ctx["gauges"]:
+        assert re.search(r"[一-鿿]", g["label_zh"])
+        if g["read_en"]:
+            assert re.search(r"[一-鿿]", g["read_zh"])
+
+
+def test_cn_tone_vocabulary_is_closed():
+    ctx = _cn_ctx()
+    allowed = {"down", "warn", "up", "muted"}
+    seen = [r.get("tone") for sec in ("policy_chips", "factors", "gauges")
+            for r in (ctx.get(sec) or [])]
+    assert seen and set(seen) <= allowed, set(seen) - allowed

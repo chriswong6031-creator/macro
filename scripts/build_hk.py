@@ -960,9 +960,15 @@ def _radar_dlg_vm(vm: dict, latest: dict) -> dict:
     # written for the engine's own audience ("US-coupling", "the external legs",
     # "recent-era only") — internal vocabulary that Tier 1 bans (DESIGN_DOCTRINE Law 2).
     # Same substance, said the way a reader can use it.
+    # The trailing clause restores what the first rewrite dropped: HK_PROFILE says this
+    # coupling "has only led HSI drawdowns since ~2016", a sample-window disclosure, not
+    # jargon. Losing it turned a recent-era relationship into a timeless one — the exact
+    # overclaim the rewrite was supposed to avoid. Said as a date, not as "recent era".
     ctx["caveat_en"] = ("Hong Kong's pullbacks are mostly imported — US rates and the dollar, "
-                        "which the currency link passes straight through.")
-    ctx["caveat_zh"] = "香港的回撤多为外部输入——美债利率与美元，经联系汇率直接传导。"
+                        "which the currency link passes straight through. That pattern only "
+                        "shows up in the record from about 2016 on.")
+    ctx["caveat_zh"] = ("香港的回撤多为外部输入——美债利率与美元，经联系汇率直接传导。"
+                        "该规律在历史数据中约自2016年起才成立。")
 
     # ── Leading tile: benchmark stretch vs its 200-day average + the loudest leg ──
     try:

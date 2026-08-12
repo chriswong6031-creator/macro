@@ -85,7 +85,7 @@ class TestAbsentSafe:
     def test_sections_are_omitted_not_emptied(self):
         """No payload -> no eyebrow. An empty titled section is a defect, not an absence."""
         html = _render(ctx={})
-        for eyebrow in ("Behind the reading", "Leaders", "Currency backdrop", "Context"):
+        for eyebrow in ("The local backdrop", "Leaders", "Currency backdrop", "Context"):
             assert eyebrow not in html, eyebrow
 
 

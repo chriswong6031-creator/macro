@@ -274,7 +274,15 @@
       {# ── 5. Country factor block + optional gauges ────────────────────────── #}
       {% if c.factors or c.gauges or c.factors_note_en %}
       <div class="rrd-sep"></div>
-      <div class="rrd-eyebrow">{{ t('Behind the reading','读数背后') }}</div>
+      {# "Behind the reading" until 2026-08-11 — a causal claim the engine contradicts.
+         Of the fourteen rows the three markets put here, ONE (Canada's participation) is
+         even adjacent to a scored leg: engine/risk_radar_intl.py scores rateshock / usd /
+         yield-gap / breadth, and CN_PROFILE's own caveat says the local froth legs are
+         "excluded (they mean-revert)". Margin balance, options fear, limit-up breadth,
+         southbound, VHSI, CBBC leverage, oil, gold and copper-vs-gold are BACKDROP, not
+         inputs. The eyebrow now says what the rows are; each market's factors_note says
+         what drives the score instead. #}
+      <div class="rrd-eyebrow">{{ t('The local backdrop','本地背景') }}</div>
       {% if c.factors %}
       <div class="rrd-frows">
         {% for f in c.factors %}
@@ -380,16 +388,29 @@
         </div>
         {% endif %}
       </div>
-      {% if _fx.stale is defined and _fx.stale and _fx.built_date %}
-      <div class="rrd-fnote">{{ t('Currency data as of ' ~ _fx.built_date ~ '.', '汇率数据截至 ' ~ _fx.built_date ~ '。') }}</div>
-      {% endif %}
+      {# NO second as-of stamp here. The currency block used to print "Currency data as of
+         YYYY-MM-DD" while the merged footer below printed "As of YYYY-MM-DD" — two
+         timestamps in one panel, which DESIGN_DOCTRINE Law 4 forbids ("one as-of stamp per
+         panel"). The staleness disclosure now rides the ONE footer, and only when the two
+         dates actually differ. #}
       {% endif %}
       {% endif %}
 
       {# ── 8. ONE merged footer: one as-of + one footnote for the whole dialog ─ #}
+      {#- A lagging currency feed is disclosed HERE, folded into the single as-of clause,
+          rather than as its own stamp inside the FX block (Law 4: one as-of, one
+          footnote, merge never stack). Only when the two dates actually differ — an
+          identical date would be the same stamp printed twice in one sentence. -#}
+      {#- and only when the currency section actually RENDERED: disclosing the age of a
+          reading the reader cannot see would be a footnote about nothing. -#}
+      {%- set _fx_shown = (c.fx and ((c.fx.cnh_basis_state is defined and c.fx.cnh_basis_state)
+                          or (c.fx.usd_dir is defined and c.fx.usd_dir))) -%}
+      {%- set _fx_lag = (c.fx.built_date if (_fx_shown and c.fx.stale is defined and c.fx.stale
+                          and c.fx.built_date is defined and c.fx.built_date
+                          and c.fx.built_date != c.asof) else none) -%}
       <div class="rrd-sep"></div>
       <div class="rrd-foot">
-        {%- if c.asof %}<span class="l-en">As of {{ c.asof }}. </span><span class="l-zh">数据截至 {{ c.asof }}。</span>{% endif -%}
+        {%- if c.asof %}<span class="l-en">As of {{ c.asof }}{% if _fx_lag %}, currency readings from {{ _fx_lag }}{% endif %}. </span><span class="l-zh">数据截至 {{ c.asof }}{% if _fx_lag %}，汇率读数为 {{ _fx_lag }}{% endif %}。</span>{% endif -%}
         {%- if c.caveat_en %}<span class="l-en">{{ c.caveat_en }} </span><span class="l-zh">{{ c.caveat_zh if c.caveat_zh else c.caveat_en }}</span>{% endif -%}
         <span class="l-en">These are windows, not certainties — re-drawn nightly. The response is sizing, not stock picking; forward records are still accruing.</span>
         <span class="l-zh">这些是概率窗口而非定论——每晚重算。应对是仓位控制而非选股；前瞻记录仍在积累中。</span>

@@ -57,6 +57,23 @@
   'aud_depreciation': ('Australian dollar depreciation','澳元贬值'),
 } -%}{%- set p = m.get(leg, (leg, leg)) -%}{{ t(p[0], p[1]) }}
 {%- endmacro %}
+{# A firing leg's percentile rank, rendered per language. Two defects this fixes, both
+   shipped live on the five international dashboards (the only surface that shows the
+   Leading row — the US #dlg-risk and the country dialogs both hide .rrx-ev):
+     1. the suffix was a hard-coded "th", so a rank ending in 1/2/3 printed "73th"
+        (euro_area.html) and "21th"; 11/12/13 still take "th".
+     2. the whole token was language-invariant, so the ZH view read "73th" — an English
+        ordinal dropped into Chinese copy (DESIGN_DOCTRINE §5.5). ZH takes the shape the
+        rest of the site uses for a rank (第N百分位 / N 分位).
+   Absent-safe: a leg with no pctile renders nothing rather than raising on Undefined. #}
+{% macro rr_pctile(p) -%}
+{%- if p is not none -%}
+{%- set n = (p * 100) | round | int -%}
+{%- set _t = n % 100 -%}{%- set _u = n % 10 -%}
+{%- set sfx = 'th' if (_t > 10 and _t < 14) else ('st' if _u == 1 else ('nd' if _u == 2 else ('rd' if _u == 3 else 'th'))) -%}
+<span class="l-en">{{ n }}{{ sfx }}</span><span class="l-zh">第{{ n }}百分位</span>
+{%- endif -%}
+{%- endmacro %}
 {# The card itself. Built only from a radar (rd = market_state.radar) + its scares.
    Replaces the old cramped "Pullback odds · 5d.. 10d.. 21d.." text run with an
    escalating odds ramp drawn against the normal base rate, a state-coloured header,
@@ -67,8 +84,14 @@
    Truthiness-only on rd.recovery.receding — never `is not none` (crashes on missing keys, Jinja codebase law). -#}
 {%- set _rec_receding = rd.recovery and rd.recovery.present and rd.recovery.receding -%}
 {%- set ic = '🛑' if rd.state=='risk-off' else ('🚨' if rd.state=='elevated' else ('⚠️' if rd.state=='caution' else ('🌤️' if (rd.state=='watch' and _rec_receding) else ('📡' if rd.state=='watch' else '✅')))) -%}
-{%- set base = rd.dd_base if (rd.dd_base and rd.dd_base.h21 is not none) else {'h5':0.036,'h10':0.086,'h21':0.178} -%}
-{%- set hmax = (rd.dd21 / 0.82) if (rd.dd21 is not none and rd.dd21 > 0) else 0.25 -%}
+{#- Optional numeric fields are guarded `is defined and is not none`, never `is not none`
+   alone: in Jinja a MISSING key is Undefined, and `Undefined is not none` evaluates TRUE, so
+   the guard passes and the arithmetic behind it raises UndefinedError — taking the whole page
+   with it. `_radar_to_rd` always emits every key, so this is unreachable in production today;
+   it is the trap tests/test_risk_radar_dlg_partial.py exists to pin, and the reason the dialog
+   partial has to sniff `r.dd21 is defined` before it dares embed this card at all. -#}
+{%- set base = rd.dd_base if (rd.dd_base and rd.dd_base.h21 is defined and rd.dd_base.h21 is not none) else {'h5':0.036,'h10':0.086,'h21':0.178} -%}
+{%- set hmax = (rd.dd21 / 0.82) if (rd.dd21 is defined and rd.dd21 is not none and rd.dd21 > 0) else 0.25 -%}
 <div class="rrx rrx-{{ rd.state }}{{ ' rrx-loud' if rd.is_loud }}" style="--rc:{{ rc }}">
   {# .rrx-main / .rrx-side are display:contents by default (no layout change on the China/HK/
      Canada/stocks cards); only the macro front-page promotes them to a 2-column banner. #}
@@ -77,16 +100,16 @@
     <span class="rrx-ic">{{ ic }}</span>
     <div class="rrx-id">
       <div class="rrx-ttl">{{ t('Risk Radar','风险雷达') }}
-        <span class="rrx-badge">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} · {{ rd.top_score }}/100{% endif %}</span>
+        <span class="rrx-badge">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is defined and rd.top_score is not none %} · {{ rd.top_score }}/100{% endif %}</span>
         {{ help('Pullback-risk gauge. Use high readings to trim risk, not to pick stocks.', '回撤风险仪表。高读数用于降风险，不用于选股。') }}
       </div>
       {% if rd.label_en %}<div class="rrx-dom">{{ t(rd.label_en, rd.label_zh) }}</div>{% endif %}
       {% if rd.amp and rd.amp > 0 %}<div class="rrx-amp">▲ {{ t('Amplified','放大') }} — <span class="l-en">{{ rd.amp_flags_en|join(' · ') }}</span><span class="l-zh">{{ rd.amp_flags_zh|join(' · ') }}</span></div>{% endif %}
     </div>
-    {% if rd.gross is not none and rd.gross < 1 %}<div class="rrx-gross"><span class="gv">×{{ '%.2f'|format(rd.gross) }}</span><span class="gn">{{ t('gross','建议仓位') }}</span></div>{% endif %}
+    {% if rd.gross is defined and rd.gross is not none and rd.gross < 1 %}<div class="rrx-gross"><span class="gv">×{{ '%.2f'|format(rd.gross) }}</span><span class="gn">{{ t('gross','建议仓位') }}</span></div>{% endif %}
   </div>
 
-  {% if rd.dd21 is not none %}
+  {% if rd.dd21 is defined and rd.dd21 is not none %}
   <div class="rrx-odds">
     <div class="rrx-odds-l">
       <div class="rrx-cap">{{ t('Pullback odds','回撤概率') }} <span class="rrx-cap-sub">{{ t('≥5% drop · escalating','≥5% · 递增') }}</span></div>
@@ -94,7 +117,9 @@
       <div class="rrx-vsn">{% if rd.dd_lift is not none %}<b>{{ rd.dd_lift }}×</b> {% endif %}{{ t('vs normal','对比常态') }} {{ (base.h21*100)|round|int }}%</div>
     </div>
     <div class="rrx-ramp">
-      {% for h in [ ('5d','5日',rd.dd5,base.h5), ('10d','10日',rd.dd10,base.h10), ('21d','21日',rd.dd21,base.h21) ] %}
+      {%- set _d5 = rd.dd5 if rd.dd5 is defined else none -%}
+      {%- set _d10 = rd.dd10 if rd.dd10 is defined else none -%}
+      {% for h in [ ('5d','5日',_d5,base.h5), ('10d','10日',_d10,base.h10), ('21d','21日',rd.dd21,base.h21) ] %}
       {%- set odd = h[2] if h[2] is not none else 0 -%}
       {%- set bs = h[3] if h[3] is not none else 0 -%}
       <div class="rrx-col{{ ' is-hd' if loop.last }}">
@@ -239,11 +264,20 @@
   {% endif %}{# /show_threats — the chip strip only; the Leading-evidence line below
      stays visible even when the host dedupes the strip against its own scare ladder #}
   {% for s in scares %}{% if s.label_en == rd.label_en and s.firing_legs %}
-  <div class="rrx-ev"><span class="rrx-ev-k">{{ t('Leading','领先信号') }}</span>{% for l in s.firing_legs[:2] %}{% if not loop.first %} · {% endif %}{{ rr_leg(l.leg) }} <span class="rrx-ev-p">{{ (l.pctile*100)|round|int }}th{% if l.confirmed %} ✓{% endif %}</span>{% endfor %}</div>
+  <div class="rrx-ev"><span class="rrx-ev-k">{{ t('Leading','领先信号') }}</span>{% for l in s.firing_legs[:2] %}{% if not loop.first %} · {% endif %}{{ rr_leg(l.leg) }} <span class="rrx-ev-p">{{ rr_pctile(l.pctile if (l.pctile is defined and l.pctile is not none) else none) }}{% if l.confirmed %} ✓{% endif %}</span>{% endfor %}</div>
   {% endif %}{% endfor %}
   {% endif %}
 
-  {% if rd.is_loud and rd.do_en %}
+  {# Stance on EVERY state, not only the loud ones (DESIGN_DOCTRINE Law 1 — "a panel that
+     shows a state with no stance makes the user do the analyst's job"; "watch — don't
+     chase" is a complete, honest stance). The `rd.is_loud and` gate meant the calm and
+     watch cards shipped with no action line at all: japan.html (watch), south_korea.html
+     and india.html (calm) all rendered the state and the odds ramp and then stopped.
+     The wording is the ENGINE's own calm/watch stance (`_RADAR_DO` in
+     engine/market_state.py) — nothing is invented here; an empty do_en still renders
+     nothing. The US #dlg-risk and the country dialogs hide .rrx-do in CSS (their own
+     headline carries the same stance), so this reaches the boards that had none. #}
+  {% if rd.do_en %}
   <div class="rrx-do"><span class="rrx-do-k">{{ t('Do','应对') }}</span>{{ t(rd.do_en, rd.do_zh) }}</div>
   {% endif %}
 
@@ -275,12 +309,9 @@
   </div>
   {% endif %}
 
-  {# self-audit line — only on the international radars (rd.forward_log set by
-     engine/risk_radar_intl_audit). Every call is logged + graded vs the realized index path;
-     the radar earns the right to move the verdict only once its own record clears the bar. #}
-  {% if rd.forward_log %}{% set fl = rd.forward_log %}
-  <div class="rrx-audit"><span class="rrx-audit-k">🧾 {{ t('Self-audit','自审') }}</span>{% if fl.n_graded and fl.n_graded > 0 %}{{ fl.n_graded }} {{ t('graded','已评分') }}{% if fl.force_lift is not none %} · <b>{{ fl.force_lift }}×</b> {{ t('vs base rate','对比基准') }}{% endif %} · {% if fl.can_force %}{{ t('moving the verdict','参与定调') }} ✓{% else %}{{ t('display-only','仅展示') }}{% endif %}{% else %}{{ t('accruing — grades begin once calls mature (~21 trading days)','积累中 — 约21个交易日后开始评分') }}{% endif %}</div>
-  {% endif %}
+  {# The self-audit line that used to live here is MERGED into the one track-record row at
+     the end of this card (see the "ONE honesty line" block below) — DESIGN_DOCTRINE Law 4,
+     one footnote per panel, merge never stack. #}
   {# ── Track record (forward-ledger scorecard, data/risk_radar/scorecard.json).
      Display-only context accrual — deterministic math over graded ledger rows.
      Glance tier: ONE plain-word line. Tier-2: per-scare (top 3 by n) +
@@ -435,8 +466,29 @@
   </div>
   {%- endif %}
 
-  {% if rd.track is defined and rd.track %}
-  {%- set trk = rd.track -%}
+  {# ── ONE honesty line: this radar's own graded record (DESIGN_DOCTRINE Law 4 — one
+     footnote per panel, MERGE never stack).
+     Until 2026-08-11 this was TWO adjacent lines that said the same thing on a young
+     ledger. Measured on the shipped international dashboards: japan.html and
+     south_korea.html printed "🧾 Self-audit  accruing — grades begin once calls mature
+     (~21 trading days)" immediately above "Graded calls accruing — check back once
+     alerts mature (~21 trading days)"; euro_area / united_kingdom / india printed the
+     same self-audit line above "Monitoring paused — ledger stale", which CONTRADICTS it
+     at glance tier and leaks the internal word "ledger" (Law 2).
+     One row now. Precedence: this market's own graded log (rd.forward_log, set by
+     engine/risk_radar_intl_audit — intl radars only) -> the scorecard's past-year alert
+     window (rd.track, data/risk_radar/scorecard.json) -> the plain accrual sentence.
+     A log that has not been appended lately rides the SAME line as a plain-word clause.
+     Class stays `.rrx-trk` so every existing scope keeps working unchanged: the US
+     #dlg-risk hides the whole .rrx-side, the country dialogs hide .rrx-trk by name, and
+     the .ms-front boards show it. Guards: with neither source present (older renders,
+     first build before the scorecard exists) the card is byte-identical to before.
+     Glance tier: ONE plain-word line. Tier-2: per-scare (top 3 by n) + watch/caution +
+     recovery detail inside the help() tooltip, rendered from the live by_sc_y1, wc_y1
+     and y1-window recovery data. #}
+  {%- set _fl = rd.forward_log if rd.forward_log else none -%}
+  {% if (rd.track is defined and rd.track) or _fl %}
+  {%- set trk = rd.track if (rd.track is defined and rd.track) else {} -%}
   {%- set mon = trk.get('monitoring') if trk.get is defined else trk.monitoring if trk.monitoring is defined else {} -%}
   {%- set win_y1 = trk.get('windows', {}).get('y1', {}) if trk.get is defined else {} -%}
   {%- set al_y1 = win_y1.get('alerts', {}) if win_y1.get is defined else {} -%}
@@ -476,16 +528,29 @@
       {%- set _ns.seen = _ns.seen + 1 -%}
     {%- endif -%}
   {%- endfor -%}
+  {%- set _fl_n = _fl.n_graded if (_fl and _fl.n_graded) else 0 -%}
+  {%- set _lag = mon.get('last_logged_days_ago') if mon.get is defined else none -%}
   <div class="rrx-trk">
-    {%- if not log_fresh %}
-    <span class="l-en">Monitoring paused — ledger stale</span><span class="l-zh">监控暂停 — 账本数据陈旧</span>
+    <span class="rrx-audit-k">🧾 {{ t('Track record','往绩') }}</span>
+    {%- if _fl_n > 0 %}
+    {#- this market's OWN graded log (intl radars). "not yet moving the verdict" replaces
+        the old "display-only" chip — that phrase is banned glance-tier vocabulary
+        (DESIGN_DOCTRINE Law 2, "display-tier / display context only"). -#}
+    <span>{{ _fl_n }} {{ t('graded','已评分') }}{% if _fl.force_lift is defined and _fl.force_lift is not none %} · <b>{{ _fl.force_lift }}×</b> {{ t('vs base rate','对比基准') }}{% endif %} · {% if _fl.can_force %}{{ t('moving the verdict','参与定调') }} ✓{% else %}{{ t('not yet moving the verdict','尚未参与定调') }}{% endif %}</span>
     {%- elif hit_rate is not none %}
     {# Glance tier: "on N of M elevated days a ≥5% drop followed within a month (past year)" #}
-    <span class="l-en">Track record: on {{ al_tp }} of {{ al_n }} elevated days in the past year, a ≥5% drop followed within a month</span><span class="l-zh">历史记录：过去一年 {{ al_n }} 个警报日中有 {{ al_tp }} 天在一个月内出现 ≥5% 下跌</span>
+    <span class="l-en">on {{ al_tp }} of {{ al_n }} elevated days in the past year, a ≥5% drop followed within a month</span><span class="l-zh">过去一年 {{ al_n }} 个警报日中有 {{ al_tp }} 天在一个月内出现 ≥5% 下跌</span>
     {%- elif al_n > 0 %}
-    <span class="l-en">Too few elevated alerts to judge yet — {{ al_n }} graded</span><span class="l-zh">已评分警报尚少，暂无定论 — {{ al_n }} 条</span>
+    <span class="l-en">too few elevated alerts to judge yet — {{ al_n }} graded</span><span class="l-zh">已评分警报尚少，暂无定论 — {{ al_n }} 条</span>
     {%- else %}
-    <span class="l-en">Graded calls accruing — check back once alerts mature (~21 trading days)</span><span class="l-zh">评分记录积累中 — 约21个交易日后可查看</span>
+    <span class="l-en">grading begins once these calls mature — about 21 trading days</span><span class="l-zh">这些判断成熟后开始评分 — 约21个交易日</span>
+    {%- endif %}
+    {%- if trk and not log_fresh %}
+    {#- Staleness rides THIS line, in plain words. It used to REPLACE the sentence above
+        with "Monitoring paused — ledger stale", which contradicted the self-audit line
+        beside it and told the reader our monitoring had stopped when the log had simply
+        not been appended for a few sessions. State the fact, not a verdict. -#}
+    <span class="l-en">· no new entries {{ ('for ' ~ _lag ~ ' days') if (_lag is not none) else 'lately' }}</span><span class="l-zh">· {{ ('已 ' ~ _lag ~ ' 天') if (_lag is not none) else '近期' }}无新增记录</span>
     {%- endif %}
     {# Tier-2 detail in the help() tooltip: per-scare rows + watch/caution + recovery #}
     {{ help(

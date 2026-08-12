@@ -865,9 +865,13 @@ def _radar_dlg_vm(vm: dict, latest: dict) -> dict:
     # opens with the word "validated", which is CI-forbidden in emitted copy
     # (scripts/check_validated_claims.py) — and its jargon ("US–China yield differential")
     # is Tier-1 banned besides. This says the same thing in the doctrine's language.
+    # The trailing clause restores the effect-size honesty the first rewrite dropped:
+    # CN_PROFILE's caveat opens "Validated but modest" — the CI-forbidden word had to go,
+    # the word "modest" did not. Without it the sentence reads as a strong claim.
     ctx["caveat_en"] = ("A-share pullbacks are mostly led from outside — US rates, the yuan, "
-                        "and how broadly the market is falling.")
-    ctx["caveat_zh"] = "A股回撤多由外部因素引导——美债利率、人民币汇率，以及下跌的广度。"
+                        "and how broadly the market is falling. The pull is real but modest.")
+    ctx["caveat_zh"] = ("A股回撤多由外部因素引导——美债利率、人民币汇率，以及下跌的广度。"
+                        "这种引导确实存在，但幅度有限。")
 
     # ── Leading tile: benchmark stretch vs its 200-day average + the loudest leg ──
     try:
@@ -1085,38 +1089,75 @@ def _radar_dlg_vm(vm: dict, latest: dict) -> dict:
         log.warning("radar_dlg southbound row skipped (%s)", e)
     if factors:
         ctx["factors"] = factors
-    # Honest staleness note: the participation store is a separate nightly step and can
-    # lag the page by days. Say so in plain words rather than passing off an old figure.
+    # ONE merged note under the rows (DESIGN_DOCTRINE Law 4 — one footnote per panel).
+    # It carries the disclosure the plain-word caveat rewrite dropped: CN_PROFILE's own
+    # caveat ends "the internal froth legs are excluded (they mean-revert)", i.e. NONE of
+    # the rows above (margin, options fear, limit-up, southbound) is an input to the risk
+    # score — its legs are rateshock / usd_cnh / us_cn_diff / cn_breadth. Without this the
+    # section reads as a causal breakdown of the headline number, which it is not.
+    # The participation store is a separate nightly step and can lag the page by days;
+    # that clause joins the SAME note rather than adding a second one.
+    _note_en = ("These local readings are context. The risk score itself is driven by US "
+                "rates, the yuan and how broadly the market is falling.")
+    _note_zh = "以上本地读数仅为背景。风险分数本身由美债利率、人民币汇率与市场下跌的广度驱动。"
     try:
         p_date = str(part.get("date") or "")[:10]
         page_date = str(latest.get("date") or "")[:10]
         if p_date and page_date and p_date < page_date:
-            ctx["factors_note_en"] = (f"Margin and options readings are as of {p_date}, "
-                                      "a little behind the rest of this page.")
-            ctx["factors_note_zh"] = f"两融与期权读数截至 {p_date}，略滞后于本页其余数据。"
+            _note_en += (f" Margin and options figures are as of {p_date}, a little behind "
+                         "the rest of this page.")
+            # no leading space: a half-width gap after 。 is a stray in Chinese setting
+            _note_zh += f"两融与期权读数截至 {p_date}，略滞后于本页其余数据。"
     except Exception:  # noqa: BLE001
         pass
+    ctx["factors_note_en"], ctx["factors_note_zh"] = _note_en, _note_zh
 
     # ── Gauges: the two CN charts the old bespoke dialog carried (nothing lost) ───
+    # LABEL <-> SOURCE, settled 2026-08-11 against engine/china_conditions.py — the old
+    # `#cnx-dlg-risk` had them CROSSED, and nobody noticed because both of its charts read
+    # `conditions.recession.chart_html` / `conditions.drawdown.chart_html`, keys the
+    # builder never writes (it writes `recession_html` / `drawdown_html` on `conditions`),
+    # so the charts were dead markup. W1 preserved the crossed pairing and made it visible.
+    # The engine's own definitions:
+    #   conditions["recession"]      = china_recession()  -> weighted macro SLOWDOWN legs
+    #                                  (credit impulse, PPI, PMI, M1-M2, property, GDP);
+    #                                  charts["recession"] is that same series, and
+    #                                  build_china stamps it aria_en="Slowdown gauge chart".
+    #   conditions["drawdown_risk"]  = china_drawdown()   -> expanding rank-percentile of
+    #                                  A-share stress legs (slowdown + margin froth + flat
+    #                                  CGB + QVIX + turnover mania) = DEEP-DRAWDOWN risk;
+    #                                  charts["drawdown"], aria_en="Drawdown gauge chart".
+    # Read-words come from the ENGINE's own band label (`recession.label` on _REC_BANDS
+    # 26/45, `drawdown_risk.band` on 50/75/90), not from thresholds invented here — the
+    # old 60/40 cut points contradicted the gauge's own history-anchored bands.
+    _REC_READ = {"low": ("calm", "平静", "up"),
+                 "elevated": ("softening", "走弱", "warn"),
+                 "high": ("weak", "疲弱", "down")}
+    _DD_READ = {"low": ("calm", "平静", "up"),
+                "elevated": ("building", "升温", "warn"),
+                "high": ("high", "偏高", "down"),
+                "extreme": ("extreme", "极高", "down")}
     try:
         cond = latest.get("conditions") or {}
         gauges = []
         rec = cond.get("recession") or {}
         rec_sc = rec.get("score")
         if rec_sc is not None or cond.get("recession_html"):
-            w = _rd_word(rec_sc, [(60, "high", "高危", "down"),
-                                  (40, "elevated", "偏高", "warn"),
-                                  (0, "calm", "平静", "up")]) or (None, None, "muted")
+            w = _REC_READ.get(rec.get("label"), (None, None, "muted"))
             gauges.append({
-                "label_en": "Deep-drawdown gauge", "label_zh": "深跌仪表",
+                "label_en": "Slowdown gauge", "label_zh": "放缓仪表",
                 "score": round(rec_sc) if rec_sc is not None else None,
                 "read_en": w[0], "read_zh": w[1], "tone": w[2],
                 "chart_html": cond.get("recession_html"),
             })
-        if cond.get("drawdown_html"):
+        dd = cond.get("drawdown_risk") or {}
+        dd_sc = dd.get("score")
+        if dd_sc is not None or cond.get("drawdown_html"):
+            w = _DD_READ.get(dd.get("band"), (None, None, "muted"))
             gauges.append({
-                "label_en": "Slowdown gauge", "label_zh": "放缓仪表",
-                "score": None, "read_en": None, "read_zh": None, "tone": "muted",
+                "label_en": "Deep-drawdown gauge", "label_zh": "深跌仪表",
+                "score": round(dd_sc) if dd_sc is not None else None,
+                "read_en": w[0], "read_zh": w[1], "tone": w[2],
                 "chart_html": cond.get("drawdown_html"),
             })
         if gauges:
