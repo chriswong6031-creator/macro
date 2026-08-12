@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T02:22:11.920878+00:00",
-  "count": 962,
+  "generated_at": "2026-08-12T02:52:16.981941+00:00",
+  "count": 973,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -103,6 +103,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-cnowubklr7k-cb2ed8",
+      "title": "Global Markets Daily Carrying On — Carry Trades Resilient But Continue to Prefer Equity to Credit",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:38:12Z",
+      "summary_points": [
+        "**Carry Opportunity Resilience**: FX carry strongest risk-adjusted returns despite COI near multi-year lows; Middle East tensions and Yen interventions had limited impact on carry trade resilience.",
+        "**Equity Over Credit Preference**: Equity favored over credit in 2H due to AI capex-driven earnings growth, tight credit spreads, and credit’s late-cycle restructuring risks (USD IG underperformance).",
+        "**FX Carry Tactical Execution**: Top opportunities in BRL/COP, EGP/KZT/TRY, CHF/EUR/CAD; active positioning with targets/stops (e.g., short SGD/MYR, long TRY/NGN/KZT basket).",
+        "**Credit Vulnerability Drivers**: Credit underperforms equities on risk-adjusted basis due to AI-driven credit supply (capex), sector mismatches, and tight spreads (Exhibits 6-8).",
+        "**Macro Support for Carry**: Low carry premia not a warning signal; supportive Goldilocks macro (Fed policy 3.5-3.75% for 2026, oil range-bound) offsets Middle East war reflationary backdrop."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-e6iqxljorzl-d9490e",
       "title": "InterContinental Hotels Group (IHG.L) 1H26 Strong net system growth of 5",
       "institution": "Goldman Sachs",
@@ -162,6 +183,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-kg5eiwxrhie-c7e5ff",
+      "title": "JPM Equity Strategy",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:57:49Z",
+      "summary_points": [
+        "**Cyclical rebound fundamentals**: Strong PMIs/ISM/CESIs, yield curve steepening, and softer USD drive Cyclical outperformance (Banks, Mining, Industrials, Consumer); Defensives fading (Healthcare, Staples) as tactical bounce weakens.",
+        "**Fed dovishness & inflation anchoring**: Central banks not aggressive (\"bad is good\"), core PCE <3% annualized, 5Y5Y inflation forwards contained (25bp range), supporting equities and weaker USD.",
+        "**Q2 earnings beat surge**: 88% of S&P500 beat EPS/sales (vs 76% avg), exceeding expectations; Mag-7 growth divergence (EPS below S&P500 ex-Mag-7) reinforces market broadening.",
+        "**Eurozone cyclicals outperformance**: Eurozone EPS revisions surpass US since Jan 2025, coinciding with improved Manufacturing PMI (51.9); European Cyclicals lead Defensives by 10-12% ytd.",
+        "**Mag 7 valuation & risk**: Mag 7 forward P/E at 10-year low; structural risks in Media/Software (AI disruption/latency) justify underweight positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-pbe5nntoagu-bab4be",
       "title": "FSA FI Daily Commentary 10 August 2026",
       "institution": "Safra",
@@ -183,6 +225,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qz9mkhtmhxb-0f17f2",
+      "title": "Market Update US, Europe & Asia",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:32:19Z",
+      "summary_points": [
+        "**US Jobs Data Miss**: July jobs decrease of 23K vs 80K consensus, unemployment rate 4.1% (down), CPI expected +0.2% m/m, PPI 2.5% y/y—critical for Fed policy shift timing.",
+        "**AI/Cloud Earnings Beats**: TEAM (+35.3%) beat on Cloud growth, DOCS (+32.6%) on AI monetization, TWLO (+24.9%) on messaging/voice—driving tech sector outperformance.",
+        "**Strait of Hormuz Geopolitical Risk**: Iran sanctions and Red Sea clashes escalating, with shipping industry skepticism on US sanctions—impacting energy/commodity flows and risk sentiment.",
+        "**EU DACH Earnings Momentum**: Allianz, Munich Re, Daimler, Porsche strong earnings driving German/UK equities (+0.69%, +0.31%), but Munich Re Q2 miss and revenue guidance cut signals sector caution.",
+        "**China Trade Slowdown**: Exports +23.9% (below June’s 36%), imports +27.5% (below surge)—narrows growth, signaling trade weakness amid Japan’s 7th consecutive household spending decline."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-vko7e4zekvn-09bb9d",
       "title": "JPM US Market Intelligence Morning Briefing Aug 11",
       "institution": "J.P. Morgan",
@@ -200,6 +263,69 @@
       "tickers": [],
       "top_pick": true,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hxrvufpnwmu-a6c378",
+      "title": "LY Corp. (4689.T) 1Q wrap Raise GSe and expect FY3 27 guidance beat, led by commerce sales and media profitability",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T03:15:41Z",
+      "summary_points": [
+        "**Estimate Revisions & Guidance Beat**: Goldman Sachs raises FY3/27 adjusted EBITDA estimates by +9% to +14% (media +11-14%, commerce +9-10%), forecasting ¥640.5B vs.",
+        "guidance ¥585B, driven by commerce top-line momentum and media margin expansion.",
+        "**Business-Specific Fundamentals**: Media segment sustains ~40% EBITDA margin via cost efficiency (SG&A decline); commerce benefits from top-line growth and Yahoo Shopping awarding effect, both exceeding guidance.",
+        "**Revenue & EPS Growth**: Revenue up 6.3% (consensus), EPS (basic) up 28.0-36.9%, though EBIT margin dipped slightly (9.5%→9.0%), with net debt/equity stable at 24.1%.",
+        "**Commerce Sales Outlook**: Commerce sales outlook raised +6% to +11% (FY3/27-FY3/31), with FY3/27 EBITDA forecast ¥143.8B vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nt1rycqnkst-71c372",
+      "title": "ETF Market Pulse Week 1 August 2026",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T00:10:40Z",
+      "summary_points": [
+        "**Gold Miner ETFs Outperform on Policy Easing & Gold Breakout**: Weak US jobs data (23k vs 79k) triggered policy easing, lowering yields and boosting gold.",
+        "China’s 20-tonne gold purchase (21st month) and Strait of Hormuz easing reduced inflation concerns, driving Gold Miner ETFs +22% vs Gold ETFs +7.3% due to operating leverage.",
+        "**US Growth ETFs Rally on AI Earnings & Fed Easing**: Palantir +29% (93% YoY revenue) and lower rate expectations (10-yr yield drop) fueled US Growth ETFs, as lower discount rates increase present value of future earnings for long-duration assets.",
+        "**Risk-on Rebound Led by Gold, US Growth & Japan**: Gold (+7.2%), US Growth (+3.2%), and Japan Equities (+4.9%) showed strongest weekly returns, directly tied to softer US jobs data and policy easing, positioning them in the Aggressive camp (high return, low volatility).",
+        "**Gold Miners & Private Credit Dominate Returns vs Oil Vulnerability**: Gold Miners ETFs surged +25.4% (e.g., Sprott Junior Gold Miners), while Crude Oil ETFs fell -4.9%, highlighting sector-specific resilience from geopolitical easing (Strait of Hormuz) and policy shifts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ldwbjlrbhml-2b963a",
+      "title": "Conviction Thinking Asia The making of a Korea macro trade",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T00:10:37Z",
+      "summary_points": [
+        "**Korea's won-KOSPI decoupling**: Equity rally driven by portfolio rebalancing flows (ADR, shipbuilder hedging, retail capital), not macro fundamentals; tactically constructive on USD/KRW targeting 1,470.",
+        "**SK Hynix ADR flow fade**: <50% of $26.5bn ADR proceeds repatriated due to semiconductor equipment dependency; FX flows fading by early-August.",
+        "**Hanwha Ocean hedging completion**: USD33.8bn order book hedged (70-75% ratio) likely finalized mid-June, reducing market impact.",
+        "**MSCI market-access constraint**: Korea excluded from Developed Markets due to access concerns, limiting foreign flows; profits concentrated in SK Hynix/Samsung, requiring broadening for global appeal.",
+        "**KOSPI valuation cycle low**: 12m Fwd PE at 5.1 (vs 10.2 long-term avg), P/B below 1x (ex big2), signaling deep discount."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
       "language": "en",
       "needs_metadata": false
     },
@@ -262,6 +388,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-te38ojy6kyd-b01c31",
+      "title": "International market pulse aug2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:42:00Z",
+      "summary_points": [
+        "**Global Inflation & Fed Policy**: US core inflation near 3% (Dec 2026) driven by tariffs/energy/AI, contrasting G10 ex-US undershooting (2.1%); Fed holds rates pending price pass-through evidence.",
+        "**AI-Driven Asset Flows**: Credit financing shifts (USD IG/HY, leveraged loans), widened tech spreads; Yen +3.7% vs USD, gold +26.4% (real assets), dollar weakness amid geopolitical/energy risks.",
+        "**Sector Automation vs.",
+        "Productivity**: Tech Hardware/Semis/Banks face 36-40% automation exposure (7% job displacement), while tech/financial/healthcare gain 15% productivity ($7T GDP boost)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ywiqit1w0aa-eb43cf",
+      "title": "Weekly investment commentary en us 20260810 two market signals one story",
+      "institution": "BlackRock",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:41:43Z",
+      "summary_points": [
+        "**Structural market shift**: S&P 500 earnings forecasted at 11.6% 5-year growth (AI-driven) vs.",
+        "rising Treasury yields signaling persistent inflation risks; mandates underweighting developed market government bonds.",
+        "**Inflation data & Fed policy**: July inflation data critical to test if soft labor/wage trends reduce price pressures; contradictory signals (rising earnings forecasts amid higher yields) demand flexible macro assumptions.",
+        "**Bond yield strategy shift**: Corporate earnings growth lifting government yields since 2021 forces underweighting developed government bonds; strategic pivot to private credit (direct lending, resilient cash flows) and infrastructure equity over high yield."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -329,6 +495,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-lwmbysv4j7p-a63ded",
+      "title": "What role can gold play in portfolios",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T22:19:15Z",
+      "summary_points": [
+        "**Gold momentum drivers**: 7.4% weekly gain (breaking $4,250) fueled by reduced Fed hike expectations, Chinese central bank buying (20 tons July), and ETF inflows; strategic allocation target $5,000/oz by 2027 with dips below $4,000 as entry points.",
+        "**Near-term volatility catalysts**: July CPI data strength, oil price movements, and hawkish Fed commentary could reignite hike concerns, boosting real yields/USD and pressuring gold.",
+        "**Key flow dynamics**: Central bank buying (20 tons July) and ETF inflows are primary structural supports for gold's upward trajectory.",
+        "**Critical risk factor**: Stronger-than-expected US data or Fed hawkishness may reverse momentum, triggering short-term downside pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-bco5esaj1dl-bd2ff1",
       "title": "Daily US",
       "institution": "UBS",
@@ -370,6 +556,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-hybxg1t2ebs-f95aca",
+      "title": "Weekly Global",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T22:18:42Z",
+      "summary_points": [
+        "**AI Infrastructure Investment Scale**: Global grid investment to reach $500bn by 2026, power sector investment to $3tr by 2030, and longevity market expanding from $5.3tr to $8tr by 2030, driven by AI capex in power generation, grids, and automation.",
+        "**Earnings Momentum Broadening**: S&P 500 earnings growth (86% beat expectations, record net profit margin) and Eurozone 22% YoY earnings growth (strongest since Q3 2022) signal sector-wide strength, reinforced by AI supply chain (CoreWeave, Cisco, Applied Materials).",
+        "**Middle East Geopolitical Risk**: Strait of Hormuz reopening talks caused oil price volatility; unresolved Iran-Oman-US tensions threaten energy flows, inflation, and supply chain stability.",
+        "**Semiconductor Concentration Risk**: Philadelphia Semiconductor Index volatility (9.2% weekly rise) amid concerns over slowing AI capex; requires diversification beyond large US tech to mitigate portfolio concentration."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-iabsklnuj34-921c53",
       "title": "Charlie McElligott Equities Update",
       "institution": "Nomura",
@@ -407,6 +613,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tzo1rtpsaey-10bd43",
+      "title": "Americas Retail Takeaways from IR management",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:57Z",
+      "summary_points": [
+        "**Broadlines Traffic Strength**: July traffic growth +6% y/y (COST, TGT, WMT) vs.",
+        "home improvement/auto parts weakness (FND, LOW, HD), signaling sector divergence and consumer preference shifts.",
+        "**PCE Spending Shift**: Goods wallet share rose to 31.2% (vs.",
+        "1% Jun'25), driven by gasoline/energy (+0.3pp) and recreational goods, while services share fell to 68.8%, indicating sustained goods demand and service sector softness.",
+        "**WSM Valuation Risk**: Williams-Sonoma trading at 25.1x NTM P/E (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
