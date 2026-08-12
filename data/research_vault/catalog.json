@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T00:06:49.233361+00:00",
-  "count": 955,
+  "generated_at": "2026-08-12T00:21:58.217659+00:00",
+  "count": 956,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -364,6 +364,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ku6snn4ql3i-c05068",
+      "title": "Take Two Interactive Software Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T03:06:23Z",
+      "summary_points": [
+        "**GTA VI as Near-Term Catalyst**: Pre-orders (Q1), August 27 Netflix extended look, and holiday 2026 anticipation drive FY27 bookings beyond guidance, directly supporting Goldman Sachs' price target upgrade.",
+        "**Exponential Q1 Fundamentals**: 18.2% revenue growth, 102.4% EBITDA growth, and $1.15B operating cash flow signal robust operational momentum and capacity for strategic investments.",
+        "**Valuation Justified by Growth Metrics**: High P/E (55.3x) aligns with explosive EBITDA growth (102.4% in 3/26) and low net debt/EBITDA (0.8x), validating BUY rating despite elevated valuation.",
+        "**Regulatory Policy Risk**: Government regulation on loot boxes/microtransactions poses direct threat to key IP revenue streams and margin stability.",
+        "**Macroeconomic Exposure**: Heightened consumer spend headwinds from sustained macro volatility and growth stock risk appetite directly impact GTA/Red Dead/NBA2K sales."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
