@@ -24,8 +24,10 @@ The problem is three-fold and specific:
    Scoreboard holds 45,203 claims — and **not one claim family has produced a single verdict at
    its own declared horizon.** Every verdict in the store is off-horizon.
 2. **The flagship's live record cannot yet distinguish itself from noise.** Prophet US: 28
-   closed plans, mean +0.51%, **t = +0.178**. And the ledger schema has no benchmark field, so
-   no alpha has ever been computed for it.
+   closed plans, mean +0.51%, **t = +0.178**. And its *plan* ledger has no benchmark field, so
+   that headline is a raw return with no alpha behind it — while Prophet's *board* is graded
+   correctly against SPY and sector ETF. The un-benchmarked surface is the one carrying the
+   public narrative (§5, Finding C-5).
 3. **Three ways to read the store produce impressive numbers that mean nothing**, and one of
    them is already emitted by a shipped script (§4.3). These are now caught by a gate
    (`scripts/check_qledger_metric_validity.py`, added with this catalog).
@@ -48,7 +50,7 @@ Four registries exist. None of them is an *engine* registry, which is the gap (�
 
 ### 1.1 Signal bus (`config/synapse.yml`)
 
-642 artifacts across ~100 `owner_program` values. Field coverage is genuinely high:
+642 artifacts across **99** distinct `owner_program` values. Field coverage is genuinely high:
 
 - `tier` — 642/642 · `horizon_role` — 642/642 · `storage`/`format`/`owner_program` — 642/642
 - `freshness_sla_hours` — **635/642**
@@ -142,7 +144,7 @@ most: 71% of all registered claims are salience claims (§4.2).
 
 ## 3. Engine families and their evaluation status
 
-Grouped by owner program (synapse `owner_program`, ~100 values; the largest shown). "Graded"
+Grouped by owner program (synapse `owner_program`, 99 values; the largest shown). "Graded"
 means outcomes are attached to dated predictions in a ledger, not that a study once ran.
 
 | Family | Artifacts | Tiers | Ledger / grader | Evaluation status |
@@ -160,11 +162,23 @@ means outcomes are attached to dated predictions in a ledger, not that a study o
 | cycle-intelligence | 14 | 9 infra / 2 shadow / 2 display / **1 scored** | `fit_cycle_hazard.py` | One scored artifact, no `qual_ladder_ref` |
 | prophet | 3 (+ ~25 modules) | 3 display | `data/prophet/ledger.jsonl`, `us_board_ledger`, `prophet_arena` | See §5 — richest, and thinnest |
 
-Roughly **60 of ~100 programs have no grader of any kind**. That is not automatically wrong:
-descriptive analytics (GEX, concentration, exposure) *should not* have a forward-return grade,
-and forcing one would be the "evaluate everything by win rate" error the handoff warns against.
-The registry gap in §6 is what makes this distinction impossible to audit today — nothing
-records whether a program is ungraded *by design* or ungraded *by neglect*.
+**Measured:** of the **99** distinct `owner_program` values in the registry, **48 own at least one
+grader-shaped artifact and 51 own none** — where "grader-shaped" is a name match on
+`grade|ledger|calibrat|backtest|track|audit|gauntlet|forward_log|scoreboard|fitness` across each
+artifact's id, path and producer.
+
+That heuristic **undercounts graded programs and 51 is therefore an upper bound**, not a count.
+`blocked-entry-override` lands in the "none" bucket while actually owning a `scored`-tier artifact
+whose `qual_ladder_ref` points at a real pre-registration — its grading simply is not visible in
+a filename. Read the figure as *"about half the programs have no visible grading surface"* and no
+further.
+
+Nor is an ungraded program automatically wrong: descriptive analytics (GEX, concentration,
+exposure) *should not* carry a forward-return grade, and forcing one would be exactly the
+"evaluate everything by win rate" error the handoff warns against. The registry gap in §6 is what
+makes the distinction unauditable today — nothing records whether a program is ungraded *by
+design* or *by neglect*, which is why `graded_by_design` is a required field of the engine
+registry and why this paragraph needs a heuristic at all.
 
 ---
 
@@ -346,7 +360,7 @@ should be conditioned on this series yet**, in either direction.
 Four registries exist (§1) and none of them answers the CEO question *"which parts of Mastermind
 are actually working?"* Concretely, nothing in the repository can currently answer:
 
-- How many intelligence engines are there? (`642` is artifacts; `27` is setup species; ~100 is
+- How many intelligence engines are there? (`642` is artifacts; `27` is setup species; 99 is
   programs — none is engines.)
 - For engine X: what output class, what ledger, what evaluation method, what validation state,
   what evidence, and **is it ungraded by design or by neglect?**

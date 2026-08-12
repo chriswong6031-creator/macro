@@ -192,7 +192,7 @@ this only harvests it.
 |---|---|
 | **Objective** | Every directional engine registers claims before outcomes exist |
 | **Dependencies** | none (T1 informs prioritisation but must not block it) |
-| **Files** | per-engine adapters onto `engine/qledger.register()`; 26 files reference it today against ~100 programs |
+| **Files** | per-engine adapters onto `engine/qledger.register()`; 26 files reference it today against 99 programs |
 | **Agent** | `builder` (opus), one engine per PR |
 | **Validation** | Claims appear with correct `direction`, `horizon_d`, `bench`, `control`, and `timestamp_quality` |
 | **Acceptance** | Not done unless: `direction` is set correctly (`0` **only** for genuine salience claims — the salience/directional split is what makes any later hit rate legal); `horizon_d` is the horizon the engine actually claims, not a convenient short one; the engine also registers a `*_pit` twin or documents why no lookahead control is needed |

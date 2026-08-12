@@ -17,7 +17,7 @@ tape, a prospective champion-vs-challenger harness, a code-enforced promotion li
 kill registry with receipts, a contradiction detector, and 19 freshness monitors. What it did
 not find is anything that can answer *"which parts of Mastermind are working, and how do you
 know?"* — because there is no unit of account. The registries count **artifacts** (642),
-**setups** (27), and **programs** (~100). None counts **engines**, and none records whether an
+**setups** (27), and **programs** (99). None counts **engines**, and none records whether an
 engine is ungraded by design or by neglect.
 
 So the architecture below is deliberately thin. Every layer either (a) already exists and is
@@ -86,7 +86,7 @@ evaluation OS that cannot distinguish those two cannot prioritise anything.
 ### L1 — RECORD: adopt, don't rebuild
 
 `engine/qledger.py` is the substrate. Its contract already satisfies most of the handoff's
-PART VII. The work is **adoption, not construction**: 26 files reference it against ~100
+PART VII. The work is **adoption, not construction**: 26 files reference it against 99
 programs, and the largest un-adopted producer is Prophet, which keeps its own
 `data/prophet/ledger.jsonl` with a schema that has no benchmark field (catalog Finding C-5).
 
@@ -376,8 +376,9 @@ new system.
    public performance narrative (Finding C-5).
 4. **Three ways of reading the scoreboard produce impressive, meaningless numbers**, one of them
    already emitted by a shipped script (catalog §4.3).
-5. **~60 of ~100 programs have no grader**, and nothing records which of those are ungraded
-   *correctly*.
+5. **Up to 51 of the 99 registered programs have no visible grading surface** (name-match
+   heuristic, catalog §3 — it undercounts, so treat 51 as an upper bound), and nothing records
+   which of those are ungraded *correctly*.
 
 **Honest verdict.** Today Mastermind can prove its *process* is trustworthy and cannot prove its
 *predictions* are. That is a much better position than the reverse — a firm with a good-looking
