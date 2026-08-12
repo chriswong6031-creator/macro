@@ -701,13 +701,16 @@ def _china_signal_stack(latest: dict) -> dict | None:
 
 def _china_market_tiles() -> list[dict]:
     """Cross-asset 'market snapshot' tiles — level + 1-day move for the headline A-share /
-    macro instruments already on disk (SHCOMP, CSI 300, ChiNext, offshore yuan, gold, the
-    10Y CGB yield, copper). Coloured by raw sign; semantic read lives in the panels below."""
+    macro instruments already on disk (SHCOMP, offshore yuan, gold, the 10Y CGB yield).
+    Coloured by raw sign; semantic read lives in the panels below."""
     # (store group, ticker, column, en, zh, tag_en, tag_zh, decimals, is_rate, invert_tone)
+    # NO CSI 300 / ChiNext rows: their face tiles are LIVE-ONLY (templates/china.html.j2).
+    # The real index histories can't be baked honestly — Yahoo daily history runs weeks
+    # stale for 000300.SS and is absent for 399006.SZ (probed 2026-08-11) — and the old
+    # 510300.SS/159915.SZ ETF rows rendered NAVs ~4.7/~3.6 under index labels (the
+    # 2026-08-11 production bug). Live spark quotes resolve both indexes fine.
     spec = [
         ("china", "000001.SS", "close", "Shanghai Comp", "上证综指", "index", "指数", 1, False, False),
-        ("china", "510300.SS", "close", "CSI 300 ETF", "沪深300", "large-cap", "大盘", 2, False, False),
-        ("china", "159915.SZ", "close", "ChiNext ETF", "创业板", "growth", "成长", 2, False, False),
         ("china", "CNH_F", "close", "Offshore yuan", "离岸人民币", "USDCNH", "美元离岸", 3, False, True),
         ("yahoo", "GC_F", "close", "Gold", "黄金", "USD/oz", "美元/盎司", 0, False, False),
         ("china_property", "cgb", "cgb_10y", "10Y CGB", "10年国债", "yield", "收益率", 2, True, False),

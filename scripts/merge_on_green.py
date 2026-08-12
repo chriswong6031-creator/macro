@@ -320,9 +320,9 @@ MAX_PULL_CAP = 100
 # live bucket is partly spent. These are deliberately pessimistic: the merge writes
 # normally charge MERGE_TOKEN, not READ_TOKEN, but counting them here makes an
 # admitted window affordable even on the fallback token.
-FULL_SWEEP_FIXED_REQUESTS = 77
-MAX_REQUESTS_PER_PULL = 18
-# A 25-pull reference pass now needs 77 fixed + 25 x up-to-18 + refresh headroom =
+FULL_SWEEP_FIXED_REQUESTS = 80
+MAX_REQUESTS_PER_PULL = 19
+# A 25-pull reference pass now needs 80 fixed + 25 x up-to-19 + refresh headroom =
 # 535 in its pessimistic shape, so the floor funds useful work while preserving
 # room for other lanes in the ordinary cheaper shape. Larger buckets do
 # not need a proportionally larger dead zone: `pull_cap` shrinks to what the
@@ -752,12 +752,30 @@ def decide_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
     # succeeded" holds for all of them without naming any. Widening
     # `is_spurious_check` would have fixed #4779 and not the next one.
     #
-    # This cannot block an ordinary path-filtered PR. ci.yml is `paths:`-filtered at
-    # the WORKFLOW level, so a non-matching PR gets no run at all and was already
-    # `unproven` before this line existed; `ci-pack`'s only job-level `if:` is
-    # `action != 'closed'`, which is true for every event that opens or updates a
-    # pull request. A head with real packs therefore carries real successes, and a
-    # mixed head (one success + one path-skipped pack) still reads `clean`.
+    # This cannot block an ordinary path-filtered PR, and that argument survived the
+    # dynamic-matrix conversion (2026-08-11) — but it now rests on a DIFFERENT job,
+    # so read it as rewritten rather than as unchanged. ci.yml is still `paths:`-
+    # filtered at the WORKFLOW level, so a non-matching PR gets no run at all and was
+    # already `unproven` before this line existed. What changed is inside the run.
+    # `ci-pack`'s only job-level `if:` used to be `action != 'closed'`, true for every
+    # event that opens or updates a pull request, so all twelve packs launched on
+    # every head and a head with real packs necessarily carried real successes. It now
+    # ALSO carries `needs.ci-plan.outputs.has_work == 'true'`, so a PR whose changed
+    # paths select no legacy job publishes NO pack success at all — under the old
+    # argument that head would be permanently `unproven`, which would make the no-work
+    # fast path the one shape that can never merge.
+    #
+    # `ci-gate` IS THE ANCHOR that replaces the pack. `ci-plan` runs on every
+    # non-closed event, and `ci-gate` is `if: always() && action != 'closed'` with
+    # `needs: [ci-plan, ci-pack]`, so both publish a real conclusion whatever the
+    # matrix did — and on the no-work path `ci-gate` exits 0 on the planner's
+    # AFFIRMATIVE proof, so it concludes `success`, not `skipped`. Every head CI
+    # actually looked at therefore carries at least one genuine pass, pack or no pack.
+    # A mixed head (one selected pack green beside a path-skipped one) still reads
+    # `clean`, and a head publishing only a SUBSET of `ci-pack-*` is clean on that
+    # subset: an unselected pack is ABSENT, not failing, and nothing below enumerates
+    # the names it expects to see. Pinned in `tests/test_merge_on_green.py` under
+    # "the DYNAMIC pack matrix (Wave B)".
     if not any(run.get("conclusion") == "success" for run in considered):
         return "unproven", []
     return "clean", []
@@ -1479,6 +1497,41 @@ def in_flight_pr_proofs(repo: str, token: str) -> int | None:
     return total
 
 
+def serialized_refresh_authority(
+    repo: str, token: str, current_run_id: str, trigger_conclusion: str
+) -> bool:
+    """Affirm that branch refreshes run only inside the serialized sweep lane.
+
+    The durable label and its description are safety fences, not a compare-and-swap
+    primitive. Mutual exclusion therefore comes from the workflow's job-level
+    ``sweep`` concurrency group. Refusing mutation outside the exact in-progress
+    default-branch workflow run turns that orchestration contract into an explicit
+    code boundary instead of an assumption an out-of-band caller can bypass.
+    """
+    if not current_run_id.isdigit() or trigger_conclusion not in {"", "success"}:
+        return False
+    try:
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/actions/runs/{current_run_id}",
+            token,
+        )
+    except Exception:
+        return False
+    repository = (payload or {}).get("repository") if isinstance(payload, dict) else {}
+    return bool(
+        status == 200
+        and isinstance(payload, dict)
+        and str(payload.get("id") or "") == current_run_id
+        and str(payload.get("status") or "") == "in_progress"
+        and str(payload.get("path") or "") == ".github/workflows/merge-on-green.yml"
+        and str(payload.get("head_branch") or "") == "main"
+        and str((repository or {}).get("full_name") or "") == repo
+        and str(payload.get("event") or "")
+        in {"workflow_run", "schedule", "workflow_dispatch"}
+    )
+
+
 def _set_local_label(payload: dict[str, Any], name: str, present: bool) -> None:
     """Keep an already-read issue/PR payload coherent after a label write."""
     labels = list(payload.get("labels") or [])
@@ -1623,16 +1676,30 @@ def read_refresh_lease_record(
     repo: str, token: str
 ) -> tuple[int, str, str, str] | None:
     """Read the single repository-scoped generation register."""
+    readable, record = read_refresh_lease_register(repo, token)
+    return record if readable else None
+
+
+def read_refresh_lease_register(
+    repo: str, token: str
+) -> tuple[bool, tuple[int, str, str, str] | None]:
+    """Read ``(authoritative, record)`` without conflating absence and outage."""
     encoded = urllib.parse.quote(REFRESH_LEASE_LABEL, safe="")
     try:
         status, payload = _request(
             "GET", f"{GITHUB_API}/repos/{repo}/labels/{encoded}", token
         )
     except Exception:
-        return None
-    if status >= 400 or not isinstance(payload, dict):
-        return None
-    return parse_refresh_lease_record(payload.get("description"))
+        return False, None
+    if status == 404:
+        return True, None
+    if status != 200 or not isinstance(payload, dict):
+        return False, None
+    description = str(payload.get("description") or "")
+    if description == REFRESH_LEASE_DESCRIPTION:
+        return True, None
+    record = parse_refresh_lease_record(description)
+    return (record is not None), record
 
 
 class RefreshLease:
@@ -1789,18 +1856,20 @@ class RefreshLease:
             self._label_ready = False
             return False
 
-    def _issue_has_label(self, number: Any) -> bool:
+    def _issue_has_claim_labels(self, number: Any) -> bool:
+        """Read the owner issue directly, bypassing the lagging label index."""
         try:
             status, payload = _request(
                 "GET", f"{GITHUB_API}/repos/{self.repo}/issues/{number}", self.read_token
             )
         except Exception:
             return False
-        return (
-            status < 400
-            and isinstance(payload, dict)
-            and REFRESH_LEASE_LABEL in label_names(payload)
+        labels = (
+            label_names(payload)
+            if status < 400 and isinstance(payload, dict)
+            else set()
         )
+        return {MERGE_ON_GREEN_LABEL, REFRESH_LEASE_LABEL}.issubset(labels)
 
     def claim(self, pull: dict[str, Any]) -> bool:
         """Claim before ``update-branch``; ambiguity fails closed."""
@@ -1835,7 +1904,7 @@ class RefreshLease:
             )
         except Exception:
             status = 599
-        if status >= 400 and not self._issue_has_label(number):
+        if status >= 400 and not self._issue_has_claim_labels(number):
             _annotate(
                 "error",
                 "merge-on-green refresh lease",
@@ -1843,9 +1912,13 @@ class RefreshLease:
                 "update-branch; no refresh write was attempted.",
             )
             return False
-        # The label write is not a compare-and-swap. Full sweeps are serialized by
-        # Actions, but pre-deploy/manual callers may overlap, so re-census before the
-        # CI-producing write and require this pull request to be the sole armed owner.
+        # GitHub's label-filtered issues index is eventually consistent: immediately
+        # after the POST it can legitimately omit this just-confirmed owner. Prove
+        # the claimant through the strongly scoped issue read, while the filtered
+        # census remains responsible for finding every *other* indexed owner. The
+        # exact generation register is reread below and immediately before PUT, so
+        # a concurrent claimant still wins or loses fail-closed.
+        claimant_affirmed = self._issue_has_claim_labels(number)
         try:
             observed = open_refresh_lease_issues(self.repo, self.read_token)
         except Exception:
@@ -1861,6 +1934,9 @@ class RefreshLease:
             else []
         )
         armed_numbers = sorted(set(armed_numbers))
+        other_armed_numbers = [
+            owner for owner in armed_numbers if owner != int(number)
+        ]
         observed_record = read_refresh_lease_record(self.repo, self.read_token)
         intended_record = (
             int(number),
@@ -1868,7 +1944,12 @@ class RefreshLease:
             self.owner_acquired_at,
             self.generation_id,
         )
-        if armed_numbers != [int(number)] or observed_record != intended_record:
+        if (
+            observed is None
+            or not claimant_affirmed
+            or other_armed_numbers
+            or observed_record != intended_record
+        ):
             # If the record changed, a newer same-PR generation may own the one
             # indistinguishable issue-label association. An old actor must never
             # delete it. If the record is still ours but the census disagrees, the
@@ -1886,7 +1967,7 @@ class RefreshLease:
                 "merge-on-green refresh lease",
                 f"PR #{number}: post-claim census did not prove it is the sole "
                 f"refresh owner with its exact generation record (observed "
-                f"{armed_numbers or 'unreadable'}); no "
+                f"{armed_numbers if observed is not None else 'unreadable'}); no "
                 "update-branch write was attempted"
                 + (
                     "; the failed claimant label was removed."
@@ -1971,6 +2052,57 @@ def prepare_refresh_lease(
         )
         return RefreshLease(repo, read_token, write_token, readable=False), pulls
 
+    # The label-filtered issues index is eventually consistent. A previous sweep's
+    # accepted owner can be absent here for a few seconds even though its direct
+    # issue and the exact generation register are already durable. Recover that
+    # owner before any new claim may overwrite the register. This is the sequential
+    # half of the serialization invariant; the workflow authority check below
+    # excludes overlapping refresh writers.
+    register_readable, generation = read_refresh_lease_register(repo, read_token)
+    if not register_readable:
+        _annotate(
+            "error",
+            "merge-on-green refresh lease",
+            "The generation register is unreadable or malformed; high-load "
+            "refreshes paused rather than assuming no prior owner.",
+        )
+        return RefreshLease(repo, read_token, write_token, readable=False), pulls
+    if generation is not None and not any(
+        str(issue.get("number")) == str(generation[0]) for issue in issues
+    ):
+        try:
+            owner_status, owner_issue = _request(
+                "GET",
+                f"{GITHUB_API}/repos/{repo}/issues/{generation[0]}",
+                read_token,
+            )
+        except Exception:
+            owner_status, owner_issue = 599, None
+        valid_owner_shape = bool(
+            owner_status == 200
+            and isinstance(owner_issue, dict)
+            and str(owner_issue.get("number") or "") == str(generation[0])
+            and str(owner_issue.get("state") or "") in {"open", "closed"}
+            and isinstance(owner_issue.get("labels"), list)
+            and owner_issue.get("pull_request")
+        )
+        if owner_status not in {200, 404} or (
+            owner_status == 200 and not valid_owner_shape
+        ):
+            _annotate(
+                "error",
+                "merge-on-green refresh lease",
+                f"Generation register points to PR #{generation[0]}, but its direct "
+                "issue state is unreadable; high-load refreshes paused.",
+            )
+            return RefreshLease(repo, read_token, write_token, readable=False), pulls
+        if (
+            valid_owner_shape
+            and str(owner_issue.get("state") or "") == "open"
+            and REFRESH_LEASE_LABEL in label_names(owner_issue)
+        ):
+            issues = [owner_issue, *issues]
+
     armed_issues: list[dict[str, Any]] = []
     cleanup_failed = False
     for issue in issues:
@@ -1992,7 +2124,6 @@ def prepare_refresh_lease(
         # for either owner before this sweep sees both associations. Deleting either
         # one would guess which irreversible write happened, so fail closed and wait
         # for an operator or a later unambiguous lifecycle transition.
-        generation = read_refresh_lease_record(repo, read_token)
         shown = ", ".join(f"#{issue.get('number')}" for issue in armed_issues)
         if generation is not None:
             quarantine_expired = RefreshLease(
@@ -2088,7 +2219,6 @@ def prepare_refresh_lease(
         return RefreshLease(repo, read_token, write_token, readable=False), pulls
     _set_local_label(owner, REFRESH_LEASE_LABEL, True)
     acquired_at = refresh_lease_acquired_at(repo, number, read_token)
-    generation = read_refresh_lease_record(repo, read_token)
     generation_head_sha = ""
     generation_id = ""
     if generation is not None and str(generation[0]) == str(number):
@@ -2218,6 +2348,7 @@ class SweepBudget:
         self.refresh_context = ""
         self.refresh_lease: RefreshLease | None = None
         self.requires_refresh_lease = False
+        self.refresh_authorized = False
         self.observed_anchor_states: dict[Any, str] = {}
         self.polls = 0
         self.last_seen: int | None = None
@@ -2288,7 +2419,7 @@ class SweepBudget:
         could retry indefinitely on 422s would bound neither. At saturation, the
         durable lease must be affirmed before the attempt is consumed or sent.
         """
-        if self.refreshes_used >= self.max_refreshes:
+        if not self.refresh_authorized or self.refreshes_used >= self.max_refreshes:
             return False
         if self.requires_refresh_lease:
             if pull is None or self.refresh_lease is None:
@@ -2685,6 +2816,26 @@ def ensure_integration_baseline(repo: str, token: str, baseline_state: str) -> s
 #: refreshable for exactly the same reason a pack red is. The FIRST entry is the anchor:
 #: it supplies the reported head sha, and it is the workflow `ensure_main_baseline`
 #: dispatches, because it is the one with no `push` trigger to dispatch itself.
+#:
+#: THE TWO SIDES PUBLISH DIFFERENT PACK SETS since the dynamic-matrix conversion
+#: (2026-08-11), and that asymmetry is load-bearing rather than a defect to tidy away.
+#: A pull request now publishes only the `ci-pack-*` its changed paths selected — any
+#: subset of the twelve, sometimes none at all — because `ci-pack` is gated on
+#: `needs.ci-plan.outputs.has_work`. Main is proven by a `workflow_dispatch`, which
+#: passes no `--changed-from`, so the planner has no changed set, widens to the full
+#: suite by the fail-safe rule, and still runs all twelve. That asymmetry is exactly
+#: what keeps the base-inherited-red refresh viable: a PR can only go red on a name
+#: main's baseline also publishes, so `bad_names <= clean_names` still has something to
+#: be a subset OF. Narrow main's baseline to a changed set and this mechanism goes
+#: quiet with no red anywhere to show for it — the 2026-08-08 backlog shape, arrived at
+#: from the other direction. `ci-gate` is the stable AGGREGATE name, published on every
+#: non-closed event by both sides; it is the one to hand branch protection or an
+#: external controller, since no individual `ci-pack-N` is guaranteed to appear.
+#:
+#: `MAIN_PROOF_WORKFLOWS` itself now lives with the tested-surface gate above (#5397,
+#: which needs it to build `.github/workflows/<name>` before this point in the file).
+#: This block stays here because it documents WHY those two workflows are the proof
+#: and what the anchor position means, which is what `MAIN_BASELINE_WORKFLOW` reads.
 MAIN_BASELINE_WORKFLOW = MAIN_PROOF_WORKFLOWS[0]
 #: How many completed runs to look back through, per workflow, for one that CONCLUDED.
 #: `status=completed` includes `cancelled`, and until 2026-08-09 `fences.yml` cancelled
@@ -2748,11 +2899,15 @@ MAIN_BASELINE_MIN_INTERVAL_MINUTES = 30
 #: keeps `skipped` and must not be narrowed), but on main it means the job did not run,
 #: and treating that as proof would excuse a red on a check that produced no verdict.
 #: Costs nothing today: every real job on main's newest ci.yml + fences.yml runs
-#: (`ci-pack-0..3`, `fence-pack`, `self-mod-fence`, `capability-broker`, `grader-manifest`)
-#: is `success`; the only `skipped` entries are the fork-fallback jobs, which GitHub
-#: reports under their UNEVALUATED `name:` expression and so can never collide with a real
-#: check name. That accident is exactly why this must be pinned rather than left implicit —
-#: the first statically-named conditional job added to either workflow would end it.
+#: (`ci-plan`, all twelve `ci-pack-*`, `ci-gate`, `fence-pack`, `self-mod-fence`,
+#: `capability-broker`, `grader-manifest`) is `success`; the only `skipped` entries are
+#: the fork-fallback jobs, which GitHub reports under their UNEVALUATED `name:`
+#: expression and so can never collide with a real check name. That accident is exactly
+#: why this must be pinned rather than left implicit — the first statically-named
+#: conditional job added to either workflow would end it. Main still publishes all
+#: twelve packs because its baseline is a `workflow_dispatch` with no `--changed-from`
+#: (see MAIN_PROOF_WORKFLOWS); a PULL REQUEST may publish any subset, but a pack that
+#: never launched there is a name absent from the head, not a `skipped` job here.
 PROOF_CLEAN_CONCLUSIONS = {"success"}
 
 
@@ -3664,9 +3819,17 @@ def attempt_update_branch(
             f"({disposition}); no branch write attempted.",
         )
         return disposition
-    if budget is not None and not budget.take_refresh(live):
+    if budget is None:
+        _annotate(
+            "error",
+            "merge-on-green refresh authority",
+            f"PR #{pull.get('number')}: update-branch admission has no serialized "
+            "sweep budget; no branch write attempted.",
+        )
+        return "refresh-deferred"
+    if not budget.take_refresh(live):
         return refresh_deferred(pull.get("number"), why, budget)
-    if budget is not None and budget.requires_refresh_lease:
+    if budget.requires_refresh_lease:
         live, disposition = live_authorized_pull(
             repo, live, token, require_refresh_lease=True
         )
@@ -4798,6 +4961,17 @@ def main() -> int:
     refresh_lease, pulls = prepare_refresh_lease(
         repo, read_token, merge_token, pulls
     )
+    budget.refresh_authorized = serialized_refresh_authority(
+        repo, read_token, current_run_id, trigger_conclusion
+    )
+    if not budget.refresh_authorized:
+        _annotate(
+            "error",
+            "merge-on-green refresh authority",
+            "This process is not the affirmed in-progress default-branch "
+            "merge-on-green sweep. Branch refreshes are disabled; already-proven "
+            "heads may still be judged and merged.",
+        )
     ineligible = [pull for pull in pulls if not is_sweep_candidate(pull)]
     for pull in ineligible:
         print(

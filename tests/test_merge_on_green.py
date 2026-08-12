@@ -27,6 +27,7 @@ import scripts.merge_on_green as MOG
 ROOT = Path(__file__).resolve().parents[1]
 REAL_IN_FLIGHT_PR_PROOFS = MOG.in_flight_pr_proofs
 REAL_PREPARE_REFRESH_LEASE = MOG.prepare_refresh_lease
+REAL_SERIALIZED_REFRESH_AUTHORITY = MOG.serialized_refresh_authority
 REAL_ENSURE_SELF_WAKE = MOG.ensure_self_wake
 REAL_LEASE_RECONCILE_PASS = MOG.lease_reconcile_pass
 WORKFLOW = ROOT / ".github" / "workflows" / "merge-on-green.yml"
@@ -71,6 +72,7 @@ def _no_unstubbed_http(monkeypatch):
     # The repo-wide Actions census is another main()-only read. Healthy/idle is the
     # neutral default; tests about global refresh backpressure override it.
     monkeypatch.setattr(MOG, "in_flight_pr_proofs", lambda *_a: 0)
+    monkeypatch.setattr(MOG, "serialized_refresh_authority", lambda *_a: True)
     monkeypatch.setattr(
         MOG,
         "prepare_refresh_lease",
@@ -548,6 +550,125 @@ def test_a_red_beside_a_skip_is_still_named_as_blocked():
     assert names == ["ci-pack-1 (failure)"]
 
 
+# --- the DYNAMIC pack matrix (Wave B) -----------------------------------------
+#
+# ci.yml stopped launching a fixed `ci-pack-0..11` on every head. `ci-plan` now
+# computes the pack plan once and publishes a matrix; `ci-pack` carries
+# `needs.ci-plan.outputs.has_work == 'true'` on top of its old `action != 'closed'`
+# fence, so a PR may publish ANY SUBSET of the twelve pack names — including none at
+# all — while main's `workflow_dispatch` baseline passes no `--changed-from` and so
+# still publishes all twelve. `ci-gate` is the one name published on every non-closed
+# event, and it is what makes the whole thing safe here.
+#
+# This shifted the ground under `decide_verdict` WITHOUT changing a line of it: the
+# function has always been name-agnostic, so nothing in it enumerates pack names or
+# counts them. That is precisely why these pins exist. The dangerous edit is not one
+# that breaks a pack name; it is a future "the sweeper should require the full pack
+# set" hardening, which would read as a tightening and would silently make every
+# path-scoped PR permanently unmergeable. The six shapes below are the whole
+# interface the sweeper now depends on, asserted against the pure function.
+
+
+def test_a_no_work_pr_head_is_proven_by_the_plan_and_the_gate():
+    """The shape Wave B invented: a PR the planner proved needs NO pack work.
+
+    `ci-plan` succeeds, proves the changed paths own no legacy job, and emits
+    `has_work=false`; `ci-pack` never launches (GitHub reports the skipped matrix
+    job); `ci-gate` takes the no-work exit-0 branch and succeeds. Two real successes,
+    so the affirmative-pass rule (#4779) is satisfied by `ci-plan`/`ci-gate` rather
+    than by a pack — which is the entire reason `ci-gate` is required to publish on
+    every non-closed event. Were it allowed to be absent, this head would carry one
+    success and one skip today and could be argued down to `unproven` tomorrow, and
+    the no-work PR — the fast path the whole conversion exists to create — would be
+    the one shape that can never merge.
+    """
+    assert MOG.decide_verdict(
+        [
+            _run("ci-plan", conclusion="success"),
+            _run("ci-pack", conclusion="skipped"),
+            _run("ci-gate", conclusion="success"),
+        ]
+    ) == ("clean", [])
+
+
+def test_a_head_carrying_only_the_plan_and_the_gate_is_clean():
+    """The same no-work PR when GitHub publishes no check for the skipped matrix.
+
+    A `strategy.matrix` that resolves to zero entries does not always leave a named
+    `ci-pack` check behind — an `if:`-gated job with an empty matrix can simply not
+    appear. So the no-work head must read `clean` on the two names alone, with no
+    third check to lean on. Split from the test above deliberately: if the verdict
+    ever came to depend on a skipped pack being PRESENT, that test would still pass
+    and this one would red, which is the correct place for the failure to land.
+    """
+    assert MOG.decide_verdict(
+        [_run("ci-plan", conclusion="success"), _run("ci-gate", conclusion="success")]
+    ) == ("clean", [])
+
+
+def test_a_selected_pack_red_blocks_and_names_the_pack_and_the_gate():
+    """A red in the dynamic matrix must stay a red, and stay DIAGNOSABLE.
+
+    `ci-gate` aggregates — it reports `failure` whenever any selected pack did not
+    succeed — but aggregation must not cost the per-pack name. `merge-blocked`'s
+    one-shot comment quotes this list, and "ci-gate (failure)" alone would tell the
+    session nothing about WHICH pack to look at, on a workflow whose packs are
+    rebalanced by weight and therefore not stable across commits (`ci-pack-N` is not
+    a stable job identity). Directive §6.8: prefer ADDING `ci-gate` to the proof
+    interpretation over deleting the per-pack diagnostics.
+    """
+    verdict, names = MOG.decide_verdict(
+        [
+            _run("ci-plan", conclusion="success"),
+            _run("ci-pack-5", conclusion="success"),
+            _run("ci-pack-9", conclusion="failure"),
+            _run("ci-gate", conclusion="failure"),
+        ]
+    )
+    assert verdict == "blocked"
+    assert "ci-pack-9 (failure)" in names, "the failing pack must stay nameable"
+    assert "ci-gate (failure)" in names, "the aggregate must stay visible too"
+
+
+def test_a_subset_of_packs_is_clean_because_an_unselected_pack_is_not_missing():
+    """The load-bearing consequence: a name that never launched is not a gap.
+
+    Under the static matrix every head carried all twelve packs, so "absent" and
+    "unproven" were never distinguishable and nothing had to decide between them.
+    Under the dynamic matrix a scoped PR publishes only the packs its changed paths
+    selected — here `ci-pack-3` and `ci-pack-7` — and the other ten names exist
+    nowhere on the head. `decide_verdict` reads the runs that ARE there and holds no
+    expected-name list, so this reads `clean`. A future "require the full set" rule
+    would invert that into a permanent block on every scoped PR while looking, in
+    review, like a tightening of the merge gate.
+    """
+    assert MOG.decide_verdict(
+        [
+            _run("ci-plan", conclusion="success"),
+            _run("ci-pack-3", conclusion="success"),
+            _run("ci-pack-7", conclusion="success"),
+            _run("ci-gate", conclusion="success"),
+        ]
+    ) == ("clean", [])
+
+
+def test_a_skipped_plan_and_gate_is_unproven_not_clean():
+    """#4779 survives the conversion: `skipped` is still not a pass.
+
+    The new names do not get a pass the old ones never had. A `closed` event skips
+    every job in ci.yml, and an outage or a dropped webhook can leave the same
+    shape — two named checks, both `skipped`, neither one evidence of anything. The
+    spurious filter does not know `ci-plan` or `ci-gate`, so `considered` is
+    non-empty and the zero-checks branch never fires; nothing is pending; `skipped`
+    is in CLEAN_CONCLUSIONS so `bad` is empty. Only the affirmative-pass rule stands
+    between this head and a squash-merge on zero CI evidence — which is exactly the
+    outcome #4779 measured. Deleting that rule makes THIS test red.
+    """
+    assert MOG.decide_verdict(
+        [_run("ci-plan", conclusion="skipped"), _run("ci-gate", conclusion="skipped")]
+    ) == ("unproven", [])
+
+
 @pytest.mark.parametrize("conclusion", ["cancelled", "stale"])
 def test_superseded_checks_are_incomplete_never_accused(conclusion):
     assert MOG.decide_verdict(
@@ -729,6 +850,12 @@ def _pull(number=4242, labels=("merge-on-green",)) -> dict:
         "base": {"ref": "main"},
         "labels": [{"name": name} for name in labels],
     }
+
+
+def _authorized_budget(max_refreshes=MOG.MAX_REFRESHES_PER_SWEEP):
+    budget = MOG.SweepBudget("read", max_refreshes=max_refreshes)
+    budget.refresh_authorized = True
+    return budget
 
 
 def test_a_clean_pull_request_is_squash_merged(monkeypatch, capsys):
@@ -933,7 +1060,10 @@ def test_a_real_conflict_is_reported_as_merge_blocked(monkeypatch, capsys):
         merge_status=409,
         update_status=422,
     )
-    assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness()) == "conflict"
+    assert MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness(),
+        budget=_authorized_budget(),
+    ) == "conflict"
     assert any(call[1].endswith("/update-branch") for call in calls), (
         "the sweeper must TRY to clear a stale base before labelling it blocked"
     )
@@ -991,7 +1121,8 @@ def test_the_definitive_expected_SHA_mismatch_wins_over_a_failed_reread(monkeypa
         pull_read_sequence=[(200, {}), (200, {}), (200, {})],
     )
     assert MOG.sweep_pull(
-        "acme/widgets", _pull(), "read", "write", _freshness()
+        "acme/widgets", _pull(), "read", "write", _freshness(),
+        budget=_authorized_budget(),
     ) == "head-moved"
     assert not [call for call in calls if call[0] == "POST"]
 
@@ -1010,7 +1141,8 @@ def test_an_update_API_failure_is_retried_not_called_a_content_conflict(monkeypa
         update_message="Server Error",
     )
     assert MOG.sweep_pull(
-        "acme/widgets", _pull(), "read", "write", _freshness()
+        "acme/widgets", _pull(), "read", "write", _freshness(),
+        budget=_authorized_budget(),
     ) == "update-retry"
     assert not [call for call in calls if call[0] == "POST"]
 
@@ -1034,7 +1166,8 @@ def test_an_unknown_422_on_the_same_head_is_retried_not_called_a_conflict(monkey
         },
     )
     assert MOG.sweep_pull(
-        "acme/widgets", _pull(), "read", "write", _freshness()
+        "acme/widgets", _pull(), "read", "write", _freshness(),
+        budget=_authorized_budget(),
     ) == "update-retry"
     assert not [call for call in calls if call[0] == "POST"]
 
@@ -1138,7 +1271,10 @@ def test_a_stale_base_is_updated_instead_of_blocked(monkeypatch, capsys):
         merge_status=409,
         update_status=202,
     )
-    assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness()) == "updated"
+    assert MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness(),
+        budget=_authorized_budget(),
+    ) == "updated"
 
     updates = [call for call in calls if call[1].endswith("/update-branch")]
     assert len(updates) == 1 and updates[0][0] == "PUT"
@@ -1171,7 +1307,10 @@ def test_an_updated_branch_clears_a_stale_merge_blocked_label(monkeypatch, capsy
         },
     )
     already = _pull(labels=("merge-on-green", "merge-blocked"))
-    assert MOG.sweep_pull("acme/widgets", already, "read", "write", _freshness()) == "updated"
+    assert MOG.sweep_pull(
+        "acme/widgets", already, "read", "write", _freshness(),
+        budget=_authorized_budget(),
+    ) == "updated"
     assert any(
         call[0] == "DELETE" and "labels/merge-blocked" in call[1] for call in calls
     ), "the stale merge-blocked label must be dropped once the branch moves again"
@@ -1876,7 +2015,10 @@ def test_the_4583_reconstruction_never_merges_a_proof_main_has_moved_past(
     freshness = MOG.ProofFreshness.build("acme/widgets", "read")
 
     assert (
-        MOG.sweep_pull("acme/widgets", _pull(), "read", "write", freshness) == "re-proving"
+        MOG.sweep_pull(
+            "acme/widgets", _pull(), "read", "write", freshness,
+            budget=_authorized_budget(),
+        ) == "re-proving"
     )
     assert not any(
         call[0] == "PUT" and call[1].endswith("/merge") for call in calls
@@ -2192,7 +2334,8 @@ def test_inconsistent_exact_proof_bases_use_the_oldest_conservatively(
     )
     freshness = MOG.ProofFreshness.build("acme/widgets", "read")
     assert MOG.sweep_pull(
-        "acme/widgets", _pull(), "read", "write", freshness
+        "acme/widgets", _pull(), "read", "write", freshness,
+        budget=_authorized_budget(),
     ) == "re-proving"
     assert any(call[1].endswith("/update-branch") for call in calls)
 
@@ -2551,7 +2694,10 @@ def test_a_stale_proof_that_cannot_be_updated_is_labeled_and_explained_once(
         update_status=422,
     )
     freshness = MOG.ProofFreshness.build("acme/widgets", "read")
-    assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write", freshness) == "conflict"
+    assert MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", freshness,
+        budget=_authorized_budget(),
+    ) == "conflict"
     comments = [c for c in calls if c[0] == "POST" and c[1].endswith("/comments")]
     assert len(comments) == 1
     body = comments[0][2]["body"]
@@ -2873,6 +3019,52 @@ def test_an_unreadable_proof_census_never_claims_zero_load(
     assert REAL_IN_FLIGHT_PR_PROOFS("acme/widgets", "read") is None
 
 
+def test_refresh_mutation_authority_is_the_in_progress_serialized_main_workflow(
+    monkeypatch,
+):
+    def fake_request(method, url, token, payload=None):
+        assert method == "GET" and url.endswith("/actions/runs/123")
+        assert token == "read" and payload is None
+        return 200, {
+            "id": 123,
+            "status": "in_progress",
+            "path": ".github/workflows/merge-on-green.yml",
+            "head_branch": "main",
+            "event": "workflow_run",
+            "repository": {"full_name": "acme/widgets"},
+        }
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    assert REAL_SERIALIZED_REFRESH_AUTHORITY(
+        "acme/widgets", "read", "123", "success"
+    )
+    assert not REAL_SERIALIZED_REFRESH_AUTHORITY(
+        "acme/widgets", "read", "123", "failure"
+    )
+    assert not REAL_SERIALIZED_REFRESH_AUTHORITY(
+        "acme/widgets", "read", "not-a-run", "success"
+    )
+
+
+def test_refresh_budget_refuses_branch_writes_without_serialized_authority(
+    monkeypatch,
+):
+    calls: list[tuple[str, str]] = []
+
+    def fake_request(method, url, token, payload=None):
+        calls.append((method, url))
+        if method == "GET" and url.endswith("/pulls/1"):
+            return 200, _pull(1)
+        raise AssertionError(f"unexpected {method} {url}")
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    budget = MOG.SweepBudget("read", max_refreshes=1)
+    assert MOG.attempt_update_branch(
+        "acme/widgets", _pull(1), "write", budget, "stale"
+    ) == "refresh-deferred"
+    assert not [call for call in calls if call[0] == "PUT"]
+
+
 @pytest.mark.parametrize(
     "active,expected_allowance",
     [
@@ -2922,7 +3114,14 @@ def test_every_update_branch_call_is_behind_the_refresh_admission_gateway():
     )
 
 
-def test_high_load_refresh_claims_one_durable_lease_before_one_update(monkeypatch):
+@pytest.mark.parametrize(
+    "owner_visible_in_filtered_index",
+    (True, False),
+    ids=("indexed-owner", "direct-read-before-index-catches-up"),
+)
+def test_high_load_refresh_claims_one_durable_lease_before_one_update(
+    monkeypatch, owner_visible_in_filtered_index
+):
     calls: list[tuple[str, str]] = []
     claimed = [False]
     generation_description = [MOG.REFRESH_LEASE_DESCRIPTION]
@@ -2947,17 +3146,26 @@ def test_high_load_refresh_claims_one_durable_lease_before_one_update(monkeypatc
             return 200, payload
         if method == "POST" and url.endswith("/issues/1/labels"):
             return 200, [{"name": MOG.REFRESH_LEASE_LABEL}]
+        if method == "GET" and url.endswith("/issues/1"):
+            return 200, {
+                "number": 1,
+                "labels": [
+                    {"name": MOG.MERGE_ON_GREEN_LABEL},
+                    {"name": MOG.REFRESH_LEASE_LABEL},
+                ],
+            }
         if method == "GET" and "/issues?" in url:
-            return 200, [
+            indexed = [
                 {
                     "number": 1,
-                        "pull_request": {"url": "pr"},
+                    "pull_request": {"url": "pr"},
                     "labels": [
                         {"name": MOG.MERGE_ON_GREEN_LABEL},
                         {"name": MOG.REFRESH_LEASE_LABEL},
                     ],
                 }
             ]
+            return 200, indexed if owner_visible_in_filtered_index else []
         if method == "PUT" and url.endswith("/pulls/1/update-branch"):
             return 202, {"message": "Updating"}
         raise AssertionError(f"unexpected {method} {url}")
@@ -2965,6 +3173,7 @@ def test_high_load_refresh_claims_one_durable_lease_before_one_update(monkeypatc
     monkeypatch.setattr(MOG, "_request", fake_request)
     lease = MOG.RefreshLease("acme/widgets", "read", "write")
     budget = MOG.SweepBudget("read", max_refreshes=1)
+    budget.refresh_authorized = True
     budget.max_refreshes = 1
     budget.requires_refresh_lease = True
     budget.refresh_lease = lease
@@ -3103,6 +3312,7 @@ def test_low_load_refresh_does_not_create_a_controller_lease(monkeypatch):
 
     monkeypatch.setattr(MOG, "_request", fake_request)
     budget = MOG.SweepBudget("read", max_refreshes=2)
+    budget.refresh_authorized = True
     assert MOG.attempt_update_branch(
         "acme/widgets", _pull(1), "write", budget, "stale"
     ) == "updated"
@@ -3137,6 +3347,7 @@ def test_ambiguous_lease_claim_never_updates_or_tries_a_second_owner(monkeypatch
     monkeypatch.setattr(MOG, "_request", fake_request)
     lease = MOG.RefreshLease("acme/widgets", "read", "write")
     budget = MOG.SweepBudget("read", max_refreshes=1)
+    budget.refresh_authorized = True
     budget.max_refreshes = 1
     budget.requires_refresh_lease = True
     budget.refresh_lease = lease
@@ -3165,6 +3376,12 @@ def test_lease_owner_outside_pull_page_is_fetched_and_promoted(monkeypatch):
     def fake_request(method, url, token, payload=None):
         if "/issues?" in url:
             return 200, [issue]
+        if method == "GET" and "/labels/" in url:
+            return 200, {
+                "description": MOG.refresh_lease_record(
+                    999, "b" * 40, "2026-08-12T01:00:00Z", "1a2b3c4d5e6f"
+                )
+            }
         if method == "GET" and url.endswith("/pulls/999"):
             return 200, {**owner, "state": "open"}
         raise AssertionError(f"unexpected {method} {url}")
@@ -3179,6 +3396,76 @@ def test_lease_owner_outside_pull_page_is_fetched_and_promoted(monkeypatch):
         pulls, refresh_lease_number=999, trigger_head_sha="a" * 40, cap=1, now=0
     )
     assert ordered[0]["number"] == 999
+
+
+def test_generation_register_recovers_an_owner_missing_from_the_label_index(
+    monkeypatch,
+):
+    owner = {
+        **_pull(
+            999,
+            labels=(MOG.MERGE_ON_GREEN_LABEL, MOG.REFRESH_LEASE_LABEL),
+        ),
+        "state": "open",
+    }
+    generation = MOG.refresh_lease_record(
+        999, "b" * 40, "2026-08-12T01:00:00Z", "1a2b3c4d5e6f"
+    )
+
+    def fake_request(method, url, token, payload=None):
+        if method == "GET" and "/issues?" in url:
+            return 200, []
+        if method == "GET" and "/labels/" in url:
+            return 200, {"description": generation}
+        if method == "GET" and url.endswith("/issues/999"):
+            return 200, {
+                "number": 999,
+                "state": "open",
+                "pull_request": {"url": "pr"},
+                "labels": owner["labels"],
+            }
+        if method == "GET" and url.endswith("/pulls/999"):
+            return 200, owner
+        if method == "GET" and url.endswith("/issues/999/events?per_page=100"):
+            return 200, []
+        raise AssertionError(f"unexpected {method} {url}")
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    lease, pulls = REAL_PREPARE_REFRESH_LEASE(
+        "acme/widgets", "read", "write", [_pull(1)]
+    )
+    assert lease.readable and lease.owner_number == 999
+    assert lease.generation_record == (
+        999,
+        "b" * 40,
+        "2026-08-12T01:00:00Z",
+        "1a2b3c4d5e6f",
+    )
+    assert pulls[0]["number"] == 999
+
+
+def test_unindexed_generation_owner_with_malformed_direct_issue_fails_closed(
+    monkeypatch,
+):
+    generation = MOG.refresh_lease_record(
+        999, "b" * 40, "2026-08-12T01:00:00Z", "1a2b3c4d5e6f"
+    )
+
+    def fake_request(method, url, token, payload=None):
+        if method == "GET" and "/issues?" in url:
+            return 200, []
+        if method == "GET" and "/labels/" in url:
+            return 200, {"description": generation}
+        if method == "GET" and url.endswith("/issues/999"):
+            return 200, {}
+        raise AssertionError(f"unexpected {method} {url}")
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    lease, pulls = REAL_PREPARE_REFRESH_LEASE(
+        "acme/widgets", "read", "write", [_pull(1)]
+    )
+    assert not lease.readable and lease.owner_number is None
+    assert pulls == [_pull(1)]
 
 
 def test_multiple_refresh_owners_fail_closed_without_deleting_either(monkeypatch, capsys):
@@ -3856,10 +4143,10 @@ def test_the_dynamic_cap_preserves_the_proven_budget_share():
     assert MOG.RATE_LIMIT_RESERVE < MOG.RATE_LIMIT_FLOOR
 
     assert MOG.pull_cap_for_budget(14_904, 15_000) == MOG.MAX_PULL_CAP
-    assert MOG.pull_cap_for_budget(600, 15_000) == 21
+    assert MOG.pull_cap_for_budget(600, 15_000) == 20
     affordable_cost = (
         MOG.FULL_SWEEP_FIXED_REQUESTS
-        + 21 * MOG.MAX_REQUESTS_PER_PULL
+        + 20 * MOG.MAX_REQUESTS_PER_PULL
         + MOG.MAX_REFRESHES_PER_SWEEP
         + MOG.RATE_LIMIT_RESERVE
     )
@@ -3884,7 +4171,8 @@ def test_a_red_inherited_from_a_since_healed_main_is_refreshed_not_blocked(
     pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
     calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
     verdict = MOG.sweep_pull(
-        "acme/widgets", _pull(), "read", "write", _freshness(), _proof("ci-pack-3")
+        "acme/widgets", _pull(), "read", "write", _freshness(),
+        _proof("ci-pack-3"), _authorized_budget(),
     )
     assert verdict == "rebased"
     assert any(call[1].endswith("/update-branch") for call in calls), \
@@ -3914,7 +4202,8 @@ def test_a_red_main_does_not_share_is_still_blocked(monkeypatch, capsys):
     }
     calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
     verdict = MOG.sweep_pull(
-        "acme/widgets", _pull(), "read", "write", _freshness(), _proof("ci-pack-3")
+        "acme/widgets", _pull(), "read", "write", _freshness(),
+        _proof("ci-pack-3"), _authorized_budget(),
     )
     assert verdict == "blocked"
     assert not any(call[1].endswith("/update-branch") for call in calls), \
@@ -3951,7 +4240,8 @@ def test_a_head_already_current_falls_through_and_cannot_loop(monkeypatch, capsy
     pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
     calls = _fake_api(monkeypatch, check_pages=pages, update_status=422)
     verdict = MOG.sweep_pull(
-        "acme/widgets", _pull(), "read", "write", _freshness(), _proof("ci-pack-3")
+        "acme/widgets", _pull(), "read", "write", _freshness(),
+        _proof("ci-pack-3"), _authorized_budget(),
     )
     assert verdict == "blocked"
     assert any(call[1].endswith("/update-branch") for call in calls), "it tried"
@@ -4171,9 +4461,44 @@ def test_main_proof_reads_the_packs_off_a_run_no_commit_window_could_reach(
     pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-2", conclusion="failure")]}}
     calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
     assert MOG.sweep_pull(
-        "acme/widgets", _pull(), "read", "write", _freshness(), proof
+        "acme/widgets", _pull(), "read", "write", _freshness(), proof,
+        _authorized_budget(),
     ) == "rebased"
     assert any(call[1].endswith("/update-branch") for call in calls)
+
+
+def test_the_dynamic_matrix_does_not_weaken_mains_full_baseline(monkeypatch):
+    """Main's dispatch still proves all twelve packs, plus the two new names.
+
+    The dynamic matrix narrows what a PULL REQUEST publishes; it must not narrow
+    what MAIN proves, because main's clean set is the only thing that can excuse a
+    base-inherited red (`bad_names <= proof.clean_names`). The mechanism that keeps
+    them separate lives in ci.yml — a `workflow_dispatch` on main passes no
+    `--changed-from`, so the planner has no changed-file set, widens to the full
+    suite by the fail-safe rule, and emits all twelve indices — but the property
+    worth pinning HERE is that the sweeper side collects whatever the run published,
+    verbatim and without a name list of its own. `_run_clean_jobs` reads the job
+    names straight off the API, so `ci-plan` and `ci-gate` join the proof for free
+    and a pack red on a PR still finds its excuse.
+
+    A narrowed baseline is the silent version of the 2026-08-08 backlog: main proves
+    fewer names, `bad_names <= clean_names` stops holding, and the armed PRs stop
+    draining — with a green main and nothing in the sweep log to explain it.
+    """
+    packs = [(f"ci-pack-{index}", "success") for index in range(12)]
+    runs, jobs = _both_workflows(
+        [("ci-plan", "success"), *packs, ("ci-gate", "success")]
+    )
+    _proof_api(monkeypatch, runs=runs, jobs=jobs)
+
+    proof = MOG.main_proof("acme/widgets", "read")
+    expected = {f"ci-pack-{index}" for index in range(12)} | {"ci-plan", "ci-gate"}
+    assert expected <= proof.clean_names, (
+        "main's full baseline must still prove every pack name a scoped PR can go "
+        f"red on; missing {sorted(expected - proof.clean_names)}"
+    )
+    assert len(expected) == 14
+    assert proof.proved_at is not None, "an undatable proof cannot excuse anything"
 
 
 def test_every_proof_workflow_names_a_file_that_actually_exists():
@@ -4433,6 +4758,7 @@ def test_a_base_inherited_red_is_refreshed_when_main_was_proven_AFTER_it(
         "write",
         _freshness(),
         _proof("ci-pack-3", proved_at=MAIN_PROVED_AT),
+        _authorized_budget(),
     )
     assert verdict == "rebased"
     assert any(call[1].endswith("/update-branch") for call in calls)
@@ -4947,6 +5273,7 @@ def test_the_refresh_budget_is_capped_because_each_one_launches_a_ci_run(
     pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
     calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
     budget = MOG.SweepBudget("read", max_refreshes=2)
+    budget.refresh_authorized = True
 
     verdicts = [
         MOG.sweep_pull(
@@ -4979,6 +5306,7 @@ def test_the_DEFAULT_budget_caps_refreshes_at_the_constant(monkeypatch):
     pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
     calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
     budget = MOG.SweepBudget("read")
+    budget.refresh_authorized = True
     verdicts = [
         MOG.sweep_pull(
             "acme/widgets",
@@ -5056,26 +5384,22 @@ def test_a_stale_proof_refresh_also_draws_on_the_capped_slots(monkeypatch, capsy
     )
 
 
-def test_the_refresh_cap_does_not_change_behaviour_when_no_budget_is_passed(
+def test_update_branch_is_fail_closed_when_no_serialized_budget_is_passed(
     monkeypatch, capsys
 ):
-    """`budget=None` must reproduce the pre-cap behaviour exactly, so every existing
-    caller and test keeps its meaning."""
+    """An imported/out-of-band caller cannot bypass workflow serialization."""
     pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
     calls = _fake_api(monkeypatch, check_pages=pages, update_status=202)
-    for number in range(1, 30):
-        assert (
-            MOG.sweep_pull(
-                "acme/widgets",
-                _pull(number),
-                "read",
-                "write",
-                _freshness(),
-                _proof("ci-pack-3"),
-            )
-            == "rebased"
-        )
-    assert len([c for c in calls if c[1].endswith("/update-branch")]) == 29
+    assert MOG.sweep_pull(
+        "acme/widgets",
+        _pull(1),
+        "read",
+        "write",
+        _freshness(),
+        _proof("ci-pack-3"),
+    ) == "refresh-deferred"
+    assert not [c for c in calls if c[1].endswith("/update-branch")]
+    assert "no serialized sweep budget" in capsys.readouterr().out
 
 
 # ── the breaker's upstream: a proof that never concludes reads as `pending` ────

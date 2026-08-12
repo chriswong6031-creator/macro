@@ -87,7 +87,7 @@ preregistration → clean-room ledger + advancer → only then a rebuilt picks s
 | Wave | Question | Status |
 |---|---|---|
 | **W-P0** | Do washout depth/duration, terminal confluence, sector washout, and accumulation footprints condition FIRST-board onset (N: 0→1)? | **SHIPPED with this document** — `research/cn_prophet_audit/WASHOUT_ONSET_W1_2026-08-10.{md,json}` + `washout_onset_w1.py`. First results: the washout carrier is real and era-stable; the sector conjunction adds excess beyond timing; the volatility-matched control separates board-propensity from wildness; the transcribed oracle is a universe definition, not a first-board selector — ranking inside it is where the discrimination lives. Pattern-tier only. |
-| **P-A** | Do the W-P0 footprints produce uplift **inside the actual Prophet pick panel** (not the bar-derived oracle approximation)? | NEXT — requires the Terminal cross-repo read contract for Golden Oracle pick/state history. The true test of the thesis. |
+| **P-A** | Do the W-P0 footprints describe / eventually rank the actual Prophet pick panel (`data/china_standout_track/board.parquet` + `data/china_prophet_rank/candidates.parquet` — in-repo PIT ledgers; census 2026-08-11: no Terminal-side CN history exists)? | P-A1 descriptive read **SHIPPED with this PR** — `research/cn_prophet_audit/PA1_PANEL_READ_2026-08-11.{md,json}` (charter `P_A_PANEL_CHARTER_2026-08-11.md`); P-A2 battery accrual-gated (≥120 sessions + ≥2 regime segments per stream). |
 | **P-B** | Case decomposition of 300363-class winners: which footprints were present, in what order, at what lead times? | Chartered; runs alongside P-A. |
 | **P-C** | Intraday/chip footprints: auction demand, seal-time structure, 筹码 concentration shifts as accumulation tells | Blocked on minute-bar backfill + chips accrual depth; charter after P-A. |
 | **P-D** | Conjunction stacking + scorer preregistration: combine surviving footprints into one Prophet scoring input | Last; gauntlet at promotion; forward verification only via the exact-plane ledger. |
@@ -105,8 +105,8 @@ Display-tier findings state what they do not establish.
 ## §5 Evidence-ranked queue (2026-08-11)
 
 1. **W-P0 ships** (this PR) — the program's first affirmative pre-onset findings.
-2. **P-A charter**: define the Terminal cross-repo read contract (Golden Oracle pick/state
-   stream, read-only, PIT), then run the W-P0 battery conditioned on the real pick panel.
+2. **P-A1 descriptive read ships**; P-A2 waits on ledger accrual — no cross-repo contract
+   needed (charter §1).
 3. **Range shards** finish (preserved campaign, four named blockers) — data infrastructure,
    lawful and unaffected by the kill.
 4. **Full-A spine backfill** under the operator-attested authority gate → eligibility
