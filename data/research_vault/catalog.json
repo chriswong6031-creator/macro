@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T03:22:35.728255+00:00",
-  "count": 984,
+  "generated_at": "2026-08-12T06:08:07.514681+00:00",
+  "count": 992,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -102,6 +102,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-urmoidwn5ej-5e7287",
+      "title": "Aegonam global fixed income midyear outlook final",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-11T23:09:04Z",
+      "summary_points": [
+        "**Iran Conflict & Energy Shock**: Prolonged oil/gas price surge from Middle East conflict drives global inflation, creates terms-of-trade shocks in Europe, and delays growth recovery to 2026–2027 despite ECB hiking rates twice to 2.5%.",
+        "**Fed Policy Divergence**: Hawkish shift (50/50 FOMC split, Chairman abstaining) amid oil volatility prioritizes short-term inflation over long-term risks, with Fed holding rates into 2027 (higher-for-longer yields).",
+        "**Valuation-Fundamentals Mismatch**: Robust credit fundamentals (resilient economies, strong balance sheets) contrast with stretched valuations (tight spreads, limited compression), demanding active selection over passive exposure.",
+        "**EM Debt Strategy**: USD-denominated EM debt favored over local currency due to Fed policy anchoring carry, with performance driven by fiscal discipline, reform momentum, and country differentiation.",
+        "**Europe Energy Vulnerability**: Elevated gas prices persist post-US-Iran deal, creating fiscal constraints and debt limit pressures, while ECB hikes rates amid sticky inflation from energy shock."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-f5fryndrqbq-cc1e4d",
       "title": "JPM US Market Intelligence Afternoon Briefing Aug 11",
       "institution": "J.P. Morgan",
@@ -165,6 +186,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-yklid5momhw-1dfc32",
+      "title": "Venture Global (VG) First Take 2Q26 Slight Miss on Margins, but 2026 Guidance Increased",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:40Z",
+      "summary_points": [
+        "**Q2 EBITDA Miss, 2026 Guidance Raised**: Q2 adj.",
+        "EBITDA slightly missed consensus ($2.49bn vs $2.51bn), but 2026 guidance raised to $8.7-9.1bn (up from $8.2-8.5bn), driven by stronger 2H26 spread outlook and production expectations.",
+        "**Critical Arbitration & Geopolitical Risks**: Pending arbitration claims at $6.1-8.4B (BP settled, others ongoing); key risks include CP1 arbitration, Russia/Ukraine peace impact on gas prices, and LNG demand volatility.",
+        "**26.2% Upside Valuation**: Buy-rated with $18.00 12-month target ($14.26 current price), implying 26.2% upside; EBITDA projected to grow from $6.2bn (12/25) to $8.2bn (12/28E).",
+        "**Coverage Risk Flag**: \"Not covered by current analyst\" and \"Price target at removal\" highlighted as critical risk indicators, signaling potential downgrades or coverage changes affecting portfolio positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yj7jfih70ze-6c7281",
+      "title": "US Daily July CPI Preview",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:33Z",
+      "summary_points": [
+        "**Core CPI Miss**: Core CPI forecast at 0.19% MoM (vs.",
+        "2% consensus), YoY 2.47% (vs.",
+        "5%), driven by lower energy and mixed auto/shelter trends.",
+        "**Auto Insurance Disinflation**: Auto insurance CPI decline of 0.5% MoM SA, reflecting lower premiums amid mixed auto sector inflation (used cars +0.5%, new cars +0.1%).",
+        "**Geopolitical Inflation Impact**: Iran War-driven jet fuel spike caused 2.0% MoM SA airfare surge (travel services), offset by 1.0% MoM SA hotel price decline (World Cup effect reversal)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-e6iqxljorzl-d9490e",
       "title": "InterContinental Hotels Group (IHG.L) 1H26 Strong net system growth of 5",
       "institution": "Goldman Sachs",
@@ -182,6 +245,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2d9rq0xceea-3b9054",
+      "title": "Americas Investment Banks Structural M&A growth persists, but expenses continue to rise, with valuation upside less likely",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:09Z",
+      "summary_points": [
+        "**Underperformance driven by M&A trends & expenses**: Americas IBank stocks underperformed S&P 500 by 5pp pre-2026 EPS due to M&A trend-driven estimate downgrades, rising expenses, and structural negative leverage reducing valuation upside.",
+        "**Sector bifurcation critical for allocation**: Stark divergence between high-performing banks (LCLN, MC, PWT with positive YoY revenue/margins) and struggling peers (EVR, HLI, LAZ with negative YoY revenue/margins) necessitates selective positioning.",
+        "**Sponsor M&A volume contraction**: 2026 sponsor M&A volumes at 26% of total market (below 5-yr avg 35%), signaling strategic realignment or market contraction, contrasting with strategic M&A growth (56% volume/fee growth).",
+        "**Non-M&A advisory structural growth**: Secondaries/restructuring to reach 18% of 2025 IBank revenue, with GP-led volumes up 35% YoY; EVR and PJT best positioned for structural tailwinds.",
+        "**Structural negative operating leverage**: Elevated comp leverage (80bps/90bps in 2026E/2027E) and non-comp growth (1% above Street) compressing margins, with EVR/LCLN margins projected 11.7%/12.8% below 2021 levels."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 40,
       "language": "en",
       "needs_metadata": false
     },
@@ -801,6 +885,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-hhthzs4lt9x-820c08",
+      "title": "Tokyo Keiki (7721)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T13:13:16Z",
+      "summary_points": [
+        "**Earnings Beat & Guidance Raise**: 1Q3/27 operating loss of ¥250 mn (vs.",
+        "¥480 mn est.) driven by defense/communications segment strength; operating profit guidance raised 31% yoy to ¥7 bn on 63% yoy orders growth in defense/communications and 27% in marine systems.",
+        "**Defense Segment Geopolitical Tailwinds**: Q1 defense sales up ¥4.0bn (YoY), fueled by naval/aircraft equipment and Australia’s frigate program; orders +63% YoY despite Japan defense budget concerns, with sustained growth outlook.",
+        "**Marine Systems Upgrade & Maintenance Driver**: Q1 marine sales +16% YoY to ¥3.7bn, profits +27% to ¥400mn; FY3/27 sales/profit guidance revised up to ¥15.2bn/¥1.8bn, with after-sales maintenance as key medium-term earnings catalyst.",
+        "**Price Outperformance & Target Upside**: 7721.T up 53.2% in 12m vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-tzo1rtpsaey-10bd43",
       "title": "Americas Retail Takeaways from IR management",
       "institution": "Goldman Sachs",
@@ -822,6 +927,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-mwiwpzg95ra-ca24c9",
+      "title": "Japan SMID Monitor Next Generation TOPIX inclusion exclusion end game",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:40Z",
+      "summary_points": [
+        "**TOPIX Structural Shift**: 681 exclusions, 35 inclusions (index down to 991), 27% of near-removed firms executing buybacks; 42% of buyback-announcing firms risk exclusion, signaling index weighting changes.",
+        "**AI/Semi De-risking Flows**: Short-cover rally in AI-losers/Defensives (+17%/+13% mom) vs.",
+        "Semis/FA (-19%/-14% mom); foreigners net sold TSE Growth/Standard (-¥31.6bn/-¥45.1bn), individuals net bought (+¥44.4bn/+¥35.3bn).",
+        "**Liquidity Threshold Risks**: 12 companies below 3M ADTV face exclusion; McDonalds Japan (2702) has 4% short interest (1.8 days to cover), 10% of firms show 12% short interest (e.g., GNI Group).",
+        "**Valuation-Risk Mismatch**: High P/B (e.g., Internet Initiative Japan at 20.5) with moderate ROE (16.1) suggests overvaluation; Nippon Steel (P/B 7.3, ROE 12.2) indicates value trap."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-keuiyhvmikc-2bf1df",
       "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 10, 2026 as of 5 30 AM ET",
       "institution": "Goldman Sachs",
@@ -839,6 +965,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vd4taryxext-8187e9",
+      "title": "Eli Lilly & Co. (LLY) Commercial Momentum, Uninterrupted",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:53:33Z",
+      "summary_points": [
+        "**Medicare Obesity Coverage Unlock**: July 1st Medicare bridge program driving 80% injectable volume surge, accelerating revenue growth beyond expectations (Q2 beat/raise +4.5% vs DRG +1.9%); revenue guidance raised to $88.5bn (2026).",
+        "**Foundry Launch & OUS Momentum**: Q2 revenue $98mn (vs $40mn adj.), OUS sales $31mn reflecting pent-up demand; 2026 revenue estimate up to $847mn (vs $805mn), US prescriber base doubling.",
+        "**Forward Catalysts & M&A**: Elora + tirzepide combo Ph2 data (late Sept EASD) for diabetes/obesity; $7.8bn CNTA acquisition (largest since 2019) accelerating M&A for near-Ph3 assets and unmet needs.",
+        "**Valuation Upside & EPS Growth**: Buy rating with 16.9% upside ($1,367 target vs $1,169.86 current); FY26 EPS revised to $36.71 (vs $33.77), driven by revenue expansion (115.756B by 2028) and margin improvement.",
+        "**Critical Risk Factor**: Downside risk from greater-than-expected obesity pricing decline (e.g., Medicare coverage pricing pressure) or pipeline underperformance compressing long-term estimates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
@@ -942,6 +1089,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ucjkvbyjtau-5728a0",
+      "title": "JPM Cross Asset Volatiliy",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T09:55:29Z",
+      "summary_points": [
+        "**Central Bank Buying Sustains Gold Upside**: Strong central bank inflows (Figure 5) offset negative correlation with 10Y real yields (Figure 4), driving long-term bullish fundamentals despite Fed volatility shifts.",
+        "**Gold Technical Shift to Buyer Momentum**: Prices near $4000 with tight 5% range; elevated volatility easing, buyers gaining traction as inflation news digested (Figures 2-3).",
+        "**Retail Gold Flows & Call Spread Strategy**: Rising retail imbalance (Figure 6) and mid-range GLD call open interest (Figure 7) signal upside momentum; GLD 25%-10% delta call spread offers higher Sharpe (1.6 vs 1.36) and lower max drawdown (-2.6% vs -15.0%).",
+        "**Elevated Tail-Risk Exposure**: 66.7% Downside Convexity across Credit (HYG), Equity (SPX), FX (EURUSD), and Rates (EUR 10Y) indicates heightened vulnerability to large downside moves (Figure 23)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
       "language": "en",
       "needs_metadata": false
     },
