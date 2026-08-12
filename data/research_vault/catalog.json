@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T04:07:28.891829+00:00",
-  "count": 986,
+  "generated_at": "2026-08-12T04:37:34.063509+00:00",
+  "count": 987,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -161,6 +161,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yklid5momhw-1dfc32",
+      "title": "Venture Global (VG) First Take 2Q26 Slight Miss on Margins, but 2026 Guidance Increased",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:40Z",
+      "summary_points": [
+        "**Q2 EBITDA Miss, 2026 Guidance Raised**: Q2 adj.",
+        "EBITDA slightly missed consensus ($2.49bn vs $2.51bn), but 2026 guidance raised to $8.7-9.1bn (up from $8.2-8.5bn), driven by stronger 2H26 spread outlook and production expectations.",
+        "**Critical Arbitration & Geopolitical Risks**: Pending arbitration claims at $6.1-8.4B (BP settled, others ongoing); key risks include CP1 arbitration, Russia/Ukraine peace impact on gas prices, and LNG demand volatility.",
+        "**26.2% Upside Valuation**: Buy-rated with $18.00 12-month target ($14.26 current price), implying 26.2% upside; EBITDA projected to grow from $6.2bn (12/25) to $8.2bn (12/28E).",
+        "**Coverage Risk Flag**: \"Not covered by current analyst\" and \"Price target at removal\" highlighted as critical risk indicators, signaling potential downgrades or coverage changes affecting portfolio positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },

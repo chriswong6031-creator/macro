@@ -18,12 +18,26 @@ any PR that grows it reds here and must SHRINK the file by extracting
 inline script blocks to scripts/ci/ (blocks free of ${{ }} expressions
 extract verbatim) or by chaining steps into a separate workflow — never
 by deleting the load-bearing comments.
+
+2026-08-12 diet: four inline blocks (the two engine builder spines, the
+standout-audit-US commit, the cortex commit — 47,737 bytes of body) were
+extracted verbatim to scripts/ci/, taking daily.yml to ~469 KB WITH the
+#5362 OIP campaign-v2 steps restored. Budget tightened 509,000 -> 487,000
+so the file always keeps >=25,000 bytes of emergency headroom below the
+512,000 cliff; a PR that reds here diets the file the same way, never by
+deleting documentation. Extraction is safe because the guards that read
+step bodies resolve `bash scripts/ci/*.sh` back to the script's source via
+scripts/workflow_run_source.py — DAG conformance, the push-conflict
+census, the brun/ORDER visibility check and the render-options ordering
+gate all see through the move (an extracted script must carry that
+module's provenance marker in its first 5 lines, or resolution fails
+closed). Extract more the same way; do not delete comments to fit.
 """
 
 import re
 from pathlib import Path
 
-BUDGET_BYTES = 509_000
+BUDGET_BYTES = 487_000
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 

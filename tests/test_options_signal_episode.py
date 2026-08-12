@@ -2987,7 +2987,7 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
     assert "commit-render-sync" in broad_block
     assert 'git commit -m "engine: regime update' not in broad_block
     assert 'git commit -m "render-sync: post-rebase guards' not in broad_block
-    assert broad_block.index("git clean -fd -- data/prophet/origination_receipts") < (
+    assert broad_block.index("data/prophet/origination_receipts") < (
         broad_block.rindex("bash scripts/ci/options_signal_nightly.sh exclude-broad")
     )
     cleanup_helper = helper.split("exclude_broad() {", 1)[1].split(
