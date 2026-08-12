@@ -62,6 +62,8 @@ import pandas as pd
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from engine.json_strict import sanitize_non_finite  # noqa: E402
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -1252,7 +1254,8 @@ def main(argv=None) -> int:
     meta = _build_meta(
         deep_stats, baskets_stats, runtime_deep, runtime_baskets, _mcap_fallback_frac
     )
-    _OUT_META.write_text(json.dumps(meta, indent=2, default=str))
+    _OUT_META.write_text(json.dumps(sanitize_non_finite(meta), indent=2,
+                                    default=str, allow_nan=False))
     log.info("Wrote meta: %s", _OUT_META)
 
     log.info("Done.")
