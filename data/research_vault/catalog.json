@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T10:23:51.911444+00:00",
-  "count": 1004,
+  "generated_at": "2026-08-12T10:38:55.057507+00:00",
+  "count": 1005,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -60,6 +60,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-xbhcx4pjct0-be0ad1",
+      "title": "JPM US Market Intelligence | Morning Briefing: Futs higher with AI Infra boosting Tech; Thoughts into CPI; CPI Scenario Analysis",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T10:11:49Z",
+      "summary_points": [
+        "**CPI Data & Fed Policy Catalyst**: Core CPI MoM +0.22% (2.5% YoY) critical for September Fed hike assessment; SPX sensitivity shows >0.30% MoM → 1.5-2.5% decline, <0.15% MoY → 1-2% gain.",
+        "**Earnings Momentum & AI Impact**: 80% S&P 500 companies growing earnings; blended EPS beat 29.2% (vs.",
+        "7% 5-yr avg), AI driving 180bp avg margin gains (25 firms).",
+        "**Geopolitical Risk Events**: US-China AI talks (Sep), Trump-Xi trade truce expiry (Nov 1), and US midterms (Nov 3) introduce policy uncertainty and volatility.",
+        "**Sector Rotation Drivers**: AI/Semis theme outperforming (Semis/Memory vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-xeez6ry3zzy-23c159",
       "title": "GS Shawn Tuteja framework and AI",
