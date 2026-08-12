@@ -335,6 +335,15 @@ jobs:
         # this same failure class in miniature. Every other manual dispatch still
         # polls, so the console is never more than a click from current.
         #
+        # NEITHER DOES A RECALL DISPATCH (2026-08-11 follow-up). A recall is the
+        # kill-switch: the operator is cancelling posts ALREADY BOOKED at Buffer,
+        # and every one of those deletes is a call on this same rolling 24h
+        # allowance. Telemetry standing in front of an emergency stop is the
+        # worst version of the failure class this whole comment is about — the
+        # post that cannot be pulled is worse than the post that cannot be sent.
+        # Carried as a step-level `if`, identical to the publisher step's, so the
+        # step never starts rather than bailing inside the shell.
+        #
         # Metrics refresh ~daily, so 30 polls a day of the same post bought
         # nothing and cost the product. The 13:00Z slot is after the US open so
         # the prior session's posts have had time to accrue numbers. The script
@@ -351,6 +360,7 @@ jobs:
         # data/marketing/post_metrics.jsonl. Fully independent of the
         # kill-switch: with BUFFER_TOKEN unset it prints one line and exits 0
         # (no network, no write) — so it is harmless while the publisher is dark.
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.recall_pending) }}
         env:
           # Same input the publisher step reads: empty on every scheduled sweep,
           # non-empty only on a breaking dispatch.

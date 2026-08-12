@@ -613,6 +613,12 @@ jobs:
         run: python3 scripts/check_trial_registration.py
       - name: reliability-contract guard (no gated field rendered directionally, audit #46)
         run: python3 scripts/check_reliability_contract.py
+      # A ticker rename is a ledger-key migration, not a fresh company. This
+      # suite owns the track-record ingest guard, duplicate detector, and
+      # losslessness receipt; keep it ahead of the broader grading invocation
+      # so an unrelated grading failure cannot leave identity enforcement dark.
+      - name: track-record company-key identity + lossless migration guard
+        run: python -m pytest tests/test_ledger_identity.py -q
       - name: grading rebuild + trial ledger tests
         run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py tests/test_universe_history.py -q
       - name: promotion-stat DISPLAY gate — the published DSR must be the computed one
@@ -1040,6 +1046,13 @@ jobs:
         run: python -m pytest tests/test_market_score_authority_2026_08_12.py -q
       - name: shared light-mode odometer semantic needle contract
         run: python -m pytest tests/test_odometer_light_mode_surface.py -q
+      # #5480 added this express-render ownership guard to main but omitted a
+      # run: owner, so audit_unrun_tests correctly found it dark on the very
+      # next check-definition refresh. It belongs beside the render-lane
+      # contracts above: the suite pins both render workflows and the
+      # data-pristine --site-only builder boundary.
+      - name: China Policy Watch express-render ownership + data-pristine mode
+        run: python -m pytest tests/test_china_policy_watch_render_lane.py -q
       # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
       # pinned SEC source objects into filing packages, Company Facts ledgers,
       # and deterministic B4 binding plans. Keep these security/provenance
@@ -4111,13 +4124,21 @@ jobs:
         # multi-account tests were asserting behaviour the fix deliberately
         # narrows. Unrun, that would have been a silent rot. Same deps as the
         # rest of this lane, verified green.
+        # test_marketing_metrics_poll_quota joins 2026-08-11 (#5306 follow-up).
+        # It shipped WITH the 429 fix and was baselined unrun in the same breath,
+        # so the poller's own two bounds — stop-on-first-429 and cap-the-run —
+        # had no job at all, and #5306 had to duplicate three coarser pins into
+        # test_marketing_metrics_poll.py to get ANY guard that executes. Both
+        # halves now run in one step, next to the sibling they were split from.
+        # Same deps, zero network: the Buffer publisher is a counting stub and
+        # every write goes to tmp_path.
         # test_marketing_market_clock joins (2026-08-11): the publish-time
         # clock + lead-fact fan-out gate suite sat in the unrun baseline, and
         # voice v5 (#5291) rotted seven of its fixtures unseen — first-person
         # tails, the register v5 retired, not the gates under test. It drives
         # scripts/marketing_publisher.py end to end, so it lives with the
         # publisher lane it exercises.
-        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_outbox_single_composition.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py tests/test_marketing_market_clock.py -q
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_outbox_single_composition.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_metrics_poll_quota.py tests/test_marketing_weekend_levels.py tests/test_marketing_market_clock.py -q
       - name: stale backlog quarantine + optional publish-time phrase fallback
         run: python -m pytest tests/test_marketing_stale_purge.py tests/test_publish_time_llm_phrase.py -q
       - name: liveness tripwire rule engine (the green-and-dark alarm)
@@ -4410,7 +4431,18 @@ jobs:
         # copywriter keeps every heavy import lazy, the test file's own imports
         # are stdlib-only, nothing importorskip-gated. Verified in a clean
         # pytest+pyyaml+jinja2(+requests+pyarrow) venv.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_admin_marketing_floor.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_press_stream.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_reply_warmth.py tests/test_marketing_reply_tails.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_copywriter.py tests/test_marketing_copy_auditor.py tests/test_marketing_bare_cashtag.py tests/test_marketing_voice_laws.py tests/test_marketing_voice_v5.py tests/test_marketing_money_format.py tests/test_marketing_publisher_names.py tests/test_marketing_media_backfill.py tests/test_chart_facts.py tests/test_confluence_source.py tests/test_chart_since_setup.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py tests/test_marketing_ladder_collapse.py tests/test_marketing_wire_headroom.py tests/test_marketing_copy_yield.py tests/test_marketing_news_arming.py tests/test_marketing_breaking_card_geometry.py tests/test_marketing_ramp_speedup.py tests/test_news_translate_render_gate.py -q
+        # test_market_facts.py joins 2026-08-12 (W2D): another unrun-suite-rot
+        # grandfather (config/unrun_test_baseline.json) closed on contact — it
+        # is the suite docs/marketing_voice_doctrine_v5.md Hard Ban #9 and
+        # market_facts._claims_level_words both name BY FILENAME as the
+        # regression pin for the k/m/b compact-number register, so shipping
+        # that switch while its own test stayed dark would have defeated the
+        # point. Data-dependent cases `pytest.skip` on a missing source file
+        # (regime/heatmap/confluence json) rather than fail — the same idiom
+        # already trusted for copy_v2/copywriter above — so it degrades safely
+        # in a sparse checkout and simply runs more of itself where the data
+        # exists. engine.marketing.market_facts imports stdlib + re only.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_admin_marketing_floor.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_press_stream.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_reply_warmth.py tests/test_marketing_reply_tails.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_copywriter.py tests/test_market_facts.py tests/test_marketing_copy_auditor.py tests/test_marketing_bare_cashtag.py tests/test_marketing_voice_laws.py tests/test_marketing_voice_v5.py tests/test_marketing_money_format.py tests/test_marketing_publisher_names.py tests/test_marketing_media_backfill.py tests/test_chart_facts.py tests/test_confluence_source.py tests/test_chart_since_setup.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py tests/test_marketing_ladder_collapse.py tests/test_marketing_wire_headroom.py tests/test_marketing_copy_yield.py tests/test_marketing_news_arming.py tests/test_marketing_breaking_card_geometry.py tests/test_marketing_ramp_speedup.py tests/test_news_translate_render_gate.py -q
       - name: unrun-baseline joins 2026-08-11 — engine, reply desk, wire relay, cards
         # Batch join from the unrun_test_baseline triage that followed #5379's
         # voice-v5 rot discovery (test_marketing_market_clock): all suites below
