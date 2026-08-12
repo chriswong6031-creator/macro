@@ -112,6 +112,48 @@ _FUTURES_NAME_RE = re.compile(
     re.IGNORECASE,
 )
 _FUTURES_TICKER_RE = re.compile(r"^[A-Z0-9]{1,6}\s+INDEX$")
+# The SECOND form of the same defect: a government money-market SWEEP sleeve, or a
+# T-bill held to park cash. Neither is caught above — the ticker is a real symbol
+# (FGXXX, AGPXX, a CUSIP) and the name says neither "cash" nor "money market" — yet
+# the row is a DOLLAR BALANCE, not a position: measured on the live feed, these
+# lines carry shares EXACTLY equal to market_value (METV FGXXX 1,722,754.52 /
+# 1,722,754.52; BLOK AGPXX 17,685,543.99 / 17,685,543.99), i.e. a $1-NAV fund. In
+# METV that balance is 18.9% of the fund's TOTAL share count at 0.81% of its
+# weight, and it sits inside the SUM-ratio denominator `active_changes_dir` uses,
+# so the fund's measured scale was 1.4164 against a true 1.1688 and EVERY
+# constituent published a phantom +21.18% active change (bar: 5%). Measured across
+# the board: 14 rows in 14 funds change verdict, 13 funds' published scale moves,
+# 6 of them at or over that 5% bar (table in research/ETF_DATA_SOURCES.md § W3).
+#
+# Anchored on the two vehicle families the live feeds actually carry plus the
+# Treasury instrument names — NEVER on bare tokens. "BILL Holdings" (XSW/FINX/MDY),
+# "Liquidity Services" (EBIZ) and "Treasury Wine Estates" are real issuers a loose
+# `bill|liquidity|treasury` would silently delete. The `&amp;` alternative is
+# load-bearing: the HTML-sourced Invesco rows arrive still escaped.
+_CASH_EQUIV_NAME_RE = re.compile(
+    r"government\s+obligations?\s+fund|"
+    r"government\s+(?:&amp;|&|and)\s+agency\s+(?:portfolio|fund)|"
+    r"\btreasury\s+(?:bill|note|bond)s?\b|\bt-bills?\b",
+    re.IGNORECASE,
+)
+# Secondary, structural belt for a sweep vehicle we have not seen yet: Nasdaq's
+# 5th-letter "X" marks a mutual fund, so a 5-letter all-alpha ticker ending in X
+# is never a listed operating company. Required to co-occur with a cash-vehicle
+# NAME token so that neither half can fire alone.
+_MMF_TICKER_RE = re.compile(r"^[A-Z]{4}X$")
+_MMF_NAME_TOKEN_RE = re.compile(
+    r"\b(?:fund|portfolio|obligations?|treasury|government|govt|liquidity|reserves?)\b",
+    re.IGNORECASE,
+)
+# Swap lines whose NAME cannot give them away. Roundhill files the same total-
+# return swap two ways depending on the date: "21873S108 TRS 090827 GS" named
+# "COREWEAVE, INC.-SWAP-GOLD-L" (the name patterns above catch it) and, on other
+# dates, "21873S108 SWP" with the name column simply REPEATING the ticker — no
+# issuer, no "swap". Measured on NCLD: the second form survived as a 16.38% and a
+# 20.38% phantom equity constituent whose "shares" are swap units.
+# The marker must be a TOKEN beside another token, never the whole ticker: TRS is
+# TriMas Corp and SWP is a live symbol elsewhere, so a bare 3-letter ticker stays.
+_DERIVATIVE_TOKENS = {"SWP", "SWAP", "TRS"}
 
 
 def is_non_equity_holding(ticker, name: str = "") -> bool:
@@ -129,10 +171,19 @@ def is_non_equity_holding(ticker, name: str = "") -> bool:
         return True
     if _FUTURES_TICKER_RE.match(tk):                # e.g. "NQU6 Index" (Bloomberg)
         return True
-    nm = str(name).strip()
-    if nm and _FUTURES_NAME_RE.search(nm):          # e.g. "… E-MINI SEP26"
+    parts = tk.split()
+    if len(parts) > 1 and _DERIVATIVE_TOKENS & set(parts):   # e.g. "21873S108 SWP"
         return True
-    return bool(nm and _NON_EQUITY_NAME_RE.search(nm))
+    nm = str(name).strip()
+    if not nm:
+        return False
+    if _NON_EQUITY_NAME_RE.search(nm):
+        return True
+    if _FUTURES_NAME_RE.search(nm):                 # e.g. "… E-MINI SEP26"
+        return True
+    if _CASH_EQUIV_NAME_RE.search(nm):              # e.g. FGXXX / AGPXX / a T-bill
+        return True
+    return bool(_MMF_TICKER_RE.match(tk) and _MMF_NAME_TOKEN_RE.search(nm))
 
 
 def _drop_non_equity(df: pd.DataFrame) -> pd.DataFrame:
