@@ -1,0 +1,9 @@
+{
+  "name": "com.mastermind.optionsnbbocohort.momoedge_observe",
+  "description": "Mastermind observe-only MomoEdge private evidence receiver",
+  "path": "/Users/chriswong/options-nbbo-ops-wt/ops/native_messaging/run_momoedge_browser_host.sh",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://hgplipfmplcbbkjmhaijacaanmiljfdi/"
+  ]
+}

@@ -3259,25 +3259,6 @@ divergences:
 
   # ── DOCUMENTED ──────────────────────────────────────────────────────────
 
-  # lanes carries both the workflow shorthand and the job name: the checker's
-  # divergence lookup matches on either, and for "<path> / <job>" lane keys the
-  # job-name branch is the one that resolves (see _covered_by_divergence).
-  - lanes: [daily, engine]
-    differs: >
-      engine job omits scripts.build_options_signal_campaign and its checkpoint
-      step (OIP campaign v2 deferred out of the live workflow)
-    reason: >
-      2026-08-12 workflow-size incident (#5416): daily.yml crossed GitHub's
-      silent ~512,000-byte processing cap and the nightly stranded jobless, so
-      the #5362 campaign-v2 steps were deferred out of the live workflow to get
-      back under the cap. The lane declaration is retained ON PURPOSE so this
-      divergence, the episode suite's deferral pin
-      (tests/test_options_signal_episode.py), and chip task_a1298313 all point
-      at the same restoration: diet daily.yml by extracting inline scripts,
-      then re-land the steps verbatim and delete this entry. Size guard:
-      tests/test_workflow_file_size.py.
-    evidence: "PR #5416; tests/test_workflow_file_size.py docstring"
-
   - lanes: [engine-render]
     differs: >
       cl_gex omits scripts.build_gex_board (daily/render include it)
@@ -4577,3 +4558,25 @@ modules:
       all raw responses remain private. Empty producers record unavailable coverage,
       never fabricated clocks or abstentions. Every score, rank, issue, trade, publication, training,
       Prophet, Neural Web, and completion authority flag is false.
+
+  # User-session browser companion. Chrome invokes the native receiver only
+  # while an authenticated terminal page is open; this node is deliberately
+  # disjoint from the cohort producer and every coverage/promotion lane.
+  - module: scripts.momoedge_browser_receiver
+    reads:
+      - chrome-native-message://com.mastermind.optionsnbbocohort.momoedge_observe/options.momoedge_browser_observation/v1
+    writes:
+      - /Users/chriswong/.mastermind_private/momoedge_browser_observe_v1/raw/sha256/
+      - /Users/chriswong/.mastermind_private/momoedge_browser_observe_v1/journal/
+      - /Users/chriswong/.mastermind_private/momoedge_browser_observe_v1/quarantine/
+      - /Users/chriswong/.mastermind_private/momoedge_browser_observe_v1/.receiver.lock
+    impure: true
+    needs_secrets: false
+    event_driven: true
+    note: >
+      Observe-only native-messaging receiver. The origin-scoped extension calls
+      the page's existing authenticated runtime but never reads or persists
+      credentials, cookies, browser storage, or request headers. Raw response
+      bodies stay private 0600; journals are debranded. Missing slots remain
+      gaps, coverage_eligible is always false, and every enroll, score, rank,
+      size, gate, trade, publication, and promotion authority is false.
