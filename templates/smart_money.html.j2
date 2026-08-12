@@ -468,6 +468,175 @@ a.mem-card:hover { border-color:var(--info); }
               border:1px solid var(--line); background:var(--panel2); color:var(--text);
               cursor:pointer; }
 .smfold-btn:hover { border-color:var(--info); }
+
+/* ---- light mode: deliberate depth, not a dark-palette inversion ----
+   Dark mode already gets hierarchy from tonal contrast. On a light canvas the
+   same hard rule around every level reads like a stack of form fields, so the
+   desk uses three local jobs: elevated outer surfaces, quiet nested surfaces,
+   and hairline data rules. These tokens stay page-scoped by design. */
+html[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 8% 0%, color-mix(in srgb,var(--info) 8%,transparent) 0, transparent 31rem),
+    radial-gradient(circle at 94% 8%, rgba(119,91,218,.055) 0, transparent 27rem),
+    #e9edf3;
+  background-attachment:fixed;
+}
+html[data-theme="light"] .sm {
+  --sm-edge:#d5dbe5;
+  --sm-rule:#e3e8ef;
+  --sm-soft:#f8fafd;
+  --sm-soft-blue:#f5f8fd;
+  --sm-ink:#202a3d;
+  --sm-shadow:0 1px 2px rgba(23,32,55,.055),0 18px 42px -28px rgba(23,32,55,.34);
+  --sm-shadow-soft:0 1px 2px rgba(23,32,55,.045),0 10px 24px -22px rgba(23,32,55,.28);
+}
+html[data-theme="light"] .sm h1,
+html[data-theme="light"] .sm h2,
+html[data-theme="light"] .sm h3 { color:var(--sm-ink); }
+
+/* Text uses contrast-calibrated semantic inks; dots and fills keep raw hues. */
+html[data-theme="light"] .grade.A { color:var(--ink-ok,var(--up)); }
+html[data-theme="light"] .grade.B { color:var(--ink-info,var(--info)); }
+html[data-theme="light"] .grade.C { color:var(--ink-warn,var(--warn)); }
+html[data-theme="light"] .grade.D { color:var(--ink-act,var(--down)); }
+html[data-theme="light"] .axis-13f,
+html[data-theme="light"] .axis-13fa,
+html[data-theme="light"] .t-amber,
+html[data-theme="light"] .tier.moderate,
+html[data-theme="light"] .tmed,
+html[data-theme="light"] .sm-clock .qstate,
+html[data-theme="light"] .star,
+html[data-theme="light"] .cap-chip.mid,
+html[data-theme="light"] .frozen-chip { color:var(--ink-warn,var(--warn)); }
+html[data-theme="light"] .axis-13dg,
+html[data-theme="light"] .tier.activist,
+html[data-theme="light"] .tier.flip,
+html[data-theme="light"] .role-pill,
+html[data-theme="light"] .cap-chip.large { color:var(--ink-info,var(--info)); }
+html[data-theme="light"] .axis-form4,
+html[data-theme="light"] .t-green,
+html[data-theme="light"] .cap-chip.small { color:var(--ink-ok,var(--ok)); }
+html[data-theme="light"] .t-red { color:var(--ink-act,var(--act)); }
+html[data-theme="light"] .axis-short { color:color-mix(in srgb,#8b52b8 76%,var(--text)); }
+html[data-theme="light"] :is(.ftier.follow,.followed-chip) { color:var(--ink-ok,var(--ok)); }
+html[data-theme="light"] :is(.tier.elevated,.thigh,.ftier.fade) { color:var(--ink-act,var(--act)); }
+html[data-theme="light"] :is(.fl-actions .pos,.census-metric.up strong,.act-pill.new,.act-pill.add,
+  .vs-card.win .vs-role,.rot-h.into,.rely.up) {
+  color:var(--ink-up,var(--up));
+}
+html[data-theme="light"] :is(.fl-actions .neg,.census-metric.down strong,.act-pill.trim,
+  .act-pill.exit,.vs-card.lag .vs-role,.rot-h.out,.rely.down) {
+  color:var(--ink-down,var(--down));
+}
+html[data-theme="light"] :is(.fl-kicker,.fl-unit,.fl-change .fc-rank,.census-kicker,.spark,
+  details.fl > summary) { color:var(--ink-info,var(--info)); }
+
+/* Primary surfaces carry the page hierarchy. */
+html[data-theme="light"] .sm-deck,
+html[data-theme="light"] .institutional-census,
+html[data-theme="light"] .sm-card {
+  border-color:var(--sm-edge);
+  box-shadow:var(--sm-shadow);
+}
+html[data-theme="light"] .sm-deck {
+  background:linear-gradient(135deg,#fff 0%,#fcfdff 58%,color-mix(in srgb,var(--info) 3%,#fff) 100%);
+}
+html[data-theme="light"] .filing-live {
+  border-color:color-mix(in srgb,var(--info) 34%,var(--sm-edge));
+  background:linear-gradient(135deg,color-mix(in srgb,var(--info) 8%,#fff),#fff 46%,color-mix(in srgb,var(--info) 2%,#fff));
+  box-shadow:var(--sm-shadow);
+}
+html[data-theme="light"] .vs-card,
+html[data-theme="light"] details.fund,
+html[data-theme="light"] .led,
+html[data-theme="light"] a.mem-card {
+  border-color:var(--sm-edge);
+  box-shadow:var(--sm-shadow-soft);
+}
+html[data-theme="light"] a.mem-card {
+  transition:border-color .15s,box-shadow .15s,transform .15s;
+}
+html[data-theme="light"] a.mem-card:hover {
+  box-shadow:0 2px 4px rgba(23,32,55,.06),0 18px 34px -25px rgba(45,76,135,.42);
+  transform:translateY(-1px);
+}
+
+/* Nested information rests on near-white, while controls keep panel2. */
+html[data-theme="light"] .fl-filer,
+html[data-theme="light"] .fl-change,
+html[data-theme="light"] .census-panel,
+html[data-theme="light"] .axisblock {
+  border-color:var(--sm-rule);
+  background:var(--sm-soft);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.92);
+}
+html[data-theme="light"] .fl-change { background:var(--sm-soft-blue); }
+html[data-theme="light"] .banner,
+html[data-theme="light"] .disc,
+html[data-theme="light"] .follow-banner,
+html[data-theme="light"] .census-empty,
+html[data-theme="light"] .fl-notices {
+  border-color:var(--sm-rule);
+  background:var(--sm-soft);
+}
+
+/* Semantic chips should read as status, not identical grey controls. */
+html[data-theme="light"] .chip-fresh { border-color:var(--sm-edge); background:rgba(255,255,255,.72); }
+html[data-theme="light"] .chip-fresh.t-green { background:color-mix(in srgb,var(--ok) 8%,#fff); }
+html[data-theme="light"] .chip-fresh.t-green .fdot { background:var(--ok); }
+html[data-theme="light"] .chip-fresh.t-red { background:color-mix(in srgb,var(--act) 7%,#fff); }
+html[data-theme="light"] .chip-fresh.t-red .fdot { background:var(--act); }
+html[data-theme="light"] .fl-actions .pos { background:color-mix(in srgb,var(--up) 8%,#fff); }
+html[data-theme="light"] .fl-actions .neg { background:color-mix(in srgb,var(--down) 7%,#fff); }
+html[data-theme="light"] .chip-fresh.t-amber { background:color-mix(in srgb,#e0a030 9%,#fff); }
+
+/* Long data runs need hairlines; the stronger edge token is reserved for cards. */
+html[data-theme="light"] .census-list li,
+html[data-theme="light"] .wire li,
+html[data-theme="light"] .rotbars li,
+html[data-theme="light"] .mini td,
+html[data-theme="light"] .vs-list li,
+html[data-theme="light"] table.sm-t th,
+html[data-theme="light"] table.sm-t td,
+html[data-theme="light"] details.fund[open] > summary,
+html[data-theme="light"] .smfold-more-row,
+html[data-theme="light"] .wire-more-row { border-color:var(--sm-rule); }
+html[data-theme="light"] table.sm-t th {
+  background:linear-gradient(180deg,#f8fafd,#f4f7fb);
+  color:#627087;
+}
+html[data-theme="light"] table.sm-t tbody tr:hover { background:color-mix(in srgb,var(--info) 4%,#fff); }
+html[data-theme="light"] .sm-sec::after {
+  background:linear-gradient(90deg,color-mix(in srgb,var(--info) 25%,var(--sm-rule)),transparent);
+}
+
+/* The sticky rail becomes light chrome rather than a bare strip of canvas. */
+html[data-theme="light"] .sm-rail {
+  margin-top:10px;
+  padding:9px 10px 10px;
+  border:1px solid color-mix(in srgb,var(--sm-edge) 78%,transparent);
+  border-radius:12px;
+  background:rgba(250,251,253,.9);
+  box-shadow:0 10px 28px -24px rgba(23,32,55,.55);
+  -webkit-backdrop-filter:blur(14px) saturate(1.08);
+  backdrop-filter:blur(14px) saturate(1.08);
+}
+html[data-theme="light"] .sm-rail a { border-color:var(--sm-edge); background:rgba(255,255,255,.78); }
+html[data-theme="light"] .sm-rail a:hover { background:color-mix(in srgb,var(--info) 6%,#fff); }
+html[data-theme="light"] .sm :is(.sm-rail a,.wire-more,.smfold-btn,summary,.sm-search input):focus-visible {
+  outline:2px solid var(--ink-info,var(--info));
+  outline-offset:2px;
+}
+
+/* Tiny labels that hold on dark become brittle against white. */
+html[data-theme="light"] .fl-filer-date,
+html[data-theme="light"] .fl-actions span,
+html[data-theme="light"] .fc-fund,
+html[data-theme="light"] .fc-metric,
+html[data-theme="light"] .census-panel-note { font-size:11px; font-weight:500; }
+html[data-theme="light"] .census-name small,
+html[data-theme="light"] .census-metric { font-size:10px; }
+html[data-theme="light"] .census-metric strong { font-size:11px; }
 {% endblock %}
 
 {% block content %}

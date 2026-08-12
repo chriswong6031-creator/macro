@@ -359,6 +359,46 @@ def test_census_template_is_permanent_bilingual_semantic_and_bounded():
     assert ".census-extra > summary { display:flex" in html
 
 
+def test_smart_money_light_mode_has_page_scoped_depth_and_semantic_inks():
+    source = (ROOT / "templates" / "smart_money.html.j2").read_text()
+    light_css = source.split(
+        "/* ---- light mode: deliberate depth, not a dark-palette inversion ----", 1
+    )[1].split("{% endblock %}", 1)[0]
+
+    assert 'html[data-theme="light"] body' in light_css
+    assert 'html[data-theme="light"] .sm {' in light_css
+    assert "--sm-edge:" in light_css
+    assert "--sm-rule:" in light_css
+    assert "--sm-shadow:" in light_css
+    assert 'html[data-theme="light"] .sm-deck' in light_css
+    assert 'html[data-theme="light"] .filing-live' in light_css
+    assert 'html[data-theme="light"] .institutional-census' in light_css
+    assert 'html[data-theme="light"] .sm-rail' in light_css
+    assert "backdrop-filter:blur(14px)" in light_css
+    assert "var(--ink-up,var(--up))" in light_css
+    assert "var(--ink-down,var(--down))" in light_css
+    assert "var(--ink-ok,var(--ok))" in light_css
+    assert "var(--ink-act,var(--act))" in light_css
+    assert "var(--ink-info,var(--info))" in light_css
+    assert ".cap-chip.small { color:var(--ink-ok,var(--ok)); }" in light_css
+    assert '.t-red { color:var(--ink-act,var(--act)); }' in light_css
+    assert ".chip-fresh.t-green { background:color-mix(in srgb,var(--ok) 8%,#fff); }" in light_css
+    assert ".chip-fresh.t-red { background:color-mix(in srgb,var(--act) 7%,#fff); }" in light_css
+    assert "outline:2px solid var(--ink-info,var(--info));" in light_css
+    assert 'html[data-theme="dark"]' not in light_css
+
+    theme_css = (ROOT / "templates" / "theme.css").read_text()
+    light_zh_blocks = [
+        block.split("}", 1)[0]
+        for block in theme_css.split('html[data-theme="light"][data-lang="zh"] {')[
+            1:
+        ]
+    ]
+    light_zh = next(block for block in light_zh_blocks if "--ink-mix-up:" in block)
+    assert "--ink-mix-up:" in light_zh and "--ink-mix-down:" in light_zh
+    assert "--ink-mix-ok:" not in light_zh and "--ink-mix-act:" not in light_zh
+
+
 def test_census_template_degraded_state_hides_stale_rankings():
     env = Environment(loader=FileSystemLoader(str(ROOT / "templates")), autoescape=True)
     degraded = desk_builder._degraded_census("source_rejected")
