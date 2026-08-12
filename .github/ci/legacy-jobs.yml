@@ -2467,6 +2467,17 @@ jobs:
         run: python -m pytest tests/test_risk_core_js.py -q
       - name: watchlist_risk.js chain lane — node-shelled helper tests (TXI W4)
         run: python -m pytest tests/test_watchlist_chains_js.py -q
+      # UWP/W1a: the watchlist+portfolio STORE (templates/watchstore.js), same
+      # node-shelling idiom as the two steps above. test_watchlist_books_js.py was
+      # named by no run: step in any workflow since it landed (P5 in
+      # scripts/audit_unrun_tests.py) — it pins the fold markers ("only on success",
+      # "never on an empty book") on the file W1a rewrites, so it is wired here
+      # rather than left dark. The multilist suite pins the list-scoped push diff:
+      # a full-membership delete that escapes its list wipes a sibling watchlist.
+      - name: watchstore.js store — local books + one-shot folds
+        run: python -m pytest tests/test_watchlist_books_js.py -q
+      - name: watchstore.js store — registered multi-list seam (W1a)
+        run: python -m pytest tests/test_watchstore_multilist_js.py -q
       - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
         run: python -m pytest tests/test_factor_exposure.py tests/test_factor_exposure_stress.py -q
 
@@ -2676,6 +2687,14 @@ jobs:
       # docstrings in scripts/externalize_css.py.
       - name: inline-CSS externalization units + pair-skip guards
         run: python -m pytest tests/test_externalize_css.py -q
+      # Shared light-mode odometer needle: a pure contract over templates/theme.css,
+      # its site/ twin, and the five report templates that copy the compact gauge.
+      # It landed in #5458 wired to NO run: step in any workflow — an orphan that
+      # reddened `workflow-yaml` (which runs scripts/audit_unrun_tests.py) for every
+      # PR whose diff scope reaches that pack, while the suite itself passes. Homed
+      # here because this job already owns the templates/ <-> site/ theme.css pair.
+      - name: light-mode odometer needle — theme.css + five report templates
+        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
 
   data-base-shim:
     if: ${{ false }}

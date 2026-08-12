@@ -2825,7 +2825,10 @@ watchlist:
   # OPTIONAL cloud account sync (Supabase). Leave url/anon_key blank to ship a
   # pure local-only watchlist (no accounts, no third-party calls). The anon key
   # is PUBLIC by design — per-user isolation is enforced by RLS, not by secrecy.
-  # One-time setup: run templates/watchlist_supabase.sql in the Supabase SQL editor.
+  # Schema authority: `watchlists` / `watchlist_symbols` are owned by the
+  # mastermind-terminal repo (supabase/migrations/0001_init.sql). The
+  # portfolio_positions RLS policies are templates/uwp_supabase.sql, applied by hand
+  # in the Supabase SQL editor. (There is no templates/watchlist_supabase.sql.)
   supabase:
     url: "https://fsldfzlxyavsuwqbceod.supabase.co"
     anon_key: "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"   # publishable key — PUBLIC by design (RLS enforces isolation)

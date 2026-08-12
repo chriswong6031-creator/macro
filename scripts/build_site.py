@@ -4765,8 +4765,11 @@ def main() -> int:
     # is live on EVERY page — see lib/site_assets.copy_asset(), used in the loop
     # below and by every other page builder (so a builder that runs after this one
     # can no longer clobber the bake with a raw copy). The publishable key is
-    # PUBLIC by design; per-user isolation is enforced by RLS
-    # (templates/watchlist_supabase.sql).
+    # PUBLIC by design; per-user isolation is enforced by RLS. Schema authority for
+    # `watchlists` / `watchlist_symbols` is the mastermind-terminal repo
+    # (supabase/migrations/); the portfolio_positions policies live in
+    # templates/uwp_supabase.sql. (There is no templates/watchlist_supabase.sql —
+    # that path was stale and is corrected here.)
     # NOTE: site/CNAME is deliberately NOT written. Pages has no custom domain
     # (repo pages cname=null) and all Pages deploys are workflow-type
     # (actions/deploy-pages), where a CNAME file in the artifact is inert.
@@ -4784,6 +4787,11 @@ def main() -> int:
                   "stockdata.js", "logo_config.js", "stock-logos.js", "watchlist.js", "factor_exposure.js", "auth.js",
                   # WRI W3: watchlist book-structure math + render layer (paired)
                   "risk_core.js", "watchlist_risk.js",
+                  # UWP/PSI: the relational store (multi-list + portfolio_positions), the
+                  # portfolio cockpit, and the market-books derived view. These shipped
+                  # ONLY as committed templates/->site/ pairs; copying them here too means
+                  # a render self-heals them like every other page asset.
+                  "watchstore.js", "portfolio.js", "market_books.js",
                   "tablesort.js", "charts.js",
                   "aibrief.js", "stockbrief.js", "aidesk_lean.js",
                   "stockview.js",

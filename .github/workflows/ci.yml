@@ -425,6 +425,24 @@ on:
       # selection, 404-empty, rail-sentence condition). Same ci-test-whitelist-rot guard.
       - "tests/test_watchlist_chains_js.py"
       - "tests/fixtures/transmission/transmission_chains.json"
+      # UWP/W1a watchlist+portfolio store: the node-shelled suites over
+      # templates/watchstore.js — the local books + one-shot folds, and the registered
+      # multi-list seam (list CRUD isolation, fold retarget + run-twice, the
+      # list-scoped push diff, semantic invariants A-D). templates/** already covers
+      # watchstore.js/watchlist.js; list the test files so a test-only edit still
+      # triggers CI (ci-test-whitelist-rot guard). Both run in the wri-risk-core job.
+      # test_watchlist_books_js.py had been named by NO run: step since it landed
+      # (P5 in scripts/audit_unrun_tests.py) — it guards the fold markers on the very
+      # file W1a rewrites, so it is wired here rather than left dark.
+      - "tests/test_watchlist_books_js.py"
+      - "tests/test_watchstore_multilist_js.py"
+      - "templates/watchstore.js"
+      # Main-side orphan healed here (landed in #5458 wired to nothing, which reddens
+      # the workflow-yaml pack via scripts/audit_unrun_tests.py). templates/** and
+      # site/** already cover its subjects (theme.css + five report templates); this
+      # entry is the test half, so a test-only edit still triggers CI. Runs in the
+      # template-site-sync job, which already owns that theme.css pair.
+      - "tests/test_odometer_light_mode_surface.py"
       # live_flow payload consumers: the node-shelled suites that execute the intraday_flow
       # tracker's and the stock panel's flow loaders against payloads from the real builders.
       # templates/** and site/** already cover the pages and engine/** the builders; list the
