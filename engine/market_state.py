@@ -13,13 +13,13 @@ Green / Yellow / Red verdict:
 
 This is confirmation-over-prediction by construction: every leg reads what has
 ALREADY turned (price across timeframes, vol term structure, credit, breadth),
-not a forecast. A handful of early-warning OVERRIDES (an 'act' alert, a fresh
+not a forecast. A handful of evidence-gated OVERRIDES (an 'act' alert, a fresh
 regime flip, a high/extreme drawdown-risk or acute systemic-stress band) can cap
 or force the verdict so the headline can never read "risk-on" while a stress
-gauge is screaming. The HEAVIEST of these is the Risk Radar (engine/risk_radar.py):
-an active radar imposes an amplified score CEILING that descends with its intensity
-and with every other risk gauge flashing at the same time — so the validated leading
-drawdown signal dominates the bullish legs instead of being averaged into silence.
+gauge is screaming. Risk Radar watch/caution states are sizing advisories; only an
+above-base loud state backed by confirmed validated evidence earns authority to impose
+an amplified score CEILING. This keeps a weak prior or unconfirmed leg from replacing
+the measured blend with a policy constant.
 
 Pure functions, never raises: any shortfall degrades the affected leg (or the
 whole read) to None and the page still builds. No new data is fetched — the
@@ -41,7 +41,7 @@ log = logging.getLogger("market_state")
 WEIGHTS = {
     "trend": 0.24,        # the broad-market tape across timeframes — "the market itself"
     "risk": 0.18,         # cross-asset risk appetite (RORO + bonds/FX confirmation)
-    "vol": 0.16,          # the volatility regime (term structure / VRP / complacency)
+    "vol": 0.16,          # the measured volatility regime (term structure / VRP)
     "breadth": 0.16,      # participation — how many stocks are in the move
     "liquidity": 0.14,    # the money tide + credit
     "stress": 0.12,       # the downturn-risk guard (macro-risk / drawdown / recession)
@@ -274,8 +274,8 @@ def _comp_vol(latest: dict) -> dict | None:
     vix_p = _num(cmp_.get("vix_pctile"))
     vix_s = 0.6 if vix_p is None else _clamp(1 - vix_p)   # high vol pctile → lower
     s01 = 0.62 * term_s + 0.38 * vix_s
-    if (cmp_.get("state") or "") in ("watch", "high"):
-        s01 -= 0.06                                # complacency caveat
+    # `conditions.complacency` is explicitly display-only. Calm vol is a regime input; the
+    # narrative "calm but fragile" must not subtract from it a second time without validation.
     s01 = _clamp(s01)
     contango = term < 1.0
     read_en = f"VIX term {'contango (calm)' if contango else 'backwardation (stress)'}"
@@ -475,6 +475,9 @@ _RADAR_DO = {
 # does not gets pruned toward zero, WITHOUT a human re-picking the weights. Absent file =>
 # the original flat-6 behaviour. engine.market_state_tune and the live engine share
 # _ceiling_for so the backtest can never diverge from production.
+# `complacency` remains in this compatibility vocabulary because historical ledger rows and
+# calibration overlays contain it. New live snapshots never fire it: conditions.py owns it as
+# display-only, and historical tuning must not silently reinterpret old rows.
 CORROBORATORS = ("conjunction", "two_plus_scares", "complacency", "breadth_div",
                  "drawdown_band", "systemic_stress", "turning_point")
 _DEFAULT_WEIGHTS = {k: 6.0 for k in CORROBORATORS}
@@ -584,6 +587,22 @@ def _radar_to_rd(rr: dict) -> dict:
     top = _num(rr.get("top_score"))
     dp = rr.get("drawdown_prob") or {}
     _mkt = rr.get("market") or "us"
+    _track = _rr_scorecard_track(_mkt)
+    # Explicit authority is emitted by current radar producers. For older artifacts, only an
+    # actual loud alert may bind; a legacy caution payload is advisory by construction.
+    _can_force = (bool(rr.get("can_force")) if "can_force" in rr else
+                  bool(rr.get("alert") and state in ("elevated", "risk-off")))
+    _authority = dict(rr.get("authority") or {
+        "tier": "binding" if _can_force else "advisory",
+        "can_force": _can_force,
+        "reason": "legacy_loud_alert" if _can_force else "legacy_early_tier_advisory",
+        "note_en": ("Binding guard — confirmed leading risk may cap the measured tape." if _can_force
+                    else "Advisory — sizes risk; does not override the measured tape."),
+        "note_zh": ("约束性护栏——已确认的领先风险可压低实测盘面评分。" if _can_force
+                    else "提示性信号——仅调整仓位，不覆盖实测盘面。"),
+    })
+    # Forward-monitor freshness remains visible in `track`, but it is display provenance. The
+    # optional, wall-clock scorecard must not silently rewrite an identical producer payload.
     return {
         "state": state,
         "top_score": round(top) if top is not None else None,
@@ -599,7 +618,11 @@ def _radar_to_rd(rr: dict) -> dict:
         # escalating odds against (so a small near-term bar can't be misread as "no risk").
         "dd_base": {"h5": _num(dp.get("base_h5")), "h10": _num(dp.get("base_h10")),
                     "h21": _num(dp.get("base_h21"))},
-        "is_loud": state in ("caution", "elevated", "risk-off"),
+        "is_warning": state in ("caution", "elevated", "risk-off"),
+        "is_loud": state in ("elevated", "risk-off"),
+        "can_force": _can_force,
+        "binding": bool(_can_force and state in ("caution", "elevated", "risk-off")),
+        "authority": _authority,
         # carried so the board can pass ms.radar.scares to the card (the US page passes
         # latest.risk_radar.scares separately, so this is harmless duplication there).
         "scares": rr.get("scares") or [],
@@ -612,7 +635,7 @@ def _radar_to_rd(rr: dict) -> dict:
         # RC-R11 washout counter-read — display-tier context chip beside the banner (US radar only).
         "counterread": rr.get("counterread"),
         "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
-        "severe_gated": False, "ceiling": None,
+        "severe_gated": False, "ceiling": None, "candidate_ceiling": None,
         # amplification-provenance defaults (the US override fills them in when the radar is
         # loud); present here so every consumer can read them unconditionally.
         "amp_unavailable": [], "amp_unavailable_keys": [], "amp_n_checked": 0,
@@ -625,7 +648,7 @@ def _radar_to_rd(rr: dict) -> dict:
         # forward-ledger track record for this market (data/risk_radar/scorecard.json).
         # Display-only; None when the scorecard is absent (first build, engine builder not yet run).
         # The card template guards with {% if radar.track is defined and radar.track %}.
-        "track": _rr_scorecard_track(_mkt),
+        "track": _track,
     }
 
 
@@ -659,6 +682,8 @@ def _radar_override_intl(latest: dict, overrides: list) -> dict:
     if rr.get("can_force") and state in ("caution", "elevated", "risk-off"):
         ceil = _RADAR_INTL_CEIL.get(state)
         out["ceiling"] = ceil
+        out["candidate_ceiling"] = ceil
+        out["binding"] = ceil is not None
         mkt_en, mkt_zh = _RADAR_MARKET.get(rr.get("market"), ("", ""))
         if ceil is not None and ceil < 42:
             overrides.append({"kind": "radar",
@@ -674,13 +699,9 @@ def _radar_override_intl(latest: dict, overrides: list) -> dict:
 def _amp_unavailable(latest: dict) -> list:
     """Which confluence corroborators are STRUCTURALLY UNABLE to fire on the current tape.
 
-    Audit 2026-07-29: the amplification ladder reads as "N of 7 risk gauges are flashing", but two
-    of the seven are gated on a CALM-tape precondition and therefore DISARM in exactly the decline
-    they would be most wanted for — complacency needs a calm surface (VIX percentile below its calm
-    cut or VIX term in contango) and breadth_div needs the index within ~3% of its 1y high. That is
-    why the amplified ceiling could RISE 50 -> 56 on a down day: the tape falling switched two
-    corroborators off. Emitting the disarmed set (machine-readable + plain-word notes) lets a
-    surface say "5 of 7 gauges could speak today" instead of implying a 7-gauge all-clear.
+    Breadth divergence is gated on the index being near its high, and several slow gauges may lack
+    a current read. Emitting the disarmed set lets the surface distinguish "silent by construction"
+    from reassuring. Display-only complacency is intentionally absent from this scoring ladder.
 
     Reads the SAME config keys engine/conditions.py computes the gauges from, so the note can
     never claim a threshold the gauge does not use. Never raises."""
@@ -694,22 +715,7 @@ def _amp_unavailable(latest: dict) -> list:
             mcfg = (config.load()["engine"]["conditions"].get("complacency") or {})
         except Exception:  # noqa: BLE001
             mcfg = {}
-        vix_calm = mcfg.get("vix_calm_pctile", 0.25)
-        contango = mcfg.get("contango_calm", 0.95)
         prox_thr = mcfg.get("breadth_high_prox", 0.97)
-
-        calm_n = _num(cmp_.get("calm"))
-        if calm_n is not None and calm_n < 1:
-            out.append({
-                "key": "complacency", "reason": "requires_calm_surface",
-                "note_en": (f"Complacency cannot fire: it needs a calm surface — VIX below its "
-                            f"{int(vix_calm*100)}th-percentile calm cut or VIX term under "
-                            f"{contango} (contango). Neither holds, so this gauge is silent by "
-                            f"construction, not reassuring."),
-                "note_zh": (f"「自满」无法触发：需要平静的表面——VIX 低于 {int(vix_calm*100)} "
-                            f"百分位，或 VIX 期限结构低于 {contango}（正向）。两者皆不满足，"
-                            f"因此该指标是结构性沉默，并非安全信号。"),
-            })
         prox = _num(cmp_.get("spy_high_prox"))
         if prox is not None and prox < float(prox_thr):
             out.append({
@@ -744,21 +750,19 @@ def _amp_unavailable(latest: dict) -> list:
 
 
 def _radar_override(latest: dict, overrides: list) -> dict:
-    """Summarise the Risk Radar (engine/risk_radar.py) for the hero AND, when it is at
-    caution or worse, compute an AMPLIFIED score ceiling + push an override note.
+    """Summarise the Risk Radar and compute a transparent candidate ceiling at caution+.
 
-    The radar is the HEAVIEST input on this read. An active radar dominates the bullish
-    trend/breadth legs rather than being averaged into silence — the "conjunction over
-    mean" principle the radar itself is built on (research/RISK_ENGINE_V2_FINDINGS.md).
-    Two things scale how hard it pulls the verdict down:
+    The candidate becomes a binding Market-State ceiling only when the radar's explicit
+    `can_force` evidence gate is true. Watch/caution states otherwise remain sizing advisories.
+    Two things scale a binding ceiling:
       • intensity — its gated state, plus a SEVERE-BUT-GATED bump when the radar's own
         un-gated read is worse than its label (the context gate keeps the label quiet
         until the broad tape breaks, but the underlying drawdown risk is already high);
       • a CONFLUENCE MULTIPLIER — every OTHER risk gauge that is flashing at the same
-        time (a second scare-type, complacency/fragility, a stress band) drops the
+        time (a second scare-type, breadth divergence, a stress band) drops the
         ceiling further, so a confluence drives the verdict deep into risk-off even
         while VIX and trend still look calm.
-    The caller applies the returned `ceiling` to the 0-100 score."""
+    The caller applies only the returned `ceiling`; `candidate_ceiling` is disclosure."""
     rr = latest.get("risk_radar") or {}
     state = rr.get("state")
     top = _num(rr.get("top_score"))
@@ -783,7 +787,7 @@ def _radar_override(latest: dict, overrides: list) -> dict:
     # STABLE key so the forward-grade log (engine/market_state_audit.py) can measure which
     # corroborators actually precede drawdowns and prune the ones that don't. ----
     C = latest.get("conditions") or {}
-    cmp_ = C.get("complacency") or {}
+    cmp_ = C.get("complacency") or {}  # breadth-divergence field only; state is display-only
     nhot = sum(1 for s in (rr.get("scares") or [])
                if s.get("band") in ("caution", "elevated", "risk-off"))
     _checks = [
@@ -791,8 +795,6 @@ def _radar_override(latest: dict, overrides: list) -> dict:
          "several scare-types firing together", "多个风险类型同时触发"),
         ("two_plus_scares", nhot >= 2,
          f"{nhot} risk types elevated", f"{nhot} 类风险升高"),
-        ("complacency", (cmp_.get("state") or "") in ("watch", "high"),
-         "complacency — calm VIX but fragile", "自满 — VIX 平静但脆弱"),
         ("breadth_div", bool(cmp_.get("breadth_div")),
          "narrowing breadth / leadership", "广度／领导性收窄"),
         ("drawdown_band", (C.get("drawdown_risk") or {}).get("band") in ("elevated", "high", "extreme"),
@@ -813,13 +815,17 @@ def _radar_override(latest: dict, overrides: list) -> dict:
 
     # the amplified ceiling, using the (auto-tuned) per-corroborator weights
     calib = _ms_calib()
-    ceiling = _ceiling_for(state, severe_gated, keys, calib)
+    candidate_ceiling = _ceiling_for(state, severe_gated, keys, calib)
+    can_force = bool(out.get("can_force"))
+    ceiling = candidate_ceiling if can_force else None
 
     # which corroborators are structurally DISARMED on this tape (see _amp_unavailable) — a
     # silent gauge is not a quiet one, and the ladder's "N gauges flashing" needs that context.
     unavail = _amp_unavailable(latest)
     out.update(amp=amp, amp_keys=keys, amp_flags_en=flags_en, amp_flags_zh=flags_zh,
                severe_gated=severe_gated, ceiling=ceiling,
+               candidate_ceiling=candidate_ceiling,
+               binding=bool(can_force and ceiling is not None),
                amp_n_checked=len(_checks),
                amp_unavailable=unavail,
                amp_unavailable_keys=[u["key"] for u in unavail],
@@ -834,6 +840,8 @@ def _radar_override(latest: dict, overrides: list) -> dict:
     # it only explains the CONSEQUENCE (forced / capped) plus the severe-but-gated nuance the
     # banner doesn't surface. Restating "Risk Radar {state} ({score}/100) amplified by N…"
     # duplicated the banner headline word-for-word.
+    if ceiling is None:
+        return out
     if ceiling < 42:
         overrides.append({"kind": "radar",
             "note_en": "Risk Radar forces Risk-off.",
@@ -851,9 +859,12 @@ def _calm_radar() -> dict:
     return {"state": None, "top_score": None, "label_en": "calm", "label_zh": "平静",
             "state_zh": "", "do_en": "", "do_zh": "", "gross": None,
             "dd5": None, "dd10": None, "dd21": None, "dd_lift": None,
-            "dd_base": {"h5": None, "h10": None, "h21": None}, "is_loud": False,
+            "dd_base": {"h5": None, "h10": None, "h21": None},
+            "is_warning": False, "is_loud": False, "can_force": False, "binding": False,
+            "authority": None,
             "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
-            "severe_gated": False, "ceiling": None, "recovery": None, "track": None,
+            "severe_gated": False, "ceiling": None, "candidate_ceiling": None,
+            "recovery": None, "track": None,
             "amp_unavailable": [], "amp_unavailable_keys": [], "amp_n_checked": 0,
             "amp_available": 0, "ceiling_base": None, "ceiling_severe_bump": 0,
             "ceiling_amp_pull": 0.0, "ceiling_floor": None}
@@ -931,16 +942,14 @@ def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None,
                               "note_en": "A falling-knife dislocation is live — forced to Risk-off.",
                               "note_zh": "接飞刀式错位正在发生 — 强制为「避险」。"})
 
-        # ---- Risk Radar override + confluence amplification (runs LAST so it wins) ----
-        # The radar is the heaviest guard on this read. _radar_override returns an
-        # amplified score ceiling (intensity × how many other risk gauges are flashing);
-        # an active radar therefore dominates the bullish legs instead of being averaged
-        # into silence, and a confluence pushes the verdict deep into risk-off even while
-        # VIX and trend still look calm. Markets without a radar source skip this entirely.
+        # ---- Evidence-gated Risk Radar override (runs LAST when it has earned authority) ----
+        # _radar_override always publishes the radar and its candidate ceiling. It returns an
+        # actual ceiling only when `can_force` is true; early watch/caution reads remain visible
+        # sizing advisories and cannot replace the measured blend with a constant.
         radar = profile.radar_override(latest, overrides) if profile.radar_override else _calm_radar()
 
         # Keep the 0-100 dial honest: a forced verdict pulls the displayed score into its
-        # own band, then the radar's amplified ceiling pulls it lower still (never higher).
+        # own band, then an evidence-authorized radar ceiling can pull it lower (never higher).
         #
         # PROVENANCE (audit 2026-07-29): on every radar-capped day the number the page shows is
         # the CEILING CONSTANT (base − amp pull − severe bump), not a measurement of the tape —
@@ -948,7 +957,8 @@ def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None,
         # never rose above 56. raw_score was already in the payload but nothing said WHICH of the
         # two the dial was showing, so a constant read as a reading. score_source / score_ceiling
         # / capped / score_caps make the distinction machine-readable, so a surface can draw the
-        # blend and the cap as two separate marks. No cap value changes here.
+        # blend and the cap as two separate marks. The 2026-08-12 authority gate now prevents
+        # below-base/unconfirmed early tiers from creating such a cap.
         score = raw_score
         caps_applied = []
         if verdict == "RISK_OFF":
@@ -1131,11 +1141,14 @@ def _legs_claim(legs: list, direction: int, n_total: int) -> tuple[str, str]:
 
 
 def _radar_escalation_claim(radar: dict | None, target: float) -> tuple[str, str] | None:
-    """Would the radar's NEXT-WORSE state on its own drive the score under `target`? Uses the very
-    same _ceiling_for the live override uses, so the claim can never diverge from what would
-    actually happen. None when the radar is absent, already at its worst, or would not get there."""
+    """Would an already-authorized radar's NEXT-WORSE state drive the score under `target`?
+
+    Advisory radar states have no ceiling, so escalation alone is insufficient: the future read
+    would also have to earn confirmed-evidence authority. We do not manufacture that hypothetical.
+    Uses the same _ceiling_for as the live override once authority is already established.
+    """
     st = (radar or {}).get("state")
-    if st not in ("caution", "elevated"):
+    if st not in ("caution", "elevated") or not (radar or {}).get("can_force"):
         return None
     nxt = "elevated" if st == "caution" else "risk-off"
     try:
