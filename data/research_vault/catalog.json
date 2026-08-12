@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T03:52:24.482727+00:00",
-  "count": 985,
+  "generated_at": "2026-08-12T04:07:28.891829+00:00",
+  "count": 986,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -963,6 +963,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ucjkvbyjtau-5728a0",
+      "title": "JPM Cross Asset Volatiliy",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T09:55:29Z",
+      "summary_points": [
+        "**Central Bank Buying Sustains Gold Upside**: Strong central bank inflows (Figure 5) offset negative correlation with 10Y real yields (Figure 4), driving long-term bullish fundamentals despite Fed volatility shifts.",
+        "**Gold Technical Shift to Buyer Momentum**: Prices near $4000 with tight 5% range; elevated volatility easing, buyers gaining traction as inflation news digested (Figures 2-3).",
+        "**Retail Gold Flows & Call Spread Strategy**: Rising retail imbalance (Figure 6) and mid-range GLD call open interest (Figure 7) signal upside momentum; GLD 25%-10% delta call spread offers higher Sharpe (1.6 vs 1.36) and lower max drawdown (-2.6% vs -15.0%).",
+        "**Elevated Tail-Risk Exposure**: 66.7% Downside Convexity across Credit (HYG), Equity (SPX), FX (EURUSD), and Rates (EUR 10Y) indicates heightened vulnerability to large downside moves (Figure 23)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
       "language": "en",
       "needs_metadata": false
     },
