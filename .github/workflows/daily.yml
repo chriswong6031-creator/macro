@@ -3515,7 +3515,9 @@ jobs:
           DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         # Body extracted verbatim to scripts/ci/daily_engine_regional_desk_builders.sh (512KB processing-cap diet 2026-08-12 — tests/test_workflow_file_size.py).
-        run: bash scripts/ci/daily_engine_regional_desk_builders.sh
+        # Pass the delegated hard-law module explicitly: the helper validates this
+        # argument, and the registry census can verify the workflow-to-guard wiring.
+        run: bash scripts/ci/daily_engine_regional_desk_builders.sh scripts.check_theme_graph_contracts
       # Runs AFTER the band that contains `build_baskets --snapshot`, so it grades THIS
       # run's stamp rather than last night's. The plane it watches can die with every
       # signal green: both snapshot writers are content-deduped, so "membership has not

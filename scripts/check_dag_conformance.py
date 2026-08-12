@@ -28,11 +28,10 @@ from typing import NamedTuple
 
 import yaml
 
-try:  # package import (tests, `python -m scripts.check_dag_conformance`)
-    from scripts.workflow_run_source import resolve_run_source
-except ImportError:  # direct invocation: `python scripts/check_dag_conformance.py`
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from scripts.workflow_run_source import resolve_run_source
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts.workflow_run_source import resolve_run_source  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Types
@@ -98,6 +97,10 @@ _RUN_PY_RE = re.compile(
 _BRUN_RE = re.compile(
     r'brun\s+\w+\s+"[^"]*"\s+([\w.]+)',
 )
+_BRUN_VAR_RE = re.compile(
+    r'brun\s+\w+\s+"[^"]*"\s+"?\$\{?(\w+)\}?"?',
+)
+_MODULE_VAR_RE = re.compile(r'^\s*(\w+)=["\']([\w.]+)["\']\s*$', re.MULTILINE)
 _PYTHON_M_RE = re.compile(
     r'python(?:3)?\s+-m\s+([\w.]+)',
 )
@@ -130,14 +133,20 @@ def _extract_steps_from_run(run_body: str) -> list[Step]:
     # Extract cluster function definitions and map name -> [modules].
     # Also record the character spans of each function body so the line-level scanner
     # can skip those regions (avoiding double-counting).
+    module_vars = dict(_MODULE_VAR_RE.findall(run_body))
     cluster_funcs: dict[str, list[str]] = {}
     cluster_func_spans: list[tuple[int, int]] = []  # (start, end) byte offsets to skip
     for match in _CLUSTER_FUNC_RE.finditer(run_body):
         fname = match.group(1)
         body = match.group(2)
         cluster_mods: list[str] = []
-        for m in _BRUN_RE.finditer(body):
-            cluster_mods.append(m.group(1))
+        brun_modules = [(m.start(), m.group(1)) for m in _BRUN_RE.finditer(body)]
+        brun_modules.extend(
+            (m.start(), module_vars[m.group(1)])
+            for m in _BRUN_VAR_RE.finditer(body)
+            if m.group(1) in module_vars
+        )
+        cluster_mods.extend(module for _, module in sorted(brun_modules))
         for m in _RUN_PY_RE.finditer(body):
             cluster_mods.append(m.group(1))
         for m in _PYTHON_M_RE.finditer(body):
@@ -223,6 +232,10 @@ def _extract_steps_from_run(run_body: str) -> list[Step]:
             m = _BRUN_RE.search(stripped)
             if m:
                 result.append(Step(id="", module=m.group(1), cluster=None))
+                continue
+            m = _BRUN_VAR_RE.search(stripped)
+            if m and m.group(1) in module_vars:
+                result.append(Step(id="", module=module_vars[m.group(1)], cluster=None))
                 continue
             # python -m
             m = _PYTHON_M_RE.search(stripped)

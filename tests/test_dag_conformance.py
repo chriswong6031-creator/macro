@@ -1129,3 +1129,21 @@ jobs:
         for token in ("engine.run", "scripts.build_site", "scripts.build_ticker_pages"):
             assert token in text, token
         assert len(text) > len(raw)
+
+    def test_theme_graph_guard_argument_drives_the_delegated_invocation(self):
+        daily = (REPO_ROOT / ".github" / "workflows" / "daily.yml").read_text()
+        helper = (
+            REPO_ROOT / "scripts" / "ci" / "daily_engine_regional_desk_builders.sh"
+        ).read_text()
+        module = "scripts.check_theme_graph_contracts"
+        assert (
+            "bash scripts/ci/daily_engine_regional_desk_builders.sh " + module
+            in daily
+        )
+        assert 'THEME_GRAPH_GUARD_MODULE="scripts.check_theme_graph_contracts"' in helper
+        assert '"${1:-}" != "$THEME_GRAPH_GUARD_MODULE"' in helper
+        assert (
+            'brun theme_graph_guard "theme graph contract guard '
+            '(check_theme_graph_contracts)" "$THEME_GRAPH_GUARD_MODULE"'
+            in helper
+        )
