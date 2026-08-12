@@ -613,11 +613,26 @@
       pullDoneAt = 0;
       queuedBlob = null;
       portfolioOk = true;
+      try { sessionStorage.removeItem('wl_auth_reloaded'); } catch (e) { /* n/a */ }
       showSignedOut();
       document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: null } }));
       return;
     }
     showAccount(user.email || '');
+    // Signed in from the anonymous shell: the account-gated page scripts
+    // (stockdata.js and the risk stack) were 401'd at load and an in-page auth
+    // event cannot re-run <script> tags, so their signal lanes would stay dark
+    // until a manual refresh. Reload ONCE with the session cookie in place;
+    // the latch keeps a still-gated asset from ever looping the page.
+    if (!window.SD) {
+      try {
+        if (!sessionStorage.getItem('wl_auth_reloaded')) {
+          sessionStorage.setItem('wl_auth_reloaded', '1');
+          location.reload();
+          return;
+        }
+      } catch (e) { /* storage denied -> stay on the bare shell */ }
+    }
     document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
     // Resolve the shared Supabase client then kick off the initial pull
     var getClient = window.getSupabaseClient;
