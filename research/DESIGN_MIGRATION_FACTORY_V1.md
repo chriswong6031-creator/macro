@@ -35,6 +35,8 @@
    race is a bug the packet owns.
 10. **No self-merge on first-pass flagship surfaces:** the commissioning session reviews the
     visual artifact before the normal ship chain proceeds.
+11. **Perf budget respected:** the packet's page-weight/perf line (packet §I.5 pattern) holds,
+    and generated-family packets carry a render-budget line — render budget is repo law.
 
 ---
 
@@ -66,8 +68,13 @@ spawn-handoff law applied to migration: quality travels in the packet, not by po
 7  MUST NOT CHANGE       engine outputs, payload schemas, canonical counts, access
                          boundaries, URLs, ledger/data writes — verified in review
 8  FILES IN SCOPE        exhaustive
-9  FORBIDDEN SCOPE       theme.css (unless the packet IS a DS-PR), nav partials, engine
-                         scripts, sibling pages — plus packet-specific bans
+9  FORBIDDEN SCOPE       theme.css (unless the packet IS a DS-PR — token/primitive edits
+                         happen only through DS-PRs; DS-PR-0 pre-lands the html-body var()
+                         rebinds packets consume), nav partials, engine scripts, sibling
+                         pages (on a multi-page template like dashboard.html.j2 the sibling
+                         page is the SAME FILE — the packet names its owned region/selector
+                         scope and its sequencing against any sibling packet) — plus
+                         packet-specific bans
 10 STATES                the four states' copy (EN+ZH) written IN the packet
 11 EVIDENCE REQUIRED     the §0.2 screenshot matrix + forced-state shots + harness capture
 12 ACCEPTANCE            §0 gates + packet-specific checks (each testable by a stranger)
@@ -95,15 +102,18 @@ image paths (never prose descriptions of a look).
 ## §4 Standard line items (ride every packet unless the packet says why not)
 
 - Rebind page-local hexes/fonts/radii → tokens (the census's 4,800-hex debt retires
-  page-by-page; never a big-bang).
+  page-by-page; never a big-bang). Radius/duration values snap to the §2.2 stops — a stated
+  repaint line in the packet.
 - As-of variants → `.dtp-asof` / `.dtp` family; one per panel.
-- Empty states → `.empty`+`.empty-why` (5 sanctioned causes).
+- Empty states → `.mx-empty`+`.mx-empty-why` (5 sanctioned causes).
 - Display charts → illus idiom (the 9/247 compliance gap closes through packets).
 - Emoji-as-icons → `_icons.html.j2` monoline set.
-- Exactly one h1; `.sec` header anatomy on every panel.
-- 390w no-horizontal-scroll check; mobile reduction per archetype.
+- Exactly one h1; `.mx-sec` header anatomy on every panel (band labels are eyebrow-styled
+  real h2s — the outline never loses a section).
+- 390w no-horizontal-scroll check; mobile reduction per archetype (§15: the archetype's
+  declared reduction governs).
 - Banned Tier-1 vocabulary sweep (doctrine §2) on all touched copy, EN and ZH.
-- Inline `<style>` shrinks or holds — never grows (measured in the lint report).
+- Inline `<style>` byte-size governed by ratchet rule 7 (§6): warn on any growth, fail >5%.
 
 ## §5 PR sequencing — how the factory's foundations land
 
@@ -112,8 +122,8 @@ The packet's PR-0 (type ramp, `.ladder`, `.chg-row`, `.empty`, lock slots) is al
 
 | PR | Scope | Blocks |
 |---|---|---|
-| **DS-PR-0** (after packet PR-0, same owner discipline: small, reviewed alone) | remaining §2.2 scales (`--sp-*`, `--r-*`, `--t-*/--ease-*`, `--ser-*`, `--shadow-hover`) + new primitives (`.vh`, `.sec`, `.tbl`, `.callout`, `.disc`) + `_icons` base-CSS promotion + specimen updated to consume real tokens (its local proposed-block deleted) | all migration packets |
-| **DS-PR-1** | registry overrides gain `archetype` for all rows + `design_system` field schema; ratchet script `scripts/check_design_system.py` lands **report-only** (guard-registry registered, annotation law obeyed: bare `print("::notice …", flush=True)` at line start) | ratchet waves R1+ |
+| **DS-PR-0** (after packet PR-0, same owner discipline: small, reviewed alone) | remaining §2.2 scales (`--sp-*`, `--r-*`, `--t-*/--ease-*`, `--ser-*`, `--shadow-hover`, `--ink-tier`, `--ink-prov` alias) + new primitives under the **`.mx-*` namespace** (`.mx-vh`, `.mx-sec`, `.mx-tbl`, `.mx-callout`, `.mx-disc`, `.mx-rail`; packet PR-0's land renamed `.mx-ladder`/`.mx-chg-row`/`.mx-empty`+`.mx-empty-why`) + **the `html body` var() rebind** of the vector-polish block and component radii at current values (without it the tokens are dead — theme.css:378-379 out-specifies any consumer) + reconciliation of `dashboard.html.j2:1653`'s local `--sp-*` (its `--sp-8:32`→`--sp-7`; recorded amendment to packet PR-0's `--fs-*`-only extraction boundary) + zh tracking/uppercase resets beyond h2 + `_icons` base-CSS reconciliation (stroke 1.8) + `.eyebrow`→`--fs-label` snap + specimen updated to consume real tokens (its local proposed-block deleted). **Collision gate before landing: re-run the §8 class-collision scan; any new `.mx-*` hit blocks.** | all migration packets |
+| **DS-PR-1** | (a) `design_system` added to `OVERRIDABLE` in `scripts/build_product_page_registry.py:97-103` — today the builder hard-errors on unknown override keys (`:1050-1053`), so the field must be schema'd before any packet writes it; (b) the existing `archetype` values re-keyed to the §10 registry ids (crosswalk in the master doc §10) + the field completed for all rows; (c) **governance unit defined**: a registry row governs `(source_template, selector/region scope)` pairs, not bare files — `dashboard.html.j2` (renders macro + us_stocks) gets explicit `governed_regions`; (d) ratchet script `scripts/check_design_system.py` lands **report-only** (guard-registry registered; annotation law: bare `print("::notice …", flush=True)` at line start) | ratchet waves R1+, all packet gates §0.3/§0.7/§0.8 |
 | **DS-PR-2** | PR template / review checklist wiring for evidence matrix; harness gains forced-state capture flag if absent | — |
 
 theme.css collision discipline: DS-PR-0 lands only after packet PR-0 merges (one file, two
@@ -126,17 +136,21 @@ line-sliced mockup) applies to both.
 never reds main: the lint only judges (a) files whose registry row says `compliant: true`, and
 (b) newly created templates.
 
-**Static rules** (`scripts/check_design_system.py`, on the PR diff):
+**Static rules** (`scripts/check_design_system.py`, on the PR diff; the governed unit is the
+registry row's `(template, region)` pair from DS-PR-1(c), never a bare file):
 
 1. New color literals (`#hex`, `rgb(`, `hsl(`) outside `theme.css`/sanctioned asset files.
 2. New `font-family:` literals (tokens only).
 3. New `border-radius` values not `var(--r-*)`.
-4. New `:root { --` token-family blocks outside `theme.css`.
+4. New **literal-valued custom properties in ANY selector** outside `theme.css` (`:root`,
+   `body.page-*`, or class scope alike — `dashboard.html.j2:1616` declares its family on
+   `body.page-macro`, which a `:root`-only rule misses). Derivations
+   (`--local: var(--theme-token)`) are the §2 compliant pattern and pass.
 5. New `*-card` class *definitions* outside the canonical inventory (heuristic; warn-tier).
 6. Banned Tier-1 vocabulary outside `data-tip-*`/`<details>`/Tier-3 pages (doctrine §6's
    planned vocabulary lint — same registry, same waves).
-7. Inline `<style>` byte growth on a compliant file (warn at >0, fail at >5%).
-8. Emoji codepoints in markup on compliant files.
+7. Inline `<style>` byte growth on a governed region (warn at >0, fail at >5%).
+8. Emoji codepoints in markup on governed regions.
 
 **Evidence rules** (process gates, not static lint): the §0.2 screenshot matrix, forced-state
 shots, and harness capture are review-blocking for packet PRs; DS-PR-2 wires the checklist. A
@@ -144,10 +158,15 @@ follow-up may add a CI presence check (registry row's `evidence` path exists) �
 never pixel judgment in CI.
 
 **Waves:** **R0** (with DS-PR-1): report-only `::notice` annotations on every PR, estate-wide —
-builds the baseline and finds false positives. **R1**: blocking for compliant-registry files +
-all NEW templates (born-compliant rule). **R2** (post-launch): warn-tier estate-wide, blocking
-threshold reviewed quarterly. The registry only grows; a compliant page that must regress
-requires an operator-visible exception entry in the registry row (never silent removal).
+builds the baseline and finds false positives. **R1**: blocking for compliant-registry regions;
+NEW templates get the **graduated born-compliant rule** — rules 1–4 block, rules 5–8 warn
+(a new surface must be token-clean from birth, but is not required to be a completed
+migration; the §8 delta audit's `--ff-*`/winner-health window shows what ungraduated R1 would
+have blocked mid-flight). A new template may carry
+`design_system: {exempt: true, reason, expires}` in its registry row — operator-visible,
+time-boxed, never silent. **R2** (post-launch): warn-tier estate-wide, blocking threshold
+reviewed quarterly. The registry only grows; a compliant region that must regress requires
+the same exception entry (never silent removal).
 
 **Known-trap notes for the implementer:** annotations start the line, printed not logged,
 `flush=True` (CI-guarded house law); the checker must be registered in the guard registry;
@@ -163,23 +182,27 @@ tail converges by template, post-launch. Nothing is hand-polished ×4,000.
 
 | # | Item | Dependency |
 |---|---|---|
-| 1 | packet PR-0 + DS-PR-0 foundations | — |
-| 2 | PR-1 funnel chrome (nav auth/plans presence, 404) | PR-0 |
-| 3 | Today reference build (`start.html`, A) | PR-0 + mockup gate |
-| 4 | Prophet board reference (`us_stocks.html`, B) | PR-0, §J.10 concurrence, Prophet-lane coordination |
-| 5 | Prophet detail (new surface, C) | Sol §J decisions, Handoff D |
-| 6 | Plans (H) | Chairman Founding-Pro variant decision |
-| 7 | Dossier reference + `stock.html` resolver (C) | Sol route ruling |
-| 8 | **macro.html migration to the dense-dashboard reference** (D) — the Wave-0 reference (`mockups/design_system/macro_reference.html`) is its frozen contract | DS-PR-0 + reference ratified |
-| 9 | Landing proof-belt hero (live dated board replaces mock-ups) | taste-gate (packet §H) |
-| 10 | Nav N0 six-job regroup | **Sol approval (IA §10.1)** |
-| 11 | DS-PR-1 ratchet R0 | DS-PR-0 |
-| 12 | Access-truth fixes (Handoff A's lane: proof-page payload, silent 401s, signup seam) | its own lane — listed because the journey breaks without it |
+| 1 | packet PR-0 foundations | **Sol §J.9** (count-ladder ratification incl. the display-tier stage field minted in PR-0(c)) |
+| 2 | DS-PR-0 (scales + `.mx-*` primitives + rebinds) | packet PR-0 merged |
+| 3 | **DS-PR-1** (registry field schema + archetype re-key + governance unit + ratchet R0) | DS-PR-0 — **sequenced before every migration below because gates §0.3/§0.7/§0.8 consume it** |
+| 4 | PR-1 funnel chrome (nav auth/plans presence, 404 — the 404 mockup in PR-1's own mockup gate is archetype I's reference, satisfying first-of-archetype) | PR-0 |
+| 5 | Today reference build (`start.html`, A) | DS-PR-0 + mockup gate |
+| 6 | Prophet board reference (`us_stocks.html`, B) | DS-PR-0, §J.10 concurrence, Prophet-lane coordination |
+| 7 | Prophet detail (new surface, C-signal) | Sol §J decisions, Handoff D |
+| 8 | Plans (H-plans) | Chairman Founding-Pro variant decision |
+| 9 | Dossier reference + `stock.html` resolver (C-company) | Sol route ruling |
+| 10 | **macro.html migration to the dense-dashboard reference** (D) — the Wave-0 reference (`mockups/design_system/macro_reference.html`) is its frozen contract. **Recorded supersession:** IA §8 row 3 said "conformance pass later; not a reference page" — this docket amends that ruling (grounds: the D archetype needs a production consumer pre-launch, and macro is P0 route #3 and the estate's main anonymous SEO entry). **Same-file collision:** items 6 and 10 both edit `dashboard.html.j2` — item 6 lands first; item 10's packet names its macro-mode region scope and rebases on 6 (site-heavy law: rebuild, not rebase, on conflict) | DS-PR-0 + item 6 merged |
+| 11 | Landing proof-belt hero (live dated board replaces mock-ups) | taste-gate (packet §H) |
+| 12 | Nav N0 six-job regroup | **Sol approval (IA §10.1)** |
+| 13 | Access-truth fixes (Handoff A's lane: proof-page payload, silent 401s, signup seam) | its own lane — listed because the journey breaks without it |
 
 **P1 — immediately post-launch:** `china.html` + `hk.html` (D-archetype followers of the macro
-reference — the reference generalizing IS the test of Wave 0), `news`/`alerts`/`watchlist` (G,
-pending IA §10.4 identity ruling), `confluence_screener` + heatmaps (B), `research_vault` (F),
-`products/*` polish (H), sector_central pair (C/E).
+reference — the reference generalizing IS the test of Wave 0), `news`/`alerts` (G — the G
+reference ships with the first of these, satisfying first-of-archetype), `watchlist`
+(**pending the IA §10.4 Sol ruling** — its archetype home follows the ruling),
+`confluence_screener` + heatmaps (B), `research_vault` (F — its migration is the F reference),
+`products/*` polish (H-product), sector_central pair (C/E — the E reference ships with the
+first desk migrated).
 
 **P2 — the neglected middle (~30 desks):** intelligence desks (E) in reach order
 (`china_intel`, `policy_watch` twins, `alt_data`, `smart_money`, `capital_structure`,
@@ -229,8 +252,55 @@ program (full lane report in the session transcript; facts, file:line cited by t
    new design language. Other deltas (prophet receipts plain-word pass, dashboard release-radar
    modal refinement, basket_detail stamp fix, biocatalyst change-tape) are content/correctness
    work inside existing idioms — no new card systems, no new routes.
+7. **Rival token scales beyond `--fs-*`** (red-team supplement — the lane's item 4 enumerated
+   the ramp only): `options.html.j2:90-91` ships `--s1..--s8` (`--s8:44px`) **and** its own
+   `--r-pill/--r-ctl/--r-panel/--r-shell`; `dashboard.html.j2:1653` ships a `body.page-macro`
+   `--sp-*` block (no `--sp-7`, `--sp-8:32px` — the §2.2 collision DS-PR-0 reconciles);
+   `dashboard.html.j2:1655` + `seo_base.html.j2:118-123` ship `--r-sm/--r-md/--r-lg`. All are
+   named reconciliation targets (DS-PR-0 for the dashboard `--sp-*`; each page's migration
+   for the rest).
+8. **Module-count anchors** for the master doc §10 selection ruling: macro = 13 first-level
+   sections (hero `dashboard.html.j2:2257` through where-next `:11292`, visual order per the
+   `order:` scheme documented at `:5329-5342`, plus the DOM-order Release Radar `:8609`);
+   china = 14 (`china.html.j2:1659-2279`). Counts are the delta lane's, template-anchored.
+9. **Baseline naming:** "census provenance" in this section = the page census's registry
+   snapshot (`data/product_experience/page_registry.json`, `generated_at
+   2026-08-11T00:00:00Z`, macro source SHA `6560d5a8` — `research/PRODUCT_PAGE_CENSUS_2026-08.md`
+   §1); the experience census (same PR #5401) shares it.
+10. **Mockup-path convention:** program-level design-system references live under
+   `mockups/refs/design-system/`; per-page migration mockups keep the packet convention
+   `mockups/refs/institutionalize/<page>/` (packet §I mockup gate). Two namespaces, one rule:
+   committed files, never prose.
 
 ## §9 Red-team record
 
-**PENDING** — same rule as the master doc §18: this factory is not frozen until the
-independent Opus red-team pass has run and its real findings are recorded here.
+Two independent Opus red-team passes ran 2026-08-12 (full record + dispositions: master doc
+§18). Verdict REWORK — scoped; integrated in this PR. Findings that changed THIS document:
+
+- **Docket ordering:** DS-PR-1 moved from P0 item 11 to item 3 — it was sequenced *after*
+  the seven migrations whose §0.3/§0.7/§0.8 gates consume its field, script, and archetype
+  assignments. Sol §J.9 restored as item 1's dependency (packet PR-0(c) mints the stage
+  field §J.9 reserves).
+- **Ratchet mechanics:** `design_system` is NOT an overridable registry key today (the
+  builder hard-errors, `build_product_page_registry.py:1050-1053`) — DS-PR-1(a) schemas it;
+  governance unit redefined as `(template, region)` pairs (DS-PR-1(c)) because
+  `dashboard.html.j2` renders two pages and file-granularity would red the macro region's
+  legacy debt the moment `us_stocks` flips compliant — exactly the "never reds legacy"
+  violation; rule 4 re-specified to literal-valued custom properties in ANY selector
+  (`body.page-*` roots were invisible to a `:root`-only rule, and the derivation pattern it
+  DID flag is the compliant one); R1 born-compliant graduated (rules 1–4 block, 5–8 warn)
+  with a time-boxed, operator-visible exemption field.
+- **Packet form:** same-file sibling-page rule added to field 9 (the dashboard.html.j2
+  case); §0 gained the perf/render-budget gate; §4's inline-style line now cites the §6.7
+  thresholds instead of stating a rival "never grows" law.
+- **DS-PR-0 scope:** `.mx-*` namespace law (11 collision families enumerated in the master
+  doc §11.1); the `html body` var() rebind; the `dashboard.html.j2` `--sp-*` reconciliation
+  (recorded packet-boundary amendment); the collision-scan landing gate.
+- **Docket content:** IA §8-row-3 supersession for macro.html now recorded instead of
+  silent; items 6/10 same-file sequencing named; first-of-archetype coverage stated for I
+  (404 in PR-1's mockup gate), G and E (P1); watchlist hedged to the IA §10.4 Sol ruling.
+- §8 gained items 7–10 (rival scales the lane's ramp-only enumeration missed;
+  module-count template anchors; baseline naming; mockup-path convention).
+
+Standing dissents: none — the two partially-rejected findings and their grounds are in the
+master doc §18.12.
