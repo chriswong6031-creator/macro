@@ -2797,6 +2797,7 @@ on:
       - "tests/test_baskets_china_ths.py"
       - "tests/test_canada_branch_b.py"
       - "tests/test_china_analogs.py"
+      - "tests/test_china_connect_leaderboard_render.py"
       - "tests/test_china_fx_context_render.py"
       - "tests/test_china_stf_facets.py"
       - "tests/test_hk_closes_fallback.py"
