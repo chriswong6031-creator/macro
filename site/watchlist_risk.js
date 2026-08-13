@@ -71,51 +71,49 @@
     if (!t || !j) return;
     if (CARD_JSON[t] === j) return;
     CARD_JSON[t] = j;
-    updateConditionCounts();
-  }
-  function updateConditionCounts() {
-    var host = document.getElementById('wri_conds');
-    if (!host) return;
-    var b = activeBook();
-    /* Scope to the SAME names the verdict above is about. The line sits inside the
-       verdict block, so counting a wider set (every name with a per-name read) would
-       print two different "names" totals one line apart — "Your 3 names move as about
-       4 bets" over "3 of 5 names in review or worse". Same book, same denominator. */
-    var hero = document.getElementById('wri_hero');
-    var st = hero && hero.__wri;
-    var held = null;
-    if (st && st.RR) {
-      var active = (st.RR.hasStress ? st.RR.stress : st.RR.calm);
-      if (active && active.ok && active.held) {
-        held = {};
-        active.held.forEach(function (t) { held[t] = 1; });
-      }
-    }
-    var names = Object.keys(CARD_JSON).filter(function (t) {
-      if (!CARD_JSON[t] || !isModeled(t)) return false;
-      if (held) return !!held[t];
-      if (b === 'all') return true;
-      return window.MB && window.MB.marketOf(t) === b;
-    });
-    var M = names.length;
-    if (!M) { host.innerHTML = ''; return; }
-    var review = 0, elevated = 0;
-    names.forEach(function (t) {
-      var lanes = laneRead(CARD_JSON[t]);
-      if (roleBadge(lanes)) review++;
-      LANES.forEach(function (k) { if (lanes[k] && lanes[k].state === 'elev') elevated++; });
-    });
-    if (!review && !elevated) {
-      // Law 1: the honest nothing is a finding, not an empty panel
-      host.innerHTML = te('Nothing elevated across your names tonight.',
-        '今晚你的名称无升高风险项。');
-      return;
-    }
-    host.innerHTML = te(
-      review + ' of ' + M + ' names in review or worse · ' + elevated + ' risk checks elevated.',
-      M + '只中' + review + '只处于复查或更高级别 · ' + elevated + '项风险检查升高。');
+    /* The Events tab reads this registry, so a hydration wave has to reach it — but
+       it must NOT reach it one re-render per resolved name, and it must not re-run
+       RiskCore (the book has not changed; only what we know about its names has).
+       `republishTabs` rebuilds the tab strings from the cached read on ONE frame. */
+    scheduleTabRefresh();
   }
 
+  /* The cached read the tabs were last built from. Held so a hydration wave can
+     refresh the event calendar without a second RiskCore pass, and so the two are
+     never built from different books. */
+  var LAST_READ = null;   // { RR, active, cov }
+  var _tabsPending = false;
+  function scheduleTabRefresh() {
+    if (_tabsPending || !LAST_READ) return;
+    _tabsPending = true;
+    var run = function () { _tabsPending = false; republishTabs(); };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+    else setTimeout(run, 16);
+  }
+  function republishTabs() {
+    if (!LAST_READ || !window.WS || !window.WS.setRisk) return;
+    try { window.WS.setRisk(tabPayload(LAST_READ)); } catch (e) {}
+  }
+  function tabPayload(R) {
+    var active = R.active, RR = R.RR, cov = R.cov;
+    return {
+      concHTML: concentrationHTML(active, cov),
+      rcTabs: {
+        conc: concentrationHTML(active, cov),
+        corr: correlationHTML(active, cov),
+        fact: factorsHTML(active, cov),
+        strs: stressHTML(RR, cov),
+        evt:  eventsHTML(cov),
+        weak: weakLinksHTML(active, cov)
+      },
+      labHTML: labIntroHTML()
+    };
+  }
+  /* The condition-count line ("N of M names in review or worse") is retired with the
+     braid hero. Its job — telling the reader how much of the book the summary above is
+     actually about — is done better and in plain words by the attention stack's own
+     "5 of 12 positions" disclosure, which the pinned design makes part of the section
+     header. Two sentences answering one question, one line apart, was the defect. */
   // ---- factor display metadata (hue class + bilingual label) --------------
   // labels mirror factor_exposure.js ZH map + the mockup's plain words.
   var FLABEL = {
@@ -307,6 +305,20 @@
     }
   }
 
+  /* The lane state token. It lives HERE, beside its only caller, because it used to sit
+     700 lines away inside the braid-hero block — and when W2 deleted that block it took
+     this function with it. `laneRowsHTML` then threw ReferenceError on every call,
+     portfolio.js's try/catch swallowed it, and the drawer printed its honest-null line:
+     the per-name lane read shipped 100% dark for every signed-in user, disguised as a
+     data gap. tests/test_watchlist_workspace_js.py now calls laneRows on a real payload
+     and asserts a non-empty string, so a catch can never hide this class again. */
+  function stateToken(s) {
+    if (s === 'ok') return 'OK';
+    if (s === 'watch') return te('WATCH', '关注');
+    if (s === 'elev') return te('ELEVATED', '升高');
+    return te('n/a', '未覆盖');
+  }
+
   // The seven lane rows as HTML — the ONE renderer, shared by the watchlist cards and
   // the portfolio assessment drawer (portfolio.js calls it through window.WRI). Keeping
   // a single implementation is why the drawer and the card can never drift apart.
@@ -343,7 +355,7 @@
   //  transmission_chains.json. A name that sits in an ARMED chain's blast radius
   //  gets a deliberately COOL info chip + a drawer read. Display-only WATCH
   //  context: never a signal, size, or call. All logic below is pure + DOM-free
-  //  (exported for node tests); the wiring lives in loadChains / paintLanes / rail.
+  //  (exported for node tests); the wiring lives in loadChains and the publisher.
   // =========================================================================
   var CHAIN_ARMED = { arming: 1, propagating: 1, expressed: 1 };
   // most-progressed first (a name in several chains leads with the furthest along)
@@ -488,11 +500,13 @@
   // =========================================================================
   // state ramp tint (never --up/--down; zh-flip trap). state from risk_radar.
   var STATE_TINT = { calm: 'ok', normal: 'ok', watch: 'tilt', caution: 'tilt', elevated: 'conc', high: 'conc', extreme: 'one' };
-  function renderRail(bookBeta) {
-    var host = document.getElementById('wri_rail');
-    if (!host) return;
+  /* W2: the L3 regime read is no longer a rail of its own — the pinned design gives
+     it the book read's SUBLINE ("Quiet tape · nothing crossed a line overnight"), one
+     quiet line above the sentence it qualifies. This function therefore returns HTML
+     for portfolio.js to place rather than painting a host of its own. */
+  function regimeSentence(bookBeta) {
     var R = window.WRI_REGIME;
-    if (!R || (!R.dominant_label_en && !R.state)) { host.style.display = 'none'; return; }
+    if (!R || (!R.dominant_label_en && !R.state)) return '';
     var tint = STATE_TINT[(R.state || '').toLowerCase()] || 'tilt';
     var domEn = R.dominant_label_en || 'Market read', domZh = R.dominant_label_zh || R.dominant_label_en || '市场状态';
     var stateEn = stateWord(R.state, 'en'), stateZh = stateWord(R.state, 'zh');
@@ -500,31 +514,30 @@
     var betaFrag = '';
     if (isNum(bookBeta)) {
       var bx = (Math.round(bookBeta * 10) / 10);
-      betaFrag = '<span class="sep">·</span><span>' +
+      betaFrag = ' · ' + '<span>' +
         te('your book moves about <b class="num">' + bx + '×</b> the market',
           '你的组合波动约为大盘的 <b class="num">' + bx + '×</b>') + '</span>';
     }
-    host.style.display = 'flex';
-    host.style.setProperty('--wri-rail-tint', 'var(--wri-' + tint + ')');
-    host.className = 'wri-rail wri-rail-' + tint;
     // ONE appended chain sentence — only when a chain is propagating|expressed AND ≥1 book
     // name sits downstream of it. Links to the Cascade Monitor. The rail's single-line law
     // wins: this rides at the end, after the base state + beta, so the base read always shows.
     var chainFrag = '';
     var cs = railChainSentence(CHAINS_IDX, Object.keys(BOOK_SHARES));
     if (cs) {
-      chainFrag = '<span class="sep">·</span><span class="wri-rail-chain">' +
+      chainFrag = ' · ' + '<span class="wri-rail-chain">' +
         te(esc(cs.en), esc(cs.zh)) + ' <a href="transmission.html">' +
         te('cascade →', '传导链 →') + '</a></span>';
     }
     // the regime artifact reads the US tape; say so once the user holds other markets
     var scope = multiBook() ? te('US tape · ', '美股行情 · ') : '';
-    host.innerHTML =
-      '<span class="dot"></span>' + scope +
-      '<b>' + te(esc(domEn) + ' — market on ' + esc(stateEn), esc(domZh) + '——市场' + esc(stateZh)) + '</b>' +
-      betaFrag + chainFrag +
-      '<a href="macro.html">' + te('market state →', '市场状态 →') + '</a>';
+    return scope +
+      te(esc(domEn) + ' — market on ' + esc(stateEn), esc(domZh) + '——市场' + esc(stateZh)) +
+      betaFrag + chainFrag;
   }
+  // tint is computed above and deliberately not used for ink here: the subline is a
+  // quiet muted line in the pinned design, and a state ramp on it would be a fifth
+  // reserved hue on a page whose palette decision allows four.
+  function renderRail(bookBeta) { return regimeSentence(bookBeta); }
   function stateWord(s, l) {
     s = (s || '').toLowerCase();
     var m = {
@@ -548,156 +561,883 @@
      names, so the hero collapses to ONE honest line instead of a verdict computed
      from a different book's names (WRI-R6 / gate 6). Their per-name signals are
      unaffected — they render in full below, which is what the line says. */
-  function renderBookNote(hero) {
-    var b = activeBook();
-    var meta = (window.MB && window.MB.BOOKS && window.MB.BOOKS[b]) || null;
-    var nEn = meta ? meta.en : b, nZh = meta ? meta.zh : b;
-    hero.style.display = '';
-    hero.setAttribute('data-state', 'ok');
-    hero.className = 'tile wri wri-hero';
-    hero.innerHTML = '<div class="wri-empty muted">' + te(
-      'Book-structure risk modeling covers US &amp; crypto names for now — your ' +
-        esc(nEn) + ' names still carry tonight&#39;s signals below.',
-      '组合结构风险建模目前覆盖美股与加密——你的' + esc(nZh) + '名称在下方仍有今晚信号。') +
-      '</div>';
-    hidePanel();
-  }
+  /* A non-modeled book (cn/hk/ca/intl): the USD factor stack does not cover these
+     names, so `publishBook` above publishes coverage-only and the workspace draws the
+     seam's risk rail as a lock shell. There is no separate "book note" render any
+     more — the honest statement is the coverage line the book read already carries. */
 
-  function renderHero(data, weights) {
-    var hero = document.getElementById('wri_hero');
-    if (!hero) return;
-    if (!bookIsModeled(activeBook())) { renderBookNote(hero); renderRail(null); return; }
-    var wmap = weights.wmap, universe = modeledUniverse(weights.universe);
-    // filter the weights map to the universe the FX layer resolved (auto: portfolio
-    // dollar values; manual: watchlist tickers), MODELED names only (USD). Build a
-    // {ticker->value} map.
+  /* W2 — THE RISK PUBLISHER.
+
+     The braid hero is superseded by the Book Seam (DESIGN_NOTES §1): one signature,
+     drawn in ONE place (watchlist.js `WS.seam`), fed from here. This function no
+     longer paints — it computes the model read and hands portfolio.js a payload to
+     compose. Nothing about the arithmetic changed; only who owns the pixels.
+
+     The honesty rule this file is now responsible for: `modeledN` travels WITH the
+     bet count, so the headline can never print the model's subset size as if it were
+     the user's list size. That was the specific defect the pinned design calls out —
+     "12 positions move like 3 bets" while the model had only ever seen 11 of them. */
+  /* Plain-word names for the dominant idea, for the ONE sentence that says what the
+     book is leaning on. The factor labels above are the right words inside a factor
+     table and the wrong words here: "Most of it is one idea — market." is not a
+     sentence a reader learns anything from. Glance tier gets the idea, not the key. */
+  var IDEA = {
+    mkt:    ['the market itself',      '大盘本身'],
+    growth: ['big technology',         '大型科技股'],
+    size:   ['smaller companies',      '中小盘'],
+    rates:  ['where interest rates go', '利率走向'],
+    usd:    ['the US dollar',          '美元'],
+    oil:    ['oil and energy',         '石油与能源'],
+    china:  ['China',                  '中国'],
+    btc:    ['bitcoin',                '比特币'],
+    gold:   ['gold',                   '黄金']
+  };
+
+  function publishBook(data, weights) {
+    var universe = modeledUniverse(weights.universe);
+    var wmap = weights.wmap;
     var wIn = {};
     universe.forEach(function (t) { var v = wmap[t]; wIn[t] = isNum(v) && v > 0 ? v : 1; });
+
+    /* The active BOOK CHIP is deliberately not consulted here. Under the pinned
+       semantics (DESIGN_NOTES §7d) the chips filter the holdings TABLE VIEW only —
+       the book read, the attention stack and the Risk Center always describe the whole
+       portfolio. Scoping this read to the chip meant selecting "Hong Kong" silently
+       emptied the book read above it, which is the same class of defect as a filter
+       that shortens a list without saying so. The USD-only guard that matters is
+       `modeledUniverse`, applied to the weights, and it is applied above. */
 
     var RR = RiskCore.read(data, wIn);
     var cov = (RR.calm && RR.calm.coverage) || RiskCore.coverage(data, wIn);
 
-    // empty / thin -> collapse hero to a single invitation line (empty = invitation)
+    /* The Scenario Lab compares against THIS book under THIS lens. Caching the two
+       here — rather than re-deriving them when the user runs a comparison — is what
+       makes "before" in the lab and the figures in the tabs the same object. */
+    LAST_WMAP = wIn;
+    LAST_LENS = RR.defaultLens === 'stress' ? 'stress' : 'calm';
+
     if (!RR.calm.ok) {
-      var railBeta = null;
-      renderRail(railBeta);
-      hero.setAttribute('data-state', 'ok');
-      hero.innerHTML = '<div class="wri-empty muted">' + te(
-        'Add a few holdings and this reads what your book really is — how many independent bets you hold, and what moves together.',
-        '添加几项持仓，这里会读出你的组合到底押了什么——你持有多少项独立押注，以及什么在同涨同跌。') + '</div>';
-      hidePanel();  // no book -> keep the old fx panel hidden
+      // a thin/uncovered book has no read to cache — drop it, so a later hydration
+      // wave cannot republish tab strings describing a book we no longer have
+      LAST_READ = null;
+      publish({ shares: {}, covered: {}, bets: null, modeledN: 0,
+                regime: regimeSentence(null), rcTabs: null, labHTML: labIntroHTML() });
       return;
     }
 
-    // book market beta for the rail (client)
-    var mktBeta = RR.calm.bookBeta && RR.calm.bookBeta.mkt;
-    renderRail(mktBeta);
+    var b = RR.hasStress ? RR.stress : RR.calm;
+    var active = RR.calm;                       // the seam describes the ALL-DAYS read
+    var shares = {}, covered = {};
+    (active.held || []).forEach(function (t) {
+      shares[t] = active.mctrShare[t];
+      covered[t] = true;
+    });
 
-    // stash the model so lens toggle / lang flip re-render without recompute.
-    // wIn + mode feed the W4 pre-trade check (hypothetical-book math + $ prefill).
-    hero.__wri = { RR: RR, cov: cov, data: data, wmap: wIn, mode: weights.mode };
-    var lens = hero.getAttribute('data-lens') || RR.defaultLens;
-    if (!RR.hasStress) lens = 'calm';
-    hero.setAttribute('data-lens', lens);
-    paintHero(hero, lens);
-  }
-
-  function paintHero(hero, lens) {
-    var st = hero.__wri; if (!st) return;
-    var RR = st.RR, cov = st.cov;
-    var abstain = cov.abstain;
-    var active = lens === 'stress' && RR.hasStress ? RR.stress : RR.calm;
-    var stateLens = RR.hasStress ? RR.stress : RR.calm;   // state chip pinned to stress read
-    var enb = stateLens && stateLens.ok ? stateLens.enb : (RR.calm.enb);
-    var stateKey = abstain ? null : RiskCore.enbState(enb);
-
-    hero.setAttribute('data-state', stateKey || 'tilt');
-    hero.className = 'tile wri wri-hero';
-
-    // ---- header + verdict ----
-    var asof = (window.WRI_REGIME && window.WRI_REGIME.asof) || (st.data && st.data.as_of) || '';
-    // when the user holds more than one market, the eyebrow says WHICH book this reads
-    var eyebrow = multiBook()
-      ? te('BOOK STRUCTURE — US &amp; CRYPTO', '组合结构——美股与加密')
-      : te('BOOK RISK', '组合风险');
-    // the DATE stays atomic (.d is nowrap) while the label side may still wrap — at
-    // 390px this was breaking as "AS OF 2026-08-" / "06"
-    var asofD = '<span class="d">' + esc(asof) + '</span>';
-    var html = '<div class="eyebrow"><span>' + eyebrow + '</span>' +
-      '<span class="asof">' + te('AS OF ' + asofD, '截至 ' + asofD) + '</span></div>';
-
-    if (abstain) {
-      html += '<div class="wri-verdict"><h2>' + te(
-        'Not enough modeled names to read the book',
-        '可建模持仓不足，暂不给出组合判读') + '</h2></div>';
-      html += '<p class="wri-so">' + te(
-        'Most of your book is in names the model doesn\'t cover, so a book-level read here would be misleading.',
-        '你的组合大部分为模型未覆盖的标的，此处给出组合级判读会产生误导。');
-      if (cov.unmodeled.length) html += ' ' + te('Not modeled: ', '未纳入模型：') +
-        '<b class="num">' + esc(cov.unmodeled.join(', ')) + '</b>.';
-      html += '</p>';
-      hero.innerHTML = html;
-      absorbFxPanel(hero, RR.calm);   // still offer the beta table drawer if computable
-      return;
+    // cluster / ballast membership — the biggest factor group is the dominant idea;
+    // anything that OFFSETS the book (negative MCTR share) is its ballast. Both come
+    // straight from RiskCore; nothing is re-ranked here.
+    var groups = clustersFor(active);
+    var cluster = {}, ballast = {};
+    if (groups.length) {
+      (groups[0].members || []).forEach(function (t) { cluster[t] = 1; });
+      groups.forEach(function (g, i) {
+        if (i === 0) return;
+        g.members.forEach(function (t) {
+          if ((active.mctrShare[t] || 0) < 0 || g.hedge) ballast[t] = 1;
+        });
+      });
+    }
+    // a book with no negative-MCTR name still has a smallest group; call the two
+    // smallest contributors ballast so the seam has a readable third role
+    if (!Object.keys(ballast).length && active.held.length >= 4) {
+      active.held.slice().sort(function (x, y) {
+        return Math.abs(active.mctrShare[x]) - Math.abs(active.mctrShare[y]);
+      }).slice(0, 2).forEach(function (t) { if (!cluster[t]) ballast[t] = 1; });
     }
 
-    // clusters (patch-bay picture) under the ACTIVE lens; verdict count = ENB.
-    var clusters = clustersFor(active);
-    var verdict = verdictSentence(RR, active);
-
-    var stateChip = stateChipText(stateKey);
-    html += '<div class="wri-verdict"><h2 id="wri_verdict">' + verdict.h2 + '</h2>' +
-      '<span class="wri-state">' + stateChip + '</span></div>';
-    html += '<p class="wri-so">' + soWhat(active, cov) + '</p>';
-    // condition counts — filled (and refilled) as the per-name reads hydrate
-    html += '<p class="wri-conds" id="wri_conds"></p>';
-
-    // ---- lens toggle (only when stress available) ----
-    if (RR.hasStress) {
-      var stressOn = lens === 'stress';
-      var hint = lensHint(RR);
-      html += '<div class="wri-lens"><div class="seg" role="group" aria-label="' +
-        (isZh() ? '视角' : 'lens') + '">' +
-        '<button id="wri_lensCalm" type="button" aria-pressed="' + (!stressOn) + '" data-lens="calm">' +
-        te('ALL DAYS', '全部交易日') + '</button>' +
-        '<button id="wri_lensStress" type="button" aria-pressed="' + stressOn + '" data-lens="stress">' +
-        te('IN SELLOFFS', '跌市中') + '</button></div>' +
-        (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
+    var clamp = enbClamp(active.enb, active.held.length);
+    var lead = groups.length ? groups[0] : null;
+    var leadShare = lead ? Math.round(lead.share * 100) : 0;
+    var because = '';
+    if (lead && lead.members.length >= 2) {
+      var ideaEn = lead.fk && IDEA[lead.fk] ? IDEA[lead.fk][0]
+                                            : lead.members.slice(0, 2).join(' and ');
+      var ideaZh = lead.fk && IDEA[lead.fk] ? IDEA[lead.fk][1]
+                                            : lead.members.slice(0, 2).join('和');
+      because = te('Most of it is one idea — <b>' + esc(ideaEn) + '</b>.',
+                   '大部分压在同一件事上 —— <b>' + esc(ideaZh) + '</b>。');
+      var ballNames = Object.keys(ballast).slice(0, 2);
+      if (ballNames.length) {
+        because += ' ' + te(
+          esc(ballNames.join(' and ')) + (ballNames.length === 1 ? ' is what keeps' : ' are what keep') +
+            ' this book from being a single position.',
+          '是' + esc(ballNames.join('和')) + '让这本账簿没有变成一笔仓位。');
+      }
     }
 
-    // ---- patch-bay + bucket fallback ----
-    html += '<div class="wri-braid" role="img" aria-label="' + esc(braidAria(active, clusters)) + '">' +
-      '<svg viewBox="0 0 1000 192" xmlns="http://www.w3.org/2000/svg" id="wri_braidSvg">' +
-      '<g id="wri_guides"></g><g id="wri_threads"></g><g id="wri_railg"></g>' +
-      '<g id="wri_ticks"></g><g id="wri_strands"></g></svg></div>' +
-      '<div class="wri-buckets" id="wri_buckets"></div>';
+    /* The seam CAPTION is deliberately NOT built here. Its two figures — the
+       cluster's share of the money and of the risk — must come from the same
+       distribution the two rails are drawn from, and that distribution lives with
+       the items in portfolio.js. Computing the money side off the modeled weight
+       map here produced a caption that said 51% over a bracket that drew 40%: one
+       claim, two denominators, one line apart. */
 
-    // ---- sub-cards ----
-    html += subCards(RR, active, cov);
-
-    // ---- pre-trade check (W4) — inside the hero, after the sub-cards, before
-    //      the footnote. Hidden below 1 modeled holding (handled in wireWhatIf). ----
-    html += whatIfRow(RR, active);
-
-    // ---- footnote + method receipt ----
-    html += footnote(RR, cov);
-
-    hero.innerHTML = html;
-    updateConditionCounts();
-    // paint the patch-bay from the active-lens model
-    paintBraid(active, clusters);
-    absorbFxPanel(hero, RR.calm);
-    // wire the pre-trade check (suggestions + resolve); restores the user's typed
-    // candidate across lens/lang re-renders from hero.__w4.
-    wireWhatIf(hero, RR, active);
+    var out = {
+      shares: shares, covered: covered,
+      bets: clamp.bets, modeledN: active.held.length,
+      cluster: cluster, ballast: ballast,
+      because: because, clusterN: lead ? lead.members.length : 0,
+      regime: regimeSentence(active.bookBeta && active.bookBeta.mkt)
+    };
+    /* All six tabs are built from the SAME two reads (`active` = the all-days book,
+       `RR` = both lenses) in ONE pass, so no two tabs can describe different books.
+       The workspace picks which string to paint; it never recomputes — the same split
+       the seam already uses, for the same reason. */
+    LAST_READ = { RR: RR, active: active, cov: cov };
+    var tabs = tabPayload(LAST_READ);
+    out.concHTML = tabs.concHTML;
+    out.rcTabs = tabs.rcTabs;
+    out.labHTML = tabs.labHTML;
+    publish(out);
   }
 
-  // clusters(active): the patch-bay PICTURE — names grouped by their dominant
-  // factor-bet (RiskCore.factorBets), so market-driven names converge on one bus
-  // while idiosyncratic / oil / rates names sit on their own. This is the visual
-  // composition of the book (where the risk sits). Distinct from ρ≥0.70 twins
-  // (the "Move as one" card) and from ENB (the verdict's independence count).
-  //   [{ key, members[], share, hue, labelEn, labelZh, hedge }]
+  function publish(payload) {
+    if (window.PF && window.PF.setBookRisk) { try { window.PF.setBookRisk(payload); } catch (e) {} }
+    if (window.WS && window.WS.setRisk) {
+      try {
+        window.WS.setRisk({
+          concHTML: payload.concHTML || '',
+          rcTabs: payload.rcTabs || null,
+          labHTML: payload.labHTML || ''
+        });
+      } catch (e) {}
+    }
+  }
+
+  /* Risk Center → Concentration. The seam already carries the CLUSTER claim, so this
+     tab deliberately carries the SINGLE-NAME one — one dominant idea per section, no
+     duplicate content (DESIGN_NOTES §5.5). Bars share ONE scale, printed once, with
+     the number beside every bar as the truth. */
+  function concentrationHTML(b, cov) {
+    if (!b || !b.ok || !b.held.length) return '';
+    var ranked = b.held.slice().sort(function (x, y) {
+      return Math.abs(b.mctrShare[y]) - Math.abs(b.mctrShare[x]);
+    });
+    var top = ranked[0];
+    var topShare = Math.abs(b.mctrShare[top] || 0);
+    var SCALE = 0.30;                     // a full bar is 30% of book risk
+    var rows = ranked.slice(0, 5).map(function (t) {
+      var sh = Math.abs(b.mctrShare[t] || 0);
+      var hedge = (b.mctrShare[t] || 0) < 0;
+      return '<div class="conc-row' + (hedge ? ' is-ballast' : '') + '">' +
+        '<span class="who">' + esc(t) + '</span>' +
+        '<span class="track"><span style="width:' + Math.min(100, sh / SCALE * 100).toFixed(0) + '%"></span></span>' +
+        '<span class="pct fig">' + Math.round(sh * 100) + '%</span></div>';
+    }).join('');
+
+    var claim = te(
+      'One name, ' + esc(top) + ', carries <span class="fig">' + Math.round(topShare * 100) +
+        '%</span> of this book&rsquo;s risk.',
+      '单是 ' + esc(top) + ' 一只，就扛下了本账簿 <span class="fig">' + Math.round(topShare * 100) +
+        '%</span> 的风险。');
+
+    /* The coverage disclosure is the SHARED one, not a bespoke sentence.
+       Concentration used to carry its own shorter version ("X is not on this list —
+       outside the model"), which said nothing about MARKETS — and because
+       `modeledUniverse` strips non-US names before RiskCore ever sees them, an HK or
+       CN position is not in `cov.unmodeled` either. So the DEFAULT tab of a
+       multi-market book disclosed nothing at all about the positions it was silently
+       not describing, while Events one click away named them. Same two disclosures on
+       every tab that reads the factor model — including this one. */
+    var foot = te('Scale: a full bar is <span class="fig">30%</span> of book risk.',
+      '刻度：满格代表占本账簿风险 <span class="fig">30%</span>。');
+    var cf = coverageFoot(cov);
+    if (cf) foot += ' ' + cf;
+    return '<p class="rc-claim">' + claim + '</p>' +
+      '<p class="rc-note">' + te(
+        'Each bar is that name&rsquo;s share of the book&rsquo;s modeled risk, on one shared scale.',
+        '每根条形是该股在本账簿模型风险中的占比，统一刻度。') + '</p>' +
+      '<div class="conc">' + rows + '</div>' +
+      '<p class="rc-note" style="margin-top:12px">' + foot + '</p>';
+  }
+
+  // =========================================================================
+  //  W3 — the remaining five Risk Center tabs, over the SAME RiskCore reads.
+  //
+  //  Nothing here computes a new statistic. Every figure below is a value
+  //  RiskCore already published (mctrShare, W, rho, twinPairs, factorShare,
+  //  idioShare, enb under each lens, coverage) or a comparison of two of them.
+  //  The tabs differ in WHICH published distribution they point at, never in the
+  //  arithmetic — which is why no two tabs can disagree about the same book.
+  //
+  //  One dominant idea per tab, and no tab repeats another's claim:
+  //    Concentration  the single largest name's share of the risk
+  //    Correlation    how closely any two names actually move together
+  //    Factors        which outside force the whole book leans on
+  //    Stress         whether that changes on the days the market falls
+  //    Events         when the book's names next report
+  //    Weak links     risk PER DOLLAR — who overpays, and who pulls the other way
+  // =========================================================================
+
+  /* Read LAZILY, never at load: this file and risk_core.js are two separate <script>
+     tags, so a module-level `window.RiskCore.TWIN_RHO` would resolve to the fallback on
+     whichever load order the browser happens to give us and then silently disagree with
+     the engine that actually drew the clusters. */
+  function twinLine() {
+    var R = (typeof window !== 'undefined') && window.RiskCore;
+    return (R && isNum(R.TWIN_RHO)) ? R.TWIN_RHO : 0.70;
+  }
+
+  // The shared shape of a tab: one claim sentence, one how-to-read line, a compact
+  // visual, then the honest footer. `claim`/`note`/`foot` are already-bilingual HTML.
+  function tabHTML(claim, note, body, foot) {
+    return '<p class="rc-claim">' + claim + '</p>' +
+      (note ? '<p class="rc-note">' + note + '</p>' : '') +
+      (body || '') +
+      (foot ? '<p class="rc-note" style="margin-top:12px">' + foot + '</p>' : '');
+  }
+  // the "we cannot read this yet" body — a plain sentence, never an empty panel
+  function tabNull(en, zh) { return '<p class="rc-soon">' + te(en, zh) + '</p>'; }
+
+  /* COVERAGE FOOTER — the same two disclosures on every tab that reads the factor
+     model, because a reader who lands on Stress must learn what it does not cover
+     without first visiting Concentration. Names the model has no read for, and the
+     markets the model does not price at all. Never a cross-currency total: the
+     non-US books are named as SEPARATE reads, not folded into these figures. */
+  function coverageFoot(cov) {
+    var un = (cov && cov.unmodeled) || [];
+    var out = '';
+    if (un.length) {
+      var shown = un.slice(0, 6), more = un.length - shown.length;
+      var one = (un.length === 1);
+      out += te(
+        esc(shown.join(', ')) + (more > 0 ? ' and ' + more + ' more' : '') + ' ' +
+          (one ? 'is' : 'are') +
+          ' not in these figures — the nightly model has no read for ' +
+          (one ? 'it' : 'them') + '. ' +
+          (one ? 'Its' : 'Their') + ' own price signals still show in the table above.',
+        // zh has no plural inflection, but 它 / 它们 is a real distinction and a
+        // single name reading "它们" is wrong Chinese, not merely clumsy
+        esc(shown.join('、')) + (more > 0 ? ' 等 ' + un.length + ' 只' : '') +
+          ' 不在以上数字里 —— 每晚的模型没有' + (one ? '它' : '它们') + '的读数。' +
+          (one ? '它' : '它们') + '自己的价格信号仍在上方表格中。');
+    }
+    if (multiBook()) {
+      out += (out ? ' ' : '') + te(
+        'These reads cover your US-listed names. Positions in other markets keep their own signals in the table and are never added into one number across currencies.',
+        '以上读数覆盖你的美股持仓。其他市场的持仓在表格里保留各自的信号，绝不会跨币种加总成一个数字。');
+    }
+    return out;
+  }
+
+  // ---- 2. CORRELATION -----------------------------------------------------
+  /* The one question: which two of these names are really the same trade?
+     Source: RiskCore's implied pairwise correlation and its ρ ≥ 0.70 clusters —
+     both already computed inside book(). The honest case this surface must handle
+     is the COMMON one: on an orthogonalized factor model with real per-name idio
+     vol, most equity pairs land well below 0.70. "No pair crosses the line" is a
+     finding, not an empty state, and printing the closest pair anyway is what
+     stops it from reading as "these names are unrelated". */
+  function correlationHTML(b, cov) {
+    if (!b || !b.ok || b.held.length < 2) return '';
+    var held = b.held, pairs = [];
+    for (var i = 0; i < held.length; i++) {
+      for (var j = i + 1; j < held.length; j++) {
+        pairs.push({ a: held[i], c: held[j], r: b.rho(held[i], held[j]) });
+      }
+    }
+    pairs.sort(function (x, y) { return y.r - x.r; });
+    if (!pairs.length) return '';
+
+    // the ρ ≥ 0.70 groups, from RiskCore's own connected components (size ≥ 2 only)
+    var groups = (b.clusters || []).filter(function (g) { return g.members.length >= 2; });
+    var top = pairs[0];
+    var claim, note;
+    if (groups.length) {
+      var g0 = groups[0], names = g0.members;
+      claim = te(
+        '<b>' + esc(names.join(' and ')) + '</b> move almost as one position — you own ' +
+          'the same trade <span class="fig">' + names.length + '</span> times.',
+        '<b>' + esc(names.join('、')) + '</b> 几乎是同一笔仓位 —— 同一笔交易你持有了 <span class="fig">' +
+          names.length + '</span> 次。');
+      note = te(
+        'A pair at <span class="fig">1.00</span> would move identically. We draw the line at <span class="fig">0.70</span>: above it, two names stop being two.',
+        '两只票若为 <span class="fig">1.00</span> 即完全同步。我们以 <span class="fig">0.70</span> 为界：越过这条线，两只票就不再算两只。');
+    } else {
+      claim = te(
+        'Nothing in this book moves in lockstep. The closest pair is <b>' + esc(top.a) +
+          '</b> and <b>' + esc(top.c) + '</b>, at <span class="fig">' + top.r.toFixed(2) + '</span>.',
+        '这本账簿里没有完全同步的持仓。最接近的一对是 <b>' + esc(top.a) + '</b> 与 <b>' +
+          esc(top.c) + '</b>，为 <span class="fig">' + top.r.toFixed(2) + '</span>。');
+      note = te(
+        'A pair at <span class="fig">1.00</span> would move identically; we draw the line at <span class="fig">0.70</span>. Below it these names still lean the same way — they just do not move as one.',
+        '两只票若为 <span class="fig">1.00</span> 即完全同步；我们以 <span class="fig">0.70</span> 为界。低于这条线，它们仍会同向倾斜 —— 只是不会作为一只票波动。');
+    }
+
+    var LINE = twinLine();
+    var rows = pairs.slice(0, 6).map(function (p) {
+      var strong = p.r >= LINE;
+      return '<div class="pair-row' + (strong ? ' is-twin' : '') + '">' +
+        '<span class="who">' + esc(p.a) + ' · ' + esc(p.c) + '</span>' +
+        '<span class="track"><span style="width:' +
+          Math.max(0, Math.min(100, p.r * 100)).toFixed(0) + '%"></span></span>' +
+        '<span class="pct fig">' + p.r.toFixed(2) + '</span></div>';
+    }).join('');
+
+    var foot = te('The closest <span class="fig">' + Math.min(6, pairs.length) +
+        '</span> of <span class="fig">' + pairs.length + '</span> pairs. Full bar is <span class="fig">1.00</span>.',
+      '共 <span class="fig">' + pairs.length + '</span> 对中最接近的 <span class="fig">' +
+        Math.min(6, pairs.length) + '</span> 对。满格为 <span class="fig">1.00</span>。');
+    var cf = coverageFoot(cov);
+    if (cf) foot += ' ' + cf;
+    return tabHTML(claim, note, '<div class="conc">' + rows + '</div>', foot);
+  }
+
+  // ---- 3. FACTORS & MACRO -------------------------------------------------
+  /* The one question: which outside force is this book actually leaning on?
+     Source: factorShare (Euler variance shares) + idioShareTotal, both published.
+     The rate line reads the book's own rates beta and the rates share — the two
+     things that decide whether "where interest rates go" matters to this book. */
+  function factorsHTML(b, cov) {
+    if (!b || !b.ok) return '';
+    var ranked = (b.rankedFactors || []).filter(function (k) { return (b.factorShare[k] || 0) > 0.005; });
+    var topK = b.topFactor, topS = b.topFactorShare || 0;
+    var idio = b.idioShareTotal || 0;
+    var ideaEn = IDEA[topK] ? IDEA[topK][0] : flabel(topK);
+    var ideaZh = IDEA[topK] ? IDEA[topK][1] : flabel(topK);
+
+    var claim = (topS >= idio)
+      ? te('About <span class="fig">' + pct0(topS) + '</span> of what moves this book is one outside force — <b>' +
+             esc(ideaEn) + '</b>.',
+           '本账簿约 <span class="fig">' + pct0(topS) + '</span> 的波动来自同一股外部力量 —— <b>' +
+             esc(ideaZh) + '</b>。')
+      : te('No single outside force runs this book — <span class="fig">' + pct0(idio) +
+             '</span> of what moves it is the individual companies&rsquo; own stories.',
+           '没有哪股外部力量主导这本账簿 —— <span class="fig">' + pct0(idio) +
+             '</span> 的波动来自各家公司自己的故事。');
+
+    var SCALE = Math.max(0.10, topS, idio);      // one shared scale, printed below
+    var rows = ranked.slice(0, 6).map(function (k) {
+      var s = b.factorShare[k] || 0;
+      return '<div class="conc-row"><span class="who">' + esc(flabel(k)) + '</span>' +
+        '<span class="track"><span style="width:' + Math.min(100, s / SCALE * 100).toFixed(0) + '%"></span></span>' +
+        '<span class="pct fig">' + pct0(s) + '</span></div>';
+    }).join('');
+    rows += '<div class="conc-row is-ballast"><span class="who">' +
+      te('Own story', '个股自身') + '</span>' +
+      '<span class="track"><span style="width:' + Math.min(100, idio / SCALE * 100).toFixed(0) + '%"></span></span>' +
+      '<span class="pct fig">' + pct0(idio) + '</span></div>';
+
+    // the macro half: does this book care where rates go?
+    var rateBeta = (b.bookBeta && b.bookBeta.rates);
+    var rateShare = (b.factorShare && b.factorShare.rates) || 0;
+    var rateLine = '';
+    if (isNum(rateBeta)) {
+      var matters = rateShare >= 0.05 || Math.abs(rateBeta) >= 0.30;
+      var withRates = rateBeta >= 0;
+      /* The Tier-2 receipt rides the SENTENCE, not a separate `?` glyph. The old
+         `.wri-q` affordance belonged to the braid hero W2 deleted and is styled
+         nowhere on this page any more, so it rendered as a bare question mark
+         hanging off the end of the line. The workspace's own pattern is
+         `data-tip-en`/`data-tip-zh` on the element carrying the copy, wired to the
+         LENS popover by theme.js — technical quantities live there, never at glance
+         tier, and never in a title= attribute. */
+      rateLine = '<p class="rc-note" style="margin-top:12px">' +
+        '<span class="rc-tip" tabindex="0" data-tip-en="' +
+          esc('Measured against the nightly rates factor: net beta ' + rateBeta.toFixed(2) +
+              ', share of book variance ' + (rateShare * 100).toFixed(1) +
+              '%. Measurement over the model window, not a forecast.') +
+        '" data-tip-zh="' +
+          esc('对每晚利率因子的测量：净贝塔 ' + rateBeta.toFixed(2) + '，占账簿方差 ' +
+              (rateShare * 100).toFixed(1) + '%。为模型窗口内的测量，非预测。') + '">' +
+        (matters
+        ? te('Where interest rates go matters here: the book leans <b>' +
+               (withRates ? 'with' : 'against') + '</b> them, and they account for <span class="fig">' +
+               pct0(rateShare) + '</span> of its movement.',
+             '利率走向对这本账簿有影响：账簿与利率<b>' + (withRates ? '同向' : '反向') +
+               '</b>，并占其波动的 <span class="fig">' + pct0(rateShare) + '</span>。')
+        : te('Interest rates barely move this book — under <span class="fig">' +
+               pct0(Math.max(rateShare, 0.01)) + '</span> of its movement.',
+             '利率对这本账簿影响很小 —— 占其波动不足 <span class="fig">' +
+               pct0(Math.max(rateShare, 0.01)) + '</span>。')) +
+        '</span></p>';
+    }
+
+    /* THE GROUPING CAVEAT, surfaced where the grouping is displayed (packet §8-W3).
+       `RiskCore.factorBets` files each name under the single force that explains most
+       of its OWN variance, and it measures that with the factor covariance's DIAGONAL
+       only — cross-factor terms are dropped. For a name pulled by two correlated
+       forces the runner-up can therefore be understated, which is why the group a name
+       is filed under and the book-level ranking above it can name different forces for
+       the same ticker. Said in plain words rather than left as a code comment, because
+       the reader is the one looking at the two lists. */
+    var caveat = te(
+      'Each name is filed under the one force that explains most of its own moves, measured one force at a time. A name pulled by two related forces is filed under the larger one, so its second force can read smaller here than in the list above.',
+      '每只票按“最能解释其自身波动”的那一股力量归类，且逐一测量。若一只票同时受两股相关力量牵引，会归入较大的那一股 —— 因此它的第二股力量在这里可能比上面的列表显得更小。');
+
+    var foot = te('Shares of everything that moves this book. Full bar is <span class="fig">' +
+        pct0(SCALE) + '</span>.',
+      '各项占本账簿全部波动的比例。满格为 <span class="fig">' + pct0(SCALE) + '</span>。') +
+      ' ' + caveat;
+    var cf = coverageFoot(cov);
+    if (cf) foot += ' ' + cf;
+    // `is-worded` widens the label column: factor names are words ("Growth / Tech"),
+    // not tickers, and wrapping one across two lines breaks the ladder's rhythm
+    return tabHTML(claim, te('Each bar is that force&rsquo;s share of the book&rsquo;s movement, on one shared scale.',
+      '每根条形是该力量在本账簿波动中的占比，统一刻度。'),
+      '<div class="conc is-worded">' + rows + '</div>' + rateLine, foot);
+  }
+
+  // ---- 4. STRESS ----------------------------------------------------------
+  /* The one question: is this the same book on the days the market falls?
+     Source: the SECOND RiskCore read the engine already performs under
+     factor_cov_stress (re-estimated on worst-quartile market days), compared with
+     the calm read. Nothing is recomputed — `read()` returns both.
+
+     This tab must be honest in BOTH directions. A book can tighten under stress
+     (the interesting case) and it can also spread — and on an orthogonalized model
+     with per-name idio vol held v1-invariant, spreading is common. Reporting only
+     the tightening direction would make the calm case look like a missing read. */
+  function stressHTML(RR, cov) {
+    var calm = RR && RR.calm;
+    if (!calm || !calm.ok) return '';
+    if (!RR.hasStress || !RR.stress || !RR.stress.ok) {
+      return tabHTML(
+        te('Tonight&rsquo;s model has no falling-days lens.',
+           '今晚的模型没有「下跌日」视角。'),
+        te('Everything else in this Risk Center is the all-days read. When the falling-days lens is in the nightly model, this tab compares the two.',
+           '风险中心其余部分均为「全部交易日」的读数。当每晚的模型带有「下跌日」视角时，这个标签会对比两者。'),
+        '', coverageFoot(cov));
+    }
+    var st = RR.stress;
+    var nNames = calm.held.length;
+    var cB = enbClamp(calm.enb, nNames).bets, sB = enbClamp(st.enb, nNames).bets;
+    var cTop = calm.topFactorShare || 0, sTop = st.topFactorShare || 0;
+    var tightens = st.enb < calm.enb - 1e-9;
+
+    // pairs that only move together when it matters — the finding this lens exists for
+    var only = (RR.stressOnlyPairs || []).slice(0, 3);
+    var pairNames = only.map(function (p) { return p.a + ' · ' + p.b; });
+
+    /* `RR.diverges` is an OR: risk_core raises it when the falling-days book collapses
+       (`stress.enb < 0.7 * calm.enb`) **or** when any pair becomes a twin only under
+       stress. Those are different findings, and branching the "tightens" sentence on
+       the OR let the second one print the first one's words — "your 6 names move like
+       about 3, not 2" directly above a counts line saying the opposite. The count
+       claim now requires the count predicate; the pair finding gets its own sentence. */
+    var claim;
+    if (RR.diverges && tightens) {
+      claim = te('On the days the market falls, this book tightens: your <span class="fig">' + nNames +
+          '</span> names move like about <span class="fig">' + sB + '</span>, not <span class="fig">' + cB + '</span>.',
+        '在市场下跌的日子里，这本账簿会收紧：你的 <span class="fig">' + nNames +
+          '</span> 只持仓更像 <span class="fig">' + sB + '</span> 个方向，而不是 <span class="fig">' + cB + '</span> 个。');
+    } else if (tightens) {
+      claim = te('On the days the market falls, this book tightens a little — but it does not collapse into one position.',
+        '在市场下跌的日子里，这本账簿会略微收紧 —— 但不会塌缩成一笔仓位。');
+    } else if (only.length) {
+      claim = te('The book as a whole does not tighten on falling days — but <b>' +
+          esc(pairNames.join('; ')) + '</b> start moving together, and only then.',
+        '整本账簿在下跌日并未收紧 —— 但 <b>' + esc(pairNames.join('；')) +
+          '</b> 会开始同步波动，且仅在此时。');
+    } else {
+      claim = te('On the days the market falls, this book does not tighten — its names spread out slightly rather than moving as one.',
+        '在市场下跌的日子里，这本账簿并未收紧 —— 持仓略微分散，而不是同步波动。');
+    }
+
+    /* ONE scale for both rows, rounded UP to the next 5% so neither bar is pinned at
+       100%. A bar with no unfilled tail cannot be read as a proportion, and the two
+       rows here exist only to be compared with each other.
+
+       Neither row is `is-ballast`. That class means "this position offsets the book" in
+       Concentration and Weak links; reusing it to distinguish two LENSES both changed
+       its meaning and broke the picture — its fill sits at 1.38:1 against the track
+       (normal fill is 3.39:1), so the Average-day bar, which is the wider of the two
+       whenever the book does not tighten, read as an EMPTY track beside a full one.
+       The comparison the tab exists to make was inverted for most books. */
+    var SC = Math.max(0.10, Math.ceil(Math.max(cTop, sTop) * 20) / 20);
+    function lensRow(label, topShare) {
+      return '<div class="conc-row">' +
+        '<span class="who">' + label + '</span>' +
+        '<span class="track"><span style="width:' + Math.min(100, topShare / SC * 100).toFixed(0) + '%"></span></span>' +
+        '<span class="pct fig">' + pct0(topShare) + '</span></div>';
+    }
+    /* Both counts print under the bars whichever way the comparison came out. The
+       claim sentence above can only lead with ONE of the three outcomes; a reader who
+       gets the "does not tighten" wording would otherwise never see the two numbers
+       that sentence is about. Nulls printed — and so are unremarkable results. */
+    var counts = '<p class="rc-note">' + te(
+      'On an average day this book moves in about <span class="fig">' + cB +
+        '</span> separate directions; on the falling days, about <span class="fig">' + sB + '</span>.',
+      '在平均日，这本账簿约有 <span class="fig">' + cB +
+        '</span> 个独立方向；在下跌日，约有 <span class="fig">' + sB + '</span> 个。') + '</p>';
+    var body = '<div class="conc is-worded">' +
+      lensRow(te('Average day', '平均日'), cTop) +
+      lensRow(te('Falling days', '下跌日'), sTop) +
+      '</div>' + counts;
+
+    var note = te(
+      'Each bar is how much of the book&rsquo;s movement its single biggest force accounts for, under each lens. Full bar is <span class="fig">' +
+        pct0(SC) + '</span>.',
+      '每根条形表示在该视角下，最大的那股力量占本账簿波动的比例。满格为 <span class="fig">' +
+        pct0(SC) + '</span>。');
+
+    /* The pair finding rides the footer unless it is already the CLAIM above, which is
+       exactly the `!tightens` branch — so it belongs here when the book tightens. */
+    var extra = '';
+    if (only.length && tightens) {
+      extra = ' ' + te(
+        '<b>' + esc(pairNames.join('; ')) + '</b> only move together on the falling days.',
+        '<b>' + esc(pairNames.join('；')) + '</b> 只在下跌日才同步波动。');
+    }
+    var foot = te(
+      'The falling-days lens re-measures how the forces move together using only the market&rsquo;s worst days. Each name&rsquo;s own story is held unchanged between the two.',
+      '「下跌日」视角仅用市场表现最差的那些交易日，重新测量各股力量之间的联动。两个视角下，个股自身的故事保持不变。') + extra;
+    var cf = coverageFoot(cov);
+    if (cf) foot += ' ' + cf;
+    return tabHTML(claim, note, body, foot);
+  }
+
+  // ---- 5. EVENTS ----------------------------------------------------------
+  /* The one question: what is coming, and when? Source: the SAME events lane the
+     per-name drawer already renders (`laneRead(j).events`), over the per-ticker JSON
+     the page has already hydrated — CARD_JSON. No new fetch: a name whose detail has
+     not arrived is simply not claimed, which is why the footer counts what it read. */
+  function eventsHTML(cov) {
+    var rows = [], seen = 0;
+    Object.keys(CARD_JSON).forEach(function (t) {
+      var j = CARD_JSON[t]; if (!j) return;
+      seen++;
+      var earn = j.earnings || null;
+      if (!earn || !earn.next_date) return;
+      var d = daysUntil(earn.next_date);
+      if (!isNum(d) || d < 0) return;
+      rows.push({ t: t, d: d, iso: earn.next_date, when: earn.next_time || '' });
+    });
+    rows.sort(function (a, b) { return a.d - b.d; });
+
+    if (!seen) {
+      return tabHTML(
+        te('Event dates arrive with each name&rsquo;s detail.',
+           '事件日期随每只票的详细数据一起载入。'),
+        te('Nothing has loaded yet. Open the holdings table and this fills in as each name resolves.',
+           '目前尚未载入。打开持仓表格，各只票的数据到位后这里会自动填充。'), '', '');
+    }
+    if (!rows.length) {
+      return tabHTML(
+        te('No reporting dates ahead for the <span class="fig">' + seen + '</span> names we have a calendar for.',
+           '在我们有日历的 <span class="fig">' + seen + '</span> 只票中，暂无即将到来的财报日。'),
+        te('A name with no date here either reports outside the covered window or has no scheduled date we can read.',
+           '此处没有日期的票，要么财报日不在覆盖窗口内，要么没有我们能读到的排定日期。'), '',
+        coverageFoot(cov));
+    }
+    var soon = rows.filter(function (r) { return r.d <= 14; });
+    var first = rows[0];
+    var claim = soon.length
+      ? te('<span class="fig">' + soon.length + '</span> of your names report within two weeks — <b>' +
+             esc(first.t) + '</b> is first, in <span class="fig">' + first.d + '</span> ' +
+             (first.d === 1 ? 'day' : 'days') + '.',
+           '你有 <span class="fig">' + soon.length + '</span> 只持仓将在两周内发布财报 —— 最早的是 <b>' +
+             esc(first.t) + '</b>，还有 <span class="fig">' + first.d + '</span> 天。')
+      : te('Nothing reports in the next two weeks. The next is <b>' + esc(first.t) +
+             '</b>, in <span class="fig">' + first.d + '</span> days.',
+           '未来两周没有财报。下一个是 <b>' + esc(first.t) + '</b>，还有 <span class="fig">' +
+             first.d + '</span> 天。');
+
+    var list = rows.slice(0, 8).map(function (r) {
+      var w = r.when === 'pre-market' ? te('before the open', '盘前')
+        : r.when === 'after-hours' ? te('after close', '盘后') : '';
+      return '<div class="evt-row' + (r.d <= 5 ? ' is-near' : '') + '">' +
+        '<span class="who">' + esc(r.t) + '</span>' +
+        '<span class="when">' + te(esc(fmtDate(r.iso)), esc(fmtDateZh(r.iso))) +
+          (w ? ' <span class="sub">' + w + '</span>' : '') + '</span>' +
+        '<span class="pct"><span class="fig">' + r.d + '</span>d</span></div>';
+    }).join('');
+
+    var foot = te('Read from the <span class="fig">' + seen +
+        '</span> names whose detail has loaded. A name without a covered calendar is not listed and is not counted.',
+      '读取自已载入详细数据的 <span class="fig">' + seen +
+        '</span> 只票。没有覆盖日历的票不会列出，也不计入。');
+    var cfE = coverageFoot(cov);
+    if (cfE) foot += ' ' + cfE;
+    return tabHTML(claim, te('Nearest first. Dates come from each company&rsquo;s own reported schedule.',
+      '按时间由近及远排列。日期来自各公司自己公布的排期。'),
+      '<div class="conc">' + list + '</div>', foot);
+  }
+
+  // ---- 6. WEAK LINKS & STRENGTHS ------------------------------------------
+  /* The one question Concentration does NOT answer: risk per dollar. Concentration
+     ranks names by how much of the risk they carry; this ranks them by how much they
+     carry RELATIVE TO WHAT THEY COST — which is how a small position turns out to be
+     the problem and a large one turns out to be the ballast.
+
+     Both distributions are published by RiskCore over the SAME modeled book: `W` (the
+     normalized money weights) and `mctrShare`. Comparing them is the seam's claim in
+     numbers, per name; no new estimator is involved. A name whose risk share is
+     negative moves against the rest of the book — the model's own statement, reported
+     as such and never as an instruction. */
+  function weakLinksHTML(b, cov) {
+    if (!b || !b.ok || b.held.length < 2) return '';
+    var rows = b.held.map(function (t) {
+      var money = b.W[t] || 0, risk = b.mctrShare[t] || 0;
+      return { t: t, money: money, risk: risk,
+               ratio: money > 0 ? risk / money : 0, own: b.idioShare[t] || 0 };
+    });
+    // the weak link: most risk per dollar. the strength: least (negative = pulls back).
+    var byRatio = rows.slice().sort(function (x, y) { return y.ratio - x.ratio; });
+    var weak = byRatio[0], strong = byRatio[byRatio.length - 1];
+    if (!weak || !strong || weak.t === strong.t) return '';
+
+    var claim = te(
+      '<b>' + esc(weak.t) + '</b> takes <span class="fig">' + pct0(weak.money) +
+        '</span> of the money and <span class="fig">' + pct0(Math.abs(weak.risk)) + '</span> of the risk.',
+      '<b>' + esc(weak.t) + '</b> 占用了 <span class="fig">' + pct0(weak.money) +
+        '</span> 的资金，却扛下 <span class="fig">' + pct0(Math.abs(weak.risk)) + '</span> 的风险。');
+
+    var strongLine = (strong.risk < 0)
+      ? te('<b>' + esc(strong.t) + '</b> is the one pulling the other way — when the rest of the book moves, it leans against it.',
+           '<b>' + esc(strong.t) + '</b> 是往反方向拉的那一只 —— 账簿其余部分波动时，它反向倾斜。')
+      : te('<b>' + esc(strong.t) + '</b> is the quiet one: <span class="fig">' + pct0(strong.money) +
+             '</span> of the money for <span class="fig">' + pct0(Math.abs(strong.risk)) + '</span> of the risk.',
+           '<b>' + esc(strong.t) + '</b> 是安静的那一只：占 <span class="fig">' + pct0(strong.money) +
+             '</span> 的资金，只承担 <span class="fig">' + pct0(Math.abs(strong.risk)) + '</span> 的风险。');
+
+    /* ONE scale across BOTH columns, not one per column.
+       The first build normalised money and risk independently, so the name with the
+       largest money drew a full bar and the name with the largest risk drew a full
+       bar — and the row the headline was about (most risk PER DOLLAR) drew neither.
+       The picture contradicted the sentence above it. On a shared scale the finding
+       is the thing you actually see: a risk bar longer than its own money bar is a
+       name carrying more than it costs, and that is the whole tab. */
+    var SCALE = Math.max(0.01, maxOf(rows, 'money'), maxAbsRisk(rows));
+    /* The RENDERED set is the five carrying the most per dollar PLUS the strength —
+       so both names the copy points at are on screen. A plain `slice(0, 6)` ranked the
+       weak end only, which meant the strength sentence regularly named a ticker that
+       was nowhere in the ladder below it ("XOM is the one pulling the other way", with
+       no XOM row). A tab called "Weak links & strengths" that renders one end of its
+       own ranking was answering half its question; the scope line says which five. */
+    var shown = byRatio.slice(0, 5);
+    if (shown.indexOf(strong) < 0) shown.push(strong);
+    var list = shown.map(function (r) {
+      var heavy = r.ratio > 1.15, light = r.ratio < 0.85;
+      return '<div class="wk-row' + (light ? ' is-ballast' : '') + '">' +
+        '<span class="who">' + esc(r.t) + '</span>' +
+        '<span class="two"><span class="track"><span style="width:' +
+          Math.min(100, r.money / SCALE * 100).toFixed(0) + '%"></span></span>' +
+        '<span class="track"><span style="width:' +
+          Math.min(100, Math.abs(r.risk) / SCALE * 100).toFixed(0) + '%"></span></span></span>' +
+        // a direction glyph is not a figure — it stays out of the tabular-mono span
+        '<span class="pct mark">' + (heavy ? '↑' : light ? '↓' : '·') + '</span></div>';
+    }).join('');
+
+    var body = '<div class="conc wk">' +
+      '<div class="wk-hd"><span></span><span class="two"><span>' + te('Money', '资金') +
+        '</span><span>' + te('Risk', '风险') + '</span></span><span></span></div>' + list + '</div>' +
+      '<p class="rc-note" style="margin-top:12px">' + strongLine + '</p>';
+
+    // per-name own story — the idio half of the brief, from the published idioShare
+    var ownTop = rows.slice().sort(function (x, y) { return y.own - x.own; })[0];
+    var foot = '';
+    if (ownTop && ownTop.own > 0.02) {
+      foot += te('Of everything that moves this book, <span class="fig">' + pct0(ownTop.own) +
+          '</span> is <b>' + esc(ownTop.t) + '</b>&rsquo;s own story — news that belongs to that company alone.',
+        '在本账簿的全部波动中，<span class="fig">' + pct0(ownTop.own) + '</span> 来自 <b>' +
+          esc(ownTop.t) + '</b> 自身的故事 —— 只属于这家公司的消息。') + ' ';
+    }
+    foot += te('Both bars share one scale, so a risk bar longer than its own money bar is a name carrying more than it costs: <span class="mark">↑</span>. Shorter is <span class="mark">↓</span>.',
+      '两根条形共用同一刻度：风险条比自身的资金条长，说明这只票承担的风险高于它占用的资金 —— <span class="mark">↑</span>；反之为 <span class="mark">↓</span>。');
+    var cf = coverageFoot(cov);
+    if (cf) foot += ' ' + cf;
+    var lead = te('Risk per dollar, biggest first. A name can be small and still be the largest thing in the book.',
+      '按「每一元资金承担的风险」排序，由高到低。一只票可以仓位很小，却是账簿里最大的一件事。');
+    if (shown.length > 5) {
+      lead += ' ' + te('The five carrying the most per dollar, and the one carrying the least.',
+        '列出「每一元资金承担风险」最高的五只，以及最低的那一只。');
+    }
+    return tabHTML(claim, lead, body, foot);
+  }
+  function maxOf(rows, k) {
+    var m = 0; rows.forEach(function (r) { if (r[k] > m) m = r[k]; }); return m;
+  }
+  function maxAbsRisk(rows) {
+    var m = 0; rows.forEach(function (r) { var v = Math.abs(r.risk); if (v > m) m = v; }); return m;
+  }
+
+  /* RETIRED IN W2 — the braid hero, its verdict/sub-card layer and the in-hero
+     pre-trade check all rendered into #wri_hero, which the pinned workspace design
+     replaces with the Book Seam + the Risk Center. They are deleted rather than left
+     guarded: a render function whose host no longer exists is dead code that still
+     reviews as live. W3 gives the Scenario Lab that replaced the pre-trade check its
+     real body (below); the MEASUREMENT layer this file exists for — RiskCore reads,
+     the lane engine, the chain index, enbClamp — is untouched throughout. */
+
+  // =========================================================================
+  //  SCENARIO LAB — the pre-trade check, rehomed (packet §12 / §14 A4).
+  //
+  //  WRI-R3 stands in full: the user constructs, we describe. There is no
+  //  optimizer here, no recommended size, no "consider" and no verb telling
+  //  anyone to do anything. Every sentence below is a statement about a book
+  //  that would exist, in the same words the tabs above use for the book that
+  //  does. The engine is RiskCore.whatIf, unchanged.
+  // =========================================================================
+  /* The default size, stated rather than assumed. Production shipped this figure
+     into an unlabelled box beside an empty ticker field, which is how a round
+     number becomes a suggestion by accident: the reader assumes a $10,000 default
+     means something about their book. It means nothing about their book — it is a
+     comparison unit, and the lab says so in the copy under the form. */
+  var W4_DEFAULT_DOLLARS = 10000;
+  var LAST_WMAP = {}, LAST_LENS = 'calm';
+
+  function money0(v) {
+    var s = String(Math.round(Math.abs(v)));
+    return '$' + s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  /* The lab's body when there is no model to compare against — the nightly factor
+     artifact did not load (signed out it 401s; signed in it can 404 or fail). Says
+     what the lab would do and why it cannot, rather than presenting a form whose
+     every answer would be "the nightly model is not loaded". */
+  function labUnavailableHTML() {
+    return '<p class="lab-say">' + te(
+      'This compares your book before and after a position you name — how many separate directions it would move in, how much of the risk that position would carry, and which of your names it would move with.',
+      '这里会对比「加仓前」与「加仓后」的账簿 —— 会剩下几个独立方向、这笔仓位会扛下多少风险、以及它会和你的哪些持仓同步波动。') +
+      '</p><p class="lab-note">' + te(
+      'It needs tonight&rsquo;s factor model, which has not loaded, so there is nothing to compare against yet.',
+      '它需要今晚的因子模型，而模型尚未载入，因此暂时无法进行对比。') + '</p>';
+  }
+
+  function labIntroHTML() {
+    return '<p class="lab-say">' + te(
+      'Name a position and a size, and this prints the same figures for the book you would have — how many separate directions it would move in, how much of the risk that position would carry, and which of your names it would move with.',
+      '输入一个代码和一个金额，这里会用同样的口径打印「加仓后」的账簿数字 —— 会剩下几个独立方向、这笔仓位会扛下多少风险、以及它会和你的哪些持仓同步波动。') +
+      '</p>' +
+      '<div class="lab-form">' +
+        '<input class="lab-in lab-t" id="rc_lab_t" type="text" maxlength="12" autocomplete="off"' +
+          ' data-ph-en="Ticker" data-ph-zh="代码" aria-label="' + (isZh() ? '代码' : 'Ticker') + '">' +
+        '<span class="lab-d">' +
+          '<span class="lab-cur">$</span>' +
+          '<input class="lab-in lab-amt" id="rc_lab_d" type="number" min="0" step="any" value="' +
+            W4_DEFAULT_DOLLARS + '" aria-label="' + (isZh() ? '金额' : 'Size in dollars') + '">' +
+        '</span>' +
+        '<button class="gbtn gbtn-sm" type="button" id="rc_lab_go">' +
+          te('See the change', '查看变化') + '</button>' +
+      '</div>' +
+      '<div class="lab-out" id="rc_lab_out"></div>' +
+      '<p class="lab-note">' + te(
+        'The size starts at <span class="fig">' + money0(W4_DEFAULT_DOLLARS) +
+          '</span> because a round number makes two runs comparable — it is not drawn from your book and it is not a suggested size. Change it to whatever you are actually weighing.',
+        '默认金额为 <span class="fig">' + money0(W4_DEFAULT_DOLLARS) +
+          '</span>，只是为了让两次试算可比 —— 它不是根据你的账簿算出来的，也不是建议仓位。请改成你实际在考虑的金额。') +
+      '</p>';
+  }
+
+  /* Returns the lab's RESULT html for one candidate. PURE with respect to the DOM —
+     it reads the module's cached model + weights and returns a string, so the caller
+     owns the pixels exactly as it does for the tabs. */
+  function scenarioHTML(ticker, dollars) {
+    ticker = String(ticker || '').trim().toUpperCase();
+    if (!ticker) {
+      return '<p class="rc-soon">' + te('Name a position to compare.', '请输入一个代码进行对比。') + '</p>';
+    }
+    if (!DATA || !window.RiskCore) {
+      return '<p class="rc-soon">' + te(
+        'The nightly model is not loaded, so there is nothing to compare against yet.',
+        '每晚的模型尚未载入，暂时无法进行对比。') + '</p>';
+    }
+    var d = (isNum(dollars) && dollars > 0) ? dollars : W4_DEFAULT_DOLLARS;
+    var r;
+    try { r = RiskCore.whatIf(DATA, LAST_WMAP, ticker, d, LAST_LENS); }
+    catch (e) { r = null; }
+    if (!r) {
+      return '<p class="rc-soon">' + te('That comparison could not be run.', '该对比无法完成。') + '</p>';
+    }
+
+    // an unmodeled candidate never gets numbers invented for it
+    if (!r.modeled) {
+      return '<p class="lab-line">' + te(
+        'The nightly model has no read for <b>' + esc(ticker) +
+          '</b>, so we cannot say what it would do to this book&rsquo;s structure. Its own price signals still show in the table above.',
+        '每晚的模型没有 <b>' + esc(ticker) +
+          '</b> 的读数，因此无法说明它会如何改变这本账簿的结构。它自己的价格信号仍在上方表格中。') + '</p>';
+    }
+    if (!r.after || !r.after.ok) {
+      return '<p class="rc-soon">' + te(
+        'This needs at least two covered positions to compare against.',
+        '至少需要两笔已覆盖的持仓才能进行对比。') + '</p>';
+    }
+
+    var beforeOk = r.before && r.before.ok;
+    var nAfter = r.after.held.length;
+    var bAfter = enbClamp(r.after.enb, nAfter).bets;
+    var bBefore = beforeOk ? enbClamp(r.before.enb, r.before.held.length).bets : null;
+    var cand = r.candidate || {};
+    var share = isNum(cand.mctrShare) ? Math.abs(cand.mctrShare) : null;
+
+    var head;
+    if (bBefore == null) {
+      head = te('With <b>' + esc(ticker) + '</b> at <span class="fig">' + money0(d) +
+          '</span>, this book would move in about <span class="fig">' + bAfter + '</span> separate directions.',
+        '加入 <b>' + esc(ticker) + '</b>（<span class="fig">' + money0(d) +
+          '</span>）后，这本账簿大约会有 <span class="fig">' + bAfter + '</span> 个独立方向。');
+    } else if (bAfter === bBefore) {
+      head = te('<b>' + esc(ticker) + '</b> at <span class="fig">' + money0(d) +
+          '</span> would leave this book moving in about <span class="fig">' + bAfter +
+          '</span> separate directions — the same as now.',
+        '<b>' + esc(ticker) + '</b>（<span class="fig">' + money0(d) +
+          '</span>）不会改变方向数：仍约为 <span class="fig">' + bAfter + '</span> 个，与当前相同。');
+    } else {
+      head = te('<b>' + esc(ticker) + '</b> at <span class="fig">' + money0(d) +
+          '</span> would take this book from about <span class="fig">' + bBefore +
+          '</span> separate directions to <span class="fig">' + bAfter + '</span>.',
+        '<b>' + esc(ticker) + '</b>（<span class="fig">' + money0(d) +
+          '</span>）会把这本账簿从大约 <span class="fig">' + bBefore +
+          '</span> 个独立方向变成 <span class="fig">' + bAfter + '</span> 个。');
+    }
+
+    var lines = '<p class="lab-line">' + head + '</p>';
+    if (share != null) {
+      var rankTxt = isNum(cand.rank) ? cand.rank : null;
+      lines += '<p class="lab-line">' + (cand.hedge
+        ? te('It would carry <span class="fig">' + pct0(share) +
+               '</span> of the risk and lean <b>against</b> the rest of the book.',
+             '它将承担 <span class="fig">' + pct0(share) + '</span> 的风险，并与账簿其余部分<b>反向</b>。')
+        : te('It would carry <span class="fig">' + pct0(share) + '</span> of the risk' +
+               (rankTxt ? ', the <span class="fig">' + rankTxt + '</span>' + ordSuffix(rankTxt) +
+                 ' largest of <span class="fig">' + nAfter + '</span>' : '') + '.',
+             '它将承担 <span class="fig">' + pct0(share) + '</span> 的风险' +
+               (rankTxt ? '，在 <span class="fig">' + nAfter + '</span> 只中排第 <span class="fig">' +
+                 rankTxt + '</span>' : '') + '。')) + '</p>';
+    }
+    if (cand.twinWith && cand.twinWith.length) {
+      var tw = cand.twinWith.slice(0, 4);
+      lines += '<p class="lab-line">' + te(
+        'It moves as one with <b>' + esc(tw.join(', ')) + '</b> — adding it would be owning that trade again.',
+        '它与 <b>' + esc(tw.join('、')) + '</b> 同步波动 —— 加入它等于再持有一次同一笔交易。') + '</p>';
+    } else if (isNum(cand.topFactorShareOfName) && cand.topFactor) {
+      var idEn = IDEA[cand.topFactor] ? IDEA[cand.topFactor][0] : flabel(cand.topFactor);
+      var idZh = IDEA[cand.topFactor] ? IDEA[cand.topFactor][1] : flabel(cand.topFactor);
+      lines += '<p class="lab-line">' + te(
+        'What mostly moves <b>' + esc(ticker) + '</b> is <b>' + esc(idEn) +
+          '</b>; nothing in this book moves as one with it.',
+        '主要驱动 <b>' + esc(ticker) + '</b> 的是<b>' + esc(idZh) +
+          '</b>；本账簿中没有与它同步波动的持仓。') + '</p>';
+    }
+    lines += '<p class="lab-line lab-lens">' + (LAST_LENS === 'stress'
+      ? te('Measured on the falling-days lens, the same one the tabs above lead with.',
+           '按「下跌日」视角测量，与上方标签所采用的视角一致。')
+      : te('Measured on the all-days lens, the same one the tabs above lead with.',
+           '按「全部交易日」视角测量，与上方标签所采用的视角一致。')) +
+      ' ' + te('A description of a book that would exist — not a recommendation.',
+               '这是对「假如存在」的那本账簿的描述 —— 不构成任何建议。') + '</p>';
+    return lines;
+  }
+  /* The ordinal SUFFIX only — the digit stays inside `.fig` and the letters stay
+     outside it. Mono tabular numerals are for figures, never for words, and "4th"
+     set entirely in mono renders the "th" as a figure glyph. */
+  function ordSuffix(n) {
+    var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+    return (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
   function clustersFor(b) {
     var bets = RiskCore.factorBets(b, 0.25);
     return bets.map(function (g) {
@@ -751,719 +1491,45 @@
     };
   }
   function betCount(b) { return enbClamp(b.enb, b.held.length).bets; }
-  function verdictSentence(RR, active) {
-    var n = active.held.length;
-    var lens = active.lens;
-    var nBets = betCount(active);
-    if (RR.hasStress && lens === 'calm' && RR.stress && RR.stress.ok) {
-      var nStress = betCount(RR.stress);
-      return { h2: te(
-        'Calm days: about <span class="num">' + nBets + '</span> bets. Selloffs: <span class="num">' + nStress + '</span>',
-        '平日约 <span class="num">' + nBets + '</span> 项押注；跌市中只剩 <span class="num">' + nStress + '</span> 项') };
-    }
-    var betWord = nBets === 1 ? 'bet' : 'bets';
-    return { h2: te(
-      'Your <span class="num">' + n + '</span> names move as about <span class="num">' + nBets + '</span> ' + betWord,
-      '你的 <span class="num">' + n + '</span> 只持仓实际上约为 <span class="num">' + nBets + '</span> 项押注') };
-  }
-
-  // so-what: top factor + its share + consequence + what moves independently.
-  // "Independent" = the factor-bet groups OTHER than the dominant one (their names
-  // are the pieces not riding the top factor) — never the top-factor names.
-  function soWhat(b, cov) {
-    var top = b.topFactor, share = b.topFactorShare;
-    var fmeta = FLABEL[top] || { en: top, zh: top };
-    var bets = clustersFor(b);
-    var dom = bets[0];   // dominant bet (largest risk share)
-    // independent pieces = members of the non-dominant bets (cap 3 for the sentence)
-    var indep = [];
-    bets.slice(1).forEach(function (g) { g.members.forEach(function (t) { if (indep.length < 4) indep.push(t); }); });
-    var indepEn = indep.length ? (indep.slice(0, 3).join(', ') + (indep.length > 3 ? '…' : '')) : '';
-    var enParts = ['<b>' + esc(fmeta.en) + ' drives ' + pct0(share) + '</b> of your swings'];
-    var zhParts = ['<b>' + esc(fmeta.zh) + '驱动你 ' + pct0(share) + ' 的波动</b>'];
-    if (share >= 0.5) {
-      enParts.push('if that one trade turns, most of this book turns with it');
-      zhParts.push('这笔交易一转向，组合大部分随之转向');
-    }
-    if (indepEn) {
-      enParts.push(esc(indepEn) + (indep.length === 1 ? ' is the piece moving on its own' : ' are the pieces moving on their own'));
-      zhParts.push('只有 ' + esc(indepEn) + ' 在独立行走');
-    }
-    return te(enParts.join(' — ') + '.', zhParts.join('——') + '。');
-  }
-
-  function stateChipText(key) {
-    var m = {
-      ok: { en: 'Spread out', zh: '分散' }, tilt: { en: 'Leaning one way', zh: '偏向一侧' },
-      conc: { en: 'Mostly one bet', zh: '高度集中' }, one: { en: 'Effectively one bet', zh: '实为单一押注' }
-    };
-    var w = m[key] || m.tilt;
-    return te(w.en, w.zh);
-  }
-
-  function lensHint(RR) {
-    if (RR.stressOnlyPairs && RR.stressOnlyPairs.length) {
-      var p = RR.stressOnlyPairs[0];
-      return te('on bad market days, ' + esc(p.a) + ' joins the ' + esc(p.b) + ' cluster',
-        '大盘下跌日，' + esc(p.a) + ' 也并入 ' + esc(p.b) + ' 集群');
-    }
-    return '';
-  }
-
-  function braidAria(b, clusters) {
-    var n = b.held.length, nb = clusters.length;
-    return n + ' holdings connect into ' + nb + ' ' + (nb === 1 ? 'bet' : 'bets') + '.';
-  }
-
-  // ---- the three sub-cards -------------------------------------------
-  function subCards(RR, active, cov) {
-    var b = active;
-    // 1) what drives your swings — factor shares (calm-model betas; use active lens)
-    var top = b.rankedFactors.filter(function (k) { return (b.factorShare[k] || 0) > 0.005; }).slice(0, 5);
-    var rows = top.map(function (k) {
-      return frow(flabel(k), fhue(k), b.factorShare[k]);
-    }).join('');
-    rows += frow(isZh() ? '个股特有' : 'Stock-specific', 'var(--f-idio)', b.idioShareTotal);
-    var enbRaw = (RR.hasStress ? RR.stress : RR.calm).enb;
-    var nNames = b.held.length;
-    var enbInfo = enbClamp(enbRaw, nNames);
-    var enbShown = enbInfo.shown.toFixed(1);
-    // Tier-2 receipt: when the clamp engages, the method tip carries the raw reading
-    var tip1En = 'Share of your book\'s day-to-day variance attributed to each factor, from a 9-factor model of daily moves. Measurement, not a forecast.';
-    var tip1Zh = '各因子对组合日度波动方差的贡献，来自 9 因子日度模型。为测量而非预测。';
-    var suffix = enbTipSuffix(enbInfo);
-    if (suffix) { tip1En += suffix.en; tip1Zh += suffix.zh; }
-    var card1 = card('What drives your swings', '波动的来源', tip1En, tip1Zh,
-      rows +
-      '<div class="wri-enb">' + te('effective bets ≈ <b class="num">' + enbShown + '</b> of ' + nNames + ' names',
-        '有效押注数 ≈ <b class="num">' + enbShown + '</b>（共 ' + nNames + ' 只）') + '</div>' +
-      '<div id="wri_fxhome"></div>');   // absorbed FX panel drawer mounts here
-
-    // 2) move as one — twin clusters (active lens) + stress-only joins
-    var twins = twinCards(RR, active);
-    var card2 = card('Move as one', '同涨同跌',
-      'Pairs whose modeled correlation is 0.70 or higher under the selected lens. "Selloffs only" pairs decouple on calm days but move together on bad market days.',
-      '在所选视角下建模相关性达到 0.70 或以上的组合。“仅跌市”组合在平日相互独立，但在大盘下跌日同向移动。',
-      twins);
-
-    // 3) biggest single risks — top |MCTR share|
-    var pr = b.rankedPositions.slice(0, 4).map(function (t) {
-      var s = b.mctrShare[t] || 0, neg = s < 0;
-      return '<div class="wri-crow' + (neg ? ' neg' : '') + '"><span class="tk">' + esc(t) + '</span>' +
-        '<span class="wri-track" style="--hue:' + (neg ? 'var(--wri-ok)' : fhue(b.topFactor)) + '"><i style="width:' +
-        Math.min(100, Math.abs(s) * 100).toFixed(0) + '%"></i></span>' +
-        '<span class="pct">' + (neg ? '−' : '') + Math.abs(Math.round(s * 100)) + '%</span></div>';
-    }).join('');
-    var negName = b.rankedPositions.filter(function (t) { return (b.mctrShare[t] || 0) < 0; })[0];
-    var note3 = negName ? '<div class="wri-note">' + te(esc(negName) + ' leans against the rest of the book',
-      esc(negName) + ' 与组合其余部分反向而行') + '</div>' : '';
-    var card3 = card('Biggest single risks', '最大单一风险',
-      'Each position\'s contribution to the book\'s overall volatility (weight x co-movement). A small position in a volatile, correlated name can out-risk a large quiet one. Negative = moves against the rest of the book.',
-      '各持仓对组合整体波动的贡献（权重 x 联动）。一个波动大、相关性高的小仓位，风险可能超过一个安静的大仓位。负值 = 与组合其余部分反向。',
-      pr + note3);
-
-    return '<div class="wri-sub">' + card1 + card2 + card3 + '</div>';
-  }
-  function card(hEn, hZh, tipEn, tipZh, body) {
-    return '<div class="wri-card2"><h3>' + te(hEn, hZh) +
-      '<span class="q" data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) + '" tabindex="0" role="button" aria-label="' +
-      esc(isZh() ? tipZh : tipEn) + '">?</span></h3>' + body + '</div>';
-  }
-  function frow(lab, hue, share) {
-    return '<div class="wri-frow"><span class="lab">' + esc(lab) + '</span>' +
-      '<span class="wri-track" style="--hue:' + hue + '"><i style="width:' + Math.min(100, share * 100).toFixed(0) + '%"></i></span>' +
-      '<span class="pct">' + Math.round(share * 100) + '%</span></div>';
-  }
-  function twinCards(RR, active) {
-    var calmClusters = active.clusters.filter(function (c) { return c.members.length >= 2; });
-    var html = '';
-    if (!calmClusters.length && !(RR.stressOnlyPairs && RR.stressOnlyPairs.length)) {
-      return '<div class="wri-note" style="border:0;padding:0">' + te(
-        'No two names move as one under this lens — your positions are pulling their own weight.',
-        '在此视角下没有两只持仓同涨同跌——各仓位各自独立。') + '</div>';
-    }
-    calmClusters.forEach(function (c) {
-      html += '<div class="wri-twin">' +
-        c.members.map(function (t) { return '<span class="tk">' + esc(t) + '</span>'; }).join('') +
-        '<span class="lnk">' + te('one trade', '同一笔交易') + '</span></div>';
-    });
-    // stress-only joins — dedupe by the joining name (a name can pair with several
-    // cluster members; surface it once). Skip names already shown in a calm cluster.
-    if (RR.stressOnlyPairs && RR.stressOnlyPairs.length) {
-      var inCalm = {};
-      calmClusters.forEach(function (c) { c.members.forEach(function (t) { inCalm[t] = 1; }); });
-      var seen = {};
-      RR.stressOnlyPairs.forEach(function (p) {
-        // the "joining" name is whichever of the pair is NOT already in a calm cluster
-        var joiner = inCalm[p.a] ? p.b : p.a;
-        if (seen[joiner] || Object.keys(seen).length >= 3) return;
-        seen[joiner] = 1;
-        html += '<div class="wri-twin stress"><span class="tk">' + esc(joiner) + '</span>' +
-          '<span class="lnk">' + te('joins in selloffs', '跌市中并入') + '</span>' +
-          '<span class="why">' + te('holds up on calm days, falls with the cluster on bad ones',
-            '平日独立，大跌日与集群同跌') + '</span></div>';
-      });
-    }
-    return '<div class="wri-twins">' + html + '</div>';
-  }
-
-  function footnote(RR, cov) {
-    var unmod = cov.unmodeled.length;
-    var unEn = unmod ? (' ' + unmod + ' name' + (unmod > 1 ? 's' : '') + ' (' + esc(cov.unmodeled.join(', ')) +
-      ') ' + (unmod > 1 ? 'aren\'t' : 'isn\'t') + ' modeled and sit outside these numbers.') : '';
-    var unZh = unmod ? (' ' + unmod + ' 只（' + esc(cov.unmodeled.join(', ')) + '）未纳入模型，不在上述数字内。') : '';
-    var clampEn = (RR.calm.clampDisclose) ? ' A small share of variance nets out and is not shown.' : '';
-    var clampZh = (RR.calm.clampDisclose) ? ' 少量方差相互抵消，未予显示。' : '';
-    var methodEn = 'Betas fit on 252 trading days' + (RR.hasStress
-      ? '; the selloffs lens re-estimates factor co-movement on the worst quarter of market days over 3 years'
-      : '') + '; stock-specific risk estimated on all days. Full method on the stock pages.';
-    var methodZh = 'Beta 基于 252 个交易日拟合' + (RR.hasStress
-      ? '；跌市视角在三年内最差四分位的大盘交易日上重估因子联动' : '') + '；个股特有风险按全部交易日估计。';
-    return '<div class="wri-foot">' +
-      '<span class="l-en">Measurement from a 9-factor model of daily moves — not a forecast, and not a recommendation.' + unEn + clampEn +
-      ' <span class="q" data-tip-en="' + esc(methodEn) + '" data-tip-zh="' + esc(methodZh) +
-      '" tabindex="0" role="button">method</span></span>' +
-      '<span class="l-zh">基于 9 因子日度模型的测量——并非预测，也非建议。' + unZh + clampZh +
-      ' <span class="q" data-tip-en="' + esc(methodEn) + '" data-tip-zh="' + esc(methodZh) +
-      '" tabindex="0" role="button">方法</span></span></div>';
-  }
-
-  // =========================================================================
-  //  W4 — the pre-trade check (what-if diagnostic). Operator-signed NWP-U18
-  //  carve-out (WRI-R3): the user proposes ONE candidate (ticker + optional $
-  //  size); we print the SAME descriptive statistics for the hypothetical book.
-  //  The user constructs; WE DESCRIBE. No optimizer, no suggested weight/size, no
-  //  advice verbs — ever. Deltas are NEVER tinted (a diversification delta is a
-  //  measurement, not a verdict). Math is RiskCore.whatIf (pure composition of
-  //  book(), no new estimator); result respects the surface's active lens.
-  // =========================================================================
-  var W4_DEFAULT_DOLLARS = 10000;   // manual-mode fallback (no real dollars exist)
-
-  // static markup: header + input row + (empty) live result container. The row
-  // is present only when the book has ≥1 modeled holding (wireWhatIf hides it
-  // otherwise — the empty-book state).
-  function whatIfRow(RR, active) {
-    var tipEn = 'Type a name to see what it would do to the book’s structure. A measurement of the hypothetical book — not a recommendation.';
-    var tipZh = '输入代码，查看它对组合结构的影响。对假设组合的测量——并非建议。';
-    var subEn = 'assuming a position about the size of your average holding — adjust to your intent';
-    var subZh = '默认按你的平均持仓规模——可自行调整';
-    return '<div class="wri-w4" id="wri_w4">' +
-      '<div class="wri-w4-head"><span>' + te('PRE-TRADE CHECK', '试仓检查') + '</span>' +
-      '<span class="q" data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) +
-      '" tabindex="0" role="button" aria-label="' + esc(isZh() ? tipZh : tipEn) + '">?</span></div>' +
-      '<div class="wri-w4-in">' +
-      '<div class="wri-w4-tk"><input id="wri_w4_tk" type="text" autocomplete="off" ' +
-      'autocapitalize="characters" placeholder="' + (isZh() ? '代码或名称' : 'ticker or name') +
-      '" aria-label="' + (isZh() ? '候选代码' : 'candidate ticker') + '">' +
-      '<div class="wri-w4-sugg" id="wri_w4_sugg"></div></div>' +
-      '<div class="wri-w4-amt"><div class="wri-w4-amtrow"><span class="cur">$</span>' +
-      '<input id="wri_w4_amt" type="text" inputmode="numeric" aria-label="' +
-      (isZh() ? '仓位金额' : 'position amount in dollars') + '"></div>' +
-      '<span class="sub">' + te(subEn, subZh) + '</span></div>' +
-      '<button class="wri-w4-clear" id="wri_w4_clear" type="button" style="display:none">' +
-      te('clear', '清除') + '</button></div>' +
-      '<div class="wri-w4-res" id="wri_w4_res" aria-live="polite"></div></div>';
-  }
-
-  // average position size for the $ prefill. Averaged from the book's OWN per-name
-  // weight values so the candidate is scaled to the book and the deltas are
-  // meaningful (a size that dwarfs every holding would read as "100% of the swing"
-  // regardless of the name). AUTO mode: those values are real dollars, so the
-  // prefill is the real average holding. MANUAL mode: the book carries only
-  // relative weights (equal-weight => 1 each); scaling the candidate to that same
-  // average keeps it comparable, and we express it as a round default only when
-  // the weights are unit-scale (≤ a few) so the $ field never shows a bare "1".
-  function avgPositionSize(hero) {
-    var st = hero.__wri; if (!st) return W4_DEFAULT_DOLLARS;
-    var vals = [];
-    if (st.wmap) Object.keys(st.wmap).forEach(function (t) {
-      var v = st.wmap[t]; if (isNum(v) && v > 0) vals.push(v);
-    });
-    if (!vals.length) return W4_DEFAULT_DOLLARS;
-    var m = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
-    // real dollars (auto, or a manual editor in dollars) -> use the average as-is.
-    // unit-scale weights (manual equal-weight, avg ~1) carry no dollar meaning, so
-    // show a round nominal ($10k) — but the RESOLVE always re-scales to the book's
-    // average weight so the delta stays comparable regardless of what's displayed.
-    if (m >= 100) return Math.max(1, Math.round(m));
-    return W4_DEFAULT_DOLLARS;
-  }
-  // the dollar size to actually FEED whatIf: in a real-dollar book it's the typed
-  // amount; in a unit-weight book (manual equal-weight) the typed "$10,000" is
-  // nominal, so we translate it into the book's own weight scale — the candidate
-  // is sized at (typed / displayed-default) × average-book-weight, i.e. "about one
-  // average holding" when left at the prefill. Keeps the what-if honest either way.
-  function effectiveDollars(hero, typed) {
-    var st = hero.__wri; if (!st) return typed;
-    var vals = [];
-    if (st.wmap) Object.keys(st.wmap).forEach(function (t) {
-      var v = st.wmap[t]; if (isNum(v) && v > 0) vals.push(v);
-    });
-    if (!vals.length) return typed;
-    var m = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
-    if (m >= 100) return typed;                 // real-dollar book: feed dollars directly
-    // unit-weight book: map the displayed $ onto the book's weight scale so the
-    // candidate is ~one average holding at the prefill, and scales linearly if edited.
-    var disp = avgPositionSize(hero) || W4_DEFAULT_DOLLARS;
-    return (typed / disp) * m;
-  }
-  function fmtDollars(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
-  function parseDollars(s) {
-    var v = parseFloat(String(s == null ? '' : s).replace(/[^0-9.]/g, ''));
-    return isNum(v) && v > 0 ? v : 0;
-  }
-
-  function wireWhatIf(hero, RR, active) {
-    var row = document.getElementById('wri_w4'); if (!row) return;
-    // empty-book state: hide the row below 1 modeled holding.
-    var modeledN = (active && active.held) ? active.held.length : 0;
-    if (modeledN < 1) { row.style.display = 'none'; return; }
-    row.style.display = '';
-
-    var tk = document.getElementById('wri_w4_tk');
-    var amt = document.getElementById('wri_w4_amt');
-    var sugg = document.getElementById('wri_w4_sugg');
-    var clear = document.getElementById('wri_w4_clear');
-    if (!tk || !amt || !sugg) return;
-
-    // restore prior state (survives lens/lang re-render); default $ = avg holding.
-    // The typed amount is sticky ONLY when the user hand-edited it (userAmt) — a
-    // lens/lang flip keeps their number, but a book change (e.g. weights→dollars)
-    // refreshes the prefill to the new average holding.
-    var prior = hero.__w4 || {};
-    var avg = avgPositionSize(hero);
-    var keepAmt = prior.userAmt && isNum(prior.dollars) && prior.dollars > 0;
-    amt.value = fmtDollars(keepAmt ? prior.dollars : avg);
-    if (prior.ticker) { tk.value = prior.ticker; clear.style.display = '';
-      // re-sync the stashed dollars to the (possibly refreshed) default
-      if (!keepAmt) hero.__w4.dollars = avg; }
-
-    var sel = -1, items = [];
-    // suggestions from the SAME index the watchlist search uses (SD.loadIndex).
-    function renderSugg() {
-      var v = tk.value.trim().toLowerCase(); sel = -1;
-      if (!v || !W4_INDEX) { sugg.style.display = 'none'; return; }
-      items = W4_INDEX.filter(function (x) {
-        return x.t.toLowerCase().indexOf(v) === 0 ||
-          x.n.toLowerCase().indexOf(v) >= 0 || (x.s || '').toLowerCase().indexOf(v) >= 0;
-      }).sort(function (a, b) {
-        var ae = a.t.toLowerCase() === v ? -1 : 0, be = b.t.toLowerCase() === v ? -1 : 0;
-        if (ae !== be) return ae - be;
-        var ap = a.t.toLowerCase().indexOf(v) === 0 ? 0 : 1, bp = b.t.toLowerCase().indexOf(v) === 0 ? 0 : 1;
-        return ap - bp || a.t.localeCompare(b.t);
-      }).slice(0, 10);
-      sugg.innerHTML = items.map(function (x, i) {
-        return '<div data-i="' + i + '"><b>' + esc(x.t) + '</b><small>' + esc(x.n) +
-          (x.s ? ' · ' + esc(x.s) : '') + '</small></div>';
-      }).join('');
-      sugg.style.display = items.length ? 'block' : 'none';
-    }
-    function pickSugg(i) {
-      var x = items[i] || (items[0]); if (!x) { commit(tk.value.trim().toUpperCase()); return; }
-      sugg.style.display = 'none';
-      commit(x.t);
-    }
-    // commit a candidate: stash state + resolve. Resolve to the index's CANONICAL
-    // ticker (x.t) so it matches the factor_betas.json / stockdata keys exactly
-    // (GC=F, BRK-B, ^GSPC keep their case/symbols — never blindly uppercased).
-    function commit(ticker) {
-      if (!ticker) return;
-      var canon = canonTicker(ticker);
-      var wasUserAmt = !!(hero.__w4 && hero.__w4.userAmt);   // preserve hand-edited size
-      tk.value = canon;
-      hero.__w4 = { ticker: canon, dollars: parseDollars(amt.value) || avg, userAmt: wasUserAmt };
-      clear.style.display = '';
-      resolveWhatIf(hero, canon);
-    }
-
-    ensureW4Index(function () { /* index ready; input handlers already live */ });
-
-    tk.addEventListener('input', renderSugg);
-    tk.addEventListener('keydown', function (e) {
-      if (sugg.style.display !== 'none') {
-        var divs = sugg.querySelectorAll('div');
-        if (e.key === 'ArrowDown') { sel = Math.min(sel + 1, divs.length - 1); e.preventDefault(); divs.forEach(function (d, i) { d.classList.toggle('sel', i === sel); }); return; }
-        if (e.key === 'ArrowUp') { sel = Math.max(sel - 1, 0); e.preventDefault(); divs.forEach(function (d, i) { d.classList.toggle('sel', i === sel); }); return; }
-        if (e.key === 'Escape') { sugg.style.display = 'none'; return; }
-      }
-      if (e.key === 'Enter') { e.preventDefault(); pickSugg(sel >= 0 ? sel : 0); }
-    });
-    sugg.addEventListener('mousedown', function (e) {
-      var d = e.target.closest('div[data-i]'); if (d) { e.preventDefault(); pickSugg(+d.dataset.i); }
-    });
-    // amount edits re-resolve live (only when a candidate is set). Mark the size
-    // as user-owned so a later lens/lang flip keeps it (userAmt).
-    amt.addEventListener('input', function () {
-      if (!hero.__w4 || !hero.__w4.ticker) return;
-      hero.__w4.dollars = parseDollars(amt.value) || avg;
-      hero.__w4.userAmt = true;
-      resolveWhatIf(hero, hero.__w4.ticker);
-    });
-    clear.addEventListener('click', function () {
-      hero.__w4 = null; tk.value = ''; sugg.style.display = 'none';
-      amt.value = fmtDollars(avg); clear.style.display = 'none';
-      var res = document.getElementById('wri_w4_res'); if (res) res.innerHTML = '';
-      tk.focus();
-    });
-
-    // re-resolve on a lens/lang re-render if a candidate is already set
-    if (hero.__w4 && hero.__w4.ticker) resolveWhatIf(hero, hero.__w4.ticker);
-  }
-
-  // resolve a typed string to the index's canonical ticker key (exact match,
-  // then case-insensitive), else fall back to the trimmed input as-is (so an
-  // unmodeled name still resolves to the honest-null branch, never crashes).
-  function canonTicker(s) {
-    var raw = String(s || '').trim();
-    if (!raw) return raw;
-    if (W4_BY && W4_BY[raw]) return raw;
-    var up = raw.toUpperCase();
-    if (W4_BY && W4_BY[up]) return up;
-    if (W4_BY) {
-      var lo = raw.toLowerCase();
-      var hit = Object.keys(W4_BY).filter(function (t) { return t.toLowerCase() === lo; })[0];
-      if (hit) return hit;
-    }
-    return up;
-  }
-
-  // resolve + render the neutral result block for the current candidate. Reads
-  // the ACTIVE lens off the hero so the deltas match what the surface shows.
-  function resolveWhatIf(hero, ticker) {
-    var st = hero.__wri; if (!st) return;
-    var res = document.getElementById('wri_w4_res'); if (!res) return;
-    var lens = hero.getAttribute('data-lens') || st.RR.defaultLens;
-    if (!st.RR.hasStress) lens = 'calm';
-    var typed = (hero.__w4 && hero.__w4.dollars) || avgPositionSize(hero);
-    // feed whatIf the size on the BOOK's own scale (dollars in a real-dollar book;
-    // translated to the weight scale in a unit-weight manual book) so the delta is
-    // comparable — see effectiveDollars.
-    var dollars = effectiveDollars(hero, typed);
-    var wi = RiskCore.whatIf(st.data, st.wmap, ticker, dollars, lens);
-    res.innerHTML = whatIfResult(wi);
-    // the candidate's own lane chips (reuse the L1 lane engine) mount async
-    mountCandidateChips(res, ticker);
-  }
-
-  // build the neutral result lines. NUMBERS mono, arrows plain, deltas untinted.
-  function whatIfResult(wi) {
-    var T = esc(wi.ticker || '');
-    // unmodeled candidate -> honest null, no fabricated numbers (WRI-R6/R3).
-    if (!wi.modeled) {
-      return '<p class="ln"><span class="dot"></span><span class="null">' +
-        te('<span class="tk">' + T + '</span> — not in the risk model, price signals only.',
-          '<span class="tk">' + T + '</span> —— 未纳入风险模型，仅价格信号。') +
-        '</span></p>';
-    }
-    var before = wi.before, after = wi.after;
-    if (!after || !after.ok) {
-      // e.g. the candidate is the only modeled name (thin after-book) — stay honest.
-      return '<p class="ln"><span class="dot"></span><span class="null">' +
-        te('Add another modeled holding to compare the book with and without ' + '<span class="tk">' + T + '</span>.',
-          '再添加一项可建模持仓，以比较加入 <span class="tk">' + T + '</span> 前后的组合。') +
-        '</span></p>';
-    }
-    // Line 1: bets before->after · top-factor share before->after
-    var enb0 = before && before.ok ? Math.max(1, Math.round(before.enb)) : null;
-    var enb1 = Math.max(1, Math.round(after.enb));
-    var topK = after.topFactor;
-    var topLab = flabel(topK);
-    var a0 = before && before.ok ? Math.round((before.factorShare[topK] || 0) * 100) : null;
-    var a1 = Math.round((after.factorShare[topK] || 0) * 100);
-    var enbFrag = (enb0 != null)
-      ? '<span class="num">' + enb0 + '</span><span class="arw">→</span><span class="num">' + enb1 + '</span>'
-      : '<span class="num">' + enb1 + '</span>';
-    var shFrag = (a0 != null)
-      ? '<span class="num">' + a0 + '%</span><span class="arw">→</span><span class="num">' + a1 + '%</span>'
-      : '<span class="num">' + a1 + '%</span>';
-    var line1 = '<p class="ln"><span class="dot"></span><span>' + te(
-      'With <span class="tk">' + T + '</span>: effectively ' + enbFrag + ' bets · ' + esc(topLab) + ' share ' + shFrag,
-      '加入 <span class="tk">' + T + '</span>：有效押注数 ' + enbFrag + ' · ' + esc(topLab) + '占比 ' + shFrag
-    ) + '</span></p>';
-
-    // Line 2 (conditional): twin membership OR hedge lean
-    var line2 = '';
-    var cand = wi.candidate;
-    if (cand.hedge) {
-      line2 = '<p class="ln"><span class="dot"></span><span>' + te(
-        '<span class="tk">' + T + '</span> would lean against the rest of the book',
-        '<span class="tk">' + T + '</span> 将与组合其余部分反向') + '</span></p>';
-    } else if (cand.twinWith && cand.twinWith.length) {
-      var withT = esc(cand.twinWith.slice(0, 3).join(', '));
-      var inSell = (wi.lens === 'stress');
-      line2 = '<p class="ln"><span class="dot"></span><span>' + te(
-        'moves with <span class="tk">' + withT + '</span>' + (inSell ? ' in selloffs' : ''),
-        '与 <span class="tk">' + withT + '</span> 同步' + (inSell ? '（跌市中）' : '')) + '</span></p>';
-    }
-
-    // Line 3: candidate's own swing share + rank
-    var c = Math.abs(Math.round((cand.mctrShare || 0) * 100));
-    var k = cand.rank || after.rankedPositions.length;
-    var line3 = '<p class="ln"><span class="dot"></span><span>' + te(
-      'would carry about <span class="num">' + c + '%</span> of the book’s swing (#<span class="num">' + k + '</span> largest)',
-      '约占组合波动的 <span class="num">' + c + '%</span>（第<span class="num">' + k + '</span>大）') + '</span></p>';
-
-    return line1 + line2 + line3 + '<div class="wri-lanes" id="wri_w4_chips"></div>';
-  }
-
-  // reuse the L1 lane engine to build the candidate's own chips (async — its
-  // stockdata JSON loads on demand; degrades to nothing if absent).
-  function mountCandidateChips(res, ticker) {
-    var host = res.querySelector('#wri_w4_chips'); if (!host) return;
-    window.SD.loadTicker(ticker).then(function (j) {
-      if (!host.isConnected || !j) return;
-      var lanes = laneRead(j);
-      var chips = [];
-      LANES.forEach(function (kk) {
-        var L = lanes[kk];
-        if (L && L.chip) chips.push('<span class="wri-chip ' + (L.chip.cls || '') + '">' +
-          te(esc(L.chip.en), esc(L.chip.zh)) + '</span>');
-      });
-      host.innerHTML = chips.join('');
-    });
-  }
-
-  // shared search index for the what-if input (same source as the watchlist
-  // search: stockdata/index.json via SD.loadIndex). Loaded once, cached.
-  var W4_INDEX = null, W4_BY = null, W4_INDEX_LOADING = null;
-  function ensureW4Index(cb) {
-    if (W4_INDEX) { cb && cb(); return; }
-    if (!W4_INDEX_LOADING) {
-      W4_INDEX_LOADING = window.SD.loadIndex().then(function (r) {
-        W4_INDEX = r.list; W4_BY = r.byTicker; return r;
-      }).catch(function () { W4_INDEX = []; W4_BY = {}; });
-    }
-    W4_INDEX_LOADING.then(function () { cb && cb(); });
-  }
-
-  // ---- patch-bay painter (data-driven port of the mockup SVG builder) -----
-  // model rows: NAMES = [{t, share (signed MCTR share), cl (cluster index)}].
-  function paintBraid(active, clusters) {
-    var svg = document.getElementById('wri_braidSvg'); if (!svg) return;
-    var names = active.rankedPositions.map(function (t) { return t; });
-    // stable left-to-right order = ranked positions; cluster index per name
-    var clOf = {};
-    clusters.forEach(function (c, i) { c.members.forEach(function (t) { clOf[t] = i; }); });
-    var NAMES = names.map(function (t) { return { t: t, share: active.mctrShare[t] || 0, cl: clOf[t] }; });
-    var n = NAMES.length;
-    var xs = {}; for (var i = 0; i < n; i++) xs[NAMES[i].t] = 64 + (W - 128) * (n > 1 ? i / (n - 1) : 0.5);
-    // order clusters as they first appear L->R; segment widths ∝ cluster share
-    var order = [], seen = {};
-    NAMES.forEach(function (m) { if (!seen[m.cl]) { seen[m.cl] = 1; order.push(m.cl); } });
-    var shares = {}, members = {};
-    order.forEach(function (c) { shares[c] = 0; members[c] = []; });
-    NAMES.forEach(function (m) { shares[m.cl] += Math.abs(m.share); members[m.cl].push(m.t); });
-    var total = 0; order.forEach(function (c) { total += shares[c]; }); total = total || 1;
-    var gap = 24, usable = W - 128 - gap * (order.length - 1), sumw = 0, ws = {};
-    order.forEach(function (c) { ws[c] = Math.max(56, usable * shares[c] / total); sumw += ws[c]; });
-    var scale = usable / (sumw || 1), x = 64, cx = {};
-    order.forEach(function (c) { var w = ws[c] * scale; cx[c] = { x: x, w: w }; x += w + gap; });
-    var dom = order.reduce(function (a, b) { return shares[a] >= shares[b] ? a : b; }, order[0]);
-
-    var guides = '', threads = '', ticks = '', strands = '';
-    var railg = '<line class="rail" x1="40" y1="' + RAILY + '" x2="' + (W - 40) + '" y2="' + RAILY + '"/>';
-    NAMES.forEach(function (m, i) {
-      var xp = xs[m.t], c = cx[m.cl], neg = m.share < 0;
-      var k = members[m.cl].indexOf(m.t), nm = members[m.cl].length;
-      var bx = c.x + c.w * (k + 0.5) / nm;
-      var fil = Math.min(6, 1 + Math.round(Math.abs(m.share) * 14));
-      var hue = clusters[m.cl] ? clusters[m.cl].hue : 'var(--f-idio)';
-      var col = cmix(hue, m.cl === dom ? 72 : 48, 'var(--muted)');
-      guides += '<line class="guide" x1="' + xp + '" y1="' + (TOPY - 4) + '" x2="' + xp + '" y2="' + (RAILY - 4) + '"/>';
-      ticks += '<text class="tick' + (neg ? ' neg' : '') + '" x="' + xp + '" y="12" text-anchor="middle">' + esc(m.t) + (neg ? ' ⇄' : '') + '</text>';
-      for (var f = 0; f < fil; f++) {
-        var dx = (f - (fil - 1) / 2) * 2.6;
-        threads += '<path class="cord' + (neg ? ' hedge' : '') + '" stroke="' + col + '" style="animation-delay:' + (i * 45 + f * 18) + 'ms" d="' +
-          'M' + (xp + dx) + ',' + TOPY + ' L' + (xp + dx) + ',' + BENDY +
-          ' C' + (xp + dx) + ',' + (BENDY + 34) + ' ' + (bx + dx * 0.4) + ',' + (RAILY - 30) + ' ' + (bx + dx * 0.4) + ',' + RAILY + '"/>';
-      }
-    });
-    order.forEach(function (cl, j) {
-      var c = cx[cl], isDom = cl === dom, cluster = clusters[cl];
-      var hue = cluster ? cluster.hue : 'var(--f-idio)';
-      var col = isDom ? hue : cmix(hue, 55, 'var(--muted)');
-      var y = (c.w < 96 && j % 2) ? LABY2 : LABY;
-      var lab = cluster ? (isZh() ? cluster.labelZh : cluster.labelEn) : members[cl][0];
-      if (cluster && cluster.hedge) lab = lab + ' ⇄';
-      strands += '<g' + (isDom ? ' class="seg-dom"' : '') + '>' +
-        '<line class="segbase" x1="' + c.x + '" y1="' + RAILY + '" x2="' + (c.x + c.w) + '" y2="' + RAILY + '" stroke="' + col + '"/>' +
-        '<line class="segtick" x1="' + c.x + '" y1="' + (RAILY - 4) + '" x2="' + c.x + '" y2="' + (RAILY + 4) + '" stroke="' + col + '"/>' +
-        '<line class="segtick" x1="' + (c.x + c.w) + '" y1="' + (RAILY - 4) + '" x2="' + (c.x + c.w) + '" y2="' + (RAILY + 4) + '" stroke="' + col + '"/></g>' +
-        '<text class="wri-strandlab' + (isDom ? ' dom' : '') + '" x="' + (c.x + c.w / 2) + '" y="' + y + '" text-anchor="middle">' + esc(lab) + '</text>';
-    });
-    svg.querySelector('#wri_guides').innerHTML = guides;
-    svg.querySelector('#wri_threads').innerHTML = threads;
-    svg.querySelector('#wri_railg').innerHTML = railg;
-    svg.querySelector('#wri_ticks').innerHTML = ticks;
-    svg.querySelector('#wri_strands').innerHTML = strands;
-
-    // bucket-list fallback (≤560px)
-    var bhtml = '';
-    order.forEach(function (cl) {
-      var cluster = clusters[cl];
-      var lab = cluster ? (isZh() ? cluster.labelZh : cluster.labelEn) : members[cl][0];
-      var hue = cluster ? cluster.hue : 'var(--f-idio)';
-      var tks = members[cl].join(' · ');
-      var showTks = (tks !== lab.replace(' ⇄', ''));
-      bhtml += '<div class="wri-bucket"><span class="swatch" style="background:' + hue + '"></span>' +
-        '<b style="font-size:12px">' + esc(lab) + '</b>' + (showTks ? ' <span class="tks">' + esc(tks) + '</span>' : '') + '</div>';
-    });
-    var bEl = document.getElementById('wri_buckets'); if (bEl) bEl.innerHTML = bhtml;
-
-    // first-paint-only draw-in animation
-    var braid = document.querySelector('.wri-braid');
-    if (braid && !animatedOnce && !prefersReduced()) {
-      braid.classList.add('animate');
-      animatedOnce = true;
-      setTimeout(function () { braid.classList.remove('animate'); }, 1400);
-    }
-  }
-  function cmix(hue, p, base) { return 'color-mix(in srgb, ' + hue + ' ' + p + '%, ' + base + ')'; }
-  function prefersReduced() {
-    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
-
-  // ---- absorb the old #fx_panel into sub-card 1's <details> drawer --------
-  // factor_exposure.js renders into #fx_panel; we relocate that node into
-  // #wri_fxhome inside a collapsed <details> so the full beta table / shocks /
-  // weight editor stay a Tier-2 home (spec §2, §6.1). The panel keeps working.
-  function absorbFxPanel(hero, calm) {
-    var home = document.getElementById('wri_fxhome');
-    var fx = document.getElementById('fx_panel');
-    if (!home || !fx) return;
-    // wrap in a details the first time; move the live #fx_panel inside it
-    var det = home.querySelector('details.wri-fxdrawer');
-    if (!det) {
-      det = document.createElement('details');
-      det.className = 'wri-fxdrawer';
-      det.innerHTML = '<summary>' + te('Full factor detail — beta table, shocks, weights',
-        '完整因子明细——贝塔表、情景冲击、权重') + '</summary>';
-      home.appendChild(det);
-    }
-    if (fx.parentNode !== det) { fx.style.display = ''; det.appendChild(fx); }
-  }
-  function hidePanel() {
-    var fx = document.getElementById('fx_panel');
-    if (fx) fx.style.display = 'none';
-  }
-
   // =========================================================================
   //  L1 card decoration — add lane chips + role badge + drawer to each card
   // =========================================================================
-  function decorateCards() {
-    var cards = document.querySelectorAll('#wl_list .wl-card[data-t]');
-    cards.forEach(function (card) {
-      var t = card.getAttribute('data-t');
-      if (card.querySelector('.wri-lanes')) return;   // already decorated this render
-      window.SD.loadTicker(t).then(function (j) {
-        noteJson(t, j);
-        if (!card.isConnected) return;
-        card.__wriJson = j;
-        paintLanes(card, j);
-      });
-    });
-  }
-  function paintLanes(card, j) {
-    if (card.querySelector('.wri-lanes')) card.querySelector('.wri-lanes').remove();
-    if (card.querySelector('.wri-drawer')) card.querySelector('.wri-drawer').remove();
-    var lanes = laneRead(j);
-    var role = roleBadge(lanes);
-    // chips at rest: max 3 real-signal chips; the rest live in the drawer
-    var chips = [];
-    LANES.forEach(function (k) {
-      var L = lanes[k];
-      if (L && L.chip) chips.push('<span class="wri-chip ' + (L.chip.cls || '') + '">' +
-        te(esc(L.chip.en), esc(L.chip.zh)) + '</span>');
-    });
-    var tkr = card.getAttribute('data-t');
-    // transmission chain chip (INFO tier — deliberately NOT hot/red): the furthest-progressed
-    // armed chain this name sits downstream of. At-rest cap = 1 chain chip; the rest live in
-    // the drawer. Display-only WATCH context, never a signal.
-    var chainMs = CHAINS_IDX[tkr];
-    var chainLead = furthestChain(chainMs);
-    if (chainLead) {
-      var drv = chainDriver(chainLead);
-      chips.push('<span class="wri-chip info">' +
-        te(esc(drv.en) + ' risk building', esc(drv.zh) + '风险酝酿') + '</span>');
-    }
-    // book-risk share chip (info, from L2) if we have it for this name
-    var shareChip = BOOK_SHARES[tkr];
-    if (shareChip != null) {
-      var pctv = Math.round(Math.abs(shareChip) * 100);
-      chips.unshift('<span class="wri-chip info">' + te(pctv + '% of book risk', '占组合风险' + pctv + '%') + '</span>');
-    } else if (UNMODELED[tkr]) {
-      // out-of-model name: keep its price-tier lanes, but say what's missing (WRI-R6)
-      chips.push('<span class="wri-chip info">' +
-        te('price signals only — not in the risk model', '仅价格信号——未纳入风险模型') + '</span>');
-    }
-    var shown = chips.slice(0, 3);
-    var lanesHtml = '<div class="wri-lanes">' + shown.join('') +
-      '<button class="wri-more" type="button" aria-expanded="false">' + te('details', '详情') + '</button></div>';
-    // role badge -> top-right of .wl-top
-    if (role) {
-      var top = card.querySelector('.wl-top');
-      if (top && !top.querySelector('.wri-role')) {
-        var span = document.createElement('span');
-        span.className = 'wri-role wri-role-' + role.kind;
-        span.innerHTML = te(esc(role.en), esc(role.zh));
-        top.appendChild(span);
-      }
-    }
-    // drawer: one row per lane (shared renderer — see laneRowsHTML)
-    var rows = laneRowsHTML(j);
-    // chain drawer rows — ALL armed chains this name sits downstream of (the chip shows only
-    // the furthest along; the drawer carries the rest). Each is a plain review read, never a call.
-    rows += chainDrawerRows(chainMs);
-    var asof = j && j.asof ? ('<div class="asof">' + te('signals as of ' + esc(j.asof), '信号截至 ' + esc(j.asof)) + '</div>') : '';
-    var drawerHtml = '<div class="wri-drawer">' + rows + asof + '</div>';
-    // insert after .wl-enrich (or .wl-sig)
-    var anchor = card.querySelector('.wl-enrich') || card.querySelector('.wl-sig');
-    if (anchor) {
-      anchor.insertAdjacentHTML('afterend', lanesHtml + drawerHtml);
-    } else {
-      card.insertAdjacentHTML('beforeend', lanesHtml + drawerHtml);
-    }
-    var more = card.querySelector('.wri-more');
-    if (more) more.addEventListener('click', function () {
-      var d = card.querySelector('.wri-drawer');
-      var open = d.classList.toggle('open');
-      more.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
-  }
-  function stateToken(s) {
-    if (s === 'ok') return 'OK';
-    if (s === 'watch') return te('WATCH', '关注');
-    if (s === 'elev') return te('ELEVATED', '升高');
-    return te('n/a', '未覆盖');
-  }
-  // repaint decorations in the current language without refetch (lang flip)
-  function repaintCards() {
-    document.querySelectorAll('#wl_list .wl-card[data-t]').forEach(function (card) {
-      if ('__wriJson' in card) {
-        // strip role badge too (rebuilt in paintLanes)
-        var role = card.querySelector('.wri-role'); if (role) role.remove();
-        paintLanes(card, card.__wriJson);
-      }
-    });
+  // =========================================================================
+  //  Row decoration — batched, and scoped to the dense tables
+  // =========================================================================
+  /* The card grid this layer used to decorate is gone. What replaced it is a dense
+     table whose rows are rebuilt by their owning renderer (watchlist.js for the
+     watchlist, portfolio.js for the holdings), so decoration is no longer a second
+     DOM pass over painted cards — it is an input to the ONE pass that draws the row.
+
+     What still belongs here is the BATCHING: a hydration wave over 100 names used to
+     fire one decoration pass per resolved name. `scheduleDecorate` coalesces the whole
+     wave into a single animation frame, so the wave costs one re-render, not a hundred. */
+  var _decorPending = false;
+  function scheduleDecorate() {
+    if (_decorPending) return;
+    _decorPending = true;
+    var run = function () {
+      _decorPending = false;
+      if (window.PF && window.PF.render) { try { window.PF.render(); } catch (e) {} }
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+    else setTimeout(run, 16);
   }
 
   // =========================================================================
-  //  Portfolio table columns — Share of book risk + Risk read
+  //  Book risk shares — the numbers, published, never painted here
   // =========================================================================
-  var BOOK_SHARES = {};   // {ticker -> mctr share} from the last L2 read (for chips + table)
-  var BOOK_ROLES = {};    // {ticker -> role badge} from lane reads (filled lazily)
-  var UNMODELED = {};     // {ticker -> 1} names present in the list but absent from the factor model
-  /* The portfolio table used to be decorated from HERE — two columns injected into a
-     generic 9-column table. The table is now the Position Assessment desk (portfolio.js)
-     and renders its own assessment cell + drawer from this file's exported lane engine
-     (window.WRI below), so injecting columns would fight its markup. What this layer
-     still owns for the table is the SHARE data itself: BOOK_SHARES / BOOK_ROLES stay
-     populated for the card chips, and portfolio.js reads the lane engine directly. */
-  function decorateTable() { /* retired — see comment above */ }
+  /* This file no longer draws anything into the holdings table. It computes the book
+     read and PUBLISHES it (`publish` above); watchlist.js draws the seam and
+     portfolio.js draws the rows. That split is what makes the signature impossible to
+     draw twice, and it is why the risk share a row prints and the risk share the seam
+     paints can never disagree — they are the same object. */
+  var BOOK_SHARES = {};   // {ticker -> mctr share} from the last read
+  var UNMODELED = {};     // {ticker -> 1} names present in the list but absent from the model
 
   // =========================================================================
-  //  Orchestration — recompute L2/L3 whenever weights change; decorate L1 on
-  //  every watchlist render; keep the fx panel absorbed.
+  //  Orchestration — recompute whenever the weights change
   // =========================================================================
   var DATA = null, DATA_LOADING = null;
   function loadData() {
@@ -1489,10 +1555,23 @@
 
   function recomputeBook(weights) {
     loadData().then(function (data) {
-      if (!data) { var h = document.getElementById('wri_hero'); if (h) h.style.display = 'none'; return; }
-      var hero = document.getElementById('wri_hero'); if (hero) hero.style.display = '';
-      // fill BOOK_SHARES for chips + table from the default-lens read (MODELED only —
-      // a non-USD value entering here would corrupt every downstream statistic)
+      if (!data) {
+        // no factor model reachable (401 signed out, or the artifact is absent): the
+        // workspace still renders — the seam's risk rail becomes a lock shell and the
+        // Risk Center says so. Silence here would leave the page claiming coverage.
+        /* The lab body travels with this publish. It used to be omitted, which left
+           `RISK.labHTML` empty and the Scenario Lab an EMPTY BOX — a panel that says
+           nothing at all, which is the one thing this Risk Center is not allowed to
+           do (DESIGN_NOTES §7g: a tab with nothing to say says what it would say and
+           why it cannot). The form itself would be useless without a model, so this
+           publishes the reason instead of the controls. */
+        BOOK_SHARES = {}; UNMODELED = {}; LAST_READ = null;
+        publish({ shares: {}, covered: {}, bets: null, modeledN: 0, regime: '',
+                  labHTML: labUnavailableHTML() });
+        return;
+      }
+      // fill BOOK_SHARES from the default-lens read (MODELED only — a non-USD value
+      // entering here would corrupt every downstream statistic)
       var wIn = {};
       modeledUniverse(weights.universe).forEach(function (t) {
         var v = weights.wmap[t]; wIn[t] = isNum(v) && v > 0 ? v : 1;
@@ -1501,66 +1580,32 @@
       BOOK_SHARES = {}; UNMODELED = {};
       var b = RR.hasStress ? RR.stress : RR.calm;
       if (b && b.ok) b.held.forEach(function (t) { BOOK_SHARES[t] = b.mctrShare[t]; });
-      // names in the list but not in the factor model (for the "price signals only" chip).
-      // A non-US name is not "unmodeled" in this sense — it has its own market's signals;
-      // it is simply outside the USD factor stack, which the book-risk note already says.
+      // names in the list but not in the factor model. A non-US name is not
+      // "unmodeled" in this sense — it has its own market's signals; it is simply
+      // outside the USD factor stack, which the coverage line already says.
       (weights.universe || []).forEach(function (t) {
         if (isModeled(t) && !(data.betas && data.betas[t])) UNMODELED[t] = 1;
       });
-      renderHero(data, weights);
-      // book shares changed -> refresh card chips + table columns
-      refreshShareConsumers();
+      publishBook(data, weights);
     });
-  }
-  function refreshShareConsumers() {
-    // repaint the "% of book risk" chip on decorated cards (shares just changed) and
-    // capture each name's role for the portfolio table's Risk-read column.
-    document.querySelectorAll('#wl_list .wl-card[data-t]').forEach(function (card) {
-      if (!('__wriJson' in card)) return;
-      var role = card.querySelector('.wri-role'); if (role) role.remove();
-      paintLanes(card, card.__wriJson);
-      var r = roleBadge(laneRead(card.__wriJson));
-      if (r) BOOK_ROLES[card.getAttribute('data-t')] = r;
-    });
-    decorateTable();
-  }
-
-  var scheduled = false;
-  function scheduleDecorate() {
-    if (scheduled) return; scheduled = true;
-    requestAnimationFrame(function () { scheduled = false; decorateCards(); decorateTable(); });
   }
 
   function init() {
-    if (!document.getElementById('wri_hero')) return;   // page without the WRI host
-    // 0) load the transmission chains subset once; when it resolves, re-decorate cards +
-    //    re-render the rail so the chain chips/drawer/rail sentence appear (404 => silent).
-    loadChains().then(function () {
-      repaintCards();
-      var hero = document.getElementById('wri_hero');
-      if (hero && hero.__wri && hero.__wri.RR.calm.ok) renderRail(hero.__wri.RR.calm.bookBeta.mkt);
-      else renderRail(null);
-    });
+    // the workspace's Book Seam is this file's host now (#wri_hero is gone with the
+    // braid). A page without it gets the measurement layer and no render at all.
+    if (!document.getElementById('ws_seam')) return;
+    // 0) load the transmission chains subset once; when it resolves, re-publish so the
+    //    chain sentence and the drawer rows appear (404 => silent, never a blank claim).
+    loadChains().then(function () { scheduleDecorate(); });
     // 1) recompute the book whenever the FX layer republishes weights
     document.addEventListener('fx-weights', function (e) { recomputeBook(e.detail); });
     // 2) first read: pull current weights if the FX panel already resolved them
     if (window.FX && window.FX.currentWeights) recomputeBook(window.FX.currentWeights());
     else loadData().then(function () { recomputeBook({ universe: [], wmap: {}, mode: 'manual' }); });
-    // 3) decorate cards on each watchlist render (watchlist.js repaints #wl_list)
-    var listEl = document.getElementById('wl_list');
-    if (listEl && 'MutationObserver' in window) {
-      new MutationObserver(scheduleDecorate).observe(listEl, { childList: true });
-    }
-    scheduleDecorate();
-    // 4) portfolio table re-renders too
-    var pfRows = document.getElementById('pf_rows');
-    if (pfRows && 'MutationObserver' in window) {
-      new MutationObserver(function () { decorateTable(); }).observe(pfRows, { childList: true });
-    }
-    // 5) language / theme flips -> re-render L2 wording + L1 decorations + rail
+    // 3) language / theme flips -> re-derive the wording (the numbers are unchanged)
     document.addEventListener('langchange', onLangTheme);
     document.addEventListener('themechange', onLangTheme);
-    // 6) book switch -> the hero is scoped to the active book (modeled vs note form)
+    // 4) book switch -> the read is scoped to the active book (modeled vs coverage-only)
     document.addEventListener('bk-change', function () {
       if (window.FX && window.FX.currentWeights) recomputeBook(window.FX.currentWeights());
       else onLangTheme();
@@ -1571,12 +1616,8 @@
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-lang'] });
   }
   function onLangTheme() {
-    var hero = document.getElementById('wri_hero');
-    if (hero && hero.__wri) paintHero(hero, hero.getAttribute('data-lens') || hero.__wri.RR.defaultLens);
-    else if (window.FX && window.FX.currentWeights) recomputeBook(window.FX.currentWeights());
-    repaintCards();
-    // rail re-render (book beta preserved from last hero read)
-    if (hero && hero.__wri && hero.__wri.RR.calm.ok) renderRail(hero.__wri.RR.calm.bookBeta.mkt);
+    if (window.FX && window.FX.currentWeights) recomputeBook(window.FX.currentWeights());
+    else scheduleDecorate();
   }
 
   // keyboard: Enter/Space on a ? tip is a no-op focus target; tips are CSS/hover +
@@ -1591,22 +1632,18 @@
       roleBadge: roleBadge,
       laneRows: laneRowsHTML,
       chainRows: function (t) { return chainDrawerRows(CHAINS_IDX[t]); },
-      noteJson: noteJson
+      noteJson: noteJson,
+      /* The Scenario Lab's engine seam. The workspace owns the form and the pixels;
+         this owns the model. Same split as the tabs, and the same reason: two places
+         that could compute a book read are two places that can disagree about one. */
+      scenario: scenarioHTML,
+      defaultDollars: function () { return W4_DEFAULT_DOLLARS; }
     };
   }
 
   // Browser bootstrap — guarded so `require()` under node (the unit-test shell) never
   // touches the DOM at load. In node `document` is undefined; we skip straight to the export.
   if (typeof document !== 'undefined') {
-    // lens toggle (delegated — buttons are re-created each paint)
-    document.addEventListener('click', function (e) {
-      var btn = e.target && e.target.closest ? e.target.closest('#wri_lensCalm, #wri_lensStress') : null;
-      if (!btn) return;
-      var hero = document.getElementById('wri_hero'); if (!hero || !hero.__wri) return;
-      var lens = btn.getAttribute('data-lens');
-      hero.setAttribute('data-lens', lens);
-      paintHero(hero, lens);
-    });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
   }
@@ -1619,7 +1656,28 @@
       chainIndex: chainIndex, furthestChain: furthestChain,
       railChainSentence: railChainSentence, chainDrawerRows: chainDrawerRows,
       chainDriver: chainDriver,
-      enbClamp: enbClamp, enbTipSuffix: enbTipSuffix, betCount: betCount
+      enbClamp: enbClamp, enbTipSuffix: enbTipSuffix, betCount: betCount,
+      /* W3 Risk Center tab builders — PURE string builders over a RiskCore result, so
+         the node shell can hand them a crafted book (a stress lens that really does
+         converge, a book with an unmodeled name, an empty event calendar) and assert
+         the sentence that comes back. Everything the tabs claim is testable without a
+         browser, which is the point: a crop shows one book on one night. */
+      correlationHTML: correlationHTML, factorsHTML: factorsHTML,
+      stressHTML: stressHTML, weakLinksHTML: weakLinksHTML,
+      eventsHTML: eventsHTML, concentrationHTML: concentrationHTML,
+      coverageFoot: coverageFoot, labIntroHTML: labIntroHTML,
+      labUnavailableHTML: labUnavailableHTML,
+      scenarioHTML: scenarioHTML,
+      /* The FX-corruption guard (A3 law 3). Exported so its effect is testable: it is
+         the boundary that keeps HKD/CNY/CAD position values out of a USD book's
+         statistics, and with it removed every test still passed — RiskCore's beta
+         lookup happens to drop unknown tickers as a second gate, so the arithmetic
+         survived while `coverage()` silently reported a book 84% "unmodeled". */
+      modeledUniverse: modeledUniverse,
+      W4_DEFAULT_DOLLARS: W4_DEFAULT_DOLLARS,
+      /* the node shell's only way to seat a book/model without a DOM or a fetch */
+      __setModel: function (data, wmap, lens) { DATA = data; LAST_WMAP = wmap || {}; LAST_LENS = lens || 'calm'; },
+      __setCardJson: function (map) { CARD_JSON = map || {}; }
     };
   }
 })();

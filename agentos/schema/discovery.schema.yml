@@ -1,0 +1,23 @@
+# agentos/schema/discovery.schema.yml
+# Machine mirror of research/MASTERMIND_AGENT_OS_STATE_SCHEMA.md §3.
+# Crosses the account boundary that account-local Claude memory cannot (gap G2).
+#
+# TWO ADMISSION GATES - both must hold, or it is a log line, not memory:
+#   1. FALSIFIABLE - a named command or read could disprove it  -> field `falsifier`
+#   2. LOAD-BEARING - it changes what a future session does     -> field `so_what`
+schema: agentos.discovery.v1
+file: agentos/discoveries/DSC-<KEY>.md
+required:
+  key:         {type: string, pattern: UPPER-KEBAB}
+  claim:       {type: string, note: one sentence, the fact itself}
+  falsifier:   {type: string, note: GATE 1 - the command or read that would disprove it}
+  so_what:     {type: string, note: GATE 2 - what a future session does differently}
+  kind:        {enum: [architecture, data, landmine, dead_code, constraint, runtime]}
+  verified_at: {type: date}
+  verified_by: {type: string, note: "command, file:line, or PR"}
+  scope:       {type: list, note: repos, programs, or path globs}
+  confidence:  {enum: [verified, probable, suspected]}
+optional:
+  cited_by:      {type: list, note: auto-maintained by the generator; drives GC}
+  superseded_by: {type: string}
+  expires:       {type: date, note: default verified_at + 90d if never cited; FLAGGED, never auto-deleted}

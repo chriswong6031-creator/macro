@@ -1,0 +1,28 @@
+# agentos/schema/handoff.schema.yml
+# Machine mirror of research/MASTERMIND_AGENT_HANDOFF_PROTOCOL.md.
+# Contract: a competent stranger with no access to your session can continue from this text alone.
+# ENFORCED by scripts/agentos.py validate (check_handoff): required fields, the
+# unverified-present rule, verified[].command, changed[].what, citation shape, and a
+# literal scan for 'see above' / 'as discussed' in the body.
+schema: agentos.handoff.v1
+file: agentos/handoffs/<WS-KEY>-<YYYY-MM-DD>.md
+required:
+  workstream:    {type: string, pattern: "WS:<KEY>"}
+  session:       {type: string, note: branch or worktree name}
+  model:         {enum: [fable, opus, sonnet, haiku, codex, local]}
+  ended_because: {enum: [complete, ci_handoff, blocked, context_budget, crashed]}
+  mission:       {type: string}
+  state_before:  {type: string}
+  changed:       {type: list, items: {path: string, what: string}}
+  verified:      {type: list, items: {claim: string, command: string, result: string},
+                  note: every claim names the command that backs it - "tests pass" is not a claim}
+  unverified:    {type: list, items: {claim: string, what_would_verify: string},
+                  note: an EMPTY list is a valid answer; an ABSENT key means nobody asked}
+  unresolved:    {type: list}
+  next_actions:  {type: list, note: ordered; each concrete enough to execute}
+  do_not_redo:   {type: list, note: highest-leverage field - 55-80% of proposals duplicate settled work}
+  danger_areas:  {type: list, note: what breaks easily here}
+optional:
+  prs:         {type: list, items: int}
+  decisions:   {type: list, items: "DEC:<KEY>"}
+  discoveries: {type: list, items: "DSC:<KEY>"}

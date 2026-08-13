@@ -9,7 +9,18 @@
   "sessions": [
     {
       "date": "2026-08-13",
-      "events": []
+      "events": [
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-d9c35d7bc86d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ecx3kynusdj-b16e59",
+          "tickers": [],
+          "title": "Citi: Citi The Point for Europe Thursday, 13 August 2026",
+          "weight_hint": 3
+        }
+      ]
     },
     {
       "date": "2026-08-12",
@@ -211,16 +222,6 @@
           "tickers": [],
           "title": "UBS: Daily US",
           "weight_hint": 3
-        },
-        {
-          "date": "2026-08-03",
-          "id": "cev-research_vault-e2627ef3d424",
-          "kind": "report",
-          "source": "research_vault",
-          "source_ref": "marketdesk-v1ic267gpef-df8b56",
-          "tickers": [],
-          "title": "Goldman Sachs: Americas Payment Technology Consumer spending update July Fiserv SMB spend steps down from strong June levels",
-          "weight_hint": 2
         },
         {
           "date": "2026-08-03",

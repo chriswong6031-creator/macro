@@ -46,8 +46,10 @@ slice and never an opportunity gate.
 from __future__ import annotations
 
 import json
+import os
 import random
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 from unittest.mock import patch
 
@@ -102,6 +104,33 @@ SEEDS = (0, 1, 2, 3, 5, 7, 11, 13, 17, 23, 42, 1337)
 # The pre-W1 rule, copied VERBATIM from engine/prophet_bridge.py@origin/main.
 # Re-implemented rather than imported so the comparison is against the shipped
 # behaviour and survives every later edit to the live function.
+#
+# "Verbatim" was FALSE for the tier_cascade clause below, and silently so from
+# #5071 (which added it to `select_candidates`) through #5105 (which re-pointed
+# this copy at `legacy_admitted` without porting it).  Two rules that differ by
+# a filter nothing on the board can trip are indistinguishable from two rules
+# that agree, so the fence read green for two PRs and detonated the night the
+# first discriminating row arrived: `us_standouts.json` as_of 2026-08-12 carries
+# SWX at `signal.tier_cascade == "T4"` -- the first non-T1/T2/T3 buy row ever
+# published (histogram that night: T1 35, T2 28, T4 1, absent 8).  The engine was
+# right and stayed right; this copy admitted 24 rows where the frozen rule admits
+# 23, and `test_committed_artifact_admits_the_identical_rows` correctly said so.
+#
+# The clause is part of the rule being copied, not an implementation detail: it
+# predates the freeze (pre-A1 `select_candidates` carried it with the comment
+# "actionable contract has always been T1-T3 (signal_gate.BUYABLE_TIERS)") and
+# `legacy_admitted`'s own docstring names it. Restoring it makes the transcription
+# true rather than loosening what the fence asserts.
+#
+# #5524 restored the clause but left the fence's BLIND SPOT intact: it was a no-op
+# on every synthetic fixture here (`_buy()` emitted no `signal` block at all), so
+# the only call sites that could move were the two reading the committed artifact,
+# and the only reason those moved was that one nightly happened to publish SWX at
+# T4.  A board without such a row -- every board before 2026-08-12 -- restores the
+# original silence.  `_buy(tier_cascade=...)` and
+# `test_tier_cascade_leg_admits_identically` now pin the leg on rows this file
+# owns, so the next transcription drift reds on a fixture instead of waiting for
+# the tape to expose it.
 # ---------------------------------------------------------------------------
 
 def _old_select(standouts: dict, n: int = N_CANDIDATES) -> list[dict]:
@@ -122,6 +151,14 @@ def _old_select(standouts: dict, n: int = N_CANDIDATES) -> list[dict]:
 
         if band == "low":
             continue
+
+        # Rows predating `tier_cascade` keep their prior behaviour (the clause is
+        # skipped when the key is absent or null), which is why this was invisible.
+        signal = b.get("signal")
+        if isinstance(signal, Mapping):
+            signal_tier = signal.get("tier_cascade")
+            if signal_tier is not None and signal_tier not in ("T1", "T2", "T3"):
+                continue
 
         if gate_go:
             if not (act_level >= 2):
@@ -158,10 +195,17 @@ def _buy(
     spot: float = 100.0,
     anchor: str | None = "2026-07-02",
     entry_signal: dict | None = "keep",  # type: ignore[assignment]
+    tier_cascade: str | None = "absent",  # type: ignore[assignment]
 ) -> dict:
     """One `us_standouts.json["buy"]` row.
 
     `priority=None` emits NO `prophet` block at all — a pre-us_prophet_v1 row.
+
+    `tier_cascade` has THREE states, because the T1–T3 clause distinguishes all
+    three: the default `"absent"` emits no `signal` block at all (what every
+    fixture here did before, and why none of them could exercise that clause),
+    `None` emits a `signal` block carrying a null `tier_cascade` (the pre-cascade
+    row shape the clause deliberately tolerates), and a string emits that tier.
     """
     row: dict = {
         "ticker": ticker,
@@ -187,6 +231,8 @@ def _buy(
         row["entry_signal"] = entry_signal
     if priority is not None:
         row["prophet"] = {"version": "us_prophet_v1", "score": priority}
+    if tier_cascade != "absent":
+        row["signal"] = {"tier_cascade": tier_cascade}
     return row
 
 
@@ -211,7 +257,17 @@ def _tickers(rows: list[dict]) -> list[str]:
 def committed() -> dict:
     """The real nightly artifact — the operator's review surface for this change."""
     if not COMMITTED_STANDOUTS.exists():
-        pytest.skip("committed us_standouts.json absent")
+        # A sparse session worktree omits `site/` (the default profile since
+        # 2026-08-13), so skipping keeps a local run usable. The RUNNER checks
+        # out in full, and a skip there would take the artifact-backed half of
+        # this fence dark while still printing green — the same silence that let
+        # the tier_cascade transcription drift live for two PRs.
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            pytest.fail(
+                "committed us_standouts.json absent on a runner — the "
+                "artifact-backed population fence cannot run, and a skip here "
+                "would read as a pass")
+        pytest.skip("committed us_standouts.json absent (sparse worktree?)")
     return json.loads(COMMITTED_STANDOUTS.read_text(encoding="utf-8"))
 
 
@@ -264,6 +320,46 @@ class TestAdmittedPopulationIsUnchanged:
         assert {"BANDLOW", "ACT1LOWSCORE", "BEAR", "NOENTRY"}.isdisjoint(admitted)
         assert "CLEAN" in admitted and "LEGACY" in admitted
         assert ("ACT1HIGHSCORE" in admitted) is (gate_go is False)
+
+    @pytest.mark.parametrize("gate_go", [True, False])
+    def test_tier_cascade_leg_admits_identically(self, gate_go):
+        """The T1–T3 leg, pinned on a FIXTURE instead of on the nightly tape.
+
+        This leg is the one the transcription above lost, and the reason it stayed
+        lost from #5071 through #5105 is that nothing here could see it: `_buy()`
+        emitted no `signal` block, so every synthetic row skipped the clause
+        entirely and the ONLY discriminator was the committed artifact happening
+        to publish a non-T1/T2/T3 buy row. One eventually did — SWX at `T4`,
+        as_of 2026-08-12, the first ever published — and the fence detonated two
+        PRs late (#5524 restored the clause).
+
+        The board is regenerated nightly, so that discriminator is on loan: the
+        night no non-T1/T2/T3 row is published, an identical drift would again go
+        silent for as long as it took one to appear. Pinning the leg on rows this
+        file controls takes the fence off the tape. Every row below clears the
+        band / act_level / score / dir / entry_signal gates on both branches of
+        `gate_go`, so the tier leg is the only thing that can move admission.
+        """
+        buys = [
+            _buy("T1OK", priority=99.0, tier_cascade="T1"),
+            _buy("T2OK", priority=98.0, tier_cascade="T2"),
+            _buy("T3OK", priority=97.0, tier_cascade="T3"),
+            _buy("T4NO", priority=96.0, tier_cascade="T4"),   # the SWX shape
+            _buy("T5NO", priority=95.0, tier_cascade="T5"),
+            _buy("NULLTIER", priority=94.0, tier_cascade=None),  # block, null tier
+            _buy("NOSIGNAL", priority=93.0),                     # no signal block
+        ]
+        s = _standouts(buys, gate_go=gate_go)
+        assert sorted(_tickers(legacy_admitted(s))) == \
+               sorted(_tickers(_old_select(s, n=_UNCAPPED))), (
+            "the pre-W1 copy and the frozen legacy gate disagree on tier_cascade")
+        admitted = set(_tickers(legacy_admitted(s)))
+        assert {"T4NO", "T5NO"}.isdisjoint(admitted), (
+            "the T1–T3 tier_cascade leg is not being applied — a non-buyable tier "
+            "was admitted into the legacy shadow population")
+        assert {"T1OK", "T2OK", "T3OK", "NULLTIER", "NOSIGNAL"} <= admitted, (
+            "the tier leg over-filtered: T1–T3, a null tier_cascade, and a row "
+            "with no signal block at all must all still be admitted")
 
     def test_capped_membership_is_identical_when_the_pool_fits(self):
         """When the admitted pool does not overflow N_CANDIDATES, the shipped
