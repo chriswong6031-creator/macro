@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T01:09:58.283701+00:00",
-  "count": 1026,
+  "generated_at": "2026-08-13T01:25:02.059584+00:00",
+  "count": 1027,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -62,6 +62,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ihhroq7zrot-128c39",
+      "title": "JPM US Market Intelligence Afternoon Briefing Aug 12",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T00:59:12Z",
+      "summary_points": [
+        "**US Macro Data & Geopolitics**: PPI (8:30am ET) and Jobless Claims critical; US-Iran tensions (Hormuz Strait) and mixed Middle East headlines drive sentiment, with CPI context easing inflation concerns via AI narrative.",
+        "**Inflation Signals**: Core goods inputs slowdown hints at easing pressures, but services inflation (PPI services +0.2% Jul) and rising PMI/ISM cost metrics create pipeline uncertainty.",
+        "**Tech Rotation & Catalysts**: Hyperscalers (AWS/Azure) show sustained demand; AI catalysts (Gemini 3.5 Pro, AWS re:Invent) drive Mag7/hyperscalers (30% upside) and global Semis (APAC AI reversal).",
+        "**EM Tactical Trades**: TACTICALLY LONG China H-shares/Internet (KWEB), Taiwan; Hedges: long LatAm (ILF), India (INDA) vs short Southeast Asia (ASEA).",
+        "**Geopolitical Risk**: Iran-US talks frozen, Hormuz traffic low; US-China AI talks (Sep) and Nov 1 trade truce expiration threaten tech policy stability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-gr0omfe4cut-a2a4b1",
       "title": "Strategy Espresso Europe – The secret outperformer",
