@@ -67,8 +67,11 @@ RULE LEVELS (RIG §8).  Each rule prints a STABLE finding code; tests pin the st
                                             continuity-renamed-without-linkage,
                                             continuity-superseded-without-linkage,
                                             continuity-overridden-without-authority,
+                                            continuity-carried-block-without-note,
                                             continuity-carried-block-approved,
                                             continuity-snapshot-without-source,
+                                            continuity-invalid-source,
+                                            continuity-source-mismatch,
                                             undeclared-predecessor, mandate-incomplete,
                                             condition-without-id
 
@@ -205,7 +208,9 @@ CONTINUITY_DISPOSITIONS = frozenset({
 })
 # ``on_disk`` = the predecessor set is in this checkout and its verdict.yml is the source of
 # truth; ``snapshot`` = it is not (its PR is still open), so the entry must prove where the
-# closure set came from (RIG §13.2).
+# closure set came from (RIG §13.2).  The enum is enforced UNCONDITIONALLY and must MATCH the
+# checkout in both directions: a bad value never becomes legal because the predecessor happens
+# to resolve, and a snapshot claim expires the moment the real set lands.
 CONTINUITY_SOURCES = frozenset({"on_disk", "snapshot"})
 
 # RIG §7 — all eight verdict-packet answers are required, non-empty.
@@ -1208,19 +1213,40 @@ def rule_l10(aset: ArtifactSet, groups: frozenset[str]) -> list[Finding]:
         source = _text(block.get("source"))
         on_disk = _load_predecessor(aset.repo_root, pid_raw) is not None
 
-        if source == "snapshot":
-            if not _has(block, "source_ref"):
-                out.append(Finding(
-                    "continuity-snapshot-without-source", f"{ref}:{pid}",
-                    "source: snapshot requires source_ref — the PR/SHA/path proving where the "
-                    "closure set came from (RIG §13.2)",
-                ))
-        elif not on_disk:
+        # (a) The enum is checked UNCONDITIONALLY.  A bad value must never become legal
+        # because of where the predecessor happens to live — a checkout is not a validator,
+        # and ``source`` has no default: an absent one is an undeclared one.
+        if source not in CONTINUITY_SOURCES:
+            out.append(Finding(
+                "continuity-invalid-source", f"{ref}:{pid}",
+                f"source {_one_line(source, 40) or '<missing>'!r} not in "
+                f"{sorted(CONTINUITY_SOURCES)} — declare on_disk when the predecessor set is in "
+                f"this checkout, snapshot (with a source_ref) when it is not (RIG §13.2)",
+            ))
+        # (b) ...and where it lives must MATCH what the row claims, in both directions.
+        elif source == "on_disk" and not on_disk:
+            out.append(Finding(
+                "continuity-source-mismatch", f"{ref}:{pid}",
+                "declares source: on_disk but the predecessor set is NOT in this checkout, so "
+                "nothing can be cross-checked — carry it as source: snapshot with a source_ref "
+                "proving where the closure set came from (RIG §13.2)",
+            ))
+        elif source == "snapshot" and on_disk:
+            out.append(Finding(
+                "continuity-source-mismatch", f"{ref}:{pid}",
+                "declares source: snapshot but the predecessor set IS in this checkout now — a "
+                "transcription may not stand in for a verdict.yml that is right there.  Fix is "
+                "one word: source: snapshot → source: on_disk (keep source_ref as provenance), "
+                "and the closure is then cross-checked against the real record (RIG §13.2)",
+            ))
+
+        # (c) A snapshot CLAIM, and any predecessor this checkout cannot resolve, must carry
+        # its proof — independent of (a)/(b), so a wrong enum never disarms the proof rule.
+        if (source == "snapshot" or not on_disk) and not _has(block, "source_ref"):
             out.append(Finding(
                 "continuity-snapshot-without-source", f"{ref}:{pid}",
-                f"predecessor set is not in this checkout (source {source or '<missing>'!r}, "
-                f"expected one of {sorted(CONTINUITY_SOURCES)}) — an unresolvable predecessor "
-                f"must declare source: snapshot with a source_ref (RIG §13.2)",
+                "an unresolvable predecessor requires source_ref — the PR/SHA/path proving "
+                "where the closure set came from (RIG §13.2)",
             ))
 
         counts: dict[str, int] = {}
@@ -1254,6 +1280,16 @@ def rule_l10(aset: ArtifactSet, groups: frozenset[str]) -> list[Finding]:
                         "closure (RIG §13.1)",
                     ))
             elif disposition == "CARRIED_BLOCK":
+                # Two INDEPENDENT checks — never elif.  A note-less carried block at approved
+                # is two separate defects (the debt is undescribed AND it cannot approve), and
+                # neither may mask the other.
+                if not _has(row, "note"):
+                    out.append(Finding(
+                        "continuity-carried-block-without-note", subject,
+                        "CARRIED_BLOCK requires a non-empty note — the note IS the disposition: "
+                        "an unresolved item recorded without saying what is still broken hands "
+                        "the next cycle a bare id and resets the debt to zero (RIG §13.1)",
+                    ))
                 if aset.status == "approved":
                     out.append(Finding(
                         "continuity-carried-block-approved", subject,
@@ -1942,7 +1978,7 @@ def _continuity_successor_docs(
     closure: list[dict[str, Any]] | None,
     *,
     status: str = "in_review",
-    source: str = "on_disk",
+    source: str | None = "on_disk",
     source_ref: str = "",
     with_receipts: bool = False,
     revision_mandate: list[str] | None = None,
@@ -1950,7 +1986,8 @@ def _continuity_successor_docs(
     """A successor declaring ``predecessor_id``.  ``closure=None`` = no continuity.yml at all.
 
     Receipts are absent by default on purpose: §13.4/§13.6 require the gate to fire at
-    ``in_review``, BEFORE any critic has been dispatched.
+    ``in_review``, BEFORE any critic has been dispatched.  ``source=None`` omits the key
+    entirely — an absent source is an undeclared one, not a defaulted one.
     """
     docs = _synthetic_docs(reference_id)
     docs["manifest.yml"]["status"] = status
@@ -1963,12 +2000,12 @@ def _continuity_successor_docs(
     if revision_mandate is not None:
         docs["proposal.yml"]["revision_mandate"] = revision_mandate
     if closure is not None:
-        block: dict[str, Any] = {
-            "reference_id": predecessor_id, "verdict": "REVISE",
-            "source": source, "closure": closure,
-        }
+        block: dict[str, Any] = {"reference_id": predecessor_id, "verdict": "REVISE"}
+        if source is not None:
+            block["source"] = source
         if source_ref:
             block["source_ref"] = source_ref
+        block["closure"] = closure
         docs["continuity.yml"] = {
             "schema": SCHEMA_IDS["continuity"],
             "reference_id": reference_id,
@@ -2125,10 +2162,12 @@ def run_selftest() -> int:
         # predecessor and drops four items the predecessor had already upheld — caught at
         # status in_review, with no critic receipts in existence anywhere in the set.
         def continuity_codes(tag: str, closure: list[dict[str, Any]] | None,
-                             *, bare_conditions: bool = False, **kwargs: Any) -> set[str]:
+                             *, bare_conditions: bool = False, write_predecessor: bool = True,
+                             **kwargs: Any) -> set[str]:
             pred, succ = f"{tag}-pred", f"{tag}-succ"
-            _write_synthetic_set(root, pred,
-                                 _continuity_predecessor_docs(pred, bare_conditions=bare_conditions))
+            if write_predecessor:
+                _write_synthetic_set(root, pred,
+                                     _continuity_predecessor_docs(pred, bare_conditions=bare_conditions))
             return _selftest_codes(root, succ,
                                    _continuity_successor_docs(succ, pred, closure, **kwargs))
 
@@ -2185,9 +2224,61 @@ def run_selftest() -> int:
         check("continuity-carried-block-approved fires",
               "continuity-carried-block-approved" in fired, f"got {sorted(fired)}")
 
-        fired = continuity_codes("c-snapshot", _continuity_full_closure(), source="snapshot")
+        # CARRIED_BLOCK's note is the disposition's whole content — enforced at every armed
+        # status, and INDEPENDENT of the approved check.
+        rows = _continuity_full_closure()
+        rows[1].pop("note")
+        fired = continuity_codes("c-carried-no-note", rows)
+        check("continuity-carried-block-without-note fires",
+              "continuity-carried-block-without-note" in fired, f"got {sorted(fired)}")
+
+        rows = _continuity_full_closure()
+        rows[1]["note"] = "   \n\t "
+        fired = continuity_codes("c-carried-blank-note", rows)
+        check("continuity-carried-block-without-note fires on a whitespace-only note",
+              "continuity-carried-block-without-note" in fired, f"got {sorted(fired)}")
+
+        rows = _continuity_full_closure()
+        rows[1].pop("note")
+        fired = continuity_codes("c-carried-no-note-approved", rows,
+                                 status="approved", with_receipts=True)
+        check("a note-less CARRIED_BLOCK at approved fires BOTH codes, neither masking the other",
+              {"continuity-carried-block-without-note",
+               "continuity-carried-block-approved"} <= fired, f"got {sorted(fired)}")
+
+        # The source enum is checked unconditionally — a bad value is not laundered by a
+        # predecessor that happens to resolve on disk.
+        fired = continuity_codes("c-bad-source", _continuity_full_closure(), source="local")
+        check("continuity-invalid-source fires", "continuity-invalid-source" in fired,
+              f"got {sorted(fired)}")
+
+        fired = continuity_codes("c-no-source", _continuity_full_closure(), source=None)
+        check("continuity-invalid-source fires on a MISSING source",
+              "continuity-invalid-source" in fired, f"got {sorted(fired)}")
+
+        # ...and it must match where the predecessor actually lives, in both directions.
+        fired = continuity_codes("c-mismatch-snapshot", _continuity_full_closure(),
+                                 source="snapshot", source_ref="PR #5533 head f717aab2")
+        check("continuity-source-mismatch fires (snapshot declared, predecessor IS present)",
+              "continuity-source-mismatch" in fired, f"got {sorted(fired)}")
+
+        fired = continuity_codes("c-mismatch-ondisk", _continuity_full_closure(),
+                                 write_predecessor=False, source="on_disk",
+                                 source_ref="PR #5533 head f717aab2")
+        check("continuity-source-mismatch fires (on_disk declared, predecessor is ABSENT)",
+              "continuity-source-mismatch" in fired, f"got {sorted(fired)}")
+
+        fired = continuity_codes("c-snapshot", _continuity_full_closure(),
+                                 write_predecessor=False, source="snapshot")
         check("continuity-snapshot-without-source fires",
               "continuity-snapshot-without-source" in fired, f"got {sorted(fired)}")
+
+        fired = continuity_codes("c-snapshot-ok", _continuity_full_closure(),
+                                 write_predecessor=False, source="snapshot",
+                                 source_ref="PR #5533 head f717aab2 — set not in this checkout")
+        check("a correct snapshot declaration fires no source finding",
+              not {"continuity-invalid-source", "continuity-source-mismatch",
+                   "continuity-snapshot-without-source"} & fired, f"got {sorted(fired)}")
 
         fired = continuity_codes("c-mandate", _continuity_full_closure(),
                                  revision_mandate=["PRC-201"])

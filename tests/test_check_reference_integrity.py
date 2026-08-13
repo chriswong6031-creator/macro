@@ -1160,7 +1160,7 @@ def successor_docs(
     *,
     status: str = "in_review",
     closes: str | None = None,
-    source: str = "on_disk",
+    source: str | None = "on_disk",
     source_ref: str = "",
     with_receipts: bool = False,
     revision_mandate: list[str] | None = None,
@@ -1168,7 +1168,8 @@ def successor_docs(
     """A successor declaring ``predecessors`` (ordered oldest → nearest).
 
     Receipts are absent by default ON PURPOSE: RIG §13.4 requires the gate to fire at
-    ``in_review``, before any critic has been dispatched.
+    ``in_review``, before any critic has been dispatched.  ``source=None`` omits the key
+    entirely — an absent source is undeclared, never defaulted.
     """
     docs = valid_docs(reference_id)
     docs["manifest.yml"]["status"] = status
@@ -1183,10 +1184,13 @@ def successor_docs(
     if closure is not None:
         block: dict[str, Any] = {
             "reference_id": closes or (predecessors[-1] if predecessors else ""),
-            "verdict": "REVISE", "source": source, "closure": closure,
+            "verdict": "REVISE",
         }
+        if source is not None:
+            block["source"] = source
         if source_ref:
             block["source_ref"] = source_ref
+        block["closure"] = closure
         docs["continuity.yml"] = {
             "schema": "mastermind.rig_continuity.v1",
             "reference_id": reference_id,
@@ -1201,11 +1205,17 @@ def continuity_case(
     closure: list[dict[str, Any]] | None,
     *,
     bare_conditions: bool = False,
+    write_predecessor: bool = True,
     **kwargs: Any,
 ) -> list[Any]:
-    """Materialize a predecessor + a successor declaring it; return the successor's findings."""
+    """Materialize a predecessor + a successor declaring it; return the successor's findings.
+
+    ``write_predecessor=False`` leaves the declared predecessor OFF disk — the snapshot world,
+    where its PR is still open.
+    """
     pred, succ = f"{tag}-pred", f"{tag}-succ"
-    write_set(root, pred, predecessor_docs(pred, bare_conditions=bare_conditions))
+    if write_predecessor:
+        write_set(root, pred, predecessor_docs(pred, bare_conditions=bare_conditions))
     write_set(root, succ, successor_docs(succ, [pred], closure, **kwargs))
     return findings(root, succ)
 
@@ -1274,6 +1284,67 @@ def test_a_carried_block_row_blocks_approved(tmp_path):
     fired = continuity_codes(tmp_path, "r3-approved", full_closure(),
                              status="approved", with_receipts=True)
     assert "continuity-carried-block-approved" in fired, sorted(fired)
+
+
+def test_a_carried_block_with_a_note_is_clean(tmp_path):
+    """The baseline the three mutations below depart from."""
+    fired = continuity_codes(tmp_path, "note-ok", full_closure())
+    assert "continuity-carried-block-without-note" not in fired, sorted(fired)
+    assert fired == set(), sorted(fired)
+
+
+def test_a_carried_block_with_no_note_key_fires(tmp_path):
+    rows = full_closure()
+    rows[1].pop("note")
+    fired = continuity_codes(tmp_path, "note-missing", rows)
+    assert "continuity-carried-block-without-note" in fired, sorted(fired)
+
+
+@pytest.mark.parametrize("note", ["", " ", "   ", "\n\t ", "\xa0"])
+def test_a_carried_block_with_an_empty_or_whitespace_note_fires(tmp_path, note):
+    """A blank note is an absent note: the field is the disposition's whole content.
+
+    ``\\xa0`` is deliberate — a non-breaking space is what a note pasted out of a
+    rendered table looks like, and it is invisible in a diff.
+    """
+    rows = full_closure()
+    rows[1]["note"] = note
+    fired = continuity_codes(tmp_path, f"note-blank-{note.encode('unicode_escape').decode()}", rows)
+    assert "continuity-carried-block-without-note" in fired, sorted(fired)
+
+
+@pytest.mark.parametrize("status", ["draft", "in_review", "revise", "rejected", "approved"])
+def test_the_note_requirement_holds_at_every_armed_status(tmp_path, status):
+    rows = full_closure()
+    rows[1].pop("note")
+    fired = continuity_codes(tmp_path, f"note-arm-{status}", rows, status=status,
+                             with_receipts=status in {"revise", "rejected", "approved"})
+    assert "continuity-carried-block-without-note" in fired, sorted(fired)
+
+
+def test_a_note_less_carried_block_at_approved_fires_both_codes(tmp_path):
+    """Independence: two separate defects, and neither may mask the other."""
+    rows = full_closure()
+    rows[1].pop("note")
+    found = continuity_case(tmp_path, "note-both", rows, status="approved", with_receipts=True)
+    fired = {(f.code, f.subject) for f in found}
+    subject = "note-both-succ:note-both-pred:COND-CARD-LINK"
+    assert ("continuity-carried-block-without-note", subject) in fired, sorted(fired)
+    assert ("continuity-carried-block-approved", subject) in fired, sorted(fired)
+
+
+def test_each_carried_block_code_fires_alone_in_its_own_condition(tmp_path):
+    """The other half of independence: neither code implies the other."""
+    rows = full_closure()
+    rows[1].pop("note")
+    mid_flight = continuity_codes(tmp_path, "note-alone", rows)          # in_review
+    assert "continuity-carried-block-without-note" in mid_flight, sorted(mid_flight)
+    assert "continuity-carried-block-approved" not in mid_flight, sorted(mid_flight)
+
+    approved = continuity_codes(tmp_path, "approved-alone", full_closure(),
+                                status="approved", with_receipts=True)
+    assert "continuity-carried-block-approved" in approved, sorted(approved)
+    assert "continuity-carried-block-without-note" not in approved, sorted(approved)
 
 
 def test_a_fully_resolved_closure_does_not_block_approved(tmp_path):
@@ -1387,23 +1458,124 @@ def test_a_complete_override_row_passes(tmp_path):
 
 # ── Snapshot form: a predecessor whose PR is still open ───────────────────────
 
+SOURCE_CODES = {"continuity-invalid-source", "continuity-source-mismatch",
+                "continuity-snapshot-without-source"}
+
+
 def test_a_snapshot_predecessor_without_a_source_ref_fires(tmp_path):
-    fired = continuity_codes(tmp_path, "r3-snap", full_closure(), source="snapshot")
+    fired = continuity_codes(tmp_path, "r3-snap", full_closure(),
+                             write_predecessor=False, source="snapshot")
     assert "continuity-snapshot-without-source" in fired, sorted(fired)
 
 
-def test_a_snapshot_predecessor_with_a_source_ref_passes(tmp_path):
-    fired = continuity_codes(tmp_path, "r3-snap-ok", full_closure(), source="snapshot",
+def test_a_correct_snapshot_declaration_fires_no_source_finding(tmp_path):
+    """The legitimate case: the predecessor's PR is still open, and the row proves where
+    the closure set came from."""
+    fired = continuity_codes(tmp_path, "r3-snap-ok", full_closure(), write_predecessor=False,
+                             source="snapshot",
                              source_ref="PR #5533 head f717aab2 — set not in this checkout")
-    assert "continuity-snapshot-without-source" not in fired, sorted(fired)
+    assert not (SOURCE_CODES & fired), sorted(fired)
+
+
+def test_a_correct_on_disk_declaration_fires_no_source_finding(tmp_path):
+    fired = continuity_codes(tmp_path, "r3-ondisk-ok", full_closure())
+    assert not (SOURCE_CODES & fired), sorted(fired)
 
 
 def test_a_predecessor_absent_from_the_checkout_must_use_the_snapshot_form(tmp_path):
-    """``source: on_disk`` for a set that is NOT on disk is an unprovable claim."""
+    """``source: on_disk`` for a set that is NOT on disk is an unprovable claim.
+
+    Both halves must survive: the correspondence failure AND the missing proof.
+    """
     docs = successor_docs("ghost-succ", ["ghost-pred"], full_closure())
     write_set(tmp_path, "ghost-succ", docs)
     fired = codes(tmp_path, "ghost-succ")
     assert "continuity-snapshot-without-source" in fired, sorted(fired)
+    assert "continuity-source-mismatch" in fired, sorted(fired)
+
+
+# ── The source enum is enforced UNCONDITIONALLY (own code) ────────────────────
+
+@pytest.mark.parametrize("bad", ["local", "ON_DISK", "committed", "true"])
+def test_an_unknown_source_value_fires_even_when_the_predecessor_resolves(tmp_path, bad):
+    """The gap this closes: a bad enum must never become legal because of where the
+    predecessor happens to live.  The predecessor here IS on disk."""
+    fired = continuity_codes(tmp_path, f"src-{bad}", full_closure(), source=bad)
+    assert "continuity-invalid-source" in fired, sorted(fired)
+
+
+def test_a_missing_source_key_fires_invalid_source(tmp_path):
+    """``source`` has no default — an absent one is undeclared, not on_disk."""
+    fired = continuity_codes(tmp_path, "src-absent", full_closure(), source=None)
+    assert "continuity-invalid-source" in fired, sorted(fired)
+
+
+def test_a_missing_source_on_an_absent_predecessor_still_demands_its_proof(tmp_path):
+    """A wrong enum may not disarm the proof rule."""
+    fired = continuity_codes(tmp_path, "src-absent-ghost", full_closure(),
+                             write_predecessor=False, source=None)
+    assert "continuity-invalid-source" in fired, sorted(fired)
+    assert "continuity-snapshot-without-source" in fired, sorted(fired)
+
+
+def test_an_invalid_source_does_not_also_report_a_mismatch(tmp_path):
+    """The two codes are distinct defects: an unreadable claim is not a wrong claim."""
+    fired = continuity_codes(tmp_path, "src-no-overload", full_closure(), source="local")
+    assert "continuity-source-mismatch" not in fired, sorted(fired)
+
+
+# ── ...and must correspond exactly to the checkout, in both directions ────────
+
+def test_on_disk_declared_for_an_absent_predecessor_fires_mismatch(tmp_path):
+    fired = continuity_codes(tmp_path, "mm-ondisk", full_closure(), write_predecessor=False,
+                             source="on_disk", source_ref="PR #5533 head f717aab2")
+    assert "continuity-source-mismatch" in fired, sorted(fired)
+    assert "continuity-invalid-source" not in fired, sorted(fired)
+
+
+def test_snapshot_declared_for_a_present_predecessor_fires_mismatch(tmp_path):
+    """The post-merge case: once the real verdict.yml is on disk, a transcription may not
+    stand in for it."""
+    found = continuity_case(tmp_path, "mm-snap", full_closure(), source="snapshot",
+                            source_ref="PR #5533 head f717aab2")
+    fired = {f.code for f in found}
+    assert "continuity-source-mismatch" in fired, sorted(fired)
+    message = next(f.message for f in found if f.code == "continuity-source-mismatch")
+    assert "on_disk" in message and "snapshot" in message, message
+
+
+def test_the_mismatch_message_names_the_one_word_fix(tmp_path):
+    """Whoever hits this after a predecessor PR merges must know the fix in one read."""
+    found = continuity_case(tmp_path, "mm-msg", full_closure(), source="snapshot",
+                            source_ref="PR #5533 head f717aab2")
+    message = next(f.message for f in found if f.code == "continuity-source-mismatch")
+    assert "source: snapshot → source: on_disk" in message, message
+    assert "IS in this checkout" in message, message
+
+
+def test_the_real_r3_continuity_source_agrees_with_this_checkout():
+    """The live artifact: ``prophet-board-5514-r3`` transcribes r2 because #5533 is open.
+
+    This assertion follows the checkout rather than freezing today's answer.  When #5533
+    merges, r2 becomes resolvable, the checker starts firing ``continuity-source-mismatch``
+    on that row — by design, with no grandfather clause — and this test fails alongside it
+    until the row is flipped to ``source: on_disk``.  One word, named in both messages.
+    """
+    path = ROOT / "research" / "reference_integrity" / "prophet-board-5514-r3" / "continuity.yml"
+    if not path.exists():                      # the r3 half-set lands with PR #5552
+        pytest.skip("prophet-board-5514-r3/continuity.yml is not in this checkout")
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    for block in doc["predecessors"]:
+        resolved = (ROOT / "research" / "reference_integrity" / block["reference_id"]
+                    / "manifest.yml").exists()
+        expected = "on_disk" if resolved else "snapshot"
+        assert block["source"] == expected, (
+            f"{block['reference_id']} is {'present in' if resolved else 'absent from'} this "
+            f"checkout — flip continuity.yml to source: {expected}"
+        )
+        if expected == "snapshot":
+            assert str(block.get("source_ref") or "").strip(), \
+                f"{block['reference_id']}: a snapshot must prove where its closure set came from"
 
 
 def test_an_unresolvable_predecessor_cannot_prove_it_approved(tmp_path):
