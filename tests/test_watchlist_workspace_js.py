@@ -603,22 +603,92 @@ def test_book_filter_regression_an_empty_model_never_resets_a_persisted_book():
     assert out["afterGone"]["book"] == "all", out
 
 
-def test_flagship_dark_regression_the_book_seeds_the_factor_universe_itself():
-    """DEFECT 1, the worst of them. `FX.setAutoWeights` stores its map but returns early
-    unless the FX layer already has a ticker list from `FX.update()` — which on this page
-    is the WATCHLIST. A user with a full book and an empty watchlist therefore stored
-    weights that were never resolved, never announced and never reached RiskCore: every
-    position read "Not covered" and the Book Seam's risk rail went dark for exactly the
-    user the page exists for.
+@needs_node
+def test_flagship_dark_regression_a_full_book_with_an_empty_watchlist_gets_a_factor_read():
+    """DEFECT 1, the worst of them — now pinned at the mechanism instead of at a caller.
 
-    Source-level because the ordering is the fix: `update` must be called with the book's
-    own names BEFORE `setAutoWeights`, or the guard swallows it again."""
+    `FX.setAutoWeights` bailed on `!LAST.length`, and `LAST` is the WATCHLIST. But the
+    AUTO path's universe is `Object.keys(AUTO_W)` — `render()` never reads `LAST` at all
+    when auto weights are set. So a signed-in account with a full portfolio and an EMPTY
+    watchlist stored weights that were never resolved, never announced and never reached
+    RiskCore: every position read "Not covered" and the Book Seam's risk rail went dark
+    for exactly the user the page exists for.
+
+    W2 could not touch factor_exposure.js, so it worked around this from portfolio.js by
+    seeding the universe with the book's own names, and pinned THAT ordering here. W3
+    fixed the guard, so the workaround is gone and this test moved with it: it now drives
+    the real path — `setAutoWeights` alone, with `LAST` empty — and asserts the weights
+    reach the world as an `fx-weights` event. Behavioural, so it cannot pass by matching
+    a source string that no longer has to exist.
+
+    MUTATION CHECK: restore `if (!p || !LAST.length) return;` in factor_exposure.js and
+    this reds (announced: false, universe: [])."""
+    fx = ROOT / "templates" / "factor_exposure.js"
+    betas = {
+        "AAPL": {"mkt": 1.0, "growth": 0.5, "idio_vol": 0.25},
+        "MSFT": {"mkt": 0.9, "growth": 0.4, "idio_vol": 0.22},
+        "NVDA": {"mkt": 1.3, "growth": 0.9, "idio_vol": 0.40},
+    }
+    model = {
+        "factors": [{"key": "mkt", "label": "Market", "tier": "high"},
+                    {"key": "growth", "label": "Growth / Tech", "tier": "high"}],
+        "factor_cov": {"mkt": {"mkt": 0.03, "growth": 0.0},
+                       "growth": {"mkt": 0.0, "growth": 0.02}},
+        "betas": betas,
+    }
+    out = _run(
+        """
+        var __panel = { style: {}, innerHTML: '',
+          querySelectorAll: function () { return []; }, querySelector: function () { return null; } };
+        document.getElementById = function (id) { return id === 'fx_panel' ? __panel : null; };
+        // the model arrives by fetch in the browser; hand it over the same promise shape
+        global.fetch = function () {
+          return Promise.resolve({ ok: true, json: function () { return Promise.resolve(MODEL); } });
+        };
+        require(%s);
+        // THE CASE: the watchlist is empty, so FX.update was never called with a name.
+        // Only the portfolio's own dollar weights arrive.
+        window.FX.setAutoWeights({ AAPL: 15000, MSFT: 12000, NVDA: 20000 });
+        setTimeout(function () {
+          var ann = null;
+          for (var i = 0; i < __events.length; i++) {
+            if (__events[i].type === 'fx-weights') ann = __events[i].detail;
+          }
+          OUT({ announced: !!ann,
+                mode: ann && ann.mode,
+                universe: ann ? ann.universe.slice().sort() : [],
+                panelShown: __panel.style.display });
+        }, 30);
+        """ % json.dumps(str(fx)),
+        {"MODEL": model},
+    )
+    assert out["announced"], (
+        "the auto weights never left factor_exposure.js — the empty-watchlist guard is back"
+    )
+    assert out["mode"] == "auto", out
+    assert out["universe"] == ["AAPL", "MSFT", "NVDA"], out
+    # and the panel actually resolved a read rather than hiding itself
+    assert out["panelShown"] == "block", out
+
+
+def test_portfolio_no_longer_carries_the_retired_fx_seeding_workaround():
+    """The companion to the test above. Two independent guarantees of one property is how
+    a mechanism fix goes untested: with the seeding call still in place, `LAST` is never
+    empty in production and the guard above is never the thing carrying the case. The
+    workaround is retired deliberately, so its absence is pinned deliberately."""
+    import re
+
     src = PORTFOLIO.read_text()
     body = src[src.index("function pushFxWeights"):src.index("function pushFxWeights") + 1800]
-    iu = body.index("FX.update(keys)")
-    isa = body.index("FX.setAutoWeights(")
-    assert iu < isa, "FX.update must seed the universe BEFORE setAutoWeights"
-    assert "keys.length >= 2 && window.FX.update" in body
+    # the comment that RECORDS the retirement names the retired call; a scan that cannot
+    # tell code from prose would fail on its own documentation
+    code = re.sub(r"/\*.*?\*/", "", body, flags=re.S)
+    code = re.sub(r"//[^\n]*", "", code)
+    assert "FX.update(keys)" not in code, (
+        "the W2 seeding workaround is back — factor_exposure.js's auto-path guard is then "
+        "dead code and the regression it fixes is untested in production"
+    )
+    assert "FX.setAutoWeights(" in code
 
 
 def test_seam_segment_cap_is_bounded_and_the_denominators_are_not():
@@ -760,3 +830,461 @@ def test_the_pack_dep_list_matches_the_job_that_runs_this_file():
     assert installed == PACK_DEPS, (
         "the job's install set moved; update PACK_DEPS deliberately. "
         "job=%s PACK_DEPS=%s" % (sorted(installed), sorted(PACK_DEPS)))
+
+
+# ===========================================================================
+# 7. W3 — the Risk Center's six tabs, over unchanged engines
+#
+# Packet §0 puts two gate rows on this wave, and both are the kind a crop cannot
+# prove: a crop shows one book on one night, and the honest cases (a name the model
+# has never heard of, a stress lens that really does converge, a book with no
+# earnings calendar at all) are exactly the ones tonight's artifact may not contain.
+# So the tabs are built as PURE string builders over a RiskCore result, and the
+# fixtures below hand them books chosen to make each claim falsifiable.
+# ===========================================================================
+RISK_CORE = ROOT / "templates" / "risk_core.js"
+WATCHLIST_RISK = ROOT / "templates" / "watchlist_risk.js"
+
+
+def _rc(js_body: str, extra: dict | None = None, lang: str = "en") -> dict:
+    """Seat risk_core + watchlist_risk in the node shell and run `js_body`.
+
+    `RiskCore` lands on the global (the module attaches to `globalThis`), which the
+    shim aliases to `window` — the same object the browser gives the render layer, so
+    the tab builders take the identical path they take in production."""
+    head = """
+    document.documentElement.getAttribute = function (a) {
+      return a === 'data-lang' ? %s : 'en';
+    };
+    var RC = require(%s);
+    var WR = require(%s);
+    /* Tags out, entities in, whitespace collapsed — BOTH languages left interleaved.
+       An earlier version tried to drop the l-zh half with a regex; the dual-emit spans
+       nest (a zh string carries its own <span class="fig">), so no regex can balance
+       them and the "stripped" text silently lost real copy. Assertions are substring
+       checks against English phrases, which do not care that the Chinese is still
+       there — and leaving it in means a zh-side regression cannot hide behind the
+       stripper either. Attribute contents go with their tags, which is deliberate:
+       a Tier-2 receipt may name a technical quantity, glance-tier copy may not. */
+    function TEXT(h) {
+      return String(h || '')
+        .replace(/<[^>]+>/g, ' ').replace(/&rsquo;/g, "'").replace(/&amp;/g, '&')
+        .replace(/\\s+/g, ' ').trim();
+    }
+    """ % (json.dumps(lang), json.dumps(str(RISK_CORE)), json.dumps(str(WATCHLIST_RISK)))
+    return _run(head + textwrap.dedent(js_body), extra)
+
+
+# --- the §0 risk-correctness fixture ---------------------------------------
+# 8 correlated tech names + GLD + TLT. GLD is deliberately absent from `betas`:
+# it is the unmodeled name the coverage gate is about, and on the real nightly
+# artifact GLD is in fact absent, so the fixture matches production rather than
+# flattering it.
+def _fixture_model(stress: bool = False) -> dict:
+    tech = {
+        "AAPL": 1.00, "MSFT": 0.95, "NVDA": 1.35, "AVGO": 1.25,
+        "AMD": 1.40, "GOOGL": 1.05, "META": 1.10, "MU": 1.30,
+    }
+    betas = {}
+    for t, m in tech.items():
+        betas[t] = {"mkt": m, "growth": 0.60, "rates": 0.05, "idio_vol": 0.26}
+    # TLT: the model's own diversifier — leans AGAINST the market, on rates
+    betas["TLT"] = {"mkt": -0.25, "growth": -0.05, "rates": 1.20, "idio_vol": 0.10}
+    model = {
+        "factors": [{"key": "mkt", "label": "Market"},
+                    {"key": "growth", "label": "Growth / Tech"},
+                    {"key": "rates", "label": "Rates (duration)"}],
+        "factor_cov": {"mkt": {"mkt": 0.030, "growth": 0.0, "rates": 0.0},
+                       "growth": {"mkt": 0.0, "growth": 0.020, "rates": 0.0},
+                       "rates": {"mkt": 0.0, "growth": 0.0, "rates": 0.010}},
+        "betas": betas,
+    }
+    if stress:
+        # worst-quartile days: the market term dominates and the names converge
+        model["factor_cov_stress"] = {
+            "mkt": {"mkt": 0.400, "growth": 0.0, "rates": 0.0},
+            "growth": {"mkt": 0.0, "growth": 0.020, "rates": 0.0},
+            "rates": {"mkt": 0.0, "growth": 0.0, "rates": 0.010}}
+        model["stress_meta"] = {"available": True}
+    return model
+
+
+FIXTURE_WMAP = {"AAPL": 10000, "MSFT": 10000, "NVDA": 10000, "AVGO": 10000,
+                "AMD": 10000, "GOOGL": 10000, "META": 10000, "MU": 10000,
+                "GLD": 10000, "TLT": 10000}
+
+
+@needs_node
+def test_w3_fixture_tech_concentration_is_visible_and_bets_fall_below_the_name_count():
+    """§0 risk-correctness, first two rows. Eight names that share a market and a growth
+    exposure must NOT read as eight independent positions, and the surface must say which
+    names carry it."""
+    out = _rc(
+        """
+        var b = RC.read(MODEL, WMAP).calm;
+        var bets = WR.enbClamp(b.enb, b.held.length);
+        OUT({
+          held: b.held.length,
+          enb: b.enb,
+          bets: bets.bets,
+          topByRisk: b.rankedPositions.slice(0, 4),
+          concText: TEXT(WR.concentrationHTML(b, b.coverage))
+        });
+        """,
+        {"MODEL": _fixture_model(), "WMAP": FIXTURE_WMAP},
+    )
+    # GLD is unmodeled, so nine names reach the model; the read is over those
+    assert out["held"] == 9, out
+    # "materially below the ticker count" — eight correlated names plus a hedge
+    assert out["bets"] <= 4, out
+    assert out["enb"] < out["held"] / 2.0, out
+    # the tech block, not TLT, is what carries the risk
+    assert "TLT" not in out["topByRisk"], out
+    # and the tab names a real holder of it, with a figure
+    assert "carries" in out["concText"], out["concText"]
+    assert "%" in out["concText"], out["concText"]
+
+
+@needs_node
+def test_w3_fixture_tlt_reads_as_a_diversifier_and_gld_never_enters_the_math():
+    """§0 rows three and five, together — they are the same property seen from two sides.
+
+    TLT is IN the model and leans against the book, so it must read as the quiet one.
+    GLD is NOT in the model, so it must be named as outside it and must never appear as
+    a bar, a pair, or a row anywhere — "no unmodeled ticker silently enters factor math"
+    is only proved by looking for it in the OUTPUT, not by trusting the coverage split."""
+    out = _rc(
+        """
+        var b = RC.read(MODEL, WMAP).calm;
+        var cov = b.coverage;
+        var tabs = {
+          conc: WR.concentrationHTML(b, cov),
+          corr: WR.correlationHTML(b, cov),
+          fact: WR.factorsHTML(b, cov),
+          weak: WR.weakLinksHTML(b, cov)
+        };
+        var text = {}; for (var k in tabs) text[k] = TEXT(tabs[k]);
+        OUT({
+          unmodeled: cov.unmodeled,
+          heldHasGld: b.held.indexOf('GLD') >= 0,
+          tltMoney: b.W.TLT, tltRisk: b.mctrShare.TLT,
+          text: text,
+          weakRaw: tabs.weak
+        });
+        """,
+        {"MODEL": _fixture_model(), "WMAP": FIXTURE_WMAP},
+    )
+    # --- GLD: outside the model, and provably outside every figure -------------
+    assert out["unmodeled"] == ["GLD"], out["unmodeled"]
+    assert not out["heldHasGld"], "an unmodeled name reached the factor math"
+    for tab, body in out["text"].items():
+        if tab == "corr":
+            # the pair ladder must not pair a name the model cannot price
+            assert "GLD ·" not in body and "· GLD" not in body, (tab, body)
+        # every tab that reads the model must NAME it as excluded, never omit it silently
+        assert "GLD" in body, (tab, body)
+        assert "no read for" in body or "not on this list" in body, (tab, body)
+
+    # --- TLT: the model's own diversifier, and the tab says so -----------------
+    assert out["tltRisk"] < out["tltMoney"] / 2.0, (
+        "TLT should carry far less risk than money in this fixture: %s vs %s"
+        % (out["tltRisk"], out["tltMoney"]))
+    weak = out["text"]["weak"]
+    assert "TLT" in weak, weak
+    assert ("pulling the other way" in weak) or ("quiet one" in weak), weak
+
+
+@needs_node
+def test_w3_stress_tab_can_show_convergence_and_says_so_when_it_does_not():
+    """§0 row four. The gate is that the lens CAN show convergence — so the fixture is
+    built to converge, and the calm-model control proves the same surface does not claim
+    it when it is not there. Both directions, because a tab that only knows how to report
+    tightening turns an ordinary book into a missing read."""
+    converging = _rc(
+        """
+        var RR = RC.read(MODEL, WMAP);
+        var calm = RR.calm, st = RR.stress;
+        OUT({ hasStress: RR.hasStress, diverges: RR.diverges,
+              calmEnb: calm.enb, stressEnb: st.enb,
+              text: TEXT(WR.stressHTML(RR, calm.coverage)) });
+        """,
+        {"MODEL": _fixture_model(stress=True), "WMAP": FIXTURE_WMAP},
+    )
+    assert converging["hasStress"], converging
+    assert converging["stressEnb"] < converging["calmEnb"], converging
+    assert converging["diverges"], (
+        "the fixture was meant to converge hard enough to trip the divergence flag: %s"
+        % converging)
+    txt = converging["text"]
+    assert "tightens" in txt, txt
+    # both counts print regardless of which branch the claim took
+    assert "on an average day" in txt.lower(), txt
+    assert "falling days" in txt.lower(), txt
+
+    # control: no stress block in the model at all -> an honest absence, not a guess
+    absent = _rc(
+        """
+        var RR = RC.read(MODEL, WMAP);
+        OUT({ hasStress: RR.hasStress, text: TEXT(WR.stressHTML(RR, RR.calm.coverage)) });
+        """,
+        {"MODEL": _fixture_model(stress=False), "WMAP": FIXTURE_WMAP},
+    )
+    assert not absent["hasStress"], absent
+    assert "no falling-days lens" in absent["text"], absent["text"]
+    assert "tightens" not in absent["text"], absent["text"]
+
+
+@needs_node
+def test_w3_correlation_prints_the_closest_pair_even_when_none_crosses_the_line():
+    """The common case on an orthogonalized model with real per-name idio vol: no pair
+    reaches 0.70. "No twins" is a finding, and printing the closest pair anyway is what
+    stops it reading as "these names are unrelated" — which would be false."""
+    out = _rc(
+        """
+        var b = RC.read(MODEL, WMAP).calm;
+        var pairs = [];
+        for (var i = 0; i < b.held.length; i++)
+          for (var j = i + 1; j < b.held.length; j++)
+            pairs.push(b.rho(b.held[i], b.held[j]));
+        pairs.sort(function (x, y) { return y - x; });
+        OUT({ maxRho: pairs[0], text: TEXT(WR.correlationHTML(b, b.coverage)) });
+        """,
+        {"MODEL": _fixture_model(), "WMAP": FIXTURE_WMAP},
+    )
+    assert out["maxRho"] < 0.70, "fixture drifted — it is meant to sit below the line"
+    txt = out["text"]
+    assert "closest pair" in txt, txt
+    assert "0.70" in txt, txt
+    # it must NOT claim independence
+    assert "unrelated" not in txt and "no correlation" not in txt.lower(), txt
+
+
+@needs_node
+def test_w3_events_tab_never_claims_a_calendar_it_has_not_read():
+    """The events read is composed from per-ticker JSON the page has already hydrated.
+    Three states, three honest answers: nothing loaded, loaded but no dates ahead, and a
+    real calendar. The failure this pins is the middle one reading like the first."""
+    nothing = _rc("WR.__setCardJson({}); OUT({ text: TEXT(WR.eventsHTML({ unmodeled: [] })) });")
+    assert "arrive with each name" in nothing["text"], nothing["text"]
+
+    no_dates = _rc(
+        "WR.__setCardJson({ AAPL: {}, MSFT: { earnings: {} } });"
+        " OUT({ text: TEXT(WR.eventsHTML({ unmodeled: [] })) });"
+    )
+    assert "No reporting dates ahead" in no_dates["text"], no_dates["text"]
+    assert "2" in no_dates["text"], "it must say how many names it actually read"
+
+    real = _rc(
+        """
+        var soon = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+        var far  = new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10);
+        WR.__setCardJson({
+          NVDA: { earnings: { next_date: soon, next_time: 'after-hours' } },
+          AAPL: { earnings: { next_date: far } },
+          TLT:  {}
+        });
+        OUT({ text: TEXT(WR.eventsHTML({ unmodeled: [] })) });
+        """
+    )
+    assert "NVDA" in real["text"], real["text"]
+    assert "within two weeks" in real["text"], real["text"]
+    # a name with no calendar is not invented into the list
+    assert "TLT" not in real["text"], real["text"]
+
+
+@needs_node
+def test_w3_coverage_honesty_states_market_coverage_and_never_totals_two_currencies():
+    """§0 coverage-honesty row. With positions in more than one market the tabs must say
+    which market their figures describe AND state that the currencies are never summed —
+    the single sentence that stops a reader inferring a portfolio total that does not
+    exist. Driven through `MB.presentBooks`, the same seam the page uses."""
+    out = _rc(
+        """
+        window.MB = {
+          isModeled: function (t) { return !/\\.(HK|SS|TO)$/.test(t) && t !== 'GC=F'; },
+          presentBooks: function () { return ['us', 'hk', 'cn']; },
+          getBook: function () { return 'all'; }
+        };
+        OUT({ multi: TEXT(WR.coverageFoot({ unmodeled: ['GC=F'] })) });
+        """
+    )
+    txt = out["multi"]
+    assert "US-listed" in txt, txt
+    assert "never added into one number across currencies" in txt, txt
+    # the unsupported symbol is named, not dropped
+    assert "GC=F" in txt, txt
+    assert "no read for" in txt, txt
+
+    single = _rc(
+        """
+        window.MB = { isModeled: function () { return true; },
+                      presentBooks: function () { return ['us']; },
+                      getBook: function () { return 'all'; } };
+        OUT({ t: TEXT(WR.coverageFoot({ unmodeled: [] })) });
+        """
+    )
+    assert single["t"] == "", "a single-market book with full coverage needs no disclaimer"
+
+
+@needs_node
+def test_w3_factor_grouping_caveat_is_surfaced_where_the_grouping_is_displayed():
+    """packet §8-W3: the one permitted risk_core.js act was to surface `factorBets`'
+    diagonal-only approximation honestly WHERE IT IS DISPLAYED — not to change it. The
+    consequence is user-visible (the group a name is filed under can name a different
+    force from the book-level ranking), so the disclosure lives in the rendered copy."""
+    out = _rc(
+        """
+        var b = RC.read(MODEL, WMAP).calm;
+        OUT({ text: TEXT(WR.factorsHTML(b, b.coverage)) });
+        """,
+        {"MODEL": _fixture_model(), "WMAP": FIXTURE_WMAP},
+    )
+    txt = out["text"]
+    assert "one force at a time" in txt, txt
+    assert "filed under the larger one" in txt, txt
+    # and the engine still carries the reason in source, pointing at this surface
+    src = RISK_CORE.read_text()
+    assert "DIAGONAL" in src and "factorsHTML" in src, "the engine-side note lost its pointer"
+
+
+@needs_node
+def test_w3_scenario_lab_states_its_default_and_stays_descriptive():
+    """§14 A4 / WRI-R3. The lab describes; it never advises. And the default size is
+    STATED — production shipped $10,000 into an unlabelled box, which is how a round
+    number becomes a suggestion by accident."""
+    out = _rc(
+        """
+        WR.__setModel(MODEL, WMAP, 'calm');
+        OUT({
+          intro: TEXT(WR.labIntroHTML()),
+          dflt: WR.W4_DEFAULT_DOLLARS,
+          modeled: TEXT(WR.scenarioHTML('NVDA', 10000)),
+          unmodeled: TEXT(WR.scenarioHTML('GC=F', 10000)),
+          empty: TEXT(WR.scenarioHTML('', 10000))
+        });
+        """,
+        {"MODEL": _fixture_model(), "WMAP": FIXTURE_WMAP},
+    )
+    assert out["dflt"] == 10000, out["dflt"]
+    intro = out["intro"]
+    assert "$10,000" in intro, intro
+    assert "not a suggested size" in intro, intro
+    assert "not drawn from your book" in intro, intro
+
+    # an unmodeled candidate gets no numbers invented for it
+    un = out["unmodeled"]
+    assert "no read for" in un, un
+    assert "%" not in un, un
+    assert out["empty"].startswith("Name a position"), out["empty"]
+
+    # descriptive, and it says so
+    mod = out["modeled"]
+    assert "would" in mod, mod
+    assert "not a recommendation" in mod, mod
+
+
+@needs_node
+def test_w3_no_imperatives_or_internal_vocabulary_in_any_rendered_tab():
+    """Glance-tier copy law across the whole W3 surface at once. The banned list is the
+    packet's: internal state names, the study/lane vocabulary, and any verb that tells
+    someone what to do with their own money."""
+    out = _rc(
+        """
+        var RR = RC.read(MODEL, WMAP);
+        var b = RR.calm, cov = b.coverage;
+        WR.__setModel(MODEL, WMAP, RR.defaultLens);
+        WR.__setCardJson({ NVDA: { earnings: { next_date: '2099-01-15' } } });
+        var all = [
+          WR.concentrationHTML(b, cov), WR.correlationHTML(b, cov),
+          WR.factorsHTML(b, cov), WR.stressHTML(RR, cov),
+          WR.eventsHTML(cov), WR.weakLinksHTML(b, cov),
+          WR.labIntroHTML(), WR.scenarioHTML('AAPL', 10000)
+        ];
+        OUT({ raw: all.join('\\n'), text: all.map(TEXT).join(' \\n ') });
+        """,
+        {"MODEL": _fixture_model(stress=True), "WMAP": FIXTURE_WMAP},
+    )
+    text = out["text"]
+    banned_words = [
+        # internal machinery a reader has no name for
+        "ENB", "MCTR", "effective number of bets", "idiosyncratic", "Euler",
+        "mctrShare", "factorShare", "beta", "variance", "covariance",
+        "WRI", "lane", "falsifier", "证伪", "validated",
+    ]
+    hits = [w for w in banned_words if w.lower() in text.lower()]
+    assert not hits, (hits, text[:400])
+
+    # no instruction to do anything with a position
+    for verb in ("you should", "consider adding", "consider trimming", "we recommend",
+                 "buy ", "sell ", "trim ", "hedge ", "add to your", "reduce your"):
+        assert verb.lower() not in text.lower(), (verb, text[:400])
+
+    # tier names may be NAMED, never explained: no title= anywhere in the emitted HTML
+    assert "title=" not in out["raw"], "translated copy in a title attribute"
+
+
+@needs_node
+def test_w3_every_tab_emits_both_languages():
+    """zh copy is a build output, not a translation pass — every string the tabs emit
+    carries both halves of the dual-emit pair, or the page goes half-English under zh."""
+    out = _rc(
+        """
+        var RR = RC.read(MODEL, WMAP);
+        var b = RR.calm, cov = b.coverage;
+        WR.__setModel(MODEL, WMAP, RR.defaultLens);
+        WR.__setCardJson({ NVDA: { earnings: { next_date: '2099-01-15' } } });
+        var tabs = {
+          conc: WR.concentrationHTML(b, cov), corr: WR.correlationHTML(b, cov),
+          fact: WR.factorsHTML(b, cov), strs: WR.stressHTML(RR, cov),
+          evt: WR.eventsHTML(cov), weak: WR.weakLinksHTML(b, cov),
+          lab: WR.labIntroHTML(), scen: WR.scenarioHTML('AAPL', 10000)
+        };
+        var counts = {};
+        for (var k in tabs) {
+          counts[k] = {
+            en: (tabs[k].match(/class="l-en"/g) || []).length,
+            zh: (tabs[k].match(/class="l-zh"/g) || []).length,
+            cjk: /[\\u4e00-\\u9fff]/.test(tabs[k])
+          };
+        }
+        OUT(counts);
+        """,
+        {"MODEL": _fixture_model(stress=True), "WMAP": FIXTURE_WMAP},
+    )
+    for tab, c in out.items():
+        assert c["en"] > 0, (tab, c)
+        assert c["en"] == c["zh"], ("dual-emit is unbalanced — a string lost its zh half",
+                                    tab, c)
+        assert c["cjk"], ("no Chinese characters emitted at all", tab, c)
+
+
+@needs_node
+def test_w3_tabs_do_not_repeat_each_others_claim():
+    """DESIGN_NOTES §5.5, generalised: one dominant idea per tab. The seam already owns
+    the cluster claim and Concentration owns the single-name one, so no two tab CLAIMS
+    may be the same sentence — a Risk Center where two tabs answer one question is the
+    'pile of unrelated cards' the whole revamp exists to remove."""
+    out = _rc(
+        """
+        var RR = RC.read(MODEL, WMAP);
+        var b = RR.calm, cov = b.coverage;
+        WR.__setCardJson({ NVDA: { earnings: { next_date: '2099-01-15' } } });
+        function claim(h) {
+          var m = String(h).match(/<p class="rc-claim">([\\s\\S]*?)<\\/p>/);
+          return m ? TEXT(m[1]) : '';
+        }
+        OUT({
+          conc: claim(WR.concentrationHTML(b, cov)), corr: claim(WR.correlationHTML(b, cov)),
+          fact: claim(WR.factorsHTML(b, cov)), strs: claim(WR.stressHTML(RR, cov)),
+          evt: claim(WR.eventsHTML(cov)), weak: claim(WR.weakLinksHTML(b, cov))
+        });
+        """,
+        {"MODEL": _fixture_model(stress=True), "WMAP": FIXTURE_WMAP},
+    )
+    claims = [v for v in out.values() if v]
+    assert len(claims) == 6, out
+    assert len(set(claims)) == 6, out
+    # concentration owns "carries N% of the risk"; weak links owns the money-vs-risk ratio
+    assert "carries" in out["conc"], out["conc"]
+    assert "of the money and" in out["weak"], out["weak"]
+    assert out["conc"] != out["weak"]

@@ -395,9 +395,61 @@
   .conc-row.is-ballast .track span { background:color-mix(in srgb,var(--muted) 34%,var(--panel2)); }
   .conc-row .who { font-weight:650; }
   .conc-row .pct { text-align:right; color:var(--muted); }
-  /* a tab whose read is not built yet says so in plain words — never a fake panel */
+  /* factor names are words, not tickers — "Growth / Tech" wraps at the ticker width
+     and breaks the ladder's rhythm, so that one ladder gets a wider label column */
+  .conc.is-factors .conc-row { grid-template-columns:100px minmax(0,1fr) 42px; }
+  /* Tier-2 receipt affordance: the LENS popover is wired by theme.js off
+     [data-tip-en]; this is only the hint that the sentence has one. */
+  .rc-tip { border-bottom:1px dotted color-mix(in srgb,var(--muted) 55%,transparent); }
+  /* a tab whose book is too thin for its read says so in plain words — never an
+     empty panel, and never another tab's answer standing in for a missing one */
   .rc-soon { font-size:12.5px; color:var(--muted); line-height:1.6; max-width:56ch; }
   .rc-soon b { color:var(--text); font-weight:650; display:block; margin-bottom:3px; font-size:13px; }
+
+  /* ── W3 tab row grammars ───────────────────────────────────────────────────
+     Three variants of the ONE ladder the Concentration tab already established:
+     same track, same shared-scale law, same read-only nature. They differ only in
+     what the left column names (a pair, a date, two columns) — never in geometry.
+     Nothing here is the Board's count ladder: no cell is a category, no cell is a
+     filter control, and every track is a continuous share rather than a count. */
+  .pair-row { display:grid; grid-template-columns:112px minmax(0,1fr) 42px; align-items:center;
+    gap:10px; font-size:12.5px; }
+  .pair-row .who { font-weight:650; }
+  .pair-row .pct { text-align:right; color:var(--muted); }
+  .pair-row .track { height:6px; border-radius:3px; background:var(--panel2);
+    border:1px solid color-mix(in srgb,var(--line) 70%,transparent); overflow:hidden; }
+  /* below the 0.70 line the fill is quiet; at or above it, it is the full accent —
+     a threshold read by WEIGHT, never by a second hue */
+  .pair-row .track span { display:block; height:100%;
+    background:color-mix(in srgb,var(--link) 34%,var(--panel2)); }
+  .pair-row.is-twin .track span { background:color-mix(in srgb,var(--link) 72%,var(--panel2)); }
+  .pair-row.is-twin .who, .pair-row.is-twin .pct { color:var(--text); }
+
+  .evt-row { display:grid; grid-template-columns:66px minmax(0,1fr) 46px; align-items:baseline;
+    gap:10px; font-size:12.5px; }
+  .evt-row .who { font-weight:650; }
+  .evt-row .when { color:var(--muted); min-width:0; }
+  .evt-row .when .sub { opacity:.72; }
+  .evt-row .pct { text-align:right; color:var(--muted); }
+  .evt-row.is-near .who, .evt-row.is-near .pct { color:var(--text); }
+
+  .wk .wk-hd { display:grid; grid-template-columns:66px minmax(0,1fr) 22px; gap:10px;
+    font-size:9.5px; font-weight:750; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:1px; }
+  .wk-row { display:grid; grid-template-columns:66px minmax(0,1fr) 22px; align-items:center;
+    gap:10px; font-size:12.5px; }
+  .wk-row .who { font-weight:650; }
+  .wk-row .two, .wk .wk-hd .two { display:grid; grid-template-columns:1fr 1fr; gap:9px;
+    align-items:center; min-width:0; }
+  .wk-row .track { height:6px; border-radius:3px; background:var(--panel2);
+    border:1px solid color-mix(in srgb,var(--line) 70%,transparent); overflow:hidden; }
+  .wk-row .track span { display:block; height:100%;
+    background:color-mix(in srgb,var(--link) 62%,var(--panel2)); }
+  .wk-row.is-ballast .track span { background:color-mix(in srgb,var(--muted) 34%,var(--panel2)); }
+  /* a direction glyph, not a figure: no tabular-mono, no --up/--down ink (it marks
+     risk-per-dollar, which has no up/down meaning and must not flip under zh) */
+  .mark { color:var(--muted); font-weight:650; }
+  .wk-row .pct.mark { text-align:right; }
 
   details.lab { border-top:1px solid var(--line); }
   details.lab summary { list-style:none; cursor:pointer; padding:13px 20px; display:flex;
@@ -408,6 +460,31 @@
   details.lab summary .q { font-weight:450; color:var(--muted); font-size:12.5px; }
   details.lab .labbody { padding:0 20px 18px; font-size:12.5px; color:var(--muted); max-width:60ch; }
   @media (prefers-reduced-motion:reduce){ details.lab summary .car { transition:none; } }
+
+  /* ── Scenario Lab body (W3) ────────────────────────────────────────────────
+     The pre-trade check, rehomed. Deliberately the plainest surface in the panel:
+     it describes a book that does not exist, so it gets no accent fill, no bars
+     and no signature — two fields, a button, and sentences. */
+  .lab-say { margin:0 0 11px; }
+  .lab-form { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .lab-in { font-family:inherit; font-size:12.5px; color:var(--text);
+    background:var(--panel2); border:1px solid var(--line); border-radius:9px;
+    padding:7px 10px; min-width:0; }
+  .lab-in:focus-visible { outline:2px solid color-mix(in srgb,var(--link) 70%,transparent);
+    outline-offset:1px; }
+  .lab-t { width:108px; text-transform:uppercase; }
+  .lab-d { display:inline-flex; align-items:center; gap:5px; }
+  .lab-cur { font-family:var(--font-mono); font-size:12px; color:var(--muted); }
+  .lab-amt { width:104px; font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+  .lab-out { margin-top:12px; }
+  .lab-out:empty { margin-top:0; }
+  .lab-line { margin:0 0 6px; color:var(--text); line-height:1.5; }
+  .lab-line b { font-weight:650; }
+  .lab-line .fig { font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+    font-weight:700; }
+  .lab-lens { color:var(--muted); }
+  .lab-note { margin:13px 0 0; color:var(--muted); line-height:1.55; }
+  @media (max-width:520px){ .lab-form .gbtn { width:100%; } }
 
   /* ══════════════════════════════════════════════════════════════════════════
      MARKET BOOKS — chips are VIEWS of the ONE portfolio, never new books.
@@ -919,15 +996,15 @@
      SD routes each per-ticker fetch to its market's store through window.MB. -->
 <script src="market_books.js?v=2"></script>
 <script src="stockdata.js?v=3"></script>
-<script src="watchlist.js?v=5"></script>
-<script src="factor_exposure.js?v=2"></script>
+<script src="watchlist.js?v=6"></script>
+<script src="factor_exposure.js?v=3"></script>
 <!-- pure book-structure math + the risk publisher. risk_core.js must precede
      watchlist_risk.js; both need SD + FX. Signed-in only — the anonymous shell
      boots without them and the Risk rails render as lock shells (packet A9). -->
-<script src="risk_core.js?v=1"></script>
-<script src="watchlist_risk.js?v=3"></script>
+<script src="risk_core.js?v=2"></script>
+<script src="watchlist_risk.js?v=4"></script>
 <script src="watchstore.js?v=5"></script>
-<script src="portfolio.js?v=3"></script>
+<script src="portfolio.js?v=4"></script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
 <p class="muted" style="font-size:12px; text-align:center">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>

@@ -1347,10 +1347,18 @@
   //  RISK CENTER
   // ===========================================================================
   var rcTab = 'conc';
-  var RC_SOON = {
+  /* The question each tab answers, in the words a reader would use. W2 shipped these
+     as "being built" shells; W3 gives every one of them a real read, so the copy now
+     serves the case that survives forever: a book too thin for that particular read.
+     A tab with nothing to say says what it would say and why it cannot — it never
+     shows an empty panel, and it never shows another tab's answer instead. */
+  var RC_THIN = {
+    conc: ['Concentration', '集中度',
+           'Which single name carries the most of your risk.',
+           '哪一只票扛下了你最多的风险。'],
     corr: ['Correlation', '相关性',
-           'Which of your names actually move together — and which pair you think is a hedge but is not.',
-           '你的哪些票其实是同涨同跌 —— 以及哪一对你以为在对冲、实际并没有。'],
+           'Which of your names actually move together, and how closely.',
+           '你的哪些票其实同涨同跌，以及有多同步。'],
     fact: ['Factors &amp; macro', '因子与宏观',
            'The handful of forces — growth, rates, the dollar, oil — your book is really leaning on.',
            '你的账簿真正压在哪几股力量上 —— 成长、利率、美元、原油。'],
@@ -1358,11 +1366,11 @@
            'What the same book looks like on the days the market falls, not on an average day.',
            '在市场下跌的那些日子里，同一本账簿是什么样 —— 而不是平均日。'],
     evt:  ['Events', '事件',
-           'Every earnings date and event attached to your names, on one calendar.',
-           '你名下每只票的财报与事件，集中在一张日历上。'],
+           'Every reporting date attached to your names, on one calendar.',
+           '你名下每只票的财报日期，集中在一张日历上。'],
     weak: ['Weak links &amp; strengths', '弱点与支撑',
-           'The position carrying more risk than its size deserves, and the one quietly holding the book together.',
-           '哪一笔仓位扛的风险超过了它的体量，以及哪一笔在默默撑住整本账簿。']
+           'The position carrying more risk than its size, and the one pulling the other way.',
+           '哪一笔仓位扛的风险超过了它的体量，以及哪一笔在往反方向拉。']
   };
 
   function renderRiskCenter() {
@@ -1372,10 +1380,7 @@
       b.setAttribute('aria-selected', String(b.getAttribute('data-rc') === rcTab));
     });
 
-    var lab = el('rc_lab');
-    if (lab) lab.innerHTML = te(
-      'Try a name and a size, and see this page&rsquo;s figures before and after — how concentrated the book becomes, and which names it would join. Built in the next wave.',
-      '输入一个代码和一个金额，就能看到本页数字在加仓前后的变化 —— 账簿会变得多集中、它会和哪些票归为一组。下一波交付。');
+    renderLab();
 
     // anonymous: every rule-derived read is a lock shell with the free CTA
     if (!window.RiskCore || !window.SD) {
@@ -1387,24 +1392,48 @@
         te('Create a free account', '创建免费账户') + '</button></span></div>';
       return;
     }
-    if (rcTab !== 'conc') {
-      var s = RC_SOON[rcTab];
-      body.innerHTML = '<p class="rc-soon"><b>' + te(s[0], s[1]) + '</b>' + te(s[2], s[3]) +
-        '<br><span style="opacity:.7">' + te('Being built — this tab lands in the next wave.',
-          '正在建设中 —— 这个标签下一波交付。') + '</span></p>';
+    var html = RISK.rcTabs && RISK.rcTabs[rcTab];
+    if (!html && rcTab === 'conc') html = RISK.concHTML;   // pre-W3 publisher, mid-deploy
+    if (html) { body.innerHTML = html; return; }
+    var s = RC_THIN[rcTab] || RC_THIN.conc;
+    body.innerHTML = '<p class="rc-soon"><b>' + te(s[0], s[1]) + '</b>' + te(s[2], s[3]) +
+      '<br><span style="opacity:.7">' + te(
+        'Add at least two positions the nightly model covers and this fills in.',
+        '添加至少两笔每晚模型已覆盖的持仓，这里就会填充。') + '</span></p>';
+  }
+
+  /* The Scenario Lab shell is painted ONCE and then left alone. A hydration wave
+     republishes the risk payload every time a name resolves, and re-rendering the
+     form on each one would delete whatever the reader was in the middle of typing.
+     The RESULT is cleared instead: it describes a book that has just changed, and a
+     stale hypothetical presented as current is the one thing this panel must not do. */
+  function renderLab() {
+    var lab = el('rc_lab'); if (!lab) return;
+    if (!lab.querySelector('#rc_lab_go')) {
+      lab.innerHTML = RISK.labHTML || '';
+      paintPlaceholders();
       return;
     }
-    body.innerHTML = RISK.concHTML || ('<p class="rc-soon">' + te(
-      'Add at least two positions the model covers and this reads which single name carries the most of your risk.',
-      '添加至少两笔模型覆盖的持仓，这里会读出哪一只票扛下了你最多的风险。') + '</p>');
+    var out = el('rc_lab_out');
+    if (out && out.innerHTML) out.innerHTML = '';
+  }
+  function runLab() {
+    var out = el('rc_lab_out'); if (!out) return;
+    if (!window.WRI || !window.WRI.scenario) return;
+    var t = el('rc_lab_t'), d = el('rc_lab_d');
+    var dollars = d ? parseFloat(d.value) : NaN;
+    try { out.innerHTML = window.WRI.scenario(t ? t.value : '', dollars); }
+    catch (e) { out.innerHTML = ''; }
   }
 
   /* The risk publisher's landing pad. watchlist_risk.js computes; the workspace
-     draws. Keeping the seam and the Concentration read in ONE file is what stops
+     draws. Keeping the seam and the Risk Center reads in ONE file is what stops
      the signature from drifting between two renderers. */
-  var RISK = { shares: null, concHTML: '', seamItems: null, coverage: null, headline: null };
+  var RISK = { shares: null, concHTML: '', rcTabs: null, labHTML: '',
+               seamItems: null, coverage: null, headline: null };
   function setRisk(payload) {
-    RISK = payload || { shares: null, concHTML: '', seamItems: null, coverage: null, headline: null };
+    RISK = payload || { shares: null, concHTML: '', rcTabs: null, labHTML: '',
+                        seamItems: null, coverage: null, headline: null };
     if (mode === 'portfolio') renderRiskCenter();
   }
 
@@ -1781,6 +1810,22 @@
       var b = e.target.closest('.rc-tab[data-rc]'); if (!b) return;
       rcTab = b.getAttribute('data-rc'); renderRiskCenter();
     });
+
+    /* Scenario Lab: delegated off the panel, because the form is painted by
+       `renderLab` after this wiring runs and re-painted whenever the reader
+       reopens the page in a new mode. Enter in either field runs it too — a
+       two-field form where only the button works is a form people abandon. */
+    var lab = el('rc_lab');
+    if (lab) {
+      lab.addEventListener('click', function (e) {
+        if (e.target.closest('#rc_lab_go')) runLab();
+      });
+      lab.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        if (!e.target.closest('#rc_lab_t, #rc_lab_d')) return;
+        e.preventDefault(); runLab();
+      });
+    }
 
     var wf = el('wl_filter');
     if (wf) wf.addEventListener('input', debounce(function () {
