@@ -1733,3 +1733,383 @@ def test_the_reason_head_is_bounded_while_the_tail_names_the_offender():
     # the mixed reason names BOTH legs — and none of that may become a key
     assert "300024.SZ" in mixed and "SPY" in mixed
     assert q.clock_reason_head(mixed) == q.MARKET_UNDETERMINED_MIXED
+
+
+# --------------------------------------------------------------------------- #
+# ROUND 5 — BLOCKER 1: THE NO-SUFFIX BRANCH FAILED OPEN ONTO US.
+#
+# Three rounds in a row patched a new failure of the SAME assumption — "a
+# claim's market can be read off the SHAPE of its ticker" — and this is the
+# fourth: a bare numeric like `600519` or `0700` carries NO market information
+# in its shape at all, and round 4's "no suffix -> US" answered US for it,
+# silently, every time. The fix is structural: market is now derived from the
+# claim's OWN PROVENANCE (`DESK_MARKET`/`_provenance_market`) when the shape
+# cannot say, and ticker shape may only corroborate (a real exchange suffix,
+# or `valid_us_ticker` when provenance is silent) or refuse — never originate.
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("ticker", ["600519", "000001", "0700", "^HSI"])
+def test_a_bare_ticker_never_silently_resolves_to_us(ticker):
+    """The four live exemplars, called with NO claim context — exactly what
+    `session_anchor.market_for_ticker` (the house classifier) would answer US
+    for. `_ticker_market` alone has no provenance to consult, so every one of
+    these FAILS CLOSED — never `(q.MARKET_US, "")`, the round-4 behaviour."""
+    from engine.session_anchor import market_for_ticker
+    assert market_for_ticker(ticker) == "US", (
+        "negative control: the house classifier really would have said US here")
+    market, reason = q._ticker_market(ticker)
+    assert market is None, f"{ticker} must never silently resolve to US"
+    head = q.clock_reason_head(reason).split(":", 1)[0]
+    assert head in (q.MARKET_UNDETERMINED_NO_LEG,
+                    q.MARKET_UNDETERMINED_NO_PROVENANCE), reason
+
+
+def test_a_bare_a_share_code_resolves_cn_through_its_desks_own_provenance():
+    """The TRUE-market half of the acceptance bar: 600519 (Kweichow Moutai,
+    Shanghai) and 000001 (Ping An, Shenzhen) — BARE, no suffix — resolve CN
+    when the claim carries the desk `cn_importance_v0` is provenanced under,
+    with the provenance path shown explicitly (`_provenance_market`), and via
+    the full `make_claim` -> `resolve_claim_market` path a real producer takes."""
+    assert q._provenance_market({"desk": "cn_importance_v0"}) == q.MARKET_CN
+    assert q._provenance_market({"claim_family": "china_news"}) == q.MARKET_CN
+    for ticker, desk in (("600519", "cn_importance_v0"), ("000001", "china_news")):
+        market, reason = q._ticker_market(ticker, provenance=q.MARKET_CN)
+        assert (market, reason) == (q.MARKET_CN, "")
+        # end to end: the claim itself, with no suffix anywhere, resolves CN
+        # because ITS DESK says so — not because the ticker looks like anything.
+        c = q.make_claim(desk=desk, asof="2026-08-07", scope_type="entity",
+                         scope_key=ticker, direction=0, horizon_d=5,
+                         horizon_unit=q.HORIZON_UNIT_TRADING,
+                         timestamp_quality="CRAWL_BOUNDED", bench="510300.SS",
+                         claim_family=desk)
+        assert c["clock_market"] == q.MARKET_CN
+        assert c["check_by"], "a resolved A-share exit, not None"
+
+
+def test_a_bare_ticker_with_no_provenance_anywhere_fails_closed_and_counted(tmp_path):
+    """0700 (Tencent, Hong Kong) is bare and ticker-SHAPED (`plausible_symbol`
+    is True — it is all digits, a real subject), and THIS repo has no
+    HK-priced desk in `DESK_MARKET` to provenance it from — so the honest
+    answer is FAIL CLOSED, not a guess at HK. It fails closed regardless of
+    what the bench says, because a ticker-shaped leg that cannot resolve
+    refuses the WHOLE claim (`resolve_claim_market`'s per-leg contract) —
+    unlike a purely symbolic label (see `^HSI` below), it never defers to
+    another leg. Registration refuses the claim (never a zombie open row) and
+    the refusal is COUNTED, matching acceptance bar #2 ('a claim with no
+    determinable provenance fails closed and is counted')."""
+    claim = q.make_claim(desk="some_unmapped_desk", asof="2026-08-07",
+                         scope_type="entity", scope_key="0700", direction=0,
+                         horizon_d=5, horizon_unit=q.HORIZON_UNIT_TRADING,
+                         timestamp_quality="CRAWL_BOUNDED", bench="SPY",
+                         claim_family="some_unmapped_desk")
+    assert claim["check_by"] is None, "the clock could not resolve — no zombie exit"
+    stored = q.register(claim, root=tmp_path)
+    assert stored["status"] == q.STATUS_REJECTED
+    assert stored["reject_reason"].startswith(q.REJECT_CLOCK_UNRESOLVABLE)
+    counted = q.count_unresolvable_clock_claims(root=tmp_path)
+    assert counted["n"] == 1
+
+
+def test_hsi_never_independently_claims_a_market_only_a_real_leg_can():
+    """^HSI (the Hang Seng INDEX ticker) is not even ticker-SHAPED
+    (`plausible_symbol` is False — the leading `^` matches no venue's symbol
+    alphabet), so as a STANDALONE leg it is `_ticker_market`'s exact
+    `MARKET_UNDETERMINED_NO_LEG` case: it NEVER answers `(US, "")` for it,
+    which is the property this fix guarantees (acceptance bar #1: TRUE market
+    or FAIL CLOSED, never silently US). Embedded in a full claim, the market
+    still comes from whichever OTHER leg carries real information — here, an
+    explicitly-named US bench — never from ^HSI's own shape; with NO
+    informative leg at all the claim fails closed exactly like any other."""
+    market, reason = q._ticker_market("^HSI")
+    assert (market, reason) == (None, q.MARKET_UNDETERMINED_NO_LEG)
+
+    # a real bench resolves the claim — via the BENCH's own information, not
+    # ^HSI's shape (^HSI itself never became "US" anywhere in this call).
+    resolved = q.resolve_claim_market(
+        {"scope": {"type": "macro", "key": "^HSI"}, "bench": "SPY", "control": None})
+    assert resolved == (q.MARKET_US, "")
+
+    # with NO informative leg anywhere, the claim fails closed — ^HSI alone
+    # is never enough to conjure a market.
+    refused = q.resolve_claim_market(
+        {"scope": {"type": "macro", "key": "^HSI"}, "bench": "^HSI", "control": None})
+    assert refused == (None, q.MARKET_UNDETERMINED_NO_LEG)
+
+
+def test_a_desk_not_in_the_provenance_table_is_unaffected_negative_control():
+    """Negative control: a desk this table has never heard of still resolves
+    every REAL US ticker exactly as before — provenance only ADDS a source, it
+    never narrows the existing shape-corroborated US fallback. Every live US
+    lane (altdata/radar/policy/whitehouse/narrative/intel_hub/…) keeps working
+    with no entry in `DESK_MARKET` at all."""
+    assert q._provenance_market({"desk": "altdata"}) is None
+    for ticker in ("AAPL", "SPY", "XLP", "BRK.B"):
+        market, reason = q._ticker_market(ticker, provenance=None)
+        assert (market, reason)[0] == q.MARKET_US, (ticker, reason)
+
+
+# --------------------------------------------------------------------------- #
+# ROUND 5 — BLOCKER 2: THE MIXED-MARKET REFUSAL KILLED A LIVE PRODUCER
+# --------------------------------------------------------------------------- #
+def test_missing_tapes_symbolic_macro_key_never_originates_a_market():
+    """`engine/missing_tape.py` registers `scope_key="CN_CENSORSHIP_RISK"`
+    (a symbolic risk-flag label, never a real ticker) against
+    `bench="510300.SS"`. Under the round-4 code the symbolic key fell through
+    the no-suffix branch to US, and the US/CN pair refused as mixed_markets —
+    silently killing this desk's forward log. `CN_CENSORSHIP_RISK` is not even
+    ticker-SHAPED (`plausible_symbol` is False, underscores included), so it
+    now contributes NOTHING toward the market — exactly like an absent leg —
+    and the bench alone, unaided, decides CN."""
+    from engine.ticker_shape import plausible_symbol
+    assert plausible_symbol("CN_CENSORSHIP_RISK") is False
+    market, reason = q._ticker_market("CN_CENSORSHIP_RISK")
+    assert (market, reason) == (None, q.MARKET_UNDETERMINED_NO_LEG)
+
+    claim = {"scope": {"type": "macro", "key": "CN_CENSORSHIP_RISK"},
+             "bench": "510300.SS", "control": None,
+             "desk": "missing_tape", "claim_family": "missing_tape"}
+    assert q.resolve_claim_market(claim) == (q.MARKET_CN, "")
+
+
+def test_missing_tapes_claim_registers_open_not_refused_as_mixed(tmp_path):
+    """End to end — the EXACT claim shape `missing_tape._register_claim` builds
+    (desk/scope/bench copied verbatim from `engine/missing_tape.py`), registered
+    hermetically against `tmp_path` (`_register_claim` itself hardcodes the real
+    repo root with no `root=` passthrough — a separate, pre-existing gap in that
+    module's testability, out of this fix's scope — so the claim is built here
+    and registered directly rather than calling `mt.emit`, which would otherwise
+    write into the real `data/qledger/`). Never the mixed_markets refusal."""
+    claim = q.make_claim(
+        desk="missing_tape", asof="2026-08-05", scope_type="macro",
+        scope_key="CN_CENSORSHIP_RISK", direction=0, horizon_d=21,
+        horizon_unit=q.HORIZON_UNIT_TRADING, timestamp_quality="SNAPSHOT_DATE",
+        bench="510300.SS", claim_family="missing_tape",
+        extra={"risk_level": "NONE", "divergence_z": None, "is_context_only": True},
+    )
+    stored = q.register(claim, root=tmp_path)
+    assert stored["status"] == q.STATUS_OPEN, stored.get("reject_reason")
+    assert stored["clock_market"] == q.MARKET_CN
+    assert stored["check_by"]
+
+
+def test_sibling_sweep_no_other_symbolic_scope_key_desk_is_mixed_refused():
+    """BLOCKER 2's sweep, made executable. Every OTHER live producer that
+    pairs a non-suffixed scope key with an explicit bench (`basket_turn_cohort`
+    — a bare ISO-date cohort id vs SPY; `build_whitehouse`'s WH_POLICY macro
+    fallback vs SPY) resolves exactly as before: none of these are
+    ticker-shaped, so none of them can originate a market either, and the
+    named bench decides alone — the same fix, uniformly, not a per-producer
+    patch."""
+    for scope_key, bench, expect in (
+            ("CN_CENSORSHIP_RISK", "510300.SS", q.MARKET_CN),   # missing_tape
+            ("WH_POLICY", "SPY", q.MARKET_US),                  # build_whitehouse
+            ("2026-10-15", "SPY", q.MARKET_US),                 # basket_turn_cohort
+    ):
+        claim = {"scope": {"type": "macro", "key": scope_key}, "bench": bench,
+                 "control": None}
+        assert q.resolve_claim_market(claim) == (expect, "")
+
+
+# --------------------------------------------------------------------------- #
+# ROUND 5 — MAJOR 1: _placebo_magnitude NO LONGER POOLS ACROSS CLOCK BASES
+# --------------------------------------------------------------------------- #
+def _placebo_claim(cid: str, path: str) -> dict:
+    return {"claim_id": cid, "desk": "placebo", "is_placebo": True,
+            "placebo_path": path, "event_id": f"e_{cid}"}
+
+
+def test_placebo_magnitude_no_longer_pools_us_and_cn_grades():
+    """BEFORE/AFTER, on the same fixture. THE DEFECT: a US-clock grade
+    (excess=0.01) and a CN-clock grade (excess=0.99) on the SAME horizon used
+    to average into one number (0.50) with no clock guard at all — exactly the
+    pooling `require_single_clock`/`_aggregate` exist to forbid, on the
+    control arm the whole 'beat placebo' comparison leans on. AFTER: the
+    published cell is ONE basis's own honest mean, the other basis's own
+    count is disclosed beside it, and 0.50 is not reachable by any reading."""
+    claims = [_placebo_claim("u1", "covered_ticker"),
+              _placebo_claim("c1", "covered_ticker")]
+    us_grade = {"claim_id": "u1", "horizon_d": 5, "excess": 0.01,
+               "horizon_unit": q.HORIZON_UNIT_TRADING,
+               "clock_version": q.CLOCK_V1, "clock_market": q.MARKET_US}
+    cn_grade = {"claim_id": "c1", "horizon_d": 5, "excess": 0.99,
+               "horizon_unit": q.HORIZON_UNIT_TRADING,
+               "clock_version": q.CLOCK_V1, "clock_market": q.MARKET_CN}
+
+    # BEFORE (the reverted defect — mirrored here as a plain mean, never
+    # called): summing both into one bucket the old way gives exactly 0.50.
+    pooled_before = round((0.01 + 0.99) / 2, 6)
+    assert pooled_before == 0.5
+
+    out = q._placebo_magnitude(claims, [us_grade, cn_grade])
+    cell = out["5"]
+    assert cell["pooling_refused"] is True
+    assert cell["clock_basis"] in (
+        q.clock_basis_key(q.CLOCK_V1, q.HORIZON_UNIT_TRADING, q.MARKET_US),
+        q.clock_basis_key(q.CLOCK_V1, q.HORIZON_UNIT_TRADING, q.MARKET_CN))
+    # whichever basis was selected, its OWN mean is published — 0.01 or 0.99,
+    # NEVER the 0.50 blend the old code computed.
+    assert cell["overall"]["mean_abs_excess"] in (0.01, 0.99)
+    assert cell["overall"]["mean_abs_excess"] != pooled_before
+    # both bases' own counts stay visible, disclosed, never hidden
+    assert cell["clock_bases_n_grades"] == {
+        q.clock_basis_key(q.CLOCK_V1, q.HORIZON_UNIT_TRADING, q.MARKET_CN): 1,
+        q.clock_basis_key(q.CLOCK_V1, q.HORIZON_UNIT_TRADING, q.MARKET_US): 1,
+    }
+
+
+def test_placebo_magnitude_single_basis_is_unchanged_by_the_split():
+    """Negative control: while every placebo grade shares one clock basis (the
+    live corpus today), the cell carries no refusal marker and no key that
+    did not exist before this fix."""
+    claims = [_placebo_claim("a", "covered_ticker"),
+              _placebo_claim("b", "fallback_no_ticker")]
+    grades = [{"claim_id": "a", "horizon_d": 5, "excess": 0.02},
+             {"claim_id": "b", "horizon_d": 5, "excess": -0.04}]
+    out = q._placebo_magnitude(claims, grades)
+    cell = out["5"]
+    assert "pooling_refused" not in cell
+    assert cell["clock_basis"] == q.CLOCK_LEGACY
+    assert cell["covered_ticker"]["mean_abs_excess"] == 0.02
+    assert cell["fallback_no_ticker"]["mean_abs_excess"] == 0.04
+    assert cell["overall"]["mean_abs_excess"] == 0.03
+    assert cell["overall"]["n_grades"] == 2
+
+
+# --------------------------------------------------------------------------- #
+# ROUND 5 — MAJOR 2: PROMOTION REACHABLE PER MARKET, FROM PRODUCTION
+# --------------------------------------------------------------------------- #
+def test_emit_ladder_states_reaches_per_market_promotion(tmp_path):
+    """`emit_ladder_states` — the ACTUAL production call path that gates
+    SHADOW->CONFIRMER — used to call `promotion_check` with no `clock_basis`,
+    so a bi-market family read STATE_MIXED_CLOCK/ineligible forever with no
+    way out through this path, even though `promotion_check(clock_basis=...)`
+    could always promote it per market. `by_clock_basis` closes that gap."""
+    claims, grades = _two_market_store(n_us=26, n_cn=26)
+    _write_store(tmp_path, claims, grades)
+
+    states = q.emit_ladder_states(root=tmp_path, families=["f"])
+    cell = states["f"]["21"]
+    assert cell["current_state"] == q.STATE_MIXED_CLOCK
+    assert cell["eligible"] is False, "the pooled default is still a refusal"
+
+    per_market = cell["by_clock_basis"]
+    assert set(per_market) == {_v1(market=q.MARKET_US), _v1(market=q.MARKET_CN)}
+    for basis, res in per_market.items():
+        assert res["eligible"] is True, (basis, res["reason"])
+        assert res["n_dates"] == 26
+        assert res["clock_basis"] == basis
+
+    # negative control: a single-basis family carries no extra key at all
+    single_claims, single_grades = _two_market_store(n_us=26, n_cn=0)
+    _write_store(tmp_path, single_claims, single_grades)
+    single_states = q.emit_ladder_states(root=tmp_path, families=["f"])
+    assert "by_clock_basis" not in single_states["f"]["21"]
+
+
+def test_compute_promotion_readiness_also_reaches_per_market(tmp_path):
+    """The admin-tab-facing sibling of the same production gap
+    (`scripts.grade_qledger.compute_promotion_readiness`)."""
+    import scripts.grade_qledger as grader
+
+    claims, grades = _two_market_store(n_us=26, n_cn=26)
+    _write_store(tmp_path, claims, grades)
+    readiness = grader.compute_promotion_readiness(tmp_path, families=["f"])
+    cell = readiness["f"]["21"]
+    assert cell["clock_migration"] is False
+    per_market = cell["by_clock_basis"]
+    assert set(per_market) == {_v1(market=q.MARKET_US), _v1(market=q.MARKET_CN)}
+    assert all(r["ready"] for r in per_market.values())
+
+
+# --------------------------------------------------------------------------- #
+# ROUND 5 — MAJOR 3: THE MIGRATION BANNER NEVER FLAPS AND NEVER LIES ON A
+# BI-MARKET SPLIT
+# --------------------------------------------------------------------------- #
+def test_a_bi_market_split_is_never_labelled_a_migration(tmp_path):
+    """THE DEFECT. A family holding two EXPLICIT bases (two markets, both
+    accruing forever) hit the STATE_MIXED_CLOCK branch, which unconditionally
+    stamped `clock_migration=True` — a flag defined elsewhere in this same
+    contract to mean 'there is a drop to explain, and it will clear once the
+    corrected clock catches up'. A bi-market split never converges to one
+    clock, so the flag could never clear: not a disclosure of a temporary
+    state, a permanently false one. It is now False, and `reason` (not
+    `migration_note`) carries the real, accurate prose."""
+    claims, grades = _two_market_store(n_us=26, n_cn=26)
+    _write_store(tmp_path, claims, grades)
+
+    res = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    assert res.current_state == q.STATE_MIXED_CLOCK
+    assert res.clock_migration is False
+    assert res.migration_note == ""
+    # the disclosure is not lost — it just is not mislabelled as a migration
+    assert res.clock_prior_n_dates == {
+        _v1(market=q.MARKET_US): 26, _v1(market=q.MARKET_CN): 26}
+    assert "no single explicit clock" in res.reason
+
+
+def test_the_bi_market_banner_does_not_flap_across_two_consecutive_runs(tmp_path):
+    """Acceptance #6, literally: call the SAME nightly surface twice in a row
+    on an unchanged, stably-split corpus and the verdict must not move."""
+    claims, grades = _two_market_store(n_us=26, n_cn=30)
+    _write_store(tmp_path, claims, grades)
+
+    run1 = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    run2 = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    assert run1.clock_migration == run2.clock_migration == False
+    assert run1.current_state == run2.current_state == q.STATE_MIXED_CLOCK
+    assert run1.clock_prior_n_dates == run2.clock_prior_n_dates
+
+
+def test_the_admin_surface_never_renders_re_accruing_for_a_mixed_market_family(
+        tmp_path, monkeypatch):
+    """The consumer end: `experiments_registry` must not render the
+    "RE-ACCRUING on a corrected clock ... not lost" sentence for a family that
+    was never migrating anywhere — that sentence is FALSE for a stable
+    bi-market split (there is no single corrected clock it is re-accruing on)."""
+    import scripts.grade_qledger as grader
+    from engine import experiments_registry as er
+
+    claims, grades = _two_market_store(n_us=26, n_cn=26)
+    _write_store(tmp_path, claims, grades)
+    readiness = grader.compute_promotion_readiness(tmp_path, families=["f"])
+    assert readiness["f"]["21"]["clock_migration"] is False
+
+    monkeypatch.setattr(er, "_read_json",
+                        lambda rel: {"promotion_readiness": readiness}
+                        if rel.endswith("track_record.json") else {})
+    out = er._refresh_qledger_promotion({"claim_family": "f"})
+    assert out["clock_migration"] is False
+    assert "RE-ACCRUING" not in out["state"]
+    assert "migration_note" not in out
+
+
+# --------------------------------------------------------------------------- #
+# ROUND 5 — MUTATION CONTROL: revert provenance derivation to shape inference
+# --------------------------------------------------------------------------- #
+def test_mutant_reverting_provenance_to_shape_inference_is_caught(monkeypatch):
+    """The kill-switch for a regression back to round 4's defect: if a future
+    edit makes the no-suffix branch answer US again WITHOUT consulting
+    provenance (i.e. re-introduces "no suffix -> US"), this must fail. Applied
+    directly against `_ticker_market` so the mutant is exactly "ignore
+    provenance, fall back to the old default" — the smallest edit that
+    reproduces round 4's bug."""
+    real = q._ticker_market
+
+    def _reverted_no_suffix_defaults_to_us(ticker, provenance=None):
+        # THE MUTANT: provenance is accepted but never consulted — the exact
+        # round-4 shape of the bug (bare shape decides, silently, every time).
+        t = str(ticker or "").strip().upper()
+        if t and "." not in t:
+            from engine.ticker_shape import plausible_symbol
+            if plausible_symbol(t):
+                return q.MARKET_US, ""
+        return real(ticker, provenance)
+
+    monkeypatch.setattr(q, "_ticker_market", _reverted_no_suffix_defaults_to_us)
+    # the CN provenance test must now fail under the mutant...
+    with pytest.raises(AssertionError):
+        market, reason = q._ticker_market("600519", provenance=q.MARKET_CN)
+        assert market == q.MARKET_CN
+    # ...and the fail-closed test must fail too (the mutant resolves US instead
+    # of refusing) — confirms the mutant is live, not merely present.
+    market, _ = q._ticker_market("0700", provenance=None)
+    assert market == q.MARKET_US, "mutant sanity: this is what the bug looked like"

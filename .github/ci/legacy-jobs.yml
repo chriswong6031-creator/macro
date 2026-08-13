@@ -2400,6 +2400,14 @@ jobs:
         run: python -m pytest tests/test_qledger.py -q
       - name: qledger explicit horizon-clock contract (P0a)
         run: python -m pytest tests/test_qledger_horizon_clock.py -q
+      # round 5 MINOR: this file was owned by NO legacy job, so
+      # test_register_claims_are_salience_only_macro — which asserts on
+      # register_claims()'s "returns the count REGISTERED OPEN" semantics
+      # this branch's P0a market-dispatch fix redefined (a refused claim no
+      # longer silently inflates the count) — never ran in CI. Sits right
+      # after the horizon-clock step it is a direct consequence of.
+      - name: communique_diff phrase-book + qledger registration contract
+        run: python -m pytest tests/test_communique_diff.py -q
       - name: altdata reboot W2 — per-channel family routing + placebo tests
         run: python -m pytest tests/test_altdata_reboot_families.py -q
       # Metric-validity invariants (epistemics.qledger_metric_validity). grades.excess
