@@ -59,7 +59,11 @@ from engine.session_anchor import MARKET_SUFFIX
 # The house US-equity shape gate (engine/ticker_shape) — stdlib-only, no disk.
 # Used as the CORROBORATION on the residual share-class branch of `_ticker_market`,
 # so "single letter after the dot" is never on its own sufficient to name a market.
-from engine.ticker_shape import valid_us_ticker
+# `plausible_symbol` is the WIDER tripwire — "is this shaped like a ticker on ANY
+# exchange at all" — used to tell a real (if ambiguous) ticker apart from a
+# symbolic macro label like "CN_CENSORSHIP_RISK" that carries no market
+# information in its shape and must never be asked to originate one (round 5).
+from engine.ticker_shape import plausible_symbol, valid_us_ticker
 
 log = logging.getLogger("qledger")
 
@@ -457,6 +461,10 @@ MARKET_UNDETERMINED_FOREIGN_EXCHANGE = "unsupported_exchange_suffix"
 MARKET_UNDETERMINED_NOT_A_US_SYMBOL = "not_a_us_symbol"
 MARKET_UNDETERMINED_MIXED = "mixed_markets"
 MARKET_UNDETERMINED_NO_CALENDAR = "no_session_calendar_for_market"
+#: round 5 — a ticker-shaped leg with NO exchange suffix, whose claim carries no
+#: provenance market either, so nothing (shape or desk) can name a market for
+#: it. See `_ticker_market`'s "NO SUFFIX AT ALL" note.
+MARKET_UNDETERMINED_NO_PROVENANCE = "no_market_provenance"
 
 #: The separator between a refusal reason's MACHINE-READABLE HEAD and its prose
 #: tail. Everything before the FIRST occurrence is bounded-cardinality and safe to
@@ -565,7 +573,69 @@ EXCHANGE_SUFFIXES_UNSUPPORTED: dict[str, str] = {
 }
 
 
-def _ticker_market(ticker: Any) -> tuple[str | None, str]:
+#: ROUND 5 — THE MARKET'S AUTHORITATIVE SOURCE IS THE CLAIM'S OWN PROVENANCE,
+#: NOT THE TICKER STRING. Three rounds in a row (2, 3, 4) each patched a new
+#: failure of the SAME assumption: "a claim's market can be read off the SHAPE
+#: of its ticker." It cannot — a bare numeric like `600519` (Kweichow Moutai,
+#: Shanghai) or `0700` (Tencent, Hong Kong) carries NO market information in
+#: its shape at all, and the pre-round-5 fallback ("no suffix -> US") answered
+#: US for those, silently, every time. The desk/claim_family a claim is
+#: registered under is not a guess: `cn_importance_v0` / `cn_importance_v0_pit`
+#: / `china_news` / `china_special_sits` price CN by construction (their
+#: producers name a CN bench and pull from CN event stores); `us_importance_v0`
+#: / `us_importance_v0_pit` / `radar` / `whitehouse` / `policy` price US by
+#: construction. This table is that fact, made explicit and machine-readable —
+#: it is consulted ONLY for a leg whose ticker shape carries no suffix (a real
+#: exchange suffix is always a stronger, leg-level fact and is resolved first,
+#: see `_ticker_market`); it never overrides one.
+#:
+#: A desk/family not listed here is NOT assumed to be either market — it falls
+#: through to the shape-corroborated US fallback (`ticker_shape.valid_us_ticker`)
+#: exactly as an unlisted desk always has, so every existing US lane (altdata,
+#: narrative, intel_hub, basket_turn, flip_confirmation, placebo, …) is
+#: untouched. Listing a desk here is a POSITIVE claim about its market and nulls
+#: the shape fallback for that desk's non-suffixed legs — get it wrong and a
+#: leg refuses loudly (counted) rather than resolving quietly on the wrong
+#: calendar, which is the same inclusive-errs-safe design as
+#: `EXCHANGE_SUFFIXES_UNSUPPORTED`.
+#:
+#: Both spellings a producer uses for the same family are listed (desk vs
+#: claim_family sometimes drift — `china_special_situations.py` registers
+#: `desk="china_special_sits"` but `claim_family="cn_special_sits"`).
+DESK_MARKET: dict[str, str] = {
+    "cn_importance_v0": MARKET_CN,
+    "cn_importance_v0_pit": MARKET_CN,
+    "china_news": MARKET_CN,
+    "china_special_sits": MARKET_CN,
+    "cn_special_sits": MARKET_CN,
+    "us_importance_v0": MARKET_US,
+    "us_importance_v0_pit": MARKET_US,
+    "radar": MARKET_US,
+    "whitehouse": MARKET_US,
+    "policy": MARKET_US,
+}
+
+
+def _provenance_market(claim: dict) -> str | None:
+    """The market implied by a claim's OWN provenance — `claim_family` first
+    (the finer-grained tag), falling back to `desk` — or None when neither
+    names a market this table knows. PURE; never inspects a ticker string.
+
+    This is the round-5 fix's primary source. `_ticker_market` calls it once
+    per claim (not per leg — provenance is a property of the CLAIM) and uses
+    the answer ONLY for a leg whose suffix names nothing; a leg with its own
+    exchange suffix ignores this entirely (a real suffix outranks provenance,
+    it is never overridden by it)."""
+    if not isinstance(claim, dict):
+        return None
+    for key in (claim.get("claim_family"), claim.get("desk")):
+        k = str(key or "").strip()
+        if k in DESK_MARKET:
+            return DESK_MARKET[k]
+    return None
+
+
+def _ticker_market(ticker: Any, provenance: str | None = None) -> tuple[str | None, str]:
     """(market, reason) for ONE priced leg. `reason` is "" on success.
 
     The mapped-suffix table is `engine.session_anchor.MARKET_SUFFIX` — the same
@@ -575,22 +645,49 @@ def _ticker_market(ticker: Any) -> tuple[str | None, str]:
     default is not harmless — it is exactly the "silently resolving on the wrong
     calendar" this dispatch exists to stop — so this function refuses instead.
 
-    THE DISCRIMINATOR IS AN ENUMERATION, NOT A SHAPE. Two earlier cuts read
-    "single letter after the dot" as a US share class; that fails OPEN onto NYSE
-    for `.L` / `.T` / `.F`, which are real exchanges. The order is now:
+    THE DISCRIMINATOR IS AN ENUMERATION AND PROVENANCE, NEVER A BARE SHAPE
+    DEFAULT. Three earlier cuts each read the ticker STRING as the sole source
+    of market truth and each failed a new way: round 2 hardcoded NYSE for
+    every claim; round 3 read "single letter after the dot" as a US share
+    class, which fails OPEN onto NYSE for `.L` / `.T` / `.F` (real exchanges);
+    round 4 enumerated the exchange suffixes but still answered US for ANY
+    ticker with no suffix at all — silently wrong for a bare A-share code like
+    `600519` or `0700`, which carries NO market information in its shape. The
+    order is now:
 
-      1. suffix in `MARKET_SUFFIX`                   -> that market
+      1. suffix in `MARKET_SUFFIX`                   -> that market (a real
+         exchange suffix is a leg-level fact and always wins)
       2. suffix in `EXCHANGE_SUFFIXES_UNSUPPORTED`   -> REFUSED, by name
-      3. no suffix at all                            -> US
+      3. a residual, un-enumerated MULTI-letter suffix -> REFUSED, unknown
       4. a SINGLE-LETTER residual suffix on a symbol the house US-equity gate
          (`ticker_shape.valid_us_ticker`) accepts  -> US (share class: BRK.B/BRK.A)
-      5. anything else                               -> REFUSED
+      5. NO suffix at all, and not even ticker-SHAPED on any exchange
+         (`ticker_shape.plausible_symbol` is False — a symbolic macro label
+         like `CN_CENSORSHIP_RISK`, never a real subject) -> contributes NO
+         market information, same as an absent leg (`MARKET_UNDETERMINED_NO_LEG`
+         — `resolve_claim_market` skips it and lets another leg decide)
+      6. NO suffix, ticker-SHAPED, and the claim's OWN provenance
+         (`_provenance_market`, desk/claim_family) names a market -> THAT
+         market. Provenance is the claim's own construction, not an inference
+         from the string — this is the round-5 fix.
+      7. NO suffix, ticker-SHAPED, no provenance, but `valid_us_ticker`
+         accepts it -> US (the only shape-only inference left, and it is
+         corroborated: it holds for every real US ticker with no suffix,
+         AAPL/SPY/MSFT included, and it EXCLUDES every bare digit-first or
+         symbol-first code — `600519`, `000001`, `0700`, `^HSI` all fail this
+         gate, so none of them can reach US by shape alone any more)
+      8. anything else                               -> REFUSED
+         (`MARKET_UNDETERMINED_NO_PROVENANCE`) — a ticker-shaped leg with no
+         suffix, no provenance and no US shape has nothing to determine its
+         market from, and this clock fails closed rather than guess.
 
-    Rule 4 is the only inference left, it is corroborated rather than assumed,
-    and it is bounded on both sides: the enumeration above it has already taken
-    every known exchange suffix, and `valid_us_ticker` — the gate every emitter
-    in this repo routes ticker keys through — has to accept the whole symbol, so
-    `600519.T` (digit-first root) and `ANANTRAJ.LONGTAIL` cannot reach it.
+    Rules 6-8 are the round-5 repair: the OLD rule 3 ("no suffix -> US") is
+    gone. Provenance (6) is tried BEFORE the shape fallback (7) — a claim
+    whose desk/family names a market is not asking this function to guess —
+    and the shape fallback is bounded on both sides exactly as rule 4 always
+    was: the enumeration above it has taken every known exchange suffix, and
+    `valid_us_ticker` has to accept the whole symbol, so no bare numeric code
+    can pass it.
 
     Rule 2 is not hypothetical: four live `china_special_sits` claims are priced
     on `920007.BJ`-style Beijing Stock Exchange tickers, a suffix `MARKET_SUFFIX`
@@ -628,7 +725,34 @@ def _ticker_market(ticker: Any) -> tuple[str | None, str]:
             return None, (f"{MARKET_UNDETERMINED_NOT_A_US_SYMBOL}:{suffix}"
                           f"{CLOCK_REASON_SEP}a single-letter suffix reads as a US "
                           f"share class only on a symbol ticker_shape accepts")
-    return MARKET_US, ""
+        return MARKET_US, ""
+
+    # --- NO SUFFIX AT ALL (round 5) ---
+    if not plausible_symbol(t):
+        # Not shaped like a ticker on ANY exchange — a symbolic macro label
+        # (`CN_CENSORSHIP_RISK`, a cohort date key, …), never a real priced
+        # subject. It carries nothing to corroborate, refuse, or originate a
+        # market FROM, so it is read exactly like an absent leg: the market
+        # must come from a leg that IS priced, or from provenance applied
+        # where a real ticker sits. Refusing it here would silently kill a
+        # claim whose OTHER legs are perfectly resolvable (missing_tape's
+        # `CN_CENSORSHIP_RISK` scope key against a `510300.SS` bench — round 5
+        # blocker 2).
+        return None, MARKET_UNDETERMINED_NO_LEG
+    if provenance is not None:
+        # The claim's OWN construction names a market — authoritative, not an
+        # inference from this string. THE PRIMARY SOURCE for a no-suffix leg.
+        return provenance, ""
+    if valid_us_ticker(t) is not None:
+        # The only shape-only inference left when provenance is silent. It is
+        # corroborated, not assumed: every bare digit-first or symbol-first
+        # code (600519, 000001, 0700, ^HSI) fails this gate and falls through
+        # to the refusal below instead of silently becoming US.
+        return MARKET_US, ""
+    return None, (f"{MARKET_UNDETERMINED_NO_PROVENANCE}:{t}"
+                  f"{CLOCK_REASON_SEP}no exchange suffix, no claim provenance "
+                  f"names a market, and the shape is not a US ticker either — "
+                  f"refusing rather than defaulting to US")
 
 
 def clock_reason_head(reason: Any) -> str:
@@ -657,11 +781,24 @@ def resolve_claim_market(claim: dict) -> tuple[str | None, str]:
         horizon lengths);
       * the named market has no session calendar in `CLOCK_CALENDARS` — `.TO`
         and `.V` map to CA and this repo has no `lib/ca_calendar.py`, so a
-        Canadian claim is refused rather than graded on somebody else's sessions.
+        Canadian claim is refused rather than graded on somebody else's sessions;
+      * a ticker-shaped leg carries no suffix, the claim's OWN provenance
+        (`_provenance_market`) names no market, and the shape is not even a US
+        ticker (round 5 — `MARKET_UNDETERMINED_NO_PROVENANCE`).
 
     Returning US "for now" in any of those cases is the failure this replaces.
+
+    PROVENANCE IS DERIVED ONCE, PER CLAIM, AND OFFERED TO EVERY LEG. It is the
+    claim's own desk/claim_family (`_provenance_market`) — never re-derived
+    from a ticker string — and a leg with its own exchange suffix ignores it
+    entirely (a real suffix is a stronger, leg-level fact, see `_ticker_market`
+    rule 1). This is what lets `missing_tape`'s `CN_CENSORSHIP_RISK` scope key
+    (no suffix, not even ticker-shaped) sit beside a `510300.SS` bench without
+    either leg inventing a market: the symbolic key contributes nothing (same
+    as an absent leg) and the bench's own suffix decides CN, unaided.
     """
     scope = claim.get("scope") if isinstance(claim.get("scope"), dict) else {}
+    provenance = _provenance_market(claim)
     # EXACTLY the legs `grade_claim` prices, including its bench default — so the
     # market the validator refuses on and the market the grader would have used
     # can never be two different answers.
@@ -671,7 +808,7 @@ def resolve_claim_market(claim: dict) -> tuple[str | None, str]:
     for leg in legs:
         if not leg:
             continue
-        m, reason = _ticker_market(leg)
+        m, reason = _ticker_market(leg, provenance)
         if m is None:
             if reason == MARKET_UNDETERMINED_NO_LEG:
                 continue
@@ -1368,6 +1505,14 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
             "scope": {"type": scope_type, "key": scope_key},
             "bench": bench,
             "control": control,
+            # round 5: provenance is derived from THESE two fields
+            # (`_provenance_market`) — they must be present here, at the point
+            # of construction, not only on the assembled claim dict below, or
+            # a claim whose subject leg carries no exchange suffix (a bare
+            # A-share code, a symbolic macro key) can never reach its desk's
+            # own known market.
+            "desk": desk,
+            "claim_family": claim_family or desk,
         })
         win = (resolve_horizon_window(
                    _entry_anchor(asof, timestamp_quality), horizon_d,
@@ -1998,20 +2143,35 @@ def _aggregate(claims: list[dict], grades: list[dict],
 def _placebo_magnitude(claims: list[dict], grades: list[dict]) -> dict:
     """Compute per-horizon magnitude stats for the placebo tape (D3).
 
-    Reports the mean |excess| across ALL placebo grades at each horizon,
-    split by placebo_path ('covered_ticker' entity claims vs 'fallback_no_ticker'
+    Reports the mean |excess| across placebo grades at each horizon, split by
+    placebo_path ('covered_ticker' entity claims vs 'fallback_no_ticker'
     bench-basket claims). The UI's scoreboard reads this to display the
     "beat placebo" comparison.
 
     n_fallback is the count of sampled events that had no covered ticker and
     fell back to the bench-basket path (a diagnostic for placebo tape quality).
+
+    P0a MAJOR 1 — THIS WAS THE ONE SURFACE THAT POOLED ACROSS THE CLOCK BASIS,
+    NO GUARD AT ALL. Every other aggregation point in this module
+    (`_aggregate`, `compute_track_record`, `promotion_check`) partitions grades
+    by `grade_clock_basis` before summing anything — this function iterated
+    every grade row unconditionally, so a legacy row, a US-explicit row and a
+    CN-explicit row at the same horizon summed into ONE |excess| mean. That is
+    the exact pooling `require_single_clock`/`partition_grades_by_clock` exist
+    to forbid, and it is the placebo tape's counterfactual — the control arm
+    the whole "beat placebo" comparison leans on. It now buckets by
+    (horizon, placebo_path, clock_basis) and, like `_select_single_clock_block`,
+    NEVER blends a horizon's numbers across a basis change: a single basis is
+    published as-is; more than one is SELECT-AND-LABEL (most `n_grades` wins,
+    every basis's own count stays visible under `clock_bases_n_grades`, and
+    `pooling_refused: True` says why the published cell is not the union).
     """
     cid_meta = {c["claim_id"]: c for c in claims
                 if c.get("claim_id") and c.get("is_placebo")}
     if not cid_meta:
         return {}
 
-    per_h: dict[str, dict] = {}
+    per_h_basis: dict[str, dict[str, dict[str, dict]]] = {}
     for g in grades:
         cid = g.get("claim_id")
         c = cid_meta.get(cid)
@@ -2024,13 +2184,13 @@ def _placebo_magnitude(claims: list[dict], grades: list[dict]) -> dict:
         exc = g.get("excess")
         if exc is None:
             continue
-        bucket = per_h.setdefault(str(h), {})
-        agg = bucket.setdefault(path, {"n": 0, "abs_excess_sum": 0.0})
+        basis = grade_clock_basis(g)
+        paths = per_h_basis.setdefault(str(h), {}).setdefault(basis, {})
+        agg = paths.setdefault(path, {"n": 0, "abs_excess_sum": 0.0})
         agg["n"] += 1
         agg["abs_excess_sum"] += abs(float(exc))
 
-    out: dict[str, dict] = {}
-    for h_str, paths in per_h.items():
+    def _block(paths: dict[str, dict]) -> dict[str, Any]:
         h_out: dict[str, Any] = {}
         total_n = 0
         total_abs = 0.0
@@ -2043,6 +2203,28 @@ def _placebo_magnitude(claims: list[dict], grades: list[dict]) -> dict:
         h_out["overall"] = {
             "n_grades": total_n,
             "mean_abs_excess": round(total_abs / total_n, 6) if total_n else None,
+        }
+        return h_out
+
+    out: dict[str, dict] = {}
+    for h_str, by_basis in per_h_basis.items():
+        blocks = {basis: _block(paths) for basis, paths in by_basis.items()}
+        if len(blocks) == 1:
+            basis, h_out = next(iter(blocks.items()))
+            h_out = dict(h_out)
+            h_out["clock_basis"] = basis
+        else:
+            # SELECT-AND-LABEL, never blend — same rule, same reason as
+            # `_select_single_clock_block`: the published cell is one basis's
+            # own honest numbers, picked by n_grades, with every basis's own
+            # count disclosed beside it rather than summed into it.
+            basis = max(blocks, key=lambda b: blocks[b]["overall"]["n_grades"])
+            h_out = dict(blocks[basis])
+            h_out["clock_basis"] = basis
+            h_out["pooling_refused"] = True
+        h_out["clock_bases"] = sorted(blocks)
+        h_out["clock_bases_n_grades"] = {
+            b: blk["overall"]["n_grades"] for b, blk in sorted(blocks.items())
         }
         out[h_str] = h_out
 
@@ -2306,15 +2488,37 @@ class PromotionResult:
                         replaced. It is not "this family has any old rows" —
                         that condition never clears, and a banner that never
                         clears says nothing.
-        clock_prior_n_dates: {excluded basis -> its own n_dates}, so a consumer can
-                        say "1 date on the corrected clock; the 40 dates it had
-                        were measured on the old one" instead of showing a fall
-                        from 40 to 1 with no explanation. Populated whenever a
-                        basis was excluded, INCLUDING after `clock_migration` has
-                        cleared — the excluded history stays a fact about the
-                        verdict once it has stopped shrinking the headline.
+
+                        (round 5, MAJOR 3) It is ALSO False for a family in
+                        `STATE_MIXED_CLOCK` — a family that has genuinely
+                        started accruing on two EXPLICIT bases at once (two
+                        markets, most often). That is not a migration: there is
+                        no single corrected clock this family is converging
+                        toward, both bases keep accruing forever, and a flag
+                        that would never clear is not disclosure, it is a
+                        permanently false "re-accruing" sentence. Read
+                        `current_state` to tell the two apart:
+                        `STATE_MIXED_CLOCK` + `clock_migration=False` is a
+                        stable multi-basis split (promote each basis by name,
+                        `promotion_check_by_market`); `clock_migration=True`
+                        (any other state) is a one-time, terminating
+                        legacy->explicit changeover.
+        clock_prior_n_dates: {basis -> its own n_dates} for every basis this
+                        verdict is NOT counting toward its headline —whether
+                        excluded (a migration) or simply the OTHER market in a
+                        MIXED_CLOCK split — so a consumer can say "1 date on
+                        the corrected clock; the 40 dates it had were measured
+                        on the old one" (migration) or "26 dates on US; 26 on
+                        CN, neither summed" (split) instead of showing a bare
+                        number with no context. Populated whenever another
+                        basis exists, INCLUDING after `clock_migration` has
+                        cleared and for a MIXED_CLOCK split (where it is never
+                        going to clear) — this is a fact about the verdict,
+                        not gated on the flag.
         migration_note: one plain sentence a surface can render as-is; empty
-                        string exactly when `clock_migration` is False.
+                        string exactly when `clock_migration` is False —
+                        including the MIXED_CLOCK case, where `reason` already
+                        carries the (different, accurate) prose.
 
     WHY THIS EXISTS. `_authority_clock_basis` resets authority at a basis change
     — the right call, and the CEO's explicit ruling (do NOT pool bases). But the
@@ -2456,12 +2660,30 @@ def promotion_check(claim_family: str, horizon: int,
 
     if basis is None and family_bases:
         return PromotionResult(
-            clock_migration=True,
+            # P0a MAJOR 3 (round 5) — THIS IS A STABLE SPLIT, NOT A MIGRATION.
+            # `clock_migration` means "the live count is smaller than a history
+            # counted on a DIFFERENT clock because this family is partway
+            # through a ONE-TIME basis change" (see the single-basis branch
+            # below) — and it is TRUE exactly while that count is catching up,
+            # then CLEARS. A family straddling two markets never converges to
+            # one clock: both keep accruing every night, forever, so there is
+            # no "corrected clock" this family is re-accruing toward. Labelling
+            # that `clock_migration=True` was market-blind and produced a
+            # FALSE sentence downstream (`experiments_registry` rendered
+            # "RE-ACCRUING on a corrected clock ... not lost" for a family that
+            # was never migrating anywhere) that never cleared, because a
+            # bi-market split cannot clear — that is not disclosure, it is a
+            # permanently mislabelled state. `current_state=STATE_MIXED_CLOCK`
+            # already names what this is; `clock_prior_n_dates` still
+            # discloses each basis's own count (unchanged — it is a fact about
+            # the verdict, not gated on this flag) so nothing is hidden, but
+            # promotion for EACH market on its own is reachable by name
+            # (`promotion_check(..., clock_basis=...)`, wired into production
+            # via `promotion_check_by_market`/`emit_ladder_states`) — this is
+            # never the family's terminal state.
+            clock_migration=False,
             clock_prior_n_dates=n_dates_by_basis,
-            migration_note=(
-                "This family's grades were measured on more than one clock and "
-                "no single corrected clock can be chosen; per-clock date counts "
-                "are listed rather than combined."),
+            migration_note="",
             eligible=False,
             reason=(f"claim_family={claim_family!r} horizon={horizon}d: grades "
                     f"straddle {len(family_bases)} grading-clock bases "
@@ -2624,6 +2846,38 @@ def promotion_check(claim_family: str, horizon: int,
     )
 
 
+def promotion_check_by_market(claim_family: str, horizon: int,
+                              mixed: "PromotionResult",
+                              root: Path | str | None = None,
+                              control_only: bool = False) -> dict[str, "PromotionResult"]:
+    """P0a MAJOR 2 (round 5) — PROMOTION, REACHABLE PER MARKET, FROM PRODUCTION.
+
+    `promotion_check`'s default resolves via `_authority_clock_basis`, which
+    answers None for a family holding two or more EXPLICIT bases (a family
+    that has genuinely started accruing on two markets) — that is the correct,
+    deliberate refusal to pool. `promotion_check(..., clock_basis=...)` CAN
+    promote such a family per market, but nothing in the only two production
+    call paths that reach `promotion_check` (`emit_ladder_states`,
+    `scripts.grade_qledger.compute_promotion_readiness`) ever names one, so a
+    bi-market family was unreachable for promotion through any path a nightly
+    run actually takes — reachable in principle, never in practice.
+
+    Call this with the STATE_MIXED_CLOCK `PromotionResult` `promotion_check`
+    just returned (`mixed`); it re-evaluates the SAME family/horizon once per
+    explicit basis that result's own `clock_prior_n_dates` discloses (every
+    basis the family holds, mixed or not — the disclosure IS the enumeration),
+    NEVER pooling any two of them. Returns `{}` when `mixed` was not actually
+    a MIXED_CLOCK verdict (nothing to re-evaluate — the default already named
+    the one basis that matters)."""
+    if mixed.current_state != STATE_MIXED_CLOCK:
+        return {}
+    return {
+        basis: promotion_check(claim_family, horizon, root=root,
+                               control_only=control_only, clock_basis=basis)
+        for basis in sorted(mixed.clock_prior_n_dates or {})
+    }
+
+
 def emit_ladder_states(root: Path | str | None = None,
                        families: list[str] | None = None) -> dict:
     """Run promotion_check at every GRADE_HORIZON for each claim_family found in
@@ -2645,7 +2899,20 @@ def emit_ladder_states(root: Path | str | None = None,
         fam_res: dict[str, dict] = {}
         for h in GRADE_HORIZONS:
             pr = promotion_check(fam, h, root=root, control_only=True)
-            fam_res[str(h)] = pr.as_dict()
+            entry = pr.as_dict()
+            # P0a MAJOR 2 (round 5): the pooled default refuses a bi-market
+            # family as STATE_MIXED_CLOCK — correctly, it never pools — but
+            # this is the production call path that gates SHADOW->CONFIRMER,
+            # so a family stuck here never reaches promotion on EITHER market.
+            # `by_clock_basis` adds each market's own verdict beside the
+            # refused pooled one; nothing here is summed, and a family with a
+            # single basis (today, every live family) carries no extra key.
+            per_market = promotion_check_by_market(fam, h, pr, root=root,
+                                                   control_only=True)
+            if per_market:
+                entry["by_clock_basis"] = {b: r.as_dict()
+                                           for b, r in per_market.items()}
+            fam_res[str(h)] = entry
         results[fam] = fam_res
 
     # Merge into the existing track_record if it exists, else write fresh

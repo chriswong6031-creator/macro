@@ -306,6 +306,10 @@ def _refresh_qledger_promotion(e: dict) -> dict:
                 is a re-count on a CORRECTED grading clock rather than evidence
                 collapsing (P0a). Clears once the corrected clock's own count catches
                 up; `clock_prior_n_dates` survives it. See below.
+                (round 5) Always False for a `STATE_MIXED_CLOCK` family (one
+                genuinely accruing on two markets at once) — that split never
+                converges to one clock, so it is never a "migration"; see
+                `PromotionResult.clock_migration` in engine/qledger.py.
 
     P0a — A CLOCK MIGRATION MUST NOT READ AS A PERFORMANCE COLLAPSE. qledger's
     promotion gate evaluates inside ONE grading-clock basis and never pools two, so

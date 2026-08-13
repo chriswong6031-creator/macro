@@ -185,58 +185,80 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
     if families is None:
         families = _load_qual_ladder_families(root)
 
+    def _readiness_row(pr, fam: str, h: int) -> dict:
+        """One readiness row for a single PromotionResult. Factored out (round
+        5 / MAJOR 2) so a per-market sub-result gets IDENTICAL treatment to the
+        pooled-default one — same accrual-rate/projection/track-record read,
+        never a shortcut for the market that is not the headline."""
+        rate = _accrual_rate_per_day(grades, claims, fam, h,
+                                     clock_basis=pr.clock_basis)
+        proj = _projected_ready_date(pr.n_dates, rate)
+        approaching = (pr.n_dates >= 20 and not pr.eligible)
+
+        # hit_rate and excess_mean from track record aggregation.
+        # P0a: `_aggregate` is FAIL-CLOSED on a mixed grading-clock basis —
+        # calling it without a basis raises HorizonClockMismatch the first
+        # night any ladder family holds both the legacy and the explicit
+        # clock, which is this nightly step's normal state during the
+        # migration. The basis is therefore always named, and it is the SAME
+        # basis promotion_check just gated on (pr.clock_basis), so n_dates /
+        # wilson_ci_low / hit_rate / excess_mean in one row all describe one
+        # clock. None means there was nothing coherent to evaluate (no rows,
+        # or a family mixing two explicit clocks) — report the null, never a
+        # pooled number.
+        fam_stats: dict = {}
+        if pr.clock_basis is not None:
+            stats = q._aggregate(claims, grades, "family", h,
+                                 clock_basis=pr.clock_basis)
+            fam_stats = stats.get(fam, {})
+
+        return {
+            "n_dates": pr.n_dates,
+            "needed": q.PROMOTION_MIN_DATES,
+            "wilson_ci_low": pr.wilson_ci_low,
+            "hit_rate": fam_stats.get("hit_rate"),
+            "excess_mean": fam_stats.get("excess_mean"),
+            "ready": pr.eligible,
+            "approaching": approaching,
+            "projected_ready_date": proj,
+            "reason": pr.reason,
+            # The clock these four numbers were measured on. Same n_dates on
+            # a different clock is a different claim about the world.
+            "clock_basis": pr.clock_basis,
+            # P0a MIGRATION LEGIBILITY. A family whose first explicit-clock
+            # grade lands drops from (say) GRADED/n_dates=40 to
+            # ACCRUING/n_dates=1 in one night, because authority resets at a
+            # basis change rather than pooling across it (the CEO's ruling,
+            # unchanged). Without these three fields the readiness row, the
+            # alert and the admin tab all read that as evidence collapsing.
+            # The counts are NEVER combined — `clock_prior_n_dates` is the
+            # excluded basis's own number, published beside the live one.
+            "clock_migration": pr.clock_migration,
+            "clock_prior_n_dates": pr.clock_prior_n_dates,
+            "migration_note": pr.migration_note,
+        }
+
     result: dict[str, dict] = {}
     for fam in families:
         fam_res: dict[str, dict] = {}
         for h in q.GRADE_HORIZONS:
             pr = q.promotion_check(fam, h, root=root, control_only=True)
-            rate = _accrual_rate_per_day(grades, claims, fam, h,
-                                         clock_basis=pr.clock_basis)
-            proj = _projected_ready_date(pr.n_dates, rate)
-            approaching = (pr.n_dates >= 20 and not pr.eligible)
-
-            # hit_rate and excess_mean from track record aggregation.
-            # P0a: `_aggregate` is FAIL-CLOSED on a mixed grading-clock basis —
-            # calling it without a basis raises HorizonClockMismatch the first
-            # night any ladder family holds both the legacy and the explicit
-            # clock, which is this nightly step's normal state during the
-            # migration. The basis is therefore always named, and it is the SAME
-            # basis promotion_check just gated on (pr.clock_basis), so n_dates /
-            # wilson_ci_low / hit_rate / excess_mean in one row all describe one
-            # clock. None means there was nothing coherent to evaluate (no rows,
-            # or a family mixing two explicit clocks) — report the null, never a
-            # pooled number.
-            fam_stats: dict = {}
-            if pr.clock_basis is not None:
-                stats = q._aggregate(claims, grades, "family", h,
-                                     clock_basis=pr.clock_basis)
-                fam_stats = stats.get(fam, {})
-
-            fam_res[str(h)] = {
-                "n_dates": pr.n_dates,
-                "needed": q.PROMOTION_MIN_DATES,
-                "wilson_ci_low": pr.wilson_ci_low,
-                "hit_rate": fam_stats.get("hit_rate"),
-                "excess_mean": fam_stats.get("excess_mean"),
-                "ready": pr.eligible,
-                "approaching": approaching,
-                "projected_ready_date": proj,
-                "reason": pr.reason,
-                # The clock these four numbers were measured on. Same n_dates on
-                # a different clock is a different claim about the world.
-                "clock_basis": pr.clock_basis,
-                # P0a MIGRATION LEGIBILITY. A family whose first explicit-clock
-                # grade lands drops from (say) GRADED/n_dates=40 to
-                # ACCRUING/n_dates=1 in one night, because authority resets at a
-                # basis change rather than pooling across it (the CEO's ruling,
-                # unchanged). Without these three fields the readiness row, the
-                # alert and the admin tab all read that as evidence collapsing.
-                # The counts are NEVER combined — `clock_prior_n_dates` is the
-                # excluded basis's own number, published beside the live one.
-                "clock_migration": pr.clock_migration,
-                "clock_prior_n_dates": pr.clock_prior_n_dates,
-                "migration_note": pr.migration_note,
-            }
+            entry = _readiness_row(pr, fam, h)
+            # P0a MAJOR 2 (round 5): `promotion_check`'s pooled default refuses
+            # a bi-market family as STATE_MIXED_CLOCK, correctly — but this is
+            # a production call path that feeds the admin Experiments tab, so
+            # a family stuck here read as permanently un-promotable on EITHER
+            # market even though `clock_basis=...` reaches each one. Nothing
+            # is pooled: `by_clock_basis` adds each market's OWN readiness row
+            # beside the refused pooled one.
+            per_market = q.promotion_check_by_market(fam, h, pr, root=root,
+                                                      control_only=True)
+            if per_market:
+                entry["by_clock_basis"] = {
+                    b: _readiness_row(mpr, fam, h)
+                    for b, mpr in per_market.items()
+                }
+            fam_res[str(h)] = entry
         result[fam] = fam_res
 
     # Duel context: champion vs placebo |excess| at 5d from the track record
