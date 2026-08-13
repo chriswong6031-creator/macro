@@ -248,7 +248,7 @@ watch set (ticker-granular, disjoint from the open book by construction):
 | 2 | `ready` | **Ready** | **就绪** | plan is live; entry trigger has not fired | `phase=pre_trigger`, open | 56 |
 | 3 | `entered` | **Entered** | **入场** | trigger fired; in the entry window, pre-T1 | `phase=triggered_pre_t1`, open | 65 |
 | 4 | `delivering` | **Delivering** | **达标** | at or past the first target | `phase∈{at_t1, between_t1_t2, at_t2}`, open | 1 |
-| 5 | `overtime` | **Overtime** | **超时** | past its declared window without resolving | `phase=overtime`, open | 0² |
+| 5 | `overtime` | **Window Elapsed** | **窗口已到期** | the declared window elapsed and no closing print has arrived | `phase=overtime`, open | 0² |
 | 6 | `invalidated` | **Invalidated** | **失效** | invalidation level hit; thesis void | `phase=invalidated`, open | 2 |
 | 7 | `resolved` | **Resolved** | **已结** | closed — graded out (win, loss, or expired) | `closed=True` | 16 |
 
@@ -271,9 +271,15 @@ exporter names it. That pass-through is PR-0(c) item 1a (§9); the bridge-side p
 is merged and live (#5370). **Builder rule:** on a payload with no `early_turn_watch`
 key, the watch cell renders as a disclosed absence ("watch tier publishes from the next
 nightly"), never as a silent 0 — key-absence and zero are different facts.
-² `overtime` and `at_t2` are zero today but have real producers in the management engine
-(`_VALID_PHASES`, phase weights) — a producing cell at zero is honest inventory; a cell
-with no producer is forbidden (that is exactly the stage=4 defect, §2.4).
+² `at_t2` is zero today but has a real producer — honest inventory. `overtime` is zero
+for a **structural** reason, corrected by the §13 amendment (2026-08-13): the phase fires
+at `tau > 1.0` while the closure scan retires the plan at `days >= horizon_days` on the
+**same clock**, so on a plan with live prices `overtime` can only become true on a row
+the ledger has already closed — and `closed=True` wins the partition at rung 1. The cell
+is reachable **open** only when the price frame stops printing (a halted/delisted name),
+which is what the corrected EN/ZH label states. It is a producing cell, not a dead one,
+but its open population is a data-staleness set, not a timing set. Do not "fix" the count
+by deriving it from `age_days > horizon_days` — see §13.
 
 **Label rationale (binding):**
 - ZH is a native two-character arc — 观察 · 就绪 · 入场 · 达标 · 超时 · 失效 · 已结 — not
@@ -294,8 +300,12 @@ with no producer is forbidden (that is exactly the stage=4 defect, §2.4).
   ladder is a fact partition. It stays hover/receipt tier, alongside the existing `ext_z`
   chase flags.
 - "Aging" (the proposal's word) is rejected for `overtime`: the fact is a declared
-  window expiring, not gradual decay; the management engine's own shipped word is
-  Overtime ("Overtime Stall").
+  window expiring, not gradual decay. **"Overtime" is also rejected (§13 amendment,
+  2026-08-13)** — it reads as "still running, in extra time", which is the one thing an
+  open `phase=overtime` row never is: its window is gone and the only thing outstanding
+  is the closing print. The engine's shipped words moved with this ruling
+  (`_human_state` → "Window Elapsed — Awaiting Close", `_PHASE_WORD["overtime"]` →
+  "window elapsed"/"窗口已到期"), so the cell label and the card word still converge.
 
 **Count law (Sol clause 2, made mechanical):** `build_prophet.py` publishes a
 `lifecycle_counts` block (`{watch, ready, entered, delivering, overtime, invalidated,
@@ -465,3 +475,129 @@ The motivating exemplars were run: the live board (69 rows), the live book (140 
 127 tickers), the anonymous landing showcase (12 cards), and the full v1 ledger history
 (18 snapshots) — the cell set covers all of them with zero unmapped rows at the declared
 units.
+
+---
+
+## §13 Amendment (2026-08-13) — the Overtime/horizon reconciliation
+
+**Question referred:** 16 open plans sit past their declared horizon and none produces
+`phase=overtime`. Producer defect, or vocabulary defect?
+
+**Ruling: vocabulary defect.** The 16 are correctly not overtime, the engine transition
+is correct as written, and it is the §6 gloss (corrected above) that was wrong. Nothing
+in the phase detector, the horizon clock, or the closure gate is changed by this
+amendment. What changed: the EN/ZH cell label, footnote ², the "Aging" rationale, the
+management engine's own plain words, and the one place a surface was quoting a
+non-commensurable age.
+
+### 13.1 The two clocks (this is the whole finding)
+
+| Fact | Anchor | Producer | Units |
+|---|---|---|---|
+| `age_days` (published on every row) | `signal_date` → `observed_date` → `_signal_date` → `formation_date` | `build_prophet._age_days` (`:1208`), called at `:1888` | calendar days |
+| `days_elapsed` / `tau` (the horizon clock) | `plan_clock_date()` = `price_basis_date` → `entry_date` → `asof` → `signal_date` | `prophet_management` `:196,216,258` | calendar days |
+| horizon expiry (closure) | **the same** `plan_clock_date()` | `build_prophet._determine_outcome` `:844,882` | calendar days |
+
+Both are calendar days — **there is no trading-day conversion anywhere in this path**, so
+no unit mismatch exists to fix. The divergence is the *anchor*. `signal_date` is a
+formation/event anchor that may precede the plan's own existence by months
+(`plan_clock_date`'s docstring: "Reading it FIRST is the defect this function exists to
+fix" — it once graded ledger rows on bars that predated the plan and made 14 plans born
+past horizon). The horizon, τ, the phase, the confidence, the recommended action and the
+EXPIRED/NO_ENTRY close **all** read `plan_clock_date`. `age_days` alone reads
+`signal_date`.
+
+So "open past declared horizon" computed as `age_days > horizon_days` is comparing an age
+on one clock to a horizon declared on another. It is not a weaker test of the same fact;
+it is a different fact.
+
+### 13.2 The 16 counterexamples, replayed through the real engine
+
+Every one of the 16 was replayed against its committed `site/prophet/states/<id>.json`
+(the management engine's own output, asof 2026-08-13) and its `site/prophet/plans/<id>.json`
+clock. Result: **τ ranges 0.0222 → 0.7333. Not one is past its declared horizon.**
+`_first_t1_ts` is `null` on all 16, so the `not t1_hit` leg is satisfied for all of them
+— **the sole transition preventing `phase=overtime` is `tau > 1.0`**
+(`prophet_management._detect_phase:504`), and it is preventing it correctly.
+
+| plan | `age_days` | clock anchor (rung) | `days_elapsed` | τ |
+|---|---|---|---|---|
+| `PINS-BULL-20260227` | 167 | 2026-07-29 (`asof`) | 15 | 0.333 |
+| `GPK-BULL-20260407` | 128 | 2026-07-20 (`asof`) | 24 | 0.533 |
+| `RH-BULL-20260417` | 118 | 2026-08-08 (`entry_date`) | 6 | 0.133 |
+| `AZO-BULL-20260625` | 49 | 2026-07-11 (`asof`) | 33 | 0.733 |
+| … 12 more, all τ < 1.0 | | | | |
+
+Max τ across the **entire** live book — 154 open plans and 20 closed — is **0.8222**. No
+plan has ever been observed at τ ≥ 1.0 in a published state.
+
+### 13.3 Why the cell is structurally near-empty (footnote ², corrected)
+
+Both authorities read the same clock, and their boundaries are one day apart in the
+direction that makes the phase unobservable on an open row:
+
+- closure: `days >= horizon_days` → `EXPIRED` (triggered) or `NO_ENTRY` (untriggered)
+  (`build_prophet.py:893,934`)
+- overtime: `tau > 1.0`, i.e. `days > horizon_days` (`prophet_management.py:504`)
+
+Boundary replay through both real functions (continuous session grid, clock 2026-06-01,
+horizon 45):
+
+| asof | days | τ | `phase` | closure |
+|---|---|---|---|---|
+| 2026-07-15 | 44 | 0.978 | `triggered_pre_t1` | — (open) |
+| 2026-07-16 | 45 | 1.000 | `triggered_pre_t1` | **EXPIRED** |
+| 2026-07-17 | 46 | 1.022 | **`overtime`** | EXPIRED (already closed) |
+
+The phase becomes `overtime` exactly one day **after** the ledger has already closed the
+plan — and rung 1 of the §6 partition (`closed == True → resolved`) wins, while
+`_plan_pulse` suppresses the phase leg entirely on a closed row. So on a plan with live
+prices, `overtime` is a post-closure state that no surface can ever display.
+
+This is **not** an off-by-one to be repaired by moving either boundary. Closure cannot
+fire before a bar prints (it needs a close price to grade), so the lag between "the
+calendar passed the horizon" and "a session printed to close it" is irreducible. The one
+case where that lag is unbounded is a price frame that stops printing — a halted or
+delisted name — and that is the only way an **open** row reads `overtime`:
+
+| case | τ | `phase` | closure |
+|---|---|---|---|
+| stale frame, horizon+1 | 1.022 | **`overtime`** | — (still open) |
+| stale frame, horizon+20 | 1.444 | **`overtime`** | — (still open) |
+
+Hence the corrected label: **Window Elapsed / 窗口已到期** — "the declared window elapsed
+and no closing print has arrived". "Overtime/超时" was rejected because it reads as *still
+running, in extra time*, which is the one thing such a row is not.
+
+### 13.4 What the phase was historically intended to mean
+
+`_detect_phase` is a port of MomoEdge `oracle_spec.md` §V2 step 3
+(`research/momoedge/oracle_spec.md:259`): "`overtime` — `tau > 1.0 AND first_t1_ts ==
+null` (horizon exceeded, T1 never hit)". MomoEdge is a **browser tick-state** system with
+**no closure authority** — a plan there simply keeps being managed past its horizon, and
+`overtime` exists to *de-rate confidence* on a stalled position (its ceiling band drops to
+35–50, `oracle_spec.md:376-378`, ported at `prophet_management.py:880-882`). Prophet added
+a closure authority that retires plans at the horizon. The port kept the confidence
+de-rating — which still works — but inherited a *lifecycle* reading that Prophet's closure
+contract does not support. §6 then published that inherited reading as a user-facing cell.
+That is the defect this amendment closes.
+
+### 13.5 Binding consequences
+
+1. **`lifecycle_counts.overtime` MUST derive from `phase == "overtime" AND NOT closed`**
+   — the §6 derivation as written. It may **never** be derived from
+   `age_days > horizon_days`, `age_days >= horizon_days`, or any other re-derivation of
+   "past horizon" from a signal-anchored age. Pinned by
+   `tests/test_prophet_overtime_horizon_reconciliation.py`.
+2. **No surface computes its own Overtime state.** A surface that wants "how far through
+   its window is this plan" reads the row's `clock_age_days` (added by this amendment) or
+   `geometry.horizon_pct_used` from the state — both are the engine's own τ clock.
+   `age_days` remains published and remains the **signal's** age; it is not commensurable
+   with `horizon_days` and must not be compared to it.
+3. **The pulse's age leg now speaks the horizon clock.** It quoted `age_days`, so
+   `PINS-BULL-20260227` pulsed "167d · pre-trigger" on a row whose own state said 33.3% of
+   a 45-day window was used. That juxtaposition is what generated this referral.
+4. **`recommended_action` for `overtime` is unchanged** (`"trim"`,
+   `prophet_management.py:1137`). It is engine truth and out of scope for a vocabulary
+   ruling — but flagged: on the stale-frame case it is a live instruction derived from a
+   price that has stopped updating. Follow-up, not a fix ridden here.
