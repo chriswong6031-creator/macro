@@ -427,6 +427,11 @@ def register_source_call_claims(
             scope_key=ticker,
             direction=0,           # salience-only: |excess| graded, not directional
             horizon_d=horizon_cd,  # exact calendar days to D+20 trading days exit
+            # P0a: the NUMBER stored here is a calendar span (derived above from
+            # the exact D+20 session exit), so it is declared as such — the
+            # contract preserves the declared ruler and never converts it. This
+            # desk still grades through its own exact exit_date below.
+            horizon_unit=q.HORIZON_UNIT_CALENDAR,
             timestamp_quality="CRAWL_BOUNDED",
             bench="SPY",
             claim_family=_FAMILY_SOURCE_CALL,
@@ -533,6 +538,9 @@ def register_flare_state_claims(
                 scope_key=ticker,
                 direction=0,       # descriptive accrual; no directional verdict this wave
                 horizon_d=horizon_d,
+                # P0a: STATE_CLAIM_HORIZONS_TD is TRADING days by construction —
+                # the grading path below resolves it with _add_trading_days.
+                horizon_unit=q.HORIZON_UNIT_TRADING,
                 timestamp_quality="SNAPSHOT_DATE",  # state_hist is a PIT snapshot
                 bench="SPY",
                 claim_family=_FAMILY_FLARE_STATE,
