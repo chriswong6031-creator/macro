@@ -77,15 +77,34 @@ surfaces:
       and independently asks the master for the same security's current ledger symbol
 
   - path: collectors/china_tushare_spine.py
-    claims: "the CN A-share spine's own security_id, minted at line 520"
-    id_convention: 'CN-{MIC}-{six_digit_code} (literal at line 4619)'
+    reader: "canonical_identity(ts_code, *, bse_aliases=None) -> Identity"
+    claims: "the CN A-share spine's own venue-qualified identity, minted at line 520"
+    id_convention: 'CN-{MIC}-{six_digit_code} (format literal at line 4619)'
     class: ADOPT
     rationale: >-
       This is the ORIGIN of the bare <CC>-<MIC>-<CODE> convention that lib/dataos/identity.py
       adopted; both must construct the same listing key for the same code or the CN estate
       and the master have forked.
+    # ---- NAMING COLLISION ACROSS THE SEAM (declared, deliberately NOT fixed here) ----
+    # `china_tushare_spine.Identity.security_id` is NOT the Data OS `security_id()`.
+    # Its value is the Data OS **listing_id** / ListingKey.render():
+    #     spine  Identity.security_id  == "CN-XSHG-600519"        (bare listing key)
+    #     DataOS listing_id(key)       == "CN-XSHG-600519"        <- THIS is the match
+    #     DataOS security_id(key)      == "SEC:CN-XSHG-600519"    <- NOT the same field
+    # So a reader that joins the spine's `security_id` column onto a Data OS `security_id`
+    # column gets ZERO matches while both look correctly named. DOS-1.2 DECLARES this seam
+    # only; the production field is NOT renamed here, because renaming it moves a column in
+    # the CN spine's committed manifests and is a migration, not a census.
+    field_mapping:
+      spine_field: "Identity.security_id"
+      maps_to: "lib.dataos.identity.listing_id / ListingKey.render()"
+      does_not_map_to: "lib.dataos.identity.security_id() (SEC: prefixed)"
+      rename_deferred: "out of DOS-1.2 scope — declaring the seam, not migrating the column"
     consumers: "the CN spine lane and its manifests"
-    checked_by: "the agreement gate builds the same listing key both ways and compares"
+    checked_by: >-
+      the agreement gate calls canonical_identity() for representative SH / SZ / canonical
+      BJ / STAR / ChiNext codes and compares its returned identity against
+      lib.dataos.identity.listing_id, asserting the SEC: prefix is absent
 
   # ------------------------------------------------- ALIAS-INTO-MASTER (5)
   - path: lib/ticker_aliases.py

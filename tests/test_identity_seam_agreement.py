@@ -180,15 +180,51 @@ class TestAdoptSurfacesAgree:
         print(f"::notice title=identity-seam-agreement::ledger vs master compared {compared} security(s)", flush=True)
 
     def test_the_cn_spine_and_the_master_build_the_same_listing_key(self):
-        """ADOPT x ADOPT: the CN spine mints `CN-{MIC}-{code}` (china_tushare_spine.py:520,
-        format literal at :4619). lib/dataos/identity must render the identical string."""
-        cases = [("600519", "XSHG"), ("000001", "XSHE"), ("920163", "XBSE")]
-        for code, mic in cases:
-            spine_answer = f"CN-{mic}-{code}"
-            master_answer = ident.ListingKey(country="CN", mic=mic, code=code).render()
-            assert spine_answer == master_answer, (
-                f"CN identity forked: spine mints {spine_answer!r}, master renders {master_answer!r}"
+        """ADOPT x ADOPT: the CN spine vs the master, each through ITS OWN reader.
+
+        CORRECTED after CEO review 2026-08-13. The first version of this test hardcoded
+        ``spine_answer = f"CN-{mic}-{code}"`` — a literal typed into the test, not the ADOPT
+        surface's own answer — so it compared the master to the test author's belief about
+        the spine and could not detect the spine changing. That is exactly the vacuity this
+        module's own docstring forbids. It now calls
+        ``collectors.china_tushare_spine.canonical_identity`` for real.
+
+        SEAM NOTE (declared in config/identity_seams.yml): the spine's field is *named*
+        ``security_id`` but its value is the Data OS **listing_id** — bare
+        ``CN-XSHG-600519``, no ``SEC:`` prefix. It is NOT Data OS ``security_id()``. The
+        production field is deliberately NOT renamed by DOS-1.2; the seam is only declared.
+        """
+        spine = pytest.importorskip("collectors.china_tushare_spine")
+
+        cases = [
+            ("600519.SH", "CN-XSHG-600519"),   # Shanghai main board
+            ("000001.SZ", "CN-XSHE-000001"),   # Shenzhen main board
+            ("920163.BJ", "CN-XBSE-920163"),   # Beijing, canonical 920xxx
+            ("688981.SH", "CN-XSHG-688981"),   # STAR
+            ("300750.SZ", "CN-XSHE-300750"),   # ChiNext
+        ]
+        assert cases, "vacuity guard: no CN cases to compare"
+
+        for ts_code, expected_listing in cases:
+            spine_identity = spine.canonical_identity(ts_code)          # surface A, own reader
+            listing_key = ident.parse_listing_key(spine_identity.security_id)
+            master_listing = ident.listing_id(listing_key)              # surface B, own reader
+
+            assert spine_identity.security_id == master_listing, (
+                f"CN identity forked for {ts_code}: spine yields "
+                f"{spine_identity.security_id!r}, the master renders {master_listing!r}"
             )
+            assert master_listing == expected_listing, (
+                f"{ts_code}: expected listing key {expected_listing!r}, got {master_listing!r}"
+            )
+            # The seam itself: spine.security_id is a LISTING id, not a Data OS security id.
+            assert not spine_identity.security_id.startswith("SEC:")
+            assert ident.security_id(listing_key) == f"SEC:{master_listing}"
+
+        print(
+            f"::notice title=identity-seam-agreement::cn spine vs master compared {len(cases)} listing(s)",
+            flush=True,
+        )
 
     def test_the_master_resolves_both_sides_of_every_recorded_rename(self, alias_table):
         """The MMC and SATS pins, asserted through the master's own reader."""
@@ -234,11 +270,30 @@ class TestDeclaredDivergencesRemainDeclared:
         )
 
     def test_the_master_still_treats_goog_and_googl_as_distinct(self):
+        """CORRECTED after CEO review 2026-08-13.
+
+        The first version wrapped these assertions in ``if {"GOOG","GOOGL"} <= codes:`` — so
+        DELETING one side of the divergence made the guard GREEN. A divergence guard that
+        passes when half the divergence disappears protects nothing. Both sides must exist
+        AND must be two distinct securities, unconditionally.
+        """
         frame = pd.read_parquet(_MASTER)
         codes = set(frame["inception_code"].astype(str))
-        if {"GOOG", "GOOGL"} <= codes:
-            ids = frame[frame["inception_code"].isin(["GOOG", "GOOGL"])]["security_id"].nunique()
-            assert ids == 2, "master collapsed GOOG/GOOGL — that is share_class_equiv's job, not the master's"
+
+        missing = {"GOOG", "GOOGL"} - codes
+        assert not missing, (
+            f"{sorted(missing)} absent from the committed security master — the declared "
+            "GOOG/GOOGL divergence cannot be protected if a side is missing. If a share class "
+            "genuinely delisted, update identity_seams.yml declared_divergences in the same commit."
+        )
+
+        rows = frame[frame["inception_code"].isin(["GOOG", "GOOGL"])]
+        distinct = rows["security_id"].nunique()
+        assert distinct == 2, (
+            f"master yields {distinct} security_id(s) for GOOG+GOOGL, expected 2 — collapsing "
+            "share classes is config/share_class_equiv.yml's job for 13F consensus, never the "
+            f"master's. Rows: {rows[['inception_code', 'security_id']].to_dict('records')}"
+        )
 
     def test_the_theme_graph_uses_its_own_collision_suffix(self, seams):
         row = next(r for r in seams["surfaces"] if r["path"] == "config/theme_graph_identity_breaks.yml")
