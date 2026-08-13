@@ -459,6 +459,9 @@ def register_claims(events: list[dict], root: Path | None = None) -> list[dict]:
             scope_key="XLP",          # priceable subject ticker (D4)
             direction=direction,
             horizon_d=21,
+            # P0a: 21 is the grade-ladder rung — 21 exchange SESSIONS, not 21
+            # calendar days. Declared so the clock resolves it, never guesses.
+            horizon_unit=q.HORIZON_UNIT_TRADING,
             timestamp_quality="CRAWL_BOUNDED",
             bench="XLK",              # priceable bench ticker (offense proxy, D4)
             claim_family=QLEDGER_FAMILY,

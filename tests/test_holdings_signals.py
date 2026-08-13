@@ -223,6 +223,64 @@ def test_is_non_equity_holding() -> None:
     assert not is_non_equity_holding("NVDA", "NVIDIA CORP")
     assert not is_non_equity_holding("000720 KS", "HYUNDAI ENGINEERING & CONST")
     assert not is_non_equity_holding("FF", "FutureFuel Corp")   # 'future' substring not flagged
+    # VanEck files its cash sleeve with the marker in the TICKER and no name at
+    # all, so neither the ticker set nor the name patterns can see it (§6b R1).
+    # The currency codes here are deliberately outside _CURRENCY_CODES: the rule
+    # reads the FORM (leading hyphen + ISO-shaped code + CASH), not a code list.
+    for tk in ("-USD CASH-", "-EUR CASH-", "-CZK CASH-", "-TWD CASH-", "-IDR CASH-"):
+        assert is_non_equity_holding(tk, float("nan")), tk
+        assert is_non_equity_holding(tk, "nan"), tk       # what astype(str) leaves
+    # …and no ticker that merely CONTAINS the letters is caught with it. A real
+    # equity ticker never opens with a hyphen, which is the whole rule.
+    for tk in ("CASH.TO", "CASHX", "XCASH", "CASH US", "USDX", "X", "MP", "UEC"):
+        assert not is_non_equity_holding(tk, ""), tk
+    assert not is_non_equity_holding("-A CASH-", "")      # not an ISO-shaped code
+
+
+def test_index_futures_overlay_is_not_an_equity_holding() -> None:
+    """A fund equitizes uninvested cash with index futures and the sponsor files
+    the overlay as a holding. Its "shares" are a CONTRACT COUNT and the contract
+    ROLLS quarterly, so the share-diff engine reads a rollover as a full exit
+    plus a brand-new position (§6c). Every form below is live in
+    data/etf_holdings today."""
+    from collectors.holdings import is_non_equity_holding
+    # named futures lines — Invesco (QQQ, RSP) and Global X (BOTZ, BUG)
+    assert is_non_equity_holding("NQM6", "CME E-Mini NASDAQ 100 Index Future")
+    assert is_non_equity_holding("NQM6_", "CME E-Mini NASDAQ 100 Index Future")
+    assert is_non_equity_holding("LWEM6", "E-mini S&amp;P 500 Equal Weight Futures")
+    assert is_non_equity_holding("NQU6 Index", "NASDAQ 100 E-MINI SEP26")
+    # SSGA's XOP legs carry no "future" word at all — only a contract-month token
+    assert is_non_equity_holding("IXPM6", "XAE ENERGY        JUN26")
+    assert is_non_equity_holding("IXPU6", "XAE ENERGY        SEP26")
+    # …and the Bloomberg " Index" ticker suffix stands on its own, because R1's
+    # lesson was that a sponsor can put the marker in the ticker and file no name.
+    assert is_non_equity_holding("NQZ6 Index", "")
+    assert is_non_equity_holding("ESH7 Index", float("nan"))
+
+
+def test_futures_predicate_leaves_real_issuers_and_tickers_alone() -> None:
+    """Conservatism. A wrongly-dropped equity leaves no trace in any output — a
+    strictly worse failure than a surviving futures line — so the rules key on
+    futures-market phrasing and on a ticker suffix no listed equity carries.
+    Never a bare "future"/"option" substring, never the singular "future" (Future
+    plc is listed), and never the CME root+month+year SHAPE, which Latin-American
+    local tickers share: CMIG4 and BRKM5 are letters + a CME month code + a digit."""
+    from collectors.holdings import is_non_equity_holding
+    for tk, nm in [("FF", "FutureFuel Corp"),             # live in the ETF feeds
+                   ("OPCH", "Option Care Health Inc"),    # live in MDY
+                   ("FUTR", "Future plc"),
+                   ("FUTU", "Futu Holdings Ltd"),
+                   ("MINI", "Mobile Mini Inc"),
+                   ("NICE", "NICE Ltd"),                  # trailing "e" + " Mini"?
+                   ("CMIG4", "Cia Energetica de Minas Gerais"),
+                   ("BRKM5", "Braskem SA"),
+                   ("PETR4", "Petroleo Brasileiro SA"),
+                   ("VALE3", "Vale SA"),
+                   ("000720 KS", "HYUNDAI ENGINEERING & CONST"),
+                   ("1211 HK", "BYD CO LTD"),
+                   ("8001 JP", "ITOCHU CORP"),
+                   ("NVDA", "NVIDIA CORP")]:
+        assert not is_non_equity_holding(tk, nm), f"{tk} / {nm} was dropped"
 
 
 def test_active_changes_dir_weeds_cash_and_tiny_base() -> None:
@@ -354,6 +412,8 @@ if __name__ == "__main__":
                test_etf_active_decision_flags_accumulation,
                test_volume_surge_detects_and_degrades,
                test_is_non_equity_holding,
+               test_index_futures_overlay_is_not_an_equity_holding,
+               test_futures_predicate_leaves_real_issuers_and_tickers_alone,
                test_active_changes_dir_weeds_cash_and_tiny_base,
                test_etf_signals_conviction_ranks_weight_over_pct,
                test_etf_signals_flags_new_position,
