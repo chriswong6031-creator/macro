@@ -1466,6 +1466,198 @@ def build_qledger_reliability() -> dict:
     }
 
 
+# ── ETF consensus board — forward windows (ETF masterplan §3 W3) ──────────────
+#: The display projection scripts/grade_etf_board.py writes on the NIGHTLY lane.
+#: This builder only ever READS it: build_measurement runs on the render path, and
+#: nothing on the render path may advance a forward ledger (house law).
+ETF_BOARD_TRACK_PATH = SITE / "factordata" / "etf_board_track.json"
+
+#: Plain-word horizon labels. The panel never prints a raw slug or a bare integer.
+ETF_HORIZON_LABELS = {
+    5: {"en": "1 week (5 sessions)", "zh": "1周（5个交易日）"},
+    21: {"en": "1 month (21 sessions)", "zh": "1个月（21个交易日）"},
+    63: {"en": "1 quarter (63 sessions)", "zh": "1个季度（63个交易日）"},
+}
+
+
+#: m9 — the standing disclosure that the pooled rows are not independent readings.
+#: Windows language throughout (no accuracy / validated / falsified vocabulary):
+#: this panel reports what closed, it does not claim a result.
+ETF_POOLING_NOTE = {
+    "en": ("Windows overlap. The board re-publishes many of the same names night "
+           "after night, so a horizon's closed windows come from fewer distinct "
+           "names than rows, over board dates only days apart — they are not that "
+           "many independent readings. That is why this panel reports counts and a "
+           "median and nothing more, and why the distinct-name count is printed "
+           "beside every row count."),
+    "zh": ("窗口相互重叠。榜单夜复一夜地重新发布同一批个股，因此某一期限下已收官的窗口"
+           "来自比行数更少的个股，且榜单日期彼此仅相隔数日——它们并非同样数量的独立读数。"
+           "面板因此只报计数与中位数，并在每个行数旁一并印出不重复个股数。"),
+}
+
+
+def _pct(v: float | None, decimals: int = 1) -> str:
+    """Signed percent, or an em dash. A dash is a null; a 0.0% is a measurement."""
+    if v is None:
+        return "—"
+    return f"{v * 100:+.{decimals}f}%"
+
+
+def _etf_collecting_horizons() -> list[dict]:
+    """The three horizon cards in their COLLECTING state.
+
+    m18: shared by the artifact-missing and the artifact-unreadable paths. Those
+    two used to differ — missing rendered three honest "collecting" cards, corrupt
+    returned `horizons: []` and the metric grid silently rendered nothing at all.
+    A reader cannot tell a broken artifact from a broken panel, and the state that
+    LOOKS most like "this feature was never finished" is the one a corrupt file
+    produced. Both now render the same three cards.
+    """
+    return [
+        {"horizon": h, "label_en": ETF_HORIZON_LABELS[h]["en"],
+         "label_zh": ETF_HORIZON_LABELS[h]["zh"], "state": "collecting",
+         "n_graded": 0, "n_pending": 0, "n_immature": 0, "n_unpriceable": 0,
+         "n_boards": 0, "n_names": 0, "n_vs_bench": 0, "n_ahead": None,
+         "windows_overlap": False,
+         "median_excess_str": "—", "median_ret_str": "—", "ahead_str": "—",
+         "names_str": "—"}
+        for h in (5, 21, 63)
+    ]
+
+
+def build_etf_board_windows() -> dict:
+    """Forward windows for the Fund Flows consensus board (site/factordata/etf_board_track.json).
+
+    WINDOWS, NOT A VERDICT. Every night the ETF board publishes a ranked list; the
+    nightly ledger writes down what it published and then, as each 5 / 21 / 63-session
+    window closes, what the names did — outright and against SPY. This panel reports
+    those closed windows and nothing else: counts, a median, and "x of y ahead of SPY".
+    There is no accuracy claim, no composite and no verdict here, and the board's own
+    ranking does not read this file.
+
+    ABSENT-SAFE and ZERO-SAFE, deliberately different states:
+      * the artifact is missing (the nightly has not run since this shipped) →
+        available False, state "collecting";
+      * the artifact exists but no window has closed yet (the first nights) →
+        available True, state "collecting", with the honest count of logged boards.
+    Neither hides the panel: a measurement surface that only appears once it has
+    something flattering to say is not a measurement surface. m18: an artifact that
+    exists but does not PARSE renders exactly what a missing one renders — the same
+    three collecting cards — so a corrupt file can never be mistaken for a feature
+    that was never finished.
+
+    m9: every state carries ``pooling_note`` and every horizon carries its
+    distinct-name count beside its row count. The rows in one horizon are pooled
+    over board dates days apart and the board re-publishes the same names, so the
+    windows overlap and N graded rows are not N independent readings.
+    """
+    payload = {
+        "available": False,
+        "state": "collecting",
+        "benchmark": "SPY",
+        "as_of": None,
+        "first_board": None,
+        "n_boards_logged": 0,
+        "n_graded_total": 0,
+        "horizons": _etf_collecting_horizons(),
+        "rows": [],
+        "pooling_note": dict(ETF_POOLING_NOTE),
+        "source": "site/factordata/etf_board_track.json",
+    }
+
+    if not ETF_BOARD_TRACK_PATH.exists():
+        log.warning("ETF board track not found: %s (panel renders its collecting state)",
+                    ETF_BOARD_TRACK_PATH)
+        return payload
+
+    try:
+        raw = load_json(ETF_BOARD_TRACK_PATH)
+    except Exception as exc:  # noqa: BLE001 — a bad artifact must not kill the page
+        log.warning("Failed to load ETF board track: %s "
+                    "(panel renders the same collecting state a missing file does)", exc)
+        return payload
+    # A truncated write can leave VALID json of the wrong shape (`[]`, `null`, a
+    # bare string) — that parses, so the except above never fires, and the first
+    # `.get()` below then raises AttributeError out of a render-path builder.
+    # Same verdict as unparseable: the collecting state.
+    if not isinstance(raw, dict):
+        log.warning("ETF board track is %s, not an object (panel renders its "
+                    "collecting state)", type(raw).__name__)
+        return payload
+
+    per_horizon = raw.get("per_horizon") or {}
+    horizons = []
+    for h in raw.get("horizons") or [5, 21, 63]:
+        cell = per_horizon.get(f"h{h}") or {}
+        n_graded = int(cell.get("n_graded") or 0)
+        n_vs = int(cell.get("n_vs_bench") or 0)
+        n_ahead = cell.get("n_ahead")
+        n_names = int(cell.get("n_names") or 0)
+        n_pending = int(cell.get("n_pending") or 0)
+        # m10: the two populations inside "pending". An older artifact carries
+        # neither key, so the whole pile degrades to "immature" rather than
+        # inventing a delisting count.
+        n_unpriceable = int(cell.get("n_unpriceable") or 0)
+        n_immature = int(cell.get("n_immature") if cell.get("n_immature") is not None
+                         else n_pending - n_unpriceable)
+        labels = ETF_HORIZON_LABELS.get(h, {"en": f"{h} sessions", "zh": f"{h}个交易日"})
+        horizons.append({
+            "horizon": h,
+            "label_en": labels["en"],
+            "label_zh": labels["zh"],
+            "state": "open" if n_graded else "collecting",
+            "n_graded": n_graded,
+            "n_pending": n_pending,
+            "n_immature": n_immature,
+            "n_unpriceable": n_unpriceable,
+            "n_boards": int(cell.get("n_boards") or 0),
+            "n_names": n_names,
+            "n_vs_bench": n_vs,
+            "n_ahead": n_ahead,
+            # m9: fewer distinct names than graded rows IS the overlap, stated as a
+            # flag so the surface can never print the row count on its own.
+            "windows_overlap": bool(n_graded and n_names and n_names < n_graded),
+            "names_str": f"{n_names}" if n_names else "—",
+            "median_excess_str": _pct(cell.get("median_excess_bench")),
+            "median_ret_str": _pct(cell.get("median_ret")),
+            # "3 of 8 ahead of SPY" — the denominator is the benchmark leg's own
+            # count, never the absolute-return count, so the sentence stays true
+            # when a name matures without a usable benchmark window.
+            "ahead_str": (f"{n_ahead} of {n_vs}" if n_ahead is not None and n_vs
+                          else "—"),
+        })
+
+    rows = []
+    for r in (raw.get("rows") or [])[:24]:
+        rows.append({
+            "as_of": r.get("as_of"),
+            "ticker": r.get("ticker"),
+            "rank": r.get("rank"),
+            "horizon": r.get("horizon"),
+            "n_accum": r.get("n_accum"),
+            "ret_str": _pct(r.get("ret")),
+            "excess_str": _pct(r.get("excess_bench")),
+        })
+
+    n_graded_total = int(raw.get("n_graded_total") or 0)
+    payload.update({
+        "available": True,
+        "state": "open" if n_graded_total else "collecting",
+        "benchmark": raw.get("benchmark") or "SPY",
+        "as_of": raw.get("as_of"),
+        "first_board": raw.get("first_board"),
+        "n_boards_logged": int(raw.get("n_boards_logged") or 0),
+        "n_snapshot_rows": int(raw.get("n_snapshot_rows") or 0),
+        "n_graded_total": n_graded_total,
+        "horizons": horizons,
+        "rows": rows,
+        "pooling_note": dict(ETF_POOLING_NOTE),
+        "windows_overlap": any(h["windows_overlap"] for h in horizons),
+        "generated_at": raw.get("generated_at", ""),
+    })
+    return payload
+
+
 def emit_js(payload: dict) -> str:
     """Emit the window.MEASUREMENT = {...} script-tag data."""
     json_str = json.dumps(payload, ensure_ascii=False, indent=None, separators=(",", ":"))
@@ -1604,6 +1796,20 @@ def run() -> None:
     else:
         log.warning("qledger reliability unavailable — site/qledger/track_record.json missing")
 
+    # 6h. ETF consensus board forward windows (ETF masterplan §3 W3). READ-ONLY here —
+    # the nightly grader is the only writer; a render must never advance the ledger.
+    etf_board_windows = build_etf_board_windows()
+    if etf_board_windows.get("available"):
+        log.info(
+            "ETF board windows: %d boards logged, %d graded rows (state=%s)",
+            etf_board_windows.get("n_boards_logged", 0),
+            etf_board_windows.get("n_graded_total", 0),
+            etf_board_windows.get("state"),
+        )
+    else:
+        log.warning("ETF board windows unavailable — site/factordata/etf_board_track.json "
+                    "missing (panel renders its collecting state)")
+
     # 7. Grand total of PIT month-end stamps across all three engines (used in prose)
     n_stamps_grand_total = sum(
         eng.get("n_stamps_total", 0) for eng in engines if not eng.get("missing")
@@ -1636,6 +1842,8 @@ def run() -> None:
         "trial_budgets": trial_budgets,
         "rule_experiments": rule_experiments,
         "qledger_reliability": qledger_reliability,
+        # ETF masterplan §3 W3 — forward windows, display tier, no authority
+        "etf_board_windows": etf_board_windows,
         "consolidated_verdict": {
             "en": (
                 "Descriptive structure (confirmed turns, phase wheel, risk/vol clustering) has measurable substance. "
@@ -1690,6 +1898,8 @@ def run() -> None:
         trial_budgets=trial_budgets,
         rule_experiments=rule_experiments,
         qledger_reliability=qledger_reliability,
+        # ETF board forward windows (ETF masterplan §3 W3)
+        etf_board_windows=etf_board_windows,
         # Forward record (hero) — two integers and a flag, nothing else.
         seasonality_record=build_seasonality_forward_record(),
     )

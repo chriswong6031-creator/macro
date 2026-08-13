@@ -359,6 +359,72 @@ def test_a_glob_pattern_bounds_the_file_kinds_its_scan_can_reach() -> None:
     assert PACK.narrow_to_suffixes(("data/**",), ()) == ("data/**",)
 
 
+def test_exclude_peer_test_ownership_drops_catch_alls_keeps_fixtures() -> None:
+    """Named pytest jobs must not own every tests/*.py edit via opaque globs."""
+    filtered = PACK.exclude_peer_test_ownership(
+        (
+            "*",
+            "*.py",
+            "tests/**",
+            "tests/**/*.py",
+            "tests/**/*.py/**",
+            "tests/**/*.json",
+            "research/**",
+            "docs/**",
+            "content/**",
+            "research/**/*.md",
+            "engine/**",
+            "tests/test_foo.py",
+        )
+    )
+    assert "*" not in filtered
+    assert "tests/**" not in filtered
+    assert "tests/**/*.py" not in filtered
+    assert "docs/**" not in filtered
+    assert "content/**" not in filtered
+    assert "research/**" in filtered
+    assert "tests/**/*.json" in filtered
+    assert "research/**/*.md" in filtered
+    assert "engine/**" in filtered
+    assert "tests/test_foo.py" in filtered
+
+
+def test_resolve_changed_files_prefers_planner_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Packs must not git-diff a shallow clone when ci-plan already listed the files."""
+    monkeypatch.setattr(
+        PACK, "changed_files", lambda base: (_ for _ in ()).throw(AssertionError("git"))
+    )
+    assert PACK.resolve_changed_files(
+        "abc123", explicit_json='["tests/test_foo.py","engine/bar.py"]'
+    ) == ["tests/test_foo.py", "engine/bar.py"]
+    assert PACK.resolve_changed_files("abc123", explicit_json="null") is None
+    assert PACK.resolve_changed_files("abc123", explicit_json="not-json") is None
+    monkeypatch.setenv("CI_CHANGED_FILES_JSON", '["app/x.py"]')
+    assert PACK.resolve_changed_files("abc123") == ["app/x.py"]
+    monkeypatch.delenv("CI_CHANGED_FILES_JSON")
+    monkeypatch.setattr(PACK, "changed_files", lambda base: ["from-git.py"])
+    assert PACK.resolve_changed_files("abc123") == ["from-git.py"]
+    assert PACK.resolve_changed_files(None) is None
+
+
+def test_plan_publishes_changed_paths_for_pack_shallow_checkout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("owner", 0, paths=("tests/test_foo.py",))]
+    plan = PACK.build_plan(
+        jobs,
+        ["tests/test_foo.py"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=12,
+    )
+    assert plan.changed_paths == ("tests/test_foo.py",)
+    assert plan.nonempty_pack_indices == (0,)
+
+
 def test_traversal_pattern_evidence_is_read_only_when_it_is_literal() -> None:
     """An unreadable or unlisted pattern keeps the full root claim."""
     closure = _closure_of(
@@ -499,6 +565,27 @@ def test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs() -> None
     content, reason = PACK.select_jobs(jobs, ["content/seo/blog/example.md"])
     assert len(content) < len(jobs), reason
     assert any(job.job_id == "free-content-estate" for job in content)
+
+
+def test_a_named_suite_edit_does_not_select_peer_pytest_jobs() -> None:
+    """PR #5550 shape: one prophet test file used to mint 133/187 jobs and 12 packs.
+
+    unrun-market-plumbing names tests/test_prophet_w1_intake_repair.py. marketing-engine
+    and engine-render-guards do not. After exclude_peer_test_ownership they must not
+    run for this diff, and the matrix must not be the full twelve.
+    """
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    changed = ["tests/test_prophet_w1_intake_repair.py"]
+    selected, reason = PACK.select_jobs(jobs, changed)
+    ids = {job.job_id for job in selected}
+    assert "unrun-market-plumbing" in ids, reason
+    assert "marketing-engine" not in ids, reason
+    assert "engine-render-guards" not in ids, reason
+    assert "full suite" not in reason, reason
+    assert len(selected) <= len(jobs) // 4, (len(selected), len(jobs), reason)
+    packs = PACK.partition_jobs(selected, 12)
+    nonempty = [index for index, pack in enumerate(packs) if pack]
+    assert len(nonempty) < 12, nonempty
 
 
 def test_unscoped_hook_diff_does_not_pull_the_full_suite() -> None:
@@ -1044,6 +1131,7 @@ def test_planner_failure_never_emits_no_work(
     assert outputs["has_work"] == "true"
     assert outputs["plan_sha"] == ""
     assert outputs["reason"].startswith("full suite: planner error")
+    assert outputs["changed_files"] == "null"
     warning = next(
         line
         for line in capsys.readouterr().out.splitlines()
@@ -1166,12 +1254,13 @@ def test_github_output_is_byte_stable_and_parses_as_heredoc(tmp_path: Path) -> N
         )
     assert first.read_text() == second.read_text()
     outputs = _parse_github_output(first.read_text())
-    assert set(outputs) == {"matrix", "has_work", "plan_sha", "reason"}
+    assert set(outputs) == {"matrix", "has_work", "plan_sha", "reason", "changed_files"}
     assert json.loads(outputs["matrix"]) == {
         "include": [{"pack": index} for index in range(12)]
     }
     assert outputs["has_work"] == "true"
     assert len(outputs["plan_sha"]) == 64
+    assert outputs["changed_files"] == "null"
 
 
 def test_matrix_mode_overrules_a_no_work_plan_without_changing_its_hash(
@@ -1446,12 +1535,13 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     assert "macstudio" not in runs_on
     assert "render-linux" not in runs_on
     assert "self-hosted" not in runs_on
-    # PR abort-on-first-red; main workflow_dispatch keeps the rest of the pack.
-    # Must stay an unquoted boolean expression — quotes stringify "true"/"false"
-    # and can fail-fast main's heal-slow path (non-empty string is truthy).
-    assert pack["strategy"]["fail-fast"] == "${{ github.event_name == 'pull_request' }}"
+    # Sibling packs must finish so their proofs survive a single red. fail-fast
+    # on pull_request cancelled the other eleven, ci-gate went red, and a heal
+    # had to rerun everything. A real red still fails ci-gate.
+    assert pack["strategy"]["fail-fast"] is False
     pack_src = WORKFLOW.read_text(encoding="utf-8")
-    assert "fail-fast: ${{ github.event_name == 'pull_request' }}" in pack_src
+    assert "fail-fast: false" in pack_src
+    assert "fail-fast: ${{ github.event_name == 'pull_request' }}" not in pack_src
     assert 'fail-fast: "${{ github.event_name == \'pull_request\' }}"' not in pack_src
     # No `max-parallel`: it existed only to stop main's packs from taking all four
     # `render-linux` runners. With no shared pool to protect, throttling would only
@@ -1540,13 +1630,13 @@ def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
 
 
 def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> None:
-    """Full history is load-bearing; full historical blob transfer is not.
+    """ci-plan keeps full history; packs shallow-checkout the current tree.
 
-    The four #4053 hosted runners spent 6m45s-14m39s in checkout before tests.
-    ``filter: blob:none`` preserves the complete current working tree and commit
-    graph while omitting historical generated-site blobs from the initial fetch.
-    Do not replace this with sparse checkout: legacy suites legitimately inspect
-    current ``site/`` files.
+    Measured PR #5550 / run 31729769728: twelve packs fetching fetch-depth:0 at
+    once put ci-pack-1 in "Checking out the ref" for 31 minutes. Packs consume
+    ci-plan's changed-file list and only need the current working tree (legacy
+    suites inspect committed site/ artifacts, not historical blobs). Do not
+    replace this with sparse checkout.
     """
     workflow = _yaml(WORKFLOW)
     pack = workflow["jobs"]["ci-pack"]
@@ -1556,8 +1646,15 @@ def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> 
         if str(step.get("uses", "")).startswith("actions/checkout@")
     )
     assert checkout["with"]["filter"] == "blob:none"
-    assert checkout["with"]["fetch-depth"] == 0
+    assert checkout["with"]["fetch-depth"] == 1
     assert "sparse-checkout" not in checkout["with"]
+    plan = workflow["jobs"]["ci-plan"]
+    plan_checkout = next(
+        step
+        for step in plan["steps"]
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert plan_checkout["with"]["fetch-depth"] == 0
 
 
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
