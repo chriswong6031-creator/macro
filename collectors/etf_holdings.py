@@ -431,15 +431,34 @@ class EtfHoldingsAdapter(Adapter):
             tables = pd.read_html(io.StringIO(html))
         except Exception as e:  # noqa: BLE001 — needs lxml/bs4; degrade per-fund
             raise ValueError(f"{who}: read_html failed ({e})")
+
+        def _match(cells: list[str]) -> bool:
+            has_w = (not need_weight) or any(weight_token in c or "%" in c for c in cells)
+            has_s = (not need_shares) or any("share" in c or "quantit" in c for c in cells)
+            return has_w and has_s
+
+        def _clean(cells) -> list[str]:
+            return [str(c).strip().lower().replace(" ", "_").replace("%", "pct")
+                    for c in cells]
+
         for t in tables:
-            cols = [str(c).strip().lower() for c in t.columns]
-            has_w = (not need_weight) or any(weight_token in c or "%" in c for c in cols)
-            has_s = (not need_shares) or any("share" in c or "quantit" in c for c in cols)
-            if has_w and has_s:
+            if _match([str(c).strip().lower() for c in t.columns]):
                 t = t.copy()
-                t.columns = [str(c).strip().lower().replace(" ", "_").replace("%", "pct")
-                             for c in t.columns]
+                t.columns = _clean(t.columns)
                 return t
+        # Fallback: the header row carries no <th>, so read_html left it as data row
+        # 0 and numbered the columns 0..n (First Trust's ASP.NET holdings grid does
+        # exactly this — it shipped 4 configured funds with ZERO snapshots until
+        # 2026-08-12). Promote row 0 only when the normal scan found nothing, so a
+        # table with a real header is never reinterpreted.
+        for t in tables:
+            if len(t) < 2 or not len(t.columns):
+                continue
+            first = [str(c).strip().lower() for c in t.iloc[0].tolist()]
+            if _match(first):
+                out = t.iloc[1:].copy()
+                out.columns = _clean(t.iloc[0].tolist())
+                return out.reset_index(drop=True)
         raise ValueError(f"{who}: no holdings table found")
 
     # --- Sprott (full holdings embedded as a data: URI in static fund-page HTML) -
