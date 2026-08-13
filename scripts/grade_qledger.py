@@ -225,6 +225,17 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
                 # The clock these four numbers were measured on. Same n_dates on
                 # a different clock is a different claim about the world.
                 "clock_basis": pr.clock_basis,
+                # P0a MIGRATION LEGIBILITY. A family whose first explicit-clock
+                # grade lands drops from (say) GRADED/n_dates=40 to
+                # ACCRUING/n_dates=1 in one night, because authority resets at a
+                # basis change rather than pooling across it (the CEO's ruling,
+                # unchanged). Without these three fields the readiness row, the
+                # alert and the admin tab all read that as evidence collapsing.
+                # The counts are NEVER combined — `clock_prior_n_dates` is the
+                # excluded basis's own number, published beside the live one.
+                "clock_migration": pr.clock_migration,
+                "clock_prior_n_dates": pr.clock_prior_n_dates,
+                "migration_note": pr.migration_note,
             }
         result[fam] = fam_res
 
@@ -516,7 +527,25 @@ def run(root: Path | str | None = None, today: date | None = None,
                 continue
 
             legs = [subject, bench] + ([control] if control else [])
-            if not q._matured(root, start, h, today_dt, legs):
+            # P0a — THE PRE-GATE MUST USE THE CLAIM'S OWN CLOCK. This cheap
+            # "is it time yet" check exists so the loop skips immature claims
+            # without paying for grade_claim's price reads. It used to run the
+            # LEGACY calendar maturity function for EVERY claim, explicit-clock
+            # ones included, with no unit dispatch — so a `trading_days` h=21
+            # claim opened on roughly the calendar clock: it could be admitted
+            # up to ~9 days early (grade_claim then refused it and it counted as
+            # blocked), or, under `calendar_days`, held past its real exit.
+            # Dispatched here through the SAME `claim_window` grade_claim uses,
+            # so the pre-gate and the grader can never disagree about which
+            # window is being asked about. A declared-unit claim whose window
+            # cannot resolve is blocked, not silently skipped.
+            window = q.claim_window(claim, h, entry_anchor=start)
+            if q.claim_horizon_unit(claim) is None:
+                matured = q._matured(root, start, h, today_dt, legs)
+            else:
+                matured = (window is not None
+                           and q._matured_window(root, window, today_dt, legs))
+            if not matured:
                 # Not yet elapsed or price not yet available — count as blocked.
                 n_blocked_by_coverage += 1
                 continue
@@ -561,6 +590,15 @@ def run(root: Path | str | None = None, today: date | None = None,
             log.warning("run_readiness_post_step failed (non-fatal): %s", e)
             w6_readiness = {"error": str(e)}
 
+    # P0a — the refused-clock population, counted rather than invisible. A claim
+    # whose declared clock cannot resolve (unknown/mixed/uncalendared market, or
+    # an anchor outside the calendar's modelled span) is REJECTED at registration
+    # instead of registering open-forever with check_by=None. Publishing the count
+    # here is what makes "fail closed" auditable: a lane that starts refusing
+    # everything shows up as a number on the nightly instead of as claims that
+    # quietly never grade.
+    clock_refused = q.count_unresolvable_clock_claims(claims=claims)
+
     summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "as_of": today_dt.isoformat(),
@@ -569,6 +607,7 @@ def run(root: Path | str | None = None, today: date | None = None,
         "n_blocked_by_coverage": n_blocked_by_coverage,
         "n_ungradeable": n_ungradeable,
         "n_already_graded": n_already_graded,
+        "clock_unresolvable_claims": clock_refused,
         "dry_run": dry_run,
         "w6_readiness": w6_readiness,
         "regime_stamp_backfill": regime_backfill,
@@ -585,6 +624,7 @@ def run(root: Path | str | None = None, today: date | None = None,
         f"[grade_qledger] open={n_open} graded_today={n_graded_today} "
         f"blocked={n_blocked_by_coverage} ungradeable={n_ungradeable} "
         f"already_graded={n_already_graded} "
+        f"clock_unresolvable={clock_refused.get('n', 0)} "
         f"regime_backfilled={regime_backfill.get('n_backfilled', 0)} "
         f"regime_unstamped={regime_backfill.get('n_unstamped', 0)}"
         + (" [DRY RUN]" if dry_run else "")
