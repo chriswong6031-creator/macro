@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T10:41:33.263565+00:00",
-  "count": 1054,
+  "generated_at": "2026-08-13T10:51:06.538836+00:00",
+  "count": 1055,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -553,6 +553,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-l8mc9gi51gc-335c88",
+      "title": "PNC Economics Research Weekly Economic Roundup 10 August 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-11T22:47:56Z",
+      "summary_points": [
+        "**Jobs Data Revisions**: July nonfarm payrolls fell 23k vs.",
+        "+85k expected, with May/June revisions down 103k cumulative, reducing 3-month average to 20k/mo—eroding Q2 momentum and signaling labor market softening.",
+        "**Core CPI Critical for Fed Policy**: Markets anticipate July core CPI at +0.2% m/m (2.45% y/y); a reading ≤0.2% sustains disinflation trajectory, while stronger data could reignite 2026 rate hike bets (Fed officials warn of further tightening if inflation fails to slow).",
+        "**Supercore Inflation Risk**: Core services excluding shelter (supercore) remains a key risk; June’s soft reading (airfares/auto insurance declines) could reverse, pushing supercore higher despite modest tariff impacts on CPI.",
+        "**Labor Market Uncertainty**: Unemployment dropped to 4.1% (lowest since early 2025), but wage growth moderated to 0.1% m/m (3.15% y/y), with Fed funds futures pricing rate hike probability at 47% (down from 60% pre-report), indicating no overheating but trend ambiguity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
