@@ -76,8 +76,11 @@ ALLOWED_STEP_KEYS = {"name", "run", "uses", "with"}
 #
 # The residual risk is an IMPLICIT dependency: a scoped job whose tests import a
 # module the commands never name. That cannot be caught statically here, so the
-# the full manifest still audits main. That post-merge audit is not a substitute
-# for conservative PR ownership: any ambiguity below widens to a full PR run.
+# the full manifest still audits main. Ordinary PRs do not widen to that audit
+# merely because one changed path has no proven owner — that mapping was the
+# speed hole (PR #5488: `.claude/hooks/gh_quota_guard.py` → all 185/187 jobs).
+# Unowned paths stay on always-on fences + owners of the rest of the diff.
+# Main / CI_SCOPE_MODE=off remains the long fail-fast:false heal pack.
 # ---------------------------------------------------------------------------
 
 # A change to any of these invalidates scoping entirely: they can alter what any
@@ -129,8 +132,8 @@ PASSIVE_UNOWNED_PATTERNS = ("**/*.md",)
 # repository surface it could inspect.  This is deliberately broad: it keeps
 # whole-tree guards such as all-exports-resolve selected for every engine/script
 # edit, while still allowing an unrelated narrow owner to skip guards that have
-# no opaque I/O.  A new top-level directory remains unowned and therefore widens
-# the whole PR to a full run.
+# no opaque I/O.  A new top-level directory remains unowned; it does not widen
+# the PR to a full run — it rides always-on fences only.
 OPAQUE_IO_ROOTS = (
     "*",
     "app/**", "admin/**", "collectors/**", "config/**", "content/**", "contracts/**",
@@ -581,19 +584,23 @@ def select_jobs(
         if not any(_matches_any(job.paths, path) for job in scoped_jobs)
         and not _matches_any(PASSIVE_UNOWNED_PATTERNS, path)
     ]
-    if unowned:
-        return jobs, f"full suite: changed path has no proven owner ({unowned[0]})"
     selected = [
         job
         for job in jobs
         if not job.paths or any(_matches_any(job.paths, path) for path in changed)
     ]
     unscoped = sum(1 for job in jobs if not job.paths)
-    return selected, (
+    reason = (
         f"scoped to {len(changed)} changed file(s): {len(selected)}/{len(jobs)} jobs "
         f"({unscoped} unscoped always-on, "
         f"{len(selected) - unscoped} scoped matches)"
     )
+    if unowned:
+        reason += (
+            f"; {len(unowned)} unowned path(s) did not widen "
+            f"({unowned[0]})"
+        )
+    return selected, reason
 
 
 def _workflow_jobs(path: Path) -> dict[str, dict[str, Any]]:

@@ -11,7 +11,7 @@
       "type": "engine",
       "label": "altdata",
       "meta": {
-        "n_spine_rows": 1633
+        "n_spine_rows": 1737
       }
     },
     {
@@ -19,7 +19,15 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 7
+        "n_spine_rows": 12
+      }
+    },
+    {
+      "id": "engine:basket_turn.v1",
+      "type": "engine",
+      "label": "basket_turn.v1",
+      "meta": {
+        "n_spine_rows": 1
       }
     },
     {
@@ -27,7 +35,7 @@
       "type": "engine",
       "label": "ca_board",
       "meta": {
-        "n_spine_rows": 1312
+        "n_spine_rows": 1384
       }
     },
     {
@@ -43,7 +51,7 @@
       "type": "engine",
       "label": "china_special_sits",
       "meta": {
-        "n_spine_rows": 74
+        "n_spine_rows": 80
       }
     },
     {
@@ -51,7 +59,7 @@
       "type": "engine",
       "label": "cn_board",
       "meta": {
-        "n_spine_rows": 192
+        "n_spine_rows": 576
       }
     },
     {
@@ -59,7 +67,7 @@
       "type": "engine",
       "label": "cn_importance_v0",
       "meta": {
-        "n_spine_rows": 2889
+        "n_spine_rows": 3192
       }
     },
     {
@@ -67,7 +75,7 @@
       "type": "engine",
       "label": "cn_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 2889
+        "n_spine_rows": 3192
       }
     },
     {
@@ -83,7 +91,7 @@
       "type": "engine",
       "label": "desk:stock_desk",
       "meta": {
-        "n_spine_rows": 102
+        "n_spine_rows": 110
       }
     },
     {
@@ -99,7 +107,7 @@
       "type": "engine",
       "label": "hk_board",
       "meta": {
-        "n_spine_rows": 1620
+        "n_spine_rows": 1776
       }
     },
     {
@@ -107,7 +115,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 2429
+        "n_spine_rows": 2897
       }
     },
     {
@@ -115,7 +123,7 @@
       "type": "engine",
       "label": "macro_context",
       "meta": {
-        "n_spine_rows": 294
+        "n_spine_rows": 305
       }
     },
     {
@@ -123,7 +131,7 @@
       "type": "engine",
       "label": "narrative",
       "meta": {
-        "n_spine_rows": 607
+        "n_spine_rows": 623
       }
     },
     {
@@ -147,7 +155,7 @@
       "type": "engine",
       "label": "policy",
       "meta": {
-        "n_spine_rows": 48
+        "n_spine_rows": 53
       }
     },
     {
@@ -155,7 +163,7 @@
       "type": "engine",
       "label": "radar",
       "meta": {
-        "n_spine_rows": 14165
+        "n_spine_rows": 15512
       }
     },
     {
@@ -179,7 +187,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 241
+        "n_spine_rows": 247
       }
     },
     {
@@ -187,7 +195,7 @@
       "type": "engine",
       "label": "reflex.regime_stale_selfheal",
       "meta": {
-        "n_spine_rows": 15
+        "n_spine_rows": 17
       }
     },
     {
@@ -195,7 +203,7 @@
       "type": "engine",
       "label": "stock_personality",
       "meta": {
-        "n_spine_rows": 1720
+        "n_spine_rows": 1719
       }
     },
     {
@@ -211,7 +219,7 @@
       "type": "engine",
       "label": "track_record",
       "meta": {
-        "n_spine_rows": 293255
+        "n_spine_rows": 294820
       }
     },
     {
@@ -227,7 +235,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 14874
+        "n_spine_rows": 17425
       }
     },
     {
@@ -235,7 +243,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 14874
+        "n_spine_rows": 17425
       }
     },
     {
@@ -243,7 +251,7 @@
       "type": "engine",
       "label": "whitehouse",
       "meta": {
-        "n_spine_rows": 74
+        "n_spine_rows": 92
       }
     },
     {
@@ -1698,6 +1706,60 @@
       }
     },
     {
+      "id": "thesis:2026-08-12-radar-crypto_rails",
+      "type": "thesis",
+      "label": "2026-08-12-radar-crypto_rails",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-12-radar-space_economy",
+      "type": "thesis",
+      "label": "2026-08-12-radar-space_economy",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-12-radar-us_sector_comm",
+      "type": "thesis",
+      "label": "2026-08-12-radar-us_sector_comm",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-12-radar-us_sector_staples",
+      "type": "thesis",
+      "label": "2026-08-12-radar-us_sector_staples",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-12-radar-non_ai_tech",
+      "type": "thesis",
+      "label": "2026-08-12-radar-non_ai_tech",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-12-radar-semicap_equipment",
+      "type": "thesis",
+      "label": "2026-08-12-radar-semicap_equipment",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
       "id": "macro:fx_dollar",
       "type": "macro",
       "label": "FX / Dollar",
@@ -1706,7 +1768,7 @@
         "regime": "US growth premium",
         "risk": "risk-on",
         "usd_trend": "mixed",
-        "asof": "2026-08-08",
+        "asof": "2026-08-10",
         "display_only": true,
         "source_lobe": "fx_dollar",
         "smile_regime": "mixed",
@@ -1714,7 +1776,7 @@
         "regime_radar_dominant": null,
         "stance_word": "Watch — don't chase",
         "dominant_scenario": null,
-        "days_in_regime": 111
+        "days_in_regime": 113
       }
     },
     {
@@ -1804,7 +1866,7 @@
           "Gold",
           "Copper"
         ],
-        "asof": "2026-08-07",
+        "asof": "2026-08-09",
         "display_only": true,
         "source_lobe": "commodity_context"
       }
@@ -1819,7 +1881,7 @@
         "regime": "mixed / no clear trend",
         "correlation_verdict": "converging",
         "state_text": "mixed / no clear trend",
-        "asof": "2026-08-08",
+        "asof": "2026-08-09",
         "display_only": true,
         "source_lobe": "cross_asset_flows"
       }
@@ -2673,6 +2735,16 @@
     },
     {
       "src": "artifact:baskets-membership",
+      "dst": "module:scripts/build_basket_washout_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/baskets/membership.json consumed by scripts/build_basket_washout_state.py"
+    },
+    {
+      "src": "artifact:baskets-membership",
       "dst": "module:scripts/build_baskets.py",
       "edge_type": "feeds",
       "n": null,
@@ -3280,6 +3352,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: engine/qledger.py writes data/qledger/claims.jsonl"
+    },
+    {
+      "src": "artifact:qledger-claims",
+      "dst": "module:scripts/check_qledger_metric_validity.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/qledger/claims.jsonl consumed by scripts/check_qledger_metric_validity.py"
     },
     {
       "src": "artifact:qledger-claims",
@@ -5220,6 +5302,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/species/registry.json consumed by engine/track_record.py"
+    },
+    {
+      "src": "artifact:species-registry",
+      "dst": "module:scripts/build_stock_library.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/species/registry.json consumed by scripts/build_stock_library.py"
     },
     {
       "src": "artifact:species-registry",
@@ -7543,6 +7635,26 @@
     },
     {
       "src": "artifact:us-basket-turn",
+      "dst": "module:engine/us_early_turn.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/basketdata/us_basket_turn.json consumed by engine/us_early_turn.py"
+    },
+    {
+      "src": "artifact:us-basket-turn",
+      "dst": "module:engine/us_turn_watch.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/basketdata/us_basket_turn.json consumed by engine/us_turn_watch.py"
+    },
+    {
+      "src": "artifact:us-basket-turn",
       "dst": "module:scripts/build_baskets.py",
       "edge_type": "feeds",
       "n": null,
@@ -7550,6 +7662,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: site/basketdata/us_basket_turn.json consumed by scripts/build_baskets.py"
+    },
+    {
+      "src": "artifact:us-basket-turn",
+      "dst": "module:scripts/build_turn_watch.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/basketdata/us_basket_turn.json consumed by scripts/build_turn_watch.py"
     },
     {
       "src": "module:engine/us_basket_turn.py",
@@ -7560,6 +7682,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: engine/us_basket_turn.py writes data/us_basket_turn/ledger.jsonl"
+    },
+    {
+      "src": "artifact:us-basket-turn-ledger",
+      "dst": "module:scripts/check_ledger_advance.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/us_basket_turn/ledger.jsonl consumed by scripts/check_ledger_advance.py"
     },
     {
       "src": "module:collectors/china_funding.py",
@@ -10373,6 +10505,16 @@
     },
     {
       "src": "artifact:ticker-sectors",
+      "dst": "module:scripts/build_basket_washout_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/breadth/ticker_sectors.parquet consumed by scripts/build_basket_washout_state.py"
+    },
+    {
+      "src": "artifact:ticker-sectors",
       "dst": "module:scripts/research/long_hold_label_panel.py",
       "edge_type": "feeds",
       "n": null,
@@ -11992,6 +12134,36 @@
       "note": "structural: site/factordata/momentum_display.json consumed by scripts/build_site.py"
     },
     {
+      "src": "module:scripts/build_basket_washout_state.py",
+      "dst": "artifact:site-basket-washout-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_basket_washout_state.py writes site/factordata/basket_washout_state.json"
+    },
+    {
+      "src": "artifact:site-basket-washout-state",
+      "dst": "module:engine/signal_quality.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/basket_washout_state.json consumed by engine/signal_quality.py"
+    },
+    {
+      "src": "module:scripts/build_basket_washout_state.py",
+      "dst": "artifact:site-basket-washout-history",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_basket_washout_state.py writes site/factordata/basket_washout_history.json"
+    },
+    {
       "src": "module:scripts/build_neuralweb_health.py",
       "dst": "artifact:neuralweb-health",
       "edge_type": "feeds",
@@ -13452,14 +13624,14 @@
       "note": "structural: options_structure/gex_state/<ROOT>.json consumed by engine/positioning_persistence.py"
     },
     {
-      "src": "module:engine/options_structure.py",
+      "src": "module:scripts/build_chain_heat.py",
       "dst": "artifact:options-flow-chain-heat",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: engine/options_structure.py writes live_flow/chain_heat_current.json"
+      "note": "structural: scripts/build_chain_heat.py writes live_flow/chain_heat_current.json"
     },
     {
       "src": "artifact:options-flow-chain-heat",
@@ -13582,6 +13754,16 @@
       "note": "structural: site/prophet/index.json consumed by scripts/build_site.py"
     },
     {
+      "src": "artifact:prophet-index",
+      "dst": "module:engine/us_candidate_lanes.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/prophet/index.json consumed by engine/us_candidate_lanes.py"
+    },
+    {
       "src": "module:scripts/build_prophet.py",
       "dst": "artifact:prophet-ledger",
       "edge_type": "feeds",
@@ -13640,6 +13822,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/us_prophet_rank/candidates/YYYY-MM.parquet consumed by engine/prophet_miss_audit.py"
+    },
+    {
+      "src": "artifact:us-context-vector",
+      "dst": "module:engine/us_candidate_lanes.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/us_prophet_rank/candidates/YYYY-MM.parquet consumed by engine/us_candidate_lanes.py"
     },
     {
       "src": "module:engine/us_prophet_grades.py",
@@ -13820,6 +14012,236 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/fred_vintage/release_targets/manifest.json consumed by engine/release_target_truth.py"
+    },
+    {
+      "src": "artifact:release-target-vintage-manifest",
+      "dst": "module:engine/release_cpi_target_history.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/fred_vintage/release_targets/manifest.json consumed by engine/release_cpi_target_history.py"
+    },
+    {
+      "src": "module:scripts/collect_release_cpi_official_truth.py",
+      "dst": "artifact:release-cpi-truth-preregistered-sample",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/collect_release_cpi_official_truth.py writes data/release_forecast/cpi_truth/preregistered_sample.json"
+    },
+    {
+      "src": "artifact:release-cpi-truth-preregistered-sample",
+      "dst": "module:scripts/collect_release_cpi_official_truth.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/preregistered_sample.json consumed by scripts/collect_release_cpi_official_truth.py"
+    },
+    {
+      "src": "artifact:release-cpi-truth-preregistered-sample",
+      "dst": "module:engine/release_cpi_target_history.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/preregistered_sample.json consumed by engine/release_cpi_target_history.py"
+    },
+    {
+      "src": "artifact:release-cpi-truth-preregistered-sample",
+      "dst": "module:scripts/build_release_cpi_truth_parity.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/preregistered_sample.json consumed by scripts/build_release_cpi_truth_parity.py"
+    },
+    {
+      "src": "module:scripts/collect_release_cpi_official_truth.py",
+      "dst": "artifact:release-cpi-official-table1-archive",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/collect_release_cpi_official_truth.py writes data/release_forecast/cpi_truth/official_table1_archive/"
+    },
+    {
+      "src": "artifact:release-cpi-official-table1-archive",
+      "dst": "module:scripts/collect_release_cpi_official_truth.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/official_table1_archive/ consumed by scripts/collect_release_cpi_official_truth.py"
+    },
+    {
+      "src": "artifact:release-cpi-official-table1-archive",
+      "dst": "module:engine/release_cpi_target_history.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/official_table1_archive/ consumed by engine/release_cpi_target_history.py"
+    },
+    {
+      "src": "module:scripts/collect_release_cpi_official_truth.py",
+      "dst": "artifact:release-cpi-official-table1-receipts",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/collect_release_cpi_official_truth.py writes data/release_forecast/cpi_truth/official_table1_receipts.jsonl"
+    },
+    {
+      "src": "artifact:release-cpi-official-table1-receipts",
+      "dst": "module:engine/release_cpi_target_history.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/official_table1_receipts.jsonl consumed by engine/release_cpi_target_history.py"
+    },
+    {
+      "src": "artifact:release-cpi-official-table1-receipts",
+      "dst": "module:scripts/build_release_cpi_truth_parity.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/official_table1_receipts.jsonl consumed by scripts/build_release_cpi_truth_parity.py"
+    },
+    {
+      "src": "module:scripts/collect_release_cpi_official_truth.py",
+      "dst": "artifact:release-cpi-official-table1-collection",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/collect_release_cpi_official_truth.py writes data/release_forecast/cpi_truth/official_table1_collection.json"
+    },
+    {
+      "src": "artifact:release-cpi-official-table1-collection",
+      "dst": "module:engine/release_cpi_target_history.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/official_table1_collection.json consumed by engine/release_cpi_target_history.py"
+    },
+    {
+      "src": "artifact:release-cpi-official-table1-collection",
+      "dst": "module:scripts/build_release_cpi_truth_parity.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/official_table1_collection.json consumed by scripts/build_release_cpi_truth_parity.py"
+    },
+    {
+      "src": "module:scripts/build_release_cpi_truth_parity.py",
+      "dst": "artifact:release-cpi-coherent-target-history",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_release_cpi_truth_parity.py writes data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json"
+    },
+    {
+      "src": "artifact:release-cpi-coherent-target-history",
+      "dst": "module:engine/release_cpi_coherent_shadow.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json consumed by engine/release_cpi_coherent_shadow.py"
+    },
+    {
+      "src": "module:scripts/build_release_cpi_truth_parity.py",
+      "dst": "artifact:release-cpi-truth-parity",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_release_cpi_truth_parity.py writes data/release_forecast/cpi_truth/parity_report.json"
+    },
+    {
+      "src": "artifact:release-cpi-truth-parity",
+      "dst": "module:engine/release_cpi_coherent_shadow.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/parity_report.json consumed by engine/release_cpi_coherent_shadow.py"
+    },
+    {
+      "src": "module:scripts/build_release_cpi_truth_parity.py",
+      "dst": "artifact:release-cpi-truth-build-completion",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_release_cpi_truth_parity.py writes data/release_forecast/cpi_truth/build_completion.json"
+    },
+    {
+      "src": "artifact:release-cpi-truth-build-completion",
+      "dst": "module:engine/release_cpi_coherent_shadow.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/cpi_truth/build_completion.json consumed by engine/release_cpi_coherent_shadow.py"
+    },
+    {
+      "src": "module:<MANUAL>",
+      "dst": "artifact:release-official-actual-defects",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: <MANUAL> writes data/release_forecast/official_actual_defects.json"
+    },
+    {
+      "src": "artifact:release-official-actual-defects",
+      "dst": "module:engine/release_actuals.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/official_actual_defects.json consumed by engine/release_actuals.py"
+    },
+    {
+      "src": "artifact:release-official-actual-defects",
+      "dst": "module:scripts/watch_release_publications.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/release_forecast/official_actual_defects.json consumed by scripts/watch_release_publications.py"
     },
     {
       "src": "module:scripts/reconcile_release_actuals.py",
@@ -14220,6 +14642,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/stage_analysis/context/latest.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "module:scripts/build_top_maturation.py",
+      "dst": "artifact:top-maturation-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_top_maturation.py writes data/top_maturation/latest.json"
     },
     {
       "src": "module:scripts/build_darkpool_desk.py",
@@ -14960,6 +15392,46 @@
       "display_only": true,
       "regime": null,
       "note": "structural: site/options_prophet/index.json consumed by scripts/mirror_flow_idx.py"
+    },
+    {
+      "src": "module:engine/options_issue_desk.py",
+      "dst": "artifact:options-issue-desk-private-proposals",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/options_issue_desk.py writes runtime-private/options_issue_desk/proposals.jsonl"
+    },
+    {
+      "src": "artifact:options-issue-desk-private-proposals",
+      "dst": "module:app/options_issue_desk.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: runtime-private/options_issue_desk/proposals.jsonl consumed by app/options_issue_desk.py"
+    },
+    {
+      "src": "module:engine/options_issue_desk.py",
+      "dst": "artifact:options-issue-desk-private-decisions",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/options_issue_desk.py writes runtime-private/options_issue_desk/decisions.jsonl"
+    },
+    {
+      "src": "artifact:options-issue-desk-private-decisions",
+      "dst": "module:app/options_issue_desk.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: runtime-private/options_issue_desk/decisions.jsonl consumed by app/options_issue_desk.py"
     },
     {
       "src": "module:scripts/build_pick_lab.py",
@@ -16242,6 +16714,36 @@
       "note": "structural: data/options_signal_episode/episodes.jsonl consumed by scripts/build_options_signal_episode.py"
     },
     {
+      "src": "artifact:options-signal-episodes",
+      "dst": "module:scripts/capture_market_memory_options_episodes.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_episode/episodes.jsonl consumed by scripts/capture_market_memory_options_episodes.py"
+    },
+    {
+      "src": "artifact:options-signal-episodes",
+      "dst": "module:scripts/audit_options_market_memory_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_episode/episodes.jsonl consumed by scripts/audit_options_market_memory_context.py"
+    },
+    {
+      "src": "artifact:options-signal-episodes",
+      "dst": "module:engine/options_signal_campaign.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_episode/episodes.jsonl consumed by engine/options_signal_campaign.py"
+    },
+    {
       "src": "module:scripts/build_options_signal_episode.py",
       "dst": "artifact:options-signal-episode-h60-outcomes",
       "edge_type": "feeds",
@@ -16260,6 +16762,116 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/options_signal_episode/outcomes_h60.jsonl consumed by scripts/build_options_signal_episode.py"
+    },
+    {
+      "src": "artifact:options-signal-episode-h60-outcomes",
+      "dst": "module:scripts/audit_options_market_memory_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_episode/outcomes_h60.jsonl consumed by scripts/audit_options_market_memory_context.py"
+    },
+    {
+      "src": "artifact:options-signal-episode-h60-outcomes",
+      "dst": "module:engine/options_signal_campaign.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_episode/outcomes_h60.jsonl consumed by engine/options_signal_campaign.py"
+    },
+    {
+      "src": "module:scripts/build_options_signal_episode.py",
+      "dst": "artifact:options-signal-episode-session-outcomes",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_options_signal_episode.py writes data/options_signal_episode/outcomes_session.jsonl"
+    },
+    {
+      "src": "artifact:options-signal-episode-session-outcomes",
+      "dst": "module:scripts/build_options_signal_episode.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_episode/outcomes_session.jsonl consumed by scripts/build_options_signal_episode.py"
+    },
+    {
+      "src": "artifact:options-signal-episode-session-outcomes",
+      "dst": "module:engine/options_signal_campaign.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_episode/outcomes_session.jsonl consumed by engine/options_signal_campaign.py"
+    },
+    {
+      "src": "module:engine/options_signal_campaign.py",
+      "dst": "artifact:options-signal-campaign-revisions",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/options_signal_campaign.py writes data/options_signal_campaign/campaigns.jsonl"
+    },
+    {
+      "src": "artifact:options-signal-campaign-revisions",
+      "dst": "module:engine/options_signal_campaign.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_campaign/campaigns.jsonl consumed by engine/options_signal_campaign.py"
+    },
+    {
+      "src": "module:engine/options_signal_campaign.py",
+      "dst": "artifact:options-signal-campaign-outcomes",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/options_signal_campaign.py writes data/options_signal_campaign/outcomes.jsonl"
+    },
+    {
+      "src": "artifact:options-signal-campaign-outcomes",
+      "dst": "module:engine/options_signal_campaign.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_campaign/outcomes.jsonl consumed by engine/options_signal_campaign.py"
+    },
+    {
+      "src": "module:engine/options_signal_campaign.py",
+      "dst": "artifact:options-signal-campaign-checkpoint",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/options_signal_campaign.py writes data/options_signal_campaign/checkpoint.json"
+    },
+    {
+      "src": "artifact:options-signal-campaign-checkpoint",
+      "dst": "module:engine/options_signal_campaign.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_signal_campaign/checkpoint.json consumed by engine/options_signal_campaign.py"
     },
     {
       "src": "module:scripts/build_options_signal_episode.py",
@@ -18353,6 +18965,86 @@
     },
     {
       "src": "module:scripts/build_government_revenue_candidates.py",
+      "dst": "artifact:government-revenue-candidate-historical-suppressions",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue_candidates.py writes config/government_revenue/candidate_historical_suppressions.v1.json"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-historical-suppressions",
+      "dst": "module:scripts/build_government_revenue_candidates.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: config/government_revenue/candidate_historical_suppressions.v1.json consumed by scripts/build_government_revenue_candidates.py"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-historical-suppressions",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: config/government_revenue/candidate_historical_suppressions.v1.json consumed by app/government_revenue.py"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-historical-suppressions",
+      "dst": "module:scripts/check_government_revenue_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: config/government_revenue/candidate_historical_suppressions.v1.json consumed by scripts/check_government_revenue_projection.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue_candidates.py",
+      "dst": "artifact:government-revenue-candidate-issuance-corrections",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue_candidates.py writes config/government_revenue/candidate_issuance_corrections.v1.json"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-issuance-corrections",
+      "dst": "module:scripts/build_government_revenue_candidates.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: config/government_revenue/candidate_issuance_corrections.v1.json consumed by scripts/build_government_revenue_candidates.py"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-issuance-corrections",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: config/government_revenue/candidate_issuance_corrections.v1.json consumed by app/government_revenue.py"
+    },
+    {
+      "src": "artifact:government-revenue-candidate-issuance-corrections",
+      "dst": "module:scripts/check_government_revenue_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: config/government_revenue/candidate_issuance_corrections.v1.json consumed by scripts/check_government_revenue_projection.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue_candidates.py",
       "dst": "artifact:government-revenue-candidate-ledger",
       "edge_type": "feeds",
       "n": null,
@@ -19382,6 +20074,96 @@
       "note": "structural: engine/basket_membership_pit.py writes data/baskets_china/membership_history.parquet"
     },
     {
+      "src": "module:scripts/build_theme_graph.py",
+      "dst": "artifact:theme-graph-nodes",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_theme_graph.py writes data/theme_graph/nodes.parquet"
+    },
+    {
+      "src": "module:scripts/build_theme_graph.py",
+      "dst": "artifact:theme-graph-edges",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_theme_graph.py writes data/theme_graph/edges.parquet"
+    },
+    {
+      "src": "module:scripts/build_theme_graph.py",
+      "dst": "artifact:theme-graph-evidence",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_theme_graph.py writes data/theme_graph/evidence.parquet"
+    },
+    {
+      "src": "module:scripts/build_price_pressure.py",
+      "dst": "artifact:price-pressure-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_price_pressure.py writes data/price_pressure/latest.json"
+    },
+    {
+      "src": "artifact:price-pressure-latest",
+      "dst": "module:engine/neuralweb/market_packet.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/price_pressure/latest.json consumed by engine/neuralweb/market_packet.py"
+    },
+    {
+      "src": "module:scripts/build_price_pressure.py",
+      "dst": "artifact:price-pressure-completion-receipts",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_price_pressure.py writes data/price_pressure/completion_receipts.jsonl"
+    },
+    {
+      "src": "artifact:price-pressure-completion-receipts",
+      "dst": "module:scripts/build_price_pressure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/price_pressure/completion_receipts.jsonl consumed by scripts/build_price_pressure.py"
+    },
+    {
+      "src": "module:scripts/build_price_pressure.py",
+      "dst": "artifact:price-pressure-events",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_price_pressure.py writes data/price_pressure/events.parquet"
+    },
+    {
+      "src": "artifact:price-pressure-events",
+      "dst": "module:scripts/build_price_pressure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/price_pressure/events.parquet consumed by scripts/build_price_pressure.py"
+    },
+    {
       "src": "data/regime/latest.json:regime_vector",
       "dst": "data/regime/latest.json:risk_radar",
       "edge_type": "contradicts",
@@ -19399,7 +20181,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=32 ticker-level demand-vs-supply divergences b=n_divergences=32, top tickers=['SPCX', 'C', 'GS', 'MS', 'ECH"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=33 ticker-level demand-vs-supply divergences b=n_divergences=33, top tickers=['GS', 'IRDM', 'GOOG', 'RKLB',"
     },
     {
       "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
@@ -19409,51 +20191,51 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=cross_asset_confirm-diverge kind=directional-opposition severity=tension a=bonds+FX cross-asset leg readings b=cross_asset_confirm verdict=diverge, agree_pct=100"
+      "note": "pair_id=cross_asset_confirm-diverge kind=directional-opposition severity=tension a=bonds+FX cross-asset leg readings b=cross_asset_confirm verdict=diverge, agree_pct=50"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:intel_hub",
       "edge_type": "confirms",
-      "n": 19,
-      "lift": 0.0053,
+      "n": 28,
+      "lift": 0.00603,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0053 n=19 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0060 n=28 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 87,
-      "lift": -0.02955,
+      "n": 101,
+      "lift": -0.02657,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0295 n=87 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0266 n=101 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:track_record",
       "edge_type": "confirms",
-      "n": 8,
+      "n": 12,
       "lift": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "n=8 — outcome basis not signed (track_record=unsigned_mfe_proxy; unsigned mfe proxy) — co-firing lift undefined; cf. PR #4673 dst_outcome_unsigned_mfe_proxy"
+      "note": "n=12 — outcome basis not signed (track_record=unsigned_mfe_proxy; unsigned mfe proxy) — co-firing lift undefined; cf. PR #4673 dst_outcome_unsigned_mfe_proxy"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 16,
-      "lift": 0.01712,
+      "n": 21,
+      "lift": 0.00796,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0171 n=16 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0080 n=21 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -19470,12 +20252,12 @@
       "src": "engine:intel_hub",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 620,
-      "lift": -0.00041,
+      "n": 861,
+      "lift": 0.00185,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0004 n=620 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0019 n=861 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -19493,44 +20275,55 @@
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 20,
-      "lift": -0.01649,
+      "lift": -0.02099,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0165 n=20 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0210 n=20 (pre-gauntlet estimate; display-only)"
+    },
+    {
+      "src": "engine:intel_hub",
+      "dst": "engine:whitehouse",
+      "edge_type": "confirms",
+      "n": 2,
+      "lift": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "n=2 < MIN_N=10 — lift=null (insufficient sample; display-only)"
     },
     {
       "src": "engine:policy",
       "dst": "engine:radar",
       "edge_type": "confirms",
       "n": 17,
-      "lift": -0.01341,
+      "lift": -0.01889,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0134 n=17 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0189 n=17 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
       "dst": "engine:track_record",
       "edge_type": "confirms",
-      "n": 27,
+      "n": 28,
       "lift": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "n=27 — outcome basis not signed (track_record=unsigned_mfe_proxy; unsigned mfe proxy) — co-firing lift undefined; cf. PR #4673 dst_outcome_unsigned_mfe_proxy"
+      "note": "n=28 — outcome basis not signed (track_record=unsigned_mfe_proxy; unsigned mfe proxy) — co-firing lift undefined; cf. PR #4673 dst_outcome_unsigned_mfe_proxy"
     },
     {
       "src": "engine:radar",
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 86,
-      "lift": 0.00245,
+      "lift": 0.00044,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0024 n=86 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0004 n=86 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:track_record",
@@ -19547,21 +20340,21 @@
       "src": "options.skew_rising",
       "dst": "us_board.buy_lane",
       "edge_type": "contradicts",
-      "n": 9,
+      "n": 0,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-07-30); e.g. ABNB, ASO, BKR, MDLZ, NET, NVO, PEP, TEAM. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
+      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-07-31); e.g. none. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
     },
     {
       "src": "options.skew_decel",
       "dst": "us_board.buy_lane",
       "edge_type": "confirms",
-      "n": 1,
+      "n": 0,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-07-30); e.g. ASTS. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
+      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-07-31); e.g. none. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
     },
     {
       "src": "options.ivspread_positive_call_doi",
@@ -19571,7 +20364,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-07-30); e.g. ALB, DAL, KLIC, ROK, ROST, TRGP, UAL. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
+      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-07-31); e.g. ALB, KLIC, ON, ROK, ROST, TRGP, UAL. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
     },
     {
       "src": "options.skew_rising_or_call_wall_pin",
@@ -19667,16 +20460,16 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "32 ticker-level demand-vs-supply divergences"
+        "reading": "33 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=32, top tickers=['SPCX', 'C', 'GS', 'MS', 'ECHO']"
+        "reading": "n_divergences=33, top tickers=['GS', 'IRDM', 'GOOG', 'RKLB', 'ADM']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-08-09",
-      "note": "32 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: SPCX, C, GS, MS, ECHO.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-08-13",
+      "note": "33 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: GS, IRDM, GOOG, RKLB, ADM.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     },
     {
@@ -19687,11 +20480,11 @@
       },
       "b": {
         "artifact": "data/regime/latest.json:regime (equity)",
-        "reading": "cross_asset_confirm verdict=diverge, agree_pct=100"
+        "reading": "cross_asset_confirm verdict=diverge, agree_pct=50"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-08-07",
+      "as_of": "2026-08-12",
       "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (credit, usd_positioning).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
       "display_only": true
     }
@@ -19699,7 +20492,7 @@
   "independence": {
     "effective_independent_lobes": 1.0,
     "n_lobes_measurable": 1,
-    "n_lobes_total": 29,
+    "n_lobes_total": 30,
     "pctile_vs_null": 1.0,
     "same_bet_warning": null,
     "dominant_overlap_cluster": null,
@@ -19714,7 +20507,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-08-10T03:27:19Z",
-  "inputs_hash": "sha256:bef57656e75215a44c59afb682c88e72f503bed102996e5144fcb25c8ee83ccd",
+  "produced_at": "2026-08-13T13:57:11Z",
+  "inputs_hash": "sha256:5b0067749b44b4753ec3a2c9865888f59b4b780ff5f9d3e6f4d022487ea47ba7",
   "tier": "display"
 }
