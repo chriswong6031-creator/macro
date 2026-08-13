@@ -5,7 +5,7 @@
 schema: mastermind.rig_manifest.v1
 reference_id: prophet-board-5514-r3
 scope: full
-status: in_review
+status: revise
 
 surface:
   route: us_stocks.html

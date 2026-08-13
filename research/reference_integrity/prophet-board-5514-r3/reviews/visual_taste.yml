@@ -1,412 +1,992 @@
 schema: mastermind.rig_review.v1
 reference_id: prophet-board-5514-r3
+role: visual_taste
 artifact_sha: 6ad6b51bc351bb7e32a77960abe11f6ddb63475c
-
 reviewer:
-  identity: "independent Opus reviewer agent B — RIG r3 cycle, visual/taste critic"
+  identity: independent Opus reviewer agent B — RIG r3 cycle, visual/taste critic
   role: visual_taste_critic
   model: opus
   independent_of_author: true
-
+  continuity: fresh instance; pass-1 receipt frozen at dfc1fa67ce57334d, re-read as the basis for amendment
 quarantine:
   rationale_received_after_first_pass: true
   first_pass_inputs:
-    - RIG_V1.md (§1 preservation presumption, §6 what the reviews judge, §7 verdict packet)
-    - CRITIC_B_TEMPLATE.md
-    - REVIEW_TEMPLATE.yml
-    - PASS1_QUARANTINED_LEDGER.yml (user job, production hierarchy, capability ledger, design lineage, dispositions, claims)
-    - production/ (all six committed production screenshots)
-    - artifact_quarantined/{index.html,board.css,board.js,board-data.js}
-    - mockups/refs/reference_integrity/prophet-board-5514-r3/proposal/ (crops 00-61; 70-73 withheld by law and NOT opened)
+  - RIG_V1.md (§1 preservation presumption, §6 what the reviews judge, §7 verdict packet)
+  - CRITIC_B_TEMPLATE.md
+  - REVIEW_TEMPLATE.yml
+  - PASS1_QUARANTINED_LEDGER.yml (user job, production hierarchy, capability ledger, design lineage,
+    dispositions, claims)
+  - production/ (all six committed production screenshots)
+  - artifact_quarantined/{index.html,board.css,board.js,board-data.js}
+  - mockups/refs/reference_integrity/prophet-board-5514-r3/proposal/ (crops 00-61; 70-73 withheld by
+    law and NOT opened)
   not_opened:
-    - reveal/R3_DESIGN_NOTES.md
-    - reveal/R2_verdict.yml
-    - reveal/R2_visual_taste.yml
-    - reveal/R2_product_regression.yml
-    - reveal/R3_compare.html
-    - proposal/70-73 (withheld from pass 1)
-
+  - reveal/R3_DESIGN_NOTES.md
+  - reveal/R2_verdict.yml
+  - reveal/R2_visual_taste.yml
+  - reveal/R2_product_regression.yml
+  - reveal/R3_compare.html
+  - proposal/70-73 (withheld from pass 1)
 first_pass:
-  frozen_at: "2026-08-13"
+  frozen_at: '2026-08-13'
   verdict: BLOCK
-
   coverage:
     crops_reviewed:
-      - 00-R3-dark-en.png
-      - 00-R3-light-en.png
-      - 00-R3-dark-zh.png
-      - 00-R3-light-zh.png
-      - 00-R3-dark-en--full.png
-      - 40-anon-locked-dark-en--full.png
-      - 05-mobile390-dark-en.png
-      - 05-mobile390-dark-en--full.png
-      - 06-mobile390-dark-zh.png
-      - 07-mobile390-light-en.png
-      - 12-fallback-390-dark-en.png
-      - 33-multi-episode-390-en.png
-      - 42-anon-locked-390-dark.png
-      - 10-fallback-dark-en.png
-      - 11-fallback-light-zh.png
-      - 20-filter-ready.png
-      - 24-filter-watch-absent.png
-      - 25-filter-delivering-zero.png
-      - 27-filter-resolved.png
-      - 30-multi-episode-en.png
-      - 40-anon-locked-dark-en.png
-      - 41-anon-locked-light-zh.png
-      - 50-empty-dark-en.png
-      - 60-table-invalidated.png
-      - "01/02/03/04 verified byte-identical to 00-R3 dark-en / light-en / dark-zh / light-zh"
-      - production/prod-desktop-dark-en-card-zoom.png
-      - production/prod-desktop-dark-en-standouts-board.png
-      - production/prod-desktop-light-en-standouts-board.png
-      - production/prod-desktop-dark-zh-standouts-board.png
-      - production/prod-mobile390-dark-en-standouts-board.png
-      - production/prod-desktop-dark-en-pagetop.png
+    - 00-R3-dark-en.png
+    - 00-R3-light-en.png
+    - 00-R3-dark-zh.png
+    - 00-R3-light-zh.png
+    - 00-R3-dark-en--full.png
+    - 40-anon-locked-dark-en--full.png
+    - 05-mobile390-dark-en.png
+    - 05-mobile390-dark-en--full.png
+    - 06-mobile390-dark-zh.png
+    - 07-mobile390-light-en.png
+    - 12-fallback-390-dark-en.png
+    - 33-multi-episode-390-en.png
+    - 42-anon-locked-390-dark.png
+    - 10-fallback-dark-en.png
+    - 11-fallback-light-zh.png
+    - 20-filter-ready.png
+    - 24-filter-watch-absent.png
+    - 25-filter-delivering-zero.png
+    - 27-filter-resolved.png
+    - 30-multi-episode-en.png
+    - 40-anon-locked-dark-en.png
+    - 41-anon-locked-light-zh.png
+    - 50-empty-dark-en.png
+    - 60-table-invalidated.png
+    - 01/02/03/04 verified byte-identical to 00-R3 dark-en / light-en / dark-zh / light-zh
+    - production/prod-desktop-dark-en-card-zoom.png
+    - production/prod-desktop-dark-en-standouts-board.png
+    - production/prod-desktop-light-en-standouts-board.png
+    - production/prod-desktop-dark-zh-standouts-board.png
+    - production/prod-mobile390-dark-en-standouts-board.png
+    - production/prod-desktop-dark-en-pagetop.png
     source_files_read:
-      - /private/tmp/.../rig_r3/artifact_quarantined/board.css (all 898 lines)
-      - /private/tmp/.../rig_r3/artifact_quarantined/board.js (card/candidates/render paths)
-      - /private/tmp/.../rig_r3/artifact_quarantined/index.html
-      - /private/tmp/.../rig_r3/artifact_quarantined/board-data.js
+    - /private/tmp/.../rig_r3/artifact_quarantined/board.css (all 898 lines)
+    - /private/tmp/.../rig_r3/artifact_quarantined/board.js (card/candidates/render paths)
+    - /private/tmp/.../rig_r3/artifact_quarantined/index.html
+    - /private/tmp/.../rig_r3/artifact_quarantined/board-data.js
     computed_checks:
-      - "resolved --pv-buy dark = color-mix(#45b873 80%, #063a24) = #389f63; contrast vs --panel2 #1e222a = 4.78:1"
-      - "resolved --pv-wait dark = #e0a030; contrast vs #1e222a = 7.01:1"
-      - "resolved --pv-noread dark = --muted #8b93a1; contrast vs #1e222a = 5.15:1  -> dark chart-stroke salience order WAIT > NO-READ > BUY"
-      - "resolved --pv-buy light = color-mix(#1f9a55 84%, #05301d) = #1b894c; contrast vs #fff = 4.44:1"
-      - "resolved --pv-noread light = --muted #5d6b7e; contrast vs #fff = 5.43:1"
-      - "resolved --pv-wait light = #b9791a; contrast vs #fff = 3.61:1  -> light chart-stroke salience order NO-READ > BUY > WAIT"
-      - "--warn (board.css:27) and --pv-wait (board.css:39) are byte-identical #e0a030; .pv-wait .pv-chip, .pv-trg and .pv-cau-btn all resolve to it"
-      - "cascade: html[data-theme=light] (0,1,1, line 56) vs html[data-lang=zh] (0,1,1, line 72) -> later wins, so light+zh --pv-buy = color-mix(#cf4040 80%, #4a0f0f) = #b43636 (5.96:1 on white); the light+zh block (line 76) never redefines the pv-* ramp"
-      - "pixel-sampled 00-R3-dark-en.png: GPCR featured top rail y384-386 = (135,143,157)->(97,104,115) grey; GPCR left border x82 = (57,101,87) green; DAR featured rail = (55,153,96) green"
-      - "pixel-measured RIO card (00-R3-dark-en.png, y383-578, 195px tall): single uniform empty run of 105px = 54% of card height"
-      - "card census 00-R3-dark-en--full.png: 19 of 40 rendered cards are chartless; 20-filter-ready.png: 8 of 15 visible cards chartless"
-      - "390w media block (board.css:751-776, 881-898) hides: .bh-purpose; collapses .pv-grid/.cand-rows/.actiongrid to 1fr; .mx-ladder to 4 cols; sets .pv-chart svg and .pv-nochart to 58px. Nothing load-bearing is hidden."
-      - "dead selectors: actiongrid/actcol/stance-sel/data-lane/act-buy have 0 occurrences in board.js and index.html"
+    - 'resolved --pv-buy dark = color-mix(#45b873 80%, #063a24) = #389f63; contrast vs --panel2 #1e222a
+      = 4.78:1'
+    - 'resolved --pv-wait dark = #e0a030; contrast vs #1e222a = 7.01:1'
+    - 'resolved --pv-noread dark = --muted #8b93a1; contrast vs #1e222a = 5.15:1  -> dark chart-stroke
+      salience order WAIT > NO-READ > BUY'
+    - 'resolved --pv-buy light = color-mix(#1f9a55 84%, #05301d) = #1b894c; contrast vs #fff = 4.44:1'
+    - 'resolved --pv-noread light = --muted #5d6b7e; contrast vs #fff = 5.43:1'
+    - 'resolved --pv-wait light = #b9791a; contrast vs #fff = 3.61:1  -> light chart-stroke salience
+      order NO-READ > BUY > WAIT'
+    - '--warn (board.css:27) and --pv-wait (board.css:39) are byte-identical #e0a030; .pv-wait .pv-chip,
+      .pv-trg and .pv-cau-btn all resolve to it'
+    - 'cascade: html[data-theme=light] (0,1,1, line 56) vs html[data-lang=zh] (0,1,1, line 72) -> later
+      wins, so light+zh --pv-buy = color-mix(#cf4040 80%, #4a0f0f) = #b43636 (5.96:1 on white); the
+      light+zh block (line 76) never redefines the pv-* ramp'
+    - 'pixel-sampled 00-R3-dark-en.png: GPCR featured top rail y384-386 = (135,143,157)->(97,104,115)
+      grey; GPCR left border x82 = (57,101,87) green; DAR featured rail = (55,153,96) green'
+    - 'pixel-measured RIO card (00-R3-dark-en.png, y383-578, 195px tall): single uniform empty run of
+      105px = 54% of card height'
+    - 'card census 00-R3-dark-en--full.png: 19 of 40 rendered cards are chartless; 20-filter-ready.png:
+      8 of 15 visible cards chartless'
+    - '390w media block (board.css:751-776, 881-898) hides: .bh-purpose; collapses .pv-grid/.cand-rows/.actiongrid
+      to 1fr; .mx-ladder to 4 cols; sets .pv-chart svg and .pv-nochart to 58px. Nothing load-bearing
+      is hidden.'
+    - 'dead selectors: actiongrid/actcol/stance-sel/data-lane/act-buy have 0 occurrences in board.js
+      and index.html'
+  overall_read: 'In its parts this is frequently better than production — the one-population ladder,
+    the reconciled counts, the empty-vs-absent states and the compact degraded grid are all real advances
+    that production has no answer to. But as the board a paying user actually opens tonight it is worse,
+    and for the two reasons a dense trading surface exists: where the eye lands, and whether the page
+    looks worth reading. The canonical desktop grid is roughly half holes (19 of 40 cards carry a 54%-empty
+    void), and the pre-attentive colour layer ranks WAIT and "No read yet" ABOVE BUY in both themes,
+    so the strongest marks on the board belong to the names the user must not act on. A demanding user
+    would take production''s card grid and this artifact''s chrome.
 
-  overall_read: >
-    In its parts this is frequently better than production — the one-population ladder, the
-    reconciled counts, the empty-vs-absent states and the compact degraded grid are all real
-    advances that production has no answer to. But as the board a paying user actually opens
-    tonight it is worse, and for the two reasons a dense trading surface exists: where the eye
-    lands, and whether the page looks worth reading. The canonical desktop grid is roughly half
-    holes (19 of 40 cards carry a 54%-empty void), and the pre-attentive colour layer ranks WAIT
-    and "No read yet" ABOVE BUY in both themes, so the strongest marks on the board belong to the
-    names the user must not act on. A demanding user would take production's card grid and this
-    artifact's chrome.
-
+    '
   findings:
-    - id: VTC-301
-      severity: blocker
-      title: The canonical desktop grid's dominant texture is a 54%-empty card — and the void is a layout choice, not a data consequence
-      evidence: >
-        board.css:365-368 (.pv-grid { align-items: stretch }) + board.css:553 (.pv-zn { margin-top: auto })
-        + board.css:458-462 (.pv-nochart height 24px) against board.css:447 (.pv-chart svg height 74px).
-        Pixel-measured in 00-R3-dark-en.png: the RIO card spans y383-578 (195px) and contains a single
-        uniform empty run of 105px = 54% of the card. Census: 19 of the 40 cards in
-        00-R3-dark-en--full.png are chartless; in 20-filter-ready.png — the primary actionable filter,
-        62 setups — 8 of the 15 visible cards are voids. Counter-evidence that this is layout and not
-        data: 10-fallback-dark-en.png and 11-fallback-light-zh.png render the SAME chartless content as
-        clean ~78px compact cards with no void at all (because every card in the row is equally short),
-        and 05-mobile390-dark-en--full.png does the same at 1 column (board.css:768).
-      production_behavior: >
-        Every card is the same ~200px unit carrying a verb-hued sparkline
-        (prod-desktop-dark-en-card-zoom.png); the grid has uniform texture and no holes.
-      proposal_behavior: >
-        In a multi-column row the chartless card is stretched to the tallest sibling's height and the
-        surplus collects as one blank region between the lifecycle word and the zone footer.
-      why_it_matters: >
-        As law this ships a flagship board whose most common visual is an empty rectangle, and it
-        photographs as a broken render rather than as honest degradation. The artifact already contains
-        two better renderings of identical data (uniform fallback, mobile single column), so the defect
-        is not caused by the missing enrichment — it is caused by stretching one short card against tall
-        neighbours. Worst hit is the Ready filter, i.e. the screen the user opens to decide what to work on.
+  - id: VTC-301
+    severity: blocker
+    title: The canonical desktop grid's dominant texture is a 54%-empty card — and the void is a layout
+      choice, not a data consequence
+    evidence: 'board.css:365-368 (.pv-grid { align-items: stretch }) + board.css:553 (.pv-zn { margin-top:
+      auto }) + board.css:458-462 (.pv-nochart height 24px) against board.css:447 (.pv-chart svg height
+      74px). Pixel-measured in 00-R3-dark-en.png: the RIO card spans y383-578 (195px) and contains a
+      single uniform empty run of 105px = 54% of the card. Census: 19 of the 40 cards in 00-R3-dark-en--full.png
+      are chartless; in 20-filter-ready.png — the primary actionable filter, 62 setups — 8 of the 15
+      visible cards are voids. Counter-evidence that this is layout and not data: 10-fallback-dark-en.png
+      and 11-fallback-light-zh.png render the SAME chartless content as clean ~78px compact cards with
+      no void at all (because every card in the row is equally short), and 05-mobile390-dark-en--full.png
+      does the same at 1 column (board.css:768).
 
-    - id: VTC-302
-      severity: blocker
-      title: Chart-stroke salience is inverted against actionability in both themes — BUY is the dimmest mark on the board
-      evidence: >
-        board.css:452 (.pv-chart svg * { stroke: var(--pvh) !important }) with the stance map at
-        board.css:392-399 and the ramps at board.css:26-28, 37-41, 52-60. Computed contrast of the chart
-        stroke against its card surface — dark on --panel2 #1e222a: WAIT #e0a030 = 7.01:1,
-        NO-READ (--muted #8b93a1) = 5.15:1, BUY (color-mix(#45b873 80%, #063a24) = #389f63) = 4.78:1.
-        Light on #fff: NO-READ (--muted #5d6b7e) = 5.43:1, BUY (#1b894c) = 4.44:1, WAIT #b9791a = 3.61:1.
-        Visually confirmed on 2x crops of row 1 of 00-R3-dark-en.png and 00-R3-light-en.png: GPCR's
-        "No read yet" grey chart is the heaviest block in the light row; FTI's amber WAIT chart is the
-        loudest in the dark row; DAR's BUY green is the quietest in both.
-      production_behavior: >
-        Verb hue drove a small pill plus a sparkline, and the BUY/FEATURED treatment was the brightest
-        thing on the card — the green solid BUY badge, green Triggered chip, green tracker and green ZONE
-        label all in one direction (prod-desktop-dark-en-card-zoom.png).
-      proposal_behavior: >
-        The chart is promoted to the card's largest element and hued by stance, but the three stance ramps
-        were never ordered by luminance, so the least actionable states carry the strongest strokes.
-      why_it_matters: >
-        The chart is the only genuinely pre-attentive element on the card and the board's stated job is
-        "shortlist the few names worth acting on today". Across a 5-column grid the user's eye is pulled
-        systematically to WAIT and to cards where the machine has no opinion. In light mode the single
-        loudest chart on the page belongs to a card that says "No read yet" — the inversion is total.
+      '
+    production_behavior: 'Every card is the same ~200px unit carrying a verb-hued sparkline (prod-desktop-dark-en-card-zoom.png);
+      the grid has uniform texture and no holes.
 
-    - id: VTC-303
-      severity: major
-      title: The Featured treatment renders two different hues 1px apart, half-reverting the pinned-Featured ruling
-      evidence: >
-        board.css:413-419 pins .pvcard.pv-featured background, border-color and box-shadow to
-        var(--pv-buy); board.css:427-432 draws the 3px lit top rail (.pv-featured::before) from
-        var(--pvh), the card's own stance hue. Pixel-sampled 00-R3-dark-en.png: GPCR (Featured +
-        "No read yet") top rail y384-386 = (135,143,157) fading to (97,104,115) — grey; its left border
-        at x82 = (57,101,87) — green. DAR (Featured + BUY) rail = (55,153,96) green, border (57,101,87)
-        green. In zh the same GPCR card gets a RED ring (--pv-buy flips at board.css:72) around a grey
-        rail on a card reading 暂无判断: 06-mobile390-dark-zh.png, 41-anon-locked-light-zh.png.
-      production_behavior: >
-        Featured glow pinned to --pv-buy regardless of verb, as a single coherent pick-cohort cue
-        (design_lineage: templates/_prophet_card.html.j2:47-54).
-      proposal_behavior: >
-        Ring obeys the pin; rail does not. The two halves of the same 3px of chrome disagree on every
-        non-BUY Featured card.
-      why_it_matters: >
-        GPCR is the #1 card on the board by priority and is the anonymous visitor's only unblurred
-        specimen. A green (en) or red (zh) "this is a pick" ring wrapped around a grey rail and the words
-        "No read yet" reads as a rendering bug, and the split quietly reverts half of a recorded operator
-        ruling.
+      '
+    proposal_behavior: 'In a multi-column row the chartless card is stretched to the tallest sibling''s
+      height and the surplus collects as one blank region between the lifecycle word and the zone footer.
 
-    - id: VTC-304
-      severity: major
-      title: Amber now carries three contradictory meanings on one card; production reserved it for caution alone
-      evidence: >
-        board.css:27 (--warn: #e0a030) and board.css:39 (--pv-wait: #e0a030) are byte-identical.
-        .pv-wait .pv-chip resolves through --pvh-ink -> --ink-warn -> --warn (board.css:80, 394, 475-481);
-        .pv-trg (the ⚡Triggered chip) is pinned to --warn (board.css:486-491); .pv-cau-btn (⚠N) is pinned
-        to --warn (board.css:806-813). In 00-R3-dark-en.png the FTI card stacks "WAIT" and "⚡Triggered"
-        as two same-amber pills 3px apart. Production's card zoom
-        (prod-desktop-dark-en-card-zoom.png) shows ⚡Triggered rendered GREEN — verb-hued — with amber
-        appearing exactly once, on ⚠2.
-      production_behavior: One meaning for amber on the card, caution; the trigger chip took the verb hue.
-      proposal_behavior: >
-        Amber simultaneously means stance=WAIT, event=TRIGGERED and count=CAUTION; on a BUY card the
-        amber Triggered chip now sits beside the green BUY badge.
-      why_it_matters: >
-        WAIT ("do nothing") and TRIGGERED ("the entry just fired") are opposite instructions rendered in
-        the same ink, so the colour layer stops being decodable without reading every word — on a
-        surface whose whole premise is that colour is decodable. On a BUY card the amber chip reads as a
-        warning attached to the buy.
+      '
+    why_it_matters: 'As law this ships a flagship board whose most common visual is an empty rectangle,
+      and it photographs as a broken render rather than as honest degradation. The artifact already
+      contains two better renderings of identical data (uniform fallback, mobile single column), so
+      the defect is not caused by the missing enrichment — it is caused by stretching one short card
+      against tall neighbours. Worst hit is the Ready filter, i.e. the screen the user opens to decide
+      what to work on.
 
-    - id: VTC-305
-      severity: major
-      title: The lifecycle mark is decorative at shipped size, and two of the seven ruled cells are pixel-identical
-      evidence: >
-        board.css:258-261 (.mx-mark { width: 26px; height: 4px; color: var(--text) }).
-        board.css:279-280: ".mx-mark--entered::before, .mx-mark--delivering::before { top:.5px; height:3px;
-        background: currentColor }" — Entered and Delivering render the IDENTICAL mark. Ready differs from
-        Entered only by the right half of a 26px bar dropping to 22% alpha (board.css:272-274); Overtime
-        only by a flat 38% alpha (board.css:284). At 1x in 00-R3-dark-en.png, GPCR "—— Entered" and RIO
-        "—— Ready" are indistinguishable without reading the word.
-      production_behavior: >
-        A 4-stage rail with a dot at one of four POSITIONS along a track
-        (prod-desktop-dark-en-card-zoom.png) — position is one of the strongest pre-attentive channels.
-      proposal_behavior: >
-        A 26x3px bar whose seven ruled states collapse, at real size, into roughly four visual classes
-        (dashed hairline / solid / faint / outlined), with the word carrying the actual distinction. The
-        mark is also pinned to var(--text), making it the brightest ink on a chartless card while
-        carrying almost no discriminating information.
-      why_it_matters: >
-        The encoding moved from a strong channel (position) to one of the weakest (3px bar weight), so
-        the on-card lifecycle is now read-tier rather than glance-tier, and the one distinction a holder
-        most cares about — Entered versus Delivering — has no visual difference at all. Mitigating and
-        worth recording: the word is always printed so no information is lost, and the ladder-as-filter
-        answers "show me the Ready ones" better than any per-card mark could.
+      '
+  - id: VTC-302
+    severity: blocker
+    title: Chart-stroke salience is inverted against actionability in both themes — BUY is the dimmest
+      mark on the board
+    evidence: 'board.css:452 (.pv-chart svg * { stroke: var(--pvh) !important }) with the stance map
+      at board.css:392-399 and the ramps at board.css:26-28, 37-41, 52-60. Computed contrast of the
+      chart stroke against its card surface — dark on --panel2 #1e222a: WAIT #e0a030 = 7.01:1, NO-READ
+      (--muted #8b93a1) = 5.15:1, BUY (color-mix(#45b873 80%, #063a24) = #389f63) = 4.78:1. Light on
+      #fff: NO-READ (--muted #5d6b7e) = 5.43:1, BUY (#1b894c) = 4.44:1, WAIT #b9791a = 3.61:1. Visually
+      confirmed on 2x crops of row 1 of 00-R3-dark-en.png and 00-R3-light-en.png: GPCR''s "No read yet"
+      grey chart is the heaviest block in the light row; FTI''s amber WAIT chart is the loudest in the
+      dark row; DAR''s BUY green is the quietest in both.
 
-    - id: VTC-306
-      severity: major
-      title: The anonymous shop window is a card that says "No read yet" and "No zone — stand aside"
-      evidence: >
-        40-anon-locked-dark-en.png, 40-anon-locked-dark-en--full.png, 42-anon-locked-390-dark.png,
-        41-anon-locked-light-zh.png — the single unblurred specimen is GPCR: dashed grey "No read yet"
-        chip, -2.1% change, grey chart, "No zone — stand aside". The choice is mechanical (top of the
-        priority sort) and per the ledger 97/179 rows carry the no-read stance, so it recurs. At 390w
-        (42-anon-locked-390-dark.png) that one card is the ENTIRE above-the-fold product demonstration —
-        the purple gate sits below the fold. Compounding: the gate copy promises "entry, target and void
-        levels included" while the paid card behind it prints a zone, not those three numbers (they exist
-        only in the table, 60-table-invalidated.png).
-      production_behavior: >
-        The board's proof to a visitor was quantitative and mid-page: "Track record · 59% win · +0.45% a
-        trade" plus a fired row at +40.9% (prod-desktop-dark-en-standouts-board.png).
-      proposal_behavior: >
-        One free card chosen by sort order, plus a gate that describes a richer card than the one on show.
-      why_it_matters: >
-        The secondary user job is an anonymous visitor deciding whether the machine is real. The single
-        artifact offered as evidence is a card on which the machine states it has no read and no zone —
-        the least persuasive object on the board — and the gate's copy writes a cheque the surface does
-        not cash.
+      '
+    production_behavior: 'Verb hue drove a small pill plus a sparkline, and the BUY/FEATURED treatment
+      was the brightest thing on the card — the green solid BUY badge, green Triggered chip, green tracker
+      and green ZONE label all in one direction (prod-desktop-dark-en-card-zoom.png).
 
-    - id: VTC-307
-      severity: major
-      title: The page decays to nothing — it ends on five empty pills and four bare links with no number anywhere
-      evidence: >
-        00-R3-dark-en--full.png (bottom) and 40-anon-locked-dark-en--full.png: "MARKET CONTEXT · the
-        weather, not the trade" renders five bare navigation pills (Breadth / Indexes & mega-caps / Flow /
-        Rates / Regime) carrying no content at all; "EVIDENCE & RECORD" renders four bare text links
-        (Track record / How Prophet works / Calibration lab / Closed plans archive) carrying zero numbers.
-        Page rhythm on the 2782px full crop: grid ~60% of the page, then Candidates, then Groups, then
-        Market context, then Evidence — each section thinner and emptier than the one before.
-      production_behavior: >
-        Track record rendered as a chip with a sparkline glyph and live figures mid-page, and the page
-        closed on a designed CTA panel ("Expand the Prophet shortlist").
-      proposal_behavior: >
-        Two consecutive sections that are pure navigation furniture, as the last thing on the page.
-      why_it_matters: >
-        A section header that promises market context and delivers five link pills reads as unfinished,
-        and a board that ends on its emptiest row leaves the impression that the product runs out of
-        material. This is a composition problem independent of the reachability question in the ledger:
-        even if the links resolve, the page's closing move went from evidence to a nav list.
+      '
+    proposal_behavior: 'The chart is promoted to the card''s largest element and hued by stance, but
+      the three stance ramps were never ordered by luminance, so the least actionable states carry the
+      strongest strokes.
 
-    - id: VTC-308
-      severity: major
-      title: Multi-episode and Resolved render ~20 visually identical husk cards, each printing "PRIORITY —"
-      evidence: >
-        30-multi-episode-en.png — 19 of the 20 visible cards are the same object: grey "No read yet"
-        chip, "— —" quote placeholder, ticker, "PRIORITY —", an Episode N of M chip, a bar plus
-        "Entered", "No zone — stand aside". 27-filter-resolved.png — 18 of 20 the same with "Closed — in
-        the record". The null priority is styled but still labelled: board.css:522
-        (.pv-prin--na { color: var(--muted) }), so the word PRIORITY is repeated ~20 times beside an
-        em-dash. Each card also carries the VTC-301 void.
-      production_behavior: Not represented — production had no episode or resolved card surface.
-      proposal_behavior: >
-        The full card component is reused for rows that have no chart, no quote, no stance and no
-        priority.
-      why_it_matters: >
-        A 5-across grid of near-identical husks has no hierarchy — there is nothing for the eye to land
-        on and no basis on which the sort can be read. The artifact already proves the better instrument:
-        10-fallback-dark-en.png renders exactly this content as clean ~78px compact rows. The card is
-        simply the wrong form for a priority-less archive, and 25 of the 159 live rows are in this state
-        interleaved into the main grid (per the lens note on 30-multi-episode-en.png).
+      '
+    why_it_matters: 'The chart is the only genuinely pre-attentive element on the card and the board''s
+      stated job is "shortlist the few names worth acting on today". Across a 5-column grid the user''s
+      eye is pulled systematically to WAIT and to cards where the machine has no opinion. In light mode
+      the single loudest chart on the page belongs to a card that says "No read yet" — the inversion
+      is total.
 
-    - id: VTC-309
-      severity: minor
-      title: Candidates restates six names already on the grid, contradicting its own copy, and its shelf pills carry prose tails
-      evidence: >
-        board.js:632 — "var cr = B.cand_rows.slice(0, 6);" with no exclusion of names already rendered as
-        setups. In 00-R3-dark-en--full.png all six candidate rows (DAR, MRK, GPCR, CVCO, KEYS, WBD) are
-        also setup cards above, directly under copy reading "A candidate is not a setup: it becomes one
-        only when a plan is written for it, which is what the board above counts." Separately the shelf
-        pills embed explanation inside the pill — "35 Setting up not there yet — prepare",
-        "12 Ran — don't chase the move already started".
-      production_behavior: >
-        Triage shelves were two tokens each ("Setting up 27"); the Passed-on / Recently-fired lists named
-        different stocks from the card grid.
-      proposal_behavior: >
-        A duplicate, visually downgraded restatement (bare row + price, no stance, lifecycle or zone) of
-        names the user has just scanned, under copy asserting they are a different population.
-      why_it_matters: >
-        The section's only reason to exist is the setup/candidate distinction, and the rendered data
-        refutes it on screen. The prose-tailed pills also push explanation back into chrome, which is the
-        pattern the 2026-08-03 kill removed from cards.
+      '
+  - id: VTC-303
+    severity: major
+    title: The Featured treatment renders two different hues 1px apart, half-reverting the pinned-Featured
+      ruling
+    evidence: 'board.css:413-419 pins .pvcard.pv-featured background, border-color and box-shadow to
+      var(--pv-buy); board.css:427-432 draws the 3px lit top rail (.pv-featured::before) from var(--pvh),
+      the card''s own stance hue. Pixel-sampled 00-R3-dark-en.png: GPCR (Featured + "No read yet") top
+      rail y384-386 = (135,143,157) fading to (97,104,115) — grey; its left border at x82 = (57,101,87)
+      — green. DAR (Featured + BUY) rail = (55,153,96) green, border (57,101,87) green. In zh the same
+      GPCR card gets a RED ring (--pv-buy flips at board.css:72) around a grey rail on a card reading
+      暂无判断: 06-mobile390-dark-zh.png, 41-anon-locked-light-zh.png.
 
-    - id: VTC-310
-      severity: minor
-      title: ~35 lines of the stylesheet describe a five-lane action grid the artifact never renders
-      evidence: >
-        board.css:615-647 (.actiongrid, .actcol, .act-buy/.act-soon/.act-run/.act-trim/.act-hold, .acth*,
-        .act-row, .stance-sel) plus the mobile rules at board.css:771-772
-        (".stance-sel { display: flex }", ".actcol[data-lane]:not([data-lane=buy]) { display: none }").
-        Zero occurrences of actiongrid, stance-sel, data-lane or act-buy in board.js or index.html, so
-        the mobile rules govern nothing.
-      production_behavior: >
-        This is production's live "WHAT TO ACT ON NOW" five-lane module (prod-desktop-dark-en-pagetop.png).
-      proposal_behavior: Its styling is carried forward in the reference stylesheet but never rendered.
-      why_it_matters: >
-        This artifact is about to become canonical law that follower pages inherit. Shipping a dead copy
-        of a production module inside the reference invites a later surface to resurrect it by accident,
-        and it obscures which of the reference's components are actually normative.
+      '
+    production_behavior: 'Featured glow pinned to --pv-buy regardless of verb, as a single coherent
+      pick-cohort cue (design_lineage: templates/_prophet_card.html.j2:47-54).
 
-    - id: VTC-311
-      severity: minor
-      title: The light+zh stance ramp is a cascade side effect, not a design — it inherits the dark-mode deepeners
-      evidence: >
-        board.css:72-74 declares --pv-buy/--pv-near/--pv-avoid inside html[data-lang="zh"], mixing toward
-        the dark-theme partners #4a0f0f / #5a1616 / #06331f. board.css:76
-        (html[data-theme="light"][data-lang="zh"]) redefines only --up/--down/--q1/--q3 and never the
-        pv-* ramp. Since html[data-theme="light"] (line 56) and html[data-lang="zh"] (line 72) carry equal
-        specificity (0,1,1), the later zh block wins, so light+zh resolves --pv-buy to
-        color-mix(#cf4040 80%, #4a0f0f) = #b43636 — 5.96:1 on white, which happens to be legible.
-      production_behavior: n/a — the zh flip is inherited from production's token contract.
-      proposal_behavior: >
-        Three of the four theme x language quadrants have an explicitly authored stance ramp; light+zh
-        does not, and lands where it lands by source order.
-      why_it_matters: >
-        The zh direction flip is load-bearing brand identity (design_lineage,
-        _prophet_card.html.j2:14-16). Leaving one of its four quadrants unowned means a future edit to
-        either the light block or the zh block silently re-tunes a shipped Chinese surface, and the
-        heavier maroon it currently produces is visibly weightier than the light-en green it mirrors
-        (00-R3-light-zh.png vs 00-R3-light-en.png).
+      '
+    proposal_behavior: 'Ring obeys the pin; rail does not. The two halves of the same 3px of chrome
+      disagree on every non-BUY Featured card.
 
-    - id: VTC-312
-      severity: minor
-      title: The page's headline claim invites an addition that does not visibly work
-      evidence: >
-        00-R3-dark-en.png — "159 live setups today · the six cells below add up to this number" sits above
-        Watch(—) 62 95 0 0 2. The five printed integers reach 159 only if the dashed Watch cell is read as
-        zero, and 24-filter-watch-absent.png states explicitly that the dash means not published, NOT
-        zero ("This tier has a producer, but tonight's build did not publish it yet — which is why the
-        cell shows a dash rather than a zero").
-      production_behavior: '"69 shown · 93 setups" beside five shelf counts — the count defect this replaces.'
-      proposal_behavior: >
-        A reconciliation claim attached to a row in which one of the six addends is deliberately blank;
-        it reconciles tonight only because the absent tier happens to be empty.
-      why_it_matters: >
-        The reconciled count is this design's headline honesty win, and the one sentence that advertises
-        it asks the reader to perform a sum they cannot complete on screen. It undersells a genuinely
-        good idea and will read as an error on any night the Watch tier is both unpublished and non-zero.
+      '
+    why_it_matters: 'GPCR is the #1 card on the board by priority and is the anonymous visitor''s only
+      unblurred specimen. A green (en) or red (zh) "this is a pick" ring wrapped around a grey rail
+      and the words "No read yet" reads as a rendering bug, and the split quietly reverts half of a
+      recorded operator ruling.
 
-  preserved_strengths:
-    - >
-      The empty-versus-absent distinction is the best design work in the artifact and production has
-      nothing like it: 25-filter-delivering-zero.png reads "Nothing is in Delivering right now / The cell
-      is empty today, not missing: a plan lands here when at or past the first target", and
-      24-filter-watch-absent.png reads "This tier has a producer, but tonight's build did not publish it
-      yet — which is why the cell shows a dash rather than a zero". Plain words, the mechanism named, a
-      recovery button, and the section total honours the dash ("SETUPS — in Watch"). This is compliant
-      null disclosure done as product writing rather than as a footnote.
-    - >
-      The uniform degraded grid (10-fallback-dark-en.png, 11-fallback-light-zh.png) is excellent and is
-      more scannable than production's card grid: five across, ~78px per card, ticker + priority +
-      lifecycle mark + word + zone + date, and not one wasted pixel. It proves the design system can
-      compress hard when the row is homogeneous.
-    - >
-      The ladder as both headline and filter is a real advance on production's pill shelf: one
-      population, large legible integers, and the terminal Resolved cell physically separated by a gap
-      and a dashed border with "not in today's count" (board.css:216-228). The reconciliation is shown
-      rather than asserted, which is exactly the count cure production needed.
-    - >
-      The zh direction flip is wired correctly end to end, including on live change ink: board.css:69-76
-      plus 00-R3-dark-zh.png, where -2.1% renders green and +0.8% renders red while the stance chip,
-      chart stroke, zone label and Featured ring all flip to red. Load-bearing brand identity preserved,
-      not merely translated.
-    - >
-      Light mode is designed rather than swapped: board.css:64-65 re-mixes every semantic ink toward
-      --text via the --ink-mix-* ramp so saturated hues do not glare on white, and board.css:868-876
-      gives cards a true white surface, an explicit 13% ink border and a real --card-shadow. Cards sit on
-      the canvas properly in 00-R3-light-en.png.
-    - >
-      Mobile at 390 is the right call, not a compromise: the single column (board.css:768) shows the full
-      company name, the full zone and a legible 58px chart where production's 2-up truncated to
-      "Structur..." and "$52.15–..." (prod-mobile390-dark-en-standouts-board.png), and it still places two
-      complete cards above the fold (05-mobile390-dark-en.png). Nothing load-bearing is hidden by the 390w
-      block — only the decorative subtitle.
-    - >
-      The chartless card renders compactly and correctly at one column, which is why VTC-301 is a
-      desktop layout defect rather than an inherent consequence of the missing enrichment.
-    - >
-      The Resolved treatment is restrained and unmistakable: dashed border, muted ticker, recessed
-      surface (board.css:567-568) with "Closed — in the record" and a "Newer plan →" forward link
-      (27-filter-resolved.png).
-    - >
-      The card's overlay collision fix is clean: board.css:468 reserves the quote's width
-      (max-width: calc(100% - 122px)) so the left overlay wraps to a second row instead of sliding under
-      the price — visible working on GPCR and FTI in 00-R3-dark-en.png.
-    - >
-      The table view (60-table-invalidated.png) is well set — quiet uppercase heads, tabular figures, the
-      lifecycle mark carried through — and closes with an honest footer, "Table view shows every row of
-      the current filter: 2 rendered."
-    - >
-      The 2026-08-03 operator kill is respected: there is no verdict sentence, no what-to-do prose and no
-      paragraph anywhere on a card. The card stays a glance object.
+      '
+  - id: VTC-304
+    severity: major
+    title: Amber now carries three contradictory meanings on one card; production reserved it for caution
+      alone
+    evidence: 'board.css:27 (--warn: #e0a030) and board.css:39 (--pv-wait: #e0a030) are byte-identical.
+      .pv-wait .pv-chip resolves through --pvh-ink -> --ink-warn -> --warn (board.css:80, 394, 475-481);
+      .pv-trg (the ⚡Triggered chip) is pinned to --warn (board.css:486-491); .pv-cau-btn (⚠N) is pinned
+      to --warn (board.css:806-813). In 00-R3-dark-en.png the FTI card stacks "WAIT" and "⚡Triggered"
+      as two same-amber pills 3px apart. Production''s card zoom (prod-desktop-dark-en-card-zoom.png)
+      shows ⚡Triggered rendered GREEN — verb-hued — with amber appearing exactly once, on ⚠2.
+
+      '
+    production_behavior: One meaning for amber on the card, caution; the trigger chip took the verb
+      hue.
+    proposal_behavior: 'Amber simultaneously means stance=WAIT, event=TRIGGERED and count=CAUTION; on
+      a BUY card the amber Triggered chip now sits beside the green BUY badge.
+
+      '
+    why_it_matters: 'WAIT ("do nothing") and TRIGGERED ("the entry just fired") are opposite instructions
+      rendered in the same ink, so the colour layer stops being decodable without reading every word
+      — on a surface whose whole premise is that colour is decodable. On a BUY card the amber chip reads
+      as a warning attached to the buy.
+
+      '
+  - id: VTC-305
+    severity: major
+    title: The lifecycle mark is decorative at shipped size, and two of the seven ruled cells are pixel-identical
+    evidence: 'board.css:258-261 (.mx-mark { width: 26px; height: 4px; color: var(--text) }). board.css:279-280:
+      ".mx-mark--entered::before, .mx-mark--delivering::before { top:.5px; height:3px; background: currentColor
+      }" — Entered and Delivering render the IDENTICAL mark. Ready differs from Entered only by the
+      right half of a 26px bar dropping to 22% alpha (board.css:272-274); Overtime only by a flat 38%
+      alpha (board.css:284). At 1x in 00-R3-dark-en.png, GPCR "—— Entered" and RIO "—— Ready" are indistinguishable
+      without reading the word.
+
+      '
+    production_behavior: 'A 4-stage rail with a dot at one of four POSITIONS along a track (prod-desktop-dark-en-card-zoom.png)
+      — position is one of the strongest pre-attentive channels.
+
+      '
+    proposal_behavior: 'A 26x3px bar whose seven ruled states collapse, at real size, into roughly four
+      visual classes (dashed hairline / solid / faint / outlined), with the word carrying the actual
+      distinction. The mark is also pinned to var(--text), making it the brightest ink on a chartless
+      card while carrying almost no discriminating information.
+
+      '
+    why_it_matters: 'The encoding moved from a strong channel (position) to one of the weakest (3px
+      bar weight), so the on-card lifecycle is now read-tier rather than glance-tier, and the one distinction
+      a holder most cares about — Entered versus Delivering — has no visual difference at all. Mitigating
+      and worth recording: the word is always printed so no information is lost, and the ladder-as-filter
+      answers "show me the Ready ones" better than any per-card mark could.
+
+      '
+  - id: VTC-306
+    severity: major
+    title: The anonymous shop window is a card that says "No read yet" and "No zone — stand aside"
+    evidence: '40-anon-locked-dark-en.png, 40-anon-locked-dark-en--full.png, 42-anon-locked-390-dark.png,
+      41-anon-locked-light-zh.png — the single unblurred specimen is GPCR: dashed grey "No read yet"
+      chip, -2.1% change, grey chart, "No zone — stand aside". The choice is mechanical (top of the
+      priority sort) and per the ledger 97/179 rows carry the no-read stance, so it recurs. At 390w
+      (42-anon-locked-390-dark.png) that one card is the ENTIRE above-the-fold product demonstration
+      — the purple gate sits below the fold. Compounding: the gate copy promises "entry, target and
+      void levels included" while the paid card behind it prints a zone, not those three numbers (they
+      exist only in the table, 60-table-invalidated.png).
+
+      '
+    production_behavior: 'The board''s proof to a visitor was quantitative and mid-page: "Track record
+      · 59% win · +0.45% a trade" plus a fired row at +40.9% (prod-desktop-dark-en-standouts-board.png).
+
+      '
+    proposal_behavior: 'One free card chosen by sort order, plus a gate that describes a richer card
+      than the one on show.
+
+      '
+    why_it_matters: 'The secondary user job is an anonymous visitor deciding whether the machine is
+      real. The single artifact offered as evidence is a card on which the machine states it has no
+      read and no zone — the least persuasive object on the board — and the gate''s copy writes a cheque
+      the surface does not cash.
+
+      '
+  - id: VTC-307
+    severity: major
+    title: The page decays to nothing — it ends on five empty pills and four bare links with no number
+      anywhere
+    evidence: '00-R3-dark-en--full.png (bottom) and 40-anon-locked-dark-en--full.png: "MARKET CONTEXT
+      · the weather, not the trade" renders five bare navigation pills (Breadth / Indexes & mega-caps
+      / Flow / Rates / Regime) carrying no content at all; "EVIDENCE & RECORD" renders four bare text
+      links (Track record / How Prophet works / Calibration lab / Closed plans archive) carrying zero
+      numbers. Page rhythm on the 2782px full crop: grid ~60% of the page, then Candidates, then Groups,
+      then Market context, then Evidence — each section thinner and emptier than the one before.
+
+      '
+    production_behavior: 'Track record rendered as a chip with a sparkline glyph and live figures mid-page,
+      and the page closed on a designed CTA panel ("Expand the Prophet shortlist").
+
+      '
+    proposal_behavior: 'Two consecutive sections that are pure navigation furniture, as the last thing
+      on the page.
+
+      '
+    why_it_matters: 'A section header that promises market context and delivers five link pills reads
+      as unfinished, and a board that ends on its emptiest row leaves the impression that the product
+      runs out of material. This is a composition problem independent of the reachability question in
+      the ledger: even if the links resolve, the page''s closing move went from evidence to a nav list.
+
+      '
+  - id: VTC-308
+    severity: major
+    title: Multi-episode and Resolved render ~20 visually identical husk cards, each printing "PRIORITY
+      —"
+    evidence: '30-multi-episode-en.png — 19 of the 20 visible cards are the same object: grey "No read
+      yet" chip, "— —" quote placeholder, ticker, "PRIORITY —", an Episode N of M chip, a bar plus "Entered",
+      "No zone — stand aside". 27-filter-resolved.png — 18 of 20 the same with "Closed — in the record".
+      The null priority is styled but still labelled: board.css:522 (.pv-prin--na { color: var(--muted)
+      }), so the word PRIORITY is repeated ~20 times beside an em-dash. Each card also carries the VTC-301
+      void.
+
+      '
+    production_behavior: Not represented — production had no episode or resolved card surface.
+    proposal_behavior: 'The full card component is reused for rows that have no chart, no quote, no
+      stance and no priority.
+
+      '
+    why_it_matters: 'A 5-across grid of near-identical husks has no hierarchy — there is nothing for
+      the eye to land on and no basis on which the sort can be read. The artifact already proves the
+      better instrument: 10-fallback-dark-en.png renders exactly this content as clean ~78px compact
+      rows. The card is simply the wrong form for a priority-less archive, and 25 of the 159 live rows
+      are in this state interleaved into the main grid (per the lens note on 30-multi-episode-en.png).
+
+      '
+  - id: VTC-309
+    severity: minor
+    title: Candidates restates six names already on the grid, contradicting its own copy, and its shelf
+      pills carry prose tails
+    evidence: 'board.js:632 — "var cr = B.cand_rows.slice(0, 6);" with no exclusion of names already
+      rendered as setups. In 00-R3-dark-en--full.png all six candidate rows (DAR, MRK, GPCR, CVCO, KEYS,
+      WBD) are also setup cards above, directly under copy reading "A candidate is not a setup: it becomes
+      one only when a plan is written for it, which is what the board above counts." Separately the
+      shelf pills embed explanation inside the pill — "35 Setting up not there yet — prepare", "12 Ran
+      — don''t chase the move already started".
+
+      '
+    production_behavior: 'Triage shelves were two tokens each ("Setting up 27"); the Passed-on / Recently-fired
+      lists named different stocks from the card grid.
+
+      '
+    proposal_behavior: 'A duplicate, visually downgraded restatement (bare row + price, no stance, lifecycle
+      or zone) of names the user has just scanned, under copy asserting they are a different population.
+
+      '
+    why_it_matters: 'The section''s only reason to exist is the setup/candidate distinction, and the
+      rendered data refutes it on screen. The prose-tailed pills also push explanation back into chrome,
+      which is the pattern the 2026-08-03 kill removed from cards.
+
+      '
+  - id: VTC-310
+    severity: minor
+    title: ~35 lines of the stylesheet describe a five-lane action grid the artifact never renders
+    evidence: 'board.css:615-647 (.actiongrid, .actcol, .act-buy/.act-soon/.act-run/.act-trim/.act-hold,
+      .acth*, .act-row, .stance-sel) plus the mobile rules at board.css:771-772 (".stance-sel { display:
+      flex }", ".actcol[data-lane]:not([data-lane=buy]) { display: none }"). Zero occurrences of actiongrid,
+      stance-sel, data-lane or act-buy in board.js or index.html, so the mobile rules govern nothing.
+
+      '
+    production_behavior: 'This is production''s live "WHAT TO ACT ON NOW" five-lane module (prod-desktop-dark-en-pagetop.png).
+
+      '
+    proposal_behavior: Its styling is carried forward in the reference stylesheet but never rendered.
+    why_it_matters: 'This artifact is about to become canonical law that follower pages inherit. Shipping
+      a dead copy of a production module inside the reference invites a later surface to resurrect it
+      by accident, and it obscures which of the reference''s components are actually normative.
+
+      '
+  - id: VTC-311
+    severity: minor
+    title: The light+zh stance ramp is a cascade side effect, not a design — it inherits the dark-mode
+      deepeners
+    evidence: 'board.css:72-74 declares --pv-buy/--pv-near/--pv-avoid inside html[data-lang="zh"], mixing
+      toward the dark-theme partners #4a0f0f / #5a1616 / #06331f. board.css:76 (html[data-theme="light"][data-lang="zh"])
+      redefines only --up/--down/--q1/--q3 and never the pv-* ramp. Since html[data-theme="light"] (line
+      56) and html[data-lang="zh"] (line 72) carry equal specificity (0,1,1), the later zh block wins,
+      so light+zh resolves --pv-buy to color-mix(#cf4040 80%, #4a0f0f) = #b43636 — 5.96:1 on white,
+      which happens to be legible.
+
+      '
+    production_behavior: n/a — the zh flip is inherited from production's token contract.
+    proposal_behavior: 'Three of the four theme x language quadrants have an explicitly authored stance
+      ramp; light+zh does not, and lands where it lands by source order.
+
+      '
+    why_it_matters: 'The zh direction flip is load-bearing brand identity (design_lineage, _prophet_card.html.j2:14-16).
+      Leaving one of its four quadrants unowned means a future edit to either the light block or the
+      zh block silently re-tunes a shipped Chinese surface, and the heavier maroon it currently produces
+      is visibly weightier than the light-en green it mirrors (00-R3-light-zh.png vs 00-R3-light-en.png).
+
+      '
+  - id: VTC-312
+    severity: minor
+    title: The page's headline claim invites an addition that does not visibly work
+    evidence: '00-R3-dark-en.png — "159 live setups today · the six cells below add up to this number"
+      sits above Watch(—) 62 95 0 0 2. The five printed integers reach 159 only if the dashed Watch
+      cell is read as zero, and 24-filter-watch-absent.png states explicitly that the dash means not
+      published, NOT zero ("This tier has a producer, but tonight''s build did not publish it yet —
+      which is why the cell shows a dash rather than a zero").
+
+      '
+    production_behavior: '"69 shown · 93 setups" beside five shelf counts — the count defect this replaces.'
+    proposal_behavior: 'A reconciliation claim attached to a row in which one of the six addends is
+      deliberately blank; it reconciles tonight only because the absent tier happens to be empty.
+
+      '
+    why_it_matters: 'The reconciled count is this design''s headline honesty win, and the one sentence
+      that advertises it asks the reader to perform a sum they cannot complete on screen. It undersells
+      a genuinely good idea and will read as an error on any night the Watch tier is both unpublished
+      and non-zero.
+
+      '
+  preserved_strengths: &id001
+  - 'The empty-versus-absent distinction is the best design work in the artifact and production has
+    nothing like it: 25-filter-delivering-zero.png reads "Nothing is in Delivering right now / The cell
+    is empty today, not missing: a plan lands here when at or past the first target", and 24-filter-watch-absent.png
+    reads "This tier has a producer, but tonight''s build did not publish it yet — which is why the
+    cell shows a dash rather than a zero". Plain words, the mechanism named, a recovery button, and
+    the section total honours the dash ("SETUPS — in Watch"). This is compliant null disclosure done
+    as product writing rather than as a footnote.
+
+    '
+  - 'The uniform degraded grid (10-fallback-dark-en.png, 11-fallback-light-zh.png) is excellent and
+    is more scannable than production''s card grid: five across, ~78px per card, ticker + priority +
+    lifecycle mark + word + zone + date, and not one wasted pixel. It proves the design system can compress
+    hard when the row is homogeneous.
+
+    '
+  - 'The ladder as both headline and filter is a real advance on production''s pill shelf: one population,
+    large legible integers, and the terminal Resolved cell physically separated by a gap and a dashed
+    border with "not in today''s count" (board.css:216-228). The reconciliation is shown rather than
+    asserted, which is exactly the count cure production needed.
+
+    '
+  - 'The zh direction flip is wired correctly end to end, including on live change ink: board.css:69-76
+    plus 00-R3-dark-zh.png, where -2.1% renders green and +0.8% renders red while the stance chip, chart
+    stroke, zone label and Featured ring all flip to red. Load-bearing brand identity preserved, not
+    merely translated.
+
+    '
+  - 'Light mode is designed rather than swapped: board.css:64-65 re-mixes every semantic ink toward
+    --text via the --ink-mix-* ramp so saturated hues do not glare on white, and board.css:868-876 gives
+    cards a true white surface, an explicit 13% ink border and a real --card-shadow. Cards sit on the
+    canvas properly in 00-R3-light-en.png.
+
+    '
+  - 'Mobile at 390 is the right call, not a compromise: the single column (board.css:768) shows the
+    full company name, the full zone and a legible 58px chart where production''s 2-up truncated to
+    "Structur..." and "$52.15–..." (prod-mobile390-dark-en-standouts-board.png), and it still places
+    two complete cards above the fold (05-mobile390-dark-en.png). Nothing load-bearing is hidden by
+    the 390w block — only the decorative subtitle.
+
+    '
+  - 'The chartless card renders compactly and correctly at one column, which is why VTC-301 is a desktop
+    layout defect rather than an inherent consequence of the missing enrichment.
+
+    '
+  - 'The Resolved treatment is restrained and unmistakable: dashed border, muted ticker, recessed surface
+    (board.css:567-568) with "Closed — in the record" and a "Newer plan →" forward link (27-filter-resolved.png).
+
+    '
+  - 'The card''s overlay collision fix is clean: board.css:468 reserves the quote''s width (max-width:
+    calc(100% - 122px)) so the left overlay wraps to a second row instead of sliding under the price
+    — visible working on GPCR and FTI in 00-R3-dark-en.png.
+
+    '
+  - 'The table view (60-table-invalidated.png) is well set — quiet uppercase heads, tabular figures,
+    the lifecycle mark carried through — and closes with an honest footer, "Table view shows every row
+    of the current filter: 2 rendered."
+
+    '
+  - 'The 2026-08-03 operator kill is respected: there is no verdict sentence, no what-to-do prose and
+    no paragraph anywhere on a card. The card stays a glance object.
+
+    '
+  strengths: *id001
+second_pass:
+  rationale_received_at: '2026-08-13'
+  revealed_inputs:
+  - reveal/R3_DESIGN_NOTES.md
+  - reveal/R3_compare.html
+  - proposal/70-compare-dark-en.png, 71-compare-light-en.png (72/73 zh spot-checked)
+  - reveal/R2_verdict.yml
+  - reveal/R2_visual_taste.yml
+  - reveal/R2_product_regression.yml (read for blocker text PRC-201/202/203/207/214)
+  re_measurement:
+    method: 'Every number below was recomputed in pass 2 rather than carried over. Colour: sRGB color-mix
+      resolved arithmetically and cross-checked against rendered pixels; WCAG relative luminance and
+      contrast ratios computed from the resolved values. Geometry: PIL row-profiles over the committed
+      crops. Population: the committed payload (board-data.js) executed under node with board.js''s
+      own rows()/sort()/GRID_CAP=40.
+
+      '
+    confirmed_unchanged:
+    - 'dark --pv-buy = color-mix(#45b873 80%, #063a24) = #389f63, CR 4.79 on --panel2 #1e222a'
+    - 'dark --pv-wait = #e0a030, CR 7.01 | dark no-read (--muted #8b93a1) CR 5.15'
+    - 'light --pv-buy = #1b894c CR 4.44 on #fff | --muted #5d6b7e CR 5.43 | --warn #b9791a CR 3.61'
+    - 'light+zh --pv-buy resolves to #b43636 by source order (both blocks are specificity 0,1,1); empirically
+      confirmed — the featured ring samples (195,159,163) against the predicted color-mix(#b43636 30%,
+      --line) = (195,163,166)'
+    - 'board.css:452 .pv-chart svg * { stroke: var(--pvh) !important }; board.css:399 .pv-noread { --pvh:
+      var(--muted) }; board.css:392-396 stance map'
+    - board.css:413-419 featured bg/border/box-shadow pinned to --pv-buy; board.css:427-432 ::before
+      rail drawn from --pvh
+    - 'board.css:27 --warn and board.css:39 --pv-wait are byte-identical #e0a030; .pv-trg (486-491)
+      and .pv-cau-btn (806-813) both pinned to --warn'
+    - board.css:280 .mx-mark--entered::before and .mx-mark--delivering::before are one rule
+    - board.js:632 var cr = B.cand_rows.slice(0, 6) — no exclusion of rendered setups
+    - 'actiongrid / stance-sel / data-lane / act-buy / acth: 0 occurrences in board.js and index.html;
+      the single index.html hit for actcol is inside a comment'
+    corrected_or_sharpened:
+    - 'VTC-301 void: re-measured as a 97px continuous ink-free band inside a 190px card (51%), not 105px/195px
+      (54%). Cards 3 and 5 of grid row 1 (RIO, FN) both measure y451-547 empty. Finding unaffected.'
+    - 'VTC-301 census: EXACT from the payload — 20 of the 40 canonical cards are chartless (pass 1 said
+      19). Ready filter: 23 of 40 rendered are chartless and 23 of 40 are no-read (pass 1 estimated
+      8 of 15 visible). Worse than pass 1 stated.'
+    - 'VTC-303 pixels re-sampled: GPCR ring/border (57,101,87) = color-mix(--pv-buy 38%, --line) exactly;
+      GPCR rail y384-386 (134,142,156) -> (97,104,115) grey. DAR rail (55,153,96) -> (46,111,77) green,
+      ring identical (57,101,87). zh GPCR ring (110,72,81) red. Confirmed exactly.'
+    - 'Featured cohort is 11 rows, 10 in the canonical grid. Exactly 2 of them (GPCR, VSEC) are stance=blocked_data
+      — the split renders on 2 of 40 cards, GPCR being card #1.'
+    - 'Population: 179 rows / 159 live / 20 resolved. Live stance mix blocked_data 97, wait 34, buy
+      19, hold 7, avoid 2. But the CANONICAL 40-CARD GRID is blocked_data 13, wait 15, buy 11, hold
+      1 — 33% no-read, not 61%. The priority sort concentrates stanced rows at the top. This materially
+      changes the ruling on question (c).'
+    new_verified_facts:
+    - id: NEW-A
+      fact: 'The prior cycle''s condition "stance palette values distinct from the direction tokens"
+        (r2 VTC-202) is satisfied for the CHART hue and NOT for the BUY chip in dark mode. board.css:392
+        sets --pvh-ink: var(--ink-up) for .pv-buy, board.css:78 defines --ink-up = color-mix(--up var(--ink-mix-up),
+        --text), and board.css:45 sets --ink-mix-up: 100% in the dark :root — so --ink-up == --up byte-identically.
+        board.css:482-484 fills the solid BUY badge with --pvh-ink. Pixel-verified: DAR''s and MRK''s
+        BUY badges both sample (69,184,115) = #45b873 = --up exactly, the same value board.css:506 gives
+        the "+0.8%" up-change on the same card. In dark mode the Buy stance chip IS the direction ink.
+        In light mode --ink-mix-up is 62% so the same chip resolves to #1e6d47 (pixel-verified) and
+        no collision exists.
+
+        '
+    - id: NEW-B
+      fact: 'board.css:896 already equalises .pv-chart svg and .pv-nochart at 58px inside the 720px
+        block. The desktop mismatch (74px chart vs 24px placeholder, board.css:447 vs 458-462) is therefore
+        a deliberate desktop-only asymmetry, and the one-line remedy for VTC-301 is present in the same
+        stylesheet at another breakpoint.
+
+        '
+    - id: NEW-C
+      fact: 'DESIGN_NOTES §7 states "Groups is the shipped .actcol idiom unchanged". Verified false
+        at this SHA: groups() emits .grp-grid/.grp (board.css:845-862) and .actcol is never rendered.
+        The ~35 dead lines VTC-310 names are asserted by the rationale to be the live component.
+
+        '
+    - id: NEW-D
+      fact: 'DESIGN_NOTES ships two mutually exclusive descriptions of state=paid. §0a.C: "One universe,
+        no view exemption. The reference-only subset is gone. paid and today render the same population."
+        §0b.1 and §7: "The reference view (state=paid) shows the product once G-D is met; state=today
+        and state=fallback show what ships if it is not." board.js:106 (var isRef = S.state === "paid"
+        || S.state === "today") and rows() confirm §0a.C is the code and §0b.1/§7 are stale text shipped
+        as if current.
+
+        '
+    - id: NEW-E
+      fact: 'DESIGN_NOTES §5 states the candidate total as 69 = 28+27+10+2+2. The rendered page prints
+        70 = 22+35+12+1 (four shelves) and "Showing 6 of 70". The page is internally consistent; the
+        rationale''s arithmetic is stale.
+
+        '
+  amendments:
+  - finding: VTC-301
+    new_severity: blocker
+    note: 'Re-measured and worse than stated. Exactly 20 of the 40 canonical cards are chartless (payload-exact,
+      not estimated), each carrying a single 97px ink-free band inside a 190px card = 51%; the Ready
+      filter — the screen a user opens to decide what to work on — renders 23 chartless of 40. The rationale
+      (§6 Q1) discloses the DATA gap and calls the degraded card "quiet and deliberate rather than broken",
+      but that defence is measured on state=fallback, where every card in the row is equally short.
+      It never addresses the MIXED row, which is the only place the void exists. Two independent counter-renderings
+      of identical content sit inside the artifact (10/11-fallback, and the 390w single column) and
+      board.css:896 already equalises chart and placeholder height at the mobile breakpoint — so this
+      is a desktop layout choice with its own fix adjacent in the file. Causation recorded under (a):
+      the r2 cycle''s Reviewer B raised this exact defect (VTC-212, "40-60px void that reads as broken/loading")
+      and the r2 second pass DOWNGRADED it to polish on the express ground that state=paid filtered
+      the voids out of the canonical view. PRC-203 destroyed that ground. The defect did not appear
+      in R3 — it was promoted into the flagship by the count-law cure, and grew from 40-60px to 97px.
+      Non-waivable: a reference that becomes design law must not freeze a canonical grid that is half
+      holes.
+
+      '
+    action: upheld
+  - finding: VTC-302
+    new_severity: major
+    note: 'Every measured number reproduces exactly (dark WAIT 7.01 > NO-READ 5.15 > BUY 4.79; light
+      NO-READ 5.43 > BUY 4.44 > WAIT 3.61), and the defect is real: the chart is the card''s largest
+      element, its stroke channel encodes no actionability ordering in either theme, and it encodes
+      a DIFFERENT wrong ordering in each — which is worse for a reference than one consistent wrong
+      ordering, because a follower page inherits an inversion that flips with the theme. What pass 1
+      got wrong is the headline. "BUY is the dimmest mark on the board" is a stroke-channel claim that
+      the whole card contradicts: 8 of the 11 BUY cards in the canonical grid also carry the --pv-buy
+      pinned ring plus glow plus lift (board.css:413-419) and the solid badge (board.css:482-484), which
+      are the loudest card-level treatments on the page and which WAIT and NO-READ cards do not get.
+      Verified against the rendered crops in both themes: the featured BUY cards are the most salient
+      objects in the grid. The residue that survives is precise and still worth a condition — the 3
+      non-featured BUY cards are out-shouted by every WAIT and NO-READ chart in dark, the single loudest
+      stroke on the light page belongs to a card that says "No read yet", and any inheriting surface
+      without a Featured cohort gets the inversion with no compensation. Downgraded on pass-2 evidence
+      (payload census + rendered composite), not on the rationale, which does not argue this point at
+      all: §2''s "colour budget" claims chroma is spent on chip and chart and never claims a luminance
+      ordering.
+
+      '
+    action: downgraded
+  - finding: VTC-303
+    new_severity: major
+    note: 'Pixel-confirmed to the byte: GPCR''s ring samples (57,101,87), exactly color-mix(--pv-buy
+      38%, --line), while its rail samples (134,142,156) fading to (97,104,115) — --pvh grey; DAR''s
+      rail is (55,153,96) green with an identical ring; the zh ring is (110,72,81) red around the same
+      grey rail on a card reading 暂无判断. Causation matters here and cuts against the artifact: the r2
+      verdict named VTC-204 (restore the Featured aura and its --pv-buy pin) as "the one that must not
+      be waived", and R3 pinned the background, border-color and box-shadow to --pv-buy while leaving
+      the rail on --pvh. A non-waivable condition implemented on three of four properties is not implemented.
+      The rationale (§0a.E) claims the aura is restored "verbatim from _prophet_card.html.j2:109-130"
+      and does not disclose that the rail was left on the stance hue. Scope confirmed and bounded: 2
+      of the 10 featured cards in the canonical grid, but one of them is card #1 and the anonymous visitor''s
+      only unblurred specimen.
+
+      '
+    action: upheld
+  - finding: VTC-304
+    new_severity: major
+    note: 'Confirmed in code and against the production artifact. --warn and --pv-wait are byte-identical
+      #e0a030; .pv-trg and .pv-cau-btn are both pinned to --warn; prod-desktop-dark-en-card-zoom.png
+      shows production rendering ⚡Triggered GREEN (verb-hued) with amber appearing exactly once, on
+      ⚠2. On the R3 board FTI stacks WAIT and ⚡Triggered as two same-amber pills, and DAR / KEYS / WBD
+      are BUY cards carrying an amber ⚡ beside a green solid badge. Causation recorded: the third amber
+      meaning is a direct consequence of satisfying PRC-201 — the ⚠N carrier R3 correctly restored took
+      the same --warn as the WAIT stance and the trigger chip. That does not excuse it; it names the
+      fix as "give the restored carrier and the trigger their own inks", not "drop the carrier". The
+      rationale addresses where ⚠ sits (§0a.A, the marks row rather than the overlay) and never addresses
+      its hue.
+
+      '
+    action: upheld
+  - finding: VTC-305
+    new_severity: minor
+    note: 'The measurement stands (board.css:280 makes Entered and Delivering one rule; Ready differs
+      from Entered only by the right half of a 26px bar dropping to 22% alpha), but the reveal shows
+      the collision is RULED, not overlooked: §3 states "Entered and Delivering are deliberately identical:
+      the grammar encodes commitment class, not per-cell identity, and the partition law guarantees
+      label and count tell them apart", under binding authority #1 (PROPHET_RULING_J9C_J10, PR #5504
+      merged). Re-litigating a merged upstream ruling is out of my lane, and the count is 0 in Delivering
+      tonight so the pair does not even co-occur. What survives is the taste residue only: the lifecycle
+      encoding moved from position — one of the strongest pre-attentive channels — to 3px bar weight,
+      one of the weakest, so on-card lifecycle is read-tier rather than glance-tier. Recorded, not conditioned.
+      The ladder-as-filter answers the same question better than any per-card mark could, which pass
+      1 already credited.
+
+      '
+    action: downgraded
+  - finding: VTC-306
+    new_severity: major
+    note: 'Upheld with the scope narrowed to one half. The SPECIMEN half is withdrawn: §0a''s "Open
+      constraint, not papered over" names it precisely — "at 390w the first actionable (Buy/Near) card
+      cannot be guaranteed above the fold ... tonight the #1 and #3 priority rows are no-read cards
+      ... Guaranteeing a Buy above the fold would require re-sorting by stance, which contradicts the
+      stated sort rule; that is an operator ruling, not a layout fix." That is the correct disposition
+      of a data gap and I will not penalise it. The GATE-COPY half carries the finding and is unaffected
+      by the reveal: board.js:438 still promises "The rest are part of the live board — entry, target
+      and void levels included" while the paid card deliberately ships zone-not-levels (§1 "Removed
+      from #5514 v1"). That is the same contract mismatch the r2 verdict conditioned as PRC-214 ("reconcile
+      the anon gate copy with what the paid card actually carries"), unfixed at this SHA, on the one
+      surface whose only job is conversion. Verified at 390w (42-anon-locked-390-dark.png): the entire
+      above-fold product demonstration is one card reading "No read yet" and "No zone — stand aside",
+      above copy promising three numbers the product does not show.
+
+      '
+    action: upheld
+  - finding: VTC-307
+    new_severity: major
+    note: 'Confirmed on the full crop: "MARKET CONTEXT · the weather, not the trade" renders five contentless
+      pills (Breadth / Indexes & mega-caps / Flow / Rates / Regime) and "EVIDENCE & RECORD" renders
+      four bare links, as the last two things on a 2782px page, followed by ~90px of nothing. Causation
+      recorded and it is the cleanest example of the pattern in this cycle: §0a.D deletes the producer-less
+      regime/breadth/posture chips — exactly what PRC-207 demanded — but keeps the section header and
+      turns the chips into navigation. PRC-207 asked for content to be "sourced, removed, or unmistakably
+      marked illustrative"; it did not ask for an empty shell to be left in the composition. The contrast
+      with the same pass''s Groups section is instructive and works in R3''s favour: Groups was rebound
+      to us_standouts.themes_in_favour and now renders 8 real themes with rank, recommendation, run
+      length, member count and a printed as-of. Market context got the deletion without the rebinding.
+
+      '
+    action: upheld
+  - finding: VTC-308
+    new_severity: major
+    note: 'Strengthened by payload-exact counts. Episodes: 25 rows, 18 no-read, 23 chartless, 24 of
+      25 with pri == null — so 24 cards print "PRIORITY —" beside the styled null (board.css:522) while
+      carrying the VTC-301 void. Resolved: 20 rows, 20 of 20 with no stance at all, 18 chartless, 19
+      of 20 with pri == null. The full card component is being reused for rows that have no chart, no
+      quote, no stance and no priority, and a 5-across grid of those has no hierarchy for the eye to
+      use. The rationale addresses episode IDENTITY well (§4: one card per plan id, N-of-M dated chips,
+      forward links only where a live row exists — all verified) and says nothing about the card being
+      the wrong FORM for a priority-less archive. The artifact''s own compact fallback row (10-fallback-dark-en.png,
+      ~78px, five across) is the instrument this content wants.
+
+      '
+    action: upheld
+  - finding: VTC-309
+    new_severity: minor
+    note: 'The duplication is exact and worse than "six names": all 6 rendered candidate rows (DAR,
+      MRK, GPCR, CVCO, KEYS, WBD) are in the top-40 setup grid, verified against the payload. But the
+      "contradicts its own copy" framing is withdrawn — the copy says a candidate "becomes" a setup
+      when a plan is written, which asserts a transition, not disjointness, and §5 claims only "different
+      noun, different form, non-adjacent", which the render honours. The surviving finding is compositional:
+      a section whose reason to exist is a second population illustrates itself with a 6-of-6 sample
+      of the first one, so the on-screen evidence demonstrates overlap rather than separation. The prose-tail
+      half also softens — §5 shows the sub-lines are SHIPPED grammar carried through a one-referent-per-page
+      relabel, not new chrome invented here.
+
+      '
+    action: upheld
+  - finding: VTC-310
+    new_severity: minor
+    note: 'Strengthened by the reveal. The dead-code measurement holds (0 occurrences of actiongrid,
+      actcol, acth, stance-sel, data-lane or act-buy in board.js or index.html; the lone index.html
+      hit is inside a comment), and the mobile rules at board.css:771-772 therefore govern nothing.
+      What the reveal adds is that §7 asserts "Groups is the shipped .actcol idiom unchanged" — false
+      at this SHA, since groups() emits .grp-grid / .grp (board.css:845-862). So the rationale points
+      a future implementer at a component the reference does not render, inside a document that is about
+      to become law. Minor in pixels, but it is the kind of thing a canonical reference exists to prevent.
+
+      '
+    action: upheld
+  - finding: VTC-311
+    new_severity: minor
+    note: 'Re-verified two ways. Specificity: html[data-theme="light"] (board.css:48) and html[data-lang="zh"]
+      (board.css:69) are both (0,1,1), so source order decides and the zh block''s --pv-buy wins in
+      light+zh, mixing toward the DARK-theme partner #4a0f0f; board.css:76 redefines only --up/--down/--q1/--q3
+      and never the pv-* ramp. Empirically: the light+zh featured ring samples (195,159,163) against
+      the predicted color-mix(#b43636 30%, --line) = (195,163,166). Three of the four theme x language
+      quadrants have an authored stance ramp and one lands where it lands. The rationale engages the
+      zh flip repeatedly (§0a.E, Q10, the G2-G4 verify checks) and never mentions this quadrant, so
+      it is undiscussed rather than chosen. Note for the fix under (b): any re-authoring of the ramp
+      must close this quadrant explicitly or it will re-open under a different value.
+
+      '
+    action: upheld
+  - finding: VTC-312
+    new_severity: minor
+    note: 'Strengthened. The page prints "159 live setups today · the six cells below add up to this
+      number" over a row in which the first of the six is a deliberate em dash, and 24-filter-watch-absent.png
+      states in the artifact''s own words that the dash means not published, NOT zero. The rationale
+      confirms the dash is designed (§3 "Key-absence is not zero") — which is right — but never reconciles
+      it with the sentence that asks the reader to add six things. §0''s own reconciliation block writes
+      five addends ("62 ready + 95 entered + 0 delivering + 0 overtime + 2 invalidated = 159"), so the
+      rationale itself counts five while the product surface says six. One word ("the cells below add
+      up to this number" / "the five published cells add up to this number") ends it. It undersells
+      the design''s best honesty win.
+
+      '
+    action: upheld
+  answers:
+    net_vs_prior_revision: 'NET BETTER, and not marginally — but every one of my surviving findings
+      sits in the blast radius of a prior cure, which is the part the record must keep straight.
+
+      Cured relative to 0fc975a, verified in the frozen code and payload: PRC-203, the count law, is
+      genuinely fixed — one universe, no view exemption, and the arithmetic closes (62+95+0+0+2 = 159
+      = live_total; 159 live + 20 resolved = 179 = active_count; 40 rendered + "+119 more" = 159). PRC-207
+      is fixed for the two worst offenders — the regime/breadth/posture chips are gone and Groups is
+      rebound to a canonical artifact rendering 8 real themes with rank, recommendation, run length,
+      member count and a printed as-of. PRC-201 is fixed — the ⚠N carrier is back as a counted pill
+      with a popover bound to real fields, 18 rows tonight. PRC-202 is fixed — the zone is stance-branched
+      again (active 19 / re-add 7 / muted 35 / no-band 118 in the payload, matching §0a.B), so GPCR
+      and RIO read "No zone — stand aside" where DAR prints an active band. My own r2 predecessor''s
+      VTC-203 is fixed — light cards are true #fff on a #f7f8fa canvas with a real shadow, and they
+      sit ON the page in 00-R3-light-en.png.
+
+      Two prior conditions are HALF-implemented, and both halves cost something. VTC-204 (Featured aura
+      + --pv-buy pin, the condition the r2 verdict called non-waivable) is implemented on background,
+      border-color and box-shadow and NOT on the rail — VTC-303. VTC-202 (stance values distinct from
+      the direction tokens) is implemented for the chart hue and NOT for the BUY chip: --ink-mix-up
+      is 100% in the dark :root, so --ink-up == --up, and the solid BUY badge samples (69,184,115) =
+      #45b873 = --up exactly — the same value as the up-change ink on the same card. The condition''s
+      stated purpose was that a Buy card not be two direction inks; in dark mode the chip still is one.
+
+      Did satisfying the conditions CAUSE my findings? For four of them, demonstrably yes, and the causal
+      chain is specific rather than rhetorical: (1) VTC-301 is PRC-203''s shadow. The r2 cycle''s own
+      Reviewer B measured this defect (VTC-212, "40-60px void that reads as broken/loading") and the
+      r2 second pass downgraded it to polish on the express ground that state=paid filtered the un-enriched
+      rows out of the canonical view. PRC-203 removed that filter by design. The void was not introduced
+      — it was PROMOTED from a disclosed honesty lens into the flagship grid, and it grew from 40-60px
+      to 97px because the mixed row now stretches a 24px placeholder against a 74px chart. A regression
+      is still a regression, and this one is still a blocker, but the record should say that R3 chose
+      a real integrity cure over a cosmetic one and then did not pay the layout bill the cure created.
+      (2) VTC-302''s dark half is VTC-202''s shadow, and the arithmetic is instructive. Before the cure,
+      dark --pv-buy == --up = #45b873 at CR 6.34, ranking BUY second behind amber. After, #389f63 at
+      CR 4.79, ranking BUY LAST behind no-read grey. In light the identical change moved BUY from 3.61
+      to 4.44 — an improvement, from third to second. One deepening mix was applied to both themes;
+      deepening raises contrast on white and lowers it on a dark panel. The WAIT-over-BUY inversion
+      pre-existed R3 and is inherited from theme.css; the NO-READ-over-BUY inversion is new and is this
+      cure''s doing. (3) VTC-307 is PRC-207''s shadow: the producer-less market content was deleted
+      as demanded, the section header was kept, and the page now closes on two rows of empty furniture.
+      PRC-207 asked for content to be sourced, removed, or marked illustrative — it did not ask for
+      a shell. (4) VTC-304''s third amber is PRC-201''s shadow: the ⚠N carrier the r2 verdict demanded
+      back took --warn, which was already both the WAIT stance and the trigger chip. VTC-303 is the
+      inverse case and should be recorded as such: it is not a side-effect of a cure, it is a cure applied
+      to three of four properties.
+
+      '
+    fix_exists_for_302: "YES — a ramp exists that satisfies all three constraints in all four theme\
+      \ x language quadrants, and the artifact already contains most of it. The conflict the question\
+      \ feared does not exist, but the reason it looked like it might is worth stating: on the dark\
+      \ panel, amber #e0a030 sits at CR 7.01 while pure --up green sits at 6.34 and pure zh --up red\
+      \ at 4.69. Any DEEPENING mix of --up can only move further below amber. So it is true that no\
+      \ deepened --up-derived Buy can out-contrast the current --pv-wait on dark. The free parameter\
+      \ R3 did not use is the DIRECTION of the distinctness mix — \"distinct from --up\" never required\
+      \ \"darker than --up\", and on a dark surface the correct direction is toward --text, which raises\
+      \ salience and creates distinctness in the same move.\nConcrete candidate, verified end to end\
+      \ (contrast against the card surface: --panel2 #1e222a in dark, #fff in light; deltaE76 against\
+      \ the live direction token in the same quadrant):\n\n  DARK\n    --pv-buy:    color-mix(in srgb,\
+      \ var(--up) 82%, var(--text))\n    --pv-wait:   #a8761f          (decoupled from --warn)\n   \
+      \ .pv-noread { --pvh: #6e7684 } (decoupled from --muted)\n    dark+en  buy #5fbe87  BUY 7.02 >\
+      \ WAIT 4.00 > NO-READ 3.48   dE(buy,--up) 10.1\n    dark+zh  buy #de7a7b  BUY 5.44 > WAIT 4.00\
+      \ > NO-READ 3.48   dE(buy,--up) 12.5\n\n  LIGHT\n    --pv-buy:    color-mix(in srgb, var(--up)\
+      \ 62%, var(--text))\n    --pv-wait:   #a2650f\n    .pv-noread { --pvh: #8794a6 }\n    light+en\
+      \ buy #1e6d47  BUY 6.29 > WAIT 4.77 > NO-READ 3.08   dE(buy,--up) 24.9\n    light+zh buy #8b353a\
+      \  BUY 7.85 > WAIT 4.77 > NO-READ 3.08   dE(buy,--up) 28.8\n\nAll twelve values clear the WCAG\
+      \ 1.4.11 3:1 floor for a graphical object; every step is at least 1.15x; the ordering is BUY >\
+      \ WAIT > NO-READ in all four quadrants; and --pv-buy still derives from --up, so the zh flip stays\
+      \ automatic and structural rather than re-authored (condition iii).\nThree things make this cheaper\
+      \ than it looks. First, the light values are not invented: color-mix(--up 62%, --text) IS the\
+      \ shipped --ink-up formula under light (--ink-mix-up: 62%), and #1e6d47 / #8b353a are the exact\
+      \ pixels the BUY badge already renders today — I sampled them off 00-R3-light-en.png and 00-R3-light-zh.png.\
+      \ The light half of this fix is \"point --pv-buy at the ink the card already uses\". Second, the\
+      \ dark half is the same formula with the dark --ink-mix-up moved off 100%, which simultaneously\
+      \ closes NEW-A — the BUY chip would stop being byte-identical to --up, which is what r2's VTC-202\
+      \ actually asked for and did not get. Third, --pv-wait is ALREADY a separate token (board.css:39);\
+      \ R3 merely set it equal to --warn. Decoupling it is a value change, not a structural one, and\
+      \ it is the same edit VTC-304 needs.\nTwo caveats the authority should price in. (i) The dark+zh\
+      \ step (5.44 vs 4.00) is the tightest, because red cannot reach green's luminance at equal chroma\
+      \ — the ordering holds but with less headroom than dark+en; if a wider margin is wanted, --pv-wait\
+      \ must go darker still rather than the red going lighter, or the zh red will drift pink. (ii)\
+      \ Fixing --pv-wait does NOT by itself fix VTC-304: it separates the WAIT stance amber from the\
+      \ trigger/caution amber by a hair, which arguably reads as two near-identical ambers. The clean\
+      \ joint cure is this ramp for the stance channel PLUS re-hueing ⚡Triggered to the verb, which\
+      \ is what production does (prod-desktop-dark-en-card-zoom.png renders it green on a Buy card).\n\
+      One further ordering fact for the record, not a finding: --pv-hold and the no-read --pvh both\
+      \ resolve to --muted, so HOLD and \"No read yet\" paint identical chart strokes. If the ramp is\
+      \ re-authored, they should be given separate rungs or the identity should be declared deliberate\
+      \ — \"we have no read\" and \"we read it and say hold\" are different statements.\n"
+    flagship_principle_ruling: 'The principle is real, the violation is real, and the number in the
+      question does not describe what the page photographs — all three at once.
+
+      Verified against the file: DESIGN_NOTES §0b.1 states "A 60%-`暂无判断` board must not become the flagship
+      reference", and it states it as the JUSTIFICATION for the very mechanism R3 removed — the state=paid
+      subset that rendered 33 full-fidelity rows under a canonical 162 headline. §0a.C then says "One
+      universe, no view exemption. The reference-only subset is gone. paid and today render the same
+      population." board.js:106 confirms the code follows §0a.C. So the two sections are not in tension
+      by accident: the later one repeals the earlier one, and the document ships both without marking
+      it. §7 compounds it — "The reference view (state=paid) shows the product once G-D is met; state=today
+      and state=fallback show what ships if it is not" is false at this SHA, because paid and today
+      are the same render.
+
+      Ruling on the visual result. At the POPULATION level the principle is violated exactly as written:
+      97 of 159 live rows (61%) carry blocked_data, the "+119 more" and the table view expose all of
+      them, and the frozen reference''s canonical state is the honest state. At the RENDERED-GRID level
+      it is not: the priority sort puts 27 stanced rows in the top 40, so the canonical grid is 13 no-read
+      of 40 (33%), and 00-R3-dark-en.png shows a first screen with BUY badges, WAIT chips and real charts,
+      not a wall of 暂无判断. The board a reviewer photographs is not a 60% no-read board. That distinction
+      matters, and it should not be flattened in either direction.
+
+      What the principle was actually written to prevent — a flagship reference whose dominant visual
+      texture is absence — HAS happened, but through a different door than the one §0b.1 was watching.
+      It is not the no-read chip that does it: it is the ENRICHMENT gap, because 20 of the 40 canonical
+      cards are chartless and each renders a 97px void (VTC-301). 33% of the grid says "no read"; 50%
+      of the grid is half-empty. §0b.1 guarded the stance axis and the damage came in on the spark axis,
+      which G-D §7.2 tracks separately (45/179) and which the notes treat as the softer of the two dependencies.
+      It is the harder one visually.
+
+      And the principle is now in direct conflict with a merged blocker. PRC-203 requires the canonical
+      view to reconcile with the count law over one universe; §0b.1 requires the flagship not to show
+      that universe when it is 60% no-read. Both cannot hold. R3 chose PRC-203, which is the right call
+      — a blocker from the design authority outranks an internal design note, and a reference that lies
+      about its own counts is worse than one that shows an unflattering book. But the choice must be
+      recorded, not left implicit in two contradictory paragraphs of the same document. Condition: DESIGN_NOTES
+      §0b.1 and §7 are amended to state that the state=paid exemption was withdrawn under PRC-203 and
+      that the flagship now renders the true book, or §0b.1 is struck. Leaving a repealed principle
+      in the rationale of a document that becomes law is how the repealed version gets rebuilt later.
+
+      '
+  compare_page_assessment: 'The compare page argues honestly about the two variants it is replacing
+    and dishonestly by omission about itself. It is not a strawman — that is worth saying first. The
+    v1 column renders v1''s real defects (no chart, no quote, no name/sector, "day 2 of 45", a three-line
+    paragraph, the Entry/T1/Void footer) and gives it a fair three-item credit list; the production
+    column reproduces the four-dot rail and the accent bar and credits production with five things the
+    revision kept. The keep/drop lists are accurate against the artifacts they describe, and the light
+    crop (71) shows the light-mode card/canvas fix without flattering it. As an argument for retiring
+    the four-dot rail and for rejecting v1''s grayscale card, it is convincing and I accept it.
+
+    Three specific things it does not argue honestly.
+
+    (1) The specimen is off-payload. The lede says "One real plan row (FTI · TechnipFMC, entered 2026-08-10)
+    rendered three ways from the SAME committed payload, so what differs is design and not data." All
+    three columns are hardcoded to class "pvcard pv-hold" with the chip text hardcoded to Hold / 持有
+    (compare.html:107, 159). FTI''s stance in the committed payload is `wait` — the main board renders
+    it with an amber WAIT chip, verified in 00-R3-dark-en.png. So the one claim the lede makes about
+    its own fidelity is false, and it is false in the single most convenient direction available: HOLD
+    is the only stance whose --pvh is --muted, so choosing it renders all three cards chromatically
+    neutral and removes the stance-ink question — the exact question VTC-302 and r2''s VTC-202 are about
+    — from the comparison. Rendered at FTI''s real WAIT, the revised column would show an amber chart
+    under an amber WAIT chip beside an amber ⚡Triggered chip, next to a production column whose ⚡ is
+    green.
+
+    (2) The incumbent is rendered in the challenger''s stylesheet. compare.html loads board.css and
+    overrides only .cmp-prod-scoped rules for the rail, the border tint, the 4-dot stepper and the Edge
+    slot. .pv-trg is not among them, so production''s ⚡Triggered renders in R3''s --warn amber in both
+    the dark and light compare crops — while the actual production artifact (prod-desktop-dark-en-card-zoom.png)
+    renders it GREEN, verb-hued, with amber used exactly once on ⚠2. Any regression that lives in a
+    shared class name is invisible in this comparison by construction, and VTC-304 is precisely such
+    a regression.
+
+    (3) The ledger is asymmetric. Production gets a three-item "What must go"; v1 gets a six-item "What
+    must go"; the revised column gets "Kept from production", "Kept from #5514", "Dropped from both"
+    and "Added" — four lists, none of which is a cost. The artifact''s own adjudication assigns debits
+    to both variants it is replacing and none to itself, on a page whose stated purpose is adjudication.
+
+    Fourth, and structural rather than dishonest: the specimen is one of the 45 of 179 rows that carry
+    a spark and one of the 62 of 159 that carry a stance. The modal card on the board it is arguing
+    for — chartless, no-read, 97px void — is never drawn. A three-way adjudication of the card is entitled
+    to pick one row, but a reference gate should see the same three-way on the row the grid is actually
+    made of. Recommend: re-render the compare at FTI''s true stance, scope .pv-trg (and any other divergent
+    shared class) inside .cmp-prod to production''s real values, add a "what it costs" list to the revised
+    column, and add a second specimen row that is chartless and no-read.
+
+    '
+  post_reveal_verdict: BLOCK
+  surviving_blockers:
+  - VTC-301
+  conditions_if_overridden:
+  - 'VTC-301 (blocker, non-waivable): equalise the chartless placeholder with the chart at desktop (board.css:458-462
+    to 74px, the pattern board.css:896 already uses at 720px), or set .pv-grid to align-items: start,
+    or route chartless rows to the compact fallback row form the artifact already ships. 20 of 40 canonical
+    cards and 23 of 40 Ready-filter cards are affected.'
+  - 'VTC-302 (major): adopt the luminance-ordered ramp in fix_exists_for_302, including the dark --ink-mix-up
+    change that closes NEW-A (the BUY chip is currently byte-identical to --up), and close the light+zh
+    quadrant explicitly per VTC-311.'
+  - 'VTC-303 (major): the .pv-featured::before rail takes var(--pv-buy), not var(--pvh) — completing
+    a condition the r2 verdict recorded as non-waivable.'
+  - 'VTC-304 (major): ⚡Triggered takes the verb hue as production ships it; ⚠N and the WAIT stance stop
+    sharing one value with it.'
+  - 'VTC-306 (major): reconcile board.js:438 with what the paid card carries (PRC-214, carried over
+    unfixed from r2).'
+  - 'VTC-307 (major): bind MARKET CONTEXT to a producer or remove the section; a deleted assertion should
+    not leave a header behind.'
+  - 'VTC-308 (major): episode and resolved rows render in the compact form, not the full card.'
+  - 'Rationale corrections (documentation, but this document becomes law): strike or amend DESIGN_NOTES
+    §0b.1 and §7 so state=paid is not described two ways (NEW-D); correct §7''s ''Groups is the shipped
+    .actcol idiom unchanged'' (NEW-C); refresh §5''s candidate arithmetic (NEW-E); disclose in §0a.E
+    that the Featured rail was left on --pvh.'
+  - 'Compare page: re-render at FTI''s payload stance, scope divergent shared classes inside .cmp-prod,
+    give the revised column a cost list, add a chartless/no-read specimen.'
+  preserved_strengths_reaffirmed:
+  - 'The empty-versus-absent writing remains the best design work in the artifact and the reveal strengthens
+    it: §3''s "Key-absence is not zero" is implemented as product prose with the mechanism named and
+    a recovery action, not as a footnote. Compliant null disclosure done as writing.
+
+    '
+  - 'The ladder as headline and filter, with Resolved physically outside the enclosure past a gap and
+    a dashed border labelled "not in today''s count", and the arithmetic actually closing over one universe.
+    This is PRC-203 cured, and it is the artifact''s best claim.
+
+    '
+  - 'Groups is now a real producer read — 8 themes with rank, recommendation, run length, member count,
+    clean-entry flag and a printed as-of — and the section says so rather than inventing a call when
+    the key is absent. This is PRC-207 cured properly, and it is the counter-example that makes VTC-307
+    fixable in an afternoon.
+
+    '
+  - 'The zone is stance-branched geography again (active 19 / re-add 7 / muted 35 / no-band 118), so
+    "No zone — stand aside" appears on the cards that deserve it. PRC-202 cured.
+
+    '
+  - 'Light mode is designed, not swapped: white cards on a tinted canvas with a real shadow and a re-mixed
+    ink ramp. My r2 predecessor''s VTC-203 cured, and verified in the crops.
+
+    '
+  - 'The uniform degraded grid (10/11-fallback) and the 390w single column remain excellent, and both
+    are the proof that VTC-301 is a layout choice rather than a data consequence.
+
+    '
+  - 'The zh direction flip is wired end to end including on live change ink, and the 2026-08-03 operator
+    kill is respected — no verdict sentence, no what-to-do prose, no paragraph on any card.
+
+    '
+  amended_at: '2026-08-13'
+  verdict: BLOCK
