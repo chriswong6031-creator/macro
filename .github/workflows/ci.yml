@@ -4260,7 +4260,12 @@ jobs:
       # the pack. Do not reintroduce a hardcoded `false` here: that is how
       # the 2026-08-13 traffic jam kept twelve packs running to completion
       # after govrev had already failed. Do not add max-parallel (#5465).
-      fail-fast: "${{ github.event_name == 'pull_request' }}"
+      #
+      # BOOLEAN expression, not a quoted string. `fail-fast: "${{ ... }}"`
+      # evaluates to the strings "true"/"false"; some Actions parsers treat
+      # any non-empty string as true, so main's heal-slow path would still
+      # cancel sibling packs. Keep this unquoted.
+      fail-fast: ${{ github.event_name == 'pull_request' }}
       # NO `max-parallel`. It existed only to stop main's four packs from taking all
       # four `render-linux` runners and starving `merge-on-green.yml`, then co-resident
       # on that pool. With both control/proof lanes hosted there is no shared pool to
