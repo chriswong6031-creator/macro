@@ -64,6 +64,18 @@ VARIANTS = [
 # watchlist), which is why every Risk Center crop doubles as evidence the factor
 # read now reaches the page at all.
 SEED_BOOK = "window.__W2.clear(); window.__W2.book();"
+# the same book plus HK/CN/CA positions — the state that made F4 invisible
+SEED_BOOKMIX = "window.__W2.clear(); window.__W2.bookmix();"
+# an anonymous visitor's ANALYZED state: a pasted book, which is the only thing that
+# puts the workspace past `anon-empty` and renders the Risk Center at all
+SEED_ANON = ("window.__W2.clear();"
+             "window.__W2.entry('AAPL, MSFT, NVDA, AVGO, GOOGL, AMZN, GLD, TLT','equal');")
+
+# Supplementary scenes are shot in three variants, not five: they prove a COPY
+# property (the coverage disclosure) that the light variant cannot add to, and the
+# 390 shot is kept because the disclosure is longest exactly where space is tightest.
+MIX_VARIANTS = [v for v in VARIANTS
+                if v[0] in ("desktop_dark_en", "desktop_dark_zh", "390_dark_en")]
 
 TABS = [
     ("01_conc", "conc"),
@@ -144,6 +156,19 @@ def render_preview() -> None:
     (SITE / "__w3seed.js").write_text((OUT.parent / "preview_seed.js").read_text())
     print("rendered preview ->", SITE / "__w3preview.html")
 
+    # ANONYMOUS variant — the four account-gated scripts are REMOVED, not disabled,
+    # which is exactly what production does (config/site_access.yml keeps them off the
+    # public plane, so their tags 401 and never execute). The wall is reproduced rather
+    # than simulated. This is the build the Scenario Lab's anonymous body is shot on:
+    # `watchlist_risk.js` never runs, so nothing publishes and `labHTML` is empty —
+    # the exact path that shipped an empty box to round 2.
+    anon = html
+    for g in ("stockdata.js", "watchlist_risk.js", "risk_core.js", "factor_exposure.js"):
+        anon = re.sub(r'<script src="%s[^"]*"></script>\n?' % re.escape(g), "", anon)
+        assert ('src="%s' % g) not in anon, g
+    (SITE / "__w3preview_anon.html").write_text(anon)
+    print("rendered anon preview ->", SITE / "__w3preview_anon.html")
+
 
 def serve() -> socketserver.TCPServer:
     handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(SITE))
@@ -153,10 +178,10 @@ def serve() -> socketserver.TCPServer:
     return srv
 
 
-def prepare(page, size, theme, lang):
+def prepare(page, size, theme, lang, seed=None, url=None):
     page.set_viewport_size({"width": size[0], "height": size[1]})
-    page.goto(BASE + "/__w3preview.html", wait_until="domcontentloaded")
-    page.evaluate(SEED_BOOK)
+    page.goto(url or (BASE + "/__w3preview.html"), wait_until="domcontentloaded")
+    page.evaluate(seed or SEED_BOOK)
     page.evaluate(
         "([t,l])=>{try{t?localStorage.setItem('theme',t):localStorage.removeItem('theme');"
         "l?localStorage.setItem('lang',l):localStorage.removeItem('lang');}catch(e){}}",
@@ -172,11 +197,18 @@ def prepare(page, size, theme, lang):
 
 def hide_launcher(page):
     """The chat launcher is a shared global widget, not this page's design — and it is
-    position:fixed, so it lands inside an ELEMENT crop too. It re-mounts on re-render,
-    so this runs before every shot rather than once per variant."""
+    position:fixed, so it lands inside an ELEMENT crop too.
+
+    Injects a STYLE RULE rather than setting inline display on the nodes that exist
+    right now: the launcher mounts asynchronously and re-mounts on re-render, so a
+    per-node hide raced the shot and left a sliver of it in the corner of some crops.
+    A rule in the document beats whatever mounts afterwards."""
     page.evaluate(
-        "document.querySelectorAll('#mm-brain-launcher,.mm-brain-launcher,#mmb-launcher')"
-        ".forEach(function(n){n.style.display='none'})"
+        "()=>{if(document.getElementById('__nolauncher'))return;"
+        "var s=document.createElement('style');s.id='__nolauncher';"
+        "s.textContent='#mm-brain-launcher,.mm-brain-launcher,#mmb-launcher,"
+        "[class*=\"brain-launcher\"]{display:none !important}';"
+        "document.head.appendChild(s);}"
     )
 
 
@@ -199,6 +231,8 @@ def main():
     overflow = []
     errs = []
     thin = []
+    emptylab = []
+    nocover = []
     try:
         with sync_playwright() as pw:
             b = pw.chromium.launch()
@@ -250,10 +284,68 @@ def main():
                 page.screenshot(path=str(OUT / f"08_empty_watchlist_portfolio_{vstem}.png"),
                                 full_page=True)
                 print("  ->", f"08_empty_watchlist_portfolio_{vstem}.png")
+
+                # 10 — ANONYMOUS Scenario Lab, open. Round 2 found this rendering as an
+                # EMPTY BOX: watchlist_risk.js is account-gated, so nothing publishes
+                # and `labHTML` is empty. Shot on the build with the gated scripts
+                # actually removed, so the wall is reproduced rather than simulated.
+                # The seed is the paste ENTRY, not a portfolio: an anonymous visitor has
+                # no `portfolio_positions`, so the workspace's anonymous state is driven
+                # by what they typed into the box. Seeding `mdash.pf.v1` instead left the
+                # page in `anon-empty`, where the Risk Center section is not rendered at
+                # all — and the shot then hung waiting for an element that never appears.
+                prepare(page, size, theme, lang, seed=SEED_ANON,
+                        url=BASE + "/__w3preview_anon.html")
+                page.evaluate("()=>{var d=document.querySelector('details.lab');"
+                              "if(d)d.open=true;}")
+                page.wait_for_timeout(260)
+                labtxt = page.evaluate(
+                    "()=>{var n=document.getElementById('rc_lab');"
+                    "return n?(n.innerText||'').trim().length:-1;}")
+                if labtxt <= 0:
+                    emptylab.append((vstem, labtxt))
+                if size == MOBILE:
+                    over = hscroll(page)
+                    if over > 0:
+                        overflow.append((vstem, "anon-lab", over))
+                hide_launcher(page)
+                if page.locator("#ws_sec_rc").is_visible():
+                    page.locator("#ws_sec_rc").screenshot(
+                        path=str(OUT / f"10_anon_lab_{vstem}.png"))
+                    print("  ->", f"10_anon_lab_{vstem}.png")
+                else:
+                    # never sit for 30s on a locator that will never resolve
+                    emptylab.append((vstem, "risk center section not rendered"))
+
+            # 09 — the MIXED-MARKET book. Round 2's F4 was invisible because the matrix
+            # only ever shot a single-market book: `modeledUniverse` strips non-US names
+            # before RiskCore sees them, so they are not in `cov.unmodeled` either, and
+            # the DEFAULT tab of a multi-market book disclosed nothing about the
+            # positions it was silently not describing. Three variants, all six tabs —
+            # enough to prove the disclosure everywhere without another 30 files.
+            for vstem, size, theme, lang in MIX_VARIANTS:
+                print(vstem, "(mixed-market book)")
+                prepare(page, size, theme, lang, seed=SEED_BOOKMIX)
+                for stem, key in TABS:
+                    select_tab(page, key)
+                    if size == MOBILE:
+                        over = hscroll(page)
+                        if over > 0:
+                            overflow.append((vstem, "mix:" + key, over))
+                    if page.locator("#rc_body .rc-soon").count() > 0:
+                        thin.append((vstem, "mix:" + key))
+                    # the whole point of this scene: every tab names its market coverage
+                    txt = page.locator("#rc_body").inner_text()
+                    if "US-listed" not in txt and "美股" not in txt:
+                        nocover.append((vstem, key))
+                    hide_launcher(page)
+                    page.locator("#ws_sec_rc").screenshot(
+                        path=str(OUT / f"09_bookmix_{stem[3:]}_{vstem}.png"))
+                    print("  ->", f"09_bookmix_{stem[3:]}_{vstem}.png")
             b.close()
     finally:
         srv.shutdown()
-        for f in ("__w3preview.html", "__w3seed.js"):
+        for f in ("__w3preview.html", "__w3preview_anon.html", "__w3seed.js"):
             p = SITE / f
             if p.exists():
                 p.unlink()
@@ -273,6 +365,16 @@ def main():
         ok = False
     else:
         print("every tab rendered a real read in every variant")
+    if emptylab:
+        print("ANONYMOUS SCENARIO LAB RENDERED EMPTY:", emptylab)
+        ok = False
+    else:
+        print("the Scenario Lab has a body on the anonymous wall in every variant")
+    if nocover:
+        print("A TAB ON A MIXED-MARKET BOOK NAMED NO MARKET COVERAGE:", nocover)
+        ok = False
+    else:
+        print("every tab states its market coverage on a multi-market book")
     if overflow:
         print("PAGE-LEVEL HORIZONTAL SCROLL at 390px:", overflow)
         ok = False

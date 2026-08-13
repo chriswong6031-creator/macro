@@ -1410,12 +1410,32 @@
   function renderLab() {
     var lab = el('rc_lab'); if (!lab) return;
     if (!lab.querySelector('#rc_lab_go')) {
-      lab.innerHTML = RISK.labHTML || '';
+      lab.innerHTML = RISK.labHTML || labFallback();
       paintPlaceholders();
       return;
     }
     var out = el('rc_lab_out');
     if (out && out.innerHTML) out.innerHTML = '';
+  }
+
+  /* The lab body when the publisher never spoke.
+     `RISK.labHTML` comes from watchlist_risk.js, and that file is account-gated — it
+     401s for a signed-out visitor and never executes, so `labHTML` is empty and the
+     Scenario Lab rendered as an EMPTY BOX on the anonymous funnel surface. That is a
+     regression against the pre-W3 page, which always printed a sentence here, and it
+     breaks this Risk Center's own rule: a panel with nothing to say says what it would
+     say and why it cannot. Signed-in-but-model-missing is covered on the publisher's
+     side (`labUnavailableHTML`); this is the case where nothing publishes at all. */
+  function labFallback() {
+    var anon = !window.RiskCore || !window.SD;
+    return '<p class="lab-say">' + te(
+      'Name a position and a size, and this compares your book before and after — how many separate directions it would move in, how much of the risk that position would carry, and which of your names it would move with.',
+      '输入一个代码和一个金额，这里会对比「加仓前」与「加仓后」的账簿 —— 会剩下几个独立方向、这笔仓位会扛下多少风险、以及它会和你的哪些持仓同步波动。') +
+      '</p><p class="lab-note">' + (anon
+      ? te('Those figures are computed from the nightly model, which comes with a free account.',
+           '这些数字由每晚的模型算出，需要免费账户才能使用。')
+      : te('Tonight&rsquo;s model has not loaded, so there is nothing to compare against yet.',
+           '今晚的模型尚未载入，因此暂时无法进行对比。')) + '</p>';
   }
   function runLab() {
     var out = el('rc_lab_out'); if (!out) return;

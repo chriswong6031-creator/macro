@@ -741,18 +741,24 @@
       '单是 ' + esc(top) + ' 一只，就扛下了本账簿 <span class="fig">' + Math.round(topShare * 100) +
         '%</span> 的风险。');
 
-    var unmodeled = (cov && cov.unmodeled) || [];
+    /* The coverage disclosure is the SHARED one, not a bespoke sentence.
+       Concentration used to carry its own shorter version ("X is not on this list —
+       outside the model"), which said nothing about MARKETS — and because
+       `modeledUniverse` strips non-US names before RiskCore ever sees them, an HK or
+       CN position is not in `cov.unmodeled` either. So the DEFAULT tab of a
+       multi-market book disclosed nothing at all about the positions it was silently
+       not describing, while Events one click away named them. Same two disclosures on
+       every tab that reads the factor model — including this one. */
+    var foot = te('Scale: a full bar is <span class="fig">30%</span> of book risk.',
+      '刻度：满格代表占本账簿风险 <span class="fig">30%</span>。');
+    var cf = coverageFoot(cov);
+    if (cf) foot += ' ' + cf;
     return '<p class="rc-claim">' + claim + '</p>' +
       '<p class="rc-note">' + te(
         'Each bar is that name&rsquo;s share of the book&rsquo;s modeled risk, on one shared scale.',
         '每根条形是该股在本账簿模型风险中的占比，统一刻度。') + '</p>' +
       '<div class="conc">' + rows + '</div>' +
-      '<p class="rc-note" style="margin-top:12px">' + te(
-        'Scale: a full bar is <span class="fig">30%</span> of book risk.',
-        '刻度：满格代表占本账簿风险 <span class="fig">30%</span>。') +
-      (unmodeled.length ? ' ' + te(
-        esc(unmodeled.join(', ')) + ' ' + (unmodeled.length === 1 ? 'is' : 'are') + ' not on this list — outside the model.',
-        esc(unmodeled.join('、')) + ' 不在此列 —— 不在模型内。') : '') + '</p>';
+      '<p class="rc-note" style="margin-top:12px">' + foot + '</p>';
   }
 
   // =========================================================================
@@ -803,14 +809,18 @@
     var out = '';
     if (un.length) {
       var shown = un.slice(0, 6), more = un.length - shown.length;
+      var one = (un.length === 1);
       out += te(
         esc(shown.join(', ')) + (more > 0 ? ' and ' + more + ' more' : '') + ' ' +
-          (un.length === 1 && !more ? 'is' : 'are') +
+          (one ? 'is' : 'are') +
           ' not in these figures — the nightly model has no read for ' +
-          (un.length === 1 && !more ? 'it' : 'them') + '. ' +
-          (un.length === 1 && !more ? 'Its' : 'Their') + ' own price signals still show in the table above.',
+          (one ? 'it' : 'them') + '. ' +
+          (one ? 'Its' : 'Their') + ' own price signals still show in the table above.',
+        // zh has no plural inflection, but 它 / 它们 is a real distinction and a
+        // single name reading "它们" is wrong Chinese, not merely clumsy
         esc(shown.join('、')) + (more > 0 ? ' 等 ' + un.length + ' 只' : '') +
-          ' 不在以上数字里 —— 每晚的模型没有它们的读数。它们自己的价格信号仍在上方表格中。');
+          ' 不在以上数字里 —— 每晚的模型没有' + (one ? '它' : '它们') + '的读数。' +
+          (one ? '它' : '它们') + '自己的价格信号仍在上方表格中。');
     }
     if (multiBook()) {
       out += (out ? ' ' : '') + te(
@@ -971,11 +981,11 @@
       ' ' + caveat;
     var cf = coverageFoot(cov);
     if (cf) foot += ' ' + cf;
-    // `is-factors` widens the label column: factor names are words ("Growth / Tech"),
+    // `is-worded` widens the label column: factor names are words ("Growth / Tech"),
     // not tickers, and wrapping one across two lines breaks the ladder's rhythm
     return tabHTML(claim, te('Each bar is that force&rsquo;s share of the book&rsquo;s movement, on one shared scale.',
       '每根条形是该力量在本账簿波动中的占比，统一刻度。'),
-      '<div class="conc is-factors">' + rows + '</div>' + rateLine, foot);
+      '<div class="conc is-worded">' + rows + '</div>' + rateLine, foot);
   }
 
   // ---- 4. STRESS ----------------------------------------------------------
@@ -1005,8 +1015,18 @@
     var cTop = calm.topFactorShare || 0, sTop = st.topFactorShare || 0;
     var tightens = st.enb < calm.enb - 1e-9;
 
+    // pairs that only move together when it matters — the finding this lens exists for
+    var only = (RR.stressOnlyPairs || []).slice(0, 3);
+    var pairNames = only.map(function (p) { return p.a + ' · ' + p.b; });
+
+    /* `RR.diverges` is an OR: risk_core raises it when the falling-days book collapses
+       (`stress.enb < 0.7 * calm.enb`) **or** when any pair becomes a twin only under
+       stress. Those are different findings, and branching the "tightens" sentence on
+       the OR let the second one print the first one's words — "your 6 names move like
+       about 3, not 2" directly above a counts line saying the opposite. The count
+       claim now requires the count predicate; the pair finding gets its own sentence. */
     var claim;
-    if (RR.diverges) {
+    if (RR.diverges && tightens) {
       claim = te('On the days the market falls, this book tightens: your <span class="fig">' + nNames +
           '</span> names move like about <span class="fig">' + sB + '</span>, not <span class="fig">' + cB + '</span>.',
         '在市场下跌的日子里，这本账簿会收紧：你的 <span class="fig">' + nNames +
@@ -1014,14 +1034,29 @@
     } else if (tightens) {
       claim = te('On the days the market falls, this book tightens a little — but it does not collapse into one position.',
         '在市场下跌的日子里，这本账簿会略微收紧 —— 但不会塌缩成一笔仓位。');
+    } else if (only.length) {
+      claim = te('The book as a whole does not tighten on falling days — but <b>' +
+          esc(pairNames.join('; ')) + '</b> start moving together, and only then.',
+        '整本账簿在下跌日并未收紧 —— 但 <b>' + esc(pairNames.join('；')) +
+          '</b> 会开始同步波动，且仅在此时。');
     } else {
       claim = te('On the days the market falls, this book does not tighten — its names spread out slightly rather than moving as one.',
         '在市场下跌的日子里，这本账簿并未收紧 —— 持仓略微分散，而不是同步波动。');
     }
 
-    function lensRow(label, topShare, ballast) {
-      var SC = Math.max(0.10, cTop, sTop);
-      return '<div class="conc-row' + (ballast ? ' is-ballast' : '') + '">' +
+    /* ONE scale for both rows, rounded UP to the next 5% so neither bar is pinned at
+       100%. A bar with no unfilled tail cannot be read as a proportion, and the two
+       rows here exist only to be compared with each other.
+
+       Neither row is `is-ballast`. That class means "this position offsets the book" in
+       Concentration and Weak links; reusing it to distinguish two LENSES both changed
+       its meaning and broke the picture — its fill sits at 1.38:1 against the track
+       (normal fill is 3.39:1), so the Average-day bar, which is the wider of the two
+       whenever the book does not tighten, read as an EMPTY track beside a full one.
+       The comparison the tab exists to make was inverted for most books. */
+    var SC = Math.max(0.10, Math.ceil(Math.max(cTop, sTop) * 20) / 20);
+    function lensRow(label, topShare) {
+      return '<div class="conc-row">' +
         '<span class="who">' + label + '</span>' +
         '<span class="track"><span style="width:' + Math.min(100, topShare / SC * 100).toFixed(0) + '%"></span></span>' +
         '<span class="pct fig">' + pct0(topShare) + '</span></div>';
@@ -1035,23 +1070,24 @@
         '</span> separate directions; on the falling days, about <span class="fig">' + sB + '</span>.',
       '在平均日，这本账簿约有 <span class="fig">' + cB +
         '</span> 个独立方向；在下跌日，约有 <span class="fig">' + sB + '</span> 个。') + '</p>';
-    var body = '<div class="conc">' +
-      lensRow(te('Average day', '平均日'), cTop, true) +
-      lensRow(te('Falling days', '下跌日'), sTop, false) +
+    var body = '<div class="conc is-worded">' +
+      lensRow(te('Average day', '平均日'), cTop) +
+      lensRow(te('Falling days', '下跌日'), sTop) +
       '</div>' + counts;
 
     var note = te(
-      'Each bar is how much of the book&rsquo;s movement its single biggest force accounts for, under each lens.',
-      '每根条形表示在该视角下，最大的那股力量占本账簿波动的比例。');
+      'Each bar is how much of the book&rsquo;s movement its single biggest force accounts for, under each lens. Full bar is <span class="fig">' +
+        pct0(SC) + '</span>.',
+      '每根条形表示在该视角下，最大的那股力量占本账簿波动的比例。满格为 <span class="fig">' +
+        pct0(SC) + '</span>。');
 
-    // pairs that only move together when it matters — the finding this lens exists for
-    var only = (RR.stressOnlyPairs || []).slice(0, 3);
+    /* The pair finding rides the footer unless it is already the CLAIM above, which is
+       exactly the `!tightens` branch — so it belongs here when the book tightens. */
     var extra = '';
-    if (only.length) {
-      var names = only.map(function (p) { return p.a + ' · ' + p.c; });
+    if (only.length && tightens) {
       extra = ' ' + te(
-        '<b>' + esc(names.join('; ')) + '</b> only move together on the falling days.',
-        '<b>' + esc(names.join('；')) + '</b> 只在下跌日才同步波动。');
+        '<b>' + esc(pairNames.join('; ')) + '</b> only move together on the falling days.',
+        '<b>' + esc(pairNames.join('；')) + '</b> 只在下跌日才同步波动。');
     }
     var foot = te(
       'The falling-days lens re-measures how the forces move together using only the market&rsquo;s worst days. Each name&rsquo;s own story is held unchanged between the two.',
@@ -1121,6 +1157,8 @@
         '</span> names whose detail has loaded. A name without a covered calendar is not listed and is not counted.',
       '读取自已载入详细数据的 <span class="fig">' + seen +
         '</span> 只票。没有覆盖日历的票不会列出，也不计入。');
+    var cfE = coverageFoot(cov);
+    if (cfE) foot += ' ' + cfE;
     return tabHTML(claim, te('Nearest first. Dates come from each company&rsquo;s own reported schedule.',
       '按时间由近及远排列。日期来自各公司自己公布的排期。'),
       '<div class="conc">' + list + '</div>', foot);
@@ -1171,8 +1209,15 @@
        is the thing you actually see: a risk bar longer than its own money bar is a
        name carrying more than it costs, and that is the whole tab. */
     var SCALE = Math.max(0.01, maxOf(rows, 'money'), maxAbsRisk(rows));
-    // ordered by risk-per-dollar so the two ends of the list ARE the two findings
-    var list = byRatio.slice(0, 6).map(function (r) {
+    /* The RENDERED set is the five carrying the most per dollar PLUS the strength —
+       so both names the copy points at are on screen. A plain `slice(0, 6)` ranked the
+       weak end only, which meant the strength sentence regularly named a ticker that
+       was nowhere in the ladder below it ("XOM is the one pulling the other way", with
+       no XOM row). A tab called "Weak links & strengths" that renders one end of its
+       own ranking was answering half its question; the scope line says which five. */
+    var shown = byRatio.slice(0, 5);
+    if (shown.indexOf(strong) < 0) shown.push(strong);
+    var list = shown.map(function (r) {
       var heavy = r.ratio > 1.15, light = r.ratio < 0.85;
       return '<div class="wk-row' + (light ? ' is-ballast' : '') + '">' +
         '<span class="who">' + esc(r.t) + '</span>' +
@@ -1202,8 +1247,13 @@
       '两根条形共用同一刻度：风险条比自身的资金条长，说明这只票承担的风险高于它占用的资金 —— <span class="mark">↑</span>；反之为 <span class="mark">↓</span>。');
     var cf = coverageFoot(cov);
     if (cf) foot += ' ' + cf;
-    return tabHTML(claim, te('Risk per dollar, biggest first. A name can be small and still be the largest thing in the book.',
-      '按「每一元资金承担的风险」排序，由高到低。一只票可以仓位很小，却是账簿里最大的一件事。'), body, foot);
+    var lead = te('Risk per dollar, biggest first. A name can be small and still be the largest thing in the book.',
+      '按「每一元资金承担的风险」排序，由高到低。一只票可以仓位很小，却是账簿里最大的一件事。');
+    if (shown.length > 5) {
+      lead += ' ' + te('The five carrying the most per dollar, and the one carrying the least.',
+        '列出「每一元资金承担风险」最高的五只，以及最低的那一只。');
+    }
+    return tabHTML(claim, lead, body, foot);
   }
   function maxOf(rows, k) {
     var m = 0; rows.forEach(function (r) { if (r[k] > m) m = r[k]; }); return m;
@@ -1240,6 +1290,19 @@
   function money0(v) {
     var s = String(Math.round(Math.abs(v)));
     return '$' + s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  /* The lab's body when there is no model to compare against — the nightly factor
+     artifact did not load (signed out it 401s; signed in it can 404 or fail). Says
+     what the lab would do and why it cannot, rather than presenting a form whose
+     every answer would be "the nightly model is not loaded". */
+  function labUnavailableHTML() {
+    return '<p class="lab-say">' + te(
+      'This compares your book before and after a position you name — how many separate directions it would move in, how much of the risk that position would carry, and which of your names it would move with.',
+      '这里会对比「加仓前」与「加仓后」的账簿 —— 会剩下几个独立方向、这笔仓位会扛下多少风险、以及它会和你的哪些持仓同步波动。') +
+      '</p><p class="lab-note">' + te(
+      'It needs tonight&rsquo;s factor model, which has not loaded, so there is nothing to compare against yet.',
+      '它需要今晚的因子模型，而模型尚未载入，因此暂时无法进行对比。') + '</p>';
   }
 
   function labIntroHTML() {
@@ -1496,8 +1559,15 @@
         // no factor model reachable (401 signed out, or the artifact is absent): the
         // workspace still renders — the seam's risk rail becomes a lock shell and the
         // Risk Center says so. Silence here would leave the page claiming coverage.
+        /* The lab body travels with this publish. It used to be omitted, which left
+           `RISK.labHTML` empty and the Scenario Lab an EMPTY BOX — a panel that says
+           nothing at all, which is the one thing this Risk Center is not allowed to
+           do (DESIGN_NOTES §7g: a tab with nothing to say says what it would say and
+           why it cannot). The form itself would be useless without a model, so this
+           publishes the reason instead of the controls. */
         BOOK_SHARES = {}; UNMODELED = {}; LAST_READ = null;
-        publish({ shares: {}, covered: {}, bets: null, modeledN: 0, regime: '' });
+        publish({ shares: {}, covered: {}, bets: null, modeledN: 0, regime: '',
+                  labHTML: labUnavailableHTML() });
         return;
       }
       // fill BOOK_SHARES from the default-lens read (MODELED only — a non-USD value
@@ -1596,7 +1666,14 @@
       stressHTML: stressHTML, weakLinksHTML: weakLinksHTML,
       eventsHTML: eventsHTML, concentrationHTML: concentrationHTML,
       coverageFoot: coverageFoot, labIntroHTML: labIntroHTML,
+      labUnavailableHTML: labUnavailableHTML,
       scenarioHTML: scenarioHTML,
+      /* The FX-corruption guard (A3 law 3). Exported so its effect is testable: it is
+         the boundary that keeps HKD/CNY/CAD position values out of a USD book's
+         statistics, and with it removed every test still passed — RiskCore's beta
+         lookup happens to drop unknown tickers as a second gate, so the arithmetic
+         survived while `coverage()` silently reported a book 84% "unmodeled". */
+      modeledUniverse: modeledUniverse,
       W4_DEFAULT_DOLLARS: W4_DEFAULT_DOLLARS,
       /* the node shell's only way to seat a book/model without a DOM or a fetch */
       __setModel: function (data, wmap, lens) { DATA = data; LAST_WMAP = wmap || {}; LAST_LENS = lens || 'calm'; },

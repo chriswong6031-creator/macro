@@ -491,3 +491,29 @@ engines that already existed. No estimator changed. The rulings a later wave inh
   drawn from the reader's book and not a suggested size. WRI-R3 is unchanged — no
   optimizer, no recommended sizing, no imperatives; an unmodeled candidate gets an honest
   null rather than invented figures.
+
+**Round-2 rulings absorbed into (g), binding on later waves:**
+
+- **A semantic class is not a spare visual channel.** `is-ballast` means "this position
+  offsets the book". Borrowing it to mark one of two LENSES changed what it means AND
+  broke the picture — its fill fails contrast against the track, so the larger of the
+  two bars read as an empty one. If two rows need distinguishing, distinguish them with
+  their labels, not by reaching for a class that already carries a meaning.
+- **A shared scale needs headroom.** A bar pinned at 100% with no unfilled tail cannot be
+  read as a proportion. Ladders round their scale up (to the next 5%) and print it.
+- **Never branch display copy on a compound engine flag.** `RiskCore.read().diverges` is
+  an OR over two unrelated findings (the book collapses; a pair becomes a twin only under
+  stress). Branching one sentence on the OR let one finding print the other's words. Use
+  the specific predicate, and give each finding its own sentence.
+- **Every tab that reads the factor model carries the SAME two disclosures** — the
+  unmodeled names and the market coverage — including the DEFAULT tab. Non-US names are
+  stripped before RiskCore sees them, so they never appear in `coverage.unmodeled`; only
+  the market sentence discloses them, and a tab without it is silently describing a
+  subset of someone's book.
+- **A surface may only name what it renders.** If the copy points at a ticker, that
+  ticker's row is on screen — or the copy picks a different one.
+- **zh singular/plural pronouns are a real distinction** (它 / 它们), not an English
+  artifact to be ignored.
+- **Fix the dead class in the file you are already editing.** Deferring a three-line CSS
+  fix to a later wave while editing the exact template it lands in costs more than taking
+  it, and ships a known defect in the meantime.

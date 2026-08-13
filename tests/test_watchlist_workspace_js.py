@@ -1288,3 +1288,268 @@ def test_w3_tabs_do_not_repeat_each_others_claim():
     assert "carries" in out["conc"], out["conc"]
     assert "of the money and" in out["weak"], out["weak"]
     assert out["conc"] != out["weak"]
+
+
+# ===========================================================================
+# 8. W3 round-2 — the commissioning reviewer's findings, each pinned
+#
+# Every test below reds against the head that shipped to round 2. They are kept
+# together because they share one lesson: the node shell can prove what a function
+# RETURNS, and four of these six were invisible to it — an empty string that only
+# appears when a different file never ran, a contrast ratio, a claim that is only
+# wrong on a book the fixture did not contain, and a name printed outside the list
+# it was chosen from.
+# ===========================================================================
+@needs_node
+def test_w3r2_scenario_lab_is_never_an_empty_box_on_any_path():
+    """F3. `RISK.labHTML` comes from watchlist_risk.js, which is account-gated and never
+    executes for a signed-out visitor — so the lab rendered as an EMPTY BOX on the
+    anonymous funnel surface, a regression against the pre-W3 page (269 chars -> 0).
+
+    Two paths, two owners: the publisher covers signed-in-but-no-model, and watchlist.js
+    covers nobody-published-at-all. Both must say what the lab would do AND why it
+    cannot — the Risk Center's own rule."""
+    # (a) the anonymous path — the renderer's own fallback, with no publisher at all
+    src = (ROOT / "templates" / "watchlist.js").read_text()
+    assert "function labFallback" in src
+    body = src[src.index("function labFallback"):]
+    body = body[:body.index("\n  }")]
+    assert "RiskCore" in body and "SD" in body, "the fallback must distinguish anonymous"
+    assert "free account" in body, "the anonymous case must name what unlocks it"
+    # it is actually WIRED as the fallback, not merely defined
+    assert "RISK.labHTML || labFallback()" in src
+
+    # (b) the publisher path — a model that failed to load still ships a body
+    out = _rc("OUT({ html: WR.labUnavailableHTML(), text: TEXT(WR.labUnavailableHTML()) });")
+    assert len(out["html"]) > 200, out["html"]
+    txt = out["text"]
+    assert "compares your book before and after" in txt, txt
+    assert "has not loaded" in txt, txt
+    # and it is bilingual like everything else
+    assert out["html"].count('class="l-en"') == out["html"].count('class="l-zh"')
+
+    # (c) the no-model publish carries it, rather than omitting labHTML as it did
+    wr = WATCHLIST_RISK.read_text()
+    nodata = wr[wr.index("BOOK_SHARES = {}; UNMODELED = {}; LAST_READ = null;"):]
+    nodata = nodata[:nodata.index("return;")]
+    assert "labUnavailableHTML()" in nodata, (
+        "the !data publish still omits labHTML — the lab is an empty box for a "
+        "signed-in user whose factor model did not load")
+
+
+@needs_node
+def test_w3r2_stress_rows_are_not_styled_as_ballast_and_leave_headroom():
+    """F2. `is-ballast` means "this position offsets the book" in Concentration and Weak
+    links. Reusing it to mark one of two LENSES painted the Average-day bar at 1.38:1
+    against its track (normal fill 3.39:1) — and because the scale was the max of the
+    two shares, that bar was also 100% wide with no unfilled tail. Whenever the book did
+    not tighten (most books), the LARGER share read as an empty track beside a full one:
+    the comparison the tab exists to make, inverted."""
+    out = _rc(
+        """
+        var RR = RC.read(MODEL, WMAP);
+        var html = WR.stressHTML(RR, RR.calm.coverage);
+        var rows = html.match(/<div class="conc-row[^"]*"/g) || [];
+        var widths = (html.match(/width:(\\d+)%/g) || []).map(function (s) {
+          return parseInt(s.replace(/\\D/g, ''), 10); });
+        OUT({ rows: rows, widths: widths, text: TEXT(html) });
+        """,
+        {"MODEL": _fixture_model(stress=True), "WMAP": FIXTURE_WMAP},
+    )
+    assert len(out["rows"]) == 2, out["rows"]
+    for r in out["rows"]:
+        assert "is-ballast" not in r, (
+            "a lens row is styled as ballast — that class means hedge/diversifier, and "
+            "its fill fails contrast against the track: %s" % r)
+    # neither bar is pinned at 100%: a bar with no tail cannot be read as a proportion
+    assert out["widths"], out
+    assert max(out["widths"]) < 100, out["widths"]
+    # the scale is disclosed, as every other ladder on this page discloses its own
+    assert "Full bar is" in out["text"], out["text"]
+
+
+@needs_node
+def test_w3r2_stress_claims_tightening_only_when_it_actually_tightens():
+    """F1. `RR.diverges` is an OR — risk_core raises it when the book collapses OR when
+    any pair becomes a twin only under stress. Branching the count sentence on the OR
+    printed "your N names move like about 3, not 2" directly above a counts line saying
+    the opposite. The count claim now requires the count predicate."""
+    # A book that does NOT tighten but DOES have a stress-only twin pair, so `diverges`
+    # is true for the OTHER reason. A and B share a factor that is inert on calm days
+    # (rho 0.07) and dominant on falling ones (0.74, over the 0.70 line); meanwhile the
+    # market term collapses, so C-F fall back on their own idio and the book SPREADS.
+    model = {
+        "factors": [{"key": "mkt", "label": "Market"}, {"key": "spec", "label": "Special"}],
+        "factor_cov": {"mkt": {"mkt": 0.090, "spec": 0.0},
+                       "spec": {"mkt": 0.0, "spec": 0.001}},
+        "factor_cov_stress": {"mkt": {"mkt": 0.005, "spec": 0.0},
+                              "spec": {"mkt": 0.0, "spec": 0.350}},
+        "stress_meta": {"available": True},
+        "betas": {
+            "A": {"mkt": 0.30, "spec": 1.00, "idio_vol": 0.35},
+            "B": {"mkt": 0.30, "spec": 1.00, "idio_vol": 0.35},
+            "C": {"mkt": 1.00, "spec": 0.00, "idio_vol": 0.30},
+            "D": {"mkt": 1.00, "spec": 0.00, "idio_vol": 0.30},
+            "E": {"mkt": 1.00, "spec": 0.00, "idio_vol": 0.30},
+            "F": {"mkt": 1.00, "spec": 0.00, "idio_vol": 0.30},
+        },
+    }
+    wmap = {k: 10000 for k in "ABCDEF"}
+    out = _rc(
+        """
+        var RR = RC.read(MODEL, WMAP);
+        OUT({ diverges: RR.diverges, calmEnb: RR.calm.enb, stressEnb: RR.stress.enb,
+              nOnly: RR.stressOnlyPairs.length,
+              text: TEXT(WR.stressHTML(RR, RR.calm.coverage)) });
+        """,
+        {"MODEL": model, "WMAP": wmap},
+    )
+    assert out["diverges"], "fixture drifted — it must raise diverges via stress-only pairs"
+    assert out["stressEnb"] >= out["calmEnb"], (
+        "fixture drifted — this case must NOT tighten: %s" % out)
+    assert out["nOnly"] > 0, out
+    txt = out["text"]
+    assert "tightens" not in txt, (
+        "the tab claims tightening on a book whose falling-days count is not lower: %s" % txt)
+    assert "does not tighten" in txt, txt
+    # the pair finding gets its OWN sentence rather than borrowing the count one
+    assert "start moving together" in txt, txt
+    # and it is not also repeated in the footer
+    assert txt.count("only move together on the falling days") == 0, txt
+
+
+@needs_node
+def test_w3r2_weak_links_only_names_tickers_it_actually_renders():
+    """F5. `strong` was chosen from ALL rows while the ladder rendered `slice(0, 6)` of
+    the weak end, so the strength sentence regularly named a ticker with no row —
+    measured in the zh crop: "XOM 是往反方向拉的那一只" with no XOM row on screen."""
+    out = _rc(
+        """
+        var b = RC.read(MODEL, WMAP).calm;
+        var html = WR.weakLinksHTML(b, b.coverage);
+        var rendered = (html.match(/<div class="wk-row[^"]*"><span class="who">([^<]+)/g) || [])
+          .map(function (s) { return s.replace(/[\\s\\S]*who">/, ''); });
+        // the two names the COPY points at
+        var claim = TEXT((html.match(/<p class="rc-claim">[\\s\\S]*?<\\/p>/) || [''])[0]);
+        var strongLine = TEXT((html.match(/<p class="rc-note" style="margin-top:12px">[\\s\\S]*?<\\/p>/) || [''])[0]);
+        OUT({ rendered: rendered, claim: claim, strongLine: strongLine,
+              text: TEXT(html) });
+        """,
+        {"MODEL": _fixture_model(), "WMAP": FIXTURE_WMAP},
+    )
+    rendered = out["rendered"]
+    assert rendered, out
+    # every ticker the copy names must be one of the rows below it
+    named = [t for t in FIXTURE_WMAP if (" " + t + " ") in (" " + out["claim"] + " ")
+             or (" " + t + " ") in (" " + out["strongLine"] + " ")]
+    assert named, out
+    for t in named:
+        assert t in rendered, (
+            "the copy names %s but the ladder does not render it: rendered=%s" % (t, rendered))
+    # the strength is genuinely the least risk-per-dollar, so it sits last
+    assert len(rendered) == len(set(rendered)), rendered
+    # and when the set is not a plain top-N the scope line says so
+    if len(rendered) > 5:
+        assert "carrying the least" in out["text"], out["text"]
+
+
+@needs_node
+def test_w3r2_every_model_reading_tab_carries_the_coverage_disclosure():
+    """F4. `concentrationHTML` never called `coverageFoot`, and Concentration is the
+    DEFAULT tab. `modeledUniverse` strips non-US names before RiskCore sees them, so an
+    HK/CN/CA position is not in `cov.unmodeled` either — the default tab of a
+    multi-market book therefore disclosed NOTHING about the positions it was silently
+    not describing, while Events one click away named them."""
+    out = _rc(
+        """
+        window.MB = {
+          isModeled: function (t) { return !/\\.(HK|SS|TO)$/.test(t); },
+          presentBooks: function () { return ['us', 'hk', 'cn']; },
+          getBook: function () { return 'all'; }
+        };
+        var RR = RC.read(MODEL, WMAP);
+        var b = RR.calm, cov = b.coverage;
+        WR.__setCardJson({ NVDA: { earnings: { next_date: '2099-01-15' } } });
+        OUT({
+          conc: TEXT(WR.concentrationHTML(b, cov)),
+          corr: TEXT(WR.correlationHTML(b, cov)),
+          fact: TEXT(WR.factorsHTML(b, cov)),
+          strs: TEXT(WR.stressHTML(RR, cov)),
+          evt:  TEXT(WR.eventsHTML(cov)),
+          weak: TEXT(WR.weakLinksHTML(b, cov))
+        });
+        """,
+        {"MODEL": _fixture_model(stress=True), "WMAP": FIXTURE_WMAP},
+    )
+    for tab, txt in out.items():
+        assert txt, tab
+        # the MARKET half — the one a stripped non-US name can only be disclosed by
+        assert "US-listed" in txt, (
+            "%s does not state which market its figures cover" % tab, txt[:200])
+        assert "never added into one number across currencies" in txt, (tab, txt[:200])
+        # the unmodeled-name half
+        assert "GLD" in txt, (tab, txt[:200])
+
+
+@needs_node
+def test_w3r2_fx_corruption_guard_is_pinned_at_the_coverage_it_protects():
+    """F6. Mutating `modeledUniverse` to `return (list||[]).slice()` passed all 54 tests.
+    The arithmetic survived by luck — RiskCore's beta lookup drops unknown tickers as a
+    second gate — but `coverage()` then sees the foreign names and reports a book that is
+    84% "unmodeled" when it is in fact fully covered. Defense-in-depth is not a reason to
+    leave the first gate untested; it is the reason its failure is silent."""
+    out = _rc(
+        """
+        window.MB = {
+          isModeled: function (t) { return !/\\.(HK|SS|TO)$/.test(t); },
+          presentBooks: function () { return ['us', 'hk']; },
+          getBook: function () { return 'all'; }
+        };
+        // a mixed book: USD positions plus HKD ones, whose values are ~8x by currency
+        var raw = { AAPL: 10000, MSFT: 10000, NVDA: 10000,
+                    '0700.HK': 400000, '9988.HK': 300000, 'SHOP.TO': 120000 };
+        var universe = WR.modeledUniverse(Object.keys(raw));
+        var wIn = {};
+        universe.forEach(function (t) { wIn[t] = raw[t]; });
+        var guarded = RC.coverage(MODEL, wIn);
+        // what the same call sees if the guard is bypassed
+        var unguarded = RC.coverage(MODEL, raw);
+        OUT({ universe: universe.slice().sort(),
+              guardedFrac: guarded.unmodeledFrac,
+              guardedUnmodeled: guarded.unmodeled,
+              unguardedFrac: unguarded.unmodeledFrac });
+        """,
+        {"MODEL": _fixture_model()},
+    )
+    # the guard removes the non-USD names before any book statistic sees them
+    assert out["universe"] == ["AAPL", "MSFT", "NVDA"], out["universe"]
+    assert out["guardedFrac"] == 0, out
+    assert out["guardedUnmodeled"] == [], out
+    # and this is the number that goes wrong when it is bypassed — the silent failure
+    assert out["unguardedFrac"] > 0.8, (
+        "the fixture no longer demonstrates the corruption the guard prevents", out)
+
+
+def test_w3r2_coverage_foot_zh_uses_the_singular_for_one_name():
+    """F8. zh has no plural inflection, but 它 / 它们 is a real distinction, and a single
+    unmodeled name reading 它们 is wrong Chinese rather than merely clumsy."""
+    src = WATCHLIST_RISK.read_text()
+    body = src[src.index("function coverageFoot"):]
+    body = body[:body.index("\n  }")]
+    assert "one ? '它' : '它们'" in body.replace('"', "'"), (
+        "the zh half still hardcodes a plural pronoun", body)
+
+
+def test_w3r2_the_lane_row_grammar_is_styled_where_its_drawer_lives():
+    """F7 (commissioning ruling). `.wri-q` rendered a bare "?" in the holdings drawer:
+    it, and the four sibling classes emitted by the same renderer, belonged to the WRI
+    braid hero W2 deleted and had no rule anywhere on this page. Styled in the template
+    whose drawer emits them, so W4 inherits a working surface, not a known defect."""
+    css = TEMPLATE.read_text()
+    for cls in (".wri-lrow", ".wri-q", ".wri-lrow .ln", ".wri-lrow .st", ".wri-lrow .rs"):
+        assert cls in css, "%s is emitted into this page's drawer and styled nowhere" % cls
+    # the state token is a SEVERITY, so it must not paint from the direction tokens —
+    # those swap under 红涨绿跌 and would turn an elevated lane green in Chinese
+    block = css[css.index(".wri-lrow"):css.index(".drw-act")]
+    assert "--up" not in block and "--down" not in block, block
+    assert "--warn" in block and "--act" in block, block

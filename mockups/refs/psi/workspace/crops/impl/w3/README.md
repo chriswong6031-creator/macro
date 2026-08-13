@@ -129,3 +129,68 @@ produced six beautifully rendered empty tabs. The script now links the directory
 main checkout for the duration of the shoot (removing the symlink afterwards, since an
 untracked symlink blocks the ship-loop guard) and **fails if any tab still renders the
 fallback**.
+
+---
+
+## 4. Round 2 — what the commissioning review found, and what changed
+
+Verdict: ARM-AFTER-FIXES. Four must-fix, four fold-ins, all landed in this PR. The
+rulings are folded into `DESIGN_NOTES.md` §7(g) alongside the round-1 ones; this section
+records the crop-matrix consequences, because two of the four must-fixes were invisible
+to both the tests AND the crops **for the same reason**: the matrix only ever shot one
+book, in one state.
+
+### The matrix gained two scenes
+
+| scene | why it did not exist before | what it catches |
+|---|---|---|
+| `09_bookmix_*` — a mixed-market book (US + HK + CA), 6 tabs × 3 variants | the matrix only shot `__W2.book()`, a single-market book | F4: the DEFAULT tab said nothing about the HK/CN/CA positions it was silently not describing |
+| `10_anon_lab_*` — the Scenario Lab on the anonymous wall, 5 variants | the matrix had no anonymous scene at all | F3: the lab rendered as an EMPTY BOX for every signed-out visitor |
+
+Both scenes are now **asserted**, not just shot. The harness exits non-zero if the
+anonymous lab body is empty, or if any tab on a multi-market book fails to name its
+market coverage — so neither defect can return silently.
+
+One trap inside the new anonymous scene, worth recording: seeding it with a PORTFOLIO
+(`__W2.book()`) leaves the workspace in `anon-empty`, where the Risk Center section is
+not rendered at all, and the shot then hangs for 30s on a locator that will never
+resolve. An anonymous visitor has no positions — their state is driven by what they
+pasted, so the scene seeds `__W2.entry(...)`.
+
+### Round-2 deltas
+
+**W3-D7 — the Stress lens rows are not `is-ballast`.** That class means "this position
+offsets the book" in Concentration and Weak links. Reusing it to distinguish two LENSES
+both overloaded its meaning and broke the picture: its fill sits at 1.38:1 against the
+track (normal fill 3.39:1), and because the scale was `max(cTop, sTop)` the larger bar
+was also pinned at 100% with no unfilled tail. Whenever the book did not tighten — most
+books — the LARGER share rendered as an empty track beside a full one, inverting the
+only comparison the tab exists to make. Both rows now use the normal fill, and the scale
+rounds up to the next 5% so neither bar is pinned. Verified in the crop, not the DOM.
+
+**W3-D8 — `.conc.is-factors` became `.conc.is-worded`.** The wider label column is needed
+by any ladder labelled with words rather than tickers, and the Stress tab ("Average day",
+"Falling days") is the second one. Named for the label, not the tab.
+
+**W3-D9 — Weak links renders both ends of its own ranking.** `strong` was chosen from all
+rows while the ladder rendered `slice(0, 6)` of the weak end, so the strength sentence
+regularly named a ticker with no row — measured in the zh crop: "XOM 是往反方向拉的那一只"
+with no XOM row on screen. The rendered set is now the five carrying the most per dollar
+plus the one carrying the least, and the scope line says so.
+
+**W3-D10 — the `.wri-q` fix widened, by ruling.** Round 1 deferred it to W4; the
+commissioning session overrode that. Fixing only `.wri-q` would have been cosmetically
+pointless: **all five** classes the drawer's lane renderer emits (`.wri-lrow`, `.ln`,
+`.st`, `.rs`, `.wri-q`) belonged to the deleted braid hero and had no rule anywhere on
+this page. All five are styled now. The state token paints from the HEALTH tokens
+(`--warn`/`--act`), never from `--up`/`--down` — a lane state is a severity, not a price
+direction, and health tokens deliberately do not swap under 红涨绿跌. **W4 inherits
+nothing here.**
+
+### One bug found while fixing another
+
+`stressOnlyPairs` carries `{a, b, rho}` (risk_core's own shape), but the footer sentence
+read `p.c` — so on any book where that sentence fired it would have printed
+`AAPL · undefined`. Not in the review's list; found while rewriting the branch around it,
+and now covered by the diverges-but-spreading test, whose fixture makes that sentence
+fire.

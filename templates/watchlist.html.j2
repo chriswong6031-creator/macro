@@ -306,6 +306,36 @@
     font-size:12.5px; }
   .drw .k { display:block; font-size:10px; font-weight:750; letter-spacing:.08em;
     text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
+  /* ── the per-name lane rows, emitted by watchlist_risk.js `laneRows`/`chainRows` ──
+     These five classes had NO rule anywhere on this page: they belonged to the WRI
+     braid hero W2 deleted, and the drawer that still renders them was left showing
+     unstyled spans and a bare "?" where the Tier-2 receipt should be. Styled here
+     because this is the template whose drawer emits them — W4 inherits a working
+     surface rather than a known defect. The state token paints from the HEALTH tokens
+     (--warn/--act), never from --up/--down: a lane state is a severity, not a price
+     direction, and health tokens deliberately do not swap under 红涨绿跌. */
+  .wri-lrow { grid-column:1/-1; display:grid; grid-template-columns:116px 74px minmax(0,1fr);
+    gap:10px; align-items:baseline; padding:4px 0; font-size:12px;
+    border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
+  .wri-lrow .ln { font-weight:650; color:var(--muted); }
+  .wri-lrow .st { font-size:9.5px; font-weight:750; letter-spacing:.07em;
+    text-transform:uppercase; color:var(--muted); }
+  .wri-lrow .st.watch { color:var(--warn); }
+  .wri-lrow .st.elev  { color:var(--act); }
+  .wri-lrow .st.info  { color:var(--ink-link); }
+  .wri-lrow .st.na    { opacity:.62; }
+  .wri-lrow .rs { color:var(--text); line-height:1.45; }
+  /* the Tier-2 receipt mark: a real affordance, not a stray question mark */
+  .wri-q { display:inline-grid; place-items:center; width:13px; height:13px; margin-left:5px;
+    border-radius:50%; border:1px solid color-mix(in srgb,var(--muted) 45%,transparent);
+    font-size:9px; font-weight:700; line-height:1; color:var(--muted); cursor:help; }
+  .wri-q:focus-visible { outline:2px solid color-mix(in srgb,var(--link) 70%,transparent);
+    outline-offset:1px; }
+  @media (max-width:720px){
+    .wri-lrow { grid-template-columns:1fr auto; gap:3px 8px; }
+    .wri-lrow .rs { grid-column:1/-1; }
+  }
+
   .drw-act { grid-column:1/-1; display:flex; gap:12px; flex-wrap:wrap; align-items:center;
     margin-top:2px; padding-top:9px; border-top:1px solid var(--line); font-size:12px; }
   .drw-act a { font-weight:650; }
@@ -395,9 +425,11 @@
   .conc-row.is-ballast .track span { background:color-mix(in srgb,var(--muted) 34%,var(--panel2)); }
   .conc-row .who { font-weight:650; }
   .conc-row .pct { text-align:right; color:var(--muted); }
-  /* factor names are words, not tickers — "Growth / Tech" wraps at the ticker width
-     and breaks the ladder's rhythm, so that one ladder gets a wider label column */
-  .conc.is-factors .conc-row { grid-template-columns:100px minmax(0,1fr) 42px; }
+  /* Some ladders are labelled with WORDS rather than tickers — "Growth / Tech",
+     "Falling days". Those wrap at the ticker width and break the ladder's rhythm, so
+     they get a wider label column. The modifier is named for the label, not for the
+     tab, because two different tabs need it for the same reason. */
+  .conc.is-worded .conc-row { grid-template-columns:104px minmax(0,1fr) 42px; }
   /* Tier-2 receipt affordance: the LENS popover is wired by theme.js off
      [data-tip-en]; this is only the hint that the sentence has one. */
   .rc-tip { border-bottom:1px dotted color-mix(in srgb,var(--muted) 55%,transparent); }
