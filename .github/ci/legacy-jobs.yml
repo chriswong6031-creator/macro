@@ -1794,6 +1794,17 @@ jobs:
         run: python -m pytest tests/test_ci_plan_workflow.py -q
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_check_conflict_markers.py -q
+      # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
+      # the two steps above are: its subject IS .github/workflows/ — specifically the
+      # asymmetry that asia-close.yml carries five cron slots and daily.yml carries one
+      # DST pair, which is why CN self-heals a lost fire and the US lane lost two whole
+      # sessions on 2026-08-11/12. The backstop is an ACTOR, so its suite is mostly the
+      # cases where it must NOT fire; test_primary_still_has_only_the_dst_pair reds if
+      # daily.yml ever grows its own backstop crons and this lane becomes double-firing.
+      - name: nightly backstop selftest (scripts/nightly_backstop.py)
+        run: python3 scripts/nightly_backstop.py --selftest
+      - name: nightly backstop dispatch rule (must never fire over a live run)
+        run: python -m pytest tests/test_nightly_backstop.py -q
       # The terminal CI handoff (`mastermind.ci_handoff.v1`) — the rule deciding WHEN a
       # worker stops. Same subject as the packing step above: the sweeper that step
       # already pins via tests/test_merge_on_green.py is the party that owns the merge
