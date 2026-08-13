@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-08-13",
-  "generated_utc": "2026-08-13T05:59:38.623015+00:00",
+  "generated_utc": "2026-08-13T11:25:12.477657+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": "The desk sees broad, multi-channel convergence in mega-cap AI-enablers (NVDA, MSFT) with strong political/smart-money footprints, while a smaller set of soft-signal names lack the weight to clear the bar. The absence of a track record forces low default conviction.",
   "brain_present": true,
@@ -20,8 +20,8 @@
     "open": 7,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 98,
-  "n_broken": 19,
+  "n_signals": 97,
+  "n_broken": 20,
   "signals": [
     {
       "ticker": "MU",
@@ -407,7 +407,7 @@
       "off_high_252": -35.9,
       "ret_20d": 39.9,
       "above_50dma": true,
-      "entry_tier": null,
+      "entry_tier": "T1",
       "affiliations": [],
       "n_affiliated_actors": 0,
       "thesis": null,
@@ -640,7 +640,7 @@
       "off_high_252": 0.0,
       "ret_20d": 7.5,
       "above_50dma": true,
-      "entry_tier": null,
+      "entry_tier": "T2",
       "affiliations": [],
       "n_affiliated_actors": 0,
       "thesis": null,
@@ -1121,16 +1121,15 @@
     },
     {
       "ticker": "META",
-      "signal_score": 51,
+      "signal_score": 41,
       "conviction": "high",
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 1.45,
-      "convergence_score": 5,
+      "weighted_score": 1.15,
+      "convergence_score": 4,
       "channels": [
         "affiliation",
-        "github_momentum",
         "lobbying",
         "special_situation",
         "stocktwits_bull"
@@ -1143,7 +1142,7 @@
       "off_high_252": -26.5,
       "ret_20d": -15.0,
       "above_50dma": false,
-      "entry_tier": "T1",
+      "entry_tier": null,
       "affiliations": [
         {
           "actor": "Mark Zuckerberg",
@@ -1465,6 +1464,41 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "DJT",
+      "signal_score": 21,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.7,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -9.1,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -55.3,
+      "ret_20d": -13.6,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Eric Trump",
+          "rel": "CONTROLS",
+          "kind": "trump_family"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
