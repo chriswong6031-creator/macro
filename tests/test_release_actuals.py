@@ -69,6 +69,51 @@ _CASES = {
 }
 
 
+# Named disclosure set: the two PCE 2026-06 receipts whose source URL was bound
+# to a shared RSS digest (SHA 29ae0bad…) after a 304. The committed defects
+# sidecar quarantines exactly these ids. Do not grow this set from the live
+# ledger's current cardinality — later bound prints are keep-first actuals, not
+# members of the defect set.
+_QUARANTINED_PCE_RECEIPT_IDS = frozenset(
+    {
+        "official_actual:0492229833dc679fdb39494f",
+        "official_actual:3af69117d78be4d9ea46b002",
+    }
+)
+_KNOWN_PCE_BINDING_DEFECT_SHA256 = (
+    "29ae0bad7d568ca7ea59be2f74461b5dcf5da4393ff816544254cd47507f13e1"
+)
+
+
+def _committed_official_actuals() -> Path:
+    return (
+        Path(__file__).resolve().parents[1]
+        / "data"
+        / "release_forecast"
+        / "official_actuals.jsonl"
+    )
+
+
+def _named_quarantined_pce_receipts() -> list[dict]:
+    """The two known binding-defect PCE receipts, and nothing the nightly added later.
+
+    ``official_actuals.jsonl`` is a live keep-first ledger. The 2026-08-13 regime
+    update (``44c90f8f547``) wrote scoring-eligible bound PCE 2026-06 prints
+    (SHA ``62e09584…``) next to the quarantined pair. Passing the whole file as
+    ``existing`` turns a fresh bound replay into ``correction_candidate`` —
+    keep-first working, not a regression. This named disclosure set is the
+    census the yield contract actually needs.
+    """
+    rows = [
+        row
+        for row in load_actual_ledger(_committed_official_actuals())
+        if row.get("receipt_id") in _QUARANTINED_PCE_RECEIPT_IDS
+    ]
+    assert {row["receipt_id"] for row in rows} == _QUARANTINED_PCE_RECEIPT_IDS
+    assert all(not is_scoring_truth_eligible(row) for row in rows)
+    return rows
+
+
 def _publication(event_type: str = "CPI") -> dict:
     case = _CASES[event_type]
     day = case["date"]
@@ -290,14 +335,8 @@ def test_keep_first_and_correction_candidate() -> None:
 
 
 def test_quarantined_pce_receipts_yield_to_fresh_bound_receipts() -> None:
-    root = Path(__file__).resolve().parents[1]
-    existing = load_actual_ledger(
-        root / "data" / "release_forecast" / "official_actuals.jsonl"
-    )
     defective_replay = _publication("PCE")
-    defective_replay["source_sha256"] = (
-        "29ae0bad7d568ca7ea59be2f74461b5dcf5da4393ff816544254cd47507f13e1"
-    )
+    defective_replay["source_sha256"] = _KNOWN_PCE_BINDING_DEFECT_SHA256
     assert reconcile_receipts(
         {
             "schema": "release_publications.v2",
@@ -305,6 +344,8 @@ def test_quarantined_pce_receipts_yield_to_fresh_bound_receipts() -> None:
         },
         [],
     ) == []
+
+    existing = _named_quarantined_pce_receipts()
 
     corrected = _publication("PCE")
     corrected["source_sha256"] = "b" * 64
@@ -338,8 +379,7 @@ def test_file_reconciliation_is_idempotent(tmp_path: Path) -> None:
 def test_committed_official_actual_ledger_quarantines_known_pce_binding_defects(
     tmp_path: Path,
 ) -> None:
-    root = Path(__file__).resolve().parents[1]
-    rows = load_actual_ledger(root / "data" / "release_forecast" / "official_actuals.jsonl")
+    rows = load_actual_ledger(_committed_official_actuals())
     assert rows
     missing_sidecar = tmp_path / "absent.json"
     assert all(
@@ -351,10 +391,7 @@ def test_committed_official_actual_ledger_quarantines_known_pce_binding_defects(
         for row in rows
         if "known_source_binding_defect" in receipt_integrity_errors(row)
     }
-    assert quarantined == {
-        "official_actual:0492229833dc679fdb39494f",
-        "official_actual:3af69117d78be4d9ea46b002",
-    }
+    assert quarantined == _QUARANTINED_PCE_RECEIPT_IDS
     assert all(
         is_scoring_truth_eligible(row) == (row["receipt_id"] not in quarantined)
         for row in rows

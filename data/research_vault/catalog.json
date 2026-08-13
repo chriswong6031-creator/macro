@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T11:11:44.031377+00:00",
-  "count": 1056,
+  "generated_at": "2026-08-13T12:56:58.832163+00:00",
+  "count": 1061,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -64,6 +64,110 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-q8w8jub10lx-aa75bd",
+      "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 13, 2026 as of 5 30 AM ET",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T11:36:37Z",
+      "summary_points": [
+        "**US PCE Methodology Shift**: Old PCE methodology ends 12 Aug, creating volatility risk; macro outlook (favorable inflation/weak labor) drives risk asset rebound and issuance surge, critical for positioning.",
+        "**MSCI Index Strategy**: MSCI review implications drive market sentiment and index flows; monitor for volatility and positioning shifts.",
+        "**Vail Resorts Downgrade & Tingyi Upgrade**: Vail (MTN) downgraded to Sell (Americas sector risk); Tingyi (0322.HK) upgraded to Buy (Asia equity flow catalyst), direct portfolio action.",
+        "**China EV/Export Dynamics**: Domestic NEV decline narrows but export growth holds; Hiwin Corp faces price hike vs.",
+        "cost increases (geopolitics/pricing risk), Sell."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ecx3kynusdj-b16e59",
+      "title": "Citi The Point for Europe Thursday, 13 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T11:24:19Z",
+      "summary_points": [
+        "**Vestas Margin Beat & Target Price Hike**: Q2'26 earnings beat with offshore margins at low-mid teens (since 2016/17), 10% group margin target by 2028; Buy maintained with DKK260 TP.",
+        "**ABN AMRO ROE Feasibility**: 2026 EPS growth to high-single digits (better NII/cost guidance), 15% ROE feasible at current rates; TP raised to €50.",
+        "**Global Macro Flows Shift to Goldilocks**: Hedge fund flows shifting from Consumer Discretionary/Staples to Financials/Energy/Tech; favored by dovish US data, FOMC easing, and geopolitical risks.",
+        "**Norges Bank Policy Outlook**: Hold expected (vs hike) after soft CPI, tightening likely in September; policy rate elasticity reduced due to strong NOK.",
+        "**Soitec SA Target Price Surge**: TP jumped to €120 (from €10) with Sell rating, signaling potential mispricing catalysts or short-term upside."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-97w8woj8a3k-626676",
+      "title": "GS TMT SPEC SALES – Adyen topline good enough",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T11:19:40Z",
+      "summary_points": [
+        "**AI Infrastructure Divergence**: AI/semis (CoreWeave +20%, Lumentum +13%) outperform hyperscalers (MSFT/AMZN/META down ~2%) post-CPI; NVIDIA vs.",
+        "hyperscaler tension defines near-term demand backdrop.",
+        "**Tencent AI Strategy & Geopolitical Risk**: Aggressive AI spend (WorkBuddy, Weixin Xiaowei) vs.",
+        "cloud monetization debate; Prosus tied to Tencent; US-China IP disputes (Zuckerberg defends AI distillation) heighten supply chain vulnerability.",
+        "**Anthropic IPO & CommunaCopia Flow Catalyst**: Anthropic $2tn IPO expectations; European CommunaCopia event (Sept 15-16) with 44x corps (75% C-suite) critical for investor flows and sector-specific capital allocation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pdkacdlkes8-0833c4",
+      "title": "Deutsche Bank",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T11:17:04Z",
+      "summary_points": [
+        "**Target Price Upgrades**: Deutsche Bank raised targets for 7 stocks (6 Buy, 1 Hold), with ABN AMRO (+17.6%), Balfour Beatty (+11.1%), and Hill & Smith (+7.0%) showing largest revisions, signaling strong institutional optimism.",
+        "**Defense Sector Momentum**: HENSOLDT (target raised to €105) and HILL & SMITH (FY26E EBITA +1% to $216m) driven by robust order momentum and US infrastructure demand; TKMS shows sequential margin improvement (Q3 EBIT margin c.7% vs Q2 5.5%).",
+        "**Jenoptik Earnings & Guidance**: Q2 EBITDA beat (+28% yoy to €54.4m) with guidance upgraded to upper half (Tgt EUR48), fueled by strong orders in Semi/Biophotonics segments and margin expansion (20-21% EBITDA margin).",
+        "**DAX Earnings Acceleration**: DAX Q2 earnings growth accelerated to 11% YoY (strongest in decade), led by Industrials/Chemicals; consensus expects 10% growth, with firm maintaining 12% outlook due to resilient momentum and macro backdrop."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-i3beom5skfx-38d370",
+      "title": "JPM International Market Intell | Morning Briefing Aug 13",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T11:14:30Z",
+      "summary_points": [
+        "**KOSPI Overbought Reversal Risk**: Korea L/S ratio at 78th percentile (since Jan 2018) signals severe overbought conditions; recent peak (May-Jun 2026) preceded decline, indicating imminent KOSPI reversal risk.",
+        "**China Structural Deterioration**: China industrial producer prices peaked at ~15% y/y (2021) while loss-making entities rose steadily (20%→30% by 2025), reflecting structural profitability decline beyond pandemic shocks.",
+        "**US Inflation Policy Shock**: Headline CPI and Core PCE surged above 8% (2026), exceeding 2% target; implies sustained inflationary pressure forcing Fed to hike in December despite July report.",
+        "**Memory Sector Acceleration**: Asian Semis revenue up 134% YoY (10th consecutive month acceleration), memory revenue YoY surged to 36% (late 2024), outpacing semi-memory revenue (34%), signaling robust sector fundamentals.",
+        "**Geopolitical Escalation Catalyst**: US missile expenditure spiked 40% YTD in Iran conflict (2025), driving defense volatility, oil spikes, and risk-off sentiment globally."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-knoyqozpljd-1fb109",
       "title": "JPM Retail Radar Aug 12",

@@ -6,11 +6,12 @@
      • window.MDXAuth.onChange    — auth events from theme.js shared session
      • window.getSupabaseClient() — shared Supabase client from theme.js
 
-   Also owns the watchlist sync UI (formerly auth.js):
-     • Bilingual sync pill (#wl_syncpill): synced/syncing/local/offline/finishing
-     • Sign-in button (#wl_signin) → MDXAuth.open('signin')
-     • Account row (#wl_account, #wl_who) with sign-out (#wl_signout)
-     • #wl_auth panel show/hide; langchange relabeling
+   W2: this module no longer OWNS any sync UI. The Account Sync panel is deleted and
+   the header save-state chip is the page's only disclosure of where the list lives,
+   so the store's job here is to publish the state and nothing else:
+     • `ws-save` document event, detail.state ∈ saved | saving | local | offline
+       (watchlist.js paints the chip; this file never touches its DOM)
+     • sign-in / sign-out go through the global MDXAuth modal, wired by the page
 
    When there is no session (logged out, no config, SDK blocked):
      • All paths are dormant; localStorage-only behavior is unchanged.
@@ -77,28 +78,44 @@
   // ---- DOM helpers -----------------------------------------------------------
   function el(id) { return document.getElementById(id); }
 
+  /* The four states the header chip can show, published as an event. The internal
+     vocabulary keeps its old names (setPill is called from a dozen places) and maps
+     ONCE, here, onto the four user-facing states — "finishing sign-in" is a write in
+     flight from the reader's point of view, so it is `saving`, not a fifth word. */
+  var CHIP_STATE = { synced: 'saved', syncing: 'saving', finishing: 'saving',
+                     local: 'local', offline: 'offline' };
+  var lastChip = null;
   function setPill(state) {
+    var next = CHIP_STATE[state] || 'local';
+    if (next !== lastChip) {
+      lastChip = next;
+      try {
+        document.dispatchEvent(new CustomEvent('ws-save', { detail: { state: next } }));
+      } catch (e) {}
+    }
+    lgPaintPill(state);
+  }
+  /* PRE-W2 pill. Inert on the workspace (the element does not exist there); on the old
+     markup it is the ONLY sync disclosure, so it is painted verbatim as before. */
+  function lgPaintPill(state) {
     var p = el('wl_syncpill'); if (!p) return;
     var map = { synced: L('synced'), syncing: L('syncing'), local: L('local'),
                 offline: L('offline'), finishing: L('finishing') };
     p.textContent = map[state] || '';
     p.className = 'wl-pill wl-pill-' + (state === 'finishing' ? 'syncing' : state);
   }
-
   function showAccount(email) {
     if (el('wl_signin'))  el('wl_signin').style.display  = 'none';
     if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
     if (el('wl_account')) el('wl_account').style.display = 'flex';
     if (el('wl_who'))     el('wl_who').textContent = L('hello') + ' ' + email;
   }
-
   function showSignedOut() {
     if (el('wl_account')) el('wl_account').style.display = 'none';
     if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
     if (el('wl_signin'))  el('wl_signin').style.display  = 'inline-block';
     setPill('local');
   }
-
   function relabel() {
     if (el('wl_signin'))  el('wl_signin').textContent  = L('signin');
     if (el('wl_signout')) el('wl_signout').textContent = L('signout');
@@ -646,7 +663,7 @@
       delete _pushTimers[listId];
       // Never diff against a list we have not read: queue it for the pull to flush.
       if (!_cloudOf(listId)) { queuedPushes[listId] = tickers; return; }
-      pushList(listId, tickers);
+      _trackedPush(listId, tickers);
     }, 600);
   }
 
@@ -658,7 +675,7 @@
       var tickers = queuedPushes[id];
       delete queuedPushes[id];
       if (!id || id === 'null' || id === 'undefined') return;   // defensive: never a null target
-      if (_cloudOf(id)) pushList(id, tickers);
+      if (_cloudOf(id)) _trackedPush(id, tickers);
     });
   }
 
@@ -773,9 +790,48 @@
   };
 
   // ---- refetch-on-focus (if >60s since last pull) ----------------------------
+  /* A pull MERGES cloud rows into the local blob (union: cloud wins for membership).
+     That is correct after a settled edit and WRONG inside a pending push window: a
+     removal made moments ago is still only local, so the merge hands the row straight
+     back and the user watches their deletion undo itself. Reproduced on a tab switch
+     within the 600 ms push debounce; recorded as W2 scope on PR #5461.
+
+     The fix is a READ-SIDE guard only — nothing in the push or fold paths is touched,
+     which is what keeps ruling R1/R1.1 and the frozen push-scoping contract intact.
+     While any push is scheduled or queued, the refetch DEFERS and re-arms instead of
+     firing; the retry is bounded so a permanently stuck queue can never spin. */
+  var PUSH_SETTLE_MS = 800, PUSH_SETTLE_TRIES = 6;
+  /* Three states have to be counted, not two. The debounce timer is deleted the moment
+     `pushList` is CALLED, but the DELETE it issues is still in flight for a round trip
+     — and a pull landing inside that window merges the row straight back, which is the
+     exact bug the deferral exists to stop, just one RTT later. `_pushInFlight` closes
+     that hole; it is incremented at the call sites rather than inside pushList, so the
+     frozen push path itself is untouched. */
+  var _pushInFlight = 0;
+  function _pushPendingWith(timers, queued, inFlight) {
+    return Object.keys(timers || {}).length > 0 ||
+           Object.keys(queued || {}).length > 0 ||
+           (inFlight || 0) > 0;
+  }
+  function pushPending() { return _pushPendingWith(_pushTimers, queuedPushes, _pushInFlight); }
+  // wraps a pushList call so the in-flight window is counted without editing pushList
+  function _trackedPush(listId, tickers) {
+    _pushInFlight++;
+    var done = function (r) { _pushInFlight--; return r; };
+    return pushList(listId, tickers).then(done, function (e) { done(); throw e; });
+  }
+  function pullWhenSettled(tries) {
+    if (!user || !sb) return;
+    if (pushPending()) {
+      if (tries <= 0) return;    // still busy after ~5s: the next focus/edit will pull
+      setTimeout(function () { pullWhenSettled(tries - 1); }, PUSH_SETTLE_MS);
+      return;
+    }
+    pull();
+  }
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && user && sb && (Date.now() - pullDoneAt > 60000)) {
-      pull();
+      pullWhenSettled(PUSH_SETTLE_TRIES);
     }
   });
 
@@ -1103,7 +1159,10 @@
       document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: null } }));
       return;
     }
+    // signed in: the write-through state is whatever the pull below resolves. Say
+    // "saving" now rather than claiming "saved" before anything has been read.
     showAccount(user.email || '');
+    setPill('finishing');
     // Signed in from the anonymous shell: the account-gated page scripts
     // (stockdata.js and the risk stack) were 401'd at load and an in-page auth
     // event cannot re-run <script> tags, so their signal lanes would stay dark
@@ -1135,41 +1194,63 @@
   function init() {
     var CFG = window.SUPABASE_CFG;
     var enabled = CFG && CFG.url && CFG.anonKey;
-    var box = el('wl_auth');
+    var chip = el('ws_savechip');      // the W2 workspace host
+    var box  = el('wl_auth');          // the PRE-W2 Account Sync panel
 
-    // Local-only unless BOTH the config is baked AND the shared client exists.
+    /* THREE pages, one file — and only two of them want a cloud session.
+
+       W2 deleted the Account Sync panel, and with it the `if (!box) return;` guard that
+       had been doing double duty: it also kept this module DORMANT on every page that
+       merely loads it (committee.html loads watchstore.js and has never touched a list).
+       Without it that page became a full cloud participant — MDXAuth wiring, a one-time
+       reload it never asked for, and a reachable list-creation path. The guard is
+       restored in its general form: no sync host of EITHER generation -> do nothing at
+       all. No onChange, no reload, no pull, no fold. */
+    if (!chip && !box) return;
+
+    // Local-only unless BOTH the config is baked AND the shared client exists. The
+    // chip still has to say so — a page that silently shows nothing about where the
+    // list lives is exactly the husk this wave removed.
     if (!enabled || !window.MDXAuth || !window.MDXAuth.onChange) {
       if (box) box.style.display = 'none';
+      setPill('local');
       return;
     }
-    if (!box) return;  // nothing to wire if the panel isn't on the page (e.g. committee.html)
 
-    box.style.display = 'flex';
-    relabel();
-
-    // Wire sign-in button -> global modal
-    var si = el('wl_signin');
-    if (si) si.addEventListener('click', function () {
-      if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
-    });
-
-    // Wire sign-out button
-    var so = el('wl_signout');
-    if (so) so.addEventListener('click', function () {
-      if (window.MDXAuth && window.MDXAuth.signOut) window.MDXAuth.signOut();
-      else showSignedOut();  // UI also updates via the mdx-auth event
-    });
-
-    // The legacy magic-link box is retired — sign-in goes through the global modal
-    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+    /* PRE-W2 markup (the render-lane lag window): the live page carries
+       `#wl_auth` with an inline `display:none`, so failing to un-hide it here serves a
+       page with no sync state, no sign-in CTA and no account row — the husk again, from
+       the other direction. Restore the panel and its two buttons verbatim. */
+    if (box) {
+      box.style.display = 'flex';
+      if (el('wl_signin')) {
+        el('wl_signin').textContent = L('signin');
+        el('wl_signin').style.display = 'inline-block';
+        el('wl_signin').addEventListener('click', function () {
+          if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
+        });
+      }
+      if (el('wl_signout')) {
+        el('wl_signout').textContent = L('signout');
+        el('wl_signout').addEventListener('click', function () {
+          if (window.MDXAuth && window.MDXAuth.signOut) window.MDXAuth.signOut();
+          else showSignedOut();
+        });
+      }
+      if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+      document.addEventListener('langchange', relabel);
+    }
 
     showSignedOut();
     // Establish the signed-out baseline so lastAuthUid=null; a later real
     // sign-in (null→uid) still transitions correctly.
     lastAuthUid = null;
 
-    // Refetch on tab focus (already wired above for >60s gate)
-    document.addEventListener('langchange', relabel);
+    /* Offline is a real, reachable state and the chip must be able to say it. The
+       browser tells us directly; a signed-out visitor is unaffected because their list
+       genuinely still lives in this browser either way. */
+    window.addEventListener('offline', function () { if (user && sb) setPill('offline'); });
+    window.addEventListener('online', function () { if (user && sb) pull(); });
 
     // If a session is already established before init (e.g. page reload while
     // signed in), show 'finishing' until onChange fires with the real user.
@@ -1205,6 +1286,12 @@
       cacheKey: cacheKey, cacheRead: cacheRead, cacheWrite: cacheWrite,
       tickersOf: _tickersOf,
       _setTestSession: function (u, client) { user = u; sb = client; },
+      // W2: the read-side guard that keeps a focus refetch from reverting an edit
+      // that is still only local (see tests/test_watchlist_workspace_js.py)
+      _testHooks: {
+        pushPendingWith: _pushPendingWith,
+        inFlight: function () { return _pushInFlight; }
+      },
       // seed the resolved-list state a real pull would have established
       _setTestLists: function (s) {
         if (!s) return;
