@@ -1055,12 +1055,9 @@ jobs:
       # The market-score authority suite spans engine contracts, dashboard projection,
       # and forward-ledger provenance, so this render/engine guard job owns it. Keep it
       # ahead of the broad sweep: an unrelated render failure must not leave the veto
-      # firewall dark. The odometer suite is the paired template/site light-mode guard
-      # merged by #5458; naming it explicitly closes the same unrun-suite gap on main.
+      # firewall dark.
       - name: US market-score authority firewall (calendar, Radar, history, provenance)
         run: python -m pytest tests/test_market_score_authority_2026_08_12.py -q
-      - name: shared light-mode odometer semantic needle contract
-        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       # #5480 added this express-render ownership guard to main but omitted a
       # run: owner, so audit_unrun_tests correctly found it dark on the very
       # next check-definition refresh. #5481 folded the focused render-lane
@@ -2690,14 +2687,6 @@ jobs:
       # docstrings in scripts/externalize_css.py.
       - name: inline-CSS externalization units + pair-skip guards
         run: python -m pytest tests/test_externalize_css.py -q
-      # Shared light-mode odometer needle: a pure contract over templates/theme.css,
-      # its site/ twin, and the five report templates that copy the compact gauge.
-      # It landed in #5458 wired to NO run: step in any workflow — an orphan that
-      # reddened `workflow-yaml` (which runs scripts/audit_unrun_tests.py) for every
-      # PR whose diff scope reaches that pack, while the suite itself passes. Homed
-      # here because this job already owns the templates/ <-> site/ theme.css pair.
-      - name: light-mode odometer needle — theme.css + five report templates
-        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
 
   data-base-shim:
     if: ${{ false }}
@@ -6123,6 +6112,12 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: macro desk surface, typography, glance + action-board hover cards
         run: python -m pytest tests/test_macro_desk_surface.py tests/test_macro_primary_typography.py tests/test_macro_what_to_do_glance.py tests/test_action_board_hover_cards.py tests/test_board_copy_and_controls_guard.py -q
+      # Canonical — and deliberately ONLY — home of the shared light-mode odometer
+      # contract (templates/theme.css, its site/ twin, five report templates).
+      # #5458 landed the suite unwired; three sessions healed that concurrently on
+      # 2026-08-12 (#5455 engine-render-guards, #5460 here, #5461 template-site-sync),
+      # leaving it triple-run. Consolidated to this step alone: it is a shipped-page
+      # source-scan like the rest of this job. Don't re-add copies elsewhere.
       - name: shared light-mode odometer needle across five report templates
         run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       - name: dashboard cold-load budget + stocktable bootstrap + logo adapter + globe overlays
