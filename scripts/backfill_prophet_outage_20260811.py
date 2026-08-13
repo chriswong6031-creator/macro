@@ -1218,42 +1218,41 @@ def live_plans_since(plans: dict[str, dict], cutoff: str) -> dict[str, list[dict
     return by_key
 
 
-def chronology_refusals(plans: list[dict], *, through: str) -> tuple[list[dict],
-                                                                    list[dict]]:
-    """Split minted plans into (still valid, refused because the trigger already fired).
+#: The engine stage that refuses a candidate whose clocks do not line up — the
+#: chronology contract.  Named as a constant because the partition below keys on it.
+CHRONOLOGY_STAGE = "clock_provenance"
 
-    A plan whose entry trigger is at or below the price the tape had already printed by
-    the reconstruction's own close is not a forward-looking plan — it is an entry the
-    reader could never have taken at that level on that night, and grading it forward
-    would credit the lane with a fill that was already in the past.  #5305 met the same
-    class as engine refusals (CCJ/SHEN/URG/UUUU); here it is checked explicitly because
-    a reconstruction has no receipted refusal set to inherit.
 
-    The comparison uses ONLY the plan's own basis close, which is the last bar in the
-    truncated tree — there is no later price in scope by construction.
+def partition_chronology(refusals: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Split the engine's refusals into (chronology, everything else).
+
+    THE CHRONOLOGY GATE IS THE ENGINE'S, AND IT STAYS THE ENGINE'S (§0.8).  An earlier
+    draft of this lane invented its own rule — refuse when the basis close is at or
+    above the plan's trigger — and it was wrong twice over. Wrong on semantics: for a
+    patience row ``entry == trigger`` by construction (measured on the live 2026-08-12
+    plans: GS carries entry 1037.2, trigger 1037.2, ``entry_status: hold``, with the
+    actual buy zone at 1004.2-1020.7 and 1037.2 as the DON'T-CHASE line), so the rule
+    would have refused nearly every plan for being normal. And wrong on authority: §0.8
+    says the gates are not modified and a refusal is RECORDED rather than overridden,
+    which cuts both ways — a lane may not add a gate of its own either.
+
+    The class the design doc names — CCJ, SHEN, URG, UUUU in the 2026-08-09 window — is
+    already exactly this: ``engine_refusal:clock_provenance``, "formation_date
+    '2026-08-05' postdates tier_event_date '2026-08-03'". The six-clock contract in
+    ``_resolve_origination_clocks`` is relative to ``asof``, so at ``asof=2026-08-11``
+    against a board priced through 2026-08-11 it evaluates that night on its own terms.
+    This function therefore only SORTS what the engine already decided, so the
+    disclosure can report the chronology refusals under their own heading instead of
+    burying them in a list of unlike reasons.
     """
-    kept: list[dict] = []
-    refused: list[dict] = []
-    for plan in plans:
-        trigger = plan.get("trigger")
-        basis = plan.get("entry") if plan.get("entry") is not None else plan.get("price")
-        if not isinstance(trigger, (int, float)) or not isinstance(basis, (int, float)):
-            kept.append(plan)
-            continue
-        if basis >= trigger:
-            refused.append({
-                "ticker": plan.get("asset"),
-                "plan_id": plan.get("id"),
-                "reason": "chronology_refused:trigger_already_fired",
-                "detail": [
-                    f"the {through} close ({basis}) is already at or above the plan's "
-                    f"entry trigger ({trigger}); the entry was in the past before the "
-                    "plan existed"
-                ],
-            })
-            continue
-        kept.append(plan)
-    return kept, refused
+    chronology: list[dict] = []
+    other: list[dict] = []
+    for row in refusals:
+        if str(row.get("reason") or "").endswith(f":{CHRONOLOGY_STAGE}"):
+            chronology.append({**row, "class": "chronology"})
+        else:
+            other.append(row)
+    return chronology, other
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1671,10 +1670,10 @@ def run_reconstruction(
             continue
         survived.append(plan)
 
-    kept, chronology_refused = chronology_refusals(survived, through=BACKFILL_ASOF)
-    minted = [_stamp(plan, executed_at=executed_at) for plan in kept]
+    minted = [_stamp(plan, executed_at=executed_at) for plan in survived]
 
-    still_refused = _refusal_rows_from_intake(intake)
+    chronology_refused, still_refused = partition_chronology(
+        _refusal_rows_from_intake(intake))
     for key in intake.get("reorigination_blocked_keys") or []:
         normalised = str(key).strip().upper()
         rivals = incumbents.get(normalised) or []

@@ -274,30 +274,50 @@ class TestCollisionRuleLiveWins:
 # ---------------------------------------------------------------------------
 
 class TestChronologyRefusal:
+    """The chronology gate is the ENGINE's; this lane only sorts what it decided."""
 
-    def test_a_trigger_the_close_already_took_out_is_refused(self):
-        kept, refused = bf11.chronology_refusals(
-            [_plan("AAA", entry=12.0, trigger=11.0)], through=bf11.BACKFILL_ASOF)
-        assert kept == []
-        assert refused[0]["ticker"] == "AAA"
-        assert refused[0]["reason"] == "chronology_refused:trigger_already_fired"
+    def test_a_clock_provenance_refusal_is_filed_as_chronology(self):
+        """The CCJ/SHEN/URG/UUUU class from the 2026-08-09 window, by its real name."""
+        rows = [{"ticker": "CCJ", "plan_id": None,
+                 "reason": "engine_refusal:clock_provenance",
+                 "detail": ["formation_date '2026-08-05' postdates tier_event_date "
+                            "'2026-08-03'"]}]
+        chronology, other = bf11.partition_chronology(rows)
+        assert other == []
+        assert chronology[0]["ticker"] == "CCJ"
+        assert chronology[0]["class"] == "chronology"
 
-    def test_a_trigger_the_close_sits_exactly_on_is_refused(self):
-        """At the trigger IS fired — ``_evaluate_trigger`` fires on price >= trigger."""
-        _, refused = bf11.chronology_refusals(
-            [_plan("AAA", entry=11.0, trigger=11.0)], through=bf11.BACKFILL_ASOF)
-        assert len(refused) == 1
+    def test_an_unlike_refusal_stays_out_of_the_chronology_bucket(self):
+        rows = [{"ticker": "AAA", "reason": "engine_refusal:zone_geometry",
+                 "detail": []}]
+        chronology, other = bf11.partition_chronology(rows)
+        assert chronology == [] and len(other) == 1
 
-    def test_a_forward_trigger_survives(self):
-        kept, refused = bf11.chronology_refusals(
-            [_plan("AAA", entry=10.0, trigger=11.0)], through=bf11.BACKFILL_ASOF)
-        assert refused == [] and len(kept) == 1
+    def test_the_partition_loses_nothing(self):
+        """Every refusal lands in exactly one bucket — the disclosure claims a complete
+        counterfactual set, so a row that falls between them is a hole in that claim."""
+        rows = [{"ticker": "CCJ", "reason": "engine_refusal:clock_provenance"},
+                {"ticker": "AAA", "reason": "engine_refusal:zone_geometry"},
+                {"ticker": "BBB", "reason": "engine_refusal:reorigination_blocked"}]
+        chronology, other = bf11.partition_chronology(rows)
+        assert len(chronology) + len(other) == len(rows)
+        assert {r["ticker"] for r in chronology} | {r["ticker"] for r in other} == {
+            "CCJ", "AAA", "BBB"}
 
-    def test_a_plan_with_no_comparable_numbers_is_not_silently_dropped(self):
-        """An unpriced plan is the engine's problem to refuse, not this gate's."""
-        kept, refused = bf11.chronology_refusals(
-            [_plan("AAA", entry=None, trigger=None)], through=bf11.BACKFILL_ASOF)
-        assert len(kept) == 1 and refused == []
+    def test_the_lane_adds_no_price_based_chronology_gate_of_its_own(self):
+        """§0.8 cuts both ways: a lane may not ADD a gate either.
+
+        The rule this replaced refused when the basis close reached the trigger, which
+        is the normal shape of a patience row — the live 2026-08-12 plans carry
+        entry == trigger with the real buy zone below and the trigger as the
+        don't-chase line, so that rule would have refused them for being ordinary.
+        """
+        source = Path(bf11.__file__).read_text(encoding="utf-8")
+        assert "trigger_already_fired" not in source, (
+            "a hand-rolled price comparison is back in the lane; the chronology gate "
+            "is _resolve_origination_clocks' and its refusals arrive in intake"
+        )
+        assert bf11.CHRONOLOGY_STAGE == "clock_provenance"
 
 
 # ---------------------------------------------------------------------------
