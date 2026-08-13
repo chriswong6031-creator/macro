@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-12T23:54:44.529448+00:00",
-  "count": 1023,
+  "generated_at": "2026-08-13T01:40:07.458690+00:00",
+  "count": 1028,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -62,6 +62,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ihhroq7zrot-128c39",
+      "title": "JPM US Market Intelligence Afternoon Briefing Aug 12",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T00:59:12Z",
+      "summary_points": [
+        "**US Macro Data & Geopolitics**: PPI (8:30am ET) and Jobless Claims critical; US-Iran tensions (Hormuz Strait) and mixed Middle East headlines drive sentiment, with CPI context easing inflation concerns via AI narrative.",
+        "**Inflation Signals**: Core goods inputs slowdown hints at easing pressures, but services inflation (PPI services +0.2% Jul) and rising PMI/ISM cost metrics create pipeline uncertainty.",
+        "**Tech Rotation & Catalysts**: Hyperscalers (AWS/Azure) show sustained demand; AI catalysts (Gemini 3.5 Pro, AWS re:Invent) drive Mag7/hyperscalers (30% upside) and global Semis (APAC AI reversal).",
+        "**EM Tactical Trades**: TACTICALLY LONG China H-shares/Internet (KWEB), Taiwan; Hedges: long LatAm (ILF), India (INDA) vs short Southeast Asia (ASEA).",
+        "**Geopolitical Risk**: Iran-US talks frozen, Hormuz traffic low; US-China AI talks (Sep) and Nov 1 trade truce expiration threaten tech policy stability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-gr0omfe4cut-a2a4b1",
       "title": "Strategy Espresso Europe – The secret outperformer",
@@ -431,6 +452,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-l8t5s8tr0ns-3c1a76",
+      "title": "Americas Transportation Railroads Weekly Rail Carload Snapshot — Week 31",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:49Z",
+      "summary_points": [
+        "**US Rail Demand Acceleration**: US Class I rail total traffic growth accelerated to +5.7% YoY (vs +2.4% prior week), driven by intermodal (+6.5% YoY) and ex-intermodal (+4.8% YoY), with CSX leading intermodal (+8.9% YoY) and ex-intermodal (+5.5% YoY), signaling robust freight demand fundamentals.",
+        "**Canadian Rail Momentum**: Canadian Class 1 rail growth rose to +3.6% YoY (vs +0.1% prior week), led by CPKC (+4.7% YoY) and intermodal expansion (+6.5% YoY vs 0.6% prior week), indicating strengthening cross-border trade flows and regional economic activity.",
+        "**Critical Rating System Insight**: Goldman Sachs' \"Not Rated\" (NR) designation for stocks involved in merger/strategic transactions is a key portfolio positioning signal, distinct from Neutral (N) for inactive stocks, directly impacting risk assessment and allocation decisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-yklid5momhw-1dfc32",
       "title": "Venture Global (VG) First Take 2Q26 Slight Miss on Margins, but 2026 Guidance Increased",
       "institution": "Goldman Sachs",
@@ -531,6 +571,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-eqkuddit4xx-8d0a58",
+      "title": "ADNOC Logistics & Services (ADNOCLS)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:21Z",
+      "summary_points": [
+        "**Q2 Earnings Beat**: Revenue +59%/+69% vs consensus, EBITDA beat GSe/cons by +65%/+61% (43% margin), net profit +82%/+85% at US$595m driven by Tankers outperformance, VLCC sale, and associate/JV contributions.",
+        "**FY26 Guidance Upgrade**: Revenue mid-20% growth (vs low single-digit), EBITDA mid-60% (vs high-20%), net profit high-110% (vs high-60%); shipping segment guidance upgraded to mid-80% growth.",
+        "**Segment Dichotomy**: Shipping revenue +246% YoY (EBITDA +541%, 49% margin) vs.",
+        "Integrated Logistics revenue down 16% YoY (EBITDA down 44% YoY) due to JUB utilization and offshore cost overruns.",
+        "**Key Risk**: Client dependency (early termination/non-renewals) and reduced client reliance (outsourcing/in-sourcing) as top risk factors impacting UAE AL&S market."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
@@ -822,6 +883,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-2nidsjv3ldc-d5afbd",
+      "title": "Standard Nuclear Inc. (STDN) Pureplay nuclear fuel supplier poised to capture significant share in a growing nuclear SMR TAM...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T03:15:51Z",
+      "summary_points": [
+        "**TRISO Fuel Demand Surge**: TRISO fuel demand projected to surge from 0.2 MTU (2026) to 98 MTU (2035), creating exponential growth opportunity amid limited commercial suppliers.",
+        "**Near-Monopoly Capacity Advantage**: STDN plans 30 MTU/yr TRISO capacity by 2030 (vs.",
+        "peers’ <1 MTU/yr), enabling pricing power and commanding market share (25% SMR fuel applications).",
+        "**De-Risked Backlog & Military Focus**: $661m backlog (contract + pipeline) with military deployments ensures revenue visibility; 7/8 TRISO SMRs target government sites (DoD, Air Force), bypassing NRC licensing delays.",
+        "**Policy-Driven HALEU Support**: DOE’s $2.7bn funding for domestic enrichment (10 companies selected, 7 TRISO-focused) and Russian uranium import ban (2024) accelerate HALEU availability, de-risking supply chain."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-q8jkpedougf-da7104",
       "title": "Global Market Views Same Macro, Different Marks",
       "institution": "Goldman Sachs",
@@ -839,6 +921,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-c8gir4mnhnc-16330b",
+      "title": "Standard Nuclear Inc. (STDN) Pureplay nuclear fuel supplier poised to capture significant share in a growing nuclear SMR TAM...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T03:15:46Z",
+      "summary_points": [
+        "**TRISO Fuel Demand Surge**: TRISO fuel demand projected to surge from 0.2 MTU (2026) to 98 MTU (2035), creating exponential growth opportunity amid limited commercial suppliers.",
+        "**Near-Monopoly Capacity Advantage**: STDN plans 30 MTU/yr TRISO capacity by 2030 (vs.",
+        "peers’ <1 MTU/yr), enabling pricing power and commanding market share (25% SMR fuel applications).",
+        "**De-Risked Backlog & Military Focus**: $661m backlog (contract + pipeline) with military deployments ensures revenue visibility; 7/8 TRISO SMRs target government sites (DoD, Air Force), bypassing NRC licensing delays.",
+        "**Policy-Driven HALEU Support**: DOE’s $2.7bn funding for domestic enrichment (10 companies selected, 7 TRISO-focused) and Russian uranium import ban (2024) accelerate HALEU availability, de-risking supply chain."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
       "language": "en",
       "needs_metadata": false
     },
