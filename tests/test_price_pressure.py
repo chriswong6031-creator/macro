@@ -24,6 +24,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -1272,6 +1273,24 @@ def test_base_rate_honest_n_is_per_horizon(tmp_path):
 # script entry
 # ---------------------------------------------------------------------------
 
+def _builder_env(tmp_path: Path) -> dict:
+    # Hermetic on purpose (PATH/PYTHONPATH/TZ/HOME pinned) — but the dynamic
+    # loader's variables must pass through. actions/setup-python's tool-cache
+    # interpreter carries no usable RUNPATH and locates its own libpython only
+    # through the LD_LIBRARY_PATH the setup step exports; dropping it here made
+    # this exact subprocess bind the SYSTEM libpython3.12 (3.12.3) under a
+    # 3.12.13 stdlib on the self-hosted render-linux pool, and _ctypes died on
+    # `undefined symbol: _PyErr_SetLocaleString` (PR #5465, run 31641832540).
+    # Hosted images dodge the collision by libpython layout, which is why the
+    # suite was green there for months. Passing the variable through keeps the
+    # env hermetic where it matters and is a no-op wherever it is unset.
+    env = {"PATH": "/usr/bin:/bin", "PYTHONPATH": str(ROOT), "TZ": "UTC",
+           "HOME": str(tmp_path)}
+    if "LD_LIBRARY_PATH" in os.environ:
+        env["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
+    return env
+
+
 def test_missing_store_annotates_at_line_start_and_exits_zero(tmp_path):
     """House annotation law: bare print, '::' first on the line, exit 0."""
     data_dir = tmp_path / "data"
@@ -1280,8 +1299,7 @@ def test_missing_store_annotates_at_line_start_and_exits_zero(tmp_path):
         [sys.executable, "-m", "scripts.build_price_pressure",
          "--data-root", str(data_dir)],
         cwd=str(ROOT), capture_output=True, text=True, timeout=300,
-        env={"PATH": "/usr/bin:/bin", "PYTHONPATH": str(ROOT), "TZ": "UTC",
-             "HOME": str(tmp_path)},
+        env=_builder_env(tmp_path),
     )
     assert proc.returncode == 0, proc.stderr[-2000:]
     hits = [ln for ln in proc.stdout.splitlines()
@@ -1345,8 +1363,7 @@ def _run_builder(data_dir: Path, tmp_path: Path):
         [sys.executable, "-m", "scripts.build_price_pressure",
          "--data-root", str(data_dir)],
         cwd=str(ROOT), capture_output=True, text=True, timeout=300,
-        env={"PATH": "/usr/bin:/bin", "PYTHONPATH": str(ROOT), "TZ": "UTC",
-             "HOME": str(tmp_path)},
+        env=_builder_env(tmp_path),
     )
 
 
