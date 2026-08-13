@@ -39,6 +39,10 @@ import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.sparse_guard import refuse_if_vacuous, trees_for  # noqa: E402
+
 
 def _is_excluded(rel_path: str, name: str) -> bool:
     """True for third-party bundles we do not author (skip = pure noise)."""
@@ -92,8 +96,12 @@ def _check_file(path: str):
     return line, msg
 
 
-def find_bad_files(site_dir: str = "site"):
-    """Return a list of (file, line, error) for every malformed standalone JS bundle."""
+def find_js_files(site_dir: str = "site"):
+    """Return the standalone (non-vendor) bundles under `site_dir` — the scan set.
+
+    Split out from `find_bad_files` so `main` can tell "nothing was broken" from
+    "nothing was looked at" without re-deriving the exclusion rules.
+    """
     js_files = []
     for root, _dirs, files in os.walk(site_dir):
         for name in files:
@@ -104,6 +112,12 @@ def find_bad_files(site_dir: str = "site"):
                 continue
             js_files.append(path)
     js_files.sort()
+    return js_files
+
+
+def find_bad_files(site_dir: str = "site"):
+    """Return a list of (file, line, error) for every malformed standalone JS bundle."""
+    js_files = find_js_files(site_dir)
 
     bad: list[tuple[str, int, str]] = []
     with ThreadPoolExecutor(max_workers=min(8, (os.cpu_count() or 2))) as pool:
@@ -120,6 +134,18 @@ def find_bad_files(site_dir: str = "site"):
 def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     site_dir = argv[0] if argv else "site"
+
+    # A sparse session worktree omits site/ entirely, so the walk yields nothing
+    # and the OK below reports "all bundles parse cleanly" over zero bundles — a
+    # vacuous pass on the guard that keeps a blank page off production. Zero
+    # bundles is only honest when site/ is really there. Checked BEFORE the node
+    # probe: "I cannot see what I audit" is the more specific cause, and both
+    # paths are non-zero, so no full checkout changes verdict.
+    scanned = find_js_files(site_dir)
+    refusal = refuse_if_vacuous(len(scanned), trees_for(site_dir), "check-site-js-vacuous")
+    if refusal:
+        print(f"check_site_js: REFUSED — {refusal}", file=sys.stderr)
+        return 1
 
     if shutil.which("node") is None:
         print("check_site_js: ERROR — `node` not found on PATH; cannot verify standalone JS.", file=sys.stderr)
