@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prophet — US Board · mockup gate reference (MP-1)</title>
+<!--
+  ══════════════════════════════════════════════════════════════════════════
+  PROPHET BOARD — frozen visual reference for migration packet MP-1, gate G-C.
+  NOT production. No production template, engine path, or site/ file is touched
+  by this directory.
+
+  Binding authority, in precedence order:
+    1. research/PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md   (PR #5504, merged)
+    2. research/migration_packets/MP-1-prophet-board.md      (PR #5505)
+    3. research/P0_REFERENCE_EXPERIENCE_DESIGN_PACKET.md §B  (as amended 2026-08-13)
+    4. shipped design-system primitives (theme.css, tier_preview.css, LENS, .actcol)
+
+  HARNESS — state switching by query parameter:
+    ?theme=dark|light   ?lang=en|zh   ?view=grid|table   ?chrome=0|1
+    ?state=paid|anon|empty|episodes
+    ?life=watch|ready|entered|delivering|overtime|invalidated|resolved
+
+  Data: board-data.js is a real extract of the committed payload
+  (site/prophet/index.json asof 2026-08-12 + site/factordata/us_standouts.json
+  as_of 2026-08-10) — regenerate with tools/gen_fixture.py. Every count on the
+  page reconciles against that payload: 62+96+0+0+4 = 162 = open_count.
+  ══════════════════════════════════════════════════════════════════════════
+-->
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+  <div id="harness"></div>
+  <div class="wrap">
+    <main id="board"></main>
+  </div>
+  <script src="board-data.js"></script>
+  <script src="board.js"></script>
+</body>
+</html>

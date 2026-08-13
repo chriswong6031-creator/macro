@@ -5,9 +5,13 @@ The pinned design is `mockups/refs/psi/workspace/workspace.html` + `DESIGN_NOTES
 the implementation's side of the record: what the crops show, how they were taken, and
 every place the build departed from the pinned artifact or resolved something it left open.
 
-**DESIGN_NOTES.md is not edited here on purpose.** It lives in #5464 and would fork if
-this PR carried a second copy. Sections 2 and 3 below are written to be folded into its
-§7 (Builder inheritance) once that PR lands.
+**FOLDED, 2026-08-13.** #5464 merged, and the fold this file asked for has been done:
+sections 2 and 3 below now also live in `DESIGN_NOTES.md` §7 as subsections **(e)** and
+**(f)**, where a later builder actually reads them. That file is the authority; this one
+is kept unedited as the W2 crop record and the account of how the shots were taken.
+Two of the deltas below are since **superseded by W3** — D2 (Scenario Lab shell) and D3
+(five labelled Risk Center tabs) both shipped for real; `DESIGN_NOTES.md` §7(g) is the
+current record for that surface.
 
 ---
 
