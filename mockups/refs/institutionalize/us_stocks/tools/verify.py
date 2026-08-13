@@ -460,8 +460,19 @@ def main():
             pg = page_at(f"theme=dark&lang={lang}&state=paid", 390, 844)
             m = pg.evaluate("""() => {
               const F = 844;
-              const cs = [...document.querySelectorAll('.pvcard')];
-              const full = cs.filter(c => c.getBoundingClientRect().bottom <= F).length;
+              // AMENDED at R4. `bottom <= F` is TRUE for a display:none card,
+              // whose rect is all zeros — so once PRC-306 put the whole partition
+              // in the DOM with the overflow hidden, this counted 120 "whole cards
+              // above the fold" at 390w instead of 1. It still passed, which is
+              // worse than failing: the guard stopped measuring anything while
+              // still reporting green. A card counts only if it is laid out, has
+              // real height, and actually ends above the fold.
+              const cs = [...document.querySelectorAll('.pvcard')]
+                .filter(c => c.offsetParent !== null);
+              const full = cs.filter(c => {
+                const r = c.getBoundingClientRect();
+                return r.height > 40 && r.top >= 0 && r.bottom <= F;
+              }).length;
               const de = document.documentElement;
               const cells = [...document.querySelectorAll('.mx-cell')];
               const tops = [...new Set(cells.map(c => Math.round(c.getBoundingClientRect().top)))];

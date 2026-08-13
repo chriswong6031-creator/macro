@@ -77,16 +77,30 @@ re-add 7 · muted 35 · no band 118.
 
 **C · One universe, no view exemption.** The reference-only subset is gone. `paid` and `today`
 render the same population — the whole plan book — so the headline, the ladder cells, the rendered
-cards, `+N more`, the filters and the table view all describe one universe. The earlier
+cards, the expansion bar, the filters and the table view all describe one universe. The earlier
 "reference renders 33, headline says 162" split was itself the count-law contradiction; enrichment
 coverage now shows honestly on the cards instead of being filtered away.
+
+*Amended at R4 under PRC-306.* The overflow is no longer a `+N more` link routing to the table.
+The grid holds the whole partition and reveals it in place via the shipped `.sm-*` expansion bar
+(`Showing N of M` · `Show N more` · `Show all M`), so **every plan row is reachable as a CARD** —
+159 visible after one click, evidenced in crops `90`/`91`. The table is now an alternate
+representation, never the only route to the tail.
 
 **D · No producer-less market assertions.** The regime / breadth / posture chips are **deleted** —
 they asserted a market call with no producer behind them. Groups is no longer five authored lanes
 of invented sectors: it is bound to `us_standouts.themes_in_favour`, a canonical artifact, and
-renders rank, recommendation, run length and member count straight from the payload with its
+renders recommendation, run length and member count straight from the payload with its
 as-of printed on the surface. If the key is absent the section says so rather than inventing a
 call to keep the composition full.
+
+*Amended at R4 under PRC-316/PRC-317.* Two corrections. The `RECO` map was five values and the
+payload ships `enter`, which fell through to the raw slug — leaking the English token `enter` into
+Chinese copy; the map now covers every slug and an unmapped one renders nothing rather than its
+identifier. And **rank is no longer printed**: the eight themes carry ranks 1, 5, 6, 7, 9, 11, 12,
+19 — non-contiguous, i.e. filtered out of a larger ranking whose size the payload does not carry.
+An ordinal without its denominator is not a fact, so the list is sorted by rank and sequence
+carries the ordering. If a `themes_total` ever publishes, the ordinal comes back.
 
 **E · Visual conditions.** Featured is the operator-ratified aura again — a `--pv-buy` pinned ring
 plus glow plus lift, and the lit rail — not the bare inset ring the first pass reduced it to
@@ -108,6 +122,56 @@ guaranteed above the fold. The board sorts by the engine's priority rank, and to
 #3 priority rows are no-read cards — the G-D coverage gap surfacing. Guaranteeing a Buy above the
 fold would require re-sorting by stance, which contradicts the stated sort rule; that is an
 operator ruling, not a layout fix. Once G-D lands, the top rows carry stances.
+
+---
+
+## 0c. R4 — closing the RIG R3 REVISE verdict (#5552)
+
+R3 returned **REVISE** over `6ad6b51b`. This pass closes it. The full disposition of all 41 rows
+of that record — every blocking finding, both authority-delta rows, all three task-matrix rows,
+12 carried majors, 13 carried minors and 1 withdrawn — lives in
+`research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md`, which is **generated**
+by joining the frozen record against the disposition table and hard-fails if any finding lacks a
+disposition. A finding cannot be dropped here by forgetting it.
+
+**The four capability-shaped findings that had survived three revisions are the point of this
+pass.** R3's own strongest argument against approval was that the previous cycle "fixed everything
+its rationale discussed and moved nothing that appeared on no list" — the code-shaped conditions
+got closed while a link, a stale banner, a proof number and a route to 43% of the book stayed
+invisible. All four now exist: the card routes to `stock.html#TICKER`; the behind-the-tape banner
+is bound to production's `_compute_board_staleness()`; Evidence carries the real track record with
+its confidence interval; and every plan row is reachable as a card.
+
+**What did NOT change, deliberately.** The R3 verdict recorded nine preserved strengths and none is
+touched: the one-universe count law, producer-bound Groups, the ⚠N caution carrier, the
+stance-branched zone, the light-mode card plane, the empty-vs-absent state writing, the ruled
+seven-cell ladder, the withhold-by-absence anonymous gate, and the artifact's own harness. This was
+a closure pass, not a redesign.
+
+**Two deliberate deviations from the brief, both proven before adoption:**
+
+1. **The stance ramp's light value is 54%, not the critic's 62%.** The critic's ramp reproduces
+   exactly and its central insight is load-bearing — on a dark panel no *deepening* mix of `--up`
+   can out-contrast amber, so the free parameter is the *direction* of the distinctness mix, toward
+   `--text`. But at light 62% `--pv-buy` resolves byte-identical to `--ink-up`, because light
+   `--ink-mix-up` is also 62% — so the BUY badge and the live +N% change on one card would paint one
+   value, which is the DA-002 defect repeating in the other theme. At 54% the ordering holds in all
+   four quadrants, light contrast *rises* (7.12 vs 6.29 en; 8.75 vs 7.85 zh), and the chip separates
+   from the tape ink in four quadrants instead of two.
+2. **The fixture is NOT rebaked.** `gen_fixture.py` read `git show origin/main:<path>` — a moving
+   ref taking ~24 nightly commits every two hours — so a rebake would have silently replaced the
+   population the verdict was issued over, and could have made VTC-301 read as "fixed" merely
+   because a different night had more sparks. `board-data.js` is additive-only (`staleness` and
+   `track` appended, every other key byte-identical); `gen_fixture.py` is repaired to a
+   repo-relative path and a pinned SHA. The stale numbers in *this document* were stale against the
+   already-frozen payload, and the prose is what moved.
+
+**Not waived.** G-D (#5541) and the overtime producer contradiction (#5540) remain open production
+blockers. Closing a visual reference closes neither, and neither is a reason to weaken it.
+
+**This pass self-approves nothing.** It produces a SHA and stops; approval requires a fresh
+independent RIG cycle with new critic receipts, because receipts go stale the moment the frozen SHA
+moves (RIG §3).
 
 ---
 
@@ -205,12 +269,19 @@ The revision keeps the Board from #5514 and restores the shipped card's DNA.
   Its producer is now ruled (§6 Q7): the entry/actionability axis only, factored from the engine.
 - **Compact identity** — ticker · company name · sector, in the shipped geometry.
 - **⚡ trigger chip** and **restrained marks** (★ Featured · New · Bottoming/Continuation entry).
-- **Zone footer** — `ZONE $70.66–$72.35` with the date pinned right.
+- **Zone footer** — `ZONE $70.66–$72.35` with the date pinned right. *(R4 / PRC-318: a zone whose
+  endpoints are equal now prints as a single price, not a range with identical ends — 4 rows.)*
 
 ### Preserved from #5514
 - The whole Board architecture: Setups = the plan book, Candidates as a separate population,
   the seven-cell ladder, lifecycle filtering, `#life=` fragments, honest count reconciliation,
-  empty / anonymous / filtered states, Groups / Market context / Evidence organisation.
+  empty / anonymous / filtered states, Groups / Evidence organisation.
+  *(R4 / VTC-307: the Market context section is **deleted**. It rendered a header and five tab
+  anchors bound to no producer — a header retained over content that had already been removed.
+  Evidence now closes the page with real quantities from `us_track_ledger.json` instead of four
+  bare links: win rate WITH its confidence interval, the matured n against the in-flight n, and
+  the number of boards the record covers. A win rate printed without its interval would be the
+  overclaim this whole review cycle exists to catch.)*
 - The ruled **hue-neutral lifecycle grammar**, now compact on the card: mark + word, nothing else.
 - One card per plan `id`, dated episode chips, Resolved outside the live total.
 - Retirement of the four-dot Bottoming → Turning → Ready → Trend rail.
@@ -242,17 +313,41 @@ The revision keeps the Board from #5514 and restores the shipped card's DNA.
 
 ```
 ┌────────────────────────────────────────┐
-│ HOLD  ⚡Triggered        $74.13  +0.7%  │  stance · trigger · live quote + change
+│ ENTRY WAIT ⚡Triggered   $74.13  +0.7%  │  axis · stance · trigger · live quote
 │         compact price chart            │  74px, with its own zone band
 ├────────────────────────────────────────┤
-│ FTI  TechnipFMC          PRIORITY  89  │
+│ FTI  TechnipFMC          PRIORITY  89  │  ← ticker+name is the LINK to detail
 │ Energy                                 │
 │ ★ Featured  New  Bottoming entry       │  restrained marks, max 3
 │ ━━ Entered                             │  ruled lifecycle mark + word, no gloss
 ├────────────────────────────────────────┤
 │ ZONE $70.66–$72.35             Aug 10  │
 └────────────────────────────────────────┘
+
+   …and when the chart has not published (116 of 159 live rows):
+
+┌────────────────────────────────────────┐
+│ ENTRY  No read yet              —   —  │
+│           No chart yet                 │  74px — the SAME height, null PRINTED
+├────────────────────────────────────────┤
 ```
+
+*Amended at R4.* Three changes to the anatomy above:
+
+- **PRC-312 — the stance slot names its axis.** `ENTRY` precedes the verb, because 27 rows are
+  `life=entered` carrying `stance=wait` and "Entered / Wait" otherwise reads as a verdict that the
+  open position should not exist. It is an entry read: *do not add here*. Ready's gloss also moved
+  off "plan armed, trigger not fired" — which contradicted a sourced ⚡Triggered — to the lifecycle
+  fact, `plan armed, not yet entered`.
+- **PRC-301 — the card routes to the name.** Ticker + company name is an `a.pv-open` →
+  `stock.html#TICKER` (the cross-market house convention), stretched over the card by `::after`
+  while the caution / trigger / priority / lane controls are raised above it. A sibling anchor, not
+  a wrapper: `.pv-newer` is itself an `<a>`, and an `<a>` inside an `<a>` is illegal.
+- **VTC-301 / PRC-309 — the chartless hero is the SAME height and states its absence.** It was a
+  24px strip stretched by the grid into a ~97px void beside a 74px neighbour, on 20 of the 40
+  canonical cards. It is now 74px with `No chart yet` / `暂无图表` printed in it. The R3 artifact
+  disproved its own data excuse — the identical rows already rendered as clean cards in the
+  fallback lens and at 390w; only the canonical grid read as broken.
 
 Everything a reader needs is answerable without opening the card, and **no paragraph is
 required for any of it**: what it is, what Prophet thinks, the price, how it is moving, the
@@ -559,7 +654,7 @@ population the product surface may substitute for the book.
 
 ## 8. Evidence
 
-`crops/` — 37 views, 55 files, at 1440×900 and 390×844:
+`crops/` — 42 views, 62 files, at 1440×900 and 390×844:
 
 - `00-R3-*` the R3 matrix: dark+light x EN+ZH
 - `01`–`07` the required matrix: desktop dark/light × EN/ZH, 390w dark EN/ZH, 390w light EN
@@ -569,6 +664,14 @@ population the product surface may substitute for the book.
 - `40`–`42` anonymous lock (dark EN, light ZH, 390w)
 - `50`–`51` empty board · `60`–`61` table view
 - `70`–`73` **the three-way card adjudication** (production · #5514 v1 · revised), dark+light × EN+ZH
+- `80`–`82` **R4 / PRC-305 — behind the tape** (dark EN, light ZH, 390w). Production ships this
+  banner today and the R3 reference had no stale path at all, so it needs its own committed
+  evidence in both languages.
+- `90`–`91` **R4 / PRC-306 — the expanded grid** (dark EN, light ZH). These are *post-interaction*
+  states: `capture.py` clicks `Show all` and then shoots, because a capability that only exists
+  after a click cannot be evidenced by a URL. Both show **159 visible cards** — every live plan row
+  reachable as a card. The capture RAISES rather than skipping if the control is missing, so a
+  regression cannot quietly yield a crop of the un-expanded grid that photographs as success.
 
 ### Honest screenshot gaps — states the real payload cannot exhibit (PRC-319)
 
