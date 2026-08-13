@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T03:26:12.806049+00:00",
-  "count": 1033,
+  "generated_at": "2026-08-13T03:40:24.474914+00:00",
+  "count": 1034,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -347,6 +347,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ai6opfy6d1l-be2ae3",
+      "title": "JPM CNY valuation",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T10:04:36Z",
+      "summary_points": [
+        "**CNY Undervaluation & Structural Distortion**: CNY undervalued 20-30% in REER due to PBOC interventions, creating severe bilateral exchange rate, trade flow, and inflation distortions despite minimal global stress; cyclically adjusted CAB (3.6% of GDP) significantly deviates from IMF norms.",
+        "**Policy Conflict: Fiscal vs FX Intervention**: Critical debate on whether fiscal policy (not FX intervention) drives external surplus; forcing CNY appreciation would worsen deflation and hurt growth, with exports remaining primary demand driver amid persistent export dependency.",
+        "**Global Imbalance Data & Risk Triggers**: Widening China/US current account imbalances (IMF 2026 ESR) reflect reporting gaps, not disruptive flows, but China’s CAB deviation and FX misalignment (-21.3%) create macro-financial risk exposure despite stable global conditions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
