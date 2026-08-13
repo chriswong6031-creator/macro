@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T07:56:06.857857+00:00",
-  "count": 1046,
+  "generated_at": "2026-08-13T08:11:09.149813+00:00",
+  "count": 1047,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -470,6 +470,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-sqdih2ygcpy-f84de4",
+      "title": "Is China building an alternative monetary system",
+      "institution": "Natixis",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T22:49:01Z",
+      "summary_points": [
+        "**RMB Trade Finance Surge**: RMB overtakes euro as 2nd most-used currency in global trade finance (2024-2025), driven by Russia-Ukraine war sanctions; trade settlement share jumps from 12-13% (2018) to 30% (2024).",
+        "**China's External Assets & Current Account**: Non-reserve international investment position exceeds $8T by Q2 2026, fueled by current account surplus, positioning China as a major creditor with redenomination capacity.",
+        "**CIPS Infrastructure Growth**: CIPS cross-border payments grow 40% YoY (2024: 175T yuan), offering SWIFT-sanction avoidance; driven by US dollar extraterritoriality concerns (e.g., Russia-Ukraine sanctions).",
+        "**Foreign Demand Gap**: Foreign investors hold ~RMB 3.2T in onshore bonds (down 28% from peak), while offshore dim sum market dominated by Chinese banks (>60% held by Chinese institutions), limiting RMB investment currency adoption.",
+        "**Geopolitical Acceleration**: Sanctions-driven bifurcation (e.g., CIPS, OmniClear) accelerates RMB infrastructure development more effectively than domestic policies, though broader adoption beyond aligned states remains uncertain."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
