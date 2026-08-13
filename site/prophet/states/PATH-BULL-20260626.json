@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PATH-BULL-20260626",
-  "asof": "2026-08-12",
+  "asof": "2026-08-13",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 71.2,
-  "raw_confidence": 75.0,
-  "delta_vs_base": 11.2,
+  "management_confidence": 72.8,
+  "raw_confidence": 74.8,
+  "delta_vs_base": 12.8,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
     "progress": 37.7,
-    "pace": 100.0,
+    "pace": 99.1,
     "retention": 50.0,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.683,
     "dist_to_t1_r": 0.817,
     "dist_to_t2_r": 2.317,
-    "horizon_pct_used": 26.7,
+    "horizon_pct_used": 28.9,
     "p1": 0.4554,
     "p2": 0.2277,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-06",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 12,
-  "tau": 0.2667
+  "days_elapsed": 13,
+  "tau": 0.2889
 }

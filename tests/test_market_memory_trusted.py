@@ -1362,6 +1362,132 @@ def test_options_context_campaign_batch_replays_the_owner_corpus_once(
     }
 
 
+def test_options_context_closed_campaign_corpus_replays_against_its_own_era() -> None:
+    """A CLOSED corpus is replayed against the sources of the era it covers.
+
+    `data/options_signal_episode/campaigns.jsonl` is byte-frozen at its retired v1
+    cohort and no lane appends to it, while `episodes.jsonl` grows nightly, so
+    `resolve_campaign_context_references`' whole-replay equality was a scheduled
+    failure: the 2026-08-13 durable checkpoint (e9738279704) added 822 episodes and
+    twelve qualifying groups the frozen corpus cannot hold, and the deployed
+    auditor started exiting non-zero with `campaign corpus differs from exact
+    episode/outcome replay`.
+
+    The cure is at the INPUT boundary, not at the comparison: the auditor cuts its
+    replay sources at `CAMPAIGN_RULE_FROZEN_AT`, the same instant that closed the
+    cohort, so the equality holds by construction and every mutation inside the
+    window still has to fail.  Cutting the comparison instead would have let a
+    truncated tail pass -- and `engine/options_market_memory_context.py` is bound
+    byte-for-byte by the sparse-selector preregistration receipt, so it is not
+    editable here in any case.
+    """
+
+    first_group = [
+        _campaign_episode("closed-era-first-a", 1_500_000.0),
+        _campaign_episode(
+            "closed-era-first-b", 1_500_000.0, available_at="2026-07-02T14:32:00Z"
+        ),
+    ]
+    second_group = [
+        _campaign_episode(
+            "closed-era-second-a", 1_500_000.0, ticker="OTHER", strike=110.0
+        ),
+        _campaign_episode(
+            "closed-era-second-b",
+            1_500_000.0,
+            ticker="OTHER",
+            strike=110.0,
+            available_at="2026-07-02T14:33:00Z",
+        ),
+    ]
+    after_freeze = [
+        _campaign_episode(
+            "closed-era-after-a",
+            1_500_000.0,
+            session_date="2026-08-12",
+            available_at="2026-08-12T14:31:00Z",
+            ticker="LATER",
+            expiration="2026-09-18",
+        ),
+        _campaign_episode(
+            "closed-era-after-b",
+            1_500_000.0,
+            session_date="2026-08-12",
+            available_at="2026-08-12T14:32:00Z",
+            ticker="LATER",
+            expiration="2026-09-18",
+        ),
+    ]
+    episodes = [*first_group, *second_group, *after_freeze]
+    outcomes = [_campaign_h60_outcome(row) for row in episodes]
+    full, pending = options_signal_episode.derive_campaigns(episodes, outcomes)
+    assert pending == []
+    closed_rows = [
+        row for row in full if row["evidence_phase"] == "retrospective_discovery"
+    ]
+    assert len(closed_rows) == 2 < len(full)
+
+    closed_episodes, closed_outcomes = options_context_audit._closed_campaign_era_sources(
+        episodes, outcomes
+    )
+    assert [row["episode_id"] for row in closed_episodes] == [
+        row["episode_id"] for row in [*first_group, *second_group]
+    ]
+    assert {row["episode_id"] for row in closed_outcomes} == {
+        row["episode_id"] for row in closed_episodes
+    }
+    replayed, replay_pending = options_signal_episode.derive_campaigns(
+        closed_episodes, closed_outcomes
+    )
+    assert replayed == closed_rows
+    assert replay_pending == []
+
+    class ForbiddenReader:
+        def read_stored_as_known_at(self, **_query: object):
+            pytest.fail("retrospective campaigns must abstain before a store read")
+
+    references = options_context.resolve_campaign_context_references(
+        closed_rows,
+        episodes=closed_episodes,
+        h60_outcomes=closed_outcomes,
+        reader=ForbiddenReader(),
+    )
+    assert len(references) == len(closed_rows)
+
+    # The uncut sources are the failure this cures -- keep it pinned, so a future
+    # change that silently widens the window again is caught here.
+    with pytest.raises(
+        options_context.OptionsMarketMemoryContextError,
+        match="differs from exact episode/outcome replay",
+    ):
+        options_context.resolve_campaign_context_references(
+            closed_rows,
+            episodes=episodes,
+            h60_outcomes=outcomes,
+            reader=ForbiddenReader(),
+        )
+
+    # Nothing inside the window got weaker: a dropped, reordered, extra or empty
+    # corpus still fails against the cut sources.
+    for mutant in (
+        closed_rows[:-1],
+        closed_rows[1:],
+        [closed_rows[1], closed_rows[0]],
+        [],
+        [*closed_rows, full[-1]],
+    ):
+        with pytest.raises(
+            options_context.OptionsMarketMemoryContextError,
+            match="differs from exact episode/outcome replay",
+        ):
+            options_context.resolve_campaign_context_references(
+                mutant,
+                episodes=closed_episodes,
+                h60_outcomes=closed_outcomes,
+                reader=ForbiddenReader(),
+            )
+
+
 def test_options_context_rejects_a_reader_that_returns_a_nearby_capture(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
