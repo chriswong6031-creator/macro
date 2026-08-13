@@ -170,11 +170,27 @@
       ".nb-px[data-live='delayed']::after{background:#d97706;animation:none;box-shadow:none}" +
       ".nb-dvg{font-size:10px;font-weight:700;margin-left:5px;padding:0 4px;border-radius:4px;" +
       "vertical-align:middle;white-space:nowrap}" +
-      ".nb-dvg.alert{background:#7f1d1d;color:#fecaca}.nb-dvg.watch{background:#78350f;color:#fde68a}" +
-      ".nb-chg{font-weight:600}.nb-chg.up{color:#16a34a}.nb-chg.down{color:#dc2626}" +
-      ".nb-chg.stale{color:#9ca3af;font-weight:500}" +
+      /* Divergence badges were a dark-plane island: #7f1d1d / #78350f solids read
+         as two black-red blocks on a white page. Tinted chip + ink-grade text is
+         the estate's badge machinery and resolves correctly in both themes. */
+      ".nb-dvg.alert{background:color-mix(in srgb,var(--act,#dc2626) 15%,transparent);" +
+      "color:var(--ink-act,var(--act,#991b1b))}" +
+      ".nb-dvg.watch{background:color-mix(in srgb,var(--warn,#d97706) 16%,transparent);" +
+      "color:var(--ink-warn,var(--warn,#92400e))}" +
+      /* Direction text was literal #16a34a / #dc2626 — 3.30:1 and 4.53:1 on white
+         at 12.5px. The --ink-* rungs are the text grade of the same hues, and they
+         carry the zh 红涨绿跌 swap themselves. 62 of the 232 pages that load live.js
+         do NOT link theme.css, so the fallback is a measured AA literal rather than
+         the page's own fill-grade --up/--down; the zh block below stays for exactly
+         those pages (where the rungs exist it resolves to the same flipped ink, so
+         the two can never disagree). */
+      ".nb-chg{font-weight:600}" +
+      ".nb-chg.up{color:var(--ink-up,#15803d)}" +
+      ".nb-chg.down{color:var(--ink-down,#b91c1c)}" +
+      ".nb-chg.stale{color:var(--muted,#5d6b7e);font-weight:500}" +
       /* zh 红涨绿跌: swap up→red, down→green */
-      'html[data-lang="zh"] .nb-chg.up{color:#dc2626}html[data-lang="zh"] .nb-chg.down{color:#16a34a}' +
+      'html[data-lang="zh"] .nb-chg.up{color:var(--ink-up,#b91c1c)}' +
+      'html[data-lang="zh"] .nb-chg.down{color:var(--ink-down,#15803d)}' +
       "@media (forced-colors:active){.nb-px[data-live]::after{forced-color-adjust:none;border:1px solid currentColor}}" +
       "@keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}" +
       "70%{box-shadow:0 0 0 5px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}" +

@@ -6,7 +6,7 @@
 body{ margin:0; padding-top:18px;            /* 18px top gap — house law */
   background:var(--bg); color:var(--text); font:14.5px/1.55 var(--font-ui);
   -webkit-font-smoothing:antialiased; }
-a{ color:var(--link); text-decoration:none; }
+a{ color:var(--ink-link, var(--link)); text-decoration:none; }
 
 :root{
   --surface:color-mix(in srgb, var(--panel) 96%, var(--text));
@@ -59,7 +59,7 @@ html[data-err="1"]       .panel{ --accent:var(--act); }
 .p-head{ display:flex; align-items:center; gap:12px; padding:13px 18px;
   border-bottom:1px solid var(--line); }
 .p-head .mlab{ flex:1; color:var(--text); }
-html[data-unsub="off"] .p-head .mlab{ color:var(--ok); }
+html[data-unsub="off"] .p-head .mlab{ color:var(--ink-ok, var(--ok)); }
 .p-body{ padding:18px; }
 @media (min-width:600px){ .p-body{ padding:22px 24px 20px; } }
 
@@ -86,10 +86,10 @@ html[data-unsub="bad"]   .lb-bad{ display:inline; }
 
 /* ── the seal + the recorded state ────────────────────────────────────────── */
 .seal{ width:38px; height:38px; border-radius:50%; display:grid; place-items:center;
-  color:var(--ok); background:color-mix(in srgb,var(--ok) 13%,transparent);
+  color:var(--ink-ok, var(--ok)); background:color-mix(in srgb,var(--ok) 13%,transparent);
   border:1px solid color-mix(in srgb,var(--ok) 34%,transparent); margin-bottom:14px; }
 .seal svg{ width:19px; height:19px; }
-.seal.bad{ color:var(--act); background:color-mix(in srgb,var(--act) 12%,transparent);
+.seal.bad{ color:var(--ink-act, var(--act)); background:color-mix(in srgb,var(--act) 12%,transparent);
   border-color:color-mix(in srgb,var(--act) 34%,transparent); }
 .st h2{ font:700 21px/1.2 var(--font-ui); letter-spacing:-.01em; margin:0 0 8px; }
 .st p{ margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.55; max-width:46ch; }
@@ -132,7 +132,7 @@ html[data-unsub="bad"]   .lb-bad{ display:inline; }
   border:1px solid color-mix(in srgb,var(--act) 45%,var(--line));
   background:color-mix(in srgb,var(--act) 10%,transparent); }
 html[data-err="1"] .err{ display:flex; }
-.err .ic{ flex:none; width:16px; height:16px; margin-top:1px; color:var(--act); }
+.err .ic{ flex:none; width:16px; height:16px; margin-top:1px; color:var(--ink-act, var(--act)); }
 .err .ic svg{ display:block; width:16px; height:16px; }
 .err a{ white-space:nowrap; }
 

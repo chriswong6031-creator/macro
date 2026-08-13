@@ -33,7 +33,7 @@
 <title>Equity factor rankings — value, quality, low-vol & more</title>
 {% set seo_title = "Equity Factor Rankings — Mastermind" %}{% set seo_desc = "Value, quality, momentum, low-vol and more — US equity factors ranked by current performance with seasonality context. Updated nightly." %}{% set seo_path = "factors.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   /* ══════════════════════════════════════════════════════════════════════
@@ -106,7 +106,7 @@
   tbody tr:last-child td, table tr:last-child td { border-bottom:0; }
   td.r, th.r { text-align:right; }
   td.r, .num { font-variant-numeric:tabular-nums; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
+  .pos { color:var(--ink-up, var(--up)); } .neg { color:var(--ink-down, var(--down)); }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
           height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
           font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
@@ -137,7 +137,7 @@
                   border:1px solid var(--fx-brd); color:var(--muted); }
   .twocol { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; }
   @media (max-width:760px){ .twocol{ grid-template-columns:minmax(0,1fr); } }
-  .zpos { color:var(--up); font-weight:700; } .zneg { color:var(--down); font-weight:700; }
+  .zpos { color:var(--ink-up, var(--up)); font-weight:700; } .zneg { color:var(--ink-down, var(--down)); font-weight:700; }
   .chip { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600;
           padding:3px 10px; margin:0 4px 4px 0; border-radius:999px;
           background:color-mix(in srgb,var(--panel2) 60%,transparent);
@@ -145,15 +145,15 @@
   /* validation chip — status colours (--ok/--act/--muted) do NOT flip in zh mode, unlike --up/--down */
   .val-chip { display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.03em;
               padding:1px 6px; margin-left:7px; border-radius:6px; vertical-align:middle; white-space:nowrap; }
-  .val-chip.validated   { color:var(--ok);    border:1px solid color-mix(in srgb,var(--ok) 55%,transparent);
+  .val-chip.validated   { color:var(--ink-ok, var(--ok));    border:1px solid color-mix(in srgb,var(--ok) 55%,transparent);
                           background:color-mix(in srgb,var(--ok) 12%,transparent); }
-  .val-chip.negative-ic { color:var(--act);   border:1px solid color-mix(in srgb,var(--act) 55%,transparent);
+  .val-chip.negative-ic { color:var(--ink-act, var(--act));   border:1px solid color-mix(in srgb,var(--act) 55%,transparent);
                           background:color-mix(in srgb,var(--act) 14%,transparent); }
   .val-chip.fdr-fail    { color:var(--muted); border:1px solid var(--line); background:var(--panel2); }
   .ic-alert { margin:0 0 10px; padding:8px 11px; border-radius:7px; font-size:12px; line-height:1.5;
               border:1px solid color-mix(in srgb,var(--act) 45%,transparent);
               background:color-mix(in srgb,var(--act) 9%,var(--panel)); }
-  .ic-alert b { color:var(--act); font-weight:700; }
+  .ic-alert b { color:var(--ink-act, var(--act)); font-weight:700; }
   sub { font-size:.72em; }
   .bbar { display:inline-block; width:150px; max-width:42vw; height:11px; border-radius:6px;
           background:var(--panel2); position:relative; overflow:hidden; vertical-align:middle; }
@@ -204,17 +204,17 @@
   .nw-chip { display:inline-block; font-size:10.5px; font-weight:600; padding:2px 8px; margin:0 4px 4px 0;
              border-radius:7px; border:1px solid var(--line); background:var(--panel2); color:var(--muted);
              white-space:nowrap; letter-spacing:.02em; }
-  .nw-chip.live      { color:var(--ok);   border-color:color-mix(in srgb,var(--ok) 55%,transparent);
+  .nw-chip.live      { color:var(--ink-ok, var(--ok));   border-color:color-mix(in srgb,var(--ok) 55%,transparent);
                        background:color-mix(in srgb,var(--ok) 10%,transparent); }
   .nw-chip.dormant   { color:var(--muted); }
-  .nw-chip.shadow    { color:var(--act);  border-color:color-mix(in srgb,var(--act) 45%,transparent);
+  .nw-chip.shadow    { color:var(--ink-act, var(--act));  border-color:color-mix(in srgb,var(--act) 45%,transparent);
                        background:color-mix(in srgb,var(--act) 8%,transparent); }
-  .nw-chip.accruing  { color:var(--act);  border-color:color-mix(in srgb,var(--act) 45%,transparent);
+  .nw-chip.accruing  { color:var(--ink-act, var(--act));  border-color:color-mix(in srgb,var(--act) 45%,transparent);
                        background:color-mix(in srgb,var(--act) 8%,transparent); }
-  .nw-chip.bh-withheld { color:var(--down); border-color:color-mix(in srgb,var(--down) 50%,transparent);
+  .nw-chip.bh-withheld { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 50%,transparent);
                           background:color-mix(in srgb,var(--down) 8%,transparent); }
   .nw-chip.null      { color:var(--muted); }
-  .nw-chip.gate-passed { color:var(--ok);  border-color:color-mix(in srgb,var(--ok) 55%,transparent);
+  .nw-chip.gate-passed { color:var(--ink-ok, var(--ok));  border-color:color-mix(in srgb,var(--ok) 55%,transparent);
                           background:color-mix(in srgb,var(--ok) 10%,transparent); }
   .nw-chip.pre-fdr   { color:var(--muted); font-style:italic; }
   .nw-status-grid { display:grid; grid-template-columns:minmax(130px,auto) 1fr; gap:4px 12px;
@@ -276,7 +276,7 @@
   .rl-val { font-size:11px; text-align:right; font-variant-numeric:tabular-nums; color:var(--muted); }
   .rl-tag { font-size:9px; font-weight:700; letter-spacing:.05em; text-align:right;
             text-transform:uppercase; color:var(--muted); }
-  .rl-row.pass .rl-tag { color:var(--up); }
+  .rl-row.pass .rl-tag { color:var(--ink-up, var(--up)); }
   .rl-row.pass .rl-name { font-weight:700; }
   .rl-axis { grid-column:2; display:flex; justify-content:space-between; font-size:9px;
              color:var(--muted); margin-top:4px; }
@@ -816,7 +816,7 @@
       <span class="muted" style="font-size:11.5px;flex:1;min-width:240px">{{ t(
         'Broad = S&P 1500 (large+mid+small); Narrow = S&P 500 large-cap. This switch re-ranks only the chart, table & sector monitor below — the IC scorecard, crowding, quilt and breadth panels stay on the broad universe.',
         '广义=标普 1500（大+中+小）；狭义=标普 500 大盘。此切换仅重排下方图表、表格与行业监测 — IC 记分卡、拥挤度、拼布与广度面板保持广义口径。') }}
-        <span id="uni-note" style="display:none;color:var(--warn)"> · {{ t('S&P 500 price history starts 2025-03 (~1y) — curves are shorter and σ/z need ~1y+, so some cells show —.', '标普 500 价格历史自 2025-03（约 1 年）— 曲线更短，σ/z 需约 1 年以上，部分单元格显示 —。') }}</span>
+        <span id="uni-note" style="display:none;color:var(--ink-warn, var(--warn))"> · {{ t('S&P 500 price history starts 2025-03 (~1y) — curves are shorter and σ/z need ~1y+, so some cells show —.', '标普 500 价格历史自 2025-03（约 1 年）— 曲线更短，σ/z 需约 1 年以上，部分单元格显示 —。') }}</span>
       </span>
     </div>
     <div class="chartbar"><span class="tabs" id="fc-modes" role="group"></span><span class="tabs" id="fc-ranges" role="group"></span></div>
@@ -1059,11 +1059,11 @@
         {% set _any_hw = _now.factors | selectattr('verdict','eq','headwind') | list | length > 0 %}
         {% set _any_tw = _now.factors | selectattr('verdict','eq','tailwind') | list | length > 0 %}
         {% if _any_hw %}
-          <span style="display:inline-block;padding:2px 10px;border-radius:8px;border:1px solid var(--act);color:var(--act);background:color-mix(in srgb,var(--act) 10%,var(--panel));font-size:12px;font-weight:600">
+          <span style="display:inline-block;padding:2px 10px;border-radius:8px;border:1px solid var(--act);color:var(--ink-act, var(--act));background:color-mix(in srgb,var(--act) 10%,var(--panel));font-size:12px;font-weight:600">
             <span class="l-en">{{ _now.stance_en }}</span><span class="l-zh">{{ _now.stance_zh or _now.stance_en }}</span>
           </span>
         {% elif _any_tw %}
-          <span style="display:inline-block;padding:2px 10px;border-radius:8px;border:1px solid var(--ok);color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--panel));font-size:12px;font-weight:600">
+          <span style="display:inline-block;padding:2px 10px;border-radius:8px;border:1px solid var(--ok);color:var(--ink-ok, var(--ok));background:color-mix(in srgb,var(--ok) 10%,var(--panel));font-size:12px;font-weight:600">
             <span class="l-en">{{ _now.stance_en }}</span><span class="l-zh">{{ _now.stance_zh or _now.stance_en }}</span>
           </span>
         {% else %}
@@ -1245,9 +1245,9 @@
       {% if not _nw_avail %}
         <span class="chip">{{ t('offline', '离线') }}</span>
       {% elif _nw_floor %}
-        <span class="chip" style="color:var(--up);border-color:color-mix(in srgb,var(--up) 45%,transparent);background:color-mix(in srgb,var(--up) 10%,transparent)">{{ t('live', '已启用') }}</span>
+        <span class="chip" style="color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 45%,transparent);background:color-mix(in srgb,var(--up) 10%,transparent)">{{ t('live', '已启用') }}</span>
       {% else %}
-        <span class="chip" style="color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent)">{{ t('still learning', '累积中') }}</span>
+        <span class="chip" style="color:var(--ink-warn, var(--warn));border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent)">{{ t('still learning', '累积中') }}</span>
       {% endif %}
       {% if _nw_as_of %}<span class="muted sm" style="margin-left:auto">{{ _nw_as_of }}</span>{% endif %}
     </div>
@@ -1479,7 +1479,7 @@
       const f=FX_F[key]; if(!f||!f.label) return;
       last=document.activeElement;
       const vcs=f.val==='fdr-pass'
-        ?' style="color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 55%,transparent);background:color-mix(in srgb,var(--ok) 12%,transparent)"':'';
+        ?' style="color:var(--ink-ok, var(--ok));border:1px solid color-mix(in srgb,var(--ok) 55%,transparent);background:color-mix(in srgb,var(--ok) 12%,transparent)"':'';
       const vc=f.val?'<span class="val-chip '+f.val+'"'+vcs+'>'+L(VL[f.val][0],VL[f.val][1])+'</span>':'';
       const edge=row('mean IC','平均 IC',num(f.ic,4,1))+row('IC-IR (ann)','IC-IR（年化）',num(f.ir,2,1))
         +row('t-HAC','t 值',num(f.t,2,1))

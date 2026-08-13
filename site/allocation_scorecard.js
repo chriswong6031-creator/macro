@@ -17,7 +17,7 @@
 
   var st = document.createElement('style');
   st.textContent =
-    '#nr-scorecard{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent,#7c5cff);' +
+    '#nr-scorecard{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent,var(--ink-link,var(--link,#1c4fe0)));' +
       'border-radius:12px;padding:14px 16px;margin:14px 0;display:flex;flex-wrap:wrap;gap:18px;align-items:stretch}' +
     '#nr-scorecard .nrc-main{flex:1 1 380px;min-width:280px}' +
     '#nr-scorecard .nrc-lead{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}' +
@@ -26,9 +26,9 @@
     '#nr-scorecard .nrc-chips{margin:8px 0 6px}' +
     '#nr-scorecard .nrc-chip{display:inline-block;font-size:11px;padding:1px 7px;margin:0 4px 4px 0;border-radius:7px;' +
       'background:var(--panel2);border:1px solid var(--line);color:var(--muted)}' +
-    '#nr-scorecard .nrc-chip.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:var(--up)}' +
-    '#nr-scorecard .nrc-chip.hot{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:var(--down)}' +
-    /* zh 红涨绿跌: ok=bullish durable chip bg/border swap green→red tint; color:var(--up) auto-flips via theme.css */
+    '#nr-scorecard .nrc-chip.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:var(--ink-up, var(--up))}' +
+    '#nr-scorecard .nrc-chip.hot{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:var(--ink-down, var(--down))}' +
+    /* zh 红涨绿跌: ok=bullish durable chip bg/border swap green→red tint; color:var(--ink-up, var(--up)) auto-flips via theme.css */
     'html[data-lang="zh"] #nr-scorecard .nrc-chip.ok{background:rgba(224,85,85,.12);border-color:rgba(224,85,85,.4)}' +
     '#nr-scorecard .nrc-chip.dom{background:rgba(124,92,255,.12);border-color:rgba(124,92,255,.4)}' +
     '#nr-scorecard .nrc-read{font-size:12.5px;color:var(--muted);line-height:1.5;margin:6px 0 0;max-width:70ch}' +
@@ -37,21 +37,27 @@
     '#nr-scorecard .nrc-row{display:flex;align-items:center;gap:8px;font-size:12px}' +
     '#nr-scorecard .nrc-row .nm{flex:0 0 150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
     '#nr-scorecard .nrc-row .bar{flex:1;height:9px;background:var(--grid,var(--panel2));border-radius:5px;overflow:hidden}' +
-    '#nr-scorecard .nrc-row .fill{display:block;height:100%;background:linear-gradient(90deg,var(--accent,#5aa7ff),#7c5cff)}' +
+    '#nr-scorecard .nrc-row .fill{display:block;height:100%;background:linear-gradient(90deg,var(--accent,var(--info)),var(--ink-link,var(--link,#1c4fe0)))}' +
     '#nr-scorecard .nrc-row .wv{flex:0 0 36px;text-align:right;font-variant-numeric:tabular-nums}' +
     '#nr-scorecard .nrc-side{flex:0 0 210px;display:flex;flex-direction:column;gap:8px}' +
     '#nr-scorecard .nrc-g{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}' +
     '#nr-scorecard .nrc-g .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}' +
     '#nr-scorecard .nrc-g .v{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}' +
-    '#nr-scorecard .nrc-btn{display:block;text-align:center;background:var(--accent,#5aa7ff);color:#fff;font-weight:650;' +
+    // --accent is defined nowhere in the estate, so this always painted the literal
+    // #5aa7ff — white on it is 2.55:1 in BOTH themes. --fill-link is the solid grade.
+    '#nr-scorecard .nrc-btn{display:block;text-align:center;background:var(--fill-link,var(--link,#1c4fe0));color:#fff;font-weight:650;' +
       'font-size:13px;padding:9px 12px;border-radius:9px;margin-top:auto}' +
     '#nr-scorecard .nrc-btn:hover{filter:brightness(1.08)}' +
     '#nr-scorecard .nrc-honest{font-size:10.5px;color:var(--muted);margin-top:6px;text-align:center}' +
     '#nr-scorecard .nrc-falter{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;' +
       'padding:2px 8px;margin:4px 0 2px;border-radius:7px;background:rgba(239,68,68,.12);' +
-      'border:1px solid rgba(245,158,11,.6);color:var(--down,#ef4444)}' +
+      'border:1px solid rgba(245,158,11,.6);color:var(--ink-down, var(--down,#ef4444))}' +
     '#nr-scorecard .nrc-exp{font-size:10.5px;margin-top:8px;padding:2px 8px;display:inline-block;' +
-      'border-radius:7px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.45);color:#d97706}';
+
+    // 390w is the design floor (§15). This widget shipped with ZERO media queries and
+    // three unshrinkable flex bases, so on a phone the weight column sat off-screen.
+    '@media(max-width:640px){#nr-scorecard .nrc-side,#nr-scorecard .nrc-row .nm,#nr-scorecard .nrc-row .wv{flex:1 1 100%}' +
+    '#nr-scorecard .nrc-row{flex-wrap:wrap}#nr-scorecard .nrc-row .fill,#nr-scorecard .nrc-row .bar{min-width:0}}' +      'border-radius:7px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.45);color:#d97706}';
   document.head.appendChild(st);
 
   fetch('allocationdata/' + alloc + '?cb=' + Date.now())

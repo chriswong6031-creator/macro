@@ -77,7 +77,7 @@
       s += '<polyline points="' + pathFor(navs) + '" fill="none" stroke="var(--link)" stroke-width="2"/>';
     s += "</svg>";
     var L = tt();
-    s += '<div class="spark-leg"><span style="color:var(--link)">▬ ' + esc(L.book) +
+    s += '<div class="spark-leg"><span style="color:var(--ink-link, var(--link))">▬ ' + esc(L.book) +
          '</span> &nbsp; <span style="color:var(--muted)">┄ ' + esc(benchSym || L.bench) + "</span></div>";
     return '<div class="sparkwrap">' + s + "</div>";
   }
@@ -99,7 +99,7 @@
       (b.market_status ? " · " + esc(b.market_status) : "") +
       (b.regime && b.regime.quad_name ? " · " + esc(L.regime + ": " + b.regime.quad_name +
         (b.regime.liquidity_overlay ? " / " + b.regime.liquidity_overlay : "")) : "") + "</div>";
-    return '<div class="panel"><h2>📈 ' + esc(L.perf) + ' — ' + esc(b.name || b.id) + "</h2>" +
+    return '<div class="panel"><h2>' + esc(L.perf) + ' — ' + esc(b.name || b.id) + "</h2>" +
       grid + sub + sparkline(p.series, b.benchmark) + "</div>";
   }
 
@@ -116,7 +116,7 @@
       leg += '<span><i style="background:' + col + '"></i>' + esc(label) + " " + pct(w * 100, 1) + "</span>";
     });
     bar += "</div>"; leg += "</div>";
-    return '<div class="panel"><h2>🧮 ' + esc(L.alloc) + "</h2>" + bar + leg + "</div>";
+    return '<div class="panel"><h2>' + esc(L.alloc) + "</h2>" + bar + leg + "</div>";
   }
 
   function positionsPanel(b) {
@@ -129,7 +129,7 @@
         "</td><td>" + esc(p.sleeve || "—") + '</td><td class="num">' +
         (p.rs_pctile != null ? esc(Number(p.rs_pctile).toFixed(0)) : "—") + "</td><td>" + st + "</td></tr>";
     }).join("");
-    return '<div class="panel"><h2>📊 ' + esc(L.positions) + " (" + pos.length + ')</h2>' +
+    return '<div class="panel"><h2>' + esc(L.positions) + " (" + pos.length + ')</h2>' +
       '<table class="mm"><thead><tr><th>' + esc(L.colT) + '</th><th class="num">' + esc(L.colW) +
       '</th><th>' + esc(L.colS) + '</th><th class="num">' + esc(L.colRS) + '</th><th>' + esc(L.colSt) +
       "</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
@@ -146,7 +146,7 @@
         ' <span class="muted sm">' + esc(conv + prob + hz) + "</span></div>" +
         (d.thesis ? '<div class="muted sm">' + esc(d.thesis) + "</div>" : "") + "</div>";
     }).join("");
-    return '<div class="panel"><h2>🧠 ' + esc(L.decisions) + "</h2>" + items + "</div>";
+    return '<div class="panel"><h2>' + esc(L.decisions) + "</h2>" + items + "</div>";
   }
 
   function trackPanel(b) {
@@ -156,7 +156,7 @@
     if (tr.brier != null) parts.push(esc(L.brier + " " + Number(tr.brier).toFixed(3)));
     if (tr.skill != null) parts.push(esc(L.skill + " " + Number(tr.skill).toFixed(3)));
     var statusTxt = (tr.status === "building" || tr.n === 0) ? L.building : (tr.status || "");
-    return '<div class="panel"><h2>🎯 ' + esc(L.track) + '</h2><div class="sm">' + parts.join(" · ") +
+    return '<div class="panel"><h2>' + esc(L.track) + '</h2><div class="sm">' + parts.join(" · ") +
       (statusTxt ? ' · <span class="muted">' + esc(statusTxt) + "</span>" : "") + "</div></div>";
   }
 

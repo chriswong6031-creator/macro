@@ -42,7 +42,13 @@
 
 {% block base_css %}
   /* ---- China desk signature accents (brand, NOT direction — never ZH-swapped) ---- */
-  .cad { --cad-verm:#c8452e; --cad-gold:#d9a441; max-width:1080px; margin:0 auto; }
+  /* --cad-gold/--cad-verm are the desk's signature hues and are printed as the eyebrow,
+     the section numerals and the c-gold column — 1.88:1 and 4.05:1 on the light
+     surfaces. Fill grade stays for chips and rails; *-ink is the text grade, dark
+     byte-identical. */
+  .cad { --cad-verm:#c8452e; --cad-gold:#d9a441;
+         --cad-verm-ink:#c8452e; --cad-gold-ink:#d9a441; max-width:1080px; margin:0 auto; }
+  html[data-theme="light"] .cad { --cad-verm-ink:#a83a26; --cad-gold-ink:#8a5c00; }
   .cad :is(h1,h2,h3){ font-family:var(--font-ui,inherit); }
 
   /* ---- editorial hero ---- */
@@ -51,7 +57,7 @@
     backdrop-filter:var(--glass-blur); box-shadow:var(--glass-shadow,0 18px 48px -24px rgba(3,7,18,.6)); }
   .cad-hero::before{ content:""; position:absolute; left:0; right:0; top:0; height:2px;
     background:linear-gradient(90deg,var(--cad-verm),var(--cad-gold) 60%,transparent); opacity:.9; }
-  .cad-eyebrow{ font:600 11px/1 var(--font-ui); letter-spacing:.16em; text-transform:uppercase; color:var(--cad-gold); margin:0 0 9px; display:flex; align-items:center; gap:8px; }
+  .cad-eyebrow{ font:600 11px/1 var(--font-ui); letter-spacing:.16em; text-transform:uppercase; color:var(--cad-gold-ink,var(--cad-gold)); margin:0 0 9px; display:flex; align-items:center; gap:8px; }
   .cad-eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--cad-verm); box-shadow:0 0 8px var(--cad-verm); }
   .cad-h1{ font-size:30px; line-height:1.1; letter-spacing:-.015em; margin:0 0 8px; font-weight:800; }
   html[data-lang="zh"] .cad-h1{ letter-spacing:0; }
@@ -94,11 +100,11 @@
   /* ---- small tinted chips ---- */
   .cad-chip{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 9px;
     border-radius:100px; white-space:nowrap; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
-  .cad-chip.c-up{ color:var(--up); border-color:color-mix(in srgb,var(--up) 30%,transparent); background:color-mix(in srgb,var(--up) 11%,transparent); }
-  .cad-chip.c-down{ color:var(--down); border-color:color-mix(in srgb,var(--down) 30%,transparent); background:color-mix(in srgb,var(--down) 11%,transparent); }
-  .cad-chip.c-warn{ color:var(--warn); border-color:color-mix(in srgb,var(--warn) 32%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
-  .cad-chip.c-gold{ color:var(--cad-gold); border-color:color-mix(in srgb,var(--cad-gold) 40%,transparent); background:color-mix(in srgb,var(--cad-gold) 12%,transparent); }
-  .cad-chip.c-info{ color:var(--info); border-color:color-mix(in srgb,var(--info) 30%,transparent); background:color-mix(in srgb,var(--info) 11%,transparent); }
+  .cad-chip.c-up{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 30%,transparent); background:color-mix(in srgb,var(--up) 11%,transparent); }
+  .cad-chip.c-down{ color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 30%,transparent); background:color-mix(in srgb,var(--down) 11%,transparent); }
+  .cad-chip.c-warn{ color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 32%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
+  .cad-chip.c-gold{ color:var(--cad-gold-ink,var(--cad-gold)); border-color:color-mix(in srgb,var(--cad-gold) 40%,transparent); background:color-mix(in srgb,var(--cad-gold) 12%,transparent); }
+  .cad-chip.c-info{ color:var(--ink-info, var(--info)); border-color:color-mix(in srgb,var(--info) 30%,transparent); background:color-mix(in srgb,var(--info) 11%,transparent); }
 
   /* ---- jump nav (homepage index) ---- */
   .cad-jump{ display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 2px; }
@@ -109,7 +115,7 @@
   /* ---- section header ---- */
   .cad-sec{ margin:34px 0 0; }
   .cad-sec-head{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:20px; }
-  .cad-sec-n{ font:700 12px/1 var(--font-mono,monospace); color:var(--cad-gold); letter-spacing:.06em; }
+  .cad-sec-n{ font:700 12px/1 var(--font-mono,monospace); color:var(--cad-gold-ink,var(--cad-gold)); letter-spacing:.06em; }
   .cad-sec h2{ font-size:21px; font-weight:800; letter-spacing:-.01em; margin:0; }
   .cad-sec-count{ font-size:12px; color:var(--muted); font-weight:600; }
   .cad-sec-intro{ font-size:13px; line-height:1.55; color:var(--muted); margin:8px 0 0; max-width:66ch; }
@@ -137,7 +143,7 @@
   .cvband{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; white-space:nowrap;
     background:color-mix(in srgb,var(--cb,var(--muted)) 13%,transparent); color:color-mix(in srgb,var(--cb,var(--muted)) 92%,var(--text)); }
   .cvband.cv-pos{ --cb:var(--up); } .cvband.cv-neg{ --cb:var(--down); }
-  .flag{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:var(--warn);
+  .flag{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:var(--ink-warn, var(--warn));
     background:color-mix(in srgb,var(--warn) 13%,transparent); white-space:nowrap; }
 
   /* ---- the SEAL-STRIP signature (7 independent feeds, lit by contribution sign) ---- */
@@ -160,15 +166,15 @@
   .cad-tier{ background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:13px 15px; }
   .cad-tier h3{ margin:0 0 9px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
   .cad-tier .tbadge{ font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
-  .t-scored .tbadge{ color:var(--up); background:color-mix(in srgb,var(--up) 15%,transparent); }
-  .t-confirmer .tbadge{ color:var(--info); background:color-mix(in srgb,var(--info) 15%,transparent); }
+  .t-scored .tbadge{ color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 15%,transparent); }
+  .t-confirmer .tbadge{ color:var(--ink-info, var(--info)); background:color-mix(in srgb,var(--info) 15%,transparent); }
   .t-display .tbadge{ color:var(--muted); background:var(--panel2); }
-  .t-pending .tbadge{ color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,transparent); }
-  .t-killed .tbadge{ color:var(--down); background:color-mix(in srgb,var(--down) 14%,transparent); }
+  .t-pending .tbadge{ color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 15%,transparent); }
+  .t-killed .tbadge{ color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 14%,transparent); }
   .cad-tier .row{ padding:7px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent); }
   .cad-tier .row:last-child{ border-bottom:0; }
   .cad-tier .nm{ font-weight:600; font-size:12.5px; }
-  .cad-tier .wired{ font:10px/1 var(--font-mono,monospace); color:var(--link); }
+  .cad-tier .wired{ font:10px/1 var(--font-mono,monospace); color:var(--ink-link, var(--link)); }
   .cad-tier .nt{ font-size:11px; color:var(--muted); line-height:1.5; margin-top:2px; }
 
   .cad-callout{ border-radius:13px; padding:12px 15px; margin:14px 0; border:1px solid var(--line);
@@ -453,7 +459,7 @@
     <div class="cad-grid">
       {% if special.unlocks and special.unlocks.events %}
       <div class="cad-card">
-        <h3>🔓 {{ t('Share unlocks','限售解禁') }} <span class="cad-chip">{{ special.unlocks.n_large or special.unlocks.n_events_30d or 0 }}</span></h3>
+        <h3>{{ t('Share unlocks','限售解禁') }} <span class="cad-chip">{{ special.unlocks.n_large or special.unlocks.n_events_30d or 0 }}</span></h3>
         <p class="sub">{{ t('Insiders freed to sell in the next 30 days — supply overhang.', '未来30天内可减持——供给压力。') }}</p>
         {% for e in special.unlocks.events[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -466,7 +472,7 @@
 
       {% if special.inquiry and special.inquiry.letters %}
       <div class="cad-card">
-        <h3>📩 {{ t('Exchange inquiries','交易所问询') }} <span class="cad-chip c-warn">{{ special.inquiry.n_letters or 0 }}</span></h3>
+        <h3>{{ t('Exchange inquiries','交易所问询') }} <span class="cad-chip c-warn">{{ special.inquiry.n_letters or 0 }}</span></h3>
         <p class="sub">{{ t('Regulators asking hard questions — a risk flag, not a verdict.', '监管层发问——风险信号，非定论。') }}</p>
         {% for e in special.inquiry.letters[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -479,7 +485,7 @@
 
       {% if special.buyback and special.buyback.top %}
       <div class="cad-card">
-        <h3>♻️ {{ t('Active buybacks','进行中回购') }} <span class="cad-chip c-up">{{ special.buyback.n_active or 0 }}</span></h3>
+        <h3>{{ t('Active buybacks','进行中回购') }} <span class="cad-chip c-up">{{ special.buyback.n_active or 0 }}</span></h3>
         <p class="sub">{{ t('Companies buying their own shares — an insider conviction floor.', '公司回购自家股份——内部人信心的底。') }}</p>
         {% for e in special.buyback.top[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -492,7 +498,7 @@
 
       {% if special.pledge and special.pledge.top %}
       <div class="cad-card">
-        <h3>⚠️ {{ t('Pledge stress','质押压力') }} <span class="cad-chip c-warn">{{ special.pledge.n_high or 0 }}</span></h3>
+        <h3>{{ t('Pledge stress','质押压力') }} <span class="cad-chip c-warn">{{ special.pledge.n_high or 0 }}</span></h3>
         <p class="sub">{{ t('Controlling shareholders heavily pledged — forced-sale tail risk.', '大股东高比例质押——被迫平仓的尾部风险。') }}</p>
         {% for e in special.pledge.top[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -505,7 +511,7 @@
 
       {% if special.st and (special.st.additions or special.st.top_current) %}
       <div class="cad-card">
-        <h3>🚩 {{ t('ST board','ST板') }} <span class="cad-chip c-down">{{ special.st.count or 0 }}</span></h3>
+        <h3>{{ t('ST board','ST板') }} <span class="cad-chip c-down">{{ special.st.count or 0 }}</span></h3>
         <p class="sub">{{ t('Special-treatment names — delisting-risk watch. Avoid unless you know why.', 'ST（特别处理）个股——退市风险观察。除非明确原因，否则回避。') }}</p>
         {% for e in (special.st.additions or special.st.top_current)[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -517,7 +523,7 @@
 
       {% if special.preannounce and special.preannounce.top_movers %}
       <div class="cad-card">
-        <h3>📣 {{ t('Earnings pre-announcements','业绩预告') }} <span class="cad-chip">{{ special.preannounce.n_total or 0 }}</span></h3>
+        <h3>{{ t('Earnings pre-announcements','业绩预告') }} <span class="cad-chip">{{ special.preannounce.n_total or 0 }}</span></h3>
         <p class="sub">{{ t('Companies flagging results early — the biggest guided swings.', '提前预告业绩的公司——预告变动最大者。') }}</p>
         {% for e in special.preannounce.top_movers[:5] %}
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -586,14 +592,14 @@
     <div class="cad-grid">
       {% if broker_gold %}
       <div class="cad-card">
-        <h3>🏅 {{ t('Broker gold-stock picks','券商金股') }} <span class="cad-chip c-gold">{{ broker_gold[0].month }}</span></h3>
+        <h3>{{ t('Broker gold-stock picks','券商金股') }} <span class="cad-chip c-gold">{{ broker_gold[0].month }}</span></h3>
         <p class="sub">{{ t('Most-picked names this month, as a pick-count tally — a discrete monthly list, distinct from the ~97%-buy ratings.', '当月被推荐最多的个股，按推荐家数计——离散月度名单，区别于近97%“买入”评级。') }}</p>
         <table class="cad-tbl" style="margin-top:2px">
           <tbody>
           {% for r in broker_gold[:10] %}
           <tr>
             <td><span class="cad-nm">{{ r.name }}</span>{% if r.name != r.ticker %} <span class="cad-tk">{{ r.ticker }}</span>{% endif %}</td>
-            <td class="num conv c-gold" style="color:var(--cad-gold)">{{ r.n_brokers }}</td>
+            <td class="num conv c-gold" style="color:var(--cad-gold-ink,var(--cad-gold))">{{ r.n_brokers }}</td>
             <td style="font-size:11px;color:var(--muted)">{{ r.brokers[:4]|join(' · ') }}{% if r.brokers|length > 4 %} …{% endif %}</td>
           </tr>
           {% endfor %}
@@ -604,7 +610,7 @@
 
       {% if guidance and (guidance.up or guidance.down) %}
       <div class="cad-card">
-        <h3>📣 {{ t('Earnings-guidance surprises','业绩预告') }}</h3>
+        <h3>{{ t('Earnings-guidance surprises','业绩预告') }}</h3>
         <p class="sub">{{ t('Company-guided profit direction. A real ~3-month post-announcement drift has been measured (right sign) — tracked, never scored here.', '公司预告的利润方向。已测得真实的约3个月公告后漂移（符号正确）——此处跟踪，不评分。') }}</p>
         {% for col, items, cls in [(t('▲ Positive','▲ 正面'), guidance.up, 'r-pos'), (t('▼ Negative','▼ 负面'), guidance.down, 'r-neg')] %}
         {% if items %}
