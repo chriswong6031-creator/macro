@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T01:25:02.059584+00:00",
-  "count": 1027,
+  "generated_at": "2026-08-13T01:40:07.458690+00:00",
+  "count": 1028,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -448,6 +448,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-l8t5s8tr0ns-3c1a76",
+      "title": "Americas Transportation Railroads Weekly Rail Carload Snapshot — Week 31",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:49Z",
+      "summary_points": [
+        "**US Rail Demand Acceleration**: US Class I rail total traffic growth accelerated to +5.7% YoY (vs +2.4% prior week), driven by intermodal (+6.5% YoY) and ex-intermodal (+4.8% YoY), with CSX leading intermodal (+8.9% YoY) and ex-intermodal (+5.5% YoY), signaling robust freight demand fundamentals.",
+        "**Canadian Rail Momentum**: Canadian Class 1 rail growth rose to +3.6% YoY (vs +0.1% prior week), led by CPKC (+4.7% YoY) and intermodal expansion (+6.5% YoY vs 0.6% prior week), indicating strengthening cross-border trade flows and regional economic activity.",
+        "**Critical Rating System Insight**: Goldman Sachs' \"Not Rated\" (NR) designation for stocks involved in merger/strategic transactions is a key portfolio positioning signal, distinct from Neutral (N) for inactive stocks, directly impacting risk assessment and allocation decisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
