@@ -1,0 +1,27 @@
+{
+  "prediction_id": "CPI:2026-08:first:2026-08-13:v1",
+  "asof": "2026-08-13",
+  "features": {
+    "cpi_hl_mom_lag1": 0.07366914435544825,
+    "cpi_hl_mom_lag2": -0.42248165303806484,
+    "cpi_hl_mom_lag3": 0.47291422864139676,
+    "sticky_mom_lag1": 0.28592279,
+    "median_mom_lag1": 0.2559248273904302,
+    "flex_mom_lag1": -0.514324319,
+    "ppi_mom_lag1": -0.6932683830291886,
+    "gasoline_mom": 2.8037383177570208,
+    "shelter_nowcast": 0.0745641330065705
+  },
+  "legs": {
+    "cpi_hl_mom_lag1": "present",
+    "cpi_hl_mom_lag2": "present",
+    "cpi_hl_mom_lag3": "present",
+    "flex_mom_lag1": "present",
+    "gasoline_mom": "unrevised",
+    "median_mom_lag1": "present",
+    "ppi_mom_lag1": "present",
+    "shelter_nowcast": "revision_optimistic",
+    "sticky_mom_lag1": "present"
+  },
+  "inputs_hash": "c13035d2c3837af208a87dcf61e463ec765fc93c80c36a6171d7021df296d312"
+}

@@ -1,24 +1,24 @@
 {
   "schema": "stage_context.v1",
-  "asof": "2026-08-10",
-  "data_session": "2026-08-07",
-  "built": "2026-08-10T02:37:03Z",
+  "asof": "2026-08-13",
+  "data_session": "2026-08-12",
+  "built": "2026-08-13T12:46:53Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
   "counts": {
-    "total": 2734,
+    "total": 2735,
     "stage1": 141,
-    "stage2": 1562,
-    "stage2_fresh": 368,
-    "stage3": 160,
+    "stage2": 1564,
+    "stage2_fresh": 369,
+    "stage3": 159,
     "stage4": 871,
     "too_young": 350,
-    "new_today": 0
+    "new_today": 2
   },
   "market": {
-    "pct_stage2": 57.1,
-    "pct_stage4": 31.9,
+    "pct_stage2": 57.2,
+    "pct_stage4": 31.8,
     "weather": "advancing",
     "spy_stage": 2,
     "spy_weeks": 15
@@ -28,7 +28,7 @@
       "ticker": "WYFI",
       "company": "Whitefiber Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -39,7 +39,7 @@
       "vol_ratio": 1.51,
       "event": "pullback_resume",
       "gate_tier": null,
-      "blackout": true,
+      "blackout": false,
       "arc_pos": 0.35,
       "earnings": {
         "present": false,
@@ -52,13 +52,11 @@
       },
       "why": [
         "Early in its climb — 8 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Earnings soon — wait, don't chase"
+        "Trading above its 30-week line — the trend is with it"
       ],
       "why_zh": [
         "上升初期 — 已上行 8 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "财报临近 — 先等待，不要追高"
+        "位于 30 周均线之上 — 趋势向好"
       ],
       "atr_14w": 9.0266,
       "atr_ext": 0.293,
@@ -69,283 +67,54 @@
       "industry_percentile": null
     },
     {
-      "ticker": "FLR",
-      "company": "Fluor",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
+      "ticker": "KRRO",
+      "company": "Korro Bio Inc",
+      "sector": "Healthcare",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
-      "weeks_in_stage": 8,
+      "weeks_in_stage": 6,
       "fresh": true,
-      "sga_score": 66,
-      "ma30_slope_pct5w": 3.409,
-      "pct_vs_ma30": 17.8,
-      "mansfield_rs": 10.3,
-      "vol_ratio": 0.97,
-      "event": "pullback_resume",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.35,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.7,
-        "performance": 7.5,
-        "tone_word": "confident",
-        "tags": [
-          "guidance_raised",
-          "demand_acceleration",
-          "new_product",
-          "margin_expansion"
-        ],
-        "quarter": "Q2",
-        "summary": "Fluor reported Q2 2026 revenue of $4.3 billion, up 9% year-over-year, with adjusted EBITDA up to $149 million from $96 million and adjusted EPS of $0.91 versus $0.43. New awards exceeded $6 billion, backlog grew to $26.9 billion, and management raised expectations for full-yea…"
-      },
-      "why": [
-        "Early in its climb — 8 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 8 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 5.21,
-      "atr_ext": 1.653,
-      "atr_pct_price": 0.0914,
-      "sata_score": 7,
-      "sata_change_1w": 2,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 57.9
-    },
-    {
-      "ticker": "ANET",
-      "company": "Arista Networks",
-      "sector": "Information Technology",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 9,
-      "fresh": true,
-      "sga_score": 65,
-      "ma30_slope_pct5w": 5.908,
-      "pct_vs_ma30": 24.12,
-      "mansfield_rs": 15.89,
-      "vol_ratio": 0.97,
-      "event": "pullback_resume",
+      "sga_score": 67,
+      "ma30_slope_pct5w": 5.615,
+      "pct_vs_ma30": 9.56,
+      "mansfield_rs": -30.98,
+      "vol_ratio": 0.79,
+      "event": "trendline_recapture",
       "gate_tier": "T2",
       "blackout": false,
-      "arc_pos": 0.3625,
+      "arc_pos": 0.325,
       "earnings": {
-        "present": true,
-        "sentiment": 0.85,
-        "performance": 9.0,
-        "tone_word": "confident",
-        "tags": [
-          "guidance_raised",
-          "beat_and_raise",
-          "margin_contraction",
-          "demand_acceleration",
-          "supply_constraint"
-        ],
-        "quarter": "Q2",
-        "summary": "Arista Networks reported Q2 FY2026 revenue of just over $3 billion, up 37.7% year-over-year and above guidance of $2.8 billion, with non-GAAP EPS of $1.02, up 39.7% year-over-year. The company raised its full-year 2026 revenue guidance to $12.6 billion, implying 40% annual gro…"
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
       },
       "why": [
-        "Early in its climb — 9 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
+        "Early in its climb — 6 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
         "Also shows a strong confirmation from our other checks"
       ],
       "why_zh": [
-        "上升初期 — 已上行 9 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
+        "上升初期 — 已上行 6 周",
+        "位于 30 周均线之上 — 趋势向好",
         "其他多项验证同样给出强确认"
       ],
-      "atr_14w": 22.4854,
-      "atr_ext": 1.631,
-      "atr_pct_price": 0.11918,
-      "sata_score": 7,
+      "atr_14w": 2.5491,
+      "atr_ext": 0.454,
+      "atr_pct_price": 0.19239,
+      "sata_score": 4,
       "sata_change_1w": 0,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 53.3
-    },
-    {
-      "ticker": "APH",
-      "company": "Amphenol",
-      "sector": "Information Technology",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 8,
-      "fresh": true,
-      "sga_score": 65,
-      "ma30_slope_pct5w": 2.674,
-      "pct_vs_ma30": 16.37,
-      "mansfield_rs": 10.08,
-      "vol_ratio": 0.76,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.35,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.8888888888888888,
-        "performance": 10.0,
-        "tone_word": "confident",
-        "tags": [
-          "ai",
-          "commscope_integration",
-          "it_datacom",
-          "margin_expansion",
-          "organic_growth",
-          "record_results",
-          "book-to-bill",
-          "electronic_components",
-          "communications_equipment",
-          "data_center_hw",
-          "ai_infrastructure",
-          "aerospace_defense",
-          "industrial_machinery",
-          "automotive_parts"
-        ],
-        "quarter": "Q2",
-        "summary": "Our IT datacom market grew 63% organically, driven by continued acceleration in demand for our products used in artificial intelligence applications."
-      },
-      "why": [
-        "Early in its climb — 8 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 8 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 16.1985,
-      "atr_ext": 1.469,
-      "atr_pct_price": 0.09575,
-      "sata_score": 7,
-      "sata_change_1w": 1,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 45.7
-    },
-    {
-      "ticker": "AMZN",
-      "company": "Amazon",
-      "sector": "Consumer Discretionary",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 2,
-      "fresh": true,
-      "sga_score": 64,
-      "ma30_slope_pct5w": 1.574,
-      "pct_vs_ma30": 15.13,
-      "mansfield_rs": 4.71,
-      "vol_ratio": 1.03,
-      "event": null,
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.275,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.8333333333333334,
-        "performance": 7.5,
-        "tone_word": "confident",
-        "tags": [
-          "ai_demand",
-          "aws_acceleration",
-          "cloud_capex",
-          "custom_silicon",
-          "ad_revenue_growth",
-          "grocery_&_perishables",
-          "logistics_efficiency",
-          "aws_growth",
-          "ecommerce",
-          "advertising",
-          "grocery_delivery"
-        ],
-        "quarter": "Q2",
-        "summary": "Our AI revenue run rate... is now also over $25 billion, growing triple-digit percentages year-over-year."
-      },
-      "why": [
-        "Early in its climb — 2 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 2 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 18.125,
-      "atr_ext": 1.99,
-      "atr_pct_price": 0.06603,
-      "sata_score": 8,
-      "sata_change_1w": 0,
-      "stage_detailed": "2D_extended_run",
-      "industry_percentile": 71.4
-    },
-    {
-      "ticker": "AVGO",
-      "company": "Broadcom",
-      "sector": "Information Technology",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 2,
-      "fresh": true,
-      "sga_score": 64,
-      "ma30_slope_pct5w": 2.142,
-      "pct_vs_ma30": 15.78,
-      "mansfield_rs": 7.03,
-      "vol_ratio": 0.78,
-      "event": "pullback_resume",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.275,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.8333333333333334,
-        "performance": 7.5,
-        "tone_word": "confident",
-        "tags": [
-          "ai",
-          "custom_silicon",
-          "semiconductors",
-          "networking",
-          "data_center",
-          "cloud",
-          "software",
-          "vmware",
-          "ai_hardware",
-          "custom_asic",
-          "networking_equipment",
-          "cloud_computing",
-          "enterprise_software",
-          "it_services"
-        ],
-        "quarter": "Q2",
-        "summary": "Demand for XPUs and networking is simply insatiable. During the quarter, bookings for AI semiconductors were over $30 billion against the $10.8 billion shipped."
-      },
-      "why": [
-        "Early in its climb — 2 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 2 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 41.679,
-      "atr_ext": 1.399,
-      "atr_pct_price": 0.09744,
-      "sata_score": 7,
-      "sata_change_1w": 2,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 27.8
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": 14.1
     },
     {
       "ticker": "VSEC",
       "company": "VSE Corporation",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -355,7 +124,7 @@
       "mansfield_rs": 3.89,
       "vol_ratio": 0.78,
       "event": "trendline_recapture",
-      "gate_tier": "T2",
+      "gate_tier": "T1",
       "blackout": false,
       "arc_pos": 0.35,
       "earnings": {
@@ -390,65 +159,6 @@
       "sata_change_1w": 1,
       "stage_detailed": "2X_catch_price_above_ma",
       "industry_percentile": 51.9
-    },
-    {
-      "ticker": "APOG",
-      "company": "Apogee Enterprises, Inc.",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 8,
-      "fresh": true,
-      "sga_score": 63,
-      "ma30_slope_pct5w": 1.62,
-      "pct_vs_ma30": 15.11,
-      "mansfield_rs": 1.8,
-      "vol_ratio": 0.79,
-      "event": "pullback_resume",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.35,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.2222222222222222,
-        "performance": 5.416666666666667,
-        "tone_word": "steady",
-        "tags": [
-          "m&a",
-          "kalwall",
-          "cost_pressures",
-          "pricing_actions",
-          "glass_segment_softness",
-          "margin_performance",
-          "building_products",
-          "architectural_glass",
-          "commercial_construction",
-          "non_residential_construction",
-          "construction_materials",
-          "energy_efficiency",
-          "daylighting_systems",
-          "institutional_construction"
-        ],
-        "quarter": "Q1",
-        "summary": "Adjusted EBITDA margin decreased...driven by higher material and freight costs, and the impact of lower volume."
-      },
-      "why": [
-        "Early in its climb — 8 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 8 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 4.1405,
-      "atr_ext": 1.379,
-      "atr_pct_price": 0.09514,
-      "sata_score": 7,
-      "sata_change_1w": 2,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 77.3
     },
     {
       "ticker": "SILA",
@@ -510,7 +220,7 @@
       "ticker": "HEI",
       "company": "HEICO Corporation",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -569,7 +279,7 @@
       "ticker": "BSVN",
       "company": "Bank7 Corp",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -606,64 +316,6 @@
       "sata_change_1w": 0,
       "stage_detailed": "2D_extended_run",
       "industry_percentile": null
-    },
-    {
-      "ticker": "OC",
-      "company": "Owens Corning",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 8,
-      "fresh": true,
-      "sga_score": 59,
-      "ma30_slope_pct5w": 4.285,
-      "pct_vs_ma30": 26.02,
-      "mansfield_rs": 12.26,
-      "vol_ratio": 0.75,
-      "event": "pullback_resume",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.35,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.16666666666666666,
-        "performance": 2.5,
-        "tone_word": "steady",
-        "tags": [
-          "cost_savings",
-          "inflation_impact",
-          "roofing",
-          "insulation",
-          "doors",
-          "demand_headwinds",
-          "guidance_maintained",
-          "portfolio_reshaping",
-          "building_materials",
-          "residential_construction",
-          "remodeling",
-          "distributor_channel",
-          "specialty_materials"
-        ],
-        "quarter": "Q1",
-        "summary": "Roofing activity... remained impacted by low carryover demand from the uniquely quiet storm season in the second half of last year."
-      },
-      "why": [
-        "Early in its climb — 8 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 8 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 12.5749,
-      "atr_ext": 2.579,
-      "atr_pct_price": 0.08004,
-      "sata_score": 8,
-      "sata_change_1w": 1,
-      "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": 90.9
     },
     {
       "ticker": "EML",
@@ -711,7 +363,7 @@
       "ticker": "HPK",
       "company": "HighPeak Energy Inc",
       "sector": "Energy",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -755,118 +407,10 @@
       "industry_percentile": 62.7
     },
     {
-      "ticker": "SABR",
-      "company": "Sabre",
-      "sector": "Consumer Discretionary",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 6,
-      "fresh": true,
-      "sga_score": 55,
-      "ma30_slope_pct5w": 4.308,
-      "pct_vs_ma30": 28.88,
-      "mansfield_rs": 11.87,
-      "vol_ratio": 0.54,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.325,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.6,
-        "performance": 7.5,
-        "tone_word": "confident",
-        "tags": [
-          "guidance_raised",
-          "demand_acceleration",
-          "new_product",
-          "margin_expansion"
-        ],
-        "quarter": "Q2",
-        "summary": "Sabre's Q2 FY2026 revenue grew 4% to $712 million, with normalized adjusted EBITDA up 19% to $151 million, exceeding guidance. Full-year pro forma adjusted EBITDA guidance was raised to approximately $600 million and free cash flow to -$65 million. Air distribution bookings gr…"
-      },
-      "why": [
-        "Early in its climb — 6 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 6 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 0.2942,
-      "atr_ext": 1.577,
-      "atr_pct_price": 0.14213,
-      "sata_score": 7,
-      "sata_change_1w": 1,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 79.7
-    },
-    {
-      "ticker": "UAL",
-      "company": "United Airlines Holdings",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 10,
-      "fresh": true,
-      "sga_score": 55,
-      "ma30_slope_pct5w": 1.426,
-      "pct_vs_ma30": 20.42,
-      "mansfield_rs": 9.68,
-      "vol_ratio": 0.68,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.375,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.6666666666666666,
-        "performance": 7.083333333333334,
-        "tone_word": "confident",
-        "tags": [
-          "fuel_headwinds",
-          "strong_demand",
-          "pricing_power",
-          "corporate_travel_recovery",
-          "starlink_rollout",
-          "cost_inflation",
-          "market_share_gains",
-          "passenger_airlines",
-          "global_airlines",
-          "travel_and_leisure",
-          "corporate_travel",
-          "airline_loyalty_programs",
-          "cargo_airlines",
-          "transportation_services"
-        ],
-        "quarter": "Q2",
-        "summary": "This is about a structural change in the cost side of the business, which is forcing a structural change in the pricing and revenue side."
-      },
-      "why": [
-        "Early in its climb — 10 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 10 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 12.4564,
-      "atr_ext": 1.763,
-      "atr_pct_price": 0.09614,
-      "sata_score": 7,
-      "sata_change_1w": 1,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 77.8
-    },
-    {
       "ticker": "CRNX",
       "company": "Crinetics Pharmaceuticals Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 4,
       "fresh": true,
@@ -922,7 +466,7 @@
       "ticker": "HOV",
       "company": "Hovnanian Enterprises Inc",
       "sector": "Consumer Cyclical",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -964,7 +508,7 @@
       "ticker": "ITIC",
       "company": "Investors Title Co",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 4,
       "fresh": true,
@@ -1061,7 +605,7 @@
       "ticker": "NKTR",
       "company": "Nektar Therapeutics",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -1105,7 +649,7 @@
       "ticker": "AGEN",
       "company": "Agenus Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 3,
       "fresh": true,
@@ -1147,7 +691,7 @@
       "ticker": "ATAI",
       "company": "AtaiBeckley Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -1191,7 +735,7 @@
       "ticker": "FRD",
       "company": "Friedman Industries Inc",
       "sector": "Basic Materials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -1228,56 +772,6 @@
       "sata_change_1w": 1,
       "stage_detailed": "2A_strong_breakout",
       "industry_percentile": null
-    },
-    {
-      "ticker": "QNST",
-      "company": "QuinStreet, Inc.",
-      "sector": "Communication Services",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 4,
-      "fresh": true,
-      "sga_score": 53,
-      "ma30_slope_pct5w": 3.224,
-      "pct_vs_ma30": 57.36,
-      "mansfield_rs": 34.27,
-      "vol_ratio": 1.11,
-      "event": "pullback_resume",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.3,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.86,
-        "performance": 8.7,
-        "tone_word": "upbeat",
-        "tags": [
-          "guidance_raised",
-          "margin_expansion",
-          "demand_acceleration",
-          "new_product",
-          "buyback_or_dividend"
-        ],
-        "quarter": "Q4",
-        "summary": "QuinStreet reported record Q4 FY2026 with revenue up 43% YoY to $373.9M and adjusted EBITDA up 87% to $41.4M, driving margin expansion. Full-year revenue grew 18% to $1.3B with adjusted EBITDA up 38%, and the company guided to continued strong growth in FY2027, expecting 16% r…"
-      },
-      "why": [
-        "Early in its climb — 4 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 4 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 1.8686,
-      "atr_ext": 4.112,
-      "atr_pct_price": 0.08864,
-      "sata_score": 9,
-      "sata_change_1w": 2,
-      "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": 100.0
     },
     {
       "ticker": "TMHC",
@@ -1334,7 +828,7 @@
       "ticker": "ZVRA",
       "company": "Zevra Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -1430,131 +924,10 @@
       "industry_percentile": null
     },
     {
-      "ticker": "FELE",
-      "company": "Franklin Electric",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 8,
-      "fresh": true,
-      "sga_score": 52,
-      "ma30_slope_pct5w": 1.431,
-      "pct_vs_ma30": 9.31,
-      "mansfield_rs": -0.27,
-      "vol_ratio": 1.0,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.35,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.5555555555555556,
-        "performance": 10.0,
-        "tone_word": "confident",
-        "tags": [
-          "guidance_raise",
-          "margin_expansion",
-          "m&a_synergies",
-          "new_products",
-          "water_treatment_growth",
-          "geopolitical_risk",
-          "ag_market_strength",
-          "data_center_exposure",
-          "industrial_pumps",
-          "water_infrastructure",
-          "fluid_handling",
-          "agricultural_equipment",
-          "mining_equipment",
-          "water_treatment",
-          "energy_equipment",
-          "distribution_services"
-        ],
-        "quarter": "Q2",
-        "summary": "The 18% adjusted EPS expansion was driven by volume growth above market, price discipline, and cost management, demonstrating our commitment to expand earnings power."
-      },
-      "why": [
-        "Early in its climb — 8 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 8 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 5.5291,
-      "atr_ext": 1.686,
-      "atr_pct_price": 0.05051,
-      "sata_score": 7,
-      "sata_change_1w": 1,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 55.1
-    },
-    {
-      "ticker": "FSS",
-      "company": "Federal Signal Corporation",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 6,
-      "fresh": true,
-      "sga_score": 52,
-      "ma30_slope_pct5w": 1.191,
-      "pct_vs_ma30": 11.52,
-      "mansfield_rs": -1.41,
-      "vol_ratio": 1.01,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.325,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.7777777777777778,
-        "performance": 10.0,
-        "tone_word": "confident",
-        "tags": [
-          "guidance_raise",
-          "aftermarket_growth",
-          "m&a_integration",
-          "margin_expansion",
-          "new_way_synergies",
-          "strong_cash_flow",
-          "demand_resilience",
-          "funding_diversification",
-          "specialty_vehicles",
-          "industrial_machinery",
-          "municipal_equipment",
-          "aftermarket_parts_services",
-          "safety_and_security",
-          "refuse_trucks",
-          "road_maintenance"
-        ],
-        "quarter": "Q2",
-        "summary": "Growth in our aftermarket business, leveraging the power of our platform to drive internal margin initiatives and proactive price-cost management were all meaningful organic contributors."
-      },
-      "why": [
-        "Early in its climb — 6 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 6 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 10.0103,
-      "atr_ext": 1.323,
-      "atr_pct_price": 0.07808,
-      "sata_score": 6,
-      "sata_change_1w": 0,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 51.0
-    },
-    {
       "ticker": "MNPR",
       "company": "Monopar Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 4,
       "fresh": true,
@@ -1565,7 +938,7 @@
       "vol_ratio": 1.46,
       "event": "pullback_resume",
       "gate_tier": null,
-      "blackout": true,
+      "blackout": false,
       "arc_pos": 0.3,
       "earnings": {
         "present": false,
@@ -1578,13 +951,11 @@
       },
       "why": [
         "Early in its climb — 4 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Earnings soon — wait, don't chase"
+        "Already stretched well above its 30-week line — may need a rest"
       ],
       "why_zh": [
         "上升初期 — 已上行 4 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "财报临近 — 先等待，不要追高"
+        "已明显高于 30 周均线 — 可能需要回踩"
       ],
       "atr_14w": 13.7957,
       "atr_ext": 3.547,
@@ -1598,7 +969,7 @@
       "ticker": "PSNL",
       "company": "Personalis Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -1655,7 +1026,7 @@
       "ticker": "AMLX",
       "company": "Amylyx Pharmaceuticals Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -1697,7 +1068,7 @@
       "ticker": "BH",
       "company": "Biglari Holdings Inc",
       "sector": "Consumer Cyclical",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -1708,7 +1079,7 @@
       "vol_ratio": 1.8,
       "event": null,
       "gate_tier": null,
-      "blackout": false,
+      "blackout": true,
       "arc_pos": 0.325,
       "earnings": {
         "present": false,
@@ -1721,11 +1092,13 @@
       },
       "why": [
         "Early in its climb — 6 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
+        "Trading above its 30-week line — the trend is with it",
+        "Earnings soon — wait, don't chase"
       ],
       "why_zh": [
         "上升初期 — 已上行 6 周",
-        "位于 30 周均线之上 — 趋势向好"
+        "位于 30 周均线之上 — 趋势向好",
+        "财报临近 — 先等待，不要追高"
       ],
       "atr_14w": 43.4136,
       "atr_ext": 0.816,
@@ -1739,7 +1112,7 @@
       "ticker": "BLZE",
       "company": "Backblaze Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -1789,7 +1162,7 @@
       "ticker": "DTIL",
       "company": "Precision Biosciences Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -1828,58 +1201,10 @@
       "industry_percentile": null
     },
     {
-      "ticker": "ENR",
-      "company": "Energizer",
-      "sector": "Consumer Staples",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 6,
-      "fresh": true,
-      "sga_score": 51,
-      "ma30_slope_pct5w": 1.095,
-      "pct_vs_ma30": 14.23,
-      "mansfield_rs": -4.42,
-      "vol_ratio": 1.0,
-      "event": "pullback_resume",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.325,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.1,
-        "performance": 6.5,
-        "tone_word": "guarded",
-        "tags": [
-          "guidance_lowered",
-          "demand_slowdown",
-          "margin_expansion"
-        ],
-        "quarter": "Q3",
-        "summary": "Energizer reported organic growth across both batteries and lights and auto care, but moderated consumer demand led to a guidance reduction for the back half of fiscal 2026, with organic growth expected to be roughly flat to up 1% versus prior expectations of ~4%. Battery cate…"
-      },
-      "why": [
-        "Early in its climb — 6 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 6 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 2.1065,
-      "atr_ext": 1.334,
-      "atr_pct_price": 0.09333,
-      "sata_score": 6,
-      "sata_change_1w": 1,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": 42.9
-    },
-    {
       "ticker": "NEXN",
       "company": "Nexxen International Ltd",
       "sector": "Communication Services",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -1960,10 +1285,54 @@
       "industry_percentile": null
     },
     {
+      "ticker": "USAR",
+      "company": "USA Rare Earth Inc",
+      "sector": "Basic Materials",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 10,
+      "fresh": true,
+      "sga_score": 51,
+      "ma30_slope_pct5w": 1.123,
+      "pct_vs_ma30": -4.46,
+      "mansfield_rs": -9.67,
+      "vol_ratio": 0.68,
+      "event": null,
+      "gate_tier": "T1",
+      "blackout": false,
+      "arc_pos": 0.375,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 10 weeks up so far",
+        "Still near its 30-week line — not clear of it yet",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 10 周",
+        "仍接近 30 周均线 — 尚未站稳",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 4.4577,
+      "atr_ext": -0.202,
+      "atr_pct_price": 0.23061,
+      "sata_score": 4,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
+    },
+    {
       "ticker": "WNC",
       "company": "Wabash National Corp",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -2016,70 +1385,10 @@
       "industry_percentile": 93.9
     },
     {
-      "ticker": "WOR",
-      "company": "Worthington Enterprises",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
-      "stage": 2,
-      "weeks_in_stage": 1,
-      "fresh": true,
-      "sga_score": 51,
-      "ma30_slope_pct5w": 0.823,
-      "pct_vs_ma30": 6.54,
-      "mansfield_rs": -6.57,
-      "vol_ratio": 1.01,
-      "event": "pullback_resume",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.2625,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.6666666666666666,
-        "performance": 3.75,
-        "tone_word": "confident",
-        "tags": [
-          "data_centers",
-          "building_products",
-          "consumer_products",
-          "jvs",
-          "a2l_refrigerants",
-          "inflation",
-          "margins",
-          "m&a",
-          "hvac_equipment",
-          "data_center_supplier",
-          "home_improvement_products",
-          "construction_materials",
-          "industrial_machinery",
-          "chemicals",
-          "metals_and_mining"
-        ],
-        "quarter": "Q4",
-        "summary": "We shipped $13M of ASME tanks for data centers in fiscal 2026 and expect to ship at least that much in Q1 '27."
-      },
-      "why": [
-        "Early in its climb — 1 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 1 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 3.9858,
-      "atr_ext": 0.9,
-      "atr_pct_price": 0.06823,
-      "sata_score": 6,
-      "sata_change_1w": 2,
-      "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": 36.7
-    },
-    {
       "ticker": "ACIW",
       "company": "ACI Worldwide",
       "sector": "Information Technology",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 5,
       "fresh": true,
@@ -2184,7 +1493,7 @@
       "ticker": "HNVR",
       "company": "Hanover Bancorp Inc",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 2,
       "fresh": true,
@@ -2268,7 +1577,7 @@
       "ticker": "CHCO",
       "company": "City Holding Company",
       "sector": "Financials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2310,7 +1619,7 @@
       "ticker": "FDMT",
       "company": "4D Molecular Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 4,
       "fresh": true,
@@ -2352,7 +1661,7 @@
       "ticker": "MOH",
       "company": "Molina Healthcare",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2407,7 +1716,7 @@
       "ticker": "PAMT",
       "company": "PAMT Corp",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2449,7 +1758,7 @@
       "ticker": "QLYS",
       "company": "Qualys",
       "sector": "Information Technology",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 2,
       "fresh": true,
@@ -2497,7 +1806,7 @@
       "ticker": "PLX",
       "company": "Protalix BioTherapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 7,
       "fresh": true,
@@ -2595,7 +1904,7 @@
       "ticker": "ALTG",
       "company": "Alta Equipment Group Inc",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -2652,7 +1961,7 @@
       "ticker": "DSGR",
       "company": "Distribution Solutions Group Inc",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 3,
       "fresh": true,
@@ -2694,7 +2003,7 @@
       "ticker": "FAST",
       "company": "Fastenal",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2751,7 +2060,7 @@
       "ticker": "HNST",
       "company": "Honest Company Inc",
       "sector": "Consumer Defensive",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -2807,7 +2116,7 @@
       "ticker": "MAN",
       "company": "ManpowerGroup",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -2865,7 +2174,7 @@
       "ticker": "NUAI",
       "company": "New Era Energy & Digital Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 7,
       "fresh": true,
@@ -2909,7 +2218,7 @@
       "ticker": "PENN",
       "company": "Penn Entertainment",
       "sector": "Consumer Discretionary",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2957,7 +2266,7 @@
       "ticker": "WRLD",
       "company": "World Acceptance Corporation",
       "sector": "Financials",
-      "stage_source_asof": "2026-08-07",
+      "stage_source_asof": "2026-08-12",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2994,26 +2303,630 @@
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": null
+    },
+    {
+      "ticker": "AGIO",
+      "company": "Agios Pharmaceuticals Inc",
+      "sector": "Healthcare",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 5,
+      "fresh": true,
+      "sga_score": 46,
+      "ma30_slope_pct5w": 5.002,
+      "pct_vs_ma30": 4.45,
+      "mansfield_rs": -12.22,
+      "vol_ratio": 1.18,
+      "event": "trendline_recapture",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3125,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.7222222222222222,
+        "performance": 6.25,
+        "tone_word": "confident",
+        "tags": [
+          "aqvesme_launch",
+          "thalassemia",
+          "sickle_cell_disease",
+          "mitapivat",
+          "tebapivat",
+          "rems",
+          "snda_filing",
+          "pipeline_data",
+          "biotechnology",
+          "rare_disease",
+          "hematology",
+          "pharma",
+          "drug_launch",
+          "clinical_trials"
+        ],
+        "quarter": "Q1",
+        "summary": "The U.S. commercial launch of AQVESME in thalassemia is off to a strong start with 242 prescriptions written as of March 31st."
+      },
+      "why": [
+        "Early in its climb — 5 weeks up so far",
+        "Trading above its 30-week line — the trend is with it"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 5 周",
+        "位于 30 周均线之上 — 趋势向好"
+      ],
+      "atr_14w": 3.89,
+      "atr_ext": 0.353,
+      "atr_pct_price": 0.12055,
+      "sata_score": 5,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": 28.1
+    },
+    {
+      "ticker": "FRBA",
+      "company": "First Bank (NJ)",
+      "sector": "Financial",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 7,
+      "fresh": true,
+      "sga_score": 46,
+      "ma30_slope_pct5w": 1.373,
+      "pct_vs_ma30": 13.4,
+      "mansfield_rs": 2.6,
+      "vol_ratio": 1.28,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3375,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 7 weeks up so far",
+        "Trading above its 30-week line — the trend is with it"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 7 周",
+        "位于 30 周均线之上 — 趋势向好"
+      ],
+      "atr_14w": 1.0176,
+      "atr_ext": 2.164,
+      "atr_pct_price": 0.05462,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "ITGR",
+      "company": "Integer Holdings Corporation",
+      "sector": "Health Care",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 10,
+      "fresh": true,
+      "sga_score": 46,
+      "ma30_slope_pct5w": 5.539,
+      "pct_vs_ma30": 37.99,
+      "mansfield_rs": 24.99,
+      "vol_ratio": 1.99,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.375,
+      "earnings": {
+        "present": true,
+        "sentiment": -0.5,
+        "performance": 0.0,
+        "tone_word": "downbeat",
+        "tags": [
+          "guidance_cut",
+          "strategic_review",
+          "electrophysiology",
+          "medtech_cmo",
+          "inventory_adjustment",
+          "customer_forecast_update",
+          "medical_devices",
+          "contract_manufacturing",
+          "cardiovascular_devices",
+          "neuromodulation",
+          "medical_supplies"
+        ],
+        "quarter": "Q1",
+        "summary": "The recent customer forecast updates primarily affect the second half outlook for a few products in electrophysiology."
+      },
+      "why": [
+        "Early in its climb — 10 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 10 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 6.8257,
+      "atr_ext": 5.052,
+      "atr_pct_price": 0.05449,
+      "sata_score": 9,
+      "sata_change_1w": 0,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": 89.7
+    },
+    {
+      "ticker": "LH",
+      "company": "Labcorp",
+      "sector": "Health Care",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 4,
+      "fresh": true,
+      "sga_score": 46,
+      "ma30_slope_pct5w": 2.749,
+      "pct_vs_ma30": 17.29,
+      "mansfield_rs": 5.59,
+      "vol_ratio": 1.22,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.6111111111111112,
+        "performance": 10.0,
+        "tone_word": "confident",
+        "tags": [
+          "diagnostics",
+          "biopharma_lab_services",
+          "specialty_testing",
+          "margin_expansion",
+          "guidance_raise",
+          "m&a",
+          "consumer_health",
+          "technology_/_ai",
+          "clinical_labs",
+          "life_sciences_tools",
+          "contract_research_organization",
+          "oncology_testing",
+          "genomic_testing",
+          "health_tech"
+        ],
+        "quarter": "Q2",
+        "summary": "BLS segment adjusted operating margin expanded 130 basis points, driven by organic growth and operating efficiencies from strategic actions in Early Development."
+      },
+      "why": [
+        "Early in its climb — 4 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 4 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 16.3249,
+      "atr_ext": 2.882,
+      "atr_pct_price": 0.05115,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": 55.3
+    },
+    {
+      "ticker": "MAS",
+      "company": "Masco",
+      "sector": "Industrials",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 10,
+      "fresh": true,
+      "sga_score": 46,
+      "ma30_slope_pct5w": 2.981,
+      "pct_vs_ma30": 10.14,
+      "mansfield_rs": 0.5,
+      "vol_ratio": 1.09,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.375,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.05555555555555555,
+        "performance": 7.083333333333334,
+        "tone_word": "steady",
+        "tags": [
+          "tariff_refund",
+          "strategic_investments",
+          "guidance_raise",
+          "commodity_inflation",
+          "capital_allocation",
+          "plumbing",
+          "paint",
+          "building_products",
+          "home_improvement",
+          "repair_and_remodel",
+          "plumbing_fixtures",
+          "architectural_coatings",
+          "faucets",
+          "spa_and_wellness"
+        ],
+        "quarter": "Q2",
+        "summary": "Operating profit was driven by the approximately $95 million net tariff refund benefit, pricing actions and cost savings initiatives."
+      },
+      "why": [
+        "Early in its climb — 10 weeks up so far",
+        "Trading above its 30-week line — the trend is with it"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 10 周",
+        "位于 30 周均线之上 — 趋势向好"
+      ],
+      "atr_14w": 5.9315,
+      "atr_ext": 1.204,
+      "atr_pct_price": 0.07653,
+      "sata_score": 6,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 72.7
+    },
+    {
+      "ticker": "NODK",
+      "company": "NI Holdings Inc",
+      "sector": "Financial",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 9,
+      "fresh": true,
+      "sga_score": 46,
+      "ma30_slope_pct5w": 2.521,
+      "pct_vs_ma30": 11.0,
+      "mansfield_rs": 1.28,
+      "vol_ratio": 1.16,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3625,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 9 weeks up so far",
+        "Trading above its 30-week line — the trend is with it"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 9 周",
+        "位于 30 周均线之上 — 趋势向好"
+      ],
+      "atr_14w": 0.8887,
+      "atr_ext": 1.742,
+      "atr_pct_price": 0.0569,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "INCY",
+      "company": "Incyte",
+      "sector": "Health Care",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 5,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 2.835,
+      "pct_vs_ma30": 17.03,
+      "mansfield_rs": 8.86,
+      "vol_ratio": 1.17,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3125,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.7222222222222222,
+        "performance": 6.25,
+        "tone_word": "confident",
+        "tags": [
+          "pipeline_update",
+          "povorcitinib",
+          "989_calr_antibody",
+          "734_kras_inhibitor",
+          "opzelura",
+          "regulatory_milestones",
+          "positive_clinical_data",
+          "guidance_reaffirmed",
+          "biotechnology",
+          "hematology",
+          "oncology",
+          "immunology",
+          "dermatology",
+          "jak_inhibitors",
+          "clinical_trials",
+          "drug_pipeline"
+        ],
+        "quarter": "Q1",
+        "summary": "Sales for our core business, excluding Jakafi, were up 63% year-over-year, with contributions across hematology, oncology and immunology."
+      },
+      "why": [
+        "Early in its climb — 5 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 5 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 8.815,
+      "atr_ext": 1.99,
+      "atr_pct_price": 0.07312,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": 56.3
+    },
+    {
+      "ticker": "IPAR",
+      "company": "Inter Parfums, Inc.",
+      "sector": "Consumer Staples",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 8,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 6.854,
+      "pct_vs_ma30": 22.86,
+      "mansfield_rs": 13.56,
+      "vol_ratio": 1.05,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.35,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.16666666666666666,
+        "performance": 5.0,
+        "tone_word": "steady",
+        "tags": [
+          "fragrance",
+          "brand_portfolio",
+          "international_sales",
+          "tariffs",
+          "geopolitics",
+          "licensing",
+          "e-commerce",
+          "fragrance_cosmetics",
+          "brand_licensing",
+          "consumer_discretionary",
+          "global_distribution",
+          "accessible_luxury",
+          "e_commerce_channels",
+          "supply_chain_optimization"
+        ],
+        "quarter": "Q1",
+        "summary": "Our top 20 brand-region combinations, which represent 86% of our global sales in Q1, grew 9%."
+      },
+      "why": [
+        "Early in its climb — 8 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 8 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 9.4694,
+      "atr_ext": 2.416,
+      "atr_pct_price": 0.07701,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": 83.3
+    },
+    {
+      "ticker": "LEGH",
+      "company": "Legacy Housing Corp",
+      "sector": "Consumer Cyclical",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 9,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 5.192,
+      "pct_vs_ma30": 27.05,
+      "mansfield_rs": 12.86,
+      "vol_ratio": 1.33,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3625,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 9 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 9 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 2.2941,
+      "atr_ext": 2.71,
+      "atr_pct_price": 0.07856,
+      "sata_score": 8,
+      "sata_change_1w": 1,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "RCEL",
+      "company": "RCEL",
+      "sector": "Unknown",
+      "stage_source_asof": "2026-07-10",
+      "stage": 2,
+      "weeks_in_stage": 6,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 2.265,
+      "pct_vs_ma30": -3.98,
+      "mansfield_rs": -16.03,
+      "vol_ratio": 1.48,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.325,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.7,
+        "performance": 8.0,
+        "tone_word": "confident",
+        "tags": [
+          "guidance_raised",
+          "beat_and_raise",
+          "margin_expansion",
+          "demand_acceleration"
+        ],
+        "quarter": "Q2",
+        "summary": "AVITA Medical reported Q2 2026 revenue of $21.7 million, up 18% year-over-year and 13% sequentially, exceeding $20 million for the first time. The company raised full-year 2026 revenue guidance to $86-89 million (20-24% growth) and introduced new guidance to achieve cash flow …"
+      },
+      "why": [
+        "Early in its climb — 6 weeks up so far",
+        "Still near its 30-week line — not clear of it yet"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 6 周",
+        "仍接近 30 周均线 — 尚未站稳"
+      ],
+      "atr_14w": 0.8507,
+      "atr_ext": -0.198,
+      "atr_pct_price": 0.20954,
+      "sata_score": 4,
+      "sata_change_1w": -2,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
+    },
+    {
+      "ticker": "RVTY",
+      "company": "Revvity",
+      "sector": "Health Care",
+      "stage_source_asof": "2026-08-12",
+      "stage": 2,
+      "weeks_in_stage": 10,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 2.209,
+      "pct_vs_ma30": 14.43,
+      "mansfield_rs": 5.25,
+      "vol_ratio": 1.15,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.375,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.8,
+        "performance": 8.0,
+        "tone_word": "confident",
+        "tags": [
+          "guidance_raised",
+          "beat_and_raise",
+          "margin_expansion",
+          "demand_acceleration",
+          "new_product",
+          "supply_constraint"
+        ],
+        "quarter": "Q2",
+        "summary": "Revvity reported Q2 FY2026 pro forma organic growth of 3%, with total revenue above the high end of expectations and pro forma adjusted EPS of $1.41, well above guidance. The company raised full-year organic growth guidance to 4%-5% (from 3%-4%), adjusted operating margin to ~…"
+      },
+      "why": [
+        "Early in its climb — 10 weeks up so far",
+        "Trading above its 30-week line — the trend is with it"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 10 周",
+        "位于 30 周均线之上 — 趋势向好"
+      ],
+      "atr_14w": 8.9873,
+      "atr_ext": 1.609,
+      "atr_pct_price": 0.07838,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 50.0
+    },
+    {
+      "ticker": "TOI",
+      "company": "Oncology Institute Inc",
+      "sector": "Healthcare",
+      "stage_source_asof": "2026-07-31",
+      "stage": 2,
+      "weeks_in_stage": 10,
+      "fresh": true,
+      "sga_score": 45,
+      "ma30_slope_pct5w": 8.034,
+      "pct_vs_ma30": 24.05,
+      "mansfield_rs": 18.45,
+      "vol_ratio": 1.06,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.375,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.55,
+        "performance": 7.0,
+        "tone_word": "confident",
+        "tags": [
+          "guidance_raised",
+          "beat_and_raise",
+          "margin_expansion",
+          "demand_acceleration"
+        ],
+        "quarter": "Q2",
+        "summary": "Starling Oncology reported Q2 FY2026 revenue of $161.3 million, up 34.6% year-over-year, driven by Specialty Pharmacy growth of 57.6%. Gross margin improved to 16.8% from 14.6%, and adjusted EBITDA turned positive at $0.2 million versus a loss of $4.1 million a year ago. The c…"
+      },
+      "why": [
+        "Early in its climb — 10 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 10 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 0.7455,
+      "atr_ext": 1.264,
+      "atr_pct_price": 0.1534,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     }
   ],
   "warnings_stage3": [
     {
-      "ticker": "HRMY",
-      "company": "Harmony Biosciences Holdings, Inc.",
-      "weeks_in_stage": 8,
-      "sga_score": 35
+      "ticker": "ARR",
+      "company": "Armour Residential REIT",
+      "weeks_in_stage": 1,
+      "sga_score": 31
     },
     {
-      "ticker": "SBAC",
-      "company": "SBA Communications",
-      "weeks_in_stage": 7,
-      "sga_score": 27
-    },
-    {
-      "ticker": "ALK",
-      "company": "Alaska Air Group",
+      "ticker": "EW",
+      "company": "Edwards Lifesciences",
       "weeks_in_stage": 3,
-      "sga_score": 25
+      "sga_score": 27
     },
     {
       "ticker": "CRWV",
@@ -3031,18 +2944,6 @@
       "ticker": "SRZN",
       "company": "Surrozen Inc",
       "weeks_in_stage": 2,
-      "sga_score": 25
-    },
-    {
-      "ticker": "WMT",
-      "company": "Walmart",
-      "weeks_in_stage": 4,
-      "sga_score": 25
-    },
-    {
-      "ticker": "WS",
-      "company": "Worthington Steel",
-      "weeks_in_stage": 4,
       "sga_score": 25
     },
     {
@@ -3116,6 +3017,24 @@
       "company": "Tootsie Roll Industries, Inc.",
       "weeks_in_stage": 10,
       "sga_score": 15
+    },
+    {
+      "ticker": "STRS",
+      "company": "Stratus Properties Inc",
+      "weeks_in_stage": 1,
+      "sga_score": 13
+    },
+    {
+      "ticker": "TDC",
+      "company": "Teradata",
+      "weeks_in_stage": 2,
+      "sga_score": 13
+    },
+    {
+      "ticker": "XFOR",
+      "company": "X4 Pharmaceuticals Inc",
+      "weeks_in_stage": 3,
+      "sga_score": 13
     }
   ],
   "sectors": [
@@ -3134,7 +3053,7 @@
     {
       "sector": "Financials",
       "n": 222,
-      "pct_stage2": 67.1,
+      "pct_stage2": 67.6,
       "trend": "up"
     },
     {
@@ -3175,8 +3094,8 @@
     },
     {
       "sector": "Healthcare",
-      "n": 348,
-      "pct_stage2": 53.2,
+      "n": 349,
+      "pct_stage2": 53.3,
       "trend": "flat"
     },
     {
@@ -6868,8 +6787,8 @@
       41
     ],
     "FBK": [
-      3,
-      20
+      2,
+      1
     ],
     "FBLA": [
       2,
@@ -12499,6 +12418,10 @@
       2,
       45
     ],
+    "STLN": [
+      2,
+      11
+    ],
     "STM": [
       2,
       24
@@ -14161,11 +14084,22 @@
     ]
   },
   "changes": {
-    "items": [],
-    "n": 0
+    "items": [
+      {
+        "kind": "entered_stage2",
+        "ticker": "FBK",
+        "detail": "Moved into an advancing stage"
+      },
+      {
+        "kind": "entered_stage2",
+        "ticker": "STLN",
+        "detail": "Now in an advancing stage"
+      }
+    ],
+    "n": 2
   },
   "prev_state": {
-    "asof": "2026-08-08",
+    "asof": "2026-08-10",
     "by_key": {
       "A": {
         "stage": 1,
@@ -32396,9 +32330,9 @@
       "event": "pullback_resume"
     },
     "FBK": {
-      "stage": 3,
-      "fresh": false,
-      "event": null
+      "stage": 2,
+      "fresh": true,
+      "event": "pullback_resume"
     },
     "FBLA": {
       "stage": 2,
@@ -38528,7 +38462,7 @@
     "RUSHA": {
       "stage": 2,
       "fresh": false,
-      "event": "pullback_resume"
+      "event": "trendline_recapture"
     },
     "RVLV": {
       "stage": 4,
@@ -39431,6 +39365,11 @@
       "event": null
     },
     "STLD": {
+      "stage": 2,
+      "fresh": false,
+      "event": "pullback_resume"
+    },
+    "STLN": {
       "stage": 2,
       "fresh": false,
       "event": "pullback_resume"
