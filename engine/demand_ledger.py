@@ -38,6 +38,7 @@ from engine import ai_desk_scorer as _scorer  # reuse the predicate evaluators
 from engine import desk_ledger               # append-time id-immutability gate
 from engine.regime_label import quad_label    # regime stamp → by_regime track record
 from engine import demand_chain as dc
+from engine import qledger_desk_adapter as _qadapt   # T9: Universal Scoreboard mirror
 from lib import config
 
 log = logging.getLogger("demand_ledger")
@@ -236,8 +237,51 @@ def emit(root=None, today=None) -> list[dict]:
             log.debug(
                 "demand_ledger.emit: theses write skipped (COLLECT_LANE != nightly)"
             )
+    _register_claims(list(ledger.values()) + fresh, {t["id"] for t in fresh}, root)
     log.info("demand-ledger: +%d new theses (%d already logged)", len(fresh), len(ledger))
     return fresh
+
+
+def _register_claims(rows: list[dict], forward_ids: set[str], root: Path) -> None:
+    """Mirror the demand-chain ledger into the Universal Scoreboard (T9 wave 1).
+
+    Runs on the ENGINE's OWN nightly path (`python -m engine.demand_ledger`,
+    daily.yml engine job) immediately after the thesis append, so tonight's rows
+    are registered BEFORE the outcome exists — not by a separate backfill script.
+
+    * DIRECTION comes from this engine's own predicate: `lean` is set at
+      `_thesis_for` from `divergence ∈ {ahead_of_consensus, consensus_at_risk}`
+      and stamped into `falsifier.check.{op,threshold}`; the adapter reads the
+      sign off that pair. There is no LLM anywhere in the construction (module
+      docstring), and no row of this desk is a salience claim — direction is
+      never 0 here.
+    * HORIZON is 126, the engine constant at `_thesis_for` and the ruler the
+      row's own falsifier text names. Registered unmodified.
+    * timestamp_quality=DISCLOSURE_DATE: these reads are driven by FILED RPO /
+      capex data, so the honest entry anchor is one business day after the
+      disclosure (qledger._entry_date applies the shift). CRAWL_BOUNDED here
+      would buy a free look at the disclosure-day move.
+    * The whole ledger is re-offered every night, not just `fresh`: registration
+      is idempotent by claim_id (salt = thesis id, 55/55 committed ids unique),
+      so this both self-heals a night that failed to register and marks the
+      pre-activation rows `backfilled=True` — they accrue as context, never as a
+      live-forward record (R3).
+
+    Lane-gated to match the ledger append itself: outside the nightly lane the
+    thesis row is not written, so a claim here would reference a row that never
+    landed (and the checkout is thrown away regardless).
+    """
+    if not _ledger_advance_enabled():
+        log.debug("demand_ledger: qledger registration skipped (COLLECT_LANE != nightly)")
+        return
+    _qadapt.register_theses(
+        rows,
+        desk="demand_chain",
+        claim_family="demand_chain",
+        timestamp_quality="DISCLOSURE_DATE",
+        root=root,
+        forward_ids=forward_ids,
+    )
 
 
 def score(root=None, today=None) -> dict:

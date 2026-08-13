@@ -1898,6 +1898,7 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/backfill_qledger_us.py — historical backfill; additive append-only
   - scripts/backfill_qledger_cn.py — CN historical backfill; additive append-only
+  - engine/qledger_desk_adapter.py — T9 wave-1 desk adapter; calls the producer's register_batch from the desks' own nightly build paths (engine/demand_ledger.py, engine/stock_desk.py, engine/thematic_desk.py). Additive append-only, idempotent by claim_id under an explicit salt.
 
 ### regime-history
 

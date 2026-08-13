@@ -40,6 +40,8 @@ import pandas as pd
 from engine import ai_desk as _ad           # reuse _check_by / _extract_json / _cfg
 from engine import desk_ledger as _ledger_law    # run-scoped ids + immutable appends
 from engine import master_brain as _mb      # the LLM client (_call_model)
+from engine import qledger_desk_adapter as _qadapt   # T9: Universal Scoreboard mirror
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -524,8 +526,59 @@ def _append_ledger(brief: dict, root) -> None:
         with open(lp, "a") as fh:
             for row in rows:
                 fh.write(json.dumps(row, default=str) + "\n")
+        _register_claims(lp, rows, root)
     except Exception as e:  # noqa: BLE001
         log.warning("thematic_desk ledger append failed: %s", e)
+
+
+def _register_claims(ledger_path: Path, written: list, root) -> None:
+    """Mirror the US leg of the thematic ledger into the Universal Scoreboard
+    (T9 wave 1).
+
+    Runs on the desk's own build path (scripts.build_allocation._run_thematic_desk,
+    reached from build_baskets inside daily.yml's `engine` job) immediately after
+    the thesis append, so tonight's leans are registered before the outcome exists.
+
+    * DIRECTION comes from the ENGINE's own derived predicate `_derive_check`:
+      overweight → `{"op": "<", "threshold": -thr}`, underweight/avoid →
+      `{"op": ">", "threshold": +thr}`. Rows the engine itself resolved to
+      `kind: "soft"` (the theme has no scalar etf_proxy) are SKIPPED — never
+      forced onto a substituted proxy, and never filed as direction=0.
+    * SCOPE KEY is `falsifier.check.subject_ticker`, the engine-resolved proxy
+      ETF (SMH, CIBR, XLE …) — NOT `subject`, which is an unpriceable theme
+      label. scope_type stays "entity": the graded object is one priceable
+      instrument, so "basket" would misdescribe the tape and buy no grading
+      behaviour.
+    * BENCH is read from `falsifier.check.vs`, never defaulted to SPY.
+    * CONTROL is null by design: a theme proxy ETF has no distinct matched
+      control, and a sector control on a single-sector theme resolves to the
+      subject itself, which makes the excess-vs-control leg identically zero.
+
+    US ONLY, and the restriction is load-bearing: data/yahoo carries no parquet
+    for XIC.TO, XCD.TO or _HSI, so the canada and hk legs would register and then
+    sit permanently UNGRADED while looking like accrual; the china leg
+    (bench 510300.SS) needs its own provenance ruling against
+    DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT before anything derived from it may be
+    graded, and registering into a graded ledger is grading.
+
+    Lane-gated: only the nightly engine lane commits data/, so registering in a
+    render lane would spend a full claims-store read on a checkout that is thrown
+    away.
+    """
+    if not _ledger_advance_enabled():
+        log.debug("thematic_desk: qledger registration skipped (COLLECT_LANE != nightly)")
+        return
+    if not any((r or {}).get("market") == "us" for r in written):
+        return          # nothing US was written this run — nothing to mirror
+    _qadapt.register_ledger(
+        ledger_path,
+        desk="thematic_desk",
+        claim_family="thematic_desk_us",
+        timestamp_quality="CRAWL_BOUNDED",
+        root=root,
+        forward_ids={str(r.get("id")) for r in written},
+        row_filter=lambda r: r.get("market") == "us",
+    )
 
 
 def run(market: str = "us", persist: bool = True, root=None, call=None) -> dict | None:

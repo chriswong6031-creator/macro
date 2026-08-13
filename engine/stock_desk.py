@@ -49,6 +49,7 @@ import pandas as pd
 
 from engine import catalyst_stock, master_brain
 from engine import desk_ledger as _ledger_law    # run-scoped ids + immutable appends
+from engine import qledger_desk_adapter as _qadapt   # T9: Universal Scoreboard mirror
 from engine.catalyst_tone import _extract_json
 from lib import config, store
 
@@ -420,7 +421,10 @@ def _ledger_path(root) -> Path:
     return d / "theses.jsonl"
 
 
-def _append_ledger(notes: list, asof, root) -> None:
+def _append_ledger(notes: list, asof, root) -> list:
+    """Append this run's leans to the desk ledger. Returns the rows that SURVIVED
+    the id-immutability gate — i.e. exactly the rows written — so the caller
+    registers claims for those and no others."""
     lp = _ledger_path(root)
     now = datetime.now(timezone.utc).isoformat()
     rows = []
@@ -441,6 +445,7 @@ def _append_ledger(notes: list, asof, root) -> None:
     with lp.open("a") as f:
         for row in rows:
             f.write(json.dumps(row, default=str) + "\n")
+    return rows
 
 
 # --------------------------------------------------------------------------- #
@@ -696,10 +701,55 @@ def run(persist: bool = True, root=None, force: bool = False, call=None) -> dict
         pub_path.parent.mkdir(parents=True, exist_ok=True)
         pub_path.write_text(json.dumps({"as_of": asof, "by_ticker": by_t,
                                         "disclaimer": out["disclaimer"]}, default=str))
-        _append_ledger(notes, asof, root)
+        written = _append_ledger(notes, asof, root)
+        _register_claims(written, state["picks"], root)
         score_ledger(root=root)                 # re-score so the new open leans show
     log.info("stock_desk: %d notes (%s)", len(notes), syn.get("degraded") or "ok")
     return out
+
+
+def _register_claims(written: list, picks: list, root) -> None:
+    """Mirror THIS RUN's leans into the Universal Scoreboard (T9 wave 1).
+
+    FORWARD-ONLY, and that constraint is load-bearing. This runs on the desk's own
+    nightly path (scripts.build_stock_briefs → daily.yml `stock_briefs`),
+    immediately after the ledger append, so a claim is written the same minute the
+    lean is — before the outcome exists. It NEVER backfills the committed ledger:
+    the 702 rows committed before the run_token era carry only 355 unique ids, 110
+    of them duplicated (`2026-06-18-WT-3` appears 16 times) with CONTRADICTORY
+    leans inside one id, so a salt=id backfill would silently register one
+    arbitrary lean out of sixteen, and a positional salt would register a
+    directional straddle. Either poisons the ledger this program exists to keep
+    meaningful. Only rows this run actually wrote are offered.
+
+    * DIRECTION comes from the ENGINE's own predicate `_derive_check`:
+      constructive → `{"op": "<", "threshold": -0.05}`, cautious/avoid →
+      `{"op": ">", "threshold": +0.05}`. The adapter reads the sign off that
+      pair — there is no lean table here. A `neutral` lean emits
+      `{"kind": "soft"}` and is SKIPPED, never filed as direction=0: the desk's
+      own prompt tells the model to lean neutral when it has no view, so it is a
+      declared NO-CALL, not a salience claim.
+    * HORIZON is the row's own `horizon_d` (model-authored, engine-clamped to
+      [5,60], mirrored into the check and into check_by, and the clock this
+      desk's own `score_ledger` grades at). Registered per-row, verbatim.
+    * CONTROL is the GICS sector ETF of the underlying pick (the pick's
+      `identity.sector`), null when the sector is unknown. Non-degenerate here:
+      the subject is a single name, not the sector ETF itself.
+    * timestamp_quality=CRAWL_BOUNDED: the inputs are the price/technical state
+      at state_asof, with no disclosure-timing component to embargo.
+    """
+    sector_by_ticker = {}
+    for p in (picks or []):
+        if isinstance(p, dict) and p.get("ticker"):
+            sector_by_ticker[p["ticker"]] = (p.get("identity") or {}).get("sector")
+    _qadapt.register_theses(
+        written,
+        desk="stock_desk",
+        claim_family="stock_desk",
+        timestamp_quality="CRAWL_BOUNDED",
+        root=root,
+        sector_of=sector_by_ticker.get,
+    )
 
 
 def main() -> int:

@@ -722,6 +722,31 @@ jobs:
           tests/test_ai_desk.py tests/test_ai_desk_scorer.py
           tests/test_radar_scorer.py tests/test_narrative_brain.py
           tests/test_demand_ledger.py tests/test_policy_intent_desk.py -q
+      - name: Universal Scoreboard core (was DARK — named by no job before 2026-08-13)
+        # engine/qledger.py is the claims+grades substrate the desk adapters below
+        # stack on, and its OWN unit tests (register/register_batch/grade_claim/
+        # promotion_check/Wilson-CI, and the UI chip states) were named by NO file
+        # under .github/ — a `grep -rl` over the whole directory returned nothing.
+        # test_qledger_validity.py and test_qledger_cluster_honest_ci.py were wired
+        # (job `qledger-cluster-honest-ci`); the core contract was not, so an edit to
+        # the registrar shipped with no guard. Placed HERE rather than in that job so
+        # the substrate and the desks that write into it fail together, and BEFORE the
+        # adapter step below because a red substrate makes the adapter verdict
+        # meaningless.
+        run: python -m pytest tests/test_qledger.py tests/test_qledger_ui.py -q
+      - name: qledger desk adapter (T9 wave 1) — direction is engine-derived, no-calls skipped
+        # Fixture-only: asserts nothing over data/qledger/claims.jsonl or any desk's
+        # nightly-appended theses.jsonl (a content assertion over an append-only store
+        # is a scheduled red). Pins that the adapter takes its sign from the desks' own
+        # `_derive_check`/`_thesis_for` output, skips a declared no-call instead of
+        # filing it as direction=0, never substitutes a shorter horizon or a defaulted
+        # bench, and is idempotent under an explicit salt.
+        # LAST IN THE JOB ON PURPOSE: scripts/run_ci_pack.py returns on the first
+        # non-zero step, so a step placed first MASKS its siblings. This is the newest
+        # suite in the job and a consumer of the five desks above — masking five
+        # established suites behind it is the worse failure mode, and if a desk suite
+        # is red the adapter verdict is not independently meaningful anyway.
+        run: python -m pytest tests/test_qledger_desk_adapter.py -q
 
   conviction-profile:
     if: ${{ false }}

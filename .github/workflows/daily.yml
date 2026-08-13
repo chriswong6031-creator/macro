@@ -6337,6 +6337,14 @@ jobs:
           # committed or the track record can never accumulate past-due leans. (Same gitignore/
           # force-add trap as the per-market stock libraries.)
           git add data/stock_desk 2>/dev/null || true
+          # T9 adoption wave 1: stock_desk now mirrors each lean it writes into the
+          # Universal Scoreboard (data/qledger/claims.jsonl) in THIS job. The engine
+          # job's broad `git add data/` never sees it — that job has already finished
+          # by the time this one runs — so without this line every stock_desk claim is
+          # written and thrown away, and a claim not recorded tonight can never be
+          # reconstructed (the whole point is that it predates the outcome).
+          # Append-only and idempotent by claim_id, so a re-run adds nothing.
+          git add data/qledger 2>/dev/null || true
           if git diff --cached --quiet; then echo "no stock-brief changes"; exit 0; fi
           git commit -m "stock-briefs: AI research briefs + accountable leans $(date -u +%F)"
           # best-effort push (own files → rebases clean against engine/factor_series)
