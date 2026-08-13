@@ -18,7 +18,7 @@
 <title>{% if mode == 'stocks' %}Hong Kong Stock & Exposure Board{% else %}Hong Kong Regime{% endif %} — {{ latest.date }}</title>
 {% if mode == 'stocks' %}{% set seo_title = 'Hong Kong Stock and Exposure Board | Mastermind' %}{% set seo_desc = 'Hong Kong single-stock signals and factor exposures — HSI names, sectors and regime context, updated daily.' %}{% set seo_path = 'hk_stocks.html' %}{% else %}{% set seo_title = 'Hong Kong Market Dashboard — HSI Regime, Sectors and Flows | Mastermind' %}{% set seo_desc = 'Track the Hong Kong market regime — HSI sector rotation, southbound flows, drawdown risk and cycle position.' %}{% set seo_path = 'hk.html' %}{% endif %}
 {% include "_seo_head.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 {% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
 {% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
@@ -30,7 +30,7 @@
          "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 26px 18px 18px; }
   @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
   html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
-  a { text-decoration: none; color: var(--link); }
+  a { text-decoration: none; color: var(--ink-link, var(--link)); }
   h1 { font-size: 21px; margin: 0 0 2px; color: var(--text); }
   h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
@@ -56,9 +56,9 @@
   /* global-risk-beta regime tilt (amplifiers vs cushions) */
   .gb-tilt { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
              border-radius:9px; border:1px solid var(--line); white-space:nowrap; }
-  .gb-favored { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+  .gb-favored { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up));
                 border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .gb-exposed { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
+  .gb-exposed { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--ink-down, var(--down));
                 border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .gb-lag,.gb-neutral { background:var(--panel2,var(--panel)); color:var(--muted); }
   /* consolidated stock-screener: segmented mode toggle (parallels china.html) */
@@ -77,7 +77,7 @@
   .sb-table th.th-sort:hover { color:var(--text); }
   .sb-table th.sorted { color:var(--text); }
   .sb-table .sarrow { font-size:9px; opacity:.32; margin-left:3px; font-weight:700; }
-  .sb-table th.sorted .sarrow { opacity:.9; color:var(--link); }
+  .sb-table th.sorted .sarrow { opacity:.9; color:var(--ink-link, var(--link)); }
 
   /* global risk overlay (HK-specific) */
   .risk-badge { font-size: 20px; font-weight: 800; padding: 7px 16px; border-radius: 12px;
@@ -116,7 +116,7 @@
   th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); }
   th { color: var(--muted); font-weight: 500; }
   th:first-child, td:first-child, td.l, th.l { text-align: left; }
-  .pos { color: var(--up); } .neg { color: var(--down); }
+  .pos { color: var(--ink-up, var(--up)); } .neg { color: var(--ink-down, var(--down)); }
   .lad { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 11.5px; font-weight: 700;
          background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
          color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
@@ -148,8 +148,8 @@
   .pdial .on-agg { background: color-mix(in srgb, var(--up) 88%, var(--panel)); color: #fff; border-color: transparent; }
   .reason { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; margin: 5px 0; line-height: 1.45; }
   .sig { flex: none; width: 17px; height: 17px; border-radius: 50%; font-size: 11px; font-weight: 800; line-height: 17px; text-align: center; }
-  .sig-p { background: color-mix(in srgb, var(--up) 22%, var(--panel)); color: var(--up); }
-  .sig-m { background: color-mix(in srgb, var(--down) 22%, var(--panel)); color: var(--down); }
+  .sig-p { background: color-mix(in srgb, var(--up) 22%, var(--panel)); color: var(--ink-up, var(--up)); }
+  .sig-m { background: color-mix(in srgb, var(--down) 22%, var(--panel)); color: var(--ink-down, var(--down)); }
   .sig-i { background: color-mix(in srgb, var(--muted) 22%, var(--panel)); color: var(--muted); }
   .pcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; margin: 6px 0; font-size: 12.5px; }
   .calltag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; margin-right: 6px; text-transform: uppercase; letter-spacing: .03em; }
@@ -169,11 +169,11 @@
   .stat-row .v { font-size:22px; font-weight:800; color:var(--text); }
   /* .stat-row .v is more specific than the generic .pos/.neg — restate direction color
      at higher specificity so flow/premium stats read green/red (and zh-flip via tokens) */
-  .stat-row .v.pos { color: var(--up); } .stat-row .v.neg { color: var(--down); }
+  .stat-row .v.pos { color: var(--ink-up, var(--up)); } .stat-row .v.neg { color: var(--ink-down, var(--down)); }
   table.sortable th.th-sort { cursor: pointer; user-select: none; }
   table.sortable th.sorted { color: var(--text); }
   table.sortable th .sarrow { font-size: 9px; opacity: .32; margin-left: 3px; font-weight: 700; }
-  table.sortable th.sorted .sarrow { opacity: .9; color: var(--link); }
+  table.sortable th.sorted .sarrow { opacity: .9; color: var(--ink-link, var(--link)); }
 
   /* ---- regime time machine (timemachine.js) -------------------------------- */
   #time-machine .tm-wrap { position: relative; margin: 4px 0 2px; }
@@ -261,36 +261,36 @@
   .nb-lead { font-size: 11px; line-height: 1.45; color: var(--fg); margin: 5px 0 3px; font-weight: 600; }
   .nb-ripe { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 0 0 3px; }
   .nb-ripe span { font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 7px; letter-spacing: .01em; border: 1px solid var(--line); }
-  .nb-grp.grp-open { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, var(--line)); background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
-  .nb-grp.grp-set { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
+  .nb-grp.grp-open { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 40%, var(--line)); background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
+  .nb-grp.grp-set { color: var(--ink-warn, var(--warn)); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
   .nb-ewin { color: var(--muted); }
-  .nb-ewin.ew-open-now { color: var(--up); }
-  .nb-port.pt-wash { color: var(--link); border-color: color-mix(in srgb, var(--link) 35%, var(--line)); }
-  .nb-port.pt-ext { color: var(--down); border-color: color-mix(in srgb, var(--down) 35%, var(--line)); }
+  .nb-ewin.ew-open-now { color: var(--ink-up, var(--up)); }
+  .nb-port.pt-wash { color: var(--ink-link, var(--link)); border-color: color-mix(in srgb, var(--link) 35%, var(--line)); }
+  .nb-port.pt-ext { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 35%, var(--line)); }
   /* data-health banner (§5.5) */
   .health-banner { border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); background: color-mix(in srgb, var(--warn) 8%, var(--panel)); }
-  .health-banner .hb-h { margin: 0 0 4px; font-weight: 800; color: var(--warn); text-transform: none; }
+  .health-banner .hb-h { margin: 0 0 4px; font-weight: 800; color: var(--ink-warn, var(--warn)); text-transform: none; }
   .health-banner .hb-list { margin: 0; padding-left: 18px; }
   .health-banner .hb-item { font-size: 11.5px; line-height: 1.6; color: var(--fg); }
   /* freshness sentinel — stale = loud red panel; degraded = one thin amber line */
   .hk-fresh-stale { border: 1px solid color-mix(in srgb, var(--down) 50%, var(--line)); background: color-mix(in srgb, var(--down) 7%, var(--panel)); }
-  .hk-fresh-stale .hb-h { margin: 0 0 5px; font-weight: 800; color: var(--down); text-transform: none; }
+  .hk-fresh-stale .hb-h { margin: 0 0 5px; font-weight: 800; color: var(--ink-down, var(--down)); text-transform: none; }
   .hk-fresh-stale .hb-msg { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--fg); }
   .hk-fresh-stale .hb-exp { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
   .hk-fresh-degraded { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 8px; font-size: 12px; line-height: 1.4;
     color: color-mix(in srgb, var(--warn) 85%, var(--fg)); border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--line)); background: color-mix(in srgb, var(--warn) 7%, var(--panel)); }
-  .hk-fresh-degraded .hfd-i { color: var(--warn); font-size: 13px; }
+  .hk-fresh-degraded .hfd-i { color: var(--ink-warn, var(--warn)); font-size: 13px; }
   .nbcard .nch { background: transparent; margin: 4px 0 2px; }
   .nb-bot { display: flex; align-items: center; gap: 6px; margin-top: 1px; }
   .nb-state { font-size: 10px; font-weight: 800; letter-spacing: .02em; padding: 1px 7px; border-radius: 8px; }
-  .nb-up .nb-state { color: var(--up); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
-  .nb-down .nb-state { color: var(--down); background: color-mix(in srgb, var(--down) 15%, var(--panel)); }
-  .nb-caution .nb-state { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, var(--panel)); }
+  .nb-up .nb-state { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
+  .nb-down .nb-state { color: var(--ink-down, var(--down)); background: color-mix(in srgb, var(--down) 15%, var(--panel)); }
+  .nb-caution .nb-state { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 15%, var(--panel)); }
   .nb-alpha { display: flex; align-items: center; gap: 6px; font-size: 9.5px; margin-top: 2px; flex-wrap: wrap; }
   .nb-az { font-weight: 800; font-variant-numeric: tabular-nums; padding: 0 5px; border-radius: 7px;
            background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
-  .nb-az.az-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
-  .nb-az.az-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
+  .nb-az.az-up { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
+  .nb-az.az-dn { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
   .nb-rk { color: var(--muted); font-variant-numeric: tabular-nums; }
   .nb-ent { font-weight: 700; padding: 0 5px; border-radius: 7px; }
   .ent-good { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
@@ -369,7 +369,7 @@
            padding: 1px 7px; border-radius: 999px;
            background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
   .pbf-bar button[aria-pressed="true"] .pbf-n {
-           background: color-mix(in srgb, var(--link) 16%, transparent); color: var(--link); }
+           background: color-mix(in srgb, var(--link) 16%, transparent); color: var(--ink-link, var(--link)); }
   @media (max-width: 680px) { .pbf-bar button { min-height: 44px; padding: 6px 14px; font-size: 13px; } }
   /* the polite result announcement — visible to assistive tech only */
   .pbf-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
@@ -422,8 +422,8 @@
   /* --up/--down (NOT --pv-*) is correct here: this IS a directional figure, so it
      must flip red/green under html[data-lang="zh"]. HK already scopes .pos/.neg
      the same way; .az-up/.az-dn are the board-family names the US rows use. */
-  .pbr-m .az-up { color: var(--up); font-weight: 700; }
-  .pbr-m .az-dn { color: var(--down); font-weight: 700; }
+  .pbr-m .az-up { color: var(--ink-up, var(--up)); font-weight: 700; }
+  .pbr-m .az-dn { color: var(--ink-down, var(--down)); font-weight: 700; }
   /* the honest em-dash: a ran row whose move since the signal could not be
      measured prints the gap rather than a zero. Muted, so it never reads as a
      flat return. */
@@ -481,8 +481,8 @@
      link inside the row — the row itself is the affordance. */
   .ts-tk-a { color: inherit; text-decoration: none; }
   .ts-nm { font-size: 10px; color: var(--muted); }
-  .ts-tbl td.az-up { color: var(--up); font-weight: 700; }
-  .ts-tbl td.az-dn { color: var(--down); font-weight: 700; }
+  .ts-tbl td.az-up { color: var(--ink-up, var(--up)); font-weight: 700; }
+  .ts-tbl td.az-dn { color: var(--ink-down, var(--down)); font-weight: 700; }
   /* ── strip tables on phones: primary decisions never x-scroll. At the board's
      own 680px break the tertiary columns demote to the row's own page (every row
      is a tap-through); what stays — ticker+name, the rank-key column, and the
@@ -497,18 +497,18 @@
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
                min-width: 30px; text-align: center; padding: 1px 5px; border-radius: 8px;
                border: 1px solid var(--line); color: var(--text); }
-  .nb-cscore.band-high { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line));
+  .nb-cscore.band-high { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 45%, var(--line));
                          background: color-mix(in srgb, var(--up) 12%, var(--panel)); }
   .nb-cscore.band-constructive { color: var(--g-cold); border-color: color-mix(in srgb, var(--g-cold) 40%, var(--line)); }
   .nb-cscore.band-neutral { color: var(--muted); }
-  .nb-cscore.band-low { color: var(--down); border-color: color-mix(in srgb, var(--down) 35%, var(--line)); }
+  .nb-cscore.band-low { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 35%, var(--line)); }
   .nb-verdict { font-size: 10.5px; font-weight: 700; line-height: 1.25; color: var(--text); }
   /* multi-timeframe bottoming-alignment chip (weekly+3d+daily turning up) */
   .nb-align { display: flex; align-items: center; gap: 5px; margin: 3px 0 1px; min-width: 0;
               font-size: 9.5px; font-weight: 700; letter-spacing: .01em;
               padding: 2px 7px; border-radius: 7px; border: 1px solid var(--line);
-              color: var(--up); background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
-  .nb-align.nba-near { color: var(--warn); background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
+              color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
+  .nb-align.nba-near { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
   .nb-align .nba-line { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nb-align .nba-tag { margin-left: auto; flex: none; font-size: 8px; font-weight: 800;
                        text-transform: uppercase; letter-spacing: .04em; opacity: .85; }
@@ -524,7 +524,7 @@
     display: inline-flex; align-items: center; gap: 3px;
     padding: 0 5px 0 4px; height: 18px; border-radius: 9px; border: none; cursor: pointer;
     font-size: 9px; font-weight: 700; line-height: 1;
-    color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, var(--panel));
+    color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 14%, var(--panel));
     text-decoration: none;
     animation: nb-cau-pulse 2.5s ease-in-out infinite;
   }
@@ -544,7 +544,7 @@
     padding: 7px 9px; border-radius: 8px;
     background: var(--panel); border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--line));
     box-shadow: 0 4px 16px rgba(0,0,0,.18);
-    font-size: 10px; font-weight: 600; line-height: 1.45; color: var(--warn);
+    font-size: 10px; font-weight: 600; line-height: 1.45; color: var(--ink-warn, var(--warn));
     pointer-events: none;
   }
   .nb-cau-pop .cau-row { display: block; padding: 2px 0; }
@@ -562,20 +562,20 @@
   .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
   .nb-vchip { font-size: 8.5px; font-weight: 800; padding: 0 5px; border-radius: 6px; border: 1px solid var(--line);
               color: var(--muted); white-space: nowrap; }
-  .vf-coil { color: var(--link); border-color: color-mix(in srgb, var(--link) 38%, var(--line));
+  .vf-coil { color: var(--ink-link, var(--link)); border-color: color-mix(in srgb, var(--link) 38%, var(--line));
              background: color-mix(in srgb, var(--link) 10%, var(--panel)); }
-  .vf-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line)); }
-  .vf-down { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
-  .vf-exp { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
+  .vf-up { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 45%, var(--line)); }
+  .vf-down { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
+  .vf-exp { color: var(--ink-warn, var(--warn)); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
   .nb-note { font-size: 8.5px; line-height: 1.3; margin-top: 3px; padding: 2px 5px; border-radius: 6px;
              color: var(--muted); background: color-mix(in srgb, var(--text) 4%, var(--panel)); }
-  .nb-note-anticipation { color: var(--link); background: color-mix(in srgb, var(--link) 8%, var(--panel)); }
+  .nb-note-anticipation { color: var(--ink-link, var(--link)); background: color-mix(in srgb, var(--link) 8%, var(--panel)); }
   /* ⚖ vol-managed size chip + compact entry-timing chip (US-parity gauges) */
   .nb-size { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
              padding: 0 5px; border-radius: 7px; color: var(--muted);
              background: var(--panel); border: 1px solid var(--line); }
-  .nb-size.sz-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
-  .nb-size.sz-dn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 42%, var(--line)); }
+  .nb-size.sz-up { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
+  .nb-size.sz-dn { color: var(--ink-warn, var(--warn)); border-color: color-mix(in srgb, var(--warn) 42%, var(--line)); }
   .nb-entry { display: flex; align-items: center; gap: 5px; margin-top: 4px; padding: 3px 6px;
               border-radius: 7px; border-top: 2px solid var(--muted);
               background: color-mix(in srgb, var(--text) 4%, var(--panel)); }
@@ -610,7 +610,7 @@
   .alert-ico { font-size: 15px; flex: none; line-height: 1; }
   .alert-head b { font-size: 13.5px; color: var(--text); }
   .alert-jump { margin-left: auto; font-size: 11px; font-weight: 700;
-                color: var(--link); flex: none; white-space: nowrap; }
+                color: var(--ink-link, var(--link)); flex: none; white-space: nowrap; }
   .alert-detail { margin: 6px 0 0; font-size: 12.5px; color: var(--text); font-variant-numeric: tabular-nums; }
   .alert-what { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line);
                 font-size: 12px; color: var(--muted); line-height: 1.5; }
@@ -618,7 +618,7 @@
   .alert-edge b { color: var(--muted); font-weight: 600; }
   /* AI master brief */
   .ai-brief .mb-sum { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
-  .ai-brief .mb-sec { margin: 10px 0; } .ai-brief .mb-h { font-weight: 600; color: var(--link); margin: 0 0 4px; }
+  .ai-brief .mb-sec { margin: 10px 0; } .ai-brief .mb-h { font-weight: 600; color: var(--ink-link, var(--link)); margin: 0 0 4px; }
   .ai-brief .mb-list { margin: 4px 0 0 18px; padding: 0; } .ai-brief .mb-list li { margin: 3px 0; }
   .ai-brief .mb-foot { margin-top: 12px; color: var(--muted); font-size: 12px; }
   .ai-brief .mb-deg { color: var(--muted); font-size: 12px; font-style: italic; margin: 4px 0; }
@@ -661,14 +661,14 @@
   .nb-flow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
   .nb-flow span { font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 7px; letter-spacing: .01em;
       border: 1px solid var(--line); color: var(--muted); background: var(--panel); overflow-wrap: anywhere; max-width: 100%; }
-  .nb-flow .fl-buy { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, var(--line));
+  .nb-flow .fl-buy { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 40%, var(--line));
       background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
-  .nb-flow .fl-sell { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line));
+  .nb-flow .fl-sell { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 40%, var(--line));
       background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
-  .nb-flow .fl-val { color: var(--info); border-color: color-mix(in srgb, var(--info) 40%, var(--line));
+  .nb-flow .fl-val { color: var(--ink-info, var(--info)); border-color: color-mix(in srgb, var(--info) 40%, var(--line));
       background: color-mix(in srgb, var(--info) 10%, var(--panel)); }
   /* H2a SFC reportable-short CONTEXT chip (ACCRUE) — a high short book leans returns softer */
-  .nb-flow .fl-short { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 42%, var(--line));
+  .nb-flow .fl-short { color: var(--ink-warn, var(--warn)); border-color: color-mix(in srgb, var(--warn) 42%, var(--line));
       background: color-mix(in srgb, var(--warn) 11%, var(--panel)); }
   /* smart-money flows desk */
   .flows-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
@@ -697,12 +697,12 @@
   .watch-grid a.wg-knife { border-color: color-mix(in srgb, var(--down) 34%, var(--line));
       background: color-mix(in srgb, var(--down) 7%, var(--panel)); }
   .watch-grid .wg-knife-chip { margin-top: 3px; font-size: 9px; font-weight: 800; line-height: 1.25;
-      color: var(--down); }
+      color: var(--ink-down, var(--down)); }
   /* H-PLC placement/rights dilution demote — dilutive top-up announced within 90d */
   .watch-grid a.wg-plc { border-color: color-mix(in srgb, var(--down) 34%, var(--line));
       background: color-mix(in srgb, var(--down) 7%, var(--panel)); }
   .watch-grid .wg-plc-chip { margin-top: 3px; font-size: 9px; font-weight: 800; line-height: 1.25;
-      color: var(--down); }
+      color: var(--ink-down, var(--down)); }
   /* Washout Watch strip — igniting · unconfirmed · high-risk */
   .ww-strip { margin: 8px 0 0; }
   .ww-grid { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -775,7 +775,7 @@
   .evbanner .ev-list { display: flex; flex-wrap: wrap; gap: 7px; }
   .ev-chip { display: inline-flex; align-items: baseline; gap: 5px; font-size: 11.5px; padding: 3px 9px; border-radius: 8px;
       background: var(--panel); border: 1px solid var(--line); }
-  .ev-chip b { color: var(--text); } .ev-chip .ev-d { font-weight: 800; color: var(--warn); font-variant-numeric: tabular-nums; }
+  .ev-chip b { color: var(--text); } .ev-chip .ev-d { font-weight: 800; color: var(--ink-warn, var(--warn)); font-variant-numeric: tabular-nums; }
   .ev-chip .ev-rg { font-size: 9px; font-weight: 700; padding: 0 5px; border-radius: 6px; color: var(--muted); background: var(--panel2, color-mix(in srgb,var(--muted) 12%,var(--panel))); }
   .cat-imminent { background: color-mix(in srgb, var(--warn) 8%, var(--panel)); }
 
@@ -789,7 +789,7 @@
   .dm-cell { min-width: 0; }
   .dm-k { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
       display: inline-flex; align-items: center; gap: 5px; margin-bottom: 3px; }
-  .dm-is .dm-k { color: var(--up); }
+  .dm-is .dm-k { color: var(--ink-up, var(--up)); }
   .dm-isnt .dm-k { color: var(--muted); }
   .dm-v { font-size: 12px; line-height: 1.5; color: var(--fg); }
   .dm-v b { color: var(--text); }
@@ -808,9 +808,9 @@
   .tr-head h2 { margin: 0; }
   .tr-status { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
       padding: 2px 9px; border-radius: 8px; }
-  .tr-status.st-accruing { color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, var(--panel));
+  .tr-status.st-accruing { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 13%, var(--panel));
       border: 1px solid color-mix(in srgb, var(--warn) 34%, var(--line)); }
-  .tr-status.st-scored { color: var(--up); background: color-mix(in srgb, var(--up) 13%, var(--panel));
+  .tr-status.st-scored { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 13%, var(--panel));
       border: 1px solid color-mix(in srgb, var(--up) 38%, var(--line)); }
   .tr-lead { font-size: 13px; line-height: 1.55; color: var(--fg); margin: 0 0 10px; }
   .tr-lead b { color: var(--text); }
@@ -822,7 +822,7 @@
   .tr-step .ts-sub { font-size: 10.5px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
   .tr-step.ts-now { border-color: color-mix(in srgb, var(--info) 40%, var(--line));
       background: color-mix(in srgb, var(--info) 7%, var(--panel)); }
-  .tr-step.ts-now .ts-v { color: var(--info); }
+  .tr-step.ts-now .ts-v { color: var(--ink-info, var(--info)); }
   .tr-foot { font-size: 10.5px; color: var(--muted); margin: 9px 0 0; line-height: 1.5; }
   .tr-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
   .tr-tbl th, .tr-tbl td { text-align: right; padding: 5px 9px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
@@ -832,8 +832,8 @@
   /* (C) evidence-tag micro-style on the why-now chips — .et-validated / .et-accruing / .et-context. */
   .ev-tag { font-size: 7.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em;
       padding: 0 3px; border-radius: 4px; margin-left: 3px; vertical-align: middle; }
-  .ev-tag.et-validated { color: var(--up); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
-  .ev-tag.et-accruing { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, var(--panel)); }
+  .ev-tag.et-validated { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
+  .ev-tag.et-accruing { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 15%, var(--panel)); }
   .ev-tag.et-context { color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, var(--panel)); }
   /* A/H = the near-GO edge (DSR 0.879) — gets visual priority among the flow chips. */
   .nb-flow .fl-val.fl-lead { border-color: color-mix(in srgb, var(--info) 62%, var(--line));
@@ -916,13 +916,13 @@
   .st-chip { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px;
     border-radius:999px; white-space:nowrap; }
   .st-chip-entry { background:color-mix(in srgb,var(--up) 14%,transparent);
-    color:var(--up); border:1px solid color-mix(in srgb,var(--up) 35%,transparent); }
+    color:var(--ink-up, var(--up)); border:1px solid color-mix(in srgb,var(--up) 35%,transparent); }
   .st-chip-ran { background:color-mix(in srgb,var(--muted) 12%,transparent);
     color:var(--muted); border:1px solid var(--line); }
   .st-chip-rip { background:color-mix(in srgb,var(--link) 12%,transparent);
-    color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); }
+    color:var(--ink-link, var(--link)); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); }
   .st-chip-knife { background:color-mix(in srgb,var(--down) 12%,transparent);
-    color:var(--down); border:1px solid color-mix(in srgb,var(--down) 25%,transparent); }
+    color:var(--ink-down, var(--down)); border:1px solid color-mix(in srgb,var(--down) 25%,transparent); }
 
   /* filter row */
   /* filter-row + column-chooser chrome (.stf-*) is injected by stocktable.js since v3 */
@@ -964,11 +964,11 @@
   /* sort arrow */
   .st-sarrow { font-size:8px; margin-left:2px; opacity:.28; }
   .st-sarrow-idle { font-size:8px; }
-  .st-table th:has(.st-sarrow:not(.st-sarrow-idle)) .st-sarrow { opacity:.9; color:var(--link); }
+  .st-table th:has(.st-sarrow:not(.st-sarrow-idle)) .st-sarrow { opacity:.9; color:var(--ink-link, var(--link)); }
 
   /* cell colors */
-  .st-pos { color:var(--up); font-weight:600; }
-  .st-neg { color:var(--down); font-weight:600; }
+  .st-pos { color:var(--ink-up, var(--up)); font-weight:600; }
+  .st-neg { color:var(--ink-down, var(--down)); font-weight:600; }
   .st-muted { color:var(--muted); }
 
   /* th tooltip */
@@ -1072,22 +1072,22 @@
   body.page-hk .ms-red .hkx-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
   body.page-hk .hkx-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   /* Big score — US parity: 68px/800 with state glow */
-  body.page-hk .hkx-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--warn);text-shadow:0 0 36px rgba(245,158,11,.3)}
-  body.page-hk .ms-green .hkx-big-score{color:var(--up);text-shadow:0 0 36px rgba(34,217,122,.3)}
-  body.page-hk .ms-red .hkx-big-score{color:var(--down);text-shadow:0 0 36px rgba(239,68,68,.3)}
+  body.page-hk .hkx-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--ink-warn, var(--warn));text-shadow:0 0 36px rgba(245,158,11,.3)}
+  body.page-hk .ms-green .hkx-big-score{color:var(--ink-up, var(--up));text-shadow:0 0 36px rgba(34,217,122,.3)}
+  body.page-hk .ms-red .hkx-big-score{color:var(--ink-down, var(--down));text-shadow:0 0 36px rgba(239,68,68,.3)}
   /* zh glow literal mirrors (color text flips via --up/--down; rgba glow needs explicit mirror) */
   html[data-lang="zh"] body.page-hk .ms-green .hkx-big-score{text-shadow:0 0 36px rgba(239,68,68,.3)}
   html[data-lang="zh"] body.page-hk .ms-red .hkx-big-score{text-shadow:0 0 36px rgba(34,217,122,.3)}
   @media(max-width:560px){body.page-hk .hkx-big-score{font-size:34px}}
   body.page-hk .hkx-verdict{font-size:19px;font-weight:700;white-space:nowrap}
   @media(max-width:560px){body.page-hk .hkx-verdict{font-size:13px}}
-  body.page-hk .hkx-verdict .arr{color:var(--warn)}
-  body.page-hk .ms-green .hkx-verdict .arr{color:var(--up)}
-  body.page-hk .ms-red .hkx-verdict .arr{color:var(--down)}
+  body.page-hk .hkx-verdict .arr{color:var(--ink-warn, var(--warn))}
+  body.page-hk .ms-green .hkx-verdict .arr{color:var(--ink-up, var(--up))}
+  body.page-hk .ms-red .hkx-verdict .arr{color:var(--ink-down, var(--down))}
   body.page-hk .hkx-sub{margin-left:7px;color:var(--muted);font-weight:400}
-  body.page-hk .hkx-sub-line{font-size:11.5px;font-weight:650;letter-spacing:.4px;color:var(--warn);margin-top:2px}
-  body.page-hk .ms-green .hkx-sub-line{color:var(--up)}
-  body.page-hk .ms-red .hkx-sub-line{color:var(--down)}
+  body.page-hk .hkx-sub-line{font-size:11.5px;font-weight:650;letter-spacing:.4px;color:var(--ink-warn, var(--warn));margin-top:2px}
+  body.page-hk .ms-green .hkx-sub-line{color:var(--ink-up, var(--up))}
+  body.page-hk .ms-red .hkx-sub-line{color:var(--ink-down, var(--down))}
   /* Mechanic #4: three per-color spans, CSS-toggled */
   body.page-hk .hkx-sub-line .hkx-sub-g,body.page-hk .hkx-sub-line .hkx-sub-r{display:none}
   body.page-hk .hkx-sub-line .hkx-sub-y{display:inline}
@@ -1122,17 +1122,17 @@
   body.page-hk .hkx-pop-bar{height:4px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
   body.page-hk .hkx-pop-bar i{display:block;height:100%;border-radius:3px}
   body.page-hk .hkx-pop-flag{font-size:9.5px;font-weight:700;letter-spacing:.8px;margin:10px 0 2px}
-  body.page-hk .hkx-pop-link{display:block;font-size:11.5px;font-weight:650;color:var(--link);margin-top:12px;cursor:pointer}
+  body.page-hk .hkx-pop-link{display:block;font-size:11.5px;font-weight:650;color:var(--ink-link, var(--link));margin-top:12px;cursor:pointer}
   body.page-hk .hkx-pop-big{display:flex;align-items:baseline;gap:10px;margin:2px 0 4px}
   /* family-coherence per #3174 pattern: .hkx-pop-big shows the pullback risk number
      which is a direction read (risk-off) → var(--down) flips correctly in zh */
-  body.page-hk .hkx-pop-big .n{font-size:30px;font-weight:750;color:var(--down)}
-  body.page-hk .hkx-pop-big .t{font-size:12.5px;font-weight:700;color:var(--down)}
+  body.page-hk .hkx-pop-big .n{font-size:30px;font-weight:750;color:var(--ink-down, var(--down))}
+  body.page-hk .hkx-pop-big .t{font-size:12.5px;font-weight:700;color:var(--ink-down, var(--down))}
   body.page-hk .hkx-pop-sub{font-size:11.5px;color:var(--muted);margin-bottom:8px}
   body.page-hk .hkx-hero-vitals{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   body.page-hk .hkx-vchip{font-size:10.5px;border-radius:8px;padding:4px 9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:var(--muted)}
   body.page-hk .hkx-vchip b{color:var(--text);font-weight:650}
-  body.page-hk .hkx-vchip.warn{border-color:rgba(224,160,48,.35);color:var(--warn)}
+  body.page-hk .hkx-vchip.warn{border-color:rgba(224,160,48,.35);color:var(--ink-warn, var(--warn))}
   body.page-hk .hkx-vchip.bad{border-color:rgba(224,100,100,.35);color:#eda8a8}
   /* Tiles */
   body.page-hk .hkx-secbar{display:flex;align-items:baseline;justify-content:space-between;margin:20px 2px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
@@ -1150,8 +1150,8 @@
      html[data-lang="zh"], so direction elements just use the direction tokens.
      Do NOT add per-page dir-* flip rules — they double-flip back to green
      (caught live on this build). */
-  body.page-hk .hkx-tile .chg.up{color:var(--up)}
-  body.page-hk .hkx-tile .chg.dn{color:var(--down)}
+  body.page-hk .hkx-tile .chg.up{color:var(--ink-up, var(--up))}
+  body.page-hk .hkx-tile .chg.dn{color:var(--ink-down, var(--down))}
   /* Racks */
   body.page-hk .hkx-rack2{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
   body.page-hk .hkx-rack3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
@@ -1167,14 +1167,14 @@
   body.page-hk .hkx-kv:last-of-type{border-bottom:none}
   body.page-hk .hkx-kv .k{color:var(--muted)}
   body.page-hk .hkx-kv .v{font-weight:650;text-align:right}
-  body.page-hk .hkx-stword.ok{color:var(--up)}
-  body.page-hk .hkx-stword.warn{color:var(--warn)}
-  body.page-hk .hkx-stword.bad{color:var(--down)}
+  body.page-hk .hkx-stword.ok{color:var(--ink-up, var(--up))}
+  body.page-hk .hkx-stword.warn{color:var(--ink-warn, var(--warn))}
+  body.page-hk .hkx-stword.bad{color:var(--ink-down, var(--down))}
   /* .hkx-stword.act uses var(--act) which is a non-flipping legacy alias → remap to var(--down)
      so it participates in the zh swap (market-direction reads: "act" = a bad stance).
      NO zh overrides for .ok/.bad here: they paint from --up/--down, which the theme.css
      zh swap already flips — a zh-scoped re-swap would double-flip them back to Western. */
-  body.page-hk .hkx-stword.act{color:var(--down)}
+  body.page-hk .hkx-stword.act{color:var(--ink-down, var(--down))}
   body.page-hk .hkx-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
   body.page-hk .hkx-chip{font-size:11px;border-radius:999px;padding:3px 10px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04)}
   body.page-hk .hkx-chip.hot{background:rgba(224,100,100,.13);border-color:rgba(224,100,100,.4);color:#eda8a8}
@@ -1189,13 +1189,13 @@
      text-transform:uppercase;border-radius:5px;padding:2px 7px;white-space:nowrap;
      border:1px solid color-mix(in srgb,var(--muted) 40%,transparent);color:var(--muted);
      background:color-mix(in srgb,var(--muted) 10%,transparent)}
-  body.page-hk .hkx-tp.buyback{border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent)}
-  body.page-hk .hkx-tp.placement{border-color:color-mix(in srgb,var(--down) 55%,transparent);color:var(--down);background:color-mix(in srgb,var(--down) 12%,transparent)}
-  body.page-hk .hkx-tp.results{border-color:color-mix(in srgb,var(--info) 55%,transparent);color:var(--info);background:color-mix(in srgb,var(--info) 12%,transparent)}
+  body.page-hk .hkx-tp.buyback{border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--ink-up, var(--up));background:color-mix(in srgb,var(--up) 12%,transparent)}
+  body.page-hk .hkx-tp.placement{border-color:color-mix(in srgb,var(--down) 55%,transparent);color:var(--ink-down, var(--down));background:color-mix(in srgb,var(--down) 12%,transparent)}
+  body.page-hk .hkx-tp.results{border-color:color-mix(in srgb,var(--info) 55%,transparent);color:var(--ink-info, var(--info));background:color-mix(in srgb,var(--info) 12%,transparent)}
   /* recent-window count strip — honest counts, plain words, one glance line */
   body.page-hk .hkx-fsum{display:flex;flex-wrap:wrap;gap:5px 14px;font-size:11.5px;color:var(--muted);margin:2px 0 10px}
   body.page-hk .hkx-fsum b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
-  body.page-hk .hkx-fsum .u{color:var(--up)} body.page-hk .hkx-fsum .d{color:var(--down)} body.page-hk .hkx-fsum .i{color:var(--info)}
+  body.page-hk .hkx-fsum .u{color:var(--ink-up, var(--up))} body.page-hk .hkx-fsum .d{color:var(--ink-down, var(--down))} body.page-hk .hkx-fsum .i{color:var(--ink-info, var(--info))}
   /* filing row (card + dialog) — date · company · pill · plain read */
   body.page-hk .hkx-frw{display:flex;align-items:baseline;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px}
   body.page-hk .hkx-frw:last-child{border-bottom:none}
@@ -1208,10 +1208,10 @@
   body.page-hk .hkx-foot{font-size:10.5px;color:var(--muted);margin-top:9px;border-top:1px solid rgba(255,255,255,.05);padding-top:7px}
   body.page-hk .hkx-bignum{font-size:28px;font-weight:750;line-height:1.05}
   body.page-hk .hkx-bigsub{font-size:12px;font-weight:650;margin-top:3px}
-  body.page-hk .hkx-alert-pill{margin-left:auto;font-size:10px;font-weight:700;background:rgba(224,160,48,.16);color:var(--warn);border-radius:999px;padding:2px 9px;letter-spacing:.5px}
+  body.page-hk .hkx-alert-pill{margin-left:auto;font-size:10px;font-weight:700;background:rgba(224,160,48,.16);color:var(--ink-warn, var(--warn));border-radius:999px;padding:2px 9px;letter-spacing:.5px}
   /* direction-wash helpers for inline pills: use color-mix so zh swap applies automatically */
-  body.page-hk .hkx-alert-pill.pill-buy{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up)}
-  body.page-hk .hkx-alert-pill.pill-sell{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down)}
+  body.page-hk .hkx-alert-pill.pill-buy{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--ink-up, var(--up))}
+  body.page-hk .hkx-alert-pill.pill-sell{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--ink-down, var(--down))}
   body.page-hk .hkx-heat{display:flex;gap:4px;margin-top:6px}
   body.page-hk .hkx-heat i{flex:1;height:12px;border-radius:3px}
   /* h=hot (green), h2=warm, h3=mild, c=cold (red), c2=cool, n=neutral */
@@ -1225,8 +1225,8 @@
   {# heating/cooling key — ported from macro.html's .mx5-sector-heat-legend. The tokens
      flip to 红涨绿跌 automatically under html[data-lang="zh"]. #}
   body.page-hk .hkx-heat-legend{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;font-weight:600;letter-spacing:.03em}
-  body.page-hk .hkx-heat-legend .heat-up{color:var(--up)}
-  body.page-hk .hkx-heat-legend .heat-dn{color:var(--down)}
+  body.page-hk .hkx-heat-legend .heat-up{color:var(--ink-up, var(--up))}
+  body.page-hk .hkx-heat-legend .heat-dn{color:var(--ink-down, var(--down))}
   {# wrapper for the in-page ilx charts (Canada's .cax-ilx equivalent — that class is
      page-canada-scoped and does nothing here) #}
   body.page-hk .hkx-ilx{margin:6px 0 2px}
@@ -1257,7 +1257,7 @@
   body.page-hk .hkx-ev .ed{font-size:10px;color:var(--muted)}
   body.page-hk .hkx-ev .imp{font-size:9px;font-weight:700;letter-spacing:.6px;border-radius:4px;padding:1px 6px}
   body.page-hk .hkx-imp.high{background:rgba(224,100,100,.2);color:#eda8a8}
-  body.page-hk .hkx-imp.med{background:rgba(224,160,48,.16);color:var(--warn)}
+  body.page-hk .hkx-imp.med{background:rgba(224,160,48,.16);color:var(--ink-warn, var(--warn))}
   body.page-hk .hkx-dh{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);padding:11px 18px}
   body.page-hk .hkx-dh b{color:var(--text);font-weight:650}
   body.page-hk .hkx-dh .d{width:8px;height:8px;border-radius:50%;background:var(--warn)}
@@ -1278,7 +1278,7 @@
   body.page-hk table.hkx-mt th{font-size:9.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.09)}
   body.page-hk table.hkx-mt td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.05)}
   body.page-hk table.hkx-mt td.r,body.page-hk table.hkx-mt th.r{text-align:right}
-  body.page-hk .hkx-tt-dn{color:var(--down);font-weight:650} body.page-hk .hkx-tt-up{color:var(--up);font-weight:650} body.page-hk .hkx-tt-fl{color:var(--warn);font-weight:650}
+  body.page-hk .hkx-tt-dn{color:var(--ink-down, var(--down));font-weight:650} body.page-hk .hkx-tt-up{color:var(--ink-up, var(--up));font-weight:650} body.page-hk .hkx-tt-fl{color:var(--ink-warn, var(--warn));font-weight:650}
   body.page-hk .hkx-cols2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
   @media(max-width:980px){body.page-hk .hkx-cols2{grid-template-columns:1fr}}
   /* Mechanic #6: 2-col dialog with minmax(0,1fr) */
@@ -1292,9 +1292,9 @@
   body.page-hk .hkx-cat .cat-val{font-size:14px;font-weight:700;line-height:1.1}
   body.page-hk .hkx-cat .cat-chg{font-size:10.5px;font-weight:650;margin-top:2px}
   body.page-hk .hkx-cat .cat-tone{font-size:9.5px;font-weight:700;letter-spacing:.5px;border-radius:4px;padding:1px 7px;margin-top:3px;display:inline-block}
-  body.page-hk .hkx-cat .cat-tone.bull{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up)}
-  body.page-hk .hkx-cat .cat-tone.bear{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down)}
-  body.page-hk .hkx-cat .cat-tone.warn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn)}
+  body.page-hk .hkx-cat .cat-tone.bull{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--ink-up, var(--up))}
+  body.page-hk .hkx-cat .cat-tone.bear{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--ink-down, var(--down))}
+  body.page-hk .hkx-cat .cat-tone.warn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--ink-warn, var(--warn))}
   body.page-hk .hkx-cat .cat-tone.neu{background:rgba(255,255,255,.06);color:var(--muted)}
   /* PEG-warn accent on the USD/HKD tile */
   body.page-hk .hkx-cat.peg-warn{border-color:rgba(224,160,48,.4)!important}
@@ -1304,11 +1304,11 @@
   body.page-hk .hkx-dh-dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
   /* Valuation section in dlg-flows */
   body.page-hk .hkx-val-pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:10px 0}
-  body.page-hk .hkx-freshbar{background:rgba(224,160,48,.10);border:1px solid rgba(224,160,48,.3);border-radius:12px;padding:8px 14px;font-size:12px;color:var(--warn);margin-bottom:14px}
+  body.page-hk .hkx-freshbar{background:rgba(224,160,48,.10);border:1px solid rgba(224,160,48,.3);border-radius:12px;padding:8px 14px;font-size:12px;color:var(--ink-warn, var(--warn));margin-bottom:14px}
   body.page-hk .hkx-nchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(255,255,255,.06);color:var(--muted)}
   /* Dial (VHSI gauge) */
   body.page-hk .hkx-dial{width:100%;max-width:320px;margin:0 auto;display:block}
-  body.page-hk .hkx-dial-word{text-align:center;font-size:14px;font-weight:700;color:var(--warn);margin-top:-4px}
+  body.page-hk .hkx-dial-word{text-align:center;font-size:14px;font-weight:700;color:var(--ink-warn, var(--warn));margin-top:-4px}
   body.page-hk .hkx-dial-sub{text-align:center;font-size:10.5px;color:var(--muted)}
 
   /* Mechanic #5: Dialog animation (China #2592 spec) */
@@ -1412,15 +1412,20 @@
     --mx5-accent-dim:    color-mix(in srgb,var(--up) 10%,transparent);
     --mx5-warn:          var(--warn,#f59e0b);
     --mx5-warn-dim:      color-mix(in srgb,var(--warn) 10%,transparent);
-    --mx5-accent-ink:    var(--up);
-    --mx5-warn-ink:      var(--warn);
+    --mx5-accent-ink:    var(--ink-up, var(--up));
+    --mx5-warn-ink:      var(--ink-warn, var(--warn));
     --mx5-hover-bg:      rgba(22,29,38,.62);
     --mx5-hover-border:  rgba(255,255,255,.16);
     --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.25);
     --mx5-focus-ring:    0 0 0 2px color-mix(in srgb,var(--up) 55%,transparent);
     --ink-1: var(--text);
     --ink-2: var(--muted);
-    --ink-3: color-mix(in srgb,var(--muted) 70%,transparent);
+    /* Third ink = --muted, the same value china/intl/macro already use. The
+       70%-alpha form here composited to 3.43:1 on the light panel while
+       carrying axis ticks, tickers and eyebrows; a THIRD text grade lighter
+       than --muted cannot clear AA at all, so the hierarchy below --muted is
+       carried by size and weight, never by fading the ink. */
+    --ink-3: var(--muted);
   }
   [data-theme="light"] body.page-hk{
     --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
@@ -1460,12 +1465,12 @@
   body.page-hk .mx5-verdict-word{white-space:nowrap;font-size:19px;font-weight:700;color:var(--ink-1);}
   body.page-hk .mx5-big-score{font-size:60px;font-weight:800;line-height:.95;color:var(--mx5-accent-ink);
     text-shadow:0 0 40px var(--mx5-accent-glow);letter-spacing:-.035em;font-variant-numeric:tabular-nums;}
-  body.page-hk .mx5-score-green .mx5-big-score{color:var(--up);text-shadow:0 0 36px color-mix(in srgb,var(--up) 30%,transparent);}
-  body.page-hk .mx5-score-yellow .mx5-big-score{color:var(--warn);text-shadow:0 0 36px color-mix(in srgb,var(--warn) 30%,transparent);}
-  body.page-hk .mx5-score-red .mx5-big-score{color:var(--down);text-shadow:0 0 36px color-mix(in srgb,var(--down) 30%,transparent);}
+  body.page-hk .mx5-score-green .mx5-big-score{color:var(--ink-up, var(--up));text-shadow:0 0 36px color-mix(in srgb,var(--up) 30%,transparent);}
+  body.page-hk .mx5-score-yellow .mx5-big-score{color:var(--ink-warn, var(--warn));text-shadow:0 0 36px color-mix(in srgb,var(--warn) 30%,transparent);}
+  body.page-hk .mx5-score-red .mx5-big-score{color:var(--ink-down, var(--down));text-shadow:0 0 36px color-mix(in srgb,var(--down) 30%,transparent);}
   body.page-hk .mx5-sub-line{font-size:11px;color:var(--mx5-accent-ink);font-weight:600;margin-top:3px;}
   body.page-hk .mx5-score-yellow .mx5-sub-line{color:var(--mx5-warn-ink);}
-  body.page-hk .mx5-score-red .mx5-sub-line{color:var(--down);}
+  body.page-hk .mx5-score-red .mx5-sub-line{color:var(--ink-down, var(--down));}
 
   /* ── B · 60-session path panel ── */
   body.page-hk .mx5-sc-right{display:flex;flex-direction:column;flex:1;min-width:0;}
@@ -1517,22 +1522,36 @@
   body.page-hk .mx5-mkt-sub{font-size:11px;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;}
   body.page-hk .mx5-mkt-price{font-size:18px;font-weight:700;line-height:1;color:var(--ink-1);margin-bottom:4px;font-variant-numeric:tabular-nums;}
   body.page-hk .mx5-mkt-delta{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;}
-  body.page-hk .mx5-mkt-delta.up{color:var(--up);}
-  body.page-hk .mx5-mkt-delta.dn{color:var(--down);}
+  body.page-hk .mx5-mkt-delta.up{color:var(--ink-up, var(--up));}
+  body.page-hk .mx5-mkt-delta.dn{color:var(--ink-down, var(--down));}
   body.page-hk .mx5-face-open{font-size:11px;color:var(--ink-3);margin-top:12px;font-weight:600;}
 
   /* ── D · Sentiment odometer (Mood & Fear) ── */
   /* HK dial = inverted VHSI: high fear → needle LEFT (panic). fg-fear→--down, fg-greed→--up,
      neutral→--warn; --fg-col routes through those so it flips 红涨绿跌 in zh. */
-  body.page-hk .fg-greed{--fg-col:var(--up)} body.page-hk .fg-fear{--fg-col:var(--down)} body.page-hk .fg-neutral{--fg-col:var(--warn)}
+  body.page-hk .fg-greed{--fg-col:var(--up);--fg-col-ink:var(--ink-up, var(--up))} body.page-hk .fg-fear{--fg-col:var(--down);--fg-col-ink:var(--ink-down, var(--down))} body.page-hk .fg-neutral{--fg-col:var(--warn);--fg-col-ink:var(--ink-warn, var(--warn))}
   body.page-hk #hkx-sentiment .fg-mark-s{stroke:var(--fg-col)} body.page-hk #hkx-sentiment .fg-mark-f{fill:var(--fg-col)}
   body.page-hk #hkx-sentiment .fg-lab-panic{fill:var(--down)} body.page-hk #hkx-sentiment .fg-lab-euph{fill:var(--up)}
   body.page-hk .mx5-sentiment-dial-wrap{text-align:center;margin-bottom:4px;}
-  body.page-hk .mx5-sentiment-zone-text{font-size:15px;font-weight:700;color:var(--fg-col,var(--warn));text-align:center;margin-bottom:3px;}
+  body.page-hk .mx5-sentiment-zone-text{font-size:15px;font-weight:700;color:var(--fg-col-ink,var(--fg-col,var(--ink-warn, var(--warn))));text-align:center;margin-bottom:3px;}
   body.page-hk .mx5-sentiment-label{font-size:11px;color:var(--ink-3);text-align:center;margin-top:2px;}
 
   /* ── AI BRIEF DIALOG — ABX v2 shared body (.aib2-*); ZH-safe blue accent by default ── */
 {% include "_aibrief_css.j2" %}
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  body.page-hk .hkx-big-score,
+  body.page-hk .ms-green .hkx-big-score,
+  body.page-hk .ms-red .hkx-big-score,
+  body.page-hk .mx5-big-score,
+  body.page-hk .mx5-score-green .mx5-big-score,
+  body.page-hk .mx5-score-yellow .mx5-big-score,
+  body.page-hk .mx5-score-red .mx5-big-score
+) { text-shadow:none; }
+html[data-lang="zh"][data-theme="light"] body.page-hk .ms-green .hkx-big-score { text-shadow:none; }
+html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { text-shadow:none; }
 </style>
 </head>
 <body{% if mode != 'stocks' %} class="page-hk"{% endif %}>
@@ -1678,7 +1697,7 @@
         <button class="hkx-hbtn" onclick="hkxTogglePop('hkx-pop-signals',event)">&#x21B1; {{ t(signal_stack.n_bull|string + ' of ' + signal_stack.n|string + ' signals positive', signal_stack.n_bull|string + '/' + signal_stack.n|string + ' 信号偏多') }} <span class="hkx-hbtn-n">&#x25BE;</span></button>
         {% endif %}
         {% if ms is defined and ms and ms.radar is defined and ms.radar %}
-        <button class="hkx-hbtn" style="{{ 'border-color:rgba(224,100,100,.5)' if ms.color == 'red' else '' }}" onclick="hkxTogglePop('hkx-pop-risk',event)">&#9888; {{ t('Drop risk', '回撤风险') }} · <span class="hkx-hbtn-n" style="{{ 'color:var(--down)' if ms.color == 'red' else '' }}">{{ t(ms.radar.label_en, ms.radar.label_zh or ms.radar.label_en) }}</span> &#x25BE;</button>
+        <button class="hkx-hbtn" style="{{ 'border-color:rgba(224,100,100,.5)' if ms.color == 'red' else '' }}" onclick="hkxTogglePop('hkx-pop-risk',event)">&#9888; {{ t('Drop risk', '回撤风险') }} · <span class="hkx-hbtn-n" style="{{ 'color:var(--ink-down, var(--down))' if ms.color == 'red' else '' }}">{{ t(ms.radar.label_en, ms.radar.label_zh or ms.radar.label_en) }}</span> &#x25BE;</button>
         {% endif %}
         {# signals popover #}
         <div class="hkx-pop" id="hkx-pop-signals">
@@ -1700,7 +1719,7 @@
           <div class="hkx-pop-h">{{ t('Chance of a pullback','回撤概率') }}</div>
           {% if ms is defined and ms and ms.radar is defined and ms.radar %}
           {% set _rad = ms.radar %}
-          <div class="hkx-pop-big"><span style="color:var(--down)">{{ ((_rad.dd21 * 100)|round|int)|string + '%' if _rad.dd21 is defined and _rad.dd21 else '—' }}</span><span style="font-size:12.5px;color:var(--down)">{{ t('21-day chance','21日概率') }}</span></div>
+          <div class="hkx-pop-big"><span style="color:var(--ink-down, var(--down))">{{ ((_rad.dd21 * 100)|round|int)|string + '%' if _rad.dd21 is defined and _rad.dd21 else '—' }}</span><span style="font-size:12.5px;color:var(--ink-down, var(--down))">{{ t('21-day chance','21日概率') }}</span></div>
           <div class="hkx-pop-sub">{{ t(_rad.do_en, _rad.do_zh or _rad.do_en) if _rad.do_en is defined and _rad.do_en else '' }}</div>
           {% for s in _rad.scares[:3] if _rad.scares is defined %}
           <div class="hkx-pop-row">
@@ -1964,7 +1983,7 @@
       {# tone pill shows stance word, not instrument name; matched to tone enum #}
       <span class="cat-tone {{ 'bull' if tile.tone in ('pos','bull') else ('bear' if tile.tone in ('neg','bear') else 'neu') }}">{{ t('Up','涨') if tile.tone in ('pos','bull') else (t('Down','跌') if tile.tone in ('neg','bear') else t('Flat','平')) }}</span>
       {% endif %}
-      {% if _peg_warn %}<div style="font-size:9px;color:var(--warn);margin-top:2px">{{ t('near weak edge','接近弱方') }}</div>{% endif %}
+      {% if _peg_warn %}<div style="font-size:9px;color:var(--ink-warn, var(--warn));margin-top:2px">{{ t('near weak edge','接近弱方') }}</div>{% endif %}
     </div>
     {% endfor %}
     {% else %}
@@ -1973,7 +1992,7 @@
     <div class="hkx-card hkx-cat{{ ' peg-warn' if gv.peg.level > 7.83 else '' }}" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-policy')">
       <div class="cat-tag">{{ t('USD/HKD','美元/港元') }}</div>
       <div class="cat-val {{ 'hkx-tt-dn' if gv.peg.level > 7.83 else '' }}">{{ '%.4f'|format(gv.peg.level) }}</div>
-      {% if gv.peg.level > 7.83 %}<div style="font-size:9px;color:var(--warn);margin-top:2px">{{ t('near weak edge','接近弱方') }}</div>{% endif %}
+      {% if gv.peg.level > 7.83 %}<div style="font-size:9px;color:var(--ink-warn, var(--warn));margin-top:2px">{{ t('near weak edge','接近弱方') }}</div>{% endif %}
     </div>
     {% endif %}
     {% if gv %}
@@ -2035,11 +2054,11 @@
     {% if latest and latest.risk_radar is defined and latest.risk_radar and latest.risk_radar.can_force %}
     <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-risk')"
          style="{{ 'border-color:rgba(224,100,100,.35)' if ms is defined and ms and ms.color == 'red' else '' }}">
-      <div class="hkx-ctitle">{{ t('Chance of a Pullback','回撤风险') }}<span class="hkx-alert-pill" style="{{ 'background:rgba(224,100,100,.16);color:var(--down)' if ms is defined and ms and ms.color == 'red' else '' }}">{{ t('HIGH','高') if ms is defined and ms and ms.color == 'red' else t('WATCH','观察') }}</span></div>
+      <div class="hkx-ctitle">{{ t('Chance of a Pullback','回撤风险') }}<span class="hkx-alert-pill" style="{{ 'background:rgba(224,100,100,.16);color:var(--ink-down, var(--down))' if ms is defined and ms and ms.color == 'red' else '' }}">{{ t('HIGH','高') if ms is defined and ms and ms.color == 'red' else t('WATCH','观察') }}</span></div>
       {% if ms is defined and ms and ms.radar is defined and ms.radar %}
       {% set _rad = ms.radar %}
-      <div class="hkx-bignum" style="color:var(--down)">{{ ((_rad.dd21 * 100)|round|int)|string + '%' if _rad.dd21 is defined and _rad.dd21 else t('Elevated','偏高') }}</div>
-      <div class="hkx-bigsub" style="color:var(--down)">{{ t(_rad.do_en, _rad.do_zh or _rad.do_en) if _rad.do_en is defined and _rad.do_en else t('Raise some cash','适当减仓') }}</div>
+      <div class="hkx-bignum" style="color:var(--ink-down, var(--down))">{{ ((_rad.dd21 * 100)|round|int)|string + '%' if _rad.dd21 is defined and _rad.dd21 else t('Elevated','偏高') }}</div>
+      <div class="hkx-bigsub" style="color:var(--ink-down, var(--down))">{{ t(_rad.do_en, _rad.do_zh or _rad.do_en) if _rad.do_en is defined and _rad.do_en else t('Raise some cash','适当减仓') }}</div>
       {% for s in _rad.scares[:2] if _rad.scares is defined %}
       <div class="hkx-kv"><span class="hkx-k">{{ t(s.label_en, s.label_zh) }}</span><span class="hkx-v">{{ s.band if s.band is defined else '—' }}</span></div>
       {% endfor %}
@@ -2252,14 +2271,14 @@
       {% endif %}
       {% endif %}
       {% if cbbc_map.sld_banner %}
-      <div style="font-size:11px;color:var(--warn);margin-top:4px"><span class="l-en">{{ cbbc_map.sld_banner.en }}</span><span class="l-zh">{{ cbbc_map.sld_banner.zh }}</span></div>
+      <div style="font-size:11px;color:var(--ink-warn, var(--warn));margin-top:4px"><span class="l-en">{{ cbbc_map.sld_banner.en }}</span><span class="l-zh">{{ cbbc_map.sld_banner.zh }}</span></div>
       {% endif %}
       {% endif %}
       {# W1 freshness banner — OUTSIDE the bellwethers gate: the engine-crash
          path returns bellwethers: [] WITH a banner, and that is exactly the
          case a reader most needs told. #}
       {% if cbbc_map and cbbc_map.banner %}
-      <div style="font-size:11px;color:var(--warn);margin-top:4px"><span class="l-en">{{ cbbc_map.banner.en }}</span><span class="l-zh">{{ cbbc_map.banner.zh }}</span></div>
+      <div style="font-size:11px;color:var(--ink-warn, var(--warn));margin-top:4px"><span class="l-en">{{ cbbc_map.banner.en }}</span><span class="l-zh">{{ cbbc_map.banner.zh }}</span></div>
       {% endif %}
       <div class="hkx-foot">{{ t('An early read on tomorrow\'s open, plus where crowded leveraged bets could speed up a move.','对明日开盘的早期读数，以及集中杠杆仓位可能加速行情的位置。') }}</div>
     </div>
@@ -2298,7 +2317,7 @@
       {# Stance: property moves slowly, matters for sentiment #}
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px">{{ t('Slow signal — context for local confidence','慢速信号 — 本地信心背景') }}</div>
       {% if property and property.regime and property.regime.label_en %}
-      <div class="hkx-bignum" style="font-size:22px;color:var(--warn)">{{ t(property.regime.label_en, property.regime.label_zh or property.regime.label_en) }}</div>
+      <div class="hkx-bignum" style="font-size:22px;color:var(--ink-warn, var(--warn))">{{ t(property.regime.label_en, property.regime.label_zh or property.regime.label_en) }}</div>
       <div class="hkx-bigsub" style="color:var(--muted)">{{ t('off the lows · prices firming a little','企稳回升') if property.ccl and property.ccl.chg_13w is not none and property.ccl.chg_13w > 0 else '' }}</div>
       {% if property.ccl %}
       <div class="hkx-kv"><span class="hkx-k">{{ t('Last 3 months','近3个月') }}</span><span class="hkx-v">{{ ('%+.1f'|format(property.ccl.chg_13w) + '%') if property.ccl.chg_13w is not none else '—' }}</span></div>
@@ -2438,7 +2457,7 @@
             {% if gv and gv.peg %}
             <div style="display:flex;gap:12px;align-items:baseline;margin:2px 0 6px">
               <span class="hkx-bignum">{{ '%.4f'|format(gv.peg.level) }}</span>
-              {% if gv.peg.level > 7.83 %}<span class="hkx-alert-pill" style="background:rgba(224,100,100,.16);color:var(--down);margin:0">{{ t('NEAR WEAK EDGE','接近弱方') }}</span>{% endif %}
+              {% if gv.peg.level > 7.83 %}<span class="hkx-alert-pill" style="background:rgba(224,100,100,.16);color:var(--ink-down, var(--down));margin:0">{{ t('NEAR WEAK EDGE','接近弱方') }}</span>{% endif %}
             </div>
             <div class="hkx-pegband" style="height:28px"><div class="hkx-mark" style="left:{{ ((gv.peg.level - 7.75) / 0.10 * 100)|int }}%"></div><div class="hkx-ends"><span>{{ t('strong 7.75','强 7.75') }}</span><span>{{ t('weak 7.85','弱 7.85') }}</span></div></div>
             <div class="hkx-kv" style="margin-top:16px"><span class="hkx-k">{{ t('State','状态') }}</span><span class="hkx-v">{{ td(gv.peg.state) }}</span></div>
@@ -2624,10 +2643,10 @@
             {% endfor %}
             {% endif %}
             {% if cbbc_map and cbbc_map.banner %}
-            <div style="font-size:11px;color:var(--warn);margin-top:6px"><span class="l-en">{{ cbbc_map.banner.en }}</span><span class="l-zh">{{ cbbc_map.banner.zh }}</span></div>
+            <div style="font-size:11px;color:var(--ink-warn, var(--warn));margin-top:6px"><span class="l-en">{{ cbbc_map.banner.en }}</span><span class="l-zh">{{ cbbc_map.banner.zh }}</span></div>
             {% endif %}
             {% if cbbc_map and cbbc_map.sld_banner %}
-            <div style="font-size:11px;color:var(--warn);margin-top:6px"><span class="l-en">{{ cbbc_map.sld_banner.en }}</span><span class="l-zh">{{ cbbc_map.sld_banner.zh }}</span></div>
+            <div style="font-size:11px;color:var(--ink-warn, var(--warn));margin-top:6px"><span class="l-en">{{ cbbc_map.sld_banner.en }}</span><span class="l-zh">{{ cbbc_map.sld_banner.zh }}</span></div>
             {% endif %}
             {% if cbbc_map and (cbbc_map.sld_freshness == 'stale' or cbbc_map.sld_pdftotext_available is sameas false) %}
             <div style="font-size:10.5px;color:var(--muted);margin-top:4px">
@@ -2899,7 +2918,7 @@
         <div class="hkx-eyebrow">{{ t('Sector playbook','板块操盘') }}</div>
         {% if pb.preferred %}<div class="hkx-kv"><span class="hkx-k">{{ t('Favour','偏好') }}</span><span class="hkx-v">{% for x in pb.preferred %}<span class="hkx-nchip">{{ td(x.name) }}</span>{% endfor %}</span></div>{% endif %}
         {% if pb.leaders %}<div class="hkx-kv"><span class="hkx-k">{{ t('Leaders','领先') }}</span><span class="hkx-v">{% for x in pb.leaders %}<span class="hkx-nchip">{{ td(x.name) }}</span>{% endfor %}</span></div>{% endif %}
-        {% if pb.avoid %}<div class="hkx-kv"><span class="hkx-k">{{ t('Avoid','回避') }}</span><span class="hkx-v">{% for x in pb.avoid %}<span class="hkx-nchip" style="color:var(--down)">{{ td(x.name) }}</span>{% endfor %}</span></div>{% endif %}
+        {% if pb.avoid %}<div class="hkx-kv"><span class="hkx-k">{{ t('Avoid','回避') }}</span><span class="hkx-v">{% for x in pb.avoid %}<span class="hkx-nchip" style="color:var(--ink-down, var(--down))">{{ td(x.name) }}</span>{% endfor %}</span></div>{% endif %}
         {% endif %}
         <div class="hkx-receipt">{{ t('Research context only — never a buy or sell signal.','仅供研究参考 — 绝非买卖信号。') }}</div>
       </div>
@@ -2985,7 +3004,7 @@
         {# Per-store freshness rows from freshness.stores if available #}
         {% if freshness %}
         {% if freshness.banner_message and freshness.verdict != 'ok' %}
-        <div class="hkx-kv"><span class="hkx-k">{{ t('Detail','详情') }}</span><span class="hkx-v" style="color:var(--warn)"><span class="l-en">{{ freshness.banner_message.en }}</span><span class="l-zh">{{ freshness.banner_message.zh }}</span></span></div>
+        <div class="hkx-kv"><span class="hkx-k">{{ t('Detail','详情') }}</span><span class="hkx-v" style="color:var(--ink-warn, var(--warn))"><span class="l-en">{{ freshness.banner_message.en }}</span><span class="l-zh">{{ freshness.banner_message.zh }}</span></span></div>
         {% endif %}
         {% if freshness.expected_session %}
         <div class="hkx-kv"><span class="hkx-k">{{ t('Expected session','预期交易日') }}</span><span class="hkx-v">{{ freshness.expected_session }}</span></div>
@@ -3171,8 +3190,8 @@
        are DELETED. Per-card trust tier (nb-tier) + the §5.0 order tooltip stay. #}
     <div class="desk-manifest">
       <div class="dm-tierline">{{ t('A <b>flow &amp; structure screen</b> — ranked by flow, A/H value and relative strength. A research shortlist, <b>not a buy list</b>.', '一个<b>资金与结构筛选</b> — 按资金流、A/H 价值与相对强度排序。研究备选清单，<b>非买入清单</b>。') }}
-        <a href="hk.html" style="color:var(--link);font-weight:600;margin-left:6px">← {{ t('HK macro dashboard', '香港宏观看板') }}</a>
-        <a href="hk_stocks_lab.html" style="margin-left:14px;padding:4px 11px;border:1.5px solid var(--link);border-radius:8px;font-size:12px;font-weight:700;color:var(--link);white-space:nowrap;display:inline-block;margin-top:4px">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a>
+        <a href="hk.html" style="color:var(--ink-link, var(--link));font-weight:600;margin-left:6px">← {{ t('HK macro dashboard', '香港宏观看板') }}</a>
+        <a href="hk_stocks_lab.html" style="margin-left:14px;padding:4px 11px;border:1.5px solid var(--link);border-radius:8px;font-size:12px;font-weight:700;color:var(--ink-link, var(--link));white-space:nowrap;display:inline-block;margin-top:4px">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a>
       </div>
     </div>
   </div>
@@ -3202,7 +3221,7 @@
     color: color-mix(in srgb, var(--warn) 92%, var(--text));
     border: 1px solid color-mix(in srgb, var(--warn) 46%, var(--line));
     margin-left: auto; white-space: nowrap; flex: none; }
-  .hkrv-why-toggle { font-size: 11.5px; color: var(--link); cursor: pointer;
+  .hkrv-why-toggle { font-size: 11.5px; color: var(--ink-link, var(--link)); cursor: pointer;
     background: none; border: none; padding: 0; font: inherit;
     text-decoration: underline; text-decoration-style: dotted; }
   .hkrv-pop { display: none; margin-top: 6px; padding: 11px 14px;
@@ -3242,7 +3261,7 @@
   <div class="panel span12 anv2-board" id="act-now">
     {{ dc.dc_css() }}
     <div class="anv2-hd">
-      <h2>⚡ {{ t('What to Act On Now', '现在行动') }}
+      <h2>{{ t('What to Act On Now', '现在行动') }}
         <span class="anv2-v2pill">v2</span>
         {{ lens.lens(
           kind='read', ill=lens.ILL_LANES,
@@ -3721,7 +3740,7 @@
   {%- endif -%}{%- endfor -%}
   {%- set _hk_xu_allfeat = (_hk_xu_c.feat > 0 and _hk_xu_c.feat_unknown == _hk_xu_c.feat) -%}
   <div class="panel span12" id="standouts">
-    <h2>⚡ {{ t('Prophet — HK stock signals', 'Prophet — 港股信号') }}
+    <h2>{{ t('Prophet — HK stock signals', 'Prophet — 港股信号') }}
       <span class="note" style="text-transform:none">· {% if _hsg.any %}{{ t('Ranked by readiness — what to act on, and what to leave alone', '按就绪度排序 —— 哪些可以动手，哪些放着别碰') }}{% else %}{{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}{% endif %}</span>
       {% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, " ~ _hk_ext_en ~ ", capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The " ~ _hk_def ~ " forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、" ~ _hk_ext_zh ~ "，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。" ~ _hk_def ~ " 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}
       {# W8-G: grid/table view toggle #}
@@ -4432,10 +4451,10 @@
        because its laggards really were composite-ordered — relabelling them under the
        new copy would put an accurate sentence on the wrong data. #}
     {% if _hsg.any %}
-    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest selection edge — distribution risk', '选股优势最弱 — 派发风险') }}
+    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--ink-down, var(--down));font-weight:700">⚠ {{ t('Weakest selection edge — distribution risk', '选股优势最弱 — 派发风险') }}
       {{ help("The names whose selection edge — our stock-picking read, before any timing — sits lowest on the board tonight. It is NOT a statement that they are falling: a name can be up on the month and still be here, which usually reads as distribution, money leaving while the price holds. The figure is that edge scored against the rest of the HK board, and it is the number the list is ordered by. A name whose edge cannot be resolved at all sorts to the end rather than the front — an unknown edge is not evidence of a weak one.", "本栏是今晚全榜选股优势最低的个股 —— 选股优势指的是不考虑择时的选股读数。这并不表示它们正在下跌：一只月内上涨的股票同样可能出现在这里，通常意味着派发，即股价撑住而资金在流出。所标数值即该优势的 z 分（相对港股样本），也是本列表的排序依据。优势完全无法计算的个股排在末尾而非开头 —— 优势未知不等于优势弱。") }}</p>
     {% else %}
-    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest — avoid', '最弱 — 回避') }}</p>
+    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--ink-down, var(--down));font-weight:700">⚠ {{ t('Weakest — avoid', '最弱 — 回避') }}</p>
     {% endif %}
     <p style="margin:0;line-height:2">
       {# PRINT THE KEY YOU SORTED BY, SIGN-AWARE. Two defects lived on this line. (1) It
@@ -4530,7 +4549,7 @@
   {% if _vd %}
   <!-- ===================== 1D VELOCITY DESK (fast movers, HK native 1D signal) ===================== -->
   <div class="panel span12" id="hk-velocity-desk">
-    <h2 style="margin:0 0 4px">⚡ {{ t('Fast movers — 1-day momentum', '快速异动 — 1日动能') }}
+    <h2 style="margin:0 0 4px">{{ t('Fast movers — 1-day momentum', '快速异动 — 1日动能') }}
       {{ help("HK names that set off several same-day momentum triggers — a fresh cross, an overnight gap on the US listing, or a turn off a washout — and then ran. Hong Kong has no daily price limits, so a name that runs the same day is showing real demand. A heads-up, not a buy signal.", "今天同时触发了几个盘中动量信号的港股 —— 信号刚上穿、美股 ADR 隔夜跳空，或者从低位转上来 —— 然后就直接涨了。港股没有涨跌停，当天就能拉起来说明需求是真的。这是提示，不是买入信号。") }}
     </h2>
     {% set _vd_asof = _vd.get('as_of') %}
@@ -4560,7 +4579,7 @@
           {% if _cc is not none %}<span class="chip c-muted" style="font-size:10px">{{ _cc }} {{ t('trigger', '项触发') if _cc == 1 else t('triggers', '项触发') }}</span>{% endif %}
           {% if n.get('washout_state') %}<span class="nb-washout" style="font-size:10px"><span class="l-en">{{ n.get('washout_state') }}</span><span class="l-zh">{{ n.get('washout_state') }}</span></span>{% endif %}
           {% if n.get('adr_gap_pct') is not none %}<span class="chip c-muted" style="font-size:10px">ADR {{ '%+.1f'|format(n.get('adr_gap_pct') * 100) if n.get('adr_gap_pct') else '' }}%</span>{% endif %}
-          {% if n.get('knife_risk') %}<span class="chip" style="font-size:10px;color:var(--down)">⚠ <span class="l-en">knife</span><span class="l-zh">刀口</span></span>{% endif %}
+          {% if n.get('knife_risk') %}<span class="chip" style="font-size:10px;color:var(--ink-down, var(--down))">⚠ <span class="l-en">knife</span><span class="l-zh">刀口</span></span>{% endif %}
           {% if n.get('beta_role') %}<span class="chip c-muted" style="font-size:10px">{{ n.get('beta_role') }}</span>{% endif %}
         </div>
       </div>
@@ -4591,7 +4610,7 @@
   {% set _ww_hot = (_ww | selectattr('state', 'equalto', 'ignition_watch') | list) if _ww else [] %}
   {% set _ww_cold = (_ww | rejectattr('state', 'equalto', 'ignition_watch') | list) if _ww else [] %}
   <div class="panel span12" id="washout-watch">
-    <h2>🔥 {{ t('Washout Watch — deep decliners trying to turn', '洗盘观察 — 深跌股尝试转身') }}
+    <h2>{{ t('Washout Watch — deep decliners trying to turn', '洗盘观察 — 深跌股尝试转身') }}
       <span class="note" style="text-transform:none">· {{ t("High risk, unconfirmed — watch, don't chase.", '高风险、未确认 — 观察，勿追。') }}</span>
     </h2>
     <div class="ww-strip">
@@ -4864,7 +4883,7 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
   {% if hk_scoreboard and hk_scoreboard.modes and hk_scoreboard.modes.all %}
   {% set RS = hk_scoreboard.risk_state %}
   <div class="panel span12" id="hk-screener">
-    <h2>🌐 {{ t('Global-risk screener', '全球风险筛选') }}
+    <h2>{{ t('Global-risk screener', '全球风险筛选') }}
       <span class="note" style="text-transform:none">· {{ t('Who amplifies global risk, who cushions it — the full HK list', '谁放大全球风险、谁缓冲 —— 完整港股名单') }}{% if hk_scoreboard.as_of %} · {{ hk_scoreboard.as_of }}{% endif %}</span>
       {{ help("HK single names are mostly risk exposures. Amplifiers (high beta) move more with global risk; cushions (low beta) move less. Beta measured to the S&P 500 overnight. Descriptive exposure, not a return forecast.", "港股个股主要是风险敞口。放大器（高贝塔）更随全球风险波动；缓冲股（低贝塔）波动较小。贝塔以隔夜标普500衡量。描述性敞口，非收益预测。") }}
     </h2>

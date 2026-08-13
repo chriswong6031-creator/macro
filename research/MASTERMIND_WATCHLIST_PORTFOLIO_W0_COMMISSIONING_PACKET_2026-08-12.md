@@ -363,3 +363,23 @@ Each wave session receives: (1) this packet's path + the CEO handoff path; (2) t
 - **A6 — PSI Books spec §4 `#wl_auth "(unchanged)"` superseded:** the Account Sync panel is deleted; the UWP-R6 disclosure obligation moves to the header save-state chip (Saved / Saving… / Local to this browser / Offline). The Books derived-view model itself (marketOf, FX-corruption guard, no cross-currency totals) is REAFFIRMED — it is the CEO's §1.2 law already implemented.
 - **A7 — `MASTER_PRODUCT_INFORMATION_ARCHITECTURE_V1.md` §10.4 (watchlist identity, reserved to Sol/Chairman) resolved by the CEO handoff:** Watchlist = attention set, Portfolio = held positions, separate concepts, one canonical relational store each; the Macro page is authorized as the deep-analysis portfolio surface the IA doc had deferred. The six-job nav is honored via two nav entries → two modes of one URL (§3). PRODUCT_EXPERIENCE_CENSUS §1.4 "watchlist duality" closes the same way: Macro = deep analysis + acquisition, Terminal = live operations, one state.
 - **A8 — Population disclosure law (new):** any surface composing the portfolio brief must state the population mode it received (`positions` vs `watchlist_union`), and equal-weight watchlist analysis is always labeled "Watchlist structure — equal weighted" (handoff §11.2). No consumer may silently mix populations again.
+
+- **A9 — Anonymous-render ruling (new; W2 commissioning session, 2026-08-12).** Recorded verbatim:
+
+  > The #5463 boundary stands: `stockdata.js`, `watchlist_risk.js`, `risk_core.js`, `factor_exposure.js` are NEVER served anonymously; no new anonymous server endpoints; never widen `config/site_access.yml` `public.exact` beyond the six shell files already registered (the frozen set in `tests/test_unsubscribe_page.py` is the review checkpoint — touching it beyond what this ruling licenses is a STOP-and-report).
+  >
+  > Anonymous ANALYZED state renders REAL structure analysis from plain arithmetic + shell-reachable public-plane facts: parsed book (names, weights as entered), weight concentration, market-book split, next events if reachable through the shell's own fetch paths; the Book Seam's MONEY rail renders real; the RISK rail renders as a locked preview shell.
+  >
+  > Everything factor-model/rule-derived (effective bets, risk shares, signal stages, attention chips, stress/correlation) = lock shells with the free CTA, using the mockup's "Free account" grammar.
+  >
+  > Anonymous hero: weight/sector-concentration phrasing ("Most of this book is one idea — big US technology" via public metadata, else weight-only concentration). "moves like about K bets" is RESERVED for signed-in (it is factor output).
+  >
+  > Signed-in users get the full pinned experience (risk trio loads as today for authenticated sessions).
+
+  **As implemented (W2).** The boundary is unchanged: `public.exact` is untouched, the frozen `PUBLIC_EXACT` set is untouched, and no endpoint was added. The anonymous page boots without the four gated scripts, so `window.SD` / `RiskCore` / `WRI` / `FX` are simply absent and every read they would supply degrades individually.
+
+  - **Real, from arithmetic alone:** the parsed book, the weights exactly as entered, weight concentration (top-N share vs an even split), and the market-book split — `MB.marketOf()` is a pure suffix derivation and needs no account. These drive the headline, the "because" line and the MONEY rail.
+  - **Sector metadata proved NOT shell-reachable.** The ruling allows "via public metadata, else weight-only concentration"; the only source of a name's sector on this page is `stockdata/index.json`, which is gated. The build therefore takes the ruling's stated fallback — weight and market concentration — and the "big US technology" phrasing is signed-in only. Same for next events, which live in the per-ticker JSON: they render as an honest "—" with a Tier-2 cue, never a guess.
+  - **Locked, with the free CTA:** the RISK rail (a dashed violet shell, not a fabricated distribution), every Signal cell, Risk share, Attention, and the whole Risk Center body.
+  - **The effective-bets sentence is structurally unavailable anonymously** — it is composed in `portfolio.js` from a `bets` figure only `watchlist_risk.js` can publish, and that file never executes. Pinned by a gate assertion (`anonymous: the effective-bets claim is NOT made`).
+  - **One inversion worth recording:** the seam's hatch means *this position is real money the risk model does not cover*. Drawing it for a book whose risk read is merely behind the wall told the visitor their entire book was outside the model. Anonymously the money rail is drawn solid and the LOCK is the rail below it — a different claim, made in a different place.

@@ -12,7 +12,7 @@
 {% set seo_title = mk.seo_title %}{% set seo_desc = mk.seo_desc %}{% set seo_path = mk.key ~ "_heatmap.html" %}
 <title>{{ seo_title }}</title>
 {% include "_seo_head.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -31,7 +31,7 @@
     font-size:11px; color:var(--muted); font-weight:600;
     background:color-mix(in srgb,#d97706 14%,transparent);
     border:1px solid color-mix(in srgb,#d97706 35%,transparent);
-    color:#b45309; border-radius:7px; padding:3px 9px; margin-top:6px;
+    color:var(--ink-warn, var(--warn)); border-radius:7px; padding:3px 9px; margin-top:6px;
     white-space:nowrap; align-self:flex-end; }
   .hm-live-badge:empty { display:none; }
   /* Hidden live-chg spans that live.js writes to (observer then recolors the tile) */
@@ -66,7 +66,7 @@
     background:color-mix(in srgb,#8b5cf6 7%,transparent);
     border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent); }
   .gate-note svg { width:14px; height:14px; flex:none; margin-top:2px; color:#8b5cf6; }
-  .gate-note a { color:var(--link); border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); }
+  .gate-note a { color:var(--ink-link, var(--link)); border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); }
   .cta-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:16px;
     padding:14px 16px; border-radius:14px; background:var(--panel); border:1px solid var(--line); }
   .cta-txt { flex:1; min-width:220px; font-size:12.5px; color:var(--muted); line-height:1.5; }

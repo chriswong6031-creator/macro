@@ -7,7 +7,7 @@ import copy
 import hashlib
 import json
 from contextlib import contextmanager
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -16,6 +16,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 from engine import options_signal_episode
 from engine.neuralweb import market_memory_production_records as records
+from lib import nyse_calendar
 from scripts import capture_market_memory_options_episodes as capture_cli
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,9 +46,62 @@ def _canonical_jsonl(rows: list[dict]) -> bytes:
     return b"".join(records._canonical_bytes(row) + b"\n" for row in rows)
 
 
+def _activation_body() -> bytes:
+    """The owner ledger AS OF the activation watermark, not as of tonight.
+
+    ``data/options_signal_episode/episodes.jsonl`` is an append-only production
+    ledger the options PIT lane extends every night, but every capture in this
+    module is pinned to the activation clock (``records.CONTRACT_FROZEN_AT`` ==
+    ``BASE_CAPTURE``).  Feeding the whole LIVE file to a frozen clock made the
+    module a scheduled red: the 2026-08-13 durable checkpoint (e9738279704)
+    appended 822 rows stamped 2026-08-11/12, and twenty of the twenty-one cases
+    here died at once on ``owner source artifact contains a future availability
+    clock`` -- an input the capture had not learned yet at the instant it is
+    replayed at.
+
+    A replay of a closed admission is only closed if its INPUT is closed, so read
+    the input point-in-time.  The boundary is the engine's own prefix watermark
+    rather than a hand-typed row count, which keeps expectation and data one
+    vintage by construction; ``test_frozen_owner_prefix_matches_the_reviewed_384_rows``
+    is what proves the boundary still names the reviewed bytes.
+    """
+
+    lines = SOURCE.read_bytes().splitlines()[: records.ACTIVATION_PREFIX_ROWS]
+    return b"".join(line + b"\n" for line in lines)
+
+
+def _deployed_capture_clock(body: bytes) -> datetime:
+    """A capture instant of the SAME vintage as the deployed ledger.
+
+    The deployed capture is gated twice on the clock: no availability stamp may
+    lie in its future, and the artifact's newest session must be exactly
+    ``nyse_calendar.expected_last_session(captured_at)`` -- which only names a
+    session once its 17:00 ET settle buffer has passed.  Wall-clock ``now`` is
+    therefore wrong for several hours every night, in the window between that
+    settle boundary and the lane's own write, so derive the instant from the
+    artifact instead: late on the ledger's OWN newest session.  Both gates are
+    asserted rather than assumed, so a calendar or producer change fails loudly
+    here instead of silently re-timing the capture.
+    """
+
+    rows = [json.loads(line) for line in body.splitlines()]
+    latest = max(date.fromisoformat(row["session_date"]) for row in rows)
+    settled = datetime.combine(latest, time(23, 0), tzinfo=nyse_calendar.ET).astimezone(
+        timezone.utc
+    )
+    newest_available = max(
+        datetime.fromisoformat(row["available_at"].replace("Z", "+00:00"))
+        for row in rows
+    )
+    assert nyse_calendar.expected_last_session(settled) == latest
+    assert newest_available <= settled
+    return settled
+
+
 def _base_rows() -> list[dict]:
     return [
-        json.loads(line) for line in SOURCE.read_text(encoding="utf-8").splitlines()
+        json.loads(line)
+        for line in _activation_body().decode("utf-8").splitlines()
     ]
 
 
@@ -96,7 +150,7 @@ def _capture_base(store: Path):
     with _clock(BASE_CAPTURE):
         return records.capture_options_episode_source(
             store,
-            source_body=SOURCE.read_bytes(),
+            source_body=_activation_body(),
             source_commit=COMMIT,
         )
 
@@ -112,8 +166,15 @@ def _capture_forward(store: Path):
 
 
 def test_frozen_owner_prefix_matches_the_reviewed_384_rows() -> None:
-    body = SOURCE.read_bytes()
-    assert len(body.splitlines()) == records.ACTIVATION_PREFIX_ROWS == 384
+    # The deployed ledger only ever GROWS -- the reviewed prefix inside it may
+    # never move, and a shrinking ledger is a defect rather than weather.  This is
+    # the assertion that keeps `_activation_body()`'s point-in-time read honest:
+    # everything else in this module trusts the boundary, so the boundary is
+    # proven here, literal by literal, against the engine's own watermark.
+    live = SOURCE.read_bytes().splitlines()
+    assert len(live) >= records.ACTIVATION_PREFIX_ROWS == 384
+    body = _activation_body()
+    assert len(body.splitlines()) == records.ACTIVATION_PREFIX_ROWS
     assert hashlib.sha256(body).hexdigest() == records.ACTIVATION_PREFIX_SHA256
     assert _base_rows()[-1]["episode_id"] == records.ACTIVATION_LAST_EPISODE_ID
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
@@ -176,7 +237,7 @@ def test_exact_duplicate_is_idempotent_and_identity_is_clock_free(
     # create a second capture.
     with _clock(datetime(2026, 8, 12, 12, 2, 48, tzinfo=timezone.utc)):
         second = records.capture_options_episode_source(
-            store, source_body=SOURCE.read_bytes(), source_commit=COMMIT
+            store, source_body=_activation_body(), source_commit=COMMIT
         )
 
     assert second.action == "already_captured_no_new_owner_record"
@@ -552,8 +613,15 @@ def test_cold_bootstrap_delta_can_exceed_incremental_delta_bound(
 
 
 def test_source_is_read_from_git_and_never_mutated(tmp_path: Path) -> None:
+    # The only case here that reads the LIVE deployed ledger rather than the
+    # activation prefix, because that is its whole subject: the CLI takes its input
+    # from the committed git object and leaves the working tree alone.  Its
+    # cardinality is therefore the lane's weather, so it is derived from the very
+    # bytes the CLI just read; only the v1 capacity ceilings, which no lane can
+    # move, stay literal.
     before = SOURCE.read_bytes()
-    with _clock(BASE_CAPTURE):
+    committed_rows = len(before.splitlines())
+    with _clock(_deployed_capture_clock(before)):
         result = capture_cli.capture_deployed_options_episodes(
             ROOT,
             store_root=_store(tmp_path),
@@ -561,12 +629,16 @@ def test_source_is_read_from_git_and_never_mutated(tmp_path: Path) -> None:
 
     assert SOURCE.read_bytes() == before
     assert result["source_artifact_sha256"] == hashlib.sha256(before).hexdigest()
-    assert result["cumulative_record_count"] == 384
+    # The floor keeps the derived pair from agreeing with itself about nothing: a
+    # capture reporting fewer rows than the reviewed activation prefix is reading
+    # something other than the owner ledger.
+    assert records.ACTIVATION_PREFIX_ROWS <= committed_rows
+    assert result["cumulative_record_count"] == committed_rows
     assert result["v1_capacity"] == {
         "maximum_source_rows": 25_000,
         "maximum_source_bytes": 48 * 1024 * 1024,
         "migration_warning_at_rows": 20_000,
-        "remaining_rows": 24_616,
+        "remaining_rows": 25_000 - committed_rows,
         "status": "within_measured_v1_bound",
     }
 
