@@ -441,7 +441,8 @@ on:
       # the workflow-yaml pack via scripts/audit_unrun_tests.py). templates/** and
       # site/** already cover its subjects (theme.css + five report templates); this
       # entry is the test half, so a test-only edit still triggers CI. Runs in the
-      # template-site-sync job, which already owns that theme.css pair.
+      # unrun-page-guards job — its single canonical home after the 2026-08-12 triple
+      # concurrent heal (#5455/#5460/#5461) was consolidated to one run: step.
       - "tests/test_odometer_light_mode_surface.py"
       # live_flow payload consumers: the node-shelled suites that execute the intraday_flow
       # tracker's and the stock panel's flow loaders against payloads from the real builders.
@@ -633,10 +634,8 @@ on:
       - "tests/test_rr_scorecard_card.py"
       # Market-score authority firewall: the engine/template subjects are already
       # covered by engine/** and templates/**; name the suite so a test-only edit
-      # still starts the owner job. The odometer suite is the same two-halves fix
-      # for #5458's shared template/site light-mode contract.
+      # still starts the owner job.
       - "tests/test_market_score_authority_2026_08_12.py"
-      - "tests/test_odometer_light_mode_surface.py"
       # #5481 folded the China Policy Watch express-render guards into this
       # canonical suite. Name the test half explicitly beside its owner job;
       # collectors/**, engine/**, scripts/**, and templates/** cover its subjects.

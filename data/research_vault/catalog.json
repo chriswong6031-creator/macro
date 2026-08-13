@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T01:40:07.458690+00:00",
-  "count": 1028,
+  "generated_at": "2026-08-13T02:40:19.244796+00:00",
+  "count": 1031,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -62,6 +62,48 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-iiyfaodohcd-982745",
+      "title": "AVC (3017)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T01:24:14Z",
+      "summary_points": [
+        "**AI-Driven Revenue & GM Upside**: Jul revenue +57% YoY (vs.",
+        "6% QoQ) from AI server liquid cooling components; 2Q26 GM beat at 32.6% (vs.",
+        "consensus) driven by higher-margin AI cooling, rack shipments, and penetration rates.",
+        "**2025-28 Growth Catalyst**: 52% CAGR net income growth via AI spending tailwinds, liquid cooling penetration expansion, and market leadership in air/liquid cooling solutions (supported by R&D/manufacturing capacity).",
+        "**Valuation Upside & Revisions**: Target price lifted to NT$3,986 (28.2x P/E on 2027E EPS), reflecting 11%/7%/8% net income revisions (2026-2028) and 37% upside from current price."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nfyjrzmss3b-a8d72f",
+      "title": "Tingyi (0322.HK) 1H26 Review Upgrade to Buy on enhanced core category position, improved operation efficiency amid cost vol...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T01:24:13Z",
+      "summary_points": [
+        "**Margin Expansion & Core Segment Strength**: 1H26 results beat expectations with EBIT margin improving to 9.6% (from 8.8%), driven by cost management, sweetened tea (+15% yoy) and noodles segment growth (50%+ H1 2026), supported by product innovation and structural F&B transformation.",
+        "**PET Cost Resolution & Margin Resilience**: PET prices corrected from Rmb9k+/t to Rmb7-8k/t, turning cost pressure into tailwind; eased input costs and automation-driven expense efficiency support earnings resilience amid sugar/palm oil price stability.",
+        "**20% Upside Target & Catalysts**: Goldman Sachs upgrades to Buy with HK$14.80 target (20.4% upside), citing 20%+ total return potential, 15.5x 2027 P/E, and strong growth catalysts (sugar-free tea +25% market growth, noodles premiumization >Rmb5/unit).",
+        "**Reduced Leverage & Outperformance**: Net debt/equity (excl.",
+        "leases) declines to 17.0% (from 24.0%), lowering financial risk; stock outperforms Hang Seng China Ent."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ihhroq7zrot-128c39",
       "title": "JPM US Market Intelligence Afternoon Briefing Aug 12",
@@ -264,6 +306,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tcokvhuzse4-dc02a8",
+      "title": "The Point for Europe Wednesday, 12 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T10:05:10Z",
+      "summary_points": [
+        "**Daimler Truck (DTG.DE) - MY27 Sale Decision**: MY27 sales strategy shift vs MY26, 2Q DTNA order weakness (fleet mix-driven, temporary), Chinese competition risk; critical for trucking sector fundamentals and capital allocation.",
+        "**EU Auto China Competition Policy Risk**: EU auto market segmentation and regulation-driven China share rise; policy negligence not sustainable, posing structural risk to EU manufacturers.",
+        "**Global Sporting Goods Sneaker Demand**: July volumes down 1.2% MoM (9th decline), Nike US momentum (+30bps), lifestyle footwear weakness; key for consumer discretionary flows and sector rotation.",
+        "**Kingspan BMC Acquisition**: €850mn deal delivers 5.6% EPS accretion, EV/EBITDA <5x (vs KSP 11.6x), strategic power management entry; enables two additional BMC-scale acquisitions.",
+        "**Commodities - Silver Price Drivers**: Investment demand (Strait of Hormuz de-escalation, Fed pivot) and solar slowdown; targets $75/oz (0-3m), $90/oz (6-12m) vs spot $65/oz."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
