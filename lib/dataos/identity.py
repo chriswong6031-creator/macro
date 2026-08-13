@@ -630,6 +630,19 @@ class AliasRow:
     day ambiguous (two rows valid at once on 2026-01-14, which is exactly the day
     the MMC/MRSH answer has to be unambiguous).  ``None`` on either side is an open
     bound.
+
+    THE DATE IS THE ROW'S OWN CLOCK, AND A VENDOR SPACE DECLARES WHICH CLOCK IT RUNS
+    ON.  A DATED row answers HISTORICAL NAMING — "what did this space call the
+    security ON that day".  It is NOT a fetch-symbol or store-key resolver, because a
+    vendor that renames typically migrates the WHOLE history onto the new name: Yahoo
+    serves Marsh's entire tape under ``MRSH`` and ``data/stocks/ECHO.parquet`` holds
+    EchoStar's spliced history back to 2008, so a backfill that asked a dated row what
+    Yahoo called it in 2020 and then REQUESTED that answer would get "possibly
+    delisted, no price data found" — the seven-month ``insurance`` 18/19 outage in a
+    new costume.  The CURRENT-CATALOG question ("what string do I use today, for a bar
+    of any date") is answered by a separate vendor space carrying ONE OPEN-BOUNDED row
+    per security; ``config/dataset_registry.yml::reference.vendor_aliases`` names both
+    families, and ``scripts/build_security_master.py`` emits them.
     """
 
     vendor: str
