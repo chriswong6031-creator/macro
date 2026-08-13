@@ -204,6 +204,41 @@ class TestPriceTruncation:
                                                    bf11.CONTROL_THROUGH)
         assert bf11._needs_write(merged, on_disk, provenance) is False
 
+    def test_the_cache_key_describes_the_TREE_not_the_delta(self, tmp_path):
+        """An identical tree must produce an identical key however it got there.
+
+        The bug this pins cost a 13-minute board rebuild on every run: the key was
+        hashed from the overlay manifest, so reaching 2026-08-10 by truncating down from
+        08-11 and reaching it by changing nothing gave two different keys for the same
+        tree, and each run discarded the last one's cache.
+        """
+        store = tmp_path / "data" / "stocks"
+        store.mkdir(parents=True)
+        _frame(["2026-08-10", "2026-08-11"], [10.0, 11.0]).to_parquet(
+            store / "AAA.parquet")
+        fence = bf11.fence_no_bar_after(tmp_path, bf11.TRUNCATE_THROUGH)
+
+        truncated_down = {"through": "2026-08-11", "fence": fence,
+                          "totals": {"written": 3596, "sessions_added": 0}}
+        already_there = {"through": "2026-08-11", "fence": fence,
+                         "totals": {"written": 0, "sessions_added": 0}}
+
+        assert bf11.tree_fingerprint(truncated_down) == bf11.tree_fingerprint(
+            already_there), "the same tree produced two cache keys"
+
+    def test_a_different_tree_produces_a_different_key(self, tmp_path):
+        """Guard the guard — a key that never changes is worse than no key."""
+        store = tmp_path / "data" / "stocks"
+        store.mkdir(parents=True)
+        _frame(["2026-08-10"], [10.0]).to_parquet(store / "AAA.parquet")
+        short = bf11.fence_no_bar_after(tmp_path, bf11.TRUNCATE_THROUGH)
+        _frame(["2026-08-10", "2026-08-11"], [10.0, 11.0]).to_parquet(
+            store / "AAA.parquet")
+        long = bf11.fence_no_bar_after(tmp_path, bf11.TRUNCATE_THROUGH)
+
+        assert bf11.tree_fingerprint({"fence": short}) != bf11.tree_fingerprint(
+            {"fence": long})
+
     def test_the_price_surface_covers_every_rung_of_the_plan_price_ladder(self):
         """A truncation that misses a rung is a truncation with a hole in it.
 
@@ -536,6 +571,40 @@ class TestDisclosureCopy:
         """The one fact a reader most needs, in both languages."""
         assert "not" in bf11.DISCLOSURE_COPY["not_a_live_call"]["en"].lower()
         assert "没有" in bf11.DISCLOSURE_COPY["not_a_live_call"]["zh"]
+
+
+class TestWriteArtifactsProtectsWhatItDidNotWrite:
+
+    def _args(self, tmp_path: Path, plan_id: str = "AAA-BULL-20260805") -> dict:
+        plan = {"schema": "prophet.trade_plan/v1", "id": plan_id, "asset": "AAA",
+                "recorded_at": bf11.BACKFILL_ASOF,
+                "origination_mode": bf11.ORIGINATION_MODE}
+        return {"minted": [plan], "receipt": {"schema": "x"},
+                "receipt_id": "backfill-20260811-aaaaaaaaaaaaaaaa",
+                "document": {"backfills": []}}
+
+    def test_a_plan_this_lane_did_not_write_is_never_overwritten(self, tmp_path):
+        plans = tmp_path / bf11.PLANS_RELDIR
+        plans.mkdir(parents=True)
+        live = plans / "AAA-BULL-20260805.json"
+        live.write_text(json.dumps({"id": "AAA-BULL-20260805", "asset": "AAA"}))
+
+        with pytest.raises(SystemExit):
+            bf11.write_artifacts(tmp_path, **self._args(tmp_path))
+
+        assert json.loads(live.read_text()) == {"id": "AAA-BULL-20260805",
+                                                "asset": "AAA"}, "live plan clobbered"
+
+    def test_this_lanes_own_output_can_be_rewritten_before_it_is_committed(self, tmp_path):
+        """Otherwise the lane is single-shot per checkout rather than per window."""
+        plans = tmp_path / bf11.PLANS_RELDIR
+        plans.mkdir(parents=True)
+        (plans / "AAA-BULL-20260805.json").write_text(json.dumps(
+            {"id": "AAA-BULL-20260805", "origination_mode": bf11.ORIGINATION_MODE}))
+
+        bf11.write_artifacts(tmp_path, **self._args(tmp_path))
+
+        assert json.loads((plans / "AAA-BULL-20260805.json").read_text())["asset"] == "AAA"
 
 
 class TestTheBoardFootnoteSurvivesASecondWindow:

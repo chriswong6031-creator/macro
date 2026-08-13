@@ -550,6 +550,9 @@ def fence_no_bar_after(tree: Path, through: str,
     violations: list[dict[str, Any]] = []
     ahead_of_pass: list[dict[str, Any]] = []
     latest = ""
+    # (path, last session) for every price file, in scan order — the STATE of the tree
+    # the builder is about to read, which is what a board cache must be keyed on.
+    state: list[tuple[str, str]] = []
     for relative, pattern in PRICE_TICKER_STORES:
         directory = tree / relative
         if not directory.exists():
@@ -565,6 +568,7 @@ def fence_no_bar_after(tree: Path, through: str,
                 continue
             top = index.max()
             latest = max(latest, str(top)[:10])
+            state.append((str(path.relative_to(tree)), str(top)[:10]))
             if top > ceiling:
                 violations.append({"path": str(path.relative_to(tree)),
                                    "max_date": str(top)[:10]})
@@ -585,6 +589,7 @@ def fence_no_bar_after(tree: Path, through: str,
             continue
         top = index.max()
         latest = max(latest, str(top)[:10])
+        state.append((relative, str(top)[:10]))
         if top > ceiling:
             violations.append({"path": relative, "max_date": str(top)[:10]})
         elif top > pass_ceiling:
@@ -600,6 +605,7 @@ def fence_no_bar_after(tree: Path, through: str,
     return {
         "files_scanned": scanned, "ceiling": through, "max_date_found": latest,
         "violations": 0,
+        "state_digest": _canonical_sha256(sorted(state))[:12],
         "pass_ceiling": str(pass_ceiling)[:10],
         "ahead_of_pass": ahead_of_pass,
         "ahead_of_pass_count": len(ahead_of_pass),
@@ -1079,19 +1085,25 @@ def build_board(vintage: Path, *, through: str, work: Path, timeout: int = 7200,
 def tree_fingerprint(manifest: dict[str, Any]) -> str:
     """A short digest of the price tree state a board was built over.
 
-    Cheap and total: the overlay manifest already records every file it touched, how
-    many sessions it added, and the fence's own scan count, so hashing it captures
-    exactly the axis a board build can differ on without its ``as_of`` moving.
+    It comes from the FENCE — (path, last session) for every price file it scanned —
+    and deliberately not from the overlay's own manifest.  An earlier version hashed the
+    manifest and was keyed on the DELTA rather than the RESULT: running the control pass
+    against a tree left at 2026-08-11 by a previous run produced "truncated 3,596 files,
+    appended none", while running it against a tree already at 2026-08-10 produced
+    "changed nothing" — two different fingerprints for the identical tree, so every run
+    discarded the previous run's cache and rebuilt a 13-minute board for nothing.
+    Keyed on the resulting state, an identical tree is an identical key.
     """
-    payload = {
+    fence = manifest.get("fence") or {}
+    digest = fence.get("state_digest")
+    if digest:
+        return str(digest)
+    # Pre-fence manifests (or a fence that scanned nothing) fall back to the delta, and
+    # say so by shape rather than pretending to be a state digest.
+    return "delta-" + _canonical_sha256({
         "through": manifest.get("through"),
-        "live_price_source_commit": manifest.get("live_price_source_commit"),
         "totals": manifest.get("totals"),
-        "files_scanned": (manifest.get("fence") or {}).get("files_scanned"),
-        "files": sorted((rel, row.get("added_sessions"))
-                        for rel, row in (manifest.get("files") or {}).items()),
-    }
-    return _canonical_sha256(payload)[:12]
+    })[:8]
 
 
 def board_fidelity(rebuilt: dict, reference: dict) -> dict[str, Any]:
@@ -2243,14 +2255,24 @@ def write_artifacts(repo: Path, *, minted: list[dict], receipt: dict[str, Any],
     for plan in minted:
         path = plans_dir / f"{plan['id']}.json"
         if path.exists():
-            # The engine's duplicate-id suppression should already have made this
-            # unreachable, but "should" is doing load-bearing work in that sentence and
-            # the thing at stake is a LIVE plan file. Refuse rather than overwrite: a
-            # clobbered live plan is unrecoverable from this lane's own artifacts.
-            print("::error title=prophet-backfill-plan-collision::"
-                  f"{PLANS_RELDIR}/{plan['id']}.json already exists — the reconstruction "
-                  "would overwrite a plan it did not write", flush=True)
-            raise SystemExit(4)
+            # The engine's duplicate-id suppression should already have made a LIVE
+            # collision unreachable, but "should" is doing load-bearing work there and
+            # the thing at stake is a live plan file, so it is refused rather than
+            # overwritten — a clobbered live plan is unrecoverable from this lane's own
+            # artifacts. This lane's OWN earlier output is a different case: a re-run
+            # before the artifacts are committed is how the run is redone, and refusing
+            # it would make the lane single-shot per checkout rather than per window.
+            # Idempotence is the committed disclosure's job, and it says so by name.
+            try:
+                incumbent = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001 - unreadable is not "mine", so refuse
+                incumbent = {}
+            if incumbent.get("origination_mode") != ORIGINATION_MODE:
+                print("::error title=prophet-backfill-plan-collision::"
+                      f"{PLANS_RELDIR}/{plan['id']}.json already exists and was not "
+                      "written by this window — the reconstruction would overwrite a "
+                      "plan it did not write", flush=True)
+                raise SystemExit(4)
         path.write_bytes(_plan_bytes(plan))
 
     # Receipts are IMMUTABLE publication records — same discipline as the nightly's
