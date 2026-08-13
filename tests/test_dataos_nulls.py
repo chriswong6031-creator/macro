@@ -217,13 +217,19 @@ def test_a_masked_zero_is_caught_on_non_builtin_numeric_types(zero: object) -> N
     assert validate_value(zero, STRICT) is MissingReason.NO_COVERAGE
 
 
-def test_a_masked_zero_is_caught_on_numpy_scalars() -> None:
-    """The real thing, wherever numpy is installed.  Skipped in the stdlib-only CI
-    lane — ``_NumpyLikeScalar`` above pins the same code path there."""
-    np = pytest.importorskip("numpy")
-    for zero in (np.int64(0), np.int32(0), np.float64(0.0), np.float32(0.0)):
-        assert validate_value(zero, STRICT) is MissingReason.NO_COVERAGE, zero
-        assert validate_value(zero, NullPolicy(zero_is_meaningful=True)) is None
+# A `pytest.importorskip("numpy")` variant of the case above USED TO LIVE HERE and was
+# removed rather than kept, because it could never run: `dataos-foundation` is a
+# deliberately thin lane (pytest + pyyaml only) whose narrow dependency set is the
+# CANARY for a pandas/numpy import creeping into lib/dataos — so numpy is absent there
+# BY DESIGN and always will be. `scripts/check_skip_only_suites.py` is right to call a
+# suite that skips in every job that names it dead: it reads as coverage and executes
+# nowhere. Adding numpy to the lane to "fix" the skip would have silenced the guard by
+# destroying the very property the lane exists to protect.
+#
+# Nothing is lost. `_NumpyLikeScalar` is a `numbers.Number` that is NOT an int/float
+# subclass — precisely the shape of `np.int64`/`np.float64` for this code path, which
+# branches on `isinstance(value, (int, float))` and nothing numpy-specific. It is
+# exercised above, in the lane, on every run.
 
 
 def test_a_bool_is_not_a_masked_zero_whatever_int_says_about_it() -> None:
