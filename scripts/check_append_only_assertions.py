@@ -1436,14 +1436,33 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if not stores:
-        print(
-            "::notice title=append-only-assertions::config/synapse.yml absent or "
-            "unreadable — NOT audited",
-            flush=True,
-        )
+        # COULD NOT LOOK != LOOKED AND FOUND NOTHING.
+        # `findings: null` (not []) is load-bearing: an empty list is indistinguishable
+        # from a clean audit, which is the substitution
+        # research/MASTERMIND_EVALUATION_STANDARDS.md §9.2 exists to forbid — and it would
+        # be committed here by the very guard that polices honest absence.
+        # --json emits ONLY JSON, never a ::notice line ahead of it, or a consumer piping
+        # to jq breaks on the first byte.
         if args.json:
-            print(json.dumps({"root": str(root), "stores": 0, "findings": []}), flush=True)
-        return 0
+            print(
+                json.dumps(
+                    {
+                        "root": str(root),
+                        "store_set_absent": True,
+                        "stores": 0,
+                        "findings": None,
+                    }
+                ),
+                flush=True,
+            )
+        else:
+            print(
+                "::notice title=append-only-assertions::config/synapse.yml absent or "
+                "unreadable — NOT audited (could not look; this is not a clean result)",
+                flush=True,
+            )
+        # Fail CLOSED under --strict: unable to classify is not a pass.
+        return 1 if args.strict else 0
 
     gates = load_gate_scripts(root)
     hits = scan_tree(root, stores, gates)
