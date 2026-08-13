@@ -728,11 +728,16 @@ def test_a_parked_fetch_is_released_when_a_timing_budget_blows() -> None:
     tests above park an item on the never-shut-down module executor and assert
     wall-clock budgets before releasing it, so on a loaded runner the assertion
     fired first and the release never ran.  The stranded item was then picked up
-    at interpreter exit — past ``monkeypatch`` teardown, so through the real
+    after the test ended — past ``monkeypatch`` teardown, so through the real
     ``_fetch_stock_record`` and its unbounded ``socket.getaddrinfo`` — and the
-    process hung with the pytest summary already printed.  Locally reproduced:
-    without the release the run reports ``1 failed in 0.96s`` and then never
-    exits; with it the same failing run exits in 1.47s.
+    process hung with the pytest summary already printed.  Deterministically
+    reproduced (resolver blackholed, all six executor workers held busy so the
+    singleflight item was still queued when ``started.wait(1.0)`` blew):
+    unpatched, pytest printed ``1 failed`` and interpreter exit then hung
+    forever in ``_python_exit``'s join — a watchdog killed it at 30s with the
+    worker parked inside ``getaddrinfo`` under the real ``_fetch_stock_record``;
+    with this file's finally-release, the identical failing run exited cleanly
+    in 8s.
     """
     release = threading.Event()
 
