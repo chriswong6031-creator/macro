@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T02:40:19.244796+00:00",
-  "count": 1031,
+  "generated_at": "2026-08-13T03:11:21.492918+00:00",
+  "count": 1032,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -40,6 +40,7 @@
     "RBC",
     "Rabobank",
     "Raymond James",
+    "RiskHedge",
     "Royal London on Private Credit",
     "S&T",
     "SEB",
@@ -858,6 +859,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ijm734vtw5s-6419c3",
+      "title": "DI August 2026",
+      "institution": "RiskHedge",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:31:31Z",
+      "summary_points": [
+        "**AI Supply Chain Bottlenecks**: TSMC controls 70% of silicon wafer supply; wafer production constraints and power demands for AI scaling (processing duration doubling monthly) create systemic risk, with manufacturing capacity as the critical bottleneck.",
+        "**Copper Wall Limitation**: Copper cabling fails at high-speed AI data transmission (signals degrade <1m), forcing shift to photonics; copper’s usable range collapses to centimeters by 2028, halting further scaling.",
+        "**Photonics as Critical Infrastructure Shift**: Fiber optics replace copper for bandwidth, heat, and interference issues; NVIDIA’s Vera Rubin Ultra NVL576 drives *scale-up* and *scale-across* via optical networking, making photonics essential for next-gen AI clusters.",
+        "**Lumentum’s Dominance in Photonics**: Holds 50-60% of high-speed EML market (sole 200G supplier at scale), with 77% YoY revenue growth in AI components; owns four integrated light platforms (EMLs, VCSELs) unmatched by competitors.",
+        "**Persistent Supply Shortage**: Demand exceeds supply by >30% (widened from 25-30%), supported by take-or-pay contracts and intentional capacity retention for premium pricing, indicating durable scarcity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
       "language": "en",
       "needs_metadata": false
     },
