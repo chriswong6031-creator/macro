@@ -909,6 +909,16 @@ jobs:
         run: python -m pytest tests/test_options_signal_episode.py -q
       - name: sparse exact-option selector preregistration (zero denominator, permanent retrospective fence, no authority)
         run: python -m pytest tests/test_options_sparse_selector_prereg.py -q
+      - name: inert sparse selector runtime + private authenticated dictionary (fail-closed authority and cache forgery)
+        run: >-
+          python -m pytest
+          tests/test_options_sparse_selector_runtime.py
+          tests/test_private_auth_dict.py -q -rs
+      - name: inert sparse selector 4,096-candidate full-drain benchmark (1,024 objects, 4 MiB intent caps)
+        run: >-
+          SPARSE_SELECTOR_PERF=1 python -m pytest
+          tests/test_options_sparse_selector_runtime.py::test_4096_candidate_benchmark
+          -q -rs
       - name: options signal campaign v2 (immutable revisions, causal anchors, exact checkpoint)
         run: python -m pytest tests/test_options_signal_campaign.py -q
       - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
