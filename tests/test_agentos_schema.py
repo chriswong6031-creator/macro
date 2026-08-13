@@ -14,6 +14,7 @@ print, never through a logger.
 """
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -573,11 +574,32 @@ def test_annotations_start_the_line(store: Path) -> None:
         assert line.startswith("::"), f"annotation does not start the line: {line!r}"
 
 
-def test_stubs_are_visibly_stubs() -> None:
-    """A not-yet-implemented subcommand must announce itself, never exit silently."""
-    for command in ("compile-context",):
-        result = subprocess.run(
-            [sys.executable, str(CLI), command], capture_output=True, text=True, cwd=REPO
-        )
-        assert result.returncode == 0
-        assert "not implemented" in result.stdout, f"{command} exited silently"
+def test_no_subcommand_still_announces_itself_as_a_stub() -> None:
+    """Every advertised subcommand must do work or say it cannot — never exit silently.
+
+    This test used to pin `compile-context` as a visible STUB.  Phase 3 landed it, so it
+    now pins the opposite: the subcommand must produce a real bundle, and no stub
+    language may survive anywhere in the CLI.  The shape of the check is deliberately
+    unchanged — a subcommand that silently returns 0 having done nothing is the failure
+    both versions exist to refuse.
+    """
+    source = CLI.read_text(encoding="utf-8")
+    assert "not implemented until" not in source, "a stub announcement outlived its stub"
+
+    usage_error = subprocess.run(
+        [sys.executable, str(CLI), "compile-context"], capture_output=True, text=True, cwd=REPO
+    )
+    assert usage_error.returncode == 2, (
+        "neither a task nor --workstream is a USAGE error, not a silent empty bundle"
+    )
+    assert "exactly one" in usage_error.stderr
+
+    real = subprocess.run(
+        [sys.executable, str(CLI), "compile-context", "--workstream", "AGENT-OS",
+         "--now", "2026-08-12T14:00:00Z"],
+        capture_output=True, text=True, cwd=REPO,
+    )
+    assert real.returncode == 0, real.stdout + real.stderr
+    bundle = json.loads(real.stdout)
+    assert bundle["schema"] == "context_bundle.v1"
+    assert any(section["items"] for section in bundle["sections"]), "an empty bundle is a stub"

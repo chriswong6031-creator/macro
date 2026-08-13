@@ -44,7 +44,8 @@ Subcommands:
     validate          schema + referential integrity over agentos/ (Phase 0)
     status            materialize agent_os_state.v1 + docs/AGENT_OS_STATE.md (Phase 2)
     brief             CEO brief (Phase 2; spec in research/MASTERMIND_CEO_BRIEF_SPEC.md)
-    compile-context   bounded cited bundle for a workstream (Phase 3)
+    compile-context   bounded, cited context_bundle.v1 for a workstream or a task
+                      (Phase 3; architecture §8).  Reads and cites; writes nothing.
 
 Usage::
 
@@ -55,6 +56,8 @@ Usage::
     python3 scripts/agentos.py brief --since 24h
     python3 scripts/agentos.py brief --full
     python3 scripts/agentos.py brief --json
+    python3 scripts/agentos.py compile-context --workstream PROPHET-US-ENTRY-TIMING
+    python3 scripts/agentos.py compile-context "fix prophet late entry" --text --budget 4000
 """
 from __future__ import annotations
 
@@ -67,7 +70,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 try:
     import yaml
@@ -960,12 +963,6 @@ def cmd_validate(args: argparse.Namespace) -> int:
     )
     print(summary, flush=True)
     return 1 if hard else 0
-
-
-def _not_yet(phase: str, doc: str) -> int:
-    """A stub must be unmistakably a stub — never a silent success."""
-    print(f"::warning title=agentos::not implemented until {phase}; see {doc}", flush=True)
-    return 0
 
 
 # ------------------------------------------------------- Phase 2: join inputs
@@ -2087,8 +2084,1137 @@ def cmd_brief(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_compile_context(_args: argparse.Namespace) -> int:
-    return _not_yet("Phase 3", "research/MASTERMIND_AGENT_OS_ARCHITECTURE.md")
+# ================================================== Phase 3: context compilation
+#
+# `compile-context` answers ONE question — "what does a session picking up this work
+# need to know?" — and answers it by WALKING the record graph, never by guessing.  It
+# reads, resolves, filters, ranks, compiles and cites.  It cannot schedule, assign,
+# lease, gate, arm, or mutate anything (I1), and it writes NOTHING: stdout only.  The
+# exit code carries schema truth, never work state — 1 only when a caller NAMES a
+# workstream that is unknown or malformed (fail-closed on schema, I4); a missing join,
+# an unresolvable free-text task, and an ambiguous one all exit 0 with the reason
+# printed, because degrading honestly is the whole point of a context bundle.
+#
+# RETRIEVAL IS BORROWED, NOT REBUILT (architecture §8; plan §Phase 3 explicit non-goal).
+# Free text goes through `engine.context_index.packet.build_packet` — the same index
+# `scripts/context_index_query.py search` uses — and its hits only ever VOTE for a
+# workstream.  Nothing a search returns becomes bundle CONTENT; content comes from the
+# graph walk alone.  That is what makes "records from other programs are excluded"
+# structural rather than a relevance threshold nobody can audit, and it is why there is
+# no vector store, no embedding, and no second scorer here.
+#
+# EXCLUSION IS BY FIELD, NOT BY RELEVANCE.  A superseded decision, an expired discovery,
+# an older handoff and a malformed record are dropped because a field says so, and each
+# one is NAMED in `excluded` with the reason.  A bundle that silently omits is
+# indistinguishable from a bundle where the thing never existed — the same failure the
+# CEO brief's overflow line exists to prevent, one tier up.
+
+BUNDLE_SCHEMA = "context_bundle.v1"
+BUNDLE_BUDGET_DEFAULT = 8000      # architecture §8: "capped (default ~8k tokens)"
+BUNDLE_BUDGET_MIN = 500           # a floor, so --budget 0 cannot render an empty bundle
+BUNDLE_CHARS_PER_TOKEN = 4        # packet.py's convention, mirrored not imported
+SEARCH_MAX_RESULTS = 20           # mirrors context_index_query.py `search`
+
+_KILL_REGISTRY = _ROOT / "config" / "compiled_kill_registry.yml"
+_CONTEXT_INDEX_ENV = "MACRO_CONTEXT_INDEX_DIR"
+_CONTEXT_INDEX_DIR = _ROOT / ".context-index"
+_MACRO_PROJECT = "macro-dashboard"
+_MACRO_DB = "shared.sqlite"
+_DNR_SOURCE = "research/DO_NOT_REBUILD.md"
+_PROGRAMS_REL = "config/mastermind_programs.yml"
+
+EXCERPT_WORKSTREAM_BODY = 700
+EXCERPT_DECISION = 1200
+EXCERPT_DISCOVERY = 700
+EXCERPT_HANDOFF = 1600
+
+DNR_RE = re.compile(r"DNR:([A-Z0-9][A-Z0-9-]*)")
+WS_MENTION_RE = re.compile(r"\bWS[-:]([A-Z0-9][A-Z0-9-]*)\b")
+HANDOFF_DATE_RE = re.compile(r"-(\d{4}-\d{2}-\d{2})$")
+
+# Presentation order IS authority order, and the framings are the contract (WP-E): a
+# receiving session must be able to tell, without reading the architecture, that a
+# discovery is evidence and a DNR row is law.  A bundle that lists them as peers is how
+# an LLM ends up "deciding" a kill row is outdated.
+SECTIONS: tuple[tuple[str, str, str], ...] = (
+    (
+        "higher_law",
+        "HIGHER LAW — outranks every Agent OS record below",
+        "DNR rows, the company P0 objective, and the owning program row. Nothing in "
+        "this bundle may be read as overriding these.",
+    ),
+    (
+        "workstream",
+        "WORKSTREAM STATE (authoritative for state, not for permission)",
+        "What the work is and where it stands. Agent OS records work; it never decides "
+        "whether work may run (invariant I1).",
+    ),
+    (
+        "decisions",
+        "DECISIONS (institutional reasoning — do not override higher law)",
+        "Current decisions only. Superseded records are named under EXCLUDED with the "
+        "key that replaced them; they are never co-equal here.",
+    ),
+    (
+        "discoveries",
+        "DISCOVERIES (evidence, not policy)",
+        "Fresh findings only. Expired, superseded, and uncited-and-stale discoveries "
+        "are excluded by field, not by relevance.",
+    ),
+    (
+        "handoff",
+        "LATEST HANDOFF (transfer state, not strategy)",
+        "Where the last session stopped. Only the latest survives — older handoffs are "
+        "excluded rather than merged into a composite nobody wrote.",
+    ),
+    (
+        "artifacts",
+        "ARTIFACTS (pointers — read the primary source)",
+        "Paths only. A record points at prose; it never absorbs it.",
+    ),
+)
+
+# Packing priority, highest first.  `workstream_block` is the "never split the top
+# result" analog from packet._pack_results: without it the bundle can answer nothing.
+PACK_ORDER = (
+    "workstream_block", "higher_law", "handoff", "decisions",
+    "discoveries", "dependency", "artifacts",
+)
+_PACK_SECTION = {
+    "workstream_block": "workstream",
+    "dependency": "workstream",
+    "higher_law": "higher_law",
+    "handoff": "handoff",
+    "decisions": "decisions",
+    "discoveries": "discoveries",
+    "artifacts": "artifacts",
+}
+
+
+def _estimate_tokens(text: str) -> int:
+    """Chars/4, the same conservative ratio packet.py uses.
+
+    Deliberately a local four-liner rather than an import: ``--workstream`` mode must
+    never touch ``engine/``, and a token estimator is not worth coupling the knowledge
+    plane to the retrieval package for.
+    """
+    return max(1, len(text) // BUNDLE_CHARS_PER_TOKEN)
+
+
+def _flat(value: Any) -> str:
+    """Collapse an authored YAML value to one readable line, deterministically."""
+    if isinstance(value, dict):
+        return "; ".join(f"{k}={_flat(value[k])}" for k in sorted(value))
+    if isinstance(value, list):
+        return " | ".join(_flat(item) for item in value)
+    return " ".join(str(value).split())
+
+
+def _clip(text: str, limit: int) -> str:
+    """Cap an excerpt and SAY that it was capped — a silent cut reads as the whole."""
+    cleaned = (text or "").strip()
+    if len(cleaned) <= limit:
+        return cleaned
+    return cleaned[: max(0, limit - 1)].rstrip() + "…"
+
+
+def _fields(rec: dict[str, Any], fields: tuple[tuple[str, str], ...]) -> str:
+    """Render ``(label, field)`` pairs that are present, in the given order."""
+    lines: list[str] = []
+    for label, name in fields:
+        value = rec.get(name)
+        if value is None or (isinstance(value, (str, list, dict)) and len(value) == 0):
+            continue
+        lines.append(f"{label}: {_flat(value)}")
+    return "\n".join(lines)
+
+
+def _bundle_item(
+    *, kind: str, key: str | None, path: str, locator: str, authority_class: str,
+    status: str, updated: str | None, excerpt: str, why: str,
+) -> dict[str, Any]:
+    """One cited line of testimony.  Every field here exists so the reader can OPEN it."""
+    return {
+        "kind": kind,
+        "key": key,
+        "path": path,
+        "locator": locator,
+        "authority_class": authority_class,
+        "status": status,
+        "updated": updated,
+        "excerpt": excerpt,
+        "why_included": why,
+    }
+
+
+def _pointer_authority(path: str) -> str:
+    """Authority class of a pointed-at file, mirroring config/context_index.yml.
+
+    Three rules, exactly the ones the corpus registration already draws, so a pointer
+    never claims a rank the index would not give the same file.
+    """
+    if path.endswith(".py"):
+        return "A2"
+    if path.startswith("config/") and path.endswith((".yml", ".yaml")):
+        return "A1"
+    return "A3"
+
+
+def _repo_sha() -> str:
+    """Local HEAD.  Reuses ``_git`` — no new subprocess site, no network."""
+    return (_git("rev-parse", "HEAD") or "").strip()
+
+
+def _normalize_ws_key(raw: str) -> str:
+    """``WS:KEY``/``WS-KEY``/``KEY`` all name the same record."""
+    text = (raw or "").strip()
+    for prefix in ("WS:", "WS-"):
+        if text.startswith(prefix):
+            return text[len(prefix):].strip()
+    return text
+
+
+def discovery_citation_counts(records: dict[str, dict[str, Any]]) -> dict[str, int]:
+    """Inbound ``DSC:`` citations per discovery, from every WS/DEC/HND in the store.
+
+    FACTORED, not reimplemented.  ``check_references`` uses this to flag a 90-day GC
+    candidate and the compiler uses it to decide whether a discovery is still fresh; two
+    independent implementations of "is anything citing this?" would eventually disagree,
+    and the disagreement would be invisible — one surface would drop a finding the other
+    still flagged as live.  HANDOFFS COUNT, which is the non-obvious half: a discovery
+    whose only reader is a handoff is cited, not orphaned.
+    """
+    dsc = {k[4:] for k in records if k.startswith("DSC/")}
+    counts = {key: 0 for key in dsc}
+    for ident, rec in records.items():
+        if not ident.startswith(("WS/", "DEC/", "HND/")):
+            continue
+        for ref in _refs(rec.get("discoveries"), "DSC"):
+            if ref in counts:
+                counts[ref] += 1
+    return counts
+
+
+# ---------------------------------------------------- Phase 3: target resolution
+
+
+def _default_search(query: str) -> dict[str, Any] | None:
+    """Query the existing context index.  ``None`` when there is no index to query.
+
+    Wired exactly as ``context_index_query.py search`` wires it — same db dir, same
+    project map, same mode — because a compiler that retrieved differently from the CLI
+    would answer differently from the CLI, and nobody would know which was right.  The
+    import is LAZY on purpose: ``--workstream`` mode must be able to run in a checkout
+    where ``engine/`` is not even present.
+    """
+    raw = os.environ.get(_CONTEXT_INDEX_ENV, "").strip()
+    db_dir = Path(raw) if raw else _CONTEXT_INDEX_DIR
+    if not (db_dir / _MACRO_DB).exists():
+        return None
+    from engine.context_index.packet import build_packet  # local: never on the WS path
+
+    return build_packet(
+        query=query,
+        db_dir=db_dir,
+        project_db_map={_MACRO_PROJECT: _MACRO_DB},
+        repo_root_map={_MACRO_PROJECT: _ROOT},
+        mode="research",
+        max_results=SEARCH_MAX_RESULTS,
+    )
+
+
+def _search_packet(
+    query: str,
+    search_fn: Callable[[str], dict[str, Any] | None] | None,
+    degraded: Degraded,
+) -> dict[str, Any] | None:
+    """Run the retrieval seam and surface everything it could not promise."""
+    fn = search_fn or _default_search
+    try:
+        packet = fn(query)
+    except Exception as exc:  # fail-OPEN: retrieval is a join, not a schema (I4)
+        degraded.add(
+            f"context index query failed ({exc.__class__.__name__}) — "
+            "context index unavailable — pass --workstream"
+        )
+        return None
+    if not isinstance(packet, dict):
+        return None
+    if packet.get("index_stale"):
+        # packet.py's first absolute rule: index_stale must be VISIBLE.  A bundle
+        # compiled off a stale index can miss a record written this morning.
+        degraded.add(
+            "context index is STALE (indexed sha != repo HEAD) — a record written since "
+            "the last build is not retrievable; rebuild with scripts/context_index_build.py"
+        )
+    if packet.get("no_answer_reason"):
+        degraded.add(f"context index returned no answer: {packet['no_answer_reason']}")
+    return packet
+
+
+def _vote_for_paths(
+    packet: dict[str, Any], store: Store
+) -> dict[str, int]:
+    """Map search hits onto workstream votes.  INTEGER weights, deterministic order.
+
+    A retrieved path votes for the workstreams it BELONGS to, resolved through the same
+    citation graph the walk uses: a decision votes for every workstream that cites it and
+    every workstream it declares it affects; a discovery for its citers and its declared
+    scope; a handoff for its workstream; any other path for the workstreams that own or
+    cite it.  Ranks, never float scores — a fused score copied into a second ranker is a
+    number that looks meaningful and is not comparable across queries.
+    """
+    ws = store.of_type("WS")
+    dec = store.of_type("DEC")
+    dsc = store.of_type("DSC")
+    hnd = store.of_type("HND")
+
+    cite_dec: dict[str, set[str]] = {}
+    cite_dsc: dict[str, set[str]] = {}
+    for key in sorted(ws):
+        for ref in _refs(ws[key].get("decisions"), "DEC"):
+            cite_dec.setdefault(ref, set()).add(key)
+        for ref in _refs(ws[key].get("discoveries"), "DSC"):
+            cite_dsc.setdefault(ref, set()).add(key)
+
+    def owners(path: str) -> list[str]:
+        name = path.rsplit("/", 1)[-1]
+        if not name.endswith(".md"):
+            name = ""
+        stem = name[:-3] if name else ""
+        if path.startswith("agentos/workstreams/") and stem.startswith("WS-"):
+            key = stem[3:]
+            return [key] if key in ws else []
+        if path.startswith("agentos/decisions/") and stem.startswith("DEC-"):
+            key = stem[4:]
+            hits = set(cite_dec.get(key, ()))
+            rec = dec.get(key)
+            if rec:
+                hits |= {k for k in _refs(rec.get("affects"), "WS") if k in ws}
+            return sorted(hits)
+        if path.startswith("agentos/discoveries/") and stem.startswith("DSC-"):
+            key = stem[4:]
+            hits = set(cite_dsc.get(key, ()))
+            rec = dsc.get(key)
+            if rec:
+                hits |= {k for k in _refs(rec.get("scope"), "WS") if k in ws}
+            return sorted(hits)
+        if path.startswith("agentos/handoffs/") and stem:
+            rec = hnd.get(stem)
+            keys = _refs(rec.get("workstream"), "WS") if rec else []
+            if not keys:
+                match = HANDOFF_DATE_RE.search(stem)
+                if match:
+                    keys = [stem[: match.start()]]
+            return sorted({k for k in keys if k in ws})
+        hits: set[str] = set()
+        for key in sorted(ws):
+            rec = ws[key]
+            for entry in rec.get("artifacts") or []:
+                if isinstance(entry, str):
+                    resolved = _resolve_path(entry, rec)
+                    if resolved and resolved[0] == "macro" and resolved[1] == path:
+                        hits.add(key)
+            for entry in rec.get("owns_paths") or []:
+                if isinstance(entry, str):
+                    resolved = _resolve_path(entry, rec)
+                    if resolved and resolved[0] == "macro" and fnmatch.fnmatch(
+                        path, resolved[1]
+                    ):
+                        hits.add(key)
+        return sorted(hits)
+
+    votes: dict[str, int] = {}
+    for index, result in enumerate(packet.get("results") or []):
+        weight = SEARCH_MAX_RESULTS - index
+        if weight <= 0:
+            break
+        path = str(result.get("path") or "")
+        if not path:
+            continue
+        for key in owners(path):
+            votes[key] = votes.get(key, 0) + weight
+    return votes
+
+
+def _candidate_rows(
+    ws: dict[str, dict[str, Any]], keys: Iterable[str], votes: dict[str, int], why: str
+) -> list[dict[str, Any]]:
+    return [
+        {
+            "key": f"WS:{key}",
+            "title": _flat(ws[key].get("title")),
+            "score": votes.get(key, 0),
+            "why": why,
+        }
+        for key in keys
+    ]
+
+
+def _resolve_target(
+    store: Store,
+    *,
+    workstream: str | None,
+    task: str | None,
+    search_fn: Callable[[str], dict[str, Any] | None] | None,
+    degraded: Degraded,
+) -> dict[str, Any]:
+    """Which workstream is this about?  Degrade honestly rather than guess.
+
+    Four outcomes, and the last two are FEATURES: `explicit` and `cited-key` are exact,
+    `search` is a decisive vote, `ambiguous` means two plausible answers and the caller
+    must say which — a compiler that picked one would hand a session a confident bundle
+    about the wrong work, which is worse than no bundle at all.
+    """
+    ws = store.of_type("WS")
+    everything = _candidate_rows(
+        ws, sorted(ws), {}, "no workstream could be resolved — every one is a candidate"
+    )
+
+    if workstream is not None:
+        key = _normalize_ws_key(workstream)
+        if key in ws:
+            return {"key": key, "resolution": "explicit", "candidates": [],
+                    "no_answer_reason": None}
+        return {"key": None, "resolution": "explicit", "candidates": everything,
+                "no_answer_reason": f"unknown workstream WS:{key}"}
+
+    text = task or ""
+    cited = sorted({m for m in WS_MENTION_RE.findall(text) if m in ws})
+    if len(cited) == 1:
+        return {"key": cited[0], "resolution": "cited-key", "candidates": [],
+                "no_answer_reason": None}
+    if len(cited) > 1:
+        named = ", ".join(f"WS:{k}" for k in cited)
+        return {
+            "key": None, "resolution": "ambiguous",
+            "candidates": _candidate_rows(ws, cited, {}, "named by key in the task text"),
+            "no_answer_reason": f"the task text names {named} — pick one with --workstream",
+        }
+
+    packet = _search_packet(text, search_fn, degraded)
+    if packet is None:
+        degraded.add("context index unavailable — pass --workstream")
+        return {"key": None, "resolution": "unresolved", "candidates": everything,
+                "no_answer_reason": "context index unavailable — no workstream could be "
+                                    "resolved from free text; pass --workstream"}
+
+    votes = _vote_for_paths(packet, store)
+    if not votes:
+        return {"key": None, "resolution": "unresolved", "candidates": everything,
+                "no_answer_reason": "no search result maps to a workstream — pass "
+                                    "--workstream"}
+    ranked = sorted(votes.items(), key=lambda item: (-item[1], item[0]))
+    if len(ranked) == 1 or ranked[0][1] >= 2 * ranked[1][1]:
+        return {"key": ranked[0][0], "resolution": "search", "candidates": [],
+                "no_answer_reason": None}
+    top, second = ranked[0], ranked[1]
+    return {
+        "key": None,
+        "resolution": "ambiguous",
+        "candidates": _candidate_rows(
+            ws, [k for k, _ in ranked], votes, "ranked by context-index votes"
+        ),
+        "no_answer_reason": (
+            f"WS:{top[0]} ({top[1]}) does not outrank WS:{second[0]} ({second[1]}) by "
+            "2x — pick one with --workstream"
+        ),
+    }
+
+
+# --------------------------------------------------------- Phase 3: higher law
+
+
+def _load_kill_rows(degraded: Degraded) -> dict[str, dict[str, Any]] | None:
+    """Compiled DNR rows by key, or None when unreadable (fail-open join)."""
+    if not _KILL_REGISTRY.exists():
+        degraded.add(f"{_rel(_KILL_REGISTRY)} absent — DNR citations unresolved")
+        return None
+    try:
+        doc = yaml.safe_load(_KILL_REGISTRY.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        degraded.add(
+            f"{_rel(_KILL_REGISTRY)} unreadable ({exc.__class__.__name__}) — "
+            "DNR citations unresolved"
+        )
+        return None
+    entries = doc.get("entries") if isinstance(doc, dict) else None
+    if not isinstance(entries, list):
+        degraded.add(f"{_rel(_KILL_REGISTRY)} has no 'entries' list — DNR unresolved")
+        return None
+    return {
+        str(row["key"]): row
+        for row in entries
+        if isinstance(row, dict) and isinstance(row.get("key"), str)
+    }
+
+
+def _load_program_row(program: str, degraded: Degraded) -> dict[str, Any] | None:
+    """The owning program's registry row, or None (fail-open join)."""
+    if not _PROGRAMS.exists():
+        degraded.add(f"{_PROGRAMS_REL} absent — program context omitted")
+        return None
+    try:
+        doc = yaml.safe_load(_PROGRAMS.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        degraded.add(
+            f"{_PROGRAMS_REL} unreadable ({exc.__class__.__name__}) — program omitted"
+        )
+        return None
+    programs = doc.get("programs") if isinstance(doc, dict) else None
+    row = programs.get(program) if isinstance(programs, dict) else None
+    if not isinstance(row, dict):
+        degraded.add(f"{_PROGRAMS_REL} has no row for program {program!r} — omitted")
+        return None
+    return row
+
+
+PROGRAM_EXCERPT_FIELDS = (
+    ("name", "name"),
+    ("description", "description"),
+    ("purpose", "purpose"),
+    ("strategic role", "strategic_role"),
+    ("lifecycle", "lifecycle_state"),
+)
+
+
+def _higher_law_items(
+    rec: dict[str, Any], key: str, *, degraded: Degraded
+) -> list[dict[str, Any]]:
+    """DNR rows, the P0 objective, and the program row — everything that outranks."""
+    items: list[dict[str, Any]] = []
+
+    prose = list(rec.get("do_not_redo") or []) + list(rec.get("landmines") or [])
+    cited = sorted({
+        token for entry in prose if isinstance(entry, str)
+        for token in DNR_RE.findall(entry)
+    })
+    rows = _load_kill_rows(degraded) if cited else None
+    for token in cited:
+        row = (rows or {}).get(token)
+        if row is None:
+            # Fail-OPEN and LOUD.  An unresolvable DNR citation is a real problem for the
+            # reader, but it is the registry's problem, not a reason to refuse a bundle.
+            degraded.add(
+                f"DNR:{token} cited by WS:{key} does not resolve in "
+                f"{_rel(_KILL_REGISTRY)} — cite it as DNR:<KEY>, never by row number"
+            )
+            continue
+        items.append(_bundle_item(
+            kind="dnr",
+            key=f"DNR:{token}",
+            path=_DNR_SOURCE,
+            locator=f"{_DNR_SOURCE}#{token}",
+            authority_class="A1",
+            status=str(row.get("verdict") or "unknown"),
+            updated=None,
+            excerpt=_fields(row, (("topic", "topic"), ("verdict", "verdict"),
+                                  ("source", "source"), ("section", "section_name"))),
+            why=f"cited as DNR:{token} in WS:{key} do_not_redo/landmines",
+        ))
+
+    p0 = rec.get("p0")
+    if isinstance(p0, str) and p0:
+        p0_status = load_p0(degraded)
+        label = f"mastermind:{_STRATEGIC_STATE_REL.as_posix()}"
+        if p0_status is None:
+            pass  # load_p0 already said why; ranking stays neutral (I4)
+        elif p0 not in p0_status:
+            degraded.add(
+                f"p0 {p0!r} on WS:{key} is not an objective in {label} — P0 context omitted"
+            )
+        else:
+            items.append(_bundle_item(
+                kind="p0",
+                key=None,
+                path=label,
+                locator=f"{label}#p0.{p0}",
+                authority_class="A1",
+                status=p0_status[p0],
+                updated=None,
+                excerpt=f"P0 objective: {p0}\nstatus: {p0_status[p0]}",
+                why=f"WS:{key} declares p0: {p0}",
+            ))
+
+    program = rec.get("program")
+    if isinstance(program, str) and program:
+        row = _load_program_row(program, degraded)
+        if row is not None:
+            items.append(_bundle_item(
+                kind="program",
+                key=None,
+                path=_PROGRAMS_REL,
+                locator=f"{_PROGRAMS_REL}#programs.{program}",
+                authority_class="A1",
+                status=str(row.get("lifecycle_state") or "unknown"),
+                updated=None,
+                excerpt=_fields(row, PROGRAM_EXCERPT_FIELDS),
+                why=f"WS:{key} belongs to program {program}",
+            ))
+    return items
+
+
+# --------------------------------------------------- Phase 3: workstream block
+
+
+def _wave_line(wave: dict[str, Any], prs: dict[int, dict[str, Any]]) -> str:
+    bits = [f"{wave.get('id')} {_flat(wave.get('title'))} — {wave.get('status')}"]
+    deps = [d for d in (wave.get("depends_on") or []) if isinstance(d, str)]
+    if deps:
+        bits.append("deps: " + ", ".join(deps))
+    for number in _wave_prs(wave):
+        joined = prs.get(number)
+        # Fail-OPEN on the PR join: "unknown" is an honest answer, and it is the normal
+        # one in a sparse worktree where data/governance/ was never checked out.
+        bits.append(f"PR #{number} {joined['state'].upper() if joined else 'unknown'}")
+    if wave.get("next_action"):
+        bits.append("next: " + _flat(wave["next_action"]))
+    return " · ".join(bits)
+
+
+def _workstream_excerpt(
+    rec: dict[str, Any], prs: dict[int, dict[str, Any]]
+) -> str:
+    lines = [f"objective: {_flat(rec.get('objective'))}"]
+    lines.append(
+        f"status: {rec.get('status')} · class: {rec.get('class')} · "
+        f"blast_radius: {rec.get('blast_radius')} · ambiguity: {rec.get('ambiguity')}"
+    )
+    lines.append(
+        f"owner: {rec.get('owner')} · program: {rec.get('program')} · "
+        f"repos: {_flat(rec.get('repos'))}"
+    )
+    if rec.get("owns_paths"):
+        lines.append(f"owns_paths: {_flat(rec.get('owns_paths'))}")
+    waves = [w for w in (rec.get("waves") or []) if isinstance(w, dict)]
+    if waves:
+        lines.append("waves:")
+        lines.extend(f"  {_wave_line(wave, prs)}" for wave in waves)
+    if rec.get("blocked_by"):
+        lines.append(f"blocked_by: {_flat(rec.get('blocked_by'))}")
+    needs = rec.get("needs_ceo")
+    if isinstance(needs, dict):
+        lines.append(f"needs_ceo: {_flat(needs.get('question'))}")
+        if needs.get("recommendation"):
+            lines.append(f"  recommendation: {_flat(needs.get('recommendation'))}")
+    claim = rec.get("claim")
+    if isinstance(claim, dict):
+        # ADVISORY, and labelled so in the bundle itself.  Chairman ruling C2: a claim
+        # note is an author's note in git, never evidence that anyone is working now.
+        lines.append(
+            f"claim (ADVISORY — an author's note in git, blocks nothing, proves no live "
+            f"activity): by {claim.get('by')}, expires {claim.get('expires')}"
+        )
+    lines.append(f"next_action: {_flat(rec.get('next_action'))}")
+    body = _clip(rec.get("_body", ""), EXCERPT_WORKSTREAM_BODY)
+    if body:
+        lines += ["", "--- record body (excerpt) ---", body]
+    return "\n".join(lines)
+
+
+# ------------------------------------------------------------ Phase 3: the walk
+
+
+def compile_bundle(
+    store: Store,
+    *,
+    workstream: str | None = None,
+    task: str | None = None,
+    now: _dt.datetime,
+    budget: int = BUNDLE_BUDGET_DEFAULT,
+    builds: dict[str, Any] | None = None,
+    degraded: Degraded | None = None,
+    search_fn: Callable[[str], dict[str, Any] | None] | None = None,
+) -> dict[str, Any]:
+    """Compile ``context_bundle.v1``.  Pure read; never writes, never gates.
+
+    ``search_fn`` is the retrieval seam: ``None`` means the real context index (see
+    ``_default_search``).  It exists so a test can inject a packet without a built index
+    and so the fail-open path has somewhere to fail to — production always uses the index.
+    """
+    degraded = degraded if degraded is not None else Degraded()
+    budget = max(BUNDLE_BUDGET_MIN, int(budget))
+    target = _resolve_target(
+        store, workstream=workstream, task=task, search_fn=search_fn, degraded=degraded
+    )
+
+    envelope: dict[str, Any] = {
+        "schema": BUNDLE_SCHEMA,
+        "target": {
+            "workstream": f"WS:{target['key']}" if target["key"] else None,
+            "task": task,
+            "resolution": target["resolution"],
+            "candidates": target["candidates"],
+        },
+        "generated_at": _iso_z(now),
+        "repo_sha": _repo_sha(),
+        "token_budget": budget,
+        "token_estimate": 0,
+        "sections": [],
+        "excluded": [],
+        "omitted_due_to_budget": [],
+        "degraded": list(degraded.items),
+        "no_answer_reason": target["no_answer_reason"],
+    }
+    if target["key"] is None:
+        # Sections stay EMPTY.  A bundle that guessed a workstream and filled itself in
+        # would be indistinguishable from one that knew.
+        return envelope
+
+    key = target["key"]
+    ws_all = store.of_type("WS")
+    dec_all = store.of_type("DEC")
+    dsc_all = store.of_type("DSC")
+    hnd_all = store.of_type("HND")
+    rec = ws_all[key]
+    ws_path = store.paths[f"WS/{key}"]
+    program = rec.get("program") if isinstance(rec.get("program"), str) else None
+    prs = _pr_index(builds)
+    hard_paths = {problem.path for problem in store.problems if problem.hard}
+
+    excluded: list[dict[str, Any]] = []
+    groups: dict[str, list[dict[str, Any]]] = {name: [] for name in PACK_ORDER}
+    order = [0]
+
+    def emit(pack: str, item: dict[str, Any]) -> None:
+        item["_seq"] = order[0]
+        order[0] += 1
+        groups[pack].append(item)
+
+    def drop(kind: str, ident: str | None, path: Path | str, reason: str) -> None:
+        excluded.append({
+            "kind": kind,
+            "key": ident,
+            "path": _rel(path) if isinstance(path, Path) else path,
+            "reason": reason,
+        })
+
+    def malformed(kind: str, ident: str, path: Path) -> bool:
+        """A record any hard Problem targets is a lie; it is NAMED, never rendered."""
+        if path not in hard_paths:
+            return False
+        drop(kind, ident, path, "malformed record — excluded from the walk")
+        degraded.add(f"record excluded (malformed): {_rel(path)} — {ident}")
+        return True
+
+    # ---- higher law -------------------------------------------------------
+    for item in _higher_law_items(rec, key, degraded=degraded):
+        emit("higher_law", item)
+
+    # ---- workstream state (never dropped by budget) ------------------------
+    _, ws_updated = git_dates(ws_path)
+    emit("workstream_block", _bundle_item(
+        kind="workstream",
+        key=f"WS:{key}",
+        path=_rel(ws_path),
+        locator=f"{_rel(ws_path)}#frontmatter",
+        authority_class="A4",
+        status=str(rec.get("status") or "unknown"),
+        updated=ws_updated,
+        excerpt=_workstream_excerpt(rec, prs),
+        why="the compilation target",
+    ))
+    for field, label in (("landmines", "landmine"), ("do_not_redo", "settled — do not redo")):
+        for entry in rec.get(field) or []:
+            if not isinstance(entry, str) or not entry.strip():
+                continue
+            emit("workstream_block", _bundle_item(
+                kind="constraint",
+                key=f"WS:{key}",
+                path=_rel(ws_path),
+                locator=f"{_rel(ws_path)}#{field}",
+                authority_class="A4",
+                status=label,
+                updated=ws_updated,
+                excerpt=f"[{label.upper()}] {_flat(entry)}",
+                why=f"{field} declared on WS:{key}",
+            ))
+
+    # ---- dependency stubs: depth 1, never their subtrees --------------------
+    for dep in sorted(_refs(rec.get("depends_on"), "WS")):
+        dep_rec = ws_all.get(dep)
+        if dep_rec is None:
+            drop("dependency", f"WS:{dep}", "—", "dangling depends_on — no such record")
+            continue
+        dep_path = store.paths[f"WS/{dep}"]
+        if malformed("dependency", f"WS:{dep}", dep_path):
+            continue
+        _, dep_updated = git_dates(dep_path)
+        emit("dependency", _bundle_item(
+            kind="dependency",
+            key=f"WS:{dep}",
+            path=_rel(dep_path),
+            locator=f"{_rel(dep_path)}#frontmatter",
+            authority_class="A4",
+            status=str(dep_rec.get("status") or "unknown"),
+            updated=dep_updated,
+            excerpt=(
+                f"{_flat(dep_rec.get('title'))}\n"
+                f"status: {dep_rec.get('status')}\n"
+                f"next_action: {_flat(dep_rec.get('next_action'))}"
+            ),
+            why=f"WS:{key} depends_on WS:{dep} (stub only — open the record for its waves)",
+        ))
+
+    # ---- decisions ---------------------------------------------------------
+    cited_dec = set(_refs(rec.get("decisions"), "DEC"))
+    reasons: dict[str, list[str]] = {}
+    for ref in sorted(cited_dec):
+        reasons.setdefault(ref, []).append(f"cited by WS:{key}")
+    for dec_key in sorted(dec_all):
+        affects = [str(a).strip() for a in (dec_all[dec_key].get("affects") or [])
+                   if isinstance(a, str)]
+        if f"WS:{key}" in affects:
+            reasons.setdefault(dec_key, []).append(f"declares affects WS:{key}")
+        if program and program in affects:
+            reasons.setdefault(dec_key, []).append(f"declares affects program {program}")
+    rows: list[dict[str, Any]] = []
+    for dec_key in sorted(reasons):
+        dec_rec = dec_all.get(dec_key)
+        if dec_rec is None:
+            drop("decision", f"DEC:{dec_key}", "—", "dangling citation — no such record")
+            continue
+        dec_path = store.paths[f"DEC/{dec_key}"]
+        if malformed("decision", f"DEC:{dec_key}", dec_path):
+            continue
+        superseded = dec_rec.get("superseded_by")
+        if superseded:
+            replacement = _refs(superseded, "DEC")
+            named = f"DEC:{replacement[0]}" if replacement else _flat(superseded)
+            # NEVER co-equal.  Supersession is the whole reason both records survive; a
+            # bundle that listed them side by side would undo it.
+            drop("decision", f"DEC:{dec_key}", dec_path, f"superseded_by {named}")
+            continue
+        supersedes = _refs(dec_rec.get("supersedes"), "DEC")
+        note = ("\n[supersedes " + ", ".join(f"DEC:{s}" for s in supersedes) + "]"
+                if supersedes else "")
+        body = _fields(dec_rec, (("question", "question"), ("answer", "answer"),
+                                 ("rationale", "rationale")))
+        _, dec_updated = git_dates(dec_path)
+        rows.append({
+            "_date": str(_as_date(dec_rec.get("decided_at")) or ""),
+            "item": _bundle_item(
+                kind="decision",
+                key=f"DEC:{dec_key}",
+                path=_rel(dec_path),
+                locator=f"{_rel(dec_path)}#frontmatter",
+                authority_class="A3",
+                status=str(dec_rec.get("confidence") or "unknown"),
+                updated=dec_updated,
+                excerpt=_clip(body, EXCERPT_DECISION - len(note)) + note,
+                why="; ".join(reasons[dec_key]),
+            ),
+        })
+    rows.sort(key=lambda row: row["item"]["key"])
+    rows.sort(key=lambda row: row["_date"], reverse=True)
+    for row in rows:
+        emit("decisions", row["item"])
+
+    # ---- discoveries -------------------------------------------------------
+    citations = discovery_citation_counts(store.records)
+    cited_dsc = set(_refs(rec.get("discoveries"), "DSC"))
+    dsc_reasons: dict[str, list[str]] = {}
+    for ref in sorted(cited_dsc):
+        dsc_reasons.setdefault(ref, []).append(f"cited by WS:{key}")
+    for dsc_key in sorted(dsc_all):
+        # A repo-wide scope (`macro`) does NOT qualify: it would attach every finding in
+        # the repo to every workstream in it, which is the opposite of a bounded bundle.
+        scope = [str(s).strip() for s in (dsc_all[dsc_key].get("scope") or [])
+                 if isinstance(s, str) and str(s).strip() not in REPOS]
+        if key in scope or f"WS:{key}" in scope:
+            dsc_reasons.setdefault(dsc_key, []).append(f"scoped to WS:{key}")
+        if program and program in scope:
+            dsc_reasons.setdefault(dsc_key, []).append(f"scoped to program {program}")
+    rows = []
+    for dsc_key in sorted(dsc_reasons):
+        dsc_rec = dsc_all.get(dsc_key)
+        if dsc_rec is None:
+            drop("discovery", f"DSC:{dsc_key}", "—", "dangling citation — no such record")
+            continue
+        dsc_path = store.paths[f"DSC/{dsc_key}"]
+        if malformed("discovery", f"DSC:{dsc_key}", dsc_path):
+            continue
+        superseded = dsc_rec.get("superseded_by")
+        if superseded:
+            replacement = _refs(superseded, "DSC")
+            named = f"DSC:{replacement[0]}" if replacement else _flat(superseded)
+            drop("discovery", f"DSC:{dsc_key}", dsc_path, f"superseded_by {named}")
+            continue
+        expires = _as_date(dsc_rec.get("expires"))
+        if expires and expires < now.date():
+            drop("discovery", f"DSC:{dsc_key}", dsc_path, f"expired {expires}")
+            continue
+        verified = _as_date(dsc_rec.get("verified_at"))
+        age = (now.date() - verified).days if verified else None
+        if not citations.get(dsc_key, 0) and age is not None and age > STALE_DISCOVERY_DAYS:
+            drop("discovery", f"DSC:{dsc_key}", dsc_path, f"uncited and {age}d old")
+            continue
+        _, dsc_updated = git_dates(dsc_path)
+        rows.append({
+            "_date": str(verified or ""),
+            "item": _bundle_item(
+                kind="discovery",
+                key=f"DSC:{dsc_key}",
+                path=_rel(dsc_path),
+                locator=f"{_rel(dsc_path)}#frontmatter",
+                authority_class="A3",
+                status=str(dsc_rec.get("confidence") or "unknown"),
+                updated=dsc_updated,
+                excerpt=_clip(_fields(dsc_rec, (("claim", "claim"), ("so what", "so_what"),
+                                                ("falsifier", "falsifier"))),
+                              EXCERPT_DISCOVERY),
+                why="; ".join(dsc_reasons[dsc_key]),
+            ),
+        })
+    rows.sort(key=lambda row: row["item"]["key"])
+    rows.sort(key=lambda row: row["_date"], reverse=True)
+    for row in rows:
+        emit("discoveries", row["item"])
+
+    # ---- handoff: the LATEST only ------------------------------------------
+    mine: list[str] = [
+        stem for stem in sorted(hnd_all)
+        if key in _refs(hnd_all[stem].get("workstream"), "WS")
+    ]
+
+    def handoff_rank(stem: str) -> tuple[str, str]:
+        match = HANDOFF_DATE_RE.search(stem)
+        return (match.group(1) if match else "", stem)
+
+    if mine:
+        latest = max(mine, key=handoff_rank)
+        for stem in mine:
+            hnd_path = store.paths[f"HND/{stem}"]
+            if stem != latest:
+                drop("handoff", stem, hnd_path, f"older_handoff (latest: {latest})")
+                continue
+            if malformed("handoff", stem, hnd_path):
+                continue
+            _, hnd_updated = git_dates(hnd_path)
+            emit("handoff", _bundle_item(
+                kind="handoff",
+                key=f"WS:{key}",
+                path=_rel(hnd_path),
+                locator=f"{_rel(hnd_path)}#frontmatter",
+                authority_class="A4",
+                status=str(hnd_all[stem].get("ended_because") or "unknown"),
+                updated=hnd_updated,
+                excerpt=_clip(
+                    _fields(hnd_all[stem], (
+                        ("mission", "mission"), ("state before", "state_before"),
+                        ("next actions", "next_actions"), ("do not redo", "do_not_redo"),
+                        ("danger areas", "danger_areas"), ("unresolved", "unresolved"),
+                    )),
+                    EXCERPT_HANDOFF,
+                ),
+                why=f"latest handoff for WS:{key} ({stem})",
+            ))
+
+    # ---- artifacts: pointers, never absorbed prose -------------------------
+    roots = repo_roots()
+    for entry in rec.get("artifacts") or []:
+        if not isinstance(entry, str) or not entry.strip():
+            continue
+        resolved = _resolve_path(entry.strip(), rec)
+        if resolved is None:
+            continue
+        repo_key, rel = resolved
+        shown = rel if repo_key == "macro" else f"{repo_key}:{rel}"
+        root = roots.get(repo_key)
+        if root is None:
+            note = f"repo {repo_key!r} is not checked out — existence unknown"
+        elif (root / rel).exists():
+            note = "present on disk"
+        else:
+            note = "NOT FOUND on disk (it may not exist yet)"
+        emit("artifacts", _bundle_item(
+            kind="artifact",
+            key=None,
+            path=shown,
+            locator=shown,
+            authority_class=_pointer_authority(rel),
+            status=note,
+            updated=None,
+            excerpt=f"pointer — {note}. Open the primary source; this bundle does not "
+                    f"quote it.",
+            why=f"listed in WS:{key} artifacts",
+        ))
+
+    # ---- budget ------------------------------------------------------------
+    # Selection happens BEFORE rendering, over the already-filtered items, so JSON and
+    # --text can never disagree about what made the cut.  Greedy in packing priority, the
+    # same shape as packet._pack_results: an item that does not fit is NAMED and packing
+    # continues, because a later smaller item still helps the reader.
+    ordered = [item for pack in PACK_ORDER for item in groups[pack]]
+    always = {id(item) for item in groups["workstream_block"]}
+    selected: list[dict[str, Any]] = []
+    omitted: list[dict[str, Any]] = []
+    used = 0
+    for rank, item in enumerate(ordered):
+        cost = _estimate_tokens(item["excerpt"])
+        if id(item) in always or used + cost <= budget:
+            selected.append(item)
+            used += cost
+            continue
+        omitted.append({
+            "kind": item["kind"], "key": item["key"], "path": item["path"],
+            "tokens": cost, "rank": rank,
+        })
+
+    by_section: dict[str, list[dict[str, Any]]] = {}
+    for pack in PACK_ORDER:
+        for item in groups[pack]:
+            if item in selected:
+                by_section.setdefault(_PACK_SECTION[pack], []).append(item)
+    for items in by_section.values():
+        items.sort(key=lambda item: item["_seq"])
+    for item in ordered:
+        item.pop("_seq", None)
+
+    envelope["token_estimate"] = used
+    envelope["sections"] = [
+        {"id": ident, "title": title, "authority_note": note,
+         "items": by_section.get(ident, [])}
+        for ident, title, note in SECTIONS
+    ]
+    envelope["excluded"] = excluded
+    envelope["omitted_due_to_budget"] = omitted
+    # Re-read at the end: the walk itself degrades (an unresolvable DNR row, an absent
+    # sibling), and a snapshot taken at envelope time would drop exactly those.
+    envelope["degraded"] = list(degraded.items)
+    return envelope
+
+
+# ------------------------------------------------------ Phase 3: text rendering
+
+
+def render_bundle(bundle: dict[str, Any]) -> str:
+    """The readable form.  Same selected set as the JSON — one compiler, two renderers."""
+    target = bundle["target"]
+    out: list[str] = [
+        f"=== CONTEXT BUNDLE — {target['workstream'] or 'NO WORKSTREAM RESOLVED'} ===",
+        f"task: {target['task'] or '—'}",
+        f"resolution: {target['resolution']}",
+        f"generated: {bundle['generated_at']}  ·  repo_sha: {bundle['repo_sha'][:12]}",
+        f"budget: {bundle['token_budget']} tokens  ·  estimate: "
+        f"{bundle['token_estimate']} tokens",
+        "",
+    ]
+    if bundle["no_answer_reason"]:
+        out += _wrap(f"NO ANSWER: {bundle['no_answer_reason']}", 76, "") + [""]
+    for candidate in target["candidates"]:
+        out.append(f"  candidate {candidate['key']} (score {candidate['score']}) — "
+                   f"{candidate['title']}")
+    if target["candidates"]:
+        out.append("")
+
+    for section in bundle["sections"]:
+        out.append(f"━━ {section['title']} {RULE[:max(0, 72 - len(section['title']))]}")
+        out.extend(_wrap(section["authority_note"], 74, "   "))
+        out.append("")
+        if not section["items"]:
+            out += ["   (nothing in this section)", ""]
+            continue
+        for item in section["items"]:
+            cite = f"{item['key']} · {item['path']}" if item["key"] else item["path"]
+            out.append(f" [{item['authority_class']} · {item['status']}] {cite}")
+            out.extend(_wrap(f"why: {item['why_included']}", 70, "     "))
+            for line in item["excerpt"].splitlines():
+                out.extend(_wrap(line, 70, "     ") or [""])
+            out.append("")
+
+    # Always printed, never suppressed — the omission list IS the honesty of the bundle.
+    out.append(f"━━ EXCLUDED ({len(bundle['excluded'])}) {RULE[:56]}")
+    for row in bundle["excluded"] or []:
+        out.append(f" • {row['key'] or row['kind']} · {row['path']} — {row['reason']}")
+    if not bundle["excluded"]:
+        out.append(" (nothing excluded)")
+    out.append("")
+    out.append(f"━━ OMITTED — BUDGET ({len(bundle['omitted_due_to_budget'])}) {RULE[:48]}")
+    for row in bundle["omitted_due_to_budget"] or []:
+        out.append(f" • {row['key'] or row['kind']} · {row['path']} — "
+                   f"{row['tokens']} tokens (rank {row['rank']})")
+    if not bundle["omitted_due_to_budget"]:
+        out.append(" (nothing omitted — the bundle fits its budget)")
+    out.append("")
+    out.append(f"━━ DEGRADED ({len(bundle['degraded'])}) {RULE[:56]}")
+    for message in bundle["degraded"] or []:
+        wrapped = _wrap(message, 70, "   ")
+        out.append(" • " + wrapped[0].lstrip() if wrapped else " • ")
+        out.extend(wrapped[1:])
+    if not bundle["degraded"]:
+        out.append(" (every input read cleanly)")
+    out.append("")
+    return "\n".join(out)
+
+
+def cmd_compile_context(args: argparse.Namespace) -> int:
+    """Bounded, cited context for one workstream.  Writes nothing; stdout only.
+
+    Exit 1 is reserved for the one fail-CLOSED case: a caller NAMED a workstream that
+    does not exist or whose own record is malformed.  That is a caller error and a lie
+    about the organization, and compiling around it would hand back a bundle for work
+    the store cannot describe.  Everything else exits 0 with the reason in the bundle.
+
+    No GitHub annotations on the success path, deliberately: stdout carries the bundle
+    and must stay parseable.  Degraded inputs are a FIELD of the bundle, printed by both
+    renderers and never suppressed.
+    """
+    if bool(args.task) == bool(args.workstream):
+        args._parser.error(
+            "give exactly one of a free-text task or --workstream <KEY>"
+        )
+
+    store_root = Path(args.root) if args.root else _DEFAULT_STORE
+    degraded = Degraded()
+    now = _parse_moment(args.now) if args.now else _dt.datetime.now(_dt.timezone.utc)
+    if now is None:
+        degraded.add(f"--now {args.now!r} unparseable — the wall clock was used instead")
+        now = _dt.datetime.now(_dt.timezone.utc)
+
+    if not store_root.exists():
+        print(f"::error title=agentos-compile::no agentos/ store at {store_root} — "
+              "nothing to compile", flush=True)
+        return 1
+
+    store = load_store(store_root, _load_programs())
+
+    if args.workstream:
+        key = _normalize_ws_key(args.workstream)
+        ident = f"WS/{key}"
+        if ident not in store.records:
+            print(f"::error title=agentos-compile::unknown workstream WS:{key} — "
+                  f"no record at {store_root}/workstreams/WS-{key}.md", flush=True)
+            for problem in store.problems:
+                if problem.hard and problem.path.stem == f"WS-{key}":
+                    print(f"::error title=agentos-{problem.rule}::"
+                          f"{problem.render(_ROOT)}", flush=True)
+            return 1
+        target_path = store.paths[ident]
+        fatal = [p for p in store.problems if p.hard and p.path == target_path]
+        if fatal:
+            for problem in fatal:
+                print(f"::error title=agentos-{problem.rule}::{problem.render(_ROOT)}",
+                      flush=True)
+            print(f"::error title=agentos-compile::WS:{key} is malformed — fix the record "
+                  "before compiling context from it (fail-closed on schema, I4)",
+                  flush=True)
+            return 1
+
+    builds = load_active_builds(
+        degraded, Path(args.active_builds) if args.active_builds else None
+    )
+    bundle = compile_bundle(
+        store,
+        workstream=args.workstream,
+        task=args.task,
+        now=now,
+        budget=args.budget,
+        builds=builds,
+        degraded=degraded,
+    )
+    sys.stdout.write(render_bundle(bundle) if args.text else _dump_json(bundle))
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -2127,9 +3253,27 @@ def main(argv: list[str] | None = None) -> int:
                          help="do not record this invocation as the last check-in")
     p_brief.set_defaults(func=cmd_brief)
 
-    p_ctx = sub.add_parser("compile-context", help="context bundle (Phase 3)")
-    p_ctx.add_argument("--workstream", help="workstream key")
-    p_ctx.set_defaults(func=cmd_compile_context)
+    p_ctx = sub.add_parser(
+        "compile-context",
+        help="bounded, cited context_bundle.v1 for a workstream or a task (Phase 3)",
+    )
+    p_ctx.add_argument("task", nargs="?",
+                       help="free-text task; resolved via the context index")
+    p_ctx.add_argument("--workstream",
+                       help="workstream key — KEY, WS-KEY and WS:KEY are all accepted")
+    p_ctx.add_argument("--budget", type=int, default=BUNDLE_BUDGET_DEFAULT,
+                       help=f"token budget (default {BUNDLE_BUDGET_DEFAULT}, "
+                            f"floor {BUNDLE_BUDGET_MIN})")
+    p_ctx.add_argument("--text", action="store_true", help="human-readable output")
+    p_ctx.add_argument("--json", action="store_true",
+                       help="emit context_bundle.v1 (the default; accepted for symmetry)")
+    p_ctx.add_argument("--root", help="store root (default: <repo>/agentos)")
+    p_ctx.add_argument("--active-builds", help="active_builds.v1 path override")
+    p_ctx.add_argument("--now", help="freeze the clock (ISO-8601) — reproducibility")
+    # The subparser is carried on the namespace so the command can raise a real usage
+    # error for "both or neither", which argparse cannot express between a positional
+    # and an option.
+    p_ctx.set_defaults(func=cmd_compile_context, _parser=p_ctx)
 
     args = parser.parse_args(argv)
     return args.func(args)
