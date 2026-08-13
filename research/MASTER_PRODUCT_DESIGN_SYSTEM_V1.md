@@ -70,7 +70,7 @@ reserved word. Color appears only when it *means* one of five things:
 | Health / severity | `--ok`/`--warn`/`--act` (+inks) | never flips — red is always danger |
 | Wayfinding / action | `--link`/`--info` (+inks) | the one brand accent |
 | Provisional/epistemic tier | `--prov`(+ink) | direction-neutral by construction |
-| Locked content | `--mx-tier-accent` (defaults to `var(--link)`, tier_preview.css:5; **violet only via `.mx-tier-gate--prophet`**, :16) | violet is **lock-only** — never on data (packet §0); printed as text only through the `--ink-tier` rung (DS-PR-0 — raw #7c5cff measures 3.97–4.35:1, under the §14 floor in both themes) |
+| Locked content | `--mx-tier-accent` (defaults to `var(--link)`, tier_preview.css:5; **violet only via `.mx-tier-gate--prophet`**, :16) | violet is **lock-only** — never on data (packet §0); printed as text only through the `--ink-tier` rung — raw #7c5cff measures 3.97–4.35:1, under the §14 floor in both themes. **RESOLVED 2026-08-12: the shipped values are `--ink-tier:#9b86ff` (dark) / `#5b3fc4` (light), landed by PR #5479, and they supersede this doc's earlier color-mix derivation.** Measured against the surfaces they actually sit on: literals 5.95 (dark panel) / 5.50 (dark panel2) / 7.11 (light panel) / 6.28 (light panel2); the derivation `color-mix(accent 78%/72%, text)` clears too but thinner — 5.13 / **4.74** / 6.27 / 5.54, and that 4.74 on dark panel2 is too close to the 4.5 floor to defend. **Standing rule: `--ink-tier` is a MEASURED value, not a free derivation — any change to `--mx-tier-accent` obliges a re-measure against `--panel` AND `--panel2` in BOTH themes, floor 4.5:1.** The specimen's derivation is reconciled to these literals by DS-PR-0 |
 
 Everything else is achromatic: text, muted, line, panels. A colored element with none of these
 five meanings is decoration, and decoration is a defect on an institutional surface. The one
@@ -451,6 +451,7 @@ are the collision-free vocabulary. Existing registry values re-key in DS-PR-1:
 
 - **A**: full-width state band → 2/3 primary answer column + 1/3 rail → full-width band.
   Mobile: primary market + first 3 rows in one swipe (packet §A is the worked contract).
+  Reference: `today_reference.html`.
 - **B**: header + ladder → filterable card grid (≤40) → groups band → context tabs → record.
   Mobile: ladder pinned, one lane via stance selector (packet §B).
 - **C-signal**: decision header → dated rail/what-changed → two-column quality block (never
@@ -469,7 +470,7 @@ are the collision-free vocabulary. Existing registry values re-key in DS-PR-1:
 - **H**: proof-first hero (live artifact, dated) → 3-band value → plan/CTA → FAQ. Landing's
   15.5-screen scroll is the anti-pattern; ≤8 mobile screens.
 - **I**: one centered card on canvas, `_public_nav` or bare brand, no aurora emphasis, no
-  second CTA.
+  second CTA. Reference: `utility_reference.html`.
 
 **P0 route mapping** (18 census rows): `/` H · `start.html` A · `macro.html` D ·
 `us_stocks.html` B · `china.html` D · `hk.html` D · `confluence_screener.html` B ·

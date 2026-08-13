@@ -11,6 +11,12 @@ on:
     paths:
       - ".github/workflows/public-render.yml"
       - "config/plans.yml"
+      # Build inputs to site/plans.html since the chat allowances stopped being
+      # literals (lib/chat_allowance.py reads config/brain.yml — the same file
+      # brain_gateway._get_allowance enforces). Without these two the page would
+      # keep the old numbers after a reprice, silently.
+      - "config/brain.yml"
+      - "lib/chat_allowance.py"
       - "scripts/build_public_pages.py"
       - "scripts/ci/public_render.sh"
       - "templates/*.html"

@@ -1,24 +1,24 @@
 {
   "schema": "policy_lever.v1",
-  "as_of": "2026-08-12",
+  "as_of": "2026-08-10",
   "favored_complex": {
     "basket": [
       "SMH",
       "SOXX"
     ],
     "basket_incomplete": false,
-    "drawdown_pct": -14.56,
-    "drawdown_z": -2.04,
-    "as_of": "2026-08-12",
-    "note": "Semis complex (SMH/SOXX equal-weight) is -14.6% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
-    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-14.6%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
+    "drawdown_pct": -17.03,
+    "drawdown_z": -2.57,
+    "as_of": "2026-08-10",
+    "note": "Semis complex (SMH/SOXX equal-weight) is -17.0% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
+    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-17.0%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
   },
   "jawboning": {
-    "n_7d": 10,
-    "n_30d": 28,
-    "last_alert_ts": "2026-08-10T20:00:00+00:00",
-    "last_alert_summary": "Treasury\u2019s $131bn TGA rebuild drains reserves, tightening the tape",
-    "last_alert_summary_zh": "\u8d22\u653f\u90e8\u91cd\u5efaTGA\u8fbe1310\u4ebf\u7f8e\u5143\uff0c\u62bd\u8d70\u51c6\u5907\u91d1\u5e76\u6536\u7d27\u5e02\u573a\u6d41\u52a8\u6027"
+    "n_7d": 11,
+    "n_30d": 26,
+    "last_alert_ts": "2026-08-12T21:43:13+00:00",
+    "last_alert_summary": "U.S. opens offensive cyber operations to vetted private contractors",
+    "last_alert_summary_zh": "\u7f8e\u56fd\u5411\u7ecf\u5ba1\u67e5\u7684\u79c1\u8425\u627f\u5305\u5546\u5f00\u653e\u8fdb\u653b\u6027\u7f51\u7edc\u884c\u52a8"
   },
   "calendar": {
     "days_to_midterm": 83,
@@ -31,16 +31,16 @@
       "name_zh": "\u4f0a\u6717/\u77f3\u6cb9",
       "asset": "CL=F",
       "arming": {
-        "stoch_k": 69.82,
-        "stoch_d": 49.98,
-        "stoch_curl": false,
+        "stoch_k": 29.17,
+        "stoch_d": 18.69,
+        "stoch_curl": true,
         "macd_curl": true,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.0242,
+        "flatness": 0.0282,
         "armed": false,
         "stoch_curl_recent": true,
-        "stoch_traverse": true,
+        "stoch_traverse": false,
         "armed_recent": false,
         "armed_recent_window": 10,
         "params": {
@@ -83,7 +83,7 @@
       "copy_stale": false
     }
   ],
-  "state": "QUIET",
+  "state": "ELEVATED",
   "framing": "Conditions under which violent reversals are more likely \u2014 not intent, not timing.",
   "framing_zh": "\u8861\u91cf\u5267\u70c8\u53cd\u8f6c\u66f4\u53ef\u80fd\u53d1\u751f\u7684\u6761\u4ef6\u2014\u2014\u4e0d\u662f\u610f\u56fe\uff0c\u4e5f\u4e0d\u662f\u65f6\u70b9\u3002"
 }
