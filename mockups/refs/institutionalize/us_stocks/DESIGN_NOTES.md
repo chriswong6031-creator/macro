@@ -570,8 +570,38 @@ population the product surface may substitute for the book.
 - `50`–`51` empty board · `60`–`61` table view
 - `70`–`73` **the three-way card adjudication** (production · #5514 v1 · revised), dark+light × EN+ZH
 
-**Checks:** `tools/verify.py` — **136/136 passing**, run against the *rendered* page and
-mutation-tested (planting "stage"/阶段 and a lifecycle cell word inside Candidates makes it fail
-in both languages). Zero horizontal page scroll at every captured width, asserted per shot.
+### Honest screenshot gaps — states the real payload cannot exhibit (PRC-319)
+
+Three of the seven ruled lifecycle cells have **no card rendering anywhere in the crop set**, and
+no crop can be produced for them from the committed payload. Recorded here rather than left as an
+implied-but-missing capture, because an absent screenshot and an unphotographable state look
+identical in a crop index:
+
+| Cell | Rows in payload | Why no card crop exists | What IS captured |
+|---|---|---|---|
+| **Watch** | 0 — key **absent**, not zero | The producer has not published the tier; `watch_key_present: false`, `watch_n: null`. A card cannot be drawn for a row that does not exist. | `24-filter-watch-absent` — the em-dash + disclosure state, which is the honest rendering of key-absence |
+| **Delivering** | 0 — key present, genuinely zero | No plan is at or past its first target tonight. A real zero, not a gap. | `25-filter-delivering-zero` — the empty-cell copy |
+| **Overtime** | 0 — key present, genuinely zero | Compounded by the Q2 producer contradiction (`age_days` anchored to `signal_date` vs `plan_clock_date()`), a **separate open production blocker** (#5540) not cured here. | `26-filter-overtime-zero` |
+
+So the lifecycle card treatment is photographed for **4 of 7** cells (Ready, Entered, Invalidated,
+Resolved). The remaining three are evidenced by their empty/absent states only. This is a real
+coverage limit of the frozen fixture, and it is **not** closed by this pass — it closes when the
+producers publish, not when the reference is re-shot.
+
+### Enrichment coverage, stated as a number (PRC-308)
+
+The company name and sector are absent on **134 of 179 rows** — the same 134 that carry no spark;
+the lane mark is absent on 146. The enrichment join therefore reaches **45/179**, exactly the
+figure gate **G-D** (#5541) is written against. This is **accepted as a data dependency**, not
+cured here and not a design regression: the card renders it as a printed absence rather than a
+hidden row. What the R3 cycle owed and this one pays is the *layout* consequence (VTC-301), which
+is a design choice and is fixed — the data gap itself is G-D's and stays open.
+
+**Checks:** `tools/verify.py`, run against the *rendered* page, plus `tools/mutation_test.py`,
+which asserts the harness can SEE the closure work missing — a different claim from asserting it
+is present, and the only one that makes the harness evidence rather than decoration. It treats a
+mutation whose pattern does not match as an ERROR (a silently no-op mutation makes a decorative
+guard look green), reports any mutation the harness survives, and rejects two guards sharing one
+observable kill. Zero horizontal page scroll at every captured width, asserted per shot.
 
 This is a visual gate: green checks are a floor, not the acceptance. The crops are the deliverable.
