@@ -1217,12 +1217,52 @@ class TestCollisionRuleLiveWins:
         assert [e["plan_key"] for e in dirty["new_collisions"]] == ["AAA-BULL"]
 
 
-#: Ticker+direction keys that ALREADY carry multiple open plans on main, from before
-#: the W1 re-origination block shipped (tests/test_prophet_w1_intake_repair.py
-#: documents the same debt: "10 ticker+direction pairs held duplicate open plans on
-#: 2026-08-03; PI held three"). This backfill did not create them and does not fix
-#: them; the ratchet below stops it from ADDING to them, which is the part §0.4 owns.
-_LEGACY_DOUBLED_KEYS = 10
+#: Ticker+direction keys that ALREADY carry multiple open plans on main, each with
+#: WHY it is not this lane's to fix. This backfill created none of them and repairs
+#: none of them; the ratchet below stops it from ADDING one, which is the part §0.4
+#: owns.
+#:
+#: A SUBSET bound, not a census. It replaced a hand-typed count of the whole shipped
+#: corpus, which was weather: `_open_keys()` reads `site/prophet/plans/` and
+#: `data/prophet/ledger.jsonl`, both advanced nightly by lanes this suite does not
+#: own, so the count moved without anything here changing and took the fleet red with
+#: it. A legacy pair closing out through the ledger shrinks this set harmlessly; a key
+#: that is NOT listed is a new duplicate and fails by name.
+_DISCLOSED_DOUBLED_KEYS = frozenset({
+    # Legacy pairs: every member predates the W1 re-origination block, and none
+    # carries a `recorded_at`, so no post-block lane wrote them. The census taken
+    # the day the block shipped counted ten such keys
+    # (tests/test_prophet_w1_intake_repair.py §2: "10 ticker+direction pairs held
+    # duplicate open plans on 2026-08-03; PI held three"); the eight below are what
+    # is still OPEN on the shipped tree today, the rest having closed out through
+    # data/prophet/ledger.jsonl.
+    "APPF-BULL",
+    "BDC-BULL",
+    "CELH-BULL",
+    "CLF-BULL",
+    "ENOV-BULL",
+    "LPG-BULL",
+    "PAHC-BULL",
+    "PI-BULL",
+    # One recurring post-block shape, three times: the `prophet-us: durable nightly
+    # checkpoint` lane writes a plan keyed on FORMATION date beside an older open
+    # plan on the same name. FCX-BULL-20260731 and MDB-BULL-20260731 arrived in the
+    # 2026-08-09 checkpoint (56260d0a7b1) and sat inside the tolerated count;
+    # HEI-BULL-20260723 arrived in 2026-08-13's (f9140631d37) carrying
+    # recorded_at/asof 2026-08-12 and selection_era anticipation-v1-2026-08-08,
+    # beside the still-open HEI-BULL-20260731, and tipped the count over.
+    #
+    # It is a real finding and it belongs to the Prophet US intake lane -- W1's
+    # BLOCK (an OPEN plan on the same ticker+direction blocks re-origination) does
+    # not appear to cover the checkpoint's origination path. Nothing the outage
+    # backfill does can cause, prove, or repair it, and none of these three plans
+    # carries an `outage_backfill*` origination_mode; pinning a cross-lane census
+    # here only converted the program's finding into a fleet-wide CI red. Flagged to
+    # the Prophet US program 2026-08-13.
+    "FCX-BULL",
+    "MDB-BULL",
+    "HEI-BULL",
+})
 
 
 @pytest.mark.skipif(
@@ -1269,15 +1309,30 @@ class TestOnePlanPerEpisodeOnTheShippedTree:
             "minting it. Re-run `--verify-collisions` before merging."
         )
 
-    def test_the_legacy_duplicate_open_keys_do_not_grow(self):
-        """A ratchet, not a heal. The pre-W1 duplicates are somebody else's lane; the
-        point here is that this PR cannot quietly add an eleventh."""
+    def test_no_undisclosed_duplicate_open_key_appears(self):
+        """A ratchet, not a heal. The known duplicates are somebody else's lane and
+        are disclosed BY NAME above; the point here is that a new one cannot appear
+        quietly — least of all one this PR minted."""
+        keys = self._open_keys()
+        # Anti-vacuity: an empty or unreadable plan corpus agrees with the clause
+        # below about nothing. TestTheShippedTreeIsSegregated carries the same guard
+        # for the census it owns.
+        assert len(keys) >= 50, (
+            f"only {len(keys)} open ticker+direction key(s) read from "
+            f"{REAL_PLANS_DIR} — the ratchet below would be vacuous; read the tree "
+            "before trusting it"
+        )
         doubled = {k: [str(p.get("id")) for p in v]
-                   for k, v in self._open_keys().items() if len(v) > 1}
-        assert len(doubled) <= _LEGACY_DOUBLED_KEYS, (
-            f"{len(doubled)} ticker+direction keys now carry multiple OPEN plans, up "
-            f"from the {_LEGACY_DOUBLED_KEYS} pre-W1 legacy pairs: {doubled}. "
-            "Something minted a second episode for a live name."
+                   for k, v in keys.items() if len(v) > 1}
+        undisclosed = {k: v for k, v in doubled.items()
+                       if k not in _DISCLOSED_DOUBLED_KEYS}
+        assert not undisclosed, (
+            f"{len(undisclosed)} ticker+direction key(s) carry multiple OPEN plans "
+            f"and are not disclosed above: {undisclosed}. Something minted a second "
+            "episode for a live name — ATTRIBUTE it before disclosing it. If a "
+            "reconstructed plan is one of them, the replay should have recorded a "
+            "collision in backfill_disclosures.json instead of minting it; re-run "
+            "`--verify-collisions` before merging."
         )
 
 

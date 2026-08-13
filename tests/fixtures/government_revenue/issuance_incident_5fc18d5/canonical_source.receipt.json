@@ -1,0 +1,26 @@
+{
+  "archive": {
+    "byte_count": 167612,
+    "name": "canonical_source.tar.xz",
+    "sha256": "b9ecf598aa8c391186edcdeceef6be63a91a7eaed2e3c2387cef1f6a2e10caeb"
+  },
+  "contract": "government_revenue.candidate_incident_canonical_source.v1",
+  "extracted_by": "git show <source_commit_sha>:data/government_revenue/<name> -- re-freeze only from the incident commit, never from the live tree",
+  "files": {
+    "latest.json": {
+      "byte_count": 3439996,
+      "sha256": "17d941c358f4678e42192e375a26b1a12beee09261d6e4fbe1bbec35eb9e089b"
+    },
+    "recipient_entity_graph.json": {
+      "byte_count": 315108,
+      "sha256": "e161fb0ab901114f77fbfd46519d38932b67e9bd631647c734af88be5e0b521b"
+    },
+    "workspace.json": {
+      "byte_count": 2867020,
+      "sha256": "66582a165998ce2852aec71689d20142ff092c07d4a7dac69730db86f4669395"
+    }
+  },
+  "incident_id": "grcii1-5fc18d5aac892ac61bcfdcc7",
+  "source_commit_sha": "5fc18d5aac892ac61bcfdcc7ae1638c028c66781",
+  "source_directory": "data/government_revenue"
+}

@@ -1272,7 +1272,13 @@ def execute_pack(
             )
             if failure:
                 failures.append(failure)
-                print(f"::error::{failure}", flush=True)
+                # title=legacy-job-<id> is what merge_on_green parses for
+                # live-inherited reds. The message still starts with job_id so
+                # older parsers and the Actions log grep keep working.
+                print(
+                    f"::error title=legacy-job-{job.job_id}::{failure}",
+                    flush=True,
+                )
             if shadow_predicted is not None:
                 record: dict[str, object] = {
                     "job": job.job_id,
@@ -1288,6 +1294,10 @@ def execute_pack(
     finally:
         _restore_workspace()
 
+    failed_ids = sorted(
+        {failure.split(":", 1)[0] for failure in failures if ":" in failure}
+    )
+    print("CI_PACK_FAILED_JOBS=" + json.dumps(failed_ids), flush=True)
     if failures:
         print("\nLegacy CI failures:", file=sys.stderr)
         for failure in failures:
