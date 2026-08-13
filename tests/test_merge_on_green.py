@@ -4610,8 +4610,57 @@ def test_a_live_inherited_red_is_merged_not_blocked(monkeypatch, capsys):
     assert "live-inherited red" in out
 
 
-def test_a_live_inherited_red_with_an_extra_pack_is_still_blocked(monkeypatch):
-    """Pack-name subset is necessary: an extra red is this pull request's own."""
+def test_a_live_inherited_red_survives_pack_rebalance(monkeypatch, capsys):
+    """Pack numbers rebalance on the selected job set; waive on job identity.
+
+    The same ``unrun-government-revenue`` is pack-7 on a scoped 114-job PR and
+    pack-5 on main's full-suite dispatch. Pack-name subset can never match.
+    ``ci-gate`` is implied by those identities, not an extra name.
+    """
+    pack7 = _run("ci-pack-7", conclusion="failure", check_id=7007)
+    pack11 = _run("ci-pack-11", conclusion="failure", check_id=7011)
+    gate = _run("ci-gate", conclusion="failure", check_id=7010)
+    pages = {1: {"total_count": 3, "check_runs": [pack7, pack11, gate]}}
+    annotations = {
+        7007: [
+            {
+                "title": "legacy-job-unrun-government-revenue",
+                "message": "unrun-government-revenue: step 'pytest' exited 1",
+            }
+        ],
+        7011: [
+            {
+                "title": "legacy-job-unrun-government-revenue-candidate-projection",
+                "message": (
+                    "unrun-government-revenue-candidate-projection: "
+                    "step 'pytest' exited 1"
+                ),
+            }
+        ],
+    }
+    calls = _fake_api(
+        monkeypatch, check_pages=pages, annotations=annotations, merge_status=200
+    )
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _live_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "merged", (
+        "a remapped pack with the same legacy-job-* identities is main's weather"
+    )
+    assert any(call[1].endswith("/merge") for call in calls)
+    out = capsys.readouterr().out
+    assert "live-inherited red" in out
+    assert "unrun-government-revenue" in out
+
+
+def test_a_live_inherited_red_with_an_extra_job_is_still_blocked(monkeypatch):
+    """An extra legacy-job identity is this pull request's own, pack numbers aside."""
     pack6 = _run("ci-pack-6", conclusion="failure", check_id=6006)
     pack9 = _run("ci-pack-9", conclusion="failure", check_id=6009)
     pages = {1: {"total_count": 2, "check_runs": [pack6, pack9]}}
@@ -5452,10 +5501,17 @@ def test_proof_postdates_failures_is_pure_and_fail_closed():
 # repairing the supply would have fixed the mechanism and kept the daily audit.
 
 
-def _aged_proof(hours, *names):
+def _aged_proof(hours, *names, failed_legacy_jobs=(), failed_names=()):
     """A proof `hours` old (None = undated)."""
     when = None if hours is None else dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=hours)
-    return MOG.MainProof(frozenset(names or ("ci-pack-0",)), when, "a" * 40, "test")
+    return MOG.MainProof(
+        frozenset(names or ("ci-pack-0",)),
+        when,
+        "a" * 40,
+        "test",
+        frozenset(failed_names),
+        frozenset(failed_legacy_jobs),
+    )
 
 
 def _dispatched(calls):
@@ -5514,13 +5570,66 @@ def test_an_undated_proof_also_orders_a_baseline_and_never_calls_it_never_proven
 
 def test_a_fresh_proof_orders_nothing(monkeypatch):
     """A ci.yml run takes 30-34 minutes, so the age gate must not fire on a proof that
-    is merely mid-flight — and a repository whose main is proven is not a problem."""
+    is merely mid-flight — and a repository whose main is proven is not a problem.
+
+    A proof that already carries legacy-job weather CAN answer live-inherited
+    reds, so clock-fresh is enough to skip. An empty-weather proof is the
+    other test below.
+    """
     calls = _baseline_api(monkeypatch)
     outcome = MOG.ensure_main_baseline(
-        "acme/widgets", _aged_proof(MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5), {"ci-pack-2"}, "write"
+        "acme/widgets",
+        _aged_proof(
+            MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5,
+            failed_legacy_jobs=_GOVREV_JOBS,
+        ),
+        {"ci-pack-2"},
+        "write",
     )
     assert outcome.startswith("not needed")
     assert not calls, "a fresh proof must not spend a single call"
+
+
+def test_a_clock_fresh_proof_with_no_legacy_weather_orders_a_baseline(
+    monkeypatch, capsys
+):
+    """Skip-ci tape ticks do not retrigger ci.yml, so a clock-fresh GREEN proof
+    leaves ``failed_legacy_jobs`` empty and the live-inherited waiver blind.
+
+    Bound: still requires blocked packs, a CONCLUDED newest run, and the
+    interval floor — this is not a per-commit dispatch.
+    """
+    calls = _baseline_api(monkeypatch)
+    outcome = MOG.ensure_main_baseline(
+        "acme/widgets",
+        _aged_proof(MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5),
+        {"ci-pack-7", "ci-gate"},
+        "write",
+    )
+    assert outcome == "dispatched"
+    assert _dispatched(calls)
+    out = capsys.readouterr().out
+    assert any(
+        line.startswith("::notice") and "legacy-job" in line
+        for line in out.splitlines()
+    ), out
+
+
+def test_a_clock_fresh_empty_legacy_proof_does_not_stampede_an_in_flight_baseline(
+    monkeypatch,
+):
+    """The 17:05 post-#5547 dispatch must not be killed by a sibling catch-up."""
+    calls = _baseline_api(
+        monkeypatch, newest=_wf_run(1, status="in_progress", conclusion=None)
+    )
+    outcome = MOG.ensure_main_baseline(
+        "acme/widgets",
+        _aged_proof(MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5),
+        {"ci-pack-7", "ci-gate"},
+        "write",
+    )
+    assert outcome == "skipped (the newest baseline is in_progress)"
+    assert not _dispatched(calls)
 
 
 def test_an_idle_sweep_orders_nothing_however_old_the_proof_is(monkeypatch):
@@ -6549,15 +6658,24 @@ def test_a_base_inherited_red_is_left_for_the_full_sweep(monkeypatch, capsys):
 
 
 def test_a_live_inherited_red_is_left_for_the_full_sweep(monkeypatch, capsys):
-    """The marker pass must not accuse a head of main's current weather."""
+    """The marker pass must not accuse a head of main's current weather.
+
+    Pack numbers on the PR need not match main's — they rebalance. Main having
+    *any* failed weather is enough for this pass to defer; the full sweep owns
+    the annotation-identity merge-vs-block call.
+    """
     pages = {
-        1: {"total_count": 1, "check_runs": [_run("ci-pack-6", conclusion="failure")]}
+        1: {"total_count": 1, "check_runs": [_run("ci-pack-7", conclusion="failure")]}
     }
     calls, code = _mark_only(
         monkeypatch,
         [_pull(5291)],
         check_pages=pages,
-        proof=_proof("ci-pack-1", failed_names=("ci-pack-6", "ci-pack-8")),
+        proof=_proof(
+            "ci-pack-1",
+            failed_names=("ci-pack-5",),
+            failed_legacy_jobs=_GOVREV_JOBS,
+        ),
     )
     assert code == 0
     assert [call for call in calls if call[0] != "GET"] == [], (

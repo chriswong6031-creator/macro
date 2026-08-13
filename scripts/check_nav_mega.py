@@ -29,6 +29,10 @@ from __future__ import annotations
 import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.sparse_guard import refuse_if_vacuous, trees_for  # noqa: E402
+
 # A page carrying this dropdown class renders the shared _navlinks nav — it is in scope.
 # Pages with no site nav at all (the globe landing page, diagnostic pages) lack it and are
 # correctly ignored.
@@ -39,20 +43,30 @@ _NAV_MARKER = "nav-dd-menu"
 _MEGA_MARKER = "nav-mega"
 
 
+def find_pages(site_dir: str = "site"):
+    """Return every HTML page under `site_dir` — the set this guard walks.
+
+    Split out from `find_stale` so `main` can tell "no nav is frozen" (the normal
+    green) from "no page was read at all" (a tree that isn't there)."""
+    pages = []
+    for root, _dirs, names in os.walk(site_dir):
+        for n in names:
+            if n.endswith(".html"):
+                pages.append(os.path.join(root, n))
+    pages.sort()
+    return pages
+
+
 def find_stale(site_dir: str = "site"):
     """Return [file] for every page that renders the shared dropdown nav but is missing
     the Research mega-menu."""
     stale = []
-    for root, _dirs, names in os.walk(site_dir):
-        for n in names:
-            if not n.endswith(".html"):
-                continue
-            path = os.path.join(root, n)
-            html = open(path, encoding="utf-8", errors="replace").read()
-            if _NAV_MARKER not in html:      # no shared dropdown nav -> out of scope
-                continue
-            if _MEGA_MARKER not in html:     # shared nav present but mega-menu missing -> stale
-                stale.append(path)
+    for path in find_pages(site_dir):
+        html = open(path, encoding="utf-8", errors="replace").read()
+        if _NAV_MARKER not in html:      # no shared dropdown nav -> out of scope
+            continue
+        if _MEGA_MARKER not in html:     # shared nav present but mega-menu missing -> stale
+            stale.append(path)
     stale.sort()
     return stale
 
@@ -60,6 +74,15 @@ def find_stale(site_dir: str = "site"):
 def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     site_dir = argv[0] if argv else "site"
+
+    # A sparse session worktree omits site/, so the walk reads zero pages and the
+    # OK below certifies the mega-menu on a set that is empty — a vacuous pass.
+    # "No frozen nav" is only a green when pages were actually opened.
+    pages = find_pages(site_dir)
+    refusal = refuse_if_vacuous(len(pages), trees_for(site_dir), "check-nav-mega-vacuous")
+    if refusal:
+        print(f"check_nav_mega: REFUSED — {refusal}", file=sys.stderr)
+        return 1
 
     stale = find_stale(site_dir)
     if stale:
