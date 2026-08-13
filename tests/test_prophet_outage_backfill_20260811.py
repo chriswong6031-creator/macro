@@ -204,6 +204,51 @@ class TestPriceTruncation:
                                                    bf11.CONTROL_THROUGH)
         assert bf11._needs_write(merged, on_disk, provenance) is False
 
+    def test_a_date_in_a_column_frame_is_not_read_as_epoch_nanoseconds(self):
+        """The silent-no-op shape: dates in a column, a RangeIndex on the frame.
+
+        `pd.to_datetime(RangeIndex)` SUCCEEDS — 0, 1, 2 become 1970 — so a naive
+        conversion keeps every row, writes a fake index back over a real one, and lets
+        the fence report "max 1970" and pass. prophet_bridge._load_price_history handles
+        this shape explicitly, so it is not hypothetical.
+        """
+        frame = pd.DataFrame({"date": pd.to_datetime(
+            ["2026-08-10", "2026-08-11", "2026-08-12"]), "close": [10.0, 11.0, 99.0]})
+        kept = bf11.truncate_frame(frame, bf11.TRUNCATE_THROUGH)
+        assert len(kept) == 2, "the 2026-08-12 row survived a truncation"
+        assert 99.0 not in set(kept["close"])
+
+    def test_a_frame_with_no_readable_dates_is_left_alone_and_flagged(self, tmp_path):
+        """Not truncatable and not silently rewritten — the fence names it instead."""
+        frame = pd.DataFrame({"close": [1.0, 2.0]})
+        assert bf11.truncate_frame(frame, bf11.TRUNCATE_THROUGH) is frame
+
+        store = tmp_path / "data" / "stocks"
+        store.mkdir(parents=True)
+        frame.to_parquet(store / "AAA.parquet")
+        report = bf11.fence_no_bar_after(tmp_path, bf11.TRUNCATE_THROUGH)
+        assert report["unscannable_count"] == 1, (
+            "'I could not look' was counted as 'I looked and saw nothing later'"
+        )
+
+    def test_several_missing_sessions_are_all_appended(self):
+        """A name whose vintage series is stale gets every session up to the ceiling."""
+        vintage = _frame(["2026-08-06"], [9.0])
+        live = _frame(["2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+                       "2026-08-12"], [9.0, 9.5, 10.0, 11.0, 99.0])
+        merged, provenance = bf11.overlay_sessions(vintage, live,
+                                                   bf11.TRUNCATE_THROUGH)
+        assert provenance["added"] == ["2026-08-07", "2026-08-10", "2026-08-11"]
+        assert merged["close"].max() == 11.0
+
+    def test_an_empty_vintage_frame_is_reported_as_a_substitution(self):
+        """The Russell panel takes this branch every run; calling it an append lies."""
+        live = _frame(["2026-08-10", "2026-08-11", "2026-08-12"], [10.0, 11.0, 99.0])
+        merged, provenance = bf11.overlay_sessions(None, live, bf11.TRUNCATE_THROUGH)
+        assert provenance["substituted"] is True
+        assert "substituted" in provenance["note"]
+        assert len(merged) == 2 and merged["close"].max() == 11.0
+
     def test_the_cache_key_describes_the_TREE_not_the_delta(self, tmp_path):
         """An identical tree must produce an identical key however it got there.
 

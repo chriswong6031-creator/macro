@@ -416,11 +416,27 @@ def truncate_frame(df: Any, through: str) -> Any:
         return None
     index = getattr(df, "index", None)
     if index is None or not isinstance(index, pd.DatetimeIndex):
-        try:
+        # A frame that keeps its dates in a COLUMN is a real shape here —
+        # prophet_bridge._load_price_history handles exactly that — and converting its
+        # RangeIndex instead SUCCEEDS, reading 0,1,2… as epoch nanoseconds and landing
+        # every row in 1970. The truncation then keeps everything, the write-back
+        # replaces a real index with a fake one, and the fence reports "max 1970" and
+        # passes. So the date column is tried first, and a frame that yields neither is
+        # returned untouched and flagged by the fence rather than silently rewritten.
+        for column in ("date", "Date", "asof", "session"):
+            if column in getattr(df, "columns", ()):
+                df = df.copy()
+                df.index = pd.to_datetime(df[column])
+                break
+        else:
+            try:
+                converted = pd.to_datetime(df.index)
+            except Exception:  # noqa: BLE001 - not date-indexed; not ours to reshape
+                return df
+            if len(converted) and converted.max() < pd.Timestamp("1990-01-01"):
+                return df   # epoch-nanosecond nonsense, not dates
             df = df.copy()
-            df.index = pd.to_datetime(df.index)
-        except Exception:  # noqa: BLE001 - not a date-indexed frame; not ours to reshape
-            return df
+            df.index = converted
     ceiling = pd.Timestamp(through)
     if getattr(df.index, "tz", None) is not None:
         ceiling = ceiling.tz_localize(df.index.tz)
@@ -502,6 +518,31 @@ def overlay_sessions(vintage: Any, live: Any, through: str) -> tuple[Any, dict[s
     }
 
 
+def _fence_index(frame: Any) -> Any:
+    """The frame's date index for scanning, or None when it has none to read.
+
+    Mirrors ``truncate_frame``'s resolution order so the fence and the truncation can
+    never disagree about what a file's dates are — including the refusal to read a
+    RangeIndex as epoch nanoseconds, which is how a date-in-a-column frame silently
+    reports "max 1970" and passes a ceiling it was never checked against.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    index = getattr(frame, "index", None)
+    if isinstance(index, pd.DatetimeIndex):
+        return index
+    for column in ("date", "Date", "asof", "session"):
+        if column in getattr(frame, "columns", ()):
+            return pd.to_datetime(frame[column])
+    try:
+        converted = pd.to_datetime(index)
+    except Exception:  # noqa: BLE001
+        return None
+    if len(converted) and converted.max() < pd.Timestamp("1990-01-01"):
+        return None
+    return converted
+
+
 def _needs_write(merged: Any, on_disk: Any, provenance: dict[str, Any]) -> bool:
     """True when the overlay's answer differs from what is already on disk.
 
@@ -553,6 +594,11 @@ def fence_no_bar_after(tree: Path, through: str,
     # (path, last session) for every price file, in scan order — the STATE of the tree
     # the builder is about to read, which is what a board cache must be keyed on.
     state: list[tuple[str, str]] = []
+    #: Files whose dates the fence could not read AT ALL. Reported rather than counted
+    #: as clean: "I looked and saw nothing later" and "I could not look" are different
+    #: answers, and a fence that conflates them is the kind of guard that reads green
+    #: over a hole.
+    unscannable: list[str] = []
     for relative, pattern in PRICE_TICKER_STORES:
         directory = tree / relative
         if not directory.exists():
@@ -561,8 +607,11 @@ def fence_no_bar_after(tree: Path, through: str,
             scanned += 1
             try:
                 frame = pd.read_parquet(path)
-                index = pd.to_datetime(frame.index)
+                index = _fence_index(frame)
             except Exception:  # noqa: BLE001 - unreadable is the builder's problem, not a fence hit
+                continue
+            if index is None:
+                unscannable.append(str(path.relative_to(tree)))
                 continue
             if not len(index):
                 continue
@@ -582,8 +631,11 @@ def fence_no_bar_after(tree: Path, through: str,
         scanned += 1
         try:
             frame = pd.read_parquet(path)
-            index = pd.to_datetime(frame.index)
+            index = _fence_index(frame)
         except Exception:  # noqa: BLE001
+            continue
+        if index is None:
+            unscannable.append(relative)
             continue
         if not len(index):
             continue
@@ -606,6 +658,8 @@ def fence_no_bar_after(tree: Path, through: str,
         "files_scanned": scanned, "ceiling": through, "max_date_found": latest,
         "violations": 0,
         "state_digest": _canonical_sha256(sorted(state))[:12],
+        "unscannable": sorted(unscannable),
+        "unscannable_count": len(unscannable),
         "pass_ceiling": str(pass_ceiling)[:10],
         "ahead_of_pass": ahead_of_pass,
         "ahead_of_pass_count": len(ahead_of_pass),
