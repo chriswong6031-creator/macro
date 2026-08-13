@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T06:25:50.653020+00:00",
-  "count": 1042,
+  "generated_at": "2026-08-13T06:55:52.811482+00:00",
+  "count": 1043,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -672,6 +672,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dp3pxkxqncx-857bfe",
+      "title": "Traton (8TRA)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:30Z",
+      "summary_points": [
+        "**Traton Valuation Gap**: Undervalued with EV/sales 0.4x and P/E 14.2x (below sector median), PEG ratio in bottom quartile, indicating significant upside potential despite Neutral rating.",
+        "**Cash Flow & Balance Sheet Strength**: Robust FCF trajectory (Net income: €913.1m 12/25 → €2,561.8m 12/28E) and expanding assets (€68.2bn → €70.7bn), supporting operational resilience and growth capacity.",
+        "**Key Risk Triggers**: Downside exposure to order cancellations, FX volatility, and anti-trust charges; EBIT guidance revised down (-10% 2026E/27E) due to tariff receivable impacts.",
+        "**Regional Demand Divergence**: Positive US/Europe truck demand signals (inventory, tire estimates) vs.",
+        "declining China/Asia truck OEM sales, creating mixed near-term flow dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
