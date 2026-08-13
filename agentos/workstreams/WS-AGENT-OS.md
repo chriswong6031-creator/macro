@@ -28,6 +28,7 @@ waves:
   - id: W1
     title: "Phase 1 — adoption: CLAUDE.md/AGENTS.md sections, handoff protocol in use, <=10 backfilled decisions"
     status: in_progress
+    pr: 5556
     depends_on: [W0]
     next_action: >
       Adoption instructions + backfill are in PR; the unmet gate is >=3 handoffs
