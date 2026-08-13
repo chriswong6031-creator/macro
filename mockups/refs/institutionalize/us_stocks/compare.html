@@ -6,8 +6,14 @@
 <title>Prophet card — three-way adjudication (production · #5514 v1 · revised)</title>
 <!--
   Side-by-side adjudication artifact for the G-C revision (handoff §12).
-  One real plan row (FTI — TechnipFMC) rendered three ways, from the SAME
-  committed payload, so the comparison is about design and not about data.
+
+  TWO real plan rows from the committed payload, each rendered three ways:
+    · FTI — the enriched row (chart, name, sector, price, an entry read)
+    · RIO — the MODAL row (no chart, no name, no sector, no price, no read)
+  Every field comes from board-data.js. Nothing is hardcoded to flatter a
+  column: the stance class is derived from R.stance, and where the shipped
+  stylesheet and this proposal disagree the shipped values are scoped into
+  .cmp-prod so the production column renders in production's own terms.
 
   ?theme=dark|light   ?lang=en|zh
 -->
@@ -15,10 +21,29 @@
 <style>
   .cmp-wrap { max-width: 1180px; margin: 0 auto; padding: 26px 22px 70px; }
   .cmp-h1 { font-size: 21px; font-weight: 800; letter-spacing: -.02em; margin: 0 0 6px; }
-  .cmp-lede { font-size: 13px; color: var(--muted); line-height: 1.55; max-width: 78ch; margin: 0 0 24px; }
-  .cmp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; align-items: start; }
-  @media (max-width: 900px) { .cmp-grid { grid-template-columns: 1fr; } }
-  .cmp-col { min-width: 0; }
+  .cmp-lede { font-size: 13px; color: var(--muted); line-height: 1.55; max-width: 78ch; margin: 0 0 18px; }
+  .cmp-legend { display: grid; gap: 7px; margin: 0 0 24px; padding: 12px 14px;
+                border: 1px solid var(--line); border-radius: 10px;
+                background: color-mix(in srgb, var(--panel2) 60%, transparent); }
+  .cmp-legend p { margin: 0; font-size: 12px; line-height: 1.55;
+                  color: color-mix(in srgb, var(--text) 82%, var(--muted)); }
+  .cmp-legend b { color: var(--text); font-weight: 800; }
+  /* Six shared rows — header, caption, card, caption, card, notes — so the two
+     specimens and the cost lists sit at the SAME y across all three columns.
+     A comparison whose rows do not line up cannot be read across, which is the
+     one thing this page exists to let a reader do. */
+  .cmp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+              grid-template-rows: repeat(6, auto); column-gap: 22px; row-gap: 0; }
+  .cmp-col { min-width: 0; display: grid; grid-row: span 6;
+             grid-template-rows: subgrid; row-gap: 0; align-items: start; }
+  @supports not (grid-template-rows: subgrid) {
+    .cmp-grid { grid-template-rows: none; }
+    .cmp-col { display: block; grid-row: auto; }
+  }
+  @media (max-width: 900px) {
+    .cmp-grid { grid-template-columns: 1fr; grid-template-rows: none; row-gap: 34px; }
+    .cmp-col { display: block; grid-row: auto; }
+  }
   .cmp-hd { padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
   .cmp-tag {
     display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: .09em;
@@ -30,18 +55,43 @@
   .cmp-name { font-size: 14px; font-weight: 750; margin: 0; }
   .cmp-sub { font-size: 11.5px; color: var(--muted); margin: 3px 0 0; line-height: 1.45; }
   .cmp-card { max-width: 268px; }
-  .cmp-notes { margin: 16px 0 0; font-size: 11.5px; line-height: 1.6; }
+  .cmp-spec { font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+              color: var(--muted); margin: 20px 0 6px; }
+  .cmp-spec--first { margin-top: 0; }
+  .cmp-notes { margin: 18px 0 0; font-size: 11.5px; line-height: 1.6; }
   .cmp-notes b { display: block; font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
                  color: var(--muted); margin: 12px 0 5px; }
   .cmp-notes ul { margin: 0; padding-left: 16px; }
   .cmp-notes li { margin: 2px 0; color: color-mix(in srgb, var(--text) 82%, var(--muted)); }
   .cmp-keep li::marker { color: var(--ink-up); }
   .cmp-drop li::marker { color: var(--ink-down); }
+  .cmp-method { margin: 34px 0 0; padding: 14px 16px; border: 1px solid var(--line);
+                border-radius: 10px; font-size: 11.5px; line-height: 1.62; color: var(--muted); }
+  .cmp-method b { display: block; font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+                  color: var(--text); margin: 0 0 7px; }
+  .cmp-method ol { margin: 0; padding-left: 18px; }
+  .cmp-method li { margin: 4px 0; }
+  .cmp-method code { font-family: var(--font-mono); font-size: 10.5px;
+                     color: color-mix(in srgb, var(--text) 78%, var(--muted)); }
 
-  /* ─────────── variant: PRODUCTION (shipped today) ───────────
-     The distinguishing rules are lifted verbatim from pv_css() in
-     templates/_prophet_card.html.j2 — the verb accent bar, the four-dot rail,
-     the Edge slot. Everything else is the shared card base. */
+  /* ═══════════════════════════════════════════════════════════════════════
+     PRODUCTION COLUMN — shown in PRODUCTION's values.
+
+     Two kinds of rule live here and they must not be confused:
+
+     (a) PRODUCTION-ONLY classes, which board.css never defines (the accent
+         bar, the four-dot rail, the Edge slot). Lifted verbatim from pv_css()
+         in templates/_prophet_card.html.j2.
+
+     (b) DIVERGENT SHARED classes — defined by BOTH stylesheets with different
+         values. Left unscoped, the production column silently renders in the
+         challenger's terms and an entire class of regression becomes invisible
+         by construction. Every one of these carries production's EXPLICIT
+         value, never an inherited one, so a later edit to board.css cannot
+         quietly repaint this column.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* ── (a) production-only ───────────────────────────────────────────────── */
   .cmp-prod .pvcard::before {
     content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 3;
     pointer-events: none; border-radius: 12px 12px 0 0;
@@ -53,12 +103,65 @@
   .cmp-prod .pv-dot { width: 6.5px; height: 6.5px; border-radius: 50%; background: var(--line); flex: none; }
   .cmp-prod .pv-seg { flex: 1; height: 2px; background: var(--line); opacity: .75; }
   .cmp-prod .pv-dot.on { background: var(--pvh); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pvh) 18%, transparent); }
+  .cmp-prod .pv-dot.pa, .cmp-prod .pv-seg.pa {
+    background: color-mix(in srgb, var(--pvh) 45%, var(--line)); opacity: 1;
+  }
   .cmp-prod .pv-stl { display: flex; justify-content: space-between; gap: 3px; margin-top: 3px; min-width: 0; }
   .cmp-prod .pv-stl span { font-size: 9.5px; color: var(--muted); opacity: .7; white-space: nowrap; }
   .cmp-prod .pv-stl span.on { color: var(--pvh); opacity: 1; font-weight: 700; }
-  .cmp-prod .pv-edge { display: flex; align-items: baseline; gap: 4px; flex: none; }
-  .cmp-prod .pv-edl { font-size: 8px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
-  .cmp-prod .pv-edn { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--pvh-ink, var(--pvh)); line-height: 1; }
+  .cmp-prod .pv-edge { display: inline-flex; align-items: baseline; gap: 4px; flex: none; }
+  .cmp-prod .pv-edl { font-size: 9.5px; font-weight: 700; letter-spacing: .05em;
+                      text-transform: uppercase; color: var(--muted); }
+  .cmp-prod .pv-edn { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums;
+                      color: var(--pvh-ink, var(--pvh)); line-height: 1; }
+  .cmp-prod .pv-edn.pv-edna { color: var(--muted); font-weight: 600; font-size: 12px; }
+
+  /* ── (b) divergent shared classes ──────────────────────────────────────── */
+
+  /* ⚡ TRIGGER. Production pins it to the VERB hue in a 999px pill at 10px/800.
+     board.css pins it to a fixed --warn amber in a 5px rect at 9px/750. On a
+     Buy or Hold row those are visibly different chips; on a WAIT row they land
+     on the same ink, because --pv-wait and --warn ship the SAME token value —
+     so here the divergence reads as shape, and the hue half of it is only
+     visible on a stance whose hue is not amber. Scoped either way: the column
+     must be correct, not merely correct on the specimen that happens to show. */
+  .cmp-prod .pv-trg {
+    display: inline-flex; align-items: center; gap: 2px;
+    font-size: 10px; font-weight: 800; line-height: 1.35;
+    padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+    background: color-mix(in srgb, var(--pvh) 9%, var(--panel));
+    color: var(--pvh-ink, var(--pvh));
+    border: 1px solid color-mix(in srgb, var(--pvh-ink, var(--pvh)) 45%, transparent);
+  }
+  /* MISSING CHART. Production reserves the FULL 74px hero and lets .pv-chart's
+     verb wash fill it; board.css collapses it to a 24px near-invisible strip.
+     This is the single largest divergence on the modal card, and it is only
+     visible because specimen 2 exists. */
+  .cmp-prod .pv-nochart { height: 74px; background: transparent; border-bottom: 0; }
+  /* OVERLAY BUDGET. Production caps both overlays at a flat 70%; board.css
+     reserves the quote's measured width on the left and 60% on the right. */
+  .cmp-prod .pv-ov { max-width: 70%; }
+  .cmp-prod .pv-ov.pv-ovl { max-width: 70%; flex-wrap: wrap; row-gap: 3px; }
+  .cmp-prod .pv-ov.pv-ovr { max-width: 70%; }
+  /* ZONE FOOTER. Different alignment, gap, padding and type size — and the
+     zone LABEL takes the verb ink in production (--pvh-ink falling back to
+     --pvh) where board.css falls back to --muted and adds a --q mute class. */
+  .cmp-prod .pv-zn { align-items: center; gap: 5px; padding: 6px 10px 7px; font-size: 10.5px; }
+  .cmp-prod .pv-znl { font-size: 9.5px; color: var(--pvh-ink, var(--pvh)); }
+  .cmp-prod .pv-dt { font-size: 9.5px; }
+  /* IDENTITY TYPE. Production runs the name and sector a full point larger and
+     clips them; board.css shrinks the sector and drops the clip. */
+  .cmp-prod .pv-idw { overflow: hidden; }
+  .cmp-prod .pv-tk { font-size: 13px; }
+  .cmp-prod .pv-nm { font-size: 10.5px; }
+  .cmp-prod .pv-ind { font-size: 10.5px; white-space: nowrap; overflow: hidden;
+                      text-overflow: ellipsis; margin-top: 1px; }
+  /* MARKS ROW. Production reserves a min-height so the row never collapses and
+     the grid stays flush; board.css lets it vanish. */
+  .cmp-prod .pv-mk { gap: 3px 4px; margin-top: 4px; min-height: 18px; align-items: center; }
+  .cmp-prod .pv-mk-i { font-size: 9.5px; font-weight: 700; line-height: 1.45;
+                       padding: 1px 6px; border-radius: 6px; }
+  .cmp-prod .pvcard:hover { border-color: color-mix(in srgb, var(--pvh) 55%, var(--line)); }
 
   /* ─────────── variant: #5514 v1 (the over-corrected card) ───────────
      Reproduced here so the adjudication has all three designs in one frame.
@@ -79,13 +182,11 @@
 </head>
 <body>
   <div class="cmp-wrap">
-    <h1 class="cmp-h1">Prophet card — three-way adjudication</h1>
-    <p class="cmp-lede">
-      One real plan row (<b>FTI · TechnipFMC</b>, entered 2026-08-10) rendered three ways from the same
-      committed payload, so what differs is design and not data. The revision keeps the shipped card's
-      chart-first trading DNA and the ruled lifecycle semantics, and drops what each side got wrong.
-    </p>
+    <h1 class="cmp-h1" id="h1"></h1>
+    <p class="cmp-lede" id="lede"></p>
+    <div class="cmp-legend" id="legend"></div>
     <div class="cmp-grid" id="cmp"></div>
+    <div class="cmp-method" id="method"></div>
   </div>
   <script src="board-data.js"></script>
   <script>
@@ -97,146 +198,400 @@
     root.setAttribute("data-lang", lang);
     root.lang = lang === "zh" ? "zh-CN" : "en";
 
-    var R = window.BOARD.rows.filter(function (x) { return x.tk === "FTI"; })[0];
     function t(en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + "</span>"; }
-    function money(v) { return v == null ? "—" : "$" + Number(v).toFixed(2); }
-    var PX = money(R.px), CHG = "+0.7%";
+    function money(v) { return v == null ? "&mdash;" : "$" + Number(v).toFixed(2); }
+    function li(p) { return "<li>" + t(p[0], p[1]) + "</li>"; }
+    function ul(cls, items) { return '<ul class="' + cls + '">' + items.map(li).join("") + "</ul>"; }
+    function hd(en, zh) { return "<b>" + t(en, zh) + "</b>"; }
 
-    /* ── 1. PRODUCTION — as shipped today (four-dot rail, Edge slot) ─────── */
-    var prod =
-      '<article class="pvcard pv-hold">' +
-        '<div class="pv-chart">' + R.spark +
-          '<span class="pv-ov pv-ovl"><span class="pv-chip">' + t("Hold", "持有") + '</span>' +
-          '<span class="pv-trg">&#9889; ' + t("Triggered", "已触发") + '</span></span>' +
-          '<span class="pv-ov pv-ovr"><span class="pv-quote"><span class="pv-px">' + PX + '</span>' +
-          '<span class="pv-chg pv-chg--up">' + CHG + '</span></span></span>' +
-        '</div>' +
+    /* ── the population this page is arguing about ─────────────────────────
+       Derived, never asserted: LIVE = every row the board carries tonight that
+       has not resolved, which is the same 159 the board's own tier gate
+       prints. The modal-card claim stands or falls on these counts, so they
+       are computed from the payload at render time rather than typed in. */
+    var LIVE = window.BOARD.rows.filter(function (x) { return x.life !== "resolved"; });
+    var N_LIVE     = LIVE.length;
+    var N_CHART    = LIVE.filter(function (x) { return !!x.spark; }).length;
+    var N_NOCHART  = N_LIVE - N_CHART;
+    var N_NOREAD   = LIVE.filter(function (x) { return x.stance === "blocked_data"; }).length;
+    var N_MODAL    = LIVE.filter(function (x) { return !x.spark && x.stance === "blocked_data"; }).length;
+
+    var ROWS = {};
+    window.BOARD.rows.forEach(function (x) { ROWS[x.tk] = x; });
+    var A = ROWS["FTI"];      /* enriched:  stance "wait",         spark, zone, ⚡ */
+    var B = ROWS["RIO"];      /* modal:     stance "blocked_data", no spark, no zone, no price */
+
+    var VERB = { buy: ["Buy", "买入"], near: ["Near", "临近"], wait: ["Wait", "等待"],
+                 hold: ["Hold", "持有"], avoid: ["Avoid", "回避"] };
+    var LIFE = { watch: ["Watch", "观察"], ready: ["Ready", "就绪"], entered: ["Entered", "入场"],
+                 delivering: ["Delivering", "达标"], overtime: ["Overtime", "超时"],
+                 invalidated: ["Invalidated", "失效"], resolved: ["Resolved", "已结"] };
+    var GLOSS = { watch: ["signal fired, nothing committed", "已出现信号，尚未建仓"],
+                  ready: ["plan armed, trigger not fired", "计划就位，尚未触发"],
+                  entered: ["in the entry window", "处于入场窗口内"] };
+    var LANE = { bottoming: ["Bottoming entry", "底部入场"],
+                 continuation: ["Continuation entry", "顺势入场"] };
+    var SEC  = { "Energy": ["Energy", "能源"], "Health Care": ["Health Care", "医疗保健"],
+                 "Materials": ["Materials", "原材料"], "Industrials": ["Industrials", "工业"] };
+
+    /* The daily % change is the ONE simulated value on this page — no committed
+       artifact carries per-ticker intraday change (DESIGN_NOTES §6 Q8). It is
+       rendered identically in both columns that draw a quote, so the columns
+       differ by design and never by data. */
+    var DEMO_CHG = "+0.7%";
+
+    function sec(r) {
+      if (!r.sec) return "";
+      var s = SEC[r.sec] || [r.sec, r.sec];
+      return '<div class="pv-ind">' + t(s[0], s[1]) + "</div>";
+    }
+    function lane(r, extra) {
+      if (!r.lane || !LANE[r.lane]) return "";
+      return '<div class="pv-mk"><span class="pv-mk-i' + (extra || "") + '">' +
+             t(LANE[r.lane][0], LANE[r.lane][1]) + "</span></div>";
+    }
+    function chart(r) { return r.spark ? r.spark : '<div class="pv-nochart"></div>'; }
+    function quote(r) {
+      var live = r.px != null;
+      return '<span class="pv-ov pv-ovr"><span class="pv-quote">' +
+        '<span class="nb-px pv-px">' + money(r.px) + "</span>" +
+        '<span class="nb-chg pv-chg' + (live ? " up" : "") + '"' +
+        (live ? ' data-mock-live="1"' : "") + ">" +
+        (live ? DEMO_CHG : "&mdash;") + "</span></span></span>";
+    }
+    function trg(r) {
+      if (!r.trg) return "";
+      return '<span class="pv-trg">&#9889; ' +
+        (r.trg === "imminent" ? t("Imminent", "即将触发") : t("Triggered", "已触发")) + "</span>";
+    }
+    /* zone footer. `q` is the mute class board.css adds to a non-actionable
+       zone label; production has no such class and inks the label with the
+       verb hue instead, which is exactly why .cmp-prod .pv-znl is scoped. */
+    function zone(r, q) {
+      var h = '<div class="pv-zn">', zk = r.zk || "none";
+      if (zk === "active") {
+        h += '<span class="pv-znl">' + t("Zone", "买区") + "</span>" +
+             '<span class="pv-znr fig">' + money(r.zlo) + "&ndash;" + money(r.zhi) + "</span>";
+      } else if (zk === "readd") {
+        h += '<span class="pv-znl' + q + '">' + t("Re-add", "回补") + "</span>" +
+             '<span class="pv-znm fig">' + money(r.zlo) + "&ndash;" + money(r.zhi) + "</span>";
+      } else if (zk === "muted") {
+        h += '<span class="pv-znl' + q + '">' + t("Zone", "买区") + "</span>" +
+             '<span class="pv-znm fig">' + money(r.zlo) + "&ndash;" + money(r.zhi) + "</span>";
+      } else if (zk === "confirm") {
+        h += '<span class="pv-znm">' + t("Zone sets on confirmation", "买区待确认后生成") + "</span>";
+      } else {
+        h += '<span class="pv-znm">' + t("No zone — stand aside", "无买区 — 观望") + "</span>";
+      }
+      if (r.opened) h += '<span class="pv-dt">' + t(r.opened.en, r.opened.zh) + "</span>";
+      return h + "</div>";
+    }
+
+    /* ── 1. PRODUCTION — as shipped today (four-dot rail, Edge slot) ────────
+       _prophet_card.html.j2:373 reads
+           {%- set _verb = cx.verb if cx.verb in _VEN else 'wait' -%}
+       so a plan whose entry read has NOT published renders as a full WAIT card
+       — amber hue, "Wait" chip, a cautious verdict the engine never produced.
+       That coercion is reproduced here, not invented: specimen 2's production
+       column is what production actually draws for the modal row. */
+    function prod(r) {
+      var v = VERB[r.stance] ? r.stance : "wait";
+      /* The rail's lit step comes from a `stage` field the payload does not
+         carry. The only payload value naming a rail step is `lane`, and only
+         `bottoming` matches a label — `continuation` matches none. So the rail
+         is drawn from what exists rather than lit by hand, and the unreachable
+         steps are shown rather than asserted. */
+      var stage = r.lane === "bottoming" ? 1 : 0;
+      var dots = "", i;
+      for (i = 1; i <= 4; i++) {
+        if (i > 1) dots += '<span class="pv-seg' + (stage >= i ? " pa" : "") + '"></span>';
+        dots += '<span class="pv-dot' + (stage === i ? " on" : stage > i ? " pa" : "") + '"></span>';
+      }
+      var labels = [["Bottoming", "筑底"], ["Turning", "转向"], ["Ready", "就绪"], ["Trend", "趋势"]]
+        .map(function (p, k) {
+          return "<span" + (stage === k + 1 ? ' class="on"' : "") + ">" + t(p[0], p[1]) + "</span>";
+        }).join("");
+      return '<article class="pvcard pv-' + v + '" data-life="' + r.life + '">' +
+        '<div class="pv-chart">' + chart(r) +
+          '<span class="pv-ov pv-ovl"><span class="pv-chip">' + t(VERB[v][0], VERB[v][1]) + "</span>" +
+          trg(r) + "</span>" +
+          /* the quote slot renders ONLY when the join supplied a price
+             (_prophet_card.html.j2:402), so a priceless row has no node for
+             live.js to key on and can never hydrate — visible on specimen 2 */
+          (r.px == null ? "" : quote(r)) +
+        "</div>" +
         '<div class="pv-bd">' +
-          '<div class="pv-hd"><span class="pv-idw"><span class="pv-tk">FTI</span>' +
-            '<span class="pv-nm">TechnipFMC</span></span>' +
-            '<span class="pv-edge"><span class="pv-edl">' + t("Edge", "优势") + '</span>' +
-            '<span class="pv-edn">2.1</span></span></div>' +
-          '<div class="pv-ind">' + t("Energy", "能源") + '</div>' +
-          '<div class="pv-mk"><span class="pv-mk-i">' + t("Bottoming", "筑底") + '</span></div>' +
-          '<div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span>' +
-            '<span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span>' +
-            '<span class="pv-seg"></span><span class="pv-dot"></span></div>' +
-          '<div class="pv-stl"><span class="on">' + t("Bottoming", "筑底") + '</span><span>' +
-            t("Turning", "转向") + '</span><span>' + t("Ready", "就绪") + '</span><span>' +
-            t("Trend", "趋势") + '</span></div>' +
-        '</div>' +
-        '<div class="pv-zn"><span class="pv-znl">' + t("Zone", "买区") + '</span>' +
-          '<span class="pv-znr fig">' + money(R.zlo) + "&ndash;" + money(R.zhi) + '</span>' +
-          '<span class="pv-dt">' + t("Aug 10", "8月10日") + '</span></div>' +
-      '</article>';
+          '<div class="pv-hd"><span class="pv-idw"><span class="pv-tk">' + r.tk + "</span>" +
+            (r.nm ? '<span class="pv-nm">' + r.nm + "</span>" : "") + "</span>" +
+            '<span class="pv-edge"><span class="pv-edl">' + t("Edge", "优势") + "</span>" +
+            /* the payload carries no `edge` field at all, so production's own
+               missing-value form renders (_prophet_card.html.j2:407) */
+            '<span class="pv-edn pv-edna">&mdash;</span></span></div>' +
+          sec(r) + lane(r) +
+          '<div class="pv-stp">' + dots + "</div>" +
+          '<div class="pv-stl">' + labels + "</div>" +
+        "</div>" + zone(r, "") + "</article>";
+    }
 
-    /* ── 2. #5514 v1 — the over-corrected card ───────────────────────────── */
-    var v1 =
-      '<article class="pvcard" data-life="entered">' +
-        '<span class="mx-cap mx-cap--entered"></span>' +
+    /* ── 2. #5514 v1 — the over-corrected card ─────────────────────────────
+       v1 deleted the stance channel outright, so its column is hue-free on
+       BOTH specimens. That is v1's design, not a substitution by this page,
+       and it is priced in v1's cost list rather than quietly repaired. */
+    function v1(r) {
+      var g = GLOSS[r.life];
+      var s = r.sec ? (SEC[r.sec] || [r.sec, r.sec]) : null;
+      var idline = r.nm
+        ? '<div class="pv-nm">' + r.nm + (s ? " &middot; " + t(s[0], s[1]) : "") + "</div>"
+        : (s ? '<div class="pv-nm">' + t(s[0], s[1]) + "</div>" : "");
+      return '<article class="pvcard" data-life="' + r.life + '">' +
+        '<span class="mx-cap mx-cap--' + r.life + '"></span>' +
         '<div class="pv-chart"></div>' +
         '<div class="pv-bd">' +
-          '<div class="pv-hd"><span class="pv-tk">FTI</span>' +
-            '<span class="pv-win fig">' + t("day 2 of 45", "第 2 天 / 共 45 天") + '</span></div>' +
-          '<div class="pv-nm">TechnipFMC &middot; ' + t("Energy", "能源") + '</div>' +
-          '<div class="pv-life"><span class="mx-mark mx-mark--entered"></span>' +
-            '<span class="pv-life-w">' + t("Entered", "入场") + '</span>' +
-            '<span class="pv-lifegloss">' + t("in the entry window", "处于入场窗口内") + '</span></div>' +
-          '<div class="pv-mk"><span class="pv-mk-i">' + t("Bottoming entry", "底部入场") + '</span></div>' +
-          '<div class="pv-do">' + t(R["do"], R.do_zh) + '</div>' +
-        '</div>' +
+          '<div class="pv-hd"><span class="pv-tk">' + r.tk + "</span>" +
+            '<span class="pv-win fig">' +
+            t("day " + r.age + " of " + r.hz, "第 " + r.age + " 天 / 共 " + r.hz + " 天") + "</span></div>" +
+          idline +
+          '<div class="pv-life"><span class="mx-mark mx-mark--' + r.life + '"></span>' +
+            '<span class="pv-life-w">' + t(LIFE[r.life][0], LIFE[r.life][1]) + "</span>" +
+            (g ? '<span class="pv-lifegloss">' + t(g[0], g[1]) + "</span>" : "") + "</div>" +
+          lane(r) +
+          '<div class="pv-do">' + t(r["do"], r.do_zh) + "</div>" +
+        "</div>" +
         '<div class="pv-zn">' +
-          '<span class="pv-zi"><span class="pv-znl">' + t("Entry", "入场") + '</span>' +
-            '<span class="pv-znr fig">' + money(R.entry) + '</span></span>' +
+          '<span class="pv-zi"><span class="pv-znl">' + t("Entry", "入场") + "</span>" +
+            '<span class="pv-znr fig">' + money(r.entry) + "</span></span>" +
           '<span class="pv-zi"><span class="pv-znl">T1</span>' +
-            '<span class="pv-znr fig">' + money(R.t1) + '</span></span>' +
-          '<span class="pv-zi pv-zi--void"><span class="pv-znl">' + t("Void", "失效") + '</span>' +
-            '<span class="pv-znr fig">' + money(R.inval) + '</span></span></div>' +
-      '</article>';
+            '<span class="pv-znr fig">' + money(r.t1) + "</span></span>" +
+          '<span class="pv-zi pv-zi--void"><span class="pv-znl">' + t("Void", "失效") + "</span>" +
+            '<span class="pv-znr fig">' + money(r.inval) + "</span></span></div>" +
+        "</article>";
+    }
 
-    /* ── 3. REVISED — the amalgamation ──────────────────────────────────── */
-    var v2 =
-      '<article class="pvcard pv-hold" data-life="entered">' +
-        '<div class="pv-chart">' + R.spark +
-          '<span class="pv-ov pv-ovl"><span class="pv-chip">' + t("Hold", "持有") + '</span>' +
-          '<span class="pv-trg">&#9889; ' + t("Triggered", "已触发") + '</span></span>' +
-          '<span class="pv-ov pv-ovr"><span class="pv-quote"><span class="pv-px">' + PX + '</span>' +
-          '<span class="pv-chg pv-chg--up">' + CHG + '</span></span></span>' +
-        '</div>' +
+    /* ── 3. REVISED — the amalgamation ─────────────────────────────────────
+       Stance comes from the payload with no fallback: an unpublished read gets
+       .pv-noread and the dashed "No read yet" chip, never a verb. */
+    function v2(r) {
+      var v = VERB[r.stance] ? r.stance : null;
+      var noRead = r.stance === "blocked_data";
+      return '<article class="pvcard' + (v ? " pv-" + v : noRead ? " pv-noread" : "") +
+        '" data-life="' + r.life + '">' +
+        '<div class="pv-chart">' + chart(r) +
+          '<span class="pv-ov pv-ovl">' +
+            (v ? '<span class="pv-chip">' + t(VERB[v][0], VERB[v][1]) + "</span>"
+               : '<span class="pv-chip pv-chip--noread">' + t("No read yet", "暂无判断") + "</span>") +
+            trg(r) + "</span>" +
+          /* the slot renders on EVERY card, priced or not, so live.js always
+             has a node to paint — the fix production's `if price_txt` blocks */
+          quote(r) +
+        "</div>" +
         '<div class="pv-bd">' +
-          '<div class="pv-hd"><span class="pv-idw"><span class="pv-tk">FTI</span>' +
-            '<span class="pv-nm">TechnipFMC</span></span>' +
-            '<span class="pv-pri"><span class="pv-pril">' + t("Priority", "优先级") + '</span>' +
-            '<span class="pv-prin fig">89</span></span></div>' +
-          '<div class="pv-ind">' + t("Energy", "能源") + '</div>' +
-          '<div class="pv-mk"><span class="pv-mk-i pv-mk-lane">' + t("Bottoming entry", "底部入场") + '</span></div>' +
-          '<div class="pv-life"><span class="mx-mark mx-mark--entered"></span>' +
-            '<span class="pv-life-w">' + t("Entered", "入场") + '</span></div>' +
-        '</div>' +
-        '<div class="pv-zn"><span class="pv-znl">' + t("Zone", "买区") + '</span>' +
-          '<span class="pv-znr fig">' + money(R.zlo) + "&ndash;" + money(R.zhi) + '</span>' +
-          '<span class="pv-dt">' + t("Aug 10", "8月10日") + '</span></div>' +
-      '</article>';
+          '<div class="pv-hd"><span class="pv-idw"><span class="pv-tk">' + r.tk + "</span>" +
+            (r.nm ? '<span class="pv-nm">' + r.nm + "</span>" : "") + "</span>" +
+            '<span class="pv-pri"><span class="pv-pril">' + t("Priority", "优先级") + "</span>" +
+            '<span class="pv-prin' + (r.pri == null ? " pv-prin--na" : "") + ' fig">' +
+            (r.pri == null ? "&mdash;" : Math.round(r.pri)) + "</span></span></div>" +
+          sec(r) + lane(r, " pv-mk-lane") +
+          '<div class="pv-life"><span class="mx-mark mx-mark--' + r.life + '"></span>' +
+            '<span class="pv-life-w">' + t(LIFE[r.life][0], LIFE[r.life][1]) + "</span></div>" +
+        "</div>" + zone(r, " pv-znl--q") + "</article>";
+    }
 
-    function col(cls, tag, tagCls, name, sub, card, notes) {
+    /* ── page copy ─────────────────────────────────────────────────────────── */
+    document.getElementById("h1").innerHTML =
+      t("Prophet card — three-way adjudication", "Prophet 卡片 —— 三方评定");
+
+    document.getElementById("lede").innerHTML = t(
+      "Two real plan rows from the same committed payload, each rendered three ways, so what " +
+      "differs is design and not data. Every field on every card is read from the payload — " +
+      "including the stance, which is <b>Wait</b> for FTI and <b>no read at all</b> for RIO. " +
+      "Each column is rendered in its OWN stylesheet: classes the two designs define differently " +
+      "are scoped into the production column, so production is shown in production's values. " +
+      "All three columns carry a cost list, the revised one included.",
+      "两条来自同一份已提交数据的真实计划行，各以三种设计渲染 —— 差异只在设计，不在数据。每张卡上的每个字段都取自数据本身，" +
+      "判读也一样：FTI 是<b>「等待」</b>，RIO 则<b>根本没有判读</b>。三栏各自使用自己的样式表：凡两套设计取值不同的类，" +
+      "都已限定在生产栏内，因此生产栏显示的是生产的取值。三栏都列出各自的代价，修订版也不例外。");
+
+    document.getElementById("legend").innerHTML =
+      "<p>" + t(
+        "<b>Specimen 1 — the enriched row.</b> FTI · TechnipFMC: a chart, a name, a sector, a price, " +
+        "an entry read. Only <b>" + N_CHART + " of tonight's " + N_LIVE + "</b> live rows carry a chart, " +
+        "so this is the best case, not the common one.",
+        "<b>样本一 —— 资料齐全的行。</b>FTI · TechnipFMC：有走势图、有公司名、有行业、有价格、有入场判读。" +
+        "今晚 <b>" + N_LIVE + "</b> 条在跑的计划里只有 <b>" + N_CHART + "</b> 条带走势图 —— 这是最好的情况，不是常见的情况。") + "</p>" +
+      "<p>" + t(
+        "<b>Specimen 2 — the modal card.</b> RIO: no chart, no name, no sector, no price, no entry read. " +
+        "<b>" + N_NOCHART + " of " + N_LIVE + "</b> live rows carry no chart and <b>" + N_NOREAD +
+        "</b> carry no entry read; <b>" + N_MODAL + "</b> are this exact shape. This — not specimen 1 — " +
+        "is what the grid is mostly made of, and a comparison that draws only the enriched row is " +
+        "arguing about a minority of the surface.",
+        "<b>样本二 —— 占多数的那种卡片。</b>RIO：无走势图、无公司名、无行业、无价格、无入场判读。" +
+        "<b>" + N_LIVE + "</b> 条在跑的计划中，<b>" + N_NOCHART + "</b> 条没有走势图、<b>" + N_NOREAD +
+        "</b> 条没有入场判读，其中 <b>" + N_MODAL + "</b> 条正是这个形态。这才是面板的主体，样本一不是；" +
+        "只画资料齐全那一行的对比，讨论的只是这块界面的少数派。") + "</p>";
+
+    function col(cls, tag, tagCls, name, nameZh, sub, subZh, a, b, notes) {
       return '<div class="cmp-col ' + cls + '">' +
-        '<div class="cmp-hd"><span class="cmp-tag ' + tagCls + '">' + tag + '</span>' +
-        '<p class="cmp-name">' + name + '</p><p class="cmp-sub">' + sub + '</p></div>' +
-        '<div class="cmp-card">' + card + '</div>' +
-        '<div class="cmp-notes">' + notes + '</div></div>';
+        '<div class="cmp-hd"><span class="cmp-tag ' + tagCls + '">' + tag + "</span>" +
+        '<p class="cmp-name">' + t(name, nameZh) + '</p>' +
+        '<p class="cmp-sub">' + t(sub, subZh) + "</p></div>" +
+        '<p class="cmp-spec cmp-spec--first">' + t("Specimen 1 · enriched", "样本一 · 资料齐全") + "</p>" +
+        '<div class="cmp-card">' + a + "</div>" +
+        '<p class="cmp-spec">' + t("Specimen 2 · modal card", "样本二 · 占多数的卡片") + "</p>" +
+        '<div class="cmp-card">' + b + "</div>" +
+        '<div class="cmp-notes">' + notes + "</div></div>";
     }
 
     document.getElementById("cmp").innerHTML =
-      col("cmp-prod", "shipped today", "cmp-tag--prod",
-          "Production Prophet card",
-          "Operator-ratified over many iterations. Chart-first, one-second read — but its four-dot rail asserts a journey the engine never computes, and two of its four steps are structurally unreachable.",
-          prod,
-          '<b>What it gets right</b><ul class="cmp-keep">' +
-          '<li>Chart hero — denser than any prose</li>' +
-          '<li>Live quote and change, overlaid</li>' +
-          '<li>One-word stance, read instantly</li>' +
-          '<li>Compact ticker / name / sector</li>' +
-          '<li>Zone, not an execution order</li></ul>' +
-          '<b>What must go</b><ul class="cmp-drop">' +
-          '<li>The four-dot Bottoming→Trend rail</li>' +
-          '<li>Two rail steps that can never light</li>' +
-          '<li>Full-card verb wash and accent bar</li></ul>') +
+      col("cmp-prod", t("shipped today", "现网在跑"), "cmp-tag--prod",
+          "Production Prophet card", "现网 Prophet 卡片",
+          "Operator-ratified over many iterations. Chart-first, one-second read — but its four-dot rail " +
+          "asserts a journey the engine never computes, and on the modal row it renders a cautious verdict " +
+          "no read produced.",
+          "经过多轮迭代、由操作者拍板。以图为先，一秒可读 —— 但那条四点进度条声称了一段引擎从未计算过的进程；" +
+          "而到了占多数的那种行上，它给出的是一个从未有人判读出来的谨慎结论。",
+          prod(A), prod(B),
+          hd("What it gets right", "做对了什么") +
+          ul("cmp-keep", [
+            ["Chart hero — denser than any prose", "以走势图为主 — 比任何文字都信息密集"],
+            ["Live quote and change, overlaid", "实时价格与涨跌，叠加在图上"],
+            ["One-word stance, read instantly", "一个词的判读，一眼可读"],
+            ["Compact ticker / name / sector", "代码 / 名称 / 行业，排布紧凑"],
+            ["Zone, not an execution order", "给的是买区，不是下单指令"],
+            ["Marks row holds its height — the grid stays flush", "标记行保留固定高度 — 网格不会参差"]
+          ]) +
+          hd("What it costs", "代价是什么") +
+          ul("cmp-drop", [
+            ["The four-dot Bottoming→Trend rail", "「筑底 → 趋势」四点进度条"],
+            ["Two rail steps that can never light", "其中两步永远不可能点亮"],
+            ["No stage field in the payload — the rail is dead on the modal row",
+             "数据里根本没有 stage 字段 — 到了占多数的那种行上，进度条整条是熄的"],
+            ["An unpublished read is coerced to WAIT — a verdict nobody produced",
+             "判读未发布时被强行当作「等待」 — 一个没有人得出过的结论"],
+            ["No quote slot without a price, so the card can never hydrate",
+             "没有价格就不渲染报价位，这张卡永远接不上实时价"],
+            ["74px of empty hero on a chartless row", "无图的行仍留着 74px 的空图区"],
+            ["Full-card verb wash and accent bar", "整卡判读色调与顶部色条"]
+          ])) +
       col("cmp-v1", "#5514 v1", "cmp-tag--v1",
-          "First G-C mockup",
-          "Fixed the lifecycle semantics, but rebuilt the card around only the fields the plan book carries on every row — letting a data-join gap redefine the flagship UX.",
-          v1,
-          '<b>What it gets right</b><ul class="cmp-keep">' +
-          '<li>Ruled hue-neutral lifecycle mark</li>' +
-          '<li>Rail retired, no fake progression</li>' +
-          '<li>Episode chips for repeat names</li></ul>' +
-          '<b>What must go</b><ul class="cmp-drop">' +
-          '<li>No chart — the biggest regression</li>' +
-          '<li>No quote, no change, no name/sector</li>' +
-          '<li>Plan-clock telemetry (“day 2 of 45”)</li>' +
-          '<li>Paragraph instructions in a grid</li>' +
-          '<li>Entry / T1 / Void reads as an order</li>' +
-          '<li>Grayscale — no stance at a glance</li></ul>') +
-      col("cmp-v2", "revised", "cmp-tag--v2",
-          "Revised amalgamation",
-          "The shipped card's trading DNA, with the rail replaced by the ruled lifecycle mark and Priority restored. Institutional, but alive.",
-          v2,
-          '<b>Kept from production</b><ul class="cmp-keep">' +
-          '<li>Chart hero at its shipped height</li>' +
-          '<li>Live quote + change (direction ink, zh-flipping)</li>' +
-          '<li>One-word stance chip</li>' +
-          '<li>Ticker / name / sector geometry</li>' +
-          '<li>Zone footer with the date pinned right</li>' +
-          '<li>⚡ trigger and restrained marks</li></ul>' +
-          '<b>Kept from #5514</b><ul class="cmp-keep">' +
-          '<li>Lifecycle mark + word, hue-neutral</li>' +
-          '<li>One card per plan id; episode chips</li>' +
-          '<li>No “stage” vocabulary anywhere</li></ul>' +
-          '<b>Dropped from both</b><ul class="cmp-drop">' +
-          '<li>The four-dot rail (production)</li>' +
-          '<li>Plan clock, paragraph, Entry/T1/Void (v1)</li>' +
-          '<li>Full-card green wash (production)</li></ul>' +
-          '<b>Added</b><ul class="cmp-keep">' +
-          '<li>Priority score — readiness rank, quiet and never hued</li></ul>');
+          "First G-C mockup", "G-C 首版稿",
+          "Fixed the lifecycle semantics, but rebuilt the card around only the fields the plan book carries " +
+          "on every row — letting a data-join gap redefine the flagship UX. On the modal row that bet pays: " +
+          "it is the only column with nothing missing.",
+          "修正了生命周期的语义，却把整张卡重建在「计划簿每行都有」的那几个字段上 —— 等于让一处数据缺口反过来定义了旗舰界面。" +
+          "但到了占多数的那种行上，这个赌注赢了：它是唯一一栏没有任何空缺的。",
+          v1(A), v1(B),
+          hd("What it gets right", "做对了什么") +
+          ul("cmp-keep", [
+            ["Ruled hue-neutral lifecycle mark", "有规可循、不用颜色的生命周期标记"],
+            ["Rail retired, no fake progression", "撤掉进度条，不再伪造推进感"],
+            ["Episode chips for repeat names", "同一标的重复出现时给出轮次标签"],
+            ["Draws the modal card with nothing missing — it was built for exactly that row",
+             "画占多数的那种卡片时毫无空缺 — 它本来就是为那种行设计的"],
+            ["The plan's own levels are on the card, not one click away",
+             "计划自身的价位就在卡上，不必再点一次"]
+          ]) +
+          hd("What it costs", "代价是什么") +
+          ul("cmp-drop", [
+            ["No chart — the biggest regression", "没有走势图 — 最大的一处倒退"],
+            ["No quote, no change, no name/sector", "没有报价、没有涨跌、没有名称与行业"],
+            ["Plan-clock telemetry (“day 3 of 45”)", "计划计时器（「第 3 天 / 共 45 天」）"],
+            ["Paragraph instructions in a grid", "在网格里塞进整段说明文字"],
+            ["Entry / T1 / Void reads as an order", "入场 / T1 / 失效价 读起来像一张下单指令"],
+            ["Grayscale — no stance at a glance", "全灰阶 — 一眼看不出判读"]
+          ])) +
+      col("cmp-v2", t("revised", "修订版"), "cmp-tag--v2",
+          "Revised amalgamation", "修订合并版",
+          "The shipped card's trading DNA, with the rail replaced by the ruled lifecycle mark, Priority " +
+          "restored, and an absent read shown as absent. Institutional, but alive — and it pays for that " +
+          "on the modal row, where the hero it is built around has nothing to draw.",
+          "保留现网卡片的交易气质：撤掉进度条，换成有规可循的生命周期标记，恢复优先级，并且让「没有判读」如实显示为没有判读。" +
+          "专业，但不死板 —— 代价则落在占多数的那种行上：它赖以成立的主视觉，在那里无图可画。",
+          v2(A), v2(B),
+          hd("What it gets right", "做对了什么") +
+          ul("cmp-keep", [
+            ["Chart hero at its shipped height", "走势图主视觉保持现网高度"],
+            ["Live quote + change in direction ink, flipping under zh",
+             "实时价格与涨跌用方向色，中文下自动反转"],
+            ["Quote slot on every card, priced or not — it can always hydrate",
+             "每张卡都有报价位，有没有价格都在 — 永远接得上实时价"],
+            ["One-word stance chip; an absent read says so, and takes no hue",
+             "一个词的判读标签；没有判读就说没有，并且不占用任何颜色"],
+            ["Lifecycle mark + word, hue-neutral (from #5514)",
+             "生命周期标记加词，不用颜色（沿用 #5514）"],
+            ["Rail, plan clock, paragraph and Entry/T1/Void all dropped",
+             "进度条、计划计时器、整段文字、入场/T1/失效价 全部撤除"],
+            ["Priority — readiness rank, quiet and never hued", "优先级 — 就绪排序，克制且从不着色"]
+          ]) +
+          hd("What it costs", "代价是什么") +
+          ul("cmp-drop", [
+            ["Execution levels leave the card. Entry, T1 and Void live only in detail now — " +
+             "a reader sizing a position has to click through, where v1 had all three in front of them.",
+             "执行价位离开了卡片。入场、T1、失效价如今只在详情页 —— 要定仓位就得点进去，而 v1 把三者都摆在眼前。"],
+            ["The hero spends the card's largest area on a chart " + N_NOCHART + " of " + N_LIVE +
+             " live rows cannot fill. On specimen 2 it collapses to a 24px strip and the card loses its " +
+             "visual anchor: this design is optimised for the " + N_CHART + "-row best case.",
+             "最大的一块版面给了走势图，而 " + N_LIVE + " 条在跑的计划中有 " + N_NOCHART + " 条填不满它。" +
+             "到了样本二，图区塌成 24px 的窄条，卡片失去视觉重心：这个设计是按 " + N_CHART + " 条的最好情况优化的。"],
+            ["Lifecycle is weight-encoded, not hued — a 3px mark at two weights is a slower scan across " +
+             "159 cards than a colour would be, and Entered and Delivering are deliberately identical.",
+             "生命周期用笔画粗细编码，不用颜色 —— 在 159 张卡里，两档粗细的 3px 标记比颜色更难扫读，" +
+             "而且「入场」与「达标」本就故意长得一样。"],
+            ["The stance chip adds vocabulary the reader has to learn: five verbs plus “No read yet”, " +
+             "which is the one chip in that slot that is not a stance. The card itself never explains it.",
+             "判读标签又多了一套要学的词：五个动词，外加「暂无判断」—— 而后者是这个位置上唯一不表示判读的标签，卡片本身从不解释。"],
+            ["Priority is a bare number with no scale. “89” out of what? It ranks tonight's set, but only " +
+             "the tip says so — on the card it is an unexplained figure sitting where Edge used to be.",
+             "优先级只是一个没有量纲的数字。「89」是满分多少？它表示今晚名单内的排序，但只有提示里说了 —— " +
+             "在卡面上，它就是一个没有解释的数字，占着原来「优势」的位置。"],
+            ["For a Wait row the zone band is the only price on the card, and the stance rule renders it " +
+             "muted — so the one number a reader might act on is the least legible thing there.",
+             "对「等待」的行来说，买区是卡上唯一的价格区间，而判读规则把它渲染成淡色 —— " +
+             "结果是：读者唯一可能据此行动的数字，成了卡上最不显眼的一处。"]
+          ]));
+
+    document.getElementById("method").innerHTML =
+      hd("How this page renders — and where it could still mislead",
+         "本页如何渲染 —— 以及它仍可能误导你的地方") + "<ol>" +
+      li(["Stance is read from the payload, never hardcoded. FTI's is <code>wait</code>, so all three " +
+          "columns show WAIT. RIO's entry read has not published at all.",
+          "判读取自数据，不写死。FTI 的是 <code>wait</code>，因此三栏都显示「等待」。RIO 的入场判读根本没有发布。"]) +
+      li(["Production coerces an unpublished read to <code>wait</code> " +
+          "(<code>_prophet_card.html.j2:373</code>). Specimen 2's production column is therefore a WAIT " +
+          "card where nothing was read — reproduced, not substituted by this page.",
+          "生产端会把「未发布的判读」强制当作 <code>wait</code>（<code>_prophet_card.html.j2:373</code>）。" +
+          "所以样本二的生产栏是一张「等待」卡，而实际上什么都没判读出来 —— 这是复现，不是本页替换。"]) +
+      li(["#5514 v1 has no stance channel at all, so its column is hue-free on both specimens. That is " +
+          "v1's design; it is charged to v1's cost list rather than repaired here.",
+          "#5514 v1 根本没有判读这条通道，因此它两个样本都不带颜色。这是 v1 的设计，本页把它计入 v1 的代价，而不是替它修好。"]) +
+      li(["Classes both stylesheets define with different values are scoped into <code>.cmp-prod</code> " +
+          "with production's explicit values: <code>.pv-trg</code>, <code>.pv-nochart</code>, " +
+          "<code>.pv-ov / .pv-ovl / .pv-ovr</code>, <code>.pv-zn</code>, <code>.pv-znl</code>, " +
+          "<code>.pv-dt</code>, <code>.pv-tk</code>, <code>.pv-nm</code>, <code>.pv-ind</code>, " +
+          "<code>.pv-idw</code>, <code>.pv-mk</code>, <code>.pv-mk-i</code>, <code>.pvcard:hover</code>.",
+          "凡两套样式表都定义、但取值不同的类，都以生产端的显式取值限定在 <code>.cmp-prod</code> 之内：" +
+          "<code>.pv-trg</code>、<code>.pv-nochart</code>、<code>.pv-ov / .pv-ovl / .pv-ovr</code>、" +
+          "<code>.pv-zn</code>、<code>.pv-znl</code>、<code>.pv-dt</code>、<code>.pv-tk</code>、" +
+          "<code>.pv-nm</code>、<code>.pv-ind</code>、<code>.pv-idw</code>、<code>.pv-mk</code>、" +
+          "<code>.pv-mk-i</code>、<code>.pvcard:hover</code>。"]) +
+      li(["A limit worth stating: on a WAIT row the ⚡ chips resolve to the same ink, because " +
+          "<code>--pv-wait</code> and <code>--warn</code> ship the same value. Production pins ⚡ to the " +
+          "verb hue and this proposal pins it to a fixed amber — a real divergence that shows on Buy and " +
+          "Hold rows, and that specimen 1 cannot display. Here the two differ only in shape.",
+          "一处必须说明的局限：在「等待」的行上，两个 ⚡ 标签解析出的是同一种颜色，因为 <code>--pv-wait</code> " +
+          "与 <code>--warn</code> 取值相同。生产端把 ⚡ 绑定在判读色上，本提案把它固定为琥珀色 —— " +
+          "这是真实存在的分歧，但只在「买入」「持有」的行上看得见，样本一显示不出来。此处两者只差在形状。"]) +
+      li(["The rail's lit step is not hand-set. The payload carries no <code>stage</code>; only " +
+          "<code>lane === \"bottoming\"</code> names a rail label, so specimen 1 lights step 1 and " +
+          "specimen 2 lights nothing.",
+          "进度条点亮的那一步不是手工设定的。数据里没有 <code>stage</code> 字段，只有 " +
+          "<code>lane === \"bottoming\"</code> 能对上进度条的标签，因此样本一亮第一步、样本二一步都不亮。"]) +
+      li(["The payload carries no <code>edge</code> field, so the production column shows production's " +
+          "own missing-value form (—) rather than an invented number.",
+          "数据里没有 <code>edge</code> 字段，因此生产栏显示的是生产端自己的缺值形式（—），而不是编造的数字。"]) +
+      li(["The daily % change is the only simulated value on this page (DESIGN_NOTES §6 Q8) and is " +
+          "identical in both columns that draw a quote. Everything else is the committed payload.",
+          "当日涨跌幅是本页唯一模拟的数值（DESIGN_NOTES §6 Q8），且在两个绘制报价的栏里完全一致。其余全部取自已提交数据。"]) +
+      "</ol>";
   })();
   </script>
 </body>
