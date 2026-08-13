@@ -560,31 +560,44 @@
     var INK = (function () {
       var a = document.querySelector(".cmp-prod .pv-trg");
       var b = document.querySelector(".cmp-v2 .pv-trg");
-      var shape = { en: "a 999px pill at 10px/800 against a 5px rect at 9px/750",
-                    zh: "999px 胶囊、10px/800 对 5px 圆角矩形、9px/750" };
       if (!a || !b) {
         return { en: "No specimen on this page carries a ⚡ trigger, so the two treatments cannot be " +
                      "compared here at all.",
                  zh: "本页没有任何样本带 ⚡ 触发标签，因此这里根本无法比较两种处理。" };
       }
-      var ia = getComputedStyle(a).color, ib = getComputedStyle(b).color;
-      if (ia === ib) {
-        return { en: "Measured on this render: the two ⚡ chips resolve to the SAME ink " +
-                     "(<code>" + ia + "</code>), because the verb hue this row carries and the fixed " +
-                     "amber the proposal uses currently hold the same value. So on this specimen they " +
-                     "differ only in shape — " + shape.en + ". The hue half of the divergence is real " +
-                     "but is not visible on this stance; do not read its absence as agreement.",
-                 zh: "本次渲染实测：两个 ⚡ 标签解析出的是<b>同一种</b>颜色（<code>" + ia + "</code>），" +
-                     "因为这一行的判读色与本提案固定使用的琥珀色目前取值相同。所以在这个样本上，两者只差在形状 —— " +
-                     shape.zh + "。颜色上的分歧真实存在，只是在这个判读上看不出来；不要把「看不见」当成「一致」。" };
+      /* Describe only what is on screen. Any sentence naming the MECHANISM
+         either side uses — "the proposal pins it to a fixed amber", "the two
+         tokens hold the same value" — is a sentence that goes quietly false
+         the next time board.css moves, which is the failure this page exists
+         to stop doing. Production's rule is the one stable half: the shipped
+         template inks ⚡ with the verb hue (_prophet_card.html.j2:305). */
+      function spec(el) {
+        var c = getComputedStyle(el);
+        return { ink: c.color, r: c.borderRadius, f: c.fontSize + "/" + c.fontWeight };
       }
-      return { en: "Measured on this render: the two ⚡ chips resolve to DIFFERENT inks — production " +
-                   "<code>" + ia + "</code> against the proposal's <code>" + ib + "</code> — on top of " +
-                   "the shape difference (" + shape.en + "). Production pins ⚡ to the verb hue; the " +
-                   "proposal pins it to a fixed amber that no longer tracks the stance.",
-               zh: "本次渲染实测：两个 ⚡ 标签解析出的是<b>不同</b>颜色 —— 生产端 <code>" + ia + "</code>，" +
-                   "本提案 <code>" + ib + "</code> —— 形状上也不同（" + shape.zh + "）。" +
-                   "生产端把 ⚡ 绑定在判读色上，本提案则固定为琥珀色，已不再随判读变化。" };
+      var p = spec(a), v = spec(b), same = p.ink === v.ink;
+      var read = { en: "production <code>" + p.ink + "</code> in a <code>" + p.r + "</code> chip at <code>" +
+                       p.f + "</code>, the proposal <code>" + v.ink + "</code> in a <code>" + v.r +
+                       "</code> chip at <code>" + v.f + "</code>",
+                   zh: "生产端 <code>" + p.ink + "</code>，圆角 <code>" + p.r + "</code>，字号字重 <code>" +
+                       p.f + "</code>；本提案 <code>" + v.ink + "</code>，圆角 <code>" + v.r +
+                       "</code>，字号字重 <code>" + v.f + "</code>" };
+      return {
+        en: "The ⚡ chips are measured off this render rather than described from memory — " + read.en +
+            ". They " + (same ? "agree on ink here and differ in shape" : "differ in both ink and shape") +
+            ". Production inks ⚡ with the verb hue by rule, so " + (same
+              ? "a match on this one stance is not a match in general: check a Buy or Avoid row before " +
+                "concluding the two treatments are the same chip."
+              : "the gap you see is the stance hue pulling away from what the proposal renders.") +
+            " The production column is scoped to production's own values precisely so a later change on " +
+            "either side surfaces here instead of hiding.",
+        zh: "⚡ 标签的数值取自本次渲染实测，而非凭记忆描述 —— " + read.zh + "。两者" +
+            (same ? "在颜色上一致，只差形状" : "颜色与形状都不同") + "。生产端按规则用判读色给 ⚡ 上色，因此" +
+            (same
+              ? "在这一个判读上相同，并不等于普遍相同：在下结论之前，请再看一眼「买入」或「回避」的行。"
+              : "你看到的差距，来自判读色与本提案渲染结果之间的偏离。") +
+            "生产栏之所以被限定为生产端自己的取值，正是为了让任何一侧日后的改动在这里显形，而不是被藏起来。"
+      };
     })();
 
     document.getElementById("method").innerHTML =

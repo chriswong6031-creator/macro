@@ -290,33 +290,50 @@ a { color: inherit; }
   position: absolute; top: 0; left: 0; right: 0; height: 3px;
   color: var(--text); pointer-events: none;
 }
+/* VTC-305: 4px was decorative at shipped size. 8px gives the weights room to
+   read at 1x without turning the mark into a second chroma channel. */
 .mx-mark {
-  position: relative; display: inline-block; width: 26px; height: 4px; flex: none;
+  position: relative; display: inline-block; width: 26px; height: 8px; flex: none;
   color: var(--text); vertical-align: middle;
 }
 .mx-cap::before, .mx-mark::before { content: ""; position: absolute; inset: 0; }
 
 /* Watch — dashed hairline: a signal fired, nothing is committed */
 .mx-cap--watch::before  { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 9px); }
-.mx-mark--watch::before { top: 1.5px; height: 1px;
+.mx-mark--watch::before { top: 3px; height: 2px;
   background: repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 6.5px); }
 
-/* Ready — half filled: the plan is armed, the trigger has not fired */
+/* Ready — half filled: the plan is armed, the position is not open yet */
 .mx-cap--ready::before  { background: linear-gradient(90deg, currentColor 0 50%,
                           color-mix(in srgb, currentColor 16%, transparent) 50%); }
-.mx-mark--ready::before { top: .5px; height: 3px;
+.mx-mark--ready::before { top: 2.5px; height: 3px;
   background: linear-gradient(90deg, currentColor 0 50%,
-              color-mix(in srgb, currentColor 22%, transparent) 50%); }
+              color-mix(in srgb, currentColor 20%, transparent) 50%); }
 
-/* Entered + Delivering — solid: a live commitment. Deliberately IDENTICAL: the
-   grammar encodes commitment CLASS, not per-cell identity; the two solid cells
-   are told apart by label and count, which the partition law guarantees. */
-.mx-cap--entered::before, .mx-cap--delivering::before { background: currentColor; }
-.mx-mark--entered::before, .mx-mark--delivering::before { top: .5px; height: 3px; background: currentColor; }
+/* Entered — solid: a live commitment. */
+.mx-cap--entered::before { background: currentColor; }
+.mx-mark--entered::before { top: 2.5px; height: 3px; background: currentColor; }
+
+/* Delivering — VTC-305: it used to render from the SAME rule as Entered, so the
+   one distinction a holder cares about most had no visual difference at all.
+   The ruling's grammar is preserved — Delivering is still the solid
+   commitment weight, it is not re-encoded as a different class — and the
+   first target it has reached is marked at the end of the run. Entered is a
+   plain bar; Delivering is a bar that arrives somewhere. */
+.mx-cap--delivering::before { background: currentColor; }
+.mx-cap--delivering::after {
+  content: ""; position: absolute; right: 0; top: 0; width: 22%; height: 6px;
+  background: currentColor;
+}
+.mx-mark--delivering::before { top: 2.5px; height: 3px; background: currentColor; }
+.mx-mark--delivering::after {
+  content: ""; position: absolute; right: 0; top: 0; width: 5px; height: 8px;
+  border-radius: 1px; background: currentColor;
+}
 
 /* Overtime — solid muted: the declared window expired, the plan is still open */
 .mx-cap--overtime::before  { background: color-mix(in srgb, currentColor 34%, transparent); }
-.mx-mark--overtime::before { top: .5px; height: 3px; background: color-mix(in srgb, currentColor 38%, transparent); }
+.mx-mark--overtime::before { top: 2.5px; height: 3px; background: color-mix(in srgb, currentColor 42%, transparent); }
 
 /* Invalidated — hollow + struck: the plan's own stated void level was hit */
 .mx-cap--invalidated::before {
@@ -541,6 +558,20 @@ html[data-theme="light"] .pvcard.pv-featured {
   background: var(--pvh-ink, var(--pvh, var(--up)));
   color: var(--panel, #fff); border-color: transparent;
 }
+/* ── PRC-312: NAME THE AXIS ────────────────────────────────────────────────
+   27 rows are life=entered + stance=wait, and an unlabelled "WAIT" above
+   "Entered" reads as a verdict on a position the user already holds. The chip
+   answers ONE question — should you enter here today — so the slot says which
+   question it is answering. The lifecycle word answers a different one, and
+   with the axis named the two stop contradicting.
+   The zh label is 买点 (entry point), deliberately not 入场: 入场 is the Entered
+   CELL word, and printing it twice on one card is the collision, not the cure. */
+.pv-stance { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.pv-axis {
+  font-size: 7.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--muted); white-space: nowrap; flex: none; line-height: 1;
+  padding: 1px 0;
+}
 /* VTC-304 — ⚡ Triggered takes the VERB hue, as production ships it. Amber was
    carrying three meanings on one card (Wait, Triggered, caution); it now means
    caution and nothing else. On a no-read card the trigger renders in the
@@ -589,7 +620,7 @@ html[data-theme="light"] .pvcard.pv-featured {
 .pv-open::after { content: ""; position: absolute; inset: 0; z-index: 1; }
 .pvcard:hover .pv-tk { text-decoration: underline; text-underline-offset: 2px; }
 /* everything the reader can still operate has to out-rank the stretched hit area */
-.pv-chip--noread, .pv-trg, .pv-cau, .pv-pri, .pv-mk-lane, .pv-newer, .pv-quote {
+.pv-chip--noread, .pv-trg, .pv-cau, .pv-pri, .pv-mk-lane, .pv-newer {
   position: relative; z-index: 2;
 }
 .pv-nm { font-size: 10px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -692,49 +723,14 @@ html[data-theme="light"] .pvcard.pv-featured {
 .cand-nm { color: var(--muted); font-size: 10.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cand-px { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 11.5px; flex: none; }
 
-/* ═══════════════════ 4. GROUPS (five stance lanes — idiom untouched) ═════ */
-.actiongrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; align-items: start; }
-.actcol {
-  background: var(--panel); border: 1px solid var(--line); min-width: 0;
-  border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;
-  --act-accent: var(--muted);
-}
-.act-buy  { --act-accent: var(--up);   --act-accent-ink: var(--ink-up); }
-.act-soon { --act-accent: var(--info); --act-accent-ink: var(--ink-info); }
-.act-run  { --act-accent: #8b5cf6;     --act-accent-ink: color-mix(in srgb, #8b5cf6 80%, var(--text)); }
-.act-trim { --act-accent: var(--warn); --act-accent-ink: var(--ink-warn); }
-.act-hold { --act-accent: var(--muted);--act-accent-ink: var(--muted); }
-.acth { padding: 10px 13px 9px; border-bottom: 1px solid var(--line); position: relative; }
-.acth::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; background: var(--act-accent); }
-.acth-title-row { display: flex; align-items: center; gap: 5px; }
-.acth-name {
-  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-  color: var(--act-accent-ink, var(--act-accent)); min-width: 0;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.acth-count { flex: none; font-size: 11px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
-.acth-count::before { content: "("; } .acth-count::after { content: ")"; }
-.acth-sub { font-size: 10.5px; color: var(--muted); line-height: 1.4; margin-top: 3px; }
-.actbody { padding: 7px 0; flex: 1; }
-.act-row { display: flex; align-items: baseline; gap: 7px; padding: 4px 13px; font-size: 11.5px; }
-.act-row b { font-weight: 700; }
-.act-row span { color: var(--muted); font-size: 10.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* mobile: five lanes become a segmented stance selector (lane names ARE stances) */
-.stance-sel { display: none; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.stance-sel button {
-  font: inherit; font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 999px;
-  border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer;
-}
-.stance-sel button[aria-pressed="true"] { background: color-mix(in srgb, var(--text) 11%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); }
+/* ═══════════════════ 4. GROUPS ═══════════════════════════════════════════
+   VTC-310: the five-lane .actiongrid / .actcol block that used to sit here
+   (~35 lines, plus its 1100px and 720px breakpoints and the .stance-sel mobile
+   selector) described a component this artifact never rendered — groups() emits
+   .grp-grid / .grp. It is deleted rather than kept as "idiom": a stylesheet
+   that describes a component the page does not have is not a reference. */
 
-/* ═══════════════════ 5/6. MARKET CONTEXT + EVIDENCE ═════════════════════ */
-.tabset { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.tabset a {
-  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
-  border: 1px solid var(--line); border-radius: 8px; font-size: 11.5px; font-weight: 650;
-  color: var(--muted); text-decoration: none; background: color-mix(in srgb, var(--panel2) 55%, transparent);
-}
-.tabset a:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 28%, var(--line)); }
+/* ═══════════════════ 5. EVIDENCE ════════════════════════════════════════ */
 .ev-links { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; }
 .ev-links a { color: var(--ink-link); text-decoration: none; font-weight: 650; }
 .ev-links a:hover { text-decoration: underline; }
@@ -827,8 +823,6 @@ html[data-theme="light"] .pv-ghost { filter: blur(5px) saturate(.35); opacity: .
 }
 
 /* ═══════════════════ RESPONSIVE ════════════════════════════════════════ */
-@media (max-width: 1100px) { .actiongrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-
 @media (max-width: 720px) {
   .wrap { padding: 0 14px 60px; }
   .bh-title { font-size: 21px; }
@@ -836,21 +830,25 @@ html[data-theme="light"] .pv-ghost { filter: blur(5px) saturate(.35); opacity: .
   .ladder-n { font-size: 34px; }
 
   /* seven cells wrap 4 + 3 with the total pinned above — never a horizontal
-     scroll on a filter control (a scroll hides active-filter state). */
+     scroll on a filter control (a scroll hides active-filter state).
+     PRC-321: the divider SURVIVES here. It used to be display:none, so the
+     terminal cell became the third cell of an ordinary row and "Resolved sits
+     outside the total" rested on a caption alone — on the viewport where a
+     count claim is most likely to be misread. The gap keeps its own 1fr slot
+     in row 2 (cells 5, 6, [divider], Resolved), so the wrap stays 4 + 3 and
+     Resolved is still physically outside the live run. */
   .mx-ladder { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .mx-ladder-gap { display: none; }
+  .mx-ladder-gap { display: block; }
+  .mx-ladder-gap::before { top: 4px; bottom: 4px; }
   .mx-cell { border-right-width: 1px; border-radius: 9px; }
   .mx-cell:first-child, .mx-cell--last-live { border-radius: 9px; }
   .mx-ladder { gap: 5px; }
   .mx-cell-n { font-size: 18px; }
   .mx-cell-l { font-size: 10.5px; white-space: normal; }
-  .ladder-termnote { grid-column: 1 / -1; text-align: center; padding-top: 2px; }
+  .ladder-termnote { grid-column: 4; text-align: left; padding: 4px 2px 0; }
 
   .pv-grid { grid-template-columns: 1fr; }
   .cand-rows { grid-template-columns: 1fr; }
-  .actiongrid { grid-template-columns: 1fr; }
-  .stance-sel { display: flex; }
-  .actcol[data-lane]:not([data-lane="buy"]) { display: none; }
   .mx-tier-gate { grid-template-columns: 1fr; gap: 16px; padding: 18px; }
   .mx-tier-actions { width: 100%; min-width: 0; }
   .mx-tier-primary { width: 100%; }
