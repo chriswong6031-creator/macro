@@ -27,9 +27,18 @@
   --warn: #e0a030; --act: #e05555; --ok: #3da564;
   --up: #45b873; --down: #e06464; --orange: #e08b45;
   --info: #5b9bf0; --link: #7aa7e0;
-  /* the stance family — theme.css:21 block. The card's one chroma channel. */
-  --pv-buy: #45b873; --pv-near: #63c08d; --pv-wait: #e0a030;
-  --pv-hold: #8b93a1; --pv-avoid: #e06464;
+  /* THE STANCE FAMILY. R2-E: stance must stay semantically distinct from
+     DIRECTION. theme.css ships --pv-buy identical to --up, so a Buy chip and a
+     positive change were the same ink and the card carried one colour meaning
+     two things. Stance now sits a deliberate tone deeper than the direction ink
+     it belongs to: same semantic family (and it still flips with the zh
+     convention, because it is derived FROM --up/--down), visibly not the same
+     colour as the tape. Pinned by verify.py N9. */
+  --pv-buy:   color-mix(in srgb, var(--up) 80%, #063a24);
+  --pv-near:  color-mix(in srgb, var(--up) 55%, #0d4a30);
+  --pv-wait:  #e0a030;
+  --pv-hold:  #8b93a1;
+  --pv-avoid: color-mix(in srgb, var(--down) 80%, #3d1414);
   --prov: #62a0e8; --prov-ink: var(--prov);
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
   --popover-shadow: 0 6px 18px rgba(0,0,0,.5);
@@ -44,8 +53,11 @@ html[data-theme="light"] {
   --warn: #b9791a; --act: #c43d3d; --ok: #2f8a52;
   --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
   --info: #285fff; --link: #285fff;
-  --pv-buy: #1f9a55; --pv-near: #3aad72; --pv-wait: #b9791a;
-  --pv-hold: #5d6b7e; --pv-avoid: #cf4040;
+  --pv-buy:   color-mix(in srgb, var(--up) 84%, #05301d);
+  --pv-near:  color-mix(in srgb, var(--up) 58%, #0b3f27);
+  --pv-wait:  #b9791a;
+  --pv-hold:  #5d6b7e;
+  --pv-avoid: color-mix(in srgb, var(--down) 84%, #3a1010);
   --prov: #2f6fd0; --prov-ink: color-mix(in srgb, var(--prov) 82%, var(--text));
   --card-shadow: 0 1px 3px rgba(20,30,50,.07);
   --popover-shadow: 0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
@@ -56,9 +68,10 @@ html[data-theme="light"] {
    reference these, which is the whole point of weight encoding. */
 html[data-lang="zh"] {
   --up: #e06464; --down: #45b873; --q1: #d04545; --q3: #2e9e4f;
-  --pv-buy: var(--up);
-  --pv-near: color-mix(in srgb, var(--up) 82%, #fff);
-  --pv-avoid: var(--down);
+  /* zh still flips (bullish = red) — the offset rides the flipped ink */
+  --pv-buy:   color-mix(in srgb, var(--up) 80%, #4a0f0f);
+  --pv-near:  color-mix(in srgb, var(--up) 58%, #5a1616);
+  --pv-avoid: color-mix(in srgb, var(--down) 80%, #06331f);
 }
 html[data-theme="light"][data-lang="zh"] { --up: #cf4040; --down: #1f9a55; --q1: #c12f2f; --q3: #1f8b41; }
 :root {
@@ -394,8 +407,37 @@ a { color: inherit; }
   padding: 1.5px 6px;
 }
 html[data-theme="light"] .pv-chip--noread { box-shadow: none; }
-/* Featured is a RING, never a container wash (operator ruling). */
-.pv-featured { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pvh, var(--text)) 52%, transparent); }
+/* FEATURED — the operator-ratified treatment, verbatim from
+   _prophet_card.html.j2:109-130: a soft bullish aura pinned to --pv-buy plus a
+   full-bleed lit rail. R2-E: the first pass reduced this to a bare inset ring. */
+.pvcard.pv-featured {
+  background: color-mix(in srgb, var(--pv-buy) 2.5%, var(--panel2));
+  border-color: color-mix(in srgb, var(--pv-buy) 38%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pv-buy) 24%, transparent),
+              0 0 16px -6px color-mix(in srgb, var(--pv-buy) 32%, transparent),
+              0 10px 26px -14px rgba(0,0,0,.7);
+}
+/* hover ADDS the lift, never replaces the aura */
+.pvcard.pv-featured:hover {
+  border-color: color-mix(in srgb, var(--pv-buy) 48%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pv-buy) 30%, transparent),
+              0 0 20px -6px color-mix(in srgb, var(--pv-buy) 40%, transparent),
+              0 8px 22px -8px rgba(0,0,0,.5);
+}
+.pvcard.pv-featured::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 3;
+  pointer-events: none; border-radius: 12px 12px 0 0;
+  background: linear-gradient(90deg, var(--pvh), color-mix(in srgb, var(--pvh) 55%, transparent));
+  box-shadow: 0 1px 10px color-mix(in srgb, var(--pvh) 40%, transparent);
+}
+/* light: no tint — a clean white card; featured reads through ring + whisper aura */
+html[data-theme="light"] .pvcard.pv-featured {
+  background: #fff;
+  border-color: color-mix(in srgb, var(--pv-buy) 30%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pv-buy) 16%, transparent),
+              0 0 12px -6px color-mix(in srgb, var(--pv-buy) 22%, transparent),
+              0 8px 20px -14px rgba(24,58,40,.22);
+}
 
 /* ── chart hero ─────────────────────────────────────────────────────────── */
 .pv-chart {
@@ -418,8 +460,13 @@ html[data-theme="light"] .pv-chip--noread { box-shadow: none; }
   background: color-mix(in srgb, var(--muted) 5%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
 }
-.pv-ov { position: absolute; top: 8px; display: flex; gap: 5px; align-items: center; z-index: 2; max-width: 70%; }
-.pv-ov.pv-ovl { flex-wrap: wrap; row-gap: 3px; }
+.pv-ov { position: absolute; top: 8px; display: flex; gap: 5px; align-items: center; z-index: 2; }
+/* The left overlay must never reach the quote. A flat 70% did on a narrow card
+   carrying stance + ⚡ (the shipped file warns about exactly this: "the excess
+   chip clipped BEHIND the .pv-px price"). Reserving the quote's width makes the
+   overlay WRAP instead of collide. */
+.pv-ov.pv-ovl { flex-wrap: wrap; row-gap: 3px; max-width: calc(100% - 122px); }
+.pv-ov.pv-ovr { max-width: 60%; }
 .pv-ovl { left: 9px; }
 .pv-ovr { right: 9px; }
 /* STANCE CHIP HIERARCHY — _prophet_card.html.j2:174,178, verbatim.
@@ -750,4 +797,102 @@ html[data-chrome="0"] .harness { display: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   .pvcard:hover { transform: none; }
+}
+
+/* ═══════════════ R3 ADDITIONS ══════════════════════════════════════════ */
+
+/* ── A. the caution carrier (_prophet_card.html.j2:307-318, verbatim) ───── */
+.pv-cau { position: relative; display: inline-flex; }
+.pv-cau-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; line-height: 1.35; padding: 2px 7px;
+  border-radius: 999px; cursor: pointer; font-family: inherit;
+  background: color-mix(in srgb, var(--warn) 14%, var(--panel));
+  color: var(--ink-warn, var(--warn));
+  border: 1px solid color-mix(in srgb, var(--ink-warn, var(--warn)) 40%, transparent);
+}
+/* the card clips its chart; a hovered caution must escape it */
+.pvcard:has(.pv-cau:hover), .pvcard:has(.pv-cau:focus-within) { overflow: visible; z-index: 40; }
+.pv-cau-pop {
+  display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
+  width: 264px; max-width: min(264px, 78vw); max-height: min(300px, 58vh);
+  overflow-y: auto; overscroll-behavior: contain;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 9px 11px 10px; box-shadow: var(--popover-shadow);
+  white-space: normal; text-align: left;
+}
+.pv-cau:hover .pv-cau-pop, .pv-cau:focus-within .pv-cau-pop { display: block; }
+.pv-cau-hd {
+  display: block; margin: 0 0 7px; font-size: 8.5px; font-weight: 800;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-warn, var(--warn));
+}
+.pv-cau-row {
+  position: relative; display: block; padding-left: 12px;
+  font-size: 10.5px; line-height: 1.5; color: var(--text);
+}
+.pv-cau-row::before {
+  content: ""; position: absolute; left: 2px; top: 6.5px;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--warn); opacity: .7;
+}
+
+/* ── B. zone geography vs actionability ─────────────────────────────────
+   .pv-znr (active) keeps the stance ink; .pv-znm (muted) is neutral, so a
+   Wait/Hold/Avoid card shows WHERE the zone is without implying an order. */
+.pv-znl--q { color: var(--muted); }
+.pv-znm { color: var(--muted); font-weight: 600; }
+
+/* ── D. Groups, bound to the theme producer ─────────────────────────────── */
+.grp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 10px; }
+.grp {
+  border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px;
+  background: color-mix(in srgb, var(--panel) 70%, transparent); min-width: 0;
+}
+.grp-hd { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.grp-rank {
+  font-size: 10px; font-weight: 800; color: var(--muted); flex: none;
+  min-width: 1.6ch; text-align: right;
+}
+.grp-nm {
+  font-size: 12.5px; font-weight: 750; color: var(--text); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.grp-meta { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
+.grp-reco { font-size: 10px; font-weight: 750; color: var(--text); }
+.grp-fact { font-size: 10px; color: var(--muted); }
+.grp-clean { font-size: 9.5px; color: var(--ink-ok, var(--ok)); font-weight: 650; }
+
+/* ── E. light-mode card/canvas hierarchy ────────────────────────────────
+   In light the canvas (--bg #f7f8fa) and the card (--panel2 #eef1f6) were both
+   grey, so cards did not sit ON the page. Cards go white and carry the shipped
+   light shadow; the surrounding furniture keeps the tinted plane. */
+html[data-theme="light"] .pvcard {
+  background: #fff;
+  border-color: color-mix(in srgb, #1c2430 13%, #e6e9ef);
+  box-shadow: var(--card-shadow);
+}
+html[data-theme="light"] .pvcard:hover { box-shadow: 0 4px 14px -6px rgba(20,30,50,.18); }
+html[data-theme="light"] .pv-zn { background: color-mix(in srgb, var(--panel2) 55%, #fff); }
+html[data-theme="light"] .grp { background: #fff; }
+html[data-theme="light"] .mx-cell { background: #fff; }
+
+/* ── E. 390w: one actionable opportunity above the first fold ───────────
+   The ladder keeps its full 4+3 wrap and every count; the savings come from the
+   page head and the chart, which production itself shortens on small screens. */
+@media (max-width: 720px) {
+  .bh { padding: 10px 0 0; }
+  .bh-title { font-size: 19px; }
+  .ladder-n { font-size: 27px; }
+  .mx-cell { padding: 9px 9px 7px; }
+  .ladder-absence { margin-top: 5px; }
+  .ladder-foot { margin-top: 5px; font-size: 11px; }
+  .pv-grid { gap: 10px; }
+  .bh-purpose { display: none; }            /* the h1 already says what this is */
+  .ladder-block { margin: 10px 0 0; }
+  .ladder-headline { margin-bottom: 5px; }
+  .mx-sec { margin: 12px 0 0; }
+  .mx-sec-hd { padding-bottom: 5px; margin-bottom: 7px; }
+  .setups-bar { margin-bottom: 6px; }
+  .chg-strip { margin-bottom: 6px; padding: 5px 10px; }
+  .pvcard .pv-chart svg, .pvcard .pv-nochart { height: 58px; }   /* production parity */
+  .grp-grid { grid-template-columns: 1fr; }
 }

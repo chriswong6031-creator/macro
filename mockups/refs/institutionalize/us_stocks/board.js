@@ -96,15 +96,14 @@
      prove the degraded card still reads, and to size the enrichment gap
      honestly (DESIGN_NOTES §6 Q1). It is not a page control. */
   var isFall  = S.state === "fallback";
-  /* `paid` is the CANONICAL REFERENCE: the intended fully-enriched experience,
-     which is what the frozen crops must represent (operator ruling 2026-08-13 —
-     "do not let 暂无判断 become 60% of the flagship product"). It renders only
-     rows where the enrichment contract is actually met today.
-     `today` renders the ACTUAL payload, no-reads and all — the honesty state,
-     and the one the count law is verified against. Production migration is gated
-     on closing the gap between them (DESIGN_NOTES §6 Q1/Q7b, spawn gate G-D). */
-  var isRef   = S.state === "paid";
-  var isToday = S.state === "today";
+  /* ONE UNIVERSE (R2-C). `paid` and `today` are the same board: the whole plan
+     book. There is no reference-only subset, because a view that renders a
+     different population than the one its integers describe is the count-law
+     contradiction itself. Headline, ladder cells, rendered cards, "+N more",
+     filters and table view all describe the plan book, with no view exemption.
+     Enrichment coverage shows honestly on the cards instead of being filtered
+     away; `fallback` isolates the un-enriched rows for inspection only. */
+  var isRef   = S.state === "paid" || S.state === "today";
 
   /* ── the count accessor — the ONLY place a setup quantity comes from ───── */
   function cellCount(k) {
@@ -135,12 +134,9 @@
     var r = B.rows.slice();
     if (isEps) r = r.filter(function (x) { return x.eps; });          // multi-episode names only
     if (isFall) r = r.filter(function (x) { return !x.spark; });      // un-enriched rows only
-    if (isRef) r = r.filter(function (x) {                            // contract-met rows only
-      return x.spark && x.stance && x.stance !== "blocked_data";
-    });
     if (S.life) {
       r = r.filter(function (x) { return x.life === S.life; });
-    } else if (!isEps && !isFall && !isRef) {
+    } else if (!isEps && !isFall) {
       /* The UNFILTERED board is the LIVE board: `resolved` is outside the
          headline by construction (ruling §6 two-total law), so a graded-out plan
          may not sit in the default grid either — otherwise the section total
@@ -359,6 +355,25 @@
         ' data-tip-en="' + esc(ln.bEn) + '" data-tip-zh="' + esc(ln.bZh) + '">' +
         t(ln.en, ln.zh) + "</span>";
     }
+    /* R2-A: the RISK LEDGER carrier. The card must be able to reach its caution
+       facts — the first pass deleted the capability outright. Progressive
+       disclosure: a counted ⚠ pill at glance tier, the sentences one hover/focus
+       deeper, so the card never becomes a wall of warnings. Rows come from real
+       candidate fields (blow-off, ext_z, anti-chase, earnings window).
+       It sits in the MARKS row rather than the chart overlay: the overlay is
+       capped at 70% and already carries the stance and ⚡, so a third chip there
+       collided with the live quote. */
+    if (r.flags && r.flags.length) {
+      mk += '<span class="pv-cau" tabindex="0" role="button" aria-label="' +
+            (S.lang === "zh" ? "风险提示 " : "Caution notes ") + r.flags.length + '">';
+      mk += '<span class="pv-cau-btn">&#9888; ' + r.flags.length + "</span>";
+      mk += '<span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd">' +
+            t("Before you act", "动手之前") + "</span>";
+      r.flags.forEach(function (f) {
+        mk += '<span class="pv-cau-row">' + t(esc(f[0]), esc(f[1])) + "</span>";
+      });
+      mk += "</span></span>";
+    }
     if (r.eps) {
       var d = r.opened || { en: "—", zh: "—" };
       mk += '<span class="pv-ep">' + t(
@@ -377,16 +392,28 @@
     h += "</div></div>";
 
     /* ── zone footer: the price AREA that matters ───────────────────────── */
+    /* R2-B: ZONE IS GEOGRAPHY, NOT AN INSTRUCTION. The band is shown whatever the
+       stance, but only an ACTIONABLE stance renders it in the active treatment
+       (.pv-znr). Wait/Avoid get the muted form, Hold gets "Re-add" — the shipped
+       zone_kind split (dashboard.html.j2:16183) that the first pass flattened,
+       which had made every card's zone read like a buy instruction. */
     h += '<div class="pv-zn">';
-    if (r.zlo != null && r.zhi != null) {
+    var zk = r.zk || "none";
+    if (zk === "active") {
       h += '<span class="pv-znl">' + t("Zone", "买区") + "</span>";
       h += '<span class="pv-znr fig">' + money(r.zlo) + "&ndash;" + money(r.zhi) + "</span>";
+    } else if (zk === "readd") {
+      h += '<span class="pv-znl pv-znl--q">' + t("Re-add", "回补") + "</span>";
+      h += '<span class="pv-znm fig">' + money(r.zlo) + "&ndash;" + money(r.zhi) + "</span>";
+    } else if (zk === "muted") {
+      h += '<span class="pv-znl pv-znl--q">' + t("Zone", "买区") + "</span>";
+      h += '<span class="pv-znm fig">' + money(r.zlo) + "&ndash;" + money(r.zhi) + "</span>";
     } else if (r.life === "resolved") {
       h += '<span class="pv-znm">' + t("Closed — in the record", "已平仓 — 计入战绩") + "</span>";
-    } else if (r.zstate === "filled") {
-      h += '<span class="pv-znm">' + t("Zone already worked through", "买区已走完") + "</span>";
-    } else {
+    } else if (zk === "confirm") {
       h += '<span class="pv-znm">' + t("Zone sets on confirmation", "买区待确认后生成") + "</span>";
+    } else {
+      h += '<span class="pv-znm">' + t("No zone — stand aside", "无买区 — 观望") + "</span>";
     }
     if (r.opened) h += '<span class="pv-dt">' + t(r.opened.en, r.opened.zh) + "</span>";
     h += "</div></article>";
@@ -430,14 +457,14 @@
        shipped board has no "multi-episode" filter. Its header states its own
        scope so the reference never shows a total that disagrees with the grid. */
     var nNames = isEps ? new Set(r.map(function (x) { return x.tk; })).size : 0;
-    var enriched = B.rows.filter(function (x) { return x.spark; }).length;
     var absentCell = S.life === "watch" && watchAbsent();
-    var enriched = B.rows.filter(function (x) {
-      return x.spark && x.stance && x.stance !== "blocked_data";
-    }).length;
+    /* R2 defect: `enriched` was declared TWICE in this scope with two different
+       formulas — spark-only (45) and spark+stance (33) — so every sentence that
+       printed it showed 33 while describing the 45-row join. Both declarations
+       are gone; coverage arithmetic lives in DESIGN_NOTES, computed once. */
     h += '<span class="mx-sec-total">' + (isFall
-      ? t("<b>" + r.length + "</b> rows the screener join does not reach",
-          "候选关联未覆盖的 <b>" + r.length + "</b> 条")
+      ? t("<b>" + r.length + "</b> rows without chart or quote data",
+          "缺少图表与报价数据的 <b>" + r.length + "</b> 条")
       : isEps
       ? t("<b>" + r.length + "</b> plan rows on <b>" + nNames + "</b> names",
           "<b>" + nNames + "</b> 只个股 &middot; 共 <b>" + r.length + "</b> 条计划")
@@ -616,74 +643,61 @@
     return h;
   }
 
-  /* ═══════════════ 4. GROUPS ═══════════════════════════════════════════ */
-  var LANES = [
-    { k: "buy",  en: "Buy now",      zh: "立即买入", sEn: "entry confirmed today",  sZh: "今日已确认买入", n: 6 },
-    { k: "soon", en: "Almost ready", zh: "即将就位", sEn: "close, not confirmed",   sZh: "接近但未确认",   n: 5 },
-    { k: "run",  en: "In favour",    zh: "受资金青睐", sEn: "money is rotating in", sZh: "资金正在流入",   n: 4 },
-    { k: "trim", en: "Take profits", zh: "止盈",     sEn: "extended, thinning out", sZh: "涨幅过大，逐步减仓", n: 3 },
-    { k: "hold", en: "Stand aside",  zh: "观望",     sEn: "nothing to do here",     sZh: "此处无需操作",   n: 4 }
-  ];
+  /* ═══════════════ 4. GROUPS — bound to a real producer ══════════════════
+     R2-D: the five stance lanes and their sector rows were AUTHORED — invented
+     names, invented stances, invented counts. They are replaced by
+     `us_standouts.themes_in_favour`, a canonical artifact with an as_of: rank,
+     recommendation, run length and member count all come from the payload. If
+     the key is absent the section states that, rather than inventing a market
+     call to keep the composition full. */
+  var RECO = {
+    accumulate: { en: "Accumulate", zh: "逐步买入" },
+    hold:       { en: "Hold",       zh: "持有" },
+    watch:      { en: "Watch",      zh: "观察" },
+    avoid:      { en: "Avoid",      zh: "回避" },
+    trim:       { en: "Trim",       zh: "减仓" }
+  };
   function groups() {
-    var total = LANES.reduce(function (a, l) { return a + l.n; }, 0);
-    var gi = 0;
-    var h = "";
-    h += '<div class="mx-sec-hd">';
+    var T = B.themes || [];
+    var h = '<div class="mx-sec-hd">';
     h += '<h2 class="mx-sec-h2">' + t("Groups", "板块") + "</h2>";
-    h += '<span class="mx-sec-total">' + t(
-      "<b>" + total + "</b> sectors &amp; themes moving",
-      "<b>" + total + "</b> 个板块与主题在移动") + "</span>";
+    h += '<span class="mx-sec-total">' + (T.length
+      ? t("<b>" + T.length + "</b> themes in favour", "<b>" + T.length + "</b> 个占优主题")
+      : t("no theme read published", "暂无主题读数")) + "</span>";
     h += '<a class="mx-sec-link" href="#sectors">' + t("Sector intelligence", "板块情报") + "</a>";
     h += "</div>";
-    h += '<div class="stance-sel" role="group">';
-    LANES.forEach(function (l, i) {
-      h += '<button aria-pressed="' + (i === 0) + '" data-lane="' + l.k + '">' + t(l.en, l.zh) + "</button>";
-    });
-    h += "</div>";
-    h += '<div class="actiongrid">';
-    LANES.forEach(function (l) {
-      h += '<div class="actcol act-' + l.k + '" data-lane="' + l.k + '">';
-      h += '<div class="acth"><div class="acth-title-row">' +
-           '<span class="acth-name">' + t(l.en, l.zh) + "</span>" +
-           '<span class="acth-count">' + l.n + "</span></div>" +
-           '<div class="acth-sub">' + t(l.sEn, l.sZh) + "</div></div>";
-      h += '<div class="actbody">';
-      for (var i = 0; i < Math.min(l.n, 4); i++) {
-        var g = GRP[(gi++) % GRP.length];
-        h += '<div class="act-row"><b>' + g[0] + "</b><span>" + t(g[1], g[2]) + "</span></div>";
+
+    if (!T.length) {
+      h += '<div class="mx-empty"><b>' +
+        t("No theme read published", "暂无主题读数") + "</b>" +
+        '<div class="mx-empty-why">' + t(
+          "Tonight&rsquo;s screen did not publish a theme ranking. Nothing is asserted in its place.",
+          "本次筛选未发布主题排名。此处不作任何替代性判断。") + "</div></div>";
+      return h;
+    }
+
+    h += '<div class="grp-grid">';
+    T.forEach(function (g) {
+      var rc = RECO[g.reco] || { en: g.reco || "—", zh: g.reco || "—" };
+      h += '<div class="grp">';
+      h += '<div class="grp-hd"><span class="grp-rank fig">' + g.rank + "</span>" +
+           '<span class="grp-nm">' + t(esc(g.en), esc(g.zh || g.en)) + "</span></div>";
+      h += '<div class="grp-meta">';
+      h += '<span class="grp-reco">' + t(rc.en, rc.zh) + "</span>";
+      if (g.days != null) {
+        h += '<span class="grp-fact fig">' + t(g.days + "d up", g.days + " 天走强") + "</span>";
       }
-      if (l.n > 4) {
-        h += '<div class="act-row"><span>' + t("+" + (l.n - 4) + " more", "另有 " + (l.n - 4) + " 个") + "</span></div>";
-      }
+      h += '<span class="grp-fact fig">' + t(g.n + " names", g.n + " 只") + "</span>";
+      if (g.clean) h += '<span class="grp-clean">' + t("clean entry", "入场干净") + "</span>";
       h += "</div></div>";
     });
     h += "</div>";
+    /* lineage, stated on the surface: which artifact, and as of when */
+    h += '<p class="mx-sec-note" style="margin:10px 0 0">' + t(
+      "Ranked by tonight&rsquo;s theme screen &middot; as of " + esc(B.themes_asof || "—"),
+      "依据本次主题筛选排名 &middot; 数据日期 " + esc(B.themes_asof || "—")) + "</p>";
     return h;
   }
-  var GRP = [
-    ["Semiconductors",  "chips leading",       "芯片领涨"],
-    ["Regional banks",  "rate relief",         "利率压力缓解"],
-    ["Homebuilders",    "starts turning up",   "开工回升"],
-    ["Energy",          "crude firming",       "原油走强"],
-    ["Precious metals", "real rates rolling",  "实际利率回落"],
-    ["Industrials",     "orders picking up",   "订单回升"],
-    ["Biotech",         "funding reopening",   "融资窗口重开"],
-    ["Utilities",       "defensive bid",       "防御性买盘"],
-    ["Retail",          "traffic softening",   "客流走弱"],
-    ["Transports",      "freight rates easing", "运价回落"],
-    ["Insurance",       "pricing still firm",  "费率依然坚挺"],
-    ["Media",           "ad spend flat",       "广告支出持平"],
-    ["Staples",         "crowded and rich",    "拥挤且估值偏高"],
-    ["Autos",           "inventories building", "库存累积"],
-    ["Real Estate",     "basing out",          "底部构筑中"],
-    ["Software",        "multiples compressing", "估值倍数压缩"],
-    ["Steel",           "spreads widening",    "价差走阔"],
-    ["Gold miners",     "margins expanding",   "利润率扩张"],
-    ["Airlines",        "fuel headwind",       "燃油拖累"],
-    ["Chemicals",       "destocking ending",   "去库存接近尾声"],
-    ["Uranium",         "contracting cycle on", "长协周期启动"],
-    ["Shipping",        "day rates topping",   "日租金见顶"]
-  ];
 
   /* ═══════════════ 5 / 6 ═══════════════════════════════════════════════ */
   function context() {
@@ -722,11 +736,12 @@
     h += '<span class="dtp-asof">' + esc(B.asof) + "</span>";
     h += "</div></div>";
 
-    h += '<div class="bh-chips">';
-    h += '<span class="rchip">' + t("Regime", "市场状态") + " <b>" + t("Risk-on", "偏好风险") + "</b></span>";
-    h += '<span class="rchip">' + t("Breadth", "市场宽度") + " <b>" + t("Broadening", "扩散中") + "</b></span>";
-    h += '<span class="rchip">' + t("Posture", "建议姿态") + " <b>" + t("Act on the best few", "择优出手") + "</b></span>";
-    h += "</div></div>";
+    /* R2-D: the regime / breadth / posture chips are GONE. They asserted a market
+       call ("Risk-on", "Broadening", "Act on the best few") with no canonical
+       producer behind them — an authored claim wearing the costume of a reading.
+       Nothing replaces them: the board's job is the plan book, and a market read
+       returns only when a producer with lineage exists to state it. */
+    h += "</div>";
     return h;
   }
 

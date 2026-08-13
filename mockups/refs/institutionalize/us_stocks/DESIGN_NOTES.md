@@ -1,7 +1,10 @@
 # Prophet Board — mockup gate notes (MP-1 / gate G-C)
 
-**Status:** mockup-gate artifact, **G-C correction pass 2026-08-13** (third revision) after the
-operator's visual/product audit. Composition approved; five narrow corrections applied.
+**Status:** **R3 — the RIG R2 revise mandate.** G-C is FROZEN / ACCEPTED at `8d5df856095`; that
+SHA stands as an immutable checkpoint. The work below is authorized by the R2 REVISE verdict and
+produces a **new SHA for a fresh RIG cycle**. It does not reopen G-C.
+
+**Not self-approved.** No `approval.yml`. The new SHA is returned for review.
 Frozen visual reference for the `us_stocks.html` migration.
 **No production file is touched by this directory.**
 
@@ -24,7 +27,7 @@ python3 -m http.server 8792 --directory mockups/refs/institutionalize/us_stocks
 |---|---|
 | `theme` | `dark` (default) · `light` |
 | `lang` | `en` (default) · `zh` |
-| `state` | `paid` = **canonical reference** (default) · `today` = actual payload · `anon` · `empty` · `episodes` · `fallback` |
+| `state` | `paid` (default) · `today` (alias — same universe) · `anon` · `empty` · `episodes` · `fallback` (diagnostic) |
 | `life` | `watch` `ready` `entered` `delivering` `overtime` `invalidated` `resolved` |
 | `view` | `grid` (default) · `table` |
 | `chrome` | `1` (default, harness bar) · `0` (clean, used for crops) |
@@ -34,18 +37,77 @@ python3 -m http.server 8792 --directory mockups/refs/institutionalize/us_stocks
 ```bash
 python3 tools/gen_fixture.py board-data.js      # regenerate data from origin/main
 python3 tools/capture.py  http://localhost:8792 crops
-python3 tools/verify.py   http://localhost:8792 # 123/123 acceptance checks
+python3 tools/verify.py   http://localhost:8792 # 136/136 acceptance checks
 ```
 
 **The data is real.** `board-data.js` is a committed extract of `site/prophet/index.json`
-(asof 2026-08-12, 179 plan rows) and `site/factordata/us_standouts.json` (as_of 2026-08-10).
+(asof 2026-08-13, 179 plan rows) and `site/factordata/us_standouts.json` (as_of 2026-08-12).
 `lifecycle_state` is derived by the ruling §6 precedence, verbatim. Counts reconcile:
 
 ```
-62 ready + 96 entered + 0 delivering + 0 overtime + 4 invalidated = 162 = open_count
-162 live + 17 resolved                                           = 179 = active_count
-grid: 40 cards + "+122 more"                                     = 162 = headline
+62 ready + 95 entered + 0 delivering + 0 overtime + 2 invalidated = 159 = open_count
+159 live + 20 resolved                          = 179 = active_count
+grid: 40 cards + "+119 more"                             = 159 = headline
 ```
+
+*(payload re-baked to asof 2026-08-13 during R3; the invariants re-derived and still hold)*
+
+---
+
+## 0a. R3 — satisfying the RIG R2 revise verdict
+
+Accepted architecture preserved unchanged: chart-first card, unconditional live quote/change,
+the ruled stance projection, Priority, zone-not-levels, the lifecycle ladder, Setups/Candidates
+separation, plan-row identity, bilingual structure, table view, anonymous state, and the
+lifecycle weight grammar.
+
+**A · Risk ledger carrier — restored.** The ⚠ capability was deleted outright in the first pass.
+It is back as the shipped `.pv-cau` component (verbatim CSS): a counted pill at glance tier, the
+sentences one hover/focus deeper. Rows are bound to real candidate fields — blow-off/burst mover,
+`ext_z > 2`, anti-chase shadow, and the earnings window — never authored. It sits in the marks row
+rather than the chart overlay, because the overlay is capped and already carries the stance and ⚡;
+a third chip there collided with the live quote. 18 rows carry cautions today.
+
+**B · Zone is geography again.** The shipped `zone_kind` split was flattened in the first pass, so
+every card rendered its zone in the active buy treatment — an implicit instruction on a Wait card.
+Restored to the shipped derivation (`dashboard.html.j2:16183`): **active** only for Buy/Near,
+**Re-add** for Hold, **muted** for Wait/Avoid, and the confirm/none prose when there is no band.
+The zone is still shown in every case; only its treatment changes. Today: active 19 ·
+re-add 7 · muted 35 · no band 118.
+
+**C · One universe, no view exemption.** The reference-only subset is gone. `paid` and `today`
+render the same population — the whole plan book — so the headline, the ladder cells, the rendered
+cards, `+N more`, the filters and the table view all describe one universe. The earlier
+"reference renders 33, headline says 162" split was itself the count-law contradiction; enrichment
+coverage now shows honestly on the cards instead of being filtered away.
+
+**D · No producer-less market assertions.** The regime / breadth / posture chips are **deleted** —
+they asserted a market call with no producer behind them. Groups is no longer five authored lanes
+of invented sectors: it is bound to `us_standouts.themes_in_favour`, a canonical artifact, and
+renders rank, recommendation, run length and member count straight from the payload with its
+as-of printed on the surface. If the key is absent the section says so rather than inventing a
+call to keep the composition full.
+
+**E · Visual conditions.** Featured is the operator-ratified aura again — a `--pv-buy` pinned ring
+plus glow plus lift, and the lit rail — not the bare inset ring the first pass reduced it to
+(verbatim from `_prophet_card.html.j2:109-130`). Stance inks are now a deliberate tone off the
+direction inks (`theme.css` ships `--pv-buy` *identical* to `--up`, so a Buy chip and a positive
+tick were the same colour); they still derive from `--up`/`--down`, so the zh flip is intact.
+Light mode gives cards a white plane against the tinted canvas so they sit **on** the page. At
+390w the page head and chart tighten to production's own small-screen height, putting whole
+opportunity cards above the fold with the 4+3 ladder and every count untouched.
+
+**G-D display defect — repaired.** `enriched` was declared **twice in one function scope** with two
+different formulas — spark-only (45) and spark-plus-stance (33) — so the second silently shadowed
+the first and every sentence that printed it showed 33 while describing the 45-row join. Both
+declarations are gone; coverage arithmetic is computed once, here in the notes. `verify.py` R-GD1/2
+pin that no variable is declared twice inside `setups()` again.
+
+**Open constraint, not papered over:** at 390w the first *actionable* (Buy/Near) card cannot be
+guaranteed above the fold. The board sorts by the engine's priority rank, and tonight the #1 and
+#3 priority rows are no-read cards — the G-D coverage gap surfacing. Guaranteeing a Buy above the
+fold would require re-sorting by stance, which contradicts the stated sort rule; that is an
+operator ruling, not a layout fix. Once G-D lands, the top rows carry stances.
 
 ---
 
@@ -255,7 +317,7 @@ Five card fields arrive through the candidate join and are partial on plan rows:
 
 | Field | Coverage |
 |---|---|
-| company name, sector, `lane`, `spark_svg` | **45 / 179 (25%)** |
+| company name, sector, `lane`, `spark_svg` | **45 / 179** |
 | SSR price text | 45 / 179 |
 
 **Proposed solution, in two parts:**
@@ -355,8 +417,8 @@ never a guessed Wait. Measured on the committed payload:
 
 | | rows |
 |---|---|
-| stance obtainable (`entry_status` present) | **64 of 162 live** |
-| **BLOCKED_DATA** | **98 of 162 live (60%)** |
+| stance obtainable (`entry_status` present) | **62 of 159 live** |
+| **BLOCKED_DATA** | **97 of 159 live (61%)** |
 
 The previous mapping hid this: falling through to `recommended_action` covered 174/179 rows and
 made the board look complete while sourcing its primary answer from an engine that disclaims order
@@ -450,10 +512,9 @@ rather than argued.
 
 ## 8. Evidence
 
-`crops/` — 37 views, 54 files, at 1440×900 and 390×844:
+`crops/` — 37 views, 55 files, at 1440×900 and 390×844:
 
-- `00-FREEZE-*` the two freeze crops (dark EN + light ZH) — the canonical reference
-- `08`–`09` the honesty state (`today`) — the actual payload, no-reads included
+- `00-R3-*` the R3 matrix: dark+light x EN+ZH
 - `01`–`07` the required matrix: desktop dark/light × EN/ZH, 390w dark EN/ZH, 390w light EN
 - `10`–`12` **missing-enrichment fallback** (dark EN, light ZH, 390w)
 - `20`–`27` each ladder filter incl. Ready, Entered, Invalidated, and the zero/absent cells
@@ -462,7 +523,7 @@ rather than argued.
 - `50`–`51` empty board · `60`–`61` table view
 - `70`–`73` **the three-way card adjudication** (production · #5514 v1 · revised), dark+light × EN+ZH
 
-**Checks:** `tools/verify.py` — **123/123 passing**, run against the *rendered* page and
+**Checks:** `tools/verify.py` — **136/136 passing**, run against the *rendered* page and
 mutation-tested (planting "stage"/阶段 and a lifecycle cell word inside Candidates makes it fail
 in both languages). Zero horizontal page scroll at every captured width, asserted per shot.
 

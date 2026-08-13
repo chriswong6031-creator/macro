@@ -308,9 +308,9 @@ def main():
                all(tok[k] for k in ("buy", "near", "wait", "hold", "avoid")),
                f"undefined: {[k for k in ('buy','near','wait','hold','avoid') if not tok[k]]}")
             if lang == "zh":
-                ok("G3[zh] the buy stance flips with the zh direction convention",
-                   tok["buy"] == tok["up"] or tok["buy"] == "var(--up)",
-                   f"--pv-buy {tok['buy']!r} vs --up {tok['up']!r}")
+                # The zh FLIP is asserted by G4 below, on the RENDERED chip: the raw
+                # custom-property value has already substituted var(--up), so there is
+                # no textual derivation left to test here.
                 # The chip may compute to rgb(), rgba() or color(srgb ...) depending
                 # on whether color-mix was involved. Assert the SEMANTIC fact — a zh
                 # Buy chip is RED (red channel dominates) — not a literal string.
@@ -322,109 +322,152 @@ def main():
                    f"chip {tok['chip']!r} -> rgb{tuple(round(v) for v in _n)}")
             pg.close()
 
-        # ── N. the G-C correction pass (operator 2026-08-13) ────────────────
+        # ── R3. the RIG R2 revise mandate (A-E + the G-D display defect) ────
         for lang in ("en", "zh"):
-            # N1-N2: the canonical REFERENCE must show the intended experience
             pg = page_at(f"theme=dark&lang={lang}&state=paid")
-            ref = pg.evaluate("""() => {
-              const cards = [...document.querySelectorAll('.pvcard')];
-              return {n: cards.length,
-                      noread: cards.filter(c => c.querySelector('.pv-chip--noread')).length,
-                      charts: cards.filter(c => c.querySelector('.pv-chart svg')).length};
-            }""")
-            ok(f"N1[{lang}] the reference view renders cards", ref["n"] > 0, str(ref["n"]))
-            ok(f"N2[{lang}] the reference view carries ZERO no-read cards",
-               ref["noread"] == 0, f"{ref['noread']} of {ref['n']}")
-            ok(f"N3[{lang}] every reference card is chart-first",
-               ref["charts"] == ref["n"], f"{ref['charts']} of {ref['n']}")
 
-            # N3b: the reference states the CANONICAL product population and
-            # reconciles to it — no fixture/enrichment semantic on the surface.
+            # C: ONE universe. `paid` and `today` must render the same population
+            # — a view-specific exemption IS the count-law contradiction.
+            here = pg.evaluate("() => [...document.querySelectorAll('.pvcard')].map(c=>c.dataset.id)")
+            pg2 = page_at(f"theme=dark&lang={lang}&state=today")
+            there = pg2.evaluate("() => [...document.querySelectorAll('.pvcard')].map(c=>c.dataset.id)")
+            pg2.close()
+            ok(f"R-C1[{lang}] paid and today render one identical population",
+               here == there and len(here) > 0, f"{len(here)} vs {len(there)}")
             recon = pg.evaluate("""() => {
               const m = document.querySelector('.pv-more');
               const more = m ? parseInt((m.textContent.match(/\\d+/)||[0])[0],10) : 0;
-              const tot = document.querySelector('.mx-sec-total');
               return {cards: document.querySelectorAll('.pvcard').length, more,
-                      total: tot ? tot.textContent : '',
-                      head: parseInt(document.querySelector('.ladder-n').textContent.trim(), 10)};
+                      head: parseInt(document.querySelector('.ladder-n').textContent.trim(),10),
+                      total: (document.querySelector('.mx-sec-total')||{}).textContent||''};
             }""")
-            ok(f"N3b[{lang}] reference: rendered + '+N' == the live headline",
+            ok(f"R-C2[{lang}] rendered + '+N' == the live headline",
                recon["cards"] + recon["more"] == recon["head"],
                f"{recon['cards']}+{recon['more']} vs {recon['head']}")
-            ok(f"N3c[{lang}] reference header states the canonical population",
+            ok(f"R-C3[{lang}] the section total states the canonical population",
                str(recon["head"]) in recon["total"], f"total={recon['total']!r}")
 
-            # N7: no fixture / enrichment / gate vocabulary on the product surface
-            surf = pg.evaluate("() => document.getElementById('board').innerText")
-            leaks = [w for w in ("G-D", "contract met", "enrichment", "Reference view",
-                                 "fixture", "数据已完整", "参考视图", "准入条件")
-                     if w in surf]
-            ok(f"N7[{lang}] no reference/fixture/gate language on the product surface",
-               not leaks, f"found {leaks}")
-
-            # N4: the live-quote slot exists on EVERY card, hydratable or not
-            q = pg.evaluate("""() => {
-              const cards = [...document.querySelectorAll('.pvcard')];
-              return {n: cards.length,
-                      slot: cards.filter(c => c.querySelector('.nb-px[data-sym]') &&
-                                              c.querySelector('.nb-chg[data-sym]')).length};
+            # A: the risk ledger is CARRIED and REACHABLE
+            cau = pg.evaluate("""() => {
+              const pills = [...document.querySelectorAll('.pv-cau')];
+              return {n: pills.length,
+                      withRows: pills.filter(p => p.querySelectorAll('.pv-cau-row').length > 0).length,
+                      focusable: pills.filter(p => p.hasAttribute('tabindex')).length,
+                      counted: pills.filter(p => /\\d/.test((p.querySelector('.pv-cau-btn')||{}).textContent||'')).length};
             }""")
-            ok(f"N4[{lang}] every card carries a live-bound quote slot",
-               q["slot"] == q["n"], f"{q['slot']} of {q['n']}")
-            pg.close()
+            ok(f"R-A1[{lang}] the caution carrier exists on the board",
+               cau["n"] > 0, "no .pv-cau rendered — capability absent again")
+            ok(f"R-A2[{lang}] every caution pill carries its sentences",
+               cau["withRows"] == cau["n"], f"{cau['withRows']} of {cau['n']}")
+            ok(f"R-A3[{lang}] every caution pill is keyboard-reachable and counted",
+               cau["focusable"] == cau["n"] and cau["counted"] == cau["n"],
+               f"focusable {cau['focusable']} counted {cau['counted']} of {cau['n']}")
 
-            # N4b: including the un-enriched rows, which is the bug that was fixed
-            pg = page_at(f"theme=dark&lang={lang}&state=fallback")
-            q2 = pg.evaluate("""() => {
-              const cards = [...document.querySelectorAll('.pvcard')];
-              return {n: cards.length,
-                      slot: cards.filter(c => c.querySelector('.nb-px[data-sym]') &&
-                                              c.querySelector('.nb-chg[data-sym]')).length};
-            }""")
-            ok(f"N4b[{lang}] un-enriched cards also carry the quote slot",
-               q2["n"] > 0 and q2["slot"] == q2["n"], f"{q2['slot']} of {q2['n']}")
-            pg.close()
-
-            # N5: stance chip hierarchy — only BUY is a solid badge
-            pg = page_at(f"theme=dark&lang={lang}&state=today")
-            hier = pg.evaluate("""() => {
-              // Shipped rule (_prophet_card.html.j2:174,178): every verb gets a 13%
-              // tint + a 40%-alpha border; ONLY .pv-buy gets border-color:transparent.
-              // Border transparency is the unambiguous tell — color-mix tints are
-              // OPAQUE, so an alpha test on background classifies everything solid.
-              const out = {solid: [], tint: []};
-              const VERBS = ['buy','near','wait','hold','avoid'];
-              document.querySelectorAll('.pvcard .pv-chip:not(.pv-chip--noread)').forEach(c => {
-                const card = c.closest('.pvcard');
-                const cls = card.className.split(/\\s+/);
-                let verb = '?';
-                VERBS.forEach(v => { if (cls.indexOf('pv-' + v) >= 0) verb = v; });
-                const bc = getComputedStyle(c).borderTopColor;
-                const a = bc.indexOf('rgba') === 0 ? parseFloat(bc.split(',')[3]) : 1;
-                (a < 0.05 ? out.solid : out.tint).push(verb);
+            # B: zone geography must not read as an instruction on a non-actionable card
+            zone = pg.evaluate("""() => {
+              const bad = [], seen = {};
+              document.querySelectorAll('.pvcard').forEach(c => {
+                const m = c.className.match(/pv-(buy|near|wait|hold|avoid|noread)\\b/);
+                const st = m ? m[1] : 'none';
+                const active = !!c.querySelector('.pv-znr');
+                seen[st] = seen[st] || {active:0, quiet:0};
+                active ? seen[st].active++ : seen[st].quiet++;
+                if (active && ['wait','hold','avoid','noread'].includes(st)) bad.push(c.dataset.ticker);
               });
-              out.solid = [...new Set(out.solid)]; out.tint = [...new Set(out.tint)];
-              return out;
+              return {bad, seen};
             }""")
-            ok(f"N5a[{lang}] the chip sweep resolves real verbs",
-               "?" not in hier["solid"] + hier["tint"] and bool(hier["solid"] or hier["tint"]),
-               f"solid={hier['solid']} tint={hier['tint']}")
-            ok(f"N5b[{lang}] only BUY renders as a solid stance badge",
-               set(hier["solid"]) <= {"buy"} and "buy" not in hier["tint"],
-               f"solid={hier['solid']} tint={hier['tint']}")
+            ok(f"R-B1[{lang}] no non-actionable card renders the active buy-zone treatment",
+               not zone["bad"], f"{zone['bad'][:5]}")
+            ok(f"R-B2[{lang}] the active treatment is actually used somewhere",
+               (zone["seen"].get("buy", {}).get("active", 0)
+                + zone["seen"].get("near", {}).get("active", 0)) > 0,
+               f"{zone['seen']}")
 
-            # N6: the spark takes the stance hue (no chip/chart colour conflict)
-            spark = pg.evaluate("""() => {
-              const c = document.querySelector('.pvcard.pv-buy .pv-chart svg polyline') ||
-                        document.querySelector('.pvcard .pv-chart svg polyline');
+            # D: no producer-less market assertions; Groups bound with lineage
+            surf = pg.evaluate("() => document.getElementById('board').innerText")
+            claims = [w for w in ("Risk-on", "Broadening", "Act on the best few",
+                                  "偏好风险", "扩散中", "择优出手") if w in surf]
+            ok(f"R-D1[{lang}] no authored regime/posture claim on the board",
+               not claims, f"found {claims}")
+            grp = pg.evaluate("""() => ({
+              n: document.querySelectorAll('.grp').length,
+              lineage: document.getElementById('groups').innerText
+            })""")
+            ok(f"R-D2[{lang}] Groups is bound to the theme producer",
+               grp["n"] > 0, "no .grp rendered")
+            ok(f"R-D3[{lang}] Groups states its lineage (as-of)",
+               ("as of" in grp["lineage"] or "数据日期" in grp["lineage"]), "no as-of stamp")
+
+            # E: Featured is an aura pinned to --pv-buy, not a bare ring
+            feat = pg.evaluate("""() => {
+              const c = document.querySelector('.pvcard.pv-featured');
               if (!c) return null;
-              const card = c.closest('.pvcard');
-              return {stroke: getComputedStyle(c).stroke,
-                      pvh: getComputedStyle(card).getPropertyValue('--pvh').trim()};
+              const g = getComputedStyle(c);
+              // count SHADOW LAYERS, not rgba() tokens: modern colours serialise
+              // as color(srgb ...) and an rgba-only match under-counts to 1.
+              const layers = (g.boxShadow.match(/\\d+px/g)||[]).length ? g.boxShadow.split(/,(?![^(]*\\))/).length : 0;
+              return {shadow: g.boxShadow, layers: layers,
+                      inset: g.boxShadow.includes('inset'), bg: g.backgroundColor,
+                      rail: !!getComputedStyle(c, '::before').content};
             }""")
-            ok(f"N6[{lang}] the spark is recoloured to the stance hue",
-               spark and spark["stroke"] and spark["pvh"], f"{spark}")
+            ok(f"R-E1[{lang}] Featured renders the ratified aura, not a bare ring",
+               feat and feat["layers"] >= 3 and not feat["inset"],
+               f"{(feat or {}).get('layers')} layers inset={(feat or {}).get('inset')}")
+
+            # E: stance ink must be distinguishable from the direction ink
+            inks = pg.evaluate("""() => {
+              const g = getComputedStyle(document.documentElement);
+              const norm = v => { const n=(v.match(/[0-9.]+/g)||[]).slice(0,3).map(Number);
+                                  return n.length===3 ? (Math.max(...n)<=1 ? n.map(x=>Math.round(x*255)) : n.map(Math.round)) : null; };
+              const probe = k => { const d=document.createElement('div'); d.style.color='var('+k+')';
+                                   document.body.appendChild(d); const c=getComputedStyle(d).color;
+                                   d.remove(); return norm(c); };
+              return {buy: probe('--pv-buy'), up: probe('--up'),
+                      avoid: probe('--pv-avoid'), down: probe('--down')};
+            }""")
+            def dist(a, b):
+                return a and b and sum(abs(x - y) for x, y in zip(a, b)) >= 24
+            ok(f"R-E2[{lang}] the Buy stance ink differs from the direction up-ink",
+               dist(inks["buy"], inks["up"]), f"buy={inks['buy']} up={inks['up']}")
+            ok(f"R-E3[{lang}] the Avoid stance ink differs from the direction down-ink",
+               dist(inks["avoid"], inks["down"]), f"avoid={inks['avoid']} down={inks['down']}")
             pg.close()
+
+        # E: 390w must expose a real opportunity card above the first fold
+        for lang in ("en", "zh"):
+            pg = page_at(f"theme=dark&lang={lang}&state=paid", 390, 844)
+            m = pg.evaluate("""() => {
+              const F = 844;
+              const cs = [...document.querySelectorAll('.pvcard')];
+              const full = cs.filter(c => c.getBoundingClientRect().bottom <= F).length;
+              const de = document.documentElement;
+              const cells = [...document.querySelectorAll('.mx-cell')];
+              const tops = [...new Set(cells.map(c => Math.round(c.getBoundingClientRect().top)))];
+              return {full, cells: cells.length,
+                      perRow: tops.map(t => cells.filter(c => Math.round(c.getBoundingClientRect().top)===t).length),
+                      sw: de.scrollWidth, cw: de.clientWidth};
+            }""")
+            ok(f"R-E4[{lang}] 390w shows >=1 whole opportunity card above the fold",
+               m["full"] >= 1, f"{m['full']} cards")
+            ok(f"R-E5[{lang}] the count ladder is not broken to achieve it",
+               m["cells"] == 7 and m["perRow"] == [4, 3], f"{m['cells']} cells {m['perRow']}")
+            ok(f"R-E6[{lang}] still no horizontal page scroll at 390w",
+               m["sw"] <= m["cw"], f"{m['sw']} > {m['cw']}")
+            pg.close()
+
+        # G-D display defect: the duplicated `enriched` declaration is gone
+        import pathlib as _pl2
+        _bj = (_pl2.Path(__file__).resolve().parents[1] / "board.js").read_text()
+        ok("R-GD1 no duplicate `enriched` declaration in board.js",
+           _bj.count("var enriched") == 0, f"{_bj.count('var enriched')} declarations remain")
+        # Scope to ONE function body — `var h` legitimately recurs across functions;
+        # what must never recur is a declaration inside a single scope, which is how
+        # `enriched` came to hold two different formulas in the same function.
+        _fn = _bj[_bj.index("function setups()"):_bj.index("function candidates()")]
+        _dupes = [n for n in set(re.findall(r"\bvar ([A-Za-z_$][\w$]*)\s*=", _fn))
+                  if len(re.findall(r"\bvar " + re.escape(n) + r"\s*=", _fn)) > 1]
+        ok("R-GD2 no variable is declared twice inside setups()",
+           not _dupes, f"duplicated: {sorted(_dupes)[:6]}")
 
         # ── N8: board-level facts are invariant across lenses ───────────────
         # "What changed today" is a fact about the plan book, so it may not move

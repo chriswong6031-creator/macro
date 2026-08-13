@@ -77,6 +77,49 @@ STANCE_BY_STATUS = {
 BLOCKED_DATA = "blocked_data"
 
 
+def zone_kind(stance_v, has_zone):
+    """Zone GEOGRAPHY vs ACTIONABILITY — the shipped split (dashboard.html.j2:16183).
+
+    A zone is market geography and is shown whatever the stance; only an
+    ACTIONABLE stance may render it in the active treatment. Flattening this (as
+    the first pass did) turns "here is the zone" into an implicit buy order on a
+    Wait/Hold/Avoid card.
+    """
+    if has_zone:
+        if stance_v == "hold":
+            return "readd"                      # re-add area, not a fresh buy
+        return "active" if stance_v in ("buy", "near") else "muted"
+    return "confirm" if stance_v in ("wait", "near") else "none"
+
+
+# Caution ledger — the shipped rows (dashboard.html.j2:16050-16065), each bound
+# to a real candidate field. A card must be able to REACH its risk facts; the
+# first pass deleted the carrier entirely.
+def caution_rows(b):
+    out = []
+    if not b:
+        return out
+    bl = b.get("blowoff") or {}
+    if bl.get("burst_mover") or b.get("alpha_entry") == "extended":
+        out.append(("Already moving. Don't chase above the buy zone.",
+                    "已在异动。不要在买区上方追高。"))
+    ez = b.get("ext_z")
+    if ez is not None and ez > 2.0:
+        out.append(("Stretched unusually far above its trend line, so chasing is risky.",
+                    "远高于趋势线，追高风险较大。"))
+    if b.get("antichase_shadow_blocked"):
+        out.append(("Parabolic tail. Treat any entry here as a chase.",
+                    "处于抛物线尾部。此处入场应视同追高。"))
+    es = b.get("earnings_soon") or {}
+    d = es.get("days_to_report")
+    if es.get("reports_within_7") and isinstance(d, (int, float)) and d >= 0:
+        out.append((f"Earnings in {int(d)}d — a result can override the setup.",
+                    f"距财报 {int(d)} 天 — 业绩可能盖过形态。"))
+    if es.get("in_blackout"):
+        out.append(("Inside the earnings blackout window.", "处于财报静默期内。"))
+    return out
+
+
 def stance(row, life):
     """Glance-tier Prophet stance — buy / near / wait / hold / avoid.
 
@@ -269,6 +312,10 @@ def main():
             # ⚡ from the real trigger producer, or absent. No inference.
             "trg": (("imminent" if ((trg[tk].get("signal") or {}).get("tier_cascade") == "T3")
                      else "triggered") if tk in trg else None),
+            # zone TREATMENT (geography vs actionability) and the caution ledger
+            "zk": zone_kind(stance(r, life),
+                            (r.get("entry_zone") or {}).get("high") is not None),
+            "flags": caution_rows(b),
         })
 
     counts = collections.Counter(r["life"] for r in rows_out)
@@ -311,11 +358,18 @@ def main():
         "cand_total": len(cand_rows),
         "cand_counts": {t: cand_counts.get(t, 0) for t in TRIAGE},
         "cand_rows": cand_rows,
-        "groups": {
-            "leaders": len(su.get("leaders") or []),
-            "laggards": len(su.get("laggards") or []),
-            "ran": len(su.get("ran") or []),
-        },
+        # Groups is bound to us_standouts.themes_in_favour — a real canonical
+        # producer with an as_of. Nothing here is authored: rank, reco, bull_days
+        # and clean_entry all come from the artifact. If the key is absent the
+        # section renders a disclosed absence rather than an invented market call.
+        "themes": [
+            {"id": t.get("id"), "en": t.get("name"), "zh": t.get("name_zh"),
+             "rank": t.get("rank"), "reco": t.get("reco"),
+             "days": t.get("bull_days"), "clean": bool(t.get("clean_entry")),
+             "n": len(t.get("tickers") or [])}
+            for t in (su.get("themes_in_favour") or [])
+        ],
+        "themes_asof": su.get("as_of"),
     }
 
     out = (
