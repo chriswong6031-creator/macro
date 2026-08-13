@@ -225,7 +225,31 @@ def test_state_vocabularies_cover_the_emitters_domain():
     assert {"RISK-OFF", "ELEVATED"} <= set(_RISK_STATE_ZH)
 
 
-def test_hub_feed_heals_baked_half_translated_rows(monkeypatch):
+@pytest.fixture()
+def isolated_hub_sibling_feeds(monkeypatch):
+    """Bind the hub's non-macro feeds to empty so a poisoned parquet is the tape.
+
+    ``home_alert_feed`` merges macro + vector + commodity and caps at
+    ``home.alerts.max_items`` (12). The Property-3 tests already monkeypatch
+    ``pd.read_parquet`` for the macro log, but they still consume the live
+    ``data/vector/alerts.jsonl`` and ``data/commodity/alerts.jsonl`` stores —
+    nightly-advancing jsonl, the same class of pin #5547 isolated off
+    ``data/spine/predictions.parquet``. Measured on origin/main 2026-08-13:
+    twelve live vector/commodity cards, all newer than the 2026-07-29 cycle
+    fixture, crowded every macro row off the cap (``n_macro == 0``). The GEX
+    fixture (2026-08-02..04) still fitted; one more live day and it would not.
+
+    Patching the loaders (not bumping the fixture dates, not raising max_items)
+    keeps the heal assertion on the translator, whatever the sibling tapes did
+    overnight. Product tests that read the real baked log are untouched.
+    """
+    import engine.btc_alerts as ba
+    import engine.commodity_alerts as ca
+    monkeypatch.setattr(ba, "load_events", lambda: [])
+    monkeypatch.setattr(ca, "load_events", lambda: [])
+
+
+def test_hub_feed_heals_baked_half_translated_rows(monkeypatch, isolated_hub_sibling_feeds):
     """Property 3, through the REAL resolution — not a re-implementation of it.
 
     Drives scripts.build_vector.home_alert_feed over a parquet of poisoned rows,
@@ -538,7 +562,8 @@ _BAKED_ROW_SHAPES = {
 
 
 @pytest.mark.parametrize("shape", sorted(_BAKED_ROW_SHAPES))
-def test_hub_feed_heals_baked_cycle_read_change_rows(monkeypatch, shape):
+def test_hub_feed_heals_baked_cycle_read_change_rows(
+        monkeypatch, isolated_hub_sibling_feeds, shape):
     """Property 3, through the REAL home_alert_feed — not a re-implementation."""
     import scripts.build_vector as bv
 
