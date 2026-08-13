@@ -137,6 +137,22 @@ CLOCK_V1 = "explicit_unit_v1"
 # fails closed (None) instead of spinning.
 _MAX_CLOSED_STRETCH_DAYS = 15
 
+# THE RESOLVER'S SUPPORTED DATE RANGE. `lib.nyse_calendar` computes SCHEDULED
+# holidays from the rules for any year (MLK from 1998, Juneteenth from 2022), but
+# UNSCHEDULED full-day closures cannot be derived and live in a hand-maintained
+# list: `ONE_OFF_CLOSURES` holds Hurricane Sandy (2012-10-29/30), the 2018-12-05
+# Bush day of mourning and the 2025-01-09 Carter day of mourning — and NOTHING
+# earlier. It is therefore blind to every pre-2012 one-off closure (2001-09-11..14,
+# 2004-06-11 Reagan, 2007-01-02 Ford, 1994-04-27 Nixon, …), each of which would
+# make a session-counted exit land one or more sessions LATE without any signal.
+# So the clock declares its range instead of guessing outside it: an anchor before
+# `CLOCK_SUPPORTED_FROM` resolves to None (ungradeable, fail closed) rather than to
+# a confidently wrong date. The floor is the first day after the earliest modelled
+# one-off closure; every qledger claim asof is 2025+, so nothing live sits near it.
+# Moving the floor EARLIER requires appending the missing closures to
+# `lib.nyse_calendar.ONE_OFF_CLOSURES` first.
+CLOCK_SUPPORTED_FROM = date(2012, 10, 31)
+
 
 class HorizonClockMismatch(ValueError):
     """Raised when observations produced under DIFFERENT grading clocks would be
@@ -211,6 +227,19 @@ def resolve_horizon_window(entry_anchor: Any, horizon_d: int,
     (`engine/source_registry._add_trading_days`, `engine/basket_turn_watch.py`).
     The store still decides MATURITY (`coverage_date`) — it just does not get to
     define what a session is.
+
+    SUPPORTED RANGE: anchors on or after `CLOCK_SUPPORTED_FROM` (2012-10-31).
+    Earlier anchors return None rather than resolve, because the session ruler
+    models no pre-2012 unscheduled closure and would place the exit late without
+    saying so — see the constant's note.
+
+    MINIMUM WINDOW: the resolved window must contain at least TWO sessions
+    (the fill bar and a later exit bar). A `calendar_days` horizon whose exit
+    lands before the next session — 1 calendar day from a Friday fill — has no
+    measurable return, and resolving it anyway produced a window that
+    `_matured_window` called matured while `_leg_ret_in_window` refused on its
+    two-bar guard. The two now agree BY CONSTRUCTION: such a horizon has no
+    window at all, so it is never matured and never graded.
     """
     if horizon_unit not in HORIZON_UNITS:
         raise ValueError(
@@ -224,6 +253,8 @@ def resolve_horizon_window(entry_anchor: Any, horizon_d: int,
     try:
         anchor = _as_date(entry_anchor)
     except Exception:  # noqa: BLE001
+        return None
+    if anchor < CLOCK_SUPPORTED_FROM:
         return None
 
     fill = next_session_strictly_after(anchor)
@@ -240,7 +271,8 @@ def resolve_horizon_window(entry_anchor: Any, horizon_d: int,
         # A calendar exit can land on a weekend/holiday; the bar that closes the
         # window is the last session on or before it.
         coverage = last_session_on_or_before(exit_date)
-        if coverage < fill:
+        if coverage <= fill:
+            # Zero measurable sessions after the fill (see MINIMUM WINDOW above).
             return None
 
     return HorizonWindow(
@@ -330,9 +362,12 @@ STATE_UNGRADED = "UNGRADED"    # n_dates == 0
 STATE_ACCRUING = "ACCRUING"    # 0 < n_dates < GRADED_MIN_DATES
 STATE_GRADED = "GRADED"        # n_dates >= GRADED_MIN_DATES
 # P0a: the state a PROMOTION gate reports when a family's grades straddle two
-# grading-clock bases. Authority may not ride a selected basis, so the gate
-# refuses outright; the display tier selects-and-labels instead (see
-# `_select_single_clock_block`).
+# EXPLICIT grading clocks (trading_days and calendar_days at the same horizon) —
+# the one straddle with no non-arbitrary basis to promote on, so the gate refuses.
+# A legacy+explicit straddle is NOT this state: it evaluates inside the explicit
+# basis (`_authority_clock_basis`), because a permanent refusal would make the
+# migration non-terminating. Display never refuses — it selects and labels
+# (`_select_single_clock_block`).
 STATE_MIXED_CLOCK = "MIXED_CLOCK"
 GRADED_MIN_DATES = 25          # §3: n_graded >= 25 DATES (not overlapping obs)
 
@@ -751,6 +786,25 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
       a human reads and the window actually graded can no longer diverge (they
       were 10 days apart at horizon_d=21 before this). Legacy (unitless) claims
       keep the pre-P0a `asof + horizon_d business days` default untouched.
+
+      A CALLER-SUPPLIED `check_by` DOES NOT OVERRIDE THE CLOCK. On a claim that
+      DECLARES a unit, the resolver's exit always wins and the supplied value is
+      preserved for audit as `check_by_source` (only when it disagrees). This is
+      the difference between a contract and a convention: the two highest-volume
+      US lanes — `scripts/backfill_qledger_us.py` `backfill_altdata` and
+      `backfill_policy` — both pass a `check_by` read straight off their source
+      thesis, and those values came from `ai_desk._check_by`, i.e. from
+      `asof + BusinessDay(horizon)`: the very arithmetic P0a exists to replace,
+      holiday-blind and anchored pre-embargo. Honouring them would have left the
+      headline guarantee ("check_by IS the exit the grader resolves") with a
+      bypass on exactly the lanes that carry the most claims. The alternative —
+      validate and REFUSE on disagreement — was rejected: it would reject those
+      lanes' entire output on day one, and a claim whose deadline is merely
+      restated more precisely is not an invalid claim. Nothing is lost or
+      hidden: the source's stated deadline stays on the row under
+      `check_by_source`, so every overridden claim is countable in the store.
+      Legacy (unitless) claims are untouched — a supplied value passes through
+      exactly as before.
     """
     bench = bench or default_bench_for(scope_type, scope_key)
     if control is None:
@@ -762,21 +816,25 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
     if bench_level is not None:
         entry_levels["bench"] = round(float(bench_level), 6)
 
-    if check_by is None:
-        if horizon_unit in HORIZON_UNITS:
-            # ONE resolver, ONE anchor: check_by IS the authoritative exit the
-            # grader resolves. The anchor is the post-embargo entry date, the
-            # same one grade_claim() passes in — a DISCLOSURE_DATE claim shifts
-            # +1bd on BOTH sides or on neither.
-            win = resolve_horizon_window(
-                _entry_anchor(asof, timestamp_quality), horizon_d, horizon_unit)
-            check_by = win.exit_date.isoformat() if win is not None else None
-        else:
-            try:
-                check_by = (pd.Timestamp(asof) +
-                            pd.offsets.BusinessDay(int(horizon_d))).date().isoformat()
-            except Exception:  # noqa: BLE001
-                check_by = None
+    check_by_source: str | None = None
+    if horizon_unit in HORIZON_UNITS:
+        # ONE resolver, ONE anchor, NO bypass: check_by IS the authoritative exit
+        # the grader resolves, whether or not the caller supplied one. The anchor
+        # is the post-embargo entry date, the same one grade_claim() passes in —
+        # a DISCLOSURE_DATE claim shifts +1bd on BOTH sides or on neither.
+        win = resolve_horizon_window(
+            _entry_anchor(asof, timestamp_quality), horizon_d, horizon_unit)
+        resolved = win.exit_date.isoformat() if win is not None else None
+        if check_by is not None and check_by != resolved:
+            check_by_source = str(check_by)   # audit: what the source asked for
+        check_by = resolved
+    elif check_by is None:
+        # LEGACY (unitless) claim: pre-P0a default, byte for byte.
+        try:
+            check_by = (pd.Timestamp(asof) +
+                        pd.offsets.BusinessDay(int(horizon_d))).date().isoformat()
+        except Exception:  # noqa: BLE001
+            check_by = None
 
     claim: dict[str, Any] = {
         "desk": desk,
@@ -800,6 +858,11 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
         # already registered under the legacy clock must keep its id (and be
         # deduped away on re-registration), never fork into a second row.
         claim["horizon_unit"] = horizon_unit
+    if check_by_source is not None:
+        # The deadline the SOURCE stated, kept only when the clock disagreed with
+        # it. Never read by the grader — it exists so an override is auditable
+        # rather than invisible.
+        claim["check_by_source"] = check_by_source
     if sector:
         claim["sector"] = sector
     if extra:
@@ -915,15 +978,40 @@ def _fwd_ret(ticker: str, root: Path, start_date: str, horizon_d: int,
 def _leg_ret_in_window(ticker: str, root: Path, window: HorizonWindow) -> float | None:
     """Total return of ONE leg over the SHARED resolved window (contract rule 5).
 
-    Entry is the first close at or after the shared fill SESSION — which is by
-    construction strictly after the entry anchor, so the next-bar law is intact —
-    and the exit is the last close on or before the resolved exit boundary. The
-    window dates come from the resolver, never from this ticker's own index, so
-    subject, bench and control are measured over the same declared horizon.
+    Entry is the close ON the shared fill SESSION — which is by construction
+    strictly after the entry anchor, so the next-bar law is intact — and the exit
+    is the close on the window's `coverage_date`, the last session the declared
+    horizon contains. The window dates come from the resolver, never from this
+    ticker's own index, so subject, bench and control are measured over the same
+    declared horizon.
+
+    RULE 5 IS ENFORCED HERE, NOT DESCRIBED. The two endpoint bars must be the
+    window's OWN endpoint sessions:
+
+      * the first bar in [fill, exit] must BE `fill_date`, and
+      * the last bar in [fill, exit] must BE `coverage_date`.
+
+    An endpoint the store does not hold — a halt, an IPO that starts mid-window,
+    a collection hole, a ticker delisted before the exit — used to be silently
+    absorbed: the slice simply started later or ended earlier and a SHORTER
+    window was graded under the declared horizon's label, differently for each
+    leg. That is the exact failure the docstring promised against while maturity
+    was checked somewhere else entirely (`_matured_window` asks `_covers`, which
+    only tests the series MAX, so a ticker whose store has an interior hole or a
+    late start passes maturity and then grades short). Both endpoints are now
+    asserted against the shared window, so a shortened window is REFUSED (None),
+    never graded. Interior gaps do not matter: a two-endpoint total return reads
+    only its endpoints (`lib.nyse_calendar` § GAP DISCIPLINE).
+
+    NOT SILENT EITHER: a refused leg makes `grade_claim` return no row for that
+    horizon, and `scripts/grade_qledger.py` counts exactly that outcome into
+    `n_blocked_by_coverage` in `data/qledger/run_status.json` — so if this rule
+    ever refuses at scale (a price store with widespread holes), the nightly
+    summary shows it as a coverage number rather than as quietly missing grades.
+    The per-leg reason is at DEBUG.
 
     None (never a shortened window silently graded) when the series is absent,
-    does not yet cover the window's `coverage_date`, or holds fewer than two bars
-    inside it."""
+    does not yet cover `coverage_date`, or does not hold both endpoint bars."""
     try:
         s = _aidesk._close_series(ticker, root)
         if s is None or s.empty:
@@ -935,6 +1023,15 @@ def _leg_ret_in_window(ticker: str, root: Path, window: HorizonWindow) -> float 
         exit_ts = pd.Timestamp(window.exit_date)
         w = s[(s.index >= fill_ts) & (s.index <= exit_ts)]
         if len(w) < 2:
+            return None
+        # RULE 5: the graded window's endpoints, or nothing.
+        if pd.Timestamp(w.index[0]).normalize() != fill_ts.normalize():
+            log.debug("_leg_ret_in_window(%s): entry bar %s != shared fill %s — "
+                      "refusing a shortened window", ticker, w.index[0], fill_ts)
+            return None
+        if pd.Timestamp(w.index[-1]).normalize() != cover_ts.normalize():
+            log.debug("_leg_ret_in_window(%s): exit bar %s != window close %s — "
+                      "refusing a shortened window", ticker, w.index[-1], cover_ts)
             return None
         e0 = float(w.iloc[0])
         if not e0:
@@ -951,7 +1048,13 @@ def _matured_window(root: Path, window: HorizonWindow, today: date,
 
     Matured when the resolved `coverage_date` has passed AND every leg's price
     cache covers it. (`_matured` below is the LEGACY-clock twin and is left
-    exactly as it was: legacy rows must stay reproducible.)"""
+    exactly as it was: legacy rows must stay reproducible.)
+
+    NECESSARY, NOT SUFFICIENT: `_covers` tests only that a leg's series REACHES
+    `coverage_date`, so a leg that reaches it while missing the window's own
+    endpoint bars still passes here. The shortened-window refusal therefore lives
+    in `_leg_ret_in_window`, which asserts both endpoints per leg — this function
+    decides only "is it time yet", never "is the window whole"."""
     try:
         if today < window.coverage_date:
             return False
@@ -1350,20 +1453,74 @@ def _placebo_magnitude(claims: list[dict], grades: list[dict]) -> dict:
     return out
 
 
+def _authority_clock_basis(bases: Iterable[str]) -> str | None:
+    """The ONE basis a PROMOTION gate evaluates on, or None when no non-arbitrary
+    choice exists.
+
+    THE MIGRATION MUST TERMINATE. Refusing every straddled family outright — the
+    first cut of this contract — is a permanent state, not a migration: a family
+    with one legacy row and 25 explicit-clock dates would stay INELIGIBLE forever,
+    so `promotion_check` could never again return True for anything that existed
+    before P0a. The rule here is instead: **authority evaluates INSIDE the
+    explicit-clock basis and counts nothing else.**
+
+      * one basis present            -> that basis
+      * legacy + exactly ONE v1      -> the v1 basis (legacy rows are not counted)
+      * two or more v1 bases         -> None (a family mixing trading_days and
+                                        calendar_days at one horizon has no
+                                        non-arbitrary answer — refuse, and say so)
+
+    Why this terminates: a lane that declares a unit stops minting legacy claims,
+    so its legacy rows stop accruing once the last unitless claim matures (≤63d),
+    while the v1 count climbs from 0 toward the 25-date bar. The path is
+    monotone and finite. Authority is RESET by the basis change rather than
+    inherited across it, which is the honest reading of a measurement-basis
+    change — the alternative (pool, or ride whichever basis is bigger) launders
+    59,326 legacy observations into a gate about a clock they were never measured
+    on. NOT a trailing time window: a window that straddles the change still
+    pools, and its length would be a free parameter nobody pre-registered.
+    """
+    bases = sorted(set(bases))
+    if not bases:
+        return None
+    if len(bases) == 1:
+        return bases[0]
+    explicit = [b for b in bases if b != CLOCK_LEGACY]
+    return explicit[0] if len(explicit) == 1 else None
+
+
+# The DISPLAY-tier selection rule, named so the intent is explicit rather than
+# implied by a lambda. "Most independent date clusters, ties to the newer clock."
+CLOCK_DISPLAY_SELECTION = "max_n_dates_tie_newer"
+
+
 def _select_single_clock_block(blocks: dict[str, dict]) -> dict:
     """Resolve a group/horizon cell whose history STRADDLES two clock bases.
 
     The rule is SELECT-AND-LABEL, never pool: the published cell is ONE basis's
-    own honest numbers — the basis with the most independent date clusters, ties
-    broken toward the newer clock — carrying `clock_basis`, every basis present
-    in `clock_bases`, and `pooling_refused: True`. Nothing is summed across a
-    measurement-basis change, and nothing is hidden: the excluded basis's full
-    numbers sit under ``track_record["by_clock_basis"]`` and the row split under
-    ``counts.grades_by_clock_basis``.
+    own honest numbers — `CLOCK_DISPLAY_SELECTION`, i.e. the basis with the most
+    independent date clusters, ties broken toward the newer clock — carrying
+    `clock_basis`, every basis present in `clock_bases`, `pooling_refused: True`,
+    the named rule in `clock_basis_selection`, and EVERY basis's date count in
+    `clock_bases_n_dates`. Nothing is summed across a measurement-basis change.
 
-    Display selects; AUTHORITY refuses. `promotion_check` returns INELIGIBLE on
-    the same straddle rather than promoting off a selected basis — a track-record
-    panel may keep reading while the clock migrates, a promotion gate may not.
+    DISCLOSED LIMITATION — the legacy basis will win for a long time. Selecting
+    on sample size is deliberate for a display tier (the headline cell should be
+    the largest honest sample, not the newest sliver), but with 59,326 legacy
+    grade rows already in the store the legacy basis takes essentially every
+    straddled cell until the explicit-clock corpus overtakes it, which is years
+    of accrual at current volume. Correctly-clocked observations are therefore
+    NOT the headline for those cells — but they are never invisible: their count
+    sits in the same cell under `clock_bases_n_dates`, their full stats under
+    ``track_record["by_clock_basis"]``, and the row split under
+    ``counts.grades_by_clock_basis``. A reader who wants the new clock's numbers
+    can always get them; a reader who reads only the headline is told, in the
+    cell, that a bigger-but-older basis was chosen and how big the other one is.
+
+    Display selects; AUTHORITY does the opposite — `promotion_check` evaluates
+    inside the EXPLICIT basis via `_authority_clock_basis` and ignores the legacy
+    pile entirely, because a gate may not ride the sample size of a clock it is
+    not gating on.
     """
     def rank(item: tuple[str, dict]) -> tuple[int, int]:
         basis, block = item
@@ -1373,6 +1530,9 @@ def _select_single_clock_block(blocks: dict[str, dict]) -> dict:
     out = dict(chosen)
     out["clock_basis"] = basis
     out["clock_bases"] = sorted(blocks)
+    out["clock_basis_selection"] = CLOCK_DISPLAY_SELECTION
+    out["clock_bases_n_dates"] = {b: int(blk.get("n_dates") or 0)
+                                  for b, blk in sorted(blocks.items())}
     out["pooling_refused"] = True
     return out
 
@@ -1496,13 +1656,20 @@ class PromotionResult:
         current_state:  derive_state() chip value.
         demote:         True if the rolling CI has gone negative — auto-demote is warranted.
         pinned_reason:  Suggested pin reason string (mirrors narrative_regime precedent).
+        clock_basis:    (P0a) the ONE grading-clock basis this verdict was computed
+                        on. None when no basis could be chosen (the family mixes two
+                        EXPLICIT bases) or when there are no rows to evaluate. Any
+                        consumer reporting these numbers must report this alongside
+                        them — the same n_dates means different things on different
+                        clocks.
     """
     __slots__ = ("eligible", "reason", "n_dates", "wilson_ci_low",
-                 "current_state", "demote", "pinned_reason")
+                 "current_state", "demote", "pinned_reason", "clock_basis")
 
     def __init__(self, eligible: bool, reason: str, n_dates: int,
                  ci_low: float | None, current_state: str,
-                 demote: bool = False, pinned_reason: str = "") -> None:
+                 demote: bool = False, pinned_reason: str = "",
+                 clock_basis: str | None = None) -> None:
         self.eligible = eligible
         self.reason = reason
         self.n_dates = n_dates
@@ -1510,6 +1677,7 @@ class PromotionResult:
         self.current_state = current_state
         self.demote = demote
         self.pinned_reason = pinned_reason
+        self.clock_basis = clock_basis
 
     def as_dict(self) -> dict:
         return {
@@ -1520,12 +1688,14 @@ class PromotionResult:
             "current_state": self.current_state,
             "demote": self.demote,
             "pinned_reason": self.pinned_reason,
+            "clock_basis": self.clock_basis,
         }
 
 
 def promotion_check(claim_family: str, horizon: int,
                     root: Path | str | None = None,
-                    control_only: bool = False) -> PromotionResult:
+                    control_only: bool = False,
+                    clock_basis: str | None = None) -> PromotionResult:
     """Evaluate the §3 promotion gate for a claim_family at a given horizon.
 
     §3 gate (SHADOW → CONFIRMER):
@@ -1541,15 +1711,29 @@ def promotion_check(claim_family: str, horizon: int,
     noted in the result but their implementation is deferred to the W6 composite
     validator — this function gates on the two hard numeric criteria.
 
+    P0a — THE GATE EVALUATES INSIDE EXACTLY ONE GRADING-CLOCK BASIS, and never
+    pools two. When a family's rows straddle the legacy and explicit clocks, the
+    gate counts ONLY the explicit-clock rows (`_authority_clock_basis`): the
+    legacy pile is neither pooled in nor allowed to carry the family over the
+    bar, and the family's authority accrues from zero on the clock it is now
+    measured on. That is a TERMINATING migration — see `_authority_clock_basis`
+    for why the first cut (refuse every straddled family) was not. A family
+    mixing two EXPLICIT bases at one horizon is genuinely ambiguous and is still
+    refused as `STATE_MIXED_CLOCK`.
+
     Args:
         claim_family: The `claim_family` tag (matches qledger claims.jsonl rows).
         horizon:      The horizon_d to check (typically 5, 21, or 63).
         root:         Repo root; defaults to config.ROOT.
         control_only: When True, evaluate excess vs control_ret rather than bench.
                       §3 specifies "vs matched control" as the gate leg.
+        clock_basis:  Evaluate on THIS `grade_clock_basis` value explicitly (e.g.
+                      to ask what the legacy history said). Default None selects
+                      per `_authority_clock_basis`.
 
     Returns:
-        PromotionResult with eligible/reason/n_dates/wilson_ci_low/demote.
+        PromotionResult with eligible/reason/n_dates/wilson_ci_low/demote and the
+        `clock_basis` the verdict was computed on.
     """
     root = _root(root)
     claims = load_claims(root)
@@ -1580,20 +1764,33 @@ def promotion_check(claim_family: str, horizon: int,
                    and cid_meta.get(g.get("claim_id")) is not None]
 
     # P0a: a promotion gate is the sharpest place pooling could launder a
-    # measurement-basis change into authority, so it refuses rather than raises —
-    # the caller gets an INELIGIBLE result naming the split, not a traceback.
+    # measurement-basis change into authority. It never pools — it evaluates
+    # inside ONE basis and says which, and it refuses (INELIGIBLE, not a
+    # traceback) only when no non-arbitrary basis exists.
     family_bases = sorted({grade_clock_basis(g) for g in family_rows})
-    if len(family_bases) > 1:
+    basis = clock_basis or _authority_clock_basis(family_bases)
+    if basis is None and family_bases:
         return PromotionResult(
             eligible=False,
             reason=(f"claim_family={claim_family!r} horizon={horizon}d: grades "
                     f"straddle {len(family_bases)} grading-clock bases "
-                    f"({', '.join(family_bases)}) — refusing to pool. Two rows "
-                    f"both stamped horizon_d={horizon} are not comparable across "
-                    f"a clock change; promote on ONE basis."),
+                    f"({', '.join(family_bases)}) with no single explicit clock "
+                    f"to promote on — refusing to pool. Two rows both stamped "
+                    f"horizon_d={horizon} are not comparable across a clock "
+                    f"change; give this family ONE horizon_unit."),
             n_dates=0, ci_low=None,
             current_state=STATE_MIXED_CLOCK,
+            clock_basis=None,
         )
+    excluded = [b for b in family_bases if b != basis]
+    family_rows = [g for g in family_rows if grade_clock_basis(g) == basis]
+    basis_note = ""
+    if excluded:
+        basis_note = (f" Evaluated on clock basis {basis!r}; "
+                      f"{len(excluded)} other basis/bases "
+                      f"({', '.join(excluded)}) excluded, NOT pooled — this "
+                      f"family's authority accrues on the clock it is now "
+                      f"measured on.")
 
     for g in family_rows:
         c = cid_meta.get(g.get("claim_id"))
@@ -1635,9 +1832,11 @@ def promotion_check(claim_family: str, horizon: int,
             eligible=False,
             reason=(f"n_dates={n_dates} < {PROMOTION_MIN_DATES} required. "
                     f"State: {current_state}. "
-                    f"Need {PROMOTION_MIN_DATES - n_dates} more independent date clusters."),
+                    f"Need {PROMOTION_MIN_DATES - n_dates} more independent date "
+                    f"clusters.{basis_note}"),
             n_dates=n_dates, ci_low=ci_low,
             current_state=current_state,
+            clock_basis=basis,
         )
 
     # §3 gate criterion 2: wilson_ci_low > PROMOTION_MIN_CI_LOW (the coin-flip null)
@@ -1647,9 +1846,10 @@ def promotion_check(claim_family: str, horizon: int,
             reason=(f"n_dates={n_dates} OK but no directional hits recorded "
                     f"(graded_hits={graded_hits}) — cannot compute Wilson CI. "
                     f"Family may be salience-only (direction=0); salience families "
-                    f"gate on |excess| > placebo instead."),
+                    f"gate on |excess| > placebo instead.{basis_note}"),
             n_dates=n_dates, ci_low=None,
             current_state=current_state,
+            clock_basis=basis,
         )
 
     # Auto-demote check: CI bracketing (or below) the coin-flip null on a family that was
@@ -1668,10 +1868,11 @@ def promotion_check(claim_family: str, horizon: int,
             eligible=False,
             reason=f"Wilson CI lower bound {ci_low:.4f} <= {PROMOTION_MIN_CI_LOW} — the "
                    f"hit-rate interval does not clear a coin flip. AUTO-DEMOTE warranted. "
-                   f"{pinned_reason}",
+                   f"{pinned_reason}{basis_note}",
             n_dates=n_dates, ci_low=ci_low,
             current_state=current_state,
             demote=True, pinned_reason=pinned_reason,
+            clock_basis=basis,
         )
 
     # Both gates pass
@@ -1681,9 +1882,11 @@ def promotion_check(claim_family: str, horizon: int,
                 f"n_dates={n_dates} >= {PROMOTION_MIN_DATES}, "
                 f"Wilson CI lower bound={ci_low:.4f} > {PROMOTION_MIN_CI_LOW}. "
                 f"Block-bootstrap stability and incremental-information checks "
-                f"(price+VIX baseline) are delegated to the W6 composite validator."),
+                f"(price+VIX baseline) are delegated to the W6 composite "
+                f"validator.{basis_note}"),
         n_dates=n_dates, ci_low=ci_low,
         current_state=current_state,
+        clock_basis=basis,
     )
 
 
