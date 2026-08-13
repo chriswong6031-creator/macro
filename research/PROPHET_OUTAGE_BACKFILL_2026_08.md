@@ -194,3 +194,81 @@ to run twice — idempotence via the disclosure artifact):
       after the next nightly.
 - Companion investigation (lower pool / graduation) tracked separately;
   recon in flight.
+
+## §5 SECOND EVENT — 2026-08-11 (operator force-majeure, 2026-08-13)
+
+A separate operator order, chartered separately on purpose. §0's gates transfer; the
+INPUTS do not, and §5.1 is the whole reason this is a different kind of artifact.
+Producer: `scripts/backfill_prophet_outage_20260811.py`. Reader-facing record:
+`research/PROPHET_LEDGER_SCHEMA.md` § Addendum 2026-08-13.
+
+### §5.1 There is nothing to replay
+
+`daily.yml` was stranded for the 2026-08-11 session by the #5362 workflow-size cap
+(postmortem: `tests/test_workflow_file_size.py`) and its recovery dispatches were
+force-cancelled. The night produced NO collect, NO board, NO intake receipt, NO refusal
+set. The 2026-08-12 session recovered live — run 31649984834 collected BOTH stranded
+days' bars and originated 25 plans at `recorded_at=2026-08-12` — so the board artifact
+went from `as_of=2026-08-10` (2026-08-11T03:36Z) straight to `as_of=2026-08-12`.
+**No `as_of=2026-08-11` board has ever existed in this repository's history**, verified
+across all 40 revisions of `site/factordata/us_standouts.json` spanning the window.
+
+So where §0.2 pinned a bake-time blob by sha256, this event has no blob to pin. The
+board is RECONSTRUCTED, and every property §0.2 got for free has to be built:
+
+| §0.2 property | 2026-08-09 (replay) | 2026-08-11 (reconstruction) |
+|---|---|---|
+| board provenance | pinned blob `f9ce1f3044` @ `b3d3c38bdce5`, sha256-fenced | **built** on `7ba57221ddec`; synthetic, never published |
+| price vintage | inherited from the pinned blob | **structural** — vintage tree + only the missing sessions, fenced |
+| code vintage | current tree (same engine) | **pre-#5370 tree** — #5370 edits the origination module and merged 82 min after the bake slot |
+| justification of the one change | heal verified by recomputation | **harness scored** against the 2026-08-10 board the vintage already ships |
+| refusal set | receipted, replayed verbatim | engine gates at execution + an added chronology refusal |
+
+### §5.2 Mechanism
+
+1. **Vintage worktree** at `7ba57221ddec` — newest main at or before the 22:30Z cron.
+   Its committed price store ends 2026-08-10 *because the stranded collect never wrote
+   08-11*, which is what makes truncation structural rather than a read-time clamp.
+2. **Price overlay**: for every file on the plan-price ladder
+   (`data/baskets/ohlcv` → `data/stocks` → the four wide close panels, plus
+   `data/yahoo`), append ONLY the sessions in `(vintage_last, 2026-08-11]` taken from
+   the store the 2026-08-12 collect wrote. Rows the vintage already carries keep the
+   vintage's own bytes, so a later restatement cannot leak backwards. `data/russell_breadth/_closes_cache.parquet`
+   is gitignored and must be supplied from a lane checkout — without it `universe()`
+   silently drops ~1,300 small caps and the board is ranked over a third less universe.
+3. **Fence** every price parquet in the tree before the builder starts. A bar past the
+   ceiling is a refusal, not a warning.
+4. **Rebuild `site/factordata/alpha.json`** from the truncated panel. This is what makes
+   the board say 2026-08-11: `build_stock_library` does not derive its own `as_of` — it
+   publishes alpha's stamp verbatim (`wide["as_of"] = alpha_asof`, build_stock_library.py:4839)
+   and anchors the W1.5 earnings-blackout gate to the same value. Reusing the vintage's
+   committed alpha would have produced a board labelled 2026-08-10 whose blackout gate
+   was also anchored to 2026-08-10, and the origination clock contract would refuse it.
+5. **Build the board**, verify `as_of == price_through == 2026-08-11` and
+   `rank_by == us_prophet_v2`.
+6. **Originate** in the same tree so plan geometry re-reads the same fenced prices.
+7. **Collide** (live wins, cutoff 2026-08-12), **chronology-refuse**, stamp, disclose.
+
+Between passes, every tracked file the builder writes is restored from the vintage —
+`data/name_score/us_calls.parquet` is a keep-FIRST PIT stamp, the shadow ledgers accrue,
+and `us_standouts.json` is read back as the previous board — so the control rehearsal
+cannot become the reconstruction's input.
+
+### §5.3 The control is the acceptance evidence
+
+Truncating one session earlier rebuilds a board that ALREADY EXISTS (the vintage's own
+`as_of=2026-08-10`, sha256 `3e86c1088f…`, 69 buy rows). The agreement between the
+rebuild and the real artifact is this window's error bar; it rides in the disclosure as
+`harness_fidelity` and a run below the floor refuses. First measurement, taken before
+the Russell panel was supplied, was **jaccard 0.822 with the missing names dominated by
+Russell-2000 constituents** (UEC, UUUU, SMR, BKSY, DGII) — which is exactly what
+`build_stock_library.py:753` predicts when that cache is absent, and is why supplying it
+is part of the mechanism rather than a nicety.
+
+### §5.4 What this event does NOT authorise
+
+2026-08-03 → 2026-08-06 stay refused under `us-board-frozen-alpha-2026-08` — and this
+window does not weaken that ruling, which turns on a factor panel frozen at 2026-07-31,
+not on a missing session. 2026-08-12 forward is the live nightly's. There is still no
+generic backfill lane and no `--asof` flag; a third window needs its own order, its own
+producer, its own disclosure row and its own dated addendum.

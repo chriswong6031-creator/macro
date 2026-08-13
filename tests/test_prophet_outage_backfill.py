@@ -57,6 +57,7 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 import scripts.backfill_prophet_outage as bf  # noqa: E402
+import scripts.backfill_prophet_outage_20260811 as bf11  # noqa: E402
 import scripts.build_prophet as bp  # noqa: E402
 import scripts.build_stock_library as bsl  # noqa: E402
 from scripts.audit_prophet_plan_chronology import (  # noqa: E402
@@ -66,6 +67,24 @@ from scripts.audit_prophet_plan_chronology import (  # noqa: E402
 REAL_PLANS_DIR = _REPO / "site" / "prophet" / "plans"
 REAL_DISCLOSURES = _REPO / bf.DISCLOSURES_RELPATH
 REAL_SCHEMA_DOC = _REPO / "research" / "PROPHET_LEDGER_SCHEMA.md"
+
+#: EVERY force-majeure window the operator has chartered, built from each lane's OWN
+#: constants so a window cannot exist without a lane that owns it.
+#:
+#: This registry replaced a hardcoded "there is exactly one window, and it is the
+#: 2026-08-09 replay". That assertion was right when it was written and became wrong the
+#: moment a second night was chartered (2026-08-11, operator 2026-08-13) — but the LAW it
+#: encoded is still the one that matters and is preserved below: no plan may carry a
+#: backfill stamp that no enumerated window authorises, and no window may appear that no
+#: lane charters. Widening this dict is therefore a deliberate act with a script and a
+#: disclosure row behind it, not a way to make a failing test pass.
+AUTHORISED_WINDOWS = {
+    bf.ORIGINATION_MODE: {"asof": bf.BACKFILL_ASOF, "window_id": bf.WINDOW_ID,
+                          "kind": "replay"},
+    bf11.ORIGINATION_MODE: {"asof": bf11.BACKFILL_ASOF, "window_id": bf11.WINDOW_ID,
+                            "kind": "reconstruction"},
+}
+AUTHORISED_WINDOW_IDS = {meta["window_id"] for meta in AUTHORISED_WINDOWS.values()}
 
 #: last_session_on_or_before("2026-08-09") — the Friday close the replay prices off.
 PRICE_THROUGH = "2026-08-07"
@@ -1543,17 +1562,46 @@ class TestTheShippedTreeIsSegregated:
             "research/PROPHET_LEDGER_SCHEMA.md — do not just delete the test."
         )
 
-    def test_no_shipped_backfill_escapes_the_one_authorised_window(self):
-        """One event. A second date here is scope creep, not a backfill."""
+    def test_no_shipped_backfill_escapes_an_authorised_window(self):
+        """Chartered events only, and each plan dated to the night it reconstructs.
+
+        Was "one event, and a second date is scope creep". Two nights are now chartered
+        (2026-08-09 replay, 2026-08-11 reconstruction), so the test asserts MEMBERSHIP in
+        the enumerated registry rather than equality with one window — an unchartered
+        third mode, or a plan dated to a night its own window does not claim, still
+        fails.
+        """
         for plan_id, plan in _real_plans().items():
             mode = str(plan.get("origination_mode") or "")
             if not mode.startswith("outage_backfill"):
                 continue
-            assert mode == bf.ORIGINATION_MODE, (
-                f"{plan_id} carries origination_mode={mode!r}; the only authorised "
-                f"backfill is {bf.ORIGINATION_MODE!r} (operator 2026-08-11)"
+            assert mode in AUTHORISED_WINDOWS, (
+                f"{plan_id} carries origination_mode={mode!r}, which no chartered "
+                f"window authorises. Authorised: {sorted(AUTHORISED_WINDOWS)}. A new "
+                "backfill needs its own operator authority, its own lane, its own "
+                "disclosure row and an amendment to research/PROPHET_LEDGER_SCHEMA.md."
             )
-            assert str(plan.get("recorded_at"))[:10] == bf.BACKFILL_ASOF
+            assert (str(plan.get("recorded_at"))[:10]
+                    == AUTHORISED_WINDOWS[mode]["asof"]), (
+                f"{plan_id} is stamped {mode!r} but recorded "
+                f"{str(plan.get('recorded_at'))[:10]!r}, not that window's night"
+            )
+
+    def test_the_registry_rejects_a_window_no_lane_charters(self):
+        """Guard the guard: the registry must be able to say no.
+
+        A membership test is only worth the set it checks against, so this pins that an
+        invented mode is NOT in it — the exact failure the old equality assertion gave
+        for free and that the widening could have quietly dropped.
+        """
+        assert "outage_backfill_2026_08_31" not in AUTHORISED_WINDOWS
+        assert len(AUTHORISED_WINDOW_IDS) == len(AUTHORISED_WINDOWS), (
+            "two modes share a window id — one of them is not really chartered"
+        )
+        for mode, meta in AUTHORISED_WINDOWS.items():
+            assert mode.endswith(meta["asof"].replace("-", "_")), (
+                f"{mode!r} does not name the night {meta['asof']} it claims"
+            )
 
 
 class TestTheDocsAndTheArtifactCannotDisagree:
@@ -1602,27 +1650,58 @@ class TestTheDocsAndTheArtifactCannotDisagree:
 class TestTheDisclosureArtifactIsWellFormed:
 
     def test_the_document_declares_its_authority_and_inputs(self):
+        """Every row is pinned — but a replay and a reconstruction pin different things.
+
+        A replay's input is a board that EXISTS, so it pins that blob by commit and
+        sha256. A reconstruction has no such blob to pin (its night produced none), so
+        it pins the code+data vintage it rebuilt on and the ceiling it truncated at.
+        Asserting the replay's shape on both rows would have forced the reconstruction to
+        fake a bake-time board commit it does not have — which is the one thing this file
+        exists to prevent.
+        """
         document = json.loads(REAL_DISCLOSURES.read_text(encoding="utf-8"))
         rows = document.get("backfills") or []
         assert rows, "backfill_disclosures.json lists no backfills — truncated?"
         for row in rows:
             assert row["authority"]
             assert row["window"]["from"] and row["window"]["to"]
-            inputs = row["inputs"]
-            assert len(inputs["board_commit"]) == 40, "input SHAs must be pinned full"
-            assert len(inputs["plans_baseline_commit"]) == 40
-            assert inputs["board_sha256"] == bf.BAKE_BOARD_SHA256, (
-                "the executed run did NOT read the pinned bake-time board"
-            )
-            assert inputs["board_rank_by"] == bf.REQUIRED_RANK_BY
             assert row["engine_selection_era"]
+            inputs = row["inputs"]
+            assert len(inputs["plans_baseline_commit"]) == 40
+            if row["id"] == bf.WINDOW_ID:
+                assert len(inputs["board_commit"]) == 40, "SHAs must be pinned full"
+                assert inputs["board_sha256"] == bf.BAKE_BOARD_SHA256, (
+                    "the executed run did NOT read the pinned bake-time board"
+                )
+                assert inputs["board_rank_by"] == bf.REQUIRED_RANK_BY
+            elif row["id"] == bf11.WINDOW_ID:
+                assert len(row["code_vintage"]["vintage_commit"]) == 40
+                assert row["code_vintage"]["vintage_commit"] == bf11.VINTAGE_COMMIT
+                assert inputs["board"]["rank_by"] == bf11.REQUIRED_RANK_BY
+                assert inputs["board"]["synthetic"] is True
+                assert inputs["price_truncation"]["fence"]["violations"] == 0
+            else:  # pragma: no cover - the registry test above fails first
+                raise AssertionError(f"unchartered window {row['id']!r}")
 
-    def test_the_executed_run_verified_its_heal(self):
+    def test_every_executed_run_shows_the_work_its_own_kind_requires(self):
+        """A replay proves its heal; a reconstruction proves its harness.
+
+        Both are the same demand in different clothes — show that the ONE thing you
+        changed about the world was justified — and neither row may skip it.
+        """
         document = json.loads(REAL_DISCLOSURES.read_text(encoding="utf-8"))
         for row in document.get("backfills") or []:
-            heal = row["heal"]
-            assert heal["recomputed"]["mixed_vintage"] is False
-            assert heal["method"] == "recomputed_panel_price_reach"
+            if row["id"] == bf.WINDOW_ID:
+                heal = row["heal"]
+                assert heal["recomputed"]["mixed_vintage"] is False
+                assert heal["method"] == "recomputed_panel_price_reach"
+            elif row["id"] == bf11.WINDOW_ID:
+                fidelity = row["harness_fidelity"]
+                assert fidelity["measured"] is True, (
+                    "a reconstruction that never reproduced an observed board has "
+                    "shown no work at all"
+                )
+                assert fidelity["reference_sha256"] == bf11.CONTROL_BOARD_SHA256
 
     def test_the_executed_run_reconciles(self):
         document = json.loads(REAL_DISCLOSURES.read_text(encoding="utf-8"))
@@ -1630,10 +1709,21 @@ class TestTheDisclosureArtifactIsWellFormed:
             for name, identity in row["reconciliation"].items():
                 assert identity["holds"], f"{name} does not close on the shipped run"
 
-    def test_the_only_disclosed_window_is_the_authorised_one(self):
+    def test_every_disclosed_window_is_an_authorised_one(self):
+        """Chartered windows only, each disclosed once.
+
+        Was an equality against a single id. Two nights are chartered now, so this
+        asserts the two properties that actually carry the law: nothing disclosed is
+        unchartered, and nothing chartered is disclosed twice (a duplicate row is how a
+        second, silent execution of the same window would look).
+        """
         document = json.loads(REAL_DISCLOSURES.read_text(encoding="utf-8"))
         ids = [row["id"] for row in document.get("backfills") or []]
-        assert ids == [bf.WINDOW_ID], (
-            f"disclosed windows {ids} — the force-majeure exception covers exactly "
-            f"one event ({bf.WINDOW_ID})."
+        unchartered = [i for i in ids if i not in AUTHORISED_WINDOW_IDS]
+        assert not unchartered, (
+            f"disclosed windows {unchartered} are chartered by no lane — the "
+            f"force-majeure exception covers exactly {sorted(AUTHORISED_WINDOW_IDS)}."
+        )
+        assert len(ids) == len(set(ids)), (
+            f"a window is disclosed more than once ({ids}) — a one-off lane ran twice"
         )

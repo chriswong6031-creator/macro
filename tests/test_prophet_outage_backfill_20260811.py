@@ -1,0 +1,613 @@
+"""The 2026-08-11 outage RECONSTRUCTION lane, and the properties that make it honest.
+
+Companion to ``tests/test_prophet_outage_backfill.py`` (the 2026-08-09 REPLAY).  The two
+windows share a disclosure artifact and a segregation law, and the cross-window
+assertions live in that older file so there is exactly one place that says "every
+stamped plan belongs to an enumerated, authorised window".
+
+What is pinned HERE is what the 2026-08-09 lane never had to prove, because it replayed
+a board that existed:
+
+* PRICE TRUNCATION.  The reconstruction tree is built by appending only the sessions the
+  stranded collect never wrote, up to the 2026-08-11 close.  A poisoned 2026-08-12 bar —
+  one whose price would visibly reorder any downstream reader — must not reach the tree,
+  and the fence that re-proves it must actually fire when a bar is planted.  Neuter
+  ``truncate_frame`` and these go red; that is the point of them.
+* COLLISION.  The 2026-08-12 nightly originated 25 plans live. Live wins, and the
+  ticker+DIRECTION key is what decides it.
+* CHRONOLOGY.  A plan whose entry trigger the tape had already taken out by the 08-11
+  close is an entry nobody could have taken that night, and it is refused with a named
+  reason rather than minted and quietly graded.
+* VINTAGE.  The lane runs the engine that predates #5370. A tree at any other commit, or
+  one that descends from #5370's merge, is refused.
+"""
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+_REPO = Path(__file__).resolve().parent.parent
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
+
+import scripts.backfill_prophet_outage_20260811 as bf11  # noqa: E402
+
+REAL_PLANS_DIR = _REPO / "site" / "prophet" / "plans"
+REAL_DISCLOSURES = _REPO / bf11.DISCLOSURES_RELPATH
+
+
+# ---------------------------------------------------------------------------
+# helpers
+# ---------------------------------------------------------------------------
+
+def _frame(dates: list[str], closes: list[float]) -> pd.DataFrame:
+    return pd.DataFrame({"close": closes, "high": closes, "low": closes,
+                         "volume": [1_000] * len(closes)},
+                        index=pd.to_datetime(dates))
+
+
+def _plan(ticker: str, *, entry: float, trigger: float,
+          direction: str = "BULL", **extra) -> dict:
+    plan = {
+        "schema": "prophet.trade_plan/v1",
+        "id": f"{ticker}-{direction}-20260805",
+        "asset": ticker,
+        "direction": direction,
+        "recorded_at": bf11.BACKFILL_ASOF,
+        "price_basis_date": bf11.BACKFILL_ASOF,
+        "entry": entry,
+        "trigger": trigger,
+        "invalidation": (entry * 0.9) if isinstance(entry, (int, float)) else None,
+    }
+    plan.update(extra)
+    return plan
+
+
+def _git(repo: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True)
+
+
+# ---------------------------------------------------------------------------
+# R1 — the truncation is what makes the reconstruction honest
+# ---------------------------------------------------------------------------
+
+class TestPriceTruncation:
+    """No bar the 2026-08-11 bake could not have seen may reach the tree it reads."""
+
+    def test_truncate_frame_drops_every_bar_after_the_ceiling(self):
+        frame = _frame(["2026-08-10", "2026-08-11", "2026-08-12"], [10.0, 11.0, 99.0])
+        kept = bf11.truncate_frame(frame, bf11.TRUNCATE_THROUGH)
+        assert list(kept.index.strftime("%Y-%m-%d")) == ["2026-08-10", "2026-08-11"]
+        assert kept["close"].max() == 11.0
+
+    def test_truncate_frame_keeps_a_bar_exactly_on_the_ceiling(self):
+        """The ceiling is the SESSION being reconstructed, not the day before it."""
+        frame = _frame(["2026-08-10", "2026-08-11"], [10.0, 11.0])
+        assert len(bf11.truncate_frame(frame, bf11.TRUNCATE_THROUGH)) == 2
+
+    def test_a_poisoned_08_12_bar_cannot_reach_the_reconstruction_tree(self, tmp_path):
+        """THE lookahead test.
+
+        The live store carries an 08-12 bar at a price no reader could ignore — a 10x
+        gap that would move the name's momentum, its extension, its rank and therefore
+        its admission. The overlay must add the 08-11 session and stop, so the tree the
+        board builder reads cannot contain the number at all: not filtered downstream,
+        not weighted to zero, ABSENT.
+        """
+        vintage = _frame(["2026-08-07", "2026-08-10"], [10.0, 10.5])
+        live = _frame(["2026-08-07", "2026-08-10", "2026-08-11", "2026-08-12"],
+                      [10.0, 10.5, 11.0, 110.0])
+
+        merged, provenance = bf11.overlay_sessions(vintage, live,
+                                                   bf11.TRUNCATE_THROUGH)
+
+        assert provenance["added"] == ["2026-08-11"]
+        assert list(merged.index.strftime("%Y-%m-%d")) == [
+            "2026-08-07", "2026-08-10", "2026-08-11"]
+        assert 110.0 not in set(merged["close"]), (
+            "the 2026-08-12 close reached the reconstruction tree — every price the "
+            "board ranks on would then carry a session the 2026-08-11 bake could not "
+            "have seen"
+        )
+        assert merged["close"].max() == 11.0
+
+    def test_the_overlay_keeps_the_vintage_rows_and_only_appends(self, tmp_path):
+        """A later restatement of old history must not leak backwards into that night.
+
+        The live store's 2026-08-10 close has been restated (a re-fetch, an adjustment,
+        a widened seeing set). The reconstruction is of a night that read the OLD value,
+        so the old value is what it must keep.
+        """
+        vintage = _frame(["2026-08-10"], [10.5])
+        live = _frame(["2026-08-10", "2026-08-11"], [10.9, 11.0])
+
+        merged, _ = bf11.overlay_sessions(vintage, live, bf11.TRUNCATE_THROUGH)
+
+        assert merged.loc[pd.Timestamp("2026-08-10"), "close"] == 10.5
+        assert merged.loc[pd.Timestamp("2026-08-11"), "close"] == 11.0
+
+    def test_the_fence_fires_on_a_planted_bar(self, tmp_path):
+        """The structural claim is re-measured, not asserted."""
+        store = tmp_path / "data" / "stocks"
+        store.mkdir(parents=True)
+        _frame(["2026-08-11", "2026-08-12"], [11.0, 12.0]).to_parquet(
+            store / "AAA.parquet")
+
+        with pytest.raises(bf11.BackfillRefused, match="carry bars AFTER"):
+            bf11.fence_no_bar_after(tmp_path, bf11.TRUNCATE_THROUGH)
+
+    def test_the_fence_passes_a_clean_tree_and_says_what_it_scanned(self, tmp_path):
+        store = tmp_path / "data" / "stocks"
+        store.mkdir(parents=True)
+        _frame(["2026-08-10", "2026-08-11"], [10.0, 11.0]).to_parquet(
+            store / "AAA.parquet")
+
+        report = bf11.fence_no_bar_after(tmp_path, bf11.TRUNCATE_THROUGH)
+
+        assert report["violations"] == 0
+        assert report["files_scanned"] == 1
+        assert report["max_date_found"] == "2026-08-11"
+
+    def test_the_fence_is_not_vacuous_when_nothing_is_there(self, tmp_path):
+        """Guard the guard: a tree with no price files scans nothing and says so."""
+        assert bf11.fence_no_bar_after(tmp_path, bf11.TRUNCATE_THROUGH)[
+            "files_scanned"] == 0
+
+    def test_a_round_the_clock_bar_ahead_of_the_control_pass_is_reported_not_refused(
+            self, tmp_path):
+        """FX and crypto trade past the equity close; the vintage really did hold those.
+
+        The control pass truncates to 2026-08-10, but the pinned tree already ships 13
+        files dated 2026-08-11 — FX crosses and crypto. Calling those lookahead would
+        be calling the bake's own inputs lookahead. They are reported.
+        """
+        store = tmp_path / "data" / "yahoo"
+        store.mkdir(parents=True)
+        _frame(["2026-08-10", "2026-08-11"], [1.0, 1.1]).to_parquet(
+            store / "EURUSD_X.parquet")
+
+        report = bf11.fence_no_bar_after(tmp_path, bf11.TRUNCATE_THROUGH,
+                                         pass_through=bf11.CONTROL_THROUGH)
+
+        assert report["violations"] == 0
+        assert report["ahead_of_pass_count"] == 1
+        assert report["ahead_of_pass"][0]["max_date"] == "2026-08-11"
+
+    def test_the_price_surface_covers_every_rung_of_the_plan_price_ladder(self):
+        """A truncation that misses a rung is a truncation with a hole in it.
+
+        ``prophet_bridge`` resolves a name through ``data/baskets/ohlcv`` ->
+        ``data/stocks`` -> the wide index-constituent close panels, and
+        ``build_stock_library.universe()`` reads the same panels plus ``data/yahoo``.
+        Every one of those has to be inside the fenced surface.
+        """
+        covered = {relative for relative, _ in bf11.PRICE_TICKER_STORES}
+        assert {"data/baskets/ohlcv", "data/stocks", "data/yahoo"} <= covered
+        panels = set(bf11.PRICE_WIDE_PANELS)
+        for group in ("breadth", "smallcap_breadth", "midcap_breadth",
+                      "russell_breadth"):
+            assert f"data/{group}/_closes_cache.parquet" in panels, (
+                f"{group}'s close panel is outside the truncated surface"
+            )
+
+
+# ---------------------------------------------------------------------------
+# R2 — collisions: the live nightly always wins
+# ---------------------------------------------------------------------------
+
+class TestCollisionRuleLiveWins:
+
+    def test_a_name_the_live_nightly_took_is_an_incumbent(self):
+        plans = {"AAA-BULL-20260812": _plan("AAA", entry=10.0, trigger=11.0,
+                                            recorded_at="2026-08-12")}
+        incumbents = bf11.live_plans_since(plans, bf11.LIVE_WINS_FROM)
+        assert "AAA-BULL" in incumbents
+
+    def test_a_plan_recorded_before_the_window_is_not_an_incumbent(self):
+        plans = {"AAA-BULL-20260810": _plan("AAA", entry=10.0, trigger=11.0,
+                                            recorded_at="2026-08-10")}
+        assert bf11.live_plans_since(plans, bf11.LIVE_WINS_FROM) == {}
+
+    def test_a_live_bear_does_not_knock_out_a_reconstructed_bull(self):
+        """Different direction, different episode — the engine keys the same way."""
+        plans = {"AAA-BEAR-20260812": _plan("AAA", entry=10.0, trigger=9.0,
+                                            direction="BEAR",
+                                            recorded_at="2026-08-12")}
+        incumbents = bf11.live_plans_since(plans, bf11.LIVE_WINS_FROM)
+        assert "AAA-BEAR" in incumbents and "AAA-BULL" not in incumbents
+
+    def test_this_lanes_own_output_can_never_be_its_own_incumbent(self):
+        """Otherwise a re-run reads its own plans as live and refuses forever."""
+        plans = {"AAA-BULL-20260805": _plan(
+            "AAA", entry=10.0, trigger=11.0, recorded_at="2026-08-12",
+            origination_mode=bf11.ORIGINATION_MODE)}
+        assert bf11.live_plans_since(plans, bf11.LIVE_WINS_FROM) == {}
+
+    def test_the_live_wins_cutoff_is_the_nightly_that_actually_ran(self):
+        assert bf11.LIVE_WINS_FROM == "2026-08-12", (
+            "the 2026-08-12 nightly is the run that collected both stranded sessions "
+            "and originated live; it is the boundary the reconstruction yields to"
+        )
+        assert bf11.LIVE_WINS_FROM > bf11.BACKFILL_ASOF
+
+
+# ---------------------------------------------------------------------------
+# R3 — chronology: an entry already in the past is not a plan
+# ---------------------------------------------------------------------------
+
+class TestChronologyRefusal:
+
+    def test_a_trigger_the_close_already_took_out_is_refused(self):
+        kept, refused = bf11.chronology_refusals(
+            [_plan("AAA", entry=12.0, trigger=11.0)], through=bf11.BACKFILL_ASOF)
+        assert kept == []
+        assert refused[0]["ticker"] == "AAA"
+        assert refused[0]["reason"] == "chronology_refused:trigger_already_fired"
+
+    def test_a_trigger_the_close_sits_exactly_on_is_refused(self):
+        """At the trigger IS fired — ``_evaluate_trigger`` fires on price >= trigger."""
+        _, refused = bf11.chronology_refusals(
+            [_plan("AAA", entry=11.0, trigger=11.0)], through=bf11.BACKFILL_ASOF)
+        assert len(refused) == 1
+
+    def test_a_forward_trigger_survives(self):
+        kept, refused = bf11.chronology_refusals(
+            [_plan("AAA", entry=10.0, trigger=11.0)], through=bf11.BACKFILL_ASOF)
+        assert refused == [] and len(kept) == 1
+
+    def test_a_plan_with_no_comparable_numbers_is_not_silently_dropped(self):
+        """An unpriced plan is the engine's problem to refuse, not this gate's."""
+        kept, refused = bf11.chronology_refusals(
+            [_plan("AAA", entry=None, trigger=None)], through=bf11.BACKFILL_ASOF)
+        assert len(kept) == 1 and refused == []
+
+
+# ---------------------------------------------------------------------------
+# R4 — the pinned vintage
+# ---------------------------------------------------------------------------
+
+class TestCodeVintageIsPinned:
+
+    def test_a_tree_at_another_commit_is_refused(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bf11, "_git", lambda *a, **kw: "deadbeef" * 5 + "\n")
+        with pytest.raises(bf11.BackfillRefused, match="not the pinned bake-time"):
+            bf11.verify_code_vintage(tmp_path, tmp_path)
+
+    def test_a_tree_descending_from_5370_is_refused(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bf11, "_git",
+                            lambda *a, **kw: bf11.VINTAGE_COMMIT + "\n")
+        monkeypatch.setattr(
+            subprocess, "run",
+            lambda *a, **kw: subprocess.CompletedProcess(a[0], 0, b"", b""))
+        with pytest.raises(bf11.BackfillRefused, match="DESCENDS from #5370"):
+            bf11.verify_code_vintage(tmp_path, tmp_path)
+
+    def test_the_pinned_vintage_predates_the_5370_merge(self):
+        """The whole reason the lane runs an old tree, stated as a constant."""
+        assert bf11.VINTAGE_COMMITTED_UTC < bf11.PR5370_MERGED_UTC
+        assert bf11.VINTAGE_COMMITTED_UTC <= bf11.BAKE_CRON_UTC
+
+    @pytest.mark.skipif(
+        not (_REPO / ".git").exists(), reason="needs the real object database")
+    def test_the_pinned_vintage_is_a_real_commit_on_main(self):
+        head = subprocess.run(
+            ["git", "rev-parse", "--verify", f"{bf11.VINTAGE_COMMIT}^{{commit}}"],
+            cwd=_REPO, capture_output=True, text=True)
+        if head.returncode != 0:  # shallow clone — the graft hides it
+            pytest.skip("shallow checkout: the pinned vintage is beyond the graft")
+        assert head.stdout.strip() == bf11.VINTAGE_COMMIT
+
+
+# ---------------------------------------------------------------------------
+# R5 — the reconstructed board has to be the right board
+# ---------------------------------------------------------------------------
+
+def _board(**over) -> tuple[dict, bytes]:
+    doc = {
+        "as_of": bf11.BACKFILL_ASOF,
+        "rank_by": bf11.REQUIRED_RANK_BY,
+        "ranking": {"definition": bf11.REQUIRED_RANK_BY},
+        "staleness": {"price_through": bf11.BACKFILL_ASOF, "basis": "panel_majority",
+                      "inputs": {"panel": {"members_total": 3041}}},
+        "buy": [{"ticker": "AAA"}],
+    }
+    doc.update(over)
+    return doc, json.dumps(doc).encode("utf-8")
+
+
+class TestTheReconstructedBoardIsFenced:
+
+    def test_the_right_board_passes_and_is_marked_synthetic(self):
+        identity = bf11.verify_board_identity(*_board())
+        assert identity["as_of"] == bf11.BACKFILL_ASOF
+        assert identity["synthetic"] is True, (
+            "a board that never existed must never be described as one that did"
+        )
+
+    def test_another_days_board_is_refused(self):
+        with pytest.raises(bf11.BackfillRefused, match="as_of"):
+            bf11.verify_board_identity(*_board(as_of="2026-08-12"))
+
+    def test_a_board_priced_through_another_session_is_refused(self):
+        """The clock contract: the price basis must BE the recorded session."""
+        doc, _ = _board()
+        doc["staleness"]["price_through"] = "2026-08-10"
+        with pytest.raises(bf11.BackfillRefused, match="prices through"):
+            bf11.verify_board_identity(doc, json.dumps(doc).encode("utf-8"))
+
+    def test_the_wrong_ranker_is_refused(self):
+        with pytest.raises(bf11.BackfillRefused, match="ranker"):
+            bf11.verify_board_identity(*_board(rank_by="us_prophet_v1",
+                                               ranking={"definition": "us_prophet_v1"}))
+
+
+class TestHarnessFidelity:
+    """A reconstruction is worth what its reproduction of an observed board is worth."""
+
+    def test_an_exact_rebuild_scores_one(self):
+        board = {"buy": [{"ticker": "AAA"}, {"ticker": "BBB"}], "as_of": "2026-08-10"}
+        score = bf11.board_fidelity(board, board)
+        assert score["jaccard"] == 1.0 and score["exact_order_match"] is True
+        assert score["passes_floor"] is True
+
+    def test_a_half_wrong_rebuild_fails_the_floor_and_names_both_directions(self):
+        rebuilt = {"buy": [{"ticker": "AAA"}, {"ticker": "CCC"}]}
+        reference = {"buy": [{"ticker": "AAA"}, {"ticker": "BBB"}], "as_of": "2026-08-10"}
+        score = bf11.board_fidelity(rebuilt, reference)
+        assert score["passes_floor"] is False
+        assert score["missing_from_rebuild"] == ["BBB"]
+        assert score["extra_in_rebuild"] == ["CCC"]
+
+    def test_membership_agreement_without_order_agreement_is_reported_as_such(self):
+        rebuilt = {"buy": [{"ticker": "BBB"}, {"ticker": "AAA"}]}
+        reference = {"buy": [{"ticker": "AAA"}, {"ticker": "BBB"}], "as_of": "2026-08-10"}
+        score = bf11.board_fidelity(rebuilt, reference)
+        assert score["jaccard"] == 1.0 and score["exact_order_match"] is False
+
+
+# ---------------------------------------------------------------------------
+# R6 — funnel arithmetic
+# ---------------------------------------------------------------------------
+
+class TestReconciliation:
+
+    def test_both_identities_close_on_a_consistent_funnel(self):
+        counts = {"admitted": 10, "duplicate_id_blocked": 3, "reorigination_blocked": 2,
+                  "eligible_after_skips": 5, "minted": 4, "collided": 1,
+                  "chronology_refused": 1, "still_refused": 1}
+        result = bf11.check_reconciliation(counts)
+        assert result["admission_identity"]["holds"]
+        assert result["disposition_identity"]["holds"]
+
+    def test_a_lost_candidate_breaks_the_disposition_identity(self):
+        """The point of the identity: a name that vanishes cannot vanish quietly."""
+        counts = {"admitted": 10, "duplicate_id_blocked": 3, "reorigination_blocked": 2,
+                  "eligible_after_skips": 5, "minted": 4, "collided": 1,
+                  "chronology_refused": 0, "still_refused": 1}
+        assert not bf11.check_reconciliation(counts)["disposition_identity"]["holds"]
+
+    def test_chronology_refusals_are_inside_the_identity(self):
+        """They were added by this lane, so the arithmetic has to account for them."""
+        statement = bf11.check_reconciliation({})["disposition_identity"]["statement"]
+        assert "chronology_refused" in statement
+
+
+# ---------------------------------------------------------------------------
+# R7 — the disclosure this lane is required to write
+# ---------------------------------------------------------------------------
+
+class TestDisclosureCopy:
+    """§0.10: plain-word and bilingual, and the ZH written as Chinese."""
+
+    def test_every_copy_field_is_bilingual(self):
+        for key, value in bf11.DISCLOSURE_COPY.items():
+            assert set(value) == {"en", "zh"}, f"{key} is not bilingual"
+            assert value["en"].strip() and value["zh"].strip()
+
+    def test_the_zh_is_chinese_not_an_english_sentence(self):
+        """Han density, not han count: a headline is short, a body is not.
+
+        The failure this catches is the one the ZH audit actually found — copy that is
+        English in shape with Chinese words dropped in, or worse, an English clause left
+        untranslated inside a Chinese sentence.
+        """
+        for key, value in bf11.DISCLOSURE_COPY.items():
+            zh = value["zh"]
+            letters = [ch for ch in zh if not ch.isspace()]
+            han = [ch for ch in letters if "一" <= ch <= "鿿"]
+            assert len(han) >= 4, f"{key}'s zh is too short to be copy: {zh!r}"
+            assert len(han) / len(letters) >= 0.5, (
+                f"{key}'s zh is only {len(han)}/{len(letters)} han — English-shaped?"
+            )
+            assert not any(word in zh for word in ("backfill", "reconstruction",
+                                                   "outage")), (
+                f"{key}'s zh leaks an untranslated internal term"
+            )
+
+    def test_the_front_facing_copy_uses_no_internal_vocabulary(self):
+        banned = ("backfill", "mixed vintage", "origination_mode", "selection_era",
+                  "us_prophet", "anticipation-v1", "falsif", "refut")
+        for key, value in bf11.DISCLOSURE_COPY.items():
+            lowered = value["en"].lower()
+            for word in banned:
+                assert word not in lowered, f"{key}'s en copy leaks {word!r}"
+
+    def test_the_copy_says_it_was_never_published_that_night(self):
+        """The one fact a reader most needs, in both languages."""
+        assert "not" in bf11.DISCLOSURE_COPY["not_a_live_call"]["en"].lower()
+        assert "没有" in bf11.DISCLOSURE_COPY["not_a_live_call"]["zh"]
+
+
+class TestTheLaneIsScopedToOneNight:
+
+    def test_the_constants_all_name_the_same_night(self):
+        assert bf11.BACKFILL_ASOF == "2026-08-11"
+        assert bf11.ORIGINATION_MODE.endswith("2026_08_11")
+        assert bf11.WINDOW_ID.endswith("2026-08-11")
+
+    def test_there_is_no_asof_flag_to_widen_the_scope(self):
+        """Each outage is chartered separately; a date flag would be a generic lane."""
+        parser_help = bf11.main.__doc__ or ""
+        source = Path(bf11.__file__).read_text(encoding="utf-8")
+        assert '"--asof"' not in source and "'--asof'" not in source, (
+            "a date flag turns a chartered one-off into the generic backfill lane "
+            "research/DO_NOT_REBUILD.md forbids"
+        )
+        assert "--date" not in parser_help
+
+
+# ---------------------------------------------------------------------------
+# R8 — the design of record and the artifact cannot disagree
+# ---------------------------------------------------------------------------
+
+REAL_SCHEMA_DOC = _REPO / "research" / "PROPHET_LEDGER_SCHEMA.md"
+
+
+class TestTheDocsAndTheArtifactCannotDisagree:
+    """Always runs, including before the reconstruction has executed."""
+
+    def test_the_schema_doc_carries_a_dated_addendum_for_this_window(self):
+        text = REAL_SCHEMA_DOC.read_text(encoding="utf-8")
+        assert "Addendum 2026-08-13" in text, (
+            "research/PROPHET_LEDGER_SCHEMA.md carries no addendum for the 2026-08-11 "
+            "reconstruction; an undocumented exception reads as a repeal of the "
+            "no-backfill law"
+        )
+        assert bf11.BACKFILL_ASOF in text
+        assert "us-board-frozen-alpha-2026-08" in text, (
+            "the addendum does not name the ruling that keeps 08-03→08-06 refused"
+        )
+
+    def test_the_addendum_says_the_board_never_existed(self):
+        """The one sentence that separates this window from the 2026-08-09 replay."""
+        text = REAL_SCHEMA_DOC.read_text(encoding="utf-8")
+        assert "never existed anywhere in this repository" in text
+
+    def test_a_marker_claiming_execution_requires_the_artifact(self):
+        """Mirrors the 2026-08-09 guard — and covers the direction that one missed.
+
+        That guard keys on the marker's PRESENCE and skips when absent, so a doc that
+        UNDERclaims is invisible to it; the 2026-08-09 marker sat unset for two days
+        after its artifacts had merged. Here the absent-marker branch asserts the
+        converse explicitly instead of skipping, so an executed window with no marker
+        fails rather than passing quietly.
+        """
+        text = REAL_SCHEMA_DOC.read_text(encoding="utf-8")
+        claims_executed = any(
+            line.startswith(f"executed_window: {bf11.WINDOW_ID}")
+            for line in text.splitlines()
+        )
+        row_exists = False
+        if REAL_DISCLOSURES.exists():
+            document = json.loads(REAL_DISCLOSURES.read_text(encoding="utf-8"))
+            row_exists = any(row.get("id") == bf11.WINDOW_ID
+                             for row in (document.get("backfills") or []))
+        assert claims_executed == row_exists, (
+            f"the schema doc says executed={claims_executed} but the disclosure "
+            f"artifact says executed={row_exists}. Either the doc claims something "
+            "that never happened, or an executed window is undocumented."
+        )
+
+
+# ---------------------------------------------------------------------------
+# R9 — against the tree that actually ships
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skipif(
+    not REAL_DISCLOSURES.exists(),
+    reason="the reconstruction has not been executed in this tree yet",
+)
+class TestTheShippedReconstructionRow:
+
+    def _row(self) -> dict | None:
+        document = json.loads(REAL_DISCLOSURES.read_text(encoding="utf-8"))
+        return next((r for r in (document.get("backfills") or [])
+                     if r.get("id") == bf11.WINDOW_ID), None)
+
+    def test_the_row_declares_itself_a_reconstruction(self):
+        row = self._row()
+        if row is None:
+            pytest.skip("this window has not been executed in this tree yet")
+        assert row["kind"] == "reconstruction"
+        assert "never existed" in row["kind_note"]
+
+    def test_the_row_pins_its_code_vintage(self):
+        row = self._row()
+        if row is None:
+            pytest.skip("this window has not been executed in this tree yet")
+        vintage = row["code_vintage"]
+        assert vintage["vintage_commit"] == bf11.VINTAGE_COMMIT
+        assert vintage["pr5370"]["excluded"] is True
+
+    def test_the_row_proves_its_truncation(self):
+        row = self._row()
+        if row is None:
+            pytest.skip("this window has not been executed in this tree yet")
+        truncation = row["inputs"]["price_truncation"]
+        assert truncation["ceiling"] == bf11.TRUNCATE_THROUGH
+        assert truncation["fence"]["violations"] == 0
+        assert truncation["fence"]["files_scanned"] > 0, (
+            "a fence that scanned nothing proved nothing"
+        )
+
+    def test_the_row_scores_its_own_harness(self):
+        row = self._row()
+        if row is None:
+            pytest.skip("this window has not been executed in this tree yet")
+        fidelity = row["harness_fidelity"]
+        assert fidelity["measured"] is True, (
+            "an unscored reconstruction is an unfalsifiable one"
+        )
+        assert fidelity["reference_sha256"] == bf11.CONTROL_BOARD_SHA256
+
+    def test_the_row_says_the_board_is_synthetic(self):
+        row = self._row()
+        if row is None:
+            pytest.skip("this window has not been executed in this tree yet")
+        assert row["inputs"]["board"]["synthetic"] is True
+        assert row["inputs"]["board"]["as_of"] == bf11.BACKFILL_ASOF
+
+    def test_the_row_carries_the_bilingual_reader_copy(self):
+        row = self._row()
+        if row is None:
+            pytest.skip("this window has not been executed in this tree yet")
+        assert row["disclosure_copy"] == bf11.DISCLOSURE_COPY
+
+
+@pytest.mark.skipif(
+    not REAL_PLANS_DIR.exists(),
+    reason="sparse checkout: site/prophet/plans is not materialised here",
+)
+class TestTheShippedPlansOfThisWindow:
+
+    def _plans(self) -> list[dict]:
+        out = []
+        for path in REAL_PLANS_DIR.glob("*.json"):
+            try:
+                plan = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                continue
+            if plan.get("origination_mode") == bf11.ORIGINATION_MODE:
+                out.append(plan)
+        return out
+
+    def test_every_plan_of_this_window_is_stamped_and_dated_to_it(self):
+        for plan in self._plans():
+            assert str(plan.get("recorded_at"))[:10] == bf11.BACKFILL_ASOF
+            assert plan.get("backfill_executed_at"), (
+                f"{plan.get('id')} carries no backfill_executed_at — the stamp that "
+                "says WHEN the row was written is half the provenance"
+            )
+
+    def test_no_plan_of_this_window_prices_off_a_later_session(self):
+        """The last honest check on the whole lane, read off the shipped artifacts."""
+        for plan in self._plans():
+            basis = str(plan.get("price_basis_date") or "")[:10]
+            assert basis <= bf11.TRUNCATE_THROUGH, (
+                f"{plan.get('id')} is priced off {basis}, after the truncation ceiling"
+            )
