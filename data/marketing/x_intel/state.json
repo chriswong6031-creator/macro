@@ -1,19 +1,19 @@
 {
   "handles": {
     "Barchart": {
-      "last_captured_at": "2026-08-11T22:04:23Z",
+      "last_captured_at": "2026-08-12T21:57:45Z",
       "last_kept": 18
     },
     "DeItaone": {
-      "last_captured_at": "2026-08-11T22:04:23Z",
+      "last_captured_at": "2026-08-12T21:57:45Z",
       "last_kept": 20
     },
     "FirstSquawk": {
-      "last_captured_at": "2026-08-11T22:04:23Z",
+      "last_captured_at": "2026-08-12T21:57:45Z",
       "last_kept": 20
     },
     "KobeissiLetter": {
-      "last_captured_at": "2026-08-11T22:04:23Z",
+      "last_captured_at": "2026-08-12T21:57:45Z",
       "last_kept": 20
     },
     "LizAnnSonders": {
@@ -61,7 +61,7 @@
       "last_kept": 20
     },
     "unusual_whales": {
-      "last_captured_at": "2026-08-11T22:04:23Z",
+      "last_captured_at": "2026-08-12T21:57:45Z",
       "last_kept": 20
     },
     "wallstengine": {
@@ -70,7 +70,7 @@
     }
   },
   "last_run": {
-    "at": "2026-08-11T22:04:23Z",
+    "at": "2026-08-12T21:57:45Z",
     "calls": 5,
     "rows": 98,
     "stopped": null,
@@ -83,11 +83,11 @@
       "usd": 0.0525
     },
     "2026-08": {
-      "calls": 79,
-      "tweets": 1140,
-      "usd": 0.1743
+      "calls": 84,
+      "tweets": 1240,
+      "usd": 0.1893
     }
   },
   "schema": "marketing.x_intel_state/v1",
-  "updated_at": "2026-08-11T22:04:23Z"
+  "updated_at": "2026-08-12T21:57:45Z"
 }

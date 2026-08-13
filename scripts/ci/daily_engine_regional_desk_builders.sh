@@ -3,14 +3,8 @@
 # job `engine`, step `regional + desk builders (parallelised — independent clusters, barrier before the hub)`.
 # 2026-08-12 512KB processing-cap diet (tests/test_workflow_file_size.py).
 # Env comes from the step's `env:` block, which stays in the YAML.
-# Invoked as: bash scripts/ci/daily_engine_regional_desk_builders.sh scripts.check_theme_graph_contracts
+# Invoked as: bash scripts/ci/daily_engine_regional_desk_builders.sh
 set -e  # mirror GitHub's default `bash -e {0}` step shell — daily.yml declares no shell:
-
-THEME_GRAPH_GUARD_MODULE="scripts.check_theme_graph_contracts"
-if [ "${1:-}" != "$THEME_GRAPH_GUARD_MODULE" ] || [ "$#" -ne 1 ]; then
-  echo "::error title=regional builder wiring::expected the exact theme-graph guard module argument" >&2
-  exit 2
-fi
 
 set +e
 ART="$RUNNER_TEMP/band"; rm -rf "$ART"; mkdir -p "$ART"
@@ -95,7 +89,7 @@ cl_baskets() {
   # false, so a contract breach must not take the collect lane down. CI runs
   # the same guard with --strict.
   brun theme_graph "theme graph nightly materialization (build_theme_graph)" scripts.build_theme_graph
-  brun theme_graph_guard "theme graph contract guard (check_theme_graph_contracts)" "$THEME_GRAPH_GUARD_MODULE"
+  brun theme_graph_guard "theme graph contract guard (check_theme_graph_contracts)" scripts.check_theme_graph_contracts
   brun subsector_conf "subsector confluence desk + double-gated funnel (build_subsector_confluence)" scripts.build_subsector_confluence
   brun subsector_conf_ndx "nasdaq-100 subsector confluence desk (build_subsector_confluence --nasdaq)" scripts.build_subsector_confluence --nasdaq
   brun subsector_conf_rut "russell-2000 subsector confluence desk (build_subsector_confluence --russell)" scripts.build_subsector_confluence --russell

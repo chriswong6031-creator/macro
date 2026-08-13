@@ -110,18 +110,27 @@ Generation-side. The gates only backstop these.
    "Metals & miners").
 9. **Numbers written the way traders write them.** $1.0M not $1000K; -10.3%
    keeps its sign; market-cap and market-value figures humanized to three
-   significant figures; big figures rounded to the digit that matters.
+   significant figures; big figures rounded to the digit that matters. Bare
+   counts follow the same law: "199,000" is written "199k", "7,600,000,000" is
+   written "$7.6B".
 
-   **One documented exception, and it is an anti-fabrication exception rather
-   than a style choice.** `market_facts._claims_level_words` deliberately emits
-   "203 thousand" rather than the natural "203k", because
-   `copywriter._extract_number_tokens` cannot see a `k`-suffixed figure at all
-   (no word boundary before the "k"), so an invented "213k" would clear the
-   whitelist screen untouched while "203 thousand" is checked. The register
-   loses and the invention gate wins, every time. Closing it properly means
-   teaching the number tokenizer the `k`/`m` suffixes FIRST, with its own
-   mutation test, and only then switching the producer. Until that lands,
-   spelled-out thousands are legal in macro print copy and nowhere else.
+   **The k/m/b exception is CLOSED (W2D, 2026-08-12).** Through this date,
+   `market_facts._claims_level_words` deliberately emitted "203 thousand"
+   rather than the natural "203k", because `copywriter._extract_number_tokens`
+   could not see a `k`-suffixed figure at all (no word boundary before the
+   "k"), so an invented "213k" would have cleared the whitelist screen
+   untouched while "203 thousand" was checked — an anti-fabrication exception,
+   never a style choice. `copywriter._NUMBER_RE` now carries a compact-suffix
+   branch (`_PRICE_SLOT_RE` too, for a suffixed price-slot level like
+   "target 120k"), and `build_context` licenses the compact spelling of every
+   whitelisted count >= 1,000 (`_compact_display_variants`, mirroring how a
+   percent's display spelling is already licensed) — so `_claims_level_words`
+   now writes "203k" directly, self-consistently, in both the copy and the
+   whitelist token. Mutation-tested in `tests/test_copywriter.py` and
+   `tests/test_marketing_copy_v2.py`; the producer switch itself is pinned by
+   `tests/test_market_facts.py::test_no_invented_numbers_in_macro_posts` and
+   the dedicated `_claims_level_words`/`_print_jobless_claims` tests beside it.
+   Spelled-out thousands are no longer the house register anywhere.
 10. **Emoji are functional only.** `mastermind_news` may keep 🔴 as a severity
     flag on genuine alerts. Every other account ships zero.
 

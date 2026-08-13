@@ -2263,10 +2263,12 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
       <div class="hkx-kv"{% if cbbc_map.banner %} style="opacity:.55"{% endif %}><span class="hkx-k">{{ t('Leverage bets','杠杆仓位') }}</span><span class="hkx-v"><span class="hkx-stword {{ 'bad' if 'bear' in (_cb.leverage_state or '') else ('ok' if 'bull' in (_cb.leverage_state or '') else 'warn') }}">{{ t('Lean bearish','偏空') if 'bear' in (_cb.leverage_state or '') else (t('Lean bullish','偏多') if 'bull' in (_cb.leverage_state or '') else ('—' if _cb.leverage_state == 'no_data' else t('Balanced','均衡'))) }}</span></span></div>
       {% if _cb.bull_outstanding is not none and _cb.bear_outstanding is not none %}
       {% set _tot = _cb.bull_outstanding + _cb.bear_outstanding %}
+      {% if _tot > 0 %}
       <div class="hkx-bbar"{% if cbbc_map.banner %} style="opacity:.55"{% endif %}>
         <span class="hkx-bull" style="width:{{ (_cb.bull_outstanding / _tot * 100)|int }}%"></span>
         <span class="hkx-bear" style="width:{{ (_cb.bear_outstanding / _tot * 100)|int }}%"></span>
       </div>
+      {% endif %}
       {% endif %}
       {% if cbbc_map.sld_banner %}
       <div style="font-size:11px;color:var(--ink-warn, var(--warn));margin-top:4px"><span class="l-en">{{ cbbc_map.sld_banner.en }}</span><span class="l-zh">{{ cbbc_map.sld_banner.zh }}</span></div>
@@ -2634,7 +2636,9 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
             <div class="hkx-kv"{% if cbbc_map.banner %} style="opacity:.55"{% endif %}><span class="hkx-k">{{ cb.name_en if cb.name_en is defined else '—' }}</span><span class="hkx-v"><span class="hkx-stword {{ 'bad' if 'bear' in (cb.leverage_state or '') else ('ok' if 'bull' in (cb.leverage_state or '') else 'warn') }}">{{ t('Bearish','偏空') if 'bear' in (cb.leverage_state or '') else (t('Bullish','偏多') if 'bull' in (cb.leverage_state or '') else ('—' if cb.leverage_state == 'no_data' else t('Balanced','均衡'))) }}</span></span></div>
             {% if cb.bull_outstanding is not none and cb.bear_outstanding is not none %}
             {% set _tot = cb.bull_outstanding + cb.bear_outstanding %}
+            {% if _tot > 0 %}
             <div class="hkx-bbar"{% if cbbc_map.banner %} style="opacity:.55"{% endif %}><span class="hkx-bull" style="width:{{ (cb.bull_outstanding / _tot * 100)|int }}%"></span><span class="hkx-bear" style="width:{{ (cb.bear_outstanding / _tot * 100)|int }}%"></span></div>
+            {% endif %}
             {% endif %}
             {% endfor %}
             {% endif %}

@@ -1,33 +1,33 @@
 {
   "store": "massive_stock_day",
-  "n_tickers": 20764,
-  "latest_date": "2026-08-07",
-  "updated_at": "2026-08-11T00:39:43.652816+00:00",
+  "n_tickers": 20783,
+  "latest_date": "2026-08-11",
+  "updated_at": "2026-08-13T00:45:27.970826+00:00",
   "coverage": {
     "first_day": "2021-07-06",
-    "last_day": "2026-08-07",
-    "n_processed_days": 887,
-    "max_missing_run_weekdays": 442,
+    "last_day": "2026-08-11",
+    "n_processed_days": 928,
+    "max_missing_run_weekdays": 403,
     "max_missing_run_weekdays_recent": 0,
     "recent_window_bdays": 90,
     "missing_sample": [
-      "2023-04-25",
-      "2023-04-26",
-      "2023-04-27",
-      "2023-04-28",
-      "2023-05-01",
-      "2023-05-02",
-      "2023-05-03",
-      "2023-05-04",
-      "2023-05-05",
-      "2023-05-08"
+      "2023-06-19",
+      "2023-06-20",
+      "2023-06-21",
+      "2023-06-22",
+      "2023-06-23",
+      "2023-06-26",
+      "2023-06-27",
+      "2023-06-28",
+      "2023-06-29",
+      "2023-06-30"
     ]
   },
   "anchor": {
     "ticker": "SPY",
     "first": "2021-07-06",
-    "last": "2026-08-07",
-    "n_rows": 1279,
+    "last": "2026-08-11",
+    "n_rows": 1281,
     "max_gap_calendar_days": 4
   }
 }
