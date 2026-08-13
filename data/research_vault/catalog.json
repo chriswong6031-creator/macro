@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T09:13:00.819592+00:00",
-  "count": 1050,
+  "generated_at": "2026-08-13T09:41:23.649562+00:00",
+  "count": 1051,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -247,6 +247,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-glzyuqbhs8f-19abb4",
+      "title": "GS TMT SPEC SALES AI complex and semis benefit from Nvidia",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T15:17:24Z",
+      "summary_points": [
+        "**NVIDIA $500bn partnership**: Drives semiconductor rally; Supermicro backlog, CoreWeave $104bn backlog, Samsung/SK Hynix gains amid tight supply/demand fundamentals.",
+        "**Cloudflare non-human traffic shift**: Non-human traffic overtakes human traffic (2026 vs.",
+        "2027 forecast), signaling 1,000x growth potential and infrastructure dynamics shift.",
+        "**Google Zero policy crackdown**: \"Google Zero\" causes >40% traffic drops (mid-2025–2026), forcing publishers to restrict access; reshapes ad tech and publisher revenue models."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
