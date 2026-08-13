@@ -100,8 +100,16 @@ cited, read-only** `context_bundle.v1` — higher law (DNR rows, the P0, the pro
 above the workstream state, then current decisions, fresh discoveries, the latest
 handoff, and artifact pointers, with every excluded, budget-omitted and unreadable input
 named rather than silently dropped. It exits **0** with honest degradation (an ambiguous
-task, an unbuilt index and an absent sibling repo all report and carry on) and exits 1
-only when you NAME a workstream that does not exist or whose record is malformed.
+task, an unbuilt index, an absent sibling repo, a citation that no longer resolves, and —
+for a free-text task — an absent store all report and carry on) and exits 1 only when
+`--workstream` NAMES a workstream that does not exist, whose OWN frontmatter is malformed,
+or whose store is absent. Naming is an assertion and gets the strict answer; free text is a
+question and gets an honest one.
+
+`token_estimate` prices the whole payload — every item's citation fields, not just its
+prose, plus the `excluded`/`omitted_due_to_budget`/`degraded` tails — so it may exceed
+`--budget`: the workstream block, higher law and those tails are never dropped. Whenever it
+does, the overrun and its composition are named in `degraded`, so the number is never bare.
 
 Both `status` and `brief` **always exit 0** (invariant I1), and all three make **zero
 network calls**: PR state comes only

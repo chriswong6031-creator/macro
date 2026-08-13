@@ -2200,15 +2200,28 @@ SEARCH_MAX_RESULTS = 20           # mirrors context_index_query.py `search`
 _KILL_REGISTRY = _ROOT / "config" / "compiled_kill_registry.yml"
 _CONTEXT_INDEX_ENV = "MACRO_CONTEXT_INDEX_DIR"
 _CONTEXT_INDEX_DIR = _ROOT / ".context-index"
+_CONTEXT_INDEX_CONFIG = _ROOT / "config" / "context_index.yml"
+_CONTEXT_INDEX_CONFIG_REL = "config/context_index.yml"
 _MACRO_PROJECT = "macro-dashboard"
 _MACRO_DB = "shared.sqlite"
 _DNR_SOURCE = "research/DO_NOT_REBUILD.md"
 _PROGRAMS_REL = "config/mastermind_programs.yml"
+# Record repo key -> the project this repo is registered as in the index config.
+_INDEX_PROJECTS = {
+    "macro": _MACRO_PROJECT, "terminal": "terminal", "mastermind": "mastermind",
+}
+POINTER_AUTHORITY_DEFAULT = "A3"
 
 EXCERPT_WORKSTREAM_BODY = 700
 EXCERPT_DECISION = 1200
 EXCERPT_DISCOVERY = 700
 EXCERPT_HANDOFF = 1600
+# Landmines and do_not_redo lines are one-liners BY CONVENTION, not by rule, and the
+# always-include set does not check.  A 2,280-char entry rendered whole used to be the
+# only unbounded thing in a bundle that advertises itself as bounded; capped, its head
+# still renders and `_clip`'s ellipsis says it was cut.  The resulting overrun, if any,
+# is NAMED in `degraded` — see the packer.
+EXCERPT_CONSTRAINT = 400
 
 DNR_RE = re.compile(r"DNR:([A-Z0-9][A-Z0-9-]*)")
 WS_MENTION_RE = re.compile(r"\bWS[-:]([A-Z0-9][A-Z0-9-]*)\b")
@@ -2336,17 +2349,187 @@ def _bundle_item(
     }
 
 
-def _pointer_authority(path: str) -> str:
-    """Authority class of a pointed-at file, mirroring config/context_index.yml.
+def _glob_match(pattern: str, path: str) -> bool:
+    """``pathlib``-style glob match: ``*`` never crosses ``/``; ``**`` spans any depth.
 
-    Three rules, exactly the ones the corpus registration already draws, so a pointer
-    never claims a rank the index would not give the same file.
+    ``fnmatch`` alone is wrong here: its ``*`` matches ``/`` too, so ``config/*.yml``
+    would claim ``config/nested/deep.yml`` — a file the index does NOT put in that source
+    — and the pointer would carry a rank the corpus never gave it.  Segment-wise, so the
+    semantics are the ones ``Path.glob`` (and therefore the index builder) uses.
     """
-    if path.endswith(".py"):
-        return "A2"
-    if path.startswith("config/") and path.endswith((".yml", ".yaml")):
-        return "A1"
-    return "A3"
+    return _glob_segments(pattern.split("/"), path.split("/"))
+
+
+def _glob_segments(pattern: list[str], parts: list[str]) -> bool:
+    if not pattern:
+        return not parts
+    head, rest = pattern[0], pattern[1:]
+    if head == "**":
+        return any(_glob_segments(rest, parts[index:]) for index in range(len(parts) + 1))
+    if not parts:
+        return False
+    return fnmatch.fnmatchcase(parts[0], head) and _glob_segments(rest, parts[1:])
+
+
+# Parsed ONCE per process: `(projects, error)`.  `None` until first read.
+_INDEX_CONFIG_CACHE: tuple[dict[str, dict[str, list[Any]]], str | None] | None = None
+
+
+def _index_config() -> tuple[dict[str, dict[str, list[Any]]], str | None]:
+    """``config/context_index.yml`` reduced to ``{project: {sources, deny}}``.
+
+    Plain ``yaml.safe_load``, never an ``engine`` import — ``--workstream`` mode must run
+    in a checkout where ``engine/`` was never checked out (see ``_default_search``).
+    Cached for the process: a bundle asks this once per artifact, and re-reading a 420-line
+    config per pointer is pure waste.
+    """
+    global _INDEX_CONFIG_CACHE
+    if _INDEX_CONFIG_CACHE is not None:
+        return _INDEX_CONFIG_CACHE
+    projects: dict[str, dict[str, list[Any]]] = {}
+    error: str | None = None
+    try:
+        doc = yaml.safe_load(_CONTEXT_INDEX_CONFIG.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        doc = None
+        error = f"{_CONTEXT_INDEX_CONFIG_REL} unreadable ({exc.__class__.__name__})"
+    raw = doc.get("projects") if isinstance(doc, dict) else None
+    if error is None and not isinstance(raw, dict):
+        error = f"{_CONTEXT_INDEX_CONFIG_REL} has no 'projects' mapping"
+    for name, spec in (raw or {}).items():
+        if not isinstance(spec, dict):
+            continue
+        sources: list[tuple[str, str]] = []
+        for source in spec.get("sources") or []:
+            if not isinstance(source, dict):
+                continue
+            klass = source.get("authority_class")
+            for root in source.get("roots") or []:
+                if isinstance(root, str) and isinstance(klass, str):
+                    sources.append((root, klass))
+        deny = [row for row in (spec.get("deny") or []) if isinstance(row, str)]
+        projects[str(name)] = {"sources": sources, "deny": deny}
+    _INDEX_CONFIG_CACHE = (projects, error)
+    return _INDEX_CONFIG_CACHE
+
+
+def _pointer_authority(repo_key: str, path: str, degraded: Degraded) -> str:
+    """Authority class of a pointed-at file, RESOLVED FROM the index config.
+
+    Authority is the corpus registration's to give, and three hardcoded suffix rules gave
+    a different answer from the file that owns the question: `research/DO_NOT_REBUILD.md`
+    rendered as A3 as an artifact pointer while the SAME bundle carried its rows as A1
+    `dnr` items, `CLAUDE.md` was demoted A0 -> A3, and a Macro-shaped rule was applied to
+    Terminal and Mastermind paths that the config ranks under their own source lists.
+
+    First matching source WINS, in list order — the same first-source-wins shape the
+    index's own discovery dedup uses, and the reason `research/DO_NOT_REBUILD.md` (A1,
+    listed early) does not fall through to `repo-research` (A3, listed late).  A denied
+    path is not in the corpus at all, so it gets the neutral default rather than the rank
+    of a source that never indexed it.  Fail-OPEN to the default with a `degraded` line:
+    an unreadable config is a join failure (I4), never a reason to refuse a pointer.
+    """
+    projects, error = _index_config()
+    if error:
+        degraded.add(f"{error} — pointer authority defaulted to {POINTER_AUTHORITY_DEFAULT}")
+        return POINTER_AUTHORITY_DEFAULT
+    project = _INDEX_PROJECTS.get(repo_key)
+    spec = projects.get(project or "")
+    if spec is None:
+        degraded.add(
+            f"{_CONTEXT_INDEX_CONFIG_REL} has no project for repo {repo_key!r} — "
+            f"pointer authority defaulted to {POINTER_AUTHORITY_DEFAULT}"
+        )
+        return POINTER_AUTHORITY_DEFAULT
+    if any(_glob_match(rule, path) for rule in spec["deny"]):
+        return POINTER_AUTHORITY_DEFAULT
+    for root, klass in spec["sources"]:
+        if _glob_match(root, path):
+            return klass
+    return POINTER_AUTHORITY_DEFAULT
+
+
+def _glob_entry(entry: str, rec: dict[str, Any]) -> tuple[str, str] | None:
+    """``(repo, glob)`` for an ``affects``/``scope`` entry that is a path glob, else None.
+
+    Both schemas declare path globs as first-class — decision.schema.yml `affects`:
+    "WS:<KEY>, program keys, or path globs"; discovery.schema.yml `scope`: "repos,
+    programs, or path globs" — and the walk used to read only the first two forms, so a
+    decision that declared its blast radius the way the schema invites was silently
+    dropped by the compiler that exists to surface it.
+
+    A `PREFIX:KEY` citation is not a glob.  A `repo:path` prefix IS one, resolved against
+    THAT repo, because a Terminal path and a Macro path can spell the same string and mean
+    different files.  Bare repo names are stripped by the caller BEFORE this and that
+    strip is load-bearing: `_owns_overlap` is prefix-coarse, so the entry `terminal` would
+    overlap `terminal/components/**` and re-attach the repo-wide scope the walk refuses.
+    """
+    text = (entry or "").strip()
+    if not text:
+        return None
+    if ":" in text and text.split(":", 1)[0] not in REPOS:
+        return None
+    return _resolve_path(text, rec)
+
+
+def _owned_globs(rec: dict[str, Any]) -> list[tuple[str, str]]:
+    """The target's ``owns_paths``, resolved to ``(repo, glob)`` in authored order."""
+    resolved: list[tuple[str, str]] = []
+    for entry in rec.get("owns_paths") or []:
+        if not isinstance(entry, str) or not entry.strip():
+            continue
+        pair = _resolve_path(entry.strip(), rec)
+        if pair is not None:
+            resolved.append(pair)
+    return resolved
+
+
+def _owned_overlap(entry: str, source: dict[str, Any], owned: list[tuple[str, str]]) -> str | None:
+    """The first ``owns_paths`` glob this ``affects``/``scope`` entry overlaps, or None."""
+    pair = _glob_entry(entry, source)
+    if pair is None:
+        return None
+    repo, glob = pair
+    for owns_repo, owns_glob in owned:
+        if owns_repo == repo and _owns_overlap(glob, owns_glob):
+            return owns_glob
+    return None
+
+
+def _supersession(
+    rec: dict[str, Any], prefix: str, known: dict[str, dict[str, Any]]
+) -> tuple[str | None, Any]:
+    """``(replacement_key, raw)`` — evict ONLY on a citation that is shaped AND resolves.
+
+    ``superseded_by`` is the one field that deletes a live record from every bundle, and
+    it used to be read by TRUTHINESS: ``"no"`` evicted a current decision, ``false``,
+    ``0`` and ``""`` did not, and a citation naming a record nobody can open evicted just
+    the same.  Eviction now requires exactly one well-shaped citation that RESOLVES in the
+    store; every other present value returns ``(None, raw)`` so the caller keeps the
+    record and says why.  Losing the reasoning is the expensive direction — a retained
+    record with a loud note is recoverable, a silently deleted one is not.
+    """
+    raw = rec.get("superseded_by")
+    if raw is None:
+        return None, None
+    keys, malformed = _citations(raw, prefix)
+    if len(keys) == 1 and not malformed and keys[0] in known:
+        return keys[0], raw
+    return None, raw
+
+
+def _item_cost(item: dict[str, Any]) -> int:
+    """What one bundle item costs a READER — the whole item, not just its excerpt.
+
+    Measured: costing `excerpt` alone under-reported the JSON payload by 1.9x-6.5x,
+    because every item also ships its path, locator, why_included, kind, key, status and
+    authority_class — the fields that make it citable, which is most of a short item.  A
+    budget that only prices the prose is a budget the caller cannot use to size a context
+    window.  `_seq` is the packer's internal ordering handle and is stripped before the
+    bundle is emitted, so it must not be priced.
+    """
+    payload = {name: value for name, value in item.items() if name != "_seq"}
+    return _estimate_tokens(json.dumps(payload, ensure_ascii=False))
 
 
 def _repo_sha() -> str:
@@ -2567,6 +2750,14 @@ def _resolve_target(
                     "no_answer_reason": None}
         return {"key": None, "resolution": "explicit", "candidates": everything,
                 "no_answer_reason": f"unknown workstream WS:{key}"}
+
+    if not ws:
+        # Nothing to resolve AGAINST.  Short-circuited before retrieval on purpose: a
+        # search whose every hit must then map onto an empty workstream table can only
+        # return "unresolved", so running it spends a query to reach a known answer.
+        return {"key": None, "resolution": "unresolved", "candidates": [],
+                "no_answer_reason": "the record store holds no workstreams — there is "
+                                    "nothing to compile context from"}
 
     text = task or ""
     cited = sorted({m for m in WS_MENTION_RE.findall(text) if m in ws})
@@ -2864,7 +3055,15 @@ def compile_bundle(
     ws_path = store.paths[f"WS/{key}"]
     program = rec.get("program") if isinstance(rec.get("program"), str) else None
     prs = _pr_index(builds)
-    hard_paths = {problem.path for problem in store.problems if problem.hard}
+    # Record-LOCAL hard problems only.  A sibling whose own frontmatter is wrong is a lie
+    # and is refused; a sibling whose only fault is a citation that does not resolve is a
+    # JOIN failure and fails open (see CROSS_RECORD_RULES) — it is rendered, with the
+    # unresolved half named in `degraded`.  Dropping it instead would delete a valid
+    # decision from the bundle because some THIRD record was renamed.
+    hard_paths = {
+        problem.path for problem in store.problems
+        if problem.hard and problem.rule not in CROSS_RECORD_RULES
+    }
 
     excluded: list[dict[str, Any]] = []
     groups: dict[str, list[dict[str, Any]]] = {name: [] for name in PACK_ORDER}
@@ -2920,7 +3119,7 @@ def compile_bundle(
                 authority_class="A4",
                 status=label,
                 updated=ws_updated,
-                excerpt=f"[{label.upper()}] {_flat(entry)}",
+                excerpt=f"[{label.upper()}] {_clip(_flat(entry), EXCERPT_CONSTRAINT)}",
                 why=f"{field} declared on WS:{key}",
             ))
 
@@ -2951,17 +3150,28 @@ def compile_bundle(
         ))
 
     # ---- decisions ---------------------------------------------------------
+    # `owns_paths` is the third declared form of `affects`/`scope` (both schemas say so),
+    # and the only one that needs a match rather than an equality test.
+    owned = _owned_globs(rec)
     cited_dec = set(_refs(rec.get("decisions"), "DEC"))
     reasons: dict[str, list[str]] = {}
     for ref in sorted(cited_dec):
         reasons.setdefault(ref, []).append(f"cited by WS:{key}")
     for dec_key in sorted(dec_all):
+        # A bare repo name is stripped FIRST and stays stripped: it would otherwise reach
+        # the glob matcher and attach every decision in a repo to every workstream in it.
         affects = [str(a).strip() for a in (dec_all[dec_key].get("affects") or [])
-                   if isinstance(a, str)]
+                   if isinstance(a, str) and str(a).strip() not in REPOS]
         if f"WS:{key}" in affects:
             reasons.setdefault(dec_key, []).append(f"declares affects WS:{key}")
         if program and program in affects:
             reasons.setdefault(dec_key, []).append(f"declares affects program {program}")
+        for entry in affects:
+            hit = _owned_overlap(entry, dec_all[dec_key], owned)
+            if hit is not None:
+                reasons.setdefault(dec_key, []).append(
+                    f"affects paths this workstream owns ({entry} ~ {hit})"
+                )
     rows: list[dict[str, Any]] = []
     for dec_key in sorted(reasons):
         dec_rec = dec_all.get(dec_key)
@@ -2971,14 +3181,17 @@ def compile_bundle(
         dec_path = store.paths[f"DEC/{dec_key}"]
         if malformed("decision", f"DEC:{dec_key}", dec_path):
             continue
-        superseded = dec_rec.get("superseded_by")
-        if superseded:
-            replacement = _refs(superseded, "DEC")
-            named = f"DEC:{replacement[0]}" if replacement else _flat(superseded)
+        replacement, raw = _supersession(dec_rec, "DEC", dec_all)
+        if replacement is not None:
             # NEVER co-equal.  Supersession is the whole reason both records survive; a
             # bundle that listed them side by side would undo it.
-            drop("decision", f"DEC:{dec_key}", dec_path, f"superseded_by {named}")
+            drop("decision", f"DEC:{dec_key}", dec_path, f"superseded_by DEC:{replacement}")
             continue
+        if raw is not None:
+            degraded.add(
+                f"DEC:{dec_key} carries unresolvable superseded_by {raw!r} — retained; "
+                f"fix the record"
+            )
         supersedes = _refs(dec_rec.get("supersedes"), "DEC")
         note = ("\n[supersedes " + ", ".join(f"DEC:{s}" for s in supersedes) + "]"
                 if supersedes else "")
@@ -3013,12 +3226,21 @@ def compile_bundle(
     for dsc_key in sorted(dsc_all):
         # A repo-wide scope (`macro`) does NOT qualify: it would attach every finding in
         # the repo to every workstream in it, which is the opposite of a bounded bundle.
+        # The strip runs BEFORE glob matching and is load-bearing there — `_owns_overlap`
+        # is prefix-coarse, so an unstripped `terminal` overlaps `terminal/components/**`
+        # and the repo-wide attach comes back through the path door.
         scope = [str(s).strip() for s in (dsc_all[dsc_key].get("scope") or [])
                  if isinstance(s, str) and str(s).strip() not in REPOS]
         if key in scope or f"WS:{key}" in scope:
             dsc_reasons.setdefault(dsc_key, []).append(f"scoped to WS:{key}")
         if program and program in scope:
             dsc_reasons.setdefault(dsc_key, []).append(f"scoped to program {program}")
+        for entry in scope:
+            hit = _owned_overlap(entry, dsc_all[dsc_key], owned)
+            if hit is not None:
+                dsc_reasons.setdefault(dsc_key, []).append(
+                    f"scoped to paths this workstream owns ({entry} ~ {hit})"
+                )
     rows = []
     for dsc_key in sorted(dsc_reasons):
         dsc_rec = dsc_all.get(dsc_key)
@@ -3028,15 +3250,30 @@ def compile_bundle(
         dsc_path = store.paths[f"DSC/{dsc_key}"]
         if malformed("discovery", f"DSC:{dsc_key}", dsc_path):
             continue
-        superseded = dsc_rec.get("superseded_by")
-        if superseded:
-            replacement = _refs(superseded, "DSC")
-            named = f"DSC:{replacement[0]}" if replacement else _flat(superseded)
-            drop("discovery", f"DSC:{dsc_key}", dsc_path, f"superseded_by {named}")
+        replacement, raw = _supersession(dsc_rec, "DSC", dsc_all)
+        if replacement is not None:
+            drop("discovery", f"DSC:{dsc_key}", dsc_path, f"superseded_by DSC:{replacement}")
             continue
+        if raw is not None:
+            degraded.add(
+                f"DSC:{dsc_key} carries unresolvable superseded_by {raw!r} — retained; "
+                f"fix the record"
+            )
+        # RULING (2026-08-13): an explicit `expires` date is the AUTHOR'S hard freshness
+        # boundary and evicts regardless of citation.  The schema's "if never cited"
+        # clause modifies the 90-day DEFAULT below, not an explicit date — a finding whose
+        # author wrote "this is untrue after May" does not become true again because
+        # someone cited it.  Citation instead buys VISIBILITY: a target that cites an
+        # expired discovery is told so, because to that reader the exclusion looks like
+        # the finding never existed.
         expires = _as_date(dsc_rec.get("expires"))
         if expires and expires < now.date():
             drop("discovery", f"DSC:{dsc_key}", dsc_path, f"expired {expires}")
+            if dsc_key in cited_dsc:
+                degraded.add(
+                    f"DSC:{dsc_key} cited by this workstream but expired {expires} — "
+                    f"re-verify or supersede"
+                )
             continue
         verified = _as_date(dsc_rec.get("verified_at"))
         age = (now.date() - verified).days if verified else None
@@ -3111,6 +3348,10 @@ def compile_bundle(
             continue
         resolved = _resolve_path(entry.strip(), rec)
         if resolved is None:
+            # NAMED, not skipped.  A `PREFIX:KEY` citation or a URL that wandered into
+            # `artifacts` is an authoring mistake, and a bundle that drops it silently
+            # reads exactly like a record that never listed it.
+            degraded.add(f"artifact entry not a repo path — skipped: {entry.strip()}")
             continue
         repo_key, rel = resolved
         shown = rel if repo_key == "macro" else f"{repo_key}:{rel}"
@@ -3126,7 +3367,7 @@ def compile_bundle(
             key=None,
             path=shown,
             locator=shown,
-            authority_class=_pointer_authority(rel),
+            authority_class=_pointer_authority(repo_key, rel, degraded),
             status=note,
             updated=None,
             excerpt=f"pointer — {note}. Open the primary source; this bundle does not "
@@ -3145,20 +3386,27 @@ def compile_bundle(
     # fits in the change left over by the expensive head — and a bundle whose entire job is
     # to tell a cold session which constraints may not be violated must not lose them to a
     # cap while keeping file paths.  So `higher_law` joins `workstream_block` in the
-    # always-include set.  Both are bounded small BY CONSTRUCTION: the target's own record
-    # plus its landmines, and the DNR rows that record cites plus at most one P0 row and
-    # one program row.  DEGENERATE-BUDGET EXCEPTION: `token_estimate` may exceed
-    # `token_budget` only when those two packs ALONE exceed it; every other pack is capped.
+    # always-include set.  That set is bounded PER ENTRY (every excerpt is `_clip`ped, the
+    # constraints at EXCERPT_CONSTRAINT) and LINEAR in what the record declares — a
+    # workstream with forty landmines has forty always-included items — plus at most the
+    # DNR rows it cites, one P0 row and one program row.  It is NOT bounded small by
+    # construction, and pretending it was is how an unbounded overrun would have shipped
+    # unnoticed: any resulting overrun is NAMED in `degraded` below, which is the signal.
+    # DEGENERATE-BUDGET EXCEPTION: `token_estimate` may exceed `token_budget` only through
+    # the always-include set and the accounting tails; every other pack is capped.
     ordered = [item for pack in PACK_ORDER for item in groups[pack]]
     always = {id(item) for item in groups["workstream_block"] + groups["higher_law"]}
     selected: list[dict[str, Any]] = []
     omitted: list[dict[str, Any]] = []
     used = 0
+    always_cost = 0
     for rank, item in enumerate(ordered):
-        cost = _estimate_tokens(item["excerpt"])
+        cost = _item_cost(item)
         if id(item) in always or used + cost <= budget:
             selected.append(item)
             used += cost
+            if id(item) in always:
+                always_cost += cost
             continue
         omitted.append({
             "kind": item["kind"], "key": item["key"], "path": item["path"],
@@ -3178,6 +3426,30 @@ def compile_bundle(
         items.sort(key=lambda item: item["_seq"])
     for item in ordered:
         item.pop("_seq", None)
+
+    # The TAILS are payload too.  `excluded`, `omitted_due_to_budget`, `degraded` and the
+    # candidate list all ship in the bundle a caller pays for, and pricing only the items
+    # is how a "1,000-token" bundle arrives as 6,500 tokens of JSON.  They are priced but
+    # never PACKED against: the omission list grows as packing omits, so feeding it back
+    # into the packing loop is circular.  The report is the honest layer — packing bounds
+    # what it can bound, and `token_estimate` then states the whole payload.
+    tails = _estimate_tokens(json.dumps({
+        "excluded": excluded,
+        "omitted_due_to_budget": omitted,
+        "degraded": list(degraded.items),
+        "candidates": target["candidates"],
+    }, ensure_ascii=False))
+    used += tails
+    if used > budget:
+        # The SIGNAL for every overrun, whatever caused it — an always-included set larger
+        # than the cap, or accounting tails that outgrew it.  Neither is droppable, so the
+        # only honest response is to say so; a bare number in the header reads as a bug.
+        degraded.add(
+            f"token_estimate {used} exceeds token_budget {budget} — "
+            f"always-included constraint context ({always_cost}) + packed items "
+            f"({used - tails - always_cost}) + accounting tails ({tails}); the "
+            f"always-included set and the tails are never dropped, so raise --budget"
+        )
 
     envelope["token_estimate"] = used
     envelope["sections"] = [
@@ -3199,13 +3471,18 @@ def compile_bundle(
 def render_bundle(bundle: dict[str, Any]) -> str:
     """The readable form.  Same selected set as the JSON — one compiler, two renderers."""
     target = bundle["target"]
+    # A header that prints an estimate ABOVE the budget with no comment reads as an
+    # arithmetic bug.  It is not — see the packer — so the header points at the DEGRADED
+    # block that names the overrun and its composition.
+    overrun = (" — OVER BUDGET, see DEGRADED"
+               if bundle["token_estimate"] > bundle["token_budget"] else "")
     out: list[str] = [
         f"=== CONTEXT BUNDLE — {target['workstream'] or 'NO WORKSTREAM RESOLVED'} ===",
         f"task: {target['task'] or '—'}",
         f"resolution: {target['resolution']}",
         f"generated: {bundle['generated_at']}  ·  repo_sha: {bundle['repo_sha'][:12]}",
         f"budget: {bundle['token_budget']} tokens  ·  estimate: "
-        f"{bundle['token_estimate']} tokens",
+        f"{bundle['token_estimate']} tokens{overrun}",
         "",
     ]
     if bundle["no_answer_reason"]:
@@ -3259,10 +3536,15 @@ def render_bundle(bundle: dict[str, Any]) -> str:
 def cmd_compile_context(args: argparse.Namespace) -> int:
     """Bounded, cited context for one workstream.  Writes nothing; stdout only.
 
-    Exit 1 is reserved for the one fail-CLOSED case: a caller NAMED a workstream that
-    does not exist or whose own record is malformed.  That is a caller error and a lie
-    about the organization, and compiling around it would hand back a bundle for work
-    the store cannot describe.  Everything else exits 0 with the reason in the bundle.
+    Exit 1 is reserved for the fail-CLOSED case: a caller NAMED a workstream that does not
+    exist, that has no store to live in, or whose OWN record is malformed.  That is a
+    caller error and a lie about the organization, and compiling around it would hand back
+    a bundle for work the store cannot describe.  A CROSS-RECORD problem is not that
+    (CROSS_RECORD_RULES): a dangling citation, a dependency cycle and an unreciprocated
+    supersession are attributed to the citing record, so a valid workstream whose sibling
+    was renamed in an in-flight PR used to be refused outright — the bundle degrades
+    around them instead, and each one is named.  Everything else exits 0 with the reason
+    in the bundle.
 
     No GitHub annotations on the success path, deliberately: stdout carries the bundle
     and must stay parseable.  Degraded inputs are a FIELD of the bundle, printed by both
@@ -3281,11 +3563,19 @@ def cmd_compile_context(args: argparse.Namespace) -> int:
         now = _dt.datetime.now(_dt.timezone.utc)
 
     if not store_root.exists():
-        print(f"::error title=agentos-compile::no agentos/ store at {store_root} — "
-              "nothing to compile", flush=True)
-        return 1
-
-    store = load_store(store_root, _load_programs())
+        # Asymmetric, and deliberately so.  Naming `--workstream X` against a store that
+        # does not exist is the same caller error as naming a workstream that does not
+        # exist, and gets the same exit 1.  Free text asked a QUESTION, and "there is no
+        # record store here" is an honest answer to it — a not-yet-adopted repo is a
+        # normal state (the same fail-open `validate` takes), so it exits 0 saying so.
+        if args.workstream:
+            print(f"::error title=agentos-compile::no agentos/ store at {store_root} — "
+                  f"cannot compile WS:{_normalize_ws_key(args.workstream)}", flush=True)
+            return 1
+        degraded.add(f"no agentos/ store at {store_root} — nothing to compile")
+        store = Store(store_root)
+    else:
+        store = load_store(store_root, _load_programs())
 
     if args.workstream:
         key = _normalize_ws_key(args.workstream)
@@ -3299,7 +3589,8 @@ def cmd_compile_context(args: argparse.Namespace) -> int:
                           f"{problem.render(_ROOT)}", flush=True)
             return 1
         target_path = store.paths[ident]
-        fatal = [p for p in store.problems if p.hard and p.path == target_path]
+        mine = [p for p in store.problems if p.hard and p.path == target_path]
+        fatal = [p for p in mine if p.rule not in CROSS_RECORD_RULES]
         if fatal:
             for problem in fatal:
                 print(f"::error title=agentos-{problem.rule}::{problem.render(_ROOT)}",
@@ -3308,6 +3599,14 @@ def cmd_compile_context(args: argparse.Namespace) -> int:
                   "before compiling context from it (fail-closed on schema, I4)",
                   flush=True)
             return 1
+        for problem in mine:
+            if problem.rule in CROSS_RECORD_RULES:
+                # Not fatal, and not invisible either: the compile proceeds, and the
+                # unresolved half travels with the bundle it degraded.
+                degraded.add(
+                    f"cross-record problem on WS:{key} — [{problem.rule}] "
+                    f"{problem.message}; the bundle compiles around it"
+                )
 
     builds = load_active_builds(
         degraded, Path(args.active_builds) if args.active_builds else None
@@ -3321,7 +3620,10 @@ def cmd_compile_context(args: argparse.Namespace) -> int:
         builds=builds,
         degraded=degraded,
     )
-    sys.stdout.write(render_bundle(bundle) if args.text else _dump_json(bundle))
+    # Mirrors context_index_query.py exactly: machines get the default, humans opt in, and
+    # `--json --text` together resolves to JSON in BOTH tools rather than one each way.
+    as_json = args.json or not args.text
+    sys.stdout.write(_dump_json(bundle) if as_json else render_bundle(bundle))
     return 0
 
 
