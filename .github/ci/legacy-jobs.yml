@@ -907,6 +907,12 @@ jobs:
         run: python -m pytest tests/test_options_matrix.py -q
       - name: options PIT episodes (causal clocks, durable stage, H+60 + declared-session-close proxies, R2/checkpoint integrity)
         run: python -m pytest tests/test_options_signal_episode.py -q
+      # Pending H+60 rows are never appended, so an episode that never resolves
+      # simply never appears in outcomes_h60.jsonl.  This suite pins the census
+      # that bounds that hole and the classifier that splits it by remedy —
+      # uncovered price universe (fixable) vs cadence-aligned exit (accepted).
+      - name: options episode H+60 coverage census (unlabelled bound, structural gap vs accepted cadence class)
+        run: python -m pytest tests/test_options_episode_outcome_coverage.py -q
       - name: sparse exact-option selector preregistration (zero denominator, permanent retrospective fence, no authority)
         run: python -m pytest tests/test_options_sparse_selector_prereg.py -q
       - name: options signal campaign v2 (immutable revisions, causal anchors, exact checkpoint)

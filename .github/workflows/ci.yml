@@ -531,7 +531,9 @@ on:
       # OIP PIT decision/outcome ledger: both the durable R2 source and the
       # nightly consumer/contracts must trigger the exact adversarial suite.
       - "engine/options_signal_episode.py"
+      - "engine/options_episode_coverage.py"
       - "scripts/build_options_signal_episode.py"
+      - "scripts/audit_options_episode_outcome_coverage.py"
       - "scripts/build_polygon_intraday.py"
       - "contracts/options/options.signal_episode.v1.schema.json"
       - "contracts/options/options.signal_episode_outcome.v1.schema.json"
@@ -542,6 +544,7 @@ on:
       - "research/options_estate/OPTIONS_SIGNAL_CAMPAIGNS_PREREG.md"
       - "ops/LIVE_FLOW_RUNBOOK.md"
       - "tests/test_options_signal_episode.py"
+      - "tests/test_options_episode_outcome_coverage.py"
       - "tests/test_polygon_intraday.py"
       # Canonical campaign v2: independent immutable revisions, causal outcomes,
       # exact-prefix checkpoint, preregistration, and hostile replay tests.
