@@ -1,34 +1,34 @@
 {
-  "date": "2026-08-11",
+  "date": "2026-08-12",
   "authority": {
     "tier": "context_only"
   },
-  "turnover_z20": -0.33304469051780994,
-  "turnover_z60": -1.229524538964388,
-  "margin_balance": 26633.2913308,
-  "margin_chg_5d": 1.8395416085376537,
-  "margin_to_mcap": 2.624704,
-  "southbound_net": -1376.16,
-  "southbound_z": -0.4125525888690038,
-  "etf_share_chg": 0.23904572186687872,
+  "turnover_z20": -0.8503236602412454,
+  "turnover_z60": -1.543410031296382,
+  "margin_balance": 26731.72846985,
+  "margin_chg_5d": 1.7008595684944394,
+  "margin_to_mcap": 2.616551,
+  "southbound_net": -2906.11,
+  "southbound_z": -0.5911265172128087,
+  "etf_share_chg": 0.20167085737739476,
   "zt_breadth": null,
   "failed_seal_ratio": null,
-  "qvix": 19.57,
-  "qvix_z": -0.8527432066646689,
-  "broker_rs": 0.04557468965255736,
+  "qvix": null,
+  "qvix_z": null,
+  "broker_rs": 0.026733934147025566,
   "regime": "unclear",
   "who_controls": "mixed",
   "risk": "normal",
   "evidence": [
-    "turnover_z20=-0.33",
-    "margin_chg_5d=1.84% (rising)",
+    "turnover_z20=-0.85",
+    "margin_chg_5d=1.70% (rising)",
     "fin_pct_float=2.62%",
-    "broker_rs=0.0456 (positive, sector leading)",
-    "qvix_z=-0.85 (inverted-semantics: high=stress)"
+    "broker_rs=0.0267 (positive, sector leading)"
   ],
   "contradictions": [],
   "data_gaps": [
-    "zt_breadth:null on 2026-08-11",
+    "zt_breadth:null on 2026-08-12",
+    "qvix_z:null on 2026-08-12",
     "northbound:DEAD post-2024-08-16 SLF-050"
   ],
   "backfill": false

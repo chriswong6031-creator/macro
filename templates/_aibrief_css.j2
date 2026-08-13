@@ -27,8 +27,13 @@
      must NOT bind to --up/--down (which swap red<->green under html[data-lang="zh"]).
      This matches the sibling china chip idiom (.cnx-chip.turn = fixed green,
      .cnx-chip.hot = fixed red) — a "good" reading stays green in EN and ZH alike. */
-  --aib2-good:#45b873;   /* == the site's canonical gain-green (fixed) */
-  --aib2-bad:#e06464;    /* == the site's canonical loss-red (fixed)   */
+  /* Bound to the HEALTH tokens rather than fixed hexes: --ok/--act encode safety,
+     never direction, so they already do not flip under 红涨绿跌 — which is exactly
+     the property this block was hand-rolling. Binding also earns the light twins
+     and the --ink-* text grades for free (the fixed pair measured 2.7:1 and 3.5:1
+     on a white panel). Same intent, one source of truth. */
+  --aib2-good:var(--ok,#45b873);
+  --aib2-bad:var(--act,#e06464);
   --aib2-warn:var(--warn,#f59e0b);  /* amber — does not flip in ZH */
   --aib2-info:var(--info,#5b9bf0);  /* blue  — does not flip in ZH */
   color:var(--text);

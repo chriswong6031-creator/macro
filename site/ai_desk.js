@@ -66,7 +66,7 @@
   }
 
   function trackBadge(tr) {
-    var h = '<div class="panel"><h2>📊 ' + bi("Desk track record", "交易台战绩") + "</h2>";
+    var h = '<div class="panel"><h2>' + bi("Desk track record", "交易台战绩") + "</h2>";
     if (!tr || !tr.overall || tr.scored_total === 0 || tr.overall.n === 0) {
       h += '<p class="muted sm" style="margin:4px 0 0">' +
         esc((tr && tr.calibration_note) ||
@@ -113,7 +113,7 @@
       base_rate: ["Base-rate", "基率派"], structural: ["Structural", "结构派"] };
     var present = keys.filter(function (k) { return panel && panel[k]; });
     if (!present.length) return "";
-    var h = '<div class="panel"><details class="panel-acc"><summary>🧑‍⚖️ ' +
+    var h = '<div class="panel"><details class="panel-acc"><summary>' +
       bi("What the analyst panel argued", "分析师小组的论点") + " (" + present.length + ")</summary>";
     present.forEach(function (k) {
       var s = panel[k] || {};
@@ -138,7 +138,7 @@
     var html = "";
     html += trackBadge(d.track_record);
     if (d.regime_context) {
-      html += '<div class="panel"><h2>🧭 ' + bi("Regime context", "周期背景") + "</h2><div>" +
+      html += '<div class="panel"><h2>' + bi("Regime context", "周期背景") + "</h2><div>" +
         esc(d.regime_context) + "</div>";
       var sv = d.source_verdicts || {};
       var bits = [];
@@ -149,7 +149,7 @@
         (bits.length ? " · " + bits.join(" · ") : "") + "</p></div>";
     }
     var theses = d.theses || [];
-    html += '<div class="panel"><h2>🎯 ' + bi("Conditional leans", "条件性倾向") + " (" + theses.length + ")</h2>";
+    html += '<div class="panel"><h2>' + bi("Conditional leans", "条件性倾向") + " (" + theses.length + ")</h2>";
     if (!theses.length) {
       html += '<p class="muted sm">' + bi("No actionable leans today — honesty over content.",
         "今日无可执行倾向 — 诚实优先于内容。") + "</p>";

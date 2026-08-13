@@ -275,7 +275,7 @@
     } else {
       var er = entryRead(g);
       body = (er ? '<div class="g-act"><span class="lead">' + er + '</span></div>' : '')
-        + (action ? '<div class="g-act" style="margin-top:5px' + (avoid ? ';color:var(--orange)' : ';color:var(--muted)') + '">' + (avoid ? '⚠ ' : '') + action + '</div>' : '');
+        + (action ? '<div class="g-act" style="margin-top:5px' + (avoid ? ';color:var(--ink-orange, var(--orange))' : ';color:var(--muted)') + '">' + (avoid ? '⚠ ' : '') + action + '</div>' : '');
     }
     return '<a class="gcard" style="border-left-color:' + col + '" href="' + href + '">'
       + '<div class="g-top"><div><div class="g-nm">' + esc(g.label) + '</div>'
@@ -324,7 +324,7 @@
       var w = Math.round(54 * (r.combined_score || 0) / maxs);
       return '<tr' + (i >= PICKS_CAP ? ' class="sc-xtra"' : '') + '><td class="tk"><a href="' + stockHref(r.ticker) + '">' + esc(r.ticker) + '</a></td>'
         + '<td>' + tierBadge(r.stock_tier) + '</td>'
-        + '<td><a href="' + detailHref(ds, r.subsector_key) + '" style="color:var(--link)">' + esc(r.subsector) + '</a> <span class="pill ' + (r.subsector_side || 'neutral') + '">' + esc(r.subsector_state) + '</span></td>'
+        + '<td><a href="' + detailHref(ds, r.subsector_key) + '" style="color:var(--ink-link, var(--link))">' + esc(r.subsector) + '</a> <span class="pill ' + (r.subsector_side || 'neutral') + '">' + esc(r.subsector_state) + '</span></td>'
         + '<td class="num">' + (r.combined_score == null ? '–' : r.combined_score.toFixed(2)) + '<span class="scbar" style="width:' + w + 'px"></span></td>'
         + '<td>' + signed(r.vs_subsector_20d) + '</td></tr>';
     }).join('');
@@ -355,7 +355,7 @@
       var chips = ['W', '2W', 'M'].map(function (k) { return tfChip(k, tf[k]); }).join(' ');
       return '<div class="lcard" style="border-left-color:' + qi[2] + '">' + head
         + '<div class="lc-row">' + stageBadge(co.stage) + ' <span class="pill ' + (e.regime_side || 'neutral') + '">' + esc(e.regime_state || '—') + '</span></div>'
-        + '<div class="lc-tf">' + L('higher TF', '更高周期') + ': ' + chips + (co.htf_turning ? ' <span style="color:var(--up)">' + L('confirming', '确认中') + '</span>' : '') + '</div>'
+        + '<div class="lc-tf">' + L('higher TF', '更高周期') + ': ' + chips + (co.htf_turning ? ' <span style="color:var(--ink-up, var(--up))">' + L('confirming', '确认中') + '</span>' : '') + '</div>'
         + '<div class="lc-meta">' + L('coil', '蓄势') + ' ' + num(co.coil_score, 0) + '/100' + (e.rs_60d != null ? ' · RS60 ' + signed(e.rs_60d, 1) : '') + '</div>'
         + (co.macro_caution ? '<div class="lc-macro">⚠ ' + L('macro risk-off — confirm the tape', '宏观避险——请确认大盘') + '</div>' : '') + '</div>';
     }
@@ -482,7 +482,7 @@
     }).join('') + '</tr>';
     var body = rowsData.map(function (v) {
       var g = v._g, e = v._e, r = v._r;
-      return '<tr><td><a href="' + (g.chart_key ? detailHref(ds, g.key) : '#') + '" style="color:var(--link)">' + esc(g.label) + '</a> ' + relDot(g.reliability) + '</td>'
+      return '<tr><td><a href="' + (g.chart_key ? detailHref(ds, g.key) : '#') + '" style="color:var(--ink-link, var(--link))">' + esc(g.label) + '</a> ' + relDot(g.reliability) + '</td>'
         + '<td style="color:var(--muted)">' + esc(g.sector) + '</td>'
         + '<td>' + tierBadge(e.tier) + '</td>'
         + '<td>' + regimePill(r) + '</td>'

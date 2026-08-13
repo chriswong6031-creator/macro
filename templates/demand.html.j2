@@ -9,7 +9,7 @@
 <title>Demand Desk — demand vs expectations</title>
 {% set seo_title = "Demand Desk — Mastermind" %}{% set seo_desc = "Demand vs expectations across the economy — where real activity beats or misses what markets price, updated as data lands." %}{% set seo_path = "demand.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -29,12 +29,12 @@
   .cc-sub { color:var(--muted); font-size:12px; }
   .cc-ser { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
   .ser { font-size:11px; padding:2px 7px; border-radius:6px; background:var(--bg); border:1px solid var(--line); font-variant-numeric:tabular-nums; }
-  .pos{color:var(--up)} .neg{color:var(--down)} .mut{color:var(--muted)}
+  .pos{color:var(--ink-up, var(--up))} .neg{color:var(--ink-down, var(--down))} .mut{color:var(--muted)}
   /* variant tables */
   .grp-h { display:flex; align-items:center; gap:9px; margin:16px 0 6px; }
   .badge { font-size:11px; font-weight:800; letter-spacing:.03em; padding:3px 9px; border-radius:7px; border:1px solid var(--line); }
-  .badge.up { color:var(--up); background:color-mix(in srgb,var(--up) 13%,transparent); border-color:color-mix(in srgb,var(--up) 38%,var(--line)); }
-  .badge.risk { color:var(--down); background:color-mix(in srgb,var(--down) 13%,transparent); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .badge.up { color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 13%,transparent); border-color:color-mix(in srgb,var(--up) 38%,var(--line)); }
+  .badge.risk { color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 13%,transparent); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
   .badge.mut { color:var(--muted); background:var(--panel2); }
   .grp-n { color:var(--muted); font-size:12px; }
   table.dt { width:100%; border-collapse:collapse; font-size:13px; }
@@ -42,7 +42,7 @@
   table.dt td { padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
   table.dt tr:last-child td { border-bottom:0; }
   .tk { font-weight:800; }
-  .tk a { color:var(--link); text-decoration:none; }
+  .tk a { color:var(--ink-link, var(--link)); text-decoration:none; }
   .chip { font-size:10.5px; padding:1px 7px; border-radius:6px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
   .chip.coin { border-style:dashed; }
   .num { font-variant-numeric:tabular-nums; }
@@ -52,7 +52,7 @@
   .stat .k { color:var(--muted); font-size:11.5px; } .stat .v { font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; }
   .verdict { font-size:11px; font-weight:800; letter-spacing:.04em; padding:3px 9px; border-radius:7px; border:1px solid var(--line); color:var(--muted); }
   .verdict.PENDING { color:var(--g-cold); } .verdict.NEUTRAL { color:var(--muted); }
-  .verdict.EDGE_CANDIDATE { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
+  .verdict.EDGE_CANDIDATE { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
   .cav { color:var(--muted); font-size:11.5px; line-height:1.5; margin-top:8px; border-top:1px dotted var(--line); padding-top:8px; }
   .faint { color:var(--muted); }
 </style>
@@ -60,7 +60,7 @@
 <body>
 {% include "_site_nav.html.j2" %}
 
-<h1>🧭 {{ t('Demand Desk', '需求台') }}</h1>
+<h1>{{ t('Demand Desk', '需求台') }}</h1>
 <p class="lead">{{ t('Shows where real demand signals look stronger or weaker than market expectations. Context only; not a buy or sell signal.',
   '显示真实需求信号相对市场预期更强或更弱的位置。仅供参考，非买入或卖出信号。') }}
   <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>

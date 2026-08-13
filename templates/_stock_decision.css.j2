@@ -39,16 +39,16 @@
   padding: 6px 14px; border-radius: 10px; letter-spacing: .02em; margin-bottom: 2px;
 }
 .sv-act-go { color: #fff; background: var(--up); }
-.sv-act-wait { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); border: 1px solid var(--warn); }
+.sv-act-wait { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); border: 1px solid var(--warn); }
 .sv-act-avoid { color: #fff; background: var(--down); }
 .sv-act-screen { color: var(--text); background: var(--panel); border: 1px solid var(--line); }
 /* B2+B3: TRIM ONLY — demotion from BUY when extended + hold intact; warn-family, downgrade-only */
-.sv-act-trim { color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--panel)); border: 1px dashed var(--warn); }
+.sv-act-trim { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 10%, var(--panel)); border: 1px dashed var(--warn); }
 .sv-act-why { margin-top: 4px; }
 /* the BRIDGE — reconciles a strong rank with a "don't buy now" action. */
 .sv-bridge {
   margin: 10px 0 2px; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 600;
-  color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--panel));
+  color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 12%, var(--panel));
   border: 1px solid var(--warn);
 }
 .sv-gauge {
@@ -86,16 +86,16 @@
   font-weight: 700; padding: 1px 7px; border-radius: 6px;
   background: var(--panel2); border: 1px solid var(--line);
 }
-.sv-urg-now, .sv-urg-imminent { color: var(--up); border-color: var(--up); }
-.sv-urg-caution { color: var(--warn); border-color: var(--warn); }
-.sv-urg-exit, .sv-urg-avoid { color: var(--down); border-color: var(--down); }
-.sv-cap { color: var(--warn); font-size: 12px; }
+.sv-urg-now, .sv-urg-imminent { color: var(--ink-up, var(--up)); border-color: var(--up); }
+.sv-urg-caution { color: var(--ink-warn, var(--warn)); border-color: var(--warn); }
+.sv-urg-exit, .sv-urg-avoid { color: var(--ink-down, var(--down)); border-color: var(--down); }
+.sv-cap { color: var(--ink-warn, var(--warn)); font-size: 12px; }
 
 .sv-size { display: flex; align-items: center; gap: 8px; margin: 8px 2px 0; font-size: 13px; }
 .sv-size-lbl { color: var(--muted); font-weight: 600; }
 .sv-size-pct { font-weight: 800; font-size: 15px; color: var(--text); }
-.sv-size-avoid { color: var(--down); }
-.sv-size-full, .sv-size-three-quarter { color: var(--up); }
+.sv-size-avoid { color: var(--ink-down, var(--down)); }
+.sv-size-full, .sv-size-three-quarter { color: var(--ink-up, var(--up)); }
 .sv-size-bk { color: var(--muted); font-size: 12px; }
 .sv-regime { margin: 8px 2px 0; font-size: 12px; color: var(--muted); font-style: italic; }
 
@@ -115,18 +115,18 @@
 /* ---- Layer 1c: honesty row ---- */
 .sv-conflict {
   margin: 8px 0 6px; padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
-  color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--panel));
+  color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 12%, var(--panel));
   border: 1px solid var(--warn);
 }
 .sv-conflict-p { font-weight: 700; }
 .sv-honesty { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 8px 0; }
 .sv-col { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
 .sv-col-h { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 4px; }
-.sv-why .sv-col-h { color: var(--up); }
-.sv-flip .sv-col-h { color: var(--warn); }
+.sv-why .sv-col-h { color: var(--ink-up, var(--up)); }
+.sv-flip .sv-col-h { color: var(--ink-warn, var(--warn)); }
 .sv-list { margin: 0; padding-left: 16px; font-size: 13px; line-height: 1.5; }
 .sv-list li { margin: 1px 0; }
-.sv-fl-high { color: var(--down); font-weight: 600; }
+.sv-fl-high { color: var(--ink-down, var(--down)); font-weight: 600; }
 .sv-empty { font-size: 12.5px; color: var(--muted); margin: 2px 0; }
 
 /* ---- Layer 2: evidence lanes ---- */
@@ -151,8 +151,8 @@
 .sv-crow { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 1px 0; }
 .sv-ck { color: var(--muted); }
 .sv-cv { font-weight: 650; color: var(--text); }
-.sv-c-up { color: var(--up); }
-.sv-c-down { color: var(--down); }
+.sv-c-up { color: var(--ink-up, var(--up)); }
+.sv-c-down { color: var(--ink-down, var(--down)); }
 .sv-cfoot { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
 
 /* ---- Deep-layer collapsed disclosure groups ---- */

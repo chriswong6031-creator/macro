@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "REZI-BULL-20260703",
-  "asof": "2026-08-10",
+  "asof": "2026-08-13",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 13.5,
@@ -14,23 +14,23 @@
     "progress": 0.0,
     "pace": 0.0,
     "retention": 0.0,
-    "overlay": 53.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": -0.352,
+    "dist_to_stop_r": -0.055,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 68.9,
-    "p1": -0.9017,
-    "p2": -0.4508,
+    "horizon_pct_used": 75.6,
+    "p1": -0.7036,
+    "p2": -0.3518,
     "p3": null,
-    "move_r": -1.352,
+    "move_r": -1.055,
     "mfe_r": 1.111,
     "mae_r": -1.352
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Stop Level Breached",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-11",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 31,
-  "tau": 0.6889
+  "days_elapsed": 34,
+  "tau": 0.7556
 }

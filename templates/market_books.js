@@ -199,47 +199,51 @@
   // =========================================================================
   var MODEL = { present: [], nAll: 0, members: {}, agg: {}, show: false };
 
-  function plateHTML(b) {
+  /* W2: the strip is the SECOND LINE OF THE HOLDINGS TOOLBAR, not a section of its
+     own (DESIGN_NOTES §7d — a filter placed below the thing it filters is a usability
+     defect). The chips filter the HOLDINGS TABLE VIEW only; the book read, the
+     attention stack and the Risk Center always describe the WHOLE portfolio, and the
+     label's hover is where that rule is stated. The never-mix-currencies law is the
+     strip's trailing subline. A book with no positions renders DISABLED with an
+     em dash — visible, and honest about being empty. */
+  function chipHTML(b) {
     var meta = BOOKS[b];
     var a = MODEL.agg[b];
     var nNames = MODEL.members[b] ? Object.keys(MODEL.members[b]).length : 0;
-    var line1, line2;
-    if (a && a.n > 0) {
-      // ≥1 open position -> native-currency total for THIS book only
-      var val = fmtValue(a.value, meta.ccy);
-      line1 = '<span class="bk-line1 num">' + esc(val) + '</span>';
-      var tags = '';
-      if (a.atCost) tags += ' <span class="bk-atcost">' + te('at cost', '按成本') + '</span>';
-      if (!meta.ccy) tags += ' <span class="bk-atcost">' + te('local currency', '本币') + '</span>';
-      line1 += tags;
-      line2 = '<span class="bk-line2">' + te(
-        a.n + (a.n === 1 ? ' position' : ' positions'), a.n + ' 笔持仓') + '</span>';
-    } else {
-      // watchlist names only
-      line1 = '<span class="bk-line1">' + te(esc(meta.en), esc(meta.zh)) + '</span>';
-      line2 = '<span class="bk-line2 num">' + te(
-        nNames + (nNames === 1 ? ' name' : ' names'), nNames + ' 只') + '</span>';
-    }
-    return '<button class="bk-plate" role="tab" type="button" aria-selected="' +
+    var n = (a && a.n > 0) ? a.n : nNames;
+    return '<button class="bookchip" type="button" aria-pressed="' +
       (active === b ? 'true' : 'false') + '" data-bk="' + esc(b) + '">' +
-      '<span class="bk-glyph">' + esc(meta.glyph) + '</span>' + line1 + line2 + '</button>';
+      te(esc(meta.en), esc(meta.zh)) + '<span class="n">' + (n > 0 ? n : '—') + '</span></button>';
   }
 
   function paintStrip() {
     if (typeof document === 'undefined') return;
     var host = document.getElementById('bk_strip');
     if (!host) return;
+    // one market (or none) means the chips would be a control with a single option —
+    // the disclosure line already says "all N · all books", so the strip stays away
     if (!MODEL.show) { host.style.display = 'none'; host.innerHTML = ''; return; }
     host.style.display = '';
-    var html = '<button class="bk-plate" role="tab" type="button" aria-selected="' +
+    var chips = '<button class="bookchip" type="button" aria-pressed="' +
       (active === 'all' ? 'true' : 'false') + '" data-bk="all">' +
-      '<span class="bk-glyph">ALL</span>' +
-      '<span class="bk-line1">' + te('All books', '全部账本') + '</span>' +
-      '<span class="bk-line2 num">' + te(
-        MODEL.nAll + (MODEL.nAll === 1 ? ' name' : ' names'), MODEL.nAll + ' 只') + '</span></button>';
-    MODEL.present.forEach(function (b) { html += plateHTML(b); });
-    host.innerHTML = '<div class="bk-strip wri" role="tablist" aria-label="' +
-      (isZh() ? '账本' : 'Books') + '">' + html + '</div>';
+      te('All', '全部') + '<span class="n">' + MODEL.nAll + '</span></button>';
+    MODEL.present.forEach(function (b) { chips += chipHTML(b); });
+    // every book we know about but the user holds nothing in — disabled, never hidden
+    BOOK_ORDER.forEach(function (b) {
+      if (MODEL.present.indexOf(b) >= 0) return;
+      chips += '<button class="bookchip" type="button" disabled data-bk="' + esc(b) + '">' +
+        te(esc(BOOKS[b].en), esc(BOOKS[b].zh)) + '<span class="n">—</span></button>';
+    });
+    host.innerHTML =
+      '<span class="books-lbl"' +
+        ' data-tip-en="Views of the same portfolio — never separate portfolios. Picking a book filters this table only; the read above, what needs attention, and the risk center always describe every position."' +
+        ' data-tip-zh="同一个组合的不同视角 —— 不是另外几个组合。选择某个市场只筛选这张表；上方的解读、「需要留意」和「风险中心」始终描述全部持仓。">' +
+        te('Books', '分市场') + '</span>' +
+      '<div class="books-strip" role="group" aria-label="' + (isZh() ? '分市场' : 'Books') + '">' +
+        chips + '</div>' +
+      '<span class="books-law">' + te(
+        'Each book totals in its own currency. We never add two currencies into one number.',
+        '每个市场各自计价。我们绝不会把两种货币加成一个数字。') + '</span>';
   }
   function isZh() {
     return typeof document !== 'undefined' &&
@@ -250,8 +254,12 @@
      prices changed). Cheap and idempotent — safe to call on every render. */
   function refresh(watchSyms, rows, priceOf) {
     MODEL = buildModel(watchSyms, rows, priceOf);
-    // an active book that no longer has members falls back to All (never a dead view)
-    if (active !== 'all' && MODEL.present.indexOf(active) < 0) {
+    /* An active book that no longer has members falls back to All (never a dead view).
+       An EMPTY model is not that case: on first paint the positions have not loaded
+       yet, so every book looks absent and this reset silently discarded the visitor's
+       persisted choice — and PERSISTED the discard, so it never came back. "We don't
+       know yet" and "that book is gone" have to be different answers. */
+    if (active !== 'all' && MODEL.nAll > 0 && MODEL.present.indexOf(active) < 0) {
       active = 'all'; writeActive('all');
     }
     paintStrip();
@@ -297,16 +305,29 @@
      Counts only names present in BOTH snapshots whose state moved — a newly added
      name is not a "change". The new snapshot is written AFTER the diff, each load. */
   function seenDiff(stMap) {
+    return Object.keys(seenDiffRows(stMap)).length;
+  }
+  /* Same diff, per name: {ticker: {from, to}}. W2's Δ-since-visit column needs to know
+     WHICH names moved, not just how many, and the header count and the column ink have
+     to come from the SAME computation or the page contradicts itself ("4 changed" over
+     three marked rows). The snapshot is still written exactly once, AFTER the diff, so
+     the answer stays "since the last time you looked" rather than "since the last
+     render" — which is also why the count call must not run this twice per load. */
+  function seenDiffRows(stMap) {
     var prev = null;
     try { prev = JSON.parse(localStorage.getItem(SEEN_KEY) || 'null'); } catch (e) {}
-    var n = 0;
+    var out = {};
     if (prev && typeof prev === 'object') {
       Object.keys(stMap || {}).forEach(function (t) {
-        if (prev[t] != null && stMap[t] != null && prev[t] !== stMap[t]) n++;
+        // a name that was not on the list last visit has no "since your last visit"
+        // story, so it is not a change — it is simply new, and stays blank
+        if (prev[t] != null && stMap[t] != null && prev[t] !== stMap[t]) {
+          out[t] = { from: prev[t], to: stMap[t] };
+        }
       });
     }
     try { localStorage.setItem(SEEN_KEY, JSON.stringify(stMap || {})); } catch (e) {}
-    return n;
+    return out;
   }
 
   // =========================================================================
@@ -319,7 +340,7 @@
 
   function wire() {
     document.addEventListener('click', function (e) {
-      var plate = e.target && e.target.closest ? e.target.closest('.bk-plate[data-bk]') : null;
+      var plate = e.target && e.target.closest ? e.target.closest('.bookchip[data-bk]:not([disabled])') : null;
       if (plate) { setBook(plate.getAttribute('data-bk')); return; }
       var jump = e.target && e.target.closest ? e.target.closest('.tod-chip[data-jump]') : null;
       if (jump) {
@@ -354,7 +375,7 @@
     fmtValue: fmtValue, bookName: bookName,
     getBook: getBook, setBook: setBook, inActive: inActive,
     presentBooks: function () { return MODEL.present.slice(); },
-    refresh: refresh, setFact: setFact, seenDiff: seenDiff
+    refresh: refresh, setFact: setFact, seenDiff: seenDiff, seenDiffRows: seenDiffRows
   };
   if (typeof window !== 'undefined') window.MB = API;
 

@@ -78,7 +78,7 @@
 <title>{% if mode == 'stocks' %}China A-Share Stock Dashboard{% else %}China A-Share Regime{% endif %} — {{ latest.date }}</title>
 {% if mode == 'stocks' %}{% set seo_title = 'China A-Share Stock Dashboard — Washout · Base · Fresh Turn | Mastermind' %}{% set seo_desc = 'Selective A-share entry shelf: actionable and anticipatory T1–T3 signals, verified liquidity and fillability, anti-chase controls, and a readiness ranking.' %}{% set seo_path = 'china_stocks.html' %}{% else %}{% set seo_title = 'China A-Share Market Dashboard — Regime, Sectors and Flows | Mastermind' %}{% set seo_desc = 'Track the China A-share market regime — sector rotation, capital-flow velocity, drawdown risk and cycle position on the mainland market.' %}{% set seo_path = 'china.html' %}{% endif %}
 {% include "_seo_head.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 {% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
 {% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
@@ -90,7 +90,7 @@
          "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
   @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
   html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
-  a { text-decoration: none; color: var(--link); }
+  a { text-decoration: none; color: var(--ink-link, var(--link)); }
   h1 { font-size: 21px; margin: 0 0 2px; color: var(--text); }
   h2 { font-size: 14.5px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 
@@ -146,20 +146,20 @@
   .sb-table th.th-sort:hover { color:var(--text); }
   .sb-table th.sorted { color:var(--text); }
   .sb-table .sarrow { font-size:9px; opacity:.32; margin-left:3px; font-weight:700; }
-  .sb-table th.sorted .sarrow { opacity:.9; color:var(--link); }
+  .sb-table th.sorted .sarrow { opacity:.9; color:var(--ink-link, var(--link)); }
   /* W8-R7: CN MTF upturn panel (reuses dash-mtf-* class names from dashboard.html) */
   .cn-mtf-tbl { width:100%; border-collapse:collapse; margin-top:7px; font-size:11.5px; }
   .cn-mtf-tbl th { text-align:left; font-weight:700; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.03em; padding:3px 6px; border-bottom:1px solid var(--line); }
   .cn-mtf-tbl td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
   .cn-mtf-tbl tr:hover { background:color-mix(in srgb,var(--muted) 4%,transparent); }
   .dash-mtf-badge { display:inline-flex; align-items:center; padding:1px 6px; border-radius:10px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
-  .dash-mtf-badge.confirmed { background:color-mix(in srgb,var(--up) 14%,transparent); border:1px solid color-mix(in srgb,var(--up) 36%,transparent); color:var(--up); }
-  .dash-mtf-badge.watch { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 30%,transparent); color:var(--info,var(--link)); }
+  .dash-mtf-badge.confirmed { background:color-mix(in srgb,var(--up) 14%,transparent); border:1px solid color-mix(in srgb,var(--up) 36%,transparent); color:var(--ink-up, var(--up)); }
+  .dash-mtf-badge.watch { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 30%,transparent); color:var(--ink-info, var(--info,var(--link))); }
   .dash-mtf-badge.none { background:color-mix(in srgb,var(--muted) 8%,transparent); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); color:var(--muted); }
   .dash-mtf-leg { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; font-size:9px; font-weight:700; }
-  .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
+  .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--ink-up, var(--up)); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
   .dash-mtf-leg.off { background:color-mix(in srgb,var(--muted) 8%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); }
-  .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+  .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--ink-warn, var(--warn)); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
   .dash-mtf-legs { display:flex; gap:3px; align-items:center; }
   .dash-mtf-phase { font-size:10px; color:var(--muted); }
   .dash-mtf-k { font-weight:700; font-variant-numeric:tabular-nums; font-size:11px; }
@@ -171,7 +171,7 @@
   .sb-table tr.sbt1 td:first-child { box-shadow:inset 3px 0 0 color-mix(in srgb,var(--up) 45%,transparent); }
   .sbt-chip { display:inline-block; font-size:9px; font-weight:700; line-height:1.5;
               padding:0 6px; border-radius:999px; margin-left:6px; white-space:nowrap;
-              background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up);
+              background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--ink-up, var(--up));
               border:1px solid color-mix(in srgb,var(--up) 35%,transparent); vertical-align:1px; }
   .sbt-chip.soft { background:color-mix(in srgb,var(--up) 7%,transparent);
               color:color-mix(in srgb,var(--up) 72%,var(--muted)); }
@@ -293,9 +293,9 @@
             border-radius:0 0 7px 7px; }
   /* state chip in context strip */
   .nb-ctx .nb-state { font-size:8.5px; padding:1px 5px; border-radius:6px; letter-spacing:.02em; }
-  .nb-up .nb-ctx .nb-state { color:var(--up); background:color-mix(in srgb,var(--up) 14%,var(--panel)); }
-  .nb-down .nb-ctx .nb-state { color:var(--down); background:color-mix(in srgb,var(--down) 14%,var(--panel)); }
-  .nb-caution .nb-ctx .nb-state { color:var(--warn); background:color-mix(in srgb,var(--warn) 14%,var(--panel)); }
+  .nb-up .nb-ctx .nb-state { color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 14%,var(--panel)); }
+  .nb-down .nb-ctx .nb-state { color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 14%,var(--panel)); }
+  .nb-caution .nb-ctx .nb-state { color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 14%,var(--panel)); }
   /* condition chips smaller in context strip */
   .nb-ctx .nb-washout, .nb-ctx .nb-coiled, .nb-ctx .nb-ext { font-size:7.5px; padding:1px 4px; }
   /* caution button compact in context strip */
@@ -304,12 +304,12 @@
   /* signal as-of pushed right */
   .nb-asof { font-size:8px; color:var(--muted); margin-left:auto; white-space:nowrap; opacity:.75; }
   .nb-washout { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap;
-                background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 38%,transparent); }
-  .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
-  .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
-  .nb-coiled.fire{box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent);border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--up);background:color-mix(in srgb,var(--up) 20%,transparent)}
+                background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up)); border:1px solid color-mix(in srgb,var(--up) 38%,transparent); }
+  .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--ink-link, var(--link));border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
+  .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 40%,transparent)}
+  .nb-coiled.fire{box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent);border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--ink-up, var(--up));background:color-mix(in srgb,var(--up) 20%,transparent)}
   .nb-ext { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap;
-            background:color-mix(in srgb,var(--orange) 15%,transparent); color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 42%,transparent); }
+            background:color-mix(in srgb,var(--orange) 15%,transparent); color:var(--ink-orange, var(--orange)); border:1px solid color-mix(in srgb,var(--orange) 42%,transparent); }
   .nbcard .nch { background:transparent; margin:0; width:100%; height:42px; border-radius:4px; }
   /* nb-state defaults (overridden per-dir in context strip above) */
   .nb-state { font-size:10px; font-weight:800; letter-spacing:.02em; padding:1px 7px; border-radius:8px; }
@@ -349,12 +349,12 @@
                border:1px solid var(--line); color:var(--text); }
   .nb-crank { font-size:7.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
               opacity:.7; margin-right:3px; vertical-align:1px; }
-  .nb-cscore.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+  .nb-cscore.band-high { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
                          background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
   .nb-cscore.band-constructive { color:var(--g-cold);
                          border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
   .nb-cscore.band-neutral { color:var(--muted); }
-  .nb-cscore.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
+  .nb-cscore.band-low { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
   .nb-verdict { font-size:10.5px; font-weight:700; line-height:1.25; color:var(--text);
                 flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
   /* ---- Caution icon + popover (replaces old pill-row; ported from dashboard #1061) ---- */
@@ -363,7 +363,7 @@
     display:inline-flex; align-items:center; gap:3px;
     padding:0 5px 0 4px; height:18px; border-radius:9px; border:none; cursor:pointer;
     font-size:9px; font-weight:700; line-height:1;
-    color:var(--warn); background:color-mix(in srgb,var(--warn) 14%,var(--panel));
+    color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 14%,var(--panel));
     text-decoration:none;
     animation:nb-cau-pulse 2.5s ease-in-out infinite;
   }
@@ -383,7 +383,7 @@
     padding:7px 9px; border-radius:8px;
     background:var(--panel); border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line));
     box-shadow:0 4px 16px rgba(0,0,0,.18);
-    font-size:10px; font-weight:600; line-height:1.45; color:var(--warn);
+    font-size:10px; font-weight:600; line-height:1.45; color:var(--ink-warn, var(--warn));
     pointer-events:none;
   }
   .nb-cau-pop .cau-row { display:block; padding:2px 0; }
@@ -408,7 +408,7 @@
   .nb-shelf-tag { font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
                   padding:2px 10px; border-radius:20px; flex:none; }
   .nb-shelf-tag.st-entry  { color:#fff; background:var(--up); }
-  .nb-shelf-tag.st-ripe   { color:var(--warn); background:color-mix(in srgb,var(--warn) 18%,var(--panel));
+  .nb-shelf-tag.st-ripe   { color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 18%,var(--panel));
                               border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line)); }
   .nb-shelf-tag.st-ran    { color:var(--muted); background:color-mix(in srgb,var(--muted) 10%,var(--panel));
                               border:1px solid var(--line); }
@@ -479,14 +479,14 @@
   th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); }
   th { color: var(--muted); font-weight: 500; }
   th:first-child, td:first-child, td.l, th.l { text-align: left; }
-  .pos { color: var(--up); } .neg { color: var(--down); }
+  .pos { color: var(--ink-up, var(--up)); } .neg { color: var(--ink-down, var(--down)); }
   .lad { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 11.5px; font-weight: 700;
          background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
          color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
   .lad.up { --c: var(--up); } .lad.down { --c: var(--down); } .lad.flat { --c: var(--muted); }
   .agechip { font-size: 10.5px; font-weight: 700; color: var(--muted); white-space: nowrap; margin-left: 5px; }
   .eqmini { font-size: 10.5px; font-weight: 700; white-space: nowrap; margin-left: 5px; cursor: help; }
-  .eqmini.eq-up { color: var(--up); } .eqmini.eq-down { color: var(--down); } .eqmini.eq-flat { color: var(--muted); }
+  .eqmini.eq-up { color: var(--ink-up, var(--up)); } .eqmini.eq-down { color: var(--ink-down, var(--down)); } .eqmini.eq-flat { color: var(--muted); }
   .note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
   .mtf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
   .mtf-card .mtf-name { font-weight: 700; font-size: 13.5px; margin-bottom: 6px; color: var(--text); }
@@ -511,9 +511,9 @@
   .act-item:last-child { border-bottom: none; }
   .act-item .an { font-weight: 600; color: var(--text); }
   .act-item .at { font-size: 10.5px; color: var(--muted); }
-  .act-now h3 { color: var(--up); } .act-soon h3 { color: var(--info); }
+  .act-now h3 { color: var(--ink-up, var(--up)); } .act-soon h3 { color: var(--ink-info, var(--info)); }
   .act-run h3 { color: #8b5cf6; }   /* neutral violet — NOT green/buy */
-  .act-tp h3 { color: var(--warn); } .act-avoid h3 { color: var(--down); } .act-hold h3 { color: var(--muted); }
+  .act-tp h3 { color: var(--ink-warn, var(--warn)); } .act-avoid h3 { color: var(--ink-down, var(--down)); } .act-hold h3 { color: var(--muted); }
 
   /* ---- regime hero: quad map + meaning + regime watch ----------------------- */
   .herogauges { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; max-width: 580px; margin: 16px 0 2px; }
@@ -552,8 +552,8 @@
   .pdial .on-agg { background: color-mix(in srgb, var(--up) 88%, var(--panel)); color: #fff; border-color: transparent; }
   .reason { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; margin: 5px 0; line-height: 1.45; }
   .sig { flex: none; width: 17px; height: 17px; border-radius: 50%; font-size: 11px; font-weight: 800; line-height: 17px; text-align: center; }
-  .sig-p { background: color-mix(in srgb, var(--up) 22%, var(--panel)); color: var(--up); }
-  .sig-m { background: color-mix(in srgb, var(--down) 22%, var(--panel)); color: var(--down); }
+  .sig-p { background: color-mix(in srgb, var(--up) 22%, var(--panel)); color: var(--ink-up, var(--up)); }
+  .sig-m { background: color-mix(in srgb, var(--down) 22%, var(--panel)); color: var(--ink-down, var(--down)); }
   .sig-i { background: color-mix(in srgb, var(--muted) 22%, var(--panel)); color: var(--muted); }
   .pcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; margin: 6px 0; font-size: 12.5px; }
   .pcard .tk { color: var(--text); }
@@ -568,7 +568,7 @@
   table.sortable th.th-sort:hover { color: var(--text); }
   table.sortable th .sarrow { font-size: 9px; opacity: .32; margin-left: 3px; font-weight: 700; }
   table.sortable th.sorted { color: var(--text); }
-  table.sortable th.sorted .sarrow { opacity: .9; color: var(--link); }
+  table.sortable th.sorted .sarrow { opacity: .9; color: var(--ink-link, var(--link)); }
   .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
   /* ---- fired alerts (ported from the US dashboard) -------------------------- */
   .alert { display: block; padding: 10px 13px; border-radius: 8px; margin: 8px 0;
@@ -582,7 +582,7 @@
   .alert-ico { font-size: 15px; flex: none; line-height: 1; }
   .alert-head b { font-size: 13.5px; color: var(--text); }
   .alert-jump { margin-left: auto; font-size: 11px; font-weight: 700;
-                color: var(--link); flex: none; white-space: nowrap; }
+                color: var(--ink-link, var(--link)); flex: none; white-space: nowrap; }
   .alert-detail { margin: 6px 0 0; font-size: 12.5px; color: var(--text);
                   font-variant-numeric: tabular-nums; }
   .alert-what { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line);
@@ -597,7 +597,7 @@
   .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
   .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
   .idx-trend { margin-top: 3px; color: var(--muted); }
-  .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
+  .idx-grid .pos { color: var(--ink-up, var(--up)); } .idx-grid .neg { color: var(--ink-down, var(--down)); } .idx-grid .warn { color: var(--ink-warn, var(--warn)); }
   /* live-price tiles (cn-live-tiles strip — SSE, CSI 300 ETF, Hang Seng) */
   .cn-lt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .cn-live-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
@@ -645,13 +645,13 @@
   .st-chip { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px;
     border-radius:999px; white-space:nowrap; }
   .st-chip-entry { background:color-mix(in srgb,var(--up) 14%,transparent);
-    color:var(--up); border:1px solid color-mix(in srgb,var(--up) 35%,transparent); }
+    color:var(--ink-up, var(--up)); border:1px solid color-mix(in srgb,var(--up) 35%,transparent); }
   .st-chip-ran { background:color-mix(in srgb,var(--muted) 12%,transparent);
     color:var(--muted); border:1px solid var(--line); }
   .st-chip-rip { background:color-mix(in srgb,var(--link) 12%,transparent);
-    color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); }
+    color:var(--ink-link, var(--link)); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); }
   .st-chip-knife { background:color-mix(in srgb,var(--down) 12%,transparent);
-    color:var(--down); border:1px solid color-mix(in srgb,var(--down) 25%,transparent); }
+    color:var(--ink-down, var(--down)); border:1px solid color-mix(in srgb,var(--down) 25%,transparent); }
 
   /* ── W-FCT: stage facet bar (grid view) — browse one shelf at a time ────
      stgf- prefix on purpose: .stf-* belongs to the stocktable.js filter chrome
@@ -661,7 +661,7 @@
     padding:1px 7px; border-radius:999px; vertical-align:1px;
     background:color-mix(in srgb,var(--muted) 14%,transparent); color:var(--muted); }
   .sb-seg button[aria-selected="true"] .stgf-n {
-    background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+    background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--ink-link, var(--link)); }
   /* facet visibility — tagged groups not matching the active facet hide;
      facet "all" matches no rule so everything stays visible */
   #standouts[data-stfacet="entry"] .nb-grid-section [data-stf]:not([data-stf~="entry"]),
@@ -731,7 +731,7 @@
   .cn-depth-chip { border:1px solid var(--line); border-radius:999px; padding:1px 6px;
     color:var(--muted); font-size:10px; line-height:1.45; white-space:nowrap; }
   .cn-depth-reason { grid-column:1/-1; color:var(--muted); font-size:10.5px; line-height:1.4; }
-  .cn-depth.late > summary { color:var(--warn); }
+  .cn-depth.late > summary { color:var(--ink-warn, var(--warn)); }
   .cn-depth.forming > summary { color:var(--muted); }
   @media(max-width:560px) {
     .cn-depth-grid { grid-template-columns:1fr; }
@@ -780,11 +780,11 @@
   /* sort arrow */
   .st-sarrow { font-size:8px; margin-left:2px; opacity:.28; }
   .st-sarrow-idle { font-size:8px; }
-  .st-table th:has(.st-sarrow:not(.st-sarrow-idle)) .st-sarrow { opacity:.9; color:var(--link); }
+  .st-table th:has(.st-sarrow:not(.st-sarrow-idle)) .st-sarrow { opacity:.9; color:var(--ink-link, var(--link)); }
 
   /* cell colors */
-  .st-pos { color:var(--up); font-weight:600; }
-  .st-neg { color:var(--down); font-weight:600; }
+  .st-pos { color:var(--ink-up, var(--up)); font-weight:600; }
+  .st-neg { color:var(--ink-down, var(--down)); font-weight:600; }
   .st-muted { color:var(--muted); }
   .st-new-dot::before { content:"NEW"; display:inline-block; font-size:8px; font-weight:800;
     background:var(--up); color:#fff; padding:0 4px; border-radius:4px; margin-right:4px;
@@ -896,10 +896,10 @@
     --mx5-accent:        var(--up);
     --mx5-accent-glow:   color-mix(in srgb, var(--up) 30%, transparent);
     --mx5-accent-dim:    color-mix(in srgb, var(--up) 10%, transparent);
-    --mx5-accent-ink:    var(--up);
+    --mx5-accent-ink:    var(--ink-up, var(--up));
     --mx5-warn:          var(--warn);
     --mx5-warn-dim:      color-mix(in srgb, var(--warn) 10%, transparent);
-    --mx5-warn-ink:      var(--warn);
+    --mx5-warn-ink:      var(--ink-warn, var(--warn));
     --mx5-hover-bg:      rgba(22,29,38,.62);
     --mx5-hover-border:  rgba(255,255,255,.16);
     --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.25);
@@ -946,7 +946,7 @@
   body.page-china .ms-red .cnx-regime-pill .dot{background:var(--down)}
   body.page-china .cnx-live-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.8px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:999px;margin-left:8px;opacity:.45}
   body.page-china .cnx-live-pill .d{width:6px;height:6px;border-radius:50%;background:var(--muted)}
-  body.page-china .cnx-live-pill.on{opacity:1;color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,var(--line))}
+  body.page-china .cnx-live-pill.on{opacity:1;color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 40%,var(--line))}
   body.page-china .cnx-live-pill.on .d{background:var(--up);box-shadow:0 0 5px var(--up)}
   body.page-china .cnx-gauge-row{display:flex;gap:20px;align-items:center;margin-top:10px;margin-bottom:16px}
   /* Gauge scaled up to US parity: 192×120px CSS box, viewBox 0 0 120 78 UNCHANGED
@@ -981,19 +981,19 @@
   body.page-china .ms-red .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
   body.page-china .cnx-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   /* Big score: US parity — 68px/800, tabular-nums, state-keyed glow */
-  body.page-china .cnx-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--warn);text-shadow:0 0 36px rgba(245,158,11,.3)}
-  body.page-china .ms-green .cnx-big-score{color:var(--up);text-shadow:0 0 36px rgba(34,217,122,.3)}
-  body.page-china .ms-red .cnx-big-score{color:var(--down);text-shadow:0 0 36px rgba(239,68,68,.3)}
+  body.page-china .cnx-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--ink-warn, var(--warn));text-shadow:0 0 36px rgba(245,158,11,.3)}
+  body.page-china .ms-green .cnx-big-score{color:var(--ink-up, var(--up));text-shadow:0 0 36px rgba(34,217,122,.3)}
+  body.page-china .ms-red .cnx-big-score{color:var(--ink-down, var(--down));text-shadow:0 0 36px rgba(239,68,68,.3)}
   @media(max-width:560px){body.page-china .cnx-big-score{font-size:34px}}
   /* Verdict word: 19px/700 to match US spec */
   body.page-china .cnx-verdict{font-size:19px;font-weight:700;white-space:nowrap}
   @media(max-width:560px){body.page-china .cnx-verdict{font-size:13px}}
-  body.page-china .cnx-verdict .arr{color:var(--warn)}
-  body.page-china .ms-green .cnx-verdict .arr{color:var(--up)}
-  body.page-china .ms-red .cnx-verdict .arr{color:var(--down)}
-  body.page-china .cnx-sub-line{font-size:11.5px;font-weight:650;letter-spacing:.4px;color:var(--warn);margin-top:2px}
-  body.page-china .ms-green .cnx-sub-line{color:var(--up)}
-  body.page-china .ms-red .cnx-sub-line{color:var(--down)}
+  body.page-china .cnx-verdict .arr{color:var(--ink-warn, var(--warn))}
+  body.page-china .ms-green .cnx-verdict .arr{color:var(--ink-up, var(--up))}
+  body.page-china .ms-red .cnx-verdict .arr{color:var(--ink-down, var(--down))}
+  body.page-china .cnx-sub-line{font-size:11.5px;font-weight:650;letter-spacing:.4px;color:var(--ink-warn, var(--warn));margin-top:2px}
+  body.page-china .ms-green .cnx-sub-line{color:var(--ink-up, var(--up))}
+  body.page-china .ms-red .cnx-sub-line{color:var(--ink-down, var(--down))}
   /* stance line follows the .ms-{color} class — default caution (yellow), green/red override */
   body.page-china .cnx-sub-line .cnx-sub-g,body.page-china .cnx-sub-line .cnx-sub-r{display:none}
   body.page-china .cnx-sub-line .cnx-sub-y{display:inline}
@@ -1019,11 +1019,11 @@
   body.page-china .cnx-pop-row .pr-t b{font-weight:700}
   body.page-china .cnx-pop-bar{height:4px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
   body.page-china .cnx-pop-bar i{display:block;height:100%;border-radius:3px}
-  body.page-china .cnx-pop-flag{font-size:9.5px;font-weight:700;letter-spacing:.8px;color:var(--warn);margin:10px 0 2px}
-  body.page-china .cnx-pop-link{display:block;font-size:11.5px;font-weight:650;color:var(--link);margin-top:12px;cursor:pointer}
+  body.page-china .cnx-pop-flag{font-size:9.5px;font-weight:700;letter-spacing:.8px;color:var(--ink-warn, var(--warn));margin:10px 0 2px}
+  body.page-china .cnx-pop-link{display:block;font-size:11.5px;font-weight:650;color:var(--ink-link, var(--link));margin-top:12px;cursor:pointer}
   body.page-china .cnx-pop-big{display:flex;align-items:baseline;gap:10px;margin:2px 0 4px}
-  body.page-china .cnx-pop-big .n{font-size:30px;font-weight:750;color:var(--down)}
-  body.page-china .cnx-pop-big .t{font-size:12.5px;font-weight:700;color:var(--down)}
+  body.page-china .cnx-pop-big .n{font-size:30px;font-weight:750;color:var(--ink-down, var(--down))}
+  body.page-china .cnx-pop-big .t{font-size:12.5px;font-weight:700;color:var(--ink-down, var(--down))}
   body.page-china .cnx-pop-sub{font-size:11.5px;color:var(--muted);margin-bottom:8px}
   /* tiles rack */
   body.page-china .cnx-secbar{display:flex;align-items:baseline;justify-content:space-between;margin:20px 2px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
@@ -1036,10 +1036,10 @@
   body.page-china .cnx-tile .nm{font-size:9.5px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-top:1px}
   body.page-china .cnx-tile .px{font-size:19px;font-weight:700;margin-top:7px}
   body.page-china .cnx-tile .chg{font-size:11.5px;font-weight:650;margin-top:1px}
-  body.page-china .cnx-tile .chg.up{color:var(--up)}
-  body.page-china .cnx-tile .chg.dn{color:var(--down)}
-  body.page-china .cnx-tile .chg.pos{color:var(--up)}
-  body.page-china .cnx-tile .chg.neg{color:var(--down)}
+  body.page-china .cnx-tile .chg.up{color:var(--ink-up, var(--up))}
+  body.page-china .cnx-tile .chg.dn{color:var(--ink-down, var(--down))}
+  body.page-china .cnx-tile .chg.pos{color:var(--ink-up, var(--up))}
+  body.page-china .cnx-tile .chg.neg{color:var(--ink-down, var(--down))}
   body.page-china .cnx-rack2{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
   body.page-china .cnx-rack3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
   @media (max-width:1000px){body.page-china .cnx-rack2,body.page-china .cnx-rack3{grid-template-columns:1fr}body.page-china .cnx-hero{grid-template-columns:1fr}body.page-china .cnx-hero-left{border-right:none;border-bottom:1px solid rgba(255,255,255,.12)}}
@@ -1062,7 +1062,7 @@
   body.page-china .cnx-foot{font-size:10.5px;color:var(--muted);margin-top:10px;border-top:1px solid rgba(255,255,255,.05);padding-top:8px}
   body.page-china .cnx-bignum{font-size:30px;font-weight:750;line-height:1.05}
   body.page-china .cnx-bigsub{font-size:12px;font-weight:650;margin-top:3px}
-  body.page-china .cnx-dial-word{text-align:center;font-size:14.5px;font-weight:700;color:var(--warn);margin-top:6px}
+  body.page-china .cnx-dial-word{text-align:center;font-size:14.5px;font-weight:700;color:var(--ink-warn, var(--warn));margin-top:6px}
   body.page-china .cnx-dial-sub{text-align:center;font-size:10.5px;color:var(--muted)}
   body.page-china .cnx-estrip{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
   body.page-china .cnx-ev{flex:1 1 86px;text-align:center;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 6px;background:rgba(255,255,255,.02)}
@@ -1071,17 +1071,17 @@
   body.page-china .cnx-ev .ed{font-size:10px;color:var(--muted)}
   body.page-china .cnx-ev .imp{font-size:9px;font-weight:700;letter-spacing:.6px;border-radius:4px;padding:1px 6px}
   body.page-china .cnx-imp.high{background:rgba(224,100,100,.2);color:#eda8a8}
-  body.page-china .cnx-imp.med{background:rgba(224,160,48,.16);color:var(--warn)}
+  body.page-china .cnx-imp.med{background:rgba(224,160,48,.16);color:var(--ink-warn, var(--warn))}
   body.page-china .cnx-edot.h{background:var(--down)}
   body.page-china .cnx-edot.m{background:var(--warn)}
-  body.page-china .cnx-alert-pill{margin-left:auto;font-size:10px;font-weight:700;background:rgba(224,160,48,.16);color:var(--warn);border-radius:999px;padding:2px 9px;letter-spacing:.5px}
+  body.page-china .cnx-alert-pill{margin-left:auto;font-size:10px;font-weight:700;background:rgba(224,160,48,.16);color:var(--ink-warn, var(--warn));border-radius:999px;padding:2px 9px;letter-spacing:.5px}
   body.page-china .cnx-heat{display:flex;gap:4px;margin-top:6px}
   body.page-china .cnx-heat i{flex:1;height:12px;border-radius:3px;background:var(--up);opacity:.85}
   body.page-china .cnx-heat i.h2{opacity:.55}body.page-china .cnx-heat i.h3{opacity:.3}
   body.page-china .cnx-heat i.c{background:var(--down)}
   body.page-china .cnx-heat i.c2{background:var(--down);opacity:.45}
   body.page-china .cnx-heat i.n{background:rgba(255,255,255,.12)}
-  body.page-china .cnx-view-all{font-size:11px;color:var(--link);text-align:right;margin-top:8px}
+  body.page-china .cnx-view-all{font-size:11px;color:var(--ink-link, var(--link));text-align:right;margin-top:8px}
   /* top-stocks card */
   body.page-china .cnx-stk{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
   body.page-china .cnx-stk .tkr{flex:0 0 auto}
@@ -1191,13 +1191,13 @@
   body.page-china table.cnx-mt th{font-size:9.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.09)}
   body.page-china table.cnx-mt td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.05)}
   body.page-china table.cnx-mt td.r,body.page-china table.cnx-mt th.r{text-align:right}
-  body.page-china .cnx-tt-dn{color:var(--down);font-weight:650}
-  body.page-china .cnx-tt-up{color:var(--up);font-weight:650}
-  body.page-china .cnx-tt-fl{color:var(--warn);font-weight:650}
+  body.page-china .cnx-tt-dn{color:var(--ink-down, var(--down));font-weight:650}
+  body.page-china .cnx-tt-up{color:var(--ink-up, var(--up));font-weight:650}
+  body.page-china .cnx-tt-fl{color:var(--ink-warn, var(--warn));font-weight:650}
   /* stword for key-value color coding */
-  body.page-china .cnx-stword.ok{color:var(--up)}
-  body.page-china .cnx-stword.warn{color:var(--warn)}
-  body.page-china .cnx-stword.bad{color:var(--down)}
+  body.page-china .cnx-stword.ok{color:var(--ink-up, var(--up))}
+  body.page-china .cnx-stword.warn{color:var(--ink-warn, var(--warn))}
+  body.page-china .cnx-stword.bad{color:var(--ink-down, var(--down))}
   /* ── Light-mode tokens + overrides — align page-china with body.page-macro ──
      The mx5 glass CSS was ported dark-only: .cnx-card reads
      var(--mx5-glass-bg,<dark fallback>) which was never defined for light, and
@@ -1291,7 +1291,7 @@
     background:var(--mx5-warn);box-shadow:0 0 6px color-mix(in srgb,var(--warn) 30%,transparent);
   }
   body.page-china .mx5-regime-pill.rp-red{
-    border-color:var(--down);background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down);
+    border-color:var(--down);background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--ink-down, var(--down));
   }
   body.page-china .mx5-regime-pill.rp-red .mx5-dot{
     background:var(--down);box-shadow:0 0 6px color-mix(in srgb,var(--down) 30%,transparent);
@@ -1316,15 +1316,16 @@
     letter-spacing:.02em;
   }
   body.page-china .mx5-score-yellow .mx5-sub-line{color:var(--mx5-warn-ink);}
-  body.page-china .mx5-score-red .mx5-sub-line{color:var(--down);}
-  /* In-gauge score numeral + needle inner-ring are mx5-only elements — paint them from the
-     zh-flipping --up/--warn/--down pair directly (as #3174 does for .cnx-gauge-fill/.cnx-needle-*
-     /.cnx-big-score/.cnx-verdict/.cnx-sub-line), so "risk-off = GREEN" in zh (operator ruling
-     2026-07-21). Default amber (Mixed); the .ms-* rules below override. */
-  body.page-china #mx5-score-numeral{fill:var(--warn);}
-  body.page-china .ms-green  #mx5-score-numeral{fill:var(--up);}
-  body.page-china .ms-red    #mx5-score-numeral{fill:var(--down);}
-  body.page-china .ms-yellow #mx5-score-numeral{fill:var(--warn);}
+  body.page-china .mx5-score-red .mx5-sub-line{color:var(--ink-down, var(--down));}
+  /* The big score beside the gauge already states the number; the in-arc numeral sat at
+     y=62 with its "/ 100" at y=73 over a needle hub at cy=75, so the 24px figure printed
+     ON the needle blade and the "/ 100" overprinted the "100" axis label — the same number
+     twice, two inches apart (DOCTRINE Law 4 / design system §9.5 one-integer law). Hidden,
+     not deleted: china_risk_state_live.js patches #mx5-score-numeral by id and needs the
+     node alive. macro, hk and canada each killed this independently; china was the last.
+     Byte-for-byte the same rule as hk.html.j2. */
+  body.page-china #mx5-score-numeral,
+  body.page-china .mx5-gauge-svg text:last-of-type{ display:none; }
   /* needle inner ring: accent STROKE, dark fill (kept from the presentation attr) */
   body.page-china .cnx-needle-ring{stroke:var(--warn);}
   body.page-china .ms-green .cnx-needle-ring{stroke:var(--up);}
@@ -1461,8 +1462,8 @@
     font-size:19px;font-weight:700;line-height:1;color:var(--ink-1);margin-bottom:4px;font-variant-numeric:tabular-nums;
   }
   body.page-china .mx5-mkt-delta{font-size:13px;font-weight:600;}
-  body.page-china .mx5-mkt-delta.up{color:var(--up);}
-  body.page-china .mx5-mkt-delta.dn{color:var(--down);}
+  body.page-china .mx5-mkt-delta.up{color:var(--ink-up, var(--up));}
+  body.page-china .mx5-mkt-delta.dn{color:var(--ink-down, var(--down));}
   body.page-china .mx5-spark{margin-top:10px;}
   body.page-china .mx5-spark svg{width:100%;height:32px;display:block;}
   /* spark colour follows sign, routed through --up/--down so it flips in zh */
@@ -1483,7 +1484,7 @@
 
   /* ── D · Market Sentiment odometer (dial-only; lives in the cnx-rack cnx-card) ── */
   body.page-china .mx5-sentiment-dial-wrap{text-align:center;margin-bottom:4px;}
-  body.page-china .mx5-sentiment-zone-text{
+  body.page-china .mx5-sentiment-zone-text{color:var(--fg-col-ink, var(--ink-warn, var(--warn)));
     font-size:15px;font-weight:700;color:var(--mx5-accent-ink);text-align:center;margin-bottom:3px;
   }
   body.page-china .mx5-sentiment-label{
@@ -1491,9 +1492,9 @@
   }
   /* zh 红涨绿跌 for the sentiment gauge: Euphoria=bullish→red, Panic=bearish→green (neutral amber).
      --fg-col routes through --up/--warn/--down so it auto-flips in zh; SVG marks + zone word read it. */
-  body.page-china .fg-greed{--fg-col:var(--up)}
-  body.page-china .fg-fear{--fg-col:var(--down)}
-  body.page-china .fg-neutral{--fg-col:var(--warn)}
+  body.page-china .fg-greed{--fg-col:var(--up);--fg-col-ink:var(--ink-up, var(--up))}
+  body.page-china .fg-fear{--fg-col:var(--down);--fg-col-ink:var(--ink-down, var(--down))}
+  body.page-china .fg-neutral{--fg-col:var(--warn);--fg-col-ink:var(--ink-warn, var(--warn))}
   body.page-china #cnx-sentiment .fg-mark-s{stroke:var(--fg-col)}
   body.page-china #cnx-sentiment .fg-mark-f{fill:var(--fg-col)}
   body.page-china #cnx-sentiment .fg-lab-panic{fill:var(--down)}
@@ -1506,6 +1507,17 @@
      brief fallback text keeps a local class. ──────────────────────────────────── */
   body.page-china .aib-empty{font-size:13px;color:var(--muted);line-height:1.6;margin:4px 0;}
 {% include "_aibrief_css.j2" %}
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  body.page-china .cnx-big-score,
+  body.page-china .ms-green .cnx-big-score,
+  body.page-china .ms-red .cnx-big-score,
+  body.page-china .mx5-big-score
+) { text-shadow:none; }
+html[data-lang="zh"][data-theme="light"] body.page-china .ms-green .cnx-big-score { text-shadow:none; }
+html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score { text-shadow:none; }
 </style>
 </head>
 <body class="{{ 'page-china-stocks' if mode == 'stocks' else 'page-china mx4-grid' }}">
@@ -1758,7 +1770,7 @@
         {% set _rr_sub_en = ('~%d%% chance of a ≥5%% pullback within a month'|format((_rr_p21*100)|round|int) ~ (' · %.1f× the usual odds'|format(_rr_lift) if _rr_lift else '')) if _rr_p21 is not none else (_rr_do_en or ms.posture_en or '') %}
         {% set _rr_sub_zh = ('未来一个月内出现≥5%%回撤的概率约%d%%'|format((_rr_p21*100)|round|int) ~ (' · 约为平时的%.1f倍'|format(_rr_lift) if _rr_lift else '')) if _rr_p21 is not none else (_rr_do_zh or ms.posture_zh or '') %}
         <button class="cnx-hbtn" onclick="cnxTogglePop('cnx-pop-risk',event)" style="border-color:color-mix(in srgb,var(--down) 50%,transparent)">⚠
-          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span>{% if _rr_score is not none %} · <span class="n" style="color:var(--down)">{{ _rr_score }}</span>{% endif %} ▾</button>
+          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span>{% if _rr_score is not none %} · <span class="n" style="color:var(--ink-down, var(--down))">{{ _rr_score }}</span>{% endif %} ▾</button>
 
         <!-- popover: factor breakdown -->
         <div class="cnx-pop" id="cnx-pop-signals">
@@ -1766,8 +1778,8 @@
           {% for c in _comps %}
           <div class="cnx-pop-row">
             <div class="pr-t">
-              <span {% if c.tone == 'neg' %}style="color:var(--down)"{% elif c.tone == 'pos' %}style="color:var(--up)"{% endif %}>{{ t(c.label_en, c.label_zh) }}</span>
-              <b {% if c.tone == 'neg' %}style="color:var(--down)"{% elif c.tone == 'pos' %}style="color:var(--up)"{% endif %}>{{ c.score }}</b>
+              <span {% if c.tone == 'neg' %}style="color:var(--ink-down, var(--down))"{% elif c.tone == 'pos' %}style="color:var(--ink-up, var(--up))"{% endif %}>{{ t(c.label_en, c.label_zh) }}</span>
+              <b {% if c.tone == 'neg' %}style="color:var(--ink-down, var(--down))"{% elif c.tone == 'pos' %}style="color:var(--ink-up, var(--up))"{% endif %}>{{ c.score }}</b>
             </div>
             <div class="cnx-pop-bar"><i style="width:{{ c.score }}%;background:{{ 'var(--up)' if c.tone == 'pos' else ('var(--down)' if c.tone == 'neg' else 'var(--warn)') }}"></i></div>
           </div>
@@ -2234,8 +2246,8 @@
       <div class="cnx-ctitle">{{ t('Property','房地产') }}</div>
       {% if P %}
       {% set R = P.regime %}
-      <div class="cnx-bignum" style="color:var(--down);font-size:22px">{{ t(R.label_en, R.label_zh) }}</div>
-      <div class="cnx-bigsub" style="color:var(--warn)">{{ t('easing at the margin','边际宽松') if R.tone in ('neutral','pos') else t('still contracting','仍在收缩') }}</div>
+      <div class="cnx-bignum" style="color:var(--ink-down, var(--down));font-size:22px">{{ t(R.label_en, R.label_zh) }}</div>
+      <div class="cnx-bigsub" style="color:var(--ink-warn, var(--warn))">{{ t('easing at the margin','边际宽松') if R.tone in ('neutral','pos') else t('still contracting','仍在收缩') }}</div>
       {% if P.breadth %}
       <div class="cnx-kv"><span class="k">{{ t('70-city prices','70城价格') }}</span><span class="v">{{ '%+d'|format(P.breadth.new) }} {{ t('net cities','净城市数') }}</span></div>
       {% endif %}
@@ -2473,7 +2485,7 @@
              heatmap.js/MMHeatmap is unavailable, the link fallback below stays. #}
           <div id="cn-hm-embed">
             <div style="display:flex;align-items:center;justify-content:center;height:80px;font-size:12px;color:var(--muted)">
-              <a href="china_heatmap.html" style="color:var(--link)">{{ t('→ Open full heatmap','→ 打开完整热力图') }}</a>
+              <a href="china_heatmap.html" style="color:var(--ink-link, var(--link))">{{ t('→ Open full heatmap','→ 打开完整热力图') }}</a>
             </div>
           </div>
         </div>
@@ -3186,7 +3198,7 @@
        execution coverage degraded. Never rendered on a normal board. #}
     {% set _do = setups.get('data_outage') %}
     {% if _do and _do.get('flag') %}
-    <div style="margin:6px 0 10px;padding:9px 13px;border-radius:9px;font-size:12px;line-height:1.5;border:1.5px solid var(--down);background:color-mix(in srgb,var(--down) 10%,var(--panel));color:var(--down)">
+    <div style="margin:6px 0 10px;padding:9px 13px;border-radius:9px;font-size:12px;line-height:1.5;border:1.5px solid var(--down);background:color-mix(in srgb,var(--down) 10%,var(--panel));color:var(--ink-down, var(--down))">
       {# The W0.7 headline is the DEFAULT, not the only one: it describes a board that
          is genuinely partial (buy-count collapsed past the drop threshold). A path that
          publishes NO board — the Prophet outage shell — overrides it, because saying
@@ -3865,9 +3877,9 @@
         {% set _rsl = r.get('sublabel') %}
         {% if _rsl %}<span style="color:var(--muted)"><span class="l-en">{{ _rsl }}</span><span class="l-zh">{% if r.get('cross_date') %}信号触发于{{ r.get('cross_date') }}（{{ r.get('sessions_since',0) }}个交易日前），自那时起+{{ '%.1f'|format(r.get('pct_since',0)) }}%{% endif %}</span></span>{% endif %}
         {% set _rbc = r.get('basing_chip') %}
-        {% if _rbc %}<span style="display:block;font-size:9px;color:var(--link);margin-top:2px"><span class="l-en">{{ _rbc }}</span><span class="l-zh">筑底中</span></span>{% endif %}
+        {% if _rbc %}<span style="display:block;font-size:9px;color:var(--ink-link, var(--link));margin-top:2px"><span class="l-en">{{ _rbc }}</span><span class="l-zh">筑底中</span></span>{% endif %}
         {% set _rlc = r.get('launched_chip') %}
-        {% if _rlc %}<span style="display:block;font-size:9px;color:var(--up);margin-top:2px"><span class="l-en">{{ _rlc }}</span><span class="l-zh">已突破</span></span>{% endif %}
+        {% if _rlc %}<span style="display:block;font-size:9px;color:var(--ink-up, var(--up));margin-top:2px"><span class="l-en">{{ _rlc }}</span><span class="l-zh">已突破</span></span>{% endif %}
       </div>
       <div style="flex:none;text-align:right;font-size:9px;color:var(--muted)">
         <span>{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</span>
@@ -3893,8 +3905,7 @@
 
     {% if _late %}
     <details class="cn-depth late" data-stf="ran">
-      <summary>
-        <span>⚠ {{ t('Wait / unfillable / do not chase', '等待 / 无法成交 / 勿追涨') }}
+      <summary>{{ t('Wait / unfillable / do not chase', '等待 / 无法成交 / 勿追涨') }}
           <span class="cn-depth-sub">{{ t('the signal exists, but lifecycle, extension or A-share execution checks block a featured entry', '信号存在，但生命周期、过度延伸或A股成交检查阻止其进入精选区') }}</span>
         </span>
         <span class="cn-depth-n">{{ _late|length }}</span>
@@ -3928,7 +3939,7 @@
     {% endif %}
 
     {% if setups.laggards %}
-    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest relative momentum (laggards) — distribution risk:', '相对动量最弱（落后股）— 派发风险：') }}</p>
+    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--ink-down, var(--down));font-weight:700">⚠ {{ t('Weakest relative momentum (laggards) — distribution risk:', '相对动量最弱（落后股）— 派发风险：') }}</p>
     <p style="margin:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:center">
       {% for r in setups.laggards %}<a href="china_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
     </p>
@@ -3996,7 +4007,7 @@
   <!-- ===================== STOCK SCREENER (consolidated · toggle) ===================== -->
   {% if scoreboard and scoreboard.modes %}
   <div class="panel span12" id="stock-screener">
-    <h2>{{ t('🎯 Stock screener — one board, two validated lenses', '🎯 选股面板 — 一板双镜') }}
+    <h2>{{ t('Stock screener — one board, two validated lenses', '选股面板 — 一板双镜') }}
       <span class="note" style="text-transform:none">· {{ t('switch the lens; the table re-sorts', '切换视角；表格随之重排') }}{% if scoreboard.as_of %} · {{ scoreboard.as_of }}{% endif %}</span>
       {{ help("Two validated lenses: within-sector mean reversion and low-vol defensive. Sortable context, not a buy list.", "两种已验证视角：板块内均值回归与防御低波。可排序背景，非买入清单。") }}
     </h2>
@@ -4165,7 +4176,7 @@
   <div class="panel span12" id="reversion-desk">
     {# lane header #}
     <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px">
-      <h2 style="margin:0">🔄 {{ t('Reversion Desk', '回归台') }}
+      <h2 style="margin:0">{{ t('Reversion Desk', '回归台') }}
         {{ help("Stocks that fell the most within their own sector over the last 3 months — historically the deepest fallers tend to snap back. Ranked by how deep the fall is, with bonus credit for A-share-specific signs (a 2-week washout, a coiled volatility squeeze). Scored against the CSI 300 over the next 21 sessions, entering at the next day's price (T+1). Track record still accruing — display context, not a signal and not a buy list (CNPL-R1/R3/R4).", "同行业内近3个月跌幅最深的个股——历史上跌得最深的往往反弹也快。按跌幅深度排序，并对A股特有迹象（2周洗盘、波动压缩蓄势）加分。以次日价格入场（T+1）、未来21个交易日对沪深300的超额收益计分。成绩仍在累积——仅供展示参考，非信号、非买入清单（CNPL-R1/R3/R4）。") }}
       </h2>
       <span class="chip c-muted" style="font-size:11px;font-weight:600">{{ t('display-only', '仅展示') }}</span>
