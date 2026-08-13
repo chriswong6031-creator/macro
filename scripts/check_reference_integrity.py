@@ -1546,8 +1546,12 @@ def run_selftest() -> int:
 
         # L7/L8/L9 fire against synthetic roots.
         (root / DESIGN_SYSTEM_ROOT).mkdir(parents=True, exist_ok=True)
-        (root / DESIGN_SYSTEM_ROOT / "orphan_reference.html").write_text("<p>x</p>", encoding="utf-8")
-        (root / DESIGN_SYSTEM_ROOT / "specimen.html").write_text("<p>x</p>", encoding="utf-8")
+        # tmp-rooted selftest fixtures, never shipped site pages — bound to names so
+        # the site-shim guard's tmp taint (tests/test_site_shim.py) reads them as such
+        orphan_fixture = root / DESIGN_SYSTEM_ROOT / "orphan_reference.html"
+        orphan_fixture.write_text("<p>x</p>", encoding="utf-8")
+        specimen_fixture = root / DESIGN_SYSTEM_ROOT / "specimen.html"
+        specimen_fixture.write_text("<p>x</p>", encoding="utf-8")
         sets = discover_artifact_sets(root)
         l7 = {f.code for f in rule_l7(root, sets)}
         check("unclaimed-reference-file fires", "unclaimed-reference-file" in l7, f"got {sorted(l7)}")
