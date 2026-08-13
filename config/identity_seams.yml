@@ -1,0 +1,291 @@
+# Identity seam registry — DOS-1.2
+#
+# THE DECLARED REGISTRY of every surface in this repository that answers a question of
+# the form "which security is this?".  DOS-1.1 landed the master
+# (`data/reference/security_master.parquet` + `vendor_aliases.parquet`, read through
+# `lib/dataos/identity.py`).  This file records what every OTHER identity surface is,
+# and how it relates to that master.
+#
+# WHY IT EXISTS.  `lib/ticker_aliases.py`'s own docstring records the realized cost of an
+# ungoverned seam: the MMC->MRSH rename lived in `scripts/fetch_basket_extras` but not in
+# its sibling `scripts/fetch_basket_ohlcv`, so `data/baskets/ohlcv/MMC.parquet` never
+# existed, and for seven months the `insurance` basket rendered 18/19 members and
+# `us_sector_financials` 75/76.  NOTHING WENT RED.  That silence is what this registry and
+# its gate (`tests/test_identity_seam_agreement.py`) exist to end.
+#
+# THE FOUR CLASSES (closed vocabulary — plan §DOS-1.2):
+#   ADOPT               the surface answers "which security is this?" in a form CHECKABLE
+#                       against the master.  Disagreement is a BUG and the gate fails.
+#   ALIAS-INTO-MASTER   a feeder: its content belongs as alias rows, or as a master column
+#                       that does not exist yet.  Not a competing authority.
+#   KNOWINGLY-DIFFERENT a DELIBERATE divergence with a documented reason.  Registering the
+#                       divergence is MANDATORY; resolving it is a PRODUCT DECISION, not a
+#                       cleanup (precedent: DNR:HOLD-FF-DETECTOR-PERIOD-BASIS, where four
+#                       detector ids implemented three ways were HELD because unifying them
+#                       silently republishes a live user-facing surface).
+#   RETIRE              superseded by the master; carries a migration note.  Nothing is
+#                       deleted by this PR.
+#
+# AN UNLISTED IDENTITY SURFACE IS A CI FAILURE.  See the completeness test.  Its discovery
+# bound is stated honestly in that test's docstring: it pins the declared set plus a
+# content-shaped scan; it cannot detect an identity map expressed in a form it has never
+# seen.  Do not read a green completeness test as proof that no other surface exists.
+
+version: 1
+
+# The master every ADOPT-class surface is checked against.
+master:
+  reader: lib/dataos/identity.py
+  artifacts:
+    - data/reference/security_master.parquet
+    - data/reference/vendor_aliases.parquet
+  id_conventions:
+    issuer: "ISS:<CC>-<MIC>-<CODE>[.N]"
+    security: "SEC:<CC>-<MIC>-<CODE>[.N]"
+    listing: "<CC>-<MIC>-<CODE>[.N]"
+  # HONEST LIMIT, measured 2026-08-13 from the committed artifact: the master's columns are
+  # security_id, issuer_id, listing_key, country, mic, inception_code, effective_at,
+  # ingested_at — 703 rows.  There is NO lifecycle column.  The master therefore answers
+  # "which security is this" but NOT "does it still exist".  Two feeders below are scoped
+  # against that gap rather than against an existing column.
+  models_lifecycle: false
+
+surfaces:
+
+  # ---------------------------------------------------------------- ADOPT (3)
+  - path: lib/dataos/identity.py
+    claims: "issuer / security / listing identity; mint-once-and-store"
+    id_convention: "ISS: / SEC: / bare <CC>-<MIC>-<CODE>[.N]"
+    class: ADOPT
+    rationale: >-
+      This IS the master. It is the reference every other ADOPT surface is checked against.
+    consumers: "lib/dataos/*, scripts/build_security_master.py, tests/test_dataos_*"
+    checked_by: "the agreement gate reads it via VendorAliasTable over the committed parquet"
+
+  - path: engine/ledger_identity.py
+    claims: "which key an append-only ledger row is stored under TODAY, given a rename"
+    id_convention: "bare uppercase ticker; current_key(ticker, migrations)"
+    class: ADOPT
+    rationale: >-
+      Its answer is directly checkable against the master: vendor_aliases carries vendor
+      'ledger' rows with dated boundaries (SATS valid_to 2026-06-24, ECHO valid_from
+      2026-06-24, both -> SEC:US-XNAS-SATS). If this module and the master disagree about
+      the current key of a renamed ticker, one of them is wrong.
+    consumers: "engine/track_record.py, scripts/migrate_track_record_keys.py"
+    checked_by: >-
+      the agreement gate calls current_key() with config.yml quality.ticker_key_migrations
+      and independently asks the master for the same security's current ledger symbol
+
+  - path: collectors/china_tushare_spine.py
+    claims: "the CN A-share spine's own security_id, minted at line 520"
+    id_convention: 'CN-{MIC}-{six_digit_code} (literal at line 4619)'
+    class: ADOPT
+    rationale: >-
+      This is the ORIGIN of the bare <CC>-<MIC>-<CODE> convention that lib/dataos/identity.py
+      adopted; both must construct the same listing key for the same code or the CN estate
+      and the master have forked.
+    consumers: "the CN spine lane and its manifests"
+    checked_by: "the agreement gate builds the same listing key both ways and compares"
+
+  # ------------------------------------------------- ALIAS-INTO-MASTER (5)
+  - path: lib/ticker_aliases.py
+    claims: "membership ticker -> Yahoo fetch symbol, and the inverse"
+    id_convention: "bare ticker, TIMELESS (no date scoping) — 2 rows: FI->FISV, MMC->MRSH"
+    class: ALIAS-INTO-MASTER
+    rationale: >-
+      Content already replicated into vendor_aliases.parquet under vendors yahoo/yahoo_fetch.
+      Its own shape is the defect DOS-1.1 fixed: TIMELESS, so it cannot express that MMC was
+      correct before 2026-01-14 and MRSH after.
+    consumers: "collectors/yahoo.py, scripts/fetch_basket_* (the 7-month gap came from ONE sibling missing it)"
+    migrates_to: "vendor_aliases vendors 'yahoo' / 'yahoo_fetch'"
+
+  - path: config.yml
+    key: breadth.ticker_fixups
+    claims: "membership-space rename pin: which OLD ticker a vendor symbol maps back onto"
+    id_convention: "bare ticker, TIMELESS — {'MRSH': 'MMC', 'FISV': 'FI'}"
+    class: ALIAS-INTO-MASTER
+    rationale: >-
+      A third timeless map lifted directly by scripts/build_security_master.py. Not named in
+      plan §2.1; found by this census.
+    consumers: "collectors/breadth.py and the membership builders"
+    migrates_to: "vendor_aliases vendor 'membership'"
+
+  - path: config.yml
+    key: quality.ticker_key_migrations
+    claims: "ledger-key continuation: this ticker string CONTINUES that one"
+    id_convention: "bare ticker, TIMELESS, curated-only — {'SATS': 'ECHO'}"
+    class: ALIAS-INTO-MASTER
+    rationale: >-
+      Already replicated into vendor_aliases as dated vendor 'ledger' rows. It is also the
+      input to engine/ledger_identity.py, which is ADOPT — so this map is the feeder and
+      that module is the checked reader.
+    consumers: "engine/ledger_identity.py"
+    migrates_to: "vendor_aliases vendor 'ledger'"
+
+  - path: lib/delisted_symbols.py
+    also: config/delisted_symbols.yml
+    claims: "exit ledger — this security STOPPED EXISTING, on this date, for this reason"
+    id_convention: "bare ticker keys under a `symbols:` mapping"
+    class: ALIAS-INTO-MASTER
+    rationale: >-
+      ADJUDICATED 2026-08-13, against this census's first instinct. Its docstring is explicit
+      that a row here "means the SECURITY STOPPED EXISTING — it is not a rename", which is a
+      LIFECYCLE fact, not an alias, and that argued for ADOPT. But the committed master has
+      NO lifecycle column (see master.models_lifecycle above), so there is nothing to agree
+      WITH and ADOPT is impossible today. It is therefore a feeder for a dimension the master
+      does not yet model — the same standing as edgar_deadnames' CIK axis. This row must not
+      be read as "already absorbed".
+    consumers: >-
+      three, each acting differently: collectors.yahoo.all_tickers drops it from the FETCH;
+      collectors.yahoo.audit_store_freshness classifies it `delisted` not `stale`;
+      scripts.build_stock_library swaps `feed_stale` for a truthful `delisted` disclosure
+    migrates_to: "a security-master lifecycle dimension that DOES NOT EXIST YET (gap recorded, not closed)"
+
+  - path: collectors/edgar_deadnames.py
+    claims: "dead/renamed ticker -> CIK bridge for delisted filers"
+    id_convention: "bare ticker -> int CIK (unpadded) — a different axis from any listing key"
+    class: ALIAS-INTO-MASTER
+    rationale: >-
+      A legitimate identity question the master does not model: CIK is a filer axis, not a
+      listing axis. Documents that edgar.py:423 drops delisted filers, so 0 of 1,083 dead-only
+      tickers in data/breadth/sp1500_pit_membership.parquet carry fundamentals.
+    consumers: "the fundamentals survivor panel"
+    migrates_to: "a security-master CIK column that DOES NOT EXIST YET (gap recorded, not closed)"
+
+  # ----------------------------------------------- KNOWINGLY-DIFFERENT (6)
+  - path: engine/entity_resolver.py
+    claims: "free text -> ticker, for news/headline tagging"
+    id_convention: "5-layer probabilistic ladder with confidence scores"
+    class: KNOWINGLY-DIFFERENT
+    reason: >-
+      It answers a DIFFERENT question — "does this text plausibly refer to this security?" —
+      not "which security is this?". Probabilistic by construction, and its own docstring
+      self-scopes it LEAF / CONTEXT-ONLY with nothing in the scoring path importing it.
+      A probabilistic tagger must never be held to exact-identity agreement.
+    consumers: "engine/financial_news.py and the news tagging lane"
+
+  - path: engine/name_resolver.py
+    claims: "company legal name -> ticker for newswire headlines carrying no ticker"
+    id_convention: "exact unique normalized-name index over SEC company_tickers.json + digest_db"
+    class: KNOWINGLY-DIFFERENT
+    reason: >-
+      Same family as entity_resolver: precision-over-recall name matching for news tagging.
+      Deliberately returns nothing rather than guess. Not an authority on security identity.
+    consumers: "the news tagging lane"
+
+  - path: config/theme_graph_identity_breaks.yml
+    also: engine/theme_graph/identity.py
+    claims: "COMPANY-node identity across ticker-reuse epochs for the GMI theme graph"
+    id_convention: "co:<market>:<SYMBOL> for epoch 1, co:<market>:<SYMBOL>#<epoch> thereafter"
+    class: KNOWINGLY-DIFFERENT
+    reason: >-
+      A graph-topology concern, not a security concern: a company node id must NEVER be
+      recycled or the graph's history silently merges two companies. It uses a '#<epoch>'
+      collision suffix where the master uses '.N'. This is a DECLARED second convention, and
+      unifying it would rewrite graph node ids — a product decision, not a cleanup.
+    consumers: "engine/theme_graph/*"
+
+  - path: config/biocatalyst_sponsor_ticker_map.yml
+    claims: "ClinicalTrials.gov leadSponsor.name -> one ticker in a curated healthcare universe"
+    id_convention: "sponsor name -> ticker, tagged issuer_relationship (direct_issuer | parent_of ...)"
+    class: KNOWINGLY-DIFFERENT
+    reason: >-
+      Its own header states outright: "It is NOT a general point-in-time identity service and
+      it is NOT an inferred join." The parent-of-subsidiary collapse is a deliberate modelling
+      choice for trial attribution — a subsidiary's trial is attributed to the listed parent.
+    consumers: "the BioCatalyst lane"
+
+  - path: config/us_search_aliases_zh.json
+    claims: "Chinese-language SEARCH alias per US ticker (Wikidata zh label)"
+    id_convention: "{ticker: zh_alias_string}"
+    class: KNOWINGLY-DIFFERENT
+    reason: >-
+      Search-matching only, never displayed; its own _comment distinguishes it from the
+      curated visible zh name in config/us_names_zh.json. A search alias intentionally admits
+      forms that are not the security's name.
+    consumers: "nav search"
+
+  - path: config/share_class_equiv.yml
+    claims: "which non-primary share class collapses onto a canonical ticker for 13F consensus"
+    id_convention: "{ticker, canonical, comment} rows — 25 pairs"
+    class: KNOWINGLY-DIFFERENT
+    reason: >-
+      It deliberately MERGES legally different securities — different CUSIPs, sometimes
+      different vote classes — into one issuer bucket so institutional-holdings consensus is
+      not split across share classes. The master mints GOOG and GOOGL as two distinct
+      securities (mint-once-per-listing, §D2). Both are correct for their own question.
+      This divergence is REGISTERED, not resolved: collapsing it in the master would corrupt
+      per-security identity; unifying the 13F view to the master would split every consensus
+      count. Product decision.
+    consumers: "the 13F institutional-holdings consensus lane"
+
+  # --------------------------------------------------------------- RETIRE (3)
+  - path: collectors/china_universe.py
+    symbol: "_code_to_ticker / _to_ticker"
+    claims: "bare 6-digit A-share code -> suffixed ticker"
+    id_convention: "6xxxxx/900xxx -> .SS; 0/3xxxxx -> .SZ; Beijing (4/8/92xxxx) -> None (EXCLUDED)"
+    class: RETIRE
+    superseded_by: "lib/dataos/identity.normalize_cn_symbol / cn_board"
+    migration: >-
+      Route through lib.dataos.identity. NOTE the live disagreement this retirement resolves:
+      this converter EXCLUDES the Beijing families that its two siblings MAP.
+    consumers: "the CN universe collector"
+
+  - path: collectors/china_ths_concepts.py
+    symbol: "to_suffixed"
+    claims: "bare 6-digit A-share code -> store ticker with exchange suffix"
+    id_convention: "6xxxxx/900xxx -> .SS; Beijing (8/4/920xxx) -> .BJ; else -> .SZ"
+    class: RETIRE
+    superseded_by: "lib/dataos/identity.normalize_cn_symbol / cn_board"
+    migration: >-
+      Disagrees with china_universe.py on Beijing (maps vs excludes) AND with the master on
+      LEGACY Beijing codes: it silently yields '430047.BJ' as a usable ticker where
+      lib/dataos/identity RAISES IdentityError rather than mint a canonical key from a legacy
+      4xxxxx/8xxxxx alias. Same input, one silently succeeds and one refuses.
+    consumers: "THS concept-board scraping"
+
+  - path: collectors/china_analyst.py
+    symbol: "to_ticker"
+    claims: "bare A-share code -> suffixed ticker"
+    id_convention: "6xxxxx/900xxx -> .SS; 0/2/3xxxxx -> .SZ; 4/8/92xxxx -> .BJ"
+    class: RETIRE
+    superseded_by: "lib/dataos/identity.normalize_cn_symbol / cn_board"
+    migration: >-
+      A THIRD independent implementation, shared by ~10 sibling china_* collectors (lhb,
+      zt_pool, block_trades, buyback, ...). Not named in plan §2.1; found by this census.
+      Agrees with china_ths_concepts on Beijing, disagrees with china_universe.
+    consumers: "~10 china_* collectors"
+
+# Surfaces examined and DELIBERATELY NOT classified as identity surfaces.
+# The completeness gate requires every candidate to be either classified above or excluded
+# here WITH a reason — so an omission cannot hide as an oversight.
+excluded:
+  - path: lib/symbol_directory_receipts.py
+    reason: >-
+      ADJUDICATED 2026-08-13, against this census's first instinct (it proposed
+      ALIAS-INTO-MASTER). This module makes NO identity claim. Its own docstring: "Prospective
+      completion receipts for symbol-directory artifacts. The receipt is an operational
+      observation boundary, not a historical upgrade." It is provenance machinery that
+      authenticates the snapshots the master builder reads — a receipt envelope, not an
+      answer to "which security is this?". Classifying it as an identity surface would dilute
+      the registry's meaning.
+
+# Divergences that are TRUE TODAY and must keep being true until a product decision changes
+# them. The gate asserts these remain REGISTERED — a silent "fix" here is itself a failure.
+declared_divergences:
+  - id: collision-suffix-conventions
+    detail: >-
+      THREE live collision-suffix conventions: the CN spine's bare CN-XSHG-600519, the theme
+      graph's co:<market>:<SYMBOL>#2, and lib/dataos/identity's US-XNYS-MMC.2.
+  - id: share-class-collapse
+    detail: >-
+      GOOG collapses onto GOOGL in config/share_class_equiv.yml for 13F consensus, while the
+      master mints them as two distinct securities.
+  - id: cn-beijing-range-split
+    detail: >-
+      collectors/china_universe.py returns None for Beijing 92xxxx while
+      collectors/china_ths_concepts.py and collectors/china_analyst.py map them to .BJ.
+  - id: legacy-beijing-alias
+    detail: >-
+      china_ths_concepts/china_analyst silently map legacy 430047 -> '430047.BJ';
+      lib/dataos/identity RAISES IdentityError rather than mint from a legacy alias.

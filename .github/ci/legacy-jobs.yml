@@ -7671,3 +7671,67 @@ jobs:
           tests/test_dataos_nulls.py
           tests/test_dataos_registry.py
           tests/test_dataos_quality.py -q -rs
+
+  dataos-identity-seams:
+    # DOS-1.2 — the identity seam gate. `config/identity_seams.yml` declares every surface
+    # in this tree that answers "which security is this?", classified ADOPT /
+    # ALIAS-INTO-MASTER / KNOWINGLY-DIFFERENT / RETIRE against the DOS-1.1 master, and this
+    # suite makes an ADOPT-class DISAGREEMENT fail.
+    #
+    # WHY IT IS A SEPARATE JOB FROM `dataos-foundation`: that lane is deliberately thin
+    # (pytest + pyyaml only) so a pandas/numpy import creeping into lib/dataos/ breaks there
+    # FIRST. This suite must read the committed master parquet, so it needs pandas+pyarrow —
+    # putting it in the thin lane would destroy that tripwire. Two jobs, two purposes.
+    #
+    # WITHOUT THIS JOB the registry is prose. The cost of an ungoverned seam is already
+    # measured in this repo: MMC->MRSH lived in scripts/fetch_basket_extras but not in its
+    # sibling scripts/fetch_basket_ohlcv, so data/baskets/ohlcv/MMC.parquet never existed and
+    # for seven months the `insurance` basket rendered 18/19 members and
+    # us_sector_financials 75/76 — and NOTHING WENT RED. This suite is the thing that goes red.
+    #
+    # The gate is mutation-proven, not asserted: making engine/ledger_identity disagree with
+    # the master fails the agreement test; blanking a KNOWINGLY-DIFFERENT `reason` fails the
+    # schema test; deleting a registry row fails completeness; and silently "fixing" the
+    # declared GOOG/GOOGL divergence in config/share_class_equiv.yml fails the divergence
+    # test. Non-emptiness guards are explicit, because an agreement gate over zero securities
+    # is green forever and means nothing.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - .github/ci/legacy-jobs.yml
+      - .github/workflows/ci.yml
+      - config.yml
+      - config/identity_seams.yml
+      - config/share_class_equiv.yml
+      - config/theme_graph_identity_breaks.yml
+      - config/biocatalyst_sponsor_ticker_map.yml
+      - config/us_search_aliases_zh.json
+      - config/delisted_symbols.yml
+      - data/reference/**
+      - lib/dataos/identity.py
+      - lib/ticker_aliases.py
+      - lib/delisted_symbols.py
+      - lib/symbol_directory_receipts.py
+      - engine/ledger_identity.py
+      - engine/entity_resolver.py
+      - engine/name_resolver.py
+      - collectors/edgar_deadnames.py
+      - collectors/china_universe.py
+      - collectors/china_ths_concepts.py
+      - collectors/china_analyst.py
+      - collectors/china_tushare_spine.py
+      - tests/test_identity_seam_agreement.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        # pandas+pyarrow: the suite reads the committed security_master/vendor_aliases
+        # parquet through lib.dataos.identity.VendorAliasTable. pyyaml: the registry itself.
+        run: pip install pytest pyyaml pandas pyarrow
+      - name: identity seams — ADOPT surfaces must agree, divergences must stay declared
+        run: >-
+          PYTHONDONTWRITEBYTECODE=1 python -m pytest
+          tests/test_identity_seam_agreement.py -q -rs
