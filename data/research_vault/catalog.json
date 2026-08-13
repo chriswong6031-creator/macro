@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T11:56:46.344197+00:00",
-  "count": 1058,
+  "generated_at": "2026-08-13T12:26:50.505620+00:00",
+  "count": 1059,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -103,6 +103,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-i3beom5skfx-38d370",
+      "title": "JPM International Market Intell | Morning Briefing Aug 13",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T11:14:30Z",
+      "summary_points": [
+        "**KOSPI Overbought Reversal Risk**: Korea L/S ratio at 78th percentile (since Jan 2018) signals severe overbought conditions; recent peak (May-Jun 2026) preceded decline, indicating imminent KOSPI reversal risk.",
+        "**China Structural Deterioration**: China industrial producer prices peaked at ~15% y/y (2021) while loss-making entities rose steadily (20%→30% by 2025), reflecting structural profitability decline beyond pandemic shocks.",
+        "**US Inflation Policy Shock**: Headline CPI and Core PCE surged above 8% (2026), exceeding 2% target; implies sustained inflationary pressure forcing Fed to hike in December despite July report.",
+        "**Memory Sector Acceleration**: Asian Semis revenue up 134% YoY (10th consecutive month acceleration), memory revenue YoY surged to 36% (late 2024), outpacing semi-memory revenue (34%), signaling robust sector fundamentals.",
+        "**Geopolitical Escalation Catalyst**: US missile expenditure spiked 40% YTD in Iran conflict (2025), driving defense volatility, oil spikes, and risk-off sentiment globally."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
