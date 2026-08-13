@@ -1,5 +1,13 @@
-#!/usr/bin/env python3
 """Shared refusal for guards that would otherwise pass VACUOUSLY on a sparse tree.
+
+This module is a LIBRARY and carries no shebang on purpose: it is imported by the
+guards, never executed. `tests/test_check_script_import_pinning.py` treats a
+shebang (or a `__main__` guard) as the mark of an entry script and then requires a
+top-level `sys.path.insert(0, <repo root>)` before any repo-package import —
+because `python3 scripts/foo.py` puts `scripts/`, not the repo root, on `sys.path`.
+The importing guards already carry that pin; a library that is only ever imported
+must not repeat it, since a module-level `sys.path` mutation is a side effect on
+every import for no benefit.
 
 WHY THIS EXISTS
 ---------------
