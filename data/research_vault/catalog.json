@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T02:25:16.435436+00:00",
-  "count": 1030,
+  "generated_at": "2026-08-13T02:40:19.244796+00:00",
+  "count": 1031,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -306,6 +306,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tcokvhuzse4-dc02a8",
+      "title": "The Point for Europe Wednesday, 12 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T10:05:10Z",
+      "summary_points": [
+        "**Daimler Truck (DTG.DE) - MY27 Sale Decision**: MY27 sales strategy shift vs MY26, 2Q DTNA order weakness (fleet mix-driven, temporary), Chinese competition risk; critical for trucking sector fundamentals and capital allocation.",
+        "**EU Auto China Competition Policy Risk**: EU auto market segmentation and regulation-driven China share rise; policy negligence not sustainable, posing structural risk to EU manufacturers.",
+        "**Global Sporting Goods Sneaker Demand**: July volumes down 1.2% MoM (9th decline), Nike US momentum (+30bps), lifestyle footwear weakness; key for consumer discretionary flows and sector rotation.",
+        "**Kingspan BMC Acquisition**: €850mn deal delivers 5.6% EPS accretion, EV/EBITDA <5x (vs KSP 11.6x), strategic power management entry; enables two additional BMC-scale acquisitions.",
+        "**Commodities - Silver Price Drivers**: Investment demand (Strait of Hormuz de-escalation, Fed pivot) and solar slowdown; targets $75/oz (0-3m), $90/oz (6-12m) vs spot $65/oz."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
