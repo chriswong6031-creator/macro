@@ -59,6 +59,11 @@ if str(_REPO) not in sys.path:
 import scripts.backfill_prophet_outage as bf  # noqa: E402
 import scripts.build_prophet as bp  # noqa: E402
 import scripts.build_stock_library as bsl  # noqa: E402
+from engine.prophet_integrity import (  # noqa: E402
+    PLAN_CORRECTIONS_FILENAME,
+    apply_plan_corrections,
+    load_plan_corrections,
+)
 from scripts.audit_prophet_plan_chronology import (  # noqa: E402
     _validate_receipt_shape,
 )
@@ -1217,12 +1222,35 @@ class TestCollisionRuleLiveWins:
         assert [e["plan_key"] for e in dirty["new_collisions"]] == ["AAA-BULL"]
 
 
-#: Ticker+direction keys that ALREADY carry multiple open plans on main, from before
-#: the W1 re-origination block shipped (tests/test_prophet_w1_intake_repair.py
-#: documents the same debt: "10 ticker+direction pairs held duplicate open plans on
-#: 2026-08-03; PI held three"). This backfill did not create them and does not fix
-#: them; the ratchet below stops it from ADDING to them, which is the part §0.4 owns.
-_LEGACY_DOUBLED_KEYS = 10
+#: Ticker+direction keys that ALREADY carried multiple open plans on main
+#: before the W1 re-origination block shipped
+#: (tests/test_prophet_w1_intake_repair.py: "10 ticker+direction pairs held
+#: duplicate open plans on 2026-08-03; PI held three"). This backfill did not
+#: create them and does not fix them; the ratchet below stops it from ADDING a
+#: new name, which is the part §0.4 owns.
+#:
+#: Membership, not a count: ``<= 10`` would re-arm the moment two of these
+#: shrink away (quarantine already retired FCX and MDB from the actionable
+#: doubled set) and a new name appeared. The set is the 2026-08-03 debt still
+#: visible as sibling plan files; it does not include later successors on a
+#: quarantined incumbent (measured 2026-08-13: ``HEI-BULL``).
+#:
+#: "Open" here is the engine's definition. ``build_prophet`` excludes
+#: audit-quarantined plans from ``actionable_existing`` before it derives
+#: ``active_keys``, because a quarantined plan must not monopolise the ticker's
+#: future slot. Counting those files as open is a census of the wrong store.
+_LEGACY_DOUBLED_KEYS = frozenset({
+    "APPF-BULL",
+    "BDC-BULL",
+    "CELH-BULL",
+    "CLF-BULL",
+    "ENOV-BULL",
+    "FCX-BULL",
+    "LPG-BULL",
+    "MDB-BULL",
+    "PAHC-BULL",
+    "PI-BULL",
+})
 
 
 @pytest.mark.skipif(
@@ -1245,9 +1273,20 @@ class TestOnePlanPerEpisodeOnTheShippedTree:
                     closed.add(str(json.loads(line).get("id")))
                 except Exception:  # noqa: BLE001
                     continue
+        plans = _real_plans()
+        # Same overlay ``build_prophet`` applies before ``open_plan_keys``:
+        # a quarantined plan is not actionable and does not occupy the slot.
+        quarantined: set[str] = set()
+        corrections_path = _REPO / "data" / "prophet" / PLAN_CORRECTIONS_FILENAME
+        if corrections_path.exists() and plans:
+            projection = apply_plan_corrections(
+                plans, load_plan_corrections(corrections_path)
+            )
+            quarantined = set(projection.quarantined_ids)
         keys: dict[str, list[dict]] = {}
-        for plan in _real_plans().values():
-            if str(plan.get("id")) in closed:
+        for plan in plans.values():
+            plan_id = str(plan.get("id"))
+            if plan_id in closed or plan_id in quarantined:
                 continue
             keys.setdefault(bf.plan_key_of(plan), []).append(plan)
         return keys
@@ -1271,13 +1310,20 @@ class TestOnePlanPerEpisodeOnTheShippedTree:
 
     def test_the_legacy_duplicate_open_keys_do_not_grow(self):
         """A ratchet, not a heal. The pre-W1 duplicates are somebody else's lane; the
-        point here is that this PR cannot quietly add an eleventh."""
+        point here is that this PR cannot quietly add a new actionable pair.
+
+        Quarantined incumbents are not open: the engine frees that slot on
+        purpose. A successor on a quarantined name is not a new pair. New names
+        still fail even if the total stays at or under ten.
+        """
         doubled = {k: [str(p.get("id")) for p in v]
                    for k, v in self._open_keys().items() if len(v) > 1}
-        assert len(doubled) <= _LEGACY_DOUBLED_KEYS, (
-            f"{len(doubled)} ticker+direction keys now carry multiple OPEN plans, up "
-            f"from the {_LEGACY_DOUBLED_KEYS} pre-W1 legacy pairs: {doubled}. "
-            "Something minted a second episode for a live name."
+        newcomers = set(doubled) - _LEGACY_DOUBLED_KEYS
+        assert not newcomers, (
+            f"{sorted(newcomers)} ticker+direction key(s) now carry multiple "
+            f"OPEN actionable plans, outside the {len(_LEGACY_DOUBLED_KEYS)} "
+            f"pre-W1 legacy pairs {sorted(_LEGACY_DOUBLED_KEYS)}. Something "
+            f"minted a second episode for a live name: {doubled}."
         )
 
 

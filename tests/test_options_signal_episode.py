@@ -45,6 +45,11 @@ from engine.options_signal_episode import (
 from engine.options_signal_episode import (
     derive_session_outcome as _derive_session_outcome,
 )
+from engine.neuralweb.market_memory_production_records import (
+    ACTIVATION_LAST_EPISODE_ID,
+    ACTIVATION_PREFIX_ROWS,
+    ACTIVATION_PREFIX_SHA256,
+)
 from engine.session_digest import session_window_et
 from lib import nyse_calendar
 from scripts import audit_options_market_memory_context as options_context_audit
@@ -5416,12 +5421,50 @@ def test_campaign_locked_append_is_concurrently_idempotent_and_conflict_strict(
     assert load_jsonl(path) == campaigns
 
 
+def _activation_vintage_campaign_sources() -> tuple[list[dict], list[dict]]:
+    """Episode and H+60 rows from the retired v1 activation prefix.
+
+    The live episode ledger is allowed to grow (it did, 384 → 1206, on the
+    2026-08-13 options-pit checkpoint). The frozen eight-row campaign corpus is
+    an incident replay of that 384-row prefix. Feeding ``derive_campaigns``
+    today's full file is the same bomb as a hand-typed census literal: a later
+    qualifying prefix whose H+60 has not matured surfaces as ``pending``, and
+    finished later campaigns inflate the derived count. The prefix is a stable
+    watermark (``ACTIVATION_PREFIX_SHA256``) on the live artifact, so the slice
+    is derived rather than re-typed. Filter H+60 by prefix episode id, not by a
+    row-count literal, so later outcomes appending after the watermark cannot
+    leak into the replay.
+    """
+    repo = Path(__file__).resolve().parent.parent
+    ledger_root = repo / "data/options_signal_episode"
+    body = (ledger_root / "episodes.jsonl").read_bytes()
+    lines = body.splitlines(True)
+    if len(lines) < ACTIVATION_PREFIX_ROWS:
+        raise AssertionError(
+            f"owner source artifact has {len(lines)} rows; activation prefix "
+            f"requires {ACTIVATION_PREFIX_ROWS}"
+        )
+    prefix = b"".join(lines[:ACTIVATION_PREFIX_ROWS])
+    assert hashlib.sha256(prefix).hexdigest() == ACTIVATION_PREFIX_SHA256, (
+        "live options episode ledger prefix mutated: the activation watermark "
+        "no longer hashes as the production-record contract recorded"
+    )
+    episodes = [json.loads(line) for line in prefix.splitlines() if line]
+    assert episodes[-1]["episode_id"] == ACTIVATION_LAST_EPISODE_ID
+    prefix_ids = {row["episode_id"] for row in episodes}
+    outcomes = [
+        row
+        for row in load_jsonl(ledger_root / "outcomes_h60.jsonl")
+        if row["episode_id"] in prefix_ids
+    ]
+    return episodes, outcomes
+
+
 def test_committed_campaign_ledger_is_exact_frozen_corpus_not_future_recomputation() -> None:
     repo = Path(__file__).resolve().parent.parent
     ledger_root = repo / "data/options_signal_episode"
     campaign_body = (ledger_root / "campaigns.jsonl").read_bytes()
-    episodes = load_jsonl(ledger_root / "episodes.jsonl")
-    outcomes = load_jsonl(ledger_root / "outcomes_h60.jsonl")
+    episodes, outcomes = _activation_vintage_campaign_sources()
     committed = load_jsonl(ledger_root / "campaigns.jsonl")
     assert len(committed) == 8
     assert len(campaign_body) == 10_492
