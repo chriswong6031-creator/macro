@@ -475,60 +475,75 @@ def test_the_renderer_is_a_clean_no_op_without_its_host():
 # mockups/refs/psi/workspace/crops/impl/verify_w2_workspace.py, run by hand. A
 # `pytest.importorskip("playwright")` here would SKIP in the packs and report green
 # while proving nothing (house trap: ci-packs-install-minimal-deps-not-requirements),
-# so everything checkable WITHOUT a browser is asserted here against the rendered
-# template and the shipped source instead.
+# so everything checkable WITHOUT a browser is asserted here against the template and
+# the shipped source instead.
 # ===========================================================================
 TEMPLATE = ROOT / "templates" / "watchlist.html.j2"
 PORTFOLIO = ROOT / "templates" / "portfolio.js"
 
+# The pack's install line for the job that runs this file (.github/ci/legacy-jobs.yml,
+# `wri-risk-core`): `pip install pytest pandas numpy pyarrow pyyaml`. NOTHING in this
+# file may import outside that set — see test_this_suite_imports_nothing_the_pack_lacks.
+PACK_DEPS = {"pytest", "pandas", "numpy", "pyarrow", "yaml"}
+
 
 @pytest.fixture(scope="module")
-def rendered() -> str:
-    """The template through the real builder context — not the raw .j2."""
-    import json as _json
-    import sys as _sys
+def template() -> str:
+    """The template SOURCE, deliberately not a Jinja render.
 
-    _sys.path.insert(0, str(ROOT))
-    from jinja2 import Environment, FileSystemLoader
+    An earlier version of this fixture rendered the .j2 through the real builder
+    context, which meant importing jinja2 — a package the pack running this suite does
+    not install. Locally that passed; on CI the six tests below ERRORed at fixture setup
+    and the step exited 1. Reading the source is not a workaround for that: every
+    assertion here is about literal content (an id, an attribute, a selector, a word),
+    and against the SOURCE they are strictly stronger — a `title=` behind a Jinja
+    conditional is invisible to one rendering and caught here.
 
-    from engine.cycles import STATE_DISPLAY
-
-    env = Environment(loader=FileSystemLoader(str(ROOT / "templates")), autoescape=False)
-    return env.get_template("watchlist.html.j2").render(
-        generated_utc="2026-08-12 14:00",
-        state_display_json=_json.dumps(STATE_DISPLAY),
-        supabase_cfg_json="null",
-        wri_regime_json="null",
-        starters_json=_json.dumps(["NVDA"]),
-    )
+    The one thing a render would additionally cover — copy injected by the `t()` macro —
+    is covered directly by test_the_t_macro_emits_no_title_attribute below."""
+    return TEMPLATE.read_text()
 
 
-def test_the_account_sync_panel_is_gone_from_the_markup(rendered):
+def test_the_account_sync_panel_is_gone_from_the_markup(template):
     """Gate row: the header chip is the ONLY sync disclosure."""
+    # not merely `id="..."` — the whole token, so a stray reference in a comment or a
+    # leftover selector is caught too
     for dead in ("wl_auth", "wl_syncpill", "wl_signin", "wl_signout",
                  "wl_account", "wl_authbox", "wl_who"):
-        assert 'id="%s"' % dead not in rendered, dead
-    assert 'id="ws_savechip"' in rendered
+        assert dead not in template, dead
+    assert 'id="ws_savechip"' in template
 
 
-def test_zero_title_attributes_in_the_workspace_markup(rendered):
+def test_zero_title_attributes_in_the_workspace_markup(template):
     """i18n law: translated copy never goes in title=, because an attribute has no room
     for the dual-emit spans the rest of the page uses."""
     import re
-    body = rendered.split("<body>", 1)[1]
+    body = template.split("<body>", 1)[1]
+    body = re.sub(r"<!--.*?-->", "", body, flags=re.S)      # comments are not markup
     hits = re.findall(r'<[^>]*\stitle="[^"]*"', body)
     assert not hits, hits[:3]
 
 
-def test_no_banned_glance_tier_vocabulary_in_the_markup(rendered):
+def test_the_t_macro_emits_no_title_attribute(template):
+    """The one thing a Jinja render would cover that the source does not: copy the `t()`
+    macro injects. Pinned directly, so the fixture never needs to render."""
+    import re
+    m = re.search(r"\{%\s*macro\s+t\(.*?\{%-?\s*endmacro\s*-?%\}", template, re.S)
+    assert m, "the t() macro moved — this pin needs to follow it"
+    assert "title=" not in m.group(0), m.group(0)
+
+
+def test_no_banned_glance_tier_vocabulary_in_the_markup(template):
+    """Over the WHOLE source, comments included: an internal state name is no more
+    welcome in a comment a translator will read than in the copy itself, and the
+    template currently contains none of them anywhere."""
     banned = ["ENB", "MCTR", "effective number of bets", "mctrShare",
               "falsifier", "证伪", "validated"]
-    body = rendered.split("<body>", 1)[1]
-    hits = [w for w in banned if w.lower() in body.lower()]
+    hits = [w for w in banned if w.lower() in template.lower()]
     assert not hits, hits
 
 
-def test_the_stance_set_is_the_descriptive_subset_only(rendered):
+def test_the_stance_set_is_the_descriptive_subset_only():
     """DESIGN_NOTES §7b: Watch / Get ready / No action. "Act" and "Protect gains" read
     as trade instructions on a page showing someone's actual money."""
     src = (ROOT / "templates" / "watchlist.js").read_text() + PORTFOLIO.read_text()
@@ -549,14 +564,14 @@ def test_all_four_save_chip_states_are_defined_with_copy_and_a_receipt():
 
 
 # ---- round-2 item 7: regression pins for the defects this PR fixed ---------
-def test_page_blank_regression_the_mode_rule_is_scoped_to_the_main_element(rendered):
+def test_page_blank_regression_the_mode_rule_is_scoped_to_the_main_element(template):
     """DEFECT 7. `[data-ws-mode]{display:none}` also matches <html>, which carries the
     same attribute — so the rule blanked the ENTIRE page on first paint. Mutation-tested:
     dropping the `main.ws >` scope re-greens without this."""
-    assert "main.ws > [data-ws-mode] { display:none; }" in rendered
+    assert "main.ws > [data-ws-mode] { display:none; }" in template
     import re
     # comments are not rules — the explanation of this very bug quotes the bad selector
-    css = re.sub(r"/\*.*?\*/", "", rendered, flags=re.S)
+    css = re.sub(r"/\*.*?\*/", "", template, flags=re.S)
     # no UNSCOPED selector may set display:none on the mode attribute
     for m in re.finditer(r"([^\n{}]*\[data-ws-mode\][^\n{}]*)\{([^}]*)\}", css):
         sel, body = m.group(1), m.group(2)
@@ -680,3 +695,68 @@ def test_watchstore_is_dormant_on_a_page_with_neither_sync_host():
         % json.dumps(str(WATCHSTORE))
     )
     assert out["calls"] == [], "watchstore joined a cloud session with no sync host: %s" % out
+
+
+# ===========================================================================
+# 10. the suite must run in the environment that actually runs it
+# ===========================================================================
+def test_this_suite_imports_nothing_the_pack_lacks():
+    """THE CI-ONLY FAILURE, pinned as a class rather than as one symbol.
+
+    The packs install a MINIMAL dependency set, not requirements.txt — for the job that
+    runs this file, `pip install pytest pandas numpy pyarrow pyyaml`. A test that reaches
+    outside it passes on a developer machine (where the whole world is installed) and
+    ERRORs on CI, which is the most expensive shape of failure: green where it is cheap
+    to notice, red where it is not.
+
+    That is exactly what happened. A fixture here rendered the template through Jinja to
+    assert against the output, importing `jinja2` — not in the list — so six tests
+    ERRORed at setup and the step exited 1 while the local run said 227 passed. The
+    fixture now reads the template source, which needed no dependency and is the stronger
+    assertion anyway.
+
+    Pinning the SYMBOL would have been the small lesson. The class is: this file's import
+    surface is part of its contract with the runner. `pyyaml` is in the pack's list for
+    the same reason, recorded in the job's own comment."""
+    import ast
+    import sys
+
+    tree = ast.parse(Path(__file__).read_text())
+    stdlib = getattr(sys, "stdlib_module_names", set())
+    offenders = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names = [a.name for a in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            names = [node.module or ""]
+        else:
+            continue
+        for name in names:
+            top = name.split(".")[0]
+            if not top or top in stdlib or top in PACK_DEPS or top == "__future__":
+                continue
+            offenders.append(name)
+    assert not offenders, (
+        "these imports are not in the pack's install set %s — they pass locally and "
+        "ERROR on CI: %s" % (sorted(PACK_DEPS), sorted(set(offenders))))
+
+
+def test_the_pack_dep_list_matches_the_job_that_runs_this_file():
+    """PACK_DEPS above is a copy of a list that lives in the workflow. A copy that can
+    drift is worse than no copy, so it is checked against the source of truth."""
+    import re
+
+    wf = (ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text()
+    job = wf[wf.index("  wri-risk-core:"):]
+    job = job[:job.index("\n  house-law-registry:")] if "\n  house-law-registry:" in job else job
+    assert "tests/test_watchlist_workspace_js.py" in job, \
+        "this suite is no longer run by wri-risk-core — PACK_DEPS is pinned to the wrong job"
+    m = re.search(r"run: pip install ([^\n]+)", job)
+    assert m, "the install line moved"
+    installed = {d.strip() for d in m.group(1).split()}
+    # pyyaml imports as `yaml`; keep the mapping explicit rather than clever
+    normalised = {"pyyaml": "yaml"}
+    installed = {normalised.get(d, d) for d in installed}
+    assert installed == PACK_DEPS, (
+        "the job's install set moved; update PACK_DEPS deliberately. "
+        "job=%s PACK_DEPS=%s" % (sorted(installed), sorted(PACK_DEPS)))
