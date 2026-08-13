@@ -126,6 +126,12 @@ The packet's PR-0 (type ramp, `.ladder`, `.chg-row`, `.empty`, lock slots) is al
 | **DS-PR-1** | (a) `design_system` added to `OVERRIDABLE` in `scripts/build_product_page_registry.py:97-103` — today the builder hard-errors on unknown override keys (`:1050-1053`), so the field must be schema'd before any packet writes it; (b) the existing `archetype` values re-keyed to the §10 registry ids (crosswalk in the master doc §10) + the field completed for all rows; (c) **governance unit defined**: a registry row governs `(source_template, selector/region scope)` pairs, not bare files — `dashboard.html.j2` (renders macro + us_stocks) gets explicit `governed_regions`; (d) ratchet script `scripts/check_design_system.py` lands **report-only** (guard-registry registered; annotation law: bare `print("::notice …", flush=True)` at line start) | ratchet waves R1+, all packet gates §0.3/§0.7/§0.8 |
 | **DS-PR-2** | PR template / review checklist wiring for evidence matrix; harness gains forced-state capture flag if absent | — |
 
+**AMENDED 2026-08-12 (foundations lane):** DS-PR-1 (PR #5486) landed ahead of packet PR-0/DS-PR-0 —
+grounds: Sol §J.9 (count-ladder ratification) is still pending, which blocks the theme.css chain;
+DS-PR-1 consumes nothing from DS-PR-0, and its ratchet lands R0 report-only. DS-PR-2 (PR #5475)
+shipped alongside it. Executed order of docket items 1–3 is therefore **3 → 1 → 2**; gates and
+scopes are unchanged.
+
 theme.css collision discipline: DS-PR-0 lands only after packet PR-0 merges (one file, two
 sequenced PRs, never parallel); the known four-way blast radius (sync → hash → stamps →
 line-sliced mockup) applies to both.
@@ -195,6 +201,11 @@ tail converges by template, post-launch. Nothing is hand-polished ×4,000.
 | 11 | Landing proof-belt hero (live dated board replaces mock-ups) | taste-gate (packet §H) |
 | 12 | Nav N0 six-job regroup | **Sol approval (IA §10.1)** |
 | 13 | Access-truth fixes (Handoff A's lane: proof-page payload, silent 401s, signup seam) | its own lane — listed because the journey breaks without it |
+
+*Status 2026-08-12: item 3 (DS-PR-1) executed first per the §5 amendment. Items 1–2 remain blocked
+on Sol §J.9. Items 4 and 5 have their mockup gate satisfied by
+`mockups/design_system/{today_reference,utility_reference}.html` (this lane); the BUILDS still wait
+on DS-PR-0.*
 
 **P1 — immediately post-launch:** `china.html` + `hk.html` (D-archetype followers of the macro
 reference — the reference generalizing IS the test of Wave 0), `news`/`alerts` (G — the G

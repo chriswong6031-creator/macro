@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Today — reference (Command Center, Archetype A)</title>
+<!-- THE COMMAND-CENTER REFERENCE (Wave 0, mockup tier — nothing imports this).
+     Route: start.html (registry macro:start, archetype command_center). This is a
+     REPLACEMENT THESIS, not a polish: today's start.html is a 142-link hub that
+     answers "here are our pages", not "what changed while I was away". Production
+     wiring is unresolved (no templates/start.html.j2; the registry's source_template
+     reads "unknown") — that belongs to the migration packet, not to this reference.
+     Numbers are ILLUSTRATIVE mockup values, internally consistent by the one-count
+     law, not live data. Links real theme.css + tier_preview.css; proposed DS-PR-0
+     tokens inline (byte-identical to specimen.html; deleted when landed). All new
+     primitives are .mx-* namespaced (red-team 2026-08-12). Spec commentary uses
+     .spec-note ONLY — never body copy. Default render = the FREE tier; the paid and
+     anonymous variants and the four designed states live in the quarantined spec
+     appendix at the foot of the page. -->
+<link rel="stylesheet" href="../../templates/theme.css">
+<link rel="stylesheet" href="../../templates/tier_preview.css">
+<style>
+/* ═══ PROPOSED — DS-PR-0 tokens (same block as specimen.html) ═══ */
+:root{
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px; --fs-h2:17px;
+  --fs-md:15px; --fs-body:14px; --fs-h3:14px; --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-7:32px; --sp-8:44px;
+  --gap-grid:18px;
+  --r-ctl:8px; --r-btn:10px; --r-card:12px; --r-panel:14px; --r-pill:999px;
+  --t-fast:.16s; --t-med:.2s; --t-slow:.55s;
+  --ease-std:ease; --ease-lift:cubic-bezier(.2,.7,.3,1);
+  --shadow-hover:0 14px 30px -16px color-mix(in srgb, var(--link) 40%, transparent);
+  --ser-1:#5b9bf0; --ser-2:#d4a017; --ser-3:#0ea5e9; --ser-4:#e08b45;
+  --ink-tier:color-mix(in srgb, var(--mx-tier-accent,#7c5cff) 78%, var(--text));
+}
+html[data-theme="light"]{ --ser-1:#2f63c4; --ser-2:#8f6a04; --ser-3:#0284c7; --ser-4:#b06a25;
+  --ink-tier:color-mix(in srgb, var(--mx-tier-accent,#7c5cff) 72%, var(--text)); }
+html[data-lang="zh"] :is(h1,h2,h3,.eyebrow,.spec-note,.band-label,.mx-mkt-code,
+  .mx-class-div,.mx-pv-verb,.mx-slice-lbl,.mockchip){ letter-spacing:0; text-transform:none; }
+
+/* ═══ mockup scaffolding (same names as macro_reference.html — no new unprefixed classes) ═══ */
+body{ margin:0; background:var(--bg); color:var(--text); font-size:var(--fs-body); line-height:1.55; }
+.wrap{ max-width:1180px; margin:0 auto; padding:0 var(--sp-4) var(--sp-8); }
+.bar{ position:sticky; top:0; z-index:50; display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2);
+  padding:9px var(--sp-4); background:var(--glass-bg); border-bottom:1px solid var(--glass-brd);
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); }
+.bar .brand{ font-weight:900; letter-spacing:.07em; font-size:13.5px; }
+.bar .navsim{ display:flex; gap:2px; margin-right:auto; }
+.bar .navsim a{ color:var(--muted); text-decoration:none; font-size:var(--fs-sm); font-weight:500; padding:6px 10px; border-radius:9px; }
+.bar .navsim a.on{ color:var(--text); background:color-mix(in srgb, var(--link) 12%, var(--panel2)); }
+.bar .navsim a:hover{ color:var(--text); }
+.mockchip{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-warn); border:1px solid color-mix(in srgb, var(--warn) 34%, transparent);
+  background:color-mix(in srgb, var(--warn) 12%, var(--panel)); border-radius:var(--r-pill); padding:3px 9px; flex:none; }
+/* spec commentary — NEVER customer copy; visually quarantined */
+.spec-note{ font-size:var(--fs-micro); letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
+  border-left:2px dashed var(--line); padding-left:8px; margin:10px 0 0; }
+.spec-note::before{ content:"SPEC NOTE — "; font-weight:700; }
+html[data-lang="zh"] .spec-note::before{ content:"规范注释 — "; }
+
+.panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel); padding:16px 18px; box-shadow:var(--card-shadow); }
+.mx-sec{ display:flex; align-items:baseline; gap:8px; margin:0 0 6px; }
+.mx-sec .eyebrow{ margin:0; }
+.mx-sec h2, .mx-sec h3{ font-size:var(--fs-h2); font-weight:700; letter-spacing:-.01em; margin:0; }
+.mx-sec .mx-sub{ color:var(--muted); font-size:var(--fs-sm); }
+.band-label{ font-size:var(--fs-label); font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); margin:0 0 7px; }
+html[data-lang="zh"] .band-label{ letter-spacing:0; text-transform:none; }
+.band{ margin-top:var(--sp-5); }
+.mx-stance{ display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:var(--fs-sm);
+  padding:4px 11px; border-radius:var(--r-pill); border:1px solid color-mix(in srgb, var(--c,var(--muted)) 34%, transparent);
+  background:color-mix(in srgb, var(--c,var(--muted)) 12%, var(--panel)); color:var(--c,var(--muted)); }
+
+/* ── page chrome: session token + the ONE page as-of. A's title is DELIBERATELY small —
+      the answer is below the header, not inside it (that is archetype D's device). ── */
+.mx-chrome{ display:flex; flex-wrap:wrap; align-items:baseline; gap:var(--sp-3);
+  padding:var(--sp-4) 0 var(--sp-3); border-bottom:1px solid var(--line); }
+.mx-chrome h1{ font-size:var(--fs-h1); font-weight:800; letter-spacing:-.02em; line-height:1; margin:0; }
+.mx-chrome .mx-day{ color:var(--muted); font-size:var(--fs-sm); }
+.mx-chrome .dtp-asof{ margin-left:auto; }
+
+/* ── §1 market state — one line per followed market. No charts, no gauge (the gauge
+      lives on macro.html; archetypes never borrow each other's device). ── */
+.mx-mkt{ display:grid; gap:0; }
+.mx-mkt-row{ display:flex; align-items:baseline; gap:var(--sp-3); padding:5px 2px; line-height:1.4;
+  border-bottom:1px solid color-mix(in srgb, var(--line) 60%, transparent); text-decoration:none; color:inherit; }
+.mx-mkt-row:last-child{ border-bottom:none; }
+.mx-mkt-code{ flex:none; width:34px; font-size:var(--fs-label); font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--muted); }
+.mx-mkt-word{ flex:none; font-size:var(--fs-md); font-weight:700; color:var(--c,var(--text)); min-width:132px; }
+.mx-mkt-clause{ flex:1; min-width:0; font-size:var(--fs-sm); color:var(--muted); }
+.mx-mkt-move{ flex:none; font-size:var(--fs-sm); font-weight:600; font-variant-numeric:tabular-nums; }
+.mx-mkt-chev{ flex:none; color:var(--muted); }
+.mx-mkt-chips{ display:none; }
+
+/* ── the two-column command layout — archetype A's identity device.
+      §2 is the 2/3 primary answer; §4+§5 ride a 1/3 rail beside it. ── */
+.mx-cols{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:var(--sp-4); align-items:start; margin-top:var(--sp-5); }
+.mx-rail-col{ display:grid; gap:var(--sp-4); }
+@media (max-width:980px){ .mx-cols{ grid-template-columns:1fr; } }
+
+/* ── §2 decision rows + the precedence ledger. Ordering is a STATED, NON-SCORED
+      precedence rule (DNR:KILL-FUSED-COMPOSITE): the DIVIDER is the ordering, so the
+      page never needs a rank number or a score to explain itself. ── */
+.mx-class-div{ display:flex; align-items:center; gap:8px; margin:5px 0 1px;
+  font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.mx-class-div::after{ content:""; flex:1; height:1px; background:var(--line); }
+.mx-class-div:first-of-type{ margin-top:0; }
+.mx-chg-row{ display:flex; align-items:center; gap:10px; padding:7px 2px; line-height:1.4; border-bottom:1px solid var(--line); text-decoration:none; color:inherit; }
+.mx-chg-row:last-of-type{ border-bottom:none; }
+.mx-chg-name{ font-weight:700; font-size:var(--fs-md); flex:none; min-width:92px; }
+.mx-chg-what{ color:var(--text); font-size:var(--fs-sm); flex:1; min-width:0; }
+.mx-chg-row .mx-stance{ flex:none; font-size:var(--fs-label); padding:3px 9px; }
+.mx-chg-chev{ color:var(--muted); flex:none; }
+/* ≤640w: deliberate two-line stack, not a squeezed row */
+@media (max-width:640px){
+  .mx-chg-row{ flex-wrap:wrap; row-gap:4px; }
+  .mx-chg-name{ min-width:0; }
+  .mx-chg-what{ flex-basis:100%; order:3; }
+}
+.mx-see{ display:inline-flex; align-items:center; gap:6px; margin-top:8px; text-decoration:none;
+  color:var(--ink-link); font-size:var(--fs-sm); font-weight:600; }
+.mx-see:hover{ text-decoration:underline; }
+/* the primary column terminates on a rule, so its shorter length reads as finished
+   rather than cut off beside the taller rail */
+.mx-see--foot{ display:flex; margin-top:0; padding-top:9px; border-top:1px solid var(--line); }
+
+/* ── §3 Prophet today: the count ladder quotes the board; the module never recounts ── */
+.mx-ladbox{ overflow-x:auto; padding-bottom:2px; }
+.mx-ladder{ display:inline-flex; align-items:stretch; gap:0; border:1px solid var(--line); border-radius:var(--r-btn); overflow:hidden; }
+.mx-ladder .mx-lad-total{ padding:8px 14px; font-weight:800; font-size:var(--fs-md); border-right:1px solid var(--line); background:var(--panel2); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.mx-ladder .mx-lad-total small{ display:block; font-size:var(--fs-micro); font-weight:600; color:var(--muted); }
+/* the display:block above out-specifies theme.css's html[data-lang] toggle (0-2-1 vs
+   0-1-1), which would print BOTH language labels in the total cell. Restore the toggle. */
+html:not([data-lang="zh"]) .mx-ladder .mx-lad-total small.l-zh,
+html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en{ display:none; }
+.mx-ladder button{ appearance:none; background:none; border:none; border-right:1px solid var(--line); padding:8px 12px;
+  font:600 var(--fs-sm)/1.2 var(--font-ui); color:var(--muted); cursor:pointer; white-space:nowrap; }
+.mx-ladder button:last-child{ border-right:none; }
+.mx-ladder button b{ display:block; font-size:var(--fs-md); color:var(--text); font-variant-numeric:tabular-nums; }
+.mx-ladder button[aria-pressed="true"]{ color:var(--text); font-weight:800; box-shadow:inset 0 -3px 0 var(--text); }
+.mx-slice{ font-size:var(--fs-sm); color:var(--muted); margin:8px 0 0; }
+.mx-slice-lbl{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.mx-slice b{ color:var(--text); font-variant-numeric:tabular-nums; }
+
+/* ── .pvcard STAND-IN (repo-bound: templates/_prophet_card.html.j2 + pv_css()).
+      Slot contract mirrored from that macro's header; hue follows --pvh from the
+      shipped --pv-* tokens, so 红涨绿跌 flips for free. ── */
+.mx-pvgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-4); margin-top:var(--sp-3); }
+@media (max-width:860px){ .mx-pvgrid{ grid-template-columns:1fr 1fr; } }
+.mx-pv{ --pvh:var(--pv-hold); --pvi:var(--ink-pv-buy);
+  display:block; text-decoration:none; color:inherit; background:var(--panel);
+  border:1px solid color-mix(in srgb, var(--pvh) 30%, var(--line)); border-radius:var(--r-card); overflow:hidden;
+  transition:transform var(--t-med) var(--ease-lift), box-shadow var(--t-med) var(--ease-std); }
+.mx-pv:hover{ transform:translateY(-2px); box-shadow:0 14px 30px -16px color-mix(in srgb, var(--pvh) 45%, transparent); }
+.mx-pv--buy{ --pvh:var(--pv-buy); --pvi:var(--ink-pv-buy); }
+.mx-pv--near{ --pvh:var(--pv-near); --pvi:var(--ink-pv-near); }
+.mx-pv--wait{ --pvh:var(--pv-wait); --pvi:var(--ink-pv-wait); }
+.mx-pv-hero{ position:relative; background:color-mix(in srgb, var(--pvh) 7%, var(--panel)); padding:8px 10px 0; }
+.mx-pv-hero svg{ width:100%; height:42px; display:block; }
+.mx-pv-verb{ position:absolute; top:8px; left:10px; z-index:1; font-size:var(--fs-micro); font-weight:800;
+  letter-spacing:.08em; text-transform:uppercase; padding:3px 8px; border-radius:var(--r-pill); }
+.mx-pv--buy .mx-pv-verb{ background:var(--pv-buy); color:#fff; border:1px solid var(--pv-buy); }
+.mx-pv--near .mx-pv-verb, .mx-pv--wait .mx-pv-verb{ color:var(--pvi);
+  background:color-mix(in srgb, var(--pvh) 13%, var(--panel)); border:1px solid color-mix(in srgb, var(--pvh) 40%, transparent); }
+.mx-pv-px{ position:absolute; top:8px; right:10px; z-index:1; font-size:var(--fs-micro); font-weight:700;
+  font-variant-numeric:tabular-nums; padding:3px 8px; border-radius:var(--r-pill);
+  background:color-mix(in srgb, var(--text) 8%, var(--panel)); border:1px solid var(--line); }
+.mx-pv-body{ padding:9px 12px 11px; }
+.mx-pv-id{ display:flex; align-items:baseline; gap:7px; }
+.mx-pv-id b{ font-size:var(--fs-md); font-weight:800; }
+.mx-pv-id span{ font-size:var(--fs-sm); color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mx-pv-sec{ font-size:var(--fs-micro); color:var(--muted); margin-top:1px; }
+.mx-pv-trk{ display:flex; gap:3px; margin:9px 0 7px; }
+.mx-pv-trk i{ flex:1; height:3px; border-radius:2px; background:var(--line); }
+.mx-pv-trk i.on{ background:color-mix(in srgb, var(--pvh) 62%, var(--line)); }
+.mx-pv-trk i.now{ background:var(--pvh); }
+.mx-pv-zone{ font-size:var(--fs-micro); color:var(--muted); font-variant-numeric:tabular-nums; }
+.mx-pv-zone b{ color:var(--pvi); font-weight:700; }
+
+/* ── §4 watchlist rail rows ── */
+.mx-wl-row{ display:flex; align-items:baseline; gap:8px; padding:3px 2px; line-height:1.45; text-decoration:none; color:inherit;
+  border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.mx-wl-row:last-of-type{ border-bottom:none; }
+.mx-wl-row b{ flex:none; width:56px; font-size:var(--fs-sm); font-weight:700; }
+.mx-wl-row span{ flex:1; min-width:0; font-size:var(--fs-sm); color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mx-wl-row em{ flex:none; font-style:normal; font-size:var(--fs-sm); font-weight:600; font-variant-numeric:tabular-nums; }
+
+/* ── §5 risk & calendar rail ── */
+.mx-cond{ font-size:var(--fs-sm); padding:5px 0; line-height:1.4; border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.mx-cond:last-of-type{ border-bottom:none; }
+.mx-cond b{ font-weight:700; }
+.mx-cond span{ color:var(--muted); }
+.mx-cal-row{ display:flex; align-items:baseline; gap:8px; padding:2px 0; line-height:1.4; font-size:var(--fs-sm); }
+.mx-cal-row i{ flex:none; width:66px; font-style:normal; color:var(--muted); font-size:var(--fs-micro); font-variant-numeric:tabular-nums; }
+.mx-foot{ color:var(--muted); font-size:var(--fs-micro); margin:8px 0 0; }
+
+/* ── §15 responsive: the TWO declared archetype-A reductions at 390w ──
+      (i) market state → primary market row + a chip strip for the rest
+      (ii) Prophet today → ladder + one card + "See 2 more"                       */
+@media (max-width:640px){
+  /* the primary market row stacks deliberately (code+word+move, then the clause) —
+     a squeezed flex row is the defect, not the reduction */
+  .mx-mkt-row{ flex-wrap:wrap; row-gap:2px; }
+  .mx-mkt-word{ min-width:0; flex:1; }
+  .mx-mkt-clause{ flex-basis:100%; order:3; }
+  .bar .navsim{ display:none; }   /* mockup scaffolding only — not part of the contract */
+  .mx-sec{ flex-wrap:wrap; }
+  .mx-sec .mx-sub{ flex-basis:100%; }
+  .mx-mkt-row.mx-mkt-sec{ display:none; }
+  .mx-mkt-chips{ display:flex; gap:6px; overflow-x:auto; padding:8px 0 2px; }
+  .mx-mkt-chips a{ flex:none; display:inline-flex; align-items:baseline; gap:6px; text-decoration:none; color:inherit;
+    border:1px solid var(--line); border-radius:var(--r-pill); padding:4px 10px; font-size:var(--fs-sm); background:var(--panel2); }
+  .mx-mkt-chips a em{ font-style:normal; font-weight:600; font-variant-numeric:tabular-nums; }
+  .mx-mkt-word{ min-width:0; }
+  .mx-pvgrid{ grid-template-columns:1fr; }
+  .mx-pvgrid > .mx-pv-more{ display:flex; }
+  .mx-pv.mx-pv-sec{ display:none; }
+}
+.mx-pv-more{ display:none; align-items:center; justify-content:center; text-decoration:none; color:var(--ink-link);
+  font-size:var(--fs-sm); font-weight:600; border:1px dashed var(--line); border-radius:var(--r-card); padding:12px; }
+
+/* ── quarantined spec appendix: alternate tier states + the four designed states.
+      NOT page content. Fenced, labelled, and visually separated. ── */
+.mx-specbox{ margin-top:var(--sp-8); border-top:2px dashed var(--line); padding-top:var(--sp-5); }
+.mx-specbox > h2{ font-size:var(--fs-h2); font-weight:700; margin:0 0 2px; color:var(--muted); }
+.mx-specgrid{ display:grid; gap:var(--gap-grid); grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr)); margin-top:var(--sp-4); }
+/* the states gallery stays 3-up: loading | empty | error must be comparable in ONE glance */
+.mx-specgrid .mx-specgrid{ grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr)); }
+.mx-specgrid .panel{ border-style:dashed; }
+.mx-specgrid h3{ font-size:var(--fs-h3); font-weight:700; margin:0 0 8px; }
+.mx-skel{ display:block; border-radius:var(--r-ctl);
+  background:linear-gradient(90deg, var(--panel2) 25%, color-mix(in srgb, var(--text) 7%, var(--panel2)) 45%, var(--panel2) 65%);
+  background-size:200% 100%; animation:mx-skel 1.2s linear infinite; }
+@keyframes mx-skel{ to{ background-position:-200% 0; } }
+.mx-skelrow{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:1px solid var(--line); }
+.mx-empty{ padding:var(--sp-5) var(--sp-3); text-align:center; }
+.mx-empty-line{ font-size:var(--fs-md); font-weight:600; }
+.mx-empty-why{ color:var(--muted); font-size:var(--fs-sm); margin-top:4px; }
+.mx-error{ display:flex; align-items:flex-start; gap:10px; border:1px solid color-mix(in srgb, var(--warn) 34%, var(--line));
+  border-radius:var(--r-card); padding:10px 14px; font-size:var(--fs-sm); background:color-mix(in srgb, var(--warn) 6%, var(--panel)); }
+.mx-error b{ color:var(--ink-warn); }
+.mx-lenspop{ background:var(--glass-bg); border:1px solid var(--glass-brd); border-radius:var(--r-card);
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  box-shadow:var(--popover-shadow); padding:10px 12px; font-size:var(--fs-sm); margin-top:8px; }
+.mx-lenspop .rc{ margin-top:6px; padding-top:6px; border-top:1px dashed var(--line); color:var(--muted); font-size:var(--fs-micro); }
+
+/* Packet F.1 ghost — promoted UNSCOPED (both themes): a blur alone reads as a dirty
+   smudge on white. Lands in tier_preview.css with the packet; local until then. */
+.mx-tier-blurred{ filter:blur(5px) saturate(.35); opacity:.46; }
+
+:where(.mx-chg-row,.mx-mkt-row,.mx-see,.mx-ladder button,.mx-pv,.mx-wl-row,.mx-pv-more,.mx-cal-row a,.mx-disc summary):focus-visible{
+  outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){
+  .mx-skel{ animation:none; }
+  .mx-pv, .mx-pv:hover{ transform:none; }
+  .dtp-dot{ animation:none; }
+  .gbtn::after{ display:none; }
+  .mx-tier-primary:hover{ transform:none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="brand">MASTERMIND</span>
+  <nav class="navsim" aria-hidden="true">
+    <a class="on" href="#"><span class="l-en">Today</span><span class="l-zh">今日</span></a>
+    <a href="#"><span class="l-en">Discover</span><span class="l-zh">发现</span></a>
+    <a href="#"><span class="l-en">Analyze</span><span class="l-zh">分析</span></a>
+    <a href="#"><span class="l-en">Research</span><span class="l-zh">研究</span></a>
+  </nav>
+  <span class="mockchip"><span class="l-en">Reference mockup · Free tier</span><span class="l-zh">设计参考稿 · 免费层</span></span>
+  <button class="gbtn gbtn-sm" id="t-theme">Dark/Light</button>
+  <button class="gbtn gbtn-sm" id="t-lang">EN/中文</button>
+</div>
+
+<div class="wrap">
+
+<!-- ══ CHROME — session token + the ONE page as-of (the whole page carries no second stamp) ══ -->
+<header class="mx-chrome">
+  <h1><span class="l-en">Today</span><span class="l-zh">今日</span></h1>
+  <span class="mx-day l-en">Tuesday 12 August</span>
+  <span class="mx-day l-zh">8月12日 星期二</span>
+  <span class="dtp-token pre"><i class="dtp-dot"></i><span class="l-en">PRE-OPEN</span><span class="l-zh">盘前</span></span>
+  <span class="dtp-asof tnum">08-12 08:15 ET</span>
+</header>
+
+<!-- ══ 1 · MARKET STATE — full-width band. One line per followed market. ══ -->
+<section class="band panel">
+  <h2 class="band-label"><span class="l-en">Market state · overnight, one line each</span><span class="l-zh">市场状态 · 隔夜情况，每个市场一句话</span></h2>
+  <div class="mx-mkt">
+    <a class="mx-mkt-row" href="#">
+      <span class="mx-mkt-code">US</span>
+      <span class="mx-mkt-word" style="--c:var(--ink-warn)"><span class="l-en">Risk-on, narrowing</span><span class="l-zh">偏多，但在收窄</span></span>
+      <span class="mx-mkt-clause l-en">fewer names are carrying the tape than a week ago</span>
+      <span class="mx-mkt-clause l-zh">带动大盘的个股比一周前更少</span>
+      <span class="mx-mkt-move pos tnum">+0.4%</span>
+      <span class="mx-mkt-chev">›</span>
+    </a>
+    <a class="mx-mkt-row mx-mkt-sec" href="#">
+      <span class="mx-mkt-code">CN</span>
+      <span class="mx-mkt-word" style="--c:var(--muted)"><span class="l-en">Range-bound</span><span class="l-zh">区间震荡</span></span>
+      <span class="mx-mkt-clause l-en">holding the range while the market waits on policy</span>
+      <span class="mx-mkt-clause l-zh">政策落地前维持区间</span>
+      <span class="mx-mkt-move neg tnum">−0.2%</span>
+      <span class="mx-mkt-chev">›</span>
+    </a>
+    <a class="mx-mkt-row mx-mkt-sec" href="#">
+      <span class="mx-mkt-code">HK</span>
+      <span class="mx-mkt-word" style="--c:var(--ink-ok)"><span class="l-en">Repairing</span><span class="l-zh">修复中</span></span>
+      <span class="mx-mkt-clause l-en">third week of gains, still under the spring high</span>
+      <span class="mx-mkt-clause l-zh">连涨第三周，仍低于春季高点</span>
+      <span class="mx-mkt-move pos tnum">+1.1%</span>
+      <span class="mx-mkt-chev">›</span>
+    </a>
+  </div>
+  <div class="mx-mkt-chips" aria-label="Other markets">
+    <a href="#"><span class="l-en">CN Range-bound</span><span class="l-zh">CN 区间震荡</span><em class="neg tnum">−0.2%</em></a>
+    <a href="#"><span class="l-en">HK Repairing</span><span class="l-zh">HK 修复中</span><em class="pos tnum">+1.1%</em></a>
+  </div>
+</section>
+
+<!-- ══ THE TWO-COLUMN COMMAND LAYOUT — archetype A's identity device ══ -->
+<div class="mx-cols">
+
+  <!-- ══ 2 · NEEDS ATTENTION — the primary answer (2/3 column) ══ -->
+  <section class="panel">
+    <div class="mx-sec">
+      <h2 class="l-en">Needs attention</h2><h2 class="l-zh">需要留意</h2>
+      <span class="mx-sub l-en">9 crossed a line since yesterday's close</span>
+      <span class="mx-sub l-zh">自昨收以来有 9 项越线</span>
+    </div>
+
+    <div class="mx-class-div"><span class="l-en">Your names · Prophet moved</span><span class="l-zh">你的持仓 · 先知阶段有变动</span></div>
+    <a class="mx-chg-row" href="#"
+       data-tip-en="On your watchlist, and its Prophet stage moved — that is why it is first."
+       data-tip-zh="它在你的关注列表里，且先知阶段发生变动——这是它排在最前的原因。"
+       data-tip-rc-en="Prophet stage change · 04:12 ET · precedence slot 1 of 4 — your names, Prophet moved"
+       data-tip-rc-zh="先知阶段变动 · 04:12 ET · 优先级第 1 档（共 4 档）——你的持仓、先知阶段变动">
+      <span class="mx-chg-name">NVDA</span>
+      <span class="mx-chg-what l-en">entered Confirmed after two closes above the zone</span>
+      <span class="mx-chg-what l-zh">连续两日收于区间上方，进入「已确认」</span>
+      <span class="mx-stance" style="--c:var(--ink-up)"><span class="l-en">Act</span><span class="l-zh">可行动</span></span><span class="mx-chg-chev">›</span></a>
+    <a class="mx-chg-row" href="#"
+       data-tip-en="On your watchlist, and its Prophet stage moved — same slot as the row above."
+       data-tip-zh="它在你的关注列表里，且先知阶段发生变动——与上一行同档。"
+       data-tip-rc-en="Prophet stage change · 04:12 ET · precedence slot 1 of 4 — your names, Prophet moved"
+       data-tip-rc-zh="先知阶段变动 · 04:12 ET · 优先级第 1 档（共 4 档）——你的持仓、先知阶段变动">
+      <span class="mx-chg-name">ASML</span>
+      <span class="mx-chg-what l-en">slipped back to Confirming — the zone did not hold</span>
+      <span class="mx-chg-what l-zh">回落至「确认中」——区间没有守住</span>
+      <span class="mx-stance" style="--c:var(--ink-warn)"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察，勿追</span></span><span class="mx-chg-chev">›</span></a>
+
+    <div class="mx-class-div"><span class="l-en">Your names · other triggers</span><span class="l-zh">你的持仓 · 其他触发</span></div>
+    <a class="mx-chg-row" href="#"
+       data-tip-en="On your watchlist, and one of your own alerts fired overnight."
+       data-tip-zh="它在你的关注列表里，且你自己设的提醒在隔夜触发。"
+       data-tip-rc-en="Your price alert · 21:40 ET · precedence slot 2 of 4 — your names, other triggers"
+       data-tip-rc-zh="你的价格提醒 · 21:40 ET · 优先级第 2 档（共 4 档）——你的持仓、其他触发">
+      <span class="mx-chg-name">COST</span>
+      <span class="mx-chg-what l-en">gapped through the alert price you set in June</span>
+      <span class="mx-chg-what l-zh">跳空穿过你 6 月设的提醒价位</span>
+      <span class="mx-stance" style="--c:var(--link)"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span><span class="mx-chg-chev">›</span></a>
+
+    <div class="mx-class-div"><span class="l-en">Off your list · Prophet moved</span><span class="l-zh">列表之外 · 先知阶段有变动</span></div>
+    <a class="mx-chg-row" href="#"
+       data-tip-en="Not on your watchlist — it ranks below your own names by the stated rule."
+       data-tip-zh="不在你的关注列表内——按既定规则排在你自己的持仓之后。"
+       data-tip-rc-en="Prophet stage change · 04:12 ET · precedence slot 3 of 4 — off-list, Prophet moved"
+       data-tip-rc-zh="先知阶段变动 · 04:12 ET · 优先级第 3 档（共 4 档）——列表之外、先知阶段变动">
+      <span class="mx-chg-name">XOM</span>
+      <span class="mx-chg-what l-en">entered Confirmed — the biggest energy move on the board</span>
+      <span class="mx-chg-what l-zh">进入「已确认」——看板上能源板块最大的一笔变动</span>
+      <span class="mx-stance" style="--c:var(--ink-warn)"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察，勿追</span></span><span class="mx-chg-chev">›</span></a>
+
+    <div class="mx-class-div"><span class="l-en">Risk conditions</span><span class="l-zh">风险条件</span></div>
+    <a class="mx-chg-row" href="#"
+       data-tip-en="A market-wide risk condition changed — the last class in the stated order."
+       data-tip-zh="全市场风险条件发生变化——既定顺序中的最后一档。"
+       data-tip-rc-en="Risk condition change · 17:05 ET · precedence slot 4 of 4 — risk conditions"
+       data-tip-rc-zh="风险条件变动 · 17:05 ET · 优先级第 4 档（共 4 档）——风险条件">
+      <span class="mx-chg-name l-en">Breadth</span><span class="mx-chg-name l-zh">市场广度</span>
+      <span class="mx-chg-what l-en">under 4 in 10 stocks above their 50-day, third day running</span>
+      <span class="mx-chg-what l-zh">50日线上个股不足四成，已连续第三天</span>
+      <span class="mx-stance" style="--c:var(--ink-act)"><span class="l-en">Protect gains</span><span class="l-zh">保护收益</span></span><span class="mx-chg-chev">›</span></a>
+
+    <a class="mx-see mx-see--foot" href="#"><span class="l-en">See all 9 changes — Monitor</span><span class="l-zh">查看全部 9 项变化 — 监控页</span> ›</a>
+
+  </section>
+
+  <!-- ══ the 1/3 rail — §4 + §5 ══ -->
+  <div class="mx-rail-col">
+
+    <!-- ══ 4 · YOUR WATCHLIST (registered state) ══ -->
+    <section class="panel">
+      <h2 class="band-label"><span class="l-en">Your watchlist</span><span class="l-zh">你的关注列表</span></h2>
+      <a class="mx-wl-row" href="#"><b>NVDA</b><span class="l-en">entered Confirmed</span><span class="l-zh">进入已确认</span><em class="pos tnum">+2.1%</em></a>
+      <a class="mx-wl-row" href="#"><b>ASML</b><span class="l-en">back to Confirming</span><span class="l-zh">退回确认中</span><em class="neg tnum">−1.4%</em></a>
+      <a class="mx-wl-row" href="#"><b>COST</b><span class="l-en">through your alert price</span><span class="l-zh">穿过你的提醒价</span><em class="pos tnum">+0.9%</em></a>
+      <a class="mx-wl-row" href="#"><b>TSM</b><span class="l-en">reports tomorrow</span><span class="l-zh">明日发布财报</span><em class="pos tnum">+0.2%</em></a>
+      <a class="mx-wl-row" href="#"><b>LIN</b><span class="l-en">left the board</span><span class="l-zh">已离开看板</span><em class="neg tnum">−0.3%</em></a>
+      <a class="mx-see" href="#"><span class="l-en">All 12 names</span><span class="l-zh">全部 12 只</span> ›</a>
+    </section>
+
+    <!-- ══ 5 · RISK & CALENDAR ══ -->
+    <section class="panel">
+      <h2 class="band-label"><span class="l-en">Risk &amp; calendar</span><span class="l-zh">风险与日程</span></h2>
+      <div class="mx-cond">
+        <b class="l-en">Breadth under 4-in-10 for a week</b><b class="l-zh">广度低于四成并持续一周</b>
+        <span class="l-en">…moves the stance to Protect gains.</span><span class="l-zh">…立场将转为「保护收益」。</span>
+      </div>
+      <div class="mx-cond">
+        <b class="l-en">10-year back above 4.35%</b><b class="l-zh">十年期收益率回到 4.35% 上方</b>
+        <span class="l-en">…and the growth names give it back first.</span><span class="l-zh">…成长股会最先回吐。</span>
+      </div>
+      <h3 class="band-label" style="margin:10px 0 3px"><span class="l-en">Next three events</span><span class="l-zh">未来三件事</span></h3>
+      <div class="mx-cal-row"><i class="l-en">Wed 08-13</i><i class="l-zh">周三 08-13</i><span class="l-en">US inflation print</span><span class="l-zh">美国通胀数据</span></div>
+      <div class="mx-cal-row"><i class="l-en">Thu 08-14</i><i class="l-zh">周四 08-14</i><span class="l-en">US retail sales</span><span class="l-zh">美国零售销售</span></div>
+      <div class="mx-cal-row"><i class="l-en">Fri 08-15</i><i class="l-zh">周五 08-15</i><span class="l-en">China activity data</span><span class="l-zh">中国经济活动数据</span></div>
+      <p class="mx-foot l-en">Windows, not certainties — re-drawn nightly.</p>
+      <p class="mx-foot l-zh">是窗口，不是定论——每晚重新校准。</p>
+    </section>
+
+  </div>
+</div>
+
+<!-- ══ 3 · PROPHET TODAY — full-width band. Quotes the board; never recounts. ══ -->
+<section class="band panel">
+  <div class="mx-sec">
+    <h2 class="l-en">Prophet today</h2><h2 class="l-zh">先知 · 今日</h2>
+    <span class="mx-sub l-en">What the overnight run changed on the board</span>
+    <span class="mx-sub l-zh">隔夜运行在看板上改动了什么</span>
+  </div>
+  <div class="mx-ladbox">
+    <div class="mx-ladder" role="group" aria-label="Setups by stage">
+      <span class="mx-lad-total tnum">47<small class="l-en">setups</small><small class="l-zh">形态</small></span>
+      <button aria-pressed="false"><span class="l-en">Early</span><span class="l-zh">早期</span><b class="tnum">12</b></button>
+      <button aria-pressed="false"><span class="l-en">Confirming</span><span class="l-zh">确认中</span><b class="tnum">9</b></button>
+      <button aria-pressed="true"><span class="l-en">Confirmed</span><span class="l-zh">已确认</span><b class="tnum">14</b></button>
+      <button aria-pressed="false"><span class="l-en">Aging</span><span class="l-zh">老化</span><b class="tnum">6</b></button>
+      <button aria-pressed="false"><span class="l-en">More…</span><span class="l-zh">其余…</span><b class="tnum">6</b></button>
+    </div>
+  </div>
+  <p class="mx-slice">
+    <span class="mx-slice-lbl l-en">Today's changes</span><span class="mx-slice-lbl l-zh">今日变动</span>
+    <span class="l-en"> — <b>5</b> new · <b>3</b> advanced a stage · <b>2</b> entered Confirmed. That is <b>10 of 47</b>.</span>
+    <span class="l-zh"> — 新增 <b>5</b> 个 · 阶段前进 <b>3</b> 个 · 进入已确认 <b>2</b> 个，即 <b>47 中的 10</b> 个。</span>
+  </p>
+
+  <div class="mx-pvgrid">
+    <a class="mx-pv mx-pv--buy" href="#">
+      <div class="mx-pv-hero">
+        <span class="mx-pv-verb"><span class="l-en">Buy</span><span class="l-zh">买入</span></span>
+        <span class="mx-pv-px tnum">182.40</span>
+        <svg viewBox="0 0 300 42" preserveAspectRatio="none" aria-hidden="true"><path d="M0 34 L40 32 L80 33 L120 27 L160 28 L200 21 L240 19 L300 11" fill="none" stroke="var(--pvh)" stroke-width="2"/></svg>
+      </div>
+      <div class="mx-pv-body">
+        <div class="mx-pv-id"><b>NVDA</b><span class="l-en">NVIDIA</span><span class="l-zh">英伟达</span></div>
+        <div class="mx-pv-sec l-en">Semiconductors</div><div class="mx-pv-sec l-zh">半导体</div>
+        <div class="mx-pv-trk" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="now"></i></div>
+        <div class="mx-pv-zone"><b class="l-en">Confirmed</b><b class="l-zh">已确认</b> <span class="l-en">· zone 176–181</span><span class="l-zh">· 区间 176–181</span></div>
+      </div>
+    </a>
+    <a class="mx-pv mx-pv--near mx-pv-sec" href="#">
+      <div class="mx-pv-hero">
+        <span class="mx-pv-verb"><span class="l-en">Near</span><span class="l-zh">接近</span></span>
+        <span class="mx-pv-px tnum">104.85</span>
+        <svg viewBox="0 0 300 42" preserveAspectRatio="none" aria-hidden="true"><path d="M0 30 L40 31 L80 26 L120 28 L160 22 L200 24 L240 18 L300 20" fill="none" stroke="var(--pvh)" stroke-width="2"/></svg>
+      </div>
+      <div class="mx-pv-body">
+        <div class="mx-pv-id"><b>XOM</b><span class="l-en">Exxon Mobil</span><span class="l-zh">埃克森美孚</span></div>
+        <div class="mx-pv-sec l-en">Energy</div><div class="mx-pv-sec l-zh">能源</div>
+        <div class="mx-pv-trk" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="now"></i><i></i></div>
+        <div class="mx-pv-zone"><b class="l-en">Ready</b><b class="l-zh">就绪</b> <span class="l-en">· sets on confirmation</span><span class="l-zh">· 确认后成立</span></div>
+      </div>
+    </a>
+    <a class="mx-pv mx-pv--wait mx-pv-sec" href="#">
+      <div class="mx-pv-hero">
+        <span class="mx-pv-verb"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
+        <span class="mx-pv-px tnum">61.20</span>
+        <svg viewBox="0 0 300 42" preserveAspectRatio="none" aria-hidden="true"><path d="M0 20 L40 22 L80 19 L120 25 L160 24 L200 29 L240 27 L300 31" fill="none" stroke="var(--pvh)" stroke-width="2"/></svg>
+      </div>
+      <div class="mx-pv-body">
+        <div class="mx-pv-id"><b>ASML</b><span class="l-en">ASML Holding</span><span class="l-zh">阿斯麦</span></div>
+        <div class="mx-pv-sec l-en">Semiconductor equipment</div><div class="mx-pv-sec l-zh">半导体设备</div>
+        <div class="mx-pv-trk" aria-hidden="true"><i class="on"></i><i class="now"></i><i></i><i></i></div>
+        <div class="mx-pv-zone"><b class="l-en">Turning</b><b class="l-zh">转向中</b> <span class="l-en">· re-add 98–102</span><span class="l-zh">· 回补区 98–102</span></div>
+      </div>
+    </a>
+    <a class="mx-pv-more" href="#"><span class="l-en">See 2 more</span><span class="l-zh">再看 2 个</span> ›</a>
+  </div>
+
+  <div class="mx-tier-blurred" aria-hidden="true">
+    <div class="mx-chg-row"><span class="mx-chg-name">████</span><span class="mx-chg-what">██████ ████ ███████ ██</span></div>
+    <div class="mx-chg-row"><span class="mx-chg-name">████</span><span class="mx-chg-what">████████ ██ █████ ███</span></div>
+  </div>
+  <div class="mx-tier-gate mx-tier-gate--prophet">
+    <div class="mx-tier-copy">
+      <span class="mx-tier-eyebrow"><span class="mx-tier-mark">🔒</span><span class="l-en">You're seeing 3 of 47 setups</span><span class="l-zh">您正在查看 47 个形态中的 3 个</span></span>
+      <b class="l-en">The rest of the board is locked</b><b class="l-zh">看板其余部分已锁定</b>
+      <small class="l-en">Every qualifying name's stage, zone and plan — the other 44 you can act on today.</small>
+      <small class="l-zh">每只入选标的的阶段、区间与计划——今天可行动的另外 44 个。</small>
+      <small class="mx-tier-plan" style="color:var(--ink-tier);font-weight:600"><span class="l-en">Included with Pro — $75/mo billed yearly</span><span class="l-zh">Pro 版包含 — 每月 $75，按年计费</span></small>
+    </div>
+    <div class="mx-tier-actions">
+      <button class="mx-tier-primary"><span class="l-en">See all 47 setups</span><span class="l-zh">查看全部 47 个形态</span></button>
+      <button class="mx-tier-signin"><span class="l-en">Already a member? Sign in</span><span class="l-zh">已是会员？登录</span></button>
+    </div>
+  </div>
+
+  <p class="spec-note l-en">Count discipline: 47 is the page's one canonical total. The ladder cells partition it (12+9+14+6+6); the slice line is a LABELLED slice of the same stage field and states its share (10 of 47); the lock quotes it (3 of 47); the CTA quotes it. Nothing on this page recounts. The ladder's FORM is frozen by the constitution (§11: cells from the engine stage enum, exhaustive and disjoint, active cell by weight never hue). Its count POLICY — whether the ladder is the only sanctioned home for a setup count — awaits the Sol §J.9 ratification; if §J.9 rules otherwise, only this section re-cuts.</p>
+  <p class="spec-note l-zh">计数纪律：47 是全页唯一官方总数。阶梯单元格对其做完备划分（12+9+14+6+6）；切片行是同一阶段字段的具名切片并写明占比（47 中的 10）；锁引用它（47 中的 3）；行动按钮引用它。本页不做二次统计。阶梯的形态由宪法冻结（§11：单元格取自引擎阶段枚举、完备互斥、激活格用字重而非色相）。其计数政策——阶梯是否为形态数量的唯一法定归属——待 Sol §J.9 裁定；若 §J.9 另有裁决，仅本节重切。</p>
+  <p class="spec-note l-en">One primary CTA, and it is the lock's own action: for the FREE tier the tier-dependent CTA ("See all N setups") and the module's required quote-link to the board ("the canonical total in the link text") are the same element — two buttons pointing at one board would be two primaries. The card is a STAND-IN for templates/_prophet_card.html.j2 + pv_css(); hue rides the shipped --pv-* tokens so 红涨绿跌 flips for free. Two deliberate deltas from the shipped card, both for THIS page: the Edge score is dropped (a bare score fails the §9.4 Tier-1 test here — the verb and stage carry the decision, and the full card lives on the board), and the per-card signal date is dropped (packet §A allows exactly ONE as-of on this page; the shipped card pins a date in its zone footer — the collision is the migration packet's to resolve).</p>
+  <p class="spec-note l-zh">全页只有一个主行动按钮，且就是锁本身的按钮：免费层的分层行动文案（「查看全部 N 个形态」）与本模块必须提供的看板引用链接（「链接文案中带官方总数」）是同一个元素——两个按钮指向同一个看板就是两个主行动。卡片是 templates/_prophet_card.html.j2 + pv_css() 的占位示意；色相取自既有 --pv-* 令牌，红涨绿跌自动生效。相对既有卡片有两处针对本页的刻意取舍：去掉 Edge 分数（裸分数在此不满足 §9.4 一级门槛——决策由动词与阶段承担，完整卡片在看板上），去掉每卡信号日期（规范 §A 规定本页只允许一个时间戳；既有卡片在区间页脚固定一个日期——该冲突留给迁移规范包解决）。</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SPEC APPENDIX — NOT PAGE CONTENT. Alternate tier states and the four
+     designed states live here so the page above can render exactly one truth.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="mx-specbox">
+  <h2><span class="l-en">Spec appendix — not page content</span><span class="l-zh">规范附录 — 非页面内容</span></h2>
+  <p class="spec-note l-en">Everything below is design commentary. The page above renders ONE state (free tier, loaded, fresh). These blocks exist so the reference can show the other tiers and the four designed states without a mockup ever teaching commentary as customer copy. They are excluded from the five-section L1 budget by construction.</p>
+  <p class="spec-note l-zh">以下全部为设计说明。上方页面只渲染一种状态（免费层、已加载、数据新鲜）。这些区块用于展示其他会员层与四种设计态，同时确保设计稿不会把说明文字教成用户文案。它们按构造不计入五个一级区块的预算。</p>
+
+  <div class="mx-specgrid">
+
+    <div class="panel">
+      <h3><span class="l-en">Access — anonymous</span><span class="l-zh">权限 — 匿名访客</span></h3>
+      <p style="margin:0 0 8px;font-size:var(--fs-sm);color:var(--muted)">
+        <span class="l-en">Market state and Risk &amp; calendar render in full. Needs attention shows the top row only. The ladder totals stay honest; one preview card. The watchlist becomes a Shape-C explanation.</span>
+        <span class="l-zh">市场状态与风险日程完整呈现。需要留意只显示第一行。阶梯总数如实呈现；预览卡一张。关注列表改为「这是什么」的说明卡。</span></p>
+      <div class="mx-tier-blurred" aria-hidden="true">
+        <div class="mx-chg-row"><span class="mx-chg-name">████</span><span class="mx-chg-what">██████ ████ ███████</span></div>
+      </div>
+      <div class="mx-tier-gate" style="margin-top:8px">
+        <div class="mx-tier-copy">
+          <span class="mx-tier-eyebrow"><span class="mx-tier-mark">🔒</span><span class="l-en">You're seeing 1 of 9 changes</span><span class="l-zh">您正在查看 9 项变化中的 1 项</span></span>
+          <b class="l-en">The other 8 need an account</b><b class="l-zh">其余 8 项需要账号</b>
+          <small class="l-en">Your own names first, then the market's — the order is the same for everyone.</small>
+          <small class="l-zh">先是你自己的持仓，再是全市场——每个人看到的顺序一致。</small>
+          <small class="mx-tier-plan" style="color:var(--ink-tier);font-weight:600"><span class="l-en">Free account — no card</span><span class="l-zh">免费账号 — 无需银行卡</span></small>
+        </div>
+        <div class="mx-tier-actions">
+          <button class="mx-tier-primary"><span class="l-en">Create free account</span><span class="l-zh">创建免费账号</span></button>
+          <button class="mx-tier-signin"><span class="l-en">Already a member? Sign in</span><span class="l-zh">已是会员？登录</span></button>
+        </div>
+      </div>
+      <div class="mx-empty" style="border:1px dashed var(--line);border-radius:var(--r-card);margin-top:10px">
+        <div class="mx-empty-line l-en">Your watchlist lives here</div>
+        <div class="mx-empty-line l-zh">你的关注列表会出现在这里</div>
+        <div class="mx-empty-why l-en">Add a name and it moves to the front of the list above</div>
+        <div class="mx-empty-why l-zh">加入一只标的，它会排到上面列表的最前面</div>
+      </div>
+      <p class="spec-note l-en">Anonymous lock states a REAL count (1 of 9) and names a plan. A locked row's content never appears in the markup — only the count and the redaction blocks.</p>
+      <p class="spec-note l-zh">匿名锁写明真实数量（9 中的 1）并说明方案。被锁内容绝不出现在源码中——只有数量与遮挡块。</p>
+    </div>
+
+    <div class="panel">
+      <h3><span class="l-en">Access — paid</span><span class="l-zh">权限 — 付费会员</span></h3>
+      <p style="margin:0 0 10px;font-size:var(--fs-sm);color:var(--muted)">
+        <span class="l-en">Everything the free tier gets, plus the since-your-last-visit read. No lock on the page, so the one primary CTA becomes a standalone button.</span>
+        <span class="l-zh">免费层的全部内容，另加「自你上次到访」的读数。页面无锁，因此唯一的主行动按钮独立出现。</span></p>
+      <div class="mx-class-div"><span class="l-en">Since your last visit · Friday 16:04 ET</span><span class="l-zh">自你上次到访 · 周五 16:04 ET</span></div>
+      <a class="mx-chg-row" href="#"><span class="mx-chg-name">NVDA</span>
+        <span class="mx-chg-what l-en">was Confirming when you left; Confirmed since</span>
+        <span class="mx-chg-what l-zh">你离开时还在「确认中」，之后已确认</span>
+        <span class="mx-stance" style="--c:var(--ink-up)"><span class="l-en">Act</span><span class="l-zh">可行动</span></span><span class="mx-chg-chev">›</span></a>
+      <p style="margin:12px 0 0"><button class="gbtn gbtn-cta"><span class="l-en">Open the Prophet board — 47 setups</span><span class="l-zh">打开先知看板 — 47 个形态</span></button></p>
+      <p class="spec-note l-en">The since-marker is a divider label, not a second as-of stamp — it timestamps the READER's last visit, not the data. At most one breathing element on the page, and it is this button; in the free render there is none.</p>
+      <p class="spec-note l-zh">「自你上次到访」是分隔标签，不是第二个数据时间戳——它标记的是读者的上次到访，而非数据。全页最多一个会呼吸的元素，即此按钮；免费层渲染中一个也没有。</p>
+    </div>
+
+    <div class="panel">
+      <h3><span class="l-en">LENS receipt — shown open</span><span class="l-zh">LENS 凭据 — 展开示意</span></h3>
+      <p style="margin:0;font-size:var(--fs-sm);color:var(--muted)">
+        <span class="l-en">Every Needs-attention row carries data-tip-en/zh + data-tip-rc-en/zh; theme.js wires them in production. This is the NVDA row's tip, rendered open.</span>
+        <span class="l-zh">每一行「需要留意」都带 data-tip-en/zh 与 data-tip-rc-en/zh；生产环境由 theme.js 挂接。此为 NVDA 行凭据的展开示意。</span></p>
+      <div class="mx-lenspop">
+        <div class="l-en">On your watchlist, and its Prophet stage moved — that is why it is first.</div>
+        <div class="l-zh">它在你的关注列表里，且先知阶段发生变动——这是它排在最前的原因。</div>
+        <div class="rc l-en">Prophet stage change · 04:12 ET · precedence slot 1 of 4 — your names, Prophet moved</div>
+        <div class="rc l-zh">先知阶段变动 · 04:12 ET · 优先级第 1 档（共 4 档）——你的持仓、先知阶段变动</div>
+      </div>
+      <p class="spec-note l-en">The receipt prints the rule verbatim: source class, time, and which precedence slot the row filled. No translated text in title= — LENS data attributes are the hover home (CI-guarded).</p>
+      <p class="spec-note l-zh">凭据逐字写出规则：来源类别、时间、所属优先级档位。title= 中不放译文——LENS 数据属性才是悬停内容的归属（CI 有校验）。</p>
+    </div>
+
+    <div class="panel" style="grid-column:1/-1">
+      <h3><span class="l-en">The four designed states — Needs attention</span><span class="l-zh">四种设计态 — 需要留意</span></h3>
+      <p style="margin:0 0 10px;font-size:var(--fs-sm);color:var(--muted)">
+        <span class="l-en">Loading and empty are structurally different, not stylistically: loading has no sentence, empty has no skeleton.</span>
+        <span class="l-zh">加载态与空态的差别是结构性的，不是样式性的：加载态没有句子，空态没有骨架屏。</span></p>
+      <div class="mx-specgrid" style="margin-top:0">
+        <div>
+          <div class="mx-class-div"><span class="l-en">Loading</span><span class="l-zh">加载中</span></div>
+          <div class="mx-skelrow"><span class="mx-skel" style="width:80px;height:15px"></span><span class="mx-skel" style="flex:1;height:13px"></span><span class="mx-skel" style="width:78px;height:19px;border-radius:999px"></span></div>
+          <div class="mx-skelrow"><span class="mx-skel" style="width:80px;height:15px"></span><span class="mx-skel" style="flex:1;height:13px"></span><span class="mx-skel" style="width:78px;height:19px;border-radius:999px"></span></div>
+          <div class="mx-skelrow" style="border-bottom:none"><span class="mx-skel" style="width:80px;height:15px"></span><span class="mx-skel" style="flex:1;height:13px"></span><span class="mx-skel" style="width:78px;height:19px;border-radius:999px"></span></div>
+          <p class="spec-note l-en">Skeleton at the row's true geometry. No words at all — a word here would be read as data.</p>
+          <p class="spec-note l-zh">按行的真实几何做骨架屏。完全不放文字——此处任何文字都会被当成数据读。</p>
+        </div>
+        <div>
+          <div class="mx-class-div"><span class="l-en">Empty</span><span class="l-zh">空态</span></div>
+          <div class="mx-empty" style="border:1px dashed var(--line);border-radius:var(--r-card)">
+            <div class="mx-empty-line l-en">Quiet tape — nothing crossed a line since Friday's close.</div>
+            <div class="mx-empty-line l-zh">盘面安静——自上周五收盘后没有信号越线。</div>
+            <div class="mx-empty-why l-en">No qualifying changes today · refreshes after tonight's close</div>
+            <div class="mx-empty-why l-zh">今日无符合条件的变化 · 今晚收盘后刷新</div>
+          </div>
+          <p class="spec-note l-en">Full-weight market-facing sentence plus a mandatory why. No skeleton anywhere.</p>
+          <p class="spec-note l-zh">完整的、面向市场的句子加上必须的原因说明。不出现任何骨架屏。</p>
+        </div>
+        <div>
+          <div class="mx-class-div"><span class="l-en">Error</span><span class="l-zh">错误</span></div>
+          <div class="mx-error">
+            <span><b class="l-en">This read didn't load.</b><b class="l-zh">这项读数未能加载。</b>
+            <span class="l-en"> The rest of the page is current.</span><span class="l-zh"> 页面其余部分为最新。</span></span>
+            <button class="gbtn gbtn-sm" style="margin-left:auto"><span class="l-en">Retry</span><span class="l-zh">重试</span></button>
+          </div>
+          <div class="mx-class-div" style="margin-top:14px"><span class="l-en">Stale</span><span class="l-zh">滞后</span></div>
+          <div class="dtp-row" style="border:1px solid var(--line);border-radius:var(--r-ctl)">
+            <span class="dtp-chip dtp-chip--behind"><i></i><span class="l-en">BEHIND</span><span class="l-zh">数据滞后</span></span>
+            <span style="font-size:var(--fs-sm)"><span class="l-en">Overnight run finished late; rows are from the prior close.</span><span class="l-zh">隔夜运行结束较晚；以下为上一收盘数据。</span></span>
+          </div>
+          <p class="spec-note l-en">Error names what failed AND what still works, with retry — never a bare “—”, never pipeline telemetry. Stale is a calm .dtp behind-state plus one line, never a red banner.</p>
+          <p class="spec-note l-zh">错误态写明什么坏了、什么仍可用，并给重试——禁止裸「—」，禁止流水线术语。滞后是平静的 .dtp 落后态加一句说明，不是红色警报。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="grid-column:1/-1">
+      <h3><span class="l-en">Composition record</span><span class="l-zh">构成记录</span></h3>
+<p class="spec-note l-en" style="max-width:88ch">Ordering is a stated, non-scored precedence rule (DNR:KILL-FUSED-COMPOSITE) — the dividers ARE the ordering, which is why no rank number or score appears anywhere. Most-recent-first inside each class; no weights, no blending, no hidden inputs. Each row's LENS receipt prints source class, time, and which slot it filled (rendered open in the spec appendix). Rows carry no per-row date: the window is uniform overnight, and a constant belongs in the header once (doctrine Law 4).</p>
+      <p class="spec-note l-zh" style="max-width:88ch">排序是明示的、非打分的优先级规则（DNR:KILL-FUSED-COMPOSITE）——分隔线本身就是排序，所以全页不出现任何名次或分数。同档内按最近优先；无权重、无混合、无隐藏输入。每行的 LENS 凭据写明来源类别、时间与所属档位（在下方规范附录中展开示意）。行内不放日期：窗口统一为隔夜，恒定信息只在页头出现一次（信条第四法则）。</p>
+      <p class="spec-note l-en" style="max-width:88ch">No dial, no gauge, no chart: the regime instrument is archetype D's identity device and A may not borrow it. Regime WORD takes health ink (a judgment); the overnight move keeps direction ink and flips honestly under 红涨绿跌. Anonymous visitors have no saved state — the primary row defaults to US, and to CN when the locale is zh.</p>
+      <p class="spec-note l-zh" style="max-width:88ch">没有仪表盘、没有量表、没有图表：状态仪表是 D 型页面的身份签名，A 型不得借用。状态词用健康墨色（属判断）；隔夜涨跌保留方向墨色，在红涨绿跌下如实翻转。匿名访客没有保存状态——主市场行默认美国，中文语境下默认中国。</p>
+            <p class="spec-note l-en" style="max-width:88ch">Five L1 sections exactly (market state · needs attention · Prophet today · your watchlist · risk &amp; calendar) — the command_center budget, not extended. Desktop is the two-column command layout, archetype A's identity device: §2 is the 2/3 primary answer with §4+§5 on a 1/3 rail; §1 and §3 are full-width bands. A flat equal-weight stack would fail the archetype. 390w carries exactly two declared reductions: market state collapses to the primary market row plus a scrolling chip strip, and Prophet today collapses to ladder + one card + “See 2 more”. First swipe at 390×844 = session token, primary market line, and the first three change rows. Wide content scrolls inside its own container; the page never scrolls horizontally.</p>
+      <p class="spec-note l-zh" style="max-width:88ch">一级区块恰好五个（市场状态 · 需要留意 · 先知今日 · 你的关注列表 · 风险与日程）——指挥中心的预算，未加码。桌面端采用双栏指挥布局，即 A 型的身份签名：§2 为三分之二的主答案栏，§4 与 §5 位于三分之一侧栏；§1 与 §3 为通栏。若摊成等权重的单列堆叠即不合原型。390 宽度下只做两处既定收敛：市场状态收为主市场行加一条可横向滚动的芯片带，先知今日收为阶梯 + 一张卡片 + 「再看 2 个」。390×844 首屏 = 时段标记、主市场行、前三条变化行。宽内容在自身容器内滚动；页面永不横向滚动。</p>
+      <p class="spec-note l-en" style="max-width:88ch">Replacement thesis, not a polish: the live start.html is a 142-link hub with a page-local wordmark and repeated mega-nav blocks — it answers “here are our pages”, not “what changed while I was away”. Production wiring is unresolved upstream (no templates/start.html.j2; the registry's source_template reads “unknown”) and belongs to the migration packet, not to this reference.</p>
+      <p class="spec-note l-zh" style="max-width:88ch">这是替换方案，不是修饰：现行 start.html 是一个 142 条链接的导航中心，带页面级自有字标与重复的巨型导航块——它回答的是「我们有哪些页面」，而不是「我不在的时候发生了什么」。生产接线在上游尚未理清（不存在 templates/start.html.j2；注册表的 source_template 写作「unknown」），属于迁移规范包的范围，不属于本参考稿。</p>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<script>
+var root=document.documentElement;
+document.getElementById('t-theme').onclick=function(){ root.setAttribute('data-theme', root.getAttribute('data-theme')==='light'?'dark':'light'); };
+document.getElementById('t-lang').onclick=function(){ root.setAttribute('data-lang', root.getAttribute('data-lang')==='zh'?'en':'zh'); };
+document.querySelectorAll('.mx-ladder').forEach(function(l){
+  l.querySelectorAll('button').forEach(function(b){
+    b.onclick=function(){
+      l.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed','false'); });
+      b.setAttribute('aria-pressed','true');
+    };
+  });
+});
+</script>
+</body>
+</html>
