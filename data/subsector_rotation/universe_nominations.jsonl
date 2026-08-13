@@ -14,3 +14,5 @@
 {"date":"2026-08-07","theme":"Commodities Energy","donor":"commenergyoil","receiver":"commenergyuranium","confidence":0.42,"both_confirmed":false}
 {"date":"2026-08-07","theme":"Energy Renewable","donor":"energycleanbiofuels","receiver":"energycleanmaterials","confidence":0.362,"both_confirmed":false}
 {"date":"2026-08-07","theme":"Crypto & Blockchain","donor":"blockchainpayments","receiver":"blockchainenterprise","confidence":0.216,"both_confirmed":false}
+{"date":"2026-08-13","theme":"Nanotechnology","donor":"nanotechmaterials","receiver":"nanotechenergy","confidence":0.328,"both_confirmed":false}
+{"date":"2026-08-13","theme":"Wearables","donor":"wearablessmartwatches","receiver":"wearablesimmersive","confidence":0.302,"both_confirmed":false}

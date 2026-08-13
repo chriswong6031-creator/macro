@@ -6785,12 +6785,26 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python -m scripts.build_active_build_map || echo "::warning::active_build_map generation failed (non-fatal — fail-open)"
+      - name: generate agent OS state
+        # ORDERED AFTER the active build map, which is its PR-state input: the join is
+        # only as fresh as active_builds.json, so regenerating first would publish a
+        # CEO view built on yesterday's PR state.
+        #
+        # This is the ONLY regenerator (DEC:AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR).
+        # There is deliberately no CI drift guard forcing record-touching PRs to commit
+        # a regenerated copy — that would put two independent record edits into conflict
+        # on a shared generated file, which is the write pattern invariant I2 exists to
+        # prevent.  One writer; staleness is printed in the artifact, never hidden.
+        # No network: PR state comes only from the file written by the step above.
+        run: |
+          python3 scripts/agentos.py status || echo "::warning::agent_os_state generation failed (non-fatal — fail-open)"
       - name: commit active build map outputs
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add docs/ACTIVE_BUILD_MAP.md data/governance/active_builds.json
+          git add docs/ACTIVE_BUILD_MAP.md data/governance/active_builds.json \
+                  docs/AGENT_OS_STATE.md data/governance/agent_os_state.json
           if git diff --cached --quiet; then echo "no active build map changes"; exit 0; fi
           git commit -m "docs: active build map $(date -u +%F)"
           PUSH_ALARM=420
