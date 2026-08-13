@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-08-10",
-  "generated_at": "2026-08-10T03:35:15Z",
+  "as_of": "2026-08-13",
+  "generated_at": "2026-08-13T14:11:35Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -28,10 +28,10 @@
   "theses": [
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-08-10",
+      "as_of": "2026-08-13",
       "thesis_id": "ai_semiconductors.v1",
-      "content_hash": "sha256:627c932c2498d4586bfb5c4ebf478ce23304e008808ecb77def4b72e79ff64ed",
-      "prev_content_hash": "sha256:8ba67c34e669dbe6bf1b67bd6ec387c4d6f60c9fb1f435329364bea03789b0d9",
+      "content_hash": "sha256:a52c48573e7342f6e4e2807f14a43d3765c9f99286298b8b3c546896c03637fa",
+      "prev_content_hash": "sha256:627c932c2498d4586bfb5c4ebf478ce23304e008808ecb77def4b72e79ff64ed",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -109,7 +109,7 @@
           "rule_en": "If crowding on the ai_semiconductors or ai_infra basket exceeds 0.7 (z-score), the risk-adjusted opportunity is diminished — variant perception has become consensus.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.422"
+          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.613"
         },
         {
           "id": "ai_semi_f4",
@@ -465,10 +465,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-08-08",
+      "as_of": "2026-08-13",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:dd52844ad33a856b14c7f1d940b149ebe05b7cf8592feaacd66142a4a0a3321c",
-      "prev_content_hash": "sha256:fa724a6f3d5a9386145ec02c736bf44f72ad16e58d83e2d467c2ffef8a6fbf0c",
+      "content_hash": "sha256:315ecdaa3a86b4b39752a9fc02972a391257b3943d05bc9142cc14d7cc3501ac",
+      "prev_content_hash": "sha256:dd52844ad33a856b14c7f1d940b149ebe05b7cf8592feaacd66142a4a0a3321c",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -534,7 +534,7 @@
           "rule_en": "If reshoring basket score falls below 30 or moves to 'avoid' label, the industrial-capex driver underpinning automation demand is weakening.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=68.0"
+          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=67.0"
         },
         {
           "id": "robo_f3",
@@ -554,10 +554,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-08-08",
+      "as_of": "2026-08-13",
       "thesis_id": "fintech_payments.v1",
-      "content_hash": "sha256:d7b2185d94dcebc8adb59a8de8eb5e4bfbebf7172d9eaca63e5a009ccab92f44",
-      "prev_content_hash": "sha256:7d411e1b4ed4fe47128fe5e05c1fc655bca495de8eeae9de99602e6bbbf5cd07",
+      "content_hash": "sha256:24effbb7bbc54d4db90c70a885d3e9072480fa47bc1833a1600c819fcfaed41a",
+      "prev_content_hash": "sha256:d7b2185d94dcebc8adb59a8de8eb5e4bfbebf7172d9eaca63e5a009ccab92f44",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -611,7 +611,7 @@
           "rule_en": "If revision_breadth for fintech_payments falls negative, earnings consensus is cutting; stablecoin disruption may be larger than the on-ramp toll revenue offset.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=-0.017"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=-0.027"
         },
         {
           "id": "finpay_f2",
@@ -1380,10 +1380,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-08-10",
+      "as_of": "2026-08-13",
       "thesis_id": "ag_fertilizer.v1",
-      "content_hash": "sha256:9c3af727752daf8cf8321422a8c8de98701d14b0982cf5c79ec9a221954f920d",
-      "prev_content_hash": "sha256:3868293fd21c56ebf23b6c9900ac170fa276a3746bcebd8f263f4ec98c99a798",
+      "content_hash": "sha256:0a8906fb2b7af075cddc8eea0b282be48626dfa0c168c7d2c2b1cfea9a3676b3",
+      "prev_content_hash": "sha256:9c3af727752daf8cf8321422a8c8de98701d14b0982cf5c79ec9a221954f920d",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1437,7 +1437,7 @@
           "rule_en": "If revision_breadth for ag_fertilizer falls negative, crop commodity prices are declining faster than fertilizer input cost savings — farmer economics are deteriorating.\n",
           "state": "FIRED",
           "fired": true,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=-0.472"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=-0.539"
         },
         {
           "id": "ag_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-10T03:35:15Z",
-  "inputs_hash": "sha256:10f4787e4c68ec7661eedc5222a24a044d3c9435ba31b702f99e7d130ce188c5",
+  "produced_at": "2026-08-13T14:11:35Z",
+  "inputs_hash": "sha256:036f671fc48caebb6aec1f4a7b3f63c81444d6d7ef56946b6452d2096b5562a4",
   "tier": "display"
 }

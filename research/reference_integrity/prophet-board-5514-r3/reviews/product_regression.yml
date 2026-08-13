@@ -1,0 +1,1165 @@
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-5514-r3
+role: product_regression
+artifact_sha: 6ad6b51bc351bb7e32a77960abe11f6ddb63475c
+reviewer:
+  identity: independent Opus reviewer agent A — RIG r3 cycle, product regression critic
+  role: product_regression_critic
+  model: opus
+  independent_of_author: true
+quarantine:
+  rationale_received_after_first_pass: true
+  first_pass_inputs:
+  - RIG_V1.md (gate law §0-§12)
+  - CRITIC_A_TEMPLATE.md, REVIEW_TEMPLATE.yml
+  - PASS1_QUARANTINED_LEDGER.yml (user job, production baseline, design lineage, capability ledger,
+    dispositions, additions, user-task matrix, authority delta, information economics)
+  - production/ — all six committed production screenshots
+  - artifact_quarantined/ — index.html, board.css, board.js, board-data.js at the frozen SHA
+  - mockups/refs/reference_integrity/prophet-board-5514-r3/proposal/ — frozen crops
+  not_opened:
+  - rig_r3/reveal/ (R3_DESIGN_NOTES.md, R2_product_regression.yml, R2_visual_taste.yml, R2_verdict.yml,
+    R3_compare.html) — quarantined material, deliberately not read in pass 1
+  - proposal crops 70-73 (withheld from pass 1)
+first_pass:
+  frozen_at: '2026-08-13'
+  verdict: BLOCK
+  coverage:
+    crops_reviewed:
+    - production/prod-desktop-dark-en-standouts-board.png
+    - production/prod-desktop-light-en-standouts-board.png
+    - production/prod-desktop-dark-zh-standouts-board.png
+    - production/prod-mobile390-dark-en-standouts-board.png
+    - production/prod-desktop-dark-en-card-zoom.png
+    - production/prod-desktop-dark-en-pagetop.png
+    - 00-R3-dark-en.png
+    - 00-R3-dark-en--full.png
+    - 00-R3-light-en.png
+    - 00-R3-dark-zh--full.png
+    - 00-R3-light-zh.png
+    - 05-mobile390-dark-en.png
+    - 05-mobile390-dark-en--full.png
+    - 06-mobile390-dark-zh.png
+    - 07-mobile390-light-en.png
+    - 12-fallback-390-dark-en.png
+    - 33-multi-episode-390-en.png
+    - 42-anon-locked-390-dark.png
+    - 20-filter-ready.png
+    - 21-filter-entered.png
+    - 22-filter-invalidated.png
+    - 23-filter-invalidated-zh.png
+    - 24-filter-watch-absent.png
+    - 25-filter-delivering-zero.png
+    - 26-filter-overtime-zero.png
+    - 27-filter-resolved.png
+    - 10-fallback-dark-en.png
+    - 11-fallback-light-zh.png
+    - 40-anon-locked-dark-en--full.png
+    - 41-anon-locked-light-zh.png
+    - 50-empty-dark-en--full.png
+    - 51-empty-light-zh.png
+    - 60-table-invalidated.png
+    - 61-table-resolved-zh.png
+    - 30-multi-episode-en.png
+    - 31-multi-episode-zh.png
+    - 32-multi-episode-resolved.png
+    source_files_read:
+    - artifact_quarantined/board.js (all 843 lines)
+    - artifact_quarantined/board.css (898 lines; token block, card/ladder/mark/media-query rules read
+      in full)
+    - artifact_quarantined/index.html (all 40 lines)
+    - artifact_quarantined/board-data.js (parsed as JSON; 179 plan rows + counts + candidates + themes)
+    fixture_checks_run:
+    - 'count reconciliation, unfiltered: six live cells 0+62+95+0+0+2 = 159 = live_total = published
+      headline; live_total 159 + resolved 20 = 179 = grand_total = len(rows). EXACT.'
+    - 'count reconciliation, per filter: for all seven life values, rendered(min(n,40)) + ''+N more''
+      == published cell count, and rows matched == published count. 7/7 EXACT.'
+    - 'grid overflow: GRID_CAP=40, r.length=159 unfiltered -> 40 rendered, ''+119 more''. 40+119=159.'
+    - 'card reachability: union of the top-40 across state=paid and all 7 life filters = 102/179 rows;
+      77 rows (43%) are renderable as a card in NO product state or filter.'
+    - 'enrichment coverage: spark 45/179, nm 45/179, sec 45/179, px 45/179, lane 33/179.'
+    - 'priority coverage: pri present 93/179; null-priority rows sort last (board.js:154) so 86 rows
+      sit permanently below the 40-card cap; the table view carries no Priority column.'
+    - 'stance coverage: blocked_data 97, wait 34, buy 19, hold 7, avoid 2, null(resolved) 20 = 179.
+      ''near'' never occurs. 61% of live rows (97/159) render ''No read yet''.'
+    - 'verb-vs-stance cross-tab: 5 rows carry a payload verb yet render ''No read yet'' — GPCR(FRESH
+      BUY, pri 90.5), VSEC(FRESH BUY, 82.1), DXYZ(COUNTERTREND BOUNCE, 66.2), AYI(TURN SIGNALED, 58.7),
+      CSR(COUNTERTREND BOUNCE, null). GPCR and VSEC are in the visible 40.'
+    - 'visible top-40 composition: 20/40 have a chart, company name, sector and price; 13/40 read ''No
+      read yet''; 13/40 read ''No zone — stand aside''; 11/40 carry a caution pill.'
+    - 'the 119 rows behind ''+N more'': 23/119 enriched, 52/119 have a priority, 84/119 ''No read yet''.'
+    - 'zone coverage: zk none 118, muted 35, active 19, readd 7. 99/159 live rows render ''No zone —
+      stand aside''. 4 of the 61 zone-bearing rows have zlo == zhi.'
+    - 'lifecycle x stance collision: 27 ''Entered'' rows carry a WAIT chip, 4 carry BUY, 2 ''Ready''
+      rows carry HOLD; 13 of the 40 rendered cards carry a colliding pair (11 of them Entered+Wait).'
+    - 'resolved-row leakage: AGNT (life=resolved, zk=muted) renders a ZONE range because board.js:400-417
+      tests zk before life; AGNT and FBRT render a live price + signed change; AGNT renders PRIORITY
+      69 where the other 19 resolved cards render ''—''.'
+    - demoChange() reproduced independently from board.js:269-273 — GPCR -2.1, FTI +0.7, DAR +0.8, MRK
+      +2.1, CVCO +3.2, SGML -2.8, KEYS +1.2, AGNT -2.4, FBRT +1.1 — matches every crop exactly. Pure
+      function of the ticker string; no market input anywhere in the artifact.
+    - '''What changed today'' fresh count = 15 (age<=1, non-resolved, over ALL rows, never the filter);
+      all 15 carry opened.iso 2026-08-12 against asof 2026-08-13.'
+    - 'caution flags: 18/179 rows, exactly 1 flag each, only 2 distinct sentences; the counted pill
+      therefore always reads ''1''. 3 rows carry a flag naming ''the buy zone'' while their footer reads
+      ''No zone — stand aside'' (GPCR and VSEC are in the visible 40).'
+    - 'direction consistency of the table''s execution levels: dir is BULL on all 179 rows; 1 row (AGNT)
+      has inval $5.49 ABOVE entry $4.28 — printed unflagged in the resolved table view.'
+    - 'unexercised states: delivering=0, overtime=0, watch absent -> 3 of the 7 ruled lifecycle cells
+      have no CARD rendering anywhere; new=false on 179/179 (the ''New'' chip never renders); trg=''imminent''
+      on 0/179 (the Imminent branch at board.js:304-312 never renders).'
+    - 'candidates: cand_counts 22+35+12+1+0 = 70 = cand_total; 6 of 70 rows displayed. Consistent.'
+    - 'index.html:27 self-documentation vs fixture: claims ''62+96+0+0+4 = 162 = open_count''; fixture
+      is 62/95/0/0/2 and open_count 159. Wrong on three addends and the total.'
+    - 'hrefs in board.js: 11 distinct. Only harness query-param links are live; #methodology, #turnwatch,
+      #screener, #sectors, #ctx (x5), #ev (x4) and #id=<newer> are placeholders. No element in the document
+      carries an id attribute, and no code reads location.hash — every ''#'' link is inert.'
+  findings:
+  - id: PRC-301
+    severity: blocker
+    title: The card-to-name-detail link is deleted outright, with no capability id and no disposition
+    capability_or_task: task.open_name_detail (no baseline capability id exists — that is part of the
+      finding)
+    evidence: 'board.js:286 opens the card as ''<article class="'' + cls + ''" data-life=...'' — an
+      <article>, not an <a>. The only href a card can emit is board.js:389 ''<a class="pv-newer" href="#id=''
+      + esc(r.newer) + ''">'', present on 2 of 179 rows. Those anchors are inert twice over: cards carry
+      data-id (board.js:287), never an id attribute, so the fragment matches no element; and nothing
+      in board.js reads location.hash (board.js:804 and 811 only write it). Production: prod-desktop-dark-en-card-zoom.png
+      and the board shots show the whole card as a link to the per-name detail. The capability ledger
+      has no id for it, so it never received a disposition — yet production_core_interactions names
+      it ("toggle grid/table; open a name via card link").
+
+      '
+    production_behavior: 'Every card is a link into the per-name read (stock.html#TICKER); the deeper
+      receipts, plan and dossier are one click from any card on the board.
+
+      '
+    proposal_behavior: '0 of 179 names route anywhere. The board is a terminal surface: the user can
+      see a name and can see nothing further about it.
+
+      '
+    why_it_matters: 'This is RIG §1 implicit deletion of a core navigation capability — the mechanism
+      the gate exists to stop. The ledger''s own matrix marks task.open_name_detail critical:true /
+      WORSE, which under §6 is review-blocking until adjudicated; because no capability id covers it,
+      the checker''s ledger-coverage rule (L2) cannot see it at all. "Choose which setups to work on
+      today" is not completable when the board cannot hand a name off to the read that justifies it.
+
+      '
+  - id: PRC-302
+    severity: blocker
+    title: The anonymous gate promises entry, target and void levels that no card at any tier renders
+    capability_or_task: auth.anon_gate_copy (ledger direction/warranted both "unresolved") · task.anon_proof
+    evidence: 'board.js:437-439 — "The rest are part of the live board — entry, target and void levels
+      included. The counts above stay honest whether you subscribe or not." ZH at the same lines: "其余计划同在这块看板上，
+      含入场价、目标价与失效价。" The card renderer (board.js:275-421) never emits r.entry, r.inval or r.t1; those
+      three fields appear only inside the table branch (board.js:560-576). Crops 40-anon-locked-dark-en--full.png
+      and 41-anon-locked-light-zh.png show the promise sitting directly beneath the single unlocked
+      card (GPCR), which reads "No read yet" and "No zone — stand aside".
+
+      '
+    production_behavior: 'Production makes no such promise; its conversion panel says "Expand the Prophet
+      shortlist — more model-ranked setups, with the same signal detail and discipline" (prod-desktop-dark-en-standouts-board.png).
+
+      '
+    proposal_behavior: 'The paying-tier surface the visitor is being sold — the card grid, which is
+      the default view — carries none of the three named numbers. They exist only if the user finds
+      and toggles the table view, which the gate copy never mentions.
+
+      '
+    why_it_matters: 'A specific, checkable product promise at the paywall that the product does not
+      keep in its default state. Under §6 this is authority the engine does not warrant, made worse
+      by being the one place the product speaks to someone deciding whether to pay. I resolve the ledger''s
+      "unresolved" row as NOT warranted.
+
+      '
+  - id: PRC-303
+    severity: blocker
+    title: 'The rank-1 card contradicts itself and contradicts production — "No read yet" and "No zone"
+      on a name the payload calls FRESH BUY, beside a "trigger fired" chip and a caution naming the
+      buy zone it denies
+
+      '
+    capability_or_task: card.stance_verb (IMPROVE) · auth.stance_source (claimed weaker / warranted
+      true)
+    evidence: 'Fixture row GPCR: verb "FRESH BUY", stance "blocked_data", trg "triggered", zk "none",
+      star true, pri 90.5, flags [["Already moving. Don''t chase above the buy zone.", ...]]. Rendered
+      (crops 00-R3-dark-en.png, 00-R3-dark-zh--full.png, 05-mobile390-dark-en.png, 40-anon-*, 07-*):
+      "No read yet" chip (board.js:296-299, tooltip "The entry read ... has not published for this plan"),
+      "⚡ Triggered" chip (board.js:310-312, tooltip "The entry trigger fired in the last few sessions"),
+      "⚠1" whose only sentence names "the buy zone", and a footer reading "No zone — stand aside" (board.js:416).
+      Production renders the same name, same board, as BUY with ZONE $52.15-$53.81 (prod-desktop-dark-en-card-zoom.png).
+      Arithmetic: 5 rows carry a payload verb yet render "No read yet" (GPCR, VSEC, DXYZ, AYI, CSR);
+      3 rows pair a "buy zone" caution with a "No zone" footer, 2 of them (GPCR, VSEC) inside the visible
+      40; both are ★Featured.
+
+      '
+    production_behavior: 'One ruling stance word per card, present, and a zone chip that agrees with
+      it.
+
+      '
+    proposal_behavior: 'The board''s highest-priority, Featured, trigger-fired card tells a paying user
+      there is no read and nothing to do, while warning against chasing above a zone it says does not
+      exist.
+
+      '
+    why_it_matters: 'This is the first card in every desktop crop, the only card the anonymous visitor
+      sees, and the exact card production chose for its own anatomy zoom — the head-to-head is unavoidable.
+      It falsifies auth.stance_source''s "unobtainable -> disclosed absence, warranted: true": for these
+      rows the read was obtainable, it is in the same row of the same fixture. An honest null is a strength;
+      a null asserted over an available value, next to two chips that assert the opposite, is an incoherent
+      claim on the face of the product.
+
+      '
+  - id: PRC-305
+    severity: blocker
+    title: Degraded-freshness disclosure is deleted; the header can only ever assert "Settled close"
+    capability_or_task: task.staleness_awareness (critical:true, ledger verdict WORSE; no capability
+      id exists)
+    evidence: 'board.js:724-746 header() emits ''<span class="dtp-token closed">…Settled close</span>''
+      plus esc(B.asof) unconditionally — there is no branch, and a grep of board.js/board.css for stale|behind|degrad|delayed|outdated
+      returns only board.js:306 ("fired in the last few sessions") and the .dtp-token CSS at board.css:132-139.
+      Production carries a persistent amber banner in all four board captures — "Still ranked on prices
+      as of 2026-08-10 — 2 sessions behind. We''re updating it; check a live quote before you act."
+      (zh: "仍按截至 2026-08-10 的价格排序，落后 2 个交易日…") — plus the header line "dots reflect prices as of 2026-08-10
+      — verify before acting" and a page-top "● Delayed 2026-08-10" pill (prod-desktop-dark-en-pagetop.png).
+
+      '
+    production_behavior: 'When the ranking prices are behind the tape, the board says so before anything
+      else, in both languages, on desktop and mobile, and tells the user what to do about it.
+
+      '
+    proposal_behavior: 'A single "Settled close · 2026-08-13" token in the page head. No state, anywhere
+      in the artifact, can express that the board is behind.
+
+      '
+    why_it_matters: 'The one disclosure on this surface that exists to stop a user acting on stale prices.
+      It is not in the capability ledger, so it received no disposition — implicit deletion of a safety
+      capability. It is also authority inflation by omission: a board that can only say "Settled close"
+      asserts a freshness it has no mechanism to verify, on exactly the day when production would be
+      warning the user.
+
+      '
+  - id: PRC-306
+    severity: blocker
+    title: '77 of 179 plan rows can never be rendered as a card in any state or filter; their only representation
+      is a seven-column table that drops priority, stance, zone, chart, caution, sector and company
+      name
+
+      '
+    capability_or_task: card.priority_score (RETAIN) · task.readiness_rank (BETTER) · task.table_overflow
+    evidence: 'GRID_CAP = 40 (board.js:230); shown = r.slice(0, GRID_CAP) (board.js:585). Computed union
+      of the rendered top-40 across state=paid and all seven life filters = 102 of 179 rows; 77 rows
+      are card- unreachable. Overflow routes to ''?view=table'' (board.js:597). The table''s columns
+      are fixed at board.js:561-562: Ticker · Lifecycle · Entry · Void · First target · Opened · Episode
+      — verified in crops 60-table-invalidated.png and 61-table-resolved-zh.png. Null-priority rows
+      sort last (board.js:154, ap = a.pri == null ? -1 : a.pri), so the 86 rows with no priority are
+      pushed below the cap by construction, and the only surface that reaches them has no priority column.
+
+      '
+    production_behavior: '"Showing 15 of 74 · Show 15 more · Show all 74" (desktop) / "Showing 6 of
+      74 · Show 6 more · Show all 74" (mobile) — user-controlled progressive expansion that keeps every
+      row in the card tier with its verb, hue, chart, priority, tracker and zone intact.
+
+      '
+    proposal_behavior: 'A hard 40-card ceiling with no expander, and a single overflow route into a
+      stripped table. 119 of the 159 live rows on the default board are reachable only as Ticker + Lifecycle
+      + three dollar levels.
+
+      '
+    why_it_matters: 'card.priority_score is filed RETAIN and task.readiness_rank BETTER, but for 119/159
+      rows on the default board there is no surface in the artifact that shows a priority at all — the
+      disposition overstates. Production''s in-place expansion is itself a user capability with no ledger
+      id and no disposition (implicit deletion). And the substitution inverts the reference''s own authority
+      discipline: the rows a user can least contextualise are the ones presented purely as execution
+      numbers (see PRC-313).
+
+      '
+  - id: PRC-304
+    severity: major
+    title: Every price-change value in every crop is a hash of the ticker string, rendered with direction
+      ink
+    capability_or_task: card.live_change (RETAIN) · task.price_now (BETTER) · task.momentum_context
+      (WORSE)
+    evidence: 'board.js:269-273 — demoChange(tk) returns ((hash(tk) % 61) - 28) / 10, a pure function
+      of the ticker with no market input; board.js:321-329 renders it into ''.nb-chg pv-chg'' with an
+      up/down class and, when non-null, data-mock-live="1" (an invisible attribute). Reproduced independently
+      and matched to the crops exactly: GPCR -2.1%, FTI +0.7%, DAR +0.8%, MRK +2.1%, CVCO +3.2%, SGML
+      -2.8%, KEYS +1.2%, AGNT -2.4%, FBRT +1.1%. Production''s own captures render this pill as "—"
+      (prod-desktop-dark-en-card-zoom.png: "$53.81 —").
+
+      '
+    production_behavior: 'The change pill is bound to live.js and shows an em dash when unhydrated —
+      production''s committed evidence shows the honest dash.
+
+      '
+    proposal_behavior: '45 cards display an invented signed percentage in up/down colour; the remaining
+      134 show "—". Nothing visible distinguishes the two populations'' provenance.
+
+      '
+    why_it_matters: 'The crops are the artifact the design authority and every downstream migration
+      reviewer compare against; a conformance check will "match" a fabricated number. It also props
+      up two matrix verdicts: task.price_now is scored BETTER and card.live_change RETAIN is justified
+      as "the one place direction ink appears on the card; zh flip pinned by verify.py" — so the direction-colour
+      guard is being pinned against hash output rather than data. The design (unconditional slot, live.js-bound)
+      is sound; a condition to render the existing em-dash path instead of demoChange fully carries
+      this.
+
+      '
+  - id: PRC-307
+    severity: major
+    title: board.track_record_strip is filed RELOCATE to a destination that renders no numbers at all
+    capability_or_task: board.track_record_strip (RELOCATE, reachability "NOT ESTABLISHED") · task.anon_proof
+    evidence: 'board.js:713-721 evidence() emits four bare anchors — Track record / How Prophet works
+      / Calibration lab / Closed plans archive — all href="#ev", and no numeric content whatsoever.
+      Confirmed in 00-R3-dark-en--full.png, 40-anon-locked-dark-en--full.png and 50-empty-dark-en--full.png.
+      Production renders "Track record · 59% win · +0.45% a trade →", a "measurement updated" chip,
+      "What changed today · 30 →", "RECENTLY FIRED 12" with "SGHT +40.9% since signal · fired 8 sessions
+      ago", and "Passed on tonight 27 of 69" with an earnings-watch row (prod-desktop-dark-en-standouts-board.png;
+      zh and light equivalents).
+
+      '
+    production_behavior: 'Four independent quantitative proofs of the machine, on the board itself,
+      above the fold on mobile.
+
+      '
+    proposal_behavior: 'Four link labels. An anonymous visitor gets no number, and neither does a paying
+      one.
+
+      '
+    why_it_matters: 'RIG §1 requires a RELOCATE to carry proof the user can still reach the capability;
+      the ledger honestly records that it cannot. A RELOCATE whose destination is a placeholder is a
+      REMOVE that never had to supply rationale, user_job_impact, superiority_case or approval_ref.
+      "Judge whether the machine is real" is the stated secondary user job and the proposal has no answer
+      for it. Note the same silent loss covers "Passed on tonight" and "Recently fired", neither of
+      which has a capability id either.
+
+      '
+  - id: PRC-308
+    severity: major
+    title: Company name and sector disappear on 134/179 rows with no capability id, no disposition and
+      no disclosure
+    capability_or_task: (no ledger id) — folded into card.chart_hero's BLOCKED_DATA dependency string
+      only
+    evidence: 'nm and sec are present on 45/179 rows (arithmetic). board.js:335 and 345 emit them only
+      when truthy, so the rest render a bare ticker. In the flagship crop 00-R3-dark-en--full.png, 20
+      of the 40 rendered cards show no company name and no sector: RIO, FN, CENX, ROIV, HP, DAN, ADAM,
+      RGTI, WINA, USAR, XPEL, WT, HASI, BHP, NGVT, NVDA, FCX, BNY, MDB, SOUN. Production''s information
+      hierarchy carries "ticker · company · PRIORITY" and "sector · chips" as separate rows on every
+      card (prod-desktop-dark-en-card-zoom.png).
+
+      '
+    production_behavior: Every card names the company and its sector.
+    proposal_behavior: 'Half the visible board, and 75% of the full book, is a four-letter ticker with
+      no identity.
+
+      '
+    why_it_matters: 'The BLOCKED_DATA dependency string names "name/sector/lane/spark" but the disposition
+      is attached only to card.chart_hero; there is no capability id for card identity, so two production
+      hierarchy rows are deleted without any disposition of their own — §1 implicit deletion. Sector
+      is also load-bearing for the Groups section the same page renders: a user cannot connect "Accumulate:
+      Gold Miners" to a card whose sector is blank.
+
+      '
+  - id: PRC-309
+    severity: major
+    title: 'The chart null is hidden rather than printed, and the stated interim ("slot at chart height")
+      is not what the artifact does
+
+      '
+    capability_or_task: card.chart_hero (BLOCKED_DATA — interim field)
+    evidence: 'board.css:458-462 sets ''.pv-nochart { height: 24px; ... }'' against ''.pv-chart svg
+      { height: 74px }'' (board.css:447) — one third the height on desktop; they match only under the
+      ≤720px rule at board.css:896. The slot carries no text: board.js:291 emits ''<div class="pv-nochart"></div>''.
+      The only explanation of what the blank means lives at board.js:497-501 and renders exclusively
+      under state=fallback — a mockup-only lens (crops 10/11/12) that no user can reach. On the canonical
+      board (00-R3-dark-en--full.png, 00-R3-light-en.png) the degraded cards appear interleaved with
+      no disclosure at all.
+
+      '
+    production_behavior: A verb-hued sparkline on every card; there is no blank state to explain.
+    proposal_behavior: 'A silent empty rectangle on 20 of the 40 visible cards, which a user cannot
+      distinguish from flat price, a broken render, or a design choice.
+
+      '
+    why_it_matters: 'House epistemics law''s compliant null form is a plain-word disclosure plus a Tier-2
+      receipt — which this artifact does correctly for the stance ("No read yet" + a tooltip that distinguishes
+      absence from neutral, board.js:254-260) and not at all for the chart or the quote. §1 requires
+      BLOCKED_DATA to state what the UI does meanwhile; the UI states nothing, and the ledger''s description
+      of the slot is contradicted by the CSS.
+
+      '
+  - id: PRC-310
+    severity: major
+    title: '"the six cells below add up to this number" is asserted while the surface simultaneously
+      discloses that one of the six has no published value
+
+      '
+    capability_or_task: task.population_truth (verdict BETTER) · board.triage_shelves (IMPROVE — the
+      count cure)
+    evidence: 'board.js:167-173 prints liveTotal() = 159 with the sub-line "the six cells below add
+      up to this number"; board.js:186 renders Watch as ''&mdash;'' when watchAbsent(); board.js:206-209
+      prints "Watch tier publishes from the next nightly." The published live_total was computed with
+      the unknown Watch treated as zero (62+95+0+0+2 = 159). Both statements appear on the same screen
+      in every crop; crop 24-filter-watch-absent.png makes the contradiction explicit — "This tier has
+      a producer, but tonight''s build did not publish it yet — which is why the cell shows a dash rather
+      than a zero" sits under a headline claiming exact six-cell reconciliation.
+
+      '
+    production_behavior: 'Production''s defect is the opposite one — duplicated vocabulary ("69 shown
+      · 93 setups" beside five shelf counts) — but it never claims an identity it cannot support.
+
+      '
+    proposal_behavior: 'Claims exact reconciliation over six addends, one of which it states is unknown.
+
+      '
+    why_it_matters: 'Population truth is the reference''s flagship claim and the matrix scores it BETTER.
+      The arithmetic is in fact exact for the five published cells (verified 7/7 across filters) — the
+      defect is the sentence, which overstates by one cell and is refuted by the product''s own absence
+      note. Either the headline scopes to the published cells or the total is disclosed as provisional.
+
+      '
+  - id: PRC-311
+    severity: major
+    title: '"What changed today · N opened in the last day" is computed over the whole book and printed
+      inside every filtered view
+
+      '
+    capability_or_task: task.population_truth (BETTER) · add.population_reconciliation
+    evidence: 'board.js:535-537 — fresh = B.rows.filter(...) — filters the full 179-row book, never
+      the active result set r, and the strip is emitted at board.js:538-545 for every non-empty state.
+      Crop 22-filter-invalidated.png shows "15 opened in the last day" above 2 cards; 27-filter-resolved.png
+      shows the same 15 above 20 closed plans; 60-table-invalidated.png shows it above a 2-row table.
+
+      '
+    production_behavior: 'Production''s equivalent ("What changed today · 30") sits outside the filtered
+      grid, attached to the board as a whole.
+
+      '
+    proposal_behavior: 'A count describing 179 rows is rendered inside a frame the user has just narrowed
+      to 2.
+
+      '
+    why_it_matters: 'It is the one printed integer on this board that does not describe the population
+      on screen, inside the reference whose stated cure is "one population behind every printed integer".
+      Fixing it is a one-line scope change; leaving it in the reference makes the defect law.
+
+      '
+  - id: PRC-312
+    severity: major
+    title: Two prescriptive vocabularies collide on the card — 27 "Entered" plans carry a "Wait" stance
+      chip
+    capability_or_task: card.stance_verb (IMPROVE) · card.stage_tracker (IMPROVE) · task.act_today_boundary
+    evidence: 'Lifecycle x stance cross-tab over the fixture: entered+wait 27, entered+buy 4, ready+hold
+      2. 13 of the 40 cards the default board renders carry a colliding pair (11 of them Entered+Wait).
+      Crop 21-filter-entered.png: HP, DAN, RGTI, WINA, HASI, CENX and others read "WAIT" above "Entered";
+      crop 33-multi-episode-390-en.png shows FBRT reading "WAIT" above "Entered" above "ZONE $7.70-$7.70".
+
+      '
+    production_behavior: 'One prescriptive word per card (the verb) plus a descriptive price-shape rail
+      (Bottoming→Turning→Ready→Trend) that makes no action claim — so the two never contradict.
+
+      '
+    proposal_behavior: 'An action word ("Wait") sits directly above a position word ("Entered"): the
+      card tells a user who is already in the trade not to enter yet.
+
+      '
+    why_it_matters: 'The design lineage records "second lifecycle chip beside the rail" as a rejected
+      variant on exactly this ground ("one lifecycle vocabulary per card", red-team #3). The proposal
+      reintroduces the collision in a different form. task.act_today_boundary is scored UNKNOWN; on
+      the visible board it is worse than UNKNOWN for a third of the cards, because the two instruments
+      give opposing instructions.
+
+      '
+  - id: PRC-313
+    severity: major
+    title: 'The table prints unvalidated execution levels as the sole representation of 77 rows, with
+      no direction, no priority and no sanity check
+
+      '
+    capability_or_task: auth.table_levels (direction stronger, warranted "unresolved")
+    evidence: 'board.js:560-576 renders Entry, Void and First target via money() for every row of the
+      active filter, with no direction column although dir is present on all 179 rows. Crop 61-table-resolved-zh.png
+      row 1: AGNT 入场价 $4.28 · 失效价 $5.49 · 首个目标 $6.09 — a BULL plan whose void sits ABOVE its entry (direction-consistency
+      check: 1/179 rows fail; dir is BULL on 179/179). The reference renders it with no flag. These
+      are the same three numbers the card tier deliberately withholds as execution-prescriptive (auth.zone_vs_levels,
+      "Entry/T1/Void off the card").
+
+      '
+    production_behavior: No production board surface prints Entry, Void or First target.
+    proposal_behavior: 'Three execution levels per row, at cent precision, for every row of every filter
+      — and, per PRC-306, the only representation 77 rows ever get.
+
+      '
+    why_it_matters: 'The authority the card tier removed as too prescriptive is reinstated one toggle
+      away, stripped of every instrument that would let a user judge it (no stance, no priority, no
+      zone, no caution, no chart), and with no validation: the fixture already contains one row whose
+      stop is on the wrong side of its entry and the reference publishes it unremarked. The ledger''s
+      "unresolved" should resolve to NOT warranted in this form.
+
+      '
+  - id: PRC-314
+    severity: major
+    title: Resolved plans render as live — an active zone range, a live price, and a signed green change
+    capability_or_task: card.zone_chip (IMPROVE — "stance-branched four ways") · task.lifecycle_position
+      (BETTER)
+    evidence: 'board.js:400-417 tests zk === "active"/"readd"/"muted" BEFORE r.life === "resolved",
+      so AGNT (life=resolved, zk=muted, zlo 4.10, zhi 4.22) prints "ZONE $4.10-$4.22" instead of "Closed
+      — in the record". The quote overlay (board.js:321-329) is unconditional, so AGNT ($4.28, -2.4%)
+      and FBRT ($8.05, +1.1% in up-ink) render a live price and change on closed, graded plans. AGNT
+      also renders PRIORITY 69 where the other 19 resolved cards render "—". Crops 27-filter-resolved.png
+      (AGNT is the first card) and 32-multi-episode-resolved.png (FBRT).
+
+      '
+    production_behavior: Not represented — production has no Resolved treatment.
+    proposal_behavior: '18 of 20 resolved cards are correct and quiet; 2 read as open positions, one
+      of them with a live buy zone and a ranked priority.
+
+      '
+    why_it_matters: 'Resolved treatment is one of this reference''s headline improvements and the first
+      card of the Resolved filter is wrong. A closed plan showing a buy zone and a green change reads
+      as an open position with a gain. The fix is a branch reorder, but as frozen the reference teaches
+      the wrong precedence.
+
+      '
+  - id: PRC-315
+    severity: major
+    title: 'The Regime/Breadth/Posture removal is filed as an ADDITION, and its authority-delta row
+      misstates production''s baseline
+
+      '
+    capability_or_task: add.regime_chips_removed · auth.market_read (direction "equal", warranted true)
+    evidence: 'The ledger files "the Regime / Breadth / Posture chips are deleted outright; nothing
+      replaces them" under `additions`, where §1''s REMOVE fields (rationale, user_job_impact, superiority_case,
+      approval_ref) never apply and no baseline capability id exists to make it visible to the coverage
+      rule. auth.market_read asserts production_claim "no board-level regime/breadth/posture assertion"
+      — contradicted by the production baseline the ledger itself supplies: prod-desktop-dark-en-pagetop.png
+      renders "Regime **Reflation**", "Posture **DEFENSIVE**", and "MARKET STATE **Risk-on** · conditions
+      supportive" with a Risk radar link. Internally inconsistent too: board.js:703-712 reserves a five-tab
+      "Market context" strip whose fifth tab is "Regime", rendered as dead #ctx anchors (crop 00-R3-dark-en--full.png).
+
+      '
+    production_behavior: A stated market regime, posture and market-state read at the top of the route.
+    proposal_behavior: 'Nothing asserted, and five empty tabs where the assertion used to be.
+
+      '
+    why_it_matters: 'Removing an over-claiming market read may well be right — but under §1 it has to
+      be a REMOVE with its four mandatory fields, not an entry in `additions`, and the authority-delta
+      row cannot claim "equal" against a production baseline that plainly makes the claim. Filing a
+      deletion as an addition is the exact route around the no-implicit-deletion rule this gate exists
+      to close.
+
+      '
+  - id: PRC-316
+    severity: minor
+    title: An unmapped payload slug ships as user-facing copy in both languages
+    capability_or_task: add.themes_producer · auth.groups_read
+    evidence: 'board.js:653-659 defines RECO for accumulate/hold/watch/avoid/trim; board.js:681 falls
+      back to ''{ en: g.reco, zh: g.reco }''. The themes payload carries reco "enter" on theme 19 (Space
+      Economy / 太空经济), so the card reads "enter 5d up 15 names" in EN and "enter 5 天走强 15 只" in ZH —
+      visible in 00-R3-dark-en--full.png, 00-R3-dark-zh--full.png, 51-empty-light-zh.png and every other
+      full crop.
+
+      '
+    production_behavior: Sector intelligence lives on its own surface with mapped vocabulary.
+    proposal_behavior: A raw producer slug, untranslated, on a recommendation card.
+    why_it_matters: 'Violates the bilingual content law and the banned-vocabulary rule (no raw slugs
+      on glance-tier surfaces). The failure is silent by construction: any recommendation value the
+      map does not know reaches the user verbatim, in English, on the Chinese surface.
+
+      '
+  - id: PRC-317
+    severity: minor
+    title: Groups prints ranks from an undisclosed population
+    capability_or_task: auth.groups_read (direction stronger, warranted true)
+    evidence: 'board.js:683 renders g.rank; the payload''s eight themes carry ranks 1, 5, 6, 7, 9, 11,
+      12, 19 while the section header (board.js:664-665) reads "8 themes in favour". Visible in every
+      full crop.
+
+      '
+    production_behavior: n/a — sector intelligence lives elsewhere.
+    proposal_behavior: 'Eight cards numbered out of an unnamed universe of at least 19, with no statement
+      of the denominator or of why 2, 3, 4, 8, 10 are absent.
+
+      '
+    why_it_matters: 'A rank without its denominator is a stronger claim than the producer supports —
+      the user cannot tell whether "7 · Gold Miners" is 7 of 8 or 7 of 40. The section otherwise handles
+      provenance well (as_of stamp, explicit no-read empty state), which makes the gap conspicuous.
+
+      '
+  - id: PRC-318
+    severity: minor
+    title: Zero-width zones print as ranges
+    capability_or_task: card.zone_chip (IMPROVE)
+    evidence: '4 of the 61 zone-bearing rows have zlo == zhi (CENX 46.46, BKSY 26.73, FBRT 7.70, SBSI
+      32.52); board.js:404/407/410 render money(zlo) + "&ndash;" + money(zhi) unconditionally, producing
+      "ZONE $46.46-$46.46" — visible on the default board (CENX, crop 00-R3-dark-en.png) and in 31-multi-episode-zh.png
+      / 33-multi-episode-390-en.png (FBRT "买区 $7.70-$7.70").
+
+      '
+    production_behavior: Same underlying data; production's zone chip has five states including a collapsed
+      form.
+    proposal_behavior: A range rendered where there is no range.
+    why_it_matters: 'Small, but it is on the flagship crop and it undercuts a disposition filed as IMPROVE;
+      a single price is a different instruction from a band.
+
+      '
+  - id: PRC-319
+    severity: minor
+    title: 'Three of the seven ruled lifecycle cells have no card rendering anywhere in the artifact,
+      while proposal_screenshot_gaps asserts there are none
+
+      '
+    capability_or_task: card.stage_tracker (IMPROVE — "ruled seven-cell lifecycle")
+    evidence: 'Fixture counts are watch 0, delivering 0, overtime 0, so no Watch, Delivering or Overtime
+      card can ever render (crops 24, 25, 26 show only their empty states). new is false on 179/179,
+      so the "New" chip (board.js:350) never renders — production''s card carries it (prod-desktop-dark-en-card-zoom.png).
+      trg === "imminent" on 0/179, so the Imminent branch (board.js:304-312) never renders. The ledger
+      declares `proposal_screenshot_gaps: []`.
+
+      '
+    production_behavior: n/a (different lifecycle vocabulary).
+    proposal_behavior: 'The reference canonicalising a seven-cell lifecycle demonstrates card treatment
+      for four of them.
+
+      '
+    why_it_matters: 'A migration builder implementing against this reference has no reference for three
+      ruled cells, the New chip, or the Imminent trigger state. The gap is a fixture-availability limit
+      rather than a design choice — but declaring zero screenshot gaps makes it invisible to the verdict
+      packet, and §4''s rule is that missing axes are recorded as honest gaps, never silently absent.
+
+      '
+  - id: PRC-320
+    severity: minor
+    title: The reference's own frozen reconciliation receipt is arithmetically wrong against its own
+      fixture
+    capability_or_task: add.population_reconciliation
+    evidence: 'index.html:27 — "Every count on the page reconciles against that payload: 62+96+0+0+4
+      = 162 = open_count." The fixture has ready 62, entered 95, invalidated 2, open_count 159, and
+      the sum lists five addends for six cells (Watch omitted). index.html:25-26 names "site/prophet/index.json
+      asof 2026-08-12" and "us_standouts.json as_of 2026-08-10" while board-data.js:1-6 and the payload
+      carry asof 2026-08-13 and themes_asof 2026-08-12. index.html:21-22 enumerates ?state=paid|anon|empty|episodes,
+      omitting the `fallback` state that board.js:98 implements and board.js:760 exposes in the harness.
+
+      '
+    production_behavior: n/a
+    proposal_behavior: 'A stale hand-written receipt frozen inside the reference, contradicting the
+      data file two lines below it.
+
+      '
+    why_it_matters: 'Non-user-facing, but it is the artifact''s own proof of the count cure and it does
+      not hold — the exact shape of a receipt written from the wrong variable. Anyone auditing the reference
+      by reading its header gets 162/96/4 and a state list missing a state.
+
+      '
+  - id: PRC-321
+    severity: minor
+    title: The mobile ladder collapses the separation that carries "Resolved sits outside the total"
+    capability_or_task: task.population_truth (BETTER)
+    evidence: 'board.js:194 emits ''<div class="mx-ladder-gap">'' to hold Resolved apart from the six
+      live cells on desktop. At ≤720px the ladder reflows to a 4+3 grid (crops 05-mobile390-dark-en.png,
+      12-fallback-390-dark-en.png, 42-anon-locked-390-dark.png, 33-multi-episode-390-en.png), placing
+      Resolved as the third cell of a row that also holds Overtime and Invalidated, with "not in today''s
+      count" (board.js:202) as a caption beneath the whole row.
+
+      '
+    production_behavior: n/a
+    proposal_behavior: 'On mobile, Resolved reads as the seventh cell of a continuous ladder; only a
+      dashed border and an ambiguously-placed caption distinguish it.
+
+      '
+    why_it_matters: 'The desktop composition is what makes "the six cells add up, Resolved does not"
+      legible; on the smaller viewport the distinction rests on the caption alone, which is where the
+      count claim is most likely to be misread.
+
+      '
+  preserved_strengths: &id001
+  - 'Count reconciliation is genuinely exact, and I could not break it: the six live cells sum to live_total
+    (0+62+95+0+0+2 = 159), live_total + resolved = grand_total = len(rows) = 179, and rendered + ''+N
+    more'' equals the published count in the unfiltered board and all seven lifecycle filters (7/7).
+    This is a real cure for production''s ''69 shown · 93 setups'' duplication, and it holds arithmetically,
+    not just in the crop.'
+  - 'The zero-vs-absent distinction is the best epistemic work in the artifact and is rare in shipped
+    product: an empty cell says ''The cell is empty today, not missing: a plan lands here when …'' (board.js:522),
+    while an unpublished tier says ''This tier has a producer, but tonight''s build did not publish
+    it yet — which is why the cell shows a dash rather than a zero'' (board.js:520). Crops 24, 25, 26
+    show all three forms.'
+  - 'The empty-board state is handled with integrity: the Resolved record survives a quiet day (board.js:110),
+    and the copy frames the null as a result rather than an outage — ''Nothing qualified tonight — that
+    is a result, not an outage'' (board.js:483; crop 50-empty-dark-en--full.png).'
+  - 'The zh direction-colour convention is implemented completely and correctly, not just on the change
+    pill: board.css:69-76 flips --up/--down/--q1/--q3 and re-mixes --pv-buy/--pv-near/--pv-avoid under
+    html[data-lang=''zh''], with a light-theme override at higher specificity, so Buy renders red and
+    Avoid renders green in both themes (crops 00-R3-dark-zh--full.png, 00-R3-light-zh.png, 23-filter-invalidated-zh.png).
+    This is the operator''s load-bearing colour law preserved rather than reasoned away.'
+  - 'The operator''s 2026-08-03 kill of verdict/what-to-do prose is respected in the strongest possible
+    way: the payload carries do, do_zh, pulse and pulse_zh on all 179 rows and the card renders none
+    of them. There is no paragraph anywhere on any card in any state.'
+  - '''No read yet'' is a model null disclosure — it names the absence, distinguishes it from neutrality
+    in its tooltip (''that is not the same as neutral, and not a hold'', board.js:258), and is keyboard-reachable
+    via tabindex plus the focusin handler at board.js:839-841. My complaint in PRC-303 is that it is
+    applied over an available value, not that the pattern is wrong; the pattern is right and the chart
+    and quote should have copied it.'
+  - The Priority tooltip carries the ruled honest gloss verbatim — 'It is not a win probability, an
+    expected return, or a confidence score' (board.js:339) — the value is never hued (board.css:399
+    keeps noread at --muted), and a missing score renders an em dash rather than a zero (board.js:342-343).
+  - The caution capability returns as progressive disclosure — a counted pill opening a hover/focus
+    popover (board.js:366-376) — rather than card prose, which is the correct resolution of the tension
+    between the prose kill and the need to surface risk before acting.
+  - 'Episode handling is a genuine addition production does not have: one card per plan row with dated
+    ''Episode N of M'' chips (board.js:377-382), so a name appearing twice is explained rather than
+    confusing (crops 30/31/32/33). The forward-link half of it does not work (PRC-301), but the chips
+    do.'
+  - 'Groups is properly sourced: rank, recommendation, run length and member count come from the payload
+    with an as_of stamp printed on the surface (board.js:696-698), and an absent key renders an explicit
+    ''No theme read published … Nothing is asserted in its place'' (board.js:670-677) rather than authored
+    filler. Dropping 22 authored sector rows for 8 sourced ones is the right trade.'
+  - The ladder doubles honestly as the filter, every filtered view carries a labelled escape ('Clear
+    filter' / 'Show all live setups', board.js:221-224, 524-525), the active cell is aria-pressed (board.js:183),
+    and the filter state round-trips through the query string and hash (board.js:798-812).
+  - 'The Candidates/Setups separation is correct and well-explained: ''A candidate is not a setup: it
+    becomes one only when a plan is written for it, which is what the board above counts'' (board.js:619),
+    with the shelf counts reconciling (22+35+12+1+0 = 70 = cand_total) and empty shelves rendering no
+    chip (board.js:625).'
+  strengths: *id001
+second_pass:
+  rationale_received_at: '2026-08-13'
+  revealed_inputs:
+  - reveal/R3_DESIGN_NOTES.md (builder rationale for the artifact under review)
+  - reveal/R3_compare.html + proposal crops 70-73 (designer-authored three-way card adjudication)
+  - reveal/R2_verdict.yml (prior-cycle design-authority verdict on 0fc975a — REVISE)
+  - reveal/R2_product_regression.yml (prior-cycle Reviewer A receipt, PRC-201..216)
+  - reveal/R2_visual_taste.yml (prior-cycle Reviewer B receipt, VTC-201..213)
+  reverification_run:
+  - board.js:106 `var isRef` is declared and NEVER read; rows() (board.js:132-147) applies only the
+    episodes/fallback/life/resolved filters — no state=paid subset. §C is what ships.
+  - 'board.css:384 retains `text-decoration: none` (a link-only property) and board.css:387/421/873
+    retain the hover lift + glow on a non-link <article>. R2''s disjunctive condition (link OR remove
+    the affordance) is unmet on BOTH branches.'
+  - 5 rows are life=ready AND trg=triggered — DAR, MRK, KEYS, KALU, STLD. R2 PRC-208's named pair (DAR,
+    STLD) survives verbatim.
+  - 'R3-authored sections reconcile exactly against the frozen fixture: §A cautions 18; §B zones 19/7/35/118;
+    Q1 enrichment 45/179; Q7b BLOCKED_DATA 97/159; Q9 triggered 8 / imminent 0.'
+  - 'R2 carry-over sections do NOT: §0b-1 ''162 live'' vs 159; §3 ''Resolved still 17'' vs 20; §5 ''69
+    … 28+27+10+2+2'' vs 70 / 22+35+12+1+0; §0b-4 Featured ''10'' vs 11; §0b-4 New ''40'' vs 0.'
+  r2_conditions_closed_by_this_revision:
+  - 'PRC-201 (blocker — ⚠ risk ledger had no carrier): CLOSED. §A restores the shipped .pv-cau component;
+    18 rows carry cautions, verified in the crops and the fixture.'
+  - 'PRC-202 (blocker — stance-blind zone ink): CLOSED. §B restores the branch; the fixture matches
+    §B''s tally exactly at active 19 · re-add 7 · muted 35 · no band 118.'
+  - 'PRC-203 (blocker — canonical view exempt from the count law): CLOSED. §C removes the subset; I
+    verified reconciliation 7/7 across every filter and isRef is now dead code.'
+  - 'PRC-207 (blocker — producer-less regime/Groups/TRIM): CLOSED. §D deletes the chips and rebinds
+    Groups to us_standouts.themes_in_favour with as_of printed and an explicit no-read state.'
+  - 'PRC-204''s residual (GPCR filtered out of the canonical view entirely): CLOSED — GPCR is now card
+    #1 in every desktop crop and the anonymous state.'
+  - 'PRC-215 (double-declared `enriched`): CLOSED per §0a, pinned by verify.py R-GD1/2.'
+  - 'VTC-202 (--pv-buy aliased to --up): CLOSED — board.css:37-41 now color-mixes a distinct tone.'
+  - 'VTC-204 (bare Featured ring — B''s non-waivable condition): CLOSED — board.css:413-438 restores
+    aura + glow + lift with the --pv-buy pin.'
+  - 'VTC-203 (light card/canvas inversion): CLOSED — cards render as a white plane on the tinted canvas
+    (00-R3-light-en.png).'
+  - 'This is real progress and I record it before the amendments: every R2 blocker and B''s non-waivable
+    condition is closed. What went unaddressed is the authority''s conditions 3, 4 and 5 — and those
+    are exactly where my surviving blockers sit.'
+  amendments:
+  - finding: PRC-301
+    note: 'Not rescued and now aggravated. The reveal shows this is R2 PRC-209 — raised, upheld in both
+      passes, and made an explicit authority condition ("Card links to the name''s detail surface or
+      the hover affordance is removed"). R3 §0a''s fix list (A/B/C/D/E + the G-D display defect) does
+      not include it, and I verified NEITHER branch of the disjunction was taken: board.css:384 still
+      carries `text-decoration: none` — a property that only means anything on a link — and board.css:387/421/873
+      still carry the hover lift and glow on an <article> with no href. The three-way compare is decisive:
+      across its "what it gets right", "what must go", "kept from production", "dropped from both" and
+      "added" lists, the card-as-link appears on none of them. Two revisions and a designer-authored
+      adjudication have never put this capability on any list.
+
+      '
+    action: upheld
+  - finding: PRC-302
+    note: 'R2 PRC-214, upheld and strengthened, and an explicit authority condition ("reconcile the
+      anon gate copy with what the paid card actually carries"). The copy at board.js:437-439 is unchanged
+      in both languages. R2''s amender already established the decisive fact — "the payload does hold
+      entry/t1/inval for that row" — so this is a tier-policy contradiction the artifact chose to keep,
+      not a data absence. Second consecutive revision under an unmet condition, and §1 line 200 restates
+      the card-tier ban ("exact levels live in plan detail") on the same page as the promise.
+
+      '
+    action: upheld
+  - finding: PRC-303
+    new_severity: major
+    note: 'Q7 supplies a fact I did not have and it is a good one. Production''s GPCR "BUY" came through
+      the management engine''s `recommended_action` — an engine that disclaims order authority — and
+      the prior mapping defaulted an unobtainable stance to `wait`, originating a signal the engine
+      never stated. The operator ruled the producer to be `entry_status` only (2026-08-13), factored
+      from us_board_rank.py:365-368 and drift-pinned in gen_fixture/verify. Refusing the disclaimed
+      verb is therefore a correct authority DE-escalation, not a regression. I WITHDRAW both the "the
+      read was obtainable" component and the "GPCR differs from production" component, and I credit
+      that §C fixed R2''s residual by putting GPCR back in the canonical view. WHAT SURVIVES, at major:
+      the on-card incoherence. Q7 rules the stance producer and Q9 rules the ⚡ producer; nothing rules
+      what happens when they land together. GPCR renders "⚡ Triggered" (tooltip: the trigger fired)
+      beside "No read yet" (tooltip: the stance is unavailable) beside "No zone — stand aside" beside
+      a caution reading "Already moving. Don''t chase above the buy zone." The caution↔zone half is
+      NEW in R3 and could not have existed in R2, where the caution was deleted entirely (that was R2''s
+      PRC-201). Restoring the risk ledger created a collision the rationale never anticipated: 3 rows
+      pair a "buy zone" caution with a "No zone" footer, 2 of them (GPCR, VSEC) among the 40 rendered,
+      both ★Featured.
+
+      '
+    action: downgraded
+  - finding: PRC-304
+    new_severity: minor
+    note: 'Q10 supplies the coordinator''s named criterion verbatim — a producer that does not exist:
+      no committed artifact carries per-ticker intraday change (quotes.json holds 27 index/futures symbols).
+      The fabrication is disclosed, scoped, explained as a demonstration of the direction-ink channel
+      and its zh flip, and DOM-marked. R2''s Reviewer A downgraded the identical finding major→minor
+      on this basis and the authority accepted it; I reach the same place independently. Residual, unchanged
+      from R2 and therefore second-cycle: §8 declares the crops the deliverable and `data-mock-live`
+      is invisible in a PNG. Two R3-specific aggravations for the record: the simulated change now paints
+      on closed plans (AGNT -2.4%, FBRT +1.1% in up-ink — see PRC-314), and the three-way compare lists
+      "Live quote + change (direction ink, zh-flipping)" as a KEPT FROM PRODUCTION capability with no
+      simulation note anywhere on that sheet.
+
+      '
+    action: downgraded
+  - finding: PRC-305
+    note: 'R2 PRC-205, upheld, and an explicit authority condition ("the degraded/behind state has a
+      slot; the card date names its referent"). Absent from §0a''s fix list and from every open question.
+      Nothing in the reveal supplies a missing producer: the artifact itself holds three distinct vintages
+      (asof 2026-08-13, cand_asof 2026-08-12, themes_asof 2026-08-12) and prints one unconditional "Settled
+      close" token, while production computes and renders the behind-banner from the same lane today,
+      in both languages, on desktop and mobile. Aggravating: line 53 records the payload was re-baked
+      to a same-day asof during R3, so the reference can never exhibit the state it lacks — the gap
+      is now invisible in every crop rather than merely unbuilt.
+
+      '
+    action: upheld
+  - finding: PRC-306
+    note: 'R2 PRC-211, upheld, and an explicit authority condition ("the overflow table carries the
+      board''s own sort key and stance"). The table is byte-unchanged. Nothing here is data-bounded:
+      GRID_CAP=40 is a literal (board.js:230), the column set is a literal (board.js:561-562), priority
+      exists on 93/179 rows and stance on 62/179, and where they are null the card tier already demonstrates
+      the em-dash path. Aggravated by §C, correctly: R2''s canonical view rendered 33 of a filtered
+      set, so the unreachable residue was invisible; R3 renders 40 of 159 with an identical overflow
+      surface, which is how the residue reached 77 rows. Fixing PRC-203 without fixing PRC-211 is what
+      produced this number.
+
+      '
+    action: upheld
+  - finding: PRC-307
+    note: 'Half-credited. The R2 condition was disjunctive — "restore a quantitative proof strip OR
+      disposition board.track_record_strip explicitly" — and R3 now files a disposition, so the silent-drop
+      half is genuinely cured. But it is filed RELOCATE, which §1 requires to carry reachability, and
+      the ledger states "NOT ESTABLISHED" in its own words. A RELOCATE whose destination renders four
+      bare #ev anchors and zero figures is a REMOVE without its four mandatory fields. Not BLOCKED_DATA
+      under any reading: production prints 59% win · +0.45% a trade, RECENTLY FIRED 12 with per-name
+      outcomes, and Passed on tonight 27 of 69 today.
+
+      '
+    action: upheld
+  - finding: PRC-308
+    new_severity: minor
+    note: 'Q1 + spawn gate G-D supply the fact I lacked, and it is a textbook legitimate BLOCKED_DATA:
+      name/sector/lane/spark come through the candidate join at 45/179; the named insufficient contract
+      is a per-plan enrichment block on index.json.plans[] keyed over the full book; it is explicitly
+      not authorised by MP-1 and needs its own packet line; and the operator ruled it a hard implementation
+      dependency before the production migration rather than a reason to weaken the reference. I WITHDRAW
+      any fault for degraded cards appearing on the canonical board — that is the operator-ratified
+      consequence of §C, and the alternative was R2''s PRC-203 blocker. WHAT SURVIVES, at minor: bookkeeping
+      only. There is no capability id for card identity, so the loss of company name and sector rides
+      on card.chart_hero''s disposition rather than carrying its own row — which is why my pass-1 read
+      mistook an escalated dependency for an implicit deletion.
+
+      '
+    action: downgraded
+  - finding: PRC-309
+    note: 'Q1 establishes intent ("quiet and deliberate rather than broken") but intent is not disclosure,
+      and a sentence requires no producer. §C materially INCREASED the exposure: in R2 the canonical
+      view filtered the degraded rows out so only state=today showed them, which is why R2''s nearest
+      finding (VTC-212) was downgraded as a "deliberately shown transitional symptom" in a lens; in
+      R3 every user of the flagship view sees 20 undisclosed voids in the first 40 cards, and the only
+      explanatory sentence still lives in state=fallback, which no user reaches. The compliant null
+      form is demonstrated on the same card by the stance chip. The interim mismatch is untouched by
+      the reveal and now doubled: the ledger says "slot at chart height", §1 says the hero is at "its
+      shipped height (74px)", and board.css:458 gives 24px. Note also that the three-way compare adjudicates
+      FTI — an enriched row — so the degraded card form is adjudicated in no artifact the authority
+      reads.
+
+      '
+    action: upheld
+  - finding: PRC-310
+    note: 'Ownership is now shared, but the sentence is still false. §0b-5 records "下方 6 个状态合计" as an
+      operator wording adopted verbatim — and the operator supplied the absence line ("「观察」将在下一次收盘更新后发布")
+      too, so both halves of the contradiction are operator-sourced and neither party appears to have
+      noticed they collide. §3''s "Key-absence is not zero" shows the designer reasoned carefully about
+      the CELL and not about the headline that sums it. Under RIG §9 a prior decision is presumptively
+      preserved but may be overturned explicitly; the correct disposition is a flag-back to the operator,
+      not a unilateral rewrite — which is why I hold this at major rather than raising it.
+
+      '
+    action: upheld
+  - finding: PRC-311
+    note: 'Q3 answers a different component than the one I raised. It explains why the strip is THIN
+      — the payload carries no transition dates, only age_days, so only the derivable figure is printed
+      — and I accept that fully. It says nothing about SCOPE. Computing the count over the active result
+      set `r` instead of `B.rows` (board.js:535) is a one-line change that invents no producer, and
+      without it the board''s single "what changed" integer describes 179 rows inside a frame the user
+      has narrowed to 2 (crop 22) or to 20 closed plans (crop 27).
+
+      '
+    action: upheld
+  - finding: PRC-312
+    note: 'R2 PRC-208, upheld in both passes, and an explicit authority condition ("resolve the Wait-beside-Entered
+      gloss collision with one vocabulary rule on-card"). Unaddressed in §0a and in every open question.
+      It is now more prevalent in absolute terms — 27 Entered+Wait rows against R2''s 17 of 33 — and
+      R2''s second exemplar survives with the same tickers: 5 rows read "⚡ Triggered" beside "Ready",
+      where the board''s own gloss defines Ready as "plan armed, trigger not fired" (DAR, MRK, KEYS,
+      KALU, STLD; DAR and STLD are R2''s named pair). §5 remains the sharpest evidence against it: the
+      designer holds the one-referent-per-page law and applied it to two SECONDARY Candidates sub-lines
+      for the same 入场 collision, while leaving it on the primary card for a second consecutive cycle.
+
+      '
+    action: upheld
+  - finding: PRC-313
+    note: 'R2 PRC-212, upheld and strengthened, and an explicit authority condition (drop the levels
+      or re-adjudicate the card-tier ban). Neither was done: §1 line 200 RESTATES the ban in R3 — "The
+      Entry / T1 / Void three-number footer … framed Prophet as an order-execution oracle … exact levels
+      live in plan detail" — while board.js:561-572 still ships all three as table columns one toggle
+      from the grid. New in R3: AGNT prints void $5.49 above entry $4.28 on a BULL plan, unflagged,
+      in the resolved table (crop 61) — evidence that the surface applies no validation to numbers it
+      presents at execution precision.
+
+      '
+    action: upheld
+  - finding: PRC-314
+    note: 'Addressed nowhere in the reveal, and the causal chain matters for the authority. §B restored
+      the zone_kind branch to cure R2''s PRC-202 blocker, and its tally is exactly right (19/7/35/118
+      verified). But the restored branch tests zk before `life === "resolved"` (board.js:400-417), so
+      a resolved row carrying a muted zone now prints a range — AGNT, the first card of the Resolved
+      filter, renders ZONE $4.10-$4.22 with a live quote, a simulated -2.4% and PRIORITY 69 while the
+      other 19 correctly read "Closed — in the record" and "PRIORITY —". This is a defect introduced
+      BY the R2 remedy, and the fix is a branch reorder.
+
+      '
+    action: upheld
+  - finding: PRC-315
+    note: 'Withdrawn on a fact I lacked. R2 PRC-207 establishes that the Regime/Breadth/Posture chips
+      were the R2 MOCKUP''s own hardcoded string literals at board.js:718-720 — not a production capability
+      — and the R2 design authority ruled PRC-207 blocking, requiring they be "sourced, removed, or
+      unmistakably marked illustrative-fixture-only". The R3 deletion is therefore the authority-ordered
+      remedy for a mockup-introduced defect, `additions` is the correct filing (the thing removed was
+      itself a prior addition), and auth.market_read''s "equal / warranted" is defensible within the
+      board''s scope. My pass-1 charge — that a deletion was filed as an addition to escape §1''s REMOVE
+      fields — is refuted. Residual, offered as an ask rather than sustained as a finding: production''s
+      page-top chips on the same route make "no board-level regime/breadth/posture assertion" ambiguous,
+      so the reference should state its scope boundary for the migration builder; and add.regime_chips_removed''s
+      "nothing replaces them" sits beside a five-tab Market context strip whose fifth tab is "Regime"
+      (board.js:703-712).
+
+      '
+    action: withdrawn
+  - finding: PRC-316
+    note: 'Unaddressed, and the reveal identifies its origin. §D replaced R2''s 22 fabricated sector
+      rows (the PRC-207 blocker) with payload-sourced themes rendering "rank, recommendation, run length
+      and member count straight from the payload" — and "straight from the payload" is precisely the
+      path that leaks an unmapped slug. RECO (board.js:653-659) knows five values; the payload carries
+      a sixth ("enter"), and board.js:681 falls back to the raw string in BOTH languages. A correct
+      remedy for a producer-less section introduced an untranslated internal token in its place.
+
+      '
+    action: upheld
+  - finding: PRC-317
+    note: 'Unaddressed; same §D sourcing lineage. Ranks 1, 5, 6, 7, 9, 11, 12, 19 are printed beside
+      "8 themes in favour" with no denominator, so the surface exposes a scale of at least 19 while
+      naming 8 members. §D takes care to print the as_of and to refuse invention on an absent key —
+      the missing denominator is the one provenance fact that did not make it onto the surface.
+
+      '
+    action: upheld
+  - finding: PRC-318
+    note: 'Unaddressed. §B enumerates the four-way branch and its exact tally but not the zero-width
+      case; 4 of the 61 zone-bearing rows have zlo == zhi and render "$X–$X", including CENX on the
+      flagship crop and FBRT on the multi-episode crops.
+
+      '
+    action: upheld
+  - finding: PRC-319
+    new_severity: minor
+    note: 'Severity unchanged at minor; scope materially narrowed — two of four components withdrawn.
+      WITHDRAWN: the Imminent branch, because Q9 rules it an honest zero from a real producer (signal.tier_cascade
+      == "T3") and explicitly prefers that to the earlier plan-age proxy — an unexercised branch backed
+      by a ruled producer is a strength, not a gap; and the Watch/Delivering/Overtime card-form gap,
+      because Watch is a genuine key absence (§3) and Overtime is held open by Q2 as an UNRESOLVED hard
+      production blocker the operator ruled must not be considered closed — both are real escalations,
+      not silent omissions. SURVIVING: (a) proposal_screenshot_gaps: [] remains a false attestation
+      while three ruled cells have no card form in any crop; (b) NEW — §0b-4 presents the New badge
+      as a fixed, re-sourced deliverable at "40 rows" (row["new"], sig_date == board_date), but the
+      R3 payload carries new: false on 179/179, so a correction the notes bank as delivered renders
+      in zero crops.
+
+      '
+    action: downgraded
+  - finding: PRC-320
+    note: 'Materially widened by the reveal. This is not one stale comment in index.html — DESIGN_NOTES
+      is stale in the same way and more extensively. Verified against the frozen fixture: §0b-1 "162
+      live" vs 159; §3 "Resolved still 17" vs 20; §5 "One printed total (69) … 28+27+10+2+2" vs 70 and
+      22+35+12+1+0; §0b-4 Featured "10" vs 11 and New "40" vs 0. The pattern is clean and worth the
+      authority''s attention: every R3-AUTHORED number reconciles exactly (§A 18 cautions, §B 19/7/35/118,
+      Q1 45/179, Q7b 97/159, Q9 8/0), and every stale number sits in an R2 CARRY-OVER section that was
+      not re-derived after line 53''s payload re-bake. Held at minor because none of it is user-facing
+      — but these are the numbers the design authority reads to adjudicate, and line 53''s claim that
+      "the invariants re-derived and still hold" is true only of the count invariants. R2''s own PRC-215
+      was this same class of defect (the artifact''s disclosure arithmetic contradicting its fixture);
+      that instance was fixed and pinned, and the class recurred at a new site.
+
+      '
+    action: upheld
+  - finding: PRC-321
+    note: 'R2 PRC-216, upheld, and listed in the authority''s conditions ("390w Resolved partition (PRC-216)
+      and the remaining B minors as polish"). Unaddressed. §3 still asserts "Resolved is outside the
+      live count three ways: outside the enclosure past a divider, labelled ''not in today''s count'',
+      and absent from the default grid" — a guarantee the artifact''s own 390w crops refute, exactly
+      as R2 recorded.
+
+      '
+    action: upheld
+  answers:
+    blocked_data_ruling: 'No. None of the three convert, and the artifact itself shows why — it knows
+      how to file a real BLOCKED_DATA and did so twice. Q1/G-D item 2 (name/sector/lane/spark at 45/179)
+      and Q7b/G-D item 1 (entry_status at 61/179, 97 of 159 live rows blocked) each name the insufficient
+      contract, name the escalation, name the interim, and are operator-ruled as hard dependencies gating
+      the commissioning of the migration builder. Those are exemplary, and they are why I downgraded
+      PRC-308 to bookkeeping and withdrew my fault for degraded cards on the canonical board. PRC-301
+      (card link) — NO. A navigation target is not data. stock.html#TICKER is the live production route
+      today, the payload carries id and tk on 179/179, and nothing is missing but the anchor element.
+      The artifact instead ships a non-link <article> that retains text-decoration:none (board.css:384)
+      and a hover lift (board.css:387) — the affordance without the destination, which is the precise
+      thing R2''s condition told it to resolve either way. It appears on no keep, drop or must-go list
+      in DESIGN_NOTES §1 or in the designer''s own three-way compare. This is the "chose not to build"
+      case the coordinator names, and calling it blocked would be the reverse error §1 warns about.
+      PRC-305 (staleness) — NO. Every input exists inside the artifact: it holds asof 2026-08-13, cand_asof
+      2026-08-12 and themes_asof 2026-08-12 simultaneously and prints one unconditional "Settled close"
+      token. Production computes and renders the behind-state from the same lane today. What is missing
+      is a UI state, not a producer. The R3 payload re-bake to a same-day asof means the reference cannot
+      exhibit the state even in principle, so the omission is now unfalsifiable from the crops — the
+      opposite of what an escalation would achieve. PRC-306 (77 card-unreachable rows) — NO. GRID_CAP=40
+      is a literal (board.js:230) and the seven table columns are a literal (board.js:561-562). Priority
+      exists on 93/179 and stance on 62/179; adding them as columns invents no producer, and where they
+      are null the card tier already ships the em-dash path. The one genuinely data-bounded aspect —
+      that many table rows would show a dash — is the artifact''s own established idiom, not a blocker.
+      The converse rule the authority should apply: G-D and Q2 are hard dependencies on what may ship
+      to PRODUCTION. They do not license a frozen REFERENCE to omit a UI state whose data it already
+      holds (305), a navigation target that needs no data at all (301), or a surface cap that is an
+      integer literal (306). R2''s authority said this in terms and it still governs: "a hard production
+      dependency governs what ships to production — it does not authorize a frozen reference" with the
+      defects it does not cover.
+
+      '
+    design_notes_contradiction: 'It holds, and §0b-1 is the stale leftover. Verified in code: board.js:106
+      declares `var isRef = S.state === "paid" || S.state === "today"` and NEVER reads it; rows() (board.js:132-147)
+      applies only the episodes, fallback, life and resolved filters, with no state=paid subset anywhere.
+      The frozen fixture is one universe — 179 rows, 159 live, 97 no-read, 40 rendered + "+119 more"
+      = 159 — so §C is what ships and the dead isRef variable is the literal vestige of the deleted
+      exemption. §0b-1''s "33 today", "162 live · the Prophet book" and "state=today is … the state
+      the count law is verified against" describe the R2 artifact; that is corroborated by R2''s PRC-203
+      blocker, which recorded exactly that behaviour, and by §C''s own text naming "the earlier ''reference
+      renders 33, headline says 162'' split" as the thing it removed. The stale-number sweep confirms
+      the boundary: §0b-1''s 162, §3''s 17 Resolved and §5''s 69/28+27+10+2+2 are all R2 values, while
+      every R3-authored figure reconciles exactly. The more important half of your question: YES, the
+      artifact now violates a design principle its own notes record, and the reversal is unadjudicated.
+      §0b-1 does not merely describe — it states a rule: "A 60%-暂无判断 board must not become the flagship
+      reference." R3 makes precisely that board the flagship reference (97 of 159 live rows, 61%, disclosed
+      no-read; 13 of the 40 rendered cards). I judge the reversal CORRECT on the merits — the count-law
+      exemption was an R2 blocker the authority ordered removed, §C''s remedy is the right one, and
+      I credited it above. But RIG §9 is explicit that a prior decision may be overturned only explicitly,
+      "never by omission", and nothing overturns this one. §C explains why the exemption went and asserts
+      that "enrichment coverage now shows honestly on the cards instead of being filtered away"; it
+      never returns to the recorded principle, and no keep/drop line, open question or lineage entry
+      marks it as superseded. The practical cost is real, not clerical: the two passages describe different
+      products — one shows 33 full-fidelity cards under a 162 headline, the other 159 rows at 61% no-read
+      — and a migration builder handed this reference plus these notes has no way to tell which is law.
+      The remedy is cheap: delete §0b-1 as superseded, or record the reversal as a lineage entry stating
+      that the count law outranks the flagship-quality principle and that G-D is the mechanism intended
+      to eventually satisfy both.
+
+      '
+    repeat_findings:
+      third_consecutive_revision:
+      - id: PRC-301
+        note: card-as-link — named in R2's verdict as missing 'across two revisions'; R2 PRC-209 upheld
+          twice, authority-conditioned, still unaddressed
+      - id: PRC-305
+        note: degraded-freshness state — same, via R2 PRC-205 and the verdict's 'disappeared' list
+      - id: PRC-307
+        note: quantitative proof strip — same, via R2 PRC-213/VTC-211; R3 dispositions it but as an
+          unreachable RELOCATE
+      second_consecutive_revision:
+      - id: PRC-302
+        note: = R2 PRC-214, upheld+strengthened, authority-conditioned; copy byte-unchanged
+      - id: PRC-306
+        note: = R2 PRC-211, upheld, authority-conditioned; table byte-unchanged, residue grew 33→77
+          rows
+      - id: PRC-312
+        note: = R2 PRC-208, upheld twice, authority-conditioned; 17→27 rows, same exemplars DAR/STLD
+      - id: PRC-313
+        note: = R2 PRC-212, upheld+strengthened, authority-conditioned; §1 restates the ban, code still
+          ships the levels
+      - id: PRC-321
+        note: = R2 PRC-216, upheld, listed in conditions; §3 still asserts a guarantee its own 390w
+          crop refutes
+      - id: PRC-304
+        note: finding itself downgraded in both cycles, but R2's residual (marker invisible in a PNG
+          while §8 makes the crops the deliverable) is unaddressed for a second cycle
+      recurring_class_new_site:
+      - id: PRC-320
+        note: R2 PRC-215 was the artifact's own disclosure arithmetic contradicting its fixture; that
+          instance was fixed and pinned (verify.py R-GD1/2) and the class reappeared in the notes' un-re-derived
+          R2 carry-over numbers
+      new_in_r3_introduced_by_an_r2_remedy:
+      - id: PRC-314
+        note: §B's zone-branch restoration (curing blocker PRC-202) tests zk before life=resolved, so
+          closed plans print a live zone
+      - id: PRC-316
+        note: §D's payload-sourced Groups (curing blocker PRC-207) leaks an unmapped 'enter' slug into
+          both languages
+      - id: PRC-317
+        note: same §D sourcing — ranks printed without their denominator
+      - id: PRC-303 (surviving component)
+        note: §A's caution restoration (curing blocker PRC-201) put a 'don't chase above the buy zone'
+          sentence on cards whose footer reads 'No zone — stand aside'
+      - id: PRC-309
+        note: §C's one-universe fix (curing blocker PRC-203) moved the undisclosed chart voids from
+          a lens into the flagship view
+      genuinely_first_occurrence:
+      - id: PRC-310
+        note: the 'six cells add up' sentence against an unpublished Watch cell — a different mechanism
+          from R2's count blocker
+      - id: PRC-311
+        note: unscoped what-changed count
+      - id: PRC-318
+        note: zero-width zone ranges
+      - id: PRC-319 (surviving component)
+        note: the New badge documented as 40 sourced rows and rendering on none
+      - id: PRC-308
+        note: ledger-hygiene residue only, after downgrade
+  post_reveal_verdict: BLOCK
+  surviving_blockers:
+  - PRC-301
+  - PRC-302
+  - PRC-305
+  - PRC-306
+  closing_note: 'The rationale is honest and the revision is substantial: all four R2 blockers and Reviewer
+    B''s non-waivable condition are genuinely closed, and Q7/Q7b/Q1/Q9/Q10/G-D/Q2 are a model of escalating
+    what cannot be built rather than redefining the UX around it — they earned two downgrades and one
+    withdrawal from me. What the reveal cannot do is convert the four survivors. Each is a capability
+    or claim whose data already exists, each was raised in the previous cycle, each was written into
+    the design authority''s own conditions, and each is unmentioned in the revision''s fix list, its
+    keep/drop lists, and the designer''s three-way adjudication. The pattern the authority should weigh
+    is not the count of findings but their direction: this cycle fixed everything the notes discussed
+    and moved nothing that appears on no list. A reference frozen as law with a board that cannot open
+    a name, cannot say it is behind the tape, cannot show 43% of its own rows as cards, and promises
+    an anonymous visitor three numbers its cards do not carry, would institutionalize four regressions
+    that have now survived every mechanism this gate has.
+
+    '
+  amended_at: '2026-08-13'
+  verdict: BLOCK

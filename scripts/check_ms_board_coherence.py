@@ -75,6 +75,10 @@ from html import unescape
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+SITE_DIR = ROOT / "site"
+sys.path.insert(0, str(ROOT))
+
+from scripts.sparse_guard import refuse_if_vacuous, trees_for  # noqa: E402
 
 # ── Constants mirrored from engine/market_state.py (drift-pinned by tests) ───
 # _verdict_from_score bands, keyed by the _LABEL display word.
@@ -270,7 +274,7 @@ def heal_from(ref: str, path: Path) -> bool:
 
 
 def _default_pages() -> list[Path]:
-    return sorted((ROOT / "site").glob("*.html"))
+    return sorted(SITE_DIR.glob("*.html"))
 
 
 # ── Selftest fixtures (the incident, verbatim, plus synthetic edge cases) ─────
@@ -381,6 +385,15 @@ def main(argv: list[str]) -> int:
         argv = argv[:i] + argv[i + 2:]
 
     pages = [Path(a) if Path(a).is_absolute() else ROOT / a for a in argv] or _default_pages()
+
+    # A sparse session worktree omits site/, so _default_pages() globs nothing and
+    # the OK below prints "0 page(s) scanned" and exits 0 — a vacuous pass on the
+    # guard that catches a rebase-stitched board. An explicit PAGE argument keeps
+    # `pages` non-empty and is never affected.
+    refusal = refuse_if_vacuous(len(pages), trees_for(SITE_DIR), "ms-board-coherence-vacuous")
+    if refusal:
+        print(f"ms-board coherence: REFUSED — {refusal}")
+        return 1
 
     violations: dict[Path, list[str]] = {}
     for p in pages:

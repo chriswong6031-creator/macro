@@ -66,7 +66,7 @@ sys.path.insert(0, str(_ROOT))
 
 from engine import importance_v0 as iv  # noqa: E402
 from engine import qbus  # noqa: E402
-from engine.qledger import make_claim, register_batch  # noqa: E402
+from engine.qledger import HORIZON_UNIT_TRADING, make_claim, register_batch  # noqa: E402
 
 log = logging.getLogger("shadow_importance_v0_pit")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -190,6 +190,8 @@ def _register_lane(lane: str, df, root: Path, band_frac: float,
                     scope_key=ticker,
                     direction=0,
                     horizon_d=horizon_d,
+                    # P0a: grade-ladder rungs are exchange SESSIONS, not calendar days.
+                    horizon_unit=HORIZON_UNIT_TRADING,
                     timestamp_quality="CRAWL_BOUNDED",
                     bench=bench,
                     control=None,

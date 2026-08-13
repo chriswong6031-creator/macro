@@ -11,13 +11,16 @@
     <div class="fc-top">{{ logo(g.ticker) }}
       <span class="st-txt"><a href="stock.html#{{ g.ticker }}"><b>{{ g.ticker }}</b></a>
         <span class="nm">{{ clean_name(g.name) }}</span></span>
+      <span class="fc-conv">+{{ "%.1f" | format(g.conviction_pp) }}<i>pp</i></span>
     </div>
-    <div class="fc-mid">
-      <span class="fund-n"><b>{{ g.n_funds }}</b> {{ t('fund', '只基金') if g.n_funds == 1 else t('funds', '只基金') }} {{ t('opened it', '建仓') }}</span>
-      <span class="fc-conv">+{{ "%.1f" | format(g.conviction_pp) }}pp</span>
-    </div>
+    <div class="fc-mid">{{ t('opened from zero by', '从零建仓') }}
+      <b>{{ g.n_funds }}</b> {{ t('fund', '只基金') if g.n_funds == 1 else t('funds', '只基金') }}</div>
+    {# The fund names ARE the evidence here, so they get the room. An active
+       manager's mark is a filled chip — a deliberate pick, the strongest form
+       of this signal — and the hover names it in both languages. #}
     <div class="fc-funds">
-      {% for f in g.funds[:5] %}<span class="fchip {{ 'act' if f.is_active }}">{{ f.fund }}</span>{% endfor %}
+      {% for f in g.funds[:5] %}<span class="fchip{{ ' act' if f.is_active }}"{% if f.is_active %} data-tip-en="{{ f.fund }} is an actively managed fund — a person chose this name" data-tip-zh="{{ f.fund }} 为主动管理基金——由经理人主动选择该个股"{% endif %}>{{ f.fund }}</span>{% endfor %}
+      {% if (g.funds | length) > 5 %}<span class="fchip more">+{{ (g.funds | length) - 5 }}</span>{% endif %}
     </div>
     <div class="fc-foot">{{ stance(g.stance) }}</div>
   </div>

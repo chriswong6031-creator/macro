@@ -7,26 +7,26 @@
   "flag": "🇮🇳",
   "scope_en": "India national economy; Nifty 50 and Sensex are market context.",
   "scope_zh": "印度全国经济；Nifty 50与Sensex仅作市场背景。",
-  "asof": "2026-08-07",
-  "built": "2026-08-10 03:10 UTC",
+  "asof": "2026-08-13",
+  "built": "2026-08-13 13:29 UTC",
   "regime": {
     "quad": "Q2",
     "name": "Reflation",
-    "growth_score": 0.667,
-    "inflation_score": 1.0,
-    "confidence": 0.333,
+    "growth_score": -0.333,
+    "inflation_score": 0.0,
+    "confidence": 0.167,
     "liquidity": "unknown",
-    "recession_score": 27.0,
+    "recession_score": 30.0,
     "recession_band": "low",
     "data_limited": true
   },
   "decision": {
-    "score": 50,
-    "state": "balanced",
-    "state_en": "Balanced",
-    "state_zh": "均衡",
-    "action_en": "Keep growth exposure balanced against food inflation, liquidity and rupee risk.",
-    "action_zh": "在增长暴露与食品通胀、流动性及卢比风险之间保持平衡。",
+    "score": 37,
+    "state": "defensive",
+    "state_en": "Defensive",
+    "state_zh": "防御",
+    "action_en": "Reduce leverage if food inflation, liquidity tightness and rupee pressure become concurrent.",
+    "action_zh": "若食品通胀、流动性收紧与卢比压力同时出现，降低杠杆。",
     "transitions_en": [
       "Upgrade: IIP, private credit and consumption broaden beyond public capex.",
       "Policy turn: food inflation cools enough for RBI easing without rupee stress.",
@@ -39,9 +39,9 @@
     ],
     "parts": {
       "base": 50.0,
-      "growth": 14.67,
-      "inflation": -10.0,
-      "recession": -4.86,
+      "growth": -7.33,
+      "inflation": -0.0,
+      "recession": -5.4,
       "liquidity": 0.0,
       "risk_state": 0.0
     },
@@ -50,10 +50,6 @@
   },
   "history": {
     "values": [
-      30,
-      30,
-      35,
-      50,
       50,
       51,
       51,
@@ -109,13 +105,13 @@
       43,
       67,
       67,
-      50
+      50,
+      53,
+      52,
+      52,
+      37
     ],
     "dates": [
-      "2026-05-18",
-      "2026-05-19",
-      "2026-05-20",
-      "2026-05-21",
       "2026-05-22",
       "2026-05-25",
       "2026-05-26",
@@ -171,27 +167,31 @@
       "2026-08-04",
       "2026-08-05",
       "2026-08-06",
-      "2026-08-07"
+      "2026-08-07",
+      "2026-08-10",
+      "2026-08-11",
+      "2026-08-12",
+      "2026-08-13"
     ],
-    "points": "0.00,70.00 1.69,70.00 3.39,65.00 5.08,50.00 6.78,50.00 8.47,49.00 10.17,49.00 11.86,49.00 13.56,49.00 15.25,50.00 16.95,65.00 18.64,50.00 20.34,65.00 22.03,65.00 23.73,65.00 25.42,66.00 27.12,51.00 28.81,51.00 30.51,66.00 32.20,50.00 33.90,49.00 35.59,49.00 37.29,49.00 38.98,34.00 40.68,49.00 42.37,49.00 44.07,50.00 45.76,49.00 47.46,49.00 49.15,34.00 50.85,35.00 52.54,49.00 54.24,34.00 55.93,41.00 57.63,34.00 59.32,41.00 61.02,41.00 62.71,42.00 64.41,42.00 66.10,41.00 67.80,48.00 69.49,49.00 71.19,49.00 72.88,49.00 74.58,60.00 76.27,53.00 77.97,54.00 79.66,54.00 81.36,54.00 83.05,60.00 84.75,66.00 86.44,66.00 88.14,58.00 89.83,58.00 91.53,58.00 93.22,57.00 94.92,57.00 96.61,33.00 98.31,33.00 100.00,50.00",
-    "min": 30,
+    "points": "0.00,50.00 1.69,49.00 3.39,49.00 5.08,49.00 6.78,49.00 8.47,50.00 10.17,65.00 11.86,50.00 13.56,65.00 15.25,65.00 16.95,65.00 18.64,66.00 20.34,51.00 22.03,51.00 23.73,66.00 25.42,50.00 27.12,49.00 28.81,49.00 30.51,49.00 32.20,34.00 33.90,49.00 35.59,49.00 37.29,50.00 38.98,49.00 40.68,49.00 42.37,34.00 44.07,35.00 45.76,49.00 47.46,34.00 49.15,41.00 50.85,34.00 52.54,41.00 54.24,41.00 55.93,42.00 57.63,42.00 59.32,41.00 61.02,48.00 62.71,49.00 64.41,49.00 66.10,49.00 67.80,60.00 69.49,53.00 71.19,54.00 72.88,54.00 74.58,54.00 76.27,60.00 77.97,66.00 79.66,66.00 81.36,58.00 83.05,58.00 84.75,58.00 86.44,57.00 88.14,57.00 89.83,33.00 91.53,33.00 93.22,50.00 94.92,47.00 96.61,48.00 98.31,48.00 100.00,63.00",
+    "min": 34,
     "max": 67,
-    "start": "2026-05-18",
-    "end": "2026-08-07"
+    "start": "2026-05-22",
+    "end": "2026-08-13"
   },
   "market": {
     "index_label": "Nifty 50 / Sensex",
     "currency_label": "USD/INR",
     "equity": {
-      "price": 24570.65,
-      "off_52w_high": -6.7,
+      "price": 24356.8,
+      "off_52w_high": -7.5,
       "above_50d": true,
       "above_200d": false,
-      "realvol": 10.6,
-      "rsi": 60.0,
-      "ext_z": -0.21,
+      "realvol": 10.1,
+      "rsi": 52.0,
+      "ext_z": -0.36,
       "ext_grade": "intrend",
-      "drawdown_risk": 43.0,
+      "drawdown_risk": 45.0,
       "drawdown_band": "watch",
       "bubble_flag": false
     }
@@ -204,28 +204,24 @@
   },
   "risk": {
     "state": "calm",
-    "top_score": 25,
+    "top_score": 21,
     "dominant_en": "Calm — no driver elevated",
     "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.185,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 25.2,
+      "intensity": 21.2,
       "peak": 87.1,
-      "peak_days_ago": 9,
-      "off_peak": 61.9,
-      "velocity": -24.2,
-      "phase": "receding",
+      "peak_days_ago": 13,
+      "off_peak": 65.9,
+      "velocity": -1.0,
+      "phase": "flat",
       "reached_risk": true,
       "state_now": "calm",
       "odds_now": 0.185,
       "odds_peak": 0.185,
       "odds_delta": 0.0,
       "spark": [
-        15.5,
-        30.4,
-        20.2,
-        19.4,
         26.6,
         40.9,
         60.0,
@@ -245,16 +241,20 @@
         36.3,
         17.7,
         22.2,
-        25.2
+        19.2,
+        25.6,
+        19.6,
+        17.9,
+        21.2
       ],
-      "spark_pts": "3.0,23.0 6.9,18.8 10.8,21.7 14.7,21.9 18.7,19.9 22.6,15.9 26.5,10.6 30.4,7.1 34.3,13.0 38.2,9.8 42.1,6.5 46.0,8.2 50.0,6.9 53.9,6.0 57.8,3.0 61.7,6.0 65.6,10.1 69.5,10.8 73.4,13.5 77.3,17.7 81.3,17.2 85.2,22.4 89.1,21.1 93.0,20.3",
+      "spark_pts": "3.0,20.4 6.9,16.3 10.8,10.8 14.7,7.2 18.7,13.3 22.6,10.0 26.5,6.7 30.4,8.4 34.3,7.1 38.2,6.1 42.1,3.0 46.0,6.1 50.0,10.3 53.9,11.0 57.8,13.9 61.7,18.2 65.6,17.6 69.5,23.0 73.4,21.7 77.3,22.6 81.3,20.7 85.2,22.5 89.1,22.9 93.0,22.0",
       "spark_peak": {
-        "x": 57.8,
+        "x": 42.1,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 20.3
+        "y": 22.0
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -266,17 +266,17 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 74.4,
+        "score": 73.8,
         "band": "caution",
         "firing_legs": [
           {
             "leg": "us_rate_10y",
-            "pctile": 0.793,
+            "pctile": 0.791,
             "confirmed": false
           },
           {
             "leg": "us_real_rate",
-            "pctile": 0.747,
+            "pctile": 0.733,
             "confirmed": false
           },
           {
@@ -291,7 +291,7 @@
         "tier": "A",
         "label_en": "Parabolic extension / exhaustion",
         "label_zh": "抛物线伸展／透支",
-        "score": 23.2,
+        "score": 20.7,
         "band": "calm",
         "firing_legs": []
       },
@@ -300,7 +300,7 @@
         "tier": "A",
         "label_en": "Rupee depreciation / outflows",
         "label_zh": "卢比贬值／资金外流",
-        "score": 10.9,
+        "score": 5.8,
         "band": "calm",
         "firing_legs": []
       }
@@ -366,8 +366,8 @@
       "key": "fx",
       "label_en": "FX reference",
       "label_zh": "汇率参考",
-      "raw": 95.3119,
-      "value": "95.31",
+      "raw": 95.4075,
+      "value": "95.41",
       "unit": "",
       "asof": null
     },
@@ -375,8 +375,8 @@
       "key": "fx_strength_3m",
       "label_en": "Currency strength, 3m",
       "label_zh": "货币强弱，3个月",
-      "raw": 0.77,
-      "value": "0.77%",
+      "raw": 0.4,
+      "value": "0.40%",
       "unit": "%",
       "asof": null
     },
@@ -384,8 +384,8 @@
       "key": "drawdown",
       "label_en": "Index from 52w high",
       "label_zh": "指数距52周高点",
-      "raw": -6.7,
-      "value": "-6.70%",
+      "raw": -7.5,
+      "value": "-7.50%",
       "unit": "%",
       "asof": null
     },
@@ -393,8 +393,8 @@
       "key": "realvol",
       "label_en": "Realized volatility",
       "label_zh": "实现波动率",
-      "raw": 10.6,
-      "value": "10.60%",
+      "raw": 10.1,
+      "value": "10.10%",
       "unit": "%",
       "asof": null
     }
@@ -484,7 +484,7 @@
       "title_zh": "卢比、储备与外部平衡",
       "why_en": "The buffer against oil and global-funding shocks.",
       "why_zh": "抵御油价与全球融资冲击的缓冲。",
-      "value": "95.31",
+      "value": "95.41",
       "available": true,
       "metric": "fx",
       "source_key": "rbi",
@@ -551,7 +551,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2025-03",
-      "age_days": 527,
+      "age_days": 530,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -575,7 +575,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-05",
-      "age_days": 101,
+      "age_days": 104,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"
