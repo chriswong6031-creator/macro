@@ -65,9 +65,11 @@ Treat that as a range, not a date. Mint volume is event-density-driven, not univ
 2026-08-12 produced the *most* episodes (515) from the *fewest* tickers (31), one ticker alone
 contributing 168. A volatile week compresses it.
 
-`outcomes_h60.jsonl` is a second capped source artifact and must be tracked too: 969 rows at
-1,985 B/row, so it meets the 4,096 row cap and the 8 MiB byte cap at nearly the same moment,
-roughly 9-10 sessions behind episodes.
+`outcomes_h60.jsonl` is a second capped source artifact and must be tracked too, and for it the
+**byte** dimension binds first: 969 rows at 1,985 B/row projects to ~8.13 MiB at 4,096 rows, so its
+8 MiB `_source_artifact` cap fires just *before* its row cap. It trails episodes by roughly 9-10
+sessions, so it is not the near-term deadline — but a rows-only instrument would let it walk
+through the wall.
 
 ### Blast radius
 
@@ -212,10 +214,13 @@ pinned byte moves.
    the same file, so the auditor stops being the first thing to fail and stops contradicting the
    repo's considered capacity. This buys nothing on its own — the binding ceiling becomes the
    pinned 4,096 — and the comment says so.
-2. A two-tier tripwire on `episodes.jsonl` and `outcomes_h60.jsonl` independently. At **2,600
-   rows** it emits a GitHub `::warning` annotation — naming the row count, the headroom in rows and
-   sessions, the pinned ceiling, and §7 as the owner of the fix — without failing. At **3,600 rows**
-   it fails.
+2. A two-tier tripwire on `episodes.jsonl` and `outcomes_h60.jsonl` independently, over **both**
+   the row and the byte dimension (the byte tiers are the same fraction of the pinned 8 MiB
+   ceiling that the row tiers are of 4,096, so it is one declared rule rather than two — and it is
+   what keeps h60, whose byte cap binds first, from slipping past a rows-only instrument). At
+   **2,600 rows** it emits a GitHub `::warning` annotation — naming the count, the headroom in rows
+   and sessions, the pinned ceiling, and §7 as the owner of the fix — without failing. At **3,600
+   rows** it fails.
 
    The split is deliberate. A single early hard-fail would red main fleet-wide and block every
    unrelated PR for a week over a deadline that has not arrived; a single late one would leave
@@ -239,7 +244,9 @@ frozen document plus a new implementation, with v1 left byte-frozen):
   `const`. **This resets the forward cohort**, which is the real price of the cut and the reason it
   is an operator-visible act rather than a maintenance patch.
 * Bounds sized against §2's 25,000 rows / 48 MiB rather than a larger arbitrary number, so the wall
-  does not simply move. Size `outcomes_h60.jsonl` as a first-class capped source at the same time.
+  does not simply move. Size `outcomes_h60.jsonl` as a first-class capped source at the same time,
+  and size it on **bytes**: at 1,985 B/row it reaches the 8 MiB artifact cap at ~4,225 rows, so its
+  byte dimension is the binding one and a row-only v2 sizing would under-provision it.
 
 The cohort reset is cheap **today** and gets more expensive every session: the selector is
 currently `selector_active: false` with `candidate_count: 0`, all authority flags false, and the
