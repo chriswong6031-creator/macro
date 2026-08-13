@@ -46,6 +46,7 @@ def _run_runtime(
     fetch_status: int = 200,
     ticker_routes: list[str] | None = None,
     location_search: str = "",
+    lang: str = "en",
 ) -> dict:
     """Run the page's real IIFE against a deliberately tiny browser DOM stub."""
     page_runtime = _page_runtime_js()
@@ -63,6 +64,7 @@ def _run_runtime(
         var FETCH_STATUS = %(fetch_status)s;
         var TICKER_ROUTES = %(ticker_routes)s;
         var LOCATION_SEARCH = %(location_search)s;
+        var LANG = %(lang)s;
         var fetchCalls = 0;
         function makeElement(){
           var listeners = {};
@@ -88,7 +90,7 @@ def _run_runtime(
         var LANG = 'en';
         var docListeners = {};
         var document = {
-          documentElement:{getAttribute:function(){return LANG}}, activeElement:null,
+          documentElement:{getAttribute:function(name){return name==='data-lang'?LANG:'en'}}, activeElement:null,
           getElementById:node, querySelectorAll:function(){return[]},
           addEventListener:function(name, fn){(docListeners[name]=docListeners[name]||[]).push(fn)},
           dispatchEvent:function(){return true}
@@ -151,6 +153,7 @@ def _run_runtime(
         "fetch_status": json.dumps(fetch_status),
         "ticker_routes": json.dumps(ticker_routes) if ticker_routes is not None else "null",
         "location_search": json.dumps(location_search),
+        "lang": json.dumps(lang),
         "page_runtime": page_runtime,
     }
     path = tmp_path / "government_revenue_runtime.js"
@@ -1042,3 +1045,193 @@ def test_runtime_preserves_award_change_kind_and_renders_unmapped_truth(tmp_path
     assert "Official USAspending change" in out["inspectorHtml"]
     assert "Resolve the recipient" in out["inspectorHtml"]
     assert "public-company transmission remains unresolved" in out["inspectorHtml"]
+
+
+def _discovery_timing_workspace(
+    *,
+    effective_at: str | None,
+    known_at: str | None,
+    is_late_discovery: bool,
+) -> dict:
+    """A snapshot-rail diff event, the shape that hardcodes ``is_late_discovery``.
+
+    ``award_events._project_snapshots`` emits every diff-derived change event with
+    ``is_late_discovery=False`` because the flag answers "was this a late FIRST
+    discovery", a question a diff cannot be.  The page must therefore read the
+    event's own effective->known clock instead of trusting that false.
+    """
+    change: dict[str, object] = {
+        "type": "current_value_changed",
+        "what_changed_en": "Award value raised — FA1234",
+        "changed_fields": [
+            {"field": "current_award_amount", "before": 10_000_000, "after": 12_500_000}
+        ],
+    }
+    if effective_at is not None:
+        change["effective_at"] = effective_at
+    if known_at is not None:
+        change["known_at"] = known_at
+    award = {
+        "contract": "government_procurement_event.v2",
+        "event_id": "govws-award-change-timing",
+        "record_id": "award:CONT_AWD_777",
+        "kind": "award_change",
+        "title_original": "Award value raised — FA1234",
+        "agency": {"name": "Department of the Air Force"},
+        "change": change,
+        "award_change": {
+            "award_key": "CONT_AWD_777",
+            "piid": "FA1234",
+            "recipient_name": "Acme Defense Systems",
+            "event_type": "current_value_changed",
+            "source_rail": "usaspending_award_snapshot",
+            "is_late_discovery": is_late_discovery,
+        },
+        "dates": [],
+        "amounts": [],
+        "listed_company_impacts": [],
+        "evidence": {"source_class": "official_fact", "receipts": []},
+        "authority": {"can_rank": False, "can_size": False},
+    }
+    return {
+        "schema_version": "government_procurement_workspace.v2",
+        "event_contract": "government_procurement_event.v2",
+        "bundle_id": "grw2-" + "b" * 24,
+        "total": 1,
+        "next_cursor": None,
+        "events": [award],
+        "coverage": {"events_visible": 1, "open_opportunities": 0},
+        "freshness": {"status": "ok"},
+        "limitations": [],
+    }
+
+
+def _discovery_timing_html(tmp_path: Path, workspace: dict, lang: str = "en") -> str:
+    payload = {
+        "companies": [],
+        "market": {},
+        "freshness": {"status": "ok"},
+        "opportunity_intelligence": {"market": {}},
+        "procurement_workspace": workspace,
+    }
+    out = _run_runtime(tmp_path, payload, workspace, 1_785_548_460_000, lang=lang)
+    return out["inspectorHtml"]
+
+
+@needs_node
+@pytest.mark.parametrize(
+    ("lang", "expected", "forbidden"),
+    [
+        ("en", "Late discovery · 98 days", "Observed in live window"),
+        ("zh", "延迟发现 · 98 天", "在实时窗口内观测"),
+    ],
+)
+def test_delayed_publication_diff_event_never_claims_a_live_window(
+    tmp_path: Path, lang: str, expected: str, forbidden: str
+) -> None:
+    """A ~92d delayed-publication gap must not read as a fresh catalyst.
+
+    The 2026-08-13 batch carried May-dated snapshot rows whose diff events all
+    hardcode ``is_late_discovery=False``.  The old binary copy turned that
+    structural false into a positive freshness assertion in both locales.
+    """
+    workspace = _discovery_timing_workspace(
+        effective_at="2026-05-07T00:00:00Z",
+        known_at="2026-08-13T00:00:00Z",
+        is_late_discovery=False,
+    )
+
+    html = _discovery_timing_html(tmp_path, workspace, lang=lang)
+
+    assert expected in html
+    assert forbidden not in html
+
+
+@needs_node
+@pytest.mark.parametrize(
+    ("lang", "expected"),
+    [("en", "Observed in live window"), ("zh", "在实时窗口内观测")],
+)
+def test_promptly_observed_change_still_reads_as_a_live_window(
+    tmp_path: Path, lang: str, expected: str
+) -> None:
+    """The live-window claim survives where the clock actually supports it."""
+    workspace = _discovery_timing_workspace(
+        effective_at="2026-08-11T00:00:00Z",
+        known_at="2026-08-13T00:00:00Z",
+        is_late_discovery=False,
+    )
+
+    html = _discovery_timing_html(tmp_path, workspace, lang=lang)
+
+    assert expected in html
+    assert "Late discovery" not in html
+
+
+@needs_node
+@pytest.mark.parametrize(
+    ("lang", "expected", "forbidden"),
+    [
+        ("en", "Timing unconfirmed", "Observed in live window"),
+        ("zh", "时点未确认", "在实时窗口内观测"),
+    ],
+)
+def test_unmeasurable_gap_discloses_the_null_instead_of_claiming_freshness(
+    tmp_path: Path, lang: str, expected: str, forbidden: str
+) -> None:
+    """An absent clock is a null to print, never evidence of a live observation."""
+    workspace = _discovery_timing_workspace(
+        effective_at=None,
+        known_at="2026-08-13T00:00:00Z",
+        is_late_discovery=False,
+    )
+
+    html = _discovery_timing_html(tmp_path, workspace, lang=lang)
+
+    assert expected in html
+    assert forbidden not in html
+
+
+@needs_node
+@pytest.mark.parametrize(
+    ("lang", "expected"), [("en", "Late discovery"), ("zh", "延迟发现")]
+)
+def test_engine_late_verdict_outranks_an_unmeasurable_gap(
+    tmp_path: Path, lang: str, expected: str
+) -> None:
+    """``_is_late_discovery`` fails closed on a missing clock; the page must too."""
+    workspace = _discovery_timing_workspace(
+        effective_at=None,
+        known_at=None,
+        is_late_discovery=True,
+    )
+
+    html = _discovery_timing_html(tmp_path, workspace, lang=lang)
+
+    assert expected in html
+    assert "Timing unconfirmed" not in html
+    assert "时点未确认" not in html
+
+
+def test_discovery_timing_threshold_tracks_the_engine_constant() -> None:
+    """The page's live-window boundary mirrors the engine's own definition."""
+    engine_default = int(
+        re.search(
+            r"^DEFAULT_LATE_DISCOVERY_DAYS\s*=\s*(\d+)",
+            (ROOT / "engine" / "government_revenue" / "award_events.py").read_text(
+                encoding="utf-8"
+            ),
+            re.MULTILINE,
+        ).group(1)
+    )
+    page_default = int(
+        re.search(r"var LATE_DISCOVERY_DAYS\s*=\s*(\d+)", TEMPLATE).group(1)
+    )
+
+    assert page_default == engine_default
+
+
+def test_discovery_timing_never_reads_the_hardcoded_flag_alone() -> None:
+    """Pin the defect: the cell must not branch on ``is_late_discovery`` at the call site."""
+    assert "discoveryTiming(e.change,award)" in TEMPLATE
+    assert "award.is_late_discovery?" not in TEMPLATE
