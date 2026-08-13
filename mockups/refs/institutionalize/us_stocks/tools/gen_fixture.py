@@ -170,6 +170,12 @@ def main():
     assert_projection_tracks_engine()
     idx = git_json("site/prophet/index.json")
     su = git_json("site/factordata/us_standouts.json")
+    # The ⚡ trigger's REAL producer: membership in top_setups.buy means a trigger
+    # exists; `signal.tier_cascade == "T3"` is the imminent tier. This is what
+    # dashboard.html.j2:16187-16189 reads. Trigger recency is NOT inferable from
+    # plan age (operator ruling 2026-08-13) — sourced or omitted, never approximated.
+    trg = {r["ticker"]: r for r in (git_json("site/factordata/setups.json").get("buy") or [])
+           if r.get("ticker")}
 
     plans = idx["plans"]
     buy = {r["ticker"]: r for r in su.get("buy", [])}
@@ -251,14 +257,18 @@ def main():
             "zstate": ((r.get("entry_zone_state") or {}).get("state")
                        if isinstance(r.get("entry_zone_state"), dict) else None),
             "zclass": (r.get("entry_zone") or {}).get("zone_class"),
-            # marks, restrained: star (join) · new (100%, age<=1) · lane (join)
-            "star": bool(((b or {}).get("coiled") or {}).get("star")),
-            "new": bool(r.get("age_days") is not None and r.get("age_days") <= 1),
-            # ⚡ trigger chip — kept high-signal: only a RECENT trigger, or one
-            # about to fire. Not on all 96 entered rows (that is chip spam).
-            "trg": ("triggered" if (life == "entered" and (r.get("age_days") or 99) <= 3)
-                    else "imminent" if (life == "ready" and r.get("entry_status") == "buy_now")
-                    else None),
+            # ── marks: SOURCED, never approximated (operator ruling 2026-08-13) ──
+            # `featured` is the Priority Engine's own gated cohort flag
+            # (us_board_rank.featured_shortfalls -> row["featured"]); it is NOT
+            # coiled.star, which is a different measurement.
+            "star": bool((b or {}).get("featured")),
+            # `new` is the shipped contract: signal date == board as-of date
+            # (us_board_rank.py:1109 `row["new"] = sig_date == board_date`).
+            # It is NOT age_days <= 1.
+            "new": bool((b or {}).get("new")),
+            # ⚡ from the real trigger producer, or absent. No inference.
+            "trg": (("imminent" if ((trg[tk].get("signal") or {}).get("tier_cascade") == "T3")
+                     else "triggered") if tk in trg else None),
         })
 
     counts = collections.Counter(r["life"] for r in rows_out)

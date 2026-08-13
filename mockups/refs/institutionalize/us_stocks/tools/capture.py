@@ -19,6 +19,9 @@ MOBILE = (390, 844)
 
 # name, viewport, query
 SHOTS = [
+    # ── THE FREEZE CROPS (operator: "one final light-ZH + dark-EN") ────────
+    ("00-FREEZE-dark-en",         DESKTOP, "theme=dark&lang=en&state=paid"),
+    ("00-FREEZE-light-zh",        DESKTOP, "theme=light&lang=zh&state=paid"),
     # ── handoff §12 deliverables 1-5: the required matrix ──────────────────
     ("01-desktop-dark-en",        DESKTOP, "theme=dark&lang=en&state=paid"),
     ("02-desktop-light-en",       DESKTOP, "theme=light&lang=en&state=paid"),
@@ -27,6 +30,9 @@ SHOTS = [
     ("05-mobile390-dark-en",      MOBILE,  "theme=dark&lang=en&state=paid"),
     ("06-mobile390-dark-zh",      MOBILE,  "theme=dark&lang=zh&state=paid"),
     ("07-mobile390-light-en",     MOBILE,  "theme=light&lang=en&state=paid"),
+    # ── the honesty state: the ACTUAL payload, no-reads included ───────────
+    ("08-today-actual-dark-en",   DESKTOP, "theme=dark&lang=en&state=today"),
+    ("09-today-actual-light-zh",  DESKTOP, "theme=light&lang=zh&state=today"),
     # ── §12.7: the missing-enrichment fallback ─────────────────────────────
     ("10-fallback-dark-en",       DESKTOP, "theme=dark&lang=en&state=fallback"),
     ("11-fallback-light-zh",      DESKTOP, "theme=light&lang=zh&state=fallback"),
@@ -66,6 +72,7 @@ SHOTS = [
 # gate is reviewed on the above-fold composition. These are the views where the
 # whole-page rhythm (three count-bearing devices, §G.2) is the thing being judged.
 FULL_PAGE = {
+    "00-FREEZE-dark-en", "00-FREEZE-light-zh", "08-today-actual-dark-en",
     "01-desktop-dark-en", "02-desktop-light-en", "03-desktop-dark-zh",
     "04-desktop-light-zh", "05-mobile390-dark-en", "06-mobile390-dark-zh",
     "10-fallback-dark-en", "30-multi-episode-en", "40-anon-locked-dark-en",

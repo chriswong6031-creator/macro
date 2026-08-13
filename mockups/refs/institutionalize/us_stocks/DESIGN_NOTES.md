@@ -1,6 +1,7 @@
 # Prophet Board — mockup gate notes (MP-1 / gate G-C)
 
-**Status:** mockup-gate artifact, **revised 2026-08-13** after the operator's card ruling.
+**Status:** mockup-gate artifact, **G-C correction pass 2026-08-13** (third revision) after the
+operator's visual/product audit. Composition approved; five narrow corrections applied.
 Frozen visual reference for the `us_stocks.html` migration.
 **No production file is touched by this directory.**
 
@@ -23,7 +24,7 @@ python3 -m http.server 8792 --directory mockups/refs/institutionalize/us_stocks
 |---|---|
 | `theme` | `dark` (default) · `light` |
 | `lang` | `en` (default) · `zh` |
-| `state` | `paid` (default) · `anon` · `empty` · `episodes` · `fallback` |
+| `state` | `paid` = **canonical reference** (default) · `today` = actual payload · `anon` · `empty` · `episodes` · `fallback` |
 | `life` | `watch` `ready` `entered` `delivering` `overtime` `invalidated` `resolved` |
 | `view` | `grid` (default) · `table` |
 | `chrome` | `1` (default, harness bar) · `0` (clean, used for crops) |
@@ -33,7 +34,7 @@ python3 -m http.server 8792 --directory mockups/refs/institutionalize/us_stocks
 ```bash
 python3 tools/gen_fixture.py board-data.js      # regenerate data from origin/main
 python3 tools/capture.py  http://localhost:8792 crops
-python3 tools/verify.py   http://localhost:8792 # 99/99 acceptance checks
+python3 tools/verify.py   http://localhost:8792 # 116/116 acceptance checks
 ```
 
 **The data is real.** `board-data.js` is a committed extract of `site/prophet/index.json`
@@ -45,6 +46,54 @@ python3 tools/verify.py   http://localhost:8792 # 99/99 acceptance checks
 162 live + 17 resolved                                           = 179 = active_count
 grid: 40 cards + "+122 more"                                     = 162 = headline
 ```
+
+---
+
+## 0b. The G-C correction pass (operator audit, 2026-08-13)
+
+The composition passed Product/Taste review — ladder, density, card anatomy, Priority placement,
+lifecycle treatment, Zone footer and chroma level are settled and are **not** revisited. Five
+narrow corrections were applied; no structural redesign.
+
+**1. The canonical reference now shows the intended experience.** `state=paid` is the reference
+view and renders only the **33 plan rows whose enrichment contract is met today** — zero no-read
+cards. `state=today` is the honesty state showing the actual payload including the 60% awaiting
+their entry read, and is the state the count law is verified against. A 60%-`暂无判断` board must
+not become the flagship reference. **New spawn gate G-D** (§7) makes coverage a hard production
+dependency.
+
+**2. The live-quote slot now actually renders on every card.** The previous pass put `data-sym` on
+every card and claimed `live.js` could therefore paint every quote — but only created the quote
+DOM when an SSR price existed, so un-enriched rows had no `.nb-px`/`.nb-chg` node to hydrate. The
+slot is now unconditional; un-hydrated it reads an em dash in muted ink, exactly as the shipped
+card server-renders it.
+
+**3. Two pieces of shipped visual grammar were restored.**
+- **Stance chip hierarchy** (`_prophet_card.html.j2:174,178`): only **Buy** is a solid badge;
+  every other verb is a 13% tint + coloured text + a 40%-alpha border. The previous pass made all
+  five solid white-on-hue, which read as five equally loud calls.
+- **The spark-recolour law** (`:162-163`): `.pv-chart svg * { stroke: var(--pvh) !important }`
+  plus the `[fill]` rule recolour the whole spark *and its baked zone band* to the stance hue.
+  Without it, DAR rendered a red 买入 chip beside an amber chart — two stance colours on one card.
+  Restored, a Buy card in Chinese is one coherent red system while the daily negative change stays
+  independently green.
+
+**4. Three badges are now SOURCED, not approximated.** This mattered more than the CSS:
+
+| Badge | Was (approximated) | Now (sourced) | Rows |
+|---|---|---|---|
+| ★ Featured | `coiled.star` | `row["featured"]` — the Priority Engine's own gated cohort flag (`featured_shortfalls`) | 10 |
+| New | `age_days <= 1` | `row["new"]` — the shipped contract `sig_date == board_date` (`us_board_rank.py:1109`) | 40 |
+| ⚡ Triggered / Imminent | plan age ≤3d / `Ready + buy_now` | membership in `setups.json.buy`; `signal.tier_cascade == "T3"` is Imminent (`dashboard.html.j2:16187-16189`) | 8 / **0 today** |
+
+Imminent is **0 today** because no row carries T3 — an honest zero from a real producer, rather
+than four cards inferred from a nearby field. Trigger recency is not derivable from plan age.
+
+**5. Native zh pass + PR-body refresh.** The operator's wordings adopted verbatim
+(`跟踪中计划`, `下方 6 个状态合计`, `「观察」将在下一次收盘更新后发布`,
+`今日变化 · 过去 24 小时新增 N`) plus a wider pass over the same register — build-system
+vocabulary (`夜间构建`, `档位`) and literal translations (`在场计划`, `计划簿`) removed
+throughout. The GitHub PR body has been rewritten to describe the current contract.
 
 ---
 
@@ -364,15 +413,32 @@ and a lifecycle fact added; the lock is the shipped `.mx-tier-gate--prophet`; Gr
 shipped `.actcol` idiom unchanged.
 
 MP-1 remains gated on **G-A** (PR-0(c) publishing `lifecycle_state` + `lifecycle_counts`) and
-**G-B** (DS-PR-0), plus the enrichment dependency in Q1. This artifact satisfies **G-C** only.
-**No production migration has begun.**
+**G-B** (DS-PR-0). This artifact satisfies **G-C** only. **No production migration has begun.**
+
+### NEW — spawn gate G-D: plan-book enrichment + actionability coverage
+
+**The Board migration builder may not be commissioned until the plan book publishes, for the full
+universe (not the candidate intersection):**
+
+1. **the entry/actionability axis** (`entry_status`) — today 61/179, leaving **60% of live rows
+   BLOCKED_DATA**. Without it the Board cannot state a stance on two-thirds of its inventory.
+2. **name · sector · lane · spark** — today 45/179. The live quote is *not* part of this gate: it
+   needs only `data-sym`.
+
+The reference view (`state=paid`) shows the product once G-D is met; `state=today` and
+`state=fallback` show what ships if it is not. Both are committed so the difference is reviewable
+rather than argued.
+
+**Overtime (Q2) is a separate hard production blocker** and is not cleared by this pass.
 
 ---
 
 ## 8. Evidence
 
-`crops/` — 33 views, 47 files, at 1440×900 and 390×844:
+`crops/` — 37 views, 54 files, at 1440×900 and 390×844:
 
+- `00-FREEZE-*` the two freeze crops (dark EN + light ZH) — the canonical reference
+- `08`–`09` the honesty state (`today`) — the actual payload, no-reads included
 - `01`–`07` the required matrix: desktop dark/light × EN/ZH, 390w dark EN/ZH, 390w light EN
 - `10`–`12` **missing-enrichment fallback** (dark EN, light ZH, 390w)
 - `20`–`27` each ladder filter incl. Ready, Entered, Invalidated, and the zero/absent cells
@@ -381,7 +447,7 @@ MP-1 remains gated on **G-A** (PR-0(c) publishing `lifecycle_state` + `lifecycle
 - `50`–`51` empty board · `60`–`61` table view
 - `70`–`73` **the three-way card adjudication** (production · #5514 v1 · revised), dark+light × EN+ZH
 
-**Checks:** `tools/verify.py` — **99/99 passing**, run against the *rendered* page and
+**Checks:** `tools/verify.py` — **116/116 passing**, run against the *rendered* page and
 mutation-tested (planting "stage"/阶段 and a lifecycle cell word inside Candidates makes it fail
 in both languages). Zero horizontal page scroll at every captured width, asserted per shot.
 

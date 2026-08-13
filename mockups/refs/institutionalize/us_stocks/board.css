@@ -402,7 +402,13 @@ html[data-theme="light"] .pv-chip--noread { box-shadow: none; }
   position: relative; min-width: 0; border-radius: 11px 11px 0 0;
   background: color-mix(in srgb, var(--pvh, var(--muted)) 3%, transparent);
 }
-.pv-chart svg { display: block; width: 100%; height: 74px; border-radius: 11px 11px 0 0; }  /* production parity */
+.pv-chart svg { display: block; width: 100%; height: 74px; border-radius: 11px 11px 0 0; }
+/* THE SPARK-RECOLOUR LAW — _prophet_card.html.j2:162-163, verbatim.
+   The whole spark AND its baked zone band take the stance hue, so a Buy card is
+   one coherent bullish system rather than a red chip beside an amber chart. It
+   also means the spark inherits the zh flip through --pvh, for free. */
+.pv-chart svg * { stroke: var(--pvh) !important; }
+.pv-chart svg [fill]:not([fill="none"]) { fill: var(--pvh) !important; stroke: none !important; }
 /* Graceful missing-enrichment fallback. The stance chip must sit in the SAME
    place on every card, so the hero collapses to a quiet strip rather than
    disappearing — but it stays near-invisible: an absent chart is a data gap to
@@ -412,33 +418,46 @@ html[data-theme="light"] .pv-chip--noread { box-shadow: none; }
   background: color-mix(in srgb, var(--muted) 5%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
 }
-.pv-ov { position: absolute; top: 5px; display: flex; align-items: center; gap: 4px; z-index: 2; }
-.pv-ovl { left: 6px; }
-.pv-ovr { right: 6px; }
+.pv-ov { position: absolute; top: 8px; display: flex; gap: 5px; align-items: center; z-index: 2; max-width: 70%; }
+.pv-ov.pv-ovl { flex-wrap: wrap; row-gap: 3px; }
+.pv-ovl { left: 9px; }
+.pv-ovr { right: 9px; }
+/* STANCE CHIP HIERARCHY — _prophet_card.html.j2:174,178, verbatim.
+   Only BUY is a solid badge. Every other verb is a quiet tint + coloured text +
+   40% border, so the board does not read as five equally loud calls. */
 .pv-chip {
-  padding: 2px 7px; border-radius: 5px; font-size: 9.5px; font-weight: 800;
-  letter-spacing: .05em; text-transform: uppercase; line-height: 1.35;
-  color: #fff; background: var(--pvh, var(--muted)); white-space: nowrap;
+  font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+  line-height: 1.35; padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+  background: color-mix(in srgb, var(--pvh, var(--muted)) 13%, var(--panel, #fff));
+  color: var(--pvh-ink, var(--pvh, var(--muted)));
+  border: 1px solid color-mix(in srgb, var(--pvh-ink, var(--pvh, var(--muted))) 40%, transparent);
 }
-html[data-theme="light"] .pv-chip { box-shadow: 0 1px 2px rgba(20,30,50,.18); }
+.pv-buy .pv-chip {
+  background: var(--pvh-ink, var(--pvh, var(--up)));
+  color: var(--panel, #fff); border-color: transparent;
+}
 .pv-trg {
   padding: 2px 6px; border-radius: 5px; font-size: 9px; font-weight: 750;
   white-space: nowrap; cursor: help;
   color: var(--ink-warn); background: color-mix(in srgb, var(--warn) 15%, var(--panel));
   border: 1px solid color-mix(in srgb, var(--warn) 42%, transparent);
 }
-.pv-quote {
-  display: inline-flex; align-items: baseline; gap: 5px; padding: 2px 6px;
-  border-radius: 5px; background: color-mix(in srgb, var(--panel) 78%, transparent);
-  font-variant-numeric: tabular-nums;
+/* QUOTE — _prophet_card.html.j2:179-189, verbatim. The slot is rendered on
+   EVERY card and bound by data-sym; live.js paints it. Un-hydrated it reads an
+   em dash in muted ink, which is why it needs no payload price to exist. */
+.pvcard .pv-quote {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  border: 1px solid var(--line); border-radius: 7px; padding: 1px 6px; white-space: nowrap;
 }
-.pv-px { font-size: 11.5px; font-weight: 800; color: var(--text); }
-/* the live change is the ONE place a direction ink belongs on this card, and it
-   flips with the zh convention because it reads --up/--down */
-.pv-chg { font-size: 10px; font-weight: 750; }
-.pv-chg--up { color: var(--ink-up); }
-.pv-chg--dn { color: var(--ink-down); }
-.pv-chg--flat { color: var(--muted); }
+.pvcard .nb-px.pv-px, .pvcard .nb-chg.pv-chg {
+  font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+  line-height: 1.35; white-space: nowrap; margin: 0;
+}
+.pvcard .nb-px.pv-px { color: var(--text); }
+.pvcard .pv-quote .pv-chg { color: var(--muted); }
+.pvcard .pv-quote .pv-chg.up { color: var(--ink-up, var(--up)); }
+.pvcard .pv-quote .pv-chg.down { color: var(--ink-down, var(--down)); }
 
 /* ── body ───────────────────────────────────────────────────────────────── */
 .pv-bd { padding: 8px 10px 9px; display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }

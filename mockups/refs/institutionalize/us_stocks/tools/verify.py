@@ -56,7 +56,7 @@ def main():
             return pg
 
         # ── A. two-total law ────────────────────────────────────────────────
-        pg = page_at("theme=dark&lang=en&state=paid")
+        pg = page_at("theme=dark&lang=en&state=today")
         B = pg.evaluate("() => window.BOARD")
         painted = pg.evaluate(
             "() => Object.fromEntries([...document.querySelectorAll('.mx-cell')]"
@@ -89,7 +89,7 @@ def main():
 
         # ── B. chip-count law, every cell, grid AND table ──────────────────
         for k in CELLS:
-            pg = page_at(f"theme=dark&lang=en&state=paid&life={k}")
+            pg = page_at(f"theme=dark&lang=en&state=today&life={k}")
             n = B["counts"][k]
             got = pg.evaluate("""() => {
                 const cards = document.querySelectorAll('.pvcard').length;
@@ -106,7 +106,7 @@ def main():
                    f"{got['cards']}+{got['more']} vs {n}")
             pg.close()
 
-            pg = page_at(f"theme=dark&lang=en&state=paid&life={k}&view=table")
+            pg = page_at(f"theme=dark&lang=en&state=today&life={k}&view=table")
             rows = pg.evaluate("() => document.querySelectorAll('.st-table tbody tr').length")
             ok(f"B-table {k}: rendered rows == cell count, no remainder",
                rows == n, f"{rows} vs {n}")
@@ -114,7 +114,7 @@ def main():
 
         # ── D/E/F. vocabulary + rail sweeps, both languages ────────────────
         for lang in ("en", "zh"):
-            pg = page_at(f"theme=dark&lang={lang}&state=paid")
+            pg = page_at(f"theme=dark&lang={lang}&state=today")
             txt = pg.evaluate("() => document.getElementById('board').innerText")
             html = pg.evaluate("() => document.getElementById('board').innerHTML")
 
@@ -131,6 +131,13 @@ def main():
             ok(f"D1[{lang}] no user-facing 'stage'",
                "stage" not in txt.lower(), "found 'stage' in rendered text")
             ok(f"D2[{lang}] no user-facing '阶段'", "阶段" not in txt, "found 阶段")
+            if lang == "zh":
+                # A latin word wedged into a Chinese sentence is the tell of
+                # English-shaped copy (shipped once as "是production迁移前的…").
+                # Product nouns and tickers are legitimate; lowercase prose is not.
+                bad = re.findall(r"[\u4e00-\u9fff][a-z]{4,}|[a-z]{4,}[\u4e00-\u9fff]", txt)
+                ok("D5[zh] no latin prose word wedged inside Chinese copy",
+                   not bad, f"found {sorted(set(bad))[:5]}")
             ok(f"D3[{lang}] no '#stage=' anywhere", "#stage=" not in html, "found #stage=")
             ok(f"D4[{lang}] fragment vocabulary is #life=",
                "#life=" in html or "data-life" in html, "no #life=/data-life")
@@ -304,9 +311,95 @@ def main():
                 ok("G3[zh] the buy stance flips with the zh direction convention",
                    tok["buy"] == tok["up"] or tok["buy"] == "var(--up)",
                    f"--pv-buy {tok['buy']!r} vs --up {tok['up']!r}")
-                ok("G4[zh] a rendered Buy chip is painted the zh up-ink",
-                   tok["chip"] in ("rgb(224, 100, 100)", "rgb(207, 64, 64)"),
-                   f"chip {tok['chip']!r}")
+                # The chip may compute to rgb(), rgba() or color(srgb ...) depending
+                # on whether color-mix was involved. Assert the SEMANTIC fact — a zh
+                # Buy chip is RED (red channel dominates) — not a literal string.
+                _n = [float(x) for x in re.findall(r"[0-9.]+", tok["chip"] or "")][:3]
+                if _n and max(_n) <= 1.0:
+                    _n = [v * 255 for v in _n]
+                ok("G4[zh] a rendered Buy chip is painted red (the zh up-ink)",
+                   len(_n) == 3 and _n[0] > _n[1] + 40 and _n[0] > _n[2] + 40,
+                   f"chip {tok['chip']!r} -> rgb{tuple(round(v) for v in _n)}")
+            pg.close()
+
+        # ── N. the G-C correction pass (operator 2026-08-13) ────────────────
+        for lang in ("en", "zh"):
+            # N1-N2: the canonical REFERENCE must show the intended experience
+            pg = page_at(f"theme=dark&lang={lang}&state=paid")
+            ref = pg.evaluate("""() => {
+              const cards = [...document.querySelectorAll('.pvcard')];
+              return {n: cards.length,
+                      noread: cards.filter(c => c.querySelector('.pv-chip--noread')).length,
+                      charts: cards.filter(c => c.querySelector('.pv-chart svg')).length};
+            }""")
+            ok(f"N1[{lang}] the reference view renders cards", ref["n"] > 0, str(ref["n"]))
+            ok(f"N2[{lang}] the reference view carries ZERO no-read cards",
+               ref["noread"] == 0, f"{ref['noread']} of {ref['n']}")
+            ok(f"N3[{lang}] every reference card is chart-first",
+               ref["charts"] == ref["n"], f"{ref['charts']} of {ref['n']}")
+
+            # N4: the live-quote slot exists on EVERY card, hydratable or not
+            q = pg.evaluate("""() => {
+              const cards = [...document.querySelectorAll('.pvcard')];
+              return {n: cards.length,
+                      slot: cards.filter(c => c.querySelector('.nb-px[data-sym]') &&
+                                              c.querySelector('.nb-chg[data-sym]')).length};
+            }""")
+            ok(f"N4[{lang}] every card carries a live-bound quote slot",
+               q["slot"] == q["n"], f"{q['slot']} of {q['n']}")
+            pg.close()
+
+            # N4b: including the un-enriched rows, which is the bug that was fixed
+            pg = page_at(f"theme=dark&lang={lang}&state=fallback")
+            q2 = pg.evaluate("""() => {
+              const cards = [...document.querySelectorAll('.pvcard')];
+              return {n: cards.length,
+                      slot: cards.filter(c => c.querySelector('.nb-px[data-sym]') &&
+                                              c.querySelector('.nb-chg[data-sym]')).length};
+            }""")
+            ok(f"N4b[{lang}] un-enriched cards also carry the quote slot",
+               q2["n"] > 0 and q2["slot"] == q2["n"], f"{q2['slot']} of {q2['n']}")
+            pg.close()
+
+            # N5: stance chip hierarchy — only BUY is a solid badge
+            pg = page_at(f"theme=dark&lang={lang}&state=today")
+            hier = pg.evaluate("""() => {
+              // Shipped rule (_prophet_card.html.j2:174,178): every verb gets a 13%
+              // tint + a 40%-alpha border; ONLY .pv-buy gets border-color:transparent.
+              // Border transparency is the unambiguous tell — color-mix tints are
+              // OPAQUE, so an alpha test on background classifies everything solid.
+              const out = {solid: [], tint: []};
+              const VERBS = ['buy','near','wait','hold','avoid'];
+              document.querySelectorAll('.pvcard .pv-chip:not(.pv-chip--noread)').forEach(c => {
+                const card = c.closest('.pvcard');
+                const cls = card.className.split(/\\s+/);
+                let verb = '?';
+                VERBS.forEach(v => { if (cls.indexOf('pv-' + v) >= 0) verb = v; });
+                const bc = getComputedStyle(c).borderTopColor;
+                const a = bc.indexOf('rgba') === 0 ? parseFloat(bc.split(',')[3]) : 1;
+                (a < 0.05 ? out.solid : out.tint).push(verb);
+              });
+              out.solid = [...new Set(out.solid)]; out.tint = [...new Set(out.tint)];
+              return out;
+            }""")
+            ok(f"N5a[{lang}] the chip sweep resolves real verbs",
+               "?" not in hier["solid"] + hier["tint"] and bool(hier["solid"] or hier["tint"]),
+               f"solid={hier['solid']} tint={hier['tint']}")
+            ok(f"N5b[{lang}] only BUY renders as a solid stance badge",
+               set(hier["solid"]) <= {"buy"} and "buy" not in hier["tint"],
+               f"solid={hier['solid']} tint={hier['tint']}")
+
+            # N6: the spark takes the stance hue (no chip/chart colour conflict)
+            spark = pg.evaluate("""() => {
+              const c = document.querySelector('.pvcard.pv-buy .pv-chart svg polyline') ||
+                        document.querySelector('.pvcard .pv-chart svg polyline');
+              if (!c) return null;
+              const card = c.closest('.pvcard');
+              return {stroke: getComputedStyle(c).stroke,
+                      pvh: getComputedStyle(card).getPropertyValue('--pvh').trim()};
+            }""")
+            ok(f"N6[{lang}] the spark is recoloured to the stance hue",
+               spark and spark["stroke"] and spark["pvh"], f"{spark}")
             pg.close()
 
         # ── H. 390w ────────────────────────────────────────────────────────
