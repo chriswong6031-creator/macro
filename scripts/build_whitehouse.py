@@ -516,6 +516,8 @@ def _register_wh_claim(rec: dict, root: Path) -> None:
                 scope_key=sym,
                 direction=direction,
                 horizon_d=int(rec.get("banner_days") or 3) * 1,
+                # P0a: banner_days is a CALENDAR banner life, not a session count.
+                horizon_unit=ql.HORIZON_UNIT_CALENDAR,
                 timestamp_quality="PUBLISHER_STATED",
                 claim_family="whitehouse",
                 extra={
@@ -536,6 +538,8 @@ def _register_wh_claim(rec: dict, root: Path) -> None:
             scope_key="WH_POLICY",
             direction=tone_dir,
             horizon_d=int(rec.get("banner_days") or 3),
+            # P0a: banner_days is a CALENDAR banner life, not a session count.
+            horizon_unit=ql.HORIZON_UNIT_CALENDAR,
             timestamp_quality="PUBLISHER_STATED",
             bench="SPY",
             claim_family="whitehouse",

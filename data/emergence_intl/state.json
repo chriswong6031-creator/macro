@@ -1,32 +1,32 @@
 {
-  "62047a0c2e48": {
-    "name_en": "Cross-sector cluster \u00b7 Communication + Real Estate",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Real Estate",
-    "score": 53.1
-  },
-  "6d1b3c0c93b2": {
+  "1b8d011f8a34": {
     "name_en": "Emerging Consumer Staples cluster",
     "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 44.8
+    "score": 45.5
   },
-  "9cf48c142dc5": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Materials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Materials",
-    "score": 60.6
+  "435fcf9c383f": {
+    "name_en": "Cross-sector cluster \u00b7 Health Care + Financials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Health Care + Financials",
+    "score": 58.0
   },
-  "aeb0eb3df3e7": {
-    "name_en": "Emerging Consumer Discretionary cluster",
-    "name_zh": "\u65b0\u5174 Consumer Discretionary \u96c6\u7fa4",
-    "score": 47.9
+  "65a1cdad57c1": {
+    "name_en": "Cross-sector cluster \u00b7 Communication + Consumer Discretionary",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Consumer Discretionary",
+    "score": 66.3
   },
-  "b55c430c900a": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Financials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Financials",
-    "score": 66.6
+  "9d04f9048967": {
+    "name_en": "Cross-sector cluster \u00b7 Communication + Industrials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Industrials",
+    "score": 70.3
   },
-  "e340c833aa78": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Health Care",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Health Care",
-    "score": 61.7
+  "d7085c868000": {
+    "name_en": "Emerging Health Care cluster",
+    "name_zh": "\u65b0\u5174 Health Care \u96c6\u7fa4",
+    "score": 44.6
+  },
+  "ed4e23d90c77": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Materials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Materials",
+    "score": 61.2
   }
 }

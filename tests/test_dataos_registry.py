@@ -84,10 +84,24 @@ def test_the_committed_registry_carries_the_seven_seeded_datasets() -> None:
 
 
 def test_nothing_unproduced_is_marked_produced() -> None:
-    """The honesty rule: a row claiming a store that does not exist is a trap."""
+    """The honesty rule: a row claiming a store that does not exist is a trap.
+
+    The two identity rows were PROPOSED for exactly one day (DOS-1.0) and were promoted
+    by DOS-1.1, which shipped the producer and committed the artifacts.  A promotion is
+    only honest if the row names a REAL producer and a REAL path, so this pins the
+    strings; the on-disk half of gate G1 — the path exists, the producer file exists —
+    is asserted by ``tests/test_dataos_security_master.py``, which runs in a lane that
+    has ``data/``.  It deliberately does NOT live here: every suite in the
+    ``dataos-foundation`` job is a pure unit test that never opens ``data/``, so it
+    behaves identically on a full checkout and in that thin lane.
+    """
     registry = load_registry()
     for dataset_id in ("reference.security_master", "reference.vendor_aliases"):
-        assert registry.get(dataset_id).status is DatasetStatus.PROPOSED
+        contract = registry.get(dataset_id)
+        assert contract.status is DatasetStatus.PRODUCED
+        assert contract.producer == "scripts/build_security_master.py"
+        assert contract.storage.startswith("data/reference/")
+        assert contract.storage.endswith(".parquet")
     for dataset_id in ("equity.bars.daily.stocks", "macro.fred.vintages"):
         assert registry.get(dataset_id).status is DatasetStatus.PRODUCED
 
