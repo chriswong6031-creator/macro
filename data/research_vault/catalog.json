@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T05:55:45.176916+00:00",
-  "count": 1040,
+  "generated_at": "2026-08-13T06:10:49.387200+00:00",
+  "count": 1041,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1000,6 +1000,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2jpyimyszcp-f38495",
+      "title": "IntradayFXView",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:32:18Z",
+      "summary_points": [
+        "**US Data & Japan Policy Shifts**: US CPI (Wed) and PPI (Thu) to drive USD strength; BOJ minutes signal rate hikes amid lower-than-expected Japan trade balance (June), targeting USD/JPY resistance at 158.60.",
+        "**UK Catalyst**: British GDP (Thu) +0.4% QoQ, +1.1% YoY, critical for EUR/GBP positioning.",
+        "**AUD Catalyst**: RBA holds rates at 4.35% (tomorrow), AUD/USD support at 0.7053 amid key commodity flows.",
+        "**Technical Levels**: EUR/USD support at 1.1500, resistance at 1.1581; USD/JPY resistance at 158.60 post-BOJ policy shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
