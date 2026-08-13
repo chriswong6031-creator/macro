@@ -543,10 +543,10 @@ entries:
       any_of:
         - 'second.{0,30}hand.{0,30}maintained'
     reason: >
-      FORBIDDEN — knowledge retrieval is the Macro Context Index
-      (derived, rebuildable, canonical-sources-keep-truth); a
-      hand-curated parallel store is the ratified program's named
-      degenerate form
+      **OVERRULED 2026-08-12 by Chairman ruling** ("this is an old law
+      and we overrule it") — the kill is LIFTED, and lifted as a whole
+      rather than narrowed to one program. Authored knowledge records
+      are pe
     source: 'CXI-R12, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` (2026-07-18)'
 
   - id: BL-G027
@@ -1217,6 +1217,17 @@ entries:
       COUNT measures our cadence rather than the world, the retention
       clock sile
     source: '`research/FILING_FORENSICS_SEC_STORE_MINT_ADJUDICATION_2026-08-08.md`; diagnosed PR #4986 (2026-08-08); conforms to the pre-registered `first_observed_at` + single "latest retrieval receipt" contract '
+
+  - id: BL-G097
+    match:
+      any_of:
+        - 'healing.{0,30}reviewed.{0,30}manifest'
+    reason: >
+      BOTH FORBIDDEN — they are the same violation from opposite sides.
+      (a) auto-issues M−N unreviewed decisions and stamps a
+      `reviewed_at` no human reviewed; a reviewed manifest cannot
+      re-time itself. (b)
+    source: '`research/GOVERNMENT_REVENUE_CANDIDATE_CENSUS_ADJUDICATION_2026-08-13.md`; `tests/government_revenue_candidate_fixture.py` (`canonical_candidate_census`, the clock-axis precedent from #4406); handoff '
 
   - id: BL-G097
     match:

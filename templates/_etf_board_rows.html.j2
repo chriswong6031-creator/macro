@@ -1,16 +1,28 @@
 {# ── M2 "The consensus board" — the ranked cross-fund board ──────────────────
-   Renders the whole replaceable BLOCK (card + column head + one .cb-row per
-   name) so the entitled DOM is byte-identical whichever side of the wall it
-   arrives from: the ungated shell {% include %}s this file, and the gated
-   build's /premiumdata/etfs.json renders the SAME file into `board_html`.
+   Renders the whole replaceable BLOCK (card + legend + column head + one
+   .cb-row per name + the secondary size strip) so the entitled DOM is
+   byte-identical whichever side of the wall it arrives from: the ungated shell
+   {% include %}s this file, and the gated build's /premiumdata/etfs.json
+   renders the SAME file into `board_html`.
    The card wrapper has to travel with the rows because `.cb-row:nth-child(-n+4)
    .cb-rank` colours the leaders by POSITION inside .card — rows injected into a
    different wrapper would silently lose that accent.
 
    Params: `rows` (favored), `scale` (board.scale.consensus_pp).
    Carries NO tier logic — docs/TIER_PREVIEW_PATTERN.md §checklist-1. #}
-{% from "_etf_macros.html.j2" import t, b, logo, stance, breadth, presbar %}
-<div class="card" style="padding:16px 20px">
+{% from "_etf_macros.html.j2" import t, b, logo, stance, breadth, presbar, source, money, persist %}
+<div class="card cb-card">
+  {# The legend prints the page's two constants ONCE — what the money-source
+     pair means, and what the ≈ / + marks mean — so no row has to repeat them
+     (Doctrine Law 4: a constant belongs in one place, not on every row). #}
+  <div class="cb-legend">
+    <span class="lg-k"><i class="sw sw-f"></i>{{ t('investor money', '投资者资金') }}</span>
+    <span class="lg-k"><i class="sw sw-s"></i>{{ t('manager picks', '经理人选股') }}</span>
+    <span class="lg-t">{{ t('Money arriving in a theme fund buys every holding it owns; a pick is the manager choosing this one name.', '资金流入主题基金会机械性买入其全部持仓；选股则是经理人对该个股的主动选择。') }}</span>
+    {#- three marks, explained once: the row never repeats them, and the em dash
+        gets a plain-word reason so it can never be read as "nothing moved" -#}
+    <span class="lg-m">{{ t('≈ estimated · + at least this much · — no fund here publishes values', '≈ 为估算 · + 表示至少这么多 · — 表示涉及基金均不披露市值') }}</span>
+  </div>
   <div class="cb-head">
     <span>#</span>
     <span>{{ t('stock', '个股') }}</span>
@@ -29,6 +41,7 @@
       </span>
     </div>
     <div class="cb-breadth">{{ breadth(c.n_accum or 0, c.n_trim or 0) }}
+      {% if c.contested %}<span class="mini split">{{ t('they disagree', '存在分歧') }}</span>{% endif %}
       {% if c.funds %}<div class="cb-who"><span class="who-src">{{ t('who', '谁') }}</span>
         <div class="who-pop">{% for f in c.funds[:6] %}<div class="wl"><b>{{ f.fund }}</b><span class="wv {{ 'u' if (f.conviction_pp or 0) >= 0 else 'd' }}">{% if f.conviction_pp is not none %}{{ "%+.1f" | format(f.conviction_pp) }}pp{% else %}—{% endif %}</span></div>{% endfor %}</div>
       </div>{% endif %}
@@ -36,14 +49,52 @@
     <div class="cb-pres">
       <div class="cb-net"><span class="v {{ 'u' if net >= 0 else 'd' }}">{{ "%+.1f" | format(net) }}<span class="faint" style="font-weight:600">pp</span></span></div>
       {{ presbar(net, scale or 1) }}
+      {# The size-and-source line: one quiet mono figure plus which kind of
+         buying it was. Never a second bold number (masterplan R2) — the pp
+         above stays the row's only headline. #}
+      {% if c.get('total_usd') is not none or c.get('n_funds_flow') or c.get('n_funds_selection') %}
+      {% set nff = c.get('n_funds_flow') or 0 %}{% set nfs = c.get('n_funds_selection') or 0 %}
+      {% set nfsum = nff + nfs %}
+      <div class="cb-src"
+           data-tip-en="Investor money: {{ nff }} fund{{ '' if nff == 1 else 's' }}. Manager picks: {{ nfs }} fund{{ '' if nfs == 1 else 's' }}.{% if c.get('contested_components') %} The two pull opposite ways on this name.{% endif %}"
+           data-tip-zh="投资者资金：{{ nff }} 只基金。经理人选股：{{ nfs }} 只基金。{% if c.get('contested_components') %}两者在该个股上方向相反。{% endif %}"
+           data-tip-rc-en="{% if c.get('total_usd') is not none %}≈${{ "%.0f" | format((c.get('total_usd') or 0) / 1.0e6) }}M in all · {{ c.get('n_funds_usd') or 0 }} of {{ nfsum }} funds publish position values{% if not c.get('usd_complete') %}, so the total is a floor{% endif %}{% else %}None of the funds on this row publishes position values, so there is no dollar estimate{% endif %}"
+           data-tip-rc-zh="{% if c.get('total_usd') is not none %}合计约 ${{ "%.0f" | format((c.get('total_usd') or 0) / 1.0e6) }}M · {{ nfsum }} 只基金中 {{ c.get('n_funds_usd') or 0 }} 只披露持仓市值{% if not c.get('usd_complete') %}，故该金额为下限{% endif %}{% else %}本行涉及的基金均不披露持仓市值，故无金额估算{% endif %}">
+        {{ money(c.get('total_usd'), c.get('usd_complete')) }}{{ source(c.get('n_funds_flow'), c.get('n_funds_selection')) }}
+      </div>
+      {% endif %}
       <div class="cb-flags">
-        {% if c.n_new %}<span class="mini new">{{ c.n_new }} {{ t('NEW', '新建') }}</span>{% endif %}
-        {% if c.n_exit %}<span class="mini exit">{{ c.n_exit }} {{ t('EXIT', '清仓') }}</span>{% endif %}
-        {% if c.contested %}<span class="mini contested">{{ t('SPLIT', '分歧') }}</span>{% endif %}
-        {% if c.is_active_any %}<span class="mini active">{{ t('ACTIVE MGR', '主动') }}</span>{% endif %}
+        {% if c.n_new %}<span class="mini new">{{ c.n_new }} {{ t('new', '新建') }}</span>{% endif %}
+        {% if c.n_exit %}<span class="mini exit">{{ c.n_exit }} {{ t('out', '清仓') }}</span>{% endif %}
+        {{ persist(c.get('max_streak'), c.get('accel_pct_per_day')) }}
       </div>
     </div>
     <div class="cb-stance-cell">{{ stance(c.stance) }}</div>
   </div>
   {% endfor %}
+  {# ── the size lens, deliberately BELOW the agreement ranking ────────────────
+     Dollars and fund counts answer different questions and they disagree often,
+     so size gets a footer strip rather than a sort control — the reader meets
+     breadth first and size second, which is the order this page argues for.
+     Two protections, both load-bearing: it reads the SAME `total_usd` the rows
+     above print (a second, differently-derived dollar figure beside them would
+     be unverifiable), and it is filtered to genuine accumulation — at least two
+     funds buying AND positive net conviction — because an unfiltered dollar
+     order headlines single-fund names that are being SOLD (W2b red-team).
+     The structurally-weighted figures stay payload-only by contract
+     (tests/test_etf_weighting.py), so nothing weighted is presented here. #}
+  {% set big = rows | selectattr('total_usd', 'defined') | rejectattr('total_usd', 'none')
+               | selectattr('n_accum', 'ge', 2) | selectattr('net_conviction_pp', 'gt', 0)
+               | sort(attribute='total_usd', reverse=true) | list %}
+  {% if big | length >= 3 %}
+  <div class="cb-size">
+    <span class="cs-k">{{ t('Biggest cheques', '资金规模最大') }}</span>
+    {% for c in big[:5] %}<a class="cs-i" href="stock.html#{{ c.ticker }}"><b>{{ c.ticker }}</b>{{ money(c.get('total_usd'), c.get('usd_complete')) }}</a>{% endfor %}
+    <span class="cs-n"
+          data-tip-en="Size, not agreement — a different question from the board above, and the two disagree often. One big fund can move a lot of money on its own, which is why the board is ranked by how many managers agree, not by this."
+          data-tip-zh="这是规模，不是共识——与上方看板回答的是两个不同的问题，两者经常不一致。单只大基金自己就能推动大量资金，因此看板按有多少经理人达成一致排序，而不是按金额。"
+          data-tip-rc-en="Same dollar estimate the rows above print. Shown only for names at least two funds are buying with positive net conviction, so a single fund being sold can never head this strip."
+          data-tip-rc-zh="与上方各行所示金额估算一致。仅显示至少两只基金买入且净信念为正的个股，因此正在被卖出的单只基金永远不会出现在此。">{{ t('what is this?', '这是什么？') }}</span>
+  </div>
+  {% endif %}
 </div>

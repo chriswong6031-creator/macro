@@ -23,7 +23,9 @@
   'use strict';
 
   // ---- guard: only active when the section exists --------------------------
-  function section() { return document.getElementById('pf_section'); }
+  // The workspace's holdings table is this file's host — #pf_section is gone with
+  // the old IA. Inert on any page that does not carry it.
+  function section() { return document.getElementById('ws_sec_hold'); }
 
   // ---- i18n ----------------------------------------------------------------
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
@@ -143,6 +145,8 @@
   function activeBook() { var m = MB(); return m ? m.getBook() : 'all'; }
   function bookMeta(b) { var m = MB(); return m && m.BOOKS[b] ? m.BOOKS[b] : null; }
   function bookOrder() { var m = MB(); return m ? m.BOOK_ORDER : ['us']; }
+  function bookName(b) { var m = MB(); return m ? m.bookName(b, false) : b; }
+  function bookNameZh(b) { var m = MB(); return m ? m.bookName(b, true) : b; }
 
   // ---- view helpers --------------------------------------------------------
   function showEl(id) { var e = el(id); if (e) e.style.display = ''; }
@@ -222,7 +226,14 @@
       var sh = num(r.shares), px = priceOf(t);
       if (sh != null && sh > 0 && px != null && px > 0) w[t] = sh * px;
     });
-    window.FX.setAutoWeights(Object.keys(w).length >= 2 ? w : null);
+    var keys = Object.keys(w);
+    /* W2 seeded `FX.update(keys)` here before announcing, because `FX.setAutoWeights`
+       bailed on an empty `LAST` — so a full book with an EMPTY watchlist never reached
+       RiskCore. W3 fixed that at the mechanism (factor_exposure.js: the auto path's
+       universe is the weight map, never `LAST`), so the seeding call is retired rather
+       than left as a second, silent guarantee of the same property. One owner for the
+       auto path means the regression test pins the path production actually takes. */
+    window.FX.setAutoWeights(keys.length >= 2 ? w : null);
   }
 
   // =========================================================================
@@ -311,37 +322,8 @@
     try { return window.WRI.roleBadge(window.WRI.laneRead(j)); } catch (e) { return null; }
   }
 
-  function assessmentHTML(t) {
-    var j = jsonCache[t];
-    var out = '';
-    var st = tickerSt(t);
-    if (st && window.SD) {
-      out += '<span class="state ' + esc(window.SD.stClass(st)) + '">' +
-        esc(window.SD.label(st)) + '</span>';
-    }
-    var stg = ctxStage(t);
-    if (stg) {
-      var suffix = isNum(stg.weeks)
-        ? { en: ' · ' + Math.round(stg.weeks) + ' wks in', zh: ' · 已' + Math.round(stg.weeks) + '周' }
-        : { en: '', zh: '' };
-      out += '<span class="wri-chip info">' +
-        te(stg.chipEn + suffix.en, stg.chipZh + suffix.zh) + '</span>';
-    }
-    var str = stretchOf(t, j);
-    if (str) {
-      out += '<span class="wri-chip' + (str.hot ? ' hot' : '') + '">' +
-        te(str.en, str.zh) + '</span>';
-    }
-    var role = roleOf(t, j);
-    if (role) {
-      out += '<span class="wri-role wri-role-' + esc(role.kind) + '">' +
-        te(esc(role.en), esc(role.zh)) + '</span>';
-    }
-    return out || '<span class="muted pfx-dash">—</span>';
-  }
-
   // =========================================================================
-  //  Drawer
+  //  Drawer — the per-name detail, and the ONE place a lane failure is spoken
   // =========================================================================
   function lrow(labEn, labZh, stCls, stTok, readEn, readZh) {
     return '<div class="wri-lrow"><span class="ln">' + te(labEn, labZh) + '</span>' +
@@ -349,73 +331,110 @@
       '<span class="rs">' + te(readEn, readZh) + '</span></div>';
   }
   function terminalHref(t) {
-    // verified route (charting-app origin/master terminal/app/terminal/page.tsx reads
-    // ?symbol ?? ?sym); same construction the repo already uses in options.html.j2
+    // verified route (charting-app terminal/app/terminal/page.tsx reads ?symbol ?? ?sym)
     return 'https://app.mastermind-x.com/terminal?sym=' + encodeURIComponent(t) + '&from=macro';
   }
 
-  function drawerHTML(r) {
-    var t = r.ticker, j = jsonCache[t];
-    var body = '';
+  /* The drawer is where the 390px demotions live (Day, Since entry, Risk share,
+     Sector) AND where the per-name detail appears. Its honesty rule: when a lane the
+     drawer would normally show cannot be read, the drawer SAYS SO on its own line —
+     it never renders a shorter drawer and lets the reader assume there was nothing to
+     say. An absent lane and a quiet lane look identical otherwise, and only one of
+     them is information. */
+  function drawerBody(r) {
+    var t = r.ticker, j = jsonCache[t], out = '';
+    var b = marketOf(t), v = rowValue(r);
+
+    // the demoted columns, restated in full
+    out += '<div class="drw">';
+    out += '<div><span class="k">' + te('Day', '当日') + '</span>' + WS().dayCell() + '</div>';
+    var entryP = num(r.entry_price), cur = priceOf(t);
+    out += '<div><span class="k">' + te('Since entry', '持有以来') + '</span>' +
+      (entryP != null && entryP !== 0 && cur != null
+        ? '<span class="fig ' + (cur >= entryP ? 'pos' : 'neg') + '">' +
+          ((cur - entryP) / entryP * 100 >= 0 ? '+' : '') +
+          ((cur - entryP) / entryP * 100).toFixed(1) + '%</span>'
+        : WS().dash('No entry price saved for this position, so there is nothing to measure from.',
+                    '这笔持仓没有保存买入价，因此没有基准可比。')) + '</div>';
+    var share = RISK_SHARES[t];
+    out += '<div><span class="k">' + te('Risk share', '风险占比') + '</span>' +
+      (isNum(share)
+        ? '<span class="fig">' + Math.round(Math.abs(share) * 100) + '%</span>'
+        : WS().dash('Not covered by the risk model, so there is no share to give.',
+                    '不在风险模型覆盖范围内，因此没有占比可给。')) + '</div>';
+    if (v.value != null) {
+      out += '<div><span class="k">' + te('Position value', '仓位市值') + '</span><span class="fig">' +
+        esc(fmtMoney(v.value, b)) + '</span>' +
+        (v.atCost ? ' <span class="mut">' + te('at cost', '按成本') + '</span>' : '') + '</div>';
+    }
+    out += '</div>';
 
     if (j === null || j === undefined) {
-      // Truly uncovered: absent from its market's store. ONE honest line, no lanes.
-      body += '<div class="wri-lrow"><span class="rs">' +
-        te(esc(T.en.notInLibrary), esc(T.zh.notInLibrary)) + '</span></div>';
+      /* Truly uncovered, or not read yet — either way we have no lanes. One honest
+         line, never an empty drawer that reads as "all clear". */
+      out += '<div class="drw-honest">' + (j === null
+        ? te(esc(T.en.notInLibrary), esc(T.zh.notInLibrary))
+        : te('Reading this name&rsquo;s detail…', '正在读取该股详情…')) + '</div>';
     } else {
-      // 1) lead line — the entry read, verbatim (already the plain-word sentence)
       var es = j.entry_signal || {};
       var headEn = es.headline || '', headZh = es.headline_zh || es.headline || '';
-      body += headEn
+      out += headEn
         ? '<div class="pfx-lead">' + te(esc(headEn), esc(headZh)) + '</div>'
-        : '<div class="pfx-lead muted">' + te(esc(T.en.noEntryRead), esc(T.zh.noEntryRead)) + '</div>';
+        : '<div class="drw-honest">' + te(esc(T.en.noEntryRead), esc(T.zh.noEntryRead)) + '</div>';
 
-      // 2) stage (US only — the engine classifies US listings)
       var stg = ctxStage(t);
       if (stg) {
         var wEn = isNum(stg.weeks) ? ' · ' + Math.round(stg.weeks) + ' wks in' : '';
         var wZh = isNum(stg.weeks) ? ' · 已' + Math.round(stg.weeks) + '周' : '';
-        body += lrow(T.en.lblStage, T.zh.lblStage, '', '', stg.drawEn + wEn, stg.drawZh + wZh);
+        out += lrow(T.en.lblStage, T.zh.lblStage, '', '', stg.drawEn + wEn, stg.drawZh + wZh);
+      } else if (isModeled(t) && ctxTried && !ctxMap) {
+        // the lane exists but its source did not answer — say it, do not just omit
+        out += '<div class="drw-honest">' + te(
+          'The stage read for this name is not available right now. Nothing else on this row depends on it.',
+          '这只票的阶段判断暂时读不到。本行其余内容不依赖它。') + '</div>';
       }
 
-      // 3) extension
       var pct = j.tech && j.tech.pct_vs_200dma;
       var ext = extensionSentence(extGradeOf(t, j), num(pct));
-      if (ext) body += lrow(T.en.lblExtension, T.zh.lblExtension, '', '', esc(ext.en), esc(ext.zh));
+      if (ext) out += lrow(T.en.lblExtension, T.zh.lblExtension, '', '', esc(ext.en), esc(ext.zh));
 
-      // 4) the seven lane rows — the SAME engine the cards use, never duplicated
+      // the seven lane rows — the SAME engine the workspace uses, never duplicated
+      var lanes = '';
       if (window.WRI && window.WRI.laneRows) {
-        try { body += window.WRI.laneRows(j); } catch (e) {}
+        try { lanes = window.WRI.laneRows(j) || ''; } catch (e) { lanes = ''; }
       }
-      // 5) chains
+      if (lanes) out += lanes;
+      else out += '<div class="drw-honest">' + te(
+        'The per-lane checks for this name did not load. That is a gap in what we can show you, not a clean bill of health.',
+        '这只票的各项检查没有加载出来。这是我们能展示的内容缺了一块，不代表它没问题。') + '</div>';
+
       if (window.WRI && window.WRI.chainRows) {
-        try { body += window.WRI.chainRows(t); } catch (e) {}
+        try { out += window.WRI.chainRows(t) || ''; } catch (e) {}
       }
       if (j.asof) {
-        body += '<div class="asof">' + te('signals as of ' + esc(j.asof),
-          '信号截至 ' + esc(j.asof)) + '</div>';
+        out += '<div class="asof mut" style="font-size:11px;margin-top:7px">' +
+          te('signals as of ' + esc(j.asof), '信号截至 ' + esc(j.asof)) + '</div>';
       }
     }
 
-    // 6) footer links + edit
-    body += '<div class="pfx-foot">' +
+    out += '<div class="drw-act">' +
       '<a href="stock.html#' + encodeURIComponent(t) + '">' + te(T.en.dossier, T.zh.dossier) + '</a>' +
       '<a href="' + esc(terminalHref(t)) + '" target="_blank" rel="noopener noreferrer">' +
         te(T.en.terminal, T.zh.terminal) + '</a>' +
-      '<button class="wl-btn" type="button" data-edit="' + esc(String(r.id)) + '">' +
+      '<button class="drw-rm" type="button" data-edit="' + esc(String(r.id)) + '">' +
         te(T.en.editBtn, T.zh.editBtn) + '</button>' +
-      '<button class="wl-btn pfx-rm" type="button" data-rm-pos="' + esc(String(r.id)) + '">' +
-        te(T.en.removeBtn, T.zh.removeBtn) + '</button>' +
-      '</div>';
-
-    return '<tr class="pfx-drawer" data-drawer="' + esc(String(r.id)) + '"' +
-      (openDrawers[r.id] ? '' : ' hidden') + '><td colspan="4">' +
-      '<div class="wri-drawer open">' + body + '</div></td></tr>';
+      '<button class="drw-rm" type="button" data-rm-pos="' + esc(String(r.id)) + '">' +
+        te(T.en.removeBtn, T.zh.removeBtn) + '</button></div>';
+    return out;
   }
 
   // =========================================================================
-  //  Table
+  //  The dense holdings table
   // =========================================================================
+  function WS() { return window.WS || {}; }
+  var RISK_SHARES = {};    // ticker -> |mctr share| (0..1), published by watchlist_risk.js
+  var RISK_COVERED = {};   // ticker -> true when the factor model covers it
+
   function bookValueTotals(list) {
     // {book -> {value, priced}} over the given rows; per book, never across books
     var out = {};
@@ -428,152 +447,465 @@
     return out;
   }
 
-  function rowHTML(r, totals) {
-    var t = r.ticker || '', b = marketOf(t);
-    var name = tickerName(t);
-    var v = rowValue(r);
-    var tot = totals[b];
+  var HEAD =
+    '<thead><tr>' +
+      '<th class="srt" data-sort="sym">' + te('Symbol', '代码') + '<span class="ar">▴</span></th>' +
+      '<th class="num srt" data-sort="value">' + te('Value / weight', '市值 / 占比') + '<span class="ar">▴</span></th>' +
+      '<th class="num">' + te('Day', '当日') + '</th>' +
+      '<th class="num srt" data-sort="since">' + te('Since entry', '持有以来') + '<span class="ar">▴</span></th>' +
+      '<th>' + te('Signal', '信号阶段') + '</th>' +
+      '<th class="num srt" data-sort="risk">' + te('Risk share', '风险占比') + '<span class="ar">▴</span></th>' +
+      '<th>' + te('Attention', '留意') + '</th>' +
+      '<th>' + te('Next event', '下一个事件') + '</th>' +
+      '<th></th>' +
+    '</tr></thead>';
 
-    // value cell + weight bar (share of THIS book's value; ≥2 priced positions only)
-    var valHtml = '—';
+  function holdRowHTML(r, totals) {
+    var t = r.ticker || '', b = marketOf(t);
+    var v = rowValue(r), tot = totals[b];
+    var uncovered = !RISK_COVERED[t];
+
+    var valHtml;
     if (v.value != null) {
-      valHtml = '<span class="num">' + esc(fmtMoney(v.value, b)) + '</span>';
-      if (v.atCost) valHtml += ' <span class="bk-atcost">' + te(T.en.atCost, T.zh.atCost) + '</span>';
-      if (b === 'intl') valHtml += ' <span class="bk-atcost">' + te(T.en.localCcy, T.zh.localCcy) + '</span>';
-      if (tot && tot.priced >= 2 && tot.value > 0) {
-        var w = Math.min(100, v.value / tot.value * 100);
-        valHtml += '<span class="wri-rsbar"><i style="width:' + w.toFixed(0) + '%"></i></span>';
+      valHtml = '<span class="fig">' + esc(fmtMoney(v.value, b)) + '</span>';
+      if (tot && tot.value > 0) {
+        valHtml += '<span class="w fig">' + (v.value / tot.value * 100).toFixed(1) + '%' +
+          (v.atCost ? ' ' + te('at cost', '按成本') : '') + '</span>';
       }
+    } else {
+      valHtml = WS().dash('This position has no share count saved, so there is no value to show.',
+                          '这笔持仓没有保存股数，因此没有市值可显示。');
     }
 
-    // since entry
-    var entryP = num(r.entry_price), cur = priceOf(t);
-    var sinceHtml = '—';
+    var entryP = num(r.entry_price), cur = priceOf(t), sinceHtml;
     if (entryP != null && entryP !== 0 && cur != null) {
       var pct = (cur - entryP) / entryP * 100;
-      sinceHtml = '<span class="num" style="color:' + (pct >= 0 ? 'var(--up)' : 'var(--down)') + '">' +
+      sinceHtml = '<span class="fig ' + (pct >= 0 ? 'pos' : 'neg') + '">' +
         (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%</span>';
+    } else {
+      sinceHtml = WS().dash('No entry price saved for this position, so there is nothing to measure from.',
+                            '这笔持仓没有保存买入价，因此没有基准可比。');
     }
+
+    /* Risk share on ONE shared scale: the bar is full at 30% of book risk and the
+       printed number is the truth. No per-row rescaling, no fake magnitude. A name
+       the model does not cover gets "—" and is left out of the denominator. */
+    var share = RISK_SHARES[t];
+    var rcHtml;
+    if (uncovered || !isNum(share)) {
+      rcHtml = WS().dash('Not covered by the risk model, so there is no share to give.',
+                         '不在风险模型覆盖范围内，因此没有占比可给。');
+    } else {
+      var p = Math.round(Math.abs(share) * 100);
+      rcHtml = '<span class="rc' + (p >= 13 ? ' is-big' : '') + '"><span class="bar"><span style="width:' +
+        Math.min(100, Math.abs(share) * 100 / 30 * 100).toFixed(0) + '%"></span></span>' +
+        '<span class="fig">' + p + '%</span></span>';
+    }
+
+    var j = jsonCache[t];
+    var st = tickerSt(t);
+    var sig = WS().stageCell ? WS().stageCell(WS().stageOf(st)) : '';
+    var att = attentionFlag(r, j);
+    var evt = eventCell(j);
 
     var isOpen = !!openDrawers[r.id];
-    return '<tr class="pfx-row" data-row="' + esc(String(r.id)) + '" tabindex="0" ' +
-      'aria-expanded="' + (isOpen ? 'true' : 'false') + '">' +
-      '<td class="pfx-pos" data-th="' + esc(L('colPosition')) + '">' +
-        '<a href="stock.html#' + encodeURIComponent(t) + '"><b>' + esc(t) + '</b></a>' +
-        (name ? '<span class="pfx-name muted">' + esc(name) + '</span>' : '') + '</td>' +
-      '<td class="tabnum pfx-val" data-th="' + esc(L('colValue')) + '">' + valHtml + '</td>' +
-      '<td class="tabnum" data-th="' + esc(L('colSince')) + '">' + sinceHtml + '</td>' +
-      '<td class="pfx-assess" data-th="' + esc(L('colAssess')) + '">' +
-        '<div class="pfx-assess-in">' + assessmentHTML(t) +
-        '<span class="pfx-tgl" aria-hidden="true"></span></div></td>' +
-      '</tr>' + drawerHTML(r);
+    return '<tr class="pfx-row' + (uncovered ? ' is-uncovered' : '') + '" data-t="' + esc(t) +
+      '" data-row="' + esc(String(r.id)) + '" tabindex="0" aria-expanded="' + (isOpen ? 'true' : 'false') + '">' +
+      '<td class="c-sym"><b>' + esc(t) + '</b><span class="co">' + esc(tickerName(t)) + '</span></td>' +
+      '<td class="c-val num">' + valHtml + '</td>' +
+      '<td class="c-day num">' + WS().dayCell() + '</td>' +
+      '<td class="c-since num">' + sinceHtml + '</td>' +
+      '<td class="c-sig">' + sig + '</td>' +
+      '<td class="c-rc num">' + rcHtml + '</td>' +
+      '<td class="c-att">' + (att ? '<span class="flag ' + att[0] + '">' + te(att[1], att[2]) + '</span>'
+                                  : '<span class="dash">—</span>') + '</td>' +
+      '<td class="c-evt">' + evt + '</td>' +
+      '<td class="c-exp"><button class="exp" type="button" data-row-exp="' + esc(String(r.id)) +
+        '" aria-label="' + (isZh() ? '详情' : 'Details') + '"><span class="car">⌄</span></button></td>' +
+      '</tr>' +
+      (isOpen ? '<tr class="row-drawer" data-drawer="' + esc(String(r.id)) + '"><td colspan="9">' +
+        drawerBody(r) + '</td></tr>' : '');
   }
 
-  function bookHeadHTML(b, tot) {
-    var meta = bookMeta(b);
-    if (!meta) return '';
-    var valPart = '';
-    if (tot && tot.value > 0) {
-      valPart = ' · <span class="num">' + esc(fmtMoney(tot.value, b)) + '</span>' +
-        (tot.atCost ? ' <span class="bk-atcost">' + te(T.en.atCost, T.zh.atCost) + '</span>' : '');
-    }
-    return '<tr class="pfx-bookhead"><td colspan="4">' +
-      '<span class="bk-glyph">' + esc(meta.glyph) + '</span>' +
-      '<b>' + te(esc(meta.en) + ' ' + T.en.book, esc(meta.zh)) + '</b>' + valPart +
-      ' · ' + te(T.en.positions(tot ? tot.n : 0), T.zh.positions(tot ? tot.n : 0)) +
-      '</td></tr>';
+  /* The attention flag on a row is the SAME rule the attention stack sorts by, read
+     for one name. Precedence is fixed and stated; there is no score anywhere. */
+  function attentionFlag(r, j) {
+    var t = r.ticker;
+    var share = RISK_SHARES[t];
+    var days = eventDays(j);
+    if (isNum(share) && Math.abs(share) >= 0.20) return ['f-warn', 'Biggest risk share', '风险占比最大'];
+    if (days != null && days >= 0 && days <= 5) return ['f-warn', 'Event window', '关键窗口'];
+    var g = extGradeOf(t, j);
+    if (g === 'high' || g === 'extreme') return ['f-warn', 'Stretched', '偏离过大'];
+    if (!RISK_COVERED[t] && isModeled(t) === false) return ['f-info', 'Outside risk model', '不在风险模型内'];
+    return null;
+  }
+  function eventDays(j) {
+    var d = j && j.earnings && j.earnings.next_date;
+    if (!d) return null;
+    var m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return null;
+    return Math.round((Date.UTC(+m[1], +m[2] - 1, +m[3]) - Date.now()) / 86400000);
+  }
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function eventCell(j) {
+    var d = j && j.earnings && j.earnings.next_date;
+    if (!d) return '<span class="dash">—</span>';
+    var m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return '<span class="dash">—</span>';
+    var dt = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    var days = eventDays(j);
+    // the ZH date deliberately drops .fig — "8月27日" contains WORDS, and mono
+    // numerals are for figures, never for words
+    return '<span class="evt">' + te('Earnings', '财报') +
+      ' <b class="fig l-en">' + MON[dt.getUTCMonth()] + ' ' + dt.getUTCDate() + '</b>' +
+      '<b class="l-zh">' + (dt.getUTCMonth() + 1) + '月' + dt.getUTCDate() + '日</b>' +
+      (days != null && days >= 0 && days <= 5
+        ? ' <span class="soon">' + te('in ' + days + (days === 1 ? ' day' : ' days'), '还有 ' + days + ' 天') + '</span>'
+        : '') + '</span>';
+  }
+
+  var sortKey = 'value', sortDir = -1;
+  function sortRows(list, totals) {
+    var d = sortDir;
+    return list.slice().sort(function (a, b) {
+      var r = 0;
+      if (sortKey === 'sym') r = (a.ticker || '').localeCompare(b.ticker || '');
+      else if (sortKey === 'risk') r = (RISK_SHARES[a.ticker] || 0) - (RISK_SHARES[b.ticker] || 0);
+      else if (sortKey === 'since') r = sincePct(a) - sincePct(b);
+      else r = (rowValue(a).value || 0) - (rowValue(b).value || 0);
+      return (r || (a.ticker || '').localeCompare(b.ticker || '')) * d;
+    });
+  }
+  function sincePct(r) {
+    var e = num(r.entry_price), c = priceOf(r.ticker);
+    return (e != null && e !== 0 && c != null) ? (c - e) / e * 100 : -1e9;
   }
 
   function renderTable() {
-    var tbody = el('pf_rows');
-    if (!tbody) return;
-    var book = activeBook();
+    var host = el('tbl_pf');
+    if (!host) return;
     var open = openRows();
+    var book = activeBook();
     var shown = book === 'all' ? open : open.filter(function (r) { return marketOf(r.ticker) === book; });
+    var q = (el('pf_q') && el('pf_q').value || '').trim().toLowerCase();
+    if (q) shown = shown.filter(function (r) {
+      return (r.ticker || '').toLowerCase().indexOf(q) >= 0 ||
+             (tickerName(r.ticker) || '').toLowerCase().indexOf(q) >= 0;
+    });
     var totals = bookValueTotals(open);
 
-    var html = '';
-    if (book === 'all') {
-      // grouped: one subtotal row per market, in the canonical book order
-      var byBook = {};
-      shown.forEach(function (r) { (byBook[marketOf(r.ticker)] || (byBook[marketOf(r.ticker)] = [])).push(r); });
-      bookOrder().forEach(function (b) {
-        var list = byBook[b];
-        if (!list || !list.length) return;
-        // a single-market book needs no group header (it would just repeat the page)
-        if (Object.keys(byBook).length > 1) html += bookHeadHTML(b, totals[b]);
-        list.forEach(function (r) { html += rowHTML(r, totals); });
-      });
+    if (!open.length) {
+      host.innerHTML = '<tbody><tr><td><div class="tbl-empty">' + te(
+        'No positions yet. Add your first with the button above, or paste a book on the Portfolio tab.',
+        '还没有持仓。用上方的按钮添加第一笔，或在「持仓」页贴入一份账簿。') + '</div></td></tr></tbody>';
+    } else if (!shown.length) {
+      host.innerHTML = '<tbody><tr><td><div class="tbl-empty">' + te(
+        'No positions in this book yet.', '这个市场里还没有持仓。') + '</div></td></tr></tbody>';
     } else {
-      html += bookHeadHTML(book, totals[book]);
-      shown.forEach(function (r) { html += rowHTML(r, totals); });
+      host.innerHTML = HEAD + '<tbody>' +
+        sortRows(shown, totals).map(function (r) { return holdRowHTML(r, totals); }).join('') + '</tbody>';
     }
-    tbody.innerHTML = html;
+
+    // the disclosure line — ALWAYS rendered, so a persisted book filter can never
+    // silently shorten the list (packet §11)
+    var scope = el('pf_scope');
+    if (scope && WS().scopeLine) scope.innerHTML = WS().scopeLine(shown.length, open.length);
+    var rc = el('pf_rowcount');
+    if (rc) rc.innerHTML = te(shown.length + (shown.length === 1 ? ' row' : ' rows'), shown.length + ' 行');
   }
 
-  // ---- the signed-out "keep this book" line --------------------------------
-  function isLocalMode() {
-    return !!(window.WatchStore && window.WatchStore.portfolio &&
-      window.WatchStore.portfolio.isLocal && window.WatchStore.portfolio.isLocal());
-  }
-  function renderLocalNote() {
-    // the footnote's privacy clause must match where the book ACTUALLY lives
-    var priv = el('pf_priv');
-    if (priv) {
-      priv.innerHTML = isLocalMode()
-        ? te(T.en.privLocal, T.zh.privLocal)
-        : te(T.en.privAccount, T.zh.privAccount);
+  // =========================================================================
+  //  BOOK READ — the plain-language sentence the Book Seam is evidence for
+  // =========================================================================
+  var BOOK = null;   // published by watchlist_risk.js: {bets, cluster, coverage, ...}
+
+  function renderBookRead() {
+    var open = openRows();
+    var totals = bookValueTotals(open);
+    var say = el('ws_book_say'), because = el('ws_book_because'),
+        meta = el('ws_book_meta'), stance = el('ws_book_stance'),
+        cov = el('ws_book_coverage'), sub = el('ws_book_sub');
+    if (!say) return;
+
+    if (open.length < 2) {
+      if (meta) meta.innerHTML = '';
+      say.innerHTML = te('Add a second position and this reads what your book really is.',
+                         '再添加一笔持仓，这里就会读出你的账簿到底是什么。');
+      if (because) because.innerHTML = '';
+      if (stance) stance.innerHTML = '';
+      if (cov) cov.innerHTML = '';
+      if (WS().seam) WS().seam(el('ws_seam'), null);
+      return;
     }
-    var host = el('pf_localnote');
-    if (!host) return;
-    var isLocal = isLocalMode();
-    if (!isLocal || !rows || !rows.length) { host.style.display = 'none'; host.innerHTML = ''; return; }
-    host.style.display = '';
-    host.innerHTML = '<span class="muted">' + te(T.en.signinKeep, T.zh.signinKeep) + '</span> ' +
-      '<button class="wl-btn" type="button" id="pf_signin_inline">' +
-      te(T.en.signIn, T.zh.signIn) + '</button>';
+
+    // money shares within the DOMINANT book only — we never add two currencies
+    var byBook = {};
+    open.forEach(function (r) { byBook[marketOf(r.ticker)] = (byBook[marketOf(r.ticker)] || 0) + 1; });
+    var lead = Object.keys(byBook).sort(function (a, b) { return byBook[b] - byBook[a]; })[0] || 'us';
+    var leadTot = totals[lead] ? totals[lead].value : 0;
+
+    var items = open.filter(function (r) { return marketOf(r.ticker) === lead; })
+      .map(function (r) {
+        var v = rowValue(r).value;
+        return {
+          sym: r.ticker,
+          money: (leadTot > 0 && v != null) ? v / leadTot * 100 : 100 / byBook[lead],
+          risk: RISK_COVERED[r.ticker] && isNum(RISK_SHARES[r.ticker])
+                  ? Math.abs(RISK_SHARES[r.ticker]) * 100 : null,
+          role: ''
+        };
+      }).sort(function (a, b) { return b.money - a.money; });
+
+    // the cluster is whatever the risk publisher named; absent one, the top half by money
+    var clusterSet = (BOOK && BOOK.cluster) || null;
+    items.forEach(function (x, i) {
+      x.role = clusterSet ? (clusterSet[x.sym] ? 'cluster' : (BOOK.ballast && BOOK.ballast[x.sym] ? 'ballast' : ''))
+                          : (i < Math.ceil(items.length / 2) ? 'cluster' : '');
+    });
+
+    var nUncovered = items.filter(function (x) { return x.risk == null; }).length;
+
+    if (meta) {
+      var parts = ['<span>' + te(open.length + (open.length === 1 ? ' position' : ' positions'),
+                                 open.length + ' 只持仓') + '</span>'];
+      if (leadTot > 0) {
+        parts.push('<span class="sep">·</span><span class="fig">' + esc(fmtMoney(leadTot, lead)) + '</span>' +
+          '<span>' + te('tracked', '在管') + '</span>');
+      }
+      meta.innerHTML = parts.join('');
+    }
+    if (sub) sub.innerHTML = (BOOK && BOOK.regime) ? BOOK.regime : '';
+
+    /* "moves like about K bets" is FACTOR OUTPUT — it is printed only when the model
+       actually produced it, and it names the MODELED subset rather than the user's
+       list size whenever those differ. A book whose model read is missing gets the
+       money-only sentence, never a bet count we did not compute. */
+    if (BOOK && isNum(BOOK.bets) && BOOK.modeledN >= 2) {
+      var n = BOOK.modeledN, all = open.length;
+      say.innerHTML = (n === all)
+        ? te('These <span class="fig">' + all + '</span> positions move like about <span class="fig">' +
+             BOOK.bets + '</span> bets.',
+             '<span class="fig">' + all + '</span> 只持仓，实际只相当于大约 <span class="fig">' +
+             BOOK.bets + '</span> 个方向。')
+        : te('The <span class="fig">' + n + '</span> positions our model covers move like about <span class="fig">' +
+             BOOK.bets + '</span> bets.',
+             '模型覆盖的这 <span class="fig">' + n + '</span> 只持仓，实际只相当于大约 <span class="fig">' +
+             BOOK.bets + '</span> 个方向。');
+    } else {
+      var topShare = 0, topN = Math.max(1, Math.min(3, Math.ceil(items.length / 4)));
+      items.slice(0, topN).forEach(function (x) { topShare += x.money; });
+      say.innerHTML = te(
+        'Most of this book — <span class="fig">' + Math.round(topShare) + '%</span> of the money — sits in <span class="fig">' +
+          topN + '</span> ' + (topN === 1 ? 'position' : 'positions') + '.',
+        '这本账簿的大部分 —— <span class="fig">' + Math.round(topShare) + '%</span> 的资金 —— 压在 <span class="fig">' +
+          topN + '</span> 只持仓上。');
+    }
+    if (because) because.innerHTML = (BOOK && BOOK.because) ? BOOK.because : te(
+      'The biggest weights are <b>' + esc(items.slice(0, 3).map(function (x) { return x.sym; }).join(' · ')) + '</b>.',
+      '权重最大的是 <b>' + esc(items.slice(0, 3).map(function (x) { return x.sym; }).join(' · ')) + '</b>。');
+
+    // Stance vocabulary on portfolio surfaces is DESCRIPTIVE ONLY (DESIGN_NOTES §7b):
+    // Watch · Get ready · No action, plus this plain line when the answer is nothing.
+    /* Descriptive only (DESIGN_NOTES §7b). "Worth a look" is claimed ONLY when a row
+       actually carries Watch or Get ready — a stack of five No-action rows means the
+       honest answer is still nothing, and Law 1 is satisfied by saying so. */
+    if (stance) {
+      var live = attentionStack().some(function (x) { return !!x.stance; });
+      stance.innerHTML = live
+        ? te('A few names are worth a look today.', '今天有几只票值得看一眼。')
+        : te('Nothing here needs a decision today.', '今天没有需要决定的事。');
+    }
+
+    /* The caption's two figures come from the SAME distribution the two rails draw:
+       the cluster's share of THIS money and of THIS modeled risk. Any other
+       denominator produces a sentence that contradicts the bracket directly above it. */
+    var moneyAll = 0, riskAll = 0, moneyCl = 0, riskCl = 0, nCl = 0;
+    items.forEach(function (x) {
+      moneyAll += x.money;
+      if (x.risk != null) riskAll += x.risk;
+      if (x.role === 'cluster') {
+        nCl++; moneyCl += x.money;
+        if (x.risk != null) riskCl += x.risk;
+      }
+    });
+    var cap = '';
+    if (nCl >= 2 && moneyAll > 0 && riskAll > 0) {
+      var mp = Math.round(moneyCl / moneyAll * 100), rp = Math.round(riskCl / riskAll * 100);
+      cap = te(
+        nCl + ' names hold <b>' + mp + '% of the money</b> and <b>' + rp + '% of the risk</b>. ' +
+          'That gap is the difference between how this book is sized and how it actually moves.',
+        nCl + ' 只票占了 <b>' + mp + '% 的资金</b>，却占了 <b>' + rp + '% 的风险</b>。' +
+          '这个差，就是「你怎么配的」和「它实际怎么动」之间的距离。');
+    }
+    if (WS().seam) {
+      WS().seam(el('ws_seam'), {
+        items: items,
+        lockedRisk: !items.some(function (x) { return x.risk != null; }),
+        cap: cap
+      });
+    }
+    /* Two disclosures, and they must not blur into one. The seam draws ONE currency —
+       adding two would be the law this page states in its own toolbar — so when the
+       book spans markets the rails describe the LEAD book and the line says which.
+       The coverage count is then over exactly the set the rails drew, never over the
+       whole book, or the sentence contradicts the shape directly above it. */
+    if (cov) {
+      var lines = [];
+      if (Object.keys(byBook).length > 1) {
+        lines.push(te(
+          'The two lines above read your <b>' + esc(bookName(lead)) + '</b> book — ' +
+            items.length + ' of ' + open.length + ' positions. Each book totals in its own currency, ' +
+            'so we never draw two of them on one line.',
+          '上面两条读的是你的 <b>' + esc(bookNameZh(lead)) + '</b> 账本 —— ' + open.length +
+            ' 只持仓中的 ' + items.length + ' 只。每个市场各自计价，因此我们不会把两个市场画在同一条线上。'));
+      }
+      if (nUncovered) {
+        lines.push(te(
+          '<b>' + nUncovered + ' of ' + (lines.length ? 'them' : 'your ' + items.length + ' positions') + ' ' +
+            (nUncovered === 1 ? 'sits' : 'sit') + ' outside the risk model.</b> ' +
+            (nUncovered === 1 ? 'It is' : 'They are') +
+            ' shown on the money line above and in the table below, and left out of every risk figure — never quietly folded in.',
+          '<b>其中有 ' + nUncovered + ' 只不在风险模型内。</b>' +
+            '它们照常出现在上方的资金分布和下方的表格里，但不计入任何风险数字 —— 不会被悄悄算进去。'));
+      }
+      cov.innerHTML = lines.length
+        ? '<span class="mark"></span><span>' + lines.join(' ') + '</span>' : '';
+    }
+  }
+
+  // =========================================================================
+  //  WHAT NEEDS ATTENTION — a fixed precedence, printed. Never a score.
+  // =========================================================================
+  /* The order is a RULE, in this order, and the hover on each row names which rule
+     put it there:
+       1  large risk contribution AND its own checks turned elevated
+       2  an event inside its critical window
+       3  an elevated check on a position large enough to matter
+       4  a major status transition
+       5  context — the names holding the book apart from its dominant idea
+     At most five rows; the section header discloses "5 of N positions". */
+  function attentionStack() {
+    var open = openRows();
+    if (!open.length) return [];
+    var out = [], used = {};
+    function push(r, rule, whatEn, whatZh, stance, tipEn, tipZh) {
+      if (used[r.ticker] || out.length >= 5) return;
+      used[r.ticker] = 1;
+      out.push({ sym: r.ticker, rule: rule, en: whatEn, zh: whatZh,
+                 stance: stance, tipEn: tipEn, tipZh: tipZh });
+    }
+    var byRisk = open.slice().sort(function (a, b) {
+      return (RISK_SHARES[b.ticker] || 0) - (RISK_SHARES[a.ticker] || 0);
+    });
+
+    // rule 1
+    byRisk.forEach(function (r) {
+      var s = RISK_SHARES[r.ticker];
+      if (!isNum(s) || s < 0.18) return;
+      var g = extGradeOf(r.ticker, jsonCache[r.ticker]);
+      if (g !== 'high' && g !== 'extreme') return;
+      push(r, 1, 'Your largest risk share, and its checks turned elevated.',
+           '它占你账簿的风险最大，指标也转为偏高。', 's-watch',
+           'Rule 1 — largest share of book risk, and its own checks are elevated. Source: last night&#39;s close.',
+           '规则 1 —— 占本账簿风险最大，且其自身指标偏高。来源：昨夜收盘数据。');
+    });
+    // rule 2
+    open.forEach(function (r) {
+      var d = eventDays(jsonCache[r.ticker]);
+      if (d == null || d < 0 || d > 5) return;
+      push(r, 2, 'Reports in ' + d + (d === 1 ? ' day' : ' days') + '.',
+           d + ' 天后发财报。', 's-ready',
+           'Rule 2 — an event inside its critical window.',
+           '规则 2 —— 事件进入关键窗口。');
+    });
+    // rule 3
+    byRisk.forEach(function (r) {
+      var g = extGradeOf(r.ticker, jsonCache[r.ticker]);
+      if (g !== 'high' && g !== 'extreme') return;
+      var s = RISK_SHARES[r.ticker];
+      if (!isNum(s) || s < 0.08) return;
+      push(r, 3, 'Sitting far above its own trend after a long run up.',
+           '在一轮长涨之后，已经远离自己的趋势线。', 's-watch',
+           'Rule 3 — an elevated check on a position large enough to matter. Stretch is measured against its own 200-day path.',
+           '规则 3 —— 一只体量足够大的持仓出现偏高指标。偏离度以其自身 200 日均线路径为基准。');
+    });
+    /* Rule 4 takes at most ONE row. Five names that all changed stage this week is a
+       true statement and a useless stack — the reader learns nothing from the fifth
+       identical sentence. The freshest transition stands for the rest. */
+    var fresh = open.filter(function (r) {
+      var stg = ctxStage(r.ticker);
+      return stg && isNum(stg.weeks) && stg.weeks <= 2 && !used[r.ticker];
+    }).sort(function (a, b) { return ctxStage(a.ticker).weeks - ctxStage(b.ticker).weeks; })[0];
+    if (fresh) {
+      push(fresh, 4, 'Changed status recently, after months in one place.',
+           '在长期横盘之后，最近状态发生了变化。', '',
+           'Rule 4 — a major status transition. This is the most recent one on your book.',
+           '规则 4 —— 重要状态变化。这是你账簿上最近的一次。');
+    }
+    // rule 5 — context
+    if (out.length < 5 && BOOK && BOOK.ballast) {
+      var ball = Object.keys(BOOK.ballast).filter(function (t) { return !used[t]; });
+      if (ball.length) {
+        out.push({ sym: ball.slice(0, 2).join(' · '), rule: 5,
+          en: 'The names holding this book apart from its dominant idea.',
+          zh: '是这几只把整本账簿和主线拉开了距离。', stance: '',
+          tipEn: 'Rule 5 — context. These are the reason the book is not a single position.',
+          tipZh: '规则 5 —— 背景信息。正是它们让这本账簿没有变成一笔仓位。' });
+      }
+    }
+    return out;
+  }
+
+  var STANCE = { 's-watch': ['Watch', '留意'], 's-ready': ['Get ready', '做好准备'],
+                 '': ['No action', '暂不需要动作'] };
+  function renderAttention() {
+    var host = el('ws_att'); if (!host) return;
+    var sec = el('ws_sec_att');
+    var stack = attentionStack();
+    var open = openRows();
+    if (!stack.length) {
+      if (sec) sec.style.display = open.length ? '' : 'none';
+      host.innerHTML = '<div class="att-row"><span class="att-sym"></span>' +
+        '<span class="att-what">' + te(
+          'Nothing on this book crossed a line overnight.', '昨夜这本账簿没有出现越线。') + '</span>' +
+        '<span class="att-stance">' + te('No action', '暂不需要动作') + '</span><span class="att-chev"></span></div>';
+    } else {
+      if (sec) sec.style.display = '';
+      host.innerHTML = stack.map(function (x) {
+        var s = STANCE[x.stance] || STANCE[''];
+        return '<div class="att-row" data-t="' + esc(x.sym) + '" data-tip-en="' + esc(x.tipEn) +
+          '" data-tip-zh="' + esc(x.tipZh) + '">' +
+          '<span class="att-sym">' + esc(x.sym) + '</span>' +
+          '<span class="att-what">' + te(esc(x.en), esc(x.zh)) + '</span>' +
+          '<span class="att-stance ' + x.stance + '">' + te(s[0], s[1]) + '</span>' +
+          '<span class="att-chev">›</span></div>';
+      }).join('');
+    }
+    var scope = el('ws_att_scope');
+    if (scope) {
+      scope.innerHTML = te(stack.length + ' of ' + open.length + ' positions',
+                           open.length + ' 只中的 ' + stack.length + ' 只');
+    }
   }
 
   // ---- render --------------------------------------------------------------
+  /* The workspace owns the page STATE; this file owns the signed-in composition of it.
+     An anonymous visitor's book read and holdings table are drawn by watchlist.js from
+     what they pasted, so painting here as soon as `rows` resolves would overwrite that
+     read with an empty signed-in shell — which is exactly what it did: the anonymous
+     analysis appeared for one frame and was then replaced by "No positions yet". */
+  function wsState() {
+    return document.documentElement.getAttribute('data-ws-state') || 'signed';
+  }
   function render() {
     if (!section()) return;
-    relabelStatic();
     if (rows === null) return;   // not loaded yet: leave the static shell alone
+    if (wsState().indexOf('anon') === 0) return;
 
-    var open = openRows(), closed = closedRows();
-    var addBtn = el('pf_add');
-
-    if (open.length === 0 && closed.length === 0) {
-      hideEl('pf_desk'); showEl('pf_empty');
-      if (addBtn) addBtn.style.display = 'none';
-      hideEl('pf_closed');
-    } else {
-      hideEl('pf_empty'); showEl('pf_desk');
-      if (addBtn) addBtn.style.display = '';
-      renderTable();
-      var cl = el('pf_closed');
-      if (cl) {
-        if (closed.length > 0) {
-          cl.style.display = '';
-          var cn = el('pf_closed_n'); if (cn) cn.textContent = L('closedCount')(closed.length);
-          var ctbody = el('pf_closed_rows');
-          if (ctbody) ctbody.innerHTML = closed.map(closedRowHTML).join('');
-        } else { cl.style.display = 'none'; }
-      }
-    }
-
-    renderLocalNote();
-
-    // as-of footnote
-    var asofEl = el('pf_asof');
-    if (asofEl) {
-      var asofVal = '';
-      Object.keys(priceCache).forEach(function (t) {
-        var pc = priceCache[t];
-        if (pc && pc.asof && pc.asof > asofVal) asofVal = pc.asof;
-      });
-      asofEl.textContent = asofVal || '—';
-    }
+    renderTable();
+    renderBookRead();
+    renderAttention();
 
     // books strip + factor weights
     var wl = (window.WL && window.WL.getBlob) ? window.WL.getBlob() : null;
@@ -585,21 +917,9 @@
     hydrate();
   }
 
-  function closedRowHTML(r) {
-    var t = r.ticker || '';
-    var entryP = num(r.entry_price);
-    return '<tr>' +
-      '<td><a href="stock.html#' + encodeURIComponent(t) + '">' + esc(t) + '</a></td>' +
-      '<td>' + esc(tickerName(t)) + '</td>' +
-      '<td class="tabnum">' + (r.shares != null ? esc(String(r.shares)) : '—') + '</td>' +
-      '<td class="tabnum">' + (entryP != null ? entryP.toFixed(2) : '—') + '</td>' +
-      '<td>' + esc(r.entry_date || '—') + '</td>' +
-      '<td><button class="wl-btn" data-edit="' + esc(String(r.id)) + '">' +
-        esc(L('editBtn')) + '</button></td>' +
-      '</tr>';
-  }
-
-  // ---- lazy hydration: per-ticker JSON (price + signals) then ctx -----------
+  /* Progressive hydration through SD's bounded-concurrency batcher. Each name repaints
+     its OWN row as it lands, so a 100-position book never blocks first paint and ONE
+     failed ticker degrades exactly one row. */
   function hydrate() {
     if (hydrated || !rows || !rows.length) return;
     hydrated = true;
@@ -607,23 +927,50 @@
     rows.forEach(function (r) {
       if (r.ticker && !seen[r.ticker]) { seen[r.ticker] = 1; tickers.push(r.ticker); }
     });
-    if (!tickers.length || !window.SD || !window.SD.loadTicker) return;
-    Promise.all(tickers.map(function (t) {
-      return window.SD.loadTicker(t).then(function (j) {
-        jsonCache[t] = j;
-        priceCache[t] = (j && j.tech && j.tech.price != null)
-          ? { price: j.tech.price, asof: j.asof || '' } : null;
-        // feed the hero's condition counts (no extra fetch — this JSON is already here)
-        if (j && window.WRI && window.WRI.noteJson) window.WRI.noteJson(t, j);
-      }).catch(function () { jsonCache[t] = null; priceCache[t] = null; });
-    })).then(function () {
-      render();          // one re-render pass with prices + reads filled
+    if (!tickers.length || !window.SD || !window.SD.loadTickers) return;
+    window.SD.loadTickers(tickers, function (t, j) {
+      jsonCache[t] = j;
+      priceCache[t] = (j && j.tech && j.tech.price != null)
+        ? { price: j.tech.price, asof: j.asof || '' } : null;
+      if (j && window.WRI && window.WRI.noteJson) { try { window.WRI.noteJson(t, j); } catch (e) {} }
+      repaintRow(t);
+    }).then(function () {
+      render();          // one settled pass with prices + reads filled
       loadCtx();
     });
   }
 
+  var pending = {}, rafOn = false;
+  function repaintRow(t) {
+    pending[t] = 1;
+    if (rafOn) return;
+    rafOn = true;
+    var run = function () {
+      rafOn = false;
+      var todo = Object.keys(pending); pending = {};
+      var open = openRows(), totals = bookValueTotals(open);
+      todo.forEach(function (tk) {
+        var row = document.querySelector('#tbl_pf tr[data-t="' + CSS_escape(tk) + '"]');
+        if (!row) return;
+        var r = null;
+        for (var i = 0; i < open.length; i++) if (open[i].ticker === tk) { r = open[i]; break; }
+        if (!r) return;
+        var frag = document.createElement('tbody');
+        frag.innerHTML = holdRowHTML(r, totals);
+        var drawer = row.nextElementSibling;
+        if (drawer && drawer.classList.contains('row-drawer')) drawer.remove();
+        var parent = row.parentNode, anchor = row.nextSibling;
+        parent.removeChild(row);
+        while (frag.firstElementChild) parent.insertBefore(frag.firstElementChild, anchor);
+      });
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+    else setTimeout(run, 16);
+  }
+
   /* ctx (US stage rows) — deferred to idle, and only when a modeled position exists.
-     Account-gated: a 401 resolves to null and the stage rows simply omit. */
+     Account-gated: a 401 resolves to null and the stage rows simply omit (the drawer
+     says so rather than rendering a shorter, quieter drawer). */
   function loadCtx() {
     if (ctxTried) return;
     var anyModeled = openRows().some(function (r) { return isModeled(r.ticker); });
@@ -634,15 +981,15 @@
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) {
           ctxMap = (j && j.tickers) || null;
-          if (ctxMap) render();
+          render();
         })
-        .catch(function () { ctxMap = null; });
+        .catch(function () { ctxMap = null; render(); });
     };
     if (window.requestIdleCallback) window.requestIdleCallback(go, { timeout: 3000 });
     else setTimeout(go, 1200);
   }
 
-  // ---- today-strip fact: names reporting this week --------------------------
+  // ---- fact: names reporting this week --------------------------------------
   function publishEarningsFact() {
     if (!MB() || !MB().setFact) return;
     var n = 0, seen = {};
@@ -650,45 +997,25 @@
       var t = r.ticker, j = jsonCache[t];
       if (!t || seen[t] || !j) return;
       seen[t] = 1;
-      var d = j.earnings && j.earnings.next_date;
-      if (!d) return;
-      var m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (!m) return;
-      var days = Math.round((Date.UTC(+m[1], +m[2] - 1, +m[3]) - Date.now()) / 86400000);
-      if (days >= 0 && days <= 7) n++;
+      var d = eventDays(j);
+      if (d != null && d >= 0 && d <= 7) n++;
     });
     MB().setFact('earn', n);
   }
 
-  // ---- static label relabeling (bilingual) ---------------------------------
-  function relabelStatic() {
-    [['pf_th_position', 'colPosition'], ['pf_th_value', 'colValue'],
-     ['pf_th_since', 'colSince'], ['pf_th_assess', 'colAssess']].forEach(function (p) {
-      var e = el(p[0]); if (e) e.textContent = L(p[1]);
-    });
-    var addBtn = el('pf_add'); if (addBtn) addBtn.textContent = L('addBtn');
-    [['pfm_lbl_ticker', 'tickerLabel'], ['pfm_lbl_shares', 'sharesLabel'],
-     ['pfm_lbl_entry', 'entryLabel'], ['pfm_lbl_date', 'dateLabel'],
-     ['pfm_lbl_notes', 'notesLabel'], ['pfm_lbl_status', 'statusLabel'],
-     ['pfm_save', 'saveBtn']].forEach(function (p) {
-      var e = el(p[0]); if (e) e.textContent = L(p[1]);
-    });
-    var selEl = el('pfm_status');
-    if (selEl && selEl.options) {
-      if (selEl.options[0]) selEl.options[0].text = L('statusOpen');
-      if (selEl.options[1]) selEl.options[1].text = L('statusClosed');
-    }
-    var emph = el('pf_empty');
-    if (emph) { var h = emph.querySelector('p'); if (h) h.textContent = L('emptyHeading'); }
-    var clSum = el('pf_closed');
-    if (clSum) {
-      var sumEl = clSum.querySelector('summary');
-      if (sumEl) {
-        var sumSpan = sumEl.querySelector('span:not(#pf_closed_n)');
-        if (sumSpan) sumSpan.textContent = L('closedHeading');
-      }
+  /* The risk publisher's landing pad (watchlist_risk.js computes, this file composes).
+     Everything here is DISPLAY of a number the model produced — nothing is derived,
+     re-scaled or re-ranked on the way in. */
+  function setBookRisk(payload) {
+    BOOK = payload || null;
+    RISK_SHARES = (payload && payload.shares) || {};
+    RISK_COVERED = (payload && payload.covered) || {};
+    if (section() && rows && wsState().indexOf('anon') !== 0) {
+      renderTable(); renderBookRead(); renderAttention();
     }
   }
+
+  function relabelStatic() { /* every label on the workspace is a dual-emit span now */ }
 
   // ---- modal ---------------------------------------------------------------
   function pfOpenDlg() {
@@ -854,13 +1181,10 @@
 
   // ---- drawer toggle -------------------------------------------------------
   function toggleDrawer(id) {
-    var tr = document.querySelector('tr.pfx-drawer[data-drawer="' + CSS_escape(id) + '"]');
-    var row = document.querySelector('tr.pfx-row[data-row="' + CSS_escape(id) + '"]');
-    if (!tr) return;
-    var willOpen = tr.hasAttribute('hidden');
-    if (willOpen) { tr.removeAttribute('hidden'); openDrawers[id] = true; }
-    else { tr.setAttribute('hidden', ''); delete openDrawers[id]; }
-    if (row) row.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    if (openDrawers[id]) delete openDrawers[id]; else openDrawers[id] = true;
+    var row = document.querySelector('#tbl_pf tr.pfx-row[data-row="' + CSS_escape(id) + '"]');
+    if (row) repaintRow(row.getAttribute('data-t'));
+    else renderTable();
   }
   // attribute-selector safety for ids that came from Supabase (uuid) or 'loc-<n>'
   function CSS_escape(s) { return String(s).replace(/["\\]/g, '\\$&'); }
@@ -904,7 +1228,6 @@
       if (e.target && e.target.getAttribute('data-close') !== null) pfCloseDlg();
     });
     var addBtn = el('pf_add'); if (addBtn) addBtn.addEventListener('click', openAddModal);
-    var addFirst = el('pf_add_first'); if (addFirst) addFirst.addEventListener('click', openAddModal);
     var saveBtn = el('pfm_save'); if (saveBtn) saveBtn.addEventListener('click', doSave);
 
     var sec = section();
@@ -957,6 +1280,16 @@
     // watchstore.js resolves signed-out to the localStorage book behind the same API.
     onAuth();
   }
+
+  /* The workspace seam. watchlist.js owns the page's render pass and calls in here
+     for the Portfolio mode; watchlist_risk.js publishes the model read through
+     setBookRisk. Nothing outside this file touches `rows`. */
+  window.PF = {
+    render: render,
+    count: function () { return openRows().length; },
+    repaintRow: repaintRow,
+    setBookRisk: setBookRisk
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

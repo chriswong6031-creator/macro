@@ -34,6 +34,10 @@ import re
 import sys
 from collections import defaultdict
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.sparse_guard import refuse_if_vacuous, trees_for  # noqa: E402
+
 # pos_v2 is a 0-100 CDF gauge; a small numeric wobble between two builds of the same
 # tape (e.g. one page rebuilt an hour later on one more bar) is tolerable.  A genuine
 # same-tape divergence (a page recomputing with different math, or a frozen stale value)
@@ -163,6 +167,10 @@ def _collect(site_dir: str) -> list:
 def check(site_dir: str) -> tuple[list, list, list]:
     """Return (same_tape_violations, cross_tape_declared, same_tape_ok_groups)."""
     readings = _collect(site_dir)
+    # How many readings were actually extracted, stashed for main's vacuity check.
+    # A tuple element would break every `a, b, c = check(...)` caller; the function
+    # attribute is the same out-channel check_template_site_sync uses for `unfixed`.
+    check.n_readings = len(readings)
     by_tape: dict = defaultdict(list)
     for r in readings:
         by_tape[r.tape_key].append(r)
@@ -268,6 +276,16 @@ def main(argv=None) -> int:
     site_dir = argv[0] if argv else "site"
 
     same_tape_violations, cross_tape_declared, same_tape_ok = check(site_dir)
+
+    # A sparse session worktree omits site/, so _collect finds none of the five
+    # cycle artifacts and the PASS below reads "0 same-tape group(s) agree" — a
+    # vacuous pass on the cross-page drift gate. Zero readings is only honest
+    # when site/ is really on disk.
+    refusal = refuse_if_vacuous(getattr(check, "n_readings", 0), trees_for(site_dir),
+                                "check-cycle-consistency-vacuous")
+    if refusal:
+        print(f"CYCLE-CONSISTENCY: REFUSED — {refusal}", file=sys.stderr)
+        return 1
 
     if report_path:
         os.makedirs(os.path.dirname(report_path) or ".", exist_ok=True)

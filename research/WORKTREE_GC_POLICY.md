@@ -14,7 +14,7 @@ Tool: `scripts/worktree_gc.py` (shipped disarmed: `config/worktree_gc.json` → 
 | R5 | Reclaim clean+pushed worktrees of OPEN PRs (branch/PR survive; only the local checkout goes) | off | `"include_open_pr": true` | small; open lanes are mostly RECENT anyway |
 | R6 | charting-app: same sweep for its 103 GiB `.claude/worktrees` | report-only | arm a `config/worktree_gc.json` there (tool takes `--repo-root`) | **9.6 GiB** at 7 d already (16 trees); more at 2 d |
 | R7 | Session-closing hygiene: **24 open sessions / 78.1 GiB** have their PR already squash-merged at the worktree head but stay pinned by their processes. Closing finished sessions releases them to the sweeper (all 62 pinned trees are < 2 d strong-active, so this is workflow, not archaeology) | keep all pinned | close finished sessions in FleetView as a habit | ~78 GiB now; keeps the done-pool draining |
-| R8 | Structural: each checkout is 3.27 GiB, of which `data/` 2.10 + `site/` 0.67 = **85 %**. The ~0–2 d active window (~330 GiB at the measured ~40 sessions/day cadence) is a capacity requirement GC cannot reduce — a sparse-checkout session profile could cut it ~5×. Proposal note only | — | commission separately if wanted | ~250+ GiB of standing working set |
+| R8 | Structural: each checkout is 3.27 GiB, of which `data/` 2.10 + `site/` 0.67 = **85 %**. The ~0–2 d active window (~330 GiB at the measured ~40 sessions/day cadence) is a capacity requirement GC cannot reduce — a sparse-checkout session profile could cut it ~5×. **SHIPPED 2026-08-13** (operator-ratified during the disk-pressure incident) | sparse by default | `config/sparse_worktree.json` → `"enabled": false` reverts to full checkouts | ~7–11× per tree; see §8 |
 
 First armed run on the Studio: suggest `--apply --dry-run` once, eyeball the log, then `--apply`.
 `max_delete_per_run: 200` caps a single pass; the daily schedule drains any remainder.
@@ -171,6 +171,133 @@ present its numbers, then arm.
 - Runner `_work` directories (bounded per-workflow reuse; separate lever).
 - Killing processes that pin `LIVE_PROC` trees — the sweeper only reports them (R7 is
   operator hygiene; a rule change would be its own ratified PR).
-- Shrinking the active window (R8 sparse-checkout proposal) — capacity question, not GC.
+- Shrinking the active window — a capacity question, not GC. Shipped separately as the
+  sparse session profile (§8), which is the only lever that reaches the active window.
 - Steady state with R1 armed at 2 d ≈ active window (~330 GiB) + parked pile until R7
   acted on. The tail no longer grows; the window tracks fleet cadence.
+
+## §8. Sparse session-worktree profile (R8 — shipped 2026-08-13)
+
+Operator-ratified during the same disk-pressure incident that armed the sweeper.
+GC reclaims FINISHED trees; this shrinks LIVE ones, which is why both were needed.
+
+**Mechanism.** `.claude/hooks/worktree_create_sparse.py` runs on the harness's
+`WorktreeCreate` event, wired in the checked-in `.claude/settings.json`. It fetches
+`origin/main`, adds the worktree `--no-checkout`, sets a cone-mode sparse profile
+holding every tracked top-level directory except those in
+`config/sparse_worktree.json`, then `read-tree -mu HEAD` to populate it. A name of
+the form `pr-<N>` bases the tree on that PR's head instead. It replaces an
+unversioned zsh prototype that lived in `~/.local/bin` and was wired through
+`.claude/settings.local.json` — globally gitignored, so the behaviour existed on one
+host but could never ship, be reviewed, or be tested.
+
+**Host migration (one operator step, AFTER this merges).** The Studio's legacy wiring
+was deliberately left alone by the shipping session: repointing it before the merge
+would have aimed it at a script not yet on `main` and broken worktree creation for
+the whole fleet. Once merged, remove the `WorktreeCreate` block from
+`/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/settings.local.json` (and
+delete `~/.local/bin/claude-macro-sparse-worktree-create.zsh`) so the checked-in
+wiring is the only one. Until that is done both may fire; the Python hook is
+idempotent — an existing destination that is already a registered worktree is
+reported as success — but the older zsh prototype is not, and it exits non-zero on a
+destination that already exists, so leaving both wired indefinitely risks a failed
+spawn depending on which runs second.
+
+**Measured 2026-08-13 (Studio).** Full session worktree **3.8 GiB**: `data/` 2.3 +
+`site/` 0.73 + `mockups/` 0.23 + `verify_shots/` 0.05 = 3.31 GiB (**87 %**). Sparse
+tree **0.35–0.57 GiB** — an ~7–11× cut, better than R8's ~5× estimate because
+`mockups/`+`verify_shots/` join R8's two named dirs (same class: committed rendered
+artifacts and screenshot evidence, not code). At ~40 new trees/day the standing
+active window drops from ~330 GiB toward ~30–50 GiB as trees turn over.
+
+**Escape hatches.** `python3 scripts/worktree_sparse.py full` opts one worktree into
+a full checkout (worktree-scoped — `core.sparseCheckout` lives in `config.worktree`,
+so siblings are untouched); `… add <dir>` materialises one tree; `… status` reports
+state and any stray files a local tool wrote into an omitted tree. Repo-wide revert
+is `"enabled": false` in `config/sparse_worktree.json`.
+
+**Honesty properties (the reason this is more than a setup script).** A sparse tree
+must never make a guard or test pass for the wrong reason:
+
+- `scripts/check_template_site_sync.py` enumerates its own pair list by walking
+  `site/`. Absent `site/`, it printed `sync OK (0 pairs checked)` and exited 0 — a
+  vacuous pass on the law protecting the render lanes (`render.yml` carries a long
+  comment about the same failure mode reaching the lane: "would render, guard and
+  COMMIT whatever subset of the tree it found — a truncated publish, not a red X").
+  It now REFUSES and names the opt-in command.
+- pytest prints the omitted trees plus that command in its header and in the summary
+  of any failing run, skips only tests explicitly marked `needs_full_checkout`, and
+  annotates other failures whose traceback names an omitted tree — a wrong answer
+  stays red, it just stops being a mystery. Verified visible under `-q`,
+  `-q --tb=short`, `-q --tb=line` and the house `-q --tb=no -rf` (where the header and
+  the per-failure sections are both suppressed and the terminal-summary NOTE is the
+  one that lands — which is why that hook exists alongside the header).
+  **DO NOT run the full suite in a sparse worktree.** Measured 2026-08-13: it produces
+  **1,281 failures + 419 errors across 247 distinct test files** (against 68,776
+  passes) purely as artifacts of the missing trees. Marking those 247 files
+  `needs_full_checkout` was considered and REJECTED — it would be an unmaintainable
+  diff that permanently masks real regressions in a tenth of the suite. The marker
+  stays available for surgical use; the honest instruction is to opt into a full
+  checkout first, which is also what every CI lane running the suite already has.
+  Nine of those files read an omitted tree at MODULE level and therefore die during
+  COLLECTION, before any marker can apply — the terminal-summary NOTE still fires on a
+  collection error, which is why the notice is wired to the summary and not only to
+  per-test reporting. `tests/test_ship_loop_guard.py::test_the_pair_list_is_the_ci_gate_s_own_enumeration`
+  is the one test marked here: it asserts its pair list is non-empty and builds it by
+  walking `site/`, so unmarked it fails with a bare `assert set()`.
+- Detection reads git's sparse state, never `Path.is_dir()`: `data/` survives
+  `git reset --hard` as a **0-byte husk**, so presence checks report it materialised
+  while it holds none of its 2.3 GiB. `scripts/worktree_sparse.missing_dirs()` is the
+  single detector all callers share.
+- A write into an omitted tracked path still reaches `git status` (verified in
+  `tests/test_sparse_worktree_profile.py`), so `ship_loop_guard.py`'s dirty snapshot
+  keeps working and nothing becomes silently committable.
+
+**VACUOUS-PASS RETROFIT — the seven affirmative-OK guards now REFUSE (fixed 2026-08-13).**
+21 `scripts/check_*.py` read `site/` or `data/`. Run in a sparse tree, **12 exit 0**,
+and seven of those printed an affirmative OK over an empty set rather than failing.
+All seven now refuse instead; the table records what each one used to print, which is
+what a regression here would look like again:
+
+| guard | what it printed with the tree absent (now refuses) |
+|---|---|
+| `check_site_js` | `OK — all standalone JS bundles under site/ parse cleanly` |
+| `check_nav_gap` | `OK — every menu page under site/ keeps a ≥14px top gap` |
+| `check_nav_mega` | `OK — every shared-nav page under site/ carries the Research mega-menu` |
+| `check_badge_passport` | `OK: site dir <abs>/site absent (nothing rendered yet)` — and, over a husk `site/`, `OK: every desk brief carries a passport (0 checked, 0 grandfathered)`; it has TWO vacuous paths and both now refuse |
+| `check_cycle_consistency` | `PASS — 0 same-tape group(s) agree` |
+| `check_ms_board_coherence` | `ms-board coherence: OK (0 page(s) scanned)` |
+| `check_ohlc_basis_coherence` | `no breadth panel carries the ... triple — nothing to check` |
+
+The other nine fail loudly (FileNotFoundError and friends), which was already honest.
+`check_template_site_sync` was fixed first, because it is the one the paired plain-copy
+asset law depends on; it refuses unconditionally, which is safe only because its callers
+were verified to be full checkouts. **A blanket entry-refusal is NOT safe as a sweep**:
+several CI lanes check out partial trees on purpose, so a guard that refused whenever
+`site/` is not fully present would red a lane working exactly as designed. So the seven
+above take the other form — per-guard and **conditional on an EMPTY result set**:
+
+> refuse only when *I checked ZERO items* **AND** *a tree I read is sparse-omitted*.
+
+Both halves are load-bearing. Zero items in a FULL checkout is an honest zero and still
+passes; a run that found real items in a partial tree still passes. `scripts/sparse_guard.py`
+owns that conjunction (`refuse_if_vacuous`), deriving the trees it needs from the path the
+guard was actually pointed at — so a guard aimed at a `tmp_path` stays inert — and
+answering `None` on every detector failure, because the detector may never be the thing
+that breaks a guard. `tests/test_sparse_guard_refusals.py` pins all seven against a
+synthetic repo sparsed with real cone-mode `git sparse-checkout`, and covers both
+negative cases so the conditional can never silently become a blanket one.
+
+Callers were audited before the retrofit: **all seven guards are invoked only from full
+checkouts** (`ci-pack` in `ci.yml`, `pages.yml`, `ci-main-heartbeat.yml`, and the render
+family — `render.yml`, `engine-render.yml`, `earlyclose.yml`, `closing-bell.yml`,
+`asia-close.yml`, `daily.yml`, `public-render.yml`). The 13 workflows that DO take a
+partial tree — `live-quotes.yml`, `marketing-press-wire.yml`, `marketing-hot-tape.yml`,
+`marketing-earnings-wire.yml`, `marketing-x-intel.yml`, `earnings-story-packets.yml`,
+`earnings-story-press-stage.yml`, `earnings-evidence-graph.yml`, `company-intelligence.yml`,
+`prophet-live.yml`, `key-pool-probe.yml`, `merge-on-green.yml`,
+`daily-engine-setup-retry.yml` — invoke none of them.
+
+Standing rule regardless: **a green from a `site/`/`data/` guard in a sparse worktree
+means nothing** — run them after `python3 scripts/worktree_sparse.py full`, which is also
+what CI does.
