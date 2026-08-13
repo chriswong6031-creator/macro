@@ -4007,6 +4007,14 @@ on:
       - "tests/test_dataos_nulls.py"
       - "tests/test_dataos_registry.py"
       - "tests/test_dataos_quality.py"
+      # Job: dataos-identity-seams (.github/ci/legacy-jobs.yml). DOS-1.2. Both halves
+      # again: the suite AND the surfaces it measures. config/** and lib/** catch-alls
+      # would cover most of these, but a catch-all is provenance by accident — an edit
+      # to a surface must demonstrably be able to start the guard that reads it.
+      - "config/identity_seams.yml"
+      - "config/share_class_equiv.yml"
+      - "tests/test_identity_seam_agreement.py"
+      - "data/reference/**"
       # ── Data OS security master + vendor aliases (DOS-1.1, 2026-08-13) ──────
       # Job: house-law-registry (.github/ci/legacy-jobs.yml) — folded into that job
       # rather than dataos-foundation, which installs pytest+pyyaml only so that a

@@ -113,6 +113,8 @@ def _register_claim(asof: str, risk_level: str, divergence_z: float | None) -> N
         scope_key="CN_CENSORSHIP_RISK",
         direction=0,          # salience-only; direction is never a positive signal
         horizon_d=21,         # accrual horizon for the forward log
+        # P0a: 21 exchange SESSIONS (the grade-ladder rung), not calendar days.
+        horizon_unit=qledger.HORIZON_UNIT_TRADING,
         timestamp_quality="SNAPSHOT_DATE",  # display-only snapshot
         # W4 ITEM 3: bench changed from "SPY" to "510300.SS" — the machine-checkable
         # China A-share benchmark used by communique_diff desk for macro scope claims.

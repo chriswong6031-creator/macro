@@ -1,0 +1,333 @@
+# Design-authority verdict packet — r3 cycle, Prophet Board reference frozen at 6ad6b51b.
+# Issued over: the reused production baseline, both independent two-pass critic receipts
+# (quarantined first passes frozen by sha256 BEFORE any reveal), the artifact's own
+# verification harness, the RIG mechanical checker, and the authority's own spot
+# verification of every load-bearing claim (AUTHORITY SPOT VERIFICATION below).
+schema: mastermind.rig_verdict.v1
+reference_id: prophet-board-5514-r3
+
+authority:
+  identity: "Fable main loop — RIG r3 adjudication session (design authority per factory §1)"
+  role: design_authority
+
+process_attestation:
+  fresh_cycle: >
+    The r2 REVISE verdict was treated as historical evidence, not as an inherited verdict.
+    Both critics judged 6ad6b51b from production, and both first passes were frozen and
+    committed before the r2 findings or the R3 rationale were revealed to either.
+  quarantine_enforced_mechanically: >
+    The artifact's own source comments narrate the builder's rationale and name the prior
+    cycle's blockers, so the pass-1 copies had every comment blanked with line numbers
+    preserved (file:line citations stay exact, behaviour untouched). compare.html and crops
+    70-73 — a designer-authored argument about which variant is right, not a product surface
+    — were withheld from pass 1 and revealed at pass 2. Both receipts attest what they did
+    and did not open.
+  pass1_frozen_sha256:
+    product_regression: "1815deeb33e5cbee"
+    visual_taste: "dfc1fa67ce57334d"
+  reviewer_b_continuity: >
+    Reviewer B's pass-1 process was not resumable. Pass 2 ran as a fresh instance in the same
+    role, re-reading the frozen pass-1 receipt as its amendment basis and recomputing every
+    number rather than claiming memory of pass 1. Disclosed rather than papered over.
+  amendment_was_real: >
+    The reveal changed findings in both directions and in both receipts: A withdrew PRC-315
+    outright and downgraded PRC-303/304/308/319; B downgraded VTC-302 and VTC-305 while
+    STRENGTHENING four others on re-measurement. Neither critic rubber-stamped its own pass 1.
+
+# ── The eight required answers (RIG §7) ───────────────────────────────────────
+packet:
+  materially_improved: >
+    Every one of the r2 cycle's four blockers is genuinely closed, verified in the frozen code
+    and payload by both critics and by the authority independently. PRC-203: the count law now
+    closes over ONE universe with no view exemption — 62+95+0+0+2 = 159 = live_total, 159+20 =
+    179 = active_count, 40 rendered + "+119 more" = 159. PRC-207: the producer-less regime /
+    breadth / posture chips are deleted outright and Groups is rebound to
+    us_standouts.themes_in_favour, rendering 8 real themes with rank, recommendation, run
+    length, member count and a printed as-of, with an explicit no-read empty state when the key
+    is absent. PRC-201: the risk ledger has a carrier again — a counted ⚠N pill with a
+    keyboard-reachable popover bound to real candidate fields. PRC-202: the zone is
+    stance-branched again (active 19 / re-add 7 / muted 35 / no-band 118), restoring the
+    anti-chase encoding production had. The r2 cycle's light-mode inversion is fixed — cards
+    are true #fff on a #f7f8fa canvas with a real shadow. The double-declared enrichment
+    variable is gone. The artifact's own harness passes 136/136.
+  materially_worsened: >
+    The canonical grid's dominant texture is now absence: 20 of the 40 rendered cards are
+    chartless, each stretching a 24px placeholder against a 74px chart into a ~97px uniform
+    void (23 of 40 under the primary Ready filter). 77 of 179 plan rows (43%) can never render
+    as a card in any state or filter, their only representation a seven-column table that drops
+    priority, stance, zone, chart, caution, sector and company name. The chart-stroke salience
+    ordering is inverted against actionability in both themes — authority-measured by pixel
+    sampling at dark WAIT 6.67 > NO-READ 4.00 > BUY 3.78, light NO-READ 4.46 > BUY 3.66 >
+    WAIT 3.50. The rank-1 ★Featured card renders "No read yet" and "No zone — stand aside"
+    beside a ⚡Triggered chip and a caution reading "Don't chase above the buy zone". The page
+    ends on five empty pills and four bare links carrying no number.
+  disappeared: >
+    Still missing across three consecutive revisions: the card-as-link path to any per-name
+    detail (0 of 179 names route anywhere; the only card href is an inert "#id=" fragment on
+    2 rows, with no consumer); the degraded-freshness disclosure (production's amber "2
+    sessions behind — check a live quote before you act" banner appears in all four production
+    captures; the artifact hardcodes "Settled close" with no stale path anywhere); and the
+    quantitative accountability strip (59% win · +0.45%/trade), whose RELOCATE destination
+    renders four bare anchors and zero numbers.
+  behavior_harder: >
+    Opening a name (no route exists). Knowing the board is behind the tape (no slot for the
+    state). Judging the machine anonymously (no number anywhere, and the gate promises levels
+    the card tier bans). Reaching 43% of the book as anything richer than seven columns.
+    Scanning for actionability, because the colour layer ranks WAIT and "no opinion" above BUY
+    and half the grid is holes.
+  stronger_claims: >
+    Two, both unwarranted and both now adjudicated below. The anonymous gate promises the
+    withheld rows come with "entry, target and void levels included" while card() never emits
+    them — the promise is honoured only by the table view, the surface the card tier's own
+    ruling bans. The table prints Entry / Void / First target for every row as the sole
+    representation of the 77 card-unreachable rows, without direction, priority or a sanity
+    check, and includes at least one row whose void sits above its entry. Against that, the
+    artifact genuinely REDUCES authority where it matters most: refusing to guess a stance from
+    a disclaimed engine, and deleting the producer-less market call outright.
+  intent_vs_convenience: >
+    Product intent, accepted: the one-universe count cure, the stance-branched zone, the
+    restored caution carrier, the producer-bound Groups, the disclosed no-read that refuses to
+    invent a read, the light-mode fix, and G-D minted as a hard data gate. Implementation
+    convenience, rejected: GRID_CAP=40 with null-priority rows sorted last, which pushes 43% of
+    the book out of card representation by construction; a table column set that keeps the
+    execution levels and drops the decision fields; a section header retained over deleted
+    content; and a stance ramp deepened in the one direction that costs salience on a dark
+    panel. The chart gap itself is a legitimate BLOCKED_DATA under G-D — but its LAYOUT
+    consequence is a design choice, and the artifact disproves the data excuse itself: the
+    same chartless rows render as clean ~78px cards in the fallback lens and in the 1-column
+    mobile layout.
+  production_preferable_for: >
+    Opening a name; knowing the board is stale; anonymous proof; reaching the whole book;
+    and scanning a grid whose loudest marks are its most actionable names. Production remains
+    preferable for each of these today. The proposal is preferable for count integrity,
+    lifecycle truth, population structure, episode identity, absence honesty, risk disclosure
+    as progressive disclosure, and a Groups section that asserts nothing it cannot source.
+  strongest_argument_against: >
+    All four surviving product blockers were raised in the r2 cycle, upheld there, and written
+    verbatim into this authority's own r2 conditions — and none of them appears anywhere in
+    the R3 notes' fix lists, keep/drop lists, or the designer's own three-way comparison. The
+    cycle fixed everything its rationale discussed and moved nothing that appeared on no list.
+    That is the failure mode RIG exists to catch, one level up from where it was expected: not
+    a bad decision laundered into law, but a REVIEW ITERATION converging on the parts of the
+    critique that were written down as code-shaped conditions while the capability-shaped ones
+    — a link, a stale banner, a proof number, a route to 43% of the book — stayed invisible
+    for a third consecutive revision. Approving here would teach the loop that a condition is
+    discharged by addressing the findings that name a file.
+
+# ── Blocking findings — every surviving blocker adjudicated by id (RIG §7) ────
+blocking_findings:
+  - finding: PRC-301
+    resolution: upheld_revise
+    note: >
+      Card→name-detail navigation. Authority-verified: root is <article> (board.js:286), cards
+      emit data-id and never id, the only card href is "#id=" on the 2 rows carrying `newer`,
+      and the only id= attributes are five section anchors — no consumer resolves it. PRECISION
+      CORRECTION to the receipt's wording: location.hash IS present at board.js:804, but as a
+      WRITE of the lifecycle filter, never a read; "nothing reads location.hash" is imprecise
+      and the finding stands on the corrected wording. Not BLOCKED_DATA: stock.html#TICKER is
+      live today and the payload carries id/tk on 179/179. Third consecutive revision.
+  - finding: PRC-302
+    resolution: upheld_revise
+    note: >
+      The anonymous gate's copy contract. Resolves auth.anon_gate_copy to NOT warranted:
+      board.js:437-439 promises "entry, target and void levels included"; card() never emits
+      them; only the banned table tier does; and the single unlocked card reads "No read yet" /
+      "No zone — stand aside". Either the copy matches what a subscriber lands on, or the card
+      tier's level ban is re-adjudicated — not both.
+  - finding: PRC-305
+    resolution: upheld_revise
+    note: >
+      Degraded-freshness disclosure. The header can only ever assert "Settled close"
+      (board.js:724-746); no stale/behind/degraded path exists. Production carries the amber
+      behind-the-tape banner in all four board captures plus a "● Delayed" pill. Not
+      BLOCKED_DATA — the artifact holds three vintages and chooses to print one unconditional
+      stamp. No capability id exists for it, which is itself the §1 defect: there is no
+      implicit deletion. Third consecutive revision.
+  - finding: PRC-306
+    resolution: upheld_revise
+    note: >
+      77 of 179 rows (43%) card-unreachable in every state and filter. Authority recomputed the
+      union independently at 102/179 reachable — matching the receipt exactly. GRID_CAP=40 and
+      the seven table columns are literals, and null-priority rows sort last, so the 86 unscored
+      rows are pushed below the cap by construction. This falsifies card.priority_score: RETAIN
+      and task.readiness_rank: BETTER for most of the book. G-D governs what ships to
+      PRODUCTION; it does not license a frozen REFERENCE to have no card representation for
+      43% of its own population. Production instead offers in-place "Show 15 more / Show all".
+  - finding: VTC-301
+    resolution: upheld_revise
+    note: >
+      The canonical grid's dominant texture is a half-empty card — 20 of 40 canonical cards,
+      23 of 40 under the Ready filter, ~97px of uniform void each. Caused by .pv-grid
+      align-items:stretch (board.css:367) + .pv-zn margin-top:auto (:553) against a 24px
+      .pv-nochart (:458) versus a 74px chart. Explicitly NOT excused by the enrichment gap: the
+      artifact renders the identical chartless content as clean ~78px cards in the fallback lens
+      and at 1-column mobile. This is the layout bill for the (correct) one-universe cure, and
+      it was not paid.
+  - finding: PRC-303
+    resolution: upheld_revise
+    note: >
+      DOWNGRADED by its own critic at pass 2 (blocker -> major) and recorded here because a
+      downgrade is not a withdrawal: RIG §7 requires every blocker surviving its own second
+      pass to carry a resolution. The reveal supplied a real fact — production's GPCR "BUY"
+      came via recommended_action, an engine that disclaims order authority, so refusing it is
+      a correct de-escalation and the "the read was obtainable" component is withdrawn. What
+      survives, and what this authority upholds, is the on-card INCOHERENCE, which is new in
+      R3 and was created by curing r2's PRC-201: ⚡Triggered + "No read yet" + "No zone — stand
+      aside" + a caution reading "Don't chase above the buy zone", all on the rank-1 ★Featured
+      card. Authority-verified in the fixture. Carried as revision work, not as a gate.
+  - finding: VTC-302
+    resolution: upheld_revise
+    note: >
+      DOWNGRADED by its own critic at pass 2 (blocker -> major) on new pass-2 evidence rather
+      than on the rationale: 8 of the 11 canonical BUY cards also carry the --pv-buy pinned ring
+      and solid badge, the loudest card-level treatments on the page, so "BUY is the dimmest
+      mark on the board" is a stroke-channel claim the whole card contradicts. Recorded here
+      because the residue is real and conditioned — 3 non-featured BUY cards, and any follower
+      surface without a Featured cohort inherits a bare inversion that flips with the theme.
+      Authority-measured independently by pixel sampling; see authority_spot_verification.
+      Not a gate; the remedy is recorded in the receipt and in the conditions below.
+  - finding: DA-001
+    resolution: upheld_revise
+    note: >
+      AUTHORITY-ORIGINATED, corroborated independently by both critics at pass 2. DESIGN_NOTES
+      ships two contradictory positions unmarked: §0a.C ("One universe, no view exemption") is
+      what the code implements (board.js:106; isRef is declared and never read), while §0b.1
+      still states the repealed rule "A 60%-暂无判断 board must not become the flagship
+      reference" as the justification for the removed mechanism, and §7 still describes the
+      repealed behaviour. The reversal is CORRECT on the merits — a design-authority blocker
+      (PRC-203) outranks an internal design note, and a reference that lies about its own counts
+      is worse than one that shows an unflattering book — but RIG §9 requires it be explicit.
+      A migration builder reading this document cannot tell which paragraph is law. Amend §0b.1
+      and §7 to record that the state=paid exemption was withdrawn under PRC-203, or strike
+      §0b.1. Leaving a repealed principle in the rationale of a document that becomes law is how
+      the repealed version gets rebuilt later.
+  - finding: DA-002
+    resolution: upheld_revise
+    note: >
+      AUTHORITY-VERIFIED from Reviewer B's pass-2 NEW-A. The r2 verdict's non-waivable condition
+      — stance values distinct from the direction tokens, "so a Buy card at a down tape is not
+      two direction inks" — is only HALF implemented. It was applied to the chart hue (--pv-buy
+      darkened) and not to the chip: dark :root sets --ink-mix-up:100% (board.css:45), so
+      --ink-up IS --up; .pv-buy routes --pvh-ink: var(--ink-up) (:392); the solid BUY chip
+      paints background: var(--pvh-ink) (:483); and the up-change text paints color:
+      var(--ink-up) (:506). Both resolve to #45b873. In dark mode the Buy card is still two
+      direction inks. A condition recorded as non-waivable may not be discharged on one of its
+      two surfaces.
+  - finding: DA-003
+    resolution: upheld_revise
+    note: >
+      The artifact's own three-way comparison argues honestly about the two variants it rejects
+      and dishonestly by omission about itself. Its lede claims all three columns render one
+      real plan row "from the SAME committed payload", while all three hardcode pv-hold
+      (compare.html:107,159) — FTI's payload stance is `wait`, and HOLD is the single stance
+      whose --pvh is --muted, which neutralises exactly the stance-ink question VTC-302 and the
+      r2 condition are about. The production column is rendered in the challenger's stylesheet
+      (.pv-trg is not scoped into .cmp-prod, so production's ⚡Triggered shows R3's amber where
+      the real production artifact renders it green), making an entire class of regression
+      invisible by construction. And production gets a 3-item "what must go", v1 a 6-item, the
+      revised column none. An adjudication artifact that assigns debits only to the variants it
+      is replacing is not evidence; it is advocacy. It also never draws the modal card — the
+      chartless, no-read row the grid is actually made of.
+
+# ── Mechanically-flagged items the checker requires be adjudicated here ───────
+task_matrix_adjudication:
+  - task: task.open_name_detail
+    verdict_stands: WORSE
+    resolution: upheld_revise
+    note: "Drives PRC-301. Not waived; the capability has no disposition and must acquire one."
+  - task: task.staleness_awareness
+    verdict_stands: WORSE
+    resolution: upheld_revise
+    note: "Drives PRC-305. Not waived."
+  - task: task.momentum_context
+    verdict_stands: WORSE
+    resolution: accepted_as_blocked_data
+    note: >
+      The change pill is at parity; only the sparkline half is degraded, on 134/179 rows, and
+      that gap is a genuine BLOCKED_DATA with a named contract, a measured coverage number and
+      an operator-ruled escalation (G-D, #5541). ACCEPTED as a data dependency and NOT counted
+      as a design regression — with the express exception of its layout consequence, which is
+      VTC-301 and is not excused.
+authority_delta_adjudication:
+  - row: auth.anon_gate_copy
+    resolution: upheld_revise
+    note: "Unwarranted. Drives PRC-302."
+  - row: auth.table_levels
+    resolution: upheld_revise
+    note: >
+      Unwarranted as shipped. The tier split is not defensible in its current form: the table
+      keeps the three execution numbers the card tier banned and drops the four decision fields
+      the board actually ranks on. Either the table carries stance, Priority and zone and drops
+      the levels, or the card-tier ban is re-adjudicated on the record.
+
+overrides: []
+
+verdict: REVISE
+
+conditions:
+  - "PRC-301 — the card routes to the name's detail surface, or the capability receives an explicit disposition with a reachability proof. A hover affordance with no destination is not a disposition."
+  - "PRC-302 — the anonymous gate's copy matches what a subscriber actually lands on, or the card tier's level ban is re-adjudicated on the record."
+  - "PRC-305 — the behind-the-tape state gets a slot and a capability id, or an explicit REMOVE with its §1 fields. Production ships this banner today."
+  - "PRC-306 — every row of the book is reachable as a card (in-place expansion as production does it, pagination, or a filter that reaches them), or the table carries the board's own decision fields so it is an honest second representation rather than a demotion."
+  - "VTC-301 — stop stretching short cards against tall neighbours. The artifact already renders these rows well in two other layouts; the canonical grid must not be the one place they read as broken."
+  - "DA-001 — DESIGN_NOTES §0b.1 and §7 are amended to record that the state=paid exemption was withdrawn under PRC-203, or §0b.1 is struck. No document that becomes law may ship two contradictory positions unmarked."
+  - "DA-002 — the r2 non-waivable stance-distinctness condition is discharged on the CHIP as well as the chart (dark --ink-mix-up off 100%, or .pv-buy .pv-chip re-pointed), so a dark Buy card is not two direction inks."
+  - "DA-003 — the compare page renders its specimen at the payload's true stance, scopes divergent shared classes into .cmp-prod so production is shown in production's values, carries a cost list for the revised column, and adds a chartless/no-read specimen."
+  - "VTC-302 is NOT blocking (downgraded on the critic's own pass-2 evidence: 8 of 11 canonical BUY cards also carry the Featured ring and solid badge). It is conditioned, and a concrete ramp satisfying all three constraints in all four theme x language quadrants is recorded in the receipt — including that the fix is a change of mix DIRECTION (toward --text), not more deepening, and that the light values are the shipped --ink-up formula the badges already render."
+  - "Remaining majors carried as revision work, not gates: VTC-303/304/306/307/308, PRC-307/309/310/311/312/313/314."
+  - "Resubmission is a new frozen SHA with fresh critic receipts under a new artifact set or an appended cycle; existing receipts go stale the moment proposal.yml's frozen_sha moves (RIG §3), and approval is possible only then."
+
+preserved_strengths:
+  - "All four r2 blockers genuinely closed and independently verified: the count law over one universe, producer-bound Groups with the regime chips deleted, the ⚠N risk carrier restored with a keyboard-reachable popover, and the stance-branched zone that restores production's anti-chase encoding."
+  - "The one-universe cure is the right call on the merits — it chose a real integrity fix over a cosmetic one, and it closes arithmetically (62+95+0+0+2 = 159; 159+20 = 179; 40 + '+119 more' = 159)."
+  - "Groups now renders 8 sourced themes with rank, recommendation, run length, member count and a printed as-of, and states an honest no-read when the key is absent rather than inventing a market call to fill the composition."
+  - "The disclosed no-read chip refuses to guess a stance from a disclaimed engine — a genuine REDUCTION in claimed authority, and the correct call."
+  - "Light mode is fixed as a design, not a token swap: true #fff cards on a #f7f8fa canvas with a real shadow."
+  - "The empty-vs-absent state writing is the best product copy in either artifact ('The cell is empty today, not missing…' / '…which is why the cell shows a dash rather than a zero')."
+  - "Ruled seven-cell lifecycle, ladder-as-filter, Resolved outside the live total, episode identity with dated N-of-M chips, and an anonymous gate that withholds by absence rather than by overlay."
+  - "The artifact ships its own mutation-resistant verification harness (136/136 at this SHA) and G-D is minted as a hard production data gate rather than used as an excuse to weaken the reference."
+  - "Reviewer B's pass-2 answer supplies a complete, verified remedy for the salience inversion — a rare case where the critique arrives with the fix already proven across all four theme x language quadrants."
+
+# ── Independent evidence the authority ran, beyond the two receipts ───────────
+authority_spot_verification:
+  method: "frozen fixture parsed directly; artifact served at the frozen SHA and measured in a real browser"
+  confirmed_exactly:
+    - "PRC-303 — GPCR: verb='FRESH BUY', trg='triggered', star=true, entry=53.14, caution 'Don't chase above the buy zone', while stance='blocked_data' and zk='none'. 5 rows carry a verb under a blocked_data stance."
+    - "PRC-306 — union across default + all seven filters = 102/179 reachable; 77 unreachable. Matches the receipt."
+    - "PRC-312 — 27 rows are life='entered' with stance='wait'."
+    - "PRC-304 — demoChange(tk) is literally (h*31 + charCodeAt) % 997 over the ticker string."
+    - "DA-002 — dark --ink-mix-up:100% so --ink-up == --up == #45b873; the solid BUY chip and the up-change text resolve to the same value."
+  confirmed_with_correction:
+    - "PRC-301 — substance holds; the receipt's 'nothing reads location.hash' is imprecise (board.js:804 WRITES it for the lifecycle filter). Conclusion unchanged: no consumer resolves a plan id."
+  confirmed_in_ordering_refined_in_magnitude:
+    - >
+      VTC-302 — measured by sampling RENDERED PIXELS (playwright, DSF 2), because getComputedStyle
+      does not reliably resolve color-mix() on this path and produced a spurious rgb(0,1,0) for
+      --pv-buy on the first attempt. Dark: WAIT 6.67 > NO-READ 4.00 > BUY 3.78. Light: NO-READ
+      4.46 > BUY 3.66 > WAIT 3.50. --pv-buy resolves to rgb(56,159,99), matching the hand-computed
+      color-mix. The ordering — which is the finding — holds under both the card-background and
+      chart-backdrop references; the absolute ratios differ between them.
+  precision_the_record_must_carry: >
+    BUY at 3.78 / 3.66 still clears the WCAG 1.4.11 3:1 floor for graphical objects. This is a
+    SALIENCE-ORDERING defect, not an accessibility violation, and must not be written up as the
+    latter.
+
+# ── Not waived by this verdict (separate production-migration blockers) ───────
+production_migration_blockers_preserved:
+  - id: G-D
+    pr: 5541
+    status: open
+    note: >
+      The plan book's actionability axis reaches 61/179 and enrichment 45/179. Diagnosed as a
+      PUBLICATION gap, not an availability gap (entry_status is an admission stamp being read as
+      a live measurement; the join used a screener population against a ledger population;
+      records exist for 162 of 166 plan tickers). Approving or revising a VISUAL REFERENCE does
+      not waive this, and it is not a reason to weaken the reference.
+  - id: overtime_producer_contradiction
+    pr: 5540
+    status: open
+    note: >
+      Outcome B — vocabulary defect. The producer is correct: age_days is anchored to
+      signal_date while days_elapsed/tau and horizon expiry are anchored to plan_clock_date(),
+      so 'past its horizon' computed by a reader disagrees with phase=overtime by construction.
+      Held open, not cured by hiding. Not waived by this verdict.

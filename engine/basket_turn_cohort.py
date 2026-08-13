@@ -573,6 +573,8 @@ def register_cohort_claims(
             scope_key=cid,
             direction=1,      # +1: cohort EW return > SPY over 21d
             horizon_d=21,
+            # P0a: 21 exchange SESSIONS (the grade-ladder rung), not calendar days.
+            horizon_unit=q.HORIZON_UNIT_TRADING,
             timestamp_quality="CRAWL_BOUNDED",
             bench="SPY",
             claim_family=QLEDGER_FAMILY,
