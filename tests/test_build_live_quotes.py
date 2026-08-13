@@ -241,6 +241,60 @@ def test_display_universe_survives_validation_undropped(tmp_path):
     assert snap["meta"]["requested"] == len(blq.DISPLAY_SYMBOLS)
 
 
+def test_display_universe_carries_the_board_cards_not_only_the_tiles(tmp_path):
+    """The bug this leg fixes: china_stocks.html renders 133 single-name Prophet
+    cards, each a `.nb-px`/`.nb-chg` pill bound to a `data-sym`, but the display
+    snapshot only ever fetched the ~34 hand-listed macro TILES — so live.js had
+    no reading for a single one of them, patchChgNode() bailed on `chg == null`,
+    and every percentage pill held its baked "—" through a live A-share session.
+    A page that renders a data-sym must be IN the universe the producer fetches."""
+    (tmp_path / "china_stocks.html").write_text(
+        '<span class="nb-px" data-sym="001301.SZ" data-mkt="cn">54.38</span>'
+        '<span class="nb-chg" data-sym="001301.SZ" data-mkt="cn">—</span>'
+        '<span class="nb-px" data-sym="603308.SS" data-mkt="cn">48.40</span>'
+        '<span class="nb-chg" data-sym="bad sym!" data-mkt="cn">—</span>'
+    )
+    uni = blq.display_universe(tmp_path)
+    assert "001301.SZ" in uni and "603308.SS" in uni
+    assert "BAD SYM!" not in uni                       # charset gate still holds
+    # tiles first: a cap squeeze or a board surprise can never cost the market
+    # strips their feed, and no tile is duplicated by a board page that shows it.
+    assert uni[:len(blq.DISPLAY_SYMBOLS)] == list(blq.DISPLAY_SYMBOLS)
+    assert len(uni) == len(set(uni))
+
+
+def test_display_board_leg_is_capped_and_tiles_survive_the_cap(tmp_path):
+    """The board's names are re-picked nightly, so the leg is unbounded by
+    construction — cap it, and order the cap so the truncation can only ever eat
+    board names, never a macro tile."""
+    page = "".join(f'<span data-sym="{i:06d}.SZ"></span>' for i in range(400))
+    (tmp_path / "china_stocks.html").write_text(page)
+    board = blq.board_display_symbols(tmp_path)
+    assert len(board) == blq.DISPLAY_BOARD_CAP
+    uni = blq.display_universe(tmp_path)
+    assert len(uni) == len(blq.DISPLAY_SYMBOLS) + blq.DISPLAY_BOARD_CAP
+    for sym in blq.DISPLAY_SYMBOLS:
+        assert sym in uni, sym
+
+
+def test_display_board_leg_degrades_to_the_tiles_when_the_page_is_missing(tmp_path):
+    """A checkout without the built page (or a renamed board) must not fail the
+    once-a-minute lane — it degrades to exactly the pre-board behaviour."""
+    assert blq.board_display_symbols(tmp_path) == []
+    assert blq.display_universe(tmp_path) == list(blq.DISPLAY_SYMBOLS)
+
+
+def test_display_board_pages_are_pages_this_repo_actually_builds():
+    """A typo'd or renamed board page scrapes to nothing and reads exactly like
+    the bug — silently back to tiles-only. Pin the names against the templates
+    that opt their cards into the live percentage (show_change=true)."""
+    for name in blq.DISPLAY_BOARD_PAGES:
+        assert name.endswith(".html"), name
+    assert "china_stocks.html" in blq.DISPLAY_BOARD_PAGES
+    src = (blq._ROOT / "scripts" / "build_china.py").read_text(encoding="utf-8")
+    assert '"china_stocks.html"' in src
+
+
 def test_yahoo_spark_yield_indexes_are_percent_direct_scale():
     """Documents the OBSERVED scale of this feed and guards the parser side of
     it: Yahoo spark delivered yield indexes as the yield percent directly
