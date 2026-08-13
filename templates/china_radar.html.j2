@@ -21,7 +21,7 @@
 
 {% block base_css %}
   .rd-hero { max-width:1060px; margin:18px auto 0; }
-  .rd-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .rd-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-link, var(--link)); font-weight:600; margin:0 0 8px; }
   .rd-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
   html[data-lang="zh"] .rd-hero h1 { letter-spacing:0; }
   .rd-hero .lens { font-size:12px; color:var(--muted); }
@@ -44,7 +44,7 @@
   .dcard .det { font-size:12px; color:var(--muted); margin:5px 0; }
   .dcard .rs { font-size:12px; font-variant-numeric:tabular-nums; }
   .dcard .hyp { font-size:12.5px; line-height:1.5; border-left:2px solid var(--link); padding-left:9px; margin-top:8px; opacity:.92; }
-  .dcard .cvx { margin-left:auto; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--link); }
+  .dcard .cvx { margin-left:auto; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--ink-link, var(--link)); }
   .dcard .cand { font-size:11.5px; color:var(--muted); margin-top:7px; }
   .dcard .hd { justify-content:flex-start; }
   .strength { height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; margin-top:8px; }
@@ -85,7 +85,7 @@
   {% set venue_inline = radar.in_line | selectattr("family", "equalto", "venue") | list %}
   {% set sector_active = radar.divergences | rejectattr("family", "equalto", "venue") | list %}
   {% set sector_inline = radar.in_line | rejectattr("family", "equalto", "venue") | list %}
-  <h2 class="sec">📡 {{ t('Active divergences', '活跃背离') }} <span style="font-size:12px;color:var(--muted)">{{ sector_active|length }}/{{ (sector_active|length) + (sector_inline|length) }}</span></h2>
+  <h2 class="sec">{{ t('Active divergences', '活跃背离') }} <span style="font-size:12px;color:var(--muted)">{{ sector_active|length }}/{{ (sector_active|length) + (sector_inline|length) }}</span></h2>
   {% if sector_active %}
   <div class="dcards">
     {% for d in sector_active %}
@@ -110,7 +110,7 @@
 
   <!-- ===== in line (silent) ===== -->
   {% if radar.in_line %}
-  <h2 class="sec">🔇 {{ t('In line (silent)', '一致（静默）') }}</h2>
+  <h2 class="sec">{{ t('In line (silent)', '一致（静默）') }}</h2>
   <p style="font-size:12px;color:var(--muted)">{{ t('Signal and price agree — confirming, no divergence edge.', '信号与价格一致——确认，无背离信号。') }}</p>
   <div class="inline-list">
     {% for d in radar.in_line %}<span class="ichip">{{ bl(d.signal_en, d.signal_zh) }} → {{ bl(d.sector_en, d.sector_zh) }}</span>{% endfor %}
@@ -119,7 +119,7 @@
 
   <!-- ===== ledger ===== -->
   {% if ledger and ledger.n_total %}
-  <h2 class="sec">📒 {{ t('Accountability ledger', '问责台账') }}</h2>
+  <h2 class="sec">{{ t('Accountability ledger', '问责台账') }}</h2>
   <div class="led-stat">
     <span><b>{{ ledger.n_total }}</b> {{ t('logged', '已记录') }}</span>
     <span><b>{{ ledger.n_resolved }}</b> {{ t('resolved', '已结') }}</span>
@@ -143,13 +143,13 @@
   </table>
   {% endif %}
   {% else %}
-  <h2 class="sec">📒 {{ t('Accountability ledger', '问责台账') }}</h2>
+  <h2 class="sec">{{ t('Accountability ledger', '问责台账') }}</h2>
   <div class="callout">{{ t('The ledger starts logging today’s divergences and scores each one ~3 months later — accountability accrues forward.', '台账从今日起记录背离，并在约3个月后逐一评分——问责随时间累积。') }}</div>
   {% endif %}
 
   <!-- ===== venue divergence section ===== -->
   {# venue_active and venue_inline already set above in the active divergences section #}
-  <h2 class="sec">🌐 {{ t('Venue Divergence', '跨市场背离') }} <span style="font-size:12px;color:var(--muted)">{{ venue_active|length }}/{{ (venue_active|length) + (venue_inline|length) }} {{ t('active', '活跃') }}</span></h2>
+  <h2 class="sec">{{ t('Venue Divergence', '跨市场背离') }} <span style="font-size:12px;color:var(--muted)">{{ venue_active|length }}/{{ (venue_active|length) + (venue_inline|length) }} {{ t('active', '活跃') }}</span></h2>
   <div class="callout" style="font-size:13px;">{{ t(
     'Cross-venue pairs: A/H premium z, offshore ETF gap (KWEB/MCHI/CQQQ vs CSI 300), southbound flow vs HSCEI. '
     'Each fires only when its z exceeds the engine threshold vs its own trailing history. '

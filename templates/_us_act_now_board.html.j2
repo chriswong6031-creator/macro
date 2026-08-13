@@ -115,7 +115,14 @@
              text-decoration: none; color: inherit; cursor: pointer;
              transition: background 0.1s; position: relative; }
   .actitem:last-child { border-bottom: none; }
-  .actitem:hover, .actitem:focus { background: color-mix(in srgb, var(--panel2) 55%, transparent); outline: none; }
+  /* `outline:none` here is (0,2,0) and theme.css's focus ring is a deliberate
+     low-specificity :where() at (0,1,0) — so this line silently removed the ring
+     from all 45 rows on us_stocks while the estate believed it was compliant
+     (design system §14: a focus-visible ring on EVERY interactive element).
+     Hover keeps its wash; the ring is restored for keyboard only. */
+  .actitem:hover, .actitem:focus { background: color-mix(in srgb, var(--panel2) 55%, transparent); }
+  .actitem:focus:not(:focus-visible) { outline: none; }
+  .actitem:focus-visible { outline: 2px solid color-mix(in srgb, var(--link) 78%, transparent); outline-offset: -2px; }
   .actitem.hovered { background: color-mix(in srgb, var(--panel2) 80%, transparent); }
   .act-row-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
   /* Row kind mark. --muted, not text-at-85%: it is a type label (fund vs basket),
@@ -162,13 +169,13 @@
   .ab-chip--wrap { white-space: normal; line-height: 1.3; flex: 0 1 auto; min-width: 0; max-width: 100%; }
   /* gate-override ✓ pill */
   .ab-chip--gate { background: color-mix(in srgb, var(--up) 10%, transparent);
-                   color: var(--up); border: 1px solid color-mix(in srgb, var(--up) 22%, transparent);
+                   color: var(--ink-up, var(--up)); border: 1px solid color-mix(in srgb, var(--up) 22%, transparent);
                    font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
                    line-height: 15px; flex: none; cursor: help; }
   /* theme item star/check/lens glyphs */
   .ai-book { flex: none; margin-left: 4px; font-size: 10px; font-weight: 800; cursor: help;
-             color: var(--up); white-space: nowrap; }
-  .ai-val { flex: none; margin-left: 4px; font-size: 10.5px; font-weight: 800; color: var(--up); cursor: help; }
+             color: var(--ink-up, var(--up)); white-space: nowrap; }
+  .ai-val { flex: none; margin-left: 4px; font-size: 10.5px; font-weight: 800; color: var(--ink-up, var(--up)); cursor: help; }
   .ai-lens { flex: none; margin-left: 4px; font-size: 11px; color: var(--muted); cursor: help; }
   /* theme item name */
   .actitem.ai-theme .act-row-name { font-weight: 700; }
@@ -191,7 +198,13 @@
 .lst-collapse.lst-cap3.is-collapsed > a.actitem:nth-child(n+4),
 .lst-collapse.lst-cap3.is-collapsed > div:nth-child(n+4) { display: none; }
   /* ── TS-R6: two-reads reconciliation chip ───────────────────────────────── */
-  .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--info,var(--link)); cursor:help; }
+  .two-reads-chip { display:inline-flex; align-items:flex-start; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600;
+    /* was white-space:nowrap — the chip is flex:none inside .actitem{overflow:hidden},
+       so in the TAKE PROFITS lane the pill ran past the card's rounded corner and the
+       label was cut mid-word ('broad sector AC'). The file's own .ab-chip--wrap note
+       warns that white-space alone is not enough; the shrink pair is what fixes it.
+       DOCTRINE §3: full display names WRAP, never truncate. */
+    white-space:normal; line-height:1.35; flex:0 1 auto; min-width:0; max-width:100%; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--ink-info, var(--info,var(--link))); cursor:help; }
   .two-reads-chip .tr-sep { opacity:.45; margin:0 2px; }
   /* ── Legacy help() "?" hover framework — HOST-PORTABILITY COPY ─────────────
      us_stocks gets these rules from dashboard.html.j2's inline page <style>;

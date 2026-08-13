@@ -2,42 +2,23 @@
   "schema": "master_brief.v2",
   "lens": "btc",
   "is_context_only": true,
-  "generated_at": "2026-08-08T07:46:37.694159+00:00",
+  "generated_at": "2026-08-13T13:42:34.489613+00:00",
   "model": "deepseek-v4-pro",
-  "state_asof": "2026-08-08",
-  "tldr": [
-    "Distribution active: system says zero allocation.",
-    "On-chain fair: Bitcoin not cheap nor expensive.",
-    "ETF inflows strong but leverage is elevated.",
-    "Markdown mature: two months until cycle pivot.",
-    "What to do: Stand aside."
-  ],
-  "summary": "Bitcoin is in a late distribution phase with fair valuation and conflicting flows \u2013 stand aside until clarity.",
-  "regime_read": "Bitcoin's composite risk map shows a distribution regime, the froth context driven by a mature cycle rather than speculative excess. Momentum is bearish but the long-term structure remains constructive \u2013 a corrective decline, not a collapse. The markdown phase has run most of its course, with only 58 days left, which historically favours a transition into accumulation by October.\n\nUnder the surface, demand is a mix. ETF buyers are steadily accumulating, yet stablecoin supply is shrinking and leveraged bets sit above mid-range. Global net liquidity is contracting, clouding the background, while on-chain gauges say Bitcoin is fairly priced.",
-  "conflicts": [
-    "Fair value: On-chain models say Bitcoin is cheap, but the system calls for distribution \u2013 the cycle disagrees.",
-    "Flow tug-of-war: ETF accumulation meets elevated leverage \u2013 one side will break.",
-    "Mixed macro: World money supply is growing, but net liquidity is draining, muddying Bitcoin's outlook."
-  ],
+  "state_asof": "2026-08-13",
+  "tldr": [],
+  "summary": null,
+  "regime_read": null,
+  "conflicts": [],
   "rotation_check": null,
-  "transmission": [
-    "If net liquidity keeps draining \u2192 Bitcoin's recovery likely stays capped.",
-    "If leverage stress stays high while ETF inflows slow \u2192 a sharp flush could follow."
-  ],
-  "watch_items": [
-    "Bitcoin reclaims $68k: distribution invalidates.",
-    "Markdown pivot Oct 5: cycle could flip to accumulation.",
-    "ETF flows turn negative: support weakens.",
-    "Leverage ranking in the top 20% of its history: froth dangerous."
-  ],
-  "confidence": "medium",
+  "transmission": [],
+  "watch_items": [],
+  "confidence": "low",
   "theses": [],
-  "raw_text": "{\n  \"tldr\": [\n    \"Distribution active: system says zero allocation.\",\n    \"On-chain fair: Bitcoin not cheap nor expensive.\",\n    \"ETF inflows strong but leverage is elevated.\",\n    \"Markdown mature: two months until cycle pivot.\",\n    \"What to do: Stand aside.\"\n  ],\n  \"summary\": \"Bitcoin is in a late distribution phase with fair valuation and conflicting flows \u2013 stand aside until clarity.\",\n  \"regime_read\": \"Bitcoin's composite risk map shows a distribution regime, the froth context driven by a mature cycle rather than speculative excess. Momentum is bearish but the long-term structure remains constructive \u2013 a corrective decline, not a collapse. The markdown phase has run most of its course, with only 58 days left, which historically favours a transition into accumulation by October.\\n\\nUnder the surface, demand is a mix. ETF buyers are steadily accumulating, yet stablecoin supply is shrinking and leveraged bets sit above mid-range. Global net liquidity is contracting, clouding the background, while on-chain gauges say Bitcoin is fairly priced.\",\n  \"conflicts\": [\n    \"Fair value: On-chain models say Bitcoin is cheap, but the system calls for distribution \u2013 the cycle disagrees.\",\n    \"Flow tug-of-war: ETF accumulation meets elevated leverage \u2013 one side will break.\",\n    \"Mixed macro: World money supply is growing, but net liquidity is draining, muddying Bitcoin's outlook.\"\n  ],\n  \"transmission\": [\n    \"If net liquidity keeps draining \u2192 Bitcoin's recovery likely stays capped.\",\n    \"If leverage stress stays high while ETF inflows slow \u2192 a sharp flush could follow.\"\n  ],\n  \"watch_items\": [\n    \"Bitcoin reclaims $68k: distribution invalidates.\",\n    \"Markdown pivot Oct 5: cycle could flip to accumulation.\",\n    \"ETF flows turn negative: support weakens.\",\n    \"Leverage pctile above 80: froth dangerous.\"\n  ],\n  \"confidence\": \"medium\"\n}",
-  "degraded_reason": null,
+  "raw_text": "{\n  \"tldr\": [\n    \"System: Bitcoin exposure is flat \u2014 the risk engine sees distribution and froth.\",\n    \"Cycle: Deep in the late, falling phase \u2014 next turn early October, momentum still bearish.\",\n    \"Value: Fair-to-cheap on-chain \u2014 but that isn't a floor while price grinds lower.\",\n    \"Liquidity: Split \u2014 global money up over the year, short-term money draining.\",\n    \"What to do: Stand aside.\"\n  ],\n  \"summary\": \"Bitcoin is in a late down-cycle with cheap valuation, but short-term liquidity is draining and exposure is already flat.\",\n  \"regime_read\": \"Bitcoin is deep in the late, grinding phase of its cycle \u2014 the part after the top where prices fall and sellers stay in control. The system marks the market as distribution, not accumulation, and it has cut Bitcoin exposure to zero. That is a position, not just a label: it is already flat, and momentum is still pointed down.\\n\\nThe valuation layer says the coin is only fair-to-cheap, near the lower end of its history. The cycle clock says the next turn is around early October. But the dominant driver today is the liquidity split: global money",
+  "degraded_reason": "truncated",
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
-  "style_flags": [],
   "nw_context_used": true,
-  "cortex_status": "degraded",
+  "cortex_status": "absent",
   "refresh_days": 3,
   "key_facts": [
     {
@@ -52,8 +33,8 @@
       "key": "cycle",
       "label_en": "Cycle clock",
       "label_zh": "\u5468\u671f\u65f6\u949f",
-      "value_en": "Late decline \u00b7 ~84% through",
-      "value_zh": "\u4e0b\u884c\u540e\u6bb5 \u00b7 \u7ea684%\u8fdb\u5ea6",
+      "value_en": "Late decline \u00b7 ~85% through",
+      "value_zh": "\u4e0b\u884c\u540e\u6bb5 \u00b7 \u7ea685%\u8fdb\u5ea6",
       "tone": "warn"
     },
     {
@@ -88,32 +69,5 @@
       "value_zh": "\u6269\u5f20",
       "tone": "good"
     }
-  ],
-  "zh": {
-    "summary": "Bitcoin\u5904\u4e8e\u540e\u671f\u6d3e\u53d1\u9636\u6bb5\uff0c\u4f30\u503c\u5408\u7406\u4f46\u8d44\u91d1\u6d41\u5411\u77db\u76fe\u2014\u2014\u89c2\u671b\u81f3\u660e\u6717\u3002",
-    "regime_read": "Bitcoin\u7684\u7efc\u5408\u98ce\u9669\u56fe\u663e\u793a\u6d3e\u53d1\u72b6\u6001\uff0c\u6ce1\u6cab\u80cc\u666f\u6e90\u4e8e\u5468\u671f\u6210\u719f\u800c\u975e\u6295\u673a\u8fc7\u5ea6\u3002\u52a8\u80fd\u504f\u7a7a\uff0c\u4f46\u957f\u671f\u7ed3\u6784\u4f9d\u7136\u5065\u5eb7\u2014\u2014\u5c5e\u4e8e\u56de\u8c03\u4e0b\u8dcc\uff0c\u800c\u975e\u5d29\u76d8\u3002\u4e0b\u8dcc\u9636\u6bb5\u5df2\u57fa\u672c\u8d70\u5b8c\uff0c\u4ec5\u526958\u5929\uff0c\u4ece\u5386\u53f2\u770b\u6709\u5229\u4e8e\u572810\u6708\u524d\u8f6c\u5165\u5438\u7b79\u9636\u6bb5\u3002\n\n\u8868\u9762\u4e4b\u4e0b\uff0c\u9700\u6c42\u8868\u73b0\u6df7\u6742\u3002ETF\u4e70\u5bb6\u7a33\u6b65\u5438\u7b79\uff0c\u4f46\u7a33\u5b9a\u5e01\u4f9b\u5e94\u5728\u6536\u7f29\uff0c\u6760\u6746\u62bc\u6ce8\u9ad8\u4e8e\u4e2d\u4f4d\u533a\u95f4\u3002\u5168\u7403\u51c0\u6d41\u52a8\u6027\u6b63\u5728\u6536\u7f29\uff0c\u4e3a\u80cc\u666f\u8499\u4e0a\u9634\u5f71\uff0c\u800c\u94fe\u4e0a\u6307\u6807\u663e\u793aBitcoin\u5b9a\u4ef7\u5408\u7406\u3002",
-    "rotation_check": null,
-    "tldr": [
-      "\u6d3e\u53d1\u6d3b\u8dc3\uff1a\u7cfb\u7edf\u663e\u793a\u96f6\u914d\u7f6e\u3002",
-      "\u94fe\u4e0a\u516c\u5141\u4ef7\u503c\uff1a\u6bd4\u7279\u5e01\u65e2\u4e0d\u4fbf\u5b9c\u4e5f\u4e0d\u8d35\u3002",
-      "ETF\u8d44\u91d1\u6d41\u5165\u5f3a\u52b2\uff0c\u4f46\u6760\u6746\u7387\u504f\u9ad8\u3002",
-      "\u56de\u8c03\u5145\u5206\uff1a\u8ddd\u79bb\u5468\u671f\u62d0\u70b9\u8fd8\u6709\u4e24\u4e2a\u6708\u3002",
-      "\u64cd\u4f5c\u5efa\u8bae\uff1a\u89c2\u671b\u3002"
-    ],
-    "conflicts": [
-      "\u516c\u5141\u4ef7\u503c\uff1a\u94fe\u4e0a\u6a21\u578b\u8ba4\u4e3aBitcoin\u4fbf\u5b9c\uff0c\u4f46\u7cfb\u7edf\u8981\u6c42\u6d3e\u53d1\u2014\u2014\u5468\u671f\u5e76\u4e0d\u8ba4\u540c\u3002",
-      "\u8d44\u91d1\u62c9\u952f\u6218\uff1aETF\u5438\u7b79\u9047\u4e0a\u6760\u6746\u9ad8\u4f01\u2014\u2014\u7ec8\u6709\u4e00\u65b9\u4f1a\u7834\u88c2\u3002",
-      "\u5b8f\u89c2\u4fe1\u53f7\u6df7\u6742\uff1a\u5168\u7403\u8d27\u5e01\u4f9b\u5e94\u91cf\u5728\u589e\u957f\uff0c\u4f46\u51c0\u6d41\u52a8\u6027\u5728\u6d41\u5931\uff0c\u4ee4Bitcoin\u524d\u666f\u8499\u4e0a\u9634\u5f71\u3002"
-    ],
-    "transmission": [
-      "\u82e5\u51c0\u6d41\u52a8\u6027\u6301\u7eed\u6d41\u5931\u2192Bitcoin\u7684\u53cd\u5f39\u53ef\u80fd\u4ecd\u53d7\u9650\u3002",
-      "\u5982\u679c\u6760\u6746\u538b\u529b\u6301\u7eed\u9ad8\u4f01\u800cETF\u8d44\u91d1\u6d41\u5165\u653e\u7f13\uff0c\u53ef\u80fd\u968f\u540e\u51fa\u73b0\u6025\u5267\u629b\u552e\u3002"
-    ],
-    "watch_items": [
-      "\u6bd4\u7279\u5e01\u6536\u590d6.8\u4e07\u7f8e\u5143\uff1a\u6d3e\u53d1\u5931\u6548\u3002",
-      "10\u67085\u65e5\u4e0b\u8dcc\u8f6c\u6298\u70b9\uff1a\u5468\u671f\u53ef\u80fd\u8f6c\u5411\u5438\u7b79\u3002",
-      "ETF\u8d44\u91d1\u6d41\u8f6c\u4e3a\u8d1f\u503c\uff1a\u652f\u6491\u51cf\u5f31\u3002",
-      "\u6760\u6746\u7387\u5904\u4e8e\u5386\u53f2\u524d20%\uff1a\u6ce1\u6cab\u5371\u9669\u3002"
-    ]
-  }
+  ]
 }

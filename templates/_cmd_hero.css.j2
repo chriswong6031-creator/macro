@@ -75,16 +75,16 @@
   .cmd-hero .v-chip { font-size: 12.5px; font-weight: 700; padding: 3px 10px;
     border-radius: 7px; width: max-content; border: var(--rule) solid var(--hair);
     background: var(--tile); color: var(--ink-1); }
-  .cmd-hero .v-chip.tone-up, .cmd-hero .v-chip.liq-expanding { color: var(--up);
+  .cmd-hero .v-chip.tone-up, .cmd-hero .v-chip.liq-expanding { color: var(--ink-up, var(--up));
     border-color: color-mix(in srgb, var(--up) 45%, var(--hair));
     background: color-mix(in srgb, var(--up) 13%, var(--tile)); }
-  .cmd-hero .v-chip.tone-down, .cmd-hero .v-chip.liq-contracting { color: var(--down);
+  .cmd-hero .v-chip.tone-down, .cmd-hero .v-chip.liq-contracting { color: var(--ink-down, var(--down));
     border-color: color-mix(in srgb, var(--down) 45%, var(--hair));
     background: color-mix(in srgb, var(--down) 13%, var(--tile)); }
-  .cmd-hero .v-chip.tone-warn { color: var(--warn);
+  .cmd-hero .v-chip.tone-warn { color: var(--ink-warn, var(--warn));
     border-color: color-mix(in srgb, var(--warn) 45%, var(--hair));
     background: color-mix(in srgb, var(--warn) 11%, var(--tile)); }
-  .cmd-hero .v-chip.tone-info { color: var(--info, var(--link));
+  .cmd-hero .v-chip.tone-info { color: var(--ink-info, var(--info, var(--link)));
     border-color: color-mix(in srgb, var(--info, var(--link)) 45%, var(--hair));
     background: color-mix(in srgb, var(--info, var(--link)) 11%, var(--tile)); }
 

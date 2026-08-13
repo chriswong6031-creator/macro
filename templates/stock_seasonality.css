@@ -367,7 +367,7 @@ html[data-lang="zh"] .sx-card > h2, html[data-lang="zh"] .sx-sect > h2 { letter-
   font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1;
   letter-spacing: -.03em;
 }
-.sx-fig.up { color: var(--up); } .sx-fig.dn { color: var(--down); }
+.sx-fig.up { color: var(--ink-up, var(--up)); } .sx-fig.dn { color: var(--ink-down, var(--down)); }
 .sx-figlab { font: 400 13.5px/1.55 var(--font-ui); color: var(--sx-text-2); margin: 6px 0 var(--sx-sp-4); }
 
 /* ── the window fan — THE signature (spec §5/§13) ───────────────────────
@@ -415,7 +415,7 @@ table.sx-tbl td.y, table.sx-tbl td.r {
    both themes; the weight stops the digits reading as noise. */
 table.sx-tbl td.y { color: var(--text); font-weight: 600; }
 table.sx-tbl td.r { font-weight: 600; }
-table.sx-tbl td.r.up { color: var(--up); } table.sx-tbl td.r.dn { color: var(--down); }
+table.sx-tbl td.r.up { color: var(--ink-up, var(--up)); } table.sx-tbl td.r.dn { color: var(--ink-down, var(--down)); }
 .sx-bar { position: relative; display: block; height: 9px; background: transparent; }
 .sx-bar i { position: absolute; top: 0; height: 9px; border-radius: 2px; display: block; }
 .sx-bar i.up { background: var(--up); } .sx-bar i.dn { background: var(--down); }
@@ -542,7 +542,7 @@ html[data-lang="zh"] .sx-quick-lab { letter-spacing: 0; }
   font: 400 13px/1.5 var(--font-ui); color: var(--sx-text-2);
 }
 .sx-note[data-on="1"] { display: flex; }
-.sx-note a { color: var(--link); }
+.sx-note a { color: var(--ink-link, var(--link)); }
 
 /* ── honesty strip ──────────────────────────────────────────────────────── */
 /* Six disclosures, so a FIXED three-up grid — two clean rows. auto-fit was

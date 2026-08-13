@@ -358,7 +358,11 @@ def test_partials_are_the_one_source_for_both_sides():
         ("_etf_board_rows.html.j2", '<div class="cb-row">'),
         ("_etf_accumulation_rows.html.j2", '<td class="fundcell">'),
         ("_etf_fresh_cards.html.j2", '<div class="fc-top">'),
-        ("_etf_trim_rows.html.j2", '<span class="sh-ic">🔻</span>'),
+        # marker was '<span class="sh-ic">🔻</span>' until 2026-08-12: a decorative
+        # emoji is the WORST possible anti-drift marker, because a doctrine §5.8
+        # sweep removes it estate-wide and this guard silently reports "vacuous"
+        # rather than the drift it exists to catch. Anchored on structure instead.
+        ("_etf_trim_rows.html.j2", '<span class="mini exit"'),
     ):
         assert f'{{% include "{partial}" %}}' in shell_src, (
             f"the shell must render {partial}, not its own copy of those rows")
