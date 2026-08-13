@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T01:09:58.283701+00:00",
-  "count": 1026,
+  "generated_at": "2026-08-13T03:11:21.492918+00:00",
+  "count": 1032,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -40,6 +40,7 @@
     "RBC",
     "Rabobank",
     "Raymond James",
+    "RiskHedge",
     "Royal London on Private Credit",
     "S&T",
     "SEB",
@@ -62,6 +63,69 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-iiyfaodohcd-982745",
+      "title": "AVC (3017)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T01:24:14Z",
+      "summary_points": [
+        "**AI-Driven Revenue & GM Upside**: Jul revenue +57% YoY (vs.",
+        "6% QoQ) from AI server liquid cooling components; 2Q26 GM beat at 32.6% (vs.",
+        "consensus) driven by higher-margin AI cooling, rack shipments, and penetration rates.",
+        "**2025-28 Growth Catalyst**: 52% CAGR net income growth via AI spending tailwinds, liquid cooling penetration expansion, and market leadership in air/liquid cooling solutions (supported by R&D/manufacturing capacity).",
+        "**Valuation Upside & Revisions**: Target price lifted to NT$3,986 (28.2x P/E on 2027E EPS), reflecting 11%/7%/8% net income revisions (2026-2028) and 37% upside from current price."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nfyjrzmss3b-a8d72f",
+      "title": "Tingyi (0322.HK) 1H26 Review Upgrade to Buy on enhanced core category position, improved operation efficiency amid cost vol...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T01:24:13Z",
+      "summary_points": [
+        "**Margin Expansion & Core Segment Strength**: 1H26 results beat expectations with EBIT margin improving to 9.6% (from 8.8%), driven by cost management, sweetened tea (+15% yoy) and noodles segment growth (50%+ H1 2026), supported by product innovation and structural F&B transformation.",
+        "**PET Cost Resolution & Margin Resilience**: PET prices corrected from Rmb9k+/t to Rmb7-8k/t, turning cost pressure into tailwind; eased input costs and automation-driven expense efficiency support earnings resilience amid sugar/palm oil price stability.",
+        "**20% Upside Target & Catalysts**: Goldman Sachs upgrades to Buy with HK$14.80 target (20.4% upside), citing 20%+ total return potential, 15.5x 2027 P/E, and strong growth catalysts (sugar-free tea +25% market growth, noodles premiumization >Rmb5/unit).",
+        "**Reduced Leverage & Outperformance**: Net debt/equity (excl.",
+        "leases) declines to 17.0% (from 24.0%), lowering financial risk; stock outperforms Hang Seng China Ent."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ihhroq7zrot-128c39",
+      "title": "JPM US Market Intelligence Afternoon Briefing Aug 12",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T00:59:12Z",
+      "summary_points": [
+        "**US Macro Data & Geopolitics**: PPI (8:30am ET) and Jobless Claims critical; US-Iran tensions (Hormuz Strait) and mixed Middle East headlines drive sentiment, with CPI context easing inflation concerns via AI narrative.",
+        "**Inflation Signals**: Core goods inputs slowdown hints at easing pressures, but services inflation (PPI services +0.2% Jul) and rising PMI/ISM cost metrics create pipeline uncertainty.",
+        "**Tech Rotation & Catalysts**: Hyperscalers (AWS/Azure) show sustained demand; AI catalysts (Gemini 3.5 Pro, AWS re:Invent) drive Mag7/hyperscalers (30% upside) and global Semis (APAC AI reversal).",
+        "**EM Tactical Trades**: TACTICALLY LONG China H-shares/Internet (KWEB), Taiwan; Hedges: long LatAm (ILF), India (INDA) vs short Southeast Asia (ASEA).",
+        "**Geopolitical Risk**: Iran-US talks frozen, Hormuz traffic low; US-China AI talks (Sep) and Nov 1 trade truce expiration threaten tech policy stability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-gr0omfe4cut-a2a4b1",
       "title": "Strategy Espresso Europe – The secret outperformer",
@@ -247,6 +311,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-tcokvhuzse4-dc02a8",
+      "title": "The Point for Europe Wednesday, 12 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T10:05:10Z",
+      "summary_points": [
+        "**Daimler Truck (DTG.DE) - MY27 Sale Decision**: MY27 sales strategy shift vs MY26, 2Q DTNA order weakness (fleet mix-driven, temporary), Chinese competition risk; critical for trucking sector fundamentals and capital allocation.",
+        "**EU Auto China Competition Policy Risk**: EU auto market segmentation and regulation-driven China share rise; policy negligence not sustainable, posing structural risk to EU manufacturers.",
+        "**Global Sporting Goods Sneaker Demand**: July volumes down 1.2% MoM (9th decline), Nike US momentum (+30bps), lifestyle footwear weakness; key for consumer discretionary flows and sector rotation.",
+        "**Kingspan BMC Acquisition**: €850mn deal delivers 5.6% EPS accretion, EV/EBITDA <5x (vs KSP 11.6x), strategic power management entry; enables two additional BMC-scale acquisitions.",
+        "**Commodities - Silver Price Drivers**: Investment demand (Strait of Hormuz de-escalation, Fed pivot) and solar slowdown; targets $75/oz (0-3m), $90/oz (6-12m) vs spot $65/oz."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xeez6ry3zzy-23c159",
       "title": "GS Shawn Tuteja framework and AI",
       "institution": "S&T",
@@ -427,6 +512,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-l8t5s8tr0ns-3c1a76",
+      "title": "Americas Transportation Railroads Weekly Rail Carload Snapshot — Week 31",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:49Z",
+      "summary_points": [
+        "**US Rail Demand Acceleration**: US Class I rail total traffic growth accelerated to +5.7% YoY (vs +2.4% prior week), driven by intermodal (+6.5% YoY) and ex-intermodal (+4.8% YoY), with CSX leading intermodal (+8.9% YoY) and ex-intermodal (+5.5% YoY), signaling robust freight demand fundamentals.",
+        "**Canadian Rail Momentum**: Canadian Class 1 rail growth rose to +3.6% YoY (vs +0.1% prior week), led by CPKC (+4.7% YoY) and intermodal expansion (+6.5% YoY vs 0.6% prior week), indicating strengthening cross-border trade flows and regional economic activity.",
+        "**Critical Rating System Insight**: Goldman Sachs' \"Not Rated\" (NR) designation for stocks involved in merger/strategic transactions is a key portfolio positioning signal, distinct from Neutral (N) for inactive stocks, directly impacting risk assessment and allocation decisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -755,6 +859,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ijm734vtw5s-6419c3",
+      "title": "DI August 2026",
+      "institution": "RiskHedge",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:31:31Z",
+      "summary_points": [
+        "**AI Supply Chain Bottlenecks**: TSMC controls 70% of silicon wafer supply; wafer production constraints and power demands for AI scaling (processing duration doubling monthly) create systemic risk, with manufacturing capacity as the critical bottleneck.",
+        "**Copper Wall Limitation**: Copper cabling fails at high-speed AI data transmission (signals degrade <1m), forcing shift to photonics; copper’s usable range collapses to centimeters by 2028, halting further scaling.",
+        "**Photonics as Critical Infrastructure Shift**: Fiber optics replace copper for bandwidth, heat, and interference issues; NVIDIA’s Vera Rubin Ultra NVL576 drives *scale-up* and *scale-across* via optical networking, making photonics essential for next-gen AI clusters.",
+        "**Lumentum’s Dominance in Photonics**: Holds 50-60% of high-speed EML market (sole 200G supplier at scale), with 77% YoY revenue growth in AI components; owns four integrated light platforms (EMLs, VCSELs) unmatched by competitors.",
+        "**Persistent Supply Shortage**: Demand exceeds supply by >30% (widened from 25-30%), supported by take-or-pay contracts and intentional capacity retention for premium pricing, indicating durable scarcity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
       "language": "en",
       "needs_metadata": false
     },

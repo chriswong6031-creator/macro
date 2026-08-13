@@ -132,6 +132,10 @@ html[data-lang="zh"] .mx-vh .mx-vh-word{ letter-spacing:0; }
 .mx-ladder{ display:flex; align-items:stretch; gap:0; border:1px solid var(--line); border-radius:var(--r-btn); overflow:hidden; }
 .mx-ladder .mx-lad-total{ padding:8px 14px; font-weight:800; font-size:var(--fs-md); border-right:1px solid var(--line); background:var(--panel2); }
 .mx-ladder .mx-lad-total small{ display:block; font-size:var(--fs-micro); font-weight:600; color:var(--muted); }
+/* the display:block above out-specifies theme.css's html[data-lang] toggle (0-2-1 vs
+   0-2-0), which printed BOTH language labels in the total cell under zh. Restore the toggle. */
+html:not([data-lang="zh"]) .mx-ladder .mx-lad-total small.l-zh,
+html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en{ display:none; }
 .mx-ladder button{ appearance:none; background:none; border:none; border-right:1px solid var(--line); padding:8px 12px;
   font:600 var(--fs-sm)/1.2 var(--font-ui); color:var(--muted); cursor:pointer; }
 .mx-ladder button:last-child{ border-right:none; }
