@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T04:26:18.662796+00:00",
-  "count": 1036,
+  "generated_at": "2026-08-13T04:44:13.503523+00:00",
+  "count": 1037,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -63,6 +63,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-yxniyrhtcac-f7186d",
+      "title": "Hon Hai (2317)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T01:24:16Z",
+      "summary_points": [
+        "**2026 Revenue Beat & Margins**: Hon Hai forecasts 2026 revenue growth across AI servers (GPU/ASIC), Consumer Electronics, PCs, and Components; 6.1% GM (vs.",
+        "consensus 5.7%/6.0%), 35% YoY NI to NT$60bn, Opex down to 2.4% driven by AI server ramp (double-digit QoQ) and EV Model B delivery by end-2026.",
+        "**AI Server & EV Growth Catalysts**: AI server rack shipments growing at high double-digit QoQ (2026) due to market share gains; EV business advancing with Model B (AUS/NZ delivery end-2026) and CAVIRA in Taiwan, supported by vertical integration and global production.",
+        "**Target Price Upside & Valuation**: Goldman Sachs target price NT$400 (193.50 NTS above current price), 18.9x 2027E P/E, reflecting bullish sentiment on AI server/EV outsourcing expansion despite stock trading below target.",
+        "**Key Downside Risks**: Slower AI server ramp, weaker EV solution performance, delayed global capacity expansion, and intensified competition in consumer electronics EMS."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-iiyfaodohcd-982745",
       "title": "AVC (3017)",
