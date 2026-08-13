@@ -782,51 +782,86 @@
     }
 
     if (S.view === "table") {
-      /* table view renders EVERY row of the active filter — the surface where
-         rendered rows equal the cell count with no remainder. */
+      /* PRC-306 / PRC-313 — THE TABLE CARRIES THE BOARD'S OWN DECISION FIELDS.
+         It used to be Ticker · Lifecycle · Entry · Void · First target · Opened
+         · Episode: it kept the three execution numbers the card tier bans as
+         prescriptive, dropped every instrument a reader would need to judge
+         them (stance, priority, zone, caution, chart), applied no validation to
+         them (the fixture holds a BULL row whose void sits above its entry and
+         the reference published it unremarked) — and, before the grid became
+         fully expandable, it was the ONLY representation 77 rows ever got.
+         Exact execution geometry belongs in plan detail. What the board ranks
+         on belongs here, with honest dashes where a value has not published. */
       h += '<div class="st-wrap"><table class="st-table"><thead><tr>';
-      [["Ticker", "代码"], ["Lifecycle", "生命周期"], ["Entry", "入场价"], ["Void", "失效价"],
-       ["First target", "首个目标"], ["Opened", "启动日"], ["Episode", "轮次"]].forEach(function (c) {
+      [["Ticker", "代码"], ["Entry read", "买点"], ["Lifecycle", "生命周期"],
+       ["Priority", "优先级"], ["Quote", "报价"], ["Zone", "买区"],
+       ["Episode", "轮次"], ["Opened", "启动日"]].forEach(function (c) {
         h += "<th>" + t(c[0], c[1]) + "</th>";
       });
       h += "</tr></thead><tbody>";
       r.forEach(function (x) {
-        var L = LEX[x.life];
+        var xl = LEX[x.life];
+        var xv = x.stance && VERB[x.stance] ? x.stance : null;
+        var xres = x.life === "resolved";
+        var xzk = x.zk || "none";
+        var xc = (!xres && x.px != null) ? demoChange(x.tk) : null;
         h += "<tr><td><b>" + esc(x.tk) + "</b></td>";
+        h += "<td>" + (xv ? t(VERB[xv].en, VERB[xv].zh)
+                          : x.stance === "blocked_data" ? t(NOREAD.en, NOREAD.zh) : "—") + "</td>";
         h += '<td><span class="st-life"><span class="mx-mark mx-mark--' + x.life + '" aria-hidden="true"></span>' +
-             t(L.en, L.zh) + "</span></td>";
-        h += '<td class="fig">' + money(x.entry) + "</td>";
-        h += '<td class="fig">' + money(x.inval) + "</td>";
-        h += '<td class="fig">' + money(x.t1) + "</td>";
-        h += '<td class="fig">' + (x.opened ? t(x.opened.en, x.opened.zh) : "—") + "</td>";
+             t(xl.en, xl.zh) + "</span></td>";
+        h += '<td class="fig">' + (xres || x.pri == null ? "—" : Math.round(x.pri)) + "</td>";
+        h += '<td class="fig">' + (xres || x.px == null ? "—" : money(x.px) +
+             ' <span class="pv-chg' + (xc > 0.05 ? " up" : xc < -0.05 ? " down" : "") +
+             '" data-mock-live="1">' + (xc > 0 ? "+" : "") + xc.toFixed(1) + "%</span>") + "</td>";
+        h += '<td class="fig">' + (xres || !(xzk === "active" || xzk === "readd" || xzk === "muted")
+             ? "—" : zoneRange(x.zlo, x.zhi)) + "</td>";
         h += "<td>" + (x.eps ? t(x.ep + " of " + x.eps, "第 " + x.ep + " / 共 " + x.eps) : "—") + "</td>";
+        h += "<td>" + (x.opened ? t(x.opened.en, x.opened.zh) : "—") + "</td>";
         h += "</tr>";
       });
       h += "</tbody></table></div>";
       h += '<p class="mx-sec-note" style="margin-top:12px">' + t(
-        "Table view shows every row of the current filter: <b>" + r.length + "</b> rendered.",
-        "表格视图显示当前筛选下的全部条目：已渲染 <b>" + r.length + "</b> 条。") + "</p>";
+        "Table view shows every row of the current filter: <b>" + population + "</b> rendered. " +
+        "Exact entry, target and void levels live in plan detail, not on the board.",
+        "表格视图显示当前筛选下的全部条目：已渲染 <b>" + population + "</b> 条。" +
+        "具体的入场、目标与失效价位在计划详情页查看，不在看板上呈现。") + "</p>";
       return h;
     }
 
-    var shown = r.slice(0, GRID_CAP);
-    /* THE POPULATION IS THE CANONICAL COUNT, not however many cards this view
-       happens to draw. On the product states that is the published cell/live
-       total, so rendered + "+N more" reconciles to the headline exactly. The
-       diagnostic lenses state their own scope in their header instead. */
-    var population = (isEps || isFall) ? r.length
-                   : (S.life ? cellCount(S.life) : liveTotal());
-    h += '<div class="pv-grid">';
-    shown.forEach(function (x) { h += card(x); });
-    /* overflow is a computed DIFFERENCE of published values, never a recount */
-    if (population > shown.length) {
-      var more = population - shown.length;
-      h += '<a class="pv-more" href="?' + qsWith({ view: "table" }) + '">' +
-           t("+<b class=\"fig\">" + more + "</b> more<br>see them all in table view",
-             "另有 <b class=\"fig\">" + more + "</b> 条<br>可在表格视图中查看全部") + "</a>";
-    }
+    /* PRC-306 — EVERY ROW OF THE ACTIVE PARTITION IS A CARD.
+       GRID_CAP was a hard ceiling with no expander and a single overflow route
+       into the stripped table, so 77 of 179 rows were card-unreachable in every
+       state and every filter — and because null-priority rows sort last, the 86
+       unscored rows were pushed below the cap by construction. The cap is now
+       the INITIAL viewport only: the whole partition is in the DOM and the bar
+       below reveals it in place, exactly as production's own initShowMore does. */
+    h += '<div class="pv-grid" data-showmore-rows="3">';
+    r.forEach(function (x, i) { h += card(x, i >= GRID_CAP); });
     h += "</div>";
+    if (population > GRID_CAP) h += showMore(Math.min(GRID_CAP, population), population);
     return h;
+  }
+
+  /* ── the expansion bar (production's .sm-* component, theme.js:4784-4869) ──
+     COUNT LAW: `shown` and `total` are the canonical population or a computed
+     difference of it; `step` is a LAYOUT quantity (rows x the live column
+     count), which is where production's "Show 15 more" comes from. Nothing here
+     is recounted from rendered rows. */
+  function smCount(shown, total) {
+    return t('Showing <b class="fig">' + shown + '</b> of <b class="fig">' + total + "</b>",
+             '已显示 <b class="fig">' + shown + '</b> / <b class="fig">' + total + "</b>");
+  }
+  function showMore(shown, total) {
+    var h = '<div class="sm-bar" data-total="' + total + '" data-init="' + shown + '">';
+    h += '<span class="sm-count">' + smCount(shown, total) + "</span>";
+    h += '<span class="sm-btns">';
+    h += '<button class="sm-btn" type="button" data-sm="more"></button>';
+    h += '<button class="sm-btn sm-ghost" type="button" data-sm="all">' +
+         t("Show all " + total, "全部显示 " + total) + "</button>";
+    h += '<button class="sm-btn sm-collapse" type="button" data-sm="less" hidden>' +
+         t("Show fewer", "收起") + "</button>";
+    return h + "</span></div>";
   }
 
   /* ═══════════════ 3. CANDIDATES / 候选 ═════════════════════════════════
@@ -856,7 +891,17 @@
     });
     h += "</div>";
 
-    var cr = B.cand_rows.slice(0, 6);
+    /* VTC-309 — a section whose whole reason to exist is a SECOND population
+       may not illustrate itself with a 6-of-6 sample of the first one. All six
+       rendered candidates (DAR, MRK, GPCR, CVCO, KEYS, WBD) were setup cards
+       directly above. The sample now prefers names the plan book does not
+       already carry — a payload fact, not a recount of what the grid drew — and
+       the pool permits it (26 of the 70 screened names have no plan row). The
+       full population is unchanged and still printed once. */
+    var planTk = {};
+    B.rows.forEach(function (x) { planTk[x.tk] = 1; });
+    var pool = B.cand_rows.filter(function (x) { return !planTk[x.tk]; });
+    var cr = (pool.length >= 6 ? pool : B.cand_rows).slice(0, 6);
     h += '<div class="cand-rows">';
     cr.forEach(function (x) {
       h += '<div class="cand-row"><span class="cand-tk">' + esc(x.tk) + "</span>" +
@@ -865,8 +910,8 @@
     });
     h += "</div>";
     h += '<p class="mx-sec-note" style="margin:12px 0 0">' + t(
-      "Showing 6 of <b>" + B.cand_total + "</b> &middot; screened " + B.cand_asof,
-      "共 <b>" + B.cand_total + "</b> 只，显示前 6 只 &middot; 筛选日 " + B.cand_asof) + "</p>";
+      "Showing 6 that carry no plan yet &middot; <b>" + B.cand_total + "</b> screened " + B.cand_asof,
+      "显示其中 6 只尚未建立计划的 &middot; 本次共筛出 <b>" + B.cand_total + "</b> 只 &middot; 筛选日 " + B.cand_asof) + "</p>";
     return h;
   }
 
@@ -877,15 +922,34 @@
      recommendation, run length and member count all come from the payload. If
      the key is absent the section states that, rather than inventing a market
      call to keep the composition full. */
+  /* PRC-316 — EVERY SLUG THE PRODUCER CAN EMIT IS MAPPED IN BOTH LANGUAGES.
+     Binding the section to a real producer was the right cure for R2's invented
+     sector rows, and "straight from the payload" is exactly the path that leaks
+     an internal token: the payload carries `enter` (Space Economy) and the map
+     knew five values, so the card read "enter 5d up · 15 names" in English on
+     the CHINESE surface. The failure was silent by construction — any value the
+     map does not know reached the user verbatim. Two changes: `enter` (and the
+     rest of the producer's vocabulary) are mapped, and an unknown slug now
+     renders NOTHING rather than itself. A missing label is a disclosed gap; a
+     raw slug is an untranslated internal token wearing the costume of copy. */
   var RECO = {
     accumulate: { en: "Accumulate", zh: "逐步买入" },
+    enter:      { en: "Enter",      zh: "建仓" },
+    add:        { en: "Add",        zh: "加仓" },
     hold:       { en: "Hold",       zh: "持有" },
     watch:      { en: "Watch",      zh: "观察" },
-    avoid:      { en: "Avoid",      zh: "回避" },
-    trim:       { en: "Trim",       zh: "减仓" }
+    reduce:     { en: "Reduce",     zh: "减仓" },
+    trim:       { en: "Trim",       zh: "减仓" },
+    exit:       { en: "Exit",       zh: "离场" },
+    avoid:      { en: "Avoid",      zh: "回避" }
   };
   function groups() {
-    var T = B.themes || [];
+    /* rank order is the ordering the section ships; PRC-317 withholds the
+       ordinal itself, so the SEQUENCE has to carry it — pin it explicitly
+       rather than relying on the producer's array order. */
+    var T = (B.themes || []).slice().sort(function (a, b) {
+      return (a.rank == null ? 1e9 : a.rank) - (b.rank == null ? 1e9 : b.rank);
+    });
     var h = '<div class="mx-sec-hd">';
     h += '<h2 class="mx-sec-h2">' + t("Groups", "板块") + "</h2>";
     h += '<span class="mx-sec-total">' + (T.length
@@ -905,12 +969,20 @@
 
     h += '<div class="grp-grid">';
     T.forEach(function (g) {
-      var rc = RECO[g.reco] || { en: g.reco || "—", zh: g.reco || "—" };
+      var rc = RECO[g.reco];
       h += '<div class="grp">';
-      h += '<div class="grp-hd"><span class="grp-rank fig">' + g.rank + "</span>" +
+      /* PRC-317 — an ORDINAL WITHOUT ITS DENOMINATOR is a stronger claim than
+         the producer supports. The eight themes carry ranks 1, 5, 6, 7, 9, 11,
+         12, 19 beside a header reading "8 themes in favour", so the surface
+         exposed a scale of at least 19 while naming 8 members, and a reader
+         could not tell whether "7 · Gold Miners" was 7 of 8 or 7 of 40. The
+         payload carries no denominator, so the ordinal is withheld — the list
+         is already in rank order, and order carries the ranking without
+         asserting a population that is not published. */
+      h += '<div class="grp-hd">' +
            '<span class="grp-nm">' + t(esc(g.en), esc(g.zh || g.en)) + "</span></div>";
       h += '<div class="grp-meta">';
-      h += '<span class="grp-reco">' + t(rc.en, rc.zh) + "</span>";
+      if (rc) h += '<span class="grp-reco">' + t(rc.en, rc.zh) + "</span>";
       if (g.days != null) {
         h += '<span class="grp-fact fig">' + t(g.days + "d up", g.days + " 天走强") + "</span>";
       }
