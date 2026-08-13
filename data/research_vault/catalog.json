@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T05:26:46.566885+00:00",
-  "count": 1039,
+  "generated_at": "2026-08-13T05:55:45.176916+00:00",
+  "count": 1040,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -757,6 +757,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ra06novmapi-cf7142",
+      "title": "Americas Investment Banks Investment Banking Monitor Announced July activity fell, as strategic large cap M&A and DCM moder...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:12Z",
+      "summary_points": [
+        "**ECM Surge Offsets M&A/DCM Weakness**: YTD banking volumes up 20% YoY (Exhibit 4), driven by 82% YoY ECM growth (Follow-ons +107%, IPOs +86%), offsetting M&A/DCM declines; large-cap/IG/China gains partially counter HY/loans/small-cap drops.",
+        "**Sector Divergence in M&A**: Telecom M&A up 213% YoY vs Industrials/Utilities down; Energy/Telecom lead volume gains (1912%/863% YoY), while Utilities/Financials decline (-74%/-33% YoY), signaling concentrated capital allocation risks.",
+        "**China vs Europe ECM Contrast**: China ECM volumes +348% YoY vs Europe -31% YoY, with China driving 80% YTD ECM growth; US/ROW down 23% YoY, highlighting geopolitical flow divergence.",
+        "**19% Global M&A Growth Forecast**: Proprietary model predicts 19% YoY M&A growth over 12 months (US 57% of volume, Euro 24%), despite July’s 9% YoY M&A volume drop and 16% YoY completed deal decline.",
+        "**Cross-Border M&A Shift**: Cross-border M&A up 7% YoY (35% of total), but US contribution to cross-border deals fell 25pp MoM to 17% (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 34,
       "language": "en",
       "needs_metadata": false
     },
