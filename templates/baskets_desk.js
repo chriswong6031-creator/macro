@@ -86,39 +86,40 @@ function dualChip(t){
 }
 
 // ---- Theme Rotation Desk --------------------------------------------------
+// Each entry is [tint, border, INK]. The ink used to be a dark-tuned Tailwind
+// literal (#eab308 / #22c55e / #f97316 / #ef4444 …) with a hand-written
+// 红涨绿跌 table beside it — two sources of truth for one flip, and a literal that
+// measured 1.9–3.3:1 on the light panels these chips sit on. Binding to the estate
+// tokens fixes all three at once:
+//   * --ink-* is the TEXT grade (identity in dark, calibrated in light);
+//   * --up/--down already swap under html[data-lang="zh"], so the _ZH tables are
+//     gone — the flip can no longer drift from the base table, and it no longer
+//     needs a re-render to take effect when the language toggles;
+//   * DIRECTION uses --up/--down (flips); a non-directional CAUTION uses
+//     --warn/--orange (design system §5: health never flips).
+const TINT = (tok, pct) => `color-mix(in srgb, var(${tok}) ${pct}%, transparent)`;
 const LABEL_COLOR = {
-  dominant:      ['rgba(250,204,21,.16)','rgba(250,204,21,.55)','#eab308'],
-  emerging:      ['rgba(74,222,128,.15)','rgba(74,222,128,.5)','#22c55e'],
-  fading:        ['rgba(251,146,60,.15)','rgba(251,146,60,.5)','#f97316'],
-  deteriorating: ['rgba(248,113,113,.15)','rgba(248,113,113,.5)','#ef4444'],
+  dominant:      [TINT('--warn',16),   TINT('--warn',55),   'var(--ink-warn, var(--warn))'],
+  emerging:      [TINT('--up',15),     TINT('--up',50),     'var(--ink-up, var(--up))'],
+  fading:        [TINT('--orange',15), TINT('--orange',50), 'var(--ink-orange, var(--orange))'],
+  deteriorating: [TINT('--down',15),   TINT('--down',50),   'var(--ink-down, var(--down))'],
   neutral:       ['var(--panel2)','var(--line)','var(--muted)'],
 };
-// zh 红涨绿跌 overrides for directional label colours (bullish↔bearish tint swap)
-const LABEL_COLOR_ZH = {
-  emerging:      ['rgba(224,85,85,.15)','rgba(224,85,85,.5)','#e05555'],
-  deteriorating: ['rgba(74,222,128,.15)','rgba(74,222,128,.5)','#22c55e'],
-};
-function labelColor(label){ return (isZh() && LABEL_COLOR_ZH[label]) || LABEL_COLOR[label] || LABEL_COLOR.neutral; }
+function labelColor(label){ return LABEL_COLOR[label] || LABEL_COLOR.neutral; }
 const RECO_COLOR = {
-  enter:      ['rgba(34,197,94,.20)','rgba(34,197,94,.65)','#16a34a'],
-  accumulate: ['rgba(74,222,128,.14)','rgba(74,222,128,.5)','#22c55e'],
+  enter:      [TINT('--up',20),     TINT('--up',65),     'var(--ink-up, var(--up))'],
+  accumulate: [TINT('--up',14),     TINT('--up',50),     'var(--ink-up, var(--up))'],
   hold:       ['var(--panel2)','var(--line)','var(--muted)'],
-  trim:       ['rgba(251,146,60,.15)','rgba(251,146,60,.55)','#f97316'],
-  avoid:      ['rgba(248,113,113,.16)','rgba(248,113,113,.6)','#ef4444'],
+  trim:       [TINT('--orange',15), TINT('--orange',55), 'var(--ink-orange, var(--orange))'],
+  avoid:      [TINT('--down',16),   TINT('--down',60),   'var(--ink-down, var(--down))'],
 };
-// zh 红涨绿跌 overrides for directional reco colours
-const RECO_COLOR_ZH = {
-  enter:      ['rgba(224,85,85,.20)','rgba(224,85,85,.65)','#e05555'],
-  accumulate: ['rgba(224,85,85,.14)','rgba(224,85,85,.5)','#e05555'],
-  avoid:      ['rgba(74,222,128,.16)','rgba(74,222,128,.6)','#22c55e'],
-};
-function recoColor(reco){ return (isZh() && RECO_COLOR_ZH[reco]) || RECO_COLOR[reco] || RECO_COLOR.hold; }
+function recoColor(reco){ return RECO_COLOR[reco] || RECO_COLOR.hold; }
 const badge = (cls,c,en,zh)=>`<span class="${cls}" style="background:${c[0]};border:1px solid ${c[1]};color:${c[2]}">${L(en,zh)}</span>`;
 // A1 — display-only verb demotion: never render a green ACCUMULATE/ENTER chip when the
 // theme's own clean_entry texture is false (the act_now board already refuses these).
 // The payload reco is NOT mutated (alerts + downstream readers keep continuity) — only
 // what the chip says changes. Amber, descriptive, no forward verb.
-const RECO_NOENTRY = ['rgba(245,158,11,.16)','rgba(245,158,11,.55)','#d97706'];
+const RECO_NOENTRY = [TINT('--warn',16), TINT('--warn',55), 'var(--ink-warn, var(--warn))'];
 const recoNoEntry = t => (t.reco==='accumulate'||t.reco==='enter') && !(((t.textures||{}).clean_entry)||{}).flag;
 const recoChip = t => recoNoEntry(t)
   ? `<span class="treco" style="background:${RECO_NOENTRY[0]};border:1px solid ${RECO_NOENTRY[1]};color:${RECO_NOENTRY[2]}" title="In favour, but no member has a clean entry — do not chase; wait for a setup.">${L('IN FAVOUR — NO ENTRY','看好但无干净入场')}</span>`

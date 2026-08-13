@@ -4560,10 +4560,1460 @@
    "last_obs": "2026-08-12",
    "rows": 7073
   },
+  "CLST": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1212
+  },
+  "CLVLY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 19
+  },
+  "CLVT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1956
+  },
+  "CLWT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7399
+  },
+  "CLZNY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4180
+  },
+  "CM": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7229
+  },
+  "CMBMF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1792
+  },
+  "CMBT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2901
+  },
+  "CMCL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 10512
+  },
+  "CMCO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7666
+  },
+  "CME": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5957
+  },
+  "CMI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 13482
+  },
+  "CMLSQ": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2014
+  },
+  "CMMB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1885
+  },
+  "CMND": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 937
+  },
+  "CMPR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5248
+  },
+  "CMPX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1346
+  },
+  "CMRB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2149
+  },
+  "CMRC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1509
+  },
+  "CMRE": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3962
+  },
+  "CMRF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 279
+  },
+  "CMS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 13482
+  },
+  "CMSQY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4660
+  },
+  "CMTL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 11693
+  },
+  "CMTV": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6921
+  },
+  "CNA": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 13479
+  },
+  "CNBMF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 196
+  },
+  "CNBP": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1664
+  },
+  "CNC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6204
+  },
+  "CNDIF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 163
+  },
+  "CNDT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2428
+  },
+  "CNET": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4274
+  },
+  "CNH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3233
+  },
+  "CNI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7470
+  },
+  "CNK": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4855
+  },
+  "CNMD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 9838
+  },
+  "CNNE": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2192
+  },
+  "CNP": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 16261
+  },
+  "CNR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2196
+  },
+  "CNSWY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 167
+  },
+  "CNTMF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1404
+  },
+  "CNTN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1149
+  },
+  "CNTX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1207
+  },
+  "CNTY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8240
+  },
   "CNVS": {
    "backfilled": "2026-08-08",
    "last_obs": "2026-08-07",
    "rows": 5721
+  },
+  "CNVVY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 499
+  },
+  "CNX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6860
+  },
+  "CNXC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1434
+  },
+  "COAG": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 71
+  },
+  "COCH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1328
+  },
+  "CODI-PA": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2299
+  },
+  "CODI-PC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1691
+  },
+  "CODX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2282
+  },
+  "COE": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2554
+  },
+  "COF-PN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1265
+  },
+  "COHN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5637
+  },
+  "COKE": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 13480
+  },
+  "COLAU": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 387
+  },
+  "COLB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8596
+  },
+  "COLD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2152
+  },
+  "COLL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2833
+  },
+  "COLM": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7138
+  },
+  "COOK": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1265
+  },
+  "COPL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 301
+  },
+  "COPL-UN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 314
+  },
+  "COPR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 29
+  },
+  "COPX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4104
+  },
+  "CORT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5615
+  },
+  "COSM": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4038
+  },
+  "COSO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 317
+  },
+  "COTY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3311
+  },
+  "COUR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1348
+  },
+  "COVTY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2613
+  },
+  "CP": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 10737
+  },
+  "CPAC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3636
+  },
+  "CPAY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3934
+  },
+  "CPBI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 704
+  },
+  "CPF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 9812
+  },
+  "CPI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2023-12-13",
+   "rows": 3763
+  },
+  "CPIX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4274
+  },
+  "CPK": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 11696
+  },
+  "CPN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2018-03-08",
+   "rows": 2552
+  },
+  "CPPTL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 873
+  },
+  "CPRI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3684
+  },
+  "CPRT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8155
+  },
+  "CPRX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-07-21",
+   "rows": 5
+  },
+  "CPS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4079
+  },
+  "CPSH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8143
+  },
+  "CPSS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8509
+  },
+  "CPT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8321
+  },
+  "CPTAF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 683
+  },
+  "CRAK": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2760
+  },
+  "CRARY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4180
+  },
+  "CRAUY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 20
+  },
+  "CRBD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 420
+  },
+  "CRBG": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 979
+  },
+  "CRBU": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1267
+  },
+  "CRC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1453
+  },
+  "CRDD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 92
+  },
+  "CRDF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5545
+  },
+  "CRDL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1904
+  },
+  "CREG": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7515
+  },
+  "CRESY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7396
+  },
+  "CREX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4957
+  },
+  "CRGY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1172
+  },
+  "CRH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 9339
+  },
+  "CRI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5730
+  },
+  "CRIS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6546
+  },
+  "CRK": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 9812
+  },
+  "CRL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6570
+  },
+  "CRMD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4087
+  },
+  "CRMT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 9929
+  },
+  "CRNC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1736
+  },
+  "CRNCY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4177
+  },
+  "CRNX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2028
+  },
+  "CRON": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2124
+  },
+  "CRRFY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4476
+  },
+  "CRSF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1036
+  },
+  "CRSP": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2466
+  },
+  "CRSR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1478
+  },
+  "CRTD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1486
+  },
+  "CRTMF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 549
+  },
+  "CRTO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3214
+  },
+  "CRVS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2612
+  },
+  "CRWS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5745
+  },
+  "CSAI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 383
+  },
+  "CSAN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1365
+  },
+  "CSB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2776
+  },
+  "CSCID": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-11",
+   "rows": 8
+  },
+  "CSCIF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6600
+  },
+  "CSCO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 9187
+  },
+  "CSHX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3288
+  },
+  "CSL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 13479
+  },
+  "CSLLY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4180
+  },
+  "CSR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7245
+  },
+  "CSTM": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3325
+  },
+  "CSTUF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1389
+  },
+  "CSV": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7549
+  },
+  "CTAS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 10827
+  },
+  "CTGO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3930
+  },
+  "CTHH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 39
+  },
+  "CTKB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1269
+  },
+  "CTNT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 761
+  },
+  "CTO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 11696
+  },
+  "CTOR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 921
+  },
+  "CTRE": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3070
+  },
+  "CTRM": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1886
+  },
+  "CTS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 11696
+  },
+  "CTSO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5034
+  },
+  "CTTAY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6862
+  },
+  "CTUY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3977
+  },
+  "CTXR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2982
+  },
+  "CUBB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1667
+  },
+  "CUBE": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5485
+  },
+  "CUBI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3624
+  },
+  "CUBWU": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 537
+  },
+  "CUE": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2164
+  },
+  "CULP": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 10822
+  },
+  "CURB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 467
+  },
+  "CURI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1657
+  },
+  "CURLF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1956
+  },
+  "CURR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 487
+  },
+  "CURYY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 176
+  },
+  "CUT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4717
+  },
+  "CUVL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4663
+  },
+  "CUZ": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 11696
+  },
+  "CVAT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4464
+  },
+  "CVBF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 10923
+  },
+  "CVCO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5816
+  },
+  "CVEO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3074
+  },
+  "CVGI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5538
+  },
+  "CVI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4730
+  },
+  "CVKD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 893
+  },
+  "CVLT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5002
+  },
+  "CVRX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1282
+  },
+  "CVSA": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8848
+  },
+  "CVV": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6906
+  },
+  "CWBC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6901
+  },
+  "CWBHF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1989
+  },
+  "CWEN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2827
+  },
+  "CWH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2474
+  },
+  "CWK": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2017
+  },
+  "CWST": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7240
+  },
+  "CWT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 13479
+  },
+  "CX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6768
+  },
+  "CXIIU": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 71
+  },
+  "CXMSF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4400
+  },
+  "CXW": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7315
+  },
+  "CXXIF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2042
+  },
+  "CYAB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 95
+  },
+  "CYAN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8870
+  },
+  "CYCN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1862
+  },
+  "CYCU": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 373
+  },
+  "CYH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6582
+  },
+  "CYPH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2400
+  },
+  "CYRX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5276
+  },
+  "CYTK": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5603
+  },
+  "CYTOF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3019
+  },
+  "CZR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2987
+  },
+  "CZWI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5628
+  },
+  "DAAQ": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 301
+  },
+  "DAAQU": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 323
+  },
+  "DAC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4986
+  },
+  "DAIC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 286
+  },
+  "DAIO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 9472
+  },
+  "DAKT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8179
+  },
+  "DAL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4850
+  },
+  "DAN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4679
+  },
+  "DANOY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7479
+  },
+  "DAR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8034
+  },
+  "DARE": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3103
+  },
+  "DASTY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7578
+  },
+  "DB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7479
+  },
+  "DBGI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1316
+  },
+  "DBI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5313
+  },
+  "DBRG": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3046
+  },
+  "DBRG-PJ": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2239
+  },
+  "DBVT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2968
+  },
+  "DBX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2108
+  },
+  "DC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1092
+  },
+  "DCBG": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 530
+  },
+  "DCBO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1425
+  },
+  "DCCPY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 29
+  },
+  "DCGO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1418
+  },
+  "DCH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6926
+  },
+  "DCI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 11696
+  },
+  "DCOM": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6938
+  },
+  "DCX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1152
+  },
+  "DD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 13662
+  },
+  "DDC": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 684
+  },
+  "DDD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 9678
+  },
+  "DDI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1239
+  },
+  "DDL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1286
+  },
+  "DDS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 11693
+  },
+  "DDT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6999
+  },
+  "DEA": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2892
+  },
+  "DECK": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8261
+  },
+  "DEFI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 976
+  },
+  "DEI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4979
+  },
+  "DENI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2139
+  },
+  "DEO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8917
+  },
+  "DETX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 79
+  },
+  "DEVSF": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 439
+  },
+  "DFAE": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1428
+  },
+  "DFAI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1434
+  },
+  "DFAU": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1434
+  },
+  "DFDV": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 766
+  },
+  "DFDVW": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 188
+  },
+  "DFGX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 691
+  },
+  "DFH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1393
+  },
+  "DFIN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2483
+  },
+  "DFKCY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1404
+  },
+  "DFLI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1247
+  },
+  "DFNS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1522
+  },
+  "DFTX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2447
+  },
+  "DG": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4209
+  },
+  "DGAC-UN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 54
+  },
+  "DGNX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 391
+  },
+  "DGP": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4643
+  },
+  "DGRO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3060
+  },
+  "DGT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 6500
+  },
+  "DGZ": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4642
+  },
+  "DH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1232
+  },
+  "DHI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 8603
+  },
+  "DHT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5239
+  },
+  "DHY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7050
+  },
+  "DIA": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 7185
+  },
+  "DIBS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1299
+  },
+  "DINO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 11696
+  },
+  "DIOD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 13482
+  },
+  "DIVB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2196
+  },
+  "DIVG": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 671
+  },
+  "DJD": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2676
+  },
+  "DJT": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1221
+  },
+  "DK": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5100
+  },
+  "DKI": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 254
+  },
+  "DKILY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4150
+  },
+  "DKL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3463
+  },
+  "DKS": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5990
+  },
+  "DLAKY": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 4176
+  },
+  "DLB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5402
+  },
+  "DLN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5070
+  },
+  "DLO": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1304
+  },
+  "DLR": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 5480
+  },
+  "DLR-PJ": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2267
+  },
+  "DLR-PL": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 1724
+  },
+  "DLTH": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 2695
+  },
+  "DLX": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 11696
+  },
+  "DMAAU": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 387
+  },
+  "DMAN": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3928
+  },
+  "DMB": {
+   "backfilled": "2026-08-13",
+   "last_obs": "2026-08-12",
+   "rows": 3344
   },
   "ECHO": {
    "backfilled": "2026-08-10",
@@ -4634,16 +6084,16 @@
   "budget_s": 480.0,
   "cap": 400,
   "census": {
-   "already_stored": 1356,
-   "bucket_1_current": 5,
-   "bucket_2_recent": 5630,
+   "already_stored": 1676,
+   "bucket_1_current": 0,
+   "bucket_2_recent": 5315,
    "bucket_3_rest": 0,
    "hub_current_surface": 38,
    "hub_universe": 56,
    "ledger_tickers": 7729,
-   "missing": 6521,
+   "missing": 6201,
    "parked": 0,
-   "queue": 5635,
+   "queue": 5315,
    "union_needed": 7729,
    "unsupported_sample": [
     "()",
@@ -4662,28 +6112,24 @@
    "unsupported_symbols": 886
   },
   "dry_run": false,
-  "elapsed_s": 95.3,
-  "no_data": 69,
+  "elapsed_s": 105.3,
+  "no_data": 90,
   "parked": 0,
   "period": "max",
   "planned": 400,
-  "ratio_anomalies": 1,
-  "ratio_anomaly_names": {
-   "CHPY": [
-    "21.1% of bars step (> 15%) \u2014 the two bases do not look like TR vs split-only"
-   ]
-  },
+  "ratio_anomalies": 0,
+  "ratio_anomaly_names": {},
   "refresh_cadence_d": 0.0,
   "refresh_cap": 0,
   "refresh_planned": 0,
   "refresh_ran": false,
   "refreshable": 0,
   "refreshed": 0,
-  "remaining": 5315,
-  "schema_rejected": 11,
-  "short_history": 12,
-  "started_utc": "2026-08-13T02:01:43+00:00",
-  "written": 320
+  "remaining": 5025,
+  "schema_rejected": 20,
+  "short_history": 6,
+  "started_utc": "2026-08-13T09:04:11+00:00",
+  "written": 290
  },
  "parked": {},
  "pending": {
@@ -6086,8 +7532,558 @@
    "attempts": 1,
    "error": "[backfill] no data returned for vendor symbol 'CLNX'",
    "last_attempt": "2026-08-13T02:03:16+00:00"
+  },
+  "CLSKW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:04:14+00:00"
+  },
+  "CLYD": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CLYD'",
+   "last_attempt": "2026-08-13T09:04:14+00:00"
+  },
+  "CMA": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CMA'",
+   "last_attempt": "2026-08-13T09:04:15+00:00"
+  },
+  "CMCSV": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CMCSV'",
+   "last_attempt": "2026-08-13T09:04:15+00:00"
+  },
+  "CMCWF": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CMCWF'",
+   "last_attempt": "2026-08-13T09:04:15+00:00"
+  },
+  "CMIIW": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CMIIW'",
+   "last_attempt": "2026-08-13T09:04:15+00:00"
+  },
+  "CMLS": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CMLS'",
+   "last_attempt": "2026-08-13T09:04:15+00:00"
+  },
+  "CMREPB": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CMREPB'",
+   "last_attempt": "2026-08-13T09:04:23+00:00"
+  },
+  "CMREPC": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CMREPC'",
+   "last_attempt": "2026-08-13T09:04:23+00:00"
+  },
+  "CMREPD": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CMREPD'",
+   "last_attempt": "2026-08-13T09:04:23+00:00"
+  },
+  "CMU": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CMU'",
+   "last_attempt": "2026-08-13T09:04:23+00:00"
+  },
+  "CNCKW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:04:27+00:00"
+  },
+  "CND": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CND'",
+   "last_attempt": "2026-08-13T09:04:27+00:00"
+  },
+  "CNE": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CNE'",
+   "last_attempt": "2026-08-13T09:04:27+00:00"
+  },
+  "CNTA": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:04:27+00:00"
+  },
+  "COALINDIA": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COALINDIA'",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "COCHW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "CODIPA": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CODIPA'",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "CODIPB": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CODIPB'",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "CODIPC": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CODIPC'",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "COEP": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COEP'",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "COFPI": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COFPI'",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "COFPJ": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COFPJ'",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "COFPK": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COFPK'",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "COFPL": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COFPL'",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "COFPN": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COFPN'",
+   "last_attempt": "2026-08-13T09:04:31+00:00"
+  },
+  "COLAR": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COLAR'",
+   "last_attempt": "2026-08-13T09:04:36+00:00"
+  },
+  "COLINZ": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COLINZ'",
+   "last_attempt": "2026-08-13T09:04:36+00:00"
+  },
+  "CONE": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CONE'",
+   "last_attempt": "2026-08-13T09:04:36+00:00"
+  },
+  "COOTW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:04:36+00:00"
+  },
+  "COPL-WT": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COPL-WT'",
+   "last_attempt": "2026-08-13T09:04:36+00:00"
+  },
+  "COPR.WS": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'COPR-WS'",
+   "last_attempt": "2026-08-13T09:04:36+00:00"
+  },
+  "CORZR": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CORZR'",
+   "last_attempt": "2026-08-13T09:04:36+00:00"
+  },
+  "CORZW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:04:41+00:00"
+  },
+  "CORZZ": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:04:41+00:00"
+  },
+  "CP8": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CP8'",
+   "last_attempt": "2026-08-13T09:04:41+00:00"
+  },
+  "CPHL": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CPHL'",
+   "last_attempt": "2026-08-13T09:04:41+00:00"
+  },
+  "CPIPG": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CPIPG'",
+   "last_attempt": "2026-08-13T09:04:41+00:00"
+  },
+  "CPR": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CPR'",
+   "last_attempt": "2026-08-13T09:04:45+00:00"
+  },
+  "CPTA": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CPTA'",
+   "last_attempt": "2026-08-13T09:04:45+00:00"
+  },
+  "CPTKW": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CPTKW'",
+   "last_attempt": "2026-08-13T09:04:45+00:00"
+  },
+  "CPXXY": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CPXXY'",
+   "last_attempt": "2026-08-13T09:04:45+00:00"
+  },
+  "CREO": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CREO'",
+   "last_attempt": "2026-08-13T09:04:51+00:00"
+  },
+  "CRMLW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:04:51+00:00"
+  },
+  "CRN": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CRN'",
+   "last_attempt": "2026-08-13T09:04:51+00:00"
+  },
+  "CRNA": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CRNA'",
+   "last_attempt": "2026-08-13T09:04:51+00:00"
+  },
+  "CSCI": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CSCI'",
+   "last_attempt": "2026-08-13T09:04:57+00:00"
+  },
+  "CSGS": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CSGS'",
+   "last_attempt": "2026-08-13T09:04:57+00:00"
+  },
+  "CSHRW": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CSHRW'",
+   "last_attempt": "2026-08-13T09:04:57+00:00"
+  },
+  "CSNA3": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CSNA3'",
+   "last_attempt": "2026-08-13T09:05:03+00:00"
+  },
+  "CSTA": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CSTA'",
+   "last_attempt": "2026-08-13T09:05:03+00:00"
+  },
+  "CSU": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CSU'",
+   "last_attempt": "2026-08-13T09:05:03+00:00"
+  },
+  "CTEK": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CTEK'",
+   "last_attempt": "2026-08-13T09:05:03+00:00"
+  },
+  "CTHT": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CTHT'",
+   "last_attempt": "2026-08-13T09:05:03+00:00"
+  },
+  "CTL": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CTL'",
+   "last_attempt": "2026-08-13T09:05:03+00:00"
+  },
+  "CTOPA": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CTOPA'",
+   "last_attempt": "2026-08-13T09:05:03+00:00"
+  },
+  "CTY1S": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CTY1S'",
+   "last_attempt": "2026-08-13T09:05:08+00:00"
+  },
+  "CUBWW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:08+00:00"
+  },
+  "CULT": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CULT'",
+   "last_attempt": "2026-08-13T09:05:08+00:00"
+  },
+  "CURLD": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:08+00:00"
+  },
+  "CUX": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CUX'",
+   "last_attempt": "2026-08-13T09:05:13+00:00"
+  },
+  "CVAC": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CVAC'",
+   "last_attempt": "2026-08-13T09:05:13+00:00"
+  },
+  "CVGW": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CVGW'",
+   "last_attempt": "2026-08-13T09:05:13+00:00"
+  },
+  "CVSG": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CVSG'",
+   "last_attempt": "2026-08-13T09:05:13+00:00"
+  },
+  "CVW": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CVW'",
+   "last_attempt": "2026-08-13T09:05:18+00:00"
+  },
+  "CWAN": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:18+00:00"
+  },
+  "CWLXF": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CWLXF'",
+   "last_attempt": "2026-08-13T09:05:18+00:00"
+  },
+  "CWV": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CWV'",
+   "last_attempt": "2026-08-13T09:05:18+00:00"
+  },
+  "CXAIW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:18+00:00"
+  },
+  "CXE": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CXE'",
+   "last_attempt": "2026-08-13T09:05:18+00:00"
+  },
+  "CXH": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CXH'",
+   "last_attempt": "2026-08-13T09:05:18+00:00"
+  },
+  "CXIIW": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CXIIW'",
+   "last_attempt": "2026-08-13T09:05:18+00:00"
+  },
+  "CY5": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CY5'",
+   "last_attempt": "2026-08-13T09:05:23+00:00"
+  },
+  "CYCUW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:23+00:00"
+  },
+  "CYIENT": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CYIENT'",
+   "last_attempt": "2026-08-13T09:05:23+00:00"
+  },
+  "CYTO": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'CYTO'",
+   "last_attempt": "2026-08-13T09:05:23+00:00"
+  },
+  "DAAQW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:23+00:00"
+  },
+  "DAICW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:28+00:00"
+  },
+  "DALMIASUG": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DALMIASUG'",
+   "last_attempt": "2026-08-13T09:05:28+00:00"
+  },
+  "DAWN": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DAWN'",
+   "last_attempt": "2026-08-13T09:05:28+00:00"
+  },
+  "DBG": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DBG'",
+   "last_attempt": "2026-08-13T09:05:28+00:00"
+  },
+  "DBREALTY": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DBREALTY'",
+   "last_attempt": "2026-08-13T09:05:28+00:00"
+  },
+  "DCC": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DCC'",
+   "last_attempt": "2026-08-13T09:05:33+00:00"
+  },
+  "DCMSRM": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DCMSRM'",
+   "last_attempt": "2026-08-13T09:05:33+00:00"
+  },
+  "DEAL": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DEAL'",
+   "last_attempt": "2026-08-13T09:05:33+00:00"
+  },
+  "DEC": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: non-positive close (min 0)",
+   "last_attempt": "2026-08-13T09:05:39+00:00"
+  },
+  "DECB": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DECB'",
+   "last_attempt": "2026-08-13T09:05:39+00:00"
+  },
+  "DELT": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DELT'",
+   "last_attempt": "2026-08-13T09:05:39+00:00"
+  },
+  "DESK3": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DESK3'",
+   "last_attempt": "2026-08-13T09:05:39+00:00"
+  },
+  "DEVS": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:39+00:00"
+  },
+  "DFENS": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DFENS'",
+   "last_attempt": "2026-08-13T09:05:39+00:00"
+  },
+  "DFLIW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:44+00:00"
+  },
+  "DFNSW": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DFNSW'",
+   "last_attempt": "2026-08-13T09:05:44+00:00"
+  },
+  "DFSCW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:44+00:00"
+  },
+  "DGAC-RI": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DGAC-RI'",
+   "last_attempt": "2026-08-13T09:05:44+00:00"
+  },
+  "DGE": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DGE'",
+   "last_attempt": "2026-08-13T09:05:44+00:00"
+  },
+  "DHANUKA": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DHANUKA'",
+   "last_attempt": "2026-08-13T09:05:44+00:00"
+  },
+  "DHER": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DHER'",
+   "last_attempt": "2026-08-13T09:05:44+00:00"
+  },
+  "DHIL": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DHIL'",
+   "last_attempt": "2026-08-13T09:05:48+00:00"
+  },
+  "DIAD": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DIAD'",
+   "last_attempt": "2026-08-13T09:05:48+00:00"
+  },
+  "DICOT": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DICOT'",
+   "last_attempt": "2026-08-13T09:05:48+00:00"
+  },
+  "DJTWW": {
+   "attempts": 1,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-13T09:05:48+00:00"
+  },
+  "DKR": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DKR'",
+   "last_attempt": "2026-08-13T09:05:48+00:00"
+  },
+  "DKUPL": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DKUPL'",
+   "last_attempt": "2026-08-13T09:05:54+00:00"
+  },
+  "DLI": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DLI'",
+   "last_attempt": "2026-08-13T09:05:54+00:00"
+  },
+  "DLRPJ": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DLRPJ'",
+   "last_attempt": "2026-08-13T09:05:54+00:00"
+  },
+  "DLRPK": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DLRPK'",
+   "last_attempt": "2026-08-13T09:05:54+00:00"
+  },
+  "DLRPL": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DLRPL'",
+   "last_attempt": "2026-08-13T09:05:54+00:00"
+  },
+  "DLT": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DLT'",
+   "last_attempt": "2026-08-13T09:05:54+00:00"
+  },
+  "DMAAR": {
+   "attempts": 1,
+   "error": "[backfill] no data returned for vendor symbol 'DMAAR'",
+   "last_attempt": "2026-08-13T09:05:54+00:00"
   }
  },
  "schema": "yahoo_backfill_state/1",
- "updated_utc": "2026-08-13T02:03:18+00:00"
+ "updated_utc": "2026-08-13T09:05:55+00:00"
 }

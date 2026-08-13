@@ -117,7 +117,7 @@
     "russell_breadth": {
       "status": "coherent",
       "split_tickers": 0,
-      "noise_tickers": 10,
+      "noise_tickers": 12,
       "findings": [
         {
           "ticker": "FIBK",
@@ -157,6 +157,16 @@
           "bad_share": 0.0019,
           "worst_excess": 0.00475,
           "worst_date": "2026-07-06",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "MGY",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 522,
+          "bad_share": 0.0019,
+          "worst_excess": 0.002832,
+          "worst_date": "2026-07-21",
           "inverted_bars": 0
         },
         {
@@ -207,6 +217,16 @@
           "bad_share": 0.0019,
           "worst_excess": 0.000706,
           "worst_date": "2026-07-07",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "CWT",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 522,
+          "bad_share": 0.0019,
+          "worst_excess": 0.000401,
+          "worst_date": "2026-07-22",
           "inverted_bars": 0
         },
         {
@@ -291,5 +311,5 @@
   },
   "splits": 0,
   "status": "coherent",
-  "noise_tickers": 26
+  "noise_tickers": 28
 }

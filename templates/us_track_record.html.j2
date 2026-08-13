@@ -33,7 +33,7 @@
 
   /* ── page header ── */
   .tr-hd{padding:18px 0 14px}
-  .tr-back{font-size:12px;color:var(--link);display:inline-flex;align-items:center;gap:4px;margin-bottom:10px}
+  .tr-back{font-size:12px;color:var(--ink-link, var(--link));display:inline-flex;align-items:center;gap:4px;margin-bottom:10px}
   .tr-back:hover{opacity:.8}
   .tr-eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
   .tr-title{font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
@@ -46,8 +46,8 @@
   .tr-hero-stat{display:flex;flex-direction:column;gap:2px;min-width:120px}
   .tr-hero-stat .val{font-size:28px;font-weight:800;letter-spacing:-.02em}
   .tr-hero-stat .lbl{font-size:12px;color:var(--muted);font-weight:600}
-  .tr-hero-stat.up .val{color:var(--up)}
-  .tr-hero-stat.dn .val{color:var(--down)}
+  .tr-hero-stat.up .val{color:var(--ink-up, var(--up))}
+  .tr-hero-stat.dn .val{color:var(--ink-down, var(--down))}
   .tr-hero-divider{width:1px;background:var(--line);align-self:stretch}
   .tr-hero-stance{flex:1;min-width:220px}
   .tr-hero-stance .stance-main{font-size:14.5px;font-weight:700;line-height:1.5}
@@ -92,7 +92,7 @@
 
   .accruing-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
-    color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);
+    color:var(--ink-warn, var(--warn));background:color-mix(in srgb,var(--warn) 10%,transparent);
     margin-left:6px;vertical-align:middle}
 
   /* ── section headers ── */
@@ -121,7 +121,7 @@
   table.tr-tbl td{text-align:right;padding:7px 10px;border-bottom:1px solid var(--line)}
   table.tr-tbl td:first-child{text-align:left;font-weight:700}
   table.tr-tbl tr:last-child td{border-bottom:none}
-  .pos{color:var(--up)} .neg{color:var(--down)} .neu{color:var(--muted)}
+  .pos{color:var(--ink-up, var(--up))} .neg{color:var(--ink-down, var(--down))} .neu{color:var(--muted)}
   .ci-range{font-size:10.5px;color:var(--muted)}
   .n-col{font-size:11px;color:var(--muted)}
 
@@ -336,7 +336,7 @@
           <td class="n-col" data-tip-en="Raw observations = {{ row.raw_n }} rows; independent entry-date windows = {{ row.effective_n }} (used for interval estimation)" data-tip-zh="原始样本={{ row.raw_n }}行；独立入场日窗口={{ row.effective_n }}（用于区间估计）">
             {{ row.raw_n }} / {{ row.effective_n }}
           </td>
-          <td><span class="accruing-chip" style="border-color:color-mix(in srgb,var(--up) 50%,var(--line));color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)">{{ t('LIVE', '实时') }}</span></td>
+          <td><span class="accruing-chip" style="border-color:color-mix(in srgb,var(--up) 50%,var(--line));color:var(--ink-up, var(--up));background:color-mix(in srgb,var(--up) 10%,transparent)">{{ t('LIVE', '实时') }}</span></td>
           {% endif %}
         </tr>
         {% endfor %}

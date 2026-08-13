@@ -2,14 +2,14 @@
   "agriculturealtprotein": {
     "emerging": false,
     "name": "Alt Protein",
-    "quadrant": "improving",
+    "quadrant": "leading",
     "theme": "Agriculture & FoodTech",
     "turn_state": "range"
   },
   "agriculturecropinputs": {
     "emerging": false,
     "name": "Crop Inputs",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Agriculture & FoodTech",
     "turn_state": "range"
   },
@@ -18,14 +18,14 @@
     "name": "Indoor Farming",
     "quadrant": "leading",
     "theme": "Agriculture & FoodTech",
-    "turn_state": "turn_up"
+    "turn_state": "trending_down"
   },
   "agricultureprocessing": {
     "emerging": false,
     "name": "Processing",
     "quadrant": "lagging",
     "theme": "Agriculture & FoodTech",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "agriculturesmartfarming": {
     "emerging": true,
@@ -49,25 +49,25 @@
     "turn_state": "range"
   },
   "aiapplications": {
-    "emerging": true,
+    "emerging": false,
     "name": "Applications",
     "quadrant": "improving",
     "theme": "Artificial Intelligence",
-    "turn_state": "bottoming"
+    "turn_state": "range"
   },
   "aicloud": {
-    "emerging": false,
+    "emerging": true,
     "name": "Cloud",
-    "quadrant": "weakening",
+    "quadrant": "leading",
     "theme": "Artificial Intelligence",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "aicompute": {
     "emerging": false,
     "name": "Compute",
-    "quadrant": "lagging",
+    "quadrant": "weakening",
     "theme": "Artificial Intelligence",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "aidata": {
     "emerging": false,
@@ -81,26 +81,26 @@
     "name": "Edge",
     "quadrant": "lagging",
     "theme": "Artificial Intelligence",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "aienergy": {
     "emerging": false,
     "name": "Energy",
     "quadrant": "improving",
     "theme": "Artificial Intelligence",
-    "turn_state": "range"
+    "turn_state": "trending_down"
   },
   "aienterprise": {
-    "emerging": true,
+    "emerging": false,
     "name": "Enterprise",
     "quadrant": "leading",
     "theme": "Artificial Intelligence",
     "turn_state": "range"
   },
   "aimodels": {
-    "emerging": true,
+    "emerging": false,
     "name": "Models",
-    "quadrant": "leading",
+    "quadrant": "improving",
     "theme": "Artificial Intelligence",
     "turn_state": "range"
   },
@@ -109,7 +109,7 @@
     "name": "Networking",
     "quadrant": "weakening",
     "theme": "Artificial Intelligence",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "airobotics": {
     "emerging": false,
@@ -128,7 +128,7 @@
   "automationautomation": {
     "emerging": false,
     "name": "Automation",
-    "quadrant": "weakening",
+    "quadrant": "improving",
     "theme": "Industrial Automation",
     "turn_state": "range"
   },
@@ -137,7 +137,7 @@
     "name": "3D Printing",
     "quadrant": "weakening",
     "theme": "Industrial Automation",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "automationiot": {
     "emerging": false,
@@ -151,7 +151,7 @@
     "name": "Logistics",
     "quadrant": "leading",
     "theme": "Industrial Automation",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "automationmachinevision": {
     "emerging": false,
@@ -161,7 +161,7 @@
     "turn_state": "range"
   },
   "automationrobotics": {
-    "emerging": false,
+    "emerging": true,
     "name": "Robotics",
     "quadrant": "leading",
     "theme": "Industrial Automation",
@@ -186,7 +186,7 @@
     "name": "Defense",
     "quadrant": "leading",
     "theme": "Autonomous Systems",
-    "turn_state": "bottoming"
+    "turn_state": "trending_down"
   },
   "autonomousindustrial": {
     "emerging": false,
@@ -200,12 +200,12 @@
     "name": "Machine Vision",
     "quadrant": "lagging",
     "theme": "Autonomous Systems",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "autonomoussoftware": {
-    "emerging": true,
+    "emerging": false,
     "name": "Software",
-    "quadrant": "leading",
+    "quadrant": "improving",
     "theme": "Autonomous Systems",
     "turn_state": "range"
   },
@@ -214,7 +214,7 @@
     "name": "Specialized",
     "quadrant": "lagging",
     "theme": "Autonomous Systems",
-    "turn_state": "range"
+    "turn_state": "topping"
   },
   "bigdataaiplatforms": {
     "emerging": false,
@@ -240,7 +240,7 @@
   "bigdataproviders": {
     "emerging": false,
     "name": "Providers",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "Big Data",
     "turn_state": "range"
   },
@@ -266,18 +266,18 @@
     "turn_state": "range"
   },
   "biometricssoftware": {
-    "emerging": true,
+    "emerging": false,
     "name": "Software",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Biometrics",
-    "turn_state": "bottoming"
+    "turn_state": "range"
   },
   "blockchainenterprise": {
-    "emerging": false,
+    "emerging": true,
     "name": "Enterprise",
     "quadrant": "leading",
     "theme": "Crypto & Blockchain",
-    "turn_state": "turn_up"
+    "turn_state": "trending_down"
   },
   "blockchaininfrastructure": {
     "emerging": false,
@@ -296,9 +296,9 @@
   "blockchainpayments": {
     "emerging": false,
     "name": "Payments",
-    "quadrant": "weakening",
+    "quadrant": "lagging",
     "theme": "Crypto & Blockchain",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "blockchainplatforms": {
     "emerging": false,
@@ -317,23 +317,23 @@
   "clouddatabases": {
     "emerging": false,
     "name": "Databases",
-    "quadrant": "weakening",
+    "quadrant": "leading",
     "theme": "Cloud Computing",
     "turn_state": "range"
   },
   "clouddatacenters": {
     "emerging": false,
     "name": "Data Centers",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Cloud Computing",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "clouddevops": {
     "emerging": false,
     "name": "DevOps",
     "quadrant": "weakening",
     "theme": "Cloud Computing",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "cloudedge": {
     "emerging": false,
@@ -350,7 +350,7 @@
     "turn_state": "trending_up"
   },
   "cloudhsaas": {
-    "emerging": true,
+    "emerging": false,
     "name": "H-SaaS",
     "quadrant": "leading",
     "theme": "Cloud Computing",
@@ -394,16 +394,16 @@
   "cloudserverless": {
     "emerging": false,
     "name": "Serverless",
-    "quadrant": "weakening",
+    "quadrant": "leading",
     "theme": "Cloud Computing",
     "turn_state": "range"
   },
   "commagribiofuels": {
     "emerging": false,
     "name": "Biofuels",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Commodities Agriculture",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "commagrifertilizers": {
     "emerging": false,
@@ -417,56 +417,56 @@
     "name": "Grains",
     "quadrant": "lagging",
     "theme": "Commodities Agriculture",
-    "turn_state": "turn_down"
+    "turn_state": "range"
   },
   "commagrilivestock": {
     "emerging": false,
     "name": "Livestock",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Commodities Agriculture",
-    "turn_state": "trending_down"
+    "turn_state": "range"
   },
   "commagrisofts": {
     "emerging": false,
     "name": "Softs",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Commodities Agriculture",
     "turn_state": "trending_down"
   },
   "commenergybiofuels": {
-    "emerging": false,
+    "emerging": true,
     "name": "Biofuels",
-    "quadrant": "lagging",
+    "quadrant": "leading",
     "theme": "Commodities Energy",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "commenergygaslng": {
     "emerging": false,
     "name": "Gas & LNG",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Commodities Energy",
     "turn_state": "range"
   },
   "commenergyoil": {
-    "emerging": false,
+    "emerging": true,
     "name": "Oil",
-    "quadrant": "weakening",
+    "quadrant": "leading",
     "theme": "Commodities Energy",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "commenergyuranium": {
     "emerging": true,
     "name": "Uranium",
     "quadrant": "improving",
     "theme": "Commodities Energy",
-    "turn_state": "bottoming"
+    "turn_state": "trending_down"
   },
   "commmetalsbattery": {
     "emerging": true,
     "name": "Battery",
     "quadrant": "improving",
     "theme": "Commodities Metals",
-    "turn_state": "bottoming"
+    "turn_state": "turn_up"
   },
   "commmetalsgold": {
     "emerging": true,
@@ -476,7 +476,7 @@
     "turn_state": "turn_up"
   },
   "commmetalsindustrial": {
-    "emerging": true,
+    "emerging": false,
     "name": "Industrial",
     "quadrant": "leading",
     "theme": "Commodities Metals",
@@ -487,7 +487,7 @@
     "name": "Precious",
     "quadrant": "leading",
     "theme": "Commodities Metals",
-    "turn_state": "bottoming"
+    "turn_state": "trending_down"
   },
   "commmetalsrareearth": {
     "emerging": true,
@@ -497,9 +497,9 @@
     "turn_state": "turn_up"
   },
   "commmetalsrecycling": {
-    "emerging": true,
+    "emerging": false,
     "name": "Recycling",
-    "quadrant": "leading",
+    "quadrant": "improving",
     "theme": "Commodities Metals",
     "turn_state": "range"
   },
@@ -513,42 +513,42 @@
   "consumerapparel": {
     "emerging": false,
     "name": "Apparel",
-    "quadrant": "leading",
+    "quadrant": "lagging",
     "theme": "Consumer Goods",
-    "turn_state": "range"
+    "turn_state": "topping"
   },
   "consumerfarmdirect": {
     "emerging": false,
     "name": "Farm-Direct",
     "quadrant": "improving",
     "theme": "Consumer Goods",
-    "turn_state": "trending_down"
+    "turn_state": "range"
   },
   "consumerfood": {
     "emerging": false,
     "name": "Food",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Consumer Goods",
     "turn_state": "trending_down"
   },
   "consumerhousehold": {
     "emerging": false,
     "name": "Household",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "Consumer Goods",
-    "turn_state": "range"
+    "turn_state": "topping"
   },
   "consumerluxury": {
     "emerging": false,
     "name": "Luxury",
-    "quadrant": "leading",
+    "quadrant": "lagging",
     "theme": "Consumer Goods",
-    "turn_state": "range"
+    "turn_state": "topping"
   },
   "consumersecondhand": {
     "emerging": false,
     "name": "Secondhand",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Consumer Goods",
     "turn_state": "range"
   },
@@ -585,7 +585,7 @@
     "name": "Network",
     "quadrant": "weakening",
     "theme": "Cybersecurity",
-    "turn_state": "topping"
+    "turn_state": "trending_up"
   },
   "cybersecuritysiem": {
     "emerging": false,
@@ -644,7 +644,7 @@
     "turn_state": "range"
   },
   "defensespacetech": {
-    "emerging": false,
+    "emerging": true,
     "name": "SpaceTech",
     "quadrant": "improving",
     "theme": "Defense & Aerospace",
@@ -655,7 +655,7 @@
     "name": "Weapons",
     "quadrant": "leading",
     "theme": "Defense & Aerospace",
-    "turn_state": "range"
+    "turn_state": "trending_down"
   },
   "ecommerceadsmedia": {
     "emerging": false,
@@ -667,7 +667,7 @@
   "ecommercedtc": {
     "emerging": false,
     "name": "DTC",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "E-commerce",
     "turn_state": "range"
   },
@@ -683,19 +683,19 @@
     "name": "Logistics",
     "quadrant": "improving",
     "theme": "E-commerce",
-    "turn_state": "trending_down"
+    "turn_state": "range"
   },
   "ecommercemarketplaces": {
     "emerging": false,
     "name": "Marketplaces",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "E-commerce",
     "turn_state": "range"
   },
   "ecommerceomnichannel": {
     "emerging": false,
     "name": "Omnichannel",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "E-commerce",
     "turn_state": "range"
   },
@@ -716,28 +716,28 @@
   "ecommercesocial": {
     "emerging": false,
     "name": "Social",
-    "quadrant": "leading",
+    "quadrant": "lagging",
     "theme": "E-commerce",
     "turn_state": "range"
   },
   "educationcurriculum": {
     "emerging": false,
     "name": "Curriculum",
-    "quadrant": "weakening",
+    "quadrant": "lagging",
     "theme": "Education Technology",
-    "turn_state": "range"
+    "turn_state": "topping"
   },
   "educationinfrastructure": {
-    "emerging": true,
+    "emerging": false,
     "name": "Infrastructure",
-    "quadrant": "leading",
+    "quadrant": "lagging",
     "theme": "Education Technology",
-    "turn_state": "range"
+    "turn_state": "topping"
   },
   "educationplatforms": {
     "emerging": false,
     "name": "Platforms",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Education Technology",
     "turn_state": "range"
   },
@@ -751,68 +751,68 @@
   "energybasemajors": {
     "emerging": false,
     "name": "Majors",
-    "quadrant": "weakening",
+    "quadrant": "leading",
     "theme": "Energy Traditional",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "energybasenuclear": {
     "emerging": true,
     "name": "Nuclear",
     "quadrant": "improving",
     "theme": "Energy Traditional",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "energybaseoilproduction": {
-    "emerging": false,
+    "emerging": true,
     "name": "Oil Production",
-    "quadrant": "weakening",
+    "quadrant": "leading",
     "theme": "Energy Traditional",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "energybaseoilrefining": {
     "emerging": false,
     "name": "Oil Refining",
-    "quadrant": "lagging",
+    "quadrant": "leading",
     "theme": "Energy Traditional",
-    "turn_state": "turn_down"
+    "turn_state": "range"
   },
   "energybaseoilservices": {
-    "emerging": false,
+    "emerging": true,
     "name": "Oil Services",
-    "quadrant": "lagging",
+    "quadrant": "leading",
     "theme": "Energy Traditional",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "energybasethermal": {
-    "emerging": false,
+    "emerging": true,
     "name": "Thermal",
     "quadrant": "improving",
     "theme": "Energy Traditional",
-    "turn_state": "trending_down"
+    "turn_state": "bottoming"
   },
   "energybaseutilities": {
     "emerging": false,
     "name": "Utilities",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Energy Traditional",
     "turn_state": "range"
   },
   "energycleanbatteries": {
-    "emerging": false,
+    "emerging": true,
     "name": "Batteries",
     "quadrant": "improving",
     "theme": "Energy Renewable",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "energycleanbiofuels": {
     "emerging": false,
     "name": "Biofuels",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Energy Renewable",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "energycleangeothermal": {
-    "emerging": false,
+    "emerging": true,
     "name": "Geothermal",
     "quadrant": "improving",
     "theme": "Energy Renewable",
@@ -821,7 +821,7 @@
   "energycleanhydrogen": {
     "emerging": false,
     "name": "Hydrogen",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Energy Renewable",
     "turn_state": "range"
   },
@@ -830,33 +830,33 @@
     "name": "Materials",
     "quadrant": "improving",
     "theme": "Energy Renewable",
-    "turn_state": "bottoming"
+    "turn_state": "trending_down"
   },
   "energycleansmartgrid": {
     "emerging": false,
     "name": "Smart Grid",
     "quadrant": "improving",
     "theme": "Energy Renewable",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "energycleansolar": {
     "emerging": false,
     "name": "Solar",
     "quadrant": "improving",
     "theme": "Energy Renewable",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "energycleanutilities": {
     "emerging": false,
     "name": "Utilities",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Energy Renewable",
     "turn_state": "range"
   },
   "energycleanwind": {
     "emerging": false,
     "name": "Wind",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Energy Renewable",
     "turn_state": "range"
   },
@@ -865,19 +865,19 @@
     "name": "Betting",
     "quadrant": "lagging",
     "theme": "Digital Entertainment",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "entertainmentgambling": {
     "emerging": false,
     "name": "Gambling",
     "quadrant": "lagging",
     "theme": "Digital Entertainment",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "entertainmentgaming": {
     "emerging": false,
     "name": "Gaming",
-    "quadrant": "weakening",
+    "quadrant": "lagging",
     "theme": "Digital Entertainment",
     "turn_state": "range"
   },
@@ -893,7 +893,7 @@
     "name": "Music",
     "quadrant": "lagging",
     "theme": "Digital Entertainment",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "entertainmentvideo": {
     "emerging": false,
@@ -942,26 +942,26 @@
     "name": "Batteries",
     "quadrant": "improving",
     "theme": "Electric Vehicles",
-    "turn_state": "bottoming"
+    "turn_state": "turn_up"
   },
   "evscharging": {
-    "emerging": false,
+    "emerging": true,
     "name": "Charging",
     "quadrant": "improving",
     "theme": "Electric Vehicles",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "evschips": {
-    "emerging": false,
+    "emerging": true,
     "name": "Chips",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Electric Vehicles",
     "turn_state": "bottoming"
   },
   "evsfleets": {
     "emerging": false,
     "name": "Fleets",
-    "quadrant": "leading",
+    "quadrant": "lagging",
     "theme": "Electric Vehicles",
     "turn_state": "range"
   },
@@ -973,16 +973,16 @@
     "turn_state": "range"
   },
   "evsselfdriving": {
-    "emerging": false,
+    "emerging": true,
     "name": "Self-Driving",
     "quadrant": "improving",
     "theme": "Electric Vehicles",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "evssuppliers": {
     "emerging": false,
     "name": "Suppliers",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Electric Vehicles",
     "turn_state": "range"
   },
@@ -996,9 +996,9 @@
   "fintechexchanges": {
     "emerging": false,
     "name": "Exchanges",
-    "quadrant": "leading",
+    "quadrant": "improving",
     "theme": "FinTech",
-    "turn_state": "topping"
+    "turn_state": "trending_down"
   },
   "fintechinsurance": {
     "emerging": false,
@@ -1010,23 +1010,23 @@
   "fintechlending": {
     "emerging": false,
     "name": "Lending",
-    "quadrant": "weakening",
+    "quadrant": "lagging",
     "theme": "FinTech",
-    "turn_state": "range"
+    "turn_state": "trending_up"
   },
   "fintechneobanks": {
     "emerging": false,
     "name": "Neobanks",
     "quadrant": "lagging",
     "theme": "FinTech",
-    "turn_state": "topping"
+    "turn_state": "trending_up"
   },
   "fintechpayments": {
     "emerging": false,
     "name": "Payments",
     "quadrant": "weakening",
     "theme": "FinTech",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "fintechtrading": {
     "emerging": false,
@@ -1036,18 +1036,18 @@
     "turn_state": "trending_up"
   },
   "hardwaredatacenters": {
-    "emerging": false,
+    "emerging": true,
     "name": "Data Centers",
-    "quadrant": "lagging",
+    "quadrant": "leading",
     "theme": "Hardware",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "hardwareelectronics": {
     "emerging": false,
     "name": "Electronics",
     "quadrant": "weakening",
     "theme": "Hardware",
-    "turn_state": "topping"
+    "turn_state": "trending_up"
   },
   "hardwaregaming": {
     "emerging": false,
@@ -1059,7 +1059,7 @@
   "hardwareindustrialiot": {
     "emerging": false,
     "name": "Industrial IoT",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "Hardware",
     "turn_state": "range"
   },
@@ -1085,7 +1085,7 @@
     "turn_state": "trending_up"
   },
   "hardwareprinting": {
-    "emerging": true,
+    "emerging": false,
     "name": "Printing",
     "quadrant": "leading",
     "theme": "Hardware",
@@ -1106,14 +1106,14 @@
     "turn_state": "trending_up"
   },
   "hardwaretelecom": {
-    "emerging": false,
+    "emerging": true,
     "name": "Telecom",
-    "quadrant": "lagging",
+    "quadrant": "leading",
     "theme": "Hardware",
     "turn_state": "range"
   },
   "healthcaredevices": {
-    "emerging": false,
+    "emerging": true,
     "name": "Devices",
     "quadrant": "leading",
     "theme": "Healthcare & Biotech",
@@ -1124,7 +1124,7 @@
     "name": "Diagnostics",
     "quadrant": "weakening",
     "theme": "Healthcare & Biotech",
-    "turn_state": "topping"
+    "turn_state": "trending_up"
   },
   "healthcaregenomics": {
     "emerging": false,
@@ -1134,39 +1134,39 @@
     "turn_state": "trending_up"
   },
   "healthcareitdata": {
-    "emerging": false,
+    "emerging": true,
     "name": "IT & Data",
     "quadrant": "leading",
     "theme": "Healthcare & Biotech",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "healthcaremetabolic": {
     "emerging": false,
     "name": "Metabolic",
-    "quadrant": "lagging",
+    "quadrant": "weakening",
     "theme": "Healthcare & Biotech",
     "turn_state": "range"
   },
   "healthcarenextgen": {
-    "emerging": false,
+    "emerging": true,
     "name": "Next-Gen",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Healthcare & Biotech",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "healthcareoncology": {
     "emerging": false,
     "name": "Oncology",
     "quadrant": "weakening",
     "theme": "Healthcare & Biotech",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "healthcaretelemedicine": {
     "emerging": false,
     "name": "Telemedicine",
     "quadrant": "weakening",
     "theme": "Healthcare & Biotech",
-    "turn_state": "range"
+    "turn_state": "trending_up"
   },
   "healthcaretherapeutics": {
     "emerging": false,
@@ -1194,7 +1194,7 @@
     "name": "Hardware",
     "quadrant": "lagging",
     "theme": "Internet of Things",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "iotnetworking": {
     "emerging": false,
@@ -1220,7 +1220,7 @@
   "longevityagingpharma": {
     "emerging": false,
     "name": "Aging Pharma",
-    "quadrant": "lagging",
+    "quadrant": "leading",
     "theme": "Aging Population & Longevity",
     "turn_state": "range"
   },
@@ -1234,7 +1234,7 @@
   "longevityhealthyaging": {
     "emerging": false,
     "name": "Healthy Aging",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Aging Population & Longevity",
     "turn_state": "range"
   },
@@ -1243,35 +1243,35 @@
     "name": "Senior Living",
     "quadrant": "lagging",
     "theme": "Aging Population & Longevity",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "megacapgenerals": {
     "emerging": false,
     "name": "Mag 7 Generals",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Mega-Cap",
-    "turn_state": "trending_down"
+    "turn_state": "range"
   },
   "nanotechelectronics": {
     "emerging": false,
     "name": "Electronics",
     "quadrant": "lagging",
     "theme": "Nanotechnology",
-    "turn_state": "trending_up"
+    "turn_state": "bottoming"
   },
   "nanotechenergy": {
-    "emerging": false,
+    "emerging": true,
     "name": "Energy",
     "quadrant": "improving",
     "theme": "Nanotechnology",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "nanotechmaterials": {
     "emerging": false,
     "name": "Materials",
     "quadrant": "leading",
     "theme": "Nanotechnology",
-    "turn_state": "range"
+    "turn_state": "topping"
   },
   "nanotechmedicine": {
     "emerging": false,
@@ -1283,21 +1283,21 @@
   "nanotechproducts": {
     "emerging": false,
     "name": "Products",
-    "quadrant": "leading",
+    "quadrant": "improving",
     "theme": "Nanotechnology",
     "turn_state": "trending_down"
   },
   "nanotechresearchtools": {
-    "emerging": false,
+    "emerging": true,
     "name": "Research Tools",
-    "quadrant": "lagging",
+    "quadrant": "leading",
     "theme": "Nanotechnology",
     "turn_state": "range"
   },
   "nutritionaltprotein": {
     "emerging": false,
     "name": "Alt Protein",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Healthy Food & Nutrition",
     "turn_state": "range"
   },
@@ -1318,21 +1318,21 @@
   "nutritionsupplements": {
     "emerging": false,
     "name": "Supplements",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Healthy Food & Nutrition",
     "turn_state": "trending_down"
   },
   "quantumapplications": {
     "emerging": false,
     "name": "Applications",
-    "quadrant": "improving",
+    "quadrant": "leading",
     "theme": "Quantum Computing",
     "turn_state": "range"
   },
   "quantumcloud": {
     "emerging": true,
     "name": "Cloud",
-    "quadrant": "improving",
+    "quadrant": "leading",
     "theme": "Quantum Computing",
     "turn_state": "range"
   },
@@ -1360,7 +1360,7 @@
   "quantumsoftware": {
     "emerging": true,
     "name": "Software",
-    "quadrant": "improving",
+    "quadrant": "leading",
     "theme": "Quantum Computing",
     "turn_state": "range"
   },
@@ -1374,7 +1374,7 @@
   "realestatehousing": {
     "emerging": false,
     "name": "Housing",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Real Estate & REITs",
     "turn_state": "range"
   },
@@ -1383,35 +1383,35 @@
     "name": "IT & Telecom",
     "quadrant": "improving",
     "theme": "Real Estate & REITs",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "realestateoffice": {
     "emerging": false,
     "name": "Office",
-    "quadrant": "weakening",
+    "quadrant": "lagging",
     "theme": "Real Estate & REITs",
-    "turn_state": "topping"
+    "turn_state": "turn_down"
   },
   "realestateretail": {
     "emerging": false,
     "name": "Retail",
     "quadrant": "lagging",
     "theme": "Real Estate & REITs",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "realestatetourism": {
     "emerging": false,
     "name": "Tourism",
     "quadrant": "lagging",
     "theme": "Real Estate & REITs",
-    "turn_state": "topping"
+    "turn_state": "turn_down"
   },
   "realestatewarehousing": {
     "emerging": false,
     "name": "Warehousing",
     "quadrant": "lagging",
     "theme": "Real Estate & REITs",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "roboticsautomation": {
     "emerging": false,
@@ -1428,7 +1428,7 @@
     "turn_state": "range"
   },
   "roboticsconsumer": {
-    "emerging": true,
+    "emerging": false,
     "name": "Consumer",
     "quadrant": "improving",
     "theme": "Robotics",
@@ -1437,44 +1437,44 @@
   "roboticslogistics": {
     "emerging": false,
     "name": "Logistics",
-    "quadrant": "weakening",
+    "quadrant": "leading",
     "theme": "Robotics",
     "turn_state": "range"
   },
   "roboticsmachinevision": {
     "emerging": false,
     "name": "Machine Vision",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Robotics",
     "turn_state": "range"
   },
   "roboticsmedical": {
-    "emerging": false,
+    "emerging": true,
     "name": "Medical",
-    "quadrant": "improving",
+    "quadrant": "leading",
     "theme": "Robotics",
     "turn_state": "trending_down"
   },
   "semisanalog": {
     "emerging": false,
     "name": "Analog",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Semiconductors",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "semiscompute": {
     "emerging": false,
     "name": "Compute",
     "quadrant": "lagging",
     "theme": "Semiconductors",
-    "turn_state": "bottoming"
+    "turn_state": "trending_up"
   },
   "semisdesigntools": {
     "emerging": false,
     "name": "Design Tools",
     "quadrant": "lagging",
     "theme": "Semiconductors",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "semisfoundries": {
     "emerging": false,
@@ -1488,14 +1488,14 @@
     "name": "Lithography",
     "quadrant": "lagging",
     "theme": "Semiconductors",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "semismemory": {
     "emerging": false,
     "name": "Memory",
     "quadrant": "lagging",
     "theme": "Semiconductors",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "semisnextgen": {
     "emerging": false,
@@ -1505,9 +1505,9 @@
     "turn_state": "bottoming"
   },
   "semispackaging": {
-    "emerging": false,
+    "emerging": true,
     "name": "Packaging",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Semiconductors",
     "turn_state": "range"
   },
@@ -1516,21 +1516,21 @@
     "name": "Wireless",
     "quadrant": "lagging",
     "theme": "Semiconductors",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "smarthomeautomation": {
     "emerging": false,
     "name": "Automation",
-    "quadrant": "leading",
+    "quadrant": "lagging",
     "theme": "Smart Home",
     "turn_state": "topping"
   },
   "smarthomedevices": {
     "emerging": false,
     "name": "Devices",
-    "quadrant": "leading",
+    "quadrant": "lagging",
     "theme": "Smart Home",
-    "turn_state": "trending_down"
+    "turn_state": "range"
   },
   "smarthomeenergy": {
     "emerging": false,
@@ -1544,21 +1544,21 @@
     "name": "Networking",
     "quadrant": "improving",
     "theme": "Smart Home",
-    "turn_state": "range"
+    "turn_state": "trending_down"
   },
   "smarthomesecurity": {
     "emerging": false,
     "name": "Security",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "Smart Home",
-    "turn_state": "topping"
+    "turn_state": "turn_down"
   },
   "smarthomevoiceai": {
-    "emerging": true,
+    "emerging": false,
     "name": "Voice & AI",
-    "quadrant": "leading",
+    "quadrant": "lagging",
     "theme": "Smart Home",
-    "turn_state": "range"
+    "turn_state": "topping"
   },
   "socialadvertising": {
     "emerging": false,
@@ -1570,14 +1570,14 @@
   "socialgaming": {
     "emerging": false,
     "name": "Gaming",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "Social Media",
     "turn_state": "range"
   },
   "socialnetworks": {
     "emerging": false,
     "name": "Networks",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Social Media",
     "turn_state": "range"
   },
@@ -1591,7 +1591,7 @@
   "socialvisualcontent": {
     "emerging": false,
     "name": "Visual Content",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Social Media",
     "turn_state": "range"
   },
@@ -1603,7 +1603,7 @@
     "turn_state": "range"
   },
   "softwarecrm": {
-    "emerging": false,
+    "emerging": true,
     "name": "CRM",
     "quadrant": "leading",
     "theme": "Software",
@@ -1633,21 +1633,21 @@
   "softwareecommerce": {
     "emerging": false,
     "name": "E-Commerce",
-    "quadrant": "leading",
+    "quadrant": "lagging",
     "theme": "Software",
     "turn_state": "range"
   },
   "softwareenterprise": {
-    "emerging": true,
+    "emerging": false,
     "name": "Enterprise",
     "quadrant": "leading",
     "theme": "Software",
-    "turn_state": "trending_down"
+    "turn_state": "range"
   },
   "softwaregaming": {
     "emerging": false,
     "name": "Gaming",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "Software",
     "turn_state": "range"
   },
@@ -1661,7 +1661,7 @@
   "softwareos": {
     "emerging": false,
     "name": "OS",
-    "quadrant": "leading",
+    "quadrant": "lagging",
     "theme": "Software",
     "turn_state": "topping"
   },
@@ -1684,7 +1684,7 @@
     "name": "Data Analytics",
     "quadrant": "leading",
     "theme": "Space Tech",
-    "turn_state": "range"
+    "turn_state": "turn_up"
   },
   "spacedefense": {
     "emerging": true,
@@ -1708,18 +1708,18 @@
     "turn_state": "range"
   },
   "spacesatellites": {
-    "emerging": false,
+    "emerging": true,
     "name": "Satellites",
-    "quadrant": "weakening",
+    "quadrant": "leading",
     "theme": "Space Tech",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "telecomcloudedge": {
     "emerging": false,
     "name": "Cloud & Edge",
-    "quadrant": "weakening",
+    "quadrant": "leading",
     "theme": "Telecommunications",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "telecomenterprise": {
     "emerging": false,
@@ -1733,21 +1733,21 @@
     "name": "5G",
     "quadrant": "lagging",
     "theme": "Telecommunications",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "telecominfrastructure": {
     "emerging": false,
     "name": "Infrastructure",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Telecommunications",
     "turn_state": "range"
   },
   "telecomsatcom": {
-    "emerging": false,
+    "emerging": true,
     "name": "Satcom",
-    "quadrant": "weakening",
+    "quadrant": "leading",
     "theme": "Telecommunications",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "telecomwireless": {
     "emerging": false,
@@ -1757,32 +1757,32 @@
     "turn_state": "trending_down"
   },
   "transportationaircargo": {
-    "emerging": true,
+    "emerging": false,
     "name": "Air Cargo",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "Transportation & Logistics",
     "turn_state": "range"
   },
   "transportationairtravel": {
     "emerging": false,
     "name": "Air Travel",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Transportation & Logistics",
-    "turn_state": "range"
+    "turn_state": "topping"
   },
   "transportationinfrastructure": {
     "emerging": false,
     "name": "Infrastructure",
     "quadrant": "lagging",
     "theme": "Transportation & Logistics",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "transportationmaritime": {
     "emerging": false,
     "name": "Maritime",
-    "quadrant": "weakening",
+    "quadrant": "lagging",
     "theme": "Transportation & Logistics",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "transportationnextgen": {
     "emerging": false,
@@ -1796,19 +1796,19 @@
     "name": "Rail",
     "quadrant": "weakening",
     "theme": "Transportation & Logistics",
-    "turn_state": "topping"
+    "turn_state": "range"
   },
   "transportationtrucking": {
     "emerging": false,
     "name": "Trucking",
     "quadrant": "lagging",
     "theme": "Transportation & Logistics",
-    "turn_state": "turn_down"
+    "turn_state": "range"
   },
   "transportationwarehousing": {
     "emerging": false,
     "name": "Warehousing",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "Transportation & Logistics",
     "turn_state": "range"
   },
@@ -1827,9 +1827,9 @@
     "turn_state": "range"
   },
   "varealityhardware": {
-    "emerging": true,
+    "emerging": false,
     "name": "Hardware",
-    "quadrant": "leading",
+    "quadrant": "improving",
     "theme": "Virtual & Augmented Reality",
     "turn_state": "range"
   },
@@ -1843,16 +1843,16 @@
   "varealitysoftware": {
     "emerging": false,
     "name": "Software",
-    "quadrant": "leading",
+    "quadrant": "weakening",
     "theme": "Virtual & Augmented Reality",
-    "turn_state": "range"
+    "turn_state": "topping"
   },
   "wearablesimmersive": {
     "emerging": false,
     "name": "Immersive",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Wearables",
-    "turn_state": "range"
+    "turn_state": "bottoming"
   },
   "wearablesmedical": {
     "emerging": false,
@@ -1864,14 +1864,14 @@
   "wearablessmartwatches": {
     "emerging": false,
     "name": "Smartwatches",
-    "quadrant": "weakening",
+    "quadrant": "lagging",
     "theme": "Wearables",
     "turn_state": "topping"
   },
   "wearablessoftware": {
     "emerging": false,
     "name": "Software",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Wearables",
     "turn_state": "range"
   },
