@@ -1003,6 +1003,28 @@ def featured_shortfalls(
     return reasons
 
 
+def verdict_for(
+    row: Mapping[str, Any],
+    verdict_by: Mapping[str, Mapping[str, Any]] | None = None,
+) -> Mapping[str, Any]:
+    """The gate verdict :func:`score_rows` actually reads for ``row``.
+
+    The gate map wins, and the row's own embedded ``signal`` blob is the fallback for
+    a name the map does not carry.  One named resolver rather than an inline ``or``
+    chain because the row carries a SECOND copy of these fields and the two can
+    legitimately disagree: ``site/factordata/us_standouts.json`` and
+    ``site/factordata/signal_gate.json`` are written by different lanes, and a
+    ``scope=all`` re-render re-emits the board's embedded ``signal`` while the gate
+    write (``build_stock_library``, guarded by ``if sig_verdict:``) is skipped — which
+    on 2026-08-12 left 8 of 69 buy rows carrying ``signal.ticks != verdict.ticks``.
+    Anything asking "what did the featured gate SEE" must resolve through here, or it
+    reads a field this module never consumed and draws a conclusion about the wrong
+    row (``tests/test_us_board_rank.py`` did exactly that and went red on NTES).
+    """
+    ticker = str(row.get("ticker") or "")
+    return (verdict_by or {}).get(ticker) or row.get("signal") or {}
+
+
 # --------------------------------------------------------------------------- #
 # the scoring pass
 # --------------------------------------------------------------------------- #
@@ -1051,7 +1073,7 @@ def score_rows(
 
     for index, row in enumerate(pool):
         ticker = str(row.get("ticker") or "")
-        verdict = (verdict_by or {}).get(ticker) or row.get("signal") or {}
+        verdict = verdict_for(row, verdict_by)
         entry = (entry_by or {}).get(ticker) or row.get("entry_signal") or {}
 
         values = {
