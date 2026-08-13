@@ -2492,21 +2492,27 @@ def _largest_remainder(weights: dict[str, float], total_slots: int) -> dict[str,
 # Slot labels
 # ─────────────────────────────────────────────────────────────────────────────
 
-# The 45-minute Pacific ladder slots (cadence masterplan §5, operator re-spec
-# 2026-07-27); outbox._LADDER_PT_TIMES resolves each to a real per-date UTC time
-# via zoneinfo. 19 slots at 45-min steps, 4:00 AM–5:30 PM PT.
-# Mirrors outbox._LADDER_PT_TIMES — 28 rungs at 30-min steps (operator
-# re-spec 2026-07-28). The clock table lives in ONE place (outbox); this
-# side only needs labels. A mismatch shows up as a slot whose scheduled_at
-# resolves to None, which tests/test_marketing_outbox.py pins.
-_LADDER_SLOTS = [f"S{i}" for i in range(1, 29)]
+# Mirrors outbox._LADDER_PT_TIMES — 55 rungs at 15-min steps, 4:00 AM–5:30 PM PT
+# (W2C-1 throughput unlock, 2026-08-11; was 19@45min 2026-07-27, 28@30min
+# 2026-07-28 — the WINDOW is invariant across all three, only the step tightens).
+# The clock table lives in ONE place (outbox); this side only needs labels, and
+# the count MUST match outbox._LADDER_N_SLOTS. A mismatch shows up as a slot whose
+# scheduled_at resolves to None — i.e. an item that silently becomes "immediate"
+# instead of scheduled — which tests/test_marketing_outbox.py pins.
+_LADDER_SLOTS = [f"S{i}" for i in range(1, 56)]
 
 
 def _slot_labels(n_days: int, per_day: int) -> list[str]:
-    """Generate ladder slot labels D1-S1, D1-S2, ..., D2-S1, ... — the 45-minute
+    """Generate ladder slot labels D1-S1, D1-S2, ..., D2-S1, ... — the 15-minute
     Pacific ladder. ``per_day`` slots are taken from the front of the ladder, so
-    per_day=19 uses the full 4:00 AM–5:30 PM span; fewer packs the earliest
-    slots."""
+    per_day=55 uses the full 4:00 AM–5:30 PM span; fewer packs the earliest
+    slots.
+
+    ``per_day`` above the ladder length wraps (``i % len``) and would emit the
+    SAME label twice in one day. Do not rely on that: `sentinel.gate_plan` treats
+    a repeated (account, slot) as `slot_collision` and quarantines the second
+    item, so a wrapped rung is a deleted post, not a denser day. `ladder_shape_for`
+    clamps to the ladder length precisely to keep the wrap unreachable."""
     labels = []
     for day in range(1, n_days + 1):
         for i in range(per_day):
@@ -2549,7 +2555,7 @@ _DEFAULT_PER_DAY_HEADROOM = 2.0
 #: a working cadence — so any caller without a `sentinel:` block (a test, an
 #: admin preview, a fixture config) would otherwise be handed a 4-rung plan
 #: carrying four of the nine kinds. Against the shipped config this floor never
-#: binds: the tiers are 10/14/20, so `cap × headroom` is 20 or 28 everywhere.
+#: binds: every desk's `cap × headroom` is 28 or 60, both far above nine.
 _MIN_LADDER_RUNGS = len(_TYPE_IDS)
 
 
@@ -2591,10 +2597,21 @@ def ladder_shape_for(
     """``{"n_days", "per_day"}`` for ONE account's slice of the ladder.
 
     ``per_day`` = ceil(that account's D08 ramp cap × ``per_day_headroom``),
-    floored at `_MIN_LADDER_RUNGS` and clamped to the 28-rung ladder. An
+    floored at `_MIN_LADDER_RUNGS` and clamped to the 55-rung ladder. An
     UNLIMITED cap (-1, which is what the base sentinel block carries) means the
     ladder length itself — there is no cap to size against, so nothing is
     trimmed.
+
+    THE CLAMP USED TO BE THE BINDING CONSTRAINT (W2C-1, 2026-08-11). At a 28-rung
+    ladder every desk computed ceil(30 × 2.0) = 60 and clamped to 28, so the
+    headroom knob was inert — turning it up changed nothing, because the ceiling
+    bound first. With ~65% survival through the gates below the allocator that
+    capped the four employee desks (their ONLY supply is this ladder: the
+    publish-time movers lane is [flagship, founder]-only and the wire lane zeroes
+    them) at ~18 posts/day against a 20/day operator floor. The 15-min ladder
+    lifts the ceiling to 55, ceil(30 × 2.0) = 60 still clamps but now to 55,
+    ~36 survive, and the per-account DAILY CAP becomes the binding constraint —
+    which is the knob that is supposed to be in control.
 
     Pass ``ramp`` (a ``sentinel.resolve_ramp`` result) when calling this in a
     loop; otherwise every account re-resolves the tier table. Fail-soft: any
@@ -2901,8 +2918,71 @@ def plan_account(
     total_w = sum(effective_tilt.values()) or 1.0
     effective_tilt = {k: v / total_w for k, v in effective_tilt.items()}
 
+    # Cross-day cooldown sets, computed ONCE (contract §Selection). Two sets
+    # because the bar differs by kind: 5 sessions for a directional call, 3 for
+    # coverage. Both are applied to the emitted day only — see the docstring.
+    # HOISTED above the allocation (W2C-1) so the receipt floor below can see
+    # whether tonight actually HAS a receipt to ship; the pools they filter are
+    # built further down, where the seat loop uses them.
+    _cooled_w = {str(t).upper() for t in (cooled_watch or ())}
+    _cooled_s = {str(t).upper() for t in (cooled_signal or ())}
+
+    # The resolved plans a receipt rung may draw from — see the long note at the
+    # seat loop below for why this pool is disjoint from the live coverage pool.
+    receipt_pool = [p for p in (receipt_plans or [])
+                    if str(p.get("asset", "")).upper() not in _cooled_w]
+
     total_slots = n_days * per_day
     allocation = _largest_remainder(effective_tilt, total_slots)
+
+    # ── RECEIPT FLOOR (W2C-1, 2026-08-11) ────────────────────────────────────
+    # Receipts are the track-record spine — hits AND misses — so a night that HAS
+    # a graded outcome must ship one. `_largest_remainder`'s >=1 guarantee
+    # already delivers this for every shipped desk today (measured 2026-08-11:
+    # 1-7 receipt rungs per desk across per_day 9/28/55), and this floor is
+    # deliberately a NO-OP against that config. It exists because the guarantee
+    # has a blind spot the config could wander into: the guarantee is SKIPPED
+    # outright when `len(positive) > total_slots` (see _largest_remainder), and
+    # rounding alone decides the rest, so a retuned tilt or a short ladder can
+    # silently drop receipts to zero on a night when a real outcome was sitting
+    # in the pool. A floor is the right shape here where a tilt bump is not:
+    # tilt is a MIX preference and would inflate receipts on empty nights too,
+    # whereas this binds only when there is something to show.
+    #
+    # TWO GATES, both required:
+    #   * pool non-empty — with nothing resolved, the rung would draw coverage
+    #     and be reallocated to `watchlist` downstream, so forcing one buys a
+    #     watchlist post mislabelled as a floor;
+    #   * receipt still carries positive weight — a kind this desk's tilt or ramp
+    #     tier zeroed must never be resurrected here
+    #     (tests/test_marketing_ladder_collapse.py::
+    #      test_a_zero_weight_kind_is_never_resurrected).
+    # The donor is the largest non-receipt allocation, tie-broken alphabetically,
+    # mirroring _largest_remainder's own rule so the result stays deterministic
+    # and `sum(allocation) == total_slots` is preserved.
+    #
+    # A donor at exactly 1 IS eligible, unlike in _largest_remainder — and that is
+    # the whole difference between the two. `_largest_remainder` is spreading NINE
+    # kinds and must not rob one to pay another, so it requires `> 1` and gives up
+    # when no kind has a spare. This floor is making a PRIORITY statement on a
+    # ladder too short to hold every family: when a graded outcome exists, the
+    # track record outranks the marginal kind. On a short ladder several kinds are
+    # already at zero, so the trade is receipt-for-one-other, not receipt-for-
+    # nothing. At per_day >= _MIN_LADDER_RUNGS this never fires (measured: every
+    # shipped desk already allocates 1-7 receipt rungs), so no shipped plan trades
+    # a family away.
+    if (receipt_pool and effective_tilt.get("receipt", 0.0) > 0
+            and allocation.get("receipt", 0) < 1):
+        _donor = max((k for k in allocation
+                      if k != "receipt" and allocation[k] >= 1),
+                     default=None, key=lambda k: (allocation[k], k))
+        if _donor is not None:
+            allocation[_donor] -= 1
+            allocation["receipt"] = 1
+            if report is not None:
+                report["receipt_floor_applied"] = (
+                    report.get("receipt_floor_applied", 0) + 1)
+
     slots = _slot_labels(n_days, per_day)
 
     # Build type sequence from allocation (round-robin within type, account-hash offset)
@@ -2926,11 +3006,8 @@ def plan_account(
     bull_plans = [p for p in signal_plans if p.get("direction") == "BULL"]
     plan_pool = bull_plans if bull_plans else signal_plans
 
-    # Cross-day cooldown pools, computed ONCE (contract §Selection). Two pools
-    # because the bar differs by kind: 5 sessions for a directional call, 3 for
-    # coverage. Both are applied to the emitted day only — see the docstring.
-    _cooled_w = {str(t).upper() for t in (cooled_watch or ())}
-    _cooled_s = {str(t).upper() for t in (cooled_signal or ())}
+    # Cross-day cooldown pools (the SETS `_cooled_w`/`_cooled_s` are hoisted above
+    # the allocation for the receipt floor; these are the pools they filter).
     watch_pool = [p for p in plan_pool
                   if str(p.get("asset", "")).upper() not in _cooled_w]
     signal_pool = [p for p in plan_pool
@@ -2961,8 +3038,8 @@ def plan_account(
     # receipt cannot re-post a name the desk just used. Absent/empty → the slot
     # behaves exactly as it does today (drops, or reallocates to watchlist), so a
     # night with nothing resolved is unchanged.
-    receipt_pool = [p for p in (receipt_plans or [])
-                    if str(p.get("asset", "")).upper() not in _cooled_w]
+    # (Assigned ABOVE the allocation — the receipt floor needs it. Kept described
+    # here because this seat loop is where it does its work.)
 
     # Attention supply — the pool a ticker-less chart-family slot draws from.
     # Walked as a CURSOR, never re-sorted: `attention_supply` already ordered it

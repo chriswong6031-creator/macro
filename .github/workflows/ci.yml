@@ -343,6 +343,13 @@ on:
       - "engine/trial_ledger.py"
       - "engine/grading.py"
       - "engine/track_record.py"
+      # Track-record company identity: one ledger key per company across ticker
+      # renames. Name both the executable subjects and the suite explicitly so
+      # a test-only or migration-tool edit starts the packed owner (#3488).
+      - "engine/ledger_identity.py"
+      - "scripts/audit_reused_tickers.py"
+      - "scripts/migrate_track_record_keys.py"
+      - "tests/test_ledger_identity.py"
       - "engine/sector_signals.py"
       - "engine/meta_label.py"
       - "tests/test_grading.py"
@@ -418,6 +425,24 @@ on:
       # selection, 404-empty, rail-sentence condition). Same ci-test-whitelist-rot guard.
       - "tests/test_watchlist_chains_js.py"
       - "tests/fixtures/transmission/transmission_chains.json"
+      # UWP/W1a watchlist+portfolio store: the node-shelled suites over
+      # templates/watchstore.js — the local books + one-shot folds, and the registered
+      # multi-list seam (list CRUD isolation, fold retarget + run-twice, the
+      # list-scoped push diff, semantic invariants A-D). templates/** already covers
+      # watchstore.js/watchlist.js; list the test files so a test-only edit still
+      # triggers CI (ci-test-whitelist-rot guard). Both run in the wri-risk-core job.
+      # test_watchlist_books_js.py had been named by NO run: step since it landed
+      # (P5 in scripts/audit_unrun_tests.py) — it guards the fold markers on the very
+      # file W1a rewrites, so it is wired here rather than left dark.
+      - "tests/test_watchlist_books_js.py"
+      - "tests/test_watchstore_multilist_js.py"
+      - "templates/watchstore.js"
+      # Main-side orphan healed here (landed in #5458 wired to nothing, which reddens
+      # the workflow-yaml pack via scripts/audit_unrun_tests.py). templates/** and
+      # site/** already cover its subjects (theme.css + five report templates); this
+      # entry is the test half, so a test-only edit still triggers CI. Runs in the
+      # template-site-sync job, which already owns that theme.css pair.
+      - "tests/test_odometer_light_mode_surface.py"
       # live_flow payload consumers: the node-shelled suites that execute the intraday_flow
       # tracker's and the stock panel's flow loaders against payloads from the real builders.
       # templates/** and site/** already cover the pages and engine/** the builders; list the
@@ -612,6 +637,10 @@ on:
       # for #5458's shared template/site light-mode contract.
       - "tests/test_market_score_authority_2026_08_12.py"
       - "tests/test_odometer_light_mode_surface.py"
+      # #5481 folded the China Policy Watch express-render guards into this
+      # canonical suite. Name the test half explicitly beside its owner job;
+      # collectors/**, engine/**, scripts/**, and templates/** cover its subjects.
+      - "tests/test_china_policy_watch.py"
       # VSB W6: corr_floor_break + ai_breadth_divergence Tier-B legs + corr alert
       - "tests/test_vsb_radar_alert.py"
       - "engine/risk_radar.py"
@@ -2325,6 +2354,12 @@ on:
       # listed so adding a driver without a translation trips the census.
       - "tests/test_marketing_event_language.py"
       - "engine/market_drivers.py"
+      # tests/test_market_facts.py joins 2026-08-12 (W2D): another
+      # unrun-suite-rot grandfather closed on contact, now run in
+      # marketing-engine. The subject code is already covered by
+      # engine/marketing/** above; listed by name so a TEST-ONLY edit (a new
+      # market_facts producer pin, say) still reaches its own guard.
+      - "tests/test_market_facts.py"
       - "data/marketing/opportunities.jsonl"
       - "data/marketing/claims.jsonl"
       # content-studio + admin marketing-panel suites — co-run in the
@@ -2548,6 +2583,9 @@ on:
       # covers the engine changes; the poller script + its tests are explicit.
       - "scripts/marketing_metrics_poll.py"
       - "tests/test_marketing_metrics_poll.py"
+      # Both halves on purpose: the quota suite was wired 2026-08-11 and an edit
+      # to a test that no path selects is a test nobody can prove they changed.
+      - "tests/test_marketing_metrics_poll_quota.py"
       - "tests/test_marketing_chart_png.py"
       - "tests/test_marketing_media_publish.py"
       - "tests/test_share_cards.py"

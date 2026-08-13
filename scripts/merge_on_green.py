@@ -226,9 +226,11 @@ budget deferred DID run, correctly, so that exits 0.
 
 from __future__ import annotations
 
+import base64
 import datetime as dt
 import json
 import os
+import re
 import secrets
 import sys
 import time
@@ -320,10 +322,10 @@ MAX_PULL_CAP = 100
 # live bucket is partly spent. These are deliberately pessimistic: the merge writes
 # normally charge MERGE_TOKEN, not READ_TOKEN, but counting them here makes an
 # admitted window affordable even on the fallback token.
-FULL_SWEEP_FIXED_REQUESTS = 80
+FULL_SWEEP_FIXED_REQUESTS = 87
 MAX_REQUESTS_PER_PULL = 19
-# A 25-pull reference pass now needs 80 fixed + 25 x up-to-19 + refresh headroom =
-# 535 in its pessimistic shape, so the floor funds useful work while preserving
+# A 25-pull reference pass now needs 87 fixed + 25 x up-to-19 + refresh headroom =
+# 542 in its pessimistic shape, so the floor funds useful work while preserving
 # room for other lanes in the ordinary cheaper shape. Larger buckets do
 # not need a proportionally larger dead zone: `pull_cap` shrinks to what the
 # remaining requests can actually afford.
@@ -957,6 +959,8 @@ class ProofFreshness:
         self._commit_files: dict[str, tuple[list[str], bool]] = {}
         self._commit_tree_shas: dict[str, str] = {}
         self._root_trees: dict[str, dict[str, tuple[str, str, str]]] = {}
+        self._recursive_trees: dict[str, dict[str, tuple[str, str, str]]] = {}
+        self._blobs: dict[str, bytes] = {}
         self._pr_files: dict[Any, list[str] | None] = {}
         # Exact checked head -> newest main commit already contained by that head.
         # This is a compatibility fallback for older/external check records that do
@@ -1056,10 +1060,121 @@ class ProofFreshness:
         self._commit_tree_shas[commit_sha] = tree_sha
         return tree_sha
 
+    def _recursive_tree(self, tree_sha: str) -> dict[str, tuple[str, str, str]]:
+        """Complete descendants of one bounded subtree, cached by tree object ID."""
+        cached = self._recursive_trees.get(tree_sha)
+        if cached is not None:
+            return cached
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{self.repo}/git/trees/{tree_sha}?recursive=1",
+            self.token,
+        )
+        if status >= 400 or not isinstance(payload, dict):
+            raise _read_failed(
+                status, payload, f"recursive tree {tree_sha[:12]} unreadable"
+            )
+        if payload.get("truncated") is True:
+            raise RuntimeError(f"recursive tree {tree_sha[:12]} was truncated")
+        entries: dict[str, tuple[str, str, str]] = {}
+        for raw in payload.get("tree") or []:
+            entry = raw or {}
+            path = str(entry.get("path") or "")
+            if not path:
+                continue
+            entries[path] = (
+                str(entry.get("type") or ""),
+                str(entry.get("mode") or ""),
+                str(entry.get("sha") or ""),
+            )
+        self._recursive_trees[tree_sha] = entries
+        return entries
+
+    def _blob(self, blob_sha: str) -> bytes:
+        cached = self._blobs.get(blob_sha)
+        if cached is not None:
+            return cached
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{self.repo}/git/blobs/{blob_sha}",
+            self.token,
+        )
+        if status >= 400 or not isinstance(payload, dict):
+            raise _read_failed(status, payload, f"blob {blob_sha[:12]} unreadable")
+        if str(payload.get("encoding") or "") != "base64":
+            raise RuntimeError(f"blob {blob_sha[:12]} has unsupported encoding")
+        try:
+            encoded = "".join(str(payload.get("content") or "").split())
+            content = base64.b64decode(encoded, validate=True)
+        except (ValueError, TypeError) as exc:
+            raise RuntimeError(f"blob {blob_sha[:12]} has invalid base64") from exc
+        self._blobs[blob_sha] = content
+        return content
+
+    @staticmethod
+    def _without_asset_stamps(content: bytes) -> bytes:
+        """Normalize only optimizer-owned terminal ``?v=<8 hex>`` URL stamps."""
+        return re.sub(
+            rb"([?]v=)[0-9a-f]{8}([\"'])",
+            rb"\1__ASSET_STAMP__\2",
+            content,
+        )
+
+    def _template_stamp_only_change(
+        self,
+        parent_entry: tuple[str, str, str] | None,
+        current_entry: tuple[str, str, str] | None,
+    ) -> bool:
+        """Prove the complete templates subtree changed only owned cache stamps."""
+        if (
+            parent_entry is None
+            or current_entry is None
+            or parent_entry[0] != "tree"
+            or current_entry[0] != "tree"
+        ):
+            return False
+        try:
+            parent_tree = self._recursive_tree(parent_entry[2])
+            current_tree = self._recursive_tree(current_entry[2])
+        except RuntimeError:
+            return False
+        changed = {
+            path
+            for path in parent_tree.keys() | current_tree.keys()
+            if parent_tree.get(path) != current_tree.get(path)
+        }
+        if not changed:
+            return False
+        for path in changed:
+            before = parent_tree.get(path)
+            after = current_tree.get(path)
+            # The public renderer stamps plain-copy HTML files only. Adds, deletes,
+            # nested/Jinja files, modes, and non-blob changes remain source changes.
+            if (
+                "/" in path
+                or not path.endswith(".html")
+                or before is None
+                or after is None
+                or before[:2] != after[:2]
+                or before[0] != "blob"
+            ):
+                return False
+            try:
+                old_content = self._blob(before[2])
+                new_content = self._blob(after[2])
+            except RuntimeError:
+                return False
+            if old_content == new_content or (
+                self._without_asset_stamps(old_content)
+                != self._without_asset_stamps(new_content)
+            ):
+                return False
+        return True
+
     def _truncated_pipeline_paths(
         self, sha: str, payload: dict[str, Any]
     ) -> list[str] | None:
-        """Prove a truncated commit changed only complete pipeline subtrees.
+        """Prove a truncated commit was derived pipeline output/stamp maintenance.
 
         ``None`` means the proof could not be made and the caller must keep the
         commit truncated/fail-closed.  Synthetic paths are sufficient downstream:
@@ -1086,7 +1201,8 @@ class ProofFreshness:
             if current_entries.get(path) != parent_entries.get(path)
         }
         pipeline_roots = {prefix.rstrip("/") for prefix in PIPELINE_TREES}
-        if not changed_roots or not changed_roots <= pipeline_roots:
+        allowed_roots = pipeline_roots | {"templates"}
+        if not changed_roots or not changed_roots <= allowed_roots:
             return None
         # A pipeline root may be added/deleted, but whenever it exists it must still
         # be a tree. A tree-to-blob replacement named `data` is not `data/**`.
@@ -1094,7 +1210,14 @@ class ProofFreshness:
             for entry in (parent_entries.get(root), current_entries.get(root)):
                 if entry is not None and entry[0] != "tree":
                     return None
-        return [f"{root}/__bulk_pipeline_tree__" for root in sorted(changed_roots)]
+        if "templates" in changed_roots and not self._template_stamp_only_change(
+            parent_entries.get("templates"), current_entries.get("templates")
+        ):
+            return None
+        return [
+            f"{root}/__bulk_pipeline_tree__"
+            for root in sorted(changed_roots & pipeline_roots)
+        ]
 
     def files_of(self, sha: str) -> tuple[list[str], bool]:
         """``(files, truncated)`` for one main commit. Cached for the whole sweep."""
@@ -1495,6 +1618,73 @@ def in_flight_pr_proofs(repo: str, token: str) -> int | None:
             return None
         total += count
     return total
+
+
+def refresh_lease_reservation_count(
+    repo: str,
+    token: str,
+    lease: "RefreshLease",
+    pulls: list[dict[str, Any]],
+) -> int:
+    """Unindexed controller workload represented only by the durable lease.
+
+    The global Actions census already counts an owner's current ``ci.yml`` run as
+    soon as GitHub registers it.  Counting the same workload again as a durable
+    reservation underfills the eight-proof pool for the entire 30-90 minute run:
+    seven real proofs plus one double-counted owner looked full in production.
+
+    Keep the reservation only across the actual update-branch -> Actions indexing
+    gap.  An unreadable or malformed run lookup is conservatively unindexed.  Once
+    an exact-current-head CI run is visible, its queued/in-progress state is already
+    in :func:`in_flight_pr_proofs`; a completed run consumes no hosted capacity and
+    the ordinary owner reconciliation releases the lease later in this sweep.
+    """
+    if lease.owner_number is None:
+        return 0
+    owner = next(
+        (pull for pull in pulls if str(pull.get("number")) == str(lease.owner_number)),
+        None,
+    )
+    current_head = str((((owner or {}).get("head") or {}).get("sha")) or "").lower()
+    generation_head = str(lease.generation_head_sha or "").lower()
+    if (
+        len(current_head) != 40
+        or len(generation_head) != 40
+        or current_head == generation_head
+    ):
+        return 1
+
+    query = urllib.parse.urlencode(
+        {
+            "event": "pull_request",
+            "head_sha": current_head,
+            "per_page": "1",
+        }
+    )
+    try:
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/actions/workflows/ci.yml/runs?{query}",
+            token,
+        )
+    except Exception:
+        return 1
+    runs = (payload or {}).get("workflow_runs") if isinstance(payload, dict) else None
+    count = (payload or {}).get("total_count") if isinstance(payload, dict) else None
+    if (
+        status >= 400
+        or not isinstance(count, int)
+        or isinstance(count, bool)
+        or count < 0
+        or not isinstance(runs, list)
+    ):
+        return 1
+    if count == 0 or not runs:
+        return 1
+    observed = runs[0] if isinstance(runs[0], dict) else {}
+    observed_head = str(observed.get("head_sha") or "").lower()
+    observed_event = str(observed.get("event") or "")
+    return 0 if observed_head == current_head and observed_event == "pull_request" else 1
 
 
 def serialized_refresh_authority(
@@ -2316,12 +2506,13 @@ def pull_cap_for_budget(
 class SweepBudget:
     """How much API budget this sweep may spend, asked repeatedly as it spends it.
 
-    One object per sweep. Four questions, four answers:
+    One object per sweep. Five bounded decisions:
 
       `preflight()`   — may this sweep start at all?
       `pull_cap`      — how wide may this live-quota sweep be?
       `may_continue()`— may it evaluate another pull request?
       `take_refresh()`— may it spend an `update-branch` (a write AND a CI run)?
+      `refund_refresh()`— did an affirmative no-op return that CI capacity?
 
     Every method fails OPEN on an unreadable budget, for the reason in
     `core_rate_limit`. None of them can ever authorise a merge that the check
@@ -2337,6 +2528,7 @@ class SweepBudget:
         reserve: int = RATE_LIMIT_RESERVE,
         recheck_every: int = BUDGET_RECHECK_EVERY,
         max_refreshes: int = MAX_REFRESHES_PER_SWEEP,
+        max_refresh_attempts: int = MAX_REFRESHES_PER_SWEEP,
     ) -> None:
         self.token = token
         self.floor = floor
@@ -2344,7 +2536,9 @@ class SweepBudget:
         self.reserve = reserve
         self.recheck_every = max(1, recheck_every)
         self.max_refreshes = max_refreshes
+        self.max_refresh_attempts = max_refresh_attempts
         self.refreshes_used = 0
+        self.refresh_attempts_used = 0
         self.refresh_context = ""
         self.refresh_lease: RefreshLease | None = None
         self.requires_refresh_lease = False
@@ -2412,14 +2606,19 @@ class SweepBudget:
         return True, ""
 
     def take_refresh(self, pull: dict[str, Any] | None = None) -> bool:
-        """Consume one `update-branch` slot. False when this sweep has spent them.
+        """Reserve one workload slot and one bounded `update-branch` attempt.
 
-        Consumed on the ATTEMPT, not on success. The slot bounds API calls as well
-        as triggered CI runs, and a refused attempt still spent a call; a sweep that
-        could retry indefinitely on 422s would bound neither. At saturation, the
-        durable lease must be affirmed before the attempt is consumed or sent.
+        The workload slot is refundable when GitHub affirmatively proves that the
+        write created no CI run (for example, a real merge conflict). The separate
+        attempt counter is never refunded, so a sweep still cannot hammer an
+        arbitrary number of conflicting heads. At saturation, the durable lease must
+        be affirmed before either counter is consumed or a write is sent.
         """
-        if not self.refresh_authorized or self.refreshes_used >= self.max_refreshes:
+        if (
+            not self.refresh_authorized
+            or self.refreshes_used >= self.max_refreshes
+            or self.refresh_attempts_used >= self.max_refresh_attempts
+        ):
             return False
         if self.requires_refresh_lease:
             if pull is None or self.refresh_lease is None:
@@ -2427,7 +2626,13 @@ class SweepBudget:
             if not self.refresh_lease.claim(pull):
                 return False
         self.refreshes_used += 1
+        self.refresh_attempts_used += 1
         return True
+
+    def refund_refresh(self) -> None:
+        """Return workload capacity after a definitive no-op; keep attempt charged."""
+        if self.refreshes_used > 0:
+            self.refreshes_used -= 1
 
 
 def sweep_order(
@@ -3849,7 +4054,15 @@ def attempt_update_branch(
                 "before update-branch; no write attempted.",
             )
             return "lease-lost"
-    return update_branch(repo, live, token)
+    result = update_branch(repo, live, token)
+    if result in {"declined", "already-merged", "already-closed"}:
+        # These are affirmative no-workload outcomes: GitHub either proved a real
+        # content conflict or the pull request had already settled. The API attempt
+        # remains charged by `refresh_attempts_used`, but keeping the scarce CI slot
+        # charged would let the same conflicting PR starve every valid stale head
+        # behind it on every sweep (observed live with #5333 at 7/8 active proofs).
+        budget.refund_refresh()
+    return result
 
 
 def refresh_deferred(
@@ -3867,8 +4080,13 @@ def refresh_deferred(
         "merge-on-green",
         f"PR #{number}: {why}, but this sweep has "
         + (
-            f"{budget.refreshes_used}/{budget.max_refreshes} effective "
-            "`update-branch` attempt(s) in use"
+            (
+                f"spent {budget.refresh_attempts_used}/"
+                f"{budget.max_refresh_attempts} bounded `update-branch` attempt(s)"
+                if budget.refresh_attempts_used >= budget.max_refresh_attempts
+                else f"{budget.refreshes_used}/{budget.max_refreshes} effective "
+                "CI workload slot(s) in use"
+            )
             if budget is not None
             else f"spent its {MAX_REFRESHES_PER_SWEEP} `update-branch` slots"
         )
@@ -5000,12 +5218,15 @@ def main() -> int:
         active_pr_proofs = None
         refresh_load_detail = f"census failed ({exc}); new refreshes paused"
     budget.refresh_lease = refresh_lease
-    # A durable owner closes the update-branch -> Actions indexing gap.  Count it
-    # conservatively in addition to GitHub's run index; once the run is indexed this
-    # may underfill by one slot, but can never oversubscribe the shared workload.
+    # A durable owner closes the update-branch -> Actions indexing gap. Count only
+    # the unindexed gap as an extra reservation: once an exact-current-head ci.yml
+    # run is visible, GitHub's active-run census already includes that workload.
+    reservation_count = refresh_lease_reservation_count(
+        repo, read_token, refresh_lease, pulls
+    )
     effective_active_proofs = (
         active_pr_proofs
-        + (1 if refresh_lease.owner_number is not None else 0)
+        + reservation_count
         if active_pr_proofs is not None
         else None
     )
@@ -5020,7 +5241,7 @@ def main() -> int:
         budget.requires_refresh_lease = True
         refresh_load_detail = (
             f"{active_pr_proofs} indexed pull-request ci run(s) plus "
-            f"{1 if refresh_lease.owner_number is not None else 0} durable "
+            f"{reservation_count} unindexed durable "
             f"reservation(s), global cap "
             f"{MAX_IN_FLIGHT_PR_PROOFS}; one durable high-load refresh lane "
             + (
@@ -5036,9 +5257,9 @@ def main() -> int:
         budget.max_refreshes = min(budget.max_refreshes, available_refreshes)
         refresh_load_detail = (
             f"{active_pr_proofs} indexed pull-request ci run(s) plus "
-            f"{1 if refresh_lease.owner_number is not None else 0} durable "
+            f"{reservation_count} unindexed durable "
             f"reservation(s), global cap "
-            f"{MAX_IN_FLIGHT_PR_PROOFS}, {budget.max_refreshes} refresh attempt(s) "
+            f"{MAX_IN_FLIGHT_PR_PROOFS}, {budget.max_refreshes} CI workload slot(s) "
             "available this sweep"
         )
     budget.refresh_context = refresh_load_detail
@@ -5331,7 +5552,9 @@ def main() -> int:
         + ", ".join(f"{count} {verdict}" for verdict, count in sorted(tally.items()))
         + f" ({freshness.commit_file_reads} main commit(s) classified, "
         + f"{budget.refreshes_used}/{budget.max_refreshes} effective refresh "
-        f"slot(s) used ({budget.refresh_context}), "
+        f"slot(s) used across {budget.refresh_attempts_used}/"
+        f"{budget.max_refresh_attempts} bounded update attempt(s) "
+        f"({budget.refresh_context}), "
         + f"~{budget.last_seen if budget.last_seen is not None else '?'} API requests left"
         + f"; {proof.describe()}; baseline: {baseline}"
         + f"; source-baseline: {source_baseline}; self-wake: {self_wake})",

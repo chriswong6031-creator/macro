@@ -36,6 +36,17 @@ WHAT IT CHECKS — every per-ticker parquet in data/stocks/ and data/baskets/ohl
                     name (its own bare-string price fetch ate reused/live tape — 125
                     names measured 2026-08). JSON + one ::notice; fuel for a registry
                     heal, never a store alarm.
+  ledger_identity   (2026-08-12) the same fires logged TWICE, once under each of a
+                    renamed company's two strings, in the append-only
+                    data/signal_archive/track_record.parquet. The classes above all look
+                    at STORES; this one follows the rename downstream, which is where the
+                    ECHO ack's blind spot was — acking the store silenced the alarm while
+                    128 EchoStar fires sat double-logged (SATS + ECHO, identical
+                    (date, type) key sets) double-weighting one company in every per-row
+                    statistic. `undeclared_candidates` (identical key sets, no ratified
+                    identity) is a ::warning; a `declared_duplicate` (a ratified rename
+                    whose superseded key still carries rows, awaiting the gated repair
+                    scripts/migrate_track_record_keys.py) is a ::notice.
   delisted_printing NOT in the registry, tip FRESH (<= stocks_stale_calendar_days),
                     but the string is absent from today's NASDAQ symbol directory:
                     rows keep flowing for a string with no current US listing — an
@@ -172,10 +183,53 @@ def _acks(cfg_quality: dict | None) -> tuple[dict[str, str], set[str]]:
     return reused, delisted
 
 
+def _ledger_identity_section(data_dir: Path, quality_raw: dict | None,
+                             ledger_path: Path | None = None) -> dict:
+    """What a ratified rename did DOWNSTREAM of the stores, in the append-only ledger.
+
+    THE GAP THIS CLOSES (2026-08-12): this audit owns the identity doctrine and the
+    operator-ratified acks, but it only ever looked at the per-ticker price STORES.
+    Acking ECHO silenced the store alarm; nothing asked what the SATS->ECHO rename had
+    already done to `data/signal_archive/track_record.parquet`, where 128 EchoStar fires
+    sat logged twice — once under each string — double-weighting one company in every
+    per-row statistic for six weeks before an unrelated investigation tripped over it.
+
+    Same disclosure discipline as the rest of this file (CSP-R1): findings, never a fail.
+    An absent ledger skips quietly (CI-lite / sparse checkouts); a corrupt one darkens
+    loudly rather than reading as "clean".
+    """
+    from engine import ledger_identity  # local: keeps this audit importable without engine
+
+    if ledger_path is None:
+        ledger_path = data_dir / "signal_archive" / "track_record.parquet"
+    sec: dict = {"ledger": str(ledger_path), "declared_duplicates": [],
+                 "undeclared_candidates": []}
+    migrations = ledger_identity.load_migrations(quality_raw)
+    sec["ticker_key_migrations"] = migrations
+    if not Path(ledger_path).exists():
+        sec["skipped"] = "ledger absent"
+        return sec
+    try:
+        # Key columns only — the geometry is the finding; the cell-by-cell losslessness
+        # receipt belongs to scripts/migrate_track_record_keys, not to a nightly audit.
+        df = pd.read_parquet(ledger_path, columns=list(ledger_identity.KEY_COLS))
+    except Exception as e:  # noqa: BLE001
+        sec["ledger_dark"] = True
+        log.warning("[reused_tickers] ledger unreadable (%s)", e)
+        print("::warning title=ledger identity::track_record.parquet unreadable — the "
+              "duplicate-identity detector is DARK this run", flush=True)
+        return sec
+    sec["ledger_rows"] = int(len(df))
+    sec["declared_duplicates"] = ledger_identity.find_declared_duplicates(df, migrations)
+    sec["undeclared_candidates"] = ledger_identity.find_undeclared_duplicates(df, migrations)
+    return sec
+
+
 def run(cfg: dict | None = None, now: datetime | None = None,
         out_dir: Path | None = None, data_dir: Path | None = None,
         directory: dict[str, str] | None = None,
-        quality_raw: dict | None = None) -> dict:
+        quality_raw: dict | None = None,
+        ledger_path: Path | None = None) -> dict:
     """Audit both per-ticker stores for reused/zombie ticker keys and persist
     data/quality/reused_tickers_audit.json. Never raises for a data issue.
 
@@ -297,7 +351,10 @@ def run(cfg: dict | None = None, now: datetime | None = None,
         universes.append(uni)
         per_store.append(rec)
 
+    ledger_sec = _ledger_identity_section(data_dir, quality_raw, ledger_path)
+
     doc = ac.write_audit("reused_tickers", "stocks", universes, cfg, asof=today, out_dir=out_dir)
+    doc["ledger_identity"] = ledger_sec
     doc["grace_days"] = grace_days
     doc["stale_calendar_days"] = stale_days
     doc["totals"] = totals
@@ -327,6 +384,23 @@ def run(cfg: dict | None = None, now: datetime | None = None,
               f"name(s) are the SAME live instrument as their store series ({shown}{tail}) — "
               "the registry's own bare-string price fetch ate reused/live tape; heal the "
               "registry, the stores are innocent", flush=True)
+    if ledger_sec.get("undeclared_candidates"):
+        groups = "; ".join("/".join(c["tickers"]) + f" ({c['n_keys']} keys)"
+                           for c in ledger_sec["undeclared_candidates"][:5])
+        print(f"::warning title=ledger identity::{len(ledger_sec['undeclared_candidates'])} "
+              f"ticker group(s) in track_record.parquet share an IDENTICAL (date, type) "
+              f"key set with no ratified identity linking them: {groups} — one company "
+              "logged under two strings double-weights it in every per-row statistic. "
+              "Resolve identity (NASDAQ directory + EDGAR CIK + OpenFIGI), then add the "
+              "row to config.yml quality.ticker_key_migrations.", flush=True)
+    if ledger_sec.get("declared_duplicates"):
+        pend = ", ".join(f"{d['superseded']}->{d['current']} ({d['superseded_rows']} rows)"
+                         for d in ledger_sec["declared_duplicates"])
+        print(f"::notice title=ledger identity::{len(ledger_sec['declared_duplicates'])} "
+              f"ratified rename(s) still carry rows under the superseded key: {pend} — the "
+              "ledger double-weights them until the gated repair runs "
+              "(python scripts/migrate_track_record_keys.py --apply). The ingest guard has "
+              "stopped the count from growing.", flush=True)
     out = Path(out_dir) if out_dir is not None else ac.quality_dir()
     out.mkdir(parents=True, exist_ok=True)
     (out / "reused_tickers_audit.json").write_text(json.dumps(doc, indent=1))
@@ -334,11 +408,17 @@ def run(cfg: dict | None = None, now: datetime | None = None,
           f"(unacked={len(unacked_zombies)}) rebirth={totals['rebirth']} "
           f"registry_mismatch={totals['registry_mismatch']} "
           f"delisted_printing={totals['delisted_printing']} "
-          f"(unacked={len(unacked_delisted)})"
+          f"(unacked={len(unacked_delisted)}) "
+          f"ledger_declared_dupes={len(ledger_sec.get('declared_duplicates', []))} "
+          f"ledger_undeclared={len(ledger_sec.get('undeclared_candidates', []))}"
           + (" registry_dark=True" if registry_dark else "")
-          + (" directory_dark=True" if directory_dark else ""))
+          + (" directory_dark=True" if directory_dark else "")
+          + (" ledger_dark=True" if ledger_sec.get("ledger_dark") else ""))
     doc["unacked_zombies"] = unacked_zombies
     doc["unacked_delisted_printing"] = unacked_delisted
+    doc["undeclared_ledger_identities"] = [
+        "/".join(c["tickers"]) for c in ledger_sec.get("undeclared_candidates", [])
+    ]
     (out / "reused_tickers_audit.json").write_text(json.dumps(doc, indent=1))
     return doc
 
@@ -346,14 +426,17 @@ def run(cfg: dict | None = None, now: datetime | None = None,
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--strict", action="store_true",
-                    help="exit 3 when any un-acked zombie or delisted_printing name exists")
+                    help="exit 3 when any un-acked zombie / delisted_printing name, or any "
+                         "undeclared ledger identity, exists")
     args = ap.parse_args(argv)
     try:
         doc = run()
     except Exception:  # noqa: BLE001 — crash is exit 2; data findings never raise
         log.exception("[reused_tickers] crashed")
         return 2
-    if args.strict and (doc.get("unacked_zombies") or doc.get("unacked_delisted_printing")):
+    if args.strict and (doc.get("unacked_zombies")
+                        or doc.get("unacked_delisted_printing")
+                        or doc.get("undeclared_ledger_identities")):
         return 3
     return 0
 
