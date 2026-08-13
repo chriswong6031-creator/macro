@@ -521,6 +521,22 @@ def test_alias_rows_are_built_dated_for_a_rename_and_open_otherwise() -> None:
     VendorAliasTable(rows)  # and the fixture table is unambiguous
 
 
+def test_every_rename_the_repo_records_is_modelled_by_the_builder() -> None:
+    """The next rename must not be able to land silently.
+
+    ``breadth.ticker_fixups`` and ``quality.ticker_key_migrations`` are one-line,
+    TIMELESS maps.  Adding a pair to either without adding a dated event here would
+    leave the alias table answering the OLD pairing forever — the exact shape of the
+    seven-month MMC loss, one layer up.  Today both maps are fully modelled.
+    """
+    fixups, migrations = BUILD.load_config_maps()
+    assert fixups, "breadth.ticker_fixups vanished — the seed this builder reads is gone"
+    assert migrations, "quality.ticker_key_migrations vanished"
+    assert BUILD.unmodelled_renames(fixups, migrations) == []
+    # And the detector has teeth: an unmodelled pair is REPORTED, not swallowed.
+    assert BUILD.unmodelled_renames({"OLDX": "NEWX"}, {}) != []
+
+
 def test_an_unresolved_name_mints_nothing() -> None:
     """A venue this repo cannot evidence produces a REPORT line, never a guessed id."""
     resolutions = [

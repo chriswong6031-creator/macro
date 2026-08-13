@@ -256,6 +256,32 @@ UNDATED_RENAMES: tuple[tuple[str, str, str], ...] = (
 
 
 # ── Small helpers ─────────────────────────────────────────────────────────────
+def unmodelled_renames(fixups: dict[str, str], migrations: dict[str, str]) -> list[str]:
+    """Rename pairs the repo's own maps carry that this builder does not model.
+
+    The failure mode this closes is the one the whole task exists to end: a rename gets
+    added to ``breadth.ticker_fixups`` or ``quality.ticker_key_migrations`` — both
+    TIMELESS, both one line — and the time-scoped table silently keeps answering with
+    the old pairing, because nothing asks it to notice.  A loud line beats a silent gap;
+    the reader still has to supply the DATE and the evidence by hand, which is the
+    curation step (``detectors propose, curation ratifies``) and not something a seed
+    loader may guess.
+    """
+    modelled = {frozenset((e.old, e.new)) for e in RENAME_EVENTS}
+    modelled |= {frozenset((old, new)) for old, new, _ in UNDATED_RENAMES}
+    missing: list[str] = []
+    for label, mapping in (("breadth.ticker_fixups", fixups),
+                           ("quality.ticker_key_migrations", migrations)):
+        for left, right in mapping.items():
+            if frozenset((left, right)) not in modelled:
+                missing.append(
+                    f"{label} carries {left}->{right}, which scripts/build_security_master.py "
+                    "does not model — add a RenameEvent (with its date and evidence) or an "
+                    "UNDATED_RENAMES row, or the alias table answers the old pairing forever"
+                )
+    return missing
+
+
 def _sha256(path: Path) -> str | None:
     """sha256 of a file, or None when it is absent (a missing seed is REPORTED)."""
     if not path.exists():
@@ -823,6 +849,8 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
     master_path = out_dir / MASTER_NAME
     aliases_path = out_dir / ALIASES_NAME
 
+    seed_notes = unmodelled_renames(fixups, migrations)
+
     master_rows, ids, notes = mint_master_rows(
         resolutions, _read_existing(master_path, MASTER_COLUMNS, MASTER_DTYPES), now
     )
@@ -874,7 +902,7 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
         "undated_renames": [
             {"old": old, "new": new, "evidence": why} for old, new, why in UNDATED_RENAMES
         ],
-        "notes": notes,
+        "notes": seed_notes + notes,
         "authority": "display_only — DOS-1.1 materializes the spine; nothing reads it as authority yet",
     }
 

@@ -1,6 +1,6 @@
 {
   "authority": "display_only \u2014 DOS-1.1 materializes the spine; nothing reads it as authority yet",
-  "code_version": "af8517a74dcfd0eaba71f1886f1f9483e661f57e",
+  "code_version": "188b0ac77d9fd90865cc6a64988959d75d0c2ed2",
   "coverage": {
     "resolved": 703,
     "total": 711,
@@ -20,7 +20,7 @@
     "reference.security_master",
     "reference.vendor_aliases"
   ],
-  "generated_at": "2026-08-13T12:20:24",
+  "generated_at": "2026-08-13T12:28:39",
   "inputs": {
     "config.yml": "555903374acfff83f2fdca970a260faba13cd17819931f84023bf6ece494de18",
     "config/delisted_symbols.yml": "d5e656970865d77f6681afe281a86a7aa57098481e4e62a0b5b94e3a0d5cd894",
