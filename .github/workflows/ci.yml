@@ -3424,6 +3424,13 @@ on:
       - "data/china_prophet_rank/**"
       # prophet-us-context-and-grades (PROPHET US §W7)
       - "tests/test_us_prophet_grades.py"
+      # Eval OS T2 — the plan-ledger benchmark sidecar rides the same job/step.
+      # The producer engine/prophet_plan_grades.py rides engine/**; the sidecar and the
+      # forward ledger it grades are listed because the suite READS the committed stores
+      # (every closed plan accounted for, no row mixing a basis), so a nightly append or
+      # a hand edit to either file must be able to start this workflow.
+      - "tests/test_prophet_plan_grades.py"
+      - "data/prophet/**"
       - "tests/test_us_context_vector.py"
       - "tests/test_us_context_vector_payload_containment.py"
       - "tests/test_prophet_miss_audit.py"

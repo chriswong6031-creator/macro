@@ -11604,6 +11604,69 @@ artifacts:
       Row fields: schema, id, asset, direction, signal_date, close_date, outcome
       (T1_HIT|T2_HIT|INVALIDATED|EXPIRED|CLOSED_EARLY), stock_result_pct,
       option_result_pct, days_held, plan_adherence, asof.
+      NO BENCHMARK LEG BY DESIGN: stock_result_pct is a RAW return and this file is an
+      IMMUTABLE forward record, so the benchmark-relative grades live BESIDE it in
+      prophet-plan-grades (joined by id), never as new fields on existing rows.
+
+  # --- prophet-plan-grades: benchmark-relative SIDECAR for the plan ledger (Eval OS T2) ---
+  prophet-plan-grades:
+    path: data/prophet/plan_grades.jsonl
+    format: jsonl
+    producer: engine/prophet_plan_grades.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 9999
+    schema: prophet.plan_grades/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Benchmark-relative grades for prophet-ledger, joined by `id`, one row per
+      (id, horizon) across 1/3/5/10/20 forward SESSIONS plus the plan's own realised
+      window. Closes the single defect research/MASTERMIND_PROPHET_EVAL_SPEC.md §7 named:
+      every number the plan surface published was a RAW return, on the one Prophet
+      surface carrying the public performance narrative, while the BOARD grader
+      (scripts/grade_us_board.py) had always graded against SPY and the sector ETF.
+      SIDECAR, NOT A COLUMN: the ledger is an immutable forward record — the whole
+      evidentiary value of a prediction ledger is that nobody went back and edited it —
+      so this follows the qledger claims.jsonl/grades.jsonl split rather than rewriting
+      an append-only, git-tracked store.
+      DIRECTION-SIGNED AT WRITE TIME: excess_vs_bench_pct / excess_vs_sector_pct and the
+      excursion columns are multiplied by the plan's own direction, so a BEAR plan whose
+      name falls while SPY rises reads POSITIVE and the column pools across directions.
+      engine/qledger.py stores an UNSIGNED excess and that is exactly the defect
+      engine/qledger_validity.py had to declare (V1 SIGNED_EXCESS_POOLED_ACROSS_DIRECTIONS,
+      measured t=-17.9 on a meaningless pooled drift). The raw legs (name/bench/sector)
+      stay unsigned so the tape is always reconstructible.
+      ONE PRICE BASIS OR NO ROW: every leg resolves through engine.price_ladder.resolve_close
+      with allow_unadjusted=False and min_last set to the plan's close_date, extended by
+      engine.grading.resolve_series for dead-name terminals. A name with no ADJUSTED series
+      is REFUSED — one row, all metrics null, refusal_reason set, price_basis null — never
+      priced off the raw breadth cache and differenced against an adjusted SPY. price_source
+      and price_basis are stamped on every row so an audit reads the basis off the row.
+      A null price_basis means REFUSED; it is never a zero.
+      REFUSALS ARE NAMED, NOT DROPPED: an unpriceable plan still produces a row and a bare
+      ::warning annotation lists it, because a missing row and a plan that never existed
+      are indistinguishable — that is how survivorship enters a record.
+      EXCURSIONS ARE CLOSE-ONLY and every such column carries `close` in its NAME
+      (mfe_close_pct, mae_close_pct, and their _excess_vs_bench_ siblings); they UNDER-state
+      true intraday MFE/MAE and mae_close_pct is NOT a drawdown figure.
+      NIGHTLY IS THE SOLE ADVANCER: ledger_lane.nightly_advance_enabled() is the FIRST
+      statement of append_plan_grades, so ledger law G0.2 holds a rung tighter here than on
+      the ledger itself; scripts/prophet_live_evaluator.py (80+ runs a session) writes
+      nothing here, as it writes nothing under data/ at all.
+      IDEMPOTENT, WITH ONE EXCEPTION: a (id, horizon) carrying a PRICED grade is FROZEN
+      forever. A REFUSAL row may be upgraded to a priced row when the adjusted store later
+      gains the name — a refusal is a statement about our data, not a graded claim.
+      ZERO AUTHORITY: nothing here confers rank, size, gate or plan rights. At 15 priced
+      plans / 14 episodes it is far below the 50-episode reporting floor
+      (MASTERMIND_EVALUATION_STANDARDS.md §4.7) and reports accrual status only.
 
   # --- us-context-vector: full-universe PIT context store (roadmap §2 keystone) ---
   us-context-vector:

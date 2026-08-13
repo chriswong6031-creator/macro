@@ -6194,8 +6194,16 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      # test_prophet_plan_grades.py rides THIS step rather than a new one (Eval OS T2).
+      # run_ci_pack.py abandons a job's remaining steps on the first non-zero exit, so a
+      # NEW step would either sit last (dark behind 5 earlier steps) or sit early and mask
+      # its 4 siblings. Folding it into the FIRST pytest step adds no masking order at all:
+      # this step already had to pass for any sibling to run, and the suite it joins
+      # (test_us_prophet_grades.py) is the sister forward-grading sidecar — same stores,
+      # same nightly gate, same excess-vs-SPY ruler. The two halves of "does a Prophet
+      # forward grade get written, and is it signed and single-basis" belong under one eye.
       - name: US context vector + full-population grades + miss-audit scorecards
-        run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py tests/test_heal_candidates_archetype.py -q
+        run: python -m pytest tests/test_us_prophet_grades.py tests/test_prophet_plan_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py tests/test_heal_candidates_archetype.py -q
       - name: US entry-status full-population remeasurement
         run: python -m pytest tests/test_us_entry_status_remeasure.py -q
       # The candidate-pool lanes ride this job because they ride this STORE: the nine

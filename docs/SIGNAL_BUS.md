@@ -63,7 +63,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-v2d | 4 |
 | metabolism-phase0 | 2 |
 | mlc | 1 |
-| momoedge | 10 |
+| momoedge | 11 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
 | neural-web | 64 |
@@ -117,13 +117,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 374 |
 | infrastructure | 162 |
 | scored | 5 |
-| shadow | 101 |
+| shadow | 102 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 602 |
+| git | 603 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 18 |
@@ -748,6 +748,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | us-prophet-grades | `data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet` | parquet | daily-engine | shadow | 2 | 0 |
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
 | prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| prophet-plan-grades | `data/prophet/plan_grades.jsonl` | jsonl | daily-engine | shadow | 0 | 0 |
 
 ### narrative-ignition
 

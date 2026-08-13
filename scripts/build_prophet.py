@@ -1999,6 +1999,24 @@ def main() -> None:
     # clocks; let the build fail so the guarded checkpoint withholds the whole delta.
     advance_ledger(actionable_plans, asof)
 
+    # ── 3b-ii. Benchmark-relative SIDECAR for the rows just closed ──────────────
+    # data/prophet/plan_grades.jsonl, joined to the ledger by `id`.  The ledger is an
+    # IMMUTABLE forward record, so the benchmark legs it never carried arrive BESIDE it
+    # (the qledger claims/grades split), never as new fields on old rows.  Runs here so
+    # tonight's closes are graded by the same call that closed them, and it is gated on
+    # the nightly lane inside append_plan_grades — an intraday lane writes nothing.
+    # Additive and non-fatal by construction: a benchmark sidecar must never be able to
+    # withhold the plan delta the checkpoint publishes.
+    # LEDGER_DIR is handed in OUTRIGHT, the same fail-CLOSED form the legacy-shadow
+    # store uses below: conftest arms COLLECT_LANE=nightly for every test, so a writer
+    # resolving its own data dir would write the REAL store from any bp.main() harness.
+    from engine import prophet_plan_grades  # noqa: PLC0415
+    prophet_plan_grades.advance_plan_grades(
+        root=_REPO,
+        ledger_path=LEDGER_PATH,
+        sidecar_path=LEDGER_DIR / "plan_grades.jsonl",
+    )
+
     # ── 3c. Forward-ledger quarantine (derived, then disclosed) ──────────────────
     # Runs AFTER advance_ledger so tonight's closes are judged by the same rule as
     # every earlier row, and the file the surfaces read is never a run behind.
