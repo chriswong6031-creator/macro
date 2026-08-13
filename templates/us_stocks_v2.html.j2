@@ -107,7 +107,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Buy Board 2.0 — shadow preview (dual-gated)</title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||'';if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||'';if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -117,7 +117,7 @@
   h1 { font-size:22px; margin:0 0 2px; }
   .lead-p { color:var(--muted); font-size:13px; margin:0 0 12px; max-width:900px; }
   .shadow-tag { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.04em;
-    color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));
+    color:var(--ink-warn, var(--warn)); border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));
     background:color-mix(in srgb,var(--warn) 12%,transparent); padding:2px 8px; border-radius:7px; margin-left:8px; }
   /* stat strip */
   .strip { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 14px; }
@@ -129,7 +129,7 @@
   .sec .cnt { color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums; }
   .sub { color:var(--muted); font-size:12.5px; margin:0 0 8px; max-width:840px; }
   .conc { font-size:12px; color:var(--muted); padding:6px 12px; border:1px dashed var(--line); border-radius:9px; margin:0 0 10px; display:inline-block; }
-  .conc.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 45%,var(--line)); border-style:solid; }
+  .conc.warn { color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 45%,var(--line)); border-style:solid; }
   /* grid + cards */
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; margin:4px 0 6px; }
   .v2-card { display:flex; flex-direction:column; gap:7px; min-width:0; overflow:hidden; position:relative;
@@ -147,10 +147,10 @@
   .glyph { font-size:11px; font-weight:800; padding:2px 7px; border-radius:6px; border:1px solid var(--line);
     font-variant-numeric:tabular-nums; }
   .glyph.edge { min-width:22px; text-align:center; }
-  .glyph.tone-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); background:color-mix(in srgb,var(--up) 10%,transparent); }
-  .glyph.tone-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); background:color-mix(in srgb,var(--down) 10%,transparent); }
+  .glyph.tone-pos { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); background:color-mix(in srgb,var(--up) 10%,transparent); }
+  .glyph.tone-neg { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); background:color-mix(in srgb,var(--down) 10%,transparent); }
   .glyph.tone-neutral { color:var(--muted); }
-  .glyph.tone-warm { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); background:color-mix(in srgb,var(--warn) 10%,transparent); }
+  .glyph.tone-warm { color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); background:color-mix(in srgb,var(--warn) 10%,transparent); }
   .glyph.prov { color:var(--muted); font-weight:600; border-style:dashed; }
   .v2-name { font-size:12.5px; color:var(--text); }
   .v2-sec { color:var(--muted); }
@@ -161,12 +161,12 @@
   .lead-txt { font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
   .v2-chips { display:flex; flex-wrap:wrap; gap:5px; }
   .chip { font-size:11px; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
-  .chip.tone-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,var(--line)); }
-  .chip.tone-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
-  .chip.tone-warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
-  .chip.tone-warm { color:var(--warn); }
+  .chip.tone-pos { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 35%,var(--line)); }
+  .chip.tone-neg { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
+  .chip.tone-warn { color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .chip.tone-warm { color:var(--ink-warn, var(--warn)); }
   .v2-foot { display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .fp.ok { color:var(--up); }
+  .fp.ok { color:var(--ink-up, var(--up)); }
   .empty { color:var(--muted); font-size:13px; padding:14px; border:1px dashed var(--line); border-radius:10px; }
   .pass { font-size:11.5px; color:var(--muted); margin:6px 0 0; }
   .foot { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; }
@@ -179,7 +179,7 @@
     border-radius:9px; display:inline-block; }
   .rx-banner b { color:var(--text); font-variant-numeric:tabular-nums; }
   .rx-thesis-banner { border-color:color-mix(in srgb,var(--warn) 50%,var(--line));
-    color:var(--warn); display:block; margin-top:4px; }
+    color:var(--ink-warn, var(--warn)); display:block; margin-top:4px; }
   .rx-caveat { display:inline-block; font-size:10px; cursor:help; margin-left:6px;
     color:var(--muted); border:1px solid var(--line); border-radius:50%;
     width:15px; height:15px; text-align:center; line-height:13px; vertical-align:middle; }

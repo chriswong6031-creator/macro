@@ -51,16 +51,16 @@
   table.sb-tbl th.l,table.sb-tbl td.l{text-align:left}
   table.sb-tbl tr.row-random{background:color-mix(in srgb,var(--muted) 7%,transparent);border-top:2px solid var(--line)}
   table.sb-tbl tr.row-random td{color:var(--muted);font-style:italic}
-  table.sb-tbl tr.row-inverse td.name-cell{color:var(--warn)}
-  .pos{color:var(--up)} .neg{color:var(--down)} .neu{color:var(--muted)}
+  table.sb-tbl tr.row-inverse td.name-cell{color:var(--ink-warn, var(--warn))}
+  .pos{color:var(--ink-up, var(--up))} .neg{color:var(--ink-down, var(--down))} .neu{color:var(--muted)}
   .family-badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;
     border:1px solid var(--line);color:var(--muted);margin-right:4px}
   .badge-accruing{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
-    color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+    color:var(--ink-warn, var(--warn));background:color-mix(in srgb,var(--warn) 10%,transparent)}
   .badge-active{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--up) 50%,var(--line));
-    color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)}
+    color:var(--ink-up, var(--up));background:color-mix(in srgb,var(--up) 10%,transparent)}
   .badge-awaiting{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--muted) 50%,var(--line));
     color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent)}
@@ -137,10 +137,10 @@
   .lane-title{font-size:14.5px;font-weight:750}
   .lane-warn{font-size:11.5px;padding:3px 9px;border-radius:7px;font-weight:700;
     background:color-mix(in srgb,var(--down) 14%,transparent);
-    border:1px solid color-mix(in srgb,var(--down) 40%,var(--line));color:var(--down)}
+    border:1px solid color-mix(in srgb,var(--down) 40%,var(--line));color:var(--ink-down, var(--down))}
   .lane-info{font-size:11.5px;padding:3px 9px;border-radius:7px;font-weight:700;
     background:color-mix(in srgb,var(--info,#4c8bf5) 14%,transparent);
-    border:1px solid color-mix(in srgb,var(--info,#4c8bf5) 40%,var(--line));color:var(--info,#4c8bf5)}
+    border:1px solid color-mix(in srgb,var(--info,#4c8bf5) 40%,var(--line));color:var(--ink-info, var(--info,#4c8bf5))}
 
   /* ── all-books chip selector ── */
   .book-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
@@ -152,7 +152,7 @@
   /* ── beta tab ── */
   .beta-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--info,#4c8bf5) 60%,var(--line));
-    color:var(--info,#4c8bf5);background:color-mix(in srgb,var(--info,#4c8bf5) 10%,transparent);
+    color:var(--ink-info, var(--info,#4c8bf5));background:color-mix(in srgb,var(--info,#4c8bf5) 10%,transparent);
     vertical-align:middle;margin-left:6px}
   .beta-hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0 0 6px}
   .beta-title{font-size:18px;font-weight:800;letter-spacing:-.01em}
@@ -179,7 +179,7 @@
   .acct-sub{font-size:13px;color:var(--muted);max-width:72ch;margin:0 0 8px}
   .acct-clock{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px;
     border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
-    color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+    color:var(--ink-warn, var(--warn));background:color-mix(in srgb,var(--warn) 10%,transparent)}
   .acct-card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;
     background:var(--panel);margin:0 0 16px;position:relative;overflow:hidden}
   .acct-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
@@ -234,7 +234,7 @@
   <!-- ── Page header ── -->
   <div class="pl-hd">
     <p class="pl-eyebrow">{{ t('Pick Lab · Display-only · ACCRUING', 'Pick Lab · 仅展示 · 累积中') }}</p>
-    <h1 class="pl-title">🧪 {{ t('Candidate Pick Engines', '候选选股引擎') }}</h1>
+    <h1 class="pl-title">{{ t('Candidate Pick Engines', '候选选股引擎') }}</h1>
     <p class="pl-sub">{{ t('23 shadow books running on forward ledgers — measured against a random-control yardstick before any book earns operator attention. All data is display-only; nothing here drives live selection or gating.', '23个影子书在前向账本上运行 — 在任何书获得操作员关注之前，均与随机控制基准对比衡量。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。') }}</p>
     {% if as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ as_of }} · {{ t('Built', '生成时间') }} {{ built }}</p>{% endif %}
     {% if not empty and regime %}
@@ -587,7 +587,7 @@
           {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
           {% if p.why %}
           <div class="pick-why">
-            {% for chip in p.why %}<span class="why-chip" style="color:var(--down)">{{ chip }}</span>{% endfor %}
+            {% for chip in p.why %}<span class="why-chip" style="color:var(--ink-down, var(--down))">{{ chip }}</span>{% endfor %}
           </div>
           {% endif %}
         </div>

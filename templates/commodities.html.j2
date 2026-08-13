@@ -25,7 +25,7 @@
 /* ── base vars — dark-default ──────────────────────────────── */
 :root {
   --bg:#0a0e16; --panel:#111826; --panel2:#0e1420; --line:#1d2740; --line2:#27324e;
-  --tx:#e3e9f2; --mut:#8a97ac; --faint:#5b6b83;
+  --tx:#e3e9f2; --mut:#8a97ac; --faint:#828b9c;
   --up:#37d07f; --dn:#ff6a6a; --amb:#f2b24d; --gold:#d6ab5c; --blue:#5d8bff; --pur:#9b8cff;
   --ink:#e3e9f2;
   --font-ui: Inter, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -37,8 +37,14 @@
 /* light-theme overrides */
 [data-theme='light']:root, [data-theme='light'] {
   --bg:#f7f8fa; --panel:#ffffff; --panel2:#f0f2f5; --line:#e1e7ef; --line2:#c8d0dc;
-  --tx:#1a2133; --mut:#5c6b80; --faint:#8b96a8;
-  --up:#1a7f43; --dn:#c0392b; --amb:#9a6800; --gold:#a07820; --blue:#285fff; --pur:#6c5ce7;
+  --tx:#1a2133; --mut:#5c6b80; --faint:#5f6a7a;
+  /* Text-grade light values. Measured on #ffffff / #f7f8fa / #eef1f6 / #e8ebf1
+     (theme.js's soft-contrast recipe outcascades this block's --bg, so the
+     deepest canvas is #e8ebf1, not the #f7f8fa declared above — the shipped
+     values were calibrated against white alone and landed 4.04–4.23:1 there).
+     --pur retired: violet is lock-only (design system §5) and must never carry
+     data — the allocation facet takes the aurora cyan instead. */
+  --up:#177a3f; --dn:#c0392b; --amb:#8a5c00; --gold:#7d5f14; --blue:#1c4fe0; --pur:#0b6a92;
   --ink:#1a2133;
   --glass-bg: rgba(255,255,255,.75);
   --glass-border: rgba(0,0,0,.10);
@@ -53,13 +59,13 @@ body {
   font: 14px/1.45 var(--font-ui);
   -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums;
 }
-a { color: var(--blue); text-decoration: none; }
+a { color: var(--ink-link, var(--blue)); text-decoration: none; }
 .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; position: relative; z-index: 1; }
 /* ── typography helpers ─── */
 .kick { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
         color: var(--faint); margin: 0 0 10px; }
-.mut { color: var(--mut); } .faint { color: var(--faint); } .up { color: var(--up); }
-.dn { color: var(--dn); } .amb { color: var(--amb); } .gold { color: var(--gold); }
+.mut { color: var(--mut); } .faint { color: var(--faint); } .up { color: var(--ink-up, var(--up)); }
+.dn { color: var(--ink-down, var(--dn)); } .amb { color: var(--ink-warn, var(--amb)); } .gold { color: var(--gold); }
 
 /* ── AURORA (ambient breathing layer) ───────────────────────── */
 body.page-commod .aurora {
@@ -148,17 +154,26 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 
 /* ── HERO ─── */
 .hero { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; margin-bottom: 14px; }
+/* min-width:0 is the load-bearing half. A grid item's default min-width is AUTO —
+   its own min-content — so collapsing to one column at 780px did not stop the hero
+   panel from holding a 411px floor against a 390px viewport and scrolling the page
+   sideways (§15: the page never scrolls horizontally, any viewport, ever). */
+.hero > * { min-width: 0; }
 @media(max-width:780px){ .hero { grid-template-columns: 1fr; } }
 
 /* Big stance word — the anchor */
 .big-stance {
+/* 390w is the design floor (§15). At 36px the stance headline set the hero's
+   minimum width and the page scrolled sideways, amputating the sentence
+   mid-word — a reader's first impression cut in half by the screen edge. */
+@media(max-width:430px){.big-stance{font-size:28px;line-height:1.05;overflow-wrap:break-word}}
   font-size: 50px; font-weight: 800; letter-spacing: -.025em;
   line-height: .95; margin: 4px 0 10px;
 }
-.big-stance.t-watch    { color: var(--amb); text-shadow: 0 0 36px rgba(242,178,77,.35); }
-.big-stance.t-protect  { color: var(--dn);  text-shadow: 0 0 36px rgba(255,106,106,.35); }
-.big-stance.t-getready { color: var(--up);  text-shadow: 0 0 36px rgba(55,208,127,.35); }
-.big-stance.t-act      { color: var(--up);  text-shadow: 0 0 36px rgba(55,208,127,.35); }
+.big-stance.t-watch    { color: var(--ink-warn, var(--amb)); text-shadow: 0 0 36px rgba(242,178,77,.35); }
+.big-stance.t-protect  { color: var(--ink-down, var(--dn));  text-shadow: 0 0 36px rgba(255,106,106,.35); }
+.big-stance.t-getready { color: var(--ink-up, var(--up));  text-shadow: 0 0 36px rgba(55,208,127,.35); }
+.big-stance.t-act      { color: var(--ink-up, var(--up));  text-shadow: 0 0 36px rgba(55,208,127,.35); }
 .big-stance.t-standaside { color: var(--mut); text-shadow: none; }
 @media(max-width:560px){ .big-stance { font-size: 36px; } }
 
@@ -167,7 +182,7 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
   display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
   font-size: 12px; color: var(--faint); border: 1px solid var(--line2);
   border-radius: 20px; padding: 4px 11px;
-}
+ flex-wrap:wrap; max-width:100%; }
 
 /* Quadrant tooltip text injected via data-tip-en/zh — plain words per quadrant */
 
@@ -207,8 +222,8 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .live-tile .lt-chg { font-size: 12px; font-weight: 650; margin-top: 1px; }
-.live-tile .lt-chg.up  { color: var(--up); }
-.live-tile .lt-chg.dn  { color: var(--dn); }
+.live-tile .lt-chg.up  { color: var(--ink-up, var(--up)); }
+.live-tile .lt-chg.dn  { color: var(--ink-down, var(--dn)); }
 /* live pill */
 .lt-pill {
   display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px;
@@ -217,7 +232,7 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
   text-transform: uppercase;
 }
 .lt-pill .d { width: 5px; height: 5px; border-radius: 50%; background: var(--faint); }
-.lt-pill.on { opacity: 1; color: var(--up); border-color: rgba(55,208,127,.4); }
+.lt-pill.on { opacity: 1; color: var(--ink-up, var(--up)); border-color: rgba(55,208,127,.4); }
 .lt-pill.on .d { background: var(--up); box-shadow: 0 0 5px var(--up); }
 
 /* ── dot bars (breadth panel) ─── */
@@ -233,7 +248,12 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 .dot.on-up  { background: var(--up); }
 .dot.on-amb { background: var(--amb); }
 .dotrow .cnt { width: 60px; text-align: right; font-size: 13px; font-weight: 600; flex-shrink: 0; }
-.diverge { margin-top: 10px; font-size: 12.5px; color: var(--amb); display: flex; gap: 7px; align-items: flex-start; }
+/* monoline icon base (shared _icons.html.j2 set) — inline SVG, stroke=currentColor,
+   so the glyph inherits its slot's ink and rides the theme/zh swaps for free. */
+.ic-svg { width:1em; height:1em; display:inline-block; flex:none; fill:none; stroke:currentColor;
+  stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.135em; }
+.ic-xa { font-size:17px; line-height:1.4; color:var(--ink-link, var(--blue)); flex:none; }
+.diverge { margin-top: 10px; font-size: 12.5px; color: var(--ink-warn, var(--amb)); display: flex; gap: 7px; align-items: flex-start; }
 
 /* ── index card ─── */
 .idx-top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
@@ -252,11 +272,11 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 .cyc-chip { font-size: 11.5px; padding: 3px 9px; border-radius: 7px;
             border: 1px solid var(--line2); color: var(--mut); }
 .cyc-chip b { font-weight: 600; }
-.cyc-chip.ph-trough  b { color: var(--dn); }
-.cyc-chip.ph-recovery b { color: var(--up); }
-.cyc-chip.ph-downturn b { color: var(--amb); }
-.cyc-chip.ph-expansion b { color: var(--up); }
-.cyc-chip.ph-peak b { color: var(--dn); }
+.cyc-chip.ph-trough  b { color: var(--ink-down, var(--dn)); }
+.cyc-chip.ph-recovery b { color: var(--ink-up, var(--up)); }
+.cyc-chip.ph-downturn b { color: var(--ink-warn, var(--amb)); }
+.cyc-chip.ph-expansion b { color: var(--ink-up, var(--up)); }
+.cyc-chip.ph-peak b { color: var(--ink-down, var(--dn)); }
 
 /* ── BOTTOMS & TOPS BOARD ─── */
 .board { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
@@ -265,8 +285,8 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
              margin-bottom: 12px; letter-spacing: .02em; }
 .bcol .bh .ic { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center;
                 justify-content: center; font-size: 13px; flex-shrink: 0; }
-.tcol .ic { background: rgba(255,106,106,.14); color: var(--dn); }
-.bcolb .ic { background: rgba(55,208,127,.14); color: var(--up); }
+.tcol .ic { background: rgba(255,106,106,.14); color: var(--ink-down, var(--dn)); }
+.bcolb .ic { background: rgba(55,208,127,.14); color: var(--ink-up, var(--up)); }
 .brow { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0;
         border-top: 1px solid var(--line); }
 .brow:first-of-type { border-top: 0; }
@@ -281,10 +301,10 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 .brow .sc { width: 28px; text-align: right; font-size: 12.5px; font-weight: 600; flex-shrink: 0; }
 .badge { font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 5px;
          letter-spacing: .02em; display: inline-block; margin-top: 2px; }
-.badge.top  { background: rgba(242,178,77,.14); color: var(--amb); }
-.badge.euf  { background: rgba(255,106,106,.16); color: var(--dn); }
-.badge.wash { background: rgba(93,139,255,.16); color: var(--blue); }
-.badge.neut { background: var(--line); color: var(--faint); }
+.badge.top  { background: rgba(242,178,77,.14); color: var(--ink-warn, var(--amb)); }
+.badge.euf  { background: rgba(255,106,106,.16); color: var(--ink-down, var(--dn)); }
+.badge.wash { background: rgba(93,139,255,.16); color: var(--ink-link, var(--blue)); }
+.badge.neut { background: var(--panel2); border:1px solid var(--line); color: var(--faint); }
 
 /* ── HEAT GRID ─── */
 .legend { display: flex; gap: 16px; font-size: 11.5px; color: var(--faint); margin: 2px 0 12px; flex-wrap: wrap; }
@@ -315,7 +335,7 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
          padding: 2px 6px; border-radius: 5px; border: 1px solid var(--line2);
          color: var(--mut); }
 .cchip.ignite { border-color: rgba(93,139,255,.42); background: rgba(93,139,255,.12);
-                color: var(--blue); font-weight: 600; }
+                color: var(--ink-link, var(--blue)); font-weight: 600; }
 .cchip.dual   { border-style: dashed; color: var(--faint); }
 /* 1m% bar at bottom of cell */
 .cell .chg-bar {
@@ -339,7 +359,7 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
   white-space: nowrap; flex-shrink: 0;
 }
 .dtab:hover { border-color: var(--blue); color: var(--tx); }
-.dtab.active { border-color: var(--blue); color: var(--blue); background: var(--panel); }
+.dtab.active { border-color: var(--blue); color: var(--ink-link, var(--blue)); background: var(--panel); }
 .dpanel { margin-top: 14px; }
 .dpanel[hidden] { display: none; }
 .det { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -352,9 +372,9 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 .mtf td { padding: 5px 6px; border-bottom: 1px solid var(--line); }
 .mtf tr:last-child td { border-bottom: 0; }
 .pill { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
-.pill.u { background: rgba(55,208,127,.14); color: var(--up); }
-.pill.d { background: rgba(255,106,106,.14); color: var(--dn); }
-.pill.n { background: var(--line); color: var(--mut); }
+.pill.u { background: rgba(55,208,127,.14); color: var(--ink-up, var(--up)); }
+.pill.d { background: rgba(255,106,106,.14); color: var(--ink-down, var(--dn)); }
+.pill.n { background: var(--panel2); border:1px solid var(--line); color: var(--mut); }
 
 /* cycle clock arc */
 .clock-wrap { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
@@ -367,20 +387,20 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 .conv-badge { font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 8px;
               color: #fff; display: inline-block; }
 .conv-sbuy { background: #0f8a4f; } .conv-buy { background: #3aa66f; }
-.conv-hold { background: #8a93a1; } .conv-sell { background: #e0744b; }
+.conv-hold { background: #5c6b80; } .conv-sell { background: #b8562c; }
 .conv-ssell { background: var(--dn); }
 /* conviction lean pill */
 .lean-pill { font-size: 11.5px; padding: 3px 10px; border-radius: 7px; font-weight: 600; }
-.lean-pos  { background: rgba(55,208,127,.14); color: var(--up); }
-.lean-neg  { background: rgba(255,106,106,.14); color: var(--dn); }
+.lean-pos  { background: rgba(55,208,127,.14); color: var(--ink-up, var(--up)); }
+.lean-neg  { background: rgba(255,106,106,.14); color: var(--ink-down, var(--dn)); }
 .lean-neut { background: var(--line); color: var(--mut); }
 
 /* shared verdict */
 .verdict { display: inline-block; padding: 3px 9px; border-radius: 7px; font-size: 11px;
            font-weight: 700; white-space: nowrap; }
-.v-conf { background: rgba(55,208,127,.14); color: var(--up); }
-.v-dir  { background: rgba(242,178,77,.14); color: var(--amb); }
-.v-inv  { background: rgba(255,106,106,.14); color: var(--dn); }
+.v-conf { background: rgba(55,208,127,.14); color: var(--ink-up, var(--up)); }
+.v-dir  { background: rgba(242,178,77,.14); color: var(--ink-warn, var(--amb)); }
+.v-inv  { background: rgba(255,106,106,.14); color: var(--ink-down, var(--dn)); }
 .v-ctx  { background: var(--line); color: var(--faint); }
 
 /* ── CATALYSTS ─── */
@@ -391,15 +411,15 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 .cat-date { font-weight: 700; color: var(--tx); font-size: 13px; min-width: 128px; }
 .cat-cd { font-size: 11px; color: var(--faint); margin-left: 4px; font-weight: 600; }
 .cat-type { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 7px; }
-.ct-FOMC    { background: rgba(242,178,77,.14); color: var(--amb); }
-.ct-OPEC    { background: rgba(255,106,106,.14); color: var(--dn); }
-.ct-EIA_WPSR{ background: rgba(93,139,255,.14); color: var(--blue); }
+.ct-FOMC    { background: rgba(242,178,77,.14); color: var(--ink-warn, var(--amb)); }
+.ct-OPEC    { background: rgba(255,106,106,.14); color: var(--ink-down, var(--dn)); }
+.ct-EIA_WPSR{ background: rgba(93,139,255,.14); color: var(--ink-link, var(--blue)); }
 .cat-label { flex: 1; font-size: 13.5px; color: var(--tx); min-width: 160px; }
 .disclaimer { margin-top: 12px; font-size: 12px; color: var(--faint); line-height: 1.6; font-style: italic; }
 
 /* ── ALERT TIMELINE ─── */
 .tl-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
-.tlf { padding: 6px 14px; border-radius: 9px; background: var(--line); color: var(--mut);
+.tlf { padding: 6px 14px; border-radius: 9px; background: var(--panel2); color: var(--mut);
        font-weight: 700; font-size: 13px; cursor: pointer; border: none; font: inherit; }
 .tlf.active { background: var(--blue); color: #fff; }
 .tl-day { margin-bottom: 18px; }
@@ -415,11 +435,11 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 .tl-node.n-medium { background: var(--blue); }
 .tl-node.n-info   { background: var(--mut); }
 .tl-chip { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 7px;
-           background: var(--line); color: var(--mut); }
-.tl-chip.f-shock  { background: rgba(255,106,106,.14); color: var(--dn); }
-.tl-chip.f-risk   { background: rgba(242,178,77,.14); color: var(--amb); }
-.tl-chip.f-driver { background: rgba(93,139,255,.14); color: var(--blue); }
-.tl-chip.f-alloc  { background: rgba(155,140,255,.14); color: var(--pur); }
+           background: var(--panel2); border:1px solid var(--line); color: var(--mut); }
+.tl-chip.f-shock  { background: rgba(255,106,106,.14); color: var(--ink-down, var(--dn)); }
+.tl-chip.f-risk   { background: rgba(242,178,77,.14); color: var(--ink-warn, var(--amb)); }
+.tl-chip.f-driver { background: rgba(93,139,255,.14); color: var(--ink-link, var(--blue)); }
+.tl-chip.f-alloc  { background: color-mix(in srgb, var(--pur) 14%, transparent); color: var(--ink-link, var(--pur)); }
 .tl-asset { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 7px;
             background: var(--line2); color: var(--tx); }
 .tl-head { font-weight: 600; color: var(--tx); font-size: 14px; flex: 1; min-width: 200px; }
@@ -434,7 +454,7 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 .tl-more button { border: 1px solid var(--line); background: var(--panel2); color: var(--tx);
                   border-radius: 9px; padding: 8px 14px; font: inherit; font-size: 13px;
                   font-weight: 700; cursor: pointer; }
-.tl-more button:hover { border-color: var(--blue); color: var(--blue); }
+.tl-more button:hover { border-color: var(--blue); color: var(--ink-link, var(--blue)); }
 .tl-more button .tl-hide { display: none; }
 .tl-more button.is-expanded .tl-show { display: none; }
 .tl-more button.is-expanded .tl-hide { display: inline; }
@@ -447,7 +467,7 @@ html[data-lang="zh"] .l-en { display: none; }
 .section-title { font-size: 13px; font-weight: 700; color: var(--mut); text-transform: uppercase;
                  letter-spacing: .05em; margin: 30px 4px 12px; }
 /* receipt popovers */
-.rcpt-toggle { font-size: 11px; color: var(--blue); cursor: pointer; margin-top: 3px;
+.rcpt-toggle { font-size: 11px; color: var(--ink-link, var(--blue)); cursor: pointer; margin-top: 3px;
                display: inline-block; border: none; background: none; padding: 0; font: inherit; }
 /* ── zh 红涨绿跌 (operator ruling 2026-07-21) ── */
 /* pill.u=up, lean-pos=positive, v-conf=confirmed, bcolb .ic=bullish column icon = direction reads */
@@ -455,7 +475,17 @@ html[data-lang="zh"] .pill.u  { background:rgba(211,11,11,.10); }
 html[data-lang="zh"] .lean-pos { background:rgba(211,11,11,.10); }
 html[data-lang="zh"] .v-conf  { background:rgba(211,11,11,.10); }
 html[data-lang="zh"] .bcolb .ic { background:rgba(211,11,11,.10); }
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  .big-stance.t-watch,
+  .big-stance.t-protect,
+  .big-stance.t-getready,
+  .big-stance.t-act
+) { text-shadow:none; }
 </style>
+{% include "_state_inks.html.j2" %}
 {% include "_vector_polish.html.j2" %}
 </head>
 <body class="page-commod">
@@ -480,20 +510,33 @@ html[data-lang="zh"] .bcolb .ic { background:rgba(211,11,11,.10); }
 {% if oil_episode %}
 <!-- Cross-asset read (display-tier CONTEXT, not a scored signal): oil trend-episode -> Canadian energy (XEG). engine/trend_episode.py + research/COMMODITY_C1R2_OIL_XEG_PREREG.md -->
 <div class="panel2" style="display:flex;gap:11px;align-items:flex-start;margin:0 0 14px;border-left:3px solid var(--line2)">
-  <span style="font-size:17px;line-height:1.4" aria-hidden="true">🛢️→🇨🇦</span>
+  {#- DOCTRINE §1/Law 2-3: this panel is TIER 1. The shipped copy printed
+      "slope-z -0.61", "n=32, t=+2.75, q=0.009", "(C1b, provisional)" and
+      "not a gauntleted signal (C1-R2 pre-registration)" at rest — four banned
+      classes at once (untranslated backtest statistics, an internal study ID, and
+      the gauntlet/prereg vocabulary). The FACTS are unchanged and nothing is
+      hidden: the honest null moves to plain words on Tier 1 and the full receipt
+      moves to the LENS hover, which IS the compliant form of "nulls printed"
+      (Law 5). Marks are the monoline icon set, not emoji (§5.8). -#}
+  {% from "_icons.html.j2" import icon %}
+  <span class="ic-xa" aria-hidden="true">{{ icon('signals') }}</span>
   <div style="font-size:12.5px;line-height:1.55">
     <div style="font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:10px;opacity:.6;margin-bottom:2px">{{ t('Cross-asset read · Canadian energy (XEG)', '跨资产读数 · 加拿大能源 (XEG)') }}</div>
     {% if oil_episode.state == 'bull' and oil_episode.confirmed %}
-    <span class="l-en">Oil's <b>3-month trend</b> is a <b>confirmed up-trend</b> ({{ oil_episode.run_len }}d{% if oil_episode.sz_now is not none %}, slope-z {{ oil_episode.sz_now }}{% endif %}){% if oil_episode.ret_1m is not none and oil_episode.ret_1m < 0 %}, despite a <b>{{ oil_episode.ret_1m }}% 1-month pullback</b>{% endif %}. Historically, when oil enters one, Canadian energy (XEG) has returned <b>+1.9% over the next 4 weeks</b> (episode study: n=32, t=+2.75, q=0.009) — a tailwind.</span>
-    <span class="l-zh">原油<b>3个月趋势</b>为<b>确认的上行</b>（{{ oil_episode.run_len }} 天{% if oil_episode.sz_now is not none %}，斜率-z {{ oil_episode.sz_now }}{% endif %}）{% if oil_episode.ret_1m is not none and oil_episode.ret_1m < 0 %}，尽管近 1 个月回调 <b>{{ oil_episode.ret_1m }}%</b>{% endif %}。历史上原油进入该阶段时，加拿大能源（XEG）随后 4 周平均回报 <b>+1.9%</b>（阶段研究：n=32，t=+2.75，q=0.009）——顺风。</span>
+    <span class="l-en">Oil is in a <b>confirmed up-trend</b>{% if oil_episode.ret_1m is not none and oil_episode.ret_1m < 0 %}, despite a <b>{{ oil_episode.ret_1m }}% pullback this month</b>{% endif %}. Canadian energy (XEG) has usually been carried along — about <b>+2% over the following month</b> in 32 past cases. <b>A tailwind, not a trigger.</b></span>
+    <span class="l-zh">原油处于<b>确认的上行趋势</b>{% if oil_episode.ret_1m is not none and oil_episode.ret_1m < 0 %}，尽管本月回调 <b>{{ oil_episode.ret_1m }}%</b>{% endif %}。历史上 32 次类似阶段里，加拿大能源（XEG）随后一个月大致<b>上涨 2% 左右</b>。<b>这是顺风，不是买入信号。</b></span>
     {% elif oil_episode.state == 'bear' and oil_episode.confirmed %}
-    <span class="l-en">Oil's <b>3-month trend</b> is a <b>confirmed down-trend</b> ({{ oil_episode.run_len }}d{% if oil_episode.sz_now is not none %}, slope-z {{ oil_episode.sz_now }}{% endif %}){% if oil_episode.ret_1m is not none and oil_episode.ret_1m > 0 %}, even after a sharp <b>+{{ oil_episode.ret_1m }}% 1-month bounce</b>{% endif %} — so the up-side tailwind for Canadian energy (XEG) is <b>not yet active</b>. The down-side link is weaker and underpowered (C1b, provisional).</span>
-    <span class="l-zh">原油<b>3个月趋势</b>仍为<b>确认的下行</b>（{{ oil_episode.run_len }} 天{% if oil_episode.sz_now is not none %}，斜率-z {{ oil_episode.sz_now }}{% endif %}）{% if oil_episode.ret_1m is not none and oil_episode.ret_1m > 0 %}，尽管近 1 个月强劲反弹 <b>+{{ oil_episode.ret_1m }}%</b>{% endif %}——对加拿大能源（XEG）的上行顺风<b>尚未激活</b>；下行关联更弱、样本不足（C1b，暂定）。</span>
+    <span class="l-en">Oil is in a <b>confirmed down-trend</b>{% if oil_episode.ret_1m is not none and oil_episode.ret_1m > 0 %}, even after a sharp <b>+{{ oil_episode.ret_1m }}% bounce this month</b>{% endif %}, so the tailwind Canadian energy (XEG) gets from rising oil is <b>not switched on</b>. <b>Watch — don't read the fall as a sell signal for XEG:</b> we have too few past cases of the downside link to trust it.</span>
+    <span class="l-zh">原油处于<b>确认的下行趋势</b>{% if oil_episode.ret_1m is not none and oil_episode.ret_1m > 0 %}，即便本月强劲反弹 <b>+{{ oil_episode.ret_1m }}%</b>{% endif %}，因此加拿大能源（XEG）来自油价上行的顺风<b>尚未启动</b>。<b>观望——不要把油价下跌当作 XEG 的卖出信号：</b>下行方向的历史样本太少，不足以采信。</span>
     {% else %}
-    <span class="l-en">Oil has <b>no confirmed 3-month trend</b> right now{% if oil_episode.sz_now is not none %} (slope-z {{ oil_episode.sz_now }}){% endif %}. When it enters a confirmed up-trend, Canadian energy (XEG) has historically gained <b>+1.9% / 4 weeks</b> (n=32, t=+2.75).</span>
-    <span class="l-zh">原油当前<b>无确认的 3 个月趋势</b>{% if oil_episode.sz_now is not none %}（斜率-z {{ oil_episode.sz_now }}）{% endif %}。当其进入确认上行趋势时，加拿大能源（XEG）历史上随后 4 周平均 <b>+1.9%</b>（n=32，t=+2.75）。</span>
+    <span class="l-en">Oil has <b>no clear 3-month trend</b> right now, so this link is quiet. When oil does turn up, Canadian energy (XEG) has usually followed — about <b>+2% over the following month</b> in 32 past cases.</span>
+    <span class="l-zh">原油目前<b>没有明确的 3 个月趋势</b>，该关联处于静默。历史上原油转为上行后，加拿大能源（XEG）通常跟涨——32 次案例中随后一个月大致<b>上涨 2%</b>。</span>
     {% endif %}
-    <span style="opacity:.6"> — {{ t('historical context, not a gauntleted signal (C1-R2 pre-registration)', '历史背景，非经考验的信号（C1-R2 预注册）') }}</span>
+    {#- Tier 2: the receipt. Every number the Tier-1 line rounded, plus the study
+        tier and the honest null, in the sanctioned hover home. -#}
+    <span class="faint" style="margin-left:4px;cursor:help"
+      data-tip-en="Episode study, 32 past oil up-trends: XEG averaged +1.9% over the next 4 weeks (t=+2.75, q=0.009).{% if oil_episode.sz_now is not none %} Current 3-month trend slope, in standard deviations: {{ oil_episode.sz_now }}.{% endif %} The DOWN-side link is provisional — study C1b is underpowered, so it is shown as context and is not gauntleted (registered as C1-R2). Historical context, never a trade trigger."
+      data-tip-zh="阶段研究，32 次原油上行阶段：XEG 随后 4 周平均 +1.9%（t=+2.75，q=0.009）。{% if oil_episode.sz_now is not none %}当前 3 个月趋势斜率（标准差）：{{ oil_episode.sz_now }}。{% endif %}下行方向的关联为暂定结论——C1b 研究样本不足，仅作背景展示，未通过考验流程（登记编号 C1-R2）。历史背景，绝非交易触发条件。">ⓘ</span>
   </div>
 </div>
 {% endif %}
@@ -680,7 +723,7 @@ html[data-lang="zh"] .bcolb .ic { background:rgba(211,11,11,.10); }
       </div>
       <div style="text-align:right">
         <div class="mut" style="font-size:12px">{{ t('Do the signals agree?', '各周期是否共振？') }}</div>
-        <div style="font-weight:600;color:var(--amb)">{{ t(ix.mtf_en, ix.mtf_zh) }}</div>
+        <div style="font-weight:600;color:var(--ink-warn, var(--amb))">{{ t(ix.mtf_en, ix.mtf_zh) }}</div>
       </div>
     </div>
     <!-- SVG area sparkline (drawn in JS from the serialized series) -->

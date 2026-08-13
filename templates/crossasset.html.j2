@@ -9,7 +9,7 @@
 <title>Cross-Asset — one trade or many? Trend, dollar, plumbing</title>
 {% set seo_title = "Cross-Asset Desk — Mastermind" %}{% set seo_desc = "Is it one trade or many? Trend, dollar and plumbing reads across stocks, bonds, commodities and FX. Updated nightly." %}{% set seo_path = "crossasset.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   body{background:var(--bg);color:var(--text);font:14px/1.5 var(--font-ui,Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif);margin:0;padding:18px}
@@ -41,7 +41,7 @@
 
   /* ── Section headers (forex idiom) ── */
   .section-h{display:flex;align-items:baseline;gap:8px;margin:28px 0 6px;flex-wrap:wrap}
-  .section-h .sn{color:var(--info,#5b9bf0);font-weight:800;font-size:13px}
+  .section-h .sn{color:var(--ink-info, var(--info,#5b9bf0));font-weight:800;font-size:13px}
   .section-h h2{margin:0;font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.01em}
   .section-h .sh-sub{font-size:12px;color:var(--muted);margin-left:2px}
 
@@ -51,13 +51,13 @@
   .ca-sub{color:var(--muted);font-size:13px;margin:0 0 8px;line-height:1.5}
   .ca-note{color:var(--muted);font-size:12px;line-height:1.5;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);margin-top:14px;padding-top:10px}
   .muted{color:var(--muted)}.sm{font-size:12px}
-  .pos{color:var(--up,#45b873)}.neg{color:var(--down,#e06464)}
+  .pos{color:var(--ink-up, var(--up,#45b873))}.neg{color:var(--ink-down, var(--down,#e06464))}
 
   /* ── Stance pill ── */
   .stance-pill{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.02em;padding:4px 14px;border-radius:999px;margin-top:6px}
-  .stance-up{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
-  .stance-warn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
-  .stance-down{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
+  .stance-up{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+  .stance-warn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+  .stance-down{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
   .stance-muted{background:color-mix(in srgb,var(--muted) 14%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 30%,transparent)}
 
   /* ── Hero layout ── */
@@ -75,7 +75,7 @@
   /* ── Fragility chip ── */
   .frag-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
     background:color-mix(in srgb,var(--warn) 10%,transparent);
-    color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent);
+    color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 28%,transparent);
     border-radius:10px;padding:6px 12px;margin-top:10px}
 
   /* ── Trend board ── */
@@ -86,8 +86,8 @@
   table.ca tr[data-rpop]{cursor:default}
   table.ca tr[data-rpop]:hover>td{background:color-mix(in srgb,var(--panel2,#1e222a) 55%,transparent)}
 
-  .trend-up{color:var(--up,#45b873);font-weight:700}
-  .trend-down{color:var(--down,#e06464);font-weight:700}
+  .trend-up{color:var(--ink-up, var(--up,#45b873));font-weight:700}
+  .trend-down{color:var(--ink-down, var(--down,#e06464));font-weight:700}
   .trend-flat{color:var(--muted)}
 
   /* 5-dot strength bar */
@@ -98,7 +98,7 @@
 
   /* ── Flow strip (lead/lag) ── */
   .flow-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 6px;font-size:13px;font-weight:600}
-  .flow-node{padding:4px 12px;border-radius:8px;background:color-mix(in srgb,var(--info) 12%,transparent);color:var(--info,#5b9bf0);font-weight:700}
+  .flow-node{padding:4px 12px;border-radius:8px;background:color-mix(in srgb,var(--info) 12%,transparent);color:var(--ink-info, var(--info,#5b9bf0));font-weight:700}
   .flow-arrow{color:var(--muted);font-size:16px}
   .flow-stable{font-size:11px;color:var(--muted);font-weight:400}
 
@@ -108,9 +108,9 @@
 
   /* ── Verdict chip (agree/diverge) ── */
   .verdict-chip{display:inline-block;font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;margin-bottom:8px}
-  .vc-agree{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
-  .vc-diverge{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 28%,transparent)}
-  .vc-mixed{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  .vc-agree{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
+  .vc-diverge{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 28%,transparent)}
+  .vc-mixed{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
 
   /* severity dots */
   .sev{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;flex:none}
@@ -120,8 +120,8 @@
 
   /* ── Dollar HW/TW chips ── */
   .hw-chip{display:inline-block;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;margin:2px 3px 2px 0;cursor:default}
-  .hw-head{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 25%,transparent)}
-  .hw-tail{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
+  .hw-head{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 25%,transparent)}
+  .hw-tail{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
 
   /* ── Mini-cards grid (ratios / carry) ── */
   .mini-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
@@ -150,7 +150,7 @@
     border-radius:50%;border:1px solid color-mix(in srgb,var(--muted) 50%,transparent);
     color:var(--muted);font-size:10px;font-weight:700;cursor:help;vertical-align:middle;
     margin-left:5px;user-select:none;transition:border-color .15s,color .15s}
-  .qm:hover,.qm:focus{border-color:var(--info,#5b9bf0);color:var(--info,#5b9bf0);outline:none}
+  .qm:hover,.qm:focus{border-color:var(--info,#5b9bf0);color:var(--ink-info, var(--info,#5b9bf0));outline:none}
 
   /* ── Carry strip ── */
   .carry-strip{margin-top:10px;padding:10px 0 2px;border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
@@ -166,7 +166,7 @@
   .cluster-lbl{color:var(--muted);font-weight:600;margin-right:2px}
   .cluster-chip{display:inline-block;padding:3px 9px;border-radius:7px;font-size:11.5px;font-weight:700;
     background:color-mix(in srgb,var(--info) 10%,transparent);
-    color:var(--info,#5b9bf0);border:1px solid color-mix(in srgb,var(--info) 22%,transparent)}
+    color:var(--ink-info, var(--info,#5b9bf0));border:1px solid color-mix(in srgb,var(--info) 22%,transparent)}
 
   /* ── popin entrance ── */
   @keyframes ca-popin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
@@ -644,7 +644,7 @@
 
   <p class="ca-note">
     {{ t('These usually move with the dollar — a pattern, not a forecast.', '这些资产通常随美元波动——是规律，非预测。') }}
-    <a href="forex.html" style="color:var(--link)">{{ t('Full currency desk → forex.html', '完整外汇页面 → forex.html') }}</a>
+    <a href="forex.html" style="color:var(--ink-link, var(--link))">{{ t('Full currency desk → forex.html', '完整外汇页面 → forex.html') }}</a>
   </p>
 </div>
 {% endif %}
