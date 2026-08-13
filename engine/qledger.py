@@ -56,6 +56,10 @@ from lib import nyse_calendar as _nyse_calendar
 # re-invented: a second suffix table would drift from the one every board's
 # session bucketing already reads.
 from engine.session_anchor import MARKET_SUFFIX
+# The house US-equity shape gate (engine/ticker_shape) — stdlib-only, no disk.
+# Used as the CORROBORATION on the residual share-class branch of `_ticker_market`,
+# so "single letter after the dot" is never on its own sufficient to name a market.
+from engine.ticker_shape import valid_us_ticker
 
 log = logging.getLogger("qledger")
 
@@ -449,48 +453,192 @@ def resolve_horizon_window(entry_anchor: Any, horizon_d: int,
 #: Every one of these is a REFUSAL, not a fallback — see the function's note.
 MARKET_UNDETERMINED_NO_LEG = "no_priced_leg"
 MARKET_UNDETERMINED_UNKNOWN_SUFFIX = "unknown_exchange_suffix"
+MARKET_UNDETERMINED_FOREIGN_EXCHANGE = "unsupported_exchange_suffix"
+MARKET_UNDETERMINED_NOT_A_US_SYMBOL = "not_a_us_symbol"
 MARKET_UNDETERMINED_MIXED = "mixed_markets"
 MARKET_UNDETERMINED_NO_CALENDAR = "no_session_calendar_for_market"
+
+#: The separator between a refusal reason's MACHINE-READABLE HEAD and its prose
+#: tail. Everything before the FIRST occurrence is bounded-cardinality and safe to
+#: bucket a histogram on; everything after it may name the offending ticker, the
+#: anchor date, or the leg pair, and must never become a histogram key
+#: (`clock_reason_head`, `count_unresolvable_clock_claims`).
+CLOCK_REASON_SEP = " — "
+
+#: EXCHANGE SUFFIXES THIS CLOCK REFUSES — an EXPLICIT, AUTHORITATIVE DENY-LIST.
+#:
+#: THE DEFECT THIS REPAIRS. The first two cuts of this dispatch discriminated on
+#: the SHAPE of the suffix: "multi-letter => exchange, single letter => US share
+#: class". That is right for `BRK.B` / `BRK.A` (527 legs in the live store) and
+#: WRONG — silently, onto NYSE — for every real exchange whose Yahoo suffix is one
+#: letter: `.L` (London), `.T` (Tokyo), `.F` (Frankfurt/Fukuoka). A shape
+#: heuristic failed twice here; it is replaced by enumeration, and the residual
+#: share-class branch now additionally requires the WHOLE symbol to pass the
+#: house US-equity gate (`engine.ticker_shape.valid_us_ticker`).
+#:
+#: WHAT AN ENTRY CLAIMS, EXACTLY. Only this: "at least one non-US venue lists
+#: symbols under this suffix, so a leg carrying it cannot be assumed to trade on a
+#: calendar in `CLOCK_CALENDARS`." It does NOT claim to be the suffix's unique
+#: meaning — `.F` is Frankfurt to one vendor and Fukuoka to another, `.CN` is the
+#: Canadian Securities Exchange and not China, and `.N`/`.S` are Nagoya/Sapporo
+#: under the Yahoo convention this repo's tickers follow while a RIC feed would
+#: read `.N` as NYSE. Every entry produces the SAME outcome — a named, counted
+#: refusal — so ambiguity between two foreign venues costs nothing, and the only
+#: error that matters is an OMISSION (which grades a foreign name on NYSE).
+#:
+#: DIRECTION OF ERROR, STATED. Over-inclusion refuses a claim: visible, countable
+#: (`count_unresolvable_clock_claims`), and repairable by mapping the suffix in
+#: `session_anchor.MARKET_SUFFIX` + adding its calendar. Under-inclusion grades on
+#: the wrong exchange calendar and says nothing. So this table errs INCLUSIVE.
+#:
+#: Suffixes in `MARKET_SUFFIX` are NOT repeated here — they are resolved, not
+#: refused (`.TO`/`.V` map to CA and are then refused one step later by
+#: `resolve_claim_market`, for the different and honest reason that this repo has
+#: no Canadian session calendar). The disjointness is pinned by a test.
+EXCHANGE_SUFFIXES_UNSUPPORTED: dict[str, str] = {
+    # --- SINGLE-LETTER suffixes: the branch that used to fail open onto NYSE ---
+    ".L": "London Stock Exchange",
+    ".T": "Tokyo Stock Exchange",
+    ".F": "Frankfurt Stock Exchange (Fukuoka under the JP convention)",
+    ".N": "Nagoya Stock Exchange",
+    ".S": "Sapporo Stock Exchange",
+    # --- Greater China / Asia-Pacific ---
+    ".BJ": "Beijing Stock Exchange",
+    ".TW": "Taiwan Stock Exchange",
+    ".TWO": "Taipei Exchange (OTC)",
+    ".KS": "Korea Exchange (KOSPI)",
+    ".KQ": "Korea Exchange (KOSDAQ)",
+    ".NS": "National Stock Exchange of India",
+    ".BO": "BSE (Bombay Stock Exchange)",
+    ".SI": "Singapore Exchange",
+    ".KL": "Bursa Malaysia",
+    ".JK": "Indonesia Stock Exchange",
+    ".BK": "Stock Exchange of Thailand",
+    ".PS": "Philippine Stock Exchange",
+    ".VN": "Ho Chi Minh Stock Exchange",
+    ".AX": "Australian Securities Exchange",
+    ".NZ": "New Zealand Exchange",
+    # --- Europe ---
+    ".DE": "Deutsche Boerse XETRA",
+    ".BE": "Boerse Berlin",
+    ".DU": "Boerse Duesseldorf",
+    ".HM": "Boerse Hamburg",
+    ".HA": "Boerse Hannover",
+    ".MU": "Boerse Muenchen",
+    ".SG": "Boerse Stuttgart",
+    ".IL": "London Stock Exchange International Order Book",
+    ".PA": "Euronext Paris",
+    ".AS": "Euronext Amsterdam",
+    ".BR": "Euronext Brussels",
+    ".LS": "Euronext Lisbon",
+    ".IR": "Euronext Dublin",
+    ".MI": "Borsa Italiana",
+    ".MC": "Bolsa de Madrid",
+    ".VI": "Wiener Boerse",
+    ".SW": "SIX Swiss Exchange",
+    ".ST": "Nasdaq Stockholm",
+    ".OL": "Oslo Boers",
+    ".CO": "Nasdaq Copenhagen",
+    ".HE": "Nasdaq Helsinki",
+    ".IC": "Nasdaq Iceland",
+    ".AT": "Athens Stock Exchange",
+    ".WA": "Warsaw Stock Exchange",
+    ".PR": "Prague Stock Exchange",
+    ".BD": "Budapest Stock Exchange",
+    ".RO": "Bucharest Stock Exchange",
+    ".IS": "Borsa Istanbul",
+    ".ME": "Moscow Exchange",
+    # --- Middle East / Africa ---
+    ".TA": "Tel Aviv Stock Exchange",
+    ".SR": "Saudi Exchange (Tadawul)",
+    ".QA": "Qatar Stock Exchange",
+    ".KW": "Boursa Kuwait",
+    ".JO": "Johannesburg Stock Exchange",
+    ".CA": "Egyptian Exchange (Cairo)",
+    # --- Americas (non-US) ---
+    ".SA": "B3 (Sao Paulo)",
+    ".MX": "Bolsa Mexicana de Valores",
+    ".BA": "Bolsa de Comercio de Buenos Aires",
+    ".SN": "Bolsa de Santiago",
+    ".CN": "Canadian Securities Exchange",
+    ".NE": "Cboe Canada (NEO)",
+}
 
 
 def _ticker_market(ticker: Any) -> tuple[str | None, str]:
     """(market, reason) for ONE priced leg. `reason` is "" on success.
 
-    The suffix table is `engine.session_anchor.MARKET_SUFFIX` — the same one the
-    board session bucketing reads — with ONE deliberate narrowing:
+    The mapped-suffix table is `engine.session_anchor.MARKET_SUFFIX` — the same
+    one the board session bucketing reads — with ONE deliberate narrowing:
     `session_anchor.market_for_ticker` resolves an UNMAPPED suffix to US openly
     (its R3 ruling: approximate bucket edges are harmless there). Here that
     default is not harmless — it is exactly the "silently resolving on the wrong
     calendar" this dispatch exists to stop — so this function refuses instead.
 
-    The discriminator is the SHAPE of the suffix, and it has a live exemplar.
-    Yahoo exchange suffixes are multi-letter (`.SS` `.SZ` `.HK` `.TO`; `.V` is
-    the one-letter exception and IS in the table), while US share classes are a
-    single letter (`BRK.B`, `BRK.A` — 527 legs in the live store). So:
+    THE DISCRIMINATOR IS AN ENUMERATION, NOT A SHAPE. Two earlier cuts read
+    "single letter after the dot" as a US share class; that fails OPEN onto NYSE
+    for `.L` / `.T` / `.F`, which are real exchanges. The order is now:
 
-      * suffix in MARKET_SUFFIX          -> that market
-      * a single-letter suffix, or none  -> US (the house rule, stated openly)
-      * any OTHER multi-letter suffix    -> REFUSED
+      1. suffix in `MARKET_SUFFIX`                   -> that market
+      2. suffix in `EXCHANGE_SUFFIXES_UNSUPPORTED`   -> REFUSED, by name
+      3. no suffix at all                            -> US
+      4. a SINGLE-LETTER residual suffix on a symbol the house US-equity gate
+         (`ticker_shape.valid_us_ticker`) accepts  -> US (share class: BRK.B/BRK.A)
+      5. anything else                               -> REFUSED
 
-    That last branch is not hypothetical: four live `china_special_sits` claims
-    are priced on `920007.BJ`-style Beijing Stock Exchange tickers, a suffix
-    `MARKET_SUFFIX` does not carry. `market_for_ticker` calls them US, which
-    would have graded Beijing names on NYSE sessions. They now refuse, visibly,
-    until `.BJ` is mapped in `session_anchor` (that module's scope, not this
-    one's — mapping it here would fork the table this reuses).
+    Rule 4 is the only inference left, it is corroborated rather than assumed,
+    and it is bounded on both sides: the enumeration above it has already taken
+    every known exchange suffix, and `valid_us_ticker` — the gate every emitter
+    in this repo routes ticker keys through — has to accept the whole symbol, so
+    `600519.T` (digit-first root) and `ANANTRAJ.LONGTAIL` cannot reach it.
+
+    Rule 2 is not hypothetical: four live `china_special_sits` claims are priced
+    on `920007.BJ`-style Beijing Stock Exchange tickers, a suffix `MARKET_SUFFIX`
+    does not carry. `market_for_ticker` calls them US, which would have graded
+    Beijing names on NYSE sessions. They refuse, visibly, until `.BJ` is mapped
+    in `session_anchor` (that module's scope, not this one's — mapping it here
+    would fork the table this reuses).
+
+    Every refusal reason is `HEAD{CLOCK_REASON_SEP}detail`: the head is
+    bounded-cardinality and safe to bucket on, the detail names the offender.
     """
     if not ticker:
         return None, MARKET_UNDETERMINED_NO_LEG
     t = str(ticker).strip().upper()
     if not t:
         return None, MARKET_UNDETERMINED_NO_LEG
-    for suffix, market in MARKET_SUFFIX.items():
-        if t.endswith(suffix):
-            return market, ""
     head, _, tail = t.rpartition(".")
-    if head and len(tail) > 1:
-        return None, f"{MARKET_UNDETERMINED_UNKNOWN_SUFFIX}:.{tail}"
+    suffix = f".{tail}" if head else ""
+    if suffix:
+        market = MARKET_SUFFIX.get(suffix)
+        if market is not None:
+            return market, ""
+        exchange = EXCHANGE_SUFFIXES_UNSUPPORTED.get(suffix)
+        if exchange is not None:
+            return None, (f"{MARKET_UNDETERMINED_FOREIGN_EXCHANGE}:{suffix}"
+                          f"{CLOCK_REASON_SEP}{exchange}; this clock has no "
+                          f"session calendar for it")
+        if not (len(tail) == 1 and tail.isalpha()):
+            return None, (f"{MARKET_UNDETERMINED_UNKNOWN_SUFFIX}:{suffix}"
+                          f"{CLOCK_REASON_SEP}suffix is in neither the mapped "
+                          f"table nor the known-exchange table")
+        if valid_us_ticker(t) is None:
+            # A single letter is only a share class on something the house gate
+            # agrees is a US symbol at all.
+            return None, (f"{MARKET_UNDETERMINED_NOT_A_US_SYMBOL}:{suffix}"
+                          f"{CLOCK_REASON_SEP}a single-letter suffix reads as a US "
+                          f"share class only on a symbol ticker_shape accepts")
     return MARKET_US, ""
+
+
+def clock_reason_head(reason: Any) -> str:
+    """The MACHINE-READABLE head of a clock refusal reason.
+
+    Everything before the first `CLOCK_REASON_SEP`. This is what a histogram may
+    bucket on: it carries the reason CLASS and, where the class is about a
+    suffix or a market, that bounded token — and never the offending ticker, the
+    anchor date, or the leg pair that follows the separator."""
+    return str(reason or "").split(CLOCK_REASON_SEP)[0].strip()
 
 
 def resolve_claim_market(claim: dict) -> tuple[str | None, str]:
@@ -501,8 +649,9 @@ def resolve_claim_market(claim: dict) -> tuple[str | None, str]:
     trade on one. This returns None — and `_validate_claim` then refuses the
     claim, and `grade_claim` grades nothing — when:
 
-      * a leg carries an exchange suffix the house table cannot name
-        (`_ticker_market`);
+      * a leg carries a KNOWN foreign exchange suffix (`.L`, `.T`, `.F`, `.BJ`,
+        … — `EXCHANGE_SUFFIXES_UNSUPPORTED`) or a suffix no house table can name
+        at all (`_ticker_market`);
       * the legs span two markets (a `.SZ` subject against an SPY bench has no
         single session ruler, and picking one would hand two legs different
         horizon lengths);
@@ -526,16 +675,19 @@ def resolve_claim_market(claim: dict) -> tuple[str | None, str]:
         if m is None:
             if reason == MARKET_UNDETERMINED_NO_LEG:
                 continue
-            return None, f"{reason} ({leg})"
+            # The leg goes AFTER the separator: it is the detail, never a
+            # histogram key (`clock_reason_head`).
+            return None, f"{reason}; leg {leg}"
         markets.setdefault(m, str(leg))
     if not markets:
         return None, MARKET_UNDETERMINED_NO_LEG
     if len(markets) > 1:
         detail = ", ".join(f"{m}={t}" for m, t in sorted(markets.items()))
-        return None, f"{MARKET_UNDETERMINED_MIXED}: {detail}"
+        return None, f"{MARKET_UNDETERMINED_MIXED}{CLOCK_REASON_SEP}{detail}"
     market = next(iter(markets))
     if market not in CLOCK_CALENDARS:
-        return None, f"{MARKET_UNDETERMINED_NO_CALENDAR}: {market}"
+        return None, (f"{MARKET_UNDETERMINED_NO_CALENDAR}:{market}"
+                      f"{CLOCK_REASON_SEP}no calendar module in CLOCK_CALENDARS")
     return market, ""
 
 
@@ -592,19 +744,48 @@ def claim_horizon_unit(claim: dict) -> str | None:
     return unit if unit in HORIZON_UNITS else None
 
 
+#: The market segment of a basis key for an explicit-clock row that carries no
+#: `clock_market` stamp. Such a row exists only if it was written between the
+#: first cut of this contract (NYSE-hardcoded, unstamped) and the market
+#: dispatch. It gets its OWN basis rather than being folded into US: an unstamped
+#: row is a row whose calendar is unknown, and "unknown" pools with nothing.
+CLOCK_MARKET_UNSTAMPED = "market_unstamped"
+
+
+def clock_basis_key(clock_version: Any, horizon_unit: Any,
+                    clock_market: Any = None) -> str:
+    """The basis key for one (clock_version, horizon_unit, market) triple.
+
+    ONE constructor, so a caller (or a test) never hand-assembles the string and
+    a later segment addition cannot leave a second spelling behind."""
+    market = str(clock_market or CLOCK_MARKET_UNSTAMPED)
+    return f"{clock_version}:{horizon_unit}:{market}"
+
+
 def grade_clock_basis(grade: dict) -> str:
     """The grading-clock basis a grade ROW was produced under.
 
     ``CLOCK_LEGACY`` for every row lacking an explicit stamp (all rows written
     before this contract) — mirroring how `fill_convention` reads absent rows as
-    ``asof_legacy``. Otherwise ``"<clock_version>:<horizon_unit>"``. Fail closed:
-    a stamped row whose unit is not in the vocabulary reads as legacy rather than
-    as a fourth, unnamed basis."""
+    ``asof_legacy``. Otherwise
+    ``"<clock_version>:<horizon_unit>:<clock_market>"``. Fail closed: a stamped
+    row whose unit is not in the vocabulary reads as legacy rather than as a
+    fourth, unnamed basis.
+
+    THE MARKET IS PART OF THE KEY, and that is the whole point of the boundary.
+    Without it this function answered ``explicit_unit_v1:trading_days`` for a
+    US-resolved row and for a CN-resolved row alike, so two observations measured
+    on INCOMPATIBLE session calendars — 21 NYSE sessions and 21 SSE sessions are
+    different spans of wall-clock time, and Golden Week/Thanksgiving fall in
+    different places — pooled into one statistic through
+    `partition_grades_by_clock`, `require_single_clock`, `_aggregate` and the §3
+    gate. The clock basis exists to stop exactly that; a basis key blind to the
+    ruler it was measured with does not."""
     cv = grade.get("clock_version")
     unit = grade.get("horizon_unit")
     if not cv or unit not in HORIZON_UNITS:
         return CLOCK_LEGACY
-    return f"{cv}:{unit}"
+    return clock_basis_key(cv, unit, grade.get("clock_market"))
 
 
 def partition_grades_by_clock(grades: Iterable[dict]) -> dict[str, list[dict]]:
@@ -630,7 +811,8 @@ def require_single_clock(grades: Iterable[dict], *, context: str = "") -> str:
             f"bases{where}: {bases}. horizon_d alone does not make two "
             f"observations comparable — the legacy basis approximated the "
             f"horizon in calendar days, the explicit-unit clock resolves it in "
-            f"the declared unit."
+            f"the declared unit, and two explicit rows resolved on DIFFERENT "
+            f"exchange calendars are two different rulers under one number."
         )
     return bases[0] if bases else CLOCK_LEGACY
 
@@ -824,19 +1006,24 @@ def _validate_claim(claim: dict) -> tuple[bool, str]:
     if unit in HORIZON_UNITS:
         market, market_reason = resolve_claim_market(claim)
         if market is None:
+            # HEAD (bucketable) then detail. The head inherits the market
+            # resolver's own bounded reason head; the prose — which names the
+            # offending leg — stays behind the separator.
             return False, (
-                f"{REJECT_CLOCK_UNRESOLVABLE}: cannot name the market this claim "
-                f"is priced in ({market_reason}) — refusing rather than resolving "
-                f"the exit on another exchange's calendar")
+                f"{REJECT_CLOCK_UNRESOLVABLE}:{clock_reason_head(market_reason)}"
+                f"{CLOCK_REASON_SEP}cannot name the market this claim is priced "
+                f"in ({market_reason}); refusing rather than resolving the exit "
+                f"on another exchange's calendar")
         anchor = _entry_anchor(asof, tq)
         if resolve_horizon_window(anchor, horizon_d, unit, market) is None:
             supported_from, supported_through = CLOCK_MARKET_SUPPORT[market]
             return False, (
-                f"{REJECT_CLOCK_UNRESOLVABLE}: cannot resolve a window for "
+                f"{REJECT_CLOCK_UNRESOLVABLE}:window_unresolvable:{market}"
+                f"{CLOCK_REASON_SEP}cannot resolve a window for "
                 f"horizon_d={horizon_d} {unit} on the {market} calendar from "
                 f"anchor {anchor} (supported {supported_from}"
-                f"{'..' + supported_through.isoformat() if supported_through else '+'}) "
-                f"— a claim with no resolvable exit has no falsifier deadline "
+                f"{'..' + supported_through.isoformat() if supported_through else '+'})"
+                f"; a claim with no resolvable exit has no falsifier deadline "
                 f"and could never grade or close")
 
     return True, ""
@@ -1276,6 +1463,14 @@ def count_unresolvable_clock_claims(root: Path | str | None = None,
     this function is what turns that store state into a number the nightly can
     print. Returns {n, by_reason, by_family} — never a bare total, because "12
     refused" and "12 refused, all of them Beijing tickers" are different facts.
+
+    `by_reason` is keyed on `clock_reason_head` — the bounded head of the reason
+    (`clock_unresolvable:unsupported_exchange_suffix:.L`,
+    `clock_unresolvable:window_unresolvable:CN`) — never the prose tail. The tail
+    carries the offending ticker AND the anchor date, and the previous split
+    ("everything before the first '(' or ' — '") kept the anchor date for the
+    out-of-range class, so that class got one key per claim. A histogram with as
+    many rows as refusals is not a histogram.
     """
     rows = list(claims) if claims is not None else load_claims(root)
     by_reason: dict[str, int] = {}
@@ -1289,8 +1484,8 @@ def count_unresolvable_clock_claims(root: Path | str | None = None,
             continue
         n += 1
         # Bucket on the machine-readable head of the reason, not the prose tail
-        # (which carries the offending ticker and would explode the histogram).
-        head = reason.split("(")[0].split(" — ")[0].strip()
+        # (which carries the offending ticker and the anchor date).
+        head = clock_reason_head(reason)
         by_reason[head] = by_reason.get(head, 0) + 1
         fam = str(c.get("claim_family") or c.get("desk") or "unknown")
         by_family[fam] = by_family.get(fam, 0) + 1
@@ -1891,8 +2086,14 @@ def _authority_clock_basis(bases: Iterable[str]) -> str | None:
       * one basis present            -> that basis
       * legacy + exactly ONE v1      -> the v1 basis (legacy rows are not counted)
       * two or more v1 bases         -> None (a family mixing trading_days and
-                                        calendar_days at one horizon has no
-                                        non-arbitrary answer — refuse, and say so)
+                                        calendar_days — or US sessions and CN
+                                        sessions — at one horizon has no
+                                        non-arbitrary answer: refuse, and say so.
+                                        A caller that wants ONE of them asks for
+                                        it by name, `promotion_check(...,
+                                        clock_basis=...)`, which is how a
+                                        multi-market family stays PROMOTABLE
+                                        per market without anything pooling.)
 
     Why this terminates: a lane that declares a unit stops minting legacy claims,
     so its legacy rows stop accruing once the last unitless claim matures (≤63d),
@@ -1940,6 +2141,15 @@ def _select_single_clock_block(blocks: dict[str, dict]) -> dict:
     ``counts.grades_by_clock_basis``. A reader who wants the new clock's numbers
     can always get them; a reader who reads only the headline is told, in the
     cell, that a bigger-but-older basis was chosen and how big the other one is.
+
+    A TIE BETWEEN TWO MARKETS RESOLVES ALPHABETICALLY, not meaningfully. Now that
+    the basis key carries the market, two EXPLICIT blocks (a US one and a CN one)
+    can tie on n_dates and on the legacy/newer key; `compute_track_record` feeds
+    the blocks in sorted-basis order and `max` keeps the first, so the CN block
+    wins such a tie. That is deterministic (the published cell never depends on
+    grade-row order) but it is NOT a judgement that CN is the better read — the
+    other market's own numbers stay in `clock_bases_n_dates` and under
+    ``by_clock_basis``, and a consumer that needs a specific market must name it.
 
     Display selects; AUTHORITY does the opposite — `promotion_check` evaluates
     inside the EXPLICIT basis via `_authority_clock_basis` and ignores the legacy
@@ -2086,15 +2296,25 @@ class PromotionResult:
                         consumer reporting these numbers must report this alongside
                         them — the same n_dates means different things on different
                         clocks.
-        clock_migration: (P0a) True when this family HAS history on another basis
-                        that was deliberately excluded — i.e. the drop in n_dates
-                        is a clock migration, not a performance collapse. See
-                        `clock_prior_n_dates`.
+        clock_migration: (P0a) True while this verdict's `n_dates` is SMALLER
+                        than the largest excluded basis's own n_dates — i.e.
+                        while there is a drop to explain, and the drop is a clock
+                        migration rather than a performance collapse. It is False
+                        for a family that never straddled, AND for one that has
+                        finished migrating: the flag CLEARS as soon as the count
+                        on the corrected clock reaches the excluded history it
+                        replaced. It is not "this family has any old rows" —
+                        that condition never clears, and a banner that never
+                        clears says nothing.
         clock_prior_n_dates: {excluded basis -> its own n_dates}, so a consumer can
                         say "1 date on the corrected clock; the 40 dates it had
                         were measured on the old one" instead of showing a fall
-                        from 40 to 1 with no explanation.
-        migration_note: one plain sentence a surface can render as-is.
+                        from 40 to 1 with no explanation. Populated whenever a
+                        basis was excluded, INCLUDING after `clock_migration` has
+                        cleared — the excluded history stays a fact about the
+                        verdict once it has stopped shrinking the headline.
+        migration_note: one plain sentence a surface can render as-is; empty
+                        string exactly when `clock_migration` is False.
 
     WHY THIS EXISTS. `_authority_clock_basis` resets authority at a basis change
     — the right call, and the CEO's explicit ruling (do NOT pool bases). But the
@@ -2248,7 +2468,9 @@ def promotion_check(claim_family: str, horizon: int,
                     f"({', '.join(family_bases)}) with no single explicit clock "
                     f"to promote on — refusing to pool. Two rows both stamped "
                     f"horizon_d={horizon} are not comparable across a clock "
-                    f"change; give this family ONE horizon_unit."),
+                    f"change or across two exchange calendars; give this family "
+                    f"ONE horizon_unit, or evaluate ONE basis by name "
+                    f"(clock_basis=...) to promote per market."),
             n_dates=0, ci_low=None,
             current_state=STATE_MIXED_CLOCK,
             clock_basis=None,
@@ -2257,26 +2479,12 @@ def promotion_check(claim_family: str, horizon: int,
     family_rows = [g for g in family_rows if grade_clock_basis(g) == basis]
     basis_note = ""
     prior_n_dates = {b: n_dates_by_basis.get(b, 0) for b in excluded}
-    migration_note = ""
     if excluded:
         basis_note = (f" Evaluated on clock basis {basis!r}; "
                       f"{len(excluded)} other basis/bases "
                       f"({', '.join(excluded)}) excluded, NOT pooled — this "
                       f"family's authority accrues on the clock it is now "
                       f"measured on.")
-        # The one sentence a surface may render as-is. Plain words on purpose: a
-        # reader must be able to tell a clock migration from a collapse without
-        # knowing what a "basis" is.
-        biggest = max(prior_n_dates.values()) if prior_n_dates else 0
-        migration_note = (
-            f"Re-accruing under a corrected clock: this family is counted from "
-            f"zero on the clock it is now measured on. Its earlier "
-            f"{biggest} dates were measured on a different clock and are not "
-            f"counted here — that history was not lost and its numbers have not "
-            f"changed.")
-    mig = {"clock_migration": bool(excluded),
-           "clock_prior_n_dates": prior_n_dates,
-           "migration_note": migration_note}
 
     for g in family_rows:
         c = cid_meta.get(g.get("claim_id"))
@@ -2304,6 +2512,42 @@ def promotion_check(claim_family: str, horizon: int,
 
     n_dates = len(dates)
     current_state = derive_state(n_dates)
+
+    # P0a — THE MIGRATION BANNER MUST CLEAR. `clock_migration` used to be
+    # `bool(excluded)`: any family carrying even ONE row on another basis was
+    # flagged as migrating forever, including a family that finished migrating
+    # years ago and whose legacy pile is a closed, never-growing set. A permanent
+    # banner is not a disclosure, it is furniture.
+    #
+    # WHAT THE FLAG MEANS, EXACTLY (and the docstrings say only this): the
+    # headline `n_dates` on the authoritative basis is SMALLER than the history
+    # this verdict is not counting — i.e. the drop a reader sees is a clock
+    # migration, not a performance collapse. It is therefore TRUE exactly while
+    # there is a drop to explain and CLEARS the moment the family's own count on
+    # the corrected clock reaches the largest excluded basis's count. That is
+    # monotone and terminating for the same reason `_authority_clock_basis` is: a
+    # lane that declares a unit stops minting rows on the old basis, so the
+    # excluded count is frozen while `n_dates` climbs.
+    #
+    # `clock_prior_n_dates` is NOT gated on the flag — the excluded history is a
+    # fact about the verdict whether or not it is still shrinking the headline,
+    # and a consumer that shows counts side by side needs it either way.
+    biggest_excluded = max(prior_n_dates.values()) if prior_n_dates else 0
+    clock_migration = bool(excluded) and n_dates < biggest_excluded
+    migration_note = ""
+    if clock_migration:
+        # The one sentence a surface may render as-is. Plain words on purpose: a
+        # reader must be able to tell a clock migration from a collapse without
+        # knowing what a "basis" is.
+        migration_note = (
+            f"Re-accruing under a corrected clock: this family is counted from "
+            f"zero on the clock it is now measured on. Its earlier "
+            f"{biggest_excluded} dates were measured on a different clock and "
+            f"are not counted here — that history was not lost and its numbers "
+            f"have not changed.")
+    mig = {"clock_migration": clock_migration,
+           "clock_prior_n_dates": prior_n_dates,
+           "migration_note": migration_note}
     # Cluster-honest Wilson CI: project pooled hit rate onto independent date-cluster n.
     # Mirrors _aggregate convention (altdata_brain.py:389, ticker-cluster time-confound law).
     if graded_hits and n_dates:

@@ -301,9 +301,11 @@ def _refresh_qledger_promotion(e: dict) -> dict:
       ready   — True when §3 gate passes (n_dates>=25 AND wilson_ci_low>0.5 — the bound is
                 a hit-rate proportion, so the bar is the coin-flip null, not zero)
       duel_context_line — challenger vs placebo |excess| at 5d (injected into next_step)
-      clock_migration — True when the live n_dates is small because the family is being
-                re-counted on a CORRECTED grading clock, not because its evidence
-                collapsed (P0a). See below.
+      clock_migration — True while the live n_dates is SMALLER than the history being
+                counted separately on another clock, i.e. while the drop a reader sees
+                is a re-count on a CORRECTED grading clock rather than evidence
+                collapsing (P0a). Clears once the corrected clock's own count catches
+                up; `clock_prior_n_dates` survives it. See below.
 
     P0a — A CLOCK MIGRATION MUST NOT READ AS A PERFORMANCE COLLAPSE. qledger's
     promotion gate evaluates inside ONE grading-clock basis and never pools two, so
