@@ -5,14 +5,18 @@ pins the guard's own selftest AND mutation-tests it: with the validator stubbed 
 selftest must FAIL. Without that, the selftest is a receipt written from the same variable
 it checks and cannot fail.
 
-Also pins the CI-observable behaviour the house laws depend on: annotations start the
-line, an absent registry exits 0 with a notice rather than a false green, and the
-warn-tier law stays advisory unless --strict.
+It also pins the two CI-observable behaviours the house laws depend on: annotations START
+the line (a logger-prefixed one is dropped silently by GitHub), and the guard FAILS CLOSED
+— a run that could not read an input says so on its summary line and exits non-zero under
+--strict, instead of printing a zero-violation count it did not earn.
+
+NOTHING HERE ASSERTS ON LIVE CONTENT. There is no committed registry to compare against,
+and no count from config/synapse.yml or data/qledger/ is pinned — both move without any PR
+on this lane.
 """
 from __future__ import annotations
 
 import contextlib
-import copy
 import io
 import json
 import subprocess
@@ -22,16 +26,16 @@ from pathlib import Path
 import pytest
 
 import scripts.check_intelligence_registry as guard
-from engine.intelligence_registry import audit_content, validate_overlay, validate_structure
+from engine.intelligence_registry import validate_overlay, validate_structure
 
 REPO = Path(__file__).resolve().parents[1]
 SCRIPT = REPO / "scripts" / "check_intelligence_registry.py"
 
 
-def _run(*args: str) -> subprocess.CompletedProcess:
+def _run(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, str(SCRIPT), *args],
-        cwd=REPO,
+        cwd=str(cwd or REPO),
         capture_output=True,
         text=True,
         check=False,
@@ -58,7 +62,8 @@ def test_selftest_covers_both_directions():
     result = _run("--selftest")
     assert "POSITIVE CONTROL" in result.stdout
     assert "NEGATIVE" in result.stdout
-    assert result.stdout.count("[PASS]") >= 30
+    assert result.stdout.count("[PASS]") >= 60
+    assert "[FAIL]" not in result.stdout
 
 
 # ---------------------------------------------------------------------------
@@ -73,8 +78,6 @@ def test_selftest_covers_both_directions():
         ("validate_overlay accepts everything", ("validate_overlay", lambda *a, **k: [])),
         ("validate_overlay rejects everything", ("validate_overlay", lambda *a, **k: ["x"])),
         ("audit_content finds nothing", ("audit_content", lambda *a, **k: [])),
-        ("audit_corpus finds nothing", ("audit_corpus", lambda *a, **k: [])),
-        ("assert_no_volatile accepts everything", ("assert_no_volatile", lambda r: [])),
         ("resolve_qual_ladder_ref always resolves", ("resolve_qual_ladder_ref", lambda r, **k: "repo_path")),
     ],
 )
@@ -85,37 +88,70 @@ def test_selftest_fails_when_the_validator_is_broken(monkeypatch, name, stub):
     assert _selftest_rc() == 1, f"selftest survived a broken validator: {name}"
 
 
+def test_selftest_fails_when_the_C1_DERIVATION_ITSELF_IS_DELETED(monkeypatch):
+    """THE NEGATIVE CONTROL THAT MATTERS. The other mutations stub the VALIDATORS; this one
+    deletes the COMPUTATION the C-1 finding is made of — `unevidenced_artifacts` — inside
+    the real build_registry, and the selftest must still fail.
+
+    Without this, the selftest could be passing because its fixtures already contain the
+    answer ("a receipt derived from what it checks cannot fail").
+    """
+    import engine.intelligence_registry as mod
+
+    real_build = mod.build_registry
+
+    def gutted(**kwargs):
+        registry = real_build(**kwargs)
+        for row in registry["engines"]:
+            row["authority_evidence"]["unevidenced_artifacts"] = []
+        return registry
+
+    monkeypatch.setattr(guard, "build_registry", gutted)
+    assert _selftest_rc() == 1, "the C-1 derivation is not covered by a negative control"
+
+
+def test_selftest_fails_when_the_species_null_is_collapsed_to_an_empty_store(monkeypatch):
+    """The 2026-08-12 failure, pinned. Substituting an EMPTY species list for the NULL is
+    exactly 'could not look' rendered as 'looked and found nothing'; the selftest must see
+    it."""
+    import engine.intelligence_registry as mod
+
+    real_build = mod.build_registry
+
+    def collapsed(**kwargs):
+        if kwargs.get("species") is None:
+            kwargs["species"] = []
+        return real_build(**kwargs)
+
+    monkeypatch.setattr(guard, "build_registry", collapsed)
+    assert _selftest_rc() == 1
+
+
 def test_selftest_passes_again_once_restored():
     assert _selftest_rc() == 0
 
 
 # ---------------------------------------------------------------------------
-# Severity split — law A hard, law B warn
+# Severity split — structural violations hard, content findings warn
 # ---------------------------------------------------------------------------
 
 def test_default_run_is_advisory_for_content_findings():
-    """Law B fires on PRE-EXISTING corpus conditions no PR author caused. Wiring it hard
-    on arrival would red main fleet-wide, which is how a gate gets routed around."""
+    """The content law fires on PRE-EXISTING corpus conditions no PR author caused. Wiring
+    it hard on arrival would red main fleet-wide, which is how a gate gets routed around."""
     result = _run()
-    if "registry absent" in result.stdout:
-        pytest.skip("registry absent in this checkout")
     assert result.returncode == 0, result.stdout[-2000:]
 
 
 def test_strict_escalates_content_findings():
     result = _run("--strict")
-    if "registry absent" in result.stdout:
-        pytest.skip("registry absent in this checkout")
     payload = json.loads(_run("--json").stdout)
-    expected = 1 if (payload["integrity"] or payload["content"]) else 0
+    expected = 1 if (payload["violations"] or payload["findings"] or payload["unreadable_inputs"]) else 0
     assert result.returncode == expected
 
 
-def test_integrity_violations_would_fail_hard():
-    """Law A must exit non-zero — proven on a synthetic bad registry, not by hoping the
-    live one is broken."""
-    bad = {"schema": "wrong", "meta": {}, "engines": [], "excluded": []}
-    assert validate_structure(bad) != []
+def test_structural_violations_exit_non_zero():
+    """Proven on a synthetic bad view, not by hoping the live one is broken."""
+    assert validate_structure({"schema": "wrong", "meta": {}, "engines": [], "excluded": []}) != []
 
 
 # ---------------------------------------------------------------------------
@@ -128,6 +164,7 @@ def test_annotations_start_the_line_and_are_never_logged():
         line for line in result.stdout.splitlines()
         if "::warning" in line or "::error" in line or "::notice" in line
     ]
+    assert annotated, "the guard emitted no annotation at all"
     for line in annotated:
         assert line.startswith("::"), (
             f"annotation does not start the line — GitHub drops it silently: {line!r}"
@@ -136,95 +173,130 @@ def test_annotations_start_the_line_and_are_never_logged():
 
 def test_guard_source_never_routes_an_annotation_through_a_logger():
     source = SCRIPT.read_text(encoding="utf-8")
-    for bad in ("log.warning(\"::", "log.error(\"::", "logger.warning(\"::", "logging.warning(\"::"):
+    for bad in ('log.warning("::', 'log.error("::', 'logger.warning("::', 'logging.warning("::'):
         assert bad not in source
 
 
 def test_annotation_volume_is_budgeted():
-    """181 findings on the 2026-08-12 corpus. One annotation each would bury the
-    actionable C-1 rows; every non-C-1 code is aggregated to a single annotation.
+    """One annotation per finding would bury the actionable C-1 rows, so every non-C-1 code
+    is aggregated to a single annotation with a count and full detail goes to stdout.
 
-    ONE SUBPROCESS. This used to compare counts across TWO independent guard invocations,
-    each rebuilding from the live tree — a cross-invocation equality assertion over a
-    shared checkout, observed failing once in 8 runs (assert 23 == 22 + 2) while the repo's
-    MM_DATA_GUARD simultaneously reported data/intelligence_registry.json modified. The
-    mechanism was never explained, which is precisely the argument: a racy structure is
-    wrong regardless of which race it loses. Reading both halves out of the SAME stdout
-    removes the race by construction, and halves the guard cost (~3s per invocation).
+    ONE SUBPROCESS. Comparing counts across TWO independent guard invocations was a
+    cross-invocation equality assertion over a shared checkout — a racy structure, observed
+    failing once in 8 runs. Reading both halves out of the SAME stdout removes the race by
+    construction.
     """
     result = _run()
-    if "registry absent" in result.stdout:
-        pytest.skip("registry absent in this checkout")
-    warnings = [line for line in result.stdout.splitlines() if line.startswith("::warning")]
+    lines = result.stdout.splitlines()
+    warnings = [line for line in lines if line.startswith("::warning")]
     per_engine = [w for w in warnings if "[AUTHORITY_WITHOUT_EVIDENCE]" in w]
-    aggregated = [w for w in warnings if "engine(s) — detail in" in w]
+    aggregated = [w for w in warnings if "engine(s) — detail on stdout" in w]
     assert warnings, result.stdout[-2000:]
     assert len(warnings) == len(per_engine) + len(aggregated), (
         "every annotation is either one C-1 row or one aggregated count"
     )
-    # Each aggregated annotation stands for MANY stdout detail lines — that is the budget.
     detail_lines = [
-        line for line in result.stdout.splitlines()
+        line for line in lines
         if line.startswith("  [") and "AUTHORITY_WITHOUT_EVIDENCE" not in line
     ]
-    assert len(detail_lines) >= len(aggregated), "full detail must still reach stdout"
     assert len(aggregated) < len(detail_lines), (
         "aggregation must actually compress — otherwise the budget is decorative"
     )
 
 
 # ---------------------------------------------------------------------------
-# "Could not look" is never "looked and found nothing"
+# FAIL CLOSED — "could not look" is never "looked and found nothing"
 # ---------------------------------------------------------------------------
 
-def test_absent_registry_exits_zero_with_a_notice(tmp_path):
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--root", str(tmp_path)],
-        cwd=REPO, capture_output=True, text=True, check=False,
+def test_an_unreadable_synapse_is_NOT_CHECKED_never_a_clean_count(tmp_path):
+    """A previous round printed '0 integrity violation(s)' when it could not read its
+    inputs. The SUMMARY LINE — the one line a CI reader sees — must say it could not look,
+    and the run must exit non-zero."""
+    result = _run("--root", str(tmp_path))
+    assert result.returncode != 0, result.stdout
+    summary = next(
+        line for line in result.stdout.splitlines() if line.startswith("intelligence registry:")
     )
-    assert result.returncode == 0
-    assert "::notice" in result.stdout
-    assert "registry absent" in result.stdout
+    assert "NOT CHECKED" in summary
+    assert "inputs=INCOMPLETE" in summary
+    # The normal-run summary shape must NOT appear: that is the sentence a CI reader skims
+    # for, and printing it while blind is the whole defect.
+    assert "structural violation(s)" not in summary
+    assert "engines," not in summary
+    assert any(line.startswith("::error") for line in result.stdout.splitlines())
 
 
-def test_absent_registry_json_mode_reports_absence_not_emptiness(tmp_path):
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--root", str(tmp_path), "--json"],
-        cwd=REPO, capture_output=True, text=True, check=False,
-    )
+def test_an_unreadable_synapse_in_json_mode_reports_absence_not_emptiness(tmp_path):
+    result = _run("--root", str(tmp_path), "--json")
     payload = json.loads(result.stdout)
-    assert payload["registry_absent"] is True
-    assert payload["integrity"] is None and payload["content"] is None, (
+    assert payload["inputs_complete"] is False
+    assert payload["violations"] is None and payload["findings"] is None, (
         "an empty list would render 'could not look' as 'looked and clean'"
     )
+    assert payload["unreadable_inputs"] == ["config/synapse.yml"]
+    assert result.returncode != 0
+
+
+def test_a_PARTIALLY_unreadable_input_set_names_what_it_missed_and_strict_reds(monkeypatch):
+    """The other half of fail-closed: synapse READS but a downstream store does not. The
+    summary must carry `inputs=INCOMPLETE (...)` naming the store, and --strict must exit
+    non-zero on that alone — an absence of findings is not a pass when the inputs are
+    partial."""
+    import scripts.build_intelligence_registry as builder
+
+    real_build = builder.build
+
+    def blinded(root):
+        registry, report = real_build(root)
+        report = dict(report)
+        report["unreadable_inputs"] = list(report["unreadable_inputs"]) + [
+            str(builder.SPECIES_REL)
+        ]
+        report["inputs_complete"] = False
+        return registry, report
+
+    monkeypatch.setattr(guard, "build", blinded)
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = guard.main(["--strict"])
+    out = buf.getvalue()
+    assert "inputs=INCOMPLETE" in out
+    assert "data/species/registry.json" in out.split("intelligence registry:")[-1]
+    assert rc != 0, "a blind run must not exit 0 under --strict"
+
+
+def test_the_summary_line_always_carries_an_inputs_clause():
+    result = _run()
+    summary = [line for line in result.stdout.splitlines() if line.startswith("intelligence registry:")]
+    assert len(summary) == 1, summary
+    assert "inputs=" in summary[0]
 
 
 def test_json_mode_always_emits_an_object():
     payload = json.loads(_run("--json").stdout)
     assert isinstance(payload, dict)
-    assert "registry_absent" in payload
+    assert "inputs_complete" in payload and "unreadable_inputs" in payload
 
 
 # ---------------------------------------------------------------------------
-# The live registry is green on law A
+# The C-1 backlog is VISIBLE and every row names its heal
 # ---------------------------------------------------------------------------
 
-def test_live_registry_has_zero_integrity_violations():
+def test_the_C1_backlog_is_reported_and_every_finding_names_its_heal():
     payload = json.loads(_run("--json").stdout)
-    if payload["registry_absent"]:
-        pytest.skip("registry absent in this checkout")
-    assert payload["integrity"] == [], payload["integrity"]
-
-
-def test_live_registry_reports_the_C1_backlog():
-    """C-1 must be VISIBLE, not silently null."""
-    payload = json.loads(_run("--json").stdout)
-    if payload["registry_absent"]:
-        pytest.skip("registry absent in this checkout")
-    c1 = [f for f in payload["content"] if f["code"] == "AUTHORITY_WITHOUT_EVIDENCE"]
+    c1 = [f for f in payload["findings"] if f["code"] == "AUTHORITY_WITHOUT_EVIDENCE"]
     assert c1, "the C-1 backlog must be reported, not hidden"
     for finding in c1:
         assert "qual_ladder_ref" in finding["detail"], "every finding names its heal"
+
+
+def test_the_derived_view_has_zero_structural_violations():
+    """Structural violations are properties of the DERIVATION and of the hand-edited
+    overlay — green by construction on arrival, so they can be hard without firing
+    fleet-wide for nobody's fault."""
+    payload = json.loads(_run("--json").stdout)
+    assert payload["violations"] == [], payload["violations"]
 
 
 # ---------------------------------------------------------------------------
@@ -247,93 +319,13 @@ def test_overlay_forbidden_key_names_the_dnr_row():
     assert any("KILL-PARALLEL-KNOWLEDGE-BASE" in v for v in violations)
 
 
-# ---------------------------------------------------------------------------
-# Drift + idempotence (law A)
-# ---------------------------------------------------------------------------
-
-def test_builder_check_mode_reports_no_drift():
-    """This assertion is CORRECT AS WRITTEN and stays.
-
-    It used to be a scheduled fleet-wide red: `--check` compares the WHOLE registry text,
-    and the committed registry carried `ledger_evidence.corpus_rows` derived from the
-    append-only claim corpus, so the first nightly claim landing on main failed this test
-    on every open PR's merge ref. The fix was at the SOURCE — nothing append-only is
-    committed any more — not here. Weakening this assertion would have hidden the defect
-    rather than removed it.
-    """
-    result = subprocess.run(
-        [sys.executable, str(REPO / "scripts" / "build_intelligence_registry.py"), "--check"],
-        cwd=REPO, capture_output=True, text=True, check=False,
-    )
-    assert result.returncode == 0, result.stdout[-3000:]
-
-
-def test_regeneration_is_idempotent():
-    from scripts.build_intelligence_registry import build
-    from engine.intelligence_registry import serialise
-
-    first, _ = build(REPO)
-    second, _ = build(REPO)
-    assert serialise(first) == serialise(second)
-
-
-@pytest.mark.parametrize(
-    "field,value",
-    [
-        ("authority", "gate_size"),
-        # THE TAMPER THAT USED TO BE INVISIBLE. validation_state is the
-        # display-only-until-validated axis; it sat in VOLATILE_ENGINE_PATHS and was
-        # STRIPPED before comparing, so a hand-edit produced byte-identical guard output.
-        ("validation_state", "validated"),
-        ("graded_by_design", "yes"),
-        ("output_class", "predictive"),
-    ],
-)
-def test_a_stale_committed_copy_cannot_pass(field, value):
-    """The drift law must actually see a mutated committed file, on EVERY field."""
-    from engine.intelligence_registry import serialise
-    from scripts.build_intelligence_registry import build
-
-    fresh, _ = build(REPO)
-    stale = copy.deepcopy(fresh)
-    if not stale["engines"]:
-        pytest.skip("no engines")
-    row = next((r for r in stale["engines"] if r[field] != value), None)
-    if row is None:
-        pytest.skip(f"every engine already has {field}={value!r}")
-    row[field] = value
-    assert serialise(stale) != serialise(fresh)
-
-
-def test_the_committed_registry_carries_no_corpus_derived_field():
-    """B-RED, stated as a property of the shipped artifact rather than of the builder."""
-    from engine.intelligence_registry import assert_no_volatile
-
-    path = REPO / "data" / "intelligence_registry.json"
-    if not path.exists():
-        pytest.skip("registry absent in this checkout")
-    assert assert_no_volatile(json.loads(path.read_text(encoding="utf-8"))) == []
-
-
-def test_a_corpus_derived_field_in_the_committed_file_is_a_HARD_violation():
-    from engine.intelligence_registry import validate_structure
-    from scripts.build_intelligence_registry import build
-
-    registry, _ = build(REPO)
-    if not registry["engines"]:
-        pytest.skip("no engines")
-    registry["engines"][0]["ledger_evidence"]["corpus_rows"] = 88
-    assert any("corpus_rows" in v for v in validate_structure(registry))
-
-
-def test_the_overlay_orphan_rule_reads_the_PARTITION_not_the_committed_ids():
+def test_the_overlay_orphan_rule_reads_the_PARTITION_not_the_built_ids():
     """A `not_an_engine` row used to SELF-LEGITIMATE: it created the excluded row that
     proved it was not an orphan, so the orphan rule could never fire on it."""
     from scripts.build_intelligence_registry import build
 
-    _, report = build(REPO)
-    committed = json.loads((REPO / "data" / "intelligence_registry.json").read_text("utf-8"))
-    excluded_ids = {r["engine_id"] for r in committed["excluded"]}
+    registry, report = build(REPO)
+    excluded_ids = {r["engine_id"] for r in registry["excluded"]}
     assert excluded_ids, "the fixture needs at least one excluded cell"
     assert excluded_ids <= set(report["cell_ids"]), (
         "cell_ids is the PRE-EXCLUSION partition, so an excluded id is still a real cell"
@@ -345,8 +337,46 @@ def test_the_overlay_orphan_rule_reads_the_PARTITION_not_the_committed_ids():
     ), "a row for a cell the partition does not contain must still be an orphan"
 
 
-def test_content_audit_is_pure_over_a_loaded_registry():
-    from scripts.build_intelligence_registry import build
+# ---------------------------------------------------------------------------
+# There is no equality pin left to red the fleet
+# ---------------------------------------------------------------------------
 
-    registry, _ = build(REPO)
-    assert audit_content(registry) == audit_content(registry)
+def test_the_guard_has_no_drift_or_equality_mode():
+    """Rounds 1 and 2 both shipped an equality pin and both were scheduled fleet-wide
+    reds. Their absence is the architecture, so it is asserted FUNCTIONALLY — the prose in
+    both modules discusses the deleted pin by name, so a grep of the source text would
+    match its own postmortem."""
+    assert _run("--check").returncode == 2, "--check must be an unknown argument"
+
+    # ...and nothing in the program OPENS a generated artifact.
+    for module in (SCRIPT, REPO / "scripts" / "build_intelligence_registry.py",
+                   REPO / "engine" / "intelligence_registry.py"):
+        source = module.read_text(encoding="utf-8")
+        for reader in ('read_text(', 'json.load(', 'open('):
+            for line in source.splitlines():
+                if reader in line and "intelligence_registry.json" in line:
+                    raise AssertionError(f"{module.name}: reads a generated artifact: {line}")
+
+
+def test_no_test_in_this_program_asserts_on_live_synapse_contents():
+    """THE STANDING RULE, ENFORCED FROM INSIDE. A sibling PR adding a scored artifact to
+    config/synapse.yml must never red this lane, so no test may READ that file directly and
+    assert on what is in it. Live-input tests go through the builder and assert only shape.
+
+    Matched on the READ EXPRESSION, not on the filename: both suites discuss synapse.yml in
+    prose, and a filename grep would match the sentence explaining the rule.
+
+    The needles are ASSEMBLED AT RUNTIME so this file does not contain them literally —
+    a self-matching guard reports its own definition and can never be green.
+    """
+    corpus = "synapse.yml"
+    needles = [
+        corpus + '").read_text',
+        corpus + "').read_text",
+        "def " + "live_synapse",
+        "live_" + "registry",
+    ]
+    for name in ("test_intelligence_registry.py", "test_check_intelligence_registry.py"):
+        source = (REPO / "tests" / name).read_text(encoding="utf-8")
+        for banned in needles:
+            assert banned not in source, f"{name}: reads live corpus contents ({banned})"

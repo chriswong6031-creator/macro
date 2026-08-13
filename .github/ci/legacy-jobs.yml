@@ -1901,11 +1901,17 @@ jobs:
       # Eval OS T1 — the engine registry. Extends this job rather than adding a new one:
       # run_ci_pack.py balances 185 jobs by weight, so a new job rebalances every pack,
       # and neural-web is the closest domain match (it already hosts test_synapse_registry
-      # and the entity-thesis registry guard). Two laws, two severities, one script:
-      # governance.intelligence_registry_integrity is HARD (drift/idempotence/overlay
-      # allowlist/partition — all green by construction on the PR that generates the file)
-      # and epistemics.engine_authority_evidence is WARN (pre-existing corpus conditions;
-      # --strict is deliberately NOT passed here, see the registry entry's notes).
+      # and the entity-thesis registry guard). Two laws, one script, both WARN:
+      # governance.intelligence_registry_integrity (partition/attribution/overlay
+      # allowlist — invariants of the derivation) and epistemics.engine_authority_evidence
+      # (pre-existing corpus conditions). --strict is deliberately NOT passed here.
+      #
+      # THE REGISTRY IS A DERIVED ON-DEMAND VIEW — nothing is committed, there is no
+      # `--check` equality mode and no drift comparison, so this step cannot be reddened by
+      # a nightly claim append or by a sibling PR editing config/synapse.yml. Two earlier
+      # rounds pinned a generated artifact by equality (against data/qledger/claims.jsonl,
+      # then against config/synapse.yml — 13 and 26 commits in 14 days) and both were
+      # scheduled fleet-wide reds. Do not re-add a regeneration lane or a committed file.
       #
       # PLACED FIRST, IMMEDIATELY AFTER `install minimal deps`, AND IT MUST STAY THERE.
       # scripts/run_ci_pack.py::_run_job RETURNS on the first non-zero step, so an appended
@@ -1916,7 +1922,7 @@ jobs:
       # is a hard manifest error. Ordering is the only lever. Safe in the other direction
       # too: the HARD guard is green by construction and the T1 suite is hermetic, so
       # nothing here can red ahead of the suites that used to precede it.
-      - name: "HARD | intelligence engine registry integrity (Eval OS T1)"
+      - name: "intelligence engine registry integrity (Eval OS T1)"
         run: |
           python3 scripts/check_intelligence_registry.py --selftest
           python3 scripts/check_intelligence_registry.py

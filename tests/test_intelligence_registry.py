@@ -1,34 +1,46 @@
 """tests/test_intelligence_registry.py — derivation tests for the T1 engine registry.
 
-Covers engine/intelligence_registry.py's pure functions with synthetic input, plus the
-two defect fixtures the registry exists to fix (C-1, C-2) asserted against the LIVE
-config/synapse.yml. Nothing here touches data/ — the corpus-sourced fields are exercised
-with injected values so the suite runs identically in a sparse agent worktree and in CI.
+SYNTHETIC INPUT ONLY, WITH ONE DELIBERATE EXCEPTION
+---------------------------------------------------
+Every behavioural assertion here runs against a hand-built fixture. Nothing asserts on the
+CONTENTS of config/synapse.yml, data/qledger/, data/species/ or config/qual_ladder.yml,
+because none of those is stable: synapse.yml took 26 commits in 14 days and the claim store
+is append-only. A test that pinned "site-us-standouts is user_ranking" or "C-1 is 21
+engines" would red main the moment a sibling PR added an artifact — an event no PR author
+on THIS lane caused. Two earlier rounds shipped exactly that scheduled red, first as a
+committed artifact pinned by equality and then as counts pinned in this file.
+
+The exception is §LIVE INPUTS at the bottom. Those tests run the builder over the real
+tree and assert only that it does not crash and returns a WELL-FORMED structure — no count,
+no name, no value. Two of them simulate the volatility directly: a synthetic claim append
+and a synthetic synapse artifact, each asserting the derivation stays structurally valid.
+
+Nothing here reads data/ from the worktree; the sparse-cone ladder is exercised through the
+builder's own probes.
 """
 from __future__ import annotations
 
 import copy
 import json
-from collections import Counter
 from pathlib import Path
 
 import pytest
-import yaml
 
 from engine.intelligence_registry import (
     AUTHORITY_ORDER,
     GRADED_DESCRIPTIVE,
+    GRADED_EVIDENCE_NONE,
+    GRADED_EVIDENCE_STRONG,
+    GRADED_EVIDENCE_WEAK,
     GRADED_NOT_YET,
     GRADED_YES,
     LEDGER_NONE,
     OUTPUT_CLASSES,
     OVERLAY_ALLOWED_KEYS,
     OVERLAY_FORBIDDEN_KEYS,
-    VOLATILE_ENGINE_PATHS,
-    VOLATILE_META_KEYS,
-    assert_no_volatile,
+    SCHEMA,
+    DeskScan,
     audit_content,
-    audit_corpus,
     bind_species,
     build_registry,
     derive_artifact_authority,
@@ -43,14 +55,13 @@ from engine.intelligence_registry import (
     species_token_matches_ledger,
     validate_overlay,
     validate_structure,
-    volatile_view,
 )
 
 REPO = Path(__file__).resolve().parents[1]
 
 
 # ---------------------------------------------------------------------------
-# Fixtures
+# Fixtures — synthetic
 # ---------------------------------------------------------------------------
 
 def _artifact(**over):
@@ -76,17 +87,46 @@ def _synapse(artifacts):
     return {"meta": {"schema_version": 1}, "artifacts": artifacts}
 
 
-@pytest.fixture(scope="module")
-def live_synapse():
-    return yaml.safe_load((REPO / "config" / "synapse.yml").read_text(encoding="utf-8"))
+def _codes(registry):
+    return {f.code for f in audit_content(registry)}
 
 
-@pytest.fixture(scope="module")
-def live_registry():
-    path = REPO / "data" / "intelligence_registry.json"
-    if not path.exists():
-        pytest.skip("data/intelligence_registry.json absent (sparse worktree)")
-    return json.loads(path.read_text(encoding="utf-8"))
+# ---------------------------------------------------------------------------
+# NOTHING IS COMMITTED — the architecture, asserted as a property of the repo
+# ---------------------------------------------------------------------------
+
+def test_no_generated_registry_artifact_is_tracked():
+    """THE ROUND-3 ARCHITECTURE, AS A TEST. Two earlier rounds committed a generated
+    data/intelligence_registry.json and a generated Markdown mirror and pinned them by
+    equality against a 'stable' input. Both were scheduled fleet-wide reds; the pin merely
+    RELOCATED between rounds (claims.jsonl -> synapse.yml, 13 and 26 commits in 14 days).
+    There is no stable input on this repo to pin against, so nothing generated is tracked.
+    """
+    import subprocess
+
+    tracked = subprocess.run(
+        ["git", "ls-files", "data/intelligence_registry.json",
+         "docs/MASTERMIND_INTELLIGENCE_REGISTRY.md"],
+        cwd=REPO, capture_output=True, text=True, check=False,
+    ).stdout.split()
+    assert tracked == [], f"a generated registry artifact is tracked again: {tracked}"
+
+
+def test_the_builder_has_no_check_equality_mode():
+    """`--check` was the pin's executable form. Its absence is what makes the guard
+    un-reddenable by a nightly append, so it is asserted rather than assumed."""
+    import scripts.build_intelligence_registry as builder
+
+    source = Path(builder.__file__).read_text(encoding="utf-8")
+    assert '"--check"' not in source and "'--check'" not in source
+
+
+def test_the_module_writes_no_files():
+    import engine.intelligence_registry as mod
+
+    source = Path(mod.__file__).read_text(encoding="utf-8")
+    for forbidden in ("write_text(", "open(", "os.makedirs", "mkdir("):
+        assert forbidden not in source, f"the pure module performs I/O: {forbidden}"
 
 
 # ---------------------------------------------------------------------------
@@ -97,20 +137,8 @@ def test_engine_id_is_producer_then_owner_program():
     assert engine_id_for("engine/a.py", "prog") == "engine/a.py::prog"
 
 
-def test_partition_is_total_and_disjoint_on_the_live_registry(live_synapse):
-    cells = partition_artifacts(live_synapse)
-    mapped = [aid for ids in cells.values() for aid in ids]
-    assert len(mapped) == len(live_synapse["artifacts"])
-    assert len(set(mapped)) == len(mapped), "an artifact landed in two cells"
-
-
 def test_two_programs_on_one_producer_are_two_engines():
-    synapse = _synapse(
-        {
-            "a": _artifact(owner_program="p1"),
-            "b": _artifact(owner_program="p2"),
-        }
-    )
+    synapse = _synapse({"a": _artifact(owner_program="p1"), "b": _artifact(owner_program="p2")})
     assert set(partition_artifacts(synapse)) == {"engine/a.py::p1", "engine/a.py::p2"}
 
 
@@ -118,6 +146,27 @@ def test_owner_program_span_counts_cross_program_producers():
     synapse = _synapse({"a": _artifact(owner_program="p1"), "b": _artifact(owner_program="p2")})
     registry = build_registry(synapse=synapse)
     assert {r["owner_program_span"] for r in registry["engines"]} == {2}
+
+
+def test_the_partition_is_total_over_a_synthetic_corpus():
+    synapse = _synapse(
+        {
+            "a": _artifact(),
+            "b": _artifact(producer="engine/b.py"),
+            "c": _artifact(producer="<MANUAL>"),
+        }
+    )
+    registry = build_registry(synapse=synapse)
+    assert registry["meta"]["n_artifacts"] == 3
+    assert registry["meta"]["n_artifacts_mapped"] == 3
+    assert validate_structure(registry) == []
+
+
+def test_a_dropped_artifact_is_a_structural_violation():
+    """The partition invariant must be able to FAIL, or it is decorative."""
+    registry = build_registry(synapse=_synapse({"a": _artifact(), "b": _artifact(producer="engine/b.py")}))
+    registry["engines"][0]["artifacts"] = []
+    assert any("partition is not total" in v for v in validate_structure(registry))
 
 
 # ---------------------------------------------------------------------------
@@ -146,11 +195,6 @@ def test_excluded_cells_carry_their_artifacts_so_the_partition_stays_total():
     assert validate_structure(registry) == []
 
 
-def test_curated_exclusion_requires_a_reason():
-    overlay = {"schema_version": 1, "engines": {"engine/a.py::prog": {"not_an_engine": {"reason": ""}}}}
-    assert validate_overlay(overlay, ["engine/a.py::prog"])
-
-
 # ---------------------------------------------------------------------------
 # `not_an_engine` is not a census-deletion hatch
 # ---------------------------------------------------------------------------
@@ -169,9 +213,9 @@ def _overlay(**row):
 
 def test_a_three_character_reason_can_no_longer_delete_an_engine():
     """MEASURED 2026-08-12 before the fix: two `not_an_engine: {reason: "nah"}` rows took
-    the census 378 -> 376, gate_size 5 -> 4, findings 109 -> 106, with validate_overlay()
-    and validate_structure() BOTH returning []. The most destructive of the four overlay
-    keys was the least gated."""
+    the census 378 -> 376 and gate_size 5 -> 4 with validate_overlay() and
+    validate_structure() BOTH returning []. The most destructive of the four overlay keys
+    was the least gated."""
     assert validate_overlay(_overlay(reason="nah"), ["engine/a.py::prog"])
 
 
@@ -198,10 +242,8 @@ def test_an_authority_bearing_cell_may_not_be_excluded_by_overlay():
     synapse = _synapse({"a": _artifact(tier="scored")})
     registry = build_registry(synapse=synapse, overlay=_overlay(**_GOOD_EXCLUSION))
     assert registry["meta"]["n_engines"] == 0 and registry["meta"]["n_excluded"] == 1
-    row = registry["excluded"][0]
-    assert row["would_be_authority"] == "gate_size"
-    violations = validate_structure(registry)
-    assert any("deletion hatch" in v for v in violations), violations
+    assert registry["excluded"][0]["would_be_authority"] == "gate_size"
+    assert any("deletion hatch" in v for v in validate_structure(registry))
 
 
 def test_an_evaluated_tier_cell_may_not_be_excluded_by_overlay():
@@ -213,16 +255,14 @@ def test_an_evaluated_tier_cell_may_not_be_excluded_by_overlay():
 def test_a_display_only_cell_MAY_be_excluded_by_overlay():
     """The refusal must not be a blanket ban — a genuine judgment exclusion of a
     decorative cell stays legal, otherwise the key is dead rather than gated."""
-    synapse = _synapse({"a": _artifact()})
-    registry = build_registry(synapse=synapse, overlay=_overlay(**_GOOD_EXCLUSION))
+    registry = build_registry(synapse=_synapse({"a": _artifact()}), overlay=_overlay(**_GOOD_EXCLUSION))
     assert validate_structure(registry) == []
 
 
 def test_a_DERIVED_placeholder_exclusion_is_exempt_from_the_authority_refusal():
     """A `<PLACEHOLDER>` token is not a repo module — there is no code to hold authority,
     so the refusal would be a false red."""
-    synapse = _synapse({"a": _artifact(producer="<MANUAL>", tier="scored")})
-    registry = build_registry(synapse=synapse)
+    registry = build_registry(synapse=_synapse({"a": _artifact(producer="<MANUAL>", tier="scored")}))
     assert registry["excluded"][0]["source"] == "derived"
     assert validate_structure(registry) == []
 
@@ -231,10 +271,10 @@ def test_an_excluded_cell_still_reports_its_content_findings():
     """BELT AND BRACES. Even if the hard refusal were bypassed, an exclusion must not buy
     silence — that is the mechanism that would deflate the C-1/C-2 backlog T1 exists for."""
     synapse = _synapse({"a": _artifact(tier="scored")})
-    registry = build_registry(synapse=synapse, overlay=_overlay(**_GOOD_EXCLUSION))
-    codes = {f.code for f in audit_content(registry)}
+    codes = _codes(build_registry(synapse=synapse, overlay=_overlay(**_GOOD_EXCLUSION)))
     assert "AUTHORITY_WITHOUT_EVIDENCE" in codes
     assert "OUTPUT_CLASS_MISSING" in codes
+    assert "ENGINE_EXCLUDED_BY_OVERLAY" in codes
 
 
 def test_an_exclusion_records_what_it_deletes():
@@ -246,28 +286,23 @@ def test_an_exclusion_records_what_it_deletes():
     assert row["would_be_output_class_reason"] == "required_but_uncurated"
 
 
-def test_the_live_overlay_carries_ZERO_curated_exclusions(live_registry):
-    """THE RATCHET. Derived (placeholder) exclusions are fine; the FIRST curated one must
-    be a deliberate reviewed act rather than a diff nobody reads."""
-    curated = [r for r in live_registry["excluded"] if r["source"] == "curated"]
-    assert curated == [], curated
-    assert all(r["source"] == "derived" for r in live_registry["excluded"])
-
-
 # ---------------------------------------------------------------------------
 # Authority — the C-2 fix
 # ---------------------------------------------------------------------------
 
 def test_rule_a_scored_tier_is_gate_size():
-    synapse = _synapse({"a": _artifact(tier="scored")})
-    assert derive_artifact_authority(synapse)["a"]["authority"] == "gate_size"
+    assert derive_artifact_authority(_synapse({"a": _artifact(tier="scored")}))["a"]["authority"] == "gate_size"
 
 
 def test_rule_b_scored_path_surfaces_is_user_ranking():
-    synapse = _synapse({"a": _artifact(scored_path_surfaces=["board_ordering"])})
+    """C-2 in miniature: an artifact that ORDERS a user-visible board carries the same
+    `tier: display` as a decorative chip, so authority must be a different field."""
+    synapse = _synapse({"a": _artifact(tier="display", scored_path_surfaces=["board_ordering"])})
     got = derive_artifact_authority(synapse)["a"]
-    assert got["authority"] == "user_ranking"
-    assert got["rule"] == "b"
+    assert got["authority"] == "user_ranking" and got["rule"] == "b"
+    assert synapse["artifacts"]["a"]["tier"] == "display", (
+        "authority is a NEW field, not a rename of tier"
+    )
 
 
 def test_rule_c_one_hop_into_an_authority_producer_is_engine_input():
@@ -291,8 +326,14 @@ def test_rule_c_requires_an_evaluated_tier_not_merely_a_hop():
 
 
 def test_rule_d_default_is_display():
-    synapse = _synapse({"a": _artifact()})
-    assert derive_artifact_authority(synapse)["a"]["authority"] == "display"
+    assert derive_artifact_authority(_synapse({"a": _artifact()}))["a"]["authority"] == "display"
+
+
+def test_authority_does_not_promote_everything():
+    """A derivation that promotes every artifact is as useless as one that promotes none."""
+    synapse = _synapse({f"chip{i}": _artifact(path=f"site/c{i}.json") for i in range(20)})
+    authority = derive_artifact_authority(synapse)
+    assert {v["authority"] for v in authority.values()} == {"display"}
 
 
 def test_engine_authority_is_the_max_over_its_artifacts():
@@ -305,29 +346,16 @@ def test_authority_order_is_a_total_order_low_to_high():
     assert AUTHORITY_ORDER == ("display", "engine_input", "user_ranking", "gate_size")
 
 
-def test_C2_site_us_standouts_is_not_plain_display(live_synapse):
-    """Finding C-2: the Prophet board that orders what a paying user sees carried the
-    same `tier: display` as a decorative chip. `authority` must separate them."""
-    authority = derive_artifact_authority(live_synapse)
-    assert authority["site-us-standouts"]["authority"] == "user_ranking"
-    assert authority["site-us-standouts"]["rule"] == "b"
-    assert live_synapse["artifacts"]["site-us-standouts"]["tier"] == "display", (
-        "the synapse tier is still display — that is the point: authority is a DIFFERENT "
-        "field, not a rename of tier"
-    )
+def test_authority_is_attributable_to_a_rule_and_an_artifact():
+    registry = build_registry(synapse=_synapse({"a": _artifact(tier="scored")}))
+    evidence = registry["engines"][0]["authority_evidence"]
+    assert evidence["rule"] == "a" and evidence["artifact_ids"] == ["a"]
 
 
-def test_C2_a_decorative_display_artifact_stays_display(live_synapse):
-    authority = derive_artifact_authority(live_synapse)
-    display = [a for a, v in authority.items() if v["authority"] == "display"]
-    assert len(display) > 100, "authority must not promote everything"
-
-
-def test_C2_the_two_vol_regime_gates_are_caught_definitionally(live_synapse):
-    authority = derive_artifact_authority(live_synapse)
-    for artifact_id in ("vol-regime-gate", "vol-regime-basket-overlay-gate"):
-        assert authority[artifact_id]["authority"] == "gate_size"
-        assert authority[artifact_id]["rule"] == "a", "rule (a) is definitional, not a scan"
+def test_an_unattributable_authority_is_a_structural_violation():
+    registry = build_registry(synapse=_synapse({"a": _artifact(tier="scored")}))
+    registry["engines"][0]["authority_evidence"]["artifact_ids"] = []
+    assert any("names no artifact" in v for v in validate_structure(registry))
 
 
 def test_completeness_flag_proposes_but_never_promotes():
@@ -339,47 +367,46 @@ def test_completeness_flag_proposes_but_never_promotes():
     assert row["authority"] == "display", "the detector must NOT promote authority"
 
 
+def test_an_unimportable_article2_table_is_a_NULL_not_an_empty_list():
+    """`_article2_modules()` used to swallow the ImportError and return [], so 'the table
+    could not be imported' rendered as 'no Article-2 modules exist' and every completeness
+    finding silently disappeared."""
+    registry = build_registry(synapse=_synapse({"a": _artifact()}), article2_modules=None)
+    row = registry["engines"][0]
+    assert row["authority_evidence"]["completeness_flag"] is None
+    assert row["authority_evidence"]["completeness_detail"] is None
+    assert "SCORED_PATH_SURFACES_UNCHECKED" in _codes(registry)
+
+
+def test_the_builder_propagates_the_article2_null_rather_than_an_empty_list():
+    import scripts.build_intelligence_registry as builder
+    import inspect
+
+    source = inspect.getsource(builder._article2_modules)
+    assert "return None," in source, "the ImportError branch must return the null"
+    assert "return [], " not in source and "return []," not in source
+
+
 # ---------------------------------------------------------------------------
 # evidence_ref — the C-1 fix
 # ---------------------------------------------------------------------------
 
-def test_C1_reproduces_on_the_live_registry(live_synapse):
-    """Four of the five tier=scored artifacts carry no qual_ladder_ref."""
-    scored = {
-        aid: entry
-        for aid, entry in live_synapse["artifacts"].items()
-        if entry.get("tier") == "scored"
-    }
-    assert set(scored) == {
-        "vector-calibration", "hazard-model", "vol-regime-gate",
-        "vol-regime-basket-overlay-gate", "site-basket-washout-state",
-    }
-    without = {aid for aid, e in scored.items() if not e.get("qual_ladder_ref")}
-    assert without == {
-        "vector-calibration", "hazard-model", "vol-regime-gate",
-        "vol-regime-basket-overlay-gate",
-    }
-
-
 def test_evidence_ref_derives_from_qual_ladder_ref_not_from_the_overlay():
     synapse = _synapse({"a": _artifact(tier="scored", qual_ladder_ref="research/P.md")})
-    registry = build_registry(synapse=synapse)
+    registry = build_registry(
+        synapse=synapse, qual_ladder_keys=set(), file_exists=lambda p: True
+    )
     assert registry["engines"][0]["evidence_ref"] == ["research/P.md"]
     assert "evidence_ref" in OVERLAY_FORBIDDEN_KEYS
 
 
 def test_authority_without_evidence_is_a_content_finding():
-    synapse = _synapse({"a": _artifact(tier="scored")})
-    registry = build_registry(synapse=synapse)
-    codes = {f.code for f in audit_content(registry)}
-    assert "AUTHORITY_WITHOUT_EVIDENCE" in codes
+    registry = build_registry(synapse=_synapse({"a": _artifact(tier="scored")}))
+    assert "AUTHORITY_WITHOUT_EVIDENCE" in _codes(registry)
 
 
 def test_display_engine_without_evidence_is_not_a_finding():
-    synapse = _synapse({"a": _artifact()})
-    registry = build_registry(synapse=synapse)
-    codes = {f.code for f in audit_content(registry)}
-    assert "AUTHORITY_WITHOUT_EVIDENCE" not in codes
+    assert "AUTHORITY_WITHOUT_EVIDENCE" not in _codes(build_registry(synapse=_synapse({"a": _artifact()})))
 
 
 def test_C1_gate_is_NOT_cleared_by_a_display_siblings_reference():
@@ -394,34 +421,91 @@ def test_C1_gate_is_NOT_cleared_by_a_display_siblings_reference():
                               qual_ladder_ref="research/UNRELATED_DISPLAY_NOTE.md"),
         }
     )
-    registry = build_registry(
-        synapse=synapse, qual_ladder_keys=set(), path_exists=lambda p: True
-    )
+    registry = build_registry(synapse=synapse, qual_ladder_keys=set(), file_exists=lambda p: True)
     row = registry["engines"][0]
     assert row["authority"] == "gate_size"
     assert row["evidence_ref"] == ["research/UNRELATED_DISPLAY_NOTE.md"], (
         "the union is non-empty — that is exactly the condition that used to silence C-1"
     )
     assert row["authority_evidence"]["unevidenced_artifacts"] == ["gate"]
-    assert "AUTHORITY_WITHOUT_EVIDENCE" in {f.code for f in audit_content(registry)}
+    assert "AUTHORITY_WITHOUT_EVIDENCE" in _codes(registry)
 
 
 def test_C1_gate_is_NOT_cleared_by_a_pointer_at_a_nonexistent_file():
     """A ref that resolves to neither a config/qual_ladder.yml key nor an existing repo
-    path is a string, not evidence. Without this the C-1 backlog is drainable to zero
-    without a single real prereg."""
+    FILE is a string, not evidence. Without this the C-1 backlog is drainable to zero
+    without a single real prereg.
+
+    The two states are DISJOINT CODES on purpose — 'no pointer' and 'pointer at nothing'
+    need different heals — so what matters is that neither is silent and that the ref never
+    rolls up into evidence_ref.
+    """
     synapse = _synapse({"a": _artifact(tier="scored", qual_ladder_ref="lol/does_not_exist.md")})
     registry = build_registry(
-        synapse=synapse, qual_ladder_keys={"altdata.action"}, path_exists=lambda p: False
+        synapse=synapse, qual_ladder_keys={"altdata.action"}, file_exists=lambda p: False
     )
     row = registry["engines"][0]
     assert row["artifacts"][0]["qual_ladder_ref_resolution"] == "unresolved"
     assert row["evidence_ref"] is None, "an unresolvable ref must not roll up as evidence"
-    codes = {f.code for f in audit_content(registry)}
-    assert "AUTHORITY_WITHOUT_EVIDENCE" in codes
-    assert "AUTHORITY_EVIDENCE_UNRESOLVABLE" in codes, (
-        "'no pointer' and 'pointer at nothing' need different heals"
+    assert "AUTHORITY_EVIDENCE_UNRESOLVABLE" in _codes(registry)
+
+
+def test_the_three_evidence_states_are_disjoint_and_none_is_silent():
+    """MISSING / UNRESOLVABLE / UNCHECKED are three buckets, one code each. The failure
+    mode this pins is a ref landing in NO bucket — silently passing for evidence."""
+    synapse = _synapse(
+        {
+            "missing": _artifact(tier="scored", path="data/m.json"),
+            "broken": _artifact(tier="scored", path="data/b.json",
+                                qual_ladder_ref="lol/nope.md", producer="engine/b.py"),
+            "good": _artifact(tier="scored", path="data/g.json",
+                              qual_ladder_ref="research/P.md", producer="engine/g.py"),
+        }
     )
+    files = {"research/P.md"}
+    registry = build_registry(
+        synapse=synapse, qual_ladder_keys=set(), file_exists=lambda p: p in files
+    )
+    by_id = {r["engine_id"]: r for r in registry["engines"]}
+    assert by_id["engine/a.py::prog"]["authority_evidence"]["unevidenced_artifacts"] == ["missing"]
+    assert by_id["engine/b.py::prog"]["authority_evidence"]["unresolvable_artifacts"] == ["broken"]
+    assert by_id["engine/g.py::prog"]["evidence_ref"] == ["research/P.md"]
+
+    findings = {(f.engine_id, f.code) for f in audit_content(registry)}
+    assert ("engine/a.py::prog", "AUTHORITY_WITHOUT_EVIDENCE") in findings
+    assert ("engine/b.py::prog", "AUTHORITY_EVIDENCE_UNRESOLVABLE") in findings
+    # ...and the properly evidenced one is the POSITIVE CONTROL: no evidence finding at all.
+    assert not any(
+        eid == "engine/g.py::prog" and code.startswith("AUTHORITY_")
+        for eid, code in findings
+    )
+
+
+@pytest.mark.parametrize("ref", ["research/", "research"])
+def test_a_qual_ladder_ref_pointing_at_a_DIRECTORY_is_reported_not_accepted(ref):
+    """A DIRECTORY IS NOT A PREREG. `git show HEAD:research` exits 0 on a tree, so the
+    previous `path_exists` probe accepted any folder — which made the whole C-1 backlog
+    drainable to zero by pointing every authority-bearing artifact at a directory.
+
+    The probe injected here is FILE-ONLY: it answers True for a real prereg and False for
+    a directory, exactly as the builder's git-ladder probe does.
+    """
+    files = {"research/PREREG.md"}
+    synapse = _synapse({"a": _artifact(tier="scored", qual_ladder_ref=ref)})
+    registry = build_registry(
+        synapse=synapse, qual_ladder_keys=set(), file_exists=lambda p: p in files
+    )
+    assert registry["engines"][0]["artifacts"][0]["qual_ladder_ref_resolution"] == "unresolved"
+    assert registry["engines"][0]["evidence_ref"] is None
+    assert "AUTHORITY_EVIDENCE_UNRESOLVABLE" in _codes(registry)
+
+
+def test_a_trailing_slash_ref_is_refused_even_by_a_lax_probe():
+    """Defence in depth: a probe that wrongly answers True for a directory must not be
+    able to launder one through."""
+    assert resolve_qual_ladder_ref(
+        "research/", qual_ladder_keys=set(), file_exists=lambda p: True
+    ) == "unresolved"
 
 
 @pytest.mark.parametrize(
@@ -437,7 +521,7 @@ def test_C1_gate_is_NOT_cleared_by_a_pointer_at_a_nonexistent_file():
 )
 def test_resolve_qual_ladder_ref(ref, keys, exists, expected):
     assert resolve_qual_ladder_ref(
-        ref, qual_ladder_keys=keys, path_exists=lambda p: exists
+        ref, qual_ladder_keys=keys, file_exists=lambda p: exists
     ) == expected
 
 
@@ -451,15 +535,25 @@ def test_an_UNPROBED_ref_is_never_reported_as_unresolvable():
     """Sparse worktrees are the norm here. A builder that could not probe must say so,
     never accuse — 'could not look' is not 'looked and found nothing'."""
     synapse = _synapse({"a": _artifact(tier="scored", qual_ladder_ref="research/P.md")})
-    registry = build_registry(synapse=synapse)  # no qual_ladder_keys, no path_exists
+    registry = build_registry(synapse=synapse)  # no qual_ladder_keys, no file_exists
     assert registry["engines"][0]["artifacts"][0]["qual_ladder_ref_resolution"] == "unchecked"
-    assert "AUTHORITY_EVIDENCE_UNRESOLVABLE" not in {f.code for f in audit_content(registry)}
+    assert "AUTHORITY_EVIDENCE_UNRESOLVABLE" not in _codes(registry)
+
+
+def test_an_UNCHECKED_ref_is_NOT_counted_as_evidence():
+    """THE OTHER HALF. 'could not look' must not be banked as a pass either: an unprobed
+    ref may not clear the C-1 gate, and it may not roll up into evidence_ref."""
+    synapse = _synapse({"a": _artifact(tier="scored", qual_ladder_ref="research/P.md")})
+    registry = build_registry(synapse=synapse)
+    row = registry["engines"][0]
+    assert row["evidence_ref"] is None, "an unprobed ref is not evidence"
+    assert row["authority_evidence"]["unchecked_artifacts"] == ["a"]
+    assert "AUTHORITY_EVIDENCE_UNCHECKED" in _codes(registry)
 
 
 def test_the_C1_heal_names_EVERY_unevidenced_artifact_not_just_the_first():
     """The heal used to name `authority_evidence.artifact_id` — the first sorted winner —
-    so for us-stocks-prebreakout it named site-signal-gate rather than site-us-standouts,
-    the artifact the whole C-2 defect statement is about."""
+    so on a multi-winner cell it pointed at the wrong artifact."""
     synapse = _synapse(
         {
             "site-signal-gate": _artifact(scored_path_surfaces=["board_ordering"], path="site/g.json"),
@@ -475,82 +569,98 @@ def test_the_C1_heal_names_EVERY_unevidenced_artifact_not_just_the_first():
     assert "site-us-standouts" in detail and "site-signal-gate" in detail
 
 
-def test_live_C1_and_resolvability_counts_are_pinned(live_registry):
-    """The honest before/after. The artifact-level gate and the resolvability probe were
-    both measured to add ZERO findings on arrival — which is what let them ship without
-    reddening the fleet. Pinned so a future change to either has to state its own count."""
-    findings = audit_content(live_registry)
-    c1 = [f for f in findings if f.code == "AUTHORITY_WITHOUT_EVIDENCE"]
-    unresolvable = [f for f in findings if f.code == "AUTHORITY_EVIDENCE_UNRESOLVABLE"]
-    assert len(c1) == 21, [f.engine_id for f in c1]
-    assert unresolvable == [], "all 10 live qual_ladder_ref values resolved on 2026-08-12"
-    resolutions = Counter(
-        a["qual_ladder_ref_resolution"]
-        for r in live_registry["engines"]
-        for a in r["artifacts"]
-        if a["qual_ladder_ref"]
-    )
-    assert resolutions == Counter({"qual_ladder_key": 9, "repo_path": 1}), resolutions
-
-
 # ---------------------------------------------------------------------------
 # Ledger waterfall
 # ---------------------------------------------------------------------------
 
-def test_ledger_rule_1_ledger_module_producer():
-    synapse = _synapse({"a": _artifact(producer="engine/x_ledger.py", path="data/x_ledger.jsonl")})
-    registry = build_registry(synapse=synapse, ledger_modules=["engine/x_ledger.py"])
-    assert registry["engines"][0]["ledger_evidence"]["rule"] == 1
+def test_ledger_rule_1_is_a_store_shaped_ledger_named_path():
+    synapse = _synapse({"a": _artifact(path="data/x_ledger.jsonl")})
+    assert build_registry(synapse=synapse)["engines"][0]["ledger_evidence"]["rule"] == 1
 
 
 def test_ledger_rule_2_resolves_the_desk_by_ast():
-    from engine.intelligence_registry import DeskScan
-
     synapse = _synapse({"a": _artifact()})
     registry = build_registry(
-        synapse=synapse,
-        desk_scans={"engine/a.py": DeskScan(True, ("mydesk",), False)},
+        synapse=synapse, desk_scans={"engine/a.py": DeskScan(True, ("mydesk",), False)}
     )
     row = registry["engines"][0]
     assert row["ledger"] == "qledger:mydesk"
-    # The ROW COUNT is not here. It is a function of an append-only store, so committing
-    # it would pin a nightly-moving value by equality — a scheduled fleet-wide red.
-    assert "corpus_rows" not in row["ledger_evidence"]
-    view = volatile_view(registry, qledger_desk_rows={"mydesk": 7})
-    assert view["engines"]["engine/a.py::prog"]["corpus_rows"] == 7
+    assert row["ledger_evidence"]["desk"] == "mydesk"
 
 
 def test_ledger_rule_2_zero_row_desk_is_NAMED_not_hidden():
     """Deviation from the brief, deliberate: a zero-row desk keeps its structural
     attribution and is raised as a finding, rather than being silently demoted down the
     waterfall. A registered desk that has never been written is worth naming."""
-    from engine.intelligence_registry import DeskScan
-
     synapse = _synapse({"a": _artifact()})
     registry = build_registry(
         synapse=synapse,
         desk_scans={"engine/a.py": DeskScan(True, ("ghost",), False)},
+        qledger_desk_rows={},
     )
     assert registry["engines"][0]["ledger"] == "qledger:ghost"
-    codes = {
-        f.code for f in audit_corpus(registry, volatile_view(registry, qledger_desk_rows={}))
-    }
-    assert "LEDGER_DECLARED_BUT_EMPTY" in codes
+    assert "LEDGER_DECLARED_BUT_EMPTY" in _codes(registry)
 
 
 def test_ledger_rule_2_unread_corpus_is_not_an_empty_desk():
     """'Could not look' must never render as 'looked and found nothing'."""
-    from engine.intelligence_registry import DeskScan
-
     synapse = _synapse({"a": _artifact()})
     registry = build_registry(
         synapse=synapse,
         desk_scans={"engine/a.py": DeskScan(True, ("ghost",), False)},
+        qledger_desk_rows=None,
     )
-    view = volatile_view(registry, qledger_desk_rows=None)
-    state = view["engines"]["engine/a.py::prog"]
-    assert state["corpus_checked"] is False and state["corpus_rows"] is None
-    assert audit_corpus(registry, view) == []
+    evidence = registry["engines"][0]["ledger_evidence"]
+    assert evidence["corpus_checked"] is False and evidence["corpus_rows"] is None
+    assert "LEDGER_DECLARED_BUT_EMPTY" not in _codes(registry)
+
+
+def test_ledger_rule_3_shadow_tier_artifact():
+    synapse = _synapse({"a": _artifact(tier="shadow", path="data/shadow.parquet")})
+    assert build_registry(synapse=synapse)["engines"][0]["ledger_evidence"]["rule"] == 3
+
+
+def test_ledger_rule_4_hops_cross_program_to_a_grader():
+    synapse = _synapse(
+        {
+            "board": _artifact(producer="scripts/build_x.py", owner_program="prog-a",
+                               consumers=["scripts/grade_x.py"]),
+            "grades": _artifact(producer="scripts/grade_x.py", owner_program="prog-b",
+                                path="data/x_ledger/grades.parquet"),
+        }
+    )
+    registry = build_registry(synapse=synapse)
+    row = next(r for r in registry["engines"] if r["producer"] == "scripts/build_x.py")
+    assert row["ledger_evidence"]["rule"] == 4
+    assert row["ledger_evidence"]["via"] == "scripts/grade_x.py"
+    assert row["owner_program"] != "prog-b", "the hop must cross the program boundary"
+
+
+def test_rule_4_cannot_hop_onto_a_python_module():
+    """scripts/seed_us_sector_baskets.py::sector-pulse was "graded by"
+    engine/demand_ledger.py — a Python module cannot hold a graded row."""
+    synapse = _synapse(
+        {
+            "board": _artifact(producer="scripts/build_x.py", consumers=["engine/demand_ledger.py"]),
+            "mod": _artifact(producer="engine/demand_ledger.py", owner_program="other",
+                             path="engine/demand_ledger.py"),
+        }
+    )
+    row = next(
+        r for r in build_registry(synapse=synapse)["engines"]
+        if r["producer"] == "scripts/build_x.py"
+    )
+    assert row["ledger"] == LEDGER_NONE
+
+
+def test_ledger_rule_5_is_the_literal_string_none_never_null():
+    assert build_registry(synapse=_synapse({"a": _artifact()}))["engines"][0]["ledger"] == LEDGER_NONE
+
+
+def test_a_null_ledger_is_a_structural_violation():
+    registry = build_registry(synapse=_synapse({"a": _artifact()}))
+    registry["engines"][0]["ledger"] = None
+    assert any("never be null" in v for v in validate_structure(registry))
 
 
 # ---------------------------------------------------------------------------
@@ -574,32 +684,13 @@ def test_ledger_shape_classification(path, shape):
     assert ledger_shape(path) == shape
 
 
-def test_a_ledger_module_with_no_store_is_not_its_own_ledger():
-    """The deleted `else producer` fallback. A Python module cannot hold a graded row, so
-    an engine/*_ledger.py producer with no ledger-shaped artifact must fall THROUGH."""
+def test_a_ledger_named_python_module_is_not_its_own_ledger():
+    """A Python module cannot hold a graded row, so an engine/*_ledger.py producer with no
+    store-shaped artifact must fall THROUGH the waterfall."""
     synapse = _synapse({"a": _artifact(producer="engine/x_ledger.py", path="site/chip.json")})
-    row = build_registry(synapse=synapse, ledger_modules=["engine/x_ledger.py"])["engines"][0]
+    row = build_registry(synapse=synapse)["engines"][0]
     assert row["ledger"] == LEDGER_NONE
     assert row["graded_by_design"] == GRADED_NOT_YET
-
-
-def test_rule_4_cannot_hop_onto_a_python_module():
-    """scripts/seed_us_sector_baskets.py::sector-pulse was "graded by" engine/demand_ledger.py."""
-    synapse = _synapse(
-        {
-            "board": _artifact(producer="scripts/build_x.py", consumers=["engine/demand_ledger.py"]),
-            "mod": _artifact(
-                producer="engine/demand_ledger.py", owner_program="other",
-                path="engine/demand_ledger.py",
-            ),
-        }
-    )
-    row = next(
-        r for r in build_registry(
-            synapse=synapse, ledger_modules=["engine/demand_ledger.py"]
-        )["engines"] if r["producer"] == "scripts/build_x.py"
-    )
-    assert row["ledger"] == LEDGER_NONE
 
 
 def test_a_template_ledger_does_not_earn_graded_by_design_yes():
@@ -607,97 +698,110 @@ def test_a_template_ledger_does_not_earn_graded_by_design_yes():
     evidence that grading happens — and it must not manufacture its own contradiction
     finding either."""
     synapse = _synapse({"a": _artifact(tier="shadow", path="data/oracle/fwd/<id>.jsonl")})
-    row = build_registry(synapse=synapse)["engines"][0]
+    registry = build_registry(synapse=synapse)
+    row = registry["engines"][0]
     assert row["ledger"] == "data/oracle/fwd/<id>.jsonl"
     assert row["ledger_evidence"]["shape"] == "template"
     assert row["graded_by_design"] == GRADED_NOT_YET
-    assert "GRADED_BY_DESIGN_CONTRADICTS_LEDGER" not in {f.code for f in audit_content(build_registry(synapse=synapse))}
+    assert "GRADED_BY_DESIGN_CONTRADICTS_LEDGER" not in _codes(registry)
 
 
-def test_a_graded_engine_still_needs_a_metric_contract():
-    """26 engines with graded_by_design='yes' were recorded 'not_required_display_only'
-    because the gate keyed on authority and tier but never on the derived ledger."""
-    synapse = _synapse({"a": _artifact(tier="display", path="data/prophet/ledger.jsonl")})
-    row = build_registry(synapse=synapse)["engines"][0]
-    assert row["graded_by_design"] == GRADED_YES
-    assert row["output_class_reason"] == "required_but_uncurated"
+# ---------------------------------------------------------------------------
+# graded_by_design — an HONESTLY LABELLED weak heuristic
+# ---------------------------------------------------------------------------
 
-
-def test_the_graded_yes_engines_that_LOST_their_ledger_are_pinned_by_name(live_registry):
-    """SHRINK-DIRECTION CONTROL. graded_by_design='yes' moved 112 -> 106 when the store
-    test landed. A detector that quietly shrinks is a detector going blind, so the exact
-    set that moved is pinned: five non-stores plus one .py rule-4 hop."""
-    by_id = {r["engine_id"]: r for r in live_registry["engines"]}
-    for eid, expected_ledger in (
-        ("engine/metabolism/lobe_registry.py::metabolism-phase-v2c", LEDGER_NONE),
-        ("scripts/seed_us_sector_baskets.py::sector-pulse", LEDGER_NONE),
-        ("engine/neuralweb/reflexes.py::neural-web", "data/reflexes/<NAME>/firings.jsonl"),
-        ("engine/options_structure.py::momoedge", "options_structure/structural/<ROOT>.json"),
-        (
-            "scripts/materialize_capital_structure_share_counts.py::capital-structure-intelligence",
-            "capital_structure/share_counts/v2/generations/*/ledger.json",
-        ),
-        ("scripts/oracle_reversion_forward_ledger.py::oracle", "data/oracle/reversion_forward/<compound_id>.jsonl"),
-    ):
-        assert by_id[eid]["ledger"] == expected_ledger, eid
-        assert by_id[eid]["graded_by_design"] != GRADED_YES, eid
-
-    # And the three engine/*_ledger.py SELF-REFERENCES now resolve a REAL store rather
-    # than their own source file — they must NOT have been shrunk away.
-    for eid, expected in (
-        ("engine/altdata_ledger.py::qualitative-intelligence", "data/altdata/theses.jsonl"),
-        ("engine/demand_ledger.py::qualitative-intelligence", "data/demand_chain/theses.jsonl"),
-        ("engine/cn_reversal_sleeve_ledger.py::china-alpha", "data/cn_reversal_sleeve_track/sleeve.parquet"),
-    ):
-        assert by_id[eid]["ledger"] == expected, eid
-        assert by_id[eid]["graded_by_design"] == GRADED_YES, eid
-
-
-def test_ledger_rule_3_shadow_tier_artifact():
-    synapse = _synapse({"a": _artifact(tier="shadow", path="data/shadow.parquet")})
+def test_graded_yes_from_a_FILENAME_is_labelled_weak_and_enumerated():
+    """THE KNOWN LIMIT, ASSERTED. Waterfall rules 1 and 4 resolve the ledger from a
+    filename substring (/ledger/ on a path, /grade|ledger/ on a consumer module name). A
+    filename is not proof that graded rows are written, so every `yes` reached that way is
+    a GUESS — labelled `weak_filename_heuristic` and enumerated by audit_content on every
+    run, rather than described in prose or hand-listed (a hand list rots)."""
+    synapse = _synapse({"a": _artifact(path="data/a_ledger.jsonl")})
     registry = build_registry(synapse=synapse)
-    assert registry["engines"][0]["ledger_evidence"]["rule"] == 3
+    row = registry["engines"][0]
+    assert row["graded_by_design"] == GRADED_YES
+    assert row["graded_by_design_evidence"] == GRADED_EVIDENCE_WEAK
+    assert "FILENAME" in row["graded_by_design_source"]
+    assert "GRADED_BY_DESIGN_IS_HEURISTIC" in _codes(registry)
 
 
-def test_ledger_rule_4_hops_cross_program_to_a_grader():
+def test_graded_yes_from_a_DECLARATION_is_labelled_strong_and_not_enumerated():
+    synapse = _synapse({"a": _artifact(tier="shadow", path="data/s.parquet")})
+    registry = build_registry(synapse=synapse)
+    row = registry["engines"][0]
+    assert row["graded_by_design"] == GRADED_YES
+    assert row["graded_by_design_evidence"] == GRADED_EVIDENCE_STRONG
+    assert "GRADED_BY_DESIGN_IS_HEURISTIC" not in _codes(registry)
+
+
+def test_graded_yes_from_an_AST_RESOLVED_desk_is_strong():
+    synapse = _synapse({"a": _artifact()})
+    registry = build_registry(
+        synapse=synapse, desk_scans={"engine/a.py": DeskScan(True, ("d",), False)}
+    )
+    assert registry["engines"][0]["graded_by_design_evidence"] == GRADED_EVIDENCE_STRONG
+
+
+def test_a_rule_4_hop_is_also_weak_because_it_matches_a_MODULE_NAME():
     synapse = _synapse(
         {
-            "board": _artifact(
-                producer="scripts/build_x.py",
-                owner_program="prog-a",
-                consumers=["scripts/grade_x.py"],
-            ),
-            "grades": _artifact(
-                producer="scripts/grade_x.py",
-                owner_program="prog-b",
-                path="data/x_ledger/grades.parquet",
-            ),
+            "board": _artifact(producer="scripts/build_x.py", owner_program="prog-a",
+                               consumers=["scripts/grade_x.py"]),
+            "grades": _artifact(producer="scripts/grade_x.py", owner_program="prog-b",
+                                path="data/x_ledger/grades.parquet"),
         }
     )
     registry = build_registry(synapse=synapse)
     row = next(r for r in registry["engines"] if r["producer"] == "scripts/build_x.py")
-    assert row["ledger_evidence"]["rule"] == 4
-    assert row["ledger_evidence"]["via"] == "scripts/grade_x.py"
-    assert row["owner_program"] != "prog-b", "the hop must cross the program boundary"
+    assert row["graded_by_design_evidence"] == GRADED_EVIDENCE_WEAK
 
 
-def test_ledger_rule_5_is_the_literal_string_none_never_null():
-    synapse = _synapse({"a": _artifact()})
-    assert build_registry(synapse=synapse)["engines"][0]["ledger"] == LEDGER_NONE
+def test_the_graded_evidence_strength_is_a_REQUIRED_field():
+    """A graded claim with no stated strength is the defect this labelling exists to fix,
+    so its absence must be a structural violation rather than a missing nicety."""
+    registry = build_registry(synapse=_synapse({"a": _artifact(path="data/a_ledger.jsonl")}))
+    registry["engines"][0]["graded_by_design_evidence"] = "vibes"
+    assert any("graded_by_design_evidence" in v for v in validate_structure(registry))
 
 
-def test_live_registry_never_has_a_null_ledger(live_registry):
-    assert all(r["ledger"] for r in live_registry["engines"])
+def test_the_module_docstring_discloses_the_weak_heuristic():
+    """The limitation must be readable where the derivation lives, not only in a test."""
+    import engine.intelligence_registry as mod
+
+    doc = mod.__doc__ or ""
+    assert "WEAK HEURISTIC" in doc.upper()
+    assert "FILENAME SUBSTRING" in doc.upper()
+    assert GRADED_EVIDENCE_WEAK in doc
 
 
-def test_us_stocks_prebreakout_binds_through_grade_us_board(live_registry):
-    """The cross-program hop the unit of account was chosen to preserve."""
-    row = next(
-        r for r in live_registry["engines"]
-        if r["engine_id"] == "scripts/build_stock_library.py::us-stocks-prebreakout"
-    )
-    assert row["ledger_evidence"]["rule"] == 4
-    assert row["ledger_evidence"]["via"] == "scripts/grade_us_board.py"
+def test_graded_descriptive_when_every_artifact_is_infrastructure():
+    synapse = _synapse({"a": _artifact(tier="infrastructure")})
+    row = build_registry(synapse=synapse)["engines"][0]
+    assert row["graded_by_design"] == GRADED_DESCRIPTIVE
+    assert row["graded_by_design_evidence"] == GRADED_EVIDENCE_NONE
+
+
+def test_graded_default_names_the_gap_rather_than_excusing_it():
+    assert build_registry(synapse=_synapse({"a": _artifact()}))["engines"][0]["graded_by_design"] == GRADED_NOT_YET
+
+
+def test_overlay_may_make_the_one_legal_transition():
+    overlay = {
+        "schema_version": 1,
+        "engines": {"engine/a.py::prog": {"graded_by_design": {"value": GRADED_DESCRIPTIVE, "reason": "r"}}},
+    }
+    registry = build_registry(synapse=_synapse({"a": _artifact()}), overlay=overlay)
+    assert registry["engines"][0]["graded_by_design"] == GRADED_DESCRIPTIVE
+
+
+def test_overlay_cannot_downgrade_a_graded_yes_engine():
+    """The overlay may never write 'yes'; and it may not touch a row already 'yes'."""
+    synapse = _synapse({"a": _artifact(path="data/x_ledger.jsonl")})
+    overlay = {
+        "schema_version": 1,
+        "engines": {"engine/a.py::prog": {"graded_by_design": {"value": GRADED_DESCRIPTIVE, "reason": "r"}}},
+    }
+    assert build_registry(synapse=synapse, overlay=overlay)["engines"][0]["graded_by_design"] == GRADED_YES
 
 
 # ---------------------------------------------------------------------------
@@ -705,8 +809,7 @@ def test_us_stocks_prebreakout_binds_through_grade_us_board(live_registry):
 # ---------------------------------------------------------------------------
 
 def test_desk_scan_extracts_a_keyword_literal():
-    src = "from engine.qledger import register\nregister(desk='alpha')\n"
-    scan = scan_producer_source(src)
+    scan = scan_producer_source("from engine.qledger import register\nregister(desk='alpha')\n")
     assert scan.imports_qledger and scan.desks == ("alpha",)
 
 
@@ -716,8 +819,7 @@ def test_desk_scan_extracts_a_dict_literal():
 
 
 def test_desk_scan_flags_an_unresolved_indirect_desk():
-    src = "from engine.qledger import register\nD = 'x'\nregister(desk=D)\n"
-    scan = scan_producer_source(src)
+    scan = scan_producer_source("from engine.qledger import register\nD = 'x'\nregister(desk=D)\n")
     assert scan.desks == () and scan.unresolved is True
 
 
@@ -730,64 +832,26 @@ def test_desk_scan_survives_a_syntax_error():
 
 
 # ---------------------------------------------------------------------------
-# graded_by_design — 100% populated, gap-naming defaults
-# ---------------------------------------------------------------------------
-
-def test_graded_yes_when_a_ledger_resolves():
-    synapse = _synapse({"a": _artifact(producer="engine/x_ledger.py", path="data/x_ledger.jsonl")})
-    registry = build_registry(synapse=synapse, ledger_modules=["engine/x_ledger.py"])
-    assert registry["engines"][0]["graded_by_design"] == GRADED_YES
-
-
-def test_graded_descriptive_when_every_artifact_is_infrastructure():
-    synapse = _synapse({"a": _artifact(tier="infrastructure")})
-    assert build_registry(synapse=synapse)["engines"][0]["graded_by_design"] == GRADED_DESCRIPTIVE
-
-
-def test_graded_default_names_the_gap_rather_than_excusing_it():
-    synapse = _synapse({"a": _artifact()})
-    assert build_registry(synapse=synapse)["engines"][0]["graded_by_design"] == GRADED_NOT_YET
-
-
-def test_graded_by_design_is_populated_for_every_live_row(live_registry):
-    assert all(r["graded_by_design"] for r in live_registry["engines"])
-
-
-def test_overlay_may_make_the_one_legal_transition():
-    synapse = _synapse({"a": _artifact()})
-    overlay = {
-        "schema_version": 1,
-        "engines": {"engine/a.py::prog": {"graded_by_design": {"value": GRADED_DESCRIPTIVE, "reason": "r"}}},
-    }
-    registry = build_registry(synapse=synapse, overlay=overlay)
-    assert registry["engines"][0]["graded_by_design"] == GRADED_DESCRIPTIVE
-
-
-def test_overlay_cannot_upgrade_a_graded_yes_engine():
-    """The overlay may never write 'yes'; and it may not touch a row already 'yes'."""
-    synapse = _synapse({"a": _artifact(producer="engine/x_ledger.py", path="data/x_ledger.jsonl")})
-    overlay = {
-        "schema_version": 1,
-        "engines": {"engine/x_ledger.py::prog": {"graded_by_design": {"value": GRADED_DESCRIPTIVE, "reason": "r"}}},
-    }
-    registry = build_registry(synapse=synapse, overlay=overlay, ledger_modules=["engine/x_ledger.py"])
-    assert registry["engines"][0]["graded_by_design"] == GRADED_YES
-
-
-# ---------------------------------------------------------------------------
 # output_class
 # ---------------------------------------------------------------------------
 
 def test_output_class_is_not_required_for_a_display_only_engine():
-    synapse = _synapse({"a": _artifact()})
-    row = build_registry(synapse=synapse)["engines"][0]
+    row = build_registry(synapse=_synapse({"a": _artifact()}))["engines"][0]
     assert row["output_class"] is None
     assert row["output_class_reason"] == "not_required_display_only"
 
 
 def test_output_class_is_required_once_the_evaluation_gate_trips():
     synapse = _synapse({"a": _artifact(tier="shadow", path="data/s.parquet")})
+    assert build_registry(synapse=synapse)["engines"][0]["output_class_reason"] == "required_but_uncurated"
+
+
+def test_a_graded_engine_still_needs_a_metric_contract():
+    """26 engines with graded_by_design='yes' were recorded 'not_required_display_only'
+    because the gate keyed on authority and tier but never on the derived ledger."""
+    synapse = _synapse({"a": _artifact(tier="display", path="data/prophet/ledger.jsonl")})
     row = build_registry(synapse=synapse)["engines"][0]
+    assert row["graded_by_design"] == GRADED_YES
     assert row["output_class_reason"] == "required_but_uncurated"
 
 
@@ -814,16 +878,13 @@ def test_declared_horizon_flags_a_mixed_cell():
     assert row["declared_horizon"]["horizon_role"] == ["context", "tactical_entry"]
 
 
-def test_declared_horizon_d_is_computed_at_READ_time_not_committed():
-    from engine.intelligence_registry import DeskScan
-
+def test_declared_horizon_d_comes_from_the_corpus_and_is_null_when_unread():
     synapse = _synapse({"a": _artifact()})
-    registry = build_registry(
-        synapse=synapse, desk_scans={"engine/a.py": DeskScan(True, ("d",), False)}
-    )
-    assert "horizon_d" not in registry["engines"][0]["declared_horizon"]
-    view = volatile_view(registry, qledger_desk_horizons={"d": [63, 5]})
-    assert view["engines"]["engine/a.py::prog"]["horizon_d"] == [5, 63]
+    scans = {"engine/a.py": DeskScan(True, ("d",), False)}
+    read = build_registry(synapse=synapse, desk_scans=scans, qledger_desk_horizons={"d": [63, 5]})
+    assert read["engines"][0]["declared_horizon"]["horizon_d"] == [5, 63]
+    unread = build_registry(synapse=synapse, desk_scans=scans, qledger_desk_horizons=None)
+    assert unread["engines"][0]["declared_horizon"]["horizon_d"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -834,11 +895,28 @@ def test_species_none_means_could_not_look_not_phase0():
     assert bind_species("data/x.jsonl", None)["validation_state"] is None
 
 
+def test_an_unread_species_store_reports_null_unbound_not_empty():
+    registry = build_registry(synapse=_synapse({"a": _artifact()}), species=None)
+    assert registry["meta"]["unbound_species"] is None
+    assert registry["meta"]["corpus"]["species_read"] is False
+    assert all(r["validation_state"] is None for r in registry["engines"])
+    assert "SPECIES_UNBOUND" not in _codes(registry)
+
+
+def test_an_EMPTY_species_store_is_a_DIFFERENT_state_from_an_unread_one():
+    """The two must not collapse: `phase0` asserts nothing, `None` says nothing was
+    asserted. A helper defaulting `species=None` to `[]` erased the distinction inside the
+    guard's own selftest harness (2026-08-12) and turned the control vacuous."""
+    registry = build_registry(synapse=_synapse({"a": _artifact()}), species=[])
+    assert registry["meta"]["unbound_species"] == []
+    assert registry["meta"]["corpus"]["species_read"] is True
+    assert all(r["validation_state"] == "phase0" for r in registry["engines"])
+
+
 def test_single_bound_species_takes_its_status():
     species = [{"species_id": "S1", "validation_status": "validated",
                 "ledger_binding": {"ledger": "us_board_ledger"}}]
-    got = bind_species("data/us_board_ledger/grades.parquet", species)
-    assert got["validation_state"] == "validated"
+    assert bind_species("data/us_board_ledger/grades.parquet", species)["validation_state"] == "validated"
 
 
 def test_multiple_bound_species_take_the_least_advanced():
@@ -854,7 +932,7 @@ def test_multiple_bound_species_take_the_least_advanced():
 @pytest.mark.parametrize(
     "token,ledger,expected",
     [
-        # The 5 live binds, by shape. All must survive the anchoring.
+        # The binding SHAPES seen live, as shapes rather than as a pinned inventory.
         ("us_board_ledger", "data/us_board_ledger/retro_grades.parquet", True),
         ("china_standout_track", "data/china_standout_track/board.parquet", True),
         ("data/trial_ledger.jsonl", "data/trial_ledger.jsonl", True),
@@ -874,37 +952,14 @@ def test_species_binding_is_anchored_not_substring(token, ledger, expected):
     assert species_token_matches_ledger(token, ledger) is expected
 
 
-def test_the_live_species_binds_are_pinned_by_name(live_registry):
-    """SHRINK-DIRECTION CONTROL for the anchoring above. A matcher that quietly binds
-    fewer things reads exactly like a matcher getting stricter."""
-    bound = {
-        r["engine_id"]: sorted(b["species_id"] for b in r["validation_state_evidence"]["bound_species"])
-        for r in live_registry["engines"]
-        if r["validation_state_evidence"]["bound_species"]
-    }
-    assert set(bound) == {
-        "engine/china_standout_track.py::china-alpha",              # 4 species
-        "engine/trial_ledger.py::engine-fix",                       # 1
-        "scripts/build_stock_library.py::us-stocks-prebreakout",    # 17
-        "scripts/grade_us_board.py::setup-species",                 # 17
-        "scripts/grade_us_board.py::standout-accountability",       # 17
-    }, bound
-
-
-def test_unbound_species_are_NAMED_not_dropped(live_registry):
+def test_unbound_species_are_NAMED_not_dropped():
     """The inverse of bind_species had no check at all: a species matching no engine was
-    dropped in silence. Both live cases are `accruing`, on the axis the
-    display-only-until-validated law hangs on."""
-    unbound = live_registry["meta"]["unbound_species"]
-    assert [r["species_id"] for r in unbound] == ["EI-F1D-RW", "F3_ANTICHASE"], unbound
-    assert all(r["validation_status"] == "accruing" for r in unbound)
-    assert len([f for f in audit_content(live_registry) if f.code == "SPECIES_UNBOUND"]) == 2
-
-
-def test_an_unread_species_store_reports_null_unbound_not_empty():
-    registry = build_registry(synapse=_synapse({"a": _artifact()}), species=None)
-    assert registry["meta"]["unbound_species"] is None
-    assert "SPECIES_UNBOUND" not in {f.code for f in audit_content(registry)}
+    dropped in silence."""
+    species = [{"species_id": "F3_ANTICHASE", "validation_status": "accruing",
+                "ledger_binding": {"ledger": "no_such_ledger"}}]
+    registry = build_registry(synapse=_synapse({"a": _artifact()}), species=species)
+    assert [r["species_id"] for r in registry["meta"]["unbound_species"]] == ["F3_ANTICHASE"]
+    assert "SPECIES_UNBOUND" in _codes(registry)
 
 
 def test_a_none_species_binding_binds_to_nothing():
@@ -951,18 +1006,21 @@ def test_derived_fields_are_all_forbidden_in_the_overlay():
     assert not (OVERLAY_ALLOWED_KEYS & OVERLAY_FORBIDDEN_KEYS)
 
 
-def test_shipped_overlay_is_valid_against_the_live_registry(live_registry):
+def test_the_shipped_overlay_is_structurally_valid_against_the_partition():
+    """A live-input test that asserts SHAPE, not contents: whatever the overlay says, it
+    must obey the four-key allowlist and name only cells the partition generates."""
+    import yaml
+    import scripts.build_intelligence_registry as builder
+
     overlay = yaml.safe_load(
         (REPO / "config" / "intelligence_registry_overlay.yml").read_text(encoding="utf-8")
     )
-    ids = [r["engine_id"] for r in live_registry["engines"]] + [
-        r["engine_id"] for r in live_registry["excluded"]
-    ]
-    assert validate_overlay(overlay, ids) == []
+    _, report = builder.build(REPO)
+    assert validate_overlay(overlay, report["cell_ids"]) == []
 
 
 # ---------------------------------------------------------------------------
-# Determinism, idempotence, and the structural projection
+# Determinism
 # ---------------------------------------------------------------------------
 
 def test_build_is_deterministic():
@@ -978,154 +1036,65 @@ def test_engines_are_sorted_by_engine_id():
     assert ids == sorted(ids)
 
 
-def test_a_freshly_built_registry_carries_NO_corpus_derived_path():
-    synapse = _synapse({"a": _artifact()})
-    assert assert_no_volatile(build_registry(synapse=synapse)) == []
-
-
-@pytest.mark.parametrize("dotted", VOLATILE_ENGINE_PATHS)
-def test_assert_no_volatile_catches_each_declared_path(dotted):
-    """The absence contract must be able to FAIL, path by path. A guard that asserts an
-    absence it cannot detect is decorative."""
-    registry = build_registry(synapse=_synapse({"a": _artifact()}))
-    head, _, rest = dotted.partition(".")
-    row = registry["engines"][0]
-    if rest:
-        row.setdefault(head, {})[rest] = 88
-    else:
-        row[head] = 88
-    assert assert_no_volatile(registry) != []
-
-
-@pytest.mark.parametrize("key", VOLATILE_META_KEYS)
-def test_assert_no_volatile_catches_each_declared_meta_key(key):
-    registry = build_registry(synapse=_synapse({"a": _artifact()}))
-    registry["meta"][key] = {"anything": True}
-    assert assert_no_volatile(registry) != []
-
-
-def test_the_absence_contract_is_part_of_the_HARD_structural_validator():
-    """Not a separate opt-in check — a committed corpus-derived field must red law A."""
-    registry = build_registry(synapse=_synapse({"a": _artifact()}))
-    registry["engines"][0]["ledger_evidence"]["corpus_rows"] = 88
-    assert any("corpus_rows" in v for v in validate_structure(registry))
-
-
-def test_validation_state_is_STABLE_and_therefore_equality_guarded():
-    """It used to sit in VOLATILE_ENGINE_PATHS and be STRIPPED before comparing, so a
-    hand-edit of the display-only-until-validated axis produced byte-identical guard
-    output. data/species/registry.json has ONE commit in the repo's history and no
-    automated writer, so it is stable and belongs in the comparison."""
-    assert "validation_state" not in VOLATILE_ENGINE_PATHS
-    assert "validation_state_evidence" not in VOLATILE_ENGINE_PATHS
-    registry = build_registry(synapse=_synapse({"a": _artifact()}), species=[])
-    tampered = copy.deepcopy(registry)
-    tampered["engines"][0]["validation_state"] = "validated"
-    assert serialise(tampered) != serialise(registry)
-
-
-def test_the_absence_contract_is_declared_inside_the_artifact():
-    registry = build_registry(synapse=_synapse({"a": _artifact()}))
-    assert registry["meta"]["volatile_fields_excluded"] == list(VOLATILE_ENGINE_PATHS)
-    assert registry["meta"]["volatile_meta_keys_excluded"] == list(VOLATILE_META_KEYS)
-
-
-def test_the_committed_artifact_is_corpus_INDEPENDENT(live_synapse):
-    """The load-bearing property the HARD drift law rests on, now stated as an identity
-    rather than a projection: the builder is not even GIVEN the claim corpus, so no
-    nightly append can move a byte of the committed file.
-
-    Built against the LIVE synapse so this cannot pass on a toy fixture that happens to
-    have no corpus-sourced values.
-    """
-    from engine.intelligence_registry import DeskScan
-    import inspect
-
-    scans = {"scripts/build_whitehouse.py": DeskScan(True, ("whitehouse",), False)}
-    params = set(inspect.signature(build_registry).parameters)
-    assert "qledger_desk_rows" not in params and "qledger_desk_horizons" not in params, (
-        "the claim corpus must not be an input to the committed artifact at all"
-    )
-    registry = build_registry(synapse=live_synapse, desk_scans=scans)
-    assert assert_no_volatile(registry) == []
-
-    # ...and the read-time view genuinely moves with the corpus, so the information was
-    # relocated rather than deleted.
-    a = volatile_view(registry, qledger_desk_rows={"whitehouse": 88})
-    b = volatile_view(registry, qledger_desk_rows={"whitehouse": 89})
-    assert a != b
+def test_the_schema_string_is_pinned():
+    assert build_registry(synapse=_synapse({"a": _artifact()}))["schema"] == SCHEMA
 
 
 # ---------------------------------------------------------------------------
-# scored_path_surfaces is the authority INPUT — it must be value-validated
+# LIVE INPUTS — no crash, well-formed structure, and NOTHING pinned by content
 # ---------------------------------------------------------------------------
 
-def test_synapse_now_validates_scored_path_surfaces_values():
-    """C-2's root cause was an unvalidated authority input. `authority: user_ranking`
-    derives from this field, so an unchecked value here is the defect class, not the fix."""
-    from engine.neuralweb.synapse import validate_registry
+def test_the_builder_runs_over_the_live_tree_and_returns_a_well_formed_view():
+    """The ONLY live-input contract: it does not crash and the view is well-formed. No
+    engine count, no artifact name and no finding count is asserted anywhere in this file —
+    every one of those moves when a sibling PR touches config/synapse.yml."""
+    import scripts.build_intelligence_registry as builder
+    from engine.species_registry import VALID_VALIDATION_STATUSES
 
-    reg = {
-        "meta": {
-            "schema_version": 1,
-            "description": "x",
-            "tier_vocabulary": {},
-            "article2_surfaces": ["board_ordering", "top_setups"],
-        },
-        "artifacts": {
-            "a": _artifact(producer="engine/neuralweb/synapse.py", scored_path_surfaces=["not_a_surface"]),
-        },
-    }
-    violations = validate_registry(reg, root=REPO)
-    assert any("scored_path_surfaces" in v for v in violations)
+    builder._READ_CACHE.clear()
+    registry, report = builder.build(REPO)
+    assert registry["schema"] == SCHEMA
+    assert isinstance(registry["engines"], list) and registry["engines"]
+    assert validate_structure(
+        registry, valid_validation_statuses=VALID_VALIDATION_STATUSES
+    ) == []
+    assert registry["meta"]["n_artifacts_mapped"] == registry["meta"]["n_artifacts"]
+    assert isinstance(report["unreadable_inputs"], list)
 
 
-def test_synapse_accepts_a_valid_scored_path_surface():
-    from engine.neuralweb.synapse import validate_registry
+def test_the_live_view_is_idempotent_within_one_snapshot():
+    import scripts.build_intelligence_registry as builder
 
-    reg = {
-        "meta": {
-            "schema_version": 1,
-            "description": "x",
-            "tier_vocabulary": {},
-            "article2_surfaces": ["board_ordering", "top_setups"],
-        },
-        "artifacts": {
-            "a": _artifact(producer="engine/neuralweb/synapse.py", scored_path_surfaces=["board_ordering"]),
-        },
-    }
-    assert not [v for v in validate_registry(reg, root=REPO) if "scored_path_surfaces" in v]
+    builder._READ_CACHE.clear()
+    first, _ = builder.build(REPO)
+    second, _ = builder.build(REPO)
+    assert serialise(first) == serialise(second)
 
 
-def test_scored_path_surfaces_is_still_optional():
-    """Requiring the key would demand it on all 642 artifacts and change the existing
-    gate's behaviour for every open PR — validate-when-present only."""
-    from engine.neuralweb.synapse import _REQUIRED_ARTIFACT_KEYS
+def test_content_audit_is_pure_over_a_loaded_registry():
+    import scripts.build_intelligence_registry as builder
 
-    assert "scored_path_surfaces" not in _REQUIRED_ARTIFACT_KEYS
-
-
-def test_every_live_scored_path_surface_is_a_declared_article2_surface(live_synapse):
-    valid = set(live_synapse["meta"]["article2_surfaces"])
-    for aid, entry in live_synapse["artifacts"].items():
-        for surface in entry.get("scored_path_surfaces") or []:
-            assert surface in valid, f"{aid}: {surface!r}"
+    registry, _ = builder.build(REPO)
+    assert audit_content(registry) == audit_content(registry)
 
 
-# ---------------------------------------------------------------------------
-# THE SCHEDULED RED — a nightly corpus append must move NOTHING that is pinned
-# ---------------------------------------------------------------------------
+# --- THE TWO VOLATILITY SIMULATIONS ---------------------------------------
+#
+# Neither event is caused by a PR author on this lane, and neither may invalidate
+# anything. The registry is derived on demand and nothing is pinned by equality, so the
+# assertion is that the DERIVATION stays structurally valid and the guard stays green —
+# not that the bytes are unchanged (they are allowed to move; that is the whole point).
 
-def _with_appended_claims(monkeypatch, extra_rows):
-    """Point the builder at a corpus with `extra_rows` appended, as a nightly lane would."""
+def _patched_read(monkeypatch, rel_to_patch, transform):
+    """Point the builder at a MUTATED COPY of one input, as a nightly lane would."""
     import scripts.build_intelligence_registry as builder
 
     original = builder._read_tracked_uncached
 
     def patched(root, rel):
         text, source = original(root, rel)
-        if rel == builder.CLAIMS_REL and text is not None:
-            text = text + "".join(json.dumps(r) + "\n" for r in extra_rows)
+        if rel == rel_to_patch and text is not None:
+            text = transform(text)
         return text, source
 
     builder._READ_CACHE.clear()
@@ -1133,99 +1102,90 @@ def _with_appended_claims(monkeypatch, extra_rows):
     return builder
 
 
-def test_a_nightly_corpus_APPEND_stales_NOTHING_that_is_pinned(monkeypatch):
-    """B-RED, the blocker. `data/qledger/claims.jsonl` is append-only — 13 automated
-    commits in 14 days — and the committed registry used to carry `corpus_rows`, pinned by
-    equality through `--check` and through the CI-wired
-    tests/test_check_intelligence_registry.py::test_builder_check_mode_reports_no_drift.
-    So main went red daily for a property no PR author caused.
-
-    This simulates two nightly appends at once: one more row on the EXISTING whitehouse
-    desk (the field that used to be pinned at 88), and a row opening a BRAND NEW desk (the
-    field that used to be pinned at n_desks=13, and which the deleted doc line printed).
-    Neither the artifact nor the doc may move by a single byte.
-    """
+def test_a_nightly_CLAIM_APPEND_invalidates_nothing(monkeypatch):
+    """SIMULATION (a). `data/qledger/claims.jsonl` is append-only — 13 automated commits in
+    14 days — and round 1 pinned a value derived from it by equality, so main went red
+    daily for a property no PR author caused. Two appends at once: one more row on an
+    existing desk, and a row opening a brand-new desk."""
     import scripts.build_intelligence_registry as builder
-
-    builder._READ_CACHE.clear()
-    before_registry, before_report = builder.build(REPO)
-    before_doc = builder.render_doc(before_registry, audit_content(before_registry))
-
-    try:
-        _with_appended_claims(
-            monkeypatch,
-            [
-                {"desk": "whitehouse", "horizon_d": 999, "direction": 1},
-                {"desk": "brand_new_desk_2026", "horizon_d": 21, "direction": 1},
-            ],
-        )
-        after_registry, after_report = builder.build(REPO)
-        after_doc = builder.render_doc(after_registry, audit_content(after_registry))
-    finally:
-        builder._READ_CACHE.clear()
-
-    # The append must be REAL, or this test proves nothing.
-    assert (
-        after_report["qledger_desk_rows"]["whitehouse"]
-        == before_report["qledger_desk_rows"]["whitehouse"] + 1
-    )
-    assert len(after_report["qledger_desk_rows"]) == len(before_report["qledger_desk_rows"]) + 1
-
-    assert serialise(after_registry) == serialise(before_registry), (
-        "a nightly claim append moved the committed artifact — that is a scheduled "
-        "fleet-wide red"
-    )
-    assert after_doc == before_doc, (
-        "a nightly claim append moved the generated doc, which the HARD law pins "
-        "byte-for-byte"
-    )
-
-    # The information is RELOCATED, not deleted: the read-time view sees the append.
-    before_view = volatile_view(
-        before_registry,
-        qledger_desk_rows=before_report["qledger_desk_rows"],
-        qledger_desk_horizons=before_report["qledger_desk_horizons"],
-    )
-    after_view = volatile_view(
-        after_registry,
-        qledger_desk_rows=after_report["qledger_desk_rows"],
-        qledger_desk_horizons=after_report["qledger_desk_horizons"],
-    )
-    assert after_view != before_view
-
-
-def test_a_species_promotion_DOES_move_the_artifact_because_it_is_PR_caused(monkeypatch):
-    """The other direction, and the reason `hard` severity is legitimate. Registering a
-    species is a PR-authored act on a store with ONE commit in the repo's history, so its
-    heal is one command on the PR that caused it. A drift guard SHOULD catch that."""
-    import scripts.build_intelligence_registry as builder
+    from engine.species_registry import VALID_VALIDATION_STATUSES
 
     builder._READ_CACHE.clear()
     before, _ = builder.build(REPO)
-    original = builder._read_tracked_uncached
-
-    def patched(root, rel):
-        text, source = original(root, rel)
-        if rel == builder.SPECIES_REL and text is not None:
-            payload = json.loads(text)
-            payload["species"].append(
-                {
-                    "species_id": "SYNTHETIC_TEST_SPECIES",
-                    "validation_status": "accruing",
-                    "ledger_binding": {"ledger": "us_board_ledger"},
-                }
-            )
-            text = json.dumps(payload)
-        return text, source
-
+    extra = [
+        {"desk": "whitehouse", "horizon_d": 999, "direction": 1},
+        {"desk": "brand_new_desk_2026", "horizon_d": 21, "direction": 1},
+    ]
     try:
-        builder._READ_CACHE.clear()
-        monkeypatch.setattr(builder, "_read_tracked_uncached", patched)
+        _patched_read(
+            monkeypatch,
+            builder.CLAIMS_REL,
+            lambda text: text + "".join(json.dumps(r) + "\n" for r in extra),
+        )
         after, _ = builder.build(REPO)
     finally:
         builder._READ_CACHE.clear()
 
-    assert serialise(after) != serialise(before)
+    # The append must be REAL, or this test proves nothing.
+    assert after["meta"]["corpus"]["n_desks"] == before["meta"]["corpus"]["n_desks"] + 1
+
+    assert validate_structure(
+        after, valid_validation_statuses=VALID_VALIDATION_STATUSES
+    ) == []
+    assert {r["engine_id"] for r in after["engines"]} == {r["engine_id"] for r in before["engines"]}
+    assert (
+        sorted((f.code, f.engine_id) for f in audit_content(after))
+        == sorted((f.code, f.engine_id) for f in audit_content(before))
+    ), "a nightly claim append changed the finding set — that is a scheduled fleet-wide red"
+
+
+def test_a_SIBLING_PR_adding_a_synapse_artifact_invalidates_nothing(monkeypatch):
+    """SIMULATION (b). config/synapse.yml took 26 commits in 14 days, ALL inside the
+    window; round 2 relocated the equality pin onto it and was refuted for that reason. A
+    sibling PR registering a new SCORED artifact must leave this lane green: the view grows
+    a row and a finding, and nothing is invalidated."""
+    import scripts.build_intelligence_registry as builder
+    from engine.species_registry import VALID_VALIDATION_STATUSES
+
+    builder._READ_CACHE.clear()
+    before, _ = builder.build(REPO)
+
+    synthetic = (
+        "\n"
+        "  synthetic-sibling-scored-artifact:\n"
+        "    path: data/synthetic_sibling/board.parquet\n"
+        "    format: parquet\n"
+        "    producer: engine/synthetic_sibling.py\n"
+        "    owner_program: synthetic-sibling-program\n"
+        "    cadence: daily-engine\n"
+        "    storage: git\n"
+        "    asof_field: asof\n"
+        "    freshness_sla_hours: 24\n"
+        "    schema: synthetic\n"
+        "    tier: scored\n"
+        "    horizon_role: context\n"
+        "    consumers: []\n"
+    )
+    try:
+        _patched_read(monkeypatch, builder.SYNAPSE_REL, lambda text: text + synthetic)
+        after, _ = builder.build(REPO)
+    finally:
+        builder._READ_CACHE.clear()
+
+    # The edit must be REAL, or this test proves nothing.
+    new_ids = {r["engine_id"] for r in after["engines"]} - {r["engine_id"] for r in before["engines"]}
+    assert new_ids == {"engine/synthetic_sibling.py::synthetic-sibling-program"}
+
+    assert validate_structure(
+        after, valid_validation_statuses=VALID_VALIDATION_STATUSES
+    ) == []
+    assert after["meta"]["n_artifacts_mapped"] == after["meta"]["n_artifacts"]
+    # The new authority-bearing artifact is REPORTED, not silently absorbed.
+    assert any(
+        f.code == "AUTHORITY_WITHOUT_EVIDENCE"
+        and f.engine_id == "engine/synthetic_sibling.py::synthetic-sibling-program"
+        for f in audit_content(after)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1234,9 +1194,8 @@ def test_a_species_promotion_DOES_move_the_artifact_because_it_is_PR_caused(monk
 
 def test_producer_source_is_read_through_the_sparse_ladder(monkeypatch):
     """`_scan_producers` read the working tree only and skipped a missing file with a
-    silent `continue`. Under a sparse cone that loses ledger-waterfall rule 2 and builds a
-    STRUCTURALLY different registry than CI — which the byte-exact gate then reports as
-    drift, with nothing in the log saying a producer could not be read."""
+    silent `continue`. Under a sparse cone that loses ledger-waterfall rule 2 and derives a
+    structurally different registry than CI, with nothing in the log saying so."""
     import scripts.build_intelligence_registry as builder
 
     seen: list[str] = []
@@ -1247,76 +1206,45 @@ def test_producer_source_is_read_through_the_sparse_ladder(monkeypatch):
         return original(root, rel)
 
     monkeypatch.setattr(builder, "read_tracked", spy)
-    scans, unresolved, unreadable = builder._scan_producers(REPO, {"scripts/build_whitehouse.py"})
+    builder._scan_producers(REPO, {"scripts/build_whitehouse.py"})
     assert "scripts/build_whitehouse.py" in seen, "the producer must go through read_tracked"
-    assert "scripts/build_whitehouse.py" in scans
 
 
 def test_an_unreadable_producer_is_COUNTED_not_silently_skipped():
     import scripts.build_intelligence_registry as builder
 
-    scans, unresolved, unreadable = builder._scan_producers(
+    scans, _, unreadable = builder._scan_producers(
         REPO, {"engine/this_module_does_not_exist_anywhere.py"}
     )
     assert unreadable == ["engine/this_module_does_not_exist_anywhere.py"]
     assert scans == {}
 
 
-def test_the_ledger_module_inventory_survives_a_sparse_cone():
-    """A working-tree-only glob would report the inventory EMPTY under a sparse cone and
-    silently change every ledger derivation."""
+def test_the_species_store_is_read_through_the_git_ladder_in_a_sparse_worktree():
+    """data/ is absent on disk in an agent worktree while ~39,900 data paths are tracked in
+    HEAD. A disk-only read would silently derive validation_state='phase0' everywhere."""
     import scripts.build_intelligence_registry as builder
 
-    modules = builder._ledger_modules(REPO)
-    assert len(modules) >= 14
-    assert all(m.startswith("engine/") and m.endswith("_ledger.py") for m in modules)
+    species, source = builder._load_species(REPO)
+    assert species is not None, "the species store must resolve through worktree OR HEAD"
+    assert source in ("worktree", "git")
 
 
-def test_qual_ladder_ref_paths_are_probed_through_the_sparse_ladder():
-    """os.path.exists() would call a tracked-but-absent prereg missing and fire
-    AUTHORITY_EVIDENCE_UNRESOLVABLE on it — the exact bug class this fix closes,
-    reproduced inside the fix."""
+@pytest.mark.parametrize(
+    "path,expected",
+    [
+        ("config/synapse.yml", True),
+        ("research", False),                       # a directory is not a prereg
+        ("research/lol_does_not_exist_anywhere.md", False),
+        ("/etc/passwd", False),                    # absolute paths must never resolve
+        ("../../../etc/passwd", False),            # nor traversal out of the repo
+        ("", False),
+    ],
+)
+def test_the_qual_ladder_probe_answers_FILE_IN_THIS_REPO_only(path, expected):
+    """`root / "/etc/passwd"` is `/etc/passwd` under pathlib's absolute-operand rule, so
+    the worktree half of the probe answered True for any absolute path on the machine —
+    another way to drain the C-1 backlog without a prereg."""
     import scripts.build_intelligence_registry as builder
 
-    probe = builder._make_path_exists(REPO)
-    assert probe("config/synapse.yml") is True
-    assert probe("research/lol_does_not_exist_anywhere.md") is False
-    assert probe("/etc/passwd") is False, "absolute paths must never resolve"
-    assert probe("../../../etc/passwd") is False, "traversal must never resolve"
-
-
-# ---------------------------------------------------------------------------
-# Live registry invariants
-# ---------------------------------------------------------------------------
-
-def test_live_registry_passes_its_own_structural_validator(live_registry):
-    from engine.species_registry import VALID_VALIDATION_STATUSES
-
-    assert validate_structure(
-        live_registry, valid_validation_statuses=VALID_VALIDATION_STATUSES
-    ) == []
-
-
-def test_live_registry_maps_every_synapse_artifact_exactly_once(live_registry, live_synapse):
-    seen = set()
-    for row in live_registry["engines"]:
-        for artifact in row["artifacts"]:
-            assert artifact["id"] not in seen
-            seen.add(artifact["id"])
-    for row in live_registry["excluded"]:
-        for aid in row["artifacts"]:
-            assert aid not in seen
-            seen.add(aid)
-    assert seen == set(live_synapse["artifacts"])
-
-
-def test_every_live_producer_maps_to_an_engine_or_an_exclusion(live_registry, live_synapse):
-    producers = {e.get("producer", "") for e in live_synapse["artifacts"].values()}
-    mapped = {r["producer"] for r in live_registry["engines"]} | {
-        r["producer"] for r in live_registry["excluded"]
-    }
-    assert producers - mapped == set()
-
-
-def test_every_live_exclusion_carries_a_non_empty_reason(live_registry):
-    assert all(str(r["reason"]).strip() for r in live_registry["excluded"])
+    assert builder._tracked_file_exists(REPO, path) is expected
