@@ -90,9 +90,21 @@ python3 scripts/agentos.py status --dry-run
 python3 scripts/agentos.py brief           # the CEO view
 python3 scripts/agentos.py brief --full --since 7d
 python3 scripts/agentos.py brief --json    # ceo_brief.v1
+
+python3 scripts/agentos.py compile-context --workstream PROPHET-US-ENTRY-TIMING
+python3 scripts/agentos.py compile-context "reduce prophet late entry" --text --budget 4000
 ```
 
-Both **always exit 0** (invariant I1) and make **zero network calls**: PR state comes only
+`compile-context` is what a session picking up work should read first: a **bounded,
+cited, read-only** `context_bundle.v1` — higher law (DNR rows, the P0, the program row)
+above the workstream state, then current decisions, fresh discoveries, the latest
+handoff, and artifact pointers, with every excluded, budget-omitted and unreadable input
+named rather than silently dropped. It exits **0** with honest degradation (an ambiguous
+task, an unbuilt index and an absent sibling repo all report and carry on) and exits 1
+only when you NAME a workstream that does not exist or whose record is malformed.
+
+Both `status` and `brief` **always exit 0** (invariant I1), and all three make **zero
+network calls**: PR state comes only
 from the local `data/governance/active_builds.json` written by the nightly ABM sweep. The
 5,000/hr REST bucket is shared with `ship_loop_guard.py`, which fails CLOSED when it is
 exhausted, so a status command that burned quota could block the Stop it was reporting on.

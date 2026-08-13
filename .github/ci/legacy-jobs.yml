@@ -2966,7 +2966,8 @@ jobs:
           # when agentos/ is outside a sparse cone, so a store that failed to check
           # out would otherwise pass as a skip. This line cannot skip.
           python3 scripts/agentos.py validate
-          python -m pytest tests/test_agentos_schema.py tests/test_agentos_status.py -q
+          python -m pytest tests/test_agentos_schema.py tests/test_agentos_status.py \
+            tests/test_agentos_compile.py -q
 
   capability-broker:
     if: ${{ false }}
