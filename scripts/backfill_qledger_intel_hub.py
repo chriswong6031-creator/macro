@@ -52,7 +52,7 @@ _HERE = Path(__file__).resolve()
 _ROOT = _HERE.parent.parent
 sys.path.insert(0, str(_ROOT))
 
-from engine.qledger import make_claim, register, control_for_sector  # noqa: E402
+from engine.qledger import HORIZON_UNIT_TRADING, make_claim, register, control_for_sector  # noqa: E402
 
 log = logging.getLogger("backfill_intel_hub")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -163,6 +163,8 @@ def run(root: Path, dry_run: bool = False) -> dict:
                 scope_key=t,
                 direction=direction,
                 horizon_d=horizon_d,
+                # P0a: grade-ladder rungs are exchange SESSIONS, not calendar days.
+                horizon_unit=HORIZON_UNIT_TRADING,
                 timestamp_quality=_TIMESTAMP_QUALITY,
                 bench=_BENCH,
                 control=control_for_sector(sector),

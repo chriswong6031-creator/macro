@@ -432,6 +432,7 @@ def register_claims(result: dict, root: Path | str | None = None) -> int:
                     pending.append(qledger.make_claim(
                         desk=DESK, asof=asof, scope_type="entity", scope_key=tk,
                         direction=0, horizon_d=HORIZON_D,
+                        horizon_unit=qledger.HORIZON_UNIT_TRADING,   # P0a
                         timestamp_quality="CRAWL_BOUNDED",
                         claim_family=CLAIM_FAMILY,
                         extra={"event_id": e.get("event_id"),
@@ -447,6 +448,7 @@ def register_claims(result: dict, root: Path | str | None = None) -> int:
                 pending.append(qledger.make_claim(
                     desk=DESK, asof=asof, scope_type="macro",
                     scope_key="510300.SS", direction=0, horizon_d=HORIZON_D,
+                    horizon_unit=qledger.HORIZON_UNIT_TRADING,       # P0a
                     timestamp_quality="CRAWL_BOUNDED",
                     bench="510300.SS", claim_family=CLAIM_FAMILY,
                     extra={"event_id": e.get("event_id"),
