@@ -318,7 +318,9 @@ it — leaving only the bench, which **defaults to SPY**. So
 graded on NYSE sessions against SPY, silently. Index symbols are now
 **enumerated** in `INDEX_MARKET` and refused by name when absent — never
 inferred, because `^HSI` and `^GSPC` are shaped identically and trade on
-different continents.
+different continents. That claim now refuses as **`mixed_markets`**: `^HSI`
+names HK from its own entry, the SPY bench names US, and two legs on two
+exchanges have no single session ruler.
 
 **(b) Provenance could name a market the shape positively excludes.**
 `valid_us_ticker` rejects a digit-first root, so US is *excluded* for `600519`
@@ -352,6 +354,53 @@ also removed from the `..._never_silently_resolves_to_us` parametrize list —
 a **strengthening**: acceptance bar #1 is "the true market, or fail closed", and
 `^HSI` used to satisfy it the weak way (fail closed), which is exactly what let
 the default bench answer. It now satisfies it the strong way (HK).
+
+## 7.3b Adversarial review — a defect in this PR's own contract
+
+A four-lens review with per-finding refutation found one that survived, and it
+was **this contract's own**.
+
+**A hard exchange suffix was vetoed by the desk table.** `_corroborate`
+documented `shape_is_decisive` as the seam between a hard exchange fact and a
+shape inference, threaded it through all four call sites, and shipped a test
+pinning every call site's value — **and never read the parameter in the function
+body.** Every caller got the agree-or-refuse arm, so:
+
+```
+{'desk': 'china_news', 'scope': {'key': '0700.HK'}, 'bench': '2800.HK'}
+    -> (None, 'shape_provenance_contradiction:HK!=CN')
+```
+
+while the *identical* claim on the unlisted desk `altdata` resolved
+`('HK', '')`. Admissibility depended on whether a claim's desk happened to be
+enumerated — backwards — and since `DESK_MARKET` carries **no HK entry** while
+HK is a first-class market in `CLOCK_CALENDARS`, **no enumerated desk could ever
+claim a Hong Kong security.**
+
+The rule was wrong in the same shape as the five rounds before it, merely
+inverted: `0700.HK` names its exchange **in the ticker** — direct evidence about
+the *instrument* — while `DESK_MARKET` is indirect evidence about the
+*producer*, a summary of what a desk has typically priced rather than a promise
+it can never price anything else. Letting the weaker, indirect signal veto the
+stronger, direct one is "one source is sufficient" again.
+
+Fixed: a decisive shape **wins**; an *inferred* shape (a bare symbol
+`valid_us_ticker` accepts) must still agree with a speaking provenance. A
+genuinely cross-market claim is still refused — one level up, as
+`mixed_markets`, which is a fact about the claim rather than a disagreement
+between two classifiers.
+
+**The pinning test could not have caught this**: it asserts the parameter's
+*value* at each call site, never its *effect* — a guard that cannot fail on the
+defect it exists to gate. It is now paired with
+`test_a_hard_exchange_suffix_is_never_vetoed_by_provenance`, which asserts the
+behaviour across eight desks, and `test_a_genuinely_cross_market_claim_is_still_
+refused_as_mixed` as its negative control. Mutation control: ignoring
+`shape_is_decisive` again fails **4** tests.
+
+Also corrected: `_ticker_market`'s numbered rules still described round-5
+precedence (provenance before the shape fallback), which is the ordering that
+let the string `SPY` resolve CN under a CN desk. The rules now match the code.
 
 ## 7.4 What this costs: nothing, measured
 

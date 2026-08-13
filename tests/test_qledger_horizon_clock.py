@@ -2431,8 +2431,12 @@ def test_an_index_subject_no_longer_lets_the_default_bench_name_the_market():
     provenance, so the claim is refused instead of silently mis-graded."""
     market, reason = q.resolve_claim_market(_mkclaim("radar", "^HSI"))
     assert market is None, "the Hang Seng resolved on somebody else's calendar"
-    assert q.clock_reason_head(reason).startswith(
-        q.MARKET_UNDETERMINED_CONTRADICTION)
+    # MIXED, not "contradiction": the index names HK from its own enumerated
+    # entry — a hard fact the desk table may not veto — and the claim's SPY
+    # default bench names US, so the two LEGS span two markets and have no
+    # single session ruler. That is the honest reason, and it is the same
+    # answer for an unlisted desk as for an enumerated one.
+    assert q.clock_reason_head(reason).startswith(q.MARKET_UNDETERMINED_MIXED)
     assert "HK" in reason and "US" in reason
 
     # ...and with no provenance in play, the index names its own market.
@@ -2495,12 +2499,17 @@ def test_provenance_can_never_re_market_a_symbol_that_names_its_own():
     SPY is a US symbol under every desk. The claim is refused (its two legs
     genuinely span two markets and have no single session ruler) — never
     silently re-marketed."""
+    # SPY is a bare symbol: its US reading is an INFERENCE (valid_us_ticker), not
+    # a hard exchange fact, so it is the weaker arm and a disagreeing provenance
+    # refuses it. This is the arm where agree-or-refuse genuinely binds.
     assert q._ticker_market("SPY", provenance=q.MARKET_CN)[0] is None
     assert q._ticker_market("SPY", provenance=None) == (q.MARKET_US, "")
     assert q._ticker_market("SPY", provenance=q.MARKET_US) == (q.MARKET_US, "")
 
-    # A hard exchange suffix outranks provenance the same way.
-    assert q._ticker_market("600519.SS", provenance=q.MARKET_US)[0] is None
+    # A hard exchange suffix outranks provenance — in the OTHER direction. The
+    # suffix is direct evidence about the instrument and simply wins; the claim
+    # is still refused, one level up, as MIXED (see the test below).
+    assert q._ticker_market("600519.SS", provenance=q.MARKET_US) == (q.MARKET_CN, "")
     assert q._ticker_market("600519.SS", provenance=q.MARKET_CN) == (q.MARKET_CN, "")
 
 
@@ -2609,3 +2618,65 @@ def test_the_hardening_refuses_only_shapes_the_live_corpus_does_not_contain():
     assert market is None
     assert q.clock_reason_head(reason).startswith(
         q.MARKET_UNDETERMINED_FOREIGN_EXCHANGE)
+
+
+def test_a_hard_exchange_suffix_is_never_vetoed_by_provenance():
+    """THE DEFECT WAS THIS CONTRACT'S OWN, AND ITS OWN TEST COULD NOT SEE IT.
+
+    P0a-2's first cut documented `shape_is_decisive` as the seam between a hard
+    exchange fact and a shape inference, threaded it through all four
+    `_corroborate` call sites, and added
+    `test_corroborate_records_the_strength_of_every_call_site` to pin every call
+    site's value — then **never read the parameter in the function body**. Every
+    caller got the agree-or-refuse arm, so a hard suffix was vetoed by a desk
+    table:
+
+        {'desk': 'china_news', 'scope': {'key': '0700.HK'}, 'bench': '2800.HK'}
+            -> (None, 'shape_provenance_contradiction:HK!=CN')
+
+    while the identical claim on the UNLISTED desk `altdata` resolved
+    ('HK', ''). Admissibility depended on whether the desk happened to be
+    enumerated — backwards — and since `DESK_MARKET` carries no HK entry while
+    HK is a first-class market in `CLOCK_CALENDARS`, **no enumerated desk could
+    ever claim a Hong Kong security.**
+
+    The pinning test asserts the parameter's VALUE at each call site, never its
+    EFFECT, so it is a guard that cannot fail on the defect it exists to gate.
+    This test asserts the effect."""
+    hk = {"scope": {"type": "entity", "key": "0700.HK"}, "bench": "2800.HK"}
+    for desk in ("china_news", "cn_importance_v0", "radar", "whitehouse",
+                 "policy", "us_importance_v0", "altdata", "narrative"):
+        claim = dict(hk, desk=desk, claim_family=desk)
+        assert q.resolve_claim_market(claim) == (q.MARKET_HK, ""), desk
+    assert not any(v == q.MARKET_HK for v in q.DESK_MARKET.values()), (
+        "if an HK desk is ever added, this test stops covering the case it "
+        "exists for — the point is that HK resolves with NO provenance help")
+
+    # The leg-level rule, at each of the three DECISIVE shape sources.
+    assert q._ticker_market("0700.HK", provenance=q.MARKET_CN) == (q.MARKET_HK, "")
+    assert q._ticker_market("600519.SS", provenance=q.MARKET_US) == (q.MARKET_CN, "")
+    assert q._ticker_market("^HSI", provenance=q.MARKET_US) == (q.MARKET_HK, "")
+    assert q._ticker_market("BRK.B", provenance=q.MARKET_CN) == (q.MARKET_US, "")
+
+    # ...and the INFERRED arm still binds: a bare symbol's US reading is not a
+    # hard fact, so a disagreeing provenance refuses it.
+    assert q._ticker_market("AAPL", provenance=q.MARKET_CN)[0] is None
+
+
+def test_a_genuinely_cross_market_claim_is_still_refused_as_mixed():
+    """NEGATIVE CONTROL for the fix above: letting a hard suffix win must NOT
+    let a two-market claim through. It is caught one level up, by
+    `resolve_claim_market`'s MIXED refusal, and that is the honest reason — the
+    two legs have no single session ruler, which is a fact about the CLAIM, not
+    a disagreement between two classifiers."""
+    for desk, key, bench in (
+            ("us_importance_v0", "600519.SS", "SPY"),
+            ("radar", "^HSI", "SPY"),
+            ("china_news", "0700.HK", "510300.SS"),
+            ("altdata", "600519.SS", "SPY")):
+        claim = {"desk": desk, "claim_family": desk,
+                 "scope": {"type": "entity", "key": key}, "bench": bench}
+        market, reason = q.resolve_claim_market(claim)
+        assert market is None, (desk, key, bench)
+        assert q.clock_reason_head(reason).startswith(
+            q.MARKET_UNDETERMINED_MIXED), (desk, key, reason)

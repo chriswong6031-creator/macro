@@ -758,28 +758,38 @@ def _ticker_market(ticker: Any, provenance: str | None = None) -> tuple[str | No
          like `CN_CENSORSHIP_RISK`, never a real subject) -> contributes NO
          market information, same as an absent leg (`MARKET_UNDETERMINED_NO_LEG`
          — `resolve_claim_market` skips it and lets another leg decide)
-      6. NO suffix, ticker-SHAPED, and the claim's OWN provenance
-         (`_provenance_market`, desk/claim_family) names a market -> THAT
-         market. Provenance is the claim's own construction, not an inference
-         from the string — this is the round-5 fix.
-      7. NO suffix, ticker-SHAPED, no provenance, but `valid_us_ticker`
-         accepts it -> US (the only shape-only inference left, and it is
-         corroborated: it holds for every real US ticker with no suffix,
-         AAPL/SPY/MSFT included, and it EXCLUDES every bare digit-first or
-         symbol-first code — `600519`, `000001`, `0700`, `^HSI` all fail this
-         gate, so none of them can reach US by shape alone any more)
+      6. NO suffix, ticker-SHAPED, and `valid_us_ticker` accepts it -> US, but
+         as an INFERENCE, not a fact — so it goes through `_corroborate` with
+         `shape_is_decisive=False` and a disagreeing provenance REFUSES it
+         (`AAPL` on a CN desk is a contradiction). The gate is bounded on both
+         sides: the enumeration above has taken every known exchange suffix,
+         and `valid_us_ticker` must accept the whole symbol, so no bare
+         digit-first or symbol-first code — `600519`, `000001`, `0700` — can
+         reach US by shape alone.
+      7. NO suffix, ticker-SHAPED, shape SILENT, and the claim's OWN provenance
+         (`_provenance_market`) names a market -> THAT market, but ONLY where
+         `_shape_admits_market` agrees the string could be one (a CN desk's
+         6-digit `600519` is admitted; a US desk's is not, because
+         `valid_us_ticker` positively excludes a digit-first root). Provenance
+         corroborates a silent shape; it never overrides a speaking one.
       8. anything else                               -> REFUSED
          (`MARKET_UNDETERMINED_NO_PROVENANCE`) — a ticker-shaped leg with no
          suffix, no provenance and no US shape has nothing to determine its
          market from, and this clock fails closed rather than guess.
 
-    Rules 6-8 are the round-5 repair: the OLD rule 3 ("no suffix -> US") is
-    gone. Provenance (6) is tried BEFORE the shape fallback (7) — a claim
-    whose desk/family names a market is not asking this function to guess —
-    and the shape fallback is bounded on both sides exactly as rule 4 always
-    was: the enumeration above it has taken every known exchange suffix, and
-    `valid_us_ticker` has to accept the whole symbol, so no bare numeric code
-    can pass it.
+    ORDER MATTERS AND IS NOT THE ROUND-5 ORDER. Round 5 tried provenance BEFORE
+    the shape fallback, which is how the string `SPY` itself resolved CN under a
+    CN desk. The shape is now read FIRST, and provenance is reached only where
+    the shape says nothing. P0a-2's rule, stated once:
+
+        a HARD exchange fact in the string (rules 1, 4, and the `^` index table)
+        WINS outright — provenance may not veto it;
+        an INFERRED shape reading (rule 6) must AGREE with a speaking provenance;
+        a SILENT shape (rule 7) lets provenance decide, if the shape admits it.
+
+    A claim whose legs then straddle two markets is refused one level up, by
+    `resolve_claim_market`, as MIXED — which is a fact about the claim, not a
+    disagreement between two classifiers.
 
     Rule 2 is not hypothetical: four live `china_special_sits` claims are priced
     on `920007.BJ`-style Beijing Stock Exchange tickers, a suffix `MARKET_SUFFIX`
@@ -888,36 +898,62 @@ def _corroborate(ticker: str, shape_market: str, provenance: str | None,
     to be sufficient. A US desk claiming `600519` is not a market to guess. It
     is a CONTRADICTION, and the only safe answer is refusal.
 
-    `shape_is_decisive` distinguishes the two strengths of shape evidence:
+    BUT "NEITHER IS AUTHORITATIVE ALONE" IS A RULE ABOUT INFERENCES, NOT ABOUT
+    FACTS, and `shape_is_decisive` is where that distinction lives:
 
-      * True  — a hard exchange fact is in the string itself (a mapped suffix
-        `.SS`/`.SZ`/`.HK`, an enumerated `^` index, a share-class suffix on a
-        symbol the house US gate accepts). Where provenance disagrees this is a
-        contradiction; where provenance is silent the string stands alone,
-        because an exchange suffix is not an inference.
-      * False — the shape reading is itself an inference (a bare symbol
-        `valid_us_ticker` happens to accept). It still contradicts a disagreeing
-        provenance, and it still stands when provenance is silent, but it is
-        recorded as the weaker reading so the distinction stays in the code
-        rather than in a comment.
+      * True — A HARD EXCHANGE FACT IS IN THE STRING ITSELF: a mapped suffix
+        (`.SS`/`.SZ`/`.HK`), an enumerated `^` index, or a share-class suffix on
+        a symbol the house US gate accepts. **The shape WINS; provenance may not
+        veto it.** `0700.HK` names the Hong Kong exchange in the ticker. That is
+        DIRECT evidence about the INSTRUMENT. `DESK_MARKET` is indirect evidence
+        about the PRODUCER — a summary of what a desk has typically priced, not
+        a promise that it can never price anything else. Letting the weaker,
+        indirect signal veto the stronger, direct one is the same "one source is
+        sufficient" error the history above is made of, merely inverted.
+      * False — THE SHAPE READING IS ITSELF AN INFERENCE: a bare symbol that
+        `valid_us_ticker` happens to accept. Here the two signals are of
+        comparable strength, so the agree-or-refuse rule binds: a disagreeing
+        provenance makes it a CONTRADICTION and the leg is refused.
 
-    Both arms currently behave the same when provenance is silent. That is not
-    an oversight and the parameter is not dead: it is the seam a future rule
-    ("a WEAK shape reading must be corroborated, a hard suffix need not be")
-    would turn on, and it makes the strength of each call site explicit at the
-    call site. `test_corroborate_records_the_strength_of_every_call_site` pins
-    every caller's value so the distinction cannot silently rot.
+    THE DEFECT THIS REPAIRS — AND IT WAS THIS FUNCTION'S OWN. The first cut of
+    P0a-2 documented exactly the distinction above, threaded `shape_is_decisive`
+    through all four call sites, added a test pinning every call site's value…
+    and then **never read the parameter in the body**. Every caller therefore
+    got the agree-or-refuse arm, so a hard suffix WAS vetoed by provenance:
+
+        {'desk': 'china_news', 'scope': {'key': '0700.HK'}, 'bench': '2800.HK'}
+            -> (None, 'shape_provenance_contradiction:HK!=CN')
+
+    while the SAME claim on the unlisted desk `altdata` resolved `('HK', '')`.
+    Admissibility depended on whether a claim's desk happened to be enumerated,
+    which is backwards; and since `DESK_MARKET` carries no HK entry at all while
+    HK is a first-class market in `CLOCK_CALENDARS`, **no enumerated desk could
+    ever claim a Hong Kong security.** The pinning test could not catch it: it
+    asserts the parameter's value at each call site, not its effect, so it is a
+    guard that cannot fail on the defect it exists to gate. It is now paired with
+    `test_a_hard_exchange_suffix_is_never_vetoed_by_provenance`, which asserts
+    the BEHAVIOUR.
+
+    A genuinely cross-market claim is still refused — just for the honest reason.
+    `600519.SS` under a US desk resolves CN on its own leg, and
+    `resolve_claim_market` then sees {CN: 600519.SS, US: SPY} and refuses as
+    MIXED, because those two legs have no single session ruler. Nothing is
+    graded on the wrong calendar in either design; the difference is that this
+    one does not also refuse the well-formed single-market claims.
     """
-    if provenance is None:
+    if provenance is None or provenance == shape_market:
         return shape_market, ""
-    if provenance == shape_market:
+    if shape_is_decisive:
+        # A hard exchange fact outranks a desk-level generalisation. The leg
+        # stands; a claim whose OTHER legs sit in another market is still caught
+        # one level up, by `resolve_claim_market`'s MIXED refusal.
         return shape_market, ""
     return None, (f"{MARKET_UNDETERMINED_CONTRADICTION}"
                   f":{shape_market}!={provenance}"
-                  f"{CLOCK_REASON_SEP}{ticker} reads as {shape_market} from its "
-                  f"symbol but the claim's own provenance names {provenance}; "
-                  f"neither signal is authoritative alone, so this is refused "
-                  f"rather than resolved on whichever source wins the tie")
+                  f"{CLOCK_REASON_SEP}{ticker} reads as {shape_market} only by "
+                  f"shape INFERENCE while the claim's own provenance names "
+                  f"{provenance}; two signals of equal strength disagree, so "
+                  f"this is refused rather than resolved on whichever wins the tie")
 
 
 def clock_reason_head(reason: Any) -> str:
