@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T10:56:34.579363+00:00",
-  "count": 1055,
+  "generated_at": "2026-08-13T11:11:44.031377+00:00",
+  "count": 1056,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -64,6 +64,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-knoyqozpljd-1fb109",
+      "title": "JPM Retail Radar Aug 12",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T10:50:52Z",
+      "summary_points": [
+        "**Retail Flows Shift to Commodities & Tech Traction Loss**: Retail ETF flows rebounded to 64%ile, rotating from Tech to Commodities (gold-led ETFs +2.5z demand; inflation-linked/dividend ETFs at 89%ile), while Tech (MSFT, Semis) lost momentum despite Mag7/SPCX concentration.",
+        "**Momentum Valuations at 0.3x (4.1%ile) vs Market Median 1.8x**: Momentum stocks now significantly cheaper than market (fwd P/E spread), signaling potential value opportunity amid recent unwind.",
+        "**Retail Imbalance in GDx/STIP Peaks at $20B**: Extreme retail overexposure (GDx daily imbalance) signals unsustainable positioning and high reversal risk.",
+        "**Dividend Yield Crowding at 77th Percentile**: High concentration in dividend ETFs (Fig 11) raises drawdown risk if yield sustainability is questioned, though below S&P 500 level (Fig 14) mitigates reversal speed.",
+        "**Meme Stock Short Squeeze Risk**: MGRX (22% short interest rise), FF AI (60% short interest rise), and HTZ (67% short interest) face elevated squeeze risk from retail buying vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-yxniyrhtcac-f7186d",
       "title": "Hon Hai (2317)",
