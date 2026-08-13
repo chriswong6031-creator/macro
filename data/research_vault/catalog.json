@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T12:26:50.505620+00:00",
-  "count": 1059,
+  "generated_at": "2026-08-13T12:42:01.451925+00:00",
+  "count": 1060,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -64,6 +64,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-q8w8jub10lx-aa75bd",
+      "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 13, 2026 as of 5 30 AM ET",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T11:36:37Z",
+      "summary_points": [
+        "**US PCE Methodology Shift**: Old PCE methodology ends 12 Aug, creating volatility risk; macro outlook (favorable inflation/weak labor) drives risk asset rebound and issuance surge, critical for positioning.",
+        "**MSCI Index Strategy**: MSCI review implications drive market sentiment and index flows; monitor for volatility and positioning shifts.",
+        "**Vail Resorts Downgrade & Tingyi Upgrade**: Vail (MTN) downgraded to Sell (Americas sector risk); Tingyi (0322.HK) upgraded to Buy (Asia equity flow catalyst), direct portfolio action.",
+        "**China EV/Export Dynamics**: Domestic NEV decline narrows but export growth holds; Hiwin Corp faces price hike vs.",
+        "cost increases (geopolitics/pricing risk), Sell."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ecx3kynusdj-b16e59",
       "title": "Citi The Point for Europe Thursday, 13 August 2026",
