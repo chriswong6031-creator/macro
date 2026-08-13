@@ -2475,6 +2475,12 @@ jobs:
         run: python -m pytest tests/test_watchlist_books_js.py -q
       - name: watchstore.js store — registered multi-list seam (W1a)
         run: python -m pytest tests/test_watchstore_multilist_js.py -q
+      # W2 workspace layer over that store: the bulk-entry parser (the anonymous
+      # funnel's front door), the weighting model, the engine-state -> plain-word
+      # stage map (which may only ever DE-ESCALATE), delta-since-visit, and the
+      # read-side guard that stops a focus refetch from reverting a just-made edit.
+      - name: watchlist workspace — entry parser, stage map, focus-refetch guard (W2)
+        run: python -m pytest tests/test_watchlist_workspace_js.py -q
       - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
         run: python -m pytest tests/test_factor_exposure.py tests/test_factor_exposure_stress.py -q
 

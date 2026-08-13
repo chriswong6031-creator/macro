@@ -6,11 +6,12 @@
      • window.MDXAuth.onChange    — auth events from theme.js shared session
      • window.getSupabaseClient() — shared Supabase client from theme.js
 
-   Also owns the watchlist sync UI (formerly auth.js):
-     • Bilingual sync pill (#wl_syncpill): synced/syncing/local/offline/finishing
-     • Sign-in button (#wl_signin) → MDXAuth.open('signin')
-     • Account row (#wl_account, #wl_who) with sign-out (#wl_signout)
-     • #wl_auth panel show/hide; langchange relabeling
+   W2: this module no longer OWNS any sync UI. The Account Sync panel is deleted and
+   the header save-state chip is the page's only disclosure of where the list lives,
+   so the store's job here is to publish the state and nothing else:
+     • `ws-save` document event, detail.state ∈ saved | saving | local | offline
+       (watchlist.js paints the chip; this file never touches its DOM)
+     • sign-in / sign-out go through the global MDXAuth modal, wired by the page
 
    When there is no session (logged out, no config, SDK blocked):
      • All paths are dormant; localStorage-only behavior is unchanged.
@@ -77,33 +78,22 @@
   // ---- DOM helpers -----------------------------------------------------------
   function el(id) { return document.getElementById(id); }
 
+  /* The four states the header chip can show, published as an event. The internal
+     vocabulary keeps its old names (setPill is called from a dozen places) and maps
+     ONCE, here, onto the four user-facing states — "finishing sign-in" is a write in
+     flight from the reader's point of view, so it is `saving`, not a fifth word. */
+  var CHIP_STATE = { synced: 'saved', syncing: 'saving', finishing: 'saving',
+                     local: 'local', offline: 'offline' };
+  var lastChip = null;
   function setPill(state) {
-    var p = el('wl_syncpill'); if (!p) return;
-    var map = { synced: L('synced'), syncing: L('syncing'), local: L('local'),
-                offline: L('offline'), finishing: L('finishing') };
-    p.textContent = map[state] || '';
-    p.className = 'wl-pill wl-pill-' + (state === 'finishing' ? 'syncing' : state);
+    var next = CHIP_STATE[state] || 'local';
+    if (next === lastChip) return;          // no-op re-publishes are noise
+    lastChip = next;
+    try {
+      document.dispatchEvent(new CustomEvent('ws-save', { detail: { state: next } }));
+    } catch (e) {}
   }
-
-  function showAccount(email) {
-    if (el('wl_signin'))  el('wl_signin').style.display  = 'none';
-    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
-    if (el('wl_account')) el('wl_account').style.display = 'flex';
-    if (el('wl_who'))     el('wl_who').textContent = L('hello') + ' ' + email;
-  }
-
-  function showSignedOut() {
-    if (el('wl_account')) el('wl_account').style.display = 'none';
-    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
-    if (el('wl_signin'))  el('wl_signin').style.display  = 'inline-block';
-    setPill('local');
-  }
-
-  function relabel() {
-    if (el('wl_signin'))  el('wl_signin').textContent  = L('signin');
-    if (el('wl_signout')) el('wl_signout').textContent = L('signout');
-    if (user) showAccount(user.email || ''); else setPill('local');
-  }
+  function showSignedOut() { setPill('local'); }
 
   // (the shared single-timer debounce() this module used is retired — the push is now
   //  debounced PER LIST at _schedulePush, so two lists cannot cancel each other.)
@@ -773,9 +763,34 @@
   };
 
   // ---- refetch-on-focus (if >60s since last pull) ----------------------------
+  /* A pull MERGES cloud rows into the local blob (union: cloud wins for membership).
+     That is correct after a settled edit and WRONG inside a pending push window: a
+     removal made moments ago is still only local, so the merge hands the row straight
+     back and the user watches their deletion undo itself. Reproduced on a tab switch
+     within the 600 ms push debounce; recorded as W2 scope on PR #5461.
+
+     The fix is a READ-SIDE guard only — nothing in the push or fold paths is touched,
+     which is what keeps ruling R1/R1.1 and the frozen push-scoping contract intact.
+     While any push is scheduled or queued, the refetch DEFERS and re-arms instead of
+     firing; the retry is bounded so a permanently stuck queue can never spin. */
+  var PUSH_SETTLE_MS = 800, PUSH_SETTLE_TRIES = 6;
+  // pure predicate, so the deferral can be pinned without a DOM or a live timer
+  function _pushPendingWith(timers, queued) {
+    return Object.keys(timers || {}).length > 0 || Object.keys(queued || {}).length > 0;
+  }
+  function pushPending() { return _pushPendingWith(_pushTimers, queuedPushes); }
+  function pullWhenSettled(tries) {
+    if (!user || !sb) return;
+    if (pushPending()) {
+      if (tries <= 0) return;    // still busy after ~5s: the next focus/edit will pull
+      setTimeout(function () { pullWhenSettled(tries - 1); }, PUSH_SETTLE_MS);
+      return;
+    }
+    pull();
+  }
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && user && sb && (Date.now() - pullDoneAt > 60000)) {
-      pull();
+      pullWhenSettled(PUSH_SETTLE_TRIES);
     }
   });
 
@@ -1103,7 +1118,9 @@
       document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: null } }));
       return;
     }
-    showAccount(user.email || '');
+    // signed in: the write-through state is whatever the pull below resolves. Say
+    // "saving" now rather than claiming "saved" before anything has been read.
+    setPill('finishing');
     // Signed in from the anonymous shell: the account-gated page scripts
     // (stockdata.js and the risk stack) were 401'd at load and an in-page auth
     // event cannot re-run <script> tags, so their signal lanes would stay dark
@@ -1135,41 +1152,25 @@
   function init() {
     var CFG = window.SUPABASE_CFG;
     var enabled = CFG && CFG.url && CFG.anonKey;
-    var box = el('wl_auth');
 
-    // Local-only unless BOTH the config is baked AND the shared client exists.
+    // Local-only unless BOTH the config is baked AND the shared client exists. The
+    // chip still has to say so — a page that silently shows nothing about where the
+    // list lives is exactly the husk this wave removed.
     if (!enabled || !window.MDXAuth || !window.MDXAuth.onChange) {
-      if (box) box.style.display = 'none';
+      setPill('local');
       return;
     }
-    if (!box) return;  // nothing to wire if the panel isn't on the page (e.g. committee.html)
-
-    box.style.display = 'flex';
-    relabel();
-
-    // Wire sign-in button -> global modal
-    var si = el('wl_signin');
-    if (si) si.addEventListener('click', function () {
-      if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
-    });
-
-    // Wire sign-out button
-    var so = el('wl_signout');
-    if (so) so.addEventListener('click', function () {
-      if (window.MDXAuth && window.MDXAuth.signOut) window.MDXAuth.signOut();
-      else showSignedOut();  // UI also updates via the mdx-auth event
-    });
-
-    // The legacy magic-link box is retired — sign-in goes through the global modal
-    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
 
     showSignedOut();
     // Establish the signed-out baseline so lastAuthUid=null; a later real
     // sign-in (null→uid) still transitions correctly.
     lastAuthUid = null;
 
-    // Refetch on tab focus (already wired above for >60s gate)
-    document.addEventListener('langchange', relabel);
+    /* Offline is a real, reachable state and the chip must be able to say it. The
+       browser tells us directly; a signed-out visitor is unaffected because their list
+       genuinely still lives in this browser either way. */
+    window.addEventListener('offline', function () { if (user && sb) setPill('offline'); });
+    window.addEventListener('online', function () { if (user && sb) pull(); });
 
     // If a session is already established before init (e.g. page reload while
     // signed in), show 'finishing' until onChange fires with the real user.
@@ -1205,6 +1206,9 @@
       cacheKey: cacheKey, cacheRead: cacheRead, cacheWrite: cacheWrite,
       tickersOf: _tickersOf,
       _setTestSession: function (u, client) { user = u; sb = client; },
+      // W2: the read-side guard that keeps a focus refetch from reverting an edit
+      // that is still only local (see tests/test_watchlist_workspace_js.py)
+      _testHooks: { pushPendingWith: _pushPendingWith },
       // seed the resolved-list state a real pull would have established
       _setTestLists: function (s) {
         if (!s) return;
