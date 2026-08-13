@@ -178,6 +178,32 @@ class TestPriceTruncation:
         assert report["ahead_of_pass_count"] == 1
         assert report["ahead_of_pass"][0]["max_date"] == "2026-08-11"
 
+    def test_a_file_already_past_the_pass_ceiling_is_rewritten_not_left_alone(self):
+        """Truncation is a reason to write, not only appending is.
+
+        Found in flight: the Russell close panel is gitignored, so the git restore
+        between passes does not reach it, and it carried a 2026-08-11 row into a
+        2026-08-10 control pass. The overlay computed the right frame and then declined
+        to write it because nothing had been APPENDED.
+        """
+        on_disk = _frame(["2026-08-10", "2026-08-11"], [10.0, 11.0])
+        live = _frame(["2026-08-10", "2026-08-11"], [10.0, 11.0])
+        merged, provenance = bf11.overlay_sessions(on_disk, live,
+                                                   bf11.CONTROL_THROUGH)
+
+        assert provenance["added_sessions"] == 0
+        assert len(merged) == 1
+        assert bf11._needs_write(merged, on_disk, provenance) is True, (
+            "the truncated frame would not have been written back"
+        )
+
+    def test_an_unchanged_file_is_not_rewritten(self):
+        """Guard the guard: the write condition must still be able to say no."""
+        on_disk = _frame(["2026-08-10"], [10.0])
+        merged, provenance = bf11.overlay_sessions(on_disk, on_disk,
+                                                   bf11.CONTROL_THROUGH)
+        assert bf11._needs_write(merged, on_disk, provenance) is False
+
     def test_the_price_surface_covers_every_rung_of_the_plan_price_ladder(self):
         """A truncation that misses a rung is a truncation with a hole in it.
 
@@ -194,6 +220,13 @@ class TestPriceTruncation:
             assert f"data/{group}/_closes_cache.parquet" in panels, (
                 f"{group}'s close panel is outside the truncated surface"
             )
+        assert "data/baskets/extras.parquet" in panels, (
+            "universe()'s LAST rung — the curated searchable names no index cache "
+            "carries — is outside the truncated surface. Left behind it does not leak "
+            "the future, it tears the panel: those members stay a session back while "
+            "every other panel advances, which is the shape that made the 2026-08-09 "
+            "bake refuse every candidate on panel.mixed_vintage"
+        )
 
 
 # ---------------------------------------------------------------------------

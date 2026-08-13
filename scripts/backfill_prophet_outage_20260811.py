@@ -164,7 +164,17 @@ PRICE_TICKER_STORES: tuple[tuple[str, str], ...] = (
 )
 #: Wide index-constituent panels — one frame, dates on the index, tickers on the
 #: columns.  Third rung of the price ladder in BOTH the library and the bridge.
+#:
+#: ``data/baskets/extras.parquet`` belongs here and its absence was a real hole, found
+#: by the control run rather than by reading: ``universe()`` takes each ticker from the
+#: FIRST group that carries it, and extras is the last rung — the curated searchable
+#: names (foreign ADRs, recent IPOs) that no index cache holds. Left outside the
+#: truncated surface it would have stayed one session behind while every other panel
+#: advanced to 2026-08-11, which is not lookahead but something just as damaging: a
+#: within-panel vintage TEAR of exactly the shape that made the 2026-08-09 bake refuse
+#: all 30 candidates on ``panel.mixed_vintage``.
 PRICE_WIDE_PANELS: tuple[str, ...] = (
+    "data/baskets/extras.parquet",
     "data/breadth/_closes_cache.parquet",
     "data/breadth/_high_cache.parquet",
     "data/breadth/_low_cache.parquet",
@@ -476,6 +486,24 @@ def overlay_sessions(vintage: Any, live: Any, through: str) -> tuple[Any, dict[s
     }
 
 
+def _needs_write(merged: Any, on_disk: Any, provenance: dict[str, Any]) -> bool:
+    """True when the overlay's answer differs from what is already on disk.
+
+    "Added a session" is NOT the only reason to write, and assuming it was left a real
+    hole: a file already extending PAST the pass ceiling gets truncated by
+    ``overlay_sessions`` but adds nothing, so a write keyed on ``added_sessions`` alone
+    silently kept the extra rows.  Tracked files hide this — the git restore between
+    passes puts them back — but the Russell close panel is gitignored and survived a
+    2026-08-11 row into a 2026-08-10 control pass, where the fence (which is deliberately
+    held at the reconstruction ceiling, not the pass ceiling) could not see it either.
+    """
+    if provenance.get("added_sessions"):
+        return True
+    if on_disk is None:
+        return True
+    return len(merged) != len(on_disk)
+
+
 def fence_no_bar_after(tree: Path, through: str,
                        *, pass_through: str | None = None) -> dict[str, Any]:
     """Prove no price parquet in ``tree`` holds a bar after ``through``.
@@ -734,7 +762,7 @@ def prepare_reconstruction_tree(
                               "note": f"unreadable ({exc}); vintage bytes kept"})
                 continue
             merged, provenance = overlay_sessions(vintage_frame, live_frame, through)
-            if provenance["added_sessions"]:
+            if _needs_write(merged, vintage_frame, provenance):
                 _atomic_parquet(merged, path)
             _record(rel, provenance)
 
@@ -760,7 +788,7 @@ def prepare_reconstruction_tree(
                                "note": f"unreadable ({exc}); vintage bytes kept"})
             continue
         merged, provenance = overlay_sessions(vintage_frame, live_frame, through)
-        if provenance["added_sessions"] or not path.exists():
+        if not path.exists() or _needs_write(merged, vintage_frame, provenance):
             path.parent.mkdir(parents=True, exist_ok=True)
             _atomic_parquet(merged, path)
             provenance = dict(provenance)
@@ -1741,7 +1769,17 @@ def run_reconstruction(
                 "found": len(post_bake), "sample": post_bake[:5],
             },
             "live_wins_from": LIVE_WINS_FROM,
-            "thetadata_store": originated.get("thetadata_store"),
+            "option_resolution": {
+                "thetadata_store": originated.get("thetadata_store"),
+                "note": (
+                    "Recorded because an absent option store would normally be a "
+                    "silent difference from the live path. Measured on the shipped "
+                    "tree: 199 of 201 plans carry option_contract=null, including ALL "
+                    "25 plans the live 2026-08-12 nightly originated and all 25 from "
+                    "2026-08-10. Null is the live behaviour here, so the "
+                    "reconstruction matches it rather than being degraded by it."
+                ),
+            },
         },
         "harness_fidelity": fidelity,
         "wall_clock_exposure": clock,
@@ -1892,6 +1930,46 @@ def _build_receipt(
     }
 
 
+def write_artifacts(repo: Path, *, minted: list[dict], receipt: dict[str, Any],
+                    receipt_id: str, document: dict[str, Any]) -> None:
+    """Write ONLY the three artifact families this lane owns (§3.4).
+
+    Never ``data/prophet/ledger.jsonl`` (the nightly is the sole advancer),
+    ``site/prophet/index.json`` or ``site/prophet/states/`` (the nightly renders them),
+    or ``site/factordata/*`` (not ours — and the reconstructed board is deliberately not
+    published, because a synthetic board on the factordata surface would be
+    indistinguishable from a real one).
+    """
+    plans_dir = repo / PLANS_RELDIR
+    plans_dir.mkdir(parents=True, exist_ok=True)
+    for plan in minted:
+        (plans_dir / f"{plan['id']}.json").write_bytes(_plan_bytes(plan))
+
+    # Receipts are IMMUTABLE publication records — same discipline as the nightly's
+    # writer (.github/workflows/daily.yml): an existing receipt whose bytes differ is a
+    # collision to fail on, never something to overwrite.
+    encoded = (json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False)
+               + "\n").encode("utf-8")
+    receipts_dir = repo / RECEIPTS_RELDIR
+    receipts_dir.mkdir(parents=True, exist_ok=True)
+    receipt_path = receipts_dir / f"{receipt_id}.json"
+    if receipt_path.exists():
+        if receipt_path.read_bytes() != encoded:
+            print("::error title=prophet-backfill-receipt-collision::"
+                  f"{RECEIPTS_RELDIR}/{receipt_id}.json already exists with different "
+                  "bytes", flush=True)
+            raise SystemExit(4)
+    else:
+        with receipt_path.open("xb") as handle:
+            handle.write(encoded)
+            handle.flush()
+
+    disclosures_path = repo / DISCLOSURES_RELPATH
+    disclosures_path.parent.mkdir(parents=True, exist_ok=True)
+    disclosures_path.write_text(
+        json.dumps(document, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CLI
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2027,6 +2105,11 @@ def main(argv: list[str] | None = None) -> int:
              "~1,300 small caps and the board is built over a third less universe.",
     )
     parser.add_argument(
+        "--execute", action="store_true",
+        help="write the artifacts. Without it this is a dry run that prints the "
+             "would-mint set with per-name provenance and touches nothing.",
+    )
+    parser.add_argument(
         "--allow-low-fidelity", action="store_true",
         help="proceed when the control rebuild scores below the fidelity floor; the "
              "measured shortfall is written into the disclosure.",
@@ -2095,9 +2178,22 @@ def main(argv: list[str] | None = None) -> int:
         return 5
 
     _print_dry_run(result)
-    (work / "disclosure_preview.json").write_text(
-        json.dumps(result["document"], indent=2, default=str), encoding="utf-8")
-    print(f"\ndisclosure preview written to {work / 'disclosure_preview.json'}")
+    if args.execute:
+        write_artifacts(repo, minted=result["minted"], receipt=result["receipt"],
+                        receipt_id=result["receipt_id"], document=result["document"])
+        print(f"\n::notice title=prophet-backfill-executed::minted "
+              f"{row['counts']['minted']} plan(s) for {row['recorded_at']}; "
+              f"{row['counts']['collided']} collided, "
+              f"{row['counts']['chronology_refused']} chronology-refused, "
+              f"{row['counts']['still_refused']} still refused; disclosure "
+              f"{DISCLOSURES_RELPATH}", flush=True)
+        print(f"wrote {row['counts']['minted']} plan(s) to {PLANS_RELDIR}/")
+        print(f"wrote {row['receipt']}")
+        print(f"wrote {DISCLOSURES_RELPATH}")
+    else:
+        (work / "disclosure_preview.json").write_text(
+            json.dumps(result["document"], indent=2, default=str), encoding="utf-8")
+        print(f"\ndisclosure preview written to {work / 'disclosure_preview.json'}")
     return 0
 
 
