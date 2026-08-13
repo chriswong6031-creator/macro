@@ -1122,6 +1122,18 @@ lanes:
       - id: grade_us_board
         module: scripts.grade_us_board
         args: [--nightly]
+      - id: grade_etf_board
+        module: scripts.grade_etf_board
+        args: [--nightly]
+        note: >
+          ETF page masterplan §3 W3 — SOLE forward advancer of data/etf_board_ledger/
+          (nightly-only, COLLECT_LANE=nightly, fail-closed). Recomputes the etfs.html
+          consensus board from committed holdings snapshots (no network), appends its
+          top-20 to snapshots.jsonl keep-FIRST per (as_of, ticker), grades matured rows
+          at 5/21/63 sessions (next-bar fill, adjusted-first ladder, vs SPY) into
+          retro_grades.parquet with price columns frozen at first grade, and projects
+          site/factordata/etf_board_track.json for the Calibration Lab's forward-windows
+          panel. Display-tier: the board's own ranking never reads this record.
       - id: build_opportunity_timeline
         module: scripts.build_opportunity_timeline
         note: "Durable display-only Prophet candidate and reversal-watch receipts for Terminal; runs after grade_us_board so tonight's US board snapshot is included."
