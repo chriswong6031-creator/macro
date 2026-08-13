@@ -13,9 +13,11 @@ rule with nothing to exclude is untested, and reads identically to no rule at al
   section.
 * **The boundary is structural.**  Records belonging to another program cannot appear at
   all: search hits only VOTE for a workstream, and content comes from the graph walk.
-* **The cap is honest.**  When the budget binds, `omitted_due_to_budget` is a LIST with
-  token costs, and the bundle still fits.  A silent truncation reads exactly like a
-  smaller store.
+* **The cap is honest, and it never costs a constraint.**  When the budget binds,
+  `omitted_due_to_budget` is a LIST with token costs, and the bundle still fits.  A silent
+  truncation reads exactly like a smaller store.  HIGHER LAW is exempt from the cap
+  alongside the workstream block: a bundle that spent its last tokens on file pointers
+  while dropping the rows a session may not violate is worse than one that overran.
 * **I4, both directions.**  Naming an unknown or malformed workstream exits 1
   (fail-CLOSED on schema); a missing sibling repo, a missing active_builds.json and a
   missing index all exit 0 with `degraded` populated (fail-OPEN on join).
@@ -97,6 +99,15 @@ def _section(bundle: dict[str, Any], ident: str) -> dict[str, Any]:
     return next(section for section in bundle["sections"] if section["id"] == ident)
 
 
+def _tokens(item: dict[str, Any]) -> int:
+    """The packer's chars/4 estimate, MIRRORED not imported.
+
+    Importing the estimator under test would make the budget arithmetic here agree with
+    the compiler by construction — including when both are wrong.
+    """
+    return max(1, len(item["excerpt"]) // 4)
+
+
 # ------------------------------------------------------------- fixture builders
 #
 # Records are written as real files rather than mocked, because the compiler's whole job
@@ -106,6 +117,11 @@ def _section(bundle: dict[str, Any], ident: str) -> dict[str, Any]:
 
 PROGRAM = "prophet-us"
 OTHER_PROGRAM = "agentic-media"
+
+# A REAL row in config/compiled_kill_registry.yml.  An unresolvable key degrades loudly
+# and emits NOTHING, which would leave the higher-law fixture carrying only its program
+# row — a fixture that silently stopped exercising the class it exists to pin.
+DNR_KEY = "KILL-FUSED-SHIELD"
 
 
 def _write(path: Path, front: dict[str, Any], body: str = "Fixture body.\n") -> None:
@@ -215,6 +231,34 @@ def overfull(tmp_path: Path) -> Path:
     return root
 
 
+@pytest.fixture()
+def constrained(tmp_path: Path) -> Path:
+    """An EXPENSIVE workstream block sitting above cheap pointers, plus higher law.
+
+    `overfull` cannot exercise this: its workstream block costs ~72 tokens, so higher law
+    fits under any budget above the floor and the rule would be untested.  The inversion
+    needs the shape of a REAL record — one that carries landmines — so that greedy
+    packing reaches HIGHER LAW with only change left, and ARTIFACTS is cheap enough to
+    spend it.
+    """
+    root = tmp_path / "agentos"
+    landmine = "A landmine stated at the length a real landmine is stated at. " * 5
+    padding = "This rationale is deliberately long so the budget binds. " * 12
+    keys = [f"BULK{index:02d}" for index in range(6)]
+    _workstream(
+        root, "TARGET",
+        landmines=[f"{landmine}({index})" for index in range(4)],
+        do_not_redo=[f"Settled — the resolution design is closed; see DNR:{DNR_KEY}."],
+        artifacts=[f"research/POINTER_{index}.md" for index in range(3)],
+        decisions=[f"DEC:{key}" for key in keys],
+        discoveries=[f"DSC:{key}" for key in keys],
+    )
+    for key in keys:
+        _decision(root, key, rationale=padding)
+        _discovery(root, key, claim=padding)
+    return root
+
+
 # --------------------------------------------------------------- the real store
 
 
@@ -289,6 +333,52 @@ def test_the_budget_binds_and_says_what_it_dropped(overfull: Path) -> None:
     assert _section(bundle, "workstream")["items"], (
         "the target's own record was dropped — it is the one item that never may be"
     )
+
+
+def test_a_binding_cap_never_costs_a_constraint(constrained: Path) -> None:
+    """HIGHER LAW is not tradable against ARTIFACTS.
+
+    Greedy-with-continuation alone emptied the constraint class while the pointer class
+    still rendered: the cheap tail fits in the change the expensive head leaves behind.
+    A bundle exists to tell a cold session which constraints it may not violate, so
+    losing them to a cap while keeping file paths inverts the whole point of the
+    document.  Higher law therefore joins the workstream block in the always-include set,
+    and the documented degenerate-budget exception extends to it — `token_estimate` may
+    exceed `token_budget` only when those two packs ALONE exceed it.
+    """
+    def compile_at(budget: str) -> dict[str, Any]:
+        return _bundle(_compile("--root", str(constrained), "--workstream", "TARGET",
+                                "--budget", budget))
+
+    uncapped = compile_at("100000")
+    law = _section(uncapped, "higher_law")["items"]
+    assert {item["kind"] for item in law} == {"dnr", "program"}, (
+        f"the fixture stopped exercising higher law: {law}"
+    )
+    assert not uncapped["omitted_due_to_budget"], "100k tokens should omit nothing"
+
+    # Tiny cap: the always-include set alone overruns it — the documented exception.
+    tight = compile_at("500")
+    assert _section(tight, "higher_law")["items"] == law, (
+        "the cap dropped a constraint-class item"
+    )
+    assert tight["omitted_due_to_budget"], "12 padded records fit in 500 tokens"
+    assert not [row for row in tight["omitted_due_to_budget"]
+                if row["kind"] in {"dnr", "p0", "program"}], "higher law was omitted"
+    assert not _section(tight, "artifacts")["items"], (
+        "a pointer outlived a constraint — the exact inversion this rule forbids"
+    )
+    always = (_section(tight, "workstream")["items"]
+              + _section(tight, "higher_law")["items"])
+    assert tight["token_estimate"] == sum(_tokens(item) for item in always), (
+        "the exception is bounded to the always-include set; nothing else may overrun"
+    )
+
+    # Roomier cap: with space for the always-include set, the cap binds as before.
+    roomy = compile_at("900")
+    assert _section(roomy, "higher_law")["items"] == law
+    assert roomy["token_estimate"] <= 900, "the bundle overran a non-degenerate cap"
+    assert roomy["omitted_due_to_budget"], "the packer did not run"
 
 
 def test_the_budget_floor_refuses_a_degenerate_cap(overfull: Path) -> None:

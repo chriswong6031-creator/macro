@@ -2728,6 +2728,11 @@ def compile_bundle(
 ) -> dict[str, Any]:
     """Compile ``context_bundle.v1``.  Pure read; never writes, never gates.
 
+    ``budget`` caps the bundle, with one documented exception: the workstream block and
+    HIGHER LAW are always included, so ``token_estimate`` may exceed ``token_budget`` when
+    — and only when — those two ALONE exceed it.  Constraint-class context is not tradable
+    against pointer-class context; see the packer for why.
+
     ``search_fn`` is the retrieval seam: ``None`` means the real context index (see
     ``_default_search``).  It exists so a test can inject a packet without a built index
     and so the fail-open path has somewhere to fail to — production always uses the index.
@@ -2797,7 +2802,7 @@ def compile_bundle(
         degraded.add(f"record excluded (malformed): {_rel(path)} — {ident}")
         return True
 
-    # ---- higher law -------------------------------------------------------
+    # ---- higher law (never dropped by budget) ------------------------------
     for item in _higher_law_items(rec, key, degraded=degraded):
         emit("higher_law", item)
 
@@ -3045,8 +3050,18 @@ def compile_bundle(
     # --text can never disagree about what made the cut.  Greedy in packing priority, the
     # same shape as packet._pack_results: an item that does not fit is NAMED and packing
     # continues, because a later smaller item still helps the reader.
+    #
+    # CONSTRAINT-CLASS CONTEXT IS NEVER TRADED FOR POINTER-CLASS CONTEXT.  Greedy-with-
+    # continuation alone empties HIGHER LAW while ARTIFACTS still renders — the cheap tail
+    # fits in the change left over by the expensive head — and a bundle whose entire job is
+    # to tell a cold session which constraints may not be violated must not lose them to a
+    # cap while keeping file paths.  So `higher_law` joins `workstream_block` in the
+    # always-include set.  Both are bounded small BY CONSTRUCTION: the target's own record
+    # plus its landmines, and the DNR rows that record cites plus at most one P0 row and
+    # one program row.  DEGENERATE-BUDGET EXCEPTION: `token_estimate` may exceed
+    # `token_budget` only when those two packs ALONE exceed it; every other pack is capped.
     ordered = [item for pack in PACK_ORDER for item in groups[pack]]
-    always = {id(item) for item in groups["workstream_block"]}
+    always = {id(item) for item in groups["workstream_block"] + groups["higher_law"]}
     selected: list[dict[str, Any]] = []
     omitted: list[dict[str, Any]] = []
     used = 0
