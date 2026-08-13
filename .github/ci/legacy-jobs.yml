@@ -1063,6 +1063,24 @@ jobs:
       # --site-only builder boundary.
       - name: China Policy Watch express-render ownership + data-pristine mode
         run: python -m pytest tests/test_china_policy_watch.py -q
+      # Wired 2026-08-13: `grep -rn cn_theme_tape .github/` returned NOTHING since the
+      # panel landed on 2026-08-05 (#4667), so its 37 guards had never run in CI — and
+      # its real-artifact acceptance case was in fact RED, invisibly, from the
+      # 2026-08-07 ledger stamp onward: that night moved 002155.SZ (湖南黄金) from a
+      # `veto` to `flat: cut`, and the case turned out to pin the night's verdict
+      # rather than the accounting. It was rewritten to the charter before wiring, per the
+      # standing rule that a previously-unrun suite goes green BEFORE it is armed.
+      # This job, not a new one: the manifest sits at the narrow-diff ceiling, where a
+      # 186th job reds test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs
+      # on arithmetic alone. It is also the right home — the china render family
+      # (test_china_stocks_w1c_render, test_china_act_now, the delayed-board disclosure)
+      # already lives in the sweep below, and the minimal deps above carry the exact set
+      # this suite needs: pandas + pyarrow to read the two parquet ledgers, jinja2 to
+      # render the real partial. Kept AHEAD of that ~100-file sweep because run_ci_pack
+      # abandons a job's remaining steps at the first non-zero exit, so a guard reachable
+      # only when every other guard passes is not a guard.
+      - name: CN Theme Tape — theme/member accounting + the 2026-08-04 narration case
+        run: python -m pytest tests/test_cn_theme_tape.py -q
       # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
       # pinned SEC source objects into filing packages, Company Facts ledgers,
       # and deterministic B4 binding plans. Keep these security/provenance
