@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T11:11:44.031377+00:00",
-  "count": 1056,
+  "generated_at": "2026-08-13T11:37:53.951687+00:00",
+  "count": 1057,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -64,6 +64,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ecx3kynusdj-b16e59",
+      "title": "Citi The Point for Europe Thursday, 13 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T11:24:19Z",
+      "summary_points": [
+        "**Vestas Margin Beat & Target Price Hike**: Q2'26 earnings beat with offshore margins at low-mid teens (since 2016/17), 10% group margin target by 2028; Buy maintained with DKK260 TP.",
+        "**ABN AMRO ROE Feasibility**: 2026 EPS growth to high-single digits (better NII/cost guidance), 15% ROE feasible at current rates; TP raised to €50.",
+        "**Global Macro Flows Shift to Goldilocks**: Hedge fund flows shifting from Consumer Discretionary/Staples to Financials/Energy/Tech; favored by dovish US data, FOMC easing, and geopolitical risks.",
+        "**Norges Bank Policy Outlook**: Hold expected (vs hike) after soft CPI, tightening likely in September; policy rate elasticity reduced due to strong NOK.",
+        "**Soitec SA Target Price Surge**: TP jumped to €120 (from €10) with Sell rating, signaling potential mispricing catalysts or short-term upside."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-knoyqozpljd-1fb109",
       "title": "JPM Retail Radar Aug 12",
