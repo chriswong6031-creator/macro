@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T09:41:23.649562+00:00",
-  "count": 1051,
+  "generated_at": "2026-08-13T09:56:37.570342+00:00",
+  "count": 1052,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -408,6 +408,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-boes33d0lbk-28ec2e",
+      "title": "US Daily July CPI Preview",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T03:14:58Z",
+      "summary_points": [
+        "**CPI Miss Below Consensus**: Core CPI forecast 0.19% MoM (vs.",
+        "2% consensus), headline CPI 0.05% MoM (vs.",
+        "1%), driven by energy price decline; signals potential Fed pause catalyst.",
+        "**Geopolitical Oil Disruption Risk**: Iran War-driven jet fuel spikes (2.0% airfare MoM) and persistent oil price increases pose upside inflation risk, outweighing tariff-related slowdowns.",
+        "**Core PCE Methodology Shift**: July core PCE forecast lowered to 0.21% (from 0.26%) due to weak wage data correlation; Q3 Services Survey revision will likely boost inflation, impacting Fed policy trajectory."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
