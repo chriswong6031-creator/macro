@@ -264,7 +264,7 @@ what a regression here would look like again:
 | `check_site_js` | `OK — all standalone JS bundles under site/ parse cleanly` |
 | `check_nav_gap` | `OK — every menu page under site/ keeps a ≥14px top gap` |
 | `check_nav_mega` | `OK — every shared-nav page under site/ carries the Research mega-menu` |
-| `check_badge_passport` | `OK: every desk brief carries a passport (0 checked, 0 grandfathered)` |
+| `check_badge_passport` | `OK: site dir <abs>/site absent (nothing rendered yet)` — and, over a husk `site/`, `OK: every desk brief carries a passport (0 checked, 0 grandfathered)`; it has TWO vacuous paths and both now refuse |
 | `check_cycle_consistency` | `PASS — 0 same-tape group(s) agree` |
 | `check_ms_board_coherence` | `ms-board coherence: OK (0 page(s) scanned)` |
 | `check_ohlc_basis_coherence` | `no breadth panel carries the ... triple — nothing to check` |
