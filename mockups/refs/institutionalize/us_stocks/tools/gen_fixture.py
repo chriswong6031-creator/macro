@@ -1,0 +1,236 @@
+#!/usr/bin/env python3
+"""Generate the Prophet Board mockup fixture from the REAL committed payload.
+
+Reads site/prophet/index.json (plan book = Setups) and site/factordata/us_standouts.json
+(screener rows = Candidates) off origin/main, derives lifecycle_state per the ruling
+§6 precedence verbatim, and emits a self-contained JS data module for the mockup.
+
+The derivation here is a MOCKUP-SIDE projection only. In production PR-0(c) publishes
+lifecycle_state + lifecycle_counts and the page quotes them; nothing is re-derived
+client-side. This script exists so the mockup's numbers are real and reconcile.
+"""
+import json
+import subprocess
+import collections
+import datetime
+
+REPO = "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/prophet-board-mockup-gate-b3966f"
+
+
+def git_json(path):
+    out = subprocess.check_output(["git", "show", f"origin/main:{path}"], cwd=REPO)
+    return json.loads(out)
+
+
+# ── ruling §6 derivation, precedence order verbatim (first match wins) ──────────
+def lifecycle_state(row):
+    if row.get("closed") is True:
+        return "resolved"
+    ph = row.get("phase")
+    if ph == "invalidated":
+        return "invalidated"
+    if ph == "overtime":
+        return "overtime"
+    if ph in ("at_t1", "between_t1_t2", "at_t2"):
+        return "delivering"
+    if ph == "triggered_pre_t1":
+        return "entered"
+    if ph == "pre_trigger":
+        return "ready"
+    return "ready"  # unknown/absent -> never advertised further along
+
+
+CELLS = ["watch", "ready", "entered", "delivering", "overtime", "invalidated", "resolved"]
+LIVE_CELLS = CELLS[:-1]
+
+
+def clip(s, n):
+    """Trim to glance-tier length on a word boundary. The mockup shows one plain line."""
+    if not s:
+        return s
+    s = str(s).strip()
+    if len(s) <= n:
+        return s
+    cut = s[:n]
+    sp = cut.rfind(" ")
+    return (cut[:sp] if sp > n * 0.6 else cut).rstrip(" ,;.—-") + "…"
+
+
+def short_en(row):
+    """One plain line: what to do now, first step, trimmed to glance tier."""
+    w = row.get("what_to_do_now")
+    if isinstance(w, list) and w:
+        return clip(w[0], 150)
+    return ""
+
+
+def short_zh(row):
+    w = row.get("what_to_do_now_zh")
+    if isinstance(w, list) and w:
+        return clip(w[0], 70)
+    return ""
+
+
+def fmt_date(iso):
+    if not iso:
+        return None
+    try:
+        d = datetime.date.fromisoformat(str(iso)[:10])
+    except Exception:
+        return None
+    return {
+        "iso": d.isoformat(),
+        "en": d.strftime("%b %-d"),
+        "zh": f"{d.month}月{d.day}日",
+    }
+
+
+def main():
+    idx = git_json("site/prophet/index.json")
+    su = git_json("site/factordata/us_standouts.json")
+
+    plans = idx["plans"]
+    buy = {r["ticker"]: r for r in su.get("buy", [])}
+
+    # ── episodes: per ticker, ordinal by opening date ──────────────────────────
+    by_ticker = collections.defaultdict(list)
+    for r in plans:
+        by_ticker[r["asset"]].append(r)
+
+    def opened(r):
+        return (r.get("entry_date") or r.get("recorded_at") or r.get("signal_date") or "")
+
+    episode_of = {}
+    multi_tickers = set()
+    for tk, rows in by_ticker.items():
+        if len(rows) < 2:
+            continue
+        multi_tickers.add(tk)
+        for i, r in enumerate(sorted(rows, key=lambda x: (opened(x), x["id"])), start=1):
+            episode_of[r["id"]] = i
+
+    # newest OPEN row per multi ticker -> the "newer plan on this name" link target
+    newest_open = {}
+    for tk in multi_tickers:
+        opens = [r for r in by_ticker[tk] if r.get("closed") is not True]
+        if opens:
+            newest_open[tk] = max(opens, key=lambda x: (opened(x), x["id"]))["id"]
+
+    rows_out = []
+    for r in plans:
+        tk = r["asset"]
+        b = buy.get(tk)
+        lane = b.get("lane") if b else None
+        if lane not in ("bottoming", "continuation"):
+            lane = None  # no recovery chip, no watch chip: mark chip is bottoming/continuation only
+        life = lifecycle_state(r)
+        tgts = r.get("targets") or []
+        rows_out.append({
+            "id": r["id"],
+            "tk": tk,
+            "nm": (b or {}).get("name"),
+            "sec": (b or {}).get("sector"),
+            "life": life,
+            "dir": r.get("direction"),
+            "entry": r.get("entry"),
+            "inval": r.get("invalidation"),
+            "t1": tgts[0] if tgts else None,
+            "px": (b or {}).get("price"),
+            "lane": lane,
+            "verb": (b or {}).get("state") or None,
+            "age": r.get("age_days"),
+            "hz": r.get("horizon_days"),
+            # the engine's own readiness rank — the board's global sort key.
+            # Higher priority = more ready today, NOT more likely to win (§G0.7).
+            "pri": r.get("_priority_score"),
+            "opened": fmt_date(r.get("entry_date") or r.get("recorded_at")),
+            "pulse": r.get("pulse"),
+            "pulse_zh": r.get("pulse_zh"),
+            "do": short_en(r),
+            "do_zh": short_zh(r),
+            "ep": episode_of.get(r["id"]),
+            "eps": len(by_ticker[tk]) if tk in multi_tickers else None,
+            "newer": newest_open.get(tk) if (r.get("closed") is True and tk in newest_open) else None,
+            "adm": r.get("admission_class"),
+            # NOTE: spark_svg is deliberately NOT carried. It lives on us_standouts buy
+            # rows only, so re-sourcing Setups to the plan book leaves 75% of cards with
+            # no chart (same join gap as `lane`). P0 §B's card depth ladder is
+            # "ticker + lifecycle + why + freshness" — no chart — so the mockup freezes
+            # the chartless card. See DESIGN_NOTES.md §Open questions.
+        })
+
+    counts = collections.Counter(r["life"] for r in rows_out)
+    watch_present = "early_turn_watch" in (idx.get("intake") or {})
+    watch_n = len((idx.get("intake") or {}).get("early_turn_watch") or []) if watch_present else None
+
+    live_total = sum(counts.get(c, 0) for c in LIVE_CELLS)
+    grand_total = sum(counts.values())
+
+    # ── invariant check (ruling §6) ────────────────────────────────────────────
+    assert live_total == idx["open_count"], (live_total, idx["open_count"])
+    assert grand_total == idx["active_count"], (grand_total, idx["active_count"])
+
+    # ── Candidates: buy rows grouped by shipped triage buckets ─────────────────
+    TRIAGE = ["live", "setting_up", "ran", "basing", "blocked"]
+    cand_rows = []
+    for r in su.get("buy", []):
+        cand_rows.append({
+            "tk": r["ticker"], "nm": r.get("name"), "sec": r.get("sector"),
+            "triage": r.get("stage"), "px": r.get("price"),
+            "label": clip(r.get("label"), 110), "label_zh": clip(r.get("label_zh"), 70),
+        })
+    cand_counts = collections.Counter(r["triage"] for r in cand_rows)
+    assert sum(cand_counts.get(t, 0) for t in TRIAGE) == len(cand_rows)
+
+    payload = {
+        "asof": idx.get("asof"),
+        "recorded_at": idx.get("recorded_at"),
+        "cand_asof": su.get("as_of"),
+        "counts": {c: counts.get(c, 0) for c in CELLS},
+        "watch_key_present": watch_present,
+        "watch_n": watch_n,
+        "live_total": live_total,
+        "grand_total": grand_total,
+        "open_count": idx["open_count"],
+        "active_count": idx["active_count"],
+        "plan_count": idx["plan_count"],
+        "rows": rows_out,
+        "multi_tickers": sorted(multi_tickers),
+        "cand_total": len(cand_rows),
+        "cand_counts": {t: cand_counts.get(t, 0) for t in TRIAGE},
+        "cand_rows": cand_rows,
+        "groups": {
+            "leaders": len(su.get("leaders") or []),
+            "laggards": len(su.get("laggards") or []),
+            "ran": len(su.get("ran") or []),
+        },
+    }
+
+    out = (
+        "/* GENERATED — real payload extract for the Prophet Board mockup.\n"
+        "   Source: site/prophet/index.json (asof %s) + site/factordata/us_standouts.json (as_of %s)\n"
+        "   on origin/main. lifecycle_state derived per PROPHET_RULING_J9C_J10 §6 (mockup-side only;\n"
+        "   production reads the published lifecycle_state / lifecycle_counts from PR-0(c)).\n"
+        "   Regenerate: python3 tools/gen_fixture.py  */\n"
+        "window.BOARD = %s;\n" % (payload["asof"], payload["cand_asof"],
+                                  json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+    )
+    import sys
+    dest = sys.argv[1]
+    with open(dest, "w") as f:
+        f.write(out)
+
+    print("cells:", payload["counts"])
+    print("live_total", live_total, "== open_count", idx["open_count"], "OK")
+    print("grand_total", grand_total, "== active_count", idx["active_count"], "OK")
+    print("watch key present:", watch_present)
+    print("multi-episode tickers:", len(multi_tickers), sorted(multi_tickers))
+    print("candidates:", len(cand_rows), payload["cand_counts"])
+    print("lane join: %d of %d rows (%.0f%%)" % (
+        sum(1 for r in rows_out if r["lane"]), len(rows_out),
+        100.0 * sum(1 for r in rows_out if r["lane"]) / len(rows_out)))
+    print("wrote", dest, "%.1f KB" % (len(out) / 1024.0))
+
+
+if __name__ == "__main__":
+    main()
