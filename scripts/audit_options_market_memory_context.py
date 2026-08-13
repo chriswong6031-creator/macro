@@ -173,6 +173,57 @@ def _validate_frozen_legacy_campaign_ledger(
         ) from exc
 
 
+def _closed_campaign_era_sources(
+    episodes: list[dict], h60_outcomes: list[dict]
+) -> tuple[list[dict], list[dict]]:
+    """The episode/outcome slice the RETIRED v1 campaign corpus was derived from.
+
+    `data/options_signal_episode/campaigns.jsonl` is byte-frozen at its eight
+    retrospective rows and no lane appends to it -- `tests/test_options_signal_
+    campaign.py` pins the nightly episode builder out of `derive_campaigns` and
+    `append_campaigns` entirely -- while `episodes.jsonl` grows every night.
+    `resolve_campaign_context_references` requires the corpus to EQUAL its replay,
+    so replaying a closed corpus against the whole live ledger was a scheduled
+    failure rather than a contract: the 2026-08-13 durable checkpoint
+    (e9738279704) appended 822 episodes and with them twelve newly qualifying
+    groups the frozen corpus by construction cannot hold, and this auditor began
+    exiting non-zero on a clean checkout with "campaign corpus differs from exact
+    episode/outcome replay".
+
+    A replay of a closed cohort is only closed if its INPUTS are, so cut the inputs
+    at the same instant the cohort is: `CAMPAIGN_RULE_FROZEN_AT`, the boundary
+    `derive_campaigns` itself uses to stamp `evidence_phase`, and therefore exactly
+    the line between the corpus's `retrospective_discovery` rows and everything the
+    ledger learned afterwards.  The equality that authenticates the corpus is
+    untouched -- nothing omitted, nothing extra, same rows in the same order -- and
+    the frozen-ledger authenticator above still replays every committed row against
+    the FULL live sources, so a v1 row that stopped being reproducible from today's
+    ledger still fails there.
+
+    Truncation can only ever REMOVE groups: a qualifying prefix is the first one to
+    cross the premium threshold, so dropping later episodes cannot promote an
+    earlier prefix.  Outcomes are cut to the retained episodes because
+    `derive_campaigns` refuses an outcome whose episode it cannot see.
+    """
+
+    frozen = options_signal_episode._as_utc(
+        options_signal_episode.CAMPAIGN_RULE_FROZEN_AT, "campaign rule frozen_at"
+    )
+    closed_episodes = [
+        row
+        for row in episodes
+        if options_signal_episode._as_utc(
+            row.get("available_at"), "episode available_at"
+        )
+        < frozen
+    ]
+    retained = {row["episode_id"] for row in closed_episodes}
+    closed_h60_outcomes = [
+        row for row in h60_outcomes if row.get("episode_id") in retained
+    ]
+    return closed_episodes, closed_h60_outcomes
+
+
 def build_live_audit_bundle(
     *,
     repository_root: Path,
@@ -248,11 +299,14 @@ def build_live_audit_bundle(
         )
         for row in episodes
     ]
+    closed_episodes, closed_h60_outcomes = _closed_campaign_era_sources(
+        episodes, h60_outcomes
+    )
     references.extend(
         context_bridge.resolve_campaign_context_references(
             campaigns,
-            episodes=episodes,
-            h60_outcomes=h60_outcomes,
+            episodes=closed_episodes,
+            h60_outcomes=closed_h60_outcomes,
             reader=pinned,
             canary_identity=canary_identity,
         )
