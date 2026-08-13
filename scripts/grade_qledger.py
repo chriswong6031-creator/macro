@@ -269,20 +269,100 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
         tr = json.loads(tr_path.read_text(encoding="utf-8")) if tr_path.exists() else {}
         placebo = (tr.get("placebo_magnitude") or {}).get("5", {})
         placebo_covered = (placebo.get("covered_ticker") or {}).get("mean_abs_excess")
+        # P0a — THE DUEL'S TWO SIDES ARE SELECTED INDEPENDENTLY, so they can
+        # land on DIFFERENT clock bases. `challenger_excess_mean_5d` comes from
+        # a `_select_single_clock_block` cell and `placebo_covered_abs_excess_5d`
+        # from `_placebo_magnitude`'s own separately-selected cell; each picks
+        # the basis with the most observations, and during a migration those are
+        # not the same basis at the same moment. Comparing a challenger measured
+        # on 5 exchange sessions against a placebo measured on 5 CALENDAR days
+        # is the pooling this contract forbids, wearing a comparison's clothes —
+        # and this pair is the D3 counterfactual, rendered verbatim into the
+        # admin Experiments tab. Neither basis used to be recorded at all, so
+        # the mismatch was not merely unguarded, it was invisible.
+        placebo_basis = placebo.get("clock_basis")
         by_family = tr.get("by_family") or {}
         for fam in families:
             h5 = (by_family.get(fam) or {}).get("5") or {}
+            challenger_basis = h5.get("clock_basis")
+            # Comparable only when BOTH sides name a basis and the bases match.
+            # Unknown-vs-anything is not comparable either: an unstamped side is
+            # a side whose clock we cannot name, and "unknown" matches nothing.
+            comparable = (challenger_basis is not None
+                          and placebo_basis is not None
+                          and challenger_basis == placebo_basis)
             duel_context[fam] = {
                 "challenger_excess_mean_5d": h5.get("excess_mean"),
                 "placebo_covered_abs_excess_5d": placebo_covered,
                 "n_dates_5d": h5.get("n_dates", 0),
                 "wilson_ci_low_5d": h5.get("wilson_ci_low"),
+                "challenger_clock_basis": challenger_basis,
+                "placebo_clock_basis": placebo_basis,
+                "duel_comparable": comparable,
             }
+            if not comparable:
+                # Say WHY, in the record, rather than leaving a reader to infer
+                # it from two basis strings. The numbers stay — they are each
+                # honest on their own basis — but the COMPARISON is withdrawn.
+                duel_context[fam]["duel_not_comparable_reason"] = (
+                    f"challenger measured on {challenger_basis or 'an unstamped clock'}, "
+                    f"placebo on {placebo_basis or 'an unstamped clock'}; a duel "
+                    f"across two grading clocks is not a comparison")
     except Exception as e:  # noqa: BLE001
         log.debug("compute_promotion_readiness: duel_context build failed: %s", e)
 
     result["_duel_context"] = duel_context
     return result
+
+
+def _summarise_readiness(readiness: dict) -> tuple[list[str], list[str]]:
+    """(families_ready, families_approaching) for `run_status.json` and the
+    first-cross operator alert.
+
+    EXTRACTED FROM `main()` DELIBERATELY. This was eight inline lines inside a
+    500-line entry point, which is why the defect below shipped: nothing could
+    reach it to test it, so "the per-market promotion fix works" was only ever
+    checked at the layer that produces the data, never at the layer that reads it.
+
+    P0a — READ THE PER-MARKET ROWS. `promotion_check_by_market` exists because
+    the pooled default refuses a bi-market family as STATE_MIXED_CLOCK, so
+    `rec["ready"]` is False for it even when BOTH markets have independently
+    cleared the 25-date bar. That fix wrote `by_clock_basis` into
+    track_record.json and stopped — this summary and the first-cross alert read
+    only the top-level `ready`, so a family promotable on two markets reported
+    nothing and no operator was ever told. Fixing it one layer up and leaving it
+    broken one layer down is not fixing it.
+
+    NOTHING IS POOLED OR SUMMED. Each basis contributes its OWN row under its
+    own key (`fam@21d[explicit_unit_v1:trading_days:CN]`), so the alert names
+    the market it crossed on, and the pooled key stays absent because the pooled
+    verdict is still a refusal. The key space is new, so a first cross alerts
+    once, exactly like any other new family×horizon.
+
+    THE LEGACY BASIS IS SKIPPED HERE TOO. `promotion_check_by_market` already
+    excludes it; this excludes it again rather than trusting an upstream filter
+    it does not own — a summary that would happily print a legacy `GRADED` cell
+    if the producer ever regressed is not a guard.
+    """
+    families_ready: list[str] = []
+    families_approaching: list[str] = []
+    for fam, horizons in readiness.items():
+        if fam.startswith("_"):
+            continue
+        for h_str, rec in (horizons or {}).items():
+            if rec.get("ready"):
+                families_ready.append(f"{fam}@{h_str}d")
+            elif rec.get("approaching"):
+                families_approaching.append(f"{fam}@{h_str}d")
+            for basis, brec in (rec.get("by_clock_basis") or {}).items():
+                if basis == q.CLOCK_LEGACY:
+                    continue      # authority is never granted on the legacy clock
+                key = f"{fam}@{h_str}d[{basis}]"
+                if brec.get("ready"):
+                    families_ready.append(key)
+                elif brec.get("approaching"):
+                    families_approaching.append(key)
+    return families_ready, families_approaching
 
 
 def _load_fired(root: Path) -> dict:
@@ -394,16 +474,7 @@ def run_readiness_post_step(root: Path, n_graded_today: int, n_open: int,
                                encoding="utf-8")
 
         # Summary for run_status.json
-        families_ready = []
-        families_approaching = []
-        for fam, horizons in readiness.items():
-            if fam.startswith("_"):
-                continue
-            for h_str, rec in horizons.items():
-                if rec.get("ready"):
-                    families_ready.append(f"{fam}@{h_str}d")
-                elif rec.get("approaching"):
-                    families_approaching.append(f"{fam}@{h_str}d")
+        families_ready, families_approaching = _summarise_readiness(readiness)
 
         # First-cross alert (two-sided dedup: a family×horizon that drops back
         # to ready=False releases its key, so a later genuine re-cross alerts

@@ -2208,18 +2208,35 @@ def _placebo_magnitude(claims: list[dict], grades: list[dict]) -> dict:
 
     out: dict[str, dict] = {}
     for h_str, by_basis in per_h_basis.items():
-        blocks = {basis: _block(paths) for basis, paths in by_basis.items()}
+        # SORTED, so the selection below cannot depend on grade-row order. This
+        # dict was built by iterating `grades` (append-only file order), and the
+        # first cut selected with `max(blocks, key=...)` over that insertion
+        # order — so on a TIE `max` kept whichever basis happened to appear
+        # first in grades.jsonl. Two bases' `n_grades` are monotone integer
+        # counts climbing past each other during a migration, so they pass
+        # through equality EXACTLY ONCE, and on that night the published placebo
+        # counterfactual could flip on file order alone. The placebo tape is the
+        # control arm of the whole "beat placebo" comparison; it may not depend
+        # on which row was appended first.
+        blocks = {basis: _block(paths) for basis, paths in sorted(by_basis.items())}
         if len(blocks) == 1:
             basis, h_out = next(iter(blocks.items()))
             h_out = dict(h_out)
             h_out["clock_basis"] = basis
         else:
-            # SELECT-AND-LABEL, never blend — same rule, same reason as
-            # `_select_single_clock_block`: the published cell is one basis's
-            # own honest numbers, picked by n_grades, with every basis's own
-            # count disclosed beside it rather than summed into it.
-            basis = max(blocks, key=lambda b: blocks[b]["overall"]["n_grades"])
-            h_out = dict(blocks[basis])
+            # SELECT-AND-LABEL, never blend — same rule, same reason and now the
+            # same DETERMINISTIC tie-break as `_select_single_clock_block`: most
+            # `n_grades`, ties to the newer clock, then alphabetically by basis
+            # (the sorted feed above + `max` keeping the first maximum). The
+            # published cell is one basis's own honest numbers, with every
+            # basis's own count disclosed beside it rather than summed into it.
+            def _rank(item: tuple[str, dict]) -> tuple[int, int]:
+                b, blk = item
+                return (int(blk["overall"]["n_grades"] or 0),
+                        0 if b == CLOCK_LEGACY else 1)
+
+            basis, chosen = max(blocks.items(), key=_rank)
+            h_out = dict(chosen)
             h_out["clock_basis"] = basis
             h_out["pooling_refused"] = True
         h_out["clock_bases"] = sorted(blocks)

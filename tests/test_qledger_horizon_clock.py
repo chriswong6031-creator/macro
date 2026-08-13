@@ -1942,13 +1942,32 @@ def test_placebo_magnitude_no_longer_pools_us_and_cn_grades():
     out = q._placebo_magnitude(claims, [us_grade, cn_grade])
     cell = out["5"]
     assert cell["pooling_refused"] is True
-    assert cell["clock_basis"] in (
-        q.clock_basis_key(q.CLOCK_V1, q.HORIZON_UNIT_TRADING, q.MARKET_US),
-        q.clock_basis_key(q.CLOCK_V1, q.HORIZON_UNIT_TRADING, q.MARKET_CN))
-    # whichever basis was selected, its OWN mean is published — 0.01 or 0.99,
-    # NEVER the 0.50 blend the old code computed.
-    assert cell["overall"]["mean_abs_excess"] in (0.01, 0.99)
+    # THE SELECTION IS DETERMINISTIC AND PINNED TO ONE ANSWER. An earlier
+    # version of this test asserted `clock_basis in (US, CN)` and
+    # `mean_abs_excess in (0.01, 0.99)` — a test written to accept EITHER
+    # answer, which does not pin behaviour, it records an ambiguity. It was
+    # accepting a real one: `_placebo_magnitude` built its blocks by iterating
+    # `grades` in append-only FILE ORDER and selected with `max`, which keeps
+    # the first maximum — so on a tie the published placebo counterfactual
+    # depended on which row was written first. Two bases' `n_grades` are
+    # monotone integer counts, so during a migration they pass through equality
+    # exactly once, and on that night the control arm could flip.
+    #
+    # The rule is now `_select_single_clock_block`'s: most n_grades, ties to the
+    # newer clock, then alphabetically by basis. Both rows here have n_grades=1
+    # and both are explicit, so the tie falls to the alphabetically first basis
+    # — CN — whichever order the rows arrive in.
+    cn_basis = q.clock_basis_key(q.CLOCK_V1, q.HORIZON_UNIT_TRADING, q.MARKET_CN)
+    assert cell["clock_basis"] == cn_basis
+    assert cell["overall"]["mean_abs_excess"] == 0.99      # CN's OWN number
     assert cell["overall"]["mean_abs_excess"] != pooled_before
+
+    # ...and REVERSING the file order must not move the published cell.
+    reversed_out = q._placebo_magnitude(claims, [cn_grade, us_grade])
+    assert reversed_out["5"]["clock_basis"] == cell["clock_basis"]
+    assert (reversed_out["5"]["overall"]["mean_abs_excess"]
+            == cell["overall"]["mean_abs_excess"])
+
     # both bases' own counts stay visible, disclosed, never hidden
     assert cell["clock_bases_n_grades"] == {
         q.clock_basis_key(q.CLOCK_V1, q.HORIZON_UNIT_TRADING, q.MARKET_CN): 1,
@@ -2210,3 +2229,149 @@ def test_mutant_reverting_provenance_to_shape_inference_is_caught(monkeypatch):
     # of refusing) — confirms the mutant is live, not merely present.
     market, _ = q._ticker_market("0700", provenance=None)
     assert market == q.MARKET_US, "mutant sanity: this is what the bug looked like"
+
+
+# --------------------------------------------------------------------------- #
+# REVIEW FINDINGS — the per-market fix was published into JSON and read by
+# nothing, and the duel paired two independently-selected clock bases.
+# --------------------------------------------------------------------------- #
+def test_a_family_promotable_on_two_markets_reaches_the_operator(tmp_path):
+    """THE DEFECT. `promotion_check_by_market` was added so a bi-market family
+    "stuck at STATE_MIXED_CLOCK never reaches promotion on EITHER market". It
+    wrote `by_clock_basis` into track_record.json — and every consumer read
+    only the TOP-LEVEL `ready`, which is False for exactly that family. So on
+    the first night two markets both cleared the 25-date bar, `run_status.json`
+    reported `n_families_ready: 0` and no operator was told.
+
+    Fixing it one layer up and leaving it broken one layer down is not fixing
+    it. This asserts the summary the operator actually reads."""
+    import scripts.grade_qledger as grader
+
+    claims, grades = _two_market_store(n_us=26, n_cn=26)
+    _write_store(tmp_path, claims, grades)
+    readiness = grader.compute_promotion_readiness(tmp_path, families=["f"])
+
+    # the pooled default still refuses — nothing here pools
+    assert readiness["f"]["21"]["ready"] is False
+
+    ready, approaching = grader._summarise_readiness(readiness)
+    us = _v1(market=q.MARKET_US)
+    cn = _v1(market=q.MARKET_CN)
+    assert f"f@21d[{us}]" in ready, ready
+    assert f"f@21d[{cn}]" in ready, ready
+    # ...and the pooled key is NOT there: the refusal is still a refusal
+    assert "f@21d" not in ready
+
+
+def test_the_operator_summary_never_names_the_legacy_basis(tmp_path):
+    """NEGATIVE CONTROL. Reading `by_clock_basis` must not become a back door
+    to legacy authority: `promotion_check_by_market` already excludes
+    `CLOCK_LEGACY`, and the summary excludes it again rather than trusting an
+    upstream filter it does not own."""
+    import scripts.grade_qledger as grader
+
+    claims, grades = _legacy_plus_two_market_store(n_legacy=40, n_us=26, n_cn=26)
+    _write_store(tmp_path, claims, grades)
+    readiness = grader.compute_promotion_readiness(tmp_path, families=["f"])
+    ready, approaching = grader._summarise_readiness(readiness)
+    assert not any(q.CLOCK_LEGACY in k for k in ready + approaching), (
+        ready, approaching)
+
+
+def test_a_single_basis_family_summarises_exactly_as_before(tmp_path):
+    """NEGATIVE CONTROL for the whole change: a family on ONE basis carries no
+    `by_clock_basis` key at all, so the new loop contributes nothing and the
+    summary is byte-identical to the pre-fix behaviour."""
+    import scripts.grade_qledger as grader
+
+    claims, grades = _two_market_store(n_us=26, n_cn=0)
+    _write_store(tmp_path, claims, grades)
+    readiness = grader.compute_promotion_readiness(tmp_path, families=["f"])
+    assert "by_clock_basis" not in readiness["f"]["21"]
+    ready, _ = grader._summarise_readiness(readiness)
+    assert ready == ["f@21d"]
+
+
+def test_the_duel_refuses_to_compare_two_different_clock_bases(tmp_path):
+    """THE D3 COUNTERFACTUAL MUST NOT STRADDLE. `challenger_excess_mean_5d` and
+    `placebo_covered_abs_excess_5d` are selected INDEPENDENTLY — each picks the
+    basis with the most observations — so during a migration they can land on
+    different clocks. Comparing a challenger measured on 5 exchange sessions
+    against a placebo measured on 5 CALENDAR days is the pooling this contract
+    forbids, wearing a comparison's clothes. Neither basis was recorded, so the
+    mismatch was not merely unguarded — it was invisible."""
+    import scripts.grade_qledger as grader
+
+    tr = tmp_path / "site" / "qledger"
+    tr.mkdir(parents=True)
+    (tr / "track_record.json").write_text(json.dumps({
+        "by_family": {"f": {"5": {"excess_mean": 0.02, "n_dates": 30,
+                                  "wilson_ci_low": 0.4,
+                                  "clock_basis": _v1(market=q.MARKET_US)}}},
+        "placebo_magnitude": {"5": {"covered_ticker": {"mean_abs_excess": 0.01},
+                                    "clock_basis": q.CLOCK_LEGACY}},
+    }), encoding="utf-8")
+    claims, grades = _two_market_store(n_us=26, n_cn=0)
+    _write_store(tmp_path, claims, grades)
+
+    ctx = grader.compute_promotion_readiness(
+        tmp_path, families=["f"])["_duel_context"]["f"]
+    assert ctx["duel_comparable"] is False
+    assert ctx["challenger_clock_basis"] == _v1(market=q.MARKET_US)
+    assert ctx["placebo_clock_basis"] == q.CLOCK_LEGACY
+    assert "not a comparison" in ctx["duel_not_comparable_reason"]
+    # the NUMBERS stay — each is honest on its own basis; the COMPARISON is
+    # what is withdrawn.
+    assert ctx["challenger_excess_mean_5d"] == 0.02
+    assert ctx["placebo_covered_abs_excess_5d"] == 0.01
+
+
+def test_the_duel_compares_normally_when_both_sides_share_a_basis(tmp_path):
+    """NEGATIVE CONTROL: matching bases must still compare, or the guard would
+    simply withdraw every duel and read as 'safe' while saying nothing."""
+    import scripts.grade_qledger as grader
+
+    tr = tmp_path / "site" / "qledger"
+    tr.mkdir(parents=True)
+    (tr / "track_record.json").write_text(json.dumps({
+        "by_family": {"f": {"5": {"excess_mean": 0.02, "n_dates": 30,
+                                  "wilson_ci_low": 0.4,
+                                  "clock_basis": q.CLOCK_LEGACY}}},
+        "placebo_magnitude": {"5": {"covered_ticker": {"mean_abs_excess": 0.01},
+                                    "clock_basis": q.CLOCK_LEGACY}},
+    }), encoding="utf-8")
+    claims, grades = _two_market_store(n_us=26, n_cn=0)
+    _write_store(tmp_path, claims, grades)
+
+    ctx = grader.compute_promotion_readiness(
+        tmp_path, families=["f"])["_duel_context"]["f"]
+    assert ctx["duel_comparable"] is True
+    assert "duel_not_comparable_reason" not in ctx
+
+
+def test_promotion_on_a_legacy_only_family_is_the_documented_status_quo(tmp_path):
+    """PINS WHAT THIS PR DOES **NOT** CHANGE, because the first draft of its own
+    commit message overstated it.
+
+    `_authority_clock_basis` returns the sole basis when a family has exactly
+    one — and for every live family today that basis IS `CLOCK_LEGACY`, since no
+    explicit-clock grade row exists yet. So `promotion_check` on the DEFAULT
+    path does grant `eligible=True` with `clock_basis='legacy_calendar_unstamped'`.
+
+    That is deliberate and is the status quo: refusing it would make every
+    family on the board permanently un-promotable until it accrues 25 dates on
+    the new clock, which is a fleet-wide product decision, not a side effect to
+    slip into a clock-plumbing PR. What this PR narrows is strictly the
+    STRADDLING case — `promotion_check_by_market` no longer mints a per-basis
+    legacy verdict beside the real ones.
+
+    This test exists so the boundary is asserted rather than assumed, and so a
+    future change to it is a deliberate act with a failing test attached."""
+    claims, grades = _legacy_plus_two_market_store(n_legacy=30, n_us=0, n_cn=0)
+    _write_store(tmp_path, claims, grades)
+    pr = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    assert pr.clock_basis == q.CLOCK_LEGACY
+    assert pr.current_state == q.STATE_GRADED
+    assert pr.eligible is True, (
+        "legacy-only promotion is the documented status quo; changing it is a "
+        "fleet-wide decision, not a side effect of the clock contract")

@@ -37,7 +37,11 @@ unsafe**.
    days" workaround; this is why.)
 3. The clock interprets the number **according to its unit**.
 4. **ONE resolver** — `resolve_horizon_window` — answers `check_by`, maturity, the
-   graded window and the rendered ruler. There is no second implementation.
+   graded window and the rendered ruler **for every claim that grades through
+   `qledger`**. (Scope corrected after review: `engine/source_registry.py` keeps
+   its own `_add_trading_days` session walker and grades `narrative_source_call`
+   through its own exit, so "there is no second implementation" — the earlier
+   wording — was false. It is a named exception, §2b, not a silent one.)
 5. The window is resolved **once** per (claim, horizon) and **shared** by subject,
    bench and control, so no leg can silently receive a different horizon length.
 
@@ -57,32 +61,53 @@ re-labelled** — the same house pattern as the `fill_convention` discontinuity.
 
 Two rows both saying `horizon_d=21` are not comparable when one was graded on the
 legacy calendar approximation and the other on 21 exchange sessions. Every
-aggregation point partitions by `grade_clock_basis` first, and where a cell
-straddles bases the rule is **select-and-label, never blend**: one basis's own
-honest numbers, with `clock_bases`, `clock_bases_n_grades` and
+aggregation point **inside `qledger`** partitions by `grade_clock_basis` first,
+and where a cell straddles bases the rule is **select-and-label, never blend**:
+one basis's own honest numbers, with `clock_bases`, `clock_bases_n_grades` and
 `pooling_refused: True` disclosed beside it.
 
-**Authority is RESET by a basis change, not inherited across it.**
-`_authority_clock_basis` evaluates promotion inside the explicit-clock basis and
-counts legacy rows for nothing. The alternative would launder 59,326 legacy
-observations into a gate about a clock they were never measured on.
+Scope corrected after review: two aggregations **outside** `qledger` still pool
+(`source_registry`'s family `hit_rate`, `report_importance_duel::_slice_stats`).
+Both are single-basis today and are listed with their fuse in §2b.
+
+**Authority is RESET by a basis change, not inherited across it.** Where a family
+holds an explicit basis, `_authority_clock_basis` evaluates promotion inside it
+and counts legacy rows for nothing — the alternative would launder 59,326 legacy
+observations into a gate about a clock they were never measured on. A family that
+holds **only** legacy rows is a different case and is unchanged by this PR: see
+the scope note in §2(a).
 
 ## 2. Two defects found and fixed in this PR
 
-**(a) Promotion could be granted on the legacy clock.**
-`promotion_check_by_market` — the per-market escape hatch that keeps a bi-market
-family promotable without pooling — re-ran `promotion_check` once per key of
-`clock_prior_n_dates`. That dict discloses *every* basis the family holds,
-`CLOCK_LEGACY` included. So a family straddling the migration would publish a
-real promotion verdict computed on the **legacy** basis into
+**(a) The per-market escape hatch minted a legacy promotion verdict.**
+`promotion_check_by_market` — which keeps a bi-market family promotable without
+pooling — re-ran `promotion_check` once per key of `clock_prior_n_dates`. That
+dict discloses *every* basis the family holds, `CLOCK_LEGACY` included. So a
+family **straddling** the migration would publish a real promotion verdict
+computed on the **legacy** basis into
 `track_record.json → ladder_states.<fam>.<h>.by_clock_basis`, where an `eligible`
-cell reads as authority earned — directly contradicting `_authority_clock_basis`
-on the default path.
+cell reads as authority earned. The disclosure is unchanged; only the **verdict**
+is removed.
 
-Not reachable on today's corpus (no explicit-clock grade row exists yet, so
-nothing can be `STATE_MIXED_CLOCK`), but reachable the first night a second
-market accrues — precisely when a legacy `GRADED` cell would appear beside the
-real ones. The disclosure is unchanged; only the **verdict** is removed.
+> **Scope, stated precisely — an earlier draft of this section and of the commit
+> message overstated it.** This does *not* mean "promotion may never be granted
+> on the legacy clock." `_authority_clock_basis` returns the sole basis when a
+> family holds exactly one, and for **every live family today that basis is
+> `CLOCK_LEGACY`** (no explicit-clock grade row exists yet). So the *default*
+> path does return `eligible=True, clock_basis='legacy_calendar_unstamped'` for a
+> legacy-only family — verified directly, 30 legacy dates → `GRADED`.
+>
+> That is the **status quo and it is deliberate**: refusing it would make every
+> family on the board permanently un-promotable until it accrues 25 dates on the
+> new clock. That is a fleet-wide product decision for the CEO, not a side effect
+> to slip into a clock-plumbing PR. What this PR narrows is strictly the
+> **straddling** case. The boundary is now pinned by
+> `test_promotion_on_a_legacy_only_family_is_the_documented_status_quo`, so
+> changing it later is a deliberate act with a failing test attached.
+
+Neither case is reachable on today's corpus for the straddle (nothing can be
+`STATE_MIXED_CLOCK` yet); it becomes reachable the first night a second market
+accrues.
 
 **(b) The acceptance-#6 flap test was tautological.** It called
 `promotion_check` twice on an *unchanged* store and asserted the two results
@@ -91,6 +116,87 @@ construction and would have stayed green against any flap a real night could
 produce. A nightly run reads a store that **grew**. The test now runs
 single-market → grows the store the way a night does (CN's first rows arrive) →
 re-reads, which is the transition where the shipped defect actually fired.
+
+## 2b. Adversarial review — what it changed, and what stays open
+
+An opus `reviewer` ran the contract against seven claims. Three were refuted and
+are fixed below; the rest are **disclosed here rather than fixed**, because
+fixing them belongs in other PRs and a claim that overstates is worse than a
+disclosed gap.
+
+### Fixed in this PR
+
+**The per-market fix was published into JSON and read by nothing.**
+`promotion_check_by_market` writes `by_clock_basis` into `track_record.json` —
+and `families_ready`, the first-cross operator alert, and the admin tab all read
+only the **top-level** `ready`, which is `False` for exactly the
+`STATE_MIXED_CLOCK` family the fix exists for. Measured: 26 US + 26 CN dates,
+both markets eligible, `run_status.json` reports `n_families_ready: 0` and no
+operator is told. Fixing it one layer up and leaving it broken one layer down is
+not fixing it. The summary now reads the per-basis rows under their own keys
+(`f@21d[explicit_unit_v1:trading_days:CN]`), pools nothing, and skips
+`CLOCK_LEGACY` again rather than trusting an upstream filter it does not own.
+The logic was **extracted from `main()`** — it was eight inline lines in a
+500-line entry point, which is precisely why it shipped unread: nothing could
+reach it to test it.
+
+**The duel compared two independently-selected clock bases.**
+`challenger_excess_mean_5d` and `placebo_covered_abs_excess_5d` are each chosen
+by "most observations", so during a migration they land on different clocks — a
+challenger on 5 exchange sessions against a placebo on 5 **calendar** days. That
+is the pooling this contract forbids, wearing a comparison's clothes, and it is
+the **D3 counterfactual** rendered verbatim into the admin tab. Neither basis was
+recorded, so the mismatch was not merely unguarded — it was invisible.
+`duel_context` now carries both bases and `duel_comparable`; on a mismatch the
+numbers stay (each honest on its own basis) and the **comparison** is withdrawn
+with a stated reason.
+
+**The placebo tape's basis selection depended on file order.**
+`_placebo_magnitude` built its blocks by iterating `grades` in append-only file
+order and selected with `max`, which keeps the first maximum — so on a tie the
+published control arm depended on which row was appended first. Two bases'
+`n_grades` are monotone integer counts, so during a migration they pass through
+equality **exactly once**, and on that night the counterfactual could flip. Now
+sorted, with `_select_single_clock_block`'s tie rule. The test that covered this
+asserted `mean_abs_excess in (0.01, 0.99)` — a test written to accept *either*
+answer, which records an ambiguity rather than pinning behaviour; it now pins one
+answer and asserts that reversing the row order does not move it.
+
+### Open, disclosed, NOT fixed here
+
+- **"ONE resolver" is overstated.** `engine/source_registry.py::_add_trading_days`
+  is an independent NYSE session walker used at registration and resolution for
+  `narrative_source_call`, and it grades that family through its own exit. Its
+  `while` loop is also unbounded, where the clock's walkers are bounded and
+  fail closed. The contract text should read "one resolver **for every claim
+  that grades through `qledger`**"; `source_registry` is a named exception with
+  its own grading path. Folding it in is its own PR.
+- **Two live aggregations pool across bases** once accrual starts:
+  `source_registry`'s family `hit_rate` and
+  `scripts/report_importance_duel.py::_slice_stats`. Both are single-basis
+  **today** (there are no explicit-clock grade rows), so neither is a wrong
+  number yet — the fuse is the first night new claims mature (≥5 sessions).
+- **`control_only` hit counting is direction-blind — and this is the most
+  serious thing the review found.** `promotion_check` scores a control hit as
+  `subject_ret - control_ret > 0` regardless of the claim's `direction`, so for a
+  `direction=-1` claim every **correct** bearish call is counted a MISS and every
+  wrong one a HIT. The §3 Wilson bound is therefore computed on an inverted hit
+  series for bearish families. It is **pre-existing on `origin/main`**, not a
+  regression from this PR — but it is the gate this PR is protecting, and it
+  needs its own PR and its own pre-registration. `bench_ret` is read in the same
+  branch and never used, so the branch is gated on a value it does not consume.
+- **The claim-side `clock_market` stamp is write-only.** Nothing reads
+  `claim["clock_market"]`; the grader re-derives the market from the claim's legs
+  at grading time and never compares. The stated guarantee ("a later change to
+  the suffix table is visible as a change rather than a silent re-reading") is
+  not implemented — if `.BJ` is later mapped, already-registered claims keep a
+  `check_by` computed under the old resolution.
+- **Consumers report the numbers without the basis.** `PromotionResult`'s own
+  docstring requires any consumer reporting these numbers to report the basis
+  alongside; the operator alert and `engine/qledger_ui.py::chip_for_desk` both
+  drop it.
+- **The admin tab degenerates for a MIXED_CLOCK family**, picking the `h="5"`
+  record (`n_dates=0`) over the `h="21"` one that carries the disclosure.
 
 ## 3. A correction to the previous handoff
 
