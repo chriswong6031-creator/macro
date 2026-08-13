@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T08:41:10.499690+00:00",
-  "count": 1048,
+  "generated_at": "2026-08-13T08:56:15.893723+00:00",
+  "count": 1049,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -570,6 +570,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1ykept0o2tt-e404a2",
+      "title": "Global daily strategic autonomy is running dry",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:39:24Z",
+      "summary_points": [
+        "**Geopolitical Tensions Escalate Over Critical Tech Supply Chains**: China’s travel restrictions on engineers in rare-earth/solar/battery sectors clash with EU’s *Industrial Accelerator Act*, risking supply chain fragmentation and redirecting investment flows into European critical industries.",
+        "**European Infrastructure Vulnerability Threatens Industrial Activity**: Rhine River drought disrupts key shipping route, forcing cargo reductions, surging inland shipping costs, and diesel price rebounds, directly impacting German industrial output and supply chains.",
+        "**RBA Policy Outlook**: Governor Bullock confirms \"quite possible\" further rate hikes, with firm forecasts for November due to persistent domestic demand exceeding capacity, signaling tighter monetary policy.",
+        "**Critical Contact Roles for Portfolio Execution**: Direct access to Head FX Strategy (Jane Foley), Head Fixed Income (Matt Cairns), and Senior Energy Strategists (Joe DeLaura, Florence Schmit) enables rapid response to data releases and flow shifts in key asset classes."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
