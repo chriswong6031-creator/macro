@@ -341,8 +341,18 @@ red on arrival.
 
 **Execution marker.** Same convention as the first window — a line beginning at column 0
 with `executed_window:` followed by the window id, added when the artifacts are
-committed and not before. It is deliberately NOT set in this commit: as of here the
-reconstruction has been dry-run only.
+committed and not before. Unlike the first window's guard, the check on this one is a
+BICONDITIONAL: `tests/test_prophet_outage_backfill_20260811.py` asserts that the marker's
+presence and the disclosure row's existence agree in BOTH directions, so a doc that
+underclaims fails as loudly as one that overclaims. That is the direction the 2026-08-09
+guard could not see, and the reason its own marker sat unset for two days.
+
+**Executed 2026-08-13.** 69 buy rows → 46 admitted → 36 duplicate ids → 10 eligible →
+**3 minted** (HCC, LNG, NXPI), 7 chronology-refused by the engine's own six-clock
+contract, 0 collided, 0 otherwise refused. Both funnel identities close. Harness fidelity
+0.875 against the 2026-08-10 board, measured identically on four independent runs.
+
+executed_window: prophet-us-outage-backfill-2026-08-11
 
 ---
 
