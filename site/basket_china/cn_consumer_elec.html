@@ -33,9 +33,9 @@
 })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Consumer Electronics — Theme detail</title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css?v=90137296">
-<link rel="stylesheet" href="../assets/css/ca905c00.css?v=ca905c00">
+<link rel="stylesheet" href="../assets/css/ff321a97.css?v=ff321a97">
 <link rel="preload" as="style" href="../product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="../navigation-refresh.css?v=c299c324">
 </head>
@@ -307,7 +307,7 @@ fetch('../live/shock_state.json',{cache:'no-cache'})
     var msg=isZh()?
       ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。冲击期的剧烈反转多难持续：历史26次中约六成在一天内消退。'):
       ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Sharp reversals during shocks usually don&#39;t hold: in 26 past cases about 6 in 10 faded within a day.');
-    el.innerHTML='<div style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--warn);border-radius:9px;padding:9px 14px;margin:8px 0;font-size:13px">'+msg+'</div>';
+    el.innerHTML='<div style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--ink-warn, var(--warn));border-radius:9px;padding:9px 14px;margin:8px 0;font-size:13px">'+msg+'</div>';
   }).catch(function(){/* absent file → no banner */});
 // Policy-lever chip
 fetch('../policy_lever.json',{cache:'no-cache'})
@@ -334,7 +334,7 @@ fetch('../policy_lever.json',{cache:'no-cache'})
 
 <footer>
   <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-08-13 00:33 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-08-13 07:05 UTC</span>.
 </footer>
 
 <script>
@@ -427,7 +427,7 @@ function cycleSectionHtml(cyc,bid){
       ${nw.rs_rank?`<span class="cyc-rk">RS #${nw.rs_rank}</span>`:''}
       ${nw.above200d!=null?`<span class="cyc-rk ${nw.above200d?'pos':'neg'}">${nw.above200d?L('above 200d','200日上'):L('below 200d','200日下')}</span>`:''}
     </div>`;
-  const fullLink=cyc.full_href?` <a href="${esc(cyc.full_href)}" style="color:var(--link)">${L('Open the full cycle dashboard →','打开完整周期看板 →')}</a>`:'';
+  const fullLink=cyc.full_href?` <a href="${esc(cyc.full_href)}" style="color:var(--ink-link, var(--link))">${L('Open the full cycle dashboard →','打开完整周期看板 →')}</a>`:'';
   return `<h2><span class="idx">◷</span>${L('Theme cycle','主题周期')} <span class="chip">${L('rebased price · auto-detected turns','再基准化价格 · 自动识别拐点')}</span></h2>
     <div class="panel">
       <div class="muted sm" style="margin-bottom:8px">${L("Equal-weight price on the cycle clock: past turns, current position, and projected next turn. Rhythm only.","等权价格的周期时钟：历史拐点、当前位置与下一拐点投影。仅看节奏。")}</div>
@@ -966,7 +966,7 @@ function grBand(bid){
 
 function grEpisodesSection(bid){
   var rows=(GRH&&GRH[bid])||null, p=GRP&&GRP[bid];
-  var h=`<h2><span class="idx">↺</span>${L('Has this happened before','以前发生过吗')} <span class="chip">${L('closed group episodes','已结束的整体行情')}</span></h2>`;
+  var h=`<h2>${L('Has this happened before','以前发生过吗')} <span class="chip">${L('closed group episodes','已结束的整体行情')}</span></h2>`;
   if(!rows||!rows.length){
     var since=p&&p.as_of?esc(p.as_of):null;
     return h+`<div class="panel"><div class="muted sm">${rows?
@@ -1120,7 +1120,7 @@ function render(){
 
   // ---- WHAT TO ACT ON NOW (stock level, gated by theme health) ----
   const an=d.act_now||{};
-  h+=`<h2><span class="idx">★</span>${L('What to act on now','现在该做什么')} <span class="chip">${L('gated by theme health','按主题健康度筛选')}</span></h2><div class="panel">`;
+  h+=`<h2>${L('What to act on now','现在该做什么')} <span class="chip">${L('gated by theme health','按主题健康度筛选')}</span></h2><div class="panel">`;
   if(an.status==='ok' && (an.buys||[]).length){
     h+=`<div class="muted sm" style="margin-bottom:8px">${L('Member stocks with a clean entry right now — buy/add verdict, cycle not blocking, decent entry price. Ranked by entry quality.','当前具备干净入场点的成分股 — 买入/加仓结论、周期未阻断、入场价尚可。按入场质量排序。')}</div>
     <div class="ts"><table class="act-table"><thead><tr><th class="act-name">${L('Stock','个股')}</th><th class="num act-conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num act-entry">${L('Entry','入场')}</th><th class="num act-5d">5d</th><th class="num act-20d">20d</th></tr></thead><tbody>`+
@@ -1418,9 +1418,9 @@ function anatomyPanelHtml(th){
   var macroAbsent = comp.macro==null||comp.macro===0;
   var why='';
   if(posEn.length) why+=L('<strong>'+posEn.join(' + ')+'</strong> fired. ','<strong>'+posZh.join(' + ')+'</strong>发力。');
-  if(negEn.length) why+=L('<span style="color:var(--down)">'+negEn.join(' + ')+'</span> dragging. ','<span style="color:var(--down)">'+negZh.join(' + ')+'</span>拖累。');
+  if(negEn.length) why+=L('<span style="color:var(--ink-down, var(--down))">'+negEn.join(' + ')+'</span> dragging. ','<span style="color:var(--ink-down, var(--down))">'+negZh.join(' + ')+'</span>拖累。');
   if(macroAbsent) why+=L('Macro leg absent — score renormalises over available legs. ','宏观缺失 — 评分在现有腿上重新归一化。');
-  if(crowdPenActive) why+=L('<span style="color:var(--amber,#fb923c)">Crowding penalty active (rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+')</span>. ','<span style="color:var(--amber,#fb923c)">拥挤惩罚生效（rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+'）</span>。');
+  if(crowdPenActive) why+=L('<span style="color:var(--ink-warn, var(--amber,#fb923c))">Crowding penalty active (rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+')</span>. ','<span style="color:var(--ink-warn, var(--amber,#fb923c))">拥挤惩罚生效（rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+'）</span>。');
 
   var html='<div class="ftr-anatomy-card">'
     +'<div class="ftr-anatomy-hd">'
@@ -1445,11 +1445,11 @@ function anatomyPanelHtml(th){
     // Bar fill: center=0, pos goes right, neg goes left; crowding amber
     var barFillPct = absent?0:Math.min(50,Math.abs(v)*35);
     var barClass = isCrowd?'crowd':(v>=0?'pos':'neg');
-    var valColor = absent?'var(--muted)':isCrowd?'var(--amber,#fb923c)':(v>=0?'var(--up)':'var(--down)');
+    var valColor = absent?'var(--muted)':isCrowd?'var(--ink-warn, var(--amber,#fb923c))':(v>=0?'var(--up)':'var(--down)');
     var crowdStyle = isCrowd?'background:rgba(251,146,60,.04);border-radius:6px;padding:4px 0;':'';
     html+='<div class="ftr-leg-row" style="'+crowdStyle+'">'
-      +'<div><div class="ftr-leg-lbl"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>'+L(ll[0],ll[1])+'</div>'
-      +'<div class="ftr-leg-wt"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
+      +'<div><div class="ftr-leg-lbl"'+(isCrowd?' style="color:var(--ink-warn, var(--amber,#fb923c))"':'')+'>'+L(ll[0],ll[1])+'</div>'
+      +'<div class="ftr-leg-wt"'+(isCrowd?' style="color:var(--ink-warn, var(--amber,#fb923c))"':'')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
       +'<div class="ftr-leg-bar"><div class="ftr-leg-bar-ctr"></div>'
       +(absent?'':'<div class="ftr-leg-fill '+barClass+'" style="width:'+barFillPct.toFixed(1)+'%"></div>')
       +'</div>'
@@ -1480,7 +1480,7 @@ function stalenessBannerHtml(detailAsOf){
   return '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;'
     +'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.35);margin-bottom:10px">'
     +'<span style="font-size:18px">⏳</span>'
-    +'<div><div style="font-weight:680;color:var(--warn)">'
+    +'<div><div style="font-weight:680;color:var(--ink-warn, var(--warn))">'
     +L('Data as of '+esc(detailAsOf)+' close — today\'s session not yet ingested (nightly pending)',
        '数据截至 '+esc(detailAsOf)+' 收盘 — 今日行情尚未录入（等待夜间更新）')
     +'</div></div></div>';
@@ -1564,7 +1564,7 @@ function liveStripHtml(pb, tw, totalBaskets, pulseMode){
     var twTipEn='Fast-turn context: '+(isIgn?'strong sign':'early sign')+'. In 26 past cases, about 6 in 10 sharp one-day flips faded within a day. Slow ratings are unchanged; context only, not a buy signal.'+cfTip;
     var twTipZh='快速拐点参考：'+(isIgn?'较强迹象':'初步迹象')+'。历史26次剧烈单日反转中，约六成在一天内消退。慢速评级不变；仅供参考，不是买入信号。'+cfTipZh;
     html+='<span data-tip-en="'+esc(twTipEn)+'" data-tip-zh="'+esc(twTipZh)+'" style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;'
-      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--orange,#f97316)':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--warn)')+'">&#9889;'+L(isIgn?'STRONG SIGN':'EARLY SIGN',isIgn?'较强迹象':'初步迹象')+'</span>';
+      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--ink-orange, var(--orange,#f97316))':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--ink-warn, var(--warn))')+'">&#9889;'+L(isIgn?'STRONG SIGN':'EARLY SIGN',isIgn?'较强迹象':'初步迹象')+'</span>';
   }
   html+='<span style="font-size:10.5px;color:var(--muted);margin-left:auto">'+L('15-min delayed','15分钟延迟')+'</span>';
   html+='</div>';

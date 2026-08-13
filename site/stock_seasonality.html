@@ -54,7 +54,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}
 /* Mode is page state, so it lives in the URL query exactly as the symbol does.
    Applied HERE, in the head, for the same reason theme and language are: the
    page body ships in calendar mode, and a deep link resolved only once
@@ -916,7 +916,7 @@ try{if(new URL(location.href).searchParams.get('mode')==='catalyst')document.doc
         <dd><span class="l-en">Presets are counted in the search budget. A window you draw after seeing the chart is not — it’s marked exploratory.</span><span class="l-zh">预设窗口已计入搜索预算。你在看过图之后自己拖出的窗口没有计入 — 会标记为探索性。</span></dd>
       </div>
     </dl>
-    <p class="sx-smcap"><a href="seasonalitydata/methodology.json"><span class="l-en">Full method (JSON) →</span><span class="l-zh">完整方法（JSON）→</span></a> · <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span class="sx-num">2026-08-12 23:48 UTC</span></p>
+    <p class="sx-smcap"><a href="seasonalitydata/methodology.json"><span class="l-en">Full method (JSON) →</span><span class="l-zh">完整方法（JSON）→</span></a> · <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span class="sx-num">2026-08-13 06:30 UTC</span></p>
   </section>
 </main>
 

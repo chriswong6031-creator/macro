@@ -48,7 +48,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=90137296">
 <script>
   // engine + page config injected at build time (the watchlist is pure client
@@ -60,7 +60,7 @@
   // null/absent => watchlist_risk.js hides the rail. Book-derived text is client-side.
   window.WRI_REGIME    = {"state": "watch", "dominant_label_en": "Trend extension watch", "dominant_label_zh": "\u8d8b\u52bf\u5ef6\u4f38\u89c2\u5bdf", "vol_regime": "normalizing", "asof": "2026-08-12"};
 </script>
-<link rel="stylesheet" href="assets/css/f8e0f918.css?v=f8e0f918">
+<link rel="stylesheet" href="assets/css/de350307.css?v=de350307">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
@@ -515,17 +515,17 @@
      SD routes each per-ticker fetch to its market's store through window.MB. -->
 <script src="market_books.js?v=1"></script>
 <script src="stockdata.js?v=2"></script>
-<script src="watchlist.js?v=3"></script>
+<script src="watchlist.js?v=4"></script>
 <script src="factor_exposure.js?v=2"></script>
 <!-- WRI W3: pure book-structure math + the render layer (rail, hero, patch-bay,
      card lanes). risk_core.js must precede watchlist_risk.js; both need SD + FX. -->
 <script src="risk_core.js?v=1"></script>
 <script src="watchlist_risk.js?v=2"></script>
-<script src="watchstore.js?v=3"></script>
+<script src="watchstore.js?v=4"></script>
 <script src="portfolio.js?v=2"></script>
 <script src="mtf.js?v=b62aea2f" defer></script>
 <script src="theme.js?v=2a51e41d" defer></script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-12 23:24 UTC</p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-13 06:05 UTC</p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
