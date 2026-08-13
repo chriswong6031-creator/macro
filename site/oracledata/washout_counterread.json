@@ -36,7 +36,7 @@
   {
    "index": "QQQ",
    "metric": "ihm_macd_hist_depth_pctile",
-   "depth_pctile": 26.3,
+   "depth_pctile": 40.8,
    "reason": "washout_turn",
    "washout_turn": true,
    "extreme": true
@@ -44,8 +44,8 @@
   {
    "index": "SOXX",
    "metric": "ihm_macd_hist_depth_pctile",
-   "depth_pctile": 9.5,
-   "reason": "low_depth",
+   "depth_pctile": 15.9,
+   "reason": "washout_turn",
    "washout_turn": true,
    "extreme": true
   }

@@ -2489,6 +2489,30 @@ jobs:
 
   house-law-registry:
     if: ${{ false }}
+    # DECLARED scope, UNIONed with the runtime-derived one (run_ci_pack.infer_job_scopes
+    # keeps `set(job.paths) | set(derived)`), and it exists for exactly one entry:
+    # root `config.yml`. That file is where BOTH of this repo's timeless rename maps
+    # live — `breadth.ticker_fixups` and `quality.ticker_key_migrations` — and the next
+    # ticker rename lands the way both modelled ones did, as ONE LINE in one of them.
+    # The unmodelled-rename detector that catches it (build_security_master.
+    # unmodelled_renames, asserted by tests/test_dataos_security_master.py) could not be
+    # REACHED from that edit: scope inference cannot own a repository-ROOT file at all —
+    # SCOPE_REFERENCE_RE and ci_scope_dependencies._PATH_LITERAL both require a tracked
+    # directory prefix — so a fixups-only PR selected 48 jobs and this was not among
+    # them (measured 2026-08-13). Silent gap, in the detector written to close a silent
+    # gap. The remaining entries are not new ownership: they are the paths this job's
+    # own commands already name, listed because _scope_coverage_findings makes a
+    # declared scope that fails to cover them a HARD manifest error. Adding a `run:`
+    # step that names a new path means adding it here too.
+    paths:
+      - config.yml
+      - docs/HOUSE_LAW_CI_GUARD_SUITE.md
+      - scripts/check_claim_passport.py
+      - scripts/check_house_law_registry.py
+      - scripts/check_symbol_rename_drift.py
+      - tests/test_dataos_security_master.py
+      - tests/test_house_law_registry.py
+      - tests/test_ticker_alias_boundary.py
     # Meta-guard: verifies config/house_law_checks.yml is complete and honest.
     # Three checks in sequence:
     #   1. selftest: synthetic assertions prove the meta-guard catches violations.
@@ -2521,6 +2545,21 @@ jobs:
         run: |
           python3 scripts/check_symbol_rename_drift.py
           python -m pytest tests/test_ticker_alias_boundary.py -q
+      # Data OS DOS-1.1: the security master + the TIME-SCOPED alias table, which is
+      # the general form of the boundary the step above guards. It lives HERE and not
+      # in `dataos-foundation` for two reasons, both load-bearing:
+      #   * that job installs pytest + pyyaml ONLY, on purpose — "a pandas/numpy import
+      #     creeping into lib/dataos/ breaks HERE first" — and adding pandas to its pip
+      #     line would switch that canary off. This job already provides pandas+pyarrow.
+      #   * that job is pure unit tests that never open data/; this suite reads the
+      #     COMMITTED artifacts (data/reference/*.parquet), which is what a consumer
+      #     would read and therefore the only honest place to pin them.
+      # It is a `run:` step in an EXISTING job rather than a new job because the legacy
+      # manifest sits near the narrow-diff ceiling (test_ci_pack.py asserts a
+      # representative diff selects <= len(jobs)*4//5); folding suites into a job keeps
+      # the job count, and the arithmetic, where it is.
+      - name: Data OS security master + time-scoped vendor alias table (MMC/MRSH, SATS/ECHO)
+        run: python -m pytest tests/test_dataos_security_master.py -q
       - name: house-law registry tests (idempotency + integration)
         run: python -m pytest tests/test_house_law_registry.py -q
 
@@ -2573,11 +2612,14 @@ jobs:
     # Fail-closed: a PR must not equality-pin a live nightly store. Measured
     # 2026-08-13: govrev latest/candidates ``assert 23 == 8``, options
     # ``episodes.jsonl`` 384→1206 used as a closed replay, prophet open-keys
-    # 10→11. Each one reddened main and then, through merge-on-green, the
-    # entire armed queue. Legal: a watermarked prefix slice, a census derived
-    # from a committed receipt written by a different path, or a named
-    # disclosure set. Do not re-type the product literals and do not
-    # grandfather by filename — a new ``== N`` in the same file still reds.
+    # 10→11, then after #5515 the spine parquet (pack-7 / #5547) and Release
+    # Radar inflation-truth artifacts (unrun-release-forecast). Each one
+    # reddened main and then, through merge-on-green, the entire armed queue.
+    # Legal: a watermarked prefix slice, a census derived from a committed
+    # receipt, a named disclosure set, or the #5547 cold-test bind of
+    # ``config.data_dir`` to empty tmp. Do not re-type the product literals
+    # and do not grandfather by filename — a new ``== N`` in the same file
+    # still reds.
     # The rglob over tests/test_*.py is load-bearing for path-aware scope:
     # inference claims tests/**/*.py so this runs on PRs that touch tests,
     # not only after the next jam. Main's full suite still runs it.
@@ -2593,7 +2635,7 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pyyaml
-      - name: vintage-pin fence selftest (three detonation classes red, three legal green)
+      - name: vintage-pin fence selftest (post-5515 detonation classes red, legal green)
         run: python3 scripts/check_vintage_pin_fence.py --selftest
       - name: vintage-pin fence (new live-store equality pins)
         run: python3 scripts/check_vintage_pin_fence.py
