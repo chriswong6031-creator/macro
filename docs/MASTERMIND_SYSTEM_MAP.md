@@ -3360,7 +3360,7 @@ These are non-binding semantic posture summaries, not a second authority system.
 - **flow_type:** presentation
 - **implementation:** repo: terminal; roots: terminal/app/api/portfolio-brief/, terminal/lib/portfolioBrief.ts
 - **participants:** repo: macro; role: producer, repo: terminal; role: renderer
-- **purpose:** Deliver the fully composed portfolio_brief.v1 into Terminal Conviction Book context.
+- **purpose:** Deliver the fully composed portfolio_brief.v2 into Terminal portfolio context, carrying the population it describes (positions vs watchlist_union, packet amendment A8).
 
 ### Portfolio Neural Web feedback to Macro (`mastermind-macro-neural-feedback`)
 
@@ -3587,7 +3587,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | Source | SHA-256 |
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
-| `config/mastermind_programs.yml` | `1a458391ad95450ac9ee85f963a6679b6c1b1deb627ac20023937111350fed23` |
+| `config/mastermind_programs.yml` | `2aaa81173b3256e128802c5d640769795ce9ec9088136822f443f789f594b2a5` |
 | `config/synapse.yml` | `ff4340e5d5ae6bea9aceb135cda1bd0b589cf6bf86ea52d3024fdefdff3932fa` |
 
 ### Legacy registry compatibility notes

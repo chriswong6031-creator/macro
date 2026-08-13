@@ -3237,13 +3237,15 @@ class MainProof:
     head_sha: str
     source: str
     # Names main FAILED on the same proof run. Empty when the run was unreadable
-    # or when every considered job passed. Used by the LIVE inherited-red path
-    # (a PR whose only reds are a subset of these, at pack AND legacy-job
-    # granularity, did not introduce a new failure).
+    # or when every considered job passed. Used by the base-inherited refresh
+    # (a PR whose reds are a subset of main's *clean* names). Live-inherited
+    # red waives on ``failed_legacy_jobs``, not these pack names — packs rebalance.
     failed_names: frozenset[str] = frozenset()
     # Legacy job ids parsed from ``::error title=legacy-job-<id>`` annotations
-    # on failed ``ci-pack-*`` jobs of this proof. Empty means "could not read",
-    # which fail-closes the live-inherited path rather than waiving a pack.
+    # on failed ``ci-pack-*`` jobs of this proof. Empty means "could not read"
+    # OR the run passed every pack — both fail-close the live-inherited path.
+    # Pack *names* are not a stable identity (they rebalance on the selected
+    # job set); this set is the waiver's load-bearing half.
     failed_legacy_jobs: frozenset[str] = frozenset()
 
     def age_hours(self, now: dt.datetime | None = None) -> float | None:
@@ -3405,6 +3407,32 @@ def _touches_ci_control_plane(paths: list[str]) -> bool:
     return any(_matches_any(GLOBAL_INVALIDATORS, path) for path in paths if path)
 
 
+def _live_inherited_extras(bad_names: set[str]) -> set[str]:
+    """Check names that are neither a rebalancing pack nor the ci-gate aggregate.
+
+    ``ci-pack-N`` numbers are not a stable identity: ``partition_jobs`` balances
+    the *selected* job set, so the same ``unrun-foo`` is pack-7 on a scoped 114-job
+    PR and pack-5 on main's full-suite dispatch. ``ci-gate`` is implied by those
+    pack failures — it is not an extra name that blocks the waiver.
+    """
+    return {
+        name
+        for name in bad_names
+        if not _PACK_CHECK_RE.match(name) and name != "ci-gate"
+    }
+
+
+def _failed_pack_runs(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        run
+        for run in runs
+        if _PACK_CHECK_RE.match(str(run.get("name") or ""))
+        and str(run.get("status") or "").lower() == "completed"
+        and str(run.get("conclusion") or "") not in CLEAN_CONCLUSIONS
+        and not is_spurious_check(str(run.get("name") or ""))
+    ]
+
+
 def live_inherited_red(
     repo: str,
     pull: dict[str, Any],
@@ -3416,27 +3444,19 @@ def live_inherited_red(
 ) -> str | None:
     """Reason string if this red is main's current weather; None to fail closed.
 
-    Pack-name subset is necessary but not sufficient — one ``ci-pack-N`` holds
-    many legacy jobs. The annotation identity is the load-bearing half: the PR's
-    failed legacy jobs must be a subset of main's, and the PR must not have
-    touched a CI global invalidator.
+    Waive on ``legacy-job-*`` annotation identity only. Pack names rebalance on
+    the selected job set, so a PR's ``ci-pack-7`` is not comparable to main's
+    ``ci-pack-5``. ``ci-gate`` is the aggregate of those identities, not an extra
+    name. A CI global invalidator is ineligible — it can change what any pack
+    means.
     """
-    if not bad_names or not proof.failed_names or not proof.failed_legacy_jobs:
+    if not bad_names or not proof.failed_legacy_jobs:
         return None
-    packs = {name for name in bad_names if _PACK_CHECK_RE.match(name)}
-    extras = {name for name in bad_names if name not in packs and name != "ci-gate"}
-    if extras or not packs:
+    if _live_inherited_extras(bad_names):
         return None
-    if not packs <= proof.failed_names:
+    failed_pack_runs = _failed_pack_runs(runs)
+    if not failed_pack_runs:
         return None
-    failed_pack_runs = [
-        run
-        for run in runs
-        if _PACK_CHECK_RE.match(str(run.get("name") or ""))
-        and str(run.get("status") or "").lower() == "completed"
-        and str(run.get("conclusion") or "") not in CLEAN_CONCLUSIONS
-        and not is_spurious_check(str(run.get("name") or ""))
-    ]
     pr_jobs = _legacy_job_ids_from_runs(repo, failed_pack_runs, token)
     if not pr_jobs or not pr_jobs <= proof.failed_legacy_jobs:
         return None
@@ -3445,8 +3465,6 @@ def live_inherited_red(
         return None
     return (
         "live-inherited red: "
-        + ", ".join(sorted(packs))
-        + " / "
         + ", ".join(sorted(pr_jobs))
         + " already failing on main"
     )
@@ -3697,7 +3715,11 @@ def ensure_main_baseline(
 
     So the sweep dispatches the baseline itself, but ONLY when all three hold:
 
-      1. the proof is undatable or older than MAIN_PROOF_MAX_AGE_HOURS;
+      1. the proof is undatable or older than MAIN_PROOF_MAX_AGE_HOURS, OR it has
+         no ``failed_legacy_jobs`` while this sweep blocked a pack or ``ci-gate``.
+         A clock-fresh green proof cannot feed the live-inherited waiver, and
+         ``ci.yml`` has no ``push`` trigger — skip-ci tape ticks never refresh it.
+         This is NOT a per-commit dispatch: (2) and (3) still bind it;
       2. at least one pull request this sweep evaluated was blocked on a non-spurious
          check — i.e. the staleness actually COST something. An idle repository never
          dispatches, however old its proof is; a proof nothing needed is not a problem;
@@ -3732,7 +3754,11 @@ def ensure_main_baseline(
     """
     try:
         age = proof.age_hours()
-        if age is not None and age <= MAIN_PROOF_MAX_AGE_HOURS:
+        packs_blocked = any(
+            _PACK_CHECK_RE.match(name) or name == "ci-gate" for name in blocked_names
+        )
+        waiver_blind = packs_blocked and not proof.failed_legacy_jobs
+        if age is not None and age <= MAIN_PROOF_MAX_AGE_HOURS and not waiver_blind:
             return f"not needed (proof is {age:.1f}h old)"
         if not blocked_names:
             return "not needed (no pull request was blocked on a check)"
@@ -3772,15 +3798,21 @@ def ensure_main_baseline(
             # proven RED, which reads identically here and has the opposite cause. The
             # proof's own `source` is the thing that distinguishes them, so print it.
             aged = f"undated ({proof.source})" if age is None else f"{age:.1f}h old"
+            weather = (
+                " and has no legacy-job-* weather for the live-inherited waiver"
+                if not proof.failed_legacy_jobs
+                else ""
+            )
             _annotate(
                 "notice",
                 "merge-on-green",
                 f"Dispatched {MAIN_BASELINE_WORKFLOW} on main: this sweep left pull "
                 f"requests blocked on {len(blocked_names)} distinct check(s) "
                 f"({', '.join(sorted(blocked_names)[:6])}) while main's own proof is "
-                f"{aged}, so it could not tell an inherited red from a real one. "
-                f"{MAIN_BASELINE_WORKFLOW} has no `push` trigger, so nothing else "
-                "re-proves main; the next sweep judges those reds against the result.",
+                f"{aged}{weather}, so it could not tell an inherited red from a real "
+                f"one. {MAIN_BASELINE_WORKFLOW} has no `push` trigger, so skip-ci "
+                "tape ticks do not re-prove main; the next sweep judges those reds "
+                "against the result.",
             )
             return "dispatched"
         _annotate(
@@ -5303,12 +5335,11 @@ def mark_only_pass(
                 continue
 
             packs = {name for name in bad_names if _PACK_CHECK_RE.match(name)}
-            extras = {name for name in bad_names if name not in packs and name != "ci-gate"}
+            extras = _live_inherited_extras(bad_names)
             if (
                 packs
                 and not extras
-                and proof.failed_names
-                and packs <= proof.failed_names
+                and (proof.failed_legacy_jobs or proof.failed_names)
             ):
                 print(
                     f"PR #{number}: red checks "
