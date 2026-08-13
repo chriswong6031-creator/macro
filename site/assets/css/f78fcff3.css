@@ -30,7 +30,7 @@
   .si-side-out { display:flex; align-items:center; gap:10px; margin-top:8px; padding:11px 10px 0;
     border-top:1px solid var(--line); text-decoration:none;
     font-size:12.5px; font-weight:600; color:var(--muted); }
-  .si-side-out:hover { color:var(--link); }
+  .si-side-out:hover { color:var(--ink-link, var(--link)); }
   /* provenance lives with the navigation — visible from every view */
   .si-side-foot { margin-top:auto; padding-top:10px; border-top:1px solid var(--line);
     display:flex; flex-direction:column; gap:3px;

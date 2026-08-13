@@ -116,7 +116,7 @@ body::before{
   font-weight:600;
   text-transform:uppercase;
   letter-spacing:.1em;
-  color:var(--warn);
+  color:var(--ink-warn, var(--warn));
 }
 
 /* ══════════════════════════════════════════
@@ -140,8 +140,9 @@ body::before{
   align-items:center;
   gap:6px;
 }
-.hero-breadcrumb a{color:var(--link);text-decoration:none}
-.hero-breadcrumb span{color:var(--line)}
+.hero-breadcrumb a{color:var(--ink-link, var(--link));text-decoration:none}
+/* was color:var(--line) — a BORDER token printed as text, 1.46:1 in light */
+  .hero-breadcrumb span{color:var(--muted)}
 
 .hero-title{
   font-size:28px;
@@ -206,10 +207,10 @@ body::before{
   color:var(--muted);
   margin-top:2px;
 }
-.up-color{color:var(--up)}
-.down-color{color:var(--down)}
-.info-color{color:var(--info)}
-.warn-color{color:var(--warn)}
+.up-color{color:var(--ink-up, var(--up))}
+.down-color{color:var(--ink-down, var(--down))}
+.info-color{color:var(--ink-info, var(--info))}
+.warn-color{color:var(--ink-warn, var(--warn))}
 .muted-color{color:var(--muted)}
 
 /* ── Cycle Wheel Hero ── */
@@ -368,7 +369,7 @@ body::before{
   letter-spacing:.08em;
   background:rgba(224,160,48,0.12);
   border:1px solid rgba(224,160,48,0.22);
-  color:var(--warn);
+  color:var(--ink-warn, var(--warn));
 }
 
 .null-chip{
@@ -573,9 +574,9 @@ body::before{
   color:var(--text);
 }
 .events-table tr:last-child td{border-bottom:none}
-.event-sealed-up{color:var(--up);font-weight:600}
-.event-sealed-down{color:var(--down);font-weight:600}
-.event-failed{color:var(--warn);font-weight:600}
+.event-sealed-up{color:var(--ink-up, var(--up));font-weight:600}
+.event-sealed-down{color:var(--ink-down, var(--down));font-weight:600}
+.event-failed{color:var(--ink-warn, var(--warn));font-weight:600}
 
 /* ══════════════════════════════════════════
    CYCLE PHASE PANEL
@@ -720,7 +721,7 @@ details[open] summary::before{transform:rotate(90deg)}
 .impulse-badge .val{
   font-size:13px;
   font-weight:700;
-  color:var(--info);
+  color:var(--ink-info, var(--info));
   white-space:nowrap;
 }
 
@@ -769,9 +770,9 @@ details[open] summary::before{transform:rotate(90deg)}
   letter-spacing:.06em;
   margin-right:6px;
 }
-.src-pboc{background:rgba(91,155,240,0.15);color:var(--info)}
-.src-politburo{background:rgba(224,160,48,0.12);color:var(--warn)}
-.src-cewc{background:rgba(224,139,69,0.12);color:var(--orange)}
+.src-pboc{background:rgba(91,155,240,0.15);color:var(--ink-info, var(--info))}
+.src-politburo{background:rgba(224,160,48,0.12);color:var(--ink-warn, var(--warn))}
+.src-cewc{background:rgba(224,139,69,0.12);color:var(--ink-orange, var(--orange))}
 /* CJK has no case and no ascender/descender rhythm: the chip's 9.5px + tracking
    is set for uppercase latin and reads as noise in Chinese. Bump the zh twin. */
 .event-source-chip .l-zh{font-size:10.5px;letter-spacing:0}

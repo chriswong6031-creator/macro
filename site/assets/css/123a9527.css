@@ -62,7 +62,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   background:currentColor;opacity:.5;flex:none}
 .rvx-chips.ctx > .rvx-chip{color:var(--muted)}
 .rvx-chips:not(.ctx) .rvx-chip{color:var(--muted);gap:5px}
-a.rvx-chip{color:var(--link)}
+a.rvx-chip{color:var(--ink-link, var(--link))}
 /* strength / breaking name chips keep their tinted pill treatment inside the hero */
 .rvx-names{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
 .rvx-names-l{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
@@ -126,9 +126,9 @@ html[data-theme="light"] .si-side {
    a hard seam — never reintroduce one. */
 .si-stage { background:transparent; }
 .si-vb-g { width:19px; height:19px; flex:none; }
-.si-vr-g { width:16px; height:16px; flex:none; margin-top:1px; color:var(--link); }
+.si-vr-g { width:16px; height:16px; flex:none; margin-top:1px; color:var(--ink-link, var(--link)); }
 .si-view-btn .si-vb-g { color:var(--muted); }
-.si-view-btn.on .si-vb-g, .si-view-btn:hover .si-vb-g { color:var(--link); }
+.si-view-btn.on .si-vb-g, .si-view-btn:hover .si-vb-g { color:var(--ink-link, var(--link)); }
 .si-side-out .si-vb-g { color:var(--muted); }
 .si-side { padding:14px 11px; }
 .si-view-btn { font-size:13px; padding:8.5px 11px; }

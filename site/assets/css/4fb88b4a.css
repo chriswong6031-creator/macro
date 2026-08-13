@@ -3,7 +3,7 @@
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
   @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
-  a { color:var(--link); text-decoration:none; }
+  a { color:var(--ink-link, var(--link)); text-decoration:none; }
   .wrap { max-width:1060px; margin:0 auto; }
   /* unambiguous move colours (NOT tied to the zh red=up swap) */
   .r-neg { color:#d23f3f; font-weight:600; }
@@ -33,7 +33,13 @@
   footer.rfoot .rf-x:hover { color:var(--text); border-color:color-mix(in srgb,var(--text) 26%,transparent); }
   
   /* ---- China desk signature accents (brand, NOT direction — never ZH-swapped) ---- */
-  .cad { --cad-verm:#c8452e; --cad-gold:#d9a441; max-width:1080px; margin:0 auto; }
+  /* --cad-gold/--cad-verm are the desk's signature hues and are printed as the eyebrow,
+     the section numerals and the c-gold column — 1.88:1 and 4.05:1 on the light
+     surfaces. Fill grade stays for chips and rails; *-ink is the text grade, dark
+     byte-identical. */
+  .cad { --cad-verm:#c8452e; --cad-gold:#d9a441;
+         --cad-verm-ink:#c8452e; --cad-gold-ink:#d9a441; max-width:1080px; margin:0 auto; }
+  html[data-theme="light"] .cad { --cad-verm-ink:#a83a26; --cad-gold-ink:#8a5c00; }
   .cad :is(h1,h2,h3){ font-family:var(--font-ui,inherit); }
 
   /* ---- editorial hero ---- */
@@ -42,7 +48,7 @@
     backdrop-filter:var(--glass-blur); box-shadow:var(--glass-shadow,0 18px 48px -24px rgba(3,7,18,.6)); }
   .cad-hero::before{ content:""; position:absolute; left:0; right:0; top:0; height:2px;
     background:linear-gradient(90deg,var(--cad-verm),var(--cad-gold) 60%,transparent); opacity:.9; }
-  .cad-eyebrow{ font:600 11px/1 var(--font-ui); letter-spacing:.16em; text-transform:uppercase; color:var(--cad-gold); margin:0 0 9px; display:flex; align-items:center; gap:8px; }
+  .cad-eyebrow{ font:600 11px/1 var(--font-ui); letter-spacing:.16em; text-transform:uppercase; color:var(--cad-gold-ink,var(--cad-gold)); margin:0 0 9px; display:flex; align-items:center; gap:8px; }
   .cad-eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--cad-verm); box-shadow:0 0 8px var(--cad-verm); }
   .cad-h1{ font-size:30px; line-height:1.1; letter-spacing:-.015em; margin:0 0 8px; font-weight:800; }
   html[data-lang="zh"] .cad-h1{ letter-spacing:0; }
@@ -85,11 +91,11 @@
   /* ---- small tinted chips ---- */
   .cad-chip{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 9px;
     border-radius:100px; white-space:nowrap; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
-  .cad-chip.c-up{ color:var(--up); border-color:color-mix(in srgb,var(--up) 30%,transparent); background:color-mix(in srgb,var(--up) 11%,transparent); }
-  .cad-chip.c-down{ color:var(--down); border-color:color-mix(in srgb,var(--down) 30%,transparent); background:color-mix(in srgb,var(--down) 11%,transparent); }
-  .cad-chip.c-warn{ color:var(--warn); border-color:color-mix(in srgb,var(--warn) 32%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
-  .cad-chip.c-gold{ color:var(--cad-gold); border-color:color-mix(in srgb,var(--cad-gold) 40%,transparent); background:color-mix(in srgb,var(--cad-gold) 12%,transparent); }
-  .cad-chip.c-info{ color:var(--info); border-color:color-mix(in srgb,var(--info) 30%,transparent); background:color-mix(in srgb,var(--info) 11%,transparent); }
+  .cad-chip.c-up{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 30%,transparent); background:color-mix(in srgb,var(--up) 11%,transparent); }
+  .cad-chip.c-down{ color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 30%,transparent); background:color-mix(in srgb,var(--down) 11%,transparent); }
+  .cad-chip.c-warn{ color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 32%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
+  .cad-chip.c-gold{ color:var(--cad-gold-ink,var(--cad-gold)); border-color:color-mix(in srgb,var(--cad-gold) 40%,transparent); background:color-mix(in srgb,var(--cad-gold) 12%,transparent); }
+  .cad-chip.c-info{ color:var(--ink-info, var(--info)); border-color:color-mix(in srgb,var(--info) 30%,transparent); background:color-mix(in srgb,var(--info) 11%,transparent); }
 
   /* ---- jump nav (homepage index) ---- */
   .cad-jump{ display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 2px; }
@@ -100,7 +106,7 @@
   /* ---- section header ---- */
   .cad-sec{ margin:34px 0 0; }
   .cad-sec-head{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:20px; }
-  .cad-sec-n{ font:700 12px/1 var(--font-mono,monospace); color:var(--cad-gold); letter-spacing:.06em; }
+  .cad-sec-n{ font:700 12px/1 var(--font-mono,monospace); color:var(--cad-gold-ink,var(--cad-gold)); letter-spacing:.06em; }
   .cad-sec h2{ font-size:21px; font-weight:800; letter-spacing:-.01em; margin:0; }
   .cad-sec-count{ font-size:12px; color:var(--muted); font-weight:600; }
   .cad-sec-intro{ font-size:13px; line-height:1.55; color:var(--muted); margin:8px 0 0; max-width:66ch; }
@@ -128,7 +134,7 @@
   .cvband{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; white-space:nowrap;
     background:color-mix(in srgb,var(--cb,var(--muted)) 13%,transparent); color:color-mix(in srgb,var(--cb,var(--muted)) 92%,var(--text)); }
   .cvband.cv-pos{ --cb:var(--up); } .cvband.cv-neg{ --cb:var(--down); }
-  .flag{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:var(--warn);
+  .flag{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:var(--ink-warn, var(--warn));
     background:color-mix(in srgb,var(--warn) 13%,transparent); white-space:nowrap; }
 
   /* ---- the SEAL-STRIP signature (7 independent feeds, lit by contribution sign) ---- */
@@ -151,15 +157,15 @@
   .cad-tier{ background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:13px 15px; }
   .cad-tier h3{ margin:0 0 9px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
   .cad-tier .tbadge{ font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
-  .t-scored .tbadge{ color:var(--up); background:color-mix(in srgb,var(--up) 15%,transparent); }
-  .t-confirmer .tbadge{ color:var(--info); background:color-mix(in srgb,var(--info) 15%,transparent); }
+  .t-scored .tbadge{ color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 15%,transparent); }
+  .t-confirmer .tbadge{ color:var(--ink-info, var(--info)); background:color-mix(in srgb,var(--info) 15%,transparent); }
   .t-display .tbadge{ color:var(--muted); background:var(--panel2); }
-  .t-pending .tbadge{ color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,transparent); }
-  .t-killed .tbadge{ color:var(--down); background:color-mix(in srgb,var(--down) 14%,transparent); }
+  .t-pending .tbadge{ color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 15%,transparent); }
+  .t-killed .tbadge{ color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 14%,transparent); }
   .cad-tier .row{ padding:7px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent); }
   .cad-tier .row:last-child{ border-bottom:0; }
   .cad-tier .nm{ font-weight:600; font-size:12.5px; }
-  .cad-tier .wired{ font:10px/1 var(--font-mono,monospace); color:var(--link); }
+  .cad-tier .wired{ font:10px/1 var(--font-mono,monospace); color:var(--ink-link, var(--link)); }
   .cad-tier .nt{ font-size:11px; color:var(--muted); line-height:1.5; margin-top:2px; }
 
   .cad-callout{ border-radius:13px; padding:12px 15px; margin:14px 0; border:1px solid var(--line);

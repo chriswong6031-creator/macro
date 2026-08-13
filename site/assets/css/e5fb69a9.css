@@ -35,23 +35,23 @@
   /* zh 红涨绿跌: T2 bullish tier badge swaps green→red */
   html[data-lang="zh"] #si-confluence .tier.T2{ background:#d04545; }
   #si-confluence .pill { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:9px; border:1px solid var(--line); }
-  #si-confluence .pill.buy{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
-  #si-confluence .pill.avoid{ color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
+  #si-confluence .pill.buy{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
+  #si-confluence .pill.avoid{ color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
   #si-confluence .pill.neutral{ color:var(--muted); }
-  #si-confluence .pill.tactical,#si-confluence .pill.late{ color:var(--orange); border-color:color-mix(in srgb,var(--orange) 45%,transparent); }
+  #si-confluence .pill.tactical,#si-confluence .pill.late{ color:var(--ink-orange, var(--orange)); border-color:color-mix(in srgb,var(--orange) 45%,transparent); }
   #si-confluence table.tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
   #si-confluence table.tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding:6px 9px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; }
   #si-confluence table.tbl td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
   #si-confluence table.tbl tr:hover td { background:var(--panel); }
   #si-confluence .sc-card-hidden { display:none !important; }
-  #si-confluence .sc-more { margin:9px 2px 0; font:600 12px/1.4 inherit; color:var(--link); background:none; border:1px solid var(--line); border-radius:8px; padding:5px 12px; cursor:pointer; transition:border-color .12s,background .12s; }
+  #si-confluence .sc-more { margin:9px 2px 0; font:600 12px/1.4 inherit; color:var(--ink-link, var(--link)); background:none; border:1px solid var(--line); border-radius:8px; padding:5px 12px; cursor:pointer; transition:border-color .12s,background .12s; }
   #si-confluence .sc-more:hover { border-color:var(--link); background:color-mix(in srgb,var(--link) 8%,transparent); }
   #si-confluence .tk { font-weight:700; }
   #si-confluence .num { font-variant-numeric:tabular-nums; }
-  #si-confluence .pos{ color:var(--up); } #si-confluence .neg{ color:var(--down); }
+  #si-confluence .pos{ color:var(--ink-up, var(--up)); } #si-confluence .neg{ color:var(--ink-down, var(--down)); }
   #si-confluence .scbar { display:inline-block; height:7px; border-radius:4px; background:var(--up); vertical-align:middle; }
   #si-confluence .relb { font-size:9.5px; font-weight:800; padding:0 5px; border-radius:6px; letter-spacing:.02em; vertical-align:middle; white-space:nowrap; }
-  #si-confluence .rel-low { color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 45%,transparent); }
+  #si-confluence .rel-low { color:var(--ink-orange, var(--orange)); border:1px solid color-mix(in srgb,var(--orange) 45%,transparent); }
   #si-confluence .rel-med { color:var(--muted); }
   #si-confluence .npc { color:var(--muted); font-size:10.5px; font-variant-numeric:tabular-nums; }
   #si-confluence details.thin { margin:14px 2px 0; border:1px dashed var(--line); border-radius:10px; padding:0 12px 12px; background:color-mix(in srgb,var(--orange) 4%,transparent); }
