@@ -82,6 +82,53 @@ reference does not close either:
   `plan_clock_date()`, so "past its horizon" computed by a reader disagrees with
   `phase=overtime` by construction. Held open, not cured by hiding.
 
+## Verification at the closure SHA
+
+| Harness | Result |
+|---|---|
+| `tools/verify.py` — the R3 regression floor | **138/138** |
+| `tools/verify_r4.py` — closure proofs, written **blind** to the implementation | **64/64** |
+| `tools/mutation_test.py` — do the guards actually bite? | **10/10 caught, each with a unique kill** |
+| `tools/build_ledger.py --check` | **41 record rows / 41 dispositions** |
+
+### Mutation matrix
+
+| # | Mutation | Killed by |
+|---|---|---|
+| M1 | remove the card→detail link | `R1`, `R1b` |
+| M2 | suppress the behind-the-tape disclosure | `R3b`/`R3c` ×2 langs |
+| M3 | remove progressive expansion | `R4`, `R4b`, `R4c` |
+| M4 | restore the dishonest anon gate copy | `R2[en]` |
+| M5 | revert no-chart geometry to 24px | `R5` |
+| M6 | delete the printed null label | `R5b` |
+| M7 | drop the stance axis label | `R14` |
+| M8 | put execution levels back in the table | `R15`, `R15b` |
+| M9 | re-assert the repealed `state=paid` rule | `R8` |
+| M10 | collapse the stance ramp onto `--up` | `R-E2`, `R9` ×2 |
+
+All five the brief names (M1–M5) are covered, each with a unique kill — no two mutations
+share a sole catcher, so no guard is decorative.
+
+### What writing the guards blind actually bought
+
+The closure checks were authored against the pinned contract **before** reading the
+implementation, on the principle that the author of a fix should not author its only guard.
+That produced eight disagreements with the delivered build. On adjudication **all eight were
+defects in the guards, not the build** — but two of them mattered enough to justify the whole
+approach:
+
+* `R4b` ("Show all reaches every row") was **vacuously true before the feature ran**. PRC-306
+  renders the whole partition and hides the overflow, so counting `.pvcard` nodes counted hidden
+  cards. The check asserted nothing and reported PASS.
+* `R-E4`, an **inherited R3 check**, had silently stopped measuring anything while still
+  reporting green: `getBoundingClientRect()` on a `display:none` node is all zeros, so
+  `bottom <= 844` is true, and "whole cards above the fold at 390w" went from 1 to 120 and still
+  passed its `>= 1` bound.
+
+Both are repaired and both now bite. The general trap — a render-and-hide change turning
+DOM-count and geometry guards vacuous *without* turning them red — is the thing to re-check
+first in the next cycle.
+
 ## For the next RIG cycle
 
 The resubmission is the SHA this branch produces. Start from `R4_CLOSURE_LEDGER.md` —
