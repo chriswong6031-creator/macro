@@ -1,160 +1,1676 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-08-11T01:48:44.205959+00:00",
+  "generated_at": "2026-08-13T02:16:22.861489+00:00",
   "base": {
-    "sha": "d92ddcf60740d58e8008bfe0bd4feca4a72af0f5"
+    "sha": "b7e3a2412c4a06862246d4c21ff907a3f0f647ac"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
-      "number": 5296,
-      "title": "Repair W3 playback catalog store readiness",
-      "head_ref": "codex/market-memory-w3a-live-availability-20260810",
-      "updated_at": "2026-08-11T01:45:54Z",
-      "is_draft": true,
+      "number": 5498,
+      "title": "research: nightly compute & allocation audit \u2014 the 5h30m bake, decomposed, with a P0-P2 plan",
+      "head_ref": "claude/nightly-compute-audit",
+      "updated_at": "2026-08-13T01:53:17Z",
+      "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 7,
+      "files_count": 1,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        ".github/workflows/ci.yml",
-        "app/deploy/api-setup.sh",
-        "app/deploy/update.sh",
-        "research/KONSEKI_CLEAN_ROOM_MARKET_MEMORY_AND_COGNITIVE_ARCHITECTURE_FOR_FABLE_2026-08-08.md",
-        "scripts/initialize_market_memory_w1a.py",
-        "tests/test_market_memory_context_deploy.py",
-        "tests/test_market_memory_playback_api.py"
+        "research/NIGHTLY_COMPUTE_ALLOCATION_AUDIT_2026_08_13.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5497,
+      "title": "design-system: resolve --ink-tier to the shipped literals, on measurement",
+      "head_ref": "claude/ds-ink-tier-resolution",
+      "updated_at": "2026-08-13T01:44:17Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5496,
+      "title": "feat(watchlist): W2 flagship Portfolio Intelligence workspace",
+      "head_ref": "claude/wp-w2-flagship-shell",
+      "updated_at": "2026-08-13T01:42:41Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 49,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "mockups/refs/psi/workspace/crops/impl/01_anon_empty_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/01_anon_empty_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/01_anon_empty_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/01_anon_empty_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/01_anon_empty_desktop_light_en.png",
+        "mockups/refs/psi/workspace/crops/impl/02_anon_analyzed_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/02_anon_analyzed_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/02_anon_analyzed_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/02_anon_analyzed_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/02_anon_analyzed_desktop_light_en.png",
+        "mockups/refs/psi/workspace/crops/impl/03_portfolio_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/03_portfolio_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/03_portfolio_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/03_portfolio_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/03_portfolio_desktop_light_en.png",
+        "mockups/refs/psi/workspace/crops/impl/04_watchlists_55_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/04_watchlists_55_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/04_watchlists_55_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/04_watchlists_55_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/04_watchlists_55_desktop_light_en.png",
+        "mockups/refs/psi/workspace/crops/impl/05_savechip_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/05_savechip_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/05_savechip_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/05_savechip_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/05_savechip_desktop_light_en.png",
+        "mockups/refs/psi/workspace/crops/impl/06_watchlists_100_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/06_watchlists_100_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/07_book_filter_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/07_book_filter_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/07_book_filter_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/impl/07_book_filter_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/impl/07_book_filter_desktop_light_en.png",
+        "mockups/refs/psi/workspace/crops/impl/IMPLEMENTATION_DELTAS.md",
+        "research/MASTERMIND_WATCHLIST_PORTFOLIO_W0_COMMISSIONING_PACKET_2026-08-12.md",
+        "site/market_books.js",
+        "site/portfolio.js",
+        "site/stockdata.js",
+        "site/watchlist.js",
+        "site/watchlist_risk.js",
+        "site/watchstore.js",
+        "templates/market_books.js",
+        "templates/portfolio.js",
+        "templates/stockdata.js",
+        "templates/watchlist.html.j2",
+        "templates/watchlist.js",
+        "templates/watchlist_risk.js",
+        "templates/watchstore.js",
+        "tests/test_watchlist_workspace_js.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5495,
+      "title": "fix(close-pass): the evening board lane has NEVER been green \u2014 it fails its own proof step",
+      "head_ref": "claude/fix-close-pass-ledger-selfcheck",
+      "updated_at": "2026-08-13T01:37:07Z",
+      "is_draft": false,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/close-pass.yml",
+        "tests/test_close_pass_lane.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/close-pass.yml"
+      ]
+    },
+    {
+      "number": 5494,
+      "title": "law: a CI handoff RELEASES a worker from waiting \u2014 it does not END the session",
+      "head_ref": "claude/drop-terminal-handoff",
+      "updated_at": "2026-08-13T01:31:51Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".claude/hooks/gh_quota_guard.py",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "scripts/ci_handoff.py",
+        "tests/test_gh_quota_guard.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5493,
+      "title": "ci: consolidate odometer light-mode suite to one canonical home (unrun-page-guards)",
+      "head_ref": "claude/dedupe-odometer-ci-wiring",
+      "updated_at": "2026-08-13T01:53:58Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
       ],
       "protected_paths_touched": [
         ".github/workflows/ci.yml"
       ]
     },
     {
-      "number": 5295,
-      "title": "prophet(us): lossless candidate-pool lanes + dated pool store (CN-parity, display-tier)",
-      "head_ref": "prophet-us-candidate-pool-lanes",
-      "updated_at": "2026-08-11T01:40:26Z",
+      "number": 5492,
+      "title": "ops: port the CN lane's cron redundancy to the US nightly",
+      "head_ref": "claude/nightly-backstop",
+      "updated_at": "2026-08-13T01:50:42Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 8,
+      "files_count": 5,
       "files_truncated": false,
       "files_error": false,
       "files": [
         ".github/ci/legacy-jobs.yml",
-        "config/synapse.yml",
-        "data/us_prophet_rank/README.md",
-        "engine/prophet_bridge.py",
-        "engine/us_candidate_lanes.py",
-        "engine/us_context_vector.py",
-        "scripts/build_stock_library.py",
-        "tests/test_us_candidate_lanes.py"
+        ".github/workflows/ci.yml",
+        ".github/workflows/nightly-backstop.yml",
+        "scripts/nightly_backstop.py",
+        "tests/test_nightly_backstop.py"
       ],
       "protected_paths_touched": [
-        "config/synapse.yml"
+        ".github/workflows/ci.yml",
+        ".github/workflows/nightly-backstop.yml"
       ]
     },
     {
-      "number": 5294,
-      "title": "prophet(us): force-majeure outage backfill \u2014 receipted 2026-08-09 origination replay (operator 2026-08-11)",
-      "head_ref": "claude/prophet-outage-backfill-2026-08-09",
-      "updated_at": "2026-08-11T01:47:45Z",
+      "number": 5491,
+      "title": "research: Sol decision packet for \u00a7J.9 (count ladder)",
+      "head_ref": "claude/sol-j9-decision-packet",
+      "updated_at": "2026-08-13T01:29:35Z",
       "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/DESIGN_MIGRATION_FACTORY_V1.md",
+        "research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md",
+        "research/P0_REFERENCE_EXPERIENCE_DESIGN_PACKET.md",
+        "research/SOL_DECISION_PACKET_J9_COUNT_LADDER.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5488,
+      "title": "hooks: deny cancelling a production lane \u2014 the prose law did not bind on 2026-08-12",
+      "head_ref": "claude/protect-production-lanes",
+      "updated_at": "2026-08-13T01:20:51Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".claude/hooks/gh_quota_guard.py",
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5487,
+      "title": "ops: nightly-liveness dead-man switch \u2014 the US bake went dark for two sessions and nothing reported it",
+      "head_ref": "claude/nightly-liveness-watchdog",
+      "updated_at": "2026-08-13T01:05:44Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
       "files_count": 6,
       "files_truncated": false,
       "files_error": false,
       "files": [
         ".github/ci/legacy-jobs.yml",
-        "research/PROPHET_LEDGER_SCHEMA.md",
-        "research/PROPHET_OUTAGE_BACKFILL_2026_08.md",
-        "scripts/backfill_prophet_outage.py",
-        "scripts/build_prophet.py",
-        "tests/test_prophet_outage_backfill.py"
+        ".github/workflows/ci.yml",
+        ".github/workflows/nightly-liveness.yml",
+        "config/house_law_checks.yml",
+        "scripts/check_nightly_liveness.py",
+        "tests/test_nightly_liveness.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/nightly-liveness.yml",
+        "scripts/check_nightly_liveness.py"
+      ]
+    },
+    {
+      "number": 5486,
+      "title": "feat(design-system): DS-PR-1 \u2014 archetype re-key + design_system schema + ratchet R0 (report-only)",
+      "head_ref": "claude/ds-pr-1-registry-ratchet",
+      "updated_at": "2026-08-13T00:24:59Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 10,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "config/house_law_checks.yml",
+        "config/product_experience/page_registry_overrides.yml",
+        "data/product_experience/page_registry.json",
+        "docs/HOUSE_LAW_CI_GUARD_SUITE.md",
+        "scripts/build_product_page_registry.py",
+        "scripts/check_design_system.py",
+        "tests/test_build_product_page_registry.py",
+        "tests/test_check_design_system.py",
+        "tests/test_page_registry_design_system.py"
+      ],
+      "protected_paths_touched": [
+        "scripts/check_design_system.py"
+      ]
+    },
+    {
+      "number": 5485,
+      "title": "Mastermind Data OS: canonical identity, temporal and price-basis spine + 7 specifications",
+      "head_ref": "claude/mastermind-data-os-arch-20260812",
+      "updated_at": "2026-08-13T02:02:20Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 23,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        "config/dataset_registry.yml",
+        "lib/dataos/__init__.py",
+        "lib/dataos/identity.py",
+        "lib/dataos/nulls.py",
+        "lib/dataos/price.py",
+        "lib/dataos/quality.py",
+        "lib/dataos/registry.py",
+        "lib/dataos/temporal.py",
+        "research/MASTERMIND_DATA_CONTRACTS.md",
+        "research/MASTERMIND_DATA_OS_ARCHITECTURE.md",
+        "research/MASTERMIND_DATA_OS_V1_IMPLEMENTATION_PLAN.md",
+        "research/MASTERMIND_DATA_QUALITY_FRAMEWORK.md",
+        "research/MASTERMIND_DATA_SOURCE_CATALOG.md",
+        "research/MASTERMIND_SECURITY_MASTER_SPEC.md",
+        "research/MASTERMIND_TEMPORAL_DATA_STANDARD.md",
+        "tests/test_dataos_identity.py",
+        "tests/test_dataos_nulls.py",
+        "tests/test_dataos_price.py",
+        "tests/test_dataos_quality.py",
+        "tests/test_dataos_registry.py",
+        "tests/test_dataos_temporal.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 5483,
+      "title": "Preserve main ref during render checkout compaction",
+      "head_ref": "codex/render-checkout-branch-ref-20260812",
+      "updated_at": "2026-08-12T23:56:02Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/render.yml",
+        "tests/test_render_checkout_bound.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/render.yml"
+      ]
+    },
+    {
+      "number": 5479,
+      "title": "ui: full-estate UI/UX audit \u2014 light mode fixed as a design, not a token swap",
+      "head_ref": "claude/website-ui-ux-audit-20260812",
+      "updated_at": "2026-08-13T01:44:15Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 100,
+      "files_truncated": true,
+      "files_error": false,
+      "files": [
+        "engine/narrative_rotation.py",
+        "scripts/build_bonds.py",
+        "scripts/build_china_masterminds.py",
+        "scripts/build_commodities.py",
+        "scripts/build_forex.py",
+        "scripts/build_masterminds.py",
+        "scripts/build_spr.py",
+        "scripts/build_strategies.py",
+        "scripts/build_transmission.py",
+        "scripts/build_vector.py",
+        "site/about.html",
+        "site/account.js",
+        "site/ai_desk.js",
+        "site/allocation_scorecard.js",
+        "site/assets/css/2a5add2c.css",
+        "site/assets/css/7fb70c63.css",
+        "site/assets/css/cf679c4a.css",
+        "site/baskets_desk.js",
+        "site/chat.css",
+        "site/chat.html",
+        "site/desk_watch.js",
+        "site/forming_narratives.js",
+        "site/fundamental_forensics.css",
+        "site/heatmap.js",
+        "site/illus.css",
+        "site/index.html",
+        "site/landing.css",
+        "site/live.js",
+        "site/macro-desk.css",
+        "site/mastermind.js",
+        "site/navigation-refresh.css",
+        "site/onboard.css",
+        "site/plans.html",
+        "site/release_publications_live.js",
+        "site/rotation_events.js",
+        "site/sector_cycles.css",
+        "site/stock_seasonality.css",
+        "site/stocktable.js",
+        "site/subsector_rotation.js",
+        "site/subsectors.js",
+        "site/subsectors_china.js",
+        "site/support.html",
+        "site/theme.css",
+        "site/theme.js",
+        "site/tier_preview.css",
+        "site/time_machine.js",
+        "site/unsubscribe.html",
+        "site/wh_banner.js",
+        "templates/_aibrief_css.j2",
+        "templates/_baskets_desk.html.j2",
+        "templates/_china_act_now_board.html.j2",
+        "templates/_cmd_hero.css.j2",
+        "templates/_crypto_house_style.html.j2",
+        "templates/_decision_card.html.j2",
+        "templates/_desk_grader_panel.html.j2",
+        "templates/_etf_trim_rows.html.j2",
+        "templates/_icons.html.j2",
+        "templates/_ignition_radar_card.css.j2",
+        "templates/_lens.html.j2",
+        "templates/_mag7_panel.css.j2",
+        "templates/_market_state.css.j2",
+        "templates/_prophet_card.html.j2",
+        "templates/_state_inks.html.j2",
+        "templates/_stock_decision.css.j2",
+        "templates/_stocks_header_css.html.j2",
+        "templates/_track_record_dlg.html.j2",
+        "templates/_us_act_now_board.html.j2",
+        "templates/_vector_polish.html.j2",
+        "templates/about.html",
+        "templates/account.js",
+        "templates/active_detail.html.j2",
+        "templates/advanced.html.j2",
+        "templates/ai_desk.html.j2",
+        "templates/ai_desk.js",
+        "templates/aibrief.html.j2",
+        "templates/alerts.html.j2",
+        "templates/allocation.html.j2",
+        "templates/allocation_scorecard.js",
+        "templates/alt_data.html.j2",
+        "templates/anticipation.html.j2",
+        "templates/article_base.html.j2",
+        "templates/basket_detail.html.j2",
+        "templates/baskets.html.j2",
+        "templates/baskets_canada.html.j2",
+        "templates/baskets_china.html.j2",
+        "templates/baskets_china_factorwatch.html.j2",
+        "templates/baskets_desk.js",
+        "templates/baskets_hk.html.j2",
+        "templates/baskets_intl.html.j2",
+        "templates/bonds.html.j2",
+        "templates/btc_strategy.html.j2",
+        "templates/canada.html.j2",
+        "templates/canada_history.html.j2",
+        "templates/canada_sector.html.j2",
+        "templates/canada_stock.html.j2",
+        "templates/chat.css",
+        "templates/chat.html",
+        "templates/china.html.j2",
+        "templates/china_allocation.html.j2",
+        "templates/china_altdata.html.j2"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 5292,
-      "title": "feat(price-pressure): \u00a710.1 VIXCLS stamp-completion pass + immutable receipts",
-      "head_ref": "claude/pressure-vix-completion",
-      "updated_at": "2026-08-11T01:24:46Z",
+      "number": 5478,
+      "title": "fix(holdings): a currency-shaped ticker is evidence, not a verdict (\u00a76c m12 audit)",
+      "head_ref": "claude/holdings-currency-false-positive-20260812",
+      "updated_at": "2026-08-12T17:32:10Z",
       "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 9,
-      "files_truncated": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 100,
+      "files_truncated": true,
       "files_error": false,
       "files": [
+        ".env.example",
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "collectors/etf_holdings.py",
+        "collectors/holdings.py",
+        "config.yml",
         "config/dag.yml",
-        "config/synapse.yml",
-        "engine/price_pressure/__init__.py",
-        "engine/price_pressure/completion.py",
-        "engine/price_pressure/context.py",
-        "engine/price_pressure/ledger.py",
-        "engine/price_pressure/pipeline.py",
-        "scripts/build_price_pressure.py",
-        "tests/test_price_pressure.py"
+        "data/etf_holdings/BATT/2025-09-25.parquet",
+        "data/etf_holdings/BATT/2025-09-30.parquet",
+        "data/etf_holdings/BATT/2025-10-06.parquet",
+        "data/etf_holdings/BATT/2025-10-07.parquet",
+        "data/etf_holdings/BATT/2025-10-08.parquet",
+        "data/etf_holdings/BATT/2025-10-09.parquet",
+        "data/etf_holdings/BATT/2025-10-10.parquet",
+        "data/etf_holdings/BATT/2025-10-13.parquet",
+        "data/etf_holdings/BATT/2025-10-14.parquet",
+        "data/etf_holdings/BATT/2025-10-15.parquet",
+        "data/etf_holdings/BATT/2025-10-16.parquet",
+        "data/etf_holdings/BATT/2025-10-17.parquet",
+        "data/etf_holdings/BATT/2025-10-20.parquet",
+        "data/etf_holdings/BATT/2025-10-21.parquet",
+        "data/etf_holdings/BATT/2025-10-22.parquet",
+        "data/etf_holdings/BATT/2025-10-23.parquet",
+        "data/etf_holdings/BATT/2025-10-24.parquet",
+        "data/etf_holdings/BATT/2025-10-27.parquet",
+        "data/etf_holdings/BATT/2025-10-28.parquet",
+        "data/etf_holdings/BATT/2025-10-29.parquet",
+        "data/etf_holdings/BATT/2025-10-30.parquet",
+        "data/etf_holdings/BATT/2025-10-31.parquet",
+        "data/etf_holdings/BATT/2025-11-03.parquet",
+        "data/etf_holdings/BATT/2025-12-17.parquet",
+        "data/etf_holdings/BATT/2025-12-18.parquet",
+        "data/etf_holdings/BATT/2025-12-19.parquet",
+        "data/etf_holdings/BATT/2025-12-22.parquet",
+        "data/etf_holdings/BATT/2025-12-23.parquet",
+        "data/etf_holdings/BATT/2025-12-24.parquet",
+        "data/etf_holdings/BATT/2025-12-26.parquet",
+        "data/etf_holdings/BATT/2025-12-29.parquet",
+        "data/etf_holdings/BATT/2025-12-30.parquet",
+        "data/etf_holdings/BATT/2025-12-31.parquet",
+        "data/etf_holdings/BATT/2026-01-02.parquet",
+        "data/etf_holdings/BATT/2026-01-05.parquet",
+        "data/etf_holdings/BATT/2026-01-06.parquet",
+        "data/etf_holdings/BATT/2026-01-07.parquet",
+        "data/etf_holdings/BATT/2026-01-08.parquet",
+        "data/etf_holdings/BATT/2026-01-09.parquet",
+        "data/etf_holdings/BATT/2026-01-12.parquet",
+        "data/etf_holdings/BATT/2026-01-13.parquet",
+        "data/etf_holdings/BATT/2026-01-14.parquet",
+        "data/etf_holdings/BATT/2026-01-15.parquet",
+        "data/etf_holdings/BATT/2026-01-16.parquet",
+        "data/etf_holdings/BATT/2026-01-20.parquet",
+        "data/etf_holdings/BATT/2026-01-21.parquet",
+        "data/etf_holdings/BATT/2026-01-22.parquet",
+        "data/etf_holdings/BATT/2026-01-23.parquet",
+        "data/etf_holdings/BATT/2026-01-26.parquet",
+        "data/etf_holdings/BATT/2026-01-27.parquet",
+        "data/etf_holdings/BATT/2026-01-28.parquet",
+        "data/etf_holdings/BATT/2026-01-29.parquet",
+        "data/etf_holdings/BATT/2026-01-30.parquet",
+        "data/etf_holdings/BATT/2026-02-02.parquet",
+        "data/etf_holdings/BATT/2026-02-03.parquet",
+        "data/etf_holdings/BATT/2026-02-04.parquet",
+        "data/etf_holdings/BATT/2026-02-05.parquet",
+        "data/etf_holdings/BATT/2026-02-06.parquet",
+        "data/etf_holdings/BATT/2026-02-09.parquet",
+        "data/etf_holdings/BATT/2026-02-10.parquet",
+        "data/etf_holdings/BATT/2026-02-11.parquet",
+        "data/etf_holdings/BATT/2026-02-12.parquet",
+        "data/etf_holdings/BATT/2026-02-13.parquet",
+        "data/etf_holdings/BATT/2026-02-17.parquet",
+        "data/etf_holdings/BATT/2026-02-18.parquet",
+        "data/etf_holdings/BATT/2026-02-19.parquet",
+        "data/etf_holdings/BATT/2026-02-20.parquet",
+        "data/etf_holdings/BATT/2026-02-23.parquet",
+        "data/etf_holdings/BATT/2026-02-24.parquet",
+        "data/etf_holdings/BATT/2026-02-25.parquet",
+        "data/etf_holdings/BATT/2026-02-26.parquet",
+        "data/etf_holdings/BATT/2026-02-27.parquet",
+        "data/etf_holdings/BATT/2026-03-02.parquet",
+        "data/etf_holdings/BATT/2026-03-03.parquet",
+        "data/etf_holdings/BATT/2026-03-04.parquet",
+        "data/etf_holdings/BATT/2026-03-05.parquet",
+        "data/etf_holdings/BATT/2026-03-06.parquet",
+        "data/etf_holdings/BATT/2026-03-09.parquet",
+        "data/etf_holdings/BATT/2026-03-10.parquet",
+        "data/etf_holdings/BATT/2026-03-11.parquet",
+        "data/etf_holdings/BATT/2026-03-12.parquet",
+        "data/etf_holdings/BATT/2026-03-13.parquet",
+        "data/etf_holdings/BATT/2026-03-16.parquet",
+        "data/etf_holdings/BATT/2026-03-17.parquet",
+        "data/etf_holdings/BATT/2026-03-18.parquet",
+        "data/etf_holdings/BATT/2026-03-19.parquet",
+        "data/etf_holdings/BATT/2026-03-20.parquet",
+        "data/etf_holdings/BATT/2026-03-23.parquet",
+        "data/etf_holdings/BATT/2026-03-24.parquet",
+        "data/etf_holdings/BATT/2026-03-25.parquet",
+        "data/etf_holdings/BATT/2026-03-26.parquet",
+        "data/etf_holdings/BATT/2026-03-27.parquet",
+        "data/etf_holdings/BATT/2026-03-30.parquet"
       ],
       "protected_paths_touched": [
-        "config/dag.yml",
-        "config/synapse.yml"
+        ".github/workflows/daily.yml",
+        "config/dag.yml"
       ]
     },
     {
-      "number": 5291,
-      "title": "marketing voice v5: the read is in the selection, not a performed reaction",
-      "head_ref": "claude/marketing-voice-v5",
-      "updated_at": "2026-08-11T01:39:32Z",
+      "number": 5477,
+      "title": "feat(etfs): W3 \u2014 Amplify SILJ/BATT, NCLD on a declared nav_equity_frac, and the government-sweep sleeve leaking into 13 funds",
+      "head_ref": "claude/etf-amplify-navfrac-20260812",
+      "updated_at": "2026-08-12T17:29:19Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 100,
+      "files_truncated": true,
+      "files_error": false,
+      "files": [
+        ".env.example",
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "collectors/etf_holdings.py",
+        "collectors/holdings.py",
+        "config.yml",
+        "config/dag.yml",
+        "data/etf_holdings/BATT/2025-09-25.parquet",
+        "data/etf_holdings/BATT/2025-09-30.parquet",
+        "data/etf_holdings/BATT/2025-10-06.parquet",
+        "data/etf_holdings/BATT/2025-10-07.parquet",
+        "data/etf_holdings/BATT/2025-10-08.parquet",
+        "data/etf_holdings/BATT/2025-10-09.parquet",
+        "data/etf_holdings/BATT/2025-10-10.parquet",
+        "data/etf_holdings/BATT/2025-10-13.parquet",
+        "data/etf_holdings/BATT/2025-10-14.parquet",
+        "data/etf_holdings/BATT/2025-10-15.parquet",
+        "data/etf_holdings/BATT/2025-10-16.parquet",
+        "data/etf_holdings/BATT/2025-10-17.parquet",
+        "data/etf_holdings/BATT/2025-10-20.parquet",
+        "data/etf_holdings/BATT/2025-10-21.parquet",
+        "data/etf_holdings/BATT/2025-10-22.parquet",
+        "data/etf_holdings/BATT/2025-10-23.parquet",
+        "data/etf_holdings/BATT/2025-10-24.parquet",
+        "data/etf_holdings/BATT/2025-10-27.parquet",
+        "data/etf_holdings/BATT/2025-10-28.parquet",
+        "data/etf_holdings/BATT/2025-10-29.parquet",
+        "data/etf_holdings/BATT/2025-10-30.parquet",
+        "data/etf_holdings/BATT/2025-10-31.parquet",
+        "data/etf_holdings/BATT/2025-11-03.parquet",
+        "data/etf_holdings/BATT/2025-12-17.parquet",
+        "data/etf_holdings/BATT/2025-12-18.parquet",
+        "data/etf_holdings/BATT/2025-12-19.parquet",
+        "data/etf_holdings/BATT/2025-12-22.parquet",
+        "data/etf_holdings/BATT/2025-12-23.parquet",
+        "data/etf_holdings/BATT/2025-12-24.parquet",
+        "data/etf_holdings/BATT/2025-12-26.parquet",
+        "data/etf_holdings/BATT/2025-12-29.parquet",
+        "data/etf_holdings/BATT/2025-12-30.parquet",
+        "data/etf_holdings/BATT/2025-12-31.parquet",
+        "data/etf_holdings/BATT/2026-01-02.parquet",
+        "data/etf_holdings/BATT/2026-01-05.parquet",
+        "data/etf_holdings/BATT/2026-01-06.parquet",
+        "data/etf_holdings/BATT/2026-01-07.parquet",
+        "data/etf_holdings/BATT/2026-01-08.parquet",
+        "data/etf_holdings/BATT/2026-01-09.parquet",
+        "data/etf_holdings/BATT/2026-01-12.parquet",
+        "data/etf_holdings/BATT/2026-01-13.parquet",
+        "data/etf_holdings/BATT/2026-01-14.parquet",
+        "data/etf_holdings/BATT/2026-01-15.parquet",
+        "data/etf_holdings/BATT/2026-01-16.parquet",
+        "data/etf_holdings/BATT/2026-01-20.parquet",
+        "data/etf_holdings/BATT/2026-01-21.parquet",
+        "data/etf_holdings/BATT/2026-01-22.parquet",
+        "data/etf_holdings/BATT/2026-01-23.parquet",
+        "data/etf_holdings/BATT/2026-01-26.parquet",
+        "data/etf_holdings/BATT/2026-01-27.parquet",
+        "data/etf_holdings/BATT/2026-01-28.parquet",
+        "data/etf_holdings/BATT/2026-01-29.parquet",
+        "data/etf_holdings/BATT/2026-01-30.parquet",
+        "data/etf_holdings/BATT/2026-02-02.parquet",
+        "data/etf_holdings/BATT/2026-02-03.parquet",
+        "data/etf_holdings/BATT/2026-02-04.parquet",
+        "data/etf_holdings/BATT/2026-02-05.parquet",
+        "data/etf_holdings/BATT/2026-02-06.parquet",
+        "data/etf_holdings/BATT/2026-02-09.parquet",
+        "data/etf_holdings/BATT/2026-02-10.parquet",
+        "data/etf_holdings/BATT/2026-02-11.parquet",
+        "data/etf_holdings/BATT/2026-02-12.parquet",
+        "data/etf_holdings/BATT/2026-02-13.parquet",
+        "data/etf_holdings/BATT/2026-02-17.parquet",
+        "data/etf_holdings/BATT/2026-02-18.parquet",
+        "data/etf_holdings/BATT/2026-02-19.parquet",
+        "data/etf_holdings/BATT/2026-02-20.parquet",
+        "data/etf_holdings/BATT/2026-02-23.parquet",
+        "data/etf_holdings/BATT/2026-02-24.parquet",
+        "data/etf_holdings/BATT/2026-02-25.parquet",
+        "data/etf_holdings/BATT/2026-02-26.parquet",
+        "data/etf_holdings/BATT/2026-02-27.parquet",
+        "data/etf_holdings/BATT/2026-03-02.parquet",
+        "data/etf_holdings/BATT/2026-03-03.parquet",
+        "data/etf_holdings/BATT/2026-03-04.parquet",
+        "data/etf_holdings/BATT/2026-03-05.parquet",
+        "data/etf_holdings/BATT/2026-03-06.parquet",
+        "data/etf_holdings/BATT/2026-03-09.parquet",
+        "data/etf_holdings/BATT/2026-03-10.parquet",
+        "data/etf_holdings/BATT/2026-03-11.parquet",
+        "data/etf_holdings/BATT/2026-03-12.parquet",
+        "data/etf_holdings/BATT/2026-03-13.parquet",
+        "data/etf_holdings/BATT/2026-03-16.parquet",
+        "data/etf_holdings/BATT/2026-03-17.parquet",
+        "data/etf_holdings/BATT/2026-03-18.parquet",
+        "data/etf_holdings/BATT/2026-03-19.parquet",
+        "data/etf_holdings/BATT/2026-03-20.parquet",
+        "data/etf_holdings/BATT/2026-03-23.parquet",
+        "data/etf_holdings/BATT/2026-03-24.parquet",
+        "data/etf_holdings/BATT/2026-03-25.parquet",
+        "data/etf_holdings/BATT/2026-03-26.parquet",
+        "data/etf_holdings/BATT/2026-03-27.parquet",
+        "data/etf_holdings/BATT/2026-03-30.parquet"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml"
+      ]
+    },
+    {
+      "number": 5475,
+      "title": "chore(design-system): DS-PR-2 \u2014 design-migration PR template + harness forced-state capture",
+      "head_ref": "claude/ds-pr-2-review-wiring",
+      "updated_at": "2026-08-13T00:30:52Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 31,
+      "files_count": 4,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "config/marketing.yml",
-        "config/personas/flagship.yml",
-        "config/personas/founder.yml",
-        "config/personas/kelly.yml",
-        "config/personas/sophia.yml",
-        "docs/marketing_voice_doctrine_v5.md",
-        "engine/marketing/attention_source.py",
-        "engine/marketing/congress_feed.py",
-        "engine/marketing/content_studio.py",
+        ".github/PULL_REQUEST_TEMPLATE/design_migration.md",
+        "docs/product_experience/PAGE_EVIDENCE_HARNESS.md",
+        "scripts/capture_page_evidence.py",
+        "tests/test_capture_page_evidence.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5474,
+      "title": "fix(holdings): drop index-futures overlays from the equity book (\u00a76c m17)",
+      "head_ref": "claude/futures-class-predicate-20260812",
+      "updated_at": "2026-08-12T17:23:46Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 100,
+      "files_truncated": true,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "collectors/etf_holdings.py",
+        "collectors/holdings.py",
+        "config.yml",
+        "config/dag.yml",
+        "data/etf_holdings/BBH/2026-08-11.parquet",
+        "data/etf_holdings/BKCH/2026-04-09.parquet",
+        "data/etf_holdings/BKCH/2026-04-10.parquet",
+        "data/etf_holdings/BKCH/2026-04-13.parquet",
+        "data/etf_holdings/BKCH/2026-04-14.parquet",
+        "data/etf_holdings/BKCH/2026-04-15.parquet",
+        "data/etf_holdings/BKCH/2026-04-16.parquet",
+        "data/etf_holdings/BKCH/2026-04-17.parquet",
+        "data/etf_holdings/BKCH/2026-04-20.parquet",
+        "data/etf_holdings/BKCH/2026-04-21.parquet",
+        "data/etf_holdings/BKCH/2026-04-22.parquet",
+        "data/etf_holdings/BKCH/2026-04-23.parquet",
+        "data/etf_holdings/BKCH/2026-04-24.parquet",
+        "data/etf_holdings/BKCH/2026-04-27.parquet",
+        "data/etf_holdings/BKCH/2026-04-28.parquet",
+        "data/etf_holdings/BKCH/2026-04-29.parquet",
+        "data/etf_holdings/BKCH/2026-04-30.parquet",
+        "data/etf_holdings/BKCH/2026-05-01.parquet",
+        "data/etf_holdings/BKCH/2026-05-04.parquet",
+        "data/etf_holdings/BKCH/2026-05-05.parquet",
+        "data/etf_holdings/BKCH/2026-05-06.parquet",
+        "data/etf_holdings/BKCH/2026-05-07.parquet",
+        "data/etf_holdings/BKCH/2026-05-08.parquet",
+        "data/etf_holdings/BKCH/2026-05-11.parquet",
+        "data/etf_holdings/BKCH/2026-05-12.parquet",
+        "data/etf_holdings/BKCH/2026-05-13.parquet",
+        "data/etf_holdings/BKCH/2026-05-14.parquet",
+        "data/etf_holdings/BKCH/2026-05-15.parquet",
+        "data/etf_holdings/BKCH/2026-05-18.parquet",
+        "data/etf_holdings/BKCH/2026-05-19.parquet",
+        "data/etf_holdings/BKCH/2026-05-20.parquet",
+        "data/etf_holdings/BKCH/2026-05-21.parquet",
+        "data/etf_holdings/BKCH/2026-05-22.parquet",
+        "data/etf_holdings/BKCH/2026-05-26.parquet",
+        "data/etf_holdings/BKCH/2026-05-27.parquet",
+        "data/etf_holdings/BKCH/2026-05-28.parquet",
+        "data/etf_holdings/BKCH/2026-05-29.parquet",
+        "data/etf_holdings/BKCH/2026-06-01.parquet",
+        "data/etf_holdings/BKCH/2026-06-02.parquet",
+        "data/etf_holdings/BKCH/2026-06-03.parquet",
+        "data/etf_holdings/BKCH/2026-06-04.parquet",
+        "data/etf_holdings/BKCH/2026-06-05.parquet",
+        "data/etf_holdings/BKCH/2026-06-08.parquet",
+        "data/etf_holdings/BKCH/2026-06-09.parquet",
+        "data/etf_holdings/BKCH/2026-06-10.parquet",
+        "data/etf_holdings/BKCH/2026-06-11.parquet",
+        "data/etf_holdings/BKCH/2026-06-12.parquet",
+        "data/etf_holdings/BKCH/2026-06-15.parquet",
+        "data/etf_holdings/BKCH/2026-06-16.parquet",
+        "data/etf_holdings/BKCH/2026-06-17.parquet",
+        "data/etf_holdings/BKCH/2026-06-18.parquet",
+        "data/etf_holdings/BKCH/2026-06-22.parquet",
+        "data/etf_holdings/BKCH/2026-06-23.parquet",
+        "data/etf_holdings/BKCH/2026-06-24.parquet",
+        "data/etf_holdings/BKCH/2026-06-25.parquet",
+        "data/etf_holdings/BKCH/2026-06-26.parquet",
+        "data/etf_holdings/BKCH/2026-06-29.parquet",
+        "data/etf_holdings/BKCH/2026-06-30.parquet",
+        "data/etf_holdings/BKCH/2026-07-01.parquet",
+        "data/etf_holdings/BKCH/2026-07-02.parquet",
+        "data/etf_holdings/BKCH/2026-07-06.parquet",
+        "data/etf_holdings/BKCH/2026-07-07.parquet",
+        "data/etf_holdings/BKCH/2026-07-08.parquet",
+        "data/etf_holdings/BKCH/2026-07-09.parquet",
+        "data/etf_holdings/BKCH/2026-07-10.parquet",
+        "data/etf_holdings/BKCH/2026-07-13.parquet",
+        "data/etf_holdings/BKCH/2026-07-14.parquet",
+        "data/etf_holdings/BKCH/2026-07-15.parquet",
+        "data/etf_holdings/BKCH/2026-07-16.parquet",
+        "data/etf_holdings/BKCH/2026-07-17.parquet",
+        "data/etf_holdings/BKCH/2026-07-20.parquet",
+        "data/etf_holdings/BKCH/2026-07-21.parquet",
+        "data/etf_holdings/BKCH/2026-07-22.parquet",
+        "data/etf_holdings/BKCH/2026-07-23.parquet",
+        "data/etf_holdings/BKCH/2026-07-24.parquet",
+        "data/etf_holdings/BKCH/2026-07-27.parquet",
+        "data/etf_holdings/BKCH/2026-07-28.parquet",
+        "data/etf_holdings/BKCH/2026-07-29.parquet",
+        "data/etf_holdings/BKCH/2026-07-30.parquet",
+        "data/etf_holdings/BKCH/2026-07-31.parquet",
+        "data/etf_holdings/BKCH/2026-08-03.parquet",
+        "data/etf_holdings/BKCH/2026-08-04.parquet",
+        "data/etf_holdings/BKCH/2026-08-05.parquet",
+        "data/etf_holdings/BKCH/2026-08-06.parquet",
+        "data/etf_holdings/BKCH/2026-08-07.parquet",
+        "data/etf_holdings/BKCH/2026-08-10.parquet",
+        "data/etf_holdings/BKCH/2026-08-11.parquet",
+        "data/etf_holdings/CIBR/2026-08-11.parquet",
+        "data/etf_holdings/CNRG/2026-08-11.parquet",
+        "data/etf_holdings/COPJ/2026-08-12.parquet",
+        "data/etf_holdings/CTEC/2026-04-09.parquet",
+        "data/etf_holdings/CTEC/2026-04-10.parquet",
+        "data/etf_holdings/CTEC/2026-04-13.parquet",
+        "data/etf_holdings/CTEC/2026-04-14.parquet"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml"
+      ]
+    },
+    {
+      "number": 5472,
+      "title": "agent-os: architecture + Phase 0 knowledge plane",
+      "head_ref": "worktree-mastermind-agent-ceo-control-9b4772",
+      "updated_at": "2026-08-13T02:14:45Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 41,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        ".gitignore",
+        "agentos/README.md",
+        "agentos/decisions/DEC-AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY.md",
+        "agentos/decisions/DEC-AGENTOS-CXI-R12-OVERRULED.md",
+        "agentos/decisions/DEC-AGENTOS-DECISION-MEMORY-STAYS-SEPARATE.md",
+        "agentos/decisions/DEC-AGENTOS-FILE-PER-RECORD.md",
+        "agentos/decisions/DEC-AGENTOS-HOME-IS-MACRO.md",
+        "agentos/decisions/DEC-AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR.md",
+        "agentos/decisions/DEC-AGENTOS-NO-TASK-STORE.md",
+        "agentos/decisions/DEC-AGENTOS-READINESS-FEEDS-THE-AGENDA.md",
+        "agentos/decisions/DEC-AGENTOS-START-NEXT-VS-AGENDA.md",
+        "agentos/discoveries/DSC-CENSUS-POSTDATES-PHASE1B.md",
+        "agentos/discoveries/DSC-EXECUTIVE-OS-NO-PROGRAM-ROW.md",
+        "agentos/discoveries/DSC-GOVERNANCE-JSONL-NOT-TRACKED.md",
+        "agentos/handoffs/.gitkeep",
+        "agentos/schema/decision.schema.yml",
+        "agentos/schema/discovery.schema.yml",
+        "agentos/schema/handoff.schema.yml",
+        "agentos/schema/workstream.schema.yml",
+        "agentos/workstreams/WS-AGENT-OS.md",
+        "agentos/workstreams/WS-CN-LIMIT-ALPHA.md",
+        "agentos/workstreams/WS-GMI-THEME-GRAPH.md",
+        "agentos/workstreams/WS-MACRO-CONTEXT-INDEX.md",
+        "agentos/workstreams/WS-PROPHET-US-ENTRY-TIMING.md",
+        "agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md",
+        "config/compiled_kill_registry.yml",
+        "config/signal_foundry_blocklist.yml",
+        "data/governance/agent_os_state.json",
+        "docs/AGENT_OS_STATE.md",
+        "research/DO_NOT_REBUILD.md",
+        "research/MASTERMIND_AGENT_HANDOFF_PROTOCOL.md",
+        "research/MASTERMIND_AGENT_OS_ARCHITECTURE.md",
+        "research/MASTERMIND_AGENT_OS_STATE_SCHEMA.md",
+        "research/MASTERMIND_AGENT_OS_V1_IMPLEMENTATION_PLAN.md",
+        "research/MASTERMIND_CEO_BRIEF_SPEC.md",
+        "scripts/agentos.py",
+        "scripts/build_active_build_map.py",
+        "tests/test_agentos_schema.py",
+        "tests/test_agentos_status.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "data/governance/agent_os_state.json"
+      ]
+    },
+    {
+      "number": 5467,
+      "title": "feat(etfs): Fund Flows upgrade \u2014 decomposition engine, 105-fund universe, weighting lens, ledger, UI refresh",
+      "head_ref": "claude/etf-page-upgrade-20260812",
+      "updated_at": "2026-08-13T02:01:51Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 100,
+      "files_truncated": true,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "collectors/etf_holdings.py",
+        "collectors/holdings.py",
+        "config.yml",
+        "config/dag.yml",
+        "data/etf_holdings/BBH/2026-08-11.parquet",
+        "data/etf_holdings/BKCH/2026-04-09.parquet",
+        "data/etf_holdings/BKCH/2026-04-10.parquet",
+        "data/etf_holdings/BKCH/2026-04-13.parquet",
+        "data/etf_holdings/BKCH/2026-04-14.parquet",
+        "data/etf_holdings/BKCH/2026-04-15.parquet",
+        "data/etf_holdings/BKCH/2026-04-16.parquet",
+        "data/etf_holdings/BKCH/2026-04-17.parquet",
+        "data/etf_holdings/BKCH/2026-04-20.parquet",
+        "data/etf_holdings/BKCH/2026-04-21.parquet",
+        "data/etf_holdings/BKCH/2026-04-22.parquet",
+        "data/etf_holdings/BKCH/2026-04-23.parquet",
+        "data/etf_holdings/BKCH/2026-04-24.parquet",
+        "data/etf_holdings/BKCH/2026-04-27.parquet",
+        "data/etf_holdings/BKCH/2026-04-28.parquet",
+        "data/etf_holdings/BKCH/2026-04-29.parquet",
+        "data/etf_holdings/BKCH/2026-04-30.parquet",
+        "data/etf_holdings/BKCH/2026-05-01.parquet",
+        "data/etf_holdings/BKCH/2026-05-04.parquet",
+        "data/etf_holdings/BKCH/2026-05-05.parquet",
+        "data/etf_holdings/BKCH/2026-05-06.parquet",
+        "data/etf_holdings/BKCH/2026-05-07.parquet",
+        "data/etf_holdings/BKCH/2026-05-08.parquet",
+        "data/etf_holdings/BKCH/2026-05-11.parquet",
+        "data/etf_holdings/BKCH/2026-05-12.parquet",
+        "data/etf_holdings/BKCH/2026-05-13.parquet",
+        "data/etf_holdings/BKCH/2026-05-14.parquet",
+        "data/etf_holdings/BKCH/2026-05-15.parquet",
+        "data/etf_holdings/BKCH/2026-05-18.parquet",
+        "data/etf_holdings/BKCH/2026-05-19.parquet",
+        "data/etf_holdings/BKCH/2026-05-20.parquet",
+        "data/etf_holdings/BKCH/2026-05-21.parquet",
+        "data/etf_holdings/BKCH/2026-05-22.parquet",
+        "data/etf_holdings/BKCH/2026-05-26.parquet",
+        "data/etf_holdings/BKCH/2026-05-27.parquet",
+        "data/etf_holdings/BKCH/2026-05-28.parquet",
+        "data/etf_holdings/BKCH/2026-05-29.parquet",
+        "data/etf_holdings/BKCH/2026-06-01.parquet",
+        "data/etf_holdings/BKCH/2026-06-02.parquet",
+        "data/etf_holdings/BKCH/2026-06-03.parquet",
+        "data/etf_holdings/BKCH/2026-06-04.parquet",
+        "data/etf_holdings/BKCH/2026-06-05.parquet",
+        "data/etf_holdings/BKCH/2026-06-08.parquet",
+        "data/etf_holdings/BKCH/2026-06-09.parquet",
+        "data/etf_holdings/BKCH/2026-06-10.parquet",
+        "data/etf_holdings/BKCH/2026-06-11.parquet",
+        "data/etf_holdings/BKCH/2026-06-12.parquet",
+        "data/etf_holdings/BKCH/2026-06-15.parquet",
+        "data/etf_holdings/BKCH/2026-06-16.parquet",
+        "data/etf_holdings/BKCH/2026-06-17.parquet",
+        "data/etf_holdings/BKCH/2026-06-18.parquet",
+        "data/etf_holdings/BKCH/2026-06-22.parquet",
+        "data/etf_holdings/BKCH/2026-06-23.parquet",
+        "data/etf_holdings/BKCH/2026-06-24.parquet",
+        "data/etf_holdings/BKCH/2026-06-25.parquet",
+        "data/etf_holdings/BKCH/2026-06-26.parquet",
+        "data/etf_holdings/BKCH/2026-06-29.parquet",
+        "data/etf_holdings/BKCH/2026-06-30.parquet",
+        "data/etf_holdings/BKCH/2026-07-01.parquet",
+        "data/etf_holdings/BKCH/2026-07-02.parquet",
+        "data/etf_holdings/BKCH/2026-07-06.parquet",
+        "data/etf_holdings/BKCH/2026-07-07.parquet",
+        "data/etf_holdings/BKCH/2026-07-08.parquet",
+        "data/etf_holdings/BKCH/2026-07-09.parquet",
+        "data/etf_holdings/BKCH/2026-07-10.parquet",
+        "data/etf_holdings/BKCH/2026-07-13.parquet",
+        "data/etf_holdings/BKCH/2026-07-14.parquet",
+        "data/etf_holdings/BKCH/2026-07-15.parquet",
+        "data/etf_holdings/BKCH/2026-07-16.parquet",
+        "data/etf_holdings/BKCH/2026-07-17.parquet",
+        "data/etf_holdings/BKCH/2026-07-20.parquet",
+        "data/etf_holdings/BKCH/2026-07-21.parquet",
+        "data/etf_holdings/BKCH/2026-07-22.parquet",
+        "data/etf_holdings/BKCH/2026-07-23.parquet",
+        "data/etf_holdings/BKCH/2026-07-24.parquet",
+        "data/etf_holdings/BKCH/2026-07-27.parquet",
+        "data/etf_holdings/BKCH/2026-07-28.parquet",
+        "data/etf_holdings/BKCH/2026-07-29.parquet",
+        "data/etf_holdings/BKCH/2026-07-30.parquet",
+        "data/etf_holdings/BKCH/2026-07-31.parquet",
+        "data/etf_holdings/BKCH/2026-08-03.parquet",
+        "data/etf_holdings/BKCH/2026-08-04.parquet",
+        "data/etf_holdings/BKCH/2026-08-05.parquet",
+        "data/etf_holdings/BKCH/2026-08-06.parquet",
+        "data/etf_holdings/BKCH/2026-08-07.parquet",
+        "data/etf_holdings/BKCH/2026-08-10.parquet",
+        "data/etf_holdings/BKCH/2026-08-11.parquet",
+        "data/etf_holdings/CIBR/2026-08-11.parquet",
+        "data/etf_holdings/CNRG/2026-08-11.parquet",
+        "data/etf_holdings/COPJ/2026-08-12.parquet",
+        "data/etf_holdings/CTEC/2026-04-09.parquet",
+        "data/etf_holdings/CTEC/2026-04-10.parquet",
+        "data/etf_holdings/CTEC/2026-04-13.parquet",
+        "data/etf_holdings/CTEC/2026-04-14.parquet"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml"
+      ]
+    },
+    {
+      "number": 5465,
+      "title": "ci: route trusted CI packs and fences to the self-hosted Linux pool (operator charter 2026-08-12, Wave 1)",
+      "head_ref": "claude/ci-selfhosted-wave1",
+      "updated_at": "2026-08-13T00:31:25Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 17,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/runner-policy.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/fences.yml",
+        ".github/workflows/integration-baseline.yml",
+        ".github/workflows/runner-canary.yml",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "config/house_law_checks.yml",
+        "docs/HOUSE_LAW_CI_GUARD_SUITE.md",
+        "research/CI_SELFHOSTED_MIGRATION_WAVE1.md",
+        "scripts/check_runner_policy.py",
+        "scripts/runner_usage_receipt.py",
+        "tests/test_ci_pack.py",
+        "tests/test_price_pressure.py",
+        "tests/test_runner_policy.py",
+        "tests/test_tushare_minutes_plane.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/fences.yml",
+        ".github/workflows/integration-baseline.yml",
+        ".github/workflows/runner-canary.yml",
+        "scripts/check_runner_policy.py"
+      ]
+    },
+    {
+      "number": 5464,
+      "title": "docs(mockups): W2 mockup gate \u2014 Portfolio Intelligence workspace",
+      "head_ref": "claude/wp-w2-mockup-gate",
+      "updated_at": "2026-08-13T01:55:04Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 27,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "mockups/refs/psi/workspace/DESIGN_NOTES.md",
+        "mockups/refs/psi/workspace/crops/01_anon_empty_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/01_anon_empty_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/01_anon_empty_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/01_anon_empty_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/01_anon_empty_desktop_light_en.png",
+        "mockups/refs/psi/workspace/crops/02_anon_analyzed_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/02_anon_analyzed_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/02_anon_analyzed_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/02_anon_analyzed_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/02_anon_analyzed_desktop_light_en.png",
+        "mockups/refs/psi/workspace/crops/03_portfolio_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/03_portfolio_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/03_portfolio_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/03_portfolio_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/03_portfolio_desktop_light_en.png",
+        "mockups/refs/psi/workspace/crops/04_watchlists_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/04_watchlists_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/04_watchlists_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/04_watchlists_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/04_watchlists_desktop_light_en.png",
+        "mockups/refs/psi/workspace/crops/05_savechip_390_dark_en.png",
+        "mockups/refs/psi/workspace/crops/05_savechip_390_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/05_savechip_desktop_dark_en.png",
+        "mockups/refs/psi/workspace/crops/05_savechip_desktop_dark_zh.png",
+        "mockups/refs/psi/workspace/crops/05_savechip_desktop_light_en.png",
+        "mockups/refs/psi/workspace/workspace.html"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5448,
+      "title": "marketing: press wire relays go compose-or-drop, never verbatim (W2E)",
+      "head_ref": "claude/w2e-press-relay-quality",
+      "updated_at": "2026-08-12T14:52:26Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 10,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
         "engine/marketing/copywriter.py",
-        "engine/marketing/earnings_card.py",
-        "engine/marketing/expression_dial.py",
-        "engine/marketing/fastlane.py",
-        "engine/marketing/movers_source.py",
-        "engine/marketing/outbox.py",
-        "engine/marketing/publish_time_content.py",
-        "engine/marketing/weekend_levels.py",
-        "engine/marketing/wire_format.py",
-        "tests/test_copywriter.py",
-        "tests/test_marketing_copy_v2.py",
-        "tests/test_marketing_fastlane.py",
-        "tests/test_marketing_money_format.py",
-        "tests/test_marketing_mover_stance.py",
-        "tests/test_marketing_outbox_garbage.py",
-        "tests/test_marketing_outbox_single_composition.py",
-        "tests/test_marketing_publish_time_content.py",
-        "tests/test_marketing_supply_feeds.py",
-        "tests/test_marketing_voice_laws.py",
+        "engine/marketing/press_lane.py",
+        "engine/marketing/relay_hygiene.py",
+        "tests/test_marketing_cadence_spine.py",
+        "tests/test_marketing_press_feeds.py",
+        "tests/test_marketing_press_relay_quality.py",
         "tests/test_marketing_voice_v5.py",
-        "tests/test_marketing_weekend_levels.py",
-        "tests/test_movers_source.py"
+        "tests/test_marketing_wire_headroom.py",
+        "tests/test_marketing_wire_story.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5437,
+      "title": "Government Revenue: read an unentitled workspace as locked, not as missing data",
+      "head_ref": "claude/government-revenue-locked-hydration",
+      "updated_at": "2026-08-12T17:01:04Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 12,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "app/government_revenue.py",
+        "config/site_access.yml",
+        "site/government-revenue-candidate-radar.js",
+        "site/government-revenue-dossiers.js",
+        "templates/government-revenue-candidate-radar.js",
+        "templates/government-revenue-dossiers.js",
+        "templates/government_revenue.html.j2",
+        "tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv",
+        "tests/test_government_revenue_api_auth.py",
+        "tests/test_government_revenue_dossier_ui.py",
+        "tests/test_government_revenue_ui.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5432,
+      "title": "fix(government-revenue): gate the API \u2014 ruled unintentional, not a public desk",
+      "head_ref": "claude/government-revenue-api-access-ruling",
+      "updated_at": "2026-08-12T16:59:18Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 10,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "app/government_revenue.py",
+        "config/site_access.yml",
+        "site/government-revenue-candidate-radar.js",
+        "site/government-revenue-dossiers.js",
+        "templates/government-revenue-candidate-radar.js",
+        "templates/government-revenue-dossiers.js",
+        "tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv",
+        "tests/test_government_revenue_api_auth.py",
+        "tests/test_government_revenue_dossier_ui.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 5424,
+      "title": "data(govrev): publish reviewed defense20-v1 recipient graph \u2014 BWXT + refreshed exact edges",
+      "head_ref": "claude/govrev-defense20-bwxt-graph",
+      "updated_at": "2026-08-12T02:53:47Z",
+      "is_draft": true,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "data/government_revenue/recipient_entity_graph.json",
+        "scripts/propose_government_revenue_recipient_graph.py",
+        "tests/test_government_revenue_candidates.py",
+        "tests/test_government_revenue_recipient_graph.py",
+        "tests/test_propose_government_revenue_recipient_graph.py"
       ],
       "protected_paths_touched": []
     }
   ],
   "collisions": [
     {
-      "pr_a": 5295,
-      "pr_b": 5294,
+      "pr_a": 5478,
+      "pr_b": 5477,
+      "shared_files": [
+        ".env.example",
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "collectors/etf_holdings.py",
+        "collectors/holdings.py",
+        "config.yml",
+        "config/dag.yml",
+        "data/etf_holdings/BATT/2025-09-25.parquet",
+        "data/etf_holdings/BATT/2025-09-30.parquet",
+        "data/etf_holdings/BATT/2025-10-06.parquet",
+        "data/etf_holdings/BATT/2025-10-07.parquet",
+        "data/etf_holdings/BATT/2025-10-08.parquet",
+        "data/etf_holdings/BATT/2025-10-09.parquet",
+        "data/etf_holdings/BATT/2025-10-10.parquet",
+        "data/etf_holdings/BATT/2025-10-13.parquet",
+        "data/etf_holdings/BATT/2025-10-14.parquet",
+        "data/etf_holdings/BATT/2025-10-15.parquet",
+        "data/etf_holdings/BATT/2025-10-16.parquet",
+        "data/etf_holdings/BATT/2025-10-17.parquet",
+        "data/etf_holdings/BATT/2025-10-20.parquet",
+        "data/etf_holdings/BATT/2025-10-21.parquet",
+        "data/etf_holdings/BATT/2025-10-22.parquet",
+        "data/etf_holdings/BATT/2025-10-23.parquet",
+        "data/etf_holdings/BATT/2025-10-24.parquet",
+        "data/etf_holdings/BATT/2025-10-27.parquet",
+        "data/etf_holdings/BATT/2025-10-28.parquet",
+        "data/etf_holdings/BATT/2025-10-29.parquet",
+        "data/etf_holdings/BATT/2025-10-30.parquet",
+        "data/etf_holdings/BATT/2025-10-31.parquet",
+        "data/etf_holdings/BATT/2025-11-03.parquet",
+        "data/etf_holdings/BATT/2025-12-17.parquet",
+        "data/etf_holdings/BATT/2025-12-18.parquet",
+        "data/etf_holdings/BATT/2025-12-19.parquet",
+        "data/etf_holdings/BATT/2025-12-22.parquet",
+        "data/etf_holdings/BATT/2025-12-23.parquet",
+        "data/etf_holdings/BATT/2025-12-24.parquet",
+        "data/etf_holdings/BATT/2025-12-26.parquet",
+        "data/etf_holdings/BATT/2025-12-29.parquet",
+        "data/etf_holdings/BATT/2025-12-30.parquet",
+        "data/etf_holdings/BATT/2025-12-31.parquet",
+        "data/etf_holdings/BATT/2026-01-02.parquet",
+        "data/etf_holdings/BATT/2026-01-05.parquet",
+        "data/etf_holdings/BATT/2026-01-06.parquet",
+        "data/etf_holdings/BATT/2026-01-07.parquet",
+        "data/etf_holdings/BATT/2026-01-08.parquet",
+        "data/etf_holdings/BATT/2026-01-09.parquet",
+        "data/etf_holdings/BATT/2026-01-12.parquet",
+        "data/etf_holdings/BATT/2026-01-13.parquet",
+        "data/etf_holdings/BATT/2026-01-14.parquet",
+        "data/etf_holdings/BATT/2026-01-15.parquet",
+        "data/etf_holdings/BATT/2026-01-16.parquet",
+        "data/etf_holdings/BATT/2026-01-20.parquet",
+        "data/etf_holdings/BATT/2026-01-21.parquet",
+        "data/etf_holdings/BATT/2026-01-22.parquet",
+        "data/etf_holdings/BATT/2026-01-23.parquet",
+        "data/etf_holdings/BATT/2026-01-26.parquet",
+        "data/etf_holdings/BATT/2026-01-27.parquet",
+        "data/etf_holdings/BATT/2026-01-28.parquet",
+        "data/etf_holdings/BATT/2026-01-29.parquet",
+        "data/etf_holdings/BATT/2026-01-30.parquet",
+        "data/etf_holdings/BATT/2026-02-02.parquet",
+        "data/etf_holdings/BATT/2026-02-03.parquet",
+        "data/etf_holdings/BATT/2026-02-04.parquet",
+        "data/etf_holdings/BATT/2026-02-05.parquet",
+        "data/etf_holdings/BATT/2026-02-06.parquet",
+        "data/etf_holdings/BATT/2026-02-09.parquet",
+        "data/etf_holdings/BATT/2026-02-10.parquet",
+        "data/etf_holdings/BATT/2026-02-11.parquet",
+        "data/etf_holdings/BATT/2026-02-12.parquet",
+        "data/etf_holdings/BATT/2026-02-13.parquet",
+        "data/etf_holdings/BATT/2026-02-17.parquet",
+        "data/etf_holdings/BATT/2026-02-18.parquet",
+        "data/etf_holdings/BATT/2026-02-19.parquet",
+        "data/etf_holdings/BATT/2026-02-20.parquet",
+        "data/etf_holdings/BATT/2026-02-23.parquet",
+        "data/etf_holdings/BATT/2026-02-24.parquet",
+        "data/etf_holdings/BATT/2026-02-25.parquet",
+        "data/etf_holdings/BATT/2026-02-26.parquet",
+        "data/etf_holdings/BATT/2026-02-27.parquet",
+        "data/etf_holdings/BATT/2026-03-02.parquet",
+        "data/etf_holdings/BATT/2026-03-03.parquet",
+        "data/etf_holdings/BATT/2026-03-04.parquet",
+        "data/etf_holdings/BATT/2026-03-05.parquet",
+        "data/etf_holdings/BATT/2026-03-06.parquet",
+        "data/etf_holdings/BATT/2026-03-09.parquet",
+        "data/etf_holdings/BATT/2026-03-10.parquet",
+        "data/etf_holdings/BATT/2026-03-11.parquet",
+        "data/etf_holdings/BATT/2026-03-12.parquet",
+        "data/etf_holdings/BATT/2026-03-13.parquet",
+        "data/etf_holdings/BATT/2026-03-16.parquet",
+        "data/etf_holdings/BATT/2026-03-17.parquet",
+        "data/etf_holdings/BATT/2026-03-18.parquet",
+        "data/etf_holdings/BATT/2026-03-19.parquet",
+        "data/etf_holdings/BATT/2026-03-20.parquet",
+        "data/etf_holdings/BATT/2026-03-23.parquet",
+        "data/etf_holdings/BATT/2026-03-24.parquet",
+        "data/etf_holdings/BATT/2026-03-25.parquet",
+        "data/etf_holdings/BATT/2026-03-26.parquet",
+        "data/etf_holdings/BATT/2026-03-27.parquet",
+        "data/etf_holdings/BATT/2026-03-30.parquet"
+      ],
+      "shared_count": 100,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5474,
+      "pr_b": 5467,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "collectors/etf_holdings.py",
+        "collectors/holdings.py",
+        "config.yml",
+        "config/dag.yml",
+        "data/etf_holdings/BBH/2026-08-11.parquet",
+        "data/etf_holdings/BKCH/2026-04-09.parquet",
+        "data/etf_holdings/BKCH/2026-04-10.parquet",
+        "data/etf_holdings/BKCH/2026-04-13.parquet",
+        "data/etf_holdings/BKCH/2026-04-14.parquet",
+        "data/etf_holdings/BKCH/2026-04-15.parquet",
+        "data/etf_holdings/BKCH/2026-04-16.parquet",
+        "data/etf_holdings/BKCH/2026-04-17.parquet",
+        "data/etf_holdings/BKCH/2026-04-20.parquet",
+        "data/etf_holdings/BKCH/2026-04-21.parquet",
+        "data/etf_holdings/BKCH/2026-04-22.parquet",
+        "data/etf_holdings/BKCH/2026-04-23.parquet",
+        "data/etf_holdings/BKCH/2026-04-24.parquet",
+        "data/etf_holdings/BKCH/2026-04-27.parquet",
+        "data/etf_holdings/BKCH/2026-04-28.parquet",
+        "data/etf_holdings/BKCH/2026-04-29.parquet",
+        "data/etf_holdings/BKCH/2026-04-30.parquet",
+        "data/etf_holdings/BKCH/2026-05-01.parquet",
+        "data/etf_holdings/BKCH/2026-05-04.parquet",
+        "data/etf_holdings/BKCH/2026-05-05.parquet",
+        "data/etf_holdings/BKCH/2026-05-06.parquet",
+        "data/etf_holdings/BKCH/2026-05-07.parquet",
+        "data/etf_holdings/BKCH/2026-05-08.parquet",
+        "data/etf_holdings/BKCH/2026-05-11.parquet",
+        "data/etf_holdings/BKCH/2026-05-12.parquet",
+        "data/etf_holdings/BKCH/2026-05-13.parquet",
+        "data/etf_holdings/BKCH/2026-05-14.parquet",
+        "data/etf_holdings/BKCH/2026-05-15.parquet",
+        "data/etf_holdings/BKCH/2026-05-18.parquet",
+        "data/etf_holdings/BKCH/2026-05-19.parquet",
+        "data/etf_holdings/BKCH/2026-05-20.parquet",
+        "data/etf_holdings/BKCH/2026-05-21.parquet",
+        "data/etf_holdings/BKCH/2026-05-22.parquet",
+        "data/etf_holdings/BKCH/2026-05-26.parquet",
+        "data/etf_holdings/BKCH/2026-05-27.parquet",
+        "data/etf_holdings/BKCH/2026-05-28.parquet",
+        "data/etf_holdings/BKCH/2026-05-29.parquet",
+        "data/etf_holdings/BKCH/2026-06-01.parquet",
+        "data/etf_holdings/BKCH/2026-06-02.parquet",
+        "data/etf_holdings/BKCH/2026-06-03.parquet",
+        "data/etf_holdings/BKCH/2026-06-04.parquet",
+        "data/etf_holdings/BKCH/2026-06-05.parquet",
+        "data/etf_holdings/BKCH/2026-06-08.parquet",
+        "data/etf_holdings/BKCH/2026-06-09.parquet",
+        "data/etf_holdings/BKCH/2026-06-10.parquet",
+        "data/etf_holdings/BKCH/2026-06-11.parquet",
+        "data/etf_holdings/BKCH/2026-06-12.parquet",
+        "data/etf_holdings/BKCH/2026-06-15.parquet",
+        "data/etf_holdings/BKCH/2026-06-16.parquet",
+        "data/etf_holdings/BKCH/2026-06-17.parquet",
+        "data/etf_holdings/BKCH/2026-06-18.parquet",
+        "data/etf_holdings/BKCH/2026-06-22.parquet",
+        "data/etf_holdings/BKCH/2026-06-23.parquet",
+        "data/etf_holdings/BKCH/2026-06-24.parquet",
+        "data/etf_holdings/BKCH/2026-06-25.parquet",
+        "data/etf_holdings/BKCH/2026-06-26.parquet",
+        "data/etf_holdings/BKCH/2026-06-29.parquet",
+        "data/etf_holdings/BKCH/2026-06-30.parquet",
+        "data/etf_holdings/BKCH/2026-07-01.parquet",
+        "data/etf_holdings/BKCH/2026-07-02.parquet",
+        "data/etf_holdings/BKCH/2026-07-06.parquet",
+        "data/etf_holdings/BKCH/2026-07-07.parquet",
+        "data/etf_holdings/BKCH/2026-07-08.parquet",
+        "data/etf_holdings/BKCH/2026-07-09.parquet",
+        "data/etf_holdings/BKCH/2026-07-10.parquet",
+        "data/etf_holdings/BKCH/2026-07-13.parquet",
+        "data/etf_holdings/BKCH/2026-07-14.parquet",
+        "data/etf_holdings/BKCH/2026-07-15.parquet",
+        "data/etf_holdings/BKCH/2026-07-16.parquet",
+        "data/etf_holdings/BKCH/2026-07-17.parquet",
+        "data/etf_holdings/BKCH/2026-07-20.parquet",
+        "data/etf_holdings/BKCH/2026-07-21.parquet",
+        "data/etf_holdings/BKCH/2026-07-22.parquet",
+        "data/etf_holdings/BKCH/2026-07-23.parquet",
+        "data/etf_holdings/BKCH/2026-07-24.parquet",
+        "data/etf_holdings/BKCH/2026-07-27.parquet",
+        "data/etf_holdings/BKCH/2026-07-28.parquet",
+        "data/etf_holdings/BKCH/2026-07-29.parquet",
+        "data/etf_holdings/BKCH/2026-07-30.parquet",
+        "data/etf_holdings/BKCH/2026-07-31.parquet",
+        "data/etf_holdings/BKCH/2026-08-03.parquet",
+        "data/etf_holdings/BKCH/2026-08-04.parquet",
+        "data/etf_holdings/BKCH/2026-08-05.parquet",
+        "data/etf_holdings/BKCH/2026-08-06.parquet",
+        "data/etf_holdings/BKCH/2026-08-07.parquet",
+        "data/etf_holdings/BKCH/2026-08-10.parquet",
+        "data/etf_holdings/BKCH/2026-08-11.parquet",
+        "data/etf_holdings/CIBR/2026-08-11.parquet",
+        "data/etf_holdings/CNRG/2026-08-11.parquet",
+        "data/etf_holdings/COPJ/2026-08-12.parquet",
+        "data/etf_holdings/CTEC/2026-04-09.parquet",
+        "data/etf_holdings/CTEC/2026-04-10.parquet",
+        "data/etf_holdings/CTEC/2026-04-13.parquet",
+        "data/etf_holdings/CTEC/2026-04-14.parquet"
+      ],
+      "shared_count": 100,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5437,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        "app/government_revenue.py",
+        "config/site_access.yml",
+        "site/government-revenue-candidate-radar.js",
+        "site/government-revenue-dossiers.js",
+        "templates/government-revenue-candidate-radar.js",
+        "templates/government-revenue-dossiers.js",
+        "tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv",
+        "tests/test_government_revenue_api_auth.py",
+        "tests/test_government_revenue_dossier_ui.py"
+      ],
+      "shared_count": 10,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5478,
+      "pr_b": 5474,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "collectors/etf_holdings.py",
+        "collectors/holdings.py",
+        "config.yml",
+        "config/dag.yml"
+      ],
+      "shared_count": 6,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5478,
+      "pr_b": 5467,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "collectors/etf_holdings.py",
+        "collectors/holdings.py",
+        "config.yml",
+        "config/dag.yml"
+      ],
+      "shared_count": 6,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5477,
+      "pr_b": 5474,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "collectors/etf_holdings.py",
+        "collectors/holdings.py",
+        "config.yml",
+        "config/dag.yml"
+      ],
+      "shared_count": 6,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5477,
+      "pr_b": 5467,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml",
+        "collectors/etf_holdings.py",
+        "collectors/holdings.py",
+        "config.yml",
+        "config/dag.yml"
+      ],
+      "shared_count": 6,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5494,
+      "pr_b": 5488,
+      "shared_files": [
+        ".claude/hooks/gh_quota_guard.py",
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "shared_count": 3,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        "config/house_law_checks.yml"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5486,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        "config/house_law_checks.yml",
+        "docs/HOUSE_LAW_CI_GUARD_SUITE.md"
+      ],
+      "shared_count": 3,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5494,
+      "pr_b": 5465,
+      "shared_files": [
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5492,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5487,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5485,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5487,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5485,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5488,
+      "pr_b": 5465,
+      "shared_files": [
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5486,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        "config/house_law_checks.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5485,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5485,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5478,
+      "pr_b": 5472,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5477,
+      "pr_b": 5472,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5474,
+      "pr_b": 5472,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5472,
+      "pr_b": 5467,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/daily.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 5497,
+      "pr_b": 5491,
+      "shared_files": [
+        "research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5493,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -162,16 +1678,1561 @@
       "any_protected": false
     },
     {
-      "pr_a": 5295,
-      "pr_b": 5292,
+      "pr_a": 5496,
+      "pr_b": 5492,
       "shared_files": [
-        "config/synapse.yml"
+        ".github/ci/legacy-jobs.yml"
       ],
       "shared_count": 1,
-      "any_protected": true
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5487,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5486,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5485,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5478,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5477,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5474,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5472,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5467,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5496,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5486,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5478,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5477,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5474,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5472,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5467,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5493,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5486,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5478,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5477,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5474,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5472,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5467,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5492,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5478,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5477,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5474,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5472,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5467,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5487,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5486,
+      "pr_b": 5485,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5486,
+      "pr_b": 5478,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5486,
+      "pr_b": 5477,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5486,
+      "pr_b": 5474,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5486,
+      "pr_b": 5472,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5486,
+      "pr_b": 5467,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5486,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5486,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5486,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5485,
+      "pr_b": 5478,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5485,
+      "pr_b": 5477,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5485,
+      "pr_b": 5474,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5485,
+      "pr_b": 5472,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5485,
+      "pr_b": 5467,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5485,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5485,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5485,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5478,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5478,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5478,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5478,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5477,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5477,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5477,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5477,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5474,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5474,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5474,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5474,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5472,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5472,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5472,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5472,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5467,
+      "pr_b": 5465,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5467,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5467,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5467,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5465,
+      "pr_b": 5448,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5465,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5465,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5448,
+      "pr_b": 5437,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 5448,
+      "pr_b": 5432,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
     }
   ],
   "recent_merged": [
+    {
+      "number": 5490,
+      "title": "fix(ci): heal main-side pack-11 drift (chat nav sync, wrongway stamp, picks-boards)",
+      "merged_at": "2026-08-13T01:41:08Z"
+    },
+    {
+      "number": 5489,
+      "title": "design(design-system): Archetype A (Today) + I (utility) reference mockups + docket amendment",
+      "merged_at": "2026-08-13T01:46:50Z"
+    },
+    {
+      "number": 5484,
+      "title": "commercial architecture: the Mastermind-X monetization, activation & growth deliverables + chat-allowance derivation",
+      "merged_at": "2026-08-12T23:35:10Z"
+    },
+    {
+      "number": 5482,
+      "title": "research(prophet-us): stop-curvature study \u2014 all five chartered forms fail G5 ex ante (ADJUDICATED: family closed, definition-validity null)",
+      "merged_at": "2026-08-12T23:34:28Z"
+    },
+    {
+      "number": 5481,
+      "title": "Attach Policy Watch render checks to an owned suite",
+      "merged_at": "2026-08-12T19:51:47Z"
+    },
+    {
+      "number": 5480,
+      "title": "Restore HK and China Policy Watch render coverage",
+      "merged_at": "2026-08-12T18:54:42Z"
+    },
+    {
+      "number": 5476,
+      "title": "research(red-team): pre-launch production failure-mode audit + launch gates",
+      "merged_at": "2026-08-12T15:44:45Z"
+    },
+    {
+      "number": 5473,
+      "title": "fix(govrev): restore render budget headroom",
+      "merged_at": "2026-08-12T14:39:54Z"
+    },
+    {
+      "number": 5471,
+      "title": "eval-os: intelligence evaluation architecture + metric-validity gate",
+      "merged_at": "2026-08-12T21:14:23Z"
+    },
+    {
+      "number": 5470,
+      "title": "docs(watchlist-portfolio): W1-cycle program build log",
+      "merged_at": "2026-08-12T15:54:07Z"
+    },
+    {
+      "number": 5463,
+      "title": "fix(watchlist): cure the anonymous watchlist.html husk \u2014 promote the funnel shell, keep the graded plane walled",
+      "merged_at": "2026-08-12T15:54:05Z"
+    },
+    {
+      "number": 5462,
+      "title": "feat(options): add unarmed selector capture attestation",
+      "merged_at": "2026-08-12T15:20:50Z"
+    },
+    {
+      "number": 5461,
+      "title": "feat(watchstore): W1a registered multi-list store seam",
+      "merged_at": "2026-08-12T23:34:37Z"
+    },
+    {
+      "number": 5460,
+      "title": "W0-A: institutionalize delivery-plane truth census",
+      "merged_at": "2026-08-12T13:53:04Z"
+    },
+    {
+      "number": 5459,
+      "title": "Design System Wave 0: master product design system, migration factory, specimen + dense-dashboard reference",
+      "merged_at": "2026-08-12T18:08:24Z"
+    },
+    {
+      "number": 5458,
+      "title": "Polish light-mode odometer needles",
+      "merged_at": "2026-08-12T12:07:04Z"
+    },
+    {
+      "number": 5457,
+      "title": "docs(watchlist-portfolio): W0 commissioning packet \u2014 CEO revamp census + plan",
+      "merged_at": "2026-08-12T15:10:34Z"
+    },
+    {
+      "number": 5456,
+      "title": "ci: stop merge sweeper refresh starvation",
+      "merged_at": "2026-08-12T17:37:29Z"
+    },
+    {
+      "number": 5455,
+      "title": "fix: gate market score overrides on validated risk",
+      "merged_at": "2026-08-12T13:46:37Z"
+    },
+    {
+      "number": 5454,
+      "title": "docs(ci): timing receipt for engine-render-guards \u2014 Wave C \u00a77.1",
+      "merged_at": "2026-08-12T15:35:38Z"
+    },
+    {
+      "number": 5453,
+      "title": "fix(signal-gate): grade a crashed analyze() as \"engine error\", not \"insufficient history\"",
+      "merged_at": "2026-08-12T17:34:50Z"
+    },
+    {
+      "number": 5452,
+      "title": "marketing: number gate learns k/m/b, jobless claims switches to the compact register (W2D)",
+      "merged_at": "2026-08-12T20:03:04Z"
+    },
+    {
+      "number": 5451,
+      "title": "Refine Smart Money light mode hierarchy",
+      "merged_at": "2026-08-12T15:21:34Z"
+    },
+    {
+      "number": 5450,
+      "title": "fix(ledger): one ledger key per company \u2014 stop the SATS/ECHO double count in track_record.parquet",
+      "merged_at": "2026-08-12T19:07:13Z"
+    },
+    {
+      "number": 5447,
+      "title": "Re-pin HK G1 fixture for price adjustments",
+      "merged_at": "2026-08-12T11:53:47Z"
+    },
+    {
+      "number": 5445,
+      "title": "docs(daily): correct the concurrency-group comment \u2014 the bake killer is a fleet session, not the group",
+      "merged_at": "2026-08-12T23:12:39Z"
+    },
+    {
+      "number": 5444,
+      "title": "ci: route the remaining workflow-body readers through the extraction seam",
+      "merged_at": "2026-08-12T22:32:26Z"
+    },
+    {
+      "number": 5443,
+      "title": "test(signals): pin the early_signal_dates non-carrier set to the SATS fossil",
+      "merged_at": "2026-08-12T16:49:15Z"
+    },
+    {
+      "number": 5441,
+      "title": "feat(product-experience): parse the public footer as a nav_family source (census gap G-15)",
+      "merged_at": "2026-08-12T15:51:33Z"
+    },
+    {
+      "number": 5440,
+      "title": "feat(options): add authenticated observe-only MomoEdge companion",
+      "merged_at": "2026-08-12T08:05:30Z"
+    },
+    {
+      "number": 5439,
+      "title": "fix(group-reads): W-B G0-10 enforcement \u2014 published denominators, agreement floor, arc refusal",
+      "merged_at": "2026-08-12T15:03:05Z"
+    },
+    {
+      "number": 5438,
+      "title": "research(cn-limit): P-A1 descriptive panel read (display-tier)",
+      "merged_at": "2026-08-12T08:58:58Z"
+    },
+    {
+      "number": 5436,
+      "title": "Fix merge refresh lease readback",
+      "merged_at": "2026-08-12T05:34:06Z"
+    },
+    {
+      "number": 5435,
+      "title": "Delete orphan _market_state_board.html.j2 partial; fix stale DOM-source comments",
+      "merged_at": "2026-08-12T15:55:09Z"
+    },
+    {
+      "number": 5434,
+      "title": "fix(ci): restore narrow-diff margin by bounding a scan to the file kinds it can read",
+      "merged_at": "2026-08-12T13:11:42Z"
+    },
+    {
+      "number": 5433,
+      "title": "Risk Radar country port: full CN/HK/CA dialogs + intl cards; macro popover de-dim",
+      "merged_at": "2026-08-12T16:01:52Z"
+    },
+    {
+      "number": 5431,
+      "title": "fix(ci): daily.yml 512KB-cap diet via guard-resolved extraction (-47KB) + restore #5362 OIP campaign-v2 steps",
+      "merged_at": "2026-08-12T04:48:22Z"
+    },
+    {
+      "number": 5430,
+      "title": "fix(ci): early_signal_dates store pin \u2014 conditional emission keeps the registration optional (red-main heal)",
+      "merged_at": "2026-08-12T03:05:19Z"
+    },
+    {
+      "number": 5428,
+      "title": "docs(biocatalyst): record live B1S2c activation",
+      "merged_at": "2026-08-12T03:05:16Z"
+    },
+    {
+      "number": 5427,
+      "title": "fix(bc-2): gate published registry rows at the source, not a render later",
+      "merged_at": "2026-08-12T14:45:50Z"
+    },
+    {
+      "number": 5426,
+      "title": "tests: share the repo scan across market-memory writer-exclusivity checks",
+      "merged_at": "2026-08-12T09:14:53Z"
+    },
+    {
+      "number": 5425,
+      "title": "docs(govrev): 2026-08-11 session handoff \u2014 cycle verified, defense20 lane, identity-hygiene charter",
+      "merged_at": "2026-08-12T17:40:08Z"
+    },
+    {
+      "number": 5423,
+      "title": "fix(bc-2): landing shipped a 'validated' claim \u2014 mask structural rules in place, scan site/prophet + landing source, decode escaped ZH",
+      "merged_at": "2026-08-12T05:04:12Z"
+    },
+    {
+      "number": 5422,
+      "title": "ops(daily): version the concurrency group past the zombie-polluted pipeline-daily",
+      "merged_at": "2026-08-12T06:06:57Z"
+    },
+    {
+      "number": 5421,
+      "title": "fix(options): restore size-safe campaign-v2 nightly accrual",
+      "merged_at": "2026-08-12T05:33:35Z"
+    },
+    {
+      "number": 5420,
+      "title": "fix(site-access): promote the presentation assets the open-HTML policy stranded (estate census)",
+      "merged_at": "2026-08-12T09:14:49Z"
+    },
+    {
+      "number": 5419,
+      "title": "fix(ci): heal the four conformance guards red since #5416's step deferral + wire the size test",
+      "merged_at": "2026-08-12T02:26:05Z"
+    },
+    {
+      "number": 5418,
+      "title": "research(top-anatomy): AM-v2 anchor-distribution matching \u2014 ore body CLOSED on tape, B2 survives at 0.38x, instrument valid first try",
+      "merged_at": "2026-08-12T09:15:40Z"
+    },
+    {
+      "number": 5417,
+      "title": "research: ANTICIPATION continuation handoff 2026-08-12",
+      "merged_at": "2026-08-12T01:56:19Z"
+    },
+    {
+      "number": 5416,
+      "title": "fix(nightly): daily.yml crossed GitHub's silent ~512,000-byte workflow cap \u2014 shrink below it + guard",
+      "merged_at": "2026-08-12T01:37:38Z"
+    },
+    {
+      "number": 5415,
+      "title": "data(release-radar): freeze CPI T-1 coherent shadow",
+      "merged_at": "2026-08-12T02:23:36Z"
+    },
+    {
+      "number": 5414,
+      "title": "ops(daily): rename concurrency group to sidestep server-side group wedge",
+      "merged_at": "2026-08-12T01:20:38Z"
+    },
+    {
+      "number": 5411,
+      "title": "Fix merge-on-green reproof treadmill",
+      "merged_at": "2026-08-12T03:39:30Z"
+    },
+    {
+      "number": 5410,
+      "title": "fix(china): live-wire CSI 300 + ChiNext index tiles \u2014 ETF NAVs were baked as index levels",
+      "merged_at": "2026-08-12T08:42:38Z"
+    },
+    {
+      "number": 5409,
+      "title": "fix(stock): restore the anonymous stock.html experience \u2014 promote renderer scripts, honest locked state, honor ?ticker=",
+      "merged_at": "2026-08-12T19:14:27Z"
+    },
+    {
+      "number": 5408,
+      "title": "feat(options): add private same-basis OPRA NBBO cohort prerequisite",
+      "merged_at": "2026-08-12T02:01:04Z"
+    },
+    {
+      "number": 5407,
+      "title": "docs(doctrine): name LENS data-tip-* as the Tier-2 hover home, replacing retired .act-pop-src",
+      "merged_at": "2026-08-12T04:32:53Z"
+    },
+    {
+      "number": 5405,
+      "title": "ci: wire 33 grandfathered marketing suites into their owning jobs",
+      "merged_at": "2026-08-12T04:37:01Z"
+    },
+    {
+      "number": 5404,
+      "title": "Fix BioCatalyst activation lane boundaries",
+      "merged_at": "2026-08-11T23:20:12Z"
+    },
+    {
+      "number": 5403,
+      "title": "Fix W2C namespace setup for masked siblings",
+      "merged_at": "2026-08-12T00:59:24Z"
+    },
+    {
+      "number": 5402,
+      "title": "GMI W2: exposure-decomposition probe (R1) \u2014 prereg, probe, reviewer-hardened verdict",
+      "merged_at": "2026-08-12T23:34:44Z"
+    },
+    {
+      "number": 5401,
+      "title": "research(institutionalize): Handoff B \u2014 product experience census, master IA v1, P0 reference design packet",
+      "merged_at": "2026-08-12T09:15:31Z"
+    },
+    {
+      "number": 5400,
+      "title": "research(product-experience): page census 2026-08 \u2014 P0 evidence + census report (HANDOFF C)",
+      "merged_at": "2026-08-12T09:15:26Z"
+    },
+    {
+      "number": 5399,
+      "title": "feat(biocatalyst): arm the B1S2c source soak",
+      "merged_at": "2026-08-11T22:55:05Z"
+    },
+    {
+      "number": 5398,
+      "title": "docs(access): census entitlement truth",
+      "merged_at": "2026-08-12T18:53:35Z"
+    },
+    {
+      "number": 5397,
+      "title": "ci: reserve merge control and drain sweeps faster",
+      "merged_at": "2026-08-11T22:54:12Z"
+    },
+    {
+      "number": 5396,
+      "title": "feat(product-experience): cross-repo page registry + evidence-capture harness (HANDOFF C)",
+      "merged_at": "2026-08-12T07:08:48Z"
+    },
+    {
+      "number": 5395,
+      "title": "research(prophet-us): independent commercial launch readiness review \u2014 PRIVATE BETA ONLY",
+      "merged_at": "2026-08-12T15:10:31Z"
+    },
+    {
+      "number": 5394,
+      "title": "ci: plan packs once and launch only non-empty shards",
+      "merged_at": "2026-08-12T10:10:17Z"
+    },
+    {
+      "number": 5393,
+      "title": "Market Memory: restore source replay and W2C evidence lineage",
+      "merged_at": "2026-08-11T22:23:22Z"
+    },
+    {
+      "number": 5392,
+      "title": "leader_radar: fix .receipt-machine-state font-family to use --num token",
+      "merged_at": "2026-08-12T06:05:56Z"
+    },
+    {
+      "number": 5391,
+      "title": "fix(fund-pages): port SM4-R3 font fix to fund_dossier + fund_index",
+      "merged_at": "2026-08-12T16:22:35Z"
+    },
+    {
+      "number": 5390,
+      "title": "fix(china): restore Connect Leaderboard \u2014 builder/template key mismatch",
+      "merged_at": "2026-08-12T15:10:29Z"
+    },
+    {
+      "number": 5389,
+      "title": "fix(fleet): declare .codex/worktrees \u2014 the fourth agent root the three lists all missed",
+      "merged_at": "2026-08-11T21:46:10Z"
+    },
+    {
+      "number": 5388,
+      "title": "Forensics: independently verify seed review bundles",
+      "merged_at": "2026-08-11T21:49:07Z"
+    },
+    {
+      "number": 5387,
+      "title": "BioCatalyst: render verified Change Tape values",
+      "merged_at": "2026-08-11T22:02:34Z"
+    },
+    {
+      "number": 5386,
+      "title": "fix(macro): quad map \u2014 neutral position marker, and name the label/reading split",
+      "merged_at": "2026-08-12T17:59:55Z"
+    },
+    {
+      "number": 5385,
+      "title": "ci: make merge-on-green handoff terminal for every agent",
+      "merged_at": "2026-08-12T10:57:04Z"
+    },
+    {
+      "number": 5384,
+      "title": "docs(executive-os): cross-reference the Mastermind strategic state + worker contract",
+      "merged_at": "2026-08-11T21:37:01Z"
+    },
+    {
+      "number": 5383,
+      "title": "research(prophet-us): stop-curvature context charter \u2014 pre-registration (\u00a76.8(a) follow-up)",
+      "merged_at": "2026-08-12T19:18:18Z"
+    },
+    {
+      "number": 5382,
+      "title": "Revamp Filing Forensics into an insight-first dashboard",
+      "merged_at": "2026-08-11T20:09:48Z"
+    },
+    {
+      "number": 5381,
+      "title": "Forensics: diagnose attested credential rejection",
+      "merged_at": "2026-08-11T20:39:53Z"
+    },
+    {
+      "number": 5380,
+      "title": "feat(marketing): W2C-1 throughput unlock \u2014 15-min ladder, armed daily read, receipt floor",
+      "merged_at": "2026-08-12T22:20:05Z"
+    },
+    {
+      "number": 5379,
+      "title": "marketing: v5-register market-clock fixtures; wire the unrun suite into CI",
+      "merged_at": "2026-08-12T15:31:25Z"
+    },
+    {
+      "number": 5378,
+      "title": "Docs: reconcile GMI Market Memory prerequisites",
+      "merged_at": "2026-08-11T19:57:23Z"
+    },
+    {
+      "number": 5377,
+      "title": "design(govrev): budget-rail status word \u2014 word font, sentence case; re-pair parity.css",
+      "merged_at": "2026-08-12T04:16:23Z"
+    },
+    {
+      "number": 5376,
+      "title": "research(options): freeze sparse selector abstention receipt",
+      "merged_at": "2026-08-11T23:29:07Z"
+    },
+    {
+      "number": 5375,
+      "title": "fix(group-reads): W-A correctness \u2014 session units, as_of stamp, and pins for the two non-defects",
+      "merged_at": "2026-08-12T05:15:37Z"
+    },
+    {
+      "number": 5374,
+      "title": "feat(winner-health): three-tier board \u2014 per-tier libraries, honest no-analog/unread states (W2b)",
+      "merged_at": "2026-08-11T23:33:44Z"
+    },
+    {
+      "number": 5373,
+      "title": "feat(options): capture prospective owner-time W1A context",
+      "merged_at": "2026-08-11T22:43:21Z"
+    },
+    {
+      "number": 5372,
+      "title": "research(top-anatomy): phase-1 anchor-matched re-registration \u2014 AM instrument failure adjudicated open, DM discharges duration, AM-v2 chartered",
+      "merged_at": "2026-08-11T23:35:29Z"
+    },
+    {
+      "number": 5371,
+      "title": "tests: pin origination_note bilingual completeness on every emit path",
+      "merged_at": "2026-08-12T09:15:51Z"
+    },
+    {
+      "number": 5370,
+      "title": "feat(prophet-us): union admission on the EARLY-TURN starter tier (bake-off \u00a7A2)",
+      "merged_at": "2026-08-11T23:52:22Z"
+    },
+    {
+      "number": 5369,
+      "title": "design(govrev): radar surface pass \u2014 label vocabulary, fact-grid disclosure, value-change direction",
+      "merged_at": "2026-08-12T09:16:02Z"
+    },
+    {
+      "number": 5368,
+      "title": "marketing: a recall never polls Buffer, the dark quota suite gets a job, five v5 follow-ups closed",
+      "merged_at": "2026-08-12T18:09:02Z"
+    },
+    {
+      "number": 5367,
+      "title": "research(cn-limit): P-A charter \u2014 actual pick panel read contract + two-phase design",
+      "merged_at": "2026-08-12T05:07:46Z"
+    },
+    {
+      "number": 5366,
+      "title": "marketing: the number gate was taxing the doctrine it enforces (date strip + breaking budget)",
+      "merged_at": "2026-08-12T09:16:10Z"
+    },
+    {
+      "number": 5365,
+      "title": "Strict JSON for research summary emitters: NaN\u2192null at write time",
+      "merged_at": "2026-08-12T14:59:18Z"
+    },
+    {
+      "number": 5364,
+      "title": "research(cn-limit): W-P0 washout-onset first results (display-tier) + program home v2",
+      "merged_at": "2026-08-12T04:22:55Z"
+    },
+    {
+      "number": 5363,
+      "title": "contracts(govrev): restore recipient_query_terms to required \u2014 manifest carries it fleet-wide",
+      "merged_at": "2026-08-12T16:12:07Z"
+    },
+    {
+      "number": 5362,
+      "title": "feat(options): add canonical campaign v2 ledgers",
+      "merged_at": "2026-08-11T21:33:22Z"
+    },
+    {
+      "number": 5361,
+      "title": "Market Memory: accrue prospective SPY experience",
+      "merged_at": "2026-08-11T20:21:26Z"
+    },
+    {
+      "number": 5360,
+      "title": "research(cn-limit): exact-plane forward ledger + advancer prereg requirements",
+      "merged_at": "2026-08-12T05:56:44Z"
+    },
+    {
+      "number": 5359,
+      "title": "research(prophet-us): footprint-picker prereg + measurement \u2014 the picker inside the filter",
+      "merged_at": "2026-08-12T06:34:08Z"
+    },
+    {
+      "number": 5358,
+      "title": "ci: wire tests/test_constitution.py into the neural-web legacy job",
+      "merged_at": "2026-08-12T07:46:18Z"
+    },
+    {
+      "number": 5357,
+      "title": "fix(china-micro): registration-era main-board IPO window + launch-era ChiNext ST width",
+      "merged_at": "2026-08-12T09:16:19Z"
+    },
+    {
+      "number": 5356,
+      "title": "research: Executive OS Phase 0 institutional census",
+      "merged_at": "2026-08-12T04:01:08Z"
+    },
+    {
+      "number": 5355,
+      "title": "feat(prophet): add private exact-option shadow lifecycle receipts",
+      "merged_at": "2026-08-11T19:03:41Z"
+    },
+    {
+      "number": 5354,
+      "title": "fix(options): keep public GEX state on fresh main",
+      "merged_at": "2026-08-11T18:21:14Z"
+    },
+    {
+      "number": 5353,
+      "title": "options: persist durable Market Memory truth receipts",
+      "merged_at": "2026-08-11T18:06:51Z"
+    },
+    {
+      "number": 5352,
+      "title": "Options: bind exact Market Memory context receipts",
+      "merged_at": "2026-08-11T15:04:30Z"
+    },
+    {
+      "number": 5351,
+      "title": "research: freeze MomoEdge completion benchmark",
+      "merged_at": "2026-08-11T15:47:06Z"
+    },
+    {
+      "number": 5350,
+      "title": "Prophet: preserve host-private exact-option mark evidence",
+      "merged_at": "2026-08-11T15:56:49Z"
+    },
+    {
+      "number": 5349,
+      "title": "fix(options): isolate chain snapshot scheduler deployment",
+      "merged_at": "2026-08-11T17:53:01Z"
+    },
+    {
+      "number": 5348,
+      "title": "feat(release-radar): add coherent CPI ridge shadow",
+      "merged_at": "2026-08-11T22:26:39Z"
+    },
+    {
+      "number": 5347,
+      "title": "Map the three-repository Mastermind system",
+      "merged_at": "2026-08-11T13:29:50Z"
+    },
+    {
+      "number": 5346,
+      "title": "Market Memory: admit first production record class",
+      "merged_at": "2026-08-11T17:59:39Z"
+    },
+    {
+      "number": 5345,
+      "title": "ops: add private project runtime truth",
+      "merged_at": "2026-08-11T14:52:33Z"
+    },
+    {
+      "number": 5344,
+      "title": "fix(prophet): make marks schedule timezone neutral",
+      "merged_at": "2026-08-11T13:38:31Z"
+    },
+    {
+      "number": 5343,
+      "title": "gmi(w1b): theme-graph semantic spine \u2014 bitemporal nodes/edges/evidence + crosswalk CN family + seeder shape discrimination + CN limit-rule registry",
+      "merged_at": "2026-08-11T19:11:20Z"
+    },
+    {
+      "number": 5342,
+      "title": "Flow: publish source-clock and cadence truth",
+      "merged_at": "2026-08-11T13:05:38Z"
+    },
+    {
+      "number": 5341,
+      "title": "fix(prophet): run marks publisher from deployed checkout",
+      "merged_at": "2026-08-11T12:50:35Z"
+    },
+    {
+      "number": 5340,
+      "title": "deploy: repoint terminal-data-setup's repo URL comment to the org",
+      "merged_at": "2026-08-11T19:25:10Z"
+    },
+    {
+      "number": 5339,
+      "title": "research(prophet-us): early-admission construction bake-off \u2014 \u00a76.8(a)/(b) replays + stop-anchored ruler",
+      "merged_at": "2026-08-12T13:09:01Z"
+    },
+    {
+      "number": 5338,
+      "title": "fix(nightly): make engine output loss fail closed",
+      "merged_at": "2026-08-11T16:49:42Z"
+    },
+    {
+      "number": 5337,
+      "title": "gmi(w1a): revive THS PIT snapshot cadence + US membership snapshots + freshness tripwire + 42-organ disposition sweep",
+      "merged_at": "2026-08-11T11:44:10Z"
+    },
+    {
+      "number": 5336,
+      "title": "feat(biocatalyst): arm bounded family clocks",
+      "merged_at": "2026-08-11T19:25:15Z"
+    },
+    {
+      "number": 5335,
+      "title": "Let the main integration baseline finish checkout",
+      "merged_at": "2026-08-11T11:55:56Z"
+    },
+    {
+      "number": 5334,
+      "title": "topa-w2: tier-widening wave \u2014 B2 confirms cross-tier, A4 reverses, F1/F3/B3 ore body replicates 4/4 panels (G0.5 PRESENTABLE)",
+      "merged_at": "2026-08-11T14:29:12Z"
+    },
+    {
+      "number": 5333,
+      "title": "fix(price-pressure): cold-runner store restore + R2-canonical event ledger (successor to #5322)",
+      "merged_at": "2026-08-12T17:03:43Z"
+    },
+    {
+      "number": 5332,
+      "title": "options: add frozen campaign cohort ledger",
+      "merged_at": "2026-08-11T10:34:04Z"
+    },
+    {
+      "number": 5331,
+      "title": "tests(govrev): clamp vintage clock offsets + decouple incident/grader tests from the live ledger",
+      "merged_at": "2026-08-12T06:38:51Z"
+    },
+    {
+      "number": 5330,
+      "title": "Add fail-closed Market Memory promotion audit",
+      "merged_at": "2026-08-11T09:10:54Z"
+    },
+    {
+      "number": 5329,
+      "title": "Publish durable opportunity receipts for Terminal",
+      "merged_at": "2026-08-11T09:37:25Z"
+    },
+    {
+      "number": 5328,
+      "title": "BioCatalyst: add governed Capital Structure PIT adapter",
+      "merged_at": "2026-08-11T09:37:32Z"
+    },
+    {
+      "number": 5327,
+      "title": "dag: declare every daily.yml fetch_r2 re-invocation; red vanished re-invocations in the conformance differ",
+      "merged_at": "2026-08-11T09:57:52Z"
+    },
+    {
+      "number": 5326,
+      "title": "GMI Theme Graph W0 \u2014 phase-0 adjudication masterplan (next TIL chapter: rail + waves, not a lobe)",
+      "merged_at": "2026-08-11T09:35:35Z"
+    },
+    {
+      "number": 5325,
+      "title": "Add the proposed-only Market Memory research handoff",
+      "merged_at": "2026-08-11T07:54:48Z"
+    },
+    {
+      "number": 5324,
+      "title": "feat(options): durably land PIT episode evidence",
+      "merged_at": "2026-08-11T08:00:33Z"
+    },
+    {
+      "number": 5321,
+      "title": "Release Radar: add coherent CPI truth substrate",
+      "merged_at": "2026-08-11T08:22:57Z"
+    },
+    {
+      "number": 5320,
+      "title": "merge-on-green: a fresh red must always leave a visible marker (#5291)",
+      "merged_at": "2026-08-11T09:56:25Z"
+    },
+    {
+      "number": 5319,
+      "title": "feat(massive_stock_day): refuse local research reads of a stale mirror",
+      "merged_at": "2026-08-11T09:49:35Z"
+    },
+    {
+      "number": 5318,
+      "title": "test(us-board): repair rendered-fixture CI drift",
+      "merged_at": "2026-08-11T06:05:16Z"
+    },
+    {
+      "number": 5316,
+      "title": "Make US Prophet copy human and keep earnings setups visible",
+      "merged_at": "2026-08-11T06:38:58Z"
+    },
+    {
+      "number": 5315,
+      "title": "feat(options): add PIT per-side PRISM unusual lens",
+      "merged_at": "2026-08-11T07:21:28Z"
+    },
+    {
+      "number": 5314,
+      "title": "Register the US candidate-pool contract disclosure",
+      "merged_at": "2026-08-11T04:34:00Z"
+    },
+    {
+      "number": 5313,
+      "title": "Refine Macro release-detail modal",
+      "merged_at": "2026-08-11T05:59:06Z"
+    },
+    {
+      "number": 5312,
+      "title": "Add the synthetic Operating Cortex conformance layer",
+      "merged_at": "2026-08-11T06:44:57Z"
+    },
+    {
+      "number": 5311,
+      "title": "fix(biocatalyst): publish across sandbox mount boundary",
+      "merged_at": "2026-08-11T06:42:00Z"
+    },
+    {
+      "number": 5310,
+      "title": "docs(biocatalyst): return handoff to Codex \u2014 what is done, what is not, and one correction",
+      "merged_at": "2026-08-11T09:37:39Z"
+    },
+    {
+      "number": 5309,
+      "title": "feat: add synthetic episodic retrieval conformance",
+      "merged_at": "2026-08-11T04:15:40Z"
+    },
+    {
+      "number": 5308,
+      "title": "docs(calcbench): Wave 0B handoff \u2014 the blocker is four secrets, not the pipeline",
+      "merged_at": "2026-08-11T09:37:45Z"
+    },
+    {
+      "number": 5307,
+      "title": "fix(us-board): anchor the display-tier earnings chip to the board session (host-clock determinism)",
+      "merged_at": "2026-08-11T09:52:54Z"
+    },
+    {
+      "number": 5306,
+      "title": "marketing: posting outbids telemetry \u2014 single-fire the metrics poll, cap it at 8 calls",
+      "merged_at": "2026-08-11T09:38:00Z"
+    },
+    {
+      "number": 5305,
+      "title": "prophet(us): force-majeure outage backfill \u2014 receipt-exact 2026-08-09 replay (rev-1, supersedes #5294)",
+      "merged_at": "2026-08-11T10:01:36Z"
+    },
+    {
+      "number": 5304,
+      "title": "docs(prophet-us): backfill design rev-1 \u2014 restore review-corrected input adjudication",
+      "merged_at": "2026-08-11T09:38:09Z"
+    },
+    {
+      "number": 5301,
+      "title": "prophet(us): plain-word disclosure for reconstructed plans (chip + receipt + footnote, EN/ZH)",
+      "merged_at": "2026-08-11T09:42:43Z"
+    },
+    {
+      "number": 5300,
+      "title": "docs(topa): primary-checkout massive_stock_day mirror is frozen \u2014 fetch_r2 before local passes",
+      "merged_at": "2026-08-11T06:07:23Z"
+    },
+    {
+      "number": 5299,
+      "title": "test: decouple breadth fixtures from nightly tip",
+      "merged_at": "2026-08-11T03:32:11Z"
+    },
+    {
+      "number": 5298,
+      "title": "feat(winner-health): W1 display surface \u2014 nightly maturation states + Winner Health page (TOPA)",
+      "merged_at": "2026-08-11T06:10:01Z"
+    },
+    {
+      "number": 5297,
+      "title": "research(top-anatomy): phase-0 results \u2014 reconciled instrument, run-3 headline + repair/cross-check arms",
+      "merged_at": "2026-08-11T06:06:08Z"
+    },
+    {
+      "number": 5296,
+      "title": "Repair W3 playback catalog store readiness",
+      "merged_at": "2026-08-11T02:09:51Z"
+    },
+    {
+      "number": 5295,
+      "title": "prophet(us): lossless candidate-pool lanes + dated pool store (CN-parity, display-tier)",
+      "merged_at": "2026-08-11T02:29:39Z"
+    },
+    {
+      "number": 5292,
+      "title": "feat(price-pressure): \u00a710.1 VIXCLS stamp-completion pass + immutable receipts",
+      "merged_at": "2026-08-11T02:19:53Z"
+    },
+    {
+      "number": 5291,
+      "title": "marketing voice v5: the read is in the selection, not a performed reaction",
+      "merged_at": "2026-08-11T02:32:52Z"
+    },
     {
       "number": 5289,
       "title": "docs(prophet-us): outage backfill design of record (operator force-majeure 2026-08-11)",
@@ -1846,831 +4907,6 @@
       "number": 4919,
       "title": "research(prophet-us): EYES OPEN masterplan \u2014 Phase 2 of Missed Ignitions (unfreeze, fail-closed disclosure, early-turn parity)",
       "merged_at": "2026-08-07T10:55:27Z"
-    },
-    {
-      "number": 4918,
-      "title": "test(risk-radar): re-pin the global-breadth guard \u2014 #2188 gave 'global' a second leg, so dropping the column re-weights the scare instead of deleting it",
-      "merged_at": "2026-08-07T10:55:23Z"
-    },
-    {
-      "number": 4917,
-      "title": "fix(dossier): reconcile the two basket gates \u2014 keep the row, gate the link",
-      "merged_at": "2026-08-07T10:53:29Z"
-    },
-    {
-      "number": 4916,
-      "title": "fix(baseline): let the proof finish \u2014 cancel-in-progress killed every run before it reached a runner",
-      "merged_at": "2026-08-07T10:48:07Z"
-    },
-    {
-      "number": 4915,
-      "title": "docs(caddy): correct the grey-cloud claim \u2014 admin is edge-proxied, and its ACME survives the hop",
-      "merged_at": "2026-08-07T10:47:00Z"
-    },
-    {
-      "number": 4914,
-      "title": "alert(surface-freshness): route staleness to the ops spine \u2014 the annotation was never the gap, the reader was",
-      "merged_at": "2026-08-07T10:40:29Z"
-    },
-    {
-      "number": 4913,
-      "title": "fix(nav): bump the immutable cache key \u2014 the sweep changed nav_market.js under it",
-      "merged_at": "2026-08-07T10:33:46Z"
-    },
-    {
-      "number": 4912,
-      "title": "docs(wave1): amend the frozen contract \u2014 Q6, a verified byte range does not verify the speaker",
-      "merged_at": "2026-08-07T10:40:25Z"
-    },
-    {
-      "number": 4911,
-      "title": "feat(earnings): Wave 1B \u2014 the EDGAR identity join and the Exhibit 99.1 release binding",
-      "merged_at": "2026-08-07T10:40:21Z"
-    },
-    {
-      "number": 4910,
-      "title": "company_intelligence: issuer-keyed event/document/span spine (Wave 1A)",
-      "merged_at": "2026-08-07T10:25:10Z"
-    },
-    {
-      "number": 4909,
-      "title": "fix(government-revenue): derive the candidate suites' frozen clock from the data they project",
-      "merged_at": "2026-08-07T10:20:24Z"
-    },
-    {
-      "number": 4908,
-      "title": "forensics: cross-pin the four detector ids across all THREE implementations",
-      "merged_at": "2026-08-07T10:25:06Z"
-    },
-    {
-      "number": 4907,
-      "title": "fix(exit-policy): the capture witness pinned a defect #4684 fixed upstream",
-      "merged_at": "2026-08-07T10:04:05Z"
-    },
-    {
-      "number": 4906,
-      "title": "fix(government-revenue): EX-21 picker missed EDGAR's bare-x separator",
-      "merged_at": "2026-08-07T10:25:02Z"
-    },
-    {
-      "number": 4905,
-      "title": "docs(seasonality): continuation handoff \u2014 the engines exist, the evidence does not",
-      "merged_at": "2026-08-07T10:24:59Z"
-    },
-    {
-      "number": 4904,
-      "title": "fix(options): era-mark the three chain-derived ledger columns onto the session-filtered chain store",
-      "merged_at": "2026-08-07T10:24:55Z"
-    },
-    {
-      "number": 4903,
-      "title": "feat(seasonality): cross-symbol research browser that refuses to become a score (W7)",
-      "merged_at": "2026-08-07T10:42:46Z"
-    },
-    {
-      "number": 4902,
-      "title": "docs(caddy): correct the apex DNS/TLS comment to the real EdgeOne topology",
-      "merged_at": "2026-08-07T09:42:31Z"
-    },
-    {
-      "number": 4901,
-      "title": "fix(estate): re-render the 57 free-content pages #4855 left stale (\u7533\u62a5 \u2192 \u62ab\u9732)",
-      "merged_at": "2026-08-07T09:42:27Z"
-    },
-    {
-      "number": 4900,
-      "title": "fix(nightly-timings): instrument us_prophet_ledgers \u2014 it shipped W2-dark",
-      "merged_at": "2026-08-07T09:36:30Z"
-    },
-    {
-      "number": 4899,
-      "title": "ci: heal main's 4 trigger gaps \u2014 every open PR is red on test_main_has_no_trigger_gap",
-      "merged_at": "2026-08-07T09:42:24Z"
-    },
-    {
-      "number": 4898,
-      "title": "ledger(us-board): declare 2026-08-03..06 a disclosed null era \u2014 the board published, but ranked on frozen factors",
-      "merged_at": "2026-08-07T09:42:20Z"
-    },
-    {
-      "number": 4897,
-      "title": "psi: market books + position assessment desk on the watchlist page",
-      "merged_at": "2026-08-07T09:42:17Z"
-    },
-    {
-      "number": 4896,
-      "title": "feat(seasonality): shadow market-response model + forward-chained calibration (W4)",
-      "merged_at": "2026-08-07T10:07:17Z"
-    },
-    {
-      "number": 4895,
-      "title": "feat(seasonality): multi-clock Neural Web state v2 \u2014 the v1 field that was about to be lied to (W5)",
-      "merged_at": "2026-08-07T10:09:01Z"
-    },
-    {
-      "number": 4894,
-      "title": "feat(psi): W2.5 \u2014 chg_1d in the five per-market library bakes (+index c1)",
-      "merged_at": "2026-08-07T09:42:09Z"
-    },
-    {
-      "number": 4893,
-      "title": "fix(dag): declare the three collect-lane modules the sweep left undeclared",
-      "merged_at": "2026-08-07T09:07:22Z"
-    },
-    {
-      "number": 4891,
-      "title": "fix(hk): HK can no longer feature anything \u2014 heal the featured reds, pin the two live defects",
-      "merged_at": "2026-08-07T09:29:56Z"
-    },
-    {
-      "number": 4890,
-      "title": "fix(ci): scope the ob-mask script's warnings filter to __main__ (un-reds ci-pack-2)",
-      "merged_at": "2026-08-07T09:00:25Z"
-    },
-    {
-      "number": 4889,
-      "title": "feat(hk-prophet): Ripening shelf \u2014 the CN W8-R1 port that gives the HK board a body between fresh crosses",
-      "merged_at": "2026-08-07T09:00:22Z"
-    },
-    {
-      "number": 4888,
-      "title": "fix(ci): define TEMPLATES so #4758's help-tip guard can actually run (un-reds ci-pack-0)",
-      "merged_at": "2026-08-07T09:00:18Z"
-    },
-    {
-      "number": 4887,
-      "title": "feat(psi): W2 \u2014 portfolio_ctx v2 per-ticker state blocks + market block + coverage counts",
-      "merged_at": "2026-08-07T09:00:15Z"
-    },
-    {
-      "number": 4886,
-      "title": "fix(macro): the quad-map arrowhead outgrew its arrow, and the dial needle is white on white",
-      "merged_at": "2026-08-07T09:00:11Z"
-    },
-    {
-      "number": 4885,
-      "title": "feat(seasonality): Catalyst mode \u2014 draw the boundary of the evidence, not a placeholder (W2C/W3)",
-      "merged_at": "2026-08-07T09:00:08Z"
-    },
-    {
-      "number": 4884,
-      "title": "fix(cboe): the cross-fill remedy promised a stamp offset that #4807 made false",
-      "merged_at": "2026-08-07T09:00:05Z"
-    },
-    {
-      "number": 4883,
-      "title": "fix(polygon-gex): finish the #4807 session re-stamp on the 91% its merge reverted",
-      "merged_at": "2026-08-07T09:00:01Z"
-    },
-    {
-      "number": 4882,
-      "title": "docs(psi): Amendment A3 \u2014 market-partitioned books + pinned design spec",
-      "merged_at": "2026-08-07T08:59:57Z"
-    },
-    {
-      "number": 4881,
-      "title": "ci(house-law): register check_tushare_freshness \u2014 heals main's house-law-registry red",
-      "merged_at": "2026-08-07T08:59:54Z"
-    },
-    {
-      "number": 4880,
-      "title": "docs: handoff addendum \u2014 nightly died of host overload (load 79), not caps",
-      "merged_at": "2026-08-07T08:21:39Z"
-    },
-    {
-      "number": 4879,
-      "title": "docs(calcbench): rewrite the wave-status table from observation, not intent",
-      "merged_at": "2026-08-07T08:59:51Z"
-    },
-    {
-      "number": 4878,
-      "title": "fix(billing): correct the MM_SITE_BASE \"www has broken edge TLS\" claim \u2014 it is false",
-      "merged_at": "2026-08-07T08:59:48Z"
-    },
-    {
-      "number": 4877,
-      "title": "research(cn-board): a published pick can be un-published by the trailing bucket \u2014 census + adjudication",
-      "merged_at": "2026-08-07T08:59:44Z"
-    },
-    {
-      "number": 4876,
-      "title": "fix(research): fail startup loudly on paid vault router wiring errors",
-      "merged_at": "2026-08-07T08:59:41Z"
-    },
-    {
-      "number": 4875,
-      "title": "guard(i18n): \u7533\u62a5 can never reach zh copy again \u2014 and register the census red pinning main",
-      "merged_at": "2026-08-07T09:29:50Z"
-    },
-    {
-      "number": 4874,
-      "title": "fix(price-basis): the census went blind, not clean \u2014 restore the detector and light the dark suite",
-      "merged_at": "2026-08-07T08:59:36Z"
-    },
-    {
-      "number": 4873,
-      "title": "Add Mastermind Bot to the Research menu, Pro-gated at the host",
-      "merged_at": "2026-08-07T08:59:32Z"
-    },
-    {
-      "number": 4872,
-      "title": "fix(ci): close the 2 biocatalyst trigger gaps \u2014 and collect the red one already let through",
-      "merged_at": "2026-08-07T09:29:46Z"
-    },
-    {
-      "number": 4871,
-      "title": "fix(ci): register /sb/* as a non-policy route \u2014 heals main's boundary red",
-      "merged_at": "2026-08-07T08:59:27Z"
-    },
-    {
-      "number": 4870,
-      "title": "fix(options): era-mark the opt_vanna_relief ledger rows onto the calendar-resolved basis",
-      "merged_at": "2026-08-07T08:59:23Z"
-    },
-    {
-      "number": 4869,
-      "title": "feat(seasonality): Prophet narrative/attention overlay \u2014 the plan cannot move (W6)",
-      "merged_at": "2026-08-07T09:29:43Z"
-    },
-    {
-      "number": 4868,
-      "title": "feat(seasonality): event-study core \u2014 two estimands that cannot see each other (W2B)",
-      "merged_at": "2026-08-07T10:03:37Z"
-    },
-    {
-      "number": 4867,
-      "title": "fix(options): era-marked restamp of opt_vanna_relief onto the calendar-resolved 5-session basis",
-      "merged_at": "2026-08-07T08:59:17Z"
-    },
-    {
-      "number": 4866,
-      "title": "fix(search): Chinese ticker search finds US names, and a failed library stops reading as \"no matches\"",
-      "merged_at": "2026-08-07T08:59:13Z"
-    },
-    {
-      "number": 4864,
-      "title": "ci(anchor): add the \u00a77 marker-engine half to session-anchor-era, and heal main's 2 trigger gaps",
-      "merged_at": "2026-08-07T09:29:39Z"
-    },
-    {
-      "number": 4863,
-      "title": "fix(price-basis): heal the guard registry both directions (base-side red, self-inflicted)",
-      "merged_at": "2026-08-07T08:59:06Z"
-    },
-    {
-      "number": 4861,
-      "title": "docs(display-grid): the parity claim is not false YET \u2014 it goes false when #4738 lands",
-      "merged_at": "2026-08-07T07:26:33Z"
-    },
-    {
-      "number": 4860,
-      "title": "feat(seasonality): point-in-time universe reads \u2014 say \"unavailable\" instead of guessing (W1A/W1C)",
-      "merged_at": "2026-08-07T08:20:25Z"
-    },
-    {
-      "number": 4859,
-      "title": "ci: run the three cheap dark reds \u2014 and heal three corrupted DO_NOT_REBUILD rows",
-      "merged_at": "2026-08-07T08:20:21Z"
-    },
-    {
-      "number": 4858,
-      "title": "fix(earnings): fail startup loudly on paid router wiring errors",
-      "merged_at": "2026-08-07T07:15:17Z"
-    },
-    {
-      "number": 4857,
-      "title": "guard(breadth): the OHLC caches must share ONE adjustment basis \u2014 close the split no scanner can see",
-      "merged_at": "2026-08-07T08:20:17Z"
-    },
-    {
-      "number": 4856,
-      "title": "docs(house-law): claim the lane first, and heal the WHOLE pack",
-      "merged_at": "2026-08-07T07:15:12Z"
-    },
-    {
-      "number": 4855,
-      "title": "i18n(zh): \u7533\u62a5 \u2192 \u62ab\u9732 site-wide \u2014 filings read as tax declarations, not disclosures",
-      "merged_at": "2026-08-07T07:15:08Z"
-    },
-    {
-      "number": 4854,
-      "title": "fix(sweeper): re-test a red the PR inherited from a base that has since been healed",
-      "merged_at": "2026-08-07T06:21:52Z"
-    },
-    {
-      "number": 4853,
-      "title": "research: display-grid alignment adjudication \u2014 era display-grid-abs-session-2026-08-06 (DG-R1..R8)",
-      "merged_at": "2026-08-07T06:21:40Z"
-    },
-    {
-      "number": 4852,
-      "title": "feat(seasonality): dark fail-closed event-clock adapter \u2014 a hostile payload gets a ledger, not a traceback (W2A)",
-      "merged_at": "2026-08-07T07:15:05Z"
-    },
-    {
-      "number": 4851,
-      "title": "test(intl): pin repair_hold hysteresis to a synthetic series",
-      "merged_at": "2026-08-07T07:15:01Z"
-    },
-    {
-      "number": 4849,
-      "title": "feat(government-revenue): Wave 9D \u2014 propose issuer mappings from official evidence only",
-      "merged_at": "2026-08-07T08:20:13Z"
-    },
-    {
-      "number": 4848,
-      "title": "perf(build_site): W2 section timing ledger + memoize the grader price loader (\u221211m/night measured)",
-      "merged_at": "2026-08-07T08:20:10Z"
-    },
-    {
-      "number": 4847,
-      "title": "marketing copy: stale sessions, diary voice, advertised abstention, and the same stat every night",
-      "merged_at": "2026-08-07T07:14:54Z"
-    },
-    {
-      "number": 4845,
-      "title": "fix(merge-on-green): the sweeper was starving its own API budget (rebased; auto-refresh half landed as #4854)",
-      "merged_at": "2026-08-07T07:14:50Z"
-    },
-    {
-      "number": 4844,
-      "title": "fix(exit-policy): pin the report's WRITER to the vintage its guard already reads",
-      "merged_at": "2026-08-07T07:14:46Z"
-    },
-    {
-      "number": 4842,
-      "title": "fix(exit-policy): re-render the committed report at the frozen slice, not live caches",
-      "merged_at": "2026-08-07T04:45:35Z"
-    },
-    {
-      "number": 4841,
-      "title": "fix(ci): heal main's last two reds together \u2014 FS-4 sys.modules + prophet-postmortem FN cohort (different packs, mutual block)",
-      "merged_at": "2026-08-07T05:36:21Z"
-    },
-    {
-      "number": 4840,
-      "title": "fix(options): resolve every polygon_gex session lookback by calendar, not by row position",
-      "merged_at": "2026-08-07T07:14:41Z"
-    },
-    {
-      "number": 4838,
-      "title": "fix(tests): let the PSS follow-on ledgers accrue (ci-pack-2 red on clean main)",
-      "merged_at": "2026-08-07T04:25:20Z"
-    },
-    {
-      "number": 4837,
-      "title": "fix(ci): heal main's basing-shelf red \u2014 the witness row was artifact-dependent, not a shelf regression",
-      "merged_at": "2026-08-07T04:25:31Z"
-    },
-    {
-      "number": 4836,
-      "title": "fix(forensics): fail startup loudly on paid router wiring errors",
-      "merged_at": "2026-08-07T07:14:37Z"
-    },
-    {
-      "number": 4835,
-      "title": "forensics: give the anonymous preview an honest aggregate",
-      "merged_at": "2026-08-07T08:59:02Z"
-    },
-    {
-      "number": 4834,
-      "title": "feat(govrev): Wave 9E \u2014 union the recipient retrievals, do not normalize",
-      "merged_at": "2026-08-07T07:26:30Z"
-    },
-    {
-      "number": 4833,
-      "title": "fix(cycles): absolute session-calendar anchor for the ladder grids \u2014 era cyc-abs-session-2026-08-06 (board admission gate)",
-      "merged_at": "2026-08-07T07:26:26Z"
-    },
-    {
-      "number": 4832,
-      "title": "outbox: clear the standing queue of copy that is already unlawful",
-      "merged_at": "2026-08-07T09:29:35Z"
-    },
-    {
-      "number": 4831,
-      "title": "biocatalyst d0b: Trial Screen, Peer Matrix, replay-verified Change Tape, Temporal Braid",
-      "merged_at": "2026-08-07T07:30:11Z"
-    },
-    {
-      "number": 4830,
-      "title": "forensics: open the paid funnel \u2014 promote page assets, split four access states",
-      "merged_at": "2026-08-07T08:20:06Z"
-    },
-    {
-      "number": 4829,
-      "title": "test(intl): freeze market-state replays at an as-of date so they stop rotting",
-      "merged_at": "2026-08-07T04:25:09Z"
-    },
-    {
-      "number": 4828,
-      "title": "fix(government-revenue): three wrong-candidate defects in the Wave 9C award-event collector",
-      "merged_at": "2026-08-07T08:20:03Z"
-    },
-    {
-      "number": 4827,
-      "title": "fix(prophet): regenerate the stale exit-policy horse race blocking every PR",
-      "merged_at": "2026-08-07T03:33:34Z"
-    },
-    {
-      "number": 4826,
-      "title": "ci: give tests/test_marketing_theme_proxy.py a lane \u2014 #4646's silent half, UNRUN since it landed",
-      "merged_at": "2026-08-07T07:14:20Z"
-    },
-    {
-      "number": 4825,
-      "title": "biocatalyst: v2 successor acceptance contract + trusted browser verifier (W0-B2)",
-      "merged_at": "2026-08-07T07:14:16Z"
-    },
-    {
-      "number": 4824,
-      "title": "fix(ci): un-dark tests/test_admin_server.py and teach it the key_alerts rail",
-      "merged_at": "2026-08-07T07:14:13Z"
-    },
-    {
-      "number": 4822,
-      "title": "biocatalyst: W7-A operating packet producer + W7-B allowlisted Neural Web reader",
-      "merged_at": "2026-08-07T08:19:59Z"
-    },
-    {
-      "number": 4821,
-      "title": "fix(ai_costs): record the rung that actually served, not the Claude subscription lane",
-      "merged_at": "2026-08-07T08:19:55Z"
-    },
-    {
-      "number": 4820,
-      "title": "biocatalyst B1S2a: private bounded fixed-cohort transport (dark, gated off)",
-      "merged_at": "2026-08-07T08:33:35Z"
-    },
-    {
-      "number": 4818,
-      "title": "feat(govrev): Wave 9D \u2014 exact-identifier issuer graph expansion, with its fences",
-      "merged_at": "2026-08-07T07:14:03Z"
-    },
-    {
-      "number": 4817,
-      "title": "fix(ci): the publish-time proxy fixture needs the data stack \u2014 gate it, and give it a lane that has one",
-      "merged_at": "2026-08-07T04:25:41Z"
-    },
-    {
-      "number": 4816,
-      "title": "fix(neuralweb): the GEX dimension never populated \u2014 context_api read a column the store has never had",
-      "merged_at": "2026-08-07T07:14:00Z"
-    },
-    {
-      "number": 4815,
-      "title": "ci(government-revenue): meta-guard the unnamed-suite rot + wire the runtime contract paths",
-      "merged_at": "2026-08-07T07:13:57Z"
-    },
-    {
-      "number": 4814,
-      "title": "biocatalyst: BC-O1a inert operational store + M0a outcome-family policy (contract only)",
-      "merged_at": "2026-08-07T08:33:31Z"
-    },
-    {
-      "number": 4813,
-      "title": "Government Revenue Wave 9G: prospective candidate grader + first preregistered family (GRV-FA1)",
-      "merged_at": "2026-08-07T07:13:50Z"
-    },
-    {
-      "number": 4812,
-      "title": "feat(china): engine-driven delayed-board disclosure + arm the freshness sentinel (china 12d)",
-      "merged_at": "2026-08-07T08:58:57Z"
-    },
-    {
-      "number": 4811,
-      "title": "feat(asia): tripwire for the gated Tushare plane going quietly cold",
-      "merged_at": "2026-08-07T07:13:44Z"
-    },
-    {
-      "number": 4810,
-      "title": "biocatalyst: reconcile the shared planes and name the real closed-beta denominator",
-      "merged_at": "2026-08-07T07:13:41Z"
-    },
-    {
-      "number": 4809,
-      "title": "fix(options): the 5-session lookback resolves its far endpoint by calendar, not by row position",
-      "merged_at": "2026-08-07T07:30:07Z"
-    },
-    {
-      "number": 4808,
-      "title": "fix(ci): catch chat.html nav drift on the PR, not on main \u2014 and stop --fix from stripping ?v=/defer",
-      "merged_at": "2026-08-07T08:33:28Z"
-    },
-    {
-      "number": 4807,
-      "title": "fix(polygon-gex): stamp the SESSION the snapshot describes, not the UTC run date",
-      "merged_at": "2026-08-07T07:30:02Z"
-    },
-    {
-      "number": 4806,
-      "title": "fix(forensics): the receipt API was reading the wrong bucket (Calcbench parity Wave 0A)",
-      "merged_at": "2026-08-07T07:13:31Z"
-    },
-    {
-      "number": 4805,
-      "title": "feat(seasonality): biopharma.event.v2 \u2014 make fabricated precision structurally impossible (W2A0)",
-      "merged_at": "2026-08-07T07:13:27Z"
-    },
-    {
-      "number": 4804,
-      "title": "feat(government-revenue): separate the collection verdict from the persistence verdict",
-      "merged_at": "2026-08-07T07:13:23Z"
-    },
-    {
-      "number": 4802,
-      "title": "ollama num_ctx: measure both lanes, keep both windows, un-dark the provider suite",
-      "merged_at": "2026-08-07T07:13:19Z"
-    },
-    {
-      "number": 4800,
-      "title": "ci(anchor): execute the session-anchor invariance suite \u2014 UNRUN under a published era stamp",
-      "merged_at": "2026-08-07T07:26:21Z"
-    },
-    {
-      "number": 4799,
-      "title": "fix(display-grid): candles and markers share the absolute session anchor \u2014 era display-grid-abs-session-2026-08-06 (stacked on #4738)",
-      "merged_at": "2026-08-07T07:17:18Z"
-    },
-    {
-      "number": 4798,
-      "title": "fix(nightly): stop the engine job restoring a stale breadth cache over the panel collect just committed",
-      "merged_at": "2026-08-07T00:27:53Z"
-    },
-    {
-      "number": 4797,
-      "title": "board_ledger: fence BOTH bucketing eras; retire the dead \u00a77 writer",
-      "merged_at": "2026-08-07T07:13:12Z"
-    },
-    {
-      "number": 4796,
-      "title": "biocatalyst: D0a named adjudication + the parity ledger \u2014 two rulings the program owed itself",
-      "merged_at": "2026-08-07T03:33:49Z"
-    },
-    {
-      "number": 4795,
-      "title": "fix(options-stamp): gap-aware chain readers \u2014 session-ordinal \u0394OI fit, prior-session-strict vol/OI comparisons",
-      "merged_at": "2026-08-07T07:13:08Z"
-    },
-    {
-      "number": 4794,
-      "title": "fix(nav): heal the chat-nav drift failing ci-pack on every PR",
-      "merged_at": "2026-08-07T07:13:04Z"
-    },
-    {
-      "number": 4792,
-      "title": "earnings_qual: drop the obsolete local 8k cap, keep the per-rung lever",
-      "merged_at": "2026-08-07T07:12:58Z"
-    },
-    {
-      "number": 4791,
-      "title": "fix(ci): bound the collect_tail non-fatal band with timeout-minutes + continue-on-error",
-      "merged_at": "2026-08-07T07:12:55Z"
-    },
-    {
-      "number": 4790,
-      "title": "marketing: the nightly emitted two kinds that nobody could decide",
-      "merged_at": "2026-08-07T07:12:52Z"
-    },
-    {
-      "number": 4789,
-      "title": "fix(merge-on-green): an absence of failure is not a pass \u2014 a head with zero CI evidence read `clean` (#4779)",
-      "merged_at": "2026-08-07T07:12:48Z"
-    },
-    {
-      "number": 4788,
-      "title": "docs: Context economy standing rule \u2014 Fable burn is context \u00d7 turns, not thinking",
-      "merged_at": "2026-08-06T23:31:41Z"
-    },
-    {
-      "number": 4786,
-      "title": "docs(wave1): freeze the Wave 1 producer contract \u2014 the five questions R0-D exposed",
-      "merged_at": "2026-08-07T03:33:54Z"
-    },
-    {
-      "number": 4785,
-      "title": "ruling: freeze the PSQ hold-tilt promotion clock \u2014 its falsifier is unreachable",
-      "merged_at": "2026-08-07T08:33:25Z"
-    },
-    {
-      "number": 4784,
-      "title": "earnings_qual: bound the local rung's prompt to its own 4k context window (R0-A2)",
-      "merged_at": "2026-08-06T23:33:13Z"
-    },
-    {
-      "number": 4783,
-      "title": "test(company-intelligence): freeze the R0-D golden corpus benchmark (234 events / 130 issuers)",
-      "merged_at": "2026-08-07T07:12:43Z"
-    },
-    {
-      "number": 4782,
-      "title": "fix(government-revenue): repair award-event persistence broken by pandas 3",
-      "merged_at": "2026-08-07T07:12:39Z"
-    },
-    {
-      "number": 4781,
-      "title": "fix(prophet): fence the legacy earnings split-brain \u2014 the Stage tilt has been inert in production since it shipped (R0-C)",
-      "merged_at": "2026-08-07T07:12:36Z"
-    },
-    {
-      "number": 4780,
-      "title": "fix(marketing-earnings): cone site/marketdata in, make a zero-emission pass attributable",
-      "merged_at": "2026-08-07T07:12:32Z"
-    },
-    {
-      "number": 4779,
-      "title": "fix(chat-nav): sync_chat_nav --fix must carry ?v= stamps and defer across the re-splice",
-      "merged_at": "2026-08-07T07:12:28Z"
-    },
-    {
-      "number": 4778,
-      "title": "fix(earnings): make the Qwen-first claim true and its fallback visible (R0-A)",
-      "merged_at": "2026-08-07T07:12:25Z"
-    },
-    {
-      "number": 4777,
-      "title": "docs(skills): fable-mode Revision 2 \u2014 delegation cluster, testimony commitment, expanded pre-send gate",
-      "merged_at": "2026-08-07T07:12:21Z"
-    },
-    {
-      "number": 4776,
-      "title": "ci(government-revenue): run the nineteen suites no pack ever executed",
-      "merged_at": "2026-08-07T07:12:18Z"
-    },
-    {
-      "number": 4775,
-      "title": "fix(cn-watch): repair the hoist-blinded buy-filter pin and enrol the dark continuation-watch suite",
-      "merged_at": "2026-08-07T08:33:21Z"
-    },
-    {
-      "number": 4774,
-      "title": "fix(base): heal both ci-pack-2 reds pinning main and every open PR",
-      "merged_at": "2026-08-07T01:27:45Z"
-    },
-    {
-      "number": 4773,
-      "title": "docs: hand off remaining biopharma seasonality waves",
-      "merged_at": "2026-08-06T22:48:55Z"
-    },
-    {
-      "number": 4772,
-      "title": "docs(biocatalyst): hand off remaining build waves",
-      "merged_at": "2026-08-06T22:50:11Z"
-    },
-    {
-      "number": 4771,
-      "title": "docs: hand off remaining Deepvue clean-room waves",
-      "merged_at": "2026-08-06T22:36:47Z"
-    },
-    {
-      "number": 4770,
-      "title": "docs: hand off remaining Calcbench parity waves",
-      "merged_at": "2026-08-06T22:36:26Z"
-    },
-    {
-      "number": 4769,
-      "title": "docs: hand off remaining earnings and company-event waves",
-      "merged_at": "2026-08-06T22:31:21Z"
-    },
-    {
-      "number": 4767,
-      "title": "fix(china): unblank the Prophet board \u2014 renderer demanded v2 after #4509 moved the engine to v3",
-      "merged_at": "2026-08-06T22:50:04Z"
-    },
-    {
-      "number": 4766,
-      "title": "docs: hand off Government Revenue remaining waves",
-      "merged_at": "2026-08-06T22:21:04Z"
-    },
-    {
-      "number": 4765,
-      "title": "i18n(zh) + copy: native Chinese across the site; stop explaining the method on the boards",
-      "merged_at": "2026-08-09T16:56:17Z"
-    },
-    {
-      "number": 4764,
-      "title": "fix(tests): stop a sys.modules eviction poisoning unrelated files; heal the collect-checkpoint guard #4731 left red",
-      "merged_at": "2026-08-06T23:33:22Z"
-    },
-    {
-      "number": 4763,
-      "title": "fix(exit-policy): pin calibration to a frozen input slice \u2014 \"calibration drifted\" was frontier + price VINTAGE, not drift",
-      "merged_at": "2026-08-07T04:26:35Z"
-    },
-    {
-      "number": 4762,
-      "title": "feat(ops): W1 external freshness sentinel \u2014 dead-man switch outside GitHub",
-      "merged_at": "2026-08-07T08:33:09Z"
-    },
-    {
-      "number": 4761,
-      "title": "fix(cboe): heal the delayed-chain session gaps \u2014 backfill 07-30 from the polygon archive, register the unrecoverable nights, harden the 429 ladder",
-      "merged_at": "2026-08-07T07:29:58Z"
-    },
-    {
-      "number": 4760,
-      "title": "docs(W6): the data-source forensics findings \u2014 three outages, three different classes",
-      "merged_at": "2026-08-07T00:10:17Z"
-    },
-    {
-      "number": 4759,
-      "title": "docs: ops handoff baton \u2014 2026-08-06 emergency (account switch)",
-      "merged_at": "2026-08-06T20:33:43Z"
-    },
-    {
-      "number": 4758,
-      "title": "fix(us-board): act-board help tip rendered inline on sector_central \u2014 port the .help/.tip framework into the shared include",
-      "merged_at": "2026-08-07T07:12:06Z"
-    },
-    {
-      "number": 4757,
-      "title": "fix(tushare): the plane has been dark since 07-27 on vendor auth-reject 40101 \u2014 detect it, annotate it, raise it",
-      "merged_at": "2026-08-07T07:12:02Z"
-    },
-    {
-      "number": 4756,
-      "title": "fix(coiled+mtf): absolute session anchor for the standout bonus/fire grids + trend.d3 chip \u2014 era coiled-mtf-abs-session-2026-08-06",
-      "merged_at": "2026-08-07T08:33:18Z"
-    },
-    {
-      "number": 4755,
-      "title": "feat(admin): Observatory map toggle \u2014 lobe dendrogram or the living synapse map",
-      "merged_at": "2026-08-07T07:11:56Z"
-    },
-    {
-      "number": 4754,
-      "title": "fix(pick-lab): absolute session-calendar anchor for the d2 grid + HK 3-session site \u2014 era pl-abs-session-2026-08-06",
-      "merged_at": "2026-08-07T07:11:51Z"
-    },
-    {
-      "number": 4752,
-      "title": "fix(ci): heal ci-pack-2's four reds on main \u2014 born-red job, vendor re-pin, flag-blind parser, gappy store",
-      "merged_at": "2026-08-06T20:22:11Z"
-    },
-    {
-      "number": 4751,
-      "title": "feat(nightly): W2 runtime telemetry \u2014 per-job/per-band timings ledger + >85%-of-cap tripwire",
-      "merged_at": "2026-08-07T07:11:45Z"
-    },
-    {
-      "number": 4749,
-      "title": "fix(prophet-postmortem): G1 pinned a MARK as a verdict \u2014 FN's horizon closed +1.66% and the fixture called it a loss",
-      "merged_at": "2026-08-07T07:11:40Z"
-    },
-    {
-      "number": 4748,
-      "title": "fix(research): gold harness silently dropped 67% of 3D bars \u2014 tf_bars rejoined to confluence's label geometry (verdict unchanged)",
-      "merged_at": "2026-08-07T07:11:37Z"
-    },
-    {
-      "number": 4747,
-      "title": "fix(track-record): `_ob_mask` is causal but NOT stable \u2014 the published US record moves on zero new information",
-      "merged_at": "2026-08-07T07:11:33Z"
-    },
-    {
-      "number": 4746,
-      "title": "daily: move the capital-structure chain out of collect into its own job",
-      "merged_at": "2026-08-07T08:33:14Z"
-    },
-    {
-      "number": 4745,
-      "title": "fix(nightly): W3 re-measured \u2014 build_news label was stale; split the six-week-dark china wire GDELT query",
-      "merged_at": "2026-08-07T07:11:28Z"
-    },
-    {
-      "number": 4743,
-      "title": "docs: nightly resilience + live-transition masterplan (2026-08-06 outage program)",
-      "merged_at": "2026-08-06T19:47:32Z"
-    },
-    {
-      "number": 4742,
-      "title": "fix(r2): hoist lib.config import above _client so local runs see .env creds",
-      "merged_at": "2026-08-07T07:11:22Z"
-    },
-    {
-      "number": 4741,
-      "title": "fix(nightly): raise engine timeout 200\u2192240 (two consecutive ~205m hard-cancels = the stale-board outage)",
-      "merged_at": "2026-08-06T19:42:07Z"
-    },
-    {
-      "number": 4740,
-      "title": "fix(capital-structure): the lineage pass must ask for the bytes it was told to bind",
-      "merged_at": "2026-08-07T07:11:18Z"
-    },
-    {
-      "number": 4739,
-      "title": "fix(ci): heal two base-side reds pinning every open PR \u2014 KOSPI/HSI golden dates, numpy-less marketing pack",
-      "merged_at": "2026-08-07T08:23:46Z"
-    },
-    {
-      "number": 4738,
-      "title": "fix(signal-quality): absolute session-calendar anchor for the \u00a77 marker engine \u2014 era sq-abs-session-2026-08-06 (A3 follow-up)",
-      "merged_at": "2026-08-07T07:26:18Z"
-    },
-    {
-      "number": 4736,
-      "title": "fix(synapse): declare build_stock_library as a consumer of sector-cycles-forward-log",
-      "merged_at": "2026-08-06T11:46:17Z"
     }
   ]
 }
