@@ -1278,7 +1278,7 @@ def rule_l10(aset: ArtifactSet, groups: frozenset[str]) -> list[Finding]:
         for rid, n in sorted(counts.items()):
             if n > 1:
                 out.append(Finding(
-                    "continuity-item-duplicated", f"{ref}:{pid}:{rid}",
+                    "continuity-item-duplicated", f"{ref}:{pid}:{_one_line(rid, 40)}",
                     f"appears in {n} closure rows — exactly one disposition per predecessor "
                     f"item, or the record contradicts itself (RIG §13.1)",
                 ))
@@ -1718,6 +1718,11 @@ def run_mandate(repo_root: Path, reference_id: str) -> int:
             "closure": rows,
         })
         header.append(f"# {len(rows)} open item(s) derived from {nearest}/verdict.yml.")
+        if nearest_set.verdict is None:
+            header.append(
+                f"# WARNING: {nearest} carries NO verdict.yml — nothing to derive from. An "
+                f"empty closure here is an absence of record, not an absence of open items."
+            )
         for index, cid, _text_ in _condition_entries(nearest_set.verdict):
             if not cid:
                 header.append(
