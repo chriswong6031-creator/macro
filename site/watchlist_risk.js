@@ -318,7 +318,7 @@
   //  transmission_chains.json. A name that sits in an ARMED chain's blast radius
   //  gets a deliberately COOL info chip + a drawer read. Display-only WATCH
   //  context: never a signal, size, or call. All logic below is pure + DOM-free
-  //  (exported for node tests); the wiring lives in loadChains / paintLanes / rail.
+  //  (exported for node tests); the wiring lives in loadChains and the publisher.
   // =========================================================================
   var CHAIN_ARMED = { arming: 1, propagating: 1, expressed: 1 };
   // most-progressed first (a name in several chains leads with the furthest along)

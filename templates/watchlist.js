@@ -240,11 +240,19 @@
      notice it by.
 
      So the boot is non-destructive: every entry point below asks whether a workspace
-     host (`#ws_modes`) is on the page, and falls through to exactly the behaviour that
-     shipped before W2 when it is not. This block is that behaviour, lifted verbatim from
-     `origin/main` and namespaced `lg*` so the two renderers cannot collide. It is
-     deletable the day site/watchlist.html is guaranteed no older than its scripts —
-     not before.
+     host (`#ws_modes`) is on the page, and falls through to the behaviour that shipped
+     before W2 when it is not. This block is that behaviour, lifted from `origin/main`
+     and namespaced `lg*` so the two renderers cannot collide.
+
+     ONE KNOWN DELTA, so the claim above stays exact: these cards render WITHOUT the Risk
+     Desk role badge (the `EXIT REVIEW` / `TAKE-PROFIT REVIEW` chips). That decoration
+     came from `decorateCards`/`paintLanes` in watchlist_risk.js, which went with the
+     braid block; the lane ENGINE behind it is untouched and still feeds the workspace
+     drawer. Accepted, not restored: the gap is bounded by the same window this block
+     exists for, and the badge is not part of the design that replaces it.
+
+     This block is deletable the day site/watchlist.html is guaranteed no older than its
+     scripts — not before.
      ══════════════════════════════════════════════════════════════════════════ */
   var BUYSOON = { 'TURN SIGNALED': 1, 'FRESH BUY': 1, 'BOTTOM WATCH': 1 };
   var listEl, countEl, observer;

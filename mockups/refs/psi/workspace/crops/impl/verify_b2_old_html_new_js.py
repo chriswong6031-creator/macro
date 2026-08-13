@@ -9,7 +9,9 @@ Method: fetch the live page, serve it locally, and swap files one at a time betw
 `origin/main` copy (what is live now) and this branch's copy. Assert the OLD page still
 renders its list, empty state, auth box and sync pill under the NEW JS.
 
-  python3 b2_shim.py            # run the matrix
+  python3 verify_b2_old_html_new_js.py      # run the matrix
+
+Needs network (it fetches the live page once and caches it) and a browser.
 """
 import http.server
 import json

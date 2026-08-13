@@ -13,10 +13,13 @@ this PR carried a second copy. Sections 2 and 3 below are written to be folded i
 
 ## 1. How the crops were taken
 
-`crops/impl/` — 32 full-page PNGs at 2× device scale, viewports 1440×900 and 390×844.
-Six states are shot in all five variants; the 100-name state is shot in two, because its
-design is identical to the 55-name state — it is a LOAD gate, and the load law is
-asserted programmatically at every width instead (§4).
+`crops/impl/` — 40 full-page PNGs at 2× device scale, viewports 1440×900 and 390×844.
+States 01–07 are shot in all five variants (35). State 08 is shot in three (desktop
+dark EN + ZH, 390 dark EN): it exists to prove a COPY set, and the light variant proves
+nothing the other three do not. State 09 is shot in two (desktop + 390, dark EN): it is
+a LAYOUT gate for the seam's folded tail, and the property it guards — zero page-level
+horizontal scroll — is asserted programmatically at every width and in both the
+anonymous and signed-in states (§4).
 
 Every shot loads `templates/watchlist.html.j2` rendered through the same three globals
 `scripts/build_site.py` injects, and runs **the page's own scripts** against the **real
@@ -39,6 +42,8 @@ public plane, so their tags 401 and never execute. The wall is reproduced, not s
 | 05 | save-state chip | all four states side by side |
 | 06 | Watchlists, 100 names | large-list law at the top of the range |
 | 07 | multi-market book, HK filter active | chips filter the TABLE only; book read stays whole-portfolio |
+| 08 | anonymous, Shares mode | every derived figure speaks SHARE COUNTS, never money |
+| 09 | anonymous, 100 names | the seam's folded tail; zero page-level horizontal scroll |
 
 **One honest limitation.** The per-ticker artifacts present in this environment are a
 mix of real and fixture data (several names carry a placeholder close of exactly
@@ -135,6 +140,23 @@ fallback. Recorded in full in packet §14 A9.
   weight; mode-switch counts are absent for a visitor with nothing saved.
 - **§6 ZH** — zero `title=` attributes in the workspace markup; placeholders use the
   `data-ph-en`/`data-ph-zh` pair; ZH dates drop `.fig` because they contain words.
+
+### Known residual in the legacy path (round-3 review)
+
+During the render-lag window — and only during it — the legacy card grid renders
+**without the Risk Desk role badge** (the `EXIT REVIEW` / `TAKE-PROFIT REVIEW` chips and
+the per-lane chips beside them). The cause is `decorateCards`/`paintLanes`, which lived
+in the braid block W2 deleted and are not part of the restored `lg*` path; the lane
+ENGINE survives untouched (`roleBadge`, `laneRead`, `laneRows` are all still exported and
+still feed the workspace drawer).
+
+Accepted rather than restored, for two reasons: the window is bounded — it closes the
+moment the render lane bakes `site/watchlist.html`, after which the legacy path is never
+taken again — and the badge is not part of the design that replaces it. The workspace
+expresses the same read as a stage mark plus the attention stack, so restoring a chip
+that is on its way out would add code whose only purpose is to be deleted. It is recorded
+here because "the legacy path is byte-for-byte what shipped" would otherwise be an
+inexact claim, and the source comment naming that path says so too.
 
 ---
 
