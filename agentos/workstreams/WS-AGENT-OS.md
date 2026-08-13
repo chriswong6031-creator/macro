@@ -31,10 +31,11 @@ waves:
     pr: 5556
     depends_on: [W0]
     next_action: >
-      Adoption instructions + backfill are in PR; the unmet gate is >=3 handoffs
-      written by sessions other than the scaffolding sessions, from real work —
-      accrues as live workstream sessions stop; do not manufacture records to
-      close it.
+      Adoption instructions + backfill are in PR. Gate status: DEC>=10 met (19);
+      DSC>=5 met on the corpus-total reading the Phase 1 commissioning handoff
+      specifies (5 total; 2 postdate Phase 0); UNMET: >=3 handoffs written by
+      sessions other than the scaffolding sessions, from real work — accrues as
+      live workstream sessions stop; do not manufacture records to close it.
   - id: W2
     title: "Phase 2 — status generator + mastermind status CEO brief"
     status: done

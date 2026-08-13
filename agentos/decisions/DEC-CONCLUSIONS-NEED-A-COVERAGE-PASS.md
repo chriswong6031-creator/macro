@@ -33,7 +33,7 @@ alternatives:
 evidence:
   - "Macro AGENTS.md §Adjudication coverage gate (operator 2026-08-10) — all four clauses"
   - "Macro CLAUDE.md §House laws — Adjudication coverage gate bullet, same ruling"
-affects: ["research adjudications fleet-wide", "promotion decisions under DEC:GAUNTLET-GATES-PROMOTION-NOT-BUILD"]
+affects: ["research/**", "AGENTS.md"]
 confidence: high
 reversibility: easy
 decided_by: chairman
@@ -45,6 +45,8 @@ decided_at: 2026-08-10
 Backfilled 2026-08-13 (Agent OS Phase 1) from the standing law, which names the ruling
 date and both motivating misses. The named exemplars (SPY-altitude, blocked-entry round
 1) are cited as the law states them; their full case files live with their programs.
+Related: `DEC:GAUNTLET-GATES-PROMOTION-NOT-BUILD` — the promotion boundary this gate
+patrols.
 
 ## What would reopen this
 

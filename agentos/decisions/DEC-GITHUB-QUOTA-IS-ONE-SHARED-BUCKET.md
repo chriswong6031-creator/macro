@@ -37,7 +37,7 @@ evidence:
   - "Macro CLAUDE.md §House laws — 'GitHub quota is ONE shared bucket (hook-enforced)', 2026-07-26 receipts"
   - "Macro AGENTS.md §Waiting on CI without jamming every other session — 4,488→0 measurement, fail-closed Stop"
   - ".claude/hooks/gh_quota_guard.py — added 2026-07-27 (git log --diff-filter=A)"
-affects: ["every gh invocation in every session", ".claude/hooks/gh_quota_guard.py", ".claude/hooks/ship_loop_guard.py"]
+affects: [".claude/hooks/gh_quota_guard.py", ".claude/hooks/ship_loop_guard.py"]
 confidence: high
 reversibility: easy
 decided_by: coo-fable

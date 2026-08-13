@@ -31,7 +31,7 @@ evidence:
   - "Macro CLAUDE.md §House laws — 'Instrument verdicts are NOT market verdicts (operator 2026-08-09)'"
   - "Macro AGENTS.md §Signal-state interpretation (operator 2026-08-09)"
   - "research/CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md — receipts of the miss and the +20% tape"
-affects: ["engine/** synthesis and nightly narration", "user-facing signal-state copy"]
+affects: ["engine/**", "research/CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md"]
 confidence: high
 reversibility: easy
 decided_by: chairman

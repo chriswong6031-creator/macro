@@ -38,7 +38,7 @@ evidence:
   - "Macro CLAUDE.md §Spawn-handoff law (STANDING — onboarding postmortem 2026-07-23); section entered 2026-07-23 (git log -S)"
   - "charting-app terminal/AGENTS.md agent-laws block — '<!-- BEGIN:mastermind-agent-laws (added 2026-07-23 after the onboarding-flow postmortem) -->', seeded by its PR #173"
   - "mockups/refs/<program>/ committed-reference convention (Macro CLAUDE.md §Spawn-handoff law item 2)"
-affects: ["every Agent spawn and cross-repo commission", "research/*MASTERPLAN* authoring convention"]
+affects: ["CLAUDE.md", "research/*MASTERPLAN*.md", "mockups/refs/**"]
 confidence: high
 reversibility: easy
 decided_by: coo-fable

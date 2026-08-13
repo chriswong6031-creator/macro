@@ -19,7 +19,8 @@ rationale: >
   and do not report it as one. The pairing guard exists for the other direction of the
   same fact: because `site/<name>` is served directly, an edit to `templates/<name>`
   without its `site/` twin silently ships nothing (or, worse, drifts the two). The guard
-  enumerates the pairs (56 at last count) and CI enforces byte equality.
+  enumerates the pairs and CI enforces byte equality; the pair count grows with the
+  site, so read it from the script, not from any record.
 alternatives:
   - option: Deliver plain copies through the render lane like `.j2` pages
     why_not: >

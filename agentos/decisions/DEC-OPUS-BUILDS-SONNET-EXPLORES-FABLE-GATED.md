@@ -5,7 +5,10 @@ question: >
   fan-out, and be spawned as frontier judgment — and how is the routing enforced?
 answer: >
   Opus builds, reviews, and designs (the `builder`/`reviewer`/`designer` agent types are
-  Opus-pinned). Sonnet is narrowed to mechanical NON-code fan-out — census, exploration,
+  Opus-pinned) — EXCEPT taste-as-deliverable surfaces that fail the draft-and-review
+  test (hero sections, new visual language, flagship page revamps), which stay in the
+  main loop or go through the gated fable orchestrator. Sonnet is narrowed to mechanical
+  NON-code fan-out — census, exploration,
   lookup sweeps — and Haiku to trivial extraction. Fable runs the main loop (planning,
   adjudication, merges, final synthesis) and may be spawned ONLY via the triple
   `orchestrator` agent type + explicit `model: 'fable'` + a `FABLE-WHY: <category>:
@@ -41,7 +44,7 @@ evidence:
   - ".claude/hooks/model_routing_guard.py, wired in .claude/settings.json (PreToolUse on Agent/Task/Workflow)"
   - "Agent-type frontmatter: builder/reviewer/designer Opus-pinned; orchestrator opus-floor with the fable gate"
   - "scripts/metabolism_build.py — autonomous build loop Opus-pinned 2026-07-21 (R-V4-2 amended)"
-affects: ["every Agent/Task/Workflow spawn in Macro sessions", ".claude/hooks/model_routing_guard.py"]
+affects: [".claude/hooks/model_routing_guard.py", ".claude/settings.json", ".claude/agents/**"]
 confidence: high
 reversibility: easy
 decided_by: chairman

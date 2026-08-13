@@ -35,7 +35,7 @@ evidence:
   - "Macro AGENTS.md §Definition of done, same-titled block with the #3867/#3889 receipts"
   - "PR #3867 (merged mid-flight, packs cancelled) and PR #3889 (auto-merge fired in ~1 min)"
   - ".github/workflows/ci.yml concurrency group — merged-close events fenced into their own group ('-merged' suffix)"
-affects: [".github/workflows/ci.yml", ".github/workflows/merge-on-green.yml", "macro merge practice fleet-wide"]
+affects: [".github/workflows/ci.yml", ".github/workflows/merge-on-green.yml"]
 confidence: high
 reversibility: costly
 decided_by: chairman
@@ -47,6 +47,10 @@ decided_at: 2026-07-28
 Backfilled 2026-08-13 (Agent OS Phase 1) from the standing fleet law in Macro
 `CLAUDE.md`/`AGENTS.md`, which carries the operator date and both PR receipts inline. The
 rationale above restates that prose; nothing here is reconstructed from recollection.
+Attribution split, for honesty: the merge-on-CONCLUDED rule itself is operator-attributed
+(2026-07-28), which is what `decided_by: chairman` records; the native-auto-merge
+prohibition clause was verified and added by a session the same day (#3891, "auto-merge
+is not a wait") under that ruling, with no separate operator quote.
 
 ## What would reopen this
 

@@ -28,11 +28,12 @@ confidence: verified
 
 ## Detail
 
-The sparse profile is applied by the account-level WorktreeCreate hook at worktree
-creation (the repo itself carries no sparse config — `.claude/settings.json` has none),
-so it is invisible in the repo tree and easy to rediscover the hard way. Detection must
-read git (`git config core.sparseCheckout`, `git sparse-checkout list`), never
-`is_dir()` on one path — partial cones make single-path checks lie in both directions.
+The sparse profile arrives with the worktree itself: the repo carries no sparse config
+(`.claude/settings.json` has none), so the mechanism lives in account-level
+worktree-creation tooling outside the tree — which is exactly why it is invisible in
+the repo and easy to rediscover the hard way. Detection must read git
+(`git config core.sparseCheckout`, `git sparse-checkout list`), never `is_dir()` on one
+path — partial cones make single-path checks lie in both directions.
 
 Two failure shapes this produces, both observed classes rather than hypotheticals:
 silent artifact truncation (the read-modify-write shape in `so_what`), and vacuously

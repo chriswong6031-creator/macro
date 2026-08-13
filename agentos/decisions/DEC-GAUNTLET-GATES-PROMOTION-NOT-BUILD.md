@@ -35,7 +35,7 @@ evidence:
   - "Macro CLAUDE.md §House laws — Epistemics (gauntlet = PROMOTION gate, NOT a build gate); law entered CLAUDE.md 2026-07-08 (git log -S)"
   - "scripts/check_validated_claims.py — CI enforcement of user-facing 'validated'"
   - "research/DO_NOT_REBUILD.md — kill rows name specific constructions, not topics, consistent with 'kill closes the construction'"
-affects: ["engine/**", "signal promotion practice fleet-wide", "user-facing stat copy"]
+affects: ["engine/**", "scripts/check_validated_claims.py", "site/**"]
 confidence: high
 reversibility: costly
 decided_by: coo-fable
