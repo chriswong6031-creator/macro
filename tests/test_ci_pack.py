@@ -608,6 +608,37 @@ def test_shadow_mode_emits_machine_readable_plan_and_job_results(
     ]
 
 
+def test_execute_pack_emits_legacy_job_annotations_and_failed_job_ids(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """merge_on_green parses `title=legacy-job-<id>` for live-inherited reds."""
+    definition = {"steps": [{"run": "true"}], "runs-on": "ubuntu-latest"}
+    jobs = [
+        PACK.LegacyJob("unrun-government-revenue", definition, 0, 1, ("engine/**",)),
+        PACK.LegacyJob("other", definition, 1, 1, ("engine/**",)),
+    ]
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda: None)
+
+    def fake_run(job, **_kwargs):
+        if job.job_id == "unrun-government-revenue":
+            return f"{job.job_id}: step 'pytest' exited 1"
+        return None
+
+    monkeypatch.setattr(PACK, "_run_job", fake_run)
+    assert PACK.execute_pack(jobs) == 1
+    out = capsys.readouterr().out
+    assert any(
+        line.startswith("::error title=legacy-job-unrun-government-revenue::")
+        for line in out.splitlines()
+    ), out
+    failed = next(
+        line for line in out.splitlines() if line.startswith("CI_PACK_FAILED_JOBS=")
+    )
+    assert json.loads(failed.split("=", 1)[1]) == ["unrun-government-revenue"]
+
+
 def test_packs_stay_balanced_over_the_selected_subset() -> None:
     """Balance must be computed on the SELECTION, not the full manifest.
 
@@ -1285,7 +1316,18 @@ def test_workflow_scopes_only_pull_requests() -> None:
     assert "--changed-from" in scope_arg
     assert "pull_request.base.sha" in scope_arg
     assert "github.base_ref" not in scope_arg
-    assert step["env"]["CI_SCOPE_MODE"] == "${{ vars.CI_SCOPE_MODE || 'shadow' }}"
+    assert step["env"]["CI_SCOPE_MODE"] == "${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}"
+    plan = _yaml(WORKFLOW)["jobs"]["ci-plan"]
+    plan_step = next(
+        s for s in plan["steps"]
+        if isinstance(s, dict) and s.get("id") == "plan"
+    )
+    assert plan_step["env"]["CI_SCOPE_MODE"] == (
+        "${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}"
+    )
+    assert plan_step["env"]["CI_DYNAMIC_MATRIX_MODE"] == (
+        "${{ vars.CI_DYNAMIC_MATRIX_MODE == 'off' && 'off' || 'active' }}"
+    )
     on = _yaml(WORKFLOW).get("on") or _yaml(WORKFLOW).get(True)
     pull_paths = on["pull_request"]["paths"]
     assert "**" in pull_paths
@@ -1365,7 +1407,13 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     assert "macstudio" not in runs_on
     assert "render-linux" not in runs_on
     assert "self-hosted" not in runs_on
-    assert pack["strategy"]["fail-fast"] is False
+    # PR abort-on-first-red; main workflow_dispatch keeps the rest of the pack.
+    # Must stay an unquoted boolean expression — quotes stringify "true"/"false"
+    # and can fail-fast main's heal-slow path (non-empty string is truthy).
+    assert pack["strategy"]["fail-fast"] == "${{ github.event_name == 'pull_request' }}"
+    pack_src = WORKFLOW.read_text(encoding="utf-8")
+    assert "fail-fast: ${{ github.event_name == 'pull_request' }}" in pack_src
+    assert 'fail-fast: "${{ github.event_name == \'pull_request\' }}"' not in pack_src
     # No `max-parallel`: it existed only to stop main's packs from taking all four
     # `render-linux` runners. With no shared pool to protect, throttling would only
     # double main's proof (~26 min -> ~50 min), and it cannot help against the hosted

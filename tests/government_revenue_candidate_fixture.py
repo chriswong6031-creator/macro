@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
+from hashlib import sha256
 import json
 from pathlib import Path
 import shutil
@@ -137,6 +138,65 @@ def canonical_frozen_at() -> str:
         return _FLOOR.isoformat()
     run_at = (newest + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
     return max(run_at, _FLOOR).isoformat()
+
+
+@lru_cache(maxsize=1)
+def canonical_candidate_census() -> int:
+    """Return how many candidate rows the canonical inputs currently yield.
+
+    The clock was not the only hand-typed vintage constant in these suites.  The
+    *census* was one too: ``== 8`` was written on 2026-08-09, when the eight
+    quarantined incident rows were everything the source engine could see, and it
+    detonated on 2026-08-12T23:50:04Z when the award-action rail resolved into the
+    reviewed graph for the first time and the projection issued fifteen forward
+    candidates (ledger 8 -> 23).  Nothing regressed: that unlock is the program's
+    success condition, and the nightly published it green
+    (``candidate_projection_status`` ``status: ok``).  Re-typing ``== 23`` only
+    re-arms the same bomb for candidate twenty-four, exactly as #4406's freshly
+    typed clock literal re-armed the one this module was written to end.
+
+    So derive the census the same way the clock is derived -- from a committed
+    artifact rather than from a human's memory of a vintage.  The authority is the
+    projection's own receipt, which is written by a *previous* run of a *different*
+    code path than the rebuild under test, so an assertion against it is a real
+    cross-artifact agreement and not a receipt checking itself.
+
+    The receipt is bound before it is believed: ``workspace_bundle_id`` must match
+    the committed source bundle (the content-derived identity that ``latest`` and
+    ``workspace`` agree on), and the append-only ledger it counts must still hash
+    and measure exactly as the receipt recorded.  A source that has moved ahead of
+    its receipt therefore fails loudly here, naming that condition, instead of
+    surfacing as an unexplained off-by-N somewhere downstream.
+    """
+    directory = ROOT / CANONICAL_DIRECTORY
+    status = json.loads(
+        (directory / "candidate_projection_status.json").read_text(encoding="utf-8")
+    )
+    workspace = json.loads((directory / "workspace.json").read_text(encoding="utf-8"))
+    latest = json.loads((directory / "latest.json").read_text(encoding="utf-8"))
+    bundle_id = status.get("workspace_bundle_id")
+    if bundle_id != workspace.get("bundle_id") or bundle_id != latest.get(
+        "procurement_workspace", {}
+    ).get("bundle_id"):
+        raise AssertionError(
+            "the committed candidate projection receipt describes a different "
+            f"source bundle than the committed canonical inputs: receipt "
+            f"{bundle_id!r}, workspace {workspace.get('bundle_id')!r}, latest "
+            f"{latest.get('procurement_workspace', {}).get('bundle_id')!r} -- the "
+            "collection lane advanced without a projection, so no census is knowable"
+        )
+    ledger = (directory / "candidate_ledger.jsonl").read_bytes()
+    line_count = len([line for line in ledger.splitlines() if line.strip()])
+    if (
+        sha256(ledger).hexdigest() != status.get("ledger_sha256")
+        or len(ledger) != status.get("ledger_byte_count")
+        or line_count != status.get("ledger_line_count")
+    ):
+        raise AssertionError(
+            "the committed append-only candidate ledger does not match the "
+            "projection receipt bound to it: the receipt cannot be used as a census"
+        )
+    return line_count
 
 
 def utc_date(instant: str) -> str:
