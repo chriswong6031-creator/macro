@@ -127,21 +127,98 @@
     });
   }
 
+  /* ---- per-ticker reads ----------------------------------------------------
+     Two properties this layer must hold that it did not before W2, both of which
+     the large-list gate (55 and 100 names) makes load-bearing:
+
+     1. A MISS IS NOT PERMANENT. The old cache wrote `null` on any failure and
+        answered from it forever, so one transient network blip — or a 401 landed in
+        the split second before the session cookie arrived — permanently blanked that
+        name for the rest of the page's life, with no way back short of a reload. The
+        negative entry now carries an expiry: a real HTTP answer (404 "not in
+        tonight's library", 403/401) is stable for the session's practical purposes
+        and gets a long TTL; a thrown fetch (network down, DNS, abort) gets a short
+        one, so recovering the connection recovers the rows.
+     2. FAN-OUT IS BOUNDED. A 100-name list used to issue 100 simultaneous requests
+        the moment it painted; browsers queue them 6-per-host anyway, so the only
+        real effects were a stalled main thread and a request storm that starved the
+        index fetch. `loadTickers` runs a fixed-width worker pool and hands each
+        result back the moment it lands, so rows hydrate progressively and ONE
+        failure degrades exactly ONE row. */
+  var NEG_TTL_HTTP = 10 * 60 * 1000;   // the store answered: nothing new until the next build
+  var NEG_TTL_NET  = 30 * 1000;        // the network answered nothing: retry soon
+  var _neg = {};                        // ticker -> epoch ms after which we may retry
+  var _inflight = {};                   // ticker -> in-flight promise (dedupes concurrent asks)
+
+  function _negFresh(t) {
+    var until = _neg[t];
+    return until != null && Date.now() < until;
+  }
+
   // fetch + cache one ticker's rich JSON from ITS market's store; resolves null on
-  // 404/absent so callers can degrade gracefully (never throws). Cached either way.
+  // absent so callers can degrade gracefully (never throws).
   function loadTicker(t) {
-    if (Object.prototype.hasOwnProperty.call(_tickerCache, t))
+    if (Object.prototype.hasOwnProperty.call(_tickerCache, t) && _tickerCache[t])
       return Promise.resolve(_tickerCache[t]);
-    return fetch(storeOf(t) + '/' + safeTicker(t) + '.json').then(function (r) {
-      if (!r.ok) throw new Error('absent');
+    if (_negFresh(t)) return Promise.resolve(null);
+    if (_inflight[t]) return _inflight[t];
+
+    var p = fetch(storeOf(t) + '/' + safeTicker(t) + '.json').then(function (r) {
+      if (!r.ok) { var e = new Error('absent'); e.http = true; throw e; }
       return r.json();
-    }).then(function (j) { _tickerCache[t] = j; return j; })
-      .catch(function () { _tickerCache[t] = null; return null; });
+    }).then(function (j) {
+      _tickerCache[t] = j;
+      delete _neg[t];
+      delete _inflight[t];
+      return j;
+    }).catch(function (err) {
+      _tickerCache[t] = null;
+      _neg[t] = Date.now() + ((err && err.http) ? NEG_TTL_HTTP : NEG_TTL_NET);
+      delete _inflight[t];
+      return null;
+    });
+    _inflight[t] = p;
+    return p;
+  }
+
+  /* Bounded-concurrency batch read. `onEach(ticker, json)` fires per resolution —
+     json is null for a name we could not read, which is the caller's cue to draw an
+     honest blank on that ONE row rather than to fail the batch. Resolves when the
+     whole list has been attempted. Concurrency is deliberately at the browser's own
+     per-host ceiling: higher just queues, and queueing is what hid the failures. */
+  function loadTickers(tickers, onEach, opts) {
+    var list = (tickers || []).filter(function (t) { return !!t; });
+    var width = Math.max(1, (opts && opts.concurrency) || 6);
+    var i = 0;
+    function next() {
+      if (i >= list.length) return Promise.resolve();
+      var t = list[i++];
+      /* `loadTicker` can throw SYNCHRONOUSLY before it ever returns a promise — a
+         missing market_books.js makes `storeOf` blow up on the first call. Un-guarded,
+         that throw escapes `next()` and kills the whole worker lane, so a batch of 100
+         silently loses a fifth of its rows with one exception nobody sees. Guarding
+         here degrades exactly the one name, which is the contract this function
+         promises its callers. */
+      var pending;
+      try { pending = loadTicker(t); }
+      catch (e) { pending = Promise.resolve(null); }
+      return pending.then(function (j) {
+        if (onEach) { try { onEach(t, j); } catch (e) {} }
+        return next();
+      }, function () {
+        if (onEach) { try { onEach(t, null); } catch (e) {} }
+        return next();
+      });
+    }
+    var lanes = [];
+    for (var k = 0; k < Math.min(width, list.length); k++) lanes.push(next());
+    return Promise.all(lanes);
   }
 
   window.SD = {
     lang: lang, lz: lz, disp: disp, label: label, action: action, dir: dir,
     stClass: stClass, safeTicker: safeTicker, storeOf: storeOf,
-    loadIndex: loadIndex, loadIndexes: loadIndexes, loadTicker: loadTicker
+    loadIndex: loadIndex, loadIndexes: loadIndexes,
+    loadTicker: loadTicker, loadTickers: loadTickers
   };
 })();

@@ -142,7 +142,7 @@
   .cg-recency button { padding:3px 10px; font-size:11px; font-weight:600; background:var(--panel2); color:var(--muted); border:none; cursor:pointer; transition:background .15s,color .15s; }
   .cg-recency button.active { background:var(--link); color:#fff; }
   .cg-filter-count { font-size:11px; color:var(--muted); margin-left:4px; }
-  .cg-filter-reset { font-size:11px; color:var(--link); cursor:pointer; text-decoration:underline; display:none; }
+  .cg-filter-reset { font-size:11px; color:var(--ink-link, var(--link)); cursor:pointer; text-decoration:underline; display:none; }
   .cg-hide { display:none !important; }
   /* collapsible long tables — "show more" toggle (native to the .cg-fchip pill idiom) */
   tr.cg-more { display:none !important; }
@@ -182,7 +182,7 @@
 
 {# ---------------- the scored watchlist ---------------- #}
 <div class="cg-card">
-  <h2>🎯 {{ t('Watchlist — ranked copy candidates', '观察清单 — 跟单候选排名') }}
+  <h2>{{ t('Watchlist — ranked copy candidates', '观察清单 — 跟单候选排名') }}
       <span class="h-note">— {{ t('composite = ', '综合分 = ') }}{{ (weights.cluster*100)|round|int }}% {{ t('cluster','集群') }} · {{ (weights.technical*100)|round|int }}% {{ t('technical','技术面') }} · {{ (weights.zone*100)|round|int }}% {{ t('zone','区间') }} · {{ (weights.entry*100)|round|int if weights.entry is defined else 30 }}% {{ t('entry timing','入场时机') }}</span></h2>
 
   {# ---- filter bar ---- #}
@@ -401,7 +401,7 @@
 {# ---------------- member track record leaderboard ---------------- #}
 {% if member_leaderboard %}
 <div class="cg-card">
-  <h2>🏅 {{ t('Member Track Record — reliability leaderboard', '议员历史记录 — 可靠性排行榜') }}
+  <h2>{{ t('Member Track Record — reliability leaderboard', '议员历史记录 — 可靠性排行榜') }}
       <span class="h-note">— {{ t('empirical-Bayes shrunk hit rate (ER>0 vs SPY); n = trades with ≥30-day horizon','经验贝叶斯收缩胜率（ER>0 vs 标普）；n = 持有≥30天的交易') }}</span></h2>
   <table class="ad" id="cgMemberTable"><thead><tr>
     <th>{{ t('Member','议员') }}</th>
@@ -481,7 +481,7 @@
 
 {# ---------------- the raw disclosure feed ---------------- #}
 <div class="cg-card">
-  <h2>🗳️ {{ t('Recent disclosures', '最新披露') }}
+  <h2>{{ t('Recent disclosures', '最新披露') }}
       <span class="h-note">— {{ t('newest filings first; ExcessReturn = cumulative excess vs SPY since trade date (horizon-inconsistent — older trades have more time to compound)','最新披露在前；超额收益 = 自交易日起累计超越标普（时间不一致——老交易有更多时间复利）') }}</span></h2>
   {% if feed %}
   <table class="ad" id="cgFeedTable"><thead><tr>

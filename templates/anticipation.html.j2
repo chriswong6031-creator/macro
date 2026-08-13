@@ -9,7 +9,7 @@
 <title>Anticipation — multi-horizon forward outcome cones</title>
 {% set seo_title = "Anticipation: Forward Outcome Cones — Mastermind" %}{% set seo_desc = "Multi-horizon forward outcome cones — the range of likely paths for major assets, drawn from historical analogs." %}{% set seo_path = "anticipation.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -19,22 +19,22 @@
   h1 { font-size:21px; margin:0; }
   h2 { font-size:15px; margin:26px 0 4px; }
   .muted { color:var(--muted); } .sm { font-size:12px; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
+  .pos { color:var(--ink-up, var(--up)); } .neg { color:var(--ink-down, var(--down)); }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:14px; margin-top:10px; }
   .tagline { color:var(--muted); font-size:12.5px; max-width:96ch; margin:4px 0 0; line-height:1.55; }
   .asof { font-size:12px; color:var(--muted); }
   .banner { border-radius:10px; padding:11px 14px; margin:12px 0; font-size:13px; background:var(--panel2); border:1px solid var(--line); display:flex; gap:9px; align-items:flex-start; }
   .banner b { color:var(--text); }
   .chip { display:inline-block; font-size:11px; padding:2px 8px; margin:0 5px 5px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
-  .chip.warn { background:rgba(250,204,21,.12); border-color:rgba(250,204,21,.4); color:var(--warn); }
-  .chip.hot { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.4); color:var(--down); }
-  .chip.ok  { background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.4); color:var(--up); }
+  .chip.warn { background:rgba(250,204,21,.12); border-color:rgba(250,204,21,.4); color:var(--ink-warn, var(--warn)); }
+  .chip.hot { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.4); color:var(--ink-down, var(--down)); }
+  .chip.ok  { background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.4); color:var(--ink-up, var(--up)); }
   /* selector */
   .selwrap { margin:12px 0 2px; }
   .selgrp { margin:6px 0; }
   .selgrp .gl { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-right:8px; }
   .pick { display:inline-block; cursor:pointer; font-size:12.5px; font-weight:600; padding:4px 10px; margin:0 5px 6px 0; border-radius:8px; background:var(--panel); border:1px solid var(--line); color:var(--text); }
-  .pick:hover { border-color:var(--link); color:var(--link); }
+  .pick:hover { border-color:var(--link); color:var(--ink-link, var(--link)); }
   .pick.on { background:var(--accent,#5aa7ff); border-color:var(--accent,#5aa7ff); color:#fff; }
   /* hero */
   .hero { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:14px; align-items:start; }
@@ -43,8 +43,8 @@
   .htitle .nm { font-size:24px; font-weight:700; }
   .htitle .grp { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
   .idxbadge { font-size:11px; font-weight:700; padding:2px 9px; border-radius:7px; text-transform:uppercase; letter-spacing:.04em; }
-  .b-calm{background:rgba(34,197,94,.14);color:var(--up);} .b-elevated{background:rgba(250,204,21,.16);color:var(--warn);}
-  .b-high{background:rgba(249,115,22,.16);color:#f97316;} .b-extreme{background:rgba(239,68,68,.16);color:var(--down);}
+  .b-calm{background:rgba(34,197,94,.14);color:var(--ink-up, var(--up));} .b-elevated{background:rgba(250,204,21,.16);color:var(--ink-warn, var(--warn));}
+  .b-high{background:rgba(249,115,22,.16);color:#f97316;} .b-extreme{background:rgba(239,68,68,.16);color:var(--ink-down, var(--down));}
   .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; }
   @media (max-width:560px){ .cards{ grid-template-columns:1fr; } }
   /* two-block horizon card: DIRECTION (top, colored) + RISK (bottom, neutral) */
@@ -57,13 +57,13 @@
   .hc .pup { float:right; font-variant-numeric:tabular-nums; font-weight:700; }
   .hc .why { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
   .hc .pill { display:inline-block; font-size:10px; padding:1px 6px; border-radius:6px; margin-top:5px; }
-  .hc .pill.ok { background:rgba(34,197,94,.14); color:var(--up); }
+  .hc .pill.ok { background:rgba(34,197,94,.14); color:var(--ink-up, var(--up)); }
   .hc .pill.flip { background:var(--panel); color:var(--muted); border:1px solid var(--line); }
   .hc .rblock { padding:7px 11px 9px; border-top:1px solid var(--line); background:var(--panel); }
   .hc .rv { font-size:14px; font-variant-numeric:tabular-nums; margin-top:1px; }
   .hc .rv2 { font-size:11.5px; color:var(--muted); margin-top:1px; }
   .hc.thin { opacity:.72; }
-  .dir-up{color:var(--up);} .dir-down{color:var(--down);} .dir-flip{color:var(--muted);}
+  .dir-up{color:var(--ink-up, var(--up));} .dir-down{color:var(--ink-down, var(--down));} .dir-flip{color:var(--muted);}
   .legend { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:9px 13px; margin:12px 0; font-size:12px; color:var(--muted); line-height:1.75; }
   .legend b{color:var(--text);font-weight:600;}
   .help{position:relative;cursor:help;border-bottom:1px dotted var(--muted);}
@@ -79,7 +79,7 @@
   .drv .bar i.dn { right:50%; background:rgba(239,68,68,.55); }
   .drv .bar i.dispo { background:transparent; border:1px dashed var(--line); }
   .drv .vv { flex:0 0 42px; text-align:right; font-variant-numeric:tabular-nums; }
-  .drv .sc { flex:0 0 14px; text-align:center; font-size:10px; color:var(--up); }
+  .drv .sc { flex:0 0 14px; text-align:center; font-size:10px; color:var(--ink-up, var(--up)); }
   /* table */
   .ts { overflow-x:auto; margin-top:8px; }
   table { border-collapse:collapse; width:100%; font-size:13px; }
@@ -99,7 +99,7 @@
 {% include "_site_nav.html.j2" %}
 
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
-  <h1>🔮 {{ t('Anticipation', '预判') }}</h1>
+  <h1>{{ t('Anticipation', '预判') }}</h1>
   <span class="asof">{{ t('as of', '截至') }} <span id="asof"></span> · <span id="ngo"></span></span>
 </div>
 <p class="tagline">{{ t(

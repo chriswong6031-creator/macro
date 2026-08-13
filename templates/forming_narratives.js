@@ -84,7 +84,7 @@
       font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap}
     #forming-narratives .ne-pop-sub{font-size:10.5px;color:var(--muted);line-height:1.4}
     #forming-narratives .ne-flags{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
-    #forming-narratives .ne-flag{font-size:11px;color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:1px 7px}`;
+    #forming-narratives .ne-flag{font-size:11px;color:var(--ink-warn, var(--warn,#f59e0b));background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:1px 7px}`;
     const st = document.createElement('style'); st.id = 'ne-styles'; st.textContent = css;
     document.head.appendChild(st);
   }
@@ -173,7 +173,7 @@
           'Scanned ' + (d.n_universe || '—') + ' names as of ' + esc(d.as_of) + '. Scores rank narrative formation, not expected return. A noisy watchlist lens — not a buy list.',
           '截至 ' + esc(d.as_of) + ' 扫描了 ' + (d.n_universe || '—') + ' 只个股。分数衡量叙事成形程度，并非预期回报。这是嘈杂的观察清单，并非买入清单。'
         );
-        sec.innerHTML = `<h2><span class="idx">★</span>🔥 ${L('Forming Narratives', '成形叙事')}
+        sec.innerHTML = `<h2>${L('Forming Narratives', '成形叙事')}
             <span class="sect-tag">${L('emerging themes our models see · ' + esc(d.market_en),
               '模型识别的新兴主题 · ' + esc(d.market_zh))}</span>
             <span style="cursor:default;color:var(--muted);font-size:13px;font-weight:400" data-tip-en="${esc(scanNote.replace(/<[^>]+>/g,''))}" data-tip-zh="${esc(scanNote.replace(/<[^>]+>/g,''))}">?</span></h2>

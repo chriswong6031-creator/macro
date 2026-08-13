@@ -14,7 +14,7 @@
     "hk_dividend",
     "hk_industrials"
   ],
-  "leader": "hk_miners",
+  "leader": "hk_tech_hardware",
   "names": {
     "hk_banks": "Banks (H + HK)",
     "hk_biotech": "Biotech, Pharma & CXO",

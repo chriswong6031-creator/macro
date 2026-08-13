@@ -10,7 +10,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TSX analyzer — cycle &amp; momentum</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -43,19 +43,19 @@
              border-radius:11px; font-size:12.5px; font-weight:700; cursor:help;
              border:1px solid var(--line); white-space:nowrap; }
   .eqbadge .eqg { font-weight:500; opacity:.8; }
-  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
   .alpha-entry { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
                  border-radius:9px; text-transform:capitalize; border:1px solid var(--line); white-space:nowrap; }
-  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
   .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text); border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
-  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
-  .ae-laggard { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--ink-link, var(--link)); }
+  .ae-laggard { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .ae-neutral { background:var(--panel2); color:var(--muted); }
   .fnd-arch { display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px;
               border-radius:8px; background:color-mix(in srgb,var(--link) 14%,var(--panel2));
-              color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
+              color:var(--ink-link, var(--link)); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
   .fnd-desc { font-size:13px; color:var(--text); margin:9px 0 4px; line-height:1.55; }
   /* ---- unified Conviction Profile hero (mirrors stock.html) ---- */
   .conv { margin:8px 0 4px; padding:11px 13px; border-radius:11px; background:var(--panel2);
@@ -63,11 +63,11 @@
   .cv-head { display:flex; align-items:center; gap:11px; }
   .cv-score { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; min-width:48px;
               text-align:center; padding:3px 9px; border-radius:10px; border:1px solid var(--line); }
-  .cv-score.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+  .cv-score.band-high { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
                         background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
   .cv-score.band-constructive { color:var(--g-cold); border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
   .cv-score.band-neutral { color:var(--muted); }
-  .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cv-score.band-low { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
   .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
   .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
   .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
@@ -79,7 +79,7 @@
   .cax .caxv { font-weight:700; font-variant-numeric:tabular-nums; }
   .cv-cau { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
-                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+                  color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
   .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
   .fnd-grid { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
   .fnd-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:5px 10px; font-size:12px; min-width:78px; }
@@ -120,14 +120,14 @@
   .mtf b { color:var(--text); }
   .fnd-chip .vs { font-size:10px; color:var(--muted); margin-left:4px; }
   .rchip { display:inline-block; font-weight:800; padding:2px 10px; border-radius:8px; font-size:12.5px; }
-  .rchip.buy { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 40%,transparent); }
+  .rchip.buy { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--ink-up, var(--up)); border:1px solid color-mix(in srgb,var(--up) 40%,transparent); }
   .rchip.hold { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
-  .rchip.sell { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
+  .rchip.sell { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--ink-down, var(--down)); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
   .fnd-tbl { width:100%; border-collapse:collapse; margin:8px 0 2px; font-size:12px; font-variant-numeric:tabular-nums; }
   .fnd-tbl th, .fnd-tbl td { padding:4px 7px; border-bottom:1px solid var(--line); text-align:right; }
   .fnd-tbl th:first-child, .fnd-tbl td:first-child { text-align:left; color:var(--muted); }
   .fnd-tbl thead th { color:var(--muted); font-weight:700; font-size:11px; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
+  .pos { color:var(--ink-up, var(--up)); } .neg { color:var(--ink-down, var(--down)); }
   .early { margin:6px 0; padding:8px 12px; border-radius:8px;
            background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
            border-left:3px solid var(--g-cold); font-size:13px; color:var(--text); }
@@ -163,7 +163,7 @@
   #r_summary { display:none; }
   #r_cal tr.cal-cur td { background:color-mix(in srgb, var(--warn) 13%, transparent); }
   #r_cal tr.cal-cur td:first-child { box-shadow:inset 3px 0 var(--warn); font-weight:700; }
-  .cal-here { color:var(--warn); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
+  .cal-here { color:var(--ink-warn, var(--warn)); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
 {% include "_stock_decision.css.j2" %}
 </style>
 </head>
@@ -173,7 +173,7 @@
   {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
-      <h1>🔎 {{ t('TSX analyzer', 'TSX 个股分析') }}</h1>
+      <h1>{{ t('TSX analyzer', 'TSX 个股分析') }}</h1>
       <div class="searchwrap">
         <input id="q" placeholder="Search any TSX stock / sector ETF / index… (e.g. RY, Shopify, Energy)" autocomplete="off">
         <div id="sugg"></div>
@@ -219,7 +219,7 @@
     <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
     <div id="sv-evidence"></div>
     <div id="sv-country"></div>
-    <details class="sv-group"><summary>{{ t('📊 Fundamentals, analyst &amp; positioning', '📊 基本面、分析师与持仓') }}</summary>
+    <details class="sv-group"><summary>{{ t('Fundamentals, analyst &amp; positioning', '基本面、分析师与持仓') }}</summary>
     <!-- legacy conviction panel — populated only as a FALLBACK if stockview.js fails -->
     <div class="panel" id="r_conviction_panel" style="display:none">
       <h2>{{ t('Conviction profile', '确信度画像') }} <span class="note" style="text-transform:none">· {{ t('unified verdict — cycle caps it', '统一结论 — 周期封顶') }}</span></h2>
@@ -239,13 +239,13 @@
       <div id="r_fund"></div>
     </div>
     <div class="panel" id="r_analyst_panel" style="display:none">
-      <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span>{{ help(
+      <h2>{{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span>{{ help(
         'yfinance sell-side aggregate: the consensus rating, mean price target with its high/low range, the implied upside vs the current price, and coverage breadth. Sell-side opinion shown as coverage context, NOT an endorsement — a target is a forecast, not a validated edge.',
         'yfinance 卖方汇总：一致评级、目标价中位及其高/低区间、相对现价的隐含上行空间，以及覆盖广度。卖方观点仅说明覆盖范围，并非推荐——目标价是预测，并非有效优势。') }}</h2>
       <div id="r_analyst"></div>
     </div>
     <div class="panel" id="r_earn_panel" style="display:none">
-      <h2>📅 {{ t('Earnings', '财报') }}</h2>
+      <h2>{{ t('Earnings', '财报') }}</h2>
       <div id="r_earn"></div>
     </div>
     <div class="panel" id="r_pos_panel" style="display:none">
@@ -255,7 +255,7 @@
       <div id="r_pos"></div>
     </div>
     <div class="panel" id="r_insider_panel" style="display:none">
-      <h2>👤 {{ t('Insider activity', '内部人交易') }} <span class="note" style="text-transform:none">· {{ t('SEDI open-market filings (yfinance)', 'SEDI 公开市场披露（yfinance）') }}</span>{{ help(
+      <h2>{{ t('Insider activity', '内部人交易') }} <span class="note" style="text-transform:none">· {{ t('SEDI open-market filings (yfinance)', 'SEDI 公开市场披露（yfinance）') }}</span>{{ help(
         'Personal insider open-market buys / sells from SEDI (Canada\'s insider-filing system), via yfinance — issuer buybacks and option exercises are excluded. CONTEXT, not a validated signal: SEDI filings lag the trade by up to ~5 days and TSX insider breadth is thin, so read net buying / selling as a conviction tell, not a timing trigger. Coverage is best-effort per name.',
         '来自 SEDI（加拿大内部人披露系统）的个人内部人公开市场买入／卖出，经 yfinance 获取——已剔除公司回购与期权行权。背景，而非已验证信号：SEDI 披露相对交易最多滞后约5天，且 TSX 内部人样本稀疏，故净买入／卖出应作为信念参考，而非择时触发。覆盖为尽力而为，逐名而定。') }}</h2>
       <div id="r_insider"></div>

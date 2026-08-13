@@ -9,12 +9,12 @@
 <title>Methodology — factor lab, baskets & seasonality</title>
 {% set seo_title = "Methodology — Mastermind" %}{% set seo_desc = "How Mastermind computes its signals — factor labs, baskets, seasonality and cycle gauges, documented plainly." %}{% set seo_path = "methodology.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  a { color:var(--link); text-decoration:none; }
+  a { color:var(--ink-link, var(--link)); text-decoration:none; }
   .topline { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; }
   .layout { display:grid; grid-template-columns:220px minmax(0,820px); gap:34px; align-items:start; }
   @media (max-width:900px){ .layout{ grid-template-columns:1fr; } .toc{ position:static !important; } }

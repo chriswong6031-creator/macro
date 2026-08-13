@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Fleet worktree GC — the "per-host launchd" half research/WORKTREE_GC_POLICY.md
+  always specified but nobody ever installed (discovered 2026-08-13: LaunchAgents
+  held only the runner plists, so the GC never ran on a schedule and the session
+  roots grew to 386GB / 168 trees while the policy said report-first sweeps were
+  happening). Installed as a USER LaunchAgent on the Mac Studio.
+
+  Runs daily at 10:30 local — after the nightly window and the morning render
+  waves, before the operator's working day heats up. The wrapper script it calls
+  (scripts/worktree_gc_launchd.sh) reads the CONFIG from origin/main — the
+  ratified state — never from the primary checkout's possibly-stale working copy,
+  and the tool itself is fail-closed at every gate (locked/dirty/unpushed/
+  open-PR/live-process trees are untouchable regardless of what this schedule
+  does).
+
+  Install (one-time, as the login user):
+    cp "ops/launchd/com.mastermind.worktree-gc.plist" ~/Library/LaunchAgents/
+    launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.mastermind.worktree-gc.plist
+  Logs: ~/Library/Logs/worktree-gc.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.mastermind.worktree-gc</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>exec "/Users/chriswong/Documents/Cluade/Macro Dashboard/scripts/worktree_gc_launchd.sh"</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>10</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/chriswong/Library/Logs/worktree-gc.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/chriswong/Library/Logs/worktree-gc.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>

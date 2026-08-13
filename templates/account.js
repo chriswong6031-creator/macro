@@ -693,10 +693,10 @@
   '.mmacc-line{display:flex;align-items:center;gap:10px}' +
   '.mmacc-line-v{flex:1;min-width:0;font-size:13px;color:var(--text,var(--ink));word-break:break-word}' +
   '.mmacc-muted{color:var(--muted,var(--ink-3))}' +
-  '.mmacc-warn{color:var(--warn,#e0a030);font-size:11px;font-weight:600}' +
-  '.mmacc-mini{flex:none;font-size:12px;font-weight:600;color:var(--link,var(--blue));background:transparent;border:1px solid var(--line,var(--grid));border-radius:8px;padding:5px 11px;cursor:pointer;transition:border-color .15s,background .15s;font-family:inherit}' +
+  '.mmacc-warn{color:var(--ink-warn, var(--warn,#e0a030));font-size:11px;font-weight:600}' +
+  '.mmacc-mini{flex:none;font-size:12px;font-weight:600;color:var(--ink-link, var(--link,var(--blue)));background:transparent;border:1px solid var(--line,var(--grid));border-radius:8px;padding:5px 11px;cursor:pointer;transition:border-color .15s,background .15s;font-family:inherit}' +
   '.mmacc-mini:hover{border-color:var(--link,var(--blue));background:color-mix(in srgb,var(--link,var(--blue)) 10%,transparent)}' +
-  '.mmacc-mini-danger{color:var(--down,#e06464)}' +
+  '.mmacc-mini-danger{color:var(--ink-down, var(--down,#e06464))}' +
   '.mmacc-mini-danger:hover{border-color:var(--down,#e06464);background:color-mix(in srgb,var(--down,#e06464) 10%,transparent)}' +
   '.mmacc-field{max-height:0;overflow:hidden;opacity:0;transition:max-height .28s ease,opacity .2s ease,margin .2s ease}' +
   '.mmacc-field.open{max-height:280px;opacity:1;margin-top:10px}' +
@@ -721,7 +721,7 @@
   '.mmacc-row-toggle{padding:7px 0}' +
   '.mmacc-switch{width:34px;height:20px;border-radius:999px;background:var(--panel2,var(--card));border:1px solid var(--line,var(--grid));position:relative;flex:none;opacity:.6}' +
   '.mmacc-switch::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted,var(--ink-3))}' +
-  '.mmacc-soon{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--warn,#e0a030);background:color-mix(in srgb,var(--warn,#e0a030) 14%,transparent);border-radius:999px;padding:2px 7px}' +
+  '.mmacc-soon{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-warn, var(--warn,#e0a030));background:color-mix(in srgb,var(--warn,#e0a030) 14%,transparent);border-radius:999px;padding:2px 7px}' +
   '.mmacc-soon-sm{padding:1px 6px;font-size:9px}' +
   '.mmacc-pro-card{background:linear-gradient(135deg,color-mix(in srgb,#7c5cff 12%,var(--panel2,var(--card))),color-mix(in srgb,#3b82f6 10%,var(--panel2,var(--card))));border:1px solid color-mix(in srgb,#7c5cff 30%,var(--line,var(--grid)));border-radius:13px;padding:12px 13px;margin-bottom:4px}' +
   '.mmacc-pro-top{display:flex;align-items:center;justify-content:space-between;gap:8px}' +
@@ -736,8 +736,8 @@
   '.mmacc-hint{font-size:11px;color:var(--muted,var(--ink-3));line-height:1.5;margin-top:9px}' +
   '.mmacc-msg{font-size:11.5px;line-height:1.4;max-height:0;overflow:hidden;transition:max-height .2s ease;margin:0}' +
   '.mmacc-msg.show{max-height:60px;margin:0 0 8px}' +
-  '.mmacc-msg.ok{color:var(--ok,#3da564)}' +
-  '.mmacc-msg.bad{color:var(--down,#e06464)}' +
+  '.mmacc-msg.ok{color:var(--ink-ok, var(--ok,#3da564))}' +
+  '.mmacc-msg.bad{color:var(--ink-down, var(--down,#e06464))}' +
   '.mmacc-signin-title{font-size:15px;font-weight:800;color:var(--text,var(--ink))}' +
   '.mmacc-signin-sub{font-size:12px;color:var(--muted,var(--ink-3));line-height:1.5;margin:5px 0 12px}' +
   '.mmacc-loading{padding:26px;text-align:center;color:var(--muted,var(--ink-3))}' +
@@ -764,7 +764,7 @@
     var s = document.createElement('script');
     // nav_market.js owns the runtime menu composition, so it must never inherit
     // a stale year-cached response after a navigation release.
-    s.src = pfx + 'nav_market.js?v=20260810-stocks-hub-movers';
+    s.src = pfx + 'nav_market.js?v=20260812-ui-audit-ink-grades';
     s.async = true;
     (document.head || document.documentElement).appendChild(s);
   })();

@@ -2,41 +2,59 @@
 
 # Active Build Map
 
-Generated: 2026-08-13T02:16:22.861489+00:00  |  Open PRs: 26  |  Merged (window): 500  |  base: `b7e3a2412c4a06862246d4c21ff907a3f0f647ac`
+Generated: 2026-08-13T09:18:51.174210+00:00  |  Open PRs: 45  |  Merged (window): 500  |  base: `41f7d5cf1d78db672d0aa1d43cf22eff1afb53a5`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #5498 | research: nightly compute & allocation audit — the 5h30m bake, decomposed, with a P0-P2 plan | `claude/nightly-compute-audit` | 2026-08-13 | — |
-| #5497 | design-system: resolve --ink-tier to the shipped literals, on measurement | `claude/ds-ink-tier-resolution` | 2026-08-13 | — |
-| #5496 | feat(watchlist): W2 flagship Portfolio Intelligence workspace | `claude/wp-w2-flagship-shell` | 2026-08-13 | — |
-| #5495 | fix(close-pass): the evening board lane has NEVER been green — it fails its own proof step | `claude/fix-close-pass-ledger-selfcheck` | 2026-08-13 | ⚠ protected:1 |
-| #5494 | law: a CI handoff RELEASES a worker from waiting — it does not END the session | `claude/drop-terminal-handoff` | 2026-08-13 | — |
-| #5493 | ci: consolidate odometer light-mode suite to one canonical home (unrun-page-guards) | `claude/dedupe-odometer-ci-wiring` | 2026-08-13 | ⚠ protected:1 |
+| #5525 | test: freeze prophet/flow-surface probes off advancing stores | `cursor/vintage-pin-prophet-flow-7dbb` | 2026-08-13 | — |
+| #5524 | fix(ci): heal nightly temporal-pin reds (prophet-intake, market-memory, flow-surface) | `claude/nightly-tri-heal` | 2026-08-13 | — |
+| #5523 | feat(cn-tushare): land range-shard campaign capability (fail-closed) — blockers 1-4 resolved | `claude/cn-tushare-range-shards-revive` | 2026-08-13 | ⚠ protected:1 |
+| #5522 | docs(govrev): adjudicate the 2026-08-13 candidate batch — no quarantine; document the projection PIT seam | `claude/govrev-aug13-batch-adjudication` | 2026-08-13 | — |
+| #5521 | research(cn-limit): P-B case decomposition — washout winners' footprint anatomy (display-tier) | `claude/pb-case-decomposition` | 2026-08-13 | — |
+| #5520 | governance: Reference Integrity Gate V1 — reference creation gate, founding #5514 fixture, mechanical enforcement | `claude/reference-integrity-gate-v1` | 2026-08-13 | ⚠ protected:1 |
+| #5519 | eval-os P1: no pooled signed excess_mean for a mixed-direction family | `claude/evalos-p1-pooled-excess` | 2026-08-13 | ⚠ CONFLICTING |
+| #5518 | test(govrev): derive the graph-vintage issuer coverage constants — 19/21/[BWXT,GE] stop being hand-typed | `claude/govrev-graph-vintage-coverage-20260813` | 2026-08-13 | — |
+| #5517 | feat(design-system): packet PR-0(a)(b) — site type ramp + shared primitives | `claude/pr0-ramp-and-primitives` | 2026-08-13 | — |
+| #5516 | ci(govrev): make the candidate projection prove itself before it publishes | `claude/govrev-producer-proof-20260813` | 2026-08-13 | ⚠ protected:1 |
+| #5515 | ci: stop the pack/merge traffic jam | `cursor/ci-pack-traffic-jam-a9a1` | 2026-08-13 | ⚠ protected:3 |
+| #5514 | design: Prophet Board mockup gate (MP-1 G-C) — chart-first card + ruled lifecycle ladder | `claude/prophet-board-mockup-gate` | 2026-08-13 | — |
+| #5513 | law: retire the terminal CI handoff — a session owns its PR through to merge | `claude/retire-ci-handoff-20260812` | 2026-08-13 | — |
+| #5512 | eval-os: situation report for the CEO, with the T1/T7/T8 decision | `claude/eval-os-sitrep` | 2026-08-13 | — |
+| #5511 | test(govrev): derive the candidate census — heal ci-pack-6 + ci-pack-3 without re-timing a reviewed manifest | `claude/govrev-candidate-census-vintage-20260813` | 2026-08-13 | — |
+| #5510 | fix(china): the CN Theme Tape's quiet group printed numbers where every other bucket printed names | `claude/cn-theme-tape-quiet-names` | 2026-08-13 | — |
+| #5509 | fix(ci): heal government-revenue pack reds (packs 6+8) | `claude/govrev-pack-heal` | 2026-08-13 | — |
+| #5508 | ops: consolidate the GC launchd onto the canonical installer — immune to every stale checkout | `claude/gc-launchd-consolidation` | 2026-08-13 | — |
+| #5507 | guard(china): the CN Theme Tape suite pinned the night's verdict, and CI never ran it | `claude/cn-theme-tape-drift-20260813` | 2026-08-13 | — |
+| #5506 | prophet: derive lifecycle_state + counts (§J.9(c) PR-0(c)) | `claude/prophet-lifecycle-projection` | 2026-08-13 | — |
+| #5505 | design: Prophet Board reference conformed to the lifecycle ruling (#5504) + MP-1 migration packet | `claude/prophet-board-reference-ruling-conformance` | 2026-08-13 | — |
+| #5503 | guard(signals): signal-gate pair coherence tripwire (#5490 follow-up) | `claude/signal-gate-coherence-tripwire` | 2026-08-13 | ⚠ protected:1 |
+| #5501 | ops(healthcheck): host-disk headroom tripwire — the Studio has hit ENOSPC twice with zero warning | `claude/disk-headroom-tripwire` | 2026-08-13 | — |
+| #5500 | research: Prophet decision packet for §J.9(c)+§J.10 — stage semantics | `claude/prophet-stage-semantics-packet` | 2026-08-13 | — |
+| #5499 | fix(live): put the china_stocks board on the live feed (its % pills were dead) | `worktree-china-stocks-live-change-c7bf58` | 2026-08-13 | — |
+| #5496 | feat(watchlist): W2 flagship Portfolio Intelligence workspace | `claude/wp-w2-flagship-shell` | 2026-08-13 | ⚠ CONFLICTING |
 | #5492 | ops: port the CN lane's cron redundancy to the US nightly | `claude/nightly-backstop` | 2026-08-13 | ⚠ protected:2 |
 | #5491 | research: Sol decision packet for §J.9 (count ladder) | `claude/sol-j9-decision-packet` | 2026-08-13 | — |
 | #5488 | hooks: deny cancelling a production lane — the prose law did not bind on 2026-08-12 | `claude/protect-production-lanes` | 2026-08-13 | — |
 | #5487 | ops: nightly-liveness dead-man switch — the US bake went dark for two sessions and nothing reported it | `claude/nightly-liveness-watchdog` | 2026-08-13 | ⚠ protected:3 |
 | #5486 | feat(design-system): DS-PR-1 — archetype re-key + design_system schema + ratchet R0 (report-only) | `claude/ds-pr-1-registry-ratchet` | 2026-08-13 | ⚠ protected:1 |
 | #5485 | Mastermind Data OS: canonical identity, temporal and price-basis spine + 7 specifications | `claude/mastermind-data-os-arch-20260812` | 2026-08-13 | ⚠ protected:1 |
-| #5483 | Preserve main ref during render checkout compaction | `codex/render-checkout-branch-ref-20260812` | 2026-08-12 | ⚠ protected:1 |
-| #5479 | ui: full-estate UI/UX audit — light mode fixed as a design, not a token swap | `claude/website-ui-ux-audit-20260812` | 2026-08-13 | files-truncated |
-| #5478 | fix(holdings): a currency-shaped ticker is evidence, not a verdict (§6c m12 audit) | `claude/holdings-currency-false-positive-20260812` | 2026-08-12 | ⚠ CONFLICTING / ⚠ protected:2 / files-truncated |
-| #5477 | feat(etfs): W3 — Amplify SILJ/BATT, NCLD on a declared nav_equity_frac, and the government-sweep sleeve leaking into 13 funds | `claude/etf-amplify-navfrac-20260812` | 2026-08-12 | ⚠ CONFLICTING / ⚠ protected:2 / files-truncated |
+| #5483 | Preserve main ref during render checkout compaction | `codex/render-checkout-branch-ref-20260812` | 2026-08-13 | ⚠ protected:1 |
+| #5478 | fix(holdings): a currency-shaped ticker is evidence, not a verdict (§6c m12 audit) | `claude/holdings-currency-false-positive-20260812` | 2026-08-13 | ⚠ protected:2 / files-truncated |
+| #5477 | feat(etfs): W3 — Amplify SILJ/BATT, NCLD on a declared nav_equity_frac, and the government-sweep sleeve leaking into 13 funds | `claude/etf-amplify-navfrac-20260812` | 2026-08-13 | ⚠ protected:2 / files-truncated |
 | #5475 | chore(design-system): DS-PR-2 — design-migration PR template + harness forced-state capture | `claude/ds-pr-2-review-wiring` | 2026-08-13 | — |
-| #5474 | fix(holdings): drop index-futures overlays from the equity book (§6c m17) | `claude/futures-class-predicate-20260812` | 2026-08-12 | ⚠ protected:2 / files-truncated |
+| #5474 | fix(holdings): drop index-futures overlays from the equity book (§6c m17) | `claude/futures-class-predicate-20260812` | 2026-08-13 | ⚠ protected:2 / files-truncated |
 | #5472 | agent-os: architecture + Phase 0 knowledge plane | `worktree-mastermind-agent-ceo-control-9b4772` | 2026-08-13 | ⚠ protected:2 |
 | #5467 | feat(etfs): Fund Flows upgrade — decomposition engine, 105-fund universe, weighting lens, ledger, UI refresh | `claude/etf-page-upgrade-20260812` | 2026-08-13 | ⚠ protected:2 / files-truncated |
 | #5465 | ci: route trusted CI packs and fences to the self-hosted Linux pool (operator charter 2026-08-12, Wave 1) | `claude/ci-selfhosted-wave1` | 2026-08-13 | ⚠ protected:5 |
 | #5464 | docs(mockups): W2 mockup gate — Portfolio Intelligence workspace | `claude/wp-w2-mockup-gate` | 2026-08-13 | — |
-| #5448 | marketing: press wire relays go compose-or-drop, never verbatim (W2E) | `claude/w2e-press-relay-quality` | 2026-08-12 | — |
-| #5437 | Government Revenue: read an unentitled workspace as locked, not as missing data | `claude/government-revenue-locked-hydration` | 2026-08-12 | — |
-| #5432 | fix(government-revenue): gate the API — ruled unintentional, not a public desk | `claude/government-revenue-api-access-ruling` | 2026-08-12 | — |
-| #5424 | data(govrev): publish reviewed defense20-v1 recipient graph — BWXT + refreshed exact edges | `claude/govrev-defense20-bwxt-graph` | 2026-08-12 | DRAFT |
+| #5448 | marketing: press wire relays go compose-or-drop, never verbatim (W2E) | `claude/w2e-press-relay-quality` | 2026-08-13 | — |
+| #5437 | Government Revenue: read an unentitled workspace as locked, not as missing data | `claude/government-revenue-locked-hydration` | 2026-08-13 | — |
+| #5432 | fix(government-revenue): gate the API — ruled unintentional, not a public desk | `claude/government-revenue-api-access-ruling` | 2026-08-13 | — |
+| #5424 | data(govrev): publish reviewed defense20-v1 recipient graph — BWXT + refreshed exact edges | `claude/govrev-defense20-bwxt-graph` | 2026-08-13 | DRAFT |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
-> ℹ 9 of 26 PRs: mergeability not yet computed by GitHub (UNKNOWN).
 
 ## File Collisions
 
@@ -44,19 +62,35 @@ Generated: 2026-08-13T02:16:22.861489+00:00  |  Open PRs: 26  |  Merged (window)
 |------|------|-------------|-------|
 | #5478 | #5477 | 100 ⚠ | `.env.example`, `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml`, `collectors/etf_holdings.py`, `collectors/holdings.py`, `config.yml`, `config/dag.yml`, `data/etf_holdings/BATT/2025-09-25.parquet` +92 more |
 | #5474 | #5467 | 100 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml`, `collectors/etf_holdings.py`, `collectors/holdings.py`, `config.yml`, `config/dag.yml`, `data/etf_holdings/BBH/2026-08-11.parquet`, `data/etf_holdings/BKCH/2026-04-09.parquet` +92 more |
+| #5524 | #5511 | 13 | `config/compiled_kill_registry.yml`, `config/signal_foundry_blocklist.yml`, `research/DO_NOT_REBUILD.md`, `research/GOVERNMENT_REVENUE_CANDIDATE_CENSUS_ADJUDICATION_2026-08-13.md`, `tests/fixtures/government_revenue/issuance_incident_5fc18d5/canonical_source.receipt.json`, `tests/fixtures/government_revenue/issuance_incident_5fc18d5/canonical_source.tar.xz`, `tests/government_revenue_candidate_fixture.py`, `tests/test_government_revenue_candidate_projection.py` +5 more |
 | #5437 | #5432 | 10 | `.github/ci/legacy-jobs.yml`, `app/government_revenue.py`, `config/site_access.yml`, `site/government-revenue-candidate-radar.js`, `site/government-revenue-dossiers.js`, `templates/government-revenue-candidate-radar.js`, `templates/government-revenue-dossiers.js`, `tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv` +2 more |
 | #5478 | #5474 | 6 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml`, `collectors/etf_holdings.py`, `collectors/holdings.py`, `config.yml`, `config/dag.yml` |
 | #5478 | #5467 | 6 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml`, `collectors/etf_holdings.py`, `collectors/holdings.py`, `config.yml`, `config/dag.yml` |
 | #5477 | #5474 | 6 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml`, `collectors/etf_holdings.py`, `collectors/holdings.py`, `config.yml`, `config/dag.yml` |
 | #5477 | #5467 | 6 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml`, `collectors/etf_holdings.py`, `collectors/holdings.py`, `config.yml`, `config/dag.yml` |
-| #5494 | #5488 | 3 | `.claude/hooks/gh_quota_guard.py`, `AGENTS.md`, `CLAUDE.md` |
+| #5524 | #5518 | 3 | `tests/government_revenue_candidate_fixture.py`, `tests/test_government_revenue_candidate_projection.py`, `tests/test_government_revenue_candidates.py` |
+| #5524 | #5509 | 3 | `tests/government_revenue_candidate_fixture.py`, `tests/test_government_revenue_candidate_projection.py`, `tests/test_government_revenue_candidates.py` |
+| #5524 | #5472 | 3 | `config/compiled_kill_registry.yml`, `config/signal_foundry_blocklist.yml`, `research/DO_NOT_REBUILD.md` |
+| #5520 | #5503 | 3 | `.github/ci/legacy-jobs.yml`, `config/house_law_checks.yml`, `docs/HOUSE_LAW_CI_GUARD_SUITE.md` |
+| #5520 | #5486 | 3 | `.github/ci/legacy-jobs.yml`, `config/house_law_checks.yml`, `docs/HOUSE_LAW_CI_GUARD_SUITE.md` |
+| #5520 | #5465 | 3 | `.github/ci/legacy-jobs.yml`, `config/house_law_checks.yml`, `docs/HOUSE_LAW_CI_GUARD_SUITE.md` |
+| #5518 | #5511 | 3 | `tests/government_revenue_candidate_fixture.py`, `tests/test_government_revenue_candidate_projection.py`, `tests/test_government_revenue_candidates.py` |
+| #5518 | #5509 | 3 | `tests/government_revenue_candidate_fixture.py`, `tests/test_government_revenue_candidate_projection.py`, `tests/test_government_revenue_candidates.py` |
+| #5515 | #5465 | 3 ⚠ | `.github/workflows/ci.yml`, `.github/workflows/integration-baseline.yml`, `tests/test_ci_pack.py` |
+| #5513 | #5488 | 3 | `.claude/hooks/gh_quota_guard.py`, `AGENTS.md`, `CLAUDE.md` |
+| #5513 | #5465 | 3 | `.github/ci/legacy-jobs.yml`, `AGENTS.md`, `CLAUDE.md` |
+| #5511 | #5509 | 3 | `tests/government_revenue_candidate_fixture.py`, `tests/test_government_revenue_candidate_projection.py`, `tests/test_government_revenue_candidates.py` |
+| #5511 | #5472 | 3 | `config/compiled_kill_registry.yml`, `config/signal_foundry_blocklist.yml`, `research/DO_NOT_REBUILD.md` |
+| #5503 | #5486 | 3 | `.github/ci/legacy-jobs.yml`, `config/house_law_checks.yml`, `docs/HOUSE_LAW_CI_GUARD_SUITE.md` |
+| #5503 | #5465 | 3 | `.github/ci/legacy-jobs.yml`, `config/house_law_checks.yml`, `docs/HOUSE_LAW_CI_GUARD_SUITE.md` |
 | #5487 | #5465 | 3 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml`, `config/house_law_checks.yml` |
 | #5486 | #5465 | 3 | `.github/ci/legacy-jobs.yml`, `config/house_law_checks.yml`, `docs/HOUSE_LAW_CI_GUARD_SUITE.md` |
-| #5494 | #5465 | 2 | `AGENTS.md`, `CLAUDE.md` |
-| #5493 | #5492 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #5493 | #5487 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #5493 | #5485 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #5493 | #5465 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5525 | #5524 | 2 | `tests/test_options_signal_episode.py`, `tests/test_prophet_outage_backfill.py` |
+| #5525 | #5511 | 2 | `tests/test_options_signal_episode.py`, `tests/test_prophet_outage_backfill.py` |
+| #5520 | #5491 | 2 | `research/DESIGN_MIGRATION_FACTORY_V1.md`, `research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md` |
+| #5520 | #5487 | 2 | `.github/ci/legacy-jobs.yml`, `config/house_law_checks.yml` |
+| #5505 | #5491 | 2 | `research/DESIGN_MIGRATION_FACTORY_V1.md`, `research/P0_REFERENCE_EXPERIENCE_DESIGN_PACKET.md` |
+| #5503 | #5487 | 2 | `.github/ci/legacy-jobs.yml`, `config/house_law_checks.yml` |
 | #5492 | #5487 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #5492 | #5485 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #5492 | #5465 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
@@ -68,8 +102,128 @@ Generated: 2026-08-13T02:16:22.861489+00:00  |  Open PRs: 26  |  Merged (window)
 | #5477 | #5472 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml` |
 | #5474 | #5472 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml` |
 | #5472 | #5467 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml` |
-| #5497 | #5491 | 1 | `research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md` |
-| #5496 | #5493 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5472 | #5437 | 2 | `.github/ci/legacy-jobs.yml`, `tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv` |
+| #5472 | #5432 | 2 | `.github/ci/legacy-jobs.yml`, `tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv` |
+| #5524 | #5424 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5523 | #5520 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5519 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5517 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5513 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5507 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5503 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5496 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5492 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5487 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5486 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5485 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5478 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5477 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5474 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5472 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5467 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5465 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5523 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5519 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5517 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5513 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5507 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5505 | 1 | `research/DESIGN_MIGRATION_FACTORY_V1.md` |
+| #5520 | #5496 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5492 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5485 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5478 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5477 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5474 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5472 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5467 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5520 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5517 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5513 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5507 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5503 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5496 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5492 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5487 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5486 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5485 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5478 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5477 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5474 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5472 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5467 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5465 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5519 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5518 | #5424 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5517 | #5513 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5507 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5503 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5496 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5492 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5487 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5486 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5485 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5478 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5477 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5474 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5472 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5467 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5465 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5517 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5515 | #5492 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #5515 | #5487 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #5515 | #5485 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #5513 | #5507 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5503 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5496 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5492 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5487 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5486 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5485 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5478 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5477 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5474 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5472 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5467 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5513 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5511 | #5424 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5510 | #5507 | 1 | `tests/test_cn_theme_tape.py` |
+| #5509 | #5424 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5507 | #5503 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5496 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5492 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5487 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5486 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5485 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5478 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5477 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5474 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5472 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5467 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5465 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5507 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5496 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5492 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5485 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5478 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5477 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5474 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5472 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5467 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5503 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5496 | #5492 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5496 | #5487 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5496 | #5486 | 1 | `.github/ci/legacy-jobs.yml` |
@@ -83,15 +237,6 @@ Generated: 2026-08-13T02:16:22.861489+00:00  |  Open PRs: 26  |  Merged (window)
 | #5496 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5496 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5496 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5493 | #5486 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5493 | #5478 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5493 | #5477 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5493 | #5474 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5493 | #5472 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5493 | #5467 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5493 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5493 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5493 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5492 | #5486 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5492 | #5478 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5492 | #5477 | 1 | `.github/ci/legacy-jobs.yml` |
@@ -140,8 +285,6 @@ Generated: 2026-08-13T02:16:22.861489+00:00  |  Open PRs: 26  |  Merged (window)
 | #5474 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5472 | #5465 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5472 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5472 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
-| #5472 | #5432 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5467 | #5465 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5467 | #5448 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5467 | #5437 | 1 | `.github/ci/legacy-jobs.yml` |
@@ -156,12 +299,19 @@ Generated: 2026-08-13T02:16:22.861489+00:00  |  Open PRs: 26  |  Merged (window)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #5504 | research: Prophet program ruling — §J.9(c)+§J.10 lifecycle cells, surface ownership, stage-name retirement | 2026-08-13 |
+| #5502 | ops: ARM the worktree GC (operator ratification 2026-08-13) + min_age 7d→3d | 2026-08-13 |
+| #5498 | research: nightly compute & allocation audit — the 5h30m bake, decomposed, with a P0-P2 plan | 2026-08-13 |
+| #5497 | design-system: resolve --ink-tier to the shipped literals, on measurement | 2026-08-13 |
+| #5495 | fix(close-pass): the evening board lane has NEVER been green — it fails its own proof step | 2026-08-13 |
+| #5493 | ci: consolidate odometer light-mode suite to one canonical home (unrun-page-guards) | 2026-08-13 |
 | #5490 | fix(ci): heal main-side pack-11 drift (chat nav sync, wrongway stamp, picks-boards) | 2026-08-13 |
 | #5489 | design(design-system): Archetype A (Today) + I (utility) reference mockups + docket amendment | 2026-08-13 |
 | #5484 | commercial architecture: the Mastermind-X monetization, activation & growth deliverables + chat-allowance derivation | 2026-08-12 |
 | #5482 | research(prophet-us): stop-curvature study — all five chartered forms fail G5 ex ante (ADJUDICATED: family closed, definition-validity null) | 2026-08-12 |
 | #5481 | Attach Policy Watch render checks to an owned suite | 2026-08-12 |
 | #5480 | Restore HK and China Policy Watch render coverage | 2026-08-12 |
+| #5479 | ui: full-estate UI/UX audit — light mode fixed as a design, not a token swap | 2026-08-13 |
 | #5476 | research(red-team): pre-launch production failure-mode audit + launch gates | 2026-08-12 |
 | #5473 | fix(govrev): restore render budget headroom | 2026-08-12 |
 | #5471 | eval-os: intelligence evaluation architecture + metric-validity gate | 2026-08-12 |
@@ -649,13 +799,6 @@ Generated: 2026-08-13T02:16:22.861489+00:00  |  Open PRs: 26  |  Merged (window)
 | #4928 | test(capital-structure): stop the mutated-__new__ probe poisoning every later HTMLParser (heals 15 disclosure-diff/projection failures) | 2026-08-07 |
 | #4927 | fix(capital-structure): a pandas NaN sentinel aborted 130 manifests a night, forever (W1-A) | 2026-08-07 |
 | #4926 | fix(golden-corpus): give the two positional `duplicate_collapsed` labels the outcome their fixtures evidence | 2026-08-07 |
-| #4925 | docs(caddy): my own global-options comment went stale within the hour — #4922 fixed the defect it points at | 2026-08-07 |
-| #4924 | feat(prophet-us): US washout-lifecycle organ — the CN port that sees the turn 9 sessions before IGNITION (W1-D) | 2026-08-07 |
-| #4923 | fix(nav): the two Mastermind cards are one product no longer — stop the icon bridge stomping unknown cards | 2026-08-07 |
-| #4922 | fix(admin): un-collapse the login lockout the edge move merged into one bucket | 2026-08-07 |
-| #4921 | feat(government-revenue): grader was missing its earnings/filings outcome labels | 2026-08-07 |
-| #4920 | fix(price-basis): restore the manager_trades census row + triage the sweep's two new pairings | 2026-08-07 |
-| #4919 | research(prophet-us): EYES OPEN masterplan — Phase 2 of Missed Ignitions (unfreeze, fail-closed disclosure, early-turn parity) | 2026-08-07 |
 
 ---
 
