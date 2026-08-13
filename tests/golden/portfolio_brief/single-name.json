@@ -5,12 +5,101 @@
     "n": 1,
     "uncovered": []
   },
+  "data": {
+    "book": {
+      "covered": 1,
+      "modeled": 1,
+      "n": 1,
+      "population": "positions",
+      "unmodeled": [],
+      "weighting": "positions"
+    },
+    "concentration": {
+      "basis": {
+        "sectors_en": "Share of covered book weight; these total 100%.",
+        "sectors_zh": "占已覆盖持仓权重的比例，合计为 100%。",
+        "themes_en": "Share of the themed part of the book. A name in two themes counts in both, so these need not total 100%.",
+        "themes_zh": "占持仓中已归类主题部分的比例。一只个股可同属多个主题，因此合计不一定为 100%。"
+      },
+      "hhi": 1.0,
+      "sectors": [
+        {
+          "class": "neutral",
+          "conviction": "Cautious",
+          "name": "Technology",
+          "pct": 100,
+          "rotation_state": "bounce, not a turn"
+        }
+      ],
+      "themes": [
+        {
+          "id": "ai_semiconductors",
+          "name": "AI Semiconductors",
+          "pct": 100,
+          "reco": "accumulate"
+        },
+        {
+          "id": "mag7",
+          "name": "Magnificent Seven",
+          "pct": 100,
+          "reco": "hold"
+        }
+      ],
+      "top3_pct": 100,
+      "top_name_pct": 100
+    },
+    "cursor": {
+      "note_en": "This “since your last visit” marker is kept on this device, so a different browser or phone keeps its own separate history.",
+      "note_zh": "“自你上次查看以来”的记录保存在本设备上，因此换用其他浏览器或手机时会各自独立计算。",
+      "scope": "device"
+    },
+    "not_computed": {
+      "keys": [
+        "posture",
+        "correlation",
+        "options",
+        "score",
+        "lanes",
+        "tape"
+      ],
+      "reason_en": "These need the factor model that runs in the risk panel, which this brief does not read. They are absent because nothing computed them — not because they computed to empty.",
+      "reason_zh": "这些字段依赖风险面板中的因子模型，本简报并不读取该模型。它们的缺失代表尚未计算，而非计算结果为空。"
+    },
+    "state_digest": {
+      "asof": "2026-07-23",
+      "names": {
+        "NVDA": {
+          "entry": "UNCONFIRMED TURN / COUNTERTREND BOUNCE",
+          "sector": "Technology",
+          "stage": 2
+        }
+      },
+      "regime_en": "Risk-on",
+      "regime_zh": "风险偏好",
+      "schema": "portfolio_state_digest.v1",
+      "sectors": {
+        "Technology": {
+          "class": "neutral",
+          "conviction_en": "Cautious",
+          "conviction_zh": "谨慎"
+        }
+      }
+    }
+  },
   "generated_at": "2026-07-23T14:00:00+00:00",
   "headline": {
     "en": "Your book today: 1 name, top weight Technology 100%, desk read Risk-on.",
     "zh": "你今日的持仓：1 只个股，最大权重Technology 100%，桌面判读风险偏好。"
   },
-  "schema": "portfolio_brief.v1",
+  "population": {
+    "disclosure_en": "This read describes the 1 name you hold.",
+    "disclosure_zh": "此判读描述你持有的 1 只个股。",
+    "label_en": "Your portfolio positions",
+    "label_zh": "你的持仓",
+    "mode": "positions",
+    "n": 1
+  },
+  "schema": "portfolio_brief.v2",
   "sections": [
     {
       "key": "exposure",

@@ -52,6 +52,16 @@ CLAIM_FAMILY = "communique_diff"
 DESK = "communique_diff"
 HORIZON_D = 21   # spec D9: horizon 21
 
+#: THE BENCHMARK EVERY CLAIM THIS DESK MINTS IS PRICED AGAINST — the CSI-300 ETF,
+#: the China event-move benchmark [P1]. It was already the macro path's bench; the
+#: ENTITY path used qledger's non-macro default (SPY) and so minted an A-share
+#: subject against a US bench. Under P0a's market dispatch that pair names two
+#: markets, has no single session ruler, and is refused — silently killing the
+#: entity path. It is one market now, because this desk prices Chinese policy on
+#: Chinese sessions: `_entities_for` resolves through `entity_resolver.resolve_cn`
+#: and returns A-share tickers ONLY, so there is no US-listed member to strand.
+CN_BENCH = "510300.SS"
+
 _PHRASE_BOOK_REL = ("data", "china_official", "phrase_book.yml")
 
 
@@ -405,13 +415,23 @@ def emit_to_qbus(result: dict, crawled_at: str) -> int:
 def register_claims(result: dict, root: Path | str | None = None) -> int:
     """Register each diff event as a SALIENCE-ONLY qledger claim (direction=0,
     horizon 21, claim_family=communique_diff). The forward log starts accruing
-    today. Returns the number of claims registered; 0 on failure.
+    today. Returns the number of claims REGISTERED OPEN; 0 on failure.
 
     scope: entity when the event mapped to a ticker, else macro (a policy formula
     with no ticker proxy grades as a macro claim against a named observable — here
     the CSI-300 ETF 510300.SS, the China event-move benchmark [P1], so the claim is
     machine-checkable per D4). direction=0 keeps it salience-only regardless of the
-    phrase's PROVISIONAL polarity."""
+    phrase's PROVISIONAL polarity. BOTH paths price against `CN_BENCH`, so both
+    resolve on the A-share calendar (P0a market dispatch).
+
+    A REFUSAL IS NEVER SILENT. qledger refuses a declared-unit claim whose clock
+    cannot resolve, and a refused claim is a `status='rejected'` store row, not an
+    exception — so a producer that starts minting unresolvable claims would just
+    quietly stop contributing. This counts them, stamps the count on `result`
+    (`n_claims_clock_refused`, `n_claims_rejected`) for the run log and the caller,
+    and logs a WARNING naming the first reason. The count travels the same route
+    the rest of this desk's numbers do; the store-side population stays countable
+    through `qledger.count_unresolvable_clock_claims`."""
     try:
         from engine import qledger
     except Exception as e:  # noqa: BLE001
@@ -432,7 +452,12 @@ def register_claims(result: dict, root: Path | str | None = None) -> int:
                     pending.append(qledger.make_claim(
                         desk=DESK, asof=asof, scope_type="entity", scope_key=tk,
                         direction=0, horizon_d=HORIZON_D,
+                        horizon_unit=qledger.HORIZON_UNIT_TRADING,   # P0a
                         timestamp_quality="CRAWL_BOUNDED",
+                        # P0a: the market this leg is actually priced in. Without
+                        # an explicit bench this took qledger's non-macro default
+                        # (SPY) and the A-share/US pair was refused as mixed.
+                        bench=CN_BENCH,
                         claim_family=CLAIM_FAMILY,
                         extra={"event_id": e.get("event_id"),
                                "event_kind": e.get("kind"),
@@ -446,9 +471,10 @@ def register_claims(result: dict, root: Path | str | None = None) -> int:
                 # macro claim vs the CSI-300 ETF (machine-checkable observable, D4)
                 pending.append(qledger.make_claim(
                     desk=DESK, asof=asof, scope_type="macro",
-                    scope_key="510300.SS", direction=0, horizon_d=HORIZON_D,
+                    scope_key=CN_BENCH, direction=0, horizon_d=HORIZON_D,
+                    horizon_unit=qledger.HORIZON_UNIT_TRADING,       # P0a
                     timestamp_quality="CRAWL_BOUNDED",
-                    bench="510300.SS", claim_family=CLAIM_FAMILY,
+                    bench=CN_BENCH, claim_family=CLAIM_FAMILY,
                     extra={"event_id": e.get("event_id"),
                            "event_kind": e.get("kind"),
                            "phrase": e.get("phrase"),
@@ -461,9 +487,29 @@ def register_claims(result: dict, root: Path | str | None = None) -> int:
             log.debug("communique_diff: claim build failed for %s (%s)",
                       e.get("event_id"), ex)
     if not pending:
+        result["n_claims_rejected"] = 0
+        result["n_claims_clock_refused"] = 0
         return 0
     results = qledger.register_batch(pending, root=root)
-    n = sum(1 for r in results if r.get("status") != "error")
+    rejected = [r for r in results
+                if r.get("status") == qledger.STATUS_REJECTED]
+    clock_refused = [r for r in rejected
+                     if str(r.get("reject_reason") or "").startswith(
+                         qledger.REJECT_CLOCK_UNRESOLVABLE)]
+    # Registered means OPEN. A rejected row was never a claim this desk put on
+    # the forward log, and counting it as one is how the entity path could have
+    # gone dark while the run line still read "N→qledger".
+    n = sum(1 for r in results
+            if r.get("status") not in ("error", qledger.STATUS_REJECTED))
+    result["n_claims_rejected"] = len(rejected)
+    result["n_claims_clock_refused"] = len(clock_refused)
+    if clock_refused:
+        log.warning("communique_diff: %d/%d claims REFUSED by the horizon clock "
+                    "(%s) — this desk's output is partly dark; see "
+                    "qledger.count_unresolvable_clock_claims",
+                    len(clock_refused), len(pending),
+                    qledger.clock_reason_head(
+                        clock_refused[0].get("reject_reason")))
     return n
 
 
@@ -509,8 +555,10 @@ def run(asof: date | str | None = None, root: Path | str | None = None,
     result["n_claims"] = n_claims
     result["is_context_only"] = True
     log.info("communique_diff.run: %s events (%s appeared / %s dropped / "
-             "%s lead-shift) — %d→qbus, %d→qledger, cold_start=%s",
+             "%s lead-shift) — %d→qbus, %d→qledger (%d clock-refused), "
+             "cold_start=%s",
              result["counts"]["n_events"], result["counts"]["n_appeared"],
              result["counts"]["n_dropped"], result["counts"]["n_lead_shift"],
-             n_bus, n_claims, result["cold_start_organs"])
+             n_bus, n_claims, result.get("n_claims_clock_refused", 0),
+             result["cold_start_organs"])
     return result

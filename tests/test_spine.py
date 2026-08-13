@@ -12,11 +12,33 @@ from pathlib import Path
 import pytest
 
 from engine import spine
+from lib import config
 
 
 @pytest.fixture()
 def root(tmp_path) -> Path:
     (tmp_path / "data").mkdir()
+    return tmp_path
+
+
+@pytest.fixture()
+def spine_root(tmp_path, monkeypatch) -> Path:
+    """``root`` PLUS the default-root readers bound to the same empty tree.
+
+    ``altdata_signals.convergence_tier``/``chip`` take no ``root=`` — they read the repo's real
+    ``data/spine/predictions.parquet`` through ``lib.config.data_dir()``. That parquet is a LIVE
+    forward ledger: the nightly lane matured the ``altdata:convergence`` family's first 58 graded
+    rows in ``44c90f8f547`` (engine: regime update 2026-08-13), and the three cold-start tests
+    below — which had hand-pinned ``n_scored == 0`` against whatever the repo tree happened to
+    hold — flipped red on main the moment the family stopped being cold. A test that means COLD
+    has to say cold; the live ledger maturing is the spine working, not a regression.
+
+    Layout matches ``spine.spine_path``: ``root=X`` reads ``X/data/spine/…`` and the default root
+    reads ``config.data_dir()/spine/…``, so pointing ``data_dir()`` at ``tmp_path/"data"`` lets
+    one fixture seed (``spine.emit(rows, root=spine_root)``) drive BOTH call styles.
+    """
+    (tmp_path / "data").mkdir()
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
     return tmp_path
 
 
@@ -339,7 +361,16 @@ def test_ic_severity_cap_ignores_ungoverned_source(root):
 
 
 # --- convergence tier: co-firing penalty + accrual honesty (#23) -------------------------- #
-def test_convergence_tier_cofiring_penalty():
+def _conv_rows(n: int, excess: float) -> list:
+    """n matured altdata:convergence rows, one distinct event each (no co-firing collapse)."""
+    return [spine.SpinePrediction(f"altdata_conv:c{i}", "altdata_conv", "altdata:convergence",
+                                  f"2026-01-0{i % 9 + 1}", f"C{i}", 21, 2.0,
+                                  direction=1, event_key=f"c{i}",
+                                  outcome_excess=excess, outcome_graded=True)
+            for i in range(n)]
+
+
+def test_convergence_tier_cofiring_penalty(spine_root):
     from engine import altdata_signals as a
     # 3 channels but all fire on ONE corporate event → NOT 'high'
     same_event = ["material_8k", "fda_approval", "earnings_beat"]
@@ -352,20 +383,48 @@ def test_convergence_tier_cofiring_penalty():
     assert t2["cofiring_score"] == 3 and t2["tier"] == "high"
 
 
-def test_convergence_tier_accrual_aware_basis():
+def test_convergence_tier_accrual_aware_basis(spine_root):
     from engine import altdata_signals as a
     t = a.convergence_tier(["material_8k", "congress_buy"], trump=False)
     # with no matured spine ledger the basis is a PRIOR, n_scored 0 (honest, not 'earned')
     assert t["n_scored"] == 0 and t["basis"] == "prior"
 
 
-def test_chip_caveat_says_accruing_when_cold():
+def test_convergence_tier_measured_null_demotes_high(spine_root):
+    """The other half of the accrual contract: a MEASURED wrong-sign family loses 'high'.
+
+    Pins the honest-override branch the live ledger started exercising on 2026-08-13 (58 graded
+    rows, hit-rate 45%, mean signed excess < 0) — without it the cold-start assertions above
+    could be satisfied by an engine that simply never reads the spine.
+    """
+    from engine import altdata_signals as a
+    spine.emit(_conv_rows(15, -0.02), root=spine_root)
+    t = a.convergence_tier(["material_8k", "congress_buy", "insider_buy"], trump=False)
+    assert t["cofiring_score"] == 3, "the co-firing collapse is unchanged by maturity"
+    assert t["tier"] == "medium", "a measured null/wrong-sign convergence family cannot be 'high'"
+    assert t["n_scored"] == 15 and t["basis"] == "measured"
+    assert t["hit_rate"] == 0.0
+
+
+def test_chip_caveat_says_accruing_when_cold(spine_root):
     from engine import altdata_signals as a
     chip = a.chip({"channels": ["material_8k", "congress_buy"], "convergence_score": 2,
                    "trump_linked": False})
     assert chip is not None
     assert "ACCRUING" in chip["caveat"]["en"].upper()
     assert chip["basis"] == "prior"
+
+
+def test_chip_caveat_cites_the_record_once_measured(spine_root):
+    """Once the ledger has matured outcomes the caveat must cite them, not claim accrual."""
+    from engine import altdata_signals as a
+    spine.emit(_conv_rows(15, 0.04), root=spine_root)
+    chip = a.chip({"channels": ["material_8k", "congress_buy"], "convergence_score": 2,
+                   "trump_linked": False})
+    assert chip is not None and chip["basis"] == "measured" and chip["n_scored"] == 15
+    en = chip["caveat"]["en"]
+    assert "ACCRUING" not in en.upper(), "an n>0 ledger may not still claim it is accruing"
+    assert "n=15" in en and "hit-rate" in en
 
 
 # --- badge passport (#41) ------------------------------------------------------------------ #

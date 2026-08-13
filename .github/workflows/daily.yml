@@ -4035,6 +4035,35 @@ jobs:
           python -m scripts.grade_us_board --nightly; rc=$?
           if [ "$rc" -ne 0 ]; then echo "::warning title=grade_us_board::rc=$rc (non-fatal)"; fi
           exit 0
+      - name: ETF consensus board ledger (snapshot tonight's board + grade matured windows vs SPY)
+        # ETF page masterplan §3 W3. Recomputes the etfs.html consensus board from the
+        # committed holdings snapshots (engine.holdings_signals -> engine.etf_consensus,
+        # no network calls), appends its top-20 to data/etf_board_ledger/snapshots.jsonl
+        # keep-FIRST per (as_of, ticker), then grades every matured board row at 5/21/63
+        # sessions (next-bar fill, adjusted-first ladder, vs SPY) into retro_grades.parquet
+        # and projects site/factordata/etf_board_track.json for the Calibration Lab's
+        # forward-windows panel. The commit step below (git add data/ site/) lands all
+        # three. Idempotent per board date: a re-run appends zero rows and leaves the
+        # fire log byte-identical.
+        #
+        # Both data/ writes are gated on COLLECT_LANE=nightly (job-level env above) —
+        # nightly is the sole advancer of forward ledgers, and this step is the only
+        # writer of that ledger anywhere in the repo.
+        #
+        # NON-FATAL by the same reasoning as grade_us_board directly above: this step
+        # sits deep in the engine job with non-always() steps after it whose ledgers the
+        # nightly is also the sole advancer of, so a raise here would silently freeze
+        # several unrelated forward ledgers for the night. First-run tolerance matters
+        # too — the ledger does not exist until this runs once. `set +e` + a named rc
+        # keeps the failure visible in the Actions summary instead of `|| true`'s
+        # ran-clean/crashed/no-op indistinguishability; the module prints its own
+        # zero-accrual annotation on a night that logs nothing.
+        timeout-minutes: 15
+        run: |
+          set +e
+          python -m scripts.grade_etf_board --nightly; rc=$?
+          if [ "$rc" -ne 0 ]; then echo "::warning title=grade_etf_board::rc=$rc (non-fatal)"; fi
+          exit 0
       - name: Opportunity timeline (durable Prophet candidate receipts for Terminal)
         # Pure projection over the four committed track_ledger/v1 artifacts.  It runs
         # after grade_us_board so tonight's US episode marks are present; CN/HK are
@@ -6767,12 +6796,26 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python -m scripts.build_active_build_map || echo "::warning::active_build_map generation failed (non-fatal — fail-open)"
+      - name: generate agent OS state
+        # ORDERED AFTER the active build map, which is its PR-state input: the join is
+        # only as fresh as active_builds.json, so regenerating first would publish a
+        # CEO view built on yesterday's PR state.
+        #
+        # This is the ONLY regenerator (DEC:AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR).
+        # There is deliberately no CI drift guard forcing record-touching PRs to commit
+        # a regenerated copy — that would put two independent record edits into conflict
+        # on a shared generated file, which is the write pattern invariant I2 exists to
+        # prevent.  One writer; staleness is printed in the artifact, never hidden.
+        # No network: PR state comes only from the file written by the step above.
+        run: |
+          python3 scripts/agentos.py status || echo "::warning::agent_os_state generation failed (non-fatal — fail-open)"
       - name: commit active build map outputs
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add docs/ACTIVE_BUILD_MAP.md data/governance/active_builds.json
+          git add docs/ACTIVE_BUILD_MAP.md data/governance/active_builds.json \
+                  docs/AGENT_OS_STATE.md data/governance/agent_os_state.json
           if git diff --cached --quiet; then echo "no active build map changes"; exit 0; fi
           git commit -m "docs: active build map $(date -u +%F)"
           PUSH_ALARM=420
