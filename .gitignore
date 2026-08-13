@@ -701,3 +701,7 @@ data/institutional_13f/*
 # smell report carry each shot's sha256, so the evidence stays citable without the
 # bytes ever entering Git. See docs/product_experience/PAGE_EVIDENCE_HARNESS.md.
 data/product_experience/evidence/
+
+# Agent OS CEO-brief check-in marker — a local pointer to "when did I last look",
+# not organizational state.  Machine-local by construction; never committed.
+data/governance/.ceo_brief_last

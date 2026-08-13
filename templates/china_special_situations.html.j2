@@ -105,7 +105,7 @@
   .ssx-ctxbadge{ font-size:9.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; padding:2px 8px;
     border-radius:999px; color:var(--ink-3); background:var(--q-dim); border:1px solid var(--gl-bd); }
   .ssx-backnav{ font-size:12px; margin:0 0 16px; }
-  .ssx-backnav a{ color:var(--ink-3); } .ssx-backnav a:hover{ color:var(--link); }
+  .ssx-backnav a{ color:var(--ink-3); } .ssx-backnav a:hover{ color:var(--ink-link, var(--link)); }
 
   /* ── glass card ── */
   .ssx-card{ background:var(--gl-bg); border:1px solid var(--gl-bd); border-radius:18px;
@@ -187,8 +187,8 @@
   /* status chip — HEALTH read, never flips in zh */
   .ssx-chip{ display:inline-flex; align-items:center; gap:4px; font:700 8.5px/1 ui-monospace,Menlo,monospace;
     letter-spacing:.06em; text-transform:uppercase; padding:3px 7px; border-radius:6px; border:1px solid; white-space:nowrap; flex:0 0 auto; }
-  .ssx-chip.ok{ color:var(--ok,#3fc07e); background:color-mix(in srgb,var(--ok,#3fc07e) 12%,transparent); border-color:color-mix(in srgb,var(--ok,#3fc07e) 30%,transparent); }
-  .ssx-chip.stale{ color:var(--warn,#e0a63a); background:color-mix(in srgb,var(--warn,#e0a63a) 13%,transparent); border-color:color-mix(in srgb,var(--warn,#e0a63a) 32%,transparent); }
+  .ssx-chip.ok{ color:var(--ink-ok, var(--ok,#3fc07e)); background:color-mix(in srgb,var(--ok,#3fc07e) 12%,transparent); border-color:color-mix(in srgb,var(--ok,#3fc07e) 30%,transparent); }
+  .ssx-chip.stale{ color:var(--ink-warn, var(--warn,#e0a63a)); background:color-mix(in srgb,var(--warn,#e0a63a) 13%,transparent); border-color:color-mix(in srgb,var(--warn,#e0a63a) 32%,transparent); }
   .ssx-chip.missing{ color:var(--ink-3); background:var(--q-dim); border-color:var(--gl-bd); }
   .ssx-asof{ font-size:10.5px; color:var(--ink-3); flex:0 0 auto; }
   /* Phone: the head is title + chips + a full sentence, which cannot share one
@@ -224,11 +224,11 @@
   /* reply / open-question tag */
   .ssx-tag{ font-size:9px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:6px; white-space:nowrap; }
   .ssx-tag.open{ color:var(--ask); background:var(--ask-dim); border:1px solid color-mix(in srgb,var(--ask) 32%,transparent); }
-  .ssx-tag.replied{ color:var(--ok,#3fc07e); background:color-mix(in srgb,var(--ok,#3fc07e) 12%,transparent); border:1px solid color-mix(in srgb,var(--ok,#3fc07e) 28%,transparent); }
+  .ssx-tag.replied{ color:var(--ink-ok, var(--ok,#3fc07e)); background:color-mix(in srgb,var(--ok,#3fc07e) 12%,transparent); border:1px solid color-mix(in srgb,var(--ok,#3fc07e) 28%,transparent); }
   /* large flag — a real supply event marker (severity, not direction) */
   .ssx-lg{ font-size:8.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px;
     color:var(--e); background:var(--e-dim); border:1px solid color-mix(in srgb,var(--e) 32%,transparent); white-space:nowrap; }
-  .ssx-pdf{ font-size:10.5px; color:var(--link); white-space:nowrap; }
+  .ssx-pdf{ font-size:10.5px; color:var(--ink-link, var(--link)); white-space:nowrap; }
   /* Phone: a ticker + a "supply event" flag + a countdown chip leave the note
      column ~60px wide, which wraps it one word per line. Stack instead: chips on
      the first line, the sentence full-width underneath. (Pre-existing on this
@@ -263,7 +263,7 @@
   .ssx-empty .ec{ font-size:15px; opacity:.7; }
 
   /* expander */
-  .ssx-more > summary{ cursor:pointer; font-size:11.5px; font-weight:600; color:var(--link); margin-top:10px; list-style:none;
+  .ssx-more > summary{ cursor:pointer; font-size:11.5px; font-weight:600; color:var(--ink-link, var(--link)); margin-top:10px; list-style:none;
     display:inline-flex; align-items:center; gap:5px; }
   .ssx-more > summary::-webkit-details-marker{ display:none; }
   .ssx-more[open] > summary{ margin-bottom:4px; }
@@ -273,7 +273,7 @@
     color:var(--ink-3); padding:6px 9px; border-bottom:1px solid var(--gl-bd); }
   table.ssx-t td{ padding:7px 9px; border-bottom:1px solid var(--hair); vertical-align:top; }
   table.ssx-t td.r,table.ssx-t th.r{ text-align:right; font-variant-numeric:tabular-nums; }
-  table.ssx-t .up{ color:var(--up); font-weight:650; } table.ssx-t .dn{ color:var(--down); font-weight:650; }
+  table.ssx-t .up{ color:var(--ink-up, var(--up)); font-weight:650; } table.ssx-t .dn{ color:var(--ink-down, var(--down)); font-weight:650; }
 
   /* track-record receipt strip */
   .ssx-track{ display:flex; align-items:flex-start; gap:11px; font-size:12px; line-height:1.5; color:var(--ink-2);
@@ -352,7 +352,7 @@
   @media(prefers-reduced-motion:reduce){ .ssx-wall .wl-btn{ transition:none; } }
   .ssx-wall .wl-note{ font-size:11px; color:var(--ink-3); }
   .ssx-wall .wl-signed{ margin-top:12px; font-size:12px; }
-  .ssx-wall .wl-signed a{ color:var(--link); }
+  .ssx-wall .wl-signed a{ color:var(--ink-link, var(--link)); }
   @media(max-width:560px){ .ssx-wall{ padding:24px 18px 20px; } .ssx-wall .wl-h{ font-size:17px; } }
 {% endblock %}
 

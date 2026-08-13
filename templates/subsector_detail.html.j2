@@ -8,7 +8,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ group_name }} — Subsector Confluence</title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -24,9 +24,9 @@
   .tier { font-weight:800; font-size:12px; padding:2px 8px; border-radius:6px; color:#fff; }
   .tier.T1{ background:var(--up); } .tier.T2{ background:#3da564; } .tier.T3{ background:var(--info); } .tier.T4{ background:#6b7cc4; } .tier.none{ background:var(--g-mid); color:var(--muted); }
   .pill { font-size:11px; font-weight:700; padding:2px 9px; border-radius:10px; border:1px solid var(--line); }
-  .pill.buy{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
-  .pill.avoid{ color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
-  .pill.neutral{ color:var(--muted); } .pill.tactical,.pill.late{ color:var(--orange); }
+  .pill.buy{ color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
+  .pill.avoid{ color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
+  .pill.neutral{ color:var(--muted); } .pill.tactical,.pill.late{ color:var(--ink-orange, var(--orange)); }
   .action { color:var(--text); font-size:13px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--link); border-radius:9px; padding:9px 12px; margin:10px 2px 4px; max-width:108ch; }
   .stats { display:flex; flex-wrap:wrap; gap:6px 18px; color:var(--muted); font-size:11.5px; margin:8px 2px 14px; }
   .stats b { color:var(--text); font-weight:600; }
@@ -37,7 +37,7 @@
   table.tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding:6px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
   table.tbl td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
   table.tbl tr:hover td { background:var(--panel); }
-  .tk { font-weight:700; } .num { font-variant-numeric:tabular-nums; } .pos{ color:var(--up); } .neg{ color:var(--down); }
+  .tk { font-weight:700; } .num { font-variant-numeric:tabular-nums; } .pos{ color:var(--ink-up, var(--up)); } .neg{ color:var(--ink-down, var(--down)); }
   tr.buyable td { background:color-mix(in srgb,var(--up) 7%,transparent); }
   .foot { color:var(--muted); font-size:11px; margin:22px 2px 0; line-height:1.6; max-width:108ch; border-top:1px solid var(--line); padding-top:12px; }
 </style>
@@ -99,7 +99,7 @@ function render() {
   // member table
   const ms = g.members || [];
   if (ms.length) {
-    h += `<h2>📊 ${L('Members — which names are firing', '成分——哪些个股在触发')}</h2>`;
+    h += `<h2>${L('Members — which names are firing', '成分——哪些个股在触发')}</h2>`;
     h += `<table class="tbl"><thead><tr><th>${L('Ticker', '代码')}</th><th>${L('Price', '价格')}</th><th>${L('Own tier', '自身层级')}</th><th>${L('20d', '20日')}</th><th>${L('vs subsector', '相对子行业')}</th><th>${L('Regime', '状态')}</th></tr></thead><tbody>`;
     h += ms.map(m => `<tr class="${m.stock_buyable ? 'buyable' : ''}"><td class="tk"><a href="${DETAIL.stock_base || '../stock.html#'}${encodeURIComponent(m.ticker)}">${esc(m.ticker)}</a>${m.name_zh ? ` <span style="color:var(--muted);font-weight:400;font-size:.85em">${esc(m.name_zh)}</span>` : ''}</td>`
       + `<td class="num">${m.price == null ? '–' : m.price.toFixed(2)}</td>`

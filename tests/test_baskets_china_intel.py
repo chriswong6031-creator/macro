@@ -472,7 +472,10 @@ def _drive_full_build(tmp_path, monkeypatch, *, turn_raises=False, merge_raises=
     (tmp_path / "templates" / "baskets_china.html.j2").write_text(
         _REAL_PAGE_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8"
     )
-    for _inc in ("_seo_head.html.j2",):   # the stub includes it
+    # every partial the REAL page {% include %}s has to travel with it into tmp —
+    # the fixture renders the real template against a synthetic templates/ dir, so a
+    # partial left behind is a TemplateNotFound, not a missing feature.
+    for _inc in ("_seo_head.html.j2", "_state_inks.html.j2"):
         _src_inc = _REAL_PAGE_TEMPLATE.parent / _inc
         if _src_inc.exists():
             (tmp_path / "templates" / _inc).write_text(

@@ -102,10 +102,16 @@ def _verdict(prof_key: str, oos: dict, sc: dict) -> tuple[str, str]:
 
 # per-profile accent for the pinned/highlighted UI (conservative→green, moderate→blue,
 # aggressive→violet). Single source of truth shared with the Strategy Scorecards pinned hero.
-_ACCENT = {"conservative": "#1FA971", "moderate": "#285fff", "aggressive": "#a855f7"}
+# Risk-tier accents. Text-grade, and NO VIOLET: violet is lock-only on Mastermind
+# surfaces (design system §5) and must never carry data or a tier. The shipped set
+# (#1FA971 / #285fff / #a855f7 + a violet→magenta→pink ramp) also measured 2.52 /
+# 4.22 / 3.31:1 against the light canvas while printing as text in .mm-bench and
+# .mm-go. Aggressive now reads as heat (deep orange) rather than as a locked tier.
+# Single source of truth shared with the Strategy Scorecards pinned hero.
+_ACCENT = {"conservative": "#177a3f", "moderate": "#1c4fe0", "aggressive": "#a8481f"}
 # per-profile gradient stops (border/flag/shimmer on the flagship detail hero)
-_GRAD = {"conservative": "#1FA971,#34d399,#0ea5e9", "moderate": "#285fff,#6366f1,#8b5cf6",
-         "aggressive": "#a855f7,#d946ef,#ec4899"}
+_GRAD = {"conservative": "#177a3f,#2f9e63,#0b6a92", "moderate": "#1c4fe0,#3f5fd8,#0b6a92",
+         "aggressive": "#a8481f,#c26a25,#8a5c00"}
 # risk-spectrum marker position (0=left/safe .. 1=right/aggressive) for the mini risk meter
 _RISKPOS = {"conservative": 0.16, "moderate": 0.5, "aggressive": 0.9}
 _BENCH_LBL = {"6040": ("60/40", "60/40"), "spy": ("S&P 500", "标普500")}

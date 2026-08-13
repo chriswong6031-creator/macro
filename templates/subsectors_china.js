@@ -165,7 +165,7 @@
     h += entry.length ? cardDeck(entry) : '<div class="empty">' + L('No theme is firing a fresh buy signal right now.', '目前没有概念出现新的买入信号。') + '</div>';
     if (forming.length) h += '<h2 style="margin-top:18px">🔵 ' + L('Forming (T4 — earliest)', '构筑中（T4 — 最早）') + ' <span style="color:var(--muted);font-weight:500">' + forming.length + '</span></h2><div class="cards">' + forming.map(cardHTML).join('') + '</div>';
     if (thinAct.length) {
-      h += '<details class="thin"><summary>⚠ ' + L('Low-confidence · thin concepts', '低可信 · 过薄概念') + ' <span style="color:var(--muted);font-weight:500">' + thinAct.length + '</span></summary>'
+      h += '<details class="thin"><summary>' + L('Low-confidence · thin concepts', '低可信 · 过薄概念') + ' <span style="color:var(--muted);font-weight:500">' + thinAct.length + '</span></summary>'
         + '<div class="desc">' + L('Same signal, but the theme holds too few stocks for the read to be steady — one or two names can swing the whole thing. Listed for completeness; treat it as weak.',
           '信号一样，但这个概念里的股票太少，读数不稳——一两只股就能带偏整体。列在这里只为完整，当作偏弱看待。') + '</div>'
         + '<div class="cards">' + thinAct.map(cardHTML).join('') + '</div></details>';
@@ -205,18 +205,18 @@
         + '<td class="col-concept">' + conceptCell(r) + '</td>'
         + '<td class="col-regime">' + statePill(r.subsector_state, 'avoid') + '</td></tr>';
     }).join('');
-    var h = '<div class="sec"><h2>🎯 ' + L('Buys with the theme behind them', '概念顺风的买入') + ' <span style="color:var(--muted);font-weight:500">' + dbRel.length + '</span></h2>'
+    var h = '<div class="sec"><h2>' + L('Buys with the theme behind them', '概念顺风的买入') + ' <span style="color:var(--muted);font-weight:500">' + dbRel.length + '</span></h2>'
       + '<div class="desc">' + L('A-shares that are a buy on their own, and whose theme is working too. The strongest agreement sits at the top.',
         '本身就是买点、所在概念也在走强的A股。两边一致程度最高的排在最前面。') + '</div>';
     h += dbRel.length ? rowCollapse(dbTable(dbRel, maxs), dbRel.length, DB_CAP)
       : '<div class="empty">' + L('Nothing right now has both the stock and its theme working.', '目前没有个股和概念同时走强的标的。') + '</div>';
     if (dbThin.length) {
-      h += '<details class="thin"><summary>⚠ ' + L('Theme too small to lean on', '概念太小，不足为凭') + ' <span style="color:var(--muted);font-weight:500">' + dbThin.length + '</span></summary>'
+      h += '<details class="thin"><summary>' + L('Theme too small to lean on', '概念太小，不足为凭') + ' <span style="color:var(--muted);font-weight:500">' + dbThin.length + '</span></summary>'
         + '<div class="desc">' + L('The stock is a buy, but the only theme supporting it holds too few names to trust. Judge these on the stock alone.',
           '个股是买点，但唯一支持它的概念里股票太少，不足为凭。这些只看个股本身来判断。') + '</div>'
         + rowCollapse(dbTable(dbThin, maxs), dbThin.length, DB_CAP) + '</details>';
     }
-    if (warn) h += '<details class="thin" style="margin-top:20px"><summary>⚠️ ' + L('Strong stock, weak theme', '个股强、概念弱') + ' <span style="color:var(--muted);font-weight:500">' + hw.length + '</span></summary>'
+    if (warn) h += '<details class="thin" style="margin-top:20px"><summary>' + L('Strong stock, weak theme', '个股强、概念弱') + ' <span style="color:var(--muted);font-weight:500">' + hw.length + '</span></summary>'
       + '<div class="desc">' + L('The stock looks strong, but its theme is topping out — the classic case of chasing something that is being sold into. Not a buy.',
         '个股看着强，但所在概念已经在见顶——典型的追在出货方向上。不是买点。') + '</div>'
       + rowCollapse('<table class="tbl hw-table"><thead><tr><th class="col-stock">' + L('Stock', '个股') + '</th><th class="col-tier">' + L('Stock tier', '个股层级') + '</th><th class="col-concept">' + L('Theme', '概念') + '</th><th class="col-regime">' + L('Theme state', '概念状态') + '</th></tr></thead><tbody>' + warn + '</tbody></table>', hw.length, DB_CAP) + '</details>';
@@ -256,7 +256,7 @@
         + ' <span style="color:var(--muted);font-weight:400;font-size:11px">· ' + gs.length + (en ? ' · ' + en + ' ' + L('entry-now', '现可入场') : '') + '</span></td></tr>';
       body += gs.map(conceptRow).join('');
     });
-    return '<div class="sec"><h2>📋 ' + L('All concepts · by category', '全部概念 · 按类别') + ' <span style="color:var(--muted);font-weight:500">' + bs.length + '</span></h2>'
+    return '<div class="sec"><h2>' + L('All concepts · by category', '全部概念 · 按类别') + ' <span style="color:var(--muted);font-weight:500">' + bs.length + '</span></h2>'
       + rowCollapse('<table class="tbl all-table"><thead><tr><th class="col-concept">' + L('Concept', '概念') + '</th><th class="col-entry">' + L('Entry', '入场') + '</th><th class="col-regime">' + L('State', '状态') + '</th><th class="col-fresh">' + L('How fresh', '新鲜度') + '</th><th class="col-rs">' + L('vs CSI 300', '对沪深300') + '</th><th class="col-n">' + L('Stocks', '只数') + '</th></tr></thead><tbody>' + body + '</tbody></table>', bs.length, ALL_CAP) + '</div>';
   }
 
