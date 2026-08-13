@@ -13,7 +13,9 @@ Legal (this fence does not red):
     that slice, not the live tail;
   * derive the census from a committed receipt written by a different path
     (``canonical_*census()``, a ``*_receipt*.json`` load);
-  * compare against a named disclosure SET of keys, not a count.
+  * compare against a named disclosure SET of keys, not a count;
+  * bind ``config.data_dir()`` to an empty tmp tree (the #5547 cold-test
+    pattern) before pinning a census of a default-root reader.
 
 Fail-closed: a test file that does not parse is a finding, not a skip.  The
 live scan is a targeted ratchet over tests that read the stores named below;
@@ -36,13 +38,36 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # Live stores the nightly advances.  A test that equality-pins a census of
 # these is a time bomb; adding a store here is how the ratchet grows.
+# 2026-08-13 after #5515: spine parquet (pack-7 / #5547) and Release Radar
+# inflation-truth artifacts (unrun-release-forecast) detonated the same way
+# as the original govrev/options/prophet trio.  Sibling jsonl/parquet logs
+# and the tripwire latch are the same class: nightly-advanced, equality-pinned.
 LIVE_STORES: tuple[tuple[str, str], ...] = (
     ("data/government_revenue/latest.json", "govrev-latest"),
     ("data/government_revenue/candidate_queue.json", "govrev-candidates"),
     ("data/government_revenue/candidate_ledger.jsonl", "govrev-candidates"),
     ("data/options_signal_episode/episodes.jsonl", "options-episodes"),
     ("site/prophet/plans", "prophet-plans"),
+    ("data/spine/predictions.parquet", "spine-predictions"),
+    ("data/release_forecast/latest.json", "release-forecast"),
+    ("data/release_forecast/forward_ledger.jsonl", "release-forecast"),
+    ("data/release_forecast/scoreboard.json", "release-forecast"),
+    ("data/release_forecast/inflation_intelligence.json", "release-forecast"),
+    ("data/release_forecast/cpi_truth", "inflation-truth"),
+    ("data/vector/alerts.jsonl", "vector-alerts"),
+    ("data/commodity/alerts.jsonl", "commodity-alerts"),
+    ("data/alerts/alerts_log.parquet", "alerts-log"),
+    ("data/cycle_ontology/tripwire_state.json", "tripwire-state"),
 )
+
+# Engine calls that read config.data_dir() by default (no root=).  A census pin
+# against their return is the #5547 hole: the test never names the parquet path,
+# so a LIVE_STORES-only scan misses it.  Explicit ``root=`` or a data_dir bind
+# to tmp (fixture or monkeypatch) is legal.
+_DEFAULT_ROOT_READERS: dict[str, str] = {
+    "convergence_tier": "spine-predictions",
+    "measured_ic": "spine-predictions",
+}
 
 # Shrink-only.  Fingerprints leave when the pin is gone.  Do not add a row to
 # ship a new pin — that is the jam this fence exists to stop.  The three
@@ -158,6 +183,63 @@ def _is_legal_call(name: str) -> bool:
     return "census" in lowered or "receipt" in lowered
 
 
+def _is_data_dir_call(node: ast.AST) -> bool:
+    return isinstance(node, ast.Call) and _call_name(node) == "data_dir"
+
+
+def _default_reader_store(node: ast.Call) -> str | None:
+    """Store label for a default-root engine call, or None if root= was passed."""
+    store = _DEFAULT_ROOT_READERS.get(_call_name(node))
+    if not store:
+        return None
+    if any(kw.arg == "root" for kw in node.keywords):
+        return None
+    return store
+
+
+def _decorator_name(node: ast.AST) -> str:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    if isinstance(node, ast.Call):
+        return _decorator_name(node.func)
+    return ""
+
+
+def _is_fixture(fn: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    return any(_decorator_name(dec) == "fixture" for dec in fn.decorator_list)
+
+
+def _isolates_data_dir(fn: ast.AST) -> bool:
+    """True when ``fn`` binds ``config.data_dir`` to a tmp tree (#5547)."""
+    for node in ast.walk(fn):
+        if not isinstance(node, ast.Call):
+            continue
+        name = _call_name(node)
+        if name == "setattr" and len(node.args) >= 2:
+            attr = _const_str(node.args[1])
+            if attr == "data_dir":
+                return True
+        if name in {"patch", "object"}:
+            for arg in node.args:
+                text = _const_str(arg)
+                if text == "data_dir" or (text is not None and text.endswith(".data_dir")):
+                    return True
+            if any(
+                kw.arg in {"attribute", "target"} and _const_str(kw.value) == "data_dir"
+                for kw in node.keywords
+            ):
+                return True
+            if (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr == "object"
+                and any(_const_str(arg) == "data_dir" for arg in node.args)
+            ):
+                return True
+    return False
+
+
 def scan_text(source: str, *, rel: str) -> list[Finding]:
     """Return vintage-pin findings in ``source`` (a single test module)."""
     try:
@@ -185,6 +267,9 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
     name_stores: dict[str, str] = {}
     func_stores: dict[str, str] = {}
     file_stores: set[str] = set()
+    isolated_fixtures: set[str] = set()
+    isolated_here = [False]
+    data_dir_names: set[str] = set()
 
     def _line(lineno: int) -> str:
         if 1 <= lineno <= len(lines):
@@ -210,11 +295,45 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
         if isinstance(node, ast.Assign) and _mentions_file(node.value):
             _bind_targets(node.targets[0], root_names)
 
+    def _collect_isolated_fixtures(fns: list[ast.AST]) -> None:
+        for fn in fns:
+            if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)) and _is_fixture(fn):
+                if _isolates_data_dir(fn):
+                    isolated_fixtures.add(fn.name)
+
+    _collect_isolated_fixtures(list(tree.body))
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef):
+            _collect_isolated_fixtures(list(node.body))
+
+    def _fn_isolated(fn: ast.AST) -> bool:
+        if _isolates_data_dir(fn):
+            return True
+        args = getattr(fn, "args", None)
+        if args is None:
+            return False
+        names = [arg.arg for arg in list(args.args) + list(args.kwonlyargs)]
+        if args.vararg is not None:
+            names.append(args.vararg.arg)
+        if args.kwarg is not None:
+            names.append(args.kwarg.arg)
+        return any(name in isolated_fixtures for name in names)
+
     def _store_of(node: ast.AST) -> str | None:
         parts = _div_parts(node)
         if not parts:
             return None
         head = parts[0]
+        if _is_data_dir_call(head) and not isolated_here[0]:
+            suffix = _joined_strings(parts[1:])
+            if suffix:
+                return _store_for_suffix("data/" + suffix)
+            return None
+        if isinstance(head, ast.Name) and head.id in data_dir_names and not isolated_here[0]:
+            suffix = _joined_strings(parts[1:])
+            if suffix:
+                return _store_for_suffix("data/" + suffix)
+            return None
         if isinstance(head, ast.Name) and head.id in root_names:
             suffix = _joined_strings(parts[1:])
             if suffix:
@@ -252,6 +371,10 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
                 return "via-source-name"
         if isinstance(node, ast.Call):
             name = _call_name(node)
+            if not isolated_here[0]:
+                reader = _default_reader_store(node)
+                if reader:
+                    return reader
             if name in func_stores:
                 return func_stores[name]
             for arg in list(node.args) + [kw.value for kw in node.keywords]:
@@ -290,6 +413,11 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
                 int_names[node.targets[0].id] = number
             if isinstance(node.value, ast.Call) and _is_legal_call(_call_name(node.value)):
                 legal_names.add(node.targets[0].id)
+        if (
+            _is_data_dir_call(node.value)
+            or (isinstance(node.value, ast.Name) and node.value.id in data_dir_names)
+        ):
+            _bind_targets(node.targets[0], data_dir_names)
         return grew
 
     for node in ast.walk(tree):
@@ -383,6 +511,10 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
         ``== 2`` in the file.
         """
         name = _call_name(node)
+        if not isolated_here[0]:
+            reader = _default_reader_store(node)
+            if reader:
+                return True
         if name in tainted_funcs:
             return True
         lowered = name.lower()
@@ -441,6 +573,7 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
     module_int_names = dict(int_names)
     module_legal = set(legal_names)
     module_file_stores = set(file_stores)
+    module_data_dir_names = set(data_dir_names)
 
     # Per-function taint so one test's `rows = live_ledger` cannot pin another.
     def _spread_in(fn: ast.AST) -> None:
@@ -481,6 +614,8 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
         legal_names.update(module_legal)
         file_stores.clear()
         file_stores.update(module_file_stores)
+        data_dir_names.clear()
+        data_dir_names.update(module_data_dir_names)
 
     # Fixpoint: assignments and same-file returns spread taint.
     def _bound_int(node: ast.AST) -> int | None:
@@ -518,6 +653,13 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
             "govrev-candidates",
             "options-episodes",
             "prophet-plans",
+            "spine-predictions",
+            "release-forecast",
+            "inflation-truth",
+            "vector-alerts",
+            "commodity-alerts",
+            "alerts-log",
+            "tripwire-state",
         ):
             if preferred in file_stores:
                 return preferred
@@ -559,8 +701,10 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
             left = rhs
 
     def _scan_fn(fn: ast.AST) -> None:
+        isolated_here[0] = _fn_isolated(fn)
         _spread_in(fn)
         _scan_compares(fn)
+        isolated_here[0] = False
         _reset_locals()
 
     # Module-level compares are rare; most pins live inside test functions.
@@ -608,7 +752,9 @@ def _text_names_store(text: str) -> bool:
             (f'"{part}"' in text) or (f"'{part}'" in text) for part in parts
         ):
             return True
-    return False
+    if "data_dir" in text:
+        return True
+    return any(reader in text for reader in _DEFAULT_ROOT_READERS)
 
 
 def scan_path(path: Path, *, root: Path = ROOT) -> list[Finding]:
@@ -813,11 +959,136 @@ def test_synthetic_pair_has_two_rows():
     if not any(f.literal == "384" for f in found):
         failures.append(f"live-ledger ==384 in the sibling test was missed: {found}")
 
+    spine_named_bad = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_pins_live_parquet_len():
+    df = pd.read_parquet(ROOT / "data" / "spine" / "predictions.parquet")
+    assert len(df) == 58
+'''
+    found = scan_text(spine_named_bad, rel="tests/test_spine_named_pin.py")
+    if not any(f.kind == "eq-literal" and f.literal == "58" and f.store == "spine-predictions" for f in found):
+        failures.append(f"spine parquet 58-row pin not caught: {found}")
+
+    spine_reader_bad = '''
+from engine import altdata_signals as a
+def test_convergence_tier_accrual_aware_basis():
+    t = a.convergence_tier(["material_8k", "congress_buy"], trump=False)
+    assert t["n_scored"] == 0
+'''
+    found = scan_text(spine_reader_bad, rel="tests/test_spine_reader_pin.py")
+    if not any(f.kind == "eq-literal" and f.literal == "0" and f.store == "spine-predictions" for f in found):
+        failures.append(f"spine default-root n_scored==0 pin not caught: {found}")
+
+    spine_cold_ok = '''
+import pytest
+from lib import config
+from engine import altdata_signals as a
+@pytest.fixture()
+def spine_root(tmp_path, monkeypatch):
+    (tmp_path / "data").mkdir()
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
+    return tmp_path
+def test_convergence_tier_accrual_aware_basis(spine_root):
+    t = a.convergence_tier(["material_8k", "congress_buy"], trump=False)
+    assert t["n_scored"] == 0
+'''
+    found = scan_text(spine_cold_ok, rel="tests/test_spine_cold_ok.py")
+    if found:
+        failures.append(f"#5547 cold data_dir bind was flagged: {found}")
+
+    spine_inline_ok = '''
+from lib import config
+from engine import altdata_signals as a
+def test_chip_shaping(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
+    t = a.convergence_tier(["material_8k"], trump=False)
+    assert t["n_scored"] == 0
+'''
+    found = scan_text(spine_inline_ok, rel="tests/test_spine_inline_ok.py")
+    if found:
+        failures.append(f"inline data_dir monkeypatch was flagged: {found}")
+
+    spine_root_kw_ok = '''
+from engine import spine
+def test_measured_ic_with_explicit_root(root):
+    m = spine.measured_ic(root=root, engine="e")
+    assert m["n_scored"] == 0
+'''
+    found = scan_text(spine_root_kw_ok, rel="tests/test_spine_root_kw.py")
+    if found:
+        failures.append(f"explicit root= cold-test was flagged: {found}")
+
+    release_bad = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_live_latest_release_count():
+    latest = json.loads((ROOT / "data/release_forecast/latest.json").read_text())
+    assert len(latest["releases"]) == 12
+'''
+    found = scan_text(release_bad, rel="tests/test_release_pin.py")
+    if not any(f.kind == "eq-literal" and f.literal == "12" and f.store == "release-forecast" for f in found):
+        failures.append(f"release-forecast latest.json ==12 pin not caught: {found}")
+
+    inflation_bad = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_live_cpi_truth_files():
+    files = list((ROOT / "data/release_forecast/cpi_truth").glob("*.json"))
+    assert len(files) == 4
+'''
+    found = scan_text(inflation_bad, rel="tests/test_inflation_truth_pin.py")
+    if not any(f.kind == "eq-literal" and f.literal == "4" and f.store == "inflation-truth" for f in found):
+        failures.append(f"inflation-truth cpi_truth ==4 pin not caught: {found}")
+
+    spine_data_dir_join_bad = '''
+from lib import config
+def test_pins_via_data_dir_join():
+    df = pd.read_parquet(config.data_dir() / "spine" / "predictions.parquet")
+    assert len(df) == 58
+'''
+    found = scan_text(spine_data_dir_join_bad, rel="tests/test_spine_data_dir_join.py")
+    if not any(f.kind == "eq-literal" and f.literal == "58" and f.store == "spine-predictions" for f in found):
+        failures.append(f"data_dir()/spine/predictions.parquet ==58 pin not caught: {found}")
+
+    alerts_log_bad = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_live_alerts_log_len():
+    df = pd.read_parquet(ROOT / "data" / "alerts" / "alerts_log.parquet")
+    assert len(df) == 12
+'''
+    found = scan_text(alerts_log_bad, rel="tests/test_alerts_log_pin.py")
+    if not any(f.kind == "eq-literal" and f.literal == "12" and f.store == "alerts-log" for f in found):
+        failures.append(f"alerts_log.parquet ==12 pin not caught: {found}")
+
+    alerts_bad = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_hub_feed_macro_count():
+    rows = (ROOT / "data/vector/alerts.jsonl").read_text().splitlines()
+    assert len(rows) == 12
+'''
+    found = scan_text(alerts_bad, rel="tests/test_vector_alerts_pin.py")
+    if not any(f.kind == "eq-literal" and f.literal == "12" and f.store == "vector-alerts" for f in found):
+        failures.append(f"vector alerts jsonl ==12 pin not caught: {found}")
+
+    tripwire_bad = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_latched_tripwire_count():
+    state = json.loads((ROOT / "data/cycle_ontology/tripwire_state.json").read_text())
+    assert len(state) == 24
+'''
+    found = scan_text(tripwire_bad, rel="tests/test_tripwire_pin.py")
+    if not any(f.kind == "eq-literal" and f.literal == "24" and f.store == "tripwire-state" for f in found):
+        failures.append(f"tripwire_state ==24 pin not caught: {found}")
+
     if failures:
         for item in failures:
             print(f"::error title=vintage-pin-selftest::{item}", flush=True)
         return 1
-    print("selftest OK — three detonation classes red, three legal patterns green")
+    print("selftest OK — post-5515 detonation classes red, legal patterns green")
     return 0
 
 

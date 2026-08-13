@@ -2570,11 +2570,14 @@ jobs:
     # Fail-closed: a PR must not equality-pin a live nightly store. Measured
     # 2026-08-13: govrev latest/candidates ``assert 23 == 8``, options
     # ``episodes.jsonl`` 384→1206 used as a closed replay, prophet open-keys
-    # 10→11. Each one reddened main and then, through merge-on-green, the
-    # entire armed queue. Legal: a watermarked prefix slice, a census derived
-    # from a committed receipt written by a different path, or a named
-    # disclosure set. Do not re-type the product literals and do not
-    # grandfather by filename — a new ``== N`` in the same file still reds.
+    # 10→11, then after #5515 the spine parquet (pack-7 / #5547) and Release
+    # Radar inflation-truth artifacts (unrun-release-forecast). Each one
+    # reddened main and then, through merge-on-green, the entire armed queue.
+    # Legal: a watermarked prefix slice, a census derived from a committed
+    # receipt, a named disclosure set, or the #5547 cold-test bind of
+    # ``config.data_dir`` to empty tmp. Do not re-type the product literals
+    # and do not grandfather by filename — a new ``== N`` in the same file
+    # still reds.
     # The rglob over tests/test_*.py is load-bearing for path-aware scope:
     # inference claims tests/**/*.py so this runs on PRs that touch tests,
     # not only after the next jam. Main's full suite still runs it.
@@ -2590,7 +2593,7 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pyyaml
-      - name: vintage-pin fence selftest (three detonation classes red, three legal green)
+      - name: vintage-pin fence selftest (post-5515 detonation classes red, legal green)
         run: python3 scripts/check_vintage_pin_fence.py --selftest
       - name: vintage-pin fence (new live-store equality pins)
         run: python3 scripts/check_vintage_pin_fence.py

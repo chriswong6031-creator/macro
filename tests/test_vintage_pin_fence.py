@@ -13,8 +13,11 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+import pytest
+
 from scripts.check_vintage_pin_fence import (
     BASELINE_FINGERPRINTS,
+    LIVE_STORES,
     iter_test_files,
     main,
     scan_text,
@@ -29,6 +32,125 @@ _PLANS = "site/prophet/plans"
 
 def test_selftest_catches_the_three_detonation_classes() -> None:
     assert main(["--selftest"]) == 0
+
+
+def test_spine_parquet_len_pin_is_caught() -> None:
+    source = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_pins_live_parquet_len():
+    df = pd.read_parquet(ROOT / "data" / "spine" / "predictions.parquet")
+    assert len(df) == 58
+'''
+    found = scan_text(source, rel="tests/test_spine_named_pin.py")
+    assert any(
+        f.kind == "eq-literal" and f.literal == "58" and f.store == "spine-predictions"
+        for f in found
+    ), found
+
+
+def test_spine_default_root_reader_pin_is_caught() -> None:
+    source = '''
+from engine import altdata_signals as a
+def test_convergence_tier_accrual_aware_basis():
+    t = a.convergence_tier(["material_8k", "congress_buy"], trump=False)
+    assert t["n_scored"] == 0
+'''
+    found = scan_text(source, rel="tests/test_spine_reader_pin.py")
+    assert any(
+        f.kind == "eq-literal" and f.literal == "0" and f.store == "spine-predictions"
+        for f in found
+    ), found
+
+
+def test_cold_data_dir_fixture_is_legal() -> None:
+    source = '''
+import pytest
+from lib import config
+from engine import altdata_signals as a
+@pytest.fixture()
+def spine_root(tmp_path, monkeypatch):
+    (tmp_path / "data").mkdir()
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
+    return tmp_path
+def test_convergence_tier_accrual_aware_basis(spine_root):
+    t = a.convergence_tier(["material_8k", "congress_buy"], trump=False)
+    assert t["n_scored"] == 0
+'''
+    assert scan_text(source, rel="tests/test_spine_cold_ok.py") == []
+
+
+def test_mutation_dropping_the_data_dir_bind_reds_the_cold_census() -> None:
+    """The #5547 isolation is load-bearing: same pin without the bind must red."""
+    source = '''
+from engine import altdata_signals as a
+def test_convergence_tier_accrual_aware_basis(spine_root):
+    t = a.convergence_tier(["material_8k", "congress_buy"], trump=False)
+    assert t["n_scored"] == 0
+'''
+    found = scan_text(source, rel="tests/test_spine_cold_mutated.py")
+    assert any(f.literal == "0" and f.store == "spine-predictions" for f in found), found
+
+
+def test_mutation_dropping_spine_from_live_stores_misses_the_parquet_pin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import scripts.check_vintage_pin_fence as fence
+
+    monkeypatch.setattr(
+        fence,
+        "LIVE_STORES",
+        tuple(row for row in fence.LIVE_STORES if row[1] != "spine-predictions"),
+    )
+    source = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_pins_live_parquet_len():
+    df = pd.read_parquet(ROOT / "data" / "spine" / "predictions.parquet")
+    assert len(df) == 58
+'''
+    found = fence.scan_text(source, rel="tests/test_spine_named_pin.py")
+    assert not any(f.store == "spine-predictions" for f in found), found
+
+
+def test_release_forecast_latest_pin_is_caught() -> None:
+    source = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_live_latest_release_count():
+    latest = json.loads((ROOT / "data/release_forecast/latest.json").read_text())
+    assert len(latest["releases"]) == 12
+'''
+    found = scan_text(source, rel="tests/test_release_pin.py")
+    assert any(
+        f.kind == "eq-literal" and f.literal == "12" and f.store == "release-forecast"
+        for f in found
+    ), found
+
+
+def test_inflation_truth_directory_pin_is_caught() -> None:
+    source = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_live_cpi_truth_files():
+    files = list((ROOT / "data/release_forecast/cpi_truth").glob("*.json"))
+    assert len(files) == 4
+'''
+    found = scan_text(source, rel="tests/test_inflation_truth_pin.py")
+    assert any(
+        f.kind == "eq-literal" and f.literal == "4" and f.store == "inflation-truth"
+        for f in found
+    ), found
+
+
+def test_live_stores_cover_the_post_5515_detonations() -> None:
+    stores = {label: path for path, label in LIVE_STORES}
+    assert stores["spine-predictions"] == "data/spine/predictions.parquet"
+    assert stores["release-forecast"].startswith("data/release_forecast/")
+    assert stores["inflation-truth"] == "data/release_forecast/cpi_truth"
+    assert "data/vector/alerts.jsonl" in {path for path, _ in LIVE_STORES}
+    assert "data/alerts/alerts_log.parquet" in {path for path, _ in LIVE_STORES}
+    assert "data/cycle_ontology/tripwire_state.json" in {path for path, _ in LIVE_STORES}
 
 
 def test_govrev_candidate_census_pin_is_caught() -> None:
