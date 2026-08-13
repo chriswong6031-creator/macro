@@ -27,6 +27,13 @@
       "runtimeArgs": ["-m", "admin", "--port", "8791"],
       "port": 8791,
       "autoPort": true
+    },
+    {
+      "name": "mockup-us-stocks",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8792", "--directory", "mockups/refs/institutionalize/us_stocks"],
+      "port": 8792,
+      "autoPort": true
     }
   ]
 }

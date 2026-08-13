@@ -68,6 +68,7 @@ sys.path.insert(0, str(_ROOT))
 
 # Engine imports — must NOT import from the nightly runner or render layers.
 from engine.qledger import (
+    HORIZON_UNIT_TRADING,
     TIMESTAMP_QUALITY,
     make_claim,
     register,
@@ -372,6 +373,8 @@ def backfill_altdata(root: Path, *, dry_run: bool = False) -> int:
             scope_key=ticker,
             direction=direction,
             horizon_d=horizon_d,
+            # P0a: grade-ladder rungs are exchange SESSIONS, not calendar days.
+            horizon_unit=HORIZON_UNIT_TRADING,
             timestamp_quality=_TQ_ALTDATA,
             subject_level=subj_level,
             bench_level=bench_level,
@@ -406,6 +409,8 @@ def backfill_altdata(root: Path, *, dry_run: bool = False) -> int:
                     scope_key=ptk,
                     direction=direction,
                     horizon_d=horizon_d,
+                    # P0a: grade-ladder rungs are exchange SESSIONS, not calendar days.
+                    horizon_unit=HORIZON_UNIT_TRADING,
                     timestamp_quality=_TQ_ALTDATA,
                     bench="SPY",
                     claim_family=family,
@@ -490,6 +495,8 @@ def backfill_radar(root: Path, *, dry_run: bool = False) -> int:
             scope_key=ticker,           # grade against the proxy ticker
             direction=direction,
             horizon_d=horizon_d,
+            # P0a: grade-ladder rungs are exchange SESSIONS, not calendar days.
+            horizon_unit=HORIZON_UNIT_TRADING,
             timestamp_quality=_TQ_RADAR,
             bench="SPY",
             extra={
@@ -594,6 +601,8 @@ def backfill_policy(root: Path, *, dry_run: bool = False) -> int:
             scope_key=subject,
             direction=direction,
             horizon_d=horizon_d,
+            # P0a: grade-ladder rungs are exchange SESSIONS, not calendar days.
+            horizon_unit=HORIZON_UNIT_TRADING,
             timestamp_quality=_TQ_POLICY,
             subject_level=subj_level,
             bench_level=bench_level,

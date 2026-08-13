@@ -115,11 +115,29 @@ jobs:
     # add or remove the lease label.
     if: >-
       github.event_name != 'workflow_run'
-      || github.event.workflow_run.conclusion != ''
+      || (
+        github.event.workflow_run.conclusion != ''
+        && (
+          github.event.workflow_run.name != 'fences'
+          || github.event.workflow_run.head_branch != 'main'
+        )
+      )
 
     concurrency:
+      # Full success sweeps share `sweep`. Failure markers are per-head.
+      # Skip-ci data ticks complete fences.yml on main every ~5 minutes and
+      # used to join the `sweep` group: GitHub keeps one PENDING run per group
+      # and cancels the older pending, which dropped the ci.yml-success wake
+      # that held the green list (measured 2026-08-13 19:36–19:45, mostly
+      # cancelled; run 31736859799). Those wakes now use `skip-ci-ignored` so
+      # the green-proof sweep is the one that survives. cancel-in-progress
+      # stays false so an in-progress drain is never killed.
       group: >-
-        merge-on-green-${{ github.event_name != 'workflow_run'
+        merge-on-green-${{ github.event_name == 'workflow_run'
+        && github.event.workflow_run.name == 'fences'
+        && github.event.workflow_run.head_branch == 'main'
+        && 'skip-ci-ignored'
+        || github.event_name != 'workflow_run'
         && 'sweep'
         || github.event.workflow_run.conclusion == 'failure'
         && format('mark-{0}', github.event.workflow_run.head_sha)
@@ -136,11 +154,14 @@ jobs:
     # nightly, and light workloads cannot land here. Never replace the unique label
     # with `parked`: mac-builder-5 also carries `parked` and is nightly failover.
     #
-    # CURRENT JAM (measured 2026-08-13): that hosted-pool saturation is NOT the
-    # live failure. Packs start in seconds on ubuntu-latest; sweeps finish in
-    # ~1 minute. Two independent stalls: (1) integration-baseline on
-    # render-linux dying inside checkout (now hosted); (2) CI_SCOPE_MODE=shadow
-    # copying main's product reds onto every PR. See scripts/merge_on_green.py.
+    # CURRENT JAM (measured 2026-08-13 run 31736859799, 19:38–19:40Z): the
+    # hosted-pool saturation and live-inherited-red path are NOT the live
+    # failure. integration-baseline was GREEN. Six check-clean PRs were
+    # classified STALE because #5545 touched an unowned DESIGN_NOTES.md catch-
+    # all; one refresh slot (#5528) and five refresh-deferred. Meanwhile skip-
+    # ci fences-on-main ticks plus PR-pack completions coalesced pending
+    # merge-on-green runs (last 10 around 19:36–19:45 mostly cancelled). See
+    # scripts/merge_on_green.py.
     #
     # The job needs only Python, network, a sparse checkout, and PyYAML; no
     # setup-python step or persistent workspace is load-bearing.

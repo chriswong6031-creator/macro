@@ -213,9 +213,13 @@ def test_concurrency_coalesces_full_sweeps_without_swallowing_red_markers():
     assert "workflow_run.head_sha" in group and "mark-{0}" in group
     assert "&& 'sweep'" in group
     assert "|| 'lease-reconcile'" in group
+    assert "skip-ci-ignored" in group
+    assert "workflow_run.name == 'fences'" in group
+    assert "workflow_run.head_branch == 'main'" in group
     source = WORKFLOW.read_text(encoding="utf-8")
     assert "livelock" in source.lower(), "the postmortem must stay in the file"
     assert "25-107 minutes" in source and "dedicated runner" in source
+    assert "pending" in source.lower() and "skip-ci-ignored" in source
 
 
 def test_the_sweep_wakes_for_merge_mark_or_bounded_lease_reconciliation():
@@ -246,6 +250,8 @@ def test_the_sweep_wakes_for_merge_mark_or_bounded_lease_reconciliation():
         "the cron and workflow_dispatch must bypass the conclusion filter entirely"
     )
     assert "workflow_run.conclusion != ''" in gate
+    assert "workflow_run.name != 'fences'" in gate
+    assert "head_branch != 'main'" in gate
     group = str(_workflow()["jobs"]["sweep"]["concurrency"]["group"])
     assert "conclusion == 'failure'" in group and "mark-{0}" in group
     assert "conclusion == 'success'" in group and "'sweep'" in group
@@ -427,26 +433,37 @@ def _gates(patterns=("engine/**", "scripts/*.py", "tests/**")) -> list[dict]:
     return [{"workflow": "ci.yml", "patterns": list(patterns)}]
 
 
+def _commit_parts(entry):
+    """``(iso, files)`` or ``(iso, files, message)`` from a freshness fixture."""
+    iso, files, *rest = entry
+    return iso, list(files), (rest[0] if rest else "")
+
+
 def _freshness(commits=((BEFORE_THE_PROOF, ["data/nightly.json"]),), **kwargs):
     """A `ProofFreshness` with its reads pre-seeded — no network, no monkeypatching.
 
-    `commits` is `[(diagnostic timestamp, [changed files]), ...]`; freshness itself
-    uses only their generated SHA order. A synthetic exact proof base is appended by
-    default so tests classify the supplied commits without inferring time.
+    `commits` is `[(diagnostic timestamp, [changed files], message?), ...]`; freshness
+    itself uses only their generated SHA order. A synthetic exact proof base is
+    appended by default so tests classify the supplied commits without inferring time.
     """
     gates = kwargs.pop("gates", None) or _gates()
     pull_files = kwargs.pop("pull_files", None)
     repo = kwargs.pop("repo", "acme/widgets")
     include_proof_base = kwargs.pop("include_proof_base", True)
     assert not kwargs, kwargs
-    parsed = [
-        {"sha": f"{index + 1:040d}"} for index, (_iso, _files) in enumerate(commits)
-    ]
+    parsed = []
+    seeded_files = []
+    for index, entry in enumerate(commits):
+        _iso, files, message = _commit_parts(entry)
+        parsed.append({"sha": f"{index + 1:040d}", "message": message})
+        seeded_files.append(files)
     if include_proof_base:
-        parsed.append({"sha": PROOF_BASE_SHA})
+        parsed.append({"sha": PROOF_BASE_SHA, "message": ""})
     fresh = MOG.ProofFreshness(repo, "read", gates, parsed)
-    for entry, (_iso, files) in zip(parsed, commits):
+    for entry, files in zip(parsed, seeded_files):
         fresh._commit_files[entry["sha"]] = (list(files), False)
+    if include_proof_base:
+        fresh._commit_files.setdefault(PROOF_BASE_SHA, ([], False))
     for number, names in (pull_files or {}).items():
         fresh._pr_files[number] = None if names is None else list(names)
     return fresh
@@ -674,6 +691,35 @@ def test_a_subset_of_packs_is_clean_because_an_unselected_pack_is_not_missing():
     ) == ("clean", [])
 
 
+def test_unscheduled_packs_are_not_missing_from_the_anchor_verdict():
+    """proof_anchor_verdict used to require all 12 packs, which made every
+    scoped PR ``incomplete`` after decide_verdict had already said clean.
+    """
+    runs = [
+        _run("ci-plan", conclusion="success"),
+        _run("ci-pack-3", conclusion="success"),
+        _run("ci-pack-7", conclusion="success"),
+        _run("ci-gate", conclusion="success"),
+        _run("fence-pack", conclusion="success"),
+    ]
+    verdict, names = MOG.proof_anchor_verdict(runs)
+    assert verdict == "clean", names
+    assert "ci-pack-3" in names and "ci-pack-7" in names
+    assert not [name for name in names if name.startswith("ci-pack-") and name not in {"ci-pack-3", "ci-pack-7"}]
+
+
+def test_a_scheduled_pack_red_still_blocks_the_anchor_verdict():
+    runs = [
+        _run("ci-plan", conclusion="success"),
+        _run("ci-pack-3", conclusion="failure"),
+        _run("ci-gate", conclusion="failure"),
+        _run("fence-pack", conclusion="success"),
+    ]
+    verdict, names = MOG.proof_anchor_verdict(runs)
+    assert verdict == "blocked"
+    assert "ci-pack-3 (failure)" in names
+
+
 def test_a_skipped_plan_and_gate_is_unproven_not_clean():
     """#4779 survives the conversion: `skipped` is still not a pass.
 
@@ -725,6 +771,9 @@ def _fake_api(
     compare_status=200,
     compare_base_sha=None,
     compare_merge_base_sha=None,
+    compare_commits=None,
+    merge_message=None,
+    main_ref_sha=None,
     pull_read_sequence=None,
     annotations=None,
 ):
@@ -753,8 +802,10 @@ def _fake_api(
     live-vs-view disagreement never occurs in practice — measured 2026-08-09).
     """
     calls: list[tuple[str, str, dict | None]] = []
-    shas = [f"{index + 1:040d}" for index, _ in enumerate(main_commits)]
+    parsed_commits = [_commit_parts(entry) for entry in main_commits]
+    shas = [f"{index + 1:040d}" for index, _ in enumerate(parsed_commits)]
     pull_reads = 0
+    merge_attempts = 0
     # Most sweep tests are about a gate *after* repository proof admission and
     # historically used one representative pack.  Production now requires the
     # complete ci/fences anchor set; fill that neutral prerequisite here while
@@ -782,7 +833,7 @@ def _fake_api(
         normalized_pages[page] = answer
 
     def fake_request(method, url, token, payload=None):
-        nonlocal pull_reads
+        nonlocal pull_reads, merge_attempts
         calls.append((method, url, payload))
         if "/check-runs/" in url and "/annotations" in url:
             ident = url.split("/check-runs/")[1].split("/")[0]
@@ -808,35 +859,69 @@ def _fake_api(
             }
             if compare_merge_base_sha is not None:
                 answer["merge_base_commit"] = {"sha": compare_merge_base_sha}
+            if compare_commits is not None:
+                answer["commits"] = list(compare_commits)
             return 200, answer
         if "/commits?" in url:
             return 200, [
-                {"sha": sha, "commit": {"committer": {"date": iso}}}
-                for sha, (iso, _files) in zip(shas, main_commits)
+                {
+                    "sha": sha,
+                    "commit": {
+                        "committer": {"date": iso},
+                        "message": message,
+                    },
+                }
+                for sha, (iso, _files, message) in zip(shas, parsed_commits)
             ] + [
                 {
                     "sha": PROOF_BASE_SHA,
-                    "commit": {"committer": {"date": "1970-01-01T00:00:00Z"}},
+                    "commit": {
+                        "committer": {"date": "1970-01-01T00:00:00Z"},
+                        "message": "",
+                    },
                 }
             ]
         if "/commits/" in url:
             sha = url.rsplit("/", 1)[1]
             files = dict(
-                zip(shas, [names for _iso, names in main_commits])
+                zip(shas, [names for _iso, names, _msg in parsed_commits])
             ).get(sha, [] if sha == PROOF_BASE_SHA else None)
             if files is None:
+                extra = {
+                    str(entry.get("sha") or ""): [
+                        str((file or {}).get("filename") or "")
+                        for file in (entry.get("files") or [])
+                    ]
+                    for entry in (compare_commits or [])
+                    if isinstance(entry, dict)
+                }
+                files = extra.get(sha)
+            if files is None:
                 raise AssertionError(url)
-            return 200, {"files": [{"filename": name} for name in files]}
+            return 200, {"files": [{"filename": name} for name in files if name]}
         if method == "GET" and "/git/ref/heads/main" in url:
-            return 200, {"object": {"sha": shas[0]}}
+            return 200, {"object": {"sha": main_ref_sha if main_ref_sha is not None else shas[0]}}
         if url.endswith("/update-branch"):
             if update_status in {200, 202}:
                 return update_status, {"message": "Updating pull request branch."}
             return update_status, {"message": update_message}
         if url.endswith("/merge"):
-            if merge_status == 200:
+            merge_attempts += 1
+            statuses = (
+                merge_status
+                if isinstance(merge_status, (list, tuple))
+                else (merge_status,)
+            )
+            status = statuses[min(merge_attempts - 1, len(statuses) - 1)]
+            if status == 200:
                 return 200, {"sha": "c" * 40, "merged": True}
-            return merge_status, {"message": "Pull Request is not mergeable"}
+            if isinstance(merge_message, (list, tuple)):
+                detail = merge_message[min(merge_attempts - 1, len(merge_message) - 1)]
+            elif merge_message:
+                detail = merge_message
+            else:
+                detail = "Pull Request is not mergeable"
+            return status, {"message": detail}
         if method == "GET" and "/files?" in url and "/pulls/" in url:
             page = int(url.rsplit("page=", 1)[1].split("&")[0])
             if page > 1:
@@ -928,6 +1013,131 @@ def test_main_moving_after_the_freshness_snapshot_defers_the_merge(
     out = capsys.readouterr().out
     assert "main moved from freshness snapshot" in out
     assert "left armed for a fresh snapshot" in out
+
+
+def test_skip_ci_ticks_after_the_snapshot_still_merge(monkeypatch, capsys):
+    """A fully-green PR whose only divergence from HEAD is skip-ci data is eligible."""
+    skip_sha = "b" * 40
+    skip_commit = {
+        "sha": skip_sha,
+        "commit": {"message": "hot-tape: radar 2026-08-13T19:43Z [skip ci]"},
+        "files": [{"filename": "data/marketing/hot_tape_ring.jsonl"}],
+    }
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        },
+        compare_base_sha=skip_sha,
+        compare_commits=[skip_commit],
+        main_ref_sha=skip_sha,
+    )
+    assert (
+        MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+        == "merged"
+    )
+    assert [call for call in calls if call[1].endswith("/merge")]
+
+
+def test_a_real_pack_red_is_not_eligible_despite_skip_ci_ticks(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 2,
+                "check_runs": [
+                    _run("ci-pack-1", conclusion="failure"),
+                    _run("ci-gate", conclusion="failure"),
+                ],
+            }
+        },
+        main_commits=(
+            (
+                BEFORE_THE_PROOF,
+                ["data/marketing/hot_tape_ring.jsonl"],
+                "hot-tape: radar [skip ci]",
+            ),
+        ),
+    )
+    assert (
+        MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+        == "blocked"
+    )
+    assert not [call for call in calls if call[1].endswith("/merge")]
+
+
+def test_a_405_base_modified_is_retried_once(monkeypatch, capsys):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        },
+        merge_status=(405, 200),
+        merge_message="Base branch was modified. Review and try the merge again.",
+    )
+    assert (
+        MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+        == "merged"
+    )
+    merges = [call for call in calls if call[1].endswith("/merge")]
+    assert len(merges) == 2
+    assert not [call for call in calls if call[1].endswith("/update-branch")]
+    assert "retrying once" in capsys.readouterr().out
+
+
+def test_standing_holds_are_never_squash_merged(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        },
+    )
+    for number in sorted(MOG.NEVER_AUTO_MERGE_PULLS):
+        assert (
+            MOG.sweep_pull(
+                "acme/widgets", _pull(number), "read", "write", _freshness()
+            )
+            == "excluded"
+        )
+    assert not [call for call in calls if call[1].endswith("/merge")]
+
+
+def test_scoped_unscheduled_packs_are_not_incomplete_on_the_merge_path(
+    monkeypatch,
+):
+    """A ci-plan subset must merge: missing ci-pack-N is N/A, not pending."""
+    check_runs = [
+        _run("ci-plan", conclusion="success"),
+        _run("ci-pack-3", conclusion="success"),
+        _run("ci-pack-7", conclusion="success"),
+        _run("ci-gate", conclusion="success"),
+        _run("fence-pack", conclusion="success"),
+    ]
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {"total_count": len(check_runs), "check_runs": check_runs}
+        },
+    )
+    monkeypatch.setattr(
+        MOG,
+        "head_check_runs",
+        lambda *_a, **_k: check_runs,
+    )
+    assert (
+        MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+        == "merged"
+    )
+    assert [call for call in calls if call[1].endswith("/merge")]
 
 
 def test_a_missing_live_base_sha_fails_closed_before_merge(monkeypatch):
@@ -1987,7 +2197,7 @@ def test_a_red_main_blocks_ordinary_pulls_and_allows_one_explicit_repair(
     assert len(swept) == 1, "a broken baseline admits exactly one explicit repair per pass"
     assert swept[0] in {2, 3}, "and the one it admits must be a labelled repair"
     out = capsys.readouterr().out
-    assert "circuit breaker" in out and "2 snapshot-deferred" in out
+    assert "circuit breaker" in out
 
 
 def test_two_armed_repairs_take_turns_instead_of_one_starving_the_other():
@@ -2240,8 +2450,13 @@ def test_a_workflow_start_catchall_does_not_make_every_surface_everything():
     assert not stale, reason
 
 
-def test_a_new_root_seen_only_by_the_start_catchall_is_re_proven():
-    """Unknown ownership is fail-closed even though ``**`` is start-only."""
+def test_a_new_root_seen_only_by_the_start_catchall_does_not_invalidate_every_proof():
+    """A file with no tested-surface owner is outside every PR's proof.
+
+    Measured 2026-08-13 run 31736859799: #5545 touched
+    ``mockups/refs/psi/workspace/DESIGN_NOTES.md``, which matched only the
+    workflow start catch-all, and every check-clean PR was classified stale.
+    """
     gates = [
         {
             "workflow": "ci.yml",
@@ -2257,8 +2472,50 @@ def test_a_new_root_seen_only_by_the_start_catchall_is_re_proven():
     stale, reason = freshness.stale_for(
         _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
     )
-    assert stale
-    assert "start catch-all" in reason and "no specific" in reason
+    assert not stale, reason
+
+
+def test_a_leaked_start_catchall_in_patterns_still_does_not_stale_the_fleet():
+    """``**`` in ``patterns`` (not just start_only) must not own every surface."""
+    gates = [
+        {
+            "workflow": "ci.yml",
+            "patterns": ["**", "engine/**"],
+            "start_only_patterns": [],
+        }
+    ]
+    freshness = _freshness(
+        commits=[
+            (
+                MAIN_MOVED_AT_1026,
+                ["mockups/refs/psi/workspace/DESIGN_NOTES.md"],
+            )
+        ],
+        gates=gates,
+        pull_files={4242: ["engine/signal_quality.py"]},
+    )
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+    assert not stale, reason
+
+
+def test_unowned_design_notes_do_not_stale_the_fleet():
+    """The exact 19:38 jam file: mockups/refs/** DESIGN_NOTES.md."""
+    freshness = _freshness(
+        commits=[
+            (
+                MAIN_MOVED_AT_1026,
+                ["mockups/refs/psi/workspace/DESIGN_NOTES.md"],
+            )
+        ],
+        gates=MOG.load_pr_gates(),
+        pull_files={4242: ["engine/signal_quality.py", "tests/test_validate_signals.py"]},
+    )
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+    assert not stale, reason
 
 
 def test_a_pipeline_bake_is_not_an_edit():
@@ -2600,11 +2857,14 @@ def test_exact_proof_base_makes_job_start_timestamps_non_authoritative():
     assert stale is False, reason
 
 
-def test_a_proof_older_than_the_whole_visible_timeline_is_re_proven():
-    """#4583's own shape: 15 hours old, far beyond the ~8 hours one listing call
-    buys. What main did in between cannot be established, so it is not asserted."""
+def test_a_proof_older_than_the_visible_timeline_stays_current_if_only_skip_ci_ticks():
+    """Skip-ci data ticks can fill the 100-commit window. That is not #4583."""
     commits = [
-        (f"2026-08-05T{12 - (index // 12):02d}:{(index * 5) % 60:02d}:00Z", ["docs/x.md"])
+        (
+            f"2026-08-05T{12 - (index // 12):02d}:{(index * 5) % 60:02d}:00Z",
+            ["data/marketing/hot_tape_ring.jsonl"],
+            "hot-tape: radar tick [skip ci]",
+        )
         for index in range(MOG.MAIN_TIMELINE_PAGE)
     ]
     freshness = _freshness(
@@ -2615,26 +2875,62 @@ def test_a_proof_older_than_the_whole_visible_timeline_is_re_proven():
     stale, reason = freshness.stale_for(
         _pull(), [_run("ci-pack-1", conclusion="success", started_at="2026-08-04T07:42:00Z")]
     )
-    assert stale and "predates or is outside" in reason, reason
+    assert not stale, reason
 
 
-def test_too_many_commits_to_classify_is_re_proven_without_reading_any():
-    """The cap protects the shared API quota. It must therefore be checked BEFORE any
-    per-commit read, or a pathological pull request spends the budget and then gets
-    re-proven anyway."""
+def test_a_product_commit_in_the_visible_window_still_reproves_an_old_proof():
+    """#4583 survives: a tests/ edit in the window is still a surface hit."""
     commits = [
-        (f"2026-08-05T{13 + (index // 30):02d}:{index % 60:02d}:00Z", ["docs/x.md"])
+        (f"2026-08-05T12:{index:02d}:00Z", ["docs/x.md"])
+        for index in range(3)
+    ]
+    commits[0] = (MAIN_MOVED_AT_1026, ["tests/test_us_reclaim_veto_packet.py"])
+    freshness = _freshness(
+        commits=commits,
+        gates=MOG.load_pr_gates(),
+        pull_files={4242: INCIDENT_4583_FILES},
+        include_proof_base=False,
+    )
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at="2026-08-04T07:42:00Z")]
+    )
+    assert stale, reason
+
+
+def test_too_many_product_commits_to_classify_is_re_proven():
+    """Skip-ci ticks do not consume the cap; product commits still do."""
+    commits = [
+        (
+            f"2026-08-05T{13 + (index // 30):02d}:{index % 60:02d}:00Z",
+            ["engine/signal_quality.py"],
+        )
+        for index in range(MOG.MAIN_COMMIT_FILE_CAP + 5)
+    ]
+    freshness = _freshness(commits=commits, pull_files={4242: ["engine/signal_gate.py"]})
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+    assert stale and "product commits" in reason, reason
+
+
+def test_skip_ci_ticks_do_not_consume_the_commit_classification_cap():
+    commits = [
+        (
+            f"2026-08-05T14:{index:02d}:00Z",
+            ["data/marketing/hot_tape_ring.jsonl"],
+            "hot-tape: radar [skip ci]",
+        )
         for index in range(MOG.MAIN_COMMIT_FILE_CAP + 5)
     ]
     freshness = _freshness(commits=commits, pull_files={4242: ["engine/signal_quality.py"]})
-    freshness._commit_files.clear()  # force a real read if one is attempted
+    freshness._commit_files.clear()
     calls: list[str] = []
     freshness.files_of = lambda sha: calls.append(sha) or ([], False)  # type: ignore[method-assign]
     stale, reason = freshness.stale_for(
         _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
     )
-    assert stale and "more than the" in reason, reason
-    assert calls == [], "the cap must be enforced before any commit is fetched"
+    assert not stale, reason
+    assert calls == [], "skip-ci messages must not spend per-commit file reads"
 
 
 def test_an_unreadable_main_commit_is_re_proven(monkeypatch):
@@ -3005,11 +3301,15 @@ def test_the_commit_classification_is_shared_across_pull_requests(monkeypatch):
         pr_files=["engine/signal_quality.py"],
     )
     freshness = MOG.ProofFreshness.build("acme/widgets", "read")
-    for number in (1, 2, 3):
-        assert (
-            MOG.sweep_pull("acme/widgets", _pull(number), "read", "write", freshness)
-            == "merged"
-        )
+    verdicts = [
+        MOG.sweep_pull("acme/widgets", _pull(number), "read", "write", freshness)
+        for number in (1, 2, 3)
+    ]
+    assert verdicts[0] == "merged"
+    assert verdicts[1:] == ["refresh-deferred", "refresh-deferred"], (
+        "after the first squash this sweep records a product commit; overlapping "
+        "heads must re-prove rather than merge on the pre-squash green"
+    )
     assert freshness.commit_file_reads == len(window)
     commit_reads = [
         call for call in calls if "/commits/" in call[1] and "/check-runs" not in call[1]
@@ -3358,7 +3658,9 @@ def test_refresh_budget_refuses_branch_writes_without_serialized_authority(
     "active,expected_allowance",
     [
         (0, MOG.MAX_IN_FLIGHT_PR_PROOFS),
-        (MOG.MAX_IN_FLIGHT_PR_PROOFS - 1, 1),
+        # Run 31736859799: 7 indexed / cap 8 used to leave 1 slot. That is the
+        # measured jam — raise to the stale-green batch floor, not leftover 1.
+        (MOG.MAX_IN_FLIGHT_PR_PROOFS - 1, MOG.HIGH_LOAD_FAIR_REFRESHES),
         (MOG.MAX_IN_FLIGHT_PR_PROOFS, MOG.HIGH_LOAD_FAIR_REFRESHES),
         (34, MOG.HIGH_LOAD_FAIR_REFRESHES),
         (None, 0),
@@ -3391,8 +3693,8 @@ def test_repo_wide_active_proofs_clamp_update_branch_capacity(
 @pytest.mark.parametrize(
     "reservation_count,expected_allowance,requires_lease",
     [
-        (0, 1, False),
-        (1, MOG.HIGH_LOAD_FAIR_REFRESHES, True),
+        (0, MOG.HIGH_LOAD_FAIR_REFRESHES, False),
+        (1, MOG.HIGH_LOAD_FAIR_REFRESHES, False),
     ],
     ids=("owner-run-indexed", "owner-run-not-yet-indexed"),
 )
@@ -3955,7 +4257,7 @@ def test_self_wake_unreadable_census_attempts_a_bounded_dispatch(monkeypatch):
     assert calls == ["GET", "POST"]
 
 
-@pytest.mark.parametrize("terminal", ["merged", "already-merged", "main-moved", "merge-unknown"])
+@pytest.mark.parametrize("terminal", ["main-moved", "merge-unknown"])
 def test_terminal_snapshot_verdict_requests_exactly_one_successor(
     monkeypatch, terminal
 ):
@@ -4112,7 +4414,7 @@ def test_old_cancelled_event_cannot_release_a_newly_claimed_same_head_lease(
 
 
 @pytest.mark.parametrize(
-    "terminal_verdict", ["merged", "already-merged", "main-moved", "merge-unknown"]
+    "terminal_verdict", ["main-moved", "merge-unknown"]
 )
 def test_a_terminal_verdict_consumes_the_immutable_main_snapshot(
     monkeypatch, capsys, terminal_verdict
@@ -4127,6 +4429,23 @@ def test_a_terminal_verdict_consumes_the_immutable_main_snapshot(
     out = capsys.readouterr().out
     assert "immutable main freshness snapshot" in out
     assert "snapshot-deferred" in out
+
+
+def test_a_successful_merge_continues_the_drain(
+    monkeypatch, capsys
+):
+    """One success wake must squash every currently-eligible armed PR.
+
+    Measured 2026-08-13: stopping after the first merge left ~50 green PRs
+    armed while skip-ci ticks moved main.
+    """
+    seen = _main_harness(
+        monkeypatch, [_pull(1), _pull(2), _pull(3)], verdict="merged"
+    )
+    assert MOG.main() == 0
+    assert sorted(seen) == [1, 2, 3]
+    out = capsys.readouterr().out
+    assert "snapshot-deferred" not in out
 
 
 def test_a_starved_sweep_defers_with_a_notice_instead_of_going_red(monkeypatch, capsys):
@@ -4610,8 +4929,57 @@ def test_a_live_inherited_red_is_merged_not_blocked(monkeypatch, capsys):
     assert "live-inherited red" in out
 
 
-def test_a_live_inherited_red_with_an_extra_pack_is_still_blocked(monkeypatch):
-    """Pack-name subset is necessary: an extra red is this pull request's own."""
+def test_a_live_inherited_red_survives_pack_rebalance(monkeypatch, capsys):
+    """Pack numbers rebalance on the selected job set; waive on job identity.
+
+    The same ``unrun-government-revenue`` is pack-7 on a scoped 114-job PR and
+    pack-5 on main's full-suite dispatch. Pack-name subset can never match.
+    ``ci-gate`` is implied by those identities, not an extra name.
+    """
+    pack7 = _run("ci-pack-7", conclusion="failure", check_id=7007)
+    pack11 = _run("ci-pack-11", conclusion="failure", check_id=7011)
+    gate = _run("ci-gate", conclusion="failure", check_id=7010)
+    pages = {1: {"total_count": 3, "check_runs": [pack7, pack11, gate]}}
+    annotations = {
+        7007: [
+            {
+                "title": "legacy-job-unrun-government-revenue",
+                "message": "unrun-government-revenue: step 'pytest' exited 1",
+            }
+        ],
+        7011: [
+            {
+                "title": "legacy-job-unrun-government-revenue-candidate-projection",
+                "message": (
+                    "unrun-government-revenue-candidate-projection: "
+                    "step 'pytest' exited 1"
+                ),
+            }
+        ],
+    }
+    calls = _fake_api(
+        monkeypatch, check_pages=pages, annotations=annotations, merge_status=200
+    )
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _live_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "merged", (
+        "a remapped pack with the same legacy-job-* identities is main's weather"
+    )
+    assert any(call[1].endswith("/merge") for call in calls)
+    out = capsys.readouterr().out
+    assert "live-inherited red" in out
+    assert "unrun-government-revenue" in out
+
+
+def test_a_live_inherited_red_with_an_extra_job_is_still_blocked(monkeypatch):
+    """An extra legacy-job identity is this pull request's own, pack numbers aside."""
     pack6 = _run("ci-pack-6", conclusion="failure", check_id=6006)
     pack9 = _run("ci-pack-9", conclusion="failure", check_id=6009)
     pages = {1: {"total_count": 2, "check_runs": [pack6, pack9]}}
@@ -5452,10 +5820,17 @@ def test_proof_postdates_failures_is_pure_and_fail_closed():
 # repairing the supply would have fixed the mechanism and kept the daily audit.
 
 
-def _aged_proof(hours, *names):
+def _aged_proof(hours, *names, failed_legacy_jobs=(), failed_names=()):
     """A proof `hours` old (None = undated)."""
     when = None if hours is None else dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=hours)
-    return MOG.MainProof(frozenset(names or ("ci-pack-0",)), when, "a" * 40, "test")
+    return MOG.MainProof(
+        frozenset(names or ("ci-pack-0",)),
+        when,
+        "a" * 40,
+        "test",
+        frozenset(failed_names),
+        frozenset(failed_legacy_jobs),
+    )
 
 
 def _dispatched(calls):
@@ -5514,13 +5889,66 @@ def test_an_undated_proof_also_orders_a_baseline_and_never_calls_it_never_proven
 
 def test_a_fresh_proof_orders_nothing(monkeypatch):
     """A ci.yml run takes 30-34 minutes, so the age gate must not fire on a proof that
-    is merely mid-flight — and a repository whose main is proven is not a problem."""
+    is merely mid-flight — and a repository whose main is proven is not a problem.
+
+    A proof that already carries legacy-job weather CAN answer live-inherited
+    reds, so clock-fresh is enough to skip. An empty-weather proof is the
+    other test below.
+    """
     calls = _baseline_api(monkeypatch)
     outcome = MOG.ensure_main_baseline(
-        "acme/widgets", _aged_proof(MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5), {"ci-pack-2"}, "write"
+        "acme/widgets",
+        _aged_proof(
+            MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5,
+            failed_legacy_jobs=_GOVREV_JOBS,
+        ),
+        {"ci-pack-2"},
+        "write",
     )
     assert outcome.startswith("not needed")
     assert not calls, "a fresh proof must not spend a single call"
+
+
+def test_a_clock_fresh_proof_with_no_legacy_weather_orders_a_baseline(
+    monkeypatch, capsys
+):
+    """Skip-ci tape ticks do not retrigger ci.yml, so a clock-fresh GREEN proof
+    leaves ``failed_legacy_jobs`` empty and the live-inherited waiver blind.
+
+    Bound: still requires blocked packs, a CONCLUDED newest run, and the
+    interval floor — this is not a per-commit dispatch.
+    """
+    calls = _baseline_api(monkeypatch)
+    outcome = MOG.ensure_main_baseline(
+        "acme/widgets",
+        _aged_proof(MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5),
+        {"ci-pack-7", "ci-gate"},
+        "write",
+    )
+    assert outcome == "dispatched"
+    assert _dispatched(calls)
+    out = capsys.readouterr().out
+    assert any(
+        line.startswith("::notice") and "legacy-job" in line
+        for line in out.splitlines()
+    ), out
+
+
+def test_a_clock_fresh_empty_legacy_proof_does_not_stampede_an_in_flight_baseline(
+    monkeypatch,
+):
+    """The 17:05 post-#5547 dispatch must not be killed by a sibling catch-up."""
+    calls = _baseline_api(
+        monkeypatch, newest=_wf_run(1, status="in_progress", conclusion=None)
+    )
+    outcome = MOG.ensure_main_baseline(
+        "acme/widgets",
+        _aged_proof(MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5),
+        {"ci-pack-7", "ci-gate"},
+        "write",
+    )
+    assert outcome == "skipped (the newest baseline is in_progress)"
+    assert not _dispatched(calls)
 
 
 def test_an_idle_sweep_orders_nothing_however_old_the_proof_is(monkeypatch):
@@ -5884,6 +6312,7 @@ def test_the_DEFAULT_budget_caps_refreshes_at_the_constant(monkeypatch):
     them green while the shipped sweeper refreshed the whole backlog in one pass —
     which is the exact 84-CI-runs-from-one-sweep failure this cap exists to prevent.
     """
+    assert MOG.HIGH_LOAD_FAIR_REFRESHES == 8
     assert MOG.SweepBudget("read").max_refreshes == MOG.MAX_REFRESHES_PER_SWEEP
     assert (
         MOG.SweepBudget("read").max_refresh_attempts
@@ -6549,15 +6978,24 @@ def test_a_base_inherited_red_is_left_for_the_full_sweep(monkeypatch, capsys):
 
 
 def test_a_live_inherited_red_is_left_for_the_full_sweep(monkeypatch, capsys):
-    """The marker pass must not accuse a head of main's current weather."""
+    """The marker pass must not accuse a head of main's current weather.
+
+    Pack numbers on the PR need not match main's — they rebalance. Main having
+    *any* failed weather is enough for this pass to defer; the full sweep owns
+    the annotation-identity merge-vs-block call.
+    """
     pages = {
-        1: {"total_count": 1, "check_runs": [_run("ci-pack-6", conclusion="failure")]}
+        1: {"total_count": 1, "check_runs": [_run("ci-pack-7", conclusion="failure")]}
     }
     calls, code = _mark_only(
         monkeypatch,
         [_pull(5291)],
         check_pages=pages,
-        proof=_proof("ci-pack-1", failed_names=("ci-pack-6", "ci-pack-8")),
+        proof=_proof(
+            "ci-pack-1",
+            failed_names=("ci-pack-5",),
+            failed_legacy_jobs=_GOVREV_JOBS,
+        ),
     )
     assert code == 0
     assert [call for call in calls if call[0] != "GET"] == [], (
