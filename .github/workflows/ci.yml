@@ -1435,6 +1435,11 @@ on:
       # the checker; this is its other half, per the same two-halves law the guard
       # enforces on everything else.
       - "tests/test_ci_trigger_closure.py"
+      # VINTAGE-PIN fence (job: vintage-pin-fence). scripts/** and tests/**
+      # already start CI; these two name the pair the job runs so a rename of
+      # either still reaches the lane that proves it.
+      - "scripts/check_vintage_pin_fence.py"
+      - "tests/test_vintage_pin_fence.py"
       # UNRUN-CENSUS discovery (job: workflow-yaml). scripts/*.py reaches
       # audit_unrun_tests.py itself; this is the test half. The census owns suite
       # discovery for all THREE darkness guards, so a regression here re-blinds
@@ -3982,6 +3987,26 @@ on:
       # to make it wrong. A registry edit that cannot START ci.yml is the darkness
       # this whole job exists to end.
       - "tests/test_price_basis_graders.py"
+      # ── Mastermind Data OS foundation (2026-08-12) ──────────────────────────
+      # Job: dataos-foundation (.github/ci/legacy-jobs.yml). BOTH halves listed on
+      # purpose, same law as every block above: the five suites AND the modules
+      # they measure. lib/dataos/** rides the lib/** catch-all and
+      # config/dataset_registry.yml rides config/**, but a catch-all is provenance
+      # nobody can read — these entries are the executable record of what this job
+      # binds, so the next person to narrow a catch-all can see what they would be
+      # switching off. The registry file is the load-bearing one: it is the SUBJECT
+      # of tests/test_dataos_registry.py (the committed registry must validate
+      # clean and must not claim a store that does not exist), so a registry edit
+      # that cannot START ci.yml is exactly the darkness the closure guard exists
+      # to end.
+      - "lib/dataos/**"
+      - "config/dataset_registry.yml"
+      - "tests/test_dataos_identity.py"
+      - "tests/test_dataos_temporal.py"
+      - "tests/test_dataos_price.py"
+      - "tests/test_dataos_nulls.py"
+      - "tests/test_dataos_registry.py"
+      - "tests/test_dataos_quality.py"
   workflow_dispatch:
 
 permissions:
@@ -4129,12 +4154,16 @@ jobs:
         name: plan the CI packs once
         env:
           # Scope mode governs WHICH jobs are eligible; matrix mode governs only
-          # which pack indices are EMITTED. They are deliberately separate switches
-          # so the dynamic matrix can be shadowed (all twelve launch, prediction
-          # visible) while scope selection is already active, or the reverse. Both
-          # default to shadow; `off` is each one's emergency kill switch.
-          CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE || 'shadow' }}
-          CI_DYNAMIC_MATRIX_MODE: ${{ vars.CI_DYNAMIC_MATRIX_MODE || 'shadow' }}
+          # which pack indices are EMITTED. They are deliberately separate switches.
+          # Both are active unless the matching repository variable is exactly
+          # `off` (2026-08-13). A leftover `shadow` from the first deployment
+          # would otherwise keep copying every main-red onto every pull request
+          # — a nightly data pin in one legacy job failed all twelve packs on
+          # every armed head. `off` is each one's emergency full-suite kill
+          # switch. Main's workflow_dispatch still omits --changed-from and
+          # therefore still audits the complete manifest.
+          CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}
+          CI_DYNAMIC_MATRIX_MODE: ${{ vars.CI_DYNAMIC_MATRIX_MODE == 'off' && 'off' || 'active' }}
           CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || '' }}
         run: >-
           "$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/run_ci_pack.py
@@ -4223,7 +4252,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
-      fail-fast: false
+      # PR fail-fast / main heal-slow. A pull_request pack aborts on the first
+      # real red so the remaining jobs in that pack do not keep burning hosted
+      # minutes (and keep the sweeper staring at a still-running check) after
+      # the diagnosis is already in. workflow_dispatch — main's full-suite
+      # heal — keeps fail-fast false so one red job cannot hide the rest of
+      # the pack. Do not reintroduce a hardcoded `false` here: that is how
+      # the 2026-08-13 traffic jam kept twelve packs running to completion
+      # after govrev had already failed. Do not add max-parallel (#5465).
+      #
+      # BOOLEAN expression, not a quoted string. `fail-fast: "${{ ... }}"`
+      # evaluates to the strings "true"/"false"; some Actions parsers treat
+      # any non-empty string as true, so main's heal-slow path would still
+      # cancel sibling packs. Keep this unquoted.
+      fail-fast: ${{ github.event_name == 'pull_request' }}
       # NO `max-parallel`. It existed only to stop main's four packs from taking all
       # four `render-linux` runners and starving `merge-on-green.yml`, then co-resident
       # on that pool. With both control/proof lanes hosted there is no shared pool to
@@ -4236,9 +4278,8 @@ jobs:
       # the non-empty pack indices. `matrix.pack` keeps exactly the meaning the
       # literal gave it — the index handed to `--pack-index` below — and the
       # partition arithmetic is unchanged because `--pack-count 12` is still passed
-      # here and in `ci-plan`. Under the default shadow matrix mode the plan emits
-      # all twelve indices regardless of selection, so this reads identically to the
-      # old literal until CI_DYNAMIC_MATRIX_MODE is switched to `active`.
+      # here and in `ci-plan`. Under `CI_DYNAMIC_MATRIX_MODE=active` the plan emits
+      # only the non-empty pack indices; `shadow`/`off` still launch all twelve.
       matrix: ${{ fromJSON(needs.ci-plan.outputs.matrix) }}
     steps:
       # A self-hosted runner REUSES its workspace between jobs, and a sibling job that
@@ -4332,10 +4373,11 @@ jobs:
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
           CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
-          # First deployment defaults to shadow: prediction is visible while all
-          # jobs still run. Set the repository variable to `active` only after a
-          # representative full-green comparison; `off` is the emergency kill switch.
-          CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE || 'shadow' }}
+          # Active unless the repository variable is exactly `off` (2026-08-13).
+          # A leftover `shadow` from the first deployment would keep copying
+          # every main-red onto every pull request. `off` is the emergency
+          # full-suite kill switch.
+          CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}
           CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || '' }}
           PLAN_SHA_ARG: ${{ needs.ci-plan.outputs.plan_sha && format('--expect-plan-sha {0}', needs.ci-plan.outputs.plan_sha) || '' }}
         run: >-

@@ -825,11 +825,19 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
         _dark_reasons.append("finnhub_no_key")
     elif _fh_detail not in ("ok", "no_rows"):
         _dark_reasons.append(f"finnhub_{_fh_detail}")
-    _degraded_reason: str | None = None
+    # ADDITIVE, not exclusive.  The old form was
+    #     if not all_items: "no_sources"  elif _dark_reasons: "; ".join(...)
+    # which suppressed the provider names in exactly the case that needs them most:
+    # when EVERY keyed provider is dark there are, by construction, no items, so the
+    # `not all_items` arm always won and the reason read "no_sources" — a total
+    # outage and a genuinely quiet news day were indistinguishable in the emitted
+    # artifact.  "no_sources" stays FIRST so any consumer matching on it still sees
+    # it; the dark-provider reasons are appended after it.
+    _reasons: list[str] = []
     if not all_items:
-        _degraded_reason = "no_sources"
-    elif _dark_reasons:
-        _degraded_reason = "; ".join(_dark_reasons)
+        _reasons.append("no_sources")
+    _reasons.extend(_dark_reasons)
+    _degraded_reason: str | None = "; ".join(_reasons) if _reasons else None
 
     out = {
         "schema": "financial_news.v1", "is_context_only": True,

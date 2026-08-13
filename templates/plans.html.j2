@@ -119,7 +119,7 @@
   }
   html[data-theme="light"] {
     --hair-2: #dfe3e9;
-    --faint: #8a95a4;
+    --faint: #5f6a7a;
     --blue-ink: #1c47cc;
     --blue-wash: #eef2ff;
     --q-green: #1f8b41;  --green-wash: #e9f5ec;
@@ -177,7 +177,7 @@
   /* ── section head (kicker · title · toggle) ─────────────────────────── */
   .p-head { text-align:center; max-width:640px; margin:0 auto; }
   .kicker { font-family:var(--display); font-weight:700; font-size:.72rem; letter-spacing:.16em;
-    text-transform:uppercase; color:var(--blue); }
+    text-transform:uppercase; color:var(--ink-link, var(--blue)); }
   .sec-title { font-family:var(--display); font-weight:700; letter-spacing:-.02em; line-height:1.02;
     font-size:clamp(1.9rem,4vw,3rem); margin:12px 0 14px; color:var(--ink); }
   .sec-sub { color:var(--muted); font-size:1.02rem; max-width:52ch; margin:0 auto; }
@@ -274,7 +274,7 @@
   .mx td:first-child, .mx th:first-child { text-align:left; position:sticky; left:0;
     background:var(--surface); z-index:1; min-width:230px; }
   .mx .grp td { font-family:var(--display); font-weight:700; font-size:10.5px; letter-spacing:.14em;
-    color:var(--blue); background:var(--surface-2); padding:9px 16px; }
+    color:var(--ink-link, var(--blue)); background:var(--surface-2); padding:9px 16px; }
   .mx .ok { color:var(--q-green); font-weight:800; font-size:14.5px; }
   {# Partial inclusion reads grey, full inclusion reads green — the landing matrix
      makes the same distinction on the same row (templates/landing.css .mx .ok.some).
@@ -324,7 +324,7 @@
   .faq .ans { padding:0 18px 16px; color:var(--muted); font-size:13.6px; line-height:1.6; }
   .faq-more { max-width:760px; margin:14px auto 0; text-align:center; font-size:13.2px;
     color:var(--muted); line-height:1.55; }
-  .faq-more a { color:var(--blue); font-weight:600; }
+  .faq-more a { color:var(--ink-link, var(--blue)); font-weight:600; }
   .faq-more a:hover { color:var(--blue-ink); }
 
   /* ── disclaimer ─────────────────────────────────────────────────────── */
@@ -343,7 +343,7 @@
   .flag-banner.cancel { border-color:color-mix(in srgb, var(--q-gold) 42%, var(--hair-2)); background:var(--gold-wash); }
   .flag-banner .ficon { flex:none; font-size:17px; }
   .flag-banner .fgo { flex:none; margin-left:14px; font-weight:600; white-space:nowrap;
-    color:var(--blue); border-bottom:1px solid currentColor; }
+    color:var(--ink-link, var(--blue)); border-bottom:1px solid currentColor; }
   .flag-banner .fx { margin-left:auto; cursor:pointer; color:var(--muted); background:none; border:0;
     font-size:16px; line-height:1; padding:2px 4px; }
 
@@ -384,7 +384,7 @@
     .mx-plan-tabs button small { display:block; margin-top:2px; font-size:10px; font-weight:500; line-height:1.2;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .mx-plan-tabs button[aria-pressed="true"] { background:var(--surface); border-color:var(--hair-2);
-      color:var(--blue); box-shadow:var(--sh-card); }
+      color:var(--ink-link, var(--blue)); box-shadow:var(--sh-card); }
     .mx-mobile-hint { margin:8px 2px 0; color:var(--faint); font-size:11px; line-height:1.35; }
 
     table.mx { min-width:0; table-layout:fixed; }
@@ -402,7 +402,7 @@
     .mx .val { font-size:12px; line-height:1.25; }
     .mx .feat .mchip { margin-left:6px; padding:2px 5px; font-size:7.5px; }
     .mx td.feat.has-tip { cursor:pointer; }
-    .mx td.feat.has-tip .ft::after { content:" ⓘ"; color:var(--blue); font-size:10px; }
+    .mx td.feat.has-tip .ft::after { content:" ⓘ"; color:var(--ink-link, var(--blue)); font-size:10px; }
     .mx td.feat.has-tip .tipbox { position:static; display:block; width:100%; max-height:0; margin:0; padding:0;
       background:transparent; color:var(--muted); border:0; border-radius:0; box-shadow:none;
       font-size:11.5px; line-height:1.45; opacity:0; visibility:hidden; overflow:hidden; transform:none;

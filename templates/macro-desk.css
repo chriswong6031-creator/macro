@@ -6,7 +6,9 @@ body.macro-desk {
   --desk-hair: color-mix(in srgb, var(--line) 78%, transparent);
   --desk-hair-strong: var(--line);
   --desk-tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
-  --desk-ink-2: color-mix(in srgb, var(--text) 66%, transparent);
+  /* 66% alpha measured 4.26:1 on the light canvas; 80% clears the floor and is
+     the value sector_central already corrected to. */
+  --desk-ink-2: color-mix(in srgb, var(--text) 80%, transparent);
   --desk-r-sm: 8px;
   --desk-r-md: 10px;
   --desk-r-lg: 14px;
