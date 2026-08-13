@@ -1,8 +1,14 @@
 /* Public dashboard preview tiers: anonymous = 1 row, Free = 3, paid = full. */
-.mx-tier-blurred{filter:blur(5px);opacity:.34;pointer-events:none;user-select:none}
+/* Locked-content ghost. A plain blur over colourful rows is a DIRTY SMUDGE on white
+   (DESIGN_DOCTRINE §5.8); desaturating first turns it into a ghost of the layout,
+   which is what a teaser should be. The design system §12 promotes this UNSCOPED, so
+   dark's .34 deepens to .46 too — a recorded dark change, not a light-only one. */
+.mx-tier-blurred{filter:blur(5px) saturate(.35);opacity:.46;pointer-events:none;user-select:none}
 .mx-tier-hidden{display:none!important}
 .mx-tier-gate{
   --mx-tier-accent:var(--link);
+  --mx-tier-fill:var(--fill-link, var(--link));
+  --ink-tier:var(--ink-link, var(--link));
   position:relative;isolation:isolate;overflow:hidden;
   display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;
   margin:18px 0 2px;padding:21px 23px;border:1px solid color-mix(in srgb,var(--mx-tier-accent) 34%,var(--line));
@@ -13,10 +19,15 @@
   border-radius:50%;background:color-mix(in srgb,var(--mx-tier-accent) 12%,transparent);filter:blur(2px)}
 .mx-tier-gate::after{content:"";position:absolute;left:23px;right:23px;top:0;height:1px;
   background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--mx-tier-accent) 75%,transparent),transparent)}
-.mx-tier-gate--prophet{--mx-tier-accent:#7c5cff;
+/* --ink-tier is the TEXT grade of the tier accent; the raw violet measures
+   3.64-4.35:1 in light and 3.79-4.38:1 in dark, under the §14 floor in BOTH themes,
+   and it is printed as the eyebrow and the plan line. --mx-tier-fill is the
+   white-text-safe fill for the primary button (white on #7c5cff = 4.35:1). */
+.mx-tier-gate--prophet{--mx-tier-accent:#7c5cff;--mx-tier-fill:#6340d8;--ink-tier:#9b86ff;
   background:linear-gradient(120deg,color-mix(in srgb,#7c5cff 12%,var(--panel)),var(--panel) 70%)}
+html[data-theme="light"] .mx-tier-gate--prophet{--ink-tier:#5b3fc4}
 .mx-tier-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:5px}
-.mx-tier-eyebrow{display:flex;align-items:center;gap:7px;color:var(--mx-tier-accent);
+.mx-tier-eyebrow{display:flex;align-items:center;gap:7px;color:var(--ink-tier,var(--mx-tier-accent));
   font:750 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase}
 .mx-tier-mark{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;
   background:color-mix(in srgb,var(--mx-tier-accent) 13%,var(--panel));border:1px solid color-mix(in srgb,var(--mx-tier-accent) 28%,var(--line));
@@ -25,7 +36,7 @@
 .mx-tier-copy small{max-width:650px;font-size:12.5px;color:var(--muted);line-height:1.45}
 .mx-tier-actions{position:relative;z-index:1;display:flex;flex-direction:column;align-items:stretch;gap:7px;min-width:174px}
 .mx-tier-gate button{font-family:var(--font-ui);cursor:pointer}
-.mx-tier-primary{border:1px solid var(--mx-tier-accent);border-radius:10px;background:var(--mx-tier-accent);
+.mx-tier-primary{border:1px solid var(--mx-tier-fill,var(--mx-tier-accent));border-radius:10px;background:var(--mx-tier-fill,var(--mx-tier-accent));
   color:#fff;font-size:12.5px;font-weight:760;line-height:1;padding:12px 17px;
   box-shadow:0 9px 22px -12px color-mix(in srgb,var(--mx-tier-accent) 85%,transparent);
   transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}

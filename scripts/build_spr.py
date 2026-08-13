@@ -41,7 +41,7 @@ log = logging.getLogger("build_spr")
 C = {
     "blue": "#285FFF", "indigo": "#4559DC",
     "r1": "#E2E7FC", "r2": "#B8C6FA", "r3": "#8FA5F6", "r4": "#6888FB", "r5": "#285FFF",
-    "ink": "#0B1733", "text": "#344054", "muted": "#6F6F6F", "faint": "#A0A0A0",
+    "ink": "#0B1733", "text": "#344054", "muted": "#4C5A6C", "faint": "#5F6A7A",
     "red": "#D30B0B", "redfill": "#FEB5B5", "amber": "#F5AD42", "green": "#1a7f43",
     "grid": "#EAECF0", "card": "#FFFFFF", "bg": "#F7F8FA", "gold": "#C8A53B",
 }

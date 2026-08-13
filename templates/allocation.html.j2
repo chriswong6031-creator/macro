@@ -1,3 +1,4 @@
+{% from "_icons.html.j2" import icon %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
@@ -19,7 +20,7 @@
 {% set seo_title = "US Theme Allocation — Mastermind" %}{% set seo_desc = "Where money is rotating across US themes — narrative strength, crowding and entry timing to guide allocation. Updated nightly." %}{% set seo_path = "allocation.html" %}
 {%- endif %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -33,6 +34,12 @@
   .pos { color:var(--ink-up,var(--up)); } .neg { color:var(--ink-down,var(--down)); }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:14px; margin-top:8px; }
   .tagline { color:var(--muted); font-size:12.5px; max-width:94ch; margin:4px 0 0; line-height:1.5; }
+  /* monoline icon base (shared _icons.html.j2 set) — stroke=currentColor, so a mark
+     inherits its banner's ink and rides theme + 红涨绿跌 for free (doctrine §5.8). */
+  .ic-svg { width:1em; height:1em; display:inline-block; flex:none; fill:none; stroke:currentColor;
+    stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.135em; }
+  .bic { width:15px; height:15px; margin-right:2px; }
+
   .sub { color:var(--muted); font-size:12.5px; margin:2px 0 10px; max-width:94ch; }
   .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
   .chip.ok2 { color:var(--ink-up,var(--up)); } .chip.hot2 { color:var(--ink-down,var(--down)); }
@@ -40,21 +47,21 @@
   .rotwrap2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; }
   @media (max-width:680px){ .rotwrap2{ grid-template-columns:1fr; } }
   .pcol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; }
-  .pcol h4 { margin:0 0 4px; font-size:13px; } .pcol h4.buy { color:var(--up); } .pcol h4.sell { color:var(--down); }
+  .pcol h4 { margin:0 0 4px; font-size:13px; } .pcol h4.buy { color:var(--ink-up, var(--up)); } .pcol h4.sell { color:var(--ink-down, var(--down)); }
   .prow { display:flex; align-items:center; gap:9px; padding:7px 4px; border-top:1px solid var(--line); color:inherit; border-radius:7px; }
   .prow:first-of-type { border-top:0; } .prow:hover { background:var(--panel2); }
   .pverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
   .prow .pn { font-weight:650; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .sb-badge { font-size:10px; font-weight:700; color:var(--warn); margin-left:5px;
+  .sb-badge { font-size:10px; font-weight:700; color:var(--ink-warn, var(--warn)); margin-left:5px;
               padding:0 4px; border-radius:6px; background:color-mix(in srgb, var(--warn) 12%, transparent); }
   .prow .pw { font-variant-numeric:tabular-nums; font-weight:700; }
   .palert { display:flex; gap:9px; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px; }
   .palert:first-of-type { border-top:0; }
   .palert .pdt { color:var(--muted); width:84px; flex:0 0 84px; font-variant-numeric:tabular-nums; }
-  .sev-high { color:var(--down); } .sev-medium { color:var(--warn); }
+  .sev-high { color:var(--ink-down, var(--down)); } .sev-medium { color:var(--ink-warn, var(--warn)); }
   .riskbig { font-size:34px; font-weight:740; font-variant-numeric:tabular-nums; line-height:1; }
   .chip.warn { background:color-mix(in srgb,var(--warn) 12%,transparent); border-color:color-mix(in srgb,var(--ink-warn,var(--warn)) 45%,var(--line)); color:var(--ink-warn,var(--warn)); }
-  .chip.ok { background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.4); color:var(--up); }
+  .chip.ok { background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.4); color:var(--ink-up, var(--up)); }
   .chip.hot { background:color-mix(in srgb,var(--down) 9%,transparent); border-color:color-mix(in srgb,var(--ink-down,var(--down)) 45%,var(--line)); color:var(--ink-down,var(--down)); }
   .asof { font-size:12px; color:var(--muted); margin-left:auto; }
   .pfx { color:var(--muted); }
@@ -75,7 +82,12 @@
   .arow { display:flex; align-items:center; gap:10px; }
   .arow .nm { flex:0 0 200px; font-weight:600; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .arow .bar { flex:1; height:22px; background:var(--grid,var(--panel2)); border-radius:6px; overflow:hidden; position:relative; }
-  .arow .fill { display:block; height:100%; min-width:2px; background:linear-gradient(90deg,var(--accent,#5aa7ff),#7c5cff); }
+  /* Weight bars are DATA. #7c5cff is the lock violet, which design system §5 reserves
+     for locked content and forbids on data, charts and states — every allocation bar
+     on this page ended in it. The ramp stays a ramp; it just runs inside the one
+     sanctioned accent instead of crossing into the lock hue. */
+  .arow .fill { display:block; height:100%; min-width:2px;
+    background:linear-gradient(90deg,var(--accent,var(--info)),var(--ink-link, var(--link))); }
   .arow .wv { flex:0 0 56px; text-align:right; font-variant-numeric:tabular-nums; font-weight:650; }
   .arow.cash .fill { background:var(--muted); opacity:.5; }
   /* table */
@@ -87,16 +99,16 @@
   td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
   tr.inelig td { opacity:.5; }
   .stage { font-size:11px; padding:1px 6px; border-radius:6px; border:1px solid var(--line); }
-  .stage.lead { background:rgba(90,167,255,.14); border-color:rgba(90,167,255,.45); color:var(--link); }
+  .stage.lead { background:rgba(90,167,255,.14); border-color:rgba(90,167,255,.45); color:var(--ink-link, var(--link)); }
   .minibars { display:flex; gap:3px; align-items:flex-end; height:18px; }
   .minibars i { width:7px; background:var(--muted); border-radius:1px; display:inline-block; opacity:.85; }
   .dbar { display:inline-block; width:46px; height:6px; background:var(--grid,var(--panel2)); border-radius:4px; overflow:hidden; vertical-align:middle; }
   .dbar > i { display:block; height:100%; background:var(--up); }
   .legrow { font-size:11.5px; color:var(--muted); }
   a.tlink { cursor:pointer; border-bottom:1px dashed var(--line); }
-  a.tlink:hover { color:var(--link); border-bottom-color:var(--link); }
+  a.tlink:hover { color:var(--ink-link, var(--link)); border-bottom-color:var(--link); }
   a.tlink .jump { font-size:10px; color:var(--muted); margin-left:3px; }
-  a.tlink:hover .jump { color:var(--link); }
+  a.tlink:hover .jump { color:var(--ink-link, var(--link)); }
   details > summary { cursor:pointer; font-size:12.5px; color:var(--muted); margin:8px 0 2px; }
   .kpis { display:flex; flex-wrap:wrap; gap:20px; margin:6px 0; }
   .kpis .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
@@ -112,7 +124,7 @@
   #td-panel .pstance { font-size:12px; color:var(--muted); margin:4px 0; line-height:1.45; }
   #td-panel .pstance b { color:var(--text); }
   .cards-td { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:11px; margin-top:8px; }
-  .tcard { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,#7c5cff); border-radius:10px; padding:11px 13px; }
+  .tcard { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,var(--info)); border-radius:10px; padding:11px 13px; }
   .tcard .lean { font-weight:650; font-size:14px; }
   .tcard .lean .dir { text-transform:uppercase; letter-spacing:.03em; font-size:11px; padding:1px 6px; border-radius:6px; border:1px solid var(--line); margin-right:6px; }
   .tcard .conv { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
@@ -131,7 +143,7 @@
 
 <header>
   <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:12px">
-    <h1>🔄 {{ t('Narrative Rotation', '主题轮动') }} <span class="muted" style="font-weight:400">· {{ t(d.market_en, d.market_zh) }}</span></h1>
+    <h1>{{ t('Narrative Rotation', '主题轮动') }} <span class="muted" style="font-weight:400">· {{ t(d.market_en, d.market_zh) }}</span></h1>
     <span class="asof"><span class="pfx">{{ t('as of', '截至') }} </span>{{ d.as_of }} · {{ t('vs', '对标') }} {{ t(d.bench_label, d.bench_label_zh) }}</span>
   </div>
   <p class="tagline">{{ t(
@@ -159,7 +171,7 @@ fetch('live/shock_state.json',{cache:'no-cache'})
     var msg=isZh()?
       ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。冲击期的剧烈反转多难持续：历史26次中约六成在一天内消退。'):
       ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Sharp reversals during shocks usually don&#39;t hold: in 26 past cases about 6 in 10 faded within a day.');
-    el.innerHTML='<div class="banner" style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--warn)">'+msg+'</div>';
+    el.innerHTML='<div class="banner" style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--ink-warn, var(--warn))">'+msg+'</div>';
   }).catch(function(){/* absent file → no banner */});
 // Policy-lever chip
 fetch('policy_lever.json',{cache:'no-cache'})
@@ -168,7 +180,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
     if(!d||!d.state)return;
     var el=document.getElementById('ftr-lever-chip');
     if(!el)return;
-    var s=d.state, c=s==='ARMED'?'var(--down)':s==='ELEVATED'?'var(--orange)':'var(--muted)';
+    var s=d.state, c=s==='ARMED'?'var(--ink-down, var(--down))':s==='ELEVATED'?'var(--ink-orange, var(--orange))':'var(--muted)';
     var sZh={'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}[s]||s;
     // Use framing/framing_zh from the JSON itself — single source of truth, immune to drift
     var disc=isZh()?(d.framing_zh||d.framing||''):(d.framing||'');
@@ -208,7 +220,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
     color: color-mix(in srgb, var(--warn) 92%, var(--text));
     border: 1px solid color-mix(in srgb, var(--warn) 46%, var(--line));
     margin-left: auto; white-space: nowrap; flex: none; }
-  .hkrv-why-toggle { font-size: 11.5px; color: var(--link); cursor: pointer;
+  .hkrv-why-toggle { font-size: 11.5px; color: var(--ink-link, var(--link)); cursor: pointer;
     background: none; border: none; padding: 0; font: inherit;
     text-decoration: underline; text-decoration-style: dotted; }
   .hkrv-pop { display: none; margin-top: 6px; padding: 11px 14px;
@@ -220,6 +232,10 @@ fetch('policy_lever.json',{cache:'no-cache'})
   .hkrv-pop-row:last-child { border-bottom: none; }
   .hkrv-pop-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .07em; color: var(--muted); display: block; margin-bottom: 1px; }
+  /* §15 + the design system's named anti-pattern: .arow .nm was flex:0 0 200px and
+     .wv flex:0 0 56px, unshrinkable at EVERY width, so the weight percentage sat
+     permanently off-screen on a phone. The row re-composes instead of squeezing. */
+  @media(max-width:640px){.arow{flex-wrap:wrap}.arow .nm{flex:1 1 100%;white-space:normal}.arow .bar{flex:1 1 auto;min-width:0}}
 </style>
 {%- set _ldr = hk_leadership -%}
 {%- set _ldr_members = _ldr.get('members') or [] -%}
@@ -230,7 +246,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
 {%- set _ldr_fwd = _ldr.get('study_hsi_fwd40_mean') -%}
 <div class="hkrv-banner" id="hkrv-banner-alloc">
   <div class="hkrv-banner-top">
-    <span class="hkrv-banner-icon">⚡</span>
+    <span class="hkrv-banner-icon">{{ icon('accel') }}</span>
     <div>
       <div class="hkrv-banner-title">
         <span class="l-en">Leaders moving first</span><span class="l-zh">龙头先行</span>
@@ -469,9 +485,9 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
         +'</div>';}
       var moversEl=document.getElementById('ftr-alloc-movers');
       if(moversEl){
-        moversEl.innerHTML='<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--up);margin-bottom:4px">'+L('Top 3 leaders','前3领涨')+'</div>'
+        moversEl.innerHTML='<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-up, var(--up));margin-bottom:4px">'+L('Top 3 leaders','前3领涨')+'</div>'
           +top3.map(function(b){return mrow(b);}).join('')+'</div>'
-          +'<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--down);margin-bottom:4px">'+L('Bottom 3 laggards','后3领跌')+'</div>'
+          +'<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-down, var(--down));margin-bottom:4px">'+L('Bottom 3 laggards','后3领跌')+'</div>'
           +bot3.map(function(b){return mrow(b);}).join('')+'</div>';
       }
       // Disagreement vs strategic leader: only in live mode (FT-R12).
@@ -497,27 +513,37 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 {% endif %}{# FTR W3 tape panel — us/hk regions only #}
 
 {% if d.allocation.crash_overlay.active %}
-<div class="banner crash">⚠ <b>{{ t('Momentum-crash state', '动量崩盘状态') }}</b> — {{ t(
+<div class="banner crash">{{ icon('alert', 'bic') }} <b>{{ t('Momentum-crash state', '动量崩盘状态') }}</b> — {{ t(
 	  'broad trend is broken and volatility is high. Exposure is cut to cash.',
 	  '大盘趋势破坏且波动偏高。敞口已降至现金。') }}</div>
 {% endif %}
 
 {% if d.rotation.one_narrative %}
-<div class="banner dom">🧲 <b>{{ t('One narrative vs everything', '单一叙事 vs 其他') }}</b> ({{ t('absorption', '共动') }} {{ (d.rotation.absorption*100)|round|int }}%) — {{ t(
+<div class="banner dom">{{ icon('magnet', 'bic') }} <b>{{ t('One narrative vs everything', '单一叙事 vs 其他') }}</b> ({{ t('absorption', '共动') }} {{ (d.rotation.absorption*100)|round|int }}%) — {{ t(
 	  'leadership is concentrated. The leader is capped; the rest goes to broadening themes.',
 	  '领跑集中。领跑者封顶，其余配置给正在扩散的主题。') }}</div>
 {% endif %}
 
 <!-- ============ 01 SUGGESTED ALLOCATION ============ -->
 <h2><span class="idx">01</span>{{ t('Suggested allocation', '建议配置') }}</h2>
-<p class="sub">{{ d.allocation.rule|truncate(150, true, '...') }}</p>
+{#- The rule sentence is MECHANICS, so it belongs on Tier 2 (DOCTRINE §1). It used
+    to be printed at rest through `|truncate(150)`, which cut it mid-word — "…so
+    t…" — the exact failure Law 4 names: if the copy does not fit the budget the
+    content is mis-tiered, so demote it rather than compressing it. Tier 1 keeps a
+    one-line plain statement of what the board is; the full rule is one hover away
+    and is no longer truncated at all. -#}
+<p class="sub">{{ t('The four themes with the strongest trend, held equally, one per family.',
+                    '趋势最强的四个主题，等权持有，每个族系只取一个。') }}
+  <span class="faint" style="cursor:help;margin-left:4px"
+        data-tip-en="{{ d.allocation.rule }}"
+        data-tip-zh="{{ d.allocation.rule_zh if d.allocation.rule_zh is defined and d.allocation.rule_zh else d.allocation.rule }}">{{ t('how it is built', '构建方式') }} ⓘ</span></p>
 <div class="panel">
   <div class="alloc">
     {% for w in d.allocation.weights %}
     <div class="arow" data-sid="{{ w.id }}">
       <span class="nm">#{{ w.rank }} {{ t(w.name, w.name_zh) }}
         {% if w.crowded %}<span class="chip hot" style="margin-left:4px">{{ t('crowded', '拥挤') }}</span>{% endif %}
-        {% if w.val_upgrade %}<span class="chip" style="margin-left:4px;color:var(--up);border-color:var(--up)" title="real-activity radar: independent activity is running ahead of price — promoted one slot earlier">🛰️ {{ t('activity ahead ⬆', '活动领先 ⬆') }}</span>{% endif %}</span>
+        {% if w.val_upgrade %}<span class="chip" style="margin-left:4px;color:var(--ink-up, var(--up));border-color:var(--up)" title="real-activity radar: independent activity is running ahead of price — promoted one slot earlier">{{ icon('signals', 'bic') }} {{ t('activity ahead', '活动领先') }}</span>{% endif %}</span>
       <span class="bar"><span class="fill" style="width:{{ ((w.weight/0.35*100) if w.weight>0 else 0)|round(1) }}%"></span></span>
       <span class="wv">{{ (w.weight*100)|round|int }}%</span>
     </div>
@@ -532,9 +558,12 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 	    'Equal-weight by design. The rank tells where to look; trend decides whether to hold.' + (' Crowding is shown as caution only; it is not a weight cut yet.' if not d.allocation.crowd_trim_gate.scored else ' Crowded themes are trimmed and redistributed to other leaders.'),
 	    '刻意等权。排名说明看哪里，趋势决定是否持有。' + ('拥挤度仅作提示；尚不削减权重。' if not d.allocation.crowd_trim_gate.scored else '拥挤主题被削减，并再分配给其他领跑者。')) }}</p>
   {% if d.allocation.de_overlapped %}
-  <p class="tagline" style="margin-top:6px">🧮 {{ t('De-overlapped for diversification', '为分散去重叠') }} — {{ t(
-	    'keeps the book from becoming one trade in several labels. Displaced',
-	    '避免组合变成同一笔交易的多个标签。被替换') }}: {% for x in d.allocation.de_overlapped %}<span class="chip">{{ x.name }}</span>{% endfor %}</p>
+  {#- Was "🧮 De-overlapped for diversification" — an internal verb in an emoji
+      slot. Same rule, same displaced list, said in words a reader already owns
+      (DOCTRINE Law 2: rewrite, don't delete). -#}
+  <p class="tagline" style="margin-top:6px">{{ t(
+	    'Only one theme per family, so the book is not the same trade under several names. Left out',
+	    '同一族系只保留一个主题，避免组合变成同一笔交易的多个名字。已剔除') }}: {% for x in d.allocation.de_overlapped %}<span class="chip">{{ x.name }}</span>{% endfor %}</p>
   {% endif %}
 </div>
 
@@ -542,7 +571,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 {% set vo = d.allocation.vol_overlay %}
 {% set ddci = vo.measured.dd_reduction_pp_ci or [None, None, None] %}
 <!-- ============ 01a DE-RISK OVERLAY (calibrated vol-target) ============ -->
-<h2><span class="idx">⚖</span>{{ t('Optional de-risk overlay', '可选降风险叠加') }}
+<h2>{{ t('Optional de-risk overlay', '可选降风险叠加') }}
   <span class="chip">{{ t('backtested · offered, not forced', '已回测 · 可选而非强制') if not vo.applied else t('backtested · applied', '已回测 · 已应用') }}</span></h2>
 <div class="panel">
   <div class="gauge" style="margin-bottom:8px">
@@ -564,7 +593,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 {% endif %}
 
 <!-- ============ 01b PLAYBOOK: BUY & SELL ENTRIES ============ -->
-<h2><span class="idx">★</span>🎯 {{ t('Buy & sell entries — the playbook', '买卖入场 — 操作手册') }}
+<h2>{{ t('Buy & sell entries — the playbook', '买卖入场 — 操作手册') }}
   <span class="chip">{{ t('discipline, not advice', '纪律，非建议') }}</span></h2>
 <p class="sub">{{ t(
 	  'What to add, reduce or avoid. Click a theme for its stocks.',
@@ -572,7 +601,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 <div id="playbook-entries" class="rotwrap2"></div>
 
 <!-- ============ 01c RISK OVER TIME ============ -->
-<h2><span class="idx">★</span>🌡️ {{ t('Risk over time', '风险随时间') }}
+<h2>{{ t('Risk over time', '风险随时间') }}
   <span class="chip">{{ t('cash dial & de-risk events', '现金刻度与去风险事件') }}</span></h2>
 <p class="sub">{{ t(
 	  'Suggested cash over time. Higher cash means more defensive.',
@@ -580,7 +609,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 <div id="risk-time" class="panel"></div>
 
 <!-- ============ 01d ROTATION ALERTS ============ -->
-<h2><span class="idx">★</span>🔔 {{ t('Rotation alerts', '轮动警报') }}
+<h2>{{ t('Rotation alerts', '轮动警报') }}
   <span class="chip">{{ t('book & leadership changes', '组合与领涨变化') }}</span></h2>
 <p class="sub">{{ t(
 	  'Book changes, leadership rotation, trend flips and risk-dial swings.',
@@ -615,13 +644,13 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
   <tr class="{{ '' if r.eligible else 'inelig' }}">
     <td><b><a class="tlink" href="{% if d.region == 'us' %}basket/{{ r.id }}.html{% else %}{{ BASKETS_PAGE }}#b-{{ r.id }}{% endif %}">{{ t(r.name, r.name_zh) }}<span class="jump" title="Open theme detail">↗</span></a></b>
       {% if r.rank==1 %}<span class="stage lead">{{ t('LEADER', '领跑') }}</span>{% endif %}
-      {% if r.val_upgrade %}<span class="stage" style="color:var(--up)" title="real-activity radar: activity ahead of price">🛰️ {{ t('activity ⬆', '活动领先⬆') }}</span>
-      {% elif r.val_state == 'fading' %}<span class="stage" style="color:var(--warn)" title="real-activity radar: activity behind price">🛰️ {{ t('fading', '退潮') }}</span>{% endif %}
+      {% if r.val_upgrade %}<span class="stage" style="color:var(--ink-up, var(--up))" title="real-activity radar: activity ahead of price">🛰️ {{ t('activity ⬆', '活动领先⬆') }}</span>
+      {% elif r.val_state == 'fading' %}<span class="stage" style="color:var(--ink-warn, var(--warn))" title="real-activity radar: activity behind price">🛰️ {{ t('fading', '退潮') }}</span>{% endif %}
       <div class="legrow">{{ r.category }} · {{ r.n_live }} {{ t('names', '只') }}</div></td>
     <td class="num"><b>{{ '%.2f'|format(r.score) if r.score is not none else '—' }}</b></td>
     {% set r10 = r.get('r10') %}
     <td class="num">{% if r10 is not none %}<span class="{{ 'pos' if r10 >= 0 else 'neg' }}">{{ '%+.1f'|format(r10*100) }}%</span>{% else %}<span class="muted">—</span>{% endif %}</td>
-    <td>{% if r.eligible %}<span class="stage" style="color:var(--up)">▲ {{ t('in trend', '趋势内') }}</span>{% else %}<span class="stage" style="color:var(--muted)">▽ {{ t('off trend', '趋势外') }}</span>{% endif %}</td>
+    <td>{% if r.eligible %}<span class="stage" style="color:var(--ink-up, var(--up))">▲ {{ t('in trend', '趋势内') }}</span>{% else %}<span class="stage" style="color:var(--muted)">▽ {{ t('off trend', '趋势外') }}</span>{% endif %}</td>
     <td class="num">{% if du.bar is not none %}<span class="dbar"><i style="width:{{ (du.bar*100)|round|int }}%"></i></span> {{ (du.bar*100)|round|int }}{% else %}—{% endif %}</td>
     <td class="num">{{ du.hurst if du.hurst is not none else '—' }}{% if du.hurst_tag %}<span class="muted sm"> {{ {'trend':'↗','mean-revert':'↺','mixed':'~'}.get(du.hurst_tag,'') }}</span>{% endif %}</td>
     <td class="num">{{ (du.breadth*100)|round|int if du.breadth is not none else '—' }}{% if du.breadth is not none %}%{% endif %}</td>
@@ -661,7 +690,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
   <span class="muted">({{ B.sectors.span[0] }} → {{ B.sectors.span[1] }})</span></p>
 
 {% if B.gate_helps == False %}
-<div class="banner crash">⚠ <b>{{ t('Experimental in this market', '本市场属实验性') }}</b> — {{ t(
+<div class="banner crash">{{ icon('alert', 'bic') }} <b>{{ t('Experimental in this market', '本市场属实验性') }}</b> — {{ t(
 	  'local history did not prove the trend gate. Treat this allocation as experimental.',
 	  '本地历史未证明趋势门有效。请将此配置视为实验性。') }}</div>
 {% endif %}
@@ -762,9 +791,9 @@ const STANDOUTS = {{ standouts_json|default('{}')|safe }};   // theme id -> # me
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 const isZh=()=>document.documentElement.getAttribute('data-lang')==='zh';
 // zh 红涨绿跌: swap buy-verb green (#16a34a/#22c55e) to red in zh mode
-const buyColor=()=>isZh()?'#ef4444':'#16a34a';
+const buyColor=()=>cssv('--ink-up')||cssv('--up')||(isZh()?'#b91c1c':'#15803d');
 // zh 红涨绿跌: swap avoid-verb red (#ef4444) to green in zh mode (amber TRIM left unchanged)
-const sellColor=c=>isZh()&&c==='#ef4444'?'#16a34a':c;
+const sellColor=c=>c==='#ef4444'?(cssv('--ink-down')||cssv('--down')||(isZh()?'#15803d':'#b91c1c')):c;
 // ★N badge: how many individual standouts back this theme (the allocation→stock bridge)
 const sbBadge = id => { const n=STANDOUTS[id]; return n?` <span class="sb-badge" title="${n} member(s) on the US Prophet buy board">★${n}</span>`:''; };
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -780,7 +809,7 @@ function renderEntries(){
   const held=new Set((alloc.weights||[]).map(w=>w.id));
   // BUY/HOLD: the de-overlapped trending book + (US) clean-entry buys not already held
   let buy=(alloc.weights||[]).map(w=>`<a class="prow" href="${bkHref(w.id)}">
-    <span class="pverb" style="color:var(--up);border-color:var(--up)">${L('HOLD / ADD','持有/加仓')}</span>
+    <span class="pverb" style="color:var(--ink-up, var(--up));border-color:var(--up)">${L('HOLD / ADD','持有/加仓')}</span>
     <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}${sbBadge(w.id)}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
   if(an && an.buy){ an.buy.filter(x=>!held.has(x.id)).forEach(x=>{
     const v=x.action==='enter'?['ENTER','建仓']:['ACCUMULATE','加仓'];
@@ -789,14 +818,14 @@ function renderEntries(){
   // in-favour themes WITHOUT a clean entry (the honest act_now split) — shown, never hidden,
   // with a muted "wait for a pullback" verb. Descriptive presentation, not a signal.
   if(an && an.add_on_pullback){ an.add_on_pullback.filter(x=>!held.has(x.id)).forEach(x=>{
-    buy.push(`<a class="prow" href="${bkHref(x.id)}" title="${esc(x.reason_en||'in favour, but no clean-entry setup right now')}"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('WAIT — PULLBACK','等待回调')}</span>
+    buy.push(`<a class="prow" href="${bkHref(x.id)}" title="${esc(x.reason_en||'in favour, but no clean-entry setup right now')}"><span class="pverb" style="color:var(--ink-warn, var(--warn));border-color:var(--warn)">${L('WAIT — PULLBACK','等待回调')}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // REDUCE/AVOID: (US) act_now reduce + crowded held + de-overlapped displaced (context)
   let sell=[];
   if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];const vc=sellColor(v[2]);
     sell.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:${vc};border-color:${vc}">${L(v[0],v[1])}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
-  (alloc.weights||[]).filter(w=>w.crowded).forEach(w=>sell.push(`<div class="prow"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('SIZE DOWN','降仓')}</span><span class="pn">${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${L('crowded','拥挤')}</span></div>`));
+  (alloc.weights||[]).filter(w=>w.crowded).forEach(w=>sell.push(`<div class="prow"><span class="pverb" style="color:var(--ink-warn, var(--warn));border-color:var(--warn)">${L('SIZE DOWN','降仓')}</span><span class="pn">${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${L('crowded','拥挤')}</span></div>`));
   if(!sell.length) sell.push(`<div class="muted" style="padding:10px 2px;font-size:12px">${L('Nothing flagged to reduce right now.','当前无需减仓的标的。')}</div>`);
   const moreBtn=n=>n>5?`<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">${L('Show more','显示更多')} ▾</span><span class="lm-hide">${L('Show less','收起')} ▴</span></button>`:'';
   const pCol=(cls,head,arr,empty)=>`<div class="pcol lst-wrap"><h4 class="${cls}">${head} <span class="muted" style="font-size:11px">(${arr.length})</span></h4>${arr.length?`<div class="plist lst-collapse is-collapsed">${arr.join('')}</div>${moreBtn(arr.length)}`:empty}</div>`;
@@ -812,12 +841,12 @@ function renderRiskTime(){
   if(pts.length>=2){ const w=320,hh=46,mn=Math.min(...pts),mx=Math.max(...pts),sp=(mx-mn)||1;
     const d=pts.map((v,i)=>`${i?'L':'M'}${(i/(pts.length-1)*w).toFixed(1)} ${(hh-3-(v-mn)/sp*(hh-7)).toFixed(1)}`).join(' ');
     spark=`<svg width="${w}" height="${hh}" viewBox="0 0 ${w} ${hh}"><path d="${d}" fill="none" stroke="${cssv('--muted')}" stroke-width="1.6"/></svg>`; }
-  const posture = cash==null?['—','—',cssv('--muted')] : crash?['DE-RISKED','已去风险',cssv('--down')] : cash>=0.5?['DEFENSIVE','防守',cssv('--warn')] : cash>=0.25?['BALANCED','均衡',cssv('--text')] : ['RISK-ON','进攻',cssv('--up')];
+  const posture = cash==null?['—','—',cssv('--muted')] : crash?['DE-RISKED','已去风险',cssv('--ink-down')||cssv('--down')] : cash>=0.5?['DEFENSIVE','防守',cssv('--ink-warn')||cssv('--warn')] : cash>=0.25?['BALANCED','均衡',cssv('--text')] : ['RISK-ON','进攻',cssv('--ink-up')||cssv('--up')];
   el.innerHTML=`<div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
     <div><div class="riskbig" style="color:${posture[2]}">${cash==null?'—':Math.round(cash*100)+'%'}</div><div class="muted" style="font-size:11px">${L('suggested cash','建议现金')}</div></div>
     <div><div style="font-size:16px;font-weight:700;color:${posture[2]}">${L(posture[0],posture[1])}</div><div class="muted" style="font-size:11px">${L('risk posture now','当前风险姿态')}</div></div>
     <div style="margin-left:auto">${spark}<div class="muted" style="font-size:10.5px">${L('cash % over time','现金% 历时')}</div></div>
-  </div>${crash?`<div class="muted" style="font-size:12px;margin-top:8px;color:var(--down)">🛑 ${L('Momentum-crash de-risk active — book halved to cash.','动量崩盘去风险激活 — 组合减半至现金。')}</div>`:''}`;
+  </div>${crash?`<div class="muted" style="font-size:12px;margin-top:8px;color:var(--ink-down, var(--down))">🛑 ${L('Momentum-crash de-risk active — book halved to cash.','动量崩盘去风险激活 — 组合减半至现金。')}</div>`:''}`;
 }
 
 function renderRotAlerts(){

@@ -115,10 +115,30 @@ def test_gc_config_still_declares_the_home_codex_root() -> None:
     )
 
 
-def test_gc_stays_report_only_unless_the_operator_arms_it() -> None:
-    """Arming is the operator's ratification act; no code change may do it."""
+def test_gc_armed_state_matches_the_operator_ratification() -> None:
+    """Arming is the operator's ratification act; no code change may do it.
+
+    Until 2026-08-13 this test pinned ``armed is False`` — the anti-drive-by
+    guard. The operator ratified arming on 2026-08-13 (chat order during the
+    disk-pressure incident: 1.7Ti/1.8Ti used, two receipted runner ENOSPC
+    crashes; the ratification text is recorded in the config's
+    ``_armed_ratification`` key). The pin now holds the RATIFIED state, which
+    keeps the original property: a session cannot flip this field either way
+    without the change being loud, deliberate, and traceable to an operator
+    order — a bare `"armed": false` diff with no ratification note reds here
+    just like a bare `true` used to.
+    """
     config = json.loads(GC_CONFIG.read_text(encoding="utf-8"))
-    assert config["armed"] is False, (
-        "config/worktree_gc.json armed must stay false — flipping it is the "
-        "operator's ratification act per research/WORKTREE_GC_POLICY.md"
+    assert config["armed"] is True, (
+        "config/worktree_gc.json armed was RATIFIED true by operator order "
+        "2026-08-13 (see _armed_ratification in the config). Disarming is "
+        "likewise an operator act — record it there and update this pin in "
+        "the same commit, per research/WORKTREE_GC_POLICY.md"
+    )
+    assert "OPERATOR RATIFIED 2026-08-13" in config.get("_armed_ratification", ""), (
+        "the armed flag must carry its ratification provenance"
+    )
+    assert config["min_age_days"] == 3, (
+        "min_age_days 3 was part of the same 2026-08-13 ratification "
+        "(at 7d the fleet's churn kept the gate permanently closed)"
     )

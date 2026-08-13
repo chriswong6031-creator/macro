@@ -226,16 +226,50 @@ def test_neither_the_mirror_nor_the_reconciler_writes_on_its_own():
             assert banned not in src, f"{name} writes directly: {banned}"
 
 
-def test_the_lane_runs_no_git_command_and_commits_nothing():
-    """closing-bell needs `git checkout -- .` because it CREATES data/ writes to
-    discard. This lane creates none, so the correct contract is not to discard
-    them but to be unable to make them: contents: read, and no git anywhere."""
+def test_the_lane_commits_nothing_and_cannot():
+    """CORRECTED 2026-08-13. This used to be
+    `test_the_lane_runs_no_git_command_and_commits_nothing`, and its docstring said
+    closing-bell needs a discard "because it CREATES data/ writes; this lane creates
+    none, so the correct contract is not to discard them but to be unable to make
+    them: contents: read, and no git anywhere."
+
+    The premise was false the day it was written. The workflow's `--heal` prefetch
+    refreshes the price store into data/yahoo/*.parquet, so the lane's own proof
+    step failed on EVERY run from 2026-08-09 until the discard was added — the lane
+    was never once green, while the board it publishes to R2 landed fine throughout.
+    A test whose reasoning is wrong can still pass; this one did, because it only
+    ever checked for `git add`/`git commit`/`git push`, none of which the prefetch
+    uses.
+
+    What is actually load-bearing survives and is asserted below: the lane cannot
+    COMMIT or PUSH, and it holds `contents: read` so nothing it does can reach main.
+    Discarding is now permitted — and required, see the test that follows."""
     for banned in ("git add", "git commit", "git push", "contents: write"):
         assert banned not in WORKFLOW_SRC, banned
     assert WORKFLOW["permissions"] == {"contents": "read"}
     for name, code in CODE.items():
         for banned in ("subprocess", "os.system", "git "):
             assert banned not in code, f"{name}: {banned}"
+
+
+def test_a_data_writing_step_is_followed_by_a_discard_before_the_proof():
+    """The bug that kept this lane red for its whole life, pinned so it cannot
+    return: any step that can dirty data/ must be discarded BEFORE the proof step,
+    or the proof fails on the lane's own prefetch.
+
+    Order is the contract — a discard placed after the proof would read as a fix and
+    change nothing."""
+    steps = [s.get("name", "") for job in WORKFLOW["jobs"].values()
+             for s in job.get("steps", [])]
+    heal = next(i for i, n in enumerate(steps) if "freshness prefetch" in n)
+    discard = next(i for i, n in enumerate(steps) if "discard" in n.lower())
+    proof = next(i for i, n in enumerate(steps) if "wrote no data/ path" in n)
+    assert heal < discard < proof, steps
+    body = "\n".join(
+        s.get("run", "") for job in WORKFLOW["jobs"].values()
+        for s in job.get("steps", []) if "discard" in s.get("name", "").lower())
+    assert "git checkout -- data/" in body, body
+    assert "git clean -fdq data/" in body, body
 
 
 def test_the_lane_never_touches_the_prophet_live_store():
