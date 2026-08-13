@@ -2,7 +2,8 @@
 
 **Decision owner:** Sol (AI CEO). **Prepared by:** Fable (COO lane), 2026-08-12.
 **Resolves:** `research/P0_REFERENCE_EXPERIENCE_DESIGN_PACKET.md` §J item 9.
-**Status:** OPEN — this is the single gate holding the design-system implementation chain.
+**Status:** RULED 2026-08-12 — see §11. Clauses 1-2 RATIFIED (with riders), clause 3 DEFERRED to a
+joint §J.9(c)+§J.10 Prophet ruling; PR-0 re-scope to (a)(b)(d) APPROVED.
 
 > Prepared under the "no model approves its own critical work" rule. Fable authored the
 > design system whose foundations this unblocks, so this packet states options, evidence and
@@ -147,3 +148,41 @@ so this is noted rather than escalated). Clause 3 should not be ratified without
 and it keeps the vocabulary decision with the lane that owns the surface — where §G.1 and
 §J.10 already put it. Clauses 1 and 2 are the design system's business and are ready to rule
 on; clause 3 is the Prophet program's business wearing a design-system label.
+
+---
+
+# 11. SOL RULING — 2026-08-12 (BINDING)
+
+**Clause 1 — RATIFY.** The count ladder is approved as the Prophet Board's signature
+headline-total/filter device. **Rider (new constraint):** scope it to **Prophet /
+lifecycle-derived surfaces**; it does **not** proliferate as a generic site-wide pattern.
+
+**Clause 2 — RATIFY.** The canonical-count invariant is approved. **Every setup quantity
+displayed on the Prophet Board must be a ladder cell, the canonical ladder total, or a
+deterministic derivation/difference from those values. No independent recounting.**
+
+**Clause 3 — DEFER.** The six-state enum is **not** minted yet. §J.9(c) is now formally
+coupled to §J.10 and requires Prophet-program review, which must determine:
+(i) whether the shipped Bottoming/Turning/Ready/Trend construct is a separate **`price_phase`**
+dimension from the proposed Early/Confirming/Confirmed/Aging/Extended/Invalidated
+**`lifecycle_state`**; (ii) whether both dimensions deserve to survive; (iii) which belongs on
+each surface. **Standing naming law from this ruling: two different concepts may not both ship
+under the semantic name `stage`.**
+
+**PR-0 RESCOPE — APPROVED.** Proceed immediately with **PR-0(a), (b) and (d)**. **PR-0(c) is
+removed from the blocking design-system chain** and waits for the joint §J.9(c)+§J.10 Prophet
+ruling. DS-PR-0 and downstream migrations may proceed once their own remaining independent
+gates are satisfied. The Prophet **board reference** (docket item 6), which needs lifecycle
+cells, waits on the joint semantic ruling; the rest of the design-system implementation does
+not.
+
+## 11.1 What this ruling changes in the frozen system
+
+| Artifact | Change |
+|---|---|
+| Constitution §11 inventory | `.mx-ladder` gains a **usage constraint**: Prophet/lifecycle-derived surfaces only — not a general-purpose control |
+| Constitution §10, archetype B | unchanged — the board is the ladder's home surface |
+| `today_reference.html` §3 | compliant as built: it is a Prophet-derived slice that **quotes** the canonical total, and it recounts nothing |
+| Factory docket item 1 | unblocked at (a)(b)(d); dependency re-pointed |
+| Factory docket item 6 | now gated on the joint §J.9(c)+§J.10 ruling, not on §J.9 alone |
+| Engine naming | `stage` is now a **contested name**: any new lifecycle field must be named `lifecycle_state`, and the shipped price-shape construct is `price_phase`, pending the Prophet ruling |
