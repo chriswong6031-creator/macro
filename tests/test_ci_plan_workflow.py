@@ -223,7 +223,7 @@ def test_ci_pack_matrix_comes_from_the_plan_and_no_static_pack_list_remains() ->
     matrix = strategy["matrix"]
     assert isinstance(matrix, str), f"ci-pack's matrix must be an expression, got {type(matrix).__name__}"
     assert "fromJSON(needs.ci-plan.outputs.matrix)" in matrix
-    assert strategy["fail-fast"] is False
+    assert strategy["fail-fast"] == "${{ github.event_name == 'pull_request' }}"
 
 
 def test_ci_pack_is_gated_on_an_affirmative_has_work() -> None:

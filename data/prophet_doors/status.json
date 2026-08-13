@@ -1,14 +1,14 @@
 {
-  "appended": 3,
+  "appended": 5,
   "asof": "2026-08-12",
   "candidates": {
     "R": 2,
-    "T": 8,
+    "T": 9,
     "W": 44
   },
   "deduped": {
-    "R": 0,
-    "T": 7,
+    "R": 2,
+    "T": 4,
     "W": 44
   },
   "dry_run": false,
@@ -27,22 +27,26 @@
       "coil_min_sessions": 293,
       "consulted": true,
       "null_reasons": {
-        "no_bar_on_flag_date": 4,
-        "ohlcv_absent": 16
+        "ohlcv_absent": 13
       },
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
       "themes_read": {
-        "Software": {
-          "theme_thrust_frac": 0.0476,
+        "Commodities Energy": {
+          "theme_thrust_frac": 0.1111,
+          "theme_thrust_reason": null,
+          "theme_thrust_state": "quiet"
+        },
+        "Energy Traditional": {
+          "theme_thrust_frac": 0.1622,
           "theme_thrust_reason": null,
           "theme_thrust_state": "quiet"
         }
       },
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 43,
-      "tickers_read": 63
+      "tickers_ok": 52,
+      "tickers_read": 65
     },
     "keys": [
       "relay_count_3d",
@@ -62,8 +66,8 @@
     "relay": {
       "consulted": true,
       "high_lookback": 63,
-      "members_indexed": 165,
-      "n_covered": 83,
+      "members_indexed": 155,
+      "n_covered": 76,
       "reason": null,
       "window_sessions": 21
     },
@@ -102,12 +106,13 @@
     ]
   },
   "flag_tickers": {
-    "R": [
-      "CART",
-      "TRUP"
-    ],
+    "R": [],
     "T": [
-      "SNPS"
+      "FANG",
+      "FTI",
+      "HCC",
+      "AMR",
+      "PTEN"
     ],
     "W": []
   },
@@ -117,41 +122,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-13 05:57:54",
-  "runtime_s": 112.0,
+  "run_utc": "2026-08-13 11:00:23",
+  "runtime_s": 114.5,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": 2,
-    "asof": "2026-08-10",
-    "n_members": 165,
+    "age_days": 0,
+    "asof": "2026-08-12",
+    "n_members": 155,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 6.129,
+        "emerging_score": 4.593,
         "rank": 1,
-        "theme": "Commodities Metals"
-      },
-      {
-        "emerging_score": 3.918,
-        "rank": 2,
         "theme": "Space Tech"
       },
       {
-        "emerging_score": 1.517,
+        "emerging_score": 4.267,
+        "rank": 2,
+        "theme": "Commodities Metals"
+      },
+      {
+        "emerging_score": 2.353,
         "rank": 3,
-        "theme": "Agriculture & FoodTech"
+        "theme": "Commodities Energy"
       },
       {
-        "emerging_score": 1.374,
+        "emerging_score": 1.853,
         "rank": 4,
-        "theme": "Software"
+        "theme": "Energy Traditional"
       },
       {
-        "emerging_score": 1.241,
+        "emerging_score": 1.844,
         "rank": 5,
-        "theme": "Defense & Aerospace"
+        "theme": "Agriculture & FoodTech"
       }
     ]
   },
@@ -169,7 +174,7 @@
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 17.2,
+    "runtime_s": 17.9,
     "skipped": 5,
     "source": "baskets/membership.json",
     "state_turn": 103,
