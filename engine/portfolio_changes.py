@@ -40,6 +40,8 @@ the rendered sequence.
 """
 from __future__ import annotations
 
+import unicodedata
+
 from engine.portfolio_vocab import STAGE_WORD, class_word, sector_block
 
 SNAPSHOT_SCHEMA = "portfolio_state_digest.v1"
@@ -61,6 +63,19 @@ _NAME_LIMIT = 48             # tickers and sector names
 # and any C0/C1 control character (line breaks that would forge a second sentence).
 _FORBIDDEN_CHARS = set("<>{}\\")
 
+# Also rejected: Unicode FORMAT and line/paragraph separators, which are invisible and
+# therefore slip past a character-blacklist eyeball. These are display-layer attacks, not
+# markup ones:
+#   Cf — U+202E RIGHT-TO-LEFT OVERRIDE and the U+2066..2069 isolates can REVERSE the
+#        rendered order of a sentence, making a desk line display as something the desk
+#        never said; U+200B/200E/200F hide inside a word and defeat equality checks.
+#   Zl/Zp — U+2028/U+2029 are line terminators in JavaScript, so a client that ever
+#        interpolates a change line into script context sees a forged statement break.
+# Safe by inspection for real copy: every legitimate string in this estate is made of
+# letters (Lu/Ll/Lo), digits (Nd), punctuation (Po/Pd) and ordinary spaces (Zs) — "S&P
+# 500", "BRK.B", "BF-B", "extended — watch", "积极配置" — none of which are in this set.
+_FORBIDDEN_CATEGORIES = {"Cf", "Zl", "Zp"}
+
 
 def _safe_text(value, limit: int = _TEXT_LIMIT) -> str | None:
     """Return `value` as displayable text, or None if it is not safe to echo."""
@@ -71,6 +86,8 @@ def _safe_text(value, limit: int = _TEXT_LIMIT) -> str | None:
         return None
     for ch in s:
         if ch in _FORBIDDEN_CHARS or ord(ch) < 32 or 127 <= ord(ch) <= 159:
+            return None
+        if unicodedata.category(ch) in _FORBIDDEN_CATEGORIES:
             return None
     return s
 

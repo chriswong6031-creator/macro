@@ -32,6 +32,7 @@ sys.path.insert(0, str(ROOT))
 
 from engine.portfolio_changes import (  # noqa: E402
     CURSOR_DISCLOSURE,
+    _safe_text,
     MAX_CHANGES,
     MAX_PREVIOUS_NAMES,
     SNAPSHOT_SCHEMA,
@@ -41,6 +42,7 @@ from engine.portfolio_changes import (  # noqa: E402
     snapshot_state,
 )
 from engine.portfolio_digest import compose_digest, idem_key  # noqa: E402
+from engine.portfolio_vocab import CLASS_WORD  # noqa: E402
 from tests.test_portfolio_brief import BOOKS, TODAY, _ctx  # noqa: E402
 
 # The install set of the CI job that runs this file (portfolio-ctx). An import outside
@@ -250,6 +252,71 @@ def test_client_supplied_text_is_never_echoed_into_desk_prose(hostile):
     assert hostile not in blob
     for frag in ("<img", "onerror", "constructor", "\x07"):
         assert frag not in blob
+
+
+@pytest.mark.parametrize("invisible", [
+    "‮",              # RTL OVERRIDE — reverses rendered order; sentence spoofing
+    "⁦", "⁩",    # directional isolates
+    "​",              # zero-width space — hides inside a word
+    "‎", "‏",    # LTR/RTL marks
+    " ", " ",    # line/paragraph separators; JS line terminators
+])
+def test_invisible_format_characters_cannot_reach_desk_prose(invisible):
+    """The character blacklist rejects markup and control codes, but Unicode FORMAT
+    characters are invisible and slipped through. U+202E is the classic spoofing
+    primitive: it can make a composed desk sentence DISPLAY as something the desk never
+    said, and no reviewer eyeballing the payload would see it."""
+    previous = _snap()
+    previous["regime_en"] = f"Risk{invisible}-on"
+    previous["names"]["NVDA"]["entry"] = f"BUY{invisible} ZONE"
+    previous["sectors"]["Technology"]["conviction_en"] = f"Cau{invisible}tious"
+    blob = json.dumps(diff_snapshots(previous, _snap(_moved_ctx())), ensure_ascii=False)
+    assert invisible not in blob
+    assert invisible not in json.dumps(
+        compose_since_section(previous, _snap(_moved_ctx())), ensure_ascii=False)
+
+
+def test_the_allowlist_still_passes_every_shape_of_real_copy():
+    """The other half of the tightening: a filter that rejects legitimate desk copy would
+    silently drop real changes. These are the shapes this estate actually produces —
+    CJK, em-dashes, ampersands, dotted and hyphenated tickers, parentheses, slashes."""
+    legitimate = [
+        "Risk-on", "Risk-off", "Neutral", "Cautious", "Accumulate", "Reduce",
+        "BUY ZONE", "FRESH BREAKOUT", "UNCONFIRMED TURN", "COUNTERTREND BOUNCE",
+        "bounce, not a turn", "extended — watch", "watching for entry",
+        "trend running", "S&P 500", "BRK.B", "BF-B", "Consumer Defensive",
+        "Communication Services", "Basic Materials", "Information Technology",
+        "谨慎", "积极配置", "减配", "风险偏好", "中性", "顺风", "逆风", "偏后段",
+    ]
+    rejected = [s for s in legitimate if _safe_text(s) is None]
+    assert not rejected, f"the allowlist rejects real desk copy: {rejected}"
+    # And the whole set survives a round trip through a rendered change line.
+    for word in legitimate[:8]:
+        previous = _snap()
+        previous["names"]["NVDA"]["entry"] = word
+        changes = diff_snapshots(previous, _snap(_moved_ctx()))
+        assert any(word in c["en"] for c in changes if c.get("ticker") == "NVDA"), word
+
+
+def test_class_word_covers_the_producer_vocabulary():
+    """The omit-path is deliberate (an unmapped class drops its clause rather than
+    printing a slug), but nothing reds when the PRODUCER's vocabulary GROWS. Without this
+    a new subsector_confluence class would silently drop a real desk move in production
+    instead of failing CI here, where it is one line to fix.
+
+    Read from the producer's own table rather than a copied list, so the check cannot be
+    satisfied by a stale duplicate."""
+    from engine.subsector_confluence import _CLASS_ORDER  # noqa: PLC0415
+
+    missing = sorted(set(_CLASS_ORDER) - set(CLASS_WORD))
+    assert not missing, (
+        "engine/subsector_confluence.py publishes these rotation-board classes and "
+        "engine/portfolio_vocab.CLASS_WORD has no display word for them, so a change "
+        "into or out of them would be silently dropped: %s" % missing)
+    # Every mapped word is bilingual and carries no raw slug.
+    for slug, (en, zh) in CLASS_WORD.items():
+        assert en.strip() and zh.strip()
+        assert "_" not in en, f"{slug}: en display word still looks like a slug"
 
 
 def test_out_of_range_stage_is_dropped_not_rendered_generically():
