@@ -76,6 +76,12 @@ except ImportError:  # pragma: no cover - environment guard
     raise SystemExit(1)
 
 _ROOT = Path(__file__).resolve().parent.parent
+# Pinned at module scope, before any in-repo import.  Run as `python3 scripts/agentos.py`,
+# sys.path[0] is scripts/, so `from scripts import ...` resolves against whatever `scripts`
+# package the ambient PYTHONPATH offers first — the hijack `tests/test_check_script_import
+# _pinning.py` builds a decoy repo to prove.  A pin inside the one function that imports
+# runs too late to be a contract and reads as optional; this line is the contract.
+sys.path.insert(0, str(_ROOT))
 _DEFAULT_STORE = _ROOT / "agentos"
 _PROGRAMS = _ROOT / "config" / "mastermind_programs.yml"
 
@@ -1072,10 +1078,7 @@ def scan_worktrees(degraded: Degraded, *, deep: bool = False) -> dict[str, Any]:
     opt-in and its absence is stated rather than silently skipped.
     """
     try:
-        if str(_ROOT) not in sys.path:
-            # Run as `python3 scripts/agentos.py`, sys.path[0] is scripts/, so the
-            # `scripts` package is not importable without this.
-            sys.path.insert(0, str(_ROOT))
+        # The repo-root pin is at module scope (see `_ROOT`), so `scripts` resolves here.
         from scripts import audit_stranded_work as stranded  # local import: optional dep
     except Exception as exc:  # pragma: no cover - import guard
         degraded.add(f"audit_stranded_work unavailable ({exc.__class__.__name__}) — "
