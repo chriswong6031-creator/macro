@@ -272,19 +272,26 @@ def test_an_unrecognised_unit_is_rejected_not_silently_taken_as_legacy():
 # --------------------------------------------------------------------------- #
 # ACCEPTANCE 5 — different clocks cannot be pooled
 # --------------------------------------------------------------------------- #
-def _grade_row(basis_unit, *, cid, excess, hit):
+def _grade_row(basis_unit, *, cid, excess, hit, market=q.MARKET_US):
     row = {"claim_id": cid, "horizon_d": 21, "excess": excess, "hit": hit}
     if basis_unit is not None:
         row["horizon_unit"] = basis_unit
         row["clock_version"] = q.CLOCK_V1
+        row["clock_market"] = market
     return row
+
+
+def _v1(unit=q.HORIZON_UNIT_TRADING, market=q.MARKET_US):
+    """The explicit-clock basis key, built by the module's own constructor so a
+    later segment addition cannot leave a second spelling in the tests."""
+    return q.clock_basis_key(q.CLOCK_V1, unit, market)
 
 
 def test_require_single_clock_refuses_a_mixed_set():
     rows = [_grade_row(None, cid="a", excess=0.01, hit=True),
             _grade_row(q.HORIZON_UNIT_TRADING, cid="b", excess=0.01, hit=True)]
     assert q.require_single_clock(rows[:1]) == q.CLOCK_LEGACY
-    assert q.require_single_clock(rows[1:]) == f"{q.CLOCK_V1}:{q.HORIZON_UNIT_TRADING}"
+    assert q.require_single_clock(rows[1:]) == _v1()
     with pytest.raises(q.HorizonClockMismatch):
         q.require_single_clock(rows)
 
@@ -334,7 +341,7 @@ def test_promotion_evaluates_inside_the_explicit_basis_never_pooling(tmp_path, m
     _mixed_family(monkeypatch, n_legacy=40, n_v1=26)
     res = q.promotion_check("f", 21, root=tmp_path)
 
-    assert res.clock_basis == f"{q.CLOCK_V1}:{q.HORIZON_UNIT_TRADING}"
+    assert res.clock_basis == _v1()
     assert res.n_dates == 26, "the legacy pile must not be counted"
     assert res.eligible is True
     assert q.CLOCK_LEGACY in res.reason and "NOT pooled" in res.reason
@@ -410,16 +417,16 @@ def test_track_record_publishes_one_basis_labelled_never_a_blend(tmp_path, monke
     cell = tr["by_desk"]["d"]["21"]
     assert cell["pooling_refused"] is True
     assert cell["clock_basis"] == q.CLOCK_LEGACY          # 3 dates beats 1
-    assert cell["clock_bases"] == [f"{q.CLOCK_V1}:{q.HORIZON_UNIT_TRADING}",
+    assert cell["clock_bases"] == [_v1(),
                                    q.CLOCK_LEGACY]
     assert cell["n_obs"] == 3, "the published cell is ONE basis, never the union"
     assert cell["hit_rate"] == 1.0, "the losing new-clock row must not bleed in"
 
     # the excluded basis is printed, not hidden
-    other = tr["by_clock_basis"][f"{q.CLOCK_V1}:{q.HORIZON_UNIT_TRADING}"]
+    other = tr["by_clock_basis"][_v1()]
     assert other["by_desk"]["d"]["21"]["n_obs"] == 1
     assert tr["counts"]["grades_by_clock_basis"] == {
-        q.CLOCK_LEGACY: 3, f"{q.CLOCK_V1}:{q.HORIZON_UNIT_TRADING}": 1}
+        q.CLOCK_LEGACY: 3, _v1(): 1}
 
 
 def test_single_basis_track_record_is_unchanged_by_the_split(tmp_path, monkeypatch):
@@ -603,7 +610,7 @@ def test_display_selection_names_its_rule_and_prints_the_excluded_basis_size(
     cell = q.compute_track_record(root=tmp_path)["by_desk"]["d"]["21"]
     assert cell["clock_basis_selection"] == q.CLOCK_DISPLAY_SELECTION
     assert cell["clock_bases_n_dates"] == {
-        q.CLOCK_LEGACY: 3, f"{q.CLOCK_V1}:{q.HORIZON_UNIT_TRADING}": 1}
+        q.CLOCK_LEGACY: 3, _v1(): 1}
 
 
 # --------------------------------------------------------------------------- #
@@ -633,6 +640,7 @@ def _mixed_store_rows(n_legacy: int, n_v1: int):
             if unit is not None:
                 row["horizon_unit"] = unit
                 row["clock_version"] = q.CLOCK_V1
+                row["clock_market"] = q.MARKET_US
             grades.append(row)
     return claims, grades
 
@@ -657,7 +665,7 @@ def test_nightly_promotion_readiness_step_survives_a_mixed_clock_corpus(tmp_path
 
     out = grader.compute_promotion_readiness(tmp_path, families=["f"])
     cell = out["f"]["21"]
-    assert cell["clock_basis"] == f"{q.CLOCK_V1}:{q.HORIZON_UNIT_TRADING}"
+    assert cell["clock_basis"] == _v1()
     assert cell["n_dates"] == 26 and cell["ready"] is True
     # the headline stats describe the SAME basis the gate used, never a blend
     assert cell["hit_rate"] == 1.0
@@ -962,8 +970,14 @@ def test_the_market_is_derived_from_the_claim_not_passed_by_the_caller(
     # a real live exemplar: four china_special_sits claims are priced on Beijing
     # Stock Exchange tickers, a suffix engine.session_anchor.MARKET_SUFFIX does
     # not carry — so `market_for_ticker` calls them US and they would have graded
-    # Beijing names on NYSE sessions.
-    ("920007.BJ", "510300.SS", q.MARKET_UNDETERMINED_UNKNOWN_SUFFIX),
+    # Beijing names on NYSE sessions. It is in the ENUMERATED deny-list, so the
+    # refusal names the exchange rather than shrugging at the suffix.
+    ("920007.BJ", "510300.SS", q.MARKET_UNDETERMINED_FOREIGN_EXCHANGE),
+    # a suffix in NEITHER house table: no venue claimed, still refused.
+    ("FOO.ZZZ", "SPY", q.MARKET_UNDETERMINED_UNKNOWN_SUFFIX),
+    # a single-letter suffix on a symbol the house US-equity gate rejects: the
+    # share-class reading is corroborated, never assumed.
+    ("600519.Q", "SPY", q.MARKET_UNDETERMINED_NOT_A_US_SYMBOL),
     # legs on two markets: no single session ruler exists, and picking one hands
     # two legs different horizon lengths (the exact rule-5 failure).
     ("300024.SZ", "SPY", q.MARKET_UNDETERMINED_MIXED),
@@ -1182,7 +1196,7 @@ def test_a_clock_migration_is_labelled_not_rendered_as_a_collapse(tmp_path):
     res = q.promotion_check("f", 21, root=tmp_path, control_only=True)
 
     # the ruling stands: NOT pooled, evaluated inside the explicit basis
-    assert res.clock_basis == f"{q.CLOCK_V1}:{q.HORIZON_UNIT_TRADING}"
+    assert res.clock_basis == _v1()
     assert res.n_dates == 1 and res.current_state == q.STATE_ACCRUING
 
     # ...and the demotion is now legible
@@ -1342,3 +1356,380 @@ def test_run_status_publishes_the_refused_clock_population(tmp_path, monkeypatch
     out = grader.run(root=tmp_path, today=date(2026, 12, 1), dry_run=True)
     assert out["clock_unresolvable_claims"]["n"] == 1
     assert out["clock_unresolvable_claims"]["by_family"] == {"cn_special_sits": 1}
+
+
+# --------------------------------------------------------------------------- #
+# ROUND-4 BLOCKER — the market dispatch FAILED OPEN on single-letter foreign
+# exchange suffixes. The shape heuristic ("one letter => US share class") is
+# replaced by an ENUMERATION, because a shape heuristic failed here twice.
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("ticker, exchange_word", [
+    ("VOD.L", "London"),      # London Stock Exchange
+    ("7203.T", "Tokyo"),      # Tokyo Stock Exchange
+    ("BAS.F", "Frankfurt"),   # Frankfurt (Fukuoka under the JP convention)
+    ("9432.N", "Nagoya"),
+    ("8524.S", "Sapporo"),
+])
+def test_a_single_letter_exchange_suffix_refuses_with_a_named_reason(
+        ticker, exchange_word):
+    """THE ROUND-3 BLOCKER RETURNING IN A NEW PLACE. `.L` / `.T` / `.F` are real
+    exchanges whose Yahoo suffix is ONE letter, and the previous rule read every
+    single-letter suffix as a US share class — so a London, Tokyo or Frankfurt
+    name resolved silently onto NYSE sessions, which is the exact failure the
+    dispatch exists to stop. Each must now REFUSE, and the refusal must NAME the
+    venue rather than shrug."""
+    market, reason = q._ticker_market(ticker)
+    assert market is None, f"{ticker} must not resolve to any market"
+    assert reason.startswith(q.MARKET_UNDETERMINED_FOREIGN_EXCHANGE), reason
+    assert exchange_word.lower() in reason.lower(), reason
+    # and it is refused at the claim level too, not merely at the leg level
+    m, r = q.resolve_claim_market(
+        {"scope": {"type": "entity", "key": ticker}, "bench": ticker})
+    assert m is None and r.startswith(q.MARKET_UNDETERMINED_FOREIGN_EXCHANGE), r
+
+
+def test_the_us_share_class_legs_are_untouched_by_the_deny_list():
+    """NEGATIVE CONTROL for the blocker fix, and the reason a blanket 'refuse
+    every dotted suffix' was not the answer: `BRK.B` / `BRK.A` are 527 legs in
+    the live store and must still resolve US, through the SAME code path that
+    now refuses `.L`."""
+    for t in ("BRK.B", "BRK.A", "BF.B", "HEI.A"):
+        assert q._ticker_market(t) == (q.MARKET_US, ""), t
+    assert q.resolve_claim_market(
+        {"scope": {"type": "entity", "key": "BRK.B"}, "bench": "SPY"}) == ("US", "")
+    # a dotless US ticker is unaffected
+    assert q._ticker_market("CARR") == (q.MARKET_US, "")
+
+
+@pytest.mark.parametrize("ticker", ["NESN.SW", "MC.PA", "005930.KS", "2330.TW",
+                                    "920007.BJ"])
+def test_the_multi_letter_refusals_are_intact(ticker):
+    """Round-3's refusals must survive round-4's restructuring: every one of
+    these still refuses, with a reason that names a class."""
+    market, reason = q._ticker_market(ticker)
+    assert market is None, ticker
+    assert reason.startswith((q.MARKET_UNDETERMINED_FOREIGN_EXCHANGE,
+                              q.MARKET_UNDETERMINED_UNKNOWN_SUFFIX)), reason
+
+
+def test_every_live_leg_suffix_resolves_the_way_the_store_needs():
+    """The suffix census of the live claims store (46,629 claims, measured
+    2026-08-13): .SS 9,403 · .SZ 2,489 · .B 287 · .A 240 · .BJ 4 — and nothing
+    else. Pinned as a LITERAL, never read from data/**: the store is
+    nightly-appended and a test may not assert over it. The deny-list must not
+    have refused anything that is live-and-correct, and must still refuse .BJ."""
+    assert q._ticker_market("600519.SS") == (q.MARKET_CN, "")
+    assert q._ticker_market("300024.SZ") == (q.MARKET_CN, "")
+    assert q._ticker_market("BRK.B")[0] == q.MARKET_US
+    assert q._ticker_market("BRK.A")[0] == q.MARKET_US
+    assert q._ticker_market("920007.BJ")[0] is None
+
+
+def test_the_two_suffix_tables_cannot_both_claim_a_suffix():
+    """A mapped suffix is RESOLVED and an enumerated one is REFUSED — a suffix in
+    both would make the answer depend on lookup order. Disjointness is the
+    invariant; the ordering in `_ticker_market` is not allowed to be load-bearing."""
+    overlap = set(q.MARKET_SUFFIX) & set(q.EXCHANGE_SUFFIXES_UNSUPPORTED)
+    assert overlap == set(), overlap
+    for suffix, exchange in q.EXCHANGE_SUFFIXES_UNSUPPORTED.items():
+        assert suffix.startswith("."), suffix
+        assert suffix == suffix.upper(), suffix
+        assert exchange.strip(), suffix          # every entry names a venue
+    # the single-letter entries are the point of this round
+    assert {".L", ".T", ".F"} <= set(q.EXCHANGE_SUFFIXES_UNSUPPORTED)
+
+
+def test_the_share_class_reading_is_corroborated_not_assumed():
+    """The ONE inference left in the dispatch is bounded on both sides: the
+    enumeration takes every known exchange suffix BEFORE it, and the house
+    US-equity gate (`ticker_shape.valid_us_ticker` — the gate every emitter here
+    routes ticker keys through) has to accept the whole symbol AFTER it. So a
+    single-letter suffix on something that is not a US symbol shape still fails
+    closed rather than inheriting NYSE."""
+    from engine.ticker_shape import valid_us_ticker
+
+    assert valid_us_ticker("BRK.B") is not None          # corroborated
+    assert valid_us_ticker("600519.Q") is None           # digit-first root
+    market, reason = q._ticker_market("600519.Q")
+    assert market is None
+    assert reason.startswith(q.MARKET_UNDETERMINED_NOT_A_US_SYMBOL), reason
+
+
+def test_a_london_claim_is_refused_at_registration_and_counted(tmp_path):
+    """End to end, on the store: the blocker's exemplar cannot become a zombie
+    claim graded on NYSE. It is a rejected row with a bucketable reason head."""
+    c = q.make_claim(desk="d", asof="2026-08-05", scope_type="entity",
+                     scope_key="VOD.L", direction=1, horizon_d=21,
+                     horizon_unit=q.HORIZON_UNIT_TRADING,
+                     timestamp_quality="CRAWL_BOUNDED", claim_family="intl_desk")
+    assert c["check_by"] is None
+    stored = q.register(c, root=tmp_path)
+    assert stored["status"] == q.STATUS_REJECTED
+    counted = q.count_unresolvable_clock_claims(root=tmp_path)
+    assert counted["n"] == 1
+    assert list(counted["by_reason"]) == [
+        f"{q.REJECT_CLOCK_UNRESOLVABLE}:"
+        f"{q.MARKET_UNDETERMINED_FOREIGN_EXCHANGE}:.L"]
+
+
+# --------------------------------------------------------------------------- #
+# ROUND-4 MAJOR 1 — the no-pooling boundary is MARKET-AWARE
+# --------------------------------------------------------------------------- #
+def test_a_us_trading_day_row_and_a_cn_trading_day_row_cannot_pool():
+    """THE DEFECT. `grade_clock_basis` returned `explicit_unit_v1:trading_days`
+    for a US-resolved row and a CN-resolved row alike, so two observations
+    measured on incompatible session calendars — 21 NYSE sessions and 21 SSE
+    sessions are different spans, and Golden Week/Thanksgiving fall in different
+    places — pooled into ONE statistic at every aggregation point. Stopping
+    exactly that is what a clock basis is for."""
+    us = _grade_row(q.HORIZON_UNIT_TRADING, cid="u", excess=0.05, hit=True,
+                    market=q.MARKET_US)
+    cn = _grade_row(q.HORIZON_UNIT_TRADING, cid="c", excess=0.05, hit=True,
+                    market=q.MARKET_CN)
+    assert q.grade_clock_basis(us) != q.grade_clock_basis(cn)
+    assert q.grade_clock_basis(us) == _v1(market=q.MARKET_US)
+    assert q.grade_clock_basis(cn) == _v1(market=q.MARKET_CN)
+
+    # the boundary primitives all inherit it — nothing has to remember
+    assert sorted(q.partition_grades_by_clock([us, cn])) == [
+        _v1(market=q.MARKET_CN), _v1(market=q.MARKET_US)]
+    with pytest.raises(q.HorizonClockMismatch):
+        q.require_single_clock([us, cn], context="us+cn")
+    claims = [{"claim_id": "u", "desk": "d", "claim_family": "f",
+               "asof": "2026-01-05"},
+              {"claim_id": "c", "desk": "d", "claim_family": "f",
+               "asof": "2026-01-06"}]
+    with pytest.raises(q.HorizonClockMismatch):
+        q._aggregate(claims, [us, cn], "family", 21)
+
+
+def test_an_explicit_row_with_no_market_stamp_pools_with_nothing():
+    """Fail closed on the residual: a row written by the first cut of this
+    contract (NYSE-hardcoded, unstamped) has an UNKNOWN calendar, and unknown
+    pools with nothing — least of all with US, which is what it silently was."""
+    unstamped = {"claim_id": "x", "horizon_d": 21, "hit": True,
+                 "horizon_unit": q.HORIZON_UNIT_TRADING,
+                 "clock_version": q.CLOCK_V1}
+    assert q.grade_clock_basis(unstamped) == _v1(market=q.CLOCK_MARKET_UNSTAMPED)
+    stamped = _grade_row(q.HORIZON_UNIT_TRADING, cid="y", excess=0.0, hit=True,
+                         market=q.MARKET_US)
+    with pytest.raises(q.HorizonClockMismatch):
+        q.require_single_clock([unstamped, stamped])
+
+
+def _two_market_store(n_us: int, n_cn: int):
+    """A family whose grades split across two markets on the SAME unit."""
+    claims, grades = [], []
+    for tag, n, market, base in (("U", n_us, q.MARKET_US, date(2026, 1, 1)),
+                                 ("C", n_cn, q.MARKET_CN, date(2026, 6, 1))):
+        for i in range(n):
+            cid = f"{tag}{i}"
+            claims.append({"claim_id": cid, "desk": "d", "claim_family": "f",
+                           "asof": (base + timedelta(days=i)).isoformat(),
+                           "is_placebo": False, "status": "open"})
+            grades.append({"claim_id": cid, "horizon_d": 21, "excess": 0.05,
+                           "hit": True, "subject_ret": 0.06, "bench_ret": 0.01,
+                           "control_ret": 0.01,
+                           "horizon_unit": q.HORIZON_UNIT_TRADING,
+                           "clock_version": q.CLOCK_V1, "clock_market": market})
+    return claims, grades
+
+
+def test_promotion_is_reachable_per_market_and_never_by_pooling(tmp_path):
+    """The boundary must not become a wall. A family graded on two markets is
+    PROMOTABLE on each of them, by name — and the pooled count (52) is not
+    reachable by any call."""
+    claims, grades = _two_market_store(n_us=26, n_cn=26)
+    _write_store(tmp_path, claims, grades)
+
+    # the DEFAULT is a refusal: two explicit bases have no non-arbitrary answer
+    mixed = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    assert mixed.eligible is False
+    assert mixed.current_state == q.STATE_MIXED_CLOCK
+    assert mixed.clock_basis is None
+    assert "clock_basis" in mixed.reason, "the reason must name the way out"
+
+    # ...and each market promotes on its OWN 26 dates
+    for market in (q.MARKET_US, q.MARKET_CN):
+        res = q.promotion_check("f", 21, root=tmp_path, control_only=True,
+                                clock_basis=_v1(market=market))
+        assert res.eligible is True, (market, res.reason)
+        assert res.n_dates == 26, (market, res.n_dates)
+        assert res.clock_basis == _v1(market=market)
+    assert mixed.clock_prior_n_dates == {_v1(market=q.MARKET_US): 26,
+                                         _v1(market=q.MARKET_CN): 26}
+
+
+def test_the_track_record_splits_the_two_markets_and_sums_neither(tmp_path,
+                                                                  monkeypatch):
+    """The display tier obeys the same boundary: two markets are two published
+    blocks, and the headline cell is ONE of them, labelled."""
+    claims, grades = _two_market_store(n_us=3, n_cn=1)
+    monkeypatch.setattr(q, "load_claims", lambda root=None: claims)
+    monkeypatch.setattr(q, "load_grades", lambda root=None: grades)
+
+    tr = q.compute_track_record(root=tmp_path)
+    assert tr["counts"]["grades_by_clock_basis"] == {
+        _v1(market=q.MARKET_US): 3, _v1(market=q.MARKET_CN): 1}
+    cell = tr["by_family"]["f"]["21"]
+    assert cell["pooling_refused"] is True
+    assert cell["clock_basis"] == _v1(market=q.MARKET_US)   # 3 dates beats 1
+    assert cell["n_obs"] == 3, "the published cell is ONE market, never the union"
+
+
+# --------------------------------------------------------------------------- #
+# ROUND-4 MAJOR 2 — the migration banner CLEARS
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("n_legacy, n_v1, migrating", [
+    (40, 1, True),     # the night the first corrected-clock grade lands
+    (40, 39, True),    # still short of the history it replaced
+    (40, 40, False),   # caught up — there is no drop left to explain
+    (40, 55, False),   # past it
+])
+def test_the_migration_banner_is_true_only_while_there_is_a_drop_to_explain(
+        tmp_path, n_legacy, n_v1, migrating):
+    """THE DEFECT. `clock_migration = bool(excluded)` never referenced the live
+    n_dates, so ANY family carrying even one legacy row was flagged as migrating
+    FOREVER — including one that finished migrating and whose legacy pile is a
+    closed, never-growing set. A banner that never clears is furniture, not
+    disclosure, and both docstrings described it as something it was not.
+
+    The flag now means exactly what it is for: the headline count is SMALLER than
+    the history being counted separately, so the drop a reader sees is a clock
+    migration rather than a collapse."""
+    claims, grades = _mixed_store_rows(n_legacy=n_legacy, n_v1=n_v1)
+    _write_store(tmp_path, claims, grades)
+    res = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+
+    assert res.n_dates == n_v1, "the ruling is unchanged: nothing is pooled"
+    assert res.clock_migration is migrating
+    assert bool(res.migration_note) is migrating
+    assert res.as_dict()["clock_migration"] is migrating
+    # the excluded history stays a published fact either way — it is disclosure
+    # about the verdict, not a function of whether the banner is lit
+    assert res.clock_prior_n_dates == {q.CLOCK_LEGACY: n_legacy}
+    # ...and the excluded basis is still named in the reason, always
+    assert q.CLOCK_LEGACY in res.reason and "NOT pooled" in res.reason
+
+
+def test_the_cleared_banner_reaches_the_admin_surface_as_a_plain_state_line(
+        tmp_path, monkeypatch):
+    """The consumer end of the same fix: a fully-migrated family must not carry
+    'RE-ACCRUING on a corrected clock' in the admin Experiments state line."""
+    import scripts.grade_qledger as grader
+    from engine import experiments_registry as er
+
+    claims, grades = _mixed_store_rows(n_legacy=26, n_v1=26)
+    _write_store(tmp_path, claims, grades)
+    readiness = grader.compute_promotion_readiness(tmp_path, families=["f"])
+    cell = readiness["f"]["21"]
+    assert cell["clock_migration"] is False
+    assert cell["clock_prior_n_dates"] == {q.CLOCK_LEGACY: 26}
+
+    monkeypatch.setattr(er, "_read_json",
+                        lambda rel: {"promotion_readiness": readiness}
+                        if rel.endswith("track_record.json") else {})
+    out = er._refresh_qledger_promotion({"claim_family": "f"})
+    assert out["clock_migration"] is False
+    assert "RE-ACCRUING" not in out["state"]
+    assert "migration_note" not in out
+
+
+# --------------------------------------------------------------------------- #
+# ROUND-4 MAJOR 3 — a live producer is never killed SILENTLY by the refusal
+# --------------------------------------------------------------------------- #
+# Lives here, not in tests/test_communique_diff.py, because that file is owned by
+# no legacy job: a test of this contract placed there would never run in CI.
+def _diff_result(tickers):
+    return {"asof": "2026-08-05",
+            "events": [{"event_id": "e1", "kind": "APPEARED", "organ": "pboc",
+                        "phrase": "适度宽松", "asof": "2026-08-05"}],
+            "counts": {"n_events": 1}}, tickers
+
+
+def test_communique_diffs_entity_path_resolves_on_the_calendar_it_prices_in(
+        tmp_path, monkeypatch):
+    """MAJOR 3. `communique_diff` mints TRADING-unit claims on A-share tickers
+    resolved by `entity_resolver.resolve_cn`, and named no bench — so it took
+    qledger's non-macro default (SPY) and the A-share/US pair was refused as
+    mixed_markets. The producer's entity path died with no disclosure.
+
+    It prices Chinese policy on Chinese sessions, so it names the CN bench and
+    the claim resolves on the A-share calendar."""
+    from engine import communique_diff as cd
+
+    result, tickers = _diff_result(["600519.SS", "300024.SZ"])
+    monkeypatch.setattr(cd, "_entities_for", lambda e: tickers)
+    n = cd.register_claims(result, root=tmp_path)
+
+    assert n == 2, "both entity claims register OPEN"
+    assert result["n_claims_clock_refused"] == 0
+    stored = q.load_claims(tmp_path)
+    assert {c["scope"]["key"] for c in stored} == set(tickers)
+    for c in stored:
+        assert c["status"] == q.STATUS_OPEN
+        assert c["bench"] == cd.CN_BENCH
+        assert c["clock_market"] == q.MARKET_CN
+        assert c["check_by"], "a resolved A-share exit, not None"
+    assert q.count_unresolvable_clock_claims(root=tmp_path)["n"] == 0
+
+
+def test_a_producer_claim_the_clock_refuses_is_counted_never_silent(
+        tmp_path, monkeypatch, caplog):
+    """The other half of MAJOR 3, and the property that outlives this particular
+    bench fix: if the clock ever refuses this desk's claims again, the run says
+    so and the number travels with the artifact. 'Registered' means OPEN — a
+    rejected row was never on the forward log, and counting it as one is exactly
+    how a producer goes dark behind a healthy-looking count."""
+    from engine import communique_diff as cd
+
+    result, tickers = _diff_result(["920007.BJ", "600519.SS"])
+    monkeypatch.setattr(cd, "_entities_for", lambda e: tickers)
+    with caplog.at_level("WARNING"):
+        n = cd.register_claims(result, root=tmp_path)
+
+    assert n == 1, "only the resolvable claim is on the forward log"
+    assert result["n_claims_clock_refused"] == 1
+    assert result["n_claims_rejected"] == 1
+    assert "REFUSED by the horizon clock" in caplog.text
+    counted = q.count_unresolvable_clock_claims(root=tmp_path)
+    assert counted["n"] == 1
+    assert counted["by_family"] == {cd.CLAIM_FAMILY: 1}
+
+
+# --------------------------------------------------------------------------- #
+# ROUND-4 MINOR — by_reason buckets on the machine-readable HEAD
+# --------------------------------------------------------------------------- #
+def test_by_reason_buckets_on_the_head_not_the_prose_tail(tmp_path):
+    """THE DEFECT. The out-of-range class's reason carries the ANCHOR DATE, and
+    the old split kept everything before the first '(' — so every refused claim
+    got its own histogram key. A histogram with one row per event is not a
+    histogram; its own docstring said it bucketed on the machine-readable head."""
+    for i in range(5):
+        q.register(q.make_claim(
+            desk="d", asof=f"2009-06-0{i + 1}", scope_type="entity",
+            scope_key=f"AAP{chr(65 + i)}", direction=1, horizon_d=5,
+            horizon_unit=q.HORIZON_UNIT_TRADING,
+            timestamp_quality="CRAWL_BOUNDED", claim_family="fam"),
+            root=tmp_path)
+    counted = q.count_unresolvable_clock_claims(root=tmp_path)
+    assert counted["n"] == 5
+    assert counted["by_reason"] == {
+        f"{q.REJECT_CLOCK_UNRESOLVABLE}:window_unresolvable:{q.MARKET_US}": 5}
+    # every offending detail is still ON the row, just not in the histogram key
+    rejected = [c for c in q.load_claims(tmp_path)
+                if c["status"] == q.STATUS_REJECTED]
+    assert all("2009-06-0" in c["reject_reason"] for c in rejected)
+
+
+def test_the_reason_head_is_bounded_while_the_tail_names_the_offender():
+    """The head/tail split is a contract, not a parsing convention: the head is
+    what a histogram may key on, the tail is where a ticker or a date may go."""
+    _, reason = q._ticker_market("VOD.L")
+    assert q.clock_reason_head(reason) == \
+        f"{q.MARKET_UNDETERMINED_FOREIGN_EXCHANGE}:.L"
+    _, mixed = q.resolve_claim_market(
+        {"scope": {"type": "entity", "key": "300024.SZ"}, "bench": "SPY"})
+    # the mixed reason names BOTH legs — and none of that may become a key
+    assert "300024.SZ" in mixed and "SPY" in mixed
+    assert q.clock_reason_head(mixed) == q.MARKET_UNDETERMINED_MIXED
