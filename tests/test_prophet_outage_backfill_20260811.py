@@ -538,6 +538,56 @@ class TestDisclosureCopy:
         assert "没有" in bf11.DISCLOSURE_COPY["not_a_live_call"]["zh"]
 
 
+class TestTheBoardFootnoteSurvivesASecondWindow:
+    """The front-facing clause has to stop being about one night.
+
+    Until this window there was one lost night and the hover said "over the weekend of
+    9 Aug". 2026-08-09 was a Sunday; 2026-08-11 was a Tuesday. Left alone, the hover
+    would have told every reader that a Tuesday outage happened at the weekend, and
+    dated a board full of 08-11 picks to 08-09.
+    """
+
+    def _rows(self, *dates: str) -> list[dict]:
+        return [{"origination_mode": f"outage_backfill_{d.replace('-', '_')}",
+                 "recorded_at": d} for d in dates]
+
+    def test_one_lost_night_names_that_night(self):
+        from engine.prophet_bridge import origination_disclosure  # noqa: PLC0415
+        out = origination_disclosure(self._rows("2026-08-09"))
+        assert "9 Aug 2026" in out["tip_en"]
+        assert "2026年8月9日" in out["tip_zh"]
+
+    def test_two_lost_nights_name_both(self):
+        from engine.prophet_bridge import origination_disclosure  # noqa: PLC0415
+        out = origination_disclosure(self._rows("2026-08-09", "2026-08-11"))
+        assert out["dates"] == ["2026-08-09", "2026-08-11"]
+        assert "9 Aug 2026" in out["tip_en"] and "11 Aug 2026" in out["tip_en"]
+        assert "2026年8月9日" in out["tip_zh"] and "2026年8月11日" in out["tip_zh"]
+        assert out["date"] == "2026-08-09", (
+            "the machine-readable field stays the earliest date — a range there would "
+            "break every consumer that reads it as a day"
+        )
+
+    def test_no_surface_calls_a_tuesday_outage_a_weekend(self):
+        from engine import prophet_bridge as pb  # noqa: PLC0415
+        for name in ("RECONSTRUCTED_FOOTNOTE_TIP_EN", "RECONSTRUCTED_FOOTNOTE_TIP_ZH",
+                     "RECONSTRUCTED_FOOTNOTE_TIP_MULTI_EN",
+                     "RECONSTRUCTED_FOOTNOTE_TIP_MULTI_ZH"):
+            text = getattr(pb, name)
+            assert "weekend" not in text.lower() and "周末" not in text, (
+                f"{name} still characterises the lost night as a weekend; "
+                f"{bf11.BACKFILL_ASOF} was a Tuesday"
+            )
+
+    def test_the_zh_takes_no_space_before_its_particle(self):
+        """The ZH-was-English-shaped trap: a date slot followed by a bare space + 的."""
+        from engine import prophet_bridge as pb  # noqa: PLC0415
+        for name in ("RECONSTRUCTED_FOOTNOTE_TIP_ZH",
+                     "RECONSTRUCTED_FOOTNOTE_TIP_MULTI_ZH"):
+            assert " 的" not in getattr(pb, name), f"{name} spaces before 的"
+            assert " 和" not in getattr(pb, name), f"{name} spaces before 和"
+
+
 class TestTheLaneIsScopedToOneNight:
 
     def test_the_constants_all_name_the_same_night(self):

@@ -947,7 +947,12 @@ def _vintage_env() -> dict[str, str]:
 
 
 def reset_builder_state(vintage: Path) -> dict[str, Any]:
-    """Restore everything the builder writes, EXCEPT the price overlay.
+    """Restore every TRACKED file the builder writes, EXCEPT the price overlay.
+
+    "Tracked" is a real limit, not a hedge: ``git checkout --`` cannot revert a path that
+    is not in the index, so anything the builder newly CREATES survives into the next
+    pass. Those paths are counted and sampled in the return value rather than left to be
+    discovered later.
 
     ``build_stock_library`` is not a pure function of its inputs: it advances tracked
     ledgers as it runs — ``data/name_score/us_calls.parquet`` (a keep-FIRST PIT stamp,
@@ -972,12 +977,37 @@ def reset_builder_state(vintage: Path) -> dict[str, Any]:
         return path in price_paths or any(
             path.startswith(f"{d}/") for d in price_dirs)
 
-    status = str(_git(vintage, "status", "--porcelain", "--", "data/", "site/"))
+    # -z, not the default: porcelain v1 QUOTES and C-escapes any path with a space or a
+    # non-ASCII byte, and emits a rename as "OLD -> NEW" on one line. Parsing that by
+    # hand produced a pathspec git would reject, and `_git` runs check=True, so a single
+    # oddly-named file would have killed the run with an unhandled CalledProcessError
+    # rather than skipped one restore. NUL-separated output has neither problem.
+    raw = _git(vintage, "status", "--porcelain", "-z", "--", "data/", "site/",
+               binary=True)
+    fields = (raw.decode("utf-8", "surrogateescape").split("\0")
+              if isinstance(raw, bytes) else str(raw).split("\0"))
     restore: list[str] = []
-    for line in status.splitlines():
-        if len(line) < 4 or line[0] == "?":
+    untracked: list[str] = []
+    index = 0
+    while index < len(fields):
+        entry = fields[index]
+        index += 1
+        if len(entry) < 4:
             continue
-        path = line[3:].strip().strip('"')
+        code, path = entry[:2], entry[3:]
+        if code[0] in ("R", "C"):
+            # A rename/copy carries its ORIGIN as the next NUL-separated field; both
+            # sides have to come back or the restore leaves the file in two places.
+            if index < len(fields):
+                origin = fields[index]
+                index += 1
+                if origin and not _is_price(origin):
+                    restore.append(origin)
+        if not path:
+            continue
+        if code[0] == "?" or code == "??":
+            untracked.append(path)
+            continue
         if _is_price(path):
             continue
         restore.append(path)
@@ -985,7 +1015,15 @@ def reset_builder_state(vintage: Path) -> dict[str, Any]:
         # Chunked: a single argv with thousands of paths overruns the arg limit.
         for start in range(0, len(restore), 400):
             _git(vintage, "checkout", "--", *restore[start:start + 400])
-    return {"restored": len(restore), "sample": sorted(restore)[:8]}
+    return {
+        "restored": len(restore),
+        "sample": sorted(restore)[:8],
+        # Reported, not restored: `git checkout --` cannot revert a file that is not in
+        # the index, so an untracked artifact the builder created survives into the next
+        # pass. Naming them is the difference between a known limit and a silent one.
+        "untracked_left_in_place": len(untracked),
+        "untracked_sample": sorted(untracked)[:8],
+    }
 
 
 def build_board(vintage: Path, *, through: str, work: Path, timeout: int = 7200,
