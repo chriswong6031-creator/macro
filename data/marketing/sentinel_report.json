@@ -1,187 +1,124 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-11T04:43:17Z",
-  "as_of": "2026-08-11",
+  "produced_at": "2026-08-13T10:22:15Z",
+  "as_of": "2026-08-13",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 19,
-    "passed": 18,
-    "quarantined": 1,
-    "quarantined_policy": 1,
+    "items": 12,
+    "passed": 12,
+    "quarantined": 0,
+    "quarantined_policy": 0,
     "quarantined_overflow": 0,
     "warnings": 0,
     "exceptions_applied": 0
   },
-  "reasons_histogram": {
-    "near_dup": 1
-  },
-  "quarantined": [
-    {
-      "id": "post-founder-001",
-      "account": "founder",
-      "slot": "D1-S1",
-      "type": "event",
-      "cashtag": "",
-      "headline": "",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-flagship-011"
-      ]
-    }
-  ],
+  "reasons_histogram": {},
+  "quarantined": [],
   "passed": [
     {
-      "id": "post-flagship-011",
+      "id": "post-flagship-020",
       "account": "flagship",
-      "slot": "D1-S11",
-      "type": "event",
+      "slot": "D1-S20",
+      "type": "macro",
       "cashtag": "",
-      "headline": "The labor market isn't showing much stress"
-    },
-    {
-      "id": "post-flagship-015",
-      "account": "flagship",
-      "slot": "D1-S15",
-      "type": "signal",
-      "cashtag": "$FBRT",
-      "headline": "$FBRT has one level to hold"
-    },
-    {
-      "id": "post-conf-flagship-001",
-      "account": "flagship",
-      "slot": "CONF-01",
-      "type": "signal",
-      "cashtag": "$WFC",
-      "headline": "$WFC just lined up a pattern we track."
+      "headline": ""
     },
     {
       "id": "post-theme-003",
       "account": "flagship",
-      "slot": "D1-S3",
+      "slot": "D1-S2",
       "type": "theme_list",
-      "cashtag": "$STKH",
-      "headline": "Agriculture & FoodTech ripping, +5.3% avg on Monday"
+      "cashtag": "$SMCI",
+      "headline": "Hardware ripping, +1.8% avg on Wednesday"
     },
     {
       "id": "post-congress-001",
       "account": "flagship",
-      "slot": "D1-S10",
+      "slot": "D1-S9",
       "type": "congress",
       "cashtag": "$BRK.B",
       "headline": ""
     },
     {
-      "id": "post-founder-018",
+      "id": "post-mover-001",
       "account": "founder",
-      "slot": "D1-S18",
-      "type": "watchlist",
-      "cashtag": "$CTS",
-      "headline": ""
+      "slot": "D1-S13",
+      "type": "mover",
+      "cashtag": "$NBIS",
+      "headline": "$NBIS +34.1% on Wednesday"
     },
     {
-      "id": "post-founder-024",
-      "account": "founder",
-      "slot": "D1-S24",
-      "type": "chart",
-      "cashtag": "$FTI",
-      "headline": "$FTI gets another run at 74.1"
-    },
-    {
-      "id": "post-founder-027",
-      "account": "founder",
-      "slot": "D1-S27",
-      "type": "receipt",
-      "cashtag": "$AGNT",
-      "headline": ""
-    },
-    {
-      "id": "post-congress-002",
-      "account": "founder",
-      "slot": "D1-S6",
-      "type": "congress",
-      "cashtag": "$CB",
-      "headline": ""
-    },
-    {
-      "id": "post-meagan-005",
+      "id": "post-meagan-022",
       "account": "meagan",
-      "slot": "D1-S5",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
-    },
-    {
-      "id": "post-meagan-008",
-      "account": "meagan",
-      "slot": "D1-S8",
+      "slot": "D1-S22",
       "type": "chart",
-      "cashtag": "$GTES",
-      "headline": "$GTES is testing the 28.2 entry line"
+      "cashtag": "$TTC",
+      "headline": ""
     },
     {
       "id": "post-theme-004",
       "account": "meagan",
-      "slot": "D1-S2",
+      "slot": "D1-S5",
       "type": "theme_list",
-      "cashtag": "$AIOT",
-      "headline": "Electric Vehicles selling off, -1.6% avg on Monday"
+      "cashtag": "$LOCL",
+      "headline": "Agriculture & FoodTech selling off, -1.2% avg on Wednesday"
     },
     {
-      "id": "post-insider-003",
+      "id": "post-congress-003",
       "account": "meagan",
-      "slot": "D1-S16",
-      "type": "insider",
-      "cashtag": "$FBIN",
+      "slot": "D1-S6",
+      "type": "congress",
+      "cashtag": "$PEP",
       "headline": ""
     },
     {
-      "id": "post-sophia-008",
+      "id": "post-sophia-035",
       "account": "sophia",
-      "slot": "D1-S8",
+      "slot": "D1-S35",
       "type": "chart",
-      "cashtag": "$AMZN",
+      "cashtag": "$GTES",
       "headline": ""
     },
     {
-      "id": "post-insider-004",
+      "id": "post-housepick-003",
       "account": "sophia",
-      "slot": "D1-S19",
-      "type": "insider",
-      "cashtag": "$PRCT",
+      "slot": "D1-S25",
+      "type": "watchlist",
+      "cashtag": "$WEN",
       "headline": ""
     },
     {
-      "id": "post-kelly-009",
+      "id": "post-kelly-012",
       "account": "kelly",
-      "slot": "D1-S9",
+      "slot": "D1-S12",
       "type": "macro",
       "cashtag": "",
       "headline": ""
     },
     {
-      "id": "post-cici-020",
-      "account": "cici",
-      "slot": "D1-S20",
-      "type": "chart",
-      "cashtag": "$CTS",
-      "headline": "$CTS has closed red 3 sessions in a row"
+      "id": "post-theme-005",
+      "account": "kelly",
+      "slot": "D1-S3",
+      "type": "theme_list",
+      "cashtag": "$SIMO",
+      "headline": "Semiconductors ripping, +2.8% avg on Wednesday"
     },
     {
-      "id": "post-theme-006",
-      "account": "cici",
-      "slot": "D1-S5",
-      "type": "theme_list",
-      "cashtag": "$FSLY",
-      "headline": "Cloud Computing ripping, +1.9% avg on Monday"
+      "id": "post-insider-007",
+      "account": "mastermind_news",
+      "slot": "D1-S1",
+      "type": "insider",
+      "cashtag": "$AMRC",
+      "headline": ""
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 130,
-      "hits": 1,
+      "pairs_checked": 58,
+      "hits": 0,
       "shared_media_hits": 0
     },
     "cadence": {
@@ -200,7 +137,8 @@
     "cherry_pick": {
       "status": "run",
       "loss_tickers_in_window": [
-        "AGNT"
+        "AGNT",
+        "HD"
       ],
       "cherry_pick_detected": false
     },
@@ -236,7 +174,7 @@
       "graduate_after_days": 21,
       "weeks_1_2_days": 5,
       "weeks_3_4_days": 10,
-      "as_of": "2026-08-11",
+      "as_of": "2026-08-13",
       "as_of_usable": true,
       "base": {
         "max_posts_per_account_per_day": null,
@@ -252,7 +190,7 @@
       "accounts": {
         "flagship": {
           "created": "2026-07-24",
-          "age_days": 18,
+          "age_days": 20,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -365,7 +303,7 @@
         },
         "founder": {
           "created": "2026-07-27",
-          "age_days": 15,
+          "age_days": 17,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -387,7 +325,7 @@
         },
         "meagan": {
           "created": "2026-07-28",
-          "age_days": 14,
+          "age_days": 16,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -409,7 +347,7 @@
         },
         "sophia": {
           "created": "2026-07-28",
-          "age_days": 14,
+          "age_days": 16,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -431,7 +369,7 @@
         },
         "kelly": {
           "created": "2026-07-28",
-          "age_days": 14,
+          "age_days": 16,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -453,7 +391,7 @@
         },
         "cici": {
           "created": "2026-07-28",
-          "age_days": 14,
+          "age_days": 16,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -475,8 +413,8 @@
         },
         "mastermind_news": {
           "created": "2026-08-02",
-          "age_days": 9,
-          "tier": "weeks_3_4",
+          "age_days": 11,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
             "max_posts_per_account_per_day": 30,

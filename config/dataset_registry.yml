@@ -1,0 +1,322 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Mastermind Data OS — dataset registry (§D5 / §D9)
+#
+# WHAT THIS IS.  One row per dataset: who produces it, where it lives, which clocks
+# it carries, what its columns actually MEAN, and which datasets it reads. Loaded by
+# lib/dataos/registry.py::load_registry and checked by
+# tests/test_dataos_registry.py.
+#
+# WHY IT EXISTS.  Nothing in this repo declared what a dataset IS, so every consumer's
+# assumption lived only in the consumer — which is how the same NVDA close came to be
+# 114.80 in two stores, 115.00 in a third column and 1150.00 in a fourth, all named
+# some form of "close" (§D4). The registry is where a basis stops being folklore.
+#
+# THE HONESTY RULE — THE ONLY ONE THAT MATTERS HERE.  A registry that lists a dataset
+# which does not exist is WORSE than no registry, because the next session builds
+# against it. Every row is either:
+#     status: PRODUCED   the store exists today and a named producer writes it, and
+#                        every fact below was verified before it was written down;
+#     status: PROPOSED   declared so it has a stable dataset_id, produced by NOTHING.
+# This seed is deliberately SMALL: only datasets whose facts are verified in the
+# pinned design spec are PRODUCED. Growing it is cheap; un-lying is not.
+#
+# THE COLUMN NAMES BELOW ARE THE NAMES ON DISK TODAY, not the canonical ones. Where a
+# stored name is ambiguous (`close`), `basis:` carries the MEASURED truth and `renames_to:`
+# carries the canonical §D4 name the V1 reader shim will expose. That pairing is the
+# whole V1 migration: 132 files keep reading `close`, and the basis stops being a guess.
+#
+# TWO KINDS OF "CONSUMER", AND THEY ARE NOT THE SAME FIELD. `inputs:` holds
+# dataset_ids ONLY — it IS the lineage DAG, and the reverse edge (Registry.consumers_of)
+# is DERIVED from it, never hand-maintained. Functions that read a store go in
+# `code_consumers:` and are prose. Both once lived under the name "consumers", and a
+# caller could not tell which of the two answers it was holding.
+#
+# temporal_profile ∈ BARS | REVISABLE_RELEASE | SNAPSHOT_SERIES | EVENT | DERIVED | INTELLIGENCE
+# layer            ∈ L0 (SOURCE) | L1 (NORMALIZED) | L2 (CANONICAL) | L3 (DERIVED) | L4 (INTELLIGENCE)
+# conflict_policy  ∈ PRIMARY_ONLY | FALLBACK | DOMAIN_AUTHORITY | CROSS_VALIDATE | COMPOSITE
+# ─────────────────────────────────────────────────────────────────────────────
+schema: dataset_registry.v1
+updated: "2026-08-12"
+
+datasets:
+
+  # ── Equity bars ────────────────────────────────────────────────────────────
+  - dataset_id: equity.bars.daily.stocks
+    layer: L1
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: collectors/sector_holdings.py::StockPriceAdapter
+    storage: data/stocks/{ticker}.parquet
+    format: parquet
+    grain: [ticker, date]
+    identity:
+      id_column: ticker
+      id_type: symbol            # NOT an identity (§D2) — the alias table is the join
+    temporal_profile: BARS
+    timezone: America/New_York
+    frequency: 1d
+    adjustment: total_return     # measured, not declared by the store
+    vendor: yahoo
+    conflict_policy: PRIMARY_ONLY
+    quality_checks: [uniqueness, validity, freshness, continuity]
+    version: "1.0.0"
+    licensing: vendor_terms_personal_use
+    schema:
+      close:
+        dtype: float64
+        unit: quote_currency
+        basis: tradj
+        renames_to: close_tradj
+        nullable: false
+        note: >
+          MEASURED NVDA 2024-06-03 = 114.80, identical to data/yahoo `close` — i.e. this
+          store carries the TOTAL-RETURN series under a name that says nothing. The
+          split-adjusted basis the house itself calls correct for structure math is
+          ABSENT from this store, which 132 files read.
+    notes: >
+      This store has NO `open` column (§D4 measurement). An OHLC-shaped read against it
+      returns a frame quietly missing a leg rather than raising, so consumers must check
+      rather than assume. The producer splices short auto_adjust=True windows onto deep
+      history, which is how 30/231 names came to be stranded on a stale adjustment basis
+      (measured 2026-07-19, healed by scripts/heal_stocks_basis.py) — the concrete cost of
+      an adjusted series whose adjustment vintage is not recorded (§D4).
+
+  - dataset_id: equity.bars.daily.yahoo
+    layer: L1
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: collectors/yahoo.py
+    storage: data/yahoo/{ticker}.parquet
+    format: parquet
+    grain: [ticker, date]
+    identity:
+      id_column: ticker
+      id_type: symbol
+    temporal_profile: BARS
+    timezone: America/New_York
+    frequency: 1d
+    adjustment: dual_basis
+    vendor: yahoo
+    endpoint: yfinance
+    conflict_policy: PRIMARY_ONLY
+    quality_checks: [uniqueness, validity, freshness, continuity]
+    version: "1.0.0"
+    licensing: vendor_terms_personal_use
+    schema:
+      close:
+        dtype: float64
+        unit: quote_currency
+        basis: tradj
+        renames_to: close_tradj
+        nullable: false
+        note: >
+          Adj Close from yfinance auto_adjust=False. MEASURED NVDA 2024-06-03 = 114.80.
+      close_price:
+        dtype: float64
+        unit: quote_currency
+        basis: sadj
+        renames_to: close_sadj
+        nullable: false
+        note: >
+          Close from yfinance auto_adjust=False — split-adjusted, dividend-UNadjusted.
+          MEASURED NVDA 2024-06-03 = 115.00. collectors/yahoo.py calls this "the correct
+          basis for all structure math"; the NAMES invert intuition, which is exactly the
+          §D4 defect.
+      volume:
+        dtype: int64
+        unit: shares
+        nullable: true
+    notes: >
+      Both stored bases are RE-ADJUSTED by Yahoo at every fetch, so an adjusted series
+      here is a point-in-time quantity with an UNRECORDED vintage (§D4). collectors/yahoo.py
+      detects the resulting overlap disagreement via store.basis_shifted and re-pulls
+      period='max' instead of splicing. `adjustment_asof` is owed and not yet carried.
+
+  - dataset_id: equity.bars.daily.massive
+    layer: L1
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: collectors/massive_stock_day.py
+    storage: data/massive_stock_day/{ticker}.parquet
+    format: parquet
+    grain: [ticker, date]
+    identity:
+      id_column: ticker
+      id_type: symbol
+    temporal_profile: BARS
+    timezone: America/New_York
+    frequency: 1d
+    adjustment: none
+    conflict_policy: PRIMARY_ONLY
+    quality_checks: [uniqueness, validity, freshness]
+    version: "1.0.0"
+    schema:
+      close:
+        dtype: float64
+        unit: quote_currency
+        basis: raw
+        renames_to: close_raw
+        nullable: false
+        note: >
+          MEASURED NVDA 2024-06-03 = 1150.00 — the price actually PRINTED, pre the 10:1
+          split. Same column name as the two stores above, 10x the number.
+    notes: >
+      The only raw-print equity store here, and therefore the only lawful input for
+      limit-price / tick-size / exchange-rule work — see DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT,
+      where using an adjusted tape for exactly that stop-shipped a whole program.
+
+  # ── Macro releases ─────────────────────────────────────────────────────────
+  - dataset_id: macro.fred.observations
+    layer: L1
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: collectors/fred.py
+    storage: data/fred/{series}.parquet
+    format: parquet
+    grain: [series, date]
+    identity:
+      id_column: series
+      id_type: fred_series_id
+    temporal_profile: REVISABLE_RELEASE
+    timezone: UTC
+    frequency: mixed
+    vendor: fred
+    endpoint: https://api.stlouisfed.org/fred/series/observations
+    conflict_policy: PRIMARY_ONLY
+    quality_checks: [freshness, completeness, temporal_integrity]
+    version: "1.0.0"
+    licensing: public_domain
+    schema:
+      value:
+        dtype: float64
+        nullable: true
+        null_reasons: [NOT_YET_AVAILABLE, VENDOR_FAILED]
+        note: >
+          LATEST VINTAGE ONLY. This store answers "what is the series now", never "what
+          did we know on date t" — macro.fred.vintages is the point-in-time reader.
+          REVISABLE_RELEASE declares published_at as owed; the store does not carry it
+          yet, which is a contract gap this row exists to make visible.
+    notes: >
+      config.yml `fred.vintage_series` decides which of these survive into the ALFRED
+      store and REPLACES (never extends) collectors/fred.py:DEFAULT_VINTAGE_SERIES. A
+      one-line deletion there silently drops series from the vintage store on the next
+      keyed collect; it has happened twice (IC4WSA/CCSA restored #3710, then
+      PPIFES/ECIALLCIV/ECIWAG #3735).
+
+  - dataset_id: macro.fred.vintages
+    layer: L1
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: collectors/fred.py::fetch_vintages
+    storage: data/fred_vintage/vintages.parquet
+    format: parquet
+    grain: [series, period, realtime_start]
+    identity:
+      id_column: series
+      id_type: fred_series_id
+    temporal_profile: REVISABLE_RELEASE
+    timezone: UTC
+    frequency: mixed
+    vendor: fred
+    endpoint: https://api.stlouisfed.org/fred/series/observations (ALFRED realtime)
+    conflict_policy: PRIMARY_ONLY
+    quality_checks: [uniqueness, temporal_integrity, completeness]
+    version: "1.0.0"
+    licensing: public_domain
+    # NO `inputs:`. This store and macro.fred.observations are L1 SIBLINGS off one
+    # vendor API, not a producer/consumer pair: collectors/fred.py::_vintage_series
+    # (:153-174) takes its series list from config.yml / DEFAULT_VINTAGE_SERIES, and
+    # _fetch_vintage_one (:177-195) calls the ALFRED realtime endpoint directly. It
+    # never reads data/fred/*.parquet. An edge here was declared and was FALSE — see
+    # tests/test_dataos_registry.py::test_the_two_fred_stores_are_siblings_...
+    # for what a false edge costs a lineage query.
+    code_consumers: [collectors/fred.py::as_of_series, collectors/fred.py::initial_release]
+    schema:
+      series: {dtype: string, nullable: false}
+      period: {dtype: "datetime64[ns]", nullable: false, note: "the interval the observation describes"}
+      value: {dtype: float64, nullable: true}
+      realtime_start:
+        dtype: "datetime64[ns]"
+        nullable: false
+        note: >
+          The published_at clock in ALFRED's own vocabulary — the date this vintage
+          became knowable. This is what makes the store point-in-time readable.
+      realtime_end: {dtype: "datetime64[ns]", nullable: true}
+    notes: >
+      ONE of the six independent, locally-correct PIT implementations §D0 names. It is
+      correct; it is also unregistered and shares no vocabulary with the other five,
+      which is the whole thesis. fetch_vintages() REWRITES this parquet wholesale, so
+      the append-only revision chain lives in ALFRED, not here.
+
+  # ── Reference / identity spine (§D2) — DECLARED, NOT YET PRODUCED ──────────
+  - dataset_id: reference.security_master
+    layer: L2
+    status: PROPOSED
+    owner: macro-dashboard
+    producer: (none yet — §D12 phase 1)
+    storage: (not yet produced)
+    format: parquet
+    grain: [security_id]
+    identity:
+      id_column: security_id
+      id_type: SEC
+    temporal_profile: SNAPSHOT_SERIES
+    timezone: UTC
+    frequency: daily
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, referential, completeness]
+    version: "0.1.0"
+    schema:
+      security_id: {dtype: string, nullable: false, note: "SEC:<inception listing key>, minted once and stored"}
+      issuer_id: {dtype: string, nullable: false}
+      listing_key: {dtype: string, nullable: false, note: "<CC>-<MIC>-<CODE>[.N] — inception code, never today's symbol"}
+      country: {dtype: string, nullable: false}
+      mic: {dtype: string, nullable: false}
+      inception_code: {dtype: string, nullable: false}
+      effective_at: {dtype: "datetime64[ns]", nullable: false}
+      ingested_at: {dtype: "datetime64[ns]", nullable: false}
+    notes: >
+      PROPOSED. lib/dataos/identity.py is the ALLOCATOR (mint-once); this dataset is the
+      AUTHORITY (the stored value). Nothing writes it yet, and saying so is the point —
+      a row that claims a store that does not exist is how the next session builds against
+      a ghost. §D12 puts it in phase 1 because every other dataset joins on it and it is
+      the only defect class here with a measured 7-month silent loss.
+
+  - dataset_id: reference.vendor_aliases
+    layer: L2
+    status: PROPOSED
+    owner: macro-dashboard
+    producer: (none yet — §D12 phase 1)
+    storage: (not yet produced)
+    format: parquet
+    grain: [vendor, vendor_symbol, valid_from]
+    identity:
+      id_column: security_id
+      id_type: SEC
+    temporal_profile: SNAPSHOT_SERIES
+    timezone: UTC
+    frequency: daily
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, referential, temporal_integrity]
+    version: "0.1.0"
+    inputs: [reference.security_master]
+    schema:
+      vendor: {dtype: string, nullable: false}
+      vendor_symbol: {dtype: string, nullable: false}
+      security_id: {dtype: string, nullable: false}
+      valid_from: {dtype: date, nullable: true, note: "inclusive; null = open bound"}
+      valid_to:
+        dtype: date
+        nullable: true
+        note: >
+          EXCLUSIVE — the first day the row no longer holds; null = open bound. An
+          inclusive end makes the changeover day ambiguous, and 2026-01-14 is exactly
+          the day the MMC/MRSH answer has to be unambiguous.
+      ingested_at: {dtype: "datetime64[ns]", nullable: false}
+    notes: >
+      PROPOSED. Supersedes lib/ticker_aliases.py — 53 lines, 2 entries, Yahoo-only and
+      TIMELESS, which is why it can say "MMC means MRSH" but not "MMC meant MMC before
+      2026-01-14". Its own docstring records the 7-month silent production loss the
+      time-scoped table exists to prevent: data/baskets/ohlcv/MMC.parquet never existed,
+      the `insurance` basket rendered 18/19 members and `us_sector_financials` 75/76.
+    supersedes: lib/ticker_aliases.py

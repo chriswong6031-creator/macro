@@ -87,11 +87,20 @@ STANCE = {
 }
 
 # dial bands (score → label/colour); weights match ea.glide_path defaults (100/66/33/0)
+#
+# The colour is a SOLID PILL FILL under hardcoded white text (.pill{color:#fff} in
+# strategy_detail / strategies / commodity_strategies) and it is a literal, so it is
+# theme-independent — it failed identically in light and dark on all 46 strategy_*
+# pages. Measured white-on-fill 2026-08-12: calm #1FA971 = 3.01:1, watch amber
+# #F5AD42 = 1.92:1, stress #D98C00 = 2.73:1 (defensive red already passed at 5.49).
+# Deepened within the same hue family — the dial still reads green→amber→orange→red —
+# and white now lands 5.62-6.53:1. The dial ARC and the chart series keep the bright
+# C[] palette; only the white-text pill fill changes.
 _BANDS = [
-    (0, 25, "Calm — fully invested", "平静 — 满仓", "#1FA971", 100, "< 25"),
-    (25, 50, "Watch — trim", "关注 — 减仓", C["amber"], 66, "25–50"),
-    (50, 75, "Stress — de-risk", "压力 — 降险", "#D98C00", 33, "50–75"),
-    (75, 101, "Defensive — all cash", "防守 — 全现金", C["red"], 0, "≥ 75"),
+    (0, 25, "Calm — fully invested", "平静 — 满仓", "#15764f", 100, "< 25"),
+    (25, 50, "Watch — trim", "关注 — 减仓", "#8a5c00", 66, "25–50"),
+    (50, 75, "Stress — de-risk", "压力 — 降险", "#8a5100", 33, "50–75"),
+    (75, 101, "Defensive — all cash", "防守 — 全现金", "#b3252a", 0, "≥ 75"),
 ]
 
 

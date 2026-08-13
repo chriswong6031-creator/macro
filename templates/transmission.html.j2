@@ -26,7 +26,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% include "_interfonts.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Transmission — {{ as_of }}</title>
 {% set seo_title = 'Transmission — Rates, Inflation & the Dollar | Mastermind' %}{% set seo_desc = 'The three forces that move every asset — interest rates, inflation and the dollar — in plain words: what each is doing, who benefits, who gets hurt, and what changed.' %}{% set seo_path = 'transmission.html' %}
 {% include "_seo_head.html.j2" %}
@@ -38,14 +38,14 @@
   /* channel identity hues — every element belonging to a channel wears its hue */
   --ch-rates:#4559DC; --ch-infl:#B45309; --ch-usd:#0F766E;
 }
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--red:#e06464;
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#828b9c;--red:#e06464;
   --ch-rates:#8b96f8;--ch-infl:#fbbf24;--ch-usd:#2dd4bf}
 *{box-sizing:border-box}
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:var(--blue);text-decoration:none}
+a{color:var(--ink-link, var(--blue));text-decoration:none}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:6px}
 
@@ -100,11 +100,11 @@ a{color:var(--blue);text-decoration:none}
 .ch-stance{display:inline-block;padding:5px 13px;border-radius:999px;font-size:12.5px;font-weight:700;
   background:color-mix(in srgb,var(--chc) 11%,var(--card));color:var(--chc);border:1px solid color-mix(in srgb,var(--chc) 30%,var(--grid))}
 .ch-more{font-size:12px;color:var(--muted);white-space:nowrap}
-.ch-more:hover{color:var(--blue)}
+.ch-more:hover{color:var(--ink-link, var(--blue))}
 .ch-minichips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .mchip{display:inline-block;padding:2px 9px;border-radius:7px;font-size:11.5px;font-weight:600}
-.mchip.down{background:rgba(211,11,11,.09);color:var(--red)}
-.mchip.up{background:rgba(26,127,67,.11);color:var(--green)}
+.mchip.down{background:rgba(211,11,11,.09);color:var(--ink-act, var(--red))}
+.mchip.up{background:rgba(26,127,67,.11);color:var(--ink-ok, var(--green))}
 /* the ? help tip — CSS-only bilingual popover (Tier-2 home for mechanics) */
 .txq{position:relative;display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;
   border:1px solid var(--grid);color:var(--muted);font-size:11px;font-weight:700;cursor:help;flex:none}
@@ -121,7 +121,7 @@ a{color:var(--blue);text-decoration:none}
 .pm-foot{font-size:12px;color:var(--faint);margin-top:10px}
 .achip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;font-size:11.5px;font-weight:600;background:color-mix(in srgb,var(--grid) 55%,var(--card));color:var(--text);cursor:default}
 .lvg{margin-left:2px;font-weight:800;font-size:11px;cursor:help}
-.vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
+.vg-measured{color:var(--ink-ok, var(--green))}.vg-directional{color:var(--ink-warn, var(--amber))}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1fr 1fr}
 @media(max-width:900px){.cols-2{grid-template-columns:1fr}}
@@ -150,8 +150,8 @@ a{color:var(--blue);text-decoration:none}
 .kpi{font-size:12px;color:var(--muted)}.kpi b{display:block;font-size:16px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
 .flag{display:inline-block;padding:5px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:10px;line-height:1.4}
 .flag.warn{background:rgba(245,173,66,.16);color:#9a6a10}
-.flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
-.flag.ok{background:rgba(26,127,67,.12);color:var(--green)}
+.flag.info{background:rgba(40,95,255,.10);color:var(--ink-link, var(--blue))}
+.flag.ok{background:rgba(26,127,67,.12);color:var(--ink-ok, var(--green))}
 .cols-3{grid-template-columns:repeat(3,1fr)}
 @media(max-width:900px){.cols-3{grid-template-columns:1fr}}
 .decomp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:6px}
@@ -167,21 +167,21 @@ a{color:var(--blue);text-decoration:none}
 .regchip{display:inline-block;padding:6px 15px;border-radius:999px;font-size:16px;font-weight:800;color:#fff;letter-spacing:.01em}
 .favrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;align-items:center}
 .favrow .fl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-right:2px}
-.favrow .fl.fav{color:var(--green)}.favrow .fl.pres{color:var(--red)}
+.favrow .fl.fav{color:var(--ink-ok, var(--green))}.favrow .fl.pres{color:var(--ink-act, var(--red))}
 .tkpill{display:inline-block;padding:2px 8px;border-radius:7px;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
-.tkpill.fav{background:rgba(26,127,67,.12);color:var(--green)}
-.tkpill.pres{background:rgba(211,11,11,.10);color:var(--red)}
+.tkpill.fav{background:rgba(26,127,67,.12);color:var(--ink-ok, var(--green))}
+.tkpill.pres{background:rgba(211,11,11,.10);color:var(--ink-act, var(--red))}
 .recgauges{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:8px 0 4px}
 .recg{padding:9px 11px;border-radius:11px;background:color-mix(in srgb,var(--grid) 45%,var(--card))}
 .recg .rgl{font-size:11px;color:var(--muted);line-height:1.3}
 .recg .rgv{font-size:18px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:1px}
 .recg.flag-on{background:rgba(211,11,11,.12)}
-.recg.flag-on .rgv{color:var(--red)}
+.recg.flag-on .rgv{color:var(--ink-act, var(--red))}
 .sectilt{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;margin-top:8px}
 .stile{padding:7px 9px;border-radius:10px;font-size:12px;border:1px solid var(--grid);background:var(--card)}
 .stile .se{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
 .stile .sb{float:right;font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px;background:color-mix(in srgb,var(--grid) 55%,var(--card));color:var(--muted)}
-.stile .sb.meas{background:rgba(26,127,67,.14);color:var(--green)}
+.stile .sb.meas{background:rgba(26,127,67,.14);color:var(--ink-ok, var(--green))}
 .stile .sm{font-size:10.5px;color:var(--faint);margin-top:3px;line-height:1.35}
 .stile.tail{background:rgba(26,127,67,.07);border-color:rgba(26,127,67,.28)}
 .stile.head{background:rgba(211,11,11,.06);border-color:rgba(211,11,11,.28)}
@@ -192,7 +192,7 @@ table.slopes tr:last-child td{border-bottom:none}
 table.slopes th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.03em}
 table.slopes td{font-variant-numeric:tabular-nums;color:var(--text)}
 table.slopes td.nm{color:var(--ink);font-weight:600}
-table.slopes td.inv{color:var(--red);font-weight:700}
+table.slopes td.inv{color:var(--ink-act, var(--red));font-weight:700}
 .facrow{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
 .facpill{display:inline-flex;flex-direction:column;padding:7px 13px;border-radius:11px;background:color-mix(in srgb,var(--grid) 45%,var(--card));min-width:120px}
 .facpill .fk{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
@@ -203,9 +203,9 @@ table.gate th{color:var(--muted);font-weight:700;text-transform:uppercase;font-s
 table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
 .bdkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:12px;margin:10px 0 4px}
 .bd-tag{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--grid);color:var(--ink)}
-.bd-tag.bd-fall{background:rgba(211,11,11,.10);color:var(--red)}
-.bd-tag.bd-rise{background:rgba(26,127,67,.12);color:var(--green)}
-.bd b.dn{color:var(--red)} .bd b.up{color:var(--green)}
+.bd-tag.bd-fall{background:rgba(211,11,11,.10);color:var(--ink-act, var(--red))}
+.bd-tag.bd-rise{background:rgba(26,127,67,.12);color:var(--ink-ok, var(--green))}
+.bd b.dn{color:var(--ink-act, var(--red))} .bd b.up{color:var(--ink-ok, var(--green))}
 .bd-badge{margin-top:12px;padding:12px 14px;border-radius:12px;border-left:4px solid var(--faint);background:color-mix(in srgb,var(--grid) 40%,var(--card))}
 .bd-badge-h{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
 .bd-liquidity{border-left-color:var(--red)} .bd-growth{border-left-color:var(--amber)}
@@ -224,18 +224,18 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
    --drag (bearish/headwind pressure) and --lift (bullish/tailwind lift) swap in zh. */
 html[data-lang="zh"]{--lift:#c65b6e;--drag:#2f9270}
 html[data-theme="dark"][data-lang="zh"]{--lift:#e58a97;--drag:#54c39a}
-html[data-lang="zh"] .mchip.up{background:rgba(211,11,11,.09);color:var(--red)}
-html[data-lang="zh"] .mchip.down{background:rgba(26,127,67,.11);color:var(--green)}
-html[data-lang="zh"] .favrow .fl.fav{color:var(--red)}
-html[data-lang="zh"] .favrow .fl.pres{color:var(--green)}
-html[data-lang="zh"] .tkpill.fav{background:rgba(211,11,11,.10);color:var(--red)}
-html[data-lang="zh"] .tkpill.pres{background:rgba(26,127,67,.12);color:var(--green)}
+html[data-lang="zh"] .mchip.up{background:rgba(211,11,11,.09);color:var(--ink-act, var(--red))}
+html[data-lang="zh"] .mchip.down{background:rgba(26,127,67,.11);color:var(--ink-ok, var(--green))}
+html[data-lang="zh"] .favrow .fl.fav{color:var(--ink-act, var(--red))}
+html[data-lang="zh"] .favrow .fl.pres{color:var(--ink-ok, var(--green))}
+html[data-lang="zh"] .tkpill.fav{background:rgba(211,11,11,.10);color:var(--ink-act, var(--red))}
+html[data-lang="zh"] .tkpill.pres{background:rgba(26,127,67,.12);color:var(--ink-ok, var(--green))}
 html[data-lang="zh"] .stile.tail{background:rgba(211,11,11,.06);border-color:rgba(211,11,11,.28)}
 html[data-lang="zh"] .stile.head{background:rgba(26,127,67,.07);border-color:rgba(26,127,67,.28)}
-html[data-lang="zh"] .bd-tag.bd-rise{background:rgba(211,11,11,.10);color:var(--red)}
-html[data-lang="zh"] .bd-tag.bd-fall{background:rgba(26,127,67,.12);color:var(--green)}
-html[data-lang="zh"] .bd b.up{color:var(--red)}
-html[data-lang="zh"] .bd b.dn{color:var(--green)}
+html[data-lang="zh"] .bd-tag.bd-rise{background:rgba(211,11,11,.10);color:var(--ink-act, var(--red))}
+html[data-lang="zh"] .bd-tag.bd-fall{background:rgba(26,127,67,.12);color:var(--ink-ok, var(--green))}
+html[data-lang="zh"] .bd b.up{color:var(--ink-act, var(--red))}
+html[data-lang="zh"] .bd b.dn{color:var(--ink-ok, var(--green))}
 
 /* ============ REVAMP — soft palette + shared panel chrome (matches the channel rail) ============ */
 :root{--drag:#c65b6e;--lift:#2f9270}
@@ -333,8 +333,8 @@ html[data-theme="dark"]{--drag:#e58a97;--lift:#54c39a}
   font-size:11px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
 .cm-state-tag.arming{background:color-mix(in srgb,var(--amber) 14%,var(--card));color:#9a6a10}
 .cm-state-tag.propagating{background:color-mix(in srgb,#e07a2f 14%,var(--card));color:#c25c1a}
-.cm-state-tag.expressed{background:color-mix(in srgb,var(--red) 12%,var(--card));color:var(--red)}
-html[data-theme="dark"] .cm-state-tag.arming{color:var(--amber)}
+.cm-state-tag.expressed{background:color-mix(in srgb,var(--red) 12%,var(--card));color:var(--ink-act, var(--red))}
+html[data-theme="dark"] .cm-state-tag.arming{color:var(--ink-warn, var(--amber))}
 html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
 @media(max-width:640px){.cm-state-tag{grid-column:2;justify-self:start;margin-top:8px}}
 .cm-quiet{padding:12px 0 13px;font-size:12.5px;color:var(--muted);line-height:1.5;border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
@@ -386,6 +386,7 @@ html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
   *{transition:none!important}
 }
 </style>
+{% include "_state_inks.html.j2" %}
 {% include "_vector_polish.html.j2" %}
 </head>
 <body>
@@ -703,7 +704,7 @@ html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
 
     {% if yc %}
     <details id="shelf-yc">
-      <summary><span class="sh-ic">📈</span>{{ t('Yield curve — the full read', '收益率曲线——完整解读') }}<span class="sh-hint">{{ t('shape · regime · recession · signals', '形态 · 状态 · 衰退 · 信号') }}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('Yield curve — the full read', '收益率曲线——完整解读') }}<span class="sh-hint">{{ t('shape · regime · recession · signals', '形态 · 状态 · 衰退 · 信号') }}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
       <p class="sub" style="margin:12px 0 14px">{{ b(yc.signals.core_macro) }}</p>
       <div class="grid cols-3">
@@ -820,7 +821,7 @@ html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
     {% endif %}
 
     <details id="shelf-infl">
-      <summary><span class="sh-ic">🌡️</span>{{ t('Inflation & expectations — the deep read', '通胀与预期——深入解读') }}<span class="sh-hint">{{ t('decomposition · breakeven velocity', '分解 · 盈亏平衡速度') }}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('Inflation & expectations — the deep read', '通胀与预期——深入解读') }}<span class="sh-hint">{{ t('decomposition · breakeven velocity', '分解 · 盈亏平衡速度') }}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
       {% set D = tx.inflation_decomposition %}
       <div class="card" style="margin-top:12px">
@@ -867,7 +868,7 @@ html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
           <div class="bd-badge-h">{{ t('Cause','成因') }}: {{ cz|replace('_',' ')|upper }}</div>
           <div>{{ b(BD.cause_badge) }}</div>
         </div>
-        {% if BD.tips_liquidity_flag %}<p class="sub" style="color:var(--red);margin-top:8px">⚠ {{ b(BD.tips_liquidity_flag) }}</p>{% endif %}
+        {% if BD.tips_liquidity_flag %}<p class="sub" style="color:var(--ink-act, var(--red));margin-top:8px">⚠ {{ b(BD.tips_liquidity_flag) }}</p>{% endif %}
         <div class="sub faint" style="margin-top:8px">{{ t('Co-state','联动状态') }}:
           {{ t('oil','油') }} {{ '%+.0f'|format(BD.costate.oil_chg_20d_pct) if BD.costate.oil_chg_20d_pct is not none else '—' }}% ·
           {{ t('real 10y','实际10年') }} {{ '%+d'|format(BD.costate.real10y_chg_20d_bp|int) if BD.costate.real10y_chg_20d_bp is not none else '—' }}bp ·
@@ -881,7 +882,7 @@ html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
     </details>
 
     <details id="shelf-gate">
-      <summary><span class="sh-ic">🧾</span>{{ t('How we measure — receipts & caveats', '测量方法——依据与告诫') }}<span class="sh-hint">{{ t('every tested signal, including the failures', '每个被检验的信号，包括失败的') }}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('How we measure — receipts & caveats', '测量方法——依据与告诫') }}<span class="sh-hint">{{ t('every tested signal, including the failures', '每个被检验的信号，包括失败的') }}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
       <p class="note" style="margin-top:12px">{{ t('We tested every rate and inflation driver on this page for real predictive edge. None passed the bar to be scored — so everything here is shown as context to explain moves, never as a signal to trade on. The table below is the full honest record.', '我们对页面上每个利率与通胀驱动都做了预测优势检验，无一通过计分门槛——因此本页内容仅为解释行情的背景，绝非交易信号。下表为完整的诚实记录。') }}</p>
       <div class="flag info" style="display:block;margin-bottom:10px"><span class="l-en">{{ tx.scored_status.en }}</span><span class="l-zh">{{ tx.scored_status.zh }}</span></div>

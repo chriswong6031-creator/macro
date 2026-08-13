@@ -48,6 +48,7 @@ from __future__ import annotations
 import json
 import random
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 from unittest.mock import patch
 
@@ -102,6 +103,25 @@ SEEDS = (0, 1, 2, 3, 5, 7, 11, 13, 17, 23, 42, 1337)
 # The pre-W1 rule, copied VERBATIM from engine/prophet_bridge.py@origin/main.
 # Re-implemented rather than imported so the comparison is against the shipped
 # behaviour and survives every later edit to the live function.
+#
+# "Verbatim" was FALSE for the tier_cascade clause below, and silently so from
+# #5071 (which added it to `select_candidates`) through #5105 (which re-pointed
+# this copy at `legacy_admitted` without porting it).  Two rules that differ by
+# a filter nothing on the board can trip are indistinguishable from two rules
+# that agree, so the fence read green for two PRs and detonated the night the
+# first discriminating row arrived: `us_standouts.json` as_of 2026-08-12 carries
+# SWX at `signal.tier_cascade == "T4"` -- the first non-T1/T2/T3 buy row ever
+# published (histogram that night: T1 35, T2 28, T4 1, absent 8).  The engine was
+# right and stayed right; this copy admitted 24 rows where the frozen rule admits
+# 23, and `test_committed_artifact_admits_the_identical_rows` correctly said so.
+#
+# The clause is part of the rule being copied, not an implementation detail: it
+# predates the freeze (pre-A1 `select_candidates` carried it with the comment
+# "actionable contract has always been T1-T3 (signal_gate.BUYABLE_TIERS)") and
+# `legacy_admitted`'s own docstring names it. Restoring it makes the transcription
+# true rather than loosening what the fence asserts. It is a no-op on every
+# synthetic fixture here -- `_buy()` emits no `signal` block at all -- so the only
+# call sites it can move are the two that read the committed artifact.
 # ---------------------------------------------------------------------------
 
 def _old_select(standouts: dict, n: int = N_CANDIDATES) -> list[dict]:
@@ -122,6 +142,14 @@ def _old_select(standouts: dict, n: int = N_CANDIDATES) -> list[dict]:
 
         if band == "low":
             continue
+
+        # Rows predating `tier_cascade` keep their prior behaviour (the clause is
+        # skipped when the key is absent or null), which is why this was invisible.
+        signal = b.get("signal")
+        if isinstance(signal, Mapping):
+            signal_tier = signal.get("tier_cascade")
+            if signal_tier is not None and signal_tier not in ("T1", "T2", "T3"):
+                continue
 
         if gate_go:
             if not (act_level >= 2):

@@ -24,7 +24,7 @@
   .ci-wrap { max-width:1060px; margin:0 auto; padding:0 0 60px; }
   /* ── hero ── */
   .ci-hero { max-width:1060px; margin:18px auto 0; }
-  .ci-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .ci-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-link, var(--link)); font-weight:600; margin:0 0 8px; }
   .ci-hero h1 { font-size:30px; margin:0 0 8px; letter-spacing:-.01em; }
   html[data-lang="zh"] .ci-hero h1 { letter-spacing:0; }
   .ci-hero .lens { font-size:12px; color:var(--muted); }
@@ -36,14 +36,14 @@
     border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
   .cmdbar .mc b { color:var(--text); font-weight:700; }
   .cmdbar .mc span { color:var(--muted); }
-  .cmdbar .mc.hot { border-color:color-mix(in srgb,var(--link) 50%,var(--line)); color:var(--link); }
-  .cmdbar .mc.warn { border-color:color-mix(in srgb,#e0973a 50%,var(--line)); color:#e0973a; }
+  .cmdbar .mc.hot { border-color:color-mix(in srgb,var(--link) 50%,var(--line)); color:var(--ink-link, var(--link)); }
+  .cmdbar .mc.warn { border-color:color-mix(in srgb,#e0973a 50%,var(--line)); color:var(--ink-warn, var(--warn)); }
   .mode-badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:999px;
     background:color-mix(in srgb,var(--muted) 15%,transparent);
     border:1px solid color-mix(in srgb,var(--muted) 30%,transparent); color:var(--muted); }
   .stale-chip { font-size:10px; font-weight:700; padding:3px 9px; border-radius:999px;
     background:color-mix(in srgb,#e0973a 15%,transparent);
-    border:1px solid color-mix(in srgb,#e0973a 35%,transparent); color:#e0973a; }
+    border:1px solid color-mix(in srgb,#e0973a 35%,transparent); color:var(--ink-warn, var(--warn)); }
   /* ── desk status board ── */
   .desks { display:grid; gap:11px; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); margin:16px 0 6px; }
   .desk { padding:12px 14px; border-radius:14px; text-decoration:none; display:block; transition:.16s ease;
@@ -61,9 +61,9 @@
     letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px;
     border:1px solid; white-space:nowrap; vertical-align:middle; }
   .ql-chip-ungraded { background:color-mix(in srgb,var(--muted) 12%,transparent); color:var(--muted); border-color:color-mix(in srgb,var(--muted) 28%,transparent); }
-  .ql-chip-accruing { background:color-mix(in srgb,#e0973a 14%,transparent); color:#e0973a; border-color:color-mix(in srgb,#e0973a 35%,transparent); }
-  .ql-chip-graded-pos { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
-  .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
+  .ql-chip-accruing { background:color-mix(in srgb,#e0973a 14%,transparent); color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,#e0973a 35%,transparent); }
+  .ql-chip-graded-pos { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
+  .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
   /* ── section headers ── */
   h2.sec { font-size:18px; margin:26px 0 8px; border-top:1px solid var(--line); padding-top:16px; display:flex; align-items:baseline; gap:9px; }
   /* ── what matters / changed ── */
@@ -86,16 +86,16 @@
   .pp-gloss { font-size:11px; color:var(--muted); margin-top:2px; }
   .pp-meta { font-size:10px; color:var(--muted); margin-left:auto; white-space:nowrap; }
   .pp-cold { font-size:11px; color:var(--muted); padding:6px 0; font-style:italic; }
-  .pp-more > summary { cursor:pointer; font-size:11px; color:var(--link); margin-top:6px; list-style:none; }
+  .pp-more > summary { cursor:pointer; font-size:11px; color:var(--ink-link, var(--link)); margin-top:6px; list-style:none; }
   .pp-more > summary::-webkit-details-marker { display:none; }
   /* ── narrative divergence chip ── */
   .nd-chip { display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin:12px 0; font-size:13px; flex-wrap:wrap; }
   .nd-z { font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
-  .nd-z.risk { color:#e0973a; }
+  .nd-z.risk { color:var(--ink-warn, var(--warn)); }
   .nd-z.ok { color:var(--muted); }
   .nd-label { font-size:11.5px; color:var(--muted); line-height:1.5; flex:1; }
   .nd-badge { font-size:9px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:6px;
-    background:color-mix(in srgb,#e0973a 15%,transparent); border:1px solid color-mix(in srgb,#e0973a 35%,transparent); color:#e0973a; white-space:nowrap; }
+    background:color-mix(in srgb,#e0973a 15%,transparent); border:1px solid color-mix(in srgb,#e0973a 35%,transparent); color:var(--ink-warn, var(--warn)); white-space:nowrap; }
   /* ── synthesis table ── */
   table.syn { border-collapse:collapse; width:100%; font-size:12.5px; margin:8px 0; }
   table.syn th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
@@ -113,9 +113,10 @@
   .b-elevated{color:#5b8def;background:color-mix(in srgb,#5b8def 13%,transparent)}
   .b-moderate,.b-low,.b-none{color:var(--muted);background:var(--panel2)}
   /* ── surfaces/flags ── */
-  .surf { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--link); margin-right:3px; }
-  .sgn-pos{color:#1f9a55} .sgn-neg{color:#d23f3f}
-  html[data-lang="zh"] .sgn-pos{color:#d23f3f} html[data-lang="zh"] .sgn-neg{color:#1f9a55}
+  .surf { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--ink-link, var(--link)); margin-right:3px; }
+  .sgn-pos{color:var(--ink-up, var(--up))} .sgn-neg{color:var(--ink-down, var(--down))}
+  /* --up/--down already swap under 红涨绿跌, so the manual flip is gone: one source
+   of truth, and no way for the two to drift apart. */
   .flags { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
   .tk { display:inline-flex; flex-direction:column; gap:2px; padding:7px 12px; border-radius:10px; background:var(--panel); border:1px solid var(--line); }
   .tk .nm { font-weight:700; font-size:13px; }
@@ -127,7 +128,7 @@
   .chain .hd { display:flex; align-items:center; gap:9px; font-weight:700; font-size:13.5px; }
   .chband { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
   .ch-aligned{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
-  .ch-forming{color:#e0973a;background:color-mix(in srgb,#e0973a 13%,transparent)}
+  .ch-forming{color:var(--ink-warn, var(--warn));background:color-mix(in srgb,#e0973a 13%,transparent)}
   .ch-dormant{color:var(--muted);background:var(--panel2)}
   .legs { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .leg { font-size:11px; padding:3px 8px; border-radius:7px; background:var(--panel2); border:1px solid var(--line); }
@@ -135,10 +136,10 @@
   /* ── misc ── */
   .digest { white-space:pre-wrap; font:12px/1.55 ui-monospace,Menlo,monospace; background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--link); border-radius:12px; padding:13px 15px; margin:12px 0; }
   .xmit { border-radius:12px; padding:13px 16px; margin:16px 0; border:1px solid var(--line); background:var(--panel2); font-size:13px; line-height:1.6; }
-  .xmit code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--link); }
+  .xmit code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--ink-link, var(--link)); }
   .strip { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
   .sx { font-size:11.5px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
-  .sx b { color:#e0973a; }
+  .sx b { color:var(--ink-warn, var(--warn)); }
   .band { display:inline-block; font-size:13px; font-weight:700; padding:2px 9px; border-radius:999px; }
   .band.supportive,.band.easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
@@ -152,7 +153,7 @@
   table.cmd-tbl th { text-align:left; padding:6px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); white-space:nowrap; }
   table.cmd-tbl td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:middle; }
   table.cmd-tbl tr:last-child td { border-bottom:none; }
-  .cmd-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--link); font-weight:700; white-space:nowrap; }
+  .cmd-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--ink-link, var(--link)); font-weight:700; white-space:nowrap; }
   .cmd-name { font-size:12px; font-weight:600; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .cmd-desk-dots { display:flex; gap:3px; align-items:center; }
   .cmd-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
@@ -165,30 +166,30 @@
   .stage-early { color:#5b8def; background:color-mix(in srgb,#5b8def 14%,transparent); border:1px solid #5b8def40; }
   .stage-consensus { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
   .stage-exhausted { color:#d23f3f; background:color-mix(in srgb,#d23f3f 12%,transparent); border:1px solid #d23f3f40; }
-  .stage-faltering { color:#e0973a; background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
-  .stage-distribution { color:#e0973a; background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
+  .stage-faltering { color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
+  .stage-distribution { color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
   .stage-quiet { color:var(--muted); background:var(--panel2); border:1px solid var(--line); opacity:.6; }
   .stage-discovery { color:#8b5cf6; background:color-mix(in srgb,#8b5cf6 13%,transparent); border:1px solid #8b5cf640; }
   .edge-bar { display:inline-block; width:48px; height:5px; background:var(--panel2); border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:4px; }
   .edge-bar > i { display:block; height:100%; background:var(--link); border-radius:3px; }
   .opp-score { font-weight:800; font-variant-numeric:tabular-nums; font-size:13px; }
   .rs-chip { font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; white-space:nowrap; }
-  .rs-pos { color:var(--up); background:color-mix(in srgb,var(--up) 12%,transparent); }
-  .rs-neg { color:var(--down); background:color-mix(in srgb,var(--down) 12%,transparent); }
+  .rs-pos { color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 12%,transparent); }
+  .rs-neg { color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 12%,transparent); }
   .rs-neu { color:var(--muted); background:var(--panel2); }
   .cmd-read { font-size:11px; color:var(--muted); max-width:240px; line-height:1.4; }
-  .cmd-fals { font-size:10px; color:#e0973a; margin-top:2px; }
-  .cmd-expander { font-size:11.5px; color:var(--link); cursor:pointer; margin-top:8px; display:inline-block; }
+  .cmd-fals { font-size:10px; color:var(--ink-warn, var(--warn)); margin-top:2px; }
+  .cmd-expander { font-size:11.5px; color:var(--ink-link, var(--link)); cursor:pointer; margin-top:8px; display:inline-block; }
   /* ── discovery queue ── */
   .disc-queue { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; margin:12px 0; }
   .disc-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
   .disc-card.off-desk { border-left:3px solid #8b5cf6; }
-  .disc-card .disc-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--link); font-weight:700; }
+  .disc-card .disc-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--ink-link, var(--link)); font-weight:700; }
   .disc-card .disc-name { font-size:12.5px; font-weight:700; margin:3px 0; }
   .disc-card .disc-reason { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
   .disc-card .disc-meta { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; align-items:center; }
   .lane-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; text-transform:uppercase; letter-spacing:.04em; background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
-  .exp-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); border:1px solid #e0973a44; }
+  .exp-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,#e0973a 13%,transparent); border:1px solid #e0973a44; }
   .offdesk-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:#8b5cf6; background:color-mix(in srgb,#8b5cf6 13%,transparent); border:1px solid #8b5cf640; }
   .disc-score-bar { height:3px; border-radius:2px; background:var(--link); margin-top:5px; }
   /* ── cycle-context regime chips (W5) ── muted/neutral only, no up/down coloring ── */
@@ -210,7 +211,7 @@
   a.scard .v { font-size:20px; font-weight:800; margin-top:5px; }
   a.scard .s { font-size:11.5px; color:var(--muted); margin-top:3px; }
   a.scard .age { font-size:10px; color:var(--muted); margin-top:6px; }
-  a.scard .go { font-size:11px; color:var(--link); margin-top:7px; }
+  a.scard .go { font-size:11px; color:var(--ink-link, var(--link)); margin-top:7px; }
   /* ── suite directory ── */
   .suite { margin:14px 0 20px; }
   .suite-group { margin-bottom:18px; }
@@ -275,7 +276,7 @@
     ('sector',            '🗂️', t('Sector Desk','板块台'),     'china_sector_desk.html',          t('Sector momentum desk','板块动能台'))
   ] %}
   {%- set _DESK_SURF_KEY = {'news':'news','policy':'policy','altdata':'altdata','radar':'radar','special_situations':'special_situations'} %}
-  <h2 class="sec">🖥️ {{ t('Desk Status Board', '面板状态') }}</h2>
+  <h2 class="sec">{{ t('Desk Status Board', '面板状态') }}</h2>
   <div class="desks">
     {%- for key, icon, label, href, desc in _DESKS %}
       {%- set _surf_key = _DESK_SURF_KEY.get(key) %}
@@ -308,7 +309,7 @@
   {# ── C. POLICY PHRASE SHIFTS CARD (new v4) ── #}
   {% if b.policy_phrase %}
   {%- set _pp = b.policy_phrase %}
-  <h2 class="sec">📜 {{ t('Policy Phrase Shifts', '政策表述变化') }}</h2>
+  <h2 class="sec">{{ t('Policy Phrase Shifts', '政策表述变化') }}</h2>
   <div class="pp-card">
     <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px">
       <span style="font-size:12px;color:var(--muted)">
@@ -316,7 +317,7 @@
         · <b>{{ _pp.n_events_recent }}</b> {{ t('events','条') }}
       </span>
       <span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · salience-only</span><span class="l-zh">累积中 · 仅显著性</span></span>
-      <a href="china_policy_watch.html" style="font-size:11px;color:var(--link);text-decoration:none;margin-left:auto">{{ t('See policy watch →','查看政策观察 →') }}</a>
+      <a href="china_policy_watch.html" style="font-size:11px;color:var(--ink-link, var(--link));text-decoration:none;margin-left:auto">{{ t('See policy watch →','查看政策观察 →') }}</a>
     </div>
     {%- if _pp.cold_start_organs %}
     <p class="pp-cold">{{ t('Cold-start feeds (no prior window yet — cannot detect APPEARED/DROPPED):','刚启动的数据源（还没有历史窗口，无法判断新增或消失）：') }} {{ _pp.cold_start_organs | join(', ') }}</p>
@@ -380,7 +381,7 @@
   {# ── D. NARRATIVE DIVERGENCE CHIP (new v4) ── #}
   {% if b.narrative_divergence %}
   {%- set _nd = b.narrative_divergence %}
-  <h2 class="sec">🌐 {{ t('Onshore / Offshore Narrative Divergence', '境内/境外叙事背离') }}</h2>
+  <h2 class="sec">{{ t('Onshore / Offshore Narrative Divergence', '境内/境外叙事背离') }}</h2>
   <div class="nd-chip">
     <div>
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">{{ t('Tone divergence z','语调背离z值') }}</div>
@@ -424,7 +425,7 @@
 
   {# ── F. CENTRAL SYNTHESIS ── #}
   {% if b.conviction %}
-  <h2 class="sec">🧩 {{ t('Cross-surface conviction','跨面板共振') }}</h2>
+  <h2 class="sec">{{ t('Cross-surface conviction','跨面板共振') }}</h2>
   <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Independence-weighted confluence across radar · alt-data · news · policy · risk-appetite, ranked by OPPORTUNITY (edge-remaining × leading-gap) — leading ideas promoted, priced/confirmed ones demoted. Context salience, never a position size.','跨雷达·另类数据·新闻·政策·风险偏好的独立性加权共振，按机会度（剩余空间×领先差）排序——领先的提升、已定价的降级。仅为显著性，绝非仓位。') }}</p>
   <table class="syn">
     <thead><tr><th>{{ t('Sector','板块') }}</th><th>{{ t('Opportunity','机会度') }}</th><th>{{ t('Stage','阶段') }}</th><th>{{ t('Conviction','置信') }}</th><th>{{ t('Edge left','剩余空间') }}</th><th>{{ t('Surfaces','面板') }}</th><th>{{ t('Read','解读') }}</th></tr></thead>
@@ -460,7 +461,7 @@
 
   {# ── G. FLAGGED TICKERS ── #}
   {% if b.flagged_tickers %}
-  <h2 class="sec">🏷️ {{ t('Flagged tickers','标记个股') }}</h2>
+  <h2 class="sec">{{ t('Flagged tickers','标记个股') }}</h2>
   <p style="font-size:12px;color:var(--muted);margin:2px 0 4px">{{ t('Names lit by ≥2 surfaces (alt-data accumulation inside a radar-lit, news-covered theme). Context watchlist, not a recommendation.','被≥2个面板点亮的个股（位于雷达点亮、新闻覆盖主题内的另类数据吸筹）。背景自选，非推荐。') }}</p>
   <div class="flags">
     {% for f in b.flagged_tickers %}
@@ -474,7 +475,7 @@
 
   {# ── H. CAUSAL CHAINS ── #}
   {% if b.analysis and b.analysis.chains %}
-  <h2 class="sec">🔗 {{ t('Transmission chains','传导链条') }}</h2>
+  <h2 class="sec">{{ t('Transmission chains','传导链条') }}</h2>
   {% for ch in b.analysis.chains %}
   <div class="chain">
     <div class="hd"><span class="chband ch-{{ ch.band }}">{{ t(ch.band|capitalize, ({'aligned':'一致','forming':'形成中','dormant':'休眠'}).get(ch.band, ch.band)) }}</span> {{ bl(ch.label_en, ch.label_zh) }} <span class="mut" style="font-weight:400">{{ ch.k }}/{{ ch.n }}</span></div>
@@ -491,7 +492,7 @@
   {% endif %}
 
   {# ── I. INTELLIGENCE SPOKE CARDS ── #}
-  <h2 class="sec">🗂️ {{ t('Intelligence Surfaces','情报面板') }}</h2>
+  <h2 class="sec">{{ t('Intelligence Surfaces','情报面板') }}</h2>
   <div class="cards">
     <a class="scard" href="china_news.html">
       <div class="ic">📰</div><div class="nm">{{ t('China News','中国财经新闻') }}</div>
@@ -532,7 +533,7 @@
         </div>
         <div class="age">{{ _ss.asof }}</div>
         {%- if _ss.top_unlock and _ss.top_unlock.large_flag %}
-          <div style="font-size:10px;color:#e0973a;margin-top:3px">⚠ {{ t('large unlock flagged','大宗解禁预警') }}</div>
+          <div style="font-size:10px;color:var(--ink-warn, var(--warn));margin-top:3px">⚠ {{ t('large unlock flagged','大宗解禁预警') }}</div>
         {%- endif %}
       {% else %}<div class="v">—</div>{% endif %}
       <div class="go">{{ t('Open special sits →','打开特殊情景 →') }}</div>
@@ -541,13 +542,13 @@
 
   {# ── J. NEXT CATALYSTS + STANDING CALLS ── #}
   {% if b.news and b.news.scheduled_ahead %}
-  <h2 class="sec">📅 {{ t('Next catalysts','即将催化') }}</h2>
+  <h2 class="sec">{{ t('Next catalysts','即将催化') }}</h2>
   <div class="strip">
     {% for ev in b.news.scheduled_ahead %}<span class="sx"><b>{{ ev.md }}</b> · {{ bl(ev.name_en, ev.name_zh) }}</span>{% endfor %}
   </div>
   {% endif %}
   {% if b.policy and b.policy.predictions %}
-  <h2 class="sec">🔮 {{ t('Standing policy calls','政策预测') }}</h2>
+  <h2 class="sec">{{ t('Standing policy calls','政策预测') }}</h2>
   <div class="strip">
     {% for p in b.policy.predictions %}<span class="sx">{{ p }}</span>{% endfor %}
   </div>
@@ -560,14 +561,14 @@
   {# cmd_full is the full command.json artifact loaded separately by the builder #}
   {%- if cmd_full and cmd_full.command %}
   {%- set _cmd = cmd_full %}
-  <h2 class="sec">⚡ {{ t('China Command List','中国指挥清单') }}</h2>
+  <h2 class="sec">{{ t('China Command List','中国指挥清单') }}</h2>
   <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
     {{ t('Ranked by opportunity = signal × edge-remaining × leading-gap — NOT by desk agreement. Emerging = altdata/radar leading while news/board are still quiet.','按机会评分排序 = 信号 × 剩余边际 × 领先差值 — 非按共识排序。萌芽 = 另类数据/雷达领先，新闻/买入板尚静。') }}
     <span class="mode-badge">{{ t('context only','仅供参考') }}</span>
     &nbsp;{{ t('Universe','覆盖') }}: {{ _cmd.n_universe or '—' }} &nbsp;·&nbsp;
     {{ t('Emerging','萌芽') }}: {{ (_cmd.counts or {}).get('emerging',0) }} &nbsp;·&nbsp;
     {{ t('Early','早期') }}: {{ (_cmd.counts or {}).get('early',0) }}
-    {%- if (_cmd.counts or {}).get('veto_blind') %} &nbsp;·&nbsp; <span style="color:#e0973a">{{ t('No-price','无价格') }}: {{ (_cmd.counts or {}).get('veto_blind',0) }}</span>{%- endif %}
+    {%- if (_cmd.counts or {}).get('veto_blind') %} &nbsp;·&nbsp; <span style="color:var(--ink-warn, var(--warn))">{{ t('No-price','无价格') }}: {{ (_cmd.counts or {}).get('veto_blind',0) }}</span>{%- endif %}
   </p>
   {%- set _rows = _cmd.command %}
   {%- set _show_n = [15, _rows|length]|min %}
@@ -697,7 +698,7 @@
 
   {# ── K3. DISCOVERY QUEUE ── #}
   {%- if cmd_full and cmd_full.discovery %}
-  <h2 class="sec">🔭 {{ t('Discovery Queue','发现队列') }}</h2>
+  <h2 class="sec">{{ t('Discovery Queue','发现队列') }}</h2>
   <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
     {{ t('Off-desk leading signals — names not yet on any desk. Margin Velocity lane is experimental (Phase-0 accruing, contributes zero to ranking).','离板块领先信号——尚未出现在任何台的个股。融资速度栏为实验性（阶段0积累，不计入排名）。') }}
   </p>
@@ -713,11 +714,11 @@
         <span class="lane-chip">{{ t((_LANE_EN.get(c.source) or c.source), (_LANE_ZH.get(c.source) or c.source)) }}</span>
         {%- if c.experimental %}<span class="exp-chip">{{ t('Experimental','实验性') }}</span>{%- endif %}
         {%- if c.off_desk %}<span class="offdesk-chip">{{ t('Off-desk','离板块') }}</span>{%- endif %}
-        {%- if c.venue %}<span class="lane-chip" style="color:var(--link)">{{ c.venue }}</span>{%- endif %}
+        {%- if c.venue %}<span class="lane-chip" style="color:var(--ink-link, var(--link))">{{ c.venue }}</span>{%- endif %}
       </div>
       <div class="disc-score-bar" style="width:{{ (c.disc_score or 0)*100 }}%"></div>
       {%- if c.experimental %}
-      <div style="font-size:10px;color:#e0973a;margin-top:4px">{{ t('⚠ Phase-0 accruing — not yet in ranking','⚠ 阶段0积累中——暂不计入排名') }}</div>
+      <div style="font-size:10px;color:var(--ink-warn, var(--warn));margin-top:4px">{{ t('⚠ Phase-0 accruing — not yet in ranking','⚠ 阶段0积累中——暂不计入排名') }}</div>
       {%- endif %}
     </div>
     {%- endfor %}
@@ -727,7 +728,7 @@
   {# ── K4. ANALOGS CARD (degrade-safe; hidden when artifact absent) ── #}
   {%- if b.analogs %}
   {%- set _an = b.analogs %}
-  <h2 class="sec">🕰️ {{ t('Cycle Context & Historical Analogs','周期背景与历史类比') }}</h2>
+  <h2 class="sec">{{ t('Cycle Context & Historical Analogs','周期背景与历史类比') }}</h2>
   <div class="analogs-card">
     <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
       {{ t('Historical analog periods sharing the current macro fingerprint. Descriptive fan only — not a forecast.','与当前宏观指纹相近的历史类比区间。仅为描述性分布——非预测。') }}
@@ -764,7 +765,7 @@
     {%- endif %}
     {%- if _an.analogs %}
     <details style="margin-top:8px">
-      <summary style="cursor:pointer;font-size:11.5px;color:var(--link)">{{ t('Analog periods','类比区间') }} ({{ _an.n_analogs or 0 }}) ▸</summary>
+      <summary style="cursor:pointer;font-size:11.5px;color:var(--ink-link, var(--link))">{{ t('Analog periods','类比区间') }} ({{ _an.n_analogs or 0 }}) ▸</summary>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px">
       {%- for a in _an.analogs[:12] %}
         <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
@@ -782,7 +783,7 @@
   {%- endif %}
 
   {# ── L. CHINA SUITE DIRECTORY ── #}
-  <h2 class="sec">🗺️ {{ t('China Suite Directory','中国页面目录') }}</h2>
+  <h2 class="sec">{{ t('China Suite Directory','中国页面目录') }}</h2>
   <div class="suite">
 
     <div class="suite-group">

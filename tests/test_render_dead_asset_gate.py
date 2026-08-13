@@ -32,16 +32,57 @@ def _porcelain_rebase_at(lane: Path, text: str) -> int:
     return text.index("git pull --rebase --autostash -X theirs origin main")
 
 
-def test_crypto_page_restores_current_house_style_asset_contract() -> None:
-    page = _text(ROOT / "site" / "crypto.html")
-    css = ROOT / "site" / "assets" / "css" / "ab184288.css"
+#: The dangling reference the incident actually published: site/crypto.html
+#: pointed at assets/css/94a4f2e3.css, which no longer existed, so the page
+#: shipped unstyled.  Human-reviewed and incident-specific — no lane can move it,
+#: and it is what keeps the derived clauses below from being satisfied by just any
+#: resolving reference.
+_INCIDENT_DEAD_CSS = "94a4f2e3.css"
 
-    assert 'href="assets/css/ab184288.css?v=ab184288"' in page
-    assert "94a4f2e3.css" not in page
-    assert css.is_file()
-    assert hashlib.sha256(css.read_bytes()).hexdigest() == (
-        "ab1842887865b3dba40cc9c760f0816f92de604effe39da72f9289a042e00e8c"
+_CONTENT_ADDRESSED_CSS = re.compile(r'href="assets/css/([0-9a-f]{8})\.css\?v=\1"')
+
+
+def test_crypto_page_restores_current_house_style_asset_contract() -> None:
+    """The page's content-addressed stylesheet must RESOLVE.  The hash is weather.
+
+    Pinning the hash re-armed the very bomb this fence exists to catch, one axis
+    over.  A content-addressed name changes by construction whenever the bundle
+    body does, so ``ab184288`` was only ever the name of one night's build: the
+    2026-08-13 ``scope=all`` re-render (eb90d4ff945 — the backlog flush after a
+    stale ``index.lock`` had frozen every render for seven hours) deleted
+    ``ab184288.css`` and published ``54cf9bc6.css`` in the same commit.  This case
+    then went red against a site with NO dead reference at all:
+    ``scripts/check_site_asset_refs.py site`` — the guard the other cases in this
+    file require the render lanes to run BEFORE they commit — reports every
+    template-decided href under ``site/`` resolving, 0 gaps.
+
+    So assert what the incident was about and let the hash move: the page carries a
+    content-addressed stylesheet, its file EXISTS, its name is its own content
+    digest (a stale body served under a fresh name is the same defect wearing a
+    different hash), the ``?v=`` stamp matches the name it busts, and the dangling
+    reference from the incident never comes back.
+    """
+
+    page = _text(ROOT / "site" / "crypto.html")
+
+    assert _INCIDENT_DEAD_CSS not in page
+    digests = _CONTENT_ADDRESSED_CSS.findall(page)
+    # Anti-vacuity: a page that lost its stylesheet altogether would satisfy every
+    # clause below by having nothing left to check.
+    assert digests, (
+        "site/crypto.html carries no content-addressed stylesheet at all — the "
+        "house-style asset contract this fence guards is gone, not merely re-hashed"
     )
+    for digest in digests:
+        css = ROOT / "site" / "assets" / "css" / f"{digest}.css"
+        assert css.is_file(), (
+            f"crypto.html references a dangling stylesheet: {css.name} is not on "
+            "disk — this is the incident, not a re-hash"
+        )
+        assert hashlib.sha256(css.read_bytes()).hexdigest().startswith(digest), (
+            f"{css.name} is not its own content digest — a content-addressed URL "
+            "that does not address its content cannot be cache-busted"
+        )
 
 
 def test_render_lanes_guard_the_finalized_tree_before_commit() -> None:

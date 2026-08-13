@@ -26,7 +26,7 @@
          border: 1px solid color-mix(in srgb, var(--ic-col) 38%, transparent); }
   .igx .igx-glance { font-size: 12px; color: var(--text); margin-top: 3px;
          font-weight: 600; }
-  .igx .igx-fragile { color: var(--warn); font-size: 11px; margin-top: 2px; }
+  .igx .igx-fragile { color: var(--ink-warn, var(--warn)); font-size: 11px; margin-top: 2px; }
   /* chip rows (8 broad chips) */
   .igx .igx-chips { display: flex; flex-wrap: wrap; gap: 5px; }
   .igx .igx-chip { display: inline-flex; align-items: center; gap: 4px;
@@ -47,10 +47,10 @@
   .igx .igx-theme { display: inline-flex; align-items: center; gap: 4px;
          padding: 2px 8px; border-radius: 6px; font-size: 10.5px;
          background: var(--panel); border: 1px solid var(--line); color: var(--text); }
-  .igx .igx-theme.igniting { color: var(--ok); font-weight: 700;
+  .igx .igx-theme.igniting { color: var(--ink-ok, var(--ok)); font-weight: 700;
          border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
          background: color-mix(in srgb, var(--ok) 10%, var(--panel)); }
-  .igx .igx-theme.running { color: var(--info); font-weight: 600;
+  .igx .igx-theme.running { color: var(--ink-info, var(--info)); font-weight: 600;
          border-color: color-mix(in srgb, var(--info) 35%, var(--line)); }
   .igx .igx-theme.fading { color: var(--muted); }
   .igx .igx-theme-score { font-size: 9.5px; font-variant-numeric: tabular-nums;
@@ -90,7 +90,7 @@
          border: 1px solid color-mix(in srgb, var(--ic-col) 36%, transparent); white-space: nowrap; }
   .igs .igs-glance { font-size: 12.5px; font-weight: 600; color: var(--text);
          flex: 1 1 240px; min-width: 0; }
-  .igs .igs-frag { color: var(--warn); }
+  .igs .igs-frag { color: var(--ink-warn, var(--warn)); }
   /* evidence row */
   .igs .igs-ev { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-top: 9px; }
   .igs .igs-k { font-size: 10px; color: var(--muted); font-weight: 700;
@@ -109,10 +109,10 @@
          padding: 2px 9px; border-radius: 6px; font-size: 11px; white-space: nowrap;
          background: var(--panel2); border: 1px solid var(--line); color: var(--text); }
   .igs .igs-theme b { font-variant-numeric: tabular-nums; font-weight: 700; }
-  .igs .igs-theme.igniting { color: var(--ok);
+  .igs .igs-theme.igniting { color: var(--ink-ok, var(--ok));
          border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
          background: color-mix(in srgb, var(--ok) 10%, var(--panel)); }
-  .igs .igs-theme.running { color: var(--info);
+  .igs .igs-theme.running { color: var(--ink-info, var(--info));
          border-color: color-mix(in srgb, var(--info) 35%, var(--line)); }
   .igs .igs-theme.fading { color: var(--muted); }
   .igs .igs-rank { font-size: 10px; font-weight: 800; opacity: .6;

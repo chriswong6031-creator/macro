@@ -36,10 +36,24 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_vector")
 
 # Glassnode/Swissblock light palette (extracted from their CSS, VECTOR_SKELETON.md)
+#
+# Text ramp (ink > text > muted > faint) is CONTRAST-CALIBRATED — do not "restore"
+# the softer greys. Measured 2026-08-12 across the four light surfaces this family
+# actually paints on (#ffffff panel, #f7f8fa canvas, #eef1f6 panel2, #e8ebf1 the
+# soft-contrast canvas), worst-surface ratio in brackets:
+#   ink   #0B1733 [14.8]  ·  text  #344054 [8.8]
+#   muted #4C5A6C [ 6.8]  ·  faint #5F6A7A [4.6]
+# The shipped values were muted #6F6F6F [4.2] and faint #A0A0A0 [2.19] — a hard
+# WCAG AA failure on every page of this family, and the estate's single largest
+# measured contrast defect (45 distinct failing rules over a 20-page probe; the
+# worst site read 1.71:1). --faint carries footers, as-of stamps, axis sub-labels
+# and legends, so it is body copy, not decoration: the AA floor applies.
+# The ramp is also re-hued off neutral grey onto the estate's slate family so this
+# family reads as one product with theme.css's --muted (#5d6b7e / #4c5a6c).
 C = {
     "blue": "#285FFF", "indigo": "#4559DC", "blue_dk": "#1F5EFF",
     "r1": "#E2E7FC", "r2": "#B8C6FA", "r3": "#8FA5F6", "r4": "#6888FB", "r5": "#285FFF",
-    "ink": "#0B1733", "text": "#344054", "muted": "#6F6F6F", "faint": "#A0A0A0",
+    "ink": "#0B1733", "text": "#344054", "muted": "#4C5A6C", "faint": "#5F6A7A",
     "red": "#D30B0B", "redfill": "#FEB5B5", "amber": "#F5AD42",
     # diverging BULL/BEAR tone semantic actually shipped: bull=BLUE (the brand accent),
     # bear=RED (distinct from the saturated alert --red), warn=amber. So direction reads
@@ -2234,7 +2248,7 @@ html[data-lang="zh"] .card-h{letter-spacing:0}
 .bar i{display:block;height:100%;border-radius:999px}
 .bar.b-risk i{background:linear-gradient(90deg,var(--act),var(--warn))}
 .bar.b-health i{background:linear-gradient(90deg,var(--warn),var(--ok))}
-.go{margin-top:auto;font-weight:700;color:var(--accent);font-size:12px}
+/* .go is TEXT on the card's white face. The raw hub accents measure 2.30-4.67:1 there (orange #f7931a is the worst); mixing 58% of the accent with --text keeps each card's identity and lands 4.9-7.9:1. Same idiom as the .pill rule below, which was already doing this at 48% and is left alone. */.go{margin-top:auto;font-weight:700;color:color-mix(in srgb,var(--accent) 58%,var(--text));font-size:12px}
 .go::after{content:' →'}
 /* market cards: header chip + two clearly-labelled split BUTTONS (Macro / Stock) */
 .card .pill.hd{margin-left:auto}
@@ -2735,7 +2749,7 @@ html[data-theme="light"] #sky-sun{display:none}
 # fold these rules back into _GLOBE_HUB_CSS, or the next render goes red again.
 _HUB_CRITICAL_CSS = r"""<style>
 body{padding:22px max(20px,env(safe-area-inset-right)) calc(56px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
-html[data-theme="light"] .pill{color:color-mix(in srgb,var(--accent) 48%,var(--text))}
+html[data-theme="light"] .pill{color:color-mix(in srgb,var(--accent) 42%,var(--text))}
 </style>"""
 
 _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global macro regime globe">
@@ -3428,7 +3442,14 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             '<title>' + _seo_title + '</title>\n'
             + _seo +
             _jsonld +
-            "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('soft-contrast');}catch(e){}</script>\n"
+            # Theme boot — the ONE house contract (theme.css :root is the dark plane;
+            # html[data-theme="light"] overrides it). This hub used to *force* the
+            # hour-derived theme AND persist theme+themeAuto for every first-time
+            # visitor, so whichever page a reader happened to land on silently decided
+            # the theme for the whole site and opted them into auto-switching they
+            # never chose. Auto stays a real setting (the Auto segment writes
+            # themeAuto=1); the hub now only HONOURS it.
+            "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(a)t=tod;document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('soft-contrast');}catch(e){}</script>\n"
             # resolve the viewer's HOME [lon,lat] from the browser timezone so the
             # deferred globe opens centred on their country — window.__mmHome. Falls
             # back to a UTC-offset longitude (15°/hr) + locale-guessed latitude.

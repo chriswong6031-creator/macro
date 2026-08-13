@@ -78,12 +78,12 @@
   }
   .row-pop-mark{
     width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:11px;
-    font-size:15px;line-height:1;color:var(--link);
+    font-size:15px;line-height:1;color:var(--ink-link, var(--link));
     border:1px solid color-mix(in srgb,var(--link) 24%,var(--line));
     background:color-mix(in srgb,var(--link) 9%,var(--panel2));
   }
   .row-pop-mark--theme{
-    color:var(--up);border-color:color-mix(in srgb,var(--up) 24%,var(--line));
+    color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 24%,var(--line));
     background:color-mix(in srgb,var(--up) 9%,var(--panel2));
   }
   .row-pop-heading{display:flex;min-width:0;flex-direction:column;gap:2px}
@@ -141,9 +141,9 @@
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:15px;
     line-height:1.1;font-variant-numeric:tabular-nums;color:var(--text);
   }
-  .row-pop-stat>strong.up,.row-pop-stat>strong .up{color:var(--up)}
-  .row-pop-stat>strong.dn,.row-pop-stat>strong .dn{color:var(--down)}
-  .row-pop-stat>strong.warn{color:var(--warn)}
+  .row-pop-stat>strong.up,.row-pop-stat>strong .up{color:var(--ink-up, var(--up))}
+  .row-pop-stat>strong.dn,.row-pop-stat>strong .dn{color:var(--ink-down, var(--down))}
+  .row-pop-stat>strong.warn{color:var(--ink-warn, var(--warn))}
   .row-pop-stat small{margin-top:3px;font-size:9px;color:var(--muted)}
   {#- Score gauge. The caption is a SIBLING of the disc, never a child: a reader
       with a minimum-font-size setting has it clamped up, and outside the disc that
@@ -173,9 +173,9 @@
     padding:2px 6px;border-radius:999px;font-size:8.5px;font-weight:700;
     background:color-mix(in srgb,currentColor 9%,transparent);
   }
-  .row-pop-trust>span.up{color:var(--up)}
-  .row-pop-trust>span.warn{color:var(--warn)}
-  .row-pop-trust>span.dn{color:var(--down)}
+  .row-pop-trust>span.up{color:var(--ink-up, var(--up))}
+  .row-pop-trust>span.warn{color:var(--ink-warn, var(--warn))}
+  .row-pop-trust>span.dn{color:var(--ink-down, var(--down))}
   .row-pop-leaders{display:flex;align-items:center;gap:10px;margin:0 14px 11px;padding:0 2px}
   .row-pop-leaders>span{
     flex:none;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
@@ -210,7 +210,7 @@
     font-size:9px;color:var(--muted);
   }
   .row-pop-decision-ft b{
-    flex:none;color:var(--link);font-size:9px;letter-spacing:.04em;text-transform:uppercase;
+    flex:none;color:var(--ink-link, var(--link));font-size:9px;letter-spacing:.04em;text-transform:uppercase;
   }
   [data-theme="light"] .row-pop:has(> .row-pop-decision){
     box-shadow:0 18px 48px rgba(31,41,55,.18),0 2px 8px rgba(31,41,55,.1);
