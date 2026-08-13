@@ -31,10 +31,10 @@ import hashlib
 import json
 import logging
 import math
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, NamedTuple
 
 import pandas as pd
 
@@ -45,6 +45,14 @@ from engine.ai_desk import _GICS_ETF, _level_asof
 from engine import ai_desk as _aidesk  # module ref: tests monkeypatch ai_desk._close_series
 from engine.ai_desk_scorer import _close_at, _covers
 from lib import config
+# The canonical session ruler. Rule-computed NYSE sessions, stdlib-only, holiday
+# aware — see `resolve_horizon_window` for why the price-store index is NOT the
+# session source of record here.
+from lib.nyse_calendar import (
+    last_session_on_or_before,
+    session_n_forward,
+    sessions_between,
+)
 
 log = logging.getLogger("qledger")
 
@@ -87,6 +95,215 @@ DIRECTIONS = (-1, 0, 1)                     # 0 == salience-only (§2.3, D5)
 # ≤ its own horizon_d (D2 — "grade every open claim at 5/21/63d simultaneously").
 GRADE_HORIZONS = (5, 21, 63)
 
+# --------------------------------------------------------------------------- #
+# THE HORIZON CLOCK (P0a — explicit horizon-unit contract)
+# --------------------------------------------------------------------------- #
+# THE DEFECT THIS REPAIRS. `horizon_d` used to be a bare integer with NO declared
+# unit, and qledger itself read it two different ways:
+#   * make_claim()  -> check_by = asof + pd.offsets.BusinessDay(horizon_d)
+#   * _fwd_ret()    -> exit     = fill + pd.Timedelta(days=horizon_d)  [CALENDAR]
+# From a Friday asof=2026-08-07 those diverge by +2d at horizon_d=5, +4d at 7 and
+# +10d at 21 — the falsifier deadline a human reads and the window actually graded
+# were ten days apart at the 21d rung. Meanwhile the emitters disagreed about what
+# the number even meant: policy_intent_desk/stock_desk/thematic_desk/altdata_brain
+# document "integer TRADING days", build_whitehouse passes CALENDAR banner_days,
+# and source_registry bypassed _fwd_ret entirely to compute an exact trading-session
+# exit precisely because an approximated calendar horizon is unsafe.
+#
+# THE CONTRACT.
+#   1. A new claim declares `horizon_unit` from this narrow vocabulary.
+#   2. `horizon_d` stays the numeric DECLARED ruler and is NEVER converted — a
+#      policy claim stays horizon_d=126/trading_days, a whitehouse claim stays
+#      horizon_d=7/calendar_days.
+#   3. The clock interprets the number ACCORDING TO ITS UNIT.
+#   4. ONE resolver (`resolve_horizon_window`) answers check_by, maturity, the
+#      graded window and the rendered ruler. There is no second implementation.
+#   5. The window is resolved ONCE per (claim, horizon) and SHARED by subject,
+#      bench and control, so no leg can silently receive a different horizon.
+HORIZON_UNIT_TRADING = "trading_days"
+HORIZON_UNIT_CALENDAR = "calendar_days"
+HORIZON_UNITS = (HORIZON_UNIT_TRADING, HORIZON_UNIT_CALENDAR)
+
+# The grading-clock basis stamped on every new grade row. Rows written before this
+# contract carry NO clock stamp and are read as CLOCK_LEGACY — the immutable
+# legacy grading basis. Legacy rows are NEVER rewritten and never re-labelled
+# (same house pattern as the fill_convention discontinuity below).
+CLOCK_LEGACY = "legacy_calendar_unstamped"
+CLOCK_V1 = "explicit_unit_v1"
+
+# Search bound for "the next open session": the longest NYSE closed stretch is a
+# weekend with adjacent holidays (Christmas/New Year, a mourning closure), well
+# under two weeks. Bounded rather than a `while` loop so a broken calendar rule
+# fails closed (None) instead of spinning.
+_MAX_CLOSED_STRETCH_DAYS = 15
+
+
+class HorizonClockMismatch(ValueError):
+    """Raised when observations produced under DIFFERENT grading clocks would be
+    pooled. Two rows both saying ``horizon_d=21`` are not comparable when one was
+    graded on the legacy calendar approximation and the other on 21 exchange
+    sessions — pooling them launders a measurement-basis change into a track
+    record. Fail closed."""
+
+
+class HorizonWindow(NamedTuple):
+    """The ONE resolved window every clock consumer reads.
+
+    entry_anchor  the effective entry date (post-embargo asof); may be a non-session
+    fill_date     the shared next-bar fill SESSION (first session STRICTLY after
+                  the anchor) — one date for every leg, so subject/bench/control
+                  can never measure different horizon lengths
+    exit_date     the authoritative exit boundary in the DECLARED unit
+    coverage_date the session a price store must cover for this window to be
+                  matured (== exit_date under trading_days; the last session
+                  on/before exit_date under calendar_days, since a calendar exit
+                  can land on a weekend or a holiday)
+    """
+    entry_anchor: date
+    fill_date: date
+    exit_date: date
+    coverage_date: date
+    horizon_d: int
+    horizon_unit: str
+    clock_version: str
+
+
+def _as_date(value: Any) -> date:
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    return pd.Timestamp(value).date()
+
+
+def next_session_strictly_after(d: date) -> date | None:
+    """First NYSE session STRICTLY after `d` (the shared next-bar fill session).
+
+    `d` itself need not be a session — a claim's asof can be a Saturday or a
+    holiday. None when the calendar cannot find one inside the longest possible
+    closed stretch (fail closed rather than invent a fill)."""
+    d = _as_date(d)
+    forward = sessions_between(d + timedelta(days=1),
+                               d + timedelta(days=_MAX_CLOSED_STRETCH_DAYS))
+    return forward[0] if forward else None
+
+
+def resolve_horizon_window(entry_anchor: Any, horizon_d: int,
+                           horizon_unit: str) -> HorizonWindow | None:
+    """THE clock resolver (contract rule 4). Every consumer — `check_by`,
+    maturity, the graded window, the rendered ruler — derives from this and only
+    this. None when the window cannot be resolved (fail closed).
+
+    trading_days: the exit is resolved by canonical exchange SESSION arithmetic
+    via `lib.nyse_calendar` — NOT `pd.Timedelta`, NOT a 1.4x fudge, and NOT
+    `pd.offsets.BusinessDay` (BusinessDay counts Mon–Fri and so silently walks
+    THROUGH market holidays: from a Wednesday before Thanksgiving, 2 BusinessDays
+    lands on the Friday half-session having counted a day the market was shut).
+
+    WHY `lib.nyse_calendar` AND NOT THE PRICE-STORE INDEX. The store index is a
+    record of what was COLLECTED, not of what the exchange held: it has known
+    holes (`collectors/cboe.KNOWN_PERMANENT_GAPS`, and `lib.nyse_calendar` exists
+    precisely because a frozen store cannot detect its own staleness), and it
+    differs PER TICKER — so a store-derived ruler would hand subject, bench and
+    control three different horizon lengths, which is the exact failure rule 5
+    forbids. `lib.nyse_calendar` is rule-computed, stdlib-only, holiday-aware and
+    identical for every leg. It is already the house pattern for this arithmetic
+    (`engine/source_registry._add_trading_days`, `engine/basket_turn_watch.py`).
+    The store still decides MATURITY (`coverage_date`) — it just does not get to
+    define what a session is.
+    """
+    if horizon_unit not in HORIZON_UNITS:
+        raise ValueError(
+            f"horizon_unit must be one of {HORIZON_UNITS}, got {horizon_unit!r}")
+    try:
+        h = int(horizon_d)
+    except Exception:  # noqa: BLE001
+        return None
+    if h <= 0:
+        return None
+    try:
+        anchor = _as_date(entry_anchor)
+    except Exception:  # noqa: BLE001
+        return None
+
+    fill = next_session_strictly_after(anchor)
+    if fill is None:
+        return None
+
+    if horizon_unit == HORIZON_UNIT_TRADING:
+        exit_date = session_n_forward(fill, h)
+        if exit_date is None:
+            return None
+        coverage = exit_date
+    else:
+        exit_date = fill + timedelta(days=h)
+        # A calendar exit can land on a weekend/holiday; the bar that closes the
+        # window is the last session on or before it.
+        coverage = last_session_on_or_before(exit_date)
+        if coverage < fill:
+            return None
+
+    return HorizonWindow(
+        entry_anchor=anchor,
+        fill_date=fill,
+        exit_date=exit_date,
+        coverage_date=coverage,
+        horizon_d=h,
+        horizon_unit=horizon_unit,
+        clock_version=CLOCK_V1,
+    )
+
+
+def claim_horizon_unit(claim: dict) -> str | None:
+    """The claim's DECLARED horizon unit, or None for a legacy (unitless) claim.
+    An unrecognised value reads as None — a claim is never silently promoted onto
+    the explicit clock on the strength of a typo."""
+    unit = claim.get("horizon_unit")
+    return unit if unit in HORIZON_UNITS else None
+
+
+def grade_clock_basis(grade: dict) -> str:
+    """The grading-clock basis a grade ROW was produced under.
+
+    ``CLOCK_LEGACY`` for every row lacking an explicit stamp (all rows written
+    before this contract) — mirroring how `fill_convention` reads absent rows as
+    ``asof_legacy``. Otherwise ``"<clock_version>:<horizon_unit>"``. Fail closed:
+    a stamped row whose unit is not in the vocabulary reads as legacy rather than
+    as a fourth, unnamed basis."""
+    cv = grade.get("clock_version")
+    unit = grade.get("horizon_unit")
+    if not cv or unit not in HORIZON_UNITS:
+        return CLOCK_LEGACY
+    return f"{cv}:{unit}"
+
+
+def partition_grades_by_clock(grades: Iterable[dict]) -> dict[str, list[dict]]:
+    """Split grade rows by `grade_clock_basis`. The pooling boundary."""
+    out: dict[str, list[dict]] = {}
+    for g in grades:
+        out.setdefault(grade_clock_basis(g), []).append(g)
+    return out
+
+
+def require_single_clock(grades: Iterable[dict], *, context: str = "") -> str:
+    """Assert every row shares ONE grading-clock basis; return it.
+
+    Raises `HorizonClockMismatch` on a mixed set. This is the refusal contract
+    rule for "different horizon units / clock versions cannot be silently
+    pooled" — it is asserted at the aggregation primitive, not left to callers
+    to remember. Returns ``CLOCK_LEGACY`` for an empty set (nothing to pool)."""
+    bases = sorted({grade_clock_basis(g) for g in grades})
+    if len(bases) > 1:
+        where = f" ({context})" if context else ""
+        raise HorizonClockMismatch(
+            f"refusing to pool grade rows across {len(bases)} grading-clock "
+            f"bases{where}: {bases}. horizon_d alone does not make two "
+            f"observations comparable — the legacy basis approximated the "
+            f"horizon in calendar days, the explicit-unit clock resolves it in "
+            f"the declared unit."
+        )
+    return bases[0] if bases else CLOCK_LEGACY
+
 # timestamp_quality enum + embargo, verbatim from [P2] / §2.2. `embargo` is the
 # minimum delay applied to the entry anchor before a claim is gradeable; the
 # special cases (EVENT_DATE / SNAPSHOT_DATE / CORRUPTED) are handled in
@@ -112,6 +329,11 @@ STATUS_REJECTED = "rejected"   # failed registration validation (kept for audit)
 STATE_UNGRADED = "UNGRADED"    # n_dates == 0
 STATE_ACCRUING = "ACCRUING"    # 0 < n_dates < GRADED_MIN_DATES
 STATE_GRADED = "GRADED"        # n_dates >= GRADED_MIN_DATES
+# P0a: the state a PROMOTION gate reports when a family's grades straddle two
+# grading-clock bases. Authority may not ride a selected basis, so the gate
+# refuses outright; the display tier selects-and-labels instead (see
+# `_select_single_clock_block`).
+STATE_MIXED_CLOCK = "MIXED_CLOCK"
 GRADED_MIN_DATES = 25          # §3: n_graded >= 25 DATES (not overlapping obs)
 
 
@@ -214,6 +436,14 @@ def _validate_claim(claim: dict) -> tuple[bool, str]:
         return False, "horizon_d not an int"
     if horizon_d <= 0:
         return False, f"horizon_d must be positive: {horizon_d}"
+
+    # P0a: an ABSENT horizon_unit is legal — it declares the LEGACY clock basis
+    # and is never re-labelled. A PRESENT one must be in the narrow vocabulary;
+    # a typo would otherwise read as legacy and silently grade on the old clock.
+    if "horizon_unit" in claim and claim.get("horizon_unit") is not None:
+        if claim.get("horizon_unit") not in HORIZON_UNITS:
+            return False, (f"horizon_unit not in {HORIZON_UNITS}: "
+                           f"{claim.get('horizon_unit')!r}")
 
     tq = claim.get("timestamp_quality")
     if tq not in TIMESTAMP_QUALITY:
@@ -491,6 +721,7 @@ def backfill_regime_stamps(root: Path | str | None = None) -> dict:
 def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
                direction: int, horizon_d: int,
                timestamp_quality: str,
+               horizon_unit: str | None = None,
                subject_level: float | None = None,
                bench: str | None = None,
                bench_level: float | None = None,
@@ -510,7 +741,16 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
     * `control` defaults to the sector-matched ETF derived from `sector`.
     * `entry_levels` is assembled as {subject, bench} — the altdata PIT model,
       generalised (subject key == scope_key).
-    * `check_by` defaults to asof + horizon_d business days (ai_desk convention).
+    * `horizon_unit` (P0a) DECLARES what the `horizon_d` number means:
+      'trading_days' or 'calendar_days'. The number itself is never converted.
+      Omitting it registers a LEGACY-clock claim graded by the pre-P0a calendar
+      approximation — supported so unmigrated callers keep their exact behaviour,
+      never as a silent declaration of either unit.
+    * `check_by` is the claim's OWN resolved exit boundary — the SAME
+      `resolve_horizon_window` answer the grader uses, so the falsifier deadline
+      a human reads and the window actually graded can no longer diverge (they
+      were 10 days apart at horizon_d=21 before this). Legacy (unitless) claims
+      keep the pre-P0a `asof + horizon_d business days` default untouched.
     """
     bench = bench or default_bench_for(scope_type, scope_key)
     if control is None:
@@ -523,11 +763,20 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
         entry_levels["bench"] = round(float(bench_level), 6)
 
     if check_by is None:
-        try:
-            check_by = (pd.Timestamp(asof) +
-                        pd.offsets.BusinessDay(int(horizon_d))).date().isoformat()
-        except Exception:  # noqa: BLE001
-            check_by = None
+        if horizon_unit in HORIZON_UNITS:
+            # ONE resolver, ONE anchor: check_by IS the authoritative exit the
+            # grader resolves. The anchor is the post-embargo entry date, the
+            # same one grade_claim() passes in — a DISCLOSURE_DATE claim shifts
+            # +1bd on BOTH sides or on neither.
+            win = resolve_horizon_window(
+                _entry_anchor(asof, timestamp_quality), horizon_d, horizon_unit)
+            check_by = win.exit_date.isoformat() if win is not None else None
+        else:
+            try:
+                check_by = (pd.Timestamp(asof) +
+                            pd.offsets.BusinessDay(int(horizon_d))).date().isoformat()
+            except Exception:  # noqa: BLE001
+                check_by = None
 
     claim: dict[str, Any] = {
         "desk": desk,
@@ -544,6 +793,13 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
         "is_placebo": bool(is_placebo),
         "claim_family": claim_family or desk,
     }
+    if horizon_unit is not None:
+        # Stamped ONLY when declared: an absent key is the LEGACY basis, and a
+        # written-in null would make every unmigrated caller look like it had
+        # declared something. Deliberately NOT part of `_claim_id` — a claim
+        # already registered under the legacy clock must keep its id (and be
+        # deduped away on re-registration), never fork into a second row.
+        claim["horizon_unit"] = horizon_unit
     if sector:
         claim["sector"] = sector
     if extra:
@@ -656,10 +912,62 @@ def _fwd_ret(ticker: str, root: Path, start_date: str, horizon_d: int,
         return None
 
 
+def _leg_ret_in_window(ticker: str, root: Path, window: HorizonWindow) -> float | None:
+    """Total return of ONE leg over the SHARED resolved window (contract rule 5).
+
+    Entry is the first close at or after the shared fill SESSION — which is by
+    construction strictly after the entry anchor, so the next-bar law is intact —
+    and the exit is the last close on or before the resolved exit boundary. The
+    window dates come from the resolver, never from this ticker's own index, so
+    subject, bench and control are measured over the same declared horizon.
+
+    None (never a shortened window silently graded) when the series is absent,
+    does not yet cover the window's `coverage_date`, or holds fewer than two bars
+    inside it."""
+    try:
+        s = _aidesk._close_series(ticker, root)
+        if s is None or s.empty:
+            return None
+        cover_ts = pd.Timestamp(window.coverage_date)
+        if s.index.max() < cover_ts:
+            return None                       # not matured for this leg
+        fill_ts = pd.Timestamp(window.fill_date)
+        exit_ts = pd.Timestamp(window.exit_date)
+        w = s[(s.index >= fill_ts) & (s.index <= exit_ts)]
+        if len(w) < 2:
+            return None
+        e0 = float(w.iloc[0])
+        if not e0:
+            return None
+        return round(float(w.iloc[-1]) / e0 - 1.0, 6)
+    except Exception as e:  # noqa: BLE001
+        log.debug("_leg_ret_in_window(%s,%s): %s", ticker, window, e)
+        return None
+
+
+def _matured_window(root: Path, window: HorizonWindow, today: date,
+                    tickers: Iterable[str]) -> bool:
+    """Maturity under the explicit clock — same resolver, no second arithmetic.
+
+    Matured when the resolved `coverage_date` has passed AND every leg's price
+    cache covers it. (`_matured` below is the LEGACY-clock twin and is left
+    exactly as it was: legacy rows must stay reproducible.)"""
+    try:
+        if today < window.coverage_date:
+            return False
+        end_ts = window.coverage_date.isoformat()
+        return all(_covers(t, root, end_ts) for t in tickers if t)
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _matured(root: Path, start_date: str, horizon_d: int,
              today: date, tickers: Iterable[str]) -> bool:
     """A horizon is matured when it is old enough AND every leg's price cache
-    covers the exit day (radar_ic._is_matured, generalised to N legs)."""
+    covers the exit day (radar_ic._is_matured, generalised to N legs).
+
+    LEGACY CLOCK ONLY (calendar-day approximation of an undeclared unit).
+    Explicit-unit claims resolve maturity through `_matured_window`."""
     try:
         snap = pd.Timestamp(start_date)
         if (pd.Timestamp(today) - snap).days < horizon_d:
@@ -696,17 +1004,27 @@ def _embargo_ok(claim: dict) -> tuple[bool, bool]:
     return bool(gradeable), bool(minutes > 0)
 
 
-def _entry_date(claim: dict) -> str:
-    """The effective entry date after embargo. DISCLOSURE_DATE shifts +1bd; all
-    others anchor at asof (the +15min PUBLISHER case cannot move a daily close)."""
-    asof = str(claim.get("asof"))
-    if claim.get("timestamp_quality") == "DISCLOSURE_DATE":
+def _entry_anchor(asof: str, timestamp_quality: str | None) -> str:
+    """The effective entry date after embargo, from the two fields that decide it.
+
+    DISCLOSURE_DATE shifts +1bd; all others anchor at asof (the +15min PUBLISHER
+    case cannot move a daily close). Extracted so `make_claim`'s `check_by` and
+    `grade_claim`'s window resolve from the SAME anchor — a check_by computed off
+    the raw asof while the grader anchored one business day later would reopen
+    the very divergence this contract closes."""
+    asof = str(asof)
+    if timestamp_quality == "DISCLOSURE_DATE":
         try:
             return (pd.Timestamp(asof) +
                     pd.offsets.BusinessDay(1)).date().isoformat()
         except Exception:  # noqa: BLE001
             return asof
     return asof
+
+
+def _entry_date(claim: dict) -> str:
+    """The effective entry date after embargo for a CLAIM (see `_entry_anchor`)."""
+    return _entry_anchor(str(claim.get("asof")), claim.get("timestamp_quality"))
 
 
 # --------------------------------------------------------------------------- #
@@ -727,6 +1045,14 @@ def grade_claim(claim: dict, root: Path | str | None = None,
     written before Stage B-e lack the field and are read as "asof_legacy";
     their graded values are never rewritten (keep-FIRST — the discontinuity
     is stamped, not silent).
+
+    P0a (the horizon clock): a claim that DECLARES a `horizon_unit` grades on
+    ONE window resolved by `resolve_horizon_window` and shared by subject, bench
+    and control, and its rows carry horizon_unit + clock_version +
+    clock_exit_date. A claim with no declared unit keeps the pre-P0a calendar
+    arithmetic byte-for-byte and its rows carry NO clock stamp — read as
+    ``CLOCK_LEGACY``. Same stamped-discontinuity pattern, same law: legacy grades
+    are never rewritten and the two bases are never pooled (`require_single_clock`).
 
     * `excess` = subject_ret - bench_ret (the primary leg).
     * `control_ret` = matched sector-control return (null when no control), for
@@ -755,16 +1081,48 @@ def grade_claim(claim: dict, root: Path | str | None = None,
     except Exception:  # noqa: BLE001
         return []
 
+    unit = claim_horizon_unit(claim)
+
     rows: list[dict] = []
     for h in in_scope_horizons(horizon_d):
         legs = [subject, bench] + ([control] if control else [])
-        if not _matured(root, start, h, today_dt, legs):
-            continue
-        subj = _fwd_ret(subject, root, start, h)
-        bench_ret = _fwd_ret(bench, root, start, h)
-        if subj is None or bench_ret is None:
-            continue
-        ctrl = _fwd_ret(control, root, start, h) if control else None
+
+        if unit is None:
+            # LEGACY CLOCK — the claim declared no unit, so it is graded by the
+            # pre-P0a calendar approximation and stamped as such. Never migrated,
+            # never re-labelled (§ legacy law).
+            if not _matured(root, start, h, today_dt, legs):
+                continue
+            subj = _fwd_ret(subject, root, start, h)
+            bench_ret = _fwd_ret(bench, root, start, h)
+            if subj is None or bench_ret is None:
+                continue
+            ctrl = _fwd_ret(control, root, start, h) if control else None
+            _, fill_ts = _fill_entry(subject, root, start)
+            fill_date = str(fill_ts.date()) if fill_ts is not None else None
+            clock_stamp: dict[str, Any] = {}
+        else:
+            # EXPLICIT CLOCK — ONE window resolved from the declared unit and
+            # SHARED by every leg (rules 3-5).
+            window = resolve_horizon_window(start, h, unit)
+            if window is None:
+                continue
+            if not _matured_window(root, window, today_dt, legs):
+                continue
+            subj = _leg_ret_in_window(subject, root, window)
+            bench_ret = _leg_ret_in_window(bench, root, window)
+            if subj is None or bench_ret is None:
+                continue
+            ctrl = (_leg_ret_in_window(control, root, window)
+                    if control else None)
+            fill_date = window.fill_date.isoformat()
+            clock_stamp = {
+                "horizon_unit": window.horizon_unit,
+                "clock_version": window.clock_version,
+                "clock_exit_date": window.exit_date.isoformat(),
+                "clock_coverage_date": window.coverage_date.isoformat(),
+            }
+
         excess = round(subj - bench_ret, 6)
         if direction == 1:
             hit: bool | None = excess > 0
@@ -772,7 +1130,6 @@ def grade_claim(claim: dict, root: Path | str | None = None,
             hit = excess < 0
         else:                       # salience-only: no directional hit
             hit = None
-        _, fill_ts = _fill_entry(subject, root, start)
         rows.append({
             "claim_id": claim.get("claim_id"),
             "horizon_d": h,
@@ -785,8 +1142,8 @@ def grade_claim(claim: dict, root: Path | str | None = None,
             "embargo_applied": embargo_applied,
             # W0 Stage B-e: the stamped fill convention (see module note)
             "fill_convention": FILL_NEXT_BAR,
-            "entry_fill_date": (str(fill_ts.date()) if fill_ts is not None
-                                else None),
+            "entry_fill_date": fill_date,
+            **clock_stamp,          # P0a: absent == the legacy clock basis
         })
     return rows
 
@@ -848,17 +1205,28 @@ def _family_key(claim: dict, by: str) -> str | None:
 
 
 def _aggregate(claims: list[dict], grades: list[dict],
-               by: str, horizon_d: int) -> dict[str, dict]:
+               by: str, horizon_d: int,
+               clock_basis: str | None = None) -> dict[str, dict]:
     """Aggregate grade rows into per-group track-record stats at ONE horizon.
     `by` in {'desk','family'}. Groups exclude placebo claims from the headline
-    hit-rate (placebo is the counterfactual, graded separately by B3)."""
+    hit-rate (placebo is the counterfactual, graded separately by B3).
+
+    P0a: aggregation happens WITHIN one grading-clock basis. Pass `clock_basis`
+    to select one (`grade_clock_basis` values); leave it None and a mixed input
+    raises `HorizonClockMismatch` rather than pooling. The default is fail-closed
+    on purpose — a caller that never heard of the clock cannot silently blend a
+    legacy 21-calendar-day observation with a 21-session one."""
     cid_meta = {c["claim_id"]: c for c in claims if c.get("claim_id")}
+
+    at_h = [g for g in grades if int(g.get("horizon_d", -1)) == horizon_d]
+    if clock_basis is None:
+        require_single_clock(at_h, context=f"_aggregate(by={by!r}, h={horizon_d})")
+    else:
+        at_h = [g for g in at_h if grade_clock_basis(g) == clock_basis]
 
     # group -> {n_obs, hits, excess_sum, date_set}
     acc: dict[str, dict] = {}
-    for g in grades:
-        if int(g.get("horizon_d", -1)) != horizon_d:
-            continue
+    for g in at_h:
         c = cid_meta.get(g.get("claim_id"))
         if c is None or c.get("is_placebo"):
             continue
@@ -982,21 +1350,72 @@ def _placebo_magnitude(claims: list[dict], grades: list[dict]) -> dict:
     return out
 
 
+def _select_single_clock_block(blocks: dict[str, dict]) -> dict:
+    """Resolve a group/horizon cell whose history STRADDLES two clock bases.
+
+    The rule is SELECT-AND-LABEL, never pool: the published cell is ONE basis's
+    own honest numbers — the basis with the most independent date clusters, ties
+    broken toward the newer clock — carrying `clock_basis`, every basis present
+    in `clock_bases`, and `pooling_refused: True`. Nothing is summed across a
+    measurement-basis change, and nothing is hidden: the excluded basis's full
+    numbers sit under ``track_record["by_clock_basis"]`` and the row split under
+    ``counts.grades_by_clock_basis``.
+
+    Display selects; AUTHORITY refuses. `promotion_check` returns INELIGIBLE on
+    the same straddle rather than promoting off a selected basis — a track-record
+    panel may keep reading while the clock migrates, a promotion gate may not.
+    """
+    def rank(item: tuple[str, dict]) -> tuple[int, int]:
+        basis, block = item
+        return (int(block.get("n_dates") or 0), 0 if basis == CLOCK_LEGACY else 1)
+
+    basis, chosen = max(blocks.items(), key=rank)
+    out = dict(chosen)
+    out["clock_basis"] = basis
+    out["clock_bases"] = sorted(blocks)
+    out["pooling_refused"] = True
+    return out
+
+
 def compute_track_record(root: Path | str | None = None) -> dict:
     """Build the track_record.json payload — per desk and per claim-family, at
     each grade horizon. Does not write; `emit_track_record` persists it. Pure so
-    it is trivially testable and the nightly runner controls IO."""
+    it is trivially testable and the nightly runner controls IO.
+
+    P0a: stats are computed PER GRADING-CLOCK BASIS and published under
+    `by_clock_basis`; nothing is ever summed across bases. A group whose history
+    straddles two bases at one horizon publishes ONE basis's numbers, labelled
+    (`_select_single_clock_block`), never a blend."""
     root = _root(root)
     claims = load_claims(root)
     grades = load_grades(root)
 
+    bases = sorted(partition_grades_by_clock(grades))
+    # basis -> {"by_desk": {...}, "by_family": {...}}
+    per_basis: dict[str, dict[str, dict]] = {
+        b: {"by_desk": {}, "by_family": {}} for b in bases
+    }
+    for b in bases:
+        for h in GRADE_HORIZONS:
+            for grp, dest_key in (("desk", "by_desk"), ("family", "by_family")):
+                stats = _aggregate(claims, grades, grp, h, clock_basis=b)
+                for key, s in stats.items():
+                    per_basis[b][dest_key].setdefault(key, {})[str(h)] = s
+
     by_desk: dict[str, dict] = {}
     by_family: dict[str, dict] = {}
-    for h in GRADE_HORIZONS:
-        for grp, dest in (("desk", by_desk), ("family", by_family)):
-            stats = _aggregate(claims, grades, grp, h)
-            for key, s in stats.items():
-                dest.setdefault(key, {})[str(h)] = s
+    for dest_key, dest in (("by_desk", by_desk), ("by_family", by_family)):
+        # group -> horizon -> {basis: block}
+        seen: dict[str, dict[str, dict[str, dict]]] = {}
+        for b in bases:
+            for key, horizons in per_basis[b][dest_key].items():
+                for hkey, block in horizons.items():
+                    seen.setdefault(key, {}).setdefault(hkey, {})[b] = block
+        for key, horizons in seen.items():
+            for hkey, blocks in horizons.items():
+                dest.setdefault(key, {})[hkey] = (
+                    next(iter(blocks.values())) if len(blocks) == 1
+                    else _select_single_clock_block(blocks))
 
     n_placebo = sum(1 for c in claims if c.get("is_placebo"))
     n_rejected = sum(1 for c in claims if c.get("status") == STATUS_REJECTED)
@@ -1007,13 +1426,22 @@ def compute_track_record(root: Path | str | None = None) -> dict:
     for g in grades:
         k = str(g.get("fill_convention") or FILL_ASOF_LEGACY)
         conv_counts[k] = conv_counts.get(k, 0) + 1
+    # P0a: the SECOND stamped discontinuity — the grading clock. Same honesty
+    # line as the fill-convention split above; unstamped rows read as legacy.
+    clock_counts: dict[str, int] = {}
+    for g in grades:
+        k = grade_clock_basis(g)
+        clock_counts[k] = clock_counts.get(k, 0) + 1
     n_unstamped = sum(1 for c in claims if c.get("vector_asof") is None)
+    n_unit_declared = sum(1 for c in claims
+                          if claim_horizon_unit(c) is not None)
     return {
         "generated_at": _now_iso(),
         "grade_horizons": list(GRADE_HORIZONS),
         "graded_min_dates": GRADED_MIN_DATES,
         "by_desk": by_desk,
         "by_family": by_family,
+        "by_clock_basis": per_basis,
         "placebo_magnitude": _placebo_magnitude(claims, grades),  # D3 counterfactual
         "counts": {
             "n_claims": len(claims),
@@ -1021,6 +1449,8 @@ def compute_track_record(root: Path | str | None = None) -> dict:
             "n_placebo": n_placebo,
             "n_rejected": n_rejected,     # the D4 dark-fraction numerator
             "grades_by_fill_convention": conv_counts,   # stamped discontinuity
+            "grades_by_clock_basis": clock_counts,      # P0a stamped discontinuity
+            "n_claims_horizon_unit_declared": n_unit_declared,
             "n_claims_unstamped_regime": n_unstamped,   # §3.4 residual
         },
     }
@@ -1145,9 +1575,27 @@ def promotion_check(claim_family: str, horizon: int,
     graded_hits = 0
     dates: set[str] = set()
 
-    for g in grades:
-        if int(g.get("horizon_d", -1)) != horizon:
-            continue
+    family_rows = [g for g in grades
+                   if int(g.get("horizon_d", -1)) == horizon
+                   and cid_meta.get(g.get("claim_id")) is not None]
+
+    # P0a: a promotion gate is the sharpest place pooling could launder a
+    # measurement-basis change into authority, so it refuses rather than raises —
+    # the caller gets an INELIGIBLE result naming the split, not a traceback.
+    family_bases = sorted({grade_clock_basis(g) for g in family_rows})
+    if len(family_bases) > 1:
+        return PromotionResult(
+            eligible=False,
+            reason=(f"claim_family={claim_family!r} horizon={horizon}d: grades "
+                    f"straddle {len(family_bases)} grading-clock bases "
+                    f"({', '.join(family_bases)}) — refusing to pool. Two rows "
+                    f"both stamped horizon_d={horizon} are not comparable across "
+                    f"a clock change; promote on ONE basis."),
+            n_dates=0, ci_low=None,
+            current_state=STATE_MIXED_CLOCK,
+        )
+
+    for g in family_rows:
         c = cid_meta.get(g.get("claim_id"))
         if c is None:
             continue
