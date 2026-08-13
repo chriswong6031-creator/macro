@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T04:10:32.561587+00:00",
-  "count": 1035,
+  "generated_at": "2026-08-13T04:26:18.662796+00:00",
+  "count": 1036,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -980,6 +980,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pntpdj90p7v-47da48",
+      "title": "Mizuho EMEA Multi Asset Strategy Daily",
+      "institution": "Mizuho",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T07:43:33Z",
+      "summary_points": [
+        "**USD: Oil, Fed, Geopolitics Pressuring USTs**: Oil supply shocks (Brent near $88), hawkish Fed (Hammack’s \"some number\" rate hikes), and Middle East tensions (Trump-Iran standoff) driving UST pressure; 10Y yields testing 4.70% amid $58bn 3Y auction.",
+        "**Key Data & Risk**: US CPI this week pivotal; soft CPI may offset energy/supply pressure but September escalation risk (Hormuz reopening) looms, with 10Y USTs under immediate pressure.",
+        "**Bunds: ECB Policy Constraints**: 10Y yields near cycle peak (3.18% vs.",
+        "218%); ECB 3% hike requires sustained inflation (1yly OIS near 2.80% raises repricing bar).",
+        "**GBP: Term Premium & Spread Pressure**: 10Y Gilt yields at 4.98% with 10Y Gilt-Bund spread at 180bp; UK inflation/fiscal risks sustain term premium, BoE unlikely to ease rate hike expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
