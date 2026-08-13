@@ -12,13 +12,18 @@ Writes one snapshot per fund per available trading day to
 data/etf_holdings/<TICKER>/<YYYY-MM-DD>.parquet (the same schema the daily
 collector writes), which collectors.holdings.active_changes_dir then diffs.
 
-Usage: python scripts/backfill_etf.py [days_back]   (default 60 calendar days)
+Usage: python scripts/backfill_etf.py [days_back] [--step N] [--only T1,T2]
+       days_back  calendar days to walk back (default 60)
+       --step N   sample every Nth calendar day (N=7 ≈ weekly) to keep a data
+                  commit lean; default 1 = every day the sponsor published
+       --only     restrict to these tickers (default: every backfillable fund)
 """
 from __future__ import annotations
 
 import io
 import logging
 import sys
+import time
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -59,10 +64,16 @@ def _parse_globalx(text: str, ticker: str) -> tuple[pd.DataFrame, str] | None:
     return out, (asof or "")
 
 
-def backfill(days_back: int = 60) -> dict[str, int]:
-    adapter = EtfHoldingsAdapter()
+def _sponsor_funds(sponsor: str, only: set[str] | None) -> list[str]:
     universe = config.load()["etf_holdings"]["universe"]
-    gx = [t for t, s in universe.items() if s.get("sponsor") == "globalx"]
+    return [t for t, s in universe.items()
+            if s.get("sponsor") == sponsor and (only is None or t in only)]
+
+
+def backfill(days_back: int = 60, step: int = 1,
+             only: set[str] | None = None) -> dict[str, int]:
+    adapter = EtfHoldingsAdapter()
+    gx = _sponsor_funds("globalx", only)
     outroot = config.data_dir() / "etf_holdings"
     ua = {"User-Agent": "Mozilla/5.0 (research)"}
     written: dict[str, int] = {}
@@ -71,13 +82,15 @@ def backfill(days_back: int = 60) -> dict[str, int]:
         d.mkdir(parents=True, exist_ok=True)
         existing = {p.stem for p in d.glob("*.parquet")}
         got = 0
-        for back in range(0, days_back + 1):
+        for back in range(0, days_back + 1, max(1, step)):
             ymd = (date.today() - timedelta(days=back)).strftime("%Y%m%d")
             url = GLOBALX_CSV.format(fund=ticker.lower(), ymd=ymd)
             try:
                 r = adapter.http_get(url, retries=1, timeout=20, headers=ua)
             except Exception:  # noqa: BLE001 — 404 on weekends/holidays; skip
                 continue
+            finally:
+                time.sleep(0.2)   # be a polite guest: this walk is hundreds of GETs
             res = _parse_globalx(r.text, ticker)
             if not res:
                 continue
@@ -94,12 +107,12 @@ def backfill(days_back: int = 60) -> dict[str, int]:
     return written
 
 
-def backfill_roundhill(days_back: int = 60) -> dict[str, int]:
+def backfill_roundhill(days_back: int = 60, step: int = 1,
+                       only: set[str] | None = None) -> dict[str, int]:
     """Backfill Roundhill funds. One dated MASTER CSV per date covers all funds, so
     fetch each date once (cached on the adapter) and slice out every configured fund."""
     adapter = EtfHoldingsAdapter()
-    universe = config.load()["etf_holdings"]["universe"]
-    rh = [t for t, s in universe.items() if s.get("sponsor") == "roundhill"]
+    rh = _sponsor_funds("roundhill", only)
     if not rh:
         return {}
     outroot = config.data_dir() / "etf_holdings"
@@ -107,7 +120,7 @@ def backfill_roundhill(days_back: int = 60) -> dict[str, int]:
         (outroot / t).mkdir(parents=True, exist_ok=True)
     existing = {t: {p.stem for p in (outroot / t).glob("*.parquet")} for t in rh}
     written = {t: 0 for t in rh}
-    for back in range(0, days_back + 1):
+    for back in range(0, days_back + 1, max(1, step)):
         mdy = (date.today() - timedelta(days=back)).strftime("%m%d%Y")
         master = adapter._roundhill_master(mdy)
         if master is None:
@@ -138,13 +151,13 @@ def backfill_roundhill(days_back: int = 60) -> dict[str, int]:
     return written
 
 
-def backfill_amplify(days_back: int = 300) -> dict[str, int]:
+def backfill_amplify(days_back: int = 300, only: set[str] | None = None) -> dict[str, int]:
     """Backfill Amplify funds from the public Firestore feed: the collection lists
     ~9 months of dated holdings docs, so pull every date within the window that we
     don't already have. Reuses the live adapter's doc parser."""
     adapter = EtfHoldingsAdapter()
     universe = config.load()["etf_holdings"]["universe"]
-    amp = [t for t, s in universe.items() if s.get("sponsor") == "amplify"]
+    amp = _sponsor_funds("amplify", only)
     if not amp:
         return {}
     outroot = config.data_dir() / "etf_holdings"
@@ -194,8 +207,26 @@ def backfill_amplify(days_back: int = 300) -> dict[str, int]:
     return written
 
 
+def _cli(argv: list[str]) -> tuple[int, int, set[str] | None]:
+    days, step, only = 60, 1, None
+    rest = list(argv)
+    while rest:
+        a = rest.pop(0)
+        if a == "--step":
+            step = int(rest.pop(0))
+        elif a == "--only":
+            only = {t.strip().upper() for t in rest.pop(0).split(",") if t.strip()}
+        elif a.startswith("--"):
+            raise SystemExit(f"unknown flag {a}")
+        else:
+            days = int(a)
+    return days, step, only
+
+
 if __name__ == "__main__":
-    n = int(sys.argv[1]) if len(sys.argv) > 1 else 60
-    res = {**backfill(n), **backfill_roundhill(n), **backfill_amplify(max(n, 300))}
+    n, step, only = _cli(sys.argv[1:])
+    res = {**backfill(n, step, only),
+           **backfill_roundhill(n, step, only),
+           **backfill_amplify(max(n, 300), only)}
     print("backfilled:", {k: v for k, v in res.items()})
     print("total new snapshots:", sum(res.values()))
