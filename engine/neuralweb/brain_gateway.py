@@ -2909,9 +2909,15 @@ def _tool_get_portfolio_brief(params: dict, root: Path, user_id: str = "") -> di
                          f"'{tier}' tier — explain the Pro gate; do not compose a brief.")}
 
     # Holdings: open positions first (positions mode), else watchlist symbols (equal).
+    # W6 / packet amendment A8: which of the two answered is the POPULATION, and it is
+    # tracked here and passed to the composer explicitly. The model must be able to say
+    # "your watchlist" rather than "your book" when that is what it read — the brief's
+    # own sentences now carry the distinction, so a silent fallback would put the model
+    # and its own tool result at odds.
     import urllib.parse as _up  # noqa: PLC0415
     quid = _up.quote(str(user_id))
     holdings: list[dict] = []
+    population = "positions"
     pos_rows = _sb_get(
         f"portfolio_positions?user_id=eq.{quid}&status=eq.open"
         f"&select=ticker,shares,entry_price")
@@ -2921,6 +2927,7 @@ def _tool_get_portfolio_brief(params: dict, root: Path, user_id: str = "") -> di
                 holdings.append({"ticker": r.get("ticker"), "shares": r.get("shares"),
                                  "entry_price": r.get("entry_price")})
     if not holdings:
+        population = "watchlist_union"
         lists = _sb_get(f"watchlists?user_id=eq.{quid}&select=id&order=position")
         list_ids = [str(r.get("id")) for r in (lists or [])
                     if isinstance(r, dict) and r.get("id") is not None]
@@ -2949,7 +2956,7 @@ def _tool_get_portfolio_brief(params: dict, root: Path, user_id: str = "") -> di
     from engine.portfolio_brief import compose_brief  # noqa: PLC0415
     today = _date.today().isoformat()
     generated_at = _dt.now(_tz.utc).replace(microsecond=0).isoformat()
-    return compose_brief(ctx, holdings, today, generated_at)
+    return compose_brief(ctx, holdings, today, generated_at, population=population)
 
 
 def _tool_set_chart_symbol(params: dict) -> dict:

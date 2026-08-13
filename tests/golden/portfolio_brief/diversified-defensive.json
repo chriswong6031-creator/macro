@@ -7,19 +7,129 @@
       "FOO"
     ]
   },
+  "data": {
+    "book": {
+      "covered": 4,
+      "modeled": 4,
+      "n": 5,
+      "population": "watchlist_union",
+      "unmodeled": [
+        "FOO"
+      ],
+      "weighting": "equal"
+    },
+    "concentration": {
+      "hhi": 0.25,
+      "sectors": [
+        {
+          "class": "tailwind",
+          "conviction": "Accumulate",
+          "name": "Consumer Defensive",
+          "pct": 25,
+          "rotation_state": "watching for entry"
+        },
+        {
+          "class": "entry_now",
+          "conviction": "Cautious",
+          "name": "Energy",
+          "pct": 25,
+          "rotation_state": "trend running"
+        },
+        {
+          "class": "headwind",
+          "conviction": "Reduce",
+          "name": "Financial",
+          "pct": 25,
+          "rotation_state": "extended — watch"
+        },
+        {
+          "class": "tailwind",
+          "conviction": "Accumulate",
+          "name": "Utilities",
+          "pct": 25
+        }
+      ],
+      "themes": [
+        {
+          "id": "energy_complex",
+          "name": "US Energy Complex",
+          "pct": 100,
+          "reco": "hold"
+        }
+      ],
+      "top3_pct": 75,
+      "top_name_pct": 25
+    },
+    "state_digest": {
+      "asof": "2026-07-23",
+      "names": {
+        "DUK": {
+          "sector": "Utilities",
+          "stage": 2
+        },
+        "JPM": {
+          "sector": "Financial",
+          "stage": 3
+        },
+        "KO": {
+          "sector": "Consumer Defensive",
+          "stage": 1
+        },
+        "XOM": {
+          "earnings_next": "2026-08-07",
+          "earnings_soon": false,
+          "sector": "Energy",
+          "stage": 2
+        }
+      },
+      "regime_en": "Risk-on",
+      "regime_zh": "风险偏好",
+      "schema": "portfolio_state_digest.v1",
+      "sectors": {
+        "Consumer Defensive": {
+          "class": "tailwind",
+          "conviction_en": "Accumulate",
+          "conviction_zh": "积极配置"
+        },
+        "Energy": {
+          "class": "entry_now",
+          "conviction_en": "Cautious",
+          "conviction_zh": "谨慎"
+        },
+        "Financial": {
+          "class": "headwind",
+          "conviction_en": "Reduce",
+          "conviction_zh": "减配"
+        },
+        "Utilities": {
+          "class": "tailwind",
+          "conviction_en": "Accumulate",
+          "conviction_zh": "积极配置"
+        }
+      }
+    }
+  },
   "generated_at": "2026-07-23T14:00:00+00:00",
   "headline": {
-    "en": "Your book today: 5 names, top weight Consumer Defensive 25%, desk read Risk-on.",
-    "zh": "你今日的持仓：5 只个股，最大权重Consumer Defensive 25%，桌面判读风险偏好。"
+    "en": "Your watchlist today: 5 names, equal weighted, top weight Consumer Defensive 25%, desk read Risk-on.",
+    "zh": "你今日的观察列表（等权）：5 只个股，最大权重Consumer Defensive 25%，桌面判读风险偏好。"
   },
-  "schema": "portfolio_brief.v1",
+  "population": {
+    "disclosure_en": "This read describes the 5 names on your watchlists, equal weighted — not a position book.",
+    "disclosure_zh": "此判读描述你观察列表中的 5 只个股，按等权计算 — 并非持仓。",
+    "label_en": "Watchlist structure — equal weighted",
+    "label_zh": "观察列表结构 — 等权",
+    "mode": "watchlist_union",
+    "n": 5
+  },
+  "schema": "portfolio_brief.v2",
   "sections": [
     {
       "key": "exposure",
       "lines": [
         {
-          "en": "25% of your book is Consumer Defensive — today's desk read on Consumer Defensive is Accumulate (watching for entry).",
-          "zh": "你的持仓有 25% 在Consumer Defensive — 桌面今日对Consumer Defensive的判读为积极配置（watching for entry）。"
+          "en": "25% of your watchlist is Consumer Defensive — today's desk read on Consumer Defensive is Accumulate (watching for entry).",
+          "zh": "你的观察列表有 25% 在Consumer Defensive — 桌面今日对Consumer Defensive的判读为积极配置（watching for entry）。"
         }
       ],
       "title_en": "Exposure",
@@ -33,8 +143,8 @@
           "zh": "你的板块在桌面的位置：Consumer Defensive — 积极配置（watching for entry）；Energy — 谨慎（trend running）；Financial — 减配（extended — watch）；Utilities — 积极配置。"
         },
         {
-          "en": "Desk tailwinds/headwinds touching your book: tailwind Consumer Defensive, Energy, Utilities; headwind Financial.",
-          "zh": "触及你持仓的桌面顺风/逆风：顺风：Consumer Defensive、Energy、Utilities；逆风：Financial。"
+          "en": "Desk tailwinds/headwinds touching your watchlist: tailwind Consumer Defensive, Energy, Utilities; headwind Financial.",
+          "zh": "与你的观察列表相关的桌面顺风/逆风：顺风：Consumer Defensive、Energy、Utilities；逆风：Financial。"
         }
       ],
       "title_en": "Rotation board",

@@ -67,7 +67,8 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 from typing import Any
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi import (BackgroundTasks, Body, Depends, FastAPI, Header, HTTPException,
+                     Request, Response)
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 from starlette.datastructures import MutableHeaders
@@ -1526,18 +1527,28 @@ def _portfolio_resolve_tier(uid: str) -> dict:
         return {"tier": "free", "status": "active"}
 
 
-def _portfolio_load_holdings(uid: str) -> list[dict]:
-    """Load the user's holdings as compose_brief rows: {ticker, shares, entry_price}.
+def _portfolio_load_holdings(uid: str) -> tuple[list[dict], str]:
+    """Load the user's holdings as compose_brief rows + the POPULATION they came from.
+
+    Returns (rows, population) where population is "positions" or "watchlist_union".
 
     Positions mode first: open portfolio_positions (status=open) → shares + entry_price
     (exactly like brain_gateway._tool_get_watchlist). When there are no open positions,
     fall back to the watchlist symbols (equal-weight; shares/entry_price None). Reads via
-    the gateway's service-role _sb_get; any error → empty list (→ empty-book brief)."""
+    the gateway's service-role _sb_get; any error → empty list (→ empty-book brief).
+
+    W6 / packet amendment A8: this function is the ONLY place that knows which of the two
+    queries answered, so it is the only place that can name the population. It is
+    returned rather than inferred downstream — the composer cannot tell a one-name
+    watchlist from a one-name position book, and guessing is the defect A8 closes. The
+    watchlist fallback returns "watchlist_union" even when it yields zero rows, because
+    the fallback is still the set that was consulted.
+    """
     try:
         from engine.neuralweb.brain_gateway import _sb_get  # noqa: PLC0415
         import urllib.parse as _up  # noqa: PLC0415
     except Exception:  # noqa: BLE001
-        return []
+        return [], "positions"
     quid = _up.quote(str(uid))
 
     rows: list[dict] = []
@@ -1550,7 +1561,7 @@ def _portfolio_load_holdings(uid: str) -> list[dict]:
                 rows.append({"ticker": r.get("ticker"), "shares": r.get("shares"),
                              "entry_price": r.get("entry_price")})
     if rows:
-        return rows
+        return rows, "positions"
 
     # Equal-weight fallback: watchlists → watchlist_symbols.
     lists = _sb_get(f"watchlists?user_id=eq.{quid}&select=id&order=position")
@@ -1567,7 +1578,7 @@ def _portfolio_load_holdings(uid: str) -> list[dict]:
             if s and s not in seen:
                 seen.add(s)
                 rows.append({"ticker": s, "shares": None, "entry_price": None})
-    return rows
+    return rows, "watchlist_union"
 
 
 @app.get("/api/portfolio/brief")
@@ -1612,7 +1623,7 @@ def portfolio_brief(response: Response, user: dict = Depends(require_user)):
     except Exception:  # noqa: BLE001
         raise HTTPException(503, detail={"error": "ctx_unavailable"}) from None
 
-    holdings = _portfolio_load_holdings(uid)
+    holdings, population = _portfolio_load_holdings(uid)
 
     try:
         from engine.portfolio_brief import compose_brief  # noqa: PLC0415
@@ -1622,12 +1633,83 @@ def portfolio_brief(response: Response, user: dict = Depends(require_user)):
 
     today = _date.today().isoformat()
     generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-    brief = compose_brief(ctx, holdings, today, generated_at)
+    # `population` is passed EXPLICITLY (A8) — never defaulted. The composer would
+    # otherwise render `unspecified`, which is honest but useless to the panel.
+    brief = compose_brief(ctx, holdings, today, generated_at, population=population)
 
     if len(_PORTFOLIO_CACHE) > 5000:
         _PORTFOLIO_CACHE.clear()
     _PORTFOLIO_CACHE[ckey] = (brief, now + _PORTFOLIO_CACHE_TTL)
     return brief
+
+
+# ---------------------------------------------------------------------------
+# /api/portfolio/changes — "since your last visit" (Watchlist+Portfolio W6)
+# ---------------------------------------------------------------------------
+# The retention spine. The client POSTs the state digest it stored on its LAST visit
+# (`data.state_digest` from a previous brief); the server diffs it against tonight's
+# desk state for the same book and returns the change lines.
+#
+# WHY POST, AND WHY NO TABLE. Three constraints decide this shape:
+#   * The diff needs the PRIOR desk state, and the ctx artifact is overwritten nightly —
+#     the server cannot reconstruct last week's read, so the prior snapshot must come
+#     from whoever kept it. The client kept it.
+#   * A user's ticker set is personal data, so it never goes in a URL (query strings land
+#     in access logs and referrers) — hence a POST body, not `GET ?since=`.
+#   * Per-user server state would mean a new Supabase table + RLS. It is not needed: the
+#     prior snapshot is a display artifact the client already holds, so the server stays
+#     stateless and stores NOTHING. A cross-device cursor is the named follow-up.
+# The digest carries tickers and desk state only — never shares, cost basis, or weights
+# (engine/portfolio_changes enforces this at the source) — and is never logged here.
+
+
+@app.post("/api/portfolio/changes")
+def portfolio_changes(response: Response, payload: dict = Body(default=None),  # noqa: B008
+                      user: dict = Depends(require_user)):
+    """Pro-only "what changed since your last visit" (portfolio_changes.v1).
+
+    Body: {"previous": <state_digest from an earlier brief>}. A missing/blank previous
+    is a FIRST visit and returns an empty change list — never a fabricated "everything
+    is new". 401 → not signed in. 403 {error:pro_required,tier} → not Pro (same gate as
+    the brief; this endpoint reads the same Pro-tier ctx). 503 → ctx unavailable.
+    """
+    response.headers["Cache-Control"] = "private, no-store"
+    uid = user.get("id") or user.get("email") or ""
+
+    ent = _portfolio_resolve_tier(uid)
+    tier = ent.get("tier") or "free"
+    status = ent.get("status") or "active"
+    if not (tier in ("pro", "unlimited") and status in ("active", "trialing")):
+        raise HTTPException(403, detail={"error": "pro_required", "tier": tier})
+
+    ctx_path = REPO / _PORTFOLIO_CTX_PATH
+    try:
+        ctx = json.loads(ctx_path.read_text(encoding="utf-8"))
+        if not isinstance(ctx, dict):
+            raise ValueError("ctx not an object")
+    except Exception:  # noqa: BLE001
+        raise HTTPException(503, detail={"error": "ctx_unavailable"}) from None
+
+    try:
+        from engine.portfolio_changes import diff_snapshots, snapshot_state  # noqa: PLC0415
+    except ImportError as exc:
+        raise HTTPException(503, "portfolio changes unavailable") from exc
+
+    holdings, population = _portfolio_load_holdings(uid)
+    tickers = [r.get("ticker") for r in holdings if isinstance(r, dict)]
+    current = snapshot_state(ctx, tickers)
+
+    previous = (payload or {}).get("previous") if isinstance(payload, dict) else None
+    changes = diff_snapshots(previous, current) if isinstance(previous, dict) else []
+
+    return {
+        "schema": "portfolio_changes.v1",
+        "asof": ctx.get("asof"),
+        "population": population,
+        "first_visit": not isinstance(previous, dict) or not previous.get("names"),
+        "changes": changes,
+        "state_digest": current,
+    }
 
 
 # ---------------------------------------------------------------------------

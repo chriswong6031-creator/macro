@@ -5,12 +5,78 @@
     "n": 1,
     "uncovered": []
   },
+  "data": {
+    "book": {
+      "covered": 1,
+      "modeled": 1,
+      "n": 1,
+      "population": "positions",
+      "unmodeled": [],
+      "weighting": "positions"
+    },
+    "concentration": {
+      "hhi": 1.0,
+      "sectors": [
+        {
+          "class": "neutral",
+          "conviction": "Cautious",
+          "name": "Technology",
+          "pct": 100,
+          "rotation_state": "bounce, not a turn"
+        }
+      ],
+      "themes": [
+        {
+          "id": "ai_semiconductors",
+          "name": "AI Semiconductors",
+          "pct": 100,
+          "reco": "accumulate"
+        },
+        {
+          "id": "mag7",
+          "name": "Magnificent Seven",
+          "pct": 100,
+          "reco": "hold"
+        }
+      ],
+      "top3_pct": 100,
+      "top_name_pct": 100
+    },
+    "state_digest": {
+      "asof": "2026-07-23",
+      "names": {
+        "NVDA": {
+          "entry": "UNCONFIRMED TURN / COUNTERTREND BOUNCE",
+          "sector": "Technology",
+          "stage": 2
+        }
+      },
+      "regime_en": "Risk-on",
+      "regime_zh": "风险偏好",
+      "schema": "portfolio_state_digest.v1",
+      "sectors": {
+        "Technology": {
+          "class": "neutral",
+          "conviction_en": "Cautious",
+          "conviction_zh": "谨慎"
+        }
+      }
+    }
+  },
   "generated_at": "2026-07-23T14:00:00+00:00",
   "headline": {
     "en": "Your book today: 1 name, top weight Technology 100%, desk read Risk-on.",
     "zh": "你今日的持仓：1 只个股，最大权重Technology 100%，桌面判读风险偏好。"
   },
-  "schema": "portfolio_brief.v1",
+  "population": {
+    "disclosure_en": "This read describes the 1 name you hold.",
+    "disclosure_zh": "此判读描述你持有的 1 只个股。",
+    "label_en": "Your portfolio positions",
+    "label_zh": "你的持仓",
+    "mode": "positions",
+    "n": 1
+  },
+  "schema": "portfolio_brief.v2",
   "sections": [
     {
       "key": "exposure",

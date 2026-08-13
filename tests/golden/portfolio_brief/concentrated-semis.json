@@ -5,12 +5,129 @@
     "n": 4,
     "uncovered": []
   },
+  "data": {
+    "book": {
+      "covered": 4,
+      "modeled": 4,
+      "n": 4,
+      "population": "positions",
+      "unmodeled": [],
+      "weighting": "positions"
+    },
+    "concentration": {
+      "hhi": 0.392,
+      "sectors": [
+        {
+          "class": "neutral",
+          "conviction": "Cautious",
+          "name": "Technology",
+          "pct": 92,
+          "rotation_state": "bounce, not a turn"
+        },
+        {
+          "class": "entry_now",
+          "conviction": "Cautious",
+          "name": "Energy",
+          "pct": 8,
+          "rotation_state": "trend running"
+        }
+      ],
+      "themes": [
+        {
+          "id": "ai_semiconductors",
+          "name": "AI Semiconductors",
+          "pct": 92,
+          "reco": "accumulate"
+        },
+        {
+          "id": "mag7",
+          "name": "Magnificent Seven",
+          "pct": 44,
+          "reco": "hold"
+        },
+        {
+          "id": "energy_complex",
+          "name": "US Energy Complex",
+          "pct": 8,
+          "reco": "hold"
+        }
+      ],
+      "top3_pct": 96,
+      "top_name_pct": 44
+    },
+    "events": {
+      "earnings_10d": [
+        {
+          "date": "2026-07-29",
+          "days_to": 6,
+          "ticker": "AVGO"
+        },
+        {
+          "date": "2026-08-01",
+          "days_to": 9,
+          "ticker": "SMCI"
+        }
+      ]
+    },
+    "state_digest": {
+      "asof": "2026-07-23",
+      "names": {
+        "AVGO": {
+          "earnings_next": "2026-07-29",
+          "earnings_soon": true,
+          "entry": "BUY ZONE / FRESH BREAKOUT",
+          "sector": "Technology",
+          "stage": 2
+        },
+        "NVDA": {
+          "entry": "UNCONFIRMED TURN / COUNTERTREND BOUNCE",
+          "sector": "Technology",
+          "stage": 2
+        },
+        "SMCI": {
+          "earnings_next": "2026-08-01",
+          "earnings_soon": true,
+          "sector": "Technology",
+          "stage": 4
+        },
+        "XOM": {
+          "earnings_next": "2026-08-07",
+          "earnings_soon": false,
+          "sector": "Energy",
+          "stage": 2
+        }
+      },
+      "regime_en": "Risk-on",
+      "regime_zh": "风险偏好",
+      "schema": "portfolio_state_digest.v1",
+      "sectors": {
+        "Energy": {
+          "class": "entry_now",
+          "conviction_en": "Cautious",
+          "conviction_zh": "谨慎"
+        },
+        "Technology": {
+          "class": "neutral",
+          "conviction_en": "Cautious",
+          "conviction_zh": "谨慎"
+        }
+      }
+    }
+  },
   "generated_at": "2026-07-23T14:00:00+00:00",
   "headline": {
     "en": "Your book today: 4 names, top weight Technology 92%, desk read Risk-on.",
     "zh": "你今日的持仓：4 只个股，最大权重Technology 92%，桌面判读风险偏好。"
   },
-  "schema": "portfolio_brief.v1",
+  "population": {
+    "disclosure_en": "This read describes the 4 names you hold.",
+    "disclosure_zh": "此判读描述你持有的 4 只个股。",
+    "label_en": "Your portfolio positions",
+    "label_zh": "你的持仓",
+    "mode": "positions",
+    "n": 4
+  },
+  "schema": "portfolio_brief.v2",
   "sections": [
     {
       "key": "exposure",
@@ -40,7 +157,7 @@
         },
         {
           "en": "Desk tailwinds/headwinds touching your book: tailwind Energy.",
-          "zh": "触及你持仓的桌面顺风/逆风：顺风：Energy。"
+          "zh": "与你的持仓相关的桌面顺风/逆风：顺风：Energy。"
         }
       ],
       "title_en": "Rotation board",

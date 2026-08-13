@@ -25,40 +25,54 @@ sentences. Guardrails, all hard:
   * Pure dict/list math — no pandas, no I/O. Determinism: same inputs → byte-identical
     output (the caller passes fixed today/generated_at; golden-file tests pin it).
 
+W6 — POPULATION DISCLOSURE (packet amendment A8). The brief now states, as a first-class
+field, WHICH SET OF NAMES it computed over: `positions` (the user's held positions) or
+`watchlist_union` (the union of their watchlist symbols, equal-weighted). This program's
+founding defect was exactly this hole — a panel headed "your book" composed from a
+watchlist, sitting above a table showing a third population, with nothing on screen
+saying the three were different sets. The composer CANNOT derive the population (only
+the loader that read Supabase knows which query answered), so it is PASSED IN; when a
+caller does not pass one the brief says `unspecified` and prints a plain-word line
+saying the set was not declared, rather than assuming "positions" and lying quietly.
+Every consumer-facing sentence that summarizes the book — headline included — carries
+the population, and equal-weighted watchlist analysis is labeled with A8's exact
+words: "Watchlist structure — equal weighted".
+
+Note the two axes are INDEPENDENT and must not be conflated: `population` is WHICH NAMES
+(positions vs watchlist_union), `weighting` is HOW THEY ARE SIZED (by cost basis vs
+equal). A positions population can be equal-weighted (positions with no cost basis
+recorded), so neither field implies the other.
+
 Public surface:
-    compose_brief(ctx, holdings, today, generated_at) -> dict   (portfolio_brief.v1)
+    compose_brief(ctx, holdings, today, generated_at, *, population=None,
+                  previous=None) -> dict   (portfolio_brief.v2)
 """
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 
-SCHEMA = "portfolio_brief.v1"
+from engine.portfolio_changes import compose_since_section, snapshot_state
+from engine.portfolio_vocab import SECTOR_ALIASES as _SECTOR_ALIASES
+from engine.portfolio_vocab import STAGE_WORD as _STAGE_WORD
+from engine.portfolio_vocab import sector_block as _sector_block
 
-# ── weighting-mode labels (bilingual) ────────────────────────────────────────
+SCHEMA = "portfolio_brief.v2"
+
+# ── weighting-mode labels (bilingual) — HOW the names are sized ──────────────
 _MODE_LABELS = {
     "positions": {"en": "by cost basis", "zh": "按成本权重"},
     "equal": {"en": "equal-weighted", "zh": "等权"},
 }
 
-# Sector-name reconciliation. The per-ticker `sector` field (from stockdata profiles
-# via us_standouts / screener rows) uses one taxonomy ("Information Technology",
-# "Health Care", "Financials", "Materials"); the ctx.sectors block is keyed by the
-# rotation-board's taxonomy ("Technology", "Healthcare", "Financial", "Basic
-# Materials"). To read a held name's sector stance we must reconcile the two. This map
-# is a pure display alias — it changes NO value, only which sector block we look up;
-# when neither the raw name nor an alias matches a block we omit the stance clause and
-# state the exposure honestly (the "no desk read for <sector>" path). Documented and
-# descriptive, not a new classification.
-_SECTOR_ALIASES = {
-    "information technology": "Technology",
-    "health care": "Healthcare",
-    "financials": "Financial",
-    "consumer staples": "Consumer Defensive",
-    "consumer discretionary": "Consumer Cyclical",
-    "materials": "Basic Materials",
-    "communication": "Communication Services",
-    "telecommunication services": "Communication Services",
+# ── population-mode labels (bilingual) — WHICH names (A8) ────────────────────
+# "Watchlist structure — equal weighted" is A8's mandated wording, verbatim.
+_POPULATION_LABELS = {
+    "positions": {"en": "Your portfolio positions", "zh": "你的持仓"},
+    "watchlist_union": {"en": "Watchlist structure — equal weighted",
+                        "zh": "观察列表结构 — 等权"},
+    "unspecified": {"en": "Names provided to the desk", "zh": "提交给桌面的标的"},
 }
+POPULATION_MODES = ("positions", "watchlist_union", "unspecified")
 
 
 # ── weekday / stale arithmetic (pure, deterministic) ─────────────────────────
@@ -153,22 +167,59 @@ def _normalize_holdings(holdings: list[dict]) -> tuple[list[str], dict[str, floa
 
 
 # ── ctx sector lookup ────────────────────────────────────────────────────────
+# `_sector_block` / `_SECTOR_ALIASES` / `_STAGE_WORD` now live in
+# engine/portfolio_vocab.py — imported above so the brief and the change-history
+# composer cannot drift apart on desk vocabulary. Values are unchanged.
 
-def _sector_block(ctx_sectors: dict, sector: str | None) -> dict:
-    """Return the ctx.sectors block for a held name's sector, reconciling taxonomies.
 
-    Tries the raw sector name, then the display alias. Returns {} when neither matches
-    (honest: we then omit the stance clause rather than fabricate a read)."""
-    if not sector or not isinstance(ctx_sectors, dict):
-        return {}
-    if sector in ctx_sectors:
-        blk = ctx_sectors[sector]
-        return blk if isinstance(blk, dict) else {}
-    alias = _SECTOR_ALIASES.get(sector.strip().lower())
-    if alias and alias in ctx_sectors:
-        blk = ctx_sectors[alias]
-        return blk if isinstance(blk, dict) else {}
-    return {}
+# ── population plumbing (A8) ─────────────────────────────────────────────────
+
+# The noun each summarizing sentence uses for the set of names. This is how "every
+# consumer-facing string that summarizes a book states which population it describes"
+# is honored WITHOUT bolting a disclaimer onto every line: the sentence names the set
+# it is talking about. Calling a watchlist "your book" is the exact defect A8 closes.
+_BOOK_NOUN = {
+    "positions": {"en": "your book", "zh": "你的持仓"},
+    "watchlist_union": {"en": "your watchlist", "zh": "你的观察列表"},
+    "unspecified": {"en": "these names", "zh": "这些标的"},
+}
+
+
+def _norm_population(population: str | None) -> str:
+    """Coerce the caller's population to a known mode. Anything unrecognized — including
+    None — becomes `unspecified`, which is DISCLOSED rather than guessed."""
+    p = str(population or "").strip().lower()
+    return p if p in POPULATION_MODES else "unspecified"
+
+
+def _noun(population: str, lang: str) -> str:
+    return _BOOK_NOUN[population][lang]
+
+
+def _population_block(population: str, n: int, weighting_mode: str) -> dict:
+    """The first-class population field (A8). Carries the mode, its bilingual label, the
+    count it describes, and a plain-word disclosure sentence a client can render as-is."""
+    labels = _POPULATION_LABELS[population]
+    unit_en = "name" if n == 1 else "names"
+    if population == "positions":
+        dis_en = f"This read describes the {n} {unit_en} you hold."
+        dis_zh = f"此判读描述你持有的 {n} 只个股。"
+    elif population == "watchlist_union":
+        dis_en = (f"This read describes the {n} {unit_en} on your watchlists, "
+                  f"equal weighted — not a position book.")
+        dis_zh = f"此判读描述你观察列表中的 {n} 只个股，按等权计算 — 并非持仓。"
+    else:
+        dis_en = (f"This read describes the {n} {unit_en} sent to the desk. The set they "
+                  f"came from was not declared.")
+        dis_zh = f"此判读描述提交给桌面的 {n} 只个股。其来源集合未声明。"
+    return {
+        "mode": population,
+        "label_en": labels["en"],
+        "label_zh": labels["zh"],
+        "n": n,
+        "disclosure_en": dis_en,
+        "disclosure_zh": dis_zh,
+    }
 
 
 # ── section builders — each returns a section dict or None ────────────────────
@@ -213,9 +264,11 @@ def _held_sectors_ordered(ctx: dict, covered: list[str], weights: dict) -> list[
     return [s for s, _ in shares]
 
 
-def _exposure_section(ctx: dict, covered: list[str], weights: dict) -> dict | None:
+def _exposure_section(ctx: dict, covered: list[str], weights: dict,
+                      population: str = "unspecified") -> dict | None:
     ctx_sectors = ctx.get("sectors") or {}
     shares = _weighted_sector_shares(ctx, covered, weights)
+    noun_en, noun_zh = _noun(population, "en"), _noun(population, "zh")
     lines: list[dict] = []
 
     if shares:
@@ -227,17 +280,17 @@ def _exposure_section(ctx: dict, covered: list[str], weights: dict) -> dict | No
         rotation = blk.get("rotation_state")
         if conviction:
             paren = f" ({rotation})" if rotation else ""
-            en = (f"{pct}% of your book is {top_sector} — today's desk read on "
+            en = (f"{pct}% of {noun_en} is {top_sector} — today's desk read on "
                   f"{top_sector} is {conviction}{paren}.")
             paren_zh = f"（{rotation}）" if rotation else ""
-            zh = (f"你的持仓有 {pct}% 在{top_sector} — 桌面今日对{top_sector}的判读为"
+            zh = (f"{noun_zh}有 {pct}% 在{top_sector} — 桌面今日对{top_sector}的判读为"
                   f"{conviction_zh or conviction}{paren_zh}。")
         else:
             # No desk read for this sector (taxonomy mismatch or absent block) — state
             # the exposure honestly without inventing a stance.
-            en = (f"{pct}% of your book is {top_sector} — no desk read on "
+            en = (f"{pct}% of {noun_en} is {top_sector} — no desk read on "
                   f"{top_sector} tonight.")
-            zh = f"你的持仓有 {pct}% 在{top_sector} — 桌面今晚对{top_sector}没有判读。"
+            zh = f"{noun_zh}有 {pct}% 在{top_sector} — 桌面今晚对{top_sector}没有判读。"
         lines.append({"en": en, "zh": zh})
 
         # Diversification caveat — DISPLAY COPY from the charter's own worked example
@@ -307,9 +360,11 @@ def _common_theme_line(ctx: dict, covered: list[str]) -> dict | None:
     return {"en": en, "zh": zh}
 
 
-def _lanes_section(ctx: dict, covered: list[str], weights: dict) -> dict | None:
+def _lanes_section(ctx: dict, covered: list[str], weights: dict,
+                   population: str = "unspecified") -> dict | None:
     ctx_sectors = ctx.get("sectors") or {}
     sectors = _held_sectors_ordered(ctx, covered, weights)
+    noun_en, noun_zh = _noun(population, "en"), _noun(population, "zh")
     lines: list[dict] = []
 
     if sectors:
@@ -353,19 +408,18 @@ def _lanes_section(ctx: dict, covered: list[str], weights: dict) -> dict | None:
             seg_en.append("headwind " + ", ".join(headwinds))
             seg_zh.append("逆风：" + "、".join(headwinds))
         lines.append({
-            "en": "Desk tailwinds/headwinds touching your book: " + "; ".join(seg_en) + ".",
-            "zh": "触及你持仓的桌面顺风/逆风：" + "；".join(seg_zh) + "。",
+            # zh: the genitive form ("触及{noun}的…") produces a double 的 once the noun
+            # itself carries one (你的持仓的), which reads as broken Chinese. The
+            # "与…相关的" form is the natural phrasing for all three nouns.
+            "en": (f"Desk tailwinds/headwinds touching {noun_en}: "
+                   + "; ".join(seg_en) + "."),
+            "zh": f"与{noun_zh}相关的桌面顺风/逆风：" + "；".join(seg_zh) + "。",
         })
 
     if not lines:
         return None
     return {"key": "lanes", "title_en": "Rotation board",
             "title_zh": "轮动板", "lines": lines}
-
-
-# Weinstein stage → plain word (DISPLAY re-expression, fixed wording per spec).
-_STAGE_WORD = {1: ("base", "筑底"), 2: ("uptrend", "上升"),
-               3: ("topping", "见顶"), 4: ("decline", "下行")}
 
 
 def _signals_section(ctx: dict, covered: list[str]) -> dict | None:
@@ -650,18 +704,131 @@ def _filings_section(ctx: dict, covered: list[str], today: str) -> dict | None:
             "title_zh": "监管披露", "lines": lines}
 
 
+# ── v2 `data` block — machine-renderable, arithmetic only ────────────────────
+#
+# PSI §5.2 specifies a larger packet (posture/ENB, correlation, options, lanes, tape,
+# score). Those legs are DELIBERATELY ABSENT here, not stubbed: every one of them needs
+# the factor machinery that today lives client-side in `risk_core.js` / `watchlist_risk.js`
+# (the W3 lane) or artifacts this endpoint does not read. Emitting them as nulls would
+# read as "the desk abstained" when the truth is "this composer cannot see it", so the
+# keys are omitted and the gap is named in the PR body as the follow-up wave. What ships
+# here is exactly what the composer can derive from the weights the user supplied plus
+# the ctx it already reads: pure arithmetic, no new signal, no threshold, no ranking.
+
+
+def _concentration_block(ctx: dict, covered: list[str], weights: dict) -> dict:
+    """Descriptive concentration arithmetic over the weights the user themselves gave.
+
+    top_name_pct / top3_pct / hhi are standard descriptive statistics of a weight
+    vector — no calibration, no gate, no verdict word attached. `sectors` and `themes`
+    carry the ctx's own vocabulary verbatim.
+
+    Theme shares are computed over covered names carrying at least one theme; a name in
+    two themes counts in both, so theme shares need NOT sum to 100 (stated here because
+    a reader would otherwise take it for a bug).
+    """
+    ranked = sorted(((weights.get(t, 0.0), t) for t in covered), key=lambda wt: (-wt[0], wt[1]))
+    total = sum(w for w, _ in ranked)
+    out: dict = {}
+    if total > 0:
+        out["top_name_pct"] = _pct(ranked[0][0] / total)
+        out["top3_pct"] = _pct(sum(w for w, _ in ranked[:3]) / total)
+        # Herfindahl over renormalized weights; 4dp keeps it deterministic in JSON.
+        out["hhi"] = round(sum((w / total) ** 2 for w, _ in ranked), 4)
+
+    ctx_sectors = ctx.get("sectors") or {}
+    sectors: list[dict] = []
+    for name, share in _weighted_sector_shares(ctx, covered, weights):
+        blk = _sector_block(ctx_sectors, name)
+        row = {"name": name, "pct": _pct(share)}
+        for src, dst in (("class", "class"), ("conviction_en", "conviction"),
+                         ("rotation_state", "rotation_state")):
+            if blk.get(src):
+                row[dst] = blk[src]
+        sectors.append(row)
+    if sectors:
+        out["sectors"] = sectors
+
+    ctx_tk = ctx.get("tickers", {})
+    theme_w: dict[str, float] = {}
+    theme_meta: dict[str, dict] = {}
+    themed_total = 0.0
+    for t in covered:
+        blk = ctx_tk.get(t) or {}
+        themes = blk.get("themes") or []
+        seen_here: set[str] = set()
+        counted = False
+        for th in themes:
+            if not isinstance(th, dict):
+                continue
+            tid = th.get("id")
+            if not tid or tid in seen_here:
+                continue
+            seen_here.add(tid)
+            w = weights.get(t, 0.0)
+            theme_w[tid] = theme_w.get(tid, 0.0) + w
+            theme_meta.setdefault(tid, th)
+            counted = True
+        if counted:
+            themed_total += weights.get(t, 0.0)
+    if themed_total > 0:
+        rows = []
+        for tid, w in theme_w.items():
+            m = theme_meta[tid]
+            row = {"id": tid, "name": m.get("name") or tid, "pct": _pct(w / themed_total)}
+            if m.get("reco"):
+                row["reco"] = m["reco"]
+            rows.append(row)
+        rows.sort(key=lambda r: (-r["pct"], r["id"]))
+        if rows:
+            out["themes"] = rows
+    return out
+
+
+def _events_block(ctx: dict, covered: list[str]) -> dict:
+    """Earnings inside the desk's own 10-day window — the same rows the prose section
+    renders, in machine form so a client need not re-parse the sentence."""
+    ctx_tk = ctx.get("tickers", {})
+    rows: list[dict] = []
+    for t in covered:
+        e = (ctx_tk.get(t) or {}).get("earnings")
+        if not isinstance(e, dict) or e.get("next") is None:
+            continue
+        try:
+            days = int(e.get("days_to"))
+        except (TypeError, ValueError):
+            continue
+        if days > 10:
+            continue
+        rows.append({"ticker": t, "date": str(e.get("next"))[:10], "days_to": days})
+    rows.sort(key=lambda r: (r["days_to"], r["ticker"]))
+    return {"earnings_10d": rows} if rows else {}
+
+
 # ── public composer ──────────────────────────────────────────────────────────
 
 def compose_brief(ctx: dict, holdings: list[dict], today: str,
-                  generated_at: str) -> dict:
-    """Compose the portfolio_brief.v1 payload from a portfolio_ctx.v1 dict + holdings.
+                  generated_at: str, *, population: str | None = None,
+                  previous: dict | None = None) -> dict:
+    """Compose the portfolio_brief.v2 payload from a portfolio_ctx.v1 dict + holdings.
 
-    Pure. See module docstring for the guardrails. Returns EXACTLY the v1 contract the
-    terminal Portfolio panel is built against.
+    Pure. See module docstring for the guardrails.
+
+    v2 is ADDITIVE over v1: every v1 key keeps its name, type and meaning, so the
+    terminal Portfolio panel and any other v1 client keep working untouched. New in v2:
+      * `population` — WHICH names this describes (A8). REQUIRED of callers in practice;
+        an omitted value renders as `unspecified` and says so, never as a guess.
+      * `data` — machine-renderable book/concentration/events + the state digest a
+        client persists to get "since your last visit" on the next visit.
+      * a `since` section when `previous` (a prior state digest) is supplied.
+
+    `previous` is the CLIENT's own stored digest. Nothing about it is persisted here —
+    see engine/portfolio_changes for the two-organisms boundary this respects.
     """
     ctx = ctx if isinstance(ctx, dict) else {}
     asof = ctx.get("asof")
     stale = _is_stale(asof, today)
+    population = _norm_population(population)
 
     order, weights, mode = _normalize_holdings(holdings)
     covered, uncovered = _covered(ctx, order)
@@ -680,7 +847,17 @@ def compose_brief(ctx: dict, holdings: list[dict], today: str,
         "stale": stale,
         "weighting": weighting,
         "book": book,
+        "population": _population_block(population, len(order), mode),
     }
+
+    # `data.book` + `data.state_digest` are present on EVERY response, including the two
+    # degenerate books below: a client that stores the digest each visit must not lose
+    # its cursor on the night a book happens to be empty or uncovered.
+    def _thin_data() -> dict:
+        return {"book": {"n": len(order), "covered": len(covered),
+                         "modeled": len(covered), "unmodeled": uncovered,
+                         "weighting": mode, "population": population},
+                "state_digest": snapshot_state(ctx, order)}
 
     # Empty book: no names at all.
     if len(order) == 0:
@@ -689,25 +866,28 @@ def compose_brief(ctx: dict, holdings: list[dict], today: str,
             "zh": "把标的加入你的观察列表，即可用桌面的视角审视你的持仓。",
         }
         base["sections"] = []
+        base["data"] = _thin_data()
         return base
 
     # Names held, but none covered by the desk artifact.
     if len(covered) == 0:
+        noun_en, noun_zh = _noun(population, "en"), _noun(population, "zh")
         base["headline"] = {
-            "en": (f"Your book has {len(order)} "
+            "en": (f"{noun_en.capitalize()} has {len(order)} "
                    f"{'name' if len(order) == 1 else 'names'}, but none has desk "
                    f"coverage yet — no read to show tonight."),
-            "zh": (f"你的持仓有 {len(order)} 只个股，但暂无任何一只被桌面覆盖 — "
+            "zh": (f"{noun_zh}有 {len(order)} 只个股，但暂无任何一只被桌面覆盖 — "
                    f"今晚没有可展示的判读。"),
         }
         base["sections"] = []
+        base["data"] = _thin_data()
         return base
 
     # Full brief.
     sections: list[dict] = []
     for builder in (
-        lambda: _exposure_section(ctx, covered, weights),
-        lambda: _lanes_section(ctx, covered, weights),
+        lambda: _exposure_section(ctx, covered, weights, population),
+        lambda: _lanes_section(ctx, covered, weights, population),
         lambda: _signals_section(ctx, covered),
         lambda: _regime_section(ctx, covered, weights),
         lambda: _earnings_section(ctx, covered),
@@ -717,32 +897,53 @@ def compose_brief(ctx: dict, holdings: list[dict], today: str,
         if sec is not None and sec.get("lines"):
             sections.append(sec)
 
-    # Headline: names, top weight, desk read.
+    # "Since your last visit" — composed only when the caller supplied a prior digest.
+    # It leads the sections: what moved is the reason a returning user opened the page.
+    since = compose_since_section(previous, snapshot_state(ctx, order)) if previous else None
+    if since is not None:
+        sections.insert(0, since)
+
+    # Headline: WHICH names, how many, top weight, desk read. The lead phrase names the
+    # population (A8) — a watchlist is never called a book.
     shares = _weighted_sector_shares(ctx, covered, weights)
     regime = ctx.get("regime") or {}
     us = regime.get("us") if isinstance(regime, dict) else None
     read_en = (us or {}).get("label_en") if isinstance(us, dict) else None
     read_zh = (us or {}).get("label_zh") if isinstance(us, dict) else None
     n = len(order)
+    lead_en = {"positions": "Your book today", "watchlist_union": "Your watchlist today",
+               "unspecified": "The names you sent today"}[population]
+    lead_zh = {"positions": "你今日的持仓", "watchlist_union": "你今日的观察列表",
+               "unspecified": "你今日提交的标的"}[population]
+    # A8: equal-weighted watchlist analysis is labeled as such wherever it is summarized.
+    ew_en = ", equal weighted" if (population == "watchlist_union" and mode == "equal") else ""
+    ew_zh = "（等权）" if (population == "watchlist_union" and mode == "equal") else ""
+    read_clause_en = f", desk read {read_en}" if read_en else ""
+    read_clause_zh = f"，桌面判读{read_zh or read_en}" if read_en else ""
     if shares:
         top_sector, top_share = shares[0]
         pct = _pct(top_share)
-        read_clause_en = f", desk read {read_en}" if read_en else ""
-        read_clause_zh = f"，桌面判读{read_zh or read_en}" if read_en else ""
         base["headline"] = {
-            "en": (f"Your book today: {n} {'name' if n == 1 else 'names'}, top weight "
+            "en": (f"{lead_en}: {n} {'name' if n == 1 else 'names'}{ew_en}, top weight "
                    f"{top_sector} {pct}%{read_clause_en}."),
-            "zh": (f"你今日的持仓：{n} 只个股，最大权重{top_sector} {pct}%"
+            "zh": (f"{lead_zh}{ew_zh}：{n} 只个股，最大权重{top_sector} {pct}%"
                    f"{read_clause_zh}。"),
         }
     else:
-        read_clause_en = f", desk read {read_en}" if read_en else ""
-        read_clause_zh = f"，桌面判读{read_zh or read_en}" if read_en else ""
         base["headline"] = {
-            "en": (f"Your book today: {n} covered "
-                   f"{'name' if n == 1 else 'names'}{read_clause_en}."),
-            "zh": f"你今日的持仓：{n} 只已覆盖个股{read_clause_zh}。",
+            "en": (f"{lead_en}: {n} covered "
+                   f"{'name' if n == 1 else 'names'}{ew_en}{read_clause_en}."),
+            "zh": f"{lead_zh}{ew_zh}：{n} 只已覆盖个股{read_clause_zh}。",
         }
 
     base["sections"] = sections
+    # `data` — machine-renderable arithmetic + the digest a client stores for next time.
+    data: dict = _thin_data()
+    conc = _concentration_block(ctx, covered, weights)
+    if conc:
+        data["concentration"] = conc
+    events = _events_block(ctx, covered)
+    if events:
+        data["events"] = events
+    base["data"] = data
     return base
