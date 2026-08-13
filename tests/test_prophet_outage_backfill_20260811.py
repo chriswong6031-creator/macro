@@ -340,6 +340,29 @@ class TestCodeVintageIsPinned:
         with pytest.raises(bf11.BackfillRefused, match="DESCENDS from #5370"):
             bf11.verify_code_vintage(tmp_path, tmp_path)
 
+    def test_the_pinned_tree_is_ACCEPTED_when_it_is_the_right_one(self):
+        """Guard the guard: the other two cases pass for a function that always raises."""
+        monkey = {"calls": []}
+
+        def _fake_git(repo, *args, **kwargs):  # noqa: ANN001
+            monkey["calls"].append(args)
+            return bf11.VINTAGE_COMMIT + "\n"
+
+        def _fake_run(cmd, **kwargs):  # noqa: ANN001
+            # `merge-base --is-ancestor #5370 vintage` must FAIL for a pre-#5370 tree.
+            raise subprocess.CalledProcessError(1, cmd)
+
+        original_git, original_run = bf11._git, subprocess.run
+        bf11._git, subprocess.run = _fake_git, _fake_run
+        try:
+            result = bf11.verify_code_vintage(Path("/nowhere"), Path("/nowhere"))
+        finally:
+            bf11._git, subprocess.run = original_git, original_run
+
+        assert result["vintage_commit"] == bf11.VINTAGE_COMMIT
+        assert result["pr5370"]["excluded"] is True
+        assert result["path_taken"] == "replayed at the pre-#5370 vintage tree"
+
     def test_the_pinned_vintage_predates_the_5370_merge(self):
         """The whole reason the lane runs an old tree, stated as a constant."""
         assert bf11.VINTAGE_COMMITTED_UTC < bf11.PR5370_MERGED_UTC
@@ -430,16 +453,35 @@ class TestHarnessFidelity:
 class TestReconciliation:
 
     def test_both_identities_close_on_a_consistent_funnel(self):
-        counts = {"admitted": 10, "duplicate_id_blocked": 3, "reorigination_blocked": 2,
+        counts = {"admitted": 10, "duplicate_id_blocked": 3,
+                  "reorigination_blocked": 2, "reorigination_blocked_rows": 2,
                   "eligible_after_skips": 5, "minted": 4, "collided": 1,
                   "chronology_refused": 1, "still_refused": 1}
         result = bf11.check_reconciliation(counts)
         assert result["admission_identity"]["holds"]
         assert result["disposition_identity"]["holds"]
 
+    def test_blocked_rows_and_blocked_keys_are_counted_separately(self):
+        """Two admitted rows on one ticker block once but are counted twice upstream.
+
+        The engine appends one blocked key per admitted ROW, while this lane disposes of
+        each distinct KEY once. Collapsing the two would abort a perfectly correct run
+        at the reconciliation gate — a guard failing on its own arithmetic rather than
+        on the thing it guards.
+        """
+        counts = {"admitted": 10, "duplicate_id_blocked": 3,
+                  "reorigination_blocked": 2,        # distinct keys
+                  "reorigination_blocked_rows": 3,   # rows the engine counted
+                  "eligible_after_skips": 4, "minted": 4, "collided": 1,
+                  "chronology_refused": 0, "still_refused": 1}
+        result = bf11.check_reconciliation(counts)
+        assert result["admission_identity"]["holds"], "3 + 3 + 4 == 10 on rows"
+        assert result["disposition_identity"]["holds"], "4 + 2 == 4 + 1 + 0 + 1 on keys"
+
     def test_a_lost_candidate_breaks_the_disposition_identity(self):
         """The point of the identity: a name that vanishes cannot vanish quietly."""
-        counts = {"admitted": 10, "duplicate_id_blocked": 3, "reorigination_blocked": 2,
+        counts = {"admitted": 10, "duplicate_id_blocked": 3,
+                  "reorigination_blocked": 2, "reorigination_blocked_rows": 2,
                   "eligible_after_skips": 5, "minted": 4, "collided": 1,
                   "chronology_refused": 0, "still_refused": 1}
         assert not bf11.check_reconciliation(counts)["disposition_identity"]["holds"]
@@ -503,15 +545,35 @@ class TestTheLaneIsScopedToOneNight:
         assert bf11.ORIGINATION_MODE.endswith("2026_08_11")
         assert bf11.WINDOW_ID.endswith("2026-08-11")
 
-    def test_there_is_no_asof_flag_to_widen_the_scope(self):
-        """Each outage is chartered separately; a date flag would be a generic lane."""
-        parser_help = bf11.main.__doc__ or ""
-        source = Path(bf11.__file__).read_text(encoding="utf-8")
-        assert '"--asof"' not in source and "'--asof'" not in source, (
-            "a date flag turns a chartered one-off into the generic backfill lane "
-            "research/DO_NOT_REBUILD.md forbids"
-        )
-        assert "--date" not in parser_help
+    def test_there_is_no_date_flag_to_widen_the_scope(self):
+        """Each outage is chartered separately; a date flag would be a generic lane.
+
+        Reads the ACTUAL parser rather than a docstring — an earlier version of this
+        asserted `"--date" not in bf11.main.__doc__ or ""`, and `main` has no docstring,
+        so it was asserting a substring is absent from the empty string.
+        """
+        import argparse  # noqa: PLC0415
+
+        captured: list[str] = []
+        real_add = argparse.ArgumentParser.add_argument
+
+        def _spy(self, *args, **kwargs):  # noqa: ANN001
+            captured.extend(a for a in args if isinstance(a, str))
+            return real_add(self, *args, **kwargs)
+
+        argparse.ArgumentParser.add_argument = _spy
+        try:
+            with pytest.raises(SystemExit):
+                bf11.main(["--help"])
+        finally:
+            argparse.ArgumentParser.add_argument = real_add
+
+        assert captured, "the spy captured no flags — the test would be vacuous"
+        for banned in ("--asof", "--as-of", "--date", "--night", "--window"):
+            assert banned not in captured, (
+                f"{banned} turns a chartered one-off into the generic backfill lane "
+                "research/DO_NOT_REBUILD.md forbids"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -630,6 +692,67 @@ class TestTheShippedReconstructionRow:
         if row is None:
             pytest.skip("this window has not been executed in this tree yet")
         assert row["disclosure_copy"] == bf11.DISCLOSURE_COPY
+
+
+@pytest.mark.skipif(
+    not REAL_PLANS_DIR.exists(),
+    reason="sparse checkout: site/prophet/plans is not materialised here",
+)
+class TestTheReceiptSatisfiesTheRealAuditor:
+    """The receipt shape is load-bearing, so it is checked against the real validator.
+
+    ``audit_prophet_plan_chronology`` validates EVERY receipt present in a plan's
+    creation commit before it will audit that plan — so a receipt that merely looks like
+    the nightly's would take every plan created in this commit out of audit with it.
+    The 2026-08-09 sibling pins this; without the same test here the module docstring's
+    "SHAPE IS LOAD-BEARING, not cosmetic" is an unbacked claim.
+    """
+
+    def _receipt(self) -> dict:
+        board = {
+            "as_of": bf11.BACKFILL_ASOF,
+            "rank_by": bf11.REQUIRED_RANK_BY,
+            "gate_go": True,
+            "staleness": {"price_through": bf11.BACKFILL_ASOF, "basis": "panel_majority",
+                          "delayed": False, "unknown": False},
+            "buy": [{"ticker": "AAA", "price": 10.0}],
+        }
+        plan = {"schema": "prophet.trade_plan/v1", "id": "AAA-BULL-20260805",
+                "asset": "AAA", "direction": "BULL", "formation_date": "2026-08-05",
+                "recorded_at": bf11.BACKFILL_ASOF}
+        return bf11._build_receipt(
+            receipt_id="backfill-20260811-deadbeefdeadbeef", board=board,
+            board_blob=json.dumps(board).encode("utf-8"),
+            baseline_sha="a" * 40, minted=[plan], intake={"admitted": 1},
+            executed_at="2026-08-13T00:00:00+00:00",
+            code_vintage={"vintage_commit": bf11.VINTAGE_COMMIT},
+            overlay={"live_price_source_commit": "b" * 40, "fence": {"violations": 0},
+                     "files": {}},
+            alpha={"as_of": bf11.BACKFILL_ASOF}, fidelity={"measured": True},
+        )
+
+    def test_the_real_auditor_accepts_the_receipt(self):
+        from scripts.audit_prophet_plan_chronology import (  # noqa: PLC0415
+            _validate_receipt_shape,
+        )
+        source, by_id = _validate_receipt_shape(
+            self._receipt(),
+            receipt_path=(f"{bf11.RECEIPTS_RELDIR}/"
+                          "backfill-20260811-deadbeefdeadbeef.json"),
+        )
+        assert source["price_through"] == bf11.BACKFILL_ASOF
+        assert "AAA-BULL-20260805" in by_id
+
+    def test_the_receipt_carries_its_price_basis_explicitly(self):
+        """The auditor raises "must be explicit" on a null, and takes the commit with it."""
+        receipt = self._receipt()
+        assert receipt["source"]["price_through"] == bf11.BACKFILL_ASOF
+        assert receipt["source"]["source_asof"] == receipt["source"]["price_through"]
+
+    def test_the_receipt_says_it_is_a_backfill_rather_than_an_actions_run(self):
+        receipt = self._receipt()
+        assert receipt["run"]["is_backfill"] is True
+        assert receipt["run"]["actor"].endswith("backfill_prophet_outage_20260811.py")
 
 
 @pytest.mark.skipif(

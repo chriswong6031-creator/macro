@@ -1702,6 +1702,11 @@ class TestTheDisclosureArtifactIsWellFormed:
                     "shown no work at all"
                 )
                 assert fidelity["reference_sha256"] == bf11.CONTROL_BOARD_SHA256
+            else:  # pragma: no cover - the registry test above fails first
+                # "Neither row may skip it" needs a terminal branch, or a third window
+                # skips the whole demand in silence — which is the one outcome this
+                # class exists to prevent.
+                raise AssertionError(f"unchartered window {row['id']!r}")
 
     def test_the_executed_run_reconciles(self):
         document = json.loads(REAL_DISCLOSURES.read_text(encoding="utf-8"))

@@ -205,16 +205,18 @@ DISCLOSURE_SCHEMA_VERSION = "1.2.0"
 RECEIPT_SCHEMA = "prophet.origination_receipt/v1"
 
 DISCLOSURE_PURPOSE = (
-    "Plans minted by the 2026-08-13 force-majeure RECONSTRUCTION of the 2026-08-11 "
-    "Prophet US origination, which never ran, and every candidate the reconstruction "
-    "did NOT mint. A plan listed in `minted` did not originate on the night its "
-    "recorded_at names, and — unlike the 2026-08-09 window in this same file — it was "
-    "not replayed from a board that existed either: the 2026-08-11 board is SYNTHETIC, "
-    "rebuilt from a price store truncated at the 2026-08-11 close. Any consumer that "
-    "computes a rate, hit-rate, calibration number or Prophet training input over the "
-    "forward ledger MUST be able to split these rows out, which is why every minted "
-    "plan carries origination_mode on the plan, on its index row, and on its "
-    "forward-ledger row at close."
+    "Every operator-ordered force-majeure origination window, and for each one both the "
+    "plans it minted and the candidates it did NOT. A plan listed under `minted` did not "
+    "originate on the night its recorded_at names. The windows are not all the same "
+    "kind: `replay` re-ran a bake that HAD run, against a board that survives in git; "
+    "`reconstruction` rebuilt a night that produced nothing at all, against a board that "
+    "never existed until the lane built it from a truncated price store — each row says "
+    "which it is under `kind`, and a reconstruction additionally carries the measured "
+    "fidelity of the harness that built its board. Any consumer that computes a rate, "
+    "hit-rate, calibration number or Prophet training input over the forward ledger MUST "
+    "be able to split these rows out, which is why every minted plan carries "
+    "origination_mode on the plan, on its index row, and on its forward-ledger row at "
+    "close."
 )
 DISCLOSURE_WHY_A_FILE = (
     "The standing law is that the forward ledger is never backfilled "
@@ -466,8 +468,20 @@ def overlay_sessions(vintage: Any, live: Any, through: str) -> tuple[Any, dict[s
         }
     live = truncate_frame(live, through)
     if vintage is None or len(vintage) == 0:
+        # NOT an append: there is no vintage history to preserve, so the whole truncated
+        # series is substituted. Said plainly, because the manifest note is what an
+        # auditor reads — the gitignored Russell panel takes this branch on every run,
+        # and calling a wholesale substitution "only missing sessions appended" would
+        # misdescribe the single largest write the overlay makes.
         merged = live
         added_index = list(getattr(live, "index", []))
+        return (merged.sort_index() if merged is not None else merged), {
+            "added_sessions": len(added_index),
+            "added": [str(ts)[:10] for ts in added_index],
+            "substituted": True,
+            "note": ("no vintage history for this path — the whole series was "
+                     "substituted from the later store and truncated at the ceiling"),
+        }
     else:
         last = vintage.index.max()
         tail = live[live.index > last]
@@ -476,12 +490,14 @@ def overlay_sessions(vintage: Any, live: Any, through: str) -> tuple[Any, dict[s
         # silently blank it.
         if len(tail) and list(tail.columns) != list(vintage.columns):
             tail = tail.reindex(columns=vintage.columns)
-        merged = pd.concat([vintage, tail]) if len(tail) else vintage
-        added_index = list(tail.index)
+    merged = pd.concat([vintage, tail]) if len(tail) else vintage
+    added_index = list(tail.index)
     merged = merged.sort_index()
     return merged, {
         "added_sessions": len(added_index),
         "added": [str(ts)[:10] for ts in added_index],
+        "substituted": False,
+        "dropped_columns": sorted(set(live.columns) - set(vintage.columns)),
         "note": "vintage rows kept byte-for-byte; only missing sessions appended",
     }
 
@@ -824,23 +840,78 @@ def prepare_reconstruction_tree(
 #: one place.  It imports the VINTAGE engine (cwd + sys.path are the vintage tree), so
 #: ``config.ROOT`` resolves there and every price read is fenced by construction.
 _ORIGINATION_RUNNER = '''
-import json, sys
+import datetime as _dt, json, sys
 from pathlib import Path
 root = Path(sys.argv[1]).resolve()
 sys.path.insert(0, str(root))
 board_path, asof, payload_in, payload_out = sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 payload = json.loads(Path(payload_in).read_text())
-from engine.prophet_bridge import SELECTION_ERA, originate_plans
+board = json.loads(Path(board_path).read_text())
+from engine.prophet_bridge import (
+    SELECTION_ERA, _make_id, _normalise_iso_date, originate_plans, select_candidates,
+)
 try:
     from engine.thetadata_store import resolve_thetadata_store
     store = resolve_thetadata_store(required=False, purpose="prophet 2026-08-11 reconstruction")
 except Exception:
     store = None
+
+# Duplicate-id re-walk, HERE rather than in the caller: it needs the vintage engine's
+# own _make_id/select_candidates, and importing those into the orchestrator would bind
+# `engine` to the vintage tree for every later import in that process.
+baseline_ids = set(payload["existing_ids"])
+on_main, intra_board, seen = [], [], set()
+for _row in select_candidates(board, n=None):
+    _t = str(_row.get("ticker") or "").strip().upper()
+    if not _t:
+        continue
+    _anchor = (_row.get("hold") or {}).get("anchor")
+    _formation = _normalise_iso_date(_anchor if _anchor else board.get("as_of"))
+    if _formation is None:
+        continue
+    _pid = _make_id(_t, "BULL", _formation)
+    if _pid in seen:
+        intra_board.append(_pid)
+        continue
+    seen.add(_pid)
+    if _pid in baseline_ids:
+        on_main.append(_pid)
+
+# Wall-clock earnings exposure, same reasoning: engine.stock_fundamentals pulls `lib`
+# and `engine` in with it, and the caller must stay bound to the PR checkout.
+earnings = {"measurable": False, "rows": []}
+try:
+    from engine.stock_fundamentals import _load_earnings
+    _cal = _load_earnings()
+    _bake, _run = _dt.date.fromisoformat(asof), _dt.datetime.now(_dt.timezone.utc).date()
+    def _days(t, today):
+        nd = (_cal.get(t) or {}).get("next_date")
+        if not nd:
+            return None
+        try:
+            d = (_dt.date.fromisoformat(str(nd)[:10]) - today).days
+        except Exception:
+            return None
+        return float(d) if 0 <= d <= 60 else None
+    _rows = []
+    for _row in (board.get("buy") or []):
+        _t = str(_row.get("ticker") or "").strip().upper()
+        if not _t:
+            continue
+        _a, _b = _days(_t, _bake), _days(_t, _run)
+        if _a != _b:
+            _rows.append({"ticker": _t, "days_to_earnings_at_bake_date": _a,
+                          "days_to_earnings_at_run_date": _b})
+    earnings = {"measurable": True, "calendar_names": len(_cal), "rows": _rows,
+                "run_date": _run.isoformat()}
+except Exception as _e:
+    earnings = {"measurable": False, "reason": str(_e), "rows": []}
+
 intake = {}
 plans = originate_plans(
     standouts_path=board_path,
     asof=asof,
-    existing_ids=set(payload["existing_ids"]),
+    existing_ids=baseline_ids,
     thetadata_store=str(store) if store else None,
     active_keys=set(payload["active_keys"]),
     intake_stats=intake,
@@ -848,6 +919,8 @@ plans = originate_plans(
 Path(payload_out).write_text(json.dumps({
     "plans": plans, "intake": intake, "selection_era": SELECTION_ERA,
     "thetadata_store": str(store) if store else None,
+    "duplicate_ids": {"on_main": sorted(on_main), "intra_board": sorted(intra_board)},
+    "earnings_exposure": earnings,
 }, default=str))
 '''
 
@@ -915,16 +988,30 @@ def reset_builder_state(vintage: Path) -> dict[str, Any]:
     return {"restored": len(restore), "sample": sorted(restore)[:8]}
 
 
-def build_board(vintage: Path, *, through: str, work: Path, timeout: int = 7200) -> Path:
+def build_board(vintage: Path, *, through: str, work: Path, timeout: int = 7200,
+                fingerprint: str | None = None) -> Path:
     """Run the VINTAGE ``build_stock_library`` and freeze the board it produces.
 
     The builder takes no as-of flag and derives ``as_of`` from the panel on disk, which
     is exactly why the truncation is done to the disk and not to the builder.
+
+    A board build costs ~11-20 minutes, so it is cached — but the cache is keyed on the
+    TREE STATE, not on the date alone, and that distinction is load-bearing.  Keyed on
+    the date, a re-run with a widened universe (the first run of this lane had no
+    Russell panel and scored 0.822; supplying it moved the measurement) would rebuild
+    the alpha stamp, hit a stale cached board built over a third less universe, sail
+    through ``verify_board_identity`` because ``as_of`` had not changed, and publish a
+    fidelity score measured on one tree beside a board built on another.
     """
-    out = work / f"board_{through}.json"
+    suffix = f"_{fingerprint}" if fingerprint else ""
+    out = work / f"board_{through}{suffix}.json"
     if out.exists():
-        log.info("reconstruction: reusing cached board %s", out.name)
+        log.info("reconstruction: reusing cached board %s (same tree state)", out.name)
         return out
+    for stale in work.glob(f"board_{through}_*.json"):
+        log.info("reconstruction: discarding %s — the tree state that produced it is "
+                 "not the one being built now", stale.name)
+        stale.unlink()
     log.info("reconstruction: building the %s board in %s (no as-of flag exists; the "
              "date comes from the truncated panel)", through, vintage)
     proc = subprocess.run(
@@ -947,8 +1034,26 @@ def build_board(vintage: Path, *, through: str, work: Path, timeout: int = 7200)
             "one that night would have produced."
         )
     out.write_bytes(board_path.read_bytes())
-    (work / f"board_{through}.buildlog").write_bytes(proc.stdout[-200_000:])
+    (work / f"board_{through}{suffix}.buildlog").write_bytes(proc.stdout[-200_000:])
     return out
+
+
+def tree_fingerprint(manifest: dict[str, Any]) -> str:
+    """A short digest of the price tree state a board was built over.
+
+    Cheap and total: the overlay manifest already records every file it touched, how
+    many sessions it added, and the fence's own scan count, so hashing it captures
+    exactly the axis a board build can differ on without its ``as_of`` moving.
+    """
+    payload = {
+        "through": manifest.get("through"),
+        "live_price_source_commit": manifest.get("live_price_source_commit"),
+        "totals": manifest.get("totals"),
+        "files_scanned": (manifest.get("fence") or {}).get("files_scanned"),
+        "files": sorted((rel, row.get("added_sessions"))
+                        for rel, row in (manifest.get("files") or {}).items()),
+    }
+    return _canonical_sha256(payload)[:12]
 
 
 def board_fidelity(rebuilt: dict, reference: dict) -> dict[str, Any]:
@@ -981,8 +1086,16 @@ def board_fidelity(rebuilt: dict, reference: dict) -> dict[str, Any]:
     }
 
 
-def wall_clock_earnings_exposure(vintage: Path, board: dict) -> dict[str, Any]:
+def wall_clock_earnings_exposure(measured: dict[str, Any]) -> dict[str, Any]:
     """Name the rows whose earnings CONTEXT moved with the wall clock, and say what it gates.
+
+    ``measured`` comes back from the vintage subprocess.  It is computed THERE, and that
+    is not incidental: reading the earnings calendar needs ``engine.stock_fundamentals``,
+    which drags ``engine`` and ``lib`` into ``sys.modules`` bound to the vintage tree.
+    An earlier draft imported it here, and the next ordinary import in this process —
+    ``scripts.build_prophet``, from the PR checkout — then resolved ``engine.prophet_bridge``
+    to the VINTAGE's copy and died on a symbol that did not exist yet. Every read of the
+    vintage now happens in a subprocess; this process never puts that tree on its path.
 
     The #5289/#5304 timezone-lookahead defect is FIXED on the path that decides board
     membership, and this lane verified that rather than assuming it: the W1.5 blackout
@@ -1001,43 +1114,11 @@ def wall_clock_earnings_exposure(vintage: Path, board: dict) -> dict[str, Any]:
     between the bake date and this run's date is named, and an empty list is a real
     answer rather than a silence.
     """
-    import datetime as _dt  # noqa: PLC0415
-
-    sys.path.insert(0, str(vintage))
-    try:
-        from engine.stock_fundamentals import _load_earnings  # noqa: PLC0415
-        calendar = _load_earnings()
-    except Exception as exc:  # noqa: BLE001 - absence is itself the disclosure
+    if not measured.get("measurable"):
         return {"measurable": False,
-                "reason": f"earnings calendar unavailable in the vintage tree ({exc})",
+                "reason": measured.get("reason", "not measured in the vintage tree"),
                 "rows_affected": []}
-    finally:
-        if sys.path and sys.path[0] == str(vintage):
-            sys.path.pop(0)
-
-    bake = _dt.date.fromisoformat(BACKFILL_ASOF)
-    run = _dt.datetime.now(timezone.utc).date()
-
-    def _days(ticker: str, today: _dt.date) -> float | None:
-        nxt = (calendar.get(ticker) or {}).get("next_date")
-        if not nxt:
-            return None
-        try:
-            delta = (_dt.date.fromisoformat(str(nxt)[:10]) - today).days
-        except Exception:  # noqa: BLE001
-            return None
-        return float(delta) if 0 <= delta <= 60 else None
-
-    affected: list[dict[str, Any]] = []
-    for row in board.get("buy") or []:
-        ticker = str(row.get("ticker") or "").strip().upper()
-        if not ticker:
-            continue
-        at_bake, at_run = _days(ticker, bake), _days(ticker, run)
-        if at_bake != at_run:
-            affected.append({"ticker": ticker,
-                             "days_to_earnings_at_bake_date": at_bake,
-                             "days_to_earnings_at_run_date": at_run})
+    affected = measured.get("rows") or []
     return {
         "measurable": True,
         "admission_gate": {
@@ -1048,16 +1129,43 @@ def wall_clock_earnings_exposure(vintage: Path, board: dict) -> dict[str, Any]:
             "note": "the #5289/#5304 timezone lookahead is fixed on this path; "
                     "verified at the pinned vintage, not assumed",
         },
-        "residual_wall_clock_input": (
-            "build_stock_library.main()'s days-to-next-earnings closure (date.today()), "
-            "feeding per-row earnings_days / days_to_earnings context — a size-down "
-            "chip, not an admission test"
+        "residual_wall_clock_inputs": [
+            {
+                "site": "build_stock_library.main()'s days-to-next-earnings closure",
+                "reaches": "per-row earnings_days / days_to_earnings context — a "
+                           "size-down chip, not an admission test",
+                "status": "measured; every row whose value moved is named below",
+            },
+            {
+                "site": "_next_monthly_opex_days() -> gex_confirm.assess(opex_days=)",
+                "reaches": "pre-OPEX suppression",
+                "status": (
+                    "measured null for THIS date pair: August 2026 monthly opex is the "
+                    "21st, so 10 days out at the bake date and 8 at the run date — both "
+                    "outside the last-2-sessions window the suppression uses"
+                ),
+            },
+            {
+                "site": "current_risk_overlay()'s FOMC leg -> stock_score verb veto",
+                "reaches": "T3 macro tax and the verb veto",
+                "status": (
+                    "measured null for THIS date pair: the next FOMC is 2026-09-16, so "
+                    "36 days out at the bake date and 34 at the run date — both bucket "
+                    "to 0.0"
+                ),
+            },
+        ],
+        "residual_channel_note": (
+            "Three channels, not one. The two beyond the earnings chip are inert for "
+            "this particular date pair rather than structurally unreachable, and they "
+            "are named with the measurement that makes them inert so a reader can "
+            "re-check it for a different night instead of inheriting the claim."
         ),
         "bake_date": BACKFILL_ASOF,
-        "run_date": run.isoformat(),
+        "run_date": measured.get("run_date"),
         "timezone_half": "pinned — every vintage subprocess runs TZ=UTC",
         "date_half": "not pinnable from outside the builder's closure; measured instead",
-        "calendar_names": len(calendar),
+        "calendar_names": measured.get("calendar_names"),
         "rows_affected": affected,
         "rows_affected_count": len(affected),
     }
@@ -1145,11 +1253,18 @@ def verify_board_identity(board: dict, blob: bytes) -> dict[str, Any]:
         raise BackfillRefused(
             f"reconstructed board as_of is {as_of!r}, expected {BACKFILL_ASOF!r}"
         )
-    if price_through and price_through != BACKFILL_ASOF:
+    if price_through != BACKFILL_ASOF:
+        # Fails CLOSED on an absent stamp, not just a wrong one. An earlier draft read
+        # `if price_through and ...`, which let an empty value through the one function
+        # whose docstring promises hard refusals — and the same empty value then lands
+        # in the receipt's `price_through`/`source_asof`, where
+        # audit_prophet_plan_chronology raises "must be explicit" and takes EVERY plan
+        # created in that commit out of audit with it.
         raise BackfillRefused(
             f"reconstructed board prices through {price_through!r}, not "
             f"{BACKFILL_ASOF!r}. The origination clock contract requires the board's "
-            "price basis to BE the last session on or before the recorded date."
+            "price basis to BE the last session on or before the recorded date, and an "
+            "absent stamp cannot satisfy it."
         )
     if rank_by != REQUIRED_RANK_BY or definition != REQUIRED_RANK_BY:
         raise BackfillRefused(
@@ -1216,6 +1331,46 @@ def live_plans_since(plans: dict[str, dict], cutoff: str) -> dict[str, list[dict
             continue
         by_key.setdefault(key, []).append(plan)
     return by_key
+
+
+def already_published_ids(duplicates: dict[str, Any], *,
+                          expected: int | None) -> tuple[list[str], str | None]:
+    """Plan ids the reconstruction did not mint because that id already exists on main.
+
+    WITHOUT THIS THE DISCLOSURE IS A LIE BY OMISSION, and the omission is large.  A plan
+    id is ``(ticker, direction, formation_anchor)`` and the anchor is a SIGNAL date, not
+    the run date — so a name the live 2026-08-12 nightly minted off a 2026-08-10 or
+    2026-08-05 anchor produces the SAME id from the 2026-08-11 board.  The engine sees
+    the id first (its duplicate check runs before the open-plan check), files it under
+    ``duplicate_id_blocked``, and the candidate never reaches the ``collided`` path this
+    lane maps.  Measured on the live set: 13 of the 25 plans the 2026-08-12 nightly
+    minted anchor to 2026-08-10 and 5 more to 2026-08-05 — eighteen names that would
+    otherwise appear nowhere in a document whose stated purpose is "every candidate the
+    reconstruction did NOT mint", surviving only as an integer.
+
+    SCOPE NOTE that matters for the arithmetic: the engine's counter also includes
+    INTRA-BOARD duplicates — two admitted rows resolving to one id, caught by its own
+    seen-set — which have no baseline plan to name.  The two populations are reported
+    separately rather than conflated, and the cross-check tolerates only their SUM
+    matching the engine's count; a mismatch withholds the names rather than guessing.
+    """
+    on_main = sorted(duplicates.get("on_main") or [])
+    intra_board = list(duplicates.get("intra_board") or [])
+    total = len(on_main) + len(intra_board)
+    if expected is not None and total != expected:
+        return [], (
+            f"not enumerated: the re-walk found {total} duplicate id(s) "
+            f"({len(on_main)} already on main + {len(intra_board)} intra-board) but the "
+            f"engine reported {expected}; the engine count is authoritative and the "
+            "names are withheld rather than guessed"
+        )
+    note = (f"{len(on_main)} id(s) already published on main — the SAME episode, not a "
+            "refusal and not a collision")
+    if intra_board:
+        note += (f". The engine's duplicate_id_blocked count ({expected}) also includes "
+                 f"{len(intra_board)} intra-board duplicate(s), which have no baseline "
+                 "plan to name, so plan_ids is shorter than count by exactly that many")
+    return on_main, note
 
 
 #: The engine stage that refuses a candidate whose clocks do not line up — the
@@ -1374,16 +1529,21 @@ def check_reconciliation(counts: dict[str, Any]) -> dict[str, Any]:
         value = counts.get(key)
         return int(value) if isinstance(value, (int, float)) else 0
 
+    # ROWS on the admission side, DISTINCT KEYS on the disposition side, and the
+    # difference is not pedantry: the engine appends one blocked key per admitted ROW,
+    # so two rows on one ticker with different anchors count twice there — while this
+    # lane disposes of each distinct key exactly once. Using one number for both aborts
+    # a correct run at the reconciliation gate, which is the worst kind of guard.
     admitted_lhs = _n("admitted")
-    admitted_rhs = (_n("duplicate_id_blocked") + _n("reorigination_blocked")
+    admitted_rhs = (_n("duplicate_id_blocked") + _n("reorigination_blocked_rows")
                     + _n("eligible_after_skips"))
     disposed_lhs = _n("eligible_after_skips") + _n("reorigination_blocked")
     disposed_rhs = (_n("minted") + _n("collided") + _n("chronology_refused")
                     + _n("still_refused"))
     return {
         "admission_identity": {
-            "statement": ("admitted == duplicate_id_blocked + reorigination_blocked + "
-                          "eligible_after_skips"),
+            "statement": ("admitted == duplicate_id_blocked + "
+                          "reorigination_blocked_rows + eligible_after_skips"),
             "lhs": admitted_lhs, "rhs": admitted_rhs,
             "holds": admitted_lhs == admitted_rhs,
         },
@@ -1422,10 +1582,26 @@ def verify_collisions(repo: Path, *, against: str = "origin/main") -> dict[str, 
             f"{DISCLOSURES_RELPATH} at HEAD records no {WINDOW_ID!r} window — there is "
             "no executed reconstruction to re-verify. Run the lane first."
         )
+    # DIRECTION comes off the disclosed row, not a hardcoded "-BULL". Every plan this
+    # window minted is BULL today, but a lane that keys collisions on ticker+direction
+    # everywhere else and then assumes one of them here is wrong the first day a BEAR
+    # plan mints — silently, and in the mode whose whole job is to catch a collision.
     minted_keys = {
-        f"{str(entry.get('ticker') or '').strip().upper()}-BULL": entry.get("plan_id")
+        (f"{str(entry.get('ticker') or '').strip().upper()}-"
+         f"{str(entry.get('direction') or 'BULL').strip().upper()}"): entry.get("plan_id")
         for entry in (row.get("minted") or [])
     }
+    # §0.4's window closes at MERGE, so the ref this reads has to BE fresh, not merely
+    # be named origin/main. Without the fetch this reports on whatever the last local
+    # fetch happened to leave behind and returns a confident green.
+    try:
+        _git(repo, "fetch", "origin", "main", "--quiet")
+    except subprocess.CalledProcessError as exc:
+        raise BackfillRefused(
+            "could not fetch origin/main, so the collision set cannot be re-derived "
+            f"against a current ref ({exc}). A stale answer here is worse than none: "
+            "the merge would proceed on a window nobody re-checked."
+        ) from exc
     fresh_sha = resolve_commit(repo, against)
     fresh_plans = load_plans_at(repo, fresh_sha)
     incumbents = live_plans_since(fresh_plans, LIVE_WINS_FROM)
@@ -1547,15 +1723,34 @@ def run_reconstruction(
         )
         control_overlay["builder_state_reset"] = reset_builder_state(vintage)
         build_alpha(vintage, through=CONTROL_THROUGH, work=work)
-        control_path = build_board(vintage, through=CONTROL_THROUGH, work=work)
+        control_path = build_board(vintage, through=CONTROL_THROUGH, work=work,
+                                   fingerprint=tree_fingerprint(control_overlay))
         fidelity = board_fidelity(json.loads(control_path.read_text()),
                                   json.loads(reference_blob.decode("utf-8")))
         fidelity["measured"] = True
         fidelity["method"] = (
-            "the SAME harness — same tree, same overlay, same alpha rebuild, same "
-            "builder — truncated one session earlier and scored against the board the "
-            "pinned vintage already ships"
+            "the same tree, alpha rebuild and builder, run one session earlier and "
+            "scored against the board the pinned vintage already ships"
         )
+        # Say what this DOES and DOES NOT establish, because the number is easy to
+        # over-read. The vintage's committed price store already ends 2026-08-10, so on
+        # the control pass the overlay appends nothing to any tracked file: the only
+        # file it writes is the gitignored Russell panel. What is measured is therefore
+        # the Russell substitution, the alpha rebuild path and the builder's determinism
+        # over the exact inputs that produced the reference board — a real and necessary
+        # result, and NOT a test of the truncation, the append, or the minted set.
+        fidelity["measures"] = [
+            "that supplying the gitignored Russell close panel reproduces the board "
+            "built with the lane's own copy of it",
+            "that the alpha rebuild lands on the tree's own session",
+            "that build_stock_library is deterministic over unchanged inputs",
+        ]
+        fidelity["does_not_measure"] = [
+            "the price overlay — the vintage store already ends 2026-08-10, so no "
+            "tracked file gains a session on this pass",
+            "truncation of a bar past the ceiling — computed, then discarded unwritten",
+            "the minted plan set — originate_plans is not called on the control pass",
+        ]
         fidelity["reference_sha256"] = digest
         log.info("reconstruction: control rebuild of the %s board scores jaccard=%s "
                  "(floor %s); missing=%s extra=%s", CONTROL_THROUGH,
@@ -1600,7 +1795,8 @@ def run_reconstruction(
              TRUNCATE_THROUGH, overlay["fence"]["files_scanned"])
 
     alpha = build_alpha(vintage, through=TRUNCATE_THROUGH, work=work)
-    board_path = build_board(vintage, through=TRUNCATE_THROUGH, work=work)
+    board_path = build_board(vintage, through=TRUNCATE_THROUGH, work=work,
+                             fingerprint=tree_fingerprint(overlay))
     board_blob = board_path.read_bytes()
     board = json.loads(board_blob.decode("utf-8"))
     identity = verify_board_identity(board, board_blob)
@@ -1608,7 +1804,7 @@ def run_reconstruction(
              "panel_members=%s", identity["as_of"], identity["rank_by"],
              identity["buy_rows"], identity["panel"].get("members_total"))
 
-    clock = wall_clock_earnings_exposure(vintage, board)
+    clock: dict[str, Any] = {}
 
     # ── plan baseline + post-bake proof ──────────────────────────────────────
     from scripts.build_prophet import open_plan_keys  # noqa: PLC0415
@@ -1640,7 +1836,27 @@ def run_reconstruction(
         vintage, board=board_path, asof=BACKFILL_ASOF,
         existing_ids=set(baseline_plans.keys()), active_keys=active_keys, work=work,
     )
+    # The one input that can reach outside the fenced tree. `resolve_thetadata_store`
+    # falls back to an ABSOLUTE path (~/theta-ops-wt/...) and honours THETADATA_STORE
+    # from the environment, so a store could be a live, present-day, actively-backfilled
+    # artifact that no fence scans. On this host it resolves to None, and rather than
+    # enjoy that quietly the lane REFUSES a store it cannot fence — the option chain is
+    # masked on the plan's own session so a resolved store would still be date-correct,
+    # but its 2026-08-11 rows need not be the rows that existed at 22:26Z that night,
+    # which is the same restatement class the price overlay exists to exclude.
+    resolved_store = originated.get("thetadata_store")
+    if resolved_store and not str(resolved_store).startswith(str(vintage)):
+        raise BackfillRefused(
+            f"the option store resolved to {resolved_store!r}, which is outside the "
+            "fenced reconstruction tree. Its rows for 2026-08-11 need not be the rows "
+            "that existed at the bake, and nothing here can date-pin them. Unset "
+            "THETADATA_STORE (the live 2026-08-12 nightly minted all 25 of its plans "
+            "with option_contract=null, so an absent store matches the live path) or "
+            "place a vintage-pinned store inside the tree."
+        )
+
     intake = originated.get("intake") or {}
+    clock = wall_clock_earnings_exposure(originated.get("earnings_exposure") or {})
     incumbents = live_plans_since(baseline_plans, LIVE_WINS_FROM)
 
     survived: list[dict[str, Any]] = []
@@ -1699,11 +1915,35 @@ def run_reconstruction(
     chronology_refused.sort(key=lambda row: str(row.get("ticker")))
     still_refused.sort(key=lambda row: (str(row.get("ticker")), str(row.get("reason"))))
 
+    duplicate_ids, duplicate_note = already_published_ids(
+        originated.get("duplicate_ids") or {},
+        expected=intake.get("duplicate_id_blocked"))
+    # §0.4 REACHES THE DUPLICATES TOO. A duplicate whose incumbent was recorded ON OR
+    # AFTER the cutoff is not "the same episode an earlier bake published" — it is a
+    # name the LIVE lane won inside the collision window, and it belongs in the record
+    # as such. It is a SEPARATE list rather than an extra `collided` entry because the
+    # disposition identity accounts for the ELIGIBLE population and a duplicate never
+    # reaches it; folding these in would break arithmetic that has to stay checkable.
+    duplicate_live_wins = sorted(
+        ({"plan_id": plan_id,
+          "ticker": (baseline_plans.get(plan_id) or {}).get("asset"),
+          "reason": "live_origination_wins_duplicate_id",
+          "live_recorded_at": plan_recorded_on(baseline_plans.get(plan_id) or {})}
+         for plan_id in duplicate_ids
+         if (plan_recorded_on(baseline_plans.get(plan_id) or {}) or "") >= LIVE_WINS_FROM),
+        key=lambda row: str(row["plan_id"]))
+
     counts = {
         "buy_rows": intake.get("buy_rows"),
         "admitted": intake.get("admitted"),
         "duplicate_id_blocked": intake.get("duplicate_id_blocked"),
-        "reorigination_blocked": intake.get("reorigination_blocked"),
+        # The engine counts every blocked ROW; this lane disposes of each distinct KEY
+        # once. Two admitted rows on one ticker with different anchors append the same
+        # key, so the row count and the disposition rows differ by exactly the
+        # duplicates — using the row count here would abort a correct run on arithmetic.
+        "reorigination_blocked": len(
+            intake.get("reorigination_blocked_keys") or []),
+        "reorigination_blocked_rows": intake.get("reorigination_blocked"),
         "eligible_after_skips": intake.get("eligible_after_skips"),
         "minted": len(minted),
         "collided": len(collided),
@@ -1788,6 +2028,7 @@ def run_reconstruction(
         "reconciliation": reconciliation,
         "minted": [{
             "plan_id": plan.get("id"), "ticker": plan.get("asset"),
+            "direction": plan.get("direction") or "BULL",
             "recorded_at": plan.get("recorded_at"),
             "price_basis_date": plan.get("price_basis_date"),
             "entry": plan.get("entry"), "trigger": plan.get("trigger"),
@@ -1802,6 +2043,17 @@ def run_reconstruction(
         "collided": collided,
         "chronology_refused": chronology_refused,
         "still_refused": still_refused,
+        "already_published": {
+            "count": intake.get("duplicate_id_blocked"),
+            "plan_ids": duplicate_ids,
+            "note": duplicate_note,
+            # The §0.4 subset: names the LIVE lane won inside the collision window,
+            # rather than episodes an earlier bake had already published. A plan id
+            # anchors to a SIGNAL date, so a 2026-08-12 mint off an 08-10 or 08-05
+            # anchor collides here rather than in `collided`.
+            "live_wins_within_window": duplicate_live_wins,
+            "live_wins_within_window_count": len(duplicate_live_wins),
+        },
         "never_reconstructed": {
             "dates": ["2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06"],
             "ruling": "us-board-frozen-alpha-2026-08",
@@ -1815,10 +2067,19 @@ def run_reconstruction(
         },
     }
 
+    # The header describes the FILE, which now holds more than one window, so it must
+    # not be this lane's window written as if it were the only one. An earlier draft
+    # replaced the 2026-08-09 lane's purpose text wholesale, leaving a document whose
+    # stated subject was the newest row while it contained both.
     document = {
         "schema_version": DISCLOSURE_SCHEMA_VERSION,
         "purpose": DISCLOSURE_PURPOSE,
         "why_a_file_and_not_a_comment": DISCLOSURE_WHY_A_FILE,
+        "windows": [
+            {"id": row.get("id"), "recorded_at": row.get("recorded_at"),
+             "kind": row.get("kind", "replay"), "authority": row.get("authority")}
+            for row in [*(existing_disclosures.get("backfills") or []), disclosure_row]
+        ],
         "backfills": [*(existing_disclosures.get("backfills") or []), disclosure_row],
     }
     receipt = _build_receipt(
@@ -1942,7 +2203,17 @@ def write_artifacts(repo: Path, *, minted: list[dict], receipt: dict[str, Any],
     plans_dir = repo / PLANS_RELDIR
     plans_dir.mkdir(parents=True, exist_ok=True)
     for plan in minted:
-        (plans_dir / f"{plan['id']}.json").write_bytes(_plan_bytes(plan))
+        path = plans_dir / f"{plan['id']}.json"
+        if path.exists():
+            # The engine's duplicate-id suppression should already have made this
+            # unreachable, but "should" is doing load-bearing work in that sentence and
+            # the thing at stake is a LIVE plan file. Refuse rather than overwrite: a
+            # clobbered live plan is unrecoverable from this lane's own artifacts.
+            print("::error title=prophet-backfill-plan-collision::"
+                  f"{PLANS_RELDIR}/{plan['id']}.json already exists — the reconstruction "
+                  "would overwrite a plan it did not write", flush=True)
+            raise SystemExit(4)
+        path.write_bytes(_plan_bytes(plan))
 
     # Receipts are IMMUTABLE publication records — same discipline as the nightly's
     # writer (.github/workflows/daily.yml): an existing receipt whose bytes differ is a
