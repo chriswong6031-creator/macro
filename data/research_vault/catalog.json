@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T03:40:24.474914+00:00",
-  "count": 1034,
+  "generated_at": "2026-08-13T04:10:32.561587+00:00",
+  "count": 1035,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -736,6 +736,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 40,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-oc8o0ibahzz-f1fc4a",
+      "title": "Agriculture Analyst Biofuels Primer Why Crop Prices Increasingly Follow Fuel",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:08Z",
+      "summary_points": [
+        "**Mandate-Driven Production Scale**: US/EU/Brazil dominate 80% of global biofuel production; rising mandates (e.g., US soybean oil biofuel share 40%→55% by 2026, Brazil ethanol 32%, Indonesia palm biodiesel 50%) directly drive crop price trends and tighten food-feed-fuel competition.",
+        "**Feedstock Competition & Supply Risk**: Biofuel demand diverts crops from food/feed (e.g., US soybean oil domestic biofuel use to 8m tonnes by 2026), intensifying supply chain risks as biodiesel (soybeans/palm/rapeseed) and ethanol (corn/sugarcane) compete for agricultural inputs.",
+        "**Policy-Driven Price Support Mechanisms**: Renewable Identification Numbers (RINs) create tradable credit systems to meet mandates; RIN price volatility surges with higher RVOs or feedstock shortages, sustaining biofuel production despite elevated costs and acting as a de facto subsidy.",
+        "**Blend Wall Constraints Limit Growth**: Technical (Brazil/Indonesia engine limits) and policy caps (US/EU) prevent biofuel demand expansion despite strong margins, capping growth potential even during oil price surges (e.g., 2026H1)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
