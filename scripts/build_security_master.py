@@ -16,7 +16,10 @@ one thing is the exact defect the spine exists to end.
 ``valid_from`` INCLUSIVE, ``valid_to`` EXCLUSIVE (spec §6;
 ``lib/dataos/identity.py::AliasRow``).  An inclusive end would make the changeover day
 ambiguous, and 2026-01-14 is exactly the day the MMC/MRSH answer has to be
-unambiguous.
+unambiguous.  It carries FIVE vendor spaces in TWO FAMILIES — three that answer "what
+was it called THEN" and two that answer "what do I call it TODAY, for a bar of any
+date".  Confusing those two is the seven-month MMC outage in a new costume, so the
+families have different names and a test pins them apart; see the vendor block below.
 
 ``data/reference/_receipt.json``  ``code_version`` (git sha), per-input sha256, row
 counts, ``generated_at``, and the coverage numbers.  Coverage is a REPORTED NUMBER,
@@ -145,14 +148,45 @@ ALIAS_COLUMNS = (
 MASTER_DTYPES = {"effective_at": "datetime", "ingested_at": "datetime"}
 ALIAS_DTYPES = {"valid_from": "date", "valid_to": "date", "ingested_at": "datetime"}
 
-# ── Vendors (symbol SPACES) ───────────────────────────────────────────────────
-# A "vendor" here is a symbol space, which is why one of the three is this repo.
+# ── Vendors (symbol SPACES) — TWO CLOCKS, never one ───────────────────────────
+# A "vendor" here is a symbol space, which is why several of them are this repo.
 # Spec §6's column note lists `yahoo` … `nasdaq_symdir` … `exchange` as vendors; the
 # repo's own stable key is the space every site surface, page slug and ledger row is
 # written in, so it needs a name in the same table or the translation has no LHS.
-VENDOR_YAHOO = "yahoo"          # the symbol REQUESTED from Yahoo (lib.ticker_aliases.fetch_symbol)
-VENDOR_MEMBERSHIP = "membership"  # this repo's stable join key (universe seeds + breadth.ticker_fixups)
-VENDOR_LEDGER = "ledger"        # the per-ticker signal-archive key space (quality.ticker_key_migrations)
+#
+# THE DISTINCTION THIS TABLE MUST NOT COLLAPSE (adversarial review, 2026-08-13).  A
+# rename gives a security two names, and there are two DIFFERENT questions about them:
+#
+#   HISTORICAL NAMING — "what did this space call the security ON 2020-01-02?"  Answered
+#     by a DATED pair straddling the changeover.  This is the question a backfill of a
+#     dated archive asks, and the one a timeless dict cannot answer at all.
+#   CURRENT CATALOG — "what string do I use TODAY to fetch or store this security's
+#     series, for data of ANY date?"  Answered by ONE OPEN-BOUNDED row at today's
+#     symbol, because the vendor and the store both migrated the WHOLE history onto the
+#     new name — Yahoo serves Marsh's entire tape under MRSH and `data/stocks/ECHO.parquet`
+#     holds EchoStar's spliced history back to 2008.
+#
+# Reading the historical answer as if it were the current one is the seven-month MMC
+# outage in a new costume: a §11.4 backfill that requested "MMC" for 2020 because the
+# table said Yahoo called it MMC then would get "possibly delisted, no price data found".
+# So the two families are SEPARATE VENDOR SPACES with names that say which clock they
+# run on, and `tests/test_dataos_security_master.py` pins them apart.
+
+# ── historical-naming spaces (dated across a rename) ──
+VENDOR_YAHOO = "yahoo"            # what Yahoo CALLED the security on a given day
+VENDOR_MEMBERSHIP = "membership"  # what THIS REPO keyed it on that day (universe seeds)
+VENDOR_LEDGER = "ledger"          # the per-ticker signal-archive key space on that day
+
+# ── current-catalog spaces (one open-bounded row at today's symbol) ──
+#: The string to REQUEST from Yahoo today, for a bar of ANY date.  Reproduces
+#: `lib.ticker_aliases.fetch_symbol` exactly — the row family that lets this dataset
+#: claim `supersedes: lib/ticker_aliases.py` without lying.
+VENDOR_YAHOO_FETCH = "yahoo_fetch"
+#: The key this repo's per-ticker stores and ledger rows carry today, for data of ANY
+#: date — `lib.ticker_aliases.store_key`'s side of the same seam.  `data/stocks/`,
+#: `data/baskets/ohlcv/` and `data/signal_archive/` rows written after a rename are all
+#: keyed here, which is why a dedup over the archive has to ask THIS space, not `ledger`.
+VENDOR_STORE = "store"
 
 # ── Venue authority ───────────────────────────────────────────────────────────
 #: otherlisted.txt single-character exchange codes, per the legend the collector that
@@ -222,12 +256,19 @@ RENAME_EVENTS: tuple[RenameEvent, ...] = (
         old="SATS",
         new="ECHO",
         on=date(2026, 6, 24),
-        # Both the vendor space and the repo's LEDGER key space moved on this one:
+        # The vendor space AND both of this repo's own key spaces moved on this one:
         # data/stocks/SATS.parquet no longer exists, data/stocks/ECHO.parquet holds the
         # full spliced history, and quality.ticker_key_migrations ratifies SATS->ECHO as
         # the key the stack now stores.  That double move is what produced the
         # double-logged ledger this table exists to make visible.
-        vendors=(VENDOR_YAHOO, VENDOR_LEDGER),
+        #
+        # `membership` is DATED here and open at MMC above, and the asymmetry is the
+        # fact, not an inconsistency: `breadth.ticker_fixups` pins MRSH back to MMC (the
+        # repo key deliberately did NOT move), while `quality.ticker_key_migrations`
+        # ratifies SATS->ECHO (it DID).  Leaving membership open at today's ECHO would
+        # re-label EchoStar's whole repo-side past — the exact timeless-map defect the
+        # time-scoping exists to end, shipped inside the artifact that ends it.
+        vendors=(VENDOR_YAHOO, VENDOR_LEDGER, VENDOR_MEMBERSHIP),
         evidence=(
             "engine/ledger_identity.py module docstring (EchoStar renamed SATS->ECHO "
             "effective 2026-06-24; SATS 128 rows and ECHO 128 rows with identical "
@@ -262,10 +303,15 @@ def unmodelled_renames(fixups: dict[str, str], migrations: dict[str, str]) -> li
     The failure mode this closes is the one the whole task exists to end: a rename gets
     added to ``breadth.ticker_fixups`` or ``quality.ticker_key_migrations`` — both
     TIMELESS, both one line — and the time-scoped table silently keeps answering with
-    the old pairing, because nothing asks it to notice.  A loud line beats a silent gap;
-    the reader still has to supply the DATE and the evidence by hand, which is the
-    curation step (``detectors propose, curation ratifies``) and not something a seed
-    loader may guess.
+    the old pairing, because nothing asks it to notice.  The reader still has to supply
+    the DATE and the evidence by hand, which is the curation step (``detectors propose,
+    curation ratifies``) and not something a seed loader may guess.
+
+    A returned line is a FAILURE, not a hint: :func:`main` exits non-zero while this is
+    non-empty, and both maps live in root ``config.yml``, which ``house-law-registry``
+    declares in its manifest scope so a one-line rename PR actually reaches this check.
+    Both halves are load-bearing — an advisory detector nothing can reach is two ways of
+    being decoration.
     """
     modelled = {frozenset((e.old, e.new)) for e in RENAME_EVENTS}
     modelled |= {frozenset((old, new)) for old, new, _ in UNDATED_RENAMES}
@@ -590,10 +636,19 @@ def resolve_universe(
 def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list[AliasRow]:
     """Every ``(vendor, vendor_symbol, security_id, valid_from, valid_to)`` this seed set supports.
 
-    Per resolved security, per vendor space, either ONE open-bounded row (the space
-    never moved, or the day it moved is not citable) or a DATED PAIR straddling a
-    rename.  The pair is what makes the table answer differently either side of the
-    boundary, which is the whole deliverable.
+    TWO FAMILIES, per the clock each answers (see the vendor block at the top):
+
+    * HISTORICAL-NAMING spaces (``yahoo``, ``membership``, ``ledger``) get either ONE
+      open-bounded row (the space never moved, or the day it moved is not citable) or a
+      DATED PAIR straddling the rename.  The pair is what makes the table answer
+      differently either side of the boundary, which is the whole deliverable.
+    * CURRENT-CATALOG spaces (``yahoo_fetch``, ``store``) get exactly ONE OPEN-BOUNDED
+      row at today's symbol, for every security, always.  A vendor that migrated the
+      whole history onto the new name has no boundary to scope, and one row per security
+      is also what ``VendorAliasTable`` requires: the constructor refuses two rows that
+      overlap on ``(vendor, security_id)``, so a "current catalog" carrying both names
+      open-bounded is not a thing this reader will accept — correctly, because "what do
+      I call it today" has exactly one answer.
     """
     dated: dict[tuple[str, str], RenameEvent] = {}
     for event in RENAME_EVENTS:
@@ -607,7 +662,7 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
             continue
         sec = ids[res.key]
 
-        spaces = {
+        historical = {
             VENDOR_MEMBERSHIP: res.key,
             VENDOR_YAHOO: ticker_aliases.fetch_symbol(res.key),
         }
@@ -616,9 +671,18 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
         # builder has not read.  quality.ticker_key_migrations is that map.
         for event in RENAME_EVENTS:
             if VENDOR_LEDGER in event.vendors and res.key in (event.old, event.new):
-                spaces[VENDOR_LEDGER] = res.key
+                historical[VENDOR_LEDGER] = res.key
 
-        for vendor, symbol in spaces.items():
+        # `res.key` IS the current store key: the universe seeds carry today's key
+        # (ECHO, not SATS) and `breadth.ticker_fixups` pins a vendor-led rename back to
+        # it (MRSH -> MMC), which is why data/baskets/ohlcv/MMC.parquet is the file that
+        # exists while Yahoo is fetched under MRSH.
+        current = {
+            VENDOR_YAHOO_FETCH: ticker_aliases.fetch_symbol(res.key),
+            VENDOR_STORE: res.key,
+        }
+
+        for vendor, symbol in historical.items():
             event = dated.get((vendor, symbol))
             if event is None:
                 rows.append(AliasRow(vendor, symbol, sec, None, None))
@@ -627,6 +691,9 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
             # NEW symbol is the answer and the OLD one is already out of scope.
             rows.append(AliasRow(vendor, event.old, sec, None, event.on))
             rows.append(AliasRow(vendor, event.new, sec, event.on, None))
+
+        for vendor, symbol in current.items():
+            rows.append(AliasRow(vendor, symbol, sec, None, None))
 
     # Dedup on the full grain — a security reached through two spaces that happen to
     # agree must not produce two identical rows (which would also read as an overlap).
@@ -969,6 +1036,16 @@ def main(argv: list[str] | None = None) -> int:
 
     receipt = build(Path(args.out), dry_run=args.dry_run)
     _report(receipt, verbose=args.report)
+    # A NOTE IS A FAILURE, not a warning (adversarial review, 2026-08-13).  `notes`
+    # carries exactly two things, and neither may pass: a rename the repo's own maps
+    # record that this builder does not model (the alias table would answer the OLD
+    # pairing forever — the seven-month MMC loss, one layer up), and a listing-key
+    # COLLISION, which spec §5 says takes an operator-ratified `.2` disambiguator and
+    # never a guess.  Emitting a `::warning` and exiting 0 makes the detector advisory,
+    # and an advisory detector on a silent-loss defect is decoration.  Coverage is NOT
+    # in this set on purpose: DOS-1.1 asks for it to be REPORTED, not asserted complete.
+    if receipt.get("notes"):
+        return 1
     return 0
 
 

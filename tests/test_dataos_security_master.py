@@ -21,17 +21,32 @@ and each is a measured production defect, not a hypothetical:
 Both halves are tested: the COMMITTED artifacts (which is what a consumer would read)
 and the pure functions over fixtures (which is what a future change would break first).
 
+TWO CLOCKS, PINNED APART (adversarial review, 2026-08-13).  A rename gives a security
+two names and there are two different questions about them, so the table carries two
+FAMILIES of vendor space and this suite refuses to let them be confused:
+
+* HISTORICAL NAMING (``yahoo``, ``membership``, ``ledger``) — "what did this space call
+  it ON that day", DATED across the rename.
+* CURRENT CATALOG (``yahoo_fetch``, ``store``) — "what string do I use TODAY, for a bar
+  of ANY date", ONE open-bounded row at today's symbol.
+
+Reading the first as the second is the seven-month MMC outage in a new costume: Yahoo
+migrated Marsh's WHOLE history onto MRSH, so a §11.4 backfill of 2020 that requested the
+historically-correct ``MMC`` gets "possibly delisted, no price data found".
+
 Run: python -m pytest tests/test_dataos_security_master.py -q
 """
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -47,6 +62,10 @@ from scripts import build_security_master as BUILD  # noqa: E402
 MASTER_PATH = ROOT / "data" / "reference" / "security_master.parquet"
 ALIASES_PATH = ROOT / "data" / "reference" / "vendor_aliases.parquet"
 RECEIPT_PATH = ROOT / "data" / "reference" / "_receipt.json"
+MANIFEST_PATH = ROOT / ".github" / "ci" / "legacy-jobs.yml"
+
+#: The remedy printed by every freshness/staleness assertion below.  One command.
+REBUILD = "python3 scripts/build_security_master.py --report"
 
 #: The two ids the whole task is about.  Both are the INCEPTION code, never today's
 #: symbol: Marsh trades as MRSH today and EchoStar as ECHO, and an id built on either
@@ -124,7 +143,7 @@ def test_mmc_and_mrsh_are_one_security_and_the_table_answers_differently_either_
 def test_the_membership_key_did_not_move_when_the_vendor_symbol_did(
     table: VendorAliasTable,
 ) -> None:
-    """`breadth.ticker_fixups` pins MRSH back to MMC: the join key is stable by charter.
+    """`breadth.ticker_fixups` pins MRSH back to MMC: THIS join key is stable by charter.
 
     The two spaces disagreeing is the NORMAL state, and expressing it is what the table
     is for — ``lib/ticker_aliases.py``: "Site copy, page slugs and ledger keys keep the
@@ -132,6 +151,120 @@ def test_the_membership_key_did_not_move_when_the_vendor_symbol_did(
     """
     for on in (date(2026, 1, 13), MMC_RENAME, date(2026, 1, 15)):
         assert table.resolve("membership", "MMC", on) == MMC_ID
+    # ...and no MRSH membership row was invented on the other side of the boundary.
+    assert table.resolve("membership", "MRSH", date(2026, 1, 15)) is None
+
+
+def test_the_membership_key_DID_move_for_echostar_and_the_table_says_so(
+    table: VendorAliasTable,
+) -> None:
+    """The half that shipped wrong on 2026-08-12 and was caught in review a day later.
+
+    The membership space does NOT generalise from Marsh.  `breadth.ticker_fixups` pins
+    MRSH back to MMC — Marsh's repo-side key deliberately did not move — while
+    `quality.ticker_key_migrations` ratifies SATS->ECHO, which IS the repo-side key
+    moving on 2026-06-24 (``data/stocks/SATS.parquet`` no longer exists;
+    ``data/stocks/ECHO.parquet`` holds the spliced history).  The first cut gave the
+    membership space one open-bounded row at ``ECHO``, so EchoStar's entire repo-side
+    PAST was re-labelled ECHO and ``resolve("membership", "SATS", <any date>)`` was
+    ``None`` — the repo's own stored key, unresolvable — which is precisely the
+    timeless-map defect the time-scoping exists to end, shipped inside the artifact
+    that ends it.  Invisible because no test asked the membership question for SATS.
+    """
+    assert table.resolve("membership", "SATS", date(2026, 1, 1)) == SATS_ID
+    assert table.resolve("membership", "SATS", date(2026, 6, 23)) == SATS_ID
+    assert table.resolve("membership", "SATS", SATS_RENAME) is None
+    assert table.resolve("membership", "ECHO", SATS_RENAME) == SATS_ID
+    assert table.resolve("membership", "ECHO", date(2026, 6, 23)) is None
+    # The inverse is the assertion that would have failed first: on 2026-01-01 the repo
+    # called EchoStar SATS, and a table that answers "ECHO" has re-labelled the past.
+    assert table.vendor_symbol_for("membership", SATS_ID, date(2026, 1, 1)) == "SATS"
+    assert table.vendor_symbol_for("membership", SATS_ID, SATS_RENAME) == "ECHO"
+
+
+# ── THE TWO CLOCKS ────────────────────────────────────────────────────────────
+def test_the_current_catalog_space_reproduces_the_live_fetch_symbol_at_every_date(
+    table: VendorAliasTable,
+) -> None:
+    """`yahoo_fetch` is the row family `supersedes: lib/ticker_aliases.py` rests on.
+
+    ``lib.ticker_aliases.fetch_symbol`` is TIMELESS on purpose: Yahoo migrated Marsh's
+    whole history onto MRSH, so the string to REQUEST is MRSH for a 2020 bar just as
+    much as for a 2026 one.  A table whose only Yahoo rows were the historical ones
+    would return "MMC" for 2020 and a backfill that believed it would get "possibly
+    delisted, no price data found" — the seven-month ``insurance`` 18/19 outage, again,
+    from the dataset built to prevent it.
+    """
+    from lib import ticker_aliases
+
+    for key, security in (("MMC", MMC_ID), ("FI", "SEC:US-XNAS-FISV"), ("ECHO", SATS_ID)):
+        expected = ticker_aliases.fetch_symbol(key)
+        for on in (date(2019, 1, 2), date(2020, 1, 2), MMC_RENAME, SATS_RENAME,
+                   date(2026, 8, 1)):
+            assert table.vendor_symbol_for("yahoo_fetch", security, on) == expected, (
+                f"{key} at {on}: the current catalog must not move with the row's date"
+            )
+            assert table.resolve("yahoo_fetch", expected, on) == security
+
+
+def test_the_current_catalog_store_space_names_the_file_that_actually_exists(
+    table: VendorAliasTable,
+) -> None:
+    """`store` is the key `data/stocks/`, `data/baskets/ohlcv/` and the archive carry TODAY.
+
+    Verified against the tree: ``data/stocks/SATS.parquet`` does not exist and
+    ``data/stocks/ECHO.parquet`` holds EchoStar back to 2008-01-02, while Marsh went the
+    other way — fetched under MRSH, STORED under MMC, so ``data/baskets/ohlcv/MMC.parquet``
+    is the file that exists.  One open row per security, for every date.
+    """
+    for security, key in ((SATS_ID, "ECHO"), (MMC_ID, "MMC"), ("SEC:US-XNAS-FISV", "FI")):
+        for on in (date(2008, 1, 2), date(2020, 1, 2), date(2026, 8, 1)):
+            assert table.vendor_symbol_for("store", security, on) == key
+            assert table.resolve("store", key, on) == security
+
+
+def test_the_two_clocks_disagree_and_neither_may_be_read_as_the_other(
+    table: VendorAliasTable,
+) -> None:
+    """The distinction, asserted — so §11.4 cannot quietly swap one family for the other.
+
+    On 2020-01-02 Yahoo CALLED Marsh "MMC" (historical, true) and you REQUEST it as
+    "MRSH" (current catalog, also true).  Both answers are needed and they are different
+    strings; a single space cannot carry both, and a consumer that picks the wrong one
+    fails silently, which is the whole reason the families have different names.
+    """
+    on = date(2020, 1, 2)
+    assert table.vendor_symbol_for("yahoo", MMC_ID, on) == "MMC"
+    assert table.vendor_symbol_for("yahoo_fetch", MMC_ID, on) == "MRSH"
+    assert table.vendor_symbol_for("yahoo", MMC_ID, on) != table.vendor_symbol_for(
+        "yahoo_fetch", MMC_ID, on
+    )
+    # And the historical space is NOT a store resolver either: on 2020-01-02 the repo
+    # keyed EchoStar SATS, while the file that holds that bar today is ECHO.parquet.
+    assert table.vendor_symbol_for("membership", SATS_ID, on) == "SATS"
+    assert table.vendor_symbol_for("store", SATS_ID, on) == "ECHO"
+
+
+def test_every_ledger_name_echostar_was_ever_logged_under_resolves_to_one_security(
+    table: VendorAliasTable,
+) -> None:
+    """The headline defect, made answerable — the reason SATS is in this table at all.
+
+    ``engine/ledger_identity.py`` measures it: ``data/signal_archive/track_record.parquet``
+    carries SATS 128 rows and ECHO 128 rows with IDENTICAL ``(date, type)`` key sets
+    spanning 2008-11-25 -> 2026-04-23 — one physical fire logged twice — so every
+    hit-rate and forward-return statistic over the ledger DOUBLE-WEIGHTS EchoStar.
+
+    Both spans end BEFORE the 2026-06-24 rename, which is what makes the two clocks
+    load-bearing rather than academic: the dead SATS rows are answered by the HISTORICAL
+    ledger space at their own row dates, and the live ECHO rows — written under the key
+    the repo had already migrated to — by the CURRENT-CATALOG store space, which does
+    not move with the row's date.  Asking one space for both is how the first cut
+    collapsed zero of the 128 pairs.
+    """
+    for on in (date(2008, 11, 25), date(2020, 1, 2), date(2026, 4, 23)):
+        assert table.resolve("ledger", "SATS", on) == SATS_ID
+        assert table.resolve("store", "ECHO", on) == SATS_ID
 
 
 # ── THE SATS BOUNDARY ─────────────────────────────────────────────────────────
@@ -183,8 +316,21 @@ def test_the_two_renames_do_not_collapse_into_one_security(table: VendorAliasTab
         ("ledger", SATS_ID, date(2026, 6, 23), "SATS"),
         ("ledger", SATS_ID, date(2026, 6, 25), "ECHO"),
         ("membership", MMC_ID, date(2026, 1, 15), "MMC"),
+        # The membership row for the one case where the repo's OWN key moved. Its
+        # absence here is what let the timeless `membership/ECHO` row ship.
+        ("membership", SATS_ID, date(2026, 6, 23), "SATS"),
+        ("membership", SATS_ID, SATS_RENAME, "ECHO"),
         ("membership", "SEC:US-XNAS-FISV", date(2026, 1, 15), "FI"),
         ("yahoo", "SEC:US-XNAS-FISV", date(2026, 1, 15), "FISV"),
+        # CURRENT CATALOG: the same answer on both sides of both boundaries, which is
+        # the property that makes it a fetch/store resolver and the historical rows not.
+        ("yahoo_fetch", MMC_ID, date(2020, 1, 2), "MRSH"),
+        ("yahoo_fetch", MMC_ID, date(2026, 1, 13), "MRSH"),
+        ("yahoo_fetch", SATS_ID, date(2026, 6, 23), "ECHO"),
+        ("yahoo_fetch", "SEC:US-XNAS-FISV", date(2026, 1, 15), "FISV"),
+        ("store", MMC_ID, date(2020, 1, 2), "MMC"),
+        ("store", SATS_ID, date(2020, 1, 2), "ECHO"),
+        ("store", "SEC:US-XNAS-FISV", date(2026, 1, 15), "FI"),
     ],
 )
 def test_vendor_symbol_for_inverts_resolve_on_both_sides(
@@ -409,6 +555,61 @@ def test_the_stored_id_is_the_authority_not_the_derivation(tmp_path: Path) -> No
     )
 
 
+# ── FRESHNESS: nothing SCHEDULES this producer, so a test is the clock ────────
+def _alias_grain(frame: pd.DataFrame) -> set[tuple]:
+    return {
+        (str(r["vendor"]), str(r["vendor_symbol"]), str(r["security_id"]),
+         BUILD._normalize_bound(r["valid_from"]), BUILD._normalize_bound(r["valid_to"]))
+        for r in frame.to_dict("records")
+    }
+
+
+def test_the_committed_artifact_is_not_stale_against_the_current_seeds(
+    tmp_path: Path, master: pd.DataFrame, aliases: pd.DataFrame
+) -> None:
+    """The freshness contract, because NOTHING RUNS THE PRODUCER (review, 2026-08-13).
+
+    ``grep -rn build_security_master .github/ ops/`` returns the ci.yml path filter and
+    nothing else: no workflow, no cron, no nightly step.  The seeds move underneath it
+    anyway — ``data/symbol_directory/snapshots/`` gains a file per night and
+    ``data/baskets/membership.json`` churns on every universe change — so without this
+    the registry could claim a PRODUCED dataset while the artifact described a seed set
+    from weeks ago and every check stayed green forever.  That is gate G1's failure
+    ("a registry listing a dataset that does not exist is worse than no registry") one
+    step downstream: the row is true about the PATH and false about the CONTENT.
+
+    The shape is a rebuild ON TOP OF the committed artifact, which is exactly what a
+    real re-run does — ``mint_master_rows``/``merge_alias_rows`` are append-only, so a
+    name LEAVING the seeds correctly changes nothing and cannot red this.  What reds it
+    is a seed change that would ADD a security or an alias row, i.e. precisely the
+    moment a re-run is owed.  ``frequency: on_demand`` in the registry says the same
+    thing in the contract; this makes it enforceable.
+    """
+    shutil.copy(MASTER_PATH, tmp_path / BUILD.MASTER_NAME)
+    shutil.copy(ALIASES_PATH, tmp_path / BUILD.ALIASES_NAME)
+    BUILD.build(tmp_path)
+
+    rebuilt_master = pd.read_parquet(tmp_path / BUILD.MASTER_NAME)
+    added = sorted(set(rebuilt_master["listing_key"]) - set(master["listing_key"]))
+    assert added == [], (
+        f"the current seeds resolve {len(added)} listing key(s) the committed "
+        f"security master does not carry: {added[:10]} — the artifact is STALE. "
+        f"Re-run `{REBUILD}` and commit data/reference/."
+    )
+    # An id may never MOVE either: mint-once is what the whole artifact is for.
+    committed_ids = dict(zip(master["listing_key"], master["security_id"]))
+    rebuilt_ids = dict(zip(rebuilt_master["listing_key"], rebuilt_master["security_id"]))
+    moved = {k: (v, rebuilt_ids[k]) for k, v in committed_ids.items() if rebuilt_ids[k] != v}
+    assert moved == {}, f"a rebuild re-minted a stored security_id: {moved}"
+
+    rebuilt_aliases = pd.read_parquet(tmp_path / BUILD.ALIASES_NAME)
+    new_rows = sorted(_alias_grain(rebuilt_aliases) - _alias_grain(aliases))
+    assert new_rows == [], (
+        f"the current seeds support {len(new_rows)} alias row(s) the committed table "
+        f"does not carry: {new_rows[:5]} — re-run `{REBUILD}` and commit data/reference/."
+    )
+
+
 def test_a_dry_run_writes_nothing(tmp_path: Path) -> None:
     receipt = BUILD.build(tmp_path, dry_run=True)
     assert receipt["coverage"]["total"] > 0
@@ -518,6 +719,15 @@ def test_alias_rows_are_built_dated_for_a_rename_and_open_otherwise() -> None:
     assert by_pair[("yahoo", "AAPL")].valid_from is None
     assert by_pair[("membership", "AAPL")].valid_to is None
     assert ("ledger", "AAPL") not in by_pair
+    # The CURRENT-CATALOG family is open-bounded even across a rename — that is what
+    # distinguishes it, and a dated row here would make it a second historical space.
+    assert by_pair[("yahoo_fetch", "MRSH")].valid_from is None
+    assert by_pair[("yahoo_fetch", "MRSH")].valid_to is None
+    assert by_pair[("store", "MMC")].valid_to is None
+    assert ("yahoo_fetch", "MMC") not in by_pair
+    assert ("store", "MRSH") not in by_pair
+    assert by_pair[("yahoo_fetch", "AAPL")].valid_to is None
+    assert by_pair[("store", "AAPL")].valid_to is None
     VendorAliasTable(rows)  # and the fixture table is unambiguous
 
 
@@ -535,6 +745,64 @@ def test_every_rename_the_repo_records_is_modelled_by_the_builder() -> None:
     assert BUILD.unmodelled_renames(fixups, migrations) == []
     # And the detector has teeth: an unmodelled pair is REPORTED, not swallowed.
     assert BUILD.unmodelled_renames({"OLDX": "NEWX"}, {}) != []
+
+
+def test_an_unmodelled_rename_FAILS_the_builder_it_does_not_merely_warn(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    """A `::warning` + exit 0 makes a silent-loss detector advisory (review 2026-08-13).
+
+    ``receipt['notes']`` carries only two things and neither may pass: a rename the
+    repo's own timeless maps record that this builder does not model, and a listing-key
+    COLLISION (spec §5: an operator-ratified `.2`, never a guess).  Shown RED on a
+    deliberately broken input and green on the real one, in the same test (gate G2).
+    """
+    real = BUILD.load_config_maps
+    monkeypatch.setattr(
+        BUILD, "load_config_maps",
+        lambda: ({**real()[0], "NEWNAME": "OLDNAME"}, real()[1]),
+    )
+    assert BUILD.main(["--out", str(tmp_path), "--dry-run"]) == 1
+    out = capsys.readouterr().out
+    assert "NEWNAME->OLDNAME" in out
+    assert any(line.startswith("::warning") for line in out.splitlines())
+
+    monkeypatch.setattr(BUILD, "load_config_maps", real)
+    assert BUILD.main(["--out", str(tmp_path), "--dry-run"]) == 0
+    # Coverage is deliberately NOT in that set: DOS-1.1 asks for it to be REPORTED.
+    assert "unresolved" in capsys.readouterr().out
+
+
+def test_the_rename_maps_live_in_a_file_that_can_reach_this_suite() -> None:
+    """The detector above must be REACHABLE from the edit that trips it.
+
+    Both timeless rename maps live in root ``config.yml``, and the next rename lands the
+    way both modelled ones did: one line in ``breadth.ticker_fixups`` or
+    ``quality.ticker_key_migrations``.  Measured 2026-08-13: a ``config.yml``-only diff
+    selected 48 of 186 legacy jobs and ``house-law-registry`` — the only job that names
+    this suite — was NOT among them, because scope inference cannot own a repository-ROOT
+    file at all (``run_ci_pack.SCOPE_REFERENCE_RE`` and
+    ``ci_scope_dependencies._PATH_LITERAL`` both require a tracked directory prefix).
+    A detector nothing can reach is a detector nothing has.
+
+    The fix is a DECLARED scope entry, and this pins it.  Reading the manifest is enough
+    and importing ``run_ci_pack`` would not be: its dependency closure would be folded
+    into this job's own inferred scope, which is the thing under test.
+    """
+    manifest = yaml.safe_load(MANIFEST_PATH.read_text())
+    job = manifest["jobs"]["house-law-registry"]
+    assert "config.yml" in (job.get("paths") or []), (
+        "house-law-registry must DECLARE root config.yml: it is where both timeless "
+        "rename maps live, and no derived scope can ever own a repo-root file"
+    )
+    commands = "\n".join(str(s["run"]) for s in job["steps"] if "run" in s)
+    assert "tests/test_dataos_security_master.py" in commands, (
+        "the declared config.yml scope only helps while THIS suite runs in that job"
+    )
+    # And the workflow can actually start on that file, or the scope is decorative.
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
+    triggers = (workflow.get("on") or workflow.get(True))["pull_request"]["paths"]
+    assert "config.yml" in triggers
 
 
 def test_an_unresolved_name_mints_nothing() -> None:
