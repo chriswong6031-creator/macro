@@ -41,7 +41,7 @@ a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
 .nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
 .nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
 .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
-.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--blue)}
+.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--ink-link, var(--blue))}
 .lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
 .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
 html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
@@ -53,7 +53,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
 .theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
 .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
 .theme-switch .knob::before{content:"☀️"}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--red:#e06464}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#828b9c;--red:#e06464}
 html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
 html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
 html[data-theme="dark"] .lang-toggle{background:#222732}
@@ -102,14 +102,15 @@ html[data-theme="dark"] .tag.exp{background:#3a1d2b;color:#f08bb4}
 .score .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600}
 .score .v{font-size:21px;font-weight:800;color:var(--ink)}
 .score .v small{font-size:12px;font-weight:600;color:var(--muted)}
-.win{color:var(--green)} .lose{color:var(--red)}
+.win{color:var(--ink-ok, var(--green))} .lose{color:var(--ink-act, var(--red))}
 .tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 .tbl td,.tbl th{padding:7px 10px;border-bottom:1px solid var(--grid);text-align:left}
 .tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
 .note{border-left:3px solid var(--amber);padding:6px 0 6px 14px;margin:8px 0;color:var(--text);font-size:13.5px}
 .note.r{border-color:var(--red)} .note.b{border-color:var(--blue)}
 .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
-</style>{% include "_vector_polish.html.j2" %}
+</style>
+{% include "_state_inks.html.j2" %}{% include "_vector_polish.html.j2" %}
 </head>
 <body>
 {% include "_site_nav.html.j2" %}

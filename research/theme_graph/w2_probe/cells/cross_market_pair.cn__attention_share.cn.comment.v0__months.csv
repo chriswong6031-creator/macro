@@ -1,0 +1,4 @@
+month,n_members,n_values,coverage,no_events,era,denominator,pct_nonzero,modal_tie_mass,distinct_magnitudes
+2026-06,37,37,1.0,False,reconstruction,3336.9999999999995,1.0,0.05405405405405406,33
+2026-07,37,37,1.0,False,reconstruction,3297.6842105263163,1.0,0.05405405405405406,34
+2026-08,37,37,1.0,False,reconstruction,3231.0285714285715,1.0,0.05405405405405406,36

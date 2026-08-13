@@ -16,7 +16,7 @@
 <title>Which Stocks Fund Managers Are Buying — MastermindX</title>
 {% set seo_title = "Which Stocks Fund Managers Are Buying — MastermindX" %}{% set seo_desc = "Track which stocks 77 thematic and active ETFs are accumulating — cross-fund consensus, brand-new positions and the sector rotation backdrop, updated each filing cycle." %}{% set seo_path = "etfs.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
 /* ═══ tokens: layered on theme.css (dark default) — components inherit light/dark ═══ */
@@ -47,7 +47,7 @@ html[data-theme="light"][data-lang="zh"]{--lift:#c65b6e;--drag:#2f9270}
 body{margin:0;padding:18px 0 0;background:var(--bg);color:var(--text);
   font-family:var(--font-ui),Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 64px}
-a{color:var(--link);text-decoration:none}
+a{color:var(--ink-link, var(--link));text-decoration:none}
 .faint{color:var(--faint)}.muted{color:var(--muted)}
 .pos{color:var(--lift)}.neg{color:var(--drag)}
 
@@ -134,7 +134,7 @@ a{color:var(--link);text-decoration:none}
 .mini{display:inline-block;padding:0 7px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.02em}
 .mini.new{background:color-mix(in srgb,var(--lift) 16%,var(--card));color:var(--lift)}
 .mini.exit{background:color-mix(in srgb,var(--drag) 15%,var(--card));color:var(--drag)}
-.mini.contested{background:color-mix(in srgb,var(--amber) 16%,var(--card));color:var(--amber)}
+.mini.contested{background:color-mix(in srgb,var(--amber) 16%,var(--card));color:var(--ink-warn, var(--amber))}
 .mini.active{background:color-mix(in srgb,var(--ch-a) 15%,var(--card));color:var(--ch-a)}
 /* the whose-conviction hover popover */
 .cb-who{position:relative;display:inline-flex}
@@ -293,7 +293,7 @@ a{color:var(--link);text-decoration:none}
   font-size:12.5px;line-height:1.5;color:var(--muted);
   background:color-mix(in srgb,#8b5cf6 7%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent)}
 .gate-note svg{width:14px;height:14px;flex:none;margin-top:2px;color:#8b5cf6}
-.gate-note a{color:var(--link)}
+.gate-note a{color:var(--ink-link, var(--link))}
 /* the page's ONE tier wall, at "Every add, by fund" — after the free backdrop */
 .tier-wall{position:relative;margin:6px 0 4px;isolation:isolate}
 .tw-ghosts{display:flex;flex-direction:column;gap:10px;padding-top:4px}
@@ -316,7 +316,7 @@ a{color:var(--link);text-decoration:none}
 .tw-btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px -10px color-mix(in srgb,#8b5cf6 80%,transparent)}
 .tw-note{font-size:11px;color:var(--faint)}
 .tw-signed{margin-top:12px;font-size:12px}
-.tw-signed a{color:var(--link);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
+.tw-signed a{color:var(--ink-link, var(--link));text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
 @media(max-width:900px){
   /* Below the ghost stack's usable width the absolute card overlaps the lede
      above it; drop the ghosts and let the card flow. */
@@ -348,7 +348,7 @@ a{color:var(--link);text-decoration:none}
 {# ═══════════════ HERO ═══════════════ #}
   <header class="eh">
     <div class="eh-brand">
-      <h1>🐳 {{ t('Real fund moves', '基金真实动作') }}</h1>
+      <h1>{{ t('Real fund moves', '基金真实动作') }}</h1>
       <span class="tag">{{ t('where thematic & active managers are building conviction', '主题与主动经理人积累信念之处') }}</span>
     </div>
     {# Hero read. Entitled: the graded verdict line (which themes managers are
@@ -576,7 +576,7 @@ a{color:var(--link);text-decoration:none}
        crawled, and unifying the state keeps the two builds structurally
        identical rather than differing in a way a reader could notice. #}
     <details open>
-      <summary><span class="sh-ic">📡</span>{{ t('Coverage & freshness', '覆盖范围与新鲜度') }} <span class="sh-sub">— {{ t('every tracked fund; any stale feed surfaces here', '所有已追踪基金；任何陈旧数据源都会在此暴露') }}{% if coverage %} · {{ t('all', '共显示') }} {{ coverage | length }} {{ t('shown', '只') }}{% endif %}</span><span class="sh-caret">▶</span></summary>
+      <summary>{{ t('Coverage & freshness', '覆盖范围与新鲜度') }} <span class="sh-sub">— {{ t('every tracked fund; any stale feed surfaces here', '所有已追踪基金；任何陈旧数据源都会在此暴露') }}{% if coverage %} · {{ t('all', '共显示') }} {{ coverage | length }} {{ t('shown', '只') }}{% endif %}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
         {% if coverage %}
         <div class="atbl-wrap">

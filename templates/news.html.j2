@@ -234,7 +234,7 @@ html[data-lang="zh"] .nxx{ --nx-serif:"Songti SC","SimSun","Noto Serif CJK SC","
 .nx-meta .sep{ color:var(--nx-rule); }
 .nx-tk{ font-family:var(--num); font-size:10.5px; font-weight:700; color:var(--muted);
   border:1px solid var(--nx-hair); padding:0 5px; border-radius:3px; }
-a.nx-tk:hover{ color:var(--link); border-color:currentColor; }
+a.nx-tk:hover{ color:var(--ink-link, var(--link)); border-color:currentColor; }
 .nx-more{ margin:20px auto 4px; display:block; }
 .nx-empty{ text-align:center; color:var(--muted); font-size:13px; padding:34px; }
 
@@ -268,14 +268,14 @@ a.nx-tk:hover{ color:var(--link); border-color:currentColor; }
 .nx-rel-top{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:8px; }
 .nx-rel-name{ font-size:13px; font-weight:700; }
 .nx-rel-read{ font-size:11px; font-weight:700; }
-.nx-rel-read.up{ color:var(--up); } .nx-rel-read.down{ color:var(--down); }
+.nx-rel-read.up{ color:var(--ink-up, var(--up)); } .nx-rel-read.down{ color:var(--ink-down, var(--down)); }
 .nx-rel-cells{ display:flex; gap:14px; flex-wrap:wrap; }
 .nx-rel-cell .k{ font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
 .nx-rel-cell .v{ font-size:15px; font-weight:800; font-family:var(--num); }
 .nx-rel-sum{ margin-top:8px; font-size:11.5px; color:var(--muted); font-style:italic; }
 .nx-badge{ font-size:9.5px; font-weight:700; letter-spacing:.05em; padding:2px 7px; border-radius:100px; }
-.nx-badge.big{ background:color-mix(in srgb,var(--act) 16%,transparent); color:var(--act); }
-.nx-badge.notable{ background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--warn); }
+.nx-badge.big{ background:color-mix(in srgb,var(--act) 16%,transparent); color:var(--ink-act, var(--act)); }
+.nx-badge.notable{ background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--ink-warn, var(--warn)); }
 
 /* ---- rail ---- */
 .nx-rail{ display:flex; flex-direction:column; gap:14px; position:sticky; top:14px; }
@@ -299,7 +299,7 @@ a.nx-tk:hover{ color:var(--link); border-color:currentColor; }
 .nx-diag h4{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; margin:12px 0 6px; color:var(--muted); }
 .nx-diag table{ width:100%; border-collapse:collapse; font-size:11px; }
 .nx-diag td{ padding:3px 6px; border-top:1px solid var(--nx-hair); vertical-align:top; }
-.nx-diag .rej-reason{ color:var(--warn); font-weight:600; }
+.nx-diag .rej-reason{ color:var(--ink-warn, var(--warn)); font-weight:600; }
 .nx-disc{ margin:22px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
 
 /* ======================= INTELLIGENCE DESK =======================
@@ -355,9 +355,9 @@ a.nx-tk:hover{ color:var(--link); border-color:currentColor; }
 .nxi-stage{ color:var(--text); background:color-mix(in srgb,var(--muted) 13%,transparent);
   border:1px solid color-mix(in srgb,var(--muted) 24%,transparent); }
 .nxi-stage.high_impact{ background:color-mix(in srgb,var(--act) 13%,transparent);
-  border-color:color-mix(in srgb,var(--act) 32%,transparent); color:var(--act); }
+  border-color:color-mix(in srgb,var(--act) 32%,transparent); color:var(--ink-act, var(--act)); }
 .nxi-stage.confirmed{ background:color-mix(in srgb,var(--info) 11%,transparent);
-  border-color:color-mix(in srgb,var(--info) 28%,transparent); color:var(--info); }
+  border-color:color-mix(in srgb,var(--info) 28%,transparent); color:var(--ink-info, var(--info)); }
 .nxi-lane,.nxi-sourcecount{ color:var(--muted); border:1px solid var(--nx-hair); }
 .nxi-time{ margin-left:auto; color:var(--muted); font:10px/1.2 var(--num); }
 .nxi-headline{ margin:0; font-size:15px; line-height:1.32; letter-spacing:-.008em; text-wrap:balance; }
@@ -369,7 +369,7 @@ a.nx-tk:hover{ color:var(--link); border-color:currentColor; }
 .nxi-chip{ border-radius:6px; padding:2px 6px; color:var(--muted); background:var(--nx-card2);
   border:1px solid var(--nx-hair); font-size:9.5px; }
 .nxi-chip.market{ color:var(--text); font-family:var(--num); }
-.nxi-chip.ticker{ color:var(--link); font-family:var(--num); font-weight:750; }
+.nxi-chip.ticker{ color:var(--ink-link, var(--link)); font-family:var(--num); font-weight:750; }
 /* A story losing attention should READ quieter than one gaining it — but not in
    colour: red/green inverts under the zh convention, and the market chip beside
    it is deliberately neutral. The dashed edge is the same "less" grammar the
@@ -391,7 +391,7 @@ a.nx-tk:hover{ color:var(--link); border-color:currentColor; }
 .nxi-evidence{ display:flex; flex-direction:column; gap:5px; }
 .nxi-source{ display:flex; gap:8px; align-items:flex-start; padding:7px 8px; border-radius:8px;
   background:var(--nx-card2); font-size:10.5px; }
-.nxi-source a{ color:var(--link); font-weight:650; }
+.nxi-source a{ color:var(--ink-link, var(--link)); font-weight:650; }
 .nxi-source span{ color:var(--muted); }
 
 /* ---- the fold's two quiet receipt groups ----
@@ -591,7 +591,7 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
 .nxw-state .h{ font-size:13.5px; font-weight:700; color:var(--text); margin:0 0 4px; }
 .nxw-state .s{ font-size:12px; color:var(--muted); margin:0; max-width:58ch; }
 .nxw-state .cta{ appearance:none; font-family:inherit; margin-top:12px; cursor:pointer;
-  display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--info);
+  display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--ink-info, var(--info));
   background:transparent; border:1px solid color-mix(in srgb,var(--info) 40%,transparent);
   padding:7px 14px; border-radius:100px; transition:background .16s, border-color .16s; }
 .nxw-state .cta:hover{ background:color-mix(in srgb,var(--info) 10%,transparent);
@@ -893,7 +893,7 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
     {% if SYN.top_tickers or SYN.top_channels %}
     <div class="nx-rail-card">
       <div class="nx-rail-hd">{{ t('In focus','焦点') }}</div>
-      {% if SYN.top_tickers %}<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">{% for tk in SYN.top_tickers[:8] %}<span class="nx-tk">{{ tk }}</span>{% endfor %}</div>{% endif %}
+      {% if SYN.top_tickers %}<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">{% for tk in SYN.top_tickers[:8] %}{% set _t = tk.ticker if tk is mapping else tk %}<a class="nx-tk" href="stock.html#{{ _t|e }}">{{ _t }}</a>{% endfor %}</div>{% endif %}
       {% if NS_STATE %}<div class="nx-rail-note">{{ t('News tone','新闻情绪') }}: <b style="color:{{ 'var(--up)' if NS_STATE in ['optimistic','positive'] else 'var(--down)' }};">{{ t('upbeat','偏乐观') if NS_STATE in ['optimistic','positive'] else t('cautious','偏谨慎') }}</b>{% if NS_Z is not none %} <span class="num">(z {{ NS_Z|round(1) }})</span>{% endif %}</div>{% endif %}
     </div>
     {% endif %}

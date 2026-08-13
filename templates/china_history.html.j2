@@ -12,7 +12,7 @@
 <title>China Regime History — {{ latest.date }}</title>
 {% set seo_title = "China Regime History — Mastermind" %}{% set seo_desc = "Every China market regime call on the record — when regimes flipped and how each call played out." %}{% set seo_path = "china_history.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 {% include '_plotly_head.html.j2' %}
 <style>
@@ -156,7 +156,7 @@
       {{ help('Known A-share market cycle eras since 2005. Each ERA is annotated with the phases it passed through. Descriptive only — no forward projection (CN-SYS-R1).', '2005年以来已知的A股市场周期时代，每个时代标注所经历的阶段。仅为描述性 — 无前瞻预测（CN-SYS-R1）。') }}
     </h3>
     <details>
-      <summary style="cursor:pointer;color:var(--link);font-size:12px;font-weight:600;list-style:none">
+      <summary style="cursor:pointer;color:var(--ink-link, var(--link));font-size:12px;font-weight:600;list-style:none">
         <span class="l-en">▸ Show ERA table ({{ era_table|length }} eras)</span>
         <span class="l-zh">▸ 展开ERA表（{{ era_table|length }}个时代）</span>
       </summary>

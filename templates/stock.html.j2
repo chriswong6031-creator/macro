@@ -10,7 +10,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stock analyzer — cycle & momentum</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -20,6 +20,15 @@
   .points { margin:6px 0; padding-left:18px; } .points li { margin:2px 0; }
   .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
               font-size:13px; line-height:1.6; }
+  /* Locked-payload CTA row (signed-out view) — same accent language as the
+     site-wide tier gate (tier_preview.css .mx-tier-primary). */
+  .lock-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .lock-cta { font:inherit; font-size:12.5px; font-weight:760; line-height:1; cursor:pointer;
+              padding:11px 16px; border-radius:10px; border:1px solid var(--link);
+              background:var(--link); color:#fff;
+              transition:transform .16s ease, filter .16s ease; }
+  .lock-cta:hover { transform:translateY(-1px); filter:brightness(1.06); }
+  .lock-cta--ghost { background:transparent; border-color:var(--line); color:var(--text); }
   .regline { margin:-2px -4px 6px; padding:6px 9px; border-radius:7px;
              border-left:3px solid var(--muted); }
   .regline.rl-bear { border-left-color:var(--down);
@@ -62,10 +71,10 @@
            border-radius:9px; font-size:11.5px; border:1px solid var(--line);
            background:var(--panel); white-space:nowrap; }
   .macro-sens .ms-chip b { font-weight:700; }
-  .ms-chip.ms-long { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
-  .ms-chip.ms-short { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .ms-chip.ms-hedge { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .ms-chip.ms-negative { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .ms-chip.ms-long { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .ms-chip.ms-short { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ms-chip.ms-hedge { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ms-chip.ms-negative { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .ms-chip.ms-tier-low { color:var(--muted); }
   /* W0c gov-exposure band tints (bare .warn/.muted carry no color rule in this scope) */
   .ms-chip.muted, .macro-sens .muted { color:var(--muted); }
@@ -91,8 +100,8 @@
   .dt-contra .dtc-chip { display:inline-flex; align-items:center; gap:5px; padding:2px 9px;
            border-radius:9px; font-size:11.5px; border:1px solid var(--line);
            background:var(--panel); white-space:nowrap; }
-  .dtc-chip.extended, .dtc-chip.entering { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
-  .dtc-chip.washed, .dtc-chip.leaving { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .dtc-chip.extended, .dtc-chip.entering { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .dtc-chip.washed, .dtc-chip.leaving { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
   .dtc-chip.elevated { color:var(--muted); }
   .dt-contra .dtc-cav { margin:6px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
   .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
@@ -101,17 +110,17 @@
              border-radius:11px; font-size:12.5px; font-weight:700; cursor:help;
              border:1px solid var(--line); white-space:nowrap; }
   .eqbadge .eqg { font-weight:500; opacity:.8; }
-  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up));
                    border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
+  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--ink-down, var(--down));
                      border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
   .alpha-entry { display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px;
                  border-radius:9px; border:1px solid var(--line); }
-  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
   .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text); border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
-  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
-  .ae-laggard { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--ink-link, var(--link)); }
+  .ae-laggard { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .ae-neutral { background:var(--panel2); color:var(--muted); }
   .bcbox { margin:9px 0 6px; padding:9px 12px; border-radius:9px; background:var(--panel2);
            border-left:4px solid var(--muted); cursor:help; }
@@ -121,14 +130,14 @@
   .bc-score { font-size:19px; font-weight:800; line-height:1; }
   .bc-score .bc-max { font-size:11px; font-weight:600; opacity:.55; }
   .bc-grade { font-size:12px; font-weight:600; opacity:.8; margin-left:auto; }
-  .bcg-strong, .bcg-solid { color:var(--up); }
-  .bcg-light { color:var(--warn); } .bcg-minimal { color:var(--muted); }
+  .bcg-strong, .bcg-solid { color:var(--ink-up, var(--up)); }
+  .bcg-light { color:var(--ink-warn, var(--warn)); } .bcg-minimal { color:var(--muted); }
   .bcbox.bc-strong, .bcbox.bc-solid { border-left-color:var(--up);
             background:color-mix(in srgb, var(--up) 9%, var(--panel2)); }
   .bcbox.bc-light { border-left-color:var(--warn); }
   .bc-tf { margin-top:5px; font-size:12.5px; color:var(--text);
            font-variant-numeric:tabular-nums; }
-  .bc-tf .bc-y { color:var(--up); font-weight:800; }
+  .bc-tf .bc-y { color:var(--ink-up, var(--up)); font-weight:800; }
   .bc-tf .bc-n { color:var(--muted); opacity:.65; }
   .bc-hist { margin-top:5px; font-size:11.5px; color:var(--muted); }
   .bc-knife { margin-top:7px; padding:6px 9px; border-radius:7px; font-size:12px;
@@ -169,13 +178,13 @@
   /* trust-the-state: flag the row matching the live cycle state */
   #r_cal tr.cal-cur td { background:color-mix(in srgb, var(--warn) 13%, transparent); }
   #r_cal tr.cal-cur td:first-child { box-shadow:inset 3px 0 var(--warn); font-weight:700; }
-  .cal-here { color:var(--warn); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
+  .cal-here { color:var(--ink-warn, var(--warn)); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
   #result { display:none; }
   #stock-brief { border-left:3px solid var(--link); }
-  #stock-brief h2 { color:var(--link); }
+  #stock-brief h2 { color:var(--ink-link, var(--link)); }
   #stock-brief .sb-sum { font-size:14.5px; font-weight:600; margin:0 0 10px; }
   #stock-brief .sb-sec { margin:10px 0; }
-  #stock-brief .sb-h { font-weight:600; color:var(--link); margin:0 0 4px; }
+  #stock-brief .sb-h { font-weight:600; color:var(--ink-link, var(--link)); margin:0 0 4px; }
   #stock-brief .sb-list { margin:4px 0 0 18px; padding:0; }
   #stock-brief .sb-list li { margin:3px 0; }
   #stock-brief .sb-foot { margin-top:12px; color:var(--muted); font-size:12px; }
@@ -230,19 +239,19 @@
   /* ---- fundamentals suite (Phase 1) ---- */
   .arch { display:inline-flex; align-items:center; gap:5px; padding:3px 11px; border-radius:11px;
           font-size:12.5px; font-weight:700; cursor:help; border:1px solid var(--line); white-space:nowrap; }
-  .arch.a-quality_compounder { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+  .arch.a-quality_compounder { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up));
           border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .arch.a-dividend_defensive { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link);
+  .arch.a-dividend_defensive { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--ink-link, var(--link));
           border-color:color-mix(in srgb,var(--link) 40%,transparent); }
   .arch.a-deep_value { background:color-mix(in srgb,var(--g-cold) 16%,transparent); color:var(--g-cold);
           border-color:color-mix(in srgb,var(--g-cold) 40%,transparent); }
-  .arch.a-high_beta_momentum { background:color-mix(in srgb,var(--warn) 18%,transparent); color:var(--warn);
+  .arch.a-high_beta_momentum { background:color-mix(in srgb,var(--warn) 18%,transparent); color:var(--ink-warn, var(--warn));
           border-color:color-mix(in srgb,var(--warn) 45%,transparent); }
-  .arch.a-speculative_unprofitable { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
+  .arch.a-speculative_unprofitable { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--ink-down, var(--down));
           border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .arch.a-mixed { background:var(--panel2); color:var(--muted); }
   /* v2 bucket pills */
-  .arch.a-distressed { background:color-mix(in srgb,var(--down) 22%,transparent); color:var(--down);
+  .arch.a-distressed { background:color-mix(in srgb,var(--down) 22%,transparent); color:var(--ink-down, var(--down));
           border-color:color-mix(in srgb,var(--down) 50%,transparent); }
   .arch.a-financial { background:color-mix(in srgb,#4a90d9 16%,transparent); color:#4a90d9;
           border-color:color-mix(in srgb,#4a90d9 40%,transparent); }
@@ -250,7 +259,7 @@
           border-color:color-mix(in srgb,#9b59b6 40%,transparent); }
   .arch.a-commodity_sensitive { background:color-mix(in srgb,#a0522d 16%,transparent); color:#a0522d;
           border-color:color-mix(in srgb,#a0522d 40%,transparent); }
-  .arch.a-secular_growth { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up);
+  .arch.a-secular_growth { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--ink-up, var(--up));
           border-color:color-mix(in srgb,var(--up) 35%,transparent); }
   .arch.a-broken_growth { background:color-mix(in srgb,#e67e22 18%,transparent); color:#e67e22;
           border-color:color-mix(in srgb,#e67e22 45%,transparent); }
@@ -268,11 +277,11 @@
   .cv-head { display:flex; align-items:center; gap:11px; }
   .cv-score { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; min-width:48px;
               text-align:center; padding:3px 9px; border-radius:10px; border:1px solid var(--line); }
-  .cv-score.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+  .cv-score.band-high { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
                         background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
   .cv-score.band-constructive { color:var(--g-cold); border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
   .cv-score.band-neutral { color:var(--muted); }
-  .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cv-score.band-low { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
   .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
   .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
   /* ENTRY-timing gauge (the second gauge) on the detail conviction hero */
@@ -298,8 +307,8 @@
   .cv-etext { font-size:11px; margin-top:5px; line-height:1.35; }
   .cv-val { font-size:10px; font-weight:700; padding:1px 6px; border-radius:7px; margin-left:6px;
             color:var(--muted); background:var(--panel); border:1px solid var(--line); }
-  .cv-val.val-extreme, .cv-val.val-stretched { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
-  .cv-val.val-cheap { color:var(--up); border-color:color-mix(in srgb,var(--up) 32%,var(--line)); }
+  .cv-val.val-extreme, .cv-val.val-stretched { color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .cv-val.val-cheap { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 32%,var(--line)); }
   .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
   .cax { font-size:10.5px; }
   .cax .caxl { color:var(--muted); display:block; }
@@ -309,7 +318,7 @@
   .cax .caxv { font-weight:700; font-variant-numeric:tabular-nums; }
   .cv-cau { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
-                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+                  color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
   .cv-basis { display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-top:9px; }
   .cv-blab { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
   .cv-bchip { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
@@ -331,25 +340,25 @@
   .pz-chase { background:color-mix(in srgb,var(--down) 8%,var(--panel)); border-left-color:var(--down); }
   .pz-h { font-size:11px; font-weight:800; letter-spacing:.03em; text-transform:uppercase;
           display:flex; align-items:center; gap:6px; }
-  .pz-acc .pz-h { color:var(--up); } .pz-chase .pz-h { color:var(--down); }
+  .pz-acc .pz-h { color:var(--ink-up, var(--up)); } .pz-chase .pz-h { color:var(--ink-down, var(--down)); }
   .pz-head { font-size:12.5px; color:var(--text); line-height:1.5; margin:5px 0 7px; }
   .pz-lvls { display:flex; flex-wrap:wrap; gap:7px; }
   .pz-lvl { font-size:11.5px; border:1px solid var(--line); background:var(--panel2);
             border-radius:7px; padding:3px 8px; display:inline-flex; align-items:baseline; gap:6px; }
   .pz-lvl b { font-variant-numeric:tabular-nums; }
-  .pz-lvl .pz-pull { font-weight:700; font-variant-numeric:tabular-nums; color:var(--down); }
+  .pz-lvl .pz-pull { font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink-down, var(--down)); }
   .pz-lvl em { color:var(--muted); font-style:normal; }
-  .cv-regime.rg-calm { color:var(--up); background:color-mix(in srgb,var(--up) 11%,var(--panel));
+  .cv-regime.rg-calm { color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 11%,var(--panel));
                        border-color:color-mix(in srgb,var(--up) 30%,var(--line)); }
-  .cv-regime.rg-stress { color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,var(--panel));
+  .cv-regime.rg-stress { color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 12%,var(--panel));
                          border-color:color-mix(in srgb,var(--warn) 30%,var(--line)); }
   .cv-regime.rg-mixed { color:var(--g-cold); background:color-mix(in srgb,var(--g-cold) 10%,var(--panel));
                         border-color:color-mix(in srgb,var(--g-cold) 26%,var(--line)); }
   .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
   .cvchip { font-weight:800; font-variant-numeric:tabular-nums; padding:0 6px; border-radius:7px;
             border:1px solid var(--line); }
-  .cvchip.band-high { color:var(--up); } .cvchip.band-constructive { color:var(--g-cold); }
-  .cvchip.band-neutral { color:var(--muted); } .cvchip.band-low { color:var(--down); }
+  .cvchip.band-high { color:var(--ink-up, var(--up)); } .cvchip.band-constructive { color:var(--g-cold); }
+  .cvchip.band-neutral { color:var(--muted); } .cvchip.band-low { color:var(--ink-down, var(--down)); }
   .chips { display:flex; flex-wrap:wrap; gap:6px; }
   .chip { padding:3px 9px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); font-size:12px; }
   .srcline { color:var(--muted); font-size:11px; margin:8px 0 0; }
@@ -368,7 +377,7 @@
   .dc-l1 .dc-rn { background:var(--muted); }
   .dc-l2 .dc-rn { background:var(--warn); }
   .dc-l3 .dc-rn { background:var(--g-cold); }
-  .dc-l2 .dc-lab { color:var(--warn); }
+  .dc-l2 .dc-lab { color:var(--ink-warn, var(--warn)); }
   .dc-vals { display:flex; flex-wrap:wrap; gap:6px; align-content:flex-start; }
   .dc-chip { display:inline-flex; align-items:baseline; gap:5px; padding:3px 9px; border-radius:8px;
              background:var(--panel2); border:1px solid var(--line); font-size:12px;
@@ -383,9 +392,9 @@
   /* Demand chain (L3 customer-capex read) */
   .dc-badge { display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.04em;
               padding:2px 8px; border-radius:7px; border:1px solid var(--line); }
-  .dc-div-up { color:var(--up); background:color-mix(in srgb,var(--up) 14%,transparent);
+  .dc-div-up { color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 14%,transparent);
                border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
-  .dc-div-risk { color:var(--down); background:color-mix(in srgb,var(--down) 14%,transparent);
+  .dc-div-risk { color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 14%,transparent);
                  border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
   .dc-div-mut { color:var(--muted); background:var(--panel2); }
   .dc-chainhead { font-size:12.5px; font-weight:600; margin-top:6px; line-height:1.4; }
@@ -433,11 +442,11 @@
   /* ---- accounting-quality read (display-only context, never scored) ---- */
   .aq-head { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:11px;
              font-size:13px; font-weight:800; border:1px solid var(--line); }
-  .aq-clean { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--up);
+  .aq-clean { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--ink-up, var(--up));
               border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .aq-watch { background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--warn);
+  .aq-watch { background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--ink-warn, var(--warn));
               border-color:color-mix(in srgb,var(--warn) 42%,transparent); }
-  .aq-warn  { background:color-mix(in srgb,var(--down) 15%,transparent); color:var(--down);
+  .aq-warn  { background:color-mix(in srgb,var(--down) 15%,transparent); color:var(--ink-down, var(--down));
               border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .aq-basis { color:var(--muted); font-size:11.5px; font-weight:400; margin-left:9px; }
   .aq-reads { margin:11px 0 0; }
@@ -466,9 +475,9 @@
   #r_demand .dc-verdict { display:flex; align-items:baseline; gap:10px; font-size:17px; font-weight:700;
     padding:10px 14px; border-radius:12px; margin-bottom:12px; }
   #r_demand .dc-vq { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
-  .dcv-up { color:var(--up); background:color-mix(in srgb,var(--up) 12%,transparent); }
-  .dcv-risk { color:var(--down); background:color-mix(in srgb,var(--down) 12%,transparent); }
-  .dcv-mut { color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,transparent); }
+  .dcv-up { color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 12%,transparent); }
+  .dcv-risk { color:var(--ink-down, var(--down)); background:color-mix(in srgb,var(--down) 12%,transparent); }
+  .dcv-mut { color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 13%,transparent); }
   #r_demand .dc-cmp { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:stretch; }
   #r_demand .dc-cmp-solo { grid-template-columns:1fr; }
   #r_demand .dc-tile { background:var(--panel2); border-radius:12px; padding:13px 15px; }
@@ -481,11 +490,11 @@
   #r_demand .dc-mid { display:flex; align-items:center; }
   #r_demand .dc-div { font-size:11px; font-weight:800; letter-spacing:.07em; writing-mode:vertical-rl;
     transform:rotate(180deg); border-radius:7px; padding:9px 4px; }
-  .dcd-up { color:var(--up); border:1px solid color-mix(in srgb,var(--up) 40%,transparent); }
-  .dcd-risk { color:var(--down); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
-  .dcd-mut { color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 40%,transparent); }
+  .dcd-up { color:var(--ink-up, var(--up)); border:1px solid color-mix(in srgb,var(--up) 40%,transparent); }
+  .dcd-risk { color:var(--ink-down, var(--down)); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
+  .dcd-mut { color:var(--ink-warn, var(--warn)); border:1px solid color-mix(in srgb,var(--warn) 40%,transparent); }
   #r_demand .dc-capex { margin-top:11px; font-size:12.5px; color:var(--muted); }
-  #r_demand .dc-capex b { color:var(--up); }
+  #r_demand .dc-capex b { color:var(--ink-up, var(--up)); }
   #r_demand .dc-arr { color:var(--muted); font-style:normal; margin:0 3px; }
   #r_demand .dc-hz { margin-top:7px; font-size:11.5px; color:var(--muted); }
   #r_demand .dc-tags { margin-top:9px; display:flex; gap:5px; flex-wrap:wrap; }
@@ -515,7 +524,7 @@
   #panel_fac .fac-standout .dot { color:var(--muted); margin:0 2px; }
   /* Earnings — event bar + beat streak + forward revisions */
   #panel_earn .earnhdr { font-size:13px; margin-bottom:8px; }
-  #panel_earn .earndays { font-weight:700; color:var(--up); }
+  #panel_earn .earndays { font-weight:700; color:var(--ink-up, var(--up)); }
   #panel_earn .earn-chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; font-size:13px; }
   #panel_earn .earn-fwd { margin-top:10px; background:var(--panel2); border-radius:11px; padding:11px 13px; }
   #panel_earn .earn-fwd-h { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
@@ -528,28 +537,28 @@
   .es-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 9px;
              border-radius:9px; font-size:12px; font-weight:600; border:1px solid var(--line);
              background:var(--panel); cursor:help; }
-  .es-chip.es-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent);
+  .es-chip.es-pos { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 35%,transparent);
                     background:color-mix(in srgb,var(--up) 9%,transparent); }
-  .es-chip.es-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent);
+  .es-chip.es-neg { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 35%,transparent);
                     background:color-mix(in srgb,var(--down) 9%,transparent); }
   .es-chip.es-neu { color:var(--muted); }
   /* GEX — vol "hole" strip */
   #panel_gex .gex-hole { margin:8px 0 2px; font-size:12.5px; color:var(--text);
     background:var(--panel2); border-radius:10px; padding:8px 12px; }
-  #panel_gex .gex-hole b { color:var(--warn); }
+  #panel_gex .gex-hole b { color:var(--ink-warn, var(--warn)); }
   /* Intraday flow panel */
   #panel_iflow .iflow-grid { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; }
   #panel_iflow .iflow-asof { font-size:11px; color:var(--muted); margin-bottom:8px; }
-  #panel_iflow .soft-tag { display:inline-block; font-size:10px; font-style:italic; color:var(--orange,#f97316); margin-left:2px; }
+  #panel_iflow .soft-tag { display:inline-block; font-size:10px; font-style:italic; color:var(--ink-orange, var(--orange,#f97316)); margin-left:2px; }
   #panel_iflow .leg-chip { display:inline-flex; align-items:center; gap:2px; font-size:10px; padding:1px 5px; border-radius:4px; border:1px solid var(--line); }
-  #panel_iflow .leg-on { border-color:var(--up); color:var(--up); }
+  #panel_iflow .leg-on { border-color:var(--up); color:var(--ink-up, var(--up)); }
   #panel_iflow .leg-off { color:var(--muted); }
   #panel_iflow .iflow-legs { display:flex; flex-wrap:wrap; gap:3px 5px; margin-top:4px; }
-  #panel_iflow .iflow-link { display:inline-block; margin-top:10px; font-size:12px; color:var(--link,var(--blue,#3b82f6)); }
+  #panel_iflow .iflow-link { display:inline-block; margin-top:10px; font-size:12px; color:var(--ink-link, var(--link,var(--blue,#3b82f6))); }
   /* Super-investors — fund grade + per-row as-of + holders trend sparkline */
   #panel_smartmoney .sm-grade { display:inline-block; font-size:10px; font-weight:800; padding:0 5px; border-radius:5px; vertical-align:middle; }
-  #panel_smartmoney .sm-gA { color:var(--up); background:color-mix(in srgb,var(--up) 16%,transparent); }
-  #panel_smartmoney .sm-gB { color:var(--warn); background:color-mix(in srgb,var(--warn) 16%,transparent); }
+  #panel_smartmoney .sm-gA { color:var(--ink-up, var(--up)); background:color-mix(in srgb,var(--up) 16%,transparent); }
+  #panel_smartmoney .sm-gB { color:var(--ink-warn, var(--warn)); background:color-mix(in srgb,var(--warn) 16%,transparent); }
   #panel_smartmoney .sm-gC, #panel_smartmoney .sm-gD, #panel_smartmoney .sm-gF { color:var(--muted); background:var(--panel2); }
   #panel_smartmoney .sm-asof { font-size:11px; color:var(--muted); }
   #panel_smartmoney .sm-trend { display:flex; align-items:center; gap:8px; font-size:12.5px; margin:0 0 11px; flex-wrap:wrap; }
@@ -560,19 +569,19 @@
   .trap-head { padding:5px 11px; border-radius:8px; font-size:12.5px; font-weight:600;
                margin-bottom:9px; }
   .trap-head-warn { background:color-mix(in srgb,var(--warn) 15%,transparent);
-                    color:var(--warn); }
+                    color:var(--ink-warn, var(--warn)); }
   .trap-head-ok   { background:color-mix(in srgb,var(--up) 10%,transparent);
-                    color:var(--up); }
+                    color:var(--ink-up, var(--up)); }
   .trap-leg { display:grid; grid-template-columns:20px 1fr auto; gap:6px; align-items:center;
               padding:4px 0; font-size:12.5px; border-bottom:1px solid var(--line); }
   .trap-leg:last-of-type { border-bottom:none; }
   .trap-icon { font-size:13px; text-align:center; }
   .trap-na   .trap-icon { color:var(--muted); }
-  .trap-fired .trap-icon { color:var(--warn); }
-  .trap-ok   .trap-icon { color:var(--up); }
+  .trap-fired .trap-icon { color:var(--ink-warn, var(--warn)); }
+  .trap-ok   .trap-icon { color:var(--ink-up, var(--up)); }
   .trap-label { color:var(--text); }
   .trap-status { font-size:11px; color:var(--muted); text-align:right; }
-  .trap-fired .trap-status { color:var(--warn); font-weight:600; }
+  .trap-fired .trap-status { color:var(--ink-warn, var(--warn)); font-weight:600; }
   .trap-foot { color:var(--muted); font-size:11px; margin:8px 0 0; font-style:italic; }
   /* Codex B5: event-windows panel (display-only) */
   .evwin-row { display:grid; grid-template-columns:140px 1fr auto; gap:6px; align-items:baseline;
@@ -592,7 +601,7 @@
                background:color-mix(in srgb,var(--down) 8%,var(--panel2)); }
   .hold-panel .hp-head { font-weight:700; font-size:12.5px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .hold-panel .hp-inv  { font-size:11.5px; color:var(--muted); margin-top:3px; }
-  .hold-panel .hp-prov { font-size:10.5px; color:var(--warn); margin-top:2px; }
+  .hold-panel .hp-prov { font-size:10.5px; color:var(--ink-warn, var(--warn)); margin-top:2px; }
 </style>
 </head>
 <body>
@@ -665,9 +674,9 @@
     <div id="sv-evidence"></div>
     <div id="sv-country"></div>
     <!-- ===== Deep layer — collapsed disclosure groups (off the glance path) ===== -->
-    <details class="sv-group"><summary>{{ t('🔮 Outlook & AI view', '🔮 前瞻与 AI 观点') }}</summary>
+    <details class="sv-group"><summary>{{ t('Outlook & AI view', '前瞻与 AI 观点') }}</summary>
     <div class="panel" id="panel_anticipation" style="display:none">
-      <h2>🔮 {{ t('Anticipation — multi-horizon outcome cone', '预判 — 多周期结果锥') }}
+      <h2>{{ t('Anticipation — multi-horizon outcome cone', '预判 — 多周期结果锥') }}
         <a href="anticipation.html" class="muted" style="font-size:12px;font-weight:400;margin-left:6px">{{ t('all assets →', '全部标的 →') }}</a></h2>
       <p style="font-size:12.5px;margin:2px 0 8px" id="ant_sub"></p>
       <div id="ant_cone"></div>
@@ -676,32 +685,32 @@
       <p class="muted" style="font-size:11.5px;margin:8px 0 0" id="ant_note"></p>
     </div>
     <div class="panel" id="ai-lean" style="display:none">
-      <h2>⚖️ {{ t('AI judgment — accountable lean', 'AI 研判 — 可问责判断') }}</h2>
+      <h2>{{ t('AI judgment — accountable lean', 'AI 研判 — 可问责判断') }}</h2>
       <div id="ai-lean-body"></div>
     </div>
     <div class="panel" id="stock-brief" style="display:none">
-      <h2>🧠 {{ t('AI brief — research context', 'AI 简报 — 研究背景') }}</h2>
+      <h2>{{ t('AI brief — research context', 'AI 简报 — 研究背景') }}</h2>
       <div id="stock-brief-body"></div>
     </div>
     </details>
-    <details class="sv-group"><summary>{{ t('📊 Fundamentals & financials', '📊 基本面与财务') }}</summary>
+    <details class="sv-group"><summary>{{ t('Fundamentals & financials', '基本面与财务') }}</summary>
     <!-- ===== Fundamentals suite (Phase 1: surface what we already compute) ===== -->
     <div class="panel" id="panel_profile" style="display:none">
-      <h2>🏢 {{ t('Business profile', '公司概况') }}</h2>
+      <h2>{{ t('Business profile', '公司概况') }}</h2>
       <p id="r_profile_desc" style="margin:0 0 8px"></p>
       <div id="r_profile_chips" class="chips"></div>
       <p id="r_profile_src" class="srcline"></p>
     </div>
 
     <div class="panel" id="panel_demand" style="display:none">
-      <h2>🧭 {{ t('Demand context — is the rally already priced?', '需求背景 — 涨势是否已被定价？') }}
+      <h2>{{ t('Demand context — is the rally already priced?', '需求背景 — 涨势是否已被定价？') }}
         {{ help('A framing of WHERE a rally\'s demand story sits, in three honest layers. (1) Trailing = demand that already converted to financials — backward-looking by accounting construction. (2) Consensus = the forward view the market has ALREADY bought (forward P/E, next-quarter estimate, analyst revisions, SUE); agreeing with it is exposure, not edge, because it is already in the price. (3) Independent observable = a management-independent read on FORWARD demand (bookings/backlog, customer-capex, hiring) — the only layer that could say a rally is MIS-priced. It is not yet measured (Phase 1 of the Demand Desk). DISPLAY-ONLY context; nothing here is a buy signal.',
           '用三个诚实的层次界定涨势的“需求故事”所处位置。(1) 历史＝已转化为财报的需求——按会计口径天然滞后。(2) 共识＝市场已经买入的前瞻预期（前瞻市盈率、下季预估、分析师评级调整、SUE）；认同它只是承担敞口而非优势，因为它已被定价。(3) 独立观测＝对前瞻需求、不依赖管理层口径的读数（订单/在手订单、客户资本开支、招聘）——这是唯一可能判断涨势被错误定价的层次。该层尚未度量（需求台第一阶段）。仅供参考展示，均非买入信号。') }}</h2>
       <div id="r_demand"></div>
     </div>
 
     <div class="panel" id="panel_val" style="display:none">
-      <h2>💲 {{ t('Valuation', '估值') }}
+      <h2>{{ t('Valuation', '估值') }}
         {{ help('Trailing multiples from the latest SEC filing divided by the current price. The bar shows how cheap or expensive the name is versus its own GICS sector (green = cheaper, marker = sector median). Forward P/E is only available for a deep set of large caps; every other name shows trailing only — we never impute a forward number.',
           '历史估值倍数＝最新SEC财报÷当前股价。条形显示相对其所属行业的便宜或昂贵程度（绿色＝更便宜，标记＝行业中位）。前瞻市盈率仅对部分大盘股可得，其余仅显示历史值——我们绝不臆造前瞻数字。') }}</h2>
       <div id="r_valbars"></div>
@@ -709,7 +718,7 @@
     </div>
 
     <div class="panel" id="panel_fin" style="display:none">
-      <h2>📊 {{ t('Financials & growth', '财务与增长') }}
+      <h2>{{ t('Financials & growth', '财务与增长') }}
         {{ help('Latest fiscal year from SEC EDGAR XBRL; multi-year trends, growth (CAGR) and the Piotroski-F / Altman-Z health scores from SEC companyfacts. All lagged to the filing date. Diluted EPS is as-reported — not split-adjusted across years.',
           '最新财年来自SEC EDGAR XBRL；多年趋势、增长（CAGR）与 Piotroski-F／Altman-Z 健康分数来自SEC companyfacts。均滞后至披露日。摊薄EPS为披露口径，未跨年做拆股调整。') }}</h2>
       <div id="r_multiyear" style="margin-bottom:8px"></div>
@@ -720,7 +729,7 @@
     </div>
 
     <div class="panel" id="panel_aq" style="display:none">
-      <h2>🧾 {{ t('Accounting quality', '会计质量') }}
+      <h2>{{ t('Accounting quality', '会计质量') }}
         {{ help('A plain-language read on whether the accounting is deteriorating — composed from this name\'s accruals (are earnings backed by cash?), working-capital trends (inventory & receivables vs sales), gross profitability, capital discipline (asset growth / dilution) and balance-sheet safety, using the same SEC-derived factor ranks shown below plus multi-year SEC companyfacts trends where they exist. DISPLAY-ONLY context: it is NOT part of any score, ranking or trading signal, and it deliberately does NOT change the technical / alpha call above — it is a fundamental cross-check for you to weigh. Lagged to the filing date; annual data, sparse for some filers.',
           '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅供参考展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至披露日；年度数据，对部分公司不全。') }}</h2>
       <div id="r_aq"></div>
@@ -728,7 +737,7 @@
 
     <!-- B1: great-company-trap de-escalation panel (display-only; hold_thesis; LH-R10) -->
     <div class="panel" id="panel_trap" style="display:none">
-      <h2>⚠ {{ t('Great-company-trap check', '优质公司陷阱检查') }}
+      <h2>{{ t('Great-company-trap check', '优质公司陷阱检查') }}
         {{ help('Three independent de-escalation legs applied to high-quality names: (1) Basket-level crowding — is the theme this stock belongs to showing elevated institutional co-movement / extension? (2) Net insider selling — are insiders selling net > $500k? (3) Analyst consensus downgrading — is the net-buy count declining? Any firing leg is a caution flag only (never a sell or a score input). DISPLAY-ONLY context — does not affect any score, rank, or entry decision (LH-R10).',
           '针对高质量标的的三个独立降级腿：(1) 篮子层面拥挤——该股所属主题是否出现机构共振或超延伸？(2) 内部人净卖出——内部人净卖出是否超过50万美元？(3) 分析师共识下调——净买入计数是否在下降？任何触发腿仅为谨慎提示（从不作为卖出信号或评分输入）。仅供展示——不影响任何评分、排名或入场决策（LH-R10）。') }}</h2>
       <div id="r_trap"></div>
@@ -736,14 +745,14 @@
 
     <!-- Codex B5: event-windows display panel (display-only; horizon_role=display_context) -->
     <div class="panel" id="panel_evwin" style="display:none">
-      <h2>🗓 {{ t('Event windows', '事件窗口') }}
+      <h2>{{ t('Event windows', '事件窗口') }}
         {{ help('Upcoming event-calendar context for this name: next earnings date (calendar days away), next FOMC meeting (calendar days away), and the most recent EDGAR balance-sheet debt snapshot (current debt due within ~12 months, long-term debt, cash, net debt). DISPLAY-ONLY context — descriptive facts only, does not affect any score, rank, or entry decision. Debt figures in USD as reported; lagged to the most recent SEC filing date shown.',
           '当前标的即将到来的事件日历参考：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC披露日期。') }}</h2>
       <div id="r_evwin"></div>
     </div>
 
     <div class="panel" id="panel_earn" style="display:none">
-      <h2>📅 {{ t('Earnings', '财报') }}
+      <h2>{{ t('Earnings', '财报') }}
         {{ help('Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company\'s own history — the post-earnings-announcement-drift (PEAD) effect. It was the strongest factor and lone false-discovery-rate survivor on the shallow 2023-2025 window, but a deep 2011-2026 re-test (survivorship-biased, an optimistic bound) collapses its CROSS-SECTIONAL edge to ~zero (see the factors page) — so it is shown as earnings-momentum / PEAD context, not a validated standalone alpha; the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.',
           '下次财报日与近期超预期/不及预期历史（SEC＋纳斯达克，免密钥），以及SUE盈利动量z值。SUE（标准化超预期盈利）衡量最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化——即盈利公布后漂移（PEAD）效应。它在浅窗口（2023-2025）曾是最强正向因子且唯一通过无泄漏错误发现率检验，但 2011-2026 深度复检（含幸存者偏差，乐观上界）使其横截面优势崩塌至约零（见因子页）——故仅作盈利动量／PEAD 背景展示，并非已验证的独立超额收益；该z为相对标普1500的排名（0＝平均，+2＝领先）。仅供参考，并非独立买入信号。') }}</h2>
       <div id="r_earn"></div>
@@ -754,7 +763,7 @@
     </div>
 
     <div class="panel" id="panel_fac" style="display:none">
-      <h2>🧬 {{ t('Factor fingerprint', '因子指纹') }}
+      <h2>{{ t('Factor fingerprint', '因子指纹') }}
         {{ help('Where this name sits on the standard factors against the rest of the S&P 1500 (0 = average, +2 = top of the pack; bars right of centre are attractive). These are relative ranks as of the latest filing — context, not a verdict on quality and not an edge on its own.',
           '该标的在标普1500横截面上各经典smart-beta因子的位置（缩尾z分数；0＝平均，+2＝领先，条形位于中线右侧＝有吸引力）。这些是滞后至最新财报的相对排名——仅供参考，并非已验证的超额收益或质量结论。') }}</h2>
       <div id="r_fac_standout" class="fac-standout"></div>
@@ -766,52 +775,52 @@
     </div>
 
     <div class="panel" id="panel_alpha" style="display:none">
-      <h2>📈 {{ t('Alpha vs sector & index', '相对板块与大盘的阿尔法') }}
+      <h2>{{ t('Alpha vs sector & index', '相对板块与大盘的阿尔法') }}
         {{ help("This stock's return with its MARKET and SECTOR beta removed — sector-neutral residual momentum over a 12-1-month window. 'alpha z' is its rank vs the whole S&P 1500 cross-section (0 = average, +2 = top of the pack); 'sector rank' is its place among its GICS peers; 'idiosyncratic' is the annualized beta-stripped return. The entry tag flags whether a leader just spiked ('extended' = short-term reversal risk) or is on a recent dip ('pullback' = constructive). Phase-0 validated as a MODEST, regime-decayed edge — context for stock selection, not a standalone buy signal.",
           "该股票剔除其市场与板块贝塔后的收益 —— 12-1 个月的板块中性残差动量。“阿尔法 z”是其在整个标普1500横截面中的排名（0＝平均，+2＝领先）；“板块排名”是其在 GICS 同业中的位次；“特异收益”为年化的剔除贝塔后收益。入场标签标记领跑股是刚急涨（“extended”＝短期反转风险）还是处于近期回调（“pullback”＝较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 —— 仅为选股参考，并非独立买入信号。") }}</h2>
       <div id="r_alpha"></div>
     </div>
     </details>
-    <details class="sv-group"><summary>{{ t('🏦 Options, positioning & ownership', '🏦 期权、持仓与机构') }}</summary>
+    <details class="sv-group"><summary>{{ t('Options, positioning & ownership', '期权、持仓与机构') }}</summary>
     <div class="panel" id="panel_gex" style="display:none">
-      <h2>🎯 {{ t('Options & dealer gamma (GEX)', '期权与做市商Gamma') }}</h2>
+      <h2>{{ t('Options & dealer gamma (GEX)', '期权与做市商Gamma') }}</h2>
       <div id="r_gex"></div>
     </div>
 
     <div class="panel" id="panel_iflow" style="display:none">
-      <h2>📊 {{ t('Intraday flow', '盘中资金流') }}</h2>
+      <h2>{{ t('Intraday flow', '盘中资金流') }}</h2>
       <div id="r_iflow_asof" class="iflow-asof"></div>
       <div id="r_iflow"></div>
     </div>
 
     <div class="panel" id="panel_pos" style="display:none">
-      <h2>🩳 {{ t('Positioning', '持仓与做空') }}
+      <h2>{{ t('Positioning', '持仓与做空') }}
         {{ help('Short interest from FINRA (bi-monthly, ~2-week lag). Insider net open-market buying/selling from SEC Form-4 filings, shown as a % of market cap (size-normalised so small/mid-cap conviction is not drowned by megacap dollars) with the count of distinct insiders — a cluster of independent buyers is the higher-conviction signal. Heavy or rising short interest with insider selling is a caution.',
           '做空数据来自FINRA（每半月，约两周滞后）。内部人净公开市场买卖来自SEC Form-4披露，按占市值%显示（经规模标准化，避免小/中盘信念被大盘美元金额淹没），并附不同内部人人数——多名独立买家形成的集群信号确信度更高。高或上升的做空＋内部人卖出为警示。') }}</h2>
       <div id="r_pos" class="twocol"></div>
     </div>
 
     <div class="panel" id="panel_analyst" style="display:none">
-      <h2>👔 {{ t('Analyst & estimates', '分析师与预期') }}</h2>
+      <h2>{{ t('Analyst & estimates', '分析师与预期') }}</h2>
       <div id="r_analyst"></div>
     </div>
 
     <div class="panel" id="panel_flow" style="display:none">
-      <h2>🐳 {{ t('Thematic-fund flow — curated ETF baskets', '主题基金流 — 精选ETF篮子') }}
+      <h2>{{ t('Thematic-fund flow — curated ETF baskets', '主题基金流 — 精选ETF篮子') }}
         {{ help("Which curated thematic/industry funds (SPDR sector, Global X) and actively managed funds (ARK) have been accumulating or trimming this stock, with mechanical creation/redemption flow and price moves stripped out. Conviction = the percentage POINTS of the fund's weight the manager actually committed. A real add from a sector specialist is a meaningful vote of confidence; pair it with the analyst & filings panels above. From the 🐳 Real fund moves board.",
           "哪些精选的主题／行业基金（SPDR 板块、Global X）与主动管理基金（ARK）一直在增持或减持该股，已剔除机械性的申购／赎回资金流与价格变动。信念 = 经理人实际投入的基金权重百分点。来自板块专业基金的真实增持是有意义的信心投票；请与上方的分析师与披露面板结合参考。数据来自 🐳 基金真实动作 看板。") }}</h2>
       <div id="r_flow"></div>
     </div>
 
     <div class="panel" id="panel_fragility" style="display:none">
-      <h2>⚠️ {{ t('Crowded & fragile', '拥挤且脆弱') }}
+      <h2>{{ t('Crowded & fragile', '拥挤且脆弱') }}
         {{ help("A contrarian RISK flag: this name is at once a crowded leader (high relative-strength percentile), a crowded short (high days-to-cover in the latest FINRA snapshot), AND stretched well above its 50-day average. That conjunction is a fragile set-up — prone to a sharp unwind or short squeeze either way. DISPLAY-ONLY context, never in the conviction score: our Phase-0 found crowding carries NO forward-return edge (only a marginal, statistically-weak worse drawdown), and short interest has no point-in-time history to validate. Context on fragility, NOT a sell.",
           "一个逆向风险标记：该股同时是拥挤的领涨股（相对强弱百分位高）、拥挤的空头（最新 FINRA 快照中回补天数高），且远高于其 50 日均线。这种组合是一种脆弱形态 —— 易于双向剧烈回吐或逼空。仅供参考展示，绝不计入信念评分：我们的 Phase-0 发现拥挤本身没有前瞻收益优势（仅有边际且统计上微弱的更深回撤），且空头数据没有可供验证的时点历史。仅作脆弱性背景，而非卖出信号。") }}</h2>
       <div id="r_fragility"></div>
     </div>
 
     <div class="panel" id="panel_smartmoney" style="display:none">
-      <h2>🏦 {{ t('Super-investors — 13F holders', '超级投资者 — 13F 持仓') }}
+      <h2>{{ t('Super-investors — 13F holders', '超级投资者 — 13F 持仓') }}
         {{ help("Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag and reports long positions for managers with at least $100M in Section 13(f) securities (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.",
           "哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度披露，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。") }}</h2>
       <div id="r_smartmoney"></div>
@@ -822,7 +831,7 @@
     {# Jinja missing-key law: NEVER use `if d.personality is not none` — use .get() on the JS side. #}
     {# This panel is populated by stockview.js reading d.personality from the per-stock JSON. #}
     <div class="panel" id="panel_personality" style="display:none">
-      <h2>🧬 {{ t('How this stock trades', '这只股票的交易个性') }}</h2>
+      <h2>{{ t('How this stock trades', '这只股票的交易个性') }}</h2>
       <div id="r_personality"></div>
     </div>
     <!-- Trust-the-state: standalone, always-open panel at the page bottom (per revamp) -->
@@ -865,6 +874,9 @@
   var T = {
     en: { asof: 'data through', notlib: 'NOT IN LIBRARY',
           notlibmsg: 'Not in the nightly library (S&P 500 + tracked ETFs/commodities/crypto). Add it in one line: config.yml → stock_search.extra_tickers.',
+          locked: 'SIGN IN TO VIEW',
+          lockedmsg: 'This name is in the library. The full analysis — the decision read, cycle timing, momentum across timeframes and financial health — is included with a free account.',
+          lockedcta: 'Create free account', lockedcta2: 'Sign in',
           season: 'Seasonality', failed: '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.',
           next: 'Next:', cu: ' just crossed up', cd: ' just crossed down',
           bullx: ' bars to bull cross', bearx: ' bars to bear cross',
@@ -878,6 +890,9 @@
                    'August', 'September', 'October', 'November', 'December'] },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（标普500 ＋ 跟踪的 ETF／大宗商品／加密货币）。一行即可添加：config.yml → stock_search.extra_tickers。',
+          locked: '登录后查看',
+          lockedmsg: '该标的已在库中。完整分析——决策读数、周期时机、跨周期动量与财务健康——注册免费账户即可查看。',
+          lockedcta: '创建免费账户', lockedcta2: '登录',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
           next: '下一步：', cu: ' 刚上穿', cd: ' 刚下穿',
           bullx: ' 根K线后金叉', bearx: ' 根K线后死叉',
@@ -1905,6 +1920,20 @@
     return s < 20 ? '0-20' : s < 40 ? '20-40' : s < 60 ? '40-60' : '60+';
   }
 
+  // stock.html?ticker=X is a real entry-link shape (nav_market.js "Bitcoin
+  // Terminal" → stock.html?ticker=BTC-USD), but every reader on this page —
+  // this boot, the live-price bridge, the anticipation panel at the bottom —
+  // keys on location.hash. Canonicalize the query form to the #hash ONCE,
+  // before any of them boot. replaceState fires no hashchange, so each
+  // listener still runs exactly once from its own initial call.
+  if (!location.hash) {
+    try {
+      var _qt = new URLSearchParams(location.search).get('ticker');
+      if (_qt && _qt.trim()) {
+        history.replaceState(null, '', location.pathname + '#' + encodeURIComponent(_qt.trim()));
+      }
+    } catch (e) { /* very old browsers keep the search-first empty state */ }
+  }
   function fromHash() {
     var t = decodeURIComponent((location.hash || '').slice(1));
     if (t) load(t);
@@ -2041,22 +2070,65 @@
     return { open: open, close: close };
   })();
 
+  // The chart + momentum panels and the deep-detail block carry no message of
+  // their own, so the no-analysis catch below hides them; a later successful
+  // load (hash navigation to a covered name) must get them back.
+  function noDataPanels() {
+    var tv = document.getElementById('tvbox');
+    return [document.querySelector('details.sv-deep'),
+            document.getElementById('panel_mtf'),
+            document.getElementById('panel_cal'),
+            tv && tv.closest ? tv.closest('.panel') : null]
+      .concat([].slice.call(document.querySelectorAll('details.sv-group')))
+      .filter(Boolean);
+  }
   function load(t) {
     var safe = t.replace('=', '_').replace('^', '_');
     if (window.loadStockBrief) window.loadStockBrief(safe);   // 🧠 AI brief (hidden if absent)
     if (window.loadAiLean) window.loadAiLean(t);              // ⚖️ accountable lean (top picks only)
+    noDataPanels().forEach(function (p) { p.style.display = ''; });
     fetch('stockdata/' + safe + '.json').then(function (r) {
+      // The per-ticker payload is account-gated (config/site_access.yml): an
+      // anonymous visitor gets a 401 here BY DESIGN. That is a locked door,
+      // not a missing name — telling a signed-out visitor that GPCR is "NOT
+      // IN LIBRARY" while us_stocks.html features it is a lie about our own
+      // coverage, so the two failures get different UI.
+      if (r.status === 401 || r.status === 403) throw new Error('locked');
       if (!r.ok) throw new Error('not in library');
       return r.json();
-    }).then(render).catch(function () {
+    }).then(render).catch(function (err) {
+      var locked = !!(err && err.message === 'locked');
       document.getElementById('result').style.display = 'block';
       document.getElementById('r_name').textContent = t;
-      document.getElementById('r_state').textContent = L('notlib');
+      document.getElementById('r_state').textContent = locked ? L('locked') : L('notlib');
       document.getElementById('r_state').className = 'state';
       document.getElementById('r_afbtn').style.display = 'none';
       if (afCtl) afCtl.close();
       document.getElementById('r_points').innerHTML = '';
-      document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
+      document.getElementById('r_cyclebox').innerHTML = '';
+      // Speak in the PRIMARY slot: r_cyclebox lives inside the collapsed
+      // "Cycle & timing detail" details block, so a message written there is
+      // invisible until expanded — the CTA a signed-out visitor needs must not
+      // hide behind a disclosure triangle.
+      var sd = document.getElementById('sv-decision');
+      if (locked) {
+        sd.innerHTML = '<p class="muted" style="margin:6px 0 2px">' + L('lockedmsg') + '</p>' +
+          '<div class="lock-row">' +
+          '<button type="button" class="lock-cta" data-auth="signup">' + L('lockedcta') + '</button>' +
+          '<button type="button" class="lock-cta lock-cta--ghost" data-auth="signin">' + L('lockedcta2') + '</button>' +
+          '</div>';
+        [].forEach.call(sd.querySelectorAll('.lock-cta'), function (b) {
+          b.addEventListener('click', function () {
+            var mode = b.getAttribute('data-auth');
+            if (window.MMOnboard && typeof window.MMOnboard.open === 'function') window.MMOnboard.open(mode, {});
+            else if (window.MDXAuth && typeof window.MDXAuth.open === 'function') window.MDXAuth.open(mode);
+            else location.href = mode === 'signup' ? '/?signup=1' : '/?signin=1';
+          });
+        });
+      } else {
+        sd.innerHTML = '<p class="muted" style="margin:6px 0 2px">' + L('notlibmsg') + '</p>';
+      }
+      noDataPanels().forEach(function (p) { p.style.display = 'none'; });
       hideFundamentals();
     });
   }
@@ -3409,10 +3481,10 @@
 <style>
 /* Anticipation panel — scoped DIRECTION/RISK card styling (mirrors anticipation.html) */
 #panel_anticipation .ap-badge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:.04em;}
-#panel_anticipation .ap-b-calm{background:rgba(34,197,94,.14);color:var(--up);}
-#panel_anticipation .ap-b-elev{background:rgba(250,204,21,.16);color:var(--warn);}
+#panel_anticipation .ap-b-calm{background:rgba(34,197,94,.14);color:var(--ink-up, var(--up));}
+#panel_anticipation .ap-b-elev{background:rgba(250,204,21,.16);color:var(--ink-warn, var(--warn));}
 #panel_anticipation .ap-b-high{background:rgba(249,115,22,.16);color:#f97316;}
-#panel_anticipation .ap-b-ext{background:rgba(239,68,68,.16);color:var(--down);}
+#panel_anticipation .ap-b-ext{background:rgba(239,68,68,.16);color:var(--ink-down, var(--down));}
 #panel_anticipation .ap-chip{font-size:10.5px;padding:2px 8px;border-radius:7px;border:1px solid var(--line);color:var(--muted);margin-left:6px;white-space:nowrap;}
 #panel_anticipation .ap-legend{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin:8px 0 0;font-size:11px;color:var(--muted);line-height:1.65;}
 #panel_anticipation .ap-legend b{color:var(--text);font-weight:600;}
@@ -3426,12 +3498,12 @@
 #panel_anticipation .hc .pup{float:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:12px;}
 #panel_anticipation .hc .why{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4;}
 #panel_anticipation .hc .pill{display:inline-block;font-size:9.5px;padding:1px 5px;border-radius:5px;margin-top:5px;}
-#panel_anticipation .hc .pill.ok{background:rgba(34,197,94,.14);color:var(--up);}
+#panel_anticipation .hc .pill.ok{background:rgba(34,197,94,.14);color:var(--ink-up, var(--up));}
 #panel_anticipation .hc .pill.flip{background:var(--panel);color:var(--muted);border:1px solid var(--line);}
 #panel_anticipation .hc .rblock{padding:6px 9px 8px;border-top:1px solid var(--line);background:var(--panel);}
 #panel_anticipation .hc .rv{font-size:12px;font-variant-numeric:tabular-nums;margin-top:1px;}
 #panel_anticipation .hc .rv2{font-size:10.5px;color:var(--muted);margin-top:1px;}
-#panel_anticipation .dir-up{color:var(--up);} #panel_anticipation .dir-down{color:var(--down);} #panel_anticipation .dir-flip{color:var(--muted);}
+#panel_anticipation .dir-up{color:var(--ink-up, var(--up));} #panel_anticipation .dir-down{color:var(--ink-down, var(--down));} #panel_anticipation .dir-flip{color:var(--muted);}
 @media (max-width:560px){ #panel_anticipation #ant_cards{ grid-template-columns:1fr !important; } }
 /* W4 personality panel */
 .sp-row { display:flex; align-items:flex-start; flex-wrap:wrap; gap:4px 8px; margin-bottom:5px; font-size:13px; }
@@ -3441,7 +3513,7 @@
 .sp-small { font-size:10px; color:var(--muted); margin-left:3px; }
 .sp-mode-row { border-top:1px solid var(--line); margin-top:6px; padding-top:7px; }
 .sp-mode-axis { color:var(--text); font-weight:700; }
-.sp-mode-chip.chip { border-color:color-mix(in srgb,var(--info) 50%,var(--line)); background:color-mix(in srgb,var(--info) 8%,var(--panel2)); color:var(--info); }
+.sp-mode-chip.chip { border-color:color-mix(in srgb,var(--info) 50%,var(--line)); background:color-mix(in srgb,var(--info) 8%,var(--panel2)); color:var(--ink-info, var(--info)); }
 .sp-chart-chip.chip { border-color:color-mix(in srgb,var(--muted) 60%,var(--line)); }
 .sp-compat { font-size:12px; margin:5px 0 3px; }
 .sp-footer { font-size:11.5px; margin:8px 0 0; line-height:1.5; }

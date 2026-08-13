@@ -1,8 +1,8 @@
 {
   "schema": "edgar_phrase_velocity.v1",
   "vocab_version": 1,
-  "as_of": "2026-08-10",
-  "generated_at": "2026-08-11T02:27:45.465746+00:00",
+  "as_of": "2026-08-12",
+  "generated_at": "2026-08-13T02:55:33.338696+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -169,9 +169,9 @@
         {
           "phrase": "longer lead times",
           "recent_count": 7,
-          "prior_count": 1,
+          "prior_count": 0,
           "recent_filers": 7,
-          "prior_filers": 1,
+          "prior_filers": 0,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -229,9 +229,9 @@
         {
           "phrase": "longer lead times",
           "recent_count": 7,
-          "prior_count": 1,
+          "prior_count": 0,
           "recent_filers": 7,
-          "prior_filers": 1,
+          "prior_filers": 0,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -282,9 +282,9 @@
         {
           "phrase": "longer lead times",
           "recent_count": 7,
-          "prior_count": 1,
+          "prior_count": 0,
           "recent_filers": 7,
-          "prior_filers": 1,
+          "prior_filers": 0,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -325,9 +325,9 @@
     {
       "phrase": "longer lead times",
       "recent_count": 6,
-      "prior_count": 1,
+      "prior_count": 0,
       "recent_filers": 6,
-      "prior_filers": 1,
+      "prior_filers": 0,
       "velocity_z": 5.0,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"

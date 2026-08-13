@@ -502,11 +502,23 @@ jobs:
       # not coverage, so it is waived in config/unrun_test_waivers.yml with that reason
       # and an owner: the Prophet US program re-pins the constant, deletes the waiver
       # row, and adds the file to the run: line below.
+      # test_stop_curvature_study.py joined 2026-08-12 with the §6.8(a) curvature study.
+      # It is a MUTATION suite, not a smoke test: it plants the exact defect each of that
+      # study's self-reporting gates claims to catch (a diverged parity flag, a
+      # forward-looking feature, a 3D state stamped before its bucket closed, an outcome
+      # read before the ex-ante exemplar gate) and requires the gate to go red — because
+      # a receipt derived from the thing it checks cannot fail on its own. It also pins
+      # the null in the PASS direction: a planted name that genuinely arches on both
+      # exemplar dates must CLEAR G5, so "all five forms missed" is a measurement rather
+      # than a stuck switch. Synthetic frames only; its one real-store receipt is
+      # skipif'd on the absence of data/ and has a never-skipping synthetic twin, same
+      # pattern as the price ladder above. Measured: 22 tests, ~0.7s.
       - name: prophet US audit guards — post-board trajectory, price ladder, adjusted-basis control
         run: >
           python -m pytest
           research/prophet_us_audit/test_post_board_trajectory.py
           research/prophet_us_audit/test_price_ladder.py
+          research/prophet_us_audit/test_stop_curvature_study.py
           research/prophet_us_audit/test_veto_leg_isolation_adjusted_rerun.py -q
       - name: fundamental forensics lineage, normalization, detector, and schema contracts
         run: >
@@ -613,6 +625,12 @@ jobs:
         run: python3 scripts/check_trial_registration.py
       - name: reliability-contract guard (no gated field rendered directionally, audit #46)
         run: python3 scripts/check_reliability_contract.py
+      # A ticker rename is a ledger-key migration, not a fresh company. This
+      # suite owns the track-record ingest guard, duplicate detector, and
+      # losslessness receipt; keep it ahead of the broader grading invocation
+      # so an unrelated grading failure cannot leave identity enforcement dark.
+      - name: track-record company-key identity + lossless migration guard
+        run: python -m pytest tests/test_ledger_identity.py -q
       - name: grading rebuild + trial ledger tests
         run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py tests/test_universe_history.py -q
       - name: promotion-stat DISPLAY gate — the published DSR must be the computed one
@@ -1034,12 +1052,17 @@ jobs:
       # The market-score authority suite spans engine contracts, dashboard projection,
       # and forward-ledger provenance, so this render/engine guard job owns it. Keep it
       # ahead of the broad sweep: an unrelated render failure must not leave the veto
-      # firewall dark. The odometer suite is the paired template/site light-mode guard
-      # merged by #5458; naming it explicitly closes the same unrun-suite gap on main.
+      # firewall dark.
       - name: US market-score authority firewall (calendar, Radar, history, provenance)
         run: python -m pytest tests/test_market_score_authority_2026_08_12.py -q
-      - name: shared light-mode odometer semantic needle contract
-        run: python -m pytest tests/test_odometer_light_mode_surface.py -q
+      # #5480 added this express-render ownership guard to main but omitted a
+      # run: owner, so audit_unrun_tests correctly found it dark on the very
+      # next check-definition refresh. #5481 folded the focused render-lane
+      # module into the canonical China Policy Watch suite; keep that canonical
+      # suite here because it pins both render workflows and the data-pristine
+      # --site-only builder boundary.
+      - name: China Policy Watch express-render ownership + data-pristine mode
+        run: python -m pytest tests/test_china_policy_watch.py -q
       # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
       # pinned SEC source objects into filing packages, Company Facts ledgers,
       # and deterministic B4 binding plans. Keep these security/provenance
@@ -2365,6 +2388,16 @@ jobs:
         run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
       - name: altdata reboot W2 — per-channel family routing + placebo tests
         run: python -m pytest tests/test_altdata_reboot_families.py -q
+      # Metric-validity invariants (epistemics.qledger_metric_validity). grades.excess
+      # is RAW, not direction-signed, so a pooled signed excess_mean over a
+      # mixed-direction family measures universe drift rather than skill; a salience
+      # family has no hit rate; a verdict may only be read at the declared horizon.
+      # The selftest carries negative controls, so it fails if the auditor flags
+      # everything as readily as if it flags nothing.
+      - name: qledger metric-validity invariants
+        run: python -m pytest tests/test_qledger_validity.py -q
+      - name: qledger metric-validity guard selftest
+        run: python scripts/check_qledger_metric_validity.py --selftest
 
   altdata-new-sources:
     if: ${{ false }}
@@ -2431,6 +2464,17 @@ jobs:
         run: python -m pytest tests/test_risk_core_js.py -q
       - name: watchlist_risk.js chain lane — node-shelled helper tests (TXI W4)
         run: python -m pytest tests/test_watchlist_chains_js.py -q
+      # UWP/W1a: the watchlist+portfolio STORE (templates/watchstore.js), same
+      # node-shelling idiom as the two steps above. test_watchlist_books_js.py was
+      # named by no run: step in any workflow since it landed (P5 in
+      # scripts/audit_unrun_tests.py) — it pins the fold markers ("only on success",
+      # "never on an empty book") on the file W1a rewrites, so it is wired here
+      # rather than left dark. The multilist suite pins the list-scoped push diff:
+      # a full-membership delete that escapes its list wipes a sibling watchlist.
+      - name: watchstore.js store — local books + one-shot folds
+        run: python -m pytest tests/test_watchlist_books_js.py -q
+      - name: watchstore.js store — registered multi-list seam (W1a)
+        run: python -m pytest tests/test_watchstore_multilist_js.py -q
       - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
         run: python -m pytest tests/test_factor_exposure.py tests/test_factor_exposure_stress.py -q
 
@@ -4111,13 +4155,21 @@ jobs:
         # multi-account tests were asserting behaviour the fix deliberately
         # narrows. Unrun, that would have been a silent rot. Same deps as the
         # rest of this lane, verified green.
+        # test_marketing_metrics_poll_quota joins 2026-08-11 (#5306 follow-up).
+        # It shipped WITH the 429 fix and was baselined unrun in the same breath,
+        # so the poller's own two bounds — stop-on-first-429 and cap-the-run —
+        # had no job at all, and #5306 had to duplicate three coarser pins into
+        # test_marketing_metrics_poll.py to get ANY guard that executes. Both
+        # halves now run in one step, next to the sibling they were split from.
+        # Same deps, zero network: the Buffer publisher is a counting stub and
+        # every write goes to tmp_path.
         # test_marketing_market_clock joins (2026-08-11): the publish-time
         # clock + lead-fact fan-out gate suite sat in the unrun baseline, and
         # voice v5 (#5291) rotted seven of its fixtures unseen — first-person
         # tails, the register v5 retired, not the gates under test. It drives
         # scripts/marketing_publisher.py end to end, so it lives with the
         # publisher lane it exercises.
-        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_outbox_single_composition.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py tests/test_marketing_market_clock.py -q
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_outbox_single_composition.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_metrics_poll_quota.py tests/test_marketing_weekend_levels.py tests/test_marketing_market_clock.py -q
       - name: stale backlog quarantine + optional publish-time phrase fallback
         run: python -m pytest tests/test_marketing_stale_purge.py tests/test_publish_time_llm_phrase.py -q
       - name: liveness tripwire rule engine (the green-and-dark alarm)
@@ -4410,7 +4462,18 @@ jobs:
         # copywriter keeps every heavy import lazy, the test file's own imports
         # are stdlib-only, nothing importorskip-gated. Verified in a clean
         # pytest+pyyaml+jinja2(+requests+pyarrow) venv.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_admin_marketing_floor.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_press_stream.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_reply_warmth.py tests/test_marketing_reply_tails.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_copywriter.py tests/test_marketing_copy_auditor.py tests/test_marketing_bare_cashtag.py tests/test_marketing_voice_laws.py tests/test_marketing_voice_v5.py tests/test_marketing_money_format.py tests/test_marketing_publisher_names.py tests/test_marketing_media_backfill.py tests/test_chart_facts.py tests/test_confluence_source.py tests/test_chart_since_setup.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py tests/test_marketing_ladder_collapse.py tests/test_marketing_wire_headroom.py tests/test_marketing_copy_yield.py tests/test_marketing_news_arming.py tests/test_marketing_breaking_card_geometry.py tests/test_marketing_ramp_speedup.py tests/test_news_translate_render_gate.py -q
+        # test_market_facts.py joins 2026-08-12 (W2D): another unrun-suite-rot
+        # grandfather (config/unrun_test_baseline.json) closed on contact — it
+        # is the suite docs/marketing_voice_doctrine_v5.md Hard Ban #9 and
+        # market_facts._claims_level_words both name BY FILENAME as the
+        # regression pin for the k/m/b compact-number register, so shipping
+        # that switch while its own test stayed dark would have defeated the
+        # point. Data-dependent cases `pytest.skip` on a missing source file
+        # (regime/heatmap/confluence json) rather than fail — the same idiom
+        # already trusted for copy_v2/copywriter above — so it degrades safely
+        # in a sparse checkout and simply runs more of itself where the data
+        # exists. engine.marketing.market_facts imports stdlib + re only.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_admin_marketing_floor.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_press_stream.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_reply_warmth.py tests/test_marketing_reply_tails.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_copywriter.py tests/test_market_facts.py tests/test_marketing_copy_auditor.py tests/test_marketing_bare_cashtag.py tests/test_marketing_voice_laws.py tests/test_marketing_voice_v5.py tests/test_marketing_money_format.py tests/test_marketing_publisher_names.py tests/test_marketing_media_backfill.py tests/test_chart_facts.py tests/test_confluence_source.py tests/test_chart_since_setup.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py tests/test_marketing_ladder_collapse.py tests/test_marketing_wire_headroom.py tests/test_marketing_copy_yield.py tests/test_marketing_news_arming.py tests/test_marketing_breaking_card_geometry.py tests/test_marketing_ramp_speedup.py tests/test_news_translate_render_gate.py -q
       - name: unrun-baseline joins 2026-08-11 — engine, reply desk, wire relay, cards
         # Batch join from the unrun_test_baseline triage that followed #5379's
         # voice-v5 rot discovery (test_marketing_market_clock): all suites below
@@ -4934,8 +4997,8 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest fastapi httpx pyyaml requests
-      - name: collect beacon throttle + tape per-IP cap + generic billing/auth errors
-        run: python -m pytest tests/test_collect_throttle.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py -q
+      - name: collect beacon throttle + growth-event registry + tape per-IP cap + generic billing/auth errors
+        run: python -m pytest tests/test_collect_throttle.py tests/test_growth_events_registry.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py -q
 
   free-content-estate:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
@@ -5222,7 +5285,7 @@ jobs:
       # against a hand-copied field list — a test that asserted its own idea of the
       # shape would go green while the schema and the writer drifted apart.
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 lxml openpyxl scikit-learn jsonschema
+        run: pip install pytest pandas numpy scipy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 lxml openpyxl scikit-learn jsonschema
       - name: china + hk + canada library builders and their manifests
         run: python -m pytest tests/test_w0_5_10_8.py tests/test_hk_closes_fallback.py tests/test_canada_branch_b.py tests/test_stock_library_manifests.py tests/test_stocktable_hk_data.py -q
       - name: china intel/analog/facet organs + fx context render
@@ -5284,6 +5347,17 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_theme_graph_crosswalk.py -q
       - name: CN limit-rule registry — schema, continuity, parity vs china_microstructure
         run: TZ=UTC python -m pytest tests/test_cn_limit_rules.py -q
+      # GMI W2 — the exposure-decomposition probe's pure math. The probe script itself is a
+      # one-shot research tool that is deliberately NOT wired into any lane, so its estimators
+      # would otherwise have no guard at all: a wrong causal shift, a share denominator that
+      # divides by an empty month, a coverage floor off by a boundary, or an era label keyed on
+      # the month END would all ship silently into the committed receipts under
+      # research/theme_graph/w2_probe/ and into whatever W4 charters from them. Every fixture
+      # here is synthetic — the suite reads no store, so it stays green on a runner that cannot
+      # see the gitignored narrative_flare history the probe reads locally. TZ=UTC to match the
+      # rest of this job; nothing in the suite is clock-dependent by construction.
+      - name: theme exposure probe — beta/causal shift, share denominator, coverage floor, era
+        run: TZ=UTC python -m pytest tests/test_theme_exposure_probe.py -q
       # The guard on the COMMITTED store, not only on its fixtures: --selftest proves it
       # can still see each incident, --strict proves the store shipped in this repo
       # satisfies the contract. A guard that only ever runs against its own fixtures is
@@ -5628,8 +5702,8 @@ jobs:
         run: python -m pytest tests/test_product_chrome.py tests/test_subdir_nav_prefix.py tests/test_nav_hover_bridge.py tests/test_nav_menu_mockup_hover.py tests/test_nav_wide_menu_anchor.py -q
       - name: landing IA + nav front-door regroup + start-page voice and publish integrity
         run: python -m pytest tests/test_landing_navigation.py tests/test_oip_w1_nav_regroup.py tests/test_hub_welcome_persona.py tests/test_start_publish_integrity.py -q
-      - name: terminal entitlement copy + full-screen portal contract
-        run: python -m pytest tests/test_terminal_indicator_pricing.py tests/test_terminal_overlay_contract.py tests/test_terminal_overlay_closed_state.py -q
+      - name: terminal entitlement copy + chat-allowance truth + full-screen portal contract
+        run: python -m pytest tests/test_terminal_indicator_pricing.py tests/test_plans_chat_quota_truth.py tests/test_terminal_overlay_contract.py tests/test_terminal_overlay_closed_state.py -q
 
   unrun-builders-stores:
     # store/ops builders behind the nightly data lanes.
@@ -6035,6 +6109,12 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: macro desk surface, typography, glance + action-board hover cards
         run: python -m pytest tests/test_macro_desk_surface.py tests/test_macro_primary_typography.py tests/test_macro_what_to_do_glance.py tests/test_action_board_hover_cards.py tests/test_board_copy_and_controls_guard.py -q
+      # Canonical — and deliberately ONLY — home of the shared light-mode odometer
+      # contract (templates/theme.css, its site/ twin, five report templates).
+      # #5458 landed the suite unwired; three sessions healed that concurrently on
+      # 2026-08-12 (#5455 engine-render-guards, #5460 here, #5461 template-site-sync),
+      # leaving it triple-run. Consolidated to this step alone: it is a shipped-page
+      # source-scan like the rest of this job. Don't re-add copies elsewhere.
       - name: shared light-mode odometer needle across five report templates
         run: python -m pytest tests/test_odometer_light_mode_surface.py -q
       - name: dashboard cold-load budget + stocktable bootstrap + logo adapter + globe overlays

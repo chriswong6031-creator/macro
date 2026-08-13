@@ -201,7 +201,7 @@
 <title>{% if mode == 'stocks' %}US Stock Dashboard{% else %}Macro Regime Dashboard{% endif %} — {{ latest.date }} | MastermindX</title>
 {% if mode == 'stocks' %}{% set seo_title = 'US Stock Dashboard — Signals, Sectors and Regime | Mastermind' %}{% set seo_desc = 'US single-stock and sector signals in one board — momentum, breadth, confluence and regime context, updated daily.' %}{% set seo_path = 'us_stocks.html' %}{% else %}{% set seo_title = 'US Macro Regime Dashboard — Risk Radar and Market State | Mastermind' %}{% set seo_desc = 'Track the US market regime in real time — risk radar, market state, sector rotation, cross-asset confirmation and factor signals, updated daily.' %}{% set seo_path = 'macro.html' %}{% endif %}
 {% include "_seo_head.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 {% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
 <link rel="stylesheet" href="tier_preview.css">
@@ -277,7 +277,7 @@
   .alert-ico { font-size: 15px; flex: none; line-height: 1; }
   .alert-head b { font-size: 13.5px; color: var(--text); }
   .alert-jump { margin-left: auto; font-size: 11px; font-weight: 700;
-                color: var(--link); flex: none; white-space: nowrap; }
+                color: var(--ink-link, var(--link)); flex: none; white-space: nowrap; }
   .alert-detail { margin: 6px 0 0; font-size: 12.5px; color: var(--text);
                   font-variant-numeric: tabular-nums; }
   .alert-what { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line);
@@ -378,8 +378,8 @@
   .reason b.rsig { position: absolute; left: 0; top: 1px; width: 16px; height: 16px;
                   display: inline-flex; align-items: center; justify-content: center;
                   border-radius: 5px; font-size: 11px; font-weight: 800; line-height: 1; }
-  .reason b.rsig-p { color: var(--up); background: color-mix(in srgb, var(--up) 16%, transparent); }
-  .reason b.rsig-m { color: var(--down); background: color-mix(in srgb, var(--down) 16%, transparent); }
+  .reason b.rsig-p { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 16%, transparent); }
+  .reason b.rsig-m { color: var(--ink-down, var(--down)); background: color-mix(in srgb, var(--down) 16%, transparent); }
   .reason b.rsig-i { color: var(--ink-2, var(--muted)); background: color-mix(in srgb, var(--ink-2, var(--muted)) 14%, transparent); }
   /* lead the bullet with the read; demote the parenthetical stats so it scans */
   .reason .reason-main { font-weight: 600; color: var(--ink-1, var(--text)); }
@@ -501,13 +501,13 @@
                     color: var(--muted); border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent); }
   /* gate-override ✓ pill */
   .ab-chip--gate { background: color-mix(in srgb, var(--up) 10%, transparent);
-                   color: var(--up); border: 1px solid color-mix(in srgb, var(--up) 22%, transparent);
+                   color: var(--ink-up, var(--up)); border: 1px solid color-mix(in srgb, var(--up) 22%, transparent);
                    font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
                    line-height: 15px; flex: none; cursor: help; }
   /* theme item star/check/lens glyphs */
   .ai-book { flex: none; margin-left: 4px; font-size: 10px; font-weight: 800; cursor: help;
-             color: var(--up); white-space: nowrap; }
-  .ai-val { flex: none; margin-left: 4px; font-size: 10.5px; font-weight: 800; color: var(--up); cursor: help; }
+             color: var(--ink-up, var(--up)); white-space: nowrap; }
+  .ai-val { flex: none; margin-left: 4px; font-size: 10.5px; font-weight: 800; color: var(--ink-up, var(--up)); cursor: help; }
   .ai-lens { flex: none; margin-left: 4px; font-size: 11px; color: var(--muted); cursor: help; }
   /* theme item name */
   .actitem.ai-theme .act-row-name { font-weight: 700; }
@@ -534,7 +534,7 @@
            color: var(--muted); }
   .plabel { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 12px;
             font-weight: 600; background: var(--panel2); }
-  .plabel-hot { color: var(--down); } .plabel-cold { color: var(--info); }
+  .plabel-hot { color: var(--ink-down, var(--down)); } .plabel-cold { color: var(--ink-info, var(--info)); }
   .plabel-norm { color: var(--muted); }
 
   /* regime lifespan bar */
@@ -585,7 +585,7 @@
   .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px;
               margin-right: 5px; vertical-align: -1px; }
   details.howto { margin-top: 10px; }
-  details.howto summary { cursor: pointer; color: var(--link); font-size: 13px; }
+  details.howto summary { cursor: pointer; color: var(--ink-link, var(--link)); font-size: 13px; }
   details.howto div { background: var(--panel2); border-radius: 8px; padding: 12px 14px;
                       margin-top: 8px; font-size: 13px; line-height: 1.6; }
   ul.compact { margin: 4px 0; padding-left: 18px; } ul.compact li { margin: 3px 0; }
@@ -653,7 +653,7 @@
   table.sortable th .sarrow { font-size: 9px; opacity: .32; margin-left: 3px;
                               font-weight: 700; }
   table.sortable th.sorted { color: var(--text); }
-  table.sortable th.sorted .sarrow { opacity: .9; color: var(--link); }
+  table.sortable th.sorted .sarrow { opacity: .9; color: var(--ink-link, var(--link)); }
   /* .tbl-filter (live table filter) is styled centrally in theme.css */
 
   /* ---- hover-to-chart: reveal a definition + mini history on metric hover --- */
@@ -677,12 +677,12 @@
             color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 2px; }
   /* directional trend words next to nowcast metrics */
   .tw { font-size: 11.5px; font-weight: 600; white-space: nowrap; }
-  .tw-good { color: var(--up); } .tw-bad { color: var(--orange); }
+  .tw-good { color: var(--ink-up, var(--up)); } .tw-bad { color: var(--ink-orange, var(--orange)); }
   .tw-flat { color: var(--muted); }
 
   /* ---- collapsed jargon: a compact "details ▾" reveal inside a card --------- */
   .jarg { margin-top: 7px; font-size: 11.5px; }
-  .jarg > summary { cursor: pointer; color: var(--link); list-style: none;
+  .jarg > summary { cursor: pointer; color: var(--ink-link, var(--link)); list-style: none;
                     font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
   .jarg > summary::-webkit-details-marker { display: none; }
   .jarg > summary::after { content: "▾"; font-size: 9px; opacity: .7; }
@@ -701,7 +701,7 @@
   .sigtab td { padding: 3px 5px; border-bottom: 1px solid var(--line); font-size: 11px;
                vertical-align: middle; }
   .sigtab td:last-child { text-align: right; white-space: nowrap; }
-  .sig-on { color: var(--up); font-weight: 700; } .sig-off { color: var(--muted); }
+  .sig-on { color: var(--ink-up, var(--up)); font-weight: 700; } .sig-off { color: var(--muted); }
   .fbar { display: grid; grid-template-columns: 74px 1fr 42px; align-items: center;
           gap: 7px; margin: 4px 0; font-size: 11px; }
   .fbar .ft { color: var(--text); } .fbar .fn { text-align: right; font-weight: 700;
@@ -716,7 +716,7 @@
   .oddsbar .ob-miss { background: var(--panel2); color: var(--muted);
              display: flex; align-items: center; justify-content: center; }
   .ocmp { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 11px; }
-  .ocmp .oc-now { color: var(--up); font-weight: 700; }
+  .ocmp .oc-now { color: var(--ink-up, var(--up)); font-weight: 700; }
   .ocmp .oc-alt { color: var(--muted); font-weight: 700; }
 
   /* ---- standout-stock cards ------------------------------------------------- */
@@ -824,7 +824,7 @@
            padding: 1px 7px; border-radius: 999px;
            background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
   .pbf-bar button[aria-pressed="true"] .pbf-n {
-           background: color-mix(in srgb, var(--link) 16%, transparent); color: var(--link); }
+           background: color-mix(in srgb, var(--link) 16%, transparent); color: var(--ink-link, var(--link)); }
   @media (max-width: 680px) { .pbf-bar button { min-height: 44px; padding: 6px 14px; font-size: 13px; } }
   /* the polite result announcement — visible to assistive tech only */
   .pbf-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
@@ -1087,12 +1087,12 @@
   .nb-bot { display: flex; align-items: center; flex-wrap: wrap; gap: 3px 6px; margin-top: 1px; font-size: 10px; }
   .nb-state { font-size: 10px; font-weight: 800; letter-spacing: .02em; padding: 1px 7px;
               border-radius: 8px; }
-  .nb-up .nb-state { color: var(--up); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
-  .nb-down .nb-state { color: var(--down); background: color-mix(in srgb, var(--down) 15%, var(--panel)); }
-  .nb-caution .nb-state { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, var(--panel)); }
+  .nb-up .nb-state { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
+  .nb-down .nb-state { color: var(--ink-down, var(--down)); background: color-mix(in srgb, var(--down) 15%, var(--panel)); }
+  .nb-caution .nb-state { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 15%, var(--panel)); }
   .nb-score { font-size: 11px; font-weight: 800; margin-left: auto;
               font-variant-numeric: tabular-nums; }
-  .nb-score.s-up { color: var(--up); } .nb-score.s-down { color: var(--down); }
+  .nb-score.s-up { color: var(--ink-up, var(--up)); } .nb-score.s-down { color: var(--ink-down, var(--down)); }
   .nb-score.s-flat { color: var(--muted); }
   .nb-meta { display: flex; align-items: center; gap: 7px; font-size: 10px;
              color: var(--muted); margin-top: 1px; }
@@ -1110,14 +1110,14 @@
   .nb-comp { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
              padding: 0 5px; border-radius: 7px; background: var(--panel);
              border: 1px solid var(--line); color: var(--muted); cursor: help; }
-  .nb-comp.cmp-pos { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
-  .nb-comp.cmp-neg { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
+  .nb-comp.cmp-pos { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
+  .nb-comp.cmp-neg { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
   .nb-size { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
              padding: 0 5px; border-radius: 7px; background: var(--panel);
              border: 1px solid var(--line); color: var(--muted); cursor: help; }
-  .nb-size.sz-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+  .nb-size.sz-up { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
                    background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
-  .nb-size.sz-dn { color: var(--warn, #c79a2e); border-color: color-mix(in srgb, var(--warn, #c79a2e) 42%, var(--line));
+  .nb-size.sz-dn { color: var(--ink-warn, var(--warn, #c79a2e)); border-color: color-mix(in srgb, var(--warn, #c79a2e) 42%, var(--line));
                    background: color-mix(in srgb, var(--warn, #c79a2e) 8%, var(--panel)); }
   .nb-disp { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
              margin: 2px 0 10px; padding: 6px 11px; border-radius: 9px; font-size: 11.5px;
@@ -1128,10 +1128,10 @@
                         margin-left: auto; }
   .nb-disp.disp-lean_in { border-color: color-mix(in srgb, var(--up) 42%, var(--line));
                           background: color-mix(in srgb, var(--up) 7%, var(--panel)); }
-  .nb-disp.disp-lean_in b { color: var(--up); }
+  .nb-disp.disp-lean_in b { color: var(--ink-up, var(--up)); }
   .nb-disp.disp-lean_out { border-color: color-mix(in srgb, var(--warn, #c79a2e) 42%, var(--line));
                            background: color-mix(in srgb, var(--warn, #c79a2e) 7%, var(--panel)); }
-  .nb-disp.disp-lean_out b { color: var(--warn, #c79a2e); }
+  .nb-disp.disp-lean_out b { color: var(--ink-warn, var(--warn, #c79a2e)); }
   .nb-ent { font-weight: 700; padding: 0 5px; border-radius: 7px; }
   .ent-good { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
   /* dark-zh: 红涨绿跌 makes this a red-on-red-tint pair, which lands at 4.41:1 on
@@ -1140,9 +1140,9 @@
   html[data-lang="zh"]:not([data-theme="light"]) .ent-good { background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
   .ent-warn { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
   /* insider Form-4 buy-cluster confirmer chip */
-  .nb-ins { font-weight: 800; padding: 0 5px; border-radius: 7px; color: var(--up);
+  .nb-ins { font-weight: 800; padding: 0 5px; border-radius: 7px; color: var(--ink-up, var(--up));
             background: color-mix(in srgb, var(--up) 13%, var(--panel)); white-space: nowrap; }
-  .ts-ins { font-weight: 800; font-size: 10px; color: var(--up); white-space: nowrap;
+  .ts-ins { font-weight: 800; font-size: 10px; color: var(--ink-up, var(--up)); white-space: nowrap;
             padding: 0 4px; border-radius: 6px;
             background: color-mix(in srgb, var(--up) 13%, var(--panel)); }
   /* theme/sector SPOTLIGHT tilt chip (engine.spotlight) — narrative alignment of the pick.
@@ -1153,9 +1153,9 @@
              color: var(--muted); background: var(--panel); text-decoration: none; }
   .nb-spot-link { cursor: pointer; }
   .nb-spot-link:hover { filter: brightness(1.08); border-color: currentColor; }
-  .nb-spot.spot-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, var(--line));
+  .nb-spot.spot-up { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 40%, var(--line));
                      background: color-mix(in srgb, var(--up) 11%, var(--panel)); }
-  .nb-spot.spot-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
+  .nb-spot.spot-dn { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
                      background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
   .nb-spot .sp-tag { overflow: hidden; text-overflow: ellipsis; }
   /* ---- sector-pulse heat chip on standout cards (DISPLAY-ONLY, no rank power) ---- */
@@ -1163,11 +1163,11 @@
                    padding: 1px 6px; border-radius: 7px; white-space: nowrap; max-width: 9em;
                    overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line);
                    color: var(--muted); background: var(--panel); cursor: help; flex: none; }
-  .nb-pulse-heat.ph-heating { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+  .nb-pulse-heat.ph-heating { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
                               background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
-  .nb-pulse-heat.ph-hot { color: var(--up); border-color: color-mix(in srgb, var(--up) 55%, var(--line));
+  .nb-pulse-heat.ph-hot { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 55%, var(--line));
                           background: color-mix(in srgb, var(--up) 15%, var(--panel)); font-weight: 800; }
-  .nb-pulse-heat.ph-cooling { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
+  .nb-pulse-heat.ph-cooling { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
                               background: color-mix(in srgb, var(--down) 9%, var(--panel)); }
   .nb-pulse-heat.ph-broken { color: var(--muted); border-color: var(--line); opacity: .75; }
   /* ---- unified Conviction Profile on each standout card ---------------- */
@@ -1175,12 +1175,12 @@
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
                min-width: 30px; flex: none; text-align: center; padding: 1px 5px; border-radius: 8px;
                border: 1px solid var(--line); color: var(--ink); }
-  .nb-cscore.band-high { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line));
+  .nb-cscore.band-high { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 45%, var(--line));
                          background: color-mix(in srgb, var(--up) 12%, var(--panel)); }
   .nb-cscore.band-constructive { color: var(--g-cold);
                          border-color: color-mix(in srgb, var(--g-cold) 40%, var(--line)); }
   .nb-cscore.band-neutral { color: var(--muted); }
-  .nb-cscore.band-low { color: var(--down); border-color: color-mix(in srgb, var(--down) 35%, var(--line)); }
+  .nb-cscore.band-low { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 35%, var(--line)); }
   /* verdict on its OWN full-width line + break only at spaces (no more "Constructi-ve"
      mid-word chop). It has the whole card width here, so it reads as whole words. */
   .nb-verdict { font-size: 10.5px; font-weight: 700; line-height: 1.3; color: var(--ink);
@@ -1197,7 +1197,7 @@
   .nb-edge-pct .ep-u { font-size: 7px; font-weight: 700; color: var(--muted); margin-left: 1px; }
   .nb-edge-pct.edge-hi { border-color: color-mix(in srgb, var(--up) 55%, var(--line));
                          background: color-mix(in srgb, var(--up) 12%, var(--panel)); }
-  .nb-edge-pct.edge-hi .ep-v { color: var(--up); }
+  .nb-edge-pct.edge-hi .ep-v { color: var(--ink-up, var(--up)); }
   .nb-edge-pct.edge-hi .ep-k { color: color-mix(in srgb, var(--up) 65%, var(--muted)); }
   .nb-edge-pct.edge-lo { opacity: .82; }
   .nb-edge-pct.edge-lo .ep-v { color: var(--muted); }
@@ -1205,8 +1205,8 @@
   .nb-align { display: flex; align-items: center; gap: 5px; margin: 2px 0 1px; min-width: 0;
               font-size: 9.5px; font-weight: 700; letter-spacing: .01em;
               padding: 2px 7px; border-radius: 7px; border: 1px solid var(--line);
-              color: var(--up); background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
-  .nb-align.nba-near { color: var(--warn); background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
+              color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
+  .nb-align.nba-near { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
   .nb-align .nba-line { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nb-align .nba-tag { margin-left: auto; flex: none; font-size: 8px; font-weight: 800;
                        text-transform: uppercase; letter-spacing: .04em; opacity: .85; }
@@ -1222,7 +1222,7 @@
     display: inline-flex; align-items: center; gap: 3px;
     padding: 0 5px 0 4px; height: 18px; border-radius: 9px; border: none; cursor: pointer;
     font-size: 9px; font-weight: 700; line-height: 1;
-    color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, var(--panel));
+    color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 14%, var(--panel));
     text-decoration: none;
     animation: nb-cau-pulse 2.5s ease-in-out infinite;
   }
@@ -1242,7 +1242,7 @@
     padding: 7px 9px; border-radius: 8px;
     background: var(--panel); border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--line));
     box-shadow: 0 4px 16px rgba(0,0,0,.18);
-    font-size: 10px; font-weight: 600; line-height: 1.45; color: var(--warn);
+    font-size: 10px; font-weight: 600; line-height: 1.45; color: var(--ink-warn, var(--warn));
     pointer-events: none;
   }
   .nb-cau-pop .cau-row { display: block; padding: 2px 0; }
@@ -1293,9 +1293,9 @@
   .nbe-bf { display: block; height: 100%; background: var(--g-cold); }
   .nb-val { font-size: 8.5px; font-weight: 700; padding: 0 5px; border-radius: 7px;
             color: var(--muted); background: var(--panel); border: 1px solid var(--line); }
-  .nb-val.val-extreme, .nb-val.val-stretched { color: var(--warn);
+  .nb-val.val-extreme, .nb-val.val-stretched { color: var(--ink-warn, var(--warn));
             border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
-  .nb-val.val-cheap { color: var(--up); border-color: color-mix(in srgb, var(--up) 32%, var(--line)); }
+  .nb-val.val-cheap { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 32%, var(--line)); }
   /* honesty notes — percentile-rank caveat + favourable-risk-cone read (AVGO/NVDA alignment) */
   .nb-note { font-size: 8.5px; line-height: 1.3; margin-top: 3px; padding: 2px 5px; border-radius: 6px;
              color: var(--muted); background: color-mix(in srgb, var(--ink) 4%, var(--panel)); }
@@ -1305,45 +1305,45 @@
   .nb-basis { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
   .nbb { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
          border: 1px solid var(--line); font-variant-numeric: tabular-nums; color: var(--muted); }
-  .nbb-validated { color: var(--up); border-color: color-mix(in srgb, var(--up) 35%, var(--line)); }
+  .nbb-validated { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 35%, var(--line)); }
   .nbb-literature { color: var(--g-cold); border-color: color-mix(in srgb, var(--g-cold) 35%, var(--line)); }
-  .nbb-screen { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
+  .nbb-screen { color: var(--ink-warn, var(--warn)); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
   /* the two new VERIFIERS — dealer-gamma "Options check" + the single-stock vol black hole */
   .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
   .nb-vchip { font-size: 8.5px; font-weight: 800; padding: 0 5px; border-radius: 6px;
               border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
-  .vf-confirm { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+  .vf-confirm { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
                 background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
-  .vf-caution { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 38%, var(--line));
+  .vf-caution { color: var(--ink-warn, var(--warn)); border-color: color-mix(in srgb, var(--warn) 38%, var(--line));
                 background: color-mix(in srgb, var(--warn) 10%, var(--panel)); }
   .vf-neutral { color: var(--muted); }
-  .vf-coil { color: var(--link); border-color: color-mix(in srgb, var(--link) 38%, var(--line));
+  .vf-coil { color: var(--ink-link, var(--link)); border-color: color-mix(in srgb, var(--link) 38%, var(--line));
              background: color-mix(in srgb, var(--link) 10%, var(--panel)); }
-  .vf-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line));
+  .vf-up { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 45%, var(--line));
            background: color-mix(in srgb, var(--up) 13%, var(--panel)); }
-  .vf-down { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
-  .vf-exp { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
+  .vf-down { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
+  .vf-exp { color: var(--ink-warn, var(--warn)); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
   /* SUE earnings-momentum confirmer chip (display context, never scored). Blue
      (--info) so it reads distinct from the green insider cluster + the green/red
      alpha, and is immune to the Asia red/green up/down swap. */
-  .nb-sue { font-weight: 800; padding: 0 5px; border-radius: 7px; color: var(--info);
+  .nb-sue { font-weight: 800; padding: 0 5px; border-radius: 7px; color: var(--ink-info, var(--info));
             white-space: nowrap; font-variant-numeric: tabular-nums;
             background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
   /* Demand Desk L2 divergence flag (non-directional attention; immune to Asia red/green swap) */
   .nb-dmnd { font-weight: 800; padding: 0 5px; border-radius: 7px; white-space: nowrap;
              border: 1px solid var(--line); }
-  .nb-dmnd.dmnd-up { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 38%, var(--line));
+  .nb-dmnd.dmnd-up { color: var(--ink-warn, var(--warn)); border-color: color-mix(in srgb, var(--warn) 38%, var(--line));
              background: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
-  .nb-dmnd.dmnd-rk { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line));
+  .nb-dmnd.dmnd-rk { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 38%, var(--line));
              background: color-mix(in srgb, var(--down) 11%, var(--panel)); }
   /* COILED wave-2-validated cohort-washout ranking bonus chip (display-only, US standouts) */
-  .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
-  .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
-  .nb-coiled.fire{box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent);border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--up);background:color-mix(in srgb,var(--up) 20%,transparent)}
+  .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--ink-link, var(--link));border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
+  .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 40%,transparent)}
+  .nb-coiled.fire{box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent);border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--ink-up, var(--up));background:color-mix(in srgb,var(--up) 20%,transparent)}
   /* W6-C HOLD tracker chip — basing state after entry anchor (display-only, US standouts) */
   .nb-hold{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
-  .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
-  .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
+  .nb-hold.hold-launched{color:var(--ink-up, var(--up));background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
+  .nb-hold.hold-broken{color:var(--ink-down, var(--down));background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
   /* W2 outcomes strip — recently surfaced → outcome */
   /* NOTE: the old .board-track-toggle glass pill + its .sm-bar relocation rules
      were removed with the Track-record popup revamp (2026-07-20). The receipt
@@ -1371,30 +1371,30 @@
   /* P2.4 board contract v2: lane chips (display-only, US standouts) */
   .nb-lane{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
   /* v2 lane taxonomy (bottoming/continuation/watch) + legacy names (trend/recovery) for backward compat */
-  .lane-bottoming,.lane-trend{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+  .lane-bottoming,.lane-trend{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
   .lane-continuation{background:color-mix(in srgb,var(--cont,var(--warn)) 12%,transparent);color:var(--cont,var(--warn));border:1px solid color-mix(in srgb,var(--cont,var(--warn)) 35%,transparent)}
   .lane-watch{background:color-mix(in srgb,var(--muted) 10%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
-  .lane-recovery{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+  .lane-recovery{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
   /* P2.4 above_trend context badge (display-only; T4 sub-partition context) */
   .nb-200dma{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help}
   .dma-above{background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent)}
-  .dma-below{background:color-mix(in srgb,var(--up) 8%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
+  .dma-below{background:color-mix(in srgb,var(--up) 8%,transparent);color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
   /* P2.4 ext_z extension chip (display-only; F3 anti-chase context per P1.3) */
   .nb-extz{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 18%,transparent)}
-  .nb-extz.extz-warn{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+  .nb-extz.extz-warn{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
   /* P2.1a Anti-Chase Watch chip (shadow gate, R7 additive-lanes law) */
-  .nb-antichase{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 40%,transparent)}
+  .nb-antichase{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--ink-warn, var(--warn));border:1px dashed color-mix(in srgb,var(--warn) 40%,transparent)}
   /* α laggard chip (alpha_entry=laggard, honest copy) */
-  .ent-lag{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 28%,transparent);font-size:8px;font-weight:700;padding:1px 5px;border-radius:6px;white-space:nowrap}
+  .ent-lag{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 28%,transparent);font-size:8px;font-weight:700;padding:1px 5px;border-radius:6px;white-space:nowrap}
   /* W8-B postcross lifecycle chip (SHAKEN; ARMED display removed per W8-A-OOS FAIL) */
   .nb-postcross{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
-  .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W9-A sector-capitulating safety chip (display-only; no rank power) */
-  .nb-sector-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+  .nb-sector-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
   /* RLT-R6 sector-stance disclosure: chip retired by prophet card v1 (fe7a7426c49) —
      the stance now rides the card's ⚠N flags popover; see the _fl.rows fold below. */
   /* W1.5 earnings-blackout chip (display-only; no rank power; hygiene context) */
-  .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* Earnings-window candidates stay visible, below the primary picks. */
   .nb-ewatch{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 9px;margin:10px 0 2px;
     padding:8px 10px;border-top:1px solid var(--line);font-size:11.5px;cursor:help}
@@ -1403,7 +1403,7 @@
   .nb-ewatch-n a{font-weight:800;text-decoration:none}
   .nb-ewatch-copy{color:var(--muted)}
   /* CSP-W5 board staleness badge */
-  .nb-stale-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;font-weight:600;color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));background:color-mix(in srgb,var(--warn) 9%,transparent)}
+  .nb-stale-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;font-weight:600;color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));background:color-mix(in srgb,var(--warn) 9%,transparent)}
   /* CSP-W5 per-card muted note on expired pending rows */
   .nb-pending-expired{font-size:9.5px;padding:1px 5px;border-radius:4px;color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent);white-space:normal}
   /* B4 Conviction Delta — rows now live inside the Track-record-style dashboard. */
@@ -1412,28 +1412,28 @@
   .nb-delta-row:first-child{border-top:none}
   .nb-delta-tk{font-weight:700;font-size:11.5px;min-width:48px;flex:none}
   .nb-delta-verb{font-size:11px;padding:1px 6px;border-radius:4px;background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--fg);white-space:nowrap}
-  .nb-delta-enter{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up)}
-  .nb-delta-leave{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down)}
-  .nb-delta-cleared{font-size:10.5px;color:var(--up);opacity:.85}
-  .nb-delta-added{font-size:10.5px;color:var(--warn);opacity:.85}
+  .nb-delta-enter{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--ink-up, var(--up))}
+  .nb-delta-leave{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--ink-down, var(--down))}
+  .nb-delta-cleared{font-size:10.5px;color:var(--ink-up, var(--up));opacity:.85}
+  .nb-delta-added{font-size:10.5px;color:var(--ink-warn, var(--warn));opacity:.85}
   /* W5b liquidity chip (display-only; no rank/gate power) */
   .nb-liq{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help}
-  .nb-liq.liq-deep{color:var(--up);background:color-mix(in srgb,var(--up) 9%,transparent);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
+  .nb-liq.liq-deep{color:var(--ink-up, var(--up));background:color-mix(in srgb,var(--up) 9%,transparent);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
   .nb-liq.liq-ok{color:var(--g-cold);background:color-mix(in srgb,var(--g-cold) 9%,transparent);border:1px solid color-mix(in srgb,var(--g-cold) 28%,transparent)}
-  .nb-liq.liq-thin{color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,transparent);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
-  .nb-liq.liq-illiquid{color:var(--down);background:color-mix(in srgb,var(--down) 9%,transparent);border:1px solid color-mix(in srgb,var(--down) 28%,transparent)}
+  .nb-liq.liq-thin{color:var(--ink-warn, var(--warn));background:color-mix(in srgb,var(--warn) 9%,transparent);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  .nb-liq.liq-illiquid{color:var(--ink-down, var(--down));background:color-mix(in srgb,var(--down) 9%,transparent);border:1px solid color-mix(in srgb,var(--down) 28%,transparent)}
   /* W2 merge note: chip explanatory copy uses the repo-standard data-tip-en/data-tip-zh
      + theme.js popover (check_title_i18n.py-guarded); the bespoke .nb-chip-pop is retired. */
-  .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
+  .ts-sue { font-weight: 800; font-size: 10px; color: var(--ink-info, var(--info)); white-space: nowrap;
             padding: 0 4px; border-radius: 6px; font-variant-numeric: tabular-nums;
             background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
   /* W3 evidence-stack chips (display-only; forward IC accruing; context framing only) */
   .nb-ev{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
-  .nb-ev-gex{color:var(--info);background:color-mix(in srgb,var(--info) 10%,transparent);border:1px solid color-mix(in srgb,var(--info) 28%,transparent)}
-  .nb-ev-alt{color:var(--up);background:color-mix(in srgb,var(--up) 8%,transparent);border:1px solid color-mix(in srgb,var(--up) 22%,transparent)}
+  .nb-ev-gex{color:var(--ink-info, var(--info));background:color-mix(in srgb,var(--info) 10%,transparent);border:1px solid color-mix(in srgb,var(--info) 28%,transparent)}
+  .nb-ev-alt{color:var(--ink-up, var(--up));background:color-mix(in srgb,var(--up) 8%,transparent);border:1px solid color-mix(in srgb,var(--up) 22%,transparent)}
   .nb-ev-news{color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent);border:1px solid color-mix(in srgb,var(--muted) 18%,transparent)}
-  .nb-ev-sm{color:var(--up);background:color-mix(in srgb,var(--up) 8%,transparent);border:1px solid color-mix(in srgb,var(--up) 22%,transparent)}
-  .nb-ev-conf{color:var(--link);font-weight:900;background:color-mix(in srgb,var(--link) 10%,transparent);border:1px solid color-mix(in srgb,var(--link) 30%,transparent)}
+  .nb-ev-sm{color:var(--ink-up, var(--up));background:color-mix(in srgb,var(--up) 8%,transparent);border:1px solid color-mix(in srgb,var(--up) 22%,transparent)}
+  .nb-ev-conf{color:var(--ink-link, var(--link));font-weight:900;background:color-mix(in srgb,var(--link) 10%,transparent);border:1px solid color-mix(in srgb,var(--link) 30%,transparent)}
   .nb-stop{font-size:9px;color:var(--muted);margin-top:2px}
   .nb-stop .stop-unscored{opacity:.55}
   /* broad "Top setups" board (selection × timing across the S&P 1500) */
@@ -1466,8 +1466,8 @@
   .ts-tbl td.az-dn { color: var(--ink-down, var(--down)); font-weight: 700; }
   /* confluence buy-signal chip (the hard gate the board now requires) */
   .ts-buy { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; white-space: nowrap; border: 1px solid var(--line); }
-  .ts-buy.ok { color: var(--up); border-color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
-  .ts-buy.soon { color: var(--up); border-color: color-mix(in srgb, var(--up) 55%, var(--line)); }
+  .ts-buy.ok { color: var(--ink-up, var(--up)); border-color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
+  .ts-buy.soon { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 55%, var(--line)); }
   /* ── strip tables on phones (UX handoff §17: primary decisions never x-scroll) ──
      Both prophet-panel strips (⚡ fresh triggers, 9 cols · 🏃 market leaders, 6 cols,
      7 when the artifact stamps themes) are wider than a 390px panel, so .tbl-scroll
@@ -1540,7 +1540,7 @@
   .st-chip { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px;
     border-radius:999px; white-space:nowrap; }
   .st-chip-lane { background:color-mix(in srgb,var(--link) 14%,transparent);
-    color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); }
+    color:var(--ink-link, var(--link)); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); }
   /* filter row */
   /* filter-row + column-chooser chrome (.stf-*) is injected by stocktable.js since v3 */
   /* table wrapper — horizontal scroll, sticky first col */
@@ -1576,10 +1576,10 @@
   /* sort arrow */
   .st-sarrow { font-size:8px; margin-left:2px; opacity:.28; }
   .st-sarrow-idle { font-size:8px; }
-  .st-table th:has(.st-sarrow:not(.st-sarrow-idle)) .st-sarrow { opacity:.9; color:var(--link); }
+  .st-table th:has(.st-sarrow:not(.st-sarrow-idle)) .st-sarrow { opacity:.9; color:var(--ink-link, var(--link)); }
   /* cell colors */
-  .st-pos { color:var(--up); font-weight:600; }
-  .st-neg { color:var(--down); font-weight:600; }
+  .st-pos { color:var(--ink-up, var(--up)); font-weight:600; }
+  .st-neg { color:var(--ink-down, var(--down)); font-weight:600; }
   .st-muted { color:var(--muted); }
   .st-new-dot::before { content:"NEW"; display:inline-block; font-size:8px; font-weight:800;
     background:var(--up); color:#fff; padding:0 4px; border-radius:4px; margin-right:4px;
@@ -1797,19 +1797,19 @@
   body.page-macro .v-chip { font-size: 12.5px; font-weight: 700; padding: 3px 10px;
     border-radius: 7px; width: max-content; border: var(--rule) solid var(--hair);
     background: var(--tile); color: var(--ink-1); }
-  body.page-macro .liq-expanding { color: var(--up);
+  body.page-macro .liq-expanding { color: var(--ink-up, var(--up));
     border-color: color-mix(in srgb, var(--up) 45%, var(--hair));
     background: color-mix(in srgb, var(--up) 13%, var(--tile)); }
-  body.page-macro .liq-contracting { color: var(--down);
+  body.page-macro .liq-contracting { color: var(--ink-down, var(--down));
     border-color: color-mix(in srgb, var(--down) 45%, var(--hair));
     background: color-mix(in srgb, var(--down) 13%, var(--tile)); }
-  body.page-macro .v-chip.state-WEAKENING { color: var(--warn);
+  body.page-macro .v-chip.state-WEAKENING { color: var(--ink-warn, var(--warn));
     border-color: color-mix(in srgb, var(--warn) 45%, var(--hair));
     background: color-mix(in srgb, var(--warn) 11%, var(--tile)); }
-  body.page-macro .v-chip.state-TRANSITIONING { color: var(--orange);
+  body.page-macro .v-chip.state-TRANSITIONING { color: var(--ink-orange, var(--orange));
     border-color: color-mix(in srgb, var(--orange) 45%, var(--hair));
     background: color-mix(in srgb, var(--orange) 11%, var(--tile)); }
-  body.page-macro .v-chip.state-NEW_REGIME { color: var(--act);
+  body.page-macro .v-chip.state-NEW_REGIME { color: var(--ink-act, var(--act));
     border-color: color-mix(in srgb, var(--act) 45%, var(--hair));
     background: color-mix(in srgb, var(--act) 11%, var(--tile)); }
 
@@ -1841,8 +1841,8 @@
   body.page-macro .sig.is-flat   { --sc: var(--ink-3); }
   body.page-macro .sig.is-q1 { --sc: var(--q1); } body.page-macro .sig.is-q2 { --sc: var(--q2); }
   body.page-macro .sig.is-q3 { --sc: var(--q3); } body.page-macro .sig.is-q4 { --sc: var(--q4); }
-  body.page-macro .sig.is-good .sig-val { color: var(--up); }
-  body.page-macro .sig.is-bad  .sig-val { color: var(--down); }
+  body.page-macro .sig.is-good .sig-val { color: var(--ink-up, var(--up)); }
+  body.page-macro .sig.is-bad  .sig-val { color: var(--ink-down, var(--down)); }
 
   /* inline headwind/tailwind chip — named .wind (NOT .tw — that's the trendword macro) */
   body.page-macro .wind { font-family: var(--num); font-size: 11px; font-weight: 700;
@@ -1871,7 +1871,7 @@
   body.page-macro #regime-radar > .howto { margin: 11px 0 0; text-align: right; }
   body.page-macro #regime-radar > .howto > summary { display: inline-block; font-size: 12px;
     font-weight: 600; color: var(--ink-3); }
-  body.page-macro #regime-radar > .howto > summary:hover { color: var(--link); }
+  body.page-macro #regime-radar > .howto > summary:hover { color: var(--ink-link, var(--link)); }
   body.page-macro #regime-radar > .howto[open] > div { text-align: left; }
 
   /* ===== Foldable panel (Data health, dormant Dislocation): click header to open/close ===== */
@@ -1894,7 +1894,7 @@
   body.page-macro details.fold[open] > summary .fold-caret { transform: rotate(180deg); }
   body.page-macro details.fold[open] > summary { margin-bottom: 13px; padding-bottom: 11px;
     border-bottom: var(--rule) solid var(--hair); }
-  body.page-macro details.fold > summary:hover .fold-caret { color: var(--link); }
+  body.page-macro details.fold > summary:hover .fold-caret { color: var(--ink-link, var(--link)); }
 
   /* ===== Combined "Now" board — pure-CSS radio tabs (no JS) ===== */
   body.page-macro .cb-tabs { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin-top: 2px; }
@@ -1916,7 +1916,7 @@
   body.page-macro #cb-news:checked ~ .cb-p-news,
   body.page-macro #cb-relief:checked ~ .cb-p-relief { display: block; }
   body.page-macro .cb-count { font-size: 11px; font-weight: 800; padding: 0 7px; border-radius: 8px;
-    background: color-mix(in srgb, var(--act) 18%, var(--tile)); color: var(--act);
+    background: color-mix(in srgb, var(--act) 18%, var(--tile)); color: var(--ink-act, var(--act));
     font-family: var(--num); font-variant-numeric: tabular-nums; }
   body.page-macro .cb-live { width: 8px; height: 8px; border-radius: 50%; background: var(--up);
     box-shadow: 0 0 8px var(--up); flex: none; }
@@ -1964,9 +1964,9 @@
              background: var(--panel2); text-decoration: none; white-space: nowrap;
              transition: filter .1s; }
   .sh-chip:hover { filter: brightness(1.07); border-color: currentColor; }
-  .sh-heat { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+  .sh-heat { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
              background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
-  .sh-cool { color: var(--down); border-color: color-mix(in srgb, var(--down) 30%, var(--line));
+  .sh-cool { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--down) 30%, var(--line));
              background: color-mix(in srgb, var(--down) 8%, var(--panel)); }
   .sh-arr { font-size: 9px; flex: none; }
   .sh-rk { font-size: 9px; opacity: .7; font-variant-numeric: tabular-nums; }
@@ -2018,15 +2018,15 @@
   .dash-mtf-tbl td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
   .dash-mtf-tbl tr:hover { background:color-mix(in srgb,var(--muted) 4%,transparent); }
   .dash-mtf-badge { display:inline-flex; align-items:center; padding:1px 6px; border-radius:10px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
-  .dash-mtf-badge.confirmed { background:color-mix(in srgb,var(--up) 14%,transparent); border:1px solid color-mix(in srgb,var(--up) 36%,transparent); color:var(--up); }
-  .dash-mtf-badge.watch { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 30%,transparent); color:var(--info,var(--link)); }
+  .dash-mtf-badge.confirmed { background:color-mix(in srgb,var(--up) 14%,transparent); border:1px solid color-mix(in srgb,var(--up) 36%,transparent); color:var(--ink-up, var(--up)); }
+  .dash-mtf-badge.watch { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 30%,transparent); color:var(--ink-info, var(--info,var(--link))); }
   .dash-mtf-badge.none { background:color-mix(in srgb,var(--muted) 8%,transparent); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); color:var(--muted); }
   .dash-mtf-leg { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; font-size:9px; font-weight:700; }
   .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--ink-up,var(--up)); border:1px solid color-mix(in srgb,var(--ink-up,var(--up)) 30%,transparent); }
   .dash-mtf-leg.off { background:color-mix(in srgb,var(--muted) 8%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); }
-  .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+  .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--ink-warn, var(--warn)); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
   /* U7: ring state — running trend (histogram positive, no recent cross; does not count toward K) */
-  .dash-mtf-leg.trend { background:transparent; color:var(--up); border:1.5px solid color-mix(in srgb,var(--up) 50%,transparent); }
+  .dash-mtf-leg.trend { background:transparent; color:var(--ink-up, var(--up)); border:1.5px solid color-mix(in srgb,var(--up) 50%,transparent); }
   .dash-mtf-legs { display:flex; gap:3px; align-items:center; }
   .dash-mtf-since { font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; }
   .dash-mtf-baskets { font-size:10px; color:var(--muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2035,7 +2035,13 @@
   .dash-mtf-k { font-weight:700; font-variant-numeric:tabular-nums; font-size:11px; }
 
   /* ── TS-R6: two-reads reconciliation chip ───────────────────────────────── */
-  .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--info,var(--link)); cursor:help; }
+  .two-reads-chip { display:inline-flex; align-items:flex-start; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600;
+    /* was white-space:nowrap — the chip is flex:none inside .actitem{overflow:hidden},
+       so in the TAKE PROFITS lane the pill ran past the card's rounded corner and the
+       label was cut mid-word ('broad sector AC'). The file's own .ab-chip--wrap note
+       warns that white-space alone is not enough; the shrink pair is what fixes it.
+       DOCTRINE §3: full display names WRAP, never truncate. */
+    white-space:normal; line-height:1.35; flex:0 1 auto; min-width:0; max-width:100%; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--ink-info, var(--info,var(--link))); cursor:help; }
   .two-reads-chip .tr-sep { opacity:.45; margin:0 2px; }
 </style>
 {% if mode != 'stocks' %}
@@ -2375,7 +2381,7 @@
   body.page-macro .v-override{margin:10px 0 0;display:flex;align-items:flex-start;gap:7px;padding:8px 11px;border-radius:7px;
     border:var(--rule) solid color-mix(in srgb,var(--act) 38%,var(--hair));background:color-mix(in srgb,var(--act) 11%,transparent);
     font-size:11.5px;line-height:1.4;color:var(--ink-1)}
-  body.page-macro .v-override .ic{color:var(--act);flex:none;font-size:12px;line-height:1.3}
+  body.page-macro .v-override .ic{color:var(--ink-act, var(--act));flex:none;font-size:12px;line-height:1.3}
 
   /* Risk-Radar banner now renders through the shared .rrx card (macro risk_radar_card);
      its old .ms-radar / .msr-* styling was retired with the cramped text-run markup. */
@@ -2451,9 +2457,9 @@
   body.page-macro .ms-cell2{display:inline-flex;align-items:baseline;gap:6px;justify-content:center;font-family:var(--num)}
   body.page-macro .ms-cell2 .ar{font-size:11px;line-height:1}
   body.page-macro .ms-cell2 .rsi{font-size:12.5px;color:var(--ink-2)}
-  body.page-macro .ms-cell2.good,body.page-macro .ms-conf.good{color:var(--up)}
-  body.page-macro .ms-cell2.bad,body.page-macro .ms-conf.bad{color:var(--down)}
-  body.page-macro .ms-cell2.flat,body.page-macro .ms-conf.warn,body.page-macro .ms-conf.flat{color:var(--warn)}
+  body.page-macro .ms-cell2.good,body.page-macro .ms-conf.good{color:var(--ink-up, var(--up))}
+  body.page-macro .ms-cell2.bad,body.page-macro .ms-conf.bad{color:var(--ink-down, var(--down))}
+  body.page-macro .ms-cell2.flat,body.page-macro .ms-conf.warn,body.page-macro .ms-conf.flat{color:var(--ink-warn, var(--warn))}
   body.page-macro .ms-conf{font-size:12px;font-weight:700;white-space:nowrap}
   @media(max-width:560px){
     body.page-macro table.ms-tapetbl th,body.page-macro table.ms-tapetbl td{padding-left:3px;padding-right:3px}
@@ -2509,13 +2515,13 @@
   body.page-macro .ms-sig-head{display:flex;align-items:baseline;gap:9px}
   body.page-macro .ms-sig-ico{font-size:16px;line-height:1;flex:none}
   body.page-macro .ms-sig-title{font-size:13.5px;font-weight:700;color:var(--ink-1);line-height:1.3}
-  body.page-macro .ms-sig-jump{margin-left:auto;font-size:11px;font-weight:700;color:var(--link);white-space:nowrap;flex:none}
+  body.page-macro .ms-sig-jump{margin-left:auto;font-size:11px;font-weight:700;color:var(--ink-link, var(--link));white-space:nowrap;flex:none}
   body.page-macro .ms-sig-detail{font-family:var(--num);font-size:12px;color:var(--ink-2);margin:8px 0 0;line-height:1.4}
   body.page-macro .ms-sig-what{font-size:11.5px;color:var(--ink-3);line-height:1.5;margin:8px 0 0;padding-top:8px;border-top:var(--rule) solid var(--hair)}
   body.page-macro .ms-sig-edge{font-size:11.5px;color:var(--ink-2);margin:6px 0 0;line-height:1.45}
   body.page-macro .ms-sig-edge b{color:var(--ink-3);font-weight:600}
   body.page-macro .ms-pop-empty{text-align:center;color:var(--ink-3);padding:30px 18px;font-size:12.5px;line-height:1.55}
-  body.page-macro .ms-pop-empty .big{font-size:32px;display:block;margin-bottom:8px;color:var(--up);opacity:.7}
+  body.page-macro .ms-pop-empty .big{font-size:32px;display:block;margin-bottom:8px;color:var(--ink-up, var(--up));opacity:.7}
   </style>
 {% if mode != 'stocks' %}
 <style id="mx-css">
@@ -2557,10 +2563,10 @@ body.page-macro::before{
 .mx-c-q2{background:color-mix(in srgb,var(--q2) 16%,var(--panel));color:var(--q2);border:1px solid color-mix(in srgb,var(--q2) 28%,transparent)}
 .mx-c-q3{background:color-mix(in srgb,var(--q3) 16%,var(--panel));color:var(--q3);border:1px solid color-mix(in srgb,var(--q3) 28%,transparent)}
 .mx-c-q4{background:color-mix(in srgb,var(--q4) 16%,var(--panel));color:var(--q4);border:1px solid color-mix(in srgb,var(--q4) 28%,transparent)}
-.mx-c-up{background:color-mix(in srgb,var(--up) 14%,var(--panel));color:var(--up);border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
-.mx-c-down{background:color-mix(in srgb,var(--down) 14%,var(--panel));color:var(--down);border:1px solid color-mix(in srgb,var(--down) 25%,transparent)}
-.mx-c-warn{background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent)}
-.mx-c-info{background:color-mix(in srgb,var(--info) 14%,var(--panel));color:var(--info);border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
+.mx-c-up{background:color-mix(in srgb,var(--up) 14%,var(--panel));color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
+.mx-c-down{background:color-mix(in srgb,var(--down) 14%,var(--panel));color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 25%,transparent)}
+.mx-c-warn{background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 25%,transparent)}
+.mx-c-info{background:color-mix(in srgb,var(--info) 14%,var(--panel));color:var(--ink-info, var(--info));border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
 .mx-c-muted{background:color-mix(in srgb,var(--muted) 12%,var(--panel));color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent)}
 
 
@@ -2579,7 +2585,7 @@ body.page-macro::before{
 }
 .mx-breaking-label{
   font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--down);white-space:nowrap;flex-shrink:0;
+  color:var(--ink-down, var(--down));white-space:nowrap;flex-shrink:0;
 }
 .mx-breaking-text{color:var(--text);flex:1}
 .mx-breaking-sub{color:var(--muted);font-size:11px;margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -2629,9 +2635,9 @@ body.page-macro .mx-pcol-row{display:flex;justify-content:space-between;align-it
 body.page-macro .mx-pcol-row:last-child{border-bottom:none}
 body.page-macro .mx-pcol-key{color:var(--muted)}
 body.page-macro .mx-delta-chip{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;font-variant-numeric:tabular-nums}
-body.page-macro .mx-delta-up{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 22%,transparent)}
-body.page-macro .mx-delta-dn{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 22%,transparent)}
-body.page-macro .mx-delta-wn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+body.page-macro .mx-delta-up{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 22%,transparent)}
+body.page-macro .mx-delta-dn{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 22%,transparent)}
+body.page-macro .mx-delta-wn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
 body.page-macro .mx-delta-mu{background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 18%,transparent)}
 body.page-macro .mx-prog-row{display:flex;flex-direction:column;gap:2px;margin:5px 0}
 body.page-macro .mx-prog-label-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:1px}
@@ -2662,22 +2668,22 @@ body.page-macro.mx4-grid #release-radar #rr-modal-overlay.open{visibility:visibl
 body.page-macro .mx-aibrief{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;text-decoration:none;display:block;color:inherit}
 body.page-macro .mx-aibrief:hover{border-color:color-mix(in srgb,var(--info) 40%,var(--line));text-decoration:none}
 body.page-macro .mx-aibrief-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-body.page-macro .mx-aibrief-icon{width:32px;height:32px;border-radius:8px;flex-shrink:0;background:color-mix(in srgb,var(--info) 14%,var(--panel2));border:1px solid color-mix(in srgb,var(--info) 25%,transparent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--info)}
+body.page-macro .mx-aibrief-icon{width:32px;height:32px;border-radius:8px;flex-shrink:0;background:color-mix(in srgb,var(--info) 14%,var(--panel2));border:1px solid color-mix(in srgb,var(--info) 25%,transparent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--ink-info, var(--info))}
 body.page-macro .mx-aibrief-title{font-size:13px;font-weight:700;color:var(--text)}
 body.page-macro .mx-aibrief-date{font-size:11px;color:var(--muted)}
 body.page-macro .mx-aibrief-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;margin-left:auto}
 body.page-macro .mx-aibrief-body{font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:10px}
 body.page-macro .mx-aibrief-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-body.page-macro .mx-aibrief-link{font-size:12px;font-weight:700;color:var(--link)}
+body.page-macro .mx-aibrief-link{font-size:12px;font-weight:700;color:var(--ink-link, var(--link))}
 
 /* ── SECTOR HEAT strip (mx restyle) ── */
 body.page-macro #sector-heat{padding:12px 16px}
 body.page-macro #sector-heat .sh-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 body.page-macro #sector-heat .sh-chips{display:flex;flex-wrap:wrap;gap:6px}
 body.page-macro #sector-heat .sh-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;border:1px solid;text-decoration:none;transition:opacity .15s}
-body.page-macro #sector-heat .sh-heat{background:color-mix(in srgb,var(--up) 12%,var(--panel2));color:var(--up);border-color:color-mix(in srgb,var(--up) 25%,transparent)}
+body.page-macro #sector-heat .sh-heat{background:color-mix(in srgb,var(--up) 12%,var(--panel2));color:var(--ink-up, var(--up));border-color:color-mix(in srgb,var(--up) 25%,transparent)}
 body.page-macro #sector-heat .sh-heat:hover{opacity:.8;text-decoration:none}
-body.page-macro #sector-heat .sh-cool{background:color-mix(in srgb,var(--down) 10%,var(--panel2));color:var(--down);border-color:color-mix(in srgb,var(--down) 20%,transparent)}
+body.page-macro #sector-heat .sh-cool{background:color-mix(in srgb,var(--down) 10%,var(--panel2));color:var(--ink-down, var(--down));border-color:color-mix(in srgb,var(--down) 20%,transparent)}
 body.page-macro #sector-heat .sh-cool:hover{opacity:.8;text-decoration:none}
 body.page-macro #sector-heat .sh-arr{font-size:10px;flex-shrink:0}
 body.page-macro #sector-heat .sh-rk{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -2711,8 +2717,8 @@ body.page-macro .mx-asset-tile:hover{transform:translateY(-1px)}
 body.page-macro .mx-at-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 body.page-macro .mx-at-val{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:3px}
 body.page-macro .mx-at-chg{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
-body.page-macro .mx-at-chg.up{color:var(--up)}
-body.page-macro .mx-at-chg.dn{color:var(--down)}
+body.page-macro .mx-at-chg.up{color:var(--ink-up, var(--up))}
+body.page-macro .mx-at-chg.dn{color:var(--ink-down, var(--down))}
 body.page-macro .mx-at-sub{font-size:10px;color:var(--muted);margin-top:2px}
 body.page-macro .mx-regime-strip{margin-top:10px;padding:9px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
 @media(max-width:900px){body.page-macro .mx-asset-grid{grid-template-columns:repeat(2,1fr)}}
@@ -2725,8 +2731,8 @@ body.page-macro .mx-iht-ticker{font-size:10px;font-weight:700;letter-spacing:.08
 body.page-macro .mx-iht-name{font-size:11px;font-weight:600;margin:3px 0}
 body.page-macro .mx-iht-price{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
 body.page-macro .mx-iht-chg{font-size:12px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
-body.page-macro .mx-iht-chg.up{color:var(--up)}
-body.page-macro .mx-iht-chg.dn{color:var(--down)}
+body.page-macro .mx-iht-chg.up{color:var(--ink-up, var(--up))}
+body.page-macro .mx-iht-chg.dn{color:var(--ink-down, var(--down))}
 body.page-macro .mx-iht-meta{display:flex;justify-content:space-between;margin-top:7px;padding-top:7px;border-top:1px solid var(--line)}
 body.page-macro .mx-iht-meta-item{text-align:center}
 body.page-macro .mx-iht-meta-lbl{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block}
@@ -2737,14 +2743,14 @@ body.page-macro .mx-iht-meta-val{font-size:11px;font-weight:700;font-variant-num
 /* ── NEWS board chrome (mx additions) ── */
 body.page-macro #now-board .mx-ni-top{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
 body.page-macro #now-board .mx-ni-tag{font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:4px;text-transform:uppercase}
-body.page-macro #now-board .mx-ni-tag.macro{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+body.page-macro #now-board .mx-ni-tag.macro{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
 body.page-macro #now-board .mx-ni-tag.earnings{background:color-mix(in srgb,var(--q2) 14%,transparent);color:var(--q2);border:1px solid color-mix(in srgb,var(--q2) 25%,transparent)}
-body.page-macro #now-board .mx-ni-tag.stocks{background:color-mix(in srgb,var(--info) 14%,transparent);color:var(--info);border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
+body.page-macro #now-board .mx-ni-tag.stocks{background:color-mix(in srgb,var(--info) 14%,transparent);color:var(--ink-info, var(--info));border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
 body.page-macro #now-board .mx-ni-date{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 body.page-macro #now-board .mx-ni-score{font-size:10px;font-weight:700;color:var(--muted);margin-left:auto}
 body.page-macro #now-board .mx-ni-impact{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px}
-body.page-macro #now-board .mx-ni-impact.high{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
-body.page-macro #now-board .mx-ni-impact.med{background:color-mix(in srgb,var(--info) 12%,transparent);color:var(--info);border:1px solid color-mix(in srgb,var(--info) 20%,transparent)}
+body.page-macro #now-board .mx-ni-impact.high{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+body.page-macro #now-board .mx-ni-impact.med{background:color-mix(in srgb,var(--info) 12%,transparent);color:var(--ink-info, var(--info));border:1px solid color-mix(in srgb,var(--info) 20%,transparent)}
 
 /* ── LINK-OUT strip ── */
 body.page-macro .mx-linkout-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:9px;margin-top:0}
@@ -2806,7 +2812,7 @@ body.page-macro .mx2-expand-btn:active{transform:translateY(0) scale(.985)}
   body.page-macro .mx2-expand-btn::after{display:none;}
 }
 body.page-macro .mx2-expand-btn .ea-ic{
-  display:inline-block;font-size:12px;line-height:1;color:var(--info);
+  display:inline-block;font-size:12px;line-height:1;color:var(--ink-info, var(--info));
   transition:transform .28s cubic-bezier(.4,0,.2,1);
 }
 body.page-macro .mx2-expand-btn.all-open .ea-ic{transform:rotate(180deg)}
@@ -2955,7 +2961,31 @@ body.page-macro .mxqm-eyebrow-chip{margin-left:auto;font-size:9.5px;font-weight:
    chip, so suppress the duplicate badge in the shared regime_flip_strip header. */
 body.page-macro #mx5FlipCtxPop .mxfs-badge{display:none}
 body.page-macro .mxqm-glance{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.78));margin:2px 0 10px}
-body.page-macro .mxqm-glance b{color:var(--warn,#f59e0b);font-weight:700}
+/* The regime name was --warn, i.e. the SAME token the position dot used — so the
+   headline word and a dot sitting in a different quadrant were painted alike, which
+   is half of why the two read as one self-contradicting claim. It is also 3.6:1 on
+   white (12.5px bold is not WCAG large text, so it wanted 4.5:1). Full text ink
+   fixes both, and leaves hue to mean quadrant and nothing else. */
+body.page-macro .mxqm-glance b{color:var(--text,#c8d0dc);font-weight:700}
+/* Divergence line — shown ONLY when today's reading and the confirmed label sit in
+   different quadrants. A watch condition, never an alarm: no falsifier/refutation
+   vocabulary on a user surface (operator 2026-07-27). */
+body.page-macro .mxqm-diverge{display:block;margin-top:3px;color:var(--muted)}
+/* Legend. The map carries two different KINDS of object — a measurement and a
+   label — and shipped naming neither, so the dot read as a broken "you are here".
+   One row, defined once, under the plot. */
+body.page-macro .mxqm-legend{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 14px;
+  margin:6px 0 0;font-size:9.5px;letter-spacing:.02em;color:var(--muted)}
+body.page-macro .mxqm-lg-item{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+body.page-macro .mxqm-lg-dot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--mxqm-mark,#f2f6fc)}
+/* swatch = the active tile's exact composite (its hue at .42 over the plate), the
+   same color-mix the odds halo uses, so it re-shades per theme and through the zh
+   q1/q3 swap for free. */
+body.page-macro .mxqm-lg-tile{width:9px;height:9px;border-radius:2.5px;flex:none}
+body.page-macro .mxqm-lg-q1{background:color-mix(in srgb,var(--q1,#2e9e4f) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-lg-q2{background:color-mix(in srgb,var(--q2,#d4a017) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-lg-q3{background:color-mix(in srgb,var(--q3,#d04545) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-lg-q4{background:color-mix(in srgb,var(--q4,#3f78d8) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
 body.page-macro .mxqm-wrap{margin:0 0 8px}
 body.page-macro .mxqm-svg-box{width:100%;max-width:300px;margin:0 auto}
 body.page-macro .mxqm-svg-box svg{width:100%;height:auto;display:block;overflow:visible}
@@ -2978,7 +3008,14 @@ body.page-macro .mxqm-axis-label{fill:rgba(255,255,255,.34);font-size:7.5px;lett
    InterDisplay-700.woff2 is in flight — so it never overflows in either state.
    CJK keeps 8px below: 2-4 glyphs never approach the tile edge and Chinese suffers
    more than Latin at small sizes. #}
-body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.62);font-size:6.6px;letter-spacing:.04em;font-family:Inter,-apple-system,sans-serif;font-weight:700}
+{# The label takes the same tile-coloured halo as the odds numeral, for the same
+   reason: the dot is drawn beneath BOTH and can land on either. It used to be safe
+   bare only because the dot was amber — a dark glyph still read on it. The dot is
+   now theme ink, so in light theme an unhaloed label glyph is near-black on a
+   near-black dot, i.e. gone. Halo width is 2.2 (vs the numeral's 3.4) because these
+   glyphs are 6.6px, not 17px — 3.4 would close the counters. #}
+body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.62);font-size:6.6px;letter-spacing:.04em;font-family:Inter,-apple-system,sans-serif;font-weight:700;
+  paint-order:stroke fill;stroke-width:2.2;stroke-linejoin:round}
 body.page-macro .mxqm-quad-label.l-zh{font-size:8px;letter-spacing:.06em}
 /* The odds numeral carries a HALO so the position dot (drawn beneath it — see the
    marker-layer note in the SVG) can pass behind the glyphs without eating them.
@@ -2991,32 +3028,50 @@ body.page-macro .mxqm-quad-label.l-zh{font-size:8px;letter-spacing:.06em}
 body.page-macro .mxqm-odds{fill:rgba(255,255,255,.72);font-size:17px;font-weight:800;font-family:Inter,-apple-system,sans-serif;font-variant-numeric:tabular-nums;
   paint-order:stroke fill;stroke-width:3.4;stroke-linejoin:round;
   stroke:color-mix(in srgb,var(--q1,#2e9e4f) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q1{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q2{stroke:color-mix(in srgb,var(--q2,#d4a017) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q3{stroke:color-mix(in srgb,var(--q3,#d04545) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q4{stroke:color-mix(in srgb,var(--q4,#3f78d8) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-/* active tile = the .42 fill, and the ONLY tile the dot can ever land in */
-body.page-macro .mxqm-odds-q1.active{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q2.active{stroke:color-mix(in srgb,var(--q2,#d4a017) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q3.active{stroke:color-mix(in srgb,var(--q3,#d04545) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q4.active{stroke:color-mix(in srgb,var(--q4,#3f78d8) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q1{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q2{stroke:color-mix(in srgb,var(--q2,#d4a017) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q3{stroke:color-mix(in srgb,var(--q3,#d04545) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q4{stroke:color-mix(in srgb,var(--q4,#3f78d8) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+/* active tile = the .42 fill. NOT necessarily the tile the dot lands in: the dot is
+   today's raw growth x inflation reading, the active tile is the hysteresis-confirmed
+   label, and during a transition they legitimately differ (see .mxqm-diverge). Every
+   tile therefore needs its halo mix at BOTH opacities. */
+body.page-macro .mxqm-halo-q1.active{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q2.active{stroke:color-mix(in srgb,var(--q2,#d4a017) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q3.active{stroke:color-mix(in srgb,var(--q3,#d04545) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q4.active{stroke:color-mix(in srgb,var(--q4,#3f78d8) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
 body.page-macro .mxqm-odds.active{fill:#fff}
-body.page-macro .mxqm-dot{fill:var(--warn,#f59e0b);stroke:rgba(255,255,255,.92);stroke-width:1.5}
-body.page-macro .mxqm-pulse{fill:var(--warn,#f59e0b);opacity:.4;transform-box:fill-box;transform-origin:center;animation:mxqmPulse 2.4s ease-out infinite}
-body.page-macro .mxqm-arrow{stroke:var(--warn,#f59e0b);stroke-width:2;fill:none;marker-end:url(#mxqmArrowHead);
+/* ── Colour law for this map: HUE = quadrant, INK = measurement ────────────────
+   All four hues are spoken for (--q1..--q4), and --q1/--q3 additionally SWAP under
+   zh 红涨绿跌 — so any hue the position marker picks collides with some tile in some
+   theme x language. It shipped on --warn, which resolves to #b9791a on light: six
+   degrees of hue from --q2 #b07d05, the REFLATION tile. The "you are here" dot was
+   therefore painted in one of the four categories it is supposed to be neutral
+   about — it camouflaged on an active Reflation tile, and over the pale Stagflation
+   tile it read as a brown smudge rather than a marker (operator report 2026-08-11).
+   The old light-theme stroke rgba(0,0,0,.5) made that worse: a translucent black rim
+   over a dark ochre fill is mud, and it separates the dot from nothing.
+   --mxqm-mark is theme ink and carries NO category meaning; the ring is the plate
+   colour, opaque, so the marker separates from all four tile hues in both themes.
+   Anything painted here that means "the reading" (dot, pulse, drift arrow) takes
+   --mxqm-mark. Never a --qN, never a state token. */
+body.page-macro .mxqm-dot{fill:var(--mxqm-mark,#f2f6fc);stroke:var(--mxqm-plate,rgba(16,21,30,.97));stroke-width:2}
+body.page-macro .mxqm-pulse{fill:var(--mxqm-mark,#f2f6fc);opacity:.26;transform-box:fill-box;transform-origin:center;animation:mxqmPulse 2.4s ease-out infinite}
+body.page-macro .mxqm-arrow{stroke:var(--mxqm-mark,#f2f6fc);stroke-width:2;fill:none;marker-end:url(#mxqmArrowHead);opacity:.62;
   stroke-dasharray:120;stroke-dashoffset:120;animation:mxqmDraw .9s ease-out .15s forwards}
-body.page-macro .mxqm-arrowhead{fill:var(--warn,#f59e0b)}
-@keyframes mxqmPulse{0%{transform:scale(1);opacity:.42}70%{transform:scale(2.9);opacity:0}100%{transform:scale(2.9);opacity:0}}
+body.page-macro .mxqm-arrowhead{fill:var(--mxqm-mark,#f2f6fc)}
+@keyframes mxqmPulse{0%{transform:scale(1);opacity:.30}70%{transform:scale(2.9);opacity:0}100%{transform:scale(2.9);opacity:0}}
 @keyframes mxqmDraw{to{stroke-dashoffset:0}}
 @media (prefers-reduced-motion: reduce){
-  body.page-macro .mxqm-pulse{animation:none;opacity:.28}
+  body.page-macro .mxqm-pulse{animation:none;opacity:.20}
   body.page-macro .mxqm-arrow{animation:none;stroke-dashoffset:0}
 }
 [data-theme="light"] body.page-macro .mxqm-axis-label{fill:rgba(0,0,0,.58)}
 [data-theme="light"] body.page-macro .mxqm-quad-label{fill:rgba(0,0,0,.62)}
 [data-theme="light"] body.page-macro .mxqm-odds{fill:rgba(0,0,0,.6)}
 [data-theme="light"] body.page-macro .mxqm-odds.active{fill:rgba(0,0,0,.9)}
-[data-theme="light"] body.page-macro .mxqm-dot{stroke:rgba(0,0,0,.5)}
+{# No light-theme .mxqm-dot override any more: fill AND ring both resolve from
+   --mxqm-mark / --mxqm-plate, which the pop already re-points per theme. #}
 /* ── Task 6: leadership drawdown bar strip ── */
 body.page-macro .rsx-ldr-bars{margin:6px 0 4px;display:flex;flex-direction:column;gap:3px;position:relative}
 body.page-macro .rsx-ldr-bar-row{display:flex;align-items:center;gap:5px;font-size:10.5px;min-height:16px}
@@ -3060,6 +3115,10 @@ body.page-macro.mx4-grid .mx5-flipctx-pop{
      because the light theme overrides `background` with a literal below rather
      than re-pointing --mx5-pop-bg, so the halo cannot read the background. */
   --mxqm-plate:var(--mx5-pop-bg,rgba(16,21,30,.97));
+  /* the MEASUREMENT ink — position dot, its pulse and the drift arrow. Deliberately
+     NOT a state token: see the colour law above .mxqm-dot. Denser than --text so a
+     4.5-unit dot still reads as a marker rather than as a stray glyph. */
+  --mxqm-mark:#f2f6fc;
   border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
   border-radius:14px;
   box-shadow:0 18px 48px rgba(0,0,0,.5);
@@ -3069,6 +3128,7 @@ body.page-macro.mx4-grid .mx5-flipctx-pop{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-flipctx-pop{
   background:#fff;
   --mxqm-plate:#fff;
+  --mxqm-mark:#1b2333;
   border-color:rgba(0,0,0,.12);
   box-shadow:0 18px 48px rgba(20,30,50,.18);
 }
@@ -3340,10 +3400,10 @@ body.page-macro .v2chip.c-q1{background:color-mix(in srgb,var(--q1) 16%,var(--pa
 body.page-macro .v2chip.c-q2{background:color-mix(in srgb,var(--q2) 16%,var(--panel));color:var(--q2);border:1px solid color-mix(in srgb,var(--q2) 28%,transparent)}
 body.page-macro .v2chip.c-q3{background:color-mix(in srgb,var(--q3) 16%,var(--panel));color:var(--q3);border:1px solid color-mix(in srgb,var(--q3) 28%,transparent)}
 body.page-macro .v2chip.c-q4{background:color-mix(in srgb,var(--q4) 16%,var(--panel));color:var(--q4);border:1px solid color-mix(in srgb,var(--q4) 28%,transparent)}
-body.page-macro .v2chip.c-up{background:color-mix(in srgb,var(--up) 14%,var(--panel));color:var(--up);border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
-body.page-macro .v2chip.c-down{background:color-mix(in srgb,var(--down) 14%,var(--panel));color:var(--down);border:1px solid color-mix(in srgb,var(--down) 25%,transparent)}
-body.page-macro .v2chip.c-warn{background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent)}
-body.page-macro .v2chip.c-info{background:color-mix(in srgb,var(--info) 14%,var(--panel));color:var(--info);border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
+body.page-macro .v2chip.c-up{background:color-mix(in srgb,var(--up) 14%,var(--panel));color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
+body.page-macro .v2chip.c-down{background:color-mix(in srgb,var(--down) 14%,var(--panel));color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 25%,transparent)}
+body.page-macro .v2chip.c-warn{background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 25%,transparent)}
+body.page-macro .v2chip.c-info{background:color-mix(in srgb,var(--info) 14%,var(--panel));color:var(--ink-info, var(--info));border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
 body.page-macro .v2chip.c-muted{background:color-mix(in srgb,var(--muted) 12%,var(--panel));color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent)}
 body.page-macro .v2-display-badge{
   display:inline-flex;align-items:center;font-size:11px;font-weight:600;
@@ -3365,7 +3425,7 @@ body.page-macro .mx2-mkt-tile{
 body.page-macro .mx2-mkt-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
 body.page-macro .mx2-mkt-name{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
 body.page-macro .mx2-mkt-chg{font-size:11px;font-weight:700}
-body.page-macro .mx2-mkt-chg.up{color:var(--up)} body.page-macro .mx2-mkt-chg.dn{color:var(--down)}
+body.page-macro .mx2-mkt-chg.up{color:var(--ink-up, var(--up))} body.page-macro .mx2-mkt-chg.dn{color:var(--ink-down, var(--down))}
 body.page-macro .mx2-mkt-px{font-size:18px;font-weight:800;color:var(--ink,var(--text));line-height:1.1;margin-top:2px;font-variant-numeric:tabular-nums}
 
 
@@ -3375,11 +3435,11 @@ body.page-macro .mx2-mkt-d-ticker{font-size:10px;font-weight:700;color:var(--mut
 body.page-macro .mx2-mkt-d-name{font-size:11px;font-weight:600;color:var(--text);margin:3px 0}
 body.page-macro .mx2-mkt-d-px{font-size:22px;font-weight:800;color:var(--text);line-height:1.1;font-variant-numeric:tabular-nums}
 body.page-macro .mx2-mkt-d-chg{font-size:12px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
-body.page-macro .mx2-mkt-d-chg.up{color:var(--up)} body.page-macro .mx2-mkt-d-chg.dn{color:var(--down)}
+body.page-macro .mx2-mkt-d-chg.up{color:var(--ink-up, var(--up))} body.page-macro .mx2-mkt-d-chg.dn{color:var(--ink-down, var(--down))}
 body.page-macro .mx2-mkt-d-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
 body.page-macro .mx2-stat{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600}
-body.page-macro .mx2-stat.ok{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)}
-body.page-macro .mx2-stat.wn{color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+body.page-macro .mx2-stat.ok{color:var(--ink-up, var(--up));background:color-mix(in srgb,var(--up) 10%,transparent)}
+body.page-macro .mx2-stat.wn{color:var(--ink-warn, var(--warn));background:color-mix(in srgb,var(--warn) 10%,transparent)}
 body.page-macro .mx2-stat.mt{color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent)}
 
 /* Legacy sector */
@@ -3389,7 +3449,7 @@ body.page-macro .mx2-sh-col-head{font-size:10px;font-weight:700;text-transform:u
 body.page-macro .mx2-sh-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
 body.page-macro .mx2-sh-row:last-child{border-bottom:none}
 body.page-macro .mx2-sh-arr{font-size:11px;width:12px;text-align:center;flex-shrink:0}
-body.page-macro .mx2-sh-arr.heat{color:var(--up)} body.page-macro .mx2-sh-arr.cool{color:var(--down)}
+body.page-macro .mx2-sh-arr.heat{color:var(--ink-up, var(--up))} body.page-macro .mx2-sh-arr.cool{color:var(--ink-down, var(--down))}
 body.page-macro .mx2-sh-name{font-size:12px;font-weight:600;color:var(--text);flex:1}
 body.page-macro .mx2-sh-rk{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
 
@@ -3486,10 +3546,10 @@ body.page-macro .sc-bar-track{height:5px;background:color-mix(in srgb,var(--mute
 body.page-macro .sc-bar-fill{height:5px;border-radius:3px}
 body.page-macro .sc-score{font-size:15px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
 body.page-macro .sc-band{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;text-align:center;white-space:nowrap}
-body.page-macro .sc-band-watch{color:var(--warn);background:rgba(224,160,48,.13);border:1px solid rgba(224,160,48,.25)}
-body.page-macro .sc-band-calm{color:var(--up);background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2)}
-body.page-macro .sc-band-elev{color:var(--info);background:rgba(77,142,245,.1);border:1px solid rgba(77,142,245,.2)}
-body.page-macro .sc-band-high{color:var(--down);background:rgba(224,92,92,.1);border:1px solid rgba(224,92,92,.2)}
+body.page-macro .sc-band-watch{color:var(--ink-warn, var(--warn));background:rgba(224,160,48,.13);border:1px solid rgba(224,160,48,.25)}
+body.page-macro .sc-band-calm{color:var(--ink-up, var(--up));background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2)}
+body.page-macro .sc-band-elev{color:var(--ink-info, var(--info));background:rgba(77,142,245,.1);border:1px solid rgba(77,142,245,.2)}
+body.page-macro .sc-band-high{color:var(--ink-down, var(--down));background:rgba(224,92,92,.1);border:1px solid rgba(224,92,92,.2)}
 body.page-macro .dd-ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
 body.page-macro .dd-box{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 13px;text-align:center}
 body.page-macro .dd-horizon{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
@@ -3512,7 +3572,7 @@ body.page-macro .froth-val{font-size:11px;font-weight:700;min-width:26px;text-al
 body.page-macro .froth-split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 body.page-macro .froth-split-item{text-align:center;padding:8px;background:rgba(224,160,48,.06);border:1px solid rgba(224,160,48,.17);border-radius:7px}
 body.page-macro .froth-split-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:3px}
-body.page-macro .froth-split-val{font-size:18px;font-weight:900;color:var(--warn);font-variant-numeric:tabular-nums}
+body.page-macro .froth-split-val{font-size:18px;font-weight:900;color:var(--ink-warn, var(--warn));font-variant-numeric:tabular-nums}
 @media(max-width:700px){body.page-macro .scare-row{grid-template-columns:1fr 1fr 40px 52px}}
 @media(max-width:560px){body.page-macro .dd-ladder{grid-template-columns:1fr 1fr}.body.page-macro .sentiment-grid{grid-template-columns:1fr}}
 @media(max-width:480px){body.page-macro .sentiment-grid{grid-template-columns:1fr}}
@@ -3528,9 +3588,9 @@ body.page-macro .pc-row{display:flex;justify-content:space-between;align-items:c
 body.page-macro .pc-row:last-of-type{border-bottom:none}
 body.page-macro .pc-key{color:var(--muted)}
 body.page-macro .pc-chip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px}
-body.page-macro .pc-warn{background:rgba(224,160,48,.13);color:var(--warn);border:1px solid rgba(224,160,48,.22)}
-body.page-macro .pc-info{background:rgba(77,142,245,.11);color:var(--info);border:1px solid rgba(77,142,245,.2)}
-body.page-macro .pc-up{background:rgba(62,200,122,.11);color:var(--up);border:1px solid rgba(62,200,122,.2)}
+body.page-macro .pc-warn{background:rgba(224,160,48,.13);color:var(--ink-warn, var(--warn));border:1px solid rgba(224,160,48,.22)}
+body.page-macro .pc-info{background:rgba(77,142,245,.11);color:var(--ink-info, var(--info));border:1px solid rgba(77,142,245,.2)}
+body.page-macro .pc-up{background:rgba(62,200,122,.11);color:var(--ink-up, var(--up));border:1px solid rgba(62,200,122,.2)}
 body.page-macro .pc-mt{background:rgba(122,132,148,.11);color:var(--muted);border:1px solid rgba(122,132,148,.18)}
 body.page-macro .pc-note{font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5}
 body.page-macro .lever-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:10px}
@@ -3608,9 +3668,9 @@ body.page-macro .isle-deep-health{font-size:11px;color:var(--muted);padding:10px
    The global --up (rgb 31,154,85) = 3.19:1 on #f7f8fa; --warn = 3.19:1.
    These local overrides apply ONLY to small (<14px) stat/change text in the macro section. */
 /* Evidence tone classes (inline colors removed so these can theme — VIS-06) */
-body.page-macro .evs-good{color:var(--up)}
-body.page-macro .evs-bad{color:var(--down)}
-body.page-macro .evs-flat{color:var(--warn)}
+body.page-macro .evs-good{color:var(--ink-up, var(--up))}
+body.page-macro .evs-bad{color:var(--ink-down, var(--down))}
+body.page-macro .evs-flat{color:var(--ink-warn, var(--warn))}
 [data-theme="light"] body.page-macro .evs-good{color:#157a42}
 [data-theme="light"] body.page-macro .evs-flat{color:#7a4500}
 [data-theme="light"] body.page-macro .mx2-mkt-chg.up,
@@ -3619,6 +3679,12 @@ body.page-macro .evs-flat{color:var(--warn)}
 [data-theme="light"] body.page-macro .idx-stat.ok{color:#157a42}
 [data-theme="light"] body.page-macro .idx-card-chg.up{color:#157a42}
 [data-theme="light"] body.page-macro .idx-stat.wn{color:#7a4500}
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  body.page-macro .mx2-score-block .v-score
+) { text-shadow:none; }
 </style>
 {% endif %}
 {% if mode != 'stocks' %}
@@ -3779,8 +3845,8 @@ body.page-macro .sxg-mkt-sym{
 body.page-macro .sxg-mkt-chg{
   font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;
 }
-body.page-macro .sxg-mkt-chg.up{color:var(--up);}
-body.page-macro .sxg-mkt-chg.dn{color:var(--down);}
+body.page-macro .sxg-mkt-chg.up{color:var(--ink-up, var(--up));}
+body.page-macro .sxg-mkt-chg.dn{color:var(--ink-down, var(--down));}
 
 /* ── News face rows ───────────────────────────────────────────── */
 body.page-macro .sxg-face-news-list{display:flex;flex-direction:column;gap:6px;flex:1;}
@@ -3812,7 +3878,7 @@ body.page-macro .sxg-deep-chip{
   border:1px solid var(--line);text-decoration:none;
   transition:border-color .12s,color .12s;
 }
-body.page-macro .sxg-deep-chip:hover{border-color:var(--link);color:var(--link);}
+body.page-macro .sxg-deep-chip:hover{border-color:var(--link);color:var(--ink-link, var(--link));}
 
 /* ── MOB: score-block overflow guard at narrow viewports ─────────────────── */
 /* mx2-hero-row wraps at small widths but score-block needs to shrink */
@@ -3929,8 +3995,8 @@ body.page-macro .sxg-evcal-label{
 body.page-macro .sxg-evcal-imp{
   font-size:9px;font-weight:700;letter-spacing:.04em;padding:1px 4px;border-radius:3px;
 }
-body.page-macro .sxg-evcal-imp.high{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn);}
-body.page-macro .sxg-evcal-imp.med{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up);}
+body.page-macro .sxg-evcal-imp.high{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--ink-warn, var(--warn));}
+body.page-macro .sxg-evcal-imp.med{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--ink-up, var(--up));}
 body.page-macro .sxg-fed-odds{
   font-size:10.5px;color:var(--ink-2);margin-top:5px;border-top:1px solid var(--line);padding-top:5px;
   display:flex;align-items:center;gap:4px;flex-wrap:wrap;
@@ -3949,8 +4015,8 @@ body.page-macro .sxg-sector-hot-cold{
   font-size:10px;color:var(--ink-3);margin-top:4px;border-top:1px solid var(--line);padding-top:4px;
 }
 body.page-macro .sxg-sector-hot-cold b{font-weight:700;}
-body.page-macro .sxg-sector-up{color:var(--up);}
-body.page-macro .sxg-sector-dn{color:var(--down);}
+body.page-macro .sxg-sector-up{color:var(--ink-up, var(--up));}
+body.page-macro .sxg-sector-dn{color:var(--ink-down, var(--down));}
 
 /* ══════════════════════════════════════════════════════════
    S2 — POLICY face full content
@@ -3999,16 +4065,23 @@ body.page-macro.mx4-grid {
   --mx5-blur:          blur(20px);
   --mx5-radius-card:   18px;
   --mx5-radius-pill:   999px;
-  --mx5-accent:        #22d97a;
-  --mx5-accent-glow:   rgba(34,217,122,.30);
-  --mx5-accent-dim:    rgba(34,217,122,.10);
-  --mx5-warn:          #f59e0b;
-  --mx5-warn-dim:      rgba(245,158,11,.10);
+  /* --mx5-accent MUST be the token, not a literal. Custom properties resolve at their
+     DECLARATION scope, so the .mx5-score-green{--mx5-accent:var(--up)} redefinition
+     further down can never reach the derived -glow/-dim/-ink computed here. With the
+     literal in place, zh flipped the gauge arc, the needle and the big 76 to red
+     (correct) while the regime pill and the 偏多 stance line beside them stayed green —
+     one state drawn in both directions inside a single 300x180 card. china/hk already
+     route this through --up; macro was the last page that did not. */
+  --mx5-accent:        var(--up,#22d97a);
+  --mx5-accent-glow:   color-mix(in srgb, var(--up,#22d97a) 30%, transparent);
+  --mx5-accent-dim:    color-mix(in srgb, var(--up,#22d97a) 10%, transparent);
+  --mx5-warn:          var(--warn,#f59e0b);
+  --mx5-warn-dim:      color-mix(in srgb, var(--warn,#f59e0b) 10%, transparent);
   /* v5.3 audit round: TEXT-role accents. Fills keep the bright hue above;
      text uses these so light mode swaps in the darker, ≥4.5:1 accent
      (theme.css already provides --up/--warn darkened for light). */
-  --mx5-accent-ink:    var(--mx5-accent);
-  --mx5-warn-ink:      var(--mx5-warn);
+  --mx5-accent-ink:    var(--ink-up, var(--mx5-accent));
+  --mx5-warn-ink:      var(--ink-warn, var(--mx5-warn));
 }
 [data-theme="light"] body.page-macro.mx4-grid {
   /* Round-3 depth pass: the panels were 82% white over a near-white canvas —
@@ -4205,7 +4278,7 @@ body.page-macro.mx4-grid .mx5-regime-pill.rp-yellow .mx5-dot{
   background:var(--mx5-warn);box-shadow:0 0 6px rgba(245,158,11,.30);
 }
 body.page-macro.mx4-grid .mx5-regime-pill.rp-red{
-  border-color:var(--down,#ef4444);background:rgba(239,68,68,.10);color:var(--down,#ef4444);
+  border-color:var(--down,#ef4444);background:rgba(239,68,68,.10);color:var(--ink-down, var(--down,#ef4444));
 }
 body.page-macro.mx4-grid .mx5-regime-pill.rp-red .mx5-dot{
   background:var(--down,#ef4444);box-shadow:0 0 6px rgba(239,68,68,.30);
@@ -4235,14 +4308,14 @@ body.page-macro.mx4-grid .mx5-sub-line{
 /* sub-line follows the verdict color like .mx5-big-score below — without these the
    page-global green accent paints "YELLOW — Trade with caution" green */
 body.page-macro.mx4-grid .mx5-score-yellow .mx5-sub-line{color:var(--mx5-warn-ink);}
-body.page-macro.mx4-grid .mx5-score-red .mx5-sub-line{color:var(--down,#ef4444);}
+body.page-macro.mx4-grid .mx5-score-red .mx5-sub-line{color:var(--ink-down, var(--down,#ef4444));}
 /* score color by state */
 body.page-macro.mx4-grid.ms-green-page .mx5-big-score,
-body.page-macro.mx4-grid .mx5-score-green .mx5-big-score{color:var(--up,#22d97a);text-shadow:0 0 36px rgba(34,217,122,.3);}
+body.page-macro.mx4-grid .mx5-score-green .mx5-big-score{color:var(--ink-up, var(--up,#22d97a));text-shadow:0 0 36px rgba(34,217,122,.3);}
 body.page-macro.mx4-grid.ms-yellow-page .mx5-big-score,
-body.page-macro.mx4-grid .mx5-score-yellow .mx5-big-score{color:var(--warn,#f59e0b);text-shadow:0 0 36px rgba(245,158,11,.3);}
+body.page-macro.mx4-grid .mx5-score-yellow .mx5-big-score{color:var(--ink-warn, var(--warn,#f59e0b));text-shadow:0 0 36px rgba(245,158,11,.3);}
 body.page-macro.mx4-grid.ms-red-page .mx5-big-score,
-body.page-macro.mx4-grid .mx5-score-red .mx5-big-score{color:var(--down,#ef4444);text-shadow:0 0 36px rgba(239,68,68,.3);}
+body.page-macro.mx4-grid .mx5-score-red .mx5-big-score{color:var(--ink-down, var(--down,#ef4444));text-shadow:0 0 36px rgba(239,68,68,.3);}
 /* v6 — STATE drives the hero glance (operator order 2026-07-13). The gauge arc, needle
    accent, glow and score numeral all follow the risk-STATE band (--mx5-gauge), never a fixed
    rainbow or the regime hue — so a caution/Mixed state reads amber, not "green/go". --mx5-gauge
@@ -4874,8 +4947,8 @@ body.mx5-dlg-open{ overflow:hidden; }
    pullback-odds block, the single canonical display) */
 
 /* Semantic chip colours for bare .chip (mood-check band chips + any dialog chip) */
-body.page-macro .chip.c-up{color:var(--up,#22d97a);border-color:color-mix(in srgb,var(--up,#22d97a) 32%,transparent);background:color-mix(in srgb,var(--up,#22d97a) 9%,transparent);}
-body.page-macro .chip.c-down{color:var(--down,#ef4444);border-color:color-mix(in srgb,var(--down,#ef4444) 32%,transparent);background:color-mix(in srgb,var(--down,#ef4444) 9%,transparent);}
+body.page-macro .chip.c-up{color:var(--ink-up, var(--up,#22d97a));border-color:color-mix(in srgb,var(--up,#22d97a) 32%,transparent);background:color-mix(in srgb,var(--up,#22d97a) 9%,transparent);}
+body.page-macro .chip.c-down{color:var(--ink-down, var(--down,#ef4444));border-color:color-mix(in srgb,var(--down,#ef4444) 32%,transparent);background:color-mix(in srgb,var(--down,#ef4444) 9%,transparent);}
 body.page-macro .chip.c-warn{color:var(--mx5-warn-ink,#f59e0b);border-color:color-mix(in srgb,var(--warn,#f59e0b) 32%,transparent);background:color-mix(in srgb,var(--warn,#f59e0b) 9%,transparent);}
 body.page-macro .chip.c-muted{color:var(--ink-2,rgba(255,255,255,.6));}
 
@@ -4915,7 +4988,7 @@ body.page-macro .rsx-axis-labels{
 }
 /* Disagreement line */
 body.page-macro .rsx-disagree{
-  font-size:11.5px;color:var(--warn,#f59e0b);margin:8px 0 4px;line-height:1.5;
+  font-size:11.5px;color:var(--ink-warn, var(--warn,#f59e0b));margin:8px 0 4px;line-height:1.5;
 }
 /* Froth sub-block */
 body.page-macro .rsx-froth{
@@ -5019,8 +5092,8 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-mtf-tbl td:not(:first-child){text-align:center;}
 .mx5-dlg-mtf-tbl tbody tr+tr td{border-top:1px solid rgba(255,255,255,.05);}
 [data-theme="light"] .mx5-dlg-mtf-tbl tbody tr+tr td{border-top-color:rgba(0,0,0,.05);}
-.mx5-dlg-mtf-conf.good{color:var(--up,#22d97a);}
-.mx5-dlg-mtf-conf.bad{color:var(--down,#ef4444);}
+.mx5-dlg-mtf-conf.good{color:var(--ink-up, var(--up,#22d97a));}
+.mx5-dlg-mtf-conf.bad{color:var(--ink-down, var(--down,#ef4444));}
 .mx5-dlg-mtf-conf.flat{color:var(--ink-3,rgba(255,255,255,.36));}
 
 /* Index deep cards (MARKETS dialog) */
@@ -5039,15 +5112,15 @@ body.page-macro .rsx-dlg-footer{
 [data-theme="light"] .mx5-dlg-idx-name{color:rgba(0,0,0,.62);}
 .mx5-dlg-idx-px{font-size:20px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:3px;}
 .mx5-dlg-idx-chg{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:10px;}
-.mx5-dlg-idx-chg.up{color:var(--up,#22d97a);}
-.mx5-dlg-idx-chg.dn{color:var(--down,#ef4444);}
+.mx5-dlg-idx-chg.up{color:var(--ink-up, var(--up,#22d97a));}
+.mx5-dlg-idx-chg.dn{color:var(--ink-down, var(--down,#ef4444));}
 .mx5-dlg-idx-chips{display:flex;flex-wrap:wrap;gap:4px;}
 .mx5-dlg-idx-chip{
   display:inline-flex;align-items:center;padding:2px 7px;
   border-radius:6px;font-size:11px;font-weight:600;
 }
-.mx5-dlg-idx-chip.ok{color:var(--up,#22d97a);background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2);}
-.mx5-dlg-idx-chip.wn{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);}
+.mx5-dlg-idx-chip.ok{color:var(--ink-up, var(--up,#22d97a));background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2);}
+.mx5-dlg-idx-chip.wn{color:var(--ink-warn, var(--warn,#f59e0b));background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);}
 .mx5-dlg-idx-chip.mt{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
 [data-theme="light"] .mx5-dlg-idx-chip.mt{color:rgba(0,0,0,.58);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
 
@@ -5064,8 +5137,8 @@ body.page-macro .rsx-dlg-footer{
 }
 [data-theme="light"] .mx5-dlg-sector-row{border-bottom-color:rgba(0,0,0,.05);}
 .mx5-dlg-sector-arr{font-size:11px;flex-shrink:0;}
-.mx5-dlg-sector-arr.heat{color:var(--down,#ef4444);}
-.mx5-dlg-sector-arr.cool{color:var(--up,#22d97a);}
+.mx5-dlg-sector-arr.heat{color:var(--ink-down, var(--down,#ef4444));}
+.mx5-dlg-sector-arr.cool{color:var(--ink-up, var(--up,#22d97a));}
 .mx5-dlg-sector-name{flex:1;font-weight:500;}
 .mx5-dlg-sector-rk{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));font-variant-numeric:tabular-nums;}
 [data-theme="light"] .mx5-dlg-sector-rk{color:rgba(0,0,0,.58);}
@@ -5081,8 +5154,8 @@ body.page-macro .rsx-dlg-footer{
 .sct-lane-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 9px currentColor;}
 .sct-lane.lead .sct-lane-head{color:color-mix(in srgb,var(--up,#22d97a) 78%,var(--text));}
 .sct-lane.lag  .sct-lane-head{color:color-mix(in srgb,var(--down,#ef4444) 78%,var(--text));}
-.sct-lane.lead .sct-lane-dot{color:var(--up,#22d97a);background:currentColor;}
-.sct-lane.lag  .sct-lane-dot{color:var(--down,#ef4444);background:currentColor;}
+.sct-lane.lead .sct-lane-dot{color:var(--ink-up, var(--up,#22d97a));background:currentColor;}
+.sct-lane.lag  .sct-lane-dot{color:var(--ink-down, var(--down,#ef4444));background:currentColor;}
 .sct-lane-n{margin-left:auto;font:600 10.5px/1 var(--font-ui,inherit);letter-spacing:.01em;text-transform:none;color:var(--ink-3,rgba(255,255,255,.42));}
 .sct-rung{display:grid;grid-template-columns:32px 1fr 132px 54px;align-items:center;gap:12px;
   padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.03);
@@ -5150,7 +5223,7 @@ body.page-macro .rsx-dlg-footer{
 .nbx-src{font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
 .nbx-dot{opacity:.5;}
 .nbx-date{font-variant-numeric:tabular-nums;white-space:nowrap;}
-.nbx-arrow{margin-left:auto;font-weight:700;color:var(--link,#22d97a);white-space:nowrap;}
+.nbx-arrow{margin-left:auto;font-weight:700;color:var(--ink-link, var(--link,#22d97a));white-space:nowrap;}
 .nbx-sum{margin-top:6px;font-size:11.5px;line-height:1.5;color:var(--ink-3,rgba(255,255,255,.5));
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 @media(prefers-reduced-motion:no-preference){
@@ -5209,7 +5282,7 @@ body.page-macro .rsx-dlg-footer{
 [data-theme="light"] .mx5-dlg-cal-card.rr-active{background:color-mix(in srgb,var(--info,#60a5fa) 9%,rgba(0,0,0,.03));}
 /* covered-date indicator — small radar dot chip (replaces the old "Release Radar ▸" text link) */
 .mx5-dlg-cal-radar{display:inline-flex;align-items:center;gap:5px;margin-top:8px;
-  font-size:10px;font-weight:700;letter-spacing:.02em;color:var(--info,#60a5fa);}
+  font-size:10px;font-weight:700;letter-spacing:.02em;color:var(--ink-info, var(--info,#60a5fa));}
 .mx5-dlg-cal-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;
   background:var(--info,#60a5fa);position:relative;}
 .mx5-dlg-cal-dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;
@@ -5243,8 +5316,8 @@ body.page-macro .rsx-dlg-footer{
   display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;
   font-size:11px;font-weight:700;
 }
-.mx5-dlg-cal-badge.high{color:var(--down,#ef4444);background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);}
-.mx5-dlg-cal-badge.med{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.18);}
+.mx5-dlg-cal-badge.high{color:var(--ink-down, var(--down,#ef4444));background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);}
+.mx5-dlg-cal-badge.med{color:var(--ink-warn, var(--warn,#f59e0b));background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.18);}
 .mx5-dlg-cal-badge.low{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
 [data-theme="light"] .mx5-dlg-cal-badge.low{color:rgba(0,0,0,.58);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
 
@@ -5262,7 +5335,7 @@ body.page-macro .rsx-dlg-footer{
 [data-theme="light"] .mx5-dlg-fed-item+.mx5-dlg-fed-item{border-top-color:rgba(0,0,0,.05);}
 .mx5-dlg-fed-desc{font-size:12px;flex:1;padding-right:12px;color:var(--ink-2,rgba(255,255,255,.6));}
 [data-theme="light"] .mx5-dlg-fed-desc{color:rgba(0,0,0,.55);}
-.mx5-dlg-fed-val{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--link,#22d97a);white-space:nowrap;}
+.mx5-dlg-fed-val{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-link, var(--link,#22d97a));white-space:nowrap;}
 .mx5-dlg-fed-chg{font-size:11px;font-variant-numeric:tabular-nums;margin-left:6px;}
 .mx5-dlg-fed-chg.pos{color:var(--ink-up,var(--up,#22d97a));}.mx5-dlg-fed-chg.neg{color:var(--ink-down,var(--down,#ef4444));}
 .mx5-dlg-fed-src{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));text-align:right;padding-top:6px;}
@@ -5483,18 +5556,18 @@ body.page-macro.mx4-grid .mx5-mkt-price{
   font-variant-numeric:tabular-nums;
 }
 body.page-macro.mx4-grid .mx5-mkt-delta{font-size:13px;font-weight:600;}
-body.page-macro.mx4-grid .mx5-mkt-delta.up{color:var(--up,#22d97a);}
-body.page-macro.mx4-grid .mx5-mkt-delta.dn{color:var(--down,#ef4444);}
+body.page-macro.mx4-grid .mx5-mkt-delta.up{color:var(--ink-up, var(--up,#22d97a));}
+body.page-macro.mx4-grid .mx5-mkt-delta.dn{color:var(--ink-down, var(--down,#ef4444));}
 /* live.js paintChg speaks up/down (not dn) — alias it into the same token path so a
    live-patched delta paints identically to a baked one (and flips in zh with it) */
-body.page-macro.mx4-grid .mx5-mkt-delta.down{color:var(--down,#ef4444);}
+body.page-macro.mx4-grid .mx5-mkt-delta.down{color:var(--ink-down, var(--down,#ef4444));}
 body.page-macro.mx4-grid .mx5-spark{margin-top:10px;}
 body.page-macro.mx4-grid .mx5-spark svg{width:100%;height:32px;display:block;}
 
 /* B3: intl risk chips in the hero button row — red (alert) variant + non-interactive chip */
 body.page-macro.mx4-grid a.mx5-sc-btn{text-decoration:none;}
 body.page-macro.mx4-grid .mx5-sc-btn-alert{
-  color:var(--down,#ef4444);
+  color:var(--ink-down, var(--down,#ef4444));
   border-color:color-mix(in srgb,var(--down,#ef4444) 30%,transparent);
   background:color-mix(in srgb,var(--down,#ef4444) 9%,transparent);
 }
@@ -5550,7 +5623,7 @@ body.page-macro .mx5-intl-score{
   font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
   color:var(--ink-3,rgba(255,255,255,.36));margin-left:auto;flex-shrink:0;
 }
-body.page-macro .mx5-intl-score.intl-score-alert{color:var(--down,#ef4444);}
+body.page-macro .mx5-intl-score.intl-score-alert{color:var(--ink-down, var(--down,#ef4444));}
 /* Spread speed row */
 body.page-macro .mx5-pop-intl-spread{
   font-size:12px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.62));
@@ -5570,8 +5643,8 @@ body.page-macro .mx5-pop-intl-spill-hd{
   color:var(--ink-2,rgba(255,255,255,.62));margin-bottom:7px;
 }
 body.page-macro .mx5-pop-intl-spill-word{font-size:11.5px;font-weight:500;}
-body.page-macro .mx5-pop-intl-spill-word.spill-alert{color:var(--down,#ef4444);}
-body.page-macro .mx5-pop-intl-spill-word.spill-warn{color:var(--warn,#f59e0b);}
+body.page-macro .mx5-pop-intl-spill-word.spill-alert{color:var(--ink-down, var(--down,#ef4444));}
+body.page-macro .mx5-pop-intl-spill-word.spill-warn{color:var(--ink-warn, var(--warn,#f59e0b));}
 body.page-macro .mx5-pop-intl-spill-word.spill-muted{color:var(--ink-3,rgba(255,255,255,.36));}
 body.page-macro .mx5-pop-intl-legs{
   display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px;
@@ -5644,10 +5717,10 @@ body.page-macro.mx4-grid .mx5-action-icon{
 }
 body.page-macro.mx4-grid .mx5-action-icon svg{width:14px;height:14px;}
 /* state-tinted glass icon containers (border tints to the state colour) */
-body.page-macro.mx4-grid .mx5-ai-green{background:rgba(34,217,122,.10);border-color:rgba(34,217,122,.24);color:var(--up,#22d97a);}
+body.page-macro.mx4-grid .mx5-ai-green{background:rgba(34,217,122,.10);border-color:rgba(34,217,122,.24);color:var(--ink-up, var(--up,#22d97a));}
 /* zh 红涨绿跌: the icon TEXT flips via --up; the glass tint is literal — mirror it */
 html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ai-green{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.24);}
-body.page-macro.mx4-grid .mx5-ai-yellow{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.24);color:var(--warn,#f59e0b);}
+body.page-macro.mx4-grid .mx5-ai-yellow{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.24);color:var(--ink-warn, var(--warn,#f59e0b));}
 body.page-macro.mx4-grid .mx5-ai-blue{background:rgba(129,140,248,.10);border-color:rgba(129,140,248,.26);color:#818cf8;}
 body.page-macro.mx4-grid .mx5-ai-gray{background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.5));}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-ai-gray{background:rgba(0,0,0,.04);}
@@ -5669,7 +5742,7 @@ body.page-macro.mx4-grid .mx5-action-sub{
    handlers on the link. */
 body.page-macro.mx4-grid .mx5-wtd-jump{
   margin-left:6px;font-size:11.5px;font-weight:650;white-space:nowrap;
-  color:var(--link);text-decoration:none;
+  color:var(--ink-link, var(--link));text-decoration:none;
 }
 body.page-macro.mx4-grid .mx5-wtd-jump:hover{text-decoration:underline;}
 /* "Not everything agrees" — the one clause that keeps a fired gate from burying its
@@ -5732,7 +5805,7 @@ body.page-macro.mx4-grid .mx5-tl-badge{
   font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;
   letter-spacing:.05em;text-align:center;margin-top:1px;
 }
-body.page-macro.mx4-grid .mx5-tl-badge.high{color:#ef4444;background:rgba(239,68,68,.12);}
+body.page-macro.mx4-grid .mx5-tl-badge.high{color:var(--ink-act, var(--act));background:color-mix(in srgb, var(--act) 12%, transparent);}
 body.page-macro.mx4-grid .mx5-tl-badge.med{color:var(--mx5-warn-ink);background:rgba(245,158,11,.12);}
 body.page-macro.mx4-grid .mx5-tl-badge.low{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.05);}
 /* staggered node entrance (reduced-motion snaps to final) */
@@ -5845,7 +5918,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .plx-null{font-size:12px;color:var(--ink-3,rgba(255,255,255,.36));padding:10px 0;font-style:italic;}
 /* Outer dots annotation chips */
 .plx-dot-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
-.plx-dot-chip{font-size:11px;padding:2px 8px;border-radius:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);color:var(--warn,#f59e0b);}
+.plx-dot-chip{font-size:11px;padding:2px 8px;border-radius:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);color:var(--ink-warn, var(--warn,#f59e0b));}
 [data-theme="light"] .plx-dot-chip{background:rgba(245,158,11,.06);}
 /* ── AI BRIEF DIALOG — ABX v2: rules live in the shared _aibrief_css.j2 include
    (.aib2-* namespace). Here we only pin the per-surface accent: macro's brief
@@ -5865,8 +5938,8 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .fbm-beam-wrap{position:relative;margin:4px 0 20px;padding:8px 4px 0;}
 .fbm-beam-heads{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
 .fbm-beam-head{font:700 11px/1 var(--font-ui,inherit);letter-spacing:.04em;display:flex;align-items:baseline;gap:5px;}
-.fbm-beam-head.hawk{color:var(--down,#ef4444);}
-.fbm-beam-head.ease{color:var(--up,#22d97a);}
+.fbm-beam-head.hawk{color:var(--ink-down, var(--down,#ef4444));}
+.fbm-beam-head.ease{color:var(--ink-up, var(--up,#22d97a));}
 .fbm-beam-head .fbm-wt{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;}
 /* The physical scale: fulcrum + rotating beam + two chip pans */
 .fbm-beam-stage{position:relative;height:160px;}
@@ -5901,16 +5974,16 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .fbm-leg.hawk{color:color-mix(in srgb,var(--down,#ef4444) 82%,var(--ink-2,#fff));border-color:color-mix(in srgb,var(--down,#ef4444) 20%,transparent);}
 .fbm-leg.ease{color:color-mix(in srgb,var(--up,#22d97a) 82%,var(--ink-2,#fff));border-color:color-mix(in srgb,var(--up,#22d97a) 20%,transparent);}
 .fbm-leg.on{font-weight:700;}
-.fbm-leg.hawk.on{background:color-mix(in srgb,var(--down,#ef4444) 14%,transparent);border-color:color-mix(in srgb,var(--down,#ef4444) 40%,transparent);color:var(--down,#ef4444);}
-.fbm-leg.ease.on{background:color-mix(in srgb,var(--up,#22d97a) 14%,transparent);border-color:color-mix(in srgb,var(--up,#22d97a) 40%,transparent);color:var(--up,#22d97a);}
+.fbm-leg.hawk.on{background:color-mix(in srgb,var(--down,#ef4444) 14%,transparent);border-color:color-mix(in srgb,var(--down,#ef4444) 40%,transparent);color:var(--ink-down, var(--down,#ef4444));}
+.fbm-leg.ease.on{background:color-mix(in srgb,var(--up,#22d97a) 14%,transparent);border-color:color-mix(in srgb,var(--up,#22d97a) 40%,transparent);color:var(--ink-up, var(--up,#22d97a));}
 .fbm-leg.on .fbm-dot{opacity:1;}
 .fbm-leg:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--text,#fff) 30%,transparent);}
 /* verdict caption under the beam */
 .fbm-beam-verdict{text-align:center;font:600 12px/1.4 var(--font-ui,inherit);color:var(--ink-2,rgba(255,255,255,.7));margin-top:6px;}
 .fbm-beam-verdict .fbm-lean{font-weight:800;}
-.fbm-beam-verdict .fbm-lean.ease{color:var(--up,#22d97a);}
-.fbm-beam-verdict .fbm-lean.hawk{color:var(--down,#ef4444);}
-.fbm-beam-verdict .fbm-lean.even{color:var(--warn,#f59e0b);}
+.fbm-beam-verdict .fbm-lean.ease{color:var(--ink-up, var(--up,#22d97a));}
+.fbm-beam-verdict .fbm-lean.hawk{color:var(--ink-down, var(--down,#ef4444));}
+.fbm-beam-verdict .fbm-lean.even{color:var(--ink-warn, var(--warn,#f59e0b));}
 
 /* — Rate-path flagship chart (ported from dlg-policy plx idiom, bigger) — */
 .fbm-chart-wrap{margin:2px 0 6px;}
@@ -5919,8 +5992,8 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .fbm-chart-take{font-size:12.5px;font-weight:600;color:var(--ink-1,rgba(255,255,255,.9));line-height:1.5;margin-top:6px;}
 .fbm-gap-chip{display:inline-flex;align-items:center;gap:4px;font:600 11px/1 var(--font-ui,inherit);
   padding:3px 9px;border-radius:999px;margin-left:2px;cursor:help;
-  background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.26);color:var(--warn,#f59e0b);}
-.fbm-diamond-key{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--warn,#f59e0b);margin-left:8px;}
+  background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.26);color:var(--ink-warn, var(--warn,#f59e0b));}
+.fbm-diamond-key{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-warn, var(--warn,#f59e0b));margin-left:8px;}
 .fbm-diamond-key svg{flex:0 0 auto;}
 
 /* — Glance rows (inflation / risk) — state word + one plain line + ? tip — */
@@ -5944,7 +6017,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   color:var(--ink-1,rgba(255,255,255,.88));}
 [data-theme="light"] .fbm-chip{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.1);}
 .fbm-chip .fbm-chip-k{color:var(--ink-3,rgba(255,255,255,.45));font-weight:500;}
-.fbm-chip.armed{border-color:color-mix(in srgb,var(--warn,#f59e0b) 42%,transparent);background:color-mix(in srgb,var(--warn,#f59e0b) 10%,transparent);color:var(--warn,#f59e0b);}
+.fbm-chip.armed{border-color:color-mix(in srgb,var(--warn,#f59e0b) 42%,transparent);background:color-mix(in srgb,var(--warn,#f59e0b) 10%,transparent);color:var(--ink-warn, var(--warn,#f59e0b));}
 .fbm-chip.warn{border-color:color-mix(in srgb,var(--down,#ef4444) 38%,transparent);background:color-mix(in srgb,var(--down,#ef4444) 9%,transparent);}
 
 /* — Unified market-implied benchmark strip (shared: dlg-fed + dlg-events) — */
@@ -6135,9 +6208,9 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   color:color-mix(in srgb,var(--lens-mut,#8b93a1) 80%,transparent);margin-right:1px;}
 .rlx-chip{display:inline-flex;align-items:center;font:700 10.5px/1 var(--font-ui,Inter,sans-serif);
   letter-spacing:.02em;padding:3px 8px;border-radius:6px;white-space:nowrap;}
-.rlx-chip.up{color:var(--ok,var(--up,#3da564));background:color-mix(in srgb,var(--ok,var(--up,#3da564)) 14%,transparent);
+.rlx-chip.up{color:var(--ink-ok, var(--ok,var(--up,#3da564)));background:color-mix(in srgb,var(--ok,var(--up,#3da564)) 14%,transparent);
   border:1px solid color-mix(in srgb,var(--ok,var(--up,#3da564)) 30%,transparent);}
-.rlx-chip.dn{color:var(--down,#ef4444);background:color-mix(in srgb,var(--down,#ef4444) 13%,transparent);
+.rlx-chip.dn{color:var(--ink-down, var(--down,#ef4444));background:color-mix(in srgb,var(--down,#ef4444) 13%,transparent);
   border:1px solid color-mix(in srgb,var(--down,#ef4444) 30%,transparent);}
 @media(prefers-reduced-motion:no-preference){
   .lens-pop.open .rlx-bar-fill,.lens-pop.open .rlx-prog-fill{transform:scaleX(0);transform-origin:0 50%;
@@ -6159,12 +6232,12 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .rkc-rot-chip.down{border-color:color-mix(in srgb,var(--down,#ef4444) 28%,transparent);background:color-mix(in srgb,var(--down,#ef4444) 5%,transparent);}
 .rkc-rot-name{font:650 10.5px/1.25 var(--font-ui,inherit);min-width:0;}
 .rkc-rot-meta{flex:0 0 auto;font:700 9.5px/1 var(--font-mono,ui-monospace,monospace);color:var(--ink-3,rgba(255,255,255,.46));}
-.rkc-rot-chip.up .rkc-rot-meta{color:var(--up,#22c55e);}.rkc-rot-chip.down .rkc-rot-meta{color:var(--down,#ef4444);}
+.rkc-rot-chip.up .rkc-rot-meta{color:var(--ink-up, var(--up,#22c55e));}.rkc-rot-chip.down .rkc-rot-meta{color:var(--ink-down, var(--down,#ef4444));}
 .rkc-cohort-kicker{margin-top:14px;padding-top:11px;border-top:1px solid var(--line,rgba(255,255,255,.08));}
 .rkc-ldr-head{display:flex;align-items:center;gap:9px;margin:2px 0 10px;}
 .rkc-ldr-state{flex:1;min-width:0;font:600 13px/1.4 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.9));}
 .rkc-ldr-count{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:6px;font:800 14px/1 var(--font-ui,inherit);
-  font-variant-numeric:tabular-nums;padding:5px 10px;border-radius:999px;color:var(--down,#ef4444);
+  font-variant-numeric:tabular-nums;padding:5px 10px;border-radius:999px;color:var(--ink-down, var(--down,#ef4444));
   background:color-mix(in srgb,var(--down,#ef4444) 12%,transparent);
   border:1px solid color-mix(in srgb,var(--down,#ef4444) 30%,transparent);}
 .rkc-ldr-count small{font-size:10px;font-weight:600;color:color-mix(in srgb,var(--down,#ef4444) 78%,var(--ink-2));letter-spacing:.02em;}
@@ -6188,7 +6261,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 /* When the tick sits hard against the left edge of the track a centred label hangs
    over the ticker gutter — anchor it to the tick instead. */
 .rkc-ldr-idx.at-start .rkc-ldr-idx-lbl{left:0;transform:none;}
-.rkc-ldr-pct{font:800 11px/1 var(--font-ui,inherit);font-variant-numeric:tabular-nums;text-align:right;color:var(--down,#ef4444);}
+.rkc-ldr-pct{font:800 11px/1 var(--font-ui,inherit);font-variant-numeric:tabular-nums;text-align:right;color:var(--ink-down, var(--down,#ef4444));}
 .rkc-ldr-sub{font-size:11px;color:var(--ink-3,rgba(255,255,255,.42));margin-top:9px;line-height:1.5;}
 .rkc-ldr-sub b{color:var(--ink-2,rgba(255,255,255,.62));font-weight:700;font-variant-numeric:tabular-nums;}
 @media(prefers-reduced-motion:no-preference){
@@ -6237,7 +6310,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .rkc-ov-age{margin-top:-4px;font:600 9px/1.2 var(--font-ui,inherit);text-align:center;
   color:var(--ink-3,rgba(255,255,255,.34));}
 [data-theme="light"] .rkc-ov-age{color:rgba(0,0,0,.58);}
-.row-pop-why li.row-pop-stale{color:var(--warn,#f59e0b);}
+.row-pop-why li.row-pop-stale{color:var(--ink-warn, var(--warn,#f59e0b));}
 @media(prefers-reduced-motion:no-preference){
   #dlg-risk .rkc-ov-ring{--rkc-anim:0;
     background:conic-gradient(var(--rkc-c,var(--isle-risk,#e05c5c)) calc(var(--rkc-anim,0) * 1%),
@@ -6253,9 +6326,9 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .rkc-tx-verdict{display:inline-flex;align-items:center;gap:5px;font:700 11px/1 var(--font-ui,inherit);
   letter-spacing:.03em;padding:3px 9px;border-radius:999px;}
 .rkc-tx-verdict::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
-.rkc-tx-verdict.v-alert{color:var(--down,#ef4444);background:color-mix(in srgb,var(--down,#ef4444) 12%,transparent);border:1px solid color-mix(in srgb,var(--down,#ef4444) 30%,transparent);}
-.rkc-tx-verdict.v-warn{color:var(--warn,#f59e0b);background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 30%,transparent);}
-.rkc-tx-verdict.v-ok{color:var(--up,#22c55e);background:color-mix(in srgb,var(--up,#22c55e) 12%,transparent);border:1px solid color-mix(in srgb,var(--up,#22c55e) 30%,transparent);}
+.rkc-tx-verdict.v-alert{color:var(--ink-down, var(--down,#ef4444));background:color-mix(in srgb,var(--down,#ef4444) 12%,transparent);border:1px solid color-mix(in srgb,var(--down,#ef4444) 30%,transparent);}
+.rkc-tx-verdict.v-warn{color:var(--ink-warn, var(--warn,#f59e0b));background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 30%,transparent);}
+.rkc-tx-verdict.v-ok{color:var(--ink-up, var(--up,#22c55e));background:color-mix(in srgb,var(--up,#22c55e) 12%,transparent);border:1px solid color-mix(in srgb,var(--up,#22c55e) 30%,transparent);}
 
 /* — 5. Risk ladder: leading stroke glyph + gradient severity bar (restyle) — */
 body.page-macro #dlg-risk .scare-ladder{gap:7px;}
@@ -6472,7 +6545,7 @@ body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
 [data-theme="light"] .sg-split-val{color:rgba(0,0,0,.82);}
 .sg-split-delta{display:inline-flex;align-items:center;gap:5px;font:700 10.5px/1 var(--font-ui,inherit);letter-spacing:.02em;
   padding:4px 10px;border-radius:999px;margin-top:2px;
-  color:var(--warn,#f59e0b);background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);
+  color:var(--ink-warn, var(--warn,#f59e0b));background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);
   border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 30%,transparent);}
 .sg-split-delta::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
 @media(prefers-reduced-motion:no-preference){
@@ -6806,9 +6879,18 @@ body.page-macro .hm-ov .hm-tm-wrap{background:transparent;border:none;border-rad
 
 /* ── 2.5 mobile-only full heatmap link (hidden on wider screens) ── */
 body.page-macro .mx5-dlg-hm-mobile-link{display:none;margin-top:10px;text-align:center;}
-body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97a);font-weight:600;}
+body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--ink-link, var(--link,#22d97a));font-weight:600;}
 @media(max-width:700px){body.page-macro .mx5-dlg-hm-mobile-link{display:block;}}
 
+
+/* light: bloom off (DESIGN_DOCTRINE §5.8) — a coloured glow behind text is a jewel on graphite
+     and a stain on white; dark keeps every one of these). */
+html[data-theme="light"] :is(
+  body.page-macro.mx4-grid .mx5-big-score,
+  body.page-macro.mx4-grid.ms-green-page .mx5-big-score, body.page-macro.mx4-grid .mx5-score-green .mx5-big-score,
+  body.page-macro.mx4-grid.ms-yellow-page .mx5-big-score, body.page-macro.mx4-grid .mx5-score-yellow .mx5-big-score,
+  body.page-macro.mx4-grid.ms-red-page .mx5-big-score, body.page-macro.mx4-grid .mx5-score-red .mx5-big-score
+) { text-shadow:none; }
 </style>
 {% endif %}
     {% set _ol = {
@@ -7303,6 +7385,28 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {# Current quad hard label and gaining quad #}
         {% set _qm_hard = latest.get('quad') %}
         {% set _qm_gain = _qvi_tm.get('gaining') %}
+        {# ── The three objects on this map answer three DIFFERENT questions ───────
+           dot   = today's raw growth x inflation axis scores (fastest, unsmoothed)
+           tile  = latest.quad, the STICKY hysteresis label (engine/regime.py — a
+                   flip needs N consecutive confirming days or a shock override)
+           odds  = quad_vector.p, the causal HMM posterior
+           They are allowed to disagree, and engine/quad_vector.py's own contract says
+           so: "hard_label ... need NOT equal argmax(p); the divergence is itself a
+           WEAKENING tell". The map was nonetheless BUILT on the assumption they can't
+           (two now-corrected comments asserted the dot only ever lands in the active
+           tile), so the divergence had no copy, no legend and no visual language and
+           rendered as a defect — a dot parked in the 6% quadrant while the 93% one was
+           lit (operator report 2026-08-11, live g~-0.14 / i~+0.25 -> raw Q3, label Q2).
+           _qm_raw mirrors engine.regime.raw_quad EXACTLY (g>=0 -> Q1 if i<0 else Q2;
+           g<0 -> Q4 if i<0 else Q3) so the sentence can never contradict the marker.
+           Kept as one expression: a {% set %} inside {% if %} would not escape the
+           block scope. #}
+        {% set _qm_raw = ({'11':'Q2','10':'Q1','01':'Q3','00':'Q4'}).get(
+             ('1' if (latest.get('growth_score') | float) >= 0 else '0')
+             ~ ('1' if (latest.get('inflation_score') | float) >= 0 else '0'))
+           if (latest.get('growth_score') is number and latest.get('inflation_score') is number)
+           else none %}
+        {% set _qm_split = (_qm_raw is not none and _qm_hard and _qm_raw != _qm_hard) %}
         {# Glance line — bilingual: "drifting toward X" or stable #}
         {% if _qm_hard %}
         {% set _qm_hard_names = _qm_quad.get(_qm_hard, [_qm_hard, _qm_hard]) %}
@@ -7325,6 +7429,30 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-en"><b>{{ _qm_hard_en }}</b> now, with today’s odds drifting toward <b>{{ _qm_gain_names[0] }}</b>.</span>
           <span class="l-zh">当前为<b>{{ _qm_hard_zh }}</b>，今日概率正向<b>{{ _qm_gain_names[1] }}</b>漂移。</span>
           {% endif %}
+          {% endif %}
+          {# Names the split the moment it exists, in the same vocabulary the legend
+             below defines ("today's reading"). Stance, not alarm: the reading has to
+             persist before the label moves — which is exactly what the hysteresis
+             machine does — so the honest Tier-1 line is a hold, not a warning. #}
+          {% if _qm_split %}
+          {% set _qm_raw_names = _qm_quad.get(_qm_raw, [_qm_raw, _qm_raw]) %}
+          <span class="mxqm-diverge">
+            <span class="l-en">Today’s reading sits in <b>{{ _qm_raw_names[0] }}</b> — it has to hold before the regime changes.</span>
+            <span class="l-zh">今日读数落在<b>{{ _qm_raw_names[1] }}</b> — 需持续站稳才会切换周期。</span>
+          </span>
+          {% endif %}
+          {# Null axes: _dot_x/_dot_y fall back to 75/75 below, i.e. DEAD CENTRE — which
+             is a real reading ("growth and inflation both exactly neutral"), not an
+             absence. Unlabelled that was merely wrong; with the legend naming the dot
+             "today's reading" it would be a claim we cannot support, so the marker is
+             suppressed entirely (see the _qm_raw guards on the circles + arrow) and the
+             absence is stated in plain words. Same rule engine/regime.apply_hysteresis
+             already follows: an axis dark means NO claim, not a carried-forward one. #}
+          {% if _qm_raw is none %}
+          <span class="mxqm-diverge">
+            <span class="l-en">Today’s reading isn’t in yet — the map shows the confirmed regime only.</span>
+            <span class="l-zh">今日读数尚未到位 — 图中仅显示已确认周期。</span>
+          </span>
           {% endif %}
         </div>
         {# 2×2 quad map SVG — 150×150, growth=X(right=strong), inflation=Y(up=high) #}
@@ -7360,7 +7488,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
            centroid is ~20 units, and the geometry below trims most of that away, leaving
            a stub shorter than the arrowhead sitting on top of the dot. A firming read is
            the dot and its pulse; only a move gets an arrow. #}
-        {% if _qm_gain and _qm_gain != _qm_hard and not _qvi_deg %}
+        {# _qm_raw is not none == both axes readable == the dot is a real point. With an
+           axis dark there is no tail for the arrow to leave from, so it is suppressed
+           with the marker rather than drawn out of the box's centre. #}
+        {% if _qm_gain and _qm_gain != _qm_hard and not _qvi_deg and _qm_raw is not none %}
         {% set _qm_centers = {'Q1':[112,112],'Q2':[112,38],'Q3':[38,38],'Q4':[38,112]} %}
         {% set _qm_tc = _qm_centers.get(_qm_gain, [75,75]) %}
         {% set _arr_tx = _qm_tc[0] %}
@@ -7426,10 +7557,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {# Q1 Goldilocks bottom-right #}
               <rect class="mxqm-q1-fill{% if _qm_hard == 'Q1' %} active{% endif %}" x="80" y="80" width="65" height="65" rx="8"/>
               {# ── MARKER LAYER FIRST, TEXT SECOND — order is load-bearing ──────────
-                 SVG has no z-index; paint order IS document order. The position dot
-                 always lands in the ACTIVE quad, i.e. the same tile that carries the
-                 largest odds numeral, so the two collide by construction rather than
-                 by accident — it shipped as an amber smudge sitting across the "96%".
+                 SVG has no z-index; paint order IS document order. The dot collides
+                 with an odds numeral often: whenever the reading is near a tile's
+                 centre it lands on that tile's number. (This comment used to claim the
+                 dot ALWAYS lands in the active quad — it does not; the dot is today's
+                 raw reading and the active tile is the sticky label. See the _qm_raw
+                 note above. The paint-order fix below is unaffected — it has to hold
+                 for ALL four numerals, which is exactly what it does.)
                  Drawing the marker before the numerals, and giving the numerals a
                  halo in their own tile's colour (.mxqm-odds below), keeps the number
                  readable wherever growth/inflation put the dot. Moving these three
@@ -7438,35 +7572,49 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {% if _show_arrow %}
               <line class="mxqm-arrow" x1="{{ _arr_sx }}" y1="{{ _arr_sy }}" x2="{{ _arr_ex }}" y2="{{ _arr_ey }}"/>
               {% endif %}
-              {# Current position — soft pulse ring behind a bright dot #}
+              {# Today's reading — soft pulse ring behind an ink dot. Drawn only when
+                 both axes are readable; a centred dot on a dark axis is a claim. #}
+              {% if _qm_raw is not none %}
               <circle class="mxqm-pulse" cx="{{ _dot_x }}" cy="{{ _dot_y }}" r="5"/>
               <circle class="mxqm-dot" cx="{{ _dot_x }}" cy="{{ _dot_y }}" r="4.5"/>
+              {% endif %}
               {# Quad labels (top of each tile) + odds numeral (centre) — bilingual via
                  l-en/l-zh (the toggle works on SVG <text>; NO t() inside <text>).
-                 The per-quad mxqm-odds-qN class carries the halo colour: the halo has
+                 The per-quad mxqm-halo-qN class carries the halo colour: the halo has
                  to match the tile it sits on, and each tile is a different hue. #}
               {# Q3 Stagflation #}
-              <text class="mxqm-quad-label l-en" x="37.5" y="24" text-anchor="middle">STAGFLATION</text>
-              <text class="mxqm-quad-label l-zh" x="37.5" y="24" text-anchor="middle">滞胀</text>
-              {% if _p_q3 is not none %}<text class="mxqm-odds mxqm-odds-q3{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="52" text-anchor="middle">{{ _p_q3 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en mxqm-halo-q3{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="24" text-anchor="middle">STAGFLATION</text>
+              <text class="mxqm-quad-label l-zh mxqm-halo-q3{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="24" text-anchor="middle">滞胀</text>
+              {% if _p_q3 is not none %}<text class="mxqm-odds mxqm-halo-q3{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="52" text-anchor="middle">{{ _p_q3 }}%</text>{% endif %}
               {# Q2 Reflation #}
-              <text class="mxqm-quad-label l-en" x="112.5" y="24" text-anchor="middle">REFLATION</text>
-              <text class="mxqm-quad-label l-zh" x="112.5" y="24" text-anchor="middle">再通胀</text>
-              {% if _p_q2 is not none %}<text class="mxqm-odds mxqm-odds-q2{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="52" text-anchor="middle">{{ _p_q2 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en mxqm-halo-q2{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="24" text-anchor="middle">REFLATION</text>
+              <text class="mxqm-quad-label l-zh mxqm-halo-q2{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="24" text-anchor="middle">再通胀</text>
+              {% if _p_q2 is not none %}<text class="mxqm-odds mxqm-halo-q2{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="52" text-anchor="middle">{{ _p_q2 }}%</text>{% endif %}
               {# Q4 Growth-scare #}
-              <text class="mxqm-quad-label l-en" x="37.5" y="99" text-anchor="middle">GROWTH-SCARE</text>
-              <text class="mxqm-quad-label l-zh" x="37.5" y="99" text-anchor="middle">增长恐慌</text>
-              {% if _p_q4 is not none %}<text class="mxqm-odds mxqm-odds-q4{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="127" text-anchor="middle">{{ _p_q4 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en mxqm-halo-q4{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="99" text-anchor="middle">GROWTH-SCARE</text>
+              <text class="mxqm-quad-label l-zh mxqm-halo-q4{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="99" text-anchor="middle">增长恐慌</text>
+              {% if _p_q4 is not none %}<text class="mxqm-odds mxqm-halo-q4{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="127" text-anchor="middle">{{ _p_q4 }}%</text>{% endif %}
               {# Q1 Goldilocks #}
-              <text class="mxqm-quad-label l-en" x="112.5" y="99" text-anchor="middle">GOLDILOCKS</text>
-              <text class="mxqm-quad-label l-zh" x="112.5" y="99" text-anchor="middle">理想增长</text>
-              {% if _p_q1 is not none %}<text class="mxqm-odds mxqm-odds-q1{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="127" text-anchor="middle">{{ _p_q1 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en mxqm-halo-q1{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="99" text-anchor="middle">GOLDILOCKS</text>
+              <text class="mxqm-quad-label l-zh mxqm-halo-q1{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="99" text-anchor="middle">理想增长</text>
+              {% if _p_q1 is not none %}<text class="mxqm-odds mxqm-halo-q1{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="127" text-anchor="middle">{{ _p_q1 }}%</text>{% endif %}
               {# Axis labels — bilingual; kept subtle at the edges #}
               <text class="mxqm-axis-label l-en" x="75" y="160" text-anchor="middle">growth →</text>
               <text class="mxqm-axis-label l-zh" x="75" y="160" text-anchor="middle">增长 →</text>
               <text class="mxqm-axis-label l-en" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">infl ↑</text>
               <text class="mxqm-axis-label l-zh" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">通胀 ↑</text>
             </svg>
+          </div>
+          {# Legend — names the map's two object types. Without it the ink dot is just
+             an unexplained mark competing with the lit tile; with it the map reads as
+             one measurement plotted against one label. Bilingual via l-en/l-zh. #}
+          <div class="mxqm-legend">
+            {% if _qm_raw is not none %}
+            <span class="mxqm-lg-item"><span class="mxqm-lg-dot"></span>
+              <span class="l-en">today’s reading</span><span class="l-zh">今日读数</span></span>
+            {% endif %}
+            <span class="mxqm-lg-item"><span class="mxqm-lg-tile mxqm-lg-{{ _qm_hard | lower }}"></span>
+              <span class="l-en">confirmed regime</span><span class="l-zh">已确认周期</span></span>
           </div>
         </div>
         {% endif %}{# /_qm_hard #}
@@ -8314,29 +8462,29 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   .rr-exp{display:inline-flex;align-items:center;padding:2px 8px;
     border-radius:12px;font-size:10.5px;font-weight:600}
   .rr-exp-above{background:color-mix(in srgb,var(--down) 15%,transparent);
-    color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
+    color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
   .rr-exp-below{background:color-mix(in srgb,var(--up) 15%,transparent);
-    color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+    color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
   .rr-exp-aligned{background:color-mix(in srgb,var(--muted) 20%,transparent);
     color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 30%,transparent)}
   /* Trend skew chip */
   .rr-skew{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;
     border-radius:12px;font-size:10.5px;font-weight:600}
   .rr-skew-hot{background:color-mix(in srgb,var(--down) 18%,transparent);
-    color:var(--down);border:1px solid color-mix(in srgb,var(--down) 35%,transparent)}
+    color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 35%,transparent)}
   .rr-skew-cool{background:color-mix(in srgb,var(--up) 18%,transparent);
-    color:var(--up);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
+    color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
   .rr-skew-inline{background:color-mix(in srgb,var(--warn) 18%,transparent);
-    color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+    color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
   /* Coverage chip */
   .rr-cov{display:inline-flex;align-items:center;padding:2px 7px;
     border-radius:4px;font-size:9.5px;font-weight:600}
   .rr-cov-fresh{background:color-mix(in srgb,var(--up) 15%,transparent);
-    color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+    color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
   .rr-cov-partial{background:color-mix(in srgb,var(--warn) 15%,transparent);
-    color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+    color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
   .rr-cov-stale{background:color-mix(in srgb,var(--down) 15%,transparent);
-    color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
+    color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
   .rr-cov-prior{background:color-mix(in srgb,var(--muted) 15%,transparent);
     color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 30%,transparent)}
   /* MRI-R39a compact two-number row */
@@ -8528,14 +8676,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   .rr-integrity-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;
     border-radius:4px;font-size:10px;font-weight:600}
   .rr-integrity-normal{background:color-mix(in srgb,var(--up) 12%,transparent);
-    border:1px solid color-mix(in srgb,var(--up) 25%,transparent);color:var(--up)}
+    border:1px solid color-mix(in srgb,var(--up) 25%,transparent);color:var(--ink-up, var(--up))}
   .rr-integrity-degraded{background:color-mix(in srgb,var(--warn) 18%,transparent);
-    border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);color:var(--warn)}
+    border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);color:var(--ink-warn, var(--warn))}
   .rr-integrity-disrupted{background:color-mix(in srgb,var(--down) 18%,transparent);
-    border:1px solid color-mix(in srgb,var(--down) 40%,transparent);color:var(--down)}
+    border:1px solid color-mix(in srgb,var(--down) 40%,transparent);color:var(--ink-down, var(--down))}
   /* capture health strip */
   .rr-health-strip{font-size:10px;color:var(--muted);padding:5px 0;line-height:1.6}
-  .rr-health-warn{color:var(--down)}
+  .rr-health-warn{color:var(--ink-down, var(--down))}
   /* CPI bridge waterfall */
   .rr-bridge-row{display:grid;grid-template-columns:minmax(126px,160px) minmax(180px,1fr) minmax(62px,auto);
     align-items:center;gap:10px;font-size:11px;min-height:24px}
@@ -8556,7 +8704,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     padding:13px 14px;margin:10px 0 0;font-size:11px;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 38%,transparent)}
   .rr-shadow-label{font-size:10px;font-weight:740;text-transform:uppercase;
     letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
-  .rr-shadow-warn{font-size:9.5px;color:var(--down);font-style:italic;
+  .rr-shadow-warn{font-size:9.5px;color:var(--ink-down, var(--down));font-style:italic;
     border-left:2px solid var(--down);padding-left:6px;margin-top:4px;line-height:1.4}
   /* surprise anatomy mini-table */
   .rr-anatomy-table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:4px}
@@ -10959,7 +11107,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {% set _evw_what_zh = '消费者物价' if (_evw_td_cpi is not none and _evw_td_cpi <= 2) else ('美联储决议' if (_evw_td_fomc is not none and _evw_td_fomc <= 2) else ('非农就业' if (_evw_td_nfp is not none and _evw_td_nfp <= 2) else '生产者物价')) %}
       {% set _evw_days_en = 'today' if ((_evw_td_cpi == 0 or _evw_td_fomc == 0 or _evw_td_nfp == 0 or _evw_td_ppi == 0)) else ('tomorrow' if ((_evw_td_cpi == 1 or _evw_td_fomc == 1 or _evw_td_nfp == 1 or _evw_td_ppi == 1)) else 'in 2 days') %}
       {% set _evw_days_zh = '今日' if ((_evw_td_cpi == 0 or _evw_td_fomc == 0 or _evw_td_nfp == 0 or _evw_td_ppi == 0)) else ('明日' if ((_evw_td_cpi == 1 or _evw_td_fomc == 1 or _evw_td_nfp == 1 or _evw_td_ppi == 1)) else '2日后') %}
-      <div style="margin-top:5px;font-size:10.5px;color:var(--warn,#f59e0b);line-height:1.4">
+      <div style="margin-top:5px;font-size:10.5px;color:var(--ink-warn, var(--warn,#f59e0b));line-height:1.4">
         <span class="l-en">{{ _evw_what_en }} {{ _evw_days_en }} — expect elevated tape noise.</span>
         <span class="l-zh">{{ _evw_what_zh }}{{ _evw_days_zh }}发布 — 市场噪音可能放大。</span>
       </div>
@@ -12381,7 +12529,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </span>
           {% endif %}
           {% if _dlgr_tp %}
-          <span class="mx5-dlg-chip" style="border-color:var(--warn);color:var(--warn)">
+          <span class="mx5-dlg-chip" style="border-color:var(--warn);color:var(--ink-warn, var(--warn))">
             <span class="l-en">Turning point watch</span>
             <span class="l-zh">拐点观察中</span>
           </span>
@@ -12600,7 +12748,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   {% if _ov_prof.dd_pct is not none %}
                   <div class="row-pop-cell">
                     <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
-                    <span class="row-pop-val"{% if _ov_prof.dd_pct < -2 %} style="color:var(--down)"{% endif %}>{{ '%.1f'|format(_ov_prof.dd_pct) }}%</span>
+                    <span class="row-pop-val"{% if _ov_prof.dd_pct < -2 %} style="color:var(--ink-down, var(--down))"{% endif %}>{{ '%.1f'|format(_ov_prof.dd_pct) }}%</span>
                   </div>
                   {% endif %}
                 </div>
@@ -12868,12 +13016,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <div class="rsx-froth-bar-row">
                 <span class="rsx-froth-bar-lbl">{{ t('Euphoria','亢奋度') }}</span>
                 <div class="rsx-froth-bar-track"><div class="rsx-froth-bar-fill" style="width:{{ [ax,100]|min }}%;background:var(--warn)"></div></div>
-                <span class="rsx-froth-bar-val" style="color:var(--warn)">{{ ax }}</span>
+                <span class="rsx-froth-bar-val" style="color:var(--ink-warn, var(--warn))">{{ ax }}</span>
               </div>
               <div class="rsx-froth-bar-row">
                 <span class="rsx-froth-bar-lbl">{{ t('Hidden selling','暗中派发') }}</span>
                 <div class="rsx-froth-bar-track"><div class="rsx-froth-bar-fill" style="width:{{ [bx,100]|min }}%;background:var(--down)"></div></div>
-                <span class="rsx-froth-bar-val" style="color:var(--down)">{{ bx }}</span>
+                <span class="rsx-froth-bar-val" style="color:var(--ink-down, var(--down))">{{ bx }}</span>
               </div>
             </div>
             {% endif %}
@@ -13453,7 +13601,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
         {% endif %}
         <div style="margin-top:16px;text-align:center">
-          <a href="news.html" style="color:var(--link);font-weight:700;font-size:13px">{{ t('Open the full news feed →','打开完整新闻流 →') }}</a>
+          <a href="news.html" style="color:var(--ink-link, var(--link));font-weight:700;font-size:13px">{{ t('Open the full news feed →','打开完整新闻流 →') }}</a>
         </div>
       </div>
     </div>
@@ -13861,7 +14009,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-dlg-eyebrow"><span class="l-en">Divergence Flags</span><span class="l-zh">背离信号</span></div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
         {% for d in _active_divs %}
-        <span style="font-size:11px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);border-radius:4px;padding:3px 7px;color:var(--down,#ef4444)">
+        <span style="font-size:11px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);border-radius:4px;padding:3px 7px;color:var(--ink-down, var(--down,#ef4444))">
           <span class="l-en">{{ d.detail_en }}</span>
           <span class="l-zh">{{ d.detail_zh }}</span>
         </span>
@@ -14553,7 +14701,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
         {% endif %}
         {% if _FC.get('basket_caveat') %}
-        <div class="mx-pcol-sub" style="color:var(--warn)"><span class="l-en">{{ _FC.basket_caveat }}</span><span class="l-zh">{{ _FC.get('basket_caveat_zh') or _FC.basket_caveat }}</span></div>
+        <div class="mx-pcol-sub" style="color:var(--ink-warn, var(--warn))"><span class="l-en">{{ _FC.basket_caveat }}</span><span class="l-zh">{{ _FC.get('basket_caveat_zh') or _FC.basket_caveat }}</span></div>
         {% endif %}
         {% endif %}
         {# Jawboning row #}
@@ -14609,7 +14757,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div style="font-size:10px;color:var(--muted);margin-top:2px">{% if _arm.get('days_in_base') is not none %}{{ _arm.days_in_base }}d base{% endif %}{% if _arm.get('flatness') is not none %} · flat={{ '%.2f'|format(_arm.flatness) }}{% endif %}</div>
           {% endif %}
           {% if _arm.get('basing') or _arm.get('stoch_curl') or _arm.get('macd_curl') %}
-          <div style="font-size:10px;color:var(--up);margin-top:2px">
+          <div style="font-size:10px;color:var(--ink-up, var(--up));margin-top:2px">
             {% if _arm.get('basing') %}basing {% endif %}{% if _arm.get('stoch_curl') %}stoch↑ {% endif %}{% if _arm.get('macd_curl') %}macd↑{% endif %}
           </div>
           {% endif %}
@@ -14876,7 +15024,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if ff.quadrant_en %}
         <div style="margin-top:4px;font-weight:700;font-size:12.5px;color:{{ ffc }}">{{ t(ff.quadrant_en, ff.quadrant_zh) }}
           {% if ff.provisional %}<span class="badge sm" style="margin-left:6px">{{ t('provisional','暂定') }}</span>{% endif %}
-          {% if ff.unwind_risk %}<span class="badge sm" style="margin-left:6px;color:var(--down)">⚠ {{ t('unwind risk','解构风险') }}</span>{% endif %}
+          {% if ff.unwind_risk %}<span class="badge sm" style="margin-left:6px;color:var(--ink-down, var(--down))">⚠ {{ t('unwind risk','解构风险') }}</span>{% endif %}
         </div>
         {% elif ff.provisional %}<div class="muted sm" style="margin-top:4px">{{ t('provisional','暂定') }}</div>
         {% endif %}
@@ -15436,7 +15584,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
        font sizes, or the inherited line-height. */
     .plv-body{min-height:calc(var(--plv-rh) * 3 + 2px);display:flex;flex-direction:column;padding-top:2px}
     .plv-row{padding:2.5px 0;height:var(--plv-rh);box-sizing:border-box;font-size:12.5px;text-decoration:none;color:inherit}
-    .plv-row:hover .plv-nm,.plv-row:hover .plv-tk{color:var(--link)}
+    .plv-row:hover .plv-nm,.plv-row:hover .plv-tk{color:var(--ink-link, var(--link))}
     .plv-tk{font-weight:800;letter-spacing:.01em;white-space:nowrap}
     .plv-nm{color:var(--muted);font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .plv-now,.plv-lvl,.plv-since{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--font-mono,monospace);white-space:nowrap}
@@ -16543,7 +16691,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     @media(max-width:480px){.sbx-cnt{flex-direction:column;gap:3px}.sbx-cnt.dec{align-items:flex-end}}
     .sbx-cnt b{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
     .sbx-cnt .w{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
-    .sbx-cnt.adv b{color:var(--up)}.sbx-cnt.dec b{color:var(--down)}
+    .sbx-cnt.adv b{color:var(--ink-up, var(--up))}.sbx-cnt.dec b{color:var(--ink-down, var(--down))}
     .sbx-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)}
     .sbx-bar i{display:block;height:100%}
     .sbx-bar .a{background:var(--up)}.sbx-bar .u{background:var(--line)}.sbx-bar .d{background:var(--down)}
@@ -16561,7 +16709,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     .sbx-wl.low i{background:var(--down)}
     .sbx-wl .tick{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted);opacity:.6}
     .sbx-more{margin-top:12px;text-align:right;font-size:11.5px}
-    .sbx-more button{background:none;border:none;color:var(--link);font:inherit;cursor:pointer;padding:0}
+    .sbx-more button{background:none;border:none;color:var(--ink-link, var(--link));font:inherit;cursor:pointer;padding:0}
     .sbx-dlg{display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,.45);padding:4vh 16px}
     .sbx-dlg.open{display:flex}
     .sbx-dlg-panel{margin:auto;width:min(880px,100%);max-height:88vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 22px 20px;position:relative}
@@ -16779,13 +16927,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       each state actually went on to do over the next 63 days, against SPY:
       <table>
         <tr><th>state</th><th>read it as</th><th>fwd 63d vs SPY*</th></tr>
-        <tr><td style="color:var(--up)"><b>BUY</b></td><td>fresh up-turn on daily + 3-day, above trend</td><td>+0.9% (56% up)</td></tr>
-        <tr><td style="color:var(--info)"><b>SETUP</b></td><td>approaching an up-cross — get ready</td><td>+0.3..0.7%</td></tr>
-        <tr><td style="color:var(--orange)"><b>EXTENDED</b></td><td>overbought, late — hold/trim, don't chase</td><td>~flat</td></tr>
-        <tr><td style="color:var(--down)"><b>TOPPING</b></td><td>overbought + rolling over — distribution</td><td>−0.1%</td></tr>
-        <tr><td style="color:var(--down)"><b>SELL</b></td><td>overbought + confirmed 3-day down-cross</td><td>−1.2% (40% up)</td></tr>
+        <tr><td style="color:var(--ink-up, var(--up))"><b>BUY</b></td><td>fresh up-turn on daily + 3-day, above trend</td><td>+0.9% (56% up)</td></tr>
+        <tr><td style="color:var(--ink-info, var(--info))"><b>SETUP</b></td><td>approaching an up-cross — get ready</td><td>+0.3..0.7%</td></tr>
+        <tr><td style="color:var(--ink-orange, var(--orange))"><b>EXTENDED</b></td><td>overbought, late — hold/trim, don't chase</td><td>~flat</td></tr>
+        <tr><td style="color:var(--ink-down, var(--down))"><b>TOPPING</b></td><td>overbought + rolling over — distribution</td><td>−0.1%</td></tr>
+        <tr><td style="color:var(--ink-down, var(--down))"><b>SELL</b></td><td>overbought + confirmed 3-day down-cross</td><td>−1.2% (40% up)</td></tr>
         <tr><td><b>BELOW TREND</b></td><td>under the 200-day — knife; wait for a reclaim</td><td>−0.1%</td></tr>
-        <tr><td style="color:var(--info)"><b>OVERSOLD BOUNCE</b></td><td>range-bound defensive (XLU/XLP/XLV/XLRE), oversold dip below trend, Fed-put on — tactical bounce, lags SPY</td><td>+4.0% abs / +0.3% vs SPY</td></tr>
+        <tr><td style="color:var(--ink-info, var(--info))"><b>OVERSOLD BOUNCE</b></td><td>range-bound defensive (XLU/XLP/XLV/XLRE), oversold dip below trend, Fed-put on — tactical bounce, lags SPY</td><td>+4.0% abs / +0.3% vs SPY</td></tr>
       </table>
       *measured per state across the 11 sector ETFs. The OVERSOLD BOUNCE row's headline is its ABSOLUTE
       return (the dip bounces); its vs-SPY is shown beside it because a low-beta defensive tends to lag a
@@ -16798,13 +16946,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       基础概率一列，是各个状态在随后 63 天里对 SPY 的实际表现：
       <table>
         <tr><th>状态</th><th>解读</th><th>未来63日对SPY*</th></tr>
-        <tr><td style="color:var(--up)"><b>买入</b></td><td>日线+3日线同时转上，且在趋势之上</td><td>+0.9%（56%上涨）</td></tr>
-        <tr><td style="color:var(--info)"><b>预备</b></td><td>接近上穿——准备</td><td>+0.3..0.7%</td></tr>
-        <tr><td style="color:var(--orange)"><b>过热</b></td><td>超买、已晚——持有/减仓，勿追</td><td>≈持平</td></tr>
-        <tr><td style="color:var(--down)"><b>见顶</b></td><td>超买+回落——派发</td><td>−0.1%</td></tr>
-        <tr><td style="color:var(--down)"><b>卖出</b></td><td>超买+3日线确认下穿</td><td>−1.2%（40%上涨）</td></tr>
+        <tr><td style="color:var(--ink-up, var(--up))"><b>买入</b></td><td>日线+3日线同时转上，且在趋势之上</td><td>+0.9%（56%上涨）</td></tr>
+        <tr><td style="color:var(--ink-info, var(--info))"><b>预备</b></td><td>接近上穿——准备</td><td>+0.3..0.7%</td></tr>
+        <tr><td style="color:var(--ink-orange, var(--orange))"><b>过热</b></td><td>超买、已晚——持有/减仓，勿追</td><td>≈持平</td></tr>
+        <tr><td style="color:var(--ink-down, var(--down))"><b>见顶</b></td><td>超买+回落——派发</td><td>−0.1%</td></tr>
+        <tr><td style="color:var(--ink-down, var(--down))"><b>卖出</b></td><td>超买+3日线确认下穿</td><td>−1.2%（40%上涨）</td></tr>
         <tr><td><b>趋势下方</b></td><td>200日线下方——接飞刀；等待收复</td><td>−0.1%</td></tr>
-        <tr><td style="color:var(--info)"><b>超卖反弹</b></td><td>区间震荡的防御板块（XLU/XLP/XLV/XLRE），趋势下方超卖回调、美联储托底在位——战术反弹，跑输SPY</td><td>+4.0% 绝对 / +0.3% 对SPY</td></tr>
+        <tr><td style="color:var(--ink-info, var(--info))"><b>超卖反弹</b></td><td>区间震荡的防御板块（XLU/XLP/XLV/XLRE），趋势下方超卖回调、美联储托底在位——战术反弹，跑输SPY</td><td>+4.0% 绝对 / +0.3% 对SPY</td></tr>
       </table>
       *按状态、跨 11 个板块 ETF 实测。「超卖反弹」一行的主数字是其绝对回报（回调会反弹）；旁边的对SPY数字
       说明低贝塔防御板块在上涨指数中通常跑输——属战术性均值回归交易，绝非确认买入。诚实上限：胜率约 50–56%——优势在于幅度与「回避」（避免追逐机构

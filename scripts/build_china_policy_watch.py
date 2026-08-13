@@ -8,6 +8,7 @@ CONTEXT-ONLY · never raises into the site build. See research/CHINA_INTEL_POWER
 """
 from __future__ import annotations
 
+import argparse
 import logging
 import sys
 from pathlib import Path
@@ -30,11 +31,12 @@ def _site_dir() -> Path:
     return sd if sd.is_absolute() else (config.ROOT / sd)
 
 
-def build() -> dict | None:
+def build(*, site_only: bool = False) -> dict | None:
     from engine import china_policy_watch as pw
 
     vm = pw.snapshot()
-    pw.write_latest(vm)        # data/china_policy/latest.json (for the intel bus)
+    if not site_only:
+        pw.write_latest(vm)    # data/china_policy/latest.json (for the intel bus)
 
     site = _site_dir()
     site.mkdir(parents=True, exist_ok=True)
@@ -52,9 +54,16 @@ def build() -> dict | None:
     return vm
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--site-only",
+        action="store_true",
+        help="render from committed inputs without advancing data/china_policy/latest.json",
+    )
+    args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    build()
+    build(site_only=args.site_only)
     return 0
 
 

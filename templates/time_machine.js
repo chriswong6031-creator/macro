@@ -141,9 +141,9 @@
       +'.tm-ep-badge { display:inline-block; font-size:9.5px; font-weight:700; text-transform:uppercase;'
       +'  padding:1px 6px; border-radius:5px; margin-left:4px; vertical-align:middle; letter-spacing:.03em;'
       +'  background:color-mix(in srgb, var(--muted) 15%, transparent); color:var(--muted); }'
-      +'.tm-ep-badge.onset     { background:color-mix(in srgb, var(--warn) 18%, transparent); color:var(--warn); }'
-      +'.tm-ep-badge.confirmed { background:color-mix(in srgb, var(--up) 18%, transparent); color:var(--up); }'
-      +'.tm-ep-badge.undeniable{ background:color-mix(in srgb, var(--up) 30%, transparent); color:var(--up); }'
+      +'.tm-ep-badge.onset     { background:color-mix(in srgb, var(--warn) 18%, transparent); color:var(--ink-warn, var(--warn)); }'
+      +'.tm-ep-badge.confirmed { background:color-mix(in srgb, var(--up) 18%, transparent); color:var(--ink-up, var(--up)); }'
+      +'.tm-ep-badge.undeniable{ background:color-mix(in srgb, var(--up) 30%, transparent); color:var(--ink-up, var(--up)); }'
       +'.tm-ep-pair { font-size:11px; color:var(--muted); margin-top:2px; }'
       +'.tm-ep-empty { color:var(--muted); font-size:12px; }'
       +'.tm-presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; align-items:center; }'
@@ -159,7 +159,7 @@
       +'.sr-tip-ep { display:flex; align-items:center; gap:7px; margin:9px 14px 0; }'
       +'.sr-ep-dir { font:700 10.5px/1 Inter,sans-serif; padding:4px 9px; border-radius:7px;'
       +'  background:color-mix(in srgb,currentColor 13%,transparent); }'
-      +'.sr-ep-dir.up { color:var(--up); } .sr-ep-dir.dn { color:var(--down); }'
+      +'.sr-ep-dir.up { color:var(--ink-up, var(--up)); } .sr-ep-dir.dn { color:var(--ink-down, var(--down)); }'
       +'.sr-ep-st { font:500 10.5px/1 Inter,sans-serif; color:var(--muted); }'
       +'.sr-tip-score { margin:12px 14px 0; padding:10px 0 13px;'
       +'  border-top:1px solid color-mix(in srgb,var(--text) 11%,transparent); }'
@@ -193,7 +193,7 @@
     if(d) return d;
     host.innerHTML=''
       +'<details class="tm-details" id="tm-details">'
-      +'<summary>⏱ '+L('Rotation Time Machine — replay 25 years of rotation','轮动时光机 — 回放25年轮动史')+'</summary>'
+      +'<summary>'+L('Rotation Time Machine — replay 25 years of rotation','轮动时光机 — 回放25年轮动史')+'</summary>'
       +'<div class="tm-body" id="tm-body"></div>'
       +'</details>';
     return document.getElementById('tm-details');
