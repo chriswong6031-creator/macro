@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T09:00:48.065446+00:00",
-  "count": 1049,
+  "generated_at": "2026-08-13T09:13:00.819592+00:00",
+  "count": 1050,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -1180,6 +1180,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-l2325x4qqpf-27b563",
+      "title": "Weekly IMM FX Positioning",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:32:18Z",
+      "summary_points": [
+        "**USD Positioning Shift**: Post-Fed meeting and U.S.-Japan intervention, USD aggregate longs fell 11,961 contracts (5-yr Z-score: 2.21 vs 3.06), JPY shorts plunged 117,599 contracts to 45,473, signaling reduced speculative pressure.",
+        "**Euro/GBP Short Reduction**: EUR shorts down 14,356 (to 58,091), GBP shorts down 7,000 (to 57,814), indicating shifting sentiment toward EUR/GBP amid USD bearish momentum.",
+        "**Gold Bullish Momentum**: XAU USD long positions surged +15,564 (5-yr Z-score: 0.09 above mean), contrasting with silver’s muted 1-yr Z-score (-0.94), reflecting strong institutional bullishness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
