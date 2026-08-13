@@ -122,6 +122,31 @@ jobs:
           # history fails immediately and visibly on this workflow, which is
           # itself the gate everyone watches.
           fetch-depth: 1
+          # AND the tree itself (2026-08-13, second attempt — the first was wrong).
+          # fetch-depth alone did NOT fix this: run 31723440810 carried
+          # `fetch-depth: 1` in its own SHA (verified) and still spent 28m17s in
+          # checkout@v4 before dying at the ceiling. So the cost is not history,
+          # it is MATERIALISING ~61k paths into the persistent render-linux
+          # workspace. Measured split:
+          #     data/   41,302 paths
+          #     site/   10,958 paths
+          #     what this job actually reads  ~9,000
+          # This job parses .github/workflows, walks job definitions, and runs two
+          # unit-test modules. It opens nothing under site/ or data/ — proven by
+          # running its COMPLETE gate set in a worktree that has neither:
+          # check_workflow_yaml selftest + 83 workflows parsed, check_skip_only_suites
+          # selftest + full run, and pytest test_ci_pack + test_merge_on_green
+          # (365 passed). Excluding those two directories drops ~85% of the
+          # checkout for zero loss of coverage.
+          #
+          # Non-cone with negation, deliberately: it states the EXCLUSION, so a new
+          # top-level directory is included by default and cannot silently fall out
+          # of this job's view the way a cone allowlist would let it.
+          sparse-checkout: |
+            /*
+            !/site/
+            !/data/
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
