@@ -261,3 +261,38 @@ def test_annotations_start_the_line(capsys, tmp_path):
     for line in annotations:
         assert line.startswith("::"), line
     assert rc == 1
+
+
+# ── the 2026-08-13 first-live-night lesson: run conclusion is a LANE LATCH ──
+#
+# The first night this guard was evaluated against reality, the recovery bake
+# concluded `cancelled` — engine's final commit step lost a push race against a
+# main moving ~1/min, and one offrender lane was cancelled — while 17/19 jobs
+# were green and the picks LANDED (asof advanced, 25 fresh plans). The as-shipped
+# check B would have paged at 08:00Z about a healthy night. The program memory
+# already knew this shape ("run-level cancelled/failure conclusions are
+# single-lane latches"); the guard now does too: the DUAL-READ leads, the
+# conclusion is the footnote.
+
+def test_cancelled_run_with_advanced_store_warns_but_does_not_page():
+    """Tonight's exact shape must be a warning, never an alarm."""
+    report = evaluate([_run(conclusion="cancelled")], ADVANCED, NOW)
+    assert report["ok"] is True
+    assert any("LANE LATCH" in w for w in report["warnings"])
+    assert not report["fail_reasons"]
+
+
+def test_cancelled_run_with_behind_store_still_pages():
+    """The downgrade requires the store to EXCUSE the conclusion — a cancelled
+    run whose store is stale is still the 2026-08-12 dispatch signature."""
+    report = evaluate([_run(conclusion="cancelled")], FROZEN, NOW)
+    assert report["ok"] is False
+    assert any("NO SUCCESS" in f for f in report["fail_reasons"])
+
+
+def test_cancelled_run_with_unreadable_store_still_pages():
+    """Blindness never softens a POSITIVE observation of failure: the only
+    evidence that could downgrade it is evidence we do not have."""
+    report = evaluate([_run(conclusion="cancelled")], None, NOW)
+    assert report["ok"] is False
+    assert any("cannot be read to excuse" in f for f in report["fail_reasons"])

@@ -200,7 +200,18 @@ def evaluate(
             )
 
     # ── B. RUN CONCLUDED SUCCESS ────────────────────────────────────────────
+    # A no-success night is NOT judged here: the verdict is deferred to C, because
+    # the run-level conclusion is a SINGLE-LANE LATCH, not a product verdict. The
+    # first live night this guard was evaluated against (2026-08-13) proved it:
+    # the recovery bake concluded `cancelled` — engine's final commit step lost a
+    # push race against a main moving ~1/min and one offrender lane was cancelled
+    # — while 17/19 jobs were green and the picks landed on main (asof advanced,
+    # 25 fresh plans). Failing on the conclusion alone would have paged the
+    # operator at 08:00Z about a healthy night; the DUAL-READ leads, the state
+    # verdict is the footnote (the standing instrument-vs-market law, applied to
+    # our own instrument).
     baked = False
+    no_success_detail: "str | None" = None
     if recent:
         conclusions = [(r.get("status"), r.get("conclusion")) for r in recent]
         facts["conclusions"] = [f"{s}/{c or '-'}" for s, c in conclusions]
@@ -214,14 +225,10 @@ def evaluate(
                 "is still in flight — no success yet, but not a breach"
             )
         else:
-            bad = ", ".join(f"{s}/{c or '-'}" for s, c in conclusions)
-            fail.append(
-                f"NO SUCCESS: every {WORKFLOW_FILE} run since {boundary.isoformat()} "
-                f"concluded without success [{bad}]. Force-cancellation by a live "
-                "fleet session produced exactly this on 2026-08-12."
-            )
+            no_success_detail = ", ".join(f"{s}/{c or '-'}" for s, c in conclusions)
 
     # ── C. DATA ADVANCED ────────────────────────────────────────────────────
+    src = None
     if index is None:
         warn.append(
             "INDETERMINATE: site/prophet/index.json unreadable (guard is blind)"
@@ -237,6 +244,18 @@ def evaluate(
         else:
             behind = sessions_behind(src, now)
             facts["sessions_behind"] = behind
+            if no_success_detail is not None and src >= session:
+                # The 2026-08-13 shape: no run succeeded, but the store carries
+                # the owed session. The night's data is LIVE; only a lane is red.
+                warn.append(
+                    f"LANE LATCH: every {WORKFLOW_FILE} run since "
+                    f"{boundary.isoformat()} concluded without success "
+                    f"[{no_success_detail}], but source_asof already reads "
+                    f"{src.isoformat()} — the run-level conclusion is a "
+                    "single-lane latch, not a missing night. Investigate the red "
+                    "lane; do not re-bake."
+                )
+                no_success_detail = None
             if baked and src < session:
                 # The sharp case.  A run for THIS session concluded success, so the
                 # store is owed exactly this session — no weekend padding applies and
@@ -258,6 +277,22 @@ def evaluate(
                     f"(limit {max_sessions_behind}), with no successful "
                     f"{WORKFLOW_FILE} run for this session."
                 )
+
+    if no_success_detail is not None:
+        # No success AND the store could not excuse it — either it is verifiably
+        # behind, or it is unreadable. An unreadable store does not soften a
+        # POSITIVE observation of failure: the only evidence that could downgrade
+        # this is evidence we do not have.
+        excuse = (
+            f"the store is behind ({src.isoformat()})" if src is not None
+            else "the store cannot be read to excuse it"
+        )
+        fail.append(
+            f"NO SUCCESS: every {WORKFLOW_FILE} run since {boundary.isoformat()} "
+            f"concluded without success [{no_success_detail}], and {excuse}. "
+            "Force-cancellation by a live fleet session produced exactly this on "
+            "2026-08-12."
+        )
 
     return {
         "ok": not fail,
@@ -355,10 +390,26 @@ def _selftest() -> int:
     assert r["facts"]["sessions_behind"] == 1, r  # data alone would NOT have alarmed
 
     # B: run created but force-cancelled — the 2026-08-12 dispatch signature.
+    # Store frozen BEHIND the session, so the latch downgrade must NOT apply.
     r = evaluate([{"created_at": "2026-08-11T22:30:00Z", "status": "completed",
                    "conclusion": "cancelled"}], frozen, now)
     _check("B/all-cancelled", r["ok"], False)
     assert any("NO SUCCESS" in f for f in r["fail_reasons"]), r
+
+    # B latch downgrade — the 2026-08-13 first-live-night shape: run concluded
+    # `cancelled` (engine commit push-race + one cancelled offrender lane) while
+    # the store ADVANCED to the owed session. Warning, never a page.
+    r = evaluate([{"created_at": "2026-08-11T22:30:00Z", "status": "completed",
+                   "conclusion": "cancelled"}], advanced, now)
+    _check("B/lane-latch-is-not-a-page", r["ok"], True)
+    assert any("LANE LATCH" in w for w in r["warnings"]), r
+
+    # B: no success and the store is UNREADABLE — a positive observation of
+    # failure with no evidence to excuse it still pages.
+    r = evaluate([{"created_at": "2026-08-11T22:30:00Z", "status": "completed",
+                   "conclusion": "cancelled"}], None, now)
+    _check("B/no-success-blind-store-fails", r["ok"], False)
+    assert any("cannot be read to excuse" in f for f in r["fail_reasons"]), r
 
     # B: still in flight -> INDETERMINATE. The nightly runs for hours; alarming here
     # would train the operator to ignore the channel.
