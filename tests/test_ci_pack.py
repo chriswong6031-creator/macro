@@ -1407,7 +1407,8 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     assert "macstudio" not in runs_on
     assert "render-linux" not in runs_on
     assert "self-hosted" not in runs_on
-    assert pack["strategy"]["fail-fast"] is False
+    # PR abort-on-first-red; main workflow_dispatch keeps the rest of the pack.
+    assert pack["strategy"]["fail-fast"] == "${{ github.event_name == 'pull_request' }}"
     # No `max-parallel`: it existed only to stop main's packs from taking all four
     # `render-linux` runners. With no shared pool to protect, throttling would only
     # double main's proof (~26 min -> ~50 min), and it cannot help against the hosted

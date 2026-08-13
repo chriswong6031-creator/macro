@@ -1435,6 +1435,11 @@ on:
       # the checker; this is its other half, per the same two-halves law the guard
       # enforces on everything else.
       - "tests/test_ci_trigger_closure.py"
+      # VINTAGE-PIN fence (job: vintage-pin-fence). scripts/** and tests/**
+      # already start CI; these two name the pair the job runs so a rename of
+      # either still reaches the lane that proves it.
+      - "scripts/check_vintage_pin_fence.py"
+      - "tests/test_vintage_pin_fence.py"
       # UNRUN-CENSUS discovery (job: workflow-yaml). scripts/*.py reaches
       # audit_unrun_tests.py itself; this is the test half. The census owns suite
       # discovery for all THREE darkness guards, so a regression here re-blinds
@@ -4247,7 +4252,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
-      fail-fast: false
+      # PR fail-fast / main heal-slow. A pull_request pack aborts on the first
+      # real red so the remaining jobs in that pack do not keep burning hosted
+      # minutes (and keep the sweeper staring at a still-running check) after
+      # the diagnosis is already in. workflow_dispatch — main's full-suite
+      # heal — keeps fail-fast false so one red job cannot hide the rest of
+      # the pack. Do not reintroduce a hardcoded `false` here: that is how
+      # the 2026-08-13 traffic jam kept twelve packs running to completion
+      # after govrev had already failed. Do not add max-parallel (#5465).
+      fail-fast: "${{ github.event_name == 'pull_request' }}"
       # NO `max-parallel`. It existed only to stop main's four packs from taking all
       # four `render-linux` runners and starving `merge-on-green.yml`, then co-resident
       # on that pool. With both control/proof lanes hosted there is no shared pool to
