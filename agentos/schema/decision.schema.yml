@@ -1,0 +1,22 @@
+# agentos/schema/decision.schema.yml
+# Machine mirror of research/MASTERMIND_AGENT_OS_STATE_SCHEMA.md §2.
+# The organizational memory of WHY. DNR keeps kill authority; this records choices.
+schema: agentos.decision.v1
+file: agentos/decisions/DEC-<KEY>.md
+required:
+  key:           {type: string, pattern: UPPER-KEBAB}
+  question:      {type: string, note: the fork, phrased as a question}
+  answer:        {type: string}
+  rationale:     {type: string, note: the load-bearing field of the whole system}
+  alternatives:  {type: list, min: 1, items: {option: string, why_not: string},
+                  note: "none considered? record it as option '(none considered)'"}
+  evidence:      {type: list, note: commands run, file:line, PR numbers, measurements}
+  affects:       {type: list, note: "WS:<KEY>, program keys, or path globs"}
+  confidence:    {enum: [high, medium, low], note: of the decision, not the evidence}
+  reversibility: {enum: [easy, costly, one_way]}
+  decided_by:    {type: string, note: "seat: chairman | ceo-sol | coo-fable | session id"}
+  decided_at:    {type: date}
+optional:
+  supersedes:    {type: list, items: "DEC:<KEY>", note: must be reciprocated by superseded_by}
+  superseded_by: {type: string, note: set on the OLD record; never delete a decision}
+  review_by:     {type: date, note: for decisions taken under acknowledged uncertainty}
