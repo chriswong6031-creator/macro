@@ -303,9 +303,22 @@
     currentWeights: currentWeights,
     // Called by portfolio.js after every render.
     // w = {ticker: dollarValue} for open holdings with shares + price; null resets to equal-weight.
+    /* The bail condition is "there is nothing to read", and in the AUTO path that is NOT
+       `LAST` — `render()` derives the auto universe from `Object.keys(AUTO_W)` and never
+       looks at `LAST` at all. Guarding on `LAST.length` therefore returned early for the
+       exact user this page exists for: a signed-in account with a full portfolio and an
+       EMPTY watchlist. `render()` never ran, so `CUR` was never resolved and
+       `announceWeights()` never fired — watchlist_risk.js received no weights, RiskCore
+       was never called, every position read "Not covered" and the Book Seam's risk rail
+       went dark. Nothing was broken downstream; the weights simply never left this file.
+       W2 worked around it from portfolio.js (seeding the universe via FX.update) because
+       this file was outside its scope; the seam is fixed here now and that workaround is
+       retired, so this guard is the one thing carrying the case in production. */
     setAutoWeights: function (w) {
       AUTO_W = w || null;
-      var p = panelEl(); if (!p || !LAST.length) return;
+      var p = panelEl(); if (!p) return;
+      var autoNames = AUTO_W ? Object.keys(AUTO_W).length : 0;
+      if (!LAST.length && !autoNames) return;
       load().then(function (data) { render(p, LAST, data); });
     }
   };

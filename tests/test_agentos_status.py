@@ -429,6 +429,112 @@ def test_unblocked_ranks_active_p0_above_a_bigger_unblock_count(
     assert ordering[0]["p0_active"] is True
 
 
+# ------------------------------------------------- stale sibling checkout (2026-08-13)
+
+
+def _git_in(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    """git inside a throwaway clone, identity pinned so a bare host config cannot fail it."""
+    return subprocess.run(
+        ["git",
+         "-c", "user.email=agentos-tests@example.invalid",
+         "-c", "user.name=agentos tests",
+         "-c", "commit.gpgsign=false",
+         *args],
+        cwd=str(repo), check=True, capture_output=True, text=True,
+    )
+
+
+def _stale_mastermind(tmp_path: Path) -> Path:
+    """A Mastermind clone whose WORKING TREE predates ``config/strategic_state.yml``.
+
+    The live 2026-08-13 shape: local `master` sat 43 commits behind while
+    `refs/remotes/origin/master` already carried the file — and nothing here may fetch
+    to find that out.
+    """
+    mm = tmp_path / "Mastermind"
+    mm.mkdir()
+    _git_in(mm, "init", "-b", "master")
+    (mm / "README.md").write_text("Mastermind\n", encoding="utf-8")
+    _git_in(mm, "add", "README.md")
+    _git_in(mm, "commit", "-m", "base")
+    (mm / "config").mkdir()
+    (mm / "config" / "strategic_state.yml").write_text(
+        "p0:\n  - id: US_PROPHET_ENTRY_TIMING\n    status: active\n", encoding="utf-8")
+    _git_in(mm, "add", "config/strategic_state.yml")
+    _git_in(mm, "commit", "-m", "strategic state")
+    head = _git_in(mm, "rev-parse", "HEAD").stdout.strip()
+    _git_in(mm, "update-ref", "refs/remotes/origin/master", head)
+    # The worktree goes back before the file; origin/master keeps it.
+    _git_in(mm, "reset", "--hard", "HEAD~1")
+    return mm
+
+
+def test_stale_mastermind_worktree_reads_p0_from_a_local_ref(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """A checkout parked behind must not neutralise a ranking it can still read.
+
+    The state is in the clone on a local ref; degrading over which branch that clone
+    happens to be sitting on discards a P0 join that costs one fetch-free `git show`.
+    """
+    mm = _stale_mastermind(tmp_path)
+    out = tmp_path / "state.json"
+    result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds),
+                     env={"MACRO_MASTERMIND_REPO": str(mm)})
+    assert result.returncode == 0, result.stdout + result.stderr
+    state = _state(out)
+    row = next(r for r in state["workstreams"] if r["p0"] == "US_PROPHET_ENTRY_TIMING")
+    assert row["p0_active"] is True, "the ref copy marks this objective active"
+    degraded = state["inputs"]["degraded"]
+    assert any("read from local ref origin/master" in item for item in degraded), degraded
+    assert not any("strategic_state.yml" in item and "P0 ranking neutral" in item
+                   for item in degraded), (
+        "the ranking is NOT neutral once the ref copy is read", degraded)
+
+
+def test_strategic_state_absent_from_every_local_ref_neutralises_p0(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """A clone that genuinely predates the file: the old degrade is still the right answer."""
+    mm = tmp_path / "Mastermind"
+    mm.mkdir()
+    _git_in(mm, "init", "-b", "master")
+    (mm / "README.md").write_text("Mastermind\n", encoding="utf-8")
+    _git_in(mm, "add", "README.md")
+    _git_in(mm, "commit", "-m", "base")
+    _git_in(mm, "update-ref", "refs/remotes/origin/master",
+            _git_in(mm, "rev-parse", "HEAD").stdout.strip())
+    out = tmp_path / "state.json"
+    result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds),
+                     env={"MACRO_MASTERMIND_REPO": str(mm)})
+    assert result.returncode == 0, result.stdout + result.stderr
+    state = _state(out)
+    row = next(r for r in state["workstreams"] if r["p0"] == "US_PROPHET_ENTRY_TIMING")
+    assert row["p0_active"] is None
+    degraded = state["inputs"]["degraded"]
+    assert any("all local refs" in item and "P0 ranking neutral" in item
+               for item in degraded), degraded
+
+
+def test_mastermind_dir_without_git_refs_neutralises_p0(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """A sibling path that is not a checkout at all — the fallback must say so, not crash."""
+    mm = tmp_path / "Mastermind"
+    mm.mkdir()
+    (mm / "README.md").write_text("not a checkout\n", encoding="utf-8")
+    out = tmp_path / "state.json"
+    result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds),
+                     env={"MACRO_MASTERMIND_REPO": str(mm)})
+    assert result.returncode == 0, result.stdout + result.stderr
+    state = _state(out)
+    row = next(r for r in state["workstreams"] if r["p0"] == "US_PROPHET_ENTRY_TIMING")
+    assert row["p0_active"] is None
+    degraded = state["inputs"]["degraded"]
+    assert any("no readable git refs" in item and "P0 ranking neutral" in item
+               for item in degraded), degraded
+
+
 # ------------------------------------------------------------------- claims
 
 

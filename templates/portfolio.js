@@ -227,14 +227,12 @@
       if (sh != null && sh > 0 && px != null && px > 0) w[t] = sh * px;
     });
     var keys = Object.keys(w);
-    /* `FX.setAutoWeights` stores the map but returns early unless the FX layer has a
-       non-empty ticker list from `FX.update()` — which on this page is the WATCHLIST.
-       So a user with a full book and an empty watchlist stored weights that were never
-       resolved, never announced, and never reached RiskCore: every position read
-       "Not covered" and the Book Seam's risk rail went dark for the exact user the
-       page is for. Seeding the universe with the book's own names first is the
-       in-scope fix; the guard in factor_exposure.js is reported separately. */
-    if (keys.length >= 2 && window.FX.update) window.FX.update(keys);
+    /* W2 seeded `FX.update(keys)` here before announcing, because `FX.setAutoWeights`
+       bailed on an empty `LAST` — so a full book with an EMPTY watchlist never reached
+       RiskCore. W3 fixed that at the mechanism (factor_exposure.js: the auto path's
+       universe is the weight map, never `LAST`), so the seeding call is retired rather
+       than left as a second, silent guarantee of the same property. One owner for the
+       auto path means the regression test pins the path production actually takes. */
     window.FX.setAutoWeights(keys.length >= 2 ? w : null);
   }
 

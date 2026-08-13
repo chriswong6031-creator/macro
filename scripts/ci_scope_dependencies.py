@@ -35,12 +35,14 @@ from scripts.audit_unrun_tests import FIRST_PARTY, ROOT
 
 # Keep this set identical to the former trigger-closure implementation.  ``data``
 # is deliberately excluded there because nightly artifacts are not human-edited
-# trigger subjects.
+# trigger subjects.  ``.claude`` is included so a hook edit (PR #5488) is owned
+# by the suite that subprocesses it, instead of looking unowned.
 LITERAL_DIRS = tuple(FIRST_PARTY) + (
     "research", "tools", "config", "content", "templates", "contracts", "ops",
+    ".claude",
 )
 _PATH_LITERAL = re.compile(
-    r"(?:" + "|".join(LITERAL_DIRS) + r")"
+    r"(?:" + "|".join(re.escape(d) for d in LITERAL_DIRS) + r")"
     r"/[\w./-]+\.[A-Za-z0-9_]{1,8}(?:#[\w.-]+)?"
 )
 _DATA_MARKER = re.compile(r"#\s*ci-trigger-closure:\s*data\b")
