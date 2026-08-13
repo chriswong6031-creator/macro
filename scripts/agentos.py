@@ -3061,10 +3061,14 @@ def compile_bundle(
             "tokens": cost, "rank": rank,
         })
 
+    # Membership by IDENTITY, not equality: two items can carry byte-identical content
+    # (two landmines that say the same thing), and `in selected` would then admit the
+    # wrong one — or both — under dict `__eq__`.
+    chosen = {id(item) for item in selected}
     by_section: dict[str, list[dict[str, Any]]] = {}
     for pack in PACK_ORDER:
         for item in groups[pack]:
-            if item in selected:
+            if id(item) in chosen:
                 by_section.setdefault(_PACK_SECTION[pack], []).append(item)
     for items in by_section.values():
         items.sort(key=lambda item: item["_seq"])
