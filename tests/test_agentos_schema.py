@@ -388,6 +388,23 @@ def test_bare_key_dependency_is_rejected_not_dropped(store: Path) -> None:
     assert "bad-citation" in result.stdout
 
 
+def test_bare_supersedes_key_is_rejected_not_dropped(store: Path) -> None:
+    """`supersedes: [FOO]` must not validate silently — `_refs` drops the bare key,
+    which used to skip the reciprocity check entirely (the superseded_by defect class,
+    one field over)."""
+    _patch(
+        store / "decisions" / "DEC-AGENTOS-READINESS-FEEDS-THE-AGENDA.md",
+        "supersedes: [DEC:AGENTOS-START-NEXT-VS-AGENDA]",
+        "supersedes: [AGENTOS-START-NEXT-VS-AGENDA]",
+    )
+    result = _validate(store)
+    assert result.returncode == 1, (
+        "a bare supersedes key used to validate clean while silently skipping the "
+        f"reciprocity check:\n{result.stdout}"
+    )
+    assert "bad-citation" in result.stdout
+
+
 def test_prefixed_unknown_dependency_is_still_dangling(store: Path) -> None:
     _patch(
         store / "workstreams" / "WS-AGENT-OS.md",

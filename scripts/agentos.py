@@ -674,6 +674,9 @@ def check_decision(rec: dict[str, Any], path: Path) -> list[Problem]:
     _date(rec, "decided_at", path, out)
     _date(rec, "review_by", path, out)
     _check_supersession(rec, "DEC", path, out)
+    # Same defect class as superseded_by, one field over: `_refs` silently drops a bare
+    # key, so an unshaped `supersedes` entry used to skip the reciprocity check entirely.
+    _check_citations(rec, "supersedes", "DEC", path, out)
 
     alts = rec.get("alternatives")
     if isinstance(alts, list):
