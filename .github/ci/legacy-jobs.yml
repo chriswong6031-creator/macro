@@ -5040,6 +5040,12 @@ jobs:
         run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
         run: python -m pytest tests/test_portfolio_brief.py -q
+      - name: retention spine — change history, digest composer, changes endpoint (W6)
+        # engine/portfolio_changes (state digest + diff) and engine/portfolio_digest (the
+        # change-triggered email COMPOSER — the send path is deliberately unwired, and a
+        # test in here asserts the module imports no mailer so no build can send). Same
+        # install set as the brief suite above; the file pins that set from the AST.
+        run: python -m pytest tests/test_portfolio_changes.py -q
       - name: theme_lanes side-write contract (source of truth for the Portfolio brief)
         # The theme_lanes.v1 side-artifact + the page-byte-identity invariant that keep
         # the State-of-Themes page and the Portfolio brief's lanes in lockstep. Only the
