@@ -451,6 +451,7 @@ are the collision-free vocabulary. Existing registry values re-key in DS-PR-1:
 
 - **A**: full-width state band → 2/3 primary answer column + 1/3 rail → full-width band.
   Mobile: primary market + first 3 rows in one swipe (packet §A is the worked contract).
+  Reference: `today_reference.html`.
 - **B**: header + ladder → filterable card grid (≤40) → groups band → context tabs → record.
   Mobile: ladder pinned, one lane via stance selector (packet §B).
 - **C-signal**: decision header → dated rail/what-changed → two-column quality block (never
@@ -469,7 +470,7 @@ are the collision-free vocabulary. Existing registry values re-key in DS-PR-1:
 - **H**: proof-first hero (live artifact, dated) → 3-band value → plan/CTA → FAQ. Landing's
   15.5-screen scroll is the anti-pattern; ≤8 mobile screens.
 - **I**: one centered card on canvas, `_public_nav` or bare brand, no aurora emphasis, no
-  second CTA.
+  second CTA. Reference: `utility_reference.html`.
 
 **P0 route mapping** (18 census rows): `/` H · `start.html` A · `macro.html` D ·
 `us_stocks.html` B · `china.html` D · `hk.html` D · `confluence_screener.html` B ·
