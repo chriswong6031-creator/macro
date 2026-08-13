@@ -1943,6 +1943,22 @@ jobs:
       # stdlib + pytest only (reads workflow/dag/builder text; imports no builder).
       - name: render-lane scope contract (flow_desk must stay express-wired)
         run: python -m pytest tests/test_render_flow_desk_scope.py -q
+      # VACUOUS guards: the same lie audit_unrun_tests.py catches, one layer down.
+      # A suite that never runs is caught above; a guard that RUNS, walks a tree
+      # that is not checked out, finds nothing and prints its affirmative OK is
+      # not — it reports green over an empty set. Session worktrees are sparse by
+      # default (policy R8, scripts/worktree_sparse.py), and seven check_*.py
+      # guards did exactly that when measured 2026-08-13. The refusal is
+      # conditional on an EMPTY result set, never on sparseness alone: the 13
+      # lanes that check out partial trees on purpose (live-quotes.yml,
+      # marketing-hot-tape.yml and friends) invoke none of these seven and must
+      # keep passing regardless. One suite owns that conjunction for all seven
+      # guards rather than being split across the seven jobs that own them.
+      # Deliberately LAST in this job: a failing step masks every step after it,
+      # and a new census must never be the thing that hides the established
+      # wiring guards above.
+      - name: guards must refuse, not pass vacuously, on a sparse tree
+        run: python -m pytest tests/test_sparse_guard_refusals.py -q
 
   causal-factory:
     if: ${{ false }}
