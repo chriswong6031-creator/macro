@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found — reference (Utility, Archetype I)</title>
+<!-- THE UTILITY REFERENCE (Wave 0, mockup tier — nothing imports this).
+     Archetype I, the 404 case (factory docket item 4 / packet §F.4). Constitution
+     §10: one centered card on canvas, _public_nav or bare brand, no aurora emphasis,
+     no second CTA; L1 budget = 1 card. Say what happened, offer exactly ONE way
+     forward, keep the brand quiet. The anti-pattern this must never become is the
+     link farm — which is precisely what site/start.html is today (142 links). Links
+     real theme.css + tier_preview.css; proposed DS-PR-0 tokens inline, byte-identical
+     to specimen.html (deleted when landed). All new primitives .mx-* namespaced.
+     Spec commentary uses .spec-note ONLY — never body copy. -->
+<link rel="stylesheet" href="../../templates/theme.css">
+<link rel="stylesheet" href="../../templates/tier_preview.css">
+<style>
+/* ═══ PROPOSED — DS-PR-0 tokens (same block as specimen.html) ═══ */
+:root{
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px; --fs-h2:17px;
+  --fs-md:15px; --fs-body:14px; --fs-h3:14px; --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-7:32px; --sp-8:44px;
+  --gap-grid:18px;
+  --r-ctl:8px; --r-btn:10px; --r-card:12px; --r-panel:14px; --r-pill:999px;
+  --t-fast:.16s; --t-med:.2s; --t-slow:.55s;
+  --ease-std:ease; --ease-lift:cubic-bezier(.2,.7,.3,1);
+  --shadow-hover:0 14px 30px -16px color-mix(in srgb, var(--link) 40%, transparent);
+  --ser-1:#5b9bf0; --ser-2:#d4a017; --ser-3:#0ea5e9; --ser-4:#e08b45;
+  --ink-tier:color-mix(in srgb, var(--mx-tier-accent,#7c5cff) 78%, var(--text));
+}
+html[data-theme="light"]{ --ser-1:#2f63c4; --ser-2:#8f6a04; --ser-3:#0284c7; --ser-4:#b06a25;
+  --ink-tier:color-mix(in srgb, var(--mx-tier-accent,#7c5cff) 72%, var(--text)); }
+html[data-lang="zh"] :is(h1,h2,h3,.eyebrow,.spec-note,.mockchip){ letter-spacing:0; text-transform:none; }
+
+/* ═══ mockup scaffolding (same names as macro_reference.html / today_reference.html) ═══ */
+body{ margin:0; background:var(--bg); color:var(--text); font-size:var(--fs-body); line-height:1.55; }
+.bar{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2);
+  padding:9px var(--sp-4); border-bottom:1px solid var(--line); }
+.bar .brand{ font-weight:900; letter-spacing:.07em; font-size:13.5px; margin-right:auto; }
+.mockchip{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-warn); border:1px solid color-mix(in srgb, var(--warn) 34%, transparent);
+  background:color-mix(in srgb, var(--warn) 12%, var(--panel)); border-radius:var(--r-pill); padding:3px 9px; flex:none; }
+.spec-note{ font-size:var(--fs-micro); letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
+  border-left:2px dashed var(--line); padding-left:8px; margin:10px 0 0; }
+.spec-note::before{ content:"SPEC NOTE — "; font-weight:700; }
+html[data-lang="zh"] .spec-note::before{ content:"规范注释 — "; }
+.wrap{ max-width:1180px; margin:0 auto; padding:0 var(--sp-4) var(--sp-8); }
+.panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel); padding:16px 18px; box-shadow:var(--card-shadow); }
+
+/* Archetype I's identity device is "single-card focus, ZERO ambient" (§10). The site
+   aurora (theme.css html body::before — §16 approved exception 1, carried by every other
+   page family) is therefore suppressed here: utility is the one family that opts out, so
+   the card is the only thing on the canvas. This is a deliberate opt-out, not an
+   oversight; the migration packet lands it as a body-class rule in theme.css. */
+html body::before{ display:none; }
+
+/* ── the single centred card on canvas. Nesting depth 1: card sits directly on --bg,
+      never a panel inside a panel. No aurora, no ambient, no second surface. ── */
+.mx-u-shell{ min-height:calc(100vh - 46px); display:grid; place-items:center;
+  padding:var(--sp-8) var(--sp-4); box-sizing:border-box; }
+.mx-u-card{ width:100%; max-width:460px; box-sizing:border-box; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--r-panel); box-shadow:var(--card-shadow); padding:var(--sp-7) var(--sp-6) var(--sp-6); }
+
+/* the one memorable detail: the status code filed as a record header. Mono is for
+   FIGURES (§4) and an HTTP status is a figure — it is the only mono on the page. */
+.mx-u-code{ font-family:var(--font-mono, monospace); font-variant-numeric:tabular-nums;
+  font-size:var(--fs-num-lg); font-weight:700; letter-spacing:.12em; color:var(--muted);
+  display:block; padding-bottom:var(--sp-3); border-bottom:1px solid var(--line); margin-bottom:var(--sp-5); }
+
+.mx-u-card h1{ font-size:var(--fs-h1); font-weight:800; letter-spacing:-.02em; line-height:1.15; margin:0 0 var(--sp-3); }
+.mx-u-said{ font-size:var(--fs-md); color:var(--muted); margin:0 0 var(--sp-6); max-width:40ch; }
+.mx-u-act{ display:block; }
+/* Motion is a status channel (§7): nothing on this page is live or ongoing, so the
+   one action does not breathe. The gbtn-cta surface is kept; its pulse is not. */
+.mx-u-act .gbtn-cta{ animation:none; width:100%; justify-content:center; }
+.mx-u-where{ font-size:var(--fs-sm); color:var(--muted); margin:var(--sp-3) 0 0; }
+
+:where(.mx-u-act .gbtn, .bar .gbtn):focus-visible{
+  outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){
+  .gbtn::after{ display:none; }
+  .gbtn, .gbtn:hover, .gbtn:active{ transform:none; }
+  .gbtn-cta{ animation:none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="brand">MASTERMIND</span>
+  <span class="mockchip"><span class="l-en">Reference mockup</span><span class="l-zh">设计参考稿</span></span>
+  <button class="gbtn gbtn-sm" id="t-theme">Dark/Light</button>
+  <button class="gbtn gbtn-sm" id="t-lang">EN/中文</button>
+</div>
+
+<!-- ══ THE ONE CARD — the whole page. L1 budget for `utility` is 1. ══ -->
+<main class="mx-u-shell">
+  <div class="mx-u-card">
+    <span class="mx-u-code">404</span>
+    <h1><span class="l-en">This page isn't here.</span><span class="l-zh">这个页面不在这里。</span></h1>
+    <p class="mx-u-said l-en">The link may be old, or the page moved. Everything else on the desk is running normally.</p>
+    <p class="mx-u-said l-zh">链接可能已失效，或页面已迁移。其余功能正常。</p>
+    <div class="mx-u-act">
+      <button class="gbtn gbtn-cta gbtn-lg"><span class="l-en">Go to Today</span><span class="l-zh">前往今日页</span></button>
+    </div>
+    <p class="mx-u-where l-en">Today is the morning read — market state, what changed overnight, what needs attention.</p>
+    <p class="mx-u-where l-zh">今日页是每天的晨读——市场状态、隔夜变化、开盘前需要留意的事。</p>
+  </div>
+</main>
+
+<div class="wrap">
+  <div class="panel" style="border-style:dashed">
+    <p class="spec-note l-en" style="max-width:88ch">Archetype I, the 404 case. One card on the canvas — nesting depth 1, no aurora, no ambient field, no second surface. Exactly one way forward: a single action, no menu, no search box, no “popular pages” list. The link farm is the anti-pattern this page exists to refuse, and it is what site/start.html is today (142 links, a page-local wordmark, repeated mega-nav blocks) — the Today reference replaces that page; this one must never become it.</p>
+    <p class="spec-note l-zh" style="max-width:88ch">I 型页面的 404 情形。画布上只有一张卡片——嵌套深度 1，无极光背景、无氛围层、无第二表面。只给一条出路：单一动作，不放菜单、不放搜索框、不放「热门页面」列表。链接农场正是本页要拒绝的反面样式，而现行 site/start.html 恰恰就是它（142 条链接、页面级自有字标、重复的巨型导航块）——今日参考稿替换那个页面，本页则永远不该变成它。</p>
+    <p class="spec-note l-en" style="max-width:88ch">The status code is set in mono because an HTTP status is a FIGURE (§4: mono for figures, never for words) — it is the only mono on the page, and the only structural device: a hairline under it files the card as a record rather than decorating it. Motion is a status channel (§7); nothing here is live or ongoing, so the action keeps the primary CTA surface but not its pulse. The brand stays quiet: a wordmark, not a header family. Zero ambient: the site aurora is suppressed on this family alone, so the card is the only thing on the canvas. Same organization as today_reference.html, deliberately emptier.</p>
+    <p class="spec-note l-zh" style="max-width:88ch">状态码用等宽字体，因为 HTTP 状态是一个数字（§4：等宽只给数字，绝不给词语）——它是全页唯一的等宽元素，也是唯一的结构装置：其下一条细线把卡片归档为一条记录，而不是给它加装饰。动效是状态通道（§7）；此处没有任何实时或进行中的事，因此动作保留主行动按钮的样式而不保留其呼吸。品牌保持安静：只是一个字标，不是一整套页头。零氛围层：仅本页族关闭全站极光背景，画布上只剩这张卡片。与 today_reference.html 同源，但刻意更空。</p>
+  </div>
+</div>
+
+<script>
+var root=document.documentElement;
+document.getElementById('t-theme').onclick=function(){ root.setAttribute('data-theme', root.getAttribute('data-theme')==='light'?'dark':'light'); };
+document.getElementById('t-lang').onclick=function(){ root.setAttribute('data-lang', root.getAttribute('data-lang')==='zh'?'en':'zh'); };
+</script>
+</body>
+</html>
