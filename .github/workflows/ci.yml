@@ -4007,6 +4007,18 @@ on:
       - "tests/test_dataos_nulls.py"
       - "tests/test_dataos_registry.py"
       - "tests/test_dataos_quality.py"
+      # ── Data OS security master + vendor aliases (DOS-1.1, 2026-08-13) ──────
+      # Job: house-law-registry (.github/ci/legacy-jobs.yml) — folded into that job
+      # rather than dataos-foundation, which installs pytest+pyyaml only so that a
+      # pandas import creeping into lib/dataos/ reds THERE first. Both halves again:
+      # the suite, the producer it imports, and the ARTIFACTS it reads. The artifacts
+      # are the load-bearing entry — the suite's whole subject is what those two
+      # parquets answer on either side of 2026-01-14 and 2026-06-24, so a hand-edit or
+      # a regenerated artifact that could not START ci.yml would be the darkness the
+      # closure guard exists to end. data/** is NOT a catch-all in this filter.
+      - "tests/test_dataos_security_master.py"
+      - "scripts/build_security_master.py"
+      - "data/reference/**"
   workflow_dispatch:
 
 permissions:
