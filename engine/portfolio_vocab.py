@@ -23,6 +23,36 @@ STAGE_WORD: dict[int, tuple[str, str]] = {
     4: ("decline", "下行"),
 }
 
+# Rotation-board `class` → plain word (DISPLAY re-expression, both languages).
+#
+# The ctx's `class` values are subsector_confluence's INTERNAL slugs. They are fine as
+# machine keys and as `data.concentration.sectors[].class`, but they must never reach a
+# rendered sentence: "Energy 在桌面轮动板上从 entry_now 转为 headwind。" puts untranslated
+# English tokens inside a Chinese sentence. `late` is in the LIVE artifact today, so this
+# is a shipping path, not a hypothetical.
+#
+# Callers MUST treat an unmapped class as "no renderable word" and omit the clause rather
+# than falling back to the slug — that fallback is the defect this map exists to close.
+CLASS_WORD: dict[str, tuple[str, str]] = {
+    "tailwind": ("tailwind", "顺风"),
+    "headwind": ("headwind", "逆风"),
+    "neutral": ("neutral", "中性"),
+    "entry_now": ("entry now", "可入场"),
+    "late": ("late", "偏后段"),
+    "forming": ("forming", "形成中"),
+    # zh deliberately avoids 买入/建仓 — the advice-filter kill-list (RUL-NW4). A board
+    # state is a description of the tape, not an instruction to trade.
+    "buyable": ("buyable", "可参与"),
+}
+
+
+def class_word(cls: str | None) -> tuple[str, str] | None:
+    """(en, zh) for a rotation-board class, or None when it has no display word."""
+    if not cls or not isinstance(cls, str):
+        return None
+    return CLASS_WORD.get(cls.strip().lower())
+
+
 # Sector-name reconciliation. The per-ticker `sector` field (from stockdata profiles via
 # us_standouts / screener rows) uses one taxonomy ("Information Technology", "Health
 # Care", "Financials", "Materials"); the ctx.sectors block is keyed by the rotation

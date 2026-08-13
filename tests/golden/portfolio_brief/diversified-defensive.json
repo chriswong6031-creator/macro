@@ -19,6 +19,12 @@
       "weighting": "equal"
     },
     "concentration": {
+      "basis": {
+        "sectors_en": "Share of covered book weight; these total 100%.",
+        "sectors_zh": "占已覆盖持仓权重的比例，合计为 100%。",
+        "themes_en": "Share of the themed part of the book. A name in two themes counts in both, so these need not total 100%.",
+        "themes_zh": "占持仓中已归类主题部分的比例。一只个股可同属多个主题，因此合计不一定为 100%。"
+      },
       "hhi": 0.25,
       "sectors": [
         {
@@ -59,6 +65,23 @@
       ],
       "top3_pct": 75,
       "top_name_pct": 25
+    },
+    "cursor": {
+      "note_en": "This “since your last visit” marker is kept on this device, so a different browser or phone keeps its own separate history.",
+      "note_zh": "“自你上次查看以来”的记录保存在本设备上，因此换用其他浏览器或手机时会各自独立计算。",
+      "scope": "device"
+    },
+    "not_computed": {
+      "keys": [
+        "posture",
+        "correlation",
+        "options",
+        "score",
+        "lanes",
+        "tape"
+      ],
+      "reason_en": "These need the factor model that runs in the risk panel, which this brief does not read. They are absent because nothing computed them — not because they computed to empty.",
+      "reason_zh": "这些字段依赖风险面板中的因子模型，本简报并不读取该模型。它们的缺失代表尚未计算，而非计算结果为空。"
     },
     "state_digest": {
       "asof": "2026-07-23",

@@ -40,9 +40,52 @@ the rendered sequence.
 """
 from __future__ import annotations
 
-from engine.portfolio_vocab import STAGE_WORD, sector_block
+from engine.portfolio_vocab import STAGE_WORD, class_word, sector_block
 
 SNAPSHOT_SCHEMA = "portfolio_state_digest.v1"
+
+# ── bounds on client-supplied input ──────────────────────────────────────────
+# `previous` arrives from the CLIENT. Every value read from it is echoed into a sentence
+# the server composes and the panel renders next to desk-authored prose, so it is
+# untrusted text, not merely stale text. Two defences, both cheap here and expensive to
+# retrofit after a client ships:
+#   * `_safe_text` — allowlist + length bound. A value that fails is DROPPED (the clause
+#     is omitted), never echoed and never partially cleaned.
+#   * cardinality caps — a snapshot with 100k names must not turn into 100k sentences.
+MAX_PREVIOUS_NAMES = 500     # names read from a client snapshot
+MAX_CHANGES = 200            # changes returned from one diff
+_MEMBERSHIP_LIST_CAP = 20    # tickers named inside a single added/removed sentence
+_TEXT_LIMIT = 64             # entry reads / regime labels / conviction words
+_NAME_LIMIT = 48             # tickers and sector names
+# Rejected outright: angle brackets and braces (markup/template injection), backslash,
+# and any C0/C1 control character (line breaks that would forge a second sentence).
+_FORBIDDEN_CHARS = set("<>{}\\")
+
+
+def _safe_text(value, limit: int = _TEXT_LIMIT) -> str | None:
+    """Return `value` as displayable text, or None if it is not safe to echo."""
+    if not isinstance(value, str):
+        return None
+    s = value.strip()
+    if not s or len(s) > limit:
+        return None
+    for ch in s:
+        if ch in _FORBIDDEN_CHARS or ord(ch) < 32 or 127 <= ord(ch) <= 159:
+            return None
+    return s
+
+
+def is_snapshot(obj) -> bool:
+    """True iff `obj` is structurally a state digest this module produced.
+
+    This is the SINGLE definition of "the client had a prior visit", shared by
+    `diff_snapshots` and by the endpoint's `first_visit` field so the two cannot
+    contradict each other. The test is the presence of a `names` MAPPING — not a
+    non-empty one: `snapshot_state` legitimately returns `names: {}` for a user whose
+    holdings are all desk-uncovered (uncovered names are omitted), and that is a real
+    visit whose membership changes must still be reported.
+    """
+    return isinstance(obj, dict) and isinstance(obj.get("names"), dict)
 
 # A name reports "soon" when the desk's own earnings block puts it inside this many
 # days. The window is the brief's existing earnings-clock window (engine/portfolio_brief
@@ -141,14 +184,23 @@ def snapshot_state(ctx: dict, tickers) -> dict:
     return snap
 
 
-def _stage_phrase(n) -> tuple[str, str]:
-    """(en, zh) for a stage number — 'Stage 2 uptrend' / '第 2 阶段上升'."""
+def _stage_phrase(n) -> tuple[str, str] | None:
+    """(en, zh) for a stage number, or None when it is not a stage we can name.
+
+    Returns None rather than a generic phrase for an out-of-range value: a client-supplied
+    `stage: 999` would otherwise render "moved from Stage 999 stage to …", which is
+    client text wearing the desk's voice. No word, no clause.
+    """
+    if isinstance(n, bool):
+        return None
     try:
         i = int(n)
     except (TypeError, ValueError):
-        return ("an unknown stage", "未知阶段")
-    en, zh = STAGE_WORD.get(i, ("stage", "阶段"))
-    return (f"Stage {i} {en}", f"第 {i} 阶段{zh}")
+        return None
+    words = STAGE_WORD.get(i)
+    if words is None:
+        return None
+    return (f"Stage {i} {words[0]}", f"第 {i} 阶段{words[1]}")
 
 
 def _names_of(snap: dict) -> dict:
@@ -163,23 +215,34 @@ def diff_snapshots(previous: dict, current: dict) -> list[dict]:
     fixed and deterministic: regime, then per-name state (sorted by ticker) for names
     present in BOTH snapshots, then sector board moves (sorted), then membership.
 
-    A missing/blank `previous` yields [] — a first visit has nothing to compare against,
-    and inventing "everything is new" would spam the panel on day one.
+    `previous` yields [] iff it is not structurally a snapshot (`is_snapshot`) — a first
+    visit has nothing to compare against, and inventing "everything is new" would spam
+    the panel on day one. Note what this does NOT treat as a first visit: a real snapshot
+    whose `names` is empty. That is what a user holding only desk-uncovered names stores,
+    and the day one of those names gains coverage its membership change is a genuine
+    "since your last visit" fact. Callers MUST derive their own first-visit flag from
+    `is_snapshot` for the same reason, or the flag and the changes will disagree.
+
+    Every value read from `previous` is client-supplied and passes `_safe_text` before it
+    reaches a sentence; a value that fails is dropped along with its clause.
     """
-    if not isinstance(previous, dict) or not isinstance(current, dict):
+    if not is_snapshot(previous) or not isinstance(current, dict):
         return []
     prev_names = _names_of(previous)
     cur_names = _names_of(current)
-    if not prev_names and not previous.get("regime_en"):
-        return []
+    if len(prev_names) > MAX_PREVIOUS_NAMES:
+        # Bounded rather than rejected: the first N by ticker still produce a truthful
+        # (if partial) read, and the cap is what stops a hostile or corrupt snapshot from
+        # becoming an unbounded response.
+        prev_names = {k: prev_names[k] for k in sorted(prev_names)[:MAX_PREVIOUS_NAMES]}
 
     out: list[dict] = []
 
     # ── the desk's daily read ────────────────────────────────────────────────
-    p_reg = previous.get("regime_en")
+    p_reg = _safe_text(previous.get("regime_en"))
     c_reg = current.get("regime_en")
     if p_reg and c_reg and p_reg != c_reg:
-        p_zh = previous.get("regime_zh") or p_reg
+        p_zh = _safe_text(previous.get("regime_zh")) or p_reg
         c_zh = current.get("regime_zh") or c_reg
         out.append({
             "kind": "regime",
@@ -196,15 +259,16 @@ def diff_snapshots(previous: dict, current: dict) -> list[dict]:
 
         p_stage, c_stage = p.get("stage"), c.get("stage")
         if p_stage is not None and c_stage is not None and p_stage != c_stage:
-            pe, pz = _stage_phrase(p_stage)
-            ce, cz = _stage_phrase(c_stage)
-            out.append({
-                "kind": "stage", "ticker": t,
-                "en": f"{t} moved from {pe} to {ce}.",
-                "zh": f"{t} 从{pz}转为{cz}。",
-            })
+            prev_phrase = _stage_phrase(p_stage)
+            cur_phrase = _stage_phrase(c_stage)
+            if prev_phrase and cur_phrase:
+                out.append({
+                    "kind": "stage", "ticker": t,
+                    "en": f"{t} moved from {prev_phrase[0]} to {cur_phrase[0]}.",
+                    "zh": f"{t} 从{prev_phrase[1]}转为{cur_phrase[1]}。",
+                })
 
-        p_entry, c_entry = p.get("entry"), c.get("entry")
+        p_entry, c_entry = _safe_text(p.get("entry")), c.get("entry")
         if p_entry and c_entry and p_entry != c_entry:
             out.append({
                 "kind": "entry", "ticker": t,
@@ -239,43 +303,78 @@ def diff_snapshots(previous: dict, current: dict) -> list[dict]:
         c = c_sec.get(sec) or {}
         if not isinstance(p, dict) or not isinstance(c, dict):
             continue
-        if p.get("class") and c.get("class") and p["class"] != c["class"]:
+        # Board class. Rendered ONLY through CLASS_WORD: the ctx's `class` values are
+        # internal slugs, and printing them raw put untranslated English tokens inside a
+        # Chinese sentence. An unmapped class has no display word, so the clause is
+        # omitted and the conviction comparison below gets its turn instead — never a
+        # slug fallback.
+        p_cls, c_cls = _safe_text(p.get("class"), _NAME_LIMIT), c.get("class")
+        p_word = class_word(p_cls)
+        c_word = class_word(c_cls)
+        emitted = False
+        if p_cls and c_cls and p_cls != c_cls and p_word and c_word:
             out.append({
                 "kind": "sector_class", "sector": sec,
-                "en": (f"{sec} moved from {p['class']} to {c['class']} on the desk's "
+                "en": (f"{sec} moved from {p_word[0]} to {c_word[0]} on the desk's "
                        f"rotation board."),
-                "zh": f"{sec} 在桌面轮动板上从 {p['class']} 转为 {c['class']}。",
+                "zh": f"{sec} 在桌面轮动板上从{p_word[1]}转为{c_word[1]}。",
             })
-        elif (p.get("conviction_en") and c.get("conviction_en")
-                and p["conviction_en"] != c["conviction_en"]):
-            p_zh = p.get("conviction_zh") or p["conviction_en"]
-            c_zh = c.get("conviction_zh") or c["conviction_en"]
-            out.append({
-                "kind": "sector_conviction", "sector": sec,
-                "en": (f"The desk read on {sec} moved from {p['conviction_en']} to "
-                       f"{c['conviction_en']}."),
-                "zh": f"桌面对{sec}的判读从{p_zh}转为{c_zh}。",
-            })
+            emitted = True
+        if not emitted:
+            p_conv = _safe_text(p.get("conviction_en"))
+            c_conv = c.get("conviction_en")
+            if p_conv and c_conv and p_conv != c_conv:
+                p_zh = _safe_text(p.get("conviction_zh")) or p_conv
+                c_zh = c.get("conviction_zh") or c_conv
+                out.append({
+                    "kind": "sector_conviction", "sector": sec,
+                    "en": f"The desk read on {sec} moved from {p_conv} to {c_conv}.",
+                    "zh": f"桌面对{sec}的判读从{p_zh}转为{c_zh}。",
+                })
 
     # ── membership (names you added / removed) ───────────────────────────────
+    # `added` comes from the server's own snapshot; `removed` comes from the CLIENT's, so
+    # those ticker strings are echoed text and are filtered before they reach a sentence.
     added = sorted(set(cur_names) - set(prev_names))
-    removed = sorted(set(prev_names) - set(cur_names))
-    if added:
-        out.append({
-            "kind": "added",
-            "en": (f"{len(added)} {'name' if len(added) == 1 else 'names'} joined this "
-                   f"read since your last visit: {', '.join(added)}."),
-            "zh": f"自你上次查看以来，新增 {len(added)} 只个股：{'、'.join(added)}。",
-        })
-    if removed:
-        out.append({
-            "kind": "removed",
-            "en": (f"{len(removed)} {'name' if len(removed) == 1 else 'names'} left this "
-                   f"read since your last visit: {', '.join(removed)}."),
-            "zh": f"自你上次查看以来，移出 {len(removed)} 只个股：{'、'.join(removed)}。",
-        })
+    removed = sorted(x for x in (set(prev_names) - set(cur_names))
+                     if _safe_text(x, _NAME_LIMIT))
 
-    return out
+    def _membership(kind: str, names: list[str], verb_en: str, verb_zh: str) -> dict:
+        """One membership line. The NAME LIST is capped separately from the count: a
+        book that gained 400 names is a true count but not a readable sentence, and
+        pasting 400 tickers into one line is how a "sentence" becomes a data dump."""
+        n = len(names)
+        shown = names[:_MEMBERSHIP_LIST_CAP]
+        rest = n - len(shown)
+        more_en = f", and {rest} more" if rest else ""
+        more_zh = f"等 {rest} 只" if rest else ""
+        return {
+            "kind": kind,
+            "en": (f"{n} {'name' if n == 1 else 'names'} {verb_en} this read since your "
+                   f"last visit: {', '.join(shown)}{more_en}."),
+            "zh": (f"自你上次查看以来，{verb_zh} {n} 只个股："
+                   f"{'、'.join(shown)}{more_zh}。"),
+        }
+
+    if added:
+        out.append(_membership("added", added, "joined", "新增"))
+    if removed:
+        out.append(_membership("removed", removed, "left", "移出"))
+
+    return out[:MAX_CHANGES]
+
+
+# The "since your last visit" marker is whatever the CLIENT stored, so its scope is the
+# client's storage — per-device today. That is a real limitation users will otherwise
+# discover by being confused ("why does my phone say nothing changed?"), so it is
+# disclosed IN THE PAYLOAD, the same mechanism `population.disclosure_*` uses to make
+# silence visible. A cross-device cursor would need an owner-scoped Supabase table.
+CURSOR_DISCLOSURE = {
+    "scope": "device",
+    "note_en": ("This “since your last visit” marker is kept on this device, so a "
+                "different browser or phone keeps its own separate history."),
+    "note_zh": "“自你上次查看以来”的记录保存在本设备上，因此换用其他浏览器或手机时会各自独立计算。",
+}
 
 
 def compose_since_section(previous: dict, current: dict, *, cap: int = 8) -> dict | None:

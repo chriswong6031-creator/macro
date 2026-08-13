@@ -51,7 +51,8 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 
-from engine.portfolio_changes import compose_since_section, snapshot_state
+from engine.portfolio_changes import (CURSOR_DISCLOSURE, compose_since_section,
+                                      snapshot_state)
 from engine.portfolio_vocab import SECTOR_ALIASES as _SECTOR_ALIASES
 from engine.portfolio_vocab import STAGE_WORD as _STAGE_WORD
 from engine.portfolio_vocab import sector_block as _sector_block
@@ -714,6 +715,20 @@ def _filings_section(ctx: dict, covered: list[str], today: str) -> dict | None:
 # keys are omitted and the gap is named in the PR body as the follow-up wave. What ships
 # here is exactly what the composer can derive from the weights the user supplied plus
 # the ctx it already reads: pure arithmetic, no new signal, no threshold, no ranking.
+#
+# Omission is only honest if it is VISIBLE, so `data.not_computed` names the absent legs
+# and says why. Without it a machine consumer cannot tell three very different things
+# apart: "this composer does not compute posture", "posture was computed and came back
+# empty", and "a proxy dropped the key in transit".
+NOT_COMPUTED_KEYS = ("posture", "correlation", "options", "score", "lanes", "tape")
+_NOT_COMPUTED = {
+    "keys": list(NOT_COMPUTED_KEYS),
+    "reason_en": ("These need the factor model that runs in the risk panel, which this "
+                  "brief does not read. They are absent because nothing computed them — "
+                  "not because they computed to empty."),
+    "reason_zh": ("这些字段依赖风险面板中的因子模型，本简报并不读取该模型。"
+                  "它们的缺失代表尚未计算，而非计算结果为空。"),
+}
 
 
 def _concentration_block(ctx: dict, covered: list[str], weights: dict) -> dict:
@@ -782,6 +797,21 @@ def _concentration_block(ctx: dict, covered: list[str], weights: dict) -> dict:
         rows.sort(key=lambda r: (-r["pct"], r["id"]))
         if rows:
             out["themes"] = rows
+
+    # The two pct families do NOT share a denominator, and they do not sum the same way.
+    # Sector shares partition the covered book and total 100. Theme shares are taken over
+    # the THEMED part of the book and a name in two themes counts in both, so they
+    # routinely exceed 100 (a two-name book can reach 200). A client that assumed one
+    # basis would render a 144% stacked bar. Stating the basis in the payload is A8's own
+    # law one layer down: say which population a number describes.
+    if out:
+        out["basis"] = {
+            "sectors_en": "Share of covered book weight; these total 100%.",
+            "sectors_zh": "占已覆盖持仓权重的比例，合计为 100%。",
+            "themes_en": ("Share of the themed part of the book. A name in two themes "
+                          "counts in both, so these need not total 100%."),
+            "themes_zh": "占持仓中已归类主题部分的比例。一只个股可同属多个主题，因此合计不一定为 100%。",
+        }
     return out
 
 
@@ -857,7 +887,10 @@ def compose_brief(ctx: dict, holdings: list[dict], today: str,
         return {"book": {"n": len(order), "covered": len(covered),
                          "modeled": len(covered), "unmodeled": uncovered,
                          "weighting": mode, "population": population},
-                "state_digest": snapshot_state(ctx, order)}
+                "state_digest": snapshot_state(ctx, order),
+                "cursor": dict(CURSOR_DISCLOSURE),
+                "not_computed": {k: v[:] if isinstance(v, list) else v
+                                 for k, v in _NOT_COMPUTED.items()}}
 
     # Empty book: no names at all.
     if len(order) == 0:

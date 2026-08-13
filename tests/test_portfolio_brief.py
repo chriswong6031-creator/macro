@@ -32,7 +32,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from engine.portfolio_brief import compose_brief  # noqa: E402
+from engine.portfolio_brief import NOT_COMPUTED_KEYS, compose_brief  # noqa: E402
 
 GOLDEN_DIR = ROOT / "tests" / "golden" / "portfolio_brief"
 TODAY = "2026-07-23"          # a Thursday — fixed so golden output is deterministic
@@ -594,6 +594,43 @@ def test_data_block_omits_legs_it_cannot_see_rather_than_nulling_them():
     data = _compose("concentrated-semis")["data"]
     for absent in ("posture", "correlation", "options", "score", "tape"):
         assert absent not in data
+
+
+def test_omission_is_declared_not_merely_silent():
+    """Reviewer: omission-over-null is right, but invisible. Without `not_computed` a
+    machine consumer cannot tell "this composer does not compute posture" from "posture
+    computed empty" from "a proxy dropped the key"."""
+    data = _compose("concentrated-semis")["data"]
+    nc = data["not_computed"]
+    assert set(nc["keys"]) == set(NOT_COMPUTED_KEYS)
+    assert nc["reason_en"].strip() and nc["reason_zh"].strip()
+    # The declared-absent keys really are absent — the disclosure cannot drift from fact.
+    for key in nc["keys"]:
+        assert key not in data
+
+
+def test_concentration_declares_its_two_denominators():
+    """G1. Sector shares partition the covered book and total 100; theme shares are over
+    the THEMED part and a name in two themes counts in both, so they routinely exceed 100
+    (the single-name golden reaches 200). A client that assumed one basis would render a
+    144% stacked bar. Stating the basis is A8's own law one layer down."""
+    conc = _compose("concentrated-semis")["data"]["concentration"]
+    basis = conc["basis"]
+    for k in ("sectors_en", "sectors_zh", "themes_en", "themes_zh"):
+        assert basis[k].strip()
+    assert sum(s["pct"] for s in conc["sectors"]) == 100
+    # The over-100 case is real, and declared rather than "fixed" into a false 100.
+    single = _compose("single-name")["data"]["concentration"]
+    assert sum(t["pct"] for t in single["themes"]) > 100
+    assert "need not total 100" in single["basis"]["themes_en"]
+
+
+def test_cursor_scope_is_disclosed_on_the_brief_too():
+    """B4 — the per-device limitation rides the payload, not just the PR body."""
+    for book in BOOKS:
+        cur = _compose(book)["data"]["cursor"]
+        assert cur["scope"] == "device"
+        assert cur["note_en"].strip() and cur["note_zh"].strip()
 
 
 def test_every_response_carries_a_state_digest_even_on_a_degenerate_book():

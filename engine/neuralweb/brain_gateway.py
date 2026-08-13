@@ -2914,6 +2914,12 @@ def _tool_get_portfolio_brief(params: dict, root: Path, user_id: str = "") -> di
     # "your watchlist" rather than "your book" when that is what it read — the brief's
     # own sentences now carry the distinction, so a silent fallback would put the model
     # and its own tool result at odds.
+    # A FAILED QUERY IS `unspecified`, NEVER `watchlist_union`. `_sb_get` returns None on
+    # every failure (missing env, 5s timeout, PostgREST 5xx, bad JSON) and [] only for a
+    # genuinely empty result, so a bare truthiness test would let a Supabase blip on the
+    # positions query fall through and label a ten-position book "watchlist_union". The
+    # None/[] distinction is branched on rather than discarded. Mirrors
+    # app.main._portfolio_load_holdings — the two loaders must not diverge.
     import urllib.parse as _up  # noqa: PLC0415
     quid = _up.quote(str(user_id))
     holdings: list[dict] = []
@@ -2921,26 +2927,35 @@ def _tool_get_portfolio_brief(params: dict, root: Path, user_id: str = "") -> di
     pos_rows = _sb_get(
         f"portfolio_positions?user_id=eq.{quid}&status=eq.open"
         f"&select=ticker,shares,entry_price")
-    if pos_rows:
+    if pos_rows is None:
+        population = "unspecified"
+    else:
         for r in pos_rows:
             if isinstance(r, dict) and r.get("ticker"):
                 holdings.append({"ticker": r.get("ticker"), "shares": r.get("shares"),
                                  "entry_price": r.get("entry_price")})
-    if not holdings:
-        population = "watchlist_union"
-        lists = _sb_get(f"watchlists?user_id=eq.{quid}&select=id&order=position")
-        list_ids = [str(r.get("id")) for r in (lists or [])
-                    if isinstance(r, dict) and r.get("id") is not None]
-        if list_ids:
-            sym_rows = _sb_get(
-                f"watchlist_symbols?watchlist_id=in.({','.join(list_ids)})"
-                f"&select=symbol,position&order=position")
-            seen: set = set()
-            for r in (sym_rows or []):
-                s = r.get("symbol") if isinstance(r, dict) else None
-                if s and s not in seen:
-                    seen.add(s)
-                    holdings.append({"ticker": s, "shares": None, "entry_price": None})
+        if not holdings:
+            lists = _sb_get(f"watchlists?user_id=eq.{quid}&select=id&order=position")
+            if lists is None:
+                population = "unspecified"
+            else:
+                population = "watchlist_union"
+                list_ids = [str(r.get("id")) for r in lists
+                            if isinstance(r, dict) and r.get("id") is not None]
+                if list_ids:
+                    sym_rows = _sb_get(
+                        f"watchlist_symbols?watchlist_id=in.({','.join(list_ids)})"
+                        f"&select=symbol,position&order=position")
+                    if sym_rows is None:
+                        population = "unspecified"
+                    else:
+                        seen: set = set()
+                        for r in sym_rows:
+                            s = r.get("symbol") if isinstance(r, dict) else None
+                            if s and s not in seen:
+                                seen.add(s)
+                                holdings.append({"ticker": s, "shares": None,
+                                                 "entry_price": None})
 
     # ctx artifact from disk (same idiom as the other file-backed reads).
     ctx_path = root / "site" / "data" / "portfolio_ctx.json"

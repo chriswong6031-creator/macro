@@ -19,6 +19,7 @@ The load-bearing assertions here are the BOUNDARY ones, not the formatting ones:
 from __future__ import annotations
 
 import ast
+import builtins
 import copy
 import json
 import sys
@@ -30,9 +31,13 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from engine.portfolio_changes import (  # noqa: E402
+    CURSOR_DISCLOSURE,
+    MAX_CHANGES,
+    MAX_PREVIOUS_NAMES,
     SNAPSHOT_SCHEMA,
     compose_since_section,
     diff_snapshots,
+    is_snapshot,
     snapshot_state,
 )
 from engine.portfolio_digest import compose_digest, idem_key  # noqa: E402
@@ -160,6 +165,141 @@ def test_every_change_line_is_bilingual_and_nonempty():
     for c in diff_snapshots(_snap(), _snap(_moved_ctx())):
         assert c["en"].strip() and c["zh"].strip()
         assert c["en"] != c["zh"]
+
+
+# ── round-2 review fixes ─────────────────────────────────────────────────────
+
+def test_empty_names_snapshot_is_a_real_visit_not_a_first_visit():
+    """Reviewer C3/B2. `snapshot_state` returns `names: {}` for a user whose holdings are
+    ALL desk-uncovered (uncovered names are omitted). That is a genuine prior visit, and
+    the day one of those names gains coverage the membership change is real. The old
+    guard treated it as a first visit and returned changes ALONGSIDE first_visit=true —
+    the response contradicting itself. `is_snapshot` is now the single definition both
+    sides read. No attacker needed to reach this."""
+    previous = {"schema": SNAPSHOT_SCHEMA, "asof": "2026-07-22", "names": {},
+                "sectors": {}, "regime_en": "Risk-on"}
+    assert is_snapshot(previous) is True
+    changes = diff_snapshots(previous, _snap())
+    assert changes, "a covered name appearing is a real change"
+    assert any(c["kind"] == "added" for c in changes)
+
+
+def test_is_snapshot_is_the_single_first_visit_definition():
+    assert is_snapshot({}) is False           # no prior digest at all
+    assert is_snapshot(None) is False
+    assert is_snapshot({"names": {}}) is True  # a real visit with nothing covered
+    assert is_snapshot(_snap()) is True
+    # …and the thing it gates agrees with it.
+    assert diff_snapshots({}, _snap()) == []
+
+
+def test_sector_class_never_ships_a_raw_slug_in_either_language():
+    """A4. `class` values are internal slugs; `late` is in the LIVE artifact today. They
+    must never reach a sentence — least of all an English token inside Chinese prose."""
+    prev = _snap()
+    moved = copy.deepcopy(_ctx())
+    moved["sectors"]["Technology"]["class"] = "late"
+    cur = _snap(moved)
+    line = next(c for c in diff_snapshots(prev, cur) if c["kind"] == "sector_class")
+    for slug in ("neutral", "late", "entry_now", "headwind", "tailwind", "forming",
+                 "buyable"):
+        assert slug not in line["zh"], f"raw slug {slug!r} in Chinese prose"
+    assert "偏后段" in line["zh"] and "中性" in line["zh"]
+    assert "late" in line["en"]
+
+
+def test_unmapped_class_omits_the_clause_rather_than_printing_the_slug():
+    """The fallback that would reintroduce the defect is explicitly absent."""
+    prev_ctx = copy.deepcopy(_ctx())
+    prev_ctx["sectors"]["Technology"]["class"] = "zzz_new_slug"
+    cur_ctx = copy.deepcopy(_ctx())
+    cur_ctx["sectors"]["Technology"]["class"] = "headwind"
+    changes = diff_snapshots(_snap(prev_ctx), _snap(cur_ctx))
+    assert not any(c["kind"] == "sector_class" for c in changes)
+    assert "zzz_new_slug" not in json.dumps(changes, ensure_ascii=False)
+
+
+def test_unmapped_class_still_lets_the_conviction_change_through():
+    """Omitting the class clause must not swallow a sibling change that IS renderable."""
+    prev_ctx = copy.deepcopy(_ctx())
+    prev_ctx["sectors"]["Technology"]["class"] = "zzz_new_slug"
+    cur_ctx = copy.deepcopy(_ctx())
+    cur_ctx["sectors"]["Technology"]["class"] = "headwind"
+    cur_ctx["sectors"]["Technology"]["conviction_en"] = "Reduce"
+    cur_ctx["sectors"]["Technology"]["conviction_zh"] = "减配"
+    changes = diff_snapshots(_snap(prev_ctx), _snap(cur_ctx))
+    assert any(c["kind"] == "sector_conviction" for c in changes)
+
+
+@pytest.mark.parametrize("hostile", [
+    "<img src=x onerror=alert(1)>",
+    "Risk-on\nThe desk's daily read moved from A to B",
+    "{{constructor.constructor('alert(1)')()}}",
+    "x" * 500,
+    "ctrl\x07char",
+])
+def test_client_supplied_text_is_never_echoed_into_desk_prose(hostile):
+    """B1. `previous` is client-supplied and its values land inside sentences the SERVER
+    composes, shape-identical to desk-authored `headline.en`. A value that fails the
+    allowlist is dropped along with its clause — never echoed, never half-cleaned."""
+    previous = _snap()
+    previous["regime_en"] = hostile
+    previous["names"]["NVDA"]["entry"] = hostile
+    previous["sectors"]["Technology"]["conviction_en"] = hostile
+    blob = json.dumps(diff_snapshots(previous, _snap(_moved_ctx())), ensure_ascii=False)
+    assert hostile not in blob
+    for frag in ("<img", "onerror", "constructor", "\x07"):
+        assert frag not in blob
+
+
+def test_out_of_range_stage_is_dropped_not_rendered_generically():
+    """A client-supplied `stage: 999` must not render "moved from Stage 999 stage" —
+    that is client text wearing the desk's voice."""
+    previous = _snap()
+    previous["names"]["NVDA"]["stage"] = 999
+    changes = diff_snapshots(previous, _snap(_moved_ctx()))
+    assert not any(c["kind"] == "stage" and c["ticker"] == "NVDA" for c in changes)
+    assert "999" not in json.dumps(changes, ensure_ascii=False)
+
+
+def test_output_cardinality_is_bounded():
+    """B3, output half. Every name changing stage must not become one sentence per name.
+
+    Built from hand-made snapshots rather than the ctx fixture on purpose: the fixture
+    covers 7 tickers, so a diff over it can never approach the cap and a test written
+    against it would pass whether or not the cap existed (the first version of this test
+    did exactly that — it asserted `<= MAX_CHANGES` on a 2-change diff)."""
+    previous = {"names": {f"T{i:04d}": {"stage": 2} for i in range(400)}}
+    current = {"names": {f"T{i:04d}": {"stage": 3} for i in range(400)}}
+    assert len(diff_snapshots(previous, current)) == MAX_CHANGES
+
+
+def test_input_cardinality_is_bounded():
+    """B3, input half. A 5000-name client snapshot is read only up to the cap."""
+    previous = {"names": {f"T{i:04d}": {"stage": 2} for i in range(5000)}}
+    removed = next(c for c in diff_snapshots(previous, {"names": {}})
+                   if c["kind"] == "removed")
+    assert removed["en"].startswith(f"{MAX_PREVIOUS_NAMES} names left")
+
+
+def test_membership_sentence_does_not_paste_hundreds_of_tickers():
+    """A true count is not a readable sentence. The list is capped independently of the
+    count, and the remainder is named rather than silently dropped."""
+    previous = {"names": {}}
+    current = {"names": {f"T{i:04d}": {"stage": 2} for i in range(100)}}
+    added = next(c for c in diff_snapshots(previous, current) if c["kind"] == "added")
+    assert added["en"].startswith("100 names joined")
+    assert "and 80 more" in added["en"]
+    assert added["en"].count(",") <= 21     # 20 listed names + the "and N more" comma
+    assert "等 80 只" in added["zh"]
+
+
+def test_cursor_scope_is_disclosed_in_the_payload():
+    """B4. The per-device limitation is disclosed where users are, not only in a PR
+    body — the same mechanism `population.disclosure_*` uses to make silence visible."""
+    assert CURSOR_DISCLOSURE["scope"] == "device"
+    assert CURSOR_DISCLOSURE["note_en"].strip() and CURSOR_DISCLOSURE["note_zh"].strip()
+    assert CURSOR_DISCLOSURE["note_en"] != CURSOR_DISCLOSURE["note_zh"]
 
 
 # ── the digest composer ──────────────────────────────────────────────────────
@@ -345,6 +485,222 @@ def test_changes_endpoint_503_without_ctx(monkeypatch, tmp_path):
     r = client.post("/api/portfolio/changes", json={},
                     headers={"Authorization": "Bearer x"})
     assert r.status_code == 503, r.text
+    m.app.dependency_overrides.clear()
+
+
+def test_changes_endpoint_first_visit_flag_agrees_with_its_changes(monkeypatch, tmp_path):
+    """B2 at the API tier: the empty-names snapshot must not come back as
+    first_visit=true alongside a non-empty changes list."""
+    previous = {"schema": SNAPSHOT_SCHEMA, "asof": "2026-07-22", "names": {},
+                "sectors": {}, "regime_en": "Risk-on"}
+    m, client = _client(monkeypatch, tmp_path, ctx=_ctx())
+    r = client.post("/api/portfolio/changes", json={"previous": previous},
+                    headers={"Authorization": "Bearer x"})
+    body = r.json()
+    assert body["first_visit"] is False
+    assert body["changes"]
+    # The invariant, stated once: the two fields can never disagree.
+    assert body["first_visit"] == (not body["changes"] and body["first_visit"])
+    m.app.dependency_overrides.clear()
+
+
+def test_changes_endpoint_discloses_the_cursor_scope(monkeypatch, tmp_path):
+    m, client = _client(monkeypatch, tmp_path, ctx=_ctx())
+    r = client.post("/api/portfolio/changes", json={},
+                    headers={"Authorization": "Bearer x"})
+    assert r.json()["cursor"]["scope"] == "device"
+    m.app.dependency_overrides.clear()
+
+
+# ── A1/A2/A3: the population is never a guess, including on error paths ──────
+
+def _loader_with(monkeypatch, tmp_path, sb_get):
+    """Load app.main with brain_gateway._sb_get stubbed, exercising the REAL loader."""
+    pytest.importorskip("fastapi")
+    repo = tmp_path
+    (repo / "site" / "data").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("MACRO_REPO", str(repo))
+    for mod in list(sys.modules):
+        if mod == "app.main" or mod.startswith("app.main."):
+            del sys.modules[mod]
+    import app.main as m  # noqa: PLC0415
+    import engine.neuralweb.brain_gateway as gw  # noqa: PLC0415
+    monkeypatch.setattr(gw, "_sb_get", sb_get)
+    return m
+
+
+def test_failed_positions_query_is_unspecified_not_watchlist_union(monkeypatch, tmp_path):
+    """A2 — the blocker. `_sb_get` returns None for a missing env var, a 5s timeout, a
+    PostgREST 5xx and bad JSON alike; [] means genuinely no rows. Collapsing them told a
+    Pro user with ten open positions "Watchlist structure — equal weighted" whenever
+    Supabase blinked."""
+    def sb_get(path):
+        if "portfolio_positions" in path:
+            return None                      # the query FAILED
+        if "watchlists?" in path:
+            return [{"id": "L1"}]
+        return [{"symbol": "NVDA"}]
+    m = _loader_with(monkeypatch, tmp_path, sb_get)
+    rows, population = m._portfolio_load_holdings("u1")
+    assert population == "unspecified"
+    assert rows == []
+
+
+def test_genuinely_empty_positions_still_falls_through_to_watchlist(monkeypatch, tmp_path):
+    """The other half of A2: [] is a real answer and must NOT be treated as a failure,
+    or the watchlist path would become unreachable."""
+    def sb_get(path):
+        if "portfolio_positions" in path:
+            return []                        # genuinely no open positions
+        if "watchlists?" in path:
+            return [{"id": "L1"}]
+        return [{"symbol": "NVDA"}]
+    m = _loader_with(monkeypatch, tmp_path, sb_get)
+    rows, population = m._portfolio_load_holdings("u1")
+    assert population == "watchlist_union"
+    assert [r["ticker"] for r in rows] == ["NVDA"]
+
+
+@pytest.mark.parametrize("failing", ["watchlists?", "watchlist_symbols"])
+def test_failed_watchlist_queries_are_also_unspecified(monkeypatch, tmp_path, failing):
+    def sb_get(path):
+        if "portfolio_positions" in path:
+            return []
+        if failing in path:
+            return None
+        if "watchlists?" in path:
+            return [{"id": "L1"}]
+        return [{"symbol": "NVDA"}]
+    m = _loader_with(monkeypatch, tmp_path, sb_get)
+    _rows, population = m._portfolio_load_holdings("u1")
+    assert population == "unspecified"
+
+
+def test_positions_query_success_reports_positions(monkeypatch, tmp_path):
+    def sb_get(path):
+        if "portfolio_positions" in path:
+            return [{"ticker": "NVDA", "shares": 10, "entry_price": 100.0}]
+        return None
+    m = _loader_with(monkeypatch, tmp_path, sb_get)
+    rows, population = m._portfolio_load_holdings("u1")
+    assert population == "positions"
+    assert len(rows) == 1
+
+
+def test_import_failure_reports_unspecified_not_positions(monkeypatch, tmp_path):
+    """A1 — when the gateway import fails, NO query ran, so nothing about the population
+    is known. Hard-coding "positions" told a Pro user with ten real positions "This read
+    describes the 0 names you hold."."""
+    pytest.importorskip("fastapi")
+    repo = tmp_path
+    (repo / "site" / "data").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("MACRO_REPO", str(repo))
+    for mod in list(sys.modules):
+        if mod == "app.main" or mod.startswith("app.main."):
+            del sys.modules[mod]
+    import app.main as m  # noqa: PLC0415
+
+    real_import = builtins.__import__
+
+    def boom(name, *a, **kw):
+        if name == "engine.neuralweb.brain_gateway":
+            raise ImportError("simulated gateway import failure")
+        return real_import(name, *a, **kw)
+
+    monkeypatch.setattr(builtins, "__import__", boom)
+    rows, population = m._portfolio_load_holdings("u1")
+    assert (rows, population) == ([], "unspecified")
+
+
+def test_two_error_paths_no_longer_claim_opposite_populations(monkeypatch, tmp_path):
+    """The tell that neither old answer was evidence-based: the import-failure path
+    claimed `positions` while the query-failure path claimed `watchlist_union` — for the
+    same state of knowledge, which is none."""
+    def sb_get(path):
+        return None
+    m = _loader_with(monkeypatch, tmp_path, sb_get)
+    _rows, query_fail = m._portfolio_load_holdings("u1")
+    assert query_fail == "unspecified"
+
+
+def test_brain_gateway_loader_also_refuses_to_guess(monkeypatch, tmp_path):
+    """A2 applies to BOTH loaders. The gateway has its own inline copy of the
+    positions→watchlist fallback, so fixing only app.main would leave the Brain tool
+    telling a user "your watchlist" about a position book — the silent sibling."""
+    import engine.neuralweb.brain_gateway as gw  # noqa: PLC0415
+
+    repo = tmp_path
+    (repo / "site" / "data").mkdir(parents=True, exist_ok=True)
+    (repo / "site" / "data" / "portfolio_ctx.json").write_text(
+        json.dumps(_ctx(), ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(gw, "_resolve_tier",
+                        lambda uid, root=None: {"tier": "pro", "status": "active"})
+
+    # positions query FAILS, watchlist would answer → must NOT claim watchlist_union.
+    monkeypatch.setattr(gw, "_sb_get",
+                        lambda path: None if "portfolio_positions" in path
+                        else ([{"id": "L1"}] if "watchlists?" in path
+                              else [{"symbol": "NVDA"}]))
+    out = gw._tool_get_portfolio_brief({}, repo, user_id="u1")
+    assert out["population"]["mode"] == "unspecified", out["population"]
+
+    # genuinely empty positions → watchlist_union is correct and still reachable.
+    monkeypatch.setattr(gw, "_sb_get",
+                        lambda path: [] if "portfolio_positions" in path
+                        else ([{"id": "L1"}] if "watchlists?" in path
+                              else [{"symbol": "NVDA"}]))
+    out = gw._tool_get_portfolio_brief({}, repo, user_id="u1")
+    assert out["population"]["mode"] == "watchlist_union"
+
+    # real positions → positions.
+    monkeypatch.setattr(gw, "_sb_get",
+                        lambda path: [{"ticker": "NVDA", "shares": 10,
+                                       "entry_price": 100.0}]
+                        if "portfolio_positions" in path else None)
+    out = gw._tool_get_portfolio_brief({}, repo, user_id="u1")
+    assert out["population"]["mode"] == "positions"
+
+
+def test_cache_key_covers_population_change(monkeypatch, tmp_path):
+    """A3 — the cached brief embeds the population, which is Supabase-derived and
+    invisible to (uid, ctx-mtime). A user adding their first position kept a cached
+    `watchlist_union` brief for 5 minutes while /api/portfolio/changes reported
+    `positions` — two live endpoints disagreeing about the same book."""
+    pytest.importorskip("fastapi")
+    repo = tmp_path
+    (repo / "site" / "data").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("MACRO_REPO", str(repo))
+    for mod in list(sys.modules):
+        if mod == "app.main" or mod.startswith("app.main."):
+            del sys.modules[mod]
+    import app.main as m  # noqa: PLC0415
+
+    watchlist = ([{"ticker": "NVDA", "shares": None, "entry_price": None}],
+                 "watchlist_union")
+    positions = ([{"ticker": "NVDA", "shares": 10, "entry_price": 100.0}], "positions")
+    assert m._holdings_fingerprint(*watchlist) != m._holdings_fingerprint(*positions)
+    # Same rows, different population → still a different key.
+    assert (m._holdings_fingerprint(watchlist[0], "watchlist_union")
+            != m._holdings_fingerprint(watchlist[0], "unspecified"))
+    # Same everything → stable key (the cache must still work).
+    assert m._holdings_fingerprint(*positions) == m._holdings_fingerprint(*positions)
+    # And it holds no user data in the clear.
+    assert "NVDA" not in m._holdings_fingerprint(*positions)
+
+
+def test_brief_endpoint_reflects_a_population_change_immediately(monkeypatch, tmp_path):
+    """The A3 defect end-to-end: two calls inside the TTL, holdings changed between."""
+    state = {"holdings": ([{"ticker": "NVDA", "shares": None, "entry_price": None}],
+                          "watchlist_union")}
+    m, client = _client(monkeypatch, tmp_path, ctx=_ctx())
+    monkeypatch.setattr(m, "_portfolio_load_holdings", lambda uid: state["holdings"])
+    r1 = client.get("/api/portfolio/brief", headers={"Authorization": "Bearer x"})
+    assert r1.json()["population"]["mode"] == "watchlist_union"
+    state["holdings"] = ([{"ticker": "NVDA", "shares": 10, "entry_price": 100.0}],
+                         "positions")
+    r2 = client.get("/api/portfolio/brief", headers={"Authorization": "Bearer x"})
+    assert r2.json()["population"]["mode"] == "positions", \
+        "the cache served a stale population"
     m.app.dependency_overrides.clear()
 
 

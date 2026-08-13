@@ -1509,9 +1509,34 @@ def brain_thread_delete(thread_id: str, user: dict = Depends(require_user)):
 # Brain tool get_portfolio_brief (engine/neuralweb/brain_gateway.py). Display-tier only,
 # never prescriptive; no per-user compute runs in the nightly.
 
-_PORTFOLIO_CACHE: dict[tuple[str, float], tuple[dict, float]] = {}  # (uid,mtime) → (resp, exp)
+# (uid, ctx-mtime, holdings-fingerprint) → (resp, expiry).
+#
+# The fingerprint is load-bearing, not belt-and-braces. The cached brief embeds the
+# POPULATION, which is derived from Supabase state that the other two key parts cannot
+# see: with a (uid, mtime) key, a user who adds their first position keeps a cached
+# `watchlist_union` brief for the full TTL while /api/portfolio/changes — uncached —
+# simultaneously reports `positions`. Two live endpoints disagreeing about which names a
+# user holds is the founding defect wearing a cache. Keying on the holdings themselves
+# makes a population change a cache MISS by construction.
+_PORTFOLIO_CACHE: dict[tuple[str, float, str], tuple[dict, float]] = {}
 _PORTFOLIO_CACHE_TTL = 300.0  # seconds
 _PORTFOLIO_CTX_PATH = "site/data/portfolio_ctx.json"
+
+
+def _holdings_fingerprint(holdings: list[dict], population: str) -> str:
+    """Stable short digest of what the loader returned, for the response cache key.
+
+    Covers the population AND the rows (ticker/shares/entry_price), so any change that
+    could alter a composed sentence changes the key. Hashed rather than stored raw: the
+    cache key lives in a process-wide dict, and a book is user data — a digest keeps the
+    holdings out of a structure that outlives the request.
+    """
+    payload = json.dumps(
+        [population] + sorted(
+            (str(r.get("ticker") or ""), str(r.get("shares")), str(r.get("entry_price")))
+            for r in holdings if isinstance(r, dict)),
+        separators=(",", ":"), sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
 def _portfolio_resolve_tier(uid: str) -> dict:
@@ -1540,40 +1565,54 @@ def _portfolio_load_holdings(uid: str) -> tuple[list[dict], str]:
     W6 / packet amendment A8: this function is the ONLY place that knows which of the two
     queries answered, so it is the only place that can name the population. It is
     returned rather than inferred downstream — the composer cannot tell a one-name
-    watchlist from a one-name position book, and guessing is the defect A8 closes. The
-    watchlist fallback returns "watchlist_union" even when it yields zero rows, because
-    the fallback is still the set that was consulted.
+    watchlist from a one-name position book, and guessing is the defect A8 closes.
+
+    A FAILED QUERY IS `unspecified`, NEVER `watchlist_union`. `_sb_get` returns None for
+    every failure mode — missing SUPABASE_URL/service key, a 5s timeout, a PostgREST 5xx,
+    unparseable JSON — and returns [] only for a genuinely empty result set. Collapsing
+    those with a bare truthiness test is how a Supabase blip would tell a Pro user with
+    ten open positions "Watchlist structure — equal weighted": the positions query fails,
+    falls through, and the fallback branch claims the population by virtue of having run.
+    The distinguishing information exists (`None` vs `[]`) and is branched on here rather
+    than discarded. Same rule for the import guard: if the module never loaded, no query
+    ran at all, so nothing about the population is known.
     """
     try:
         from engine.neuralweb.brain_gateway import _sb_get  # noqa: PLC0415
         import urllib.parse as _up  # noqa: PLC0415
     except Exception:  # noqa: BLE001
-        return [], "positions"
+        return [], "unspecified"
     quid = _up.quote(str(uid))
 
     rows: list[dict] = []
     pos_rows = _sb_get(
         f"portfolio_positions?user_id=eq.{quid}&status=eq.open"
         f"&select=ticker,shares,entry_price")
-    if pos_rows:
-        for r in pos_rows:
-            if isinstance(r, dict) and r.get("ticker"):
-                rows.append({"ticker": r.get("ticker"), "shares": r.get("shares"),
-                             "entry_price": r.get("entry_price")})
+    if pos_rows is None:
+        # The positions query did not answer. We cannot say the user has no positions.
+        return [], "unspecified"
+    for r in pos_rows:
+        if isinstance(r, dict) and r.get("ticker"):
+            rows.append({"ticker": r.get("ticker"), "shares": r.get("shares"),
+                         "entry_price": r.get("entry_price")})
     if rows:
         return rows, "positions"
 
-    # Equal-weight fallback: watchlists → watchlist_symbols.
+    # Genuinely zero open positions → the watchlist union is the population.
     lists = _sb_get(f"watchlists?user_id=eq.{quid}&select=id&order=position")
-    list_ids = [str(r.get("id")) for r in (lists or [])
+    if lists is None:
+        return [], "unspecified"
+    list_ids = [str(r.get("id")) for r in lists
                 if isinstance(r, dict) and r.get("id") is not None]
     if list_ids:
         id_filter = ",".join(list_ids)
         sym_rows = _sb_get(
             f"watchlist_symbols?watchlist_id=in.({id_filter})"
             f"&select=symbol,position&order=position")
+        if sym_rows is None:
+            return [], "unspecified"
         seen: set = set()
-        for r in (sym_rows or []):
+        for r in sym_rows:
             s = r.get("symbol") if isinstance(r, dict) else None
             if s and s not in seen:
                 seen.add(s)
@@ -1583,11 +1622,12 @@ def _portfolio_load_holdings(uid: str) -> tuple[list[dict], str]:
 
 @app.get("/api/portfolio/brief")
 def portfolio_brief(response: Response, user: dict = Depends(require_user)):
-    """Pro-only personalized daily portfolio brief (portfolio_brief.v1).
+    """Pro-only personalized daily portfolio brief (portfolio_brief.v2).
 
     401 (require_user) → not signed in. 403 {error:pro_required,tier} → not Pro.
     503 {error:ctx_unavailable} → the nightly ctx artifact is missing/corrupt.
-    Cache: in-process per (uid, ctx-file-mtime), TTL 300s; Cache-Control private,no-store.
+    Cache: in-process per (uid, ctx-file-mtime, holdings fingerprint), TTL 300s;
+    Cache-Control private,no-store.
     """
     from datetime import date as _date  # noqa: PLC0415
     response.headers["Cache-Control"] = "private, no-store"
@@ -1609,9 +1649,12 @@ def portfolio_brief(response: Response, user: dict = Depends(require_user)):
     except OSError:
         raise HTTPException(503, detail={"error": "ctx_unavailable"}) from None
 
-    # Per-(uid, mtime) response cache with TTL.
+    # Holdings first: the population they carry is part of the cache key (see
+    # _holdings_fingerprint), so the lookup cannot happen before the load.
+    holdings, population = _portfolio_load_holdings(uid)
+
     now = time.monotonic()
-    ckey = (uid, mtime)
+    ckey = (uid, mtime, _holdings_fingerprint(holdings, population))
     hit = _PORTFOLIO_CACHE.get(ckey)
     if hit and hit[1] > now:
         return hit[0]
@@ -1622,8 +1665,6 @@ def portfolio_brief(response: Response, user: dict = Depends(require_user)):
             raise ValueError("ctx not an object")
     except Exception:  # noqa: BLE001
         raise HTTPException(503, detail={"error": "ctx_unavailable"}) from None
-
-    holdings, population = _portfolio_load_holdings(uid)
 
     try:
         from engine.portfolio_brief import compose_brief  # noqa: PLC0415
@@ -1691,7 +1732,8 @@ def portfolio_changes(response: Response, payload: dict = Body(default=None),  #
         raise HTTPException(503, detail={"error": "ctx_unavailable"}) from None
 
     try:
-        from engine.portfolio_changes import diff_snapshots, snapshot_state  # noqa: PLC0415
+        from engine.portfolio_changes import (  # noqa: PLC0415
+            CURSOR_DISCLOSURE, diff_snapshots, is_snapshot, snapshot_state)
     except ImportError as exc:
         raise HTTPException(503, "portfolio changes unavailable") from exc
 
@@ -1700,15 +1742,23 @@ def portfolio_changes(response: Response, payload: dict = Body(default=None),  #
     current = snapshot_state(ctx, tickers)
 
     previous = (payload or {}).get("previous") if isinstance(payload, dict) else None
-    changes = diff_snapshots(previous, current) if isinstance(previous, dict) else []
+    # `first_visit` and `changes` MUST come from the same definition of "had a prior
+    # visit", or the response contradicts itself. A digest whose `names` is empty is a
+    # REAL prior visit — that is what a user holding only desk-uncovered names stores —
+    # so a truthiness test on `previous["names"]` reported first_visit=true next to
+    # "3 names joined this read since your last visit". `is_snapshot` is the one answer
+    # both sides read.
+    first_visit = not is_snapshot(previous)
+    changes = [] if first_visit else diff_snapshots(previous, current)
 
     return {
         "schema": "portfolio_changes.v1",
         "asof": ctx.get("asof"),
         "population": population,
-        "first_visit": not isinstance(previous, dict) or not previous.get("names"),
+        "first_visit": first_visit,
         "changes": changes,
         "state_digest": current,
+        "cursor": dict(CURSOR_DISCLOSURE),
     }
 
 
