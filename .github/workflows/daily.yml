@@ -51,10 +51,18 @@ concurrency:
   # processing the workflow SILENTLY — cron does not fire and dispatched runs sit
   # queued with zero jobs forever (uncancellable, HTTP 500). Guard:
   # tests/test_workflow_file_size.py. Shrink by extraction, never by deleting docs.
-  # Versioned AWAY from "pipeline-daily": that group holds unkillable zombie records
-  # from the oversized-file era, and the server cancelled every healed run started in
-  # it (see PR for receipts). Restores #5414's sidestep, undone by #5416's revert.
-  # Never rename back while zombies exist; "-2" skipped (also bound by a wedged run).
+  # Versioned away from "pipeline-daily" by #5422 on the theory that the group's
+  # unkillable zombie records (oversized-file era) made the server cancel every new
+  # run placed in it. That theory is REFUTED and this rename is not load-bearing:
+  # run 31583415065 — the first dispatch into "-3", 09:32:58Z 2026-08-12 — was killed
+  # anyway at 09:44:12Z, 11 min into collect, by an explicit
+  # `POST /actions/runs/31583415065/force-cancel` from a live FLEET session (receipt:
+  # PR #5422 review comment). All five dead bakes that night share that one cause.
+  # Kept only because renaming back is pointless churn. Lesson for the next lane that
+  # keeps dying: kill delays that VARY (20s/90s/6min/11min) are a poll cycle, not a
+  # server rule — grep the fleet's session transcripts for the run id before ever
+  # concluding "no canceller exists"; the repo grep only clears repo automation, and
+  # an agent conflict is fixed by arbitration, never by editing this file.
   group: pipeline-daily-3
   cancel-in-progress: false
 
