@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T03:11:21.492918+00:00",
-  "count": 1032,
+  "generated_at": "2026-08-13T03:26:12.806049+00:00",
+  "count": 1033,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -102,6 +102,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ksmvhuwasmt-0d1f11",
+      "title": "Synopsys Inc. (SNPS) Expect a solid quarter, with an uptick to 2026 guidance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T01:23:39Z",
+      "summary_points": [
+        "**FY26 Guidance Catalysts**: Solid Q3 with modest FY26 guidance uptick driven by IP recovery (China/customized blocks), core EDA demand acceleration, and Ansys synergy timing (critical for 2024 targets), insulated from AI disruption.",
+        "**Price Target Upside**: $600 12-month target (40x normalized EPS $15.00) implying 46.0% upside from current price ($414.91).",
+        "**Critical Downside Risks**: Export restrictions, market share losses, and reduced custom chip designs pose key geopolitical/fundamental threats to valuation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
