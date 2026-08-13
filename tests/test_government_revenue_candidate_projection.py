@@ -22,8 +22,11 @@ from engine.government_revenue.entity_resolution import load_recipient_entity_gr
 from scripts import build_government_revenue_candidates as projection
 from tests.government_revenue_candidate_fixture import (
     ROOT,
+    canonical_candidate_count,
     canonical_fixture_root,
     canonical_frozen_at,
+    canonical_reviewed_cohort_size,
+    restrict_boundary_to_known_through,
     rewound,
     shifted,
     utc_date,
@@ -34,6 +37,13 @@ from tests.test_government_revenue_candidates import _award_event, _graph, _payl
 # see `tests/government_revenue_candidate_fixture` for why a wall-clock literal
 # here is a scheduled failure rather than a constant.
 FROZEN_AT = canonical_frozen_at()
+#: How many exact-linked candidates the copied boundary currently derives.  The
+#: collection lane moves this (8 -> 23 overnight on 2026-08-13), so it is derived
+#: from the same documents `_fixture_root` copies rather than hand-typed; see
+#: `tests.government_revenue_candidate_fixture.canonical_candidate_count`.
+CANONICAL_CANDIDATES = canonical_candidate_count()
+#: The human-reviewed cohort those candidates can never fall below.
+REVIEWED_COHORT = canonical_reviewed_cohort_size()
 #: A later run over the same sources: reassembly, clock advance, append window.
 NEXT_RUN_AT = shifted(FROZEN_AT, hours=1)
 #: An observation known between the two runs above -- appendable, not a backfill.
@@ -165,6 +175,17 @@ def _incident_correction_root(tmp_path: Path) -> Path:
     )
     manifest, _manifest_sha = load_candidate_issuance_correction_manifest(root)
     incident = manifest["incident"]
+    # ...and hold that boundary at the instant the incident was issued.  Copying
+    # the inputs live but the ledger frozen is a mixed vintage: on 2026-08-13 the
+    # lane admitted fifteen events it had learned since, the activation run
+    # issued them, and the append broke the frozen state blob's byte/sha binding
+    # ("candidate correction activation changed the incident ledger").  An event
+    # learned after the incident was issued is not part of the incident, so the
+    # replay reads the boundary point-in-time.  See
+    # `restrict_boundary_to_known_through`.
+    restrict_boundary_to_known_through(
+        root, incident["issued_projection_generated_at"]
+    )
     ledger = projection.load_candidate_ledger(
         root / "data/government_revenue/candidate_ledger.jsonl"
     )
@@ -623,19 +644,25 @@ def test_current_fixture_projects_honest_source_queue_and_byte_identical_twins(t
         (root / "data/government_revenue/candidate_projection_status.json").read_text(encoding="utf-8")
     )
     assert result["status"] == "ok"
-    assert result["candidate_count"] == 8
+    # The cardinality is the collection lane's to move; what this test owns is
+    # that all five separately written artifacts -- the result dict, the queue,
+    # the public copy, the ledger and the status -- agree on ONE number, and that
+    # the number never falls below the reviewed cohort.  That floor is what keeps
+    # the derived comparisons from passing vacuously if the engine went blind.
+    assert CANONICAL_CANDIDATES >= REVIEWED_COHORT > 0
+    assert result["candidate_count"] == CANONICAL_CANDIDATES
     assert result["mapping_backlog_count"] == 21
-    assert queue["counts"]["total"] == 8
-    assert queue["counts"]["exact_linked"] == 8
+    assert queue["counts"]["total"] == CANONICAL_CANDIDATES
+    assert queue["counts"]["exact_linked"] == CANONICAL_CANDIDATES
     assert queue["counts"]["mapping_needed"] == 21
     assert queue_path.read_bytes() == public_path.read_bytes()
     assert len(
         (root / "data/government_revenue/candidate_ledger.jsonl")
         .read_text(encoding="utf-8")
         .splitlines()
-    ) == 8
+    ) == CANONICAL_CANDIDATES
     assert status["status"] == "ok"
-    assert status["candidate_count"] == 8
+    assert status["candidate_count"] == CANONICAL_CANDIDATES
     # Source health is reported from the canonical inputs, never defaulted rosy.
     # A hand-typed literal here is the same scheduled failure this suite's fixture
     # module was written to end: the award-event rail sat at "unavailable" for days
@@ -643,7 +670,7 @@ def test_current_fixture_projects_honest_source_queue_and_byte_identical_twins(t
     # with no code change. So bind the published award-event status to the very
     # document the fixture root copied -- the two move together by construction.
     # The literal snapshot tripwire for this state lives in the live-probe suite
-    # (tests/test_government_revenue_candidates::test_current_truth_*), which is
+    # (tests/test_government_revenue_candidates::test_current_source_truth_*), which is
     # where a human is meant to re-read it when the rail moves.
     canonical_award_status = json.loads(
         (root / "data/government_revenue/latest.json").read_text(encoding="utf-8")
@@ -684,7 +711,7 @@ def test_same_frozen_run_is_idempotent_and_one_sided_twin_is_remediated(tmp_path
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
     first = _artifact_bytes(root)
     first_state = json.loads(first["state"])
-    assert first_state["ledger"]["append_count"] == 8
+    assert first_state["ledger"]["append_count"] == CANONICAL_CANDIDATES
     assert first_state["ledger"]["prior_line_count"] == 0
 
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
@@ -695,7 +722,7 @@ def test_same_frozen_run_is_idempotent_and_one_sided_twin_is_remediated(tmp_path
     assert settled["public"] == first["public"]
     assert settled["status"] == first["status"]
     assert settled_state["ledger"]["append_count"] == 0
-    assert settled_state["ledger"]["prior_line_count"] == 8
+    assert settled_state["ledger"]["prior_line_count"] == CANONICAL_CANDIDATES
 
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
     assert _artifact_bytes(root) == settled
@@ -1068,7 +1095,10 @@ def test_reviewed_historical_source_is_withheld_without_ledger_backfill(
     assert result["append_count"] == 0
     assert result["suppressed_historical_count"] == 1
     assert ledger_path.read_bytes() == before_ledger
-    assert projection.load_candidate_ledger(ledger_path).line_count == 8
+    assert (
+        projection.load_candidate_ledger(ledger_path).line_count
+        == CANONICAL_CANDIDATES
+    )
     assert queue["candidates"] == []
     assert queue["counts"]["total"] == 0
     assert queue["freshness"]["exact_candidate_availability"] == "withheld_historical"
@@ -1474,7 +1504,7 @@ def test_unseen_observation_newer_than_prior_materialization_can_append(
     ledger = projection.load_candidate_ledger(
         root / "data/government_revenue/candidate_ledger.jsonl"
     )
-    assert ledger.line_count == 9
+    assert ledger.line_count == CANONICAL_CANDIDATES + 1
     assert ledger.observations[-1]["known_at"] == BETWEEN_RUNS_KNOWN_AT
 
 

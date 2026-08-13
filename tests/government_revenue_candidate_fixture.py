@@ -39,6 +39,14 @@ CANONICAL_DIRECTORY = Path("data/government_revenue")
 #: so the fixture root and the clock can never describe different vintages.
 CANONICAL_INPUTS = ("latest.json", "workspace.json", "recipient_entity_graph.json")
 
+#: The reviewed historical suppression manifest.  Its entry count is the one
+#: candidate cardinality no collection lane can move -- it changes only when a
+#: human re-reviews the cohort -- so it is the floor the derived counts below are
+#: checked against.
+REVIEWED_SUPPRESSIONS = Path(
+    "config/government_revenue/candidate_historical_suppressions.v1.json"
+)
+
 #: Floor for the derived clock.  The suites also synthesize hand-authored
 #: fixtures whose clocks are fixed (``tests/test_government_revenue_candidates``
 #: tops out at 2026-08-02T18:00Z; the API suite pins an observation at
@@ -211,3 +219,138 @@ def rewound(instant: str, **delta: float) -> str:
     :func:`_clamped_rewind` for what the clamp defends against.
     """
     return _clamped_rewind(instant, timedelta(**delta), floor=canonical_newest_known_at())
+
+
+@lru_cache(maxsize=1)
+def canonical_reviewed_cohort_size() -> int:
+    """Return the reviewed historical suppression manifest's entry count.
+
+    This is the floor every derived cardinality is checked against.  Without it
+    an all-derived assertion set is satisfiable by zero: an engine that went
+    blind and produced no candidates at all would agree with itself across every
+    artifact and read green.  The manifest is human-maintained, so a collection
+    lane can never move this number to hide such a regression.
+    """
+    manifest = json.loads((ROOT / REVIEWED_SUPPRESSIONS).read_text(encoding="utf-8"))
+    return len(manifest["entries"])
+
+
+@lru_cache(maxsize=1)
+def canonical_candidate_count() -> int:
+    """Return the exact-linked candidate count derivable from the copied boundary.
+
+    The suites deliberately project the live committed generation, so this
+    cardinality is weather rather than a constant: the collection lane's rolling
+    500-event window derived eight candidates through 2026-08-12T16:14Z and
+    twenty-three at 2026-08-13T02:18Z (commit ``40baa147fa2``), with no code
+    change involved.  Every hand-typed ``== 8`` in both candidate suites went red
+    at once on that write -- packs 6 and 8, fleet-wide.
+
+    Deriving the number from the very documents :func:`canonical_fixture_root`
+    copies keeps the expectation and the data one vintage by construction.  It is
+    the fix this module's header applied to the run clock, one quantity over, and
+    for the same reason: re-typing a fresher literal only re-arms the bomb for the
+    next collection.
+
+    What the suites still pin literally is everything a collection cannot move --
+    the reviewed graph's coverage and issuer roster, the mapping backlog, and
+    :func:`canonical_reviewed_cohort_size`.
+
+    The engine import is function-local on purpose.  This module is imported by
+    suites in three separate CI jobs, and ``engine.government_revenue.candidates``
+    pulls ``jsonschema`` at module scope; all three install lines carry it today,
+    but a module-scope import here would make every one of them a hard import
+    dependency of the *fixture*, so the next thin lane that borrows this helper
+    reds on a wheel it never needed.  Keeping it local costs nothing -- the
+    result is cached -- and keeps the fixture importable on a bare install.
+    """
+    from engine.government_revenue.candidates import build_candidate_queue
+
+    latest = json.loads(
+        (ROOT / CANONICAL_DIRECTORY / "latest.json").read_text(encoding="utf-8")
+    )
+    graph = json.loads(
+        (ROOT / CANONICAL_DIRECTORY / "recipient_entity_graph.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    queue = build_candidate_queue(latest, graph, generated_at=canonical_frozen_at())
+    return int(queue["counts"]["total"])
+
+
+def _event_known_at(event: Any) -> datetime | None:
+    """Return an award event's own clock, or ``None`` when it has none to read."""
+    if not isinstance(event, dict):
+        return None
+    change = event.get("change")
+    if not isinstance(change, dict):
+        return None
+    known_at = change.get("known_at")
+    return _instant(known_at) if isinstance(known_at, str) else None
+
+
+def restrict_boundary_to_known_through(root: Path, known_through: str) -> int:
+    """Drop copied award events the lane learned after ``known_through``.
+
+    A replay of a closed historical incident is only closed if its *inputs* are.
+    ``_incident_correction_root`` pairs a byte-frozen eight-row ledger with the
+    live canonical boundary, so the night the lane admitted fifteen further
+    events (2026-08-13) the activation run issued them, grew the ledger the
+    frozen state blob binds by ``byte_count``/``sha256``, and the replay died on
+    "candidate correction activation changed the incident ledger" -- again with
+    no code change involved.
+
+    Point-in-time is the honest boundary: an event the lane learned *after* the
+    incident was issued is by construction not part of the incident.
+    ``known_through`` is read off the reviewed correction manifest
+    (``incident.issued_projection_generated_at``) rather than hand-typed, so it
+    moves only when a human re-reviews the incident.  The reviewed cohort itself
+    is never at risk, because the collector preserves each event's first-seen
+    ``known_at`` across runs: the incident's eight sat at 2026-08-08T11:58:31Z
+    while the newcomers arrived stamped 2026-08-12T23:50:04Z.
+
+    An event's own clock is ``change.known_at`` -- the exact field the engine
+    admits on (``engine/government_revenue/candidates.py``, the
+    ``known_at <= analysis_as_of`` gate), not a top-level key, which award events
+    do not carry.  An event whose clock is missing or unparseable is KEPT: the
+    prune removes only what it can prove is late, never what it cannot read.
+
+    Returns the number of events dropped.
+    """
+    from scripts import build_government_revenue
+
+    boundary = _instant(known_through)
+    if boundary is None:
+        raise ValueError(f"not an offset-aware ISO-8601 instant: {known_through!r}")
+
+    workspace_path = root / CANONICAL_DIRECTORY / "workspace.json"
+    latest_path = root / CANONICAL_DIRECTORY / "latest.json"
+    workspace = json.loads(workspace_path.read_text(encoding="utf-8"))
+    events = workspace.get("events")
+    if not isinstance(events, list):
+        return 0
+    kept = [
+        event
+        for event in events
+        if not ((clock := _event_known_at(event)) is not None and clock > boundary)
+    ]
+    dropped = len(events) - len(kept)
+    if dropped == 0:
+        return 0
+
+    workspace["events"] = kept
+    # ``bundle_id`` is a CONTENT digest over the workspace, so a pruned bundle has
+    # to be re-identified or the builder refuses the whole boundary with
+    # "canonical workspace bundle identity mismatch".
+    workspace["bundle_id"] = build_government_revenue._workspace_bundle_id(workspace)
+    workspace_path.write_text(
+        json.dumps(workspace, ensure_ascii=False), encoding="utf-8"
+    )
+
+    # ``latest`` embeds the same bundle and the builder compares the two
+    # canonically, so they must be the SAME document rather than two documents
+    # pruned alike.
+    latest = json.loads(latest_path.read_text(encoding="utf-8"))
+    latest["procurement_workspace"] = workspace
+    latest_path.write_text(json.dumps(latest, ensure_ascii=False), encoding="utf-8")
+    return dropped

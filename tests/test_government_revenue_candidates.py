@@ -210,21 +210,47 @@ def _payload(event: dict | None = None) -> dict:
     }
 
 
-def test_current_source_truth_is_eight_candidates_with_twenty_one_mapping_rows() -> None:
+def test_current_source_truth_keeps_the_reviewed_cohort_over_twenty_one_mapping_rows() -> None:
     latest = json.loads((ROOT / "data/government_revenue/latest.json").read_text(encoding="utf-8"))
     graph = json.loads((ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8"))
+    reviewed = json.loads(
+        (
+            ROOT / "config/government_revenue/candidate_historical_suppressions.v1.json"
+        ).read_text(encoding="utf-8")
+    )["entries"]
 
     queue = build_candidate_queue(latest, graph, generated_at=GENERATED_AT)
 
-    # The pure source engine honestly sees the eight exact snapshot rows that
-    # #5207 made schema-valid.  Active publication is a separate boundary: the
-    # issuance-correction receipt quarantines these exact ledger rows without
-    # teaching the source engine to erase or reinterpret official evidence.
-    assert queue["counts"]["total"] == 8
-    assert queue["counts"]["exact_linked"] == 8
-    assert queue["counts"]["by_family"] == {
+    # The pure source engine honestly sees every exact snapshot row that #5207
+    # made schema-valid.  How MANY it sees is the collection lane's to move: the
+    # rolling 500-event window derived eight through 2026-08-12T16:14Z and
+    # twenty-three at 2026-08-13T02:18Z (commit 40baa147fa2), which reddened a
+    # hand-typed `== 8` here and five more in the projection suite at once, packs
+    # 6 and 8, fleet-wide, with no code change involved.  What may NOT move
+    # without a human is the reviewed cohort, so that is what this tripwire pins,
+    # along with the queue's internal coherence and its admissible shape.  Active
+    # publication remains a separate boundary: the issuance-correction receipt
+    # quarantines those exact ledger rows without teaching the source engine to
+    # erase or reinterpret official evidence.
+    total = queue["counts"]["total"]
+    assert total == queue["counts"]["exact_linked"] == len(queue["candidates"])
+    assert total >= len(reviewed) == 8
+    assert set(queue["counts"]["by_family"]) <= {
+        "award_ceiling_change",
+        "award_obligation_change",
+    }
+    assert sum(queue["counts"]["by_family"].values()) == total
+    assert Counter(entry["candidate_family"] for entry in reviewed) == {
         "award_ceiling_change": 4,
         "award_obligation_change": 4,
+    }
+    # Facts never vanish: every reviewed identity is still derivable from source.
+    derived_keys = {
+        historical_suppression_entry_key(candidate_historical_suppression_entry(row))
+        for row in queue["candidates"]
+    }
+    assert derived_keys >= {
+        historical_suppression_entry_key(entry) for entry in reviewed
     }
     assert queue["counts"]["mapping_needed"] == 21
 
@@ -262,8 +288,17 @@ def test_current_source_truth_is_eight_candidates_with_twenty_one_mapping_rows()
     assert is_valid_candidate_queue(queue)
 
 
-def test_reviewed_historical_manifest_exactly_matches_the_current_canonical_rebuild() -> None:
-    """The reviewed eight are derived truth, not a hand-transcribed allowlist."""
+def test_reviewed_historical_manifest_is_derived_truth_not_a_hand_transcribed_allowlist() -> None:
+    """Every reviewed entry is reproducible, byte for byte, from the live rebuild.
+
+    The manifest is a CLOSED quarantine of one incident's cohort, while the
+    rebuild runs over a store the collection lane keeps appending to.  The honest
+    relation between them is therefore subset, never equality: an `==` pin reds
+    the pack the first night a legitimate new candidate appears, which is exactly
+    what happened on 2026-08-13 (eight rows became twenty-three).  The claim that
+    actually matters survives intact -- nothing in the manifest was hand-typed,
+    and nothing in it has silently stopped being derivable from official source.
+    """
     payload = build_payload(root=ROOT)
     graph = json.loads(
         (ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(
@@ -286,10 +321,35 @@ def test_reviewed_historical_manifest_exactly_matches_the_current_canonical_rebu
         key=historical_suppression_entry_key,
     )
 
-    assert len(rows) == len(entries) == len(manifest["entries"]) == 8
-    assert entries == manifest["entries"]
-    assert {row["source_event"]["source_rail"] for row in rows} == {
-        "usaspending_award_snapshot"
+    derived = {historical_suppression_entry_key(entry): entry for entry in entries}
+    assert len(derived) == len(entries) == len(rows) >= 8
+    assert len(manifest["entries"]) == 8
+
+    for reviewed_entry in manifest["entries"]:
+        key = historical_suppression_entry_key(reviewed_entry)
+        assert key in derived, (
+            f"reviewed historical suppression {key} is no longer derivable from source"
+        )
+        assert derived[key] == reviewed_entry
+
+    # Stored in the engine's own canonical order, so the manifest is readable as
+    # the rebuild's output rather than as a list someone happened to type.
+    assert manifest["entries"] == sorted(
+        manifest["entries"], key=historical_suppression_entry_key
+    )
+    # The reviewed cohort is a snapshot-rail cohort.  The rebuild at large may
+    # also carry the action rail -- admissible source, and not this closed
+    # manifest's business.
+    reviewed_keys = set(historical_suppression_entry_key(entry) for entry in manifest["entries"])
+    assert {
+        row["source_event"]["source_rail"]
+        for row in rows
+        if historical_suppression_entry_key(candidate_historical_suppression_entry(row))
+        in reviewed_keys
+    } == {"usaspending_award_snapshot"}
+    assert {row["source_event"]["source_rail"] for row in rows} <= {
+        "usaspending_award_snapshot",
+        "usaspending_award_action",
     }
 
 
