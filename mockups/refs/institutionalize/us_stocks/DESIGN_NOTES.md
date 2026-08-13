@@ -117,14 +117,41 @@ The composition passed Product/Taste review — ladder, density, card anatomy, P
 lifecycle treatment, Zone footer and chroma level are settled and are **not** revisited. Five
 narrow corrections were applied; no structural redesign.
 
-**1. The canonical reference now shows the intended experience.** `state=paid` renders the plan
-rows the fixture can draw at full fidelity (33 today — an internal fixture fact, never surfaced),
-and states the **canonical product population: 162 live · the Prophet book**, reconciling
-rendered + "+N more" to that headline. No reference/enrichment/gate vocabulary appears on the
-product surface at all (`verify.py` N7). `state=today` is the honesty state showing the actual payload including the 60% awaiting
-their entry read, and is the state the count law is verified against. A 60%-`暂无判断` board must
-not become the flagship reference. **New spawn gate G-D** (§7) makes coverage a hard production
-dependency.
+**1. ~~The canonical reference now shows the intended experience.~~ — SUPERSEDED at R3 by
+PRC-203; struck at R4 under DA-001. DO NOT REBUILD.**
+
+> **Repealed text, retained only so the repeal is legible.** *"`state=paid` renders the plan rows
+> the fixture can draw at full fidelity (33 today — an internal fixture fact, never surfaced), and
+> states the canonical product population: 162 live · the Prophet book… `state=today` is the
+> honesty state showing the actual payload including the 60% awaiting their entry read, and is the
+> state the count law is verified against. A 60%-`暂无判断` board must not become the flagship
+> reference."*
+
+**What is law instead.** The design authority's blocker **PRC-203** ruled that a view rendering a
+different population than the one its integers describe *is* the count-law contradiction. The
+`state=paid` exemption and the full-fidelity subset it selected are **withdrawn**. There is now
+**one universe, no view exemption** (§0a.C): `paid` and `today` render the same population — the
+whole plan book — and the count law closes over it arithmetically (62+95+0+0+2 = 159 = `live_total`;
+159 + 20 resolved = 179 = `active_count`; 40 rendered + "+119 more" = 159). `board.js` implements
+exactly this; `isRef` survives as a declared-and-never-read vestige of the repealed rule.
+
+**And the mechanism the repealed rule justified is withdrawn with it.** "A 60%-`暂无判断` board must
+not become the flagship reference" was the stated reason for filtering the reference view down to
+the enriched subset. That trade is no longer available: an unflattering board that counts honestly
+outranks a flattering one that does not. A reference is not permitted to improve its own composition
+by choosing its population.
+
+**How full fidelity actually catches up: G-D, not a filter.** The coverage gap is real — the
+entry/actionability axis reaches 61/179 and enrichment 45/179 — and it is closed by **spawn gate
+G-D** (§7, PR #5541), which makes coverage a hard *production* dependency. G-D is a data gate on
+what ships to production; it is **not** a licence for a frozen reference to hide the rows it has
+not enriched yet. Coverage is disclosed on the cards and sized honestly in §6 Q1, never filtered
+away.
+
+*Amendment record: DA-001 (authority-originated, corroborated by both R3 critics at pass 2). The
+R3 artifact shipped this paragraph and §7's `state=paid` description as current law while the code
+implemented their repeal — two contradictory positions, unmarked, in a document that becomes law.
+A migration builder could not tell which paragraph to follow. §7 is corrected in the same pass.*
 
 **2. The live-quote slot now actually renders on every card.** The previous pass put `data-sym` on
 every card and claimed `live.js` could therefore paint every quote — but only created the quote
@@ -486,8 +513,13 @@ and the zh flip, so it cannot regress silently.
 
 No production file is touched. No template, no `site/`, no engine path, no `data/` write, no new
 `theme.css` token, no new header family. The card is the shipped `.pvcard` with its rail removed
-and a lifecycle fact added; the lock is the shipped `.mx-tier-gate--prophet`; Groups is the
-shipped `.actcol` idiom unchanged.
+and a lifecycle fact added; the lock is the shipped `.mx-tier-gate--prophet`.
+
+~~Groups is the shipped `.actcol` idiom unchanged.~~ — **corrected at R4 (VTC-310 / R3 receipt
+NEW-C).** This was false at the R3 SHA: `groups()` emits `.grp-grid` / `.grp`, and `.actcol` was
+never rendered. The rationale asserted a dead ~35-line stylesheet block was the live component.
+The dead block is deleted and this sentence corrected together, because a claim that unused code is
+normative is how the unused code gets rebuilt.
 
 MP-1 remains gated on **G-A** (PR-0(c) publishing `lifecycle_state` + `lifecycle_counts`) and
 **G-B** (DS-PR-0). This artifact satisfies **G-C** only. **No production migration has begun.**
@@ -502,9 +534,15 @@ universe (not the candidate intersection):**
 2. **name · sector · lane · spark** — today 45/179. The live quote is *not* part of this gate: it
    needs only `data-sym`.
 
-The reference view (`state=paid`) shows the product once G-D is met; `state=today` and
-`state=fallback` show what ships if it is not. Both are committed so the difference is reviewable
-rather than argued.
+~~The reference view (`state=paid`) shows the product once G-D is met; `state=today` and
+`state=fallback` show what ships if it is not.~~ — **struck at R4 under DA-001.** This is the same
+repealed `state=paid` exemption struck in §0b.1; see that section for what is law instead. `paid`
+and `today` are one universe and render the same population.
+
+What G-D actually governs: **what may ship to PRODUCTION**, not what a frozen reference is allowed
+to show. `state=fallback` remains a committed diagnostic lens isolating the un-enriched rows for
+inspection, so the coverage gap stays reviewable rather than argued — but it is a lens, never a
+population the product surface may substitute for the book.
 
 **Overtime (Q2) is a separate hard production blocker** and is not cleared by this pass.
 
