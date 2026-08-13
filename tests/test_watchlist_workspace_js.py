@@ -251,28 +251,52 @@ def test_the_snapshot_is_written_after_the_diff_so_it_means_since_you_looked():
 # 5. the visibilitychange re-pull, hardened (W2 scope, recorded on PR #5461)
 # ===========================================================================
 @needs_node
-def test_a_focus_refetch_defers_while_a_push_is_still_pending():
+def test_the_defer_predicate_covers_all_three_push_states():
     """THE NAMED BUG. A pull MERGES cloud rows into the local blob (union: cloud wins
-    for membership). Inside the 600 ms push debounce a removal is still only local, so
-    the merge hands the row straight back and the user watches their deletion undo
-    itself.
+    for membership). Inside the push window a removal is still only local, so the merge
+    hands the row straight back and the user watches their deletion undo itself.
 
-    The fix is READ-SIDE only — the push and fold paths are frozen — so this test drives
-    the real listener: enqueue a push (which arms a debounce timer), fire
-    visibilitychange, and assert no pull went out until the queue drained.
-    """
+    WHAT THIS PINS, precisely: the pure predicate the visibilitychange listener consults
+    — a truth table over its three inputs — NOT an end-to-end drive of the listener
+    (that needs real timers and a live Supabase double, and lives in the store suite's
+    territory). It is the predicate that decides, so it is the predicate that is pinned;
+    the docstring says so rather than implying coverage this body does not have.
+
+    Three states, because there are three. The debounce TIMER is deleted the moment
+    `pushList` is called, so a table over timers+queue alone still let a pull land inside
+    the DELETE's round trip and resurrect the row one RTT later — which is why
+    `inFlight` is the third column."""
     out = _run(
         "var WSJS = require(%s);\n"
         "var t = WSJS._testHooks;\n"
         "OUT({\n"
-        "  pendingWithTimer: t.pushPendingWith({A: 1}, {}),\n"
-        "  pendingWithQueue: t.pushPendingWith({}, {B: ['X']}),\n"
-        "  settled: t.pushPendingWith({}, {})\n"
+        "  timerArmed:  t.pushPendingWith({A: 1}, {}, 0),\n"
+        "  queued:      t.pushPendingWith({}, {B: ['X']}, 0),\n"
+        "  inFlight:    t.pushPendingWith({}, {}, 1),\n"
+        "  settled:     t.pushPendingWith({}, {}, 0),\n"
+        "  counterZero: t.inFlight()\n"
         "});" % json.dumps(str(WATCHSTORE))
     )
-    assert out["pendingWithTimer"] is True     # a debounce timer is armed -> defer
-    assert out["pendingWithQueue"] is True     # a push waiting on its list read -> defer
-    assert out["settled"] is False             # nothing in flight -> the pull may go
+    assert out["timerArmed"] is True      # a debounce timer is armed -> defer
+    assert out["queued"] is True          # a push waiting on its list read -> defer
+    assert out["inFlight"] is True        # the DELETE is on the wire -> defer
+    assert out["settled"] is False        # nothing pending -> the pull may go
+    assert out["counterZero"] == 0        # the counter starts settled
+
+
+@needs_node
+def test_the_in_flight_counter_is_incremented_around_the_push_not_inside_it():
+    """The push path is FROZEN in this wave, so the in-flight window is counted by a
+    wrapper at the two call sites rather than by editing `pushList`. If that ever moves
+    inside, this is the reminder that the freeze was the reason."""
+    src = WATCHSTORE.read_text()
+    assert "function _trackedPush(listId, tickers)" in src
+    assert "_pushInFlight++" in src
+    body = src[src.index("function pushList(listId, symbols)"):]
+    body = body[:body.index("function setActiveList")]
+    assert "_pushInFlight" not in body, "the frozen push path was edited"
+    # both schedulers must go through the wrapper, or the window is uncounted again
+    assert "_trackedPush(listId, tickers)" in src and "_trackedPush(id, tickers)" in src
 
 
 @needs_node
@@ -331,7 +355,89 @@ def test_the_outer_fold_catch_swallows_a_target_resolution_failure_without_marki
 
 
 # ===========================================================================
-# 7. the store contract W2 must not have moved
+# 7. the lane renderer actually RENDERS (round-2 blocker B1)
+# ===========================================================================
+WRI_SHIM = """
+global.window = global;
+global.document = {
+  readyState: 'loading',
+  documentElement: { getAttribute: function () { return 'en'; } },
+  getElementById: function () { return null; },
+  addEventListener: function () {},
+  querySelectorAll: function () { return []; }
+};
+"""
+
+RICH_J = {
+    "tech": {"price": 100, "pct_vs_200dma": 18.5, "rsi14": 72},
+    "earnings": {"next_date": "2026-08-20"},
+    "revisions": {"eps_fwd_4w_pct": -3.1},
+    "financials": {"net_debt_to_ebitda": 4.2},
+    "positioning": {"short_pct_float": 9.1},
+    "smart_money": {"insider_sales_90d": 5},
+    "macro_sensitivity": {"rates": {"beta": -0.8}},
+}
+
+
+@needs_node
+@pytest.mark.parametrize("payload", [{}, RICH_J], ids=["empty", "rich"])
+def test_lane_rows_renders_seven_rows_instead_of_throwing(payload):
+    """THE ROUND-2 BLOCKER, pinned.
+
+    `laneRowsHTML` calls `stateToken`, which lived 700 lines away inside the braid-hero
+    block. W2 deleted that block and took the function with it, so `WRI.laneRows` threw
+    ReferenceError on EVERY call. Its only caller — the portfolio drawer — wraps the
+    call in try/catch and falls back to an honest-null line, so the per-name lane read
+    shipped 100% dark for every signed-in user while LOOKING like a data gap.
+
+    The lesson generalises past this one symbol: a renderer guarded by a catch cannot be
+    verified by reading its caller, because the caller's failure mode is indistinguishable
+    from its success-with-no-data mode. So this asserts the OUTPUT, not the absence of an
+    exception — a non-empty string carrying all seven lane rows and their state tokens.
+    An empty payload is included deliberately: the lanes must still render (as n/a), so a
+    future refactor cannot satisfy this by returning '' for thin data."""
+    out = _run(
+        WRI_SHIM
+        + "require(%s);\n"
+        "var h = window.WRI.laneRows(J);\n"
+        "OUT({len: h.length, rows: (h.match(/wri-lrow/g)||[]).length,\n"
+        "     tokens: (h.match(/class=\"st /g)||[]).length,\n"
+        "     type: typeof h});"
+        % json.dumps(str(ROOT / "templates" / "watchlist_risk.js")),
+        {"J": payload},
+    )
+    assert out["type"] == "string"
+    assert out["len"] > 0, "laneRows returned an empty string — the drawer would look like a data gap"
+    assert out["rows"] == 7, out
+    assert out["tokens"] == 7, out
+
+
+@needs_node
+def test_every_exported_WRI_helper_is_callable():
+    """The same deletion could have orphaned any of the exported helpers, and each one is
+    reached through a try/catch somewhere. Call the whole surface."""
+    out = _run(
+        WRI_SHIM
+        + "require(%s);\n"
+        "var r = {};\n"
+        "r.laneRead = typeof window.WRI.laneRead(J);\n"
+        "r.roleBadge = typeof window.WRI.roleBadge(window.WRI.laneRead(J));\n"
+        "r.laneRows = typeof window.WRI.laneRows(J);\n"
+        "r.chainRows = typeof window.WRI.chainRows('NVDA');\n"
+        "window.WRI.noteJson('NVDA', J);\n"
+        "r.noteJson = 'ok';\n"
+        "OUT(r);" % json.dumps(str(ROOT / "templates" / "watchlist_risk.js")),
+        {"J": RICH_J},
+    )
+    assert out["laneRead"] == "object"
+    assert out["laneRows"] == "string"
+    assert out["chainRows"] == "string"
+    assert out["noteJson"] == "ok"
+    assert out["roleBadge"] in ("object", "string")   # null or a badge
+
+
+# ===========================================================================
+# 8. the store contract W2 must not have moved
 # ===========================================================================
 @needs_node
 def test_the_default_binding_is_still_the_anonymous_key_verbatim():
@@ -360,3 +466,217 @@ def test_the_renderer_is_a_clean_no_op_without_its_host():
         % json.dumps(str(WATCHLIST))
     )
     assert out["items"] == ["MSFT", "NVDA"]
+
+
+# ===========================================================================
+# 9. the CI-runnable half of the browser gate (round-2 item 6)
+#
+# The full 33-assertion gate needs a browser and is committed at
+# mockups/refs/psi/workspace/crops/impl/verify_w2_workspace.py, run by hand. A
+# `pytest.importorskip("playwright")` here would SKIP in the packs and report green
+# while proving nothing (house trap: ci-packs-install-minimal-deps-not-requirements),
+# so everything checkable WITHOUT a browser is asserted here against the rendered
+# template and the shipped source instead.
+# ===========================================================================
+TEMPLATE = ROOT / "templates" / "watchlist.html.j2"
+PORTFOLIO = ROOT / "templates" / "portfolio.js"
+
+
+@pytest.fixture(scope="module")
+def rendered() -> str:
+    """The template through the real builder context — not the raw .j2."""
+    import json as _json
+    import sys as _sys
+
+    _sys.path.insert(0, str(ROOT))
+    from jinja2 import Environment, FileSystemLoader
+
+    from engine.cycles import STATE_DISPLAY
+
+    env = Environment(loader=FileSystemLoader(str(ROOT / "templates")), autoescape=False)
+    return env.get_template("watchlist.html.j2").render(
+        generated_utc="2026-08-12 14:00",
+        state_display_json=_json.dumps(STATE_DISPLAY),
+        supabase_cfg_json="null",
+        wri_regime_json="null",
+        starters_json=_json.dumps(["NVDA"]),
+    )
+
+
+def test_the_account_sync_panel_is_gone_from_the_markup(rendered):
+    """Gate row: the header chip is the ONLY sync disclosure."""
+    for dead in ("wl_auth", "wl_syncpill", "wl_signin", "wl_signout",
+                 "wl_account", "wl_authbox", "wl_who"):
+        assert 'id="%s"' % dead not in rendered, dead
+    assert 'id="ws_savechip"' in rendered
+
+
+def test_zero_title_attributes_in_the_workspace_markup(rendered):
+    """i18n law: translated copy never goes in title=, because an attribute has no room
+    for the dual-emit spans the rest of the page uses."""
+    import re
+    body = rendered.split("<body>", 1)[1]
+    hits = re.findall(r'<[^>]*\stitle="[^"]*"', body)
+    assert not hits, hits[:3]
+
+
+def test_no_banned_glance_tier_vocabulary_in_the_markup(rendered):
+    banned = ["ENB", "MCTR", "effective number of bets", "mctrShare",
+              "falsifier", "证伪", "validated"]
+    body = rendered.split("<body>", 1)[1]
+    hits = [w for w in banned if w.lower() in body.lower()]
+    assert not hits, hits
+
+
+def test_the_stance_set_is_the_descriptive_subset_only(rendered):
+    """DESIGN_NOTES §7b: Watch / Get ready / No action. "Act" and "Protect gains" read
+    as trade instructions on a page showing someone's actual money."""
+    src = (ROOT / "templates" / "watchlist.js").read_text() + PORTFOLIO.read_text()
+    assert "'Protect gains'" not in src and '"Protect gains"' not in src
+    for stance in ("Watch", "Get ready", "No action"):
+        assert stance in src, stance
+
+
+def test_all_four_save_chip_states_are_defined_with_copy_and_a_receipt():
+    src = (ROOT / "templates" / "watchlist.js").read_text()
+    import re
+    block = src[src.index("var CHIP = {"):src.index("var chipState")]
+    for state in ("saved", "saving", "local", "offline"):
+        assert re.search(r"\b%s:\s*\['is-%s'" % (state, state), block), state
+    # each entry is [class, en, zh, tip-en, tip-zh] — five fields, no missing receipt
+    for line in re.findall(r"\['is-\w+',(.*?)\]\s*[,}]", block, re.S):
+        assert line.count("'") >= 8, line[:60]
+
+
+# ---- round-2 item 7: regression pins for the defects this PR fixed ---------
+def test_page_blank_regression_the_mode_rule_is_scoped_to_the_main_element(rendered):
+    """DEFECT 7. `[data-ws-mode]{display:none}` also matches <html>, which carries the
+    same attribute — so the rule blanked the ENTIRE page on first paint. Mutation-tested:
+    dropping the `main.ws >` scope re-greens without this."""
+    assert "main.ws > [data-ws-mode] { display:none; }" in rendered
+    import re
+    # comments are not rules — the explanation of this very bug quotes the bad selector
+    css = re.sub(r"/\*.*?\*/", "", rendered, flags=re.S)
+    # no UNSCOPED selector may set display:none on the mode attribute
+    for m in re.finditer(r"([^\n{}]*\[data-ws-mode\][^\n{}]*)\{([^}]*)\}", css):
+        sel, body = m.group(1), m.group(2)
+        if "display:none" in body.replace(" ", ""):
+            assert "main.ws" in sel, "unscoped mode rule can blank <html>: %r" % sel.strip()
+
+
+def test_book_filter_regression_an_empty_model_never_resets_a_persisted_book():
+    """DEFECT 2. `refresh()` fell back to All whenever the active book had no members —
+    including on first paint, before positions had loaded, and it PERSISTED that reset,
+    so the visitor's choice never came back. "We don't know yet" and "that book is gone"
+    have to be different answers."""
+    out = _run(
+        # the module reads the persisted book AT REQUIRE TIME, so the seed must precede it
+        "localStorage.setItem('mdash.book.v1', 'hk');\n"
+        "var MB = require(%s);\n"
+        "MB.refresh([], null, null);\n"                       # first paint: nothing loaded
+        "var afterEmpty = { book: MB.getBook(), stored: localStorage.getItem('mdash.book.v1') };\n"
+        "MB.refresh(['NVDA'], [{ticker:'0700.HK'},{ticker:'NVDA'}], function(){return 1;});\n"
+        "var afterLoad = { book: MB.getBook(), stored: localStorage.getItem('mdash.book.v1') };\n"
+        "MB.refresh(['NVDA'], [{ticker:'NVDA'}], function(){return 1;});\n"   # hk genuinely gone
+        "var afterGone = { book: MB.getBook(), stored: localStorage.getItem('mdash.book.v1') };\n"
+        "OUT({afterEmpty: afterEmpty, afterLoad: afterLoad, afterGone: afterGone});"
+        % json.dumps(str(MARKET_BOOKS))
+    )
+    assert out["afterEmpty"] == {"book": "hk", "stored": "hk"}, out
+    assert out["afterLoad"]["book"] == "hk", out
+    # ...but a book that really has no members still falls back, or the view is dead
+    assert out["afterGone"]["book"] == "all", out
+
+
+def test_flagship_dark_regression_the_book_seeds_the_factor_universe_itself():
+    """DEFECT 1, the worst of them. `FX.setAutoWeights` stores its map but returns early
+    unless the FX layer already has a ticker list from `FX.update()` — which on this page
+    is the WATCHLIST. A user with a full book and an empty watchlist therefore stored
+    weights that were never resolved, never announced and never reached RiskCore: every
+    position read "Not covered" and the Book Seam's risk rail went dark for exactly the
+    user the page exists for.
+
+    Source-level because the ordering is the fix: `update` must be called with the book's
+    own names BEFORE `setAutoWeights`, or the guard swallows it again."""
+    src = PORTFOLIO.read_text()
+    body = src[src.index("function pushFxWeights"):src.index("function pushFxWeights") + 1800]
+    iu = body.index("FX.update(keys)")
+    isa = body.index("FX.setAutoWeights(")
+    assert iu < isa, "FX.update must seed the universe BEFORE setAutoWeights"
+    assert "keys.length >= 2 && window.FX.update" in body
+
+
+def test_seam_segment_cap_is_bounded_and_the_denominators_are_not():
+    """DEFECT 5 (round-2). One segment per position overflowed the PAGE at 100 names on
+    390px (measured 86px). The rail now folds a disclosed tail — but the brackets and
+    both denominators must still be computed over ALL items, or capping would silently
+    change what the seam claims."""
+    src = (ROOT / "templates" / "watchlist.js").read_text()
+    import re
+    m = re.search(r"var MAX_SEGS = (\d+);", src)
+    assert m, "the cap constant is gone"
+    assert 8 <= int(m.group(1)) <= 40, "cap out of the legible range: %s" % m.group(1)
+    block = src[src.index("function seam(host, cfg)"):src.index("// ---- book (market) filtering")]
+    tot = block[block.index("function total(key)"):block.index("function rail(key)")]
+    assert "all.forEach" in tot and "items.forEach" not in tot, \
+        "the denominator must be over ALL items, not the capped view"
+    cl = block[block.index("function clusterPct(key)"):]
+    cl = cl[:cl.index("}")+1]
+    assert "all.forEach" in cl, "the bracket must be over ALL items"
+
+
+def test_share_counts_never_speak_as_money():
+    """ROUND-2 item 4. Anonymously there is no price plane, so a share count cannot be
+    turned into a position size — "98% of the money sits in F" was printed for a book
+    whose largest holding by far was the BRK-A share shown at 0.0%."""
+    out = _wl(
+        "var p = WL.parseBook('BRK-A 1, F 5000, AAPL 100');\n"
+        "OUT({shares: WL.weightsOf(p,'shares').unit, pct: WL.weightsOf(p,'pct').unit,\n"
+        "     usd: WL.weightsOf(p,'usd').unit, equal: WL.weightsOf(p,'equal').unit});"
+    )
+    assert out["shares"] == "shares", "share counts must not be typed as money"
+    assert out["pct"] == "money" and out["usd"] == "money" and out["equal"] == "money"
+    # and the copy branch actually exists for that unit
+    src = (ROOT / "templates" / "watchlist.js").read_text()
+    for phrase in ("of the share count", "A share count is not a position size",
+                   "股数不等于仓位大小"):
+        assert phrase in src, phrase
+
+
+def test_the_legacy_render_path_survives_for_the_old_markup():
+    """BLOCKER B2. site/watchlist.html lags its template by over an hour while the JS
+    pairs go live in ~3 minutes, so production WILL serve the OLD markup with this file.
+    A workspace-only renderer turns that window into the #5463 husk, silently.
+
+    The end-to-end proof is verify_b2_old_html_new_js.py, which swaps files against LIVE
+    production HTML. This pins the seam it depends on."""
+    src = (ROOT / "templates" / "watchlist.js").read_text()
+    assert "function isLegacyPage()" in src
+    assert "if (isLegacyPage()) { lgRender(); return; }" in src
+    assert "if (isLegacyPage()) { initLegacy(); return; }" in src
+    for fn in ("lgRender", "lgCardHTML", "lgViewItems", "lgWireControls", "lgRenderStarters"):
+        assert "function %s(" % fn in src, fn
+    ws = WATCHSTORE.read_text()
+    assert "if (!chip && !box) return;" in ws, "the dormancy guard is gone again"
+    assert "box.style.display = 'flex'" in ws, "the pre-W2 auth panel is left hidden"
+
+
+def test_watchstore_is_dormant_on_a_page_with_neither_sync_host():
+    """committee.html loads watchstore.js and has never touched a list. W2 deleted the
+    `if (!box) return;` guard that kept it dormant, making it a full cloud participant —
+    MDXAuth wiring, an unrequested one-time reload, and a reachable list-creation path."""
+    out = _run(
+        "var calls = [];\n"
+        "global.document.getElementById = function () { return null; };\n"
+        "global.window.SUPABASE_CFG = {url: 'https://x.supabase.co', anonKey: 'k'};\n"
+        "global.window.MDXAuth = {\n"
+        "  onChange: function () { calls.push('onChange'); },\n"
+        "  hasSession: function () { calls.push('hasSession'); return true; },\n"
+        "  open: function () {}, signOut: function () {} };\n"
+        "global.window.getSupabaseClient = function () { calls.push('client'); return Promise.resolve({}); };\n"
+        "global.document.readyState = 'complete';\n"
+        "require(%s);\n"
+        "setTimeout(function () { OUT({calls: calls}); }, 40);"
+        % json.dumps(str(WATCHSTORE))
+    )
+    assert out["calls"] == [], "watchstore joined a cloud session with no sync host: %s" % out

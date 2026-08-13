@@ -61,7 +61,17 @@
       renameList: 'Rename this list', deleteList: 'Delete this list',
       deleteConfirm: function (n) { return 'Delete “' + n + '”? The names in it are removed from your account.'; },
       entryNone: 'No tickers found in that text. Try “AAPL, MSFT, NVDA”.',
-      entryOne: 'Add at least two names — one name has no structure to read.'
+      entryOne: 'Add at least two names — one name has no structure to read.',
+      // ---- legacy render path (see the LEGACY block below) — verbatim from main
+      empty: 'Your watchlist is empty. Search above to add a holding — equity, ETF, commodity or crypto.',
+      starters: 'Quick add:', removeA: 'Remove from watchlist',
+      buysoonN: function (n) { return n + ' nearing a buy'; },
+      lgPh: 'Add a holding… (e.g. AAPL, Energy, Gold, Bitcoin)',
+      unavailable: 'temporarily unavailable',
+      unavailMsg: 'not in tonight’s library — may return after the next nightly build',
+      sortOrder: 'My order', sortAdded: 'Recently added', sortName: 'Name',
+      sortSector: 'Sector', sortSignal: 'Signal', sortLabel: 'Sort',
+      buysoonOnly: 'Buy-soon only', asof: 'as of', lgAdded: 'added'
     },
     zh: {
       ph: '添加名称…',
@@ -74,7 +84,16 @@
       renameList: '重命名列表', deleteList: '删除这个列表',
       deleteConfirm: function (n) { return '删除「' + n + '」？其中的名称会从你的账户中移除。'; },
       entryNone: '没有从这段文字里识别出代码。试试「AAPL, MSFT, NVDA」。',
-      entryOne: '至少输入两只 —— 一只票没有结构可读。'
+      entryOne: '至少输入两只 —— 一只票没有结构可读。',
+      empty: '清单为空。在上方搜索以添加持仓——股票、ETF、大宗商品或加密货币。',
+      starters: '快速添加：', removeA: '从清单移除',
+      buysoonN: function (n) { return n + ' 接近买点'; },
+      lgPh: '添加持仓…（例如 AAPL、Energy、Gold、Bitcoin）',
+      unavailable: '暂不可用',
+      unavailMsg: '不在今晚的标的库中——下次夜间构建后可能恢复',
+      sortOrder: '我的顺序', sortAdded: '最近添加', sortName: '名称',
+      sortSector: '板块', sortSignal: '信号', sortLabel: '排序',
+      buysoonOnly: '仅看接近买点', asof: '数据截至', lgAdded: '添加于'
     }
   };
   function L(k) { return (T[lang()] || T.en)[k]; }
@@ -210,6 +229,231 @@
     return blob.items.length - before;
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     LEGACY RENDER PATH — kept alive on purpose, and it is not dead code.
+
+     `site/watchlist.html` is baked by the render lane; the plain-copy JS pairs go live
+     on the VPS's 3-minute pull. Measured, the HTML lags its template by more than an
+     hour while the JS is live in ~3 minutes, so there is a real window in which the OLD
+     markup is served with THIS file. Under a workspace-only renderer that window is the
+     #5463 P0 husk all over again — zero rows, no empty state, and no console error to
+     notice it by.
+
+     So the boot is non-destructive: every entry point below asks whether a workspace
+     host (`#ws_modes`) is on the page, and falls through to exactly the behaviour that
+     shipped before W2 when it is not. This block is that behaviour, lifted verbatim from
+     `origin/main` and namespaced `lg*` so the two renderers cannot collide. It is
+     deletable the day site/watchlist.html is guaranteed no older than its scripts —
+     not before.
+     ══════════════════════════════════════════════════════════════════════════ */
+  var BUYSOON = { 'TURN SIGNALED': 1, 'FRESH BUY': 1, 'BOTTOM WATCH': 1 };
+  var listEl, countEl, observer;
+
+  // ---- rendering ----------------------------------------------------------
+  // ordered + filtered view of the watched items, resolved against the index
+  function lgViewItems() {
+    var sort = blob.settings.sort, only = blob.settings.buySoonOnly;
+    var rows = blob.items.map(function (it) {
+      var rec = idxBy[it.t] || null;          // null => dropped out of the library
+      return { t: it.t, added: it.added, rec: rec,
+               st: rec ? rec.st : null, n: rec ? rec.n : it.t, s: rec ? rec.s : '' };
+    });
+    // the active book is a VIEW over the same list — never a different list
+    rows = rows.filter(function (r) { return inBook(r.t); });
+    if (only) rows = rows.filter(function (r) { return r.st && BUYSOON[r.st]; });
+    var ord = blob.order;
+    rows.sort(function (a, b) {
+      if (sort === 'name') return a.n.localeCompare(b.n);
+      if (sort === 'sector') return (a.s || '~').localeCompare(b.s || '~') || a.t.localeCompare(b.t);
+      if (sort === 'added') return (b.added || '').localeCompare(a.added || '');
+      if (sort === 'signal') {
+        var ra = a.st in STATE_RANK ? STATE_RANK[a.st] : 99;
+        var rb = b.st in STATE_RANK ? STATE_RANK[b.st] : 99;
+        return ra - rb || a.t.localeCompare(b.t);
+      }
+      return ord.indexOf(a.t) - ord.indexOf(b.t);   // 'order'
+    });
+    return rows;
+  }
+
+  // counts the FILTERED set — the pill must agree with the cards on screen
+  function lgBuysoonCount() {
+    var n = 0;
+    blob.items.forEach(function (it) {
+      if (!inBook(it.t)) return;
+      var rec = idxBy[it.t]; if (rec && BUYSOON[rec.st]) n++;
+    });
+    return n;
+  }
+
+  function lgCardHTML(r) {
+    var safe = esc(r.t);
+    if (!r.rec) {
+      // Signed-out shell (stockdata.js is account-gated, so window.SD never
+      // exists here): we cannot know coverage, so claim NOTHING — a bare card
+      // with no state pill. "Dropped out of the library" below is only true
+      // when a live index actually answered without this ticker.
+      if (!window.SD) {
+        return '<div class="wl-card wl-gone" data-t="' + safe + '">' +
+          '<div class="wl-top"><a class="wl-name" href="stock.html#' + encodeURIComponent(r.t) +
+          '"><b>' + safe + '</b></a>' + lgRmBtn(r.t) + '</div></div>';
+      }
+      // Tier-1 drop-out: never silently omit a watched ticker
+      return '<div class="wl-card wl-gone" data-t="' + safe + '">' +
+        '<div class="wl-top"><a class="wl-name" href="stock.html#' + encodeURIComponent(r.t) +
+        '"><b>' + safe + '</b></a>' + lgRmBtn(r.t) + '</div>' +
+        '<div class="wl-sig"><span class="state pill-stale">' + esc(L('unavailable')) +
+        '</span><span class="muted wl-note">' + esc(L('unavailMsg')) + '</span></div></div>';
+    }
+    var stc = window.SD.stClass(r.st);
+    var lbl = window.SD.label(r.st), act = window.SD.action(r.st);
+    var soon = BUYSOON[r.st] ? ' wl-buysoon' : '';
+    return '<div class="wl-card ' + stc + soon + '" data-t="' + safe + '">' +
+      '<div class="wl-top">' +
+        '<a class="wl-name" href="stock.html#' + encodeURIComponent(r.t) + '">' +
+          '<b>' + safe + '</b> <span class="wl-cn muted">' + esc(r.n) + '</span></a>' +
+        lgRmBtn(r.t) +
+      '</div>' +
+      '<div class="wl-sig">' +
+        '<span class="state ' + stc + '">' + esc(lbl) + '</span>' +
+        (act ? '<span class="wl-action muted">' + esc(act) + '</span>' : '') +
+        (r.s ? '<span class="wl-sector muted">' + esc(r.s) + '</span>' : '') +
+      '</div>' +
+      '<div class="wl-enrich" data-enrich="' + safe + '"></div>' +
+    '</div>';
+  }
+  function lgRmBtn(t) {
+    return '<button class="wl-rm" data-rm="' + esc(t) + '" title="' + esc(L('removeA')) +
+      '" aria-label="' + esc(L('removeA')) + '">✕</button>';
+  }
+
+  function lgRender() {
+    if (!listEl) return;
+    // Feed the factor panel the current holdings — MODELED names only. The factor
+    // model is USD and carries no suffixed tickers, so a .HK/.SS/.TO name here would
+    // corrupt every book statistic downstream (A3 law 3).
+    if (window.FX) {
+      var syms = blob.items.map(function (it) { return it.t; });
+      window.FX.update(window.MB ? window.MB.modeledOnly(syms) : syms);
+    }
+    // the books strip reads the full list (membership is never filtered by the view)
+    if (window.MB) window.MB.refresh(blob.items.map(function (it) { return it.t; }), null, null);
+    var rows = lgViewItems();
+    // header counter
+    var n = lgBuysoonCount();
+    countEl.innerHTML = n ? '<span class="wl-soonpill">▲ ' + esc(L('buysoonN')(n)) + '</span>' : '';
+    // empty state vs grid
+    var empty = document.getElementById('wl_empty');
+    if (!blob.items.length) {
+      listEl.innerHTML = ''; empty.style.display = 'block'; lgRenderStarters();
+      document.getElementById('wl_controls').style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
+    document.getElementById('wl_controls').style.display = 'flex';
+    if (!rows.length) {
+      // the list is not empty — this BOOK is. Say which one, and what to do.
+      listEl.innerHTML = '<p class="muted wl-bkempty">' + esc(lgBookEmptyMsg()) + '</p>';
+      return;
+    }
+    listEl.innerHTML = rows.map(lgCardHTML).join('');
+    // (re)observe enrich hosts for lazy detail loading
+    lgWireEnrich();
+  }
+  function lgBookEmptyMsg() {
+    var bk = activeBook();
+    var meta = (window.MB && window.MB.BOOKS && window.MB.BOOKS[bk]) || null;
+    var name = meta ? (lang() === 'zh' ? meta.zh : meta.en) : bk;
+    return lang() === 'zh'
+      ? '清单中还没有' + name + '名称——在上方搜索添加。'
+      : 'No ' + name + ' names on your list yet — search above to add one.';
+  }
+
+  // ---- lazy Tier-2 enrichment (entry cue + momentum strip) ----------------
+  function lgWireEnrich() {
+    if (observer) observer.disconnect();
+    if (!('IntersectionObserver' in window)) {  // no IO: enrich everything now
+      listEl.querySelectorAll('[data-enrich]').forEach(lgEnrich); return;
+    }
+    observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        observer.unobserve(e.target);
+        var host = e.target.querySelector('[data-enrich]');  // the (zero-height) enrich slot
+        if (host) lgEnrich(host);
+      });
+    }, { rootMargin: '150px' });
+    // observe the CARD (it has real height — the enrich slot is 0px until filled)
+    listEl.querySelectorAll('.wl-card').forEach(function (c) { observer.observe(c); });
+  }
+  function lgEnrich(el) {
+    if (!window.SD || !window.SD.loadTicker) return;  // signed-out shell: slot stays empty
+    var t = el.getAttribute('data-enrich');
+    window.SD.loadTicker(t).then(function (j) {
+      el.__json = j;        // cache raw JSON so a language flip re-renders w/o refetch
+      lgPaintEnrich(el, j);
+    });
+  }
+  function lgPaintEnrich(el, j) {
+    if (!j || !j.ladder) { el.innerHTML = ''; return; }
+    var lad = j.ladder, e = lad.entry || {};
+    var html = '';
+    var summ = window.SD.lz(lad.summary_line, lad.summary_line_zh);
+    if (summ) html += '<div class="wl-summary muted">' + esc(summ) + '</div>';
+    if (e.urgency || e.text) {
+      html += '<div class="wl-entry urgpill urg-' + esc(e.urgency || 'hold') + '">' +
+        (e.tag ? '<span class="wl-etag">' + esc(e.tag) + '</span>' : '') +
+        '<span>' + esc(window.SD.lz(e.text, e.text_zh)) + '</span></div>';
+    }
+    if (j.tech && j.tech.price != null) {
+      var off = j.tech.off_52w_high_pct;
+      html += '<div class="wl-px muted">' + esc('$' + j.tech.price) +
+        (off != null ? ' · <span class="' + (off < 0 ? 'neg' : 'pos') + '">' +
+          (off > 0 ? '+' : '') + off + '% ' + (lang() === 'zh' ? '距52周高' : 'off 52w high') + '</span>' : '') +
+        (j.asof ? ' · ' + esc(L('asof')) + ' ' + esc(j.asof) : '') + '</div>';
+    }
+    html += '<div class="wl-mtf" data-mtf=\'' + esc(JSON.stringify(j.mtf || {})) + '\'></div>';
+    el.innerHTML = html;
+    var host = el.querySelector('.wl-mtf');
+    if (host && window.renderMTF && j.mtf) { try { window.renderMTF(host, j.mtf); } catch (x) {} }
+  }
+  // re-derive enriched text/colors in the current language/theme without refetch
+  function lgRepaintEnriched() {
+    if (!listEl) return;
+    listEl.querySelectorAll('[data-enrich]').forEach(function (el) {
+      if ('__json' in el) lgPaintEnrich(el, el.__json);
+    });
+  }
+  // ---- view controls ------------------------------------------------------
+  function lgWireControls() {
+    var sortSel = document.getElementById('wl_sort');
+    var only = document.getElementById('wl_buysoon');
+    function syncLabels() {
+      sortSel.options[0].text = L('sortOrder'); sortSel.options[1].text = L('sortAdded');
+      sortSel.options[2].text = L('sortName'); sortSel.options[3].text = L('sortSector');
+      sortSel.options[4].text = L('sortSignal');
+      document.getElementById('wl_sortlbl').textContent = L('sortLabel');
+      document.getElementById('wl_buysoonlbl').textContent = L('buysoonOnly');
+    }
+    syncLabels();
+    sortSel.value = blob.settings.sort;
+    only.checked = !!blob.settings.buySoonOnly;
+    sortSel.addEventListener('change', function () { setSetting('sort', sortSel.value); render(); pushCloud(); });
+    only.addEventListener('change', function () { setSetting('buySoonOnly', only.checked); render(); pushCloud(); });
+    document.addEventListener('langchange', syncLabels);
+  }
+  // ---- empty-state starter chips (validated against the live index) -------
+  function lgRenderStarters() {
+    var host = document.getElementById('wl_starters'); if (!host) return;
+    var starters = (window.WL_STARTERS || []).filter(function (t) { return idxBy[t]; });
+    if (!starters.length) { host.innerHTML = ''; return; }
+    host.innerHTML = '<span class="muted">' + esc(L('starters')) + '</span> ' +
+      starters.map(function (t) {
+        return '<button class="wl-chip" data-add="' + esc(t) + '">' + esc(t) +
+          ' <span class="muted">' + esc((idxBy[t] || {}).n || '') + '</span></button>';
+      }).join('');
+  }
+
   // ===========================================================================
   //  WORKSPACE PRIMITIVES — the pinned design's shared vocabulary, drawn once.
   //  Published on window.WS so portfolio.js and watchlist_risk.js compose them
@@ -225,7 +469,11 @@
     confirmed:  ['Confirmed',    '已确认'],
     aging:      ['Losing steam', '转弱'],
     extended:   ['Running hot',  '过热'],
-    invalid:    ['Broke down',   '已失效'],
+    /* zh RE-RULING (round 2): 已失效 is an ENGINE-VERDICT word — it says the read is
+       invalid, which is an escalation a display tier may not make. 已破位 describes the
+       BREAK itself, which is what the EN "Broke down" also does. The pair now says the
+       same thing in both languages. */
+    invalid:    ['Broke down',   '已破位'],
     none:       ['Not covered',  '未覆盖']
   };
   var STAGE_TIP = {
@@ -291,14 +539,46 @@
      `lockedRisk` is the anonymous form (packet amendment A9): the money rail is
      real arithmetic on what the visitor entered, the risk rail is a lock shell —
      never a fabricated distribution. */
+  /* SEGMENT CAP. One segment per position is the signature's whole idea, and it stops
+     being legible — and stops fitting — long before a big list runs out. Each segment
+     carries a 2px floor plus a 2px gap, so at 390px the rail overflows the PAGE past
+     about 80 names: measured 86px of horizontal scroll at 100, which is the large-list
+     law broken by the very device that is supposed to explain the book.
+
+     So the rail draws the largest MAX_SEGS-1 positions and folds the rest into ONE
+     tail segment. The tail is disclosed in the caption, never silent — a reader who
+     counts segments and gets a different number than the table has been misled. The
+     brackets and both denominators are computed over ALL items, before the fold, so
+     capping changes what you can point at and never what the seam claims. */
+  var MAX_SEGS = 24;
+
   function seam(host, cfg) {
     if (!host) return;
     if (!cfg || !cfg.items || cfg.items.length < 2) { host.innerHTML = ''; return; }
-    var items = cfg.items;
+    var all = cfg.items, items = all, tail = null;
+    if (all.length > MAX_SEGS) {
+      var ranked = all.slice().sort(function (a, b) { return b.money - a.money; });
+      var keep = ranked.slice(0, MAX_SEGS - 1);
+      var rest = ranked.slice(MAX_SEGS - 1);
+      var keepSet = {};
+      keep.forEach(function (x) { keepSet[x.sym] = 1; });
+      tail = { sym: '', n: rest.length, money: 0, risk: 0, anyUncovered: false };
+      rest.forEach(function (x) {
+        tail.money += x.money;
+        if (x.risk == null) tail.anyUncovered = true; else tail.risk += x.risk;
+      });
+      if (tail.anyUncovered && tail.risk === 0) tail.risk = null;
+      // keep the ORIGINAL order for the kept names, then the tail last
+      items = all.filter(function (x) { return keepSet[x.sym]; });
+      items.push({ sym: tail.n + ' smaller positions', money: tail.money,
+                   risk: tail.risk, role: '', isTail: true, n: tail.n });
+    }
 
+    // denominators come from the FULL set, so the printed percentages are unchanged
+    // by capping — the fold moves pixels, never arithmetic
     function total(key) {
       var tot = 0;
-      items.forEach(function (it) { if (it[key] != null) tot += it[key]; });
+      all.forEach(function (it) { if (it[key] != null) tot += it[key]; });
       return tot;
     }
     function rail(key) {
@@ -323,17 +603,23 @@
         }
         var k = it.role === 'cluster' ? ' is-cluster' : it.role === 'ballast' ? ' is-ballast' : '';
         var p = (it[key] / tot * 100).toFixed(1);
+        if (it.isTail) {
+          return '<span class="seam-seg is-tail" style="flex:' + it[key] + '"' +
+            ' data-tip-en="' + it.n + ' smaller positions, folded into one segment so the rail stays readable. ' +
+              'Every one of them is in the table below."' +
+            ' data-tip-zh="' + it.n + ' 只较小的持仓，合并为一段以保持这条轨道可读。它们全部都在下方的表格里。"></span>';
+        }
+        var qtyEn = key === 'risk' ? 'the modeled risk' : (cfg.topQtyEn || 'the money');
+        var qtyZh = key === 'risk' ? '模型风险' : (cfg.topQtyZh || '资金');
         return '<span class="seam-seg' + k + '" style="flex:' + it[key] + '"' +
-          ' data-tip-en="' + esc(it.sym) + ' — ' + p + '% of ' +
-            (key === 'risk' ? 'the modeled risk' : 'the money') + '"' +
-          ' data-tip-zh="' + esc(it.sym) + ' —— 占' +
-            (key === 'risk' ? '模型风险' : '资金') + ' ' + p + '%"></span>';
+          ' data-tip-en="' + esc(it.sym) + ' — ' + p + '% of ' + qtyEn + '"' +
+          ' data-tip-zh="' + esc(it.sym) + ' —— 占' + qtyZh + ' ' + p + '%"></span>';
       }).join('');
       return '<span class="seam-rail">' + segs + '</span>';
     }
     function clusterPct(key) {
       var tot = total(key), cl = 0;
-      items.forEach(function (it) { if (it.role === 'cluster' && it[key] != null) cl += it[key]; });
+      all.forEach(function (it) { if (it.role === 'cluster' && it[key] != null) cl += it[key]; });
       return tot > 0 ? cl / tot * 100 : 0;
     }
     function brk(pct, under, label) {
@@ -344,8 +630,8 @@
 
     var mp = clusterPct('money');
     var html = '<div class="seam-grid">';
-    if (mp > 0) html += '<span></span>' + brk(mp, false, te('of the money', '的资金'));
-    html += '<span class="seam-lbl">' + te('Money', '资金') + '</span>' + rail('money');
+    if (mp > 0) html += '<span></span>' + brk(mp, false, cfg.topBracket || te('of the money', '的资金'));
+    html += '<span class="seam-lbl">' + (cfg.topLabel || te('Money', '资金')) + '</span>' + rail('money');
 
     if (cfg.lockedRisk) {
       /* No factor read is delivered anonymously, so the risk rail is a locked slot
@@ -364,7 +650,16 @@
       if (rp > 0) html += '<span></span>' + brk(rp, true, te('of the risk', '的风险'));
       html += '</div>';
     }
-    if (cfg.cap) html += '<p class="seam-cap">' + cfg.cap + '</p>';
+    var cap = cfg.cap || '';
+    if (tail) {
+      cap += (cap ? ' ' : '') + te(
+        'The rail draws your <b>' + (MAX_SEGS - 1) + ' largest</b> positions; the last segment is the other <b>' +
+          tail.n + '</b>, folded together so it stays readable. Every percentage above is over all ' +
+          all.length + '.',
+        '这条轨道画出你最大的 <b>' + (MAX_SEGS - 1) + '</b> 笔持仓，最后一段是其余 <b>' + tail.n +
+          '</b> 笔的合并。上面的百分比仍然是对全部 ' + all.length + ' 笔计算的。');
+    }
+    if (cap) html += '<p class="seam-cap">' + cap + '</p>';
     host.innerHTML = html;
   }
 
@@ -463,7 +758,10 @@
       if (m.from == null) { DELTA[t] = ['d-new', 'New sign', '新信号']; return; }
       var wasUp = !!UP_STATES[m.from], nowUp = !!UP_STATES[m.to];
       if (nowUp && !wasUp) DELTA[t] = ['d-up', 'Turned up', '转强'];
-      else if (!nowUp && wasUp) DELTA[t] = ['d-down', 'Broke down', '转弱'];
+      // 转弱 is the AGING stage word; reusing it here made a movement marker and a
+      // stage read render identically in zh. 转跌 says "turned down", which is what
+      // this marker means and what the EN says.
+      else if (!nowUp && wasUp) DELTA[t] = ['d-down', 'Turned down', '转跌'];
       else DELTA[t] = ['d-new', 'Changed', '有变化'];
     });
     return Object.keys(DELTA).length;
@@ -735,10 +1033,14 @@
   function parseBook(text) {
     var rows = [], bad = [], seen = {};
     String(text || '').split(/[\n\r;,\t]+/).forEach(function (chunk) {
-      var s = chunk.trim();
-      if (!s) return;
-      // strip a leading bullet / index marker
-      s = s.replace(/^[-*\u2022\d]+[.)]?\s+/, '');
+      var raw = chunk.trim();
+      if (!raw) return;
+      /* Strip a leading bullet / index marker. `raw` is kept so a rejection can report
+         the WHOLE line the visitor typed: stripping first and reporting the remainder
+         blamed the wrong token — "600519 15%" lost its numeric code to the bullet rule
+         and came back as bad=["15%"], which points the visitor at the one part of the
+         line that was fine. This file's own law, stated at the `bad` contract. */
+      var s = raw.replace(/^[-*\u2022]+\s+/, '').replace(/^\d{1,2}[.)]\s+/, '');
       /* A symbol is EITHER a letter-led ticker (AAPL, BRK-B, GC=F) OR a numeric code
          with a market suffix (0700.HK, 600519.SS, 9988.HK). The second form is not an
          edge case on a bilingual product — it is how every Hong Kong and mainland
@@ -746,7 +1048,7 @@
          book of any Chinese user who pasted one. `bad` catches the ambiguity that
          remains: a bare number is a size, never a ticker. */
       var m = /^([A-Za-z][A-Za-z0-9.\-=^]{0,11}|[0-9]{1,6}\.[A-Za-z]{1,3})\s*[:=\-]?\s*\$?\s*([0-9]*\.?[0-9]+)?\s*%?\s*$/.exec(s);
-      if (!m) { bad.push(s.slice(0, 24)); return; }
+      if (!m) { bad.push(raw.slice(0, 32)); return; }
       var t = m[1].toUpperCase();
       if (seen[t]) return;
       seen[t] = 1;
@@ -755,15 +1057,28 @@
     return { rows: rows, bad: bad };
   }
 
-  /* Turn the parsed rows into money shares. Equal mode ignores any sizes typed;
+  /* Turn the parsed rows into shares of the book. Equal mode ignores any sizes typed;
      every other mode uses them and falls back to equal for a row that gave none —
-     which is disclosed in the book-read meta line, never silently. */
+     which is disclosed in the book-read meta line, never silently.
+
+     `unit` is the load-bearing field. Percent and Dollars describe MONEY. Share counts
+     do NOT: without a price plane, 5000 shares of a $12 stock and 1 share of a $700k
+     stock are one number each and the second is the larger position. Reading share
+     counts as money produced "98% of the money sits in F" for a book whose largest
+     holding by far was the BRK-A share it printed at 0.0%. Anonymously we have no
+     prices, so `unit` stays 'shares' and every sentence downstream is required to
+     speak share counts — the shares of the RAIL are still arithmetic, they are simply
+     shares of a different quantity, and the page has to say which. */
   function weightsOf(parsed, m) {
     var rows = parsed.rows;
     var anySize = rows.some(function (r) { return r.size != null && r.size > 0; });
+    // a price plane only exists for a signed-in session (stockdata.js); anonymously
+    // Shares can never become money, so the unit follows the mode, not the wish
+    var unit = (m === 'shares' && !window.SD) ? 'shares' : 'money';
     if (m === 'equal' || !anySize) {
       var w = 100 / rows.length;
-      return { items: rows.map(function (r) { return { sym: r.t, money: w }; }), assumed: true };
+      return { items: rows.map(function (r) { return { sym: r.t, money: w }; }),
+               assumed: true, unit: 'money' };   // an equal split IS an equal split of money
     }
     var tot = 0;
     rows.forEach(function (r) { tot += (r.size != null && r.size > 0) ? r.size : 0; });
@@ -773,7 +1088,8 @@
     });
     var sum = 0; filled.forEach(function (x) { sum += x.money; });
     filled.forEach(function (x) { x.money = sum > 0 ? x.money / sum * 100 : 0; });
-    return { items: filled, assumed: !rows.every(function (r) { return r.size != null && r.size > 0; }) };
+    return { items: filled, unit: unit,
+             assumed: !rows.every(function (r) { return r.size != null && r.size > 0; }) };
   }
 
   function runEntry() {
@@ -861,12 +1177,23 @@
 
     /* The headline is a WEIGHT / MARKET concentration claim — plain arithmetic on
        what the visitor typed. It is deliberately NOT the effective-bets sentence. */
+    /* UNIT LAW. `shares` mode has no price plane anonymously, so every sentence below
+       speaks share COUNTS and the page says outright that money weights need prices.
+       There is no phrasing in which a share count may be called money. */
+    var shares = (w.unit === 'shares');
+    var QTY = shares ? ['of the shares', '的股数'] : ['of the money', '的资金'];
+
     var say = el('ws_book_say');
     if (say) {
       if (topShare >= 55) {
-        say.innerHTML = te(
-          'Most of this book — <span class="fig">' + Math.round(topShare) + '%</span> of the money — sits in <span class="fig">' + topN + '</span> ' + (topN === 1 ? 'name' : 'names') + '.',
-          '这本账簿的大部分 —— <span class="fig">' + Math.round(topShare) + '%</span> 的资金 —— 压在 <span class="fig">' + topN + '</span> 只票上。');
+        say.innerHTML = shares
+          ? te('Most of these shares — <span class="fig">' + Math.round(topShare) +
+                 '%</span> of the share count — are in <span class="fig">' + topN + '</span> ' +
+                 (topN === 1 ? 'name' : 'names') + '.',
+               '这些股数的大部分 —— 占总股数 <span class="fig">' + Math.round(topShare) +
+                 '%</span> —— 集中在 <span class="fig">' + topN + '</span> 只票上。')
+          : te('Most of this book — <span class="fig">' + Math.round(topShare) + '%</span> of the money — sits in <span class="fig">' + topN + '</span> ' + (topN === 1 ? 'name' : 'names') + '.',
+               '这本账簿的大部分 —— <span class="fig">' + Math.round(topShare) + '%</span> 的资金 —— 压在 <span class="fig">' + topN + '</span> 只票上。');
       } else if (mkts.length === 1) {
         say.innerHTML = te(
           'All <span class="fig">' + n + '</span> of these trade in one market — ' + bookLabel(mkts[0]) + '.',
@@ -887,9 +1214,12 @@
                mkts.map(function (m) { return bookLabel(m) + ' ' + Math.round(byMkt[m].money) + '%'; }).join(', ') + '.',
              '它们分布在 <b>' + mkts.length + ' 个市场</b>：' +
                mkts.map(function (m) { return bookLabel(m) + ' ' + Math.round(byMkt[m].money) + '%'; }).join('、') + '。');
-      because.innerHTML = te(
-        'The biggest weights are <b>' + esc(lead) + '</b>. An even split across ' + n + ' names would be ' + evenSpread + '% each. ',
-        '权重最大的是 <b>' + esc(lead) + '</b>。' + n + ' 只票平均分配的话，每只是 ' + evenSpread + '%。') + mktLine;
+      because.innerHTML = (shares
+        ? te('The largest share counts are <b>' + esc(lead) + '</b>. An even split across ' + n +
+               ' names would be ' + evenSpread + '% of the shares each. ',
+             '股数最多的是 <b>' + esc(lead) + '</b>。' + n + ' 只票平均分配的话，每只占总股数 ' + evenSpread + '%。')
+        : te('The biggest weights are <b>' + esc(lead) + '</b>. An even split across ' + n + ' names would be ' + evenSpread + '% each. ',
+             '权重最大的是 <b>' + esc(lead) + '</b>。' + n + ' 只票平均分配的话，每只是 ' + evenSpread + '%。')) + mktLine;
     }
     var stance = el('ws_book_stance');
     if (stance) {
@@ -904,20 +1234,31 @@
         return { sym: x.sym, money: x.money, risk: 0, role: i < topN ? 'cluster' : '' };
       }).map(function (x) { return { sym: x.sym, money: x.money, risk: null, role: x.role }; }),
       lockedRisk: true,
-      cap: te(
-        'The top line is your money, exactly as you entered it. The bottom line — how much of the book&rsquo;s <b>risk</b> each name actually carries — is the read a free account turns on, and it is almost never the same shape.',
-        '上面这条是你的资金，完全按你输入的来。下面那条 —— 每只票实际扛下多少 <b>风险</b> —— 是免费账户才会开启的解读，而它几乎从不和上面同一个形状。')
+      topLabel: shares ? te('Shares', '股数') : te('Money', '资金'),
+      topBracket: shares ? te('of the shares', '的股数') : te('of the money', '的资金'),
+      topQtyEn: shares ? 'the share count' : 'the money',
+      topQtyZh: shares ? '总股数' : '资金',
+      cap: shares
+        ? te('The top line is your <b>share count</b>, exactly as you entered it — not money. ' +
+               'Turning share counts into position sizes needs last night&rsquo;s prices, which come with a free account; ' +
+               'so does the bottom line, how much of the book&rsquo;s <b>risk</b> each name actually carries.',
+             '上面这条是你输入的 <b>股数</b>，不是金额。要把股数换算成仓位大小，需要昨夜的收盘价 —— ' +
+               '免费账户即可获得；下面那条「每只票实际扛下多少 <b>风险</b>」也一样。')
+        : te('The top line is your money, exactly as you entered it. The bottom line — how much of the book&rsquo;s <b>risk</b> each name actually carries — is the read a free account turns on, and it is almost never the same shape.',
+             '上面这条是你的资金，完全按你输入的来。下面那条 —— 每只票实际扛下多少 <b>风险</b> —— 是免费账户才会开启的解读，而它几乎从不和上面同一个形状。')
     });
 
     var cov = el('ws_book_coverage');
     if (cov) {
-      cov.innerHTML = '<span class="mark"></span><span>' + te(
-        'Sizes are read exactly as you typed them, and nothing is inferred from them. We do not know your cost basis, so nothing on this page claims a gain or a loss.',
-        '仓位大小完全按你输入的读取，不会据此推断任何东西。我们不知道你的成本价，因此本页不会给出任何盈亏。') + '</span>';
+      cov.innerHTML = '<span class="mark"></span><span>' + (shares
+        ? te('These are share counts, read exactly as you typed them. <b>A share count is not a position size</b> — without prices we cannot tell which of these is your biggest holding, so nothing on this page claims one. We also do not know your cost basis, so nothing claims a gain or a loss.',
+             '这些是股数，完全按你输入的读取。<b>股数不等于仓位大小</b> —— 没有价格，我们无法判断哪一只才是你最大的持仓，因此本页不会作此断言。我们也不知道你的成本价，所以不会给出任何盈亏。')
+        : te('Sizes are read exactly as you typed them, and nothing is inferred from them. We do not know your cost basis, so nothing on this page claims a gain or a loss.',
+             '仓位大小完全按你输入的读取，不会据此推断任何东西。我们不知道你的成本价，因此本页不会给出任何盈亏。')) + '</span>';
     }
 
     // the anonymous holdings table — weight only, no invented money
-    renderAnonTable(items);
+    renderAnonTable(items, w.unit);
 
     var head = el('ws_gate_head');
     if (head) head.innerHTML = te(
@@ -941,12 +1282,15 @@
       '<th></th>' +
     '</tr></thead>';
 
-  function renderAnonTable(items) {
+  function renderAnonTable(items, unit) {
     var host = el('tbl_pf'); if (!host) return;
     var filtered = items.filter(function (x) { return inBook(x.sym); });
     var q = (el('pf_q') && el('pf_q').value || '').trim().toLowerCase();
     if (q) filtered = filtered.filter(function (x) { return x.sym.toLowerCase().indexOf(q) >= 0; });
-    host.innerHTML = ANON_HEAD + '<tbody>' + filtered.map(function (x) {
+    var head = (unit === 'shares')
+      ? ANON_HEAD.replace(te('Weight', '占比'), te('Share of shares', '股数占比'))
+      : ANON_HEAD;
+    host.innerHTML = head + '<tbody>' + filtered.map(function (x) {
       return '<tr data-t="' + esc(x.sym) + '">' +
         '<td class="c-sym"><b>' + esc(x.sym) + '</b><span class="co"></span></td>' +
         '<td class="c-val num"><span class="fig">' + x.money.toFixed(1) + '%</span></td>' +
@@ -1066,16 +1410,31 @@
     return ENTERED ? 'anon-analyzed' : 'anon-empty';
   }
 
-  /* Is the workspace host actually on this page? The store half of this file is
-     exercised head-less (the node unit shell drives WL.merge / WL.replace against a
-     stubbed DOM), so every renderer below must be a clean no-op when there is nothing
-     to draw into — never a throw that takes the store down with it. */
-  function hasUI() {
+  /* THREE possible pages, and this file has to be correct on all of them.
+
+       1. the W2 workspace  -> `#ws_modes` is present; render the workspace
+       2. the PRE-W2 page   -> no `#ws_modes` but `#wl_list` is there; render the
+                               legacy card grid, byte-for-byte what shipped before
+       3. no page at all    -> the node unit shell; render nothing, throw nothing
+
+     Case 2 is not hypothetical. site/watchlist.html is baked by the render lane and
+     empirically lags its template by over an hour, while this file goes live on the
+     VPS's 3-minute pull — so the old markup WILL be served with this script, and a
+     workspace-only renderer turns that window into the #5463 husk. */
+  function isWorkspace() {
+    return typeof document !== 'undefined' && !!document.getElementById && !!el('ws_modes');
+  }
+  function isLegacyPage() {
     return typeof document !== 'undefined' && !!document.getElementById &&
-      !!(el('ws_modes') || el('tbl_pf') || el('tbl_wl'));
+      !el('ws_modes') && !!el('wl_list');
+  }
+  function hasUI() {
+    return isWorkspace() || !!(typeof document !== 'undefined' && document.getElementById &&
+      (el('tbl_pf') || el('tbl_wl')));
   }
 
   function render() {
+    if (isLegacyPage()) { lgRender(); return; }
     if (!hasUI()) return;
     var state = wsState();
     document.documentElement.setAttribute('data-ws-state', state);
@@ -1373,9 +1732,15 @@
   function init() {
     sugg = el('wl_sugg');
     q = el('wl_q');
+    listEl = el('wl_list');
+    countEl = el('wl_count');
 
     blob = readStorage();
     if (!storageProbe()) showBanner(L('noStore'));
+
+    // PRE-W2 markup: wire and render exactly what shipped before this wave, then stop.
+    if (isLegacyPage()) { initLegacy(); return; }
+
     restoreEntry();
     paintPlaceholders();
     paintChip();
@@ -1498,6 +1863,61 @@
       publishSeenDiff();
       render();
     }).catch(function () { render(); });
+  }
+
+
+  /* The pre-W2 init, verbatim in behaviour: controls, share box, delegated add/remove,
+     cross-tab sync, and the index resolve that feeds the card grid. Nothing in here
+     touches a `#ws_*` id, so it is safe on markup that has never heard of the
+     workspace. */
+  function initLegacy() {
+    lgWireControls();
+    wireShare();
+
+    document.addEventListener('click', function (e) {
+      var rm = e.target.closest('[data-rm]');
+      if (rm) { remove(rm.getAttribute('data-rm')); lgRender(); pushCloud(); return; }
+      var ad = e.target.closest('[data-add]');
+      if (ad) { if (add(ad.getAttribute('data-add'))) { lgRender(); pushCloud(); } }
+    });
+
+    window.addEventListener('storage', onStorage);
+    document.addEventListener('themechange', lgRepaintEnriched);
+    document.addEventListener('langchange', function () {
+      if (q) q.placeholder = L('lgPh');
+      lgRender();
+    });
+    document.addEventListener('bk-change', lgRender);
+
+    if (!window.SD || !window.SD.loadIndexes) { lgRender(); return; }
+    var markets = { us: 1 };
+    if (window.MB) blob.items.forEach(function (it) { markets[window.MB.marketOf(it.t)] = 1; });
+    window.SD.loadIndexes(Object.keys(markets)).then(function (r) {
+      idxBy = r.byTicker;
+      wireSearch(r.list);
+      if (q) q.placeholder = L('lgPh');
+      consumeShareHash();
+      lgRender();
+      publishSeenDiff();
+    }).catch(function () { lgRender(); });
+  }
+
+  /* The export/import box only exists on the pre-W2 page. Guarded so the workspace,
+     which does not carry it, never wires a null. */
+  function wireShare() {
+    var ta = el('wl_export'), imp = el('wl_import');
+    var copy = el('wl_copylink'), impBtn = el('wl_importbtn');
+    if (!ta || !imp || !copy || !impBtn) return;
+    function refresh() { ta.value = exportCode(); }
+    refresh();
+    document.addEventListener('wl-changed', refresh);
+    copy.addEventListener('click', function () {
+      var url = location.origin + location.pathname + '#' + shareParam() + '=' + exportCode();
+      var done = function () { toast(L('copied')); };
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { ta.select(); });
+      else { ta.value = url; ta.select(); document.execCommand && document.execCommand('copy'); refresh(); done(); }
+    });
+    impBtn.addEventListener('click', function () { importCode(imp.value.trim()); imp.value = ''; });
   }
 
   /* "N changed since your last visit" — computed over the FULL set, never the

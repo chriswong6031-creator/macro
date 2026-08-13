@@ -193,8 +193,20 @@
     function next() {
       if (i >= list.length) return Promise.resolve();
       var t = list[i++];
-      return loadTicker(t).then(function (j) {
+      /* `loadTicker` can throw SYNCHRONOUSLY before it ever returns a promise — a
+         missing market_books.js makes `storeOf` blow up on the first call. Un-guarded,
+         that throw escapes `next()` and kills the whole worker lane, so a batch of 100
+         silently loses a fifth of its rows with one exception nobody sees. Guarding
+         here degrades exactly the one name, which is the contract this function
+         promises its callers. */
+      var pending;
+      try { pending = loadTicker(t); }
+      catch (e) { pending = Promise.resolve(null); }
+      return pending.then(function (j) {
         if (onEach) { try { onEach(t, j); } catch (e) {} }
+        return next();
+      }, function () {
+        if (onEach) { try { onEach(t, null); } catch (e) {} }
         return next();
       });
     }

@@ -87,13 +87,40 @@
   var lastChip = null;
   function setPill(state) {
     var next = CHIP_STATE[state] || 'local';
-    if (next === lastChip) return;          // no-op re-publishes are noise
-    lastChip = next;
-    try {
-      document.dispatchEvent(new CustomEvent('ws-save', { detail: { state: next } }));
-    } catch (e) {}
+    if (next !== lastChip) {
+      lastChip = next;
+      try {
+        document.dispatchEvent(new CustomEvent('ws-save', { detail: { state: next } }));
+      } catch (e) {}
+    }
+    lgPaintPill(state);
   }
-  function showSignedOut() { setPill('local'); }
+  /* PRE-W2 pill. Inert on the workspace (the element does not exist there); on the old
+     markup it is the ONLY sync disclosure, so it is painted verbatim as before. */
+  function lgPaintPill(state) {
+    var p = el('wl_syncpill'); if (!p) return;
+    var map = { synced: L('synced'), syncing: L('syncing'), local: L('local'),
+                offline: L('offline'), finishing: L('finishing') };
+    p.textContent = map[state] || '';
+    p.className = 'wl-pill wl-pill-' + (state === 'finishing' ? 'syncing' : state);
+  }
+  function showAccount(email) {
+    if (el('wl_signin'))  el('wl_signin').style.display  = 'none';
+    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+    if (el('wl_account')) el('wl_account').style.display = 'flex';
+    if (el('wl_who'))     el('wl_who').textContent = L('hello') + ' ' + email;
+  }
+  function showSignedOut() {
+    if (el('wl_account')) el('wl_account').style.display = 'none';
+    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+    if (el('wl_signin'))  el('wl_signin').style.display  = 'inline-block';
+    setPill('local');
+  }
+  function relabel() {
+    if (el('wl_signin'))  el('wl_signin').textContent  = L('signin');
+    if (el('wl_signout')) el('wl_signout').textContent = L('signout');
+    if (user) showAccount(user.email || ''); else setPill('local');
+  }
 
   // (the shared single-timer debounce() this module used is retired — the push is now
   //  debounced PER LIST at _schedulePush, so two lists cannot cancel each other.)
@@ -636,7 +663,7 @@
       delete _pushTimers[listId];
       // Never diff against a list we have not read: queue it for the pull to flush.
       if (!_cloudOf(listId)) { queuedPushes[listId] = tickers; return; }
-      pushList(listId, tickers);
+      _trackedPush(listId, tickers);
     }, 600);
   }
 
@@ -648,7 +675,7 @@
       var tickers = queuedPushes[id];
       delete queuedPushes[id];
       if (!id || id === 'null' || id === 'undefined') return;   // defensive: never a null target
-      if (_cloudOf(id)) pushList(id, tickers);
+      if (_cloudOf(id)) _trackedPush(id, tickers);
     });
   }
 
@@ -774,11 +801,25 @@
      While any push is scheduled or queued, the refetch DEFERS and re-arms instead of
      firing; the retry is bounded so a permanently stuck queue can never spin. */
   var PUSH_SETTLE_MS = 800, PUSH_SETTLE_TRIES = 6;
-  // pure predicate, so the deferral can be pinned without a DOM or a live timer
-  function _pushPendingWith(timers, queued) {
-    return Object.keys(timers || {}).length > 0 || Object.keys(queued || {}).length > 0;
+  /* Three states have to be counted, not two. The debounce timer is deleted the moment
+     `pushList` is CALLED, but the DELETE it issues is still in flight for a round trip
+     — and a pull landing inside that window merges the row straight back, which is the
+     exact bug the deferral exists to stop, just one RTT later. `_pushInFlight` closes
+     that hole; it is incremented at the call sites rather than inside pushList, so the
+     frozen push path itself is untouched. */
+  var _pushInFlight = 0;
+  function _pushPendingWith(timers, queued, inFlight) {
+    return Object.keys(timers || {}).length > 0 ||
+           Object.keys(queued || {}).length > 0 ||
+           (inFlight || 0) > 0;
   }
-  function pushPending() { return _pushPendingWith(_pushTimers, queuedPushes); }
+  function pushPending() { return _pushPendingWith(_pushTimers, queuedPushes, _pushInFlight); }
+  // wraps a pushList call so the in-flight window is counted without editing pushList
+  function _trackedPush(listId, tickers) {
+    _pushInFlight++;
+    var done = function (r) { _pushInFlight--; return r; };
+    return pushList(listId, tickers).then(done, function (e) { done(); throw e; });
+  }
   function pullWhenSettled(tries) {
     if (!user || !sb) return;
     if (pushPending()) {
@@ -1120,6 +1161,7 @@
     }
     // signed in: the write-through state is whatever the pull below resolves. Say
     // "saving" now rather than claiming "saved" before anything has been read.
+    showAccount(user.email || '');
     setPill('finishing');
     // Signed in from the anonymous shell: the account-gated page scripts
     // (stockdata.js and the risk stack) were 401'd at load and an in-page auth
@@ -1152,13 +1194,51 @@
   function init() {
     var CFG = window.SUPABASE_CFG;
     var enabled = CFG && CFG.url && CFG.anonKey;
+    var chip = el('ws_savechip');      // the W2 workspace host
+    var box  = el('wl_auth');          // the PRE-W2 Account Sync panel
+
+    /* THREE pages, one file — and only two of them want a cloud session.
+
+       W2 deleted the Account Sync panel, and with it the `if (!box) return;` guard that
+       had been doing double duty: it also kept this module DORMANT on every page that
+       merely loads it (committee.html loads watchstore.js and has never touched a list).
+       Without it that page became a full cloud participant — MDXAuth wiring, a one-time
+       reload it never asked for, and a reachable list-creation path. The guard is
+       restored in its general form: no sync host of EITHER generation -> do nothing at
+       all. No onChange, no reload, no pull, no fold. */
+    if (!chip && !box) return;
 
     // Local-only unless BOTH the config is baked AND the shared client exists. The
     // chip still has to say so — a page that silently shows nothing about where the
     // list lives is exactly the husk this wave removed.
     if (!enabled || !window.MDXAuth || !window.MDXAuth.onChange) {
+      if (box) box.style.display = 'none';
       setPill('local');
       return;
+    }
+
+    /* PRE-W2 markup (the render-lane lag window): the live page carries
+       `#wl_auth` with an inline `display:none`, so failing to un-hide it here serves a
+       page with no sync state, no sign-in CTA and no account row — the husk again, from
+       the other direction. Restore the panel and its two buttons verbatim. */
+    if (box) {
+      box.style.display = 'flex';
+      if (el('wl_signin')) {
+        el('wl_signin').textContent = L('signin');
+        el('wl_signin').style.display = 'inline-block';
+        el('wl_signin').addEventListener('click', function () {
+          if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
+        });
+      }
+      if (el('wl_signout')) {
+        el('wl_signout').textContent = L('signout');
+        el('wl_signout').addEventListener('click', function () {
+          if (window.MDXAuth && window.MDXAuth.signOut) window.MDXAuth.signOut();
+          else showSignedOut();
+        });
+      }
+      if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+      document.addEventListener('langchange', relabel);
     }
 
     showSignedOut();
@@ -1208,7 +1288,10 @@
       _setTestSession: function (u, client) { user = u; sb = client; },
       // W2: the read-side guard that keeps a focus refetch from reverting an edit
       // that is still only local (see tests/test_watchlist_workspace_js.py)
-      _testHooks: { pushPendingWith: _pushPendingWith },
+      _testHooks: {
+        pushPendingWith: _pushPendingWith,
+        inFlight: function () { return _pushInFlight; }
+      },
       // seed the resolved-list state a real pull would have established
       _setTestLists: function (s) {
         if (!s) return;

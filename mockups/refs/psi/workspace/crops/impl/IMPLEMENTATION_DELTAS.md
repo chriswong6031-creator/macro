@@ -88,6 +88,21 @@ sign*; `COUNTERTREND BOUNCE` (an unconfirmed turn) becomes *Early sign*, not
 *Confirming*; anything unknown becomes *Not covered*. Pinned by
 `tests/test_watchlist_workspace_js.py`.
 
+**D9 — The pinned "Sort: Value" toolbar button is absent; sorting moved to the column
+headers.** The mockup shows a `Sort: Value` button beside "Add position". The built table
+has sortable column headers instead (`aria-sort`, click to toggle) — the same affordance
+in the place a reader already looks for it, and it sorts by any column rather than
+cycling one. The button would have been a second control for a subset of what the headers
+already do. If the commissioning session wants the pinned control back, it is additive.
+
+**D10 — The anonymous entry panel persists above the analysis; the mockup replaced it.**
+In the pinned state (b) the paste box is gone once the book is read. Built, it collapses
+to a compact single-line header plus the textarea and the weighting control, and stays.
+Reason: the weighting mode is the visitor's most likely SECOND action ("what if these are
+percentages?"), and re-deriving the whole read is one click from there. Removing the panel
+would mean re-entering the book to change one control. Recorded as a deliberate departure,
+not an oversight — the commissioning session may rule it back.
+
 **D8 — The anonymous headline uses weight and market concentration, not sector.** The
 A9 ruling allows "via public metadata, else weight-only concentration". A name's sector
 is only on this page via the gated `stockdata/index.json`, so the build takes the stated
@@ -123,6 +138,37 @@ fallback. Recorded in full in packet §14 A9.
 
 ---
 
+## 3a. Round-2 rulings absorbed
+
+**zh stage word for `BOTTOM WATCH` (supersedes D7's zh half).** EN *Broke down* stands —
+it describes the completed break. The zh word became **已破位** (describes the break)
+instead of **已失效** (declares the read invalid). 已失效 is an engine-verdict word, and a
+display tier may only ever de-escalate; it leaves the glance tier entirely.
+
+**Δ-since-visit down marker (zh collision).** The marker and the *aging* stage word both
+rendered **转弱**, so a movement marker and a stage read were indistinguishable in Chinese.
+The marker is now **转跌** ("turned down", matching its EN); the stage keeps 转弱.
+
+**The seam is capped at 24 segments with a disclosed tail.** One segment per position
+overflowed the PAGE at 100 names on 390px — measured 86px, the large-list law broken by
+the device meant to explain the book. The rail now draws the 23 largest and folds the
+rest into one labelled segment; both denominators and both brackets are still computed
+over ALL positions, so capping moves pixels and never arithmetic.
+
+**Share counts never speak as money.** Anonymously there is no price plane, so Shares mode
+now carries a `unit` through every derived figure: headline, because-line, seam label,
+bracket, segment tooltips, the Weight column header and the coverage line all say *share
+count*, and one line states plainly that turning share counts into position sizes needs
+prices — which arrive with the free account. Previously a book of "BRK-A 1, F 5000, AAPL
+100" announced "98% of the money sits in F" while printing its largest holding at 0.0%.
+
+**Non-directional uses of `--down` were repainted to `--act`.** Found while auditing the
+zh flip: the remove-hover, the modal error line and the failure toast painted from the
+DIRECTION token, so under 红涨绿跌 an error message turned GREEN. Health tokens do not
+swap, which is exactly why they exist.
+
+---
+
 ## 4. What is asserted rather than eyeballed
 
 A crop shows one moment. These run in a real browser over the real page and fail loudly,
@@ -146,3 +192,45 @@ re-check by eye. 33 assertions, all passing at the head of this PR:
   a lock; the free CTA and the Risk Center lock shell are present; **the effective-bets
   claim is not made**; and the analysis survives a refresh.
 - **No page errors** anywhere in the run.
+
+### The scripts are committed, beside these crops
+
+| script | what it proves | when it runs |
+|---|---|---|
+| `verify_w2_workspace.py` | the 33 assertions above | by hand (needs a browser) |
+| `verify_b2_old_html_new_js.py` | the OLD-HTML + NEW-JS window, per file, against **live production markup** | by hand (needs network + a browser) |
+| `render_preview.py` + `preview_seed.js` | renders the signed-in and anonymous-wall previews the other two drive | by hand |
+| `shoot_crops.py` | the crop matrix | by hand |
+
+They are hand-run on purpose. The CI packs install a minimal dependency set, not
+`requirements.txt`, so a `pytest.importorskip("playwright")` would SKIP in CI and report
+green while proving nothing (house trap: *ci-packs-install-minimal-deps-not-requirements*).
+The precedent is `mockups/refs/breathing-platform/verify_wl1.py`. Everything checkable
+WITHOUT a browser — the absent `#wl_auth` ids, zero `title=`, the banned-vocab sweep, the
+stance set, the four chip states, the seam cap and its denominators, the unit law, the
+legacy fall-through, watchstore dormancy, and a regression pin for each defect this PR
+fixed — is asserted in `tests/test_watchlist_workspace_js.py`, which **is** wired into
+the packs.
+
+### zh directional colour — the answer to the round-2 visual finding
+
+**Neither side was wrong; the implementation already participates correctly, and this is
+now measured rather than eyeballed.** `.pos`/`.neg` paint from `var(--ink-up)`/
+`var(--ink-down)`, which derive from `--up`/`--down`, which `theme.css:155-156` swaps
+under `html[data-lang="zh"]`. Computed style, same harness that shoots the crops:
+
+| | `+48.3%` | `-15.5%` |
+|---|---|---|
+| EN | `#45b873` green | `#e06464` red |
+| ZH | `#e06464` **red** | `#45b873` **green** |
+
+红涨绿跌 holds. The four named traps were each checked and are clean: no direction is
+painted from a hard literal anywhere in this page's CSS or JS; `var(--red)`/`var(--green)`
+are not used; there are no charts, so `__CHART_SWAP__` is not involved; and the page-local
+`<style>` block defines **no** direction token, so nothing local can lose to the global
+swap. The crop harness does set the attribute — it writes `localStorage.lang` and reloads,
+and the pre-paint head script stamps `data-lang="zh"`, verified present in the probe above.
+
+The audit did find a real fault in the *opposite* direction, now fixed: three
+NON-directional surfaces (remove-hover, modal error, failure toast) painted from `--down`
+and therefore turned green in Chinese. They use `--act` now.

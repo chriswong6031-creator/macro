@@ -268,6 +268,20 @@
     }
   }
 
+  /* The lane state token. It lives HERE, beside its only caller, because it used to sit
+     700 lines away inside the braid-hero block — and when W2 deleted that block it took
+     this function with it. `laneRowsHTML` then threw ReferenceError on every call,
+     portfolio.js's try/catch swallowed it, and the drawer printed its honest-null line:
+     the per-name lane read shipped 100% dark for every signed-in user, disguised as a
+     data gap. tests/test_watchlist_workspace_js.py now calls laneRows on a real payload
+     and asserts a non-empty string, so a catch can never hide this class again. */
+  function stateToken(s) {
+    if (s === 'ok') return 'OK';
+    if (s === 'watch') return te('WATCH', '关注');
+    if (s === 'elev') return te('ELEVATED', '升高');
+    return te('n/a', '未覆盖');
+  }
+
   // The seven lane rows as HTML — the ONE renderer, shared by the watchlist cards and
   // the portfolio assessment drawer (portfolio.js calls it through window.WRI). Keeping
   // a single implementation is why the drawer and the card can never drift apart.

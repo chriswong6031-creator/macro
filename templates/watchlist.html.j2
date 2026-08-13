@@ -148,6 +148,11 @@
     border:1px dashed color-mix(in srgb,var(--muted) 50%,transparent); }
   .seam-seg.is-void { background:transparent;
     border:1px dashed color-mix(in srgb,var(--muted) 34%,transparent); }
+  /* the folded tail (see MAX_SEGS in watchlist.js): quieter than a named position,
+     because it is a group and must not read as one holding */
+  .seam-seg.is-tail { background:repeating-linear-gradient(90deg,
+      color-mix(in srgb,var(--muted) 30%,var(--panel2)) 0 3px,
+      color-mix(in srgb,var(--muted) 14%,var(--panel2)) 3px 6px); }
   /* the risk rail before a signed-in factor read exists: one locked slot, never a
      fabricated distribution (anonymous ruling A9) */
   .seam-rail.is-locked { background:repeating-linear-gradient(-45deg,
@@ -306,7 +311,12 @@
   .drw-act a { font-weight:650; }
   .drw-rm { background:transparent; border:0; color:var(--muted); cursor:pointer;
     font:inherit; font-size:12px; font-weight:650; padding:0; }
-  .drw-rm:hover { color:var(--ink-down); }
+  /* --act, not --down. "Remove", "error" and "failed" are HEALTH meanings, not price
+     directions; theme.css deliberately does not swap the health tokens, so an error
+     stays red in Chinese. Painting them from --down made a failure message turn GREEN
+     under 红涨绿跌 — the direction swap doing exactly its job to a caller that had no
+     direction to express. */
+  .drw-rm:hover { color:var(--act); }
   .drw-honest { grid-column:1/-1; font-size:11.5px; color:var(--muted); line-height:1.5; }
 
   /* Δ-since-visit — a dot + two plain words, no percentage theatre */
@@ -568,7 +578,7 @@
   #pfm_sugg small { color:var(--muted); flex:1; min-width:0;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pfm-ticker-wrap { position:relative; }
-  #pfm_err { display:none; color:var(--ink-down); font-size:12.5px; margin-top:8px; }
+  #pfm_err { display:none; color:var(--act); font-size:12.5px; margin-top:8px; }
   @media (max-width:700px){
     .mx5-dlg { align-items:flex-end; }
     .mx5-dlg-panel { width:calc(100% - 24px); max-width:none; max-height:85vh;
@@ -580,7 +590,7 @@
     border-radius:10px; padding:10px 16px; font-size:13px; font-weight:600;
     box-shadow:var(--popover-shadow); opacity:0; pointer-events:none; transition:.25s; z-index:90; }
   .wl-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-  .wl-toast.bad { border-color:var(--down); color:var(--ink-down); }
+  .wl-toast.bad { border-color:var(--act); color:var(--act); }
   @media (prefers-reduced-motion:reduce){ .wl-toast { transition:none; } }
   .wl-banner { display:none; margin:0 0 16px; padding:10px 14px; border-radius:9px; font-size:13px;
     background:color-mix(in srgb,var(--warn) 14%,var(--panel));
