@@ -46,6 +46,9 @@ waves:
     depends_on: [W1, W2]
 decisions:
   - DEC:AGENTOS-CXI-R12-OVERRULED
+  - DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY
+  - DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA
+  - DEC:AGENTOS-DECISION-MEMORY-STAYS-SEPARATE
   - DEC:AGENTOS-NO-TASK-STORE
   - DEC:AGENTOS-FILE-PER-RECORD
   - DEC:AGENTOS-HOME-IS-MACRO
@@ -68,30 +71,10 @@ artifacts:
   - research/MASTERMIND_AGENT_HANDOFF_PROTOCOL.md
   - research/MASTERMIND_AGENT_OS_V1_IMPLEMENTATION_PLAN.md
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
-needs_ceo:
-  question: >
-    Four open conflicts (C5 was RULED on 2026-08-12 — see DEC:AGENTOS-CXI-R12-OVERRULED).
-    C1 — task registry: the brief asks for a first-class Task entity; census §5.6 ruled
-    sub-PR granularity a non-goal. C2 — session tracking: the brief asks for heartbeats
-    and stale-task detection; census §6.3 forbids a session-tracking service. C3 — ranked
-    work: the CEO brief's START NEXT is a ranked next-work list, and
-    config/strategic_state.yml:16 gives that concept to brain/improvement_agenda.py.
-    C4 — census override: census §5.4 chose governance.jsonl event types and declared "a
-    new unified store" an explicit non-goal; agentos/decisions/ overrides that, on the
-    ground that governance.jsonl is not git-tracked.
-  options:
-    - "Side with the census on C1/C2, readiness-only on C3, confirm the C4 override"
-    - "Override the census: build a real task store and a session registry"
-    - "Reverse C4: make governance.jsonl git-tracked and retire agentos/decisions/ into it"
-  recommendation: >
-    Side with the census on C1/C2, readiness-only on C3, confirm the C4 override. Waves
-    supply the dependency graph and next-action the brief needs at ~4 fields instead of
-    20; the advisory claim plus git worktree list and PR-collision data cover the
-    collision goal; START NEXT stays a readiness view so the improvement agenda keeps
-    priority; and the C4 override rests on governance.jsonl being single-machine runtime
-    state that cannot carry cross-machine memory.
-  by_when: 2026-08-19
-next_action: Land the C5 ruling, then rule on C1-C4; Phase 1 is now unblocked to mandate DSC-*.
+next_action: >
+  Start Phase 1 (adoption). All five conflicts are ruled: C1 no task store, C2 claims
+  advisory-only, C3 readiness feeds the agenda, C4 stores stay separate, C5 CXI-R12
+  overruled. Phase 3 gains the agenda-integration wave that retires the UNBLOCKED list.
 ---
 
 ## Context

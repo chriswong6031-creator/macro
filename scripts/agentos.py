@@ -272,7 +272,7 @@ def _citations(value: Any, prefix: str) -> tuple[list[str], list[str]]:
     the single most expensive kind of defect available here: ``depends_on: [FOO]`` was
     silently DROPPED (0 errors, 0 warnings) while ``depends_on: ["WS:FOO"]`` hard-erred,
     so the workstream dependency graph that ``check_references`` walks for cycles — and
-    that ``status`` now walks for START NEXT readiness — was quietly incomplete, with no
+    that ``status`` now walks for readiness — was quietly incomplete, with no
     signal that an edge was missing.  A ranking computed over a graph with dropped edges
     is wrong in a way nobody can see.
     """
@@ -1210,7 +1210,7 @@ def build_records(
     merged_truncated = bool((builds or {}).get("merged_truncated"))
     live_branches = set(worktrees.get("branches") or [])
 
-    # Wave-level dependents, for the START NEXT unblock count.
+    # Wave-level dependents, for the UNBLOCKED section's unblock count.
     out: list[dict[str, Any]] = []
     for key in sorted(ws):
         rec = ws[key]
@@ -1394,7 +1394,7 @@ def build_records(
     return out, warnings
 
 
-def rank_start_next(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def compute_unblocked(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Waves whose dependencies are satisfied, ranked per CEO brief spec §3.
 
     THIS IS NOT AN ASSIGNMENT AND NOT A QUEUE (I1, and brief §6 "CEO becomes the
@@ -1490,18 +1490,18 @@ def build_state(
         # ---- pure function of the authored records + join inputs ----
         "workstreams": records,
         "needs_ceo": [
-            # `workstream`, matching blocked/finished/start_next and the documented
+            # `workstream`, matching blocked/finished/unblocked and the documented
             # ceo_brief.v1 envelope.  It emitted `key` here alone, so the one section the
             # CEO acts on was the one whose shape diverged from its own spec.
             {"workstream": row["key"], **row["needs_ceo"], "source": row["source"]}
             for row in records if row["needs_ceo"]
         ],
-        "start_next": rank_start_next(records),
+        "unblocked": compute_unblocked(records),
         "warnings": warnings,
     }
 
 
-PURE_SECTIONS = ("schema", "generator", "workstreams", "needs_ceo", "start_next", "warnings")
+PURE_SECTIONS = ("schema", "generator", "workstreams", "needs_ceo", "unblocked", "warnings")
 
 
 def pure_section(state: dict[str, Any]) -> dict[str, Any]:
@@ -1571,9 +1571,9 @@ def render_state_markdown(state: dict[str, Any]) -> str:
             )
         lines.append("")
 
-    if state["start_next"]:
+    if state["unblocked"]:
         lines += ["## Unblocked work (readiness, not assignment)", ""]
-        for item in state["start_next"]:
+        for item in state["unblocked"]:
             lines.append(
                 f"- `WS:{item['workstream']}` {item['wave']} — {_md_cell(item['title'] or '')}"
             )
@@ -1652,7 +1652,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         print(f"::warning title=agentos-degraded::{item}", flush=True)
     print(
         f"agentos status: {len(state['workstreams'])} workstreams · "
-        f"{len(state['needs_ceo'])} needing a ruling · {len(state['start_next'])} unblocked "
+        f"{len(state['needs_ceo'])} needing a ruling · {len(state['unblocked'])} unblocked "
         f"wave(s) · {len(state['warnings'])} warning(s) · "
         f"{len(degraded.items)} degraded input(s)",
         flush=True,
@@ -1708,10 +1708,13 @@ def _recommended_option(options: list[str], recommendation: str) -> str | None:
 # disagree is exactly the failure P7 exists to prevent — so the brief SAYS SO in prose
 # rather than quietly presenting a rival ordering.  Recorded as DEC:AGENTOS-START-NEXT-
 # VS-AGENDA and escalated as conflict C3.
-START_NEXT_SCOPE = (
-    "Readiness only — which waves CAN start (dependencies satisfied). It is NOT the "
-    "company's priority order: brain/improvement_agenda.py owns the ranked work queue "
-    "(Charter P7). Ask that list what matters most; ask this one what is unblocked."
+UNBLOCKED_SCOPE = (
+    "READINESS, NOT PRIORITY — which waves CAN start because their dependencies are "
+    "satisfied. brain/improvement_agenda.py is the SOLE canonical answer to 'what "
+    "should we do next?' (Chairman ruling C3, 2026-08-12; Charter P7). Agent OS owns "
+    "dependency/readiness computation only. This section is INTERIM: readiness is to "
+    "be fed into the agenda as an input, and this list retired once that lands — see "
+    "DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA."
 )
 
 
@@ -1822,8 +1825,8 @@ def build_brief(
         "blocked": blocked,
         "finished": finished,
         "running": running,
-        "start_next": state["start_next"],
-        "start_next_scope": START_NEXT_SCOPE,
+        "unblocked": state["unblocked"],
+        "unblocked_scope": UNBLOCKED_SCOPE,
         "warnings": state["warnings"],
     }
 
@@ -1936,31 +1939,35 @@ def render_brief(brief: dict[str, Any], *, full: bool, state: dict[str, Any]) ->
     out.append("                                     → agentos.py brief --full")
     out.append("")
 
-    out.append(f"━━ START NEXT {RULE[:54]}")
+    out.append(f"━━ UNBLOCKED — READY TO START {RULE[:37]}")
     out.append("")
-    out.extend(_wrap(START_NEXT_SCOPE, 64, " "))
+    out.extend(_wrap(UNBLOCKED_SCOPE, 64, " "))
     out.append("")
-    if not brief["start_next"]:
+    if not brief["unblocked"]:
         out.append(" Nothing is unblocked.")
-    cap_next = len(brief["start_next"]) if full else CAP_START_NEXT
-    for index, item in enumerate(brief["start_next"][:cap_next], start=1):
+    cap_next = len(brief["unblocked"]) if full else CAP_START_NEXT
+    for index, item in enumerate(brief["unblocked"][:cap_next], start=1):
         p0 = f" · P0 {item['p0']}" if item["p0_active"] else ""
         unblocks = f" · unblocks {item['unblocks']}" if item["unblocks"] else ""
         claimed = " · CLAIMED" if item["claimed"] else ""
         out.append(f" {index}. WS:{item['workstream']} {item['wave']} — "
                    f"{_md_cell(item['title'] or '')}")
         out.append(f"    {item['source']}{p0}{unblocks}{claimed}")
-    _overflow(out, len(brief["start_next"]), cap_next, "ready to start")
+    _overflow(out, len(brief["unblocked"]), cap_next, "ready to start")
     out.append("")
 
     if full:
         out.append(f"━━ FULL DETAIL {RULE[:53]}")
         out.append("")
+        out.append("Claim notes are ADVISORY — an author's note in git, not live "
+                   "activity. Live worker/job state is the Executive OS runtime "
+                   "(control_plane/); occupancy evidence is `git worktree list`.")
+        out.append("")
         for row in state["workstreams"]:
             claim = row["claim"]
-            claim_text = "unclaimed"
+            claim_text = "no claim note"
             if claim:
-                claim_text = f"claimed by {claim['by']}"
+                claim_text = f"claim note: {claim['by']}"
                 if claim["stale"]:
                     claim_text += " (EXPIRED)"
                 elif not claim["worktree_live"]:

@@ -133,7 +133,7 @@ def test_records_section_is_identical_without_a_frozen_clock(
     assert _status(store, first, "--active-builds", str(builds)).returncode == 0
     assert _status(store, second, "--active-builds", str(builds)).returncode == 0
     one, two = _state(first), _state(second)
-    pure = ("schema", "generator", "workstreams", "needs_ceo", "start_next", "warnings")
+    pure = ("schema", "generator", "workstreams", "needs_ceo", "unblocked", "warnings")
     for section in pure:
         assert one[section] == two[section], f"{section} is not a pure function of its inputs"
 
@@ -368,14 +368,14 @@ def test_staleness_comes_from_git_not_from_a_typed_field(
 # ----------------------------------------------------------------- ranking
 
 
-def test_start_next_only_offers_waves_whose_dependencies_are_satisfied(
+def test_unblocked_only_offers_waves_whose_dependencies_are_satisfied(
     store: Path, builds: Path, tmp_path: Path
 ) -> None:
     out = tmp_path / "state.json"
     _status(store, out, "--now", FROZEN, "--active-builds", str(builds))
     state = _state(out)
     by_key = {row["key"]: row for row in state["workstreams"]}
-    for item in state["start_next"]:
+    for item in state["unblocked"]:
         row = by_key[item["workstream"]]
         wave = next(w for w in row["wave_detail"] if w["id"] == item["wave"])
         assert wave["status"] == "todo"
@@ -383,18 +383,27 @@ def test_start_next_only_offers_waves_whose_dependencies_are_satisfied(
         assert row["status"] not in {"blocked", "parked", "killed", "done"}
 
 
-def test_start_next_states_that_it_is_not_the_priority_queue(store: Path) -> None:
-    """P7: two ranked lists that do not say which question they answer is the failure."""
+def test_unblocked_states_that_it_is_not_the_priority_queue(store: Path) -> None:
+    """P7: two ranked lists that do not say which question they answer is the failure.
+
+    Chairman ruling C3 (2026-08-12) went further than the original design: the agenda is the
+    SOLE canonical queue, this section is readiness only, and it is INTERIM pending
+    integration. Assert that substance, not a phrase — the wording may be improved, the
+    contract may not be weakened.
+    """
     text = _run("brief", "--root", str(store), "--now", FROZEN, "--no-remember").stdout
     assert "improvement_agenda.py" in text
-    assert "NOT the company's priority order" in text
+    assert "READINESS, NOT PRIORITY" in text
+    assert "SOLE canonical" in text or "sole canonical" in text
+    assert "UNBLOCKED" in text, "the section must not be labelled as a next-work ranking"
+    assert "START NEXT" not in text, "retired label: it read as a priority order"
     payload = json.loads(
         _run("brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json").stdout
     )
-    assert "improvement_agenda.py" in payload["start_next_scope"]
+    assert "improvement_agenda.py" in payload["unblocked_scope"]
 
 
-def test_start_next_ranks_active_p0_above_a_bigger_unblock_count(
+def test_unblocked_ranks_active_p0_above_a_bigger_unblock_count(
     store: Path, builds: Path, tmp_path: Path
 ) -> None:
     """Rank order is P0 alignment FIRST, then unblock count — not the reverse."""
@@ -414,7 +423,7 @@ def test_start_next_ranks_active_p0_above_a_bigger_unblock_count(
     result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds),
                      env={"MACRO_MASTERMIND_REPO": str(tmp_path / "mm")})
     assert result.returncode == 0, result.stdout
-    ordering = _state(out)["start_next"]
+    ordering = _state(out)["unblocked"]
     assert ordering, "the P0 wave should now be unblocked"
     assert ordering[0]["workstream"] == "PROPHET-US-ENTRY-TIMING", ordering
     assert ordering[0]["p0_active"] is True
@@ -466,7 +475,7 @@ def test_brief_json_is_the_documented_schema(store: Path, builds: Path) -> None:
     ).stdout)
     assert payload["schema"] == "ceo_brief.v1"
     for field in ("generated_at", "since", "counts", "inputs", "needs_ceo", "blocked",
-                  "finished", "start_next", "warnings"):
+                  "finished", "unblocked", "warnings"):
         assert field in payload, f"ceo_brief.v1 is missing {field}"
     for field in ("total", "active", "awaiting_ci", "blocked", "done_in_window"):
         assert field in payload["counts"]
@@ -576,7 +585,7 @@ def test_ceo_brief_envelope_keys_match_the_spec(store: Path, builds: Path) -> No
         "brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json",
         "--active-builds", str(builds),
     ).stdout)
-    for section in ("needs_ceo", "blocked", "finished", "start_next"):
+    for section in ("needs_ceo", "blocked", "finished", "unblocked"):
         for item in payload[section]:
             assert "workstream" in item, f"{section} item lacks 'workstream': {sorted(item)}"
             assert "key" not in item, f"{section} item still emits legacy 'key': {sorted(item)}"

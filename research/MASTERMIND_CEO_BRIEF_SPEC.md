@@ -100,12 +100,12 @@ since the last 7d (2026-08-05 14:00 UTC, 168h ago)
     a non-goal. C2 — session tracking: the brief asks for
     heartbeats and stale-task detection; census §6.3 forbids a
     session-tracking service. C3 — ranked work: the CEO brief's
-    START NEXT is a ranked next-work list, and
+    UNBLOCKED is a ranked next-work list, and
     config/strategic_state.yml:16 gives that concept to
     brain/improvement_agenda.py.
-      A) Side with the census on C1/C2; keep START NEXT as readiness-only on C3
+      A) Side with the census on C1/C2; keep UNBLOCKED as readiness-only on C3
       B) Override the census: build a real task store and a session registry
-      C) Fold readiness into the improvement agenda and retire START NEXT here
+      C) Fold readiness into the improvement agenda and retire UNBLOCKED here
     Recommendation:
       Side with the census on both. Waves supply the dependency
       graph and next-action the brief actually needs at ~4
@@ -133,7 +133,7 @@ since the last 7d (2026-08-05 14:00 UTC, 168h ago)
  0 open PR(s) cited by a wave. 0 stale claim(s); 0 claim(s) with no live worktree.
                                      → agentos.py brief --full
 
-━━ START NEXT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━ UNBLOCKED ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
  Readiness only — which waves CAN start (dependencies satisfied).
  It is NOT the company's priority order:
@@ -172,13 +172,13 @@ suppressed would be indistinguishable from a brief where nothing is happening.
 | BLOCKED | `status: blocked` | `record_stale_days` desc | 5 + overflow line | empty |
 | FINISHED | waves→`done` in window | recency | 8 + overflow line | empty |
 | RUNNING | everything else | — | rolled to counts | never |
-| START NEXT | `todo` waves, deps satisfied | P0 alignment, then unblock-count | 3 + overflow line | empty |
+| UNBLOCKED | `todo` waves, deps satisfied | P0 alignment, then unblock-count | 3 + overflow line | empty |
 
-**START NEXT ranking**, in order: (1) all `depends_on` satisfied; (2) maps to an active P0 in
+**UNBLOCKED ranking**, in order: (1) all `depends_on` satisfied; (2) maps to an active P0 in
 `strategic_state.yml`; (3) unblocks the most other waves; (4) not currently claimed. Deterministic
 — no model in the loop, so the brief is reproducible and arguable.
 
-**START NEXT is NOT the company's ranked work queue, and the section says so on every
+**UNBLOCKED is NOT the company's ranked work queue, and the section says so on every
 render.** Charter P7 (one source of truth per concept) gives the ranked-queue concept to
 Mastermind `brain/improvement_agenda.py`, and census §5.3 calls it "the only ranked,
 evidence-cited priority engine in the org". Readiness and priority are different
@@ -187,8 +187,8 @@ only Agent OS holds; priority comes from accountability-fused evidence, which on
 agenda holds. A wave can be perfectly ready and correctly last in line. The failure P7
 guards against is two lists that both claim to answer the same question and disagree, so
 the fix is that each list states its question: a fixed scope line renders above the
-items in both the text and JSON forms (`start_next_scope`), and the direction of truth
-is stated — **priority wins; START NEXT is only telling you the work is startable.**
+items in both the text and JSON forms (`unblocked_scope`), and the direction of truth
+is stated — **priority wins; UNBLOCKED is only telling you the work is startable.**
 Full reasoning, alternatives, and what would reverse it:
 `agentos/decisions/DEC-AGENTOS-START-NEXT-VS-AGENDA.md`. Escalated as conflict **C3**.
 
@@ -243,7 +243,7 @@ decisions past `review_by`).
      "by_when": "2026-08-14", "blocks_waves": 2,
      "source": "agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md"}
   ],
-  "blocked": [...], "finished": [...], "start_next": [...],
+  "blocked": [...], "finished": [...], "unblocked": [...],
   "warnings": []
 }
 ```
@@ -261,9 +261,9 @@ renderers. P7.
 | Brief grows with worker count | Only `needs_ceo` reaches the top section; everything else rolls to counts (§0.1) |
 | Stale data reads as "quiet" | Inputs line always prints artifact ages; `degraded` is never suppressed |
 | Everything looks urgent | Escalation is authored, not inferred — a session must deliberately write `needs_ceo` |
-| CEO becomes the dispatcher | START NEXT is *unblocked work*, not assignments. Nothing is assigned to anyone. |
+| CEO becomes the dispatcher | UNBLOCKED is *unblocked work*, not assignments. Nothing is assigned to anyone. |
 | Brief burns GitHub quota | Zero network calls; PR state inherited from the nightly sweep (§1) |
 | Brief disagrees with reality | Every line cites a file or PR the CEO can open; the artifact wins over the summary |
-| Two ranked lists disagree | START NEXT renders its scope line every time and defers to the improvement agenda on priority (§3, `DEC:AGENTOS-START-NEXT-VS-AGENDA`) |
+| Two ranked lists disagree | UNBLOCKED renders its scope line every time and defers to the improvement agenda on priority (§3, `DEC:AGENTOS-START-NEXT-VS-AGENDA`) |
 | Record says one thing, execution did another | `record_disagrees_with_execution` warnings: a wave not `done` behind a merged PR, or a `waves[].pr` absent from `active_builds.v1` |
 | Worked example drifts from the tool | §2 is regenerated from the store by a printed command, never hand-written |

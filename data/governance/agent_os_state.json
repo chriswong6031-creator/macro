@@ -1,21 +1,21 @@
 {
   "schema": "agent_os_state.v1",
   "generator": "scripts/agentos.py status",
-  "generated_at": "2026-08-12T23:48:38Z",
+  "generated_at": "2026-08-13T02:12:31Z",
   "inputs": {
     "workstreams": 6,
-    "decisions": 6,
+    "decisions": 9,
     "discoveries": 3,
     "handoffs": 0,
     "active_builds": "data/governance/active_builds.json@2026-08-11T01:48:44.205959+00:00",
-    "active_builds_age_hours": 46.0,
-    "worktrees": 246,
+    "active_builds_age_hours": 48.4,
+    "worktrees": 249,
     "uncommitted_worktrees": [],
     "degraded": [
       "active_builds.v1 merged window is TRUNCATED — a merged PR may read 'unknown'",
       "mastermind:config/strategic_state.yml absent — p0 ids unvalidated, P0 ranking neutral (this Mastermind checkout predates config/strategic_state.yml)",
-      "uncommitted-work scan skipped over 246 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work",
-      "active_builds.v1 is 46h old — PR state predates the last nightly sweep"
+      "uncommitted-work scan skipped over 249 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work",
+      "active_builds.v1 is 48h old — PR state predates the last nightly sweep"
     ]
   },
   "workstreams": [
@@ -32,10 +32,10 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Land the C5 ruling, then rule on C1-C4; Phase 1 is now unblocked to mandate DSC-*.",
+      "next_action": "Start Phase 1 (adoption). All five conflicts are ruled: C1 no task store, C2 claims advisory-only, C3 readiness feeds the agenda, C4 stores stay separate, C5 CXI-R12 overruled. Phase 3 gains the agenda-integration wave that retires the UNBLOCKED list.",
       "created": "2026-08-12",
       "updated": "2026-08-12",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -113,17 +113,7 @@
       ],
       "prs": [],
       "claim": null,
-      "needs_ceo": {
-        "question": "Four open conflicts (C5 was RULED on 2026-08-12 — see DEC:AGENTOS-CXI-R12-OVERRULED). C1 — task registry: the brief asks for a first-class Task entity; census §5.6 ruled sub-PR granularity a non-goal. C2 — session tracking: the brief asks for heartbeats and stale-task detection; census §6.3 forbids a session-tracking service. C3 — ranked work: the CEO brief's START NEXT is a ranked next-work list, and config/strategic_state.yml:16 gives that concept to brain/improvement_agenda.py. C4 — census override: census §5.4 chose governance.jsonl event types and declared \"a new unified store\" an explicit non-goal; agentos/decisions/ overrides that, on the ground that governance.jsonl is not git-tracked.",
-        "options": [
-          "Side with the census on C1/C2, readiness-only on C3, confirm the C4 override",
-          "Override the census: build a real task store and a session registry",
-          "Reverse C4: make governance.jsonl git-tracked and retire agentos/decisions/ into it"
-        ],
-        "recommendation": "Side with the census on C1/C2, readiness-only on C3, confirm the C4 override. Waves supply the dependency graph and next-action the brief needs at ~4 fields instead of 20; the advisory claim plus git worktree list and PR-collision data cover the collision goal; START NEXT stays a readiness view so the improvement agenda keeps priority; and the C4 override rests on governance.jsonl being single-machine runtime state that cannot carry cross-machine memory.",
-        "by_when": "2026-08-19",
-        "blocks_waves": 5
-      },
+      "needs_ceo": null,
       "collisions": [],
       "warnings": [],
       "source": "agentos/workstreams/WS-AGENT-OS.md"
@@ -144,7 +134,7 @@
       "next_action": "Hold. P-A1 is armed; P-A2 is accrual-gated.",
       "created": "2026-08-12",
       "updated": "2026-08-12",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "STOP-SHIP held since 2026-08-10 by operator ruling: grade NEITHER arm, and never cite the pre-charter research waves (see the landmine below for what those are)."
@@ -227,7 +217,7 @@
       "next_action": "Wait for the 2026-08-15 scrape; then start the transmission layer.",
       "created": "2026-08-12",
       "updated": "2026-08-12",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "Waiting on the scheduled Saturday 2026-08-15 scrape. External dependency, on time — not stalled."
@@ -310,7 +300,7 @@
       "next_action": "Drive the benchmark gates green (W1).",
       "created": "2026-08-12",
       "updated": "2026-08-12",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -380,7 +370,7 @@
       "next_action": "Verify the 22:30Z bake (W1).",
       "created": "2026-08-12",
       "updated": "2026-08-12",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -462,7 +452,7 @@
       "next_action": "Obtain the persistence-model ruling, then start W1.",
       "created": "2026-08-12",
       "updated": "2026-08-12",
-      "stale_days": 0,
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -545,19 +535,6 @@
   ],
   "needs_ceo": [
     {
-      "workstream": "AGENT-OS",
-      "question": "Four open conflicts (C5 was RULED on 2026-08-12 — see DEC:AGENTOS-CXI-R12-OVERRULED). C1 — task registry: the brief asks for a first-class Task entity; census §5.6 ruled sub-PR granularity a non-goal. C2 — session tracking: the brief asks for heartbeats and stale-task detection; census §6.3 forbids a session-tracking service. C3 — ranked work: the CEO brief's START NEXT is a ranked next-work list, and config/strategic_state.yml:16 gives that concept to brain/improvement_agenda.py. C4 — census override: census §5.4 chose governance.jsonl event types and declared \"a new unified store\" an explicit non-goal; agentos/decisions/ overrides that, on the ground that governance.jsonl is not git-tracked.",
-      "options": [
-        "Side with the census on C1/C2, readiness-only on C3, confirm the C4 override",
-        "Override the census: build a real task store and a session registry",
-        "Reverse C4: make governance.jsonl git-tracked and retire agentos/decisions/ into it"
-      ],
-      "recommendation": "Side with the census on C1/C2, readiness-only on C3, confirm the C4 override. Waves supply the dependency graph and next-action the brief needs at ~4 fields instead of 20; the advisory claim plus git worktree list and PR-collision data cover the collision goal; START NEXT stays a readiness view so the improvement agenda keeps priority; and the C4 override rests on governance.jsonl being single-machine runtime state that cannot carry cross-machine memory.",
-      "by_when": "2026-08-19",
-      "blocks_waves": 5,
-      "source": "agentos/workstreams/WS-AGENT-OS.md"
-    },
-    {
       "workstream": "WATCHLIST-PORTFOLIO-CEO",
       "question": "Portfolio and Watchlist persistence: one table or two?",
       "options": [
@@ -570,7 +547,7 @@
       "source": "agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md"
     }
   ],
-  "start_next": [
+  "unblocked": [
     {
       "workstream": "WATCHLIST-PORTFOLIO-CEO",
       "wave": "W1",

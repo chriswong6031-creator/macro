@@ -118,8 +118,15 @@ git worktree list        # a PR-only collision check is incomplete
 ```
 
 A `claim` on a workstream is **advisory**: it warns you, it never stops you, and it expires by
-wall-clock with no heartbeat. An expired claim reports `unclaimed` — a signal to look, not a
+wall-clock with no heartbeat. An expired claim reports `no claim note` — a signal to look, not a
 takeover.
+
+**Never present a claim note as live activity (Chairman ruling C2, 2026-08-12).** It is an
+author's note in git, not evidence that anyone is working right now. Live worker and job state
+belongs to the Executive OS runtime (`control_plane/`), which holds the real lease tokens and
+heartbeats; same-hour occupancy evidence is `git worktree list`. A surface may **display** those;
+it must never compute or arbitrate liveness itself — that would be the second runtime authority
+invariant I1 exists to prevent. See `decisions/DEC-AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY.md`.
 
 **Know what a claim can actually prevent.** It is a file in git, so no other session can read
 it until it MERGES — PR, CI, and a sweeper cycle that runs every 10 minutes and is unbounded
@@ -140,3 +147,5 @@ free. That is why `expires` defaults to +12h rather than +72h, and why `status` 
 | `docs/ACTIVE_BUILD_MAP.md` / `active_builds.v1` | open PRs, collisions, merges | **imported** — joined at generation; Agent OS never polls GitHub |
 | `research/*MASTERPLAN*` / `*HANDOFF*` | deep prose | **pointed at** via `artifacts:` — never migrated |
 | Account-local Claude memory | how *you* work | stays local; cross-session facts graduate to `DSC-*` |
+| Mastermind `brain/improvement_agenda.py` | **the** ranked "what should we do next?" queue | **canonical for priority** — Agent OS computes readiness only and feeds it in; the brief's UNBLOCKED section is interim and gets retired (`DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA`) |
+| Mastermind `control_plane/` | live worker/job state, leases, heartbeats | **canonical for liveness** — display it, never re-derive it (`DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY`) |

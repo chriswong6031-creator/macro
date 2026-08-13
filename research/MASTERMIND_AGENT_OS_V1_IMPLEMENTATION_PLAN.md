@@ -139,6 +139,26 @@ filter instead of a reading exercise.
 
 ---
 
+## Phase 2b — Retire the UNBLOCKED list into the agenda *(new, from Chairman ruling C3)*
+
+**Objective.** `brain/improvement_agenda.py` is the sole canonical "what should we do next?"
+queue. Agent OS contributes dependency/readiness as an INPUT, and the independent UNBLOCKED
+section is deleted — not deprecated.
+
+**Dependencies.** Phase 2 (the readiness computation exists).
+
+**Work.** Expose readiness in a form the agenda consumes; render it as an agenda column; delete
+the UNBLOCKED section from the brief and its `unblocked` key from `ceo_brief.v1`.
+
+**Landmine.** Read the agenda from its authoritative source (VPS / the app's API), never from
+the local `data/agenda/` checkout — that path is gitignored, VPS-authoritative, and measured
+~3.5 weeks stale in this repo.
+
+**Validation.** The brief renders no ranked next-work list of its own; the agenda shows a
+readiness column; `DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA` closed.
+
+---
+
 ## Phase 3 — Context compiler
 
 **Objective.** `compile-context --workstream X` returns a bounded, cited bundle. Closes **G6**.

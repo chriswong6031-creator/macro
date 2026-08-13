@@ -46,8 +46,11 @@ choice.** Saying it "deferred" was a misreading, corrected here: census §5 row 
 precisely *"Add ~3 event types: `executive_decision`, `objective_set/retired`,
 `experiment_judged`"* on the existing `governance.jsonl`, with unification as *"a citation
 convention across three live ledgers"*, and it states **"Explicit non-goal: a new unified
-store."** `agentos/decisions/` is a new store. That is an override, and it is escalated as
-**conflict C4** in §13 rather than presented as filling a vacancy.
+store."** `agentos/decisions/` is a new store. That is an override, and it was escalated as
+**conflict C4** rather than presented as filling a vacancy. **RULED 2026-08-12: approved, and
+the separation is now PERMANENT BY DEFAULT** — explicitly *not* to be merged if
+`governance.jsonl` later becomes git-tracked, because transport was never the real reason
+(`DEC:AGENTOS-DECISION-MEMORY-STAYS-SEPARATE`).
 
 The override has one specific ground, verified this session: **`governance.jsonl` is not
 git-tracked.** `control_plane/governance.py:70` resolves it to `data/governance/governance.jsonl`
@@ -257,7 +260,7 @@ what makes every other feature in the brief cheap:
 
 - "What is happening?" = list workstreams by status. (PART IX)
 - "Who owns this subsystem?" = workstreams declare `owns_paths`. (PART VII)
-- "What can start next?" = workstreams declare `depends_on`. (PART X)
+- "What is unblocked?" = workstreams declare `depends_on`. Readiness only — priority belongs to `improvement_agenda.py` (C3). (PART X)
 - "What context does this task need?" = follow the workstream's own links. (PART VI)
 
 **Cardinality is the design constraint that makes it work.** ~20–40 live workstreams is a set
@@ -657,7 +660,7 @@ of validator/generator, and four schema files.
 
 ---
 
-## §13 What NOT to build — and the conflicts the CEO must rule on (C5 RULED)
+## §13 What NOT to build — and the five conflicts, ALL RULED 2026-08-12
 
 **Not building (settled by prior adjudication, restated so no future session re-proposes):**
 
@@ -672,10 +675,19 @@ of validator/generator, and four schema files.
 7. **No Kubernetes, no agent social network, no Git replacement, no speculative AI scheduler.**
    The brief's PART XVIII list, adopted verbatim.
 
-**Five genuine conflicts, of which C5 is now RULED. The remaining four are flagged rather than
-silently resolved, because each is the Chairman's call. C4 and C5 were found by adversarial review
-of this document's own first draft — C5 is a standing DNR kill the draft failed to cite at all,
-and it has since been overruled:**
+**All five conflicts are now RULED (Chairman, 2026-08-12). They are kept in full below rather
+than deleted, because the reasoning that framed each question is what makes the ruling legible
+later. C4 and C5 were found by adversarial review of this document's own first draft.**
+
+| # | Question | Ruling |
+|---|---|---|
+| **C1** | First-class Task registry? | **APPROVED AS DESIGNED** — no task store in Agent OS V1; waves + PRs. A true pre-PR Task/Job store arrives later in the **Executive OS dispatcher**, not here, when autonomous assignment is built. `DEC:AGENTOS-NO-TASK-STORE` |
+| **C2** | Heartbeats / session tracking? | **APPROVED WITH SEMANTIC FIX** — no new tracking service; claim notes are advisory and must never be shown as authoritative live activity. A Control Pane may *display* Executive OS heartbeat/job state; it may not become a second runtime authority. `DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY` |
+| **C3** | Two next-work lists? | **CHANGED** — `improvement_agenda.py` is the SOLE canonical queue. Agent OS owns readiness only; feed it into the agenda and retire the independent list. Renamed to UNBLOCKED in the interim. `DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA` |
+| **C4** | Merge decisions into `governance.jsonl`? | **APPROVED — SEPARATION PERMANENT BY DEFAULT.** Explicitly reverses the previously recorded reversal condition: do NOT merge them merely because governance may become git-tracked later. `DEC:AGENTOS-DECISION-MEMORY-STAYS-SEPARATE` |
+| **C5** | Clear `DNR:KILL-PARALLEL-KNOWLEDGE-BASE`? | **OVERRULED** — kill lifted; Phase 1 may mandate `DSC-*`. `DEC:AGENTOS-CXI-R12-OVERRULED` |
+
+The original arguments, retained for provenance:
 
 > **C1 — Task registry.** The brief (PART II, PART XVI) asks for a first-class Task entity with
 > ~20 fields. Census §5.6 ruled sub-PR granularity unnecessary and a task queue an explicit
@@ -695,8 +707,12 @@ and it has since been overruled:**
 > every render rather than presenting a rival ordering silently. **What would flip me:** if
 > the CEO wants one list, it should be the agenda's, extended with a readiness column fed
 > by `agent_os_state.v1` — that retires START NEXT here rather than duplicating it.
-> Recorded with alternatives and evidence in
-> `agentos/decisions/DEC-AGENTOS-START-NEXT-VS-AGENDA.md`.
+>
+> **RULED — the Chairman took exactly that path, and further.** The agenda is SOLE canonical;
+> Agent OS owns dependency/readiness computation only; readiness is fed into the agenda and the
+> independent list retired once that lands. Until integration, the section is renamed
+> **UNBLOCKED — READY TO START** so it cannot read as a priority order. Superseded record:
+> `DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA`.
 
 > **C2 — Session tracking.** The brief (PART VII, PART XIV) asks for active-session tracking,
 > heartbeats, and stale-task detection. Census §6.3 forbids a session tracking service and names
@@ -715,6 +731,13 @@ and it has since been overruled:**
 > memory whatever event types it gains. **What would flip me:** a decision to make
 > `governance.jsonl` git-tracked and replicated — then the census's mechanism is strictly
 > simpler and `agentos/decisions/` should be retired into it.
+>
+> **RULED — and this reversal condition is REVOKED.** The Chairman approved the override *and*
+> made the separation permanent by default: *"Do not merge them merely because governance might
+> become git-tracked later."* Git-tracking was the mechanical objection; the durable reason is
+> that a runtime audit event and a supersedable human decision are different KINDS of record.
+> The "what would flip me" above is therefore struck — a future session must not merge these
+> stores on the strength of it. See `DEC:AGENTOS-DECISION-MEMORY-STAYS-SEPARATE`.
 
 > **C5 — RULED 2026-08-12: OVERRULED by the Chairman.** *(kept for provenance; no longer open)*
 > A standing kill (CXI-R12, 2026-07-18)

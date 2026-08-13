@@ -2,27 +2,27 @@
 
 # Agent OS state
 
-Generated: 2026-08-12T23:48:38Z  |  6 workstreams (4 active · 2 blocked)
+Generated: 2026-08-13T02:12:31Z  |  6 workstreams (4 active · 2 blocked)
 
 | Input | Value |
 |---|---|
 | active_builds | data/governance/active_builds.json@2026-08-11T01:48:44.205959+00:00 |
-| active_builds age | 46.0h |
-| worktrees | 246 |
-| records | 6 WS · 6 DEC · 3 DSC · 0 handoffs |
+| active_builds age | 48.4h |
+| worktrees | 249 |
+| records | 6 WS · 9 DEC · 3 DSC · 0 handoffs |
 
 ## Degraded inputs
 
 - active_builds.v1 merged window is TRUNCATED — a merged PR may read 'unknown'
 - mastermind:config/strategic_state.yml absent — p0 ids unvalidated, P0 ranking neutral (this Mastermind checkout predates config/strategic_state.yml)
-- uncommitted-work scan skipped over 246 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work
-- active_builds.v1 is 46h old — PR state predates the last nightly sweep
+- uncommitted-work scan skipped over 249 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work
+- active_builds.v1 is 48h old — PR state predates the last nightly sweep
 
 ## Workstreams
 
 | Key | Status | Owner | Program | Waves | PRs | Next action |
 |---|---|---|---|---|---|---|
-| [`WS:AGENT-OS`](../agentos/workstreams/WS-AGENT-OS.md) | active | chairman | project-active-build-control | in_progress:2 todo:3 | — | Land the C5 ruling, then rule on C1-C4; Phase 1 is now unblocked to mandate DSC-*. |
+| [`WS:AGENT-OS`](../agentos/workstreams/WS-AGENT-OS.md) | active | chairman | project-active-build-control | in_progress:2 todo:3 | — | Start Phase 1 (adoption). All five conflicts are ruled: C1 no task store, C2 claims advisory-only, C3 readiness feeds the agenda, C4 stores stay separate, C5 CXI-R12 overruled. Phase 3 gains the agenda-integration wave that retires the UNBLOCKED list. |
 | [`WS:CN-LIMIT-ALPHA`](../agentos/workstreams/WS-CN-LIMIT-ALPHA.md) | blocked | chairman | china-system | awaiting_ci:1 done:1 todo:1 | #5438(unknown) | Hold. P-A1 is armed; P-A2 is accrual-gated. |
 | [`WS:GMI-THEME-GRAPH`](../agentos/workstreams/WS-GMI-THEME-GRAPH.md) | blocked | coo-fable | gmi-theme-graph | done:2 todo:1 | #5402(unknown) | Wait for the 2026-08-15 scrape; then start the transmission layer. |
 | [`WS:MACRO-CONTEXT-INDEX`](../agentos/workstreams/WS-MACRO-CONTEXT-INDEX.md) | active | coo-fable | macro-context-index | done:1 in_progress:1 todo:1 | — | Drive the benchmark gates green (W1). |
@@ -31,7 +31,6 @@ Generated: 2026-08-12T23:48:38Z  |  6 workstreams (4 active · 2 blocked)
 
 ## Needs a CEO ruling
 
-- **WS:AGENT-OS** — Four open conflicts (C5 was RULED on 2026-08-12 — see DEC:AGENTOS-CXI-R12-OVERRULED). C1 — task registry: the brief asks for a first-class Task entity; census §5.6 ruled sub-PR granularity a non-goal. C2 — session tracking: the brief asks for heartbeats and stale-task detection; census §6.3 forbids a session-tracking service. C3 — ranked work: the CEO brief's START NEXT is a ranked next-work list, and config/strategic_state.yml:16 gives that concept to brain/improvement_agenda.py. C4 — census override: census §5.4 chose governance.jsonl event types and declared "a new unified store" an explicit non-goal; agentos/decisions/ overrides that, on the ground that governance.jsonl is not git-tracked. (blocks 5 wave(s) · wanted by 2026-08-19) — `agentos/workstreams/WS-AGENT-OS.md`
 - **WS:WATCHLIST-PORTFOLIO-CEO** — Portfolio and Watchlist persistence: one table or two? (blocks 1 wave(s) · wanted by 2026-08-14) — `agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md`
 
 ## Unblocked work (readiness, not assignment)

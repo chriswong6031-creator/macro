@@ -28,7 +28,7 @@ evidence:
   - "scripts/build_active_build_map.py docstring — active_builds.v1 is PR-granular and advisory"
   - "Macro CLAUDE.md §GitHub quota — REST core is one shared 5,000/hr bucket; ship_loop_guard fails closed"
 affects: [WS:AGENT-OS]
-confidence: medium
+confidence: high
 reversibility: easy
 decided_by: opus-architecture-session
 decided_at: 2026-08-12
@@ -42,9 +42,19 @@ word (21:01 on 2026-08-11, postdating Executive OS Phases 1A and 1B). Confidence
 rather than `high` because this is a genuine conflict with the commissioning brief, and the
 Chairman may rule the other way.
 
-## What would reverse this
+## RATIFIED 2026-08-12 — Chairman ruling C1
 
-If the CEO wants work items that exist *before* any PR and are assigned to specific workers by
-someone other than the worker, a real task store is required. That is a dispatcher, and under
-invariant I1 it would belong in Mastermind `control_plane/`, not in `agentos/`. Tracked as
-conflict C1 in the architecture §13.
+"APPROVE CURRENT DESIGN. No first-class Task registry in Agent OS V1. Use workstream waves +
+PRs." Confidence raised from `medium` to `high`: this was recorded as a genuine conflict with
+the commissioning brief, and the conflict is now resolved rather than outstanding.
+
+## Where the task store DOES go, when it comes
+
+The ruling settles the home as well as the timing: **a true pre-PR Task/Job store will be
+introduced later in the Executive OS dispatcher, not in Agent OS, when autonomous assignment
+is implemented.** That is the same boundary invariant I1 draws — assigning work to a worker is
+execution authority, and execution authority lives in `control_plane/`. So this is not "no task
+store ever"; it is "not here, and not until there is a dispatcher to own it."
+
+A future session finding this record should NOT propose a task registry under `agentos/`. It
+should ask whether the Executive OS dispatcher exists yet.

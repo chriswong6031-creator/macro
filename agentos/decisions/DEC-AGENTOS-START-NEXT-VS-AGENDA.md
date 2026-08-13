@@ -57,6 +57,7 @@ confidence: medium
 reversibility: easy
 decided_by: opus-agentos-phase2-session
 decided_at: 2026-08-12
+superseded_by: DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA
 review_by: 2026-09-12
 ---
 
@@ -85,3 +86,11 @@ retire START NEXT here rather than duplicating it.
 Recorded as conflict C3 in `research/MASTERMIND_AGENT_OS_ARCHITECTURE.md` §13 and in
 `WS:AGENT-OS` `needs_ceo`, alongside C1 and C2. It is the same class of call: a
 Chairman-level judgment about which seat owns a concept.
+
+## SUPERSEDED 2026-08-12 by Chairman ruling C3
+
+This record proposed keeping both lists and distinguishing them by prose. The Chairman
+ruled further: `brain/improvement_agenda.py` is the SOLE canonical queue, Agent OS owns
+readiness computation only, and the independent list is retired once readiness is fed
+into the agenda. Retained for provenance — the reasoning here is still the reasoning that
+framed the question. See `DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA`.
