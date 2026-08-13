@@ -2302,3 +2302,11 @@
 {"id":"ob-2026-08-13-9b458af744","from":"approved","to":"quarantined","at":"2026-08-13T11:28:41Z","actor":"publisher","note":"clock: stale_session_claim:2026-08-12!=2026-08-13 (copy names Wednesday's tape)","receipt":null}
 {"id":"ob-2026-08-13-d967a7f591","from":"approved","to":"posting","at":"2026-08-13T11:28:47Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-13-d967a7f591","from":"posting","to":"posted","at":"2026-08-13T11:28:47Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a7daa6f97697330da29aa4c","external_url":null,"at":"2026-08-13T11:28:29Z","booked_at":"2026-08-13T11:28:29Z"}}
+{"id":"ob-2026-08-13-0814a36776","from":"queued","to":"approved","at":"2026-08-13T12:12:03Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-13-252c15dca2","from":"queued","to":"approved","at":"2026-08-13T12:12:03Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-13-8f56c339e4","from":"queued","to":"approved","at":"2026-08-13T12:12:04Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-13-0814a36776","from":"approved","to":"posting","at":"2026-08-13T12:12:09Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-08-13-0814a36776","from":"posting","to":"posted","at":"2026-08-13T12:12:10Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a7db49ae8339ea9a895d1c3","external_url":null,"at":"2026-08-13T12:12:03Z","booked_at":"2026-08-13T12:12:03Z"}}
+{"id":"ob-2026-08-13-252c15dca2","from":"approved","to":"quarantined","at":"2026-08-13T12:12:10Z","actor":"publisher","note":"clock: stale_session_claim:2026-08-10!=2026-08-13 (copy names Monday's tape)","receipt":null}
+{"id":"ob-2026-08-13-8f56c339e4","from":"approved","to":"posting","at":"2026-08-13T12:12:16Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-08-13-8f56c339e4","from":"posting","to":"posted","at":"2026-08-13T12:12:17Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a7db4a1e8339ea9a895d223","external_url":null,"at":"2026-08-13T12:12:03Z","booked_at":"2026-08-13T12:12:03Z"}}
