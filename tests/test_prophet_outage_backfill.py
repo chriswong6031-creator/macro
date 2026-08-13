@@ -1221,8 +1221,32 @@ class TestCollisionRuleLiveWins:
 #: the W1 re-origination block shipped (tests/test_prophet_w1_intake_repair.py
 #: documents the same debt: "10 ticker+direction pairs held duplicate open plans on
 #: 2026-08-03; PI held three"). This backfill did not create them and does not fix
-#: them; the ratchet below stops it from ADDING to them, which is the part §0.4 owns.
-_LEGACY_DOUBLED_KEYS = 10
+#: them; the ratchet below stops the count from GROWING, which is the part §0.4 owns.
+#:
+#: ENUMERATED, not counted, as of 2026-08-13: a count-pin cannot tell "one legacy
+#: pair resolved and a new one formed" from "nothing changed", so a swap slips a
+#: brand-new double past the ratchet. The set makes every newcomer NAMED — and it
+#: was converted the night that mattered, because the ratchet fired fleet-wide on
+#: a double the LIVE lane minted (below), which a count-bump would have buried.
+_LEGACY_DOUBLED_KEYS = frozenset({
+    "APPF-BULL", "BDC-BULL", "CELH-BULL", "CLF-BULL", "ENOV-BULL",
+    "FCX-BULL", "LPG-BULL", "MDB-BULL", "PAHC-BULL", "PI-BULL",
+})
+
+#: Doubles the ratchet has ATTRIBUTED after the fact — dated, explained, and each
+#: carrying its remediation pointer. An entry here is acknowledged DEBT, not
+#: amnesty: the dedup hole that minted it stays open until its chip closes.
+_ATTRIBUTED_DOUBLED_KEYS = {
+    # The 2026-08-12→13 recovery bake (run 31649984834, the first live night
+    # after the two-session outage) minted HEI-BULL-20260723 (recorded_at
+    # 2026-08-12, episode-dated July 23) while legacy HEI-BULL-20260731 sat
+    # open with no ledger closure — the live lane's open-key dedup did not
+    # block the ticker. Attribution receipts: doubled-set diff across commit
+    # f9140631d37 ("prophet-us: durable nightly checkpoint 2026-08-13"),
+    # 10 -> 11 keys, sole newcomer HEI-BULL. The dedup hole is chipped for
+    # its own lane; this row keeps the fleet's CI honest meanwhile.
+    "HEI-BULL": "2026-08-13 recovery-bake live double-mint",
+}
 
 
 @pytest.mark.skipif(
@@ -1271,13 +1295,21 @@ class TestOnePlanPerEpisodeOnTheShippedTree:
 
     def test_the_legacy_duplicate_open_keys_do_not_grow(self):
         """A ratchet, not a heal. The pre-W1 duplicates are somebody else's lane; the
-        point here is that this PR cannot quietly add an eleventh."""
-        doubled = {k: [str(p.get("id")) for p in v]
+        point here is that nothing may QUIETLY add another — a newcomer either
+        reds every PR in the fleet (this assert) or is named, dated, and chipped
+        in _ATTRIBUTED_DOUBLED_KEYS by whoever adjudicated it."""
+        doubled = {k: sorted(str(p.get("id")) for p in v)
                    for k, v in self._open_keys().items() if len(v) > 1}
-        assert len(doubled) <= _LEGACY_DOUBLED_KEYS, (
-            f"{len(doubled)} ticker+direction keys now carry multiple OPEN plans, up "
-            f"from the {_LEGACY_DOUBLED_KEYS} pre-W1 legacy pairs: {doubled}. "
-            "Something minted a second episode for a live name."
+        known = _LEGACY_DOUBLED_KEYS | set(_ATTRIBUTED_DOUBLED_KEYS)
+        newcomers = {k: v for k, v in doubled.items() if k not in known}
+        assert not newcomers, (
+            f"NEW ticker+direction key(s) carry multiple OPEN plans beyond the "
+            f"{len(_LEGACY_DOUBLED_KEYS)} legacy pairs and "
+            f"{len(_ATTRIBUTED_DOUBLED_KEYS)} attributed debt row(s): {newcomers}. "
+            "Something minted a second episode for a live name. Adjudicate it "
+            "(who minted it, when, why the open-key dedup missed it), then either "
+            "fix the data or add an ATTRIBUTED row with receipts — never widen "
+            "silently."
         )
 
 

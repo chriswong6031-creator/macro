@@ -5455,8 +5455,41 @@ def test_committed_campaign_ledger_is_exact_frozen_corpus_not_future_recomputati
         ),
     ]
     future_outcomes = [_campaign_h60_outcome(row) for row in future_episodes]
+    # SCOPE THE RECOMPUTE TO THE FROZEN CORPUS'S OWN SUPPORT (2026-08-13).
+    # episodes.jsonl stopped being a retrospective corpus the day #5324's PIT
+    # lane went live: the nightly now APPENDS episodes whose H60 outcomes cannot
+    # exist yet (first live append: osep_70fb17ad..., AMD, session 2026-08-12,
+    # available 18:16Z — its outcome matures the NEXT session). Recomputing over
+    # the whole file therefore yields a legitimately-pending live tail, and this
+    # test redded fleet-wide on the first fresh append while the frozen ledger
+    # it exists to protect was byte-identical. The corpus watermark is DERIVED
+    # from the committed campaigns' own episode support — no new literals — so
+    # the frozen-recompute contract stays exact and the live tail can never
+    # trip it again. (Same scheduled-red class, same night, as the govrev
+    # census: an append-only store outgrew a frozen-era equality assumption.)
+    frozen_support = {
+        eid for row in committed for eid in row["crossing"]["episode_ids"]
+    }
+    frozen_watermark = max(
+        row["session_date"] for row in episodes
+        if row["episode_id"] in frozen_support
+    )
+    corpus_episodes = [
+        row for row in episodes if row["session_date"] <= frozen_watermark
+    ]
+    corpus_episode_ids = {row["episode_id"] for row in corpus_episodes}
+    corpus_outcomes = [
+        row for row in outcomes
+        if row.get("anchor", {}).get("episode_id", row.get("episode_id"))
+        in corpus_episode_ids
+    ]
+    assert frozen_support <= corpus_episode_ids, (
+        "the frozen campaigns reference an episode the watermark scope dropped — "
+        "the watermark derivation is wrong, fix it rather than widening the scope"
+    )
     expanded, pending = derive_campaigns(
-        [*episodes, *future_episodes], [*outcomes, *future_outcomes]
+        [*corpus_episodes, *future_episodes],
+        [*corpus_outcomes, *future_outcomes],
     )
     assert pending == []
     assert len(expanded) == len(committed) + 1
