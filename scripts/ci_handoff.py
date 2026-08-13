@@ -599,8 +599,10 @@ def _summary(receipt: Mapping[str, Any], verdict: contract.HandoffVerdict, senti
         f"The `{contract.MERGE_OWNER}` sweeper owns the merge from here — it sweeps "
         "every 10 minutes and squash-merges once every check has CONCLUDED clean "
         "(the known-spurious `Workers Builds: macro` X excluded); a genuine red or a "
-        "conflict gets `merge-blocked` plus one explanatory comment instead. This "
-        "worker is done: make no further tool calls after the marker line below.",
+        "conflict gets `merge-blocked` plus one explanatory comment instead. You are "
+        "released from WAITING on this pull request — do not poll it. If the user "
+        "still has unfinished asks, keep working on them; a handoff is not the end "
+        "of the session (CLAUDE.md §CI handoff RELEASES you, operator 2026-08-13).",
     ]
     if pull_url:
         lines.append(f"Pull request: {pull_url}")

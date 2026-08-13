@@ -41,17 +41,30 @@ worse than a missed warning.
      the in-flight run is an orphan (queued > 40 min), and fail-OPEN on any
      probe error: this guard is anti-waste, and a fail-closed deny would wedge
      the very recovery lever it protects.
-  5. ANY CI observation once the worker has HANDED CI OFF (Wave A). Shapes 1-3
-     throttle babysitting; this one ends it. A worker that pushed an exact head,
-     armed `merge-on-green`, and wrote a handoff sentinel is TERMINAL — the
-     sweeper owns the merge and a controller event owns the resume. Every poll
-     after that point is a worker spending shared quota to learn a fact it is no
-     longer allowed to act on, and the model burn of the wait is strictly larger
-     than the burn of a fresh continuation session (CLAUDE.md: Fable burn is
-     CONTEXT x TURNS). The sentinel is keyed on (repo, branch, head), so a NEW
-     commit invalidates it automatically and babysitting becomes legal again the
-     moment the worker has un-handed-off work. Fails OPEN in every direction:
-     unresolvable git, unloadable contract, unreadable sentinel -> allow.
+  5. REMOVED 2026-08-13 by operator order. It denied ANY CI observation once a
+     worker had armed `merge-on-green` and written a handoff sentinel, on the
+     theory that such a worker is TERMINAL and a controller event owns the
+     resume. In practice it did not merely stop babysitting — it stopped WORK.
+     Measured cost, the day it was removed: a session mid-way through a live
+     Prophet outage investigation armed three unrelated PRs, and the next
+     `gh run view` — aimed at a DIFFERENT workflow (close-pass.yml, which turned
+     out to have been failing on every scheduled run for days) — was denied with
+     "CI is no longer this worker's to observe". The incident that mattered was
+     invisible because of a rule about pull requests.
+
+     Two premises were wrong. First, "observing CI" and "polling my own PR" are
+     not the same act: this repo runs ~80 workflows, and a handoff on one PR says
+     nothing about a session's right to read any of the others. Second, the
+     operator does not want workers to stop at the handoff; they reported having
+     to return to chat and ask sessions to keep going. A session with remaining
+     work should keep doing it, and the quota shapes above are what protect the
+     shared pool — they apply to a post-handoff session exactly as to any other.
+
+     The sentinel-writing machinery in `scripts/ci_handoff.py` is retained: the
+     receipt is still useful as a record of who armed what, and
+     `ship_loop_guard.py` still uses it to RELEASE a session at the unmerged gate
+     so nobody is held hostage to a 30-minute pack. What is gone is the claim
+     that the receipt ENDS the session.
 """
 import datetime as dt
 import importlib.util
@@ -417,10 +430,10 @@ def check(raw: str, cwd=None):
     # is pure string work, and only a command that already IS CI babysitting may
     # spend the local git reads behind `handoff_sentinel`. A command this guard has
     # no business in must cost nothing.
-    if observes_ci(cmd):
-        sentinel = handoff_sentinel(cwd)
-        if sentinel:
-            return handoff_deny_reason(sentinel)
+    # (Shape 5 — "deny ANY CI observation after a handoff" — was REMOVED by operator
+    # order 2026-08-13. See the module docstring. The quota shapes below still apply
+    # to a post-handoff session exactly as they do to any other, which is the actual
+    # protection the pool needs.)
 
     # 1. gh run watch at a hot interval
     m = WATCH_RE.search(cmd)

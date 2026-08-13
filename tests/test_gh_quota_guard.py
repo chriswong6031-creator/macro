@@ -519,39 +519,47 @@ def test_prose_about_the_dispatch_is_not_a_dispatch(monkeypatch):
 # moment the worker makes a new commit. Nothing here is fail-closed.
 
 @pytest.mark.parametrize("cmd", [
-    # `--interval 60` is DELIBERATE: shape 1 allows exactly this command, so a deny
-    # here can only be the handoff rule and not the old quota rule wearing its coat.
+    # `--interval 60` is DELIBERATE: shape 1 allows exactly this command, so an
+    # ALLOW here is the repeal and not shape 1 quietly agreeing for its own reason.
     "gh run watch 31309720615 --interval 60",
-    "gh run watch 31309720615",
-    "gh pr checks 4242 --watch",
     "gh pr checks 4242",
     "gh run view 31309720615",
     "gh run view 31309720615 --log-failed",
     'gh api "repos/acme/widgets/commits/$SHA/check-runs?per_page=100"',
     "gh api repos/acme/widgets/actions/runs/31309720615 --jq '.status'",
     "gh api repos/acme/widgets/actions/runs/1/jobs",
-    # The wrapper form: a polite 300s loop is still babysitting once CI is not ours.
     "until [ x = y ]; do gh pr view 4242 --json state; sleep 300; done",
 ])
-def test_ci_observation_is_denied_once_the_handoff_sentinel_is_active(tmp_path, cmd):
+def test_ci_observation_stays_legal_after_a_handoff(tmp_path, cmd):
+    """REPEALED 2026-08-13 by operator order — this block asserted the opposite.
+
+    Shape 5 denied every one of these once a handoff sentinel existed, on the
+    theory that such a worker was TERMINAL. It could not distinguish "polling my
+    own armed PR" from "reading a completely different workflow", and on the day
+    it was removed it blocked a live Prophet-outage investigation from running
+    `gh run view <id> --log-failed` against close-pass.yml — a lane that turned
+    out to have failed on every scheduled run for days.
+
+    The operator's instruction was explicit: sessions must not stop working
+    merely because a PR is armed. Quota is still protected by shapes 1-4, which
+    apply here exactly as they do to any other session (pinned below).
+    """
     repo = _handoff_repo(tmp_path)
-    assert _denied(cmd, cwd=repo)
+    assert not _denied(cmd, cwd=repo)
 
 
-def test_the_handoff_denial_states_the_terminal_contract_verbatim(tmp_path):
-    """These two sentences ARE the worker's stop condition. A paraphrase per call
-    site is how a contract becomes folklore, so the wording is pinned here."""
+def test_the_quota_shapes_still_bind_after_a_handoff(tmp_path):
+    """The repeal removed the TERMINAL rule, not the anti-waste rules. A handed-off
+    session that starts hammering the shared 5,000/hr pool is the same problem it
+    always was — and ship_loop_guard.py still fails CLOSED when rate-limited."""
     repo = _handoff_repo(tmp_path)
-    head = subprocess.run(("git", "rev-parse", "HEAD"), cwd=repo, check=True,
-                          capture_output=True, text=True).stdout.strip()
-    d = _run("gh run watch 1 --interval 60", cwd=repo)
-    reason = (d or {}).get("permissionDecisionReason", "")
-    assert (
-        f"CI ownership was handed to merge-on-green at {head}. This worker is terminal.\n"
-        "Start a fresh repair/continuation session only after the controller emits an event."
-    ) in reason
-    assert head in reason, "the deny must name the head the handoff covers"
-    assert "CI_HANDOFF=" in reason, "and point at the marker that ends the worker"
+    assert _denied("gh run watch 31309720615", cwd=repo), "shape 1: 3s default"
+    assert _denied("gh run watch 1 --interval 5", cwd=repo), "shape 1: hot interval"
+    assert _denied("while true; do gh pr checks 4242; sleep 30; done", cwd=repo), \
+        "shape 2: tight poll loop"
+    assert _denied(
+        "gh api --paginate repos/acme/widgets/commits/x/check-runs", cwd=repo), \
+        "shape 3: paginated check-runs"
 
 
 def test_a_stale_sentinel_from_an_older_head_does_not_deny(tmp_path):
@@ -655,12 +663,19 @@ def test_a_non_ci_command_costs_no_git_probe_and_no_network(monkeypatch, cmd):
 
 
 def test_the_shape_gate_is_not_vacuous(monkeypatch):
-    """Control for the test above: a command that DOES observe CI must reach the
-    resolver, or the no-probe pin would pass by matching nothing at all."""
+    """Control for the test above: a command that DOES carry a probe-bearing shape
+    must reach its probe, or the no-probe pin would pass by matching nothing at all.
+
+    Re-pointed at shape 4 when shape 5 was repealed (2026-08-13). It used to assert
+    that a CI-observing command reached `handoff_sentinel`; nothing calls that from
+    `check()` any more, so the control had become the vacuity it was written to
+    catch. Shape 4's dispatch probe is now the only REST call `check()` makes on
+    this branch, which makes it the honest control.
+    """
     seen = []
-    monkeypatch.setattr(GUARD, "handoff_sentinel", lambda cwd=None: seen.append(cwd))
-    assert GUARD.check("gh run watch 1 --interval 60", "/some/checkout") is None
-    assert seen == ["/some/checkout"], "the resolver runs, and is told where to look"
+    monkeypatch.setattr(GUARD, "main_runs", lambda wf: seen.append(wf))
+    assert GUARD.check("gh workflow run ci.yml --ref main", "/some/checkout") is None
+    assert seen == ["ci.yml"], "the dispatch probe runs, and is told which workflow"
 
 
 def test_prose_about_the_handoff_is_not_an_observation(tmp_path):

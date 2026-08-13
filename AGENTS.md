@@ -9,7 +9,7 @@ This repository is operated by multiple Claude accounts and Codex sessions. Repo
    `~/.claude/projects/-Users-chriswong-Documents-Cluade-Macro-Dashboard/memory/MEMORY.md`
    and open the entries relevant to the task. For delivery work, always include
    `session-finish-full-git-chain`, `auto-finish-commit-push-pr`, and
-   `go-live-deploy-mechanics` — read all three under §CI handoff is terminal,
+   `go-live-deploy-mechanics` — read all three under §CI handoff RELEASES you,
    which outranks them: they describe the SYSTEM's delivery chain, not how long
    one worker stays alive.
 3. Treat `/Users/chriswong/Documents/Cluade/charting-app` as the connected Terminal
@@ -255,7 +255,7 @@ with packs still pending).
 **DEFAULT FINISH — hand the wait to the sweeper, do not sit on it.** After opening
 the pull request, run `gh pr edit <n> --add-label merge-on-green`, then
 `python3 scripts/ci_handoff.py`, emit the `CI_HANDOFF=` marker, and stop
-(§CI handoff is terminal).
+(§CI handoff RELEASES you).
 `.github/workflows/merge-on-green.yml` (GitHub-hosted `ubuntu-latest`, every 10 minutes,
 deliberately off every self-hosted render pool) squash-merges the
 pull request once every check has CONCLUDED clean, with the known-spurious
@@ -330,7 +330,7 @@ dispatch is then the mercy kill, not a murder).
 
 ### Waiting on CI without jamming every other session
 
-Waiting is the EXCEPTION now (§CI handoff is terminal): the default finish hands
+Waiting is the EXCEPTION now (§CI handoff RELEASES you): the default finish hands
 the wait to the sweeper and terminates. What follows governs the rare sanctioned
 wait — an operator-requested watch, or a wedge the sweeper cannot clear.
 
@@ -427,7 +427,7 @@ The contract is actively enforced for Claude by the tracked `SessionStart` and
 files, then refuses a normal stop while session-created work is uncommitted,
 unpushed, unmerged, awaiting a render, or absent from production. It does NOT
 require a worker to outlive its handoff: an armed pull request satisfying
-§CI handoff is terminal RELEASES the session at the unmerged gate instead of
+§CI handoff RELEASES you releases the session at the unmerged gate instead of
 pinning it, because the guard exists to prove work was delivered, not to keep a
 model breathing while other lanes finish.
 The dirty snapshot judges only this checkout's own work. Untracked entries under
