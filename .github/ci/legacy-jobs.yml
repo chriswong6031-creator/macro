@@ -2848,6 +2848,26 @@ jobs:
             --trailers "$TRAILERS"
       - name: self-mod-fence test suite
         run: python -m pytest tests/test_self_mod_fence.py -q
+      - name: agent-os record contract (schema fail-closed, join fail-open)
+        # ORDERED LAST IN THIS JOB, deliberately. `run_ci_pack.py:_run_job` returns on
+        # the FIRST nonzero step, so any step placed before `self-mod-fence live check`
+        # can make that fence never run — the F2 fence would go dark for the PR while
+        # the job reports a failure that has nothing to do with self-modification.
+        # A knowledge-plane record check must never be able to blind a security fence,
+        # so it sits behind every fence step in this job.
+        #
+        # Folded in as a STEP, not a new job, also deliberately: the manifest sits at
+        # the narrow-diff ceiling (test_representative_narrow_diffs_skip_at_least_one
+        # _quarter_of_jobs asserts selected <= len(jobs)*4//5), so adding a job can red
+        # an unrelated pack, and a `paths:` scope cannot fix it — infer_job_scopes()
+        # UNIONS declared paths with inferred ones, so a declaration only ever WIDENS.
+        # Keeping the job COUNT fixed keeps that arithmetic still.
+        run: |
+          # Direct invocation FIRST and deliberately: the pytest suite skips itself
+          # when agentos/ is outside a sparse cone, so a store that failed to check
+          # out would otherwise pass as a skip. This line cannot skip.
+          python3 scripts/agentos.py validate
+          python -m pytest tests/test_agentos_schema.py tests/test_agentos_status.py -q
 
   capability-broker:
     if: ${{ false }}
