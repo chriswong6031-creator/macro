@@ -1,0 +1,76 @@
+{
+  "authority": "display_only \u2014 DOS-1.1 materializes the spine; nothing reads it as authority yet",
+  "code_version": "d87d450a5d6552ca4bcc2a37d5e2cb76da61e662",
+  "coverage": {
+    "resolved": 703,
+    "total": 711,
+    "unresolved": 8,
+    "unresolved_names": [
+      "ANGPY",
+      "BLD",
+      "CBOE",
+      "EA",
+      "GATO",
+      "IMPUY",
+      "MAG",
+      "RHHBY"
+    ]
+  },
+  "dataset_ids": [
+    "reference.security_master",
+    "reference.vendor_aliases"
+  ],
+  "generated_at": "2026-08-13T13:08:12",
+  "inputs": {
+    "config.yml": "555903374acfff83f2fdca970a260faba13cd17819931f84023bf6ece494de18",
+    "config/delisted_symbols.yml": "d5e656970865d77f6681afe281a86a7aa57098481e4e62a0b5b94e3a0d5cd894",
+    "data/baskets/membership.json": "66ce56e0460968c5bb33b6938fec0a3429f6a8ffe0bedb85705db9706852e793",
+    "data/breadth/constituents.parquet": "78c9320218dc94fae8bc568a8e6235ca57801e52cae477cff0e96a2c08bdfea8",
+    "data/symbol_directory/snapshots/2026-08-10.parquet": "f082a2bee3171061b1f61b4b38bba98a2bceccb0a49425a62def9dca9d1eb370",
+    "lib/ticker_aliases.py": "e61756c5c1dda0b4f0a3fd06ce532e868adb91b9c38948b7e6cab00dd3893011"
+  },
+  "notes": [],
+  "producer": "scripts/build_security_master.py",
+  "rename_events": [
+    {
+      "evidence": "lib/ticker_aliases.py module docstring (MMC->MRSH 2026-01-14, symbol change only: same listing, same CUSIP; Yahoo serves the NEW symbol); config.yml breadth.ticker_fixups MRSH->MMC",
+      "new": "MRSH",
+      "old": "MMC",
+      "on": "2026-01-14",
+      "vendors": [
+        "yahoo"
+      ]
+    },
+    {
+      "evidence": "engine/ledger_identity.py module docstring (EchoStar renamed SATS->ECHO effective 2026-06-24; SATS 128 rows and ECHO 128 rows with identical (date,type) key sets and 39 byte-identical identity columns); config.yml quality.ticker_key_migrations SATS: ECHO",
+      "new": "ECHO",
+      "old": "SATS",
+      "on": "2026-06-24",
+      "vendors": [
+        "yahoo",
+        "ledger",
+        "membership"
+      ]
+    }
+  ],
+  "row_counts": {
+    "security_master": 703,
+    "vendor_alias_rows_readable": 2817,
+    "vendor_aliases": 2817
+  },
+  "seed_counts": {
+    "delisted_keys": 2,
+    "directory_symbols": 13112,
+    "ticker_fixups": 2,
+    "ticker_key_migrations": 1,
+    "universe_keys": 709
+  },
+  "symbol_directory_snapshot": "2026-08-10",
+  "undated_renames": [
+    {
+      "evidence": "lib/ticker_aliases.py YAHOO_FETCH_ALIASES FI->FISV (vendor LAGS the rename); config.yml breadth.ticker_fixups FISV->FI; no in-repo date for the 2023 change",
+      "new": "FI",
+      "old": "FISV"
+    }
+  ]
+}
