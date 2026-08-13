@@ -634,6 +634,128 @@ def test_unflagged_action_version_is_revised_not_corrected_and_text_is_only_anno
     assert events[0]["award_change"]["text_annotations"] == ["unverified_correction_language"]
 
 
+def test_stale_action_revision_computes_its_own_late_discovery_flag():
+    """A revision observed long after the action's own date is a late discovery.
+
+    The second-observation branch of ``_project_actions`` used to pass a literal
+    ``is_late_discovery=False`` that no clock ever produced.  GRV-FA1 admits a
+    source event only on ``is_late_discovery is False`` *exactly*, so that
+    literal would have walked a months-old restatement into the graded cohort
+    wearing a well-typed claim of freshness.  This asserts through the public
+    projector rather than through ``_is_late_discovery``: a helper-level test
+    passes with the literal still in place, and this one must not.
+    """
+
+    actions = [
+        _action(
+            action_id="STALE-REVISION",
+            known_at="2026-01-10T12:00:00Z",
+            action_date="2026-01-08T00:00:00Z",
+            event_eligible=False,
+            source_receipt_id="stale-revision-a",
+            federal_action_obligation=10,
+            action_content_sha256="1" * 64,
+        ),
+        _action(
+            action_id="STALE-REVISION",
+            # 71 days past the action's own effective clock -- well beyond the
+            # 45-day default window, and still inside the harness's fixed
+            # 2026-03-31 ``as_of``, so this is a pinned gap, not a wall clock.
+            known_at="2026-03-20T00:00:00Z",
+            action_date="2026-01-08T00:00:00Z",
+            source_receipt_id="stale-revision-b",
+            federal_action_obligation=20,
+            action_content_sha256="2" * 64,
+        ),
+    ]
+
+    events = _events(actions=actions)
+
+    assert len(events) == 1
+    assert events[0]["award_change"]["event_type"] == "action_revised"
+    assert events[0]["award_change"]["is_late_discovery"] is True
+
+
+def test_fresh_action_revision_still_computes_a_false_late_discovery_flag():
+    """Computing the flag must not blanket-refuse every revision.
+
+    ``_is_late_discovery`` is fail-closed -- either clock missing returns True --
+    so a computation wired to the wrong row or the wrong clock would flip every
+    revision to late and quietly empty GRV-FA1's revision intake instead of
+    narrowing it.  Same seam and same shape as the stale case, with the gap held
+    comfortably inside the 45-day window, which pins the replacement of the
+    hardcoded ``False`` as *strictly* narrowing rather than a blanket refusal.
+    """
+
+    actions = [
+        _action(
+            action_id="FRESH-REVISION",
+            known_at="2026-01-10T12:00:00Z",
+            action_date="2026-01-08T00:00:00Z",
+            event_eligible=False,
+            source_receipt_id="fresh-revision-a",
+            federal_action_obligation=10,
+            action_content_sha256="3" * 64,
+        ),
+        _action(
+            action_id="FRESH-REVISION",
+            # 28 days past the same effective clock: inside the window.
+            known_at="2026-02-05T00:00:00Z",
+            action_date="2026-01-08T00:00:00Z",
+            source_receipt_id="fresh-revision-b",
+            federal_action_obligation=20,
+            action_content_sha256="4" * 64,
+        ),
+    ]
+
+    events = _events(actions=actions)
+
+    assert len(events) == 1
+    assert events[0]["award_change"]["event_type"] == "action_revised"
+    assert events[0]["award_change"]["is_late_discovery"] is False
+
+
+def test_stale_explicitly_classified_action_correction_carries_the_flag_too():
+    """The discovery clock is rail-wide, not scoped to the default event type.
+
+    ``action_corrected`` and ``action_retracted`` leave the projector through the
+    same second-observation seam as ``action_revised``, so a fix scoped to the
+    default type would leave the explicitly classified restatements carrying the
+    uncomputed literal -- exactly the payload GRV-FA1 admits because it is
+    ``False`` and not because anything measured it.  The flag answers one
+    question ("is our knowledge clock stale against the action's own effective
+    clock"), and that question does not change with the label on the event.
+    """
+
+    actions = [
+        _action(
+            action_id="STALE-CORRECTION",
+            known_at="2026-01-10T12:00:00Z",
+            action_date="2026-01-08T00:00:00Z",
+            event_eligible=False,
+            source_receipt_id="stale-correction-a",
+            federal_action_obligation=20,
+            action_content_sha256="5" * 64,
+        ),
+        _action(
+            action_id="STALE-CORRECTION",
+            known_at="2026-03-20T00:00:00Z",
+            action_date="2026-01-08T00:00:00Z",
+            source_receipt_id="stale-correction-b",
+            federal_action_obligation=25,
+            action_content_sha256="6" * 64,
+            description="Updated amount",
+            action_semantic="correction",
+        ),
+    ]
+
+    events = _events(actions=actions)
+
+    assert len(events) == 1
+    assert events[0]["award_change"]["event_type"] == "action_corrected"
+    assert events[0]["award_change"]["is_late_discovery"] is True
+
+
 def test_v2_event_and_workspace_contracts_validate_and_authority_is_display_only():
     events = _events(
         [_snapshot(ticker="AAA", recipient_resolution=_resolution("AAA"))],
