@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TNDM-BULL-20260624",
-  "asof": "2026-08-12",
+  "asof": "2026-08-13",
   "phase": "between_t1_t2",
   "detection_phase": "between_t1_t2",
   "management_confidence": 83.5,
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 3.873,
     "dist_to_t1_r": -1.373,
     "dist_to_t2_r": 0.127,
-    "horizon_pct_used": 62.2,
+    "horizon_pct_used": 64.4,
     "p1": 1.9155,
     "p2": 0.9577,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": "2026-08-06",
   "_first_t2_ts": null,
-  "days_elapsed": 28,
-  "tau": 0.6222
+  "days_elapsed": 29,
+  "tau": 0.6444
 }

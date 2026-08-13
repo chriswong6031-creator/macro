@@ -183,7 +183,7 @@ entries:
 
   - topic: 'Second hand-maintained knowledge base / wiki / RAG memory service parallel to canonical sources (agents required to write session knowledge into a separate database)'
     key: KILL-PARALLEL-KNOWLEDGE-BASE
-    verdict: 'FORBIDDEN — knowledge retrieval is the Macro Context Index (derived, rebuildable, canonical-sources-keep-truth); a hand-curated parallel store is the ratified program''s named degenerate form'
+    verdict: '**OVERRULED 2026-08-12 by Chairman ruling** ("this is an old law and we overrule it") — the kill is LIFTED, and lifted as a whole rather than narrowed to one program. Authored knowledge records are permitted, and a session MAY be required to write them: `agentos/decisions`, `agentos/discoveries`, `agentos/handoffs`. Row retained (keys are never reused) as history and as a pointer, NOT as enforcement — do not cite it to reject a proposal. Its original ground still describes a real failure mode and survives as guidance, not as a bar: retrieval belongs to the Macro Context Index (derived, rebuildable, canonical-sources-keep-truth), so a new parallel RETRIEVAL/RAG service is still adjudicated on its own merits — it is simply no longer pre-refused by this row. Grounds, scope and what would reverse it: `DEC:AGENTOS-CXI-R12-OVERRULED`. Original verdict, for the record: FORBIDDEN — knowledge retrieval is the Macro Context Index (derived, rebuildable, canonical-sources-keep-truth); a hand-curated parallel store is the ratified program''s named degenerate form'
     source: 'CXI-R12, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` (2026-07-18)'
     section: 1
     section_name: forbidden_by_ruling

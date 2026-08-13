@@ -11,7 +11,7 @@
     "breadth_state": "Building history"
   },
   "flows": {
-    "etf": "Rising",
+    "etf": "Steady",
     "stablecoins": "Steady",
     "volume": "Quiet tape"
   },
@@ -23,7 +23,7 @@
   },
   "assets": {
     "ETH": {
-      "trend": "Fading",
+      "trend": "Range",
       "risk": "Stressed",
       "relative": "Leading Bitcoin",
       "coverage": "3,726 daily observations from Coinbase daily OHLCV."
