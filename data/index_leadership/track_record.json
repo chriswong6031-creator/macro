@@ -1,23 +1,23 @@
 {
   "schema": "index_leadership.track_record.v1",
   "as_of": "2026-08-07",
-  "generated_at": "2026-08-10T02:25:35.049263+00:00",
+  "generated_at": "2026-08-13T12:30:17.082831+00:00",
   "is_context_only": true,
-  "n_snapshots": 208,
+  "n_snapshots": 223,
   "n_days": 6,
   "horizons": {
     "5": {
-      "n_matured": 48,
+      "n_matured": 55,
       "by_stage": {
         "running": {
-          "n": 41,
-          "mean_fwd_rel": 0.0014,
-          "hit_rate": 0.659
+          "n": 47,
+          "mean_fwd_rel": -0.0015,
+          "hit_rate": 0.596
         },
         "coiling": {
-          "n": 6,
-          "mean_fwd_rel": -0.0131,
-          "hit_rate": 0.5
+          "n": 7,
+          "mean_fwd_rel": -0.0116,
+          "hit_rate": 0.429
         },
         "coiling_primed": {
           "n": 1,
@@ -31,17 +31,17 @@
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 25,
+      "n_matured": 28,
       "by_stage": {
         "running": {
-          "n": 20,
-          "mean_fwd_rel": -0.0182,
-          "hit_rate": 0.45
+          "n": 22,
+          "mean_fwd_rel": -0.0254,
+          "hit_rate": 0.409
         },
         "coiling": {
-          "n": 5,
-          "mean_fwd_rel": -0.045,
-          "hit_rate": 0.2
+          "n": 6,
+          "mean_fwd_rel": -0.0488,
+          "hit_rate": 0.167
         }
       },
       "running_ic": null,
@@ -50,17 +50,17 @@
       "coiling_ic_t_hac": null
     },
     "21": {
-      "n_matured": 25,
+      "n_matured": 28,
       "by_stage": {
         "running": {
-          "n": 20,
-          "mean_fwd_rel": -0.0115,
-          "hit_rate": 0.55
+          "n": 22,
+          "mean_fwd_rel": -0.0211,
+          "hit_rate": 0.5
         },
         "coiling": {
-          "n": 5,
-          "mean_fwd_rel": -0.0598,
-          "hit_rate": 0.4
+          "n": 6,
+          "mean_fwd_rel": -0.0483,
+          "hit_rate": 0.333
         }
       },
       "running_ic": null,
@@ -115,18 +115,18 @@
     },
     {
       "date": "2026-06-30",
-      "id": "russell:scientific-technical-instruments",
-      "name": "Scientific & Technical Instruments",
+      "id": "russell:telecom-services",
+      "name": "Telecom Services",
       "stage": "coiling",
-      "fwd_rel": -0.1203,
+      "fwd_rel": -0.1065,
       "horizon_d": 21
     },
     {
       "date": "2026-06-30",
-      "id": "baskets:housing",
-      "name": "Housing Chain",
+      "id": "russell:building-products-equipment",
+      "name": "Building Products & Equipment",
       "stage": "running",
-      "fwd_rel": -0.0974,
+      "fwd_rel": -0.1021,
       "horizon_d": 21
     },
     {
@@ -134,23 +134,23 @@
       "id": "subsectors:industrial-distribution",
       "name": "Industrial Distribution",
       "stage": "running",
-      "fwd_rel": -0.0962,
+      "fwd_rel": -0.0969,
       "horizon_d": 21
     },
     {
       "date": "2026-06-30",
-      "id": "russell:telecom-services",
-      "name": "Telecom Services",
-      "stage": "coiling",
-      "fwd_rel": -0.09,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-30",
-      "id": "russell:biotechnology",
-      "name": "Biotechnology",
+      "id": "baskets:housing",
+      "name": "Housing Chain",
       "stage": "running",
-      "fwd_rel": -0.0381,
+      "fwd_rel": -0.0966,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-06-30",
+      "id": "russell:scientific-technical-instruments",
+      "name": "Scientific & Technical Instruments",
+      "stage": "coiling",
+      "fwd_rel": -0.0949,
       "horizon_d": 21
     }
   ],

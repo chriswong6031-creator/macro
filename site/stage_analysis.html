@@ -67,7 +67,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="assets/css/291e3547.css?v=291e3547">
+<link rel="stylesheet" href="assets/css/7b3d1547.css?v=7b3d1547">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
@@ -328,7 +328,7 @@
       <p class="sub"><span class="l-en">Every stock sorted into one of four seasons — building a base, advancing, topping, or declining. Trend quality, earnings tone, and where the money is rotating, in plain words.</span><span class="l-zh">把每只股票归入四个阶段之一 —— 筑底、上升、见顶、下行。趋势质量、财报语气、资金轮动去向，全用大白话说清。</span></p>
     </div>
     <div class="asof">
-      <span class="l-en">Priced <b>2026-08-10</b></span><span class="l-zh">数据截至 <b>2026-08-10</b></span>
+      <span class="l-en">Priced <b>2026-08-13</b></span><span class="l-zh">数据截至 <b>2026-08-13</b></span>
       <div style="margin-top:3px"><span class="l-en">Weekly stage read</span><span class="l-zh">周线阶段判定</span></div>
     </div>
   </div>
@@ -353,8 +353,8 @@
 
         <div class="stations">
           <div class="stn s1"><span class="roman">I</span><div class="num tnum" data-cnt="s1">141</div><span class="lab"><span class="l-en">Building a base</span><span class="l-zh">筑底</span></span><span class="sub"><span class="l-en">resting; wait</span><span class="l-zh">盘整；等待</span></span></div>
-          <div class="stn s2"><span class="roman">II</span><div class="num tnum" data-cnt="s2">1562</div><span class="lab"><span class="l-en">Advancing</span><span class="l-zh">上升</span></span><span class="sub"><span class="l-en">368 fresh</span><span class="l-zh">368 只新转强</span></span></div>
-          <div class="stn s3"><span class="roman">III</span><div class="num tnum" data-cnt="s3">160</div><span class="lab"><span class="l-en">Topping</span><span class="l-zh">见顶</span></span><span class="sub"><span class="l-en">take profits</span><span class="l-zh">锁定利润</span></span></div>
+          <div class="stn s2"><span class="roman">II</span><div class="num tnum" data-cnt="s2">1564</div><span class="lab"><span class="l-en">Advancing</span><span class="l-zh">上升</span></span><span class="sub"><span class="l-en">369 fresh</span><span class="l-zh">369 只新转强</span></span></div>
+          <div class="stn s3"><span class="roman">III</span><div class="num tnum" data-cnt="s3">159</div><span class="lab"><span class="l-en">Topping</span><span class="l-zh">见顶</span></span><span class="sub"><span class="l-en">take profits</span><span class="l-zh">锁定利润</span></span></div>
           <div class="stn s4"><span class="roman">IV</span><div class="num tnum" data-cnt="s4">871</div><span class="lab"><span class="l-en">Declining</span><span class="l-zh">下行</span></span><span class="sub"><span class="l-en">avoid; bounces fail</span><span class="l-zh">回避；反弹易失败</span></span></div>
         </div>
       </div>
@@ -1391,8 +1391,8 @@
     if(!ERN.table||!(ERN.table.rows||[]).length)return ernEmpty();
     var dataStatus=ERN.table.data_status||'empty';
     var healthNote='';
-    if(dataStatus==='degraded')healthNote='<p class="subcap" style="color:var(--amber)">⚠ '+LT('Showing the committed latest-call fallback; fiscal quarter comparisons are unavailable until the current history generation returns.','当前显示已提交的最近电话会回退数据；最新历史数据恢复前，季度对比不可用。')+'</p>';
-    else if(dataStatus==='stale')healthNote='<p class="subcap" style="color:var(--amber)">⚠ '+LT('The earnings history is stale. Latest call: ','财报历史数据已过期。最近电话会：')+esc(ERN.table.latest_call_date||'—')+'.</p>';
+    if(dataStatus==='degraded')healthNote='<p class="subcap" style="color:var(--ink-warn, var(--amber))">⚠ '+LT('Showing the committed latest-call fallback; fiscal quarter comparisons are unavailable until the current history generation returns.','当前显示已提交的最近电话会回退数据；最新历史数据恢复前，季度对比不可用。')+'</p>';
+    else if(dataStatus==='stale')healthNote='<p class="subcap" style="color:var(--ink-warn, var(--amber))">⚠ '+LT('The earnings history is stale. Latest call: ','财报历史数据已过期。最近电话会：')+esc(ERN.table.latest_call_date||'—')+'.</p>';
     var inds=ernIndustries();
     /* opt() — single-language <option> label carrying both langs on data-en/zh
        (the l-en/l-zh span trick is flattened inside <option>; relangOptions()
@@ -1871,5 +1871,6 @@
 </script>
 <script src="live_config.js?v=52943e92" defer></script>
 <script src="live.js?v=b245e3c3" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>
