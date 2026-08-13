@@ -54,6 +54,7 @@ import logging
 import math
 import os
 import sys
+from collections.abc import Iterable
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -1095,7 +1096,11 @@ def _load_existing_state(plan_id: str) -> dict | None:
     return _read_json(state_path)
 
 
-def open_plan_keys(plans: dict[str, dict], closed_ids: set[str]) -> set[str]:
+def open_plan_keys(
+    plans: dict[str, dict],
+    closed_ids: set[str],
+    quarantined_ids: Iterable[str] = (),
+) -> set[str]:
     """``<TICKER>-<DIRECTION>`` keys that still have an OPEN plan (W1 intake repair).
 
     "Closed" is exactly what the forward ledger already says: ``advance_ledger`` appends
@@ -1103,6 +1108,17 @@ def open_plan_keys(plans: dict[str, dict], closed_ids: set[str]) -> set[str]:
     ``_load_closed_ids`` reads that file back.  No new store is introduced — this reads
     the plans dict and the ledger this pipeline already loads, and a plan that closes
     frees its ticker+direction slot for a fresh origination.
+
+    "Open" is not "present in the plans dict" either: an audit-quarantined plan
+    (``integrity_status == "quarantined"`` in the append-only correction overlay) is
+    withdrawn from display and, in the published index's own words, cannot emit live
+    instructions or ledger rows — so it does not hold a ticker+direction slot, and a
+    later bake may lawfully re-originate the name.  The exclusion lives HERE, not in a
+    caller, because this is the one definition of "open" that both the originator and
+    the duplicate-open-key census must read; when the caller owned it they drifted, and
+    the census read three lawfully re-originated pairs (FCX / HEI / MDB, freed by the
+    2026-08-08 chronology audit) as duplicates.  Same-ID suppression is untouched, so
+    identity never forks.
 
     Timing (deliberate, one-night lag): origination runs BEFORE this run's
     ``advance_ledger`` call, so a plan whose exit is being written tonight still blocks
@@ -1114,9 +1130,10 @@ def open_plan_keys(plans: dict[str, dict], closed_ids: set[str]) -> set[str]:
     ledger is a sufficient closure authority here and a second, divergeable one is not
     introduced.
     """
+    quarantined = set(quarantined_ids or ())
     keys: set[str] = set()
     for plan_id, plan in plans.items():
-        if plan_id in closed_ids:
+        if plan_id in closed_ids or plan_id in quarantined:
             continue
         asset = plan.get("asset")
         direction = plan.get("direction")
@@ -1602,13 +1619,8 @@ def main() -> None:
     # needs the outcome word for each closed plan's `closed` flag and pulse.
     closed_outcomes = _load_closed_outcomes()
     closed_ids = set(closed_outcomes)
-    # An audit-quarantined plan is not actionable and must not monopolise the ticker's
-    # future opportunity slot.  Same-ID suppression remains, so identity never forks.
-    actionable_existing = {
-        plan_id: plan for plan_id, plan in existing_plans.items()
-        if plan_id not in plan_quarantined_ids
-    }
-    active_keys = open_plan_keys(actionable_existing, closed_ids)
+    active_keys = open_plan_keys(
+        existing_plans, closed_ids, quarantined_ids=plan_quarantined_ids)
     log.info(
         "build_prophet: %d existing plans loaded (%d closed in the ledger; "
         "%d open ticker+direction keys blocking re-origination)",
