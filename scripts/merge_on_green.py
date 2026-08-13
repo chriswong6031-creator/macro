@@ -25,6 +25,19 @@ a recovery net. It performs the merge the session would otherwise have sat there
 waiting to perform. The discipline is unchanged — nothing merges until every
 check has CONCLUDED clean — only the waiting moved off the session.
 
+Two 2026-08-13 additions, both measured against the live jam rather than the
+2026-08-11 hosted-pool comments:
+
+  * A baseline whose TESTS never ran (checkout/action-download timeout) is
+    skipped the same way ``cancelled`` already is — it is no information about
+    main. Latching those flakes as ``red`` paused every ordinary merge with
+    zero ``main-red-repair`` PRs in the queue.
+  * A pull request whose only red ``ci-pack-*`` / ``ci-gate`` names (and whose
+    failed legacy jobs, parsed from check-run annotations) are a subset of
+    what main is currently failing, and which did not touch a CI global
+    invalidator, is a LIVE inherited red: merge it. The healed-main refresh
+    path still owns the case where main has since gone green.
+
 MAIN-RED CIRCUIT BREAKER. PR checks prove a head against the base GitHub gave it;
 they do not prove that the rapidly moving source main remains healthy after later
 merges. `integration-baseline.yml` publishes one fast verdict for each source or
@@ -2714,6 +2727,22 @@ BASELINE_MAX_AGE_HOURS = 6
 #: GitHub permits 100 here; one bounded request keeps the control-plane cost fixed
 #: while leaving enough room to reach the newest real verdict under churn.
 INTEGRATION_BASELINE_RUN_LOOKBACK = 100
+#: Step-name fragments that mean the circuit-breaker's TESTS ran. A failed
+#: baseline whose pytest/selftest steps never concluded is a runner/network
+#: flake (measured 2026-08-13: render-linux checkout died on a 100s codeload
+#: timeout / git promisor EOF). That is the same category as `cancelled`: no
+#: information about main. A real pytest failure still latches the breaker.
+_BASELINE_TEST_STEP_HINTS = (
+    "pytest",
+    "selftest",
+    "must parse",
+    "packing",
+    "skip-only",
+    "named suite",
+    "grammar",
+)
+_PACK_CHECK_RE = re.compile(r"^ci-pack-\d+$")
+_LEGACY_JOB_TITLE_PREFIX = "legacy-job-"
 #: Minimum gap between two sweeper-ordered `integration-baseline.yml` dispatches, and
 #: the reason `ensure_integration_baseline` can be safe at all. MUCH shorter than
 #: `MAIN_BASELINE_MIN_INTERVAL_MINUTES` (30, for ci.yml) because this workflow is the
@@ -2751,6 +2780,53 @@ def _baseline_age_hours(run: dict[str, Any], now: dt.datetime | None = None) -> 
             when = now or dt.datetime.now(dt.timezone.utc)
             return (when - stamp).total_seconds() / 3600.0
     return None
+
+
+def _baseline_failure_is_infra(
+    repo: str, run: dict[str, Any], token: str
+) -> bool:
+    """True only when the circuit-breaker TESTS never ran.
+
+    Fail closed (False) on any doubt: an unreadable jobs listing, a job with no
+    steps, or a pytest/selftest step that concluded success/failure is a real
+    red and must latch the breaker. Checkout/setup timeouts are the skip case.
+    """
+    run_id = run.get("id")
+    if run_id is None:
+        return False
+    try:
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100",
+            token,
+        )
+    except Exception:
+        return False
+    if status >= 400 or not isinstance(payload, dict):
+        return False
+    jobs = payload.get("jobs") or []
+    if not jobs:
+        return False
+    tests_ran = False
+    saw_failure = False
+    for job in jobs:
+        if not isinstance(job, dict):
+            continue
+        if str(job.get("conclusion") or "").lower() == "failure":
+            saw_failure = True
+        for step in job.get("steps") or []:
+            if not isinstance(step, dict):
+                continue
+            name = str(step.get("name") or "").lower()
+            conclusion = str(step.get("conclusion") or "").lower()
+            if conclusion == "failure":
+                saw_failure = True
+            if (
+                any(hint in name for hint in _BASELINE_TEST_STEP_HINTS)
+                and conclusion in {"success", "failure"}
+            ):
+                tests_ran = True
+    return saw_failure and not tests_ran
 
 
 def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
@@ -2818,29 +2894,39 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     if not runs:
         return "unproven", "integration-baseline has not published a run"
 
-    # Walk to the newest run that actually CONCLUDED. An in-flight run and a
-    # `cancelled` one are skipped for the same reason: neither is evidence about main.
-    run = next(
-        (
-            candidate
-            for candidate in runs
-            if str(candidate.get("status") or "").lower() == "completed"
-            and str(candidate.get("conclusion") or "").lower() != "cancelled"
-        ),
-        None,
-    )
+    # Walk to the newest run that actually CONCLUDED with information about
+    # main. An in-flight run, a `cancelled` one, and a failure whose TESTS never
+    # ran are skipped for the same reason: none of them is evidence that source
+    # main is broken. A pytest failure still stops the walk and returns ``red``.
+    skipped_infra = 0
+    run = None
+    for candidate in runs:
+        if str(candidate.get("status") or "").lower() != "completed":
+            continue
+        conclusion = str(candidate.get("conclusion") or "").lower()
+        if conclusion == "cancelled":
+            continue
+        if conclusion in {"failure", "timed_out"}:
+            if _baseline_failure_is_infra(repo, candidate, token):
+                skipped_infra += 1
+                continue
+        run = candidate
+        break
     if run is None:
         in_flight = sum(
             1 for candidate in runs if str(candidate.get("status") or "").lower() != "completed"
         )
         return "unproven", (
             f"none of the last {len(runs)} integration-baseline runs concluded "
-            f"({in_flight} still in flight, {len(runs) - in_flight} cancelled/superseded)"
+            f"({in_flight} still in flight, {skipped_infra} infra-flake, "
+            f"{len(runs) - in_flight - skipped_infra} cancelled/superseded)"
         )
     conclusion = str(run.get("conclusion") or "").lower()
     run_sha = str(run.get("head_sha") or "")
     run_url = str(run.get("html_url") or "")
     detail = f"{run_sha[:12] or 'unknown-sha'} {run_url}".strip()
+    if skipped_infra:
+        detail = f"{detail} (skipped {skipped_infra} infra-flake run(s))"
 
     ref_status, ref_payload = _request(
         "GET", f"{GITHUB_API}/repos/{repo}/git/ref/heads/main", token
@@ -3150,6 +3236,17 @@ class MainProof:
     proved_at: dt.datetime | None
     head_sha: str
     source: str
+    # Names main FAILED on the same proof run. Empty when the run was unreadable
+    # or when every considered job passed. Used by the base-inherited refresh
+    # (a PR whose reds are a subset of main's *clean* names). Live-inherited
+    # red waives on ``failed_legacy_jobs``, not these pack names — packs rebalance.
+    failed_names: frozenset[str] = frozenset()
+    # Legacy job ids parsed from ``::error title=legacy-job-<id>`` annotations
+    # on failed ``ci-pack-*`` jobs of this proof. Empty means "could not read"
+    # OR the run passed every pack — both fail-close the live-inherited path.
+    # Pack *names* are not a stable identity (they rebalance on the selected
+    # job set); this set is the waiver's load-bearing half.
+    failed_legacy_jobs: frozenset[str] = frozenset()
 
     def age_hours(self, now: dt.datetime | None = None) -> float | None:
         """How old the proof is, in hours. None when it could not be dated."""
@@ -3220,9 +3317,165 @@ def _newest_concluded_main_run(
     return None, f"{workflow} has no completed run on main"
 
 
+def _legacy_job_ids_from_annotations(annotations: list[Any]) -> set[str]:
+    """Parse pack-runner failure identities out of GitHub check-run annotations."""
+    ids: set[str] = set()
+    for item in annotations:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "")
+        message = str(item.get("message") or "")
+        if title.startswith(_LEGACY_JOB_TITLE_PREFIX):
+            job_id = title[len(_LEGACY_JOB_TITLE_PREFIX) :].strip()
+            if job_id:
+                ids.add(job_id)
+            continue
+        text = message or title
+        if ": " not in text and ": step " not in text:
+            continue
+        job_id = text.split(":", 1)[0].strip()
+        if job_id and " " not in job_id and "/" not in job_id:
+            ids.add(job_id)
+    return ids
+
+
+def _annotation_check_run_id(entry: dict[str, Any]) -> Any:
+    """The annotations API takes a *check-run* id, not a workflow *job* id.
+
+    `/actions/runs/{id}/jobs` and `/commits/{sha}/check-runs` are different
+    namespaces. A job's ``id`` 404s against ``/check-runs/{id}/annotations``,
+    which would fail-close the live-inherited path on every real sweep. Prefer
+    ``check_run_url`` (jobs API) or a ``url`` that already names a check-run.
+    """
+    for key in ("check_run_url", "url"):
+        url = str(entry.get(key) or "")
+        marker = "/check-runs/"
+        if marker not in url:
+            continue
+        ident = url.rsplit(marker, 1)[-1].split("?")[0].split("/")[0].strip()
+        if ident:
+            return ident
+    return entry.get("id")
+
+
+def _legacy_job_ids_from_runs(
+    repo: str, runs: list[dict[str, Any]], token: str
+) -> frozenset[str]:
+    """Fail closed: any unreadable failed pack yields an empty set."""
+    if not runs:
+        return frozenset()
+    ids: set[str] = set()
+    for run in runs:
+        check_id = _annotation_check_run_id(run)
+        if check_id is None:
+            return frozenset()
+        try:
+            status, payload = _request(
+                "GET",
+                f"{GITHUB_API}/repos/{repo}/check-runs/{check_id}/annotations"
+                "?per_page=100",
+                token,
+            )
+        except Exception:
+            return frozenset()
+        if status >= 400:
+            return frozenset()
+        if isinstance(payload, dict):
+            payload = payload.get("annotations")
+        if not isinstance(payload, list):
+            return frozenset()
+        parsed = _legacy_job_ids_from_annotations(payload)
+        if not parsed:
+            return frozenset()
+        ids |= parsed
+    return frozenset(ids)
+
+
+def _touches_ci_control_plane(paths: list[str]) -> bool:
+    """A control-plane edit can change what any pack means; never waive those.
+
+    Fail closed: if the pack runner cannot be imported (sparse-checkout miss),
+    treat the diff as a control-plane touch so live-inherited red cannot fire.
+    """
+    try:
+        from scripts.run_ci_pack import GLOBAL_INVALIDATORS, _matches_any
+    except ImportError:
+        try:
+            from run_ci_pack import GLOBAL_INVALIDATORS, _matches_any  # type: ignore[no-redef]
+        except ImportError:
+            return True
+    return any(_matches_any(GLOBAL_INVALIDATORS, path) for path in paths if path)
+
+
+def _live_inherited_extras(bad_names: set[str]) -> set[str]:
+    """Check names that are neither a rebalancing pack nor the ci-gate aggregate.
+
+    ``ci-pack-N`` numbers are not a stable identity: ``partition_jobs`` balances
+    the *selected* job set, so the same ``unrun-foo`` is pack-7 on a scoped 114-job
+    PR and pack-5 on main's full-suite dispatch. ``ci-gate`` is implied by those
+    pack failures — it is not an extra name that blocks the waiver.
+    """
+    return {
+        name
+        for name in bad_names
+        if not _PACK_CHECK_RE.match(name) and name != "ci-gate"
+    }
+
+
+def _failed_pack_runs(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        run
+        for run in runs
+        if _PACK_CHECK_RE.match(str(run.get("name") or ""))
+        and str(run.get("status") or "").lower() == "completed"
+        and str(run.get("conclusion") or "") not in CLEAN_CONCLUSIONS
+        and not is_spurious_check(str(run.get("name") or ""))
+    ]
+
+
+def live_inherited_red(
+    repo: str,
+    pull: dict[str, Any],
+    runs: list[dict[str, Any]],
+    bad_names: set[str],
+    proof: MainProof,
+    freshness: "ProofFreshness",
+    token: str,
+) -> str | None:
+    """Reason string if this red is main's current weather; None to fail closed.
+
+    Waive on ``legacy-job-*`` annotation identity only. Pack names rebalance on
+    the selected job set, so a PR's ``ci-pack-7`` is not comparable to main's
+    ``ci-pack-5``. ``ci-gate`` is the aggregate of those identities, not an extra
+    name. A CI global invalidator is ineligible — it can change what any pack
+    means.
+    """
+    if not bad_names or not proof.failed_legacy_jobs:
+        return None
+    if _live_inherited_extras(bad_names):
+        return None
+    failed_pack_runs = _failed_pack_runs(runs)
+    if not failed_pack_runs:
+        return None
+    pr_jobs = _legacy_job_ids_from_runs(repo, failed_pack_runs, token)
+    if not pr_jobs or not pr_jobs <= proof.failed_legacy_jobs:
+        return None
+    files = freshness.pull_files(pull.get("number"))
+    if files is None or _touches_ci_control_plane(files):
+        return None
+    return (
+        "live-inherited red: "
+        + ", ".join(sorted(pr_jobs))
+        + " already failing on main"
+    )
+
+
 def _run_clean_jobs(
     repo: str, run_id: Any, token: str
-) -> tuple[tuple[frozenset[str], dt.datetime | None] | None, str]:
+) -> tuple[
+    tuple[frozenset[str], frozenset[str], frozenset[str], dt.datetime | None] | None,
+    str,
+]:
     """``(resolved, why)``. ``resolved`` is None ONLY when the run could not be READ.
 
     ``resolved`` is ``(names main PASSED, when the run's verdict landed)``; ``why``
@@ -3273,8 +3526,10 @@ def _run_clean_jobs(
         return None, f"run {run_id}'s job listing returned an unusable payload"
     jobs = payload["jobs"]
     clean: set[str] = set()
+    failed: set[str] = set()
     clean_stamps: list[dt.datetime | None] = []
     considered_stamps: list[dt.datetime | None] = []
+    failed_pack_jobs: list[dict[str, Any]] = []
     for job in jobs:
         if not isinstance(job, dict):
             continue
@@ -3286,13 +3541,18 @@ def _run_clean_jobs(
         when = _parse_dt(job.get("completed_at"))
         considered_stamps.append(when)
         if str(job.get("conclusion") or "").lower() not in PROOF_CLEAN_CONCLUSIONS:
+            failed.add(name)
+            if _PACK_CHECK_RE.match(name):
+                failed_pack_jobs.append(job)
             continue
         clean.add(name)
         clean_stamps.append(when)
+    legacy = _legacy_job_ids_from_runs(repo, failed_pack_jobs, token)
     dating = clean_stamps if clean else considered_stamps
     if not dating or any(stamp is None for stamp in dating):
-        return (frozenset(clean), None), ""
-    return (frozenset(clean), max(stamp for stamp in dating if stamp is not None)), ""
+        return (frozenset(clean), frozenset(failed), legacy, None), ""
+    dated = max(stamp for stamp in dating if stamp is not None)
+    return (frozenset(clean), frozenset(failed), legacy, dated), ""
 
 
 def main_proof(repo: str, token: str) -> MainProof:
@@ -3351,6 +3611,8 @@ def main_proof(repo: str, token: str) -> MainProof:
     """
     try:
         names: set[str] = set()
+        failed_names: set[str] = set()
+        failed_legacy: set[str] = set()
         stamps: list[dt.datetime | None] = []
         sources: list[str] = []
         head_sha = ""
@@ -3362,8 +3624,10 @@ def main_proof(repo: str, token: str) -> MainProof:
             resolved, why = _run_clean_jobs(repo, run.get("id"), token)
             if resolved is None:
                 return MainProof(frozenset(), None, "", f"{workflow} {why}")
-            workflow_names, workflow_at = resolved
+            workflow_names, workflow_failed, workflow_legacy, workflow_at = resolved
             names |= set(workflow_names)
+            failed_names |= set(workflow_failed)
+            failed_legacy |= set(workflow_legacy)
             stamps.append(workflow_at)
             sources.append(
                 f"{workflow}@{run_sha[:12] or '?'}"
@@ -3379,7 +3643,14 @@ def main_proof(repo: str, token: str) -> MainProof:
         proved_at = None if any(stamp is None for stamp in stamps) else min(
             stamp for stamp in stamps if stamp is not None
         )
-        return MainProof(frozenset(names), proved_at, head_sha, " + ".join(sources))
+        return MainProof(
+            frozenset(names),
+            proved_at,
+            head_sha,
+            " + ".join(sources),
+            frozenset(failed_names),
+            frozenset(failed_legacy),
+        )
     except Exception as exc:  # noqa: BLE001 — a diagnostic must never fail a sweep
         return MainProof(frozenset(), None, "", f"main proof lookup raised {exc!r}"[:200])
 
@@ -3444,7 +3715,11 @@ def ensure_main_baseline(
 
     So the sweep dispatches the baseline itself, but ONLY when all three hold:
 
-      1. the proof is undatable or older than MAIN_PROOF_MAX_AGE_HOURS;
+      1. the proof is undatable or older than MAIN_PROOF_MAX_AGE_HOURS, OR it has
+         no ``failed_legacy_jobs`` while this sweep blocked a pack or ``ci-gate``.
+         A clock-fresh green proof cannot feed the live-inherited waiver, and
+         ``ci.yml`` has no ``push`` trigger — skip-ci tape ticks never refresh it.
+         This is NOT a per-commit dispatch: (2) and (3) still bind it;
       2. at least one pull request this sweep evaluated was blocked on a non-spurious
          check — i.e. the staleness actually COST something. An idle repository never
          dispatches, however old its proof is; a proof nothing needed is not a problem;
@@ -3479,7 +3754,11 @@ def ensure_main_baseline(
     """
     try:
         age = proof.age_hours()
-        if age is not None and age <= MAIN_PROOF_MAX_AGE_HOURS:
+        packs_blocked = any(
+            _PACK_CHECK_RE.match(name) or name == "ci-gate" for name in blocked_names
+        )
+        waiver_blind = packs_blocked and not proof.failed_legacy_jobs
+        if age is not None and age <= MAIN_PROOF_MAX_AGE_HOURS and not waiver_blind:
             return f"not needed (proof is {age:.1f}h old)"
         if not blocked_names:
             return "not needed (no pull request was blocked on a check)"
@@ -3519,15 +3798,21 @@ def ensure_main_baseline(
             # proven RED, which reads identically here and has the opposite cause. The
             # proof's own `source` is the thing that distinguishes them, so print it.
             aged = f"undated ({proof.source})" if age is None else f"{age:.1f}h old"
+            weather = (
+                " and has no legacy-job-* weather for the live-inherited waiver"
+                if not proof.failed_legacy_jobs
+                else ""
+            )
             _annotate(
                 "notice",
                 "merge-on-green",
                 f"Dispatched {MAIN_BASELINE_WORKFLOW} on main: this sweep left pull "
                 f"requests blocked on {len(blocked_names)} distinct check(s) "
                 f"({', '.join(sorted(blocked_names)[:6])}) while main's own proof is "
-                f"{aged}, so it could not tell an inherited red from a real one. "
-                f"{MAIN_BASELINE_WORKFLOW} has no `push` trigger, so nothing else "
-                "re-proves main; the next sweep judges those reds against the result.",
+                f"{aged}{weather}, so it could not tell an inherited red from a real "
+                f"one. {MAIN_BASELINE_WORKFLOW} has no `push` trigger, so skip-ci "
+                "tape ticks do not re-prove main; the next sweep judges those reds "
+                "against the result.",
             )
             return "dispatched"
         _annotate(
@@ -4429,28 +4714,38 @@ def sweep_pull(
                 if update_result != "declined":
                     return update_result
 
-        if blocked_names is not None:
-            # What this sweep could not answer, for `ensure_main_baseline`.
-            blocked_names |= bad_names
-
-        live_pull, authorization = live_authorized_pull(repo, pull, read_token)
-        if live_pull is None:
-            return authorization
-        pull = live_pull
-        added = mark_blocked(repo, pull, red_check_comment(names), merge_token)
-        _annotate(
-            "warning",
-            "merge-on-green",
-            f"PR #{number}: red checks ({', '.join(names[:6])}); "
-            + (
-                "marker written."
-                if added
-                else "no new marker (already labeled, or both writes failed above)."
-            ),
+        inherited_live = live_inherited_red(
+            repo, pull, runs, bad_names, proof, freshness, read_token
         )
-        return verdict
+        if inherited_live:
+            # Main is still red on exactly these packs/jobs. This pull request
+            # did not introduce them and did not touch a CI invalidator, so
+            # blocking it hostages the merge train on weather it cannot change.
+            # Fall through to the clean merge path (freshness, clobber, squash).
+            print(f"PR #{number}: {inherited_live} — merging.", flush=True)
+        else:
+            if blocked_names is not None:
+                # What this sweep could not answer, for `ensure_main_baseline`.
+                blocked_names |= bad_names
 
-    # Every check concluded clean. The remaining question is not WHETHER the head is
+            live_pull, authorization = live_authorized_pull(repo, pull, read_token)
+            if live_pull is None:
+                return authorization
+            pull = live_pull
+            added = mark_blocked(repo, pull, red_check_comment(names), merge_token)
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"PR #{number}: red checks ({', '.join(names[:6])}); "
+                + (
+                    "marker written."
+                    if added
+                    else "no new marker (already labeled, or both writes failed above)."
+                ),
+            )
+            return verdict
+
+    # Every check concluded clean, or the reds are main's current weather.
     # proven but WHICH exact main SHA its pull_request event tested. GitHub records
     # that SHA on the check run itself; timestamps are not proof identity. An
     # unavailable identity defers without mutation because update-branch cannot
@@ -5037,6 +5332,24 @@ def mark_only_pass(
                     flush=True,
                 )
                 tally["base-red-deferred"] = tally.get("base-red-deferred", 0) + 1
+                continue
+
+            packs = {name for name in bad_names if _PACK_CHECK_RE.match(name)}
+            extras = _live_inherited_extras(bad_names)
+            if (
+                packs
+                and not extras
+                and (proof.failed_legacy_jobs or proof.failed_names)
+            ):
+                print(
+                    f"PR #{number}: red checks "
+                    f"({', '.join(sorted(bad_names)[:6])}) are also currently red on "
+                    "main, so this may be a live-inherited red rather than this pull "
+                    "request's. Deferred to the full sweep, which owns the "
+                    "merge-vs-block decision; nothing marked.",
+                    flush=True,
+                )
+                tally["live-red-deferred"] = tally.get("live-red-deferred", 0) + 1
                 continue
 
             live_pull, authorization = live_authorized_pull(repo, pull, read_token)

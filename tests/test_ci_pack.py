@@ -221,10 +221,12 @@ def test_scope_glob_separator_semantics() -> None:
 
 
 def test_selection_fails_safe_toward_running_everything() -> None:
-    """Every unknown must widen the run, never narrow it.
+    """Unknown changed-sets and global invalidators still widen; unowned paths do not.
 
-    A wasted runner-minute is cheap; a false green is not. These four are the
-    only ways scoping can be wrong, and all four must resolve to the full suite.
+    A wasted runner-minute is cheap; a false green on a control-plane file is
+    not. The two remaining wideners are the only ways scoping can be unknowable
+    rather than merely unowned. An unowned path used to be a third widener and
+    that was the speed hole: one hook file ran all 185 jobs (PR #5488).
     """
     jobs, summary = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     scoped = [job for job in jobs if job.paths]
@@ -240,9 +242,13 @@ def test_selection_fails_safe_toward_running_everything() -> None:
         selected, reason = PACK.select_jobs(jobs, [invalidator])
         assert len(selected) == len(jobs), f"{invalidator} must force a full run"
         assert "full suite" in reason
-    # 3. an unowned path is ambiguous, so it widens to the full suite
-    selected, _ = PACK.select_jobs(jobs, ["no/such/path/at/all.txt"])
-    assert len(selected) == len(jobs)
+    # 3. an unowned path stays on always-on fences; it does not mint a full suite
+    selected, reason = PACK.select_jobs(jobs, ["no/such/path/at/all.txt"])
+    assert len(selected) < len(jobs), reason
+    assert "did not widen" in reason
+    unscoped = [job for job in jobs if not job.paths]
+    for job in unscoped:
+        assert job in selected, f"always-on {job.job_id} must still run"
     # 4. a scoped job runs whenever its own scope matches
     for job in scoped:
         probe = job.paths[0].replace("**/", "").replace("**", "x").replace("*", "x")
@@ -295,6 +301,8 @@ def test_real_manifest_has_non_vacuous_derived_scopes() -> None:
     assert "engine/falsifier_tripwires.py" in scoped["falsifier-tripwires"]
     assert "lib/store.py" in scoped["falsifier-tripwires"]
     assert "lib/config.py" in scoped["falsifier-tripwires"]
+    assert "unrun-dark-guards" in scoped
+    assert ".claude/hooks/gh_quota_guard.py" in scoped["unrun-dark-guards"]
 
 
 def test_derived_closure_follows_relative_first_party_imports() -> None:
@@ -493,6 +501,29 @@ def test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs() -> None
     assert any(job.job_id == "free-content-estate" for job in content)
 
 
+def test_unscoped_hook_diff_does_not_pull_the_full_suite() -> None:
+    """PR #5488 shape: `.claude/hooks/gh_quota_guard.py` used to mint 187/187 jobs.
+
+    CI_SCOPE_MODE is already active in ci.yml unless the repo var is exactly
+    ``off``. The remaining hole was select_jobs treating an unowned path as a
+    full-suite invalidator. After this PR the hook is owned by unrun-dark-guards
+    and an unowned sibling still does not widen.
+    """
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    selected, reason = PACK.select_jobs(
+        jobs, [".claude/hooks/gh_quota_guard.py"]
+    )
+    assert "full suite" not in reason, reason
+    assert len(selected) < len(jobs) * 4 // 5, (len(selected), len(jobs), reason)
+    assert any(job.job_id == "unrun-dark-guards" for job in selected)
+    mixed, mixed_reason = PACK.select_jobs(
+        jobs,
+        [".claude/hooks/gh_quota_guard.py", "engine/spine.py"],
+    )
+    assert "full suite" not in mixed_reason, mixed_reason
+    assert len(mixed) < len(jobs), mixed_reason
+
+
 @pytest.mark.parametrize("graph", ["config/dag.yml", "config/synapse.yml"])
 def test_graph_metadata_is_a_global_invalidator(graph: str) -> None:
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
@@ -501,13 +532,15 @@ def test_graph_metadata_is_a_global_invalidator(graph: str) -> None:
     assert "global invalidator" in reason
 
 
-def test_passive_markdown_stays_scoped_but_unknown_root_fails_full() -> None:
+def test_passive_markdown_stays_scoped_and_unknown_root_does_not_widen() -> None:
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     docs, _ = PACK.select_jobs(jobs, ["research/UNOWNED_HANDOFF.md"])
     code, reason = PACK.select_jobs(jobs, ["brand_new_root/unowned_runtime.xyz"])
     assert len(docs) < len(jobs)
-    assert len(code) == len(jobs)
-    assert "no proven owner" in reason
+    assert len(code) < len(jobs)
+    assert "did not widen" in reason
+    unscoped = [job for job in jobs if not job.paths]
+    assert {job.job_id for job in unscoped} <= {job.job_id for job in code}
 
 
 def test_name_status_diff_preserves_both_sides_of_rename(
@@ -606,6 +639,37 @@ def test_shadow_mode_emits_machine_readable_plan_and_job_results(
         {"job": "owner", "predicted_selected": True, "status": "passed"},
         {"job": "would-skip", "predicted_selected": False, "status": "passed"},
     ]
+
+
+def test_execute_pack_emits_legacy_job_annotations_and_failed_job_ids(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """merge_on_green parses `title=legacy-job-<id>` for live-inherited reds."""
+    definition = {"steps": [{"run": "true"}], "runs-on": "ubuntu-latest"}
+    jobs = [
+        PACK.LegacyJob("unrun-government-revenue", definition, 0, 1, ("engine/**",)),
+        PACK.LegacyJob("other", definition, 1, 1, ("engine/**",)),
+    ]
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda: None)
+
+    def fake_run(job, **_kwargs):
+        if job.job_id == "unrun-government-revenue":
+            return f"{job.job_id}: step 'pytest' exited 1"
+        return None
+
+    monkeypatch.setattr(PACK, "_run_job", fake_run)
+    assert PACK.execute_pack(jobs) == 1
+    out = capsys.readouterr().out
+    assert any(
+        line.startswith("::error title=legacy-job-unrun-government-revenue::")
+        for line in out.splitlines()
+    ), out
+    failed = next(
+        line for line in out.splitlines() if line.startswith("CI_PACK_FAILED_JOBS=")
+    )
+    assert json.loads(failed.split("=", 1)[1]) == ["unrun-government-revenue"]
 
 
 def test_packs_stay_balanced_over_the_selected_subset() -> None:
@@ -857,13 +921,14 @@ def test_passive_unowned_markdown_can_plan_no_work(
     assert all(entry["jobs"] == [] for entry in document["packs"])
 
 
-def test_unknown_top_level_path_widens_the_plan_to_the_full_suite(
+def test_unknown_top_level_path_does_not_widen_the_plan_to_the_full_suite(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _freeze_scope_inference(monkeypatch)
     jobs = [
         _plan_job("engine-owner", 0, paths=("engine/**",)),
         _plan_job("site-owner", 1, paths=("site/**",)),
+        _plan_job("always-on", 2, paths=()),
     ]
     plan = PACK.build_plan(
         jobs,
@@ -872,8 +937,8 @@ def test_unknown_top_level_path_widens_the_plan_to_the_full_suite(
         scope_mode="active",
         pack_count=12,
     )
-    assert set(plan.eligible_job_ids) == {"engine-owner", "site-owner"}
-    assert "no proven owner" in plan.reason
+    assert plan.eligible_job_ids == ("always-on",)
+    assert "did not widen" in plan.reason
     assert plan.has_work is True
 
 
@@ -1285,7 +1350,23 @@ def test_workflow_scopes_only_pull_requests() -> None:
     assert "--changed-from" in scope_arg
     assert "pull_request.base.sha" in scope_arg
     assert "github.base_ref" not in scope_arg
-    assert step["env"]["CI_SCOPE_MODE"] == "${{ vars.CI_SCOPE_MODE || 'shadow' }}"
+    assert step["env"]["CI_SCOPE_MODE"] == "${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}"
+    # A leftover `shadow` GitHub Actions variable must not hostage the fleet:
+    # anything other than exact `off` is active. Quote: before #5515 the var
+    # could sit at `shadow` and run the full 185-job suite while reporting a
+    # predicted subset; after, and still after this PR, the expression admits
+    # only `off` or `active`.
+    plan = _yaml(WORKFLOW)["jobs"]["ci-plan"]
+    plan_step = next(
+        s for s in plan["steps"]
+        if isinstance(s, dict) and s.get("id") == "plan"
+    )
+    assert plan_step["env"]["CI_SCOPE_MODE"] == (
+        "${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}"
+    )
+    assert plan_step["env"]["CI_DYNAMIC_MATRIX_MODE"] == (
+        "${{ vars.CI_DYNAMIC_MATRIX_MODE == 'off' && 'off' || 'active' }}"
+    )
     on = _yaml(WORKFLOW).get("on") or _yaml(WORKFLOW).get(True)
     pull_paths = on["pull_request"]["paths"]
     assert "**" in pull_paths
@@ -1365,7 +1446,13 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     assert "macstudio" not in runs_on
     assert "render-linux" not in runs_on
     assert "self-hosted" not in runs_on
-    assert pack["strategy"]["fail-fast"] is False
+    # PR abort-on-first-red; main workflow_dispatch keeps the rest of the pack.
+    # Must stay an unquoted boolean expression — quotes stringify "true"/"false"
+    # and can fail-fast main's heal-slow path (non-empty string is truthy).
+    assert pack["strategy"]["fail-fast"] == "${{ github.event_name == 'pull_request' }}"
+    pack_src = WORKFLOW.read_text(encoding="utf-8")
+    assert "fail-fast: ${{ github.event_name == 'pull_request' }}" in pack_src
+    assert 'fail-fast: "${{ github.event_name == \'pull_request\' }}"' not in pack_src
     # No `max-parallel`: it existed only to stop main's packs from taking all four
     # `render-linux` runners. With no shared pool to protect, throttling would only
     # double main's proof (~26 min -> ~50 min), and it cannot help against the hosted

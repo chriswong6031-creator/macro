@@ -2475,11 +2475,41 @@ jobs:
         run: python -m pytest tests/test_watchlist_books_js.py -q
       - name: watchstore.js store — registered multi-list seam (W1a)
         run: python -m pytest tests/test_watchstore_multilist_js.py -q
+      # W2 workspace layer over that store: the bulk-entry parser (the anonymous
+      # funnel's front door), the weighting model, the engine-state -> plain-word
+      # stage map (which may only ever DE-ESCALATE), delta-since-visit, and the
+      # read-side guard that stops a focus refetch from reverting a just-made edit.
+      - name: watchlist workspace — entry parser, stage map, focus-refetch guard (W2)
+        run: python -m pytest tests/test_watchlist_workspace_js.py -q
       - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
         run: python -m pytest tests/test_factor_exposure.py tests/test_factor_exposure_stress.py -q
 
   house-law-registry:
     if: ${{ false }}
+    # DECLARED scope, UNIONed with the runtime-derived one (run_ci_pack.infer_job_scopes
+    # keeps `set(job.paths) | set(derived)`), and it exists for exactly one entry:
+    # root `config.yml`. That file is where BOTH of this repo's timeless rename maps
+    # live — `breadth.ticker_fixups` and `quality.ticker_key_migrations` — and the next
+    # ticker rename lands the way both modelled ones did, as ONE LINE in one of them.
+    # The unmodelled-rename detector that catches it (build_security_master.
+    # unmodelled_renames, asserted by tests/test_dataos_security_master.py) could not be
+    # REACHED from that edit: scope inference cannot own a repository-ROOT file at all —
+    # SCOPE_REFERENCE_RE and ci_scope_dependencies._PATH_LITERAL both require a tracked
+    # directory prefix — so a fixups-only PR selected 48 jobs and this was not among
+    # them (measured 2026-08-13). Silent gap, in the detector written to close a silent
+    # gap. The remaining entries are not new ownership: they are the paths this job's
+    # own commands already name, listed because _scope_coverage_findings makes a
+    # declared scope that fails to cover them a HARD manifest error. Adding a `run:`
+    # step that names a new path means adding it here too.
+    paths:
+      - config.yml
+      - docs/HOUSE_LAW_CI_GUARD_SUITE.md
+      - scripts/check_claim_passport.py
+      - scripts/check_house_law_registry.py
+      - scripts/check_symbol_rename_drift.py
+      - tests/test_dataos_security_master.py
+      - tests/test_house_law_registry.py
+      - tests/test_ticker_alias_boundary.py
     # Meta-guard: verifies config/house_law_checks.yml is complete and honest.
     # Three checks in sequence:
     #   1. selftest: synthetic assertions prove the meta-guard catches violations.
@@ -2512,6 +2542,21 @@ jobs:
         run: |
           python3 scripts/check_symbol_rename_drift.py
           python -m pytest tests/test_ticker_alias_boundary.py -q
+      # Data OS DOS-1.1: the security master + the TIME-SCOPED alias table, which is
+      # the general form of the boundary the step above guards. It lives HERE and not
+      # in `dataos-foundation` for two reasons, both load-bearing:
+      #   * that job installs pytest + pyyaml ONLY, on purpose — "a pandas/numpy import
+      #     creeping into lib/dataos/ breaks HERE first" — and adding pandas to its pip
+      #     line would switch that canary off. This job already provides pandas+pyarrow.
+      #   * that job is pure unit tests that never open data/; this suite reads the
+      #     COMMITTED artifacts (data/reference/*.parquet), which is what a consumer
+      #     would read and therefore the only honest place to pin them.
+      # It is a `run:` step in an EXISTING job rather than a new job because the legacy
+      # manifest sits near the narrow-diff ceiling (test_ci_pack.py asserts a
+      # representative diff selects <= len(jobs)*4//5); folding suites into a job keeps
+      # the job count, and the arithmetic, where it is.
+      - name: Data OS security master + time-scoped vendor alias table (MMC/MRSH, SATS/ECHO)
+        run: python -m pytest tests/test_dataos_security_master.py -q
       - name: house-law registry tests (idempotency + integration)
         run: python -m pytest tests/test_house_law_registry.py -q
 
@@ -2558,6 +2603,41 @@ jobs:
         run: python3 scripts/check_evidence_clock.py
       - name: evidence-clock unit tests
         run: python -m pytest tests/test_evidence_clock.py -q
+
+  vintage-pin-fence:
+    if: ${{ false }}
+    # Fail-closed: a PR must not equality-pin a live nightly store. Measured
+    # 2026-08-13: govrev latest/candidates ``assert 23 == 8``, options
+    # ``episodes.jsonl`` 384→1206 used as a closed replay, prophet open-keys
+    # 10→11, then after #5515 the spine parquet (pack-7 / #5547) and Release
+    # Radar inflation-truth artifacts (unrun-release-forecast). Each one
+    # reddened main and then, through merge-on-green, the entire armed queue.
+    # Legal: a watermarked prefix slice, a census derived from a committed
+    # receipt, a named disclosure set, or the #5547 cold-test bind of
+    # ``config.data_dir`` to empty tmp. Do not re-type the product literals
+    # and do not grandfather by filename — a new ``== N`` in the same file
+    # still reds.
+    # The rglob over tests/test_*.py is load-bearing for path-aware scope:
+    # inference claims tests/**/*.py so this runs on PRs that touch tests,
+    # not only after the next jam. Main's full suite still runs it.
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    paths:
+      - tests/**
+      - scripts/check_vintage_pin_fence.py
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: vintage-pin fence selftest (post-5515 detonation classes red, legal green)
+        run: python3 scripts/check_vintage_pin_fence.py --selftest
+      - name: vintage-pin fence (new live-store equality pins)
+        run: python3 scripts/check_vintage_pin_fence.py
+      - name: vintage-pin fence unit tests
+        run: python -m pytest tests/test_vintage_pin_fence.py -q
 
   validated-claims:
     if: ${{ false }}
@@ -2810,6 +2890,26 @@ jobs:
             --trailers "$TRAILERS"
       - name: self-mod-fence test suite
         run: python -m pytest tests/test_self_mod_fence.py -q
+      - name: agent-os record contract (schema fail-closed, join fail-open)
+        # ORDERED LAST IN THIS JOB, deliberately. `run_ci_pack.py:_run_job` returns on
+        # the FIRST nonzero step, so any step placed before `self-mod-fence live check`
+        # can make that fence never run — the F2 fence would go dark for the PR while
+        # the job reports a failure that has nothing to do with self-modification.
+        # A knowledge-plane record check must never be able to blind a security fence,
+        # so it sits behind every fence step in this job.
+        #
+        # Folded in as a STEP, not a new job, also deliberately: the manifest sits at
+        # the narrow-diff ceiling (test_representative_narrow_diffs_skip_at_least_one
+        # _quarter_of_jobs asserts selected <= len(jobs)*4//5), so adding a job can red
+        # an unrelated pack, and a `paths:` scope cannot fix it — infer_job_scopes()
+        # UNIONS declared paths with inferred ones, so a declaration only ever WIDENS.
+        # Keeping the job COUNT fixed keeps that arithmetic still.
+        run: |
+          # Direct invocation FIRST and deliberately: the pytest suite skips itself
+          # when agentos/ is outside a sparse cone, so a store that failed to check
+          # out would otherwise pass as a skip. This line cannot skip.
+          python3 scripts/agentos.py validate
+          python -m pytest tests/test_agentos_schema.py tests/test_agentos_status.py -q
 
   capability-broker:
     if: ${{ false }}
@@ -4940,6 +5040,12 @@ jobs:
         run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
         run: python -m pytest tests/test_portfolio_brief.py -q
+      - name: retention spine — change history, digest composer, changes endpoint (W6)
+        # engine/portfolio_changes (state digest + diff) and engine/portfolio_digest (the
+        # change-triggered email COMPOSER — the send path is deliberately unwired, and a
+        # test in here asserts the module imports no mailer so no build can send). Same
+        # install set as the brief suite above; the file pins that set from the AST.
+        run: python -m pytest tests/test_portfolio_changes.py -q
       - name: theme_lanes side-write contract (source of truth for the Portfolio brief)
         # The theme_lanes.v1 side-artifact + the page-byte-identity invariant that keep
         # the State-of-Themes page and the Portfolio brief's lanes in lockstep. Only the
@@ -6745,14 +6851,18 @@ jobs:
   #
   # Runtime: the witness-replay test runs engine.signal_gate.gate() on seven
   # full-history series from data/hk_search/closes_deep.parquet — minutes, not
-  # seconds; budget 8.  Deps: the builder-wiring tests import scripts/build_hk.py
+  # seconds.  Documented ~83s on a fast Mac Studio; measured ~2:27 (~1.8×) on
+  # the same host, and it crosses an 8-minute cap on a busy 4-core hosted
+  # runner mid-backlog.  8 → 15, the same ceiling as unrun-market-plumbing.
+  # Weight is not derived from timeout-minutes, so this does not rebalance
+  # packs.  Deps: the builder-wiring tests import scripts/build_hk.py
   # (plotly) and reach lib.config (pyyaml) — measured in a clean venv, where
   # pytest+pandas+pyarrow+jinja2 alone left 23 tests red on those two imports.
   # The shared unrun-* install repeated BYTE-FOR-BYTE keeps this job inside the
   # set's single venv instead of adding one.
   unrun-hk-board:
     if: ${{ false }}
-    timeout-minutes: 8
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -6781,8 +6891,10 @@ jobs:
       # needs this job's wide install exactly — the same dep-list trap the
       # census recorded for the pair above.  Cost measured as this job's third
       # step over the full sequence: 68.5s (rank, 163 tests) + 13.5s (ui, 83) +
-      # 1.5s (this, 10) = ~83s against timeout-minutes: 8, so the budget is
-      # untouched and the witness replay keeps its headroom.
+      # 1.5s (this, 10) = ~83s documented; measured ~2:27 (~1.8×) locally, and
+      # it times out at 8 minutes on a busy hosted runner. timeout-minutes is
+      # 15 — same ceiling as unrun-market-plumbing — so the witness replay
+      # keeps its headroom.
       - name: hk reclaim-veto admission policy — the dropped leg and its blast radius
         run: python -m pytest tests/test_hk_reclaim_veto_policy.py -q
 
@@ -7536,3 +7648,57 @@ jobs:
         run: python3 scripts/check_reference_integrity.py
       - name: reference-integrity mutation / anti-vacuity suite
         run: python -m pytest tests/test_check_reference_integrity.py -q
+  dataos-foundation:
+    # Mastermind Data OS foundation library (lib/dataos/**) — the canonical identity,
+    # temporal, price-basis, null, registry and quality spine every later Data OS wave
+    # builds on. WITHOUT THIS JOB the six suites are dead code: there is no broad
+    # `pytest tests/` anywhere in CI, so a test file no `run:` step names never runs,
+    # and the vocabulary would drift from the incidents it encodes with nothing going
+    # red. That is not hypothetical here — lib/dataos/nulls.py shipped in the first
+    # pass with no suite AND no `run:` entry, and a mutation deleting §D6's headline
+    # law outright ("0 may never mean absence" -> `if False:`) failed NOTHING. Every
+    # name in the `run:` step below is load-bearing; adding a suite to tests/ without
+    # adding it HERE ships it dark. What it pins, concretely: the MMC->MRSH
+    # alias table answering DIFFERENTLY
+    # either side of 2026-01-14 (the rename that left data/baskets/ohlcv/MMC.parquet
+    # nonexistent for seven months while the `insurance` basket quietly rendered
+    # 18/19 members); the fail-closed PIT law, whose whole failure mode is a SILENT
+    # latest-vintage return; the price-basis naming law and the measured NVDA
+    # 2024-06-03 store bases (114.80 / 114.80 / 115.00 / 1150.00, all called some form
+    # of "close"); and that config/dataset_registry.yml still validates clean.
+    #
+    # PURE UNIT TESTS BY CONSTRUCTION: nothing here reads data/, which is not
+    # materialized in an agent worktree, so the suite behaves identically on a full
+    # checkout and in this thin lane. Deps are pytest + pyyaml only — the library
+    # imports stdlib-only and pulls yaml lazily inside registry.load_registry, so a
+    # pandas/numpy import creeping into lib/dataos/ breaks HERE first.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - .github/ci/legacy-jobs.yml
+      - .github/workflows/ci.yml
+      - config/dataset_registry.yml
+      - lib/dataos/**
+      - tests/test_dataos_identity.py
+      - tests/test_dataos_nulls.py
+      - tests/test_dataos_price.py
+      - tests/test_dataos_quality.py
+      - tests/test_dataos_registry.py
+      - tests/test_dataos_temporal.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: Data OS identity / temporal / price-basis / nulls / registry / quality contracts
+        run: >-
+          PYTHONDONTWRITEBYTECODE=1 python -m pytest
+          tests/test_dataos_identity.py
+          tests/test_dataos_temporal.py
+          tests/test_dataos_price.py
+          tests/test_dataos_nulls.py
+          tests/test_dataos_registry.py
+          tests/test_dataos_quality.py -q -rs

@@ -264,11 +264,17 @@ def test_the_sweep_step_invokes_the_tracked_script_with_the_token_fallback():
 
 
 def test_the_sweeper_sparse_checks_out_only_what_it_reads():
-    """A ~53k-file checkout cost ~100 s before the first API call. The list is now
-    three entries, and `.github/workflows` is one of them BECAUSE the tested-surface
-    gate reads the path filters out of it — if that entry is dropped the sweep aborts
-    on every run instead of merging on undated greens, but it still aborts, so the
-    entry is part of the lane's contract."""
+    """A ~53k-file checkout cost ~100 s before the first API call.
+
+    `.github/workflows` is here BECAUSE the tested-surface gate reads the path
+    filters out of it — if that entry is dropped the sweep aborts on every run
+    instead of merging on undated greens, but it still aborts, so the entry is
+    part of the lane's contract.
+
+    `scripts/run_ci_pack.py` is here because live-inherited red must read
+    `GLOBAL_INVALIDATORS` from the same list the packs use. Without it the
+    import fail-closes and the waiver never fires.
+    """
     checkout = _workflow()["jobs"]["sweep"]["steps"][0]
     assert checkout["uses"] == "actions/checkout@v4"
     options = checkout["with"]
@@ -277,6 +283,7 @@ def test_the_sweeper_sparse_checks_out_only_what_it_reads():
     assert wanted == {
         "scripts/merge_on_green.py",
         "scripts/gh_path_filter.py",
+        "scripts/run_ci_pack.py",
         ".github/workflows",
     }
     assert options["sparse-checkout-cone-mode"] is False
@@ -306,13 +313,13 @@ def test_the_main_baseline_is_fast_bounded_and_runs_the_merge_train_contract():
     triggers = _triggers(parsed)
     assert "push" in triggers and triggers["push"]["branches"] == ["main"]
     job = parsed["jobs"]["baseline"]
-    runs_on = " ".join(str(job["runs-on"]).split())
-    assert "render-linux" in runs_on
-    assert "ubuntu-latest" in runs_on
+    assert job["runs-on"] == "ubuntu-latest"
+    assert "render-linux" not in str(job["runs-on"])
+    assert "self-hosted" not in str(job["runs-on"])
     assert int(job["timeout-minutes"]) == 30
     source = BASELINE_WORKFLOW.read_text(encoding="utf-8")
-    assert "60k tracked paths" in source
-    assert "former 12-minute" in source
+    assert "codeload.github.com" in source
+    assert "main-red-repair" in source
     assert "tests/test_merge_on_green.py" in source
     assert "scripts/check_skip_only_suites.py" in source
 
@@ -356,6 +363,7 @@ def _run(
     pr_numbers: tuple[int, ...] = (4242,),
     app_slug: str = "github-actions",
     include_proof_metadata: bool = True,
+    check_id: int | None = None,
 ) -> dict:
     run = {
         "name": name,
@@ -365,6 +373,10 @@ def _run(
         "completed_at": completed_at,
         "head_sha": head_sha,
         "app": {"slug": app_slug},
+        # Stable check-run id so live-inherited tests can key annotations.
+        "id": check_id if check_id is not None else (
+            sum((index + 1) * ord(char) for index, char in enumerate(name)) + 17
+        ),
     }
     run["pull_requests"] = (
         [
@@ -393,6 +405,8 @@ def _proof(
     proved_at: str | None = MAIN_PROVED_AT,
     head_sha: str = "f" * 40,
     source: str = "ci.yml@ffffffffffff",
+    failed_names: tuple[str, ...] = (),
+    failed_legacy_jobs: tuple[str, ...] = (),
 ) -> "MOG.MainProof":
     """A `MainProof` whose default instant POSTDATES `_run`'s default conclusion.
 
@@ -400,7 +414,12 @@ def _proof(
     outcome, and a test that is about the timestamp says so by passing `proved_at`.
     """
     return MOG.MainProof(
-        frozenset(names), MOG._parse_dt(proved_at), head_sha, source
+        frozenset(names),
+        MOG._parse_dt(proved_at),
+        head_sha,
+        source,
+        frozenset(failed_names),
+        frozenset(failed_legacy_jobs),
     )
 
 
@@ -707,6 +726,7 @@ def _fake_api(
     compare_base_sha=None,
     compare_merge_base_sha=None,
     pull_read_sequence=None,
+    annotations=None,
 ):
     """Route every `_request` call by method+URL and record what was sent.
 
@@ -764,6 +784,14 @@ def _fake_api(
     def fake_request(method, url, token, payload=None):
         nonlocal pull_reads
         calls.append((method, url, payload))
+        if "/check-runs/" in url and "/annotations" in url:
+            ident = url.split("/check-runs/")[1].split("/")[0]
+            try:
+                key = int(ident)
+            except ValueError:
+                key = ident
+            table = annotations or {}
+            return 200, list(table.get(key) or table.get(ident) or [])
         if "/check-runs" in url:
             page = int(url.rsplit("page=", 1)[1].split("&")[0])
             return 200, normalized_pages.get(
@@ -1553,12 +1581,15 @@ def test_integration_baseline_fail_closes_non_green_runs(
     assert MOG.integration_baseline_state("acme/widgets", "read")[0] == expected
 
 
-def _baseline_runs(monkeypatch, runs, main_sha):
+def _baseline_runs(monkeypatch, runs, main_sha, jobs=None):
     """Serve `runs` newest-first from the workflow-runs endpoint."""
     calls = []
 
     def fake_request(method, url, token, payload=None):
         calls.append((method, url, payload))
+        if "/actions/runs/" in url and "/jobs" in url:
+            run_id = int(url.split("/actions/runs/")[1].split("/jobs")[0])
+            return 200, (jobs or {}).get(run_id, {"jobs": []})
         if "/actions/workflows/" in url:
             asked = int(url.rsplit("per_page=", 1)[1].split("&")[0])
             return 200, {"workflow_runs": runs[:asked]}
@@ -1583,14 +1614,17 @@ def _baseline_stamp(hours_old: float) -> str:
     return when.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _baseline_run(conclusion, sha, status="completed", hours_old: float = 0.1):
-    return {
+def _baseline_run(conclusion, sha, status="completed", hours_old: float = 0.1, run_id=None):
+    payload = {
         "status": status,
         "conclusion": conclusion,
         "head_sha": sha,
         "html_url": f"https://example.test/run/{conclusion}",
         "created_at": _baseline_stamp(hours_old),
     }
+    if run_id is not None:
+        payload["id"] = run_id
+    return payload
 
 
 def test_a_superseded_cancelled_run_does_not_latch_the_breaker(monkeypatch):
@@ -1655,6 +1689,75 @@ def test_falling_through_cancelled_runs_still_stops_at_a_real_red(monkeypatch):
         monkeypatch,
         [_baseline_run("cancelled", "b" * 40), _baseline_run("failure", sha), _baseline_run("success", "c" * 40)],
         main_sha=sha,
+    )
+    assert MOG.integration_baseline_state("acme/widgets", "read")[0] == "red"
+
+
+def test_an_infra_only_baseline_failure_is_skipped_like_cancelled(monkeypatch):
+    """Checkout/network flakes are not evidence that source main is broken.
+
+    Measured 2026-08-13: consecutive render-linux baselines died inside
+    checkout (codeload 100s timeout / git promisor EOF) and the breaker
+    paused every ordinary merge. A pytest failure still latches red.
+    """
+    green = "e" * 40
+    flake = _baseline_run("failure", "f" * 40, run_id=77)
+    jobs = {
+        77: {
+            "jobs": [
+                {
+                    "name": "baseline",
+                    "conclusion": "failure",
+                    "steps": [
+                        {"name": "Checkout", "conclusion": "failure"},
+                        {"name": "Set up Python 3.12", "conclusion": "skipped"},
+                        {
+                            "name": "hosted-runner packing and merge-train contracts",
+                            "conclusion": "",
+                        },
+                    ],
+                }
+            ]
+        }
+    }
+    _baseline_runs(
+        monkeypatch,
+        [flake, _baseline_run("success", green)],
+        main_sha=green,
+        jobs=jobs,
+    )
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+    assert state == "green"
+    assert "infra-flake" in detail
+    assert green[:12] in detail
+
+
+def test_a_pytest_failed_baseline_still_latches_the_breaker(monkeypatch):
+    """Skipping infra flakes must not skip a real control-plane test failure."""
+    red = "a" * 40
+    failed = _baseline_run("failure", red, run_id=88)
+    jobs = {
+        88: {
+            "jobs": [
+                {
+                    "name": "baseline",
+                    "conclusion": "failure",
+                    "steps": [
+                        {"name": "Checkout", "conclusion": "success"},
+                        {
+                            "name": "hosted-runner packing and merge-train contracts",
+                            "conclusion": "failure",
+                        },
+                    ],
+                }
+            ]
+        }
+    }
+    _baseline_runs(
+        monkeypatch,
+        [failed, _baseline_run("success", "c" * 40)],
+        main_sha=red,
+        jobs=jobs,
     )
     assert MOG.integration_baseline_state("acme/widgets", "read")[0] == "red"
 
@@ -4437,6 +4540,199 @@ def test_a_red_main_does_not_share_is_still_blocked(monkeypatch, capsys):
         "a genuine red must never be refreshed"
 
 
+_GOVREV_JOBS = (
+    "unrun-government-revenue",
+    "unrun-government-revenue-candidate-projection",
+)
+
+
+def _live_weather_proof():
+    """Main is currently red on the 2026-08-13 govrev packs — not on this PR."""
+    return _proof(
+        "ci-pack-1",
+        failed_names=("ci-pack-6", "ci-pack-8"),
+        failed_legacy_jobs=_GOVREV_JOBS,
+    )
+
+
+def _govrev_red_pages():
+    pack6 = _run("ci-pack-6", conclusion="failure", check_id=6006)
+    pack8 = _run("ci-pack-8", conclusion="failure", check_id=6008)
+    gate = _run("ci-gate", conclusion="failure", check_id=6010)
+    pages = {"total_count": 3, "check_runs": [pack6, pack8, gate]}
+    annotations = {
+        6006: [
+            {
+                "title": "legacy-job-unrun-government-revenue",
+                "message": "unrun-government-revenue: step 'pytest' exited 1",
+            }
+        ],
+        6008: [
+            {
+                "title": "legacy-job-unrun-government-revenue-candidate-projection",
+                "message": (
+                    "unrun-government-revenue-candidate-projection: "
+                    "step 'pytest' exited 1"
+                ),
+            }
+        ],
+    }
+    return {1: pages}, annotations
+
+
+def test_a_live_inherited_red_is_merged_not_blocked(monkeypatch, capsys):
+    """Main's current weather must not hostage every unrelated armed head.
+
+    Measured 2026-08-13: ci-pack-6/8 were red on main from a nightly data pin,
+    shadow-mode copied that onto every PR, and merge-on-green correctly
+    refused them all. A PR that did not introduce those jobs, and did not
+    touch a CI invalidator, is not a new failure.
+    """
+    pages, annotations = _govrev_red_pages()
+    calls = _fake_api(
+        monkeypatch, check_pages=pages, annotations=annotations, merge_status=200
+    )
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _live_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "merged"
+    assert any(call[1].endswith("/merge") for call in calls)
+    assert not any(call[1].endswith("/labels") for call in calls), (
+        "a live-inherited red must not be labeled merge-blocked"
+    )
+    out = capsys.readouterr().out
+    assert "live-inherited red" in out
+
+
+def test_a_live_inherited_red_survives_pack_rebalance(monkeypatch, capsys):
+    """Pack numbers rebalance on the selected job set; waive on job identity.
+
+    The same ``unrun-government-revenue`` is pack-7 on a scoped 114-job PR and
+    pack-5 on main's full-suite dispatch. Pack-name subset can never match.
+    ``ci-gate`` is implied by those identities, not an extra name.
+    """
+    pack7 = _run("ci-pack-7", conclusion="failure", check_id=7007)
+    pack11 = _run("ci-pack-11", conclusion="failure", check_id=7011)
+    gate = _run("ci-gate", conclusion="failure", check_id=7010)
+    pages = {1: {"total_count": 3, "check_runs": [pack7, pack11, gate]}}
+    annotations = {
+        7007: [
+            {
+                "title": "legacy-job-unrun-government-revenue",
+                "message": "unrun-government-revenue: step 'pytest' exited 1",
+            }
+        ],
+        7011: [
+            {
+                "title": "legacy-job-unrun-government-revenue-candidate-projection",
+                "message": (
+                    "unrun-government-revenue-candidate-projection: "
+                    "step 'pytest' exited 1"
+                ),
+            }
+        ],
+    }
+    calls = _fake_api(
+        monkeypatch, check_pages=pages, annotations=annotations, merge_status=200
+    )
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _live_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "merged", (
+        "a remapped pack with the same legacy-job-* identities is main's weather"
+    )
+    assert any(call[1].endswith("/merge") for call in calls)
+    out = capsys.readouterr().out
+    assert "live-inherited red" in out
+    assert "unrun-government-revenue" in out
+
+
+def test_a_live_inherited_red_with_an_extra_job_is_still_blocked(monkeypatch):
+    """An extra legacy-job identity is this pull request's own, pack numbers aside."""
+    pack6 = _run("ci-pack-6", conclusion="failure", check_id=6006)
+    pack9 = _run("ci-pack-9", conclusion="failure", check_id=6009)
+    pages = {1: {"total_count": 2, "check_runs": [pack6, pack9]}}
+    annotations = {
+        6006: [
+            {
+                "title": "legacy-job-unrun-government-revenue",
+                "message": "unrun-government-revenue: step 'pytest' exited 1",
+            }
+        ],
+        6009: [
+            {
+                "title": "legacy-job-something-else",
+                "message": "something-else: step 'pytest' exited 1",
+            }
+        ],
+    }
+    calls = _fake_api(monkeypatch, check_pages=pages, annotations=annotations)
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _live_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "blocked"
+    assert not any(call[1].endswith("/merge") for call in calls)
+
+
+def test_a_control_plane_diff_never_gets_the_live_inherited_waiver(monkeypatch):
+    """A CI invalidator can change what any pack means; never waive those."""
+    pages, annotations = _govrev_red_pages()
+    calls = _fake_api(
+        monkeypatch,
+        check_pages=pages,
+        annotations=annotations,
+        pr_files=(".github/workflows/ci.yml",),
+        merge_status=200,
+    )
+    freshness = _freshness(pull_files={4242: [".github/workflows/ci.yml"]})
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        freshness,
+        _live_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "blocked"
+    assert not any(call[1].endswith("/merge") for call in calls)
+
+
+def test_empty_pack_annotations_fail_closed_on_live_inherited_red(monkeypatch):
+    """Could-not-read is not permission to merge: the job identity is load-bearing."""
+    pages, _annotations = _govrev_red_pages()
+    calls = _fake_api(monkeypatch, check_pages=pages, annotations={})
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _live_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "blocked"
+    assert not any(call[1].endswith("/merge") for call in calls)
+
+
 def test_an_unreadable_main_blocks_exactly_as_before(monkeypatch, capsys):
     """Fail-closed: no knowledge of main is never permission to refresh."""
     pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
@@ -4571,6 +4867,7 @@ def _proof_api(
     dispatch_status=204,
     runs_payload=None,
     on_dispatch=None,
+    annotations=None,
 ):
     """Route the calls `main_proof` makes, plus `ensure_main_baseline`'s.
 
@@ -4632,6 +4929,14 @@ def _proof_api(
             return 200, {
                 "jobs": list((jobs or {}).get(run_id, [_job("phantom-pack")]))
             }
+        if "/check-runs/" in url and "/annotations" in url:
+            ident = url.split("/check-runs/")[1].split("/")[0]
+            try:
+                key = int(ident)
+            except ValueError:
+                key = ident
+            table = annotations or {}
+            return 200, list(table.get(key) or table.get(ident) or [])
         if url.endswith("/dispatches"):
             if dispatch_status in {201, 204} and on_dispatch is not None:
                 on_dispatch(pool, jobs)
@@ -4766,6 +5071,40 @@ def test_main_proof_costs_four_requests_not_a_twenty_commit_walk(monkeypatch):
     MOG.main_proof("acme/widgets", "read")
     assert len(calls) == 2 * len(MOG.MAIN_PROOF_WORKFLOWS), [c[1] for c in calls]
     assert len(calls) < 20
+
+
+def test_main_proof_records_failed_pack_names_and_legacy_jobs(monkeypatch):
+    """Live-inherited red needs BOTH the pack name and the legacy job identity."""
+    runs, jobs = _both_workflows(
+        [
+            ("ci-pack-6", "failure"),
+            ("ci-pack-1", "success"),
+            ("ci-gate", "failure"),
+        ]
+    )
+    failed = jobs[CI_RUN_ID][0]
+    failed["id"] = 66
+    failed["check_run_url"] = (
+        "https://api.github.com/repos/acme/widgets/check-runs/66006"
+    )
+    _proof_api(
+        monkeypatch,
+        runs=runs,
+        jobs=jobs,
+        annotations={
+            66006: [
+                {
+                    "title": "legacy-job-unrun-government-revenue",
+                    "message": "unrun-government-revenue: step 'pytest' exited 1",
+                }
+            ]
+        },
+    )
+    proof = MOG.main_proof("acme/widgets", "read")
+    assert "ci-pack-6" in proof.failed_names
+    assert "ci-gate" in proof.failed_names
+    assert "ci-pack-1" in proof.clean_names
+    assert proof.failed_legacy_jobs == frozenset({"unrun-government-revenue"})
 
 
 @pytest.mark.parametrize(
@@ -5162,10 +5501,17 @@ def test_proof_postdates_failures_is_pure_and_fail_closed():
 # repairing the supply would have fixed the mechanism and kept the daily audit.
 
 
-def _aged_proof(hours, *names):
+def _aged_proof(hours, *names, failed_legacy_jobs=(), failed_names=()):
     """A proof `hours` old (None = undated)."""
     when = None if hours is None else dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=hours)
-    return MOG.MainProof(frozenset(names or ("ci-pack-0",)), when, "a" * 40, "test")
+    return MOG.MainProof(
+        frozenset(names or ("ci-pack-0",)),
+        when,
+        "a" * 40,
+        "test",
+        frozenset(failed_names),
+        frozenset(failed_legacy_jobs),
+    )
 
 
 def _dispatched(calls):
@@ -5224,13 +5570,66 @@ def test_an_undated_proof_also_orders_a_baseline_and_never_calls_it_never_proven
 
 def test_a_fresh_proof_orders_nothing(monkeypatch):
     """A ci.yml run takes 30-34 minutes, so the age gate must not fire on a proof that
-    is merely mid-flight — and a repository whose main is proven is not a problem."""
+    is merely mid-flight — and a repository whose main is proven is not a problem.
+
+    A proof that already carries legacy-job weather CAN answer live-inherited
+    reds, so clock-fresh is enough to skip. An empty-weather proof is the
+    other test below.
+    """
     calls = _baseline_api(monkeypatch)
     outcome = MOG.ensure_main_baseline(
-        "acme/widgets", _aged_proof(MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5), {"ci-pack-2"}, "write"
+        "acme/widgets",
+        _aged_proof(
+            MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5,
+            failed_legacy_jobs=_GOVREV_JOBS,
+        ),
+        {"ci-pack-2"},
+        "write",
     )
     assert outcome.startswith("not needed")
     assert not calls, "a fresh proof must not spend a single call"
+
+
+def test_a_clock_fresh_proof_with_no_legacy_weather_orders_a_baseline(
+    monkeypatch, capsys
+):
+    """Skip-ci tape ticks do not retrigger ci.yml, so a clock-fresh GREEN proof
+    leaves ``failed_legacy_jobs`` empty and the live-inherited waiver blind.
+
+    Bound: still requires blocked packs, a CONCLUDED newest run, and the
+    interval floor — this is not a per-commit dispatch.
+    """
+    calls = _baseline_api(monkeypatch)
+    outcome = MOG.ensure_main_baseline(
+        "acme/widgets",
+        _aged_proof(MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5),
+        {"ci-pack-7", "ci-gate"},
+        "write",
+    )
+    assert outcome == "dispatched"
+    assert _dispatched(calls)
+    out = capsys.readouterr().out
+    assert any(
+        line.startswith("::notice") and "legacy-job" in line
+        for line in out.splitlines()
+    ), out
+
+
+def test_a_clock_fresh_empty_legacy_proof_does_not_stampede_an_in_flight_baseline(
+    monkeypatch,
+):
+    """The 17:05 post-#5547 dispatch must not be killed by a sibling catch-up."""
+    calls = _baseline_api(
+        monkeypatch, newest=_wf_run(1, status="in_progress", conclusion=None)
+    )
+    outcome = MOG.ensure_main_baseline(
+        "acme/widgets",
+        _aged_proof(MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5),
+        {"ci-pack-7", "ci-gate"},
+        "write",
+    )
+    assert outcome == "skipped (the newest baseline is in_progress)"
+    assert not _dispatched(calls)
 
 
 def test_an_idle_sweep_orders_nothing_however_old_the_proof_is(monkeypatch):
@@ -5741,68 +6140,24 @@ def test_the_baseline_proof_is_allowed_to_finish():
     )
 
 
-def test_the_baseline_main_push_escapes_the_hosted_queue_only_on_main():
-    """Route every main proof to render-linux without moving off-main runs.
+def test_the_baseline_runs_on_hosted_runners_for_every_event():
+    """Do not route the circuit breaker back onto render-linux.
 
-    The exact expression is a mutation pin: changing the ref guard, labels, or hosted
-    fallback fails before the truth-table below can disguise the altered workflow.
+    Measured 2026-08-13: consecutive main-ref baselines died inside checkout on
+    that pool (codeload 100s timeout / git promisor EOF) and merge-on-green
+    paused every ordinary merge. Hosted pickup is no longer the constraint this
+    job was moved off-hosted to escape — ci-pack already starts in seconds on
+    ubuntu-latest under Enterprise capacity.
     """
-    job = _yaml.safe_load(_BASELINE_WF.read_text(encoding="utf-8"))["jobs"]["baseline"]
-    runs_on = " ".join(str(job["runs-on"]).split())
-    assert runs_on == (
-        "${{ github.ref == 'refs/heads/main' && "
-        "fromJSON('[\"self-hosted\",\"render-linux\"]') || 'ubuntu-latest' }}"
-    )
-
-    def routed_runner(event_name: str, ref: str):
-        del event_name
-        if ref == "refs/heads/main":
-            return ["self-hosted", "render-linux"]
-        return "ubuntu-latest"
-
-    expected = {
-        ("push", "refs/heads/main"): ["self-hosted", "render-linux"],
-        ("workflow_dispatch", "refs/heads/main"): ["self-hosted", "render-linux"],
-        ("workflow_dispatch", "refs/heads/operator-check"): "ubuntu-latest",
-        ("push", "refs/heads/not-main"): "ubuntu-latest",
-    }
-    assert {
-        context: routed_runner(*context)
-        for context in expected
-    } == expected
-    assert "macstudio" not in runs_on
+    job = yaml.safe_load(_BASELINE_WF.read_text(encoding="utf-8"))["jobs"]["baseline"]
+    route = job["runs-on"]
+    labels = {route} if isinstance(route, str) else set(route or [])
+    assert labels == {"ubuntu-latest"}
+    assert "self-hosted" not in labels
+    assert "render-linux" not in labels
+    source = _BASELINE_WF.read_text(encoding="utf-8")
+    assert "sparse-checkout disable" not in source
     assert int(job["timeout-minutes"]) == 30
-
-
-def test_the_self_hosted_baseline_clears_sparse_checkout_before_checkout():
-    """A reused render-linux workspace must be made complete before checkout@v4."""
-    job = _yaml.safe_load(_BASELINE_WF.read_text(encoding="utf-8"))["jobs"]["baseline"]
-    steps = job["steps"]
-    checkout_index = next(
-        index
-        for index, step in enumerate(steps)
-        if str(step.get("uses") or "").startswith("actions/checkout@")
-    )
-    cleanup = [
-        (index, step)
-        for index, step in enumerate(steps)
-        if "sparse-checkout disable" in str(step.get("run") or "")
-    ]
-    assert len(cleanup) == 1, "expected exactly one sparse-checkout cleanup guard"
-    cleanup_index, cleanup_step = cleanup[0]
-    assert cleanup_index < checkout_index, "cleanup must run before actions/checkout"
-    assert cleanup_step["if"] == "runner.environment == 'self-hosted'"
-    assert cleanup_step["shell"] == "bash"
-    cleanup_script = str(cleanup_step["run"])
-    assert 'if [ -d "${{ github.workspace }}/.git" ]; then' in cleanup_script
-    assert (
-        'git -C "${{ github.workspace }}" sparse-checkout disable || true'
-        in cleanup_script
-    )
-    assert (
-        'git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true'
-        in cleanup_script
-    )
 
 
 # --- the sweeper orders the SOURCE baseline the freshness bound consumes -------
@@ -6300,6 +6655,35 @@ def test_a_base_inherited_red_is_left_for_the_full_sweep(monkeypatch, capsys):
     )
     out = capsys.readouterr().out
     assert "Deferred to the full sweep" in out, out
+
+
+def test_a_live_inherited_red_is_left_for_the_full_sweep(monkeypatch, capsys):
+    """The marker pass must not accuse a head of main's current weather.
+
+    Pack numbers on the PR need not match main's — they rebalance. Main having
+    *any* failed weather is enough for this pass to defer; the full sweep owns
+    the annotation-identity merge-vs-block call.
+    """
+    pages = {
+        1: {"total_count": 1, "check_runs": [_run("ci-pack-7", conclusion="failure")]}
+    }
+    calls, code = _mark_only(
+        monkeypatch,
+        [_pull(5291)],
+        check_pages=pages,
+        proof=_proof(
+            "ci-pack-1",
+            failed_names=("ci-pack-5",),
+            failed_legacy_jobs=_GOVREV_JOBS,
+        ),
+    )
+    assert code == 0
+    assert [call for call in calls if call[0] != "GET"] == [], (
+        "a live-inherited red must not be labeled or commented by this pass"
+    )
+    out = capsys.readouterr().out
+    assert "live-inherited red" in out
+    assert "Deferred to the full sweep" in out
 
 
 @pytest.mark.parametrize(
