@@ -58,7 +58,7 @@ body{ margin:0; background:var(--bg); color:var(--text); font-size:var(--fs-body
 .spec-note::before{ content:"SPEC NOTE — "; font-weight:700; }
 html[data-lang="zh"] .spec-note::before{ content:"规范注释 — "; }
 
-.panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel); padding:16px 18px; box-shadow:var(--card-shadow); }
+.panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel); padding:14px 18px; box-shadow:var(--card-shadow); }
 .mx-sec{ display:flex; align-items:baseline; gap:8px; margin:0 0 6px; }
 .mx-sec .eyebrow{ margin:0; }
 .mx-sec h2, .mx-sec h3{ font-size:var(--fs-h2); font-weight:700; letter-spacing:-.01em; margin:0; }
@@ -66,7 +66,7 @@ html[data-lang="zh"] .spec-note::before{ content:"规范注释 — "; }
 .band-label{ font-size:var(--fs-label); font-weight:600; letter-spacing:.08em; text-transform:uppercase;
   color:var(--muted); margin:0 0 7px; }
 html[data-lang="zh"] .band-label{ letter-spacing:0; text-transform:none; }
-.band{ margin-top:var(--sp-5); }
+.band{ margin-top:var(--sp-4); }
 .mx-stance{ display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:var(--fs-sm);
   padding:4px 11px; border-radius:var(--r-pill); border:1px solid color-mix(in srgb, var(--c,var(--muted)) 34%, transparent);
   background:color-mix(in srgb, var(--c,var(--muted)) 12%, var(--panel)); color:var(--c,var(--muted)); }
@@ -95,8 +95,8 @@ html[data-lang="zh"] .band-label{ letter-spacing:0; text-transform:none; }
 
 /* ── the two-column command layout — archetype A's identity device.
       §2 is the 2/3 primary answer; §4+§5 ride a 1/3 rail beside it. ── */
-.mx-cols{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:var(--sp-4); align-items:start; margin-top:var(--sp-5); }
-.mx-rail-col{ display:grid; gap:var(--sp-4); }
+.mx-cols{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:var(--sp-4); align-items:start; margin-top:var(--sp-4); }
+.mx-rail-col{ display:grid; gap:var(--sp-3); }
 @media (max-width:980px){ .mx-cols{ grid-template-columns:1fr; } }
 
 /* ── §2 decision rows + the precedence ledger. Ordering is a STATED, NON-SCORED
@@ -179,7 +179,7 @@ html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en{ display:none; }
 .mx-pv-zone b{ color:var(--pvi); font-weight:700; }
 
 /* ── §4 watchlist rail rows ── */
-.mx-wl-row{ display:flex; align-items:baseline; gap:8px; padding:3px 2px; line-height:1.45; text-decoration:none; color:inherit;
+.mx-wl-row{ display:flex; align-items:baseline; gap:8px; padding:2px 2px; line-height:1.45; text-decoration:none; color:inherit;
   border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
 .mx-wl-row:last-of-type{ border-bottom:none; }
 .mx-wl-row b{ flex:none; width:56px; font-size:var(--fs-sm); font-weight:700; }
@@ -187,11 +187,11 @@ html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en{ display:none; }
 .mx-wl-row em{ flex:none; font-style:normal; font-size:var(--fs-sm); font-weight:600; font-variant-numeric:tabular-nums; }
 
 /* ── §5 risk & calendar rail ── */
-.mx-cond{ font-size:var(--fs-sm); padding:5px 0; line-height:1.4; border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.mx-cond{ font-size:var(--fs-sm); padding:4px 0; line-height:1.4; border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
 .mx-cond:last-of-type{ border-bottom:none; }
 .mx-cond b{ font-weight:700; }
 .mx-cond span{ color:var(--muted); }
-.mx-cal-row{ display:flex; align-items:baseline; gap:8px; padding:2px 0; line-height:1.4; font-size:var(--fs-sm); }
+.mx-cal-row{ display:flex; align-items:baseline; gap:8px; padding:1px 0; line-height:1.4; font-size:var(--fs-sm); }
 .mx-cal-row i{ flex:none; width:66px; font-style:normal; color:var(--muted); font-size:var(--fs-micro); font-variant-numeric:tabular-nums; }
 .mx-foot{ color:var(--muted); font-size:var(--fs-micro); margin:8px 0 0; }
 
@@ -414,7 +414,7 @@ html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en{ display:none; }
         <b class="l-en">10-year back above 4.35%</b><b class="l-zh">十年期收益率回到 4.35% 上方</b>
         <span class="l-en">…and the growth names give it back first.</span><span class="l-zh">…成长股会最先回吐。</span>
       </div>
-      <h3 class="band-label" style="margin:10px 0 3px"><span class="l-en">Next three events</span><span class="l-zh">未来三件事</span></h3>
+      <h3 class="band-label" style="margin:7px 0 2px"><span class="l-en">Next three events</span><span class="l-zh">未来三件事</span></h3>
       <div class="mx-cal-row"><i class="l-en">Wed 08-13</i><i class="l-zh">周三 08-13</i><span class="l-en">US inflation print</span><span class="l-zh">美国通胀数据</span></div>
       <div class="mx-cal-row"><i class="l-en">Thu 08-14</i><i class="l-zh">周四 08-14</i><span class="l-en">US retail sales</span><span class="l-zh">美国零售销售</span></div>
       <div class="mx-cal-row"><i class="l-en">Fri 08-15</i><i class="l-zh">周五 08-15</i><span class="l-en">China activity data</span><span class="l-zh">中国经济活动数据</span></div>
@@ -511,6 +511,9 @@ html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en{ display:none; }
 
   <p class="spec-note l-en">Count discipline: 47 is the page's one canonical total. The ladder cells partition it (12+9+14+6+6); the slice line is a LABELLED slice of the same stage field and states its share (10 of 47); the lock quotes it (3 of 47); the CTA quotes it. Nothing on this page recounts. The ladder's FORM is frozen by the constitution (§11: cells from the engine stage enum, exhaustive and disjoint, active cell by weight never hue). Its count POLICY — whether the ladder is the only sanctioned home for a setup count — awaits the Sol §J.9 ratification; if §J.9 rules otherwise, only this section re-cuts.</p>
   <p class="spec-note l-zh">计数纪律：47 是全页唯一官方总数。阶梯单元格对其做完备划分（12+9+14+6+6）；切片行是同一阶段字段的具名切片并写明占比（47 中的 10）；锁引用它（47 中的 3）；行动按钮引用它。本页不做二次统计。阶梯的形态由宪法冻结（§11：单元格取自引擎阶段枚举、完备互斥、激活格用字重而非色相）。其计数政策——阶梯是否为形态数量的唯一法定归属——待 Sol §J.9 裁定；若 §J.9 另有裁决，仅本节重切。</p>
+
+  <p class="spec-note l-en">Above-fold budget — recorded supersession (adjudicated 2026-08-12). Packet §A's arithmetic (34+96+240+300 ≈ 670px) omitted the height of the §4+§5 rail, and it is the RAIL — not the primary column — that sets the two-column region's height: measured at 1440×900 the EN rail runs 468px against the left column's 369px, and EN runs ~35px taller than zh because the risk conditions wrap to two lines. The arithmetic therefore cannot hold as written. Ruling: the ladder clears the fold in full (EN 827–884, zh 792–849, fold 900) and the preview cards sit below it — a control bisected by the fold reads as broken, which is worse than elaboration below it. §A acceptance #1 — a cold reader names three changes and one action without scrolling — is the criterion that binds, and it passes. EN is the binding case; zh carries 51px of headroom.</p>
+  <p class="spec-note l-zh">首屏预算——已记录的取代裁定（2026-08-12）。§A 的算式（34+96+240+300 ≈ 670px）漏算了 §4+§5 侧栏的高度，而决定双栏区高度的是侧栏而非主栏：在 1440×900 实测，英文侧栏 468px，主栏 369px；英文因风险条件折行，比中文高约 35px。故该算式无法成立。裁定：阶梯完整位于首屏之内（英文 827–884，中文 792–849，折线 900），预览卡片置于其下——被折线切断的控件看起来是坏的，比把延伸内容放到折线以下更糟。§A 验收第一条——读者不滚动即可说出三项变化与一个动作——为准，且已通过。英文为约束情形，中文尚余 51px。</p>
   <p class="spec-note l-en">One primary CTA, and it is the lock's own action: for the FREE tier the tier-dependent CTA ("See all N setups") and the module's required quote-link to the board ("the canonical total in the link text") are the same element — two buttons pointing at one board would be two primaries. The card is a STAND-IN for templates/_prophet_card.html.j2 + pv_css(); hue rides the shipped --pv-* tokens so 红涨绿跌 flips for free. Two deliberate deltas from the shipped card, both for THIS page: the Edge score is dropped (a bare score fails the §9.4 Tier-1 test here — the verb and stage carry the decision, and the full card lives on the board), and the per-card signal date is dropped (packet §A allows exactly ONE as-of on this page; the shipped card pins a date in its zone footer — the collision is the migration packet's to resolve).</p>
   <p class="spec-note l-zh">全页只有一个主行动按钮，且就是锁本身的按钮：免费层的分层行动文案（「查看全部 N 个形态」）与本模块必须提供的看板引用链接（「链接文案中带官方总数」）是同一个元素——两个按钮指向同一个看板就是两个主行动。卡片是 templates/_prophet_card.html.j2 + pv_css() 的占位示意；色相取自既有 --pv-* 令牌，红涨绿跌自动生效。相对既有卡片有两处针对本页的刻意取舍：去掉 Edge 分数（裸分数在此不满足 §9.4 一级门槛——决策由动词与阶段承担，完整卡片在看板上），去掉每卡信号日期（规范 §A 规定本页只允许一个时间戳；既有卡片在区间页脚固定一个日期——该冲突留给迁移规范包解决）。</p>
 </section>
