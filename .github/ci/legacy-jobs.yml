@@ -830,7 +830,10 @@ jobs:
         # app.main mounts app.market_memory, whose authenticated stock-data
         # reader imports requests at module scope.  Keep the serving-boundary
         # lane's isolated environment closed over that production import.
-        run: pip install pytest pyyaml jinja2 fastapi httpx requests
+        # ETF board synthesis imports the rotation constants from etf_pulse,
+        # which imports numpy and pandas at module scope.  Keep this environment
+        # closed over the real production import graph.
+        run: pip install pytest pyyaml jinja2 fastapi httpx requests numpy pandas
       - name: tier-preview split contract (no paid row in the free shell)
         run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py -q
       - name: public dashboard preview-tier contracts (anon shell allowlist + controller caps)
@@ -2402,6 +2405,28 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: qledger cluster-honest Wilson CI unit tests
         run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
+      # P0a — the explicit horizon-clock contract. STEP PLACEMENT IS DELIBERATE:
+      # run_ci_pack.py returns on the FIRST non-zero step, so a step placed first
+      # MASKS its siblings and one placed last goes DARK behind an earlier red.
+      # These two sit SECOND/THIRD — after the established cluster-honest step
+      # (which stays unmaskable and is the broadest existing qledger check) and
+      # ahead of the altdata/metric-validity steps, which test different concerns
+      # and must not shadow the suite that covers the code this PR rewrote.
+      # test_qledger.py is the primary regression suite for engine/qledger.py and
+      # was named by NO legacy job, so every grading-path change shipped dark; it
+      # is hermetic (tmp_path store + monkeypatched price layer, no data/** reads).
+      - name: qledger contract regression suite
+        run: python -m pytest tests/test_qledger.py -q
+      - name: qledger explicit horizon-clock contract (P0a)
+        run: python -m pytest tests/test_qledger_horizon_clock.py -q
+      # round 5 MINOR: this file was owned by NO legacy job, so
+      # test_register_claims_are_salience_only_macro — which asserts on
+      # register_claims()'s "returns the count REGISTERED OPEN" semantics
+      # this branch's P0a market-dispatch fix redefined (a refused claim no
+      # longer silently inflates the count) — never ran in CI. Sits right
+      # after the horizon-clock step it is a direct consequence of.
+      - name: communique_diff phrase-book + qledger registration contract
+        run: python -m pytest tests/test_communique_diff.py -q
       - name: altdata reboot W2 — per-channel family routing + placebo tests
         run: python -m pytest tests/test_altdata_reboot_families.py -q
       # Metric-validity invariants (epistemics.qledger_metric_validity). grades.excess
@@ -6710,7 +6735,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        # pandas.read_html is exercised by the ETF sponsor-registry parser;
+        # pandas alone does not provide an HTML parser on a clean runner.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn lxml
       - name: spotlight tilt — W9-B US demotion is display-only + the tilt still moves weighted markets
         run: python -m pytest tests/test_spotlight.py -q
       - name: etf_pulse sector leg + analyst delta channel — each pins the data branch it exercises
@@ -6722,6 +6749,34 @@ jobs:
       # are already in this job's venv line.
       - name: etf board synthesis — bilingual backdrop tile + pulse-dated rotation (zh-leak / §B9.6 pins)
         run: python -m pytest tests/test_etf_board.py -q
+      # W1 flow-vs-selection (2026-08-12): the decomposition identity plus every
+      # robustness guard standing between a raw sponsor file and a published
+      # dollar figure — split / duplicate-day / weight-sum / cadence / exit
+      # continuity, each with its own adversarial fixture. Registered on arrival
+      # rather than added to the unrun census. Needs pandas+pyarrow (parquet
+      # fixtures) and imports scripts.build_site for the payload wiring; this
+      # job's venv line already carries both.
+      - name: etf flow/selection decomposition — identity, $ estimates, robustness guards
+        run: python -m pytest tests/test_etf_flow_decomposition.py -q
+      # W2a/W3 companions (2026-08-12), registered on arrival — this manifest is
+      # explicit-file (no pytest glob), so an unregistered suite runs in ZERO jobs
+      # (see the test_etf_board note above). Registry needs pyyaml; the ledger
+      # suite needs pandas+pyarrow and pins the nightly lane gate + price freeze;
+      # the windows tile renders measurement.html.j2 (jinja2). All deps already
+      # on this job's venv line.
+      - name: etf fund registry — universe coverage, type enum, sponsor drift pin
+        run: python -m pytest tests/test_etf_registry.py -q
+      - name: etf board ledger — lane gate, idempotency, frozen-price grading
+        run: python -m pytest tests/test_etf_board_ledger.py -q
+      - name: etf board windows tile — three states, zh parity, vocab
+        run: python -m pytest tests/test_etf_board_windows_tile.py -q
+      - name: etf weighting lens — discount identity, golden default ordering, receipts
+        run: python -m pytest tests/test_etf_weighting.py -q
+      # W3 partial-NAV sleeve support: pins the declared nav_equity_frac bounds,
+      # both ranked-consumer call sites, and the conservative sweep/swap filters.
+      # Uses pandas+pyarrow for the on-disk sponsor receipt; both are above.
+      - name: etf partial-NAV sleeve — declared bounds and sweep/swap guards
+        run: python -m pytest tests/test_etf_partial_nav_sleeve.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
 
