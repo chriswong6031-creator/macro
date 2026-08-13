@@ -320,6 +320,40 @@ def _check_citations(
     return keys
 
 
+def _check_supersession(
+    rec: dict[str, Any], prefix: str, path: Path, out: list[Problem]
+) -> None:
+    """``superseded_by`` must name exactly one ``PREFIX:KEY`` replacement, or be absent.
+
+    The most expensive unvalidated field in the schema.  ``superseded_by`` is the ONE
+    field that deletes a live record from every compiled bundle, and it was previously
+    read by TRUTHINESS: ``superseded_by: "no"`` evicted a current decision from every
+    bundle forever while ``validate`` exited 0, and ``false``/``0``/``""`` silently did
+    not evict — the same field meaning two opposite things depending on how it was typed.
+    Same one-citation-shape law as everything else (:func:`_citations`), and hard, because
+    a record that vanishes from the bundle is invisible in exactly the place a reader
+    would look for it.
+    """
+    if "superseded_by" not in rec:
+        return
+    value = rec.get("superseded_by")
+    if value is None:
+        return  # an explicitly cleared field is an ABSENT field, not a malformed one
+    keys, malformed = _citations(value, prefix)
+    if len(keys) == 1 and not malformed:
+        return
+    out.append(
+        Problem(
+            path,
+            "bad-supersession",
+            f"'superseded_by' is {value!r} — it must name exactly one {prefix}:KEY "
+            f"replacement (or be absent).  This field EVICTS the record from every "
+            f"compiled context bundle; a junk value evicts it silently",
+            hard=True,
+        )
+    )
+
+
 def repo_roots() -> dict[str, Path | None]:
     """Filesystem root per repo key, or None when that checkout is absent.
 
@@ -639,6 +673,7 @@ def check_decision(rec: dict[str, Any], path: Path) -> list[Problem]:
     _enum(rec, "reversibility", REVERSIBILITY, path, out)
     _date(rec, "decided_at", path, out)
     _date(rec, "review_by", path, out)
+    _check_supersession(rec, "DEC", path, out)
 
     alts = rec.get("alternatives")
     if isinstance(alts, list):
@@ -680,6 +715,7 @@ def check_discovery(rec: dict[str, Any], path: Path) -> list[Problem]:
     _enum(rec, "confidence", CONFIDENCE_DSC, path, out)
     _date(rec, "verified_at", path, out)
     _date(rec, "expires", path, out)
+    _check_supersession(rec, "DSC", path, out)
 
     # The two admission gates, made STRUCTURAL rather than merely non-empty.  A
     # `_require` check passes on `falsifier: "no"` and `verified_by: vibes`, which is
@@ -764,6 +800,20 @@ def check_handoff(rec: dict[str, Any], path: Path) -> list[Problem]:
 
 # ---------------------------------------------------------------- cross-record
 
+# Rules :func:`check_references` attributes to the CITING record rather than to a record
+# that is itself wrong.  They are JOIN failures, not schema failures, and invariant I4
+# says a join fails OPEN: a valid workstream whose sibling was renamed in an in-flight PR
+# still has a compilable state, and refusing to compile it hands the session nothing at
+# all instead of a bundle with one named hole.  A record carrying only these is rendered;
+# the problem travels with it as a `degraded` line, so it is visible rather than fatal.
+# Record-LOCAL rules (bad-enum, required-field, bad-key, unparseable, bad-supersession, …)
+# stay fatal for the compilation target — that record is a lie about the organization.
+CROSS_RECORD_RULES = frozenset({
+    "dangling-ref",
+    "workstream-cycle",
+    "unreciprocated-supersession",
+})
+
 
 def check_references(records: dict[str, dict[str, Any]], paths: dict[str, Path]) -> list[Problem]:
     """Referential integrity across the whole store: dangling refs, cycles, reciprocity."""
@@ -810,11 +860,14 @@ def check_references(records: dict[str, dict[str, Any]], paths: dict[str, Path])
     graph = {key: _refs(rec.get("depends_on"), "WS") for key, rec in ws.items()}
     cycle = _cycle(graph)
     if cycle:
-        out.append(
-            Problem(path_of("WS", cycle[0]), "workstream-cycle",
-                    "workstream dependency cycle: " + " -> ".join(f"WS:{n}" for n in cycle),
-                    hard=True)
-        )
+        # Reported on EVERY member, not just the entry node the DFS happened to start
+        # from.  A cycle is a joint property of its members: attributing it to one
+        # arbitrary endpoint left the other record reading clean, so a reader who opened
+        # the sibling saw nothing wrong and `compile-context` treated two symmetric
+        # records asymmetrically — one refused, one compiled.
+        rendered = "workstream dependency cycle: " + " -> ".join(f"WS:{n}" for n in cycle)
+        for node in dict.fromkeys(cycle):
+            out.append(Problem(path_of("WS", node), "workstream-cycle", rendered, hard=True))
 
     # Supersession must be reciprocated, or provenance silently forks.
     for key, rec in dec.items():
@@ -833,15 +886,44 @@ def check_references(records: dict[str, dict[str, Any]], paths: dict[str, Path])
                             f"{back!r}", hard=True)
                 )
 
+    # The other direction of the same edge, and DELIBERATELY ASYMMETRIC.  A replacement
+    # that must EXIST is hard: `superseded_by` evicts this record from every bundle, and
+    # evicting it in favour of a record nobody can open loses the reasoning outright.
+    # Reciprocity from the replacement's side is only a WARNING, because a one-sided
+    # `superseded_by` on the OLD record is how the schema itself documents supersession
+    # (decision.schema.yml: "set on the OLD record") — the new record listing `supersedes`
+    # is good practice, not a precondition for the old one being retired.
+    for prefix, table in (("DEC", dec), ("DSC", dsc)):
+        for key, rec in table.items():
+            raw = rec.get("superseded_by")
+            if raw is None:
+                continue
+            names, malformed = _citations(raw, prefix)
+            if malformed or len(names) != 1:
+                continue  # shape is check_decision/check_discovery's rule, already hard
+            new = names[0]
+            here = path_of(prefix, key)
+            if new not in table:
+                out.append(
+                    Problem(here, "dangling-ref",
+                            f"superseded_by names unknown {prefix}:{new} — this record is "
+                            f"retired in favour of one that does not exist", hard=True)
+                )
+                continue
+            if prefix == "DEC" and key not in _refs(table[new].get("supersedes"), "DEC"):
+                out.append(
+                    Problem(here, "one-sided-supersession",
+                            f"{prefix}:{new} replaces this record, but does not list it "
+                            f"under 'supersedes'", hard=False)
+                )
+
     # Citation counts drive discovery GC.  HANDOFFS COUNT: a discovery cited only by a
     # handoff used to read as uncited and became a 90-day GC candidate, which is the
-    # exact opposite of what the citation is for.
-    cited: dict[str, int] = {k: 0 for k in dsc}
-    for rec in list(ws.values()) + list(dec.values()) + list(hnd.values()):
-        for ref in _refs(rec.get("discoveries"), "DSC"):
-            if ref in cited:
-                cited[ref] += 1
-    for key, count in cited.items():
+    # exact opposite of what the citation is for.  SHARED with the compiler through
+    # `discovery_citation_counts` — two implementations of "is anything citing this?"
+    # would eventually disagree, and the surface that dropped a finding the other still
+    # counted would never say so.
+    for key, count in discovery_citation_counts(records).items():
         if count:
             continue
         verified = _as_date(dsc[key].get("verified_at"))
@@ -2205,6 +2287,13 @@ def _flat(value: Any) -> str:
     """Collapse an authored YAML value to one readable line, deterministically."""
     if isinstance(value, dict):
         return "; ".join(f"{k}={_flat(value[k])}" for k in sorted(value))
+    # A `!!set` is legal YAML and `safe_load` returns a real ``set``, which the list
+    # branch below does not catch.  Falling through to ``str(value)`` printed Python's
+    # set repr in PER-PROCESS hash order, so two runs of the same command over the same
+    # store rendered different bytes — the one wobble the determinism guarantee cannot
+    # absorb, because it is invisible until someone diffs two bundles.
+    if isinstance(value, (set, frozenset)):
+        return " | ".join(_flat(item) for item in sorted(value, key=str))
     if isinstance(value, list):
         return " | ".join(_flat(item) for item in value)
     return " ".join(str(value).split())
@@ -2284,7 +2373,7 @@ def discovery_citation_counts(records: dict[str, dict[str, Any]]) -> dict[str, i
     still flagged as live.  HANDOFFS COUNT, which is the non-obvious half: a discovery
     whose only reader is a handoff is cited, not orphaned.
     """
-    dsc = {k[4:] for k in records if k.startswith("DSC/")}
+    dsc = sorted(k[4:] for k in records if k.startswith("DSC/"))
     counts = {key: 0 for key in dsc}
     for ident, rec in records.items():
         if not ident.startswith(("WS/", "DEC/", "HND/")):

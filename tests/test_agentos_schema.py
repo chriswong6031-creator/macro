@@ -33,10 +33,22 @@ CLI = REPO / "scripts" / "agentos.py"
 # so this never skips there; the CI step additionally runs `agentos.py validate`
 # directly, which is not skippable, so an absent store cannot pass silently.
 # Heal a sparse worktree with:  git sparse-checkout add agentos
-pytestmark = pytest.mark.skipif(
-    not STORE.exists(),
-    reason="agentos/ outside this sparse checkout — run: git sparse-checkout add agentos",
+SEED_KEYS = (
+    sorted(path.stem[3:] for path in (STORE / "workstreams").glob("WS-*.md"))
+    if STORE.exists() else []
 )
+
+pytestmark = [
+    pytest.mark.skipif(
+        not STORE.exists(),
+        reason="agentos/ outside this sparse checkout — run: git sparse-checkout add agentos",
+    ),
+    pytest.mark.skipif(
+        not SEED_KEYS,
+        reason="agentos/workstreams/ holds no records in this checkout — "
+               "run: git sparse-checkout add agentos",
+    ),
+]
 
 
 def _validate(root: Path, **env: str) -> subprocess.CompletedProcess[str]:
@@ -183,6 +195,70 @@ def test_unreciprocated_supersession_is_rejected(store: Path) -> None:
     result = _validate(store)
     assert result.returncode == 1
     assert "unreciprocated-supersession" in result.stdout
+
+
+# ------------------------------------------------------------ supersession
+#
+# `superseded_by` is the ONE field in the schema that deletes a live record from every
+# compiled context bundle, and it was entirely unvalidated: any truthy string evicted a
+# current decision forever while `validate` printed "0 error(s)", and `false`/`0`/`""` —
+# the same intent, typed differently — did not evict at all.  A field that removes
+# institutional reasoning from the document a cold session reads has to be the most
+# checked field here, not the least.
+
+
+@pytest.mark.parametrize("junk", ["no", "DEC-NEW", "false", "[DEC:A, DEC:B]", "''"])
+def test_a_junk_superseded_by_is_rejected(store: Path, junk: str) -> None:
+    """Every shape that is not exactly one `DEC:KEY` citation is refused.
+
+    `no` is the expensive one: a plausible thing to type, it used to EVICT the record it
+    was written on.  `DEC-NEW` is the bare-key shape `_citations` exists to refuse, and
+    two replacements is not a supersession at all — supersession has one successor.
+    """
+    _patch(
+        store / "decisions" / "DEC-AGENTOS-FILE-PER-RECORD.md",
+        "decided_at: 2026-08-12",
+        f"decided_at: 2026-08-12\nsuperseded_by: {junk}",
+    )
+    result = _validate(store)
+    assert result.returncode == 1, f"superseded_by: {junk} validated clean:\n{result.stdout}"
+    assert "bad-supersession" in result.stdout
+
+
+def test_a_superseded_by_naming_nothing_is_rejected(store: Path) -> None:
+    """A record retired in favour of one that does not exist loses its reasoning.
+
+    Well-shaped and still wrong: the citation resolves against nothing, so the bundle would
+    drop the old record while pointing at a replacement nobody can open.
+    """
+    _patch(
+        store / "decisions" / "DEC-AGENTOS-FILE-PER-RECORD.md",
+        "decided_at: 2026-08-12",
+        "decided_at: 2026-08-12\nsuperseded_by: DEC:NO-SUCH-DECISION",
+    )
+    result = _validate(store)
+    assert result.returncode == 1
+    assert "dangling-ref" in result.stdout
+    assert "superseded_by" in result.stdout
+
+
+def test_a_one_sided_supersession_warns_but_never_blocks(store: Path) -> None:
+    """DELIBERATELY the softer half of the reciprocity rule.
+
+    `superseded_by` on the OLD record is how decision.schema.yml documents supersession —
+    "set on the OLD record" — so the new record failing to list `supersedes` is untidy
+    provenance, not a broken store.  Hard in this direction would make the schema's own
+    worked example fail validation.
+    """
+    _patch(
+        store / "decisions" / "DEC-AGENTOS-FILE-PER-RECORD.md",
+        "decided_at: 2026-08-12",
+        "decided_at: 2026-08-12\nsuperseded_by: DEC:AGENTOS-NO-TASK-STORE",
+    )
+    result = _validate(store)
+    assert result.returncode == 0, result.stdout
+    assert "one-sided-supersession" in result.stdout
+    assert "::warning" in result.stdout
 
 
 # ------------------------------------------------- invariant I4, both ways
@@ -594,12 +670,19 @@ def test_no_subcommand_still_announces_itself_as_a_stub() -> None:
     )
     assert "exactly one" in usage_error.stderr
 
-    real = subprocess.run(
-        [sys.executable, str(CLI), "compile-context", "--workstream", "AGENT-OS",
-         "--now", "2026-08-12T14:00:00Z"],
-        capture_output=True, text=True, cwd=REPO,
-    )
-    assert real.returncode == 0, real.stdout + real.stderr
-    bundle = json.loads(real.stdout)
-    assert bundle["schema"] == "context_bundle.v1"
-    assert any(section["items"] for section in bundle["sections"]), "an empty bundle is a stub"
+    # DISCOVERED, never hardcoded.  Pinning one key made the check hostage to that record
+    # surviving under that name: renaming or retiring WS-AGENT-OS would have turned this
+    # into a crash about a missing workstream, which reads as a broken CLI rather than a
+    # stale test — and would have stopped covering every other seeded record.
+    for key in SEED_KEYS:
+        real = subprocess.run(
+            [sys.executable, str(CLI), "compile-context", "--workstream", key,
+             "--now", "2026-08-12T14:00:00Z"],
+            capture_output=True, text=True, cwd=REPO,
+        )
+        assert real.returncode == 0, real.stdout + real.stderr
+        bundle = json.loads(real.stdout)
+        assert bundle["schema"] == "context_bundle.v1"
+        assert any(section["items"] for section in bundle["sections"]), (
+            f"WS:{key} compiled to an empty bundle — a stub in everything but name"
+        )

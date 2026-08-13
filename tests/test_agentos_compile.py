@@ -43,18 +43,29 @@ REPO = Path(__file__).resolve().parent.parent
 STORE = REPO / "agentos"
 CLI = REPO / "scripts" / "agentos.py"
 
-# Agent worktrees here are frequently CONE-MODE SPARSE, and a directory outside the cone
-# is simply absent.  CI checks out the full tree, so this never skips there.
-pytestmark = pytest.mark.skipif(
-    not STORE.exists(),
-    reason="agentos/ outside this sparse checkout — run: git sparse-checkout add agentos",
-)
-
 FROZEN = "2026-08-12T14:00:00Z"
 SEED_KEYS = (
     sorted(path.stem[3:] for path in (STORE / "workstreams").glob("WS-*.md"))
     if STORE.exists() else []
 )
+
+# Agent worktrees here are frequently CONE-MODE SPARSE, and a directory outside the cone
+# is simply absent.  CI checks out the full tree, so this never skips there.  The guard is
+# on the KEY LIST, not merely on the directory: a cone that carries `agentos/` but not
+# `agentos/workstreams/` leaves SEED_KEYS empty, and the tests that index `SEED_KEYS[0]`
+# would then die with IndexError — a crash that reads like a broken compiler rather than a
+# partial checkout.
+pytestmark = [
+    pytest.mark.skipif(
+        not STORE.exists(),
+        reason="agentos/ outside this sparse checkout — run: git sparse-checkout add agentos",
+    ),
+    pytest.mark.skipif(
+        not SEED_KEYS,
+        reason="agentos/workstreams/ holds no records in this checkout — "
+               "run: git sparse-checkout add agentos",
+    ),
+]
 
 
 def _run(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -675,6 +686,44 @@ def test_the_same_inputs_produce_byte_identical_output(overfull: Path) -> None:
     text_two = _compile("--root", str(overfull), "--workstream", "TARGET",
                         "--budget", "900", "--text")
     assert text_one.stdout == text_two.stdout
+
+
+def test_unordered_yaml_collections_render_in_a_fixed_order(tmp_path: Path) -> None:
+    """The determinism guarantee has to survive the collection types YAML can hand back.
+
+    Two of them wobble and neither is exotic.  A `!!set` is legal YAML and `safe_load`
+    returns a real `set`, whose iteration order for strings is PER-PROCESS (hash
+    randomisation) — so two runs of one command over one store rendered different bytes,
+    invisibly, until somebody diffed them.  A mapping is insertion-ordered, so its wobble
+    is the opposite kind: stable per run and stable in the WRONG order, which is why
+    sorting it was untested — byte-identity across runs cannot see it.  Both are asserted
+    against a fixture whose authored order is deliberately not the sorted one.
+    """
+    root = tmp_path / "agentos"
+    _workstream(root, "TARGET", decisions=["DEC:UNORDERED"])
+    _decision(root, "UNORDERED", answer={"zulu": 1, "alpha": 2, "mike": 3})
+    # `yaml.safe_dump` refuses to write a set, so the tag is patched in afterwards.
+    record = root / "decisions" / "DEC-UNORDERED.md"
+    record.write_text(
+        record.read_text(encoding="utf-8").replace(
+            "rationale: Because the measured alternative cost more and proved less.",
+            "rationale: !!set\n  ? zulu\n  ? alpha\n  ? mike\n",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    assert _run("validate", "--root", str(root)).returncode == 0, "the fixture is invalid"
+
+    runs = [_compile("--root", str(root), "--workstream", "TARGET") for _ in range(2)]
+    assert runs[0].stdout == runs[1].stdout, "a collection rendered in hash order"
+    excerpt = next(item["excerpt"] for item in _items(_bundle(runs[0]))
+                   if item["key"] == "DEC:UNORDERED")
+    assert "answer: alpha=2; mike=3; zulu=1" in excerpt, (
+        f"mapping keys were not sorted: {excerpt!r}"
+    )
+    assert "rationale: alpha | mike | zulu" in excerpt, (
+        f"set members were not sorted: {excerpt!r}"
+    )
 
 
 def test_compiling_context_writes_nothing(simple: Path) -> None:
