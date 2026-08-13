@@ -1130,20 +1130,32 @@ jobs:
             assert token in text, token
         assert len(text) > len(raw)
 
-    def test_theme_graph_guard_argument_drives_the_delegated_invocation(self):
+    def test_theme_graph_guard_is_invoked_by_plain_literal_not_by_argument(self):
+        """The delegated hard law rides the seam, not an argument.
+
+        This step briefly passed ``scripts.check_theme_graph_contracts`` as a
+        validated argv so the house-law registry census — which reads step
+        ``run:`` bodies — could still see the wiring after the body was extracted.
+        That bought exactly one law: the census read raw workflow text, so the
+        next extraction of a census-visible literal would have redded it again.
+        The census now resolves through ``scripts/workflow_run_source``
+        (``tests/test_house_law_registry.py::TestWiringCensusSeesThroughExtraction``),
+        so the argument is redundant and the invocation is a plain literal again.
+
+        Keep it that way: re-adding the module to daily.yml would let the census
+        pass for the wrong reason and stop exercising the seam.
+        """
         daily = (REPO_ROOT / ".github" / "workflows" / "daily.yml").read_text()
         helper = (
             REPO_ROOT / "scripts" / "ci" / "daily_engine_regional_desk_builders.sh"
         ).read_text()
-        module = "scripts.check_theme_graph_contracts"
         assert (
-            "bash scripts/ci/daily_engine_regional_desk_builders.sh " + module
-            in daily
+            "run: bash scripts/ci/daily_engine_regional_desk_builders.sh\n" in daily
         )
-        assert 'THEME_GRAPH_GUARD_MODULE="scripts.check_theme_graph_contracts"' in helper
-        assert '"${1:-}" != "$THEME_GRAPH_GUARD_MODULE"' in helper
+        assert "check_theme_graph_contracts" not in daily
+        assert "THEME_GRAPH_GUARD_MODULE" not in helper
         assert (
             'brun theme_graph_guard "theme graph contract guard '
-            '(check_theme_graph_contracts)" "$THEME_GRAPH_GUARD_MODULE"'
+            '(check_theme_graph_contracts)" scripts.check_theme_graph_contracts'
             in helper
         )

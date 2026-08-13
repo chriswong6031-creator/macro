@@ -4,6 +4,14 @@
     "2026-08-10": {
       "prefix_sha256": "fbc7f802cd6f999fdc600f25acccfe66a2f220de491b83b1d1d4ddebc0e8dd7f",
       "records": 768
+    },
+    "2026-08-11": {
+      "prefix_sha256": "d51a056a8e4f230deedfe1fbcd7db2c6f4201e9501c15522fdeed417575241bd",
+      "records": 614
+    },
+    "2026-08-12": {
+      "prefix_sha256": "85255d9ca4500fb3385d44a43dd76d8c935b54c3cdbd220f5873e0bc47d4c4fb",
+      "records": 1030
     }
   }
 }

@@ -88,14 +88,7 @@ def test_rendered_plans_page_names_the_indicator_ladder():
     page = Environment(
         loader=FileSystemLoader(ROOT / "templates"),
         autoescape=True,
-    ).get_template("plans.html.j2").render(
-        generated_utc="test",
-        currency=vm["currency"],
-        essential=vm["essential"],
-        pro=vm["pro"],
-        founding=vm["founding"],
-        terminal_indicators=vm["terminal_indicators"],
-    )
+    ).get_template("plans.html.j2").render(generated_utc="test", **vm)
     assert "Advanced indicator modules" in page
     assert f"{access['core_count']} " in page and "core indicators" in page
     # Same row, same treatment as the landing (2026-08-04): checkmarks in the cells,

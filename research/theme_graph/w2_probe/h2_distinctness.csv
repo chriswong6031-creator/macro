@@ -1,0 +1,22 @@
+slot,market,pair,month,n,rho,abs_rho,p,p_method,status,era
+cn_mature,cn,trading_beta.v0~attention_share.cn.comment.v0,2026-08,15,-0.1609,0.1609,0.56542,"mc-permutation(n=15,draws=100000,seed=20260811)",COMPUTED,reconstruction
+cn_young_speculative,cn,trading_beta.v0~attention_share.cn.comment.v0,2026-08,11,0.5091,0.5091,0.11455,"mc-permutation(n=11,draws=100000,seed=20260811)",COMPUTED,reconstruction
+cross_market_pair.cn,cn,trading_beta.v0~attention_share.cn.comment.v0,2026-08,37,0.181,0.181,0.28218,"mc-permutation(n=37,draws=100000,seed=20260811)",COMPUTED,reconstruction
+cn_mature,cn,trading_beta.v0~attention_share.cn.lhb.v0,2026-07,15,0.4085,0.4085,0.16999,"mc-permutation(n=15,draws=100000,seed=20260811)",COMPUTED,reconstruction
+cn_young_speculative,cn,trading_beta.v0~attention_share.cn.lhb.v0,2026-08,11,0.2981,0.2981,0.43613,"mc-permutation(n=11,draws=100000,seed=20260811)",COMPUTED,reconstruction
+cross_market_pair.cn,cn,trading_beta.v0~attention_share.cn.lhb.v0,2026-08,37,0.3873,0.3873,0.01753,"mc-permutation(n=37,draws=100000,seed=20260811)",COMPUTED,reconstruction
+us_mature_broad,us,trading_beta.v0~attention_share.us.wsb.v0,2026-08,0,,,,,ABSTAIN (attention cell),reconstruction
+us_young_narrow,us,trading_beta.v0~attention_share.us.wsb.v0,2026-08,0,,,,,ABSTAIN (attention cell),reconstruction
+us_institutional,us,trading_beta.v0~attention_share.us.wsb.v0,2026-08,0,,,,,ABSTAIN (attention cell),reconstruction
+cross_market_pair.us,us,trading_beta.v0~attention_share.us.wsb.v0,2026-08,0,,,,,ABSTAIN (attention cell),reconstruction
+us_mature_broad,us,trading_beta.v0~attention_share.us.flare.v0,2026-08,0,,,,,ABSTAIN (attention cell),reconstruction
+us_young_narrow,us,trading_beta.v0~attention_share.us.flare.v0,2026-08,0,,,,,ABSTAIN (attention cell),reconstruction
+us_institutional,us,trading_beta.v0~attention_share.us.flare.v0,2026-08,0,,,,,ABSTAIN (attention cell),reconstruction
+cross_market_pair.us,us,trading_beta.v0~attention_share.us.flare.v0,2026-08,20,-0.5166,0.5166,0.01969,"mc-permutation(n=20,draws=100000,seed=20260811)",COMPUTED,reconstruction
+us_mature_broad,us,trading_beta.v0~economic_share,,0,,,,,VACUOUS (economic_share has no formula),
+us_young_narrow,us,trading_beta.v0~economic_share,,0,,,,,VACUOUS (economic_share has no formula),
+us_institutional,us,trading_beta.v0~economic_share,,0,,,,,VACUOUS (economic_share has no formula),
+cn_mature,cn,trading_beta.v0~economic_share,,0,,,,,VACUOUS (economic_share has no formula),
+cn_young_speculative,cn,trading_beta.v0~economic_share,,0,,,,,VACUOUS (economic_share has no formula),
+cross_market_pair.us,us,trading_beta.v0~economic_share,,0,,,,,VACUOUS (economic_share has no formula),
+cross_market_pair.cn,cn,trading_beta.v0~economic_share,,0,,,,,VACUOUS (economic_share has no formula),
