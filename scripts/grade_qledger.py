@@ -62,6 +62,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from engine import qledger as q
+from engine.qledger_validity import (
+    may_pool_signed_excess,
+    may_report_hit_rate,
+    profile_families,
+)
 from lib import config
 
 log = logging.getLogger("grade_qledger")
@@ -175,6 +180,8 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
     if families is None:
         families = _load_qual_ladder_families(root)
 
+    profiles = profile_families(claims)
+
     result: dict[str, dict] = {}
     for fam in families:
         fam_res: dict[str, dict] = {}
@@ -188,17 +195,33 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
             stats = q._aggregate(claims, grades, "family", h)
             fam_stats = stats.get(fam, {})
 
-            fam_res[str(h)] = {
+            # Which metric keys this family may publish (T3,
+            # epistemics.qledger_metric_validity). A family with claims in the
+            # store is judged by its own direction profile: mixed-direction gets
+            # mean_abs_excess instead of a pooled signed excess_mean, salience-only
+            # gets no hit_rate and no wilson_ci_low. A ladder family with NO claims
+            # yet keeps the legacy null-valued keys — "no data" is a different
+            # statement from "this reading is categorically undefined", and the
+            # profile cannot distinguish them without any rows to look at.
+            prof = profiles.get(fam)
+            rec: dict = {
                 "n_dates": pr.n_dates,
                 "needed": q.PROMOTION_MIN_DATES,
-                "wilson_ci_low": pr.wilson_ci_low,
-                "hit_rate": fam_stats.get("hit_rate"),
-                "excess_mean": fam_stats.get("excess_mean"),
+            }
+            if prof is None or may_report_hit_rate(prof):
+                rec["wilson_ci_low"] = pr.wilson_ci_low
+                rec["hit_rate"] = fam_stats.get("hit_rate")
+            if prof is None or may_pool_signed_excess(prof):
+                rec["excess_mean"] = fam_stats.get("excess_mean")
+            else:
+                rec["mean_abs_excess"] = fam_stats.get("mean_abs_excess")
+            rec.update({
                 "ready": pr.eligible,
                 "approaching": approaching,
                 "projected_ready_date": proj,
                 "reason": pr.reason,
-            }
+            })
+            fam_res[str(h)] = rec
         result[fam] = fam_res
 
     # Duel context: champion vs placebo |excess| at 5d from the track record
@@ -212,12 +235,22 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
         by_family = tr.get("by_family") or {}
         for fam in families:
             h5 = (by_family.get(fam) or {}).get("5") or {}
-            duel_context[fam] = {
-                "challenger_excess_mean_5d": h5.get("excess_mean"),
+            ctx: dict = {
                 "placebo_covered_abs_excess_5d": placebo_covered,
                 "n_dates_5d": h5.get("n_dates", 0),
-                "wilson_ci_low_5d": h5.get("wilson_ci_low"),
             }
+            # The placebo arm is a MAGNITUDE (mean |excess|), so the duel is only
+            # like-for-like when the challenger is a magnitude too. A mixed-direction
+            # family now publishes mean_abs_excess and duels on that; a homogeneous
+            # family keeps the signed reading it is entitled to. The key NAME carries
+            # which one it is — a reader must never have to guess (T3).
+            if "mean_abs_excess" in h5:
+                ctx["challenger_mean_abs_excess_5d"] = h5.get("mean_abs_excess")
+            elif "excess_mean" in h5:
+                ctx["challenger_excess_mean_5d"] = h5.get("excess_mean")
+            if "wilson_ci_low" in h5:
+                ctx["wilson_ci_low_5d"] = h5.get("wilson_ci_low")
+            duel_context[fam] = ctx
     except Exception as e:  # noqa: BLE001
         log.debug("compute_promotion_readiness: duel_context build failed: %s", e)
 

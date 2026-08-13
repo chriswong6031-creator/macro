@@ -1723,9 +1723,9 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
               {{ row.n_dates }}
               <span class="eg-dates-note">/ {{ qledger_reliability.graded_min_dates }}</span>
             </td>
-            <td class="eg-num">{{ row.hit_rate_pct }}</td>
+            <td class="eg-num"><span class="l-en">{{ row.hit_rate_pct }}</span><span class="l-zh">{{ row.hit_rate_pct_zh or row.hit_rate_pct }}</span></td>
             <td class="eg-num">
-              {{ row.wilson_ci_low_str }}
+              <span class="l-en">{{ row.wilson_ci_low_str }}</span><span class="l-zh">{{ row.wilson_ci_low_str_zh or row.wilson_ci_low_str }}</span>
               <span class="eg-dates-note">(n_dates={{ row.n_dates }})</span>
             </td>
             <td>

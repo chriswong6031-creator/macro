@@ -2398,6 +2398,18 @@ jobs:
         run: python -m pytest tests/test_qledger_validity.py -q
       - name: qledger metric-validity guard selftest
         run: python scripts/check_qledger_metric_validity.py --selftest
+      # T3: the gate itself, against the real corpus. Deliberately placed AFTER
+      # the two steps above — run_ci_pack.py returns on the FIRST non-zero step,
+      # so if the auditor is broken the unit tests and the selftest name the
+      # defect precisely, while this step would only show an ambiguous
+      # second-order symptom. Putting the corpus gate first would MASK them.
+      # GATE mode audits what site/qledger/track_record.json actually publishes
+      # (not the permissive whole-store advisory, whose --strict is
+      # unsatisfiable by construction — see the module docstring). A checkout
+      # without data/qledger/*.jsonl or the track record exits 0 with a
+      # ::notice; a full CI checkout has both.
+      - name: qledger metric-validity gate (published readings, --strict)
+        run: python scripts/check_qledger_metric_validity.py --strict
 
   altdata-new-sources:
     if: ${{ false }}
@@ -2514,6 +2526,19 @@ jobs:
           python -m pytest tests/test_ticker_alias_boundary.py -q
       - name: house-law registry tests (idempotency + integration)
         run: python -m pytest tests/test_house_law_registry.py -q
+      # epistemics.append_only_assertions — discipline tier, ci_wiring [] in the
+      # registry ON PURPOSE (it fires on pre-existing code). These two steps
+      # prove the GUARD works; they do not judge the tree, so neither can red
+      # the lane for a defect no PR author wrote. Placed LAST deliberately:
+      # run_ci_pack.py returns on the first non-zero step, so a step here can
+      # only go dark behind an already-red meta-guard (in which case the pack is
+      # red and nothing merges anyway) — whereas placing it earlier would MASK
+      # the meta-guard, the docs-drift check, and the claim-passport lint, all of
+      # which are hard gates on this job.
+      - name: append-only assertion law — guard selftest (negative controls)
+        run: python3 scripts/check_append_only_assertions.py --selftest
+      - name: append-only assertion law — detector tests
+        run: python -m pytest tests/test_append_only_assertions.py -q
 
   leader-radar-unit:
     if: ${{ false }}

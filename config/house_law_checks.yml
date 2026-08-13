@@ -698,41 +698,137 @@ checks:
       - tests/test_qledger_validity.py
       - research/MASTERMIND_EVALUATION_STANDARDS.md
       - research/MASTERMIND_INTELLIGENCE_CATALOG.md
-    severity: manual
+    severity: hard
     check_script: scripts/check_qledger_metric_validity.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: qledger-cluster-honest-ci
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >
+        GATE mode reads the PUBLISHED artifact (site/qledger/track_record.json),
+        not the emitter source, so a freshly-broken emitter is only caught after
+        the next nightly rewrites the artifact. That indirection is deliberate:
+        a map derived by calling the emitter could never fail, because
+        engine/qledger.py _aggregate picks its keys with the same predicates the
+        gate checks. tests/test_qledger_validity.py closes the window at the
+        source (test_aggregate_never_emits_a_key_its_own_profile_forbids).
+      - >
+        Any emitter that recomputes a metric from data/qledger/*.jsonl WITHOUT
+        going through track_record.json is invisible to GATE mode.
+        engine/source_registry.py _build_grading_summary is a live example: it
+        re-derives its own hit_rate straight from load_claims/load_grades. It is
+        legal today (it guards the salience null the same way _aggregate does)
+        but the guard is not what proves that.
+      - >
+        The permissive whole-store mode (--audit-store) is UNSATISFIABLE by
+        construction and must never gate. All 11 of its 'invalid' findings on the
+        live corpus are corpus properties, not defects: radar/policy/intel_hub/
+        whitehouse will always hold both directions, and us_importance_v0 and the
+        other six salience families will always be direction==0. It answers "what
+        could a reader get wrong", which has no code fix.
+      - >
+        V3 (OFF_HORIZON_VERDICT) compares the family's declared ruler against
+        horizons present in the grade corpus; it cannot distinguish "not yet
+        matured" from "grading broken". Both are correctly reported as zero
+        verdicts at the ruler. It is severity note and never gates.
+      - >
+        An absent store OR an absent track_record.json exits 0 with a ::notice
+        naming the file. Sparse agent worktrees have neither on disk while both
+        are tracked in HEAD; a full CI checkout has both.
+    owner_program: qualitative-intelligence
+    notes: >
+      T3 (2026-08-13) made the gate SATISFIABLE and then promoted it. It shipped at
+      severity=manual with ci_wiring [] because its only mode was the permissive
+      whole-store audit, whose --strict could never be green — the fault was in the
+      gate, not the emitters. T3 (a) fixed the emitters (engine/qledger.py _aggregate
+      now omits a signed excess_mean for a mixed-direction group and a hit_rate for a
+      salience-only group, substituting mean_abs_excess; scripts/grade_qledger.py and
+      engine/experiments_registry.py carry the key names through and LABEL them),
+      (b) migrated the published site/qledger/track_record.json to match, and
+      (c) split the two modes so the gate audits what is actually published.
+      Proof of both directions on the live 45,271-claim corpus: --strict exits 0
+      against the migrated artifact and exits 1 with 22 invalid findings against the
+      pre-T3 one. Any future DOWNGRADE of this entry needs an operator/Fable ruling.
+
+  - law_id: epistemics.append_only_assertions
+    summary: >
+      A test or drift guard must never assert on the CONTENT of a store that a
+      nightly lane appends to. Such an assertion is green the day it is written
+      and reds main days later with no PR author involved, so it gets routed
+      around rather than obeyed — it has now shipped four times
+      (check_intelligence_registry.py's generated-doc pin, its relocation to
+      config/synapse.yml, tests/test_prophet_plan_grades.py's
+      `ledger_ids <= graded_ids` over data/prophet/ledger.jsonl, and
+      tests/test_seasonality_calibration.py's `len(rows) == 28` over
+      data/seasonality/nw_forward_ledger.jsonl, which took main red at 43 rows).
+      The rule is MONOTONICITY, not equality: an assertion is illegal when
+      APPENDING A ROW can falsify it. A floor (`>=`), a schema check, a
+      membership test, and two reads of the same store in one run are all legal.
+    source_ref:
+      - scripts/check_append_only_assertions.py
+      - tests/test_append_only_assertions.py
+      - config/synapse.yml
+      - research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md
+    severity: discipline
+    check_script: scripts/check_append_only_assertions.py
     ci_wiring: []
     selftest: true
     allowlist: null
     ratchet: null
     known_limits:
       - >
-        Audits the STORE, not the emitters. A consumer that recomputes a pooled
-        signed excess in its own code is invisible here; T3 of the V1 plan
-        retires the known emitter (scripts/grade_qledger.py per-family excess_mean).
+        FALSE NEGATIVE — unregistered store. Append-only stores are derived from
+        config/synapse.yml (format jsonl + storage git + a nightly-lane cadence,
+        OR the entry's own prose declaring append-only). A live store missing
+        from the registry is invisible: data/basket_turn/ledger.jsonl is written
+        by the nightly lane, read by seven modules, wired into config/dag.yml and
+        daily.yml, and has no artifact entry — so the equality pin in
+        tests/test_basket_membership_stamps.py is NOT reported.
       - >
-        The default run is advisory (exit 0); only --strict exits non-zero.
-        CI runs the guard's --selftest and its pytest suite (legacy job
-        qledger-cluster-honest-ci), which proves the auditor works — it does NOT
-        run the audit against the real corpus as a gate. ci_wiring is therefore
-        [] on purpose: the guard is unit-proven in CI but not yet enforcing.
+        FALSE NEGATIVE — indirection. Only a Path built from a
+        Path(__file__).resolve().parents[N]-derived name (or a bare relative
+        Path("data/...")) is traced. A path arriving via a fixture, a config
+        lookup, or a constant in another module is not resolved. Non-JSONL
+        artifacts are out of scope.
       - >
-        V3 compares the family's declared ruler against horizons present in the
-        grade corpus; it cannot distinguish "not yet matured" from "grading
-        broken". Both are correctly reported as zero verdicts at the ruler.
+        FALSE POSITIVE — manifest sibling. Comparing a live store to a receipt
+        written by the SAME producer run is safe (the receipt moves in lockstep),
+        but the guard cannot yet see that two artifacts share a producer, so
+        tests/test_chronicle.py's manifest hash ties would be flagged.
       - >
-        An absent store exits 0 with a ::notice. Sparse agent worktrees have no
-        data/ on disk while the paths are tracked in HEAD.
-    owner_program: qualitative-intelligence
+        FALSE POSITIVE — frozen prefix. A module contract may freeze a bounded
+        slice of an otherwise growing store; exact equality is correct there.
+        Measured: tests/test_market_memory_production_records.py:116-117 and
+        tests/test_government_revenue_candidate_grader.py:2302-2304.
+      - >
+        FALSE POSITIVE — taint is a per-function fixpoint that ignores statement
+        order and comprehension scoping, and the same-store carve-out needs the
+        taint on BOTH sides (a within-run comparison routed through an
+        intermediate result dict is flagged, e.g.
+        tests/test_market_memory_production_records.py:563).
+    owner_program: mastermind-intelligence-evaluation-os
     notes: >
-      Deliberately unwired and severity=manual on arrival. The findings are
-      PRE-EXISTING CONDITIONS of the corpus (18 findings across 11 families on the
-      2026-08-12 store), not regressions any PR author caused; wiring it hard on
-      day one would red main fleet-wide for a property nobody introduced, which is
-      how a guard gets routed around instead of obeyed. T3 of
-      research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md retires the invalid emitters
-      and, in the same PR, wires this into pr_ci with --strict and upgrades severity
-      to hard. Precedent for arriving manual-then-upgrading: governance.adjudication_packet
-      (an upgrade needs no ruling; a downgrade does).
+      PROMOTION PLAN. Ships at discipline with ci_wiring [] on purpose: it fires
+      on pre-existing code no PR author wrote (11 findings across 5 files on this
+      tree, 12 on claude/eval-os-t2-prophet-benchmark where the motivating defect
+      still lives), and a guard that reds the fleet on day one gets disabled
+      instead of obeyed. CI proves the guard WORKS — its --selftest with negative
+      controls plus tests/test_append_only_assertions.py run in the
+      house-law-registry legacy job — it does not yet judge the tree.
+      To promote to warn: triage the current 11 findings and either fix them or
+      record each as an allowlist entry with a reason. To promote to hard, ALSO
+      close the two structural false-positive classes above — the manifest-sibling
+      carve-out (resolve `producer:` siblings out of config/synapse.yml so a
+      store/receipt pair written by one run is exempt) and the frozen-prefix
+      carve-out (recognise a module-level *_PREFIX_ROWS / *_PREFIX_SHA256 contract)
+      — otherwise promotion converts four documented legal patterns into merge
+      blockers. The registry-gap false negative should be closed by REGISTERING
+      data/basket_turn/ledger.jsonl in config/synapse.yml, not by hand-listing it
+      here.
 
   - law_id: epistemics.validated_claims
     summary: >

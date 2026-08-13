@@ -135,10 +135,38 @@ def _as_int(value: Any) -> int | None:
     return None
 
 
+GROUP_FAMILY = "family"
+GROUP_DESK = "desk"
+GROUP_KEYS = (GROUP_FAMILY, GROUP_DESK)
+
+
+def group_key(claim: dict, group_by: str = GROUP_FAMILY) -> str | None:
+    """The grouping key for one claim. Mirrors ``engine.qledger._family_key``.
+
+    ``family`` falls back to ``desk`` because the store's early rows predate the
+    ``claim_family`` field; ``desk`` never falls back, so a claim with no desk is
+    simply not desk-grouped.
+    """
+    if group_by == GROUP_DESK:
+        return claim.get("desk")
+    if group_by == GROUP_FAMILY:
+        return claim.get("claim_family") or claim.get("desk")
+    raise ValueError(f"unknown group_by {group_by!r}; expected one of {GROUP_KEYS}")
+
+
 def profile_families(
-    claims: Iterable[dict], *, include_placebo: bool = False
+    claims: Iterable[dict],
+    *,
+    include_placebo: bool = False,
+    group_by: str = GROUP_FAMILY,
 ) -> dict[str, FamilyProfile]:
-    """Derive a :class:`FamilyProfile` per ``claim_family`` from the claim rows.
+    """Derive a :class:`FamilyProfile` per group from the claim rows.
+
+    ``group_by='family'`` (default) keys on ``claim_family`` (falling back to
+    ``desk``); ``group_by='desk'`` keys on ``desk``. Both groupings are PUBLISHED
+    — ``track_record.json`` carries ``by_family`` AND ``by_desk`` — and a desk
+    holding two families of opposite direction is exactly as unpoolable as a
+    mixed family, so the invariants must be answerable at either altitude.
 
     Placebo claims are excluded by default: the placebo tape is a control arm,
     and folding it into a family's direction profile would let a synthetic row
@@ -148,7 +176,7 @@ def profile_families(
     for claim in claims:
         if not include_placebo and claim.get("is_placebo"):
             continue
-        family = claim.get("claim_family") or claim.get("desk")
+        family = group_key(claim, group_by)
         if family is None:
             continue
         prof = out.get(family)
@@ -194,28 +222,45 @@ def audit(
     grades: Sequence[dict],
     *,
     reported_metrics: dict[str, set[str]] | None = None,
+    group_by: str = GROUP_FAMILY,
 ) -> list[Finding]:
     """Return every metric-validity finding for this corpus.
 
-    ``reported_metrics`` maps family -> the metric names a caller intends to
-    publish (e.g. ``{"radar": {"excess_mean", "hit_rate"}}``). When omitted the
-    audit assumes the permissive default that a reader may reach for any of
-    them, which is exactly what a dashboard or an LLM summarising the store
-    would do — so the default is the honest worst case, not a lenient one.
+    ``reported_metrics`` maps group -> the metric names a caller intends to
+    publish (e.g. ``{"radar": {"excess_mean", "hit_rate"}}``). Two modes, and the
+    difference between them is the difference between an advisory and a gate:
+
+    * ``reported_metrics=None`` (permissive / ADVISORY) — assume a reader may
+      reach for any metric, which is what a dashboard or an LLM summarising the
+      raw store would do. Correct as a standing advisory over the store; it
+      reports a HAZARD, not a defect, so its findings are not attributable to a
+      PR author and it must never be a merge gate.
+    * ``reported_metrics={...}`` (GATE) — audit only what is actually published.
+      A finding then means someone really publishes an illegal reading. The
+      caller must derive the map from a PUBLISHED ARTIFACT, never by re-running
+      the same legality predicates the emitter uses — a map derived from the code
+      under audit cannot fail (memory: receipt-written-from-the-same-variable).
+
+    A group with no entry in ``reported_metrics`` publishes nothing and is
+    therefore silent; an explicit empty set means the same thing.
     """
-    profiles = profile_families(claims)
+    profiles = profile_families(claims, group_by=group_by)
     ids_by_family: dict[str, set[str]] = {}
     for claim in claims:
         if claim.get("is_placebo"):
             continue
-        family = claim.get("claim_family") or claim.get("desk")
+        family = group_key(claim, group_by)
         cid = claim.get("claim_id")
         if family is not None and cid is not None:
             ids_by_family.setdefault(family, set()).add(cid)
 
     findings: list[Finding] = []
     for family, prof in sorted(profiles.items()):
-        wanted = (reported_metrics or {}).get(family)
+        # `reported_metrics is None` is ADVISORY; an EMPTY dict is a GATE over a
+        # publication surface that names nothing, which is not the same thing —
+        # `(reported_metrics or {})` would have collapsed the two and quietly run
+        # every gate caller in advisory mode the moment its map came back empty.
+        wanted = None if reported_metrics is None else (reported_metrics.get(family) or set())
 
         if (wanted is None or "excess_mean" in wanted) and not may_pool_signed_excess(prof):
             signs = sorted(prof.directions - {0})
@@ -233,7 +278,11 @@ def audit(
                 )
             )
 
-        if (wanted is None or "hit_rate" in wanted) and not may_report_hit_rate(prof):
+        # wilson_ci_low is a CI *on the hit rate*, so publishing it is publishing
+        # a hit rate by another name; it fails V2 for exactly the same reason.
+        if (
+            wanted is None or wanted & {"hit_rate", "wilson_ci_low"}
+        ) and not may_report_hit_rate(prof):
             findings.append(
                 Finding(
                     code="HIT_RATE_ON_A_SALIENCE_FAMILY",
@@ -247,8 +296,11 @@ def audit(
                 )
             )
 
+        # V3 asks "may this family's graded rows be read as a verdict". In GATE
+        # mode a group that publishes nothing is not being read at all, so the
+        # question does not arise; in ADVISORY mode (wanted is None) it always does.
         ruler = prof.ruler_horizon
-        if ruler is not None:
+        if ruler is not None and (wanted is None or wanted):
             matured = matured_horizons(grades, ids_by_family.get(family, set()))
             if matured and ruler not in matured:
                 findings.append(

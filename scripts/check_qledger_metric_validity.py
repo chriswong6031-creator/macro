@@ -6,19 +6,53 @@ impressive-looking number that does not mean what it appears to mean. The
 invariants, their evidence, and why each is silent are documented in
 :mod:`engine.qledger_validity`.
 
-WARN-TIER BY DEFAULT — AND WHY (deliberate, not an oversight)
--------------------------------------------------------------
-The findings this gate emits are PRE-EXISTING CONDITIONS of the corpus, not
-regressions introduced by any one PR. On the 2026-08-12 store it reports on the
-majority of families the moment it is wired. Shipping it as a hard gate would
-red main on day one for a property no PR author caused, which is how a guard
-gets disabled instead of obeyed (`DNR` precedent: a gate that fires fleet-wide
-is routed around, not satisfied).
+TWO MODES, AND WHY BOTH EXIST
+-----------------------------
+The invariants are the same in both; what differs is the QUESTION being asked.
 
-So: default exit 0 with ``::warning`` annotations. ``--strict`` exits 1 and is
-the intended CI mode ONCE the emitters listed in
-``research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md`` T3 stop publishing the
-invalid readings. Flipping the default is a one-word change and a deliberate act.
+  GATE mode (default, ``--strict``-able)
+      Question: *does anything we publish actually contain an illegal reading?*
+      ``reported_metrics`` is derived from ``site/qledger/track_record.json`` —
+      the artifact the nightly producer wrote and every downstream consumer
+      reads (engine/qledger_ui.py chips, scripts/build_measurement.py's
+      reliability table, engine/experiments_registry.py's admin state line,
+      engine/neuralweb/mastermind_context.py's lobe). A finding here is a DEFECT
+      with an author: some emitter really did publish a pooled signed excess for
+      a mixed-direction family, or a hit rate for a salience family. That is a
+      legitimate merge gate, and it is satisfiable — the fix is to stop
+      publishing the illegal key.
+
+      The map is read from the PUBLISHED ARTIFACT on purpose, never by
+      re-invoking the producer in-process. ``engine.qledger._aggregate`` decides
+      its keys with the very predicates this gate checks, so a map derived from
+      that call could not fail — the "receipt written from the same variable"
+      trap. The artifact is an independent record of a prior run, so it can and
+      does disagree with the current code, which is exactly what makes the gate
+      able to fire.
+
+  ADVISORY mode (``--audit-store``)
+      Question: *what could a reader who reaches into the raw store get wrong?*
+      ``reported_metrics`` is omitted, so the audit assumes the permissive worst
+      case that any metric might be computed for any family — which is what a
+      dashboard, an ad-hoc notebook, or an LLM summarising the store would do.
+      Every finding it reports on the live corpus is a PROPERTY OF THE CORPUS,
+      not a regression: ``radar`` will always hold both directions and
+      ``us_importance_v0`` will always be salience. There is no code change that
+      makes this mode green, so it must never gate a merge; ``--strict`` is
+      accepted here but is a deliberate local-diagnostic choice, not a CI mode.
+
+  (Before T3 the ONLY mode was the advisory one, which is why the guard shipped
+  at warn tier with empty ci_wiring: its `--strict` was unsatisfiable by
+  construction. Fixing the emitters is what made a gate possible; running the
+  advisory audit as the gate is what made it impossible.)
+
+An ABSENT input is not a pass. GATE mode with no ``site/qledger/track_record.json``
+has nothing to gate, and either mode with no ``data/qledger/*.jsonl`` has no
+corpus to profile against; both exit 0 with a ``::notice`` that names the missing
+file. "I could not look" must never render as "I looked and it was clean"
+(CLAUDE.md §Epistemics; research/MASTERMIND_EVALUATION_STANDARDS.md §9.2). Sparse
+agent worktrees have neither path on disk while both are tracked in HEAD; a full
+CI checkout has both.
 
 Annotations are emitted with a bare ``print`` and ``flush=True`` per CLAUDE.md
 §"GitHub annotations must START the line" — a logger would prefix the line and
@@ -27,27 +61,25 @@ GitHub would silently drop it.
 Usage
 -----
   python scripts/check_qledger_metric_validity.py [--root PATH] [--strict]
+  python scripts/check_qledger_metric_validity.py --audit-store
   python scripts/check_qledger_metric_validity.py --selftest
 
 Options
 -------
-  --root PATH   Repo root holding data/qledger/{claims,grades}.jsonl
-                (default: parent of scripts/).
-  --strict      Exit 1 when any finding has severity 'invalid'.
-  --json        Emit a JSON object to stdout instead of annotations. ALWAYS an
-                object, never a bare list: {store_absent, missing, claims,
-                grades, findings}. When the store is absent, `findings` is null
-                rather than [] — an empty list would render "could not look" as
-                "looked and clean" (standards §9.2).
-  --selftest    Inject synthetic corpora proving the auditor catches each
-                invariant AND stays silent on a clean corpus. Exits 0 if every
-                expected finding is caught, 1 otherwise.
-                Precedent: scripts/check_synapse_registry.py --selftest.
-
-An ABSENT store is not a failure: the qledger store is gitignored on some
-checkouts and absent in sparse agent worktrees. A missing file exits 0 with a
-notice, because "I could not look" must never render as "I looked and it was
-clean" (CLAUDE.md §Epistemics; nulls are printed, not hidden).
+  --root PATH     Repo root holding data/qledger/{claims,grades}.jsonl and
+                  site/qledger/track_record.json (default: parent of scripts/).
+  --audit-store   ADVISORY mode: permissive whole-store audit (pre-T3 behaviour).
+  --strict        Exit 1 when any finding has severity 'invalid'.
+  --json          Emit a JSON object to stdout instead of annotations. ALWAYS an
+                  object, never a bare list: {mode, store_absent,
+                  track_record_absent, missing, claims, grades, findings}. When
+                  an input is absent, `findings` is null rather than [] — an
+                  empty list would render "could not look" as "looked and clean".
+  --selftest      Inject synthetic corpora proving the auditor catches each
+                  invariant AND stays silent on a clean corpus, and that GATE
+                  mode fires on a published illegal key while staying silent on
+                  a published legal one. Exits 0 if every expectation holds.
+                  Precedent: scripts/check_synapse_registry.py --selftest.
 """
 from __future__ import annotations
 
@@ -59,6 +91,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from engine.qledger_validity import (  # noqa: E402
+    GROUP_DESK,
+    GROUP_FAMILY,
     SEVERITY_INVALID,
     Finding,
     audit,
@@ -66,6 +100,24 @@ from engine.qledger_validity import (  # noqa: E402
 
 CLAIMS_REL = ("data", "qledger", "claims.jsonl")
 GRADES_REL = ("data", "qledger", "grades.jsonl")
+TRACK_RECORD_REL = ("site", "qledger", "track_record.json")
+
+MODE_GATE = "gate"
+MODE_STORE = "store"
+
+# The metric names whose legality the invariants speak to. `mean_abs_excess` is
+# always legal (it is the magnitude reading V1 prescribes) but is collected so
+# that "this group publishes something" is answerable — V3 only asks its
+# question of a group that is actually read.
+METRIC_KEYS = frozenset({"hit_rate", "excess_mean", "mean_abs_excess", "wilson_ci_low"})
+
+# _duel_context is flat (no per-horizon nesting) and names its metrics with a
+# horizon suffix, so it needs an explicit key map rather than a set intersection.
+DUEL_KEY_MAP = {
+    "challenger_excess_mean_5d": "excess_mean",
+    "challenger_mean_abs_excess_5d": "mean_abs_excess",
+    "wilson_ci_low_5d": "wilson_ci_low",
+}
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -87,25 +139,79 @@ def _read_jsonl(path: Path) -> list[dict]:
     return rows
 
 
+def derive_reported_metrics(
+    track_record: dict,
+) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    """Read the PUBLISHED artifact and return (by_family map, by_desk map).
+
+    A group's entry is the union, across every horizon cell, of the metric key
+    names the artifact actually carries. A group absent from the artifact
+    publishes nothing and gets no entry — and therefore no finding.
+
+    Both groupings are returned because both are published: ``by_desk`` is what
+    engine/qledger_ui.py's chips read, and a desk holding two families of
+    opposite direction is exactly as unpoolable as a mixed family.
+    """
+    by_family: dict[str, set[str]] = {}
+    by_desk: dict[str, set[str]] = {}
+
+    for section, dest in (("by_family", by_family), ("by_desk", by_desk)):
+        for key, horizons in (track_record.get(section) or {}).items():
+            if not isinstance(horizons, dict):
+                continue
+            for cell in horizons.values():
+                if isinstance(cell, dict):
+                    dest.setdefault(key, set()).update(set(cell) & METRIC_KEYS)
+
+    # promotion_readiness is family-keyed and is rendered on the admin
+    # Experiments tab via engine/experiments_registry.py.
+    readiness = track_record.get("promotion_readiness") or {}
+    if isinstance(readiness, dict):
+        for key, horizons in readiness.items():
+            if key.startswith("_") or not isinstance(horizons, dict):
+                continue
+            for cell in horizons.values():
+                if isinstance(cell, dict):
+                    by_family.setdefault(key, set()).update(set(cell) & METRIC_KEYS)
+
+        duel = readiness.get("_duel_context") or {}
+        if isinstance(duel, dict):
+            for key, ctx in duel.items():
+                if not isinstance(ctx, dict):
+                    continue
+                published = {
+                    metric for raw, metric in DUEL_KEY_MAP.items() if raw in ctx
+                }
+                if published:
+                    by_family.setdefault(key, set()).update(published)
+
+    return by_family, by_desk
+
+
 def _json_payload(
     findings: list[Finding] | None,
     *,
+    mode: str = MODE_GATE,
     store_absent: bool,
+    track_record_absent: bool = False,
     n_claims: int | None = None,
     n_grades: int | None = None,
     missing: list[str] | None = None,
 ) -> str:
     """The --json contract: ALWAYS an object, never a bare list.
 
-    `store_absent` is a first-class field rather than an empty findings list,
-    because an empty list would render "I could not look" as "I looked and it
-    was clean" — the exact substitution research/MASTERMIND_EVALUATION_STANDARDS.md
-    §9.2 forbids. A consumer must be able to tell the two apart without parsing
-    prose, so `findings` is null (not []) when nothing was audited.
+    `store_absent` / `track_record_absent` are first-class fields rather than an
+    empty findings list, because an empty list would render "I could not look" as
+    "I looked and it was clean" — the exact substitution
+    research/MASTERMIND_EVALUATION_STANDARDS.md §9.2 forbids. A consumer must be
+    able to tell the two apart without parsing prose, so `findings` is null (not
+    []) when nothing was audited.
     """
     return json.dumps(
         {
+            "mode": mode,
             "store_absent": store_absent,
+            "track_record_absent": track_record_absent,
             "missing": missing or [],
             "claims": n_claims,
             "grades": n_grades,
@@ -125,11 +231,22 @@ def _json_payload(
     )
 
 
-def _emit(findings: list[Finding], as_json: bool, n_claims: int, n_grades: int) -> None:
+def _emit(
+    findings: list[Finding],
+    as_json: bool,
+    n_claims: int,
+    n_grades: int,
+    *,
+    mode: str,
+) -> None:
     if as_json:
         print(
             _json_payload(
-                findings, store_absent=False, n_claims=n_claims, n_grades=n_grades
+                findings,
+                mode=mode,
+                store_absent=False,
+                n_claims=n_claims,
+                n_grades=n_grades,
             ),
             flush=True,
         )
@@ -194,6 +311,61 @@ def _selftest() -> int:
     codes = {f.code for f in audit(with_placebo, grades_homo)}
     checks.append(("placebo excluded from direction profile", "SIGNED_EXCESS_POOLED_ACROSS_DIRECTIONS" not in codes))
 
+    # ── GATE mode. The reported_metrics map is what separates a defect from a
+    # hazard, so it needs both a positive and a negative control of its own:
+    # the SAME corpus must fire when the illegal key is published and stay
+    # silent when it is not. Without the negative control a gate that always
+    # fired, or one wired to an always-empty map, would pass this selftest.
+    codes = {f.code for f in audit(mixed, grades_v1, reported_metrics={"mixed": {"excess_mean"}})}
+    checks.append(("GATE fires when excess_mean is published for a mixed family",
+                   "SIGNED_EXCESS_POOLED_ACROSS_DIRECTIONS" in codes))
+    codes = {f.code for f in audit(mixed, grades_v1, reported_metrics={"mixed": {"mean_abs_excess", "hit_rate"}})}
+    checks.append(("GATE silent when the mixed family publishes the magnitude instead",
+                   "SIGNED_EXCESS_POOLED_ACROSS_DIRECTIONS" not in codes))
+    codes = {f.code for f in audit(salience, grades_sal, reported_metrics={"sal": {"hit_rate"}})}
+    checks.append(("GATE fires when hit_rate is published for a salience family",
+                   "HIT_RATE_ON_A_SALIENCE_FAMILY" in codes))
+    codes = {f.code for f in audit(salience, grades_sal, reported_metrics={"sal": {"wilson_ci_low"}})}
+    checks.append(("GATE fires on wilson_ci_low too (a hit rate by another name)",
+                   "HIT_RATE_ON_A_SALIENCE_FAMILY" in codes))
+    codes = {f.code for f in audit(salience, grades_sal, reported_metrics={"sal": {"excess_mean"}})}
+    checks.append(("GATE silent when the salience family publishes no hit rate",
+                   "HIT_RATE_ON_A_SALIENCE_FAMILY" not in codes))
+
+    # Desk grouping must be auditable too: by_desk is published alongside
+    # by_family and a desk can be mixed-direction even when no single family is.
+    two_family_desk = [
+        {"claim_family": "up", "desk": "d1", "claim_id": "h", "direction": 1, "horizon_d": 5},
+        {"claim_family": "down", "desk": "d1", "claim_id": "i", "direction": -1, "horizon_d": 5},
+    ]
+    grades_desk = [{"claim_id": "h", "horizon_d": 5}, {"claim_id": "i", "horizon_d": 5}]
+    codes = {f.code for f in audit(two_family_desk, grades_desk, group_by=GROUP_FAMILY,
+                                   reported_metrics={"up": {"excess_mean"}, "down": {"excess_mean"}})}
+    checks.append(("family grouping sees two clean single-direction families",
+                   "SIGNED_EXCESS_POOLED_ACROSS_DIRECTIONS" not in codes))
+    codes = {f.code for f in audit(two_family_desk, grades_desk, group_by=GROUP_DESK,
+                                   reported_metrics={"d1": {"excess_mean"}})}
+    checks.append(("desk grouping catches the mix the family grouping cannot see",
+                   "SIGNED_EXCESS_POOLED_ACROSS_DIRECTIONS" in codes))
+
+    # The artifact reader must actually find the published keys, or GATE mode
+    # would gate an empty map and be green for the wrong reason.
+    fam_map, desk_map = derive_reported_metrics({
+        "by_family": {"radar": {"5": {"n_obs": 3, "excess_mean": 0.1}}},
+        "by_desk": {"radar": {"5": {"n_obs": 3, "hit_rate": 0.5}}},
+        "promotion_readiness": {
+            "sal": {"5": {"hit_rate": None, "n_dates": 2}},
+            "_duel_context": {"radar": {"challenger_excess_mean_5d": 0.1}},
+        },
+    })
+    checks.append(("artifact reader finds by_family excess_mean", fam_map.get("radar") == {"excess_mean"}))
+    checks.append(("artifact reader finds by_desk hit_rate", desk_map.get("radar") == {"hit_rate"}))
+    checks.append(("artifact reader finds promotion_readiness hit_rate", fam_map.get("sal") == {"hit_rate"}))
+    checks.append((
+        "artifact reader ignores a group the artifact does not publish",
+        "never_published" not in fam_map,
+    ))
+
     ok = True
     for label, passed in checks:
         print(f"  [{'PASS' if passed else 'FAIL'}] {label}", flush=True)
@@ -206,6 +378,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--strict", action="store_true")
+    parser.add_argument(
+        "--audit-store",
+        action="store_true",
+        help="ADVISORY mode: permissive whole-store audit (never a CI gate).",
+    )
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--selftest", action="store_true")
     args = parser.parse_args()
@@ -213,31 +390,60 @@ def main() -> int:
     if args.selftest:
         return _selftest()
 
+    mode = MODE_STORE if args.audit_store else MODE_GATE
+
     claims_path = args.root.joinpath(*CLAIMS_REL)
     grades_path = args.root.joinpath(*GRADES_REL)
-    missing = [p for p in (claims_path, grades_path) if not p.exists()]
+    track_path = args.root.joinpath(*TRACK_RECORD_REL)
+
+    needed = [claims_path, grades_path]
+    if mode == MODE_GATE:
+        needed.append(track_path)
+    missing = [p for p in needed if not p.exists()]
     if missing:
-        # Absent store: say so out loud, exit 0. Never render as "clean".
+        # Absent input: say so out loud, exit 0. Never render as "clean".
         if args.json:
             print(
-                _json_payload(None, store_absent=True, missing=[str(p) for p in missing]),
+                _json_payload(
+                    None,
+                    mode=mode,
+                    store_absent=not (claims_path.exists() and grades_path.exists()),
+                    track_record_absent=mode == MODE_GATE and not track_path.exists(),
+                    missing=[str(p) for p in missing],
+                ),
                 flush=True,
             )
         else:
             for path in missing:
-                print(f"::notice title=qledger-metric-validity::store absent, not audited: {path}", flush=True)
+                print(
+                    f"::notice title=qledger-metric-validity::{mode} mode: input absent, "
+                    f"NOT audited: {path}",
+                    flush=True,
+                )
         return 0
 
     claims = _read_jsonl(claims_path)
     grades = _read_jsonl(grades_path)
-    findings = audit(claims, grades)
 
-    _emit(findings, args.json, len(claims), len(grades))
+    if mode == MODE_STORE:
+        findings = audit(claims, grades)
+    else:
+        track_record = json.loads(track_path.read_text(encoding="utf-8"))
+        fam_map, desk_map = derive_reported_metrics(track_record)
+        findings = audit(claims, grades, reported_metrics=fam_map, group_by=GROUP_FAMILY)
+        findings += audit(claims, grades, reported_metrics=desk_map, group_by=GROUP_DESK)
+
+    _emit(findings, args.json, len(claims), len(grades), mode=mode)
     invalid = [f for f in findings if f.severity == SEVERITY_INVALID]
     if not args.json:
+        suffix = (
+            f", published metrics read from {track_path.relative_to(args.root)}"
+            if mode == MODE_GATE
+            else ", permissive whole-store advisory (never a CI gate)"
+        )
         print(
-            f"qledger metric validity: {len(claims)} claims, {len(grades)} grades, "
-            f"{len(findings)} finding(s) ({len(invalid)} invalid)",
+            f"qledger metric validity [{mode}]: {len(claims)} claims, {len(grades)} grades, "
+            f"{len(findings)} finding(s) ({len(invalid)} invalid){suffix}",
             flush=True,
         )
     if args.strict and invalid:

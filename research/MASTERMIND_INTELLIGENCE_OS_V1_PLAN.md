@@ -111,7 +111,7 @@ accrual still yield no alpha number.
 | **Files** | `scripts/grade_qledger.py` (per-family `excess_mean`), `engine/qledger_ui.py`, any scorecard consumer |
 | **Output** | Mixed-direction families emit hit rate and `mean_abs_excess`, or per-direction splits; salience families emit no hit rate; off-horizon aggregates labelled `ACCRUING` |
 | **Agent** | `builder` (opus); `reviewer` (opus) for the metric-semantics review |
-| **Validation** | `check_qledger_metric_validity.py --strict` exits 0 |
+| **Validation** | `check_qledger_metric_validity.py --strict` exits 0 in GATE mode (the permissive `--audit-store` advisory is never gated — its findings are corpus properties, not defects) |
 | **Acceptance** | Not done unless: `--strict` is green **and** the CI wiring flips the gate's default to strict in the same PR, with the WARN-tier rationale removed from the module docstring |
 
 ---
@@ -259,7 +259,15 @@ reliably than any rubric axis.**
 - [ ] T1 registry generated nightly; every engine has `output_class`, `authority`,
       `graded_by_design`, and — above `display` — `evidence_ref`
 - [ ] T2 Prophet plans carry direction-signed benchmark excess and MFE/MAE
-- [ ] T3 `check_qledger_metric_validity.py --strict` green in CI
+- [x] T3 `check_qledger_metric_validity.py --strict` green in CI (2026-08-13) —
+      the gate's `--strict` was UNSATISFIABLE as shipped: it audited the whole store
+      permissively, and all 11 `invalid` findings are corpus properties (radar will
+      always hold both directions; `us_importance_v0` will always be salience), so no
+      emitter work could turn it green. T3 fixed the emitters, migrated the published
+      `site/qledger/track_record.json`, and split the modes: GATE audits what is
+      actually published (`--strict` exits 0 on the live corpus, and 1 with 22 invalid
+      findings against the pre-T3 artifact), while `--audit-store` keeps the permissive
+      advisory that must never gate.
 - [ ] T4 every engine output resolves a health state from the reader's view
 - [ ] T7 scorecards render for five different output classes with five different metric sets
 - [ ] T8 CEO view renders honestly, including a nearly empty Validated list

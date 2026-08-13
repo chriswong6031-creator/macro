@@ -1419,15 +1419,33 @@ def build_qledger_reliability() -> dict:
             max_n_dates = max(max_n_dates, n_dates)
             hit_rate = cell.get("hit_rate")
             wilson_ci_low = cell.get("wilson_ci_low")
+            # T3 (epistemics.qledger_metric_validity): the ledger OMITS the
+            # hit-rate keys for a family whose claims are all direction==0 —
+            # those calls assert importance, not direction, so there is no
+            # verdict to take a ratio over. A bare em-dash would render that
+            # as "not enough data yet", which is the exact ambiguity the
+            # invariant exists to remove, so say which of the two it is.
+            hit_rate_applicable = "hit_rate" in cell
+            if not hit_rate_applicable:
+                hit_str, hit_str_zh = "n/a (no direction)", "不适用（无方向）"
+                ci_str, ci_str_zh = hit_str, hit_str_zh
+            else:
+                hit_str = f"{hit_rate*100:.1f}%" if hit_rate is not None else "—"
+                hit_str_zh = hit_str
+                ci_str = f"{wilson_ci_low:.4f}" if wilson_ci_low is not None else "—"
+                ci_str_zh = ci_str
             rows.append({
                 "family": family,
                 "horizon": horizon_str,
                 "n_obs": cell.get("n_obs") or 0,
                 "n_dates": n_dates,
+                "hit_rate_applicable": hit_rate_applicable,
                 "hit_rate": round(hit_rate, 4) if hit_rate is not None else None,
-                "hit_rate_pct": f"{hit_rate*100:.1f}%" if hit_rate is not None else "—",
+                "hit_rate_pct": hit_str,
+                "hit_rate_pct_zh": hit_str_zh,
                 "wilson_ci_low": round(wilson_ci_low, 4) if wilson_ci_low is not None else None,
-                "wilson_ci_low_str": f"{wilson_ci_low:.4f}" if wilson_ci_low is not None else "—",
+                "wilson_ci_low_str": ci_str,
+                "wilson_ci_low_str_zh": ci_str_zh,
                 "state": cell.get("state", "ACCRUING"),
                 # n_dates beside every CI per §0.5.8
                 "n_dates_note": f"n_dates={n_dates} of {graded_min_dates} floor",

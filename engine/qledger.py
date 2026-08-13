@@ -44,6 +44,13 @@ import pandas as pd
 from engine.ai_desk import _GICS_ETF, _level_asof
 from engine import ai_desk as _aidesk  # module ref: tests monkeypatch ai_desk._close_series
 from engine.ai_desk_scorer import _close_at, _covers
+# Metric-legality predicates (epistemics.qledger_metric_validity). qledger_validity
+# imports nothing from this module, so the dependency is one-way and cycle-free.
+from engine.qledger_validity import (
+    may_pool_signed_excess,
+    may_report_hit_rate,
+    profile_families as profile_groups,
+)
 from lib import config
 
 log = logging.getLogger("qledger")
@@ -851,10 +858,31 @@ def _aggregate(claims: list[dict], grades: list[dict],
                by: str, horizon_d: int) -> dict[str, dict]:
     """Aggregate grade rows into per-group track-record stats at ONE horizon.
     `by` in {'desk','family'}. Groups exclude placebo claims from the headline
-    hit-rate (placebo is the counterfactual, graded separately by B3)."""
-    cid_meta = {c["claim_id"]: c for c in claims if c.get("claim_id")}
+    hit-rate (placebo is the counterfactual, graded separately by B3).
 
-    # group -> {n_obs, hits, excess_sum, date_set}
+    METRIC LEGALITY (T3, epistemics.qledger_metric_validity). Which excess/hit
+    keys a cell carries is decided by the group's own direction profile, never
+    assumed:
+
+      * mixed-direction group  -> ``mean_abs_excess``. ``grades.excess`` is RAW
+        subject-minus-control return, so a correct bearish call contributes a
+        NEGATIVE excess; pooling it across directions measures universe drift,
+        not skill. The magnitude reading is what the placebo lane already uses
+        (:func:`_placebo_magnitude`), so the duel compares like with like.
+      * single-direction or salience-only group -> ``excess_mean`` (poolable:
+        there is at most one sign convention, so nothing cancels).
+      * salience-only group -> NO ``hit_rate`` and NO ``wilson_ci_low``. Every
+        claim is direction==0, ``hit`` is undefined and stored null, so the ratio
+        would be taken over an empty verdict set.
+
+    The illegal key is OMITTED, not nulled: a null reads as "not enough data
+    yet", which is the ambiguity this whole invariant exists to remove. Every
+    consumer already reads these with ``.get``, so absence degrades to None.
+    """
+    cid_meta = {c["claim_id"]: c for c in claims if c.get("claim_id")}
+    profiles = profile_groups(claims, group_by=by)
+
+    # group -> {n_obs, hits, excess_sum, abs_excess_sum, date_set}
     acc: dict[str, dict] = {}
     for g in grades:
         if int(g.get("horizon_d", -1)) != horizon_d:
@@ -866,9 +894,12 @@ def _aggregate(claims: list[dict], grades: list[dict],
         if key is None:
             continue
         a = acc.setdefault(key, {"n_obs": 0, "hits": 0, "graded_hits": 0,
-                                 "excess_sum": 0.0, "dates": set()})
+                                 "excess_sum": 0.0, "abs_excess_sum": 0.0,
+                                 "dates": set()})
         a["n_obs"] += 1
-        a["excess_sum"] += float(g.get("excess") or 0.0)
+        excess = float(g.get("excess") or 0.0)
+        a["excess_sum"] += excess
+        a["abs_excess_sum"] += abs(excess)
         a["dates"].add(_date_cluster(c.get("asof")))
         hit = g.get("hit")
         if hit is not None:                 # directional claim contributes a hit
@@ -882,7 +913,6 @@ def _aggregate(claims: list[dict], grades: list[dict],
         n_dates = len(a["dates"])
         gh = a["graded_hits"]
         hit_rate = round(a["hits"] / gh, 6) if gh else None
-        excess_mean = round(a["excess_sum"] / n_obs, 6) if n_obs else None
         # Cluster-honest Wilson CI: project the pooled hit rate onto the date-cluster n
         # so that n_dates (distinct asof clusters) — not the correlated n_obs — drives
         # the confidence interval.  This matches the altdata_brain.py article3 convention
@@ -894,14 +924,31 @@ def _aggregate(claims: list[dict], grades: list[dict],
             ci_low = wilson_ci_low(cluster_hits, n_dates)
         else:
             ci_low = None
-        out[key] = {
+
+        # A group with graded rows but no profile cannot be shown to be legal, so
+        # it is treated as the strictest case (fail-closed): no hit rate, no
+        # signed pooling. In practice every acc key comes from a claim row, so
+        # the profile is always present.
+        prof = profiles.get(key)
+        legal_hit = bool(prof) and may_report_hit_rate(prof)
+        legal_signed = bool(prof) and may_pool_signed_excess(prof)
+
+        cell: dict[str, Any] = {
             "n_obs": n_obs,
             "n_dates": n_dates,          # the honest n
-            "hit_rate": hit_rate,
-            "excess_mean": excess_mean,
-            "wilson_ci_low": ci_low,
-            "state": derive_state(n_dates),
         }
+        if legal_hit:
+            cell["hit_rate"] = hit_rate
+        if legal_signed:
+            cell["excess_mean"] = round(a["excess_sum"] / n_obs, 6) if n_obs else None
+        else:
+            cell["mean_abs_excess"] = (
+                round(a["abs_excess_sum"] / n_obs, 6) if n_obs else None
+            )
+        if legal_hit:
+            cell["wilson_ci_low"] = ci_low
+        cell["state"] = derive_state(n_dates)
+        out[key] = cell
     return out
 
 

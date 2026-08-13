@@ -297,7 +297,9 @@ def _refresh_qledger_promotion(e: dict) -> dict:
 
     Fields updated:
       status  — "accruing" | "gate_open" (ready=True at any horizon)
-      state   — live summary line: n_dates/needed, CI-low, excess_mean, duel context
+      state   — live summary line: n_dates/needed, CI-low, the excess reading the
+                ledger is entitled to publish (signed `excess` for a
+                direction-homogeneous family, `|excess|` for a mixed one), duel context
       ready   — True when §3 gate passes (n_dates>=25 AND wilson_ci_low>0.5 — the bound is
                 a hit-rate proportion, so the bar is the coin-flip null, not zero)
       duel_context_line — challenger vs placebo |excess| at 5d (injected into next_step)
@@ -326,7 +328,16 @@ def _refresh_qledger_promotion(e: dict) -> dict:
     needed = best.get("needed", 25)
     ci_low = best.get("wilson_ci_low")
     hr = best.get("hit_rate")
-    ex = best.get("excess_mean")
+    # T3 (epistemics.qledger_metric_validity): a mixed-direction family publishes
+    # mean_abs_excess, not a pooled signed excess_mean, because grades.excess is
+    # RAW — a correct bearish call contributes a negative excess. Read whichever
+    # key is present and LABEL it, so the admin tab can never show a magnitude
+    # dressed up as a signed edge. An absent key means "this family may not
+    # publish this reading", which is not the same as a null.
+    if "mean_abs_excess" in best:
+        ex, ex_label = best.get("mean_abs_excess"), "|excess|"
+    else:
+        ex, ex_label = best.get("excess_mean"), "excess"
     horizon = best.get("_horizon", 5)
     ready = bool(best.get("ready"))
     approaching = bool(best.get("approaching"))
@@ -338,20 +349,28 @@ def _refresh_qledger_promotion(e: dict) -> dict:
     ex_str = f"{ex*100:.2f}%" if ex is not None else "n/a"
     state = (
         f"n_dates={n_dates}/{needed} @ {horizon}d · CI-low={ci_str} · "
-        f"hit={hr_str} · excess={ex_str}"
+        f"hit={hr_str} · {ex_label}={ex_str}"
     )
     if approaching and not ready:
         state += " · APPROACHING (≥20)"
     if proj and not ready:
         state += f" · proj_ready≈{proj}"
 
-    # Duel context line: challenger vs placebo |excess| at 5d
-    ch_ex = duel_ctx.get("challenger_excess_mean_5d")
+    # Duel context line: challenger vs placebo |excess| at 5d. The placebo arm is
+    # a magnitude, so a mixed-direction challenger duels on mean_abs_excess (the
+    # like-for-like reading); a direction-homogeneous challenger keeps its signed
+    # excess_mean. Whichever key the ledger published is the one named in the line.
+    if "challenger_mean_abs_excess_5d" in duel_ctx:
+        ch_ex = duel_ctx.get("challenger_mean_abs_excess_5d")
+        ch_label = "|excess|"
+    else:
+        ch_ex = duel_ctx.get("challenger_excess_mean_5d")
+        ch_label = "excess_mean"
     pl_ex = duel_ctx.get("placebo_covered_abs_excess_5d")
     duel_line = ""
     if ch_ex is not None and pl_ex is not None:
         duel_line = (
-            f"Duel @5d: challenger excess_mean={ch_ex*100:.2f}% vs "
+            f"Duel @5d: challenger {ch_label}={ch_ex*100:.2f}% vs "
             f"placebo |excess|={pl_ex*100:.2f}% (covered-ticker tape) · "
             f"n_dates={duel_ctx.get('n_dates_5d',0)}"
         )
