@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T08:11:09.149813+00:00",
-  "count": 1047,
+  "generated_at": "2026-08-13T08:41:10.499690+00:00",
+  "count": 1048,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -21,6 +21,7 @@
     "Franklin",
     "GMO",
     "Goldman Sachs",
+    "Halcyon",
     "ING",
     "ING Direct",
     "Ing Econ",
@@ -491,6 +492,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5lxg5glw7pu-54092e",
+      "title": "Russian monitor 9 AUG 2026",
+      "institution": "Halcyon",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T22:36:12Z",
+      "summary_points": [
+        "**Geopolitical Escalation & US Intervention**: Dual-use infrastructure attacks (fuel depots, warehouses) drive civilian casualties (49 in Russia, 37 in Ukraine); US urges Ukraine to avoid Caspian Pipeline Consortium strikes, heightening escalation risks.",
+        "**Rosneft ADR Termination & Capital Fragmentation**: JP Morgan terminates Rosneft DRs at 70% discount ($1.78/share), freezing dividends and creating 22¢/share pricing divergence; structural capital flow fragmentation persists.",
+        "**Yabloko's Rising Discontent**: Only party opposing Putin’s Ukraine stance; social media followers double next party’s, Wikipedia hits surge tenfold (surpassing Putin’s page), signaling critical public sentiment shift.",
+        "**Inflation Normalization & CBR Policy**: June/July inflation spike (Ukrainian refinery attacks) now deflating; current rate aligns with 4% CBR target, enabling rate cut rationale despite Putin’s pressure for cuts.",
+        "**Geopolitical Sanctions & Valuation Paralysis**: Russian equities (SBER, LUKOIL) show negative 12M performance (-13.0%) and unreliable P/E ratios (\"n/m\"), reflecting sanctions-driven market paralysis."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
