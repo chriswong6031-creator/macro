@@ -248,13 +248,13 @@ datasets:
       which is the whole thesis. fetch_vintages() REWRITES this parquet wholesale, so
       the append-only revision chain lives in ALFRED, not here.
 
-  # ── Reference / identity spine (§D2) — DECLARED, NOT YET PRODUCED ──────────
+  # ── Reference / identity spine (§D2) — PRODUCED (DOS-1.1, 2026-08-13) ───────
   - dataset_id: reference.security_master
     layer: L2
-    status: PROPOSED
+    status: PRODUCED
     owner: macro-dashboard
-    producer: (none yet — §D12 phase 1)
-    storage: (not yet produced)
+    producer: scripts/build_security_master.py
+    storage: data/reference/security_master.parquet
     format: parquet
     grain: [security_id]
     identity:
@@ -276,18 +276,27 @@ datasets:
       effective_at: {dtype: "datetime64[ns]", nullable: false}
       ingested_at: {dtype: "datetime64[ns]", nullable: false}
     notes: >
-      PROPOSED. lib/dataos/identity.py is the ALLOCATOR (mint-once); this dataset is the
-      AUTHORITY (the stored value). Nothing writes it yet, and saying so is the point —
-      a row that claims a store that does not exist is how the next session builds against
-      a ghost. §D12 puts it in phase 1 because every other dataset joins on it and it is
-      the only defect class here with a measured 7-month silent loss.
+      lib/dataos/identity.py is the ALLOCATOR (mint-once, a pure derivation); this
+      dataset is the AUTHORITY (the stored value). Re-running the producer NEVER
+      re-mints an existing security_id — it joins a committed row by listing_key and
+      keeps every stored column, so a later correction to inception facts appends an
+      ALIAS instead (§D2). Seeded from data/breadth/constituents.parquet,
+      data/baskets/membership.json and config/delisted_symbols.yml; the VENUE comes from
+      the newest data/symbol_directory/snapshots/*.parquet (exit ledger first for a
+      delisted name — the directory is a CURRENT listing set and cannot carry a finished
+      tape). Coverage is REPORTED, not asserted: the 2026-08-13 seed resolved 703/711,
+      8 unresolved and named in data/reference/_receipt.json. effective_at is NOT a
+      listing date — no in-repo US listing-date source exists (§4) and back-dating one
+      from a store's earliest bar would be fabrication, so it carries the earliest DATED
+      OBSERVATION in the committed seeds instead. DISPLAY TIER: nothing reads this as
+      authority yet; the master becomes authority at spec §11.4.
 
   - dataset_id: reference.vendor_aliases
     layer: L2
-    status: PROPOSED
+    status: PRODUCED
     owner: macro-dashboard
-    producer: (none yet — §D12 phase 1)
-    storage: (not yet produced)
+    producer: scripts/build_security_master.py
+    storage: data/reference/vendor_aliases.parquet
     format: parquet
     grain: [vendor, vendor_symbol, valid_from]
     identity:
@@ -314,9 +323,22 @@ datasets:
           the day the MMC/MRSH answer has to be unambiguous.
       ingested_at: {dtype: "datetime64[ns]", nullable: false}
     notes: >
-      PROPOSED. Supersedes lib/ticker_aliases.py — 53 lines, 2 entries, Yahoo-only and
-      TIMELESS, which is why it can say "MMC means MRSH" but not "MMC meant MMC before
+      Supersedes lib/ticker_aliases.py — 53 lines, 2 entries, Yahoo-only and TIMELESS,
+      which is why it can say "MMC means MRSH" but not "MMC meant MMC before
       2026-01-14". Its own docstring records the 7-month silent production loss the
       time-scoped table exists to prevent: data/baskets/ohlcv/MMC.parquet never existed,
       the `insurance` basket rendered 18/19 members and `us_sector_financials` 75/76.
+      PRODUCED as of 2026-08-13, and it now answers DIFFERENTLY either side of both
+      dated renames: yahoo/MMC before 2026-01-14 and yahoo/MRSH from it, yahoo+ledger
+      SATS before 2026-06-24 and ECHO from it — one security_id on each side
+      (SEC:US-XNYS-MMC, SEC:US-XNAS-SATS). Three vendor SPACES are carried: `yahoo`
+      (the symbol requested from the price vendor), `membership` (this repo's stable
+      join key, which by charter does NOT move on a rename) and `ledger` (the
+      signal-archive key space, whose only ratified migration is SATS->ECHO). Fiserv is
+      the undated case and stays open-bounded on both rows: the vendor LAGS that rename
+      and no in-repo source dates it, so an open bound is the honest absence of a claim.
+      lib/dataos/identity.VendorAliasTable is the only reader, and the producer
+      round-trips every row through it before writing, so an ambiguous table fails at
+      write time rather than in a consumer. DISPLAY TIER: nothing reads it as authority
+      yet; lib/ticker_aliases.py remains the live seam until spec §11.4.
     supersedes: lib/ticker_aliases.py

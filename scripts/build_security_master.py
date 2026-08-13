@@ -138,6 +138,13 @@ ALIAS_COLUMNS = (
     "ingested_at",
 )
 
+#: Non-string column kinds, from the same ``schema:`` blocks.  Rows are carried in
+#: memory as ISO STRINGS and cast only at write, so a re-read of a committed artifact
+#: compares byte-for-byte against a freshly derived row instead of "Timestamp vs str".
+#: That equality is what makes the builder idempotent rather than merely deterministic.
+MASTER_DTYPES = {"effective_at": "datetime", "ingested_at": "datetime"}
+ALIAS_DTYPES = {"valid_from": "date", "valid_to": "date", "ingested_at": "datetime"}
+
 # ── Vendors (symbol SPACES) ───────────────────────────────────────────────────
 # A "vendor" here is a symbol space, which is why one of the three is this repo.
 # Spec §6's column note lists `yahoo` … `nasdaq_symdir` … `exchange` as vendors; the
@@ -604,8 +611,9 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
 
 
 # ── Mint-once-and-store ───────────────────────────────────────────────────────
-def _read_existing(path: Path, columns: tuple[str, ...]) -> list[dict]:
-    """Committed rows as plain dicts, or ``[]``.  The stored value is the AUTHORITY."""
+def _read_existing(path: Path, columns: tuple[str, ...],
+                   dtypes: dict[str, str]) -> list[dict]:
+    """Committed rows as plain dicts of ISO strings / None.  The stored value is the AUTHORITY."""
     import pandas as pd
 
     if not path.exists():
@@ -617,12 +625,32 @@ def _read_existing(path: Path, columns: tuple[str, ...]) -> list[dict]:
             f"{path} is missing declared column(s) {missing} — refusing to append to an "
             "artifact whose schema does not match config/dataset_registry.yml"
         )
-    return frame[list(columns)].to_dict("records")
+    rows: list[dict] = []
+    for record in frame[list(columns)].to_dict("records"):
+        row: dict = {}
+        for column in columns:
+            value = record[column]
+            kind = dtypes.get(column)
+            if kind == "date":
+                row[column] = _normalize_bound(value)
+            elif kind == "datetime":
+                row[column] = _normalize_datetime(value)
+            else:
+                row[column] = None if value is None else str(value)
+        rows.append(row)
+    return rows
 
 
 def _iso_now() -> str:
-    """UTC, second precision.  CI runs UTC; a local-time stamp is a different fact."""
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    """UTC, second precision, NAIVE.
+
+    CI runs UTC and a local-time stamp is a different fact, so the instant is UTC.  The
+    offset is dropped because the registry declares ``datetime64[ns]`` with
+    ``timezone: UTC`` — carrying "+00:00" in the in-memory string and losing it in the
+    parquet would make a re-read differ from the row that wrote it, which is exactly the
+    difference that would make an idempotent re-run look like a change.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0).isoformat()
 
 
 def mint_master_rows(resolutions: list[Resolution], existing: list[dict],
@@ -671,7 +699,12 @@ def mint_master_rows(resolutions: list[Resolution], existing: list[dict],
                 "country": res.listing_key.country,
                 "mic": res.listing_key.mic,
                 "inception_code": res.inception_code,
-                "effective_at": _as_iso(res.effective_at),
+                # midnight UTC: the registry declares datetime64[ns] and the evidence is
+                # day-grained, so the time-of-day is a padding artefact, never a claim.
+                "effective_at": (
+                    None if res.effective_at is None
+                    else f"{res.effective_at.isoformat()}T00:00:00"
+                ),
                 "ingested_at": now,
             }
             ids[res.key] = sec
@@ -716,24 +749,61 @@ def merge_alias_rows(fresh: list[AliasRow], existing: list[dict], now: str) -> l
 
 
 def _normalize_bound(value) -> str | None:
-    """A stored date bound as an ISO string, or None.  ``NaT``/``NaN``/``''`` are open bounds."""
+    """A stored date bound as an ISO date string, or None.
+
+    ``NaT``/``NaN``/``''`` all mean OPEN BOUND, and every one of them is a shape pandas
+    can hand back for a parquet null depending on the column's inferred dtype — so all
+    three collapse here rather than in each caller.
+    """
     if value is None:
         return None
+    if isinstance(value, datetime):
+        return value.date().isoformat()
     if isinstance(value, date):
         return value.isoformat()
     text = str(value).strip()
-    if not text or text.lower() in {"nat", "nan", "none"}:
+    if not text or text.lower() in {"nat", "nan", "none", "<na>"}:
         return None
     return text[:10]
 
 
+def _normalize_datetime(value) -> str | None:
+    """A stored timestamp as a naive-UTC ISO string, or None."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        stamp = value.astimezone(timezone.utc).replace(tzinfo=None) if value.tzinfo else value
+        return stamp.replace(microsecond=0).isoformat()
+    if isinstance(value, date):
+        return f"{value.isoformat()}T00:00:00"
+    text = str(value).strip()
+    if not text or text.lower() in {"nat", "nan", "none", "<na>"}:
+        return None
+    return text.replace(" ", "T")[:19]
+
+
 # ── Writing ───────────────────────────────────────────────────────────────────
-def _write_parquet(rows: list[dict], columns: tuple[str, ...], path: Path) -> None:
+def _write_parquet(rows: list[dict], columns: tuple[str, ...], path: Path,
+                   dtypes: dict[str, str]) -> None:
+    """Write the declared columns in the declared order, with the declared dtypes."""
     import pandas as pd
 
-    frame = pd.DataFrame(rows, columns=list(columns))
+    data: dict[str, object] = {}
     for column in columns:
-        frame[column] = frame[column].astype("object").where(frame[column].notna(), None)
+        values = [row.get(column) for row in rows]
+        kind = dtypes.get(column)
+        if kind == "datetime":
+            data[column] = pd.to_datetime(pd.Series(values, dtype="object"), errors="coerce")
+        elif kind == "date":
+            data[column] = pd.Series(
+                [None if v is None else date.fromisoformat(str(v)[:10]) for v in values],
+                dtype="object",
+            )
+        else:
+            data[column] = pd.Series(
+                [None if v is None else str(v) for v in values], dtype="object"
+            )
+    frame = pd.DataFrame(data, columns=list(columns))
     path.parent.mkdir(parents=True, exist_ok=True)
     frame.to_parquet(path, index=False)
 
@@ -754,11 +824,11 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
     aliases_path = out_dir / ALIASES_NAME
 
     master_rows, ids, notes = mint_master_rows(
-        resolutions, _read_existing(master_path, MASTER_COLUMNS), now
+        resolutions, _read_existing(master_path, MASTER_COLUMNS, MASTER_DTYPES), now
     )
     fresh_aliases = build_alias_rows(resolutions, ids)
     alias_rows = merge_alias_rows(
-        fresh_aliases, _read_existing(aliases_path, ALIAS_COLUMNS), now
+        fresh_aliases, _read_existing(aliases_path, ALIAS_COLUMNS, ALIAS_DTYPES), now
     )
 
     # THE ONLY READER, used as the validator: an ambiguous table must fail HERE, at
@@ -810,8 +880,8 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
 
     if not dry_run:
         out_dir.mkdir(parents=True, exist_ok=True)
-        _write_parquet(master_rows, MASTER_COLUMNS, master_path)
-        _write_parquet(alias_rows, ALIAS_COLUMNS, aliases_path)
+        _write_parquet(master_rows, MASTER_COLUMNS, master_path, MASTER_DTYPES)
+        _write_parquet(alias_rows, ALIAS_COLUMNS, aliases_path, ALIAS_DTYPES)
         (out_dir / RECEIPT_NAME).write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
 
     receipt["_resolutions"] = resolutions  # in-process only; never serialized
