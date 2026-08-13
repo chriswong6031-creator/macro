@@ -7530,3 +7530,58 @@ jobs:
         run: >-
           PYTHONDONTWRITEBYTECODE=1 python -m pytest
           tests/test_options_mastermindx_capture.py -q -rs
+
+  dataos-foundation:
+    # Mastermind Data OS foundation library (lib/dataos/**) — the canonical identity,
+    # temporal, price-basis, null, registry and quality spine every later Data OS wave
+    # builds on. WITHOUT THIS JOB the six suites are dead code: there is no broad
+    # `pytest tests/` anywhere in CI, so a test file no `run:` step names never runs,
+    # and the vocabulary would drift from the incidents it encodes with nothing going
+    # red. That is not hypothetical here — lib/dataos/nulls.py shipped in the first
+    # pass with no suite AND no `run:` entry, and a mutation deleting §D6's headline
+    # law outright ("0 may never mean absence" -> `if False:`) failed NOTHING. Every
+    # name in the `run:` step below is load-bearing; adding a suite to tests/ without
+    # adding it HERE ships it dark. What it pins, concretely: the MMC->MRSH
+    # alias table answering DIFFERENTLY
+    # either side of 2026-01-14 (the rename that left data/baskets/ohlcv/MMC.parquet
+    # nonexistent for seven months while the `insurance` basket quietly rendered
+    # 18/19 members); the fail-closed PIT law, whose whole failure mode is a SILENT
+    # latest-vintage return; the price-basis naming law and the measured NVDA
+    # 2024-06-03 store bases (114.80 / 114.80 / 115.00 / 1150.00, all called some form
+    # of "close"); and that config/dataset_registry.yml still validates clean.
+    #
+    # PURE UNIT TESTS BY CONSTRUCTION: nothing here reads data/, which is not
+    # materialized in an agent worktree, so the suite behaves identically on a full
+    # checkout and in this thin lane. Deps are pytest + pyyaml only — the library
+    # imports stdlib-only and pulls yaml lazily inside registry.load_registry, so a
+    # pandas/numpy import creeping into lib/dataos/ breaks HERE first.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - .github/ci/legacy-jobs.yml
+      - .github/workflows/ci.yml
+      - config/dataset_registry.yml
+      - lib/dataos/**
+      - tests/test_dataos_identity.py
+      - tests/test_dataos_nulls.py
+      - tests/test_dataos_price.py
+      - tests/test_dataos_quality.py
+      - tests/test_dataos_registry.py
+      - tests/test_dataos_temporal.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: Data OS identity / temporal / price-basis / nulls / registry / quality contracts
+        run: >-
+          PYTHONDONTWRITEBYTECODE=1 python -m pytest
+          tests/test_dataos_identity.py
+          tests/test_dataos_temporal.py
+          tests/test_dataos_price.py
+          tests/test_dataos_nulls.py
+          tests/test_dataos_registry.py
+          tests/test_dataos_quality.py -q -rs

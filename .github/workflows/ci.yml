@@ -3982,6 +3982,26 @@ on:
       # to make it wrong. A registry edit that cannot START ci.yml is the darkness
       # this whole job exists to end.
       - "tests/test_price_basis_graders.py"
+      # ── Mastermind Data OS foundation (2026-08-12) ──────────────────────────
+      # Job: dataos-foundation (.github/ci/legacy-jobs.yml). BOTH halves listed on
+      # purpose, same law as every block above: the five suites AND the modules
+      # they measure. lib/dataos/** rides the lib/** catch-all and
+      # config/dataset_registry.yml rides config/**, but a catch-all is provenance
+      # nobody can read — these entries are the executable record of what this job
+      # binds, so the next person to narrow a catch-all can see what they would be
+      # switching off. The registry file is the load-bearing one: it is the SUBJECT
+      # of tests/test_dataos_registry.py (the committed registry must validate
+      # clean and must not claim a store that does not exist), so a registry edit
+      # that cannot START ci.yml is exactly the darkness the closure guard exists
+      # to end.
+      - "lib/dataos/**"
+      - "config/dataset_registry.yml"
+      - "tests/test_dataos_identity.py"
+      - "tests/test_dataos_temporal.py"
+      - "tests/test_dataos_price.py"
+      - "tests/test_dataos_nulls.py"
+      - "tests/test_dataos_registry.py"
+      - "tests/test_dataos_quality.py"
   workflow_dispatch:
 
 permissions:

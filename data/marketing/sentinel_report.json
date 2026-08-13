@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-13T06:01:41Z",
+  "produced_at": "2026-08-13T10:22:15Z",
   "as_of": "2026-08-13",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 31,
-    "passed": 31,
+    "items": 12,
+    "passed": 12,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -19,14 +19,6 @@
   "quarantined": [],
   "passed": [
     {
-      "id": "post-flagship-016",
-      "account": "flagship",
-      "slot": "D1-S16",
-      "type": "chart",
-      "cashtag": "$BKSY",
-      "headline": ""
-    },
-    {
       "id": "post-flagship-020",
       "account": "flagship",
       "slot": "D1-S20",
@@ -35,52 +27,12 @@
       "headline": ""
     },
     {
-      "id": "post-flagship-024",
-      "account": "flagship",
-      "slot": "D1-S24",
-      "type": "chart",
-      "cashtag": "$GTES",
-      "headline": "$GTES at the decision line"
-    },
-    {
-      "id": "post-flagship-027",
-      "account": "flagship",
-      "slot": "D1-S27",
-      "type": "chart",
-      "cashtag": "$ROIV",
-      "headline": ""
-    },
-    {
-      "id": "post-flagship-033",
-      "account": "flagship",
-      "slot": "D1-S33",
-      "type": "receipt",
-      "cashtag": "$HD",
-      "headline": "$HD lost the long-term average at 344"
-    },
-    {
-      "id": "post-flagship-038",
-      "account": "flagship",
-      "slot": "D1-S38",
-      "type": "signal",
-      "cashtag": "$MBC",
-      "headline": "$MBC meets the same ceiling again"
-    },
-    {
-      "id": "post-conf-flagship-002",
-      "account": "flagship",
-      "slot": "CONF-02",
-      "type": "signal",
-      "cashtag": "$VST",
-      "headline": "$VST just lined up a pattern we track."
-    },
-    {
       "id": "post-theme-003",
       "account": "flagship",
       "slot": "D1-S2",
       "type": "theme_list",
-      "cashtag": "$STKH",
-      "headline": "Agriculture & FoodTech ripping, +5.3% avg on Wednesday"
+      "cashtag": "$SMCI",
+      "headline": "Hardware ripping, +1.8% avg on Wednesday"
     },
     {
       "id": "post-congress-001",
@@ -91,60 +43,12 @@
       "headline": ""
     },
     {
-      "id": "post-insider-008",
-      "account": "flagship",
-      "slot": "D1-S23",
-      "type": "insider",
-      "cashtag": "$STWI",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-006",
+      "id": "post-mover-001",
       "account": "founder",
-      "slot": "D1-S6",
-      "type": "chart",
-      "cashtag": "$QUBT",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-016",
-      "account": "founder",
-      "slot": "D1-S16",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-037",
-      "account": "founder",
-      "slot": "D1-S37",
-      "type": "signal",
-      "cashtag": "$HRMY",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-043",
-      "account": "founder",
-      "slot": "D1-S43",
-      "type": "receipt",
-      "cashtag": "$HD",
-      "headline": ""
-    },
-    {
-      "id": "post-congress-002",
-      "account": "founder",
-      "slot": "D1-S19",
-      "type": "congress",
-      "cashtag": "$CARR",
-      "headline": ""
-    },
-    {
-      "id": "post-meagan-007",
-      "account": "meagan",
-      "slot": "D1-S7",
-      "type": "signal",
-      "cashtag": "$SOFI",
-      "headline": ""
+      "slot": "D1-S13",
+      "type": "mover",
+      "cashtag": "$NBIS",
+      "headline": "$NBIS +34.1% on Wednesday"
     },
     {
       "id": "post-meagan-022",
@@ -159,8 +63,8 @@
       "account": "meagan",
       "slot": "D1-S5",
       "type": "theme_list",
-      "cashtag": "$AIOT",
-      "headline": "Electric Vehicles selling off, -1.6% avg on Wednesday"
+      "cashtag": "$LOCL",
+      "headline": "Agriculture & FoodTech selling off, -1.2% avg on Wednesday"
     },
     {
       "id": "post-congress-003",
@@ -171,92 +75,36 @@
       "headline": ""
     },
     {
-      "id": "post-sophia-005",
+      "id": "post-sophia-035",
       "account": "sophia",
-      "slot": "D1-S5",
+      "slot": "D1-S35",
       "type": "chart",
-      "cashtag": "$ALB",
+      "cashtag": "$GTES",
       "headline": ""
     },
     {
-      "id": "post-sophia-010",
+      "id": "post-housepick-003",
       "account": "sophia",
-      "slot": "D1-S10",
-      "type": "chart",
-      "cashtag": "$QUBT",
-      "headline": "$QUBT meets the same ceiling again"
-    },
-    {
-      "id": "post-sophia-032",
-      "account": "sophia",
-      "slot": "D1-S32",
-      "type": "chart",
-      "cashtag": "$CNM",
+      "slot": "D1-S25",
+      "type": "watchlist",
+      "cashtag": "$WEN",
       "headline": ""
     },
     {
-      "id": "post-congress-004",
-      "account": "sophia",
-      "slot": "D1-S21",
-      "type": "congress",
-      "cashtag": "$PINS",
-      "headline": ""
-    },
-    {
-      "id": "post-kelly-047",
+      "id": "post-kelly-012",
       "account": "kelly",
-      "slot": "D1-S47",
-      "type": "chart",
-      "cashtag": "$HRMY",
-      "headline": ""
-    },
-    {
-      "id": "post-insider-005",
-      "account": "kelly",
-      "slot": "D1-S9",
-      "type": "insider",
-      "cashtag": "$BRVE",
-      "headline": ""
-    },
-    {
-      "id": "post-cici-003",
-      "account": "cici",
-      "slot": "D1-S3",
+      "slot": "D1-S12",
       "type": "macro",
       "cashtag": "",
-      "headline": "冷热不均 (uneven heat) in the US data"
-    },
-    {
-      "id": "post-cici-019",
-      "account": "cici",
-      "slot": "D1-S19",
-      "type": "chart",
-      "cashtag": "$DAR",
-      "headline": "$DAR has the same test again"
-    },
-    {
-      "id": "post-cici-055",
-      "account": "cici",
-      "slot": "D1-S55",
-      "type": "chart",
-      "cashtag": "$MRK",
       "headline": ""
     },
     {
-      "id": "post-theme-006",
-      "account": "cici",
-      "slot": "D1-S2",
+      "id": "post-theme-005",
+      "account": "kelly",
+      "slot": "D1-S3",
       "type": "theme_list",
-      "cashtag": "$FSLY",
-      "headline": "Cloud Computing ripping, +1.9% avg on Wednesday"
-    },
-    {
-      "id": "post-insider-006",
-      "account": "cici",
-      "slot": "D1-S17",
-      "type": "insider",
-      "cashtag": "$PNAQ",
-      "headline": ""
+      "cashtag": "$SIMO",
+      "headline": "Semiconductors ripping, +2.8% avg on Wednesday"
     },
     {
       "id": "post-insider-007",
@@ -269,7 +117,7 @@
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 387,
+      "pairs_checked": 58,
       "hits": 0,
       "shared_media_hits": 0
     },

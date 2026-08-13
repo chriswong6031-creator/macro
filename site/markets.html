@@ -377,10 +377,10 @@
      a pinned ref is SKIPPED by the pass, stays synchronous, and races ahead of the
      deferred data (that blanked cycle.html). Inline consumers below run on
      DOMContentLoaded (fires after every defer script). -->
-<script src="regimedata/regime_prior.js?v=f4fa6258" defer></script>
+<script src="regimedata/regime_prior.js?v=9042f7c7" defer></script>
 <script src="markets_i18n.js?v=b83891fc" defer></script>
-<script src="markets_data.js?v=c8cd2d04" defer></script>
-<script src="marketsdata/markets_engine.js?v=d94f7cd4" defer></script>
+<script src="markets_data.js?v=b87af6bb" defer></script>
+<script src="marketsdata/markets_engine.js?v=7d2e4f47" defer></script>
 <script src="mm_charts.js?v=244eb769" defer></script>
 <script src="markets_app.js?v=a9d2b30f" defer></script>
 <script>document.addEventListener('DOMContentLoaded',function(){try{document.getElementById('cyc-asof').textContent=(window.MARKET_META||{}).asOf||'';}catch(e){}});</script>
@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded',function(){
     if (ageDays <= 5) return;
     var b = document.createElement('div');
     b.id = 'mkt-stale-banner';
-    b.style.cssText = 'margin:8px 0 4px;padding:7px 14px;border-radius:8px;background:rgba(217,119,6,.14);border:1px solid rgba(217,119,6,.35);color:var(--amber,#c98a2e);font-size:13px;line-height:1.4;display:flex;gap:8px;align-items:center';
+    b.style.cssText = 'margin:8px 0 4px;padding:7px 14px;border-radius:8px;background:rgba(217,119,6,.14);border:1px solid rgba(217,119,6,.35);color:var(--ink-warn, var(--warn,#8a5c00));font-size:13px;line-height:1.4;display:flex;gap:8px;align-items:center';
     b.innerHTML = '<span style="font-size:16px">&#9888;</span>'
       + '<span class="l-en"><b>Market snapshot data is ' + ageDays + ' days old</b> (as of ' + asOf + ').'
       + ' Live levels, % off ATH and valuations may be stale — verify before acting.</span>'

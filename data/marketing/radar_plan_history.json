@@ -4,28 +4,13 @@
     {
       "as_of": "2026-08-13",
       "tickers": [
-        "ALB",
         "AMRC",
-        "BKSY",
         "BRK.B",
-        "BRVE",
-        "CARR",
-        "CNM",
-        "DAR",
         "GTES",
-        "HD",
-        "HRMY",
-        "MBC",
-        "MRK",
+        "NBIS",
         "PEP",
-        "PINS",
-        "PNAQ",
-        "QUBT",
-        "ROIV",
-        "SOFI",
-        "STWI",
         "TTC",
-        "VST"
+        "WEN"
       ]
     },
     {
