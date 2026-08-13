@@ -76,8 +76,15 @@ from datetime import datetime, time, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+# UNCONDITIONAL, for the reason tests/test_check_script_import_pinning.py gives
+# about its own guard family: "already present in sys.path" is not "ahead of a
+# foreign package", and a conditional insert is not guaranteed to run at all.
+# That test only polices scripts/check_*.py, so this file is not covered by it —
+# but this actor runs as a bare `python3 scripts/nightly_backstop.py` on a
+# GitHub-hosted runner and imports lib.nyse_calendar, which is exactly the shape
+# the rule exists for. A mis-resolved calendar here would not fail loudly; it
+# would silently re-fire a five-hour bake against the wrong session.
+sys.path.insert(0, str(REPO_ROOT))
 
 from lib.nyse_calendar import expected_last_session  # noqa: E402
 
