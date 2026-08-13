@@ -1747,12 +1747,21 @@ def test_the_reason_head_is_bounded_while_the_tail_names_the_offender():
 # cannot say, and ticker shape may only corroborate (a real exchange suffix,
 # or `valid_us_ticker` when provenance is silent) or refuse — never originate.
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("ticker", ["600519", "000001", "0700", "^HSI"])
+@pytest.mark.parametrize("ticker", ["600519", "000001", "0700"])
 def test_a_bare_ticker_never_silently_resolves_to_us(ticker):
-    """The four live exemplars, called with NO claim context — exactly what
+    """The live exemplars, called with NO claim context — exactly what
     `session_anchor.market_for_ticker` (the house classifier) would answer US
     for. `_ticker_market` alone has no provenance to consult, so every one of
-    these FAILS CLOSED — never `(q.MARKET_US, "")`, the round-4 behaviour."""
+    these FAILS CLOSED — never `(q.MARKET_US, "")`, the round-4 behaviour.
+
+    P0a-2 REMOVED `^HSI` from this list, and that is a STRENGTHENING, not a
+    relaxation. Acceptance bar #1 is "the TRUE market, or fail closed" — `^HSI`
+    used to satisfy it the weak way (fail closed, because `plausible_symbol`
+    rejects the leading `^` and it read as an absent leg). It now satisfies it
+    the strong way: `INDEX_MARKET` names HK. See
+    `test_an_index_subject_no_longer_lets_the_default_bench_name_the_market`
+    for why failing closed was NOT good enough here — an absent leg let the
+    DEFAULT BENCH name the market, which is how the Hang Seng resolved US."""
     from engine.session_anchor import market_for_ticker
     assert market_for_ticker(ticker) == "US", (
         "negative control: the house classifier really would have said US here")
@@ -1809,30 +1818,45 @@ def test_a_bare_ticker_with_no_provenance_anywhere_fails_closed_and_counted(tmp_
     assert counted["n"] == 1
 
 
-def test_hsi_never_independently_claims_a_market_only_a_real_leg_can():
-    """^HSI (the Hang Seng INDEX ticker) is not even ticker-SHAPED
-    (`plausible_symbol` is False — the leading `^` matches no venue's symbol
-    alphabet), so as a STANDALONE leg it is `_ticker_market`'s exact
-    `MARKET_UNDETERMINED_NO_LEG` case: it NEVER answers `(US, "")` for it,
-    which is the property this fix guarantees (acceptance bar #1: TRUE market
-    or FAIL CLOSED, never silently US). Embedded in a full claim, the market
-    still comes from whichever OTHER leg carries real information — here, an
-    explicitly-named US bench — never from ^HSI's own shape; with NO
-    informative leg at all the claim fails closed exactly like any other."""
-    market, reason = q._ticker_market("^HSI")
-    assert (market, reason) == (None, q.MARKET_UNDETERMINED_NO_LEG)
+def test_hsi_resolves_its_own_market_and_never_defers_to_the_bench():
+    """SUPERSEDES a round-5 test that ENSHRINED THE DEFECT.
 
-    # a real bench resolves the claim — via the BENCH's own information, not
-    # ^HSI's shape (^HSI itself never became "US" anywhere in this call).
-    resolved = q.resolve_claim_market(
-        {"scope": {"type": "macro", "key": "^HSI"}, "bench": "SPY", "control": None})
-    assert resolved == (q.MARKET_US, "")
+    That test asserted, as correct behaviour:
 
-    # with NO informative leg anywhere, the claim fails closed — ^HSI alone
-    # is never enough to conjure a market.
-    refused = q.resolve_claim_market(
-        {"scope": {"type": "macro", "key": "^HSI"}, "bench": "^HSI", "control": None})
-    assert refused == (None, q.MARKET_UNDETERMINED_NO_LEG)
+        resolve_claim_market({"scope": {"key": "^HSI"}, "bench": "SPY"})
+            == (q.MARKET_US, "")
+
+    ...on the reasoning that `^HSI` is not ticker-SHAPED (`plausible_symbol` is
+    False for the leading `^`), so it is an absent leg and "the market comes
+    from whichever OTHER leg carries real information". The reasoning is sound
+    for a symbolic MACRO label, where nothing is priced. It is wrong for an
+    INDEX, which is a real instrument on a real exchange — and the consequence
+    was that a Hang Seng claim graded on NYSE sessions against SPY, with a
+    green test standing behind it. `^HSI` skipping itself is precisely what let
+    the DEFAULT bench name the market.
+
+    An index now names its own market from `INDEX_MARKET`, and a claim pairing
+    a HK subject with a US bench is refused as MIXED — which is the honest
+    answer: those two legs have no single session ruler."""
+    assert q._ticker_market("^HSI") == (q.MARKET_HK, "")
+
+    market, reason = q.resolve_claim_market(
+        {"scope": {"type": "macro", "key": "^HSI"}, "bench": "SPY",
+         "control": None})
+    assert market is None, "the Hang Seng resolved on NYSE sessions"
+    assert q.clock_reason_head(reason).startswith(q.MARKET_UNDETERMINED_MIXED)
+    assert "HK" in reason and "US" in reason
+
+    # ^HSI benchmarked against a HK instrument has ONE ruler and resolves.
+    assert q.resolve_claim_market(
+        {"scope": {"type": "macro", "key": "^HSI"}, "bench": "2800.HK",
+         "control": None}) == (q.MARKET_HK, "")
+
+    # ...and an index against ITSELF still resolves its own market, rather than
+    # failing closed for want of a second opinion.
+    assert q.resolve_claim_market(
+        {"scope": {"type": "macro", "key": "^HSI"}, "bench": "^HSI",
+         "control": None}) == (q.MARKET_HK, "")
 
 
 def test_a_desk_not_in_the_provenance_table_is_unaffected_negative_control():
@@ -2375,3 +2399,213 @@ def test_promotion_on_a_legacy_only_family_is_the_documented_status_quo(tmp_path
     assert pr.eligible is True, (
         "legacy-only promotion is the documented status quo; changing it is a "
         "fleet-wide decision, not a side effect of the clock contract")
+# =========================================================================== #
+# P0a-2 — THE MARKET RESOLVER, HARDENED
+#
+# The rule: PROVENANCE and TICKER SHAPE are two INDEPENDENT signals, NEITHER
+# authoritative alone. Where both speak they must AGREE, or the leg is refused
+# and counted. Five earlier rounds each let ONE source be sufficient and each
+# failed a new way; the tests below pin the four holes that survived round 5.
+#
+# Every one of these is PROSPECTIVE. Measured against the live 46,630-claim
+# corpus, this whole section changes the resolved market of ZERO claims — the
+# shapes it refuses do not occur yet. That is the point: they are refused
+# BEFORE a producer starts emitting them, not after a quarter of silent
+# mis-grading.
+# =========================================================================== #
+def _mkclaim(desk, key, **kw):
+    c = {"desk": desk, "claim_family": desk,
+         "scope": {"type": "entity", "key": key}}
+    c.update(kw)
+    return c
+
+
+def test_an_index_subject_no_longer_lets_the_default_bench_name_the_market():
+    """THE DEFECT. `^HSI` fails `ticker_shape.plausible_symbol` (`^` is not in
+    PLAUSIBLE_SYMBOL_RE), so round 5 read it as "contributes no market
+    information, same as an absent leg" and skipped it. That left only the
+    bench — which DEFAULTS to SPY — so a Hang Seng claim resolved US and would
+    have graded on NYSE sessions against SPY, silently.
+
+    `^HSI` now reads HK from `INDEX_MARKET`, which contradicts `radar`'s US
+    provenance, so the claim is refused instead of silently mis-graded."""
+    market, reason = q.resolve_claim_market(_mkclaim("radar", "^HSI"))
+    assert market is None, "the Hang Seng resolved on somebody else's calendar"
+    assert q.clock_reason_head(reason).startswith(
+        q.MARKET_UNDETERMINED_CONTRADICTION)
+    assert "HK" in reason and "US" in reason
+
+    # ...and with no provenance in play, the index names its own market.
+    assert q._ticker_market("^HSI") == (q.MARKET_HK, "")
+    assert q._ticker_market("^GSPC") == (q.MARKET_US, "")
+    assert q._ticker_market("^SSEC") == (q.MARKET_CN, "")
+
+
+def test_an_unenumerated_index_symbol_is_refused_by_name_never_inferred():
+    """`^HSI` and `^GSPC` are shaped identically and trade on different
+    continents, so there is nothing in the STRING to infer a market from. An
+    index this clock has no entry for is refused, by name, and counted."""
+    market, reason = q._ticker_market("^N225")       # Nikkei — no HK/CN/US cal
+    assert market is None
+    assert q.clock_reason_head(reason) == q.MARKET_UNDETERMINED_UNKNOWN_INDEX
+    assert "^N225" in reason, "the detail must name the offending symbol"
+    # the symbol sits AFTER the separator, so it can never become a histogram key
+    assert "^N225" not in q.clock_reason_head(reason)
+
+
+def test_provenance_may_not_name_a_market_the_shape_positively_excludes():
+    """THE ROUND-5 DEFECT, DIRECTLY. Round 5 made provenance the sole source
+    for a no-suffix leg, so a US-listed desk emitting a bare A-share code
+    resolved US — on NYSE sessions, silently. `valid_us_ticker` positively
+    rejects a digit-first root, so US is EXCLUDED for `600519` no matter what
+    the desk table says, and nothing else corroborates it."""
+    market, reason = q.resolve_claim_market(_mkclaim("radar", "600519"))
+    assert market is None
+    assert q.clock_reason_head(reason).startswith(
+        q.MARKET_UNDETERMINED_SHAPE_EXCLUDES)
+
+    # The MIRROR case is refused too — provenance is not privileged in either
+    # direction. A US-shaped ticker on a CN desk is equally a contradiction.
+    market, reason = q.resolve_claim_market(_mkclaim("china_news", "AAPL"))
+    assert market is None
+    assert q.clock_reason_head(reason).startswith(
+        q.MARKET_UNDETERMINED_CONTRADICTION)
+
+
+def test_provenance_still_decides_a_bare_code_its_shape_admits():
+    """The corroboration rule must not become a wall: the forward use case
+    provenance exists FOR still works. A CN desk's bare `600519` is a 6-digit
+    A-share code — a shape CN admits — so provenance decides it, and the claim
+    resolves CN end to end when its bench is CN too."""
+    claim = _mkclaim("china_news", "600519", bench="510300.SS")
+    assert q.resolve_claim_market(claim) == (q.MARKET_CN, "")
+    # ...and the leg-level call agrees
+    assert q._ticker_market("600519", provenance=q.MARKET_CN) == (q.MARKET_CN, "")
+    # HK's bare-code shape is admitted for HK and refused for CN
+    assert q._ticker_market("0700", provenance=q.MARKET_HK) == (q.MARKET_HK, "")
+    assert q._ticker_market("0700", provenance=q.MARKET_CN)[0] is None
+
+
+def test_provenance_can_never_re_market_a_symbol_that_names_its_own():
+    """The sharpest form of the round-5 inversion: under a CN desk, round 5
+    resolved the string `SPY` ITSELF to CN, because provenance was consulted
+    before the shape gate. A CN-priced claim benchmarked against SPY would then
+    have graded the S&P 500 tracker on A-share sessions.
+
+    SPY is a US symbol under every desk. The claim is refused (its two legs
+    genuinely span two markets and have no single session ruler) — never
+    silently re-marketed."""
+    assert q._ticker_market("SPY", provenance=q.MARKET_CN)[0] is None
+    assert q._ticker_market("SPY", provenance=None) == (q.MARKET_US, "")
+    assert q._ticker_market("SPY", provenance=q.MARKET_US) == (q.MARKET_US, "")
+
+    # A hard exchange suffix outranks provenance the same way.
+    assert q._ticker_market("600519.SS", provenance=q.MARKET_US)[0] is None
+    assert q._ticker_market("600519.SS", provenance=q.MARKET_CN) == (q.MARKET_CN, "")
+
+
+def test_a_claim_with_no_subject_leg_is_refused_not_resolved_off_the_bench():
+    """THE FAIL-OPEN. The subject was simply skipped when absent, leaving
+    `_DEFAULT_BENCH` (SPY) to name US — so ANY malformed or half-built claim
+    resolved US. `_validate_claim` already rejects a claim missing `scope.key`,
+    so this is unreachable through registration; but `resolve_claim_market` is
+    a public entry point, and this exact fail-open made a malformed probe report
+    a defect that did not exist (research/EVAL_OS_P0A_HORIZON_CLOCK.md §3).
+
+    A resolver whose answer is "US" for an empty claim is not fail-closed."""
+    for empty in ({"desk": "radar", "scope": {"type": "entity"}},
+                  {"desk": "radar", "scope": {"type": "entity", "key": ""}},
+                  {"desk": "radar"},
+                  {"desk": "radar", "scope": "not-a-dict"}):
+        market, reason = q.resolve_claim_market(empty)
+        assert market is None, f"resolved a market for {empty!r}"
+        assert q.clock_reason_head(reason) == q.MARKET_UNDETERMINED_NO_SUBJECT
+
+    # ...and the shape that made the original probe lie: scope_key at the TOP
+    # level instead of inside `scope`. The resolver reads claim["scope"]["key"],
+    # so this claim has no subject — and must say so rather than answer US.
+    market, _ = q.resolve_claim_market(
+        {"desk": "us_importance_v0", "claim_family": "us_importance_v0",
+         "scope_key": "600519.SS", "scope_type": "entity"})
+    assert market is None, "the malformed-probe fail-open is still open"
+
+
+def test_a_symbolic_macro_label_still_contributes_nothing_rather_than_refusing():
+    """NEGATIVE CONTROL for the index branch. A symbolic macro label is NOT an
+    index: nothing is priced, so it carries nothing to corroborate or refuse and
+    is read exactly like an absent leg — letting a leg that IS priced decide.
+    Refusing it here would kill `missing_tape`'s `CN_CENSORSHIP_RISK` scope key
+    beside its `510300.SS` bench, which round 5 fixed deliberately."""
+    assert q._ticker_market("CN_CENSORSHIP_RISK") == (
+        None, q.MARKET_UNDETERMINED_NO_LEG)
+    claim = _mkclaim("missing_tape", "CN_CENSORSHIP_RISK", bench="510300.SS")
+    assert q.resolve_claim_market(claim) == (q.MARKET_CN, "")
+
+
+def test_the_shape_admissibility_predicates_are_mutually_exclusive():
+    """The docstring claims the three per-market shape predicates never both
+    accept one bare code. Pin it, rather than trusting the claim: a string two
+    markets both admit would make `_shape_admits_market` a coin flip."""
+    samples = ["600519", "000001", "300750", "0700", "9988", "5", "AAPL",
+               "SPY", "BRK", "MSFT", "12345", "1234567"]
+    for s in samples:
+        admitted = [m for m in (q.MARKET_US, q.MARKET_CN, q.MARKET_HK)
+                    if q._shape_admits_market(s, m)]
+        assert len(admitted) <= 1, (s, admitted)
+    # and the predicate fails CLOSED on a market it does not model
+    assert q._shape_admits_market("AAPL", "CA") is False
+    assert q._shape_admits_market("AAPL", "") is False
+
+
+def test_corroborate_records_the_strength_of_every_call_site():
+    """`_corroborate`'s `shape_is_decisive` distinguishes a hard exchange fact
+    in the string from an inferred one. Both arms behave identically TODAY, so
+    nothing else would catch the parameter rotting into a lie. Pin every call
+    site's value at the source level: a new caller must make a deliberate
+    choice, and an existing one cannot be flipped silently."""
+    import inspect
+    import re as _re
+    src = inspect.getsource(q._ticker_market)
+    calls = _re.findall(r"_corroborate\([^)]*shape_is_decisive=(\w+)", src)
+    assert calls == ["True", "True", "True", "False"], calls
+    # the sole False is the bare-symbol US inference; the three Trues are the
+    # enumerated index, the mapped exchange suffix, and the share-class suffix.
+    assert src.count("_corroborate(") == 4
+
+
+def test_the_hardening_refuses_only_shapes_the_live_corpus_does_not_contain():
+    """THE COST OF THIS PR, STATED AS A TEST. Every shape the live corpus
+    actually holds must still resolve exactly as it did before — the refusals
+    above are prospective, not a retroactive cull of the accrued record.
+
+    The fixtures below are the shape CLASSES measured in the 46,630-claim store
+    (a US ticker on a US desk against the SPY default; a suffixed CN ticker on
+    a CN desk against a CN bench; a US-desk placebo; a CN-desk placebo). This
+    asserts over FIXTURES, never over `data/qledger/claims.jsonl` — that store
+    is append-only and nightly, so any assertion counting its rows or its
+    outcomes can be falsified by tomorrow's append."""
+    live_shapes = [
+        (_mkclaim("us_importance_v0", "CARR"), q.MARKET_US),
+        (_mkclaim("radar", "AAPL"), q.MARKET_US),
+        (_mkclaim("intel_hub", "MSFT"), q.MARKET_US),
+        (_mkclaim("altdata", "BRK.B"), q.MARKET_US),
+        (_mkclaim("whitehouse", "LMT"), q.MARKET_US),
+        (_mkclaim("policy", "XOM"), q.MARKET_US),
+        (_mkclaim("placebo", "NVDA"), q.MARKET_US),
+        (_mkclaim("cn_importance_v0", "600519.SS", bench="510300.SS"), q.MARKET_CN),
+        (_mkclaim("cn_importance_v0_pit", "300024.SZ", bench="510300.SS"), q.MARKET_CN),
+        (_mkclaim("china_news", "601398.SS", bench="510300.SS"), q.MARKET_CN),
+        (_mkclaim("china_special_sits", "000001.SZ", bench="510300.SS"), q.MARKET_CN),
+        (_mkclaim("placebo", "600519.SS", bench="510300.SS"), q.MARKET_CN),
+    ]
+    for claim, expect in live_shapes:
+        market, reason = q.resolve_claim_market(claim)
+        assert market == expect, (claim["desk"], claim["scope"]["key"], reason)
+
+    # ...and the one shape class the live corpus DOES hold that must still
+    # refuse: china_special_sits on a Beijing Stock Exchange ticker (4 claims).
+    market, reason = q.resolve_claim_market(
+        _mkclaim("china_special_sits", "920007.BJ", bench="510300.SS"))
+    assert market is None
+    assert q.clock_reason_head(reason).startswith(
+        q.MARKET_UNDETERMINED_FOREIGN_EXCHANGE)

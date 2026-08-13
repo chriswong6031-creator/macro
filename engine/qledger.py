@@ -31,6 +31,7 @@ import hashlib
 import json
 import logging
 import math
+import re
 from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -465,6 +466,20 @@ MARKET_UNDETERMINED_NO_CALENDAR = "no_session_calendar_for_market"
 #: provenance market either, so nothing (shape or desk) can name a market for
 #: it. See `_ticker_market`'s "NO SUFFIX AT ALL" note.
 MARKET_UNDETERMINED_NO_PROVENANCE = "no_market_provenance"
+#: P0a-2 — the two independent signals (ticker SHAPE and claim PROVENANCE) each
+#: named a market and named DIFFERENT ones. Neither is authoritative alone, so
+#: this is a contradiction to refuse, never a tie to break. See `_ticker_market`.
+MARKET_UNDETERMINED_CONTRADICTION = "shape_provenance_contradiction"
+#: P0a-2 — provenance named a market whose symbol shape this leg cannot have
+#: (`AAPL` on a CN desk, `600519` on a US desk). Provenance is corroborated by
+#: shape or it is refused; it never originates a market on its own.
+MARKET_UNDETERMINED_SHAPE_EXCLUDES = "shape_excludes_provenance_market"
+#: P0a-2 — a `^`-prefixed index symbol this clock has no market for. Index
+#: symbols are enumerated (`INDEX_MARKET`), never inferred.
+MARKET_UNDETERMINED_UNKNOWN_INDEX = "unknown_index_symbol"
+#: P0a-2 — the claim carries no subject leg at all. Refused rather than resolved
+#: off the DEFAULT BENCH, which is what used to happen. See `resolve_claim_market`.
+MARKET_UNDETERMINED_NO_SUBJECT = "no_subject_leg"
 
 #: The separator between a refusal reason's MACHINE-READABLE HEAD and its prose
 #: tail. Everything before the FIRST occurrence is bounded-cardinality and safe to
@@ -616,6 +631,83 @@ DESK_MARKET: dict[str, str] = {
 }
 
 
+#: INDEX SYMBOLS ARE ENUMERATED, NEVER INFERRED (P0a-2).
+#:
+#: THE DEFECT THIS REPAIRS. A `^`-prefixed index symbol fails
+#: `ticker_shape.plausible_symbol` (the `^` is not in `PLAUSIBLE_SYMBOL_RE`), so
+#: the round-5 resolver read it as "contributes NO market information, same as
+#: an absent leg" and skipped it. For a claim whose SUBJECT is an index that
+#: leaves only the bench — and the bench defaults to `_DEFAULT_BENCH` (SPY) —
+#: so `{'desk': 'radar', 'scope': {'key': '^HSI'}}` resolved (US, ''), grading
+#: the Hang Seng on NYSE sessions against SPY, silently. The skip is right for a
+#: symbolic MACRO label (`CN_CENSORSHIP_RISK` — nothing is priced); it is wrong
+#: for an index, which is a real priced instrument on a real exchange.
+#:
+#: A `^` symbol therefore resolves through this table or is REFUSED BY NAME. It
+#: is never inferred from the string: `^HSI` and `^GSPC` are shaped identically
+#: and trade on different continents, so there is nothing in the shape to infer
+#: from. An omission costs a counted refusal; a wrong guess costs a silent wrong
+#: calendar — so, like `EXCHANGE_SUFFIXES_UNSUPPORTED`, this errs toward refusal.
+#:
+#: ZERO live legs today: no `^` symbol appears in any leg of the 46,630-claim
+#: corpus, and `_DEFAULT_BENCH` is `SPY`, not `^GSPC`. This is prospective, and
+#: `test_the_index_table_changes_nothing_on_the_live_corpus` pins that.
+INDEX_MARKET: dict[str, str] = {
+    # --- US ---
+    "^GSPC": MARKET_US,     # S&P 500
+    "^SPX": MARKET_US,      # S&P 500 (alternate vendor spelling)
+    "^DJI": MARKET_US,      # Dow Jones Industrial Average
+    "^IXIC": MARKET_US,     # Nasdaq Composite
+    "^NDX": MARKET_US,      # Nasdaq 100
+    "^RUT": MARKET_US,      # Russell 2000
+    "^VIX": MARKET_US,      # CBOE Volatility Index
+    "^NYA": MARKET_US,      # NYSE Composite
+    "^XAX": MARKET_US,      # NYSE American Composite
+    # --- Hong Kong ---
+    "^HSI": MARKET_HK,      # Hang Seng
+    "^HSCE": MARKET_HK,     # Hang Seng China Enterprises
+    "^HSCC": MARKET_HK,     # Hang Seng China-Affiliated Corporations
+    # --- Mainland China ---
+    "^SSEC": MARKET_CN,     # SSE Composite
+    "^SZSC": MARKET_CN,     # SZSE Composite
+    "^CSI300": MARKET_CN,   # CSI 300
+}
+
+#: SHAPE ADMISSIBILITY, PER MARKET (P0a-2). "Could a symbol of this shape trade
+#: on this market at all?" — the corroboration half of the agree-or-refuse rule.
+#:
+#: This is deliberately NOT a second market classifier. It answers a strictly
+#: weaker question than `_ticker_market`'s enumeration: not "which market is
+#: this?" but "is `market` even POSSIBLE for this string?". That is what lets
+#: provenance decide a bare code without letting it override the string — a CN
+#: desk's bare `600519` is admitted (6-digit A-share code), a US desk's bare
+#: `600519` is refused (`valid_us_ticker` rejects a digit-first root), and the
+#: refusal names which signal blocked it.
+#:
+#: The three predicates are mutually exclusive on every bare code, which is a
+#: property worth having and is pinned by a test: a 6-digit code is CN and only
+#: CN, a 1-5 digit code is HK and only HK, and everything `valid_us_ticker`
+#: accepts is digit-first-free and therefore neither.
+_CN_BARE_CODE_RE = re.compile(r"^\d{6}$")      # 600519 / 000001 / 300750
+_HK_BARE_CODE_RE = re.compile(r"^\d{1,5}$")    # 0700 / 9988 / 5
+
+
+def _shape_admits_market(ticker: str, market: str) -> bool:
+    """Could a symbol shaped like `ticker` (already upper-cased, no exchange
+    suffix) trade on `market`? PURE; consults no claim state.
+
+    False is a POSITIVE exclusion — "this string cannot be that market" — and is
+    what turns provenance from an override into a corroborated inference. An
+    unknown market key is False (fail closed), never True."""
+    if market == MARKET_US:
+        return valid_us_ticker(ticker) is not None
+    if market == MARKET_CN:
+        return bool(_CN_BARE_CODE_RE.match(ticker))
+    if market == MARKET_HK:
+        return bool(_HK_BARE_CODE_RE.match(ticker))
+    return False
+
+
 def _provenance_market(claim: dict) -> str | None:
     """The market implied by a claim's OWN provenance — `claim_family` first
     (the finer-grained tag), falling back to `desk` — or None when neither
@@ -704,12 +796,26 @@ def _ticker_market(ticker: Any, provenance: str | None = None) -> tuple[str | No
     t = str(ticker).strip().upper()
     if not t:
         return None, MARKET_UNDETERMINED_NO_LEG
+
+    # --- P0a-2: INDEX SYMBOLS, ENUMERATED (see INDEX_MARKET) ---------------- #
+    # Checked before the suffix split: `^` symbols carry no exchange suffix and
+    # fail `plausible_symbol`, so every later branch would read them as "absent
+    # leg" and let the DEFAULT BENCH name the market.
+    if t.startswith("^"):
+        market = INDEX_MARKET.get(t)
+        if market is None:
+            return None, (f"{MARKET_UNDETERMINED_UNKNOWN_INDEX}"
+                          f"{CLOCK_REASON_SEP}{t} is an index symbol this clock "
+                          f"has no market for; index symbols are enumerated in "
+                          f"INDEX_MARKET, never inferred from the string")
+        return _corroborate(t, market, provenance, shape_is_decisive=True)
+
     head, _, tail = t.rpartition(".")
     suffix = f".{tail}" if head else ""
     if suffix:
         market = MARKET_SUFFIX.get(suffix)
         if market is not None:
-            return market, ""
+            return _corroborate(t, market, provenance, shape_is_decisive=True)
         exchange = EXCHANGE_SUFFIXES_UNSUPPORTED.get(suffix)
         if exchange is not None:
             return None, (f"{MARKET_UNDETERMINED_FOREIGN_EXCHANGE}:{suffix}"
@@ -725,7 +831,7 @@ def _ticker_market(ticker: Any, provenance: str | None = None) -> tuple[str | No
             return None, (f"{MARKET_UNDETERMINED_NOT_A_US_SYMBOL}:{suffix}"
                           f"{CLOCK_REASON_SEP}a single-letter suffix reads as a US "
                           f"share class only on a symbol ticker_shape accepts")
-        return MARKET_US, ""
+        return _corroborate(t, MARKET_US, provenance, shape_is_decisive=True)
 
     # --- NO SUFFIX AT ALL (round 5) ---
     if not plausible_symbol(t):
@@ -739,20 +845,79 @@ def _ticker_market(ticker: Any, provenance: str | None = None) -> tuple[str | No
         # `CN_CENSORSHIP_RISK` scope key against a `510300.SS` bench — round 5
         # blocker 2).
         return None, MARKET_UNDETERMINED_NO_LEG
-    if provenance is not None:
-        # The claim's OWN construction names a market — authoritative, not an
-        # inference from this string. THE PRIMARY SOURCE for a no-suffix leg.
-        return provenance, ""
     if valid_us_ticker(t) is not None:
-        # The only shape-only inference left when provenance is silent. It is
-        # corroborated, not assumed: every bare digit-first or symbol-first
-        # code (600519, 000001, 0700, ^HSI) fails this gate and falls through
-        # to the refusal below instead of silently becoming US.
-        return MARKET_US, ""
+        # The shape SPEAKS: `valid_us_ticker` accepts it, so US is a positive
+        # shape reading and goes through the same corroboration as a suffix
+        # (a US-shaped ticker on a CN desk is a contradiction, not a US claim).
+        return _corroborate(t, MARKET_US, provenance, shape_is_decisive=False)
+    if provenance is not None:
+        # THE SHAPE IS SILENT (a bare code — 600519, 0700 — that names no
+        # market on its own). Provenance may decide, but only where the shape
+        # ADMITS that market: this is corroboration, not an override. A CN
+        # desk's `600519` is admitted (6-digit A-share code); a US desk's
+        # `600519` is refused, because `valid_us_ticker` positively excludes a
+        # digit-first root and nothing else corroborates US.
+        if _shape_admits_market(t, provenance):
+            return provenance, ""
+        return None, (f"{MARKET_UNDETERMINED_SHAPE_EXCLUDES}:{provenance}"
+                      f"{CLOCK_REASON_SEP}{t} cannot be a {provenance} symbol, "
+                      f"so the claim's own provenance is contradicted by the "
+                      f"only other signal — refusing rather than trusting one")
     return None, (f"{MARKET_UNDETERMINED_NO_PROVENANCE}:{t}"
                   f"{CLOCK_REASON_SEP}no exchange suffix, no claim provenance "
                   f"names a market, and the shape is not a US ticker either — "
                   f"refusing rather than defaulting to US")
+
+
+def _corroborate(ticker: str, shape_market: str, provenance: str | None,
+                 *, shape_is_decisive: bool) -> tuple[str | None, str]:
+    """Combine the two INDEPENDENT market signals for one leg — the P0a-2 rule.
+
+    > Provenance and ticker shape are two independent signals. NEITHER IS
+    > AUTHORITATIVE ALONE. Where both speak they must AGREE, or the leg is
+    > refused and counted.
+
+    THE HISTORY THIS ENCODES. Five rounds of this dispatch each picked ONE
+    source and let it win, and each failed a new way. Rounds 2-4 made SHAPE the
+    sole source: hardcoded NYSE; then "single letter suffix => US share class",
+    which reads `.L`/`.T`/`.F` (London, Tokyo, Frankfurt) as US; then "no suffix
+    => US", which reads `600519` and `0700` as US. Round 5 inverted it and made
+    PROVENANCE the sole source for a no-suffix leg — so a US-listed desk
+    emitting a bare A-share code resolved US, silently, on NYSE sessions. The
+    error was never which source was picked; it was that ONE source was allowed
+    to be sufficient. A US desk claiming `600519` is not a market to guess. It
+    is a CONTRADICTION, and the only safe answer is refusal.
+
+    `shape_is_decisive` distinguishes the two strengths of shape evidence:
+
+      * True  — a hard exchange fact is in the string itself (a mapped suffix
+        `.SS`/`.SZ`/`.HK`, an enumerated `^` index, a share-class suffix on a
+        symbol the house US gate accepts). Where provenance disagrees this is a
+        contradiction; where provenance is silent the string stands alone,
+        because an exchange suffix is not an inference.
+      * False — the shape reading is itself an inference (a bare symbol
+        `valid_us_ticker` happens to accept). It still contradicts a disagreeing
+        provenance, and it still stands when provenance is silent, but it is
+        recorded as the weaker reading so the distinction stays in the code
+        rather than in a comment.
+
+    Both arms currently behave the same when provenance is silent. That is not
+    an oversight and the parameter is not dead: it is the seam a future rule
+    ("a WEAK shape reading must be corroborated, a hard suffix need not be")
+    would turn on, and it makes the strength of each call site explicit at the
+    call site. `test_corroborate_records_the_strength_of_every_call_site` pins
+    every caller's value so the distinction cannot silently rot.
+    """
+    if provenance is None:
+        return shape_market, ""
+    if provenance == shape_market:
+        return shape_market, ""
+    return None, (f"{MARKET_UNDETERMINED_CONTRADICTION}"
+                  f":{shape_market}!={provenance}"
+                  f"{CLOCK_REASON_SEP}{ticker} reads as {shape_market} from its "
+                  f"symbol but the claim's own provenance names {provenance}; "
+                  f"neither signal is authoritative alone, so this is refused "
+                  f"rather than resolved on whichever source wins the tie")
 
 
 def clock_reason_head(reason: Any) -> str:
@@ -799,10 +964,26 @@ def resolve_claim_market(claim: dict) -> tuple[str | None, str]:
     """
     scope = claim.get("scope") if isinstance(claim.get("scope"), dict) else {}
     provenance = _provenance_market(claim)
+    subject = scope.get("key")
+    if not subject:
+        # P0a-2 — A CLAIM WITH NO SUBJECT LEG IS REFUSED, NOT RESOLVED OFF THE
+        # DEFAULT BENCH. Without this the subject was simply skipped and
+        # `_DEFAULT_BENCH` (SPY) named US for a claim that has no subject at
+        # all, so ANY malformed or partially-built claim resolved US silently.
+        # `_validate_claim` already rejects a claim missing `scope.key`, so this
+        # is unreachable through registration — but `resolve_claim_market` is a
+        # public entry point that callers and tests reach directly, and this
+        # exact fail-open is what made a malformed probe report a defect that
+        # did not exist (see research/EVAL_OS_P0A_HORIZON_CLOCK.md §3). A
+        # function whose answer is "US" for an empty claim is not fail-closed.
+        return None, (f"{MARKET_UNDETERMINED_NO_SUBJECT}"
+                      f"{CLOCK_REASON_SEP}the claim names no scope.key, so the "
+                      f"only legs left are the bench and control — resolving "
+                      f"there would let the DEFAULT bench name the market")
     # EXACTLY the legs `grade_claim` prices, including its bench default — so the
     # market the validator refuses on and the market the grader would have used
     # can never be two different answers.
-    legs = [scope.get("key"), claim.get("bench") or _DEFAULT_BENCH,
+    legs = [subject, claim.get("bench") or _DEFAULT_BENCH,
             claim.get("control")]
     markets: dict[str, str] = {}          # market -> the leg that named it
     for leg in legs:

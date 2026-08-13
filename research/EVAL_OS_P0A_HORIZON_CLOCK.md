@@ -281,3 +281,105 @@ it instead of trusting prose.
   already on file. Correctly-clocked observations are therefore not the headline
   for those cells — but they are never invisible: every basis's own count is
   published beside the selected one.
+
+---
+
+# P0a-2 — the market resolver, hardened
+
+**Shipped as the follow-on PR to P0a-1.** The rule the five earlier rounds never
+tried:
+
+> **Provenance and ticker shape are two INDEPENDENT signals. Neither is
+> authoritative alone. Where both speak they must AGREE, or the leg is refused
+> and counted.**
+
+## 7.1 Why every earlier round failed
+
+Each round picked **one** source and let it win:
+
+| round | sole source | how it failed |
+|---|---|---|
+| 2 | hardcoded NYSE | CN lanes ungradeable on ~26% of windows |
+| 3 | shape: "single-letter suffix ⇒ US share class" | `.L` (London), `.T` (Tokyo), `.F` (Frankfurt) silently US |
+| 4 | shape: "no suffix ⇒ US" | `600519`→US, `000001`→US, `0700`→US |
+| 5 | **provenance**, for any no-suffix leg | a US desk's bare A-share code → US; and, sharpest, **the string `SPY` itself resolved CN under a CN desk** |
+
+The error was never *which* source was picked. It was that **one source was
+allowed to be sufficient**. A US desk claiming `600519` is not a market to
+guess — it is a contradiction, and the only safe answer is refusal.
+
+## 7.2 The four holes this closes
+
+**(a) Index symbols let the default bench name the market.** `^HSI` fails
+`ticker_shape.plausible_symbol` (the leading `^` is not in the symbol alphabet),
+so round 5 read it as "contributes nothing, same as an absent leg" and skipped
+it — leaving only the bench, which **defaults to SPY**. So
+`{'desk':'radar','scope':{'key':'^HSI'}}` resolved **(US, '')**: the Hang Seng,
+graded on NYSE sessions against SPY, silently. Index symbols are now
+**enumerated** in `INDEX_MARKET` and refused by name when absent — never
+inferred, because `^HSI` and `^GSPC` are shaped identically and trade on
+different continents.
+
+**(b) Provenance could name a market the shape positively excludes.**
+`valid_us_ticker` rejects a digit-first root, so US is *excluded* for `600519`
+however the desk table is configured. `_shape_admits_market` makes provenance a
+**corroborated inference** rather than an override: a CN desk's bare `600519` is
+admitted (6-digit A-share code) and still resolves CN — the forward use case
+provenance exists for — while a US desk's `600519` refuses.
+
+**(c) Shape and provenance could disagree with no one noticing.** Now a
+contradiction, named and counted (`shape_provenance_contradiction`).
+
+**(d) A claim with no subject leg resolved US off the default bench.**
+`_validate_claim` already rejects such a claim, so this is unreachable through
+registration — but `resolve_claim_market` is a public entry point, and this
+exact fail-open is what made a malformed probe report a defect that did not
+exist (§3). A resolver whose answer is "US" for an empty claim is not
+fail-closed.
+
+## 7.3 Two round-5 tests were enshrining the defect
+
+`test_hsi_never_independently_claims_a_market_only_a_real_leg_can` asserted, as
+**correct behaviour**:
+
+```python
+resolve_claim_market({"scope": {"key": "^HSI"}, "bench": "SPY"}) == (MARKET_US, "")
+```
+
+That is the defect, with a green test standing behind it. It is superseded by
+`test_hsi_resolves_its_own_market_and_never_defers_to_the_bench`. `^HSI` was
+also removed from the `..._never_silently_resolves_to_us` parametrize list —
+a **strengthening**: acceptance bar #1 is "the true market, or fail closed", and
+`^HSI` used to satisfy it the weak way (fail closed), which is exactly what let
+the default bench answer. It now satisfies it the strong way (HK).
+
+## 7.4 What this costs: nothing, measured
+
+Replayed over the live **46,630-claim** corpus, P0a-2 changes the resolved
+market of **0 claims**. Distribution is identical to P0a-1: US 40,682 / CN 5,944
+/ 4 refused (`china_special_sits` on `.BJ`). Every shape refused here is one the
+corpus does not yet contain — refused *before* a producer starts emitting it,
+not after a quarter of silent mis-grading.
+
+The corpus check is deliberately **not** a test assertion.
+`data/qledger/claims.jsonl` is an append-only nightly store, and any assertion
+counting its rows or its outcomes can be falsified by tomorrow's append (the
+append-only law, P2). `test_the_hardening_refuses_only_shapes_the_live_corpus_
+does_not_contain` asserts over **fixtures** representing the shape classes the
+store holds.
+
+## 7.5 Mechanical negative controls
+
+Four mutations, each reverted byte-identically:
+
+| mutant | result |
+|---|---|
+| M1 index table nulled (`^HSI` back to "absent leg") | 2 tests fail |
+| M2 contradiction ignored (shape wins the tie) | 2 tests fail |
+| M3 provenance may override an excluding shape (round-5 behaviour) | 2 tests fail |
+| M4 absent subject resolves off the default bench again | 1 test fails |
+
+`_corroborate`'s `shape_is_decisive` flag currently behaves identically in both
+arms, so nothing would catch it rotting into a lie — every call site's value is
+therefore pinned at the source level by
+`test_corroborate_records_the_strength_of_every_call_site`.
