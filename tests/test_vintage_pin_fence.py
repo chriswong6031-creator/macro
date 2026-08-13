@@ -146,8 +146,9 @@ def test_live_cpi_truth_files():
 def test_live_stores_cover_the_post_5515_detonations() -> None:
     stores = {label: path for path, label in LIVE_STORES}
     assert stores["spine-predictions"] == "data/spine/predictions.parquet"
-    assert stores["release-forecast"].startswith("data/release_forecast/")
+    assert stores["release-forecast"] == "data/release_forecast"
     assert stores["inflation-truth"] == "data/release_forecast/cpi_truth"
+    assert stores["release-targets"] == "data/fred_vintage/release_targets"
     assert "data/vector/alerts.jsonl" in {path for path, _ in LIVE_STORES}
     assert "data/alerts/alerts_log.parquet" in {path for path, _ in LIVE_STORES}
     assert "data/cycle_ontology/tripwire_state.json" in {path for path, _ in LIVE_STORES}
@@ -336,6 +337,52 @@ def test_frozen_prefix():
         encoding="utf-8",
     )
     assert main(["--root", str(tmp_path)]) == 0
+
+
+def test_release_forecast_tree_pin_is_caught() -> None:
+    source = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_live_snapshot_count():
+    files = list((ROOT / "data/release_forecast/input_snapshots").glob("*.json"))
+    assert len(files) == 40
+'''
+    found = scan_text(source, rel="tests/test_release_tree_pin.py")
+    assert any(
+        f.kind == "eq-literal" and f.literal == "40" and f.store == "release-forecast"
+        for f in found
+    ), found
+
+
+def test_release_targets_directory_pin_is_caught() -> None:
+    source = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_live_release_target_files():
+    files = list((ROOT / "data/fred_vintage/release_targets").glob("*.parquet"))
+    assert len(files) == 3
+'''
+    found = scan_text(source, rel="tests/test_release_targets_pin.py")
+    assert any(
+        f.kind == "eq-literal" and f.literal == "3" and f.store == "release-targets"
+        for f in found
+    ), found
+
+
+def test_assigned_data_dir_parquet_loader_pin_is_caught() -> None:
+    source = '''
+from lib import config
+def test_pins_via_assigned_parquet_loader():
+    d = config.data_dir()
+    path = d / "spine" / "predictions.parquet"
+    df = pd.read_parquet(path)
+    assert len(df) == 58
+'''
+    found = scan_text(source, rel="tests/test_spine_parquet_loader.py")
+    assert any(
+        f.kind == "eq-literal" and f.literal == "58" and f.store == "spine-predictions"
+        for f in found
+    ), found
 
 
 def test_live_tree_gate_is_baseline_gated_not_a_product_heal() -> None:

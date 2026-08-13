@@ -42,6 +42,8 @@ ROOT = Path(__file__).resolve().parent.parent
 # inflation-truth artifacts (unrun-release-forecast) detonated the same way
 # as the original govrev/options/prophet trio.  Sibling jsonl/parquet logs
 # and the tripwire latch are the same class: nightly-advanced, equality-pinned.
+# Directory prefixes cover the whole tree; more specific rows listed first
+# keep a distinct label (cpi_truth → inflation-truth).
 LIVE_STORES: tuple[tuple[str, str], ...] = (
     ("data/government_revenue/latest.json", "govrev-latest"),
     ("data/government_revenue/candidate_queue.json", "govrev-candidates"),
@@ -49,11 +51,9 @@ LIVE_STORES: tuple[tuple[str, str], ...] = (
     ("data/options_signal_episode/episodes.jsonl", "options-episodes"),
     ("site/prophet/plans", "prophet-plans"),
     ("data/spine/predictions.parquet", "spine-predictions"),
-    ("data/release_forecast/latest.json", "release-forecast"),
-    ("data/release_forecast/forward_ledger.jsonl", "release-forecast"),
-    ("data/release_forecast/scoreboard.json", "release-forecast"),
-    ("data/release_forecast/inflation_intelligence.json", "release-forecast"),
     ("data/release_forecast/cpi_truth", "inflation-truth"),
+    ("data/release_forecast", "release-forecast"),
+    ("data/fred_vintage/release_targets", "release-targets"),
     ("data/vector/alerts.jsonl", "vector-alerts"),
     ("data/commodity/alerts.jsonl", "commodity-alerts"),
     ("data/alerts/alerts_log.parquet", "alerts-log"),
@@ -435,9 +435,17 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
                 and isinstance(child.func, ast.Attribute)
                 and isinstance(child.func.value, ast.Name)
                 and child.func.value.id in source_names
-                and child.func.attr in {"read_text", "read_bytes", "glob", "iterdir", "open"}
+                and child.func.attr in {
+                    "read_text", "read_bytes", "glob", "iterdir", "open",
+                    "read_parquet",
+                }
             ):
                 return name_stores.get(child.func.value.id, "via-source-name")
+            if isinstance(child, ast.Call) and _call_name(child) == "read_parquet":
+                for arg in list(child.args) + [kw.value for kw in child.keywords]:
+                    store = _store_of(arg) or _expr_store(arg)
+                    if store and store != "via-source-name":
+                        return store
             if isinstance(child, ast.Call):
                 name = _call_name(child)
                 if name in func_stores:
@@ -518,7 +526,10 @@ def scan_text(source: str, *, rel: str) -> list[Finding]:
         if name in tainted_funcs:
             return True
         lowered = name.lower()
-        if name in {"loads", "load", "len", "list", "dict", "set", "tuple", "sorted"}:
+        if name in {
+            "loads", "load", "len", "list", "dict", "set", "tuple", "sorted",
+            "read_parquet",
+        }:
             return any(_tainted(arg) for arg in node.args)
         if "queue" in lowered or "census" in lowered:
             return any(_tainted(arg) for arg in node.args) or any(
@@ -1050,6 +1061,40 @@ def test_pins_via_data_dir_join():
     found = scan_text(spine_data_dir_join_bad, rel="tests/test_spine_data_dir_join.py")
     if not any(f.kind == "eq-literal" and f.literal == "58" and f.store == "spine-predictions" for f in found):
         failures.append(f"data_dir()/spine/predictions.parquet ==58 pin not caught: {found}")
+
+    spine_parquet_loader_bad = '''
+from lib import config
+def test_pins_via_assigned_parquet_loader():
+    d = config.data_dir()
+    path = d / "spine" / "predictions.parquet"
+    df = pd.read_parquet(path)
+    assert len(df) == 58
+'''
+    found = scan_text(spine_parquet_loader_bad, rel="tests/test_spine_parquet_loader.py")
+    if not any(f.kind == "eq-literal" and f.literal == "58" and f.store == "spine-predictions" for f in found):
+        failures.append(f"assigned data_dir parquet loader ==58 pin not caught: {found}")
+
+    release_tree_bad = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_live_snapshot_count():
+    files = list((ROOT / "data/release_forecast/input_snapshots").glob("*.json"))
+    assert len(files) == 40
+'''
+    found = scan_text(release_tree_bad, rel="tests/test_release_tree_pin.py")
+    if not any(f.kind == "eq-literal" and f.literal == "40" and f.store == "release-forecast" for f in found):
+        failures.append(f"release_forecast/input_snapshots ==40 pin not caught: {found}")
+
+    release_targets_bad = '''
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+def test_live_release_target_files():
+    files = list((ROOT / "data/fred_vintage/release_targets").glob("*.parquet"))
+    assert len(files) == 3
+'''
+    found = scan_text(release_targets_bad, rel="tests/test_release_targets_pin.py")
+    if not any(f.kind == "eq-literal" and f.literal == "3" and f.store == "release-targets" for f in found):
+        failures.append(f"fred_vintage/release_targets ==3 pin not caught: {found}")
 
     alerts_log_bad = '''
 from pathlib import Path
