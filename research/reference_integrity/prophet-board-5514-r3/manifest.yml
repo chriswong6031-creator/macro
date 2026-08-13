@@ -1,0 +1,46 @@
+# RIG artifact manifest — the R3 Prophet Board reference (PR #5514), frozen by SHA.
+# Fresh cycle. The r2 REVISE verdict is HISTORICAL EVIDENCE, not an inherited
+# verdict: this artifact is judged from 6ad6b51b on its own, and approval is
+# issued only if it earns it here.
+schema: mastermind.rig_manifest.v1
+reference_id: prophet-board-5514-r3
+scope: full
+status: in_review
+
+surface:
+  route: us_stocks.html
+  registry_row: us_stocks
+  archetype: discovery_board
+
+author:
+  identity: "PR #5514 revision lane (RIG-correction pass R3, 2026-08-13) — mockup-gate builder sessions"
+  role: designer
+
+lineage:
+  predecessors:
+    - {reference_id: prophet-board-5514-original, artifact_sha: 668e5954876f078755537605942c644fcbbb8a1d, verdict: REVISE, note: "founding fixture (PR #5520)"}
+    - {reference_id: prophet-board-5514-r2, artifact_sha: 0fc975acfe97a7b208e294528af76c8431a7beef, verdict: REVISE, note: "r2 cycle (PR #5533); blockers PRC-201/202/203/207"}
+  baseline_reuse:
+    from: prophet-board-5514-r2
+    valid: true
+    evidence: "baseline.yml: revalidation_evidence — production surface unchanged since capture"
+
+reference_files:
+  - path: research/reference_integrity/prophet-board-5514-r3/evidence/r3_6ad6b51/index.html
+    frozen_sha: 6ad6b51bc351bb7e32a77960abe11f6ddb63475c
+  - path: research/reference_integrity/prophet-board-5514-r3/evidence/r3_6ad6b51/board.js
+    frozen_sha: 6ad6b51bc351bb7e32a77960abe11f6ddb63475c
+  - path: research/reference_integrity/prophet-board-5514-r3/evidence/r3_6ad6b51/board.css
+    frozen_sha: 6ad6b51bc351bb7e32a77960abe11f6ddb63475c
+  - path: research/reference_integrity/prophet-board-5514-r3/evidence/r3_6ad6b51/board-data.js
+    frozen_sha: 6ad6b51bc351bb7e32a77960abe11f6ddb63475c
+  - path: research/reference_integrity/prophet-board-5514-r3/evidence/r3_6ad6b51/compare.html
+    frozen_sha: 6ad6b51bc351bb7e32a77960abe11f6ddb63475c
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml
