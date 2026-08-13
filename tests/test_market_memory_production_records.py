@@ -17,6 +17,10 @@ from jsonschema import Draft202012Validator, FormatChecker
 from engine import options_signal_episode
 from engine.neuralweb import market_memory_production_records as records
 from scripts import capture_market_memory_options_episodes as capture_cli
+from tests.options_episode_activation_fixture import (
+    activation_episode_body,
+    materialize_activation_git_repo,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "options_signal_episode" / "episodes.jsonl"
@@ -47,7 +51,9 @@ def _canonical_jsonl(rows: list[dict]) -> bytes:
 
 def _base_rows() -> list[dict]:
     return [
-        json.loads(line) for line in SOURCE.read_text(encoding="utf-8").splitlines()
+        json.loads(line)
+        for line in activation_episode_body().splitlines()
+        if line
     ]
 
 
@@ -96,7 +102,7 @@ def _capture_base(store: Path):
     with _clock(BASE_CAPTURE):
         return records.capture_options_episode_source(
             store,
-            source_body=SOURCE.read_bytes(),
+            source_body=activation_episode_body(),
             source_commit=COMMIT,
         )
 
@@ -113,8 +119,10 @@ def _capture_forward(store: Path):
 
 def test_frozen_owner_prefix_matches_the_reviewed_384_rows() -> None:
     body = SOURCE.read_bytes()
-    assert len(body.splitlines()) == records.ACTIVATION_PREFIX_ROWS == 384
-    assert hashlib.sha256(body).hexdigest() == records.ACTIVATION_PREFIX_SHA256
+    prefix = activation_episode_body()
+    assert len(body.splitlines()) >= records.ACTIVATION_PREFIX_ROWS == 384
+    assert prefix == b"".join(body.splitlines(True)[: records.ACTIVATION_PREFIX_ROWS])
+    assert hashlib.sha256(prefix).hexdigest() == records.ACTIVATION_PREFIX_SHA256
     assert _base_rows()[-1]["episode_id"] == records.ACTIVATION_LAST_EPISODE_ID
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     provenance = schema["properties"]["provenance"]["properties"]
@@ -176,7 +184,7 @@ def test_exact_duplicate_is_idempotent_and_identity_is_clock_free(
     # create a second capture.
     with _clock(datetime(2026, 8, 12, 12, 2, 48, tzinfo=timezone.utc)):
         second = records.capture_options_episode_source(
-            store, source_body=SOURCE.read_bytes(), source_commit=COMMIT
+            store, source_body=activation_episode_body(), source_commit=COMMIT
         )
 
     assert second.action == "already_captured_no_new_owner_record"
@@ -552,16 +560,19 @@ def test_cold_bootstrap_delta_can_exceed_incremental_delta_bound(
 
 
 def test_source_is_read_from_git_and_never_mutated(tmp_path: Path) -> None:
-    before = SOURCE.read_bytes()
+    live_before = SOURCE.read_bytes()
+    repo = materialize_activation_git_repo(tmp_path / "activation-source")
+    prefix = activation_episode_body()
     with _clock(BASE_CAPTURE):
         result = capture_cli.capture_deployed_options_episodes(
-            ROOT,
-            store_root=_store(tmp_path),
+            repo,
+            store_root=_store(tmp_path / "store"),
         )
 
-    assert SOURCE.read_bytes() == before
-    assert result["source_artifact_sha256"] == hashlib.sha256(before).hexdigest()
-    assert result["cumulative_record_count"] == 384
+    assert SOURCE.read_bytes() == live_before
+    assert (repo / records.SOURCE_ARTIFACT_REL).read_bytes() == prefix
+    assert result["source_artifact_sha256"] == hashlib.sha256(prefix).hexdigest()
+    assert result["cumulative_record_count"] == records.ACTIVATION_PREFIX_ROWS
     assert result["v1_capacity"] == {
         "maximum_source_rows": 25_000,
         "maximum_source_bytes": 48 * 1024 * 1024,

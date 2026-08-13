@@ -23,6 +23,7 @@ from scripts import initialize_market_memory_w1a as w1a_initializer
 from scripts import project_market_memory_context as writer_module
 from tests import market_memory_repo_scan as repo_scan
 from tests.test_market_memory_pit import CAPTURED_AT, _packet
+from tests.options_episode_activation_fixture import materialize_activation_git_repo
 
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY = ROOT / "app" / "deploy"
@@ -319,11 +320,12 @@ def test_options_receipt_auditor_entrypoint_is_cwd_independent_and_durable(
         key: value for key, value in os.environ.items() if key != "PYTHONPATH"
     }
 
+    frozen_root = materialize_activation_git_repo(tmp_path / "frozen-options")
     result = subprocess.run(
         [
             str(OPTIONS_AUDITOR),
             "--repository-root",
-            str(ROOT),
+            str(frozen_root),
             "--w1a-store-root",
             str(w1a),
             "--trusted-store-root",
@@ -340,7 +342,7 @@ def test_options_receipt_auditor_entrypoint_is_cwd_independent_and_durable(
     )
     head = json.loads(result.stdout)
     publication = options_receipt_store.read_current_publication(
-        receipt_root, repository_root=ROOT
+        receipt_root, repository_root=frozen_root
     )
 
     assert publication["head"] == head

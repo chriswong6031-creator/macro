@@ -36,6 +36,7 @@ from tests.test_options_signal_episode import (
     _campaign_h60_outcome,
     _episode,
 )
+from tests.options_episode_activation_fixture import materialize_frozen_options_corpus
 
 SNAPSHOT_CLOCK = datetime(2026, 8, 10, 10, 0, 0, tzinfo=timezone.utc)
 IDENTITY_CLOCK = SNAPSHOT_CLOCK + timedelta(seconds=1)
@@ -1547,18 +1548,9 @@ def test_options_context_live_audit_replays_the_frozen_repository_corpus(
     tmp_path: Path,
 ) -> None:
     source_root = Path(__file__).resolve().parents[1]
-    repository_root = tmp_path / "repository"
+    repository_root = materialize_frozen_options_corpus(tmp_path / "repository")
     data_root = repository_root / "data/options_signal_episode"
-    config_root = repository_root / "config"
-    data_root.mkdir(parents=True)
-    config_root.mkdir()
-    for name in ("episodes.jsonl", "campaigns.jsonl", "outcomes_h60.jsonl"):
-        source = source_root / "data/options_signal_episode" / name
-        (data_root / name).write_bytes(source.read_bytes())
-    config_path = config_root / "market_memory_canary.v1.json"
-    config_path.write_bytes(
-        (source_root / "config/market_memory_canary.v1.json").read_bytes()
-    )
+    config_path = repository_root / "config" / "market_memory_canary.v1.json"
     w1a_root = _empty_w1a_store(tmp_path / "live-audit-w1a")
     trusted_root = tmp_path / "live-audit-trusted"
     trusted.initialize_trusted_store(trusted_root)
