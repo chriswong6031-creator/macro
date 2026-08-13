@@ -659,13 +659,12 @@ def test_compile_context_holds_no_scheduling_vocabulary() -> None:
         assert forbidden not in body, f"{forbidden} has no business in a knowledge plane"
 
 
-def test_the_store_copy_used_by_this_suite_is_the_committed_one() -> None:
-    """Guard against a fixture drifting away from the format the compiler must read."""
-    scratch = Path(os.environ.get("TMPDIR", "/tmp")) / "agentos-compile-probe"
-    if scratch.exists():
-        shutil.rmtree(scratch)
+def test_the_store_this_suite_compiles_is_the_committed_one(tmp_path: Path) -> None:
+    """The real store must stay valid, or every bundle above is compiled from a lie.
+
+    `tmp_path`, never a fixed scratch directory: parallel sessions share one TMPDIR on
+    this host, and a shared path turns two green suites into one flaky pair.
+    """
+    scratch = tmp_path / "agentos"
     shutil.copytree(STORE, scratch)
-    try:
-        assert _run("validate", "--root", str(scratch)).returncode == 0
-    finally:
-        shutil.rmtree(scratch, ignore_errors=True)
+    assert _run("validate", "--root", str(scratch)).returncode == 0
