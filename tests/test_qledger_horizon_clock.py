@@ -499,12 +499,22 @@ def _drop_bar(series: pd.Series, day: str) -> pd.Series:
     return series[series.index != pd.Timestamp(day)]
 
 
-def test_a_leg_missing_the_windows_entry_bar_is_refused_not_graded_short(
+def test_a_refused_control_leg_refuses_the_ROW_not_just_the_control_number(
         prices, tmp_path, monkeypatch):
-    """The window is 2026-08-10..2026-08-17. Delete the CONTROL leg's entry bar
-    and the naive slice would start on 08-11 — a 4-session window graded under a
-    5-session label, for one leg only. Rule 5 says every leg is measured over the
-    SAME window, so the leg is refused instead."""
+    """MAJOR 1 — rule 5 was enforced on subject and bench but NOT on the control.
+
+    The window is 2026-08-10..2026-08-17. Delete the CONTROL leg's entry bar and
+    the naive slice would start on 08-11 — a 4-session window graded under a
+    5-session label, for one leg only. The endpoint assertion caught that and
+    returned None... which `grade_claim` then wrote out as `control_ret: null`,
+    a value that in this store means "this claim declared NO control". So the
+    row published as if it had never had a control leg, and the §3 promotion
+    gate — whose bar is excess-vs-CONTROL — fell through to its primary-hit
+    fallback on exactly the claims whose control window was broken. A leg
+    silently receiving a different window is the one thing rule 5 forbids.
+
+    The row is now refused whole, like a refused subject or bench.
+    """
     win = q.resolve_horizon_window("2026-08-07", 5, q.HORIZON_UNIT_TRADING)
     assert win.fill_date == date(2026, 8, 10)
 
@@ -516,13 +526,29 @@ def test_a_leg_missing_the_windows_entry_bar_is_refused_not_graded_short(
     # The hole is real: the store still REACHES the coverage date, so maturity
     # passes and only the endpoint check can catch this.
     assert holed["XLI"].index.max() >= pd.Timestamp(win.coverage_date)
-    assert q._leg_ret_in_window("XLI", tmp_path, win) is None
-    assert q._leg_ret_in_window("CARR", tmp_path, win) is not None   # control
+    assert q._leg_ret_in_window("XLI", tmp_path, win) is None       # control
+    assert q._leg_ret_in_window("CARR", tmp_path, win) is not None  # subject
+    assert q._leg_ret_in_window("SPY", tmp_path, win) is not None   # bench
 
     c = _claim(horizon_unit=q.HORIZON_UNIT_TRADING)
-    row = q.grade_claim({**c, "claim_id": "cid-hole-in"}, root=tmp_path,
-                        today=date(2026, 9, 30))[0]
-    assert row["control_ret"] is None, "a short control leg must not be graded"
+    assert c["control"] == "XLI", "fixture must actually declare a control"
+    assert q.grade_claim({**c, "claim_id": "cid-hole-in"}, root=tmp_path,
+                         today=date(2026, 9, 30)) == [], \
+        "a control that cannot be measured over the shared window refuses the row"
+
+
+def test_a_claim_with_no_control_still_grades_with_a_null_control(
+        prices, tmp_path):
+    """Negative control for the refusal above: `control_ret: null` must keep
+    meaning 'no control was declared'. If the fix had been implemented by
+    refusing every null control, this claim would stop grading — and the two
+    states (no control / broken control) would still be indistinguishable, just
+    in the other direction."""
+    c = _claim(horizon_unit=q.HORIZON_UNIT_TRADING, sector=None)
+    assert c["control"] is None
+    rows = q.grade_claim({**c, "claim_id": "cid-no-ctrl"}, root=tmp_path,
+                         today=date(2026, 9, 30))
+    assert len(rows) == 1 and rows[0]["control_ret"] is None
 
 
 def test_a_leg_missing_the_windows_exit_bar_is_refused_not_graded_short(
@@ -764,3 +790,555 @@ def test_a_supplied_check_by_still_passes_through_on_a_legacy_claim():
     c = _claim(check_by="2026-12-31")
     assert "horizon_unit" not in c
     assert c["check_by"] == "2026-12-31" and "check_by_source" not in c
+
+
+# --------------------------------------------------------------------------- #
+# BLOCKER (round 3) — the resolver DISPATCHES on the market the claim is priced in
+# --------------------------------------------------------------------------- #
+# The first cut of this clock resolved every claim through lib.nyse_calendar.
+# 5,726 live claims (china_news, cn_importance_v0, cn_importance_v0_pit,
+# china_special_sits) are priced on A-shares, whose exchange keeps a different
+# calendar — so those claims got NYSE fill/coverage dates that the rule-5
+# endpoint assertion can never satisfy. Two measured consequences on the live
+# corpus: 31.9% of CN windows were the wrong LENGTH in A-share sessions, and on a
+# 2025-2026 anchor sweep 5.9% of h=21 CN windows land an endpoint on a CN-only
+# closure and are therefore PERMANENTLY ungradeable.
+def _cn_session_count(a: date, b: date) -> int:
+    from lib import cn_calendar
+    n, d = 0, a
+    while d <= b:
+        if cn_calendar.is_session(d):
+            n += 1
+        d += timedelta(days=1)
+    return n
+
+
+def test_a_cn_claim_resolves_on_the_cn_calendar_across_golden_week():
+    """National Day Golden Week (Oct 1-7) closes the mainland exchanges and is a
+    normal trading week in New York. From a 2026-09-28 anchor, 5 A-share sessions
+    end on 2026-10-13; 5 NYSE sessions end on 2026-10-06 — a date INSIDE Golden
+    Week, with no A-share bar, so a CN claim resolved on NYSE could never grade
+    at all: rule 5's endpoint assertion refuses it forever."""
+    from lib import cn_calendar, nyse_calendar
+
+    cn_win = q.resolve_horizon_window("2026-09-28", 5, q.HORIZON_UNIT_TRADING,
+                                      q.MARKET_CN)
+    us_win = q.resolve_horizon_window("2026-09-28", 5, q.HORIZON_UNIT_TRADING,
+                                      q.MARKET_US)
+
+    assert cn_win.market == q.MARKET_CN and us_win.market == q.MARKET_US
+    assert cn_win.exit_date == date(2026, 10, 13)
+    assert us_win.exit_date == date(2026, 10, 6)
+    assert cn_win.exit_date != us_win.exit_date
+
+    # the NYSE answer is not merely different, it is UNREACHABLE on this market
+    assert not cn_calendar.is_session(us_win.exit_date)
+    assert cn_calendar.is_session(cn_win.exit_date)
+    # ...and Golden Week is a full trading week in New York, so the US answer is
+    # right for the US and wrong here — one hardcoded calendar cannot serve both.
+    assert nyse_calendar.is_session(us_win.exit_date)
+    # the window really is 5 A-share sessions past the fill (fill + 5)
+    assert _cn_session_count(cn_win.fill_date, cn_win.coverage_date) == 6
+
+
+def test_a_cn_claim_window_is_the_declared_number_of_a_share_sessions():
+    """The quieter half of the defect: even when the NYSE endpoints happen to be
+    A-share sessions, a US-only closure inside the span (Labor Day 2026-09-07)
+    makes the window the wrong LENGTH — 21 declared sessions spanning 20 real
+    ones. Measured over the live corpus this hit 31.9% of CN windows."""
+    us_win = q.resolve_horizon_window("2026-08-12", 21, q.HORIZON_UNIT_TRADING,
+                                      q.MARKET_US)
+    cn_win = q.resolve_horizon_window("2026-08-12", 21, q.HORIZON_UNIT_TRADING,
+                                      q.MARKET_CN)
+    from lib import cn_calendar
+    # both NYSE endpoints ARE A-share sessions here, so the endpoint assertion
+    # cannot catch this one — it grades, at the wrong length.
+    assert cn_calendar.is_session(us_win.fill_date)
+    assert cn_calendar.is_session(us_win.coverage_date)
+    # Labor Day 2026-09-07 is a NYSE closure and a normal A-share session, so the
+    # NYSE-resolved "21 trading days" spans 22 A-share sessions past the fill.
+    assert _cn_session_count(us_win.fill_date, us_win.coverage_date) == 23
+    assert _cn_session_count(cn_win.fill_date, cn_win.coverage_date) == 22
+
+
+def test_no_live_cn_lane_window_is_ungradeable_or_mis_lengthed_after_dispatch():
+    """The corpus-shaped proof, run on SYNTHESISED claims spanning the live CN
+    lanes' asof range (2026-06-20..2026-08-12) plus a Golden Week straddle —
+    never on data/qledger, which the nightly appends to.
+
+    Under the NYSE resolver these windows are 21-or-22 A-share sessions and some
+    land an endpoint on a CN-only closure. Under dispatch, every window is
+    exactly its declared number of A-share sessions and both endpoints are
+    A-share sessions. Zero, not 'fewer'."""
+    from lib import cn_calendar
+
+    anchors = [date(2026, 6, 20) + timedelta(days=i) for i in range(0, 54)]
+    anchors += [date(2026, 9, 20) + timedelta(days=i) for i in range(0, 20)]
+
+    us_bad = cn_bad = total = 0
+    for a in anchors:
+        for h in (5, 21):
+            total += 1
+            us = q.resolve_horizon_window(a.isoformat(), h,
+                                          q.HORIZON_UNIT_TRADING, q.MARKET_US)
+            cn = q.resolve_horizon_window(a.isoformat(), h,
+                                          q.HORIZON_UNIT_TRADING, q.MARKET_CN)
+            if (us is None
+                    or not cn_calendar.is_session(us.fill_date)
+                    or not cn_calendar.is_session(us.coverage_date)
+                    or _cn_session_count(us.fill_date, us.coverage_date) != h + 1):
+                us_bad += 1
+            assert cn is not None
+            assert cn_calendar.is_session(cn.fill_date)
+            assert cn_calendar.is_session(cn.coverage_date)
+            if _cn_session_count(cn.fill_date, cn.coverage_date) != h + 1:
+                cn_bad += 1
+
+    assert cn_bad == 0, "every dispatched CN window is its declared length"
+    assert us_bad > 0.2 * total, (
+        f"the pre-fix control must still be broken at scale: {us_bad}/{total}")
+
+
+def test_an_hk_claim_resolves_on_the_hk_calendar():
+    """The HK mirror, and the sharpest version of it: the FILL diverges, not just
+    the exit. Chung Yeung 2026-10-19 closes HKEX and is an ordinary NYSE session,
+    so an HK claim anchored on 2026-10-16 gets an NYSE fill of 2026-10-19 — a day
+    with no HKEX bar. Rule 5 asserts the fill bar exists, so that window is
+    permanently ungradeable, exactly as the CN case."""
+    from lib import hk_calendar, nyse_calendar
+
+    hk_win = q.resolve_horizon_window("2026-10-16", 3, q.HORIZON_UNIT_TRADING,
+                                      q.MARKET_HK)
+    us_win = q.resolve_horizon_window("2026-10-16", 3, q.HORIZON_UNIT_TRADING,
+                                      q.MARKET_US)
+    assert not hk_calendar.is_session(date(2026, 10, 19))
+    assert nyse_calendar.is_session(date(2026, 10, 19))
+
+    assert us_win.fill_date == date(2026, 10, 19)
+    assert not hk_calendar.is_session(us_win.fill_date)   # unreachable bar
+    assert hk_win.fill_date == date(2026, 10, 20)
+    assert hk_calendar.is_session(hk_win.fill_date)
+    assert hk_calendar.is_session(hk_win.exit_date)
+    assert hk_win.exit_date != us_win.exit_date
+    assert hk_win.market == q.MARKET_HK
+
+
+def test_the_market_is_derived_from_the_claim_not_passed_by_the_caller(
+        monkeypatch, tmp_path):
+    """End to end: a CN claim built by `make_claim` carries a CN-resolved
+    check_by, and the grader measures to that same date — with no caller
+    anywhere naming a market."""
+    from lib import cn_calendar
+
+    c = q.make_claim(desk="cn_importance_v0", asof="2026-09-28",
+                     scope_type="entity", scope_key="300024.SZ",
+                     direction=1, horizon_d=5,
+                     horizon_unit=q.HORIZON_UNIT_TRADING,
+                     bench="510300.SS", timestamp_quality="CRAWL_BOUNDED")
+    assert c["clock_market"] == q.MARKET_CN
+    assert c["check_by"] == "2026-10-13"
+    assert cn_calendar.is_session(date.fromisoformat(c["check_by"]))
+
+    idx = pd.DatetimeIndex([pd.Timestamp(d) for d in
+                            (date(2026, 9, 1) + timedelta(days=i)
+                             for i in range(120))
+                            if cn_calendar.is_session(d.date()
+                                                      if hasattr(d, "date") else d)])
+    store = {t: pd.Series([100.0 * (1.01 ** i) for i in range(len(idx))], index=idx)
+             for t in ("300024.SZ", "510300.SS")}
+    monkeypatch.setattr("engine.ai_desk._close_series",
+                        lambda ticker, root: store.get(ticker))
+    rows = q.grade_claim({**c, "claim_id": "cid-cn"}, root=tmp_path,
+                         today=date(2026, 12, 1))
+    assert len(rows) == 1
+    assert rows[0]["clock_exit_date"] == c["check_by"]
+    assert rows[0]["clock_market"] == q.MARKET_CN
+
+
+# --------------------------------------------------------------------------- #
+# BLOCKER (round 3) — an undeterminable market FAILS CLOSED
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("scope_key, bench, expect", [
+    # a real live exemplar: four china_special_sits claims are priced on Beijing
+    # Stock Exchange tickers, a suffix engine.session_anchor.MARKET_SUFFIX does
+    # not carry — so `market_for_ticker` calls them US and they would have graded
+    # Beijing names on NYSE sessions.
+    ("920007.BJ", "510300.SS", q.MARKET_UNDETERMINED_UNKNOWN_SUFFIX),
+    # legs on two markets: no single session ruler exists, and picking one hands
+    # two legs different horizon lengths (the exact rule-5 failure).
+    ("300024.SZ", "SPY", q.MARKET_UNDETERMINED_MIXED),
+    # a market the house table CAN name but this repo has no calendar for.
+    ("SHOP.TO", "XIU.TO", q.MARKET_UNDETERMINED_NO_CALENDAR),
+])
+def test_an_undeterminable_market_fails_closed_and_says_why(scope_key, bench, expect):
+    claim = {"scope": {"type": "entity", "key": scope_key}, "bench": bench,
+             "control": None}
+    market, reason = q.resolve_claim_market(claim)
+    assert market is None
+    assert reason.startswith(expect), reason
+
+
+def test_the_house_classifier_would_have_answered_us_for_all_three():
+    """The refusals above are not the house classifier's answer — they are a
+    deliberate narrowing of it. `session_anchor.market_for_ticker` resolves an
+    unmapped suffix to US openly (its R3 ruling), which is harmless for bucket
+    edges and NOT harmless for a graded exit."""
+    from engine.session_anchor import market_for_ticker
+    assert market_for_ticker("920007.BJ") == "US"
+    # and the suffix table itself is REUSED, not re-invented
+    assert q._ticker_market("300024.SZ")[0] == market_for_ticker("300024.SZ") == "CN"
+    assert q._ticker_market("0700.HK")[0] == market_for_ticker("0700.HK") == "HK"
+
+
+def test_a_us_share_class_ticker_is_not_mistaken_for_an_exchange_suffix():
+    """`BRK.B` / `BRK.A` are 527 legs in the live store. A blanket
+    'dotted suffix we cannot name -> refuse' would have failed them closed."""
+    assert q._ticker_market("BRK.B") == (q.MARKET_US, "")
+    assert q._ticker_market("BRK.A") == (q.MARKET_US, "")
+    assert q.resolve_claim_market(
+        {"scope": {"type": "entity", "key": "BRK.B"}, "bench": "SPY"}) == ("US", "")
+
+
+def test_an_unknown_market_is_never_answered_with_another_markets_sessions():
+    """The resolver refuses an unknown market key outright rather than defaulting
+    — the default in its signature is for direct US callers, never a fallback."""
+    with pytest.raises(ValueError):
+        q.resolve_horizon_window("2026-08-07", 5, q.HORIZON_UNIT_TRADING, "CA")
+
+
+def test_each_markets_supported_range_is_declared_and_enforced():
+    """CN/HK carry a CEILING as well as a floor: their lunar tables stop at 2030
+    and the modules do not raise past it — they return a holiday set with no
+    lunar closures at all, so a 2031 exit would walk through Spring Festival."""
+    from lib import cn_calendar
+
+    lny_2030 = cn_calendar.LNY_FIRST[2030]
+    assert lny_2030 in cn_calendar.holidays(2030)
+    assert not any(h.month == 2 for h in cn_calendar.holidays(2031)), \
+        "past the table the CN calendar silently loses Spring Festival"
+
+    assert q.resolve_horizon_window("2031-01-05", 5, q.HORIZON_UNIT_TRADING,
+                                    q.MARKET_CN) is None
+    # ...including a window that STARTS inside the range and ENDS outside it
+    assert q.resolve_horizon_window("2030-12-20", 21, q.HORIZON_UNIT_TRADING,
+                                    q.MARKET_CN) is None
+    assert q.resolve_horizon_window("2013-06-03", 5, q.HORIZON_UNIT_TRADING,
+                                    q.MARKET_CN) is None
+    # the US floor is unchanged by the dispatch
+    assert q.CLOCK_MARKET_SUPPORT[q.MARKET_US][0] == q.CLOCK_SUPPORTED_FROM
+
+
+def test_the_search_bound_still_covers_the_longest_modelled_closure():
+    """`_MAX_CLOSED_STRETCH_DAYS` fails CLOSED (returns None) rather than
+    spinning, so a calendar edit that lengthens a closure past it would turn into
+    silently unresolvable windows. Measured maxima over 2014-2030 pinned here."""
+    worst = {}
+    for market, cal in q.CLOCK_CALENDARS.items():
+        run = best = 0
+        d = date(2014, 1, 1)
+        while d <= date(2030, 12, 31):
+            run = 0 if cal.is_session(d) else run + 1
+            best = max(best, run)
+            d += timedelta(days=1)
+        worst[market] = best
+    assert worst == {"US": 3, "CN": 10, "HK": 6}
+    assert max(worst.values()) < q._MAX_CLOSED_STRETCH_DAYS
+
+
+def test_us_session_arithmetic_is_unchanged_by_the_generic_walkers():
+    """The dispatch rewrote the forward walkers to run over `is_session`. For the
+    US market they must agree with `lib.nyse_calendar`'s own helpers on every
+    session of a two-year span — the round-2 behaviour is not allowed to move."""
+    from lib import nyse_calendar
+
+    d = date(2025, 1, 1)
+    checked = 0
+    while d <= date(2026, 12, 31):
+        if nyse_calendar.is_session(d):
+            for n in (0, 1, 5, 21):
+                assert (q._session_n_forward(q.MARKET_US, d, n)
+                        == nyse_calendar.session_n_forward(d, n))
+            checked += 1
+        d += timedelta(days=1)
+    assert checked > 400
+
+
+# --------------------------------------------------------------------------- #
+# MAJOR 3 (round 3) — no zombie claims
+# --------------------------------------------------------------------------- #
+def test_an_unresolvable_clock_refuses_registration_and_is_counted(tmp_path):
+    """A declared-unit claim whose clock cannot resolve used to register
+    status=open with check_by=None: it could never grade (grade_claim skips an
+    unresolvable window), never close (status advances only when every in-scope
+    horizon matures), and appeared in no count. Silent immortality.
+
+    It is now a REJECTED row with a stable reason prefix, and the population is
+    a number."""
+    c = q.make_claim(desk="d", asof="2026-08-05", scope_type="entity",
+                     scope_key="920007.BJ", direction=1, horizon_d=21,
+                     horizon_unit=q.HORIZON_UNIT_TRADING, bench="510300.SS",
+                     timestamp_quality="CRAWL_BOUNDED", claim_family="cn_special_sits")
+    assert c["check_by"] is None, "the pre-condition of the defect"
+
+    stored = q.register(c, root=tmp_path)
+    assert stored["status"] == q.STATUS_REJECTED
+    assert stored["reject_reason"].startswith(q.REJECT_CLOCK_UNRESOLVABLE)
+    assert stored["status"] != q.STATUS_OPEN, "never open-forever"
+
+    counted = q.count_unresolvable_clock_claims(root=tmp_path)
+    assert counted["n"] == 1
+    assert counted["by_family"] == {"cn_special_sits": 1}
+    assert sum(counted["by_reason"].values()) == 1
+
+    # and it can never be graded even if something re-opened it by hand
+    assert q.grade_claim({**stored, "status": q.STATUS_OPEN}, root=tmp_path,
+                         today=date(2027, 1, 1)) == []
+
+
+def test_an_out_of_range_anchor_is_refused_at_registration_not_left_open(tmp_path):
+    """The same rule for the other unresolvable cause — an anchor outside the
+    market's declared span."""
+    c = q.make_claim(desk="d", asof="2009-06-01", scope_type="entity",
+                     scope_key="CARR", direction=1, horizon_d=5,
+                     horizon_unit=q.HORIZON_UNIT_TRADING,
+                     timestamp_quality="CRAWL_BOUNDED")
+    stored = q.register(c, root=tmp_path)
+    assert stored["status"] == q.STATUS_REJECTED
+    assert stored["reject_reason"].startswith(q.REJECT_CLOCK_UNRESOLVABLE)
+    assert q.count_unresolvable_clock_claims(root=tmp_path)["n"] == 1
+
+
+def test_a_resolvable_claim_and_every_legacy_claim_still_register_open(tmp_path):
+    """Negative control for both refusals: the gate is scoped to declared-unit
+    claims whose clock genuinely cannot resolve. A legacy claim has no resolved
+    window at all and must be untouched by it."""
+    ok = q.make_claim(desk="d", asof="2026-08-07", scope_type="entity",
+                      scope_key="CARR", direction=1, horizon_d=5,
+                      horizon_unit=q.HORIZON_UNIT_TRADING,
+                      timestamp_quality="CRAWL_BOUNDED")
+    legacy_bj = q.make_claim(desk="d", asof="2009-06-01", scope_type="entity",
+                             scope_key="920007.BJ", direction=1, horizon_d=5,
+                             bench="510300.SS",
+                             timestamp_quality="CRAWL_BOUNDED")
+    assert q.register(ok, root=tmp_path)["status"] == q.STATUS_OPEN
+    assert q.register(legacy_bj, root=tmp_path)["status"] == q.STATUS_OPEN
+    assert q.count_unresolvable_clock_claims(root=tmp_path)["n"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# MAJOR 2 (round 3) — the headline guarantee states EXACTLY where it holds
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("horizon_d, holds", [
+    (5, True), (21, True), (63, True),     # the graded rungs
+    (3, True),                             # below the smallest rung: graded at 3
+    (7, False), (30, False), (126, False),  # off-rung: check_by is not a graded exit
+])
+def test_check_by_is_a_graded_exit_only_on_the_graded_rungs(horizon_d, holds):
+    """MAJOR 2 — the docstring asserted unconditionally that "check_by IS the
+    authoritative exit the grader resolves". That is FALSE for every off-rung
+    horizon: check_by is resolved at the claim's OWN horizon_d, the grader grades
+    at `in_scope_horizons(horizon_d)`. Making it true would mean changing
+    GRADE_HORIZONS / in_scope_horizons, which is P0b and out of scope — so the
+    scope is stated instead, and it is EXECUTABLE rather than prose."""
+    assert q.check_by_is_a_graded_exit(horizon_d) is holds
+    assert (horizon_d in q.in_scope_horizons(horizon_d)) is holds
+
+
+def test_an_off_rung_claims_check_by_is_a_real_exit_that_no_grade_row_matches(
+        prices, tmp_path):
+    """The concrete shape of that gap on a live lane. A 126-trading-day policy
+    claim's check_by is a correctly resolved 126-session exit — and no grade row
+    is ever measured to it, because the claim grades at 5, 21 and 63."""
+    c = _claim(horizon_d=126, horizon_unit=q.HORIZON_UNIT_TRADING)
+    win = q.resolve_horizon_window(q._entry_date(c), 126,
+                                   q.HORIZON_UNIT_TRADING, q.MARKET_US)
+    assert c["check_by"] == win.exit_date.isoformat()   # a REAL resolved exit
+    assert not q.check_by_is_a_graded_exit(126)
+
+    rows = q.grade_claim({**c, "claim_id": "cid-126"}, root=tmp_path,
+                         today=date(2027, 6, 30))
+    assert sorted(r["horizon_d"] for r in rows) == [5, 21, 63]
+    assert c["check_by"] not in {r["clock_exit_date"] for r in rows}
+
+    # ...while an ON-rung claim's check_by IS one of the graded exits.
+    on = _claim(horizon_d=63, horizon_unit=q.HORIZON_UNIT_TRADING)
+    on_rows = q.grade_claim({**on, "claim_id": "cid-63"}, root=tmp_path,
+                            today=date(2027, 6, 30))
+    assert q.check_by_is_a_graded_exit(63)
+    assert on["check_by"] in {r["clock_exit_date"] for r in on_rows}
+
+
+# --------------------------------------------------------------------------- #
+# MAJOR 4 (round 3) — the migration demotion is LEGIBLE, never a silent collapse
+# --------------------------------------------------------------------------- #
+def test_a_clock_migration_is_labelled_not_rendered_as_a_collapse(tmp_path):
+    """The basis reset is the CEO's ruling and is NOT changed here — the numbers
+    below are identical to round 2. What is added is the reason they moved: a
+    family reading GRADED/n_dates=40 flips to ACCRUING/n_dates=1 the night its
+    first explicit-clock grade lands, and nothing on the verdict said why."""
+    claims, grades = _mixed_store_rows(n_legacy=40, n_v1=1)
+    _write_store(tmp_path, claims, grades)
+
+    res = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+
+    # the ruling stands: NOT pooled, evaluated inside the explicit basis
+    assert res.clock_basis == f"{q.CLOCK_V1}:{q.HORIZON_UNIT_TRADING}"
+    assert res.n_dates == 1 and res.current_state == q.STATE_ACCRUING
+
+    # ...and the demotion is now legible
+    assert res.clock_migration is True
+    assert res.clock_prior_n_dates == {q.CLOCK_LEGACY: 40}
+    assert "corrected clock" in res.migration_note
+    assert res.as_dict()["clock_migration"] is True
+    assert res.as_dict()["clock_prior_n_dates"] == {q.CLOCK_LEGACY: 40}
+
+
+def test_a_single_basis_family_is_not_labelled_as_migrating(tmp_path):
+    """Negative control: the flag must mean something. A family that never
+    straddled carries no migration label and no phantom prior count."""
+    claims, grades = _mixed_store_rows(n_legacy=0, n_v1=26)
+    _write_store(tmp_path, claims, grades)
+    res = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    assert res.eligible is True
+    assert res.clock_migration is False
+    assert res.clock_prior_n_dates == {} and res.migration_note == ""
+
+
+def test_the_admin_experiments_surface_renders_the_migration(tmp_path, monkeypatch):
+    """The consumer, end to end. Before: `n_dates=1/25 @ 21d · CI-low=n/a · …` —
+    indistinguishable from a family whose evidence evaporated. After: the same
+    numbers plus, in plain words, that it is re-accruing on a corrected clock and
+    how big the history being counted separately is."""
+    import scripts.grade_qledger as grader
+    from engine import experiments_registry as er
+
+    claims, grades = _mixed_store_rows(n_legacy=40, n_v1=1)
+    _write_store(tmp_path, claims, grades)
+    readiness = grader.compute_promotion_readiness(tmp_path, families=["f"])
+    cell = readiness["f"]["21"]
+    assert cell["clock_migration"] is True
+    assert cell["clock_prior_n_dates"] == {q.CLOCK_LEGACY: 40}
+
+    monkeypatch.setattr(er, "_read_json",
+                        lambda rel: {"promotion_readiness": readiness}
+                        if rel.endswith("track_record.json") else {})
+    out = er._refresh_qledger_promotion({"claim_family": "f"})
+
+    assert out["clock_migration"] is True
+    assert out["clock_prior_n_dates"] == {q.CLOCK_LEGACY: 40}
+    assert "RE-ACCRUING on a corrected clock" in out["state"]
+    assert "40 dates on the previous clock" in out["state"]
+    assert out["ready"] is False and out["status"] == "accruing"
+
+    # BEFORE/AFTER: the same corpus with the migration label suppressed is the
+    # line a reader used to get — numbers only, no reason.
+    bare = dict(cell)
+    bare["clock_migration"] = False
+    monkeypatch.setattr(er, "_read_json",
+                        lambda rel: {"promotion_readiness": {"f": {"21": bare}}}
+                        if rel.endswith("track_record.json") else {})
+    before = er._refresh_qledger_promotion({"claim_family": "f"})
+    assert "RE-ACCRUING" not in before["state"]
+    assert before["state"] in out["state"], \
+        "the migration line is ADDED to the honest numbers, never replaces them"
+
+
+# --------------------------------------------------------------------------- #
+# MINOR (round 3) — the nightly maturity PRE-GATE dispatches on the claim's clock
+# --------------------------------------------------------------------------- #
+def test_the_nightly_pre_gate_uses_the_claims_own_clock_not_the_legacy_one(
+        prices, tmp_path, monkeypatch):
+    """MINOR — `scripts/grade_qledger` pre-gates every claim on `q._matured`, the
+    LEGACY calendar maturity function, before paying for grade_claim's price
+    reads. It ran with NO unit dispatch, so a `trading_days` h=21 claim was
+    opened on roughly the calendar clock.
+
+    SCOPE OF THE DEFECT, STATED HONESTLY. The legacy pre-gate errs EARLY (a
+    calendar h is never longer than h sessions), and `grade_claim` re-resolves on
+    the real window and refuses, so no wrong grade was ever written and the
+    blocked COUNT is the same either way. What was wrong is that the pre-gate and
+    the grader asked about different windows — the nightly's own admission test
+    was not the test its grades are measured by. The property below is what that
+    costs and what the dispatch buys: the pre-gate must never admit a horizon the
+    grader's own window says is immature.
+    """
+    import scripts.grade_qledger as grader
+
+    c = _claim(horizon_d=21, horizon_unit=q.HORIZON_UNIT_TRADING)
+    win = q.claim_window(c, 21)
+    assert win is not None
+    legs = ["CARR", "SPY", "XLI"]
+
+    # 1. the divergence is real — the pre-fix control still fires
+    early = win.entry_anchor + timedelta(days=22)
+    assert early < win.coverage_date
+    assert q._matured(tmp_path, q._entry_date(c), 21, early, legs) is True, \
+        "the pre-fix control: the legacy pre-gate opens this claim early"
+    assert q._matured_window(tmp_path, win, early, legs) is False
+
+    # 2. and it is not one lucky day — over the whole approach to the exit, the
+    #    legacy gate says 'ready' on days the real clock does not, and the
+    #    dispatched gate never does.
+    disagreements = 0
+    d = win.entry_anchor
+    while d <= win.coverage_date:
+        legacy = q._matured(tmp_path, q._entry_date(c), 21, d, legs)
+        real = q._matured_window(tmp_path, win, d, legs)
+        assert not (real and not legacy), \
+            "the legacy gate errs EARLY, never late — pinned so the claim above " \
+            "about the defect's direction cannot rot"
+        if legacy and not real:
+            disagreements += 1
+        d += timedelta(days=1)
+    assert disagreements >= 7, disagreements
+
+    # 3. the nightly, run at that date, writes the 5d rung and NOT the 21d one
+    q.register({**c, "claim_family": "clocktest"}, root=tmp_path)
+    monkeypatch.setattr(grader, "compute_promotion_readiness", lambda *a, **k: {})
+    grader.run(root=tmp_path, today=early, dry_run=False)
+    graded = sorted(g["horizon_d"] for g in q.load_grades(tmp_path))
+    assert graded == [5], graded
+
+    # 4. ...and past the real session exit, the 21d rung grades
+    grader.run(root=tmp_path, today=date(2026, 12, 1), dry_run=False)
+    graded = sorted(g["horizon_d"] for g in q.load_grades(tmp_path))
+    assert graded == [5, 21], graded
+
+
+def test_the_pre_gate_and_the_grader_ask_about_the_SAME_window(prices, tmp_path):
+    """The property the dispatch establishes, under BOTH units: the nightly's
+    admission test is `claim_window` + `_matured_window` — the very window
+    `grade_claim` will measure — so 'admitted' and 'gradeable' can no longer be
+    two different questions."""
+    for unit in (q.HORIZON_UNIT_TRADING, q.HORIZON_UNIT_CALENDAR):
+        c = _claim(horizon_d=21, horizon_unit=unit)
+        for h in q.in_scope_horizons(21):
+            win = q.claim_window(c, h)
+            assert win is not None
+            d = win.entry_anchor
+            while d <= win.coverage_date + timedelta(days=3):
+                admitted = q._matured_window(tmp_path, win, d,
+                                             ["CARR", "SPY", "XLI"])
+                rows = [r for r in q.grade_claim({**c, "claim_id": "x"},
+                                                 root=tmp_path, today=d)
+                        if r["horizon_d"] == h]
+                assert admitted == bool(rows), (unit, h, d)
+                d += timedelta(days=1)
+
+
+def test_run_status_publishes_the_refused_clock_population(tmp_path, monkeypatch):
+    """`fail closed` is only auditable if the refusals are a number on the
+    nightly. A lane that starts refusing everything must show up here rather
+    than as claims that quietly never grade."""
+    import scripts.grade_qledger as grader
+
+    q.register(q.make_claim(desk="d", asof="2026-08-05", scope_type="entity",
+                            scope_key="920007.BJ", direction=1, horizon_d=21,
+                            horizon_unit=q.HORIZON_UNIT_TRADING,
+                            bench="510300.SS",
+                            timestamp_quality="CRAWL_BOUNDED",
+                            claim_family="cn_special_sits"), root=tmp_path)
+    monkeypatch.setattr(grader, "compute_promotion_readiness", lambda *a, **k: {})
+    out = grader.run(root=tmp_path, today=date(2026, 12, 1), dry_run=True)
+    assert out["clock_unresolvable_claims"]["n"] == 1
+    assert out["clock_unresolvable_claims"]["by_family"] == {"cn_special_sits": 1}

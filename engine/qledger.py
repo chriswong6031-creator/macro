@@ -45,14 +45,17 @@ from engine.ai_desk import _GICS_ETF, _level_asof
 from engine import ai_desk as _aidesk  # module ref: tests monkeypatch ai_desk._close_series
 from engine.ai_desk_scorer import _close_at, _covers
 from lib import config
-# The canonical session ruler. Rule-computed NYSE sessions, stdlib-only, holiday
-# aware — see `resolve_horizon_window` for why the price-store index is NOT the
-# session source of record here.
-from lib.nyse_calendar import (
-    last_session_on_or_before,
-    session_n_forward,
-    sessions_between,
-)
+# The canonical session rulers — ONE PER MARKET. Rule-computed sessions,
+# stdlib-only, holiday aware. See `resolve_horizon_window` for why the
+# price-store index is NOT the session source of record here, and
+# `CLOCK_CALENDARS` for why there are three of these and not one.
+from lib import cn_calendar as _cn_calendar
+from lib import hk_calendar as _hk_calendar
+from lib import nyse_calendar as _nyse_calendar
+# The house ticker->market classifier (engine/session_anchor R3). REUSED, never
+# re-invented: a second suffix table would drift from the one every board's
+# session bucketing already reads.
+from engine.session_anchor import MARKET_SUFFIX
 
 log = logging.getLogger("qledger")
 
@@ -131,27 +134,99 @@ HORIZON_UNITS = (HORIZON_UNIT_TRADING, HORIZON_UNIT_CALENDAR)
 CLOCK_LEGACY = "legacy_calendar_unstamped"
 CLOCK_V1 = "explicit_unit_v1"
 
-# Search bound for "the next open session": the longest NYSE closed stretch is a
-# weekend with adjacent holidays (Christmas/New Year, a mourning closure), well
-# under two weeks. Bounded rather than a `while` loop so a broken calendar rule
-# fails closed (None) instead of spinning.
+# Search bound for "the next open session": the longest closed stretch any
+# calendar here models is CN Golden Week plus both flanking weekends (measured
+# max over 2014-2030: US 3 days, CN 10, HK 6 — pinned by
+# tests/test_qledger_horizon_clock.py). Bounded rather than a `while` loop so a
+# broken calendar rule fails closed (None) instead of spinning.
 _MAX_CLOSED_STRETCH_DAYS = 15
 
-# THE RESOLVER'S SUPPORTED DATE RANGE. `lib.nyse_calendar` computes SCHEDULED
-# holidays from the rules for any year (MLK from 1998, Juneteenth from 2022), but
-# UNSCHEDULED full-day closures cannot be derived and live in a hand-maintained
-# list: `ONE_OFF_CLOSURES` holds Hurricane Sandy (2012-10-29/30), the 2018-12-05
-# Bush day of mourning and the 2025-01-09 Carter day of mourning — and NOTHING
-# earlier. It is therefore blind to every pre-2012 one-off closure (2001-09-11..14,
-# 2004-06-11 Reagan, 2007-01-02 Ford, 1994-04-27 Nixon, …), each of which would
-# make a session-counted exit land one or more sessions LATE without any signal.
-# So the clock declares its range instead of guessing outside it: an anchor before
-# `CLOCK_SUPPORTED_FROM` resolves to None (ungradeable, fail closed) rather than to
-# a confidently wrong date. The floor is the first day after the earliest modelled
-# one-off closure; every qledger claim asof is 2025+, so nothing live sits near it.
-# Moving the floor EARLIER requires appending the missing closures to
-# `lib.nyse_calendar.ONE_OFF_CLOSURES` first.
-CLOCK_SUPPORTED_FROM = date(2012, 10, 31)
+# --------------------------------------------------------------------------- #
+# THE MARKET DISPATCH — a claim resolves on the calendar of the exchange it is
+# PRICED on, never on NYSE by default.
+# --------------------------------------------------------------------------- #
+# THE DEFECT THIS REPAIRS. The first cut of this clock resolved EVERY claim
+# through `lib.nyse_calendar`. The endpoint strictness in `_leg_ret_in_window`
+# then requires the window's own fill/coverage bars to exist in each leg's
+# store — so a CN-priced claim (5,726 live: china_news, cn_importance_v0,
+# cn_importance_v0_pit, china_special_sits) got a window whose endpoints are
+# NYSE sessions while its legs trade the A-share calendar. Two measured
+# consequences on the live corpus (both reproduced in the commit message):
+#   * 31.9% of live CN windows were the WRONG LENGTH — a "21 trading day" claim
+#     spanning 20 or 22 A-share sessions, because US-only closures (Jul 3,
+#     Labor Day) are not CN closures;
+#   * on a representative 2025-2026 anchor sweep, 5.9% of h=21 CN windows land
+#     an endpoint on a CN-only closure (Golden Week, Spring Festival) and are
+#     therefore PERMANENTLY ungradeable — refused by rule 5, forever, because
+#     no A-share bar will ever exist on that date.
+# The CEO's rule — "resolve the exit using the canonical exchange calendar" —
+# names the exchange the claim is priced on. For an A-share claim that is SSE/
+# SZSE, not NYSE.
+MARKET_US = "US"
+MARKET_CN = "CN"
+MARKET_HK = "HK"
+
+#: market key -> its rule-computed session calendar module. Every module here
+#: exposes the same two primitives this clock needs (`is_session`,
+#: `last_session_on_or_before`); the forward walkers below are written over
+#: `is_session` because the three modules do NOT share a forward API
+#: (`nyse_calendar.sessions_between` returns a LIST of dates,
+#: `cn_calendar.sessions_between` returns a COUNT, `hk_calendar` has none).
+CLOCK_CALENDARS = {
+    MARKET_US: _nyse_calendar,
+    MARKET_CN: _cn_calendar,
+    MARKET_HK: _hk_calendar,
+}
+
+# THE RESOLVER'S SUPPORTED DATE RANGE, PER MARKET. Each calendar models a finite
+# span, and outside it the answer is confidently wrong rather than absent — so
+# the clock declares its range and returns None outside it (fail closed) instead
+# of guessing.
+#
+# US — floor only. `lib.nyse_calendar` computes SCHEDULED holidays from the rules
+#   for any year (MLK from 1998, Juneteenth from 2022), but UNSCHEDULED full-day
+#   closures cannot be derived and live in a hand-maintained list:
+#   `ONE_OFF_CLOSURES` holds Hurricane Sandy (2012-10-29/30), the 2018-12-05 Bush
+#   day of mourning and the 2025-01-09 Carter day of mourning — and NOTHING
+#   earlier. It is blind to every pre-2012 one-off closure (2001-09-11..14,
+#   2004-06-11 Reagan, 2007-01-02 Ford, 1994-04-27 Nixon, …), each of which would
+#   place a session-counted exit one or more sessions LATE without any signal.
+#   The floor is the first day after the earliest modelled one-off closure; every
+#   qledger claim asof is 2025+, so nothing live sits near it. Moving it EARLIER
+#   requires appending the missing closures to `ONE_OFF_CLOSURES` first.
+# CN / HK — floor AND CEILING. Both calendars are lunar-table driven
+#   (cn_calendar: LNY_FIRST / QINGMING / DRAGON_BOAT / MID_AUTUMN; hk_calendar:
+#   LNY_FIRST / CHING_MING / BUDDHA / TUEN_NG / MID_AUTUMN / CHUNG_YEUNG), and
+#   every one of those tables spans 2014-2030 exactly. Outside it the module does
+#   not raise — it silently returns a holiday set with NO lunar closures at all
+#   (cn_calendar.holidays(2031) is Jan 1 + May 1 + Golden Week), so a 2031 exit
+#   would walk straight through Spring Festival. The ceiling is therefore checked
+#   against the resolved EXIT, not only the anchor. Extending it means extending
+#   those tables from the exchange notices first.
+CLOCK_SUPPORTED_FROM = date(2012, 10, 31)          # US floor (name kept: US default)
+CLOCK_MARKET_SUPPORT: dict[str, tuple[date, date | None]] = {
+    MARKET_US: (CLOCK_SUPPORTED_FROM, None),
+    MARKET_CN: (date(2014, 1, 1), date(2030, 12, 31)),
+    MARKET_HK: (date(2014, 1, 1), date(2030, 12, 31)),
+}
+
+# DISCLOSED RESIDUAL — the CN table is deliberately INCOMPLETE, and this clock
+# inherits that. `lib.cn_calendar` encodes only closures that recur EVERY year
+# (its own "DIRECTION OF ERROR" note): the variable tail days of a long Golden
+# Week or Spring Festival read as sessions, and State-Council makeup Saturdays
+# read as closures. For a staleness banner both directions are safe. Here they
+# are not symmetric:
+#   * a real closure we call a session -> the exit lands on a day with no bar ->
+#     `_leg_ret_in_window` REFUSES the window (endpoint assertion) and the claim
+#     shows up in `n_blocked_by_coverage`. Fail closed, visible, correct.
+#   * a real session we call a closure (a makeup Saturday) -> the exit lands one
+#     session late and the window is graded ONE SESSION LONG under the declared
+#     label. This is the residual: bounded to +1 session, and undetectable by the
+#     endpoint assertion because the bar does exist.
+# Not repaired here: the fix is a makeup-workday table in `lib.cn_calendar`
+# (State Council annual notice), which is that module's scope, not this one's.
+# It is recorded rather than left for the next reader to rediscover.
+CLOCK_CN_RESIDUAL = "cn_makeup_workday_unmodelled_max_one_session_long"
 
 
 class HorizonClockMismatch(ValueError):
@@ -174,6 +249,8 @@ class HorizonWindow(NamedTuple):
                   matured (== exit_date under trading_days; the last session
                   on/before exit_date under calendar_days, since a calendar exit
                   can land on a weekend or a holiday)
+    market        the exchange calendar every date above was resolved on — the
+                  market the claim is PRICED in, never a default
     """
     entry_anchor: date
     fill_date: date
@@ -182,6 +259,7 @@ class HorizonWindow(NamedTuple):
     horizon_d: int
     horizon_unit: str
     clock_version: str
+    market: str = MARKET_US
 
 
 def _as_date(value: Any) -> date:
@@ -192,31 +270,93 @@ def _as_date(value: Any) -> date:
     return pd.Timestamp(value).date()
 
 
-def next_session_strictly_after(d: date) -> date | None:
-    """First NYSE session STRICTLY after `d` (the shared next-bar fill session).
+def _calendar_for(market: str):
+    """The session calendar module for a market key. Raises on an unknown key —
+    a market this clock has no calendar for must be refused UPSTREAM (see
+    `resolve_claim_market`), never answered with somebody else's sessions."""
+    cal = CLOCK_CALENDARS.get(market)
+    if cal is None:
+        raise ValueError(
+            f"no session calendar for market {market!r}; "
+            f"known markets are {tuple(sorted(CLOCK_CALENDARS))}")
+    return cal
+
+
+@lru_cache(maxsize=8192)
+def _next_session_after(market: str, d: date) -> date | None:
+    """First session on `market` STRICTLY after `d`, or None.
+
+    Written over `is_session` rather than any module's own forward helper
+    because the three calendars do not share one (`nyse_calendar.sessions_between`
+    returns dates, `cn_calendar.sessions_between` returns a COUNT, `hk_calendar`
+    has neither). Bounded by `_MAX_CLOSED_STRETCH_DAYS` so a broken rule table
+    fails closed instead of spinning."""
+    cal = _calendar_for(market)
+    for i in range(1, _MAX_CLOSED_STRETCH_DAYS + 1):
+        cand = d + timedelta(days=i)
+        if cal.is_session(cand):
+            return cand
+    return None
+
+
+@lru_cache(maxsize=16384)
+def _session_n_forward(market: str, first: date, n: int) -> date | None:
+    """The session exactly `n` sessions AFTER `first` on `market`, or None.
+
+    Same fail-closed contract as `lib.nyse_calendar.session_n_forward`, which
+    this reproduces exactly for `MARKET_US` (that helper indexes
+    `sessions_between(first, first + 3n + 10)[n]`; widening the search span
+    cannot change which session is the nth). None when `first` is not itself a
+    session, or when the calendar cannot reach that far inside the search span."""
+    cal = _calendar_for(market)
+    if n < 0 or not cal.is_session(first):
+        return None
+    if n == 0:
+        return first          # matches nyse_calendar.session_n_forward(first, 0)
+    seen = 0
+    # 3n + 30 calendar days covers n sessions plus weekends and the longest
+    # modelled closed stretch (CN Golden Week + both flanking weekends = 10d).
+    for i in range(1, 3 * n + 30 + 1):
+        cand = first + timedelta(days=i)
+        if cal.is_session(cand):
+            seen += 1
+            if seen == n:
+                return cand
+    return None
+
+
+def next_session_strictly_after(d: date, market: str = MARKET_US) -> date | None:
+    """First session STRICTLY after `d` on `market` (the shared next-bar fill).
 
     `d` itself need not be a session — a claim's asof can be a Saturday or a
     holiday. None when the calendar cannot find one inside the longest possible
     closed stretch (fail closed rather than invent a fill)."""
-    d = _as_date(d)
-    forward = sessions_between(d + timedelta(days=1),
-                               d + timedelta(days=_MAX_CLOSED_STRETCH_DAYS))
-    return forward[0] if forward else None
+    return _next_session_after(market, _as_date(d))
 
 
 def resolve_horizon_window(entry_anchor: Any, horizon_d: int,
-                           horizon_unit: str) -> HorizonWindow | None:
+                           horizon_unit: str,
+                           market: str = MARKET_US) -> HorizonWindow | None:
     """THE clock resolver (contract rule 4). Every consumer — `check_by`,
     maturity, the graded window, the rendered ruler — derives from this and only
     this. None when the window cannot be resolved (fail closed).
 
     trading_days: the exit is resolved by canonical exchange SESSION arithmetic
-    via `lib.nyse_calendar` — NOT `pd.Timedelta`, NOT a 1.4x fudge, and NOT
+    on the calendar of the market the claim is PRICED in (`market`, dispatched
+    through `CLOCK_CALENDARS`) — NOT `pd.Timedelta`, NOT a 1.4x fudge, and NOT
     `pd.offsets.BusinessDay` (BusinessDay counts Mon–Fri and so silently walks
     THROUGH market holidays: from a Wednesday before Thanksgiving, 2 BusinessDays
     lands on the Friday half-session having counted a day the market was shut).
 
-    WHY `lib.nyse_calendar` AND NOT THE PRICE-STORE INDEX. The store index is a
+    THE MARKET IS AN INPUT, NOT A DEFAULT, FOR EVERY CLAIM PATH. The `MARKET_US`
+    default here exists only so a direct caller asking a US question keeps a
+    one-line call; `make_claim`, `_validate_claim` and `grade_claim` all pass the
+    claim's OWN market from `resolve_claim_market`, and refuse the claim outright
+    when it cannot be determined. A CN claim resolved on NYSE sessions is not
+    approximately right — see the MARKET DISPATCH note above for the two measured
+    failure modes (wrong window LENGTH, permanently unreachable endpoints).
+
+    WHY THE RULES CALENDAR AND NOT THE PRICE-STORE INDEX. The store index is a
     record of what was COLLECTED, not of what the exchange held: it has known
     holes (`collectors/cboe.KNOWN_PERMANENT_GAPS`, and `lib.nyse_calendar` exists
     precisely because a frozen store cannot detect its own staleness), and it
@@ -228,10 +368,13 @@ def resolve_horizon_window(entry_anchor: Any, horizon_d: int,
     The store still decides MATURITY (`coverage_date`) — it just does not get to
     define what a session is.
 
-    SUPPORTED RANGE: anchors on or after `CLOCK_SUPPORTED_FROM` (2012-10-31).
-    Earlier anchors return None rather than resolve, because the session ruler
-    models no pre-2012 unscheduled closure and would place the exit late without
-    saying so — see the constant's note.
+    SUPPORTED RANGE: per market, from `CLOCK_MARKET_SUPPORT`. Anchors before the
+    market's floor return None rather than resolve, because the session ruler
+    models no earlier unscheduled closure and would place the exit late without
+    saying so. CN/HK additionally carry a CEILING, checked against the resolved
+    EXIT as well as the anchor: their lunar holiday tables stop at 2030 and the
+    modules do not raise past it, they just return a holiday set with no lunar
+    closures in it — see the constant's note.
 
     MINIMUM WINDOW: the resolved window must contain at least TWO sessions
     (the fill bar and a later exit bar). A `calendar_days` horizon whose exit
@@ -244,6 +387,7 @@ def resolve_horizon_window(entry_anchor: Any, horizon_d: int,
     if horizon_unit not in HORIZON_UNITS:
         raise ValueError(
             f"horizon_unit must be one of {HORIZON_UNITS}, got {horizon_unit!r}")
+    cal = _calendar_for(market)          # raises on an unknown market key
     try:
         h = int(horizon_d)
     except Exception:  # noqa: BLE001
@@ -254,26 +398,40 @@ def resolve_horizon_window(entry_anchor: Any, horizon_d: int,
         anchor = _as_date(entry_anchor)
     except Exception:  # noqa: BLE001
         return None
-    if anchor < CLOCK_SUPPORTED_FROM:
+    supported_from, supported_through = CLOCK_MARKET_SUPPORT[market]
+    if anchor < supported_from:
+        return None
+    if supported_through is not None and anchor > supported_through:
         return None
 
-    fill = next_session_strictly_after(anchor)
+    fill = _next_session_after(market, anchor)
     if fill is None:
         return None
 
     if horizon_unit == HORIZON_UNIT_TRADING:
-        exit_date = session_n_forward(fill, h)
+        exit_date = _session_n_forward(market, fill, h)
         if exit_date is None:
             return None
         coverage = exit_date
     else:
         exit_date = fill + timedelta(days=h)
         # A calendar exit can land on a weekend/holiday; the bar that closes the
-        # window is the last session on or before it.
-        coverage = last_session_on_or_before(exit_date)
+        # window is the last session on or before it. The lookback RAISES when a
+        # calendar's rules are broken enough to show no session in 30 days — fail
+        # closed here rather than propagate, so a bad rule table costs windows
+        # (visible as ungradeable claims) and never a traceback in the nightly.
+        try:
+            coverage = cal.last_session_on_or_before(exit_date)
+        except Exception:  # noqa: BLE001
+            return None
         if coverage <= fill:
             # Zero measurable sessions after the fill (see MINIMUM WINDOW above).
             return None
+
+    if supported_through is not None and max(exit_date, coverage) > supported_through:
+        # The window ENDS past the calendar's modelled span — every closure after
+        # the ceiling is invisible, so the exit would be confidently wrong.
+        return None
 
     return HorizonWindow(
         entry_anchor=anchor,
@@ -283,7 +441,147 @@ def resolve_horizon_window(entry_anchor: Any, horizon_d: int,
         horizon_d=h,
         horizon_unit=horizon_unit,
         clock_version=CLOCK_V1,
+        market=market,
     )
+
+
+#: Reason codes `resolve_claim_market` returns when it cannot name ONE market.
+#: Every one of these is a REFUSAL, not a fallback — see the function's note.
+MARKET_UNDETERMINED_NO_LEG = "no_priced_leg"
+MARKET_UNDETERMINED_UNKNOWN_SUFFIX = "unknown_exchange_suffix"
+MARKET_UNDETERMINED_MIXED = "mixed_markets"
+MARKET_UNDETERMINED_NO_CALENDAR = "no_session_calendar_for_market"
+
+
+def _ticker_market(ticker: Any) -> tuple[str | None, str]:
+    """(market, reason) for ONE priced leg. `reason` is "" on success.
+
+    The suffix table is `engine.session_anchor.MARKET_SUFFIX` — the same one the
+    board session bucketing reads — with ONE deliberate narrowing:
+    `session_anchor.market_for_ticker` resolves an UNMAPPED suffix to US openly
+    (its R3 ruling: approximate bucket edges are harmless there). Here that
+    default is not harmless — it is exactly the "silently resolving on the wrong
+    calendar" this dispatch exists to stop — so this function refuses instead.
+
+    The discriminator is the SHAPE of the suffix, and it has a live exemplar.
+    Yahoo exchange suffixes are multi-letter (`.SS` `.SZ` `.HK` `.TO`; `.V` is
+    the one-letter exception and IS in the table), while US share classes are a
+    single letter (`BRK.B`, `BRK.A` — 527 legs in the live store). So:
+
+      * suffix in MARKET_SUFFIX          -> that market
+      * a single-letter suffix, or none  -> US (the house rule, stated openly)
+      * any OTHER multi-letter suffix    -> REFUSED
+
+    That last branch is not hypothetical: four live `china_special_sits` claims
+    are priced on `920007.BJ`-style Beijing Stock Exchange tickers, a suffix
+    `MARKET_SUFFIX` does not carry. `market_for_ticker` calls them US, which
+    would have graded Beijing names on NYSE sessions. They now refuse, visibly,
+    until `.BJ` is mapped in `session_anchor` (that module's scope, not this
+    one's — mapping it here would fork the table this reuses).
+    """
+    if not ticker:
+        return None, MARKET_UNDETERMINED_NO_LEG
+    t = str(ticker).strip().upper()
+    if not t:
+        return None, MARKET_UNDETERMINED_NO_LEG
+    for suffix, market in MARKET_SUFFIX.items():
+        if t.endswith(suffix):
+            return market, ""
+    head, _, tail = t.rpartition(".")
+    if head and len(tail) > 1:
+        return None, f"{MARKET_UNDETERMINED_UNKNOWN_SUFFIX}:.{tail}"
+    return MARKET_US, ""
+
+
+def resolve_claim_market(claim: dict) -> tuple[str | None, str]:
+    """The ONE market a claim's window resolves on, or (None, reason).
+
+    FAIL CLOSED, THREE WAYS. Rule 5 gives subject, bench and control ONE shared
+    window, so a claim only HAS a canonical exchange when all of its priced legs
+    trade on one. This returns None — and `_validate_claim` then refuses the
+    claim, and `grade_claim` grades nothing — when:
+
+      * a leg carries an exchange suffix the house table cannot name
+        (`_ticker_market`);
+      * the legs span two markets (a `.SZ` subject against an SPY bench has no
+        single session ruler, and picking one would hand two legs different
+        horizon lengths);
+      * the named market has no session calendar in `CLOCK_CALENDARS` — `.TO`
+        and `.V` map to CA and this repo has no `lib/ca_calendar.py`, so a
+        Canadian claim is refused rather than graded on somebody else's sessions.
+
+    Returning US "for now" in any of those cases is the failure this replaces.
+    """
+    scope = claim.get("scope") if isinstance(claim.get("scope"), dict) else {}
+    # EXACTLY the legs `grade_claim` prices, including its bench default — so the
+    # market the validator refuses on and the market the grader would have used
+    # can never be two different answers.
+    legs = [scope.get("key"), claim.get("bench") or _DEFAULT_BENCH,
+            claim.get("control")]
+    markets: dict[str, str] = {}          # market -> the leg that named it
+    for leg in legs:
+        if not leg:
+            continue
+        m, reason = _ticker_market(leg)
+        if m is None:
+            if reason == MARKET_UNDETERMINED_NO_LEG:
+                continue
+            return None, f"{reason} ({leg})"
+        markets.setdefault(m, str(leg))
+    if not markets:
+        return None, MARKET_UNDETERMINED_NO_LEG
+    if len(markets) > 1:
+        detail = ", ".join(f"{m}={t}" for m, t in sorted(markets.items()))
+        return None, f"{MARKET_UNDETERMINED_MIXED}: {detail}"
+    market = next(iter(markets))
+    if market not in CLOCK_CALENDARS:
+        return None, f"{MARKET_UNDETERMINED_NO_CALENDAR}: {market}"
+    return market, ""
+
+
+def claim_window(claim: dict, horizon_d: int,
+                 entry_anchor: str | None = None) -> HorizonWindow | None:
+    """THE window for a claim at one horizon — the single call every consumer
+    makes so the market dispatch cannot be applied in one place and forgotten in
+    another (it was: the nightly's maturity pre-gate ran the LEGACY calendar
+    function for every claim, explicit-clock ones included).
+
+    None for a legacy (unitless) claim — those grade through `_fwd_ret`/`_matured`
+    and have no resolved window at all — and None when the market cannot be
+    determined or the window cannot be resolved."""
+    unit = claim_horizon_unit(claim)
+    if unit is None:
+        return None
+    market, _reason = resolve_claim_market(claim)
+    if market is None:
+        return None
+    anchor = entry_anchor if entry_anchor is not None else _entry_date(claim)
+    return resolve_horizon_window(anchor, horizon_d, unit, market)
+
+
+def check_by_is_a_graded_exit(horizon_d: int) -> bool:
+    """True when a claim's `check_by` IS one of the exits the grader resolves.
+
+    THE SCOPE OF THE HEADLINE GUARANTEE, MADE EXECUTABLE rather than asserted in
+    prose. `check_by` is resolved at the claim's OWN `horizon_d`; the grader
+    grades at `in_scope_horizons(horizon_d)`, which is every GRADE_HORIZON
+    (5/21/63) at or below it. Those coincide only when `horizon_d` is itself one
+    of the graded rungs — or is below the smallest one, where `in_scope_horizons`
+    falls back to the claim's own number.
+
+    So for horizon_d = 7, 126 or any other off-rung value the deadline a human
+    reads is a REAL resolved exchange exit under the declared unit, but it is not
+    a date any grade row is measured to: the 126-trading-day policy claim is
+    graded at 5, 21 and 63 sessions and its check_by sits at session 126.
+    Aligning them would mean changing `in_scope_horizons` / `GRADE_HORIZONS`,
+    which is P0b and explicitly out of scope here. This predicate is exported so
+    a caller (and a test) can ask the question instead of trusting a docstring.
+    """
+    try:
+        h = int(horizon_d)
+    except Exception:  # noqa: BLE001
+        return False
+    return h in in_scope_horizons(h)
 
 
 def claim_horizon_unit(claim: dict) -> str | None:
@@ -356,6 +654,14 @@ TIMESTAMP_QUALITY = {
 STATUS_OPEN = "open"
 STATUS_GRADED = "graded"       # all in-scope horizons matured
 STATUS_REJECTED = "rejected"   # failed registration validation (kept for audit)
+
+#: Prefix on the `reject_reason` of a claim refused because its declared horizon
+#: clock could not resolve (unknown market, mixed markets, no calendar for the
+#: market, or an anchor/exit outside the calendar's modelled span). Stable so the
+#: population is COUNTABLE rather than grep-able — see
+#: `count_unresolvable_clock_claims` and the § NO ZOMBIE CLAIMS note in
+#: `_validate_claim`.
+REJECT_CLOCK_UNRESOLVABLE = "clock_unresolvable"
 
 # track-record state chips (D10 / spec D10, "the chip states the UI reads")
 STATE_UNGRADED = "UNGRADED"    # n_dates == 0
@@ -501,6 +807,37 @@ def _validate_claim(claim: dict) -> tuple[bool, str]:
     entry = claim.get("entry_levels")
     if entry is not None and not isinstance(entry, dict):
         return False, "entry_levels must be an object or null"
+
+    # P0a — NO ZOMBIE CLAIMS. A claim that DECLARES a unit but whose clock cannot
+    # resolve used to register as status=open with check_by=None: it could never
+    # grade (grade_claim skips an unresolvable window), never close (status only
+    # advances once every in-scope horizon matures), and was counted nowhere — a
+    # silently immortal row. It is now REFUSED at registration, which is a
+    # first-class, COUNTED outcome: register()/register_batch persist it with
+    # status='rejected' and the reason, and `count_unresolvable_clock_claims`
+    # reports the population. Fail closed, disclosed, countable.
+    #
+    # The predicate is the claim's OWN horizon, because `check_by` — the
+    # falsifier deadline the claim IS — is resolved there. Legacy (unitless)
+    # claims are untouched: they have no resolved window by construction.
+    unit = claim.get("horizon_unit")
+    if unit in HORIZON_UNITS:
+        market, market_reason = resolve_claim_market(claim)
+        if market is None:
+            return False, (
+                f"{REJECT_CLOCK_UNRESOLVABLE}: cannot name the market this claim "
+                f"is priced in ({market_reason}) — refusing rather than resolving "
+                f"the exit on another exchange's calendar")
+        anchor = _entry_anchor(asof, tq)
+        if resolve_horizon_window(anchor, horizon_d, unit, market) is None:
+            supported_from, supported_through = CLOCK_MARKET_SUPPORT[market]
+            return False, (
+                f"{REJECT_CLOCK_UNRESOLVABLE}: cannot resolve a window for "
+                f"horizon_d={horizon_d} {unit} on the {market} calendar from "
+                f"anchor {anchor} (supported {supported_from}"
+                f"{'..' + supported_through.isoformat() if supported_through else '+'}) "
+                f"— a claim with no resolvable exit has no falsifier deadline "
+                f"and could never grade or close")
 
     return True, ""
 
@@ -781,11 +1118,26 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
       Omitting it registers a LEGACY-clock claim graded by the pre-P0a calendar
       approximation — supported so unmigrated callers keep their exact behaviour,
       never as a silent declaration of either unit.
-    * `check_by` is the claim's OWN resolved exit boundary — the SAME
-      `resolve_horizon_window` answer the grader uses, so the falsifier deadline
-      a human reads and the window actually graded can no longer diverge (they
-      were 10 days apart at horizon_d=21 before this). Legacy (unitless) claims
-      keep the pre-P0a `asof + horizon_d business days` default untouched.
+    * `check_by` is the claim's OWN resolved exit boundary, from the SAME
+      `resolve_horizon_window` (and the same anchor, unit and market) the grader
+      uses — so the deadline a human reads and the arithmetic the grade is
+      measured with can no longer diverge as implementations. Legacy (unitless)
+      claims keep the pre-P0a `asof + horizon_d business days` default untouched.
+
+      EXACTLY WHAT THAT GUARANTEES, AND WHERE IT STOPS. `check_by` is resolved at
+      the claim's OWN `horizon_d`; the grader grades at
+      `in_scope_horizons(horizon_d)`. Those are the SAME date — check_by IS a
+      graded exit, equal to some row's `clock_exit_date` — only when
+      `check_by_is_a_graded_exit(horizon_d)` holds, i.e. when horizon_d is one of
+      the GRADE_HORIZONS (5/21/63) or below the smallest of them. For an off-rung
+      horizon it is NOT: a 126-trading-day policy claim grades at 5, 21 and 63
+      sessions while its check_by sits at session 126, and a 7-calendar-day
+      whitehouse claim grades at 5 while its check_by sits at day 7. The deadline
+      is still a real, correctly resolved exchange exit under the declared unit —
+      it is simply the claim's own horizon rather than a graded rung. Closing
+      that gap means changing `in_scope_horizons`/`GRADE_HORIZONS`, which is P0b
+      and out of scope here; the predicate is exported so the scope is checkable
+      instead of merely stated.
 
       A CALLER-SUPPLIED `check_by` DOES NOT OVERRIDE THE CLOCK. On a claim that
       DECLARES a unit, the resolver's exit always wins and the supplied value is
@@ -817,13 +1169,23 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
         entry_levels["bench"] = round(float(bench_level), 6)
 
     check_by_source: str | None = None
+    clock_market: str | None = None
     if horizon_unit in HORIZON_UNITS:
-        # ONE resolver, ONE anchor, NO bypass: check_by IS the authoritative exit
-        # the grader resolves, whether or not the caller supplied one. The anchor
-        # is the post-embargo entry date, the same one grade_claim() passes in —
-        # a DISCLOSURE_DATE claim shifts +1bd on BOTH sides or on neither.
-        win = resolve_horizon_window(
-            _entry_anchor(asof, timestamp_quality), horizon_d, horizon_unit)
+        # ONE resolver, ONE anchor, ONE market, NO bypass: check_by is resolved by
+        # the same call the grader makes, whether or not the caller supplied one.
+        # The anchor is the post-embargo entry date, the same one grade_claim()
+        # passes in — a DISCLOSURE_DATE claim shifts +1bd on BOTH sides or on
+        # neither — and the market is the claim's own (`resolve_claim_market`),
+        # so a CN claim's deadline is an A-share session, not an NYSE one.
+        clock_market, _market_reason = resolve_claim_market({
+            "scope": {"type": scope_type, "key": scope_key},
+            "bench": bench,
+            "control": control,
+        })
+        win = (resolve_horizon_window(
+                   _entry_anchor(asof, timestamp_quality), horizon_d,
+                   horizon_unit, clock_market)
+               if clock_market is not None else None)
         resolved = win.exit_date.isoformat() if win is not None else None
         if check_by is not None and check_by != resolved:
             check_by_source = str(check_by)   # audit: what the source asked for
@@ -858,6 +1220,12 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
         # already registered under the legacy clock must keep its id (and be
         # deduped away on re-registration), never fork into a second row.
         claim["horizon_unit"] = horizon_unit
+    if clock_market is not None:
+        # The exchange calendar this claim's clock resolves on. Stamped so a
+        # reader of the store can see WHICH calendar produced check_by without
+        # re-deriving it from the ticker suffixes, and so a later change to the
+        # suffix table is visible as a change rather than a silent re-reading.
+        claim["clock_market"] = clock_market
     if check_by_source is not None:
         # The deadline the SOURCE stated, kept only when the clock disagreed with
         # it. Never read by the grader — it exists so an override is auditable
@@ -894,6 +1262,41 @@ def load_claims(root: Path | str | None = None) -> list[dict]:
 
 def load_grades(root: Path | str | None = None) -> list[dict]:
     return _read_jsonl(_root(root).joinpath(*_GRADES_FILE))
+
+
+def count_unresolvable_clock_claims(root: Path | str | None = None,
+                                    claims: Iterable[dict] | None = None) -> dict:
+    """How many claims the horizon clock REFUSED, and why — the countable half of
+    the no-zombie rule.
+
+    Before this contract an unresolvable declared-clock claim registered
+    status=open with check_by=None: it could never grade, never close, and
+    appeared in no count at all. `_validate_claim` now refuses it, so it is a
+    `status='rejected'` row carrying a `REJECT_CLOCK_UNRESOLVABLE` reason, and
+    this function is what turns that store state into a number the nightly can
+    print. Returns {n, by_reason, by_family} — never a bare total, because "12
+    refused" and "12 refused, all of them Beijing tickers" are different facts.
+    """
+    rows = list(claims) if claims is not None else load_claims(root)
+    by_reason: dict[str, int] = {}
+    by_family: dict[str, int] = {}
+    n = 0
+    for c in rows:
+        if c.get("status") != STATUS_REJECTED:
+            continue
+        reason = str(c.get("reject_reason") or "")
+        if not reason.startswith(REJECT_CLOCK_UNRESOLVABLE):
+            continue
+        n += 1
+        # Bucket on the machine-readable head of the reason, not the prose tail
+        # (which carries the offending ticker and would explode the histogram).
+        head = reason.split("(")[0].split(" — ")[0].strip()
+        by_reason[head] = by_reason.get(head, 0) + 1
+        fam = str(c.get("claim_family") or c.get("desk") or "unknown")
+        by_family[fam] = by_family.get(fam, 0) + 1
+    return {"n": n,
+            "by_reason": dict(sorted(by_reason.items())),
+            "by_family": dict(sorted(by_family.items()))}
 
 
 # --------------------------------------------------------------------------- #
@@ -1150,9 +1553,13 @@ def grade_claim(claim: dict, root: Path | str | None = None,
     is stamped, not silent).
 
     P0a (the horizon clock): a claim that DECLARES a `horizon_unit` grades on
-    ONE window resolved by `resolve_horizon_window` and shared by subject, bench
-    and control, and its rows carry horizon_unit + clock_version +
-    clock_exit_date. A claim with no declared unit keeps the pre-P0a calendar
+    ONE window resolved by `claim_window` — the declared unit, on the calendar of
+    the market the claim is PRICED in — shared by subject, bench and control, and
+    its rows carry horizon_unit + clock_version + clock_exit_date + clock_market.
+    ALL THREE legs must measure over that window or the row is refused: a control
+    that cannot be priced over it is a leg on a different window, not a null.
+    A claim whose market cannot be determined grades NOTHING (it is refused at
+    registration too). A claim with no declared unit keeps the pre-P0a calendar
     arithmetic byte-for-byte and its rows carry NO clock stamp — read as
     ``CLOCK_LEGACY``. Same stamped-discontinuity pattern, same law: legacy grades
     are never rewritten and the two bases are never pooled (`require_single_clock`).
@@ -1205,9 +1612,9 @@ def grade_claim(claim: dict, root: Path | str | None = None,
             fill_date = str(fill_ts.date()) if fill_ts is not None else None
             clock_stamp: dict[str, Any] = {}
         else:
-            # EXPLICIT CLOCK — ONE window resolved from the declared unit and
-            # SHARED by every leg (rules 3-5).
-            window = resolve_horizon_window(start, h, unit)
+            # EXPLICIT CLOCK — ONE window resolved from the declared unit, on the
+            # claim's OWN market's calendar, and SHARED by every leg (rules 3-5).
+            window = claim_window(claim, h, entry_anchor=start)
             if window is None:
                 continue
             if not _matured_window(root, window, today_dt, legs):
@@ -1216,14 +1623,31 @@ def grade_claim(claim: dict, root: Path | str | None = None,
             bench_ret = _leg_ret_in_window(bench, root, window)
             if subj is None or bench_ret is None:
                 continue
-            ctrl = (_leg_ret_in_window(control, root, window)
-                    if control else None)
+            # RULE 5 APPLIES TO THE CONTROL LEG TOO. A control that fails the
+            # endpoint assertion used to be absorbed as `ctrl = None`, which is
+            # indistinguishable in the store from "this claim declared no
+            # control" — so the §3 promotion gate, whose bar is excess-vs-CONTROL,
+            # silently fell back to the primary hit on exactly the claims whose
+            # control window was broken. That is a leg receiving a different
+            # window in all but name. A declared control that cannot be measured
+            # over the shared window now REFUSES the row, the same as subject and
+            # bench, and `scripts/grade_qledger.py` counts it into
+            # `n_blocked_by_coverage`.
+            ctrl = None
+            if control:
+                ctrl = _leg_ret_in_window(control, root, window)
+                if ctrl is None:
+                    log.debug("grade_claim(%s h=%s): control leg %s refused the "
+                              "shared window — no row (rule 5)",
+                              claim.get("claim_id"), h, control)
+                    continue
             fill_date = window.fill_date.isoformat()
             clock_stamp = {
                 "horizon_unit": window.horizon_unit,
                 "clock_version": window.clock_version,
                 "clock_exit_date": window.exit_date.isoformat(),
                 "clock_coverage_date": window.coverage_date.isoformat(),
+                "clock_market": window.market,
             }
 
         excess = round(subj - bench_ret, 6)
@@ -1662,14 +2086,36 @@ class PromotionResult:
                         consumer reporting these numbers must report this alongside
                         them — the same n_dates means different things on different
                         clocks.
+        clock_migration: (P0a) True when this family HAS history on another basis
+                        that was deliberately excluded — i.e. the drop in n_dates
+                        is a clock migration, not a performance collapse. See
+                        `clock_prior_n_dates`.
+        clock_prior_n_dates: {excluded basis -> its own n_dates}, so a consumer can
+                        say "1 date on the corrected clock; the 40 dates it had
+                        were measured on the old one" instead of showing a fall
+                        from 40 to 1 with no explanation.
+        migration_note: one plain sentence a surface can render as-is.
+
+    WHY THIS EXISTS. `_authority_clock_basis` resets authority at a basis change
+    — the right call, and the CEO's explicit ruling (do NOT pool bases). But the
+    reset is instantaneous and total: the night the first explicit-clock grade
+    lands for an already-promoted family, this object flips from
+    GRADED/n_dates=40 to ACCRUING/n_dates=1 with nothing on it saying why. A
+    reader — or the admin Experiments tab, or a readiness alert — cannot tell
+    that apart from a family whose evidence evaporated. The numbers stay exactly
+    as the ruling requires; what is added is the reason they moved.
     """
     __slots__ = ("eligible", "reason", "n_dates", "wilson_ci_low",
-                 "current_state", "demote", "pinned_reason", "clock_basis")
+                 "current_state", "demote", "pinned_reason", "clock_basis",
+                 "clock_migration", "clock_prior_n_dates", "migration_note")
 
     def __init__(self, eligible: bool, reason: str, n_dates: int,
                  ci_low: float | None, current_state: str,
                  demote: bool = False, pinned_reason: str = "",
-                 clock_basis: str | None = None) -> None:
+                 clock_basis: str | None = None,
+                 clock_migration: bool = False,
+                 clock_prior_n_dates: dict | None = None,
+                 migration_note: str = "") -> None:
         self.eligible = eligible
         self.reason = reason
         self.n_dates = n_dates
@@ -1678,6 +2124,9 @@ class PromotionResult:
         self.demote = demote
         self.pinned_reason = pinned_reason
         self.clock_basis = clock_basis
+        self.clock_migration = clock_migration
+        self.clock_prior_n_dates = dict(clock_prior_n_dates or {})
+        self.migration_note = migration_note
 
     def as_dict(self) -> dict:
         return {
@@ -1689,6 +2138,9 @@ class PromotionResult:
             "demote": self.demote,
             "pinned_reason": self.pinned_reason,
             "clock_basis": self.clock_basis,
+            "clock_migration": self.clock_migration,
+            "clock_prior_n_dates": self.clock_prior_n_dates,
+            "migration_note": self.migration_note,
         }
 
 
@@ -1769,8 +2221,27 @@ def promotion_check(claim_family: str, horizon: int,
     # traceback) only when no non-arbitrary basis exists.
     family_bases = sorted({grade_clock_basis(g) for g in family_rows})
     basis = clock_basis or _authority_clock_basis(family_bases)
+
+    # P0a MIGRATION LEGIBILITY. Count each basis's OWN independent date clusters
+    # before the excluded ones are dropped, so the verdict can carry the size of
+    # the history it is NOT counting. Nothing here is pooled or added to n_dates —
+    # this is disclosure, not arithmetic (see PromotionResult.clock_migration).
+    n_dates_by_basis: dict[str, int] = {}
+    for b in family_bases:
+        n_dates_by_basis[b] = len({
+            _date_cluster(str((cid_meta.get(g.get("claim_id")) or {}).get("asof", "")))
+            for g in family_rows if grade_clock_basis(g) == b
+            and cid_meta.get(g.get("claim_id")) is not None
+        })
+
     if basis is None and family_bases:
         return PromotionResult(
+            clock_migration=True,
+            clock_prior_n_dates=n_dates_by_basis,
+            migration_note=(
+                "This family's grades were measured on more than one clock and "
+                "no single corrected clock can be chosen; per-clock date counts "
+                "are listed rather than combined."),
             eligible=False,
             reason=(f"claim_family={claim_family!r} horizon={horizon}d: grades "
                     f"straddle {len(family_bases)} grading-clock bases "
@@ -1785,12 +2256,27 @@ def promotion_check(claim_family: str, horizon: int,
     excluded = [b for b in family_bases if b != basis]
     family_rows = [g for g in family_rows if grade_clock_basis(g) == basis]
     basis_note = ""
+    prior_n_dates = {b: n_dates_by_basis.get(b, 0) for b in excluded}
+    migration_note = ""
     if excluded:
         basis_note = (f" Evaluated on clock basis {basis!r}; "
                       f"{len(excluded)} other basis/bases "
                       f"({', '.join(excluded)}) excluded, NOT pooled — this "
                       f"family's authority accrues on the clock it is now "
                       f"measured on.")
+        # The one sentence a surface may render as-is. Plain words on purpose: a
+        # reader must be able to tell a clock migration from a collapse without
+        # knowing what a "basis" is.
+        biggest = max(prior_n_dates.values()) if prior_n_dates else 0
+        migration_note = (
+            f"Re-accruing under a corrected clock: this family is counted from "
+            f"zero on the clock it is now measured on. Its earlier "
+            f"{biggest} dates were measured on a different clock and are not "
+            f"counted here — that history was not lost and its numbers have not "
+            f"changed.")
+    mig = {"clock_migration": bool(excluded),
+           "clock_prior_n_dates": prior_n_dates,
+           "migration_note": migration_note}
 
     for g in family_rows:
         c = cid_meta.get(g.get("claim_id"))
@@ -1837,6 +2323,7 @@ def promotion_check(claim_family: str, horizon: int,
             n_dates=n_dates, ci_low=ci_low,
             current_state=current_state,
             clock_basis=basis,
+            **mig,
         )
 
     # §3 gate criterion 2: wilson_ci_low > PROMOTION_MIN_CI_LOW (the coin-flip null)
@@ -1850,6 +2337,7 @@ def promotion_check(claim_family: str, horizon: int,
             n_dates=n_dates, ci_low=None,
             current_state=current_state,
             clock_basis=basis,
+            **mig,
         )
 
     # Auto-demote check: CI bracketing (or below) the coin-flip null on a family that was
@@ -1873,6 +2361,7 @@ def promotion_check(claim_family: str, horizon: int,
             current_state=current_state,
             demote=True, pinned_reason=pinned_reason,
             clock_basis=basis,
+            **mig,
         )
 
     # Both gates pass
@@ -1887,6 +2376,7 @@ def promotion_check(claim_family: str, horizon: int,
         n_dates=n_dates, ci_low=ci_low,
         current_state=current_state,
         clock_basis=basis,
+        **mig,
     )
 
 
