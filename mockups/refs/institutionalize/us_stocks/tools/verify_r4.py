@@ -64,9 +64,23 @@ def px_of(pg, selector, dx=0.5, dy=0.5):
     return im.getpixel((1, 1))
 
 
+def strip_css_comments(s):
+    return re.sub(r"/\*.*?\*/", "", s, flags=re.S)
+
+
+def strip_js_comments(s):
+    s = re.sub(r"/\*.*?\*/", "", s, flags=re.S)
+    return re.sub(r"(?m)^\s*//.*$", "", s)
+
+
 def main():
-    css = (ART / "board.css").read_text()
-    js = (ART / "board.js").read_text()
+    css_raw = (ART / "board.css").read_text()
+    js_raw = (ART / "board.js").read_text()
+    # Source checks run over CODE, never over prose. A comment recording that a
+    # block was deleted must not read as the block still being present — that
+    # would punish the documentation this cycle explicitly asks for.
+    css = strip_css_comments(css_raw)
+    js = strip_js_comments(js_raw)
     notes = (ART / "DESIGN_NOTES.md").read_text()
     cmp_html = (ART / "compare.html").read_text()
 
@@ -290,9 +304,9 @@ def main():
         ok("R29 lifecycle-mark-distinct — entered and delivering do not render from one rule",
            not re.search(r"\.mx-mark--entered::before\s*,\s*\.mx-mark--delivering::before", css),
            "the two marks still share a single rule")
-        ok("R31 no-dead-actcol-css — the dead .actcol/actiongrid block is gone",
-           ".actcol" not in css and "actiongrid" not in css,
-           "dead action-grid CSS still present")
+        ok("R31 no-dead-actcol-css — the dead .actcol/actiongrid RULES are gone",
+           re.search(r"\.(actcol|actiongrid|acth|act-buy)\b[^{;]*\{", css) is None,
+           "a dead action-grid rule is still declared")
 
         # ══ PRC-311 / PRC-310 / VTC-312 — board-level facts stay board-level ═
         pg = page_at("theme=dark&lang=en&state=paid")
@@ -325,9 +339,14 @@ def main():
         ok("R14 stance-axis-explicit — an entered card carrying WAIT names the entry axis",
            ax["wait"] == 0 or ax["axis"] == ax["wait"],
            f"{ax['axis']}/{ax['wait']} entered+wait cards carry .pv-axis")
-        ok("R14b ready-gloss-no-trigger-contradiction — Ready's gloss no longer asserts 'trigger not fired'",
-           not re.search(r"trigger not fired|尚未触发", js),
-           "the Ready gloss still contradicts a sourced Triggered event")
+        # Scoped to the LEX.ready entry rather than the whole file: "尚未触发" is
+        # legitimate copy elsewhere (the ⚡ imminent tooltip says the trigger has
+        # not fired, which is true there). Only Ready's own gloss is the defect.
+        ready_gloss = re.search(r"ready:\s*\{.*?\}", js, re.S)
+        ok("R14b ready-gloss-no-trigger-contradiction — Ready's gloss states the lifecycle fact",
+           ready_gloss is not None
+           and not re.search(r"trigger not fired|尚未触发", ready_gloss.group(0)),
+           (ready_gloss.group(0)[:110] if ready_gloss else "LEX.ready not found"))
         pg.close()
 
         # ══ PRC-313 / auth.table_levels — the table carries decision fields ═
