@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T00:24:50.185524+00:00",
-  "count": 1024,
+  "generated_at": "2026-08-13T00:39:54.624578+00:00",
+  "count": 1025,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -839,6 +839,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2nidsjv3ldc-d5afbd",
+      "title": "Standard Nuclear Inc. (STDN) Pureplay nuclear fuel supplier poised to capture significant share in a growing nuclear SMR TAM...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T03:15:51Z",
+      "summary_points": [
+        "**TRISO Fuel Demand Surge**: TRISO fuel demand projected to surge from 0.2 MTU (2026) to 98 MTU (2035), creating exponential growth opportunity amid limited commercial suppliers.",
+        "**Near-Monopoly Capacity Advantage**: STDN plans 30 MTU/yr TRISO capacity by 2030 (vs.",
+        "peers’ <1 MTU/yr), enabling pricing power and commanding market share (25% SMR fuel applications).",
+        "**De-Risked Backlog & Military Focus**: $661m backlog (contract + pipeline) with military deployments ensures revenue visibility; 7/8 TRISO SMRs target government sites (DoD, Air Force), bypassing NRC licensing delays.",
+        "**Policy-Driven HALEU Support**: DOE’s $2.7bn funding for domestic enrichment (10 companies selected, 7 TRISO-focused) and Russian uranium import ban (2024) accelerate HALEU availability, de-risking supply chain."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
       "language": "en",
       "needs_metadata": false
     },
