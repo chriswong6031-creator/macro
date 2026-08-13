@@ -136,6 +136,12 @@ jobs:
     # nightly, and light workloads cannot land here. Never replace the unique label
     # with `parked`: mac-builder-5 also carries `parked` and is nightly failover.
     #
+    # CURRENT JAM (measured 2026-08-13): that hosted-pool saturation is NOT the
+    # live failure. Packs start in seconds on ubuntu-latest; sweeps finish in
+    # ~1 minute. Two independent stalls: (1) integration-baseline on
+    # render-linux dying inside checkout (now hosted); (2) CI_SCOPE_MODE=shadow
+    # copying main's product reds onto every PR. See scripts/merge_on_green.py.
+    #
     # The job needs only Python, network, a sparse checkout, and PyYAML; no
     # setup-python step or persistent workspace is load-bearing.
     runs-on: [self-hosted, macOS, ARM64, merge-control]
@@ -159,6 +165,7 @@ jobs:
           sparse-checkout: |
             scripts/merge_on_green.py
             scripts/gh_path_filter.py
+            scripts/run_ci_pack.py
             .github/workflows
           sparse-checkout-cone-mode: false
 
