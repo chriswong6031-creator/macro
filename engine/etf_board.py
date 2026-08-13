@@ -154,6 +154,18 @@ _RISK_READ = {
                  "zh": "防御领先 · 增持在逆势而行"},
 }
 
+# The zh half of each risk label, verbatim from engine.etf_pulse._risk_leg — the
+# ONLY other place these three words are minted, so the two surfaces cannot drift.
+#
+# This exists because "or the English word" is not a translation. `_rotation` fell
+# back to `label_en` whenever the pulse carried no `label_zh`, and the pulse carries
+# none at all when it is missing or stale — which is exactly the state a macro-only
+# render leaves it in, since etf_pulse.json is rebuilt under render scope `baskets`.
+# The zh view of a page Google indexes then printed a bare "NEUTRAL" in the hero.
+# A missing translation is a bug to fix at the source, not a hole to paper with the
+# other language.
+_RISK_LABEL_ZH = {"RISK-ON": "风险偏好", "NEUTRAL": "中性", "RISK-OFF": "风险规避"}
+
 
 # T5 stance line — the free build's Law-1 "so what do I do?" read.
 #
@@ -262,7 +274,8 @@ def _rotation(pulse: dict) -> dict:
     risk = pulse.get("risk") or {}
     rl = risk.get("label_en") or "NEUTRAL"
     risk_out = {
-        "label": {"en": rl, "zh": risk.get("label_zh") or rl},
+        "label": {"en": rl, "zh": (risk.get("label_zh")
+                                   or _RISK_LABEL_ZH.get(rl) or rl)},
         "tilt": risk.get("tilt"),
         "tone": "lift" if (risk.get("tilt") or 0) > 0.1 else
                 "drag" if (risk.get("tilt") or 0) < -0.1 else "neutral",
@@ -377,12 +390,15 @@ def board_context(rows: list[dict], accumulation: list[dict], trims: list[dict],
     top = favored[0] if favored else None
     tiles = []
     if top:
+        # "contested" is our word for the state, not the reader's — a Tier-1 hero
+        # tile has no room to teach a term, and the row-level chip already says it
+        # in plain words. Same fact, said rather than labelled.
         tiles.append({"k": {"en": "Strongest consensus", "zh": "最强共识"},
                       "v": top.get("ticker"),
                       "m": {"en": f"{top.get('n_accum', 0)} funds building"
-                                  + (" · contested" if top.get("contested") else ""),
+                                  + (" · managers disagree" if top.get("contested") else ""),
                             "zh": f"{top.get('n_accum', 0)} 只基金增持"
-                                  + (" · 有分歧" if top.get("contested") else "")},
+                                  + (" · 经理人意见不一" if top.get("contested") else "")},
                       "tone": "lift", "stance": top.get("stance")})
     tiles.append({"k": {"en": "Fresh conviction", "zh": "全新建仓"},
                   "v": str(fresh_names),
