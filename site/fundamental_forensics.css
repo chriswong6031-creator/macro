@@ -70,7 +70,7 @@ body.ff-page {
 .ff-eyebrow,
 .ff-kicker {
   margin: 0 0 5px;
-  color: var(--info);
+  color: var(--ink-info, var(--info));
   font-size: 10px;
   font-weight: 800;
   letter-spacing: .12em;
@@ -287,7 +287,7 @@ body.ff-page {
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--info) 34%, var(--ff-border));
   border-radius: 11px;
-  color: var(--info);
+  color: var(--ink-info, var(--info));
   background: color-mix(in srgb, var(--info) 9%, var(--panel2));
   font-family: var(--font-mono);
   font-size: 11px;
@@ -438,7 +438,7 @@ body.ff-page {
   font-size: 8px;
 }
 
-.ff-tab.is-active .ff-tab-index { color: var(--info); }
+.ff-tab.is-active .ff-tab-index { color: var(--ink-info, var(--info)); }
 
 .ff-view-status {
   max-width: 35%;
@@ -932,7 +932,7 @@ body.ff-page {
 .ff-receipt-date { color: var(--muted); font-family: var(--font-mono); font-size: 8px; }
 
 a.ff-receipt-link {
-  color: var(--link);
+  color: var(--ink-link, var(--link));
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, var(--link) 35%, transparent);
   text-underline-offset: 3px;
@@ -951,7 +951,7 @@ a.ff-receipt-link {
 .ff-source-limitations li::before {
   position: absolute;
   left: 0;
-  color: var(--warn);
+  color: var(--ink-warn, var(--warn));
   content: "—";
 }
 
@@ -1125,7 +1125,7 @@ a.ff-receipt-link {
   padding: 7px 10px;
   border: 1px solid color-mix(in srgb, var(--ff-source) 38%, var(--ff-border));
   border-radius: 9px;
-  color: var(--link);
+  color: var(--ink-link, var(--link));
   background: color-mix(in srgb, var(--ff-source) 7%, var(--panel));
   font-size: 10px;
   font-weight: 700;
@@ -1170,7 +1170,7 @@ a.ff-receipt-link {
   padding: 5px 10px;
   border: 1px solid var(--gbtn-brd);
   border-radius: 8px;
-  color: var(--link);
+  color: var(--ink-link, var(--link));
   background: var(--gbtn-bg);
   font-size: 9px;
   font-weight: 750;
@@ -1193,7 +1193,7 @@ a.ff-receipt-link {
   padding: 4px 8px;
   border: 1px solid var(--ff-border);
   border-radius: 8px;
-  color: var(--link);
+  color: var(--ink-link, var(--link));
   background: var(--panel);
   font-size: 9px;
   text-decoration: none;
@@ -1467,7 +1467,7 @@ a.ff-receipt-link {
 .ff-receipt-waterfall-fields dd { margin: 3px 0 0; overflow-wrap: anywhere; color: var(--text); font-size: 9px; }
 .ff-receipt-unmatched { margin: 10px 0 0; padding: 8px 9px; border-left: 2px solid var(--ff-border-strong); color: var(--muted); background: var(--panel); font-size: 9px; }
 .ff-receipt-projection { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--ff-border); }
-.ff-receipt-projection summary { color: var(--link); font-size: 9px; font-weight: 700; cursor: pointer; }
+.ff-receipt-projection summary { color: var(--ink-link, var(--link)); font-size: 9px; font-weight: 700; cursor: pointer; }
 
 
 /* Wave 2 disclosure surfaces — evidence comes before interpretation. */
@@ -1612,9 +1612,9 @@ a.ff-receipt-link {
   text-transform: uppercase;
 }
 
-.ff-redline-operation[data-operation="added"] { color: var(--ok); }
-.ff-redline-operation[data-operation="removed"] { color: var(--act); }
-.ff-redline-operation[data-operation="table"] { color: var(--warn); }
+.ff-redline-operation[data-operation="added"] { color: var(--ink-ok, var(--ok)); }
+.ff-redline-operation[data-operation="removed"] { color: var(--ink-act, var(--act)); }
+.ff-redline-operation[data-operation="table"] { color: var(--ink-warn, var(--warn)); }
 
 .ff-redline-copy p {
   display: -webkit-box;
@@ -1632,7 +1632,7 @@ a.ff-receipt-link {
 .ff-redline-open {
   display: inline-flex;
   align-items: center;
-  color: var(--link);
+  color: var(--ink-link, var(--link));
   font-size: 10px;
   font-weight: 750;
   gap: 5px;
@@ -1774,8 +1774,8 @@ a.ff-receipt-link {
 
 .ff-diff-line.is-prior { background: color-mix(in srgb, var(--act) 8%, transparent); }
 .ff-diff-line.is-current { background: color-mix(in srgb, var(--ok) 8%, transparent); }
-.ff-diff-line.is-prior > span:first-child { color: var(--act); }
-.ff-diff-line.is-current > span:first-child { color: var(--ok); }
+.ff-diff-line.is-prior > span:first-child { color: var(--ink-act, var(--act)); }
+.ff-diff-line.is-current > span:first-child { color: var(--ink-ok, var(--ok)); }
 
 .ff-redline-fallback {
   margin: 0;
@@ -1816,8 +1816,8 @@ a.ff-receipt-link {
   text-transform: uppercase;
   vertical-align: 1px;
 }
-.ff-filing-role.is-current { border-color: color-mix(in srgb, var(--ok) 42%, var(--ff-border)); color: var(--ok); }
-.ff-filing-role.is-prior { border-color: color-mix(in srgb, var(--act) 38%, var(--ff-border)); color: var(--act); }
+.ff-filing-role.is-current { border-color: color-mix(in srgb, var(--ok) 42%, var(--ff-border)); color: var(--ink-ok, var(--ok)); }
+.ff-filing-role.is-prior { border-color: color-mix(in srgb, var(--act) 38%, var(--ff-border)); color: var(--ink-act, var(--act)); }
 .ff-disclosure-accession { display: block; margin-top: 2px; color: var(--muted); font-family: var(--font-mono); font-size: 8px; overflow-wrap: anywhere; }
 .ff-disclosure-receipt .ff-receipt-link { display: inline-flex; align-items: center; font-size: 9px; gap: 4px; }
 
@@ -2310,7 +2310,7 @@ body.ff-modal-open #mmb-launch {
 .ff-gate-steps > li { min-width: 0; }
 
 .ff-gate-step-index {
-  color: var(--info);
+  color: var(--ink-info, var(--info));
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 700;
@@ -2640,7 +2640,7 @@ body.ff-page {
 .ff-overview-status { flex: 0 0 auto; display: inline-flex; min-height: 30px; align-items: center; padding: 5px 10px; border: 1px solid var(--ff-border); border-radius: 999px; color: var(--muted); background: var(--ff-soft); font-size: 9px; font-weight: 800; }
 .ff-overview-status[data-state="attention"] { border-color: color-mix(in srgb, var(--ff-coral) 44%, var(--ff-border)); color: var(--ff-coral); background: color-mix(in srgb, var(--ff-coral) 8%, var(--panel)); }
 .ff-overview-status[data-state="watch"] { border-color: color-mix(in srgb, var(--ff-amber) 44%, var(--ff-border)); color: var(--ff-amber); background: color-mix(in srgb, var(--ff-amber) 8%, var(--panel)); }
-.ff-overview-status[data-state="clear"] { border-color: color-mix(in srgb, var(--ok) 38%, var(--ff-border)); color: var(--ok); background: color-mix(in srgb, var(--ok) 7%, var(--panel)); }
+.ff-overview-status[data-state="clear"] { border-color: color-mix(in srgb, var(--ok) 38%, var(--ff-border)); color: var(--ink-ok, var(--ok)); background: color-mix(in srgb, var(--ok) 7%, var(--panel)); }
 
 .ff-quick-signal { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; min-height: 145px; margin-top: 19px; padding: 18px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--ff-indigo) 32%, var(--ff-border)); border-radius: 18px; background: linear-gradient(132deg, color-mix(in srgb, var(--ff-indigo) 11%, var(--panel2)), color-mix(in srgb, var(--ff-cyan) 5%, var(--panel)) 76%); gap: 16px; }
 .ff-quick-signal::after { position: absolute; width: 150px; height: 150px; top: -90px; right: -40px; border: 22px solid color-mix(in srgb, var(--ff-cyan) 8%, transparent); border-radius: 50%; content: ""; }

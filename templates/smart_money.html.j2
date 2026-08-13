@@ -41,14 +41,14 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
               max-width:100%; }
 .chip-fresh .fdot { width:7px; height:7px; border-radius:50%; display:inline-block;
                     vertical-align:middle; margin:-1px 5px 0 0; }
-.t-green { color:var(--up); } .t-green .fdot { background:var(--up); }
+.t-green { color:var(--ink-up, var(--up)); } .t-green .fdot { background:var(--up); }
 .t-amber { color:#e0a030; } .t-amber .fdot { background:#e0a030; }
-.t-red { color:var(--down); } .t-red .fdot { background:var(--down); }
+.t-red { color:var(--ink-down, var(--down)); } .t-red .fdot { background:var(--down); }
 
 /* ---- tier pills ---- */
 .tier { font-weight:500; font-size:11px; line-height:1; padding:3px 7px; border-radius:5px;
         letter-spacing:.02em; text-transform:capitalize; }
-.tier.elevated { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
+.tier.elevated { color:var(--ink-down, var(--down)); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
 .tier.moderate { color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
 .tier.low { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
 .tier.unavail { color:var(--muted); background:transparent; border:1px dashed var(--line); }
@@ -59,7 +59,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 /* ---- turnover tier ---- */
 .tlow { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
 .tmed { color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
-.thigh { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
+.thigh { color:var(--ink-down, var(--down)); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
 
 /* ---- S0 command deck ---- */
 .sm-deck { background:var(--panel); border:1px solid var(--line); border-radius:16px;
@@ -99,7 +99,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
                border-radius:15px; background:linear-gradient(135deg,color-mix(in srgb,var(--info) 7%,var(--panel)),var(--panel) 48%);
                overflow:hidden; }
 .fl-head { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(260px,.8fr); gap:22px; align-items:end; }
-.fl-kicker { display:flex; align-items:center; gap:8px; color:var(--info); font-size:11px; font-weight:700;
+.fl-kicker { display:flex; align-items:center; gap:8px; color:var(--ink-info, var(--info)); font-size:11px; font-weight:700;
              letter-spacing:.06em; text-transform:uppercase; }
 .fl-pulse { width:8px; height:8px; border-radius:50%; background:var(--info); box-shadow:0 0 0 5px color-mix(in srgb,var(--info) 15%,transparent); }
 .filing-live h2 { margin:6px 0 4px; font-size:clamp(19px,2.5vw,25px); letter-spacing:-.01em; }
@@ -120,8 +120,8 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .fl-filer-stats strong { color:var(--text); font-variant-numeric:tabular-nums; }
 .fl-actions { margin-top:9px; display:flex; gap:5px; flex-wrap:wrap; }
 .fl-actions span { font-size:10.5px; padding:2px 6px; border-radius:5px; background:var(--panel2); color:var(--muted); }
-.fl-actions .pos { color:var(--up); } .fl-actions .neg { color:var(--down); }
-.fl-unit { display:inline-block; margin-top:7px; font-size:9.5px; color:var(--info); }
+.fl-actions .pos { color:var(--ink-up, var(--up)); } .fl-actions .neg { color:var(--ink-down, var(--down)); }
+.fl-unit { display:inline-block; margin-top:7px; font-size:9.5px; color:var(--ink-info, var(--info)); }
 .fl-notices { margin-top:10px; padding:9px 11px; border:1px solid color-mix(in srgb,#e0a030 45%,var(--line));
               border-radius:9px; background:color-mix(in srgb,#e0a030 7%,var(--panel));
               color:var(--muted); font-size:11px; line-height:1.5; }
@@ -132,7 +132,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .fl-change { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:9px; min-width:0;
              padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
 .fl-change .fc-rank { width:24px; height:24px; display:grid; place-items:center; border-radius:6px; font-weight:700;
-                      font-size:10.5px; color:var(--info); background:color-mix(in srgb,var(--info) 10%,var(--panel2)); }
+                      font-size:10.5px; color:var(--ink-info, var(--info)); background:color-mix(in srgb,var(--info) 10%,var(--panel2)); }
 .fl-change .fc-main { min-width:0; }
 .fl-change .fc-tk { font-size:12px; font-weight:750; }
 .fl-change .fc-fund { color:var(--muted); font-size:10.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -150,7 +150,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
                         border-radius:15px; background:var(--panel); overflow:hidden; }
 .census-head { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);
                align-items:end; gap:24px; }
-.census-kicker { color:var(--info); font-size:10.5px; font-weight:750; letter-spacing:.07em;
+.census-kicker { color:var(--ink-info, var(--info)); font-size:10.5px; font-weight:750; letter-spacing:.07em;
                  text-transform:uppercase; }
 .institutional-census h2 { margin:5px 0 4px; font-size:clamp(19px,2.4vw,25px); letter-spacing:-.01em; }
 .census-sub { max-width:720px; color:var(--muted); font-size:12.5px; line-height:1.55; }
@@ -182,8 +182,8 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
                      text-overflow:ellipsis; white-space:nowrap; }
 .census-metric { text-align:right; color:var(--muted); font-size:9.5px; line-height:1.35; }
 .census-metric strong { display:block; color:var(--text); font-size:10.5px; font-variant-numeric:tabular-nums; }
-.census-metric.up strong { color:var(--up); }
-.census-metric.down strong { color:var(--down); }
+.census-metric.up strong { color:var(--ink-up, var(--up)); }
+.census-metric.down strong { color:var(--ink-down, var(--down)); }
 .census-extra > summary { display:flex; align-items:center; gap:4px; cursor:pointer;
                           color:var(--muted); font-size:10.5px; }
 .census-foot { margin-top:11px; padding-top:9px; border-top:1px solid var(--line); color:var(--muted);
@@ -233,8 +233,8 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 /* ---- act pills ---- */
 .act-pill { font-weight:500; font-size:11px; line-height:1; padding:3px 6px; border-radius:5px; border:1px solid var(--line);
             color:var(--muted); text-transform:capitalize; letter-spacing:.02em; }
-.act-pill.new,.act-pill.add { color:var(--up); border-color:rgba(69,184,115,.4); }
-.act-pill.trim,.act-pill.exit { color:var(--down); border-color:rgba(224,100,100,.4); }
+.act-pill.new,.act-pill.add { color:var(--ink-up, var(--up)); border-color:rgba(69,184,115,.4); }
+.act-pill.trim,.act-pill.exit { color:var(--ink-down, var(--down)); border-color:rgba(224,100,100,.4); }
 .act-pill.hold { color:var(--muted); border-color:transparent; background:color-mix(in srgb, var(--muted) 14%, transparent); }
 
 /* ---- tables ---- */
@@ -252,7 +252,7 @@ table.sm-t .rk { color:var(--muted); font-variant-numeric:tabular-nums; }
 .sub { font-size:10.5px; color:var(--muted); }
 .sub2 { opacity:.72; font-weight:500; }
 .star { color:#e0a030; }
-.spark { font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--info); }
+.spark { font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--ink-info, var(--info)); }
 
 /* ---- vs card ---- */
 .sm-vs { display:grid; grid-template-columns:1fr auto 1fr; gap:0; align-items:stretch; margin-top:10px; }
@@ -265,7 +265,7 @@ table.sm-t .rk { color:var(--muted); font-variant-numeric:tabular-nums; }
 .vs-mid .vs-lab { font-weight:500; font-size:11px; line-height:1.2; letter-spacing:.02em;
                   color:var(--muted); text-align:center; }
 .vs-role { font-weight:600; font-size:11px; line-height:1; letter-spacing:.02em; }
-.vs-card.win .vs-role { color:var(--up); } .vs-card.lag .vs-role { color:var(--down); }
+.vs-card.win .vs-role { color:var(--ink-up, var(--up)); } .vs-card.lag .vs-role { color:var(--ink-down, var(--down)); }
 .vs-name { font-size:17px; font-weight:700; margin:5px 0 2px; }
 .vs-stat { display:flex; gap:14px; flex-wrap:wrap; margin:10px 0 6px; }
 .vs-stat .k { font-weight:500; font-size:11px; line-height:1.2; letter-spacing:.02em; color:var(--muted); }
@@ -289,7 +289,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 @media(max-width:680px){ .rot-grid { grid-template-columns:1fr; } }
 .rot-h { font-weight:500; font-size:11px; line-height:1; letter-spacing:.02em;
          color:var(--muted); margin:4px 0 2px; }
-.rot-h.into { color:var(--up); } .rot-h.out { color:var(--down); }
+.rot-h.into { color:var(--ink-up, var(--up)); } .rot-h.out { color:var(--ink-down, var(--down)); }
 .mini { width:100%; border-collapse:collapse; font-size:12px; }
 .mini td { padding:4px 6px; border-top:1px solid var(--line); text-align:right; white-space:nowrap; }
 .mini td.l { text-align:left; }
@@ -407,9 +407,9 @@ table.sm-t td.mchips { white-space:normal; max-width:280px; }
 /* ---- Follow Desk (sec-follow) ---- */
 .ftier { font-weight:500; font-size:11px; line-height:1; padding:3px 7px; border-radius:5px;
          letter-spacing:.02em; text-transform:capitalize; border:1px solid var(--line); }
-.ftier.follow { color:var(--up); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
+.ftier.follow { color:var(--ink-up, var(--up)); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
 .ftier.watch  { color:var(--muted); background:var(--panel2); }
-.ftier.fade   { color:var(--down); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
+.ftier.fade   { color:var(--ink-down, var(--down)); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
 .ftier.insufficient,.ftier.low-data { color:var(--muted); background:transparent; border-style:dashed; }
 .fsc-bar { display:inline-block; width:48px; height:5px; border-radius:3px;
            background:var(--panel2); vertical-align:middle; position:relative; overflow:hidden; }
@@ -435,12 +435,12 @@ table.sm-t td.mchips { white-space:normal; max-width:280px; }
 /* ---- v3: reliability chip + fund links + inline fund-list details ---- */
 .rely { font-weight:500; font-size:11px; line-height:1.4; padding:2px 7px; border-radius:5px; letter-spacing:.03em;
         text-transform:capitalize; border:1px solid var(--line); }
-.rely.up { color:var(--up); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
-.rely.down { color:var(--down); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
+.rely.up { color:var(--ink-up, var(--up)); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
+.rely.down { color:var(--ink-down, var(--down)); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
 .rely.flat { color:var(--muted); background:var(--panel2); }
 .fund-link { color:inherit; text-decoration:none; border-bottom:1px dotted var(--line); }
-.fund-link:hover { color:var(--info); border-bottom-color:var(--info); }
-details.fl > summary { list-style:none; cursor:pointer; color:var(--info);
+.fund-link:hover { color:var(--ink-info, var(--info)); border-bottom-color:var(--info); }
+details.fl > summary { list-style:none; cursor:pointer; color:var(--ink-info, var(--info));
                        font-weight:500; font-size:11px; line-height:1.6; white-space:nowrap; }
 details.fl > summary::-webkit-details-marker { display:none; }
 details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; max-width:340px; }
@@ -460,7 +460,7 @@ a.mem-card:hover { border-color:var(--info); }
 .mc-edge { font-weight:700; }
 .mem-legend { font-size:11px; color:var(--muted); margin:4px 0 12px; }
 .followed-chip { font-weight:500; font-size:11px; line-height:1; padding:2px 7px; border-radius:5px;
-                 color:var(--up); background:rgba(69,184,115,.1); border:1px solid rgba(69,184,115,.4); }
+                 color:var(--ink-up, var(--up)); background:rgba(69,184,115,.1); border:1px solid rgba(69,184,115,.4); }
 /* smFold shared controller */
 .smfold-more-row { display:flex; gap:8px; align-items:center; margin-top:8px;
                    padding-top:9px; border-top:1px solid var(--line); }
@@ -1214,7 +1214,7 @@ html[data-theme="light"] .census-metric strong { font-size:11px; }
         {%- else -%}<span class="sub">—</span>{%- endif -%}
       </td>
       <td>
-        {%- if _streak > 0 -%}<span class="num" style="color:var(--down)">{{ _streak }}</span>{%- endif -%}
+        {%- if _streak > 0 -%}<span class="num" style="color:var(--ink-down, var(--down))">{{ _streak }}</span>{%- endif -%}
       </td>
     </tr>
   {%- endfor -%}

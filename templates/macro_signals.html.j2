@@ -15,7 +15,7 @@
 <title>Macro Signals — the full signal board</title>
 {% set seo_title = "Macro Signals Board — Mastermind" %}{% set seo_desc = "The full macro signal board — every indicator, its current reading and its plain-word meaning. Updated nightly." %}{% set seo_path = "macro_signals.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   :root {
@@ -24,7 +24,7 @@
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
   @media (min-width:1100px){ body{ padding:24px max(36px,calc((100vw - 1340px)/2)); } }
-  a { text-decoration:none; color:var(--link); }
+  a { text-decoration:none; color:var(--ink-link, var(--link)); }
   h1 { font-size:21px; margin:0 0 2px; }
   .lead { color:var(--muted); font-size:13px; margin:0 0 16px; max-width:72ch; }
   .back { display:inline-block; margin-bottom:10px; font-size:13px; font-weight:600; }
@@ -129,9 +129,9 @@
   .hero-gauges { display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
   .hero-ms { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
   .ms-pill { display:inline-block; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:2px solid transparent; }
-  .ms-green { background:color-mix(in srgb,var(--up) 18%,var(--panel)); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .ms-yellow { background:color-mix(in srgb,var(--warn) 18%,var(--panel)); color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,transparent); }
-  .ms-red { background:color-mix(in srgb,var(--down) 18%,var(--panel)); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .ms-green { background:color-mix(in srgb,var(--up) 18%,var(--panel)); color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ms-yellow { background:color-mix(in srgb,var(--warn) 18%,var(--panel)); color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 40%,transparent); }
+  .ms-red { background:color-mix(in srgb,var(--down) 18%,var(--panel)); color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .ms-grey { background:var(--panel2); color:var(--muted); border-color:var(--line); }
 
   /* ── Misc ────────────────────────────────────────────────────────────── */
@@ -143,14 +143,14 @@
   thead th { color:var(--muted); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; }
   .muted { color:var(--muted); }
   .sm { font-size:12px; }
-  .pos { color:var(--up); }
-  .neg { color:var(--down); }
-  .warn { color:var(--warn); }
+  .pos { color:var(--ink-up, var(--up)); }
+  .neg { color:var(--ink-down, var(--down)); }
+  .warn { color:var(--ink-warn, var(--warn)); }
   .badge { display:inline-block; font-size:11px; padding:1px 7px; border-radius:6px; background:var(--panel2); border:1px solid var(--line); }
   .chip { display:inline-block; font-size:11px; padding:2px 8px; margin:2px 3px 2px 0; border-radius:6px; border:1px solid var(--line); }
-  .chip-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
-  .chip-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
-  .chip-warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); }
+  .chip-pos { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
+  .chip-neg { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .chip-warn { color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); }
   .chart { margin-top:8px; }
   .pgauge { position:relative; height:8px; border-radius:5px; background:linear-gradient(90deg,var(--down),var(--warn),var(--up)); margin:6px 0 2px; }
   .pgauge i { position:absolute; top:-2px; width:3px; height:12px; background:var(--text); border-radius:2px; transform:translateX(-50%); }
@@ -198,7 +198,7 @@
     border-radius:8px; border:1px solid var(--line);
     background:var(--panel2);
   }
-  .stress-chip.active-chip { border-color:color-mix(in srgb,var(--down) 50%,var(--line)); color:var(--down); }
+  .stress-chip.active-chip { border-color:color-mix(in srgb,var(--down) 50%,var(--line)); color:var(--ink-down, var(--down)); }
   .stress-chip.dominant-chip { font-weight:700; }
   .pulse-dot {
     width:7px; height:7px; border-radius:50%; background:var(--down);
@@ -209,7 +209,7 @@
     background:color-mix(in srgb,var(--down) 12%,var(--panel2));
     border:1px solid color-mix(in srgb,var(--down) 40%,var(--line));
     border-radius:8px; padding:10px 14px;
-    color:var(--down); font-weight:600; font-size:13px; margin:10px 0;
+    color:var(--ink-down, var(--down)); font-weight:600; font-size:13px; margin:10px 0;
   }
   .what-changed-row { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:12.5px; border-bottom:1px solid var(--line); }
   .what-changed-row:last-child { border-bottom:none; }
@@ -256,7 +256,7 @@
   .dislo-panel .dlx-stance b { color:var(--lit); font-weight:700; }
   .dislo-panel .dlx-hon { color:var(--muted); }
   .dislo-panel .dlx-warn { margin:7px 0 0; font-size:12px; line-height:1.45;
-    color:var(--down); max-width:96ch; }
+    color:var(--ink-down, var(--down)); max-width:96ch; }
   /* readout rows: label / value pairs, no nested card chrome. Everything that
      DISAGREES with the verdict stays here, in the open — the margin each stress
      trigger clears, the Fed-put sub-readings, the entry timer, and the
@@ -280,14 +280,14 @@
     color:var(--muted); font-variant-numeric:tabular-nums; }
   .dislo-panel .dlx-mg { white-space:nowrap; }
   .dislo-panel .dlx-mg.on { color:var(--lit); font-weight:650; }
-  .dislo-panel .dlx-dis { color:var(--warn); font-weight:650; }
+  .dislo-panel .dlx-dis { color:var(--ink-warn, var(--warn)); font-weight:650; }
   /* series VINTAGE, parenthetical to its reading — Sahm is a monthly reference
      month carried forward, not a same-day print. Regular numerals: a date is a
      figure, the words around it are not, so only the reading itself keeps the
      tabular alignment above. */
   .dislo-panel .dlx-vint { color:var(--ink-3,var(--muted)); white-space:nowrap; }
   .dislo-panel .dlx-more { margin-top:11px; font-size:12px; }
-  .dislo-panel .dlx-more > summary { cursor:pointer; color:var(--link);
+  .dislo-panel .dlx-more > summary { cursor:pointer; color:var(--ink-link, var(--link));
     font-weight:600; font-size:12px; }
   .dislo-panel .dlx-mbody { margin-top:8px; padding-top:8px;
     border-top:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
@@ -296,7 +296,7 @@
   /* policy divergence — amber CONTEXT, never the red of a verdict: the engine
      attaches it explicitly as context that does not change the call, so it must
      not read redder than the gate does. */
-  .dislo-panel .dlx-pdiv, .dislo-panel .dlx-pdiv b { color:var(--warn); }
+  .dislo-panel .dlx-pdiv, .dislo-panel .dlx-pdiv b { color:var(--ink-warn, var(--warn)); }
   .dislo-panel .dlx-mrow { display:flex; align-items:baseline; gap:9px;
     font-size:11.5px; line-height:1.55; }
   .dislo-panel .dlx-mk { flex:none; width:140px; font-weight:600; color:var(--muted); }
@@ -1068,7 +1068,7 @@
       {% set _stale_j = _put_stale | join(' ') %}
       <span class="dlx-val"><b style="color:{{ dlp }}">{% if _put_unknown %}{{ t('Switch unreadable', '开关无法判读') }}{% elif DL.fed_put %}{{ t('Put present', '托底在位') }}{% else %}{{ t('Put ABSENT', '托底缺失') }}{% endif %}</b>
         {%- if _put_unknown %}<span class="dlx-dis"> · ⚠ {{ t('inputs stale or missing — no ruling', '输入过期或缺失 — 不作判定') }}</span>
-        {%- elif not DL.fed_put %}<span style="color:var(--down)">
+        {%- elif not DL.fed_put %}<span style="color:var(--ink-down, var(--down))">
         {%- if DI.sahm is not none and DI.sahm >= 0.5 %} · ⚑ {{ t('recession underway (Sahm)', '衰退进行中（Sahm）') }}{% endif %}
         {%- if DI.breakeven_10y_1m is not none and DI.breakeven_10y_1m >= 2.5 %} · ⚑ {{ t('inflation locks the Fed', '通胀锁住美联储') }}{% endif %}</span>{% endif %}
         {%- if _put_unknown %}

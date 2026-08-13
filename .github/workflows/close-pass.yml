@@ -22,10 +22,17 @@ name: close-pass
 # "rel == ahead only when the rendered cards came from the evening board" a
 # property of the code rather than a promise.
 #
-# LEDGER LAW (G0.2, DNR:KILL-INTRADAY-CHRONICLE). This lane runs NO git command,
-# commits nothing, and writes no data/ path — so it needs none of closing-bell's
-# `git checkout -- .` discard contract, because it never creates the writes that
-# contract exists to discard. `contents: read` is the enforcement, not a comment.
+# LEDGER LAW (G0.2, DNR:KILL-INTRADAY-CHRONICLE). This lane COMMITS nothing and
+# nothing it touches ever reaches a ledger; `contents: read` is the enforcement,
+# not a comment. CORRECTED 2026-08-13: this paragraph used to add "and writes no
+# data/ path — so it needs none of closing-bell's `git checkout -- .` discard
+# contract, because it never creates the writes that contract exists to discard."
+# That was false from day one. The `--heal` prefetch below refreshes the price
+# store into data/yahoo/*.parquet, so the proof step at the end of the job failed
+# on EVERY run from 2026-08-09 (when both steps shipped together) until the
+# discard was added — the lane has never been green. The board itself published
+# to R2 fine throughout; only the self-check was red, which is worse than an
+# honest failure because a permanently-red lane teaches everyone to ignore it.
 # COLLECT_LANE is deliberately UNSET (every engine ledger writer self-gates on
 # it; unset means non-ledger lane) and RENDER_NO_DRIP=1 is set job-wide, both in
 # the closing-bell idiom.
@@ -148,9 +155,37 @@ jobs:
           python -m scripts.close_pass_publish \
             ${{ inputs.force && '--force' || '' }}
 
+      # DISCARD, then prove. Added 2026-08-13 after this lane was found to have
+      # FAILED EVERY RUN since it shipped (2026-08-09, commit 5b083a2a73e — the
+      # prefetch step and the proof step arrived together, so there has never been
+      # a green close-pass).
+      #
+      # The header's claim that this lane "never creates the writes that contract
+      # exists to discard" was false the day it was written: the `--heal` prefetch
+      # above refreshes the price store, which lands in data/yahoo/*.parquet. Every
+      # failed run reported the same set — _MOVE, _RUT, _SOX, _VIX, _VIX3M, _VIX9D,
+      # _VVIX and friends, all ` M`.
+      #
+      # The heal itself is CORRECT and stays: it is what gives the board current
+      # prices to compute on. What was missing is the discard every other non-ledger
+      # lane already performs (closing-bell.yml, earlyclose.yml, intraday-fastpath.yml
+      # all `git checkout -- .` + `git clean -fdq data/`). This lane stages nothing
+      # and holds `contents: read`, so the discard is unconditional and carries none
+      # of closing-bell's stage-BEFORE-checkout ordering hazard — there is nothing to
+      # stage, and nothing here could be pushed even if there were.
+      - name: discard the prefetch's data/ writes (this lane commits nothing)
+        run: |
+          git checkout -- data/ 2>/dev/null || true
+          git clean -fdq data/ 2>/dev/null || true
+
       # A lane that writes no data/ path should be able to prove it on every run,
       # not only in a unit test. This is the same evidence the guard suite asserts
       # by AST, taken against the real working tree after the real pass.
+      #
+      # This step is NOT weakened by the discard above — it still fails on anything
+      # the discard could not undo, which is the case that would mean a genuine
+      # ledger write. What it no longer does is red the whole lane over a price-cache
+      # refresh the lane itself asked for.
       - name: prove the pass wrote no data/ path
         run: |
           if [ -n "$(git status --porcelain -- data/)" ]; then

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import tarfile
 from collections import Counter
 from copy import deepcopy
 from hashlib import sha256
@@ -22,6 +23,7 @@ from engine.government_revenue.entity_resolution import load_recipient_entity_gr
 from scripts import build_government_revenue_candidates as projection
 from tests.government_revenue_candidate_fixture import (
     ROOT,
+    canonical_candidate_census,
     canonical_fixture_root,
     canonical_frozen_at,
     rewound,
@@ -34,6 +36,10 @@ from tests.test_government_revenue_candidates import _award_event, _graph, _payl
 # see `tests/government_revenue_candidate_fixture` for why a wall-clock literal
 # here is a scheduled failure rather than a constant.
 FROZEN_AT = canonical_frozen_at()
+#: How many candidate rows the canonical inputs yield, derived from the committed
+#: projection receipt rather than hand-typed -- the count axis of the same bomb
+#: `FROZEN_AT` defuses on the clock axis.  See `canonical_candidate_census`.
+CANONICAL_CENSUS = canonical_candidate_census()
 #: A later run over the same sources: reassembly, clock advance, append window.
 NEXT_RUN_AT = shifted(FROZEN_AT, hours=1)
 #: An observation known between the two runs above -- appendable, not a backfill.
@@ -83,6 +89,15 @@ _INCIDENT_FIXTURE_DIRECTORY = (
 #: state blobs it is bound to.  See :func:`_incident_correction_root` for why the
 #: incident replay may never read the live append-only store instead.
 _INCIDENT_LEDGER_FIXTURE = _INCIDENT_FIXTURE_DIRECTORY / "candidate_ledger.jsonl"
+#: The incident's canonical INPUT vintage -- `latest`/`workspace`/graph as commit
+#: `5fc18d5aac8` published them, compressed because they are ~6.6 MB raw.  A
+#: closed incident's source is as immutable as its ledger; see
+#: :func:`_incident_correction_root` for why pairing it with a live source was a
+#: scheduled failure, and handoff §2.5 for the graph-bytes rule it satisfies.
+_INCIDENT_CANONICAL_SOURCE = _INCIDENT_FIXTURE_DIRECTORY / "canonical_source.tar.xz"
+_INCIDENT_CANONICAL_SOURCE_RECEIPT = (
+    _INCIDENT_FIXTURE_DIRECTORY / "canonical_source.receipt.json"
+)
 
 
 def _issued_recovery_cohort(rows: list[dict]) -> list[dict]:
@@ -121,6 +136,37 @@ def _artifact_bytes(root: Path) -> dict[str, bytes | None]:
     return {name: path.read_bytes() if path.exists() else None for name, path in paths.items()}
 
 
+def _incident_canonical_source_root(tmp_path: Path) -> Path:
+    """Lay down the incident's own canonical input vintage, digest-checked.
+
+    Overwrites the live boundary :func:`canonical_fixture_root` copies with the
+    bytes commit ``5fc18d5aac8`` published, and refuses to hand back a root whose
+    extracted files do not hash exactly as ``canonical_source.receipt.json``
+    recorded -- a frozen vintage that can drift is not a frozen vintage.
+    """
+    root = canonical_fixture_root(tmp_path)
+    receipt = json.loads(
+        (_INCIDENT_CANONICAL_SOURCE_RECEIPT).read_text(encoding="utf-8")
+    )
+    destination = root / "data/government_revenue"
+    with tarfile.open(_INCIDENT_CANONICAL_SOURCE, mode="r:xz") as archive:
+        members = sorted(member.name for member in archive.getmembers())
+        assert members == sorted(receipt["files"]), (
+            "the frozen incident source archive and its receipt disagree about "
+            f"which documents are frozen: {members} vs {sorted(receipt['files'])}"
+        )
+        for name, expected in sorted(receipt["files"].items()):
+            handle = archive.extractfile(name)
+            assert handle is not None, f"frozen incident source {name} is unreadable"
+            payload = handle.read()
+            assert sha256(payload).hexdigest() == expected["sha256"], (
+                f"frozen incident source {name} does not match its receipt digest"
+            )
+            assert len(payload) == expected["byte_count"]
+            (destination / name).write_bytes(payload)
+    return root
+
+
 def _incident_correction_root(tmp_path: Path) -> Path:
     """Install the exact raw 5fc incident predecessor from bounded fixtures.
 
@@ -141,12 +187,35 @@ def _incident_correction_root(tmp_path: Path) -> Path:
     ``>=``-length, 50,790-byte *prefix* digest) in the grader suite, which is
     where a human is meant to re-read it.
 
-    The canonical ``latest``/``workspace``/``recipient_entity_graph`` inputs
-    copied by :func:`canonical_fixture_root` stay deliberately live-vintage: they
-    are the materializer's input boundary, and the derived run clock is computed
-    from exactly those documents, so freezing them is what would break.
+    **The canonical inputs are frozen to the incident vintage too**, which
+    reverses this docstring's original claim that freezing them "is what would
+    break".  That claim was right about the *clock* and wrong about the *source*.
+    A first activation is only legal on a run that observes the incident ledger
+    unchanged: ``candidates.py`` refuses when ``generated_at == activated_at`` and
+    ``append_count != 0`` ("candidate correction activation changed the incident
+    ledger").  Pairing the frozen 8-row predecessor with a live source therefore
+    held only while the live source still yielded exactly those eight rows, and it
+    stopped holding on 2026-08-12T23:50:04Z when the award-action rail resolved
+    and the projection issued fifteen forward candidates.  The engine is right and
+    the replay's premise was what went stale -- production activated once, in
+    2026-08-10T04:30Z, and activation is durable, so no run can ever legitimately
+    first-activate against today's source again.
+
+    This is handoff §2.5's standing rule ("a frozen incident vintage freezes its
+    GRAPH too"; "every new frozen fixture must include its graph bytes") applied
+    to the whole input boundary: :data:`_INCIDENT_CANONICAL_SOURCE` carries the
+    ``latest``/``workspace``/``recipient_entity_graph`` bytes exactly as commit
+    ``5fc18d5aac8`` published them, with per-file digests in
+    ``canonical_source.receipt.json``.  Because the graph travels with them, the
+    replay is already correct for the defense20 republish, which re-times
+    ``observation_id`` through the graph digest it embeds.
+
+    The run clock stays live-derived on purpose.  It only has to sit *forward* of
+    every source instant, and a live clock over a frozen-older source satisfies
+    that by construction -- so the incident replay inherits no scheduled failure
+    from either direction.
     """
-    root = canonical_fixture_root(tmp_path)
+    root = _incident_canonical_source_root(tmp_path)
     copied = (
         "config/government_revenue/candidate_historical_suppressions.v1.json",
         "config/government_revenue/candidate_issuance_corrections.v1.json",
@@ -622,20 +691,28 @@ def test_current_fixture_projects_honest_source_queue_and_byte_identical_twins(t
     status = json.loads(
         (root / "data/government_revenue/candidate_projection_status.json").read_text(encoding="utf-8")
     )
+    # The census is derived, never hand-typed: `== 8` was the 2026-08-09 vintage
+    # and detonated the night the award-action rail issued fifteen forward
+    # candidates.  See `canonical_candidate_census` for why re-typing `== 23`
+    # would only re-arm it.  What this test actually guards is unchanged and is
+    # the reason a shared reference value is not a tautology here: FOUR
+    # independent writers -- the projection result, the queue, the public twin,
+    # and the status receipt -- must agree on one number, and the twin must be
+    # byte-identical.
     assert result["status"] == "ok"
-    assert result["candidate_count"] == 8
+    assert result["candidate_count"] == CANONICAL_CENSUS
     assert result["mapping_backlog_count"] == 21
-    assert queue["counts"]["total"] == 8
-    assert queue["counts"]["exact_linked"] == 8
+    assert queue["counts"]["total"] == CANONICAL_CENSUS
+    assert queue["counts"]["exact_linked"] == CANONICAL_CENSUS
     assert queue["counts"]["mapping_needed"] == 21
     assert queue_path.read_bytes() == public_path.read_bytes()
     assert len(
         (root / "data/government_revenue/candidate_ledger.jsonl")
         .read_text(encoding="utf-8")
         .splitlines()
-    ) == 8
+    ) == CANONICAL_CENSUS
     assert status["status"] == "ok"
-    assert status["candidate_count"] == 8
+    assert status["candidate_count"] == CANONICAL_CENSUS
     # Source health is reported from the canonical inputs, never defaulted rosy.
     # A hand-typed literal here is the same scheduled failure this suite's fixture
     # module was written to end: the award-event rail sat at "unavailable" for days
@@ -684,7 +761,7 @@ def test_same_frozen_run_is_idempotent_and_one_sided_twin_is_remediated(tmp_path
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
     first = _artifact_bytes(root)
     first_state = json.loads(first["state"])
-    assert first_state["ledger"]["append_count"] == 8
+    assert first_state["ledger"]["append_count"] == CANONICAL_CENSUS
     assert first_state["ledger"]["prior_line_count"] == 0
 
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
@@ -695,7 +772,7 @@ def test_same_frozen_run_is_idempotent_and_one_sided_twin_is_remediated(tmp_path
     assert settled["public"] == first["public"]
     assert settled["status"] == first["status"]
     assert settled_state["ledger"]["append_count"] == 0
-    assert settled_state["ledger"]["prior_line_count"] == 8
+    assert settled_state["ledger"]["prior_line_count"] == CANONICAL_CENSUS
 
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
     assert _artifact_bytes(root) == settled
@@ -1068,7 +1145,7 @@ def test_reviewed_historical_source_is_withheld_without_ledger_backfill(
     assert result["append_count"] == 0
     assert result["suppressed_historical_count"] == 1
     assert ledger_path.read_bytes() == before_ledger
-    assert projection.load_candidate_ledger(ledger_path).line_count == 8
+    assert projection.load_candidate_ledger(ledger_path).line_count == CANONICAL_CENSUS
     assert queue["candidates"] == []
     assert queue["counts"]["total"] == 0
     assert queue["freshness"]["exact_candidate_availability"] == "withheld_historical"
@@ -1474,7 +1551,8 @@ def test_unseen_observation_newer_than_prior_materialization_can_append(
     ledger = projection.load_candidate_ledger(
         root / "data/government_revenue/candidate_ledger.jsonl"
     )
-    assert ledger.line_count == 9
+    # The canonical census plus the one synthesized appendable observation.
+    assert ledger.line_count == CANONICAL_CENSUS + 1
     assert ledger.observations[-1]["known_at"] == BETWEEN_RUNS_KNOWN_AT
 
 
