@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T12:42:01.451925+00:00",
-  "count": 1060,
+  "generated_at": "2026-08-13T12:56:58.832163+00:00",
+  "count": 1061,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -124,6 +124,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pdkacdlkes8-0833c4",
+      "title": "Deutsche Bank",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T11:17:04Z",
+      "summary_points": [
+        "**Target Price Upgrades**: Deutsche Bank raised targets for 7 stocks (6 Buy, 1 Hold), with ABN AMRO (+17.6%), Balfour Beatty (+11.1%), and Hill & Smith (+7.0%) showing largest revisions, signaling strong institutional optimism.",
+        "**Defense Sector Momentum**: HENSOLDT (target raised to €105) and HILL & SMITH (FY26E EBITA +1% to $216m) driven by robust order momentum and US infrastructure demand; TKMS shows sequential margin improvement (Q3 EBIT margin c.7% vs Q2 5.5%).",
+        "**Jenoptik Earnings & Guidance**: Q2 EBITDA beat (+28% yoy to €54.4m) with guidance upgraded to upper half (Tgt EUR48), fueled by strong orders in Semi/Biophotonics segments and margin expansion (20-21% EBITDA margin).",
+        "**DAX Earnings Acceleration**: DAX Q2 earnings growth accelerated to 11% YoY (strongest in decade), led by Industrials/Chemicals; consensus expects 10% growth, with firm maintaining 12% outlook due to resilient momentum and macro backdrop."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
