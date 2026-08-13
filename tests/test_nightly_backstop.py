@@ -196,3 +196,45 @@ def test_selftest_passes():
         cwd=REPO_ROOT, capture_output=True, text=True)
     assert proc.returncode == 0, proc.stdout + proc.stderr
     assert "PASS" in proc.stdout
+
+
+# ── the 2026-08-13 first-live-night lesson: the store outranks the conclusion ──
+#
+# The recovery bake concluded `cancelled` (engine commit push-race + a cancelled
+# offrender lane) while the picks LANDED — asof advanced, 25 fresh plans. The
+# as-shipped decide() would have re-dispatched a five-hour duplicate bake into a
+# healthy night. Run-level conclusions are single-lane latches; the store is the
+# product. The store may only ever SKIP — never fire.
+
+def test_store_current_skips_despite_cancelled_run():
+    verdict = decide([DEAD], NOW, index={"source_asof": "2026-08-11"})
+    assert verdict["dispatch"] is False
+    assert "STORE CURRENT" in verdict["reason"]
+
+
+def test_store_ahead_also_skips():
+    verdict = decide([DEAD], NOW, index={"source_asof": "2026-08-12"})
+    assert verdict["dispatch"] is False
+
+
+def test_store_behind_does_not_excuse_a_dead_night():
+    verdict = decide([DEAD], NOW, index={"source_asof": "2026-08-08"})
+    assert verdict["dispatch"] is True
+
+
+@pytest.mark.parametrize("index", [None, {}, {"source_asof": None},
+                                   {"source_asof": "not-a-date"}])
+def test_blind_index_falls_through_to_run_evidence(index):
+    """An unreadable store neither fires nor blocks — the run list decides,
+    exactly as before the index existed."""
+    assert decide([DEAD], NOW, index=index)["dispatch"] is True
+    assert decide([LIVE], NOW, index=index)["dispatch"] is False
+
+
+def test_workflow_checks_out_the_index_the_skip_reads():
+    text = WORKFLOW.read_text()
+    assert "site/prophet/index.json" in text, (
+        "the STORE CURRENT skip reads site/prophet/index.json; a sparse checkout "
+        "without it makes the skip permanently blind and every latch night a "
+        "five-hour duplicate bake"
+    )

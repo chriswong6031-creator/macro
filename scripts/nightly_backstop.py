@@ -118,8 +118,39 @@ def _parse_dt(value: object) -> "datetime | None":
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
-def decide(runs: "list[dict] | None", now: datetime) -> dict:
-    """Pure decision. ``{"dispatch": bool, "reason": str, "session": str}``."""
+def _parse_date(value: object):
+    """ISO date prefix or None — unparseable means blind, and for an ACTOR the
+    blind branch must fall through to the run-list evidence, never to a fire."""
+    if not isinstance(value, str) or len(value) < 10:
+        return None
+    try:
+        from datetime import date
+        return date.fromisoformat(value[:10])
+    except ValueError:
+        return None
+
+
+def load_index(path: Path) -> "dict | None":
+    try:
+        loaded = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+    return loaded if isinstance(loaded, dict) else None
+
+
+def decide(runs: "list[dict] | None", now: datetime,
+           index: "dict | None" = None) -> dict:
+    """Pure decision. ``{"dispatch": bool, "reason": str, "session": str}``.
+
+    ``index`` is site/prophet/index.json — the STORE's own word. It outranks the
+    run-level conclusion in the skip direction (never in the fire direction):
+    the first live night this design met (2026-08-13) the recovery bake
+    concluded ``cancelled`` — engine's final commit step lost a push race and
+    one offrender lane was cancelled — while the picks LANDED (source_asof
+    advanced, 25 fresh plans). Keying the re-fire on the conclusion alone would
+    have dispatched a five-hour duplicate bake into a healthy night. Run-level
+    conclusions are single-lane latches; the store is the product.
+    """
     session, boundary = fire_boundary(now)
     base = {"dispatch": False, "session": session,
             "boundary": boundary.isoformat()}
@@ -141,6 +172,15 @@ def decide(runs: "list[dict] | None", now: datetime) -> dict:
 
     if any((r.get("conclusion") or "") == "success" for r in tonight):
         return {**base, "reason": f"LANDED: session {session} already baked green."}
+
+    src = _parse_date((index or {}).get("source_asof"))
+    if src is not None and src.isoformat() >= session:
+        return {**base, "reason": (
+            f"STORE CURRENT: source_asof {src.isoformat()} already carries session "
+            f"{session} despite no green run — a single-lane latch (the 2026-08-13 "
+            "shape: commit push-race + a cancelled offrender lane, picks live). "
+            "A re-bake would be a five-hour duplicate; the liveness guard's LANE "
+            "LATCH warning owns the red lane.")}
 
     fired = [r for r in tonight
              if (r.get("event") or "") == "workflow_dispatch"]
@@ -238,6 +278,15 @@ def _selftest() -> int:
     _c("blind -> skip", decide(None, now)["dispatch"], False)
     _c("capped -> skip", decide([fired, fired], now)["dispatch"], False)
     _c("one prior dispatch -> still allowed", decide([fired], now)["dispatch"], True)
+    # The 2026-08-13 first-live-night shape: run cancelled, store current -> SKIP.
+    _c("store-current latch -> skip",
+       decide([dead], now, index={"source_asof": "2026-08-11"})["dispatch"], False)
+    # The store only ever SKIPS — a stale store with a cancelled run still fires.
+    _c("store-behind + cancelled -> still dispatch",
+       decide([dead], now, index={"source_asof": "2026-08-08"})["dispatch"], True)
+    # Blind index falls through to run evidence, never to a fire of its own.
+    _c("unparseable index -> run evidence decides",
+       decide([dead], now, index={"source_asof": "not-a-date"})["dispatch"], True)
     # A weekend slot resolves to Friday's bake, which landed.
     sat = datetime(2026, 8, 15, 1, 0, tzinfo=timezone.utc)
     _c("weekend -> skip", decide(
@@ -255,6 +304,10 @@ def main(argv: "list[str] | None" = None) -> int:
                         help="decide and print, never fire")
     parser.add_argument("--repo", default=DEFAULT_REPO)
     parser.add_argument("--runs-json", type=Path, help="offline: read runs from a file")
+    parser.add_argument("--index-json", type=Path,
+                        default=REPO_ROOT / "site" / "prophet" / "index.json",
+                        help="the store's own word — outranks a red run-level "
+                             "conclusion in the SKIP direction only")
     args = parser.parse_args(argv)
 
     if args.selftest:
@@ -270,7 +323,8 @@ def main(argv: "list[str] | None" = None) -> int:
     else:
         runs = fetch_runs(args.repo)
 
-    verdict = decide(runs, datetime.now(timezone.utc))
+    verdict = decide(runs, datetime.now(timezone.utc),
+                     index=load_index(args.index_json))
     print(f"nightly backstop | session={verdict['session']} "
           f"dispatch={verdict['dispatch']} :: {verdict['reason']}", flush=True)
 

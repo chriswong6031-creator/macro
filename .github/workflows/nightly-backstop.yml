@@ -57,6 +57,7 @@ jobs:
           sparse-checkout: |
             scripts
             lib
+            site/prophet/index.json
           sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
