@@ -87,8 +87,14 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+# UNCONDITIONAL by contract (tests/test_check_script_import_pinning.py). A
+# `if str(REPO_ROOT) not in sys.path` guard is NOT a strong pin: it is not
+# guaranteed to run, and a root that is merely PRESENT further down sys.path
+# still loses to a foreign package ahead of it. This guard runs from a bare
+# `python3 scripts/check_nightly_liveness.py` on a GitHub-hosted runner whose
+# CWD and sys.path[0] are not this repo, which is exactly the case the pin
+# exists for.
+sys.path.insert(0, str(REPO_ROOT))
 
 from lib.nyse_calendar import expected_last_session, sessions_behind  # noqa: E402
 
