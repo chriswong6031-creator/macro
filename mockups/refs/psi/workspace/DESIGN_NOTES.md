@@ -318,3 +318,202 @@ already uses on this page — so the page itself never scrolls sideways (verifie
 
 **Watchlists mode has no books**, by rule. `.tbl-bar` scopes the border removal, so the
 watchlist's own `.tbl-top` is untouched — verified bit-identical across all five watchlist crops.
+
+---
+
+### (e) What the W2 build changed, and why — folded in from the implementation record
+
+The four rulings above were written before the build. These are the decisions the build
+itself had to make, folded here from `crops/impl/IMPLEMENTATION_DELTAS.md` §2 now that
+this file is on `main` (the fold was deferred to whichever wave landed after the mockup
+gate; W3 is that wave). They are part of the pinned record — a later builder inherits
+them rather than re-deriving them.
+
+**D1 — Watchlists mode gains an add-a-name field.** The pinned mockup is a static
+artifact, so it shows no control for adding a name; the real page must have one. A
+`.srch`-styled input sits in `.wl-head` after the list picker, with the existing
+suggestion dropdown. No new grammar — it is the same `.srch` the toolbar filter uses.
+
+**D2 — Scenario Lab shipped as a labelled shell.** The pinned mockup writes out the
+lab's copy; the packet scoped the pre-trade check to a later wave. The `<details>` row
+was present in the pinned position with its pinned summary line, and its body said what
+it would do and that it landed next wave, rather than presenting a control that did
+nothing. *(Superseded by W3, which gave it its real body — see (g).)*
+
+**D3 — Risk Center: Concentration was live, the other five tabs were labelled shells.**
+Per the W2 scope. Each shell stated the one question its tab would answer, in plain
+words, plus "Being built — this tab lands in the next wave". No fake panels.
+*(Superseded by W3 — see (g).)*
+
+**D4 — The regime read moved from a rail to the book read's subline.** The pinned design
+gives BOOK READ a `sec-sub` ("Quiet tape · nothing crossed a line overnight"); the
+pre-existing `#wri_rail` was a separate tinted strip. The rail's own state tint was
+dropped with it: the subline is quiet muted text, and a state ramp there would introduce
+a fifth reserved hue on a page whose palette decision allows four.
+
+**D5 — The condition-count line is retired, not ported.** It answered "how much of the
+book is this summary about"; the pinned design answers the same question better with the
+attention stack's "5 of 12 positions" section header. Two sentences answering one
+question, one line apart, was the defect.
+
+**D6 — Coverage disclosure splits into two sentences on a multi-market book.** The seam
+can only draw ONE currency (the page's own toolbar states that law), so when the book
+spans markets the rails describe the LEAD book and the line says which: "The two lines
+above read your US stocks book — 12 of 15 positions." The uncovered count is then over
+exactly the set the rails drew. The pinned single-market mockup had no occasion for this.
+
+**D7 — The engine-state → plain-word stage map is a build decision the mockup did not
+specify.** The mockup names the seven stage words; the engine emits nine states plus a
+`LIMITED` sentinel. The map is fixed, lives in `templates/watchlist.js`, and only ever
+de-escalates: `BOTTOM WATCH` (a downtrend near a low) becomes *Broke down*, not *Early
+sign*; `COUNTERTREND BOUNCE` (an unconfirmed turn) becomes *Early sign*, not
+*Confirming*; anything unknown becomes *Not covered*. Pinned by
+`tests/test_watchlist_workspace_js.py`.
+
+**D8 — The anonymous headline uses weight and market concentration, not sector.** The
+A9 ruling allows "via public metadata, else weight-only concentration". A name's sector
+is only on this page via the gated `stockdata/index.json`, so the build takes the stated
+fallback. Recorded in full in packet §14 A9.
+
+**D9 — The pinned "Sort: Value" toolbar button is absent; sorting moved to the column
+headers.** The mockup shows a `Sort: Value` button beside "Add position". The built table
+has sortable column headers instead (`aria-sort`, click to toggle) — the same affordance
+in the place a reader already looks for it, and it sorts by any column rather than
+cycling one. The button would have been a second control for a subset of what the headers
+already do. If the commissioning session wants the pinned control back, it is additive.
+
+**D10 — The anonymous entry panel persists above the analysis; the mockup replaced it.**
+In the pinned state (b) the paste box is gone once the book is read. Built, it collapses
+to a compact single-line header plus the textarea and the weighting control, and stays.
+Reason: the weighting mode is the visitor's most likely SECOND action ("what if these are
+percentages?"), and re-deriving the whole read is one click from there. Removing the panel
+would mean re-entering the book to change one control. Recorded as a deliberate departure,
+not an oversight — the commissioning session may rule it back.
+
+### (f) Rulings the W2 build absorbed, including its own residual
+
+Folded from `crops/impl/IMPLEMENTATION_DELTAS.md` §3 and §3a. The round-2 rulings below
+are binding on later waves in the same way (a)–(d) are.
+
+- **§7(a)–(d) as built** — dark keyed on bare `:root` with no `[data-theme="dark"]`
+  selector anywhere in `watchlist.html.j2`; the stance set held to Watch · Get ready ·
+  No action plus "Nothing here needs a decision today."; the 390 column set demoted Day,
+  Since entry, Risk share and Sector to the drawer while the watchlist kept its own
+  template so Δ-since-visit survives; book chips filter the holdings table view only.
+- **§1 the signature** — one Book Seam, drawn in one function (`WS.seam` in
+  `watchlist.js`), fed by both the anonymous and the signed-in path. No second renderer
+  exists, which is why a row's risk share and the seam's rail cannot disagree.
+- **§4 honest data** — Day is always "—" with its Tier-2 cue; anonymous Since-entry is
+  "—" with a cue rather than a fabricated 0.0%; the anonymous Value column collapses to
+  weight; mode-switch counts are absent for a visitor with nothing saved.
+- **§6 ZH** — zero `title=` attributes in the workspace markup; placeholders use the
+  `data-ph-en`/`data-ph-zh` pair; ZH dates drop `.fig` because they contain words.
+
+**Round-2 rulings absorbed (binding):**
+
+- **zh stage word for `BOTTOM WATCH`** (supersedes D7's zh half). EN *Broke down* stands.
+  The zh word is **已破位** (describes the break), not **已失效** (declares the read
+  invalid): 已失效 is an engine-verdict word, and a display tier may only ever
+  de-escalate.
+- **Δ-since-visit down marker.** The marker and the *aging* stage word both rendered
+  **转弱**, making a movement marker and a stage read indistinguishable in Chinese. The
+  marker is **转跌** ("turned down", matching its EN); the stage keeps 转弱.
+- **The seam is capped at 24 segments with a disclosed tail.** One segment per position
+  overflowed the PAGE at 100 names on 390px (measured 86px). The rail draws the 23
+  largest and folds the rest into one labelled segment; both denominators and both
+  brackets are still computed over ALL positions, so capping moves pixels and never
+  arithmetic. **A later surface reusing the seam inherits that separation and must not
+  re-derive math over the capped view.**
+- **Share counts never speak as money.** Anonymously there is no price plane, so Shares
+  mode carries a `unit` through every derived figure — headline, because-line, seam
+  label, bracket, segment tooltips, the Weight column header and the coverage line all
+  say *share count* — and one line states that turning share counts into position sizes
+  needs prices, which arrive with the free account.
+- **Non-directional uses of `--down` were repainted to `--act`.** The remove-hover, the
+  modal error line and the failure toast painted from the DIRECTION token, so under
+  红涨绿跌 an error message turned GREEN. Health tokens do not swap, which is exactly why
+  they exist. **Severity and error surfaces use `--act` and must not flip.**
+
+**W2's own recorded residual, carried forward unchanged.** During the render-lag window —
+and only during it — the legacy card grid renders **without the Risk Desk role badge**
+(the `EXIT REVIEW` / `TAKE-PROFIT REVIEW` chips and the per-lane chips beside them). The
+cause is `decorateCards`/`paintLanes`, which lived in the braid block W2 deleted and are
+not part of the restored `lg*` path; the lane ENGINE survives untouched (`roleBadge`,
+`laneRead`, `laneRows` are all still exported and still feed the workspace drawer).
+Accepted rather than restored: the window closes the moment the render lane bakes
+`site/watchlist.html`, after which the legacy path is never taken again, and the badge is
+not part of the design that replaces it.
+
+### (g) W3 — the Risk Center's six tabs (supersedes D2 and D3)
+
+W3 replaced the five labelled shells and the Scenario Lab shell with real reads over the
+engines that already existed. No estimator changed. The rulings a later wave inherits:
+
+- **One dominant idea per tab, and no tab repeats another's claim.** The seam owns the
+  cluster claim; Concentration owns the single-name claim; **Weak links owns risk PER
+  DOLLAR** — the money-vs-risk ratio — which is why it is not a second concentration
+  ranking. Pinned by a test that asserts all six claim sentences are distinct.
+- **The tabs are computed in ONE pass and published, never recomputed per tab.**
+  `watchlist_risk.js` builds all six strings from the same two RiskCore reads and hands
+  them to `watchlist.js` to paint, the same split the seam uses. Two tabs cannot describe
+  different books.
+- **A tab with nothing to say says what it would say, and why it cannot.** The "being
+  built" shells became thin-book fallbacks: the tab's own question in plain words plus
+  "Add at least two positions the nightly model covers and this fills in." A tab never
+  shows an empty panel and never borrows another tab's answer.
+- **"No twins" is a finding, not an empty state.** On an orthogonalized model with real
+  per-name idio vol, most equity pairs sit well below the 0.70 line — so Correlation
+  prints the closest pair and its number anyway. Saying only "no pair crosses 0.70" would
+  read as "these names are unrelated", which is false.
+- **The falling-days lens reports BOTH directions.** A book can tighten under stress and
+  it can also spread. Both counts print under the bars whichever way the comparison came
+  out, so an ordinary result never looks like a missing read.
+- **`factorBets`' diagonal-only approximation is disclosed where the grouping is shown.**
+  The per-name dominant factor is argmax of `b²·F_kk` — the diagonal of F only — so the
+  force a name is filed under can differ from the book-level ranking for the same ticker.
+  The Factors tab carries that sentence in plain words. Fixing the approximation is a math
+  change and stays out of a presentation wave; disclosing it does not.
+- **Ladder geometry is reused, never re-invented.** The pair, event and money-vs-risk rows
+  are the Concentration ladder with a different left column — same track, same shared-scale
+  law, read-only. None of them is the Board's count ladder: no cell is a category, no cell
+  is a filter control, every track is a continuous share.
+- **Two bars in one row share ONE scale.** Weak links first normalised money and risk
+  independently, so the name with the largest money drew a full bar, the name with the
+  largest risk drew a full bar, and the row the headline was about drew neither — the
+  picture contradicted its own sentence. On a shared scale the finding is what you see.
+- **Tier-2 receipts ride the sentence, not a `?` glyph.** `.wri-q` belonged to the braid
+  hero W2 deleted and is styled nowhere on this page, so it rendered as a bare question
+  mark. The page's own pattern is `data-tip-en`/`data-tip-zh` on the element carrying the
+  copy, wired to the LENS popover by `theme.js`. Technical quantities (a net beta, a
+  variance share) live there and never at glance tier.
+- **The Scenario Lab states its default size.** `W4_DEFAULT_DOLLARS = 10000` is kept and
+  explained in the copy under the form: a round number that makes two runs comparable, not
+  drawn from the reader's book and not a suggested size. WRI-R3 is unchanged — no
+  optimizer, no recommended sizing, no imperatives; an unmodeled candidate gets an honest
+  null rather than invented figures.
+
+**Round-2 rulings absorbed into (g), binding on later waves:**
+
+- **A semantic class is not a spare visual channel.** `is-ballast` means "this position
+  offsets the book". Borrowing it to mark one of two LENSES changed what it means AND
+  broke the picture — its fill fails contrast against the track, so the larger of the
+  two bars read as an empty one. If two rows need distinguishing, distinguish them with
+  their labels, not by reaching for a class that already carries a meaning.
+- **A shared scale needs headroom.** A bar pinned at 100% with no unfilled tail cannot be
+  read as a proportion. Ladders round their scale up (to the next 5%) and print it.
+- **Never branch display copy on a compound engine flag.** `RiskCore.read().diverges` is
+  an OR over two unrelated findings (the book collapses; a pair becomes a twin only under
+  stress). Branching one sentence on the OR let one finding print the other's words. Use
+  the specific predicate, and give each finding its own sentence.
+- **Every tab that reads the factor model carries the SAME two disclosures** — the
+  unmodeled names and the market coverage — including the DEFAULT tab. Non-US names are
+  stripped before RiskCore sees them, so they never appear in `coverage.unmodeled`; only
+  the market sentence discloses them, and a tab without it is silently describing a
+  subset of someone's book.
+- **A surface may only name what it renders.** If the copy points at a ticker, that
+  ticker's row is on screen — or the copy picks a different one.
+- **zh singular/plural pronouns are a real distinction** (它 / 它们), not an English
+  artifact to be ignored.
+- **Fix the dead class in the file you are already editing.** Deferring a three-line CSS
+  fix to a later wave while editing the exact template it lands in costs more than taking
+  it, and ships a known defect in the meantime.
