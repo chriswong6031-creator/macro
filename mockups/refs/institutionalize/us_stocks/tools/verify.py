@@ -185,6 +185,81 @@ def main():
                not re.search(r"\bT1\b|\bVoid\b|失效价|目标一", cardm["text"]),
                "found the three-number footer")
 
+            # ── stance ruling (operator 2026-08-13) ──────────────────────────
+            st = pg.evaluate("""() => {
+              const cards = [...document.querySelectorAll('.pvcard')];
+              const chip = c => (c.querySelector('.pv-chip') || {}).textContent || '';
+              return {
+                n: cards.length,
+                noread: cards.filter(c => c.querySelector('.pv-chip--noread')).length,
+                hued:   cards.filter(c => c.className.match(/pv-(buy|near|wait|hold|avoid)\\b/)).length,
+                // a BLOCKED_DATA card must never also carry a stance hue class
+                leaked: cards.filter(c => c.querySelector('.pv-chip--noread') &&
+                                          c.className.match(/pv-(buy|near|wait|hold|avoid)\\b/)).length,
+                chips: [...new Set(cards.map(chip).filter(Boolean))]
+              };
+            }""")
+            ok(f"L1[{lang}] BLOCKED_DATA rows render a disclosed no-read chip",
+               st["noread"] > 0, "no .pv-chip--noread rendered — check is vacuous")
+            ok(f"L2[{lang}] a no-read card never also carries a stance hue",
+               st["leaked"] == 0, f"{st['leaked']} cards carry both")
+            ok(f"L3[{lang}] no sixth TRIM verb on the Board",
+               not re.search(r"TRIM|减仓", " ".join(st["chips"])), f"chips {st['chips']}")
+            ok(f"L4[{lang}] the internal token never reaches the user",
+               "blocked_data" not in txt.lower() and "BLOCKED_DATA" not in html,
+               "found the internal token in user-facing text")
+            pg.close()
+
+        # ── the stance projection is factored from the ENGINE's buckets ──────
+        # (source-level: a display mapping that drifts from its producer becomes an
+        #  independent unowned semantic — exactly what the ruling forbids)
+        # tools/verify.py -> us_stocks -> institutionalize -> refs -> mockups -> repo root
+        import pathlib as _pl
+        eng = (_pl.Path(__file__).resolve().parents[5] / "engine" / "us_board_rank.py")
+        gen = (_pl.Path(__file__).resolve().parent / "gen_fixture.py")
+        # FAIL CLOSED. A missing source must not silently skip this block — an
+        # absent check reads as a passing check, which is how M1-M4 sat dark.
+        ok("M0 the engine + generator sources are readable",
+           eng.exists() and gen.exists(), f"engine={eng.exists()} gen={gen.exists()} ({eng})")
+        if eng.exists() and gen.exists():
+            esrc, gsrc = eng.read_text(), gen.read_text()
+
+            def _bucket(name):
+                m = re.search(name + r"\s*=\s*frozenset\(\(([^)]*)\)\)", esrc)
+                return {x.strip().strip("\"'") for x in m.group(1).split(",") if x.strip()} if m else set()
+
+            mapping = {}
+            mm = re.search(r"STANCE_BY_STATUS\s*=\s*\{(.*?)\}", gsrc, re.S)
+            for k, v in re.findall(r'"([a-z_]+)"\s*:\s*"([a-z_]+)"', mm.group(1) if mm else ""):
+                mapping[k] = v
+            exp = {"_LIVE_STATUSES": {"buy", "near"}, "_SETTING_UP_STATUSES": {"wait"},
+                   "_RAN_STATUSES": {"hold"}, "_BLOCKED_STATUSES": {"avoid"}}
+            for bname, verbs in exp.items():
+                vals = _bucket(bname)
+                ok(f"M1 {bname} is fully mapped by the stance projection",
+                   vals and all(s in mapping for s in vals),
+                   f"unmapped: {sorted(s for s in vals if s not in mapping)}")
+                ok(f"M2 {bname} projects only to {sorted(verbs)}",
+                   {mapping.get(s) for s in vals} <= verbs,
+                   f"got {sorted({mapping.get(s) for s in vals})}")
+            # Target the code path, not the prose: the file documents the
+            # prohibition in a comment, so a bare substring match self-trips.
+            # Strip comments and docstrings, then look for an actual field read.
+            code = re.sub(r"#.*", "", gsrc)
+            code = re.sub(r'"""(?:.|\n)*?"""', "", code)
+            reads = re.findall(r'(?:get\(\s*["\']recommended_action["\']|\.recommended_action|'
+                               r'\[\s*["\']recommended_action["\']\s*\])', code)
+            ok("M3 the projection never reads the management engine's recommended_action",
+               not reads, f"{len(reads)} live read(s) of recommended_action in gen_fixture.py")
+            ok("M4 no sixth verb in the projection",
+               set(mapping.values()) <= {"buy", "near", "wait", "hold", "avoid"},
+               f"verbs {sorted(set(mapping.values()))}")
+
+        # ── G. lifecycle ink + the stance token family, BOTH languages ───────
+        # (G3/G4 are zh-only, so this loop must cover zh or they never run)
+        for lang in ("en", "zh"):
+            pg = page_at(f"theme=dark&lang={lang}&state=paid")
+
             # F. one-referent-per-page: no cell word inside the Candidates section
             cand = pg.evaluate("() => document.getElementById('candidates').innerText")
             words = WORDS_ZH if lang == "zh" else WORDS_EN

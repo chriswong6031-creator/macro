@@ -33,7 +33,7 @@ python3 -m http.server 8792 --directory mockups/refs/institutionalize/us_stocks
 ```bash
 python3 tools/gen_fixture.py board-data.js      # regenerate data from origin/main
 python3 tools/capture.py  http://localhost:8792 crops
-python3 tools/verify.py   http://localhost:8792 # 80/80 acceptance checks
+python3 tools/verify.py   http://localhost:8792 # 99/99 acceptance checks
 ```
 
 **The data is real.** `board-data.js` is a committed extract of `site/prophet/index.json`
@@ -62,6 +62,7 @@ The revision keeps the Board from #5514 and restores the shipped card's DNA.
 - **Live quote + change**, overlaid top-right of the chart. The change is the one place a
   direction ink belongs on this card, and it flips with the zh convention.
 - **One-word stance chip** top-left — Buy / Near / Wait / Hold / Avoid · 买入 / 临近 / 等待 / 持有 / 回避.
+  Its producer is now ruled (§6 Q7): the entry/actionability axis only, factored from the engine.
 - **Compact identity** — ticker · company name · sector, in the shipped geometry.
 - **⚡ trigger chip** and **restrained marks** (★ Featured · New · Bottoming/Continuation entry).
 - **Zone footer** — `ZONE $70.66–$72.35` with the date pinned right.
@@ -89,9 +90,11 @@ The revision keeps the Board from #5514 and restores the shipped card's DNA.
   so the cap does not compete with the chart for the card's head).
 
 ### Added
-- **Priority** — the numeric readiness rank, restored per the Chairman override. Quiet by
-  design: visible for scanning, never louder than ticker, stance or price, and **never hued**,
-  because it is not a win probability.
+- **Priority** — the numeric readiness rank, restored per the Chairman override and already ruled
+  by the Priority Engine masterplan §3.8. Quiet by design: visible for scanning, never louder than
+  ticker, stance or price, and **never hued**, because it is not a win probability.
+- **A disclosed no-read chip** for plans where the entry/actionability axis has not published —
+  BLOCKED_DATA, never a guessed Wait (§6 Q7b). It carries no stance hue.
 
 ---
 
@@ -115,6 +118,9 @@ Everything a reader needs is answerable without opening the card, and **no parag
 required for any of it**: what it is, what Prophet thinks, the price, how it is moving, the
 recent chart, its priority, whether it is featured or new, what setup type found it, where the
 plan sits in its lifecycle, and which price area matters.
+
+When the entry read has not published, the stance slot carries a dashed, hue-free **"No read yet"**
+chip instead of a verb — an absent read, never a cautious one.
 
 **Colour budget.** Chroma is spent on the stance chip and the chart. Direction ink appears only
 on the live change. Lifecycle is weight-only and never hued. Violet remains lock-only. Featured
@@ -192,7 +198,7 @@ one-referent-per-page law:
 
 ## 6. Open questions and doctrine tensions
 
-### Q1 — the enrichment gap (BLOCKING implementation dependency, no longer a design constraint)
+### Q1 — the enrichment gap (HARD dependency before MP-1 production migration)
 
 Five card fields arrive through the candidate join and are partial on plan rows:
 
@@ -214,20 +220,31 @@ Five card fields arrive through the candidate join and are partial on plan rows:
    PR-0(c)'s neighbourhood but explicitly **not** authorised by MP-1, so it needs its own
    packet line before the migration builder is commissioned.
 
+**Ruled (operator 2026-08-13):** this becomes a **hard implementation dependency before the MP-1
+production migration**, not another reason to weaken the reference. The revised finding — that the
+live quote needs only `data-sym` — materially simplifies it: name / sector / lane / spark are what
+remain, and they need full-plan-book enrichment.
+
 The `state=fallback` lens renders the 134 un-enriched rows so the degraded card can be judged on
 its own: it still answers ticker, stance, priority, lifecycle, zone and date. It is quiet and
 deliberate rather than broken — but it is a gap to close, not the target.
 
-### Q2 — the Overtime cell's gloss and its producer disagree
+### Q2 — UNRESOLVED: the Overtime cell's gloss and its producer disagree
 
 - `overtime` = **0**; open rows past their **own declared horizon** = **16** (PINS at day 166 of 45).
 - Those rows sit in `ready` (7) and `entered` (9).
 
 Either `phase=overtime` means something narrower than "past its declared window without
 resolving" (then the ruled gloss overclaims), or the phase is not firing (then Overtime is a
-de-facto producer-less cell — the stage=4 defect reborn). Note the revision **removed** the card
-copy that exposed this, so the contradiction is no longer visible to a user — but it is still
-there in the data, and the ladder cell still carries the gloss.
+de-facto producer-less cell — the stage=4 defect reborn).
+
+**Ruled (operator 2026-08-13): this remains UNRESOLVED and blocks production.** Removing
+`day X of 45` fixed the user-facing card problem; it did **not** cure the underlying contradiction.
+The ladder still carries an Overtime semantic whose producer disagrees with current plan
+arithmetic, and a producer defect must not be considered closed merely because the redesigned card
+no longer exposes it. This needs a **Prophet / data-lane resolution before the production
+migration** — either the phase begins firing, or the ruled gloss is re-worded by the lane that owns
+it. It is not the designer's to reword.
 
 ### Q3 — "What changed today" has no producer
 
@@ -253,28 +270,77 @@ or 次?), 「观察档自下一次夜间构建起发布。」 (档 for "tier"; "
 vocabulary leaking to a user), 「个在场计划」 as the headline unit, 「不计入今日总数」, the two
 §5 relabels, and the stance words 临近 / 回避.
 
-### Q7 — NEW: there is no stance producer for plan rows
+### Q7 — RULED: the stance projection (operator 2026-08-13)
 
-The shipped card receives `verb` from its **caller**; for candidates that is
-`dossier.action.verb`. Plan rows have no such field. The mockup projects a stance from
-`entry_status` → `entry_zone.stance` → `recommended_action`, first-match-wins, never escalating
-above what a field states (unknown → `wait`, the cautious lane). It originates nothing, but **it
-is a proposal, not a ruling** — the Prophet lane owns whether that mapping is the right one, and
-whether `TRIM ONLY` needs a sixth word.
+**The mockup's first mapping was rejected and is replaced.** It fell through to the management
+engine's `recommended_action` — an engine that describes itself as trade-management-only and whose
+action carries display/narrative authority, not order authority — and it defaulted an unobtainable
+stance to `wait`, originating a signal the engine never stated.
 
-### Q8 — NEW: Priority displaced Edge, and Edge now has no home
+The stance now comes from **Prophet's entry/actionability axis only**, and the grouping is
+**factored from the shipped engine logic** rather than re-mapped template-side.
+`engine/us_board_rank.py:365-368` already partitions the twelve-value domain into four buckets;
+this projects those same buckets onto the five shipped verbs:
 
-The shipped card's top-right slot is **Edge** (`score_edge`). The handoff restores **Priority**
-(`_priority_score`) into that geometry. They are different statistics. Priority is the right call
-for a board sorted by readiness — but Edge is now absent from the card entirely, and nobody has
-ruled that it should be. Flagging rather than deciding.
+| Engine bucket (`us_board_rank.py`) | Statuses | Verb |
+|---|---|---|
+| `_LIVE_STATUSES` | `buy_now`, `partial` / `buy_soon` | **Buy** / **Near** |
+| `_SETTING_UP_STATUSES` | `await_confluence`, `bounce_wait`, `watch` | **Wait** |
+| `_RAN_STATUSES` | `extended`, `topping`, `hold` | **Hold** |
+| `_BLOCKED_STATUSES` | `blocked`, `exit`, `avoid` | **Avoid** |
 
-### Q9 — NEW: ⚡ Triggered and "Entered" state nearly the same fact
+`wait_pullback`, `later` and `await` carry an `_ENTRY_VALUE` but sit in no bucket; `stage_for()`
+routes `wait_pullback` to `setting_up` (`:393`), so they join **Wait**. There is **no sixth verb**
+— TRIM does not exist on the Board.
 
-The operator's target anatomy shows both on one card. To avoid a one-referent collision and chip
-spam across 96 entered rows, ⚡ is restricted to a **recent** trigger (≤3 days) or an imminent
-one — 10 of 179 rows. If the operator wants ⚡ on every entered card, that is a one-line change,
-but the redundancy is worth a decision.
+**Drift is mechanically prevented.** `gen_fixture.py` refuses to regenerate if any engine bucket
+gains an unmapped status or projects outside its expected verb set; `verify.py` M1–M4 pin the same
+invariants plus "no live read of `recommended_action`". Both are mutation-tested.
+
+### Q7b — BLOCKED_DATA is 60% of the live book, and that is the finding
+
+A plan that cannot obtain the axis is **BLOCKED_DATA**, rendered as a disclosed no-read chip —
+never a guessed Wait. Measured on the committed payload:
+
+| | rows |
+|---|---|
+| stance obtainable (`entry_status` present) | **64 of 162 live** |
+| **BLOCKED_DATA** | **98 of 162 live (60%)** |
+
+The previous mapping hid this: falling through to `recommended_action` covered 174/179 rows and
+made the board look complete while sourcing its primary answer from an engine that disclaims order
+authority. With the ruled projection the gap is visible and measurable.
+
+**This is the second hard implementation dependency** (with Q1). `entry_status` is native to the
+plan row but published on only 61/179; the candidate join is worse (44). Production needs the
+actionability axis published for the full plan book before the Board can answer "what does Prophet
+think?" on more than a third of its inventory.
+
+The no-read chip takes **no stance hue** — an unavailable read is not a cautious read — carries a
+dashed border and sentence case so it never reads as a verdict, and its LENS says: *"The entry read
+that produces Buy / Near / Wait / Hold / Avoid has not published for this plan. The stance is
+unavailable — that is not the same as neutral, and not a hold."* The internal token `BLOCKED_DATA`
+never reaches a user (`verify.py` L4).
+
+### Q8 — CLOSED: Priority vs Edge was already ruled
+
+I reopened a settled decision. `research/PROPHET_BOARD_PRIORITY_ENGINE_MASTERPLAN_BY_FABLE.md`
+**§3.8** already rules it: *"when `row.prophet.score` exists, the pv_card number slot shows
+**Priority** (0–100) with the honest formula tooltip; legacy `score_edge` 'Edge' display is the
+fail-soft for old artifacts."*
+
+Priority stays in the slot, `score_edge` is retained as the fail-soft for legacy artifacts, and
+**Edge does not need a second glance-tier slot** — it survives in payload, plan detail and LENS.
+The Board card carries one number, not both. No change to the mockup; the question should not have
+been raised.
+
+### Q9 — APPROVED: ⚡ stays restricted
+
+**Ruled (operator 2026-08-13): the restricted treatment is approved.** `Entered` is durable
+lifecycle state; ⚡ means a *recent transition or event*. Putting it on all 96 entered cards would
+display the same fact twice and turn a valuable event badge into wallpaper.
+
+⚡ therefore fires only on a recent trigger (≤3 days) or an imminent one — **10 of 179 rows**.
 
 ### Q10 — NEW: the change values in the crops are simulated
 
@@ -315,7 +381,7 @@ MP-1 remains gated on **G-A** (PR-0(c) publishing `lifecycle_state` + `lifecycle
 - `50`–`51` empty board · `60`–`61` table view
 - `70`–`73` **the three-way card adjudication** (production · #5514 v1 · revised), dark+light × EN+ZH
 
-**Checks:** `tools/verify.py` — **80/80 passing**, run against the *rendered* page and
+**Checks:** `tools/verify.py` — **99/99 passing**, run against the *rendered* page and
 mutation-tested (planting "stage"/阶段 and a lifecycle cell word inside Candidates makes it fail
 in both languages). Zero horizontal page scroll at every captured width, asserted per shot.
 

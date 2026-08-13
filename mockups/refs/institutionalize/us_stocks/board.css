@@ -381,6 +381,19 @@ a { color: inherit; }
 .pv-wait  { --pvh: var(--pv-wait);  --pvh-ink: var(--ink-warn); }
 .pv-hold  { --pvh: var(--pv-hold);  --pvh-ink: var(--muted); }
 .pv-avoid { --pvh: var(--pv-avoid); --pvh-ink: var(--ink-down); }
+/* BLOCKED_DATA: the entry read has not published. It takes NO stance hue —
+   an unavailable read is not a cautious read (operator ruling 2026-08-13). */
+.pv-noread { --pvh: var(--muted); --pvh-ink: var(--muted); }
+/* raised specificity: .pv-chip is defined later and would otherwise re-impose
+   uppercase. Sentence case is deliberate — it reads as an absence, not a verdict,
+   and it is the one chip in this slot that is not a stance. */
+.pv-chip.pv-chip--noread {
+  color: var(--muted); background: transparent; cursor: help;
+  border: 1px dashed color-mix(in srgb, var(--muted) 55%, transparent);
+  font-weight: 700; letter-spacing: .01em; text-transform: none;
+  padding: 1.5px 6px;
+}
+html[data-theme="light"] .pv-chip--noread { box-shadow: none; }
 /* Featured is a RING, never a container wash (operator ruling). */
 .pv-featured { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pvh, var(--text)) 52%, transparent); }
 

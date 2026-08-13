@@ -44,34 +44,55 @@ CELLS = ["watch", "ready", "entered", "delivering", "overtime", "invalidated", "
 LIVE_CELLS = CELLS[:-1]
 
 
+# ── STANCE: the single projection from Prophet's entry/actionability axis ──────
+#
+# Operator ruling 2026-08-13: the Board stance comes from the entry/actionability
+# axis ONLY. It may NOT fall through to the management engine's
+# `recommended_action` — that engine describes itself as trade-management-only and
+# its action carries display/narrative authority, not order authority. A plan that
+# cannot obtain the axis is BLOCKED_DATA, never a guessed "wait".
+#
+# The grouping below is FACTORED FROM the shipped engine logic, not re-invented:
+# `engine/us_board_rank.py:365-368` already partitions the twelve-value domain into
+# four buckets, and `STAGE_LABELS` (:379) already names them for users. This maps
+# those same buckets onto the five shipped card verbs. If the engine's buckets
+# move, this projection must move with them — pinned by tests/verify.py.
+#
+#   _LIVE_STATUSES       buy_now, partial, buy_soon   -> BUY / NEAR
+#   _SETTING_UP_STATUSES await_confluence, bounce_wait, watch -> WAIT
+#   _RAN_STATUSES        extended, topping, hold      -> HOLD
+#   _BLOCKED_STATUSES    blocked, exit, avoid         -> AVOID
+#
+# `wait_pullback`, `later` and `await` carry an _ENTRY_VALUE but sit in no bucket;
+# `stage_for()` routes wait_pullback to setting_up (us_board_rank.py:393), so they
+# join WAIT. There is deliberately NO sixth verb: TRIM does not exist on the Board.
+STANCE_BY_STATUS = {
+    "buy_now": "buy", "partial": "buy",
+    "buy_soon": "near",
+    "await_confluence": "wait", "bounce_wait": "wait", "watch": "wait",
+    "wait_pullback": "wait", "later": "wait", "await": "wait",
+    "extended": "hold", "topping": "hold", "hold": "hold",
+    "blocked": "avoid", "exit": "avoid", "avoid": "avoid",
+}
+BLOCKED_DATA = "blocked_data"
+
+
 def stance(row, life):
-    """Glance-tier Prophet stance — Buy / Near / Wait / Hold / Avoid.
+    """Glance-tier Prophet stance — buy / near / wait / hold / avoid.
 
-    A DISPLAY-TIER projection over published fields only, in the same spirit as
-    lifecycle_state: total, first-match-wins, and it never escalates above what a
-    field already states (an unknown row falls to `wait`, the cautious lane —
-    the same rule stage_for() applies). It originates nothing.
-
-    Stance and lifecycle are orthogonal (handoff §3D): stance says what Prophet
-    thinks of the opportunity now; lifecycle says where the tracked plan sits.
-
-    NOTE: the shipped card takes `verb` from its CALLER, and no verb producer
-    exists for plan rows. This mapping is the mockup's proposal, not a ruling —
-    DESIGN_NOTES §6 Q7 records it for the Prophet lane to ratify.
+    Returns None when a stance is not applicable (a closed plan has no live
+    stance), and BLOCKED_DATA when the actionability axis has not published for
+    this plan. BLOCKED_DATA is a disclosed absence, NOT a cautious default: a
+    guessed "wait" would originate a signal the engine never stated.
     """
     if life == "resolved":
-        return None                       # a closed plan has no live stance
+        return None                        # not applicable, not missing
     if life == "invalidated":
-        return "avoid"
-    ez = row.get("entry_zone") or {}
-    if row.get("entry_status") == "buy_now" or ez.get("stance") in ("accumulate", "starter"):
-        return "buy"
-    if row.get("entry_status") == "partial":
-        return "near"
-    ra = row.get("recommended_action")
-    if ra in ("hold", "trail"):
-        return "hold"
-    return "wait"                          # wait / bounce_wait / unknown -> cautious
+        return "avoid"                     # the plan's own void level was hit
+    st = row.get("entry_status")
+    if st in STANCE_BY_STATUS:
+        return STANCE_BY_STATUS[st]
+    return BLOCKED_DATA                    # axis absent -> say so, never guess
 
 
 def clip(s, n):
@@ -115,7 +136,38 @@ def fmt_date(iso):
     }
 
 
+def assert_projection_tracks_engine():
+    """Fail regeneration if the engine's actionability buckets drift from the
+    stance projection. The projection is FACTORED FROM those buckets, so it may
+    not silently fall out of step with them — that is how a display mapping turns
+    into an independent, unowned semantic."""
+    import re
+    src = open(f"{REPO}/engine/us_board_rank.py").read()
+
+    def bucket(name):
+        m = re.search(name + r"\s*=\s*frozenset\(\(([^)]*)\)\)", src)
+        if not m:
+            raise AssertionError(f"{name} not found in engine/us_board_rank.py")
+        return {x.strip().strip("\"'") for x in m.group(1).split(",") if x.strip()}
+
+    expected = {
+        "_LIVE_STATUSES": {"buy", "near"},
+        "_SETTING_UP_STATUSES": {"wait"},
+        "_RAN_STATUSES": {"hold"},
+        "_BLOCKED_STATUSES": {"avoid"},
+    }
+    for name, verbs in expected.items():
+        values = bucket(name)
+        missing = sorted(v for v in values if v not in STANCE_BY_STATUS)
+        assert not missing, f"{name} gained unmapped status(es): {missing}"
+        got = {STANCE_BY_STATUS[v] for v in values}
+        assert got <= verbs, f"{name} projects to {sorted(got)}, expected within {sorted(verbs)}"
+    assert "trim" not in set(STANCE_BY_STATUS.values()), "no sixth TRIM verb on the Board"
+    print("stance projection tracks engine buckets: OK (12 statuses, 5 verbs, no TRIM)")
+
+
 def main():
+    assert_projection_tracks_engine()
     idx = git_json("site/prophet/index.json")
     su = git_json("site/factordata/us_standouts.json")
 

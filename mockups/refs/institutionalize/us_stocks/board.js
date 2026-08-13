@@ -229,12 +229,26 @@
      Deliberately NOT here (handoff §6): plan-clock telemetry (`day 2 of 45`),
      paragraph what_to_do_now, the Entry/T1/Void three-number footer, and any
      exact execution command. Those belong in plan detail, not on a dense grid. */
+  /* The five shipped card verbs. There is deliberately no sixth: TRIM does not
+     exist on the Board (operator ruling 2026-08-13). */
   var VERB = {
     buy:   { en: "Buy",   zh: "买入" },
     near:  { en: "Near",  zh: "临近" },
     wait:  { en: "Wait",  zh: "等待" },
     hold:  { en: "Hold",  zh: "持有" },
     avoid: { en: "Avoid", zh: "回避" }
+  };
+
+  /* BLOCKED_DATA — the entry/actionability axis has not published for this plan.
+     It occupies the stance slot so the reader sees an absent read rather than a
+     card that forgot its chip, and it is deliberately NOT one of the five hues:
+     an unavailable stance is not a cautious stance. Never the word "wait". */
+  var NOREAD = {
+    en: "No read yet", zh: "暂无判断",
+    tEn: "Prophet has no entry read here",
+    tZh: "此计划暂无入场判读",
+    bEn: "The entry read that produces Buy / Near / Wait / Hold / Avoid has not published for this plan. The stance is unavailable — that is not the same as neutral, and not a hold.",
+    bZh: "生成「买入 / 临近 / 等待 / 持有 / 回避」的入场判读尚未针对该计划发布。此处为暂缺，并不等同于中性，也不代表持有。"
   };
 
   /* The daily % change is a LIVE value: the shipped card server-renders an empty
@@ -253,7 +267,9 @@
   function card(r) {
     var L = LEX[r.life];
     var v = r.stance && VERB[r.stance] ? r.stance : null;
-    var cls = "pvcard" + (v ? " pv-" + v : "") + (r.star ? " pv-featured" : "");
+    var noRead = r.stance === "blocked_data";
+    var cls = "pvcard" + (v ? " pv-" + v : noRead ? " pv-noread" : "") +
+              (r.star ? " pv-featured" : "");
     /* data-sym is what live.js keys on (.nb-px[data-sym]) to paint the quote and
        the change client-side every ~60s. It is an ATTRIBUTE, not payload — so in
        production the live quote works for 100% of plan rows regardless of the
@@ -266,7 +282,14 @@
     h += '<div class="pv-chart">';
     h += r.spark ? r.spark : '<div class="pv-nochart"></div>';
     h += '<span class="pv-ov pv-ovl">';
-    if (v) h += '<span class="pv-chip">' + t(VERB[v].en, VERB[v].zh) + "</span>";
+    if (v) {
+      h += '<span class="pv-chip">' + t(VERB[v].en, VERB[v].zh) + "</span>";
+    } else if (noRead) {
+      h += '<span class="pv-chip pv-chip--noread" tabindex="0"' +
+           ' data-tip-t-en="' + esc(NOREAD.tEn) + '" data-tip-t-zh="' + esc(NOREAD.tZh) + '"' +
+           ' data-tip-en="' + esc(NOREAD.bEn) + '" data-tip-zh="' + esc(NOREAD.bZh) + '">' +
+           t(NOREAD.en, NOREAD.zh) + "</span>";
+    }
     if (r.trg) {
       /* the ⚡ chip carries a fact that appears nowhere else on the card, which
          is the shipped rule for keeping it (and its tip) */
