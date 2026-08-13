@@ -295,3 +295,82 @@ in Wave 1). Before/after §15 numbers come from it.
   against. It becomes REQUIRED the moment ci-plan migrates (Wave 2); flagged.
 - **G8 (capacity partition explicit)** — `max-parallel: 2` with the canary
   measurement in the comment and in the test's assert message.
+
+---
+
+## Wave 1.5 (2026-08-13) — the measured transfer boundary, and the revert-to-hosted posture
+
+Wave 1 shipped, armed, and was proven **twice-through on the pool** before a
+boundary emerged that is worth more than the routing it paused. Amendment
+receipts: runs 31641832540, 31654704372, 31661047921; PR #5465.
+
+### What the pool proved (keep these numbers)
+
+- **Compute WON.** Per-pack on `winpc` (24-core): **6–14 min** vs the same packs
+  hosted at **11–37 min** (hosted sample: run 31644727199, 40-min wall, ~264
+  hosted job-minutes). 20 of 24 pack executions across the first two proofs were
+  green on pc-render-1/3.
+- Three real defects were surfaced and fixed by running there — the latent
+  `LD_LIBRARY_PATH` hermetic-env defect in `tests/test_price_pressure.py`
+  (months invisible on hosted), a base-side artifact-staleness window, and the
+  transfer wall below. Self-hosted execution is a *stronger* test environment,
+  not a weaker one.
+
+### What killed the default (the transfer wall)
+
+A merge-ref checkout under `--filter=blob:none` batch-requests every missing
+blob as **one pack**. Main's publisher lanes bake `site/` + `data/` artifacts
+into git every few minutes, so every PR refresh carries a multi-hundred-MB blob
+delta; over the home uplink that single stream runs **37–77 minutes** and
+GitHub's server side cuts it (`early EOF` → `fetch-pack: invalid index-pack
+output` → `could not fetch <oid> from promisor remote`). Observed on **warm**
+pc-render-1 and **cold** pc-render-4 alike (4 packs across runs 31654704372 and
+31661047921). A truncated pack is **discarded entirely**, so job- and run-level
+retries re-request the same giant pack and cannot converge. Hosted VMs never
+see this because Azure's pipes finish the identical pack in minutes. Run-level
+flake ≈ coin-flip → weakens the merge path → charter §2 (merge safety) outranks
+§15 (cost) → packs return to hosted **by default**, pool reachable via the
+`runner_pool=selfhosted` dispatch lever only.
+
+### Wave 1.5 design (bounded transfers; acceptance = 12/12 packs green on the pool, three consecutive proofs)
+
+1. **Chunked materialization** — materialize the tree top-level-dir by
+   top-level-dir behind progressive `sparse-checkout set` calls (sub-chunk
+   `site/*` — it is the whale), so no single blob request exceeds what the link
+   moves inside the server's patience. Stock git, no new deps; lands as a
+   pre-warm step ahead of `actions/checkout@v4`, self-hosted-only.
+2. **Shared host object store** — the four slots are one box: point every
+   workspace's `objects/info/alternates` at one host-level store so a delta is
+   fetched **once per host**, not once per slot; a single flock'd fetch-updater
+   keeps it warm. (Wave-2 material if runner re-registration is in scope; the
+   alternates file alone needs no re-registration.)
+3. **Peer seeding (cheap interim)** — before fetching origin, `git fetch` the
+   sibling slot workspaces on the same filesystem; only the newest delta then
+   crosses the network at all.
+4. Re-run the Wave-1 acceptance gates via the lever
+   (`gh workflow run ci.yml --ref main -f runner_pool=selfhosted`, 2-slot cap
+   binds automatically) until the three-consecutive-green bar holds, then flip
+   the `runs-on` default back and restore the Wave-1 assert set
+   (`tests/test_ci_pack.py` + `tests/test_runner_policy.py` both pin the
+   expression literally — the flip is a one-commit, two-test-constant change).
+
+### Posture delta (what changed in the revert commit)
+
+- `ci.yml` `ci-pack.runs-on` → dispatch-opt-in expression; `runner_pool`
+  default `hosted`, options reordered; `max-parallel` → conditional
+  (`2` on the pool, `12` hosted). Sparse-clear step kept (inert on hosted).
+- `fences.yml` **unchanged** — `fence-pack` stays self-hosted (small deltas,
+  warm workspace, green throughout the incident).
+- `.github/runner-policy.yml`: ci-pack's `fork-fallback` + `recovery` entries
+  replaced by one `pending-migration` entry carrying this measurement.
+- `tests/test_ci_pack.py`:
+  `test_ci_pack_routes_trusted_runs_to_selfhosted_and_forks_to_hosted` →
+  `test_ci_pack_routes_hosted_by_default_with_selfhosted_dispatch_lever`;
+  `tests/test_runner_policy.py` expression constant + halves updated. The
+  untrusted-head property is asserted in BOTH postures — in Wave 1.5 it is
+  structural (only write-access dispatch reaches the pool).
+- `AGENTS.md` §Runner routing policy + `CLAUDE.md` §Runner policy updated.
+
+The economics are unchanged (267,066 metered Linux min/mo ⇒ ~$130+/day the
+moment the repo goes private) and still demand this migration. The boundary is
+transfer engineering, not the thesis.

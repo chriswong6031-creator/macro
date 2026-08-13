@@ -66,21 +66,20 @@ hosted_exceptions:
   # ── ci.yml ────────────────────────────────────────────────────────────────
   - workflow: .github/workflows/ci.yml
     job: ci-pack
-    class: fork-fallback
+    class: pending-migration
     reason: >-
-      The fork branch of the routing expression resolves a pull_request whose
-      head.repo.full_name differs from this repository to ubuntu-latest. This
-      repo is PUBLIC, so an untrusted head reaching the persistent 24-core home
-      runner would be arbitrary code execution on the fleet; the same expression
-      also carries the recovery value below.
-  - workflow: .github/workflows/ci.yml
-    job: ci-pack
-    class: recovery
-    reason: >-
-      `workflow_dispatch` input runner_pool=hosted forces the packs back onto
-      ubuntu-latest when the render-linux host is down or being rebuilt
-      (`gh workflow run ci.yml --ref main -f runner_pool=hosted`). Inert on
-      non-dispatch events because `inputs` is empty there.
+      Wave 1 (2026-08-12) routed the packs to the render-linux host and measured
+      the boundary: merge-ref blob:none backfills stream 37-77 min over the home
+      link and are cut by GitHub's server-side transfer wall (`early EOF` /
+      `invalid index-pack output`; a truncated pack is discarded, so retries
+      cannot converge) — runs 31654704372 and 31661047921, 2026-08-13, on warm
+      and cold workspaces alike. Compute measured FASTER self-hosted (6-14 min
+      per pack vs 11-37 hosted); the failure is transfer, not the host. Packs
+      run hosted by default until Wave 1.5 lands bounded transfers (chunked
+      per-directory materialization and/or a shared host object store —
+      research/CI_SELFHOSTED_MIGRATION_WAVE1.md §Wave 1.5). The pool stays
+      reachable only via the `workflow_dispatch` runner_pool=selfhosted opt-in
+      (write-access actors by construction), which is the Wave-1.5 test lever.
   - workflow: .github/workflows/ci.yml
     job: ci-plan
     class: cheap-orchestration

@@ -3991,12 +3991,12 @@ on:
   workflow_dispatch:
     inputs:
       runner_pool:
-        description: "Runner pool for the CI packs. selfhosted = render-linux pool (default; operator charter 2026-08-12). hosted = GitHub-hosted recovery lane for when the self-hosted fleet is down (GITHUB-HOSTED EXCEPTION: recovery)."
+        description: "Runner pool for the CI packs. hosted = GitHub-hosted (default since 2026-08-13 — the render-linux host failed Wave 1's blob:none backfills at merge-ref scale; see the runs-on comment). selfhosted = render-linux pool, the Wave-1.5 opt-in test lever."
         type: choice
         options:
-          - selfhosted
           - hosted
-        default: selfhosted
+          - selfhosted
+        default: hosted
 
 permissions:
   contents: read
@@ -4241,46 +4241,70 @@ jobs:
     # visibility flips. This migration is the PREREQUISITE for that flip, not a
     # reaction to a bill that already arrived.
     #
-    # The routing expression below therefore splits by TRUST, not by capacity:
-    #   * Same-repo `pull_request` and every `workflow_dispatch` (main's baseline) are
-    #     trusted -> `["self-hosted","Linux","X64","render-linux"]`.
-    #   * A `pull_request` whose head repo full_name differs from this repository is a
-    #     FORK -> `ubuntu-latest` (GITHUB-HOSTED EXCEPTION: untrusted fork code must
-    #     never execute on persistent home runners — this repo is PUBLIC, so that is
-    #     load-bearing, not theoretical). The YAML is the first of three layers; the
-    #     repository also holds `approval_policy: all_external_contributors` (verified
-    #     live 2026-08-12) and a read-only default workflow token.
-    #   * `inputs.runner_pool == 'hosted'` is the FLEET-DOWN RECOVERY LEVER
-    #     (`gh workflow run ci.yml --ref main -f runner_pool=hosted`). It is inert on
-    #     every non-dispatch event because `inputs` is empty there, so it can never
-    #     accidentally route a pull request.
-    # `scripts/check_runner_policy.py` + `.github/runner-policy.yml` keep this shape
-    # from silently regressing; the fork branch and the recovery value are both
-    # registered exceptions there.
+    # The routing expression that shipped that morning split by TRUST (same-repo PRs
+    # and dispatches -> render-linux; forks -> hosted; runner_pool=hosted as the
+    # recovery lever), and the pool proved the COMPUTE half of the bet: measured
+    # per-pack 6-14 min on the 24-core host vs 11-37 min hosted, 20 of 24 pack
+    # executions green across the first two proofs.
     #
-    # NOT the macstudio pool, unchanged across all three acts: that is the
+    # ── ACT IV (2026-08-13): trusted-self-hosted -> HOSTED DEFAULT, Wave 1.5 pending ──
+    # What failed was not compute but TRANSFER. A merge-ref checkout under
+    # `--filter=blob:none` batch-requests every missing blob as ONE pack, and main's
+    # publisher lanes bake site/data artifacts into git every few minutes, so each
+    # PR refresh carries a multi-hundred-MB blob delta. Over the home uplink that
+    # single stream runs 37-77 minutes and GitHub's server side cuts it: four packs
+    # across two runs died in checkout with `early EOF` / `fetch-pack: invalid
+    # index-pack output` / `could not fetch ... from promisor remote` (runs
+    # 31654704372, 31661047921 — pc-render-1 AND pc-render-4, warm and cold alike).
+    # A truncated pack is DISCARDED entirely, so job-level retries cannot converge —
+    # the same giant request just starts over. Hosted VMs never see this because
+    # Azure's pipes finish the identical pack in minutes.
+    #
+    # Merge safety outranks the cost objective (charter §2), so the packs return to
+    # hosted BY DEFAULT until Wave 1.5 lands a bounded-transfer design: chunked tree
+    # materialization (per-directory sparse checkout so no single pack exceeds the
+    # link), a shared host object store for the four slots, and/or peer seeding
+    # between slot workspaces. Design + acceptance gates:
+    # research/CI_SELFHOSTED_MIGRATION_WAVE1.md §Wave 1.5. The economics are
+    # unchanged and still demand the migration (267k metered min/mo = ~$130+/day the
+    # moment the repo goes private); the boundary is transfer engineering, not the
+    # thesis.
+    #
+    #   * `runner_pool=selfhosted` on workflow_dispatch is the Wave-1.5 OPT-IN test
+    #     lever — only a dispatch (write-access actors by construction) can reach the
+    #     persistent pool, so the fork boundary now holds structurally: a fork
+    #     pull_request can never satisfy the dispatch clause. The repository also
+    #     holds `approval_policy: all_external_contributors` (verified live
+    #     2026-08-12) and a read-only default workflow token.
+    #   * fence-pack (fences.yml) STAYS self-hosted: its checkouts ride small deltas
+    #     on a warm workspace and ran green all night — the transfer wall is a
+    #     merge-ref/12-pack phenomenon, not a host defect.
+    # `scripts/check_runner_policy.py` + `.github/runner-policy.yml` keep this shape
+    # from silently regressing; ci-pack's hosted default is REGISTERED there as
+    # class pending-migration so it stays on the worklist instead of becoming the
+    # quiet new normal.
+    #
+    # NOT the macstudio pool, unchanged across all four acts: that is the
     # render/nightly lane and is routinely saturated (CLAUDE.md — render budget is law).
-    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && 'ubuntu-latest' || inputs.runner_pool == 'hosted' && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","X64","render-linux"]') }}
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.runner_pool == 'selfhosted') && fromJSON('["self-hosted","Linux","X64","render-linux"]') || 'ubuntu-latest' }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
-      # `max-parallel: 2` RETURNS (2026-08-12), because the shared-pool reason that
-      # justified deleting it returned with the self-hosted routing above. The deletion
-      # note said "do not reintroduce one without a shared-pool reason" — this is that
-      # reason, measured rather than assumed.
+      # `max-parallel` is CONDITIONAL (2026-08-13): it exists to protect the shared
+      # self-hosted host, so it binds only when the packs actually run there — the
+      # `runner_pool=selfhosted` Wave-1.5 opt-in dispatch. On the hosted default it
+      # resolves to 12 and the matrix runs fully concurrent, exactly as the hosted
+      # posture always has.
       #
-      # `render-linux` is not four machines. Canary run 31595700406 (2026-08-12,
-      # .github/workflows/runner-canary.yml, four matrix slots) reported the SAME
-      # hostname `winpc` and the SAME machine_id `da9bccd5` from every slot, with four
-      # `Runner.Listener` processes on that host: pc-render-1..4 are four runner SLOTS
-      # on ONE physical 24-core / 31 GiB box. Twelve concurrent packs would therefore
-      # be twelve pack processes on 24 cores with four checkouts of a ~60k-path tree.
-      #
-      # Charter §6 one-PC posture partitions that host: 2 CI / 1 render / 1
-      # control-burst. `max-parallel: 2` is the CI half of that partition, and unlike
-      # 2026-08-09 it does not starve the sweeper — `merge-on-green.yml` is no longer
-      # co-resident here, it runs on the dedicated `[self-hosted, macOS, ARM64,
-      # merge-control]` runner (mac-builder-4). The render lanes keep the other slots.
+      # Why 2 on the pool: `render-linux` is not four machines. Canary run
+      # 31595700406 (2026-08-12, .github/workflows/runner-canary.yml, four matrix
+      # slots) reported the SAME hostname `winpc` and the SAME machine_id `da9bccd5`
+      # from every slot, with four `Runner.Listener` processes on that host:
+      # pc-render-1..4 are four runner SLOTS on ONE physical 24-core / 31 GiB box.
+      # Charter §6 one-PC posture partitions that host 2 CI / 1 render / 1
+      # control-burst, and unlike 2026-08-09 the cap cannot starve the sweeper —
+      # `merge-on-green.yml` is no longer co-resident here, it runs on the dedicated
+      # `[self-hosted, macOS, ARM64, merge-control]` runner (mac-builder-4).
       #
       # The literal `pack: [0..11]` list that stood here until Wave B (2026-08-11) is
       # now the PLAN's, emitted by `ci-plan` as {"include": [{"pack": N}, ...]} over
@@ -4290,7 +4314,7 @@ jobs:
       # here and in `ci-plan`. Under the default shadow matrix mode the plan emits
       # all twelve indices regardless of selection, so this reads identically to the
       # old literal until CI_DYNAMIC_MATRIX_MODE is switched to `active`.
-      max-parallel: 2
+      max-parallel: ${{ (github.event_name == 'workflow_dispatch' && inputs.runner_pool == 'selfhosted') && 2 || 12 }}
       matrix: ${{ fromJSON(needs.ci-plan.outputs.matrix) }}
     steps:
       # A self-hosted runner REUSES its workspace between jobs, and a sibling job that

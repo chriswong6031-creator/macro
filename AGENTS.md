@@ -192,18 +192,29 @@ the same reason.
 Trusted CI runs SELF-HOSTED by default; GitHub-hosted compute is a registered
 exception. Design doc: `research/CI_SELFHOSTED_MIGRATION_WAVE1.md`.
 
-- **Trusted = same-repo pull requests and main proofs.** `ci.yml`'s `ci-pack` and
-  `fences.yml`'s `fence-pack` run on `[self-hosted, Linux, X64, render-linux]` —
-  which is ONE physical 24-core / 31 GiB host (`winpc`) exposing four runner
-  slots, not four machines (canary run 31595700406). Charter §6 partitions it
-  2 CI / 1 render / 1 control-burst, which is why `ci-pack` carries
-  `strategy.max-parallel: 2`. Do not raise that number from a runner COUNT; the
-  count is slots, and the host is one box.
+- **Wave-1.5 posture (2026-08-13): `fence-pack` self-hosted; `ci-pack` hosted by
+  default, self-hosted only via the dispatch opt-in.** Wave 1 routed both to
+  `[self-hosted, Linux, X64, render-linux]` — ONE physical 24-core / 31 GiB host
+  (`winpc`) exposing four runner slots, not four machines (canary run
+  31595700406) — and measured both halves: packs ran 6-14 min there vs 11-37
+  hosted (compute WON), but merge-ref `blob:none` backfills streamed 37-77 min
+  over the home link and were cut by GitHub's server-side transfer wall
+  (`early EOF` / `invalid index-pack output`; truncated packs are discarded, so
+  retries cannot converge — runs 31654704372/31661047921). Merge safety outranks
+  the cost objective, so the packs are hosted until Wave 1.5 lands bounded
+  transfers (chunked per-directory materialization / shared host object store —
+  `research/CI_SELFHOSTED_MIGRATION_WAVE1.md` §Wave 1.5). `fence-pack` stays
+  self-hosted: small deltas on a warm workspace, green throughout. When the packs
+  DO run on the pool (opt-in), `max-parallel` resolves to 2 — charter §6
+  partitions the one box 2 CI / 1 render / 1 control-burst; do not raise it from
+  a runner COUNT, the count is slots and the host is one box.
 - **Fork/untrusted heads NEVER run self-hosted.** This repository is PUBLIC, so
   that is load-bearing rather than theoretical. Three independent layers hold it:
-  the fork branch of `ci-pack`'s `runs-on` expression, `fence-pack`'s same-repo
-  `if:` (fork PRs take the hosted `fork-*` fallbacks instead), and the repository's
-  `approval_policy: all_external_contributors` (verified live 2026-08-12).
+  `ci-pack` reaches the pool only through a `workflow_dispatch` clause (fork
+  pull_request heads can never satisfy it — dispatch is write-access-only),
+  `fence-pack`'s same-repo `if:` (fork PRs take the hosted `fork-*` fallbacks
+  instead), and the repository's `approval_policy: all_external_contributors`
+  (verified live 2026-08-12).
 - **Every GitHub-hosted job must be registered** in `.github/runner-policy.yml`
   with a `{workflow, job, class, reason}` entry. `scripts/check_runner_policy.py`
   fails closed on an unregistered hosted job, on a self-hosted job in a
@@ -217,11 +228,13 @@ exception. Design doc: `research/CI_SELFHOSTED_MIGRATION_WAVE1.md`.
   and at ~20 ci runs/hr they would otherwise hold ~1.7 of the host's 4 slots.
 - **`pending-migration` entries are the Wave-2 worklist** (43 jobs at Wave 1,
   mostly scheduled publish/collect lanes). That list should only ever shrink.
-- **Fleet-down recovery lever:**
-  `gh workflow run ci.yml --ref main -f runner_pool=hosted` routes the packs back
-  to `ubuntu-latest` for that dispatch only. It is inert on non-dispatch events
-  because `inputs` is empty there. Preflight for an in-flight main baseline first
-  — a re-dispatch cancels the proof every pinned session is waiting on.
+- **Wave-1.5 test lever:**
+  `gh workflow run ci.yml --ref main -f runner_pool=selfhosted` routes that
+  dispatch's packs onto the render-linux pool (with the 2-slot cap). Hosted is
+  the default, so no recovery lever is needed while Wave 1.5 is pending. Inert
+  on non-dispatch events because `inputs` is empty there. Preflight for an
+  in-flight main baseline first — a re-dispatch cancels the proof every pinned
+  session is waiting on.
 - Why it matters even though CI bills $0 today: measured month-to-date 2026-08,
   this repo metered 267,066 Actions Linux minutes ($1,602.40 gross) discounted to
   **net $0.00** solely because the repo is PUBLIC. The migration is the

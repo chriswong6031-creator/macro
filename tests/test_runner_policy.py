@@ -40,10 +40,10 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 # pin this literal against the live workflow anyway — so a drift reds twice,
 # which is the intended noise.
 CI_PACK_RUNS_ON = (
-    "${{ (github.event_name == 'pull_request' && "
-    "github.event.pull_request.head.repo.full_name != github.repository) && "
-    "'ubuntu-latest' || inputs.runner_pool == 'hosted' && 'ubuntu-latest' || "
-    "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"render-linux\"]') }}"
+    "${{ (github.event_name == 'workflow_dispatch' && "
+    "inputs.runner_pool == 'selfhosted') && "
+    "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"render-linux\"]') || "
+    "'ubuntu-latest' }}"
 )
 
 SELF_HOSTED_CI_POOL = ["self-hosted", "Linux", "X64", "render-linux"]
@@ -145,6 +145,47 @@ def test_self_hosted_pr_job_without_same_repo_guard_fails(tmp_path: Path) -> Non
     assert _run("--workflows-dir", wf_dir, "--registry", reg).returncode == 0
 
 
+def test_dispatch_gated_pool_arm_passes_and_misordered_gate_fails(tmp_path: Path) -> None:
+    """Wave-1.5 guard form: the pool arm reachable ONLY inside a
+    workflow_dispatch event gate is accepted without a repo comparison (a
+    pull_request can never satisfy the gate; dispatch is write-access-only).
+    ORDERING is the teeth: the same substrings with the pool as the ungated
+    default must still fail R2."""
+    registry = BASE_REGISTRY.replace(
+        "hosted_exceptions: []",
+        "hosted_exceptions:\n"
+        "  - workflow: .github/workflows/gated.yml\n"
+        "    job: packs\n"
+        "    class: pending-migration\n"
+        "    reason: hosted default while the pool migration is pending\n",
+    )
+    gated = (
+        "on:\n  pull_request:\n  workflow_dispatch:\n"
+        "jobs:\n  packs:\n"
+        "    runs-on: ${{ (github.event_name == 'workflow_dispatch' && "
+        "inputs.runner_pool == 'selfhosted') && "
+        "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"render-linux\"]') || "
+        "'ubuntu-latest' }}\n"
+        "    steps:\n      - run: true\n"
+    )
+    wf_dir, reg = _fixture_tree(tmp_path, {"gated.yml": gated}, registry)
+    result = _run("--workflows-dir", wf_dir, "--registry", reg)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    misordered = (
+        "on:\n  pull_request:\n  workflow_dispatch:\n"
+        "jobs:\n  packs:\n"
+        "    runs-on: ${{ (github.event_name == 'workflow_dispatch' && "
+        "inputs.runner_pool == 'hosted') && 'ubuntu-latest' || "
+        "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"render-linux\"]') }}\n"
+        "    steps:\n      - run: true\n"
+    )
+    wf_dir, reg = _fixture_tree(tmp_path / "mis", {"gated.yml": misordered}, registry)
+    result = _run("--workflows-dir", wf_dir, "--registry", reg)
+    assert result.returncode == 1
+    assert "R2" in result.stdout
+
+
 def test_pull_request_target_fails_and_cannot_be_registered(tmp_path: Path) -> None:
     risky = (
         "on:\n  pull_request_target:\n"
@@ -182,20 +223,22 @@ def test_opaque_runs_on_expression_needs_an_entry(tmp_path: Path) -> None:
 
 # ── the routing itself ───────────────────────────────────────────────────────
 
-def test_ci_pack_carries_the_exact_trusted_routing_expression() -> None:
+def test_ci_pack_carries_the_exact_routing_expression() -> None:
     pack = _yaml(WORKFLOWS / "ci.yml")["jobs"]["ci-pack"]
     assert pack["runs-on"] == CI_PACK_RUNS_ON, (
-        "the ci-pack routing expression is the whole Wave-1 security boundary in "
-        "YAML form; changing it is an operator decision, not an edit"
+        "the ci-pack routing expression is a security boundary in YAML form; "
+        "changing it is an operator decision, not an edit (Wave 1.5 posture: "
+        "hosted default, self-hosted only via the write-access dispatch lever "
+        "— see research/CI_SELFHOSTED_MIGRATION_WAVE1.md §Wave 1.5)"
     )
     # Semantic halves, so a reformat that keeps the string equal but loses a
-    # branch still reds on something readable.
-    assert (
-        "github.event.pull_request.head.repo.full_name != github.repository"
-        in pack["runs-on"]
-    )
+    # branch still reds on something readable. The dispatch guard is the fork
+    # boundary now: only write-access actors can fire workflow_dispatch, so no
+    # fork pull_request head can reach the persistent pool.
+    assert "github.event_name == 'workflow_dispatch'" in pack["runs-on"]
+    assert "inputs.runner_pool == 'selfhosted'" in pack["runs-on"]
     assert "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"render-linux\"]')" in pack["runs-on"]
-    assert pack["runs-on"].count("'ubuntu-latest'") == 2
+    assert pack["runs-on"].count("'ubuntu-latest'") == 1
 
 
 def test_fence_pack_is_self_hosted_and_fork_fallbacks_are_not() -> None:

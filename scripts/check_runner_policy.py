@@ -83,6 +83,32 @@ HOSTED_LITERAL_RE = re.compile(r"\b(ubuntu|macos|windows)-[a-z0-9._-]+", re.IGNO
 
 FORK_GUARD_IN_RUNS_ON = "github.event.pull_request.head.repo.full_name != github.repository"
 SAME_REPO_GUARD_IN_IF = "head.repo.full_name == github.repository"
+# Third accepted guard form (Wave 1.5, 2026-08-13): the self-hosted arm of the
+# runs-on expression is gated on the event being a workflow_dispatch. A
+# pull_request event can never satisfy it, so no fork head can reach the pool —
+# the boundary is structural rather than a repo comparison. Dispatch is
+# write-access-only by GitHub's own permission model.
+DISPATCH_GATE_IN_RUNS_ON = "github.event_name == 'workflow_dispatch'"
+
+
+def _dispatch_gates_self_hosted(expr: str) -> bool:
+    """True when the first ``self-hosted`` literal in ``expr`` sits inside the
+    ``&&``-consequent of a workflow_dispatch event gate.
+
+    Ordering matters, not mere presence: the gate must appear BEFORE the pool
+    literal with a conjunction and no alternation between them, so
+    ``dispatch && fromJSON('["self-hosted",...]') || 'ubuntu-latest'`` passes
+    while ``dispatch && 'ubuntu-latest' || fromJSON('["self-hosted",...]')`` —
+    an expression whose UNGATED default is the pool — does not. (The quoted
+    input value ``'selfhosted'`` has no hyphen, so it never false-positives
+    this search.)
+    """
+    gate = expr.find(DISPATCH_GATE_IN_RUNS_ON)
+    pool = expr.find("self-hosted")
+    if gate == -1 or pool == -1 or pool < gate:
+        return False
+    between = expr[gate + len(DISPATCH_GATE_IN_RUNS_ON) : pool]
+    return "&&" in between and "||" not in between
 
 
 def _annotate(level: str, message: str) -> None:
@@ -288,6 +314,7 @@ def evaluate(
             guarded = (
                 FORK_GUARD_IN_RUNS_ON in rec.resolution.detail
                 or SAME_REPO_GUARD_IN_IF in rec.job_if
+                or _dispatch_gates_self_hosted(rec.resolution.detail)
             )
             if not guarded:
                 errors.append(
@@ -295,8 +322,9 @@ def evaluate(
                     f"runner and its workflow has a `pull_request` trigger, but it "
                     f"carries no same-repo guard. A fork PR would execute untrusted "
                     f"code on the persistent home fleet. Add "
-                    f"`{FORK_GUARD_IN_RUNS_ON}` to the runs-on expression or "
-                    f"`{SAME_REPO_GUARD_IN_IF}` to the job's `if:` (R2)."
+                    f"`{FORK_GUARD_IN_RUNS_ON}` to the runs-on expression, or "
+                    f"`{SAME_REPO_GUARD_IN_IF}` to the job's `if:`, or gate the "
+                    f"self-hosted arm on `{DISPATCH_GATE_IN_RUNS_ON}` (R2)."
                 )
 
     # R4 — stale entries are debt, not breakage.
@@ -391,6 +419,14 @@ hosted_exceptions:
     job: ci-pack
     class: fork-fallback
     reason: synthetic fixture — the fork branch of the routing expression
+  - workflow: .github/workflows/dispatchgate.yml
+    job: ci-pack
+    class: pending-migration
+    reason: synthetic fixture — hosted default while the pool migration pends
+  - workflow: .github/workflows/misordered.yml
+    job: ci-pack
+    class: pending-migration
+    reason: synthetic fixture — registered so the case isolates R2, not R1
 """
 
 SELFTEST_WORKFLOWS: dict[str, str] = {
@@ -420,6 +456,31 @@ SELFTEST_WORKFLOWS: dict[str, str] = {
         "    if: github.event_name != 'pull_request' || "
         "github.event.pull_request.head.repo.full_name == github.repository\n"
         "    runs-on: [self-hosted, Linux, X64, render-linux]\n"
+        "    steps:\n      - run: true\n"
+    ),
+    # PASS — the Wave-1.5 ci-pack shape: the pool arm reachable ONLY inside a
+    # workflow_dispatch gate (fork PRs can never satisfy it), hosted default
+    # registered as pending-migration.
+    "dispatchgate.yml": (
+        "name: dispatchgate\n"
+        "on:\n  pull_request:\n  workflow_dispatch:\n"
+        "jobs:\n  ci-pack:\n"
+        "    runs-on: ${{ (github.event_name == 'workflow_dispatch' && "
+        "inputs.runner_pool == 'selfhosted') && "
+        "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"render-linux\"]') || "
+        "'ubuntu-latest' }}\n"
+        "    steps:\n      - run: true\n"
+    ),
+    # R2 FAIL — the dispatch gate is PRESENT but gates the WRONG arm: the
+    # ungated default is the pool, so a pull_request lands self-hosted. The
+    # ordering check must refuse mere substring presence.
+    "misordered.yml": (
+        "name: misordered\n"
+        "on:\n  pull_request:\n  workflow_dispatch:\n"
+        "jobs:\n  ci-pack:\n"
+        "    runs-on: ${{ (github.event_name == 'workflow_dispatch' && "
+        "inputs.runner_pool == 'hosted') && 'ubuntu-latest' || "
+        "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"render-linux\"]') }}\n"
         "    steps:\n      - run: true\n"
     ),
     # R1 FAIL — hosted, unregistered.
@@ -481,8 +542,10 @@ def selftest() -> int:
         ("registered hosted job passes", ["registered.yml"], 0),
         ("ci-pack-shaped dynamic expression passes", ["dynamic.yml"], 0),
         ("if:-guarded self-hosted fence passes", ["guarded.yml"], 0),
+        ("dispatch-gated pool arm passes (Wave 1.5 shape)", ["dispatchgate.yml"], 0),
         ("R1 unregistered hosted job fails", ["r1.yml"], 1),
         ("R2 unguarded self-hosted PR job fails", ["r2.yml"], 1),
+        ("R2 mis-ordered dispatch gate fails (pool is the ungated default)", ["misordered.yml"], 1),
         ("R3 pull_request_target fails", ["r3.yml"], 1),
     ]
     failures = 0
@@ -525,7 +588,7 @@ def selftest() -> int:
     if failures:
         print(f"SELFTEST FAIL: {failures} case(s).")
         return 1
-    print("SELFTEST OK: 8 cases (3 pass shapes, R1/R2/R3 mutations, R3 non-override, default pin).")
+    print("SELFTEST OK: 10 cases (4 pass shapes, R1/R2/R2-misorder/R3 mutations, R3 non-override, default pin).")
     return 0
 
 
