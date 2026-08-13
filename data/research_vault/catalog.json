@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T04:44:13.503523+00:00",
-  "count": 1037,
+  "generated_at": "2026-08-13T05:10:40.688849+00:00",
+  "count": 1038,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -854,6 +854,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9comppaylgy-58bc7a",
+      "title": "JPM US Market Intell 2026 08 10 CPI",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:57:58Z",
+      "summary_points": [
+        "**Core CPI Miss & SPX Impact**: June core CPI fell 0.02% m/m (vs 0.2% forecast), driving SPX gains; core MoM <0.15% implies 1%-2% SPX rise, while >0.30% triggers 1.5%-2.5% decline, with options pricing ~0.9% move.",
+        "**Geopolitical Inflation Risk**: Middle East instability remains critical for energy prices (gasoline near $4.0/gal), abating in July but vulnerable to shocks, directly impacting headline CPI and inflation expectations.",
+        "**China PPI as Leading Indicator**: China’s PPI (3-month low) precedes US CPI; bond markets sensitive to hawkish US inflation prints, linking global manufacturing trends to Fed policy assessment.",
+        "**Core Services vs Goods Volatility**: Core services (orange) outperforms core goods (blue) with lower volatility; core goods show sharp swings (e.g., -0.4% in 2024), heightening sensitivity to demand shocks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
