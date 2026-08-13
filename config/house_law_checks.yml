@@ -967,6 +967,44 @@ checks:
     owner_program: us-stocks-prebreakout
     notes: null
 
+  - law_id: contracts.signal_gate_pair_coherence
+    summary: >
+      us_standouts.json and signal_gate.json are written by ONE build_stock_library
+      run and carry two copies of the same reading, so every board row with a
+      non-empty `signal` blob must equal its gate verdict on every key the gate
+      entry carries. Only the gate write is guarded (`if sig_verdict:`), so a
+      scope=all re-render can advance the board and leave the gate behind — and
+      both files stamp the same `as_of` (the DATA date), so nothing on either
+      artifact reveals the skew.
+    source_ref:
+      - scripts/check_signal_gate_coherence.py
+      - "engine/us_board_rank.py::verdict_for"
+      - "PR 5490 (2026-08-12: 8 of 69 buy rows skewed; NTES blob ticks 0 vs gate 3)"
+    severity: hard
+    check_script: scripts/check_signal_gate_coherence.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: signal-gate-pair-coherence
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; the seeded-defect round trip lives in
+      tests/test_signal_gate_coherence.py, which the same CI job runs on every PR
+      (including a mutation guard that a ticks-only predicate fails).
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - PR gate skips when neither artifact is touched by the PR. Fresh renders
+        are graded warn-only by the builder's own self-check
+        (scripts/build_stock_library.py, "::warning title=signal-gate-coherence"),
+        which fires at the moment the skew is created.
+      - Absent artifacts print n/a and exit 0 — sparse agent checkouts and fresh
+        clones carry no site/ tree, and an absent pair is not a contradiction.
+      - A differing emit.pair_id alone is not a violation; it only names which
+        side is stale once the CONTENT already disagrees.
+    owner_program: us-stocks-prebreakout
+    notes: null
+
   # ── Cycles guards ──────────────────────────────────────────────────────────
 
   - law_id: cycles.cross_page_consistency
