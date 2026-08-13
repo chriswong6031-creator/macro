@@ -19,37 +19,46 @@ MOBILE = (390, 844)
 
 # name, viewport, query
 SHOTS = [
-    # ── the required matrix ────────────────────────────────────────────────
+    # ── handoff §12 deliverables 1-5: the required matrix ──────────────────
     ("01-desktop-dark-en",        DESKTOP, "theme=dark&lang=en&state=paid"),
     ("02-desktop-light-en",       DESKTOP, "theme=light&lang=en&state=paid"),
     ("03-desktop-dark-zh",        DESKTOP, "theme=dark&lang=zh&state=paid"),
-    ("04-mobile390-dark-en",      MOBILE,  "theme=dark&lang=en&state=paid"),
-    ("05-mobile390-dark-zh",      MOBILE,  "theme=dark&lang=zh&state=paid"),
-    # ── completing the light/zh corners of the matrix ──────────────────────
-    ("06-desktop-light-zh",       DESKTOP, "theme=light&lang=zh&state=paid"),
+    ("04-desktop-light-zh",       DESKTOP, "theme=light&lang=zh&state=paid"),
+    ("05-mobile390-dark-en",      MOBILE,  "theme=dark&lang=en&state=paid"),
+    ("06-mobile390-dark-zh",      MOBILE,  "theme=dark&lang=zh&state=paid"),
     ("07-mobile390-light-en",     MOBILE,  "theme=light&lang=en&state=paid"),
-    # ── required states ────────────────────────────────────────────────────
-    ("10-anon-locked-dark-en",    DESKTOP, "theme=dark&lang=en&state=anon"),
-    ("11-anon-locked-light-zh",   DESKTOP, "theme=light&lang=zh&state=anon"),
-    ("12-filtered-invalidated",   DESKTOP, "theme=dark&lang=en&state=paid&life=invalidated"),
-    ("13-filtered-invalidated-zh", DESKTOP, "theme=light&lang=zh&state=paid&life=invalidated"),
-    ("14-empty-dark-en",          DESKTOP, "theme=dark&lang=en&state=empty"),
-    ("15-empty-light-zh",         DESKTOP, "theme=light&lang=zh&state=empty"),
-    ("16-multi-episode-en",       DESKTOP, "theme=dark&lang=en&state=episodes"),
-    ("17-multi-episode-zh",       DESKTOP, "theme=light&lang=zh&state=episodes"),
-    ("18-multi-episode-resolved", DESKTOP, "theme=dark&lang=en&state=episodes&life=resolved"),
-    ("19-multi-episode-390-en",   MOBILE,  "theme=dark&lang=en&state=episodes"),
-    # ── per-cell ladder filters (packet §11: each of the seven active) ─────
-    ("20-life-watch",             DESKTOP, "theme=dark&lang=en&state=paid&life=watch"),
-    ("21-life-ready",             DESKTOP, "theme=dark&lang=en&state=paid&life=ready"),
-    ("22-life-entered",           DESKTOP, "theme=dark&lang=en&state=paid&life=entered"),
-    ("23-life-delivering",        DESKTOP, "theme=dark&lang=en&state=paid&life=delivering"),
-    ("24-life-overtime",          DESKTOP, "theme=dark&lang=en&state=paid&life=overtime"),
-    ("25-life-invalidated",       DESKTOP, "theme=dark&lang=en&state=paid&life=invalidated"),
-    ("26-life-resolved",          DESKTOP, "theme=dark&lang=en&state=paid&life=resolved"),
-    # ── table view: rendered rows == cell count, no remainder ─────────────
-    ("30-table-invalidated",      DESKTOP, "theme=dark&lang=en&state=paid&life=invalidated&view=table"),
-    ("31-table-resolved-zh",      DESKTOP, "theme=light&lang=zh&state=paid&life=resolved&view=table"),
+    # ── §12.7: the missing-enrichment fallback ─────────────────────────────
+    ("10-fallback-dark-en",       DESKTOP, "theme=dark&lang=en&state=fallback"),
+    ("11-fallback-light-zh",      DESKTOP, "theme=light&lang=zh&state=fallback"),
+    ("12-fallback-390-dark-en",   MOBILE,  "theme=dark&lang=en&state=fallback"),
+    # ── §12.8-10: the named filters ────────────────────────────────────────
+    ("20-filter-ready",           DESKTOP, "theme=dark&lang=en&state=paid&life=ready"),
+    ("21-filter-entered",         DESKTOP, "theme=dark&lang=en&state=paid&life=entered"),
+    ("22-filter-invalidated",     DESKTOP, "theme=dark&lang=en&state=paid&life=invalidated"),
+    ("23-filter-invalidated-zh",  DESKTOP, "theme=light&lang=zh&state=paid&life=invalidated"),
+    ("24-filter-watch-absent",    DESKTOP, "theme=dark&lang=en&state=paid&life=watch"),
+    ("25-filter-delivering-zero", DESKTOP, "theme=dark&lang=en&state=paid&life=delivering"),
+    ("26-filter-overtime-zero",   DESKTOP, "theme=dark&lang=en&state=paid&life=overtime"),
+    ("27-filter-resolved",        DESKTOP, "theme=dark&lang=en&state=paid&life=resolved"),
+    # ── §12.11: multi-episode ──────────────────────────────────────────────
+    ("30-multi-episode-en",       DESKTOP, "theme=dark&lang=en&state=episodes"),
+    ("31-multi-episode-zh",       DESKTOP, "theme=light&lang=zh&state=episodes"),
+    ("32-multi-episode-resolved", DESKTOP, "theme=dark&lang=en&state=episodes&life=resolved"),
+    ("33-multi-episode-390-en",   MOBILE,  "theme=dark&lang=en&state=episodes"),
+    # ── §12.12: anonymous / locked ─────────────────────────────────────────
+    ("40-anon-locked-dark-en",    DESKTOP, "theme=dark&lang=en&state=anon"),
+    ("41-anon-locked-light-zh",   DESKTOP, "theme=light&lang=zh&state=anon"),
+    ("42-anon-locked-390-dark",   MOBILE,  "theme=dark&lang=en&state=anon"),
+    # ── other required states ──────────────────────────────────────────────
+    ("50-empty-dark-en",          DESKTOP, "theme=dark&lang=en&state=empty"),
+    ("51-empty-light-zh",         DESKTOP, "theme=light&lang=zh&state=empty"),
+    ("60-table-invalidated",      DESKTOP, "theme=dark&lang=en&state=paid&life=invalidated&view=table"),
+    ("61-table-resolved-zh",      DESKTOP, "theme=light&lang=zh&state=paid&life=resolved&view=table"),
+    # ── §12: the three-way card adjudication (its own page) ────────────────
+    ("70-compare-dark-en",        DESKTOP, "PAGE:compare.html?theme=dark&lang=en"),
+    ("71-compare-light-en",       DESKTOP, "PAGE:compare.html?theme=light&lang=en"),
+    ("72-compare-dark-zh",        DESKTOP, "PAGE:compare.html?theme=dark&lang=zh"),
+    ("73-compare-light-zh",       DESKTOP, "PAGE:compare.html?theme=light&lang=zh"),
 ]
 
 
@@ -58,8 +67,10 @@ SHOTS = [
 # whole-page rhythm (three count-bearing devices, §G.2) is the thing being judged.
 FULL_PAGE = {
     "01-desktop-dark-en", "02-desktop-light-en", "03-desktop-dark-zh",
-    "04-mobile390-dark-en", "05-mobile390-dark-zh",
-    "10-anon-locked-dark-en", "14-empty-dark-en", "16-multi-episode-en",
+    "04-desktop-light-zh", "05-mobile390-dark-en", "06-mobile390-dark-zh",
+    "10-fallback-dark-en", "30-multi-episode-en", "40-anon-locked-dark-en",
+    "50-empty-dark-en",
+    "70-compare-dark-en", "71-compare-light-en", "72-compare-dark-zh", "73-compare-light-zh",
 }
 
 
@@ -72,7 +83,9 @@ def main():
         for name, (w, h), q in SHOTS:
             page = browser.new_page(viewport={"width": w, "height": h},
                                     device_scale_factor=1)
-            page.goto(f"{BASE}/?{q}&chrome=0", wait_until="networkidle")
+            url = (f"{BASE}/{q[5:]}" if q.startswith("PAGE:")
+                   else f"{BASE}/?{q}&chrome=0")
+            page.goto(url, wait_until="networkidle")
             page.wait_for_timeout(220)
 
             # a horizontal page scroll is an acceptance failure, not a nit

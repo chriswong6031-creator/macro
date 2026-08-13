@@ -27,6 +27,9 @@
   --warn: #e0a030; --act: #e05555; --ok: #3da564;
   --up: #45b873; --down: #e06464; --orange: #e08b45;
   --info: #5b9bf0; --link: #7aa7e0;
+  /* the stance family — theme.css:21 block. The card's one chroma channel. */
+  --pv-buy: #45b873; --pv-near: #63c08d; --pv-wait: #e0a030;
+  --pv-hold: #8b93a1; --pv-avoid: #e06464;
   --prov: #62a0e8; --prov-ink: var(--prov);
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
   --popover-shadow: 0 6px 18px rgba(0,0,0,.5);
@@ -41,6 +44,8 @@ html[data-theme="light"] {
   --warn: #b9791a; --act: #c43d3d; --ok: #2f8a52;
   --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
   --info: #285fff; --link: #285fff;
+  --pv-buy: #1f9a55; --pv-near: #3aad72; --pv-wait: #b9791a;
+  --pv-hold: #5d6b7e; --pv-avoid: #cf4040;
   --prov: #2f6fd0; --prov-ink: color-mix(in srgb, var(--prov) 82%, var(--text));
   --card-shadow: 0 1px 3px rgba(20,30,50,.07);
   --popover-shadow: 0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
@@ -49,7 +54,12 @@ html[data-theme="light"] {
 }
 /* zh flips direction inks (Asia convention: red = up). Lifecycle marks never
    reference these, which is the whole point of weight encoding. */
-html[data-lang="zh"] { --up: #e06464; --down: #45b873; --q1: #d04545; --q3: #2e9e4f; }
+html[data-lang="zh"] {
+  --up: #e06464; --down: #45b873; --q1: #d04545; --q3: #2e9e4f;
+  --pv-buy: var(--up);
+  --pv-near: color-mix(in srgb, var(--up) 82%, #fff);
+  --pv-avoid: var(--down);
+}
 html[data-theme="light"][data-lang="zh"] { --up: #cf4040; --down: #1f9a55; --q1: #c12f2f; --q3: #1f8b41; }
 :root {
   --ink-up:   color-mix(in srgb, var(--up)   var(--ink-mix-up),   var(--text));
@@ -80,10 +90,10 @@ a { color: inherit; }
 .fig { font-variant-numeric: tabular-nums; }
 
 /* ── section anatomy (.mx-sec — NEW primitive, lands in DS-PR-0) ─────────── */
-.mx-sec { margin: 34px 0 0; }
+.mx-sec { margin: 24px 0 0; }
 .mx-sec-hd {
   display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-  padding-bottom: 9px; border-bottom: 1px solid var(--line); margin-bottom: 16px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 12px;
 }
 .mx-sec-h2 {
   margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .085em;
@@ -98,9 +108,9 @@ a { color: inherit; }
 .mx-sec-note { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin: -6px 0 14px; }
 
 /* ═══════════════════════ 1. BOARD HEADER ════════════════════════════════ */
-.bh { padding: 26px 0 0; }
+.bh { padding: 18px 0 0; }
 .bh-top { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-.bh-title { margin: 0; font-size: 25px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.bh-title { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
 .bh-purpose { margin: 5px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; max-width: 60ch; }
 .bh-stamp { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
@@ -123,7 +133,7 @@ a { color: inherit; }
 }
 
 /* regime / posture chips (compressed Market State strip) */
-.bh-chips { display: flex; gap: 7px; flex-wrap: wrap; margin: 14px 0 0; }
+.bh-chips { display: flex; gap: 7px; flex-wrap: wrap; margin: 10px 0 0; }
 .rchip {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
   border: 1px solid var(--line); border-radius: 999px;
@@ -141,11 +151,15 @@ a { color: inherit; }
    Different width, different position, different property. A selected Watch
    cell still reads as dashed; an unselected Entered cell still reads as solid.
    ══════════════════════════════════════════════════════════════════════════ */
-.ladder-block { margin: 20px 0 0; }
+/* Vertical footprint is deliberately tight (handoff §10): the ladder stays the
+   Board's signature control and every count stays canonical, but the product
+   hero is the opportunity grid, so the first cards must arrive early. Nothing
+   semantic is reduced here — only leading, type size and padding. */
+.ladder-block { margin: 14px 0 0; }
 
-.ladder-headline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.ladder-headline { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 7px; }
 .ladder-n {
-  font-size: 40px; font-weight: 800; letter-spacing: -.035em; line-height: 1;
+  font-size: 30px; font-weight: 800; letter-spacing: -.035em; line-height: 1;
   font-variant-numeric: tabular-nums; color: var(--text);
 }
 .ladder-nl { font-size: 14.5px; font-weight: 650; color: var(--text); }
@@ -159,8 +173,8 @@ a { color: inherit; }
 /* the live enclosure: cells 1–6 share one recessed band, so "these six sum to
    the headline" is a visual fact rather than a caption. */
 .mx-cell {
-  position: relative; display: flex; flex-direction: column; gap: 3px;
-  padding: 15px 11px 11px; min-width: 0;      /* top padding clears the weight cap */
+  position: relative; display: flex; flex-direction: column; gap: 2px;
+  padding: 11px 10px 8px; min-width: 0;      /* top padding clears the weight cap */
   background: color-mix(in srgb, var(--panel) 72%, transparent);
   border: 1px solid var(--line); border-right-width: 0;
   font: inherit; color: inherit; text-align: left; cursor: pointer;
@@ -173,7 +187,7 @@ a { color: inherit; }
 .mx-cell:focus-visible { outline: 2px solid var(--ink-link); outline-offset: 2px; z-index: 3; }
 
 .mx-cell-n {
-  font-size: 21px; font-weight: 800; line-height: 1; letter-spacing: -.025em;
+  font-size: 18px; font-weight: 800; line-height: 1; letter-spacing: -.025em;
   font-variant-numeric: tabular-nums; color: var(--text);
 }
 .mx-cell-l {
@@ -290,14 +304,14 @@ a { color: inherit; }
 
 /* the disclosed-absence line for the watch cell (key absent ≠ zero) */
 .ladder-absence {
-  margin: 9px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5;
+  margin: 7px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5;
   display: flex; align-items: baseline; gap: 7px;
 }
 .ladder-absence .mx-mark { display: inline-block; transform: translateY(-2px); }
 
 .ladder-foot {
   display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
-  margin: 11px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5;
+  margin: 8px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5;
 }
 .ladder-clear {
   border: 1px solid var(--line); background: transparent; color: var(--muted);
@@ -307,7 +321,7 @@ a { color: inherit; }
 .ladder-clear:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 34%, var(--line)); }
 
 /* ═══════════════════════ 2. SETUPS ══════════════════════════════════════ */
-.setups-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.setups-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .st-view-toggle {
   display: inline-flex; gap: 3px; padding: 3px; border-radius: 8px;
   background: var(--panel2); border: 1px solid var(--line);
@@ -326,7 +340,7 @@ a { color: inherit; }
 /* "What changed today" — a labelled slice of today's lifecycle transitions */
 .chg-strip {
   display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-  padding: 9px 12px; margin-bottom: 15px;
+  padding: 7px 11px; margin-bottom: 12px;
   border: 1px solid var(--line); border-radius: 10px;
   background: color-mix(in srgb, var(--panel) 60%, transparent);
   font-size: 11.5px; color: var(--muted);
@@ -340,13 +354,17 @@ a { color: inherit; }
   gap: 12px; align-items: stretch;
 }
 
-/* ── the plan-row card ────────────────────────────────────────────────────
-   One card per plan `id` (ruling §6 unit of account). No verb hue bar: the
-   card's primary classification is the lifecycle, which is hue-free by law, and
-   a prominent hue at the card's head invites exactly the "lifecycle by colour"
-   misread the ruling forbids. The top edge instead carries the SAME weight mark
-   the ladder cell carries — which is what makes the ladder and the grid read as
-   one population rather than two widgets. */
+/* ── the plan-row card (revised at the G-C amalgamation gate) ─────────────
+   DNA is the shipped, operator-ratified Prophet card: chart-first hero, live
+   quote overlaid top-right, one-word stance chip top-left, compact identity,
+   restrained marks, Zone footer. What changes for the plan-row board is only
+   what the ruling changed: the four-dot rail is gone, replaced by the ruled
+   hue-neutral lifecycle mark + word.
+
+   COLOUR BUDGET (handoff §7 — "institutional, but alive"): chroma is spent on
+   the stance chip and on the chart (which paints itself in --up/--down and so
+   flips correctly under zh). It is NOT spent on a full-width card accent bar,
+   a green border, or any lifecycle mark. Lifecycle stays weight-only. */
 .pvcard {
   position: relative; display: flex; flex-direction: column; min-width: 0;
   background: var(--panel2); border: 1px solid var(--line); border-radius: 12px;
@@ -355,80 +373,120 @@ a { color: inherit; }
 }
 .pvcard:hover {
   transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0,0,0,.22);
-  border-color: color-mix(in srgb, var(--text) 26%, var(--line));
+  border-color: color-mix(in srgb, var(--pvh, var(--text)) 45%, var(--line));
 }
-/* Card spine is built ONLY from fields the plan book carries on every row
-   (ticker · lifecycle · why · window position · entry/void/target). Company
-   name, sector, last price and lane are ENRICHMENTS joined from the candidate
-   screener and present on ~25% of rows, so they may never carry structure —
-   a card without them is the same shape as a card with them. */
-.pv-bd { padding: 12px 11px 10px; display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+/* stance hues — the card's one deliberate chroma channel */
+.pv-buy   { --pvh: var(--pv-buy);   --pvh-ink: var(--ink-up); }
+.pv-near  { --pvh: var(--pv-near);  --pvh-ink: var(--ink-up); }
+.pv-wait  { --pvh: var(--pv-wait);  --pvh-ink: var(--ink-warn); }
+.pv-hold  { --pvh: var(--pv-hold);  --pvh-ink: var(--muted); }
+.pv-avoid { --pvh: var(--pv-avoid); --pvh-ink: var(--ink-down); }
+/* Featured is a RING, never a container wash (operator ruling). */
+.pv-featured { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pvh, var(--text)) 52%, transparent); }
+
+/* ── chart hero ─────────────────────────────────────────────────────────── */
+.pv-chart {
+  position: relative; min-width: 0; border-radius: 11px 11px 0 0;
+  background: color-mix(in srgb, var(--pvh, var(--muted)) 3%, transparent);
+}
+.pv-chart svg { display: block; width: 100%; height: 74px; border-radius: 11px 11px 0 0; }  /* production parity */
+/* Graceful missing-enrichment fallback. The stance chip must sit in the SAME
+   place on every card, so the hero collapses to a quiet strip rather than
+   disappearing — but it stays near-invisible: an absent chart is a data gap to
+   close (DESIGN_NOTES §6 Q1), not a texture to decorate. */
+.pv-nochart {
+  height: 24px; border-radius: 11px 11px 0 0;
+  background: color-mix(in srgb, var(--muted) 5%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+.pv-ov { position: absolute; top: 5px; display: flex; align-items: center; gap: 4px; z-index: 2; }
+.pv-ovl { left: 6px; }
+.pv-ovr { right: 6px; }
+.pv-chip {
+  padding: 2px 7px; border-radius: 5px; font-size: 9.5px; font-weight: 800;
+  letter-spacing: .05em; text-transform: uppercase; line-height: 1.35;
+  color: #fff; background: var(--pvh, var(--muted)); white-space: nowrap;
+}
+html[data-theme="light"] .pv-chip { box-shadow: 0 1px 2px rgba(20,30,50,.18); }
+.pv-trg {
+  padding: 2px 6px; border-radius: 5px; font-size: 9px; font-weight: 750;
+  white-space: nowrap; cursor: help;
+  color: var(--ink-warn); background: color-mix(in srgb, var(--warn) 15%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--warn) 42%, transparent);
+}
+.pv-quote {
+  display: inline-flex; align-items: baseline; gap: 5px; padding: 2px 6px;
+  border-radius: 5px; background: color-mix(in srgb, var(--panel) 78%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.pv-px { font-size: 11.5px; font-weight: 800; color: var(--text); }
+/* the live change is the ONE place a direction ink belongs on this card, and it
+   flips with the zh convention because it reads --up/--down */
+.pv-chg { font-size: 10px; font-weight: 750; }
+.pv-chg--up { color: var(--ink-up); }
+.pv-chg--dn { color: var(--ink-down); }
+.pv-chg--flat { color: var(--muted); }
+
+/* ── body ───────────────────────────────────────────────────────────────── */
+.pv-bd { padding: 8px 10px 9px; display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
 .pv-hd { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
-.pv-tk { font-size: 14px; font-weight: 800; letter-spacing: .01em; white-space: nowrap; }
-.pv-win { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
-/* a plan that outran its own declared window — stated as the plan's arithmetic,
-   never as a lifecycle claim (the Overtime CELL is the engine's to assign).
-   Italic is EN-only: CJK has no true italic, so browsers synthesise an oblique
-   that reads as a rendering fault. zh carries the emphasis on weight instead. */
-html:not([data-lang="zh"]) .pv-win--past { font-style: italic; }
-html[data-lang="zh"] .pv-win--past { font-weight: 700; color: color-mix(in srgb, var(--muted) 70%, var(--text)); }
-.pv-nm {
-  font-size: 10.5px; color: var(--muted); min-width: 0; margin-top: -3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.pv-idw { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.pv-tk { font-size: 13.5px; font-weight: 800; letter-spacing: .01em; white-space: nowrap; flex: none; }
+.pv-nm { font-size: 10px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-ind { font-size: 9.5px; color: var(--muted); opacity: .85; }
+/* PRIORITY — readiness rank within tonight's set. Deliberately quiet: visible
+   for scanning, never louder than ticker, stance or price. Never hued: it is
+   not a win probability and must not read as a quality colour. */
+.pv-pri { display: flex; align-items: baseline; gap: 4px; flex: none; cursor: help; }
+.pv-pril { font-size: 8px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.pv-prin { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1; }
+.pv-prin--na { color: var(--muted); font-weight: 700; }
 
-/* the lifecycle FACT COLUMN — one cell word + one plain gloss, no blended score */
-.pv-life {
-  display: flex; align-items: center; gap: 7px; margin-top: 2px;
-  padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
-}
-.pv-life-w { font-size: 11.5px; font-weight: 800; color: var(--text); white-space: nowrap; }
-.pv-life-g { font-size: 10.5px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.pv-chips { display: flex; gap: 5px; flex-wrap: wrap; }
-/* .pv-mark — the lane MARK chip. Static, neutral ink, no sequence, no fill
-   states, no ordering. It is a fact about which door the name came in by, not a
-   device. Renders only for bottoming/continuation; there is no recovery chip. */
-.pv-mark {
-  display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px;
-  border: 1px solid var(--line); border-radius: 5px;
+.pv-mk { display: flex; gap: 4px; flex-wrap: wrap; }
+.pv-mk-i {
+  padding: 1.5px 6px; border-radius: 4px; font-size: 9px; font-weight: 700;
+  white-space: nowrap; border: 1px solid var(--line); color: var(--muted);
   background: color-mix(in srgb, var(--panel) 55%, transparent);
-  font-size: 9.5px; font-weight: 650; color: var(--muted); white-space: nowrap;
-  cursor: help;
 }
-/* episode chip — dated ordinal, neutral ink, no hue, counted in nothing */
+.pv-mk-feat {
+  color: var(--pvh-ink, var(--text));
+  border-color: color-mix(in srgb, var(--pvh, var(--text)) 45%, transparent);
+  background: color-mix(in srgb, var(--pvh, var(--text)) 10%, transparent);
+}
+.pv-mk-new { color: var(--ink-info); border-color: color-mix(in srgb, var(--info) 42%, transparent); }
+/* the lane mark: a static admission classification, never a progress device */
+.pv-mk-lane { cursor: help; }
+
+/* lifecycle fact — the ruled mark + the cell word. No gloss sentence: the
+   vocabulary is taught at the ladder and in its LENS, not re-explained 40x. */
+.pv-life { display: flex; align-items: center; gap: 6px; margin-top: 1px; }
+.pv-life-w { font-size: 11px; font-weight: 750; color: var(--text); white-space: nowrap; }
 .pv-ep {
-  display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px;
-  border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius: 5px;
-  font-size: 9.5px; font-weight: 650; color: var(--muted); white-space: nowrap;
+  display: inline-flex; align-items: center; padding: 1.5px 6px;
+  border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius: 4px;
+  font-size: 9px; font-weight: 650; color: var(--muted); white-space: nowrap;
 }
-.pv-do {
-  font-size: 11px; line-height: 1.45; color: color-mix(in srgb, var(--text) 78%, var(--muted));
-  margin-top: 1px;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-}
-.pv-newer {
-  display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;
-  font-size: 10.5px; font-weight: 650; color: var(--ink-link); text-decoration: none;
-}
+.pv-newer { font-size: 10px; font-weight: 650; color: var(--ink-link); text-decoration: none; }
 .pv-newer:hover { text-decoration: underline; }
-/* the plan geometry — present on 100% of plan rows, so it is the card's floor */
+
+/* ── zone footer: the price AREA that matters, not an execution instruction ── */
 .pv-zn {
-  display: flex; align-items: baseline; gap: 10px; margin-top: auto;
+  display: flex; align-items: baseline; gap: 6px; margin-top: auto;
   background: color-mix(in srgb, var(--panel) 55%, var(--bg));
-  border-top: 1px solid var(--line); padding: 6px 10px 7px;
-  font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap;
-  overflow: hidden;
+  border-top: 1px solid var(--line); padding: 5px 10px 6px;
+  font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden;
 }
-.pv-zi { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
-.pv-znl { font-size: 8.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); flex: none; }
-.pv-znr { font-weight: 700; }
-.pv-zi--void { margin-left: auto; }
+.pv-znl {
+  font-size: 8.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--pvh-ink, var(--muted)); flex: none;
+}
+.pv-znr { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pv-znm { color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pv-dt { margin-left: auto; color: var(--muted); flex: none; font-size: 9px; padding-left: 5px; }
 
 /* resolved cards carry archive weight — record, not inventory */
 .pvcard[data-life="resolved"] { background: color-mix(in srgb, var(--panel2) 55%, var(--bg)); border-style: dashed; }
-.pvcard[data-life="resolved"] .pv-tk,
-.pvcard[data-life="resolved"] .pv-px { color: var(--muted); }
+.pvcard[data-life="resolved"] .pv-tk { color: var(--muted); }
 
 .pv-more {
   display: flex; align-items: center; justify-content: center; min-height: 96px;

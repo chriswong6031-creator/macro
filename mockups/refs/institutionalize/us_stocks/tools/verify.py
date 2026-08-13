@@ -24,6 +24,7 @@ from the payload:
 Usage: python3 tools/verify.py [base_url]
 Exit 0 = every check passed.
 """
+import re
 import sys
 from playwright.sync_api import sync_playwright
 
@@ -137,12 +138,52 @@ def main():
             ok(f"E1[{lang}] no four-dot rail",
                pg.query_selector(".pv-stp") is None and pg.query_selector(".pv-dot") is None,
                "rail classes present")
-            ok(f"E2[{lang}] at most one lane mark per card",
-               pg.evaluate("() => [...document.querySelectorAll('.pvcard')]"
-                           ".every(c => c.querySelectorAll('.pv-mark').length <= 1)"),
-               "a card carries >1 .pv-mark")
+            lanes = pg.evaluate("() => [...document.querySelectorAll('.pvcard')]"
+                                ".map(c => c.querySelectorAll('.pv-mk-lane').length)")
+            ok(f"E2a[{lang}] the lane mark selector actually matches something",
+               sum(lanes) > 0, "no .pv-mk-lane on any card — check is vacuous")
+            ok(f"E2b[{lang}] at most one lane mark per card",
+               all(n <= 1 for n in lanes), f"max {max(lanes) if lanes else 0}")
             ok(f"E3[{lang}] no recovery chip",
                "recovery" not in txt.lower() and "复苏" not in txt, "found a recovery chip")
+
+            # ── the revised card contract (G-C amalgamation) ─────────────────
+            cardm = pg.evaluate("""() => {
+              const cards = [...document.querySelectorAll('.pvcard')];
+              return {
+                n: cards.length,
+                charts: cards.filter(c => c.querySelector('.pv-chart svg')).length,
+                fallbacks: cards.filter(c => c.querySelector('.pv-nochart')).length,
+                stance: cards.filter(c => c.querySelector('.pv-chip')).length,
+                quote: cards.filter(c => c.querySelector('.pv-px')).length,
+                chg: cards.filter(c => c.querySelector('.pv-chg')).length,
+                pri: cards.filter(c => c.querySelector('.pv-prin')).length,
+                life: cards.filter(c => c.querySelector('.pv-life-w')).length,
+                zone: cards.filter(c => c.querySelector('.pv-zn')).length,
+                maxMarks: Math.max(...cards.map(c => c.querySelectorAll('.pv-mk-i').length)),
+                text: cards.map(c => c.innerText).join(' ')
+              };
+            }""")
+            ok(f"K1[{lang}] every card carries priority, lifecycle and a zone footer",
+               cardm["pri"] == cardm["n"] and cardm["life"] == cardm["n"] and cardm["zone"] == cardm["n"],
+               f"pri {cardm['pri']} life {cardm['life']} zone {cardm['zone']} of {cardm['n']}")
+            ok(f"K2[{lang}] both enriched and fallback cards are on screen",
+               cardm["charts"] > 0 and cardm["fallbacks"] > 0,
+               f"charts {cardm['charts']} fallbacks {cardm['fallbacks']}")
+            ok(f"K3[{lang}] a quote always carries its change read",
+               cardm["chg"] == cardm["quote"], f"quote {cardm['quote']} chg {cardm['chg']}")
+            ok(f"K4[{lang}] marks stay restrained (<= 3 per card)",
+               cardm["maxMarks"] <= 3, f"max {cardm['maxMarks']}")
+            # handoff §6: plan-clock telemetry and paragraph copy are OFF the card
+            ok(f"K5[{lang}] no plan-clock telemetry on the card",
+               not re.search(r"day \d+ of \d+|past its \d+-day|第 \d+ 天", cardm["text"]),
+               "found day-of-horizon copy")
+            ok(f"K6[{lang}] no execution-command copy on the card",
+               not re.search(r"No entry above|Buy exactly|Must exit|不要在.*之上买入", cardm["text"]),
+               "found an execution instruction")
+            ok(f"K7[{lang}] no Entry/T1/Void geometry row on the card",
+               not re.search(r"\bT1\b|\bVoid\b|失效价|目标一", cardm["text"]),
+               "found the three-number footer")
 
             # F. one-referent-per-page: no cell word inside the Candidates section
             cand = pg.evaluate("() => document.getElementById('candidates').innerText")
@@ -168,6 +209,29 @@ def main():
               }).length;
             }""")
             ok(f"G1[{lang}] no lifecycle mark uses a direction ink", inks == 0, f"{inks} marks")
+
+            # G2/G3: the stance family must EXIST (an undefined --pv-* silently
+            # falls back and paints the wrong stance colour), and under zh it must
+            # flip with the direction convention exactly as theme.css does.
+            tok = pg.evaluate("""() => {
+              const g = getComputedStyle(document.documentElement);
+              const v = k => g.getPropertyValue(k).trim();
+              return {buy: v('--pv-buy'), near: v('--pv-near'), wait: v('--pv-wait'),
+                      hold: v('--pv-hold'), avoid: v('--pv-avoid'),
+                      up: v('--up'), down: v('--down'),
+                      chip: (() => { const c = document.querySelector('.pv-buy .pv-chip');
+                                     return c ? getComputedStyle(c).backgroundColor : ''; })()};
+            }""")
+            ok(f"G2[{lang}] the --pv-* stance family is defined",
+               all(tok[k] for k in ("buy", "near", "wait", "hold", "avoid")),
+               f"undefined: {[k for k in ('buy','near','wait','hold','avoid') if not tok[k]]}")
+            if lang == "zh":
+                ok("G3[zh] the buy stance flips with the zh direction convention",
+                   tok["buy"] == tok["up"] or tok["buy"] == "var(--up)",
+                   f"--pv-buy {tok['buy']!r} vs --up {tok['up']!r}")
+                ok("G4[zh] a rendered Buy chip is painted the zh up-ink",
+                   tok["chip"] in ("rgb(224, 100, 100)", "rgb(207, 64, 64)"),
+                   f"chip {tok['chip']!r}")
             pg.close()
 
         # ── H. 390w ────────────────────────────────────────────────────────

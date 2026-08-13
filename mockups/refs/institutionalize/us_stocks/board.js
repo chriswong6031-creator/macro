@@ -91,6 +91,11 @@
   var isEmpty = S.state === "empty";
   var isAnon  = S.state === "anon";
   var isEps   = S.state === "episodes";
+  /* `fallback` is a mockup-gate lens showing ONLY rows the candidate join does
+     not reach — no chart, no quote, no name/sector, no lane mark. It exists to
+     prove the degraded card still reads, and to size the enrichment gap
+     honestly (DESIGN_NOTES §6 Q1). It is not a page control. */
+  var isFall  = S.state === "fallback";
 
   /* ── the count accessor — the ONLY place a setup quantity comes from ───── */
   function cellCount(k) {
@@ -120,9 +125,10 @@
     if (isEmpty) return [];
     var r = B.rows.slice();
     if (isEps) r = r.filter(function (x) { return x.eps; });          // multi-episode names only
+    if (isFall) r = r.filter(function (x) { return !x.spark; });      // un-enriched rows only
     if (S.life) {
       r = r.filter(function (x) { return x.life === S.life; });
-    } else if (!isEps) {
+    } else if (!isEps && !isFall) {
       /* The UNFILTERED board is the LIVE board: `resolved` is outside the
          headline by construction (ruling §6 two-total law), so a graded-out plan
          may not sit in the default grid either — otherwise the section total
@@ -215,74 +221,136 @@
   /* ═══════════════ 2. SETUPS ════════════════════════════════════════════ */
   var GRID_CAP = 40;
 
+  /* ── the revised Prophet card ────────────────────────────────────────────
+     Amalgamation: the shipped card's chart-first trading DNA + the ruled
+     lifecycle grammar. Reads in about a second — ticker, stance, price, how it
+     is moving, the chart, priority, marks, lifecycle, zone — with no paragraph.
+
+     Deliberately NOT here (handoff §6): plan-clock telemetry (`day 2 of 45`),
+     paragraph what_to_do_now, the Entry/T1/Void three-number footer, and any
+     exact execution command. Those belong in plan detail, not on a dense grid. */
+  var VERB = {
+    buy:   { en: "Buy",   zh: "买入" },
+    near:  { en: "Near",  zh: "临近" },
+    wait:  { en: "Wait",  zh: "等待" },
+    hold:  { en: "Hold",  zh: "持有" },
+    avoid: { en: "Avoid", zh: "回避" }
+  };
+
+  /* The daily % change is a LIVE value: the shipped card server-renders an empty
+     slot and live.js paints it. No committed artifact carries per-ticker intraday
+     change (quotes.json holds 27 index/futures symbols only), so for the mockup
+     the slot is filled from a deterministic per-ticker demo overlay purely to
+     show the direction inks and their zh flip. These are the ONLY simulated
+     numbers on the page — everything else is the real payload. Disclosed in
+     DESIGN_NOTES §6 Q8 and marked in the DOM with data-mock-live. */
+  function demoChange(tk) {
+    var h = 0, i;
+    for (i = 0; i < tk.length; i++) h = (h * 31 + tk.charCodeAt(i)) % 997;
+    return ((h % 61) - 28) / 10;                       /* -2.8% .. +3.2% */
+  }
+
   function card(r) {
     var L = LEX[r.life];
-    var h = '<article class="pvcard" data-life="' + r.life + '" data-ticker="' + esc(r.tk) + '" data-id="' + esc(r.id) + '">';
-    /* the SAME weight cap the ladder cell carries, same geometry — this is what
-       makes the ladder and the grid read as one governed population */
-    h += '<div class="mx-cap mx-cap--' + r.life + '" aria-hidden="true"></div>';
-    h += '<div class="pv-bd">';
-    h += '<div class="pv-hd"><span class="pv-tk">' + esc(r.tk) + "</span>";
-    /* Freshness = position inside the plan's own declared window. This is also
-       the field that makes the Overtime cell legible — and on the committed
-       payload it exposes a real disagreement: 16 open rows have run past their
-       declared window while `phase=overtime` (and therefore the Overtime cell)
-       is 0. The card states the plan's own arithmetic and does not claim the
-       cell. Escalated in DESIGN_NOTES.md §Open questions Q2. */
-    if (r.age != null && r.hz != null) {
-      var pastWin = r.age > r.hz && r.life !== "resolved";
-      h += '<span class="pv-win fig' + (pastWin ? " pv-win--past" : "") + '">' + (pastWin
-        ? t("past its " + r.hz + "-day window", "已超出 " + r.hz + " 天窗口期")
-        : t("day " + r.age + " of " + r.hz, "第 " + r.age + " 天 / 共 " + r.hz + " 天")) + "</span>";
+    var v = r.stance && VERB[r.stance] ? r.stance : null;
+    var cls = "pvcard" + (v ? " pv-" + v : "") + (r.star ? " pv-featured" : "");
+    /* data-sym is what live.js keys on (.nb-px[data-sym]) to paint the quote and
+       the change client-side every ~60s. It is an ATTRIBUTE, not payload — so in
+       production the live quote works for 100% of plan rows regardless of the
+       candidate-join gap. Only name/sector/lane/spark need an enrichment path
+       (DESIGN_NOTES §6 Q1). */
+    var h = '<article class="' + cls + '" data-life="' + r.life + '" data-ticker="' +
+            esc(r.tk) + '" data-sym="' + esc(r.tk) + '" data-mkt="us" data-id="' + esc(r.id) + '">';
+
+    /* ── chart hero, with the stance chip and the live quote overlaid ────── */
+    h += '<div class="pv-chart">';
+    h += r.spark ? r.spark : '<div class="pv-nochart"></div>';
+    h += '<span class="pv-ov pv-ovl">';
+    if (v) h += '<span class="pv-chip">' + t(VERB[v].en, VERB[v].zh) + "</span>";
+    if (r.trg) {
+      /* the ⚡ chip carries a fact that appears nowhere else on the card, which
+         is the shipped rule for keeping it (and its tip) */
+      var tgEn = r.trg === "imminent"
+        ? "The entry trigger has not fired yet, but price is at the level where it would."
+        : "The entry trigger fired in the last few sessions.";
+      var tgZh = r.trg === "imminent"
+        ? "入场触发条件尚未满足，但价格已到达触发位附近。"
+        : "入场触发条件已在最近几个交易日内满足。";
+      h += '<span class="pv-trg" tabindex="0" data-tip-en="' + esc(tgEn) +
+           '" data-tip-zh="' + esc(tgZh) + '">&#9889; ' +
+           (r.trg === "imminent" ? t("Imminent", "即将触发") : t("Triggered", "已触发")) + "</span>";
+    }
+    h += "</span>";
+    if (r.px != null) {
+      var c = demoChange(r.tk);
+      var dir = c > 0.05 ? "up" : c < -0.05 ? "dn" : "flat";
+      h += '<span class="pv-ov pv-ovr"><span class="pv-quote">' +
+           '<span class="pv-px">' + money(r.px) + "</span>" +
+           '<span class="pv-chg pv-chg--' + dir + '" data-mock-live="1">' +
+           (c > 0 ? "+" : "") + c.toFixed(1) + "%</span></span></span>";
     }
     h += "</div>";
-    var sub = [r.nm, r.sec].filter(Boolean).join(" · ");
-    if (sub) h += '<div class="pv-nm">' + esc(sub) + "</div>";
 
-    /* lifecycle FACT COLUMN — cell word + plain gloss. No blended score. */
-    h += '<div class="pv-life">';
-    h += '<span class="mx-mark mx-mark--' + r.life + '" aria-hidden="true"></span>';
-    h += '<span class="pv-life-w">' + t(L.en, L.zh) + "</span>";
-    h += '<span class="pv-life-g">' + t(L.gEn, L.gZh) + "</span>";
+    /* ── identity + priority ────────────────────────────────────────────── */
+    h += '<div class="pv-bd">';
+    h += '<div class="pv-hd"><span class="pv-idw"><span class="pv-tk">' + esc(r.tk) + "</span>";
+    if (r.nm) h += '<span class="pv-nm">' + esc(r.nm) + "</span>";
+    h += "</span>";
+    h += '<span class="pv-pri" tabindex="0"' +
+         ' data-tip-t-en="Priority" data-tip-t-zh="优先级"' +
+         ' data-tip-en="Where this setup ranks in tonight’s Prophet set — how ready it is to act on today. It is not a win probability, an expected return, or a confidence score."' +
+         ' data-tip-zh="该计划在今晚 Prophet 名单中的排序 — 表示今天有多接近可操作。它不是胜率、预期收益或信心分数。">';
+    h += '<span class="pv-pril">' + t("Priority", "优先级") + "</span>";
+    h += '<span class="pv-prin' + (r.pri == null ? " pv-prin--na" : "") + ' fig">' +
+         (r.pri == null ? "&mdash;" : Math.round(r.pri)) + "</span></span>";
     h += "</div>";
+    if (r.sec) h += '<div class="pv-ind">' + esc(r.sec) + "</div>";
 
-    var chips = "";
+    /* ── marks: restrained, at most three ───────────────────────────────── */
+    var mk = "";
+    if (r.star) mk += '<span class="pv-mk-i pv-mk-feat">&#9733; ' + t("Featured", "精选") + "</span>";
+    if (r.new) mk += '<span class="pv-mk-i pv-mk-new">' + t("New", "新增") + "</span>";
     if (r.lane && LANE[r.lane]) {
       var ln = LANE[r.lane];
-      chips += '<span class="pv-mark" tabindex="0"' +
+      mk += '<span class="pv-mk-i pv-mk-lane" tabindex="0"' +
         ' data-tip-t-en="' + esc(ln.tEn) + '" data-tip-t-zh="' + esc(ln.tZh) + '"' +
         ' data-tip-en="' + esc(ln.bEn) + '" data-tip-zh="' + esc(ln.bZh) + '">' +
         t(ln.en, ln.zh) + "</span>";
     }
-    /* episode chip — dated ordinal, neutral ink, present only when the ticker
-       has more than one row on the board, counted in nothing. */
     if (r.eps) {
       var d = r.opened || { en: "—", zh: "—" };
-      chips += '<span class="pv-ep">' + t(
-        "Episode " + r.ep + " of " + r.eps + " &middot; opened " + d.en,
-        "第 " + r.ep + " 轮（共 " + r.eps + " 轮）&middot; " + d.zh + "启动") + "</span>";
+      mk += '<span class="pv-ep">' + t(
+        "Episode " + r.ep + " of " + r.eps + " &middot; " + d.en,
+        "第 " + r.ep + " 轮（共 " + r.eps + " 轮）&middot; " + d.zh) + "</span>";
     }
-    if (chips) h += '<div class="pv-chips">' + chips + "</div>";
+    if (mk) h += '<div class="pv-mk">' + mk + "</div>";
 
-    if (r.do_) h += '<div class="pv-do">' + t(esc(r.do_), esc(r.do_zh || r.do_)) + "</div>";
-
+    /* ── lifecycle: the ruled mark + the cell word. No gloss sentence. ──── */
+    h += '<div class="pv-life"><span class="mx-mark mx-mark--' + r.life + '" aria-hidden="true"></span>' +
+         '<span class="pv-life-w">' + t(L.en, L.zh) + "</span>";
     if (r.newer) {
-      h += '<a class="pv-newer" href="#id=' + esc(r.newer) + '">' +
-           t("Newer plan on this name &rarr;", "该股最新计划 &rarr;") + "</a>";
+      h += '<a class="pv-newer" href="#id=' + esc(r.newer) + '" style="margin-left:auto">' +
+           t("Newer plan &rarr;", "最新计划 &rarr;") + "</a>";
     }
-    h += "</div>";
+    h += "</div></div>";
 
+    /* ── zone footer: the price AREA that matters ───────────────────────── */
     h += '<div class="pv-zn">';
-    h += '<span class="pv-zi"><span class="pv-znl">' + t("Entry", "入场") + "</span>" +
-         '<span class="pv-znr fig">' + money(r.entry) + "</span></span>";
-    h += '<span class="pv-zi"><span class="pv-znl">' + t("T1", "目标一") + "</span>" +
-         '<span class="pv-znr fig">' + money(r.t1) + "</span></span>";
-    h += '<span class="pv-zi pv-zi--void"><span class="pv-znl">' + t("Void", "失效") + "</span>" +
-         '<span class="pv-znr fig">' + money(r.inval) + "</span></span>";
-    h += "</div>";
-    h += "</article>";
+    if (r.zlo != null && r.zhi != null) {
+      h += '<span class="pv-znl">' + t("Zone", "买区") + "</span>";
+      h += '<span class="pv-znr fig">' + money(r.zlo) + "&ndash;" + money(r.zhi) + "</span>";
+    } else if (r.life === "resolved") {
+      h += '<span class="pv-znm">' + t("Closed — in the record", "已平仓 — 计入战绩") + "</span>";
+    } else if (r.zstate === "filled") {
+      h += '<span class="pv-znm">' + t("Zone already worked through", "买区已走完") + "</span>";
+    } else {
+      h += '<span class="pv-znm">' + t("Zone sets on confirmation", "买区待确认后生成") + "</span>";
+    }
+    if (r.opened) h += '<span class="pv-dt">' + t(r.opened.en, r.opened.zh) + "</span>";
+    h += "</div></article>";
     return h;
   }
+
 
   function ghost() {
     return '<div class="pv-ghost" aria-hidden="true"><i></i><i></i><i></i><i></i></div>';
@@ -320,8 +388,12 @@
        shipped board has no "multi-episode" filter. Its header states its own
        scope so the reference never shows a total that disagrees with the grid. */
     var nNames = isEps ? new Set(r.map(function (x) { return x.tk; })).size : 0;
+    var enriched = B.rows.filter(function (x) { return x.spark; }).length;
     var absentCell = S.life === "watch" && watchAbsent();
-    h += '<span class="mx-sec-total">' + (isEps
+    h += '<span class="mx-sec-total">' + (isFall
+      ? t("<b>" + r.length + "</b> rows the screener join does not reach",
+          "候选关联未覆盖的 <b>" + r.length + "</b> 条计划")
+      : isEps
       ? t("<b>" + r.length + "</b> plan rows on <b>" + nNames + "</b> names",
           "<b>" + nNames + "</b> 只股票上的 <b>" + r.length + "</b> 条计划")
       : S.life
@@ -346,6 +418,11 @@
     h += '<button data-view="grid" aria-selected="' + (S.view === "grid") + '">&#9638; ' + t("Grid", "卡片") + "</button>";
     h += '<button data-view="table" aria-selected="' + (S.view === "table") + '">&#9776; ' + t("Table", "表格") + "</button>";
     h += "</span>";
+    if (isFall) {
+      h += '<span class="sort-rule">' + t(
+        "Mockup-gate lens: the missing-enrichment fallback. These rows carry no chart, quote, company name or lane mark because those five fields arrive through the candidate join, which reaches only " + enriched + " of " + B.rows.length + " plan rows today. The card still reads — but closing this gap is a blocking implementation dependency, not a design target.",
+        "样稿评审视角：缺失富化数据时的降级形态。这些条目没有图表、报价、公司名称与通道标记，因为这五个字段来自候选关联，而今天该关联仅覆盖 " + B.rows.length + " 条计划中的 " + enriched + " 条。卡片仍然可读——但补齐这一缺口是实施阶段的阻塞性依赖，而非设计目标。") + "</span>";
+    }
     if (isEps) {
       h += '<span class="sort-rule">' + t(
         "Mockup-gate lens: only names carrying more than one plan row. The shipped board has no such filter — these cards sit in the full grid under the same global sort.",
@@ -603,7 +680,7 @@
     var g = [
       ["theme", [["dark", "Dark"], ["light", "Light"]]],
       ["lang",  [["en", "EN"], ["zh", "中文"]]],
-      ["state", [["paid", "Paid"], ["anon", "Anonymous"], ["empty", "Empty"], ["episodes", "Multi-episode"]]],
+      ["state", [["paid", "Paid"], ["anon", "Anonymous"], ["empty", "Empty"], ["episodes", "Multi-episode"], ["fallback", "No-enrichment"]]],
       ["view",  [["grid", "Grid"], ["table", "Table"]]]
     ];
     var h = '<div class="harness"><strong>Mockup harness</strong>';

@@ -44,6 +44,36 @@ CELLS = ["watch", "ready", "entered", "delivering", "overtime", "invalidated", "
 LIVE_CELLS = CELLS[:-1]
 
 
+def stance(row, life):
+    """Glance-tier Prophet stance — Buy / Near / Wait / Hold / Avoid.
+
+    A DISPLAY-TIER projection over published fields only, in the same spirit as
+    lifecycle_state: total, first-match-wins, and it never escalates above what a
+    field already states (an unknown row falls to `wait`, the cautious lane —
+    the same rule stage_for() applies). It originates nothing.
+
+    Stance and lifecycle are orthogonal (handoff §3D): stance says what Prophet
+    thinks of the opportunity now; lifecycle says where the tracked plan sits.
+
+    NOTE: the shipped card takes `verb` from its CALLER, and no verb producer
+    exists for plan rows. This mapping is the mockup's proposal, not a ruling —
+    DESIGN_NOTES §6 Q7 records it for the Prophet lane to ratify.
+    """
+    if life == "resolved":
+        return None                       # a closed plan has no live stance
+    if life == "invalidated":
+        return "avoid"
+    ez = row.get("entry_zone") or {}
+    if row.get("entry_status") == "buy_now" or ez.get("stance") in ("accumulate", "starter"):
+        return "buy"
+    if row.get("entry_status") == "partial":
+        return "near"
+    ra = row.get("recommended_action")
+    if ra in ("hold", "trail"):
+        return "hold"
+    return "wait"                          # wait / bounce_wait / unknown -> cautious
+
+
 def clip(s, n):
     """Trim to glance-tier length on a word boundary. The mockup shows one plain line."""
     if not s:
@@ -152,11 +182,31 @@ def main():
             "eps": len(by_ticker[tk]) if tk in multi_tickers else None,
             "newer": newest_open.get(tk) if (r.get("closed") is True and tk in newest_open) else None,
             "adm": r.get("admission_class"),
-            # NOTE: spark_svg is deliberately NOT carried. It lives on us_standouts buy
-            # rows only, so re-sourcing Setups to the plan book leaves 75% of cards with
-            # no chart (same join gap as `lane`). P0 §B's card depth ladder is
-            # "ticker + lifecycle + why + freshness" — no chart — so the mockup freezes
-            # the chartless card. See DESIGN_NOTES.md §Open questions.
+            # ── the enriched half of the card contract ────────────────────────
+            # spark/price/name/sector/lane all arrive through the candidate join
+            # and are therefore PARTIAL today (~25%). They are carried anyway:
+            # the target UX is the chart-first card, and the coverage gap is an
+            # implementation dependency to solve (DESIGN_NOTES §6 Q1), not a
+            # reason to design the flagship card down to the lowest common field.
+            # The spark_svg already carries its own relevant-zone band and paints
+            # in var(--up), so it flips correctly under zh for free.
+            "spark": (b or {}).get("spark_svg"),
+            "stance": stance(r, life),
+            # Zone — the glance-tier price area. Real on 61 rows; the rest carry a
+            # state so the footer can say WHY there is no zone rather than blank.
+            "zlo": (r.get("entry_zone") or {}).get("low"),
+            "zhi": (r.get("entry_zone") or {}).get("high"),
+            "zstate": ((r.get("entry_zone_state") or {}).get("state")
+                       if isinstance(r.get("entry_zone_state"), dict) else None),
+            "zclass": (r.get("entry_zone") or {}).get("zone_class"),
+            # marks, restrained: star (join) · new (100%, age<=1) · lane (join)
+            "star": bool(((b or {}).get("coiled") or {}).get("star")),
+            "new": bool(r.get("age_days") is not None and r.get("age_days") <= 1),
+            # ⚡ trigger chip — kept high-signal: only a RECENT trigger, or one
+            # about to fire. Not on all 96 entered rows (that is chip spam).
+            "trg": ("triggered" if (life == "entered" and (r.get("age_days") or 99) <= 3)
+                    else "imminent" if (life == "ready" and r.get("entry_status") == "buy_now")
+                    else None),
         })
 
     counts = collections.Counter(r["life"] for r in rows_out)
