@@ -346,6 +346,8 @@ def _refresh_qledger_promotion(e: dict) -> dict:
     ci_low = best.get("wilson_ci_low")
     hr = best.get("hit_rate")
     ex = best.get("excess_mean")
+    ex_abs = best.get("mean_abs_excess")
+    ex_basis = best.get("excess_basis")
     horizon = best.get("_horizon", 5)
     ready = bool(best.get("ready"))
     approaching = bool(best.get("approaching"))
@@ -354,7 +356,19 @@ def _refresh_qledger_promotion(e: dict) -> dict:
     # Build a readable state line
     ci_str = f"{ci_low:.3f}" if ci_low is not None else "n/a"
     hr_str = f"{hr*100:.1f}%" if hr is not None else "salience-only"
-    ex_str = f"{ex*100:.2f}%" if ex is not None else "n/a"
+    # V1 (SIGNED_EXCESS_POOLED_ACROSS_DIRECTIONS): a mixed-direction family has no
+    # signed excess_mean, because grades.excess is raw and a correct bearish call
+    # contributes a negative one. Say so — a bare "n/a" reads as "not measured yet"
+    # and is exactly the ambiguous dash engine/neuralweb/mastermind_context.py
+    # refuses to print.
+    if ex is not None:
+        ex_str = f"{ex*100:.2f}%"
+    elif ex_basis == "magnitude_only" and ex_abs is not None:
+        ex_str = (f"|{ex_abs*100:.2f}%| avg move "
+                  f"(mixed-direction family — a signed mean would measure "
+                  f"universe drift, not skill)")
+    else:
+        ex_str = "not measured yet"
     state = (
         f"n_dates={n_dates}/{needed} @ {horizon}d · CI-low={ci_str} · "
         f"hit={hr_str} · excess={ex_str}"
@@ -376,13 +390,25 @@ def _refresh_qledger_promotion(e: dict) -> dict:
 
     # Duel context line: challenger vs placebo |excess| at 5d
     ch_ex = duel_ctx.get("challenger_excess_mean_5d")
+    ch_abs = duel_ctx.get("challenger_abs_excess_5d")
+    ch_basis = duel_ctx.get("challenger_excess_basis_5d")
     pl_ex = duel_ctx.get("placebo_covered_abs_excess_5d")
+    n_dates_5d = duel_ctx.get("n_dates_5d", 0)
     duel_line = ""
-    if ch_ex is not None and pl_ex is not None:
+    if pl_ex is not None and ch_basis == "magnitude_only" and ch_abs is not None:
+        # Mixed-direction challenger: the signed mean is withheld (V1), and the
+        # placebo side was already a |excess| — so this is now the like-for-like duel.
+        duel_line = (
+            f"Duel @5d: challenger |excess|={ch_abs*100:.2f}% vs "
+            f"placebo |excess|={pl_ex*100:.2f}% (covered-ticker tape) · "
+            f"magnitude duel — this family calls both directions, so a signed mean "
+            f"is not a skill reading · n_dates={n_dates_5d}"
+        )
+    elif ch_ex is not None and pl_ex is not None:
         duel_line = (
             f"Duel @5d: challenger excess_mean={ch_ex*100:.2f}% vs "
             f"placebo |excess|={pl_ex*100:.2f}% (covered-ticker tape) · "
-            f"n_dates={duel_ctx.get('n_dates_5d',0)}"
+            f"n_dates={n_dates_5d}"
         )
 
     out: dict = {
