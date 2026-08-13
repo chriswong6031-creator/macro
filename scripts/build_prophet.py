@@ -1161,6 +1161,220 @@ def open_plan_keys(
 
 AGE_BUCKET_KEYS = ("le_7d", "d8_21d", "gt_21d", "unknown")
 
+
+# ---------------------------------------------------------------------------
+# §J.9(c) — the lifecycle projection
+# ---------------------------------------------------------------------------
+# research/PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md §6.  `lifecycle_state` is a
+# DERIVED, display-tier, total function over fields this builder already publishes
+# (`phase`, `closed`, and the bridge's union watch receipt).  It mints NO new engine
+# judgment: every cell has a producer that is live today, which is the whole point —
+# the estate's 4-dot rail shipped two structurally unreachable steps (§1.1), and a
+# vocabulary value with no producer is exactly that defect.
+#
+# The field ships DARK in this PR: no surface reads it yet (§9, "Explicitly not in
+# PR-0(c)").  Surfaces adopt at the Prophet Board migration.
+#
+# UNIT OF ACCOUNT (declared, binding — §6): a cell counts PLAN ROWS, except `watch`,
+# which counts TICKERS with no open plan row (a watch state precedes any plan, so it
+# has no plan row to count).  One ticker may honestly occupy two cells at row
+# granularity — FBRT carried a closed episode in `resolved` and a live plan in `ready`
+# on the same night.  Ticker-keyed surfaces use `lifecycle_state_by_ticker()` instead.
+
+#: The cells, in funnel order (left → right on the ladder).  Exhaustive and disjoint.
+LIFECYCLE_CELLS: tuple[str, ...] = (
+    "watch", "ready", "entered", "delivering", "overtime", "invalidated", "resolved",
+)
+
+#: The six LIVE cells — `lifecycle_live_total` sums these and binds the headline
+#: "N setups today".  `resolved` is deliberately OUTSIDE the headline: `active_count`
+#: is a documented misnomer that includes forward-ledger-closed plans, and a headline
+#: that counts graded-out plans as inventory sells non-actionable states.
+LIFECYCLE_LIVE_CELLS: tuple[str, ...] = tuple(c for c in LIFECYCLE_CELLS if c != "resolved")
+
+#: Paired EN/ZH lexicon.  All-or-nothing by test: a cell may never ship one language.
+#: ZH is a native two-character arc, not translated English, and every word converges
+#: with vocabulary the card already ships (失效价 · 已结 · 超时 · 入场, ruling §6).
+LIFECYCLE_LABELS_EN: dict[str, str] = {
+    "watch":       "Watch",
+    "ready":       "Ready",
+    "entered":     "Entered",
+    "delivering":  "Delivering",
+    "overtime":    "Overtime",
+    "invalidated": "Invalidated",
+    "resolved":    "Resolved",
+}
+LIFECYCLE_LABELS_ZH: dict[str, str] = {
+    "watch":       "观察",
+    "ready":       "就绪",
+    "entered":     "入场",
+    "delivering":  "达标",
+    "overtime":    "超时",
+    "invalidated": "失效",
+    "resolved":    "已结",
+}
+
+#: Which management phases each plan-row cell claims.  Held as DATA so the no-dead-cell
+#: test can assert every one of these is a value `prophet_management._VALID_PHASES`
+#: actually produces — if a phase is ever removed from the engine, the cell census goes
+#: RED rather than silently zeroing a cell.  `watch` is absent (ticker-granular, sourced
+#: from the intake roster) and `resolved` is absent (keyed on `closed`, not on a phase).
+LIFECYCLE_PHASE_CELLS: dict[str, frozenset[str]] = {
+    "invalidated": frozenset({"invalidated"}),
+    "overtime":    frozenset({"overtime"}),
+    "delivering":  frozenset({"at_t1", "between_t1_t2", "at_t2"}),
+    "entered":     frozenset({"triggered_pre_t1"}),
+    "ready":       frozenset({"pre_trigger"}),
+}
+
+#: §6 precedence, verbatim: first match wins (disjointness), and the terminal arm is
+#: total (exhaustiveness).  `closed` is tested BEFORE any phase — a closed plan is
+#: resolved whatever phase it froze at.
+LIFECYCLE_PRECEDENCE: tuple[str, ...] = (
+    "invalidated", "overtime", "delivering", "entered", "ready",
+)
+
+
+def lifecycle_state(row: dict[str, Any]) -> str:
+    """Project one plan row onto its lifecycle cell (§6 derivation, first match wins).
+
+    Total by construction: an unknown or absent phase degrades to ``ready`` — an
+    unknown state is never advertised as further along the funnel than it can be
+    proven to be (the same rule ``us_board_rank.stage_for()`` applies to unknown
+    triage states) — and discloses itself with a build annotation.
+    """
+    if row.get("closed"):
+        return "resolved"
+    phase = str(row.get("phase") or "").strip()
+    for cell in LIFECYCLE_PRECEDENCE:
+        if phase in LIFECYCLE_PHASE_CELLS[cell]:
+            return cell
+    # Bare print at line start, flushed: a logger would prefix the line and GitHub
+    # would silently drop the annotation (house annotation law).
+    print(
+        "::warning title=prophet-lifecycle-unknown-phase::plan "
+        f"{row.get('id') or '?'} ({row.get('asset') or '?'}) carries phase "
+        f"{phase or '(absent)'}, which maps to no lifecycle cell — projected as "
+        "`ready`, because an unknown state is never advertised as further along",
+        flush=True,
+    )
+    return "ready"
+
+
+def prophet_watch_roster(intake_stats: dict[str, Any]) -> list[str] | None:
+    """The union watch roster the intake published, or ``None`` when it published none.
+
+    ``None`` and ``[]`` are DIFFERENT FACTS (§6 fn.1): ``None`` means the watch tier
+    did not publish tonight and every downstream reading is a disclosed absence; ``[]``
+    means it published and nothing fired, which is honest inventory at zero.  Never
+    collapse the two — a silent 0 is how the estate ships an unlightable cell.
+
+    The roster is the BRIDGE's ``list[str]`` of tickers (``prophet_bridge``'s #5370
+    union admission).  ``engine/basket_score.py`` publishes a same-named ``list[dict]``
+    (ruling §2 note c); a wrong-shaped value is WITHHELD rather than coerced, because
+    coercing it to ``[]`` would publish "the watch tier fired nothing" — a false fact —
+    where the truth is "this came from the wrong producer".
+    """
+    if "early_turn_watch" not in intake_stats:
+        return None
+    roster = intake_stats.get("early_turn_watch") or []
+    if not isinstance(roster, (list, tuple)) or any(
+            not isinstance(t, str) for t in roster):
+        print(
+            "::warning title=prophet-lifecycle-watch-shape::intake.early_turn_watch is "
+            "not the bridge's list[str] ticker roster (found a non-string element) — "
+            "the watch cell is withheld rather than counted from the wrong producer; "
+            "engine/basket_score.py ships a same-named list[dict]",
+            flush=True,
+        )
+        return None
+    return [t for t in roster if t]
+
+
+def lifecycle_watch_cell(
+    roster: list[str] | None,
+    active_entries: list[dict[str, Any]],
+) -> list[str] | None:
+    """The `watch` cell's population: the roster MINUS every OPEN plan's ticker.
+
+    Minus OPEN, not minus any: a fresh union fire on a name whose only plans are
+    closed is a live watch state, not a resolved one.  This is what makes the watch
+    cell disjoint from the open book, so the cells partition their universe.
+
+    ``None`` in ⇒ ``None`` out — the disclosed absence propagates.
+    """
+    if roster is None:
+        return None
+    open_tickers = {
+        str(e.get("asset") or "") for e in active_entries if not e.get("closed")
+    }
+    return sorted(set(roster) - open_tickers)
+
+
+def lifecycle_projection(
+    active_entries: list[dict[str, Any]],
+    watch_tickers: list[str] | None,
+) -> tuple[dict[str, int], int, int]:
+    """Stamp ``lifecycle_state`` on every plan row and tally the counts block.
+
+    ONE pass (ruling §6 count law): the per-row field and the published counts are
+    computed from the same walk, so a rendered quantity and the rows behind it cannot
+    disagree.  CI mutates a row and asserts the block moves, so "derivable" never
+    stands in for "checked".
+
+    Returns ``(counts, live_total, grand_total)``.  ``counts`` carries the ``watch``
+    key only when the roster was published — an absent key is the disclosed absence.
+    """
+    counts: dict[str, int] = {c: 0 for c in LIFECYCLE_CELLS if c != "watch"}
+    for entry in active_entries:
+        cell = lifecycle_state(entry)
+        entry["lifecycle_state"] = cell
+        counts[cell] += 1
+    if watch_tickers is not None:
+        counts["watch"] = len(watch_tickers)
+    ordered = {c: counts[c] for c in LIFECYCLE_CELLS if c in counts}
+    live_total = sum(v for c, v in ordered.items() if c in LIFECYCLE_LIVE_CELLS)
+    return ordered, live_total, live_total + ordered["resolved"]
+
+
+def lifecycle_state_by_ticker(
+    active_entries: list[dict[str, Any]],
+    watch_tickers: list[str] | None = None,
+) -> dict[str, str]:
+    """Single-valued lifecycle cell per TICKER, for ticker-keyed surfaces (§6).
+
+    The landing showcase, stock-detail and dossier Prophet chips render one card per
+    NAME, not one per plan row, so they cannot use the row-granular cell directly: 13
+    of 127 tickers carried two rows on the ruling's reference payload.  The projection
+    is: the cell of the newest OPEN plan row (by ``recorded_at``, ties broken on the
+    larger ``id`` — plan ids embed the signal date, so this is deterministic and
+    newest-first); else ``watch`` if the ticker is on the roster (a live fire outranks
+    a finished episode); else ``resolved``.
+
+    This is a READ-ONLY projection — it never stamps rows; ``lifecycle_projection()``
+    owns the stamp.
+    """
+    newest: dict[str, tuple[tuple[str, str], dict[str, Any]]] = {}
+    for entry in active_entries:
+        ticker = str(entry.get("asset") or "")
+        if not ticker or entry.get("closed"):
+            continue
+        key = (str(entry.get("recorded_at") or ""), str(entry.get("id") or ""))
+        if ticker not in newest or key > newest[ticker][0]:
+            newest[ticker] = (key, entry)
+    out: dict[str, str] = {
+        ticker: (entry.get("lifecycle_state") or lifecycle_state(entry))
+        for ticker, (_key, entry) in newest.items()
+    }
+    for ticker in (watch_tickers or []):
+        out.setdefault(str(ticker), "watch")
+    for entry in active_entries:
+        ticker = str(entry.get("asset") or "")
+        if ticker:
+            out.setdefault(ticker, "resolved")
+    return out
+
+
 # Phase → plain word.  Raw phase slugs (``pre_trigger``, ``triggered_pre_t1``) are
 # banned from any string a surface may print (glance-tier word law), so an UNMAPPED
 # phase drops the leg rather than leaking the slug.
@@ -2209,6 +2423,23 @@ def main() -> None:
     for entry in active_entries:
         age_counts[_age_bucket(entry.get("age_days"))] += 1
 
+    # §J.9(c) lifecycle projection — stamps `lifecycle_state` on every row in
+    # `plans[]` and tallies the counts block in the SAME pass, so the published
+    # quantities and the rows behind them cannot disagree.  Runs AFTER the sort and
+    # over exactly the rows that ship.  Display tier; no engine judgment is created.
+    _watch_roster = prophet_watch_roster(intake_stats)
+    _watch_tickers = lifecycle_watch_cell(_watch_roster, active_entries)
+    _life_counts, _life_live_total, _life_grand_total = lifecycle_projection(
+        active_entries, _watch_tickers)
+    log.info(
+        "build_prophet: lifecycle projection — live=%d grand=%d %s",
+        _life_live_total, _life_grand_total,
+        " ".join(f"{c}={_life_counts[c]}" for c in LIFECYCLE_CELLS if c in _life_counts),
+    )
+    if _watch_tickers is None:
+        log.info("build_prophet: lifecycle `watch` cell WITHHELD — the intake published "
+                 "no early_turn_watch roster (key-absence, not zero)")
+
     index: dict[str, Any] = {
         "schema": "prophet.index/v1",
         # Compatibility run clock.  Freshness sentinels MUST use source_asof below:
@@ -2239,6 +2470,18 @@ def main() -> None:
         # rows whose signal_date could not be read).  Sums to active_count by design —
         # closed rows are bucketed too, because they are in `plans[]` too.
         "active_count_by_age": age_counts,
+        # ── §J.9(c) lifecycle projection (display tier, additive, ships DARK) ────
+        # The count law made mechanical (Sol clause 2): every rendered lifecycle
+        # quantity quotes this block or a difference of its values, so a ladder chip
+        # can never disagree with the rows it filters.  `lifecycle_live_total` is the
+        # six live cells and binds the headline "N setups today"; `resolved` sits
+        # outside it deliberately (see LIFECYCLE_LIVE_CELLS).  Both invariants are
+        # test-pinned: live == open_count + watch, grand == active_count + watch.
+        # `lifecycle_counts` omits `watch` entirely on a night the intake published no
+        # roster — the disclosed absence, never a silent 0.
+        "lifecycle_counts": _life_counts,
+        "lifecycle_live_total": _life_live_total,
+        "lifecycle_grand_total": _life_grand_total,
         # P6 — the order `plans[]` actually ships in, stated where the reader can check
         # it against the `_priority_score` on every row.
         "plans_sort_key": (
@@ -2402,6 +2645,20 @@ def main() -> None:
         index["origination_disclosure"] = _origination
         log.info("build_prophet: %d plan(s) disclosed as reconstructed (origination %s)",
                  _origination["n"], _origination.get("date"))
+    # ── §J.9(c) §9.1a — the union WATCH roster ──────────────────────────────────
+    # The bridge has computed this since #5370 (`prophet_bridge`: every deck-admitted
+    # union fire, licensed to mint a starter plan or not) but the intake block above is
+    # a CLOSED key-by-key whitelist, so the roster was silently dropped and the
+    # lifecycle `watch` cell had no published producer.  Named here at last.
+    #
+    # Emitted conditionally and AFTER the literal, for the same reason
+    # `origination_disclosure` is: the key must be genuinely ABSENT — not
+    # present-and-empty — on a night the bridge published no roster.  Key-absence and
+    # zero are different facts (§6 fn.1): absent means the watch tier did not publish
+    # and the cell renders a disclosed absence; `[]` means it published and nothing
+    # fired, which is honest inventory at zero.
+    if _watch_roster is not None:
+        index["intake"]["early_turn_watch"] = _watch_roster
     # ── G-D: the Board read — enrichment + the live actionability axis ──────────
     # Stamped LAST, over the finished `plans[]` (the same list object), so every row
     # that ships — enriched or degraded — carries a block, and so the coverage counted

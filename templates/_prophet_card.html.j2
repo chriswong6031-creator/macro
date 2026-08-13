@@ -52,8 +52,9 @@
        a non-buy verb be featured. Callers
        must not also pass triage on a featured row (one accent per card) — the
        aura supersedes the triage ring.
-     stage_key — OPTIONAL slug ('live'|'setting_up'|'ran'|'blocked'): emitted as
-       data-stage so a board can filter its grid client-side with pure CSS.
+     stage_key — OPTIONAL slug ('live'|'setting_up'|'ran'|'basing'|'blocked'): emitted
+       as data-stage so a board can filter its grid client-side with pure CSS.
+       ('basing' was added by the D18 bottom-watch shelf, engine/us_board_rank.py.)
      marks — OPTIONAL list of {k, en, zh, tip_en?, tip_zh?}: the sub-line chip row
        between the sector and the lifecycle tracker. `k` picks the visual weight:
        'feat' (filled green, the strongest), 'new' (accent outline), 'warm'
