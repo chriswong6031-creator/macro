@@ -20,7 +20,7 @@
   "top63_never_eligible_pct": 0.1667,
   "top63_eligible_days": {
    "n": 150,
-   "mean": 6.16,
+   "mean": 6.12,
    "p25": 3.0,
    "median": 6.0,
    "p75": 9.0,
@@ -31,7 +31,7 @@
   "top21_eligible_today_n": 4,
   "conversion_rate": 0.064,
   "conversion_n": "8/125",
-  "basket_misses_n": 7,
+  "basket_misses_n": 8,
   "basket_scored_n": 49
  },
  "top63_excluder_hist": {
@@ -61,8 +61,8 @@
  "runner_sector_hist": {
   "Health Care": 41,
   "Information Technology": 31,
-  "Consumer Discretionary": 28,
-  "Industrials": 21,
+  "Consumer Discretionary": 27,
+  "Industrials": 22,
   "Financials": 9,
   "Consumer Staples": 5,
   "Energy": 5,
@@ -128,15 +128,60 @@
  "themes": {
   "basis": "subsector_rotation.emerging_score",
   "days_since_top5_entry_basis": null,
-  "rotation_asof": "2026-08-10",
-  "standouts_asof": "2026-08-10",
+  "rotation_asof": "2026-08-12",
+  "standouts_asof": "2026-08-12",
   "available": true,
   "themes": [
    {
     "rank": 1,
+    "theme": "Space Tech",
+    "emerging_score": 4.593,
+    "n_members": 21,
+    "present_counts": {
+     "buy": 2,
+     "ran": 0,
+     "leaders": 0
+    },
+    "present": {
+     "buy": [
+      "ASTS",
+      "BKSY"
+     ],
+     "ran": [],
+     "leaders": []
+    },
+    "represented_n": 2,
+    "days_since_top5_entry": null
+   },
+   {
+    "rank": 2,
     "theme": "Commodities Metals",
-    "emerging_score": 6.129,
+    "emerging_score": 4.267,
     "n_members": 39,
+    "present_counts": {
+     "buy": 5,
+     "ran": 0,
+     "leaders": 0
+    },
+    "present": {
+     "buy": [
+      "ALB",
+      "MP",
+      "SGML",
+      "STLD",
+      "UUUU"
+     ],
+     "ran": [],
+     "leaders": []
+    },
+    "represented_n": 5,
+    "days_since_top5_entry": null
+   },
+   {
+    "rank": 3,
+    "theme": "Commodities Energy",
+    "emerging_score": 2.353,
+    "n_members": 32,
     "present_counts": {
      "buy": 6,
      "ran": 0,
@@ -144,11 +189,11 @@
     },
     "present": {
      "buy": [
-      "ALB",
-      "CENX",
-      "MP",
-      "SGML",
-      "STLD",
+      "DAR",
+      "FANG",
+      "SMR",
+      "UEC",
+      "URG",
       "UUUU"
      ],
      "ran": [],
@@ -158,29 +203,36 @@
     "days_since_top5_entry": null
    },
    {
-    "rank": 2,
-    "theme": "Space Tech",
-    "emerging_score": 3.918,
-    "n_members": 21,
+    "rank": 4,
+    "theme": "Energy Traditional",
+    "emerging_score": 1.853,
+    "n_members": 47,
     "present_counts": {
-     "buy": 1,
+     "buy": 8,
      "ran": 0,
      "leaders": 0
     },
     "present": {
      "buy": [
-      "BKSY"
+      "AMR",
+      "FANG",
+      "FTI",
+      "HCC",
+      "OKLO",
+      "PTEN",
+      "SMR",
+      "UEC"
      ],
      "ran": [],
      "leaders": []
     },
-    "represented_n": 1,
+    "represented_n": 8,
     "days_since_top5_entry": null
    },
    {
-    "rank": 3,
+    "rank": 5,
     "theme": "Agriculture & FoodTech",
-    "emerging_score": 1.517,
+    "emerging_score": 1.844,
     "n_members": 32,
     "present_counts": {
      "buy": 1,
@@ -196,58 +248,6 @@
     },
     "represented_n": 1,
     "days_since_top5_entry": null
-   },
-   {
-    "rank": 4,
-    "theme": "Software",
-    "emerging_score": 1.374,
-    "n_members": 61,
-    "present_counts": {
-     "buy": 3,
-     "ran": 2,
-     "leaders": 5
-    },
-    "present": {
-     "buy": [
-      "NTES",
-      "ORCL",
-      "QLYS"
-     ],
-     "ran": [
-      "MDB",
-      "S"
-     ],
-     "leaders": [
-      "CRWD",
-      "NET",
-      "OKTA",
-      "PANW",
-      "SNOW"
-     ]
-    },
-    "represented_n": 10,
-    "days_since_top5_entry": null
-   },
-   {
-    "rank": 5,
-    "theme": "Defense & Aerospace",
-    "emerging_score": 1.241,
-    "n_members": 27,
-    "present_counts": {
-     "buy": 2,
-     "ran": 0,
-     "leaders": 0
-    },
-    "present": {
-     "buy": [
-      "BKSY",
-      "MP"
-     ],
-     "ran": [],
-     "leaders": []
-    },
-    "represented_n": 2,
-    "days_since_top5_entry": null
    }
   ]
  },
@@ -256,7 +256,7 @@
   "authority": "none — measurement only; no rank/gate/size/membership consumer",
   "available": true,
   "as_of": "2026-08-12",
-  "standouts_asof": "2026-08-10",
+  "standouts_asof": "2026-08-12",
   "basis": "equal-weight member returns over data/baskets/ohlcv with point-in-time dated membership (engine.baskets._ew_level construction); the 10d return ranked inside the basket's OWN trailing 252-session history of the same measure. Overlapping windows — the percentile is a description, not a test.",
   "miss_rule": "pctile >= 0.9 AND zero live members on any of ['buy', 'watch', 'leaders', 'ran'] (featured is a flag inside buy)",
   "lanes": [
@@ -267,9 +267,9 @@
   ],
   "n_baskets": 49,
   "n_scored": 49,
-  "n_misses": 7,
+  "n_misses": 8,
   "n_top_decile": 24,
-  "n_unrepresented": 15,
+  "n_unrepresented": 13,
   "misses": [
    {
     "basket_id": "gold_miners",
@@ -316,13 +316,13 @@
     "ew_10d": 0.298782
    },
    {
-    "basket_id": "defense",
-    "name": "Defense & Aerospace",
-    "category": "Industrials & Defense",
+    "basket_id": "robotics_automation",
+    "name": "Robotics & Automation",
+    "category": "Industrials",
     "as_of": "2026-08-12",
-    "n_members": 22,
-    "n_members_live": 21,
-    "n_members_read": 22,
+    "n_members": 12,
+    "n_members_live": 12,
+    "n_members_read": 12,
     "n_members_on_board": 0,
     "members_on_board": [],
     "present_counts": {
@@ -331,11 +331,11 @@
      "leaders": 0,
      "ran": 0
     },
-    "pctile": 0.9782,
+    "pctile": 0.9742,
     "pctile_n": 252,
     "miss": true,
-    "ew_5d": 0.031196,
-    "ew_10d": 0.12694
+    "ew_5d": 0.005987,
+    "ew_10d": 0.117972
    },
    {
     "basket_id": "pgm_miners",
@@ -356,8 +356,8 @@
     "pctile": 0.9623,
     "pctile_n": 252,
     "miss": true,
-    "ew_5d": 0.065975,
-    "ew_10d": 0.256929
+    "ew_5d": 0.065058,
+    "ew_10d": 0.255848
    },
    {
     "basket_id": "reshoring",
@@ -379,7 +379,7 @@
     "pctile_n": 252,
     "miss": true,
     "ew_5d": 0.001486,
-    "ew_10d": 0.081489
+    "ew_10d": 0.081491
    },
    {
     "basket_id": "quantum_computing",
@@ -397,20 +397,20 @@
      "leaders": 0,
      "ran": 0
     },
-    "pctile": 0.9345,
+    "pctile": 0.9504,
     "pctile_n": 252,
     "miss": true,
-    "ew_5d": 0.029054,
-    "ew_10d": 0.219279
+    "ew_5d": 0.049626,
+    "ew_10d": 0.243653
    },
    {
-    "basket_id": "ai_neoclouds",
-    "name": "AI Neoclouds & HPC Hosting",
-    "category": "Artificial Intelligence",
+    "basket_id": "mag7",
+    "name": "Magnificent Seven",
+    "category": "AI & Technology",
     "as_of": "2026-08-12",
-    "n_members": 13,
-    "n_members_live": 10,
-    "n_members_read": 13,
+    "n_members": 7,
+    "n_members_live": 7,
+    "n_members_read": 7,
     "n_members_on_board": 0,
     "members_on_board": [],
     "present_counts": {
@@ -419,11 +419,33 @@
      "leaders": 0,
      "ran": 0
     },
-    "pctile": 0.9147,
+    "pctile": 0.9464,
     "pctile_n": 252,
     "miss": true,
-    "ew_5d": 0.015891,
-    "ew_10d": 0.267287
+    "ew_5d": -0.009073,
+    "ew_10d": 0.087544
+   },
+   {
+    "basket_id": "non_ai_tech",
+    "name": "Non-AI Tech & Hardware",
+    "category": "Semiconductors & Hardware",
+    "as_of": "2026-08-12",
+    "n_members": 14,
+    "n_members_live": 13,
+    "n_members_read": 14,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.9425,
+    "pctile_n": 252,
+    "miss": true,
+    "ew_5d": 0.031278,
+    "ew_10d": 0.125218
    }
   ],
   "baskets": [
@@ -457,12 +479,13 @@
     "n_members": 15,
     "n_members_live": 15,
     "n_members_read": 15,
-    "n_members_on_board": 1,
+    "n_members_on_board": 2,
     "members_on_board": [
+     "ASTS",
      "BKSY"
     ],
     "present_counts": {
-     "buy": 1,
+     "buy": 2,
      "watch": 0,
      "leaders": 0,
      "ran": 0
@@ -481,14 +504,15 @@
     "n_members": 24,
     "n_members_live": 24,
     "n_members_read": 24,
-    "n_members_on_board": 3,
+    "n_members_on_board": 4,
     "members_on_board": [
      "ANET",
-     "APH",
-     "TER"
+     "CIEN",
+     "CRWV",
+     "MPWR"
     ],
     "present_counts": {
-     "buy": 1,
+     "buy": 2,
      "watch": 1,
      "leaders": 0,
      "ran": 1
@@ -507,13 +531,12 @@
     "n_members": 8,
     "n_members_live": 8,
     "n_members_read": 8,
-    "n_members_on_board": 2,
+    "n_members_on_board": 1,
     "members_on_board": [
-     "AEIS",
      "POWL"
     ],
     "present_counts": {
-     "buy": 1,
+     "buy": 0,
      "watch": 1,
      "leaders": 0,
      "ran": 0
@@ -556,7 +579,7 @@
     "n_members_read": 16,
     "n_members_on_board": 2,
     "members_on_board": [
-     "AEIS",
+     "ENTG",
      "KLIC"
     ],
     "present_counts": {
@@ -579,22 +602,21 @@
     "n_members": 74,
     "n_members_live": 74,
     "n_members_read": 74,
-    "n_members_on_board": 9,
+    "n_members_on_board": 8,
     "members_on_board": [
      "ANET",
-     "APH",
-     "CRWD",
-     "FSLR",
-     "NXPI",
+     "CIEN",
+     "KEYS",
+     "MPWR",
      "ORCL",
      "PANW",
      "SNDK",
-     "TER"
+     "SNPS"
     ],
     "present_counts": {
      "buy": 4,
      "watch": 2,
-     "leaders": 2,
+     "leaders": 1,
      "ran": 1
     },
     "pctile": 0.9821,
@@ -611,17 +633,20 @@
     "n_members": 22,
     "n_members_live": 21,
     "n_members_read": 22,
-    "n_members_on_board": 0,
-    "members_on_board": [],
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "ASTS",
+     "HEI"
+    ],
     "present_counts": {
-     "buy": 0,
+     "buy": 2,
      "watch": 0,
      "leaders": 0,
      "ran": 0
     },
     "pctile": 0.9782,
     "pctile_n": 252,
-    "miss": true,
+    "miss": false,
     "ew_5d": 0.031196,
     "ew_10d": 0.12694
    },
@@ -633,20 +658,17 @@
     "n_members": 12,
     "n_members_live": 12,
     "n_members_read": 12,
-    "n_members_on_board": 2,
-    "members_on_board": [
-     "NOVT",
-     "TER"
-    ],
+    "n_members_on_board": 0,
+    "members_on_board": [],
     "present_counts": {
-     "buy": 1,
-     "watch": 1,
+     "buy": 0,
+     "watch": 0,
      "leaders": 0,
      "ran": 0
     },
     "pctile": 0.9742,
     "pctile_n": 252,
-    "miss": false,
+    "miss": true,
     "ew_5d": 0.005987,
     "ew_10d": 0.117972
    },
@@ -658,20 +680,18 @@
     "n_members": 12,
     "n_members_live": 10,
     "n_members_read": 12,
-    "n_members_on_board": 7,
+    "n_members_on_board": 5,
     "members_on_board": [
-     "CRWD",
      "NET",
      "OKTA",
      "PANW",
      "QLYS",
-     "RBRK",
      "S"
     ],
     "present_counts": {
-     "buy": 2,
+     "buy": 1,
      "watch": 0,
-     "leaders": 4,
+     "leaders": 3,
      "ran": 1
     },
     "pctile": 0.9702,
@@ -726,8 +746,8 @@
     "pctile": 0.9623,
     "pctile_n": 252,
     "miss": true,
-    "ew_5d": 0.065975,
-    "ew_10d": 0.256929
+    "ew_5d": 0.065058,
+    "ew_10d": 0.255848
    },
    {
     "basket_id": "uranium_miners",
@@ -764,13 +784,14 @@
     "n_members": 12,
     "n_members_live": 12,
     "n_members_read": 12,
-    "n_members_on_board": 1,
+    "n_members_on_board": 2,
     "members_on_board": [
-     "ANET"
+     "ANET",
+     "MPWR"
     ],
     "present_counts": {
      "buy": 0,
-     "watch": 0,
+     "watch": 1,
      "leaders": 0,
      "ran": 1
     },
@@ -800,7 +821,7 @@
     "pctile_n": 252,
     "miss": true,
     "ew_5d": 0.001486,
-    "ew_10d": 0.081489
+    "ew_10d": 0.081491
    },
    {
     "basket_id": "nuclear_power",
@@ -828,55 +849,6 @@
     "ew_10d": 0.141391
    },
    {
-    "basket_id": "mag7",
-    "name": "Magnificent Seven",
-    "category": "AI & Technology",
-    "as_of": "2026-08-12",
-    "n_members": 7,
-    "n_members_live": 7,
-    "n_members_read": 7,
-    "n_members_on_board": 1,
-    "members_on_board": [
-     "META"
-    ],
-    "present_counts": {
-     "buy": 1,
-     "watch": 0,
-     "leaders": 0,
-     "ran": 0
-    },
-    "pctile": 0.9464,
-    "pctile_n": 252,
-    "miss": false,
-    "ew_5d": -0.009073,
-    "ew_10d": 0.087544
-   },
-   {
-    "basket_id": "non_ai_tech",
-    "name": "Non-AI Tech & Hardware",
-    "category": "Semiconductors & Hardware",
-    "as_of": "2026-08-12",
-    "n_members": 14,
-    "n_members_live": 13,
-    "n_members_read": 14,
-    "n_members_on_board": 2,
-    "members_on_board": [
-     "APH",
-     "NXPI"
-    ],
-    "present_counts": {
-     "buy": 2,
-     "watch": 0,
-     "leaders": 0,
-     "ran": 0
-    },
-    "pctile": 0.9425,
-    "pctile_n": 252,
-    "miss": false,
-    "ew_5d": 0.031278,
-    "ew_10d": 0.125218
-   },
-   {
     "basket_id": "quantum_computing",
     "name": "Quantum Computing",
     "category": "AI & Technology",
@@ -892,11 +864,55 @@
      "leaders": 0,
      "ran": 0
     },
-    "pctile": 0.9345,
+    "pctile": 0.9504,
     "pctile_n": 252,
     "miss": true,
-    "ew_5d": 0.029054,
-    "ew_10d": 0.219279
+    "ew_5d": 0.049626,
+    "ew_10d": 0.243653
+   },
+   {
+    "basket_id": "mag7",
+    "name": "Magnificent Seven",
+    "category": "AI & Technology",
+    "as_of": "2026-08-12",
+    "n_members": 7,
+    "n_members_live": 7,
+    "n_members_read": 7,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.9464,
+    "pctile_n": 252,
+    "miss": true,
+    "ew_5d": -0.009073,
+    "ew_10d": 0.087544
+   },
+   {
+    "basket_id": "non_ai_tech",
+    "name": "Non-AI Tech & Hardware",
+    "category": "Semiconductors & Hardware",
+    "as_of": "2026-08-12",
+    "n_members": 14,
+    "n_members_live": 13,
+    "n_members_read": 14,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.9425,
+    "pctile_n": 252,
+    "miss": true,
+    "ew_5d": 0.031278,
+    "ew_10d": 0.125218
    },
    {
     "basket_id": "ai_agents",
@@ -957,17 +973,20 @@
     "n_members": 13,
     "n_members_live": 10,
     "n_members_read": 13,
-    "n_members_on_board": 0,
-    "members_on_board": [],
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "CRWV",
+     "IREN"
+    ],
     "present_counts": {
-     "buy": 0,
+     "buy": 2,
      "watch": 0,
      "leaders": 0,
      "ran": 0
     },
     "pctile": 0.9147,
     "pctile_n": 252,
-    "miss": true,
+    "miss": false,
     "ew_5d": 0.015891,
     "ew_10d": 0.267287
    },
@@ -979,7 +998,7 @@
     "n_members": 80,
     "n_members_live": 80,
     "n_members_read": 80,
-    "n_members_on_board": 8,
+    "n_members_on_board": 7,
     "members_on_board": [
      "CHRW",
      "CMI",
@@ -987,14 +1006,13 @@
      "FDX",
      "FIX",
      "GWW",
-     "JBHT",
-     "UBER"
+     "JBHT"
     ],
     "present_counts": {
      "buy": 1,
      "watch": 6,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.9107,
     "pctile_n": 252,
@@ -1010,19 +1028,17 @@
     "n_members": 17,
     "n_members_live": 17,
     "n_members_read": 17,
-    "n_members_on_board": 6,
+    "n_members_on_board": 4,
     "members_on_board": [
-     "CRWD",
-     "META",
      "NET",
      "ORCL",
      "PANW",
      "SNOW"
     ],
     "present_counts": {
-     "buy": 2,
+     "buy": 1,
      "watch": 0,
-     "leaders": 4,
+     "leaders": 3,
      "ran": 0
     },
     "pctile": 0.9067,
@@ -1039,15 +1055,16 @@
     "n_members": 14,
     "n_members_live": 14,
     "n_members_read": 14,
-    "n_members_on_board": 2,
+    "n_members_on_board": 3,
     "members_on_board": [
+     "GTLB",
      "MDB",
      "SNOW"
     ],
     "present_counts": {
      "buy": 0,
      "watch": 0,
-     "leaders": 1,
+     "leaders": 2,
      "ran": 1
     },
     "pctile": 0.8591,
@@ -1064,13 +1081,14 @@
     "n_members": 12,
     "n_members_live": 12,
     "n_members_read": 12,
-    "n_members_on_board": 1,
+    "n_members_on_board": 2,
     "members_on_board": [
-     "GWW"
+     "GWW",
+     "MSM"
     ],
     "present_counts": {
      "buy": 0,
-     "watch": 1,
+     "watch": 2,
      "leaders": 0,
      "ran": 0
     },
@@ -1078,7 +1096,7 @@
     "pctile_n": 252,
     "miss": false,
     "ew_5d": -0.024151,
-    "ew_10d": 0.0351
+    "ew_10d": 0.035101
    },
    {
     "basket_id": "memory_storage",
@@ -1116,7 +1134,7 @@
     "members_on_board": [
      "ABBV",
      "BIIB",
-     "VRTX"
+     "MRK"
     ],
     "present_counts": {
      "buy": 2,
@@ -1144,7 +1162,7 @@
      "BIIB",
      "DHR",
      "EW",
-     "VRTX"
+     "MRK"
     ],
     "present_counts": {
      "buy": 4,
@@ -1155,8 +1173,8 @@
     "pctile": 0.7163,
     "pctile_n": 252,
     "miss": false,
-    "ew_5d": 0.024732,
-    "ew_10d": 0.027227
+    "ew_5d": 0.024733,
+    "ew_10d": 0.027228
    },
    {
     "basket_id": "crypto_rails",
@@ -1190,15 +1208,14 @@
     "n_members": 23,
     "n_members_live": 23,
     "n_members_read": 23,
-    "n_members_on_board": 4,
+    "n_members_on_board": 3,
     "members_on_board": [
-     "META",
      "PSKY",
      "TKO",
      "WBD"
     ],
     "present_counts": {
-     "buy": 4,
+     "buy": 3,
      "watch": 0,
      "leaders": 0,
      "ran": 0
@@ -1219,7 +1236,7 @@
     "n_members_read": 22,
     "n_members_on_board": 1,
     "members_on_board": [
-     "LNG"
+     "FANG"
     ],
     "present_counts": {
      "buy": 1,
@@ -1241,19 +1258,21 @@
     "n_members": 20,
     "n_members_live": 20,
     "n_members_read": 20,
-    "n_members_on_board": 0,
-    "members_on_board": [],
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "COLB"
+    ],
     "present_counts": {
-     "buy": 0,
+     "buy": 1,
      "watch": 0,
      "leaders": 0,
      "ran": 0
     },
-    "pctile": 0.6766,
+    "pctile": 0.6687,
     "pctile_n": 252,
     "miss": false,
     "ew_5d": 0.006264,
-    "ew_10d": 0.029624
+    "ew_10d": 0.02931
    },
    {
     "basket_id": "housing",
@@ -1285,10 +1304,12 @@
     "n_members": 21,
     "n_members_live": 21,
     "n_members_read": 21,
-    "n_members_on_board": 0,
-    "members_on_board": [],
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "FANG"
+    ],
     "present_counts": {
-     "buy": 0,
+     "buy": 1,
      "watch": 0,
      "leaders": 0,
      "ran": 0
@@ -1380,15 +1401,17 @@
     "n_members": 76,
     "n_members_live": 76,
     "n_members_read": 76,
-    "n_members_on_board": 3,
+    "n_members_on_board": 5,
     "members_on_board": [
+     "BNY",
      "GS",
      "HOOD",
-     "IBKR"
+     "IBKR",
+     "IVZ"
     ],
     "present_counts": {
-     "buy": 2,
-     "watch": 1,
+     "buy": 3,
+     "watch": 2,
      "leaders": 0,
      "ran": 0
     },
@@ -1396,7 +1419,7 @@
     "pctile_n": 252,
     "miss": false,
     "ew_5d": -0.002898,
-    "ew_10d": 0.009689
+    "ew_10d": 0.009648
    },
    {
     "basket_id": "payments_fintech",
@@ -1431,15 +1454,17 @@
     "n_members": 47,
     "n_members_live": 47,
     "n_members_read": 47,
-    "n_members_on_board": 3,
+    "n_members_on_board": 5,
     "members_on_board": [
+     "BBY",
+     "HLT",
      "RL",
      "ROST",
      "TJX"
     ],
     "present_counts": {
-     "buy": 0,
-     "watch": 3,
+     "buy": 1,
+     "watch": 4,
      "leaders": 0,
      "ran": 0
     },
@@ -1457,22 +1482,23 @@
     "n_members": 21,
     "n_members_live": 21,
     "n_members_read": 21,
-    "n_members_on_board": 2,
+    "n_members_on_board": 3,
     "members_on_board": [
+     "BBY",
      "ROST",
      "TJX"
     ],
     "present_counts": {
      "buy": 0,
-     "watch": 2,
+     "watch": 3,
      "leaders": 0,
      "ran": 0
     },
     "pctile": 0.4782,
     "pctile_n": 252,
     "miss": false,
-    "ew_5d": -0.003204,
-    "ew_10d": 0.003039
+    "ew_5d": -0.003202,
+    "ew_10d": 0.003041
    },
    {
     "basket_id": "travel",
@@ -1482,10 +1508,13 @@
     "n_members": 24,
     "n_members_live": 24,
     "n_members_read": 24,
-    "n_members_on_board": 0,
-    "members_on_board": [],
+    "n_members_on_board": 2,
+    "members_on_board": [
+     "H",
+     "HLT"
+    ],
     "present_counts": {
-     "buy": 0,
+     "buy": 2,
      "watch": 0,
      "leaders": 0,
      "ran": 0
@@ -1616,16 +1645,15 @@
     "n_members": 35,
     "n_members_live": 35,
     "n_members_read": 35,
-    "n_members_on_board": 3,
+    "n_members_on_board": 2,
     "members_on_board": [
      "CL",
-     "MNST",
      "STZ"
     ],
     "present_counts": {
      "buy": 1,
      "watch": 1,
-     "leaders": 1,
+     "leaders": 0,
      "ran": 0
     },
     "pctile": 0.0734,
@@ -1661,36 +1689,36 @@
   "by_horizon": {
    "21d": {
     "horizon_d": 21,
-    "n_graded": 3205,
-    "rank_ic": -0.1151,
+    "n_graded": 3186,
+    "rank_ic": -0.1098,
     "n_ic_dates": 14,
     "ic_cross_section": {
-     "min": 210,
+     "min": 205,
      "median": 235,
      "max": 236
     },
-    "buy_tier_hit_rate": 0.515,
-    "buy_tier_n": 542,
+    "buy_tier_hit_rate": 0.52,
+    "buy_tier_n": 533,
     "by_tier": {
      "no_setup": {
-      "n": 1714,
+      "n": 1713,
       "mean_fwd": 0.0231,
-      "pos_rate": 0.589
+      "pos_rate": 0.587
      },
      "primed": {
       "n": 76,
-      "mean_fwd": -0.013,
+      "mean_fwd": -0.0124,
       "pos_rate": 0.487
      },
      "setting_up": {
-      "n": 466,
-      "mean_fwd": 0.0038,
-      "pos_rate": 0.519
+      "n": 457,
+      "mean_fwd": 0.0061,
+      "pos_rate": 0.525
      },
      "watch": {
-      "n": 949,
-      "mean_fwd": 0.0089,
-      "pos_rate": 0.514
+      "n": 940,
+      "mean_fwd": 0.0087,
+      "pos_rate": 0.513
      }
     },
     "precision_at_k": {
@@ -1699,37 +1727,37 @@
      "n_dates_eligible": 14,
      "n_dates_excluded_thin": 0,
      "cross_section": {
-      "min": 210,
+      "min": 205,
       "median": 235,
       "max": 236
      },
      "by_k": {
       "p_at_1": {
-       "value": 0.214,
-       "lift_vs_base": -0.285,
+       "value": 0.143,
+       "lift_vs_base": -0.356,
        "n_dates": 14,
        "n_picks": 14
       },
       "p_at_3": {
-       "value": 0.381,
-       "lift_vs_base": -0.118,
+       "value": 0.357,
+       "lift_vs_base": -0.141,
        "n_dates": 14,
        "n_picks": 42
       },
       "p_at_5": {
-       "value": 0.471,
-       "lift_vs_base": -0.028,
+       "value": 0.457,
+       "lift_vs_base": -0.041,
        "n_dates": 14,
        "n_picks": 70
       },
       "p_at_10": {
-       "value": 0.471,
-       "lift_vs_base": -0.028,
+       "value": 0.457,
+       "lift_vs_base": -0.041,
        "n_dates": 14,
        "n_picks": 140
       }
      },
-     "base_rate": 0.499
+     "base_rate": 0.498
     },
     "thin": false
    },
@@ -1749,17 +1777,17 @@
  },
  "scan_tier": {
   "available": true,
-  "asof": "2026-08-11",
+  "asof": "2026-08-12",
   "null_reason": null,
   "floor_rule": "still trading (last bar = store's last bar) AND >= 159 bars AND close >= $3 AND median(close x volume) over the last 20 bars >= $5M",
-  "store_n": 20782,
+  "store_n": 20794,
   "scan_n": 1508,
   "runners_n": 150,
-  "runners_eligible_today_n": 13,
-  "runners_never_eligible_n": 28,
+  "runners_eligible_today_n": 17,
+  "runners_never_eligible_n": 29,
   "excluder_family_hist": {
-   "not_topped_veto": 130,
-   "ELIGIBLE": 13,
+   "not_topped_veto": 126,
+   "ELIGIBLE": 17,
    "freshness_expired": 4,
    "rsi_cap_on_fresh_cross": 2,
    "no_cross": 1
@@ -4049,10 +4077,10 @@
    "rsi_block": false,
    "k3": 100.0,
    "d3": 100.0,
-   "rsi3d": 63.9,
+   "rsi3d": 64.0,
    "t1_ticks": 16,
-   "t2_ticks": 26,
-   "t2raw_ticks": 26,
+   "t2_ticks": 27,
+   "t2raw_ticks": 27,
    "recent3": false,
    "veto_legs": [
     "stoch_ob"
@@ -4848,6 +4876,39 @@
    "t1_ticks": 18,
    "t2_ticks": 42,
    "t2raw_ticks": 27,
+   "recent3": true,
+   "veto_legs": [
+    "stoch_ob",
+    "stoch_bear"
+   ],
+   "excluder": "not_topped_veto(stoch_ob+stoch_bear)",
+   "excluder_family": "not_topped_veto",
+   "gate_eligible": false,
+   "gate_tier": null,
+   "gate_near_miss": null
+  },
+  {
+   "ticker": "HNI",
+   "r63_pct": 57.3,
+   "sector": "Industrials",
+   "eligible_today": false,
+   "tier_today": NaN,
+   "days_eligible": 6,
+   "first_eligible": "2026-06-08",
+   "fwd_ret_from_first_pct": 56.97,
+   "tiers_seen": [
+    "T1"
+   ],
+   "stoch_ob": true,
+   "stoch_bear": true,
+   "macd_bear": false,
+   "rsi_block": true,
+   "k3": 98.3,
+   "d3": 99.4,
+   "rsi3d": 72.5,
+   "t1_ticks": 15,
+   "t2_ticks": 43,
+   "t2raw_ticks": 26,
    "recent3": true,
    "veto_legs": [
     "stoch_ob",
@@ -6383,11 +6444,11 @@
    "rsi_block": false,
    "k3": 100.0,
    "d3": 100.0,
-   "rsi3d": 51.0,
+   "rsi3d": 50.9,
    "t1_ticks": 10,
-   "t2_ticks": 22,
-   "t2raw_ticks": 22,
-   "recent3": false,
+   "t2_ticks": 21,
+   "t2raw_ticks": 21,
+   "recent3": true,
    "veto_legs": [
     "stoch_ob"
    ],
@@ -8373,39 +8434,6 @@
    "gate_eligible": false,
    "gate_tier": null,
    "gate_near_miss": null
-  },
-  {
-   "ticker": "SBH",
-   "r63_pct": 32.6,
-   "sector": "Consumer Discretionary",
-   "eligible_today": false,
-   "tier_today": NaN,
-   "days_eligible": 12,
-   "first_eligible": "2026-05-29",
-   "fwd_ret_from_first_pct": 24.77,
-   "tiers_seen": [
-    "T1"
-   ],
-   "stoch_ob": true,
-   "stoch_bear": true,
-   "macd_bear": false,
-   "rsi_block": true,
-   "k3": 96.1,
-   "d3": 98.7,
-   "rsi3d": 65.2,
-   "t1_ticks": 15,
-   "t2_ticks": 23,
-   "t2raw_ticks": 23,
-   "recent3": true,
-   "veto_legs": [
-    "stoch_ob",
-    "stoch_bear"
-   ],
-   "excluder": "not_topped_veto(stoch_ob+stoch_bear)",
-   "excluder_family": "not_topped_veto",
-   "gate_eligible": false,
-   "gate_tier": null,
-   "gate_near_miss": null
   }
  ],
  "top21_runners": [
@@ -8427,10 +8455,10 @@
    "rsi_block": false,
    "k3": 100.0,
    "d3": 100.0,
-   "rsi3d": 63.9,
+   "rsi3d": 64.0,
    "t1_ticks": 16,
-   "t2_ticks": 26,
-   "t2raw_ticks": 26,
+   "t2_ticks": 27,
+   "t2raw_ticks": 27,
    "recent3": false,
    "veto_legs": [
     "stoch_ob"
@@ -8486,11 +8514,11 @@
    "rsi_block": false,
    "k3": 100.0,
    "d3": 100.0,
-   "rsi3d": 51.0,
+   "rsi3d": 50.9,
    "t1_ticks": 10,
-   "t2_ticks": 22,
-   "t2raw_ticks": 22,
-   "recent3": false,
+   "t2_ticks": 21,
+   "t2raw_ticks": 21,
+   "recent3": true,
    "veto_legs": [
     "stoch_ob"
    ],

@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-13T02:01:00.082129+00:00",
+  "generated_at": "2026-08-13T09:03:22.584461+00:00",
   "families": {
     "narrative_source_call": {
       "n_claims": 331,
-      "n_resolved": 303,
+      "n_resolved": 308,
       "hit_rate": null,
       "accruing": true,
       "state": "ACCRUING"
@@ -22,7 +22,7 @@
     }
   },
   "source_registry_n": 2,
-  "source_registry_total_calls": 598,
+  "source_registry_total_calls": 871,
   "authority": {
     "tier": "display",
     "may_rank": false,
