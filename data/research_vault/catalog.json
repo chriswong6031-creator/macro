@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T06:10:49.387200+00:00",
-  "count": 1041,
+  "generated_at": "2026-08-13T06:25:50.653020+00:00",
+  "count": 1042,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -571,6 +571,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uzombec6qyb-f2d04b",
+      "title": "EM in Focus The IMF’s External Sector Report — Global Imbalances Continue to Rise",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:38:05Z",
+      "summary_points": [
+        "**Global Imbalances Widening**: IMF reports external imbalances at +3.7% of GDP (2024-2025), driven by China’s $300bn surplus (largest 25-year increase) and deficits in Turkey/Canada/UK; US deficit declined modestly.",
+        "**Mispricing Risk in Key Markets**: Goldman Sachs and IMF identify Mainland China, Korea, Taiwan, Singapore, Sweden, Netherlands, Germany, Japan as \"too positive\" (overvalued external balances), while US, UK, Turkey, Brazil are \"too negative\" (undervalued), signaling portfolio mispricing.",
+        "**Systemic Surplus Risks**: Persistent surpluses (China, DM creditors) depress global real rates, drive riskier asset allocation, and widen current account imbalances by ~0.5% of GDP medium-term, heightening systemic vulnerability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
