@@ -3,7 +3,6 @@
    render from the SAME source as this page — the tier-preview split's one-source
    rule (docs/TIER_PREVIEW_PATTERN.md §checklist-1). Call sites are unchanged. #}
 {% from "_etf_macros.html.j2" import t, b, help, logo, spark, stance, breadth, presbar, hero_verdict, hero_tiles %}
-{% from "_icons.html.j2" import icon %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,7 +22,7 @@
    printing 0 or 1 when the coverage directory is empty. #}
 {% set seo_title = "Which Stocks Fund Managers Are Buying — MastermindX" %}{% set seo_n_funds = (coverage | selectattr('n_snapshots') | list | length) if coverage else 0 %}{% set seo_desc = ("Track which stocks " ~ seo_n_funds ~ " thematic and active ETFs are accumulating" if seo_n_funds > 1 else "Track which stocks thematic and active ETFs are accumulating") ~ " — cross-fund consensus, brand-new positions and the sector rotation backdrop, updated each filing cycle." %}{% set seo_path = "etfs.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
 /* ═══ tokens: layered on theme.css (dark default) — components inherit light/dark ═══ */
@@ -82,7 +81,7 @@ html[data-theme="light"][data-lang="zh"]{--lift:#c65b6e;--drag:#2f9270}
 body{margin:0;padding:18px 0 0;background:var(--bg);color:var(--text);
   font-family:var(--font-ui),Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 64px}
-a{color:var(--link);text-decoration:none}
+a{color:var(--ink-link, var(--link));text-decoration:none}
 .faint{color:var(--faint)}.muted{color:var(--muted)}
 .pos{color:var(--lift)}.neg{color:var(--drag)}
 /* ── the page's type scale ────────────────────────────────────────────────
@@ -230,8 +229,10 @@ a{color:var(--link);text-decoration:none}
 .mini.exit{background:color-mix(in srgb,var(--drag) 15%,var(--card));color:var(--drag)}
 /* disagreement is a FACT about the fund count, so it sits with the dots and is
    outlined rather than filled — it must not shout louder than the stance */
-.mini.split{color:var(--amber);border:1px solid color-mix(in srgb,var(--amber) 34%,var(--grid));font-weight:700}
+.mini.split{color:var(--ink-warn, var(--amber));border:1px solid color-mix(in srgb,var(--ink-warn, var(--amber)) 34%,var(--grid));font-weight:700}
 .mini.old{color:var(--muted);border:1px solid var(--grid);font-weight:700;cursor:help}
+.mini.contested{background:color-mix(in srgb,var(--amber) 16%,var(--card));color:var(--ink-warn, var(--amber))}
+.mini.active{background:color-mix(in srgb,var(--ch-a) 15%,var(--card));color:var(--ch-a)}
 /* the whose-conviction hover popover */
 .cb-who{position:relative;display:inline-flex}
 .cb-who .who-src{font-size:11px;color:var(--muted);cursor:help;border-bottom:1px dashed var(--grid)}
@@ -454,7 +455,7 @@ a{color:var(--link);text-decoration:none}
   font-size:12.5px;line-height:1.5;color:var(--muted);
   background:color-mix(in srgb,#8b5cf6 7%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent)}
 .gate-note svg{width:14px;height:14px;flex:none;margin-top:2px;color:#8b5cf6}
-.gate-note a{color:var(--link)}
+.gate-note a{color:var(--ink-link, var(--link))}
 /* the page's ONE tier wall, at "Every add, by fund" — after the free backdrop */
 .tier-wall{position:relative;margin:6px 0 4px;isolation:isolate}
 .tw-ghosts{display:flex;flex-direction:column;gap:10px;padding-top:4px}
@@ -477,7 +478,7 @@ a{color:var(--link);text-decoration:none}
 .tw-btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px -10px color-mix(in srgb,#8b5cf6 80%,transparent)}
 .tw-note{font-size:11px;color:var(--faint)}
 .tw-signed{margin-top:12px;font-size:12px}
-.tw-signed a{color:var(--link);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
+.tw-signed a{color:var(--ink-link, var(--link));text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
 @media(max-width:900px){
   /* Below the ghost stack's usable width the absolute card overlaps the lede
      above it; drop the ghosts and let the card flow. */
@@ -512,7 +513,6 @@ a{color:var(--link);text-decoration:none}
 {# ═══════════════ HERO ═══════════════ #}
   <header class="eh">
     <div class="eh-brand">
-      <span class="eh-mark">{{ icon('inflow') }}</span>
       <h1>{{ t('Real fund moves', '基金真实动作') }}</h1>
       <span class="tag">{{ t('where thematic & active managers are building conviction', '主题与主动经理人积累信念之处') }}</span>
     </div>
@@ -761,8 +761,8 @@ a{color:var(--link);text-decoration:none}
        `fund_type` is marshalled onto the coverage rows by build_etf_page; with
        it absent every non-active fund simply lands in the theme group. #}
     <details open>
-      <summary class="fl-sum"><span class="sh-ic">{{ icon('radar') }}</span>{{ t('The fleet', '基金阵容') }} <span class="sh-sub">— {{ t('every fund we read, and how current each one is', '我们读取的每一只基金，以及各自的数据新鲜度') }}</span>{{ help('The small figure after each fund is how many daily holdings reads we hold for it: a shallow history means that fund’s numbers exist but have no context yet, a deep one means a streak on that fund is meaningful. Freshness is measured against the newest fund in the fleet rather than against the clock, because sponsors publish on different calendars and a timezone would otherwise manufacture staleness. A fund with no reads at all is a broken feed, not a quiet fund.',
-      '每只基金后的小数字，是我们为其保存的每日持仓读取次数：历史越浅，说明该基金的数字虽然存在但尚无参照；历史越深，其连续动作才具备意义。新鲜度以基金阵容中最新的一只为基准衡量，而非以时钟为准——各发行商的披露日历不同，按时钟计会凭空制造出「陈旧」。完全没有读取记录的基金代表数据源中断，而不是该基金没有动作。') }}<span class="sh-caret">▸</span></summary>
+      <summary>{{ t('Coverage & freshness', '覆盖范围与新鲜度') }} <span class="sh-sub">— {{ t('every tracked fund; any stale feed surfaces here', '所有已追踪基金；任何陈旧数据源都会在此暴露') }}{% if coverage %} · {{ t('all', '共显示') }} {{ coverage | length }} {{ t('shown', '只') }}{% endif %}</span>{{ help('The small figure after each fund is how many daily holdings reads we hold for it: a shallow history means that fund’s numbers exist but have no context yet, a deep one means a streak on that fund is meaningful. Freshness is measured against the newest fund in the fleet rather than against the clock, because sponsors publish on different calendars and a timezone would otherwise manufacture staleness. A fund with no reads at all is a broken feed, not a quiet fund.',
+      '每只基金后的小数字，是我们为其保存的每日持仓读取次数：历史越浅，说明该基金的数字虽然存在但尚无参照；历史越深，其连续动作才具备意义。新鲜度以基金阵容中最新的一只为基准衡量，而非以时钟为准——各发行商的披露日历不同，按时钟计会凭空制造出「陈旧」。完全没有读取记录的基金代表数据源中断，而不是该基金没有动作。') }}<span class="sh-caret">▶</span></summary>
       <div class="sh-body">
         {% if coverage %}
         {#- `fleet_group` is marshalled by build_etf_page off the fund registry.

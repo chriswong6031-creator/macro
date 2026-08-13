@@ -9,7 +9,7 @@
 <title>Market Heatmaps — S&P 500 · Themes — Market Intelligence</title>
 {% set seo_title = "Market Heatmaps — Mastermind" %}{% set seo_desc = "S&P 500 and theme heatmaps — today's winners and losers at a glance, sized by market cap. Updated nightly." %}{% set seo_path = "sector_heatmap.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -30,7 +30,7 @@
 <div class="wrap">
   <div class="hm-head">
     <div>
-      <h1>🔥 {{ t('Market Heatmaps', '市场热力图') }}</h1>
+      <h1>{{ t('Market Heatmaps', '市场热力图') }}</h1>
       <div class="sub">{{ t('Winners and losers at a glance — <b>S&P 500</b> stocks or narrative <b>Themes</b>, shaded by the move you pick.', '涨跌一目了然 —— <b>标普500</b> 个股或叙事 <b>主题</b>，按所选周期着色。') }}<span class="hx-help" tabindex="0" aria-label="How to read this">?<span class="hx-tip">{{ t('Two institutional treemaps in our theme. <b>S&P 500</b> — every name grouped Sector → Subsector → stock, sized by market cap; hover a tile for our conviction read. <b>Themes</b> — narrative baskets grouped Theme → Subsector, coloured by each subsector\'s move; hover a subsector for its member tickers. Both shade by the move over the timeframe you pick.',
                             '两张机构级树图，采用我们的主题配色。<b>标普500</b> — 全部成份股按「板块 → 子行业 → 个股」分组，按市值定大小；悬停方块查看我们的研判。<b>主题</b> — 叙事篮子按「主题 → 子板块」分组，按各子板块涨跌幅着色；悬停子板块查看其成员个股。两者均按所选周期的涨跌幅着色。') }}</span></span></div>
     </div>

@@ -22,7 +22,7 @@
 <meta name="twitter:title" content="{{ n.title }} — {{ n.inst }}">
 <meta name="twitter:description" content="{{ meta_desc }}">
 <script type="application/ld+json">{{ jsonld_str | safe }}</script>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">

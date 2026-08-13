@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TNDM-BULL-20260624",
-  "asof": "2026-08-10",
+  "asof": "2026-08-12",
   "phase": "between_t1_t2",
   "detection_phase": "between_t1_t2",
   "management_confidence": 83.5,
@@ -11,21 +11,21 @@
   "human_state": "Advancing to T2",
   "components": {
     "validity": 100.0,
-    "progress": 84.2,
+    "progress": 87.9,
     "pace": 100.0,
     "retention": 100.0,
-    "overlay": 59.0
+    "overlay": 64.0
   },
   "geometry": {
-    "dist_to_stop_r": 3.651,
-    "dist_to_t1_r": -1.151,
-    "dist_to_t2_r": 0.349,
-    "horizon_pct_used": 57.8,
-    "p1": 1.7676,
-    "p2": 0.8838,
+    "dist_to_stop_r": 3.873,
+    "dist_to_t1_r": -1.373,
+    "dist_to_t2_r": 0.127,
+    "horizon_pct_used": 62.2,
+    "p1": 1.9155,
+    "p2": 0.9577,
     "p3": null,
-    "move_r": 2.651,
-    "mfe_r": 2.651,
+    "move_r": 2.873,
+    "mfe_r": 2.873,
     "mae_r": -0.0
   },
   "rr_ratio": 1.5,
@@ -39,12 +39,12 @@
     "recommended_action": "display \u2014 narrate, not authoritative order",
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
-  "_mfe": 7.5299994659423835,
+  "_mfe": 8.160000534057618,
   "_mae": -2.6702880795426154e-07,
-  "_max_p1": 1.7676055084371793,
+  "_max_p1": 1.9154930831121169,
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": "2026-08-06",
   "_first_t2_ts": null,
-  "days_elapsed": 26,
-  "tau": 0.5778
+  "days_elapsed": 28,
+  "tau": 0.6222
 }

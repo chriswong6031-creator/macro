@@ -10,6 +10,12 @@
   they inherit ink + theme + the zh 红涨绿跌 flip from currentColor like the rest. Their path
   data is mirrored byte-for-byte in templates/subsectors.js (`ICON_PATHS`), which draws the
   same glyphs client-side; keep the two in step.
+  droplet/stress/magnet/calendar/shield (2026-08-12) are the monoline replacements for
+  the emoji that were doing filter-chip and banner duty on the alert desk and the
+  allocation banners. Same construction rules as the rest — 24-grid, <=3 strokes at the
+  13px legibility budget, no fill except a deliberate dot, everything on currentColor so
+  ink, theme swap and the zh direction flip come free. Server-side only, so they are
+  deliberately NOT mirrored into subsectors.js.
   `sector` (2026-08-06) is the US Act-Now board's sector-fund mark, the monoline replacement
   for the classical-building emoji that row/shelf/hover-card marks used before the doctrine
   §5.8 sweep. It is drawn SERVER-SIDE only, so it is deliberately NOT mirrored
@@ -43,14 +49,12 @@
   'accel':     '<path d="M3.6 19.2c5.2-.4 11.6-3.6 16.6-13"/><polyline points="14.8,5.6 20.6,5.6 20.6,11.4"/>',
   'coil':      '<line x1="3.4" y1="6.6" x2="12.6" y2="6.6"/><line x1="5.2" y1="12" x2="12.6" y2="12"/><line x1="7" y1="17.4" x2="12.6" y2="17.4"/><line x1="17.6" y1="19.6" x2="17.6" y2="5.4"/><polyline points="14.2,8.8 17.6,5.4 21,8.8"/>',
   'sector':    '<path d="M12 3.9 21 9.2H3Z"/><line x1="7.15" y1="10.1" x2="7.15" y2="19"/><line x1="12" y1="10.1" x2="12" y2="19"/><line x1="16.85" y1="10.1" x2="16.85" y2="19"/><line x1="2.6" y1="19.9" x2="21.4" y2="19.9"/>',
-  'inflow':    '<line x1="2.8" y1="6.6" x2="11.4" y2="6.6"/><polyline points="8.9,4.1 11.4,6.6 8.9,9.1"/><line x1="2.8" y1="12" x2="15.4" y2="12"/><polyline points="12.9,9.5 15.4,12 12.9,14.5"/><line x1="2.8" y1="17.4" x2="9.4" y2="17.4"/><polyline points="6.9,14.9 9.4,17.4 6.9,19.9"/><line x1="19.6" y1="3.6" x2="19.6" y2="20.4"/>',
-  'radar':     '<circle cx="5.2" cy="18.8" r="1.5" fill="currentColor" stroke="none"/><path d="M5.2 13.3a5.5 5.5 0 0 1 5.5 5.5"/><path d="M5.2 8.2a10.6 10.6 0 0 1 10.6 10.6"/><path d="M5.2 3.1a15.7 15.7 0 0 1 15.7 15.7"/>',
+  'droplet':   '<path d="M12 3.6c3.6 4.3 5.6 7.2 5.6 9.6a5.6 5.6 0 0 1-11.2 0c0-2.4 2-5.3 5.6-9.6Z"/>',
+  'stress':    '<path d="M8.3 3.4h7.4L21 8.3v7.4L15.7 21H8.3L3 15.7V8.3Z"/><line x1="12" y1="8" x2="12" y2="12.8"/><circle cx="12" cy="16.2" r="1" fill="currentColor" stroke="none"/>',
+  'magnet':    '<path d="M6 20V10a6 6 0 0 1 12 0v10"/><line x1="6" y1="15.4" x2="10.4" y2="15.4"/><line x1="13.6" y1="15.4" x2="18" y2="15.4"/>',
+  'calendar':  '<rect x="3.4" y="5.6" width="17.2" height="15" rx="2.4"/><line x1="3.4" y1="10.2" x2="20.6" y2="10.2"/><line x1="8.2" y1="3.4" x2="8.2" y2="7"/><line x1="15.8" y1="3.4" x2="15.8" y2="7"/>',
+  'shield':    '<path d="M12 3.2 20 6.1v6.1c0 4.4-3.2 7.3-8 8.6-4.8-1.3-8-4.2-8-8.6V6.1Z"/><polyline points="8.6,12.1 11.1,14.6 15.6,10.1"/>',
 } %}
-{#- inflow (2026-08-12) is the Fund Flows desk's masthead mark — three currents of
-    different size arriving at one book — and radar is its coverage/fleet mark, the
-    monoline replacements for the 🐳 and 📡 emoji that were doing that duty on
-    etfs.html (doctrine §5.8: emoji are not UI icons). Both are drawn SERVER-SIDE
-    only, so like `sector` they are deliberately NOT mirrored into subsectors.js. -#}
 {%- macro icon(name, cls='') -%}
 <svg class="ic-svg{{ ' ' ~ cls if cls else '' }}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{{ _ICON_PATHS.get(name, '') | safe }}</svg>
 {%- endmacro -%}

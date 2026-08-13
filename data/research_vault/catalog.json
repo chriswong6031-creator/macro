@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T02:25:16.435436+00:00",
-  "count": 1030,
+  "generated_at": "2026-08-13T05:26:46.566885+00:00",
+  "count": 1039,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -40,6 +40,7 @@
     "RBC",
     "Rabobank",
     "Raymond James",
+    "RiskHedge",
     "Royal London on Private Credit",
     "S&T",
     "SEB",
@@ -62,6 +63,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-yxniyrhtcac-f7186d",
+      "title": "Hon Hai (2317)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T01:24:16Z",
+      "summary_points": [
+        "**2026 Revenue Beat & Margins**: Hon Hai forecasts 2026 revenue growth across AI servers (GPU/ASIC), Consumer Electronics, PCs, and Components; 6.1% GM (vs.",
+        "consensus 5.7%/6.0%), 35% YoY NI to NT$60bn, Opex down to 2.4% driven by AI server ramp (double-digit QoQ) and EV Model B delivery by end-2026.",
+        "**AI Server & EV Growth Catalysts**: AI server rack shipments growing at high double-digit QoQ (2026) due to market share gains; EV business advancing with Model B (AUS/NZ delivery end-2026) and CAVIRA in Taiwan, supported by vertical integration and global production.",
+        "**Target Price Upside & Valuation**: Goldman Sachs target price NT$400 (193.50 NTS above current price), 18.9x 2027E P/E, reflecting bullish sentiment on AI server/EV outsourcing expansion despite stock trading below target.",
+        "**Key Downside Risks**: Slower AI server ramp, weaker EV solution performance, delayed global capacity expansion, and intensified competition in consumer electronics EMS."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-iiyfaodohcd-982745",
       "title": "AVC (3017)",
@@ -101,6 +123,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ksmvhuwasmt-0d1f11",
+      "title": "Synopsys Inc. (SNPS) Expect a solid quarter, with an uptick to 2026 guidance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T01:23:39Z",
+      "summary_points": [
+        "**FY26 Guidance Catalysts**: Solid Q3 with modest FY26 guidance uptick driven by IP recovery (China/customized blocks), core EDA demand acceleration, and Ansys synergy timing (critical for 2024 targets), insulated from AI disruption.",
+        "**Price Target Upside**: $600 12-month target (40x normalized EPS $15.00) implying 46.0% upside from current price ($414.91).",
+        "**Critical Downside Risks**: Export restrictions, market share losses, and reduced custom chip designs pose key geopolitical/fundamental threats to valuation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
@@ -310,6 +351,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-tcokvhuzse4-dc02a8",
+      "title": "The Point for Europe Wednesday, 12 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T10:05:10Z",
+      "summary_points": [
+        "**Daimler Truck (DTG.DE) - MY27 Sale Decision**: MY27 sales strategy shift vs MY26, 2Q DTNA order weakness (fleet mix-driven, temporary), Chinese competition risk; critical for trucking sector fundamentals and capital allocation.",
+        "**EU Auto China Competition Policy Risk**: EU auto market segmentation and regulation-driven China share rise; policy negligence not sustainable, posing structural risk to EU manufacturers.",
+        "**Global Sporting Goods Sneaker Demand**: July volumes down 1.2% MoM (9th decline), Nike US momentum (+30bps), lifestyle footwear weakness; key for consumer discretionary flows and sector rotation.",
+        "**Kingspan BMC Acquisition**: €850mn deal delivers 5.6% EPS accretion, EV/EBITDA <5x (vs KSP 11.6x), strategic power management entry; enables two additional BMC-scale acquisitions.",
+        "**Commodities - Silver Price Drivers**: Investment demand (Strait of Hormuz de-escalation, Fed pivot) and solar slowdown; targets $75/oz (0-3m), $90/oz (6-12m) vs spot $65/oz."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ai6opfy6d1l-be2ae3",
+      "title": "JPM CNY valuation",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T10:04:36Z",
+      "summary_points": [
+        "**CNY Undervaluation & Structural Distortion**: CNY undervalued 20-30% in REER due to PBOC interventions, creating severe bilateral exchange rate, trade flow, and inflation distortions despite minimal global stress; cyclically adjusted CAB (3.6% of GDP) significantly deviates from IMF norms.",
+        "**Policy Conflict: Fiscal vs FX Intervention**: Critical debate on whether fiscal policy (not FX intervention) drives external surplus; forcing CNY appreciation would worsen deflation and hurt growth, with exports remaining primary demand driver amid persistent export dependency.",
+        "**Global Imbalance Data & Risk Triggers**: Widening China/US current account imbalances (IMF 2026 ESR) reflect reporting gaps, not disruptive flows, but China’s CAB deviation and FX misalignment (-21.3%) create macro-financial risk exposure despite stable global conditions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xeez6ry3zzy-23c159",
       "title": "GS Shawn Tuteja framework and AI",
       "institution": "S&T",
@@ -513,6 +594,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-aeiwrrkgwrv-92d5b6",
+      "title": "Vestis Corp. (VSTS) F3Q First Take Revenue shortfall mitigated by margin outperformance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:44Z",
+      "summary_points": [
+        "**Margin Expansion Beats Consensus**: EBITDA margins expanded 270 bps y/y to 12.2% (vs.",
+        "consensus 11.8%), driven by strategic transformation, offsetting 1.8% revenue decline; EPS beat consensus ($0.18 vs.",
+        "$0.10).",
+        "**Valuation Target Below Peer Median**: $8.20 target (12m) based on 6.5x NTM EBITDA, significantly below peer median (8.6x), reflecting lower revenue growth, EBITDA margins, and EPS growth metrics.",
+        "**Target Price Drop Signals Deteriorating Sentiment**: Goldman Sachs' target fell from $22.00 (Jan 2024) to $8.20 (current), trading below closing price ($14.52), indicating deteriorating analyst sentiment or fundamental concerns."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-yklid5momhw-1dfc32",
       "title": "Venture Global (VG) First Take 2Q26 Slight Miss on Margins, but 2026 Guidance Increased",
       "institution": "Goldman Sachs",
@@ -680,6 +782,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-oc8o0ibahzz-f1fc4a",
+      "title": "Agriculture Analyst Biofuels Primer Why Crop Prices Increasingly Follow Fuel",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:08Z",
+      "summary_points": [
+        "**Mandate-Driven Production Scale**: US/EU/Brazil dominate 80% of global biofuel production; rising mandates (e.g., US soybean oil biofuel share 40%→55% by 2026, Brazil ethanol 32%, Indonesia palm biodiesel 50%) directly drive crop price trends and tighten food-feed-fuel competition.",
+        "**Feedstock Competition & Supply Risk**: Biofuel demand diverts crops from food/feed (e.g., US soybean oil domestic biofuel use to 8m tonnes by 2026), intensifying supply chain risks as biodiesel (soybeans/palm/rapeseed) and ethanol (corn/sugarcane) compete for agricultural inputs.",
+        "**Policy-Driven Price Support Mechanisms**: Renewable Identification Numbers (RINs) create tradable credit systems to meet mandates; RIN price volatility surges with higher RVOs or feedstock shortages, sustaining biofuel production despite elevated costs and acting as a de facto subsidy.",
+        "**Blend Wall Constraints Limit Growth**: Technical (Brazil/Indonesia engine limits) and policy caps (US/EU) prevent biofuel demand expansion despite strong margins, capping growth potential even during oil price surges (e.g., 2026H1)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-hgwq43ppu2a-512da5",
       "title": "Japan Macro aug 10",
       "institution": "Mizuho",
@@ -753,6 +875,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9comppaylgy-58bc7a",
+      "title": "JPM US Market Intell 2026 08 10 CPI",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:57:58Z",
+      "summary_points": [
+        "**Core CPI Miss & SPX Impact**: June core CPI fell 0.02% m/m (vs 0.2% forecast), driving SPX gains; core MoM <0.15% implies 1%-2% SPX rise, while >0.30% triggers 1.5%-2.5% decline, with options pricing ~0.9% move.",
+        "**Geopolitical Inflation Risk**: Middle East instability remains critical for energy prices (gasoline near $4.0/gal), abating in July but vulnerable to shocks, directly impacting headline CPI and inflation expectations.",
+        "**China PPI as Leading Indicator**: China’s PPI (3-month low) precedes US CPI; bond markets sensitive to hawkish US inflation prints, linking global manufacturing trends to Fed policy assessment.",
+        "**Core Services vs Goods Volatility**: Core services (orange) outperforms core goods (blue) with lower volatility; core goods show sharp swings (e.g., -0.4% in 2024), heightening sensitivity to demand shocks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
@@ -841,6 +983,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ijm734vtw5s-6419c3",
+      "title": "DI August 2026",
+      "institution": "RiskHedge",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:31:31Z",
+      "summary_points": [
+        "**AI Supply Chain Bottlenecks**: TSMC controls 70% of silicon wafer supply; wafer production constraints and power demands for AI scaling (processing duration doubling monthly) create systemic risk, with manufacturing capacity as the critical bottleneck.",
+        "**Copper Wall Limitation**: Copper cabling fails at high-speed AI data transmission (signals degrade <1m), forcing shift to photonics; copper’s usable range collapses to centimeters by 2028, halting further scaling.",
+        "**Photonics as Critical Infrastructure Shift**: Fiber optics replace copper for bandwidth, heat, and interference issues; NVIDIA’s Vera Rubin Ultra NVL576 drives *scale-up* and *scale-across* via optical networking, making photonics essential for next-gen AI clusters.",
+        "**Lumentum’s Dominance in Photonics**: Holds 50-60% of high-speed EML market (sole 200G supplier at scale), with 77% YoY revenue growth in AI components; owns four integrated light platforms (EMLs, VCSELs) unmatched by competitors.",
+        "**Persistent Supply Shortage**: Demand exceeds supply by >30% (widened from 25-30%), supported by take-or-pay contracts and intentional capacity retention for premium pricing, indicating durable scarcity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-6z2wfo0audq-05ac76",
       "title": "TPL Aug 8 26",
       "institution": "The Punchline",
@@ -879,6 +1042,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pntpdj90p7v-47da48",
+      "title": "Mizuho EMEA Multi Asset Strategy Daily",
+      "institution": "Mizuho",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T07:43:33Z",
+      "summary_points": [
+        "**USD: Oil, Fed, Geopolitics Pressuring USTs**: Oil supply shocks (Brent near $88), hawkish Fed (Hammack’s \"some number\" rate hikes), and Middle East tensions (Trump-Iran standoff) driving UST pressure; 10Y yields testing 4.70% amid $58bn 3Y auction.",
+        "**Key Data & Risk**: US CPI this week pivotal; soft CPI may offset energy/supply pressure but September escalation risk (Hormuz reopening) looms, with 10Y USTs under immediate pressure.",
+        "**Bunds: ECB Policy Constraints**: 10Y yields near cycle peak (3.18% vs.",
+        "218%); ECB 3% hike requires sustained inflation (1yly OIS near 2.80% raises repricing bar).",
+        "**GBP: Term Premium & Spread Pressure**: 10Y Gilt yields at 4.98% with 10Y Gilt-Bund spread at 180bp; UK inflation/fiscal risks sustain term premium, BoE unlikely to ease rate hike expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
