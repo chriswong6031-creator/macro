@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-11"
+updated: "2026-08-13"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -1935,6 +1935,40 @@ checks:
         execution-order-aware.
     owner_program: engine-fix-masterplan
     notes: null
+
+  - law_id: ci.vintage_pin_fence
+    summary: >
+      Tests must not equality-pin a live nightly store (govrev latest/candidates,
+      options episodes.jsonl, prophet plans). A hand-typed ``== N`` / ``<= N``
+      against a store the nightly advances reddens main and then, through
+      merge-on-green, every armed PR. Legal: a watermarked prefix slice, a
+      census derived from a committed receipt, or a named disclosure set.
+      Shrink-only baseline: fingerprints leave when the pin is gone; do not
+      add a row to ship a new pin.
+    source_ref:
+      - scripts/check_vintage_pin_fence.py
+      - tests/test_vintage_pin_fence.py
+      - ".github/ci/legacy-jobs.yml"
+    severity: hard
+    check_script: scripts/check_vintage_pin_fence.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: vintage-pin-fence
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - The live scan is a targeted ratchet over tests that read the named
+        stores; it is not a general AST linter of every ``== N`` in the tree.
+      - A store must be added to LIVE_STORES in the script before a new
+        nightly-advanced path is covered.
+    owner_program: pipeline-reliability
+    notes: >
+      Added with the 2026-08-13 CI traffic-jam fence. The three detonations
+      that motivated it (govrev assert 23==8, options 384→1206, prophet
+      open-keys 10→11) were healed by #5524; leftover equality pins stay on
+      the shrink-only baseline and warn, they never red.
 
   # ── Governance hook ────────────────────────────────────────────────────────
 

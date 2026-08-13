@@ -5455,11 +5455,30 @@ def test_committed_campaign_ledger_is_exact_frozen_corpus_not_future_recomputati
         ),
     ]
     future_outcomes = [_campaign_h60_outcome(row) for row in future_episodes]
+    # The baseline this synthetic pair is measured against has to come from the same
+    # documents it is added to. `derive_campaigns` re-derives EVERY qualifying group
+    # from an episode ledger the nightly lane extends, so a hand-typed cardinality
+    # here was a scheduled red: the 2026-08-13 durable checkpoint (e9738279704,
+    # +822 episodes) took the derivation from the frozen eight groups to twenty while
+    # campaigns.jsonl stayed byte-frozen at its retired v1 rows -- which is precisely
+    # the divergence this test's name says the committed corpus must NOT track.
+    baseline, baseline_pending = derive_campaigns(episodes, outcomes)
     expanded, pending = derive_campaigns(
         [*episodes, *future_episodes], [*outcomes, *future_outcomes]
     )
-    assert pending == []
-    assert len(expanded) == len(committed) + 1
+    assert len(baseline) >= len(committed)
+    assert len(expanded) == len(baseline) + 1
+    # A qualifying anchor whose H+60 row has not landed yet is a live transient of
+    # the source lane -- the session's last episodes are minted after the close and
+    # their outcome arrives later -- not a hole in the frozen corpus. The claims that
+    # survive a growing ledger: the synthetic pair creates no new pending anchor, and
+    # no pending anchor belongs to a campaign the corpus already froze.
+    assert pending == baseline_pending
+    assert not set(pending) & {
+        episode_id
+        for row in committed
+        for episode_id in row["crossing"]["episode_ids"]
+    }
     assert {row["campaign_id"] for row in committed} < {
         row["campaign_id"] for row in expanded
     }

@@ -1,8 +1,8 @@
 {
   "schema": "edgar_phrase_velocity.v1",
   "vocab_version": 1,
-  "as_of": "2026-08-10",
-  "generated_at": "2026-08-11T02:27:45.465746+00:00",
+  "as_of": "2026-08-13",
+  "generated_at": "2026-08-13T09:54:45.330045+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -149,28 +149,10 @@
       "ticker_count": 0,
       "top_accelerating": [
         {
-          "phrase": "record backlog",
-          "recent_count": 14,
-          "prior_count": 2,
-          "recent_filers": 14,
-          "prior_filers": 2,
-          "velocity_z": 5.0,
-          "is_affinity_phrase": false
-        },
-        {
-          "phrase": "tight supply",
-          "recent_count": 8,
-          "prior_count": 1,
-          "recent_filers": 7,
-          "prior_filers": 1,
-          "velocity_z": 5.0,
-          "is_affinity_phrase": true
-        },
-        {
           "phrase": "longer lead times",
-          "recent_count": 7,
+          "recent_count": 6,
           "prior_count": 1,
-          "recent_filers": 7,
+          "recent_filers": 6,
           "prior_filers": 1,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
@@ -185,12 +167,30 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "supply constrained",
-          "recent_count": 10,
+          "phrase": "record backlog",
+          "recent_count": 13,
           "prior_count": 3,
-          "recent_filers": 9,
+          "recent_filers": 13,
           "prior_filers": 3,
-          "velocity_z": 2.3333333333333335,
+          "velocity_z": 3.3333333333333335,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "tight supply",
+          "recent_count": 7,
+          "prior_count": 2,
+          "recent_filers": 6,
+          "prior_filers": 2,
+          "velocity_z": 2.5,
+          "is_affinity_phrase": true
+        },
+        {
+          "phrase": "demand exceeds supply",
+          "recent_count": 2,
+          "prior_count": 0,
+          "recent_filers": 2,
+          "prior_filers": 0,
+          "velocity_z": 2.0,
           "is_affinity_phrase": false
         }
       ],
@@ -209,28 +209,10 @@
       "ticker_count": 0,
       "top_accelerating": [
         {
-          "phrase": "record backlog",
-          "recent_count": 14,
-          "prior_count": 2,
-          "recent_filers": 14,
-          "prior_filers": 2,
-          "velocity_z": 5.0,
-          "is_affinity_phrase": false
-        },
-        {
-          "phrase": "tight supply",
-          "recent_count": 8,
-          "prior_count": 1,
-          "recent_filers": 7,
-          "prior_filers": 1,
-          "velocity_z": 5.0,
-          "is_affinity_phrase": false
-        },
-        {
           "phrase": "longer lead times",
-          "recent_count": 7,
+          "recent_count": 6,
           "prior_count": 1,
-          "recent_filers": 7,
+          "recent_filers": 6,
           "prior_filers": 1,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
@@ -245,13 +227,31 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "supply constrained",
-          "recent_count": 10,
+          "phrase": "record backlog",
+          "recent_count": 13,
           "prior_count": 3,
-          "recent_filers": 9,
+          "recent_filers": 13,
           "prior_filers": 3,
-          "velocity_z": 2.3333333333333335,
-          "is_affinity_phrase": true
+          "velocity_z": 3.3333333333333335,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "tight supply",
+          "recent_count": 7,
+          "prior_count": 2,
+          "recent_filers": 6,
+          "prior_filers": 2,
+          "velocity_z": 2.5,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "demand exceeds supply",
+          "recent_count": 2,
+          "prior_count": 0,
+          "recent_filers": 2,
+          "prior_filers": 0,
+          "velocity_z": 2.0,
+          "is_affinity_phrase": false
         }
       ],
       "coverage_note": "0 basket tickers; 30d/60d PIT windows.",
@@ -262,28 +262,10 @@
       "ticker_count": 0,
       "top_accelerating": [
         {
-          "phrase": "record backlog",
-          "recent_count": 14,
-          "prior_count": 2,
-          "recent_filers": 14,
-          "prior_filers": 2,
-          "velocity_z": 5.0,
-          "is_affinity_phrase": false
-        },
-        {
-          "phrase": "tight supply",
-          "recent_count": 8,
-          "prior_count": 1,
-          "recent_filers": 7,
-          "prior_filers": 1,
-          "velocity_z": 5.0,
-          "is_affinity_phrase": false
-        },
-        {
           "phrase": "longer lead times",
-          "recent_count": 7,
+          "recent_count": 6,
           "prior_count": 1,
-          "recent_filers": 7,
+          "recent_filers": 6,
           "prior_filers": 1,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
@@ -298,12 +280,30 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "supply constrained",
-          "recent_count": 10,
+          "phrase": "record backlog",
+          "recent_count": 13,
           "prior_count": 3,
-          "recent_filers": 9,
+          "recent_filers": 13,
           "prior_filers": 3,
-          "velocity_z": 2.3333333333333335,
+          "velocity_z": 3.3333333333333335,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "tight supply",
+          "recent_count": 7,
+          "prior_count": 2,
+          "recent_filers": 6,
+          "prior_filers": 2,
+          "velocity_z": 2.5,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "demand exceeds supply",
+          "recent_count": 2,
+          "prior_count": 0,
+          "recent_filers": 2,
+          "prior_filers": 0,
+          "velocity_z": 2.0,
           "is_affinity_phrase": false
         }
       ],
@@ -313,32 +313,12 @@
   },
   "novel_phrases": [
     {
-      "phrase": "tight supply",
-      "recent_count": 8,
-      "prior_count": 1,
-      "recent_filers": 7,
-      "prior_filers": 1,
-      "velocity_z": 5.0,
-      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
-      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
-    },
-    {
       "phrase": "longer lead times",
-      "recent_count": 6,
+      "recent_count": 5,
       "prior_count": 1,
-      "recent_filers": 6,
+      "recent_filers": 5,
       "prior_filers": 1,
-      "velocity_z": 5.0,
-      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
-      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
-    },
-    {
-      "phrase": "record backlog",
-      "recent_count": 9,
-      "prior_count": 2,
-      "recent_filers": 9,
-      "prior_filers": 2,
-      "velocity_z": 3.5,
+      "velocity_z": 4.0,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
@@ -353,12 +333,12 @@
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
     {
-      "phrase": "supply constrained",
-      "recent_count": 10,
-      "prior_count": 3,
-      "recent_filers": 9,
-      "prior_filers": 3,
-      "velocity_z": 2.3333333333333335,
+      "phrase": "tight supply",
+      "recent_count": 7,
+      "prior_count": 2,
+      "recent_filers": 6,
+      "prior_filers": 2,
+      "velocity_z": 2.5,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
@@ -383,22 +363,32 @@
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
     {
+      "phrase": "record backlog",
+      "recent_count": 8,
+      "prior_count": 3,
+      "recent_filers": 8,
+      "prior_filers": 3,
+      "velocity_z": 1.6666666666666667,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
+    {
+      "phrase": "supply constrained",
+      "recent_count": 9,
+      "prior_count": 4,
+      "recent_filers": 9,
+      "prior_filers": 4,
+      "velocity_z": 1.25,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
+    {
       "phrase": "extended lead times",
       "recent_count": 9,
       "prior_count": 5,
       "recent_filers": 9,
       "prior_filers": 5,
       "velocity_z": 0.8,
-      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
-      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
-    },
-    {
-      "phrase": "on allocation",
-      "recent_count": 5,
-      "prior_count": 3,
-      "recent_filers": 4,
-      "prior_filers": 2,
-      "velocity_z": 0.6666666666666666,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },

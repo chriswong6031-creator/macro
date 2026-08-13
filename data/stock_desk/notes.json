@@ -1,170 +1,32 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-08-10",
-  "generated_at": "2026-08-11T04:18:12.892029+00:00",
+  "generated_at": "2026-08-13T05:48:18.024436+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-08-10-GPCR-20260811041812-1",
+      "id": "2026-08-10-GPCR-20260813054818-1",
       "ticker": "GPCR",
       "name": null,
       "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "Residual momentum and insider buying context support a basing formation, though the deteriorating GLP-1 basket warrants a restrained commitment.",
-      "evidence": [
-        "verdict: Constructive \u2014 building a base (high band)",
-        "selection axis: residual momentum (z 0.34)",
-        "entry: not blocked, off-high, RSI support",
-        "insider buying event edge (lone FDR survivor)"
-      ],
-      "dissent": "The GLP-1 & Obesity basket's deterioration could overwhelm stock-specific momentum, as the tape strongly favours current leaders.",
+      "conviction": "low",
+      "horizon_d": 21,
+      "thesis": null,
+      "evidence": [],
+      "dissent": null,
       "falsifier": {
-        "text": "GPCR breaks below the 50-day moving average on above-average volume.",
+        "text": null,
         "check": {
           "kind": "rel_return",
           "subject_ticker": "GPCR",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 21
         }
       },
-      "check_by": "2026-09-07",
+      "check_by": "2026-09-08",
       "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-08-10-SPHR-20260811041812-2",
-      "ticker": "SPHR",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Strong residual momentum and insider buying are intact, but the stock is extended and cycle-blocked; waiting for a pullback is the only sensible posture \u2014 don't chase.",
-      "evidence": [
-        "verdict: Extended \u2014 wait for a pullback (neutral band)",
-        "entry blocked: over-200dma, RSI, vol-squeeze, extended",
-        "cycle_blocked true",
-        "momentum z 2.56 \u2014 strong, not fading"
-      ],
-      "dissent": "Momentum could persist without a meaningful dip, making the wait a missed ride.",
-      "falsifier": {
-        "text": "SPHR consolidates and breaks to new highs on heavy volume without offering a tradable pullback.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-09-07",
-      "engine_verdict": "Extended \u2014 wait for a pullback"
-    },
-    {
-      "id": "2026-08-10-UEC-20260811041812-3",
-      "ticker": "UEC",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Residual momentum and an improving entry setup are present, but the uranium basket is lagging leaders and the engine reads no clear edge \u2014 not a high-conviction bet.",
-      "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection: residual momentum (z 0.17, weak)",
-        "caution: Uranium & Nuclear Fuel basket below long-term trend",
-        "entry: not blocked but no urgency"
-      ],
-      "dissent": "A sudden commodity or energy rally could lift the uranium basket, turning the neutral call into a missed opportunity.",
-      "falsifier": {
-        "text": "UEC's industry basket moves above its long-term trend and the stock breaks above 12.50 with conviction.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-09-07",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-08-10-WBD-20260811041812-4",
-      "ticker": "WBD",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "WBD is a confirmed laggard with negative earnings surprises, steep downward revisions, and a weak Communication Services sector; the tape rewards leaders, making relative underperformance the default expectation.",
-      "evidence": [
-        "verdict: Lagging \u2014 relative weakness",
-        "selection: SUE z -0.77, revisions z -2.37",
-        "quality: negative factors z -0.29",
-        "caution: Communication Services basket below trend"
-      ],
-      "dissent": "A media catalyst or valuation-driven mean reversion could spark a sharp bounce, especially if streaming profitability surprises.",
-      "falsifier": {
-        "text": "WBD posts a positive earnings surprise and the stock breaks above its 200-day moving average on strong volume.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "WBD",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-09-07",
-      "engine_verdict": "Lagging \u2014 relative weakness"
-    },
-    {
-      "id": "2026-08-10-SGML-20260811041812-5",
-      "ticker": "SGML",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "Residual momentum and a basing turn signal argue for upside, though the underperforming Critical Minerals basket tempers the expected magnitude.",
-      "evidence": [
-        "verdict: Constructive \u2014 building a base (high band)",
-        "selection: residual momentum (z 0.28)",
-        "entry: not blocked, off-high, RSI, urgency imminent",
-        "board state: TURN SIGNALED"
-      ],
-      "dissent": "The critical minerals theme remains out of favour; macro headwinds for lithium/rare earths could drag the stock lower despite its own momentum.",
-      "falsifier": {
-        "text": "SGML falls back below its 10-day low and loses the basing pattern.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "SGML",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-09-07",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-08-10-STLD-20260811041812-6",
-      "ticker": "STLD",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Strong earnings momentum and insider buying make the fundamental case, but the stock is extended and cycle-blocked; the only action is to wait for a pullback.",
-      "evidence": [
-        "verdict: Extended \u2014 wait for a pullback (constructive band)",
-        "entry blocked: over-200dma, RSI, extended",
-        "cycle_blocked true",
-        "selection: positive SUE, revisions, momentum"
-      ],
-      "dissent": "Steel demand could stay robust and momentum may not pause, leaving the watcher on the sidelines while the stock grinds higher.",
-      "falsifier": {
-        "text": "STLD holds in a tight range without a meaningful pullback and breaks above 280 on above-average volume.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-09-07",
-      "engine_verdict": "Extended \u2014 wait for a pullback"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."

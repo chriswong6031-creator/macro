@@ -21,7 +21,7 @@
               border-radius:16px; padding:26px 30px; position:relative; overflow:hidden; box-shadow:var(--card-shadow); }
   .art-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
               background:linear-gradient(90deg,var(--link),color-mix(in srgb,var(--link) 25%,transparent)); }
-  .art-kicker { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 10px; font-weight:600; }
+  .art-kicker { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-link, var(--link)); margin:0 0 10px; font-weight:600; }
   .art-hero h1 { font-size:30px; line-height:1.18; margin:0 0 12px; letter-spacing:-.01em; }
   .art-dek { font-size:16px; line-height:1.55; color:var(--text); opacity:.86; margin:0 0 16px; max-width:80ch; }
   .art-meta { display:flex; flex-wrap:wrap; align-items:center; gap:9px 14px; font-size:12.5px; color:var(--muted); }
@@ -38,7 +38,7 @@
 
   article.body { font-size:15px; line-height:1.72; min-width:0; }
   article.body h2 { font-size:20px; margin:34px 0 10px; scroll-margin-top:16px; padding-top:4px; display:flex; align-items:baseline; gap:10px; }
-  article.body h2 .num { font-size:13px; color:var(--link); font-weight:700; font-variant-numeric:tabular-nums; }
+  article.body h2 .num { font-size:13px; color:var(--ink-link, var(--link)); font-weight:700; font-variant-numeric:tabular-nums; }
   article.body h3 { font-size:15.5px; margin:20px 0 4px; color:var(--text); }
   article.body p { margin:9px 0; opacity:.93; }
   article.body ul { margin:9px 0; padding-left:20px; }
@@ -61,7 +61,7 @@
   .scn td:first-child { font-weight:600; }
 
   .sources { font-size:12.5px; color:var(--muted); }
-  .sources a { color:var(--link); word-break:break-word; }
+  .sources a { color:var(--ink-link, var(--link)); word-break:break-word; }
   .disc { font-size:12px; color:var(--muted); border-top:1px solid var(--line); margin-top:22px; padding-top:12px; }
 
   .prevnext { max-width:1060px; margin:30px auto 0; display:flex; gap:12px; flex-wrap:wrap; }
@@ -70,7 +70,7 @@
   .prevnext .lbl { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
   .prevnext .ttl { display:block; margin-top:3px; color:var(--text); font-weight:600; font-size:13.5px; }
   .backbtn { display:inline-flex; align-items:center; gap:7px; margin:26px auto 0; max-width:1060px; }
-  .backbtn a { font-size:13px; color:var(--link); }
+  .backbtn a { font-size:13px; color:var(--ink-link, var(--link)); }
 
   /* ---------- responsive: shared by EVERY report page (existing + future) ---------- */
   /* Tablet / narrow: drop the sidebar grid and turn the sticky TOC into an inline

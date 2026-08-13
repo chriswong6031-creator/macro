@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-11",
+  "as_of": "2026-08-13",
   "coverage": {
-    "end": "2026-08-11",
+    "end": "2026-08-13",
     "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W33; 14 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-12"
+    "start": "2026-05-14"
   },
   "iso_week": "2026-W33",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,9 +11,48 @@
     {
       "clusters": [
         {
-          "n_events": 1,
+          "n_events": 116,
+          "source": "research_vault",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-08-10",
+              "id": "cev-research_vault-bc00499ab68b",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-ozycb5rdqy2-4f6534",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM US Market Intell | Morning Briefing 2026 08 10",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-08-13",
+              "id": "cev-research_vault-d9c35d7bc86d",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-ecx3kynusdj-b16e59",
+              "tickers": [],
+              "title": "Citi: Citi The Point for Europe Thursday, 13 August 2026",
+              "weight_hint": 3
+            }
+          ]
+        },
+        {
+          "n_events": 4,
           "source": "prophet_ledger",
           "theme": null,
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "cpi_headline",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "cpi_core",
           "top_events": []
         },
         {
@@ -32,6 +71,23 @@
               "weight_hint": 3
             }
           ]
+        },
+        {
+          "n_events": 1,
+          "source": "research_vault",
+          "theme": "McElligott",
+          "top_events": [
+            {
+              "date": "2026-08-10",
+              "id": "cev-research_vault-b2e3d2c73fe8",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-iabsklnuj34-921c53",
+              "tickers": [],
+              "title": "Nomura: Charlie McElligott Equities Update",
+              "weight_hint": 3
+            }
+          ]
         }
       ],
       "iso_week": "2026-W33"
@@ -45,7 +101,7 @@
           "top_events": []
         },
         {
-          "n_events": 282,
+          "n_events": 285,
           "source": "research_vault",
           "theme": null,
           "top_events": [
@@ -70,6 +126,16 @@
               "weight_hint": 3
             },
             {
+              "date": "2026-08-09",
+              "id": "cev-research_vault-6172555846c3",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-qizqgapurqm-a2313f",
+              "tickers": [],
+              "title": "Other: MRB Asset Allocation The Beginning Of The End August 7 2026",
+              "weight_hint": 3
+            },
+            {
               "date": "2026-08-05",
               "id": "cev-research_vault-868333f1e226",
               "kind": "report",
@@ -80,23 +146,13 @@
               "weight_hint": 3
             },
             {
-              "date": "2026-08-05",
-              "id": "cev-research_vault-dd581dc09dca",
+              "date": "2026-08-09",
+              "id": "cev-research_vault-cd5880e886d4",
               "kind": "report",
               "source": "research_vault",
-              "source_ref": "marketdesk-kvatyrzolpx-174a39",
+              "source_ref": "marketdesk-rijqwshec0p-9a8050",
               "tickers": [],
-              "title": "J.P. Morgan: JPM JPM US Market Intell",
-              "weight_hint": 3
-            },
-            {
-              "date": "2026-08-03",
-              "id": "cev-research_vault-df7884c1dd18",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-ovegn6rwo5n-3ac8f3",
-              "tickers": [],
-              "title": "UBS: Daily US",
+              "title": "Other: Investment Traffic Lights EN",
               "weight_hint": 3
             }
           ]
@@ -345,14 +401,14 @@
       "clusters": [
         {
           "n_events": 3,
-          "source": "risk_band",
-          "theme": "risk",
+          "source": "earnings",
+          "theme": "earnings",
           "top_events": []
         },
         {
-          "n_events": 2,
-          "source": "earnings",
-          "theme": "earnings",
+          "n_events": 3,
+          "source": "risk_band",
+          "theme": "risk",
           "top_events": []
         },
         {
@@ -392,6 +448,12 @@
       "clusters": [
         {
           "n_events": 1,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
           "source": "macro_release",
           "theme": "claims",
           "top_events": []
@@ -408,7 +470,7 @@
     {
       "clusters": [
         {
-          "n_events": 6,
+          "n_events": 8,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -419,7 +481,7 @@
     {
       "clusters": [
         {
-          "n_events": 14,
+          "n_events": 17,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -441,7 +503,7 @@
     {
       "clusters": [
         {
-          "n_events": 17,
+          "n_events": 18,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -475,7 +537,7 @@
     {
       "clusters": [
         {
-          "n_events": 55,
+          "n_events": 56,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -503,77 +565,16 @@
     {
       "clusters": [
         {
-          "n_events": 101,
+          "n_events": 45,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
         },
         {
-          "n_events": 10,
+          "n_events": 5,
           "source": "earnings_call",
           "theme": "earnings",
-          "top_events": [
-            {
-              "date": "2026-05-15",
-              "id": "cev-earnings_call-39d4abe05c84",
-              "kind": "earnings",
-              "source": "earnings_call",
-              "source_ref": "defeatbeta:VNRX:2026Q1",
-              "tickers": [
-                "VNRX"
-              ],
-              "title": "Earnings call: VNRX Q1 FY2026 — mixed",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-12",
-              "id": "cev-earnings_call-3b00804de95c",
-              "kind": "earnings",
-              "source": "earnings_call",
-              "source_ref": "defeatbeta:SMTI:2026Q1",
-              "tickers": [
-                "SMTI"
-              ],
-              "title": "Earnings call: SMTI Q1 FY2026 — confident",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-14",
-              "id": "cev-earnings_call-4ce85d7315e5",
-              "kind": "earnings",
-              "source": "earnings_call",
-              "source_ref": "defeatbeta:CCAP:2026Q1",
-              "tickers": [
-                "CCAP"
-              ],
-              "title": "Earnings call: CCAP Q1 FY2026 — guarded",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-15",
-              "id": "cev-earnings_call-57593808e13e",
-              "kind": "earnings",
-              "source": "earnings_call",
-              "source_ref": "defeatbeta:PWCM:2026Q1",
-              "tickers": [
-                "PWCM"
-              ],
-              "title": "Earnings call: PWCM Q1 FY2026 — mixed",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-12",
-              "id": "cev-earnings_call-6751b599a3af",
-              "kind": "earnings",
-              "source": "earnings_call",
-              "source_ref": "defeatbeta:AVIR:2026Q1",
-              "tickers": [
-                "AVIR"
-              ],
-              "title": "Earnings call: AVIR Q1 FY2026 — confident",
-              "weight_hint": 2
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W20"

@@ -56,7 +56,7 @@ body.page-vector::before{opacity:.46}
 .qm{display:inline-grid;place-items:center;width:18px;height:18px;border:1px solid var(--line);
   border-radius:50%;color:var(--muted);font:700 10px/1 var(--font-ui);cursor:help}
 .qm:hover,.qm:focus-visible{color:var(--text);border-color:var(--btc)}
-a{color:var(--link)}
+a{color:var(--ink-link, var(--link))}
 
 /* S1 — the read */
 .hero{padding:26px 28px 22px;background:
@@ -185,7 +185,7 @@ a{color:var(--link)}
   font-size:9px;text-transform:uppercase;letter-spacing:.06em}
 .data-table td{padding:8px;border-bottom:1px solid var(--line)}
 .data-table tr:last-child td{border-bottom:none}
-.data-table .blown td{color:var(--down)}
+.data-table .blown td{color:var(--ink-down, var(--down))}
 
 /* strategy fold */
 .strategy-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}

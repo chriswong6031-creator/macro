@@ -36,7 +36,7 @@
 <title>Factor seasonality — Ken French monthly factors</title>
 {% set seo_title = "Factor Seasonality — Mastermind" %}{% set seo_desc = "Which equity factors work in which months — Ken French monthly factor data turned into a practical seasonal map." %}{% set seo_path = "seasonality.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -88,7 +88,7 @@
 
   <div class="panel">
     <div class="topline">
-      <h1>🗓 {{ t('Factor seasonality', '因子季节性') }}</h1>
+      <h1>{{ t('Factor seasonality', '因子季节性') }}</h1>
       <span class="muted sm">{{ t('which calendar months each factor STYLE has tended to pay — Ken French, ' ~ seas.factors[0].start ~ '+', '各因子风格在哪些月份历史上更易获得回报 — Ken French，' ~ seas.factors[0].start ~ ' 起') }}</span>
     </div>
     <p class="muted sm" style="margin:6px 0 0">{{ t(seas.disclosure_en, seas.disclosure_zh) }}</p>

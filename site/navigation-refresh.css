@@ -313,7 +313,7 @@ html[data-lang="zh"] .nav-mega-h { letter-spacing: .02em; }
 }
 
 .nav-drill-trigger:hover .nav-drill-arrow {
-  color: var(--link, #5b79ff);
+  color: var(--ink-link, var(--link, #5b79ff));
   transform: translateX(3px);
 }
 
@@ -517,7 +517,9 @@ html[data-lang="zh"] .nav-mega-h { letter-spacing: .02em; }
   margin-left: 2px;
   vertical-align: -2px;
   background: var(--link, #5b79ff);
-  animation: nrCaretBlink .9s steps(1) infinite;
+  /* caret removed 2026-08-12: it blinked forever beside rotating fake ticker text,
+     i.e. it advertised a focus state the field did not have. Design system §7 — motion
+     is a status channel; an animated element must encode a live or ongoing fact. */
 }
 
 .ticker-search .ticker-input {
@@ -735,7 +737,7 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
 
 .search-pagination button.active {
   border-color: color-mix(in srgb, var(--link, #5b79ff) 52%, var(--nr-line));
-  color: var(--link, #5b79ff);
+  color: var(--ink-link, var(--link, #5b79ff));
   background: color-mix(in srgb, var(--link, #5b79ff) 10%, var(--nr-soft));
 }
 
@@ -766,7 +768,7 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   padding: 4px 11px;
   border: 1px solid color-mix(in srgb, var(--link, #5b79ff) 40%, var(--nr-line));
   border-radius: 999px;
-  color: var(--link, #5b79ff);
+  color: var(--ink-link, var(--link, #5b79ff));
   background: color-mix(in srgb, var(--link, #5b79ff) 9%, var(--nr-soft));
   font: inherit;
   font-size: 11px;
@@ -782,7 +784,6 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
 
 .logo-dev-attribution a { color: inherit; }
 
-@keyframes nrCaretBlink { 0%, 45% { opacity: 1; } 46%, 100% { opacity: 0; } }
 @keyframes nrFanIn {
   from { opacity: 0; transform: translateY(-9px) rotate(-2.5deg) scale(.96); }
   to { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
@@ -1313,7 +1314,7 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
 }
 
 .nav-market-rail-item:hover .nav-market-arrow {
-  color: var(--link, #5b79ff);
+  color: var(--ink-link, var(--link, #5b79ff));
   transform: translate(2px, -2px);
 }
 

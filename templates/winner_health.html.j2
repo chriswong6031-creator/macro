@@ -440,7 +440,7 @@ html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
 html body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);
   font:14px/1.55 var(--font-display);-webkit-font-smoothing:antialiased}
-a{color:var(--link);text-decoration:none}
+a{color:var(--ink-link, var(--link));text-decoration:none}
 .wrap{max-width:1260px;margin:0 auto;padding:0 26px 96px}
 @media(max-width:640px){.wrap{padding:0 14px 72px}}
 
@@ -680,7 +680,7 @@ html[data-theme="light"] .tnull{background:var(--panel);
 .row:hover{background:color-mix(in srgb,var(--mc) 5%,transparent)}
 .c-tk{min-width:0}
 .tk{font-size:14px;font-weight:750;letter-spacing:-.012em;color:var(--text)}
-a.tk:hover{color:var(--link)}
+a.tk:hover{color:var(--ink-link, var(--link))}
 .nm{display:block;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap;margin-top:1px}
 .c-gain .fig{display:block;font-size:15px;font-weight:700;letter-spacing:-.02em;
