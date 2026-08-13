@@ -2655,6 +2655,28 @@ jobs:
         run: python -m pytest tests/test_dataos_security_master.py -q
       - name: house-law registry tests (idempotency + integration)
         run: python -m pytest tests/test_house_law_registry.py -q
+      # data.append_only_assertions — registered at `discipline` with EMPTY
+      # ci_wiring, so what runs here PROVES THE GUARD WORKS; it never judges the
+      # tree. The bare `--selftest` (no --strict, no tree scan) is the whole
+      # point: the guard reports 47 pre-existing findings on main that no PR
+      # author wrote, and a gate that reds every PR on day one gets disabled
+      # rather than obeyed. See the promotion plan in config/house_law_checks.yml.
+      #
+      # STEP PLACEMENT IS DELIBERATE. run_ci_pack returns on the first non-zero
+      # step, so a step placed FIRST masks every sibling behind it. These two are
+      # appended LAST because this job is an always-on fleet control plane: the
+      # meta-guard census, the docs-drift check and the claim-passport lint must
+      # never be masked by a new guard's own proof. The cost of last placement is
+      # that these go dark behind an earlier red — acceptable for a discipline-tier
+      # guard, and not acceptable the other way round.
+      - name: append-only law selftest (7 known-bad caught, 13 legal clean)
+        run: python3 scripts/check_append_only_assertions.py --selftest
+      # Negative controls: mutates the detector 10 ways and the fixtures 9 ways.
+      # A surviving mutation means the rule it disables is dead code, and the
+      # test names it. This is what makes the selftest above evidence rather than
+      # a guard printing zero.
+      - name: append-only law mutation + negative controls
+        run: python -m pytest tests/test_append_only_assertions.py -q
 
   leader-radar-unit:
     if: ${{ false }}
