@@ -1,0 +1,464 @@
+#!/usr/bin/env python3
+"""Cron-liveness dead-man switch for the authoritative US nightly (daily.yml).
+
+WHY THIS EXISTS — the 2026-08-11/08-12 outage.  The US nightly went dark for two
+consecutive sessions and NOTHING reported it; the operator found it by looking at
+the site.  Every instrument we already had was blind to this failure, each for its
+own structural reason:
+
+  * ``heartbeat.yml`` -> ``scripts.healthcheck`` measures ``run_status.json``'s
+    ``last_run`` against ``max_age_hours=96``.  96h is sized so a Friday bake still
+    looks alive at the Monday 14:30Z check (Fri 22:40Z -> Mon 14:30Z is 63.8h), so
+    it CANNOT trip on one — or two — missed nightlies.  It is a four-day instrument.
+  * ``scripts/freshness_sentinel.py`` (VPS, every 30 min) budgets Prophet at
+    ``PROPHET_MAX_SESSIONS_BEHIND=1``.  That budget is correct and cannot be
+    tightened: between the 20:00Z close and the 22:30Z bake, "1 session behind" IS
+    the healthy state.  So a missed bake for session D cannot honestly breach until
+    after session D+1's close — ~24h of designed blindness.
+  * ``heartbeat.yml`` also runs ``runs-on: [self-hosted, macstudio]`` — the same
+    pool as the lane it watches.  A watchdog that shares fate with its subject
+    reports nothing exactly when it matters.
+
+None of those is wrong; they measure DATA staleness with weekend-safe budgets.  The
+failure mode they all miss is the one that actually happened: **the scheduled run
+was never created at all.**  #5362 pushed daily.yml past GitHub's silent ~512,000
+byte processing cap, and the cron simply stopped firing — workflow state read
+``active``, githubstatus was all-operational, and the stranded dispatches sat queued
+with zero jobs (see ``tests/test_workflow_file_size.py`` for that postmortem).  A
+data-staleness instrument can only infer that hours-to-days later, through its
+weekend padding.  Asking GitHub "did a run get created?" sees it immediately.
+
+WHAT THIS CHECKS.  Three questions, in the order a human would ask them:
+
+  A. RUN CREATED   — did daily.yml produce a run at all since the last completed
+                     NYSE session's fire window?  Catches: the workflow-file strand,
+                     a disabled workflow, a deleted/renamed cron, GitHub dropping
+                     the schedule.  This is the check that would have fired on
+                     2026-08-12 at 08:00Z, ~9.5h into the outage.
+  B. RUN CONCLUDED — did one of those runs actually finish ``success``?  Catches
+                     the 2026-08-12 signature: six dispatches force-cancelled by a
+                     live fleet session, one stuck queued.  An in-flight run is
+                     INDETERMINATE, never a breach — the nightly legitimately runs
+                     for hours.
+  C. DATA ADVANCED — did ``site/prophet/index.json``'s ``source_asof`` actually move?
+                     Catches the case A and B cannot see: a run that concludes green
+                     while the ledger silently fails to advance (the #4779 law — an
+                     absence of red is not a pass).  This is also the backstop for a
+                     run that hangs forever and so never leaves INDETERMINATE in B.
+
+VERDICT DISCIPLINE (borrowed verbatim from freshness_sentinel).  Blindness is never
+a breach.  An unreadable API response, an empty run list, a missing index file, an
+unparseable timestamp -> INDETERMINATE: reported as a ``::warning``, exit stays 0.
+A false alarm every night trains the operator to ignore the channel, which is how a
+dead-man switch dies.  Only a POSITIVE observation of absence fails.
+
+FRESHNESS IS MEASURED AGAINST THE EXCHANGE CALENDAR, never the wall clock — the
+cross-cutting lesson of every stale-store incident here.  When the pipeline dies,
+every store freezes together and agrees with itself; only the calendar knows a
+completed session is missing.  A calendar anchor also means a weekend or a market
+holiday can never manufacture a breach, which is what lets this budget be tight
+where the 96h heartbeat has to be loose.
+
+WHERE IT RUNS.  ``.github/workflows/nightly-liveness.yml``, on GitHub-hosted
+``ubuntu-latest`` — deliberately NOT the macstudio pool, so the watchdog cannot be
+taken out by whatever took out the nightly.  The repo is public, so that runner is
+free (CI self-hosted migration Wave 1, #5465).
+
+Usage:
+    python3 scripts/check_nightly_liveness.py                 # live: fetch + evaluate
+    python3 scripts/check_nightly_liveness.py --selftest      # synthetic assertions
+    python3 scripts/check_nightly_liveness.py --runs-json F --index-json G   # offline
+
+Exit codes:
+    0  healthy, or INDETERMINATE (blind — see above)
+    1  a positive observation of absence: no run, no success, or stale data
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+from datetime import date, datetime, time, timedelta, timezone
+from pathlib import Path
+from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from lib.nyse_calendar import expected_last_session, sessions_behind  # noqa: E402
+
+#: The lane this guard watches.  daily.yml is Build B — the sole authoritative,
+#: ledger-advancing nightly.  Build A (closing-bell.yml) ships a provisional site
+#: and is NOT a substitute: on 2026-08-11/12 closing-bell ran green both nights
+#: while the board it re-rendered still read ``price_through=2026-08-10``, because
+#: the price store is advanced by daily.yml's ``collect`` job.  A green Build A
+#: alongside a dead Build B is exactly the shape this guard must not be fooled by.
+WORKFLOW_FILE = "daily.yml"
+
+#: Repo the runs are read from.  ``GITHUB_REPOSITORY`` is always set in Actions;
+#: the literal is the local-run fallback.  A wrong slug 404s, which lands in
+#: INDETERMINATE rather than a false green — but it also means a typo here makes
+#: the guard permanently blind, so tests/test_nightly_liveness.py pins it against
+#: the git remote.
+DEFAULT_REPO = (
+    os.environ.get("GITHUB_REPOSITORY") or "mastermindx-market-intelligence/macro"
+)
+
+#: Safe-earliest boundary for "the bake for session D should have fired".  The DST
+#: cron pair is 22:30Z (EDT) / 23:30Z (EST) and et_gate keeps exactly one, so any
+#: run created at or after D 22:00Z is the D bake.  Deliberately 30 min early: this
+#: is a floor for "a run exists", not a punctuality check.
+FIRE_BOUNDARY_UTC = time(22, 0)
+
+#: How far behind the calendar ``source_asof`` may sit before check C fails.
+#: 1 session, because the watchdog's own schedule (see the workflow) runs AFTER the
+#: bake window: at 08:00Z on D+1 a healthy store reads D (0 behind), and a bake that
+#: is merely running long still reads D-1 (1 behind) and must not alarm.  Two behind
+#: means a whole session produced nothing — the 2026-08-11 signature.
+MAX_SESSIONS_BEHIND = 1
+
+#: Runs older than this are irrelevant to today's verdict; keeps the API page small.
+LOOKBACK_DAYS = 7
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# pure evaluation core — every input injected, so tests pin behaviour not plumbing
+# ─────────────────────────────────────────────────────────────────────────────
+def _parse_dt(value: object) -> "datetime | None":
+    """Parse a GitHub ISO-8601 timestamp.  Unparseable -> None (blindness, not breach)."""
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def _parse_date(value: object) -> "date | None":
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return date.fromisoformat(value[:10])
+    except ValueError:
+        return None
+
+
+def expected_fire_after(now: datetime) -> "tuple[date, datetime]":
+    """The session whose bake we are owed, and the instant its fire window opens.
+
+    Anchored on ``expected_last_session`` so weekends and market holidays can never
+    manufacture a breach: on a Saturday this resolves to Friday's session and asks
+    for Friday's 22:00Z bake, which already happened.
+    """
+    session = expected_last_session(now)
+    boundary = datetime.combine(session, FIRE_BOUNDARY_UTC, tzinfo=timezone.utc)
+    return session, boundary
+
+
+def evaluate(
+    runs: "list[dict] | None",
+    index: "dict | None",
+    now: datetime,
+    *,
+    max_sessions_behind: int = MAX_SESSIONS_BEHIND,
+) -> dict:
+    """Pure verdict over the three checks.  See module docstring for the contract."""
+    fail: list[str] = []
+    warn: list[str] = []
+    facts: dict[str, Any] = {}
+
+    session, boundary = expected_fire_after(now)
+    facts["expected_session"] = session.isoformat()
+    facts["fire_boundary"] = boundary.isoformat()
+
+    # ── A. RUN CREATED ──────────────────────────────────────────────────────
+    if runs is None:
+        warn.append(
+            f"INDETERMINATE: could not read {WORKFLOW_FILE} runs from the API "
+            "(guard is blind, not green)"
+        )
+        recent: list[dict] = []
+    else:
+        recent = [
+            r for r in runs
+            if (dt := _parse_dt(r.get("created_at"))) is not None and dt >= boundary
+        ]
+        facts["runs_since_boundary"] = len(recent)
+        if not recent:
+            # The 2026-08-11 signature: the cron did not fire at all.
+            fail.append(
+                f"NO RUN: {WORKFLOW_FILE} created no run since {boundary.isoformat()} "
+                f"(bake owed for session {session.isoformat()}). A stranded workflow "
+                "file, a disabled workflow or a dropped schedule all look like this — "
+                "check the file size against tests/test_workflow_file_size.py first."
+            )
+
+    # ── B. RUN CONCLUDED SUCCESS ────────────────────────────────────────────
+    baked = False
+    if recent:
+        conclusions = [(r.get("status"), r.get("conclusion")) for r in recent]
+        facts["conclusions"] = [f"{s}/{c or '-'}" for s, c in conclusions]
+        if any(c == "success" for _, c in conclusions):
+            baked = True
+        elif any(s != "completed" for s, _ in conclusions):
+            # Still baking.  The nightly legitimately runs for hours; check C is the
+            # backstop if it never lands.
+            warn.append(
+                f"INDETERMINATE: {WORKFLOW_FILE} run for session {session.isoformat()} "
+                "is still in flight — no success yet, but not a breach"
+            )
+        else:
+            bad = ", ".join(f"{s}/{c or '-'}" for s, c in conclusions)
+            fail.append(
+                f"NO SUCCESS: every {WORKFLOW_FILE} run since {boundary.isoformat()} "
+                f"concluded without success [{bad}]. Force-cancellation by a live "
+                "fleet session produced exactly this on 2026-08-12."
+            )
+
+    # ── C. DATA ADVANCED ────────────────────────────────────────────────────
+    if index is None:
+        warn.append(
+            "INDETERMINATE: site/prophet/index.json unreadable (guard is blind)"
+        )
+    else:
+        src = _parse_date(index.get("source_asof"))
+        facts["source_asof"] = index.get("source_asof")
+        if src is None:
+            warn.append(
+                f"INDETERMINATE: source_asof missing/unparseable "
+                f"({index.get('source_asof')!r})"
+            )
+        else:
+            behind = sessions_behind(src, now)
+            facts["sessions_behind"] = behind
+            if baked and src < session:
+                # The sharp case.  A run for THIS session concluded success, so the
+                # store is owed exactly this session — no weekend padding applies and
+                # no long-running bake can explain the gap.  #4779: an absence of red
+                # is not a pass, and this is the only check that can tell the two
+                # apart.
+                fail.append(
+                    f"RAN GREEN BUT DID NOT ADVANCE: {WORKFLOW_FILE} concluded success "
+                    f"for session {session.isoformat()} but Prophet source_asof is "
+                    f"still {src.isoformat()}. The lane reported success while the "
+                    "store stood still."
+                )
+            elif not baked and behind > max_sessions_behind:
+                # Coarse backstop for the no-successful-run case: catches a bake that
+                # hangs forever (B stays INDETERMINATE) or a run list we could not read.
+                fail.append(
+                    f"STALE DATA: Prophet source_asof {src.isoformat()} is {behind} "
+                    f"completed sessions behind {session.isoformat()} "
+                    f"(limit {max_sessions_behind}), with no successful "
+                    f"{WORKFLOW_FILE} run for this session."
+                )
+
+    return {
+        "ok": not fail,
+        "fail_reasons": fail,
+        "warnings": warn,
+        "facts": facts,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# live plumbing
+# ─────────────────────────────────────────────────────────────────────────────
+def fetch_runs(repo: str, token: "str | None", *,
+               lookback_days: int = LOOKBACK_DAYS) -> "list[dict] | None":
+    """Recent daily.yml runs.  Any transport failure -> None (INDETERMINATE)."""
+    created = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).date()
+    url = (
+        f"https://api.github.com/repos/{repo}/actions/workflows/{WORKFLOW_FILE}/runs"
+        f"?per_page=50&created=%3E%3D{created.isoformat()}"
+    )
+    req = urllib.request.Request(url, headers={
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "macro-nightly-liveness",
+        **({"Authorization": f"Bearer {token}"} if token else {}),
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310
+            payload = json.loads(resp.read())
+    except (urllib.error.URLError, TimeoutError, ValueError, OSError) as exc:
+        print(f"::warning title=nightly-liveness-blind::run fetch failed: {exc}",
+              flush=True)
+        return None
+    runs = payload.get("workflow_runs")
+    return runs if isinstance(runs, list) else None
+
+
+def load_index(path: Path) -> "dict | None":
+    try:
+        loaded = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+    return loaded if isinstance(loaded, dict) else None
+
+
+def _notify(report: dict) -> None:
+    """Best-effort outbound alert on the same W6b spine healthcheck uses.
+
+    The non-zero exit (and the failed-workflow notification it trips) is the primary
+    signal; this is the push that reaches a phone.
+    """
+    msg = ("🚨 macro-dashboard NIGHTLY LIVENESS FAILED — "
+           + "; ".join(report["fail_reasons"]))
+    try:
+        from engine.alert_triage import push_ops_alert  # noqa: PLC0415
+        push_ops_alert(
+            source="nightly_liveness",
+            type_="nightly_dead",
+            message=msg,
+            severity="critical",
+            lane="nightly_liveness",
+        )
+    except Exception:  # noqa: BLE001 — alerting is best-effort, never the gate
+        pass
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# selftest — synthetic assertions over the exact shapes this week produced
+# ─────────────────────────────────────────────────────────────────────────────
+def _selftest() -> int:
+    """Fixture dates are CONSTANTS with no relation to the wall clock — a guard
+    whose fixtures age is a scheduled red."""
+    ok = True
+    # 08:00Z on 2026-08-12 — the real incident, one night in. Owed session = 08-11,
+    # fire boundary = 2026-08-11T22:00Z, store frozen at 08-10.
+    now = datetime(2026, 8, 12, 8, 0, tzinfo=timezone.utc)
+    frozen = {"source_asof": "2026-08-10"}
+    advanced = {"source_asof": "2026-08-11"}
+
+    def _check(label: str, got: bool, want: bool) -> None:
+        nonlocal ok
+        if got is not want:
+            print(f"::error title=selftest::{label}: ok={got}, expected {want}",
+                  flush=True)
+            ok = False
+
+    # A: the strand. Newest run is the 08-11T00:00Z bake — BEFORE the boundary, so
+    # no run exists for session 08-11. Note the store is only 1 behind here, inside
+    # every data budget we own: check A is the ONLY instrument that sees this, which
+    # is the entire reason this guard exists.
+    r = evaluate([{"created_at": "2026-08-11T00:00:55Z", "status": "completed",
+                   "conclusion": "success"}], frozen, now)
+    _check("A/no-run-created", r["ok"], False)
+    assert any("NO RUN" in f for f in r["fail_reasons"]), r
+    assert r["facts"]["sessions_behind"] == 1, r  # data alone would NOT have alarmed
+
+    # B: run created but force-cancelled — the 2026-08-12 dispatch signature.
+    r = evaluate([{"created_at": "2026-08-11T22:30:00Z", "status": "completed",
+                   "conclusion": "cancelled"}], frozen, now)
+    _check("B/all-cancelled", r["ok"], False)
+    assert any("NO SUCCESS" in f for f in r["fail_reasons"]), r
+
+    # B: still in flight -> INDETERMINATE. The nightly runs for hours; alarming here
+    # would train the operator to ignore the channel.
+    r = evaluate([{"created_at": "2026-08-11T22:30:00Z", "status": "in_progress",
+                   "conclusion": None}], frozen, now)
+    _check("B/in-flight-indeterminate", r["ok"], True)
+    assert r["warnings"], r
+
+    # C sharp: the run concluded SUCCESS for 08-11 and the store still reads 08-10.
+    # No weekend padding, no long-bake excuse — green that did not advance.
+    r = evaluate([{"created_at": "2026-08-11T22:30:00Z", "status": "completed",
+                   "conclusion": "success"}], frozen, now)
+    _check("C/green-but-not-advanced", r["ok"], False)
+    assert any("DID NOT ADVANCE" in f for f in r["fail_reasons"]), r
+
+    # C coarse: second night out. Owed session 08-12, still nothing since 08-12T22:00Z,
+    # store 2 behind -> A and C both fire.
+    later = datetime(2026, 8, 13, 8, 0, tzinfo=timezone.utc)
+    r = evaluate([{"created_at": "2026-08-11T00:00:55Z", "status": "completed",
+                   "conclusion": "success"}], frozen, later)
+    _check("C/two-sessions-out", r["ok"], False)
+    assert any("NO RUN" in f for f in r["fail_reasons"]), r
+    assert any("STALE DATA" in f for f in r["fail_reasons"]), r
+
+    # Healthy night.
+    r = evaluate([{"created_at": "2026-08-11T22:30:00Z", "status": "completed",
+                   "conclusion": "success"}], advanced, now)
+    _check("healthy", r["ok"], True)
+
+    # Blindness is never a breach.
+    r = evaluate(None, None, now)
+    _check("blind-indeterminate", r["ok"], True)
+    assert len(r["warnings"]) == 2, r
+
+    # Weekend: Saturday resolves to Friday's bake, which happened. A calendar anchor
+    # is what lets this budget be tight where the 96h heartbeat has to be loose.
+    sat = datetime(2026, 8, 15, 8, 0, tzinfo=timezone.utc)
+    r = evaluate([{"created_at": "2026-08-14T22:30:00Z", "status": "completed",
+                   "conclusion": "success"}], {"source_asof": "2026-08-14"}, sat)
+    _check("weekend-no-false-alarm", r["ok"], True)
+
+    print("nightly-liveness selftest: " + ("PASS" if ok else "FAIL"), flush=True)
+    return 0 if ok else 1
+
+
+def main(argv: "list[str] | None" = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--selftest", action="store_true",
+                        help="synthetic assertions over the 2026-08 failure shapes")
+    parser.add_argument("--repo", default=DEFAULT_REPO)
+    parser.add_argument("--runs-json", type=Path,
+                        help="offline: read the run list from a file instead of the API")
+    parser.add_argument("--index-json", type=Path,
+                        default=REPO_ROOT / "site" / "prophet" / "index.json")
+    parser.add_argument("--max-sessions-behind", type=int, default=MAX_SESSIONS_BEHIND)
+    args = parser.parse_args(argv)
+
+    if args.selftest:
+        return _selftest()
+
+    now = datetime.now(timezone.utc)
+    if args.runs_json:
+        # Offline mode accepts either a bare list or a full API payload.
+        try:
+            raw = json.loads(args.runs_json.read_text())
+        except (OSError, ValueError):
+            raw = None
+        if isinstance(raw, list):
+            runs = raw
+        elif isinstance(raw, dict) and isinstance(raw.get("workflow_runs"), list):
+            runs = raw["workflow_runs"]
+        else:
+            runs = None
+    else:
+        runs = fetch_runs(args.repo, os.environ.get("GITHUB_TOKEN"))
+
+    report = evaluate(runs, load_index(args.index_json), now,
+                      max_sessions_behind=args.max_sessions_behind)
+
+    for line in report["warnings"]:
+        print(f"::warning title=nightly-liveness::{line}", flush=True)
+    for line in report["fail_reasons"]:
+        print(f"::error title=nightly-liveness::{line}", flush=True)
+
+    facts = report["facts"]
+    print(
+        "nightly liveness | session={} runs_since={} source_asof={} behind={}".format(
+            facts.get("expected_session"),
+            facts.get("runs_since_boundary", "?"),
+            facts.get("source_asof", "?"),
+            facts.get("sessions_behind", "?"),
+        ),
+        flush=True,
+    )
+
+    if not report["ok"]:
+        _notify(report)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
