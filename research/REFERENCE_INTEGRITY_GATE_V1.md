@@ -1,6 +1,8 @@
-# Reference Integrity Gate — V1
+# Reference Integrity Gate — V1.1
 
 **Program:** Mastermind Product Design System & Experience Convergence (governance layer).
+**V1.1 (additive):** §13 revision continuity closure + rule L10 — a `REVISE` may not evaporate
+between cycles. V1's §6 rationale quarantine and §3 fresh-SHA/stale-receipt rules are unchanged.
 **Companions:** `research/DESIGN_MIGRATION_FACTORY_V1.md` (the migration process this gate
 precedes), `research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md` (visual/composition law),
 `docs/DESIGN_DOCTRINE.md` (content law), `docs/product_experience/PAGE_EVIDENCE_HARNESS.md`
@@ -109,6 +111,7 @@ this third namespace for integrity evidence). Machine-readable YAML; every schem
 | `reviews/visual_taste.yml` | `mastermind.rig_review.v1` | Reviewer B receipt (§6), two-pass |
 | `verdict.yml` | `mastermind.rig_verdict.v1` | §7 design-authority verdict packet |
 | `approval.yml` | `mastermind.rig_approval.v1` | §7 approval receipt — exists **only** when status is `approved` |
+| `continuity.yml` | `mastermind.rig_continuity.v1` | §13 revision continuity closure — required **only** when the cycle follows a non-approving predecessor verdict |
 
 **Status lifecycle** (`manifest.yml: status`): `draft → in_review → {approved | revise |
 rejected}`, plus `superseded` (a later reference replaced this one; its manifest names the
@@ -278,6 +281,10 @@ through the existing house-law check path, no new CI topology) validates:
 - **L9 registry coupling** — no page-registry row (overrides or compiled registry) carries
   `design_system.compliant: true` for a route whose RIG reference is missing or not
   `approved` (starts with zero debt: no compliant rows exist today).
+- **L10 revision continuity closure** — §13. A cycle following a non-approving verdict
+  accounts for every unresolved predecessor blocker and every authority condition by id,
+  with exactly one successor disposition each. Armed at **every** status, `draft` included,
+  so it fails before the critics are ever dispatched.
 
 Failures print `::error` annotations at line start (house annotation law) and name a stable
 finding code per rule; `tests/test_check_reference_integrity.py` mutation-tests every rule
@@ -339,3 +346,110 @@ enforces the receipts.
 - Not a replacement for the migration factory — approved references flow into it unchanged.
 - Not deniable — builder rationale never substitutes for product comparison (quarantine,
   §6), and incomplete data never silently redefines the UX (§1).
+- Not forgetful — a finding the gate has already upheld cannot vanish between revisions
+  because the next builder's rationale did not mention it (§13).
+
+---
+
+## §13 Revision continuity closure — a REVISE may not evaporate
+
+**Added in V1.1. Purely additive: §3's fresh-SHA/stale-receipt rules and §6's rationale
+quarantine are untouched.** Fresh critics still judge the new SHA against production and are
+still expected to find *new* defects. Continuity runs beside them and stops *old* defects from
+disappearing.
+
+### §13.0 The hole, and the real failure that found it
+
+V1 gates a cycle. It does not gate the **seam between cycles**. A `REVISE` verdict can carry
+unresolved blockers and authority conditions, and nothing mechanical obliged the next revision
+to account for them — so the next builder's own rationale became the de-facto scope of the fix.
+
+Prophet r3 (`6ad6b51b`) proved it, and proved it while doing good work: it closed all four r2
+blockers and every item its own A–E rationale discussed. It also **silently omitted** four items
+r2 had already upheld and written into the authority's own conditions — card→detail navigation,
+the degraded-freshness disclosure, the anonymous-gate copy contract, and whole-book
+reachability. Two of those were, by then, in their **third** consecutive revision. Nothing
+failed. The omission surfaced only because an independent r3 critic happened to re-find it, and
+the r3 verdict's own strongest-argument-against had to be spent on it:
+
+> The cycle fixed everything its rationale discussed and moved nothing that appeared on no list.
+
+That is the V1 laundering failure one level up — not a bad decision laundered into law, but a
+review loop converging on the subset of the critique that was written down as code-shaped
+conditions, while the capability-shaped ones stayed invisible. **A gate that only works when the
+next builder chooses to re-read the last verdict is not a gate.**
+
+### §13.1 The law
+
+> A reference cycle that follows a prior `REVISE` or `REJECT` must identify its predecessor
+> artifact set and verdict, and mechanically account for **every** unresolved predecessor
+> blocker and **every** design-authority condition, **by id**, before the revised proposal may
+> enter review.
+
+Every predecessor open item receives exactly one successor disposition. **There is no missing
+state and no implicit state** — the same shape as §1's no-implicit-deletion law, applied to
+findings instead of capabilities:
+
+| disposition | meaning | mandatory fields |
+|---|---|---|
+| `RESOLVED_BY_CHANGE` | fixed in the new SHA | `evidence`, `changed_files` (≥1, in the new SHA) |
+| `CARRIED_BLOCK` | still unresolved, and said so out loud | `note`; **cannot coexist with `approved`** |
+| `OVERRIDDEN` | the authority overrides it, permanently on record | `authority`, `rationale`, `finding` |
+| `SUPERSEDED` | a named later finding/ruling genuinely replaces it | `superseded_by`, `linkage` |
+
+`CARRIED_BLOCK` is the load-bearing one. It is **legal** — a revision is allowed to not fix
+something — but it must be *stated*, it blocks approval, and it makes the debt visible to the
+next cycle instead of resetting the count to zero.
+
+### §13.2 The artifact
+
+`research/reference_integrity/<id>/continuity.yml`, schema `mastermind.rig_continuity.v1`,
+added to the §3 file set. Blank template:
+`research/reference_integrity/templates/CONTINUITY_TEMPLATE.yml`.
+
+The obligation runs against the **nearest** declared predecessor
+(`manifest.lineage.predecessors`, ordered oldest → nearest). A chain is closed link by link:
+the nearer predecessor's own continuity closed the older one, so re-closing it here would
+double-count and dilute into rubber-stamping. Provenance still lists the whole chain.
+
+Escaping by *declaring a conveniently old ancestor* is closed separately: `undeclared-predecessor`
+compares against **every** non-approved artifact set governing the same `surface.route`, not just
+the nearest.
+
+When the predecessor set is not in the checkout (its PR is still open), the successor carries
+`source: snapshot` with a `source_ref` proving where the closure set came from. A snapshot with
+no source is a finding.
+
+### §13.3 Conditions must be citable
+
+V1 wrote `verdict.yml: conditions` as bare strings, which cannot be carried forward by id. V1.1
+accepts both the string form and `{id, text}`, and requires the id form **only once a successor
+actually exists that must cite it** — forward-binding, never retroactive. A verdict nobody has
+succeeded yet is never punished for legacy-form conditions. Cite conditions by minted id, never
+by list position: positions shift on every append, and the house has already been burned by
+row-number citations that mis-resolved.
+
+### §13.4 It must fail before the critics run
+
+`GROUP_CONTINUITY` is armed at **every** status, `draft` and `in_review` included — unlike the
+completeness group, which waits for a terminal status. A successor that has dropped a prior item
+is therefore rejected while it still has no receipts at all, so the fleet never spends two
+independent Opus critics on a proposal that was already inadmissible. Continuity is an
+**admission** gate; §6 remains the judgment gate.
+
+### §13.5 The mandate is derived, not written by hand
+
+`check_reference_integrity.py --mandate <reference-id>` reads the predecessor's `verdict.yml`
+and prints the machine-complete closure set — every open item, `disposition: <REQUIRED>`, with
+the predecessor's own note as context. A design worker receives **the whole list, from the
+record**, rather than a human-written summary of it. That is the actual fix for the r3 failure:
+the r3 builder was working from a partial, self-authored scope, and a partial summary of a
+verdict is indistinguishable from a complete one until a critic re-finds the gap.
+
+### §13.6 Anti-vacuity
+
+`tests/test_check_reference_integrity.py` and `--selftest` reconstruct the **actual r2→r3
+failure**: a successor that declares its predecessor and omits the card-link, staleness,
+anon-gate-copy and reachability items must fire `continuity-item-missing` at status
+`in_review`, with no critic receipts present. Every L10 code must be provably able to fire, per
+§8's standing anti-vacuity requirement.

@@ -28,6 +28,14 @@ B. **Founding case.**  The real committed fixture
 C. **Output shape.**  Every annotation must START its line, or GitHub silently drops it
    (house annotation law).  Pins the defect class, not the wording.
 
+D. **Revision continuity (RIG §13 / L10, V1.1).**  The seam BETWEEN cycles.  Its anchor case
+   is the real r2→r3 failure: a successor that fixed everything its own rationale discussed
+   and silently dropped four items the predecessor had already upheld.  The suite's spine is
+   that the omission must be caught at status ``in_review`` with **no critic receipts in
+   existence** — continuity is an admission gate, not a judgment gate, so it fires before the
+   fleet spends two independent Opus critics re-deriving the gap.  Fixture builders here are
+   again independent of the checker's own ``--selftest`` fixtures.
+
 Run: python -m pytest tests/test_check_reference_integrity.py -q
 """
 from __future__ import annotations
@@ -1091,3 +1099,595 @@ def test_a_clean_repo_mode_run_exits_zero_and_says_so(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "::notice" in out
     assert "::error" not in out
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Suite D — revision continuity closure (RIG §13 / L10, V1.1)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# The four items the REAL r3 silently dropped: card→detail navigation, the degraded-freshness
+# disclosure, the anonymous-gate copy contract, and whole-book reachability.  Two of them were
+# by then in their THIRD consecutive revision, and nothing mechanical noticed.
+THE_FOUR_OMISSIONS = ["COND-CARD-LINK", "COND-STALENESS", "COND-ANON-COPY", "COND-REACHABILITY"]
+
+# ...plus one upheld blocker the successor genuinely did fix.  The predecessor ALSO carries a
+# blocker it resolved itself, which must never be demanded of the successor.
+PREDECESSOR_CONDITIONS = [
+    ("COND-CARD-LINK", "the card links to the name's detail surface"),
+    ("COND-STALENESS", "the board-level degraded-freshness state returns"),
+    ("COND-ANON-COPY", "the anon gate stops promising levels no card renders"),
+    ("COND-REACHABILITY", "the whole book stays reachable, not the first 40 rows"),
+]
+
+
+def predecessor_docs(reference_id: str, *, bare_conditions: bool = False) -> dict[str, Any]:
+    """A REVISE predecessor: one upheld blocker, one self-resolved blocker, four conditions."""
+    docs = valid_docs(reference_id)
+    docs["manifest.yml"]["status"] = "revise"
+    docs["verdict.yml"]["verdict"] = "REVISE"
+    docs["verdict.yml"]["blocking_findings"] = [
+        {"finding": "PRC-201", "resolution": "upheld_revise",
+         "note": "the counted risk carrier is gone from the card"},
+        {"finding": "PRC-202", "resolution": "resolved_by_change",
+         "note": "closed in the predecessor's own cycle"},
+    ]
+    docs["verdict.yml"]["overrides"] = []
+    docs["verdict.yml"]["conditions"] = (
+        [text for _cid, text in PREDECESSOR_CONDITIONS] if bare_conditions
+        else [{"id": cid, "text": text} for cid, text in PREDECESSOR_CONDITIONS]
+    )
+    docs["approval.yml"] = None
+    return docs
+
+
+def full_closure() -> list[dict[str, Any]]:
+    """An honest, complete closure of the predecessor's five open items."""
+    rows: list[dict[str, Any]] = [
+        {"id": "PRC-201", "kind": "blocker", "disposition": "RESOLVED_BY_CHANGE",
+         "evidence": "the counted risk pill is back in the marks row with its popover",
+         "changed_files": ["mockups/design_system/board.js"]},
+    ]
+    for cid, text in PREDECESSOR_CONDITIONS:
+        rows.append({"id": cid, "kind": "condition", "disposition": "CARRIED_BLOCK",
+                     "note": f"not moved this cycle: {text}"})
+    return rows
+
+
+def successor_docs(
+    reference_id: str,
+    predecessors: list[str],
+    closure: list[dict[str, Any]] | None,
+    *,
+    status: str = "in_review",
+    closes: str | None = None,
+    source: str = "on_disk",
+    source_ref: str = "",
+    with_receipts: bool = False,
+    revision_mandate: list[str] | None = None,
+) -> dict[str, Any]:
+    """A successor declaring ``predecessors`` (ordered oldest → nearest).
+
+    Receipts are absent by default ON PURPOSE: RIG §13.4 requires the gate to fire at
+    ``in_review``, before any critic has been dispatched.
+    """
+    docs = valid_docs(reference_id)
+    docs["manifest.yml"]["status"] = status
+    docs["manifest.yml"]["lineage"] = {"predecessors": list(predecessors)}
+    if status != "approved":
+        docs["approval.yml"] = None
+    if not with_receipts:
+        docs["reviews/product_regression.yml"] = None
+        docs["reviews/visual_taste.yml"] = None
+    if revision_mandate is not None:
+        docs["proposal.yml"]["revision_mandate"] = revision_mandate
+    if closure is not None:
+        block: dict[str, Any] = {
+            "reference_id": closes or (predecessors[-1] if predecessors else ""),
+            "verdict": "REVISE", "source": source, "closure": closure,
+        }
+        if source_ref:
+            block["source_ref"] = source_ref
+        docs["continuity.yml"] = {
+            "schema": "mastermind.rig_continuity.v1",
+            "reference_id": reference_id,
+            "predecessors": [block],
+        }
+    return docs
+
+
+def continuity_case(
+    root: Path,
+    tag: str,
+    closure: list[dict[str, Any]] | None,
+    *,
+    bare_conditions: bool = False,
+    **kwargs: Any,
+) -> list[Any]:
+    """Materialize a predecessor + a successor declaring it; return the successor's findings."""
+    pred, succ = f"{tag}-pred", f"{tag}-succ"
+    write_set(root, pred, predecessor_docs(pred, bare_conditions=bare_conditions))
+    write_set(root, succ, successor_docs(succ, [pred], closure, **kwargs))
+    return findings(root, succ)
+
+
+def continuity_codes(root: Path, tag: str, closure: list[dict[str, Any]] | None, **kwargs: Any) -> set[str]:
+    return {f.code for f in continuity_case(root, tag, closure, **kwargs)}
+
+
+def missing_items(found: list[Any]) -> set[str]:
+    return {f.subject.rsplit(":", 1)[-1] for f in found if f.code == "continuity-item-missing"}
+
+
+# ── The anchor case: the actual r2→r3 failure ─────────────────────────────────
+
+def test_the_dropped_items_fire_before_a_single_critic_has_run(tmp_path):
+    """RIG §13.6 — the anti-vacuity case, reconstructed from the real failure.
+
+    A successor declares its predecessor, fixes the blocker its own rationale discussed, and
+    omits the four items the predecessor had already upheld.  The gate must catch that at
+    ``in_review``, with NO critic receipts in existence: continuity is an ADMISSION gate.
+    """
+    kept = [row for row in full_closure() if row["id"] == "PRC-201"]
+    found = continuity_case(tmp_path, "r3", kept)
+    fired = {f.code for f in found}
+
+    succ_dir = tmp_path / "research" / "reference_integrity" / "r3-succ"
+    assert yaml.safe_load((succ_dir / "manifest.yml").read_text())["status"] == "in_review"
+    for role in RIG.REVIEW_ROLES:
+        assert not (succ_dir / "reviews" / f"{role}.yml").exists(), \
+            "the case is only meaningful with zero critic receipts on disk"
+    assert "missing-review-receipt" not in fired, \
+        "no critic has been dispatched — the continuity failure must not need one"
+    assert "stale-review-receipt" not in fired
+
+    assert missing_items(found) == set(THE_FOUR_OMISSIONS), sorted(fired)
+    assert len([f for f in found if f.code == "continuity-item-missing"]) == 4
+
+
+def test_adding_the_four_rows_back_clears_the_finding(tmp_path):
+    fired = continuity_codes(tmp_path, "r3-complete", full_closure())
+    assert fired == set(), sorted(fired)
+
+
+def test_a_predecessor_row_it_resolved_itself_is_never_demanded(tmp_path):
+    """Anti-over-firing: ``resolved_by_change`` / ``overridden`` closed IN the predecessor."""
+    found = continuity_case(tmp_path, "r3-selfclosed", full_closure())
+    assert "PRC-202" not in missing_items(found)
+
+
+def test_a_resolved_by_change_row_without_changed_files_fires(tmp_path):
+    rows = full_closure()
+    rows[0].pop("changed_files")
+    fired = continuity_codes(tmp_path, "r3-no-files", rows)
+    assert "continuity-resolved-without-evidence" in fired, sorted(fired)
+
+
+def test_a_resolved_by_change_row_without_evidence_fires(tmp_path):
+    rows = full_closure()
+    rows[0]["evidence"] = "   "
+    fired = continuity_codes(tmp_path, "r3-no-evidence", rows)
+    assert "continuity-resolved-without-evidence" in fired, sorted(fired)
+
+
+def test_a_carried_block_row_blocks_approved(tmp_path):
+    """§13.1: CARRIED_BLOCK is legal and honest — and it cannot coexist with ``approved``."""
+    fired = continuity_codes(tmp_path, "r3-approved", full_closure(),
+                             status="approved", with_receipts=True)
+    assert "continuity-carried-block-approved" in fired, sorted(fired)
+
+
+def test_a_fully_resolved_closure_does_not_block_approved(tmp_path):
+    """Anti-over-firing: approval is blocked by the carried debt, not by having a record."""
+    rows = full_closure()
+    for row in rows:
+        row.update({"disposition": "RESOLVED_BY_CHANGE",
+                    "evidence": "closed in the new SHA",
+                    "changed_files": ["mockups/design_system/board.js"]})
+        row.pop("note", None)
+    fired = continuity_codes(tmp_path, "r3-all-fixed", rows,
+                             status="approved", with_receipts=True)
+    assert "continuity-carried-block-approved" not in fired, sorted(fired)
+    assert "continuity-item-missing" not in fired, sorted(fired)
+
+
+# ── The record must exist, and be internally coherent ─────────────────────────
+
+def test_a_successor_of_a_revise_with_no_continuity_file_fires(tmp_path):
+    fired = continuity_codes(tmp_path, "r3-none", None)
+    assert "continuity-missing" in fired, sorted(fired)
+
+
+def test_a_successor_of_an_APPROVED_predecessor_needs_no_continuity_file(tmp_path):
+    """Anti-over-firing: §13 binds a cycle that follows a REVISE/REJECT, not every lineage."""
+    write_set(tmp_path, "ok-pred", valid_docs("ok-pred"))            # status approved
+    write_set(tmp_path, "ok-succ", successor_docs("ok-succ", ["ok-pred"], None))
+    fired = codes(tmp_path, "ok-succ")
+    assert "continuity-missing" not in fired, sorted(fired)
+
+
+def test_a_set_declaring_no_predecessor_is_untouched_by_l10(tmp_path):
+    write_set(tmp_path, "solo-ref", valid_docs("solo-ref"))
+    fired = codes(tmp_path, "solo-ref")
+    assert not {c for c in fired if c.startswith("continuity-")}, sorted(fired)
+
+
+def test_the_same_predecessor_id_in_two_rows_fires(tmp_path):
+    rows = full_closure()
+    rows.append(copy.deepcopy(rows[1]))
+    fired = continuity_codes(tmp_path, "r3-dup", rows)
+    assert "continuity-item-duplicated" in fired, sorted(fired)
+
+
+@pytest.mark.parametrize("disposition", ["FIXED", "", "resolved_by_change"])
+def test_a_disposition_outside_the_four_value_enum_fires(tmp_path, disposition):
+    rows = full_closure()
+    rows[1]["disposition"] = disposition
+    fired = continuity_codes(tmp_path, f"r3-enum-{disposition or 'blank'}", rows)
+    assert "continuity-invalid-disposition" in fired, sorted(fired)
+
+
+def test_a_closure_id_the_predecessor_never_minted_fires_renamed_without_linkage(tmp_path):
+    rows = full_closure()
+    rows.append({"id": "PRC-999", "kind": "blocker", "disposition": "CARRIED_BLOCK",
+                 "note": "an id that exists nowhere in the predecessor record"})
+    fired = continuity_codes(tmp_path, "r3-renamed", rows)
+    assert "continuity-renamed-without-linkage" in fired, sorted(fired)
+
+
+def test_a_rename_carrying_predecessor_ref_is_accepted_and_closes_the_item(tmp_path):
+    """Anti-over-firing: a renamed item is legal when it names what it closes."""
+    rows = full_closure()
+    rows[1] = {"id": "PRC-301", "kind": "condition", "disposition": "CARRIED_BLOCK",
+               "predecessor_ref": "COND-CARD-LINK",
+               "note": "re-raised at r3 under a new id — third consecutive revision"}
+    found = continuity_case(tmp_path, "r3-linked", rows)
+    fired = {f.code for f in found}
+    assert "continuity-renamed-without-linkage" not in fired, sorted(fired)
+    assert "COND-CARD-LINK" not in missing_items(found), sorted(fired)
+
+
+def test_superseded_without_superseded_by_or_linkage_fires(tmp_path):
+    rows = full_closure()
+    rows[1] = {"id": "COND-CARD-LINK", "kind": "condition", "disposition": "SUPERSEDED"}
+    fired = continuity_codes(tmp_path, "r3-superseded", rows)
+    assert "continuity-superseded-without-linkage" in fired, sorted(fired)
+
+
+def test_a_complete_superseded_row_passes(tmp_path):
+    rows = full_closure()
+    rows[1] = {"id": "COND-CARD-LINK", "kind": "condition", "disposition": "SUPERSEDED",
+               "superseded_by": "PRC-311",
+               "linkage": "PRC-311 requires the same navigation on a wider surface"}
+    fired = continuity_codes(tmp_path, "r3-superseded-ok", rows)
+    assert "continuity-superseded-without-linkage" not in fired, sorted(fired)
+
+
+@pytest.mark.parametrize("dropped", ["authority", "rationale", "finding"])
+def test_an_override_missing_any_of_its_three_fields_fires(tmp_path, dropped):
+    rows = full_closure()
+    row = {"id": "COND-CARD-LINK", "kind": "condition", "disposition": "OVERRIDDEN",
+           "authority": "design-authority-main-loop",
+           "rationale": "navigation belongs to the paid detail tier",
+           "finding": "COND-CARD-LINK"}
+    row.pop(dropped)
+    rows[1] = row
+    fired = continuity_codes(tmp_path, f"r3-override-{dropped}", rows)
+    assert "continuity-overridden-without-authority" in fired, sorted(fired)
+
+
+def test_a_complete_override_row_passes(tmp_path):
+    rows = full_closure()
+    rows[1] = {"id": "COND-CARD-LINK", "kind": "condition", "disposition": "OVERRIDDEN",
+               "authority": "design-authority-main-loop",
+               "rationale": "navigation belongs to the paid detail tier",
+               "finding": "COND-CARD-LINK"}
+    fired = continuity_codes(tmp_path, "r3-override-ok", rows)
+    assert "continuity-overridden-without-authority" not in fired, sorted(fired)
+
+
+# ── Snapshot form: a predecessor whose PR is still open ───────────────────────
+
+def test_a_snapshot_predecessor_without_a_source_ref_fires(tmp_path):
+    fired = continuity_codes(tmp_path, "r3-snap", full_closure(), source="snapshot")
+    assert "continuity-snapshot-without-source" in fired, sorted(fired)
+
+
+def test_a_snapshot_predecessor_with_a_source_ref_passes(tmp_path):
+    fired = continuity_codes(tmp_path, "r3-snap-ok", full_closure(), source="snapshot",
+                             source_ref="PR #5533 head f717aab2 — set not in this checkout")
+    assert "continuity-snapshot-without-source" not in fired, sorted(fired)
+
+
+def test_a_predecessor_absent_from_the_checkout_must_use_the_snapshot_form(tmp_path):
+    """``source: on_disk`` for a set that is NOT on disk is an unprovable claim."""
+    docs = successor_docs("ghost-succ", ["ghost-pred"], full_closure())
+    write_set(tmp_path, "ghost-succ", docs)
+    fired = codes(tmp_path, "ghost-succ")
+    assert "continuity-snapshot-without-source" in fired, sorted(fired)
+
+
+def test_an_unresolvable_predecessor_cannot_prove_it_approved(tmp_path):
+    """Fail-closed: no continuity.yml + an unreadable predecessor is still ``continuity-missing``."""
+    write_set(tmp_path, "ghost2-succ", successor_docs("ghost2-succ", ["ghost2-pred"], None))
+    fired = codes(tmp_path, "ghost2-succ")
+    assert "continuity-missing" in fired, sorted(fired)
+
+
+# ── Nearest-predecessor scoping (RIG §13.2) ───────────────────────────────────
+
+def test_only_the_nearest_predecessors_items_are_demanded(tmp_path):
+    """A chain is closed link by link — re-closing the older ancestor would rubber-stamp."""
+    write_set(tmp_path, "chain-old", predecessor_docs("chain-old"))
+    recent = predecessor_docs("chain-recent")
+    recent["verdict.yml"]["blocking_findings"] = [
+        {"finding": "PRC-401", "resolution": "upheld_revise", "note": "the newer open item"},
+    ]
+    recent["verdict.yml"]["conditions"] = [{"id": "COND-NEW", "text": "the newer condition"}]
+    recent["manifest.yml"]["lineage"] = {"predecessors": ["chain-old"]}
+    write_set(tmp_path, "chain-recent", recent)
+    write_set(tmp_path, "chain-succ", successor_docs(
+        "chain-succ", ["chain-old", "chain-recent"],
+        [{"id": "PRC-401", "kind": "blocker", "disposition": "CARRIED_BLOCK", "note": "not moved"},
+         {"id": "COND-NEW", "kind": "condition", "disposition": "CARRIED_BLOCK", "note": "not moved"}],
+    ))
+    found = findings(tmp_path, "chain-succ")
+    assert missing_items(found) == set(), [f.annotation() for f in found]
+
+
+# ── The mandate must cover what the closure carries (RIG §13.5) ───────────────
+
+def test_a_revision_mandate_short_of_the_closure_set_fires(tmp_path):
+    fired = continuity_codes(tmp_path, "r3-mandate", full_closure(),
+                             revision_mandate=["PRC-201", "COND-CARD-LINK"])
+    assert "mandate-incomplete" in fired, sorted(fired)
+
+
+def test_a_complete_revision_mandate_passes(tmp_path):
+    fired = continuity_codes(tmp_path, "r3-mandate-ok", full_closure(),
+                             revision_mandate=["PRC-201"] + THE_FOUR_OMISSIONS)
+    assert "mandate-incomplete" not in fired, sorted(fired)
+
+
+def test_no_revision_mandate_at_all_is_inert(tmp_path):
+    """continuity.yml IS the record; the mandate is an optional restatement of it."""
+    fired = continuity_codes(tmp_path, "r3-mandate-absent", full_closure())
+    assert "mandate-incomplete" not in fired, sorted(fired)
+
+
+# ── Conditions must be citable — forward-binding, never retroactive (§13.3) ───
+
+def test_a_bare_string_condition_fires_once_a_successor_must_cite_it(tmp_path):
+    kept = [row for row in full_closure() if row["id"] == "PRC-201"]
+    fired = continuity_codes(tmp_path, "legacy", kept, bare_conditions=True)
+    assert "condition-without-id" in fired, sorted(fired)
+
+
+def test_a_legacy_verdict_nobody_has_succeeded_is_never_punished(tmp_path):
+    """The other direction: the SAME verdict, with no successor, is clean."""
+    write_set(tmp_path, "legacy-alone", predecessor_docs("legacy-alone", bare_conditions=True))
+    fired = codes(tmp_path, "legacy-alone")
+    assert "condition-without-id" not in fired, sorted(fired)
+    assert fired == set(), sorted(fired)
+
+
+def test_a_provenance_only_ancestor_keeps_its_legacy_conditions(tmp_path):
+    """The §10 founding fixture's shape: named as provenance, never the nearest.
+
+    Nothing has to cite its conditions, so a rule written afterwards must not churn it.
+    """
+    write_set(tmp_path, "prov-old", predecessor_docs("prov-old", bare_conditions=True))
+    recent = predecessor_docs("prov-recent")
+    recent["manifest.yml"]["lineage"] = {"predecessors": ["prov-old"]}
+    write_set(tmp_path, "prov-recent", recent)
+    write_set(tmp_path, "prov-succ", successor_docs(
+        "prov-succ", ["prov-old", "prov-recent"], full_closure(), closes="prov-recent"))
+    fired = codes(tmp_path, "prov-succ")
+    assert "condition-without-id" not in fired, sorted(fired)
+
+
+def test_the_founding_fixture_keeps_its_legacy_conditions_on_main(capsys):
+    """The real §10 fixture: bare-string conditions, nothing succeeds it, repo mode is clean."""
+    doc = yaml.safe_load((FOUNDING_DIR / "verdict.yml").read_text(encoding="utf-8"))
+    assert any(not isinstance(c, dict) for c in doc["conditions"]), \
+        "this test is only meaningful while the fixture is legacy-form"
+    assert RIG.main(["--root", str(ROOT)]) == 0
+    out = capsys.readouterr().out
+    assert "condition-without-id" not in out, out
+
+
+# ── undeclared-predecessor — the anti-escape half (repo-wide, §13.2) ──────────
+
+def repo_l10(root: Path) -> list[Any]:
+    return RIG.rule_l10_repo(root, RIG.discover_artifact_sets(root))
+
+
+def test_declaring_a_conveniently_old_ancestor_does_not_satisfy_the_law(tmp_path):
+    """The loophole the nearest-only obligation would otherwise open.
+
+    A successor on the same route as a newer non-approved set, declaring only the OLD one,
+    must fire — otherwise the closure obligation could be pointed at a stale ancestor with
+    nothing left open.
+    """
+    write_set(tmp_path, "route-old", predecessor_docs("route-old"))
+    write_set(tmp_path, "route-recent", predecessor_docs("route-recent"))
+    write_set(tmp_path, "route-succ",
+              successor_docs("route-succ", ["route-old"], full_closure(), closes="route-old"))
+    found = repo_l10(tmp_path)
+    assert ("undeclared-predecessor", "route-succ:route-recent") in {(f.code, f.subject) for f in found}, \
+        [f.annotation() for f in found]
+
+
+def test_declaring_every_non_approved_set_on_the_route_passes(tmp_path):
+    write_set(tmp_path, "route2-old", predecessor_docs("route2-old"))
+    write_set(tmp_path, "route2-recent", predecessor_docs("route2-recent"))
+    write_set(tmp_path, "route2-succ", successor_docs(
+        "route2-succ", ["route2-old", "route2-recent"], full_closure()))
+    assert [f.code for f in repo_l10(tmp_path)] == []
+
+
+def test_a_predecessor_reached_through_the_declared_chain_counts_as_declared(tmp_path):
+    """Declaring the nearest, whose own lineage names the older one, is complete provenance."""
+    write_set(tmp_path, "chain2-old", predecessor_docs("chain2-old"))
+    recent = predecessor_docs("chain2-recent")
+    recent["manifest.yml"]["lineage"] = {"predecessors": ["chain2-old"]}
+    write_set(tmp_path, "chain2-recent", recent)
+    write_set(tmp_path, "chain2-succ",
+              successor_docs("chain2-succ", ["chain2-recent"], full_closure()))
+    assert [f.code for f in repo_l10(tmp_path)] == []
+
+
+def test_an_approved_set_on_the_route_is_not_an_undeclared_predecessor(tmp_path):
+    write_set(tmp_path, "appr-ref", valid_docs("appr-ref"))          # approved, route board.html
+    write_set(tmp_path, "appr-pred", predecessor_docs("appr-pred"))
+    write_set(tmp_path, "appr-succ",
+              successor_docs("appr-succ", ["appr-pred"], full_closure()))
+    fired = {(f.code, f.subject) for f in repo_l10(tmp_path)}
+    assert ("undeclared-predecessor", "appr-succ:appr-ref") not in fired, sorted(fired)
+
+
+def test_a_historical_record_is_not_made_to_declare_its_own_siblings(tmp_path):
+    """Non-retroactive: two terminal sets that claim no lineage are records, not successors."""
+    write_set(tmp_path, "hist-a", predecessor_docs("hist-a"))
+    write_set(tmp_path, "hist-b", predecessor_docs("hist-b"))
+    assert [f.code for f in repo_l10(tmp_path)] == []
+
+
+def test_a_set_on_a_different_route_is_not_a_predecessor(tmp_path):
+    other = predecessor_docs("other-route")
+    other["manifest.yml"]["surface"]["route"] = "macro.html"
+    write_set(tmp_path, "other-route", other)
+    write_set(tmp_path, "route3-succ", successor_docs("route3-succ", [], None, status="draft"))
+    assert [f.code for f in repo_l10(tmp_path)] == []
+
+
+# ── Arming (RIG §13.4) ────────────────────────────────────────────────────────
+
+def test_the_continuity_group_is_armed_at_every_status_but_superseded():
+    for status in ("draft", "in_review", "revise", "rejected", "approved"):
+        assert RIG.GROUP_CONTINUITY in RIG.STATUS_GROUPS[status], status
+    assert RIG.GROUP_CONTINUITY not in RIG.STATUS_GROUPS["superseded"]
+    assert RIG.GROUP_CONTINUITY in RIG.ALL_GROUPS
+
+
+@pytest.mark.parametrize("status", ["draft", "in_review", "revise", "rejected"])
+def test_a_dropped_item_fires_at_every_pre_approval_status(tmp_path, status):
+    kept = [row for row in full_closure() if row["id"] == "PRC-201"]
+    fired = continuity_codes(tmp_path, f"arm-{status}", kept, status=status,
+                             with_receipts=status in {"revise", "rejected"})
+    assert "continuity-item-missing" in fired, sorted(fired)
+
+
+def test_the_completeness_group_still_waits_for_a_terminal_status(tmp_path):
+    """The asymmetry is the point: continuity admits, completeness judges."""
+    fired = continuity_codes(tmp_path, "arm-draft-complete", full_closure(), status="draft")
+    assert "missing-artifact-file" not in fired, sorted(fired)
+    assert "missing-review-receipt" not in fired, sorted(fired)
+
+
+# ── Partial / stray directories must not crash the walk ───────────────────────
+
+def test_a_directory_holding_only_a_continuity_file_is_skipped(tmp_path, capsys):
+    """The r3 half-set on main today: continuity.yml lands with the gate, manifest with #5552."""
+    write_set(tmp_path, "synthetic-ref", valid_docs("synthetic-ref"))
+    stray = tmp_path / "research" / "reference_integrity" / "half-landed"
+    stray.mkdir(parents=True)
+    (stray / "continuity.yml").write_text(
+        yaml.safe_dump({"schema": "mastermind.rig_continuity.v1",
+                        "reference_id": "half-landed",
+                        "predecessors": [{"reference_id": "nowhere", "verdict": "REVISE",
+                                          "source": "snapshot", "source_ref": "PR #5533",
+                                          "closure": []}]}),
+        encoding="utf-8",
+    )
+    assert [a.reference_id for a in RIG.discover_artifact_sets(tmp_path)] == ["synthetic-ref"]
+    assert RIG.main(["--root", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "::error" not in out, out
+
+
+def test_the_real_half_landed_r3_directory_does_not_break_repo_mode(capsys):
+    """Belt and braces on the checkout itself: repo mode over ROOT stays green."""
+    assert RIG.main(["--root", str(ROOT)]) == 0, capsys.readouterr().out
+
+
+# ── --mandate: derived, not hand-written (RIG §13.5) ──────────────────────────
+
+def test_mandate_derives_every_open_item_from_the_predecessor_record(tmp_path, capsys):
+    write_set(tmp_path, "md-pred", predecessor_docs("md-pred"))
+    write_set(tmp_path, "md-succ", successor_docs("md-succ", ["md-pred"], None))
+    exit_code = RIG.main(["--root", str(tmp_path), "--mandate", "md-succ"])
+    out = capsys.readouterr().out
+    assert exit_code == 0, out
+
+    derived = yaml.safe_load(out)
+    assert derived["schema"] == "mastermind.rig_continuity.v1"
+    assert derived["reference_id"] == "md-succ"
+    block = derived["predecessors"][0]
+    assert block["reference_id"] == "md-pred"
+    assert block["source"] == "on_disk"
+    rows = block["closure"]
+    assert {row["id"] for row in rows} == {"PRC-201", *THE_FOUR_OMISSIONS}
+    assert {row["disposition"] for row in rows} == {"<REQUIRED>"}
+    assert all(row.get("predecessor_note") for row in rows), \
+        "the predecessor's own note is the context a builder needs"
+    assert "PRC-202" not in {row["id"] for row in rows}, "already closed in the predecessor"
+
+
+def test_the_derived_skeleton_is_not_itself_a_passing_artifact(tmp_path, capsys):
+    """``<REQUIRED>`` must fail the enum — an unfilled mandate is a work order, not a record."""
+    write_set(tmp_path, "md2-pred", predecessor_docs("md2-pred"))
+    write_set(tmp_path, "md2-succ", successor_docs("md2-succ", ["md2-pred"], None))
+    RIG.main(["--root", str(tmp_path), "--mandate", "md2-succ"])
+    derived = yaml.safe_load(capsys.readouterr().out)
+    docs = successor_docs("md2-succ", ["md2-pred"], derived["predecessors"][0]["closure"])
+    write_set(tmp_path, "md2-succ", docs)
+    fired = codes(tmp_path, "md2-succ")
+    assert "continuity-invalid-disposition" in fired, sorted(fired)
+    assert "continuity-item-missing" not in fired, "the skeleton is complete, just unfilled"
+
+
+def test_mandate_exits_four_when_the_predecessor_is_not_on_disk(tmp_path, capsys):
+    write_set(tmp_path, "md3-succ", successor_docs("md3-succ", ["md3-not-here"], None))
+    exit_code = RIG.main(["--root", str(tmp_path), "--mandate", "md3-succ"])
+    out = capsys.readouterr().out
+    assert exit_code == 4, out
+    assert "Traceback" not in out
+    annotations = [line for line in out.splitlines() if line.startswith("::")]
+    assert annotations, out
+    assert "continuity-snapshot-without-source" in annotations[0]
+    assert "snapshot" in out
+
+
+def test_mandate_on_an_unknown_reference_id_exits_one(tmp_path, capsys):
+    assert RIG.main(["--root", str(tmp_path), "--mandate", "no-such-ref"]) == 1
+    assert "missing-artifact-file" in capsys.readouterr().out
+
+
+def test_every_mandate_annotation_starts_its_line(tmp_path, capsys):
+    write_set(tmp_path, "md4-succ", successor_docs("md4-succ", ["md4-not-here"], None))
+    RIG.main(["--root", str(tmp_path), "--mandate", "md4-succ"])
+    for line in capsys.readouterr().out.splitlines():
+        if "::error" in line or "::notice" in line:
+            assert line.startswith("::"), f"annotation does not start its line: {line!r}"
+
+
+def test_continuity_annotations_start_their_line(tmp_path, capsys):
+    kept = [row for row in full_closure() if row["id"] == "PRC-201"]
+    write_set(tmp_path, "line-pred", predecessor_docs("line-pred", bare_conditions=True))
+    write_set(tmp_path, "line-succ", successor_docs("line-succ", ["line-pred"], kept))
+    RIG.main(["--root", str(tmp_path)])
+    lines = capsys.readouterr().out.splitlines()
+    marked = [line for line in lines if "::error" in line or "::notice" in line]
+    assert marked
+    for line in marked:
+        assert line.startswith("::"), f"annotation does not start its line: {line!r}"
+
+
+def test_a_continuity_file_with_the_wrong_schema_id_fires(tmp_path):
+    docs = successor_docs("schema-succ", ["schema-pred"], full_closure(),
+                          source="snapshot", source_ref="PR #1")
+    docs["continuity.yml"]["schema"] = "mastermind.rig_continuity.v2"
+    write_set(tmp_path, "schema-pred", predecessor_docs("schema-pred"))
+    write_set(tmp_path, "schema-succ", docs)
+    fired = codes(tmp_path, "schema-succ")
+    assert "invalid-schema" in fired, sorted(fired)

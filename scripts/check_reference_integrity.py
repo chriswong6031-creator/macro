@@ -60,12 +60,26 @@ RULE LEVELS (RIG §8).  Each rule prints a STABLE finding code; tests pin the st
                                             packet-cites-unapproved-reference
     L9  page-registry coupling              compliant-row-without-approved-reference,
                                             missing-registry-file
+    L10 revision continuity (§13, V1.1)     continuity-missing, continuity-item-missing,
+                                            continuity-item-duplicated,
+                                            continuity-invalid-disposition,
+                                            continuity-resolved-without-evidence,
+                                            continuity-renamed-without-linkage,
+                                            continuity-superseded-without-linkage,
+                                            continuity-overridden-without-authority,
+                                            continuity-carried-block-approved,
+                                            continuity-snapshot-without-source,
+                                            undeclared-predecessor, mandate-incomplete,
+                                            condition-without-id
 
 STATUS-SCALED VALIDATION (repo mode).  Mid-flight work is legal; a terminal state is not
 allowed to be a claim with no record.
     draft | in_review  — whatever exists must PARSE and be internally valid (schemas,
                          enums, no duplicate/dangling ledger ids).  Completeness is NOT
-                         required: a half-written proposal is a legal draft.
+                         required: a half-written proposal is a legal draft.  L10 IS armed
+                         here (RIG §13.4): continuity is an ADMISSION gate, so a successor
+                         that already dropped a prior item is refused BEFORE the fleet
+                         spends two independent critics re-deriving the omission.
     revise | rejected  — the review receipts and the verdict packet are REQUIRED (a
                          terminal verdict with no recorded review is illegal), and the
                          record's own integrity is enforced (L5).  The ledger's
@@ -108,11 +122,14 @@ make GitHub silently drop it (house annotation law; tests/test_gh_annotation_lin
 Usage:
     python3 scripts/check_reference_integrity.py                  # repo mode  (exit 0/1)
     python3 scripts/check_reference_integrity.py --evaluate <id>  # gate mode  (exit 0/3)
+    python3 scripts/check_reference_integrity.py --mandate <id>   # derive     (exit 0/4)
     python3 scripts/check_reference_integrity.py --selftest       # hermetic   (exit 0/1)
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import json
 import re
 import sys
@@ -156,6 +173,7 @@ SCHEMA_IDS = {
     "review": "mastermind.rig_review.v1",
     "verdict": "mastermind.rig_verdict.v1",
     "approval": "mastermind.rig_approval.v1",
+    "continuity": "mastermind.rig_continuity.v1",
 }
 STATUSES = frozenset({"draft", "in_review", "approved", "revise", "rejected", "superseded"})
 SCOPES = frozenset({"full", "lightweight"})
@@ -176,6 +194,20 @@ RESOLUTIONS = frozenset({"upheld_revise", "resolved_by_change", "overridden"})
 # disappeared silently, which is exactly what §7 forbids.
 APPROVAL_COMPATIBLE_RESOLUTIONS = frozenset({"resolved_by_change", "overridden"})
 
+# RIG §13.1 (V1.1) — every predecessor open item gets exactly ONE successor disposition.
+# There is no missing state and no implicit state, the same shape as §1's no-implicit-deletion
+# law applied to findings instead of capabilities.
+CONTINUITY_DISPOSITIONS = frozenset({
+    "RESOLVED_BY_CHANGE",   # fixed in the new SHA      — evidence + changed_files (>=1)
+    "CARRIED_BLOCK",        # unresolved, said out loud — note; cannot coexist with approved
+    "OVERRIDDEN",           # authority override        — authority + rationale + finding
+    "SUPERSEDED",           # genuinely replaced        — superseded_by + linkage
+})
+# ``on_disk`` = the predecessor set is in this checkout and its verdict.yml is the source of
+# truth; ``snapshot`` = it is not (its PR is still open), so the entry must prove where the
+# closure set came from (RIG §13.2).
+CONTINUITY_SOURCES = frozenset({"on_disk", "snapshot"})
+
 # RIG §7 — all eight verdict-packet answers are required, non-empty.
 PACKET_KEYS: tuple[str, ...] = (
     "materially_improved",
@@ -195,18 +227,25 @@ GROUP_LEDGER = "ledger"
 GROUP_REGRESSION = "regression"
 GROUP_REVIEW = "review"
 GROUP_APPROVAL = "approval"
+GROUP_CONTINUITY = "continuity"
 
 ALL_GROUPS = frozenset({
     GROUP_SCHEMA, GROUP_COMPLETENESS, GROUP_LEDGER,
-    GROUP_REGRESSION, GROUP_REVIEW, GROUP_APPROVAL,
+    GROUP_REGRESSION, GROUP_REVIEW, GROUP_APPROVAL, GROUP_CONTINUITY,
 })
 
+# GROUP_CONTINUITY is armed at EVERY status except ``superseded`` — including ``draft`` and
+# ``in_review``, unlike GROUP_COMPLETENESS which waits for a terminal state.  That asymmetry
+# is the point (RIG §13.4): continuity is an ADMISSION gate, so a successor that dropped a
+# predecessor item fails while it still has no critic receipts at all, instead of the
+# omission being re-found by an independent critic two passes later.  A ``superseded`` set is
+# a historical record whose successor carries the obligation, so it is not re-litigated.
 STATUS_GROUPS: dict[str, frozenset[str]] = {
-    "draft": frozenset({GROUP_SCHEMA}),
-    "in_review": frozenset({GROUP_SCHEMA}),
+    "draft": frozenset({GROUP_SCHEMA, GROUP_CONTINUITY}),
+    "in_review": frozenset({GROUP_SCHEMA, GROUP_CONTINUITY}),
     "superseded": frozenset({GROUP_SCHEMA}),
-    "revise": frozenset({GROUP_SCHEMA, GROUP_COMPLETENESS, GROUP_REVIEW}),
-    "rejected": frozenset({GROUP_SCHEMA, GROUP_COMPLETENESS, GROUP_REVIEW}),
+    "revise": frozenset({GROUP_SCHEMA, GROUP_COMPLETENESS, GROUP_REVIEW, GROUP_CONTINUITY}),
+    "rejected": frozenset({GROUP_SCHEMA, GROUP_COMPLETENESS, GROUP_REVIEW, GROUP_CONTINUITY}),
     "approved": ALL_GROUPS,
 }
 
@@ -293,6 +332,17 @@ def _has(mapping: Any, key: str) -> bool:
     return bool(_text(_as_dict(mapping).get(key)))
 
 
+def _one_line(value: Any, limit: int = 80) -> str:
+    """Collapse artifact prose to ONE short line before it enters an annotation.
+
+    A newline inside a message would push the rest of the annotation onto a second line that
+    does not start with ``::``, and GitHub silently drops it — the same defect class the
+    house annotation law exists to stop (tests/test_gh_annotation_line_start.py).
+    """
+    text = " ".join(_text(value).split())
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
 def _top_level_dir(rel_path: str) -> str:
     return rel_path.replace("\\", "/").split("/", 1)[0]
 
@@ -320,6 +370,7 @@ class ArtifactSet:
     reviews: dict[str, dict[str, Any] | None] = field(default_factory=dict)
     verdict: dict[str, Any] | None = None
     approval: dict[str, Any] | None = None
+    continuity: dict[str, Any] | None = None
     parse_errors: list[Finding] = field(default_factory=list)
 
     @property
@@ -379,12 +430,14 @@ def load_artifact_set(set_dir: Path, repo_root: Path) -> ArtifactSet:
     proposal_name = _text(files.get("proposal")) or "proposal.yml"
     verdict_name = _text(files.get("verdict")) or "verdict.yml"
     approval_name = _text(files.get("approval")) or "approval.yml"
+    continuity_name = _text(files.get("continuity")) or "continuity.yml"
     review_names = _as_dict(files.get("reviews"))
 
     aset.baseline = _load_yaml(set_dir / baseline_name, repo_root, errors)
     aset.proposal = _load_yaml(set_dir / proposal_name, repo_root, errors)
     aset.verdict = _load_yaml(set_dir / verdict_name, repo_root, errors)
     aset.approval = _load_yaml(set_dir / approval_name, repo_root, errors)
+    aset.continuity = _load_yaml(set_dir / continuity_name, repo_root, errors)
 
     for role in REVIEW_ROLES:
         name = _text(review_names.get(role)) or f"reviews/{role}.yml"
@@ -443,6 +496,7 @@ def rule_l1(
         ("proposal.yml", aset.proposal, SCHEMA_IDS["proposal"]),
         ("verdict.yml", aset.verdict, SCHEMA_IDS["verdict"]),
         ("approval.yml", aset.approval, SCHEMA_IDS["approval"]),
+        ("continuity.yml", aset.continuity, SCHEMA_IDS["continuity"]),
     ]
     for role in REVIEW_ROLES:
         docs.append((f"reviews/{role}.yml", aset.reviews.get(role), SCHEMA_IDS["review"]))
@@ -1000,6 +1054,340 @@ def rule_lightweight_archetype(aset: ArtifactSet, approved_ids: set[str], groups
     return []
 
 
+# ── L10 — revision continuity closure (RIG §13, V1.1) ─────────────────────────
+#
+# V1 gates a cycle; it does not gate the SEAM between cycles.  A REVISE can carry unresolved
+# blockers and authority conditions, and nothing mechanical obliged the next revision to
+# account for them — so the next builder's own rationale became the de-facto scope of the fix
+# and previously-upheld items evaporated silently.  L10 makes the seam mechanical: every
+# predecessor open item gets exactly one successor disposition, by id.
+#
+# THE OBLIGATION RUNS AGAINST THE NEAREST DECLARED PREDECESSOR ONLY.
+# ``manifest.lineage.predecessors`` is ordered oldest -> nearest; the obligation resolves to
+# the LAST entry.  A chain is closed link by link: the nearer predecessor's own continuity.yml
+# already closed the older one, so re-closing it here would double-count and dilute into
+# rubber-stamping.  Earlier entries are provenance and carry no closure obligation.
+# Escaping by declaring a conveniently OLD ancestor and omitting the recent one is closed
+# separately by ``undeclared-predecessor`` (rule_l10_repo), which compares against EVERY
+# non-approved set governing the same surface.route.
+
+def _declared_predecessors(aset: ArtifactSet) -> list[str]:
+    """``manifest.lineage.predecessors``, ordered oldest → nearest; deduped, self dropped.
+
+    Both forms are read: a bare reference id, or a mapping carrying ``reference_id``.
+    """
+    lineage = _as_dict(_as_dict(aset.manifest).get("lineage"))
+    out: list[str] = []
+    for row in _as_list(lineage.get("predecessors")):
+        pid = _text(_as_dict(row).get("reference_id")) if isinstance(row, dict) else _text(row)
+        if not pid or pid == aset.reference_id or pid in out:
+            continue
+        out.append(pid)
+    return out
+
+
+def _load_predecessor(repo_root: Path, reference_id: str) -> ArtifactSet | None:
+    """The predecessor artifact set if it is IN THIS CHECKOUT, else None (snapshot form)."""
+    if not reference_id:
+        return None
+    set_dir = repo_root / RIG_ROOT / reference_id
+    if not (set_dir / "manifest.yml").exists():
+        return None
+    return load_artifact_set(set_dir, repo_root)
+
+
+def _predecessor_approves(pred: ArtifactSet | None) -> bool:
+    """Fail-closed: an unresolvable predecessor cannot PROVE it approved.
+
+    A successor that declares a predecessor it cannot resolve still owes a continuity record —
+    in the snapshot form — because "we could not read it" is not "it had nothing open".
+    """
+    if pred is None:
+        return False
+    return _text(_as_dict(pred.verdict).get("verdict")) in APPROVING_VERDICTS
+
+
+def _condition_entries(verdict: dict[str, Any] | None) -> list[tuple[int, str, str]]:
+    """(index, id, text) for every verdict condition, in BOTH accepted forms (RIG §13.3).
+
+    V1 wrote conditions as bare strings (id ''); V1.1 writes ``{id, text}``.  A bare string
+    cannot be carried forward by id, which is what ``condition-without-id`` reports — but only
+    once a successor actually exists that must cite it.
+    """
+    out: list[tuple[int, str, str]] = []
+    for i, cond in enumerate(_as_list(_as_dict(verdict).get("conditions"))):
+        if isinstance(cond, dict):
+            out.append((i, _text(cond.get("id")), _text(cond.get("text"))))
+        else:
+            out.append((i, "", _text(cond)))
+    return out
+
+
+def _predecessor_open_items(verdict: dict[str, Any] | None) -> list[tuple[str, str, str]]:
+    """(id, kind, context) for every predecessor item a successor must close (RIG §13.1).
+
+    Open = ``blocking_findings`` resolved ``upheld_revise`` + every condition.  A
+    ``resolved_by_change`` / ``overridden`` predecessor row is already closed IN the
+    predecessor and is NOT carried forward.
+    """
+    out: list[tuple[str, str, str]] = []
+    for row in _as_list(_as_dict(verdict).get("blocking_findings")):
+        row = _as_dict(row)
+        if _text(row.get("resolution")) != "upheld_revise":
+            continue
+        fid = _text(row.get("finding"))
+        if fid:
+            out.append((fid, "blocker", _text(row.get("note"))))
+    for _index, cid, text in _condition_entries(verdict):
+        if cid:
+            out.append((cid, "condition", text))
+    return out
+
+
+def _predecessor_item_ids(verdict: dict[str, Any] | None) -> set[str]:
+    """Every id the predecessor record actually minted — open or already closed.
+
+    A closure row may legitimately cite a predecessor finding that the predecessor itself
+    resolved; that is not a rename.  Only an id the predecessor never minted is.
+    """
+    ids = {_text(_as_dict(r).get("finding")) for r in _as_list(_as_dict(verdict).get("blocking_findings"))}
+    ids |= {cid for _index, cid, _text_ in _condition_entries(verdict)}
+    return {i for i in ids if i}
+
+
+def _closure_blocks(aset: ArtifactSet) -> list[dict[str, Any]]:
+    return [_as_dict(b) for b in _as_list(_as_dict(aset.continuity).get("predecessors"))]
+
+
+def _closure_rows(block: dict[str, Any]) -> list[dict[str, Any]]:
+    return [_as_dict(r) for r in _as_list(block.get("closure"))]
+
+
+def rule_l10(aset: ArtifactSet, groups: frozenset[str]) -> list[Finding]:
+    """Per-set continuity closure.  ``undeclared-predecessor`` is repo-wide (rule_l10_repo)."""
+    if GROUP_CONTINUITY not in groups:
+        return []
+    out: list[Finding] = []
+    ref = aset.reference_id
+    declared = _declared_predecessors(aset)
+    nearest = declared[-1] if declared else ""
+    nearest_set = _load_predecessor(aset.repo_root, nearest)
+
+    # -- §13.3 forward binding ------------------------------------------------
+    # A legacy bare-string condition becomes a defect only once a successor exists that must
+    # cite it, and only for the NEAREST predecessor — the one whose items this cycle carries.
+    # A verdict nobody has succeeded is never punished, and a provenance-only ancestor is not
+    # churned by a rule written after it (the §10 founding fixture is exactly that case).
+    if nearest_set is not None:
+        for index, cid, text in _condition_entries(nearest_set.verdict):
+            if cid:
+                continue
+            out.append(Finding(
+                "condition-without-id", f"{nearest}/verdict.yml:conditions[{index}]",
+                f"{ref} must carry this condition forward BY ID, but it is a bare string — "
+                f"rewrite it as {{id, text}} so it can be cited (RIG §13.3): "
+                f"{_one_line(text, 60) or '<empty>'}",
+            ))
+
+    # -- the record must exist at all ----------------------------------------
+    if aset.continuity is None:
+        if nearest and not _predecessor_approves(nearest_set):
+            out.append(Finding(
+                "continuity-missing", f"{ref}/continuity.yml",
+                f"declares predecessor {nearest!r}, which did not approve — a cycle following a "
+                f"REVISE/REJECT must mechanically account for every unresolved predecessor "
+                f"blocker and every authority condition, by id (RIG §13.1)",
+            ))
+        return out
+
+    # -- row-shape rules, over EVERY declared block --------------------------
+    closure_ids: set[str] = set()
+    for i, block in enumerate(_closure_blocks(aset)):
+        pid_raw = _text(block.get("reference_id"))
+        pid = _one_line(pid_raw) or f"<predecessors[{i}]>"
+        source = _text(block.get("source"))
+        on_disk = _load_predecessor(aset.repo_root, pid_raw) is not None
+
+        if source == "snapshot":
+            if not _has(block, "source_ref"):
+                out.append(Finding(
+                    "continuity-snapshot-without-source", f"{ref}:{pid}",
+                    "source: snapshot requires source_ref — the PR/SHA/path proving where the "
+                    "closure set came from (RIG §13.2)",
+                ))
+        elif not on_disk:
+            out.append(Finding(
+                "continuity-snapshot-without-source", f"{ref}:{pid}",
+                f"predecessor set is not in this checkout (source {source or '<missing>'!r}, "
+                f"expected one of {sorted(CONTINUITY_SOURCES)}) — an unresolvable predecessor "
+                f"must declare source: snapshot with a source_ref (RIG §13.2)",
+            ))
+
+        counts: dict[str, int] = {}
+        for row in _closure_rows(block):
+            rid_raw = _text(row.get("id"))
+            rid = _one_line(rid_raw) or "<unnamed>"
+            if rid_raw:
+                # keyed on the RAW id — two long ids must not collide once truncated
+                counts[rid_raw] = counts.get(rid_raw, 0) + 1
+            subject = f"{ref}:{pid}:{rid}"
+            for key in ("id", "predecessor_ref"):
+                value = _text(row.get(key))
+                if value:
+                    closure_ids.add(value)
+
+            disposition = _text(row.get("disposition"))
+            if disposition not in CONTINUITY_DISPOSITIONS:
+                out.append(Finding(
+                    "continuity-invalid-disposition", subject,
+                    f"disposition {_one_line(disposition, 40) or '<missing>'!r} not in "
+                    f"{sorted(CONTINUITY_DISPOSITIONS)} — there is no missing and no implicit "
+                    f"state (RIG §13.1)",
+                ))
+            elif disposition == "RESOLVED_BY_CHANGE":
+                changed = [p for p in _as_list(row.get("changed_files")) if _text(p)]
+                if not _has(row, "evidence") or not changed:
+                    out.append(Finding(
+                        "continuity-resolved-without-evidence", subject,
+                        "RESOLVED_BY_CHANGE requires evidence AND at least one changed_files "
+                        "path in the new SHA — 'fixed' without either is a claim, not a "
+                        "closure (RIG §13.1)",
+                    ))
+            elif disposition == "CARRIED_BLOCK":
+                if aset.status == "approved":
+                    out.append(Finding(
+                        "continuity-carried-block-approved", subject,
+                        "a CARRIED_BLOCK is legal and honest, but it cannot coexist with "
+                        "status: approved — the debt is unresolved by its own record (RIG §13.1)",
+                    ))
+            elif disposition == "OVERRIDDEN":
+                if not (_has(row, "authority") and _has(row, "rationale") and _has(row, "finding")):
+                    out.append(Finding(
+                        "continuity-overridden-without-authority", subject,
+                        "OVERRIDDEN requires authority + rationale + finding — an override is a "
+                        "permanent record naming who overrode what, and why (RIG §13.1)",
+                    ))
+            elif disposition == "SUPERSEDED":
+                if not (_has(row, "superseded_by") and _has(row, "linkage")):
+                    out.append(Finding(
+                        "continuity-superseded-without-linkage", subject,
+                        "SUPERSEDED requires superseded_by + linkage — naming a replacement is "
+                        "not showing that it genuinely replaces the item (RIG §13.1)",
+                    ))
+
+        for rid, n in sorted(counts.items()):
+            if n > 1:
+                out.append(Finding(
+                    "continuity-item-duplicated", f"{ref}:{pid}:{rid}",
+                    f"appears in {n} closure rows — exactly one disposition per predecessor "
+                    f"item, or the record contradicts itself (RIG §13.1)",
+                ))
+
+    # -- coverage, against the NEAREST predecessor's own verdict --------------
+    if nearest and nearest_set is not None:
+        rows = [r for b in _closure_blocks(aset)
+                if _text(b.get("reference_id")) == nearest
+                for r in _closure_rows(b)]
+        closed = {t for r in rows
+                  for t in (_text(r.get("id")), _text(r.get("predecessor_ref"))) if t}
+        for item_id, kind, _context in _predecessor_open_items(nearest_set.verdict):
+            if item_id not in closed:
+                out.append(Finding(
+                    "continuity-item-missing", f"{ref}:{nearest}:{_one_line(item_id, 40)}",
+                    f"predecessor {kind} has NO closure row — this is the disappearance case: "
+                    f"an item the predecessor upheld may not evaporate between cycles "
+                    f"(RIG §13.1).  Derive the full set with --mandate {ref}",
+                ))
+        known = _predecessor_item_ids(nearest_set.verdict)
+        for row in rows:
+            rid = _text(row.get("id"))
+            if rid and rid not in known and not _has(row, "predecessor_ref"):
+                out.append(Finding(
+                    "continuity-renamed-without-linkage", f"{ref}:{nearest}:{_one_line(rid, 40)}",
+                    f"closure id is not an id {nearest} ever minted — a renamed item must carry "
+                    f"predecessor_ref naming the id it closes, or the rename silently drops it "
+                    f"(RIG §13.1)",
+                ))
+
+    # -- the successor's own work order must cover what it closes ------------
+    # ``revision_mandate`` is OPTIONAL (continuity.yml is the record); but a mandate that
+    # exists and is short of the closure set is a partial, self-authored scope — the exact
+    # shape of the failure §13 exists to stop.
+    mandate = {
+        _text(_as_dict(m).get("id")) if isinstance(m, dict) else _text(m)
+        for m in _as_list(_as_dict(aset.proposal).get("revision_mandate"))
+    } - {""}
+    if mandate:
+        for cid in sorted(closure_ids - mandate):
+            out.append(Finding(
+                "mandate-incomplete", f"{ref}:{_one_line(cid, 40)}",
+                "proposal.yml revision_mandate omits an id the continuity closure set carries — "
+                "a partial summary of a verdict is indistinguishable from a complete one until "
+                "a critic re-finds the gap (RIG §13.5)",
+            ))
+    return out
+
+
+def rule_l10_repo(repo_root: Path, sets: Sequence[ArtifactSet]) -> list[Finding]:
+    """§13.2's anti-escape half — the ONE repo-wide member of L10.
+
+    The closure obligation runs against the nearest declared predecessor, so on its own it
+    could be dodged by declaring a conveniently OLD ancestor and omitting the recent one.
+    This rule closes that: EVERY non-approved artifact set governing the same
+    ``surface.route`` must be named somewhere in the successor's declared lineage.
+    """
+    declared = {a.reference_id: _declared_predecessors(a) for a in sets}
+
+    def ancestors(reference_id: str) -> set[str]:
+        """Transitive lineage closure — declaring the nearest, whose own lineage names the
+        older one, is complete provenance (a chain is closed link by link)."""
+        seen: set[str] = set()
+        stack = list(declared.get(reference_id, []))
+        while stack:
+            current = stack.pop()
+            if current in seen:
+                continue
+            seen.add(current)
+            stack.extend(declared.get(current, []))
+        return seen
+
+    closure = {ref: ancestors(ref) for ref in declared}
+    routes = {
+        a.reference_id: _text(_as_dict(_as_dict(a.manifest).get("surface")).get("route"))
+        for a in sets
+    }
+
+    out: list[Finding] = []
+    for aset in sets:
+        if GROUP_CONTINUITY not in STATUS_GROUPS.get(aset.status, ALL_GROUPS):
+            continue
+        route = routes.get(aset.reference_id, "")
+        if not route:
+            continue
+        mine = closure.get(aset.reference_id, set())
+        # Non-retroactive: a set that is neither mid-flight nor claims any predecessor is a
+        # historical record, not a successor — it is never made to declare its own siblings.
+        if aset.status not in {"draft", "in_review"} and not mine:
+            continue
+        for other in sets:
+            if other.reference_id == aset.reference_id or other.status == "approved":
+                continue
+            if routes.get(other.reference_id, "") != route:
+                continue
+            if other.reference_id in mine:
+                continue
+            if aset.reference_id in closure.get(other.reference_id, set()):
+                continue        # the other set succeeds US — it is later, not a predecessor
+            out.append(Finding(
+                "undeclared-predecessor", f"{aset.reference_id}:{other.reference_id}",
+                f"governs the same surface.route {route!r} with status "
+                f"{other.status or '<missing>'!r} and is named nowhere in this set's "
+                f"lineage.predecessors — a successor may not dodge continuity by declaring a "
+                f"conveniently old ancestor (RIG §13.2)",
+            ))
+    return out
+
+
 # ── Per-set driver ────────────────────────────────────────────────────────────
 
 def evaluate_set(
@@ -1019,6 +1407,7 @@ def evaluate_set(
     findings += rule_l4(aset, groups)
     findings += rule_l5(aset, groups)
     findings += rule_l6(aset, groups)
+    findings += rule_l10(aset, groups)
     findings += rule_lightweight_archetype(aset, approved_ids or set(), groups)
     return dedupe(findings)
 
@@ -1212,6 +1601,7 @@ def run_repo_mode(repo_root: Path) -> int:
     findings += rule_l7(repo_root, sets)
     findings += rule_l8(repo_root, status_by_id)
     findings += rule_l9(repo_root, sets)
+    findings += rule_l10_repo(repo_root, sets)
 
     findings = dedupe(findings)
     emit(findings)
@@ -1256,6 +1646,103 @@ def run_evaluate(repo_root: Path, reference_id: str) -> int:
         return 3
     notice(f"{reference_id} is approvable-shape — every mechanical gate holds")
     return 0
+
+
+MANDATE_REQUIRED = "<REQUIRED>"
+
+
+def run_mandate(repo_root: Path, reference_id: str) -> int:
+    """Derive the machine-complete closure set for one successor (RIG §13.5).
+
+    The r3 failure was a builder working from a partial, self-authored scope: a partial
+    summary of a verdict is indistinguishable from a complete one until a critic re-finds the
+    gap.  So the mandate is DERIVED from the predecessor's own ``verdict.yml`` — every open
+    item, ``disposition: <REQUIRED>``, with the predecessor's note as context.
+
+    stdout on exit 0 is a valid ``continuity.yml`` skeleton and nothing else, so it can be
+    redirected straight into the artifact set.  ``<REQUIRED>`` is deliberately not a legal
+    disposition: an unfilled skeleton fires ``continuity-invalid-disposition``.
+
+    Exits: 0 derived · 1 no such artifact set · 4 the nearest predecessor is unresolvable on
+    disk (the builder needs the snapshot form, and the annotation says so).
+    """
+    set_dir = repo_root / RIG_ROOT / reference_id
+    if not (set_dir / "manifest.yml").exists():
+        emit([Finding(
+            "missing-artifact-file", f"{RIG_ROOT}/{reference_id}/manifest.yml",
+            "no such reference artifact set",
+        )])
+        return 1
+
+    aset = load_artifact_set(set_dir, repo_root)
+    declared = _declared_predecessors(aset)
+    nearest = declared[-1] if declared else ""
+    nearest_set = _load_predecessor(repo_root, nearest)
+    exit_code = 0
+
+    header = [
+        f"# Derived: python3 scripts/check_reference_integrity.py --mandate {reference_id}",
+        "# Machine-complete closure set (RIG §13.5) — the WHOLE list, from the record.",
+        f"# Fill every disposition with one of {' | '.join(sorted(CONTINUITY_DISPOSITIONS))}",
+        f"# plus its mandatory fields.  {MANDATE_REQUIRED} is not a legal value: the checker",
+        "# fires continuity-invalid-disposition until it is replaced.",
+    ]
+    if declared:
+        header.append(f"# Declared lineage (oldest → nearest): {', '.join(declared)}")
+        header.append(f"# The closure obligation runs against the NEAREST only: {nearest}")
+        header.append("# Earlier entries are provenance — the chain is closed link by link.")
+    else:
+        header.append("# manifest.lineage.predecessors is empty — nothing to derive.")
+
+    blocks: list[dict[str, Any]] = []
+    if nearest and nearest_set is None:
+        exit_code = 4
+        blocks.append({
+            "reference_id": nearest,
+            "verdict": MANDATE_REQUIRED,
+            "source": "snapshot",
+            "source_ref": f"{MANDATE_REQUIRED} — PR/SHA/path proving the snapshot",
+            "closure": [],
+        })
+    elif nearest:
+        rows: list[dict[str, Any]] = []
+        for item_id, kind, context in _predecessor_open_items(nearest_set.verdict):
+            row: dict[str, Any] = {"id": item_id, "kind": kind, "disposition": MANDATE_REQUIRED}
+            if context:
+                row["predecessor_note"] = context
+            rows.append(row)
+        blocks.append({
+            "reference_id": nearest,
+            "verdict": _text(_as_dict(nearest_set.verdict).get("verdict")) or MANDATE_REQUIRED,
+            "source": "on_disk",
+            "closure": rows,
+        })
+        header.append(f"# {len(rows)} open item(s) derived from {nearest}/verdict.yml.")
+        for index, cid, _text_ in _condition_entries(nearest_set.verdict):
+            if not cid:
+                header.append(
+                    f"# WARNING: {nearest} conditions[{index}] is a bare string and cannot be "
+                    f"cited — give it an id (RIG §13.3)."
+                )
+
+    body = {
+        "schema": SCHEMA_IDS["continuity"],
+        "reference_id": reference_id,
+        "predecessors": blocks,
+    }
+
+    if exit_code == 4:
+        # Annotation FIRST so it starts its line for GitHub and is the first thing a human
+        # sees; the partially-derived skeleton follows.
+        emit([Finding(
+            "continuity-snapshot-without-source", f"{reference_id}:{nearest}",
+            f"declared predecessor {nearest!r} is not in this checkout, so its closure set "
+            f"cannot be derived — carry it in the snapshot form (source: snapshot + a "
+            f"source_ref proving where the set came from) (RIG §13.2)",
+        )])
+    print("\n".join(header), flush=True)
+    print(yaml.safe_dump(body, sort_keys=False, allow_unicode=True, width=88).rstrip(), flush=True)
+    return exit_code
 
 
 # ── Selftest ──────────────────────────────────────────────────────────────────
@@ -1395,6 +1882,94 @@ def _synthetic_docs(reference_id: str) -> dict[str, Any]:
             "artifact_sha": _SYNTHETIC_SHA,
         },
     }
+
+
+def _continuity_predecessor_docs(reference_id: str, *, bare_conditions: bool = False) -> dict[str, Any]:
+    """A REVISE predecessor carrying the r2→r3 open set (RIG §13.6).
+
+    One upheld blocker + four authority conditions standing in for the four items the real r3
+    silently dropped, plus one blocker the predecessor itself resolved — which must NOT be
+    carried forward, because it is already closed in the predecessor.
+    """
+    docs = _synthetic_docs(reference_id)
+    docs["manifest.yml"]["status"] = "revise"
+    docs["verdict.yml"]["verdict"] = "REVISE"
+    docs["verdict.yml"]["blocking_findings"] = [
+        {"finding": "PRC-201", "resolution": "upheld_revise",
+         "note": "the counted risk carrier is gone from the card"},
+        {"finding": "PRC-202", "resolution": "resolved_by_change",
+         "note": "closed in the predecessor itself — never carried forward"},
+    ]
+    conditions = [
+        ("COND-CARD-LINK", "the card links to the name's detail surface"),
+        ("COND-STALENESS", "the degraded-freshness disclosure returns to the board"),
+        ("COND-ANON-COPY", "the anon gate stops promising levels no card renders"),
+        ("COND-REACHABILITY", "the whole book stays reachable, not the first 40 rows"),
+    ]
+    docs["verdict.yml"]["conditions"] = (
+        [text for _cid, text in conditions] if bare_conditions
+        else [{"id": cid, "text": text} for cid, text in conditions]
+    )
+    docs["approval.yml"] = None
+    return docs
+
+
+def _continuity_full_closure() -> list[dict[str, Any]]:
+    """A complete, honest closure of every open item above — fresh list on every call."""
+    return [
+        {"id": "PRC-201", "kind": "blocker", "disposition": "RESOLVED_BY_CHANGE",
+         "evidence": "the counted risk pill is back in the marks row with its popover",
+         "changed_files": ["mockups/design_system/board.js"]},
+        {"id": "COND-CARD-LINK", "kind": "condition", "disposition": "CARRIED_BLOCK",
+         "note": "still an <article>; nothing routes to the detail surface"},
+        {"id": "COND-STALENESS", "kind": "condition", "disposition": "CARRIED_BLOCK",
+         "note": "no stale/behind/degraded path exists in the artifact"},
+        {"id": "COND-ANON-COPY", "kind": "condition", "disposition": "CARRIED_BLOCK",
+         "note": "the gate copy still promises levels no card renders"},
+        {"id": "COND-REACHABILITY", "kind": "condition", "disposition": "CARRIED_BLOCK",
+         "note": "40 of 159 rows render and the overflow table drops the sort key"},
+    ]
+
+
+def _continuity_successor_docs(
+    reference_id: str,
+    predecessor_id: str,
+    closure: list[dict[str, Any]] | None,
+    *,
+    status: str = "in_review",
+    source: str = "on_disk",
+    source_ref: str = "",
+    with_receipts: bool = False,
+    revision_mandate: list[str] | None = None,
+) -> dict[str, Any]:
+    """A successor declaring ``predecessor_id``.  ``closure=None`` = no continuity.yml at all.
+
+    Receipts are absent by default on purpose: §13.4/§13.6 require the gate to fire at
+    ``in_review``, BEFORE any critic has been dispatched.
+    """
+    docs = _synthetic_docs(reference_id)
+    docs["manifest.yml"]["status"] = status
+    docs["manifest.yml"]["lineage"] = {"predecessors": [predecessor_id]}
+    if status != "approved":
+        docs["approval.yml"] = None
+    if not with_receipts:
+        docs["reviews/product_regression.yml"] = None
+        docs["reviews/visual_taste.yml"] = None
+    if revision_mandate is not None:
+        docs["proposal.yml"]["revision_mandate"] = revision_mandate
+    if closure is not None:
+        block: dict[str, Any] = {
+            "reference_id": predecessor_id, "verdict": "REVISE",
+            "source": source, "closure": closure,
+        }
+        if source_ref:
+            block["source_ref"] = source_ref
+        docs["continuity.yml"] = {
+            "schema": SCHEMA_IDS["continuity"],
+            "reference_id": reference_id,
+            "predecessors": [block],
+        }
+    return docs
 
 
 def _write_synthetic_set(repo_root: Path, reference_id: str, docs: dict[str, Any]) -> Path:
@@ -1540,7 +2115,126 @@ def run_selftest() -> int:
             fired = _selftest_codes(root, ref, docs)
             check(f"{code} fires", code in fired, f"got {sorted(fired)}")
 
-        # (iii) annotations start the line.
+        # (iii) L10 — revision continuity closure (RIG §13).
+        # The anti-vacuity case IS the real r2→r3 failure: a successor that declares its
+        # predecessor and drops four items the predecessor had already upheld — caught at
+        # status in_review, with no critic receipts in existence anywhere in the set.
+        def continuity_codes(tag: str, closure: list[dict[str, Any]] | None,
+                             *, bare_conditions: bool = False, **kwargs: Any) -> set[str]:
+            pred, succ = f"{tag}-pred", f"{tag}-succ"
+            _write_synthetic_set(root, pred,
+                                 _continuity_predecessor_docs(pred, bare_conditions=bare_conditions))
+            return _selftest_codes(root, succ,
+                                   _continuity_successor_docs(succ, pred, closure, **kwargs))
+
+        continuity_clean = continuity_codes("c-clean", _continuity_full_closure())
+        check("a complete closure fires nothing", not continuity_clean,
+              f"unexpected codes {sorted(continuity_clean)}")
+
+        kept = [row for row in _continuity_full_closure() if row["id"] == "PRC-201"]
+        dropped = continuity_codes("c-dropped", kept)
+        check("continuity-item-missing fires at in_review with no receipts (the r2→r3 case)",
+              "continuity-item-missing" in dropped, f"got {sorted(dropped)}")
+
+        fired = continuity_codes("c-no-record", None)
+        check("continuity-missing fires", "continuity-missing" in fired, f"got {sorted(fired)}")
+
+        rows = _continuity_full_closure()
+        rows.append(dict(rows[0]))
+        fired = continuity_codes("c-duplicated", rows)
+        check("continuity-item-duplicated fires", "continuity-item-duplicated" in fired, f"got {sorted(fired)}")
+
+        rows = _continuity_full_closure()
+        rows[0]["disposition"] = "FIXED"
+        fired = continuity_codes("c-bad-disposition", rows)
+        check("continuity-invalid-disposition fires", "continuity-invalid-disposition" in fired,
+              f"got {sorted(fired)}")
+
+        rows = _continuity_full_closure()
+        rows[0].pop("changed_files")
+        fired = continuity_codes("c-no-evidence", rows)
+        check("continuity-resolved-without-evidence fires",
+              "continuity-resolved-without-evidence" in fired, f"got {sorted(fired)}")
+
+        rows = _continuity_full_closure()
+        rows.append({"id": "PRC-999", "kind": "blocker", "disposition": "CARRIED_BLOCK",
+                     "note": "an id the predecessor never minted, with no predecessor_ref"})
+        fired = continuity_codes("c-renamed", rows)
+        check("continuity-renamed-without-linkage fires",
+              "continuity-renamed-without-linkage" in fired, f"got {sorted(fired)}")
+
+        rows = _continuity_full_closure()
+        rows[1] = {"id": "COND-CARD-LINK", "kind": "condition", "disposition": "SUPERSEDED"}
+        fired = continuity_codes("c-superseded", rows)
+        check("continuity-superseded-without-linkage fires",
+              "continuity-superseded-without-linkage" in fired, f"got {sorted(fired)}")
+
+        rows = _continuity_full_closure()
+        rows[1] = {"id": "COND-CARD-LINK", "kind": "condition", "disposition": "OVERRIDDEN"}
+        fired = continuity_codes("c-overridden", rows)
+        check("continuity-overridden-without-authority fires",
+              "continuity-overridden-without-authority" in fired, f"got {sorted(fired)}")
+
+        fired = continuity_codes("c-carried-approved", _continuity_full_closure(),
+                                 status="approved", with_receipts=True)
+        check("continuity-carried-block-approved fires",
+              "continuity-carried-block-approved" in fired, f"got {sorted(fired)}")
+
+        fired = continuity_codes("c-snapshot", _continuity_full_closure(), source="snapshot")
+        check("continuity-snapshot-without-source fires",
+              "continuity-snapshot-without-source" in fired, f"got {sorted(fired)}")
+
+        fired = continuity_codes("c-mandate", _continuity_full_closure(),
+                                 revision_mandate=["PRC-201"])
+        check("mandate-incomplete fires", "mandate-incomplete" in fired, f"got {sorted(fired)}")
+
+        fired = continuity_codes("c-bare-condition", kept, bare_conditions=True)
+        check("condition-without-id fires", "condition-without-id" in fired, f"got {sorted(fired)}")
+
+        # ...and is FORWARD-BINDING: the same legacy verdict, with nothing succeeding it,
+        # is clean.  A rule written today never churns a record nobody has revised.
+        _write_synthetic_set(root, "c-unsucceeded",
+                             _continuity_predecessor_docs("c-unsucceeded", bare_conditions=True))
+        unsucceeded = _selftest_codes(root, "c-unsucceeded",
+                                      _continuity_predecessor_docs("c-unsucceeded", bare_conditions=True))
+        check("condition-without-id does NOT fire on an unsucceeded verdict",
+              "condition-without-id" not in unsucceeded, f"got {sorted(unsucceeded)}")
+
+        # undeclared-predecessor is repo-wide: declaring a conveniently OLD ancestor while a
+        # newer non-approved set governs the same route does not satisfy §13.
+        with tempfile.TemporaryDirectory(prefix="rig_selftest_lineage_") as lineage_tmp:
+            lineage_root = Path(lineage_tmp)
+            for old_or_recent in ("u-old", "u-recent"):
+                _write_synthetic_set(lineage_root, old_or_recent,
+                                     _continuity_predecessor_docs(old_or_recent))
+            _write_synthetic_set(lineage_root, "u-successor",
+                                 _continuity_successor_docs("u-successor", "u-old",
+                                                            _continuity_full_closure()))
+            repo_wide = {f.code for f in rule_l10_repo(lineage_root,
+                                                       discover_artifact_sets(lineage_root))}
+            check("undeclared-predecessor fires", "undeclared-predecessor" in repo_wide,
+                  f"got {sorted(repo_wide)}")
+
+            # --mandate derives the WHOLE open set from the record, never a summary.
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                mandate_exit = run_mandate(lineage_root, "u-successor")
+            derived = yaml.safe_load(buffer.getvalue())
+            derived_ids = {_text(_as_dict(r).get("id"))
+                           for r in _as_list(_as_dict(_as_list(derived.get("predecessors"))[0]).get("closure"))}
+            expected_ids = {"PRC-201", "COND-CARD-LINK", "COND-STALENESS",
+                            "COND-ANON-COPY", "COND-REACHABILITY"}
+            check("--mandate derives every open item", mandate_exit == 0 and derived_ids == expected_ids,
+                  f"exit {mandate_exit}, ids {sorted(derived_ids)}")
+
+            _write_synthetic_set(lineage_root, "u-orphan",
+                                 _continuity_successor_docs("u-orphan", "u-not-in-checkout", None))
+            with contextlib.redirect_stdout(io.StringIO()):
+                orphan_exit = run_mandate(lineage_root, "u-orphan")
+            check("--mandate exits 4 on an unresolvable predecessor", orphan_exit == 4,
+                  f"exit {orphan_exit}")
+
+        # (iv) annotations start the line.
         sample = Finding("missing-disposition", "ref:card.x", "demo").annotation()
         check("annotation starts the line", sample.startswith("::error title="), repr(sample))
 
@@ -1591,6 +2285,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", default=str(_REPO_ROOT), help="repo root (default: this checkout)")
     parser.add_argument("--evaluate", metavar="REFERENCE_ID",
                         help="run the full L1-L6 rule set on one artifact set (exit 0 approvable, 3 blocked)")
+    parser.add_argument("--mandate", metavar="REFERENCE_ID",
+                        help="derive the machine-complete continuity.yml skeleton for one successor "
+                             "from its nearest predecessor's verdict (exit 0 derived, 4 unresolvable)")
     parser.add_argument("--selftest", action="store_true", help="hermetic anti-vacuity proof")
     args = parser.parse_args(argv)
 
@@ -1598,6 +2295,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_selftest()
 
     root = Path(args.root).resolve()
+    if args.mandate:
+        return run_mandate(root, args.mandate)
     if args.evaluate:
         return run_evaluate(root, args.evaluate)
     return run_repo_mode(root)
