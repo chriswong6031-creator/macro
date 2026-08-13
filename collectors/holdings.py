@@ -53,6 +53,20 @@ _NON_EQUITY_NAME_RE = re.compile(
     r"\bfx\s+forward|forward\s+contract|\bswap\b",
     re.IGNORECASE,
 )
+# Sponsor cash-sleeve lines whose CASH MARKER IS THE TICKER and whose name column
+# is empty/NaN, so neither the ticker set nor the name patterns above can see them.
+# VanEck's form is "-USD CASH-" / "-EUR CASH-" / "-CZK CASH-": a LEADING HYPHEN
+# (which no real equity ticker carries — the sponsor uses it precisely to mark a
+# non-security line), an ISO-4217-shaped 3-letter code, and a CASH token. Matching
+# on that STRUCTURE rather than on membership of _CURRENCY_CODES is deliberate:
+# the live feeds carry CZK/TWD/IDR cash sleeves that the currency set does not
+# list, and widening that set would also start flagging bare 3-letter tickers.
+# Missing this form was the R1 defect (masterplan §6b): the cash line's share
+# BALANCE (SMH: 28.5M "shares", ~10% of the fund's total share count, against
+# $0.03B of value) sat inside the SUM-ratio denominator `active_changes_dir`
+# uses, so a fund whose true scale was 1.0242 measured 0.9743 and EVERY
+# constituent published a phantom +5.12% active change.
+_CASH_SLEEVE_TICKER_RE = re.compile(r"^-\s*[A-Z]{3}[\s_-]*CASH\b[\s-]*$")
 
 
 def is_non_equity_holding(ticker, name: str = "") -> bool:
@@ -64,6 +78,8 @@ def is_non_equity_holding(ticker, name: str = "") -> bool:
         return True
     head = tk.split()[0] if tk.split() else ""
     if head in _CURRENCY_CODES:                     # e.g. "USD CASH", "EUR FWD"
+        return True
+    if _CASH_SLEEVE_TICKER_RE.match(tk):            # e.g. "-USD CASH-" (name NaN)
         return True
     nm = str(name).strip()
     return bool(nm and _NON_EQUITY_NAME_RE.search(nm))

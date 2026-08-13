@@ -223,6 +223,18 @@ def test_is_non_equity_holding() -> None:
     assert not is_non_equity_holding("NVDA", "NVIDIA CORP")
     assert not is_non_equity_holding("000720 KS", "HYUNDAI ENGINEERING & CONST")
     assert not is_non_equity_holding("FF", "FutureFuel Corp")   # 'future' substring not flagged
+    # VanEck files its cash sleeve with the marker in the TICKER and no name at
+    # all, so neither the ticker set nor the name patterns can see it (§6b R1).
+    # The currency codes here are deliberately outside _CURRENCY_CODES: the rule
+    # reads the FORM (leading hyphen + ISO-shaped code + CASH), not a code list.
+    for tk in ("-USD CASH-", "-EUR CASH-", "-CZK CASH-", "-TWD CASH-", "-IDR CASH-"):
+        assert is_non_equity_holding(tk, float("nan")), tk
+        assert is_non_equity_holding(tk, "nan"), tk       # what astype(str) leaves
+    # …and no ticker that merely CONTAINS the letters is caught with it. A real
+    # equity ticker never opens with a hyphen, which is the whole rule.
+    for tk in ("CASH.TO", "CASHX", "XCASH", "CASH US", "USDX", "X", "MP", "UEC"):
+        assert not is_non_equity_holding(tk, ""), tk
+    assert not is_non_equity_holding("-A CASH-", "")      # not an ISO-shaped code
 
 
 def test_active_changes_dir_weeds_cash_and_tiny_base() -> None:
