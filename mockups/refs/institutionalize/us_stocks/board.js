@@ -435,10 +435,7 @@
     var enriched = B.rows.filter(function (x) {
       return x.spark && x.stance && x.stance !== "blocked_data";
     }).length;
-    h += '<span class="mx-sec-total">' + (isRef && !S.life
-      ? t("<b>" + r.length + "</b> setups &middot; the enrichment contract met",
-          "<b>" + r.length + "</b> 条 &middot; 数据已完整")
-      : isFall
+    h += '<span class="mx-sec-total">' + (isFall
       ? t("<b>" + r.length + "</b> rows the screener join does not reach",
           "候选关联未覆盖的 <b>" + r.length + "</b> 条")
       : isEps
@@ -466,15 +463,14 @@
     h += '<button data-view="grid" aria-selected="' + (S.view === "grid") + '">&#9638; ' + t("Grid", "卡片") + "</button>";
     h += '<button data-view="table" aria-selected="' + (S.view === "table") + '">&#9776; ' + t("Table", "表格") + "</button>";
     h += "</span>";
-    if (isRef) {
-      h += '<span class="sort-rule">' + t(
-        "Reference view: the intended experience, rendering the " + enriched + " plan rows whose enrichment contract is met today. Switch to <b>Today (actual)</b> for the live board including rows still awaiting their entry read — closing that gap is spawn gate G-D, a hard dependency before the production migration.",
-        "参考视图：呈现目标体验，仅显示今日数据已完整的 " + enriched + " 条计划。切换到<b>「实际」</b>可查看完整看板，其中包含尚未取得入场判读的计划——补齐这一缺口是正式迁移前的硬性前置条件（G-D）。") + "</span>";
-    }
+    /* The reference view carries NO lens sentence: it is the product surface, and
+       which subset the fixture can render at full fidelity is an internal fact,
+       not something a reader should be told. The coverage question lives in
+       DESIGN_NOTES §6/§7 and in the diagnostic states below. */
     if (isFall) {
       h += '<span class="sort-rule">' + t(
-        "Mockup-gate lens: the missing-enrichment fallback. These rows carry no chart, quote, company name or lane mark because those five fields arrive through the candidate join, which reaches only " + enriched + " of " + B.rows.length + " plan rows today. The card still reads — but closing this gap is a blocking implementation dependency, not a design target.",
-        "样稿评审视角：数据缺失时的降级形态。这些计划没有图表、报价、公司名称与通道标记，因为这几项来自候选名单的关联，目前仅覆盖 " + B.rows.length + " 条中的 " + enriched + " 条。卡片仍然可读——但补齐这一缺口是正式迁移前的硬性前置条件，而不是设计目标。") + "</span>";
+        "Diagnostic view: how a card reads when the chart, quote, company name and lane mark are unavailable. The card still answers ticker, stance, priority, lifecycle and zone.",
+        "诊断视图：当图表、报价、公司名称与通道标记不可用时，卡片的呈现方式。此时仍可读出代码、判断、优先级、状态与买区。") + "</span>";
     }
     if (isEps) {
       h += '<span class="sort-rule">' + t(
@@ -503,9 +499,15 @@
       return h;
     }
 
-    /* "What changed today" — a labelled slice of today's transitions. Only the
-       derivable figure is printed; see DESIGN_NOTES §Open questions. */
-    var fresh = r.filter(function (x) { return x.age != null && x.age <= 1; }).length;
+    /* "What changed today" — a labelled slice of today's transitions, computed
+       over the FULL plan book, never over whatever subset the grid happens to be
+       rendering: a board-level fact that moved with the visible rows would be a
+       different number on every lens. Only the figure with a full-book producer
+       is printed (see DESIGN_NOTES §6 Q3 — the entered/resolved transition counts
+       have none). */
+    var fresh = B.rows.filter(function (x) {
+      return x.life !== "resolved" && x.age != null && x.age <= 1;
+    }).length;
     h += '<div class="chg-strip">';
     h += '<span class="chg-item">' + t("What changed today", "今日变化") + "</span>";
     h += '<span class="chg-sep">&middot;</span>';
@@ -554,11 +556,17 @@
     }
 
     var shown = r.slice(0, GRID_CAP);
+    /* THE POPULATION IS THE CANONICAL COUNT, not however many cards this view
+       happens to draw. On the product states that is the published cell/live
+       total, so rendered + "+N more" reconciles to the headline exactly. The
+       diagnostic lenses state their own scope in their header instead. */
+    var population = (isEps || isFall) ? r.length
+                   : (S.life ? cellCount(S.life) : liveTotal());
     h += '<div class="pv-grid">';
     shown.forEach(function (x) { h += card(x); });
     /* overflow is a computed DIFFERENCE of published values, never a recount */
-    if (r.length > GRID_CAP) {
-      var more = r.length - GRID_CAP;
+    if (population > shown.length) {
+      var more = population - shown.length;
       h += '<a class="pv-more" href="?' + qsWith({ view: "table" }) + '">' +
            t("+<b class=\"fig\">" + more + "</b> more<br>see them all in table view",
              "另有 <b class=\"fig\">" + more + "</b> 条<br>可在表格视图中查看全部") + "</a>";

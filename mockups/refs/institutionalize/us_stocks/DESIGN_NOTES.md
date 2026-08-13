@@ -34,7 +34,7 @@ python3 -m http.server 8792 --directory mockups/refs/institutionalize/us_stocks
 ```bash
 python3 tools/gen_fixture.py board-data.js      # regenerate data from origin/main
 python3 tools/capture.py  http://localhost:8792 crops
-python3 tools/verify.py   http://localhost:8792 # 116/116 acceptance checks
+python3 tools/verify.py   http://localhost:8792 # 123/123 acceptance checks
 ```
 
 **The data is real.** `board-data.js` is a committed extract of `site/prophet/index.json`
@@ -55,9 +55,11 @@ The composition passed Product/Taste review — ladder, density, card anatomy, P
 lifecycle treatment, Zone footer and chroma level are settled and are **not** revisited. Five
 narrow corrections were applied; no structural redesign.
 
-**1. The canonical reference now shows the intended experience.** `state=paid` is the reference
-view and renders only the **33 plan rows whose enrichment contract is met today** — zero no-read
-cards. `state=today` is the honesty state showing the actual payload including the 60% awaiting
+**1. The canonical reference now shows the intended experience.** `state=paid` renders the plan
+rows the fixture can draw at full fidelity (33 today — an internal fixture fact, never surfaced),
+and states the **canonical product population: 162 live · the Prophet book**, reconciling
+rendered + "+N more" to that headline. No reference/enrichment/gate vocabulary appears on the
+product surface at all (`verify.py` N7). `state=today` is the honesty state showing the actual payload including the 60% awaiting
 their entry read, and is the state the count law is verified against. A 60%-`暂无判断` board must
 not become the flagship reference. **New spawn gate G-D** (§7) makes coverage a hard production
 dependency.
@@ -383,13 +385,26 @@ Priority stays in the slot, `score_edge` is retained as the fail-soft for legacy
 The Board card carries one number, not both. No change to the mockup; the question should not have
 been raised.
 
-### Q9 — APPROVED: ⚡ stays restricted
+### Q9 — CLOSED: ⚡ is sourced from the trigger producer
 
-**Ruled (operator 2026-08-13): the restricted treatment is approved.** `Entered` is durable
-lifecycle state; ⚡ means a *recent transition or event*. Putting it on all 96 entered cards would
-display the same fact twice and turn a valuable event badge into wallpaper.
+**Ruled and implemented.** ⚡ carries a real trigger fact, from the producer the shipped board
+already reads (`dashboard.html.j2:16187-16189`):
 
-⚡ therefore fires only on a recent trigger (≤3 days) or an imminent one — **10 of 179 rows**.
+| Chip | Source | Today |
+|---|---|---|
+| ⚡ **Triggered** | membership in `site/factordata/setups.json` → `buy` | **8** rows |
+| ⚡ **Imminent** | that row's `signal.tier_cascade == "T3"` | **0** rows |
+
+There is **no plan-age proxy**. The earlier pass approximated Triggered from `age_days <= 3` and
+Imminent from `Ready + buy_now`; both were removed. Imminent is 0 because nothing carries `T3`
+tonight — an honest zero from a real producer, not four cards inferred from a neighbouring field.
+
+The restriction the operator approved holds by construction rather than by a rule: `Entered` is
+durable lifecycle state, ⚡ is a recent transition/event, and only 8 of 179 rows have one. Putting
+⚡ on all 96 entered cards would state the same fact twice and turn an event badge into wallpaper.
+
+Coverage caveat: `setups.json` is a 12-row artifact and intersects the plan book at 8, so ⚡ is
+join-limited like the other enrichments (§6 Q1). Sourced-or-absent, never approximated.
 
 ### Q10 — NEW: the change values in the crops are simulated
 
@@ -447,7 +462,7 @@ rather than argued.
 - `50`–`51` empty board · `60`–`61` table view
 - `70`–`73` **the three-way card adjudication** (production · #5514 v1 · revised), dark+light × EN+ZH
 
-**Checks:** `tools/verify.py` — **116/116 passing**, run against the *rendered* page and
+**Checks:** `tools/verify.py` — **123/123 passing**, run against the *rendered* page and
 mutation-tested (planting "stage"/阶段 and a lifecycle cell word inside Candidates makes it fail
 in both languages). Zero horizontal page scroll at every captured width, asserted per shot.
 

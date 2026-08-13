@@ -338,6 +338,30 @@ def main():
             ok(f"N3[{lang}] every reference card is chart-first",
                ref["charts"] == ref["n"], f"{ref['charts']} of {ref['n']}")
 
+            # N3b: the reference states the CANONICAL product population and
+            # reconciles to it — no fixture/enrichment semantic on the surface.
+            recon = pg.evaluate("""() => {
+              const m = document.querySelector('.pv-more');
+              const more = m ? parseInt((m.textContent.match(/\\d+/)||[0])[0],10) : 0;
+              const tot = document.querySelector('.mx-sec-total');
+              return {cards: document.querySelectorAll('.pvcard').length, more,
+                      total: tot ? tot.textContent : '',
+                      head: parseInt(document.querySelector('.ladder-n').textContent.trim(), 10)};
+            }""")
+            ok(f"N3b[{lang}] reference: rendered + '+N' == the live headline",
+               recon["cards"] + recon["more"] == recon["head"],
+               f"{recon['cards']}+{recon['more']} vs {recon['head']}")
+            ok(f"N3c[{lang}] reference header states the canonical population",
+               str(recon["head"]) in recon["total"], f"total={recon['total']!r}")
+
+            # N7: no fixture / enrichment / gate vocabulary on the product surface
+            surf = pg.evaluate("() => document.getElementById('board').innerText")
+            leaks = [w for w in ("G-D", "contract met", "enrichment", "Reference view",
+                                 "fixture", "数据已完整", "参考视图", "准入条件")
+                     if w in surf]
+            ok(f"N7[{lang}] no reference/fixture/gate language on the product surface",
+               not leaks, f"found {leaks}")
+
             # N4: the live-quote slot exists on EVERY card, hydratable or not
             q = pg.evaluate("""() => {
               const cards = [...document.querySelectorAll('.pvcard')];
@@ -401,6 +425,21 @@ def main():
             ok(f"N6[{lang}] the spark is recoloured to the stance hue",
                spark and spark["stroke"] and spark["pvh"], f"{spark}")
             pg.close()
+
+        # ── N8: board-level facts are invariant across lenses ───────────────
+        # "What changed today" is a fact about the plan book, so it may not move
+        # with whatever subset a view happens to render.
+        import re as _re
+        seen = {}
+        for st in ("paid", "today", "fallback"):
+            pg = page_at(f"theme=dark&lang=en&state={st}")
+            el = pg.query_selector(".chg-strip")
+            if el:
+                m = _re.search(r"(\d+)", el.inner_text())
+                seen[st] = int(m.group(1)) if m else None
+            pg.close()
+        ok("N8 'what changed today' is identical across every lens",
+           len(set(v for v in seen.values() if v is not None)) == 1, str(seen))
 
         # ── H. 390w ────────────────────────────────────────────────────────
         for lang in ("en", "zh"):
