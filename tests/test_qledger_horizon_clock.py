@@ -2020,6 +2020,81 @@ def test_compute_promotion_readiness_also_reaches_per_market(tmp_path):
     assert all(r["ready"] for r in per_market.values())
 
 
+def _legacy_plus_two_market_store(n_legacy: int, n_us: int, n_cn: int):
+    """A family that holds the LEGACY basis alongside two explicit ones — the
+    real shape of the corpus during the migration, once a second market starts
+    accruing under the new clock while the pre-P0a rows are still on file."""
+    claims, grades = _two_market_store(n_us=n_us, n_cn=n_cn)
+    for i in range(n_legacy):
+        cid = f"L{i}"
+        claims.append({"claim_id": cid, "desk": "d", "claim_family": "f",
+                       "asof": (date(2025, 1, 1) + timedelta(days=i)).isoformat(),
+                       "is_placebo": False, "status": "open"})
+        # no horizon_unit / clock_version / clock_market == CLOCK_LEGACY
+        grades.append({"claim_id": cid, "horizon_d": 21, "excess": 0.05,
+                       "hit": True, "subject_ret": 0.06, "bench_ret": 0.01,
+                       "control_ret": 0.01})
+    return claims, grades
+
+
+def test_promotion_check_by_market_never_evaluates_the_legacy_basis(tmp_path):
+    """THE DEFECT. The per-market escape hatch re-ran `promotion_check` once per
+    key of `clock_prior_n_dates` — and that dict discloses EVERY basis the
+    family holds, `CLOCK_LEGACY` included. So a family straddling the migration
+    published a real, per-basis PROMOTION VERDICT computed on the legacy grading
+    basis, into `ladder_states.<fam>.<h>.by_clock_basis`, where an `eligible`
+    cell reads as authority earned.
+
+    `_authority_clock_basis` refuses exactly this on the default path ("legacy +
+    one v1 -> the v1 basis; legacy rows are not counted"), and the contract's
+    whole premise is that a measurement-basis change RESETS authority rather
+    than carrying it across. The escape hatch now inherits that rule.
+
+    Note the legacy arm here is the LARGEST (40 dates vs 26 + 26) — exactly the
+    real corpus's shape, and exactly the case where an n-ranked selection rule
+    would have handed the legacy basis the headline."""
+    claims, grades = _legacy_plus_two_market_store(n_legacy=40, n_us=26, n_cn=26)
+    _write_store(tmp_path, claims, grades)
+
+    mixed = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    assert mixed.current_state == q.STATE_MIXED_CLOCK
+
+    # THE DISCLOSURE IS UNCHANGED — the legacy history is still visible, and
+    # still the biggest arm. This fix removes a VERDICT, never a disclosure.
+    assert mixed.clock_prior_n_dates == {
+        q.CLOCK_LEGACY: 40,
+        _v1(market=q.MARKET_US): 26,
+        _v1(market=q.MARKET_CN): 26,
+    }
+
+    per_market = q.promotion_check_by_market("f", 21, mixed, root=tmp_path,
+                                             control_only=True)
+    assert q.CLOCK_LEGACY not in per_market, (
+        "a promotion verdict was computed on the legacy grading basis")
+    assert set(per_market) == {_v1(market=q.MARKET_US), _v1(market=q.MARKET_CN)}
+    assert all(r.eligible for r in per_market.values())
+
+    # ...and the production surface that publishes it agrees.
+    states = q.emit_ladder_states(root=tmp_path, families=["f"])
+    published = states["f"]["21"]["by_clock_basis"]
+    assert q.CLOCK_LEGACY not in published
+    assert set(published) == {_v1(market=q.MARKET_US), _v1(market=q.MARKET_CN)}
+
+
+def test_by_clock_basis_still_appears_when_only_explicit_bases_straddle(tmp_path):
+    """Negative control for the filter: excluding the legacy basis must not
+    empty the escape hatch. With no legacy rows at all, both markets are still
+    re-evaluated and still promotable — so a green on the test above cannot be
+    bought by returning `{}`."""
+    claims, grades = _two_market_store(n_us=26, n_cn=26)
+    _write_store(tmp_path, claims, grades)
+    mixed = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    per_market = q.promotion_check_by_market("f", 21, mixed, root=tmp_path,
+                                             control_only=True)
+    assert set(per_market) == {_v1(market=q.MARKET_US), _v1(market=q.MARKET_CN)}
+    assert all(r.eligible for r in per_market.values())
+
+
 # --------------------------------------------------------------------------- #
 # ROUND 5 — MAJOR 3: THE MIGRATION BANNER NEVER FLAPS AND NEVER LIES ON A
 # BI-MARKET SPLIT
@@ -2047,16 +2122,38 @@ def test_a_bi_market_split_is_never_labelled_a_migration(tmp_path):
 
 
 def test_the_bi_market_banner_does_not_flap_across_two_consecutive_runs(tmp_path):
-    """Acceptance #6, literally: call the SAME nightly surface twice in a row
-    on an unchanged, stably-split corpus and the verdict must not move."""
-    claims, grades = _two_market_store(n_us=26, n_cn=30)
-    _write_store(tmp_path, claims, grades)
+    """Acceptance #6. THE STORE MUST MOVE BETWEEN THE TWO READS, or this proves
+    nothing: `promotion_check` is a pure function of the store, so calling it
+    twice on identical bytes returns identical bytes by construction — the
+    first cut of this test asserted exactly that, and would have stayed green
+    against any flap a real night could produce.
 
+    A nightly run reads a store that GREW since the last one. The flap this
+    guards is the one that shipped: the bi-market branch stamped
+    `clock_migration=True` unconditionally, so the banner appeared the night a
+    second market's first grade landed and could never clear. So: run 1 on a
+    single-market family (no banner), then grow the store the way a night does
+    — CN's first rows arrive — and run 2 must still not claim a migration."""
+    us_claims, us_grades = _two_market_store(n_us=26, n_cn=0)
+    _write_store(tmp_path, us_claims, us_grades)
     run1 = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    assert run1.current_state != q.STATE_MIXED_CLOCK
+    assert run1.clock_migration is False
+
+    # ...the next night, CN starts accruing under the same explicit clock.
+    grown_claims, grown_grades = _two_market_store(n_us=26, n_cn=30)
+    _write_store(tmp_path, grown_claims, grown_grades)
     run2 = q.promotion_check("f", 21, root=tmp_path, control_only=True)
-    assert run1.clock_migration == run2.clock_migration == False
-    assert run1.current_state == run2.current_state == q.STATE_MIXED_CLOCK
-    assert run1.clock_prior_n_dates == run2.clock_prior_n_dates
+
+    assert run2.current_state == q.STATE_MIXED_CLOCK, "the split is real"
+    assert run2.clock_migration is False, (
+        "a second market accruing is not a migration and never clears")
+    assert run2.migration_note == ""
+    assert run2.clock_prior_n_dates == {
+        _v1(market=q.MARKET_US): 26, _v1(market=q.MARKET_CN): 30}
+    # and a third read of the now-stable store still does not move
+    run3 = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    assert run3.as_dict() == run2.as_dict()
 
 
 def test_the_admin_surface_never_renders_re_accruing_for_a_mixed_market_family(

@@ -2864,17 +2864,36 @@ def promotion_check_by_market(claim_family: str, horizon: int,
 
     Call this with the STATE_MIXED_CLOCK `PromotionResult` `promotion_check`
     just returned (`mixed`); it re-evaluates the SAME family/horizon once per
-    explicit basis that result's own `clock_prior_n_dates` discloses (every
-    basis the family holds, mixed or not — the disclosure IS the enumeration),
-    NEVER pooling any two of them. Returns `{}` when `mixed` was not actually
-    a MIXED_CLOCK verdict (nothing to re-evaluate — the default already named
-    the one basis that matters)."""
+    EXPLICIT basis that result's own `clock_prior_n_dates` discloses (the
+    disclosure IS the enumeration), NEVER pooling any two of them. Returns
+    `{}` when `mixed` was not actually a MIXED_CLOCK verdict (nothing to
+    re-evaluate — the default already named the one basis that matters).
+
+    THE LEGACY BASIS IS ENUMERATED BUT NEVER RE-EVALUATED. `clock_prior_n_dates`
+    discloses every basis a family holds, `CLOCK_LEGACY` included — that
+    disclosure is deliberate and stays. Feeding it back into `promotion_check`
+    is a different act: it would mint a real, per-basis PROMOTION VERDICT on
+    the legacy grading basis and publish it into `track_record.json`
+    (`ladder_states.<fam>.<h>.by_clock_basis`), where a `GRADED` cell reads as
+    authority earned. `_authority_clock_basis` already refuses exactly this for
+    the default path ("legacy + one v1 -> the v1 basis; legacy rows are not
+    counted"), and the whole point of the P0a contract is that a
+    measurement-basis change RESETS authority rather than carrying it across.
+    So the per-market escape hatch inherits that rule instead of quietly
+    routing around it: authority is evaluated only inside an explicit basis.
+
+    Not reachable on today's corpus — no explicit-clock grade row exists yet, so
+    nothing can be STATE_MIXED_CLOCK — but it becomes reachable the first night
+    a second market accrues, which is precisely when a legacy `GRADED` cell
+    would appear beside the real ones. Pinned by
+    `test_promotion_check_by_market_never_evaluates_the_legacy_basis`."""
     if mixed.current_state != STATE_MIXED_CLOCK:
         return {}
     return {
         basis: promotion_check(claim_family, horizon, root=root,
                                control_only=control_only, clock_basis=basis)
         for basis in sorted(mixed.clock_prior_n_dates or {})
+        if basis != CLOCK_LEGACY
     }
 
 
