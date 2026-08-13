@@ -346,11 +346,11 @@ a { color: inherit; }
   background: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 10px);
 }
 .mx-mark--invalidated::before {
-  top: .5px; height: 3px; background: transparent;
+  top: 2.5px; height: 3px; background: transparent;
   border: 1px solid color-mix(in srgb, currentColor 62%, transparent);
 }
 .mx-mark--invalidated::after {
-  content: ""; position: absolute; left: -1px; right: -1px; top: 1.5px; height: 1px;
+  content: ""; position: absolute; left: -1px; right: -1px; top: 3.5px; height: 1px;
   background: currentColor; transform: rotate(-9deg);
 }
 
@@ -363,7 +363,7 @@ a { color: inherit; }
   border-bottom: 1px solid color-mix(in srgb, var(--muted) 52%, transparent);
 }
 .mx-mark--resolved::before {
-  top: .5px; height: 3px; background: transparent;
+  top: 2.5px; height: 3px; background: transparent;
   border: 1px solid color-mix(in srgb, var(--muted) 55%, transparent);
 }
 
@@ -679,13 +679,36 @@ html[data-theme="light"] .pvcard.pv-featured {
 .pvcard[data-life="resolved"] { background: color-mix(in srgb, var(--panel2) 55%, var(--bg)); border-style: dashed; }
 .pvcard[data-life="resolved"] .pv-tk { color: var(--muted); }
 
-.pv-more {
-  display: flex; align-items: center; justify-content: center; min-height: 96px;
-  border: 1px dashed var(--line); border-radius: 12px; color: var(--muted);
-  font-size: 12px; font-weight: 650; text-decoration: none; text-align: center; padding: 14px;
+/* ── PRC-306: PROGRESSIVE IN-PLACE EXPANSION ─────────────────────────────
+   The 40-card viewport is the initial density budget, not a ceiling. It used to
+   be a ceiling: overflow routed to a stripped table, so 77 of 179 plan rows had
+   no card representation in ANY state or filter. Production's own mechanism is
+   initShowMore() (theme.js:4784-4869) driven by data-showmore-rows on the grid,
+   and its class names and copy are reused verbatim here. Every row of the
+   active partition is now in the DOM and one click away; the table went back to
+   being an alternate representation instead of the only route to the tail. */
+.sm-hidden { display: none !important; }
+.sm-reveal { animation: sm-in .18s ease both; }
+@keyframes sm-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.sm-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 12px 0 0; padding: 9px 13px;
+  border: 1px dashed var(--line); border-radius: 11px;
+  background: color-mix(in srgb, var(--panel) 45%, transparent);
+  font-size: 11.5px; color: var(--muted);
 }
-.pv-more:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); }
-.pv-more b { color: var(--text); font-variant-numeric: tabular-nums; }
+.sm-count b { color: var(--text); font-weight: 800; }
+.sm-btns { display: flex; gap: 7px; flex-wrap: wrap; margin-left: auto; }
+.sm-btn {
+  font: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+  padding: 5px 13px; border-radius: 999px; line-height: 1.25;
+  border: 1px solid color-mix(in srgb, var(--text) 26%, var(--line));
+  background: var(--panel); color: var(--text);
+}
+.sm-btn:hover { border-color: color-mix(in srgb, var(--text) 42%, var(--line)); }
+.sm-btn.sm-ghost, .sm-btn.sm-collapse { background: transparent; color: var(--muted); border-color: var(--line); }
+.sm-btn.sm-ghost:hover, .sm-btn.sm-collapse:hover { color: var(--text); }
+.sm-btn[hidden] { display: none; }
 
 /* table view — the surface where rendered rows equal the cell count exactly */
 .st-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -974,4 +997,103 @@ html[data-theme="light"] .mx-cell { background: #fff; }
   .chg-strip { margin-bottom: 6px; padding: 5px 10px; }
   .pvcard .pv-chart svg, .pvcard .pv-nochart { height: 58px; }   /* production parity */
   .grp-grid { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════ R4 CLOSURE ADDITIONS ══════════════════════════════════ */
+
+/* ── PRC-305: the freshness slot ────────────────────────────────────────
+   The header could only ever assert "Settled close" — there was no branch, so
+   the one disclosure that exists to stop a reader acting on stale prices could
+   not be expressed at all. The producer is production's own
+   _compute_board_staleness() (build_stock_library.py:1469-1624): it emits
+   price_through / sessions_behind / delayed (true at >= 2 sessions), and the
+   board reads it. Fresh keeps the settled-close token; behind swaps the pill
+   and raises production's .nb-stale-note banner verbatim. */
+.pv-fresh { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.pv-fresh--behind {
+  font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  padding: 2.5px 9px; border-radius: 6px; white-space: nowrap; line-height: 1.35;
+  color: var(--ink-warn, var(--warn));
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+}
+.nb-stale-note {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin: 11px 0 0; padding: 9px 13px; border-radius: 10px;
+  font-size: 12px; line-height: 1.5; font-weight: 600;
+  color: var(--ink-warn, var(--warn));
+  background: color-mix(in srgb, var(--warn) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 34%, transparent);
+}
+.nb-stale-note::before { content: "\26A0"; flex: none; opacity: .85; font-weight: 700; }
+.nb-stale-note b { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ── PRC-304: the simulated number, disclosed on the SURFACE ─────────────
+   Every % change in every crop is a deterministic per-ticker demo overlay, and
+   a reader of a crop could not tell. It stays the only simulated number on the
+   page and it stays marked data-mock-live in the DOM — but the page now says so
+   where the crop can see it, not only in DESIGN_NOTES. */
+.mock-note { font-size: 11px; color: var(--muted); line-height: 1.5; flex-basis: 100%; }
+.mock-note b { color: color-mix(in srgb, var(--text) 80%, var(--muted)); font-weight: 700; }
+
+/* ── VTC-308: the compact archive row ───────────────────────────────────
+   Resolved rows and severely data-sparse rows have no chart, no quote, no
+   stance rank and no priority. Rendered as full 5-across cards they became ~20
+   near-identical husks each repeating "PRIORITY —", with no hierarchy for the
+   eye to use. This is the compact row the fallback lens already proves: same
+   card, same disclosures, the empty slots removed rather than drawn empty. */
+.pvcard--compact { min-height: 0; }
+.pvcard--compact .pv-bd { padding: 9px 11px 8px; gap: 5px; }
+.pvcard--compact .pv-hd { align-items: center; }
+.pvcard--compact .pv-tk { font-size: 12.5px; }
+.pvcard--compact .pv-life { margin-top: 0; }
+.pvcard--compact .pv-life-w { font-size: 10.5px; color: var(--muted); font-weight: 700; }
+.pvcard--compact .pv-zn { padding: 4px 11px 5px; font-size: 9.5px; }
+.pvcard--compact .pv-chip { font-size: 9px; padding: 1.5px 7px; }
+.pvcard--compact .pv-axis { font-size: 7px; }
+.pvcard--compact .pv-mk-i, .pvcard--compact .pv-ep { font-size: 8.5px; }
+
+/* ── PRC-307 / VTC-307: the page ends on EVIDENCE, with numbers ──────────
+   It used to end on five contentless "market context" pills and four bare
+   links — two consecutive sections of pure navigation furniture as the last
+   thing on a 2782px page. The empty shell is gone (a header kept over deleted
+   content is the defect, not the cure) and the record is bound to its real
+   producer: engine/track_scoring.summarize() -> scripts/grade_us_board.py
+   emit_ledger() -> site/factordata/us_track_ledger.json.
+   The interval is printed BESIDE the rate, never under it: 58.6% with a
+   50.4-64.4 interval on 18 boards is an early record, and a bare win rate here
+   would be exactly the overclaim this review cycle exists to catch. */
+.trd-wrap { display: flex; margin-bottom: 12px; }
+.trd-btn {
+  display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  padding: 8px 15px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--prov) 40%, var(--line));
+  background: color-mix(in srgb, var(--prov) 8%, transparent);
+  font-size: 12.5px; color: var(--muted);
+}
+.trd-lead { font-weight: 800; color: var(--prov-ink); letter-spacing: .02em; }
+.trd-sep { color: var(--line); }
+.trd-stat { font-weight: 650; }
+.trd-stat b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.trk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 9px; }
+.trk-i {
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; min-width: 0;
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.trk-l { font-size: 8.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.trk-v { font-size: 17px; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -.02em; }
+.trk-ci { font-size: 10px; color: var(--muted); line-height: 1.4; }
+.trk-note { font-size: 11.5px; color: var(--muted); line-height: 1.55; margin: 11px 0 0; max-width: 78ch; }
+.trk-note b { color: color-mix(in srgb, var(--text) 82%, var(--muted)); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ev-links { margin-top: 14px; }
+html[data-theme="light"] .trk-i { background: #fff; }
+
+@media (max-width: 720px) {
+  .sm-bar { padding: 9px 11px; }
+  .sm-btns { margin-left: 0; width: 100%; }
+  .sm-btn { flex: 1 1 auto; text-align: center; }
+  .trk-grid { grid-template-columns: 1fr 1fr; }
+  .trk-v { font-size: 15px; }
 }

@@ -23,8 +23,14 @@
   var LEX = {
     watch:       { en: "Watch",       zh: "观察",
                    gEn: "signal fired, nothing committed",  gZh: "已出现信号，尚未建仓" },
+    /* PRC-312: the gloss used to read "trigger not fired", which a sourced
+       ⚡ Triggered chip on the same card flatly contradicts (5 rows do exactly
+       that). Ready is a LIFECYCLE fact — the plan is armed and no position is
+       open yet — and the trigger is a separate, independently sourced event.
+       Restated as the lifecycle fact; the trigger claim is withdrawn from it.
+       Escalated to the owning lifecycle ruling in DESIGN_NOTES. */
     ready:       { en: "Ready",       zh: "就绪",
-                   gEn: "plan armed, trigger not fired",    gZh: "计划就位，尚未触发" },
+                   gEn: "plan armed, not yet entered",      gZh: "计划就位，尚未入场" },
     entered:     { en: "Entered",     zh: "入场",
                    gEn: "in the entry window",              gZh: "处于入场窗口内" },
     delivering:  { en: "Delivering",  zh: "达标",
@@ -91,6 +97,10 @@
   var isEmpty = S.state === "empty";
   var isAnon  = S.state === "anon";
   var isEps   = S.state === "episodes";
+  /* PRC-305: the behind-the-tape lens. Same population, same everything — the
+     ONE thing that changes is what the freshness producer reports, which is
+     the state the artifact previously had no way to express at all. */
+  var isStale = S.state === "stale";
   /* `fallback` is a mockup-gate lens showing ONLY rows the candidate join does
      not reach — no chart, no quote, no name/sector, no lane mark. It exists to
      prove the degraded card still reads, and to size the enrichment gap
@@ -128,6 +138,54 @@
   }
   function money(v) { return v == null ? "—" : "$" + Number(v).toFixed(2); }
 
+  /* PRC-318: a zone whose endpoints are equal is a PRICE, not a range. 4 of the
+     61 zone-bearing rows are zero-width (CENX, BKSY, FBRT, SBSI) and printed
+     "$46.46–$46.46"; a single price is a different instruction from a band. */
+  function zoneRange(lo, hi) {
+    if (lo == null && hi == null) return "—";
+    if (lo == null || hi == null) return money(lo == null ? hi : lo);
+    if (Number(lo) === Number(hi)) return money(lo);
+    return money(lo) + "&ndash;" + money(hi);
+  }
+
+  var NUMWORD = { 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven" };
+
+  /* ── FRESHNESS (PRC-305) ────────────────────────────────────────────────
+     Production's producer, not an invented one: _compute_board_staleness()
+     (scripts/build_stock_library.py:1469-1624, called :5734) emits
+     {price_through, sessions_behind, delayed, unknown} into wide["staleness"],
+     which reaches the template as _su.staleness. tools/gen_fixture.py mirrors
+     that shape into B.staleness, so the state here is read, never guessed.
+     `delayed` is production's own threshold: >= 2 sessions behind. */
+  function sessionShift(iso, back) {
+    var d = new Date(String(iso) + "T00:00:00Z"), n = 0;
+    while (n < back) {
+      d.setUTCDate(d.getUTCDate() - 1);
+      if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) n++;
+    }
+    return d.toISOString().slice(0, 10);
+  }
+  function freshness() {
+    var f = B.staleness;
+    if (!f) {
+      /* No staleness block on this fixture vintage: derive the same shape from
+         the two as-ofs the payload DOES carry — the plan book's date and the
+         ranking screen's date. Both are real payload facts. */
+      var pt = B.cand_asof || B.asof;
+      var n = 0, cur = String(B.asof);
+      while (n < 12 && cur > String(pt)) { cur = sessionShift(cur, 1); n++; }
+      f = { price_through: pt, sessions_behind: cur === String(pt) ? n : null,
+            unknown: !B.cand_asof };
+      f.delayed = f.sessions_behind != null && f.sessions_behind >= 2;
+    }
+    if (isStale) {
+      /* the harness lens, at production's own delayed threshold */
+      f = { price_through: sessionShift(B.asof, 2), sessions_behind: 2,
+            delayed: true, unknown: false, lens: true };
+    }
+    return f;
+  }
+
   /* ── row population ───────────────────────────────────────────────────── */
   function rows() {
     if (isEmpty) return [];
@@ -164,12 +222,20 @@
     var h = "";
     var total = liveTotal();
 
+    /* PRC-310 / VTC-312 — the claim is SCOPED to the cells that actually print
+       a value. The sub-line used to say "the six cells below add up to this
+       number" above a row whose first cell is a deliberate em dash, and the
+       artifact's own absence copy says that dash means NOT PUBLISHED, not zero.
+       So the sentence asked for a sum the surface cannot complete, and it would
+       read as an error on any night Watch is both unpublished and non-zero.
+       `published` is a computed difference of published values (COUNT LAW). */
+    var published = LIVE.length - (watchAbsent() ? 1 : 0);
     h += '<div class="ladder-headline">';
     h += '<span class="ladder-n fig">' + total + "</span>";
     h += '<span class="ladder-nl">' + t("live setups today", "个跟踪中计划") + "</span>";
     h += '<span class="ladder-sub">' + t(
-      "the six cells below add up to this number",
-      "下方 6 个状态合计") + "</span>";
+      "the " + (NUMWORD[published] || published) + " published cells below add up to this number",
+      "下方 " + published + " 个已发布状态合计") + "</span>";
     h += "</div>";
 
     h += '<div class="mx-ladder" role="group" aria-label="' +
