@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T10:11:29.423829+00:00",
-  "count": 1053,
+  "generated_at": "2026-08-13T10:41:33.263565+00:00",
+  "count": 1054,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -143,6 +143,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-f1vpeispinc-f34fe0",
+      "title": "Energy Vault Holdings (NRGV) Guidance raise highlights improving execution and evolving business model",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T01:23:35Z",
+      "summary_points": [
+        "**Liquidity Collapse & Margin Compression**: Current ratio plummeted to 0.47 (12/28E) from 0.98 (12/25), signaling severe near-term liquidity risk; gross margin collapsed to 15.6% (12/28E) from 23.6% (12/25), directly justifying the SELL rating as deteriorating fundamentals outweigh growth potential.",
+        "**Backlog Conversion & Project Shift**: $2.00bn backlog (40% to convert in 12-18 months) now 60% owned-operated (vs 20% in 4Q24), driving 2026-2028 revenue growth ($282m/$371m/$413m) but exacerbating margin pressure and liquidity strain from capital-intensive execution.",
+        "**Critical Risk vs.",
+        "Market Pricing**: Persistent cash flow decline (FCF to equity down 36% seq.) and margin erosion contradict quarterly revenue/FCF beats; closing prices consistently exceed analyst targets (e.g., $3.04 vs $2.50 target), indicating overvaluation risk despite fundamental deterioration."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
