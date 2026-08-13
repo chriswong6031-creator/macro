@@ -309,16 +309,33 @@ def _run_gh(args: list[str], timeout: int = 30) -> Any | None:
         return None
 
 
-def _collect_open_prs() -> list[dict] | None:
-    """Fetch open PRs via gh CLI.  Returns None on failure."""
+_OPEN_PR_FETCH_LIMIT = 100
+
+
+def _collect_open_prs() -> tuple[list[dict] | None, bool]:
+    """Fetch open PRs via gh CLI.
+
+    Returns ``(prs, truncated)``; ``(None, False)`` on failure.  ``truncated`` matters:
+    the fetch is capped, main takes roughly 35 merges a day, and an unflagged cap makes
+    a missing PR indistinguishable from a PR that does not exist — so every consumer of
+    ``active_builds.v1`` silently under-reports open work with no way to detect it.  The
+    merged-window fetch has carried this flag since it shipped; the open-PR fetch did not.
+    """
     data = _run_gh([
         "pr", "list",
         "--state", "open",
-        "--limit", "100",
+        "--limit", str(_OPEN_PR_FETCH_LIMIT),
         "--json", "number,title,headRefName,updatedAt,isDraft,mergeStateStatus",
     ])
     if data is None:
-        return None
+        return None, False
+    truncated = len(data) >= _OPEN_PR_FETCH_LIMIT
+    if truncated:
+        print(
+            f"::warning title=active-build-map::open PR list hit the "
+            f"{_OPEN_PR_FETCH_LIMIT} fetch cap — active_builds.v1 under-reports open work",
+            flush=True,
+        )
     prs: list[dict] = []
     for item in data:
         prs.append({
@@ -329,7 +346,7 @@ def _collect_open_prs() -> list[dict] | None:
             "is_draft": bool(item.get("isDraft", False)),
             "merge_state": item.get("mergeStateStatus", ""),
         })
-    return prs
+    return prs, truncated
 
 
 def _collect_pr_files(pr_number: int) -> tuple[list[str], bool, bool, str | None]:
@@ -425,7 +442,7 @@ def build_map(merged_days: int = 14) -> dict | None:
 
     Returns None if gh is unavailable or any critical fetch failed.
     """
-    open_prs_raw = _collect_open_prs()
+    open_prs_raw, open_prs_truncated = _collect_open_prs()
     if open_prs_raw is None:
         log.warning("Could not fetch open PRs — aborting map generation")
         return None
@@ -469,6 +486,7 @@ def build_map(merged_days: int = 14) -> dict | None:
         "base": {"sha": base_sha},
         "merged_days": merged_days,
         "merged_truncated": merged_truncated,
+        "open_prs_truncated": open_prs_truncated,
         "open_prs": enriched_prs,
         "collisions": collisions,
         "recent_merged": recent_merged,
