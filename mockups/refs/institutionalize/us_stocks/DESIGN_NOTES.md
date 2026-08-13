@@ -321,7 +321,16 @@ resolved episodes each and correctly show no link.
 
 ## 5. How Candidates stays a second population
 
-One printed total (69), decomposed by the **shipped** triage shelves — 28 + 27 + 10 + 2 + 2 = 69.
+One printed total (**70**), decomposed by the **shipped** triage shelves —
+**22 + 35 + 12 + 1 = 70** across four rendered shelves. The fifth shelf (`blocked`) is 0 today
+and renders no chip at all, which is why four shelves account for the whole total.
+
+*Corrected at R4 under PRC-320 (R3 receipt NEW-E). This line previously read
+"69 … 28 + 27 + 10 + 2 + 2 = 69", which matched no state of the committed payload; the page has
+been printing 70 throughout. The page was internally consistent and the rationale was not — the
+failure mode this whole document is most exposed to, since a number in prose has no producer
+checking it.*
+
 Different noun, different form (pills, no weight marks), non-adjacent.
 
 Two **shipped** sub-lines collided with lifecycle cell words and were relabelled under the
@@ -355,7 +364,7 @@ Five card fields arrive through the candidate join and are partial on plan rows:
    live quote and change. The mockup already emits it.
 2. **name / sector / lane / spark need a payload path.** All four already exist tonight inside
    the builders that produce `us_standouts.json`; the gap is only that the join is taken against
-   the 69 buy rows instead of the full plan universe (166 tickers). The ask is a per-plan
+   the **70** screened candidate rows instead of the full plan universe (166 tickers). The ask is a per-plan
    enrichment block on `index.json.plans[]`, keyed by ticker over the whole book. This is
    PR-0(c)'s neighbourhood but explicitly **not** authorised by MP-1, so it needs its own
    packet line before the migration builder is commissioned.
