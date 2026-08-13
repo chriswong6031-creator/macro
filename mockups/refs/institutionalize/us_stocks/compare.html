@@ -549,6 +549,44 @@
              "结果是：读者唯一可能据此行动的数字，成了卡上最不显眼的一处。"]
           ]));
 
+    /* ── the ⚡ note is MEASURED, not asserted ───────────────────────────────
+       Production pins ⚡ to the verb hue; the challenger pins it to a fixed
+       --warn amber. Whether those land on the same ink depends on token values
+       that are themselves under revision (--pv-wait has shared --warn's value,
+       and is being decoupled from it), so a sentence written today about which
+       way it resolves is a sentence that goes stale silently — which is the
+       exact failure mode this page is being repaired for. Read the two chips
+       out of the rendered DOM instead, and say what is actually on screen. */
+    var INK = (function () {
+      var a = document.querySelector(".cmp-prod .pv-trg");
+      var b = document.querySelector(".cmp-v2 .pv-trg");
+      var shape = { en: "a 999px pill at 10px/800 against a 5px rect at 9px/750",
+                    zh: "999px 胶囊、10px/800 对 5px 圆角矩形、9px/750" };
+      if (!a || !b) {
+        return { en: "No specimen on this page carries a ⚡ trigger, so the two treatments cannot be " +
+                     "compared here at all.",
+                 zh: "本页没有任何样本带 ⚡ 触发标签，因此这里根本无法比较两种处理。" };
+      }
+      var ia = getComputedStyle(a).color, ib = getComputedStyle(b).color;
+      if (ia === ib) {
+        return { en: "Measured on this render: the two ⚡ chips resolve to the SAME ink " +
+                     "(<code>" + ia + "</code>), because the verb hue this row carries and the fixed " +
+                     "amber the proposal uses currently hold the same value. So on this specimen they " +
+                     "differ only in shape — " + shape.en + ". The hue half of the divergence is real " +
+                     "but is not visible on this stance; do not read its absence as agreement.",
+                 zh: "本次渲染实测：两个 ⚡ 标签解析出的是<b>同一种</b>颜色（<code>" + ia + "</code>），" +
+                     "因为这一行的判读色与本提案固定使用的琥珀色目前取值相同。所以在这个样本上，两者只差在形状 —— " +
+                     shape.zh + "。颜色上的分歧真实存在，只是在这个判读上看不出来；不要把「看不见」当成「一致」。" };
+      }
+      return { en: "Measured on this render: the two ⚡ chips resolve to DIFFERENT inks — production " +
+                   "<code>" + ia + "</code> against the proposal's <code>" + ib + "</code> — on top of " +
+                   "the shape difference (" + shape.en + "). Production pins ⚡ to the verb hue; the " +
+                   "proposal pins it to a fixed amber that no longer tracks the stance.",
+               zh: "本次渲染实测：两个 ⚡ 标签解析出的是<b>不同</b>颜色 —— 生产端 <code>" + ia + "</code>，" +
+                   "本提案 <code>" + ib + "</code> —— 形状上也不同（" + shape.zh + "）。" +
+                   "生产端把 ⚡ 绑定在判读色上，本提案则固定为琥珀色，已不再随判读变化。" };
+    })();
+
     document.getElementById("method").innerHTML =
       hd("How this page renders — and where it could still mislead",
          "本页如何渲染 —— 以及它仍可能误导你的地方") + "<ol>" +
@@ -573,13 +611,7 @@
           "<code>.pv-zn</code>、<code>.pv-znl</code>、<code>.pv-dt</code>、<code>.pv-tk</code>、" +
           "<code>.pv-nm</code>、<code>.pv-ind</code>、<code>.pv-idw</code>、<code>.pv-mk</code>、" +
           "<code>.pv-mk-i</code>、<code>.pvcard:hover</code>。"]) +
-      li(["A limit worth stating: on a WAIT row the ⚡ chips resolve to the same ink, because " +
-          "<code>--pv-wait</code> and <code>--warn</code> ship the same value. Production pins ⚡ to the " +
-          "verb hue and this proposal pins it to a fixed amber — a real divergence that shows on Buy and " +
-          "Hold rows, and that specimen 1 cannot display. Here the two differ only in shape.",
-          "一处必须说明的局限：在「等待」的行上，两个 ⚡ 标签解析出的是同一种颜色，因为 <code>--pv-wait</code> " +
-          "与 <code>--warn</code> 取值相同。生产端把 ⚡ 绑定在判读色上，本提案把它固定为琥珀色 —— " +
-          "这是真实存在的分歧，但只在「买入」「持有」的行上看得见，样本一显示不出来。此处两者只差在形状。"]) +
+      li([INK.en, INK.zh]) +
       li(["The rail's lit step is not hand-set. The payload carries no <code>stage</code>; only " +
           "<code>lane === \"bottoming\"</code> names a rail label, so specimen 1 lights step 1 and " +
           "specimen 2 lights nothing.",
