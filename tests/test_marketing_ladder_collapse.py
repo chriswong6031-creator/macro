@@ -151,18 +151,26 @@ def test_the_forward_days_knob_is_actually_threaded(tmp_path):
 
 @pytest.mark.parametrize("cap,headroom,expect", [
     (10, 2.0, 20),      # weeks_1_2 — the shipped tier
-    (20, 2.0, 28),      # flagship's override, clamped to the 28-rung ladder
-    (14, 2.0, 28),      # weeks_3_4, also clamped
+    (20, 2.0, 40),      # was 28 while the ladder clamped at 28 (W2C-1: now 55)
+    (14, 2.0, 28),      # weeks_3_4 — exactly 28, and no longer AT the ceiling
+    (30, 2.0, 55),      # the shipped cap: ceil(60) clamped to the 55-rung ladder
     (10, 1.5, 15),
     (7, 1.6, 12),       # ceil, never floor: a fractional rung still gets booked
     (2, 2.0, 9),        # the structural floor — see _MIN_LADDER_RUNGS
     (1, 1.0, 9),
 ])
 def test_per_day_is_sized_to_the_ramp_cap(tmp_path, cap, headroom, expect):
-    """`per_day` follows the desk's OWN cap, not a flat 28.
+    """`per_day` follows the desk's OWN cap, not a flat ladder length.
 
-    Generating 28 rungs for a desk allowed 10 posts is the same waste as the
+    Generating a full ladder for a desk allowed 10 posts is the same waste as the
     7-day ladder, in miniature.
+
+    THE CEILING MUST NOT BE THE BINDING CONSTRAINT FOR A SHIPPED DESK (W2C-1,
+    2026-08-11). Every desk sits at cap 30 × headroom 2.0 = 60; against the old
+    28-rung ladder that clamped to 28, which made the headroom knob inert and held
+    the employee desks — whose ONLY supply is this ladder — at ~18 posts/day
+    against a 20/day floor. The (30, 2.0, 55) row is the one that would catch a
+    silent re-narrowing of the ladder.
     """
     cfg = _ramp_cfg(theme_list_allowed=True, cap=cap)
     cfg["content_plan"] = {"per_day_headroom": headroom}

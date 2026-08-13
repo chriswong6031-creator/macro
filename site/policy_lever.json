@@ -15,10 +15,10 @@
   },
   "jawboning": {
     "n_7d": 11,
-    "n_30d": 28,
-    "last_alert_ts": "2026-08-10T20:00:00+00:00",
-    "last_alert_summary": "Treasury\u2019s $131bn TGA rebuild drains reserves, tightening the tape",
-    "last_alert_summary_zh": "\u8d22\u653f\u90e8\u91cd\u5efaTGA\u8fbe1310\u4ebf\u7f8e\u5143\uff0c\u62bd\u8d70\u51c6\u5907\u91d1\u5e76\u6536\u7d27\u5e02\u573a\u6d41\u52a8\u6027"
+    "n_30d": 26,
+    "last_alert_ts": "2026-08-12T21:43:13+00:00",
+    "last_alert_summary": "U.S. opens offensive cyber operations to vetted private contractors",
+    "last_alert_summary_zh": "\u7f8e\u56fd\u5411\u7ecf\u5ba1\u67e5\u7684\u79c1\u8425\u627f\u5305\u5546\u5f00\u653e\u8fdb\u653b\u6027\u7f51\u7edc\u884c\u52a8"
   },
   "calendar": {
     "days_to_midterm": 83,

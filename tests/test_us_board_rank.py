@@ -2358,16 +2358,28 @@ class TestScoreScopeContract:
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
-def scored():
+def verdicts():
+    """The COMMITTED gate map — the verdict side of every fixture join below.
+
+    Shared rather than re-read per test so a guard cannot assert against a different
+    map than the one its rows were scored with.
+    """
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    gate = json.loads(
+        (root / "site" / "factordata" / "signal_gate.json").read_text())
+    return gate.get("verdicts") or {}
+
+
+@pytest.fixture(scope="module")
+def scored(verdicts):
     """(board, scored_rows) from the COMMITTED artifacts — deterministic, in git."""
     from pathlib import Path
     root = Path(__file__).resolve().parents[1]
     board = json.loads(
         (root / "site" / "factordata" / "us_standouts.json").read_text())
-    gate = json.loads(
-        (root / "site" / "factordata" / "signal_gate.json").read_text())
     rows = ubr.score_rows([dict(r) for r in board["buy"]],
-                          verdict_by=gate.get("verdicts") or {},
+                          verdict_by=verdicts,
                           board_asof=board["as_of"])
     return board, rows
 
@@ -2590,7 +2602,7 @@ class TestCommittedArtifactIntegration:
                        if r["stage"] in (ubr.STAGE_RAN, ubr.STAGE_BASING,
                                          ubr.STAGE_BLOCKED))
 
-    def test_a_same_day_cross_is_featurable_on_real_data(self, scored):
+    def test_a_same_day_cross_is_featurable_on_real_data(self, scored, verdicts):
         """The ticks==0 trap, pinned against production rows: the 07-31 board carries
         same-day crosses, and truthiness testing would silently drop every one.
 
@@ -2599,9 +2611,20 @@ class TestCommittedArtifactIntegration:
         ``ext_z_unknown``, so no row is featured at all and an ``any(featured)``
         assertion would go red for a reason that has nothing to do with ticks.  What
         must never come back is ``ticks_unknown``/``ticks_stale`` on a same-day cross.
+
+        The witness set is resolved through ``ubr.verdict_for`` — the SAME resolver
+        ``score_rows`` uses — never off ``row["signal"]`` directly.  The row carries a
+        second copy of these fields and the two committed artifacts are written by
+        different lanes, so they can skew: the 2026-08-12 ``scope=all`` re-render
+        re-emitted ``us_standouts.json`` without rewriting ``signal_gate.json``,
+        leaving NTES with ``signal.ticks 0`` against a gate verdict of ``ticks 3``.
+        Selecting on the row then asserting on the gate tested a row the gate never
+        saw as a same-day cross, and failed on fixture skew rather than on the trap
+        this guard exists to catch.
         """
         _board, rows = scored
-        zero_tick = [r for r in rows if (r.get("signal") or {}).get("ticks") == 0]
+        zero_tick = [r for r in rows
+                     if (ubr.verdict_for(r, verdicts) or {}).get("ticks") == 0]
         assert zero_tick, "fixture must contain a same-day cross"
         for r in zero_tick:
             reasons = r.get("featured_blocked_by") or []

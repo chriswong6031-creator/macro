@@ -1,0 +1,8 @@
+slot,market,pair,month,n,rho,abs_rho,p,p_method,frozen_beta_rho,frozen_beta_abs_rho,era
+cn_mature,cn,trading_corr.companion~attention_share.cn.comment.v0,2026-08,15,0.0197,0.0197,0.94627,"mc-permutation(n=15,draws=100000,seed=20260811)",-0.1609,0.1609,reconstruction
+cn_young_speculative,cn,trading_corr.companion~attention_share.cn.comment.v0,2026-08,11,0.3636,0.3636,0.27417,"mc-permutation(n=11,draws=100000,seed=20260811)",0.5091,0.5091,reconstruction
+cross_market_pair.cn,cn,trading_corr.companion~attention_share.cn.comment.v0,2026-08,37,0.218,0.218,0.19276,"mc-permutation(n=37,draws=100000,seed=20260811)",0.181,0.181,reconstruction
+cn_mature,cn,trading_corr.companion~attention_share.cn.lhb.v0,2026-07,15,0.0454,0.0454,0.93334,"mc-permutation(n=15,draws=100000,seed=20260811)",0.4085,0.4085,reconstruction
+cn_young_speculative,cn,trading_corr.companion~attention_share.cn.lhb.v0,2026-08,11,-0.2236,0.2236,0.58168,"mc-permutation(n=11,draws=100000,seed=20260811)",0.2981,0.2981,reconstruction
+cross_market_pair.cn,cn,trading_corr.companion~attention_share.cn.lhb.v0,2026-08,37,-0.0202,0.0202,0.90556,"mc-permutation(n=37,draws=100000,seed=20260811)",0.3873,0.3873,reconstruction
+cross_market_pair.us,us,trading_corr.companion~attention_share.us.flare.v0,2026-08,20,-0.3139,0.3139,0.17896,"mc-permutation(n=20,draws=100000,seed=20260811)",-0.5166,0.5166,reconstruction

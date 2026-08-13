@@ -1,0 +1,570 @@
+# config/growth_events.yml — the canonical growth/commercial event vocabulary.
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# The commercial architecture (research/MASTERMIND_COMMERCIAL_ARCHITECTURE.md) is built
+# by six waves across two repos. Without one vocabulary they emit six, and a funnel
+# assembled from six vocabularies cannot be joined. Spec:
+# research/MASTERMIND_GROWTH_INSTRUMENTATION_SPEC.md.
+#
+# WHAT IT IS NOT
+# --------------
+# Not a second source of truth for the beacon. `app/main.py::_MM_EVENT_TYPES` is the
+# closed whitelist that decides which client events are ACCEPTED; unknown types are
+# dropped silently, which is how an instrumentation program ships dead. Wave W2-1 makes
+# that whitelist read this file. Until then, `tests/test_growth_events_registry.py`
+# enforces the weaker but still load-bearing direction: **every type the beacon already
+# accepts appears here, marked `status: live`** — so the registry cannot start life out
+# of step with the running system.
+#
+# `wire` VS `name`
+# ----------------
+# `name` is the registry/analysis name (dotted, grouped by object). `wire` is the string
+# that actually travels to /api/collect and lands in `analytics_events.event_type`.
+# For live events the two DIFFER on purpose: the beacon has been emitting `ticker_view`
+# and `session_start` since long before this file, and those rows are in the table.
+# Renaming a live wire value would orphan its own history, so `wire` is FROZEN for
+# anything `live` and only `name` is allowed to be tidy.
+#
+# RELATIONSHIP TO engine/marketing/events.py::GROWTH_EVENTS
+# ---------------------------------------------------------
+# That list is the marketing lobe's growth taxonomy (docket §12.1.A). It is DECLARATIVE in
+# exactly the same way this file is — `engine/marketing/state.py` publishes it into
+# `marketing_state.json` as `{"instrumented": [...], "observed": 0}` and nothing emits it.
+# Two declared vocabularies for one funnel is how a funnel becomes unjoinable: the same
+# transition would exist under two names in two stores, and any cross-cut would double-count.
+#
+# So the overlap is made explicit rather than left to collide. Seven events below carry a
+# `marketing_alias` naming their counterpart in GROWTH_EVENTS, and
+# `tests/test_growth_events_registry.py` asserts every alias resolves. When the emitters land
+# (W2-3), one emit satisfies both readers. The names that do NOT overlap are legitimate: this
+# registry has no counterpart for the lobe's share/embed/referral/creator surfaces (they are
+# W8 shareability), and the lobe has none for the paywall/upgrade/retention-loop events that
+# are the point of this file.
+#
+# ADDING AN EVENT
+# ---------------
+# State the funnel transition or decision it serves in `purpose`. No transition, no
+# event — see the spec's §7 "What NOT to instrument". Properties are typed and their
+# enums are closed: an open `meta` blob becomes unqueryable within a month.
+
+schema: growth_events.v1
+
+# ── closed enums ─────────────────────────────────────────────────────────────────
+# `insider` is deliberately ABSENT from `tier`. lib/tiers.py documents that the legacy
+# string keeps arriving indefinitely (pre-rename entitlement rows are never back-filled,
+# and `immutable`-cached JS keeps sending it). Emitters must NORMALIZE it to `essential`
+# before it reaches telemetry — if it lands raw, every tier-segmented number silently
+# splits in two and the split is invisible.
+enums:
+  tier:            [anon, free, essential, pro, unlimited]
+  surface_group:   [read, find, understand, watch, prove]
+  paywall_reason:  [ceiling, tier, usage, history]
+  interval:        [month, year]
+  trial_outcome:   [converted, expired, canceled]
+  storage:         [local, cloud]
+  lane:            [fast, deep]
+  auth_method:     [email, google]
+  personal_act:    [watchlist_add, chat_ask, ticker_typed, alert_configured]
+  evidence_kind:   [receipt, drawer, prophet_detail, methodology]
+  channel:         [push, email, in_product]
+  cadence:         [daily, weekly]
+  failure_kind:    [card_declined, auth_required, abandoned, error]
+  cancel_reason:
+    - value_vs_price
+    - too_expensive
+    - overwhelming
+    - duplicate_tool
+    - accuracy
+    - inactive_period
+    - missing_capability
+    - other
+
+# ── funnel stages (research/MASTERMIND_ACTIVATION_AND_FUNNEL.md §1) ─────────────
+funnel:
+  - id: visit
+  - id: intelligence_experienced
+  - id: personal_act
+  - id: registration
+  - id: activation
+  - id: upgrade_intent
+  - id: paid
+  - id: paid_activation
+  - id: retained
+  - id: churn
+  - id: none            # legitimate: diagnostic/context events with no transition
+
+# ── events ───────────────────────────────────────────────────────────────────────
+events:
+
+  # ---- acquisition ----
+  - name: session.start
+    wire: session_start
+    status: live
+    source: client
+    funnel: visit
+    purpose: Session denominator; carries the acquisition source and landing surface.
+    properties:
+      source: string
+      campaign: string
+      landing_surface: string
+      referrer_host: string
+      is_first_ever: bool
+
+  - name: page.viewed
+    wire: pageview
+    status: live
+    source: client
+    funnel: none
+    purpose: Coarse reach. Deliberately NOT a funnel step — a view is not an act.
+    properties:
+      surface: string
+
+  - name: route.changed
+    wire: route
+    status: live
+    source: client
+    funnel: none
+    purpose: In-app navigation for SPA surfaces.
+    properties:
+      surface: string
+
+  - name: ad.exposed
+    wire: ad_exposure
+    status: live
+    source: client
+    funnel: none
+    purpose: Which split-test arm a visitor was shown (AD_CENTRAL_MASTERPLAN §2).
+    properties:
+      arena: string
+      creative: string
+
+  - name: intelligence.viewed
+    wire: intelligence.viewed
+    marketing_alias: first_value_reached
+    status: planned
+    source: client
+    funnel: intelligence_experienced
+    purpose: >
+      visit → ① . Fires ONCE per surface per session, and only when a genuine read has
+      rendered. A locked slot or an empty state must NOT emit it — that distinction is
+      the entire value of the event, and it separates "the page loaded" from "the
+      product worked".
+    properties:
+      surface: string
+      surface_group: enum:surface_group
+      tier_seen: enum:tier
+      rows_visible: int
+
+  # ---- engagement / activation ----
+  - name: ticker.viewed
+    wire: ticker_view
+    status: live
+    source: client
+    funnel: none
+    purpose: Interest breadth; input to anonymous activation.
+    properties:
+      ticker: string
+      surface: string
+
+  - name: search.performed
+    wire: search
+    status: live
+    source: client
+    funnel: none
+    purpose: Discovery intent. Query LENGTH only — never the query text.
+    properties:
+      query_len: int
+      result_kind: string
+
+  - name: terminal.jumped
+    wire: terminal_jump
+    status: live
+    source: client
+    funnel: none
+    purpose: Cross-app flow into the Terminal.
+    properties:
+      surface: string
+
+  - name: element.clicked
+    wire: click
+    status: live
+    source: client
+    funnel: none
+    purpose: Coarse interaction. Not a funnel step; see the spec's §7.
+    properties:
+      surface: string
+
+  - name: page.scrolled
+    wire: scroll
+    status: live
+    source: client
+    funnel: none
+    purpose: Coarse depth. Not a funnel step.
+    properties:
+      surface: string
+
+  - name: session.heartbeat
+    wire: heartbeat
+    status: live
+    source: client
+    funnel: none
+    purpose: Session duration bounding.
+    properties: {}
+
+  - name: session.exit
+    wire: exit
+    status: live
+    source: client
+    funnel: none
+    purpose: Batch flush on leave.
+    properties: {}
+
+  - name: personal.act
+    wire: personal.act
+    status: planned
+    source: client
+    funnel: personal_act
+    purpose: >
+      ① → ② , the single most important number in the funnel. A separate umbrella event
+      rather than a derived query, so the transition is readable without a five-way UNION.
+    properties:
+      act: enum:personal_act
+      surface: string
+
+  - name: watchlist.symbol_added
+    wire: watchlist.symbol_added
+    status: planned
+    source: client
+    funnel: personal_act
+    purpose: The create-before-register funnel, step by step.
+    properties:
+      symbol: string
+      count_after: int
+      storage: enum:storage
+
+  - name: watchlist.saved
+    wire: watchlist.saved
+    marketing_alias: watchlist_saved
+    status: planned
+    source: client
+    funnel: activation
+    purpose: Activation condition 1 — a saved list of >=3 symbols.
+    properties:
+      symbol_count: int
+      list_count: int
+      storage: enum:storage
+
+  - name: watchlist.folded
+    wire: watchlist.folded
+    status: planned
+    source: client
+    funnel: registration
+    purpose: >
+      Did the anonymous → account state transfer actually work? watchstore.js folds the
+      local blob on first sign-in; this is the only way to know it happened.
+    properties:
+      symbol_count: int
+
+  - name: evidence.opened
+    wire: evidence.opened
+    status: planned
+    source: client
+    funnel: activation
+    purpose: >
+      Activation condition 3. A user who never opens evidence has experienced Mastermind
+      as a signal feed and will churn to the next signal feed.
+    properties:
+      surface: string
+      evidence_kind: enum:evidence_kind
+
+  - name: chat.question_sent
+    wire: chat.question_sent
+    status: planned
+    source: server
+    funnel: personal_act
+    purpose: Chat demand and quota pressure by tier.
+    properties:
+      lane: enum:lane
+      surface: string
+      tier: enum:tier
+      remaining_after: int
+
+  - name: chat.answer_received
+    wire: chat.answer_received
+    status: planned
+    source: server
+    funnel: activation
+    purpose: Activation condition 3 (alternate path); chat health.
+    properties:
+      lane: enum:lane
+      latency_ms: int
+      had_citations: bool
+
+  - name: alert.configured
+    wire: alert.configured
+    status: planned
+    source: server
+    funnel: none
+    purpose: Retention intent — the user asked to be told something.
+    properties:
+      alert_kind: string
+      channel: enum:channel
+
+  # ---- registration ----
+  - name: account.created
+    wire: account.created
+    marketing_alias: account_created
+    status: planned
+    source: server
+    funnel: registration
+    purpose: >
+      ② → ③ . `had_local_watchlist` is the direct test of the create-before-register
+      thesis: if registrants who arrive with a list activate at a materially higher rate,
+      the prompt belongs everywhere; if not, the thesis is wrong.
+    properties:
+      method: enum:auth_method
+      had_local_watchlist: bool
+      prefs_skipped: bool
+      days_since_first_seen: int
+
+  - name: account.activated
+    wire: account.activated
+    status: planned
+    source: server
+    funnel: activation
+    purpose: >
+      ③ → ④ . Computed once per account by a nightly idempotent job over the prior 7
+      days; never emitted by a client.
+    properties:
+      days_to_activate: int
+      completing_condition: string
+
+  # ---- conversion ----
+  - name: paywall.encountered
+    wire: paywall.encountered
+    status: planned
+    source: client
+    funnel: upgrade_intent
+    purpose: >
+      Which ceilings users actually meet. Joined with upgrade.clicked and
+      checkout.completed this answers which of the nine upgrade moments SELLS — the
+      single most valuable join in the whole system.
+    properties:
+      surface: string
+      reason: enum:paywall_reason
+      required_tier: enum:tier
+      hits: int
+
+  - name: upgrade.clicked
+    wire: upgrade.clicked
+    status: planned
+    source: client
+    funnel: upgrade_intent
+    purpose: Which ceilings convert intent into motion.
+    properties:
+      surface: string
+      required_tier: enum:tier
+      hits: int
+      placement: string
+
+  - name: plans.viewed
+    wire: plans.viewed
+    status: planned
+    source: client
+    funnel: upgrade_intent
+    purpose: Does contextual entry to pricing beat navigation entry?
+    properties:
+      source_surface: string
+      billing_period_default: enum:interval
+
+  - name: checkout.started
+    wire: checkout.started
+    marketing_alias: checkout_started
+    status: planned
+    source: server
+    funnel: upgrade_intent
+    purpose: ⑤ → ⑥ .
+    properties:
+      tier: enum:tier
+      interval: enum:interval
+      offer_key: string
+      source_surface: string
+
+  - name: checkout.completed
+    wire: checkout.completed
+    marketing_alias: subscription_created
+    status: planned
+    source: server
+    funnel: paid
+    purpose: >
+      Revenue truth. Emitted from the Stripe webhook AFTER the entitlement upsert
+      succeeds, riding that handler's existing idempotency on event.id — a telemetry row
+      must never claim a state the authority does not hold.
+    properties:
+      tier: enum:tier
+      interval: enum:interval
+      offer_key: string
+      amount_cents: int
+      is_trial: bool
+
+  - name: checkout.failed
+    wire: checkout.failed
+    status: planned
+    source: server
+    funnel: upgrade_intent
+    purpose: Payment friction, separated from disinterest.
+    properties:
+      tier: enum:tier
+      interval: enum:interval
+      failure_kind: enum:failure_kind
+
+  - name: trial.started
+    wire: trial.started
+    status: planned
+    source: server
+    funnel: paid
+    purpose: Trial volume.
+    properties:
+      tier: enum:tier
+      trial_days: int
+
+  - name: trial.ended
+    wire: trial.ended
+    status: planned
+    source: server
+    funnel: paid
+    purpose: Trial efficacy.
+    properties:
+      tier: enum:tier
+      outcome: enum:trial_outcome
+
+  - name: daypass.granted
+    wire: daypass.granted
+    status: planned
+    source: server
+    funnel: upgrade_intent
+    purpose: Day-Pass efficacy (W8-1); which trigger surface earns one.
+    properties:
+      trigger_surface: string
+      hits: int
+
+  # ---- retention ----
+  - name: sincelast.viewed
+    wire: sincelast.viewed
+    status: planned
+    source: client
+    funnel: retained
+    purpose: Does the retention loop pull? The primary D7/D30 explanatory event.
+    properties:
+      item_count: int
+      changed_symbols: int
+      days_since_last: int
+
+  - name: digest.sent
+    wire: digest.sent
+    status: planned
+    source: server
+    funnel: none
+    purpose: Digest denominator.
+    properties:
+      cadence: enum:cadence
+      tier: enum:tier
+      item_count: int
+
+  - name: digest.opened
+    wire: digest.opened
+    status: planned
+    source: server
+    funnel: retained
+    purpose: Subject-line efficacy — the subject line IS the product here.
+    properties:
+      cadence: enum:cadence
+      tier: enum:tier
+
+  - name: digest.clicked
+    wire: digest.clicked
+    status: planned
+    source: server
+    funnel: retained
+    purpose: Which loop content pulls people back.
+    properties:
+      cadence: enum:cadence
+      item_kind: string
+
+  - name: alert.delivered
+    wire: alert.delivered
+    status: planned
+    source: server
+    funnel: none
+    purpose: Alert volume, for the server-side cap.
+    properties:
+      alert_kind: string
+      channel: enum:channel
+
+  - name: alert.opened
+    wire: alert.opened
+    marketing_alias: alert_opened
+    status: planned
+    source: server
+    funnel: retained
+    purpose: >
+      delivered vs opened is the measurable proxy for "I'm glad Mastermind told me" —
+      the standard an alert has to earn.
+    properties:
+      alert_kind: string
+      channel: enum:channel
+
+  # ---- churn ----
+  - name: subscription.past_due
+    wire: subscription.past_due
+    status: planned
+    source: server
+    funnel: churn
+    purpose: Involuntary churn, which is plumbing rather than product.
+    properties:
+      tier: enum:tier
+      interval: enum:interval
+
+  - name: subscription.canceled
+    wire: subscription.canceled
+    marketing_alias: cancellation
+    status: planned
+    source: server
+    funnel: churn
+    purpose: >
+      Voluntary churn joined to behavior. `paid_activated` on this row is what makes
+      churn analysis possible AT the moment of churn instead of six weeks later.
+    properties:
+      tier: enum:tier
+      interval: enum:interval
+      reason_code: enum:cancel_reason
+      days_subscribed: int
+      paid_activated: bool
+
+  - name: subscription.tier_changed
+    wire: subscription.tier_changed
+    status: planned
+    source: server
+    funnel: paid
+    purpose: >
+      Upgrades and downgrades between paid tiers. Required by the pre-registered 60-day
+      Essential test (MASTERMIND_PRICING_AND_PACKAGING.md §7): `checkout.completed` carries
+      only the NEW tier, so without this an Essential→Pro upgrade is indistinguishable from a
+      new Pro subscription and the test's second criterion cannot be computed at all.
+    properties:
+      from_tier: enum:tier
+      to_tier: enum:tier
+      from_interval: enum:interval
+      to_interval: enum:interval
+      days_at_previous: int
+
+  - name: subscription.reactivated
+    wire: subscription.reactivated
+    status: planned
+    source: server
+    funnel: paid
+    purpose: Win-back efficacy.
+    properties:
+      tier: enum:tier
+      days_churned: int
