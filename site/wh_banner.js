@@ -401,7 +401,15 @@
     if (document.getElementById("whb-style")) return;
     var css = [
       ".whb-on .whb{--whb-h:42px}",
+      // width:100% + max-width:100vw is load-bearing, not belt-and-braces. .whb is a
+      // flex container holding a marquee track that is deliberately ~10,800px wide.
+      // Its own overflow:hidden only clips what is INSIDE it — it does not stop the
+      // container itself from being sized by that child when the parent does not
+      // constrain it. On coming-soon.html it did exactly that and blew the document
+      // to 6,159px against a 1,440px viewport (measured 2026-08-12): a page that
+      // scrolls sideways on every viewport, which design system §15 forbids outright.
       ".whb{position:relative;z-index:60;display:flex;align-items:stretch;height:42px;",
+      "width:100%;max-width:100vw;box-sizing:border-box;",
       "background:linear-gradient(90deg,rgba(20,30,55,.96),rgba(34,20,30,.96));",
       "color:#f4f6fb;border-bottom:1px solid rgba(255,255,255,.10);",
       "box-shadow:0 2px 14px rgba(0,0,0,.28);font:13px/1.4 -apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;",

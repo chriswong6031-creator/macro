@@ -14,7 +14,7 @@
 {% set seo_desc = 'China A-share market structure — turnover and margin participation, limit-up breadth, cycle phase, the policy tape, the government bond curve and USDCNH. Context only.' %}
 {% set seo_path = 'china_mechanics.html' %}
 {% include "_seo_head.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
 :root {
@@ -134,7 +134,7 @@ body::before{
   font-weight:600;
   text-transform:uppercase;
   letter-spacing:.1em;
-  color:var(--warn);
+  color:var(--ink-warn, var(--warn));
 }
 
 /* ══════════════════════════════════════════
@@ -158,8 +158,9 @@ body::before{
   align-items:center;
   gap:6px;
 }
-.hero-breadcrumb a{color:var(--link);text-decoration:none}
-.hero-breadcrumb span{color:var(--line)}
+.hero-breadcrumb a{color:var(--ink-link, var(--link));text-decoration:none}
+/* was color:var(--line) — a BORDER token printed as text, 1.46:1 in light */
+  .hero-breadcrumb span{color:var(--muted)}
 
 .hero-title{
   font-size:28px;
@@ -224,10 +225,10 @@ body::before{
   color:var(--muted);
   margin-top:2px;
 }
-.up-color{color:var(--up)}
-.down-color{color:var(--down)}
-.info-color{color:var(--info)}
-.warn-color{color:var(--warn)}
+.up-color{color:var(--ink-up, var(--up))}
+.down-color{color:var(--ink-down, var(--down))}
+.info-color{color:var(--ink-info, var(--info))}
+.warn-color{color:var(--ink-warn, var(--warn))}
 .muted-color{color:var(--muted)}
 
 /* ── Cycle Wheel Hero ── */
@@ -386,7 +387,7 @@ body::before{
   letter-spacing:.08em;
   background:rgba(224,160,48,0.12);
   border:1px solid rgba(224,160,48,0.22);
-  color:var(--warn);
+  color:var(--ink-warn, var(--warn));
 }
 
 .null-chip{
@@ -591,9 +592,9 @@ body::before{
   color:var(--text);
 }
 .events-table tr:last-child td{border-bottom:none}
-.event-sealed-up{color:var(--up);font-weight:600}
-.event-sealed-down{color:var(--down);font-weight:600}
-.event-failed{color:var(--warn);font-weight:600}
+.event-sealed-up{color:var(--ink-up, var(--up));font-weight:600}
+.event-sealed-down{color:var(--ink-down, var(--down));font-weight:600}
+.event-failed{color:var(--ink-warn, var(--warn));font-weight:600}
 
 /* ══════════════════════════════════════════
    CYCLE PHASE PANEL
@@ -738,7 +739,7 @@ details[open] summary::before{transform:rotate(90deg)}
 .impulse-badge .val{
   font-size:13px;
   font-weight:700;
-  color:var(--info);
+  color:var(--ink-info, var(--info));
   white-space:nowrap;
 }
 
@@ -787,9 +788,9 @@ details[open] summary::before{transform:rotate(90deg)}
   letter-spacing:.06em;
   margin-right:6px;
 }
-.src-pboc{background:rgba(91,155,240,0.15);color:var(--info)}
-.src-politburo{background:rgba(224,160,48,0.12);color:var(--warn)}
-.src-cewc{background:rgba(224,139,69,0.12);color:var(--orange)}
+.src-pboc{background:rgba(91,155,240,0.15);color:var(--ink-info, var(--info))}
+.src-politburo{background:rgba(224,160,48,0.12);color:var(--ink-warn, var(--warn))}
+.src-cewc{background:rgba(224,139,69,0.12);color:var(--ink-orange, var(--orange))}
 /* CJK has no case and no ascender/descender rhythm: the chip's 9.5px + tracking
    is set for uppercase latin and reads as noise in Chinese. Bump the zh twin. */
 .event-source-chip .l-zh{font-size:10.5px;letter-spacing:0}
@@ -1155,7 +1156,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
   {% set contradictions = lpl.get('contradictions') or [] %}
   {% if contradictions %}
   <div style="padding:12px 16px;background:rgba(224,160,48,0.07);border:1px solid rgba(224,160,48,0.18);border-radius:10px;font-size:12px;color:var(--muted);margin-top:4px">
-    <span style="color:var(--warn);font-weight:700">{{ t('Contradiction flagged:', '矛盾点：') }} </span>
+    <span style="color:var(--ink-warn, var(--warn));font-weight:700">{{ t('Contradiction flagged:', '矛盾点：') }} </span>
     {% for c in contradictions %}{{ c.a }} vs {{ c.b }}{% if c.detail %} — {{ c.detail }}{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}
   </div>
   {% endif %}
@@ -1220,13 +1221,13 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
        universe); the bar is drawn at true scale — a near-empty bar honestly means
        "few names hit limits today". #}
     <div class="thermo-bar-row">
-      <span style="color:var(--up);font-weight:600;min-width:45px">{{ ('%.2f%%'|format(lup_pct)) if lup_pct is not none else '—' }}</span>
+      <span style="color:var(--ink-up, var(--up));font-weight:600;min-width:45px">{{ ('%.2f%%'|format(lup_pct)) if lup_pct is not none else '—' }}</span>
       <div class="thermo-bar">
         <div class="thermo-seg-up" style="width:{{ ('%.2f'|format([lup_pct, 100]|min)) if lup_pct is not none else '0' }}%"></div>
         <div class="thermo-seg-down" style="width:{{ ('%.2f'|format([ldn_pct, 100]|min)) if ldn_pct is not none else '0' }}%"></div>
         <div class="thermo-seg-other"></div>
       </div>
-      <span style="color:var(--down);font-weight:600;min-width:45px">{{ ('%.2f%%'|format(ldn_pct)) if ldn_pct is not none else '—' }}</span>
+      <span style="color:var(--ink-down, var(--down));font-weight:600;min-width:45px">{{ ('%.2f%%'|format(ldn_pct)) if ldn_pct is not none else '—' }}</span>
     </div>
     <div style="font-size:10.5px;color:var(--muted);margin-top:8px">
       {{ t('Green = limit-up breadth · Red = limit-down breadth, as a share of the ~1,585-name universe (limits are rare, so the bar sits low).', '绿色=涨停广度 · 红色=跌停广度，占约1,585只全市场股票的比例（涨跌停罕见，故占比很低）。') }}
@@ -1415,14 +1416,14 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         {% for ch in pp.get('transmission_channel') or [] %}
         {% set ch_en = ch.replace('_',' ').title() %}
-        <span style="padding:4px 10px;border-radius:6px;background:rgba(91,155,240,0.12);border:1px solid rgba(91,155,240,0.22);font-size:11px;color:var(--info)">{{ t(ch_en, channel_zh.get(ch, ch_en)) }}</span>
+        <span style="padding:4px 10px;border-radius:6px;background:rgba(91,155,240,0.12);border:1px solid rgba(91,155,240,0.22);font-size:11px;color:var(--ink-info, var(--info))">{{ t(ch_en, channel_zh.get(ch, ch_en)) }}</span>
         {% endfor %}
       </div>
       <div class="micro" style="margin-top:12px;margin-bottom:8px">{{ t('Data Freshness', '数据时效') }}</div>
       <div class="staleness-chips">
         {% set staleness = pp.get('staleness') or {} %}
         {% for src, days in staleness.items() %}
-        <span class="stale-chip" style="{% if days <= 3 %}background:rgba(69,184,115,0.10);border-color:rgba(69,184,115,0.2);color:var(--up){% elif days > 30 %}background:rgba(224,100,100,0.10);border-color:rgba(224,100,100,0.22);color:var(--down){% endif %}">{{ src }}: {{ days }}{{ t('d', '天') }}</span>
+        <span class="stale-chip" style="{% if days <= 3 %}background:rgba(69,184,115,0.10);border-color:rgba(69,184,115,0.2);color:var(--ink-up, var(--up)){% elif days > 30 %}background:rgba(224,100,100,0.10);border-color:rgba(224,100,100,0.22);color:var(--ink-down, var(--down)){% endif %}">{{ src }}: {{ days }}{{ t('d', '天') }}</span>
         {% endfor %}
       </div>
     </div>
@@ -1461,11 +1462,11 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
       </div>
       <svg id="cgbCurve" viewBox="0 0 500 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:180px;display:block"></svg>
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;padding:0 4px">
-        <span>3M<br><strong style="color:var(--info)">{{ ('%.4f%%'|format(cgb.get('m3', 0))) if cgb.get('m3') is not none else '—' }}</strong></span>
-        <span style="text-align:center">1Y<br><strong style="color:var(--info)">{{ ('%.4f%%'|format(cgb.get('y1', 0))) if cgb.get('y1') is not none else '—' }}</strong></span>
-        <span style="text-align:center">5Y<br><strong style="color:var(--info)">{{ ('%.4f%%'|format(cgb.get('y5', 0))) if cgb.get('y5') is not none else '—' }}</strong></span>
-        <span style="text-align:center">10Y<br><strong style="color:var(--info)">{{ ('%.4f%%'|format(cgb.get('y10', 0))) if cgb.get('y10') is not none else '—' }}</strong></span>
-        <span style="text-align:right">30Y<br><strong style="color:var(--info)">{{ ('%.4f%%'|format(cgb.get('y30', 0))) if cgb.get('y30') is not none else '—' }}</strong></span>
+        <span>3M<br><strong style="color:var(--ink-info, var(--info))">{{ ('%.4f%%'|format(cgb.get('m3', 0))) if cgb.get('m3') is not none else '—' }}</strong></span>
+        <span style="text-align:center">1Y<br><strong style="color:var(--ink-info, var(--info))">{{ ('%.4f%%'|format(cgb.get('y1', 0))) if cgb.get('y1') is not none else '—' }}</strong></span>
+        <span style="text-align:center">5Y<br><strong style="color:var(--ink-info, var(--info))">{{ ('%.4f%%'|format(cgb.get('y5', 0))) if cgb.get('y5') is not none else '—' }}</strong></span>
+        <span style="text-align:center">10Y<br><strong style="color:var(--ink-info, var(--info))">{{ ('%.4f%%'|format(cgb.get('y10', 0))) if cgb.get('y10') is not none else '—' }}</strong></span>
+        <span style="text-align:right">30Y<br><strong style="color:var(--ink-info, var(--info))">{{ ('%.4f%%'|format(cgb.get('y30', 0))) if cgb.get('y30') is not none else '—' }}</strong></span>
       </div>
       {% if cgb.get('slope_10y_3m') is not none %}
       <div style="font-size:10.5px;color:var(--muted);margin-top:8px">
@@ -1588,9 +1589,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
   <!-- Cycle Phase Meanings — grafted from mech_v2 -->
   {% if phase_catalog %}
   <details style="margin-top:24px;border:1px solid rgba(139,147,161,0.18);border-radius:8px;overflow:hidden">
-    <summary style="padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);background:rgba(255,255,255,0.02);list-style:none;display:flex;align-items:center;gap:8px">
-      <span style="font-size:16px">↻</span>
-      <span class="l-en">Cycle Phase Meanings</span>
+    <summary style="padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);background:rgba(255,255,255,0.02);list-style:none;display:flex;align-items:center;gap:8px"><span class="l-en">Cycle Phase Meanings</span>
       <span class="l-zh">周期阶段释义</span>
     </summary>
     <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
@@ -2083,7 +2082,7 @@ function buildEventsTable(){
     const off = e.off !== undefined ? e.off : (e.close_off_limit_pct || 0);
     const offStr = off===0 ? '0.00%' : (off*100).toFixed(3)+'%';
     html += `<tr>
-      <td style="font-family:monospace;font-size:11px;color:var(--link)">${e.ticker}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--ink-link, var(--link))">${e.ticker}</td>
       <td>${boardStr}</td>
       <td>${evLabel}</td>
       <td style="text-align:right;color:${off<0?'var(--down)':'var(--muted)'}">${offStr}</td>

@@ -32,11 +32,11 @@
 })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>China Tape — Macro Dashboard</title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=a0c743b0">
-<link rel="stylesheet" href="assets/css/8e4ae4ee.css?v=8e4ae4ee">
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css?v=90137296">
+<link rel="stylesheet" href="assets/css/32655cfe.css?v=32655cfe">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=65bba21c">
+<link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 
 
 
@@ -63,7 +63,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=65bba21c">
+    <link rel="stylesheet" href="navigation-refresh.css?v=c299c324">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -278,7 +278,7 @@
   <script src="logo_config.js?v=b37d33d3" defer></script>
   <script src="stock-logos.js?v=cc29be53" defer></script>
   <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="live.js?v=b245e3c3" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -312,8 +312,8 @@
       
       
       <p class="cn-lead">
-        <span class="l-en"><b>24</b> stories cleared the macro filter; official policy tone leans cautious. <b>15</b> rated high-impact, led by <b>consumer</b>.</span>
-        <span class="l-zh"><b>24</b> 条通过宏观筛选；官方政策基调偏谨慎。其中 <b>15</b> 条高影响，主导<b>消费</b>。</span>
+        <span class="l-en"><b>24</b> stories cleared the macro filter; official policy tone leans cautious. <b>9</b> rated high-impact, led by <b>equity market</b>.</span>
+        <span class="l-zh"><b>24</b> 条通过宏观筛选；官方政策基调偏谨慎。其中 <b>9</b> 条高影响，主导<b>股票市场</b>。</span>
       </p>
       <p class="cn-asof"><span class="l-en">As of</span><span class="l-zh">截至</span>  · <span class="l-en">context, not trade calls</span><span class="l-zh">仅供参考，非交易信号</span></p>
       <div class="cn-glance">
@@ -321,8 +321,8 @@
         
         <span class="cn-gchip st-cautious"><span class="dot"></span><span class="l-en">Policy tone</span><span class="l-zh">政策基调</span> <b><span class="l-en">leans cautious</span><span class="l-zh">偏谨慎</span></b></span>
         
-        <span class="cn-gchip hot"><span class="dot"></span><b>15</b> <span class="l-en">high-impact</span><span class="l-zh">高影响</span></span>
-        <span class="cn-gchip led th-monetary"><span class="dot"></span><span class="l-en">Led by</span><span class="l-zh">主导</span> <b><span class="l-en">consumer</span><span class="l-zh">消费</span></b></span>
+        <span class="cn-gchip hot"><span class="dot"></span><b>9</b> <span class="l-en">high-impact</span><span class="l-zh">高影响</span></span>
+        <span class="cn-gchip led th-markets"><span class="dot"></span><span class="l-en">Led by</span><span class="l-zh">主导</span> <b><span class="l-en">equity market</span><span class="l-zh">股票市场</span></b></span>
         <span class="cn-gchip"><b>24</b> <span class="l-en">on the tape</span><span class="l-zh">条在流</span></span>
         <span class="cn-gchip hidden" id="fresh"><span class="dot" style="background:var(--up)"></span><span id="fresh-t"></span></span>
       </div>
@@ -360,43 +360,43 @@
         
         
         
-        <div class="mx-row th-monetary">
-          <span class="mx-name"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-          <span class="mx-bar"><i style="width:100%"></i></span>
-          <span class="mx-n">7</span>
-        </div>
-        
-        
         <div class="mx-row th-markets">
           <span class="mx-name"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
           <span class="mx-bar"><i style="width:100%"></i></span>
-          <span class="mx-n">7</span>
+          <span class="mx-n">12</span>
+        </div>
+        
+        
+        <div class="mx-row th-monetary">
+          <span class="mx-name"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+          <span class="mx-bar"><i style="width:50%"></i></span>
+          <span class="mx-n">6</span>
         </div>
         
         
         <div class="mx-row th-inflation">
           <span class="mx-name"><span class="l-en">Inflation</span><span class="l-zh">物价</span></span>
-          <span class="mx-bar"><i style="width:57%"></i></span>
-          <span class="mx-n">4</span>
+          <span class="mx-bar"><i style="width:17%"></i></span>
+          <span class="mx-n">2</span>
         </div>
         
         
         <div class="mx-row th-growth">
           <span class="mx-name"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-          <span class="mx-bar"><i style="width:43%"></i></span>
-          <span class="mx-n">3</span>
+          <span class="mx-bar"><i style="width:17%"></i></span>
+          <span class="mx-n">2</span>
         </div>
         
         
         <div class="mx-row th-policy">
           <span class="mx-name"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-          <span class="mx-bar"><i style="width:43%"></i></span>
-          <span class="mx-n">3</span>
+          <span class="mx-bar"><i style="width:8%"></i></span>
+          <span class="mx-n">1</span>
         </div>
         
       
       
-      <p class="ov-foot"><span class="l-en">Sources</span><span class="l-zh">来源</span>: <span class="l-en">Chinese financial press</span><span class="l-zh">中国财经媒体</span> 20 · <span class="l-en">global wire</span><span class="l-zh">国际通讯社</span> 3 · <span class="l-en">official releases</span><span class="l-zh">官方发布</span> 1</p>
+      <p class="ov-foot"><span class="l-en">Sources</span><span class="l-zh">来源</span>: <span class="l-en">Chinese financial press</span><span class="l-zh">中国财经媒体</span> 21 · <span class="l-en">global wire</span><span class="l-zh">国际通讯社</span> 2 · <span class="l-en">domestic wire</span><span class="l-zh">国内财经快讯</span> 1</p>
       
     </article>
 
@@ -432,161 +432,104 @@
       <div class="tp-feed" id="feed">
         
         
-        <a class="tp-item th-inflation lead" href="https://wallstreetcn.com/livenews/3148778" target="_blank" rel="noopener"
+        <a class="tp-item th-inflation lead" href="https://wallstreetcn.com/livenews/3148910" target="_blank" rel="noopener"
            data-theme="inflation" data-importance="high"
-           data-search="提醒：日内请重点关注（以下均为北京时间） reminder: key events to watch today (all in beijing time) 提醒：日内请重点关注（以下均为北京时间） ① 07:01 英国至7月三个月rics房价指数； ② 07:30 日本7月国内企业商品物价指数； ③ 08:15 澳洲联储助理主席肯特参加一场炉边谈话； ④ 14:00 英国第二季度gdp初值、6月gdp、6月工业产出、6月商品贸易帐； ⑤ 17:00 欧元区6月工业产出； ⑥ 20:00 京东二季度财报电话会； ⑦ 20:15 美国2026年fomc票委、克利夫兰联储主席哈玛克发表讲话； ⑧ 20:30 美国7月ppi、美国8月8日当周首次申请失业救济人数； ⑨ 20:40 美国2027年fomc票委、里士满主席巴尔金就经济前景发表讲话； ⑩ 22: ① 07:01 uk rics house price balance for 3 months to july; ② 07:30 japan july domestic corporate goods price index; ③ 08:15 rba assistant governor kent participates in a fireside chat; ④ 14:00 uk q2 gdp preliminary, june gdp, june industrial production, june goods trade balance; ⑤ 17:00 eurozone june industrial production; ⑥ 20:00 jd.com q2 earnings call; ⑦ 20:15 us 2026 fomc voter, cleveland fed president hammack speaks; ⑧ 20:30 us july ppi, initial jobless claims for week of aug 8; ⑨ 20:40 us 2027 fomc voter, richmond fed president barkin speaks on economic outlook; ⑩ 22: ① 07:01 英国至7月三个月rics房价指数； ② 07:30 日本7月国内企业商品物价指数； ③ 08:15 澳洲联储助理主席肯特参加一场炉边谈话； ④ 14:00 英国第二季度gdp初值、6月gdp、6月工业产出、6月商品贸易帐； ⑤ 17:00 欧元区6月工业产出； ⑥ 20:00 京东二季度财报电话会； ⑦ 20:15 美国2026年fomc票委、克利夫兰联储主席哈玛克发表讲话； ⑧ 20:30 美国7月ppi、美国8月8日当周首次申请失业救济人数； ⑨ 20:40 美国2027年fomc票委、里士满主席巴尔金就经济前景发表讲话； ⑩ 22: 华尔街见闻 property industrial property 房地产 industry & manufacturing 工业与制造业 512200.ss">
-          <time class="tp-when" data-t="2026-08-12T22:30:14+00:00" datetime="2026-08-12T22:30:14+00:00">08-12<br>22:30</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-12T22:30:14+00:00"></span></div>
+           data-search="提醒：日内请重点关注（以下均为北京时间） reminder: key events to watch today (all in beijing time) 提醒：日内请重点关注（以下均为北京时间） ① 14:00 英国第二季度gdp初值、6月gdp、6月工业产出、6月商品贸易帐； ② 17:00 欧元区6月工业产出； ③ 20:00 京东二季度财报电话会； ④ 20:15 美国2026年fomc票委、克利夫兰联储主席哈玛克发表讲话； ⑤ 20:30 美国7月ppi、美国8月8日当周首次申请失业救济人数； ⑥ 20:40 美国2027年fomc票委、里士满主席巴尔金就经济前景发表讲话； ⑦ 22:30 美国至8月7日当周eia天然气库存； 微信小程序搜索“见闻历”，了解更多。 ① 14:00 uk q2 gdp preliminary, june gdp, june industrial output, june goods trade balance; ② 17:00 eurozone june industrial output; ③ 20:00 jd.com q2 earnings call; ④ 20:15 us 2026 fomc voter and cleveland fed president hammack speaks; ⑤ 20:30 us july ppi, us initial jobless claims for week of aug 8; ⑥ 20:40 us 2027 fomc voter and richmond fed president barkin speaks on economic outlook; ⑦ 22:30 us eia natural gas inventories for week of aug 7; search '见闻历' on wechat for more. ① 14:00 英国第二季度gdp初值、6月gdp、6月工业产出、6月商品贸易帐； ② 17:00 欧元区6月工业产出； ③ 20:00 京东二季度财报电话会； ④ 20:15 美国2026年fomc票委、克利夫兰联储主席哈玛克发表讲话； ⑤ 20:30 美国7月ppi、美国8月8日当周首次申请失业救济人数； ⑥ 20:40 美国2027年fomc票委、里士满主席巴尔金就经济前景发表讲话； ⑦ 22:30 美国至8月7日当周eia天然气库存； 微信小程序搜索“见闻历”，了解更多。 华尔街见闻 industrial industry & manufacturing 工业与制造业 ">
+          <time class="tp-when" data-t="2026-08-13T04:30:14+00:00" datetime="2026-08-13T04:30:14+00:00">08-13<br>04:30</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T04:30:14+00:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
               <span class="cn-tag"><span class="l-en">Inflation</span><span class="l-zh">物价</span></span>
               <span class="cn-src">华尔街见闻</span>
-              <span class="cn-imp imp-high"><b>100</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+              <span class="cn-imp imp-high"><b>96</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
             <h2 class="tp-title"><span class="l-en">Reminder: Key events to watch today (all in Beijing time)</span><span class="l-zh">提醒：日内请重点关注（以下均为北京时间）</span></h2>
-            <p class="tp-sum"><span class="l-en">① 07:01 UK RICS House Price Balance for 3 months to July; ② 07:30 Japan July Domestic Corporate Goods Price Index; ③ 08:15 RBA Assistant Governor Kent participates in a fireside chat; ④ 14:00 UK Q2 GDP preliminary, June GDP, June Industrial Production, June Goods Trade Balance; ⑤ 17:00 Eurozone June Industrial Production; ⑥ 20:00 JD.com Q2 earnings call; ⑦ 20:15 US 2026 FOMC voter, Cleveland Fed President Hammack speaks; ⑧ 20:30 US July PPI, Initial Jobless Claims for week of Aug 8; ⑨ 20:40 US 2027 FOMC voter, Richmond Fed President Barkin speaks on economic outlook; ⑩ 22:</span><span class="l-zh">① 07:01 英国至7月三个月RICS房价指数； ② 07:30 日本7月国内企业商品物价指数； ③ 08:15 澳洲联储助理主席肯特参加一场炉边谈话； ④ 14:00 英国第二季度GDP初值、6月GDP、6月工业产出、6月商品贸易帐； ⑤ 17:00 欧元区6月工业产出； ⑥ 20:00 京东二季度财报电话会； ⑦ 20:15 美国2026年FOMC票委、克利夫兰联储主席哈玛克发表讲话； ⑧ 20:30 美国7月PPI、美国8月8日当周首次申请失业救济人数； ⑨ 20:40 美国2027年FOMC票委、里士满主席巴尔金就经济前景发表讲话； ⑩ 22:</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="cn-cchip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span><span class="cn-tk">512200.SS</span></div>
+            <p class="tp-sum"><span class="l-en">① 14:00 UK Q2 GDP preliminary, June GDP, June industrial output, June goods trade balance; ② 17:00 Eurozone June industrial output; ③ 20:00 JD.com Q2 earnings call; ④ 20:15 US 2026 FOMC voter and Cleveland Fed President Hammack speaks; ⑤ 20:30 US July PPI, US initial jobless claims for week of Aug 8; ⑥ 20:40 US 2027 FOMC voter and Richmond Fed President Barkin speaks on economic outlook; ⑦ 22:30 US EIA natural gas inventories for week of Aug 7; search '见闻历' on WeChat for more.</span><span class="l-zh">① 14:00 英国第二季度GDP初值、6月GDP、6月工业产出、6月商品贸易帐； ② 17:00 欧元区6月工业产出； ③ 20:00 京东二季度财报电话会； ④ 20:15 美国2026年FOMC票委、克利夫兰联储主席哈玛克发表讲话； ⑤ 20:30 美国7月PPI、美国8月8日当周首次申请失业救济人数； ⑥ 20:40 美国2027年FOMC票委、里士满主席巴尔金就经济前景发表讲话； ⑦ 22:30 美国至8月7日当周EIA天然气库存； 微信小程序搜索“见闻历”，了解更多。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-monetary" href="https://wallstreetcn.com/livenews/3148795" target="_blank" rel="noopener"
+        <a class="tp-item th-monetary" href="https://wallstreetcn.com/livenews/3148909" target="_blank" rel="noopener"
            data-theme="monetary" data-importance="high"
-           data-search="华尔街见闻早餐 | 2026年8月13日 wall street cn breakfast | august 13, 2026 华尔街见闻早餐 | 2026年8月13日 美国cpi数据温和，标普500指数逼近纪录高位，光通信领涨美股，nebius暴涨34%；美元、黄金齐涨，原油期货基本持平。 美国7月cpi全面符合预期，同比涨幅收窄至3.4%，核心cpi同比放缓至2.5%。交易员维持对美联储9月加息概率45%的押注。 美国10年期国债发行收益率创2007年金融危机以来最高。 中期选举之际，特朗普政府考虑资本利得税减免，最大受益者为富裕阶层。 中国央行q2货币政策执行报告：逐步增加隔夜逆回购的操作频率，进一步畅通政策利率向市场利率的传导。 中国央行将首次在月中开展隔夜逆回购操作。 腾讯q2营收同比增长11%超预期，算力采购 us cpi data was moderate, s&p 500 neared record highs, optical communications led us stocks higher, nebius surged 34%; dollar and gold rose in tandem, crude futures were broadly flat. us july cpi was fully in line with expectations, with the year-over-year increase narrowing to 3.4% and core cpi slowing to 2.5% year-over-year. traders maintained bets on a 45% probability of a fed rate cut in september. us 10-year treasury issuance yield hit the highest since the 2007 financial crisis. amid midterm elections, the trump administration is considering capital gains tax cuts, with the wealthiest as the biggest beneficiaries. china's central bank q2 monetary policy report: gradually increase the frequency of overnight reverse repo operations to further smooth transmission from policy rates to market rates. the pboc will conduct overnight reverse repo operations mid-month for the first time. tencent q2 revenue grew 11% year-over-year, beating expectations; computing power procurement 美国cpi数据温和，标普500指数逼近纪录高位，光通信领涨美股，nebius暴涨34%；美元、黄金齐涨，原油期货基本持平。 美国7月cpi全面符合预期，同比涨幅收窄至3.4%，核心cpi同比放缓至2.5%。交易员维持对美联储9月加息概率45%的押注。 美国10年期国债发行收益率创2007年金融危机以来最高。 中期选举之际，特朗普政府考虑资本利得税减免，最大受益者为富裕阶层。 中国央行q2货币政策执行报告：逐步增加隔夜逆回购的操作频率，进一步畅通政策利率向市场利率的传导。 中国央行将首次在月中开展隔夜逆回购操作。 腾讯q2营收同比增长11%超预期，算力采购 华尔街见闻 pboc_liquidity consumer tech_policy commodities pboc & liquidity 央行与流动性 consumer 消费 tech policy 科技政策 commodities 大宗商品 cbon">
-          <time class="tp-when" data-t="2026-08-12T23:35:49+00:00" datetime="2026-08-12T23:35:49+00:00">08-12<br>23:35</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-12T23:35:49+00:00"></span></div>
+           data-search="早间要闻汇总 morning news roundup 早间要闻汇总 创业板指半日涨1.61%，医药、算力概念股集体走强。 恒指半日涨0.1%，恒生科技指数涨0.3%，恒生生物科技指数涨2.6%，minimax、华虹宏力涨超5%。 ai交易回暖，韩股重回技术牛市，今日盘中一度涨近5%，三星电子、sk海力士双双涨逾4%。 韩国央行二季度进行了十三年来的首次黄金相关投资。 智谱领衔33只中国股票入选msci指数，海外被动资金将于月底集中涌入。 联想集团q1营收增长43%，经调整净利润同比增长176%。 chinext index rose 1.61% in the morning, with pharmaceutical and computing power concept stocks gaining collectively. hang seng index rose 0.1% in the morning, hang seng tech index up 0.3%, hang seng biotech index up 2.6%, minimax and hua hong semiconductor both up over 5%. ai trading rebounded, south korean stocks returned to a technical bull market, rising nearly 5% intraday, with samsung electronics and sk hynix both up over 4%. the bank of korea made its first gold-related investment in 13 years in q2. zhipu led 33 chinese stocks selected into the msci index, with overseas passive funds set to flood in at month-end. lenovo group q1 revenue grew 43%, adjusted net profit rose 176% year-on-year. 创业板指半日涨1.61%，医药、算力概念股集体走强。 恒指半日涨0.1%，恒生科技指数涨0.3%，恒生生物科技指数涨2.6%，minimax、华虹宏力涨超5%。 ai交易回暖，韩股重回技术牛市，今日盘中一度涨近5%，三星电子、sk海力士双双涨逾4%。 韩国央行二季度进行了十三年来的首次黄金相关投资。 智谱领衔33只中国股票入选msci指数，海外被动资金将于月底集中涌入。 联想集团q1营收增长43%，经调整净利润同比增长176%。 华尔街见闻 pboc_liquidity markets tech_policy pboc & liquidity 央行与流动性 equity market 股票市场 tech policy 科技政策 fxi">
+          <time class="tp-when" data-t="2026-08-13T04:30:11+00:00" datetime="2026-08-13T04:30:11+00:00">08-13<br>04:30</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T04:30:11+00:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
               <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
               <span class="cn-src">华尔街见闻</span>
-              <span class="cn-imp imp-high"><b>90</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Wall Street CN Breakfast | August 13, 2026</span><span class="l-zh">华尔街见闻早餐 | 2026年8月13日</span></h2>
-            <p class="tp-sum"><span class="l-en">US CPI data was moderate, S&P 500 neared record highs, optical communications led US stocks higher, Nebius surged 34%; dollar and gold rose in tandem, crude futures were broadly flat. US July CPI was fully in line with expectations, with the year-over-year increase narrowing to 3.4% and core CPI slowing to 2.5% year-over-year. Traders maintained bets on a 45% probability of a Fed rate cut in September. US 10-year Treasury issuance yield hit the highest since the 2007 financial crisis. Amid midterm elections, the Trump administration is considering capital gains tax cuts, with the wealthiest as the biggest beneficiaries. China's central bank Q2 monetary policy report: gradually increase the frequency of overnight reverse repo operations to further smooth transmission from policy rates to market rates. The PBOC will conduct overnight reverse repo operations mid-month for the first time. Tencent Q2 revenue grew 11% year-over-year, beating expectations; computing power procurement</span><span class="l-zh">美国CPI数据温和，标普500指数逼近纪录高位，光通信领涨美股，Nebius暴涨34%；美元、黄金齐涨，原油期货基本持平。 美国7月CPI全面符合预期，同比涨幅收窄至3.4%，核心CPI同比放缓至2.5%。交易员维持对美联储9月加息概率45%的押注。 美国10年期国债发行收益率创2007年金融危机以来最高。 中期选举之际，特朗普政府考虑资本利得税减免，最大受益者为富裕阶层。 中国央行Q2货币政策执行报告：逐步增加隔夜逆回购的操作频率，进一步畅通政策利率向市场利率的传导。 中国央行将首次在月中开展隔夜逆回购操作。 腾讯Q2营收同比增长11%超预期，算力采购</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="cn-cchip"><span class="l-en">commodities</span><span class="l-zh">大宗商品</span></span><span class="cn-tk">CBON</span></div>
+            <h2 class="tp-title"><span class="l-en">Morning news roundup</span><span class="l-zh">早间要闻汇总</span></h2>
+            <p class="tp-sum"><span class="l-en">ChiNext Index rose 1.61% in the morning, with pharmaceutical and computing power concept stocks gaining collectively. Hang Seng Index rose 0.1% in the morning, Hang Seng Tech Index up 0.3%, Hang Seng Biotech Index up 2.6%, MINIMAX and Hua Hong Semiconductor both up over 5%. AI trading rebounded, South Korean stocks returned to a technical bull market, rising nearly 5% intraday, with Samsung Electronics and SK Hynix both up over 4%. The Bank of Korea made its first gold-related investment in 13 years in Q2. Zhipu led 33 Chinese stocks selected into the MSCI index, with overseas passive funds set to flood in at month-end. Lenovo Group Q1 revenue grew 43%, adjusted net profit rose 176% year-on-year.</span><span class="l-zh">创业板指半日涨1.61%，医药、算力概念股集体走强。 恒指半日涨0.1%，恒生科技指数涨0.3%，恒生生物科技指数涨2.6%，MINIMAX、华虹宏力涨超5%。 AI交易回暖，韩股重回技术牛市，今日盘中一度涨近5%，三星电子、SK海力士双双涨逾4%。 韩国央行二季度进行了十三年来的首次黄金相关投资。 智谱领衔33只中国股票入选MSCI指数，海外被动资金将于月底集中涌入。 联想集团Q1营收增长43%，经调整净利润同比增长176%。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="cn-tk">FXI</span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-growth" href="https://news.futunn.com/flash/20637534/commerce-secretary-lutnick-ford-motor-fn-is-bringing-more-manufacturing" target="_blank" rel="noopener"
+        <a class="tp-item th-policy" href="https://wallstreetcn.com/livenews/3148891" target="_blank" rel="noopener"
+           data-theme="policy" data-importance="high"
+           data-search="8月13日午间收评：创业板指半日涨1.61%，医药、算力概念股集体走强 morning wrap-up on aug 13: chinext up 1.61% at midday; pharma and computing power concept stocks rally broadly 8月13日午间收评：创业板指半日涨1.61%，医药、算力概念股集体走强 1、市场早间高开震荡，双创指数均涨超1%。医药股持续活跃，博济医药、万邦医药、陇神戎发等多股涨停。算力租赁概念集体走强，城地香江3连板，立昂技术、群兴玩具等涨停。食品饮料板块再度活跃，皇氏集团、一鸣食品双双4连板。超节点概念拉升，共进股份涨停。个股跌多涨少，沪深京三市超3000股飘绿，上午半天成交1.6万亿。午间收盘沪指涨0.42%，深成指涨0.73%，创业板涨1.61%。 2、板块概念方面，医药医疗、算力租赁、算力硬件、半导体等板块领涨；贵金属、油气、教育、房地产等板块领跌； 3、两市共2186只个股上涨，56只个股涨停；2879只个股下跌，无个股跌停 1. the market opened high and fluctuated in the morning, with both the chinext and star indices up over 1%. pharmaceutical stocks remained active, with boji medical, wanbang pharma, longshenrongfa and others hitting limit-up. computing power leasing concept stocks rallied collectively, with chengdi xiangjiang hitting 3 consecutive limit-ups, and li'ang technology, qunxing toys and others hitting limit-up. food and beverage sector became active again, with royal group and yiming food both hitting 4 consecutive limit-ups. super-node concept surged, with gongjin electronics hitting limit-up. more stocks fell than rose, with over 3,000 stocks in the red across shanghai, shenzhen and beijing markets, and turnover reached 1.6 trillion yuan in the morning session. at midday close, the shanghai composite rose 0.42%, shenzhen component rose 0.73%, and chinext rose 1.61%. 2. in terms of sectors, pharmaceutical/healthcare, computing power leasing, computing power hardware, and semiconductors led gains; precious metals, oil & gas, education, and real estate led losses. 3. across the two markets, 2,186 stocks rose, with 56 hitting limit-up; 2,879 fell, with none hitting limit-down. 1、市场早间高开震荡，双创指数均涨超1%。医药股持续活跃，博济医药、万邦医药、陇神戎发等多股涨停。算力租赁概念集体走强，城地香江3连板，立昂技术、群兴玩具等涨停。食品饮料板块再度活跃，皇氏集团、一鸣食品双双4连板。超节点概念拉升，共进股份涨停。个股跌多涨少，沪深京三市超3000股飘绿，上午半天成交1.6万亿。午间收盘沪指涨0.42%，深成指涨0.73%，创业板涨1.61%。 2、板块概念方面，医药医疗、算力租赁、算力硬件、半导体等板块领涨；贵金属、油气、教育、房地产等板块领跌； 3、两市共2186只个股上涨，56只个股涨停；2879只个股下跌，无个股跌停 华尔街见闻 property markets tech_policy property 房地产 equity market 股票市场 tech policy 科技政策 ashr 512200.ss 512760.ss">
+          <time class="tp-when" data-t="2026-08-13T03:30:45+00:00" datetime="2026-08-13T03:30:45+00:00">08-13<br>03:30</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T03:30:45+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Morning wrap-up on Aug 13: ChiNext up 1.61% at midday; pharma and computing power concept stocks rally broadly</span><span class="l-zh">8月13日午间收评：创业板指半日涨1.61%，医药、算力概念股集体走强</span></h2>
+            <p class="tp-sum"><span class="l-en">1. The market opened high and fluctuated in the morning, with both the ChiNext and STAR indices up over 1%. Pharmaceutical stocks remained active, with Boji Medical, Wanbang Pharma, Longshenrongfa and others hitting limit-up. Computing power leasing concept stocks rallied collectively, with Chengdi Xiangjiang hitting 3 consecutive limit-ups, and Li'ang Technology, Qunxing Toys and others hitting limit-up. Food and beverage sector became active again, with Royal Group and Yiming Food both hitting 4 consecutive limit-ups. Super-node concept surged, with Gongjin Electronics hitting limit-up. More stocks fell than rose, with over 3,000 stocks in the red across Shanghai, Shenzhen and Beijing markets, and turnover reached 1.6 trillion yuan in the morning session. At midday close, the Shanghai Composite rose 0.42%, Shenzhen Component rose 0.73%, and ChiNext rose 1.61%. 2. In terms of sectors, pharmaceutical/healthcare, computing power leasing, computing power hardware, and semiconductors led gains; precious metals, oil & gas, education, and real estate led losses. 3. Across the two markets, 2,186 stocks rose, with 56 hitting limit-up; 2,879 fell, with none hitting limit-down.</span><span class="l-zh">1、市场早间高开震荡，双创指数均涨超1%。医药股持续活跃，博济医药、万邦医药、陇神戎发等多股涨停。算力租赁概念集体走强，城地香江3连板，立昂技术、群兴玩具等涨停。食品饮料板块再度活跃，皇氏集团、一鸣食品双双4连板。超节点概念拉升，共进股份涨停。个股跌多涨少，沪深京三市超3000股飘绿，上午半天成交1.6万亿。午间收盘沪指涨0.42%，深成指涨0.73%，创业板涨1.61%。 2、板块概念方面，医药医疗、算力租赁、算力硬件、半导体等板块领涨；贵金属、油气、教育、房地产等板块领跌； 3、两市共2186只个股上涨，56只个股涨停；2879只个股下跌，无个股跌停</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="cn-tk">ASHR</span><span class="cn-tk">512200.SS</span><span class="cn-tk">512760.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-growth" href="https://finance.eastmoney.com/a/202608133840339390.html" target="_blank" rel="noopener"
            data-theme="growth" data-importance="high"
-           data-search="美国商务部长卢特尼克：福特汽车(f.n)正在将更多制造业带回美国 u.s. commerce secretary lutnick: ford motor (f.n) bringing more manufacturing back to the u.s. 美国商务部长卢特尼克：福特汽车(f.n)正在将更多制造业带回美国 美国商务部长卢特尼克：福特汽车(f.n)正在将更多制造业带回美国。关税推动其带来更多就业机会。 us commerce secretary lutnick: ford motor (f.n) is bringing more manufacturing back to the us. tariffs are driving more jobs. 美国商务部长卢特尼克：福特汽车(f.n)正在将更多制造业带回美国。关税推动其带来更多就业机会。 富途牛牛 industrial fiscal_trade industry & manufacturing 工业与制造业 fiscal & trade 财政与贸易 ">
-          <time class="tp-when" data-t="2026-08-12T21:10:34+00:00" datetime="2026-08-12T21:10:34+00:00">08-12<br>21:10</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-12T21:10:34+00:00"></span></div>
+           data-search="英国第二季度gdp环比增长0.4% 经济增速较前季放缓 uk q2 gdp grows 0.4% quarter-on-quarter, slowing from prior quarter 英国第二季度gdp环比增长0.4% 经济增速较前季放缓 【英国第二季度gdp环比增长0.4% 经济增速较前季放缓】8月13日，英国国家统计局公布数据显示，英国2026年第二季度实际国内生产总值（gdp）环比增长0.4%，较第一季度0.6%的增幅有所放缓。第二季度经济增长主要由服务业带动，服务业产出增长0.5%，建筑业增长0.3%，工业产出则持平。 [uk q2 gdp grew 0.4% quarter-on-quarter, slowing from the previous quarter] on aug 13, the uk office for national statistics reported that real gdp grew 0.4% quarter-on-quarter in q2 2026, slowing from 0.6% growth in q1. q2 growth was mainly driven by the services sector, with services output up 0.5%, construction up 0.3%, and industrial output flat. 【英国第二季度gdp环比增长0.4% 经济增速较前季放缓】8月13日，英国国家统计局公布数据显示，英国2026年第二季度实际国内生产总值（gdp）环比增长0.4%，较第一季度0.6%的增幅有所放缓。第二季度经济增长主要由服务业带动，服务业产出增长0.5%，建筑业增长0.3%，工业产出则持平。 eastmoney industrial industry & manufacturing 工业与制造业 ">
+          <time class="tp-when" data-t="2026-08-13 14:06:22" datetime="2026-08-13 14:06:22">08-13<br>14:06</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13 14:06:22"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
               <span class="cn-tag"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="cn-src">Eastmoney</span>
+              <span class="cn-imp imp-high"><b>71</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">UK Q2 GDP grows 0.4% quarter-on-quarter, slowing from prior quarter</span><span class="l-zh">英国第二季度GDP环比增长0.4% 经济增速较前季放缓</span></h2>
+            <p class="tp-sum"><span class="l-en">[UK Q2 GDP grew 0.4% quarter-on-quarter, slowing from the previous quarter] On Aug 13, the UK Office for National Statistics reported that real GDP grew 0.4% quarter-on-quarter in Q2 2026, slowing from 0.6% growth in Q1. Q2 growth was mainly driven by the services sector, with services output up 0.5%, construction up 0.3%, and industrial output flat.</span><span class="l-zh">【英国第二季度GDP环比增长0.4% 经济增速较前季放缓】8月13日，英国国家统计局公布数据显示，英国2026年第二季度实际国内生产总值（GDP）环比增长0.4%，较第一季度0.6%的增幅有所放缓。第二季度经济增长主要由服务业带动，服务业产出增长0.5%，建筑业增长0.3%，工业产出则持平。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-markets" href="https://news.futunn.com/flash/20638499/lenovo-group-00992-hk-surged-more-than-12-in-afternoon" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="联想集团(00992.hk)午后直线拉升涨超12%，公司午间公布业绩，第一财季经调整权益持有人应占溢利同比增长176%，ai相关业务收入同比增长60%，达到634亿元人民币，创历史 lenovo group (00992.hk) surges over 12% in afternoon trade after midday results: q1 adjusted profit attributable to shareholders up 176% yoy; ai-related revenue up 60% yoy to rmb 63.4 billion, a record 联想集团(00992.hk)午后直线拉升涨超12%，公司午间公布业绩，第一财季经调整权益持有人应占溢利同比增长176%，ai相关业务收入同比增长60%，达到634亿元人民币，创历史 联想集团(00992.hk)午后直线拉升涨超12%，公司午间公布业绩，第一财季经调整权益持有人应占溢利同比增长176%，ai相关业务收入同比增长60%，达到634亿元人民币，创历史新高。 lenovo group (00992.hk) surged over 12% in the afternoon session after releasing results at midday, with q1 adjusted profit attributable to equity holders up 176% year-on-year and ai-related revenue up 60% to rmb 63.4 billion, a record high. 联想集团(00992.hk)午后直线拉升涨超12%，公司午间公布业绩，第一财季经调整权益持有人应占溢利同比增长176%，ai相关业务收入同比增长60%，达到634亿元人民币，创历史新高。 富途牛牛 yuan tech_policy yuan & fx 人民币与汇率 tech policy 科技政策 cny">
+          <time class="tp-when" data-t="2026-08-13T05:02:13+00:00" datetime="2026-08-13T05:02:13+00:00">08-13<br>05:02</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T05:02:13+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
               <span class="cn-src">富途牛牛</span>
-              <span class="cn-imp imp-high"><b>74</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">U.S. Commerce Secretary Lutnick: Ford Motor (F.N) bringing more manufacturing back to the U.S.</span><span class="l-zh">美国商务部长卢特尼克：福特汽车(F.N)正在将更多制造业带回美国</span></h2>
-            <p class="tp-sum"><span class="l-en">US Commerce Secretary Lutnick: Ford Motor (F.N) is bringing more manufacturing back to the US. Tariffs are driving more jobs.</span><span class="l-zh">美国商务部长卢特尼克：福特汽车(F.N)正在将更多制造业带回美国。关税推动其带来更多就业机会。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
+            <h2 class="tp-title"><span class="l-en">Lenovo Group (00992.HK) surges over 12% in afternoon trade after midday results: Q1 adjusted profit attributable to shareholders up 176% YoY; AI-related revenue up 60% YoY to RMB 63.4 billion, a record</span><span class="l-zh">联想集团(00992.HK)午后直线拉升涨超12%，公司午间公布业绩，第一财季经调整权益持有人应占溢利同比增长176%，AI相关业务收入同比增长60%，达到634亿元人民币，创历史</span></h2>
+            <p class="tp-sum"><span class="l-en">Lenovo Group (00992.HK) surged over 12% in the afternoon session after releasing results at midday, with Q1 adjusted profit attributable to equity holders up 176% year-on-year and AI-related revenue up 60% to RMB 63.4 billion, a record high.</span><span class="l-zh">联想集团(00992.HK)午后直线拉升涨超12%，公司午间公布业绩，第一财季经调整权益持有人应占溢利同比增长176%，AI相关业务收入同比增长60%，达到634亿元人民币，创历史新高。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">yuan & FX</span><span class="l-zh">人民币与汇率</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="cn-tk">CNY</span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-policy" href="https://finance.sina.com.cn/jjxw/2026-08-12/doc-inimzytr3987675.shtml" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high"
-           data-search="房地产，突然暴涨！发生了什么？ real estate suddenly surges! what happened? 房地产，突然暴涨！发生了什么？    新浪财经股票 property property 房地产 512200.ss">
-          <time class="tp-when" data-t="2026-08-12" datetime="2026-08-12">08-12</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-12"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">新浪财经股票</span>
-              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">Real estate suddenly surges! What happened?</span><span class="l-zh">房地产，突然暴涨！发生了什么？</span></h2>
-            
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="cn-tk">512200.SS</span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-policy" href="https://wallstreetcn.com/livenews/3148781" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high"
-           data-search="分红、回购、增持常态化推进，a股公司以实际行动稳市场强信心 dividends, buybacks, and share increases progress steadily as a-share companies stabilize the market and boost confidence with concrete actions 分红、回购、增持常态化推进，a股公司以实际行动稳市场强信心 时值a股上市公司半年报披露窗口期，上市公司公告中期利润分配方案的案例渐次增多；同时，从回购、增持动作密集的情况看，上市公司回馈投资者意识显著增强。分析人士认为，中期分红落地数量扩容、注销式回购规模扩大、大手笔增持传递发展信心，叠加相关配套政策工具落地，上市公司正以实际行动提振市场信心。随着分红回购增持制度化、常态化深入推进，资本市场内生稳定机制有望进一步筑牢，助力a股长期健康发展。（中证报） as a-share companies enter the semi-annual report disclosure window, cases of interim dividend distribution plans are gradually increasing; meanwhile, dense buyback and share-increase activities show a notably stronger awareness of rewarding investors. analysts believe that expanded interim dividends, larger canceling buybacks, and big share increases conveying confidence, combined with related supporting policy tools, are boosting market confidence through concrete actions. with dividends, buybacks, and share increases becoming more institutionalized and normalized, the market's endogenous stability mechanism is expected to be further solidified, supporting a-shares' long-term healthy development. (china securities journal) 时值a股上市公司半年报披露窗口期，上市公司公告中期利润分配方案的案例渐次增多；同时，从回购、增持动作密集的情况看，上市公司回馈投资者意识显著增强。分析人士认为，中期分红落地数量扩容、注销式回购规模扩大、大手笔增持传递发展信心，叠加相关配套政策工具落地，上市公司正以实际行动提振市场信心。随着分红回购增持制度化、常态化深入推进，资本市场内生稳定机制有望进一步筑牢，助力a股长期健康发展。（中证报） 华尔街见闻 markets equity market 股票市场 ">
-          <time class="tp-when" data-t="2026-08-12T22:41:56+00:00" datetime="2026-08-12T22:41:56+00:00">08-12<br>22:41</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-12T22:41:56+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">华尔街见闻</span>
-              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">Dividends, buybacks, and share increases progress steadily as A-share companies stabilize the market and boost confidence with concrete actions</span><span class="l-zh">分红、回购、增持常态化推进，A股公司以实际行动稳市场强信心</span></h2>
-            <p class="tp-sum"><span class="l-en">As A-share companies enter the semi-annual report disclosure window, cases of interim dividend distribution plans are gradually increasing; meanwhile, dense buyback and share-increase activities show a notably stronger awareness of rewarding investors. Analysts believe that expanded interim dividends, larger canceling buybacks, and big share increases conveying confidence, combined with related supporting policy tools, are boosting market confidence through concrete actions. With dividends, buybacks, and share increases becoming more institutionalized and normalized, the market's endogenous stability mechanism is expected to be further solidified, supporting A-shares' long-term healthy development. (China Securities Journal)</span><span class="l-zh">时值A股上市公司半年报披露窗口期，上市公司公告中期利润分配方案的案例渐次增多；同时，从回购、增持动作密集的情况看，上市公司回馈投资者意识显著增强。分析人士认为，中期分红落地数量扩容、注销式回购规模扩大、大手笔增持传递发展信心，叠加相关配套政策工具落地，上市公司正以实际行动提振市场信心。随着分红回购增持制度化、常态化深入推进，资本市场内生稳定机制有望进一步筑牢，助力A股长期健康发展。（中证报）</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-monetary" href="https://news.futunn.com/flash/20637606/central-bank-of-venezuela-inflation-rate-reached-19-9-in" target="_blank" rel="noopener"
+        <a class="tp-item th-monetary" href="https://www.yicai.com/news/103316086.html" target="_blank" rel="noopener"
            data-theme="monetary" data-importance="high"
-           data-search="委内瑞拉央行：7月份通胀水平达到19.9% venezuela's central bank: july inflation reached 19.9% 委内瑞拉央行：7月份通胀水平达到19.9% 委内瑞拉央行：7月份通胀水平达到19.9%。 venezuela's central bank: july inflation reached 19.9%. 委内瑞拉央行：7月份通胀水平达到19.9%。 富途牛牛 pboc_liquidity pboc & liquidity 央行与流动性 ">
-          <time class="tp-when" data-t="2026-08-12T21:42:26+00:00" datetime="2026-08-12T21:42:26+00:00">08-12<br>21:42</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-12T21:42:26+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="cn-src">富途牛牛</span>
-              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">Venezuela's central bank: July inflation reached 19.9%</span><span class="l-zh">委内瑞拉央行：7月份通胀水平达到19.9%</span></h2>
-            <p class="tp-sum"><span class="l-en">Venezuela's central bank: July inflation reached 19.9%.</span><span class="l-zh">委内瑞拉央行：7月份通胀水平达到19.9%。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-monetary" href="https://www.cnstock.com/commonDetail/759088" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high"
-           data-search="事关货币政策、汇率……央行释放新信号 monetary policy, exchange rate matters... central bank releases new signals 事关货币政策、汇率……央行释放新信号    上海证券报 pboc_liquidity yuan pboc & liquidity 央行与流动性 yuan & fx 人民币与汇率 cny 512880.ss">
-          <time class="tp-when" data-t="" >—</time>
-          <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="cn-src">上海证券报</span>
-              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">Monetary policy, exchange rate matters... central bank releases new signals</span><span class="l-zh">事关货币政策、汇率……央行释放新信号</span></h2>
-            
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-cchip"><span class="l-en">yuan & FX</span><span class="l-zh">人民币与汇率</span></span><span class="cn-tk">CNY</span><span class="cn-tk">512880.SS</span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-inflation" href="https://flash.jin10.com/detail/20260813073930522800" target="_blank" rel="noopener"
-           data-theme="inflation" data-importance="high"
-           data-search="china international capital co: us inflation may have entered new phase; duration could lengthen  中金公司：美国通胀或已进入新阶段；持续时间可能延长 china international capital co says july us cpi (seasonally adjusted) rose 0.1% mom, 3.4% yoy; core cpi rose 0.2% mom, 2.5% yoy — broadly in line with expectations. energy prices continued to fall in july, but international oil has rebounded since august, raising near-term energy  中金公司称，美国7月cpi（经季节性调整）环比上涨0.1%，同比上涨3.4%；核心cpi环比上涨0.2%，同比上涨2.5%——基本符合预期。7月能源价格继续下跌，但国际油价自8月以来反弹，推高了近期能源 金十数据 consumer consumer 消费 ">
-          <time class="tp-when" data-t="2026-08-13T07:39:30+08:00" datetime="2026-08-13T07:39:30+08:00">08-13<br>07:39</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T07:39:30+08:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Inflation</span><span class="l-zh">物价</span></span>
-              <span class="cn-src">金十数据</span>
-              <span class="cn-imp imp-high"><b>74</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">China International Capital Co: US inflation may have entered new phase; duration could lengthen</span><span class="l-zh">中金公司：美国通胀或已进入新阶段；持续时间可能延长</span></h2>
-            <p class="tp-sum"><span class="l-en">China International Capital Co says July US CPI (seasonally adjusted) rose 0.1% MoM, 3.4% YoY; core CPI rose 0.2% MoM, 2.5% YoY — broadly in line with expectations. Energy prices continued to fall in July, but international oil has rebounded since August, raising near-term energy</span><span class="l-zh">中金公司称，美国7月CPI（经季节性调整）环比上涨0.1%，同比上涨3.4%；核心CPI环比上涨0.2%，同比上涨2.5%——基本符合预期。7月能源价格继续下跌，但国际油价自8月以来反弹，推高了近期能源</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-monetary" href="https://www.yicai.com/news/103316050.html" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high"
-           data-search="通胀放缓削弱加息预期！美股涨跌互现，ai算力、存储芯片爆发，coreweave与超微电脑涨近20%，，布油逼近90美元 美国7月核心cpi同比上涨2.5%，为2021年3月以来低位。 slowing inflation weakens rate-hike expectations! u.s. stocks mixed, ai computing power and memory chips surge, coreweave and super micro up nearly 20%, brent crude nears $90; u.s. july core cpi rose 2.5% year-on-year, lowest since march 2021. 通胀放缓削弱加息预期！美股涨跌互现，ai算力、存储芯片爆发，coreweave与超微电脑涨近20%，，布油逼近90美元 美国7月核心cpi同比上涨2.5%，为2021年3月以来低位。    第一财经 consumer tech_policy consumer 消费 tech policy 科技政策 ">
+           data-search="盘前必读丨央行报告释放多重信号；中鼎股份澄清市场传闻 机构认为，上证指数遇年线面临调整压力，关注创新药及券商。 pre-market briefing: pboc report signals multiple cues; zhongding co clarifies market rumors; institutions see shanghai index facing adjustment pressure at the annual line, favoring innovative drugs and brokers. 盘前必读丨央行报告释放多重信号；中鼎股份澄清市场传闻 机构认为，上证指数遇年线面临调整压力，关注创新药及券商。    第一财经 pboc_liquidity markets pboc & liquidity 央行与流动性 equity market 股票市场 510300.ss 512880.ss">
           <time class="tp-when" data-t="" >—</time>
           <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
           <div class="tp-body">
@@ -596,35 +539,92 @@
               <span class="cn-src">第一财经</span>
               <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Slowing inflation weakens rate-hike expectations! U.S. stocks mixed, AI computing power and memory chips surge, CoreWeave and Super Micro up nearly 20%, Brent crude nears $90; U.S. July core CPI rose 2.5% year-on-year, lowest since March 2021.</span><span class="l-zh">通胀放缓削弱加息预期！美股涨跌互现，AI算力、存储芯片爆发，CoreWeave与超微电脑涨近20%，，布油逼近90美元 美国7月核心CPI同比上涨2.5%，为2021年3月以来低位。</span></h2>
+            <h2 class="tp-title"><span class="l-en">Pre-market briefing: PBOC report signals multiple cues; Zhongding Co clarifies market rumors; institutions see Shanghai index facing adjustment pressure at the annual line, favoring innovative drugs and brokers.</span><span class="l-zh">盘前必读丨央行报告释放多重信号；中鼎股份澄清市场传闻 机构认为，上证指数遇年线面临调整压力，关注创新药及券商。</span></h2>
+            
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">510300.SS</span><span class="cn-tk">512880.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-monetary" href="https://www.yicai.com/news/103316050.html" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="high"
+           data-search="通胀放缓削弱加息预期！美股涨跌互现，ai算力、存储芯片爆发，coreweave与超微电脑涨近20%，布油逼近90美元 美国7月核心cpi同比上涨2.5%，为2021年3月以来低位。 inflation cooling weakens rate hike expectations! us stocks mixed; ai computing power and memory chips surge, coreweave and super micro jump nearly 20%; brent crude nears $90. us core cpi rose 2.5% yoy in july, the lowest since march 2021. 通胀放缓削弱加息预期！美股涨跌互现，ai算力、存储芯片爆发，coreweave与超微电脑涨近20%，布油逼近90美元 美国7月核心cpi同比上涨2.5%，为2021年3月以来低位。    第一财经 consumer tech_policy consumer 消费 tech policy 科技政策 ">
+          <time class="tp-when" data-t="" >—</time>
+          <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+              <span class="cn-src">第一财经</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Inflation cooling weakens rate hike expectations! US stocks mixed; AI computing power and memory chips surge, CoreWeave and Super Micro jump nearly 20%; Brent crude nears $90. US core CPI rose 2.5% YoY in July, the lowest since March 2021.</span><span class="l-zh">通胀放缓削弱加息预期！美股涨跌互现，AI算力、存储芯片爆发，CoreWeave与超微电脑涨近20%，布油逼近90美元 美国7月核心CPI同比上涨2.5%，为2021年3月以来低位。</span></h2>
             
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-markets" href="https://www.cnstock.com/commonDetail/758584" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="high"
-           data-search="稳妥有序深化双向开放 资本市场持续提升吸引力 steadily and orderly deepening two-way opening, capital markets continue to enhance attractiveness 稳妥有序深化双向开放 资本市场持续提升吸引力    上海证券报 markets equity market 股票市场 512880.ss">
-          <time class="tp-when" data-t="" >—</time>
-          <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
+        <a class="tp-item th-markets" href="https://news.futunn.com/flash/20638707/the-combined-trading-volume-of-the-shanghai-and-shenzhen-stock" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="沪深两市成交额连续第8个交易日突破2万亿元 combined turnover of shanghai and shenzhen markets exceeds rmb 2 trillion for an 8th consecutive trading day 沪深两市成交额连续第8个交易日突破2万亿元 沪深两市成交额连续第8个交易日突破2万亿元。 turnover in shanghai and shenzhen markets exceeded rmb 2 trillion for the 8th consecutive trading day. 沪深两市成交额连续第8个交易日突破2万亿元。 富途牛牛 markets equity market 股票市场 ashr">
+          <time class="tp-when" data-t="2026-08-13T06:01:28+00:00" datetime="2026-08-13T06:01:28+00:00">08-13<br>06:01</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T06:01:28+00:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
               <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="cn-src">上海证券报</span>
-              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+              <span class="cn-src">富途牛牛</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Steadily and orderly deepening two-way opening, capital markets continue to enhance attractiveness</span><span class="l-zh">稳妥有序深化双向开放 资本市场持续提升吸引力</span></h2>
-            
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">512880.SS</span></div>
+            <h2 class="tp-title"><span class="l-en">Combined turnover of Shanghai and Shenzhen markets exceeds RMB 2 trillion for an 8th consecutive trading day</span><span class="l-zh">沪深两市成交额连续第8个交易日突破2万亿元</span></h2>
+            <p class="tp-sum"><span class="l-en">Turnover in Shanghai and Shenzhen markets exceeded RMB 2 trillion for the 8th consecutive trading day.</span><span class="l-zh">沪深两市成交额连续第8个交易日突破2万亿元。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">ASHR</span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-monetary" href="https://www.cnstock.com/commonDetail/758914" target="_blank" rel="noopener"
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3148904" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="联想集团q1营收增43%，经调整净利润同比增176% lenovo group q1 revenue up 43%; adjusted net profit up 176% yoy 联想集团q1营收增43%，经调整净利润同比增176% 联想集团披露2026/27财年第一财季业绩，实现营收269.43亿美元（约1834亿元人民币），同比增长43%；经调整净利润达10.75亿美元（约73亿元人民币），同比增长176%；经调整净利润率达4%，同比接近翻倍。 lenovo group reported q1 fy2026/27 results, with revenue of $26.943 billion (approx. rmb 183.4 billion), up 43% year-on-year; adjusted net profit of $1.075 billion (approx. rmb 7.3 billion), up 176% year-on-year; adjusted net margin of 4%, nearly doubling year-on-year. 联想集团披露2026/27财年第一财季业绩，实现营收269.43亿美元（约1834亿元人民币），同比增长43%；经调整净利润达10.75亿美元（约73亿元人民币），同比增长176%；经调整净利润率达4%，同比接近翻倍。 华尔街见闻 yuan yuan & fx 人民币与汇率 cny">
+          <time class="tp-when" data-t="2026-08-13T04:18:43+00:00" datetime="2026-08-13T04:18:43+00:00">08-13<br>04:18</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T04:18:43+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Lenovo Group Q1 revenue up 43%; adjusted net profit up 176% YoY</span><span class="l-zh">联想集团Q1营收增43%，经调整净利润同比增176%</span></h2>
+            <p class="tp-sum"><span class="l-en">Lenovo Group reported Q1 FY2026/27 results, with revenue of $26.943 billion (approx. RMB 183.4 billion), up 43% year-on-year; adjusted net profit of $1.075 billion (approx. RMB 7.3 billion), up 176% year-on-year; adjusted net margin of 4%, nearly doubling year-on-year.</span><span class="l-zh">联想集团披露2026/27财年第一财季业绩，实现营收269.43亿美元（约1834亿元人民币），同比增长43%；经调整净利润达10.75亿美元（约73亿元人民币），同比增长176%；经调整净利润率达4%，同比接近翻倍。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">yuan & FX</span><span class="l-zh">人民币与汇率</span></span><span class="cn-tk">CNY</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3148892" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="上证指数早盘收报3963.15点，涨0.42% shanghai composite index opens the morning at 3,963.15 points, up 0.42% 上证指数早盘收报3963.15点，涨0.42% 上证指数早盘收报3963.15点，涨0.42%。 深证成指早盘收报14519.97点，涨0.73%。 创业板指早盘收报3660.25点，涨1.61%。 沪深300早盘收报4714.06点，涨0.49%。 科创50早盘收报1770.03点，涨1.90%。 中证500早盘收报8113.14点，涨0.84%。 中证1000早盘收报7852.15点，涨0.75%。 shanghai composite closed the morning at 3,963.15 points, up 0.42%. shenzhen component closed the morning at 14,519.97 points, up 0.73%. chinext closed the morning at 3,660.25 points, up 1.61%. csi 300 closed the morning at 4,714.06 points, up 0.49%. star 50 closed the morning at 1,770.03 points, up 1.90%. csi 500 closed the morning at 8,113.14 points, up 0.84%. csi 1000 closed the morning at 7,852.15 points, up 0.75%. 上证指数早盘收报3963.15点，涨0.42%。 深证成指早盘收报14519.97点，涨0.73%。 创业板指早盘收报3660.25点，涨1.61%。 沪深300早盘收报4714.06点，涨0.49%。 科创50早盘收报1770.03点，涨1.90%。 中证500早盘收报8113.14点，涨0.84%。 中证1000早盘收报7852.15点，涨0.75%。 华尔街见闻 markets equity market 股票市场 510300.ss ashr">
+          <time class="tp-when" data-t="2026-08-13T03:31:00+00:00" datetime="2026-08-13T03:31:00+00:00">08-13<br>03:31</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T03:31:00+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Shanghai Composite Index opens the morning at 3,963.15 points, up 0.42%</span><span class="l-zh">上证指数早盘收报3963.15点，涨0.42%</span></h2>
+            <p class="tp-sum"><span class="l-en">Shanghai Composite closed the morning at 3,963.15 points, up 0.42%. Shenzhen Component closed the morning at 14,519.97 points, up 0.73%. ChiNext closed the morning at 3,660.25 points, up 1.61%. CSI 300 closed the morning at 4,714.06 points, up 0.49%. STAR 50 closed the morning at 1,770.03 points, up 1.90%. CSI 500 closed the morning at 8,113.14 points, up 0.84%. CSI 1000 closed the morning at 7,852.15 points, up 0.75%.</span><span class="l-zh">上证指数早盘收报3963.15点，涨0.42%。 深证成指早盘收报14519.97点，涨0.73%。 创业板指早盘收报3660.25点，涨1.61%。 沪深300早盘收报4714.06点，涨0.49%。 科创50早盘收报1770.03点，涨1.90%。 中证500早盘收报8113.14点，涨0.84%。 中证1000早盘收报7852.15点，涨0.75%。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">510300.SS</span><span class="cn-tk">ASHR</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-monetary" href="https://www.cnstock.com/commonDetail/759141" target="_blank" rel="noopener"
            data-theme="monetary" data-importance="high"
-           data-search="首次！央行月中操作隔夜逆回购 first time! central bank conducts overnight reverse repo mid-month 首次！央行月中操作隔夜逆回购    上海证券报 pboc_liquidity pboc & liquidity 央行与流动性 512880.ss">
+           data-search="央行发布二季度货币政策执行报告 pboc releases q2 monetary policy implementation report 央行发布二季度货币政策执行报告    上海证券报 pboc_liquidity pboc & liquidity 央行与流动性 512880.ss">
           <time class="tp-when" data-t="" >—</time>
           <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
           <div class="tp-body">
@@ -634,16 +634,35 @@
               <span class="cn-src">上海证券报</span>
               <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">First time! Central bank conducts overnight reverse repo mid-month</span><span class="l-zh">首次！央行月中操作隔夜逆回购</span></h2>
+            <h2 class="tp-title"><span class="l-en">PBOC releases Q2 monetary policy implementation report</span><span class="l-zh">央行发布二季度货币政策执行报告</span></h2>
             
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-tk">512880.SS</span></div>
           </div>
         </a>
         
         
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3148845" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="a股大消费板块再度活跃，一鸣食品、皇氏集团均4连板，会稽山、熊猫乳品、均瑶健康、好想你等跟涨 a-share consumer staples sector active again; yiming food and royal group both hit a 4-day limit up; kuaijishan, panda dairy, juneyao health, haoxiangni and others follow gains a股大消费板块再度活跃，一鸣食品、皇氏集团均4连板，会稽山、熊猫乳品、均瑶健康、好想你等跟涨 a股大消费板块再度活跃，一鸣食品、皇氏集团均4连板，会稽山、熊猫乳品、均瑶健康、好想你等跟涨。 a-share consumer sector became active again, with yiming food and royal group both hitting 4 consecutive limit-ups, and kuaijishan, panda dairy, joyoung health, haoxiangni and others following gains. a股大消费板块再度活跃，一鸣食品、皇氏集团均4连板，会稽山、熊猫乳品、均瑶健康、好想你等跟涨。 华尔街见闻 consumer markets consumer 消费 equity market 股票市场 ">
+          <time class="tp-when" data-t="2026-08-13T01:53:17+00:00" datetime="2026-08-13T01:53:17+00:00">08-13<br>01:53</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T01:53:17+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">A-share consumer staples sector active again; Yiming Food and Royal Group both hit a 4-day limit up; Kuaijishan, Panda Dairy, Juneyao Health, Haoxiangni and others follow gains</span><span class="l-zh">A股大消费板块再度活跃，一鸣食品、皇氏集团均4连板，会稽山、熊猫乳品、均瑶健康、好想你等跟涨</span></h2>
+            <p class="tp-sum"><span class="l-en">A-share consumer sector became active again, with Yiming Food and Royal Group both hitting 4 consecutive limit-ups, and Kuaijishan, Panda Dairy, Joyoung Health, Haoxiangni and others following gains.</span><span class="l-zh">A股大消费板块再度活跃，一鸣食品、皇氏集团均4连板，会稽山、熊猫乳品、均瑶健康、好想你等跟涨。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span></div>
+          </div>
+        </a>
+        
+        
         <a class="tp-item th-growth" href="https://www.yicai.com/news/103315815.html" target="_blank" rel="noopener"
            data-theme="growth" data-importance="medium"
-           data-search="重磅经济数据即将发布，下半年宏观政策发力提效 国家统计局将于8月17日发布7月份工业、消费、投资等经济指标数据。 major economic data set for release, h2 macro policy to intensify and improve efficiency; national bureau of statistics to release july industry, consumption, and investment data on august 17 重磅经济数据即将发布，下半年宏观政策发力提效 国家统计局将于8月17日发布7月份工业、消费、投资等经济指标数据。    第一财经 consumer industrial consumer 消费 industry & manufacturing 工业与制造业 ">
+           data-search="重磅经济数据即将发布，下半年宏观政策发力提效 国家统计局将于8月17日发布7月份工业、消费、投资等经济指标数据。 key economic data due soon; h2 macro policy to intensify for effectiveness. nbs to release july industrial output, consumption, investment and other indicators on aug 17. 重磅经济数据即将发布，下半年宏观政策发力提效 国家统计局将于8月17日发布7月份工业、消费、投资等经济指标数据。    第一财经 consumer industrial consumer 消费 industry & manufacturing 工业与制造业 ">
           <time class="tp-when" data-t="" >—</time>
           <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
           <div class="tp-body">
@@ -653,28 +672,9 @@
               <span class="cn-src">第一财经</span>
               <span class="cn-imp imp-medium"><b>66</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Major economic data set for release, H2 macro policy to intensify and improve efficiency; National Bureau of Statistics to release July industry, consumption, and investment data on August 17</span><span class="l-zh">重磅经济数据即将发布，下半年宏观政策发力提效 国家统计局将于8月17日发布7月份工业、消费、投资等经济指标数据。</span></h2>
+            <h2 class="tp-title"><span class="l-en">Key economic data due soon; H2 macro policy to intensify for effectiveness. NBS to release July industrial output, consumption, investment and other indicators on Aug 17.</span><span class="l-zh">重磅经济数据即将发布，下半年宏观政策发力提效 国家统计局将于8月17日发布7月份工业、消费、投资等经济指标数据。</span></h2>
             
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3148779" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="medium"
-           data-search="发力资管业务，券商、外资机构锚定公募股权 pushing into asset management, brokers and foreign institutions anchor on public fund equity 发力资管业务，券商、外资机构锚定公募股权 在资产管理行业蓬勃发展的背景下，公募基金公司股权吸引多方竞逐。从近期公募基金公司股权变更情况看：券商持续加码相关业务，旨在完善大资管业务版图；外资机构加大布局力度，彰显对中国资产管理行业长期价值的认可。（上证报） amid the booming asset management industry, public fund company equities are attracting multiple bidders. recent equity changes at public fund firms show: securities firms continue to ramp up related businesses to complete their broader asset management layouts; foreign institutions are intensifying their presence, underscoring recognition of the long-term value of china's asset management sector. (shanghai securities news) 在资产管理行业蓬勃发展的背景下，公募基金公司股权吸引多方竞逐。从近期公募基金公司股权变更情况看：券商持续加码相关业务，旨在完善大资管业务版图；外资机构加大布局力度，彰显对中国资产管理行业长期价值的认可。（上证报） 华尔街见闻 markets equity market 股票市场 510300.ss 512880.ss">
-          <time class="tp-when" data-t="2026-08-12T22:34:02+00:00" datetime="2026-08-12T22:34:02+00:00">08-12<br>22:34</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-12T22:34:02+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="cn-src">华尔街见闻</span>
-              <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">Pushing into asset management, brokers and foreign institutions anchor on public fund equity</span><span class="l-zh">发力资管业务，券商、外资机构锚定公募股权</span></h2>
-            <p class="tp-sum"><span class="l-en">Amid the booming asset management industry, public fund company equities are attracting multiple bidders. Recent equity changes at public fund firms show: securities firms continue to ramp up related businesses to complete their broader asset management layouts; foreign institutions are intensifying their presence, underscoring recognition of the long-term value of China's asset management sector. (Shanghai Securities News)</span><span class="l-zh">在资产管理行业蓬勃发展的背景下，公募基金公司股权吸引多方竞逐。从近期公募基金公司股权变更情况看：券商持续加码相关业务，旨在完善大资管业务版图；外资机构加大布局力度，彰显对中国资产管理行业长期价值的认可。（上证报）</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">510300.SS</span><span class="cn-tk">512880.SS</span></div>
           </div>
         </a>
         
@@ -704,28 +704,9 @@ The reading fell short of a projection of 3.98 per cent from economists polled b
         </a>
         
         
-        <a class="tp-item th-growth" href="https://www.stats.gov.cn/english/PressRelease/202607/t20260717_1964160.html" target="_blank" rel="noopener"
-           data-theme="growth" data-importance="high"
-           data-search="preliminary accounting results of gdp for the second quarter and the first half of 2026  2026年第二季度及上半年gdp初步核算结果    nbs growth growth 增长 ">
-          <time class="tp-when" data-t="2026-07-17" datetime="2026-07-17">07-17</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-17"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="cn-src">NBS</span>
-              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">Preliminary Accounting Results of GDP for the Second Quarter and the First Half of 2026</span><span class="l-zh">2026年第二季度及上半年GDP初步核算结果</span></h2>
-            
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Growth</span><span class="l-zh">增长</span></span></div>
-          </div>
-        </a>
-        
-        
         <a class="tp-item th-monetary" href="https://www.yicai.com/news/103315788.html" target="_blank" rel="noopener"
            data-theme="monetary" data-importance="high"
-           data-search="输入型通胀压力显现，央行最新报告聚焦海外货币政策变局 海外主要经济体央行货币政策立场趋于转向。 imported inflation pressures emerge, central bank's latest report focuses on overseas monetary policy shifts as major economies' central banks lean toward policy pivots 输入型通胀压力显现，央行最新报告聚焦海外货币政策变局 海外主要经济体央行货币政策立场趋于转向。    第一财经 pboc_liquidity pboc & liquidity 央行与流动性 ">
+           data-search="输入型通胀压力显现，央行最新报告聚焦海外货币政策变局 海外主要经济体央行货币政策立场趋于转向。 imported inflation pressure emerges; latest pboc report focuses on overseas monetary policy shifts as major central banks lean toward policy turns. 输入型通胀压力显现，央行最新报告聚焦海外货币政策变局 海外主要经济体央行货币政策立场趋于转向。    第一财经 pboc_liquidity pboc & liquidity 央行与流动性 ">
           <time class="tp-when" data-t="" >—</time>
           <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
           <div class="tp-body">
@@ -735,54 +716,35 @@ The reading fell short of a projection of 3.98 per cent from economists polled b
               <span class="cn-src">第一财经</span>
               <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Imported inflation pressures emerge, central bank's latest report focuses on overseas monetary policy shifts as major economies' central banks lean toward policy pivots</span><span class="l-zh">输入型通胀压力显现，央行最新报告聚焦海外货币政策变局 海外主要经济体央行货币政策立场趋于转向。</span></h2>
+            <h2 class="tp-title"><span class="l-en">Imported inflation pressure emerges; latest PBOC report focuses on overseas monetary policy shifts as major central banks lean toward policy turns.</span><span class="l-zh">输入型通胀压力显现，央行最新报告聚焦海外货币政策变局 海外主要经济体央行货币政策立场趋于转向。</span></h2>
             
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-monetary" href="https://www.yicai.com/news/103315760.html" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high"
-           data-search="隔夜逆回购前瞻加码、7天期操作归零，央行释放何种调控信号？ 7天期逆回购连续两日零投放，隔夜逆回购却提前预告加码。 overnight reverse repo front-loaded and scaled up, 7-day operations drop to zero—what control signals is the central bank sending? 7-day reverse repos see zero injections for two straight days, while overnight reverse repos are pre-announced with increases. 隔夜逆回购前瞻加码、7天期操作归零，央行释放何种调控信号？ 7天期逆回购连续两日零投放，隔夜逆回购却提前预告加码。    第一财经 pboc_liquidity pboc & liquidity 央行与流动性 ">
-          <time class="tp-when" data-t="" >—</time>
-          <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
+        <a class="tp-item th-markets" href="https://news.futunn.com/flash/20638472/lenovo-sees-significant-surge-in-ai-server-backlog-orders" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="联想ai服务器储备订单大增 lenovo ai server order backlog rises sharply 联想ai服务器储备订单大增 联想集团(00992.hk)港交所披露2026/27财年第一财季业绩显示，ai服务器储备订单从上一财季的1400亿元，大幅提高至3600亿元人民币。第一财季联想集团ai相关业务收入同比增长60%，达到634亿元人民币，创历史新高，占集团整体营收约35%；ai服务收入同比增长141%。 lenovo group (00992.hk) disclosed q1 fy2026/27 results via the hong kong stock exchange, showing ai server backlog orders surged from rmb 140 billion in the prior quarter to rmb 360 billion. in q1, lenovo's ai-related revenue rose 60% year-on-year to rmb 63.4 billion, a record high, accounting for about 35% of total revenue; ai services revenue rose 141% year-on-year. 联想集团(00992.hk)港交所披露2026/27财年第一财季业绩显示，ai服务器储备订单从上一财季的1400亿元，大幅提高至3600亿元人民币。第一财季联想集团ai相关业务收入同比增长60%，达到634亿元人民币，创历史新高，占集团整体营收约35%；ai服务收入同比增长141%。 富途牛牛 yuan tech_policy yuan & fx 人民币与汇率 tech policy 科技政策 cny">
+          <time class="tp-when" data-t="2026-08-13T04:52:34+00:00" datetime="2026-08-13T04:52:34+00:00">08-13<br>04:52</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T04:52:34+00:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
-              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="cn-src">第一财经</span>
-              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">富途牛牛</span>
+              <span class="cn-imp imp-medium"><b>54</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Overnight reverse repo front-loaded and scaled up, 7-day operations drop to zero—what control signals is the central bank sending? 7-day reverse repos see zero injections for two straight days, while overnight reverse repos are pre-announced with increases.</span><span class="l-zh">隔夜逆回购前瞻加码、7天期操作归零，央行释放何种调控信号？ 7天期逆回购连续两日零投放，隔夜逆回购却提前预告加码。</span></h2>
-            
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="tp-item th-inflation" href="https://flash.jin10.com/detail/20260813065000000800" target="_blank" rel="noopener"
-           data-theme="inflation" data-importance="medium"
-           data-search="今日重点关注的财经数据与事件：2026年8月13日 周四 key financial data and events to watch today: thursday, august 13, 2026 今日重点关注的财经数据与事件：2026年8月13日 周四 <br/>① 14:00 英国第二季度gdp年率初值<br/>② 14:00 英国6月三个月gdp月率<br/>③ 14:00 英国6月制造业产出月率<br/>④ 14:00 英国6月季调后商品贸易帐<br/>⑤ 14:00 英国6月工业产出月率<br/>⑥ 17:00 欧元区6月工业产出月率<br/>⑦ 20:00 京东二季度财报电话会<br/>⑧ 20:15 美联储哈马克发表讲话<br/>⑨ 20:30 美国至8月8日当周初请失业金人数<br/>⑩ 20:30 美国7月ppi年率<br/>⑪ 20:30 美国7月ppi月率<br/>⑫ 20:40 美 <br/>① 14:00 uk q2 gdp year-over-year preliminary<br/>② 14:00 uk gdp month-over-month for 3 months to june<br/>③ 14:00 uk june manufacturing production month-over-month<br/>④ 14:00 uk june seasonally adjusted goods trade balance<br/>⑤ 14:00 uk june industrial production month-over-month<br/>⑥ 17:00 eurozone june industrial production month-over-month<br/>⑦ 20:00 jd.com q2 earnings call<br/>⑧ 20:15 fed's hammack speaks<br/>⑨ 20:30 us initial jobless claims for week ending aug 8<br/>⑩ 20:30 us july ppi year-over-year<br/>⑪ 20:30 us july ppi month-over-month<br/>⑫ 20:40 us <br/>① 14:00 英国第二季度gdp年率初值<br/>② 14:00 英国6月三个月gdp月率<br/>③ 14:00 英国6月制造业产出月率<br/>④ 14:00 英国6月季调后商品贸易帐<br/>⑤ 14:00 英国6月工业产出月率<br/>⑥ 17:00 欧元区6月工业产出月率<br/>⑦ 20:00 京东二季度财报电话会<br/>⑧ 20:15 美联储哈马克发表讲话<br/>⑨ 20:30 美国至8月8日当周初请失业金人数<br/>⑩ 20:30 美国7月ppi年率<br/>⑪ 20:30 美国7月ppi月率<br/>⑫ 20:40 美 金十数据 industrial industry & manufacturing 工业与制造业 ">
-          <time class="tp-when" data-t="2026-08-13T06:50:00+08:00" datetime="2026-08-13T06:50:00+08:00">08-13<br>06:50</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T06:50:00+08:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Inflation</span><span class="l-zh">物价</span></span>
-              <span class="cn-src">金十数据</span>
-              <span class="cn-imp imp-medium"><b>61</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">Key financial data and events to watch today: Thursday, August 13, 2026</span><span class="l-zh">今日重点关注的财经数据与事件：2026年8月13日 周四</span></h2>
-            <p class="tp-sum"><span class="l-en"><br/>① 14:00 UK Q2 GDP year-over-year preliminary<br/>② 14:00 UK GDP month-over-month for 3 months to June<br/>③ 14:00 UK June Manufacturing Production month-over-month<br/>④ 14:00 UK June Seasonally Adjusted Goods Trade Balance<br/>⑤ 14:00 UK June Industrial Production month-over-month<br/>⑥ 17:00 Eurozone June Industrial Production month-over-month<br/>⑦ 20:00 JD.com Q2 earnings call<br/>⑧ 20:15 Fed's Hammack speaks<br/>⑨ 20:30 US Initial Jobless Claims for week ending Aug 8<br/>⑩ 20:30 US July PPI year-over-year<br/>⑪ 20:30 US July PPI month-over-month<br/>⑫ 20:40 US</span><span class="l-zh"><br/>① 14:00 英国第二季度GDP年率初值<br/>② 14:00 英国6月三个月GDP月率<br/>③ 14:00 英国6月制造业产出月率<br/>④ 14:00 英国6月季调后商品贸易帐<br/>⑤ 14:00 英国6月工业产出月率<br/>⑥ 17:00 欧元区6月工业产出月率<br/>⑦ 20:00 京东二季度财报电话会<br/>⑧ 20:15 美联储哈马克发表讲话<br/>⑨ 20:30 美国至8月8日当周初请失业金人数<br/>⑩ 20:30 美国7月PPI年率<br/>⑪ 20:30 美国7月PPI月率<br/>⑫ 20:40 美</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span></div>
+            <h2 class="tp-title"><span class="l-en">Lenovo AI server order backlog rises sharply</span><span class="l-zh">联想AI服务器储备订单大增</span></h2>
+            <p class="tp-sum"><span class="l-en">Lenovo Group (00992.HK) disclosed Q1 FY2026/27 results via the Hong Kong Stock Exchange, showing AI server backlog orders surged from RMB 140 billion in the prior quarter to RMB 360 billion. In Q1, Lenovo's AI-related revenue rose 60% year-on-year to RMB 63.4 billion, a record high, accounting for about 35% of total revenue; AI services revenue rose 141% year-on-year.</span><span class="l-zh">联想集团(00992.HK)港交所披露2026/27财年第一财季业绩显示，AI服务器储备订单从上一财季的1400亿元，大幅提高至3600亿元人民币。第一财季联想集团AI相关业务收入同比增长60%，达到634亿元人民币，创历史新高，占集团整体营收约35%；AI服务收入同比增长141%。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">yuan & FX</span><span class="l-zh">人民币与汇率</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="cn-tk">CNY</span></div>
           </div>
         </a>
         
         
         <a class="tp-item th-markets" href="https://finance.sina.com.cn/roll/2026-08-13/doc-inincaex3252545.shtml" target="_blank" rel="noopener"
            data-theme="markets" data-importance="medium"
-           data-search="估值低位叠加资金布局 消费板块迎结构性机会 low valuations plus capital positioning offer structural opportunities in the consumer sector 估值低位叠加资金布局 消费板块迎结构性机会    新浪财经股票 consumer consumer 消费 ">
+           data-search="估值低位叠加资金布局 消费板块迎结构性机会 valuations at lows plus capital positioning: consumer sector sees structural opportunities 估值低位叠加资金布局 消费板块迎结构性机会    新浪财经股票 consumer consumer 消费 ">
           <time class="tp-when" data-t="2026-08-13" datetime="2026-08-13">08-13</time>
           <div class="tp-spine"><span class="tp-node" data-t="2026-08-13"></span></div>
           <div class="tp-body">
@@ -792,66 +754,66 @@ The reading fell short of a projection of 3.98 per cent from economists polled b
               <span class="cn-src">新浪财经股票</span>
               <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Low valuations plus capital positioning offer structural opportunities in the consumer sector</span><span class="l-zh">估值低位叠加资金布局 消费板块迎结构性机会</span></h2>
+            <h2 class="tp-title"><span class="l-en">Valuations at lows plus capital positioning: consumer sector sees structural opportunities</span><span class="l-zh">估值低位叠加资金布局 消费板块迎结构性机会</span></h2>
             
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-markets" href="https://finance.sina.com.cn/jjxw/2026-08-12/doc-inimysya5573271.shtml" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="medium"
-           data-search="外资机构持续看好中国经济 foreign institutions remain bullish on china's economy 外资机构持续看好中国经济    新浪财经股票 markets equity market 股票市场 ">
-          <time class="tp-when" data-t="2026-08-12" datetime="2026-08-12">08-12</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-12"></span></div>
+        <a class="tp-item th-fiscal" href="https://flash.jin10.com/detail/20260813140311398800" target="_blank" rel="noopener"
+           data-theme="fiscal" data-importance="medium"
+           data-search="china a-share gold-related stocks extended losses in afternoon trade; xiaocheng technology  中国a股黄金相关股午后跌幅扩大；晓程科技 china a-share gold-related stocks extended losses in afternoon trade; xiaocheng technology fell more than 8%, zhaojin gold dropped over 6%, hunan silver and shengda resources also declined.  中国a股黄金相关股午后跌幅扩大；晓程科技跌超8%，招金矿业跌逾6%，湖南白银、盛达资源亦下跌。 金十数据 fiscal_trade tech_policy fiscal & trade 财政与贸易 tech policy 科技政策 510300.ss ashr cnya">
+          <time class="tp-when" data-t="2026-08-13T14:03:11+08:00" datetime="2026-08-13T14:03:11+08:00">08-13<br>14:03</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T14:03:11+08:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
-              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="cn-src">新浪财经股票</span>
+              <span class="cn-tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+              <span class="cn-src">金十数据</span>
               <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Foreign institutions remain bullish on China's economy</span><span class="l-zh">外资机构持续看好中国经济</span></h2>
-            
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span></div>
+            <h2 class="tp-title"><span class="l-en">China A-share gold-related stocks extended losses in afternoon trade; Xiaocheng Technology</span><span class="l-zh">中国A股黄金相关股午后跌幅扩大；晓程科技</span></h2>
+            <p class="tp-sum"><span class="l-en">China A-share gold-related stocks extended losses in afternoon trade; Xiaocheng Technology fell more than 8%, Zhaojin Gold dropped over 6%, Hunan Silver and Shengda Resources also declined.</span><span class="l-zh">中国A股黄金相关股午后跌幅扩大；晓程科技跌超8%，招金矿业跌逾6%，湖南白银、盛达资源亦下跌。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="cn-tk">510300.SS</span><span class="cn-tk">ASHR</span><span class="cn-tk">CNYA</span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-markets" href="https://finance.sina.com.cn/wm/2026-08-12/doc-inimzump3621669.shtml" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="medium"
-           data-search="外资巨头、知名牛散入局，翻倍牛股直线封板涨停 foreign giants and renowned retail investors step in, doubling bull stock hits limit-up straight away 外资巨头、知名牛散入局，翻倍牛股直线封板涨停    新浪财经股票 markets equity market 股票市场 ">
-          <time class="tp-when" data-t="2026-08-12" datetime="2026-08-12">08-12</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-12"></span></div>
+        <a class="tp-item th-monetary" href="https://flash.jin10.com/detail/20260813143344767800" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="medium"
+           data-search="金十数据整理：每日全球外汇市场要闻速递（2026-08-13） jin shi data: daily global fx market news digest (2026-08-13) 金十数据整理：每日全球外汇市场要闻速递（2026-08-13） <b><b>美元：</b></b><br/><span class="section-news">1. 美国7月cpi通胀数据温和，债市料9月加息概率降至约四成。</span><br/><span class="section-news">2. 美国7月预算赤字激增，创2021年3月以来新高。</span><br/><b><b>其他：</b></b><br/><span class="section-news">1. 英国二季度经济维持增长，但下半年料将转弱。</span><br/><span class="section-news">2. 越南央行警告 <b><b>dollar:</b></b><br/><span class="section-news">1. us july cpi inflation was moderate, with bond markets pricing a september rate hike probability at around 40%.</span><br/><span class="section-news">2. us july budget deficit surged to a new high since march 2021.</span><br/><b><b>others:</b></b><br/><span class="section-news">1. uk economy maintained growth in q2, but is expected to weaken in h2.</span><br/><span class="section-news">2. vietnam central bank warned <b><b>美元：</b></b><br/><span class="section-news">1. 美国7月cpi通胀数据温和，债市料9月加息概率降至约四成。</span><br/><span class="section-news">2. 美国7月预算赤字激增，创2021年3月以来新高。</span><br/><b><b>其他：</b></b><br/><span class="section-news">1. 英国二季度经济维持增长，但下半年料将转弱。</span><br/><span class="section-news">2. 越南央行警告 金十数据 pboc_liquidity consumer pboc & liquidity 央行与流动性 consumer 消费 ">
+          <time class="tp-when" data-t="2026-08-13T14:33:44+08:00" datetime="2026-08-13T14:33:44+08:00">08-13<br>14:33</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T14:33:44+08:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
-              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="cn-src">新浪财经股票</span>
-              <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+              <span class="cn-src">金十数据</span>
+              <span class="cn-imp imp-medium"><b>54</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">Foreign giants and renowned retail investors step in, doubling bull stock hits limit-up straight away</span><span class="l-zh">外资巨头、知名牛散入局，翻倍牛股直线封板涨停</span></h2>
-            
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span></div>
+            <h2 class="tp-title"><span class="l-en">Jin Shi Data: Daily global FX market news digest (2026-08-13)</span><span class="l-zh">金十数据整理：每日全球外汇市场要闻速递（2026-08-13）</span></h2>
+            <p class="tp-sum"><span class="l-en"><b><b>Dollar:</b></b><br/><span class="section-news">1. US July CPI inflation was moderate, with bond markets pricing a September rate hike probability at around 40%.</span><br/><span class="section-news">2. US July budget deficit surged to a new high since March 2021.</span><br/><b><b>Others:</b></b><br/><span class="section-news">1. UK economy maintained growth in Q2, but is expected to weaken in H2.</span><br/><span class="section-news">2. Vietnam central bank warned</span><span class="l-zh"><b><b>美元：</b></b><br/><span class="section-news">1. 美国7月CPI通胀数据温和，债市料9月加息概率降至约四成。</span><br/><span class="section-news">2. 美国7月预算赤字激增，创2021年3月以来新高。</span><br/><b><b>其他：</b></b><br/><span class="section-news">1. 英国二季度经济维持增长，但下半年料将转弱。</span><br/><span class="section-news">2. 越南央行警告</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span></div>
           </div>
         </a>
         
         
-        <a class="tp-item th-policy" href="https://www.gelonghui.com/live/2609386" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="medium"
-           data-search="中信建投：ai仍是中期景气主线，但高位算力硬件进入分化阶段，资金逐步向ai应用端扩散 citic securities: ai remains a medium-term prosperity theme, but high-level computing hardware enters a differentiation phase, with funds gradually spreading to ai application segments 中信建投：ai仍是中期景气主线，但高位算力硬件进入分化阶段，资金逐步向ai应用端扩散 中信建投研报指出，本周市场风格由成长进一步向低位消费和价值方向切换，传媒、社会服务、商贸零售、美容护理、食品饮料及房地产等行业表现较强，通信、电子等前期强势板块明显调整；华为、人工智能、机器人、储能、新能源汽车及数字经济等概念涨停活跃度仍居前，周五市场情绪明显修复。ai仍是中期景气主线，但高位算力硬件进入分化阶段，资金逐步向aigc、文化传媒、数据要素等ai应用端扩散，后续需更加关注业绩兑现和拥挤度风险。机器人受政策支持和产业化进展催化，仍具主题弹性。新能源围绕储能、新能源汽车、锂电池和光伏轮动，反内卷及供需改善逻辑延续。有色金属多重利好共振，工业金属开 citic securities research note: this week, market style shifted further from growth to low-valuation consumption and value sectors; media, social services, retail, beauty care, food and beverages, and real estate outperformed, while previously strong sectors like communications and electronics corrected notably. concept limits-up activity remained high in huawei, ai, robotics, energy storage, new energy vehicles, and digital economy, with sentiment clearly improving on friday. ai remains a medium-term core theme, but high-level computing hardware is entering a divergence phase, with funds gradually shifting to aigc, cultural media, and data elements on the ai application side; further attention is needed on earnings delivery and crowding risks. robotics retains thematic elasticity, driven by policy support and industrialization progress. new energy rotates around storage, nevs, lithium batteries, and photovoltaics, continuing the anti-involution and supply-demand improvement logic. nonferrous metals see multiple favorable catalysts, industrial metals open 中信建投研报指出，本周市场风格由成长进一步向低位消费和价值方向切换，传媒、社会服务、商贸零售、美容护理、食品饮料及房地产等行业表现较强，通信、电子等前期强势板块明显调整；华为、人工智能、机器人、储能、新能源汽车及数字经济等概念涨停活跃度仍居前，周五市场情绪明显修复。ai仍是中期景气主线，但高位算力硬件进入分化阶段，资金逐步向aigc、文化传媒、数据要素等ai应用端扩散，后续需更加关注业绩兑现和拥挤度风险。机器人受政策支持和产业化进展催化，仍具主题弹性。新能源围绕储能、新能源汽车、锂电池和光伏轮动，反内卷及供需改善逻辑延续。有色金属多重利好共振，工业金属开 格隆汇 property consumer industrial tech_policy property 房地产 consumer 消费 industry & manufacturing 工业与制造业 tech policy 科技政策 512200.ss 515030.ss 512400.ss">
-          <time class="tp-when" data-t="2026-08-12T23:36:06+00:00" datetime="2026-08-12T23:36:06+00:00">08-12<br>23:36</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-12T23:36:06+00:00"></span></div>
+        <a class="tp-item th-markets" href="https://flash.jin10.com/detail/20260813143300107800" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="three major a-share indices pulled back in the afternoon; the shanghai composite and shenz  a股三大指数午后回落；沪指及深指 three major a-share indices pulled back in the afternoon; the shanghai composite and shenzhen composite moved into the red, while the chinext index's gain narrowed to 0.58%.  a股三大指数午后回调；上证指数和深证成指转跌，创业板指涨幅收窄至0.58%。 金十数据 markets equity market 股票市场 510300.ss ashr cnya">
+          <time class="tp-when" data-t="2026-08-13T14:33:00+08:00" datetime="2026-08-13T14:33:00+08:00">08-13<br>14:33</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T14:33:00+08:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
-              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="cn-src">格隆汇</span>
-              <span class="cn-imp imp-medium"><b>51</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">金十数据</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">CITIC Securities: AI remains a medium-term prosperity theme, but high-level computing hardware enters a differentiation phase, with funds gradually spreading to AI application segments</span><span class="l-zh">中信建投：AI仍是中期景气主线，但高位算力硬件进入分化阶段，资金逐步向AI应用端扩散</span></h2>
-            <p class="tp-sum"><span class="l-en">CITIC Securities research note: This week, market style shifted further from growth to low-valuation consumption and value sectors; media, social services, retail, beauty care, food and beverages, and real estate outperformed, while previously strong sectors like communications and electronics corrected notably. Concept limits-up activity remained high in Huawei, AI, robotics, energy storage, new energy vehicles, and digital economy, with sentiment clearly improving on Friday. AI remains a medium-term core theme, but high-level computing hardware is entering a divergence phase, with funds gradually shifting to AIGC, cultural media, and data elements on the AI application side; further attention is needed on earnings delivery and crowding risks. Robotics retains thematic elasticity, driven by policy support and industrialization progress. New energy rotates around storage, NEVs, lithium batteries, and photovoltaics, continuing the anti-involution and supply-demand improvement logic. Nonferrous metals see multiple favorable catalysts, industrial metals open</span><span class="l-zh">中信建投研报指出，本周市场风格由成长进一步向低位消费和价值方向切换，传媒、社会服务、商贸零售、美容护理、食品饮料及房地产等行业表现较强，通信、电子等前期强势板块明显调整；华为、人工智能、机器人、储能、新能源汽车及数字经济等概念涨停活跃度仍居前，周五市场情绪明显修复。AI仍是中期景气主线，但高位算力硬件进入分化阶段，资金逐步向AIGC、文化传媒、数据要素等AI应用端扩散，后续需更加关注业绩兑现和拥挤度风险。机器人受政策支持和产业化进展催化，仍具主题弹性。新能源围绕储能、新能源汽车、锂电池和光伏轮动，反内卷及供需改善逻辑延续。有色金属多重利好共振，工业金属开</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="cn-tk">512200.SS</span><span class="cn-tk">515030.SS</span><span class="cn-tk">512400.SS</span></div>
+            <h2 class="tp-title"><span class="l-en">Three major A-share indices pulled back in the afternoon; the Shanghai Composite and Shenz</span><span class="l-zh">A股三大指数午后回落；沪指及深指</span></h2>
+            <p class="tp-sum"><span class="l-en">Three major A-share indices pulled back in the afternoon; the Shanghai Composite and Shenzhen Composite moved into the red, while the ChiNext Index's gain narrowed to 0.58%.</span><span class="l-zh">A股三大指数午后回调；上证指数和深证成指转跌，创业板指涨幅收窄至0.58%。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">510300.SS</span><span class="cn-tk">ASHR</span><span class="cn-tk">CNYA</span></div>
           </div>
         </a>
         
@@ -879,25 +841,59 @@ The 129 per cent growth from a year earlier beat other top-performing markets in
         </a>
         
         
-        <a class="tp-item th-markets" href="https://www.scmp.com/business/banking-finance/article/3363332/what-makes-mcdonalds-assets-stand-out-amid-weak-hong-kong-retail-property-market?utm_source=rss_feed" target="_blank" rel="noopener"
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3148966" target="_blank" rel="noopener"
            data-theme="markets" data-importance="medium"
-           data-search="what makes mcdonald’s assets stand out amid a weak hong kong retail property market?  在香港零售物业市场疲软之际，麦当劳的资产有何独特优势？ one year after mcdonald’s began selling its self-owned hong kong shops, the fast-food giant has found buyers for nearly half its portfolio even as the city’s retail property market endures its weakest spell in decades.
-mcdonald’s planned to dispose of all 23 shops in phases, market sources said, with the portfolio initially valued at about hk$3 billion (us$382 million).
-since launching the disposal plan with jll in july last year, the chain had sold 11 properties for more than hk$900 million –...  麦当劳开始出售其自有香港门店一年后，这家快餐巨头已为其近一半物业找到买家，尽管香港零售物业市场正经历数十年来最疲弱的时期。据市场消息人士称，麦当劳计划分阶段处置全部23家门店，该物业组合最初估值约为30亿港元（合3亿美元）。 scmp - business property consumer property 房地产 consumer 消费 512200.ss">
-          <time class="tp-when" data-t="2026-08-10T00:00:25+00:00" datetime="2026-08-10T00:00:25+00:00">08-10<br>00:00</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-08-10T00:00:25+00:00"></span></div>
+           data-search="沪深京三市成交额超2万亿元，较上日此时放量2365亿元 combined turnover of shanghai, shenzhen and beijing markets tops rmb 2 trillion, up rmb 236.5 billion from this time the prior day 沪深京三市成交额超2万亿元，较上日此时放量2365亿元 沪深京三市成交额超2万亿元，较上日此时放量2365亿元。 turnover across shanghai, shenzhen and beijing markets exceeded rmb 2 trillion, up rmb 236.5 billion from this time the previous day. 沪深京三市成交额超2万亿元，较上日此时放量2365亿元。 华尔街见闻 markets equity market 股票市场 ashr">
+          <time class="tp-when" data-t="2026-08-13T06:01:40+00:00" datetime="2026-08-13T06:01:40+00:00">08-13<br>06:01</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13T06:01:40+00:00"></span></div>
           <div class="tp-body">
             <div class="tp-top">
               
               <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="cn-src">SCMP - Business</span>
-              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>54</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="tp-title"><span class="l-en">What makes McDonald’s assets stand out amid a weak Hong Kong retail property market?</span><span class="l-zh">在香港零售物业市场疲软之际，麦当劳的资产有何独特优势？</span></h2>
-            <p class="tp-sum"><span class="l-en">One year after McDonald’s began selling its self-owned Hong Kong shops, the fast-food giant has found buyers for nearly half its portfolio even as the city’s retail property market endures its weakest spell in decades.
-McDonald’s planned to dispose of all 23 shops in phases, market sources said, with the portfolio initially valued at about HK$3 billion (US$382 million).
-Since launching the disposal plan with JLL in July last year, the chain had sold 11 properties for more than HK$900 million –...</span><span class="l-zh">麦当劳开始出售其自有香港门店一年后，这家快餐巨头已为其近一半物业找到买家，尽管香港零售物业市场正经历数十年来最疲弱的时期。据市场消息人士称，麦当劳计划分阶段处置全部23家门店，该物业组合最初估值约为30亿港元（合3亿美元）。</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-tk">512200.SS</span></div>
+            <h2 class="tp-title"><span class="l-en">Combined turnover of Shanghai, Shenzhen and Beijing markets tops RMB 2 trillion, up RMB 236.5 billion from this time the prior day</span><span class="l-zh">沪深京三市成交额超2万亿元，较上日此时放量2365亿元</span></h2>
+            <p class="tp-sum"><span class="l-en">Turnover across Shanghai, Shenzhen and Beijing markets exceeded RMB 2 trillion, up RMB 236.5 billion from this time the previous day.</span><span class="l-zh">沪深京三市成交额超2万亿元，较上日此时放量2365亿元。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">ASHR</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-markets" href="https://finance.sina.com.cn/stock/hyyj/2026-08-13/doc-inincaex3252558.shtml" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="固态电池步入产业化攻坚期 关键温等静压设备或在明年取得突破 solid-state batteries enter critical industrialization phase; key isostatic pressing equipment may see breakthrough next year 固态电池步入产业化攻坚期 关键温等静压设备或在明年取得突破    新浪财经股票 markets equity market 股票市场 515030.ss">
+          <time class="tp-when" data-t="2026-08-13" datetime="2026-08-13">08-13</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">新浪财经股票</span>
+              <span class="cn-imp imp-medium"><b>54</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Solid-state batteries enter critical industrialization phase; key isostatic pressing equipment may see breakthrough next year</span><span class="l-zh">固态电池步入产业化攻坚期 关键温等静压设备或在明年取得突破</span></h2>
+            
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">515030.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-markets" href="https://finance.sina.com.cn/stock/s/2026-08-13/doc-ininchpe0288282.shtml" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="股海导航_2026年8月13日_沪深股市公告与交易提示 stock market navigator_august 13, 2026_shanghai and shenzhen stock exchange announcements and trading tips 股海导航_2026年8月13日_沪深股市公告与交易提示    新浪财经股票 markets equity market 股票市场 ashr">
+          <time class="tp-when" data-t="2026-08-13" datetime="2026-08-13">08-13</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-13"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">新浪财经股票</span>
+              <span class="cn-imp imp-medium"><b>54</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">Stock Market Navigator_August 13, 2026_Shanghai and Shenzhen Stock Exchange Announcements and Trading Tips</span><span class="l-zh">股海导航_2026年8月13日_沪深股市公告与交易提示</span></h2>
+            
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">ASHR</span></div>
           </div>
         </a>
         
@@ -909,7 +905,7 @@ Since launching the disposal plan with JLL in July last year, the chain had sold
 
     <aside class="cn-side">
       <section class="side-card">
-        <h2 class="sc-h"><span>📅</span><span class="l-en">Scheduled catalysts</span><span class="l-zh">排定催化</span></h2>
+        <h2 class="sc-h"><span class="l-en">Scheduled catalysts</span><span class="l-zh">排定催化</span></h2>
         
         
         <div class="cal-row">
@@ -939,29 +935,32 @@ Since launching the disposal plan with JLL in July last year, the chain had sold
 
       
       <section class="side-card">
-        <h2 class="sc-h"><span>🎯</span><span class="l-en">Exposures on the tape</span><span class="l-zh">相关标的</span></h2>
+        <h2 class="sc-h"><span class="l-en">Exposures on the tape</span><span class="l-zh">相关标的</span></h2>
         <div class="exp-pills">
           
           
-          <span class="exp-pill"><span class="tk">512200.SS</span><span class="nm"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="ct">×5</span></span>
+          <span class="exp-pill"><span class="tk">ASHR</span><span class="nm"><span class="l-en">A-shares</span><span class="l-zh">A股</span></span><span class="ct">×7</span></span>
           
           
-          <span class="exp-pill"><span class="tk">512880.SS</span><span class="nm"><span class="l-en">brokers</span><span class="l-zh">券商</span></span><span class="ct">×4</span></span>
+          <span class="exp-pill"><span class="tk">510300.SS</span><span class="nm"><span class="l-en">CSI 300</span><span class="l-zh">沪深300</span></span><span class="ct">×4</span></span>
           
           
-          <span class="exp-pill"><span class="tk">CBON</span><span class="nm"><span class="l-en">China bonds</span><span class="l-zh">中国债券</span></span></span>
+          <span class="exp-pill"><span class="tk">CNY</span><span class="nm"><span class="l-en">yuan</span><span class="l-zh">人民币</span></span><span class="ct">×3</span></span>
           
           
-          <span class="exp-pill"><span class="tk">CNY</span><span class="nm"><span class="l-en">yuan</span><span class="l-zh">人民币</span></span></span>
+          <span class="exp-pill"><span class="tk">512200.SS</span><span class="nm"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="ct">×2</span></span>
           
           
-          <span class="exp-pill"><span class="tk">510300.SS</span><span class="nm"><span class="l-en">CSI 300</span><span class="l-zh">沪深300</span></span></span>
+          <span class="exp-pill"><span class="tk">512880.SS</span><span class="nm"><span class="l-en">brokers</span><span class="l-zh">券商</span></span><span class="ct">×2</span></span>
           
           
-          <span class="exp-pill"><span class="tk">515030.SS</span><span class="nm"><span class="l-en">EV & battery</span><span class="l-zh">新能源车</span></span></span>
+          <span class="exp-pill"><span class="tk">CNYA</span><span class="nm"><span class="l-en">China A</span><span class="l-zh">中国A股</span></span><span class="ct">×2</span></span>
           
           
-          <span class="exp-pill"><span class="tk">512400.SS</span><span class="nm"><span class="l-en">metals</span><span class="l-zh">有色</span></span></span>
+          <span class="exp-pill"><span class="tk">FXI</span><span class="nm"><span class="l-en">China large-cap</span><span class="l-zh">中国大盘</span></span></span>
+          
+          
+          <span class="exp-pill"><span class="tk">512760.SS</span><span class="nm"><span class="l-en">chips</span><span class="l-zh">半导体</span></span></span>
           
         </div>
       </section>
@@ -1057,6 +1056,6 @@ Since launching the disposal plan with JLL in July last year, the chain had sold
 })();
 </script>
 
-<script src="theme.js?v=e07e6c36" defer></script>
+<script src="theme.js?v=2a51e41d" defer></script>
 </body>
 </html>

@@ -170,14 +170,14 @@
       '.stf-dd.stf-open .stf-dd-btn{border-color:var(--link);box-shadow:0 0 0 3px color-mix(in srgb, var(--link) 16%, transparent);}',
       '.stf-dd.stf-open svg.stf-chev{transform:rotate(180deg);}',
       '.stf-dd.stf-active .stf-dd-btn{border-color:color-mix(in srgb, var(--link) 45%, var(--line));background:color-mix(in srgb, var(--link) 9%, var(--panel));}',
-      '.stf-dd.stf-active .stf-dd-val{color:var(--link);}',
+      '.stf-dd.stf-active .stf-dd-val{color:var(--ink-link, var(--link));}',
       /* dropdown menu (glass) */
       '.stf-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:60;min-width:210px;max-height:320px;overflow-y:auto;padding:5px;background:var(--glass-bg, var(--panel));-webkit-backdrop-filter:var(--glass-blur, none);backdrop-filter:var(--glass-blur, none);border:1px solid var(--glass-brd, var(--line));border-radius:11px;box-shadow:var(--glass-shadow, 0 12px 32px rgba(0,0,0,.3));animation:stf-pop .14s cubic-bezier(.16,1,.3,1);transform-origin:top left;}',
       '.stf-menu.stf-menu-right{left:auto;right:0;transform-origin:top right;}',
       '@keyframes stf-pop{from{opacity:0;transform:translateY(-5px) scale(.985);}to{opacity:1;transform:none;}}',
       '.stf-opt{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;font-size:12.5px;color:var(--text);cursor:pointer;user-select:none;}',
       '.stf-opt:hover,.stf-opt.stf-kb{background:color-mix(in srgb, var(--link) 10%, transparent);}',
-      '.stf-opt .stf-tick{width:14px;height:14px;flex:none;color:var(--link);visibility:hidden;}',
+      '.stf-opt .stf-tick{width:14px;height:14px;flex:none;color:var(--ink-link, var(--link));visibility:hidden;}',
       '.stf-opt[aria-selected="true"]{font-weight:650;}',
       '.stf-opt[aria-selected="true"] .stf-tick{visibility:visible;}',
       '.stf-opt .stf-olab{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
@@ -187,7 +187,7 @@
       '.stf-chipbtn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;font:inherit;font-size:12.5px;font-weight:550;cursor:pointer;background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:999px;transition:border-color .15s, background .15s, color .15s;}',
       '.stf-chipbtn:hover{border-color:color-mix(in srgb, var(--muted) 40%, var(--line));}',
       '.stf-chipbtn svg.stf-tick{width:12px;height:12px;display:none;}',
-      '.stf-chipbtn[aria-pressed="true"]{color:var(--up);background:color-mix(in srgb, var(--up) 11%, var(--panel));border-color:color-mix(in srgb, var(--up) 42%, var(--line));font-weight:650;}',
+      '.stf-chipbtn[aria-pressed="true"]{color:var(--ink-up, var(--up));background:color-mix(in srgb, var(--up) 11%, var(--panel));border-color:color-mix(in srgb, var(--up) 42%, var(--line));font-weight:650;}',
       '.stf-chipbtn[aria-pressed="true"] svg.stf-tick{display:block;}',
       /* right cluster */
       '.stf-spacer{flex:1 0 0;}',
@@ -230,7 +230,7 @@
       '.stf-ch-note{margin-left:auto;font-size:10.5px;color:var(--muted);}',
       /* Feature 2: ticker anchor in table — inherits row color, dotted underline on hover */
       '.stf-tkr{color:inherit;text-decoration:none;border-bottom:1px dotted transparent;}',
-      '.stf-tkr:hover{color:var(--link);border-bottom-color:var(--link);}',
+      '.stf-tkr:hover{color:var(--ink-link, var(--link));border-bottom-color:var(--link);}',
       /* Feature 1: column resize — fixed-layout override (scoped to avoid .st-table host CSS) */
       'table.st-fixed-layout{table-layout:fixed;}',
       /* Feature 1: resize handle on th — th needs position:relative for handle */

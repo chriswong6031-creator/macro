@@ -571,14 +571,18 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict,
                          "shadow, not applied; when scored, freed weight redistributes "
                          "(water-fill) rather than leaking to cash"),
                 "artifact": "scripts/thematic_rotation_phase0.py"},
-            "rule": (f"Equal-weight the top-{N_HOLD} themes above their own 200d trend "
-                     "(the validated dual-momentum book), DE-OVERLAPPED to at most "
-                     f"{MAX_PER_PARENT} per parent super-theme so the book stays diversified; "
-                     "idle slots sit in T-bills; "
+            # Tier-1 copy (DOCTRINE Law 2): this string is printed at rest under the
+            # "Suggested allocation" heading, so it carries no internal verbs. "the
+            # validated dual-momentum book" and "DE-OVERLAPPED" were both engine
+            # vocabulary the reader has no way to decode; the rule itself is unchanged.
+            "rule": (f"Hold the top {N_HOLD} themes that are above their own 200-day trend, "
+                     "equally weighted, and keep at most "
+                     f"{MAX_PER_PARENT} per theme family so the book is not the same trade "
+                     "under several names; idle slots sit in T-bills; "
                      + ("crowded themes are trimmed and the freed weight is redistributed across "
                         "the other held themes; " if CROWD_TRIM_SCORED else
-                        "the crowding trim is display-only (no measured drawdown edge — not "
-                        "applied to weight); ")
+                        "crowding is shown as a caution only — it did not reduce drawdowns "
+                        "in the study, so it does not change any weight; ")
                      + f"capped at {int(POS_CAP*100)}%/theme."),
             "directional": False}
 

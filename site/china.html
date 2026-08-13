@@ -59,8 +59,8 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=a0c743b0">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css?v=90137296">
 
 <script>
 (function(){
@@ -86,14 +86,14 @@
 </script>
 
 
-<link rel="stylesheet" href="illus.css?v=8032719c">
-<link rel="stylesheet" href="assets/css/2d81e759.css?v=2d81e759">
+<link rel="stylesheet" href="illus.css?v=cbe6a0b4">
+<link rel="stylesheet" href="assets/css/8400b047.css?v=8400b047">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="assets/css/5e973f2b.css?v=5e973f2b">
-<link rel="preload" as="style" href="navigation-refresh.css?v=65bba21c">
+<link rel="preload" as="style" href="assets/css/f7e9b02b.css?v=f7e9b02b">
+<link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
 <body class="page-china mx4-grid">
-<link rel="stylesheet" href="assets/css/5e973f2b.css?v=5e973f2b"><div class="aurora au-yellow" aria-hidden="true"><div class="au-a3"></div></div>
+<link rel="stylesheet" href="assets/css/f7e9b02b.css?v=f7e9b02b"><div class="aurora au-yellow" aria-hidden="true"><div class="au-a3"></div></div>
 
 
 
@@ -101,7 +101,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=65bba21c">
+    <link rel="stylesheet" href="navigation-refresh.css?v=c299c324">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -316,7 +316,7 @@
   <script src="logo_config.js?v=b37d33d3" defer></script>
   <script src="stock-logos.js?v=cc29be53" defer></script>
   <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="live.js?v=b245e3c3" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -460,7 +460,7 @@
         
         
         <button class="cnx-hbtn" onclick="cnxTogglePop('cnx-pop-risk',event)" style="border-color:color-mix(in srgb,var(--down) 50%,transparent)">⚠
-          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--down)">86</span> ▾</button>
+          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--ink-down, var(--down))">91</span> ▾</button>
 
         <!-- popover: factor breakdown -->
         <div class="cnx-pop" id="cnx-pop-signals">
@@ -521,7 +521,7 @@
         <div class="cnx-pop" id="cnx-pop-risk" style="left:auto">
           <div class="cnx-pop-h"><span class="l-en">Pullback risk radar</span><span class="l-zh">回撤风险雷达</span></div>
           
-          <div class="cnx-pop-big"><span class="n">86</span><span class="t"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span></div>
+          <div class="cnx-pop-big"><span class="n">91</span><span class="t"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span></div>
           <div class="cnx-pop-sub"><span class="l-en">~40% chance of a ≥5% pullback within a month · 1.3× the usual odds</span><span class="l-zh">未来一个月内出现≥5%回撤的概率约40% · 约为平时的1.3倍</span></div>
           
           <div class="cnx-pop-row">
@@ -530,13 +530,13 @@
           </div>
           
           <div class="cnx-pop-row">
-            <div class="pr-t"><span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span><b>62</b></div>
-            <div class="cnx-pop-bar"><i style="width:62%;background:var(--down)"></i></div>
+            <div class="pr-t"><span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span><b>69</b></div>
+            <div class="cnx-pop-bar"><i style="width:69%;background:var(--down)"></i></div>
           </div>
           
           <div class="cnx-pop-row">
-            <div class="pr-t"><span><span class="l-en">Capital outflow / FX</span><span class="l-zh">资本外流／汇率</span></span><b>57</b></div>
-            <div class="cnx-pop-bar"><i style="width:57%;background:var(--down)"></i></div>
+            <div class="pr-t"><span><span class="l-en">Capital outflow / FX</span><span class="l-zh">资本外流／汇率</span></span><b>60</b></div>
+            <div class="cnx-pop-bar"><i style="width:60%;background:var(--down)"></i></div>
           </div>
           
           
@@ -899,7 +899,7 @@
     <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-risk')" style="border-color:color-mix(in srgb,var(--down) 35%,transparent)">
       <div class="cnx-ctitle"><span class="l-en">Pullback Risk</span><span class="l-zh">回撤风险</span> <span class="cnx-alert-pill" style="background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)"><span class="l-en">ELEVATED</span><span class="l-zh">偏高</span></span></div>
       
-      <div class="cnx-bignum" style="color:var(--down)">86<span style="font-size:14px;color:var(--muted)"> /100</span></div>
+      <div class="cnx-bignum" style="color:var(--down)">91<span style="font-size:14px;color:var(--muted)"> /100</span></div>
       <div class="cnx-bigsub" style="color:var(--down)"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></div>
       
       <div class="cnx-kv"><span class="k"><span class="l-en">≥5% dip odds</span><span class="l-zh">≥5%回撤概率</span></span><span class="v">40%</span></div>
@@ -1103,11 +1103,11 @@
         
         <div class="cnx-row">
           <span class="ic">🏦</span>
-          <div class="tx"><b>华尔街见闻早餐 | 2026年8月13日</b>
+          <div class="tx"><b>早间要闻汇总</b>
             <span class="sub">PBoC · 华尔街见闻</span></div>
         </div>
         
-        <div class="cnx-view-all">24 <span class="l-en">of</span><span class="l-zh">/</span> 757 <span class="l-en">stories kept · full feed →</span><span class="l-zh">条新闻保留 · 完整新闻流 →</span></div>
+        <div class="cnx-view-all">24 <span class="l-en">of</span><span class="l-zh">/</span> 782 <span class="l-en">stories kept · full feed →</span><span class="l-zh">条新闻保留 · 完整新闻流 →</span></div>
       
     </div>
   </div>
@@ -1119,8 +1119,8 @@
       <div class="cnx-ctitle"><span class="l-en">Property</span><span class="l-zh">房地产</span></div>
       
       
-      <div class="cnx-bignum" style="color:var(--down);font-size:22px"><span class="l-en">Deep contraction (easing)</span><span class="l-zh">深度收缩（边际改善）</span></div>
-      <div class="cnx-bigsub" style="color:var(--warn)"><span class="l-en">still contracting</span><span class="l-zh">仍在收缩</span></div>
+      <div class="cnx-bignum" style="color:var(--ink-down, var(--down));font-size:22px"><span class="l-en">Deep contraction (easing)</span><span class="l-zh">深度收缩（边际改善）</span></div>
+      <div class="cnx-bigsub" style="color:var(--ink-warn, var(--warn))"><span class="l-en">still contracting</span><span class="l-zh">仍在收缩</span></div>
       
       <div class="cnx-kv"><span class="k"><span class="l-en">70-city prices</span><span class="l-zh">70城价格</span></span><span class="v">-29 <span class="l-en">net cities</span><span class="l-zh">净城市数</span></span></div>
       
@@ -1361,7 +1361,7 @@
           <div class="rrd-hd-sub"><span class="l-en">De-risk: cut size, don't add to froth, honour stops.</span><span class="l-zh">降险：减仓、勿加注泡沫、严守止损。</span></div>
           
           
-          <div class="rrd-hd-sub"><span class="l-en">Intensity</span><span class="l-zh">强度</span> <b>86</b>/100</div>
+          <div class="rrd-hd-sub"><span class="l-en">Intensity</span><span class="l-zh">强度</span> <b>91</b>/100</div>
           
         </div>
       </div>
@@ -1373,7 +1373,7 @@
     <span class="rrx-ic">🚨</span>
     <div class="rrx-id">
       <div class="rrx-ttl"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>
-        <span class="rrx-badge"><span class="l-en">ELEVATED</span><span class="l-zh">升高</span> · 86/100</span>
+        <span class="rrx-badge"><span class="l-en">ELEVATED</span><span class="l-zh">升高</span> · 91/100</span>
         <span class="help">?<span class="tip"><span class="l-en">Pullback-risk gauge. Use high readings to trim risk, not to pick stocks.</span><span class="l-zh">回撤风险仪表。高读数用于降风险，不用于选股。</span></span></span>
       </div>
       <div class="rrx-dom"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></div>
@@ -1473,7 +1473,7 @@
 
   <div class="rrx-trk">
     <span class="rrx-audit-k">🧾 <span class="l-en">Track record</span><span class="l-zh">往绩</span></span>
-    <span class="l-en">grading begins once these calls mature — about 21 trading days</span><span class="l-zh">这些判断成熟后开始评分 — 约21个交易日</span><span class="l-en">· no new entries for 28 days</span><span class="l-zh">· 已 28 天无新增记录</span>
+    <span class="l-en">grading begins once these calls mature — about 21 trading days</span><span class="l-zh">这些判断成熟后开始评分 — 约21个交易日</span><span class="l-en">· no new entries for 27 days</span><span class="l-zh">· 已 27 天无新增记录</span>
     
     <span class="help">?<span class="tip"><span class="l-en">Past-year hit rate: too few graded alerts yet (daily readings — consecutive days overlap) | Watch/caution: too few graded | Recovery: too few graded</span><span class="l-zh">过去一年命中率：暂无足够评分记录（按日读数——连续日期相互重叠） | 观察/谨慎：暂无足够评分 | 修复信号：暂无足够评分</span></span></span>
   </div>
@@ -1566,14 +1566,14 @@
         </div>
         <div class="rrd-lrow tone-warn">
           <span class="rrd-lname"><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span>
-          <span class="rrd-fbar"><i style="width:62%"></i></span>
-          <span class="rrd-lscore">62</span>
-          <span class="rrd-lband"><span class="l-en">Watch</span><span class="l-zh">留意</span></span>
+          <span class="rrd-fbar"><i style="width:69%"></i></span>
+          <span class="rrd-lscore">69</span>
+          <span class="rrd-lband"><span class="l-en">Caution</span><span class="l-zh">谨慎</span></span>
         </div>
         <div class="rrd-lrow tone-warn">
           <span class="rrd-lname"><span class="l-en">Capital outflow / FX</span><span class="l-zh">资本外流／汇率</span></span>
-          <span class="rrd-fbar"><i style="width:57%"></i></span>
-          <span class="rrd-lscore">57</span>
+          <span class="rrd-fbar"><i style="width:60%"></i></span>
+          <span class="rrd-lscore">60</span>
           <span class="rrd-lband"><span class="l-en">Watch</span><span class="l-zh">留意</span></span>
         </div>
         
@@ -1836,7 +1836,7 @@
           
           <div id="cn-hm-embed">
             <div style="display:flex;align-items:center;justify-content:center;height:80px;font-size:12px;color:var(--muted)">
-              <a href="china_heatmap.html" style="color:var(--link)"><span class="l-en">→ Open full heatmap</span><span class="l-zh">→ 打开完整热力图</span></a>
+              <a href="china_heatmap.html" style="color:var(--ink-link, var(--link))"><span class="l-en">→ Open full heatmap</span><span class="l-zh">→ 打开完整热力图</span></a>
             </div>
           </div>
         </div>
@@ -2396,76 +2396,76 @@ Hong Kong is in a Goldilocks spot — weak growth paired with very low inflation
         <div class="cnx-sep"></div>
         
         
-        <div class="cnx-eyebrow"><span class="l-en">Today's feed</span><span class="l-zh">今日新闻</span> · 24 <span class="l-en">of</span><span class="l-zh">/</span> 757 <span class="l-en">stories kept</span><span class="l-zh">条保留</span></div>
+        <div class="cnx-eyebrow"><span class="l-en">Today's feed</span><span class="l-zh">今日新闻</span> · 24 <span class="l-en">of</span><span class="l-zh">/</span> 782 <span class="l-en">stories kept</span><span class="l-zh">条保留</span></div>
         
         
         <div class="cnx-row">
           <span class="ic">📰</span>
           <div class="tx"><b>提醒：日内请重点关注（以下均为北京时间）</b>
-            <span class="sub"><span class="l-en">Inflation</span><span class="l-zh">物价</span> · 华尔街见闻 · 100/100</span></div>
+            <span class="sub"><span class="l-en">Inflation</span><span class="l-zh">物价</span> · 华尔街见闻 · 96/100</span></div>
         </div>
         
         
         <div class="cnx-row">
           <span class="ic">🏦</span>
-          <div class="tx"><b>华尔街见闻早餐 | 2026年8月13日</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 华尔街见闻 · 90/100</span></div>
+          <div class="tx"><b>早间要闻汇总</b>
+            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 华尔街见闻 · 76/100</span></div>
         </div>
         
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>美国商务部长卢特尼克：福特汽车(F.N)正在将更多制造业带回美国</b>
-            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 富途牛牛 · 74/100</span></div>
+          <div class="tx"><b>8月13日午间收评：创业板指半日涨1.61%，医药、算力概念股集体走强</b>
+            <span class="sub"><span class="l-en">Policy</span><span class="l-zh">政策</span> · 华尔街见闻 · 76/100</span></div>
         </div>
         
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>房地产，突然暴涨！发生了什么？</b>
-            <span class="sub"><span class="l-en">Policy</span><span class="l-zh">政策</span> · 新浪财经股票 · 68/100</span></div>
+          <div class="tx"><b>英国第二季度GDP环比增长0.4% 经济增速较前季放缓</b>
+            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · Eastmoney · 71/100</span></div>
         </div>
         
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>分红、回购、增持常态化推进，A股公司以实际行动稳市场强信心</b>
-            <span class="sub"><span class="l-en">Policy</span><span class="l-zh">政策</span> · 华尔街见闻 · 68/100</span></div>
+          <div class="tx"><b>联想集团(00992.HK)午后直线拉升涨超12%，公司午间公布业绩，第一财季经调整权益持有人应占溢利同比增长176%，AI相关业务收入同比增长60%，达到634亿元人民币，创历史</b>
+            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 富途牛牛 · 62/100</span></div>
         </div>
         
         
         <div class="cnx-row">
           <span class="ic">🏦</span>
-          <div class="tx"><b>委内瑞拉央行：7月份通胀水平达到19.9%</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 富途牛牛 · 68/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">🏦</span>
-          <div class="tx"><b>事关货币政策、汇率……央行释放新信号</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 上海证券报 · 68/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>China International Capital Co: US inflation may have entered new phase; duration could lengthen</b>
-            <span class="sub"><span class="l-en">Inflation</span><span class="l-zh">物价</span> · 金十数据 · 74/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>通胀放缓削弱加息预期！美股涨跌互现，AI算力、存储芯片爆发，CoreWeave与超微电脑涨近20%，，布油逼近90美元 美国7月核心CPI同比上涨2.5%，为2021年3月以来低位。</b>
+          <div class="tx"><b>盘前必读丨央行报告释放多重信号；中鼎股份澄清市场传闻 机构认为，上证指数遇年线面临调整压力，关注创新药及券商。</b>
             <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 第一财经 · 68/100</span></div>
         </div>
         
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>稳妥有序深化双向开放 资本市场持续提升吸引力</b>
-            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 上海证券报 · 68/100</span></div>
+          <div class="tx"><b>通胀放缓削弱加息预期！美股涨跌互现，AI算力、存储芯片爆发，CoreWeave与超微电脑涨近20%，布油逼近90美元 美国7月核心CPI同比上涨2.5%，为2021年3月以来低位。</b>
+            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 第一财经 · 68/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>沪深两市成交额连续第8个交易日突破2万亿元</b>
+            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 富途牛牛 · 62/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>联想集团Q1营收增43%，经调整净利润同比增176%</b>
+            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 华尔街见闻 · 62/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>上证指数早盘收报3963.15点，涨0.42%</b>
+            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 华尔街见闻 · 62/100</span></div>
         </div>
         
         
@@ -2627,7 +2627,7 @@ Hong Kong is in a Goldilocks spot — weak growth paired with very low inflation
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-08-12 23:48 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-08-13 06:30 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 
@@ -2809,7 +2809,7 @@ window.__CHART_SWAP__ = {
   });
 })();
 </script>
-<script src="theme.js?v=e07e6c36" defer></script>
+<script src="theme.js?v=2a51e41d" defer></script>
 <script src="china_risk_state_live.js?v=73275593" defer></script>
 <script defer src="illus.js?v=8e0a3779"></script>
 <script src="chart_i18n.js?v=23272c48" defer></script>

@@ -1,9 +1,9 @@
 {
   "adapters": {
     "earnings": {
-      "count": 2803,
+      "count": 2807,
       "dropped_from_source": 0,
-      "gap": "coverage: 716/1977 tickers carried reported surprises",
+      "gap": "coverage: 717/1978 tickers carried reported surprises",
       "retracted_by_authority": 0
     },
     "earnings_call": {
@@ -19,7 +19,7 @@
       "retracted_by_authority": 0
     },
     "prophet_ledger": {
-      "count": 17,
+      "count": 20,
       "dropped_from_source": 0,
       "gap": null,
       "retracted_by_authority": 0
@@ -31,7 +31,7 @@
       "retracted_by_authority": 0
     },
     "research_vault": {
-      "count": 937,
+      "count": 1030,
       "dropped_from_source": 0,
       "gap": null,
       "retracted_by_authority": 0
@@ -43,18 +43,18 @@
       "retracted_by_authority": 0
     }
   },
-  "as_of": "2026-08-11",
+  "as_of": "2026-08-13",
   "coverage": {
-    "end": "2026-08-10",
-    "note": "4951 events across 375 distinct date(s)",
+    "end": "2026-08-13",
+    "note": "5051 events across 379 distinct date(s)",
     "start": "2013-05-21"
   },
-  "elapsed_s": 2.028,
+  "elapsed_s": 3.118,
   "gap_notes": [
-    "earnings: coverage: 716/1977 tickers carried reported surprises",
+    "earnings: coverage: 717/1978 tickers carried reported surprises",
     "macro_release: 11/11 release event(s) joined to a scored actual print"
   ],
-  "inputs_hash": "sha256:5cdd240d31c247ba602a6da295fe8104d0c694302c343f4187c3abf0695403ee",
+  "inputs_hash": "sha256:97198e6169ef1439fe9b45458f1e8d1ba15244ece7a4a54392e758d63d2b1b80",
   "ledgers": {
     "earnings_calls": {
       "path": "data/chronicle/earnings_call_events.jsonl",
@@ -65,17 +65,17 @@
     "events": {
       "path": "data/chronicle/events.jsonl",
       "present": true,
-      "rows": 4951,
-      "sha256": "sha256:c4fa6ac7c74d0a0c22532836b7a75beace0807bff5f1c287ffb5593568c51e40"
+      "rows": 5051,
+      "sha256": "sha256:96d9e113f6d8d78e54408f1637a3800f6a6f615c8e792e7fbc4c75ffc18004ae"
     },
     "state_log": {
       "path": "data/chronicle/state_log.jsonl",
       "present": true,
-      "rows": 11,
-      "sha256": "sha256:c0f1a43c80cbb5ca4516662925e9add2e041f877778c81f2e3fd3d74ddd75e5e"
+      "rows": 12,
+      "sha256": "sha256:d7f1b8ffb0c2a7765af87499428cf5ff45d968284cb2665b0c743a755da5e870"
     }
   },
-  "produced_at": "2026-08-11T03:55:30Z",
+  "produced_at": "2026-08-13T05:14:16Z",
   "produced_by": "scripts/build_chronicle.py",
   "schema": "chronicle.manifest/v1",
   "schema_version": 1,
@@ -86,15 +86,15 @@
     },
     "data/chronicle/state_log.jsonl": {
       "present": true,
-      "sha256": "sha256:c0f1a43c80cbb5ca4516662925e9add2e041f877778c81f2e3fd3d74ddd75e5e"
+      "sha256": "sha256:d7f1b8ffb0c2a7765af87499428cf5ff45d968284cb2665b0c743a755da5e870"
     },
     "data/earnings/earnings.parquet": {
       "present": true,
-      "sha256": "sha256:c8c892b7fbe7fd87ed6da0b4043750690a426b7dd0ddb012c8dfec00582435fb"
+      "sha256": "sha256:90c1386a631d5ec5fc1b6165044e921daefc1b4dda287b71e163aa486b52fc9a"
     },
     "data/prophet/ledger.jsonl": {
       "present": true,
-      "sha256": "sha256:6b04c7413f74d45464b8dce6966e2184d9b240a2d05d22312adc184021cef718"
+      "sha256": "sha256:c9d1d8679167e2e45979e0d11614ed1f96e748158e1211c6f28c76de020d107b"
     },
     "data/prophet/ledger_corrections.jsonl": {
       "present": true,
@@ -106,15 +106,15 @@
     },
     "data/release_forecast/forward_ledger.jsonl": {
       "present": true,
-      "sha256": "sha256:b5e357334d32aaae94149b7c96da9c18b80fec84c81e7669fa86d923da06bdf6"
+      "sha256": "sha256:2ce753815fd3cff063d0ff6e14e250f6172ba6b217be0ec0cd63c6d8453d3ded"
     },
     "data/research_vault/catalog.json": {
       "present": true,
-      "sha256": "sha256:32dea709ff14a49027237bd6d1b17f4fb991d78c9fc3ef7e003f3fe5194e069f"
+      "sha256": "sha256:c04bee8495cd47f25a2dad9df380b659d6b2408ade7066230736574ffc9b0e4c"
     },
     "data/risk_radar/forward_log.jsonl": {
       "present": true,
-      "sha256": "sha256:e99b7e032255f3f35756cc3a22f26a64504e2004292962165af9f7f3c2bd0689"
+      "sha256": "sha256:71a7741fb09630df5f4252a298dd4be346eb5f47ac6c4505ca1e27ab6310d934"
     }
   },
   "tier": "display"

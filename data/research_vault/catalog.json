@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-13T03:26:12.806049+00:00",
-  "count": 1033,
+  "generated_at": "2026-08-13T07:11:14.744691+00:00",
+  "count": 1044,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -63,6 +63,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-yxniyrhtcac-f7186d",
+      "title": "Hon Hai (2317)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T01:24:16Z",
+      "summary_points": [
+        "**2026 Revenue Beat & Margins**: Hon Hai forecasts 2026 revenue growth across AI servers (GPU/ASIC), Consumer Electronics, PCs, and Components; 6.1% GM (vs.",
+        "consensus 5.7%/6.0%), 35% YoY NI to NT$60bn, Opex down to 2.4% driven by AI server ramp (double-digit QoQ) and EV Model B delivery by end-2026.",
+        "**AI Server & EV Growth Catalysts**: AI server rack shipments growing at high double-digit QoQ (2026) due to market share gains; EV business advancing with Model B (AUS/NZ delivery end-2026) and CAVIRA in Taiwan, supported by vertical integration and global production.",
+        "**Target Price Upside & Valuation**: Goldman Sachs target price NT$400 (193.50 NTS above current price), 18.9x 2027E P/E, reflecting bullish sentiment on AI server/EV outsourcing expansion despite stock trading below target.",
+        "**Key Downside Risks**: Slower AI server ramp, weaker EV solution performance, delayed global capacity expansion, and intensified competition in consumer electronics EMS."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-iiyfaodohcd-982745",
       "title": "AVC (3017)",
@@ -351,6 +372,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ai6opfy6d1l-be2ae3",
+      "title": "JPM CNY valuation",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-12T10:04:36Z",
+      "summary_points": [
+        "**CNY Undervaluation & Structural Distortion**: CNY undervalued 20-30% in REER due to PBOC interventions, creating severe bilateral exchange rate, trade flow, and inflation distortions despite minimal global stress; cyclically adjusted CAB (3.6% of GDP) significantly deviates from IMF norms.",
+        "**Policy Conflict: Fiscal vs FX Intervention**: Critical debate on whether fiscal policy (not FX intervention) drives external surplus; forcing CNY appreciation would worsen deflation and hurt growth, with exports remaining primary demand driver amid persistent export dependency.",
+        "**Global Imbalance Data & Risk Triggers**: Widening China/US current account imbalances (IMF 2026 ESR) reflect reporting gaps, not disruptive flows, but China’s CAB deviation and FX misalignment (-21.3%) create macro-financial risk exposure despite stable global conditions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xeez6ry3zzy-23c159",
       "title": "GS Shawn Tuteja framework and AI",
       "institution": "S&T",
@@ -535,6 +575,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-uzombec6qyb-f2d04b",
+      "title": "EM in Focus The IMF’s External Sector Report — Global Imbalances Continue to Rise",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:38:05Z",
+      "summary_points": [
+        "**Global Imbalances Widening**: IMF reports external imbalances at +3.7% of GDP (2024-2025), driven by China’s $300bn surplus (largest 25-year increase) and deficits in Turkey/Canada/UK; US deficit declined modestly.",
+        "**Mispricing Risk in Key Markets**: Goldman Sachs and IMF identify Mainland China, Korea, Taiwan, Singapore, Sweden, Netherlands, Germany, Japan as \"too positive\" (overvalued external balances), while US, UK, Turkey, Brazil are \"too negative\" (undervalued), signaling portfolio mispricing.",
+        "**Systemic Surplus Risks**: Persistent surpluses (China, DM creditors) depress global real rates, drive riskier asset allocation, and widen current account imbalances by ~0.5% of GDP medium-term, heightening systemic vulnerability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-l8t5s8tr0ns-3c1a76",
       "title": "Americas Transportation Railroads Weekly Rail Carload Snapshot — Week 31",
       "institution": "Goldman Sachs",
@@ -550,6 +609,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-aeiwrrkgwrv-92d5b6",
+      "title": "Vestis Corp. (VSTS) F3Q First Take Revenue shortfall mitigated by margin outperformance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:44Z",
+      "summary_points": [
+        "**Margin Expansion Beats Consensus**: EBITDA margins expanded 270 bps y/y to 12.2% (vs.",
+        "consensus 11.8%), driven by strategic transformation, offsetting 1.8% revenue decline; EPS beat consensus ($0.18 vs.",
+        "$0.10).",
+        "**Valuation Target Below Peer Median**: $8.20 target (12m) based on 6.5x NTM EBITDA, significantly below peer median (8.6x), reflecting lower revenue growth, EBITDA margins, and EPS growth metrics.",
+        "**Target Price Drop Signals Deteriorating Sentiment**: Goldman Sachs' target fell from $22.00 (Jan 2024) to $8.20 (current), trading below closing price ($14.52), indicating deteriorating analyst sentiment or fundamental concerns."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
@@ -592,6 +672,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dp3pxkxqncx-857bfe",
+      "title": "Traton (8TRA)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:30Z",
+      "summary_points": [
+        "**Traton Valuation Gap**: Undervalued with EV/sales 0.4x and P/E 14.2x (below sector median), PEG ratio in bottom quartile, indicating significant upside potential despite Neutral rating.",
+        "**Cash Flow & Balance Sheet Strength**: Robust FCF trajectory (Net income: €913.1m 12/25 → €2,561.8m 12/28E) and expanding assets (€68.2bn → €70.7bn), supporting operational resilience and growth capacity.",
+        "**Key Risk Triggers**: Downside exposure to order cancellations, FX volatility, and anti-trust charges; EBIT guidance revised down (-10% 2026E/27E) due to tariff receivable impacts.",
+        "**Regional Demand Divergence**: Positive US/Europe truck demand signals (inventory, tire estimates) vs.",
+        "declining China/Asia truck OEM sales, creating mixed near-term flow dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
@@ -679,6 +780,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-kfzqvpjuyjk-0ce92f",
+      "title": "United Kingdom Retail July BRC Non food sales 0.7 yoy with online +1.3 , in store 1.9",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:17Z",
+      "summary_points": [
+        "**UK Retail Sales**: July non-food sales fell 0.7% yoy (vs +1.2% June), driven by hot weather reducing footfall; online non-food grew 1.3% (35.9% penetration) with clothing/health & beauty leading, contrasting in-store decline of 1.9%.",
+        "**E-Commerce Saturation**: Online non-food growth decelerates as penetration approaches saturation (post-2022), signaling structural shift toward mature e-commerce adoption and potential margin pressure for retailers.",
+        "**Key Risks**: Declining non-food sales due to weather, slowing wage growth, and rising fixed costs (vs +0.8% Q2 forecast), with restaurants/recreation benefiting from HAC growth amid margin compression."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-e6iqxljorzl-d9490e",
       "title": "InterContinental Hotels Group (IHG.L) 1H26 Strong net system growth of 5",
       "institution": "Goldman Sachs",
@@ -700,6 +820,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ra06novmapi-cf7142",
+      "title": "Americas Investment Banks Investment Banking Monitor Announced July activity fell, as strategic large cap M&A and DCM moder...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:12Z",
+      "summary_points": [
+        "**ECM Surge Offsets M&A/DCM Weakness**: YTD banking volumes up 20% YoY (Exhibit 4), driven by 82% YoY ECM growth (Follow-ons +107%, IPOs +86%), offsetting M&A/DCM declines; large-cap/IG/China gains partially counter HY/loans/small-cap drops.",
+        "**Sector Divergence in M&A**: Telecom M&A up 213% YoY vs Industrials/Utilities down; Energy/Telecom lead volume gains (1912%/863% YoY), while Utilities/Financials decline (-74%/-33% YoY), signaling concentrated capital allocation risks.",
+        "**China vs Europe ECM Contrast**: China ECM volumes +348% YoY vs Europe -31% YoY, with China driving 80% YTD ECM growth; US/ROW down 23% YoY, highlighting geopolitical flow divergence.",
+        "**19% Global M&A Growth Forecast**: Proprietary model predicts 19% YoY M&A growth over 12 months (US 57% of volume, Euro 24%), despite July’s 9% YoY M&A volume drop and 16% YoY completed deal decline.",
+        "**Cross-Border M&A Shift**: Cross-border M&A up 7% YoY (35% of total), but US contribution to cross-border deals fell 25pp MoM to 17% (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 34,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-2d9rq0xceea-3b9054",
       "title": "Americas Investment Banks Structural M&A growth persists, but expenses continue to rise, with valuation upside less likely",
       "institution": "Goldman Sachs",
@@ -717,6 +858,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 40,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-oc8o0ibahzz-f1fc4a",
+      "title": "Agriculture Analyst Biofuels Primer Why Crop Prices Increasingly Follow Fuel",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T13:37:08Z",
+      "summary_points": [
+        "**Mandate-Driven Production Scale**: US/EU/Brazil dominate 80% of global biofuel production; rising mandates (e.g., US soybean oil biofuel share 40%→55% by 2026, Brazil ethanol 32%, Indonesia palm biodiesel 50%) directly drive crop price trends and tighten food-feed-fuel competition.",
+        "**Feedstock Competition & Supply Risk**: Biofuel demand diverts crops from food/feed (e.g., US soybean oil domestic biofuel use to 8m tonnes by 2026), intensifying supply chain risks as biodiesel (soybeans/palm/rapeseed) and ethanol (corn/sugarcane) compete for agricultural inputs.",
+        "**Policy-Driven Price Support Mechanisms**: Renewable Identification Numbers (RINs) create tradable credit systems to meet mandates; RIN price volatility surges with higher RVOs or feedstock shortages, sustaining biofuel production despite elevated costs and acting as a de facto subsidy.",
+        "**Blend Wall Constraints Limit Growth**: Technical (Brazil/Indonesia engine limits) and policy caps (US/EU) prevent biofuel demand expansion despite strong margins, capping growth potential even during oil price surges (e.g., 2026H1)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
@@ -794,6 +955,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9comppaylgy-58bc7a",
+      "title": "JPM US Market Intell 2026 08 10 CPI",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:57:58Z",
+      "summary_points": [
+        "**Core CPI Miss & SPX Impact**: June core CPI fell 0.02% m/m (vs 0.2% forecast), driving SPX gains; core MoM <0.15% implies 1%-2% SPX rise, while >0.30% triggers 1.5%-2.5% decline, with options pricing ~0.9% move.",
+        "**Geopolitical Inflation Risk**: Middle East instability remains critical for energy prices (gasoline near $4.0/gal), abating in July but vulnerable to shocks, directly impacting headline CPI and inflation expectations.",
+        "**China PPI as Leading Indicator**: China’s PPI (3-month low) precedes US CPI; bond markets sensitive to hawkish US inflation prints, linking global manufacturing trends to Fed policy assessment.",
+        "**Core Services vs Goods Volatility**: Core services (orange) outperforms core goods (blue) with lower volatility; core goods show sharp swings (e.g., -0.4% in 2024), heightening sensitivity to demand shocks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
@@ -882,6 +1063,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-2jpyimyszcp-f38495",
+      "title": "IntradayFXView",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:32:18Z",
+      "summary_points": [
+        "**US Data & Japan Policy Shifts**: US CPI (Wed) and PPI (Thu) to drive USD strength; BOJ minutes signal rate hikes amid lower-than-expected Japan trade balance (June), targeting USD/JPY resistance at 158.60.",
+        "**UK Catalyst**: British GDP (Thu) +0.4% QoQ, +1.1% YoY, critical for EUR/GBP positioning.",
+        "**AUD Catalyst**: RBA holds rates at 4.35% (tomorrow), AUD/USD support at 0.7053 amid key commodity flows.",
+        "**Technical Levels**: EUR/USD support at 1.1500, resistance at 1.1581; USD/JPY resistance at 158.60 post-BOJ policy shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ijm734vtw5s-6419c3",
       "title": "DI August 2026",
       "institution": "RiskHedge",
@@ -941,6 +1142,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pntpdj90p7v-47da48",
+      "title": "Mizuho EMEA Multi Asset Strategy Daily",
+      "institution": "Mizuho",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T07:43:33Z",
+      "summary_points": [
+        "**USD: Oil, Fed, Geopolitics Pressuring USTs**: Oil supply shocks (Brent near $88), hawkish Fed (Hammack’s \"some number\" rate hikes), and Middle East tensions (Trump-Iran standoff) driving UST pressure; 10Y yields testing 4.70% amid $58bn 3Y auction.",
+        "**Key Data & Risk**: US CPI this week pivotal; soft CPI may offset energy/supply pressure but September escalation risk (Hormuz reopening) looms, with 10Y USTs under immediate pressure.",
+        "**Bunds: ECB Policy Constraints**: 10Y yields near cycle peak (3.18% vs.",
+        "218%); ECB 3% hike requires sustained inflation (1yly OIS near 2.80% raises repricing bar).",
+        "**GBP: Term Premium & Spread Pressure**: 10Y Gilt yields at 4.98% with 10Y Gilt-Bund spread at 180bp; UK inflation/fiscal risks sustain term premium, BoE unlikely to ease rate hike expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },

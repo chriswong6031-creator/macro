@@ -9,7 +9,7 @@
 <title>Divergence Radar — real activity vs price</title>
 {% set seo_title = "Divergence Radar — Mastermind" %}{% set seo_desc = "Real activity vs price — where fundamentals and the tape disagree across US markets. Updated nightly." %}{% set seo_path = "radar.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -41,7 +41,7 @@
   </div>
   <noscript>
     <div style="max-width:1180px;margin:0 auto;padding:26px 16px;color:var(--muted)">
-      <h1 style="color:var(--text);font-size:24px">🛰️ {{ t('Divergence Radar', '背离雷达') }}</h1>
+      <h1 style="color:var(--text);font-size:24px">{{ t('Divergence Radar', '背离雷达') }}</h1>
       <p style="max-width:760px;line-height:1.6">{{ t(
         'Where independent real activity — federal contracts, congress, lobbying, patents and modeled news flow — runs ahead of or behind price. This page needs JavaScript to show the live read. Context only, never a trade signal.',
         '独立的真实活动 —— 联邦合同、国会、游说、专利与建模新闻流 —— 领先或落后于价格之处。本页需要 JavaScript 才能显示实时解读。仅供参考，绝非交易信号。') }}</p>

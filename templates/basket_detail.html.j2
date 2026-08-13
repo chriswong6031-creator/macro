@@ -8,7 +8,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ basket_name }} — Theme detail</title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -19,23 +19,23 @@
   h2 { font-size:15px; margin:26px 0 6px; display:flex; align-items:center; gap:8px; }
   h2 .idx { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
   .muted { color:var(--muted); } .sm { font-size:12px; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
+  .pos { color:var(--ink-up, var(--up)); } .neg { color:var(--ink-down, var(--down)); }
   .back { font-size:12.5px; color:var(--muted); }
-  .back:hover { color:var(--link); }
+  .back:hover { color:var(--ink-link, var(--link)); }
   .chip { display:inline-block; font-size:11px; padding:1px 8px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
   /* standout-board cross-reference: ★ marks a member currently on the US standout buy board */
-  .sb-star { color:var(--warn); text-decoration:none; font-size:12px; }
+  .sb-star { color:var(--ink-warn, var(--warn)); text-decoration:none; font-size:12px; }
   .sb-star:hover { filter:brightness(1.15); }
-  .chip.sb-chip { color:var(--warn); border-color:color-mix(in srgb, var(--warn) 38%, var(--line)); background:color-mix(in srgb, var(--warn) 12%, var(--panel2)); }
+  .chip.sb-chip { color:var(--ink-warn, var(--warn)); border-color:color-mix(in srgb, var(--warn) 38%, var(--line)); background:color-mix(in srgb, var(--warn) 12%, var(--panel2)); }
   /* W4 stock-personality slim chips in holdings table (display-only, R-SP13) */
   .sp-td-chip,.sp-td-mode{display:inline-block;font-size:9.5px;font-weight:600;padding:0px 5px;border-radius:5px;cursor:help;white-space:nowrap}
   .sp-td-chip{background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
-  .sp-td-mode{background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--info,var(--link));border:1px solid color-mix(in srgb,var(--info,var(--link)) 28%,transparent)}
+  .sp-td-mode{background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--ink-info, var(--info,var(--link)));border:1px solid color-mix(in srgb,var(--info,var(--link)) 28%,transparent)}
   /* within-theme member context chip (basket_member_context.py band — display-only cohort read) */
   .mc-chip{display:inline-block;font-size:9.5px;font-weight:600;padding:0px 5px;border-radius:5px;white-space:nowrap;cursor:help}
-  .mc-chip.pos{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
-  .mc-chip.warn{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
-  .mc-chip.neg{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 28%,transparent)}
+  .mc-chip.pos{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--ink-up, var(--up));border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
+  .mc-chip.warn{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--ink-warn, var(--warn));border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  .mc-chip.neg{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--ink-down, var(--down));border:1px solid color-mix(in srgb,var(--down) 28%,transparent)}
   .mc-chip.neu{background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:10px; }
   .hero { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
@@ -67,13 +67,16 @@
   th:first-child,td:first-child { text-align:left; }
   td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
   .ts { overflow-x:auto; }
-  .tk { font-weight:680; } .tk:hover { color:var(--link); }
+  .tk { font-weight:680; } .tk:hover { color:var(--ink-link, var(--link)); }
   .cv { font-weight:700; border-radius:6px; padding:1px 7px; font-size:12px; }
   /* confluence cascade tier badge (T1 master -> T4 earliest), ported from subsectors_china */
   .tier { display:inline-block; font-weight:800; font-size:10px; padding:1px 5px; border-radius:5px; letter-spacing:.02em; color:#fff; vertical-align:middle; }
-  .tier.T1 { background:var(--up); } .tier.T2 { background:#3da564; }
-  .tier.T3 { background:var(--info); } .tier.T4 { background:#6b7cc4; }
-  html[data-lang="zh"] .tier.T2 { background:#d04545; }
+  /* White text on the fill, so the FILL carries the text grade — the --ink-* rung
+     is identity in dark and lands 5.3–6.5:1 in light (see subsectors). */
+  .tier.T1 { background:var(--fill-up, var(--up)); }
+  .tier.T2 { background:color-mix(in srgb, var(--fill-up, var(--up)) 84%, #000); }
+  .tier.T3 { background:var(--fill-info, var(--info)); } .tier.T4 { background:#3c4a8c; }
+  html[data-lang="zh"] .tier.T2 { background:color-mix(in srgb, var(--fill-up, var(--up)) 84%, #000); }
   .tier .prov { font-weight:700; opacity:.8; margin-left:1px; }
   .why { color:var(--muted); font-size:11.5px; white-space:normal; max-width:42ch; }
   #hold { table-layout:fixed; }
@@ -87,12 +90,12 @@
   .v-short { display:none; font-weight:700; }
   .act-table .act-entry { white-space:normal; max-width:24ch; }
   .fast-watch { margin-top:12px; padding-top:11px; border-top:1px solid var(--line); }
-  .fast-watch-title { color:var(--warn); font-weight:720; margin-bottom:2px; }
+  .fast-watch-title { color:var(--ink-warn, var(--warn)); font-weight:720; margin-bottom:2px; }
   .watch-table .watch-blocker { white-space:normal; min-width:230px; }
   .timeline .ev { display:flex; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:12.5px; }
   .timeline .ev:first-child { border-top:0; }
   .timeline .dt { color:var(--muted); width:84px; flex:0 0 84px; font-variant-numeric:tabular-nums; }
-  .sev-high { color:var(--down); } .sev-medium { color:var(--warn); }
+  .sev-high { color:var(--ink-down, var(--down)); } .sev-medium { color:var(--ink-warn, var(--warn)); }
   footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
   .disc { font-size:11.5px; color:var(--muted); margin-top:6px; max-width:90ch; }
   /* ---- cross-market narrative chip ---- */
@@ -105,16 +108,16 @@
   .xm-flag { font-size:14px; line-height:1; }
   .xm-nm { font-weight:600; max-width:24ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .xm-sc { font-weight:740; font-variant-numeric:tabular-nums; }
-  .xm-ar.pos { color:var(--up); } .xm-ar.neg { color:var(--down); } .xm-ar.muted { color:var(--muted); }
+  .xm-ar.pos { color:var(--ink-up, var(--up)); } .xm-ar.neg { color:var(--ink-down, var(--down)); } .xm-ar.muted { color:var(--muted); }
   /* ── FTR W3: live strip in basket detail header ─────────────────────── */
   .ftr-live-strip { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 12px;
     background:var(--panel2); border:1px solid var(--line); border-radius:9px; margin-top:8px; font-size:12.5px; }
   .ftr-ls-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:2px 8px; border-radius:12px; }
-  .ftr-ls-pill.live { background:rgba(35,192,138,.14); border:1px solid rgba(35,192,138,.35); color:var(--up); }
-  .ftr-ls-pill.pre  { background:rgba(79,140,255,.12); border:1px solid rgba(79,140,255,.30); color:var(--link); }
+  .ftr-ls-pill.live { background:rgba(35,192,138,.14); border:1px solid rgba(35,192,138,.35); color:var(--ink-up, var(--up)); }
+  .ftr-ls-pill.pre  { background:rgba(79,140,255,.12); border:1px solid rgba(79,140,255,.30); color:var(--ink-link, var(--link)); }
   .ftr-ls-pill.post,.ftr-ls-pill.closed { background:rgba(139,147,167,.08); border:1px solid var(--line); color:var(--muted); }
   .ftr-ls-chg { font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; }
-  .ftr-ls-chg.up { color:var(--up); } .ftr-ls-chg.dn { color:var(--down); }
+  .ftr-ls-chg.up { color:var(--ink-up, var(--up)); } .ftr-ls-chg.dn { color:var(--ink-down, var(--down)); }
   .ftr-ls-rank { font-size:12px; color:var(--muted); }
   /* ── FTR W8: anatomy panel ────────────────────────────────────────────── */
   .ftr-anatomy-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:8px; }
@@ -131,19 +134,19 @@
   .ftr-leg-fill { position:absolute; top:0; bottom:0; border-radius:3px; }
   .ftr-leg-fill.pos { left:50%; background:var(--up); }
   .ftr-leg-fill.neg { right:50%; background:var(--down); }
-  .ftr-leg-fill.crowd { left:50%; background:var(--amber,#fb923c); }
+  .ftr-leg-fill.crowd { left:50%; background:var(--ink-warn, var(--amber,#fb923c)); }
   .ftr-leg-val { font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; text-align:right; }
   .ftr-leg-src { font-size:10.5px; color:var(--muted); text-align:right; }
   .ftr-anatomy-ft { padding:9px 16px; border-top:1px solid var(--line); background:rgba(251,146,60,.03);
     display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .ftr-crowd-note { background:rgba(251,146,60,.10); border:1px solid rgba(251,146,60,.30); color:var(--amber,#fb923c); padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700; }
+  .ftr-crowd-note { background:rgba(251,146,60,.10); border:1px solid rgba(251,146,60,.30); color:var(--ink-warn, var(--amber,#fb923c)); padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700; }
   /* ---- sector-cycle mini-chart ---- */
   .cyc-readrow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:9px; }
   .cyc-pchip { font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:7px; }
   .cyc-rk { font-size:11.5px; color:var(--muted); border:1px solid var(--line); border-radius:7px; padding:2px 8px; }
   .cyc-rk b { color:var(--text); font-variant-numeric:tabular-nums; }
-  .cyc-rk.pos { color:var(--up); border-color:color-mix(in srgb, var(--up) 38%, var(--line)); }
-  .cyc-rk.neg { color:var(--down); border-color:color-mix(in srgb, var(--down) 38%, var(--line)); }
+  .cyc-rk.pos { color:var(--ink-up, var(--up)); border-color:color-mix(in srgb, var(--up) 38%, var(--line)); }
+  .cyc-rk.neg { color:var(--ink-down, var(--down)); border-color:color-mix(in srgb, var(--down) 38%, var(--line)); }
   /* ── GR1 · Group read band (group_pulse.v1 + group_earnings_pulse.v1) ──────────
      A context-only read plane: how much of the group is moving, whether it moves
      one way, where it sits on its arc, and what earnings are doing to it.
@@ -297,7 +300,7 @@ fetch('../live/shock_state.json',{cache:'no-cache'})
     var msg=isZh()?
       ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。冲击期的剧烈反转多难持续：历史26次中约六成在一天内消退。'):
       ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Sharp reversals during shocks usually don&#39;t hold: in 26 past cases about 6 in 10 faded within a day.');
-    el.innerHTML='<div style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--warn);border-radius:9px;padding:9px 14px;margin:8px 0;font-size:13px">'+msg+'</div>';
+    el.innerHTML='<div style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--ink-warn, var(--warn));border-radius:9px;padding:9px 14px;margin:8px 0;font-size:13px">'+msg+'</div>';
   }).catch(function(){/* absent file → no banner */});
 // Policy-lever chip
 fetch('../policy_lever.json',{cache:'no-cache'})
@@ -419,7 +422,7 @@ function cycleSectionHtml(cyc,bid){
       ${nw.rs_rank?`<span class="cyc-rk">RS #${nw.rs_rank}</span>`:''}
       ${nw.above200d!=null?`<span class="cyc-rk ${nw.above200d?'pos':'neg'}">${nw.above200d?L('above 200d','200日上'):L('below 200d','200日下')}</span>`:''}
     </div>`;
-  const fullLink=cyc.full_href?` <a href="${esc(cyc.full_href)}" style="color:var(--link)">${L('Open the full cycle dashboard →','打开完整周期看板 →')}</a>`:'';
+  const fullLink=cyc.full_href?` <a href="${esc(cyc.full_href)}" style="color:var(--ink-link, var(--link))">${L('Open the full cycle dashboard →','打开完整周期看板 →')}</a>`:'';
   return `<h2><span class="idx">◷</span>${L('Theme cycle','主题周期')} <span class="chip">${L('rebased price · auto-detected turns','再基准化价格 · 自动识别拐点')}</span></h2>
     <div class="panel">
       <div class="muted sm" style="margin-bottom:8px">${L("Equal-weight price on the cycle clock: past turns, current position, and projected next turn. Rhythm only.","等权价格的周期时钟：历史拐点、当前位置与下一拐点投影。仅看节奏。")}</div>
@@ -958,7 +961,7 @@ function grBand(bid){
 
 function grEpisodesSection(bid){
   var rows=(GRH&&GRH[bid])||null, p=GRP&&GRP[bid];
-  var h=`<h2><span class="idx">↺</span>${L('Has this happened before','以前发生过吗')} <span class="chip">${L('closed group episodes','已结束的整体行情')}</span></h2>`;
+  var h=`<h2>${L('Has this happened before','以前发生过吗')} <span class="chip">${L('closed group episodes','已结束的整体行情')}</span></h2>`;
   if(!rows||!rows.length){
     var since=p&&p.as_of?esc(p.as_of):null;
     return h+`<div class="panel"><div class="muted sm">${rows?
@@ -1112,7 +1115,7 @@ function render(){
 
   // ---- WHAT TO ACT ON NOW (stock level, gated by theme health) ----
   const an=d.act_now||{};
-  h+=`<h2><span class="idx">★</span>${L('What to act on now','现在该做什么')} <span class="chip">${L('gated by theme health','按主题健康度筛选')}</span></h2><div class="panel">`;
+  h+=`<h2>${L('What to act on now','现在该做什么')} <span class="chip">${L('gated by theme health','按主题健康度筛选')}</span></h2><div class="panel">`;
   if(an.status==='ok' && (an.buys||[]).length){
     h+=`<div class="muted sm" style="margin-bottom:8px">${L('Member stocks with a clean entry right now — buy/add verdict, cycle not blocking, decent entry price. Ranked by entry quality.','当前具备干净入场点的成分股 — 买入/加仓结论、周期未阻断、入场价尚可。按入场质量排序。')}</div>
     <div class="ts"><table class="act-table"><thead><tr><th class="act-name">${L('Stock','个股')}</th><th class="num act-conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num act-entry">${L('Entry','入场')}</th><th class="num act-5d">5d</th><th class="num act-20d">20d</th></tr></thead><tbody>`+
@@ -1410,9 +1413,9 @@ function anatomyPanelHtml(th){
   var macroAbsent = comp.macro==null||comp.macro===0;
   var why='';
   if(posEn.length) why+=L('<strong>'+posEn.join(' + ')+'</strong> fired. ','<strong>'+posZh.join(' + ')+'</strong>发力。');
-  if(negEn.length) why+=L('<span style="color:var(--down)">'+negEn.join(' + ')+'</span> dragging. ','<span style="color:var(--down)">'+negZh.join(' + ')+'</span>拖累。');
+  if(negEn.length) why+=L('<span style="color:var(--ink-down, var(--down))">'+negEn.join(' + ')+'</span> dragging. ','<span style="color:var(--ink-down, var(--down))">'+negZh.join(' + ')+'</span>拖累。');
   if(macroAbsent) why+=L('Macro leg absent — score renormalises over available legs. ','宏观缺失 — 评分在现有腿上重新归一化。');
-  if(crowdPenActive) why+=L('<span style="color:var(--amber,#fb923c)">Crowding penalty active (rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+')</span>. ','<span style="color:var(--amber,#fb923c)">拥挤惩罚生效（rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+'）</span>。');
+  if(crowdPenActive) why+=L('<span style="color:var(--ink-warn, var(--amber,#fb923c))">Crowding penalty active (rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+')</span>. ','<span style="color:var(--ink-warn, var(--amber,#fb923c))">拥挤惩罚生效（rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+'）</span>。');
 
   var html='<div class="ftr-anatomy-card">'
     +'<div class="ftr-anatomy-hd">'
@@ -1437,11 +1440,11 @@ function anatomyPanelHtml(th){
     // Bar fill: center=0, pos goes right, neg goes left; crowding amber
     var barFillPct = absent?0:Math.min(50,Math.abs(v)*35);
     var barClass = isCrowd?'crowd':(v>=0?'pos':'neg');
-    var valColor = absent?'var(--muted)':isCrowd?'var(--amber,#fb923c)':(v>=0?'var(--up)':'var(--down)');
+    var valColor = absent?'var(--muted)':isCrowd?'var(--ink-warn, var(--amber,#fb923c))':(v>=0?'var(--up)':'var(--down)');
     var crowdStyle = isCrowd?'background:rgba(251,146,60,.04);border-radius:6px;padding:4px 0;':'';
     html+='<div class="ftr-leg-row" style="'+crowdStyle+'">'
-      +'<div><div class="ftr-leg-lbl"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>'+L(ll[0],ll[1])+'</div>'
-      +'<div class="ftr-leg-wt"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
+      +'<div><div class="ftr-leg-lbl"'+(isCrowd?' style="color:var(--ink-warn, var(--amber,#fb923c))"':'')+'>'+L(ll[0],ll[1])+'</div>'
+      +'<div class="ftr-leg-wt"'+(isCrowd?' style="color:var(--ink-warn, var(--amber,#fb923c))"':'')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
       +'<div class="ftr-leg-bar"><div class="ftr-leg-bar-ctr"></div>'
       +(absent?'':'<div class="ftr-leg-fill '+barClass+'" style="width:'+barFillPct.toFixed(1)+'%"></div>')
       +'</div>'
@@ -1472,7 +1475,7 @@ function stalenessBannerHtml(detailAsOf){
   return '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;'
     +'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.35);margin-bottom:10px">'
     +'<span style="font-size:18px">⏳</span>'
-    +'<div><div style="font-weight:680;color:var(--warn)">'
+    +'<div><div style="font-weight:680;color:var(--ink-warn, var(--warn))">'
     +L('Data as of '+esc(detailAsOf)+' close — today\'s session not yet ingested (nightly pending)',
        '数据截至 '+esc(detailAsOf)+' 收盘 — 今日行情尚未录入（等待夜间更新）')
     +'</div></div></div>';
@@ -1556,7 +1559,7 @@ function liveStripHtml(pb, tw, totalBaskets, pulseMode){
     var twTipEn='Fast-turn context: '+(isIgn?'strong sign':'early sign')+'. In 26 past cases, about 6 in 10 sharp one-day flips faded within a day. Slow ratings are unchanged; context only, not a buy signal.'+cfTip;
     var twTipZh='快速拐点参考：'+(isIgn?'较强迹象':'初步迹象')+'。历史26次剧烈单日反转中，约六成在一天内消退。慢速评级不变；仅供参考，不是买入信号。'+cfTipZh;
     html+='<span data-tip-en="'+esc(twTipEn)+'" data-tip-zh="'+esc(twTipZh)+'" style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;'
-      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--orange,#f97316)':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--warn)')+'">&#9889;'+L(isIgn?'STRONG SIGN':'EARLY SIGN',isIgn?'较强迹象':'初步迹象')+'</span>';
+      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--ink-orange, var(--orange,#f97316))':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--ink-warn, var(--warn))')+'">&#9889;'+L(isIgn?'STRONG SIGN':'EARLY SIGN',isIgn?'较强迹象':'初步迹象')+'</span>';
   }
   html+='<span style="font-size:10.5px;color:var(--muted);margin-left:auto">'+L('15-min delayed','15分钟延迟')+'</span>';
   html+='</div>';
