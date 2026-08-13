@@ -176,27 +176,32 @@ def main():
             pg.close()
 
         # ══ PRC-306 — full-book reachability by progressive expansion ══════
+        # The grid renders EVERY row and hides the overflow, so counting .pvcard
+        # nodes would count hidden cards and make this pass vacuously. Count only
+        # cards that are actually laid out.
+        VIS = ("[...document.querySelectorAll('.pvcard')]"
+               ".filter(c => c.offsetParent !== null).length")
         pg = page_at("theme=dark&lang=en&state=paid")
         exp = pg.evaluate("""() => {
           const bar=document.querySelector('.sm-bar');
-          const before=document.querySelectorAll('.pvcard').length;
-          return {has:!!bar, before,
-                  more: !!document.querySelector('.sm-bar .sm-btn:not(.sm-ghost)'),
+          const vis=[...document.querySelectorAll('.pvcard')].filter(c=>c.offsetParent!==null).length;
+          return {has:!!bar, visible:vis, inDom:document.querySelectorAll('.pvcard').length,
+                  more: !!document.querySelector('.sm-bar .sm-btn[data-sm="more"]'),
                   all: !!document.querySelector('.sm-bar .sm-btn.sm-ghost'),
                   live: window.BOARD.live_total};
         }""")
         ok("R4 expand-more — a progressive expansion bar exists with a Show-more control",
            exp["has"] and exp["more"], f"bar={exp['has']} more={exp['more']}")
-        ok("R4a expand-initial-cap — the initial viewport is still the 40-card density budget",
-           exp["before"] <= 41, f"{exp['before']} cards initially")
+        ok("R4a expand-initial-cap — the initial VISIBLE viewport is still the 40-card budget",
+           exp["visible"] <= 41, f"{exp['visible']} visible of {exp['inDom']} in DOM")
         if exp["all"]:
             pg.click(".sm-bar .sm-btn.sm-ghost")
-            pg.wait_for_timeout(350)
-            after = pg.evaluate("() => document.querySelectorAll('.pvcard').length")
-            ok("R4b expand-all — Show-all reaches every row of the live partition as a CARD",
-               after >= exp["live"], f"{after} cards vs live_total {exp['live']}")
+            pg.wait_for_timeout(400)
+            after = pg.evaluate(f"() => {VIS}")
+            ok("R4b expand-all — Show-all reveals every row of the live partition as a VISIBLE card",
+               after >= exp["live"], f"{after} visible after expand vs live_total {exp['live']}")
         else:
-            ok("R4b expand-all — Show-all reaches every row of the live partition as a CARD",
+            ok("R4b expand-all — Show-all reveals every row of the live partition as a VISIBLE card",
                False, "no .sm-btn.sm-ghost control found")
         pg.close()
 
@@ -208,8 +213,9 @@ def main():
             if gh:
                 gh.click()
                 pg.wait_for_timeout(350)
-            r = pg.evaluate("""(c) => ({shown: document.querySelectorAll('.pvcard').length,
-                                        want: window.BOARD.counts[c]||0})""", cell)
+            r = pg.evaluate("""(c) => ({
+                shown: [...document.querySelectorAll('.pvcard')].filter(e=>e.offsetParent!==null).length,
+                want: window.BOARD.counts[c]||0})""", cell)
             if r["shown"] < r["want"]:
                 unreachable.append(f"{cell} {r['shown']}/{r['want']}")
             pg.close()
@@ -218,14 +224,24 @@ def main():
 
         # ══ VTC-301 / PRC-309 — mixed-grid geometry + printed null ═════════
         pg = page_at("theme=dark&lang=en&state=paid")
+        # Only VISIBLE cards: the grid renders the whole partition and hides the
+        # overflow, and a display:none card reports a zero-height box that would
+        # corrupt both the max and the spread.
         geo = pg.evaluate("""() => {
-          const ch=[...document.querySelectorAll('.pvcard .pv-chart svg')].map(e=>e.getBoundingClientRect().height);
-          const nc=[...document.querySelectorAll('.pvcard .pv-nochart')].map(e=>e.getBoundingClientRect().height);
-          const lab=document.querySelectorAll('.pvcard .pv-nochart .pv-nochart-l').length;
-          const heights=[...document.querySelectorAll('.pvcard')].map(c=>c.getBoundingClientRect().height);
+          const vis = e => e.offsetParent !== null;
+          const cards=[...document.querySelectorAll('.pvcard')].filter(vis);
+          const ch=cards.flatMap(c=>[...c.querySelectorAll('.pv-chart svg')])
+                        .map(e=>e.getBoundingClientRect().height);
+          const ncEls=cards.flatMap(c=>[...c.querySelectorAll('.pv-nochart')]);
+          const nc=ncEls.map(e=>e.getBoundingClientRect().height);
+          const lab=ncEls.filter(e=>e.querySelector('.pv-nochart-l')).length;
+          // compare like with like: full-form cards only, since the compact form
+          // is DELIBERATELY shorter (VTC-308) and would read as a false spread
+          const heights=cards.filter(c=>!c.classList.contains('pvcard--compact'))
+                             .map(c=>c.getBoundingClientRect().height);
           return {chart: ch.length?Math.round(Math.max(...ch)):0,
                   nochart: nc.length?Math.round(Math.max(...nc)):0,
-                  nNoChart: nc.length, labelled: lab,
+                  nNoChart: ncEls.length, labelled: lab,
                   spread: heights.length?Math.round(Math.max(...heights)-Math.min(...heights)):0};
         }""")
         ok("R5 nochart-geometry — the chartless hero matches the chart height at desktop",

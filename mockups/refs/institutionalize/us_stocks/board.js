@@ -998,19 +998,98 @@
     return h;
   }
 
-  /* ═══════════════ 5 / 6 ═══════════════════════════════════════════════ */
-  function context() {
-    var tabs = [["Breadth", "市场宽度"], ["Indexes & mega-caps", "指数与大型股"],
-                ["Flow", "资金流"], ["Rates", "利率"], ["Regime", "市场状态"]];
-    var h = '<div class="mx-sec-hd"><h2 class="mx-sec-h2">' + t("Market context", "市场环境") + "</h2>" +
-            '<span class="mx-sec-total">' + t("the weather, not the trade", "环境参考，非交易信号") + "</span></div>";
-    h += '<div class="tabset">';
-    tabs.forEach(function (c) { h += '<a href="#ctx">' + t(c[0], c[1]) + "</a>"; });
-    h += "</div>";
-    return h;
-  }
+  /* ═══════════════ 5. EVIDENCE ═════════════════════════════════════════
+     VTC-307: the page used to end on two consecutive sections of pure
+     navigation furniture — "Market context · the weather, not the trade" over
+     five contentless pills, then four bare links with no number anywhere, as
+     the last things on a 2782px page. Deleting the producer-less regime chips
+     was right (R2's PRC-207); keeping their SECTION HEADER and turning the
+     chips into links was the defect. The Market context shell is removed
+     outright: there is no producer to bind it to, and a header retained over
+     deleted content reads as unfinished rather than as restraint.
+
+     PRC-307: the record comes back with NUMBERS, from its real producer —
+     engine/track_scoring.summarize() (track_scoring.py:330-392) ->
+     emit_ledger() (scripts/grade_us_board.py:2625) ->
+     site/factordata/us_track_ledger.json — vendored into the fixture by
+     tools/gen_fixture.py, so a rebake keeps it honest and nothing here is
+     typed by hand.
+
+     EPISTEMICS: the interval is printed BESIDE the rate, never under it. 58.6%
+     with a 50.4-64.4 interval straddles a coin flip on 18 boards over about
+     five weeks; a bare win rate here would be exactly the overclaim this review
+     cycle exists to catch. The maturity split (how many of the graded rows are
+     actually closed) and the window are glance-tier facts, not footnotes. */
   function evidence() {
-    var h = '<div class="mx-sec-hd"><h2 class="mx-sec-h2">' + t("Evidence &amp; record", "证据与战绩") + "</h2></div>";
+    var K = B.track;
+    var h = '<div class="mx-sec-hd"><h2 class="mx-sec-h2">' + t("Evidence &amp; record", "证据与战绩") + "</h2>";
+    if (K) {
+      h += '<span class="mx-sec-total">' + t(
+        "graded on closed plans &middot; as of " + esc(K.as_of),
+        "以已平仓计划评分 &middot; 数据日期 " + esc(K.as_of)) + "</span>";
+    }
+    h += "</div>";
+
+    if (!K) {
+      h += '<div class="mx-empty"><b>' + t("No graded record published", "暂无评分战绩") + "</b>" +
+        '<div class="mx-empty-why">' + t(
+          "The track ledger has not published. Nothing is asserted in its place.",
+          "战绩台账尚未发布。此处不作任何替代性判断。") + "</div></div>";
+      return h;
+    }
+
+    var sign = K.expectancy_pct > 0 ? "+" : "";
+    /* production's shipped strip copy, _track_record_dlg.html.j2:424 */
+    h += '<div class="trd-wrap"><span class="trd-btn">';
+    h += '<span class="trd-lead">' + t("Track record", "往绩") + "</span>";
+    h += '<span class="trd-sep">&middot;</span>';
+    h += '<span class="trd-stat">' + t(
+      "<b>" + K.win_pct + "% win</b>", "<b>胜率 " + K.win_pct + "%</b>") + "</span>";
+    h += '<span class="trd-sep">&middot;</span>';
+    h += '<span class="trd-stat">' + t(
+      "<b>" + sign + K.expectancy_pct + "%</b> a trade",
+      "每笔 <b>" + sign + K.expectancy_pct + "%</b>") + "</span>";
+    h += "</span></div>";
+
+    var cells = [
+      [t("Win rate", "胜率"), K.win_pct + "%",
+       t("95% CI " + K.ci_lo_pct + "&ndash;" + K.ci_hi_pct,
+         "95% 置信区间 " + K.ci_lo_pct + "&ndash;" + K.ci_hi_pct)],
+      [t("Per trade", "每笔盈亏"), sign + K.expectancy_pct + "%",
+       t("95% CI " + K.exp_lo_pct + "&ndash;" + (K.exp_hi_pct > 0 ? "+" : "") + K.exp_hi_pct,
+         "95% 置信区间 " + K.exp_lo_pct + "&ndash;" + (K.exp_hi_pct > 0 ? "+" : "") + K.exp_hi_pct)],
+      [t("Median trade", "中位数"), (K.median_pct > 0 ? "+" : "") + K.median_pct + "%",
+       t("half land above this", "一半的交易好于此值")],
+      [t("Profit factor", "盈亏比"), String(K.profit_factor),
+       t("gains over losses", "总盈利 / 总亏损")],
+      [t("Graded", "已评分"), K.n_matured + " / " + K.n_total,
+       t(K.n_inflight + " still open", "另有 " + K.n_inflight + " 笔未了结")],
+      [t("Median hold", "持有天数"), K.median_hold,
+       t(K.horizon + "-session verdict", "满 " + K.horizon + " 个交易日强制结算")]
+    ];
+    h += '<div class="trk-grid">';
+    cells.forEach(function (c) {
+      h += '<div class="trk-i"><span class="trk-l">' + c[0] + "</span>" +
+           '<span class="trk-v fig">' + c[1] + "</span>" +
+           '<span class="trk-ci fig">' + c[2] + "</span></div>";
+    });
+    h += "</div>";
+
+    /* the honest read of the interval, in plain words — not a footnote */
+    h += '<p class="trk-note">' + t(
+      "Read it as an early record, not a settled edge: the win-rate interval " +
+      "(<b>" + K.ci_lo_pct + "&ndash;" + K.ci_hi_pct + "</b>) still spans a coin flip, and it is built from " +
+      "<b>" + K.n_boards + "</b> boards since " + esc(K.first_board) + ". Every plan is scored against " +
+      t_bench(K) + " on the same rule for every name.",
+      "请把它当作一份仍在积累的早期记录，而不是已经确定的优势：胜率区间（<b>" + K.ci_lo_pct + "&ndash;" + K.ci_hi_pct +
+      "</b>）仍跨过 50% 一线，样本为 " + esc(K.first_board) + " 以来的 <b>" + K.n_boards + "</b> 期看板。" +
+      "所有计划都以同一规则对照" + t_bench_zh(K) + "评分。") + "</p>";
+    h += '<p class="trk-note">' + t(
+      "<b>" + K.n_skipped_no_price + "</b> of " + K.n_total + " rows had no usable price and are left out of the scoring; " +
+      "rows that have not been graded stay published rather than being dropped from the count.",
+      "共 " + K.n_total + " 条中有 <b>" + K.n_skipped_no_price + "</b> 条因缺少可用价格未纳入评分；" +
+      "尚未评分的条目照常发布，不会从计数中剔除。") + "</p>";
+
     h += '<div class="ev-links">';
     [["Track record", "历史战绩"], ["How Prophet works", "Prophet 运作方式"],
      ["Calibration lab", "校准实验室"], ["Closed plans archive", "已结计划存档"]]
@@ -1018,6 +1097,8 @@
     h += "</div>";
     return h;
   }
+  function t_bench(K) { return esc(K.bench_en || K.bench || "the benchmark"); }
+  function t_bench_zh(K) { return esc(K.bench_zh || K.bench || "基准"); }
 
   /* ═══════════════ header ══════════════════════════════════════════════ */
   function header() {
@@ -1030,10 +1111,33 @@
     /* exactly ONE as-of pair for the page — the ladder adds no second stamp */
     h += '<div class="bh-stamp">';
     h += '<span class="pbs">&#9680; ' + t("Tonight&rsquo;s book", "今晚的计划簿") + "</span>";
-    h += '<span class="dtp-token closed"><span class="dtp-dot"></span>' +
-         t("Settled close", "收盘结算") + "</span>";
+    /* PRC-305 — THE FRESHNESS SLOT. The header could previously only assert
+       "Settled close": there was no branch, so the one disclosure that exists
+       to stop a reader acting on stale prices could not be expressed in any
+       state. Fresh keeps the settled-close token; behind states the state. */
+    var fr = freshness();
+    if (fr.delayed) {
+      h += '<span class="pv-fresh pv-fresh--behind"><span class="dtp-dot"></span>' +
+           t("Delayed", "延迟") + "</span>";
+    } else {
+      h += '<span class="pv-fresh"><span class="dtp-token closed"><span class="dtp-dot"></span>' +
+           t("Settled close", "收盘结算") + "</span></span>";
+    }
     h += '<span class="dtp-asof">' + esc(B.asof) + "</span>";
     h += "</div></div>";
+
+    /* Production's behind-the-tape banner, verbatim (dashboard.html.j2:15784-89,
+       class .nb-stale-note). It already carries exactly the three things this
+       disclosure has to carry: the vintage the ranking is on, how far behind
+       that is, and what to do about it before acting. */
+    if (fr.delayed) {
+      var sb = fr.sessions_behind;
+      h += '<p class="nb-stale-note">' + t(
+        "Still ranked on prices as of " + esc(fr.price_through) + " &mdash; <b>" + sb +
+        "</b> session" + (sb === 1 ? "" : "s") + " behind. We&rsquo;re updating it; check a live quote before you act.",
+        "仍按截至 " + esc(fr.price_through) + " 的价格排序，落后 <b>" + sb +
+        "</b> 个交易日。数据正在更新，操作前请先看一下实时报价。") + "</p>";
+    }
 
     /* R2-D: the regime / breadth / posture chips are GONE. They asserted a market
        call ("Risk-on", "Broadening", "Act on the best few") with no canonical
@@ -1056,7 +1160,7 @@
     var g = [
       ["theme", [["dark", "Dark"], ["light", "Light"]]],
       ["lang",  [["en", "EN"], ["zh", "中文"]]],
-      ["state", [["paid", "Reference"], ["today", "Today (actual)"], ["anon", "Anonymous"], ["empty", "Empty"], ["episodes", "Multi-episode"], ["fallback", "No-enrichment"]]],
+      ["state", [["paid", "Reference"], ["today", "Today (actual)"], ["anon", "Anonymous"], ["empty", "Empty"], ["stale", "Behind the tape"], ["episodes", "Multi-episode"], ["fallback", "No-enrichment"]]],
       ["view",  [["grid", "Grid"], ["table", "Table"]]]
     ];
     var h = '<div class="harness"><strong>Mockup harness</strong>';
@@ -1090,8 +1194,65 @@
     '<section class="mx-sec" id="setups">' + setups() + "</section>" +
     '<section class="mx-sec" id="candidates">' + candidates() + "</section>" +
     '<section class="mx-sec" id="groups">' + groups() + "</section>" +
-    '<section class="mx-sec" id="context">' + context() + "</section>" +
+    /* VTC-307: no `context` section. It had no producer left after the regime
+       chips were (correctly) deleted, and a header kept over deleted content is
+       the defect the finding names. The page ends on evidence with numbers. */
     '<section class="mx-sec" id="evidence">' + evidence() + "</section>";
+
+  /* ── PRC-306: progressive in-place expansion ─────────────────────────────
+     Production's initShowMore (templates/theme.js:4784-4869): the page size is
+     the row step x the LIVE column count, which is where "Show 15 more" comes
+     from on a 5-column desktop and "Show 6 more" on mobile. Reveal is a class
+     toggle on rows already in the DOM, so nothing re-renders and nothing is
+     re-fetched.
+     COUNT LAW: `total` is the canonical population the renderer printed from
+     cellCount()/liveTotal(); `shown` moves by a computed difference of it. The
+     column count is a LAYOUT measurement, never a count of setups. */
+  (function initShowMore() {
+    var grid = document.querySelector(".pv-grid[data-showmore-rows]");
+    var bar = document.querySelector(".sm-bar");
+    if (!grid || !bar) return;
+    var cards = Array.prototype.slice.call(grid.children);
+    var total = parseInt(bar.getAttribute("data-total"), 10);
+    var init = parseInt(bar.getAttribute("data-init"), 10);
+    var step = parseInt(grid.getAttribute("data-showmore-rows"), 10) || 3;
+    var shown = init;
+    var moreBtn = bar.querySelector('[data-sm="more"]');
+    var allBtn = bar.querySelector('[data-sm="all"]');
+    var lessBtn = bar.querySelector('[data-sm="less"]');
+
+    function page() {
+      var cols = getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length;
+      return step * Math.max(1, cols);
+    }
+    function paint(reveal) {
+      cards.forEach(function (c, i) {
+        var hide = i >= shown;
+        if (reveal && !hide && c.classList.contains("sm-hidden")) c.classList.add("sm-reveal");
+        c.classList.toggle("sm-hidden", hide);
+      });
+      bar.querySelector(".sm-count").innerHTML = smCount(shown, total);
+      var left = total - shown;
+      moreBtn.hidden = left <= 0;
+      allBtn.hidden = left <= 0;
+      lessBtn.hidden = shown <= init;
+      if (left > 0) {
+        var n = Math.min(page(), left);
+        moreBtn.innerHTML = t("Show " + n + " more", "再显示 " + n + " 个");
+      }
+    }
+    bar.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-sm]");
+      if (!b) return;
+      var k = b.getAttribute("data-sm");
+      if (k === "more") shown = Math.min(total, shown + page());
+      else if (k === "all") shown = total;
+      else if (k === "less") { shown = init; grid.scrollIntoView({ block: "start" }); }
+      paint(k !== "less");
+    });
+    window.addEventListener("resize", function () { paint(false); });
+    paint(false);
+  })();
 
   /* ladder cells filter in place and write #life=<cell> — never #stage= */
   document.addEventListener("click", function (e) {
