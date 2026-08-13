@@ -98,10 +98,18 @@ def _load_qual_ladder_families(root: Path) -> list[str]:
 
 def _accrual_rate_per_day(grades: list[dict], claims: list[dict],
                           family: str, horizon: int,
-                          trailing_days: int = 14) -> float | None:
+                          trailing_days: int = 14,
+                          clock_basis: str | None = None) -> float | None:
     """Estimate the rate of NEW independent date clusters accruing per calendar day
     over the trailing `trailing_days` window. Returns None when insufficient data.
     Used for projected_ready_date linear extrapolation.
+
+    P0a: pass `clock_basis` to count only rows on the basis the gate evaluates.
+    Counting both bases would project a family onto a 25-date bar it is not
+    accruing toward — during the migration the legacy rows still land nightly
+    (unitless claims already registered keep maturing) while only the explicit
+    ones count, so a pooled rate reads roughly double and the projected ready
+    date lands early. None (the default) counts every row, unchanged.
     """
     cid_meta = {
         c["claim_id"]: c for c in claims
@@ -118,6 +126,8 @@ def _accrual_rate_per_day(grades: list[dict], claims: list[dict],
     recent_dates: set[str] = set()
     for g in grades:
         if int(g.get("horizon_d", -1)) != horizon:
+            continue
+        if clock_basis is not None and q.grade_clock_basis(g) != clock_basis:
             continue
         c = cid_meta.get(g.get("claim_id"))
         if c is None:
@@ -180,13 +190,27 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
         fam_res: dict[str, dict] = {}
         for h in q.GRADE_HORIZONS:
             pr = q.promotion_check(fam, h, root=root, control_only=True)
-            rate = _accrual_rate_per_day(grades, claims, fam, h)
+            rate = _accrual_rate_per_day(grades, claims, fam, h,
+                                         clock_basis=pr.clock_basis)
             proj = _projected_ready_date(pr.n_dates, rate)
             approaching = (pr.n_dates >= 20 and not pr.eligible)
 
-            # hit_rate and excess_mean from track record aggregation
-            stats = q._aggregate(claims, grades, "family", h)
-            fam_stats = stats.get(fam, {})
+            # hit_rate and excess_mean from track record aggregation.
+            # P0a: `_aggregate` is FAIL-CLOSED on a mixed grading-clock basis —
+            # calling it without a basis raises HorizonClockMismatch the first
+            # night any ladder family holds both the legacy and the explicit
+            # clock, which is this nightly step's normal state during the
+            # migration. The basis is therefore always named, and it is the SAME
+            # basis promotion_check just gated on (pr.clock_basis), so n_dates /
+            # wilson_ci_low / hit_rate / excess_mean in one row all describe one
+            # clock. None means there was nothing coherent to evaluate (no rows,
+            # or a family mixing two explicit clocks) — report the null, never a
+            # pooled number.
+            fam_stats: dict = {}
+            if pr.clock_basis is not None:
+                stats = q._aggregate(claims, grades, "family", h,
+                                     clock_basis=pr.clock_basis)
+                fam_stats = stats.get(fam, {})
 
             fam_res[str(h)] = {
                 "n_dates": pr.n_dates,
@@ -198,6 +222,9 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
                 "approaching": approaching,
                 "projected_ready_date": proj,
                 "reason": pr.reason,
+                # The clock these four numbers were measured on. Same n_dates on
+                # a different clock is a different claim about the world.
+                "clock_basis": pr.clock_basis,
             }
         result[fam] = fam_res
 
