@@ -45,10 +45,16 @@ MUTATIONS = [
         'href="#dead-',
     ),
     (
-        "M2", "remove the stale / behind-the-tape state (PRC-305)",
+        # Surgical: suppress the behind-the-tape RENDER only. An earlier version
+        # rewrote every `isStale` occurrence including its `var` declaration,
+        # which is a syntax error — the page then failed to render at all and
+        # every check went red. That "catches" the mutation for the wrong reason
+        # and destroys the unique-kill signal, because a broken page is caught by
+        # everything. A mutation must remove ONE capability, not the artifact.
+        "M2", "suppress the behind-the-tape disclosure render (PRC-305)",
         "board.js",
-        r'isStale\b',
-        'false && isStale',
+        r'(\n\s*)if \(isStale\) \{(\s*\n\s*/\* the harness lens)',
+        r'\g<1>if (false) {\g<2>',
     ),
     (
         "M3", "remove progressive in-place expansion (PRC-306)",
@@ -60,27 +66,69 @@ MUTATIONS = [
         "M4", "restore the dishonest anonymous gate copy (PRC-302)",
         "board.js",
         r'The rest are part of the live board[^"]*',
-        'The rest are part of the live board \\u2014 entry, target and void levels included.',
+        'The rest are part of the live board - entry, target and void levels included.',
     ),
     (
         "M5", "revert desktop no-chart geometry to 24px (VTC-301)",
         "board.css",
-        r'(\.pv-nochart\s*\{[^}]*?height:\s*)74px',
+        r'(\.pv-nochart\s*\{\s*\n\s*height:\s*)74px',
         r'\g<1>24px',
+    ),
+    (
+        "M6", "delete the printed null label, leaving a bare stretched box (PRC-309)",
+        "board.js",
+        r'class="pv-nochart-l"',
+        'class="pv-nochart-GONE"',
+    ),
+    (
+        "M7", "drop the stance axis label so WAIT reads as a verdict (PRC-312)",
+        "board.js",
+        r'class="pv-axis"',
+        'class="pv-axis-GONE"',
+    ),
+    (
+        "M8", "put the execution levels back in the Board table (PRC-313)",
+        "board.js",
+        r'\["Zone", "买区"\]',
+        '["Void", "失效价"]',
+    ),
+    (
+        "M9", "re-assert the repealed state=paid exemption in DESIGN_NOTES (DA-001)",
+        "DESIGN_NOTES.md",
+        r"## 7\. Scope",
+        "## 7. Scope\n\nA 60%-`暂无判断` board must not become the flagship reference.",
+    ),
+    (
+        "M10", "collapse the stance ramp back onto the direction ink (DA-002)",
+        "board.css",
+        r"--pv-buy:\s*color-mix\(in srgb, var\(--up\) 82%, var\(--text\)\)",
+        "--pv-buy:   var(--up)",
     ),
 ]
 
 
+HARNESSES = ["verify.py", "verify_r4.py"]
+
+
 def run_harness():
-    p = subprocess.run(
-        [sys.executable, str(HERE / "verify.py"), BASE],
-        capture_output=True, text=True, cwd=str(ART),
-    )
-    return p.returncode, (p.stdout or "") + (p.stderr or "")
+    """Both harnesses. verify.py holds the R3 regression floor, verify_r4.py the
+    closure proofs; a mutation caught by EITHER is caught. Returns nonzero if any
+    harness fails, plus the combined output."""
+    rc, out = 0, ""
+    for h in HARNESSES:
+        p = subprocess.run([sys.executable, str(HERE / h), BASE],
+                           capture_output=True, text=True, cwd=str(ART))
+        rc = rc or p.returncode
+        out += (p.stdout or "") + (p.stderr or "")
+    return rc, out
 
 
 def failed_checks(out):
-    return [ln.strip() for ln in out.splitlines() if ln.strip().startswith("FAIL")]
+    # "FAILURES:" is the summary HEADER, not a check. Matching startswith("FAIL")
+    # swept it in as a phantom check id that appeared in every mutation's catcher
+    # set, which then made the unique-kill analysis report false collisions.
+    return [ln.strip() for ln in out.splitlines()
+            if re.match(r"^FAIL\s{2,}\S", ln.strip())]
 
 
 def main():

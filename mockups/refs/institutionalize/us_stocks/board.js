@@ -1069,9 +1069,12 @@
     ];
     h += '<div class="trk-grid">';
     cells.forEach(function (c) {
+      /* .fig is tabular numerals for FIGURES only, never words: the headline
+         value is a pure figure and takes it; the sub-line is prose carrying a
+         number and does not. */
       h += '<div class="trk-i"><span class="trk-l">' + c[0] + "</span>" +
            '<span class="trk-v fig">' + c[1] + "</span>" +
-           '<span class="trk-ci fig">' + c[2] + "</span></div>";
+           '<span class="trk-ci">' + c[2] + "</span></div>";
     });
     h += "</div>";
 
@@ -1223,7 +1226,11 @@
 
     function page() {
       var cols = getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length;
-      return step * Math.max(1, cols);
+      /* the floor keeps the mobile step usable: at 390w the grid is ONE column,
+         so a bare rows x cols would advance 3 at a time through a 159-row book.
+         Production reveals 6 on mobile and 15 on a 5-column desktop; this
+         reproduces both. */
+      return Math.max(6, step * Math.max(1, cols));
     }
     function paint(reveal) {
       cards.forEach(function (c, i) {

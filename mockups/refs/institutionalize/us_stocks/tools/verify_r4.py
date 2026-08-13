@@ -161,18 +161,30 @@ def main():
            fresh["has"] and not fresh["behind"], f"has={fresh['has']} behind={fresh['behind']}")
         pg.close()
 
+        # Production discloses staleness in TWO parts and the build mirrors that:
+        # a header pill (.stk-status.is-delayed -> .pv-fresh--behind, "Delayed"/"延迟")
+        # and the amber sentence banner (.nb-stale-note). Assert the SYSTEM, not one
+        # node — an earlier version of this check looked only at the pill and called
+        # a correct two-part implementation a missing disclosure.
         for lang, needles in (("en", [r"session", r"behind", r"live quote"]),
                               ("zh", [r"个交易日", r"落后", r"实时报价"])):
             pg = page_at(f"theme=dark&lang={lang}&state=stale")
             st = pg.evaluate("""() => {
-              const el=document.querySelector('.pv-fresh--behind');
-              return {has:!!el, text: el?el.innerText:''};
+              const q=s=>{const e=document.querySelector(s);return e?e.innerText:''};
+              return {pill:!!document.querySelector('.pv-fresh--behind'),
+                      pillText:q('.pv-fresh--behind'),
+                      note:!!document.querySelector('.nb-stale-note'),
+                      noteText:q('.nb-stale-note')};
             }""")
-            missing = [n for n in needles if not re.search(n, st["text"], re.I)]
+            missing = [n for n in needles if not re.search(n, st["noteText"], re.I)]
             ok(f"R3b[{lang}] freshness-behind — discloses vintage, sessions behind, verify-live-price",
-               st["has"] and not missing, f"has={st['has']} missing={missing} text={st['text'][:90]}")
-            ok(f"R3c[{lang}] freshness-behind prints a sessions-behind NUMBER",
-               bool(re.search(r"\d", st["text"])), st["text"][:60])
+               st["pill"] and st["note"] and not missing,
+               f"pill={st['pill']} note={st['note']} missing={missing} "
+               f"text={st['noteText'][:90]}")
+            ok(f"R3c[{lang}] freshness-behind prints a sessions-behind NUMBER and a vintage date",
+               bool(re.search(r"\d", st["noteText"]))
+               and bool(re.search(r"\d{4}-\d{2}-\d{2}", st["noteText"])),
+               st["noteText"][:80])
             pg.close()
 
         # ══ PRC-306 — full-book reachability by progressive expansion ══════
@@ -371,11 +383,20 @@ def main():
           const th=[...document.querySelectorAll('.st-table thead th')].map(t=>t.innerText.trim());
           return {th, rows: document.querySelectorAll('.st-table tbody tr').length};
         }""")
-        head = " | ".join(tb["th"]).lower()
-        ok("R15 table-decision-fields — the table carries stance, Priority and Zone",
-           all(k in head for k in ("stance", "priority", "zone")), head[:140])
+        # Compare COLUMNS, not substrings. The stance column ships as "Entry read"
+        # (PRC-312 names the axis), which contains the substring "entry" — a naive
+        # `"entry" not in head` test therefore reads a correctly-named DECISION
+        # field as a surviving EXECUTION level, and the obvious way to "fix" that
+        # is to rename the column back to something less honest.
+        cols = [c.strip().lower() for c in tb["th"]]
+        has_stance = any(c in ("stance", "entry read", "entry stance") for c in cols)
+        exec_cols = [c for c in cols
+                     if c in ("entry", "void", "invalidation", "first target", "t1", "target")]
+        ok("R15 table-decision-fields — the table carries the stance axis, Priority and Zone",
+           has_stance and any("priority" in c for c in cols) and any("zone" in c for c in cols),
+           " | ".join(cols))
         ok("R15b table-no-execution-levels — Entry / T1 / Void are gone from the Board table",
-           not any(k in head for k in ("entry", "void", "first target", "t1")), head[:140])
+           not exec_cols, f"execution columns still present: {exec_cols} in {' | '.join(cols)}")
         pg.close()
 
         # ══ PRC-314 — Resolved wins precedence ════════════════════════════
@@ -485,15 +506,47 @@ def main():
         br.close()
 
     # ══ static-document checks ════════════════════════════════════════════
-    ok("R8 design-notes-no-contradiction — the repealed state=paid exemption is marked superseded",
+    # DA-001 is about an UNMARKED contradiction, so the test is whether the
+    # repealed claim still stands as an assertion — not whether its words appear.
+    # The repeal is recorded by quoting the repealed text, so a check that forbids
+    # the string fails on the very documentation the finding demands, and the
+    # obvious "fix" is to delete the record of the repeal.
+    def asserting_text(md):
+        """The document speaking in its OWN voice.
+
+        Filters by PARAGRAPH, not by line: a repeal is written as prose that
+        quotes the repealed rule, and that quotation routinely spans a line
+        break, so a line-scoped filter sees the second half of the quote naked
+        and calls it an assertion. Markdown's unit of assertion is the paragraph.
+
+        A paragraph is not asserting if it is blockquoted, struck through, or
+        anywhere declares itself a repeal/correction.
+        """
+        MARKERS = ("~~", "superseded", "struck at r4", "corrected at r4",
+                   "repealed", "withdrawn", "amendment record")
+        keep = []
+        for para in re.split(r"\n\s*\n", md):
+            low = para.lower()
+            if all(ln.strip().startswith(">") for ln in para.splitlines() if ln.strip()):
+                continue                      # entirely blockquoted
+            if any(m in low for m in MARKERS):
+                continue                      # declares itself a repeal/correction
+            keep.append(para)
+        return "\n\n".join(keep)
+
+    live_notes = asserting_text(notes)
+    ok("R8 design-notes-no-contradiction — the repealed state=paid exemption no longer ASSERTS",
        ("SUPERSEDED" in notes or "struck at R4" in notes)
-       and "must\nnot become the flagship reference" not in notes,
-       "DESIGN_NOTES still ships two unmarked positions on state=paid")
+       and not re.search(r"must\s+not become the flagship reference", live_notes)
+       and not re.search(r"reference view \(`state=paid`\) shows the product once G-D", live_notes),
+       "DESIGN_NOTES still asserts the repealed state=paid exemption in its own voice")
     ok("R26 screenshot-gaps-recorded — states the payload cannot exhibit are declared",
        "Honest screenshot gaps" in notes, "no recorded screenshot-gap section")
-    ok("R27 design-notes-numbers-fresh — the stale candidate arithmetic is corrected",
-       "28 + 27 + 10 + 2 + 2" not in notes and "22 + 35 + 12 + 1" in notes,
-       "DESIGN_NOTES still carries the stale 69 = 28+27+10+2+2 arithmetic")
+    # Same shape as R8: the stale arithmetic is quoted inside the correction that
+    # replaces it, so its presence is evidence of the fix, not of the defect.
+    ok("R27 design-notes-numbers-fresh — the stale candidate arithmetic no longer ASSERTS",
+       "22 + 35 + 12 + 1" in notes and "28 + 27 + 10 + 2 + 2" not in live_notes,
+       "DESIGN_NOTES still asserts 69 = 28+27+10+2+2 in its own voice")
     ok("R22 enrichment-gap-disclosed — the coverage gap is stated as a number",
        re.search(r"134\s*(of|/)\s*179", notes) is not None, "no 134/179 coverage disclosure")
 

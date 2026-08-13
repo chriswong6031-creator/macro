@@ -51,8 +51,13 @@
      caution; a stance may not share one semantic ink with the risk carrier. */
   --pv-wait:  #a8761f;
   /* --pv-hold and no-read used to BOTH resolve to --muted, so "we read it and
-     say hold" painted identically to "we have no read". Separate rungs. */
-  --pv-hold:  color-mix(in srgb, var(--muted) 74%, var(--text));
+     say hold" painted identically to "we have no read". Separate rungs now, and
+     HOLD sits ABOVE Wait rather than between Wait and no-read: with the ruled
+     ramp pinning WAIT at 4.0 and NO-READ at 3.5, there is no room for a fourth
+     rung between them that a reader could actually tell apart, and a published
+     read must not paint quieter than an absent one. HOLD stays achromatic, so
+     the stance ramp's chroma still belongs to Buy/Near/Avoid alone. */
+  --pv-hold:  #888f9c;
   --pv-noread: #6e7684;
   --pv-avoid: color-mix(in srgb, var(--down) 82%, var(--text));
   --prov: #62a0e8; --prov-ink: var(--prov);
@@ -78,7 +83,7 @@ html[data-theme="light"] {
   --pv-buy:   color-mix(in srgb, var(--up) 54%, var(--text));
   --pv-near:  color-mix(in srgb, var(--pv-buy) 70%, var(--muted));
   --pv-wait:  #a2650f;
-  --pv-hold:  color-mix(in srgb, var(--muted) 74%, var(--text));
+  --pv-hold:  #55616f;
   --pv-noread: #8794a6;
   --pv-avoid: color-mix(in srgb, var(--down) 54%, var(--text));
   --prov: #2f6fd0; --prov-ink: color-mix(in srgb, var(--prov) 82%, var(--text));
@@ -105,7 +110,7 @@ html[data-theme="light"][data-lang="zh"] {
   --pv-buy:   color-mix(in srgb, var(--up) 54%, var(--text));
   --pv-near:  color-mix(in srgb, var(--pv-buy) 70%, var(--muted));
   --pv-wait:  #a2650f;
-  --pv-hold:  color-mix(in srgb, var(--muted) 74%, var(--text));
+  --pv-hold:  #55616f;
   --pv-noread: #8794a6;
   --pv-avoid: color-mix(in srgb, var(--down) 54%, var(--text));
 }
