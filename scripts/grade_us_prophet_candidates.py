@@ -36,6 +36,57 @@ from engine import us_prophet_grades as upg  # noqa: E402
 
 log = logging.getLogger("grade_us_prophet_candidates")
 
+#: Sessions the candidates store may trail the grader's as-of before it is called
+#: stale.  The grader runs after the engine job, so on a healthy night the newest
+#: stamp is the same session or one behind (the board stamps the settled prior
+#: close).  The warning fires strictly ABOVE this value (> 2, not >= 2): a 2-session
+#: trail can still be a holiday-adjacent normal night, so three is the first gap
+#: that cannot be one.
+STALE_AFTER_SESSIONS = 2
+
+
+def _warn_if_candidates_store_is_stale(graded_asof: object) -> None:
+    """Liveness tripwire for the UPSTREAM store (masterplan §13.0).
+
+    The candidates store stopped accruing on 2026-08-07 and nothing noticed for
+    six nights: ``append_candidates`` is fail-soft by contract, so a dead stamp and
+    a healthy one produce the same green engine job.  This lane already reads that
+    store every night to grade it, which makes it the cheapest place in the whole
+    pipeline to notice that it has not moved.
+
+    READ-ONLY, FAIL-SOFT, ZERO AUTHORITY: it grades nothing, gates nothing, and
+    returns quietly on any problem of its own.  Business days, holiday-agnostic —
+    the same approximation the rest of the repo uses; the threshold is coarse
+    enough that a holiday cannot fire it.
+    """
+    try:
+        import pandas as pd
+
+        from engine import us_context_vector as ucv
+
+        asof = pd.Timestamp(str(graded_asof)).normalize()
+        frame = ucv.load_candidates(columns=["stamp_date"])
+        if frame is None or frame.empty or "stamp_date" not in frame.columns:
+            print("::warning title=us-context-vector-stale::"
+                  "candidates store is EMPTY or unreadable — nothing to grade, "
+                  "accrual may be broken", flush=True)
+            return
+        newest = pd.to_datetime(frame["stamp_date"], errors="coerce").max()
+        if pd.isna(newest):
+            return
+        newest = pd.Timestamp(newest).normalize()
+        if newest >= asof:
+            return
+        # bdate_range is inclusive of both endpoints; the gap in sessions is one
+        # less than its length.
+        sessions = max(0, len(pd.bdate_range(newest, asof)) - 1)
+        if sessions > STALE_AFTER_SESSIONS:
+            print("::warning title=us-context-vector-stale::"
+                  f"newest candidates stamp {newest.date()} trails {asof.date()} by "
+                  f"{sessions} sessions — accrual may be broken", flush=True)
+    except Exception as exc:  # noqa: BLE001 — a tripwire never breaks the grader
+        log.debug("candidates staleness check skipped (%s)", exc)
+
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
@@ -49,6 +100,10 @@ def main() -> None:
     args = ap.parse_args()
 
     doc = upg.run(dry_run=bool(args.dry_run or not args.nightly))
+    if args.nightly:
+        # Nightly-only: the tripwire reports on the FORWARD-ADVANCING lane, so a
+        # dry-run preview on a stale local checkout cannot cry wolf in CI.
+        _warn_if_candidates_store_is_stale(doc.get("graded_asof"))
     if args.json:
         # rows can be tens of thousands on a catch-up night; the document stays the
         # machine surface, so it keeps them, but nothing else prints them.

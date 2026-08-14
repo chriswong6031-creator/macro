@@ -2036,6 +2036,15 @@ jobs:
       # stdlib + pytest only (reads workflow/dag/builder text; imports no builder).
       - name: render-lane scope contract (flow_desk must stay express-wired)
         run: python -m pytest tests/test_render_flow_desk_scope.py -q
+      # Sparse session-worktree profile (policy R8). #5531 landed the suite
+      # named by no run: step — the same class the census above now gates —
+      # so pack-1 went red on every PR the moment it merged. It belongs HERE
+      # with the other worktree/CI-profile steps: its subject is
+      # scripts/worktree_sparse.py + the WorktreeCreate hook, and the sibling
+      # vacuous-refusal suite below already owns the R8 honesty rule. stdlib +
+      # pytest; synthetic git repos under tmp_path, no data/ or site/ reads.
+      - name: sparse session-worktree profile (config ↔ fallback, husk detector, hook wiring)
+        run: python -m pytest tests/test_sparse_worktree_profile.py -q
       # VACUOUS guards: the same lie audit_unrun_tests.py catches, one layer down.
       # A suite that never runs is caught above; a guard that RUNS, walks a tree
       # that is not checked out, finds nothing and prints its affirmative OK is
@@ -2190,6 +2199,15 @@ jobs:
       # zero jobs, uncancellable. The budget test reds growth before the cap.
       - name: workflow file size stays under GitHub's silent processing cap
         run: python -m pytest tests/test_workflow_file_size.py -q
+      # Same incident, other half. The size guard stops daily.yml being stranded
+      # AGAIN; this one notices when the nightly stops producing runs for ANY
+      # reason — strand, cancellation, or a green run that never advances the
+      # store. The 2026-08-11/12 outage ran two full sessions unreported because
+      # every instrument we had measured DATA staleness on weekend-safe budgets.
+      - name: nightly liveness guard selftest (scripts/check_nightly_liveness.py)
+        run: python3 scripts/check_nightly_liveness.py --selftest
+      - name: nightly liveness dead-man switch (checks + wiring pins)
+        run: python -m pytest tests/test_nightly_liveness.py -q
 
   push-retry-policy:
     if: ${{ false }}
@@ -2967,6 +2985,16 @@ jobs:
       # docstrings in scripts/externalize_css.py.
       - name: inline-CSS externalization units + pair-skip guards
         run: python -m pytest tests/test_externalize_css.py -q
+      # design-system packet PR-0(a)(b): the site --fs-* type ramp at :root and the
+      # three shared .mx-* primitives. Same job because it is the same file — a
+      # templates/theme.css edit is what breaks all of it, and this job is already the
+      # theme.css integrity lane (interfonts sync + plain-copy byte-match above).
+      # Browser-free BY DESIGN: the packs install minimal deps, so the language-toggle
+      # check resolves the cascade in stdlib rather than importorskip-ing playwright
+      # and reporting green while proving nothing. Deps are the set installed above
+      # (pytest is the whole closure here — the suite imports only re/pathlib).
+      - name: design-system foundations (site type ramp at :root + shared .mx-* primitives)
+        run: python -m pytest tests/test_design_system_foundations.py -q
 
   data-base-shim:
     if: ${{ false }}
@@ -6517,7 +6545,22 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
-        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_continuation_watch.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_opportunity_timeline.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_live_change.py tests/test_prophet_card_shared.py tests/test_prophet_verb_ink_contrast.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_fail_closed_freshness.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
+        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_continuation_watch.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_opportunity_timeline.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_live_change.py tests/test_prophet_card_shared.py tests/test_prophet_verb_ink_contrast.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_fail_closed_freshness.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py tests/test_us_context_vector_accrual.py tests/test_confluence_veto_leg_telemetry.py -q
+      # PR-1a (WS:PROPHET-CONDITIONAL-FUSION): the accrual-regression + veto-leg
+      # telemetry suites ride the step above (same store cluster); the fusion arena
+      # harness gets its own step below — research-tier scaffolding, zero authority,
+      # every suite named because this repo has no catch-all pytest collector and
+      # audit_unrun_tests reds any suite no run: step names.
+      - name: prophet conditional-fusion arena harness + evidence-family registry (PR-1a)
+        run: python -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py -q
+      # G-D plan-book board read (#5541). Landed as a collecting suite named by
+      # no run: step, so audit_unrun_tests.py painted pack-1 red on every PR.
+      # It belongs in THIS job with the other prophet/board surfaces: the join
+      # it pins is the actionability + enrichment read those cards consume.
+      # stdlib + pytest only (engine.prophet_board_read imports no third-party);
+      # synthetic LibraryIndex trees under tmp_path, no data/ or site/ reads.
+      - name: prophet board read (G-D actionability join + honest absence)
+        run: python -m pytest tests/test_prophet_board_read.py -q
       - name: US track-ledger era boundary and frozen pre-era evidence
         run: python -m pytest tests/test_track_ledger_era.py -q
       # Stage-analysis board + its forward ledger and session-stamp heal
