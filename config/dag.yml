@@ -3169,6 +3169,13 @@ lanes:
           Generic builds and site-only renders may verify/mirror the current candidate
           projection but cannot append, retime, or backfill its ledger. No trade-signal
           scoring, ranking, sizing, gating, or escalation is permitted.
+      - id: prove_government_revenue_candidates
+        module: pytest
+        note: >
+          Conditional post-build proof for changed candidate artifacts. The live
+          workflow installs pytest best-effort, runs the three bounded candidate
+          suites without its cache provider, and records an explicit unproven
+          warning when the runner cannot acquire the proof dependency.
 
   # ── filing-forensics-sec.yml / acquire_project_sync ──────────────────────
   - workflow: .github/workflows/filing-forensics-sec.yml
