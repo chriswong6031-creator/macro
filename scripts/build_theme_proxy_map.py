@@ -53,7 +53,6 @@ import pandas as pd
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-from collectors.holdings import drop_non_equity  # noqa: E402
 from engine.marketing import theme_proxy  # noqa: E402
 
 log = logging.getLogger("build_theme_proxy_map")
@@ -149,6 +148,9 @@ def load_holdings() -> dict[str, dict]:
         # Inert while no cash string collides with a real ticker; `CASH` is both
         # a cash sentinel and a live published ticker (Pathward Financial), and a
         # collision would silently inflate a theme's holdings-coverage score.
+        # Lazy: marketing-data's install line is pandas/pyarrow/pyyaml only, and
+        # collectors.holdings imports collectors.base → requests at module scope.
+        from collectors.holdings import drop_non_equity  # noqa: PLC0415
         df = drop_non_equity(df)
         df = df[df["ticker"].notna()].copy()
         df["ticker"] = df["ticker"].astype(str).str.strip().str.upper()
