@@ -72,7 +72,7 @@ danger_areas:
   - "The word 'personality' is banned for this program's concepts (three prior senses live in-repo); the program says identity / behavioral fingerprint."
   - "No expert-fit content may exist in any W1 artifact (§16.9) — the banned-token test enforces it; W2+ adds expert data behind the post-W1 operator return."
   - "G-8 path partition — every engine PR prints the clean git diff --stat on the protected paths."
-prs: [5583]
+prs: [5583, 5612]
 decisions:
   - DEC:SI-METHOD-LAW-CHANNELS
 ---

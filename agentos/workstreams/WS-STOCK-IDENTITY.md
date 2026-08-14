@@ -34,15 +34,16 @@ waves:
       in-PR and §16.9 execution authorization present on main.
   - id: W1
     title: Identity Atlas v0 — fingerprints, state tagger, episode catalog, pilot dossiers
-    status: in_progress
+    status: done
+    pr: 5612
     depends_on: [W0]
     next_action: >
-      BUILT this wave per masterplan §14 PR-1 + §16.9 (descriptive only, zero expert-fit):
-      registration research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md; sealed
-      calibration partition SI-SEALED-CAL-P1 + blind arm drawn/hashed; constants frozen;
-      pilot Atlas + dossiers + census v0; stock-identity registry row minted (§16.7).
-      TODO-SHIP: PR number + final status flip. Post-merge: the §16.9 OPERATOR RETURN
-      (Atlas + dossiers review) gates W2 — do not start expert replay before it.
+      SHIPPED as PR #5612 (armed merge-on-green 2026-08-14) per masterplan §14 PR-1 +
+      §16.9: SI-SEALED-CAL-P1 (759 names) + blind arm (229) drawn/hashed before any
+      constant; constants frozen w/ receipts; 21 pilot dossiers; census v0 (134,207
+      episodes, survivor-only stamped); registry row minted. NEXT: the §16.9 OPERATOR
+      RETURN (Atlas + dossiers review; dead-name source decision) gates W2 — do not
+      start expert replay before it.
   - id: W2
     title: Expert replay + provenance pinning (Class R families; R1-rail extend-or-justify)
     status: todo
