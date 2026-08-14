@@ -46,7 +46,7 @@ The shared working checkouts were not used as truth and were not modified. Sourc
 
 | Repository | Branch | Audited commit |
 |---|---|---|
-| Macro Dashboard | `origin/main` | `772c8b36d2a70e9e72f870e76db73cf30c7dfed0` |
+| Macro Dashboard | `origin/main` | `be1cb1d6b6779d64ee58709db825e781c3dc7152` |
 | Terminal / charting-app | `origin/master` | `b383d8c3579faeca1cdbcd29063535081aabf35b` |
 | Mastermind | `origin/master` | `42ba5c76eb7ce1fdf44f3b44f332928668939df4` |
 
