@@ -351,7 +351,11 @@
     '</div>';
   }
   function lgRmBtn(t) {
-    return '<button class="wl-rm" data-rm="' + esc(t) + '" title="' + esc(L('removeA')) +
+    /* No `title=`: the house law bars translated text from that attribute, and the
+       `aria-label` beside it already carries the same string for the only reader that
+       needs it. `title=` was a second copy of the copy, in the one attribute mechanism
+       the page does not use (tips ride `data-tip-en`/`data-tip-zh`). */
+    return '<button class="wl-rm" data-rm="' + esc(t) +
       '" aria-label="' + esc(L('removeA')) + '">✕</button>';
   }
 
@@ -897,28 +901,73 @@
   /* The row drawer. It is where the 390px demotions live (Day, Since entry, Risk
      share, Sector), and it is the only place a per-name detail is allowed to appear:
      the row itself stays scannable. One failed ticker degrades exactly THIS drawer. */
-  function drawerHTML(r, span) {
+  function drawerHTML(r, span, opts) {
+    var o = opts || {};
     var det = DETAIL[r.t];
+    var j = det && det.raw ? det.raw : null;
     var cells = [];
-    cells.push('<div><span class="k">' + te('Day', '当日') + '</span>' + dayCell() + '</div>');
-    if (r.s) cells.push('<div><span class="k">' + te('Sector / theme', '行业 / 主题') + '</span>' + secCell(r.s) + '</div>');
-    if (det && det.summary) {
-      cells.push('<div style="grid-column:1/-1"><span class="k">' + te('Read', '解读') + '</span>' + esc(det.summary) + '</div>');
-    } else if (window.SD && det === undefined) {
+    var intel = window.WRI && window.WRI.intelSections;
+    /* The demoted columns are for a drawer that HAS a read. On the anonymous lock shell
+       they were a stray "DAY —" above the gate: a column header with a dash under it,
+       restating the one thing the row already showed, on the one drawer that has nothing
+       else in it. */
+    if (window.SD && intel) {
+      cells.push('<div><span class="k">' + te('Day', '当日') + '</span>' + dayCell() + '</div>');
+      if (r.s) cells.push('<div><span class="k">' + te('Sector / theme', '行业 / 主题') + '</span>' + secCell(r.s) + '</div>');
+    }
+    if (!window.SD || !intel) {
+      /* Anonymous. The four gated scripts never reach a signed-out visitor (packet §14
+         A9), so this is the DESIGNED state, not a failure — and the honest shape is the
+         page's own lock grammar, naming what an account delivers rather than a shorter
+         drawer that reads as "there was nothing to say". Nothing board-tier is named and
+         the count ladder is not borrowed: this is a `.lockshell`, same as the Risk
+         Center's signed-out body. */
+      cells.push('<div class="lockshell drw-full"><span class="lk">◇</span><span>' +
+        '<b>' + te('What we know about this name', '我们对这只票的了解') + '</b>' +
+        te('Where it sits in its own cycle, what its checks say, what is coming, and the themes it belongs to — all of it arrives with a free account.',
+           '它处在自己周期的哪一段、各项检查怎么说、接下来有什么事件、以及它属于哪些主题 —— 这些都随免费账户一起提供。') +
+        '<button class="cta" type="button" data-gate-save="1">' +
+        te('Save + get alerts — Free', '保存并接收提醒 —— 免费') + '</button></span></div>');
+    } else if (det === undefined) {
       cells.push('<div class="drw-honest">' + te('Loading this name&rsquo;s detail…', '正在读取该股详情…') + '</div>');
-    } else if (!window.SD) {
-      cells.push('<div class="drw-honest">' + te(
-        'Per-name detail — the stage read, the next event, the momentum picture — comes with a free account.',
-        '每只票的详情 —— 阶段判断、下一个事件、动能情况 —— 免费账户即可查看。') + '</div>');
-    } else if (det === null) {
+    } else if (det === null || !j) {
       cells.push('<div class="drw-honest">' + te(
         'We could not read this name from last night&rsquo;s build. The row stays — only its detail is missing.',
         '昨夜的构建里读不到这只票。这一行照常保留 —— 缺的只是它的详情。') + '</div>');
+    } else {
+      /* The SAME composer the holdings drawer uses (`watchlist_risk.js`), so one name
+         cannot read differently depending on which mode you opened it from. `inBook` is
+         false here by construction: a watchlist name is being watched, not held, and the
+         Portfolio-role row says exactly that instead of inventing a weight. */
+      var t1 = '', t2 = '';
+      try { t1 = window.WRI.intelTier1(r.t, j) || ''; } catch (e) { t1 = ''; }
+      try { t2 = intel(r.t, j, { inBook: false, weightPct: null }) || ''; } catch (e) { t2 = ''; }
+      if (t1) cells.push('<div class="drw-full">' + t1 + '</div>');
+      if (t2) cells.push(t2);
+      if (!t1 && !t2) {
+        cells.push('<div class="drw-honest">' + te(
+          'The per-lane checks for this name did not load. That is a gap in what we can show you, not a clean bill of health.',
+          '这只票的各项检查没有加载出来。这是我们能展示的内容缺了一块，不代表它没问题。') + '</div>');
+      }
+      if (j.asof) {
+        cells.push('<div class="asof mut drw-full" style="font-size:11px">' +
+          te('signals as of ' + esc(j.asof), '信号截至 ' + esc(j.asof)) + '</div>');
+      }
     }
+    /* `stock.html` reads its ticker from `location.hash` and from nothing else
+       (templates/stock.html.j2 — four readers, all `location.hash`). This link shipped
+       as `stock.html?t=<T>`, which resolves to a real page carrying no name: the dossier
+       opened empty. A route that 200s is not a route that works. */
     cells.push('<div class="drw-act">' +
-      '<a href="stock.html?t=' + encodeURIComponent(r.t) + '">' + te('Open full page', '打开完整页面') + '</a>' +
-      '<button class="drw-rm" type="button" data-rm="' + esc(r.t) + '">' +
-        te('Remove from this list', '从此列表移除') + '</button></div>');
+      '<a href="stock.html#' + encodeURIComponent(r.t) + '">' + te('Open full page', '打开完整页面') + '</a>' +
+      '<a href="https://app.mastermind-x.com/terminal?sym=' + encodeURIComponent(r.t) +
+        '&amp;from=macro" target="_blank" rel="noopener noreferrer">' +
+        te('Open in Terminal', '在终端打开') + '</a>' +
+      /* A pasted book is not a list, so it has nothing to be removed FROM. Offering the
+         control anyway would be a button whose sentence is false. */
+      (o.remove === false ? '' :
+        '<button class="drw-rm" type="button" data-rm="' + esc(r.t) + '">' +
+        te('Remove from this list', '从此列表移除') + '</button>') + '</div>');
     return '<tr class="row-drawer"><td colspan="' + span + '"><div class="drw">' +
       cells.join('') + '</div></td></tr>';
   }
@@ -983,9 +1032,18 @@
     });
   }
   function buildDetail(t, j) {
-    var d = { tech: j.tech || null, summary: '', flag: null, evt: null, raw: j };
-    var lad = j.ladder || {};
-    if (lad.summary_line) d.summary = window.SD.lz(lad.summary_line, lad.summary_line_zh);
+    /* No `summary` field any more. It carried `ladder.summary_line` for the pre-W4
+       drawer's "Read / 解读" line; W4's Tier 1 replaced that line with the entry-state
+       read, and the field went dead. Removed rather than left assigned, and the
+       supersession is disclosed rather than silent.
+
+       The ladder line is NOT simply restorable beside Tier 1: it is a different engine
+       (cycle-ladder timeframe alignment, not entry state), so it is real information —
+       but 146 of the 1,620 names that carry it, 9.0%, phrase it with "buy zone", which
+       is the exact class of copy the Tier-1 map exists to keep off this surface. Putting
+       it back needs its own total mapping over a compositional sentence, which is a
+       parser, not a line. Its canonical home is the dossier and the drawer links there. */
+    var d = { tech: j.tech || null, flag: null, evt: null, raw: j };
     // next event — dates dual-emit, and the ZH form drops .fig because "8月27日"
     // contains WORDS and mono numerals are for figures only
     var ev = j.next_event || (j.events && j.events[0]) || null;
@@ -1322,7 +1380,8 @@
       ? ANON_HEAD.replace(te('Weight', '占比'), te('Share of shares', '股数占比'))
       : ANON_HEAD;
     host.innerHTML = head + '<tbody>' + filtered.map(function (x) {
-      return '<tr data-t="' + esc(x.sym) + '">' +
+      var open = !!openRows[x.sym];
+      return '<tr data-t="' + esc(x.sym) + '"' + (open ? ' aria-expanded="true"' : '') + '>' +
         '<td class="c-sym"><b>' + esc(x.sym) + '</b><span class="co"></span></td>' +
         '<td class="c-val num"><span class="fig">' + x.money.toFixed(1) + '%</span></td>' +
         '<td class="c-day num">' + dayCell() + '</td>' +
@@ -1339,8 +1398,16 @@
         '<td class="c-evt">' + dash(
           'Upcoming earnings and events come with a free account.',
           '即将到来的财报与事件，免费账户即可查看。') + '</td>' +
-        '<td class="c-exp"></td>' +
-      '</tr>';
+        /* The ⌄ shipped as an EMPTY cell here: the anonymous visitor got a table with a
+           column reserved for an affordance that was never drawn, so the one row-level
+           invitation to look closer was missing from exactly the audience the funnel is
+           for. The drawer it opens is the lock shell — nothing gated is computed,
+           because none of the gated scripts is on the page to compute it — and that is
+           the honest offer: here is the shape of what we know, and what turns it on. */
+        '<td class="c-exp"><button class="exp" type="button" data-exp="' + esc(x.sym) +
+          '" aria-label="' + (isZh() ? '详情' : 'Details') + '"><span class="car">⌄</span></button></td>' +
+      '</tr>' +
+      (open ? drawerHTML({ t: x.sym, n: '', s: '' }, 9, { remove: false }) : '');
     }).join('') + '</tbody>';
 
     var scope = el('pf_scope');
@@ -1917,7 +1984,9 @@
       if (rm) { remove(rm.getAttribute('data-rm')); render(); pushCloud(); return; }
       var ad = e.target.closest('[data-add]');
       if (ad) { if (add(ad.getAttribute('data-add'))) { render(); pushCloud(); } return; }
-      var cta = e.target.closest('#ws_gate_save, #rc_cta');
+      // `[data-gate-save]` is the W4 drawer's lock-shell CTA: a drawer can be open on
+      // any row, so its CTA cannot be an id the way the page-level gates are.
+      var cta = e.target.closest('#ws_gate_save, #rc_cta, [data-gate-save]');
       if (cta) { if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signup'); return; }
       var si = e.target.closest('#ws_gate_signin');
       if (si) { if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin'); return; }
@@ -2058,7 +2127,15 @@
       stageOf: stageOf,
       secZh: secZh,
       secCell: secCell,
-      secSortKey: secSortKey
+      secSortKey: secSortKey,
+      /* W4 — the row drawer, so the node shell can RENDER it rather than assert about
+         its source text. `__setDetail` seats the hydration cache the same way
+         `WRI.__setModel` seats a book: it is the only way to reach the signed-in branch
+         without a DOM or a fetch, and without it the anonymous branch is the only one a
+         test can ever see — which is precisely the branch that must not be the only one
+         that works. */
+      drawerHTML: drawerHTML,
+      __setDetail: function (t, d) { DETAIL[t] = d; }
     };
   }
 })();

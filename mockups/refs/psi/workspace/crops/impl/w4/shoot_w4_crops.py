@@ -1,0 +1,585 @@
+"""W4 visual gate — browser-driven crops of the REAL per-ticker Intelligence Drawer.
+
+Same discipline as the W2 and W3 harnesses beside it, and the same refusal to stage
+anything: every shot renders `templates/watchlist.html.j2` through the builder's own
+context, runs the page's OWN scripts against the REAL nightly artifacts in `site/`, and
+seeds only a BOOK (and a watchlist) in localStorage — the stores a real visitor's state
+lives in. Every sentence in these crops is the page composing over those artifacts.
+
+WHAT THIS WAVE'S HARNESS HAS TO CATCH THAT THE LAST ONE DID NOT. W3 learned that a bare
+agent worktree has no `site/stockdata/`, so the page degrades exactly as designed and
+photographs as a working page with a thin book. W4's drawer degrades the same way, one
+level finer: EVERY SECTION has an honest-absence line, so a drawer with no artifacts
+behind it renders thirteen beautifully-worded rows that all say "not covered". That is
+the wave's own success criterion rendering as a total data failure — the most persuasive
+false green available to this build. So the gate asserts BOTH directions:
+
+  * the rich name's drawer must contain AT MOST `RICH_MAX_NA` absent rows, and
+  * the sparse name's drawer must contain AT LEAST `SPARSE_MIN_NA` — and some real ones.
+
+Both thresholds are measured, not chosen — and the run PRINTS the inventory it measured
+them from (`INVENTORY` lines, first variant only), so the README beside this file quotes
+a number this script emitted rather than a number somebody remembered. The composer
+emits 15 rows; a HOLDINGS drawer adds Stage from `portfolio.js`, so scenes 02/03 are 16
+rows and the watchlist scene 04 is 15.
+
+A run where every row is honest is a run with no data, and it exits non-zero.
+
+Also asserted rather than eyeballed: no page errors; zero PAGE-level horizontal scroll
+at 390px with a drawer open (the drawer is the widest thing on the page); the anonymous
+drawer is a lock shell carrying no lane rows at all; and the drawer opens from BOTH
+modes' rows, which is the acceptance row a screenshot of one mode cannot prove.
+
+Run:  python3 mockups/refs/psi/workspace/crops/impl/w4/shoot_w4_crops.py
+Needs a browser (playwright) and the repo's own site/ artifacts — hand-run, for the
+reason recorded in ../IMPLEMENTATION_DELTAS.md: the CI packs install a minimal
+dependency set, so a pytest wrapper here would SKIP in CI and report green while proving
+nothing. The node-shelled half of this wave's evidence is `tests/test_watchlist_drawer_js.py`,
+which DOES run in CI.
+"""
+import argparse
+import functools
+import http.server
+import json
+import pathlib
+import re
+import shutil
+import socketserver
+import subprocess
+import tempfile
+import sys
+import threading
+import time
+
+from playwright.sync_api import sync_playwright
+
+HERE = pathlib.Path(__file__).resolve()
+# w4 / impl / crops / workspace / psi / refs / mockups / <worktree>
+ROOT = HERE.parents[7]
+assert (ROOT / "templates" / "watchlist.html.j2").exists(), ROOT
+FINAL = HERE.parent      # the committed evidence directory
+# `None` until main() binds a staging dir. It used to default to FINAL, so any future
+# direct `shoot()` caller would have written straight into the committed evidence — the
+# same hazard F4 removed from the main path, left standing at module scope.
+OUT = None
+SITE = ROOT / "site"
+PORT = 8874
+BASE = "http://127.0.0.1:%d" % PORT
+
+DESKTOP = (1440, 900)
+MOBILE = (390, 844)
+
+VARIANTS = [
+    ("desktop_dark_en", DESKTOP, None, None),
+    ("desktop_light_en", DESKTOP, "light", None),
+    ("desktop_dark_zh", DESKTOP, None, "zh"),
+    ("390_dark_en", MOBILE, None, None),
+    ("390_dark_zh", MOBILE, None, "zh"),
+]
+
+# The twelve-position book the W2/W3 harnesses use, plus a watchlist, because W4's
+# acceptance row is that the drawer opens from BOTH modes' rows.
+WL = ["AAPL", "NVDA", "MSFT", "AVGO", "LLY", "RIVN", "GLD", "XOM"]
+# `loc-13` is added here rather than in the shared `preview_seed.js`, which the W2 and
+# W3 harnesses also load — a wave does not get to change the book its predecessors shot.
+SEED = ("window.__W2.clear(); window.__W2.book();"
+        "var b=JSON.parse(localStorage.getItem('mdash.pf.v1'));"
+        "b.rows.push({id:'loc-13',ticker:'RIVN',shares:420,entry_price:13.10,"
+        "entry_date:'2025-09-02',status:'open'});"
+        "localStorage.setItem('mdash.pf.v1', JSON.stringify(b));"
+        "window.__W2.list(%s); window.__W2.seen(%s);" % (json.dumps(WL), json.dumps(WL)))
+SEED_ANON = ("window.__W2.clear();"
+             "window.__W2.entry('AAPL, MSFT, NVDA, AVGO, GOOGL, AMZN, GLD, TLT','equal');")
+
+# The rich name and the sparse one, chosen by MEASURING every artifact in the library
+# rather than by picking a plausible ticker.
+#
+# The first version used TLT, and it was wrong in a way the crop could not show: TLT's
+# artifact here is 1,354 bytes against a 59,273-byte median — one of 16 stub-grade files
+# in this directory — so the "degraded" scene was photographing a broken FILE, not a
+# sparse name. Worse, the README's rationale for it ("carries macro sensitivity and
+# ownership filings") was falsified by the crop itself: the stub has those KEYS but not
+# the fields the rows read, so both rendered n/a.
+#
+# RIVN is a real 50KB artifact whose holdings drawer renders 7 real rows, 8 coverage gaps
+# and 1 evaluated-negative; AAPL's renders 15 real and 1 gap. Only the GAP counts are
+# asserted (the bounds below); the rest is printed per scene by `print_inventory` so the
+# README beside this file can quote a measurement rather than a memory.
+# `assert_not_stub_grade` refuses the class of file that made the first attempt
+# meaningless.
+#
+# The counts are `.st.na` ONLY — the coverage-gap mark. Since m8 split the three coverage
+# meanings apart, `none` (we looked; the answer is none) and `n/app` (does not apply here)
+# are ANSWERS and count as real rows.
+RICH = ("loc-3", "AAPL")
+SPARSE = ("loc-13", "RIVN")
+RICH_MAX_NA = 3        # AAPL measures 1 (Events); the margin is for nightly drift
+SPARSE_MIN_NA = 5      # RIVN measures 8
+MIN_ARTIFACT_BYTES = 20000   # the 16 stubs here are all <2KB; the median is ~59KB
+
+
+def link_nightly_artifacts() -> list:
+    """Borrow `site/stockdata/` from the main checkout for the duration of the shoot.
+
+    THE TRAP THIS EXISTS FOR, restated for W4 because it bites harder here. `site/
+    stockdata/` is an untracked nightly artifact directory; a fresh agent worktree has
+    none of it. The drawer then composes over `null` for every name and renders its
+    honest-absence line in every section — thirteen well-written rows saying nothing is
+    covered. Photographed, that is indistinguishable from a working drawer on a quiet
+    name, and it is the exact evidence this wave is supposed to produce. The assertions
+    in `main` exist because the picture cannot tell you which one you got.
+
+    Removed in `main`'s finally block: an untracked symlink left in the tree blocks the
+    ship-loop guard.
+    """
+    common = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=str(ROOT), capture_output=True, text=True, check=True).stdout.strip()
+    primary = pathlib.Path(common).parent
+    made = []
+    for name in ("stockdata",):
+        src, dst = primary / "site" / name, SITE / name
+        if dst.exists() or dst.is_symlink():
+            # ADOPT it for cleanup instead of walking away. This `continue` used to fire
+            # BEFORE `made.append`, so a symlink left behind by one aborted run was
+            # invisible to every later run's `finally` — it could only ever accumulate.
+            # That is how a machine-local absolute-path symlink survived long enough for
+            # a broad `git add` to commit it into the shipping tree.
+            if dst.is_symlink():
+                made.append(dst)
+                print("adopted a leftover symlink for cleanup:", dst)
+            continue
+        if not src.is_dir():
+            print("WARNING: %s not found in the main checkout — every drawer row will be "
+                  "the honest-absence line, which is NOT evidence for this wave." % src)
+            continue
+        dst.symlink_to(src)
+        made.append(dst)
+        print("linked", dst, "->", src, "(%d files)" % len(list(src.iterdir())))
+    return made
+
+
+def assert_not_stub_grade(*tickers) -> None:
+    """Refuse to shoot a scene over a stub.
+
+    `site/stockdata/` mixes real nightly artifacts with a handful of tiny placeholder
+    files (16 of them here, all under 2KB against a ~59KB median). A stub renders as a
+    drawer of honest-absence rows, which is EXACTLY what a "degraded name" scene is
+    supposed to look like — so the crop is indistinguishable from the real thing and the
+    evidence silently becomes a photograph of a broken file. That is what the first
+    version of this harness did with TLT.
+
+    Size alone is not enough: the row builders read nested fields, so a file can be big
+    and still not carry what a scene claims. Both are checked."""
+    for t in tickers:
+        f = SITE / "stockdata" / (t + ".json")
+        assert f.is_file(), "%s has no artifact — the scene cannot be shot" % t
+        size = f.stat().st_size
+        assert size >= MIN_ARTIFACT_BYTES, (
+            "%s.json is %d bytes (< %d) — that is a stub, not a sparse name. A crop of "
+            "it would document a broken file as a product state."
+            % (t, size, MIN_ARTIFACT_BYTES))
+        j = json.loads(f.read_text())
+        assert isinstance(j, dict) and j.get("tech"), \
+            "%s carries no `tech` block — it cannot render a real row" % t
+
+
+def render_preview() -> None:
+    sys.path.insert(0, str(ROOT))
+    from jinja2 import Environment, FileSystemLoader
+    from engine.cycles import STATE_DISPLAY
+
+    env = Environment(loader=FileSystemLoader(str(ROOT / "templates")), autoescape=False)
+    html = env.get_template("watchlist.html.j2").render(
+        generated_utc="2026-08-13 09:00",
+        state_display_json=json.dumps(STATE_DISPLAY),
+        supabase_cfg_json="null",
+        wri_regime_json=json.dumps({
+            "state": "calm",
+            "dominant_label_en": "Liquidity easing",
+            "dominant_label_zh": "流动性宽松",
+            "asof": "2026-08-13",
+        }),
+        starters_json=json.dumps(["NVDA", "MSFT", "GLD", "TLT"]),
+    )
+    # hand-authored ?v=N stamps mean a browser that already loaded v=N keeps the stale
+    # body across renders — bust them per run. Preview-only.
+    tok = str(int(time.time()))
+    html = re.sub(r'(src|href)="([a-z_0-9.]+\.(?:js|css))(\?v=\d+)?"',
+                  lambda m: '%s="%s?cb=%s"' % (m.group(1), m.group(2), tok), html)
+    html = html.replace("<head>", '<head>\n<script src="__w4seed.js"></script>', 1)
+    (SITE / "__w4preview.html").write_text(html)
+    (SITE / "__w4seed.js").write_text((FINAL.parent / "preview_seed.js").read_text())
+    print("rendered preview ->", SITE / "__w4preview.html")
+
+    # ANONYMOUS variant — the four account-gated scripts are REMOVED, not disabled,
+    # which is what production does (they 401 behind the wall and never execute). The
+    # drawer's anonymous branch is reached by their ABSENCE, so simulating the wall with
+    # a flag would test a different code path from the one that ships.
+    anon = html
+    for g in ("stockdata.js", "watchlist_risk.js", "risk_core.js", "factor_exposure.js"):
+        anon = re.sub(r'<script src="%s[^"]*"></script>\n?' % re.escape(g), "", anon)
+        assert ('src="%s' % g) not in anon, g
+    (SITE / "__w4preview_anon.html").write_text(anon)
+    print("rendered anon preview ->", SITE / "__w4preview_anon.html")
+
+
+def serve() -> socketserver.TCPServer:
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(SITE))
+    socketserver.TCPServer.allow_reuse_address = True
+    srv = socketserver.TCPServer(("127.0.0.1", PORT), handler)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return srv
+
+
+def hide_launcher(page):
+    """The chat launcher is a shared global widget, not this page's design, and it is
+    position:fixed so it lands inside an ELEMENT crop too. A style RULE, not per-node
+    inline display: the launcher mounts asynchronously and re-mounts on re-render.
+
+    THE ID IS `#mmb-launch`, VERIFIED IN THE PAGE. The W2/W3 harnesses hide
+    `#mm-brain-launcher, .mm-brain-launcher, #mmb-launcher, [class*="brain-launcher"]` —
+    four selectors, none of which the widget actually carries — so that rule has been a
+    no-op in every crop those harnesses ever took, and the launcher is simply absent
+    from most of them by luck of where it lands. Derived here by enumerating every
+    position:fixed element on the rendered page rather than by copying the list forward.
+    The scrim and panel are named too: they are siblings of the same widget and a
+    mid-shoot mount of either would tint a whole crop."""
+    page.evaluate(
+        "()=>{if(document.getElementById('__nolauncher'))return;"
+        "var s=document.createElement('style');s.id='__nolauncher';"
+        "s.textContent='#mmb-launch,#mmb-scrim,#mmb-panel,#mm-brain-launcher,"
+        ".mm-brain-launcher,#mmb-launcher,[class*=\"brain-launcher\"]"
+        "{display:none !important}';"
+        "document.head.appendChild(s);}"
+    )
+    # and prove it worked, rather than assuming the selector matched — the whole reason
+    # this function needed rewriting is that nobody checked
+    left = page.evaluate(
+        "()=>{var n=document.getElementById('mmb-launch');"
+        "return n?getComputedStyle(n).display:'absent';}")
+    assert left in ("none", "absent"), "the chat launcher is still visible: %r" % left
+
+
+def prepare(page, size, theme, lang, seed=None, url=None):
+    page.set_viewport_size({"width": size[0], "height": size[1]})
+    page.goto(url or (BASE + "/__w4preview.html"), wait_until="domcontentloaded")
+    page.evaluate(seed or SEED)
+    page.evaluate(
+        "([t,l])=>{try{t?localStorage.setItem('theme',t):localStorage.removeItem('theme');"
+        "l?localStorage.setItem('lang',l):localStorage.removeItem('lang');}catch(e){}}",
+        [theme, lang],
+    )
+    page.reload(wait_until="networkidle")
+    page.wait_for_timeout(3000)      # per-name hydration + the settled re-render
+    hide_launcher(page)
+
+
+def open_holding(page, row_id):
+    page.evaluate("(id)=>{var b=document.querySelector('.hold [data-row-exp=\"'+id+'\"]');"
+                  "if(b)b.click();}", row_id)
+    page.wait_for_timeout(420)
+
+
+def open_watch(page, ticker):
+    page.evaluate("(t)=>{var b=document.querySelector('#tbl_wl [data-exp=\"'+t+'\"]');"
+                  "if(b)b.click();}", ticker)
+    page.wait_for_timeout(420)
+
+
+def drawer_stats(page):
+    """What the open drawer actually contains — the numbers the gate is made of."""
+    return page.evaluate(
+        "()=>{var d=document.querySelector('tr.row-drawer');"
+        "if(!d)return {found:false};"
+        "var rows=d.querySelectorAll('.wri-lrow');"
+        "var na=d.querySelectorAll('.wri-lrow .st.na');"
+        "var blank=0;"
+        "rows.forEach(function(r){var s=r.querySelector('.rs');"
+        "if(!s||!(s.innerText||'').trim())blank++;});"
+        "return {found:true, rows:rows.length, na:na.length, blank:blank,"
+        " lock:d.querySelectorAll('.lockshell').length,"
+        " t1:d.querySelectorAll('.drw-t1').length,"
+        " text:(d.innerText||'').slice(0,4000)};}")
+
+
+def drawer_rows(page):
+    """Every row in the open drawer with the mark it carries — label + state class.
+
+    `drawer_stats` above answers the GATE's question (how many gaps?). This answers the
+    README's question (which rows, and what did each one say?), and it exists because
+    three consecutive review rounds passed over README prose whose per-scene row counts
+    were simply wrong: 15 where the holdings drawer renders 16, "8 of 15" for a scene
+    that has 16 rows, sub-counts that drifted every time a row was added. Prose derived
+    from memory rots silently; prose derived from a printed inventory cannot.
+
+    Labels are read with `textContent`, not `innerText`: under `zh` the `.l-en` span is
+    `display:none` and `innerText` would come back empty for every row."""
+    return page.evaluate(
+        "()=>{var d=document.querySelector('tr.row-drawer');"
+        "if(!d)return [];"
+        "return Array.from(d.querySelectorAll('.wri-lrow')).map(function(r){"
+        "var ln=r.querySelector('.ln'), st=r.querySelector('.st');"
+        "var e=ln?ln.querySelector('.l-en'):null;"
+        "var lab=((e?e.textContent:(ln?ln.textContent:''))||'').replace(/\\?$/,'').trim();"
+        "var cls=st?Array.prototype.slice.call(st.classList)"
+        ".filter(function(c){return c!=='st';}).join(' '):'';"
+        "return {label:lab, mark:cls||'real'};});}")
+
+
+def print_inventory(scene, rows):
+    """The receipt. `na` is the COVERAGE-GAP mark and the only one the gate counts;
+    `none` (we looked, the answer is none) and `n/app` (does not apply to this row) are
+    answers rather than gaps. All four categories are disjoint — `real` excludes them —
+    so `real + na + none + n/app == len(rows)` and no row is counted twice."""
+    na = [r for r in rows if r["mark"] == "na"]
+    ev = [r for r in rows if r["mark"] == "none"]
+    napp = [r for r in rows if r["mark"] == "n/app"]
+    real = len(rows) - len(na) - len(ev) - len(napp)
+    print("   INVENTORY %s: %d rows = %d real + %d gap(n/a) + %d evaluated-none + "
+          "%d n/app" % (scene, len(rows), real, len(na), len(ev), len(napp)))
+    for group, label in ((na, "n/a"), (ev, "NONE"), (napp, "—")):
+        if group:
+            print("      %-6s %s" % (label, ", ".join(r["label"] for r in group)))
+
+
+def hscroll(page):
+    return page.evaluate("()=>{var d=document.documentElement;return d.scrollWidth-d.clientWidth;}")
+
+
+def shoot(page, name):
+    # re-asserted per shot, not once per scene: the launcher mounts asynchronously and
+    # RE-mounts, and it is position:fixed, so it lands inside an element crop of a
+    # drawer near the bottom of the viewport. W3 recorded the same leak; a rule injected
+    # at prepare() time is not enough when the widget re-mounts after it.
+    hide_launcher(page)
+    d = page.locator("tr.row-drawer").first
+    d.screenshot(path=str(OUT / (name + ".png")))
+    print("  ->", name + ".png")
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--keep-staging", action="store_true",
+                    help="leave the staging directory in place for inspection")
+    args = ap.parse_args(argv)
+
+    global OUT
+    staging = pathlib.Path(tempfile.mkdtemp(prefix="w4crops-"))
+    OUT = staging
+    print("staging ->", staging)
+
+    # Everything that can leave state behind lives INSIDE the try. `link_nightly_artifacts`
+    # used to sit outside it, so an exception from the stub guard, the render or the port
+    # bind skipped the `finally` and left the symlink in the tree — the exact residue B1
+    # was made of. `linked` is seeded empty so the `finally` is safe if the link itself
+    # throws.
+    linked, srv = [], None
+    errs, overflow, problems = [], [], []
+    try:
+        linked = link_nightly_artifacts()
+        assert_not_stub_grade(RICH[1], SPARSE[1])
+        render_preview()
+        srv = serve()
+        with sync_playwright() as pw:
+            b = pw.chromium.launch()
+            ctx = b.new_context(device_scale_factor=2)
+            page = ctx.new_page()
+            page.on("pageerror", lambda e: errs.append(str(e)))
+
+            for vstem, size, theme, lang in VARIANTS:
+                print(vstem)
+                # the inventory is the same in all five variants (same composer, same
+                # artifacts); printing it once keeps the receipt readable
+                first = vstem == VARIANTS[0][0]
+                prepare(page, size, theme, lang)
+
+                # ---- 01/02 the RICH name, from a HOLDINGS row --------------
+                open_holding(page, RICH[0])
+                st = drawer_stats(page)
+                if not st["found"]:
+                    problems.append((vstem, "rich drawer did not open"))
+                else:
+                    if first:
+                        print_inventory("02 rich holdings (%s)" % RICH[1],
+                                        drawer_rows(page))
+                    # the whole drawer: Tier 1 + every Tier-2 section
+                    shoot(page, "02_tier2_expanded_%s_%s" % (RICH[1], vstem))
+                    # Tier 1 alone — the glance read, which is a different claim
+                    hide_launcher(page)
+                    page.locator("tr.row-drawer .drw-t1").first.screenshot(
+                        path=str(OUT / ("01_tier1_%s_%s.png" % (RICH[1], vstem))))
+                    print("  ->", "01_tier1_%s_%s.png" % (RICH[1], vstem))
+                    if st["rows"] < 12:
+                        problems.append((vstem, "rich drawer had %d rows, expected >=12" % st["rows"]))
+                    if st["blank"]:
+                        problems.append((vstem, "%d drawer rows rendered an EMPTY read" % st["blank"]))
+                    # THE FALSE-GREEN GATE. With no artifacts every section renders its
+                    # honest-absence line and the drawer photographs as a working one.
+                    if st["na"] > RICH_MAX_NA:
+                        problems.append((vstem, "rich drawer rendered %d not-covered rows "
+                                                "(max %d) — this run had no data behind it"
+                                         % (st["na"], RICH_MAX_NA)))
+                    if st["t1"] != 1:
+                        problems.append((vstem, "Tier 1 block count = %d" % st["t1"]))
+                if size == MOBILE and hscroll(page) > 0:
+                    overflow.append((vstem, "rich-drawer", hscroll(page)))
+                open_holding(page, RICH[0])          # close
+
+                # ---- 03 a name whose artifacts are genuinely thin -----------
+                open_holding(page, SPARSE[0])
+                st = drawer_stats(page)
+                if not st["found"]:
+                    problems.append((vstem, "sparse drawer did not open"))
+                else:
+                    if first:
+                        print_inventory("03 sparse holdings (%s)" % SPARSE[1],
+                                        drawer_rows(page))
+                    shoot(page, "03_degraded_%s_%s" % (SPARSE[1], vstem))
+                    if st["blank"]:
+                        problems.append((vstem, "%d sparse rows rendered EMPTY" % st["blank"]))
+                    # both halves of honest degradation, in one drawer
+                    if st["na"] < SPARSE_MIN_NA:
+                        problems.append((vstem, "the sparse name reported only %d gaps "
+                                                "(min %d) — is it still sparse?"
+                                         % (st["na"], SPARSE_MIN_NA)))
+                    if st["na"] >= st["rows"]:
+                        problems.append((vstem, "the sparse drawer was ENTIRELY gaps — no data"))
+                if size == MOBILE and hscroll(page) > 0:
+                    overflow.append((vstem, "sparse-drawer", hscroll(page)))
+                open_holding(page, SPARSE[0])
+
+                # ---- 04 the same composer, from a WATCHLIST row ------------
+                page.evaluate("()=>{window.__W2.mode('watchlists');}")
+                page.reload(wait_until="networkidle")
+                page.wait_for_timeout(3000)
+                hide_launcher(page)
+                open_watch(page, RICH[1])
+                st = drawer_stats(page)
+                if not st["found"]:
+                    problems.append((vstem, "watchlist drawer did not open"))
+                else:
+                    if first:
+                        print_inventory("04 rich watchlist (%s)" % RICH[1],
+                                        drawer_rows(page))
+                    shoot(page, "04_watchlist_mode_%s_%s" % (RICH[1], vstem))
+                    if st["rows"] < 12:
+                        problems.append((vstem, "watchlist drawer had %d rows" % st["rows"]))
+                    # a watched name is not a position, and the drawer says so rather
+                    # than inventing a weight for it
+                    if "watchlist" not in st["text"] and "自选" not in st["text"]:
+                        problems.append((vstem, "the watchlist drawer did not say the name is not held"))
+                if size == MOBILE and hscroll(page) > 0:
+                    overflow.append((vstem, "watchlist-drawer", hscroll(page)))
+                page.evaluate("()=>{window.__W2.mode('portfolio');}")
+
+                # ---- 05 the ANONYMOUS drawer -------------------------------
+                prepare(page, size, theme, lang, seed=SEED_ANON,
+                        url=BASE + "/__w4preview_anon.html")
+                page.evaluate("()=>{var b=document.querySelector('.hold [data-exp],"
+                              ".hold [data-row-exp]');if(b)b.click();}")
+                page.wait_for_timeout(420)
+                st = drawer_stats(page)
+                if not st["found"]:
+                    problems.append((vstem, "anonymous drawer did not open"))
+                else:
+                    shoot(page, "05_anon_locked_%s" % vstem)
+                    if not st["lock"]:
+                        problems.append((vstem, "the anonymous drawer is not a lock shell"))
+                    # zero gated signal, of any kind, anywhere in it
+                    if st["rows"]:
+                        problems.append((vstem, "the anonymous drawer rendered %d lane rows"
+                                                % st["rows"]))
+                if size == MOBILE and hscroll(page) > 0:
+                    overflow.append((vstem, "anon-drawer", hscroll(page)))
+
+            # ---- the large-list law, measured once (no crop) ---------------
+            # "Opening and closing drawers across a 100-name list does not degrade the
+            # table." Asserted rather than assumed, because the failure is gradual: the
+            # drawer is rendered by the row renderer, so every toggle re-renders the
+            # whole table, and a composition that got expensive would show up as a
+            # table that slowly loses rows or a page that grinds. Both are measured.
+            print("100-name list — drawer open/close")
+            prepare(page, DESKTOP, None, None, seed=(
+                "window.__W2.clear(); window.__W2.book();"
+                "var all=window.__W2.WL55.concat(['SPY','QQQ','IWM','DIA','XLK','XLF',"
+                "'XLE','XLV','XLI','XLY','XLP','XLU','XLB','XLRE','SMH','SOXX','ARKK',"
+                "'TSLA','NFLX','DIS','BA','CAT','DE','HON','GE','MMM','UPS','FDX','LMT',"
+                "'RTX','NOC','GD','V','MA','JPM','BAC','WFC','GS','MS','C','AXP','PYPL',"
+                "'COIN','HOOD','ORLY']).slice(0,100);"
+                "window.__W2.list(all); window.__W2.seen(all);"
+                "window.__W2.mode('watchlists');"))
+            n0 = page.evaluate("()=>document.querySelectorAll('#tbl_wl tbody tr[data-t]').length")
+            t0 = time.time()
+            syms = page.evaluate(
+                "()=>Array.from(document.querySelectorAll('#tbl_wl tbody tr[data-t]'))"
+                ".slice(0,20).map(function(n){return n.getAttribute('data-t');})")
+            for s in syms:                      # open twenty, then close them again
+                open_watch(page, s)
+            openn = page.evaluate("()=>document.querySelectorAll('tr.row-drawer').length")
+            for s in syms:
+                open_watch(page, s)
+            elapsed = time.time() - t0
+            n1 = page.evaluate("()=>document.querySelectorAll('#tbl_wl tbody tr[data-t]').length")
+            left = page.evaluate("()=>document.querySelectorAll('tr.row-drawer').length")
+            print("   rows %d -> %d · %d drawers opened · %d left after closing · %.1fs"
+                  % (n0, n1, openn, left, elapsed))
+            if n0 < 100:
+                problems.append(("large-list", "seeded 100 names, table rendered %d" % n0))
+            if n1 != n0:
+                problems.append(("large-list", "table lost rows across drawer toggles: "
+                                               "%d -> %d" % (n0, n1)))
+            if openn != len(syms):
+                problems.append(("large-list", "%d drawers opened, expected %d"
+                                 % (openn, len(syms))))
+            if left:
+                problems.append(("large-list", "%d drawers survived their own close" % left))
+            b.close()
+    finally:
+        if srv is not None:
+            srv.shutdown()
+        for f in ("__w4preview.html", "__w4preview_anon.html", "__w4seed.js"):
+            p = SITE / f
+            if p.exists():
+                p.unlink()
+        for p in linked:
+            if p.is_symlink():
+                p.unlink()
+
+    ok = True
+    if errs:
+        print("PAGE ERRORS:", errs[:6]); ok = False
+    else:
+        print("no page errors")
+    if problems:
+        print("DRAWER PROBLEMS:")
+        for p in problems:
+            print("   ", p)
+        ok = False
+    else:
+        print("every drawer opened, rendered real reads, and disclosed its own gaps")
+    if overflow:
+        print("PAGE-LEVEL HORIZONTAL SCROLL at 390px:", overflow); ok = False
+    else:
+        print("zero page-level horizontal scroll at 390px with a drawer open")
+
+    # PROMOTE ONLY ON SUCCESS. The first version wrote all 25 PNGs straight into the
+    # committed directory as it went, and only then ran its assertions — so a failing
+    # run replaced good evidence with bad, and a bare `main()` at module scope meant
+    # even `--help` did it. Shoot to a temp dir, assert, and copy in only if every gate
+    # passed; a failed run leaves the committed crops exactly as they were.
+    if not ok:
+        print("\nFAILED — the committed crops were NOT touched. Staging kept at", staging)
+        return 1
+    shot = sorted(staging.glob("*.png"))
+    assert shot, "the run reported success and produced no PNGs"
+    for f in shot:
+        shutil.copy2(f, FINAL / f.name)
+    print("\npromoted %d crops -> %s" % (len(shot), FINAL))
+    if not args.keep_staging:
+        shutil.rmtree(staging, ignore_errors=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

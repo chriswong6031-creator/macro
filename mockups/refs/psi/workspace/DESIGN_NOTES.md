@@ -517,3 +517,147 @@ engines that already existed. No estimator changed. The rulings a later wave inh
 - **Fix the dead class in the file you are already editing.** Deferring a three-line CSS
   fix to a later wave while editing the exact template it lands in costs more than taking
   it, and ships a known defect in the meantime.
+
+---
+
+### (h) W4 — the per-ticker Intelligence Drawer
+
+W4 composed the drawer out of artifacts that already exist: no estimator changed, no
+engine was added, and — the property that decides whether a 100-name list survives it —
+no fetch was added. Every field it reads comes out of the same `stockdata/<T>.json` the
+row already hydrated for its own cells, so opening a drawer is string concatenation over
+an object the page is holding anyway. The rulings a later wave inherits:
+
+- **Honest absence is a MECHANISM, not a habit.** Every section builder returns a ROW,
+  never `''`, and the row names WHAT is missing ("no options plane for this name
+  tonight") rather than saying nothing. A section that renders nothing and a section
+  with nothing to report are the same pixels, and only one of them is information.
+  `tests/test_watchlist_drawer_js.py` runs every builder over an EMPTY payload and reds
+  if any returns a blank, so the next person to add a section cannot quietly skip theirs.
+- **And the gate is TWO-SIDED, or it certifies its own failure.** Because every section
+  degrades honestly, a drawer composed over no artifacts renders thirteen well-worded
+  rows all saying "not covered" — a screenshot indistinguishable from a working drawer
+  on a quiet name. The wave's success criterion and its total failure look identical.
+  So the crop harness asserts a rich name renders almost NO absent rows and a sparse one
+  renders SOME BUT NOT ALL. **Any later gate over an honest-degradation surface needs
+  both halves**; the "it degrades honestly" half alone is satisfied by having no data.
+- **A surface may only name what it renders — including what it MEASURED.** The CEO's
+  Tier-2 list asks for USD, oil, China and BTC/Gold sensitivity, and for retail flow and
+  Congress trades. No per-name artifact carries any of them, so the drawer does not
+  mention them and each row's tip states the set that WAS measured. Naming an exposure
+  we did not measure is the failure this rule exists to prevent.
+- **A LANE reports a state; a SECTION may report the mechanism behind it.** The `rates`
+  lane says "not very rate-sensitive"; Macro sensitivity says "rate risk runs through
+  its market / growth beta, not a distinct duration leg". Those are different claims and
+  may sit together. Two rows repeating one claim may not — the §7(g) no-duplicate-claim
+  rule is about the CLAIM, not the topic.
+- **Two escaping rules, because the two slots are different languages.** The row
+  painter's `en`/`zh` slots are MARKUP and stay caller-escaped (callers interpolate
+  `<span class="fig">`). The `tip` slots are ATTRIBUTE TEXT and are escaped BY THE
+  PAINTER. "Callers escape" is a fine rule where a mistake prints a stray tag; it is the
+  wrong rule where a mistake breaks OUT of `data-tip-en="…"` and turns the rest of the
+  row into attributes — a failure with no visible symptom, in the slot nobody looks at.
+- **An engine string written as an instruction is not display copy.**
+  `entry_signal.action` reads "take a half position here, or wait for the weekly to
+  turn". Holdings surfaces are descriptive only, so Tier 1 reads `headline`. Check any
+  new engine field for the imperative voice before surfacing it.
+- **A route that 200s is not a route that works.** `stock.html?t=<T>` shipped for a
+  wave: a real page, a real 200, an empty dossier, and nothing a link checker can see
+  (`stock.html` reads `location.hash`, plus `?ticker=` via a boot shim). Canonical links
+  are verified against the TARGET'S OWN READER, and the accepted parameter set is pinned
+  by a test so a change there fails loudly.
+- **A hide that was never verified is not a hide.** The W2/W3 crop harnesses hide the
+  chat launcher with four selectors, none of which it carries — the widget is
+  `#mmb-launch`, and that rule has been a no-op in every crop those harnesses took. W4's
+  harness derives the id from the rendered page and then asserts the computed style went
+  to `none`. **Any harness that suppresses something for a screenshot must prove the
+  suppression worked**, or the crop silently documents whatever it failed to hide.
+- **The stance vocabulary is ONE vocabulary in two files.** §7(b)'s Watch · Get ready ·
+  No action lives in `portfolio.js` (which runs signed-out) and in `watchlist_risk.js`
+  (which never does), so neither can import the other. A test asserts the two literal
+  sets are byte-equal rather than trusting them to stay in step. The event carve-out is
+  part of the precedence: an earnings date inside five days raises the events lane to
+  `elev`, but that is something to BE READY for, not something wrong — the same way the
+  book-level attention stack files it.
+**Round-2 rulings absorbed into (h), binding on later waves:**
+
+- **An engine field written in the trading voice is not display copy, and it is not an
+  edge case.** `entry_signal.headline` carries an imperative on **66.6%** of the library;
+  `alerts.pinned` on **80.2%** of the names that have one. Any engine string reaching a
+  user surface needs a TOTAL de-imperative map keyed on the engine's own **enum**, not on
+  the text — a text key silently falls through to passthrough the day someone fixes a
+  typo upstream — and its fallback must be derived from other fields, never the string
+  itself. A map with a passthrough fallback is not a map.
+- **A severity mark that fires on most rows is not a mark, it is the background.** Check
+  the DISTRIBUTION of any state token before shipping it: Watch measured 93.5%, ownership
+  `watch` 92.8%. And when a mark needs re-deriving, look first for an instrument that is
+  ALREADY graded — `roleBadge` had three rungs and an `if (role)` was flattening them —
+  rather than inventing a threshold.
+- **One topic, one severity owner.** If a lane already reports severity on a subject, a
+  section about the same subject reports FACTS and no state. Two severity claims about
+  one topic dilute each other and neither can be trusted.
+- **A staleness guard on the chip is not a staleness guard on the read.** A past
+  `earnings.next_date` was correctly kept out of the countdown chip and still rendered
+  "reports <date>" in a confident `ok` — on 1,197 of 1,205 names. Guard the state and the
+  sentence, not just the decoration.
+- **A harness must not write into committed evidence before it has judged it.** Shoot to
+  a temp dir, assert, promote on success. A failing run must leave the committed crops
+  untouched, and a module-scope `main()` means even `--help` overwrites them.
+- **A gate that checks a control EXISTS has not checked the control.** The chevron that
+  rendered, rotated and opened nothing would pass any existence check. Operate it.
+- **Choose an evidence artifact by MEASURING, and refuse stub-grade inputs.** The
+  "degraded name" crop was shot over a 1,354-byte stub against a 59,273-byte median, and
+  the crop could not show it — an honest-degradation scene and a no-data scene are the
+  same picture. Size AND field presence, asserted before the browser starts.
+- **A guard must be able to tell a rule from its explanation.** Three tests in this wave
+  failed on their own comments (`stock.html?t=`, `title=`, the gain-protection phrase).
+  Match the EMIT shape, not the prose.
+- **A SKIP is not a PASS.** A node-shelled suite with node absent exits 0 having proved
+  nothing. On CI, absent tooling is a failure.
+- **Derive the set a coverage test iterates.** A hand-written class list covers exactly
+  what its author thought of, which is how `.wri-rail-chain` sat unstyled from #3527.
+- **Never latch a wave boundary into a test.** Hardcoding `?v=7` reds the NEXT legitimate
+  bump; assert monotonicity against `origin/main` so the check retires itself on merge.
+
+- **A one-name factor group is a FINDING, not a label.** `clusterLabel` returns
+  `members[0]` for a group of one, so passing its label through printed "filed under
+  AAPL" inside AAPL's own drawer. Carry the facts (which force, how many names) and word
+  them at the surface: "moves on its own — nothing else here is grouped with it".
+
+**Round-4 rulings absorbed into (h), binding on later waves:**
+
+- **A NORMALISED word and a RAW number may not share a sentence as claim-and-evidence.**
+  `Well above its own trend — about 8.9% above its 200-day line.` puts a
+  volatility-normalised grade (`ext.grade` grades `ext_z`, the gap's z-score against the
+  name's own 252-day history) in front of the un-normalised gap and joins them with an em
+  dash, so the number reads as the word's proof. It is not: **33.6% of ordered pairs
+  invert** over the 1,621 graded artifacts — the name called further out sits at the
+  smaller raw gap, and two drawers side by side then look broken. State the number as a
+  fact of its own, then the word **behind the yardstick it was measured against**.
+- **Name the yardstick PER BRANCH, or the disclosure becomes the next false claim.** The
+  same row falls back from `ext.grade` (1,260 of 1,621) to
+  `ladder.alignment.overextended` (the other 361), and the fallback is StochRSI/RSI
+  overbought or a >=30% gap — not a normalised distance at all. A single "measured
+  against how much it usually moves" clause would have been false on 22% of the library
+  and on **both** crop exemplars, neither of which carries an `ext` block. Check which
+  branch produced the value before writing the sentence that explains it.
+- **Disambiguating the VALUES is half the fix; the LABEL is what a reader meets first.**
+  Round 3 reworded the distance row's values and left the lane labelled `Stretch`, so
+  "Stretch: OK — not stretched" still sat a few rows from "Distance from trend: Well
+  above its own trend" — the same one-word-two-measurements defect, one round later, in
+  the more prominent slot. Rename the label in the same act as the copy.
+- **A fallback branch inherits the label, so it must disclose when it cannot answer the
+  label's question.** The entry-stretch lane falls back to `hv20` when no
+  `entry_signal.status` exists; filing a volatility answer silently under an ENTRY label
+  is the mislabel one rung down. It now says "no entry read tonight" first.
+- **Prose that certifies itself is not evidence.** "Every figure here is per-scene and
+  matches the crop named beside it" survived three review rounds while the counts beside
+  it were wrong in all three scenes. A harness that photographs a surface must also
+  PRINT the inventory it measured, and the document must say which of its figures are
+  asserted, which are transcribed from that print, and which are hand-written.
+- **A test that SKIPs in CI is only ever checked by hand, so its own scaffolding is
+  unguarded.** The library sweeps carried a two-argument `intelStance` call after the
+  function grew a third parameter, and printed a distribution the DOM never rendered
+  (No action 2.9% against the live 1.0%); a stray `%` in that same template raises
+  `TypeError` before the sweep runs at all. Neither is visible to CI. Run the skipped
+  half locally before claiming its numbers.
