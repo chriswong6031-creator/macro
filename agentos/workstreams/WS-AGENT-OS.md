@@ -103,21 +103,28 @@ invariant I1 makes that structural rather than promised: nothing here can block 
 
 ## Phase 1 acceptance receipts
 
-W1 closed only after six independent real-work handoff records across five non-Agent-OS
-workstreams, none of them the Agent OS scaffolding sessions, were written and their
-implementation commits were merged to `origin/main`:
+The current store contains twelve independent real-work handoff records across seven
+non-Agent-OS workstreams. None came from the Agent OS scaffolding/compiler sessions or this
+Phase 2b closure session, and every implementation commit is merged to `origin/main`:
 
+- `agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-14-e2big.md`
+- `agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-14-exclusive-curation.md`
 - `agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-13.md`
-- `agentos/handoffs/PROPHET-US-AVAILABILITY-2026-08-14.md`
-- `agentos/handoffs/STOCK-IDENTITY-2026-08-13.md`
-- `agentos/handoffs/WS-EVAL-OS-MEASUREMENT-LAW-2026-08-14.md`
+- `agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-14.md`
 - `agentos/handoffs/PROPHET-CONDITIONAL-FUSION-2026-08-14.md`
 - `agentos/handoffs/PROPHET-CONDITIONAL-FUSION-2026-08-14-pr1a.md`
+- `agentos/handoffs/PROPHET-US-AVAILABILITY-2026-08-14.md`
+- `agentos/handoffs/STOCK-IDENTITY-2026-08-13.md`
+- `agentos/handoffs/STOCK-IDENTITY-2026-08-14.md`
+- `agentos/handoffs/WS-EVAL-OS-MEASUREMENT-LAW-2026-08-14.md`
+- `agentos/handoffs/WS-EVAL-OS-MEASUREMENT-LAW-2026-08-14-P0D.md`
+- `agentos/handoffs/WS-EVAL-OS-T1-ENGINE-REGISTRY-2026-08-14.md`
 
-These are six records rather than six distinct workstreams because Conditional Fusion
-authored two genuine implementation handoffs. They are adoption receipts, not manufactured
-closure records. W3 separately closed when PR #5561 merged; W2B stays `awaiting_ci` until
-its Macro producer and Mastermind consumer pass the cross-repo E2E.
+Multiple workstreams authored more than one genuine implementation handoff, so record count
+and distinct-workstream count intentionally differ. The two `WS:AGENT-OS` handoffs are
+excluded. These are adoption receipts, not manufactured closure records. W3 separately closed
+when PR #5561 merged; W2B stays `awaiting_ci` until its Macro producer and Mastermind consumer
+pass the deployed cross-repo E2E.
 
 ## Phase 2b mapping acceptance
 

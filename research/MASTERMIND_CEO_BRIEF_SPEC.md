@@ -68,7 +68,7 @@ python3 scripts/agentos.py brief --now 2026-08-14T19:00:00Z --since 7d --no-reme
 MASTERMIND STATUS — 2026-08-14 19:00 UTC
 since the last 7d (2026-08-07 19:00 UTC, 168h ago)
 
-  12 workstreams:  10 active · 0 awaiting CI · 2 blocked · 7 done this window
+  13 workstreams:  10 active · 1 awaiting CI · 2 blocked · 7 done this window
   Inputs: active_builds 16h old · <live> worktrees
   ⚠ DEGRADED (3) — this brief is incomplete:
       active_builds.v1 merged window is TRUNCATED — a merged PR may
@@ -116,7 +116,7 @@ since the last 7d (2026-08-07 19:00 UTC, 168h ago)
 
 ━━ RUNNING (no action needed) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
- 10 active · 0 awaiting CI · 0 awaiting review · 0 proposed.
+ 10 active · 1 awaiting CI · 0 awaiting review · 0 proposed.
  1 open PR(s) cited by a wave. 0 stale claim(s); 0 claim(s) with no live worktree.
                                      → agentos.py brief --full
 
