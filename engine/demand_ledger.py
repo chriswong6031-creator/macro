@@ -274,7 +274,16 @@ def _register_qledger_claims(written: list, root, today=None) -> dict | None:
     names, so a naive join nulls on roughly half the universe and nothing
     alarms). `make_claim` turns that name into the sector ETF. Passing NO
     resolver — the state before this wiring — registered every demand_chain claim
-    uncontrolled forever and its control-evidence clock could never start."""
+    uncontrolled forever and its control-evidence clock could never start.
+
+    `raw_sector_of` is the SAME lookup without the alias normalisation, passed
+    for DIAGNOSIS ONLY (C2.4). Because `membership_gics_sector_of` normalises,
+    it answers None both for a ticker absent from the universe file and for a
+    sector the alias table cannot map — so without the un-normalised twin the
+    registrar reported both as `sector_absent` and the `::warning`'s value
+    sample stayed empty, which is precisely the D0-2 signal this counting exists
+    to raise (review defect 1). It never reaches `make_claim` and never lands on
+    a claim row."""
     try:
         from engine import qledger as _q
         from engine import qledger_desk_adapter as _qadapt
@@ -285,6 +294,7 @@ def _register_qledger_claims(written: list, root, today=None) -> dict | None:
     return _qadapt.register_prospective(
         written, family="demand_chain", timestamp_quality="CRAWL_BOUNDED",
         root=root, today=today, sector_of=_q.membership_gics_sector_of(root),
+        raw_sector_of=lambda t: _q.sector_of_ticker(t, root),
         git_sha=_qclock.git_sha(root))
 
 

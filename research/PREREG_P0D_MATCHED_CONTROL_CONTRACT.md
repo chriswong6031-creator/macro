@@ -19,6 +19,19 @@ members — an unpriceable control is counted as uncovered, not as absent), C7 c
 9-14. Every amendment so far has been strictly strengthening: each one can only lower a
 reported coverage or narrow an eligible verdict, never the reverse.
 
+Adversarial review of the follow-up (2026-08-14, pre-ship) found the implementation
+contradicting the contract's own words in two places, both now repaired **in the code,
+with no clause changed**: C2.4's `vocabulary_unmapped` / `sector_absent` split was
+unreachable through the production wiring (a normalising resolver answers None for both
+causes, so every alias failure was reported as an absent ticker and the `::warning`'s
+value sample — the part that would catch a D0-2 recurrence from a nightly log — could
+never populate); and C4.4's `not_yet_matured` row was returned for a CLOSED window whose
+subject could not be priced, so a delisted name read as young forever instead of
+`primary_leg_refused`. Neither affected a coverage number, a denominator, or an
+eligibility verdict — both were disclosure defects, and both are now mutation-pinned. The
+same pass made one EDITORIAL repair to C9 (a duplicated clause left by the C4.4
+amendment); no semantic content changed there.
+
 ---
 
 ## C1. The classification and its home
@@ -367,10 +380,10 @@ Government-Revenue failures stay in their owning lanes.
 At registration of this contract: **zero matched-control evidence exists anywhere.** The
 first possible accrual is stock_desk's first post-merge nightly that registers a
 prospective, control-carrying claim (#5577's wiring + this contract), and demand_chain's
-first such nightly after the follow-up wiring of C2.4's implementation note (both
+first such nightly after the follow-up wiring of C2.4's implementation note. Both
 producers are wired as of 2026-08-14; neither has yet registered a controlled claim, and
-the clock files are still the only thing that may say when one does). The evidence clock files will say when that happened;
-until they exist, every surface says the evidence has not begun. A reader in six months
+the write-once clock files remain the only thing that may say when one does. Until they
+exist, every surface says the evidence has not begun. A reader in six months
 should be able to reconstruct: classification date (this file's git history), clock start
 (the write-once artifacts), and every coverage number in between (nightly readiness
 payloads).

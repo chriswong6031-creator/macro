@@ -416,12 +416,25 @@ def test_demand_chain_control_leg_resolves_through_membership_and_aliases(tmp_pa
     STORED claims carrying the right sector ETFs, across BOTH of the universe
     file's vocabularies, and starts the C3.1 control-evidence clock.
 
-    MUTATION CONTROL: wire the RAW resolver instead
+    MUTATION CONTROL (C7 #13): wire the RAW resolver instead
     (`sector_of=lambda t: q.sector_of_ticker(t, tmp_path)`, no alias
     normalisation). The Yahoo-vocabulary names (NVDA "Technology", JNJ
     "Healthcare") then reach `control_for_sector` unnormalised, register
     `control=None`, and this test fails on `stored["NVDA"]["control"] == "XLK"`.
     That is DSC:CONTROL-VOCABULARY-MISMATCH pinned as an executable check.
+
+    CHANGED 2026-08-14 (review defect 1). This test previously asserted
+    `control_refusals == {sector_absent: 2}` — it PINNED A MISLABEL. WEIRD's
+    membership row says "Quantum Widgets", i.e. a vocabulary the alias table
+    cannot map, and OFFIDX is genuinely absent from the file; C2.4 requires those
+    two be counted APART, because one is a D0-2 alias regression and the other is
+    the benign ADR/off-index tail the census measured at 0% for this family. They
+    collapsed because `membership_gics_sector_of` NORMALISES, so it answers None
+    for both and no `sector` reaches the claim. The un-normalised twin
+    (`raw_sector_of`) restores the attribution, and the test now runs the
+    PRODUCTION PAIR and asserts the correct split. Without the pair the coarse
+    class is still reported — that fallback is asserted separately in
+    `test_the_raw_twin_is_what_separates_unmapped_from_absent`.
     """
     _seed_membership(tmp_path)
     rows = [_demand_chain_row(ticker=t)
@@ -429,7 +442,9 @@ def test_demand_chain_control_leg_resolves_through_membership_and_aliases(tmp_pa
 
     stats = qda.register_prospective(
         rows, family="demand_chain", root=tmp_path, today=TODAY,
-        sector_of=q.membership_gics_sector_of(tmp_path), git_sha="c0ffee")
+        sector_of=q.membership_gics_sector_of(tmp_path),
+        raw_sector_of=lambda t: q.sector_of_ticker(t, tmp_path),
+        git_sha="c0ffee")
 
     assert stats["n_accepted"] == 5
     stored = {c["scope"]["key"]: c for c in q.load_claims(tmp_path)}
@@ -438,17 +453,124 @@ def test_demand_chain_control_leg_resolves_through_membership_and_aliases(tmp_pa
     assert stored["JNJ"]["control"] == "XLV"         # Yahoo vocabulary, normalised
     assert stored["WEIRD"].get("control") is None    # unknown value — refused, counted
     assert stored["OFFIDX"].get("control") is None   # absent from the universe file
+    # the DIAGNOSTIC twin never touches the store: no raw vocabulary value leaks
+    # onto a claim row, and the recorded sector stays the canonical GICS name.
+    assert stored["NVDA"]["sector"] == "Information Technology"
+    assert "sector" not in stored["WEIRD"] and "sector" not in stored["OFFIDX"]
 
     assert stats["control_policy"] == q.CONTROL_POLICY_REQUIRED
     assert stats["n_control_valid"] == 3
     assert stats["n_control_missing"] == 2
-    assert stats["control_refusals"] == {qda.CONTROL_REFUSAL_SECTOR_ABSENT: 2}
+    assert stats["control_refusals"] == {
+        qda.CONTROL_REFUSAL_VOCABULARY: 1,        # WEIRD -> "Quantum Widgets"
+        qda.CONTROL_REFUSAL_SECTOR_ABSENT: 1,     # OFFIDX -> not in the file
+    }
 
     # C3.1: the wiring actually starts the matched-control evidence clock, which
     # is the whole reason the control has to be resolved at REGISTRATION.
     clock = q.read_control_clock_start("demand_chain", tmp_path)
     assert clock is not None
     assert clock["control"] in {"XLK", "XLV"}
+
+
+def test_the_raw_twin_is_what_separates_unmapped_from_absent(tmp_path):
+    """REVIEW DEFECT 1, isolated: the SAME store and the SAME normalising
+    resolver report a different — and correct — split once the un-normalised twin
+    is supplied. Without it both causes read as `sector_absent`, which is the
+    behaviour that shipped and the reason `vocabulary_unmapped` was unreachable
+    through the production wiring.
+
+    MUTATION CONTROL (C7 #14): drop the `raw_sector_of` consultation from
+    `_classify_control`'s sector-absent branch. `with_twin` then equals
+    `without_twin` and this test fails on the inequality AND on the exact split.
+    """
+    _seed_membership(tmp_path)
+    rows = [_demand_chain_row(ticker="WEIRD"),      # "Quantum Widgets" — unmapped
+            _demand_chain_row(ticker="OFFIDX")]     # not in the file — absent
+
+    without_twin = qda.register_prospective(
+        rows, family="demand_chain", root=tmp_path / "a", today=TODAY,
+        dry_run=True, sector_of=q.membership_gics_sector_of(tmp_path))
+    with_twin = qda.register_prospective(
+        rows, family="demand_chain", root=tmp_path / "b", today=TODAY,
+        dry_run=True, sector_of=q.membership_gics_sector_of(tmp_path),
+        raw_sector_of=lambda t: q.sector_of_ticker(t, tmp_path))
+
+    # the normalising resolver alone cannot tell the two causes apart
+    assert without_twin["control_refusals"] == {qda.CONTROL_REFUSAL_SECTOR_ABSENT: 2}
+    assert with_twin["control_refusals"] == {
+        qda.CONTROL_REFUSAL_VOCABULARY: 1,
+        qda.CONTROL_REFUSAL_SECTOR_ABSENT: 1,
+    }
+    assert with_twin["control_refusals"] != without_twin["control_refusals"]
+    # the totals are untouched — attribution moved, nothing else
+    assert with_twin["n_control_missing"] == without_twin["n_control_missing"] == 2
+    assert with_twin["n_control_valid"] == without_twin["n_control_valid"] == 0
+
+
+def test_the_annotation_samples_the_offending_raw_vocabulary_value(tmp_path, capsys):
+    """C2.4's SAMPLE, through the PRODUCTION pair. A bare count says "controls
+    are missing"; the value says "the universe file is handing us 'Quantum
+    Widgets' and the alias table wants a GICS name" — which is the difference
+    between catching a D0-2 regression from a nightly log and catching it from a
+    four-months-later census.
+
+    This is the assertion that was VACUOUS before review defect 1 was fixed: the
+    sample only populates on `vocabulary_unmapped`, which the production
+    resolver could never produce, so the annotation carried counts and no values
+    no matter how broken the vocabulary was.
+
+    MUTATION CONTROL: same as above (drop the twin consultation) — the refusal
+    becomes `sector_absent`, `unmapped_sectors` stays empty, and the
+    `'Quantum Widgets'` assertion fails.
+    """
+    _seed_membership(tmp_path)
+    stats = qda.register_prospective(
+        [_demand_chain_row(ticker="WEIRD"), _demand_chain_row(ticker="OFFIDX")],
+        family="demand_chain", root=tmp_path, today=TODAY, dry_run=True,
+        sector_of=q.membership_gics_sector_of(tmp_path),
+        raw_sector_of=lambda t: q.sector_of_ticker(t, tmp_path))
+
+    assert stats["n_control_missing"] == 2
+    annotations = [ln for ln in capsys.readouterr().out.splitlines()
+                   if ln.startswith("::")]
+    assert len(annotations) == 1, annotations
+    line = annotations[0]
+    assert line.startswith("::warning title=demand_chain-qledger-control-missing::")
+    assert "vocabulary_unmapped=1" in line
+    assert "sector_absent=1" in line
+    assert "'Quantum Widgets'" in line, (
+        "the RAW offending value is the load-bearing part of the sample")
+
+
+def test_demand_ledger_passes_the_raw_twin_beside_the_resolver(tmp_path, monkeypatch):
+    """The production caller supplies BOTH halves (review defect 1). The twin is
+    the un-normalised lookup, so it must answer the RAW vocabulary value where
+    the normalising resolver answers None.
+
+    MUTATION CONTROL: drop the `raw_sector_of=` kwarg from the
+    `register_prospective` call in `_register_qledger_claims` — the captured
+    kwargs carry no twin and this fails on the None check."""
+    from engine import demand_ledger
+    _seed_membership(tmp_path)
+    captured: dict = {}
+
+    def _capture(rows, **kwargs):
+        captured.update(kwargs)
+        return {"stub": True}
+
+    monkeypatch.setattr(qda, "register_prospective", _capture)
+    demand_ledger._register_qledger_claims([_demand_chain_row()], tmp_path,
+                                           today=TODAY)
+
+    raw_of = captured.get("raw_sector_of")
+    assert raw_of is not None, "the diagnostic twin was not wired"
+    # the NORMALISING resolver refuses the unmapped value...
+    assert captured["sector_of"]("WEIRD") is None
+    # ...while the RAW twin still reports what the file actually said.
+    assert raw_of("WEIRD") == "Quantum Widgets"
+    assert raw_of("NVDA") == "Technology"      # un-normalised, not "Information Technology"
+    assert raw_of("OFFIDX") is None            # genuinely absent
 
 
 def test_demand_ledger_passes_a_working_sector_resolver(tmp_path, monkeypatch):

@@ -2820,15 +2820,19 @@ def _cohort_rowless_class(claim: dict, horizon: int,
          (demand_chain declares 126 trading days and grades at 5/21/63);
       3/4. the window and its basis — no window is a fail-closed
          `window_unresolvable`, a different basis is simply not this evaluation;
-      5. SUBJECT+BENCH maturity FIRST. `grade_claim` puts the control in the same
-         `_matured_window` legs list, so an unpriceable control shows up there as
-         "not matured" — indistinguishable from a young claim. Asking about the
-         primary legs alone first is what makes step 7 attributable: only once
-         subject and bench are ready is a missing row the CONTROL's fault;
-      6. subject/bench pricing — a refusal here is the PRIMARY leg's, never the
-         control's, and it must not enter the coverage denominator (attributing
-         a delisted subject to the control would manufacture a coverage failure
-         out of a data gap);
+      5. THE CALENDAR ALONE — `today < coverage_date` is the ONLY thing that
+         makes a claim `not_yet_matured`. `_matured_window` conflates that with
+         "a leg's series does not reach the close", so asking it here reported a
+         permanently delisted subject as young forever (review defect 2);
+      6. SUBJECT+BENCH, maturity and pricing together, on a window that HAS
+         closed. `grade_claim` puts the control in the same `_matured_window`
+         legs list, so an unpriceable control shows up there as "not matured" —
+         indistinguishable from a young claim. Asking about the primary legs
+         ALONE is what makes step 7 attributable: only once subject and bench
+         are both measurable is a missing row the CONTROL's fault. A refusal
+         here is the PRIMARY leg's and must not enter the coverage denominator
+         (attributing a delisted subject to the control would manufacture a
+         coverage failure out of a data gap);
       7. the control leg — matured and priceable, or `control_leg_refused`;
       8. otherwise the claim is fully gradeable and the grader has simply not run
          yet (`matured_awaiting_grading`) — a scheduling fact, NOT a refusal.
@@ -2854,10 +2858,23 @@ def _cohort_rowless_class(claim: dict, horizon: int,
         bench = claim.get("bench") or _DEFAULT_BENCH
         control = claim.get("control")
 
-        if not _matured_window(root, window, today, [subject, bench]):
+        # TIME FIRST, DATA SECOND (review defect 2). `_matured_window` answers
+        # False for TWO unrelated reasons — the window has not closed yet, and a
+        # leg's series does not reach `coverage_date` — so asking it first
+        # reported a permanently dead subject as `not_yet_matured`, i.e. as
+        # YOUNG, forever. That is the exact confusion C4.4's table exists to
+        # prevent ("a young cohort is legible as young rather than as broken"),
+        # and it made `primary_leg_refused` reachable only through the rarer
+        # rule-5 endpoint-hole shape. The calendar question is also free, so
+        # asking it first costs no price read for a young cohort.
+        if today < window.coverage_date:
             return COHORT_ROWLESS_NOT_YET_MATURED, basis
-        if (_leg_ret_in_window(subject, root, window) is None
+        if (not _matured_window(root, window, today, [subject, bench])
+                or _leg_ret_in_window(subject, root, window) is None
                 or _leg_ret_in_window(bench, root, window) is None):
+            # The window HAS closed, so this is the primary leg's data gap: a
+            # delisted or never-collected subject, or a series that reaches the
+            # close without holding the window's own endpoint bars (rule 5).
             return COHORT_ROWLESS_PRIMARY_REFUSED, basis
         if control:
             if (not _matured_window(root, window, today, [control])
