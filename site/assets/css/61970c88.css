@@ -34,16 +34,15 @@
      ui-monospace resolves to SF Mono on macOS/iOS and the platform mono
      elsewhere. */
   --num: var(--font-mono, ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace);
-  --fs-display: 44px;
-  --fs-num-xl:  38px;
-  --fs-h1:      27px;
-  --fs-num-lg:  22px;
-  --fs-h2:      16px;
-  --fs-md:      15px;
-  --fs-body:    14px;
-  --fs-sm:      12.5px;
-  --fs-label:   11px;
-  --fs-micro:   10px;
+  /* type scale — the 7 steps that matched the site ramp now come from :root in
+     theme.css (design-system packet PR-0(a)). These 3 are DELIBERATE local
+     overrides: this board runs a tighter head than the macro dashboard, and
+     PR-0 is a promotion, not a retune — retuning the radar's heads is a design
+     decision for its own lane, not a side effect of centralising the ramp.
+     Site ramp for reference: --fs-display 46px · --fs-h1 28px · --fs-h2 17px. */
+  --fs-display: 44px;   /* site 46px — tighter hero on the radar board */
+  --fs-h1:      27px;   /* site 28px */
+  --fs-h2:      16px;   /* site 17px */
   /* ── laser hairlines + machined-surface shadow ── */
   --hair:        rgba(255,255,255,0.06);
   --hair-strong: rgba(255,255,255,0.11);
