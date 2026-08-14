@@ -354,10 +354,10 @@ downstream consumers — "may be read by them; must not write into their scoring
    never recomputes (`live_states.py:136-147`).
 3. **The 4H tier's supply is thinner than it looks (§4).** Hourly bars exist, but: 15-min delayed
    by plan, ~240 names (not the 2,779 basket universe), no stored 4H bar (chart.js aggregates
-   client-side), CI-cache-resident and gitignored rather than committed, live population
-   **UNVERIFIED**, and `bar_derive` is explicitly "additive plumbing" wired to nothing. Treat 4H as
-   a build item with a data-availability spike, not a solved input.
-4. Secondary: two legitimate session anchors (12.83% vs 0.00% verdict movement — adopt the absolute
-   one, mint a new era string); `postcross`'s `+1e-10` false-oversold (§1.2); `adjust=True` in
-   `coiled` and missing `min_periods` in `postcross` (§1.3); the `_atr_pct` misnomer (§1.4 A-6);
-   holiday-blind live RTH checks (§5); the live 2W-grid contradiction (§6).
+   client-side), CI-cache-resident and gitignored, live population **UNVERIFIED**, and `bar_derive`
+   is explicitly "additive plumbing" wired to nothing. Treat 4H as a build item with a
+   data-availability spike, not a solved input.
+4. Secondary: two legitimate session anchors (12.83% vs 0.00% — adopt the absolute one, mint a new
+   era string); `postcross`'s `+1e-10` false-oversold (§1.2); `adjust=True` in `coiled` and missing
+   `min_periods` in `postcross` (§1.3); the `_atr_pct` misnomer (§1.4 A-6); holiday-blind live RTH
+   checks (§5); the live 2W-grid contradiction (§6).
