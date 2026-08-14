@@ -4153,25 +4153,28 @@ jobs:
       changed_files: ${{ steps.plan.outputs.changed_files }}
       plan_artifact_name: ${{ steps.plan_artifact.outputs.name }}
     steps:
-      # NO sparse-clear step and NO setup-node here, unlike `ci-pack` below. Both of
-      # those exist for conditions this job cannot meet: the sparse-clear guards a
-      # SHARED self-hosted workspace, and this job is hosted-only (one `runs-on`, no
-      # self-hosted branch), so it gets a fresh VM and can never inherit a sibling's
-      # `core.sparseCheckout`; and setup-node exists for the legacy jobs' Node steps,
-      # which planning never executes. Adding either would be cargo cult.
-      - uses: actions/checkout@v4
-        with:
-          # Pin the exact event merge commit. A PR-files API call can race a newer
-          # synchronize event and must never describe a different head than this.
-          ref: ${{ github.sha }}
-          # `fetch-depth: 0` is REQUIRED, not an optimisation. `changed_files` diffs
-          # against the immutable PR base SHA, and a shallow clone does not contain
-          # that commit — the diff would fail, the planner would widen to the full
-          # suite by law, and the plan would be meaningless on every PR. The
-          # blob:none filter keeps full history cheap. Packs do NOT repeat this
-          # fetch: they consume `changed_files` and shallow-checkout.
-          filter: blob:none
-          fetch-depth: 0
+      # actions/checkout cannot combine `filter: blob:none` with sparse checkout:
+      # its filter input overrides sparse patterns. The planner therefore performs
+      # the small Git sequence explicitly: only the exact immutable event ref, two
+      # generations (merge head + base/head parents), and the `.github`/`scripts`
+      # worktree needed to validate metadata. Other changed blobs are read lazily
+      # from HEAD by preflight through the partial-clone promisor.
+      - name: metadata-only sparse checkout of the immutable event
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          git config gc.auto 0
+          git sparse-checkout init --cone
+          git sparse-checkout set .github scripts
+          git fetch --no-tags --filter=blob:none --depth=2 origin "$GITHUB_REF"
+          fetched_sha="$(git rev-parse FETCH_HEAD)"
+          if [ "$fetched_sha" != "$GITHUB_SHA" ]; then
+            echo "::error title=immutable-checkout::event ref moved from $GITHUB_SHA to $fetched_sha before planner acquisition"
+            exit 1
+          fi
+          git checkout --detach "$GITHUB_SHA"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -4179,6 +4182,12 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ci-plan-runner"
           "$RUNNER_TEMP/ci-plan-runner/bin/pip" install pyyaml
+      - name: verify committed scope ownership index
+        run: >-
+          "$RUNNER_TEMP/ci-plan-runner/bin/python"
+          scripts/ci_committed_scope_index.py verify
+          --manifest .github/ci/legacy-jobs.yml
+          --index .github/ci/scope-index.json
       - name: materialize immutable changed-path decision
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -4243,6 +4252,7 @@ jobs:
         run: >-
           "$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
+          --scope-index .github/ci/scope-index.json
           --pack-count 12
           --dynamic-pack-count
           --plan-only

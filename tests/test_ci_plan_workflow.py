@@ -80,6 +80,10 @@ def _preflight_step() -> dict[str, Any]:
     return _step_running(_job("ci-plan"), "ci_structural_preflight.py")
 
 
+def _scope_index_step() -> dict[str, Any]:
+    return _step_running(_job("ci-plan"), "ci_committed_scope_index.py verify")
+
+
 def _step_using(job: dict[str, Any], action: str) -> dict[str, Any]:
     matches = [step for step in job["steps"] if str(step.get("uses", "")).startswith(action)]
     assert len(matches) == 1, f"expected exactly one {action!r} step, got {len(matches)}"
@@ -144,16 +148,23 @@ def test_ci_plan_is_fenced_against_closed_events() -> None:
     assert _job("ci-plan")["if"] == "github.event.action != 'closed'"
 
 
-def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
-    """`changed_files` diffs against the PR base SHA, which a shallow clone lacks.
-
-    Drop `fetch-depth: 0` and the diff fails, the planner widens to the full suite by
-    law (fail-SAFE), and every PR runs everything while the plan still reports
-    success.  The regression costs the entire feature and reds nothing.
-    """
-    checkouts = [s for s in _job("ci-plan")["steps"] if str(s.get("uses", "")).startswith("actions/checkout@")]
-    assert len(checkouts) == 1, f"ci-plan should check out exactly once, found {len(checkouts)}"
-    assert checkouts[0]["with"]["fetch-depth"] == 0
+def test_ci_plan_uses_an_exact_blobless_sparse_checkout() -> None:
+    """Planner metadata must not materialize the repository's four-gigabyte tree."""
+    job = _job("ci-plan")
+    assert not any(
+        str(step.get("uses", "")).startswith("actions/checkout@")
+        for step in job["steps"]
+    ), "actions/checkout filter overrides sparse patterns and would expand the tree"
+    checkout = next(
+        step for step in job["steps"]
+        if step.get("name") == "metadata-only sparse checkout of the immutable event"
+    )
+    run = checkout["run"]
+    assert "git sparse-checkout set .github scripts" in run
+    assert '--filter=blob:none --depth=2 origin "$GITHUB_REF"' in run
+    assert 'fetched_sha="$(git rev-parse FETCH_HEAD)"' in run
+    assert '"$fetched_sha" != "$GITHUB_SHA"' in run
+    assert 'git checkout --detach "$GITHUB_SHA"' in run
 
 
 def test_ci_plan_caps_dynamic_pr_workers_but_keeps_twelve_as_the_full_suite_ceiling() -> None:
@@ -161,6 +172,7 @@ def test_ci_plan_caps_dynamic_pr_workers_but_keeps_twelve_as_the_full_suite_ceil
     run = _plan_step()["run"]
     assert f"--pack-count {PACK_COUNT}" in run
     assert "--dynamic-pack-count" in run
+    assert "--scope-index .github/ci/scope-index.json" in run
 
 
 def test_ci_plan_emits_the_plan_file_and_the_github_outputs() -> None:
@@ -217,6 +229,15 @@ def test_structural_preflight_runs_before_expensive_plan_and_uses_exact_paths() 
     assert body.count("changed_files(base)") == 2
 
 
+def test_committed_scope_index_is_verified_before_preflight_and_planning() -> None:
+    steps = _job("ci-plan")["steps"]
+    verify = _scope_index_step()
+    assert "--manifest .github/ci/legacy-jobs.yml" in verify["run"]
+    assert "--index .github/ci/scope-index.json" in verify["run"]
+    assert steps.index(verify) < steps.index(_preflight_step())
+    assert steps.index(verify) < steps.index(_plan_step())
+
+
 def test_ci_plan_scope_arg_uses_the_immutable_pull_request_base_sha() -> None:
     """The diff base must be the immutable base SHA, never a branch name.
 
@@ -233,9 +254,13 @@ def test_ci_plan_scope_arg_uses_the_immutable_pull_request_base_sha() -> None:
 
 
 def test_planner_and_pack_checkouts_are_pinned_to_the_event_sha() -> None:
-    for job_name in ("ci-plan", "ci-pack"):
-        checkout = _step_using(_job(job_name), "actions/checkout@")
-        assert checkout["with"]["ref"] == "${{ github.sha }}"
+    planner = next(
+        step for step in _job("ci-plan")["steps"]
+        if step.get("name") == "metadata-only sparse checkout of the immutable event"
+    )
+    assert "$GITHUB_SHA" in planner["run"]
+    pack_checkout = _step_using(_job("ci-pack"), "actions/checkout@")
+    assert pack_checkout["with"]["ref"] == "${{ github.sha }}"
 
 
 def test_ci_plan_handles_native_merge_group_with_immutable_base_sha() -> None:

@@ -1628,6 +1628,46 @@ def test_matrix_mode_defaults_to_shadow_and_reads_its_own_environment(
     assert (args.scope_mode, args.matrix_mode) == ("off", "active")
 
 
+def test_committed_scope_index_replaces_runtime_inference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_inference(*args: object, **kwargs: object) -> None:
+        raise AssertionError("runtime scope inference must not run")
+
+    jobs = [_plan_job("engine-owner", 0)]
+    indexed = [PACK.replace(jobs[0], paths=("engine/**",))]
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    _stub_planner_paths(monkeypatch, ["engine/example.py"])
+    monkeypatch.setattr(
+        PACK,
+        "_load_committed_scopes",
+        lambda *args, **kwargs: (list(indexed), "a" * 64),
+    )
+    monkeypatch.setattr(PACK, "infer_job_scopes", fail_inference)
+
+    plan = PACK.plan_from_workflow(
+        MANIFEST,
+        changed_from="base-sha",
+        scope_mode="active",
+        scope_index=PACK.DEFAULT_COMMITTED_SCOPE_INDEX,
+    )
+
+    assert plan.eligible_job_ids == ("engine-owner",)
+    assert plan.scope_summary == "verified committed scope index aaaaaaaaaaaa"
+
+
+def test_consume_mode_rejects_scope_index_replanning_flag() -> None:
+    with pytest.raises(SystemExit):
+        PACK.parse_args(
+            [
+                "--workflow", str(MANIFEST),
+                "--consume-plan-json", "plan.json",
+                "--expect-plan-sha", "0" * 64,
+                "--scope-index", str(PACK.DEFAULT_COMMITTED_SCOPE_INDEX),
+            ]
+        )
+
+
 def test_plan_only_never_executes_and_refuses_to_pair_with_execute(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1932,8 +1972,8 @@ def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
     assert re.search(r"\bhttpx\b", publish_ops_install)
 
 
-def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> None:
-    """ci-plan keeps full history; packs shallow-checkout the current tree.
+def test_ci_pack_and_plan_avoid_historical_site_blobs() -> None:
+    """ci-plan sparse-fetches metadata; packs shallow-checkout the current tree.
 
     Measured PR #5550 / run 31729769728: twelve packs fetching fetch-depth:0 at
     once put ci-pack-1 in "Checking out the ref" for 31 minutes. Packs consume
@@ -1955,9 +1995,10 @@ def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> 
     plan_checkout = next(
         step
         for step in plan["steps"]
-        if str(step.get("uses", "")).startswith("actions/checkout@")
+        if step.get("name") == "metadata-only sparse checkout of the immutable event"
     )
-    assert plan_checkout["with"]["fetch-depth"] == 0
+    assert "git sparse-checkout set .github scripts" in plan_checkout["run"]
+    assert '--filter=blob:none --depth=2 origin "$GITHUB_REF"' in plan_checkout["run"]
 
 
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
@@ -2285,6 +2326,32 @@ def test_structural_preflight_refuses_unwired_changed_pytest_suite(
     assert result["status"] == "fail"
     assert result["classification"] == "pr_structural_failure"
     assert _finding_codes(result) == {"unwired_changed_test"}
+
+
+def test_structural_preflight_reads_changed_test_from_head_outside_sparse_tree(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(
+        tmp_path, manifest_run="python -m pytest tests/test_wired.py -q"
+    )
+    changed = root / "tests" / "test_unwired.py"
+    changed.write_text("def test_unwired():\n    assert True\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "CI Test"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci-test@example.invalid"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "fixture"], cwd=root, check=True)
+    changed.unlink()
+
+    result = PREFLIGHT.run_preflight(root, ["tests/test_unwired.py"])
+
+    assert result["status"] == "fail"
+    assert _finding_codes(result) == {"unwired_changed_test"}
+    assert result["metrics"]["changed_tests_examined"] == 1
 
 
 def test_structural_preflight_ignores_test_shaped_non_suite(tmp_path: Path) -> None:

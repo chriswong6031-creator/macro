@@ -33,16 +33,18 @@ exit 1 is a structural/configuration refusal, and exit 2 is invalid input.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import re
 import stat
 import subprocess
 import sys
+import tempfile
 import time
 from collections import Counter
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable
+from typing import Any, Iterable, Iterator
 
 import yaml
 
@@ -177,19 +179,48 @@ def _git_head_contains(root: Path, rel: str) -> bool | None:
     """Whether HEAD carries ``rel``; None means this is not a Git checkout."""
     try:
         completed = subprocess.run(
-            ["git", "-C", str(root), "cat-file", "-e", f"HEAD:{rel}"],
-            stdout=subprocess.DEVNULL,
+            [
+                "git", "-C", str(root), "ls-tree", "-z", "--name-only",
+                "--full-tree", "HEAD", "--", rel,
+            ],
+            stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
             timeout=5,
         )
     except (OSError, subprocess.SubprocessError):
         return None
     if completed.returncode == 0:
-        return True
-    if "not a git repository" in completed.stderr.lower():
+        names = completed.stdout.decode("utf-8", "replace").split("\0")
+        return rel in names
+    if b"not a git repository" in completed.stderr.lower():
         return None
-    return False
+    return None
+
+
+@contextlib.contextmanager
+def _submitted_file(root: Path, rel: str) -> Iterator[Path | None]:
+    """Yield a changed HEAD file without requiring it in the sparse worktree."""
+    materialized = root / rel
+    if materialized.is_file():
+        yield materialized
+        return
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(root), "show", f"HEAD:{rel}"],
+            capture_output=True,
+            check=False,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        yield None
+        return
+    if completed.returncode != 0:
+        yield None
+        return
+    with tempfile.TemporaryDirectory(prefix="ci-preflight-blob-") as directory:
+        temporary = Path(directory) / PurePosixPath(rel).name
+        temporary.write_bytes(completed.stdout)
+        yield temporary
 
 
 def _tracked_test_inventory(root: Path, changed: Iterable[str]) -> list[str]:
@@ -467,63 +498,62 @@ def run_preflight(root: Path, changed_paths: Iterable[str]) -> dict[str, Any]:
     workflow_paths = {CI_WORKFLOW}
     workflow_paths.update(rel for rel in changed if _is_workflow(rel))
     for rel in sorted(workflow_paths):
-        path = root / rel
-        if not path.is_file():
-            head_contains = _git_head_contains(root, rel)
-            if rel == CI_WORKFLOW or head_contains is True:
+        with _submitted_file(root, rel) as path:
+            if path is None:
+                if rel == CI_WORKFLOW or _git_head_contains(root, rel) is True:
+                    findings.append(
+                        _finding(
+                            "workflow_unreadable",
+                            "planner_configuration_failure",
+                            "workflow exists in the submitted tree but its HEAD blob could not be read",
+                            path=rel,
+                        )
+                    )
+                continue  # A changed workflow absent from HEAD was deleted.
+            metrics["workflow_files_checked"] += 1
+            workflow_problems = check_workflow_file(path)
+            for problem in workflow_problems:
                 findings.append(
                     _finding(
-                        "workflow_not_materialized",
+                        "workflow_invalid",
                         "planner_configuration_failure",
-                        "workflow exists in the submitted tree but is absent from the sparse checkout",
+                        problem,
                         path=rel,
                     )
                 )
-            continue  # A changed workflow absent from HEAD was deleted.
-        metrics["workflow_files_checked"] += 1
-        workflow_problems = check_workflow_file(path)
-        for problem in workflow_problems:
-            findings.append(
-                _finding(
-                    "workflow_invalid",
-                    "planner_configuration_failure",
-                    problem,
-                    path=rel,
-                )
-            )
-        if not workflow_problems:
-            findings.extend(_workflow_graph_findings(path, rel))
+            if not workflow_problems:
+                findings.extend(_workflow_graph_findings(path, rel))
 
     inventory = _tracked_test_inventory(root, changed)
     basename_counts = Counter(rel.rsplit("/", 1)[-1] for rel in inventory)
     ambiguous = frozenset(name for name, count in basename_counts.items() if count > 1)
     for rel in sorted(path for path in changed if _is_test_candidate(path)):
-        path = root / rel
-        if not path.is_file():
-            if _git_head_contains(root, rel) is True:
+        with _submitted_file(root, rel) as path:
+            if path is None:
+                if _git_head_contains(root, rel) is True:
+                    findings.append(
+                        _finding(
+                            "changed_test_unreadable",
+                            "planner_configuration_failure",
+                            "changed test exists in the submitted tree but its HEAD blob could not be read",
+                            path=rel,
+                        )
+                    )
+                continue  # Deleted suite.
+            if not defines_tests(path):
+                continue
+            metrics["changed_tests_examined"] += 1
+            if run_blob and _named_by_a_run_step(rel, run_blob, ambiguous):
+                metrics["changed_tests_wired"] += 1
+            else:
                 findings.append(
                     _finding(
-                        "changed_test_not_materialized",
-                        "planner_configuration_failure",
-                        "changed test exists in the submitted tree but is absent from the sparse checkout",
+                        "unwired_changed_test",
+                        "pr_structural_failure",
+                        "changed pytest suite is named by no run step in the legacy CI manifest",
                         path=rel,
                     )
                 )
-            continue  # Deleted suite.
-        if not defines_tests(path):
-            continue
-        metrics["changed_tests_examined"] += 1
-        if run_blob and _named_by_a_run_step(rel, run_blob, ambiguous):
-            metrics["changed_tests_wired"] += 1
-        else:
-            findings.append(
-                _finding(
-                    "unwired_changed_test",
-                    "pr_structural_failure",
-                    "changed pytest suite is named by no run step in the legacy CI manifest",
-                    path=rel,
-                )
-            )
 
     for rel in changed:
         if _matches_any(PASSIVE_UNOWNED_PATTERNS, rel):
@@ -549,19 +579,36 @@ def run_preflight(root: Path, changed_paths: Iterable[str]) -> dict[str, Any]:
         elif not known:
             metrics["unowned_non_executable_paths"] += 1
 
-        path = root / rel
-        if not path.is_file() or not _is_controlled_text(root, rel) or _looks_binary(str(path)):
-            continue
-        metrics["conflict_files_scanned"] += 1
-        for lineno, line in scan_file(str(path)):
-            findings.append(
-                _finding(
-                    "conflict_marker",
-                    "pr_structural_failure",
-                    f"git conflict marker at line {lineno}: {line}",
-                    path=rel,
+        with _submitted_file(root, rel) as path:
+            if path is None:
+                if (
+                    _git_head_contains(root, rel) is True
+                    and _is_controlled_text(root, rel)
+                ):
+                    findings.append(
+                        _finding(
+                            "changed_blob_unreadable",
+                            "planner_configuration_failure",
+                            "changed controlled file exists in HEAD but its blob could not be read",
+                            path=rel,
+                        )
+                    )
+                continue
+            if (
+                not _is_controlled_text(root, rel)
+                or _looks_binary(str(path))
+            ):
+                continue
+            metrics["conflict_files_scanned"] += 1
+            for lineno, line in scan_file(str(path)):
+                findings.append(
+                    _finding(
+                        "conflict_marker",
+                        "pr_structural_failure",
+                        f"git conflict marker at line {lineno}: {line}",
+                        path=rel,
+                    )
                 )
-            )
 
     findings.sort(key=lambda item: (item.get("path", ""), item["code"], item["message"]))
     classifications = sorted({item["classification"] for item in findings})
@@ -584,12 +631,12 @@ def run_preflight(root: Path, changed_paths: Iterable[str]) -> dict[str, Any]:
         "workflow_dependency_cycle",
         "workflow_invalid",
         "workflow_invalid_needs",
-        "workflow_not_materialized",
+        "workflow_unreadable",
         "workflow_unknown_dependency",
     }
-    test_codes = {"changed_test_not_materialized", "unwired_changed_test"}
+    test_codes = {"changed_test_unreadable", "unwired_changed_test"}
     ownership_codes = {"unknown_executable_ownership"}
-    conflict_codes = {"conflict_marker"}
+    conflict_codes = {"changed_blob_unreadable", "conflict_marker"}
     return {
         "checks": {
             "changed_tests": {"status": _status(findings, test_codes)},

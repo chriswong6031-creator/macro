@@ -94,6 +94,7 @@ GLOBAL_INVALIDATORS = (
     ".github/workflows/ci.yml",
     "scripts/run_ci_pack.py",
     "scripts/ci_scope_dependencies.py",
+    "scripts/ci_committed_scope_index.py",
     "scripts/check_ci_trigger_closure.py",
     "scripts/audit_unrun_tests.py",
     "config/dag.yml",
@@ -884,10 +885,12 @@ FULL_SUITE_PACK_COUNT = 12
 DEFAULT_MAX_PR_PACK_COUNT = 4
 TARGET_PACK_WEIGHT = 900
 TARGET_JOBS_PER_PACK = 24
+DEFAULT_COMMITTED_SCOPE_INDEX = Path(".github/ci/scope-index.json")
 PLAN_SELECTOR_INPUTS = (
     "scripts/run_ci_pack.py",
     "scripts/ci_scope_dependencies.py",
     "scripts/audit_unrun_tests.py",
+    "scripts/ci_committed_scope_index.py",
 )
 PLAN_DOCUMENT_KEYS = frozenset(
     {
@@ -1095,11 +1098,15 @@ def _checkout_head_sha(repository_root: Path) -> str:
 
 def _selector_sha256(repository_root: Path) -> str:
     """Commit the repository-owned code that decides selection and coverage."""
+    inputs = list(PLAN_SELECTOR_INPUTS)
+    scope_index = repository_root / DEFAULT_COMMITTED_SCOPE_INDEX
+    if scope_index.is_file():
+        inputs.append(DEFAULT_COMMITTED_SCOPE_INDEX.as_posix())
     return _canonical_digest(
         {
             "files": {
                 relative: _file_sha256(repository_root / relative)
-                for relative in PLAN_SELECTOR_INPUTS
+                for relative in inputs
             }
         }
     )
@@ -1159,6 +1166,7 @@ def build_plan(
     head_sha: str = "",
     manifest_sha256: str = "",
     selector_sha256: str = "",
+    precomputed_scope_summary: str | None = None,
 ) -> CIPackPlan:
     """Decide, once, what this CI run executes.
 
@@ -1173,12 +1181,13 @@ def build_plan(
     invalidated = bool(
         changed and any(_matches_any(GLOBAL_INVALIDATORS, path) for path in changed)
     )
-    scope_summary = "scope inference not needed"
+    scope_summary = precomputed_scope_summary or "scope inference not needed"
     if (
         changed_from
         and scope_mode != "off"
         and changed is not None
         and not invalidated
+        and precomputed_scope_summary is None
     ):
         jobs, scope_summary = infer_job_scopes(jobs)
 
@@ -1259,6 +1268,40 @@ def build_plan(
     )
 
 
+def _load_committed_scopes(
+    scope_index: Path,
+    *,
+    workflow: Path,
+    repository_root: Path,
+) -> tuple[list[LegacyJob], str]:
+    """Verify the one repository-owned index and return its resolved jobs."""
+    candidate = (
+        scope_index.resolve()
+        if scope_index.is_absolute()
+        else (repository_root / scope_index).resolve()
+    )
+    expected = (repository_root / DEFAULT_COMMITTED_SCOPE_INDEX).resolve()
+    if candidate != expected:
+        raise ManifestError(
+            "--scope-index must name the repository-owned index "
+            f"{DEFAULT_COMMITTED_SCOPE_INDEX.as_posix()}"
+        )
+    try:
+        from scripts import ci_committed_scope_index
+    except (ImportError, OSError, SyntaxError) as exc:
+        raise ManifestError(f"committed scope index loader is unavailable: {exc}") from exc
+    try:
+        receipt = ci_committed_scope_index.verify_scope_index(
+            candidate,
+            workflow,
+            repo_root=repository_root,
+            pack_module=sys.modules[__name__],
+        )
+    except (OSError, ci_committed_scope_index.ScopeIndexError) as exc:
+        raise ManifestError(f"committed scope index is invalid: {exc}") from exc
+    return list(receipt.jobs), receipt.index_sha256
+
+
 def plan_from_workflow(
     workflow: Path,
     *,
@@ -1267,11 +1310,29 @@ def plan_from_workflow(
     pack_count: int = 12,
     dynamic_pack_count: bool = False,
     max_pr_pack_count: int = DEFAULT_MAX_PR_PACK_COUNT,
+    scope_index: Path | None = None,
 ) -> CIPackPlan:
     """Load the manifest, resolve the diff, and plan — the whole decision."""
     repository_root = _repository_root(workflow)
     legacy = load_legacy_jobs(workflow)
     changed = resolve_changed_files(changed_from)
+    scope_summary: str | None = None
+    invalidated = bool(
+        changed and any(_matches_any(GLOBAL_INVALIDATORS, path) for path in changed)
+    )
+    if (
+        scope_index is not None
+        and changed_from
+        and scope_mode != "off"
+        and changed is not None
+        and not invalidated
+    ):
+        legacy, index_sha = _load_committed_scopes(
+            scope_index,
+            workflow=workflow,
+            repository_root=repository_root,
+        )
+        scope_summary = f"verified committed scope index {index_sha[:12]}"
     return build_plan(
         legacy,
         changed,
@@ -1283,6 +1344,7 @@ def plan_from_workflow(
         head_sha=_checkout_head_sha(repository_root),
         manifest_sha256=_file_sha256(workflow),
         selector_sha256=_selector_sha256(repository_root),
+        precomputed_scope_summary=scope_summary,
     )
 
 
@@ -1977,6 +2039,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # nothing here ON PURPOSE, so the complete manifest always audits main.
     parser.add_argument("--changed-from", default=None)
     parser.add_argument(
+        "--scope-index",
+        type=Path,
+        default=None,
+        help=(
+            "verify and consume the committed scope ownership index instead of "
+            "running repository-wide inference"
+        ),
+    )
+    parser.add_argument(
         "--scope-mode",
         choices=("active", "shadow", "off"),
         default=os.environ.get("CI_SCOPE_MODE", "active"),
@@ -2063,6 +2134,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             conflicts.append("--plan-only")
         if args.changed_from is not None:
             conflicts.append("--changed-from")
+        if args.scope_index is not None:
+            conflicts.append("--scope-index")
         if args.emit_plan_json is not None:
             conflicts.append("--emit-plan-json")
         if args.github_output is not None:
@@ -2101,6 +2174,7 @@ def main(argv: list[str] | None = None) -> int:
                 pack_count=args.pack_count,
                 dynamic_pack_count=args.dynamic_pack_count,
                 max_pr_pack_count=args.max_pr_pack_count,
+                scope_index=args.scope_index,
             )
         shadow = plan.scope_mode == "shadow" and plan.changed_from
         if shadow:
