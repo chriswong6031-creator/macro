@@ -4757,7 +4757,6 @@ jobs:
       - "scripts/build_subsector_rotation.py"
       - "scripts/build_subsector_rotation_china.py"
       - "scripts/build_subsector_rotation_china_pages.py"
-      - "scripts/check_stretch_oracle_contract.py"
       - "scripts/build_subsector_rotation_pages.py"
       - "scripts/build_themes_heatmap.py"
       - "scripts/check_board_contradictions.py"
