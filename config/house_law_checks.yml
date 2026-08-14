@@ -3261,3 +3261,55 @@ checks:
       config/synapse.yml — it repairs the canonical source rather than papering over the
       gap in a side file. T1 deliberately did NOT invent those citations: a prereg pointer
       that does not exist is worse than a null one.
+
+  - law_id: cycles.stretch_oracle_disclosure
+    summary: >
+      The two stretch/extension oracles (O1 ladder.alignment.overextended, the
+      oscillator-dominant 4-leg brake; O2 entry_signal.status == "extended", a
+      relabel of urgency=="caution") legitimately disagree on ~38% of names, so the
+      contract is DISCLOSURE, not agreement: every flagged name must carry the leg
+      that actually fired (invariants I1-I4 in the checker; contract doc
+      docs/site_semantics/stretch_oracles.md), and the divergence counter is
+      re-emitted nightly against the store the render just wrote, so a stale
+      divergence number can never again be the newest one anybody has.
+    source_ref:
+      - scripts/check_stretch_oracle_contract.py
+      - docs/site_semantics/stretch_oracles.md
+      - tests/test_stretch_oracle_contract.py
+      - "PR #5574 (feat(cycles): disclose which leg fires the overextension brake)"
+    severity: warn
+    check_script: scripts/check_stretch_oracle_contract.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: hook
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: hook
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; the invariant battery (I1-I4 plus the confusion-matrix
+      shape) lives in tests/test_stretch_oracle_contract.py against synthetic
+      stores, run in pr_ci by the legacy picks-boards pytest sweep, and the live
+      gate is the warn-only in-process self-check at the end of
+      scripts/build_stock_library.py's stockdata render.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - site/stockdata is nightly-render output and is NOT committed, so no pr_ci
+        lane can run the checker against a real store (CLI exits 2 "nothing to
+        check" in a plain checkout); PR-tier coverage is the synthetic-store pytest
+        suite only.
+      - The in-process nightly invocation is display-tier and never fatal (the
+        guard must never break the render); violations surface as line-start
+        ::warning annotations, never exit codes — lane=hook mirrors the
+        surface_freshness precedent for builder-embedded gates.
+    owner_program: cycles
+    notes: >
+      Invoked in-process (lazy import, never a workflow run: body) by
+      `scripts/build_stock_library.py` after the stockdata render in the daily and
+      engine-render lanes. Operator CLI:
+      `python3 scripts/check_stretch_oracle_contract.py site/stockdata`.
+      Registered 2026-08-14 by the PR-1b fusion session healing the
+      house-law-registry census red that #5574 left (checker shipped without an
+      entry; every full-suite ci-pack run since was red on this job).
