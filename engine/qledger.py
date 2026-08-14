@@ -2799,6 +2799,13 @@ COHORT_ROWLESS_WINDOW_UNRESOLVABLE = "window_unresolvable"
 COHORT_ROWLESS_HORIZON_OUT_OF_SCOPE = "horizon_out_of_scope"
 COHORT_ROWLESS_OTHER_BASIS = "other_basis"
 COHORT_ROWLESS_UNGRADEABLE = "ungradeable_embargo"
+#: The classifier itself raised. NOT a synonym for `window_unresolvable` (review
+#: round 2, F4): that is a legitimate, expected outcome whose count carries no
+#: alarm, so folding a crash into it hid the crash inside a normal number — and
+#: in the direction that RAISES coverage, since neither class enters a
+#: denominator. A distinct key makes a non-zero count visible in `cohort_rowless`
+#: on the readiness row, and the log line is a WARNING rather than DEBUG.
+COHORT_ROWLESS_CLASSIFIER_ERROR = "classifier_error"
 
 
 def _cohort_rowless_class(claim: dict, horizon: int,
@@ -2866,11 +2873,19 @@ def _cohort_rowless_class(claim: dict, horizon: int,
         return COHORT_ROWLESS_AWAITING_GRADING, basis
     except Exception as exc:  # noqa: BLE001 — a classifier must never take the
         # gate down, and "I could not tell" must never read as a control refusal
-        # (that would ADD to a denominator on a guess). Fail closed to the
-        # non-attributing class.
-        log.debug("_cohort_rowless_class(%s h=%s): %s",
-                  claim.get("claim_id"), horizon, exc)
-        return COHORT_ROWLESS_WINDOW_UNRESOLVABLE, None
+        # (that would ADD to a denominator on a guess). Fail closed to a
+        # non-attributing class — but to its OWN class, not to
+        # `window_unresolvable`: that is a legitimate expected outcome, so a
+        # crash folded into it was a crash hidden inside a normal number, and
+        # hidden in the coverage-FAVOURABLE direction (neither class enters a
+        # denominator, so every misclassified control refusal silently raised
+        # coverage). Behaviour is unchanged; the count is now nameable and the
+        # log is a WARNING (review round 2, F4).
+        log.warning("_cohort_rowless_class(%s h=%s) RAISED — counted as %s, "
+                    "excluded from every denominator: %s: %s",
+                    claim.get("claim_id"), horizon, COHORT_ROWLESS_CLASSIFIER_ERROR,
+                    type(exc).__name__, exc)
+        return COHORT_ROWLESS_CLASSIFIER_ERROR, None
 
 
 # --------------------------------------------------------------------------- #

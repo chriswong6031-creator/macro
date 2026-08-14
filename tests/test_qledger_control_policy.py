@@ -1522,46 +1522,57 @@ def test_f4_declaring_an_unpriceable_control_cannot_beat_declaring_none(f4_price
     assert "UNCOVERED" in rb.reason
 
 
-def test_f4_an_immature_controlled_claim_is_not_a_control_refusal(f4_prices, tmp_path):
-    """`not_yet_matured` is a young claim, not a refusal: it leaves coverage
-    untouched and is DISCLOSED under `cohort_rowless` so the cohort reads as
-    young rather than as broken.
-
-    MUTATION CONTROL: classify every rowless cohort claim as
-    `COHORT_ROWLESS_CONTROL_REFUSED`. The five young claims then enter the
-    denominator, coverage falls to 30/35 = 0.857, the gate refuses, and this
-    test fails on `eligible is True` and on the `cohort_rowless` census.
-    """
+def _immature_cohort(root: Path):
+    """30 mature controlled+graded claims + 5 controlled claims whose windows do
+    not close until 2026 — evaluated at 2025-12-22, the five are simply young."""
     claims, grades = _controlled_graded(30)
     for asof in _dates(5, "2025-12-15"):          # windows close in 2026
         claims.append(_claim(family=REQ_A, asof=asof, control="XLK",
                              claim_id=f"young|{asof}"))
-    _write_store(tmp_path, claims, grades)
-    _start_clock(tmp_path, REQ_A)
+    _write_store(root, claims, grades)
+    _start_clock(root, REQ_A)
+    return q.matched_control_check(REQ_A, 21, root=root, today=date(2025, 12, 22))
 
-    r = q.matched_control_check(REQ_A, 21, root=tmp_path, today=date(2025, 12, 22))
+
+# SPLIT DELIBERATELY (review round 2, cosmetic finding): the census assertion and
+# the gate-verdict assertion were one test, so the first to fail short-circuited
+# and only HALF the stated mutation coverage was ever exercised. Two tests, two
+# independently-earned claims, one shared store.
+def test_f4_an_immature_controlled_claim_is_not_a_control_refusal(f4_prices, tmp_path):
+    """`not_yet_matured` is a young claim, not a refusal — DISCLOSED under
+    `cohort_rowless` so the cohort reads as young rather than as broken.
+
+    MUTATION CONTROL: classify every rowless cohort claim as
+    `COHORT_ROWLESS_CONTROL_REFUSED`. This test fails on the `cohort_rowless`
+    census and on `n_control_refused_rows == 0`.
+    """
+    r = _immature_cohort(tmp_path)
 
     assert r.cohort_rowless == {q.COHORT_ROWLESS_NOT_YET_MATURED: 5}
     assert r.n_control_refused_rows == 0
+    assert r.n_control_refused_dates == 0
+
+
+def test_f4_an_immature_controlled_claim_leaves_the_gate_verdict_intact(f4_prices, tmp_path):
+    """The other half, asserted on its own so it is genuinely exercised: young
+    claims touch NO denominator, so coverage and eligibility are unmoved.
+
+    MUTATION CONTROL: the same one — classify every rowless cohort claim as
+    `COHORT_ROWLESS_CONTROL_REFUSED`. The five young claims enter the
+    denominator, coverage falls to 30/35 = 0.857, and this test fails on
+    `control_coverage == 1.0` and on `eligible is True`.
+    """
+    r = _immature_cohort(tmp_path)
+
     assert r.n_cohort_rows == 30 and r.n_cohort_dates == 30
     assert r.control_coverage == 1.0
     assert r.eligible is True, r.reason
 
 
-def test_f4_a_refused_primary_leg_is_never_attributed_to_the_control(f4_prices, tmp_path):
-    """A SUBJECT that cannot be measured over the shared window refuses the row
-    too — but that is the subject's data gap, not a missing control, and turning
-    it into one would manufacture a coverage failure out of a delisting.
-
-    Built as the real rule-5 shape: each holed subject's series REACHES the
-    window (so maturity passes) but is missing its own fill bar, which is exactly
-    what `_leg_ret_in_window` refuses.
-
-    MUTATION CONTROL: attribute primary refusals to the control class (return
-    `COHORT_ROWLESS_CONTROL_REFUSED` at step 6). Coverage falls to 30/35 = 0.857,
-    the gate refuses, and this test fails on `eligible is True` and on
-    `n_control_refused_rows == 0`.
-    """
+def _holed_subject_cohort(prices: dict, root: Path):
+    """30 mature controlled+graded claims + 5 whose SUBJECT series reaches the
+    window's close (so maturity passes) but is missing the window's own entry bar
+    — the real rule-5 shortened-window refusal, on the primary leg."""
     claims, grades = _controlled_graded(30)
     for i, asof in enumerate(_dates(5, "2025-06-02")):
         subject = f"HOLEY{i}"
@@ -1570,17 +1581,40 @@ def test_f4_a_refused_primary_leg_is_never_attributed_to_the_control(f4_prices, 
         claims.append(c)
         window = q.claim_window(c, 21)
         series = _session_series("2025-01-02", "2025-12-31", 50.0, 0.001)
-        # the series still REACHES the window's close (maturity passes); it is
-        # missing the window's own entry bar (rule 5 refuses a shortened window)
-        f4_prices[subject] = series.drop(pd.Timestamp(window.fill_date))
-    _write_store(tmp_path, claims, grades)
-    _start_clock(tmp_path, REQ_A)
+        prices[subject] = series.drop(pd.Timestamp(window.fill_date))
+    _write_store(root, claims, grades)
+    _start_clock(root, REQ_A)
+    return q.matched_control_check(REQ_A, 21, root=root, today=F4_TODAY)
 
-    r = q.matched_control_check(REQ_A, 21, root=tmp_path, today=F4_TODAY)
+
+# Split for the same reason as the pair above: one assertion per claimed
+# mutation consequence, so neither half can hide behind the other's failure.
+def test_f4_a_refused_primary_leg_is_never_attributed_to_the_control(f4_prices, tmp_path):
+    """A SUBJECT that cannot be measured over the shared window refuses the row
+    too — but that is the subject's data gap, not a missing control.
+
+    MUTATION CONTROL: attribute primary refusals to the control class (return
+    `COHORT_ROWLESS_CONTROL_REFUSED` at step 6). This test fails on the
+    `cohort_rowless` census and on `n_control_refused_rows == 0`.
+    """
+    r = _holed_subject_cohort(f4_prices, tmp_path)
 
     assert r.cohort_rowless == {q.COHORT_ROWLESS_PRIMARY_REFUSED: 5}
     assert r.n_control_refused_rows == 0
-    assert r.n_cohort_rows == 30
+    assert r.n_control_refused_dates == 0
+
+
+def test_f4_a_refused_primary_leg_never_moves_the_coverage_number(f4_prices, tmp_path):
+    """The consequence that matters, asserted on its own: turning a delisted or
+    holed SUBJECT into a control refusal would manufacture a coverage failure out
+    of a price-store gap.
+
+    MUTATION CONTROL: the same one. Coverage falls to 30/35 = 0.857 and this test
+    fails on `control_coverage == 1.0` and on `eligible is True`.
+    """
+    r = _holed_subject_cohort(f4_prices, tmp_path)
+
+    assert r.n_cohort_rows == 30 and r.n_cohort_dates == 30
     assert r.control_coverage == 1.0
     assert r.eligible is True, r.reason
 
@@ -1700,6 +1734,67 @@ def test_f4_readiness_row_publishes_the_control_refusal_accounting(f4_prices, tm
     assert row["control_coverage"] == pytest.approx(0.5)
     assert row["evidence_basis"] == q.EVIDENCE_BASIS_MATCHED_CONTROL
     assert row["ready"] is False
+
+
+def test_f4_a_raising_classifier_gets_its_own_class_not_window_unresolvable(
+        f4_prices, tmp_path, monkeypatch, caplog):
+    """REVIEW ROUND 2, F4. `_cohort_rowless_class`'s catch-all returned
+    `window_unresolvable` — a LEGITIMATE, expected outcome whose count carries no
+    alarm, so a crash was hidden inside a normal number. And hidden in the
+    coverage-FAVOURABLE direction: neither class enters a denominator, so every
+    control refusal a crash swallowed silently RAISED coverage. Behaviour is
+    unchanged (still no denominator, still non-fatal); the class is now its own
+    and the log is a WARNING, so a non-zero count is visible on the readiness row.
+
+    MUTATION CONTROL: return `COHORT_ROWLESS_WINDOW_UNRESOLVABLE` from the
+    `except` again — this test fails on the `classifier_error` census key.
+    """
+    claims, grades = _controlled_graded(30)
+    for asof in _dates(3, "2025-06-02"):
+        claims.append(_claim(family=REQ_A, asof=asof, control="XLK",
+                             claim_id=f"boom|{asof}"))
+    _write_store(tmp_path, claims, grades)
+    _start_clock(tmp_path, REQ_A)
+
+    real_window = q.claim_window
+
+    def _boom_on_the_rowless(claim, horizon_d, entry_anchor=None):
+        if str(claim.get("claim_id", "")).startswith("boom|") and entry_anchor is not None:
+            raise RuntimeError("calendar module exploded")
+        return real_window(claim, horizon_d, entry_anchor=entry_anchor)
+
+    monkeypatch.setattr(q, "claim_window", _boom_on_the_rowless)
+    with caplog.at_level("WARNING", logger="qledger"):
+        r = q.matched_control_check(REQ_A, 21, root=tmp_path, today=F4_TODAY)
+
+    assert r.cohort_rowless.get(q.COHORT_ROWLESS_CLASSIFIER_ERROR) == 3
+    assert q.COHORT_ROWLESS_WINDOW_UNRESOLVABLE not in r.cohort_rowless, (
+        "a crash must not be filed under a legitimate expected outcome")
+    # unchanged behaviour: it still enters NO denominator and never refuses
+    assert r.n_control_refused_rows == 0
+    assert r.n_cohort_rows == 30 and r.control_coverage == 1.0
+    assert r.eligible is True, r.reason
+    assert any("RAISED" in rec.getMessage() for rec in caplog.records), (
+        "the catch-all must be a WARNING, not a DEBUG nobody reads")
+
+
+def test_f4_classifier_error_is_disclosed_on_the_readiness_row(f4_prices, tmp_path, monkeypatch):
+    """The point of giving the crash its own key is that an operator can SEE it:
+    it has to survive into the nightly payload, not just the in-memory verdict."""
+    claims, grades = _controlled_graded(30)
+    claims.append(_claim(family=REQ_A, asof="2025-06-02", control="XLK",
+                         claim_id="boom|one"))
+    _write_store(tmp_path, claims, grades)
+    _start_clock(tmp_path, REQ_A)
+
+    real_window = q.claim_window
+    monkeypatch.setattr(q, "claim_window", lambda claim, h, entry_anchor=None: (
+        (_ for _ in ()).throw(RuntimeError("boom"))
+        if str(claim.get("claim_id", "")) == "boom|one" and entry_anchor is not None
+        else real_window(claim, h, entry_anchor=entry_anchor)))
+
+    row = grader.compute_promotion_readiness(tmp_path, families=[REQ_A])[REQ_A]["21"]
+    assert row["cohort_rowless"].get(q.COHORT_ROWLESS_CLASSIFIER_ERROR) == 1
 
 
 def test_f4_promotion_result_as_dict_carries_the_new_accounting_keys(tmp_path):

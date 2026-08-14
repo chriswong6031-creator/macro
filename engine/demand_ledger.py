@@ -274,7 +274,14 @@ def _register_qledger_claims(written: list, root, today=None) -> dict | None:
     names, so a naive join nulls on roughly half the universe and nothing
     alarms). `make_claim` turns that name into the sector ETF. Passing NO
     resolver — the state before this wiring — registered every demand_chain claim
-    uncontrolled forever and its control-evidence clock could never start."""
+    uncontrolled forever and its control-evidence clock could never start.
+
+    `raw_sector_of` is TELEMETRY, not construction: the normalising resolver
+    above answers None both for a ticker the universe file does not hold and for
+    a vocabulary the alias table cannot map, so without the raw read every D0-2
+    mismatch would be counted as `sector_absent` and the nightly `::warning`
+    would name no offending value — the exact silence the census forbids
+    (review round 2, F1)."""
     try:
         from engine import qledger as _q
         from engine import qledger_desk_adapter as _qadapt
@@ -285,6 +292,7 @@ def _register_qledger_claims(written: list, root, today=None) -> dict | None:
     return _qadapt.register_prospective(
         written, family="demand_chain", timestamp_quality="CRAWL_BOUNDED",
         root=root, today=today, sector_of=_q.membership_gics_sector_of(root),
+        raw_sector_of=lambda t: _q.sector_of_ticker(t, root),
         git_sha=_qclock.git_sha(root))
 
 

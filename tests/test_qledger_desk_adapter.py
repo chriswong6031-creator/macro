@@ -397,7 +397,7 @@ _MEMBERSHIP_SECTORS = {
     "NVDA": "Technology",                 # Yahoo   -> Information Technology -> XLK
     "MSFT": "Information Technology",     # GICS    -> XLK
     "JNJ": "Healthcare",                  # Yahoo   -> Health Care -> XLV
-    "WEIRD": "Quantum Widgets",           # unknown -> a COUNTED refusal, never a silent None
+    "WEIRD": "Quantum Widgets",           # unknown -> `vocabulary_unmapped`, NAMED in the warning
 }
 
 
@@ -429,7 +429,8 @@ def test_demand_chain_control_leg_resolves_through_membership_and_aliases(tmp_pa
 
     stats = qda.register_prospective(
         rows, family="demand_chain", root=tmp_path, today=TODAY,
-        sector_of=q.membership_gics_sector_of(tmp_path), git_sha="c0ffee")
+        sector_of=q.membership_gics_sector_of(tmp_path),
+        raw_sector_of=lambda t: q.sector_of_ticker(t, tmp_path), git_sha="c0ffee")
 
     assert stats["n_accepted"] == 5
     stored = {c["scope"]["key"]: c for c in q.load_claims(tmp_path)}
@@ -442,7 +443,15 @@ def test_demand_chain_control_leg_resolves_through_membership_and_aliases(tmp_pa
     assert stats["control_policy"] == q.CONTROL_POLICY_REQUIRED
     assert stats["n_control_valid"] == 3
     assert stats["n_control_missing"] == 2
-    assert stats["control_refusals"] == {qda.CONTROL_REFUSAL_SECTOR_ABSENT: 2}
+    # THE HONEST SPLIT (review round 2, F1). WEIRD's sector IS in the file, the
+    # alias table cannot map it -> vocabulary_unmapped. OFFIDX has no row at all
+    # -> sector_absent. Before the `raw_sector_of` probe both collapsed to
+    # `sector_absent`, so the one family this wiring serves could not report the
+    # refusal class census D0-2 exists to make countable.
+    assert stats["control_refusals"] == {
+        qda.CONTROL_REFUSAL_VOCABULARY: 1,
+        qda.CONTROL_REFUSAL_SECTOR_ABSENT: 1,
+    }
 
     # C3.1: the wiring actually starts the matched-control evidence clock, which
     # is the whole reason the control has to be resolved at REGISTRATION.
@@ -451,14 +460,94 @@ def test_demand_chain_control_leg_resolves_through_membership_and_aliases(tmp_pa
     assert clock["control"] in {"XLK", "XLV"}
 
 
+def test_an_unmappable_membership_value_is_named_not_collapsed(tmp_path, capsys):
+    """REVIEW ROUND 2, F1 (BLOCKING). `membership_gics_sector_of` answers None for
+    BOTH "ticker absent from the universe file" and "vocabulary the alias table
+    cannot map", so every D0-2 mismatch was counted as `sector_absent` and the
+    nightly annotation named NOTHING — the one family this commit wires could not
+    report the class the census demands ("normalise the alias set explicitly AND
+    count what it refuses"). The raw probe tells them apart.
+
+    MUTATION CONTROL: drop `raw_sector_of` (from this call, from
+    `_classify_control`'s signature, or from the `demand_ledger` wiring). The
+    refusal collapses back to `sector_absent`, the sample goes empty, and this
+    test fails on `vocabulary_unmapped == 1` AND on `'Quantum Widgets'` being
+    absent from the annotation body.
+    """
+    _seed_membership(tmp_path)
+    rows = [_demand_chain_row(ticker=t) for t in ("NVDA", "WEIRD", "OFFIDX")]
+
+    stats = qda.register_prospective(
+        rows, family="demand_chain", root=tmp_path, today=TODAY, dry_run=True,
+        sector_of=q.membership_gics_sector_of(tmp_path),
+        raw_sector_of=lambda t: q.sector_of_ticker(t, tmp_path))
+
+    assert stats["control_refusals"].get(qda.CONTROL_REFUSAL_VOCABULARY) == 1
+    assert stats["control_refusals"].get(qda.CONTROL_REFUSAL_SECTOR_ABSENT) == 1
+
+    annotations = [ln for ln in capsys.readouterr().out.splitlines()
+                   if ln.startswith("::warning title=demand_chain-qledger-control-missing")]
+    assert len(annotations) == 1, annotations
+    assert "Quantum Widgets" in annotations[0], (
+        "the annotation must NAME the value the alias table could not map — a "
+        "bare count is what let census D0-1 stay dead for four months")
+
+
+def test_the_raw_probe_never_invents_a_sector_for_an_absent_ticker(tmp_path, capsys):
+    """The probe DISAMBIGUATES, it never manufactures: a ticker the universe file
+    genuinely does not hold stays `sector_absent` and contributes no sample."""
+    _seed_membership(tmp_path)
+    stats = qda.register_prospective(
+        [_demand_chain_row(ticker="OFFIDX")], family="demand_chain", root=tmp_path,
+        today=TODAY, dry_run=True,
+        sector_of=q.membership_gics_sector_of(tmp_path),
+        raw_sector_of=lambda t: q.sector_of_ticker(t, tmp_path))
+
+    assert stats["control_refusals"] == {qda.CONTROL_REFUSAL_SECTOR_ABSENT: 1}
+    line = [ln for ln in capsys.readouterr().out.splitlines()
+            if ln.startswith("::warning title=demand_chain-qledger-control-missing")][0]
+    assert "unmapped sector value(s)" not in line
+
+
+def test_a_raising_sector_resolver_is_logged_not_silent(tmp_path, caplog):
+    """REVIEW ROUND 2, F2. A resolver that RAISES produced exactly the same claim
+    as one that answered None, with no log at any level — a broken store, a bad
+    closure or a renamed column read as "this ticker is off-index". Still
+    non-fatal; no longer silent.
+
+    MUTATION CONTROL: delete the `log.warning` from `translate_row`'s `except`
+    (restore a bare `sector = None`) — this test fails on the empty caplog.
+    """
+    def _boom(_ticker):
+        raise RuntimeError("membership store exploded")
+
+    with caplog.at_level("WARNING", logger="qledger_desk_adapter"):
+        stats = qda.register_prospective(
+            [_demand_chain_row(ticker="NVDA")], family="demand_chain",
+            root=tmp_path, today=TODAY, dry_run=True, sector_of=_boom)
+
+    assert stats["n_candidates"] == 1              # non-fatal: the claim still registers
+    assert stats["n_control_missing"] == 1
+    hits = [r.getMessage() for r in caplog.records
+            if "sector resolver raised" in r.getMessage()]
+    assert hits, "a raising resolver must not be indistinguishable from a None one"
+    assert "NVDA" in hits[0] and "membership store exploded" in hits[0]
+
+
 def test_demand_ledger_passes_a_working_sector_resolver(tmp_path, monkeypatch):
     """`engine/demand_ledger.py::_register_qledger_claims` must actually HAND the
     adapter a resolver, and that resolver must answer with the canonical GICS
     sector NAME (never an ETF — `make_claim` does its own ETF lookup).
 
+    It must ALSO hand over the un-normalised `raw_sector_of` probe, or every
+    unmappable vocabulary value is reported as `sector_absent` and the nightly
+    annotation names nothing (review round 2, F1).
+
     MUTATION CONTROL: drop the `sector_of=` kwarg from the
     `register_prospective` call in `_register_qledger_claims` — the captured
     kwargs then carry no `sector_of` and this test fails on the KeyError/None.
+    SECOND MUTATION CONTROL: drop the `raw_sector_of=` kwarg from the same call —
+    this test fails on `raw_of("WEIRD") == "Quantum Widgets"`.
     """
     from engine import demand_ledger
 
@@ -484,6 +573,15 @@ def test_demand_ledger_passes_a_working_sector_resolver(tmp_path, monkeypatch):
     assert sector_of("WEIRD") is None                      # unknown vocabulary
     assert sector_of("OFFIDX") is None                     # absent from the file
     assert q.control_for_sector(sector_of("NVDA")) == "XLK"
+
+    # ...and the RAW probe, which is the only thing that can tell those last two
+    # Nones apart (F1). It returns the file's own value, un-normalised.
+    raw_of = captured.get("raw_sector_of")
+    assert raw_of is not None, (
+        "without the raw probe every D0-2 mismatch is reported as sector_absent")
+    assert raw_of("WEIRD") == "Quantum Widgets"
+    assert raw_of("NVDA") == "Technology"                   # raw, NOT normalised
+    assert raw_of("OFFIDX") is None
 
 
 def test_control_refusals_are_split_by_cause(tmp_path):
