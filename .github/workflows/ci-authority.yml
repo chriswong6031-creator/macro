@@ -3,11 +3,13 @@ name: ci-authority
 # This workflow is designed to be selected by an organization required-workflow
 # ruleset. pull_request_target loads this file from the trusted default branch;
 # every checkout below names that branch explicitly and never materializes the
-# candidate head. The controller then posts the same stable check name directly
-# to the exact, API-reverified PR head as a repository-status fallback.
+# candidate head. The controller posts the same stable check name directly to
+# the exact, API-reverified PR head as diagnostic evidence only. That custom
+# check must never be the sole required authority: the organization
+# required-workflow rule remains mandatory.
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
   merge_group:
     types: [checks_requested]
 

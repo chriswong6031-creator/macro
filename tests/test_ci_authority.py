@@ -27,6 +27,8 @@ PR_NUMBER = 5588
 HEAD = "a" * 40
 NEW_HEAD = "b" * 40
 BASE = "c" * 40
+OTHER_BASE = "d" * 40
+BASE_REF = "main"
 
 
 def _event(
@@ -34,6 +36,8 @@ def _event(
     head_repository: str = REPOSITORY,
     author: str = "operator",
     actor: str | None = None,
+    base_sha: str = BASE,
+    base_ref: str = BASE_REF,
 ) -> dict:
     sender = author if actor is None else actor
     return {
@@ -43,7 +47,11 @@ def _event(
         "pull_request": {
             "number": PR_NUMBER,
             "head": {"sha": HEAD, "repo": {"full_name": head_repository}},
-            "base": {"sha": BASE, "repo": {"full_name": REPOSITORY}},
+            "base": {
+                "sha": base_sha,
+                "ref": base_ref,
+                "repo": {"full_name": REPOSITORY},
+            },
             "user": {"login": author},
         },
     }
@@ -55,12 +63,18 @@ def _pull(
     head: str = HEAD,
     head_repository: str = REPOSITORY,
     author: str = "operator",
+    base_sha: str = BASE,
+    base_ref: str = BASE_REF,
 ) -> dict:
     return {
         "number": PR_NUMBER,
         "state": "open",
         "changed_files": len(files),
-        "base": {"repo": {"full_name": REPOSITORY}},
+        "base": {
+            "sha": base_sha,
+            "ref": base_ref,
+            "repo": {"full_name": REPOSITORY},
+        },
         "head": {"sha": head, "repo": {"full_name": head_repository}},
         "user": {"login": author},
     }
@@ -76,6 +90,8 @@ class FakeApi:
         author: str = "operator",
         permission: str = "admin",
         permissions: dict[str, str] | None = None,
+        base_sha: str = BASE,
+        base_ref: str = BASE_REF,
         fail: str = "",
     ) -> None:
         self.files = files
@@ -84,6 +100,8 @@ class FakeApi:
             head=head,
             head_repository=head_repository,
             author=author,
+            base_sha=base_sha,
+            base_ref=base_ref,
         )
         self.author = author
         self.permission = permission
@@ -186,6 +204,22 @@ def test_ordinary_fork_change_passes_without_an_authority_query() -> None:
     assert not any(call[0] == "permission" for call in api.calls)
 
 
+def test_edited_event_rechecks_the_same_head_and_base_identity() -> None:
+    event = _event()
+    event["action"] = "edited"
+    api = FakeApi([_file("docs/ordinary-note.md")])
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        event, REPOSITORY, api
+    )
+
+    assert code == 0
+    assert decision["event_action"] == "edited"
+    assert decision["head_sha"] == HEAD
+    assert decision["base_sha"] == BASE
+    assert decision["base_ref"] == BASE_REF
+    assert check["conclusion"] == "success"
+
+
 def test_same_repo_non_admin_authority_change_fails() -> None:
     api = FakeApi([_file("scripts/run_ci_pack.py")], permission="write")
     code, decision, check = AUTHORITY.run_pull_request_target(
@@ -262,7 +296,7 @@ def test_stale_event_head_fails_closed_before_files_or_permission() -> None:
     )
 
     assert code == 1
-    assert decision["reason"] == "event_head_or_author_drift"
+    assert decision["reason"] == "event_head_base_or_author_drift"
     assert check["head_sha"] == HEAD
     assert [call[0] for call in api.calls] == ["pull", "check"]
 
@@ -280,8 +314,51 @@ def test_head_changing_during_file_pagination_fails_closed() -> None:
         _event(), REPOSITORY, api
     )
     assert code == 1
-    assert decision["reason"] == "event_head_or_files_drift"
+    assert decision["reason"] == "event_head_base_or_files_drift"
     assert check["head_sha"] == HEAD
+    assert [call[0] for call in api.calls] == ["pull", "files", "pull", "check"]
+
+
+def test_base_retarget_with_reused_head_fails_before_files() -> None:
+    api = FakeApi(
+        [_file("docs/readme.md")],
+        base_sha=OTHER_BASE,
+        base_ref="codex/merge-queue-pilot",
+    )
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(), REPOSITORY, api
+    )
+
+    assert code == 1
+    assert decision["head_sha"] == HEAD
+    assert decision["base_sha"] == BASE
+    assert decision["base_ref"] == BASE_REF
+    assert decision["reason"] == "event_head_base_or_author_drift"
+    assert check["conclusion"] == "failure"
+    assert [call[0] for call in api.calls] == ["pull", "check"]
+
+
+def test_reused_head_cannot_hide_base_drift_during_files_query() -> None:
+    class BaseRacingApi(FakeApi):
+        def get_pull(self, repository: str, number: int) -> object:
+            response = super().get_pull(repository, number)
+            if sum(call[0] == "pull" for call in self.calls) == 2:
+                return _pull(
+                    self.files,
+                    head=HEAD,
+                    base_sha=OTHER_BASE,
+                    base_ref="codex/merge-queue-pilot",
+                )
+            return response
+
+    api = BaseRacingApi([_file("docs/readme.md")])
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(), REPOSITORY, api
+    )
+    assert code == 1
+    assert decision["head_sha"] == HEAD
+    assert decision["reason"] == "event_head_base_or_files_drift"
+    assert check["conclusion"] == "failure"
     assert [call[0] for call in api.calls] == ["pull", "files", "pull", "check"]
 
 
@@ -455,7 +532,7 @@ def test_workflow_is_required_workflow_shaped_and_never_executes_candidate() -> 
 
     assert re.search(r"^  pull_request_target:\s*$", source, re.MULTILINE)
     assert not re.search(r"^  pull_request:\s*$", source, re.MULTILINE)
-    assert "types: [opened, synchronize, reopened]" in source
+    assert "types: [opened, synchronize, reopened, edited]" in source
     assert re.search(r"^  merge_group:\s*$", source, re.MULTILINE)
     assert "types: [checks_requested]" in source
     assert document["permissions"] == {}
@@ -482,3 +559,6 @@ def test_workflow_is_required_workflow_shaped_and_never_executes_candidate() -> 
     assert pull_step["run"] == merge_group_step["run"]
     assert pull_step["run"].startswith("python3 scripts/ci_authority.py")
     assert "subprocess" not in (ROOT / "scripts/ci_authority.py").read_text()
+    assert "diagnostic evidence only" in source
+    assert "must never be the sole required authority" in source
+    assert "required-workflow rule remains mandatory" in source

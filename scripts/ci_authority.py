@@ -3,10 +3,10 @@
 
 ``pull_request_target`` runs this controller from the default branch.  It never
 checks out or executes pull-request code.  The event identifies the proposed
-head, then read-only API calls re-prove the current PR identity and enumerate
-its exact changed files.  A completed ``ci-authority`` check is written to that
-exact head so a repository status-check rule can consume the verdict while the
-workflow is migrated to an organization required-workflow rule.
+head and base, then read-only API calls re-prove the current PR identity and
+enumerate its exact changed files.  A completed ``ci-authority`` check is
+written to that exact head as diagnostic evidence.  It must never be the sole
+required authority; the organization required-workflow rule is mandatory.
 """
 
 from __future__ import annotations
@@ -90,6 +90,25 @@ def _safe_login(value: object) -> str | None:
     return value
 
 
+def _safe_ref(value: object) -> str | None:
+    if type(value) is not str or not (1 <= len(value.encode("utf-8")) <= 1024):
+        return None
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        return None
+    if (
+        value.startswith("/")
+        or value.endswith("/")
+        or value.startswith(".")
+        or value.endswith(".")
+        or ".." in value
+        or "@{" in value
+        or "\\" in value
+        or any(character in value for character in " ~^:?*[")
+    ):
+        return None
+    return value
+
+
 def _repository(value: object) -> str | None:
     if type(value) is not str or value.count("/") != 1:
         return None
@@ -113,7 +132,7 @@ def _event_target(payload: object, expected_repository: str) -> dict[str, object
         raise AuthorityContractError(
             "event requires repository, pull_request, and sender"
         )
-    if action not in {"opened", "synchronize", "reopened"}:
+    if action not in {"opened", "synchronize", "reopened", "edited"}:
         raise AuthorityContractError("unsupported pull_request_target action")
     trusted_repository = _repository(expected_repository)
     if trusted_repository is None or repository.get("full_name") != trusted_repository:
@@ -122,15 +141,23 @@ def _event_target(payload: object, expected_repository: str) -> dict[str, object
     number = _positive_int(pull.get("number"))
     head = _mapping(pull.get("head"))
     head_repo = None if head is None else _mapping(head.get("repo"))
+    base = _mapping(pull.get("base"))
+    base_repo = None if base is None else _mapping(base.get("repo"))
     user = _mapping(pull.get("user"))
     head_sha = None if head is None else _sha(head.get("sha"))
     head_repository = None if head_repo is None else _repository(head_repo.get("full_name"))
+    base_sha = None if base is None else _sha(base.get("sha"))
+    base_ref = None if base is None else _safe_ref(base.get("ref"))
+    base_repository = None if base_repo is None else _repository(base_repo.get("full_name"))
     author = None if user is None else _safe_login(user.get("login"))
     actor = _safe_login(sender.get("login"))
     if (
         number is None
         or head_sha is None
         or head_repository is None
+        or base_sha is None
+        or base_ref is None
+        or base_repository != trusted_repository
         or author is None
         or actor is None
     ):
@@ -141,6 +168,9 @@ def _event_target(payload: object, expected_repository: str) -> dict[str, object
         "event_action": action,
         "head_sha": head_sha,
         "head_repository": head_repository,
+        "base_sha": base_sha,
+        "base_ref": base_ref,
+        "base_repository": base_repository,
         "author": author,
         "actor": actor,
     }
@@ -186,6 +216,8 @@ def _current_pull_identity(
         or pull.get("state") != "open"
         or base_repo is None
         or base_repo.get("full_name") != target["repository"]
+        or _sha(base.get("sha")) is None
+        or _safe_ref(base.get("ref")) is None
         or head is None
         or _sha(head.get("sha")) is None
         or head_repo is None
@@ -240,13 +272,20 @@ def _identity_still_matches(
 ) -> bool:
     head = _mapping(current.get("head"))
     head_repo = None if head is None else _mapping(head.get("repo"))
+    base = _mapping(current.get("base"))
+    base_repo = None if base is None else _mapping(base.get("repo"))
     user = _mapping(current.get("user"))
     return bool(
         head is not None
         and head_repo is not None
+        and base is not None
+        and base_repo is not None
         and user is not None
         and head.get("sha") == target["head_sha"]
         and head_repo.get("full_name") == target["head_repository"]
+        and base.get("sha") == target["base_sha"]
+        and base.get("ref") == target["base_ref"]
+        and base_repo.get("full_name") == target["base_repository"]
         and user.get("login") == target["author"]
     )
 
@@ -291,7 +330,7 @@ def evaluate_pull_request_target(
         return _reject(decision, "current_pull_identity_rejected")
     current, changed_count = identity
     if not _identity_still_matches(current, target):
-        return _reject(decision, "event_head_or_author_drift")
+        return _reject(decision, "event_head_base_or_author_drift")
 
     try:
         entries = api.list_pull_files(repository, number, changed_count)
@@ -315,7 +354,7 @@ def evaluate_pull_request_target(
         or after_identity[1] != changed_count
         or not _identity_still_matches(after_identity[0], target)
     ):
-        return _reject(decision, "event_head_or_files_drift")
+        return _reject(decision, "event_head_base_or_files_drift")
 
     authority_hits = sorted(path for path in paths if is_ci_authority_path(path))
     decision["changed_file_count"] = changed_count
@@ -368,7 +407,7 @@ def evaluate_pull_request_target(
 def check_payload(
     decision: Mapping[str, object], *, details_url: str = ""
 ) -> dict[str, object]:
-    """Build the exact completed check-run payload for the proposed head."""
+    """Build diagnostic evidence; never use this as the sole required authority."""
     head_sha = _sha(decision.get("head_sha"))
     number = _positive_int(decision.get("pull_request_number"))
     repository = _repository(decision.get("repository"))
