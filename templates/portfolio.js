@@ -99,9 +99,12 @@
       notInLibrary: '该名称不在今晚的库中——数值按成本显示。',
       dossier: '完整档案 →',
       terminal: '在终端查看图表 →',
-      // 偏离度, NOT 拉伸度: the existing Stretch lane already owns 拉伸度, and two
-      // drawer rows carrying the same zh label with different readings is unreadable.
-      // 偏离 is the house word for distance-from-a-norm (偏离200日均线 / 极端偏离).
+      /* This comment used to sit here explaining the DISTANCE row's zh label (偏离度,
+         not 拉伸度). That row moved into the shared composer in round 3 and the note
+         stayed behind attached to Stage, describing a key it has nothing to do with —
+         so it is retired here. The live version of the ruling, now that the lane is
+         labelled 入场拉伸 and the row 偏离度, lives beside each of them in
+         `watchlist_risk.js`. */
       lblStage: '阶段'
     }
   };

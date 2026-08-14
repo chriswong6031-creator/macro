@@ -623,3 +623,41 @@ an object the page is holding anyway. The rulings a later wave inherits:
   `members[0]` for a group of one, so passing its label through printed "filed under
   AAPL" inside AAPL's own drawer. Carry the facts (which force, how many names) and word
   them at the surface: "moves on its own — nothing else here is grouped with it".
+
+**Round-4 rulings absorbed into (h), binding on later waves:**
+
+- **A NORMALISED word and a RAW number may not share a sentence as claim-and-evidence.**
+  `Well above its own trend — about 8.9% above its 200-day line.` puts a
+  volatility-normalised grade (`ext.grade` grades `ext_z`, the gap's z-score against the
+  name's own 252-day history) in front of the un-normalised gap and joins them with an em
+  dash, so the number reads as the word's proof. It is not: **33.6% of ordered pairs
+  invert** over the 1,621 graded artifacts — the name called further out sits at the
+  smaller raw gap, and two drawers side by side then look broken. State the number as a
+  fact of its own, then the word **behind the yardstick it was measured against**.
+- **Name the yardstick PER BRANCH, or the disclosure becomes the next false claim.** The
+  same row falls back from `ext.grade` (1,260 of 1,621) to
+  `ladder.alignment.overextended` (the other 361), and the fallback is StochRSI/RSI
+  overbought or a >=30% gap — not a normalised distance at all. A single "measured
+  against how much it usually moves" clause would have been false on 22% of the library
+  and on **both** crop exemplars, neither of which carries an `ext` block. Check which
+  branch produced the value before writing the sentence that explains it.
+- **Disambiguating the VALUES is half the fix; the LABEL is what a reader meets first.**
+  Round 3 reworded the distance row's values and left the lane labelled `Stretch`, so
+  "Stretch: OK — not stretched" still sat a few rows from "Distance from trend: Well
+  above its own trend" — the same one-word-two-measurements defect, one round later, in
+  the more prominent slot. Rename the label in the same act as the copy.
+- **A fallback branch inherits the label, so it must disclose when it cannot answer the
+  label's question.** The entry-stretch lane falls back to `hv20` when no
+  `entry_signal.status` exists; filing a volatility answer silently under an ENTRY label
+  is the mislabel one rung down. It now says "no entry read tonight" first.
+- **Prose that certifies itself is not evidence.** "Every figure here is per-scene and
+  matches the crop named beside it" survived three review rounds while the counts beside
+  it were wrong in all three scenes. A harness that photographs a surface must also
+  PRINT the inventory it measured, and the document must say which of its figures are
+  asserted, which are transcribed from that print, and which are hand-written.
+- **A test that SKIPs in CI is only ever checked by hand, so its own scaffolding is
+  unguarded.** The library sweeps carried a two-argument `intelStance` call after the
+  function grew a third parameter, and printed a distribution the DOM never rendered
+  (No action 2.9% against the live 1.0%); a stray `%` in that same template raises
+  `TypeError` before the sweep runs at all. Neither is visible to CI. Run the skipped
+  half locally before claiming its numbers.

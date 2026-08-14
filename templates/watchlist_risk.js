@@ -134,8 +134,17 @@
   // state 'na' + plain "not covered"; never invents a read. Lane names + chip
   // vocabulary are the pinned W2 §7 plain words.
   var LANES = ['price_trend', 'stretch', 'events', 'estimates', 'balance', 'selling', 'rates'];
+  /* `stretch` is labelled ENTRY stretch, not "Stretch". The bare word named a second
+     measurement: a few rows below sits "Distance from trend", which grades how far the
+     price is from its 200-day line, and a reader met "Stretch: OK — not stretched" a
+     few rows under "Distance from trend: Well above its own trend" as one English word
+     answering itself. They are different questions from different oracles — this lane
+     reads `entry_signal.status` (has the move run past the level you would enter at?),
+     the distance row reads `ext.grade` / the ladder flag (how far from the 200-day
+     line?) — so each label now names its OWN dimension and neither can be read as the
+     negation of the other. Label + sentence only; the lane's read is unchanged. */
   var LANE_LABEL = {
-    price_trend: { en: 'Price & trend', zh: '价格与趋势' }, stretch: { en: 'Stretch', zh: '拉伸度' },
+    price_trend: { en: 'Price & trend', zh: '价格与趋势' }, stretch: { en: 'Entry stretch', zh: '入场拉伸' },
     events: { en: 'Events', zh: '事件' }, estimates: { en: 'Estimates', zh: '盈利预期' },
     balance: { en: 'Balance sheet', zh: '资产负债' }, selling: { en: "Who's selling", zh: '谁在卖出' },
     rates: { en: 'Rate sensitivity', zh: '利率敏感' }
@@ -166,15 +175,29 @@
     var stretched = es && es.status === 'extended';
     var hv = tech && tech.hv20;
     if (es && es.status != null) {
+      /* Both branches are phrased against the ENTRY, which is the only thing this lane
+         measured. The negative used to read "not stretched" — three rows from a distance
+         row saying "Well above its own trend", which made one word negate the other (in
+         ZH, 未过度拉伸 under 明显高于自身趋势, a flat self-negation). It now says what
+         `status !== 'extended'` actually means: entering here is not chasing a move that
+         has already gone. */
       out.stretch = { state: stretched ? 'watch' : 'ok',
-        en: stretched ? 'ran hard; entries here have chased before' : 'not stretched',
-        zh: stretched ? '涨势过快；此位追入历史上多为追高' : '未过度拉伸',
+        en: stretched ? 'has run well past its entry level; entries here have chased before'
+                      : 'entries here are not chasing a move that already ran',
+        zh: stretched ? '已远离入场位置；此位入场历史上多为追高'
+                      : '此位入场不属于追涨已走完的行情',
         chip: stretched ? { cls: '', en: 'Stretched', zh: '过度拉伸' } : null };
     } else if (tech && isNum(hv)) {
+      /* NO entry read exists for this name, so this branch cannot answer the lane's own
+         question and says so before reporting the one thing it can (recent swing size).
+         Reporting a volatility read silently under an ENTRY label is the same mislabel
+         the rename above exists to remove. State unchanged. */
       var hot = hv > 0.6;
       out.stretch = { state: hot ? 'watch' : 'ok',
-        en: hot ? 'very volatile lately' : 'volatility contained',
-        zh: hot ? '近期波动很大' : '波动可控', chip: null };
+        en: hot ? 'no entry read tonight; it has been swinging hard lately'
+                : 'no entry read tonight; its swings have stayed contained',
+        zh: hot ? '今晚没有入场读数；近期波动很大'
+                : '今晚没有入场读数；波动幅度可控', chip: null };
     } else out.stretch = { state: 'na', en: NA.en, zh: NA.zh, chip: null };
     // --- events (earnings window) --------------------------------------
     var earn = (j && j.earnings) || null;
@@ -508,7 +531,27 @@
      (this reads `ext.grade` / `ladder.alignment.overextended`, the lane reads
      `entry_signal.status`) and they disagree on 607 of 1,629 names in the direction that
      matters, so they must not appear to be answering the same question in the same
-     words. This row talks about DISTANCE; the lane talks about stretch. PURE. */
+     words. This row talks about DISTANCE; the lane talks about entry stretch.
+
+     THE SENTENCE NAMES ITS OWN YARDSTICK, and that is the whole shape of this builder.
+     Round 3 rendered `<word> — about <p>% above its 200-day line.`, which welds a graded
+     word to a RAW number and offers the number as the word's evidence. It is not:
+     `ext.grade` is a grade of `ext_z`, the z-score of that same gap against the name's
+     OWN 252-day history, so a name that habitually runs 20% clear of its line is "in
+     line with its own trend" at +9% while a name that never leaves it is "well above"
+     at +8.9%. Measured over the 1,621 artifacts carrying a gap, 33.6% of ordered pairs
+     invert — the word and the number really do disagree about which name is further
+     out, and the em dash claimed they agreed. So the NUMBER leads as a plain fact and
+     the WORD follows behind the measure it was actually taken against.
+
+     THE TWO SOURCES ARE MEASURED AGAINST DIFFERENT THINGS, so the yardstick clause is
+     branch-specific rather than one sentence covering both. `ext.grade` exists on 1,260
+     of 1,621; on the other 361 (including BOTH crop exemplars — AAPL and RIVN carry no
+     `ext` block at all) the word comes from `ladder.alignment.overextended`, which
+     `engine/cycles.py::_overextended` computes from daily/3-day StochRSI + RSI14
+     overbought or a >=30% gap. That is "how hard it has run lately", NOT a
+     volatility-normalised distance — and printing the normalised claim over it would be
+     naming a measure we did not take, the same defect one rung down. PURE. */
   function distanceRowHTML(j) {
     var lab = { en: 'Distance from trend', zh: '偏离度' };
     var pct = j && j.tech && j.tech.pct_vs_200dma;
@@ -517,22 +560,28 @@
         en: 'We could not measure this name&rsquo;s distance from its own trend line.',
         zh: '无法测量这只票相对自身趋势线的偏离程度。' });
     }
-    var grade = (j && j.ext && j.ext.grade) ? j.ext.grade
+    var byExt = !!(j && j.ext && j.ext.grade);
+    var grade = byExt ? j.ext.grade
       : (j && j.ladder && j.ladder.alignment && j.ladder.alignment.overextended === true)
         ? 'stretched' : 'intrend';
     var below = pct < 0, p = Math.abs(Math.round(pct * 10) / 10);
-    var lineEn = below ? 'about ' + p + '% below its 200-day line'
-                       : 'about ' + p + '% above its 200-day line';
-    var lineZh = below ? '低于200日线约' + p + '%' : '高于200日线约' + p + '%';
+    var gapEn = 'About ' + p + '% ' + (below ? 'below' : 'above') + ' its 200-day line.';
+    var gapZh = (below ? '低于' : '高于') + '200日线约' + p + '%。';
     var word = grade === 'parabolic'
-        ? { en: 'Far above its own trend — extreme', zh: '远高于自身趋势——极端偏离' }
+        ? { en: 'far above its own trend — an extreme reading', zh: '极端偏离——远高于自身趋势' }
       : grade === 'stretched'
-        ? { en: 'Well above its own trend', zh: '明显高于自身趋势' }
+        ? { en: 'well above its own trend', zh: '明显高于自身趋势' }
       : grade === 'steady'
-        ? { en: 'Close to its own trend', zh: '贴近自身趋势' }
-        : { en: 'In line with its own trend', zh: '与自身趋势一致' };
+        ? { en: 'close to its own trend', zh: '贴近自身趋势' }
+        : { en: 'in line with its own trend', zh: '与自身趋势一致' };
+    var basis = byExt
+      ? { en: 'Against how far this name usually runs from that line, that is ',
+          zh: '以这只票惯常偏离该均线的幅度衡量，属于' }
+      : { en: 'Against how hard it has run lately, that reads as ',
+          zh: '以它近期走势的急缓衡量，属于' };
     return lrowHTML({ lab: lab, state: '',
-      en: esc(word.en) + ' — ' + lineEn + '.', zh: esc(word.zh) + '——' + lineZh + '。' });
+      en: gapEn + ' ' + basis.en + esc(word.en) + '.',
+      zh: gapZh + basis.zh + esc(word.zh) + '。' });
   }
 
 
@@ -2375,7 +2424,7 @@
       /* the lane engine itself — the library sweeps walk every real artifact
          through the SAME functions the DOM gets, which is the only way a
          distribution measurement means anything */
-      laneRead: laneRead, roleBadge: roleBadge,
+      laneRead: laneRead, roleBadge: roleBadge, laneRows: laneRowsHTML,
       T1_STATE: T1_STATE, t1Fallback: t1Fallback,
       intelTier1: intelTier1HTML, intelSections: intelSectionsHTML,
       W4_STANCE: W4_STANCE, W4_LABEL: W4_LABEL,
