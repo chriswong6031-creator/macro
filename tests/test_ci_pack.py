@@ -67,7 +67,7 @@ def test_engine_render_outlier_is_partitioned_without_coverage_loss() -> None:
         "engine-render-risk-guards": (420, 73),
         "engine-render-claims-guards": (419, 7),
         "engine-render-forensics-guards": (152, 31),
-        "engine-render-international-guards": (114, 36),
+        "engine-render-international-guards": (114, 37),
         "engine-render-prophet-guards": (65, 5),
     }
     assert "engine-render-guards" not in jobs
@@ -90,7 +90,9 @@ def test_engine_render_outlier_is_partitioned_without_coverage_loss() -> None:
         assert len(paths) == len(set(paths)), f"duplicate suite in {job_id}"
         all_paths.extend(paths)
 
-    assert len(all_paths) == 152
+    # The post-split Stretch Oracle contract joined the international shard;
+    # retain it in the coverage census instead of freezing the pre-oracle total.
+    assert len(all_paths) == 153
     assert len(all_paths) == len(set(all_paths)), "suite duplicated across shards"
     assert len(installs) == 1, "split shards must retain one dependency contract"
 

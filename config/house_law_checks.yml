@@ -1115,6 +1115,39 @@ checks:
       check_script is null because enforcement is via gen_ontology_js --check
       (a generator in diff/check mode), not a dedicated check_*.py script.
 
+  - law_id: cycles.stretch_oracle_disclosure
+    summary: >
+      Every overextension brake must disclose the exact oscillator and/or
+      200-day-distance leg that fired, and its basis must be derived from those
+      legs. The distinct entry-status bucket is not an extension measurement
+      and must never be silently substituted for this cause evidence.
+    source_ref:
+      - scripts/check_stretch_oracle_contract.py
+      - tests/test_stretch_oracle_contract.py
+      - docs/site_semantics/stretch_oracles.md
+      - "PR #5574"
+    severity: hard
+    check_script: scripts/check_stretch_oracle_contract.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: engine-render-international-guards
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      The checker has no selftest flag; tests/test_stretch_oracle_contract.py
+      supplies deterministic violating rows, boundary mutations, and CLI
+      coverage in the same logical CI job.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - The committed checkout has no site/stockdata tree, so the direct checker reports nothing-to-check there; fixture tests still enforce every hard invariant, while store-bearing nightly invocations emit the live divergence counter.
+      - The checker proves disclosure consistency, not whether the underlying oscillator and distance thresholds should carry decision authority.
+    owner_program: cycle-intelligence
+    notes: >
+      The CI step runs the fixture contract first, then invokes the checker
+      directly. Exit 2 is accepted only for the structurally absent committed
+      stockdata store; any observed contract violation remains exit 1.
+
   # ── Authority guards ───────────────────────────────────────────────────────
 
   - law_id: authority.cycle_pattern
@@ -2666,12 +2699,12 @@ checks:
     check_script: scripts/check_statement_tape.py
     ci_wiring:
       - workflow: .github/workflows/ci.yml
-        job: engine-render-guards
+        job: engine-render-prophet-guards
         lane: pr_ci
     selftest: false
     selftest_exempt_reason: >
       Guard logic (schema, stance enum, PS-R1 key ban, paraphrase warning) is
-      covered by tests/test_statement_tape.py in the same engine-render-guards
+      covered by tests/test_statement_tape.py in the same engine-render-prophet-guards
       pytest whitelist; the dedicated CI step runs the guard against the
       committed registry directly.
     allowlist: null

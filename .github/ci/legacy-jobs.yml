@@ -1497,6 +1497,16 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4 fastapi httpx jsonschema boto3
+      - name: stretch-oracle cause disclosure contract
+        run: |
+          python -m pytest tests/test_stretch_oracle_contract.py -q
+          rc=0
+          python3 scripts/check_stretch_oracle_contract.py --quiet || rc=$?
+          if [ "$rc" -eq 2 ]; then
+            echo "::notice title=stretch-oracle-contract::committed checkout has no stockdata store; fixture contract passed"
+            exit 0
+          fi
+          exit "$rc"
       - name: international render, library, and engine regression contracts
         run: >
           python -m pytest
@@ -1533,7 +1543,6 @@ jobs:
           tests/test_rr_scorecard_card.py
           tests/test_engine_run_no_regress.py
           tests/test_cycles.py
-          tests/test_stretch_oracle_contract.py
           tests/test_opex_risk.py
           tests/test_seo_meta_rollout.py
           tests/test_cycles_anchor_invariance.py -q
@@ -4703,6 +4712,7 @@ jobs:
       - "scripts/build_subsector_rotation.py"
       - "scripts/build_subsector_rotation_china.py"
       - "scripts/build_subsector_rotation_china_pages.py"
+      - "scripts/check_stretch_oracle_contract.py"
       - "scripts/build_subsector_rotation_pages.py"
       - "scripts/build_themes_heatmap.py"
       - "scripts/check_board_contradictions.py"
@@ -7245,6 +7255,7 @@ jobs:
       - "scripts/build_vector.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
+      - "scripts/check_stretch_oracle_contract.py"
       - "scripts/check_title_i18n.py"
       # Import-closure entry for tests/test_us_board_grader_honesty.py, wired into this
       # job below.  That suite READS scripts/exit_policy_study.py's source directly to

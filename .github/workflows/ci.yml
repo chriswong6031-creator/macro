@@ -604,7 +604,8 @@ on:
       # regime no-regress guard (2026-07-13 earlyclose↔render flip-flop fix)
       - "tests/test_engine_run_no_regress.py"
       # stretch-oracle / overextension-brake disclosure contract. Carried by
-      # engine-render-guards beside test_cycles.py (same producer: engine/cycles.py).
+      # engine-render-international-guards beside test_cycles.py (same producer:
+      # engine/cycles.py).
       # engine/** covers the producer; scripts/*.py covers the checker. Name the
       # test half and the contract doc so a test-only or doc-only edit still
       # starts the owner job (#3488 both-halves).
