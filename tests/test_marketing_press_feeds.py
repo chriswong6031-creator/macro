@@ -735,7 +735,14 @@ def _hearsay(handle, headline, iid=None):
         "id": iid or f"tw:{handle}:{abs(hash(headline)) % 10**12}",
         "source": f"x_{handle}", "x_handle": handle, "source_name": f"@{handle}",
         "source_tier": "x_relay", "url": "", "published_at": "2026-07-27T20:00:00Z",
-        "headline": headline, "body_snippet": headline,
+        "headline": headline,
+        # A REAL PACKET, not an echo of its own headline (W2E, 2026-08-11). A
+        # hearsay CLAIM whose only body is its own headline is not self-evident
+        # and carries no reading, so compose-or-drop refuses it before the
+        # corroboration gate this class is about ever gets to speak. The handle
+        # keeps the two relays' bodies distinct, which is the point of the pair.
+        "body_snippet": f"{headline}. The {handle} desk relayed the line to "
+                        f"clients and flagged it as unconfirmed.",
         "corroboration_class": "hearsay",
     }
 

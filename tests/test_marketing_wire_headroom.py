@@ -82,7 +82,14 @@ def _item(iid: str, headline: str) -> dict:
         "url": f"https://truthsocial.com/@realDonaldTrump/{iid}",
         "published_at": "2026-07-27T15:30:00Z",
         "headline": headline,
-        "body_snippet": headline,
+        # A REAL PACKET, not an echo of its own headline (W2E, 2026-08-11). A
+        # body that merely repeats the headline gives the deterministic
+        # summarizer nothing to relay, so the lane's compose-or-drop gate now
+        # refuses the item before any budget is charged — and every test in this
+        # file is about the BUDGET, not about the summarizer. The second sentence
+        # is what a wire packet actually carries and what the fallback relays.
+        "body_snippet": f"{headline}. Two desks carried the same line within "
+                        f"the hour and the tape moved on it.",
         "corroboration_class": "direct-quote",
         "truth_status_id": iid,
         "author": "Donald J. Trump",
