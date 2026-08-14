@@ -186,6 +186,32 @@ def test_fork_cannot_add_python_import_shadow_that_self_greens_ci(shadow: str) -
     assert check["conclusion"] == "failure"
 
 
+@pytest.mark.parametrize(
+    "control_path",
+    [
+        "tests/conftest.py",
+        "pyproject.toml",
+        "requirements-ci.txt",
+        "package.json",
+        "sitecustomize.py",
+    ],
+)
+def test_fork_cannot_change_test_runtime_control(control_path: str) -> None:
+    fork = "contributor/macro"
+    api = FakeApi(
+        [_file(control_path)],
+        head_repository=fork,
+        author="contributor",
+    )
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(head_repository=fork, author="contributor"), REPOSITORY, api
+    )
+    assert code == 1
+    assert decision["reason"] == "fork_cannot_change_ci_authority"
+    assert decision["authority_hits"] == [control_path]
+    assert check["conclusion"] == "failure"
+
+
 def test_ordinary_fork_change_passes_without_an_authority_query() -> None:
     fork = "contributor/macro"
     api = FakeApi(
@@ -502,6 +528,11 @@ def test_shared_ci_authority_inventory_cannot_drift_from_self_mod_fence() -> Non
         "scripts/check_self_mod_fence.py",
         "scripts/argparse.py",
         "scripts/yaml.py",
+        "tests/conftest.py",
+        "pyproject.toml",
+        "requirements-ci.txt",
+        "package.json",
+        "sitecustomize.py",
     ):
         assert is_ci_authority_path(path), path
     assert not is_ci_authority_path("docs/ordinary-note.md")

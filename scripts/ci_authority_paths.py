@@ -31,6 +31,35 @@ CI_AUTHORITY_PATTERNS: tuple[str, ...] = (
     # authority ever starts. Protect the whole executable directory; enumerating
     # today's entrypoints is structurally bypassable by tomorrow's import name.
     "scripts/**",
+    # Pytest startup hooks and dependency/bootstrap manifests can make every
+    # logical test return success without changing the protected planner. Treat
+    # them as executable CI authority, not ordinary full-suite invalidators.
+    "conftest.py",
+    "**/conftest.py",
+    "sitecustomize.py",
+    "usercustomize.py",
+    "pytest.ini",
+    "**/pytest.ini",
+    "pyproject.toml",
+    "**/pyproject.toml",
+    "setup.cfg",
+    "**/setup.cfg",
+    "setup.py",
+    "**/setup.py",
+    "tox.ini",
+    "**/tox.ini",
+    "requirements*.txt",
+    "**/requirements*.txt",
+    "constraints*.txt",
+    "**/constraints*.txt",
+    "uv.lock",
+    "**/uv.lock",
+    "poetry.lock",
+    "**/poetry.lock",
+    "package.json",
+    "**/package.json",
+    "package-lock.json",
+    "**/package-lock.json",
 )
 
 
