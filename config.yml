@@ -1897,7 +1897,14 @@ etf_holdings:
     COPP: {sponsor: sprott, slug: "copp-sprott-copper-miners-etf", name: "Sprott Copper Miners", category: "Copper Miners"}
     LITP: {sponsor: sprott, slug: "litp-sprott-lithium-miners-etf", name: "Sprott Lithium Miners", category: "Lithium Miners"}
     # --- Amplify (Firestore REST; backfillable ~9mo) ---------------------------
+    # AMPLIFY_FIREBASE_KEY (the sponsor's public web key) must be in the env or a
+    # local .env — daily.yml already passes it from repo secrets, and a fund whose
+    # key is missing raises and is skipped, never silently emptied. A build
+    # WORKTREE does not inherit the root .env (it is gitignored, not tracked), which
+    # is the entire reason the W2 sweep could take no Amplify receipt.
     BLOK: {sponsor: amplify, active: true, name: "Amplify Transformational Data Sharing", category: "Blockchain"}
+    SILJ: {sponsor: amplify, name: "Amplify Junior Silver Miners", category: "Junior Silver"}
+    BATT: {sponsor: amplify, name: "Amplify Lithium & Battery Technology", category: "Lithium / Battery"}
     # --- Defiance (dated XLSX) --------------------------------------------------
     QTUM: {sponsor: defiance, slug: "qtum", name: "Defiance Quantum", category: "Quantum"}
     # --- Bitwise (HTML table) --------------------------------------------------
@@ -1952,13 +1959,38 @@ etf_holdings:
     ROBO: {sponsor: etc, name: "ROBO Global Robotics & Automation", category: "Robotics / Automation"}
     THNQ: {sponsor: etc, name: "ROBO Global Artificial Intelligence", category: "AI"}
     HTEC: {sponsor: etc, name: "ROBO Global Healthcare Technology & Innovation", category: "Healthcare Tech"}
+    # ================= 2026-08-12 W3: declared partial-NAV equity sleeves =========
+    # `nav_equity_frac` is the ONE key that lets a swap-sleeve fund onto the board.
+    # It DECLARES what share of the fund's NAV the equity lines we keep are expected
+    # to add up to, so engine/holdings_signals.py can scale its weight-sum sanity
+    # bounds instead of quarantining a correctly-parsed snapshot for summing to 63
+    # instead of 100. It is deliberately a HAND-DECLARED constant, never derived
+    # from the snapshot it checks: a fraction computed from the file could not fail,
+    # and the whole point is that it CAN — if the sponsor's sleeve mix drifts away
+    # from the declaration, every snapshot quarantines loudly and a human re-declares.
+    # Omit the key entirely for a normal fund (absent == 1.0, bounds unchanged).
+    #
+    # NCLD holds its CoreWeave/Nebius exposure TWICE: once as ordinary shares and
+    # once as total-return swaps, because the RIC diversification tests cap the
+    # direct position. The swap legs are dropped as non-equity (their "shares" are
+    # swap units, not a float claim), so the board sees CRWV at 9.15% and NBIS at
+    # 9.07% while the fund's real economic exposure is ~27.7% / ~27.5%. That
+    # understatement is the honest cost of a share-based engine; it is recorded here
+    # and in research/ETF_DATA_SOURCES.md rather than papered over by folding swap
+    # notionals into the equity line — the sponsor files them as separate positions
+    # and merging them would publish an aggregation nobody reported.
+    NCLD: {sponsor: roundhill, active: true, nav_equity_frac: 0.63, name: "Roundhill Neocloud", category: "Neocloud / AI Data Center"}
     # Probed and REJECTED 2026-08-12 (receipts in research/ETF_DATA_SOURCES.md):
     #   RAYS/WNDY (Global X) — feeds 404, funds closed.
     #   SOXX/IBB/ITA/IRBO/ICLN — the stockanalysis.com fallback serves only the TOP
     #     25 holdings ("Showing 25 of 252"), so every name outside the top 25 would
     #     read as a phantom exit. Only funds with <=25 holdings are safe there.
     #   NIKL (Sprott) — 2.7% of weight in US-listed lines (every incumbent is >=11.9%).
-    #   NCLD/DRAM/LYTE (Roundhill) — swap-implemented and/or foreign-listed baskets.
+    #   DRAM/LYTE (Roundhill) — swap-implemented and/or foreign-listed baskets.
+    #     NCLD was rejected with them and is now ADMITTED (2026-08-12 W3) on the
+    #     declared `nav_equity_frac` above — the mechanism that reads a partial-NAV
+    #     equity sleeve as complete. DRAM/LYTE stay out on the OTHER half of that
+    #     rejection (foreign-listed baskets), which nav_equity_frac does not address.
     #   SOXQ (Invesco) — needs a CUSIP; the id-resolution endpoints 406 without a browser.
     # iShares/BlackRock (IVV/IWM/EFA...) and Invesco non-flagship: Akamai/consent
     # walls block direct HTTP (recon 2026-06-13, D71) — need a headless browser, so
@@ -2082,6 +2114,11 @@ etf_holdings:
     GBUG: {type: active, sponsor: sprott, theme: precious-miners}
     METL: {type: active, sponsor: sprott, theme: critical-minerals}
     BLOK: {type: active, sponsor: amplify, theme: crypto-infra}
+    # W3 adds (2026-08-12). Both verified index-tracking off the sponsor's own fund
+    # page: SILJ tracks the Nasdaq Junior Silver Miners Index, BATT the EQM Lithium
+    # & Battery Technology Index ("The Fund is not actively managed").
+    SILJ: {type: thematic_passive, sponsor: amplify, theme: precious-miners}
+    BATT: {type: thematic_passive, sponsor: amplify, theme: critical-minerals}
     QTUM: {type: thematic_passive, sponsor: defiance, theme: ai-compute}
     BITQ: {type: active, sponsor: bitwise, theme: crypto-infra}
     UFO:  {type: thematic_passive, sponsor: procure, theme: space}
@@ -2090,6 +2127,11 @@ etf_holdings:
     ROBO: {type: thematic_passive, sponsor: etc, theme: robotics}
     THNQ: {type: thematic_passive, sponsor: etc, theme: ai-compute}
     HTEC: {type: thematic_passive, sponsor: etc, theme: healthcare}
+    # W3 (2026-08-12). Roundhill's own prospectus: "actively-managed", quarterly
+    # rebalancing, total-return swaps held to pass the RIC diversification tests —
+    # so its per-constituent moves are SELECTION, and it is the first fund on the
+    # board carrying a declared `nav_equity_frac` (universe block above).
+    NCLD: {type: active, sponsor: roundhill, theme: data-center}
 
 fundamentals:
   enabled: true                   # LOW CONFIDENCE module — engine must work without it

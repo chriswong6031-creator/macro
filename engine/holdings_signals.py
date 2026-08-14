@@ -421,6 +421,46 @@ def _flow_cfg() -> dict:
     return config.load().get("etf_holdings", {}) or {}
 
 
+def nav_equity_frac(fund: str) -> float:
+    """The share of a fund's NAV its EQUITY sleeve is declared to be (default 1.0).
+
+    A swap-sleeve fund parks a large, deliberate slice of NAV outside listed equity
+    — NCLD runs ~30% T-bills plus total-return swaps on the names its direct
+    position cannot hold under the RIC diversification tests. Those lines are
+    dropped as non-equity (their share counts are balances and swap units, not float
+    claims), so a PERFECTLY parsed snapshot sums to ~63, not ~100, and the
+    weight-sum guard below would quarantine every single one of them.
+
+    The fraction is DECLARED per fund in `etf_holdings.universe.<T>.nav_equity_frac`
+    and never inferred from the snapshot it is used to check — a fraction derived
+    from the file could not fail, and the entire value of this guard is that it
+    still can: if the sponsor's sleeve mix drifts off the declaration, the fund's
+    snapshots quarantine loudly and a human re-declares.
+    """
+    spec = ((_flow_cfg().get("universe") or {}).get(str(fund)) or {})
+    if not isinstance(spec, dict):
+        return 1.0
+    try:
+        frac = float(spec.get("nav_equity_frac", 1.0))
+    except (TypeError, ValueError):
+        return 1.0
+    # A declaration outside (0, 1] is a config typo, not a portfolio: fall back to
+    # the full-NAV bounds rather than opening the guard to any sum at all.
+    return frac if 0.0 < frac <= 1.0 else 1.0
+
+
+def weight_sum_bounds(fund: str = "") -> tuple[float, float]:
+    """WEIGHT_SUM_BOUNDS scaled to the fund's declared equity sleeve.
+
+    Scaling is RELATIVE, so the tolerance stays ±20% of what the sleeve should sum
+    to (a full-NAV fund keeps 80–120; NCLD at 0.63 gets 50.4–75.6) instead of a
+    band that grows looser the smaller the sleeve gets.
+    """
+    frac = nav_equity_frac(fund)
+    lo, hi = WEIGHT_SUM_BOUNDS
+    return (lo * frac, hi * frac)
+
+
 def _numeric(s: pd.Series | None) -> pd.Series:
     """Sponsor columns arrive as '9.23%' / '$1,234.56' as often as plain floats."""
     if s is None:
@@ -640,18 +680,20 @@ def _read_snapshot(path) -> dict | None:
     return snap
 
 
-def _usable_snapshots(paths, want: int, *, newest_first: bool = True
-                      ) -> tuple[list[dict], list[str]]:
+def _usable_snapshots(paths, want: int, *, newest_first: bool = True,
+                      fund: str = "") -> tuple[list[dict], list[str]]:
     """Up to `want` usable snapshots from `paths`, always returned oldest→newest,
     plus the as-of dates quarantined on the way.
 
     Two guards run here so every consumer of the decomposition inherits them:
     duplicate as-of dates collapse to ONE snapshot (a re-fetch written under a
     second filename must not read as a zero-change day), and a snapshot whose
-    weight column sums outside WEIGHT_SUM_BOUNDS is quarantined rather than
-    silently used. `newest_first` picks which end of the range to take from —
-    the streak window takes the newest, the scoring pair's far end the oldest."""
-    lo, hi = WEIGHT_SUM_BOUNDS
+    weight column sums outside the fund's weight-sum bounds is quarantined rather
+    than silently used. `newest_first` picks which end of the range to take from —
+    the streak window takes the newest, the scoring pair's far end the oldest.
+    `fund` selects the bounds: a fund declaring `nav_equity_frac` is checked
+    against its equity sleeve, not against a full 100 it never claims to reach."""
+    lo, hi = weight_sum_bounds(fund)
     ordered = list(paths)[::-1] if newest_first else list(paths)
     keep: list[dict] = []
     quarantined: list[str] = []
@@ -743,8 +785,9 @@ def fund_flow_decomposition(base, window: int, *, fund: str = "",
     # window. Both resolve through the guards, and the cache means a snapshot both
     # ends reach for is parsed once.
     win = snaps[-(window + 1):]
-    tail, q_tail = _usable_snapshots(win, streak_snaps)
-    head, q_head = _usable_snapshots(win, 1, newest_first=False)
+    name = fund or base.name
+    tail, q_tail = _usable_snapshots(win, streak_snaps, fund=name)
+    head, q_head = _usable_snapshots(win, 1, newest_first=False, fund=name)
     if not tail or not head:
         return None
     first, last = head[0], tail[-1]
@@ -762,12 +805,14 @@ def fund_flow_decomposition(base, window: int, *, fund: str = "",
     streak, accel = _streaks(tail, cfg)
 
     if quarantined:
-        print(f"::warning title=etf-snapshot-quarantine::{fund or base.name}: "
+        bounds = weight_sum_bounds(name)
+        print(f"::warning title=etf-snapshot-quarantine::{name}: "
               f"{len(quarantined)} snapshot(s) rejected by the weight-sum sanity "
               f"check ({', '.join(quarantined)}) — excluded from the flow/selection "
               f"read", flush=True)
-        log.warning("flow decomposition %s: quarantined %s (weight sum outside %s)",
-                    fund or base.name, quarantined, WEIGHT_SUM_BOUNDS)
+        log.warning("flow decomposition %s: quarantined %s (weight sum outside %s; "
+                    "declared nav_equity_frac %.2f)",
+                    name, quarantined, bounds, nav_equity_frac(name))
 
     # continuity: a name absent from ONE snapshot is a feed hiccup, not an exit.
     present_last2 = set(tail[-2]["shares"].index) if len(tail) >= 2 else set()
