@@ -47,15 +47,18 @@ from engine.stock_identity.pilot import (  # noqa: E402
     W1A1_ASOF,
     W1A1_IDENTITY_RECEIPT,
     W1A1_PARTITION_TREATMENT,
+    W1A1_PROCEDURAL_DEVIATION,
     W1A1_RECEIPT_SCHEMA,
     W1A1_REFERENCE_SHA256,
     W1A1_SEALED_W1_SHA256,
+    W1A1_TRIAL_BUDGET,
     W1_SEALED_MINER_PROBE,
     W1A1_EFFECTIVE_MINER_PROBE,
     W1A1_GOLD_ANNOTATION_BEGIN,
     W1A1_GOLD_ANNOTATION_END,
     W1A1_GOLD_DISCLOSURE_PATH,
     W1A1_REGISTERED_OUTPUT_PATHS,
+    current_miner_probe,
 )
 from engine.stock_identity.plane import (  # noqa: E402
     PLANE_BASKETS,
@@ -855,18 +858,7 @@ def _build_and_stage(
             "effective_w1a1": list(W1A1_EFFECTIVE_MINER_PROBE),
         },
         "partition_treatment": W1A1_PARTITION_TREATMENT,
-        "procedural_deviation": {
-            "status": "DISCLOSED_PRE_REGISTRATION_IMPLEMENTATION_EXPOSURE",
-            "write_scope": "no repository artifacts written; independent git status/diff clean",
-            "observed_scope": (
-                "B tape shape/edge rows plus in-memory state, episode, fingerprint, "
-                "percentile and instability outputs were printed before registration"
-            ),
-            "consequence": (
-                "observations cannot choose outputs, thresholds, constants, acceptance "
-                "rules or interpretations; B is permanently design-touched"
-            ),
-        },
+        "procedural_deviation": W1A1_PROCEDURAL_DEVIATION,
         "rank_context": {
             "method": (
                 "B-only hypothetical insertion into the frozen W1 raw reference; pandas "
@@ -918,10 +910,7 @@ def _build_and_stage(
             "episode_rows": int(len(episode_frame)),
         },
         "measured_rows_mutated": False,
-        "trial_budget": (
-            "not applicable: one deterministic descriptive configuration, no sweep, "
-            "outcome attachment, graded question, or result-contingent choice"
-        ),
+        "trial_budget": W1A1_TRIAL_BUDGET,
         "authority": authority_block(),
     }
     _write_json(_staged_path(stage_root, RECEIPT_RELATIVE_PATH), receipt)
@@ -994,6 +983,12 @@ def _validate_published(receipt: dict[str, Any]) -> None:
     restored = gold_text.replace(f"\n\n{GOLD_ANNOTATION}\n\n", "\n\n", 1)
     if hashlib.sha256(restored.encode("utf-8")).hexdigest() != disclosure["before_sha256"]:
         raise SystemExit("published GOLD annotation does not restore the sealed dossier")
+    try:
+        effective = current_miner_probe(REPO_ROOT)
+    except (FileNotFoundError, ValueError) as exc:
+        raise SystemExit(f"published amendment consumer closure failed: {exc}") from exc
+    if effective != W1A1_EFFECTIVE_MINER_PROBE:
+        raise SystemExit("published amendment consumer returned the wrong effective roster")
 
 
 def _publish(stage_root: Path, staged_gold: Path, receipt: dict[str, Any]) -> None:

@@ -72,12 +72,7 @@ def _closed_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
             "effective_w1a1": list(pilot.W1A1_EFFECTIVE_MINER_PROBE),
         },
         "partition_treatment": copy.deepcopy(pilot.W1A1_PARTITION_TREATMENT),
-        "procedural_deviation": {
-            "status": "DISCLOSED_PRE_REGISTRATION_IMPLEMENTATION_EXPOSURE",
-            "write_scope": "no repository artifacts written",
-            "observed_scope": "implementation outputs printed before registration",
-            "consequence": "B is permanently design-touched and nonconfirmatory",
-        },
+        "procedural_deviation": copy.deepcopy(pilot.W1A1_PROCEDURAL_DEVIATION),
         "rank_context": {
             "method": "B-only hypothetical insertion",
             "frozen_reference_rows": 2780,
@@ -114,7 +109,7 @@ def _closed_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
             "gold_svg_unchanged": True,
         },
         "measured_rows_mutated": False,
-        "trial_budget": "one deterministic descriptive configuration, no sweep",
+        "trial_budget": pilot.W1A1_TRIAL_BUDGET,
         "authority": authority_block(),
     }
     _write_receipt(root, payload)
@@ -132,6 +127,9 @@ def test_current_miner_probe_requires_complete_closed_receipt(tmp_path, monkeypa
         (("schema",), "wrong", "receipt schema"),
         (("identity_receipt", "B", "edgar_cik"), "1591588", "identity receipt"),
         (("partition_treatment", "B_design_touched"), False, "partition quarantine"),
+        (("procedural_deviation", "write_scope"), "erased", "deviation disclosure"),
+        (("procedural_deviation", "observed_scope"), "erased", "deviation disclosure"),
+        (("trial_budget",), "outcome-selected", "trial-budget"),
         (("prerequisite_merges", "pr_5632"), "not-a-sha", "prerequisite merge"),
         (("rank_context", "w1_percentiles_rewritten"), True, "rank context"),
         (("price_input", "prefix_sha256"), "0" * 64, "price-input"),
@@ -157,6 +155,31 @@ def test_current_miner_probe_rejects_actual_sealed_artifact_drift(tmp_path, monk
     frozen = tmp_path / "data/stock_identity/constants/si_constants_v1.json"
     frozen.write_text("tampered", encoding="utf-8")
     with pytest.raises(ValueError, match="sealed W1 artifact drifted"):
+        pilot.current_miner_probe(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "key,match",
+    (("procedural_deviation", "deviation disclosure"), ("trial_budget", "trial-budget")),
+)
+def test_current_miner_probe_rejects_omitted_exposure_governance(
+    tmp_path, monkeypatch, key, match
+):
+    payload = copy.deepcopy(_closed_fixture(tmp_path, monkeypatch))
+    payload.pop(key)
+    _write_receipt(tmp_path, payload)
+    with pytest.raises(ValueError, match=match):
+        pilot.current_miner_probe(tmp_path)
+
+
+@pytest.mark.parametrize("value", ("zzzz", "2026-8-14", "2026-08-13T00:00:00"))
+def test_current_miner_probe_rejects_noncanonical_run_last_date(
+    tmp_path, monkeypatch, value
+):
+    payload = copy.deepcopy(_closed_fixture(tmp_path, monkeypatch))
+    payload["price_input"]["file_last_date_at_run"] = value
+    _write_receipt(tmp_path, payload)
+    with pytest.raises(ValueError, match="last date is not canonical ISO"):
         pilot.current_miner_probe(tmp_path)
 
 
@@ -353,3 +376,54 @@ def test_post_publish_validation_failure_rolls_back_the_whole_amendment(
     assert all(not (repo / relative).exists() for relative in outputs)
     lock_key = hashlib.sha256(str(repo.resolve()).encode("utf-8")).hexdigest()[:16]
     assert (Path(tempfile.gettempdir()) / f"stock-identity-w1a1-{lock_key}.lock").exists()
+
+
+def test_consumer_rejected_receipt_rolls_back_the_whole_amendment(
+    tmp_path, monkeypatch
+):
+    receipt_relative = "data/receipt.json"
+    disclosure_relative = "research/GOLD.md"
+    stage = tmp_path / "stage"
+    repo = tmp_path / "repo"
+    original = "# sealed GOLD dossier\n\n## Identity\n"
+    annotated = original.replace(
+        "\n\n## Identity", f"\n\n{builder.GOLD_ANNOTATION}\n\n## Identity", 1
+    )
+    staged_gold = stage / "GOLD.annotated.md"
+    staged_gold.parent.mkdir(parents=True, exist_ok=True)
+    staged_gold.write_text(annotated, encoding="utf-8")
+    receipt = {
+        "generated_output_sha256": {},
+        "disclosure_only": {
+            "after_sha256": hashlib.sha256(annotated.encode("utf-8")).hexdigest(),
+            "before_sha256": hashlib.sha256(original.encode("utf-8")).hexdigest(),
+        },
+        # This is the governing field the real consumer validates exactly.
+        "trial_budget": "erased after staging",
+    }
+    staged_receipt = stage / receipt_relative
+    staged_receipt.parent.mkdir(parents=True, exist_ok=True)
+    staged_receipt.write_text(json.dumps(receipt), encoding="utf-8")
+    original_gold = repo / disclosure_relative
+    original_gold.parent.mkdir(parents=True, exist_ok=True)
+    original_gold.write_text(original, encoding="utf-8")
+
+    monkeypatch.setattr(builder, "REPO_ROOT", repo)
+    monkeypatch.setattr(builder, "OUTPUT_PATHS", (receipt_relative,))
+    monkeypatch.setattr(builder, "RECEIPT_RELATIVE_PATH", receipt_relative)
+    monkeypatch.setattr(builder, "DISCLOSURE_ONLY_PATH", disclosure_relative)
+    monkeypatch.setattr(builder, "_validate_outputs_absent", lambda: None)
+    monkeypatch.setattr(builder, "_validate_frozen_hashes", lambda **kwargs: None)
+
+    def reject_tampered_trial_budget(root):
+        published = json.loads((root / receipt_relative).read_text(encoding="utf-8"))
+        if published.get("trial_budget") != pilot.W1A1_TRIAL_BUDGET:
+            raise ValueError("no-sweep trial-budget receipt drifted")
+        return pilot.W1A1_EFFECTIVE_MINER_PROBE
+
+    monkeypatch.setattr(builder, "current_miner_probe", reject_tampered_trial_budget)
+    with pytest.raises(SystemExit, match="consumer closure failed.*trial-budget"):
+        builder._publish(stage, staged_gold, receipt)
+
+    assert original_gold.read_text(encoding="utf-8") == original
+    assert not (repo / receipt_relative).exists()

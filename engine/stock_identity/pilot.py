@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import hashlib
 import re
+from datetime import date
 from pathlib import Path
 
 from engine.stock_identity.authority import is_zero_authority
@@ -82,6 +83,22 @@ W1A1_PARTITION_TREATMENT = {
     "B_excluded_from_future_blind_extension": True,
     "B_excluded_from_confirmatory_grading": True,
 }
+W1A1_PROCEDURAL_DEVIATION = {
+    "status": "DISCLOSED_PRE_REGISTRATION_IMPLEMENTATION_EXPOSURE",
+    "write_scope": "no repository artifacts written; independent git status/diff clean",
+    "observed_scope": (
+        "B tape shape/edge rows plus in-memory state, episode, fingerprint, "
+        "percentile and instability outputs were printed before registration"
+    ),
+    "consequence": (
+        "observations cannot choose outputs, thresholds, constants, acceptance "
+        "rules or interpretations; B is permanently design-touched"
+    ),
+}
+W1A1_TRIAL_BUDGET = (
+    "not applicable: one deterministic descriptive configuration, no sweep, "
+    "outcome attachment, graded question, or result-contingent choice"
+)
 W1A1_REFERENCE_SHA256 = {
     "raw_all.parquet": "ca9c5e5ac78c9a1913a145f8763a2bea84cd80a4a10d6fd2f4d095377f021a08",
     "univ_ew.parquet": "80f5ab3c80aa44da26e17ca58d8a14db930e5d3c03e45031c4c9505c3edba70a",
@@ -176,11 +193,10 @@ def current_miner_probe(repo_root: str | Path | None = None) -> tuple[str, ...]:
     ):
         raise ValueError(f"{path}: prerequisite merge closure is malformed")
 
-    deviation = payload.get("procedural_deviation") or {}
-    if deviation.get("status") != "DISCLOSED_PRE_REGISTRATION_IMPLEMENTATION_EXPOSURE":
+    if payload.get("procedural_deviation") != W1A1_PROCEDURAL_DEVIATION:
         raise ValueError(f"{path}: preregistration deviation disclosure drifted")
-    if "permanently design-touched" not in str(deviation.get("consequence") or ""):
-        raise ValueError(f"{path}: design-touch consequence is absent")
+    if payload.get("trial_budget") != W1A1_TRIAL_BUDGET:
+        raise ValueError(f"{path}: no-sweep trial-budget receipt drifted")
 
     rank = payload.get("rank_context") or {}
     rank_expected = {
@@ -213,7 +229,14 @@ def current_miner_probe(repo_root: str | Path | None = None) -> tuple[str, ...]:
         raise ValueError(f"{path}: B run-file hash is malformed")
     if not isinstance(price.get("file_rows_at_run"), int) or price["file_rows_at_run"] < 3172:
         raise ValueError(f"{path}: B run-file row count precedes the registered prefix")
-    if str(price.get("file_last_date_at_run") or "") < W1A1_ASOF:
+    file_last_date = price.get("file_last_date_at_run")
+    try:
+        parsed_file_last_date = date.fromisoformat(file_last_date)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{path}: B run-file last date is not canonical ISO") from exc
+    if parsed_file_last_date.isoformat() != file_last_date:
+        raise ValueError(f"{path}: B run-file last date is not canonical ISO")
+    if parsed_file_last_date < date.fromisoformat(W1A1_ASOF):
         raise ValueError(f"{path}: B run file does not reach the registered asof")
 
     sealed = payload.get("sealed_w1_sha256") or {}

@@ -298,6 +298,5 @@ def test_b_dossier_and_svg_disclose_the_2014_floor():
 
 def test_pre_registration_exposure_is_disclosed_and_quarantined():
     deviation = _receipt()["procedural_deviation"]
-    assert deviation["status"] == "DISCLOSED_PRE_REGISTRATION_IMPLEMENTATION_EXPOSURE"
-    assert "no repository artifacts written" in deviation["write_scope"]
-    assert "cannot choose outputs" in deviation["consequence"]
+    assert deviation == pilot.W1A1_PROCEDURAL_DEVIATION
+    assert _receipt()["trial_budget"] == pilot.W1A1_TRIAL_BUDGET
