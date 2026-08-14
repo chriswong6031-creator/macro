@@ -64,6 +64,12 @@ verified:
   - claim: native merge queue available but structurally incompatible with the producer main
     command: ruleset 20833101 + probe PR #5581 + direct push (receipts in recovery doc §3)
     result: queue merged probe 31s after green; one base push rebuilt the merge group; bypass_actors 422 for github-actions
+  - claim: live pipeline beat every planner target on its own full-suite run
+    command: gh api repos/.../actions/runs/31777873919/jobs (step timings, recovery doc §5)
+    result: ci-plan queue 17s (was 17m08s), files-API diff 1s, planner service 7s, preflight 42s, pack queue 2-3s (was 5m58s-19m09s), plan materialization instant
+  - claim: adversarial review found two fail-open shapes in the consume path; both fixed and pinned
+    command: python3 -m pytest tests/test_ci_pack.py -k "disarms or extension_bounded" -q
+    result: 2 passed — missing manifest_sha256 and a rehashed dropped-job partition now exit 2; md detection is extension-bounded
 unverified:
   - claim: live PR-lane behavior of the new pipeline (cold planner service time, preflight wall, pack consumption at fleet load)
     what_would_verify: PR #5585's own run 31777710942 job timings (monitor armed this session)
@@ -72,8 +78,9 @@ unverified:
 unresolved:
   - Heavy code-file fanout (engine module still selects ~121 jobs) until the
     chipped exclusive-scope curation and engine-render-guards split land.
-  - The twice-529'd full-diff opus review; a focused reviewer run was armed at
-    session end — read its verdict before large follow-on edits.
+  - ci-plan's 5m32s depth-1 checkout is now the dominant planner cost; a sparse
+    checkout is blocked because audit_unrun_tests discovers suites tree-wide.
+    Next lever if planner latency matters more than preflight breadth.
 next_actions:
   - Read run 31777710942's conclusion; if ci-gate green, arm PR #5585 with merge-on-green.
   - After merge: probe A (one research-md-file PR) — expect ci-plan ~1-2 min, 3 jobs/1 pack, auto-merge; record green-to-merge latency.

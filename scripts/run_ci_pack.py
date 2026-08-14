@@ -127,6 +127,10 @@ GLOBAL_INVALIDATORS = (
 # otherwise-unowned Markdown edit must not turn a narrow code PR back into all
 # 180 jobs merely because it carries its handoff/provenance note.
 PASSIVE_UNOWNED_PATTERNS = ("**/*.md",)
+# `.md` as a real extension, never as a prefix of `.mdx`/`.mdown`/`.mdc` and
+# never mid-token inside a URL or flag. Used to decide whether a job's own
+# commands prove it reads narrative files (see `infer_job_scopes`).
+MD_COMMAND_RE = re.compile(r"\.md(?![A-Za-z0-9])")
 
 # A statically opaque subprocess or tree traversal must own every established
 # repository surface it could inspect.  This is deliberately broad: it keeps
@@ -711,11 +715,22 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
         # note (measured 2026-08-14). A job whose md-reading is real but
         # textually invisible declares `paths:` in the manifest instead —
         # declared paths always live in the owned tier.
-        if ".md" in "\n".join(commands):
+        #
+        # Bounded match, not a substring test: a bare `".md" in ...` also fires
+        # on `.mdx`, `.mdown`, `.mdc`, and any incidental `.md` inside a URL or
+        # flag, which would promote every opaque fallback of those jobs back
+        # into the owned tier and quietly re-arm the very fanout this repairs.
+        if MD_COMMAND_RE.search("\n".join(commands)):
             owned.update(fallback)
             fallback = set()
         fallback -= owned
-        return (owned, fallback) if owned or fallback else None
+        # `owned` empty with `fallback` non-empty is unreachable today —
+        # `named_any` is only set in branches that also add to `owned` — but if
+        # suite discovery ever yields a path that no longer exists, the closure
+        # comes back empty while its opaque edges do not, and the job would
+        # silently flip from ALWAYS-ON to scoped. Requiring named evidence
+        # keeps that failure on the conservative side: no evidence, no scope.
+        return (owned, fallback) if owned else None
 
     inferred: list[LegacyJob] = []
     scoped = 0
@@ -1593,11 +1608,25 @@ def _execute_from_plan(args: argparse.Namespace) -> int:
                 flush=True,
             )
             return 2
+        # REQUIRED, not optional. `manifest_sha256` is deliberately outside the
+        # hashed payload (it is not part of the DECISION), which means a
+        # document that simply lacks the key still satisfies all three digest
+        # gates above — so treating a missing value as "skip the drift check"
+        # let the document switch its own integrity guard off. That is a
+        # fail-OPEN in a function whose contract is that every doubt is a loud
+        # exit 2. The realistic trigger is not tampering but a future emit path
+        # that forgets to thread it (the dataclass default is "" and is
+        # compare=False, so plan-equality tests cannot see the loss).
         manifest_sha = str(document.get("manifest_sha256", ""))
+        if not manifest_sha:
+            raise ManifestError(
+                "plan document carries no manifest_sha256, so the manifest "
+                "cannot be shown to match the one the planner read"
+            )
         actual_manifest_sha = hashlib.sha256(
             args.workflow.read_bytes()
         ).hexdigest()
-        if manifest_sha and manifest_sha != actual_manifest_sha:
+        if manifest_sha != actual_manifest_sha:
             print(
                 "::error title=ci-plan-consume::manifest drifted between plan "
                 f"and pack: planner read {manifest_sha[:16]}…, this checkout "
@@ -1612,6 +1641,24 @@ def _execute_from_plan(args: argparse.Namespace) -> int:
             raise ManifestError(
                 f"pack index {args.pack_index} outside the plan's "
                 f"{len(packs)} pack(s)"
+            )
+        # The partition must ACCOUNT for every eligible job. `eligible_jobs`
+        # and `pack_jobs` are hashed independently, so a plan that is
+        # self-consistent but WRONG — a partition that silently dropped a job —
+        # satisfies every digest gate, and the dropped job then never runs
+        # while the run reports green. Each pack can refute that from the
+        # document alone, so each pack does.
+        planned_union = {
+            str(item) for pack in packs for item in pack["jobs"]
+        }
+        eligible = {str(item) for item in document["eligible_jobs"]}
+        if planned_union != eligible:
+            dropped = sorted(eligible - planned_union)
+            extra = sorted(planned_union - eligible)
+            raise ManifestError(
+                "the plan's packs do not account for its eligible jobs "
+                f"(dropped: {', '.join(dropped[:6]) or 'none'}; "
+                f"unexpected: {', '.join(extra[:6]) or 'none'})"
             )
         planned_ids = [str(item) for item in packs[args.pack_index]["jobs"]]
         missing = [job_id for job_id in planned_ids if job_id not in by_id]

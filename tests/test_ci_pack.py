@@ -2173,3 +2173,96 @@ jobs:
     )
     with pytest.raises(PACK.ManifestError, match="scope: exclusive but no paths"):
         PACK.load_legacy_jobs(empty)
+
+
+def test_plan_consumption_refuses_a_document_that_disarms_its_own_guards(
+    tmp_path: Path,
+) -> None:
+    """Post-review hardening (2026-08-14): two fail-open shapes must exit 2.
+
+    Both were found by adversarial review of the consume path, and both are
+    invisible to the digest gates by construction:
+
+      * `manifest_sha256` is NOT part of the hashed decision, so a document
+        that simply omits it satisfies every digest check — the old code then
+        treated the absence as "skip the drift check", letting the document
+        switch its own integrity guard off.
+      * `eligible_jobs` and `pack_jobs` are hashed independently, so a plan
+        whose partition silently DROPPED a job is perfectly self-consistent;
+        the dropped job never runs and the run reports green.
+    """
+    workflow = tmp_path / "legacy.yml"
+    workflow.write_text(
+        """
+jobs:
+  alpha:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo alpha
+  beta:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo beta
+""",
+        encoding="utf-8",
+    )
+    plan = PACK.plan_from_workflow(
+        workflow, changed_from=None, scope_mode="active", pack_count=2
+    )
+    good = plan.to_dict()
+    assert PACK._plan_digest_from_document(good) == plan.plan_sha256
+
+    def run(document: dict) -> int:
+        path = tmp_path / "plan.json"
+        path.write_text(json.dumps(document), encoding="utf-8")
+        return PACK.main([
+            "--workflow", str(workflow),
+            "--pack-index", "0", "--pack-count", "2", "--execute",
+            "--plan-json", str(path),
+            "--expect-plan-sha", plan.plan_sha256,
+        ])
+
+    stripped = json.loads(json.dumps(good))
+    stripped.pop("manifest_sha256")
+    # Still digest-valid: the omission is invisible to every hash gate.
+    assert PACK._plan_digest_from_document(stripped) == plan.plan_sha256
+    assert run(stripped) == 2
+
+    dropped = json.loads(json.dumps(good))
+    for pack in dropped["packs"]:
+        if pack["jobs"]:
+            pack["jobs"] = []
+            break
+    assert PACK._plan_digest_from_document(dropped) != plan.plan_sha256, (
+        "sanity: mutating pack_jobs alone changes the digest"
+    )
+    # The dangerous shape is a plan that is INTERNALLY consistent but wrong,
+    # i.e. re-hashed after the drop — which is exactly what a stale or buggy
+    # planner emits.
+    consistent_but_wrong = json.loads(json.dumps(dropped))
+    consistent_but_wrong["plan_sha256"] = PACK._plan_digest_from_document(
+        consistent_but_wrong
+    )
+    path = tmp_path / "wrong.json"
+    path.write_text(json.dumps(consistent_but_wrong), encoding="utf-8")
+    assert PACK.main([
+        "--workflow", str(workflow),
+        "--pack-index", "0", "--pack-count", "2", "--execute",
+        "--plan-json", str(path),
+        "--expect-plan-sha", consistent_but_wrong["plan_sha256"],
+    ]) == 2
+
+
+def test_markdown_command_detection_is_extension_bounded() -> None:
+    """`.mdx` / `.mdown` / a URL fragment must not read as "this job reads md".
+
+    A bare substring test promoted every opaque fallback of such a job into
+    the owned tier, silently re-arming the unowned-markdown fanout for it.
+    """
+    assert PACK.MD_COMMAND_RE.search("python -m pytest docs/README.md")
+    assert PACK.MD_COMMAND_RE.search("check docs/x.md --strict")
+    assert not PACK.MD_COMMAND_RE.search("build content/page.mdx")
+    assert not PACK.MD_COMMAND_RE.search("render notes.mdown")
+    assert not PACK.MD_COMMAND_RE.search("curl https://ex.com/a.mdc/z")
