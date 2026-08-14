@@ -2,7 +2,7 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-08-12",
-  "generated_utc": "2026-08-13T22:11:16Z",
+  "generated_utc": "2026-08-13T23:53:06Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
@@ -23,7 +23,7 @@
       "label": "shared-membership"
     }
   ],
-  "earnings_coverage_frac": 0.25,
+  "earnings_coverage_frac": 0.5,
   "by_ticker": {
     "CVCO": {
       "verdict": "duplicate",
@@ -49,7 +49,7 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "UAMY",
+          "ticker": "ALM",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -67,7 +67,7 @@
       "why_en": "Same bet as AYI \u2014 shared factor profile (similarity 73%).",
       "why_zh": "\u4e0e AYI \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 73%\uff09\u3002"
     },
-    "UAMY": {
+    "ALM": {
       "verdict": "new",
       "max_similarity": 0.0,
       "basis": "membership-only:no-beta",
@@ -79,7 +79,7 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:insufficient-factors",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": false
         },
         {
           "ticker": "COHR",
@@ -88,7 +88,7 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:insufficient-factors",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "AYI",
@@ -97,13 +97,15 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:insufficient-factors",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
-        "next_date": null,
-        "same_week_peers": [],
-        "has_data": false
+        "next_date": "2026-08-13",
+        "same_week_peers": [
+          "COHR"
+        ],
+        "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Distinct bet \u2014 nearest peer CVCO at 0% similarity.",
@@ -133,18 +135,20 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "UAMY",
+          "ticker": "ALM",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:insufficient-factors",
           "shared_groups": [],
-          "same_earnings_week": false
+          "same_earnings_week": true
         }
       ],
       "earnings_leg": {
         "next_date": "2026-08-12",
-        "same_week_peers": [],
+        "same_week_peers": [
+          "ALM"
+        ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
@@ -175,7 +179,7 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "UAMY",
+          "ticker": "ALM",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -195,7 +199,7 @@
     }
   },
   "pair_basis": {
-    "CVCO__UAMY": {
+    "CVCO__ALM": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -216,14 +220,14 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "UAMY__COHR": {
+    "ALM__COHR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
-    "UAMY__AYI": {
+    "ALM__AYI": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
