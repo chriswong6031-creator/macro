@@ -87,7 +87,6 @@ def _run_runtime(
         node('workspaceDegraded').hidden = true;
         node('workspaceRetry').hidden = true;
         node('workspaceUnlock').hidden = true;
-        var LANG = 'en';
         var docListeners = {};
         var document = {
           documentElement:{getAttribute:function(name){return name==='data-lang'?LANG:'en'}}, activeElement:null,
