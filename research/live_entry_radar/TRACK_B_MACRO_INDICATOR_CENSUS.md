@@ -272,16 +272,15 @@ used nowhere and are in no `requirements.txt`. Timezones are stdlib `zoneinfo`.
   `session_window_et()` (`:229-239`).
 - `lib/hk_calendar.py` (283) · `lib/cn_calendar.py` (202) — mirror the `is_session`/`holidays` shape
   but are **separate modules with no shared rule engine**; CN deliberately minimal plus a
-  `MAX_LEGIT_CLOSURE_DAYS = 11` backstop (`cn_calendar.py:16-28,53`).
-- Real session arithmetic on it: `engine/marketing/market_clock.py:108-217`,
-  `engine/rebalance_calendar.py`, `engine/source_registry.py:236-249`. `pd.offsets.BDay()` (dozens
-  of sites) is holiday-**blind**, self-labelled (`engine/earnings_blackout.py:102`).
+  `MAX_LEGIT_CLOSURE_DAYS = 11` backstop (`cn_calendar.py:16-28,53`). `pd.offsets.BDay()` (dozens of
+  sites) is holiday-**blind**, self-labelled (`engine/earnings_blackout.py:102`).
 
-**Reach:** ~110 files import `lib.nyse_calendar` (404 occurrences) — the nightly directly
+**Reach:** ~110 files import `lib.nyse_calendar` (404 occurrences) — the nightly
 (`scripts.build_session_digest`, `daily.yml:3622`), the render lane (`scripts/build_site.py:74`),
 and Prophet (`engine/prophet_bridge.py`, `engine/prophet_live/{armed_pack,live_states}.py`, raising
 `ContractError` on "not an NYSE session", e.g. `engine/options_signal_episode.py:620`). It is also
-the reference behind the 2D/3D anchor (§2).
+the reference behind the 2D/3D anchor (§2), and `engine/marketing/market_clock.py:108-217`,
+`engine/rebalance_calendar.py`, `engine/source_registry.py:236-249` do their session arithmetic on it.
 
 **Intraday session clock: YES, but fragmented and partly holiday-blind.** Holiday-aware
 `pre|rth|post|closed` machines at `scripts/build_basket_pulse.py:158-214` (US+HK),

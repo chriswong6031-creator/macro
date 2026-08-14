@@ -14,7 +14,11 @@ falsifier: >
   The operator naming a remembered dot (symbol + approximate date) that does NOT appear
   in that symbol's computed early_dots list (Track A §2.6 fired-date tables), or a second
   grey/muted anticipation marker being found in the Terminal chart layer that the census
-  missed.
+  missed. Runnable check: the fired-date tables at
+  research/live_entry_radar/TRACK_A_GREY_DOT_FORENSICS.md:243-247, recomputable via
+  `git show origin/master:signal_layer/confluence_v2.py` (staged with confluence.py to a
+  temp dir; run early_dots(compute_signals(close), close) over data/stocks/<SYM>.parquet);
+  glyph census receipt terminal/components/ChartPanel.tsx@origin/master:3845-3855.
 so_what: >
   Live Entry Radar's champion detector G0 is this exact implementation — spec locked in
   research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md §3.1, parity via the versioned
@@ -24,7 +28,7 @@ so_what: >
   bar OPEN date) as display-only — the decision date is `known_ts`, up to 2 sessions
   later. The identity's operator ratification (gate G0-VIS) blocks only PR-2's parity
   freeze.
-kind: identification
+kind: data
 verified_at: 2026-08-13
 verified_by: >
   Track A census (research/live_entry_radar/TRACK_A_GREY_DOT_FORENSICS.md): direct reads
