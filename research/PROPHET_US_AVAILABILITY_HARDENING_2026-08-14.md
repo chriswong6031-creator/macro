@@ -38,10 +38,13 @@ and RESILIENCE layers on top and deliberately does not duplicate it.
 7. BOTH `prophet-rescue.yml` AND `nightly-liveness.yml` added to `PROTECTED_LANES` in
    `.claude/hooks/gh_quota_guard.py`, pinned in the hook's test suite (a watchdog a
    fleet session can cancel is not a watchdog).
-8. Zero file collisions with PR #5487: this PR must not touch
-   `.github/ci/legacy-jobs.yml`, `config/house_law_checks.yml`, or the dag-conformance
-   hunks of `ci.yml`. Test registration goes into a different EXISTING ci.yml job
-   (never a new job — legacy-jobs manifest sits at the narrow-diff ceiling).
+8. Zero *colliding* hunks with PR #5487 (AMENDED after adjudication): the original
+   gate said "don't touch legacy-jobs.yml at all"; the builder registered the suite
+   there because that dark-guards job is the established home for importlib
+   path-literal suites the import-derived auditor cannot see. Adjudicated ACCEPTED
+   after verifying disjointness (#5487 hunks at legacy-jobs:~2100 / ci.yml:~1336;
+   ours at ~6919 / ~3887 — merges clean). Still binding: no NEW CI job, no
+   `config/house_law_checks.yml` edit, no dag-conformance hunk.
 9. This PR does not touch `.github/workflows/daily.yml` or `scripts/build_prophet.py`
    (zero risk to the next bake; first-run-bomb law).
 10. launchd backstop ships as INSTALLER + wrapper mirroring the canonical GC pattern
@@ -107,6 +110,38 @@ re-armed ≤1 h later, receipted publicly.
 **Survive** = GitHub-hosted lane (survives Mac Studio death) + launchd host lane
 (survives GitHub scheduler death; disk-headroom + local notification; §0.10) +
 PROTECTED_LANES for both watchdog workflows.
+
+**Red-team amendments (2026-08-14 adversarial review, all adopted):** (B1) an
+in-flight run past the stale deadline still blocks dispatch but must ALERT — an
+age-unbounded quiet WAIT reproduces both real incident shapes (13 h hung run;
+jobless-queued zombie); (M2) HEALTHY requires `data_current`, else WAIT; (M3) the
+dispatch budget counts ATTEMPTS via machine-token receipts on the outage issue
+(max of run-records and receipts) so a failed/ineffective POST cannot retry
+unbounded; (M4) the VPS serve-split VERDICT is dropped — `checks.site.commit_time`
+is main's newest-commit stamp, not a pull-loop stamp, and back-tested at our own
+wake times it false-fires on 5% of wakes (7/149, max quiet gap 107 min); the
+commit_time is still printed as receipt context, and a real pull-heartbeat stamp
+on `/api/status` is a follow-up in the VPS app; (M5) alert receipts and ops pushes
+de-duplicate on unchanged verdict-sets (annotations + red run remain every wake);
+(M6) run rows with unparseable `created_at`/`status` count as in-flight (dispatch-
+safe direction) and are noted as parse anomalies. Live probe receipt: the
+`created=>=` server-side filter on the runs endpoint works (175 all-time dispatch
+runs vs 0 since 2026-08-13T21:00Z vs 1 since 2026-08-12T21:00Z — the known 05:45Z
+recovery), so budget filtering cannot silently become all-time.
+
+**Second-bake idempotence (the M7 premise, receipted):** a rescue dispatch can put
+a second bake on a session whose first bake partially ran — this exact two-bake
+shape already happened WITHOUT the rescue lane on 2026-08-12→13: the 23:11Z
+schedule bake (run 31649984834) delivered its Prophet checkpoint (f9140631d37,
+25 plans recorded_at=08-12) and was killed in a tail job; the operator-side 05:45Z
+dispatch (run 31671422158) then re-ran the full nightly over the same window and
+produced NO duplicate plans and no ledger double-advance (index.json carries the
+origination-idempotence fences live: `intake.reorigination_blocked: 2`,
+`duplicate_id_blocked: 43`; cohort census after both bakes: 08-12 = 25, exactly
+once). Residual risk is scoped to non-Prophet sub-ledgers of the nightly, where
+the same two-bake precedent ran clean; the rescue lane adds no NEW shape beyond
+what manual recovery already does, under a tighter budget (≤2/night, never over a
+live run).
 
 ## §4 Deliberately out of scope
 
