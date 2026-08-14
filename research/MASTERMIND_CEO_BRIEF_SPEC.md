@@ -116,7 +116,7 @@ since the last 7d (2026-08-07 19:00 UTC, 168h ago)
  1 open PR(s) cited by a wave. 0 stale claim(s); 0 claim(s) with no live worktree.
                                      → agentos.py brief --full
 
- 10 hygiene warning(s) — agentos.py brief --full
+ 12 hygiene warning(s) — agentos.py brief --full
 
 ```
 
