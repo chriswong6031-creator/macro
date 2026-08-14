@@ -24,8 +24,34 @@ from engine import options_signal_episode  # noqa: E402
 from engine.neuralweb import market_memory_pit  # noqa: E402
 from engine.neuralweb import market_memory_trusted  # noqa: E402
 
-_MAX_LEDGER_BYTES = 8 * 1024 * 1024
-_MAX_LEDGER_ROWS = 4_096
+# These two bounds size the auditor's own READ of the owner ledgers, and nothing
+# else.  `engine/neuralweb/market_memory_production_records.py:55,74-76` sizes this
+# exact artifact -- `SOURCE_ARTIFACT_REL = "data/options_signal_episode/
+# episodes.jsonl"` -- at `MAX_SOURCE_ROWS = 25_000` and `MAX_SOURCE_BYTES = 48 MiB`,
+# so an 8 MiB / 4,096-row read bound here had the repository contradicting its own
+# sizing of one file.  Worse, it was the boundary that would raise FIRST: at row
+# 4,097 the audit would die on `owner ledger exceeds the row boundary`, taking the
+# nightly `macro-market-memory-context` unit down while naming a limit that is not
+# the real one and is trivially editable, sending the diagnosis to the wrong wall.
+#
+# The binding ceiling is NOT here and cannot be moved from here.  It is the pinned
+# `_MAX_REFERENCES = 4_096` in `engine/options_market_memory_context.py`, which caps
+# the emitted reference set, every source artifact's `record_count`, and the
+# campaign-replay corpora, plus the matching `reference_count` bound on the receipt
+# HEAD in `engine/options_market_memory_receipt_store.py`.  Both files are
+# byte-pinned by `research/options_estate/
+# sparse_selector_preregistration_receipt_v1.json`, so editing either one is a
+# preregistration act, not a buffer change.  Crossing 4,096 owner rows therefore
+# requires the preregistration v2 chartered in `research/options_estate/
+# OPTIONS_CONTEXT_AUDIT_LEDGER_BOUND_ADJUDICATION_2026-08-13.md`.
+#
+# Raising these constants buys no headroom.  It only makes the eventual failure
+# land on the wall that actually owns it, and it stops this file from failing
+# early and misleadingly.  The early warning for the real ceiling lives in
+# `tests/test_market_memory_trusted.py::
+# test_options_owner_ledgers_stay_clear_of_the_pinned_reference_ceiling`.
+_MAX_LEDGER_BYTES = 48 * 1024 * 1024
+_MAX_LEDGER_ROWS = 25_000
 _MAX_CONFIG_BYTES = 32 * 1024
 _FROZEN_LEGACY_CAMPAIGN_ROWS = 8
 _FROZEN_LEGACY_CAMPAIGN_BYTES = 10_492

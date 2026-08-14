@@ -1,0 +1,293 @@
+# Critic receipt — Reviewer A (Product Regression), founding RIG review.
+# Two-pass record; pass 1 produced under rationale quarantine (DESIGN_NOTES.md withheld),
+# pass 2 after reveal. Findings recorded verbatim from the independent reviewer.
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-5514-original
+role: product_regression
+artifact_sha: 668e5954876f078755537605942c644fcbbb8a1d
+
+reviewer:
+  identity: "independent opus reviewer agent — RIG founding review A"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job
+    - production-before artifact (live screenshots + templates/_prophet_card.html.j2 + dashboard board region)
+    - proposed-after artifact (frozen index.html/board.css/board.js/board-data.js + 34 rendered crops)
+    - capability ledger + design lineage (baseline.yml)
+  rationale_received_after_first_pass: true
+
+first_pass:
+  frozen_at: "2026-08-13T06:20:00Z"
+  verdict: BLOCK
+  findings:
+    - id: PRC-001
+      severity: blocker
+      capability: card.live_quote
+      finding: >
+        The card renders no price node at all — card() (board.js:218-285) emits no
+        .nb-px/data-sym/data-mkt and no change pill, even though px is present per row in
+        board-data.js (GPCR "px":53.81) and is rendered only in the Candidates strip
+        (board.js:471) — so a card printing ENTRY/T1/VOID cannot tell the reader whether the
+        entry is still available or the void has already been breached; the ruling itself
+        assumes the opposite (PROPHET_RULING_J9C_J10 §:208, "data-ticker stays an attribute
+        for the live-quote JS") and production binds it at _prophet_card.html.j2:402.
+        (Also covers card.live_change.)
+    - id: PRC-002
+      severity: blocker
+      capability: card.chart_hero
+      finding: >
+        The verb-hued sparkline hero is gone with no replacement — board.js:218-285 composes
+        no chart element, versus _prophet_card.html.j2:154-163,376-377; nothing in the
+        lifecycle ruling retires the chart (§4/§5 retire only the 4-dot rail and demote
+        lane), and its absence also makes production's own fallback instruction impossible
+        (the shipped nck tip at dashboard.html.j2:16141 tells the reader to "judge the
+        run-up off the chart above yourself").
+    - id: PRC-003
+      severity: blocker
+      capability: card.caution_popover
+      finding: >
+        Every risk disclosure the ⚠N ledger carries — cautions, "already moving / don't
+        chase", ext_z stretch, parabolic-tail, earnings window, sector stance, base-broken,
+        options context (dashboard.html.j2:16049-16073, rendered at
+        _prophet_card.html.j2:398-400) — has no carrier anywhere in the proposal, while the
+        same card gains Entry/T1/Void levels (board.js:275-282); the net movement is
+        strictly more instruction and strictly less risk disclosure, and the receipts tier
+        the ruling assigns to "Plan detail / LENS" (§5:193) is unreachable because of
+        PRC-005.
+    - id: PRC-004
+      severity: blocker
+      capability: card.compact_glance_geometry
+      finding: >
+        .pv-do (board.js:267; board.css:405-408, -webkit-line-clamp:3) reinstates exactly
+        the what-to-do prose the operator killed 2026-08-03 as "not coming back"
+        (baseline design_lineage; _prophet_card.html.j2:26-34,379-386) — it is the tallest
+        element on the card, is verbatim-identical on ~20 of the 40 visible cards ("Trigger
+        is confirmed. Hold the current position and let the trade advance toward T1 ($X)"),
+        clips mid-sentence on many (crop 01-desktop-dark-en.png), presumes a position the
+        product does not know the reader holds ("Hold the current position" on all 96
+        Entered rows), and escalates to bare imperatives on the Invalidated filter ("Exit
+        the full position." ×4, crop 12-filtered-invalidated.png).
+    - id: PRC-005
+      severity: blocker
+      finding: >
+        The card is no longer a link and nothing else opens the name: board.js:220 renders
+        <article class="pvcard"> with no href against production's
+        <a href="stock.html#TICKER"> (_prophet_card.html.j2:375 + dashboard.html.j2:16195),
+        and the sole click handler (board.js:644-655) only matches
+        .mx-cell/.ladder-clear/[data-view], so a card click is inert — killing the listed
+        core interaction "open a name via card link" and every per-name receipt (analyzer,
+        cycle detail, tier/sig) that the board delegates to one click.
+    - id: PRC-006
+      severity: blocker
+      capability: card.stance_verb
+      finding: >
+        Both the one-word ruling stance and the whole per-card hue system are removed
+        without ruling cover — card() emits no verb chip and no --pvh equivalent (vs
+        _prophet_card.html.j2:76,178,387), so the grid is monochrome in both languages
+        (crop 03-desktop-dark-zh.png) where production's zh board is red-for-bullish per
+        the 红涨绿跌 convention the macro header calls load-bearing product identity
+        (_prophet_card.html.j2:14-16); the lifecycle cell answers "where is this plan",
+        not "what is the call", so the glance-scan shortlist task loses its primary
+        carrier. (Also covers card.verb_hue_identity.)
+    - id: PRC-007
+      severity: major
+      capability: card.priority_score
+      finding: >
+        The Priority 0-100 value is never printed — pri (board-data.js, GPCR "pri":90.5) is
+        consumed only as a sort key at board.js:140 — so "which matter most right now"
+        degrades from a measured quantity with an honest gloss
+        (dashboard.html.j2:16200-16209) to an unlabelled ordinal, and past the 40-card cap
+        even the ordinal is invisible.
+    - id: PRC-008
+      severity: major
+      finding: >
+        The board's flagship claim is contradicted by its own render: "the six cells below
+        add up to this number" (board.js:153-158) sits above six cells one of which is an
+        em-dash because Watch is key-absent (board.js:106,172) — five cells sum to 162, six
+        cannot be added — and the headline noun "live setups today" covers the 4
+        Invalidated (void level already hit) rows, which reads as actionable inventory.
+    - id: PRC-009
+      severity: major
+      finding: >
+        "What changed today · N opened in the last day" is recounted from row iteration in
+        violation of the file's own stated COUNT LAW (board.js:378 vs board.js:4-8
+        "Nothing is recounted from row iteration") and silently rescopes to the active
+        filter under an unchanged label — 17 unfiltered vs 0 under the Invalidated filter
+        (crops 01/12), which a reader parses as "nothing changed on the board today".
+    - id: PRC-010
+      severity: major
+      capability: board.triage_shelves
+      finding: >
+        The Live now / Setting up / Ran / Basing / Blocked shelves stop filtering anything:
+        production ships them as <button data-stagepick> chips with instant CSS filtering
+        (dashboard.html.j2:16000-16006, :843-848), the proposal ships inert
+        <span class="cand-shelf"> with no cursor, aria or handler (board.js:460-462) — the
+        ruling explicitly preserved "shelf grouping + filter as today" (§5:192), so the
+        core interaction was deleted rather than relocated.
+    - id: PRC-011
+      severity: major
+      capability: board.track_record_strip
+      finding: >
+        The anonymous visitor's every quantitative proof is stripped — production's anon
+        board carries "Track record · 59% win · +0.45% a trade", "measurement updated",
+        "What changed today · 30", "Recently fired · SGHT +40.9% since signal" and "Passed
+        on tonight 27 of 69" (production board shot), while evidence() (board.js:560-568)
+        is four bare links with no numbers and there is no fired/passed-on surface at all,
+        gutting the stated secondary user job.
+    - id: PRC-012
+      severity: major
+      finding: >
+        There is no slot for the degraded-freshness state production prints prominently
+        ("Still ranked on prices as of 2026-08-10 — 2 sessions behind ... check a live
+        quote before you act") — against a single unconditional "Settled close ·
+        2026-08-12" stamp (board.js:579-583); combined with PRC-001 a reader acting on the
+        printed Entry/Void has no path to learn the board is behind the tape.
+    - id: PRC-013
+      severity: major
+      capability: card.asof_stamp
+      finding: >
+        Per-card freshness disappears from grid view: production pins the signal as-of date
+        in every card footer (_prophet_card.html.j2:436-437); the proposal shows a date
+        only inside the episode chip, which renders only when the ticker carries more than
+        one plan row (board.js:259-264).
+    - id: PRC-014
+      severity: major
+      finding: >
+        Past 40 of 162 live rows the only route is a table that drops most of the card —
+        GRID_CAP=40 with "+122 more / see them all in table view" into a 7-column table
+        with no company name, sector, lane, window position or guidance
+        (board.js:216,401-434) — where production keeps progressive disclosure inside the
+        grid itself ("Show 15 more · Show all 74"), trading no capability for volume.
+    - id: PRC-015
+      severity: major
+      finding: >
+        The entire marks taxonomy is deleted except lane (board.js:250-256): ★ Featured
+        (the priority-engine pick cohort), New, Blow-off risk, Theme just turned, Adjusted,
+        theme name, and — materially for the house nulls-printed law — the ANTICIPATION v1
+        per-row "Extended? Not checked" disclosure and its runway-coverage footnote
+        (dashboard.html.j2:16090-16170, :15944-15964), so the proposal applies its own
+        (good) null discipline to the Watch cell while removing the two production already
+        ships.
+    - id: PRC-016
+      severity: major
+      finding: >
+        Tier-2 receipt density collapses to two hover targets on the whole page — LENS
+        binds only [data-tip-en] (board.js:679-688) and the artifact carries exactly the
+        ladder "?" and the lane chip — versus production's receipts on the score, the ⚡
+        trigger, every marks chip, the five stage filter chips, the five stage headings and
+        the ⚠ rows; "technicals demoted to hover" only holds if the hover exists.
+    - id: PRC-017
+      severity: major
+      finding: >
+        Chinese loses company/sector translation: board.js:239-240 joins r.nm and r.sec raw
+        with no t() and no zh field, so the zh render shows "Structure Therapeutics ·
+        Health Care" (crop 03) where production passes sec_zh/name_zh and renders 医疗保健
+        (production zh shot).
+    - id: PRC-018
+      severity: major
+      finding: >
+        The first card of the reference contradicts itself in every desktop crop: GPCR
+        prints "past its 45-day window" (board.js:232-236) four lines above "Entered — in
+        the entry window" (board.js:243-247), and the same card's two time anchors disagree
+        in the fixture (age:69 counts from the plan id date 2026-06-04 while opened says
+        Aug 7) — the designer's comment at board.js:226-231 documents the underlying
+        16-row Overtime disagreement but the rendered card asserts both sides as fact.
+    - id: PRC-019
+      severity: major
+      finding: >
+        Three sections of the proposed canonical reference have no producer: groups()
+        hardcodes a 22-row sector-narrative table and invented lane counts 6/5/4/3/4
+        printed as "22 sectors & themes moving" (board.js:481-547), the page header
+        hardcodes "Regime Risk-on · Breadth Broadening · Posture Act on the best few" as
+        the most prominent claim above the fold (board.js:586-590), and context() ships
+        five inert tabs — freezing a fabricated market-state read into design law, outside
+        the ruling's governed-total scope (§10.4).
+    - id: PRC-020
+      severity: major
+      finding: >
+        The artifact cannot be expressed as the pv_card variant the ruling actually granted
+        ("the macro grows a lifecycle variant behind a parameter; other markets keep the
+        legacy rail" — §10.2): it shares no element, class, or slot with
+        _prophet_card.html.j2 and drops chart, price, verb, hue and zone, so adopting it as
+        canonical forks the flagship component across the five locale boards in
+        baseline.yml shared_surfaces rather than parameterizing one.
+    - id: PRC-021
+      severity: minor
+      capability: card.zone_chip
+      finding: >
+        The zone narrows from a lo–hi band with five contextual states
+        (_prophet_card.html.j2:421-435) to one Entry number (board.js:276-277), and then
+        disagrees with the card's own prose two rows above — footer "ENTRY $63.43" beside
+        "Accumulate into the $61.14–$63.43 zone" (crop 01, DAR).
+    - id: PRC-022
+      severity: minor
+      finding: >
+        Ladder filtering is a full page navigation (board.js:648-650 assigns
+        location.search, making the following location.hash line unreachable) where
+        production filters client-side with pure CSS (dashboard.html.j2:843-848), so the
+        reference prescribes a reload per filter press.
+    - id: PRC-023
+      severity: minor
+      finding: >
+        Mobile degrades on two axes: the grid drops to one card per row (board.css:631)
+        where production keeps two-up at 390px, roughly doubling the scroll cost of a
+        162-row book; and the ladder wraps to 4+3 so Resolved sits inline beside
+        Invalidated (crop 04), leaving the desktop gap-and-enclosure that encodes the
+        two-total law carried only by the small "not in today's count" caption.
+  strengths:
+    - "Count integrity is genuinely better than production: one canonical total, a single cellCount() accessor with a grep-able audit rule, Resolved held outside the live total — this directly cures the duplicated count vocabulary baseline.yml files as a known defect."
+    - "Key-absent is distinguished from zero and disclosed in plain words (em-dash + 'Watch tier publishes from the next nightly') — a stricter reading of the nulls-printed law than production applies to its own dark inputs."
+    - "The weight-encoded lifecycle marks are direction-neutral and not colour-only, so they survive the zh red/green inversion and colour-vision deficits; identical cap geometry on ladder cell and card makes the two read as one governed population."
+    - "One card per plan row with dated 'Episode N of M · opened <date>' chips and 'Newer plan on this name →' cross-links makes two separate commitments on one ticker legible for the first time."
+    - "Window position ('day 8 of 45' / 'past its 45-day window') is a real new fact production does not carry, and it is what makes an Overtime cell legible at all."
+    - "The anonymous path puts exactly one card's data in the DOM and fills the row with contentless skeletons — a stronger gating posture than production's blur over fully-rendered teaser content."
+    - "Candidates are separated into their own noun with their own printed-once total and an explicit 'a candidate is not a setup' sentence."
+    - "Empty and empty-filter states are differentiated and explained rather than blank."
+    - "Table view renders every row of the active filter and prints the rendered count so the surface reconciles with no remainder."
+    - "The designer surfaced rather than papered over a live data disagreement (16 open rows past their declared window while the Overtime cell is 0) in an in-code comment escalating it as an open question."
+
+second_pass:
+  amended_at: "2026-08-13T06:32:00Z"
+  amendments:
+    - {finding: PRC-001, action: upheld, note: "Q1 measures the CANDIDATE-JOIN price at 25%, but the live-quote path is ticker-keyed, not join-keyed — the ruling keeps data-ticker expressly 'for the live-quote JS' — so 100% of plan rows could carry a live price; the constraint explains dropping a stale join field, not dropping the live tape from a card that prints a Void level."}
+    - {finding: PRC-002, action: downgraded, note: "blocker→major: Q1's drop-entirely-vs-25% rule is a defensible product call and P0 §B's card-depth ladder omits the chart; but no replacement for 'read recent geometry without opening anything' and no escalation asking PR-0(c) to source a spark for plan rows — dropped without a successor."}
+    - {finding: PRC-003, action: upheld, note: "Not addressed anywhere in the notes — the ⚠N ledger is computed from conviction/plan data, not candidate-join rows, so Q1 does not cover it; §7's '.pvcard is the shipped card with its rail removed' is materially inaccurate about a card that also lost its entire risk tier while gaining Entry/T1/Void."}
+    - {finding: PRC-004, action: upheld, note: "The notes never mention .pv-do, the 2026-08-03 operator kill, or the line-clamp; 'why' as a one-word slot name cannot reinstate an overturned design that renders imperative, position-presuming, truncated boilerplate."}
+    - {finding: PRC-005, action: upheld, note: "Unaddressed; made worse by the rationale's own reliance on the receipts tier (lane meaning in LENS, Extended texture on 'Plan detail / LENS') while the artifact offers no route to any per-name or per-plan detail at all."}
+    - {finding: PRC-006, action: downgraded, note: "blocker→major for the hue half: §2.3 gives a genuine ruling-anchored reason (saturated colour at the card head on a hue-free classification invites the lifecycle-by-colour misread) with computed-style verification in both languages; it does not cover the VERB itself (DNR:KILL-PROPHET-POP-MERGE keeps the card verb as the ruling stance), so the stance-word loss stands as major."}
+    - {finding: PRC-007, action: upheld, note: "Priority appears in the notes only as sort order; the score is a plan-payload field (the mockup itself sorts on it), so no coverage constraint explains dropping the value while keeping nothing of the honest gloss."}
+    - {finding: PRC-008, action: downgraded, note: "major→minor: §2.5 shows the em-dash is deliberate ruling-grounded key-absence rendering and the five-cell reconciliation is exact; what remains is a one-line copy defect ('six cells add up' above a cell that cannot be added), not a count-integrity failure."}
+    - {finding: PRC-009, action: upheld, note: "Q3 earns the 'only print the derivable figure' decision completely — but the defect is that the ONE printed figure is recounted from filtered rows in breach of the file's own COUNT LAW and silently rescopes under a filter (17→0) with an unchanged label, which Q3 does not address."}
+    - {finding: PRC-010, action: downgraded, note: "major→minor: §4/§4.1 justify the relocation as a second population with audited copy and exact decomposition; but ruling §5:192 grants the screener 'shelf grouping + filter as today' and the reference renders inert spans — the filter-affordance loss is unexplained even though the relocation is justified."}
+    - {finding: PRC-011, action: upheld, note: "Unaddressed; §1 asserts the section order ends with 'does this machine work', yet that section carries four bare links and zero figures — the rationale states the intent the artifact fails to deliver."}
+    - {finding: PRC-012, action: upheld, note: "Unaddressed; the notes are precise about the two source as-of dates, which makes the absence of any degraded/behind state for the ranking prices a gap the author was demonstrably positioned to see."}
+    - {finding: PRC-013, action: downgraded, note: "major→minor: the as-of date is a plan-book field so Q1 gives no cover — but the artifact adds a per-card freshness fact of its own (window position) that partly serves the same job, which pass-1 severity did not credit."}
+    - {finding: PRC-014, action: upheld, note: "'40 cards + 122 more = 162' is a count-law success but not a capability argument for routing 122 of 162 rows into a table that drops name, sector, lane, window position and the why-line; the notes never weigh that trade."}
+    - {finding: PRC-015, action: downgraded, note: "Split by cause — major with partial cover for lane only (Q1's 44/179 + §5's deliberate no-recovery-chip). NOT covered: ★ Featured, New, Blow-off risk, Theme just turned, Adjusted, and the shipped ANTICIPATION 'Extended? Not checked' printed null — none is a join field, and deleting a shipped printed-null while adding a new one for Watch is not a coverage consequence."}
+    - {finding: PRC-016, action: upheld, note: "Unaddressed; the notes rely on LENS carrying displaced meaning while the artifact carries two hover targets on a 40-card page — an unremarked shortfall rather than a stated tradeoff."}
+    - {finding: PRC-017, action: downgraded, note: "major→minor: name/sector are join-conditional by construction (45/179) and Q6 shows the author systematically flagged his own new zh strings for a native pass — the zh lane is disclosed, not neglected; the untranslated sector on the 25% that DO render still needs tr()."}
+    - {finding: PRC-018, action: downgraded, note: "major→minor, reclassified correctly-escalated: Q2 names the contradiction precisely, refuses to relabel a ruled cell (not the designer's call), and routes it to the ruling lane — the right disposition; the residue is that the flagship first card still renders both halves as fact with no on-card reconciliation."}
+    - {finding: PRC-019, action: upheld, note: "§1 presents Groups' '22 sectors & themes moving' inside the governed-populations table as if governed, when it is the sum of five hardcoded literals over 22 invented narratives, and the hardcoded regime header claim is never mentioned — a document this rigorous about producer-less cells cannot leave its own producer-less section unlabelled."}
+    - {finding: PRC-020, action: downgraded, note: "major→minor: §7 scopes the artifact as G-C only with migration gated on G-A/G-B, so the fork is a question for MP-1's implementation against the ruling's parameterized-variant grant; remains a condition on adoption-as-law because the artifact is what a builder would copy."}
+    - {finding: PRC-021, action: upheld, note: "Unaddressed; entry/targets/invalidation are plan-book fields present on every row, so no coverage constraint applies, and the footer/prose disagreement about what the entry actually is remains a self-contradiction inside the mockup's own data."}
+    - {finding: PRC-022, action: withdrawn, note: "§0 documents query-parameter state switching as the harness contract for the whole mockup — reload-based filtering is the capture mechanism, not a proposed production interaction; grading it as prescribed behaviour was my error."}
+    - {finding: PRC-023, action: downgraded, note: "minor→nit for the ladder wrap (dashed outline and caption survive at 390w, zero horizontal scroll asserted per shot); the one-up mobile grid against production's two-up stands as a scan-cost observation the notes do not weigh."}
+  verdict: BLOCK
+  closing_note: >
+    The rationale is a genuinely strong document and it changes the picture on roughly half
+    the file: Q1's 25% join-coverage measurement legitimately explains the chart, lane chip
+    and name/sector losses; §2.3 gives a real ruling-anchored reason for the hue-free card;
+    Q2, Q3, Q4 and Q6 are model escalations that name defects rather than paper over them;
+    and §0's harness contract withdraws PRC-022 outright. What it cannot excuse is the
+    cluster that is not a coverage consequence at all — the ⚠N risk ledger, the ruling
+    stance verb, the Priority value, the printed-null marks, the per-name detail link, and
+    the board-level staleness warning are all plan-book-side or ticker-keyed facts, deleted
+    while the card simultaneously gained Entry/T1/Void and imperative position-presuming
+    prose that an operator killed in 2026-08-03 and the notes never mention. Verdict stays
+    BLOCK on PRC-001/003/004/005 alone: a card that instructs "Exit the full position"
+    while showing no live price, no chart, no cautions and no route to the receipts tier is
+    more authoritative and less falsifiable than the surface it replaces, and no disclosed
+    constraint asks for that trade.

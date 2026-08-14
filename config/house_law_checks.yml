@@ -603,6 +603,64 @@ checks:
       main — a coherent board at most one render old beats a stitched hybrid;
       the next render re-lands freshness.
 
+  - law_id: design.reference_integrity
+    summary: >
+      No reference laundering: a proposed design reference may not become law
+      until the product/taste judgment happened, in the right order,
+      independently, and left receipts. No implicit deletion — every production
+      capability receives an explicit disposition, a data-motivated REMOVE is a
+      mis-filed BLOCKED_DATA, a WORSE verdict on a critical user task and an
+      unwarranted "stronger" authority claim are review-blocking until
+      adjudicated, and receipts-or-no-canon: only a reference carrying a valid
+      approval receipt may be cited as compliant by a registry row or as
+      canonical by a migration packet.
+    source_ref:
+      - scripts/check_reference_integrity.py
+      - tests/test_check_reference_integrity.py
+      - research/REFERENCE_INTEGRITY_GATE_V1.md
+    severity: hard
+    check_script: scripts/check_reference_integrity.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: reference-integrity
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        CI cannot judge taste and does not try. The gate proves the judgment
+        HAPPENED (dual independent critics, rationale quarantine, frozen first
+        pass, design-authority verdict packet, approval receipt) and left
+        auditable receipts — never that the design is good.
+      - >-
+        The data-motivated-REMOVE rule (blocked-data-as-removal) is a LEXICAL
+        heuristic over the rationale text. Deliberately no allowlist: by RIG §1 a
+        removal caused by data insufficiency is definitionally a mis-filed
+        BLOCKED_DATA, so a match is enforcement, and a rationale that cannot be
+        told apart from a data excuse is not yet a documented product decision.
+      - >-
+        Sparse agent worktrees under-enumerate L7/L9 locally — mockups/design_system
+        and data/ are excluded from most session checkouts, so those roots emit a
+        ::notice skip instead of a finding. CI checks out the full tree, where both
+        rules are armed; a present-but-missing registry file is a hard error.
+      - >-
+        Status-scaled by design: draft/in_review artifact sets must only be
+        internally valid (mid-flight is legal), and a revise/rejected set keeps its
+        upheld findings without failing CI — that record IS the artifact. Full
+        L1-L6 arms at status approved and under --evaluate.
+    owner_program: design-migration-factory
+    notes: >
+      Founding regression fixture: research/reference_integrity/prophet-board-5514-original/
+      — the original Prophet Board mockup (PR #5514) frozen at 668e5954, with the
+      production baseline it should have been judged against. The suite asserts the
+      checker independently derives the mechanically-derivable defects from that
+      fixture's honest ledgers (five silently dropped capabilities, a coverage-motivated
+      chart removal, receiptless removals, four WORSE critical tasks, three unwarranted
+      authority claims) and that the critic receipts block approval. `--evaluate <id>`
+      runs the full rule set on one artifact set (exit 3 = blocked) for use during
+      reference review; the default repo mode is the PR gate.
+
   # ── Git hygiene ────────────────────────────────────────────────────────────
 
   - law_id: git.no_conflict_markers
@@ -964,6 +1022,44 @@ checks:
         (scripts/build_stock_library.py, "board-contradictions self-check" log
         line, added in PR 2171); the pages.yml twin is workflow_dispatch-only
         and guards manual GitHub Pages mirror re-deploys, not nightly renders.
+    owner_program: us-stocks-prebreakout
+    notes: null
+
+  - law_id: contracts.signal_gate_pair_coherence
+    summary: >
+      us_standouts.json and signal_gate.json are written by ONE build_stock_library
+      run and carry two copies of the same reading, so every board row with a
+      non-empty `signal` blob must equal its gate verdict on every key the gate
+      entry carries. Only the gate write is guarded (`if sig_verdict:`), so a
+      scope=all re-render can advance the board and leave the gate behind — and
+      both files stamp the same `as_of` (the DATA date), so nothing on either
+      artifact reveals the skew.
+    source_ref:
+      - scripts/check_signal_gate_coherence.py
+      - "engine/us_board_rank.py::verdict_for"
+      - "PR 5490 (2026-08-12: 8 of 69 buy rows skewed; NTES blob ticks 0 vs gate 3)"
+    severity: hard
+    check_script: scripts/check_signal_gate_coherence.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: signal-gate-pair-coherence
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; the seeded-defect round trip lives in
+      tests/test_signal_gate_coherence.py, which the same CI job runs on every PR
+      (including a mutation guard that a ticks-only predicate fails).
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - PR gate skips when neither artifact is touched by the PR. Fresh renders
+        are graded warn-only by the builder's own self-check
+        (scripts/build_stock_library.py, "::warning title=signal-gate-coherence"),
+        which fires at the moment the skew is created.
+      - Absent artifacts print n/a and exit 0 — sparse agent checkouts and fresh
+        clones carry no site/ tree, and an absent pair is not a contradiction.
+      - A differing emit.pair_id alone is not a violation; it only names which
+        side is stale once the CONTENT already disagrees.
     owner_program: us-stocks-prebreakout
     notes: null
 
@@ -2720,3 +2816,134 @@ checks:
       clean fixture passes, and that the traversal itself works; a self-check
       derived from what it checks cannot fail, so the fixtures are canned in a
       tempdir rather than read from the live estate.
+  - law_id: data.append_only_assertions
+    summary: >
+      A historical assertion over an append-only store must not become false
+      merely because a VALID NEW ROW was appended. The rule is MONOTONICITY, not
+      equality: `len(rows) == 28` and `ledger_ids <= graded_ids` are fragile;
+      `>= floor`, `x in store`, `set(keys) == FIELDS`, a constant-bounded prefix
+      slice, a per-row schema contract, and two reads of the same store in one
+      run are safe. Covers BOTH shapes the defect takes — an assert over store
+      content, and a CI gate whose failing exit code is a function of it.
+    source_ref:
+      - scripts/check_append_only_assertions.py
+      - tests/test_append_only_assertions.py
+      - config/synapse.yml
+      - research/EVAL_OS_GUARDLAW_T3_HANDOFF_2026-08-12.md
+    severity: discipline
+    check_script: scripts/check_append_only_assertions.py
+    ci_wiring: []
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        PRODUCER SIBLING (false positive). A store compared to a receipt written by
+        the SAME producer run is safe because both move in lockstep, but is reported.
+        Observed at tests/test_chronicle.py:2294, where the manifest records rows=5051
+        and events.jsonl is 5051 lines. Closing it needs a `producer:` sibling lookup
+        in config/synapse.yml.
+      - >-
+        WITHIN-RUN VIA AN INTERMEDIARY (false positive). When one side reaches the
+        store through a call the scanner cannot see into, only the other side carries
+        taint. Observed at tests/test_personality_relief_hazard.py:400, where `state`
+        comes back from prh.update() over the same ledger being counted.
+      - >-
+        FROZEN FIRST ROW (false positive). `registration, *events = rows` makes
+        `registration` row 0, which an append cannot change; reported anyway at
+        tests/test_personality_relief_hazard.py:357. The BYTE form of the same idea
+        (`raw[:50_790]`) IS recognised and is not reported.
+      - >-
+        UNREGISTERED STORE (false negative). A live append-only store missing from
+        config/synapse.yml is invisible. data/basket_turn/ledger.jsonl is tracked in
+        git and pinned by `assert len(live) == 8` at
+        tests/test_basket_membership_stamps.py:259, and this guard reports zero
+        findings in that file because synapse.yml carries data/us_basket_turn/ and
+        data/china_basket_turn/ but not that path.
+      - >-
+        ROW-GRAIN MEMBERSHIP (false negative, deliberate). The per-row carve-out
+        cannot distinguish a schema contract (`row["kind"] == "event"`, legal) from an
+        enumeration of existing ids (`row["id"] in FROZEN_IDS`, fragile) — they are
+        lexically identical. The carve-out wins. All four motivating defects are
+        whole-store, and without it the guard reports about 5x the findings it can
+        justify.
+      - >-
+        Scope is tests/ and scripts/, JSONL stores only, and the exit-code family is
+        scoped to scripts/check_*.py plus registered check_scripts. A path arriving
+        via a fixture, another module's constant, or a function parameter is not
+        resolved.
+    owner_program: mastermind-intelligence-evaluation-os
+    notes: >
+      DISCIPLINE WITH EMPTY ci_wiring ON PURPOSE (2026-08-13). The guard reports 47
+      pre-existing findings on main, none of which a PR author wrote, so wiring it as
+      a gate on day one is how a guard gets disabled rather than obeyed. What CI runs
+      today is the PROOF THAT THE GUARD WORKS, not a judgement of the tree: --selftest
+      (7 known-bad constructions that must be caught, 13 legal ones that must stay
+      clean) plus tests/test_append_only_assertions.py, which mutates the detector ten
+      ways and the fixtures nine ways and fails if any mutation survives. Both run in
+      the always-on house-law-registry job, appended last so they cannot mask the
+      meta-guard census ahead of them.
+      PROMOTION PLAN. Step 1 (target 2026-09-15): drive the 47 findings down by fixing
+      the true positives — including tests/test_market_memory_production_records.py:116,
+      which pins data/options_signal_episode/episodes.jsonl at 384 rows while the
+      committed store is 1,206 lines, and scripts/check_qledger_metric_validity.py:244,
+      whose --strict path is a function of data/qledger/claims.jsonl content and would
+      become a fleet-wide scheduled red the day anything arms it. Step 2: close the
+      PRODUCER SIBLING false positive with a synapse `producer:` lookup, which retires
+      the largest legitimate-pin class. Step 3 (only once the count is zero and stays
+      zero for two weeks): promote to `hard` with `--strict` in the house-law-registry
+      job and record the promotion here. Do NOT promote on a nonzero count — the
+      previous attempt at this law was promoted to hard while itself violating the law
+      it shipped, and was structurally blind to that.
+  - law_id: ops.nightly_liveness
+    summary: >
+      The authoritative US nightly (daily.yml / Build B) must produce a run for every
+      completed NYSE session, that run must conclude success, and the Prophet store
+      must actually advance to that session. All three are separate failures and each
+      is observable on its own.
+    source_ref:
+      - scripts/check_nightly_liveness.py
+      - tests/test_workflow_file_size.py
+    severity: hard
+    check_script: scripts/check_nightly_liveness.py
+    ci_wiring:
+      - workflow: .github/workflows/nightly-liveness.yml
+        job: liveness
+        lane: scheduled
+      - workflow: .github/ci/legacy-jobs.yml
+        job: dag-conformance
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Detection floor is the schedule: 08:00Z and 14:00Z. A bake that dies at 23:00Z
+        is reported the next morning, not within the hour. That is deliberate — the
+        nightly legitimately runs for hours, so a tighter slot could only report
+        INDETERMINATE and would train the operator to ignore the channel.
+      - >-
+        Check C reads the COMMITTED site/prophet/index.json, so it proves the store
+        advanced in git, not that the VPS served it. The 3-min pull and the VPS-side
+        freshness_sentinel own that last hop.
+      - >-
+        Blindness (API error, missing artifact, unparseable stamp) is INDETERMINATE by
+        design and exits 0. A guard that is permanently blind therefore reads green;
+        test_default_repo_matches_the_git_remote pins the one input most likely to
+        cause that silently.
+      - >-
+        Watches Build B only. Build A (closing-bell.yml) ran green through the entire
+        2026-08-11/12 outage while the board it re-rendered still read
+        price_through=2026-08-10, so its health proves nothing about the ledger.
+    owner_program: prophet-us-eyes-open
+    notes: >
+      Registered after the 2026-08-11/12 two-session outage, in which the US nightly
+      went dark and no existing instrument reported it. heartbeat.yml could not:
+      max_age_hours=96 is sized so a Friday bake still looks alive on Monday, and it
+      runs on the same macstudio pool as the lane it watches. freshness_sentinel could
+      not: PROPHET_MAX_SESSIONS_BEHIND=1 is correct (between the close and the bake,
+      one behind IS healthy) and therefore blind for ~24h. Both measure DATA; what
+      broke was the SCHEDULE, after #5362 pushed daily.yml past GitHub's silent
+      ~512,000-byte processing cap. This guard asks GitHub whether a run was created
+      at all, which is the only question that sees a stranded workflow file in hours.
+      Fixture dates in --selftest are constants with no relation to the wall clock.

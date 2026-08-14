@@ -1,0 +1,36 @@
+# RIG artifact manifest — the REVISED Prophet Board reference (PR #5514, third revision),
+# frozen at its live mergeable head. This is a fresh cycle: the founding fixture's REVISE
+# verdict does not transfer, and approval is issued only if this artifact earns it.
+schema: mastermind.rig_manifest.v1
+reference_id: prophet-board-5514-r2
+scope: full
+status: revise
+
+surface:
+  route: us_stocks.html
+  registry_row: us_stocks
+  archetype: discovery_board
+
+author:
+  identity: "design authority (mockup lane), PR #5514 revision sessions (G-C correction pass 2026-08-13)"
+  role: designer
+
+reference_files:
+  - path: research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/index.html
+    frozen_sha: 0fc975acfe97a7b208e294528af76c8431a7beef
+  - path: research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/board.js
+    frozen_sha: 0fc975acfe97a7b208e294528af76c8431a7beef
+  - path: research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/board.css
+    frozen_sha: 0fc975acfe97a7b208e294528af76c8431a7beef
+  - path: research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/board-data.js
+    frozen_sha: 0fc975acfe97a7b208e294528af76c8431a7beef
+  - path: research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/compare.html
+    frozen_sha: 0fc975acfe97a7b208e294528af76c8431a7beef
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml

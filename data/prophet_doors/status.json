@@ -1,33 +1,53 @@
 {
-  "appended": 0,
-  "asof": "2026-08-12",
+  "appended": 8,
+  "asof": "2026-08-13",
   "candidates": {
-    "R": 2,
-    "T": 9,
+    "R": 5,
+    "T": 6,
     "W": 44
   },
   "deduped": {
-    "R": 2,
-    "T": 9,
+    "R": 0,
+    "T": 3,
     "W": 44
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "consulted": false
+      "asof": "2026-08-14",
+      "consulted": true,
+      "n_keys": 27,
+      "n_themes": 18,
+      "ok": true,
+      "reason": null,
+      "source": "site/basketdata/foresight_cascade.json"
     },
     "ignition": {
       "coil_min_sessions": 293,
-      "consulted": false,
-      "null_reasons": {},
+      "consulted": true,
+      "null_reasons": {
+        "no_bar_on_flag_date": 1,
+        "ohlcv_absent": 24
+      },
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {},
+      "themes_read": {
+        "Agriculture & FoodTech": {
+          "theme_thrust_frac": 0.0,
+          "theme_thrust_reason": null,
+          "theme_thrust_state": "quiet"
+        },
+        "Commodities Energy": {
+          "theme_thrust_frac": 0.1538,
+          "theme_thrust_reason": null,
+          "theme_thrust_state": "quiet"
+        }
+      },
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 0,
-      "tickers_read": 0
+      "tickers_ok": 43,
+      "tickers_read": 68
     },
     "keys": [
       "relay_count_3d",
@@ -45,10 +65,21 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": false
+      "consulted": true,
+      "high_lookback": 63,
+      "members_indexed": 183,
+      "n_covered": 84,
+      "reason": null,
+      "window_sessions": 21
     },
     "turnover": {
-      "consulted": false
+      "consulted": true,
+      "last_session": "2026-08-13",
+      "n_tickers": 1541,
+      "ok": true,
+      "reason": null,
+      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
+      "window_max": 60
     }
   },
   "feature_source_w": {
@@ -76,8 +107,18 @@
     ]
   },
   "flag_tickers": {
-    "R": [],
-    "T": [],
+    "R": [
+      "FBNC",
+      "WEN",
+      "CNS",
+      "CPK",
+      "RGA"
+    ],
+    "T": [
+      "KMI",
+      "OKE",
+      "BG"
+    ],
     "W": []
   },
   "n_universe": 1495,
@@ -86,41 +127,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-13 19:34:32",
-  "runtime_s": 104.5,
+  "run_utc": "2026-08-14 11:02:54",
+  "runtime_s": 120.5,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": -1,
+    "age_days": 0,
     "asof": "2026-08-13",
-    "n_members": 156,
+    "n_members": 183,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 4.101,
+        "emerging_score": 3.473,
         "rank": 1,
         "theme": "Commodities Metals"
       },
       {
-        "emerging_score": 3.724,
+        "emerging_score": 2.547,
         "rank": 2,
         "theme": "Space Tech"
       },
       {
-        "emerging_score": 2.43,
+        "emerging_score": 1.833,
         "rank": 3,
         "theme": "Commodities Energy"
       },
       {
-        "emerging_score": 1.744,
+        "emerging_score": 1.72,
         "rank": 4,
         "theme": "Agriculture & FoodTech"
       },
       {
-        "emerging_score": 1.658,
+        "emerging_score": 1.704,
         "rank": 5,
-        "theme": "Energy Traditional"
+        "theme": "Software"
       }
     ]
   },
@@ -130,15 +171,15 @@
       "3B"
     ],
     "aligned": 44,
-    "asof_max": "2026-08-12",
+    "asof_max": "2026-08-13",
     "asof_mismatch": 0,
-    "asof_run": "2026-08-12",
+    "asof_run": "2026-08-13",
     "evaluated": 712,
     "fresh": 44,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 17.7,
+    "runtime_s": 21.5,
     "skipped": 5,
     "source": "baskets/membership.json",
     "state_turn": 103,

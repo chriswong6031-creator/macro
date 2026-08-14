@@ -405,11 +405,49 @@ def _load_regime_history(data: Path) -> pd.DataFrame | None:
         return None
 
 
+#: Container types a dimension ``value`` may never carry (see :func:`_regime_dim`).
+#: ``context_frame`` flattens a value dict generically, so a container-valued entry
+#: becomes a container-valued COLUMN — and one committing consumer
+#: (:mod:`engine.us_context_vector`) writes those columns to parquet.
+_NONSCALAR_CELL_TYPES = (dict, list, set, tuple, bytearray)
+
+
 def _regime_dim(date_ts: pd.Timestamp, root: Path) -> dict:
     """Regime as-of date_ts from regime_history.parquet (recomputed_history basis).
 
     Also loads latest.json for rows where date is within 1 calendar day of today
-    (pit_live basis), merging the two sources.
+    (pit_live basis).
+
+    BOTH-SOURCES PATH — SCALARS ONLY (2026-08-14).  When the history row and
+    ``latest.json`` both resolve, this used to return
+    ``value={"history": {...}, "live": {...}}``.  ``context_frame`` flattens a
+    dimension's ``value`` dict generically (``f"{dim}__{k}"``), so that produced two
+    DICT-VALUED columns, ``regime__history`` and ``regime__live``.  No consumer
+    anywhere reads either key, and neither exists in any committed part of
+    ``data/us_prophet_rank/candidates/`` — because the store never survived them:
+    its schema-union append fills prior rows of a new column with float NaN, pyarrow
+    cannot unify a struct against a non-null float, and the write died with
+    ``cannot mix struct and non-struct, non-null values``.
+    :func:`engine.us_context_vector.append_candidates` catches everything and
+    returns 0, so the US Context Vector store silently stamped NOTHING from the
+    first night both sources resolved (2026-08-08) through 2026-08-13, inside a
+    GREEN engine job.
+
+    The merged value is now the HISTORY row's scalar block — the exact shape every
+    committed part already carries (``regime__quad``, ``regime__growth_score``,
+    ``regime__flag_*``, …) — so the store's regime columns stay continuous rather
+    than dying and being replaced.  ``latest.json`` is a kitchen-sink document
+    (~50 of its ~70 keys are dicts or lists on any given night), so its value dict
+    is NOT a scalar block and cannot be the merged value; what it contributes is
+    recorded as two SCALAR provenance fields:
+
+    * ``history_as_of`` — the history row's own date (``as_of`` reports live's);
+    * ``live_quad``     — what ``latest.json`` said, so a source disagreement is
+      visible in the row (``live_quad`` vs ``quad``) instead of being merged away.
+
+    Both sources' as-of and quad therefore survive, in four scalar columns instead
+    of two struct columns.  ``basis`` stays ``pit_live``: the live read is what
+    makes this row current.  The live-only and history-only paths are unchanged.
     """
     data = _data_dir(root)
     hist = _load_regime_history(data)
@@ -466,14 +504,25 @@ def _regime_dim(date_ts: pd.Timestamp, root: Path) -> dict:
             except Exception as e:  # noqa: BLE001
                 log.debug("context_api: cannot read regime/latest.json: %s", e)
 
-    # Merge: prefer live for today, history otherwise
+    # Merge: prefer live for today, history otherwise.  SCALARS ONLY — see the
+    # docstring; a nested value here silently stopped a committed store for six
+    # nights.  The filter is defensive rather than decorative: the history frame is
+    # parquet-backed and scalar today, and it must stay that way through this seam
+    # even if a future column is not.
     if live_result is not None and hist_result is not None:
-        # Return both
+        live_value = live_result["value"] if isinstance(live_result["value"], dict) else {}
+        merged = {
+            k: v for k, v in (hist_result["value"] or {}).items()
+            # ``ndim`` (not ``shape``) is the ndarray discriminator: a numpy SCALAR
+            # such as np.float64 also has ``.shape == ()``, so a shape test would
+            # drop every number the parquet row carries.
+            if not isinstance(v, _NONSCALAR_CELL_TYPES)
+            and not getattr(v, "ndim", 0)
+        }
+        merged["history_as_of"] = hist_result["as_of"]
+        merged["live_quad"] = live_value.get("quad")
         return _present(
-            value={
-                "history": hist_result["value"],
-                "live":    live_result["value"],
-            },
+            value=merged,
             as_of=live_result["as_of"],
             basis="pit_live",
         )

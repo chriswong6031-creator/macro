@@ -44,6 +44,8 @@ absent. When in doubt the item ships.
 Public API:
     scrub_headline(text, *, cfg=None) -> tuple[str, list[str]]
     headline_is_furniture(text, *, source_name="", cfg=None) -> str
+    headline_is_non_news(text, *, cfg=None) -> str
+    has_market_token(text) -> bool
     body_defects(text, *, cfg=None) -> list[str]
     self_brand_hit(text, source_name, *, cfg=None) -> str
     clean_item(item, *, cfg=None) -> dict
@@ -212,6 +214,122 @@ _MARKET_FIGURE_RE = re.compile(
     r"|\d+\s?(?:bps|bp|pts?|points?)\b"
     r")",
     re.IGNORECASE,
+)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NAMED NON-NEWS FAMILIES (W2E, operator-surfaced 2026-08-11)
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: A cashtag, uppercase-only so "$3bn" and prose "$" never read as an instrument.
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}(?:\.[AB])?(?!\w)")
+
+#: Instrument, venue and asset words. A headline carrying one of these is ABOUT
+#: a market whatever else it says. Word-boundary matched (the standing lesson:
+#: "3% off the highs" was P0-dropped once by a substring screen).
+_MARKET_WORD_RE = re.compile(
+    r"(?<!\w)(?:"
+    r"market|markets|stock|stocks|share|shares|equity|equities|bond|bonds"
+    r"|yield|yields|treasury|treasuries|gilt|gilts|bund|bunds"
+    r"|oil|crude|brent|wti|opec|barrel|barrels|gas|lng|gasoline|diesel"
+    r"|gold|silver|copper|platinum|palladium|wheat|corn|soybean|soybeans"
+    r"|futures|index|indices|s&p|nasdaq|dow|russell|ftse|dax|nikkei|hang seng"
+    r"|currency|currencies|fx|forex|dollar|euro|yen|yuan|renminbi|sterling"
+    r"|rouble|ruble|peso|franc|bitcoin|crypto|ether|ethereum"
+    r"|rate|rates|inflation|cpi|gdp|earnings|revenue|profit|profits"
+    r"|investor|investors|trader|traders|shipping|freight|tanker|tankers"
+    r"|sanctions|tariff|tariffs|export controls|embargo|supply chain"
+    r"|central bank|fed|ecb|boj|imf|bourse|exchange|premium|premiums"
+    r")(?!\w)",
+    re.IGNORECASE,
+)
+
+#: War markers. Bare "war" is ABSENT on purpose — trade war, price war, bidding
+#: war and war-risk premium are all ordinary market copy, and a P0 drop may not
+#: rest on a word whose commonest use here is a metaphor.
+#:
+#: ⚠ REVIEW BLOCKER B1, OPEN (2026-08-11, adversarial review of this branch).
+#: As wired, this family drives an ADMISSION-TIME P0 drop, which is
+#: unrecoverable and sees the HEADLINE ONLY. Measured against the real
+#: garbage_gate, it kills the highest-impact class this wire has: "Iran fires
+#: missiles at US base in Qatar" dies at ingest even when the packet's body is
+#: entirely about Brent, while "Missile exchange near Hormuz" survives on the
+#: incidental word "exchange" in _MARKET_WORD_RE. 16 of 16 realistic war
+#: headlines dropped. THE FIX (designed, not yet applied — this session lost its
+#: shell before it could be verified): move the judgment to press_lane's
+#: `_no_market_nexus`, which already judges the `policy` class the same way,
+#: runs AFTER scoring so `matched` covers headline AND body, and produces a
+#: counted, recoverable `skipped` row instead of a kill. That move also needs
+#: breaking_relevance._match_sectors switched to word-boundary matching — it is
+#: substring-matched today, so "ai" inside "Claims" gives the Zelensky fixture a
+#: phantom technology sector and would defeat the nexus gate.
+_WAR_MARKER_RE = re.compile(
+    r"(?<!\w)(?:"
+    r"troop|troops|soldier|soldiers|battalion|brigade|regiment"
+    r"|missile|missiles|warhead|warheads|rocket fire|artillery|shelling"
+    r"|airstrike|airstrikes|air strike|air strikes|drone strike|drone strikes"
+    r"|ground assault|ground offensive|incursion|invasion|invade|invades|invaded"
+    r"|ceasefire|cease-fire|truce talks|war crimes|mobilisation|mobilization"
+    r"|martial law|conscription|paratroopers|militia|insurgents"
+    r")(?!\w)",
+    re.IGNORECASE,
+)
+
+
+def has_war_marker(text: str) -> bool:
+    """Does this text carry a war/troop/missile marker? See _WAR_MARKER_RE."""
+    return bool(_WAR_MARKER_RE.search(_norm(text)))
+
+
+#: A headline that ENDS on a question. Voice doctrine v5 bans the interrogative
+#: outright; a wire desk states. Kept OUT of the family table because it is the
+#: most generic rule in this module and must therefore be the LAST to claim an
+#: item: "What are the main events for today?" is a calendar index page, and
+#: `furniture:` names that better than "it ends in a question mark" does.
+_INTERROGATIVE_RE = re.compile(r"\?\s*$")
+
+
+def _fam(pattern: str) -> re.Pattern[str]:
+    return re.compile(pattern, re.IGNORECASE)
+
+
+#: Ordered families. First match wins; each entry is (family, [(label, regex)]).
+_NON_NEWS_FAMILIES: tuple[tuple[str, tuple[tuple[str, re.Pattern[str]], ...]], ...] = (
+    # ── HOW-TO / LISTICLE / SEO ──────────────────────────────────────────────
+    # A markets desk reports what happened. It does not teach, rank or promise a
+    # numbered set. Every pattern is anchored or phrase-shaped so a story that
+    # merely CONTAINS a number ("Top Fed official says ...") survives.
+    ("howto_listicle", (
+        ("how to", _fam(r"^\s*how to\b")),
+        ("here's how to", _fam(r"\bhere'?s how to\b|\bhere is how to\b")),
+        ("top N", _fam(r"^\s*(?:the\s+)?top\s+\d+\b")),
+        ("N things", _fam(
+            r"^\s*\d+\s+(?:things|reasons|ways|charts|tips|lessons|takeaways"
+            r"|stocks|etfs|funds|moves|trades)\b")),
+        ("you need to know", _fam(r"\byou need to know\b")),
+        ("using technical analysis", _fam(r"\busing technical analysis\b")),
+        ("best stocks to buy", _fam(r"\bbest\s+(?:stocks|etfs|funds)\s+to\s+buy\b")),
+    )),
+    # ── META / PREDICTION-MARKET CLICKBAIT ───────────────────────────────────
+    # A post about what other people are guessing, or one that closes on a
+    # question the desk does not answer. Voice doctrine v5 bans the interrogative
+    # outright (the publisher screen enforces it at send time); this is the
+    # admission-side half, so the item never costs an LLM call in the first place.
+    ("meta_clickbait", (
+        ("what do ... say", _fam(r"\bwhat (?:do|does|are|is)\b[^?]{0,70}?\b"
+                                 r"(?:say|saying|says|think|expect|predict|"
+                                 r"pricing in|telling us)\b")),
+        ("what to expect", _fam(r"\bwhat to expect\b")),
+        ("what it means for you", _fam(r"\bwhat (?:it|this|that) means for you\b")),
+    )),
+    # ── TRANSCRIPT / PR FURNITURE ────────────────────────────────────────────
+    # A document, not a story. What is IN it may well be news — the transcript
+    # POINTER is a table of contents, exactly like the calendar posts above.
+    ("transcript_furniture", (
+        ("call transcript", _fam(r"\b(?:earnings|conference|analyst)?\s*call transcript\b")),
+        ("full transcript", _fam(r"\bfull transcript\b|\btranscript of\b")),
+        ("transcript prefix", _fam(r"^\s*transcript\s*[:\-—]")),
+        ("(transcript)", _fam(r"\(\s*transcript\s*\)")),
+    )),
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -384,6 +502,95 @@ def self_brand_hit(
     return ""
 
 
+def headline_is_non_news(text: str, *, cfg: dict | None = None,
+                         include_interrogative: bool = True) -> str:
+    """Named non-news FAMILIES a markets wire may never relay (W2E, 2026-08-11).
+
+    Returns ``"<family>:<marker>"`` or "". Each family is a shape the operator
+    saw on the flagship timeline on 2026-08-11, and each is a shape that no
+    straight-news wire headline takes:
+
+      howto_listicle          "How To Trade SPY, QQQ, AAPL, MSFT, NVDA, GOOGL,
+                              META, And TSLA Using Technical Analysis" — a
+                              content-farm SEO listicle, posted verbatim. The
+                              defect that opened this ticket.
+      meta_clickbait          "... : What Do Prediction Markets Say About Rate
+                              Hikes?" — a post about what other people are
+                              guessing, closing on a question the desk does not
+                              answer. Voice doctrine v5 bans the interrogative
+                              outright; this is the admission-side half.
+      transcript_furniture    "Earnings call transcript: ..." — a document, not
+                              a story. Whatever is IN it may be news; the
+                              pointer to it is a table of contents.
+      unanchored_geopolitics  "Zelensky Claims North Korea Sending Up To 50K
+                              Troops To Russia, Presses Seoul To Send Missiles"
+                              — a war headline with no market in it. Same rule
+                              the lane already applies to politics through
+                              `_no_market_nexus`, moved to where it is cheap
+                              (before scoring, before any LLM spend) and keyed
+                              to the HEADLINE's own tokens rather than to a
+                              class the scorer had to guess right first.
+
+    CONSERVATIVE BY CONSTRUCTION, like every drop in this module. Three of the
+    four families are keyed to phrase shapes with no straight-news reading. The
+    fourth is the one that could take a real story, so it fires ONLY when the
+    headline carries a war marker AND carries no market token at all — a
+    cashtag, a percentage, a basis point, a currency figure or any of the
+    instrument words below. "Missile strike near Strait of Hormuz halts $XOM
+    $CVX oil shipping" keeps every one of those and survives; the Zelensky
+    headline keeps none and does not. Bare "war" is deliberately NOT a marker:
+    trade war, price war, war-risk premium and bidding war are all market copy.
+
+    `cfg["non_news_disable"]` names families to skip, so an operator can retire
+    one without a deploy.
+    """
+    raw = _norm(text)
+    if not raw:
+        return ""
+    off = {str(x).strip().lower() for x in (cfg or {}).get("non_news_disable", ())
+           if isinstance(cfg, dict)}
+
+    for family, patterns in _NON_NEWS_FAMILIES:
+        if family in off:
+            continue
+        for label, pattern in patterns:
+            if pattern.search(raw):
+                return f"{family}:{label}"
+
+    if "unanchored_geopolitics" not in off:
+        war = _WAR_MARKER_RE.search(raw)
+        if war and not has_market_token(raw):
+            return f"unanchored_geopolitics:{war.group(0).lower()}"
+
+    # LAST, and `include_interrogative=False` is how :func:`headline_is_furniture`
+    # gives the more specific screens (the calendar/wrap phrase list) first claim
+    # on a headline that is both.
+    if (include_interrogative and "meta_clickbait" not in off
+            and _INTERROGATIVE_RE.search(raw)):
+        return "meta_clickbait:interrogative headline"
+
+    return ""
+
+
+def has_market_token(text: str) -> bool:
+    """Does this text name a market at all? A figure, a cashtag or an instrument.
+
+    The escape hatch for :func:`headline_is_non_news`'s geopolitics family, and
+    deliberately GENEROUS: the cost of a false negative here is killing a real
+    market-moving war headline, and the cost of a false positive is relaying one
+    more geopolitics item that the salience floor and `_no_market_nexus` still
+    get to judge downstream. Erring wide is the cheaper error.
+    """
+    raw = _norm(text)
+    if not raw:
+        return False
+    if _MARKET_FIGURE_RE.search(raw):
+        return True
+    if _CASHTAG_RE.search(raw):
+        return True
+    return bool(_MARKET_WORD_RE.search(raw))
+
+
 def headline_is_furniture(
     text: str, *, source_name: str = "", url: str = "", cfg: dict | None = None
 ) -> str:
@@ -400,6 +607,16 @@ def headline_is_furniture(
 
     if _BARE_POINTER_RE.match(raw):
         return "bare_pointer"
+
+    # NAMED NON-NEWS FAMILIES (W2E). Checked BEFORE the wrap branch below on
+    # purpose: that branch carries a market-figure ESCAPE, and every family here
+    # is a shape that carries figures and tickers by construction — the SEO
+    # listicle that motivated this rule names eight of them. Routing them through
+    # an escape written for "Markets wrap: S&P closes -1.8%" would rescue exactly
+    # the items the operator asked us to kill.
+    family = headline_is_non_news(raw, cfg=cfg, include_interrogative=False)
+    if family:
+        return family
 
     hits = _phrase_hits(low, _cfg_list(cfg, "furniture_phrases", _FURNITURE_PHRASES))
     if hits:
@@ -422,7 +639,9 @@ def headline_is_furniture(
     if _PAGE_ARTIFACT_RE.search(raw):
         return "page_artifact"
 
-    return ""
+    # The generic interrogative rule, held to the end so every screen above gets
+    # to name the item more precisely first.
+    return headline_is_non_news(raw, cfg=cfg)
 
 
 def body_defects(text: str, *, cfg: dict | None = None) -> list[str]:

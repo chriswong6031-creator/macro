@@ -50,8 +50,18 @@ You cannot bypass that filter from the worker.
 
 A 2,000–3,500-name universe implies roughly 22–38 calls/day on average at four
 calls per company per year, but earnings-season spikes can be hundreds per day.
-The default safety ceiling is 64 attempts per invocation; the durable queue
-carries overflow and makes repeated scheduled runs safe.
+The default safety ceiling is **256** attempts per invocation (override with
+`EARNINGS_WORKER_LIMIT`); the durable queue carries overflow and makes repeated
+scheduled runs safe.
+
+That ceiling was a flat 64 until 2026-08-14, which was the average-day number
+mistaken for the busy-day number: three scheduled runs a day capped throughput at
+192 while the 2026 Q2 window delivered 294 calls on 07-30, 320 on 08-05 and 462 on
+08-06. Nothing was ever lost — the queue is durable — but the qualitative overlay
+ran permanently behind the records it annotates and could not recover from an
+outage on its own (measured that morning: 990 still pending after a clean 64/64
+run). A scored call costs ~6s on the local Qwen, so 256 is ~26 minutes of a
+three-hour slot and the run lock makes an overrun safe.
 
 ---
 
@@ -188,14 +198,14 @@ run is idempotent, and the second run drains burst overflow or retries a sleepin
 local endpoint. Create a Basic Task → Daily → *Start a program*:
 
 - **Program:** `C:\macro-dashboard\tools\earnings_worker\.venv\Scripts\python.exe`
-- **Arguments:** `run_worker.py --terminal-auto --limit 64`
+- **Arguments:** `run_worker.py --terminal-auto --limit 256`
 - **Start in:** `C:\macro-dashboard\tools\earnings_worker`
 
 Equivalent `schtasks` one-liner (PowerShell, adjust paths):
 
 ```powershell
 schtasks /Create /TN "EarningsQualWorker" /SC DAILY /ST 18:30 ^
-  /TR "C:\macro-dashboard\tools\earnings_worker\.venv\Scripts\python.exe C:\macro-dashboard\tools\earnings_worker\run_worker.py --terminal-auto --limit 64"
+  /TR "C:\macro-dashboard\tools\earnings_worker\.venv\Scripts\python.exe C:\macro-dashboard\tools\earnings_worker\run_worker.py --terminal-auto --limit 256"
 ```
 
 Make sure the task **runs whether the user is logged on or not** only if the R2

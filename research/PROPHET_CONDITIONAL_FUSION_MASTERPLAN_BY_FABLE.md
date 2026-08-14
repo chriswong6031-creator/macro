@@ -260,7 +260,7 @@ reads). `CV` = column(s) in the zero-authority candidates store
 | Liquidity / market cap | scan tier `engine/us_scan_universe.py` | `mdv20_usd`, `turnover_pctile_20d/60d` | **ABSENT-FROM-BOARD** for curated rows (US passes no `featured_extra`; HK does) | `us_board_rank.py:1042` (`featured_extra`, also :1059/:1117) |
 | Blow-off / terminal risk | `engine/roc_blowoff.py` | — | **DISPLAY-ONLY** (`blowoff` 69/69; byte-identity pinned) | `ZERO_SCORE_AUTHORITY` :443-447 |
 | Risk sizing | builder | — | **DISPLAY-ONLY** (69/69) | :437 |
-| Conviction composite / setup | `engine/stock_score.py`, `engine/setups.py` | — | **DISPLAY-ONLY — the measured anti-predictive leg** (69/69) | `conviction_composite` :431, `setup` :432; rationale :11-20 |
+| Conviction composite / setup | `engine/stock_score.py`, `engine/setups.py`, `engine/name_score.py` | — | **DISPLAY on board + GATE/tie-RANK on plan intake** (69/69) | board display: `conviction_composite` :431, `setup` :432; `name_score` overwrite `build_stock_library.py:4274-4318`; plan gate/rank/refusal `prophet_bridge.py:22-24`, `:32`, `:413` |
 | Candidate-pool lanes | `engine/us_candidate_lanes.py` | `pool_*` (9 cols) | **DISPLAY-ONLY** | `us_candidate_lanes.py:22`, `:818`; `TestNoAuthorityLeak` |
 | Filing forensics | `scripts/build_fundamental_forensics.py` | `forensics__*` scalars (bodies dropped, `STAMP_FORBIDDEN_COLUMNS:893-896`) | **ABSENT-FROM-BOARD** | `us_context_vector.py:957-973` |
 
@@ -296,10 +296,15 @@ reads). `CV` = column(s) in the zero-authority candidates store
 
 ### §3.2 `name_score` adjudication input (roadmap §4.4, sharpened)
 
-`engine/name_score.py` is a PARALLEL SCORER, not an input and not dead: zero references in
-`us_board_rank.py`; output lands at `rec["conviction"]["potential"]`
+`engine/name_score.py` is a PARALLEL SCORER, not a `us_board_rank.py` input and not dead:
+zero references in `us_board_rank.py`; output lands at `rec["conviction"]["potential"]`
 (`build_stock_library.py:3724-3731`) and the nightly grader
-(`data/name_score/us_calls.parquet`). Two facts matter for this program: (a) it already
+(`data/name_score/us_calls.parquet`). It is already load-bearing in a side path:
+`potential_score`/band overwrite `rec["conviction"]["score"]`/`["band"]`
+(`build_stock_library.py:4274-4318`), and those published fields GATE and fallback
+tie-RANK the plan-intake funnel (`prophet_bridge.py:22-24`, `:32`, `:413`; executable
+live gate `:1147-1152`, `:1201-1206`, fallback order `:755-785`). Two facts matter for
+this program: (a) it already
 grants the US "event edge" (insider / SUE / revisions z) a ±35%/−30% multiplicative band
 (`_EDGE_BLEND["US"] = (0.20, 0.70, 1.35)`, `name_score.py:117`) — so the estate is NOT
 uniformly zero-authority for these lobes; authority varies by surface, and the stock-page
@@ -713,7 +718,7 @@ are not made.
 | **G0** | Live `us_prophet_v2` order (stage bucket, then priority score), replayed | the champion (replay diverges from what shipped in the v1 era — see G0′) |
 | **G0′** | The actually-PUBLISHED historical order, read off `snapshots.jsonl` | what users saw — mandatory baseline, because the replayed G0 diverges from it by up to 16.3 pts on v1-era boards (§6.6) |
 | **G1** | Residual-alpha ordering (pure `alpha` desc within admitted pool) | is the champion's non-edge machinery adding anything over its own selection axis? |
-| **G2** | `name_score` `potential_score` ordering | the rival in-house composite, finally raced on one ruler (roadmap §4.4's unfinished adjudication) |
+| **G2** | `name_score` `potential_score` ordering | the rival in-house composite, already load-bearing in the plan funnel, finally raced on one ruler (roadmap §4.4's unfinished adjudication) |
 | **G3** | `us_prophet_v2` with the edge leg SIGN-FLIPPED | champion-repair baseline: §6.6 measured `alpha` NEGATIVE against forward excess on the only graded frame — if that holds, any challenger would be credited for fixing a one-leg bug; G3 prices the bug-fix directly |
 | **G4** | `us_prophet_v2` with the edge leg REMOVED, weight redistributed pro-rata | champion-repair baseline: the deletion variant of the same question |
 | **C1** | Independently normalized evidence-family model: one z/percentile per family (§5), equal or IC-sign weights, NO interactions, NO fitting beyond per-family normalization | does breadth of evidence help at all, before any cleverness? |

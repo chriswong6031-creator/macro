@@ -16,6 +16,17 @@ Two guards here, and the second is the one that lasts:
    dimension to grow a paid body leaks in exactly the way forensics did — the
    defect would recur under a different column name and this file would still
    pass.
+
+(2) is a HARD FAILURE and stays one: a producer must classify its column, and a
+test that merely warned would be a suggestion. What changed on 2026-08-14 is what
+happens at RUNTIME to a column that reached the writer unclassified anyway —
+`engine.us_context_vector._contain_unclassified_nonscalars` drops it and prints a
+line-start `::warning`, so it costs that column instead of the whole night's
+stamp. `regime__live` cost six nights of a committed store precisely because the
+only runtime consequence was a `to_parquet` that raised into a fail-soft catch.
+The two halves are pinned against each other in
+:func:`test_the_runtime_drop_and_the_hard_fail_law_agree` below: the runtime must
+never keep something this file would fail on, and never drop something it blesses.
 """
 from __future__ import annotations
 
@@ -180,6 +191,46 @@ def test_the_committed_store_is_swept_for_unclassified_payloads() -> None:
         "forbidden (paid body) or reviewed (deliberately carried) in "
         f"engine/us_context_vector.py: {sorted(set(unclassified))}"
     )
+
+
+def test_the_runtime_drop_and_the_hard_fail_law_agree() -> None:
+    """The writer's runtime containment must implement THIS FILE's classification.
+
+    Two failure modes if they drift: a runtime that keeps an unclassified payload
+    (the leak this file exists to refuse), or a runtime that drops a REVIEWED
+    column (a silent, permanent hole in the store that no test would notice,
+    because absence is not a red anywhere). Both are checked, on the same frame.
+    """
+    import engine.us_context_vector as ucv
+
+    frame = pd.DataFrame({
+        "ticker": ["AAPL", "MSFT"],
+        "options__gex": [{"gamma_regime": "long"}, None],       # REVIEWED
+        "spine__records": [[{"signal_id": "x"}], None],         # REVIEWED
+        "forensics__findings": [[{"title": "PAID"}], None],     # FORBIDDEN
+        "somenewdim__records": [[{"secret": "payload"}], None],  # unclassified
+        "regime__live": [{"quad": "Q2"}, None],                 # the 2026-08-08 leak
+        "regime__quad": ["Q2", "Q2"],                           # scalar: untouched
+    })
+    out = ucv._contain_unclassified_nonscalars(frame.copy())
+
+    for reviewed in sorted(STAMP_REVIEWED_NONSCALAR_COLUMNS):
+        if reviewed in frame.columns:
+            assert reviewed in out.columns, (
+                f"{reviewed} is classified REVIEWED and must survive the writer")
+    for forbidden in sorted(STAMP_FORBIDDEN_COLUMNS):
+        if forbidden in frame.columns:
+            assert forbidden not in out.columns
+    assert "somenewdim__records" not in out.columns
+    assert "regime__live" not in out.columns
+    assert "regime__quad" in out.columns
+
+    # ...and what survived must itself pass this file's own sweep.
+    for column in out.columns:
+        series = out[column].dropna()
+        if len(series) and _is_nonscalar(series.iloc[0]):
+            assert (column in STAMP_FORBIDDEN_COLUMNS
+                    or column in STAMP_REVIEWED_NONSCALAR_COLUMNS), column
 
 
 #: Payload FIELD suffixes, matched across every dimension prefix. The flatten in
