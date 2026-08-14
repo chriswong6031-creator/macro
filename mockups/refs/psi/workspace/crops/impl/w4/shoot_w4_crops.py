@@ -14,8 +14,11 @@ behind it renders thirteen beautifully-worded rows that all say "not covered". T
 the wave's own success criterion rendering as a total data failure — the most persuasive
 false green available to this build. So the gate asserts BOTH directions:
 
-  * the rich name's drawer must contain NO absent-branch rows, and
-  * the sparse name's drawer must contain SOME — and also some real ones.
+  * the rich name's drawer must contain AT MOST `RICH_MAX_NA` absent rows, and
+  * the sparse name's drawer must contain AT LEAST `SPARSE_MIN_NA` — and some real ones.
+
+Both thresholds are measured, not chosen: over the 1,613 real-size artifacts the
+absent-section count runs 2..13, AAPL sits at 2 (Events, Transmission) and RIVN at 9.
 
 A run where every row is honest is a run with no data, and it exits non-zero.
 
@@ -31,13 +34,16 @@ dependency set, so a pytest wrapper here would SKIP in CI and report green while
 nothing. The node-shelled half of this wave's evidence is `tests/test_watchlist_drawer_js.py`,
 which DOES run in CI.
 """
+import argparse
 import functools
 import http.server
 import json
 import pathlib
 import re
+import shutil
 import socketserver
 import subprocess
+import tempfile
 import sys
 import threading
 import time
@@ -48,7 +54,8 @@ HERE = pathlib.Path(__file__).resolve()
 # w4 / impl / crops / workspace / psi / refs / mockups / <worktree>
 ROOT = HERE.parents[7]
 assert (ROOT / "templates" / "watchlist.html.j2").exists(), ROOT
-OUT = HERE.parent
+FINAL = HERE.parent      # the committed evidence directory
+OUT = FINAL              # rebound to a staging dir in main(); see the promote step
 SITE = ROOT / "site"
 PORT = 8874
 BASE = "http://127.0.0.1:%d" % PORT
@@ -66,18 +73,38 @@ VARIANTS = [
 
 # The twelve-position book the W2/W3 harnesses use, plus a watchlist, because W4's
 # acceptance row is that the drawer opens from BOTH modes' rows.
-WL = ["AAPL", "NVDA", "MSFT", "AVGO", "LLY", "GLD", "TLT", "XOM"]
+WL = ["AAPL", "NVDA", "MSFT", "AVGO", "LLY", "RIVN", "GLD", "XOM"]
+# `loc-13` is added here rather than in the shared `preview_seed.js`, which the W2 and
+# W3 harnesses also load — a wave does not get to change the book its predecessors shot.
 SEED = ("window.__W2.clear(); window.__W2.book();"
+        "var b=JSON.parse(localStorage.getItem('mdash.pf.v1'));"
+        "b.rows.push({id:'loc-13',ticker:'RIVN',shares:420,entry_price:13.10,"
+        "entry_date:'2025-09-02',status:'open'});"
+        "localStorage.setItem('mdash.pf.v1', JSON.stringify(b));"
         "window.__W2.list(%s); window.__W2.seen(%s);" % (json.dumps(WL), json.dumps(WL)))
 SEED_ANON = ("window.__W2.clear();"
              "window.__W2.entry('AAPL, MSFT, NVDA, AVGO, GOOGL, AMZN, GLD, TLT','equal');")
 
-# The rich name and the sparse one, chosen by READING the artifacts rather than by
-# guessing: AAPL carries an options plane, theme memberships and a note trail; TLT
-# carries none of the three and does carry macro sensitivity and ownership filings. The
-# second is the wave's honest-degradation scene and it must not be a drawer of nothing.
+# The rich name and the sparse one, chosen by MEASURING every artifact in the library
+# rather than by picking a plausible ticker.
+#
+# The first version used TLT, and it was wrong in a way the crop could not show: TLT's
+# artifact here is 1,354 bytes against a 59,273-byte median — one of 16 stub-grade files
+# in this directory — so the "degraded" scene was photographing a broken FILE, not a
+# sparse name. Worse, the README's rationale for it ("carries macro sensitivity and
+# ownership filings") was falsified by the crop itself: the stub has those KEYS but not
+# the fields the rows read, so both rendered n/a.
+#
+# RIVN is a real 50KB artifact that renders 5 real rows and 9 honest-absence rows
+# (Events, Estimates, Balance sheet, Who's selling, Rate sensitivity, Options, Macro
+# sensitivity, Ownership, Transmission). AAPL renders 12 real and 2 absent. Both counts
+# are asserted below, and `assert_not_stub_grade` refuses the class of file that made
+# the first attempt meaningless.
 RICH = ("loc-3", "AAPL")
-SPARSE = ("loc-11", "TLT")
+SPARSE = ("loc-13", "RIVN")
+RICH_MAX_NA = 3        # AAPL measures 2; the margin is for nightly drift
+SPARSE_MIN_NA = 5      # RIVN measures 9
+MIN_ARTIFACT_BYTES = 20000   # the 16 stubs here are all <2KB; the median is ~59KB
 
 
 def link_nightly_artifacts() -> list:
@@ -113,6 +140,31 @@ def link_nightly_artifacts() -> list:
     return made
 
 
+def assert_not_stub_grade(*tickers) -> None:
+    """Refuse to shoot a scene over a stub.
+
+    `site/stockdata/` mixes real nightly artifacts with a handful of tiny placeholder
+    files (16 of them here, all under 2KB against a ~59KB median). A stub renders as a
+    drawer of honest-absence rows, which is EXACTLY what a "degraded name" scene is
+    supposed to look like — so the crop is indistinguishable from the real thing and the
+    evidence silently becomes a photograph of a broken file. That is what the first
+    version of this harness did with TLT.
+
+    Size alone is not enough: the row builders read nested fields, so a file can be big
+    and still not carry what a scene claims. Both are checked."""
+    for t in tickers:
+        f = SITE / "stockdata" / (t + ".json")
+        assert f.is_file(), "%s has no artifact — the scene cannot be shot" % t
+        size = f.stat().st_size
+        assert size >= MIN_ARTIFACT_BYTES, (
+            "%s.json is %d bytes (< %d) — that is a stub, not a sparse name. A crop of "
+            "it would document a broken file as a product state."
+            % (t, size, MIN_ARTIFACT_BYTES))
+        j = json.loads(f.read_text())
+        assert isinstance(j, dict) and j.get("tech"), \
+            "%s carries no `tech` block — it cannot render a real row" % t
+
+
 def render_preview() -> None:
     sys.path.insert(0, str(ROOT))
     from jinja2 import Environment, FileSystemLoader
@@ -138,7 +190,7 @@ def render_preview() -> None:
                   lambda m: '%s="%s?cb=%s"' % (m.group(1), m.group(2), tok), html)
     html = html.replace("<head>", '<head>\n<script src="__w4seed.js"></script>', 1)
     (SITE / "__w4preview.html").write_text(html)
-    (SITE / "__w4seed.js").write_text((OUT.parent / "preview_seed.js").read_text())
+    (SITE / "__w4seed.js").write_text((FINAL.parent / "preview_seed.js").read_text())
     print("rendered preview ->", SITE / "__w4preview.html")
 
     # ANONYMOUS variant — the four account-gated scripts are REMOVED, not disabled,
@@ -247,8 +299,19 @@ def shoot(page, name):
     print("  ->", name + ".png")
 
 
-def main():
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--keep-staging", action="store_true",
+                    help="leave the staging directory in place for inspection")
+    args = ap.parse_args(argv)
+
+    global OUT
+    staging = pathlib.Path(tempfile.mkdtemp(prefix="w4crops-"))
+    OUT = staging
+    print("staging ->", staging)
+
     linked = link_nightly_artifacts()
+    assert_not_stub_grade(RICH[1], SPARSE[1])
     render_preview()
     srv = serve()
     errs, overflow, problems = [], [], []
@@ -282,9 +345,10 @@ def main():
                         problems.append((vstem, "%d drawer rows rendered an EMPTY read" % st["blank"]))
                     # THE FALSE-GREEN GATE. With no artifacts every section renders its
                     # honest-absence line and the drawer photographs as a working one.
-                    if st["na"] > 3:
-                        problems.append((vstem, "rich drawer rendered %d not-covered rows — "
-                                                "this run had no data behind it" % st["na"]))
+                    if st["na"] > RICH_MAX_NA:
+                        problems.append((vstem, "rich drawer rendered %d not-covered rows "
+                                                "(max %d) — this run had no data behind it"
+                                         % (st["na"], RICH_MAX_NA)))
                     if st["t1"] != 1:
                         problems.append((vstem, "Tier 1 block count = %d" % st["t1"]))
                 if size == MOBILE and hscroll(page) > 0:
@@ -301,8 +365,10 @@ def main():
                     if st["blank"]:
                         problems.append((vstem, "%d sparse rows rendered EMPTY" % st["blank"]))
                     # both halves of honest degradation, in one drawer
-                    if st["na"] < 1:
-                        problems.append((vstem, "the sparse name reported no gaps at all"))
+                    if st["na"] < SPARSE_MIN_NA:
+                        problems.append((vstem, "the sparse name reported only %d gaps "
+                                                "(min %d) — is it still sparse?"
+                                         % (st["na"], SPARSE_MIN_NA)))
                     if st["na"] >= st["rows"]:
                         problems.append((vstem, "the sparse drawer was ENTIRELY gaps — no data"))
                 if size == MOBILE and hscroll(page) > 0:
@@ -418,7 +484,24 @@ def main():
         print("PAGE-LEVEL HORIZONTAL SCROLL at 390px:", overflow); ok = False
     else:
         print("zero page-level horizontal scroll at 390px with a drawer open")
-    sys.exit(0 if ok else 1)
+
+    # PROMOTE ONLY ON SUCCESS. The first version wrote all 25 PNGs straight into the
+    # committed directory as it went, and only then ran its assertions — so a failing
+    # run replaced good evidence with bad, and a bare `main()` at module scope meant
+    # even `--help` did it. Shoot to a temp dir, assert, and copy in only if every gate
+    # passed; a failed run leaves the committed crops exactly as they were.
+    if not ok:
+        print("\nFAILED — the committed crops were NOT touched. Staging kept at", staging)
+        return 1
+    shot = sorted(staging.glob("*.png"))
+    assert shot, "the run reported success and produced no PNGs"
+    for f in shot:
+        shutil.copy2(f, FINAL / f.name)
+    print("\npromoted %d crops -> %s" % (len(shot), FINAL))
+    if not args.keep_staging:
+        shutil.rmtree(staging, ignore_errors=True)
+    return 0
 
 
-main()
+if __name__ == "__main__":
+    sys.exit(main())

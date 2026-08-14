@@ -293,8 +293,16 @@
                        : 'about ' + p + '% above its 200-day line';
     var lineZh = below ? '低于200日线约' + p + '%' : '高于200日线约' + p + '%';
     if (grade === 'parabolic') {
-      return { en: 'Parabolic — extreme extension, ' + lineEn + '. Protect gains.',
-               zh: '抛物线拉伸——极端偏离，' + lineZh + '。注意保护利润。' };
+      /* The gain-protection imperative that used to close this sentence is barred from
+         holdings surfaces BY NAME (DESIGN_NOTES §7(b)): it sits in the ratified stance
+         set and stays legal elsewhere, but on a page showing someone's actual positions
+         it reads as a trade instruction rather than a description of state. The
+         extension figure already carries the read.
+         (Written around the phrase deliberately — `tests/test_watchlist_workspace_js.py`
+         greps this file for the quoted form, and a comment that names it would trip the
+         guard that proves it is gone.) */
+      return { en: 'Parabolic — extreme extension, ' + lineEn + '.',
+               zh: '抛物线拉伸——极端偏离，' + lineZh + '。' };
     }
     if (grade === 'stretched') {
       return { en: 'Stretched — ran hard, ' + lineEn + '. Entries here have chased before.',
@@ -360,20 +368,6 @@
      hash form is the only one that arrives carrying a name. */
   function dossierHref(t) { return 'stock.html#' + encodeURIComponent(t); }
 
-  /* The drawer's anonymous body. Not a shorter drawer and not a blurred one: the gated
-     bundle never reaches an anonymous visitor at all (packet §14 A9), so the honest
-     shape is the page's own lock grammar saying what an account delivers. Nothing
-     board-tier is named, and the count ladder stays where it belongs — this is a
-     `.lockshell`, the same one the Risk Center uses signed-out. */
-  function lockedDrawerHTML() {
-    return '<div class="lockshell"><span class="lk">◇</span><span>' +
-      '<b>' + te('What we know about this name', '我们对这只票的了解') + '</b>' +
-      te('Where it sits in its own cycle, what its checks say, what is coming, and how it fits the rest of your book — all of it arrives with a free account.',
-         '它处在自己周期的哪一段、各项检查怎么说、接下来有什么事件、以及它和你账簿其余部分的关系 —— 这些都随免费账户一起提供。') +
-      '<button class="cta" type="button" data-gate-save="1">' +
-      te('Save + get alerts — Free', '保存并接收提醒 —— 免费') + '</button></span></div>';
-  }
-
   /* The drawer is where the 390px demotions live (Day, Since entry, Risk share,
      Sector) AND where the per-name detail appears. Its honesty rule: when a lane the
      drawer would normally show cannot be read, the drawer SAYS SO on its own line —
@@ -409,15 +403,16 @@
     out += '</div>';
 
     if (!window.WRI || !window.WRI.intelSections) {
-      /* The gated intelligence layer is not on the page. Anonymously that is the
-         DESIGNED state (packet §14 A9) and the lock shell is the honest read; signed in
-         it means the bundle failed, and saying "free account" to someone who has one
-         would be a lie, so the two cases get different sentences. */
-      out += (wsState() === 'signed')
-        ? '<div class="drw-honest">' + te(
-            'The detail layer for this name did not load. That is a gap in what we can show you, not a clean bill of health.',
-            '这只票的详情层没有加载出来。这是我们能展示的内容缺了一块，不代表它没问题。') + '</div>'
-        : lockedDrawerHTML();
+      /* The gated intelligence layer is not on the page — which here can only mean the
+         bundle failed, never that the visitor is anonymous. `render()` returns early on
+         every `anon*` state, so this file NEVER paints a drawer for a signed-out
+         visitor; that path belongs to watchlist.js, which draws the lock shell. This
+         branch used to carry a lock shell of its own for the anonymous case, and it was
+         unreachable code telling an audience it could not have that they needed a free
+         account they already had. */
+      out += '<div class="drw-honest">' + te(
+        'The detail layer for this name did not load. That is a gap in what we can show you, not a clean bill of health.',
+        '这只票的详情层没有加载出来。这是我们能展示的内容缺了一块，不代表它没问题。') + '</div>';
     } else if (j === null || j === undefined) {
       /* Truly uncovered, or not read yet — either way we have no lanes. One honest
          line, never an empty drawer that reads as "all clear". */

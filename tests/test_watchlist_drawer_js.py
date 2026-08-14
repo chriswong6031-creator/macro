@@ -36,6 +36,7 @@ behind minimal window/document stubs with readyState 'loading' so init() never r
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -46,6 +47,19 @@ import pytest
 
 HAS_NODE = shutil.which("node") is not None
 needs_node = pytest.mark.skipif(not HAS_NODE, reason="node not on PATH")
+
+
+def test_node_is_present_when_this_runs_on_ci():
+    """A SKIP is not a PASS, and on CI it is indistinguishable from one.
+
+    Every node-shelled test in this file carries `@needs_node`, so with node off PATH
+    35 of the 45 skip silently, 10 pass, pytest exits 0 and the workflow step turns
+    green having proved nothing — while the job's own comment claims the suite "skips
+    loudly". Loudly is this: on CI, a missing node is a FAILURE."""
+    if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
+        assert HAS_NODE, (
+            "node is not on PATH and this suite is node-shelled — every browser-module "
+            "test would SKIP and the step would green. Fix the runner, do not skip.")
 
 ROOT = Path(__file__).resolve().parents[1]
 WRISK = ROOT / "templates" / "watchlist_risk.js"
@@ -104,7 +118,11 @@ def _wr(js_body: str, extra: dict | None = None, lang: str = "en") -> dict:
 
 # the six W4 sections, by their exported builder name. `role` is the one fed from book
 # state rather than the per-name JSON, so its empty case is a different call shape.
-JSON_SECTIONS = ["optionsRow", "macroRow", "themeRow", "ownersRow", "notesRow"]
+# `chainSection` is here and `chainRows` is not, deliberately: the drawer's transmission
+# row must obey the never-empty invariant like every other section, while the RAIL's
+# `chainRows` keeps the old contract where '' means "draw nothing here".
+JSON_SECTIONS = ["optionsRow", "macroRow", "themeRow", "ownersRow", "notesRow",
+                 "chainSection"]
 
 # a real payload shape, trimmed to the fields each builder reads. Values are taken from
 # site/stockdata/AAPL.json so the "present" branch is exercised against the real schema
@@ -147,6 +165,7 @@ FULL = {
                           "detail": "BUY SETUP.", "detail_zh": "买入预备。"},
                "timeline": [{"daylabel": "Jun 29, 2026", "daylabel_zh": "2026年6月29日", "events": []}]},
 }
+
 
 
 def _rs_text(html: str) -> str:
@@ -300,23 +319,28 @@ def test_the_chain_row_tips_are_not_double_escaped():
 @pytest.mark.parametrize(
     "lanes,role,expect",
     [
-        # nothing on any lane -> nothing needs a decision
+        # nothing on any lane and no badge -> nothing needs a decision
         ({}, None, "none"),
-        # the role ladder fired -> Watch, whatever the lanes look like
-        ({}, {"kind": "review"}, "watch"),
-        # an elevated NON-event lane -> Watch
-        ({"price_trend": "elev"}, None, "watch"),
-        # an earnings date inside its window raises the EVENTS lane to elev; that is
-        # something to be ready for, not something wrong. Without this carve-out every
-        # name in an earnings week reads Watch.
-        ({"events": "elev"}, None, "ready"),
-        # a watch-tier lane -> Get ready
+        # the ladder's SEVERE rungs -> Watch. These are the two the role ladder itself
+        # grades above plain review (exit_review / trim_review), and using its own
+        # grading is what stops Watch from being a constant.
+        ({}, {"kind": "exit"}, "watch"),
+        ({}, {"kind": "trim"}, "watch"),
+        # the ladder's BOTTOM rung is not the top tier. It fires on 26% of the library
+        # by itself; promoting it to Watch is what made Watch 93.5%.
+        ({}, {"kind": "review"}, "ready"),
+        # a lane signal with no badge at all -> Get ready
+        ({"price_trend": "elev"}, None, "ready"),
         ({"stretch": "watch"}, None, "ready"),
-        # events elev alongside a real elevated lane -> Watch wins
-        ({"events": "elev", "balance": "elev"}, None, "watch"),
+        ({"events": "elev"}, None, "ready"),
+        # a severe badge outranks everything below it
+        ({"price_trend": "elev", "balance": "elev"}, {"kind": "exit"}, "watch"),
     ],
 )
-def test_the_stance_precedence_is_the_one_the_attention_stack_uses(lanes, role, expect):
+def test_the_stance_precedence_uses_the_role_ladders_own_grading(lanes, role, expect):
+    """MUTATION CHECK: collapse the two branches back to `if (role) return 'watch'` and
+    the `{"kind": "review"} -> ready` case reds — which is the exact flattening that
+    measured 93.5% Watch across the production library."""
     built = {k: {"state": "ok"} for k in
              ["price_trend", "stretch", "events", "estimates", "balance", "selling", "rates"]}
     for k, st in lanes.items():
@@ -386,7 +410,188 @@ def test_the_engines_instruction_string_never_reaches_a_holdings_surface():
     out = _wr("OUT({html: WR.intelTier1('AAPL', P)});", {"P": FULL})
     assert "take a half position" not in out["html"]
     assert "建半仓" not in out["html"]
-    assert "Cycle turn" in out["html"], "the headline should be what renders"
+    # and the HEADLINE is not what renders either — the mapped state copy is
+    assert "Cycle turn" not in out["html"], "the raw engine headline reached the DOM"
+    assert "Turning, but not confirmed yet" in out["html"]
+
+
+# ===========================================================================
+# 4b. THE DE-IMPERATIVE LAW — the glance tier may not carry a trade instruction
+# ===========================================================================
+# Packet §0: "descriptive language only — no buy/sell/add/hedge imperatives".
+# DESIGN_NOTES §7(b) additionally bars "Act" and "Protect gains" on holdings surfaces
+# BY NAME. Measured on the 1,629 production artifacts, the engine's own
+# `entry_signal.headline` carries an imperative on 1,085 of them (66.6%), so a
+# passthrough is not an edge case — it is the default rendering.
+# TWO lists, because there are two different laws and one of them is about GRAMMAR.
+#
+# STRICT (word-level) applies to Tier-1 copy and to the tooltips that quote an engine
+# string. These surfaces speak in the product's voice, so a trading verb in them is the
+# product telling the reader what to do.
+BANNED_EN = [
+    "buy", "sell", "add ", "hedge", "exit", "reduce", "protect", "trim",
+    "chase", "half size", "take profit", "position here", "wait for",
+    "don't add", "entry open", "act now",
+]
+BANNED_ZH = [
+    "买入", "卖出", "加仓", "减仓", "离场", "止盈", "保护利润", "建半仓",
+    "半仓", "追高", "入场窗口", "不宜加仓", "等待回撤", "请",
+]
+
+# IMPERATIVE (phrase-level) applies to the WHOLE drawer, and it is deliberately narrower
+# — because a word-level ban over the whole composition is wrong, not merely strict. The
+# Ownership row renders "insiders: 5 selling, 0 buying" and "1 adding, 0 trimming": those
+# are DESCRIPTIONS OF OTHER PEOPLE'S FILED BEHAVIOUR, which is exactly the content the CEO
+# handoff §10 asks that section for. Banning "selling" from a section about who is selling
+# would delete the requirement to satisfy the guard. What is barred is the instruction
+# MOOD directed at the reader, so the list is phrases.
+#
+# Verified to catch all eight imperatives the engine actually emits: "wait for a
+# pullback" (588), "Buy soon" (252), "don't add here" (104), "protect gains" (50), "Wait
+# for the pullback" (34), "half size" (29), "Buy zone / entry open" (25), "Exit /
+# reduce" (3) — plus the alert vocabulary ("BUY ZONE", "BUY SETUP", "take profit").
+IMPERATIVE_EN = [
+    "buy soon", "buy zone", "buy now", "buy setup", "wait for", "don't add",
+    "do not add", "protect gains", "half size", "half position", "take profit",
+    "back up the truck", "add here", "trim here", "exit /", "entry open",
+]
+IMPERATIVE_ZH = [
+    "等待回撤", "不宜加仓", "保护利润", "建半仓", "止盈", "买入区",
+    "入场窗口", "即将买入", "离场/减仓", "可建半仓",
+]
+
+
+def _banned_hits(text):
+    low = text.lower()
+    return ([w for w in BANNED_EN if w in low] +
+            [w for w in BANNED_ZH if w in text])
+
+
+def _imperative_hits(text):
+    low = text.lower()
+    return ([w for w in IMPERATIVE_EN if w in low] +
+            [w for w in IMPERATIVE_ZH if w in text])
+
+
+def test_the_imperative_list_catches_every_instruction_the_engine_emits():
+    """The guard's own guard. `IMPERATIVE_*` is narrower than a word ban, so it has to be
+    shown to still catch the real vocabulary — otherwise narrowing it is just weakening
+    it. These are the engine's verbatim headlines and alert strings, measured from the
+    production library."""
+    for phrase in [
+        "Extended \u2014 wait for a pullback", "Buy soon \u2014 on confirmation",
+        "Hold \u2014 don't add here", "Topping \u2014 protect gains",
+        "Wait for the pullback", "Partial entry \u2014 half size now",
+        "Buy zone \u2014 entry open now", "Exit / reduce \u2014 rolling over",
+        "BUY ZONE \u2192 NEARING A HIGH", "BUY SETUP. A new cycle low likely formed",
+        "\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4",
+        "\u89c1\u9876 \u2014 \u4fdd\u62a4\u5229\u6da6",
+        "\u6301\u6709 \u2014 \u6b64\u5904\u4e0d\u5b9c\u52a0\u4ed3",
+    ]:
+        assert _imperative_hits(phrase), "the imperative list misses %r" % phrase
+    # and it does NOT fire on the descriptive third-party facts the drawer must render
+    for ok in ["insiders: 5 selling, 0 buying", "1 adding, 0 trimming",
+               "4 of the funds we track hold it",
+               "\u5185\u90e8\u4eba\uff1a5 \u4eba\u5356\u51fa\u30010 \u4eba\u4e70\u5165"]:
+        assert not _imperative_hits(ok), "%r is a description, not an instruction" % ok
+
+
+@needs_node
+def test_every_string_the_tier_one_mapper_can_emit_is_descriptive():
+    """The WHOLE mapping table, not one fixture. A ban-token test over a single sample
+    proves one row; this walks every entry the table can ever emit, in both languages,
+    plus the fallback pair.
+
+    MUTATION CHECK: put any engine headline ("Extended — wait for a pullback", "Topping
+    — protect gains") into T1_STATE and this reds on the token."""
+    table = _wr("OUT({t: WR.T1_STATE, f: [WR.t1Fallback({tech:{above200:true}}), "
+                "WR.t1Fallback({tech:{above200:false}}), WR.t1Fallback({})]});")
+    pairs = list(table["t"].values()) + table["f"]
+    assert len(pairs) >= 12, "the mapping table shrank: %d entries" % len(pairs)
+    for pair in pairs:
+        for lang in ("en", "zh"):
+            hits = _banned_hits(pair[lang])
+            assert not hits, "Tier-1 copy %r carries %s" % (pair[lang], hits)
+
+
+@needs_node
+def test_the_engine_headline_never_reaches_the_dom_at_any_tier():
+    """`entry_signal.headline` AND `.action` are both engine trade instructions. Neither
+    may be rendered, and the map is keyed on `status` so a reworded headline still lands
+    on descriptive copy instead of falling through to passthrough.
+
+    MUTATION CHECK: restore `es.headline` as the lead (or add a
+    `|| es.headline` fallback) and this reds on the headline text itself."""
+    payload = dict(FULL)
+    payload["entry_signal"] = {
+        "status": "extended",
+        "headline": "Extended \u2014 wait for a pullback",
+        "headline_zh": "\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4",
+        "action": "take a half position here",
+    }
+    out = _wr("OUT({html: WR.intelTier1('X', P), lead: WR.intelLead(P)});", {"P": payload})
+    assert "wait for a pullback" not in out["html"]
+    assert "\u7b49\u5f85\u56de\u64a4" not in out["html"]
+    assert "half position" not in out["html"]
+    assert not _banned_hits(out["html"]), _banned_hits(out["html"])
+    assert out["lead"]["en"] == "Extended \u2014 no pullback yet"
+
+
+@needs_node
+def test_an_unknown_status_falls_back_to_a_state_read_not_to_the_engine_string():
+    """A total map stops being total the moment its fallback is a passthrough."""
+    payload = {"entry_signal": {"status": "some_new_status_the_engine_added",
+                                "headline": "Buy now \u2014 back up the truck"},
+               "tech": {"above200": True}}
+    out = _wr("OUT({lead: WR.intelLead(P), html: WR.intelTier1('X', P)});", {"P": payload})
+    assert "Buy now" not in out["html"] and "truck" not in out["html"]
+    assert out["lead"]["en"] == "Holding above its 200-day line"
+    payload2 = {"entry_signal": {"status": "unknown_x", "headline": "Sell it all"}}
+    out2 = _wr("OUT({lead: WR.intelLead(P)});", {"P": payload2})
+    assert out2["lead"]["en"] == "No state read for this name tonight."
+
+
+@needs_node
+def test_the_pinned_alert_note_is_never_quoted_into_a_tooltip():
+    """`alerts.pinned` is written in the same trading voice: 1,292 of the 1,611 names
+    carrying one (80.2%) include a banned token ("BUY ZONE", "BUY SETUP", "take
+    profit"). The notes row counts and dates the trail; it does not quote it.
+
+    MUTATION CHECK: put `p.headline`/`p.detail` back in the tip and this reds."""
+    out = _wr("OUT({html: WR.notesRow(P)});", {"P": FULL})
+    assert "DOWNTREND" not in out["html"] and "BUY SETUP" not in out["html"]
+    assert not _banned_hits(out["html"]), _banned_hits(out["html"])
+
+
+@needs_node
+def test_no_section_of_a_fully_populated_drawer_carries_a_trade_instruction():
+    """The whole composition, over the realistic payload — Tier 1 and all thirteen
+    Tier-2 rows including every tip attribute."""
+    out = _wr("OUT({html: WR.intelTier1('AAPL', P) + WR.intelSections('AAPL', P, "
+              "{inBook:true, weightPct:16.2})});", {"P": FULL})
+    hits = _imperative_hits(out["html"])
+    assert not hits, "the drawer carries %s" % hits
+
+
+@needs_node
+def test_a_past_earnings_date_is_not_reported_as_a_coming_one():
+    """`earnings.next_date` goes stale: measured across the library, 1,197 of the 1,205
+    names carrying one are already PAST it, because the per-ticker artifacts bake on a
+    cadence the earnings calendar outruns. The lane guarded its CHIP for this and not its
+    state or its sentence, so it read "reports Jul 30" in a confident `ok` about a date
+    that had come and gone.
+
+    MUTATION CHECK: drop the `past` branch and this reds on both the state and the verb."""
+    past = {"earnings": {"next_date": "2020-03-04", "next_time": "after-hours"}}
+    out = _wr("OUT({lane: WR.laneRead(P).events});", {"P": past})
+    assert out["lane"]["state"] == "na", out["lane"]
+    assert "last reported" in out["lane"]["en"], out["lane"]["en"]
+    assert "reports " not in out["lane"]["en"]
+    assert out["lane"]["chip"] is None
+    # a genuinely future date still reads forward, with its window state intact
+    fut = {"earnings": {"next_date": "2099-01-05", "next_time": "after-hours"}}
+    out2 = _wr("OUT({lane: WR.laneRead(P).events});", {"P": fut})
+    assert out2["lane"]["state"] == "ok" and out2["lane"]["en"].startswith("reports ")
 
 
 # ===========================================================================
@@ -459,7 +664,7 @@ def test_the_signed_in_drawer_renders_the_composition():
     html = out["html"]
     assert 'class="lockshell' not in html
     assert html.count('class="wri-lrow"') >= 12, html.count('class="wri-lrow"')
-    assert "Cycle turn" in html and "Magnificent Seven" in html
+    assert "Turning, but not confirmed yet" in html and "Magnificent Seven" in html
     # a watchlist name is watched, not held — no weight is invented for it
     assert "watchlist, so it carries no weight" in html
     assert "stock.html#AAPL" in html
@@ -513,6 +718,45 @@ def test_the_falling_days_claim_never_says_not_three_over_three():
 
 
 @needs_node
+def test_the_falling_days_claim_handles_the_capped_route():
+    """Route 2 of 3. calm 9.0 / stress 7.0 over six names: BOTH clamp to the name count,
+    so every figure the tab could print is the display cap rather than the measurement.
+
+    The 1dp cure does NOT work here — `shown` caps too, so it prints "6.0 ... 6.0" and
+    "tightens, but not by a whole direction" becomes a FALSE quantitative claim hiding
+    two whole directions. The capped case names the cap and makes no numeric claim.
+
+    MUTATION CHECK: set `bounded = false` and this reds."""
+    held = ["A", "B", "C", "D", "E", "F"]
+    out = _wr("OUT({html: WR.stressHTML(RR, null)});", {"RR": {"hasStress": True, "diverges": True, "stressOnlyPairs": [{"a": "A", "b": "B", "rho": 0.74}], "calm": {"ok": True, "held": held, "enb": 9.0, "topFactorShare": 0.42}, "stress": {"ok": True, "held": held, "enb": 7.0, "topFactorShare": 0.51}}})
+    html = out["html"]
+    claim = html[:html.index("</p>")] if "</p>" in html else html
+    assert "not by a whole direction" not in claim, \
+        "the capped case claimed a sub-unit change it cannot measure"
+    assert "not <span" not in claim
+    assert "display limit" in claim, claim[:300]
+    assert "6.0" not in claim, "a capped figure was printed as if it were a measurement"
+
+
+@needs_node
+def test_the_falling_days_claim_handles_the_floored_route():
+    """Route 3 of 3. calm 0.8 / stress 0.4: both floor at one direction.
+
+    MUTATION CHECK: remove the `Math.max(1, ...)` floor from `shown` and this reds —
+    the claim starts printing "0.8" for a book that cannot move in less than one
+    direction, contradicting the whole number beside it."""
+    held = ["A", "B", "C", "D", "E", "F"]
+    out = _wr("OUT({html: WR.stressHTML(RR, null), c: WR.enbClamp(0.8, 6), "
+              "s: WR.enbClamp(0.4, 6)});", {"RR": {"hasStress": True, "diverges": True, "stressOnlyPairs": [{"a": "A", "b": "B", "rho": 0.74}], "calm": {"ok": True, "held": held, "enb": 0.8, "topFactorShare": 0.42}, "stress": {"ok": True, "held": held, "enb": 0.4, "topFactorShare": 0.51}}})
+    assert out["c"]["shown"] == 1 and out["s"]["shown"] == 1, (out["c"], out["s"])
+    html = out["html"]
+    claim = html[:html.index("</p>")] if "</p>" in html else html
+    assert "floor of one direction" in claim, claim[:300]
+    assert "not by a whole direction" not in claim
+    assert "0.8" not in html and "0.4" not in html
+
+
+@needs_node
 def test_the_ordinary_falling_days_claim_still_uses_whole_numbers():
     """The cure is scoped to the degenerate case. A whole number is the right unit for
     'how many separate directions' and the ordinary claim keeps it."""
@@ -535,12 +779,22 @@ def test_the_ordinary_falling_days_claim_still_uses_whole_numbers():
 # ===========================================================================
 def test_every_class_the_drawer_emits_has_a_rule_on_this_page():
     """The `.wri-*` classes shipped unstyled for a whole wave because the block that
-    styled them was deleted with the braid hero. Same failure mode, same file: the
-    drawer's own classes are checked against the template that renders it."""
-    css = TEMPLATE.read_text()
-    for cls in ("drw-t1", "drw-lead", "drw-quiet", "drw-full", "wri-lrow", "wri-q",
-                "att-stance", "lockshell", "drw-act", "drw-honest"):
-        assert "." + cls in css, "%s is emitted by the drawer and styled nowhere" % cls
+    styled them was deleted with the braid hero. Same failure mode, same remedy — but
+    DERIVED, not hand-listed: a hand-written list covers exactly the classes whoever
+    wrote it thought of, which is why `.wri-rail-chain` sat unstyled from #3527 until
+    this wave. The set is read out of the emitters, so the next class someone adds is
+    covered on the day they add it."""
+    css = TEMPLATE.read_text() + (ROOT / "templates" / "theme.css").read_text()
+    emitted = set()
+    for path in (WRISK, PORTFOLIO, WATCHLIST):
+        src = path.read_text()
+        for m in re.finditer(r"""class=\\?["']([^"'\\]+)""", src):
+            for cls in m.group(1).split():
+                if cls.startswith(("wri-", "drw-")) or cls in ("drw", "att-stance", "lockshell"):
+                    emitted.add(cls)
+    assert len(emitted) >= 10, "the class harvester found almost nothing: %s" % sorted(emitted)
+    missing = sorted(c for c in emitted if ("." + c) not in css)
+    assert not missing, "emitted by the drawer and styled nowhere: %s" % missing
 
 
 def test_dark_is_keyed_on_the_bare_root_not_an_attribute():
@@ -562,9 +816,19 @@ def test_no_translated_text_rides_a_title_attribute():
     JS file EMITTING a title attribute is outside its reach — which is how
     `watchlist.js` shipped `title="从清单移除"` on the legacy remove button, beside an
     `aria-label` already carrying the same string. These three files emit none."""
+    # a REGEX over `title\s*=`, not the literal `title="`. Single-quoted emission,
+    # a space before the `=`, or a concatenated attribute name all slip past a literal
+    # — and emitter-quoting has switched off a guard in this repo before.
+    # Matched at the EMIT shape — an attribute name, `=`, and the OPENING QUOTE of its
+    # value — so single-quoted emission and whitespace around the `=` are both caught,
+    # while prose naming the attribute (including the comment recording this fix) is not
+    # a rendered attribute. A literal `'title="'` was the first version and would miss
+    # `title ='` and `title='`; the emitter-quoting trap has switched off a guard in this
+    # repo before, which is why this is a pattern and not a substring.
+    pat = re.compile(r"""(?<![-\w])title\s*=\s*["']""")
     for path in (WATCHLIST, PORTFOLIO, WRISK):
-        src = path.read_text()
-        assert 'title="' not in src, "%s emits a title attribute" % path.name
+        hits = [ln for ln in path.read_text().splitlines() if pat.search(ln)]
+        assert not hits, "%s emits a title attribute: %s" % (path.name, hits[:3])
 
 
 def test_severity_never_paints_from_the_direction_tokens():
@@ -578,11 +842,35 @@ def test_severity_never_paints_from_the_direction_tokens():
 
 def test_the_version_stamp_moved_for_every_js_file_this_wave_touched():
     """Plain-copy JS goes live in ~3 minutes; the `?v=` stamp waits for a render. A body
-    that ships without its stamp bump is served from a warm cache indefinitely."""
+    that ships without its stamp bump is served from a warm cache indefinitely.
+
+    Asserted as a MONOTONIC INCREASE against `origin/main`, not against hardcoded
+    numbers. Pinning `?v=7` would latch this wave's boundary into the suite and red the
+    NEXT legitimate bump — a test that fails on correct future work is a worse defect
+    than the one it guards. Self-retiring by construction: once this merges, main's
+    values equal the branch's and the comparison is vacuously true, which is the right
+    behaviour for a wave-scoped check."""
     tpl = TEMPLATE.read_text()
-    for name, ver in (("watchlist.js", 7), ("watchlist_risk.js", 5), ("portfolio.js", 5)):
-        assert '<script src="%s?v=%d"></script>' % (name, ver) in tpl, \
-            "%s did not get its stamp bump" % name
+    base = subprocess.run(
+        ["git", "-C", str(ROOT), "show", "origin/main:templates/watchlist.html.j2"],
+        capture_output=True, text=True)
+    if base.returncode != 0:
+        pytest.skip("origin/main not fetched in this checkout")
+
+    def stamps(text):
+        return {m.group(1): int(m.group(2))
+                for m in re.finditer(r'<script src="([a-z_]+\.js)\?v=(\d+)"></script>', text)}
+
+    now, was = stamps(tpl), stamps(base.stdout)
+    changed = [n for n in ("watchlist.js", "watchlist_risk.js", "portfolio.js")
+               if (ROOT / "templates" / n).read_bytes()
+               != subprocess.run(["git", "-C", str(ROOT), "show", "origin/main:templates/" + n],
+                                 capture_output=True).stdout]
+    for name in changed:
+        assert name in now and name in was, name
+        assert now[name] > was[name], (
+            "%s changed but its ?v= stamp did not move (main=%d, branch=%d)"
+            % (name, was[name], now[name]))
 
 
 def test_the_site_copies_are_byte_identical_to_their_templates():
@@ -593,6 +881,88 @@ def test_the_site_copies_are_byte_identical_to_their_templates():
         tpl = (ROOT / "templates" / name).read_bytes()
         site = (ROOT / "site" / name).read_bytes()
         assert tpl == site, "site/%s has drifted from templates/%s" % (name, name)
+
+
+# ===========================================================================
+# 8b. THE LIBRARY SWEEPS — local only, because CI has no nightly artifacts
+# ===========================================================================
+# `site/stockdata/` is an untracked nightly artifact directory: 1,629 per-ticker JSONs
+# in a full checkout, none in CI and none in a fresh agent worktree. These two tests
+# therefore SKIP where they cannot run — but they are the only place a distribution
+# claim can be checked at all, and both findings they exist for (a 66.6% imperative
+# rate, a 93.5% Watch rate) were invisible to every fixture-based test in this file.
+LIBRARY = ROOT / "site" / "stockdata"
+needs_library = pytest.mark.skipif(
+    not LIBRARY.is_dir() or len(list(LIBRARY.glob("*.json"))) < 100,
+    reason="site/stockdata/ nightly artifacts not present in this checkout")
+
+SWEEP_JS = """
+var fs = require('fs'), path = require('path');
+var WR = require(%s);
+var dir = %s;
+var files = fs.readdirSync(dir).filter(function (f) {
+  return /\\.json$/.test(f) && f !== 'index.json';
+});
+var leads = {}, stance = {}, n = 0, bad = [];
+files.forEach(function (f) {
+  var j; try { j = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')); } catch (e) { return; }
+  if (!j || typeof j !== 'object' || Array.isArray(j)) return;
+  n++;
+  var lead = WR.intelLead(j);
+  leads[lead.en + '\\u0001' + lead.zh] = (leads[lead.en + '\\u0001' + lead.zh] || 0) + 1;
+  var L = WR.laneRead(j);
+  var s = WR.intelStance(L, WR.roleBadge(L));
+  stance[s] = (stance[s] || 0) + 1;
+});
+OUT({n: n, leads: Object.keys(leads), stance: stance});
+"""
+
+
+@needs_node
+@needs_library
+def test_no_tier_one_lead_in_the_real_library_carries_an_instruction():
+    """The sweep the fixture tests cannot be: every distinct Tier-1 lead the REAL
+    library produces, checked against the strict list.
+
+    This is the test that would have caught the shipped defect. Every fixture-based
+    check in this file passed while 1,085 of 1,629 names rendered a trade instruction,
+    because a fixture only ever contains the statuses someone thought to write down."""
+    out = _run(SWEEP_JS % (json.dumps(str(WRISK)), json.dumps(str(LIBRARY))))
+    assert out["n"] > 1000, "swept only %d artifacts" % out["n"]
+    for key in out["leads"]:
+        en, zh = key.split("\u0001")
+        assert not _banned_hits(en), "%r carries %s" % (en, _banned_hits(en))
+        assert not _banned_hits(zh), "%r carries %s" % (zh, _banned_hits(zh))
+    # a total map produces a SMALL closed set; an explosion means passthrough crept back
+    assert len(out["leads"]) <= 20, \
+        "%d distinct leads — the map is leaking raw engine text" % len(out["leads"])
+
+
+@needs_node
+@needs_library
+def test_the_stance_partitions_the_real_library_instead_of_being_a_constant():
+    """The distribution, measured rather than asserted from taste.
+
+    The shipped version put 93.5% of the library in Watch, and this file's own prose
+    claimed 'No finding is the most common' — false by roughly 32x. A mark on nineteen
+    names in twenty is not a mark. The true shape, with the stance keyed to the role
+    ladder's own graded rungs, is roughly half Watch / half Get ready / a small tail of
+    No action, and No action being RARE is the honest reading of a library where almost
+    every name has at least one elevated lane.
+
+    Bounds, not point values: this is real nightly data and it moves."""
+    out = _run(SWEEP_JS % (json.dumps(str(WRISK)), json.dumps(str(LIBRARY))))
+    n = out["n"]
+    st = out["stance"]
+    frac = {k: st.get(k, 0) / n for k in ("watch", "ready", "none")}
+    print("\nstance over %d artifacts: %s" % (
+        n, "  ".join("%s=%d (%.1f%%)" % (k, st.get(k, 0), 100 * frac[k])
+                     for k in ("watch", "ready", "none"))))
+    assert frac["watch"] < 0.70, (
+        "Watch is %.1f%% of the library — a mark that common is the background, not a "
+        "mark. Re-derive the precedence rather than relaxing this bound." % (100 * frac["watch"]))
+    assert frac["ready"] > 0.15, \
+        "Get ready is %.1f%% — the middle tier has collapsed" % (100 * frac["ready"])
 
 
 # ===========================================================================

@@ -181,15 +181,27 @@
     if (earn && earn.next_date) {
       var days = daysUntil(earn.next_date);
       var when = earn.next_time ? (' ' + timeWord(earn.next_time)) : '';
+      var past = isNum(days) && days < 0;
       var hot2 = isNum(days) && days <= 5 && days >= 0;
-      var chipEn = isNum(days) ? (days < 0 ? null : 'Earnings in ' + days + 'd') : null;
-      var chipZh = isNum(days) ? (days < 0 ? null : '财报 ' + days + '天内') : null;
-      out.events = {
-        state: hot2 ? 'elev' : (isNum(days) && days <= 14 && days >= 0 ? 'watch' : 'ok'),
-        en: 'reports ' + fmtDate(earn.next_date) + when,
-        zh: fmtDateZh(earn.next_date) + timeWordZh(earn.next_time) + '发布',
-        chip: chipEn ? { cls: hot2 ? 'hot' : '', en: chipEn, zh: chipZh } : null
-      };
+      var chipEn = past || !isNum(days) ? null : 'Earnings in ' + days + 'd';
+      var chipZh = past || !isNum(days) ? null : '财报 ' + days + '天内';
+      /* A PAST `next_date` is not a forward event, and it is not the edge case it looks
+         like: measured across the library, 1,197 of the 1,205 names carrying a
+         `next_date` are already past it, because the per-ticker artifacts bake on a
+         cadence the earnings calendar outruns. The CHIP was already guarded for this;
+         the STATE and the SENTENCE were not — so the lane read "reports Jul 30" in a
+         confident `ok` about a date that had come and gone, a stale fact wearing the
+         grammar of a fresh one. Past dates now report what HAPPENED and drop to `na`,
+         because a calendar we cannot see forward on is a coverage gap, not an all-clear. */
+      out.events = past
+        ? { state: 'na',
+            en: 'last reported ' + fmtDate(earn.next_date) + '; no confirmed next date',
+            zh: '最近一次财报为' + fmtDateZh(earn.next_date) + '；下一次日期尚未确认',
+            chip: null }
+        : { state: hot2 ? 'elev' : (isNum(days) && days <= 14 ? 'watch' : 'ok'),
+            en: 'reports ' + fmtDate(earn.next_date) + when,
+            zh: fmtDateZh(earn.next_date) + timeWordZh(earn.next_time) + '发布',
+            chip: chipEn ? { cls: hot2 ? 'hot' : '', en: chipEn, zh: chipZh } : null };
     } else out.events = { state: 'na', en: NA.en, zh: NA.zh, chip: null };
     // --- estimates (revisions + surprise) ------------------------------
     var rev = (j && j.revisions) || null, sue = earn && earn.sue_z;
@@ -413,25 +425,37 @@
     none:  { en: 'No action', zh: '暂不需要动作' }
   };
 
-  /* Which of the three, for ONE name. A deterministic precedence over lane states that
-     already exist — no score, no weights, nothing fused (packet §9 allows exactly this
-     shape and forbids the other one). The event carve-out matters: an earnings date
-     inside five days raises the events lane to `elev`, but "your name reports on
-     Tuesday" is something to BE READY for, not something wrong — which is also how the
-     book-level attention stack files it (rule 2 → `s-ready`). Without the carve-out
-     every name in an earnings week would read Watch. PURE. */
+  /* Which of the three, for ONE name. Deterministic precedence over outputs that already
+     exist — no score, no weights, nothing fused (packet §9 allows exactly this shape and
+     forbids the other one).
+
+     THE TOP TIER IS THE LADDER'S OWN TOP RUNGS, and that is the whole design. The first
+     version read "any elevated lane, or any badge → Watch", which measured **93.5% Watch**
+     across the 1,629 production artifacts — a mark on nineteen names in twenty is not a
+     mark, it is the background. The cause is visible in the per-lane rates: `selling`
+     runs `elev` on 74% of the library (the insider-cluster flag) and `estimates` on 55%,
+     so "≥1 elevated lane" is very nearly "has data".
+
+     The fix is not a threshold I invent. `roleBadge` is the Risk Desk role ladder and it
+     ALREADY grades severity into three rungs — `exit_review` > `trim_review` > `review`
+     — so the calibration exists and was simply being flattened by an `if (role)`. Watch
+     is the two severe rungs; Get ready is the review rung or any lane signal below it;
+     No action is a name with neither. Measured on the same 1,629: **Watch 50.0% ·
+     Get ready 47.0% · No action 2.9%** — a partition rather than a constant.
+
+     No action stays genuinely rare, and that is honest rather than tuned: on this
+     library almost every name has at least one elevated lane, so claiming otherwise
+     would be the lie. The library sweep in the test suite prints the live distribution
+     so the next wave sees drift instead of inheriting a number. PURE. */
+  var STANCE_SEVERE = { exit: 1, trim: 1 };
   function intelStance(lanes, role) {
     if (!lanes) return 'none';
-    var elev = [], watch = [];
+    if (role && STANCE_SEVERE[role.kind]) return 'watch';
+    if (role) return 'ready';
     for (var i = 0; i < LANES.length; i++) {
       var L = lanes[LANES[i]];
-      if (!L) continue;
-      if (L.state === 'elev') elev.push(LANES[i]);
-      else if (L.state === 'watch') watch.push(LANES[i]);
+      if (L && (L.state === 'elev' || L.state === 'watch')) return 'ready';
     }
-    var elevNonEvent = elev.filter(function (k) { return k !== 'events'; });
-    if (role || elevNonEvent.length) return 'watch';
-    if (elev.length || watch.length) return 'ready';
     return 'none';
   }
 
@@ -650,8 +674,17 @@
       zh: '机构持股来自我们跟踪的基金最新 13F 申报；内部人计数为申报窗口内的报备交易' +
           (period ? '（' + period + '）' : '') + '。申报数据滞后市场数周。'
     };
-    var hot = !!(ins && ins.cluster === true);
-    return lrowHTML({ lab: W4_LABEL.owners, state: hot ? 'watch' : '', tip: tip,
+    /* NEUTRAL state, deliberately. This row painted `watch` from
+       `insider.cluster === true`, which measured 1,133 of the 1,221 names carrying
+       ownership data — 92.8% — so the token discriminated nothing and diluted a mark the
+       reader is supposed to be able to trust two rows up.
+
+       The cure is not a better threshold, it is recognising that this row was making a
+       claim that is not its own. The `selling` LANE already reports severity on exactly
+       this topic ("insider selling cluster", state `elev`) and it is the calibrated
+       surface for it. Ownership reports WHO and HOW MANY — facts the lane never states —
+       and reports no severity at all. One claim, one owner (§7(g)). */
+    return lrowHTML({ lab: W4_LABEL.owners, state: '', tip: tip,
       en: en.join(' · ') + '.', zh: zh.join(' · ') + '。' });
   }
 
@@ -682,12 +715,17 @@
       return lrowHTML({ lab: W4_LABEL.notes, state: 'na',
         en: 'This name has a note trail we could not date.', zh: '这只票有动态记录，但读不出日期。' });
     }
-    var p = a.pinned || null;
+    /* The pinned note is NOT quoted, and this is the same law as the Tier-1 map above.
+       `alerts.pinned` is written in the engine's trading voice: measured across the
+       library, 1,292 of 1,611 pinned notes — 80.2% — carry a banned token ("BUY ZONE",
+       "BUY SETUP", "take profit", "chase", "half size"). Piping it into `data-tip-en`
+       put those instructions in the DOM on four names in five, in the one slot nobody
+       reviews. The row counts and dates the trail; the trail itself has a canonical
+       home, and the drawer's link row points at it. */
     var tip = {
-      en: 'The nightly note trail for this name. Pinned tonight: ' +
-          (p && p.headline ? p.headline + (p.detail ? ' — ' + p.detail : '') : 'nothing pinned') + '.',
-      zh: '这只票每晚的动态记录。今晚置顶：' +
-          (p && p.headline ? (p.headline_zh || p.headline) + (p.detail ? ' —— ' + (p.detail_zh || p.detail) : '') : '无置顶') + '。'
+      en: 'The nightly note trail for this name — how many notes were recorded recently, ' +
+          'and when the most recent one was. The notes themselves are on the full dossier.',
+      zh: '这只票每晚的动态记录 —— 近期记录了多少条、最近一条在什么时候。动态内容本身在完整档案页。'
     };
     return lrowHTML({ lab: W4_LABEL.notes, state: '', tip: tip,
       en: en.join(' · ') + '.', zh: zh.join(' · ') + '。' });
@@ -697,19 +735,81 @@
      Tier 1 is the GLANCE read: plain words under a hard budget, no internal vocabulary
      (ENB / MCTR / WRI / lane and study names live in the tips and the method detail).
      Tier 2 is every section above, in a fixed order, each honest about its own absence. */
+  /* ★ THE DE-IMPERATIVE MAP ★
+     The entry engine writes its headline as a TRADE INSTRUCTION, and it is not an edge
+     case: measured across all 1,629 production artifacts, 1,085 of them — 66.6% — carry
+     an imperative. "Extended — wait for a pullback" ×588. "Buy soon — on confirmation"
+     ×252. "Hold — don't add here" ×104. "Topping — protect gains" ×50. Rendering
+     `headline` raw put a trade instruction at the glance tier of two thirds of the
+     library, against packet §0 ("descriptive language only — no buy/sell/add/hedge
+     imperatives") and against §7(b), which additionally bars "protect gains" by name.
+
+     The map is keyed on `status`, not on the headline text. Status is the engine's own
+     enum — eleven values across the whole library, 1:1 with the eleven headlines — so a
+     reworded headline still lands on the right descriptive copy, whereas a text key
+     would silently fall through to passthrough the day someone fixes a typo upstream.
+
+     Each entry says WHAT IS TRUE about the name, in the same plain words the lanes use,
+     and says nothing about what anyone should do with it. `entry_signal.action` is never
+     read at any tier; neither is `headline`. An unmapped status does NOT fall back to
+     the engine's string — it falls back to a state line derived from the trend fields,
+     because a passthrough fallback is how a total map stops being total.
+
+     `tests/test_watchlist_drawer_js.py` sweeps every string this table can emit for
+     banned tokens, and a local-only sweep re-runs it over the real library. */
+  var T1_STATE = {
+    extended:         { en: 'Extended — no pullback yet',
+                        zh: '过度拉伸 —— 尚未出现回撤' },
+    wait_pullback:    { en: 'Extended from its setup — no pullback yet',
+                        zh: '偏离其形态 —— 回撤尚未出现' },
+    await_confluence: { en: 'Turning, but not confirmed yet',
+                        zh: '已在转向，但尚未确认' },
+    buy_soon:         { en: 'Setup forming — confirmation not in yet',
+                        zh: '形态成形中 —— 确认尚未出现' },
+    partial:          { en: 'Setup in place — conviction is partial',
+                        zh: '形态已成立 —— 但信心仅为部分' },
+    buy_now:          { en: 'In its setup zone now',
+                        zh: '当前处于其形态区间内' },
+    hold:             { en: 'In trend — no fresh setup here',
+                        zh: '趋势之中 —— 此处没有新的形态' },
+    watch:            { en: 'A cycle low is approaching',
+                        zh: '周期低点正在临近' },
+    topping:          { en: 'Topping pattern — risk building',
+                        zh: '见顶形态 —— 风险正在累积' },
+    exit:             { en: 'Rolling over',
+                        zh: '正在掉头向下' },
+    blocked:          { en: 'Blocked — the last cycle failed',
+                        zh: '受阻 —— 上一轮周期失败' }
+  };
+
+  /* The fallback for an unmapped or absent status. Derived from the trend fields the
+     price lane already reads, so it is a real state read rather than a shrug — and when
+     even those are absent it says so instead of inventing one. PURE. */
+  function t1Fallback(j) {
+    var tech = (j && j.tech) || null;
+    if (tech && tech.above200 != null) {
+      return tech.above200
+        ? { en: 'Holding above its 200-day line', zh: '仍处于200日线上方' }
+        : { en: 'Below its 200-day line', zh: '位于200日线下方' };
+    }
+    return { en: 'No state read for this name tonight.', zh: '今晚这只票没有状态读数。' };
+  }
+
+  /* The Tier-1 lead, as a PURE pair — exported so the ban-token sweep can walk every
+     name in the library through the same function the DOM gets. */
+  function intelLead(j) {
+    var es = (j && j.entry_signal) || {};
+    var m = es.status ? T1_STATE[es.status] : null;
+    return m || t1Fallback(j);
+  }
+
   function intelTier1HTML(t, j) {
     var lanes = laneRead(j);
     var role = roleBadge(lanes);
     var stance = intelStance(lanes, role);
     var sw = W4_STANCE[stance];
-    var es = (j && j.entry_signal) || {};
-    /* `entry_signal.action` is deliberately NOT read: it is written as an instruction
-       ("take a half position here"), and holdings surfaces are descriptive only. The
-       headline is the state sentence, which is what a reader needs. */
-    var head = es.headline || '';
-    var lead = head
-      ? te(esc(head), esc(es.headline_zh || head))
-      : te('No entry read for this name tonight.', '今晚这只票没有入场读数。');
+    var m = intelLead(j);
+    var lead = te(esc(m.en), esc(m.zh));
     var stanceCls = stance === 'watch' ? 's-watch' : stance === 'ready' ? 's-ready' : '';
     var out = '<div class="drw-t1">' +
       '<span class="drw-lead">' + lead + '</span>' +
@@ -744,7 +844,7 @@
       themeRowHTML(j) +
       ownersRowHTML(j) +
       notesRowHTML(j) +
-      chainDrawerRows(CHAINS_IDX[t]);
+      chainSectionHTML(CHAINS_IDX[t]);
   }
 
   // ---- date helpers ---------------------------------------------------
@@ -880,6 +980,27 @@
   // HTML string of .wri-lrow rows (empty when the name is in no armed chain). PURE.
   function chainDrawerRows(memberships) {
     if (!memberships || !memberships.length) return '';
+    return chainRowsBody(memberships);
+  }
+
+  /* The DRAWER's transmission row. Same body, but it never returns '' — §7(h) makes
+     honest absence a mechanism, and this section was the one exception, which is exactly
+     how an invariant stops being one. "In no armed chain tonight" is a real finding
+     about a name, not the absence of one, and it is what a reader who saw the row
+     yesterday needs to see today. `chainDrawerRows` keeps the old contract because the
+     rail and the card path rely on '' meaning "draw nothing here". */
+  function chainSectionHTML(memberships) {
+    if (memberships && memberships.length) return chainRowsBody(memberships);
+    return lrowHTML({
+      lab: { en: 'Transmission', zh: '传导链' }, state: 'na',
+      en: 'Not downstream of any chain that is armed tonight.',
+      zh: '目前不处于任何已触发传导链的下游。',
+      tip: { en: 'Transmission chains are display-only WATCH context — a named channel screen places a name in a chain\'s blast radius. Being in none tonight is a state, not a gap.',
+             zh: '传导链仅为观察用的上下文 —— 由命名通道筛选判断某只票是否处于链条波及范围内。今晚不在任何链中是一种状态，而非数据缺失。' }
+    });
+  }
+
+  function chainRowsBody(memberships) {
     var ms = memberships.slice().sort(function (a, b) {
       var r = CHAIN_RANK[a.state] - CHAIN_RANK[b.state];
       return r !== 0 ? r : (b.links_confirmed || 0) - (a.links_confirmed || 0);
@@ -1461,23 +1582,33 @@
     var cTop = calm.topFactorShare || 0, sTop = st.topFactorShare || 0;
     var tightens = st.enb < calm.enb - 1e-9;
 
-    /* W3's disclosed residual, cured here (W4).
+    /* W3's disclosed residual, cured here (W4) — on ALL THREE routes, not the one the
+       first attempt tested.
 
        Both figures are `enbClamp(...).bets` — rounded, floored at 1, capped at the name
-       count — so two DIFFERENT raw values can land on one integer by three separate
-       routes: both above the name count and both capped (calm 8, stress 5.5, six names →
-       6 and 6); both under 1 and both floored; or plain rounding (2.4 and 2.2, which the
-       twin leg of `diverges` reaches without the collapse leg). Whenever that happens the
-       claim read "your 6 names move like about 3, not 3" — a sentence asserting a change
-       while printing the same number twice.
+       count — so two DIFFERENT raw ENBs can land on one integer three ways:
 
-       The cure is not a decimal everywhere. A whole number is the right unit for "how
-       many separate directions" and the ordinary case keeps it. What changes is the ONE
-       degenerate case: the tightening is real, so it is still stated, but it is stated at
-       the precision that can actually carry it, and the sentence says out loud that the
-       whole-number read did not move. The counts line below follows the claim's precision
-       so the two lines cannot print different-looking numbers about one comparison. */
-    var degenerate = tightens && cB === sB;
+         PLAIN   2.4 vs 2.2 → both round to 2. Decimals carry the difference, so the
+                 claim is restated at 1dp and says the whole-number read did not move.
+         CAPPED  9.0 vs 7.0 with six names → both cap at 6. Decimals DO NOT help: `shown`
+                 caps too, so 1dp prints "6.0 … 6.0" and the sentence "tightens, but not
+                 by a whole direction" becomes FALSE — it is hiding two whole directions
+                 behind the display cap. This case needs a different sentence, one that
+                 names the cap as the thing obscuring the change and makes no
+                 quantitative claim at all.
+         FLOORED 0.8 vs 0.4 → both floor at 1. Same shape as CAPPED once `shown` carries
+                 the floor it was missing, so it resolves the same way.
+
+       A whole number stays the right unit for "how many separate directions", so the
+       ordinary case is untouched. The counts line under the bars follows whatever
+       precision the claim used, because two lines about one comparison printing
+       different-looking numbers is the defect one level up. */
+    var atCap = cInfo.clamped && sInfo.clamped;
+    var atFloor = cInfo.floored && sInfo.floored;
+    var sameBets = tightens && cB === sB;
+    // the display bound, not the arithmetic, is what collapses these two
+    var bounded = sameBets && (atCap || atFloor);
+    var degenerate = sameBets && !bounded;
     var cFig = degenerate ? cInfo.shown.toFixed(1) : String(cB);
     var sFig = degenerate ? sInfo.shown.toFixed(1) : String(sB);
 
@@ -1492,7 +1623,18 @@
        about 3, not 2" directly above a counts line saying the opposite. The count
        claim now requires the count predicate; the pair finding gets its own sentence. */
     var claim;
-    if (RR.diverges && tightens && degenerate) {
+    if (RR.diverges && tightens && bounded) {
+      /* Both sides sit on the display bound, so every figure this tab could print is the
+         bound rather than the measurement. Naming the bound is the only honest move:
+         the tightening is real and is stated, and NO number is attached to it. */
+      claim = atCap
+        ? te('On the days the market falls, this book tightens. Both readings sit at the display limit of <span class="fig">' +
+               nNames + '</span> — the number of names you hold — so the size of the change is not something this view can show.',
+             '在市场下跌的日子里，这本账簿会收紧。两个读数都处在展示上限 <span class="fig">' + nNames +
+               '</span>（也就是你的持仓数量），因此这个视图无法呈现收紧的幅度。')
+        : te('On the days the market falls, this book tightens. Both readings are already at the floor of one direction, so the size of the change is not something this view can show.',
+             '在市场下跌的日子里，这本账簿会收紧。两个读数都已触及「一个方向」的下限，因此这个视图无法呈现收紧的幅度。');
+    } else if (RR.diverges && tightens && degenerate) {
       claim = te('On the days the market falls, this book tightens — but not by a whole direction: your <span class="fig">' +
           nNames + '</span> names move like about <span class="fig">' + cFig +
           '</span> on an average day and <span class="fig">' + sFig + '</span> on the falling ones.',
@@ -1947,9 +2089,14 @@
     var n = Math.max(1, nNames || 0);
     return {
       raw: raw,
-      shown: Math.min(raw, n),                          // the 1dp footer figure
+      /* `shown` carries the SAME floor as `bets`, and it was missing one. A book cannot
+         move in fewer than one direction, so a raw ENB below 1 printed a 1dp figure the
+         whole-number figure beside it had already refused ("0.8" over "1"). The floor is
+         the claim; the precision is only how it is written. */
+      shown: Math.max(1, Math.min(raw, n)),             // the 1dp footer figure
       bets: Math.max(1, Math.min(Math.round(raw), n)),  // the whole-number verdict figure
-      clamped: raw > n + 1e-9
+      clamped: raw > n + 1e-9,
+      floored: raw < 1 - 1e-9
     };
   }
   /* The one dynamic sentence the method tip gains when the clamp engages. Returns null
@@ -2143,6 +2290,12 @@
       lrowHTML: lrowHTML, intelStance: intelStance,
       roleRow: roleRowHTML, optionsRow: optionsRowHTML, macroRow: macroRowHTML,
       themeRow: themeRowHTML, ownersRow: ownersRowHTML, notesRow: notesRowHTML,
+      chainSection: chainSectionHTML, intelLead: intelLead,
+      /* the lane engine itself — the library sweeps walk every real artifact
+         through the SAME functions the DOM gets, which is the only way a
+         distribution measurement means anything */
+      laneRead: laneRead, roleBadge: roleBadge,
+      T1_STATE: T1_STATE, t1Fallback: t1Fallback,
       intelTier1: intelTier1HTML, intelSections: intelSectionsHTML,
       W4_STANCE: W4_STANCE, W4_LABEL: W4_LABEL,
       /* W3 Risk Center tab builders — PURE string builders over a RiskCore result, so

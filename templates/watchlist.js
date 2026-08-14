@@ -1027,9 +1027,18 @@
     });
   }
   function buildDetail(t, j) {
-    var d = { tech: j.tech || null, summary: '', flag: null, evt: null, raw: j };
-    var lad = j.ladder || {};
-    if (lad.summary_line) d.summary = window.SD.lz(lad.summary_line, lad.summary_line_zh);
+    /* No `summary` field any more. It carried `ladder.summary_line` for the pre-W4
+       drawer's "Read / 解读" line; W4's Tier 1 replaced that line with the entry-state
+       read, and the field went dead. Removed rather than left assigned, and the
+       supersession is disclosed rather than silent.
+
+       The ladder line is NOT simply restorable beside Tier 1: it is a different engine
+       (cycle-ladder timeframe alignment, not entry state), so it is real information —
+       but 146 of the 1,620 names that carry it, 9.0%, phrase it with "buy zone", which
+       is the exact class of copy the Tier-1 map exists to keep off this surface. Putting
+       it back needs its own total mapping over a compositional sentence, which is a
+       parser, not a line. Its canonical home is the dossier and the drawer links there. */
+    var d = { tech: j.tech || null, flag: null, evt: null, raw: j };
     // next event — dates dual-emit, and the ZH form drops .fig because "8月27日"
     // contains WORDS and mono numerals are for figures only
     var ev = j.next_event || (j.events && j.events[0]) || null;
