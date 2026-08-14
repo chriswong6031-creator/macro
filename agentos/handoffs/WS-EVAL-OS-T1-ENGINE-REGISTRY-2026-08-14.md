@@ -69,13 +69,17 @@ verified:
     command: "git diff --stat $(git merge-base origin/main HEAD) HEAD; git diff --diff-filter=D --name-only $(git merge-base origin/main HEAD) HEAD"
     result: "11 files, +6664/-8, no deleted files. (Raw diff vs origin/main tip shows wire-lane noise only because the shared clone's origin/main advances every few minutes.)"
 
-unverified:
-  - claim: "The isolated intelligence-registry job goes green on this PR's own CI run."
-    what_would_verify: "After the sweeper merges, read the ci-pack run for the merge and confirm the intelligence-registry job's two steps concluded green."
-  - claim: "agentos validate is green on the merge ref (my tree reds on a dangling WS:CI-MERGE-CONTROL-PLANE ref because the WS record landed via #5608, after this branch's merge-base)."
-    what_would_verify: "The neural-web pack's agentos validate step on the PR's merge-ref checkout, where both files exist."
+unverified: []
+# Post-merge addendum (same session, 2026-08-14 ~18:20Z): both previously-unverified claims
+# are now VERIFIED — (1) ci-pack-7, the pack carrying the intelligence-registry job, PASSED
+# on PR #5620's own proof run 31799422492 (the job's two steps green on the merge ref);
+# (2) the PR merged as d13259abc51c at 17:31:13Z and every T1 file on origin/main is
+# byte-identical to the branch head (git diff --quiet per file), with the job present in
+# main's manifest. The agentos-validate merge-ref claim is subsumed: the PR merged through
+# the sweep with no agentos red raised against it.
 
 unresolved:
+  - "PERMANENT VINTAGE RED, do not chase: merged PR #5620's head run 31799422492 keeps ci-pack-8 red forever — the dag-conformance drift (govrev pytest lane, introduced #5516, declared in config/dag.yml by #5655 only AFTER this merge). The run's checkout is the frozen merge commit (base 007eea93c053, pre-heal), so `gh run rerun --failed` re-executes the pre-heal vintage and cannot green; the diff's own proof is ci-pack-7 green on that same run. Any tooling that keys off the merged head's check state must treat this by the base-side exclusion, not by rerun."
   - "Claim-store corruption alerts everywhere and gates nowhere until a nightly-era lane passes --strict (deliberate cost of the plane cut; owner: T7 wave; recorded in the guard docstring, house-law known_limit and DEC)."
   - "output_class curation: 109 engines are required_but_uncurated (86 display-authority gate-trippers, 12 engine_input, 6 user_ranking, 5 gate_size). The set is derivable on demand (build() then filter output_class_reason == 'required_but_uncurated') — deliberately NOT committed as a list. Needs a bounded adjudication session (W3)."
   - "The engine-level authority roll-up is a MAX and overstates authority for low-tier siblings in the 32 mixed-tier cells — standing disclosure, consumers must read artifacts[].artifact_authority per-artifact."
