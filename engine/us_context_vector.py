@@ -34,7 +34,13 @@ unchanged and the two markets remain one schema family.  Read the store through
 :func:`load_candidates`; nothing outside this module should glob the parts.
 
 Fail-soft by contract: research telemetry must never break the nightly build, so
-every failure path logs and returns 0.
+every failure path returns 0.  FAIL-SOFT IS NOT FAIL-SILENT — a failure, a night
+that added no rows, an unclassified container-valued column, and a store/board
+buy-lane disagreement each print a line-start ``::warning``.  That distinction is
+not decorative: this store stamped nothing from 2026-08-08 to 2026-08-13 inside a
+GREEN engine job, because the sole trace of a raising ``to_parquet`` was a
+``log.warning`` — and every builder here logs through a prefixing formatter, which
+makes GitHub drop the annotation.  See ``data/us_prophet_rank/README.md``.
 
 Column provenance
 -----------------
@@ -614,6 +620,150 @@ def eightk_recency(asof: str, root: Any = None) -> dict[str, int]:
 
 
 # --------------------------------------------------------------------------- #
+# §13 telemetry block — the masterplan's named debts, read off tonight's producers
+# --------------------------------------------------------------------------- #
+
+#: The not-topped veto's three legs (``engine/confluence_tiers.py::cascade``), read
+#: off the ``signal_gate`` verdict.  Each ships with a ``<leg>_null`` companion
+#: because ``macd_bear`` is silently FAIL-OPEN below the 3D RSI-MACD's 232-bar
+#: warmup (``float(nan) < float(nan)`` is False), so an unqualified False would let
+#: bar-count masquerade as "checked, and not topped".
+VETO_LEG_COLUMNS = ("stoch_ob", "stoch_bear", "macd_bear")
+
+#: Intelligence Hub typed DECOMPOSED fields (masterplan §5.2).  The hub's own
+#: ``opportunity_score`` / ``composite_conviction`` are deliberately NOT here: they
+#: are composites whose feeders already overlap this store's other families, so
+#: ingesting them would be self-agreement wearing a second name.  Null off-hub —
+#: the hub's ``command`` list is ~30 names of a ~1,540-name universe, so ~98% of
+#: rows carry nulls here, which is this store's disclosure idiom, not a gap.
+HUB_COLUMNS = (
+    "hub_edge_remaining",
+    "hub_lifecycle",
+    "hub_leading_gap",
+    "hub_isolated",
+    "hub_governor_trust",
+    "hub_contradictions",
+)
+
+#: Every §13 column this store stamps, in one place, so a schema test can pin the
+#: set rather than a hand-copied list.  ZERO AUTHORITY, like every other column
+#: here: each is READ from a producer that already ran tonight.
+TELEMETRY_COLUMNS = (
+    "sue_z",
+    "gex_confirm_verdict",
+    "flow_attention_z",
+    "short_vol_ratio",
+    *VETO_LEG_COLUMNS,
+    *(f"{leg}_null" for leg in VETO_LEG_COLUMNS),
+    *HUB_COLUMNS,
+)
+
+
+def attention_z_map(root: Any = None) -> dict[str, float]:
+    """``ticker -> wiki-attention z`` from ``site/factordata/attention.json``.
+
+    Written by ``scripts/build_site.py::build_attention_data`` in the same nightly,
+    into the same directory this store's siblings already read (``factors.json``,
+    ``alpha.json``).  Causal robust z (log1p views vs a trailing median/MAD
+    baseline), clipped to [-3, +6] by the producer — read, never recomputed.
+    """
+    base = config.ROOT if root is None else root
+    path = base / "site" / "factordata" / "attention.json"
+    if not path.exists():
+        # Loud, because the resulting all-null column is byte-identical to "no
+        # attention read for these names" — an artifact outage must not wear the
+        # sparse-coverage costume (the silent-sibling law, masterplan §4.0).
+        print("::warning title=us-context-vector-attention-absent::"
+              "site/factordata/attention.json absent — flow_attention_z stamps "
+              "null tonight (outage, not sparse coverage)", flush=True)
+        return {}
+    try:
+        doc = json.loads(path.read_text())
+    except Exception as exc:  # noqa: BLE001 — one absent block never costs the night
+        print("::warning title=us-context-vector-attention-absent::"
+              f"attention.json unreadable ({exc}) — flow_attention_z stamps null "
+              "tonight (outage, not sparse coverage)", flush=True)
+        log.warning("us_context_vector: attention.json unreadable (%s)", exc)
+        return {}
+    out: dict[str, float] = {}
+    for ticker, row in (_mapping(doc)).items():
+        value = _finite(_mapping(row).get("z"))
+        if value is not None:
+            out[str(ticker)] = value
+    return out
+
+
+def hub_columns(root: Any = None) -> dict[str, dict[str, Any]]:
+    """``ticker -> {HUB_COLUMNS field: value}`` from the Intelligence Hub artifacts.
+
+    Sources: ``site/intel_hub/hub.json`` (``command[]``, one entry per actionable
+    name) and ``data/hub/signal_governor.json``.  Typed decomposed fields only
+    (§5.2) — see :data:`HUB_COLUMNS`.
+
+    ``hub_governor_trust`` is the governor's trust in the HUB FEEDER on that night.
+    The governor grades FEEDERS, not tickers, and ``command[].governed_by`` is null
+    across the whole current snapshot (30/30 rows), so a per-row governing-feeder
+    join would ship a permanently dead column (carried-columns law).  What is real,
+    and what §5.2 actually asks for, is how much the governor trusted the source
+    these columns came from on the night they were stamped — recorded on the hub
+    rows so all six ``hub_*`` columns share one null meaning: "not on tonight's hub".
+
+    ``hub_contradictions`` is ``command[].n_dissent``, the count of dissenting
+    feeders on the row.  The hub publishes no scalar literally named
+    "contradiction intensity"; this is the count form of it, read off, not derived.
+    """
+    base = config.ROOT if root is None else root
+    data = config.data_dir() if root is None else (root / "data")
+    hub_path = base / "site" / "intel_hub" / "hub.json"
+    if not hub_path.exists():
+        print("::warning title=us-context-vector-hub-absent::"
+              "site/intel_hub/hub.json absent — all six hub_* columns stamp null "
+              "tonight (artifact outage, not off-hub)", flush=True)
+        return {}
+    try:
+        doc = _mapping(json.loads(hub_path.read_text()))
+    except Exception as exc:  # noqa: BLE001
+        print("::warning title=us-context-vector-hub-absent::"
+              f"intel_hub/hub.json unreadable ({exc}) — all six hub_* columns "
+              "stamp null tonight (artifact outage, not off-hub)", flush=True)
+        log.warning("us_context_vector: intel_hub/hub.json unreadable (%s)", exc)
+        return {}
+
+    trust: float | None = None
+    gov_path = data / "hub" / "signal_governor.json"
+    if gov_path.exists():
+        try:
+            trust = _finite(_mapping(
+                _mapping(json.loads(gov_path.read_text())).get("trust")).get("hub"))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("us_context_vector: signal_governor.json unreadable (%s)", exc)
+    if trust is None:
+        # hub.json embeds a live copy of the same document; a fallback, never a
+        # second source of truth.
+        trust = _finite(_mapping(_mapping(
+            doc.get("signal_governor")).get("trust")).get("hub"))
+
+    out: dict[str, dict[str, Any]] = {}
+    for row in (doc.get("command") or ()):
+        row = _mapping(row)
+        ticker = _text(row.get("ticker"))
+        if not ticker:
+            continue
+        flags = row.get("flags")
+        out[ticker] = {
+            "hub_edge_remaining": _finite(row.get("edge_remaining")),
+            "hub_lifecycle": _text(row.get("stage")),
+            "hub_leading_gap": _finite(row.get("leading_gap")),
+            # A hub row WITHOUT the flag is a measured False; a name that is not on
+            # the hub at all gets no entry here and stays null (#4485).
+            "hub_isolated": ("isolated" in flags) if isinstance(flags, list) else None,
+            "hub_governor_trust": trust,
+            "hub_contradictions": _finite(row.get("n_dissent")),
+        }
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # regime block — one value for every row of the night
 # --------------------------------------------------------------------------- #
 
@@ -680,6 +830,10 @@ def build_records(
     tier: str = TIER_CURATED,
     liquidity: Mapping[str, Mapping[str, Any]] | None = None,
     pool_columns: Mapping[str, Mapping[str, Any]] | None = None,
+    sue_z: Mapping[str, Any] | None = None,
+    attention_z: Mapping[str, Any] | None = None,
+    short_flow: Mapping[str, Mapping[str, Any]] | None = None,
+    hub_rows: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """One flattened context row per universe name.  Pure; no I/O.
 
@@ -696,6 +850,15 @@ def build_records(
     on the way in and is free to record.  The curated lane does not read the
     whole-market store, so curated rows leave it NULL — "not measured for this
     name tonight", never zero (#4485).
+
+    ``sue_z`` / ``attention_z`` / ``short_flow`` / ``hub_rows`` are the masterplan
+    §13 telemetry inputs (:data:`TELEMETRY_COLUMNS`).  Every one is a producer's
+    OWN output for tonight, handed in rather than recomputed: ``sue_z`` from the
+    factors table, ``attention_z`` from ``site/factordata/attention.json``,
+    ``short_flow`` from ``engine.short_volume.signal_map`` (via the fundamental
+    panels), ``hub_rows`` from :func:`hub_columns`.  The remaining two §13 columns
+    need no input of their own — the gex verdict is read off ``board_rows`` and the
+    three veto legs off ``verdicts``, both already here.  ZERO AUTHORITY.
 
     ``pool_columns`` is ``{ticker: {pool_* column: value}}`` from
     :func:`engine.us_candidate_lanes.store_columns` — the DISPLAY-TIER candidate-pool
@@ -722,6 +885,10 @@ def build_records(
     regime = regime or {}
     liquidity = liquidity or {}
     pool_columns = pool_columns or {}
+    sue_z = sue_z or {}
+    attention_z = attention_z or {}
+    short_flow = short_flow or {}
+    hub_rows = hub_rows or {}
 
     records: list[dict[str, Any]] = []
     for ticker in sorted(verdicts):
@@ -850,7 +1017,54 @@ def build_records(
             # ── risk ──────────────────────────────────────────────────────
             "ext_z": _finite(_mapping(ext_map.get(ticker)).get("ext_z")),
             "antichase_shadow_blocked": _bool(profile.get("antichase_shadow_blocked")),
+            # ── §13 telemetry (masterplan §13.1/§13.2) ────────────────────────
+            # Earnings-momentum z (winsorized cross-sectional SUE, ~[-3,+3]) as the
+            # factors table already published it tonight. NOT the display chip
+            # `setups.sue_confirmer`, which nulls everything below z=1.0 — that
+            # gate belongs to a card, not to a forward store.
+            "sue_z": _finite(sue_z.get(ticker)),
+            # `engine/gex_confirm.py::assess()['verdict']` — confirm|neutral|caution,
+            # read off the board row. NAMED FOR ITS PRODUCER on purpose: the §13
+            # debt calls this `gex_state`, but `engine/gex_state.py` is a DIFFERENT
+            # live schema with a different six-word vocabulary
+            # (PIN/DRIFT/RANGE/TRANSITION/TREND/CASCADE), and `options__gex.gamma_regime`
+            # in this same row is a third. One name for three vocabularies is how a
+            # cohort silently splits.
+            "gex_confirm_verdict": _text(
+                _mapping(board.get("gex_confirm")).get("verdict")),
+            # Wikipedia-attention robust z (build_site's causal producer).
+            "flow_attention_z": _finite(attention_z.get(ticker)),
+            # FINRA daily consolidated SHORT VOLUME share, [0,1] — a different
+            # quantity from `short_int__*` above, which is the bi-monthly short
+            # INTEREST settlement.
+            "short_vol_ratio": _finite(
+                _mapping(short_flow.get(ticker)).get("short_ratio")),
         }
+        # The not-topped veto's legs, plus each leg's null state. A leg that its
+        # history cannot compute reads False from `float(nan) < float(nan)` and
+        # fails OPEN, so the boolean alone cannot tell "checked, clean" from
+        # "never checkable" — `veto_legs_null` is what separates them.
+        veto_null = verdict.get("veto_legs_null")
+        veto_disclosed = isinstance(veto_null, Mapping)
+        for leg in VETO_LEG_COLUMNS:
+            leg_value = _bool(verdict.get(leg))
+            record[leg] = leg_value
+            if not veto_disclosed:
+                record[f"{leg}_null"] = None      # the verdict carries no disclosure
+            elif leg in veto_null:
+                record[f"{leg}_null"] = True      # named as unknowable by the cascade
+            elif leg_value is None:
+                record[f"{leg}_null"] = None      # cascade never got far enough
+            else:
+                record[f"{leg}_null"] = False     # genuinely measured
+        # Intelligence Hub typed decomposition — every HUB_COLUMNS key on every
+        # row, null off-hub.  The SCHEMA cannot distinguish "not on tonight's hub"
+        # from "the hub artifact never loaded" — the VALUES are null either way —
+        # which is why hub_columns() raises a line-start ::warning on the outage
+        # path: the disclosure lives in the run log, not in the row.
+        hub = _mapping(hub_rows.get(ticker))
+        for column in HUB_COLUMNS:
+            record[column] = hub.get(column) if column in hub else None
         record.update(regime)
         for component in SCORE_COMPONENTS:
             record[f"prophet_{component}"] = _finite(components.get(component))
@@ -987,6 +1201,8 @@ _OBJECT_COLUMNS = (
     "regime_quad_name", "regime_vol_regime", "context_dims",
     "pool_definition", "pool_lane", "pool_lane_reasons", "pool_headline_reason",
     "pool_admission_class",
+    # §13 telemetry
+    "gex_confirm_verdict", "hub_lifecycle",
 )
 
 _BOOL_COLUMNS = (
@@ -994,16 +1210,136 @@ _BOOL_COLUMNS = (
     "reports_within_7", "earnings_stale", "in_blackout",
     "antichase_shadow_blocked", "regime_gate_go", "theme_clean_entry",
     "pool_in_buy_lane", "pool_open_plan",
+    # §13 telemetry — the veto legs and their null states are all tri-state
+    *VETO_LEG_COLUMNS, *(f"{leg}_null" for leg in VETO_LEG_COLUMNS),
+    "hub_isolated",
 )
 
 
+#: Container types a stamped cell may never carry unless the column is classified
+#: in :data:`STAMP_REVIEWED_NONSCALAR_COLUMNS`.  ``ndim`` (checked separately) is
+#: the numpy discriminator: a parquet round-trip returns a list column as an
+#: ``ndarray``, never a ``list``, and ``np.float64`` also has ``.shape == ()`` — so
+#: a ``shape`` test would reject every number the prior part carries.
+_NONSCALAR_CELL_TYPES = (dict, list, set, tuple, bytearray)
+
+
+def _is_nonscalar_cell(value: Any) -> bool:
+    return isinstance(value, _NONSCALAR_CELL_TYPES) or bool(getattr(value, "ndim", 0))
+
+
 def _coerce_nullable_objects(frame: pd.DataFrame) -> pd.DataFrame:
-    """Avoid pandas/pyarrow dtype conflicts when an older column was all-null."""
+    """Avoid pandas/pyarrow dtype conflicts when an older column was all-null.
+
+    Two passes, and the second is the one that lasts:
+
+    1. the NAMED columns, coerced through ``astype(object)`` first — that is what
+       pins the dtype of a column whose every value happens to be null tonight, so
+       a bool column that is all-None does not read back as float next month;
+    2. EVERY remaining object-dtype column, NaN → None.  The named lists cannot
+       cover the ~120 ``<dim>__<field>`` columns ``context_api.context_frame``
+       flattens in, and those are exactly the columns a schema-union append fills
+       with float NaN for prior rows.  A struct-valued column (``options__gex``,
+       ``options__skew``, ``spine__records``) reindexed against a part that lacks
+       it then carries ``struct`` and ``float('nan')`` in one column, and pyarrow
+       refuses: ``cannot mix struct and non-struct, non-null values``.  None is a
+       null pyarrow can unify with anything; NaN is a float it cannot.
+    """
     for column in (*_OBJECT_COLUMNS, *_BOOL_COLUMNS):
         if column in frame.columns:
             values = frame[column].astype(object)
             frame[column] = values.where(pd.notna(values), None)
+    for column in frame.columns:
+        if frame[column].dtype != object:
+            continue          # numeric dtypes keep NaN — that is their null
+        values = frame[column]
+        frame[column] = values.where(values.notna(), None)
     return frame
+
+
+def _contain_unclassified_nonscalars(frame: pd.DataFrame) -> pd.DataFrame:
+    """Drop container-valued columns nobody classified, and SAY SO.
+
+    The runtime half of the payload-containment law.  Its test half
+    (``tests/test_us_context_vector_payload_containment.py``) hard-fails on any
+    non-scalar column that is in neither :data:`STAMP_FORBIDDEN_COLUMNS` nor
+    :data:`STAMP_REVIEWED_NONSCALAR_COLUMNS`, so a producer must still classify —
+    that stays. What this adds is that an unclassified column costs ONE COLUMN
+    instead of the whole night: ``regime__live``/``regime__history`` arrived
+    unannounced on 2026-08-08 and took six nights of the store with them, because
+    the only thing standing between a bad column and the write was a
+    ``to_parquet`` that raises and a fail-soft catch that swallows.
+
+    A forbidden column is dropped silently (the committing seam already removed it;
+    this is the second fence).  Anything else non-scalar and unclassified is dropped
+    LOUDLY — a line-start ``::warning``, never through a logger, because a logger's
+    prefixing format makes GitHub drop the annotation.
+    """
+    forbidden, unclassified = [], []
+    for column in frame.columns:
+        if column in STAMP_REVIEWED_NONSCALAR_COLUMNS:
+            continue
+        if frame[column].dtype != object:
+            continue          # a typed column cannot hold a container
+        if not frame[column].map(_is_nonscalar_cell).any():
+            continue
+        (forbidden if column in STAMP_FORBIDDEN_COLUMNS else unclassified).append(column)
+    dropped = forbidden + unclassified
+    if dropped:
+        frame = frame.drop(columns=dropped)
+    if unclassified:
+        print(
+            "::warning title=us-context-vector-unclassified-nonscalar::"
+            f"{', '.join(sorted(unclassified))} dropped from tonight's stamp — "
+            "classify in STAMP_REVIEWED_NONSCALAR_COLUMNS or fix the producer",
+            flush=True,
+        )
+    return frame
+
+
+def _reconcile_buy_lane(
+    path: Any,
+    stamp_date: str,
+    board_definition: str,
+    lane_by_ticker: Mapping[str, str] | None,
+) -> None:
+    """Store/board buy-lane reconciliation receipt (masterplan §13.7).
+
+    Compares the buy lane the store actually PERSISTED for tonight against the buy
+    lane the board handed in, and prints the symmetric difference rather than
+    leaving it to be discovered at study time.
+
+    The part is re-read FROM DISK on purpose.  A receipt computed from the same
+    frame it is checking cannot fail — it would only ever restate the assignment
+    that produced it.  The round trip is what lets this see a keep-first drop, a
+    ``(stamp_date, ticker, board_definition)`` collision, a mangled ticker, or a
+    write that produced nothing at all.
+
+    Read-only, fail-soft, ZERO AUTHORITY: it changes no lane and no row.  The scan
+    lane passes no ``lane_by_ticker`` (a scan name is never admitted), so it is
+    skipped there rather than reported as a whole-board mismatch.
+    """
+    if not lane_by_ticker:
+        return
+    try:
+        board_buy = {str(t) for t, lane in lane_by_ticker.items() if lane == "buy"}
+        frame = pd.read_parquet(
+            path, columns=["stamp_date", "ticker", "board_definition", "lane"])
+        tonight = frame[(frame["stamp_date"] == stamp_date)
+                        & (frame["board_definition"] == board_definition)]
+        stored_buy = {str(t) for t in tonight.loc[tonight["lane"] == "buy", "ticker"]}
+        missing = sorted(board_buy - stored_buy)     # board said buy, store has not
+        extra = sorted(stored_buy - board_buy)       # store says buy, board did not
+        if missing or extra:
+            print(
+                "::warning title=us-context-vector-board-mismatch::"
+                f"{stamp_date} buy lane disagrees — "
+                f"in board not store: {', '.join(missing) or 'none'}; "
+                f"in store not board: {', '.join(extra) or 'none'}",
+                flush=True,
+            )
+    except Exception as exc:  # noqa: BLE001 — a receipt must never cost the stamp
+        log.warning("us_context_vector: buy-lane reconciliation skipped (%s)", exc)
 
 
 def append_candidates(
@@ -1029,6 +1365,8 @@ def append_candidates(
     liquidity: Mapping[str, Mapping[str, Any]] | None = None,
     volumes: pd.DataFrame | None = None,
     pool_columns: Mapping[str, Mapping[str, Any]] | None = None,
+    sue_z: Mapping[str, Any] | None = None,
+    short_flow: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> int:
     """Append one settled full-universe US context snapshot.
 
@@ -1070,6 +1408,13 @@ def append_candidates(
 
     stamp_date = _date(asof)
     if not stamp_date or not verdicts:
+        # Past the lane gate (which stays QUIET — a render/intraday lane skipping is
+        # normal), a nightly-lane call with no stamp date or an empty verdict map is
+        # an upstream defect wearing a no-op's clothes: say so at line start.
+        print("::warning title=us-context-vector-empty-input::us_context_vector "
+              f"append refused on the nightly lane: stamp_date={stamp_date!r}, "
+              f"verdicts={len(verdicts or {})} — the PIT store did not advance "
+              "tonight", flush=True)
         return 0
 
     try:
@@ -1127,8 +1472,19 @@ def append_candidates(
             tier=tier,
             liquidity=liquidity,
             pool_columns=pool_columns,
+            # §13 telemetry. `sue_z`/`short_flow` are the builder's own already-loaded
+            # producer outputs (handed in, never re-derived here); the attention and
+            # hub blocks read their artifacts the way every other block in this module
+            # reads its own, so no caller has to learn them.
+            sue_z=sue_z,
+            short_flow=short_flow,
+            attention_z=attention_z_map(root),
+            hub_rows=hub_columns(root),
         )
         if not records:
+            print("::warning title=us-context-vector-no-records::us_context_vector "
+                  f"built 0 records from {len(verdicts)} verdicts for {stamp_date} — "
+                  "the PIT store did not advance tonight", flush=True)
             return 0
 
         new = pd.DataFrame(records)
@@ -1147,8 +1503,11 @@ def append_candidates(
         # part is untouched, so it stops churning git the moment its month closes.
         path = _part_path(stamp_date, root)
         path.parent.mkdir(parents=True, exist_ok=True)
+        prior_stamped = 0
         if path.exists():
             prior = pd.read_parquet(path)
+            prior_stamped = int((prior.get("stamp_date") == stamp_date).sum()
+                                if "stamp_date" in prior.columns else 0)
             # Schema union: a column added tonight is null for prior nights, and
             # a column retired tonight is preserved for the nights that had it.
             columns = list(dict.fromkeys([*prior.columns, *new.columns]))
@@ -1162,8 +1521,40 @@ def append_candidates(
         # Keep-first: a rerun must never rewrite a night already stamped.
         combined = combined.drop_duplicates(subset=list(DEDUPE_KEY), keep="first")
         combined = _coerce_nullable_objects(combined)
+        # LAST fence before the write: one unclassified container-valued column
+        # must cost that column, never the night (see the function's docstring).
+        combined = _contain_unclassified_nonscalars(combined)
         combined.to_parquet(path, index=False)
+
+        stamped_now = int((combined["stamp_date"] == stamp_date).sum())
+        added = stamped_now - prior_stamped
+        if added <= 0:
+            # The nightly reached the writer and the store did not move. That is
+            # the normal, correct outcome of a same-night RERUN (keep-first), and
+            # it is also exactly what a broken assembly looks like — so it is
+            # announced rather than left to be discovered by a study months later.
+            print(
+                "::warning title=us-context-vector-quiet::"
+                f"us_context_vector appended 0 new rows for {stamp_date} "
+                f"({stamped_now} already stamped) — a rerun is expected to be quiet, "
+                "a first run of the night is not",
+                flush=True,
+            )
+        _reconcile_buy_lane(path, stamp_date, board_definition, lane_by_ticker)
         return int(len(combined))
     except Exception as exc:  # noqa: BLE001 — research telemetry never breaks a build
         log.warning("us_context_vector append failed: %s", exc)
+        # The log line above is INVISIBLE in the Actions summary — every builder
+        # here logs through a prefixing formatter, and a GitHub annotation must
+        # START the line. That is why six dead nights read as a green engine job.
+        # Bare print, line start, flushed (stdout is block-buffered when piped).
+        # The exception text is flattened: a newline inside it would end the
+        # annotation early and leave the rest as unattributed log noise.
+        detail = " · ".join(str(exc).splitlines()) or exc.__class__.__name__
+        print(
+            "::warning title=us-context-vector-append-failed::"
+            f"us_context_vector append failed: {detail} — "
+            "the PIT store did not advance tonight",
+            flush=True,
+        )
         return 0

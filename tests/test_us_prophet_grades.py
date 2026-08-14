@@ -796,6 +796,18 @@ class TestZeroAuthorityFence:
             "engine/us_prophet_grades.py",
             "engine/prophet_miss_audit.py",
             "tests/test_us_prophet_grades.py",
+            # PR-1a (WS:PROPHET-CONDITIONAL-FUSION): the arena LABEL builder reads
+            # grades as OUTCOMES, never as features — research-tier, zero authority,
+            # no rank/gate/size/board/plan path.  The backing is mechanical, not
+            # prose: research/prophet_fusion/families.yml carries a
+            # `label_only_stores` declaration naming this store, and
+            # tests/test_prophet_fusion_families.py::TestLabelOnlyStores reds if
+            # the declaration disappears OR if any family member ever claims a
+            # grades column as evidence.  The anti-fork law is WHY the builder
+            # must import the reader rather than re-glob the parts; the fence's
+            # meaning is unchanged: any NEW importer outside this read-only
+            # outcome-consumer class still fails here by name.
+            "scripts/prophet_fusion_labels.py",
         }
         offenders = []
         for folder in ("engine", "scripts", "app", "admin", "lib", "collectors"):

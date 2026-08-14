@@ -1,0 +1,37 @@
+# Design-authority verdict packet (RIG V1 §7) — the forced comparison. Never "checks green, looks good."
+schema: mastermind.rig_verdict.v1
+reference_id: <same as manifest>
+
+authority:
+  identity: "<design authority — Fable main loop / CEO-designated; never the Chairman as a required gate>"
+  role: design_authority
+
+packet:                      # all eight answers required, non-empty
+  materially_improved: >
+    <what actually got better>
+  materially_worsened: >
+    <what actually got worse>
+  disappeared: >
+    <what is gone>
+  behavior_harder: >
+    <what user behavior became harder>
+  stronger_claims: >
+    <what stronger claims the proposal now makes>
+  intent_vs_convenience: >
+    <which decisions trace to product intent vs implementation/data convenience>
+  production_preferable_for: >
+    <tasks where production would still be preferable — "none" must be argued, not assumed>
+  strongest_argument_against: >
+    <the strongest argument AGAINST approval, stated honestly>
+
+blocking_findings:           # every surviving blocker-severity critic finding, by id
+  - finding: PRC-001
+    resolution: upheld_revise   # upheld_revise | resolved_by_change | overridden
+    note: <one line>
+
+overrides: []                # each: {finding: <id>, justification: <...>, authority: <identity>} — permanent record
+
+verdict: REVISE              # APPROVE_REFERENCE | APPROVE_WITH_CONDITIONS | REVISE | REJECT
+conditions: []               # for APPROVE_WITH_CONDITIONS / REVISE — testable by a stranger
+preserved_strengths:         # what the proposal got right — recorded so a block is never a strawman
+  - <...>

@@ -1216,6 +1216,22 @@ STATE_GRADED = "GRADED"        # n_dates >= GRADED_MIN_DATES
 # migration non-terminating. Display never refuses — it selects and labels
 # (`_select_single_clock_block`).
 STATE_MIXED_CLOCK = "MIXED_CLOCK"
+# P0c-2 — CEO ruling 2026-08-13 §5. "Legacy-clock evidence remains VISIBLE but
+# cannot independently create a new promotion after the explicit-clock
+# discontinuity." A family whose evaluated `promotion_check` basis resolved to
+# CLOCK_LEGACY — i.e. it holds no explicit-clock grade row at all — that
+# reaches GRADED territory (n_dates >= GRADED_MIN_DATES on that legacy basis)
+# reads THIS state instead of STATE_GRADED. The numbers (n_dates, hit_rate,
+# wilson_ci_low) are unchanged and still reported alongside it — this state
+# withdraws AUTHORITY, not disclosure. It is deliberately distinct from:
+#   * STATE_GRADED         — means "authority-eligible pending the CI leg";
+#                            never true on a legacy-only basis after this ruling.
+#   * STATE_MIXED_CLOCK    — a DIFFERENT refusal, for a DIFFERENT reason: two
+#                            EXPLICIT bases colliding with no non-arbitrary
+#                            basis to pick. A legacy-only family is not mixing
+#                            anything; it simply has no explicit-clock evidence
+#                            yet. See `promotion_check`.
+STATE_LEGACY_NOT_AUTHORITY_ELIGIBLE = "LEGACY_NOT_AUTHORITY_ELIGIBLE"
 GRADED_MIN_DATES = 25          # §3: n_graded >= 25 DATES (not overlapping obs)
 
 
@@ -2847,7 +2863,11 @@ class PromotionResult:
         reason:         Human-readable explanation of the gate result.
         n_dates:        Number of independent date clusters in the grade set.
         wilson_ci_low:  Wilson CI lower bound (None if n_dates == 0).
-        current_state:  derive_state() chip value.
+        current_state:  derive_state() chip value, EXCEPT that a legacy-only
+                        basis reaching GRADED territory reads
+                        STATE_LEGACY_NOT_AUTHORITY_ELIGIBLE instead of
+                        STATE_GRADED (P0c-2, CEO ruling 2026-08-13 §5) — the
+                        one deliberate override of the plain n_dates chip.
         demote:         True if the rolling CI has gone negative — auto-demote is warranted.
         pinned_reason:  Suggested pin reason string (mirrors narrative_regime precedent).
         clock_basis:    (P0a) the ONE grading-clock basis this verdict was computed
@@ -2974,6 +2994,15 @@ def promotion_check(claim_family: str, horizon: int,
     for why the first cut (refuse every straddled family) was not. A family
     mixing two EXPLICIT bases at one horizon is genuinely ambiguous and is still
     refused as `STATE_MIXED_CLOCK`.
+
+    P0c-2 — CEO ruling 2026-08-13 §5: EVEN WHEN a legacy-only basis is the ONE
+    basis a family holds (today, every live family — no explicit-clock grade
+    row exists yet), it may not INDEPENDENTLY produce `eligible=True`. The
+    numbers still compute and still publish (n_dates, wilson_ci_low, the reason
+    string); only the verdict is withdrawn — see
+    `STATE_LEGACY_NOT_AUTHORITY_ELIGIBLE`. This does not change straddled-family
+    behaviour above: a family holding legacy + exactly one explicit basis still
+    evaluates and promotes on the explicit basis alone, unaffected.
 
     Args:
         claim_family: The `claim_family` tag (matches qledger claims.jsonl rows).
@@ -3158,6 +3187,19 @@ def promotion_check(claim_family: str, horizon: int,
     n_dates = len(dates)
     current_state = derive_state(n_dates)
 
+    # P0c-2 — CEO ruling 2026-08-13 §5: legacy-clock evidence "cannot
+    # independently create a new promotion after the explicit-clock
+    # discontinuity". `basis` resolves to CLOCK_LEGACY only when the family
+    # holds NO explicit-clock grade row at all (see `_authority_clock_basis`:
+    # legacy is picked only as the sole basis, never over an explicit one).
+    # Once such a family reaches GRADED territory this verdict is relabelled
+    # STATE_LEGACY_NOT_AUTHORITY_ELIGIBLE and forced ineligible below — the
+    # numbers (n_dates, ci_low once computed) are untouched and still returned.
+    legacy_authority_withdrawn = (basis == CLOCK_LEGACY
+                                  and current_state == STATE_GRADED)
+    if legacy_authority_withdrawn:
+        current_state = STATE_LEGACY_NOT_AUTHORITY_ELIGIBLE
+
     # P0a — THE MIGRATION BANNER MUST CLEAR. `clock_migration` used to be
     # `bool(excluded)`: any family carrying even ONE row on another basis was
     # flagged as migrating forever, including a family that finished migrating
@@ -3249,6 +3291,31 @@ def promotion_check(claim_family: str, horizon: int,
             n_dates=n_dates, ci_low=ci_low,
             current_state=current_state,
             demote=True, pinned_reason=pinned_reason,
+            clock_basis=basis,
+            **mig,
+        )
+
+    # Both §3 numeric gates pass — but P0c-2 (CEO ruling 2026-08-13 §5) withdraws
+    # AUTHORITY from a legacy-only basis even when the numbers clear. This branch
+    # only ever fires when `basis` resolved to CLOCK_LEGACY, which — per
+    # `_authority_clock_basis` — happens only when the family holds NO
+    # explicit-clock grade row at all. Explicit-clock evidence is untouched by
+    # this check and still promotes normally, on its own n (never pooled with
+    # any legacy count — see `family_bases`/`_authority_clock_basis` above).
+    if legacy_authority_withdrawn:
+        return PromotionResult(
+            eligible=False,
+            reason=(f"n_dates={n_dates} >= {PROMOTION_MIN_DATES} and Wilson CI "
+                    f"lower bound={ci_low:.4f} > {PROMOTION_MIN_CI_LOW} on the "
+                    f"LEGACY grading clock — but legacy-clock evidence cannot "
+                    f"independently mint a new promotion (CEO ruling 2026-08-13 "
+                    f"§5, post explicit-clock discontinuity). This is historical "
+                    f"evidence, honestly reported, not authority: an "
+                    f"explicit-clock grade row must accrue for this family and "
+                    f"independently clear this same gate on its own n before it "
+                    f"promotes.{basis_note}"),
+            n_dates=n_dates, ci_low=ci_low,
+            current_state=current_state,
             clock_basis=basis,
             **mig,
         )

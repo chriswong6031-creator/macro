@@ -1,0 +1,1153 @@
+# Prophet US Conditional Intelligence Fusion — evidence-family registry (v1)
+#
+# THIS FILE IS THE LAW.  The masterplan's §5.1 table is its prose view
+# (`research/PROPHET_CONDITIONAL_FUSION_MASTERPLAN_BY_FABLE.md`, §5.1/§5.2, PIT verdicts
+# §4.1/§4.2, staleness/abstention semantics §7 O6, join law §9.1).  Where prose and this
+# file disagree, this file governs and the prose is amended.
+#
+# WHAT IT IS FOR.  Every feature the fusion model ever sees belongs to exactly ONE family.
+# Families are the unit of anti-double-count budgeting (§10.6) at every arena rung C1–C5.
+# The registry exists so that law is enforced by a test over a machine-readable file, never
+# by prose: see `tests/test_prophet_fusion_families.py`.
+#
+# WHAT IT IS NOT.  It carries no authority.  It ranks nothing, sizes nothing, gates nothing,
+# originates no signal, escalates nothing.  The `authority:` block below is the pin; a PR
+# that flips any of those booleans is a doctrine amendment, not a refactor.
+#
+# CENSUS RECEIPT.  Every `# measured …` comment in this file was read on 2026-08-14 from
+# `data/us_prophet_rank/candidates/2026-08.parquet` (7,759 rows; stamps 2026-08-05/06/07).
+# "board frame" = the 153 rows with `tier == "curated" AND eligible == True` on the
+# 2026-08-07 stamp — the only stamp in the file that carries curated rows.  "curated frame"
+# = all 1,717 curated rows.  Coverage numbers rot: they are a dated receipt, not a contract.
+# The contracts are the `coverage_floor` / `max_staleness_sessions` / `pit_status` fields.
+
+schema: prophet_fusion.families.v1
+
+# ---------------------------------------------------------------------------
+# Anti-authority-creep pin.  All five are false and stay false for this artifact.
+# ---------------------------------------------------------------------------
+authority:
+  can_rank: false
+  can_size: false
+  can_gate: false
+  can_originate_signal: false
+  can_escalate: false
+
+# ---------------------------------------------------------------------------
+# Frame plumbing.  Join keys and identity columns are NEVER features — they are
+# excluded from the one-column-one-family uniqueness pool by construction.
+# ---------------------------------------------------------------------------
+
+# §9.1: context features join on (stamp_date, ticker, board_definition); §7 Population:
+# "curated only" joins on `tier == "curated"`.
+frame_keys: [stamp_date, ticker, board_definition, tier]
+
+# Orphan guard.  Read 2026-08-14: the registry homes ALL 180 columns of the pinned schema
+# exactly once, across families + frame_keys + frame_identity + strata + champion_baseline +
+# excluded_columns.  The store self-heals FORWARD by schema union (§13 adds telemetry columns
+# within days), so a NEW column must not red the suite — but a member deleted out from under
+# its columns must.  The test therefore asserts accounted >= n_columns, never equality.
+store_schema_pin:
+  file: data/us_prophet_rank/candidates/2026-08.parquet
+  stamp: "2026-08-07"
+  n_columns: 180
+
+# On the row but not evidence: board bookkeeping.  `sector` is identity — the sector
+# EVIDENCE column is `sector__sector_node`, homed in F3.
+frame_identity: [name, sector, lane, eligible, buyable]
+
+# §7 era hygiene: era stamps enter as STRATA, never as features.  As features they are
+# row-constant per night and would inherit F6's cross-sectional degeneracy; as strata they
+# fragment n, and the fragmentation is the honest cost and is reported.
+# `board_definition` is both a join key and a stratum — that is intentional.
+strata:
+  columns: [board_definition, selection_era, anchor_era]
+  excluded_eras:
+    - id: disclosed_null_era
+      range: "2026-08-03..2026-08-06"
+      action: exclude          # never imputed (`data/us_board_ledger/README.md`)
+  era_boundaries:
+    - {id: price_basis, date: "2026-08-06", note: "grades-store fill basis break"}
+    - {id: options_chain_store, date: "2026-08-07", note: "options era_break, see F5.options_state"}
+    - {id: score_scale_v1_v2, note: "replayed v1-era scores diverge up to 16.3 pts from published (§6.6)"}
+    - {id: cv_universe_widening, note: "08-05/06 curated rows = 0, 08-07 = 1,717; coverage is reported PER STAMP DATE, never pooled across this break"}
+
+# The champion's own output.  Arena BASELINES (§8.1 G0/G0'/G1/G3/G4), never features:
+# ingesting the score as evidence reproduces the champion by construction.
+champion_baseline:
+  columns:
+    - prophet_score
+    - score_rank
+    - display_rank
+    - featured
+    - prophet_signal
+    - prophet_signal_points
+    - prophet_entry
+    - prophet_entry_points
+    - prophet_edge
+    - prophet_edge_points
+    - prophet_runway
+    - prophet_runway_points
+    - prophet_quality
+    - prophet_quality_points
+  note: >-
+    Baseline comparators only.  The five legs are the champion's own decomposition and are
+    forbidden as challenger features for the same reason §5.2 forbids `conviction` — a
+    composite's legs are the composite.  The families below re-derive the same evidence
+    from its producers, which is the point of the arena.
+
+# Present in the store, deliberately not evidence.
+# The OUTCOME stores are labels, never features (masterplan §7; the arena label
+# builder scripts/prophet_fusion_labels.py is allowlisted through the grades
+# store's zero-authority fence on exactly this declaration — reading outcomes as
+# LABELS is the permitted class, reading them as FEATURES is leakage by
+# construction).  tests/test_prophet_fusion_families.py reds any family member
+# claiming one of these columns.
+label_only_stores:
+  - store: data/us_prophet_rank/grades/
+    reader: engine.us_prophet_grades.load_grades
+    label_only_columns: [fwd_ret, bench_ret, excess_spy, fwd_mfe, fwd_mdd,
+                         entry_price, fill_date, mark_date, graded_asof]
+  - store: data/us_board_ledger/retro_grades.parquet
+    reader: scripts/prophet_fusion_labels.py
+    label_only_columns: [ret, excess_spy, excess_sector, etf_ret, sector_etf,
+                         mae_close_excess_spy, mae_close_excess_sector,
+                         fwd_mfe_5, fwd_mfe_10, fwd_mfe_21, fwd_mfe_63]
+
+excluded_columns:
+  - columns: [pool_definition, pool_lane, pool_lane_reasons, pool_headline_reason, pool_rank,
+              pool_display_rank, pool_in_buy_lane, pool_admission_class, pool_open_plan]
+    reason: >-
+      Candidate-pool lane telemetry (`engine/us_candidate_lanes.py`), display-only and
+      authority-fenced by its own `TestNoAuthorityLeak`.  It records how the board's
+      admission machinery lost names — it is a description of the champion's selection,
+      not independent evidence about the name.
+  - columns: [forensics__workbench_url]
+    reason: "Display URL. Not a measurement."
+  - columns: [context_dims]
+    reason: >-
+      Frame-level missingness manifest (which Context Snapshot dims stamped that night).
+      Read by the harness as coverage metadata — see `semantics.missingness_manifest_column`
+      — never fed to a model as a feature.
+
+# ---------------------------------------------------------------------------
+# Semantics the harness must implement.  These are the mechanical statements of
+# §7 O6's abstention clause and the #4485 null-never-false law, at model scale.
+# ---------------------------------------------------------------------------
+semantics:
+  null_is_not_zero: >-
+    A null is UNMEASURED.  It is never false, never zero, never neutral.  A zero
+    contribution IS imputation at the neutral value and is therefore forbidden as the
+    handling of a missing family — abstention and a zero vote are different acts and the
+    model must be able to tell them apart.
+  missingness_is_first_class: >-
+    Every family contributes an explicit per-family missingness indicator carried as a
+    model input in its own right.  Where the store already ships one (`<dim>__absent`) it
+    is named in the member's `missingness_field` and is the indicator; where it does not,
+    the harness derives one from the member's `columns` and says so in its coverage table.
+    `<dim>__reason` carries WHY the value is missing and is named in `reason_field` —
+    "no panel for this ticker" and "panel starved upstream" are different facts and a
+    router trained without them learns the wrong one (§13.4).
+  abstention_is_not_a_zero_vote: >-
+    A family below its `coverage_floor` on the evaluation frame ABSTAINS: it contributes
+    no value, its missingness indicator is set, and it may not be REPORTED ON for that
+    frame (a metric computed over a frame where the family was dark is not a null result
+    about the family, it is a null result about the frame).
+  null_semantics_enum: [unmeasured, measured_negative, not_applicable]
+  null_semantics_meaning:
+    unmeasured: "Null means the producer did not answer for this row. Counts against coverage."
+    measured_negative: >-
+      Null means the producer answered and the answer was 'no event' (8-K recency with no
+      filing in window; no earnings inside the reaction window).  Does NOT count against
+      coverage — an event family is sparse by nature and a coverage floor read over its
+      event legs would abstain a live channel (§4.1, 8-K "event-sparse by nature").
+    not_applicable: "Null means the row is outside the field's defined population (e.g. `stage` off-board)."
+  coverage_definition: >-
+    A family's coverage on a frame = the share of board-adjacent rows for which at least
+    one member marked `coverage_probe: true` is non-absent.  Probes are chosen as the
+    members whose null means `unmeasured`, so the floor measures whether the family's
+    evidence CHANNEL is live, not whether its evidence happened to fire.  "Board-adjacent"
+    = `tier == "curated"`; the on-board subset (`eligible == True`) is reported beside it,
+    never instead of it.
+  staleness_definition: >-
+    `max_staleness_sessions` bounds how many sessions a member's value may be carried
+    forward from its PRODUCER's last refresh before that member abstains.  It is not a
+    property of the candidates store's stamp — the store re-stamps every column nightly, so
+    a stamp-based staleness reading is vacuous (it is always 0) exactly for the members
+    that are staleest.  A member's own `max_staleness_sessions` overrides its family's; the
+    family's value is the default for members that declare none.  A family abstains when
+    every member is stale or absent.  13F, monthly FINRA settlements, 2-3x/wk options and
+    daily theme cannot share one staleness notion (§7 O6) — this is why the override exists.
+  missingness_manifest_column: context_dims
+  unregistered_column_policy: refuse
+  unregistered_column_note: >-
+    The candidates store self-heals forward by schema union, so new columns appear without
+    a code change here.  The harness REFUSES any column not homed in this file rather than
+    ingesting it under a guessed family — an unhomed column has no family budget, and a
+    feature with no family budget is a free vote.
+
+# ---------------------------------------------------------------------------
+# The eight families.  One-column-one-family is enforced by
+# `tests/test_prophet_fusion_families.py::TestOneColumnOneFamily`.
+#
+# The §5.1 single-home amendments are BINDING and pinned by name in that test:
+#   * `ext_z`            -> F2 only.  F8's crowding read of extension enters, if ever, as
+#                           an F2-orthogonalized derivative registered separately.
+#   * relay columns      -> F3 only.  Its price-derivation is provenance, not membership.
+#   * `theme_heat_rank`  -> F3 only.  The S-C theme-heat-as-crowding hypothesis is a §10.7
+#                           registered interaction, not an F8 membership.
+#   * turnover columns   -> F5 only.  RESOLVED HERE: §5.1 named "turnover percentile" under
+#                           F5 and "turnover tail" under F8, which is a double home the §5.1
+#                           amendments did not adjudicate.  Ruled by the amendments' own
+#                           rule (a dual-role COLUMN gets a single home plus, if wanted, an
+#                           explicitly derived orthogonalized second term): the measure is
+#                           liquidity/flow and lives in F5; F8's tail read enters, if ever,
+#                           as an F5-orthogonalized derivative registered separately.
+# ---------------------------------------------------------------------------
+families:
+
+  # =========================================================================
+  F1_TECHNICAL_CONFLUENCE:
+    title: Technical confluence
+    # Registered default. Probe = signal_gate_cascade.
+    # measured 2026-08-07: tier_cascade 0.895 board / 0.080 curated; gate legs 1.000 board.
+    # The curated-frame reading is low because the cascade verdict is only computed for
+    # names that reach the gate — but `gate_state`/`gate_provisional` are 0.988/1.000 on
+    # the curated frame, so the CHANNEL is live frame-wide and the family passes.
+    coverage_floor: 0.50
+    max_staleness_sessions: 1        # signal_gate runs nightly
+    shared_upstream: >-
+      One MACD/StochRSI machinery family-wide.  `entry_signal` and the cycle ladder read the
+      same underlying state (`name_score._trigger` reads both).  LER's C-detectors
+      deliberately overlap the terminal dots.  Agreement inside this family is one fact.
+    members:
+      - name: signal_gate_cascade
+        source: engine/signal_gate.py verdict via candidates store
+        columns: [tier_cascade, tier_sub, ticks, bars_to_cross, fresh_bars, gate_weight,
+                  gate_state, gate_reason, gate_provisional, near_miss_reason, htf_s1, htf_s2]
+        pit_status: pit
+        availability_field: signal_asof
+        null_semantics: unmeasured
+        coverage_probe: true
+
+      - name: history_sufficiency
+        source: engine/signal_gate.py bar-count context via candidates store
+        columns: [young_history, history_bars]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        note: >-
+          Load-bearing, not bookkeeping.  §13.2 records `macd_bear` as silently FAIL-OPEN on
+          short-history names (`float(nan) < float(nan)` is False), so bar count is exactly
+          what distinguishes "not topped" from "could not tell".  A confluence feature read
+          without it inherits the fail-open.
+
+      - name: entry_stage
+        source: engine/entry_signal.py via the board's `stage` field
+        columns: [stage]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: not_applicable   # null = row is not in the staged board population
+        # measured 2026-08-07: 0.516 board / 0.046 curated.
+
+      - name: cycle_ladder
+        source: engine/cycles.py state/label (STATE_DISPLAY vocabulary)
+        columns: []
+        planned_columns: [cycle_state, cycle_label]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        note: >-
+          The grades store's `signal_class` is mapped from this same vocabulary and is
+          currently null by a named sibling-lane debt (store README) — until it lands,
+          class-conditional claims are impossible and are not made.
+
+      - name: washout_lifecycle
+        source: engine/washout_turn.py weekly lifecycle
+        columns: []
+        planned_columns: [washout_stage, washout_active]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+
+      - name: coiled_context
+        source: engine/coiled.py coiled / washout context
+        columns: []
+        planned_columns: [coiled_state]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+
+      - name: early_turn_state
+        source: engine/us_early_turn.py starter tier
+        columns: []
+        planned_columns: [early_turn_state]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+
+      - name: leader_pullback_event
+        source: engine/us_leader_pullback.py reset events
+        columns: []
+        planned_columns: [leader_pullback_state]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: measured_negative   # null = no reset event in window
+
+      - name: ler_detector_families
+        source: "Live Entry Radar (#5578) `entry_event.v1` — G0/C1-C5 detector families"
+        columns: []
+        planned_columns: [ler_detector_family, ler_event_state]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: measured_negative
+        note: >-
+          Store owned by #5578 PR-2; this program CONSUMES from its first row and duplicates
+          nothing.  The Entry head is DEFERRED until LER grades exist (§7 O4) — a deferred
+          head is reported as deferred, never proxied.
+
+      - name: mwr
+        source: multi-week reversal detector
+        columns: []
+        planned_columns: [mwr_state]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: measured_negative
+
+  # =========================================================================
+  F2_MOMENTUM_EXTENSION:
+    title: Momentum and extension
+    # Probe = residual_alpha. measured 2026-08-07: alpha 0.941 board / 0.930 curated;
+    # ext_z 1.000 board / 0.988 curated.  PASSES.
+    coverage_floor: 0.50
+    max_staleness_sessions: 1        # price-derived, recomputed nightly
+    shared_upstream: >-
+      THE canonical documented double-count: corr(alpha, composite.legs.momentum) = 0.984
+      (`engine/us_board_rank.py:1475` comment) — the momentum leg IS residual alpha under a
+      new name.  `total_return` vs alpha corr +0.37.  See `known_redundancy_edges`.
+    members:
+      - name: residual_alpha
+        source: build_site alpha via build_stock_library.py:2674-2682 -> candidates store
+        columns: [alpha, alpha_percentile]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        coverage_probe: true
+
+      - name: extension_z
+        source: engine/extension.py -> candidates store
+        columns: [ext_z]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        single_home_ruling: >-
+          §5.1 amendment, BINDING: `ext_z` lives in F2 ONLY.  F8's crowding read of
+          extension enters, if ever, as an F2-orthogonalized derivative registered as its
+          own member — never as a second membership.
+
+      - name: antichase_shadow
+        source: engine/us_board_rank.py anti-chase shadow evaluation -> candidates store
+        columns: [antichase_shadow_blocked]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        note: "Shadow-tier chase guard; extension-derived, so it shares F2's budget."
+
+      - name: total_return_z
+        source: 63d leaders total-return z
+        columns: []
+        planned_columns: [total_return_z]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+
+      - name: relative_strength
+        source: RS measures / distance from high
+        columns: []
+        planned_columns: [rs_63d, off_high]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+
+      - name: composite_momentum_leg
+        source: engine/stock_score.py composite momentum leg (decomposition target)
+        columns: []
+        planned_columns: [composite_leg_momentum]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        note: >-
+          Admissible ONLY as the §5.2 decomposition target of `conviction`/`composite_z`,
+          and ONLY after the ρ=0.984 dedup against `residual_alpha` — i.e. as an
+          orthogonalized residual, never as a raw second momentum vote.
+
+  # =========================================================================
+  F3_THEME_STRUCTURE:
+    title: Theme and structure
+    # Probe = theme_membership (1.000 — every row carries a membership COUNT, including 0).
+    # But the theme PAYLOAD is 0.320 board / 0.245 curated, foresight 0.209 board, and relay
+    # 0.000 on every curated row in the file.
+    #
+    # NO OVERRIDE.  The floor stays at the registered 0.50 even though the payload is below
+    # it, because F3's shortfall is a REPAIR ITEM (§13.4: "why the theme payload reaches only
+    # 27% of board-adjacent store rows ... fix or document — a router trained on absence
+    # learns the absence"), not a structural property of theme evidence.  Lowering the floor
+    # to make today's data pass would fit the gate to the defect.  On today's frame F3
+    # therefore ABSTAINS on its payload members and may not be reported on.
+    coverage_floor: 0.50
+    max_staleness_sessions: 1        # scripts/build_baskets.py runs nightly
+    shared_upstream: >-
+      ONE producer (`data/baskets/*`) feeds membership, chips, basket-turn cohorts AND relay
+      windows; foresight joins baskets through one crosswalk and also feeds four NW theme
+      organs; the Hub's theme leg reads the same artifacts.  Agreement among these is one
+      fact, not four.
+    members:
+      - name: theme_membership
+        source: scripts/build_baskets.py -> data/baskets/{latest,membership}.json -> candidates store
+        columns: [theme_membership_count, theme_membership_ids, theme_primary_id, theme_primary_name]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        coverage_probe: true
+
+      - name: theme_heat
+        source: scripts/build_baskets.py theme lifecycle payload -> candidates store
+        columns: [theme_heat_rank, theme_score, theme_label, theme_reco, theme_bull_days,
+                  theme_clean_entry]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        single_home_ruling: >-
+          §5.1 amendment, BINDING: theme heat lives in F3 ONLY.  The S-C
+          theme-heat-as-crowding hypothesis is a §10.7 registered INTERACTION
+          (high theme heat x high extension as negative asymmetry), not an F8 membership.
+        # measured 2026-08-07: 0.320 board / 0.245 curated — BELOW FLOOR, abstains.
+
+      - name: relay_window
+        source: us_context_vector.py:422 (mirrors prophet_doors._relay) -> candidates store
+        columns: [relay_count_3d, relay_position, relay_members_covered, relay_basket_id]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        single_home_ruling: >-
+          §5.1 amendment, BINDING: relay lives in F3 ONLY.  Its price-derivation is
+          provenance, not membership.
+        # measured 2026-08-07: 0.000 on ALL 1,717 curated rows and all 153 board rows.
+        # The column exists and is stamped null — dark, not absent-by-design. Diagnose
+        # before any relay claim (§13.4 coverage-repair family).
+
+      - name: foresight_stage
+        source: engine/foresight_score.py -> candidates store
+        columns: [foresight_stage]
+        pit_status: pit
+        availability_field: stamp_date
+        max_staleness_sessions: 5    # foresight desk cadence is not nightly; DECLARED, and
+                                     # must be re-measured once CV accrual resumes (§13.0)
+        null_semantics: unmeasured
+        note: >-
+          §13.8, disclosed and NOT a gap: all stages are currently text/fingerprint variants
+          with no numeric confirmation.  Treat as categorical; do not synthesize an ordinal.
+        # measured 2026-08-07: 0.209 board / 0.114 curated.
+
+      - name: sector_node
+        source: engine/us_sector_rotation.py -> Context Snapshot `sector` dim
+        columns: [sector__sector_node, sector__subsector_node, sector__oracle_episode]
+        pit_status: pit
+        availability_field: stamp_date
+        timestamp_columns: [sector__as_of]
+        basis_field: sector__basis
+        missingness_field: sector__absent
+        null_semantics: unmeasured
+        note: >-
+          §4.2 flag 5, binding: `sector__absent` OVER-CREDITS — it reads present on 100% of
+          curated rows while `sector__subsector_node` and `sector__oracle_episode` are 100%
+          null and `sector__as_of` is 100% null.  Consumers key on FIELD-LEVEL non-null,
+          never on the flag; that is why `availability_field` is `stamp_date` here and
+          `sector__as_of` is demoted to `timestamp_columns` — naming a column that never
+          carries a value as the PIT anchor would be a false claim of PIT-ness.
+        # measured 2026-08-07: sector__sector_node 0.745 board / 0.852 curated;
+        # subsector_node, oracle_episode, sector__as_of all 0.000.
+
+      - name: basket_turn_state
+        source: engine/us_basket_turn.py reversal-cohort states
+        columns: []
+        planned_columns: [basket_turn_state, basket_turn_cohort]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+
+      - name: narrative_rotation
+        source: engine/narrative_rotation.py
+        columns: []
+        planned_columns: [narrative_state]
+        wired: false
+        pit_status: pit
+        availability_field: fetch_date
+        null_semantics: unmeasured
+        note: "Raw store is <=4 months deep (2026-04 ->); forward accrual is the only path to depth."
+
+      - name: state_of_themes
+        source: State of Themes artifact
+        columns: []
+        planned_columns: [state_of_themes_stage]
+        wired: false
+        pit_status: forward_only
+        availability_field: null
+        null_semantics: unmeasured
+
+      - name: hub_theme_leg
+        source: engine/intel_hub.py theme leg (typed decomposition only, §5.2)
+        columns: []
+        planned_columns: [hub_theme_direction, hub_theme_strength]
+        wired: false
+        pit_status: forward_only
+        availability_field: null
+        null_semantics: unmeasured
+        note: >-
+          Hub state is SNAPSHOT-ONLY with no history trail — `forward_only` until §13.3's
+          typed columns accrue.  The hub's `opportunity_score` / `composite_conviction` are
+          never ingested (see `forbidden_composites`), and the hub's own feeders overlap
+          F1-F4, so hub agreement with Prophet is substantially self-agreement.
+
+  # =========================================================================
+  F4_CATALYST_EVENT:
+    title: Catalyst and event
+    # Probe = earnings_proximity (the channel-liveness member).
+    # measured 2026-08-07: in_blackout 1.000 board, days_to_report 0.876 board.  PASSES.
+    # The event legs (8-K 0.412, post-earnings 0.412) are `measured_negative` and correctly
+    # do NOT drag the floor — a coverage floor read over event legs would abstain a live
+    # channel purely because no event fired (§4.1: 8-K "event-sparse by nature").
+    coverage_floor: 0.50
+    max_staleness_sessions: 1        # earnings_blackout.assess + EDGAR pipeline run nightly
+    shared_upstream: >-
+      Revisions already flow into `composite` (-> conviction display) and name_score's edge
+      blend; SUE feeds name_score AND board chips; every earnings field derives from one
+      `earnings_blackout.assess` pass.
+    members:
+      - name: earnings_proximity
+        source: engine/earnings_blackout.py assess() -> candidates store
+        columns: [days_to_report, reports_within_7, in_blackout, earnings_stale]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        coverage_probe: true
+
+      - name: post_earnings_reaction
+        source: engine/earnings_catalyst.py board_row_fields -> candidates store
+        columns: [post_earnings_move_pct, post_earnings_sessions_since]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: measured_negative   # null = no earnings inside the reaction window
+
+      - name: eightk_recency
+        source: EDGAR pipeline -> data/edgar/material_8k_events.parquet -> candidates store
+        columns: [eightk_recent_days]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: measured_negative   # null = no 8-K in window
+        note: >-
+          The CV column is PIT by its nightly stamp; the upstream store's own availability
+          field is `filing_date` and is what a deep-history reconstruction joins on.
+          Derived statutory lags are FORBIDDEN as join keys (§9.1).
+
+      - name: sue_surprise
+        source: sue_freshness_days() / data/edgar/sue_phase0.json
+        columns: []
+        # sue_z was moved OUT of planned_columns in the same PR that wired it as a
+        # store column (PR-1a): the planned-vs-real vise has no green state across a
+        # wiring transition until wired_from-dating lands (PR-1b).  Until the member
+        # is re-homed with wired_from, sue_z rides as an unhomed store column —
+        # harmless (the harness refuses only REQUESTED unregistered columns).
+        planned_columns: [catalyst_class]
+        wired: false
+        pit_status: pit
+        availability_field: filing_date
+        null_semantics: measured_negative
+        note: >-
+          BINDING WARNING (§4.1): `sue_phase0.json` records a shallow-panel "WIRE — survives
+          BH-FDR" verdict that the DEEP survivorship-clean panel later REVERSED (IC 0.0006,
+          t_HAC 0.06 — hub V2 §4.3).  The file must never be cited as a live GO.
+
+      - name: analyst_revisions
+        source: engine/analyst_revisions.py
+        columns: []
+        planned_columns: [revisions_z]
+        wired: false
+        pit_status: pit
+        availability_field: available_date
+        null_semantics: unmeasured
+        note: "Also the §5.2 decomposition target of `conviction`'s revisions leg."
+
+      - name: gov_contracts
+        source: scripts/build_government_revenue.py / data/quiver gov contracts
+        columns: []
+        planned_columns: [gov_contract_accel]
+        wired: false
+        pit_status: pit
+        availability_field: available_date
+        null_semantics: measured_negative
+
+      - name: activist_13d
+        source: engine/activist.py
+        columns: []
+        planned_columns: [activist_13d_recent_days]
+        wired: false
+        pit_status: pit
+        availability_field: filing_date
+        null_semantics: measured_negative
+
+      - name: biocatalyst
+        source: scripts/build_biocatalyst.py
+        columns: []
+        planned_columns: [biocatalyst_event_days]
+        wired: false
+        pit_status: forward_only
+        availability_field: null
+        null_semantics: measured_negative
+        note: >-
+          §4.1: ABSENT — all 35 tracked files are test fixtures, zero production data.
+          `forward_only` is not a formality here; there is nothing behind it yet.
+
+      - name: special_situations
+        source: special-situation channel
+        columns: []
+        planned_columns: [special_situation_class]
+        wired: false
+        pit_status: forward_only
+        availability_field: null
+        null_semantics: measured_negative
+
+  # =========================================================================
+  F5_FLOW_POSITIONING:
+    title: Flow and positioning
+    # Probe = options_state and turnover_liquidity.
+    # measured 2026-08-07: turnover_pctile_20d 0.745 board; options 0.301 board;
+    # short_int 0.745 board (but snapshot_not_pit -> backtest-refused);
+    # insider__absent = TRUE on 153/153 board rows and 1717/1717 curated rows.
+    coverage_floor: 0.50
+    max_staleness_sessions: 1        # default for the daily members (turnover)
+    shared_upstream: >-
+      Options internals are heavily cross-correlated (the charm/DOI kills cite trail-RV
+      IC 0.5-0.6 confounds).  The SINGLE `sec_insider` panel reaches >=3 surfaces
+      (insider_intel chips + the `insider__` dim + name_score's edge blend + hub clusters) —
+      a chip agreeing with the dim is self-agreement, not confirmation.
+    members:
+      - name: options_state
+        source: engine/options_flow.py + engine/gex_confirm.py -> Context Snapshot `options` dim
+        columns: [options__skew, options__gex]
+        pit_status: pit
+        availability_field: options__as_of
+        basis_field: options__basis
+        missingness_field: options__absent
+        reason_field: options__reason
+        max_staleness_sessions: 3    # chain store refreshes ~2-3x/week
+        era_break: "2026-08-07"
+        null_semantics: unmeasured
+        coverage_probe: true
+        note: >-
+          §5.2: options NON-scalars stay research-side.  Only the scalar dim fields above are
+          features.  Pooled inference across the 2026-08-07 chain-store era boundary requires
+          disclosure (§7 era hygiene).
+
+      - name: short_interest
+        source: FINRA backfill -> data/finra/short_interest.parquet -> Context Snapshot `short_int` dim
+        columns: [short_int__short_shares, short_int__prev_short_shares, short_int__avg_daily_vol,
+                  short_int__days_to_cover, short_int__si_change_pct]
+        pit_status: snapshot_not_pit
+        availability_field: short_int__settlement_date
+        timestamp_columns: [short_int__as_of, short_int__asof]
+        basis_field: short_int__basis
+        missingness_field: short_int__absent
+        reason_field: short_int__reason
+        max_staleness_sessions: 21   # monthly FINRA settlement cycle
+        null_semantics: unmeasured
+        note: >-
+          PIT-BROKEN BY CONSTRUCTION (§4.2 flag 2): `context_api._short_int_dim` IGNORES the
+          query date and returns the CURRENT snapshot; the history file (2 settlements:
+          06-30, 07-31) is never read.  Any historical use is leakage.  The harness HARD-
+          REFUSES this member in every backtest frame — forward accrual only.  Separately,
+          `settlement_date` is the OBSERVATION date, not the publication date (FINRA
+          publishes ~8 sessions later), so even a repaired reader must join on publication.
+
+      - name: insider_panel
+        source: engine/insider_intel.py -> data/sec_insider/panel -> Context Snapshot `insider` dim
+        columns: []
+        missingness_field: insider__absent
+        reason_field: insider__reason
+        pit_status: pit
+        availability_field: filing_date
+        max_staleness_sessions: 63   # quarterly panel
+        serving_dead: true
+        null_semantics: unmeasured
+        note: >-
+          SERVING DEAD.  The dim is wired and PIT-correct by construction (`filing_date`),
+          but the panel COLLECTOR STOPPED AT 2026q1, so trailing-90d lookups from August find
+          nothing and `insider__absent` reads TRUE on 153/153 board rows and 1,717/1,717
+          curated rows (§4.1, §4.2 flag 3, §6.4).  The literal first-named lobe of the CEO
+          ruling cannot be evaluated AT ALL on fresh data until the collector is repaired
+          (§13.0).  `serving_dead: true` is the machine-readable form of that: the member is
+          registered, its budget is reserved, and no insider claim may be made until it
+          clears.  It carries NO feature columns because the store ships none — only the
+          absence flag and its reason.
+
+      - name: turnover_liquidity
+        source: engine/us_scan_universe.py liquidity fields -> candidates store
+        columns: [turnover_pctile_20d, turnover_pctile_60d, turnover_window_20d, mdv20_usd]
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        coverage_probe: true
+        single_home_ruling: >-
+          RESOLVED HERE (§5.1 named "turnover percentile" in F5 and "turnover tail" in F8 —
+          a double home the §5.1 amendments did not adjudicate).  Turnover lives in F5 ONLY,
+          by the amendments' own rule.  F8's crowding tail read enters, if ever, as an
+          F5-orthogonalized derivative registered as its own member.
+        # measured 2026-08-07: turnover_pctile_20d / turnover_window_20d 0.745 board;
+        # turnover_pctile_60d and mdv20_usd 0.000 — 60d is the §13.6 data-blocked debt
+        # (self-heal ~mid-Aug; verify it started populating, else escalate).
+
+      - name: congress_trades
+        source: data/quiver/congress*.parquet via engine/congress_entry.py
+        columns: []
+        planned_columns: [congress_net_60d, congress_buyers_60d]
+        wired: false
+        pit_status: pit
+        availability_field: ReportDate
+        max_staleness_sessions: 45
+        null_semantics: measured_negative
+        note: >-
+          RICH raw, ZERO consumers (§4.1): TransactionDate 2012-02-27 -> 2026-08-07,
+          ReportDate 2014 -> 2026-08-12 — a correct PIT pair.  Join on `ReportDate`
+          (disclosure availability), never on `TransactionDate`, and never on a derived
+          statutory lag (§9.1 — a fixed 45-day lag is wrong exactly for the interesting
+          cases: delinquent filings).  `max_staleness_sessions` here is the carry-forward
+          bound on a disclosed trade, not a join lag.
+
+      - name: smart_money_13f
+        source: data/smart_money (55 funds) + data/quiver/sec13f* (second parallel feed)
+        columns: []
+        planned_columns: [smart_money_holders, smart_money_net_qoq]
+        wired: false
+        pit_status: pit
+        availability_field: available_date
+        max_staleness_sessions: 63   # quarterly 13F cycle
+        null_semantics: measured_negative
+        note: >-
+          RICH raw (period_end 2022-09-30 ->) with the correct `filing_date`/`available_date`
+          PIT pair, ABSENT from the CV — zero columns anywhere.  TWO parallel feeds exist;
+          they are ONE family member, not two votes.
+
+  # =========================================================================
+  F6_MACRO_REGIME:
+    title: Macro regime
+    # OVERRIDE, justified: 1.00, not the registered 0.50.
+    # F6 is ROW-CONSTANT by construction (one value for every name on a given night), so a
+    # row-share coverage floor is all-or-nothing: coverage is 1.0 or 0.0, never 0.6.  A
+    # partial regime read on a frame means a BROKEN JOIN, not sparse evidence, and would
+    # silently split the frame into two macro worlds.  0.50 would therefore be a floor that
+    # can never bind. measured 2026-08-07: 1.000 on every regime column, board and curated.
+    coverage_floor: 1.00
+    max_staleness_sessions: 1        # regime recomputed nightly
+    shared_upstream: >-
+      Row-constant per night — cross-sectionally DEGENERATE BY CONSTRUCTION.  Lawful only as
+      router / interaction axes (§10.2), NEVER as cross-sectional rankers.  Before any router
+      axis is used, `engine.regime_conditioning_coverage.assess()` must return `estimable`
+      for that axis on the training frame (§9.10, `DNR:KILL-PER-SIGNAL-FAMILY-RELIABILITY`
+      compliance): the 2026-08-05 kill measured the family x regime interaction 3.8x SMALLER
+      than the family main effect, and the router must beat that bar on estimable cells.
+    members:
+      - name: regime_dim
+        source: data/regime/latest.json + regime_history.parquet -> Context Snapshot `regime` dim
+        columns: [regime__quad, regime__pending_quad, regime__pending_days, regime__raw_quad,
+                  regime__growth_score, regime__growth_confidence, regime__growth_agreement,
+                  regime__growth_n_components, regime__inflation_score,
+                  regime__inflation_confidence, regime__inflation_agreement,
+                  regime__inflation_n_components, regime__recession, regime__inflation_shock,
+                  regime__liquidity, regime__cycle, regime__regime_confidence, regime__n_flags,
+                  regime__flag_breadth_price, regime__flag_credit_equity,
+                  regime__flag_ratio_inflection, regime__flag_inflation_basket,
+                  regime__flag_confidence_decay, regime__flag_gex,
+                  regime__flag_rotation_persistence, regime__transition_state,
+                  regime__transition_state_raw, regime__transition_ratcheted,
+                  regime__transition_dwell_remaining]
+        pit_status: pit
+        availability_field: regime__as_of
+        basis_field: regime__basis
+        missingness_field: regime__absent
+        cross_sectional: false
+        null_semantics: unmeasured
+        coverage_probe: true
+        note: >-
+          RICH: `regime_history.parquet` runs 1927-12-30 ->, with `recomputed_history` and
+          `pit_live` distinguished by `regime__basis`.  A frame that mixes the two bases
+          without disclosing it is not a PIT frame — key on `basis_field`.
+
+      - name: board_regime_stamps
+        source: engine/dispersion.py + regime artifact top-level -> candidates store
+        columns: [regime_market_quad, regime_quad_name, regime_vol_regime,
+                  regime_dispersion_state, regime_gate_go]
+        pit_status: pit
+        availability_field: stamp_date
+        cross_sectional: false
+        null_semantics: unmeasured
+
+      - name: factor_dispersion_state
+        source: data/factordata panel -> Context Snapshot `factor` dim
+        columns: []
+        missingness_field: factor__absent
+        reason_field: factor__reason
+        pit_status: forward_only
+        availability_field: null
+        host_only: true
+        cross_sectional: false
+        null_semantics: unmeasured
+        note: >-
+          DEAD EVEN IN PRODUCTION COMMITS: the panel is not in git at all (host/R2-only) and
+          `factor__absent` reads TRUE on 153/153 board rows and 1,717/1,717 curated rows.
+          §4.2 flag 4: any CI-run or clone-run study silently sees zero coverage, so arena
+          reports MUST print per-dimension coverage — otherwise host-only darkness
+          masquerades as a measured null result.
+
+      - name: transmission_chains
+        source: engine/transmission_chains.py
+        columns: []
+        planned_columns: [transmission_chain_state]
+        wired: false
+        pit_status: forward_only
+        availability_field: null
+        cross_sectional: false
+        null_semantics: unmeasured
+
+  # =========================================================================
+  F7_QUALITY_FUNDAMENTAL:
+    title: Quality and fundamental
+    # Probe = forensics_scalars.
+    # measured 2026-08-07: forensics 0.739 board / 0.840 curated; archetype 0.739 board;
+    # personality__chart_primary 0.993 board.  PASSES on coverage — but see pit_status:
+    # forensics is snapshot_not_pit and is backtest-refused regardless of its coverage.
+    coverage_floor: 0.50
+    max_staleness_sessions: 21       # default: filing-driven refresh
+    shared_upstream: >-
+      Forensics scalar fields are the PIT-SAFE PROJECTION (paid bodies excluded at the store
+      boundary, `STAMP_FORBIDDEN_COLUMNS`).  Archetype and personality columns route through
+      #5583's fingerprint interfaces, NOT raw — they are near-unique keys on a ~70-row board
+      (archetype 1,465 tickers; personality 223-name universe), so an ensemble can memorize
+      names without ever seeing `ticker`.  §9.5's three Channel-A conditions (capacity budget
+      p_eff <= N_names/10, name-disjoint OOS, name-permutation null) bind every rung from C3
+      up wherever this family enters.
+    members:
+      - name: forensics_scalars
+        source: scripts/build_fundamental_forensics.py -> Context Snapshot `forensics` dim
+        columns: [forensics__action, forensics__latest_period, forensics__latest_filed,
+                  forensics__display_only, forensics__authority]
+        pit_status: snapshot_not_pit
+        availability_field: forensics__as_of
+        basis_field: forensics__basis
+        missingness_field: forensics__absent
+        reason_field: forensics__reason
+        null_semantics: unmeasured
+        coverage_probe: true
+        note: >-
+          SNAPSHOT-ONLY with NO historical replay — the store REFUSES dates before its
+          `generated_at`, and its basis is literally
+          `normalized_projection_snapshot_not_pit` (§4.1).  Backtestable NEVER; it accrues
+          forward only.  The harness HARD-REFUSES this member in any backtest frame.
+          `forensics__latest_filed` is the underlying financials' filing date and is a
+          FEATURE (data vintage), not the member's availability anchor.
+
+      - name: archetype_fingerprint
+        source: data/archetypes/history.parquet -> Context Snapshot `archetype` dim
+        columns: [archetype__archetype, archetype__confidence, archetype__fy]
+        pit_status: pit
+        availability_field: archetype__as_of
+        basis_field: archetype__basis
+        missingness_field: archetype__absent
+        reason_field: archetype__reason
+        max_staleness_sessions: 63
+        null_semantics: unmeasured
+        note: >-
+          RICH depth (2009-08-28 ->, 1,465 tickers) on `pit_labels`.  Consumed through
+          #5583's fingerprint interface, never as a raw per-name key (see `shared_upstream`).
+
+      - name: personality_fingerprint
+        source: data/research/personality_pit_labels.parquet -> Context Snapshot `personality` dim
+        columns: [personality__chart_primary, personality__micro_primary, personality__archetype]
+        pit_status: pit
+        availability_field: personality__as_of
+        basis_field: personality__basis
+        missingness_field: personality__absent
+        reason_field: personality__reason
+        max_staleness_sessions: 63
+        null_semantics: unmeasured
+        note: >-
+          RICH depth (1962-01-02 -> 2026-07-06, 2.1M rows) but a 223-NAME universe — the
+          single most memorizable key in the estate.  Same #5583 fingerprint routing.
+
+      - name: spine_records
+        source: data/neuralweb/spine_index.parquet -> Context Snapshot `spine` dim
+        columns: []
+        research_side_columns: [spine__records]
+        pit_status: pit
+        availability_field: spine__as_of
+        basis_field: spine__basis
+        missingness_field: spine__absent
+        reason_field: spine__reason
+        max_staleness_sessions: 1    # spine index stamps nightly (1962-11-29 -> 2026-08-14)
+        null_semantics: unmeasured
+        note: >-
+          §5.2, BINDING: `spine__records` STAYS RESEARCH-SIDE.  It is homed here so the
+          one-column-one-family law accounts for it, and it is registered as
+          `research_side_columns` precisely so a harness cannot promote it to a feature.
+          Typed scalars derived from the spine may be registered later as their own member.
+
+      - name: capital_structure
+        source: data/capital_structure/discovery.parquet
+        columns: []
+        planned_columns: [capstruct_dilution_risk, capstruct_shelf_active]
+        wired: false
+        pit_status: pit
+        availability_field: filing_date
+        max_staleness_sessions: 63
+        null_semantics: unmeasured
+        note: "Unwired but PIT-SAFE raw: filing_date 2023-06-23 ->."
+
+      - name: psq_stage
+        source: PSQ fundamental-quality stage
+        columns: []
+        planned_columns: [psq_stage]
+        wired: false
+        pit_status: pit
+        availability_field: filing_date
+        max_staleness_sessions: 63
+        null_semantics: unmeasured
+
+  # =========================================================================
+  F8_ATTENTION_CROWDING:
+    title: Attention and crowding
+    # Probe = attention.  measured 2026-08-07: attention__views 0.588 board / 0.691 curated
+    # in the COMMITTED parquet — the stamped column survives even though the `data/attention`
+    # STORE is host/R2-only.  NO OVERRIDE: 0.588 clears 0.50 only on the host-stamped frame,
+    # and a clone/CI frame that reconstructs attention from the store sees ZERO.  Lowering
+    # the floor would hide exactly that (§4.2 flag 4).  F8 abstains wherever attention is
+    # dark, which is the correct behaviour and is reported, not repaired by the floor.
+    #
+    # HONEST STATE: after the ext_z, theme-heat and turnover single-home rulings, F8 has NO
+    # wired feature column that is `pit`.  Its crowding hypotheses are §10.7 registered
+    # interactions and orthogonalized derivatives of F2/F5 — not memberships.  This family is
+    # thin BY LAW, and that is the anti-double-count law working, not a gap to fill.
+    coverage_floor: 0.50
+    max_staleness_sessions: 1        # attention refreshes daily on the host
+    shared_upstream: >-
+      Blowoff shares its price-derivation with F2 (correlation reported in the §5.3 blocks).
+      The S-C theme-heat-as-crowding read and any extension-as-crowding read enter ONLY as
+      §10.7 registered interactions or F2/F5-orthogonalized derivatives — NEVER as second
+      memberships.
+    members:
+      - name: attention
+        source: data/attention (host/R2-only) -> Context Snapshot `attention` dim
+        columns: [attention__views, attention__log_views]
+        pit_status: forward_only
+        availability_field: attention__as_of
+        basis_field: attention__basis
+        missingness_field: attention__absent
+        reason_field: attention__reason
+        host_only: true
+        null_semantics: unmeasured
+        coverage_probe: true
+        note: >-
+          HOST-ONLY: the `data/attention` store is not in git, so a clone/CI reconstruction
+          sees zero coverage while the committed CV column still carries stamped values —
+          two different readings of the same dim.  `forward_only`: with no clone-visible
+          history there is nothing to reconstruct backwards, so it is excluded from backtest
+          frames and accrues forward.  Arena reports MUST print per-dimension coverage so
+          host-only darkness cannot masquerade as a null result (§4.2 flag 4).
+
+      - name: news_burst
+        source: news-burst detector
+        columns: []
+        planned_columns: [news_burst_z]
+        wired: false
+        pit_status: forward_only
+        availability_field: null
+        null_semantics: measured_negative
+
+      - name: blowoff_risk
+        source: engine/roc_blowoff.py
+        columns: []
+        planned_columns: [blowoff_state]
+        wired: false
+        pit_status: pit
+        availability_field: stamp_date
+        null_semantics: unmeasured
+        note: >-
+          Shares price-derivation with F2's `ext_z` (see `known_redundancy_edges`).  Admitted
+          to F8 only as an F2-orthogonalized derivative once the correlation is measured in
+          the §5.3 blocks; before that measurement it is display-tier here.
+
+      - name: crowding_flags
+        source: crowding flag set
+        columns: []
+        planned_columns: [crowding_flag_state]
+        wired: false
+        pit_status: forward_only
+        availability_field: null
+        null_semantics: unmeasured
+
+# ---------------------------------------------------------------------------
+# §5.2 Composite-decomposition law.  These are lineage edges that FORBID VOTES.
+# The harness refuses each `composite` below as a raw feature and accepts only the typed
+# legs named in `decompose_to`, each routed to exactly one family.
+# ---------------------------------------------------------------------------
+forbidden_composites:
+
+  - composite: opportunity_score
+    owner: engine/intel_hub.py
+    reason: >-
+      The hub's own feeders (news / alt / radar / buy-board / policy) already overlap F1-F4,
+      and its buy-board leg LITERALLY READS THE BOARD'S POPULATION — hub agreement with
+      Prophet is substantially self-agreement.  A blended hub scalar is that self-agreement
+      cast as an independent vote.
+    decompose_to:
+      - {input: leading_vs_lagging_gap, family: F3_THEME_STRUCTURE}
+      - {input: lifecycle_stage, family: F3_THEME_STRUCTURE}
+      - {input: edge_remaining, family: F3_THEME_STRUCTURE}
+      - {input: isolated_pre_consensus_flag, family: F8_ATTENTION_CROWDING}
+      - {input: feeder_directions_strengths, family: F4_CATALYST_EVENT}
+      - {input: signal_governor_trust, family: F6_MACRO_REGIME}
+      - {input: contradiction_intensity, family: F6_MACRO_REGIME}
+      - {input: source_provenance, family: F6_MACRO_REGIME}
+
+  - composite: composite_conviction
+    owner: engine/intel_hub.py
+    reason: "Same hub self-agreement lineage as `opportunity_score`; never ingested as a scalar."
+    decompose_to:
+      - {input: leading_vs_lagging_gap, family: F3_THEME_STRUCTURE}
+      - {input: lifecycle_stage, family: F3_THEME_STRUCTURE}
+      - {input: edge_remaining, family: F3_THEME_STRUCTURE}
+      - {input: isolated_pre_consensus_flag, family: F8_ATTENTION_CROWDING}
+      - {input: feeder_directions_strengths, family: F4_CATALYST_EVENT}
+      - {input: signal_governor_trust, family: F6_MACRO_REGIME}
+      - {input: contradiction_intensity, family: F6_MACRO_REGIME}
+
+  - composite: conviction
+    owner: engine/stock_score.py
+    reason: >-
+      MEASURED ANTI-PREDICTIVE as an ordering (US_BOARD_MEASUREMENT §1).  A blended scalar
+      that is anti-predictive is not a weak feature, it is a wrong one; its legs may still
+      carry signal and must be raced separately.
+    decompose_to:
+      - {input: momentum_leg, family: F2_MOMENTUM_EXTENSION,
+         constraint: "dedup against residual_alpha first — rho = 0.984 (us_board_rank.py:1475)"}
+      - {input: revisions_leg, family: F4_CATALYST_EVENT}
+      - {input: vol_leg, family: F8_ATTENTION_CROWDING}
+
+  - composite: composite_z
+    owner: engine/stock_score.py
+    reason: "The z-scored form of `conviction`; same anti-predictive measurement, same law."
+    decompose_to:
+      - {input: momentum_leg, family: F2_MOMENTUM_EXTENSION,
+         constraint: "dedup against residual_alpha first — rho = 0.984"}
+      - {input: revisions_leg, family: F4_CATALYST_EVENT}
+      - {input: vol_leg, family: F8_ATTENTION_CROWDING}
+
+  - composite: setup
+    owner: engine/setups.py
+    reason: "Display-only blended setup label, measured with `conviction` in the same anti-predictive leg."
+    decompose_to:
+      - {input: momentum_leg, family: F2_MOMENTUM_EXTENSION,
+         constraint: "dedup against residual_alpha first — rho = 0.984"}
+      - {input: revisions_leg, family: F4_CATALYST_EVENT}
+      - {input: vol_leg, family: F8_ATTENTION_CROWDING}
+
+  - composite: potential_score
+    owner: engine/name_score.py
+    reason: >-
+      The rival in-house composite.  It is the arena's G2 BASELINE (§8.1) — raced as an
+      ordering on one ruler — and is therefore never also a FEATURE: a baseline ingested as
+      evidence cannot be beaten by anything, it is merely re-fit.  Its components decompose
+      as below.
+    decompose_to:
+      - {input: trigger, family: F1_TECHNICAL_CONFLUENCE}
+      - {input: fuel, family: F2_MOMENTUM_EXTENSION}
+      - {input: survive, family: F8_ATTENTION_CROWDING}
+      - {input: tailwind, family: F3_THEME_STRUCTURE}
+      - {input: confidence, family: F6_MACRO_REGIME}
+      - {input: edge_mult, family: F4_CATALYST_EVENT}
+      - {input: edge_mult, family: F5_FLOW_POSITIONING}
+
+# ---------------------------------------------------------------------------
+# §5.1 / §5.2 known redundancy edges.  ASSERTED FROM RECEIPTS TODAY, re-measured in PR-2
+# under the §5.3 plan (Spearman blocks, conditional MI, cross-fitted residualization,
+# per-family leave-one-out ablations).  These are the priors an "N families agree" claim
+# must be audited against.
+# ---------------------------------------------------------------------------
+known_redundancy_edges:
+
+  - pair: [F2_MOMENTUM_EXTENSION.residual_alpha, F2_MOMENTUM_EXTENSION.composite_momentum_leg]
+    relation: "Spearman rho = 0.984"
+    kind: same_quantity_renamed
+    source: "engine/us_board_rank.py:1475 comment, via masterplan §5.1 F2"
+    consequence: >-
+      THE canonical documented double-count.  The momentum leg IS residual alpha under a new
+      name; it may enter only as an orthogonalized residual, never as a second vote.
+
+  - pair: [F2_MOMENTUM_EXTENSION.total_return_z, F2_MOMENTUM_EXTENSION.residual_alpha]
+    relation: "corr = +0.37"
+    kind: shared_price_derivation
+    source: "masterplan §5.1 F2"
+    consequence: "Same-family budget; both may enter but share one family budget, not two."
+
+  - pair: [F8_ATTENTION_CROWDING.blowoff_risk, F2_MOMENTUM_EXTENSION.extension_z]
+    relation: "shared price-derivation; correlation to be reported in the §5.3 blocks"
+    kind: shared_price_derivation
+    source: "masterplan §5.1 F8"
+    consequence: >-
+      Blowoff is admitted to F8 only as an F2-orthogonalized derivative once measured;
+      until then it is display-tier and carries no F8 vote.
+
+  - pair: [F3_THEME_STRUCTURE.hub_theme_leg, "F1_TECHNICAL_CONFLUENCE..F4_CATALYST_EVENT"]
+    relation: "hub feeders (news / alt / radar / buy-board / policy) overlap F1-F4"
+    kind: shared_upstream_feeders
+    source: "masterplan §5.2 Intelligence Hub; engine/intel_hub.py:845-850 reads signal_gate.json"
+    consequence: >-
+      Hub agreement with Prophet is substantially SELF-agreement — the dependency runs from
+      the hub INTO the board's own gate artifact, and the buy-board leg reads the board's
+      population.  Only typed decomposed hub inputs are admissible (see
+      `forbidden_composites`), and even those share the receiving family's budget.
+
+  - pair: [F5_FLOW_POSITIONING.insider_panel, "insider_intel chips / name_score edge blend / hub clusters"]
+    relation: "one `sec_insider` panel reaches >=3 surfaces"
+    kind: single_producer_multiple_surfaces
+    source: "masterplan §5.1 F5"
+    consequence: "A chip agreeing with the dim is self-agreement, not confirmation. One vote."
+
+  - pair: [F3_THEME_STRUCTURE.theme_membership, "F3 theme_heat / relay_window / basket_turn_state"]
+    relation: "one producer (`data/baskets/*`) feeds membership, chips, basket-turn cohorts AND relay windows"
+    kind: single_producer_multiple_surfaces
+    source: "masterplan §5.1 F3"
+    consequence: >-
+      Agreement among these is ONE fact, not four.  This is why relay is homed in F3 rather
+      than treated as an independent structural read.
+
+  - pair: [F1_TECHNICAL_CONFLUENCE.entry_stage, F1_TECHNICAL_CONFLUENCE.cycle_ladder]
+    relation: "both read the same underlying state (`name_score._trigger` reads both)"
+    kind: shared_upstream_state
+    source: "masterplan §5.1 F1"
+    consequence: "One MACD/StochRSI machinery family-wide; same family budget."
+
+  - pair: [F5_FLOW_POSITIONING.options_state, "options internals (charm / DOI / trail-RV)"]
+    relation: "heavily cross-correlated; documented charm/DOI kills cite trail-RV IC 0.5-0.6 confounds"
+    kind: shared_upstream_state
+    source: "masterplan §5.1 F5"
+    consequence: "Options sub-features are one budget; an internals ensemble is not breadth."

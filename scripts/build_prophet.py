@@ -100,6 +100,7 @@ from engine.prophet_integrity import (
     load_plan_corrections,
 )
 from engine.options_structure import validate_trade_plan
+from engine import prophet_board_read
 
 log = logging.getLogger(__name__)
 
@@ -108,6 +109,12 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 STANDOUTS_PATH = _REPO / "site" / "factordata" / "us_standouts.json"
+# G-D — the per-ticker records build_stock_library writes for the WHOLE US universe.
+# Runner-local (gitignored) but written in the SAME nightly job, minutes earlier
+# (daily.yml: "Prophet nightly … AFTER build_site").  Absent tree → every row's board
+# read is BLOCKED_DATA with `library_source_unavailable`, and the coverage telemetry
+# says so; it never silently degrades to a guess.
+STOCKDATA_DIR  = _REPO / "site" / "stockdata"
 SITE_PROPHET   = _REPO / "site" / "prophet"
 PLANS_DIR      = SITE_PROPHET / "plans"
 STATES_DIR     = SITE_PROPHET / "states"
@@ -2342,6 +2349,60 @@ def main() -> None:
         index["origination_disclosure"] = _origination
         log.info("build_prophet: %d plan(s) disclosed as reconstructed (origination %s)",
                  _origination["n"], _origination.get("date"))
+    # ── G-D: the Board read — enrichment + the live actionability axis ──────────
+    # Stamped LAST, over the finished `plans[]` (the same list object), so every row
+    # that ships — enriched or degraded — carries a block, and so the coverage counted
+    # here is the coverage actually published.
+    #
+    # `entry_status` above is UNTOUCHED: it is the frozen §6.2 A1 admission stamp and
+    # several consumers read it as provenance.  This block answers the different
+    # question the Board asks ("what is the read on this name tonight?"), from the
+    # entry/actionability authority only — never `recommended_action`, never a default.
+    try:
+        _library = prophet_board_read.LibraryIndex(STOCKDATA_DIR)
+        _sparks = prophet_board_read.attach(active_entries, library=_library,
+                                            standouts=_standouts_doc)
+        index[prophet_board_read.LINEAGE_KEY] = prophet_board_read.lineage(
+            library=_library, standouts=_standouts_doc)
+        _bcov = prophet_board_read.coverage(active_entries, library=_library)
+        index[prophet_board_read.COVERAGE_KEY] = _bcov
+        # The SVG bodies the `spark` references resolve into — a sibling so index.json's
+        # dozen non-Board consumers do not carry ~2 KB of markup per row.
+        #
+        # Path is derived from INDEX_PATH, NOT from SITE_PROPHET: the reference is
+        # relative to the index, so the artifact must land beside whichever index this
+        # run is writing.  It is also the only spelling that survives the redirect
+        # callers actually use — tests/test_prophet_bridge.py::test_end_to_end_smoke
+        # repoints INDEX_PATH to tmp_path and leaves SITE_PROPHET alone, so a
+        # SITE_PROPHET-relative write escapes into the real tree (caught here 2026-08-13;
+        # the same def-time/module-constant trap that file already documents twice for
+        # write_showcase).
+        _write_json(INDEX_PATH.parent / prophet_board_read.SPARKS_FILENAME,
+                    prophet_board_read.sparks_artifact(
+                        _sparks, library=_library, standouts=_standouts_doc))
+        _status_cov = _bcov["by_field"]["status"]
+        log.info(
+            "build_prophet: board read — status %d/%d available (%d blocked, %d n/a); "
+            "name %d, sector %d, lane %d, spark %d (%d SVGs banked); source=%s asof=%s",
+            _status_cov[prophet_board_read.AVAILABLE], _bcov["rows"],
+            _status_cov[prophet_board_read.BLOCKED_DATA],
+            _status_cov[prophet_board_read.NOT_APPLICABLE],
+            *(_bcov["by_field"][f][prophet_board_read.AVAILABLE]
+              for f in ("name", "sector", "lane", "spark")),
+            len(_sparks), _bcov["source_available"], _bcov["source_as_of"],
+        )
+        if not _bcov["source_available"]:
+            # Bare print, NOT a logger call: GitHub only parses a workflow command when
+            # "::" STARTS the line, and this module's logging format prefixes every
+            # record, which silently drops the annotation.
+            print("::warning title=prophet board read::"
+                  f"{STOCKDATA_DIR} absent — every plan row's board read is"
+                  " BLOCKED_DATA(library_source_unavailable); the Board will render"
+                  " disclosed absences, not stances", flush=True)
+    except Exception as e:  # noqa: BLE001 — additive block; a plan book still ships
+        log.warning("build_prophet: board read join failed (%s: %s)", type(e).__name__, e)
+        print(f"::warning title=prophet board read::join failed ({type(e).__name__}) —"
+              " index.json ships without the board-read block", flush=True)
     _write_json(INDEX_PATH, index)
     log.info("build_prophet: wrote index.json (%d active plans)", len(active_entries))
 

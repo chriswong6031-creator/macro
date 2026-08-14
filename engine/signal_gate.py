@@ -558,6 +558,17 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=Non
     # rides beside null_legs for the same reason: the veto shipped `not_topped=True` on names
     # whose macd_bear leg was structurally unknowable, as if all three legs had been checked.
     v["veto_legs_null"] = casc.get("veto_legs_null") or {}
+    # The veto's three legs, as the veto itself computed them (masterplan §13.2).
+    # ADDITIVE TELEMETRY ONLY: nothing below reads them, `not_topped`/`topped` is
+    # still the entire decision, and `tests/test_confluence_veto_leg_telemetry.py`
+    # pins the gate's eligibility/tier output byte-identical across this change.
+    # Tri-state: None = the cascade never computed the leg (thin history / crash),
+    # never False — a False here means "checked, and clean". `veto_legs_null`
+    # above names each leg the history could not check, which is what separates a
+    # measured False from the FAIL-OPEN False `float(nan) < float(nan)` produces.
+    for _leg in ("stoch_ob", "stoch_bear", "macd_bear"):
+        _leg_value = casc.get(_leg)
+        v[_leg] = None if _leg_value is None else bool(_leg_value)
     # anchor_era is the graded-COHORT label for the bucketing era (R5) — it travels exactly
     # like young_history, onto every verdict and into the slim board dict. sq_anchor_era is
     # its §7 twin (R-SQ3), already seeded by verdict() above; re-asserting it here keeps the

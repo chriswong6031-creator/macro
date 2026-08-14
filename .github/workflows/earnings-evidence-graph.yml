@@ -48,8 +48,29 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: install R2 client only
-        run: python -m pip install --quiet boto3 requests
+      # `pyyaml` is NOT optional and is NOT an R2 dependency — it is an IMPORT
+      # dependency of the very first line this lane executes.  The refresh script
+      # imports `engine.earnings_narrative.contracts`, which runs the package
+      # `engine/earnings_narrative/__init__.py`, which re-exports `.promotion`,
+      # which does `import yaml` at module scope.  With `pyyaml` absent the lane
+      # dies with `ModuleNotFoundError: No module named 'yaml'` BEFORE it fetches
+      # a single transcript body.
+      #
+      # This shipped missing and stayed missing from 2026-08-02T09:30Z (last
+      # green run 30741902772) to 2026-08-14 — twelve days, every hourly run red,
+      # 1,631 transcript bodies dated >= 2026-07-30 left unprocessed, and
+      # /stocks/earnings frozen at call date 2026-07-29.  The outage was invisible
+      # because this is the ONLY lane that ingests: `earnings-story-packets` and
+      # `earnings-public-wire` both stayed green downstream, faithfully projecting
+      # and republishing a frozen evidence root once an hour.  Three green lanes
+      # and 24 commits a day read exactly like a healthy wire.
+      #
+      # Every sibling earnings lane already installs it (`earnings-public-wire`:
+      # boto3 jinja2 pyyaml requests; `earnings-story-packets`: boto3 pyyaml in
+      # all three jobs).  This lane was the one that was missed.  Pinned by
+      # tests/test_earnings_evidence_graph_deps.py.
+      - name: install R2 client and the contracts import chain
+        run: python -m pip install --quiet boto3 requests pyyaml
 
       - name: restore non-authoritative intake cache
         id: restore
