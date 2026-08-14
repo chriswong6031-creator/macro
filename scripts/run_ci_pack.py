@@ -1377,9 +1377,6 @@ def selection_explanations(plan: CIPackPlan) -> tuple[dict[str, Any], ...]:
         if job is None:
             selected_by = "plan-metadata-unavailable"
             matches: tuple[dict[str, Any], ...] = ()
-        elif not job.paths:
-            selected_by = "unscoped-always-on"
-            matches = ()
         elif plan.scope_mode == "off" and plan.changed_from:
             selected_by = "scope-mode-off"
             matches = owned_matches
@@ -1392,6 +1389,9 @@ def selection_explanations(plan: CIPackPlan) -> tuple[dict[str, Any], ...]:
         elif plan.scope_mode == "shadow" and job_id not in predicted_ids:
             selected_by = "scope-mode-shadow"
             matches = owned_matches
+        elif not job.paths:
+            selected_by = "unscoped-always-on"
+            matches = ()
         elif owned_matches:
             selected_by = "owned-scope-match"
             matches = owned_matches

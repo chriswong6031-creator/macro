@@ -1330,6 +1330,7 @@ def test_selection_explanations_distinguish_global_invalidator_and_full_suite(
     jobs = [
         _plan_job("engine-owner", 0, paths=("engine/**",)),
         _plan_job("site-owner", 1, paths=("site/**",)),
+        _plan_job("always-on", 2),
     ]
     invalidated = PACK.build_plan(
         jobs,
@@ -1340,6 +1341,7 @@ def test_selection_explanations_distinguish_global_invalidator_and_full_suite(
     )
     invalidator_explanations = PACK.selection_explanations(invalidated)
     assert [record["job_id"] for record in invalidator_explanations] == [
+        "always-on",
         "engine-owner",
         "site-owner",
     ]
