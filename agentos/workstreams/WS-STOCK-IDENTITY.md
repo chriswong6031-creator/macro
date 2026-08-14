@@ -43,10 +43,12 @@ waves:
       constant; constants frozen w/ receipts; 21 pilot dossiers; census v0 (134,207
       episodes, survivor-only stamped); registry row minted. W1-A1 is now the registered
       effective-roster overlay: the sealed GOLD row is Gold.com/A-Mark dealer behavior,
-      its miner interpretation is withdrawn, and a B-only Barrick addendum must land
-      without changing any W1 measurement. NEXT: finish and merge W1-A1, then the §16.9
-      OPERATOR RETURN (Atlas + dossiers review; dead-name source decision) gates W2 —
-      do not start expert replay before it.
+      its miner interpretation is withdrawn, and PR #5660 carries the B-only Barrick
+      addendum without changing any W1 measurement. The governed receipt overlays the
+      effective miner roster as NEM/AEM/PAAS/WPM/AG/B; B is permanently design-touched
+      and nonconfirmatory. NEXT: merge W1-A1, then the §16.9 OPERATOR RETURN (Atlas +
+      dossiers review; dead-name source decision) gates W2 — do not start expert replay
+      before it.
   - id: W2
     title: Expert replay + provenance pinning (Class R families; R1-rail extend-or-justify)
     status: todo
@@ -86,10 +88,12 @@ do_not_redo:
 artifacts:
   - research/STOCK_IDENTITY_EXPERT_ROUTING_MASTERPLAN_BY_FABLE.md
   - research/STOCK_IDENTITY_PR0_ARCHAEOLOGY.md
+  - research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md
+  - data/stock_identity/amendments/w1a1_gold_wrong_issuer.json
 next_action: >
-  §16 RATIFIED 2026-08-14 (PROCEED). Land PR-0 (#5583) via the sweeper; then a fresh
-  session launches W1 (Identity Atlas v0) per the §16.9 execution authorization —
-  descriptive only, no expert-fit results, understanding-before-backtest binding.
+  Merge the registered W1-A1 overlay in PR #5660, then conduct the §16.9 operator return
+  over the sealed Atlas plus the additive B dossier. W2 remains closed until that return;
+  no expert replay, fit table, partition redraw, or frozen-constant revision is authorized.
 ---
 
 ## Context

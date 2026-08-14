@@ -597,13 +597,19 @@ jobs:
       # than a stuck switch. Synthetic frames only; its one real-store receipt is
       # skipif'd on the absence of data/ and has a never-skipping synthetic twin, same
       # pattern as the price ladder above. Measured: 22 tests, ~0.7s.
+      # Base-closure 2026-08-14: #5540 added the Overtime horizon-reconciliation
+      # acceptance suite under tests/ but named it in no workflow. The bare unrun audit
+      # therefore reds current main. It belongs with the Prophet audit guards whose
+      # horizon/price-basis contracts it reconciles; the existing dependencies suffice
+      # and the focused suite is 23/23 green.
       - name: prophet US audit guards — post-board trajectory, price ladder, adjusted-basis control
         run: >
           python -m pytest
           research/prophet_us_audit/test_post_board_trajectory.py
           research/prophet_us_audit/test_price_ladder.py
           research/prophet_us_audit/test_stop_curvature_study.py
-          research/prophet_us_audit/test_veto_leg_isolation_adjusted_rerun.py -q
+          research/prophet_us_audit/test_veto_leg_isolation_adjusted_rerun.py
+          tests/test_prophet_overtime_horizon_reconciliation.py -q
       # P1 unrun backfill 2026-08-14: the DISCLOSURE BUNDLE — the publish-side artifact
       # built on top of the lineage/normalize/detector chain below — joins the step that
       # already owns that chain.  tests/test_fundamental_forensics_disclosure_bundle.py
