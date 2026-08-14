@@ -631,9 +631,13 @@ def _mixed_store_rows(n_legacy: int, n_v1: int):
                                ("V", n_v1, q.HORIZON_UNIT_TRADING, date(2026, 1, 1))):
         for i in range(n):
             cid = f"{tag}{i}"
+            # direction=1: these rows' subject_ret (0.06) beats control_ret
+            # (0.01), i.e. a correct bullish call. P0c-1 made control-only hit
+            # counting direction-aware, so a claim must declare a direction for
+            # `hit=True` below to be scoreable as a hit under control_only=True.
             claims.append({"claim_id": cid, "desk": "d", "claim_family": "f",
                            "asof": (base + timedelta(days=i)).isoformat(),
-                           "is_placebo": False, "status": "open"})
+                           "is_placebo": False, "status": "open", "direction": 1})
             row = {"claim_id": cid, "horizon_d": 21, "excess": 0.05, "hit": True,
                    "subject_ret": 0.06, "bench_ret": 0.01, "control_ret": 0.01,
                    "graded_at": "2026-08-13T00:00:00+00:00"}
@@ -1524,9 +1528,11 @@ def _two_market_store(n_us: int, n_cn: int):
                                  ("C", n_cn, q.MARKET_CN, date(2026, 6, 1))):
         for i in range(n):
             cid = f"{tag}{i}"
+            # direction=1: see _mixed_store_rows — subject_ret beats
+            # control_ret below, a correct bullish call.
             claims.append({"claim_id": cid, "desk": "d", "claim_family": "f",
                            "asof": (base + timedelta(days=i)).isoformat(),
-                           "is_placebo": False, "status": "open"})
+                           "is_placebo": False, "status": "open", "direction": 1})
             grades.append({"claim_id": cid, "horizon_d": 21, "excess": 0.05,
                            "hit": True, "subject_ret": 0.06, "bench_ret": 0.01,
                            "control_ret": 0.01,
@@ -2070,9 +2076,11 @@ def _legacy_plus_two_market_store(n_legacy: int, n_us: int, n_cn: int):
     claims, grades = _two_market_store(n_us=n_us, n_cn=n_cn)
     for i in range(n_legacy):
         cid = f"L{i}"
+        # direction=1: see _mixed_store_rows — subject_ret beats control_ret
+        # below, a correct bullish call.
         claims.append({"claim_id": cid, "desk": "d", "claim_family": "f",
                        "asof": (date(2025, 1, 1) + timedelta(days=i)).isoformat(),
-                       "is_placebo": False, "status": "open"})
+                       "is_placebo": False, "status": "open", "direction": 1})
         # no horizon_unit / clock_version / clock_market == CLOCK_LEGACY
         grades.append({"claim_id": cid, "horizon_d": 21, "excess": 0.05,
                        "hit": True, "subject_ret": 0.06, "bench_ret": 0.01,
