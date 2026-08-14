@@ -2714,6 +2714,30 @@ def test_structural_preflight_treats_sparse_symlink_as_executable_indirection(
     assert "unknown_executable_ownership" in _finding_codes(result)
 
 
+def test_structural_preflight_treats_pathspec_magic_as_literal_git_path(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    executable = root / ":(glob)scripts*"
+    executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    executable.chmod(0o755)
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "CI Test"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci-test@example.invalid"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "fixture"], cwd=root, check=True)
+    executable.unlink()  # force the sparse HEAD-mode lookup
+
+    result = PREFLIGHT.run_preflight(root, [":(glob)scripts*"])
+
+    assert result["status"] == "fail"
+    assert "unknown_executable_ownership" in _finding_codes(result)
+
+
 @pytest.mark.parametrize(
     "raw",
     [

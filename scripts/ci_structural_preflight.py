@@ -190,7 +190,7 @@ def _git_head_contains(root: Path, rel: str) -> bool | None:
         completed = subprocess.run(
             [
                 "git", "-C", str(root), "ls-tree", "-z", "--name-only",
-                "--full-tree", "HEAD", "--", rel,
+                "--full-tree", "HEAD", "--", f":(literal){rel}",
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -317,7 +317,16 @@ def _git_head_mode(root: Path, rel: str) -> int | None:
     """Read one submitted-tree mode even when sparse checkout omitted its blob."""
     try:
         completed = subprocess.run(
-            ["git", "-C", str(root), "ls-tree", "-z", "HEAD", "--", rel],
+            [
+                "git",
+                "-C",
+                str(root),
+                "ls-tree",
+                "-z",
+                "HEAD",
+                "--",
+                f":(literal){rel}",
+            ],
             capture_output=True,
             check=True,
             timeout=10,
