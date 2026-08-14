@@ -94,7 +94,11 @@ def test_engine_render_outlier_is_partitioned_without_coverage_loss() -> None:
     packs = PACK.partition_jobs(list(jobs.values()), 12)
     pack_weights = [sum(job.weight for job in pack) for pack in packs]
     assert max(job.weight for job in jobs.values()) == 438
-    assert max(pack_weights) <= 608
+    # The integrated 192-job manifest weighs 7,300 units (609 is the arithmetic
+    # lower bound across twelve bins); the deterministic greedy partition is
+    # within one unit of that bound while keeping the former 1,036-unit tail gone.
+    assert sum(pack_weights) == 7_300
+    assert max(pack_weights) <= 610
 
 
 def test_two_packs_are_complete_disjoint_and_balanced() -> None:
