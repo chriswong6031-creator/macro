@@ -2,27 +2,16 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-08-13",
-  "generated_utc": "2026-08-14T06:40:19Z",
+  "generated_utc": "2026-08-14T13:02:00Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 4,
-    "n_eff": 2.44,
+    "n": 3,
+    "n_eff": 1.99,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 4 candidates \u2248 2.44 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 3 candidates \u2248 1.99 independent bets."
   },
-  "same_thesis_groups": [
-    {
-      "members": [
-        "AYI",
-        "CVCO",
-        "ONTO"
-      ],
-      "size": 3,
-      "basis": "factor-cosine",
-      "label": "shared-membership"
-    }
-  ],
+  "same_thesis_groups": [],
   "earnings_coverage_frac": 0.0,
   "by_ticker": {
     "AYI": {
@@ -35,15 +24,6 @@
           "combined": 0.7342,
           "membership_jaccard": 0.0,
           "factor_cosine": 0.7342,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "ONTO",
-          "combined": 0.7096,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.7096,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": null
@@ -115,15 +95,6 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "ONTO",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.0,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
           "ticker": "AYI",
           "combined": 0.0,
           "membership_jaccard": 0.0,
@@ -174,7 +145,7 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 1.8,
+    "entry_open": 1.3,
     "setting_up": 1.0
   },
   "source_passport": {
