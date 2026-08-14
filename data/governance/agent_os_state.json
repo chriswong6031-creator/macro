@@ -1,0 +1,604 @@
+{
+  "schema": "agent_os_state.v1",
+  "generator": "scripts/agentos.py status",
+  "generated_at": "2026-08-14T03:07:03Z",
+  "inputs": {
+    "workstreams": 6,
+    "decisions": 19,
+    "discoveries": 5,
+    "handoffs": 1,
+    "active_builds": "data/governance/active_builds.json@2026-08-14T03:07:03.090849+00:00",
+    "active_builds_age_hours": 0.0,
+    "worktrees": 1,
+    "uncommitted_worktrees": [],
+    "degraded": [
+      "active_builds.v1 merged window is TRUNCATED — a merged PR may read 'unknown'",
+      "Mastermind checkout not found — p0 ids unvalidated, P0 ranking neutral",
+      "uncommitted-work scan skipped over 1 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work"
+    ]
+  },
+  "workstreams": [
+    {
+      "key": "AGENT-OS",
+      "title": "Mastermind Agent OS — organizational knowledge and work-identity plane",
+      "status": "active",
+      "program": "project-active-build-control",
+      "p0": "EXECUTIVE_OS",
+      "p0_active": null,
+      "owner": "chairman",
+      "class": "adjudication",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Close W1's remaining gate: >=3 genuine handoffs from sessions other than the scaffolding sessions, accrued from real work as adopted instructions take effect. Then Phase 3 (compile-context), which gains the agenda-integration wave that retires the UNBLOCKED list. All five conflicts remain ruled: C1 no task store, C2 claims advisory-only, C3 readiness feeds the agenda, C4 stores stay separate, C5 CXI-R12 overruled.",
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 2,
+        "dropped": 0,
+        "in_progress": 1,
+        "todo": 2
+      },
+      "wave_detail": [
+        {
+          "id": "W0",
+          "title": "Architecture + Phase 0 scaffolding (schemas, validator, seeded records)",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "unblocks": 3,
+          "next_action": null,
+          "prs": [
+            5472
+          ],
+          "done_at": "2026-08-13T14:29:00Z"
+        },
+        {
+          "id": "W1",
+          "title": "Phase 1 — adoption: CLAUDE.md/AGENTS.md sections, handoff protocol in use, <=10 backfilled decisions",
+          "status": "in_progress",
+          "depends_on": [
+            "W0"
+          ],
+          "deps_satisfied": true,
+          "unblocks": 1,
+          "next_action": "Adoption instructions + backfill are in PR. Gate status: DEC>=10 met (19); DSC>=5 met on the corpus-total reading the Phase 1 commissioning handoff specifies (5 total; 2 postdate Phase 0); UNMET: >=3 handoffs written by sessions other than the scaffolding sessions, from real work — accrues as live workstream sessions stop; do not manufacture records to close it.\n",
+          "prs": [
+            5556
+          ],
+          "done_at": "2026-08-14T00:47:37Z"
+        },
+        {
+          "id": "W2",
+          "title": "Phase 2 — status generator + mastermind status CEO brief",
+          "status": "done",
+          "depends_on": [
+            "W0"
+          ],
+          "deps_satisfied": true,
+          "unblocks": 1,
+          "next_action": null,
+          "prs": [
+            5472
+          ],
+          "done_at": "2026-08-13T14:29:00Z"
+        },
+        {
+          "id": "W3",
+          "title": "Phase 3 — compile-context over the existing context index",
+          "status": "todo",
+          "depends_on": [
+            "W0"
+          ],
+          "deps_satisfied": true,
+          "unblocks": 0,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W4",
+          "title": "Phase 4 — hook auto-capture at ship-loop boundaries (report-only)",
+          "status": "todo",
+          "depends_on": [
+            "W1",
+            "W2"
+          ],
+          "deps_satisfied": false,
+          "unblocks": 0,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 5472,
+          "state": "merged",
+          "wave": "W0",
+          "merged_at": "2026-08-13T14:29:00Z"
+        },
+        {
+          "number": 5556,
+          "state": "merged",
+          "wave": "W1",
+          "merged_at": "2026-08-14T00:47:37Z"
+        },
+        {
+          "number": 5472,
+          "state": "merged",
+          "wave": "W2",
+          "merged_at": "2026-08-13T14:29:00Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [
+        "record_disagrees_with_execution: wave W1 is 'in_progress' but PR #5556 is merged"
+      ],
+      "source": "agentos/workstreams/WS-AGENT-OS.md"
+    },
+    {
+      "key": "CN-LIMIT-ALPHA",
+      "title": "China limit-up alpha research",
+      "status": "blocked",
+      "program": "china-system",
+      "p0": null,
+      "p0_active": null,
+      "owner": "chairman",
+      "class": "research",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Hold. P-A1 is armed; P-A2 is accrual-gated.",
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
+      "depends_on": [],
+      "blocked_by": [
+        "STOP-SHIP held since 2026-08-10 by operator ruling: grade NEITHER arm, and never cite the pre-charter research waves (see the landmine below for what those are)."
+      ],
+      "waves": {
+        "awaiting_ci": 1,
+        "done": 1,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 1
+      },
+      "wave_detail": [
+        {
+          "id": "W-P0",
+          "title": "Charter + P0 scope",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "unblocks": 0,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "P-A1",
+          "title": "First accrual arm",
+          "status": "awaiting_ci",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "unblocks": 1,
+          "next_action": null,
+          "prs": [
+            5438
+          ],
+          "done_at": "2026-08-12T08:58:58Z"
+        },
+        {
+          "id": "P-A2",
+          "title": "Second arm",
+          "status": "todo",
+          "depends_on": [
+            "P-A1"
+          ],
+          "deps_satisfied": false,
+          "unblocks": 0,
+          "next_action": "Accrual-gated; do not start until P-A1 accrues.",
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 5438,
+          "state": "merged",
+          "wave": "P-A1",
+          "merged_at": "2026-08-12T08:58:58Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [
+        "record_disagrees_with_execution: wave P-A1 is 'awaiting_ci' but PR #5438 is merged"
+      ],
+      "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
+    },
+    {
+      "key": "GMI-THEME-GRAPH",
+      "title": "Global Market Intelligence theme graph",
+      "status": "blocked",
+      "program": "gmi-theme-graph",
+      "p0": null,
+      "p0_active": null,
+      "owner": "coo-fable",
+      "class": "research",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Wait for the 2026-08-15 scrape; then start the transmission layer.",
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
+      "depends_on": [],
+      "blocked_by": [
+        "Waiting on the scheduled Saturday 2026-08-15 scrape. External dependency, on time — not stalled."
+      ],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 2,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 1
+      },
+      "wave_detail": [
+        {
+          "id": "W0",
+          "title": "Graph scaffolding",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "unblocks": 0,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "R1",
+          "title": "R1 answered (#5402)",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "unblocks": 1,
+          "next_action": null,
+          "prs": [
+            5402
+          ],
+          "done_at": "2026-08-12T23:34:44Z"
+        },
+        {
+          "id": "TRANSMISSION",
+          "title": "Transmission/contagion layer",
+          "status": "todo",
+          "depends_on": [
+            "R1"
+          ],
+          "deps_satisfied": true,
+          "unblocks": 0,
+          "next_action": "Start after the 2026-08-15 scrape lands.",
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 5402,
+          "state": "merged",
+          "wave": "R1",
+          "merged_at": "2026-08-12T23:34:44Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-GMI-THEME-GRAPH.md"
+    },
+    {
+      "key": "MACRO-CONTEXT-INDEX",
+      "title": "Macro context index (CXI) — governed project-context retrieval",
+      "status": "active",
+      "program": "macro-context-index",
+      "p0": null,
+      "p0_active": null,
+      "owner": "coo-fable",
+      "class": "build",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro",
+        "terminal",
+        "mastermind"
+      ],
+      "next_action": "Drive the benchmark gates green (W1).",
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 1,
+        "dropped": 0,
+        "in_progress": 1,
+        "todo": 1
+      },
+      "wave_detail": [
+        {
+          "id": "W0",
+          "title": "CXI-2 CLI live (search/open/recent/explain/status, context_packet.v1)",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "unblocks": 0,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W1",
+          "title": "Benchmark gates to green so the index stops being advisory",
+          "status": "in_progress",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "unblocks": 1,
+          "next_action": "Work the red gates in research/context_index/BENCHMARK_RESULTS.md.",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W2",
+          "title": "Add agentos/** as a corpus (Agent OS Phase 3 dependency)",
+          "status": "todo",
+          "depends_on": [
+            "W1"
+          ],
+          "deps_satisfied": false,
+          "unblocks": 0,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-MACRO-CONTEXT-INDEX.md"
+    },
+    {
+      "key": "PROPHET-US-ENTRY-TIMING",
+      "title": "US Prophet structural late-entry diagnosis and reduction",
+      "status": "active",
+      "program": "prophet-us",
+      "p0": "US_PROPHET_ENTRY_TIMING",
+      "p0_active": null,
+      "owner": "coo-fable",
+      "class": "research",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro"
+      ],
+      "next_action": "Verify the 22:30Z bake (W1).",
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 1,
+        "dropped": 0,
+        "in_progress": 1,
+        "todo": 1
+      },
+      "wave_detail": [
+        {
+          "id": "W0",
+          "title": "Queue drain + backfill",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "unblocks": 1,
+          "next_action": null,
+          "prs": [
+            5370
+          ],
+          "done_at": "2026-08-11T23:52:22Z"
+        },
+        {
+          "id": "W1",
+          "title": "Verify the 22:30Z bake lands clean after backfill",
+          "status": "in_progress",
+          "depends_on": [
+            "W0"
+          ],
+          "deps_satisfied": true,
+          "unblocks": 1,
+          "next_action": "Read the 22:30Z bake log for the first post-backfill run. First-run-bomb law applies: a first run after a backfill is not evidence of steady state.\n",
+          "prs": [],
+          "done_at": null
+        },
+        {
+          "id": "W2",
+          "title": "Entry-timing delta measurement on held-out episodes",
+          "status": "todo",
+          "depends_on": [
+            "W1"
+          ],
+          "deps_satisfied": false,
+          "unblocks": 0,
+          "next_action": null,
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 5370,
+          "state": "merged",
+          "wave": "W0",
+          "merged_at": "2026-08-11T23:52:22Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-PROPHET-US-ENTRY-TIMING.md"
+    },
+    {
+      "key": "WATCHLIST-PORTFOLIO-CEO",
+      "title": "Watchlist + Portfolio CEO revamp",
+      "status": "active",
+      "program": "terminal-user-services",
+      "p0": "PRODUCT_TRUST_COHERENCE",
+      "p0_active": null,
+      "owner": "coo-fable",
+      "class": "design",
+      "blast_radius": "user_facing",
+      "repos": [
+        "macro",
+        "terminal"
+      ],
+      "next_action": "Obtain the persistence-model ruling, then start W1.",
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 0,
+        "done": 2,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 1
+      },
+      "wave_detail": [
+        {
+          "id": "W0",
+          "title": "Initial revamp shipped",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "unblocks": 0,
+          "next_action": null,
+          "prs": [
+            5457
+          ],
+          "done_at": "2026-08-12T15:10:34Z"
+        },
+        {
+          "id": "P0-HUSK",
+          "title": "P0 husk cured — 6-file shell, graded plane walled, shim trap closed",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "unblocks": 1,
+          "next_action": null,
+          "prs": [
+            5463
+          ],
+          "done_at": "2026-08-12T15:54:05Z"
+        },
+        {
+          "id": "W1",
+          "title": "Persistence model implementation",
+          "status": "todo",
+          "depends_on": [
+            "P0-HUSK"
+          ],
+          "deps_satisfied": true,
+          "unblocks": 0,
+          "next_action": "Blocked on the persistence-model decision below.",
+          "prs": [],
+          "done_at": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 5457,
+          "state": "merged",
+          "wave": "W0",
+          "merged_at": "2026-08-12T15:10:34Z"
+        },
+        {
+          "number": 5463,
+          "state": "merged",
+          "wave": "P0-HUSK",
+          "merged_at": "2026-08-12T15:54:05Z"
+        }
+      ],
+      "claim": null,
+      "needs_ceo": {
+        "question": "Portfolio and Watchlist persistence: one table or two?",
+        "options": [
+          "Single positions table with a kind discriminator",
+          "Separate tables, joined at read time"
+        ],
+        "recommendation": "Single positions table with a kind discriminator. Terminal /portfolio currently has zero portfolio_positions references, so the migration cost is near zero today and rises once W1 ships against either shape.",
+        "by_when": "2026-08-14",
+        "blocks_waves": 1
+      },
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md"
+    }
+  ],
+  "needs_ceo": [
+    {
+      "workstream": "WATCHLIST-PORTFOLIO-CEO",
+      "question": "Portfolio and Watchlist persistence: one table or two?",
+      "options": [
+        "Single positions table with a kind discriminator",
+        "Separate tables, joined at read time"
+      ],
+      "recommendation": "Single positions table with a kind discriminator. Terminal /portfolio currently has zero portfolio_positions references, so the migration cost is near zero today and rises once W1 ships against either shape.",
+      "by_when": "2026-08-14",
+      "blocks_waves": 1,
+      "source": "agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md"
+    }
+  ],
+  "unblocked": [
+    {
+      "workstream": "AGENT-OS",
+      "wave": "W3",
+      "title": "Phase 3 — compile-context over the existing context index",
+      "p0": "EXECUTIVE_OS",
+      "p0_active": false,
+      "unblocks": 0,
+      "claimed": false,
+      "next_action": "Close W1's remaining gate: >=3 genuine handoffs from sessions other than the scaffolding sessions, accrued from real work as adopted instructions take effect. Then Phase 3 (compile-context), which gains the agenda-integration wave that retires the UNBLOCKED list. All five conflicts remain ruled: C1 no task store, C2 claims advisory-only, C3 readiness feeds the agenda, C4 stores stay separate, C5 CXI-R12 overruled.",
+      "source": "agentos/workstreams/WS-AGENT-OS.md"
+    },
+    {
+      "workstream": "WATCHLIST-PORTFOLIO-CEO",
+      "wave": "W1",
+      "title": "Persistence model implementation",
+      "p0": "PRODUCT_TRUST_COHERENCE",
+      "p0_active": false,
+      "unblocks": 0,
+      "claimed": false,
+      "next_action": "Blocked on the persistence-model decision below.",
+      "source": "agentos/workstreams/WS-WATCHLIST-PORTFOLIO-CEO.md"
+    }
+  ],
+  "warnings": [
+    "WS:AGENT-OS — record_disagrees_with_execution: wave W1 is 'in_progress' but PR #5556 is merged",
+    "WS:CN-LIMIT-ALPHA — record_disagrees_with_execution: wave P-A1 is 'awaiting_ci' but PR #5438 is merged"
+  ]
+}

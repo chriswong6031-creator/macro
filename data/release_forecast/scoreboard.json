@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast_scoreboard.v2",
-  "asof": "2026-08-12T01:24:56Z",
+  "asof": "2026-08-14T05:45:36Z",
   "forward_accrual_began": "2026-07-07",
   "note": "Forward-only: no backtest rows enter this scoreboard (MRI-R8). Primary metrics use evaluation-eligible rows only; all_forward preserves the immutable raw record.",
   "evaluation_basis": "clean_structured_defect_epochs_v1",
@@ -41,8 +41,148 @@
       }
     }
   },
-  "by_shadow": {},
-  "by_shadow_epoch": {},
+  "by_shadow": {
+    "cpi_headline:coherent_ridge_v1": {
+      "n": 1,
+      "model": "coherent_ridge_v1",
+      "mae_ours": 0.2,
+      "mae_naive_prior": null,
+      "mae_trailing_3m": null,
+      "mae_ar_model": null,
+      "mae_cleveland": null,
+      "mae_vs_actual_latest": 0.1737,
+      "p10_p90_coverage": 1.0,
+      "p10_p90_coverage_n": 1,
+      "interval_50_coverage": 1.0,
+      "interval_50_coverage_n": 1,
+      "interval_50_coverage_note": "p25-p75 band; approximates Codex 60% interval (MRI-R13)",
+      "skew_hit_rate": null,
+      "skew_hit_rate_n": 0,
+      "skew_hit_rate_wilson_ci": null,
+      "reaction_mean_abs_dgs10_h0_bp": null,
+      "reaction_n": 0,
+      "expectation_read_hit_rate": null,
+      "expectation_read_hit_rate_n": 0,
+      "expectation_read_hit_rate_note": "Fraction of prints where actual fell in the same band as frozen expectation_read tag (above_expectations / below_expectations / aligned, \u00b10.35\u00b7\u03c3_scale). Display-only (MRI-R22). Null until data accrues.",
+      "pinball_loss_5q": 0.25,
+      "pinball_loss_5q_n": 1,
+      "pinball_loss_5q_note": "MRI-R31: 5-quantile pinball loss sum (p10+p25+p50+p75+p90 mean losses). Reported-only; lower is better. Skew display marked descriptive_until_n24.",
+      "by_cutoff": {
+        "T-1": {
+          "n": 1,
+          "mae_ours": 0.2,
+          "pinball_loss_5q": 0.25
+        }
+      }
+    },
+    "cpi_core:coherent_ridge_v1": {
+      "n": 1,
+      "model": "coherent_ridge_v1",
+      "mae_ours": 0.2,
+      "mae_naive_prior": null,
+      "mae_trailing_3m": null,
+      "mae_ar_model": null,
+      "mae_cleveland": null,
+      "mae_vs_actual_latest": 0.2154,
+      "p10_p90_coverage": 1.0,
+      "p10_p90_coverage_n": 1,
+      "interval_50_coverage": 1.0,
+      "interval_50_coverage_n": 1,
+      "interval_50_coverage_note": "p25-p75 band; approximates Codex 60% interval (MRI-R13)",
+      "skew_hit_rate": null,
+      "skew_hit_rate_n": 0,
+      "skew_hit_rate_wilson_ci": null,
+      "reaction_mean_abs_dgs10_h0_bp": null,
+      "reaction_n": 0,
+      "expectation_read_hit_rate": null,
+      "expectation_read_hit_rate_n": 0,
+      "expectation_read_hit_rate_note": "Fraction of prints where actual fell in the same band as frozen expectation_read tag (above_expectations / below_expectations / aligned, \u00b10.35\u00b7\u03c3_scale). Display-only (MRI-R22). Null until data accrues.",
+      "pinball_loss_5q": 0.215,
+      "pinball_loss_5q_n": 1,
+      "pinball_loss_5q_note": "MRI-R31: 5-quantile pinball loss sum (p10+p25+p50+p75+p90 mean losses). Reported-only; lower is better. Skew display marked descriptive_until_n24.",
+      "by_cutoff": {
+        "T-1": {
+          "n": 1,
+          "mae_ours": 0.2,
+          "pinball_loss_5q": 0.215
+        }
+      }
+    }
+  },
+  "by_shadow_epoch": {
+    "cpi_headline:coherent_ridge_v1:coherent_ridge_v1:alfred_same_release_vintage_proxy_v1": {
+      "n": 1,
+      "model": "coherent_ridge_v1",
+      "mae_ours": 0.2,
+      "mae_naive_prior": null,
+      "mae_trailing_3m": null,
+      "mae_ar_model": null,
+      "mae_cleveland": null,
+      "mae_vs_actual_latest": 0.1737,
+      "p10_p90_coverage": 1.0,
+      "p10_p90_coverage_n": 1,
+      "interval_50_coverage": 1.0,
+      "interval_50_coverage_n": 1,
+      "interval_50_coverage_note": "p25-p75 band; approximates Codex 60% interval (MRI-R13)",
+      "skew_hit_rate": null,
+      "skew_hit_rate_n": 0,
+      "skew_hit_rate_wilson_ci": null,
+      "reaction_mean_abs_dgs10_h0_bp": null,
+      "reaction_n": 0,
+      "expectation_read_hit_rate": null,
+      "expectation_read_hit_rate_n": 0,
+      "expectation_read_hit_rate_note": "Fraction of prints where actual fell in the same band as frozen expectation_read tag (above_expectations / below_expectations / aligned, \u00b10.35\u00b7\u03c3_scale). Display-only (MRI-R22). Null until data accrues.",
+      "pinball_loss_5q": 0.25,
+      "pinball_loss_5q_n": 1,
+      "pinball_loss_5q_note": "MRI-R31: 5-quantile pinball loss sum (p10+p25+p50+p75+p90 mean losses). Reported-only; lower is better. Skew display marked descriptive_until_n24.",
+      "by_cutoff": {
+        "T-1": {
+          "n": 1,
+          "mae_ours": 0.2,
+          "pinball_loss_5q": 0.25
+        }
+      },
+      "model_epoch": "coherent_ridge_v1",
+      "target_epoch": "alfred_same_release_vintage_proxy_v1",
+      "evidence_scope": "like_for_like_forward_epoch"
+    },
+    "cpi_core:coherent_ridge_v1:coherent_ridge_v1:alfred_same_release_vintage_proxy_v1": {
+      "n": 1,
+      "model": "coherent_ridge_v1",
+      "mae_ours": 0.2,
+      "mae_naive_prior": null,
+      "mae_trailing_3m": null,
+      "mae_ar_model": null,
+      "mae_cleveland": null,
+      "mae_vs_actual_latest": 0.2154,
+      "p10_p90_coverage": 1.0,
+      "p10_p90_coverage_n": 1,
+      "interval_50_coverage": 1.0,
+      "interval_50_coverage_n": 1,
+      "interval_50_coverage_note": "p25-p75 band; approximates Codex 60% interval (MRI-R13)",
+      "skew_hit_rate": null,
+      "skew_hit_rate_n": 0,
+      "skew_hit_rate_wilson_ci": null,
+      "reaction_mean_abs_dgs10_h0_bp": null,
+      "reaction_n": 0,
+      "expectation_read_hit_rate": null,
+      "expectation_read_hit_rate_n": 0,
+      "expectation_read_hit_rate_note": "Fraction of prints where actual fell in the same band as frozen expectation_read tag (above_expectations / below_expectations / aligned, \u00b10.35\u00b7\u03c3_scale). Display-only (MRI-R22). Null until data accrues.",
+      "pinball_loss_5q": 0.215,
+      "pinball_loss_5q_n": 1,
+      "pinball_loss_5q_note": "MRI-R31: 5-quantile pinball loss sum (p10+p25+p50+p75+p90 mean losses). Reported-only; lower is better. Skew display marked descriptive_until_n24.",
+      "by_cutoff": {
+        "T-1": {
+          "n": 1,
+          "mae_ours": 0.2,
+          "pinball_loss_5q": 0.215
+        }
+      },
+      "model_epoch": "coherent_ridge_v1",
+      "target_epoch": "alfred_same_release_vintage_proxy_v1",
+      "evidence_scope": "like_for_like_forward_epoch"
+    }
+  },
   "by_shadow_epoch_note": "Like-for-like forward evidence segmented by exact model and target epochs. The legacy by_shadow aggregate is retained for compatibility and may span epochs.",
   "promotion_review": [],
   "all_forward": {
@@ -52,34 +192,54 @@
       "mae_ours": null
     },
     "cpi_core:champion": {
+      "n": 2,
+      "excluded_n": 2,
+      "mae_ours": 0.2136
+    },
+    "cpi_core:coherent_ridge_v1": {
+      "n": 1,
+      "excluded_n": 0,
+      "mae_ours": 0.2
+    },
+    "cpi_core:combined_v1": {
       "n": 1,
       "excluded_n": 1,
-      "mae_ours": 0.2167
+      "mae_ours": 0.1102
     },
     "cpi_core:v3_factor": {
-      "n": 1,
-      "excluded_n": 1,
-      "mae_ours": 0.2008
+      "n": 2,
+      "excluded_n": 2,
+      "mae_ours": 0.1663
     },
     "cpi_headline:champion": {
+      "n": 2,
+      "excluded_n": 2,
+      "mae_ours": 0.3135
+    },
+    "cpi_headline:coherent_ridge_v1": {
+      "n": 1,
+      "excluded_n": 0,
+      "mae_ours": 0.2
+    },
+    "cpi_headline:combined_v1": {
       "n": 1,
       "excluded_n": 1,
-      "mae_ours": 0.4818
+      "mae_ours": 0.1201
     },
     "cpi_headline:cpi_bridge": {
-      "n": 1,
-      "excluded_n": 1,
-      "mae_ours": 0.4278
+      "n": 2,
+      "excluded_n": 2,
+      "mae_ours": 0.3203
     },
     "cpi_headline:mf_energy": {
-      "n": 1,
-      "excluded_n": 1,
-      "mae_ours": 0.1937
+      "n": 2,
+      "excluded_n": 2,
+      "mae_ours": 0.1101
     },
     "cpi_headline:v3_factor": {
-      "n": 1,
-      "excluded_n": 1,
-      "mae_ours": 0.543
+      "n": 2,
+      "excluded_n": 2,
+      "mae_ours": 0.3729
     },
     "nfp:champion": {
       "n": 1,
@@ -102,23 +262,23 @@
       "mae_ours": 0.1864
     },
     "ppi_finaldemand:champion": {
-      "n": 1,
-      "excluded_n": 1,
-      "mae_ours": 0.6579
+      "n": 2,
+      "excluded_n": 2,
+      "mae_ours": 0.5376
     }
   },
   "evaluation_exclusions": {
-    "n": 11,
+    "n": 20,
     "by_defect": {
       "DN-001": 4,
       "DN-002": 1,
-      "DN-004": 11
+      "DN-004": 20
     }
   },
   "score_receipts": {
-    "raw_n": 37,
-    "canonical_n": 16,
-    "superseded_n": 21,
+    "raw_n": 60,
+    "canonical_n": 27,
+    "superseded_n": 33,
     "note": "Official actual receipts supersede same-vintage proxies and legacy calculations for evaluation; every receipt remains in the ledger."
   },
   "defect_notices": [

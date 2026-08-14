@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-08-10",
+  "as_of": "2026-08-14",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -28,9 +28,9 @@
       "family": "ai_semis",
       "driver": "ai_semis",
       "pathway_role": "primary",
-      "as_of": "2026-08-10",
-      "direction_en": "Bubble / blow-off unwind",
-      "direction_zh": "泡沫/见顶回吐",
+      "as_of": "2026-08-14",
+      "direction_en": "Trend extension watch",
+      "direction_zh": "趋势延伸观察",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
       "coherence": "partial",
@@ -38,16 +38,16 @@
       "nodes": [
         {
           "node_id": "driver_ai_semis",
-          "as_of": "2026-08-10",
+          "as_of": "2026-08-14",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ai_semis",
           "observation": {
-            "en": "Bubble / blow-off unwind",
-            "zh": "泡沫/见顶回吐"
+            "en": "Trend extension watch",
+            "zh": "趋势延伸观察"
           },
           "direction": "",
-          "value": 71.2,
+          "value": 73.7,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -66,7 +66,7 @@
       "family": "rates",
       "driver": "real_rate_shock",
       "pathway_role": "alternate",
-      "as_of": "2026-08-10",
+      "as_of": "2026-08-14",
       "direction_en": "real yields falling — easing, gold & duration bid",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -76,7 +76,7 @@
       "nodes": [
         {
           "node_id": "driver_real_rate_shock",
-          "as_of": "2026-08-10",
+          "as_of": "2026-08-14",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "real_rate_shock",
@@ -85,7 +85,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 1.21,
+          "value": 0.56,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -96,7 +96,7 @@
         },
         {
           "node_id": "transmission_real_rate_order1",
-          "as_of": "2026-08-10",
+          "as_of": "2026-08-14",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -116,7 +116,7 @@
         },
         {
           "node_id": "transmission_real_rate_order2",
-          "as_of": "2026-08-10",
+          "as_of": "2026-08-14",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -136,7 +136,7 @@
         },
         {
           "node_id": "transmission_real_rate_order3",
-          "as_of": "2026-08-10",
+          "as_of": "2026-08-14",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -193,6 +193,42 @@
           ]
         }
       ],
+      "coverage_basis": "scare_trigger"
+    },
+    {
+      "family": "china",
+      "driver": "china_stimulus",
+      "pathway_role": "alternate",
+      "as_of": "2026-08-14",
+      "direction_en": "China risk-off — A-shares/HK & copper lead down",
+      "direction_zh": "",
+      "confidence_ceiling": "context_only",
+      "coverage_score": null,
+      "coherence": "partial",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_china_stimulus",
+          "as_of": "2026-08-14",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "china_stimulus",
+          "observation": {
+            "en": "China risk-off — A-shares/HK & copper lead down",
+            "zh": ""
+          },
+          "direction": "",
+          "value": 0.36,
+          "z_or_percentile": null,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        }
+      ],
+      "edges": [],
       "coverage_basis": "scare_trigger"
     }
   ]

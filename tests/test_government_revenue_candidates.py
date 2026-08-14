@@ -18,8 +18,16 @@ from engine.government_revenue.candidates import (
     historical_suppression_entry_key,
     is_valid_candidate_payload,
     is_valid_candidate_queue,
+    load_candidate_issuance_correction_manifest,
 )
 from scripts.build_government_revenue import build_payload
+from tests.government_revenue_candidate_fixture import (
+    canonical_candidate_census,
+    canonical_mapping_backlog_states,
+    canonical_requested_issuer_tickers,
+    canonical_reviewed_issuer_tickers,
+    canonical_unreviewed_issuer_tickers,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -210,60 +218,127 @@ def _payload(event: dict | None = None) -> dict:
     }
 
 
-def test_current_source_truth_is_eight_candidates_with_twenty_one_mapping_rows() -> None:
+def test_current_source_truth_reconciles_against_the_ledger_and_the_correction() -> None:
     latest = json.loads((ROOT / "data/government_revenue/latest.json").read_text(encoding="utf-8"))
     graph = json.loads((ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8"))
+    status = json.loads(
+        (ROOT / "data/government_revenue/candidate_projection_status.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    corrections, _sha = load_candidate_issuance_correction_manifest(ROOT)
 
     queue = build_candidate_queue(latest, graph, generated_at=GENERATED_AT)
 
-    # The pure source engine honestly sees the eight exact snapshot rows that
-    # #5207 made schema-valid.  Active publication is a separate boundary: the
-    # issuance-correction receipt quarantines these exact ledger rows without
-    # teaching the source engine to erase or reinterpret official evidence.
-    assert queue["counts"]["total"] == 8
-    assert queue["counts"]["exact_linked"] == 8
-    assert queue["counts"]["by_family"] == {
-        "award_ceiling_change": 4,
-        "award_obligation_change": 4,
+    # The pure source engine honestly sees every exact row that meets source
+    # eligibility.  Active publication is a separate boundary: the
+    # issuance-correction receipt quarantines the eight incident ledger rows
+    # without teaching the source engine to erase or reinterpret official
+    # evidence.  Those two boundaries are what this tripwire pins -- as an
+    # identity between three artifacts written by three different code paths,
+    # not as a census literal.  `== 8` was that literal, true of the 2026-08-09
+    # vintage and false from 2026-08-12T23:50:04Z, when the award-action rail
+    # resolved into the reviewed graph and fifteen forward candidates issued.
+    # Nothing regressed there; that unlock is what the rail was built for, and
+    # re-typing the new number would only schedule the next failure.
+    #
+    #   pure source total  ==  the append-only audit ledger      (facts kept)
+    #   pure total - quarantined  ==  the published active count (facts scoped)
+    assert queue["counts"]["total"] == canonical_candidate_census()
+    assert queue["counts"]["exact_linked"] == queue["counts"]["total"]
+    assert (
+        queue["counts"]["total"] - len(corrections["entries"])
+        == status["candidate_count"]
+    )
+    # Families are a partition of the same total, never a hand-copied tally.
+    assert set(queue["counts"]["by_family"]) <= {
+        "award_ceiling_change",
+        "award_obligation_change",
     }
-    assert queue["counts"]["mapping_needed"] == 21
+    assert sum(queue["counts"]["by_family"].values()) == queue["counts"]["total"]
+    assert all(count > 0 for count in queue["counts"]["by_family"].values())
+    # The backlog is a census of the REQUESTED issuer scope -- one row per
+    # curated company -- so `== 21` was that scope's cardinality transcribed by
+    # hand, not a contract.  Derived from `entities.json` (bound against the
+    # payload it builds) so adding or retiring an issuer moves it by itself.
+    # Keep #5518's derive-from-receipt approach over #5524's re-typed literal.
+    assert queue["counts"]["mapping_needed"] == len(canonical_requested_issuer_tickers())
 
 
-    assert len(queue["mapping_backlog"]) == 21
+    assert len(queue["mapping_backlog"]) == len(canonical_requested_issuer_tickers())
+    # Stronger than the count and equally derived: the backlog must cover the
+    # curated scope exactly -- no issuer dropped, none invented.
+    assert [row["ticker"] for row in queue["mapping_backlog"]] == list(
+        canonical_requested_issuer_tickers()
+    )
     # The award-event rail activated on 2026-08-08T18:30Z (activation_state=live)
     # after days of reporting unavailable, and Wave 9D published the reviewed
     # defense19 graph the same day. Current truth, re-verified empirically at this
     # merge (2026-08-09): the rail is read (award_events_status ok), ~500
-    # award-change events are visible, all 19 defense19 issuers are reviewed --
-    # and eight exact snapshot rows now meet source eligibility. They remain
-    # context-only and are quarantined by the separately reviewed publication
-    # correction; this pure-engine tripwire must never pretend the facts vanished.
+    # award-change events are visible, every issuer the reviewed graph declares
+    # is resolvable -- and eight exact snapshot rows now meet source eligibility.
+    # They remain context-only and are quarantined by the separately reviewed
+    # publication correction; this pure-engine tripwire must never pretend the
+    # facts vanished.
     assert queue["freshness"]["award_events_status"] == "ok"
     assert queue["freshness"]["exact_candidate_availability"] == "available"
     assert queue["freshness"]["recipient_graph_status"] == "ready"
-    assert queue["coverage"]["reviewed_issuer_company_count"] == 19
-    assert queue["coverage"]["reviewed_issuer_tickers"] == [
-        "AVAV", "BA", "CW", "GD", "HEI", "HII", "HWM", "IRDM", "KTOS", "LDOS",
-        "LHX", "LMT", "NOC", "PLTR", "RTX", "TDG", "TDY", "TXT", "VSAT",
-    ]
+    # Coverage is a census of the published reviewed graph, so `== 19` and its
+    # nineteen hand-listed tickers described exactly one vintage
+    # (`recipient-graph:reviewed:2026-08-08:defense19-v1`) and would have to be
+    # re-typed on every republish.  Derived from the graph's own declared roster
+    # instead: this still pins the engine's resolved set ticker-for-ticker, but
+    # now it pins it to what the graph publishes rather than to what a human
+    # remembered.  A graph that declares an issuer reviewed while shipping no
+    # reachable exact path for it still fails here -- that is the state BWXT was
+    # in before its exact edges were reviewed.
+    assert queue["coverage"]["reviewed_issuer_company_count"] == len(
+        canonical_reviewed_issuer_tickers()
+    )
+    assert queue["coverage"]["reviewed_issuer_tickers"] == list(
+        canonical_reviewed_issuer_tickers()
+    )
     # The coverage frontier: every reviewed issuer is identifier-linked but its
-    # discovery scope is incomplete, and exactly two requested issuers carry no
-    # reviewed mapping at all -- GE (no_exact_match) and BWXT
-    # (no_collected_recipients), both finished answers rather than open tasks.
-    assert Counter(row["mapping_state"] for row in queue["mapping_backlog"]) == {
-        "partial_identifier_coverage": 19,
-        "mapping_needed": 2,
-    }
+    # discovery scope is incomplete, and the requested issuers carrying no
+    # reviewed mapping at all -- GE (no_exact_match) and, on this vintage, BWXT
+    # (no_collected_recipients) -- are finished answers rather than open tasks.
+    # Derived as the set difference `requested - reviewed`, so an issuer that
+    # gains reviewed exact edges crosses between the two states with no edit.
+    assert (
+        Counter(row["mapping_state"] for row in queue["mapping_backlog"])
+        == canonical_mapping_backlog_states()
+    )
     assert sorted(
         row["ticker"] for row in queue["mapping_backlog"]
         if row["mapping_state"] == "mapping_needed"
-    ) == ["BWXT", "GE"]
+    ) == list(canonical_unreviewed_issuer_tickers())
     assert all(row["issuer_attribution"] == "not_asserted" for row in queue["mapping_backlog"])
     assert is_valid_candidate_queue(queue)
 
 
-def test_reviewed_historical_manifest_exactly_matches_the_current_canonical_rebuild() -> None:
-    """The reviewed eight are derived truth, not a hand-transcribed allowlist."""
+def test_reviewed_historical_cohort_rebuilds_byte_exact_and_nothing_escapes_review() -> None:
+    """The reviewed eight are derived truth, not a hand-transcribed allowlist.
+
+    The manifest governs the incident's quarantined identities, and only those.
+    It was accidentally equal to *everything the source engine could see* while
+    the eight were the only rows in existence, and this test read that accident
+    as the contract -- so it red on 2026-08-12T23:50:04Z, when fifteen forward
+    candidates issued on seven award records the review never touched.
+
+    Regenerating the manifest to cover them would have auto-issued fifteen
+    unreviewed ``do_not_backfill`` decisions and stamped a ``reviewed_at`` no
+    human reviewed, against rows that were never suppression-eligible: they were
+    issued forward, which is the correct disposition and the one the nightly
+    already took (``candidate_projection_status`` ``status: ok``).  So partition
+    the rebuild the way the engine itself partitions it -- quarantined vs active
+    -- and hold the reviewed cohort to byte equality on its own terms.
+
+    The gate the count was standing in for is restored explicitly below: every
+    row the source engine currently sees must be accounted for in the append-only
+    audit ledger.  A first-seen candidate that is neither issued nor reviewed
+    still fails here, which is the protection the manifest's own limitations
+    clause promises.
+    """
     payload = build_payload(root=ROOT)
     graph = json.loads(
         (ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(
@@ -281,16 +356,43 @@ def test_reviewed_historical_manifest_exactly_matches_the_current_canonical_rebu
             / "config/government_revenue/candidate_historical_suppressions.v1.json"
         ).read_text(encoding="utf-8")
     )
+    corrections, _sha = load_candidate_issuance_correction_manifest(ROOT)
+    quarantined = {entry["candidate_id"] for entry in corrections["entries"]}
+    by_row = {
+        row["candidate_id"]: candidate_historical_suppression_entry(row) for row in rows
+    }
+    # The partition below is keyed on candidate_id, so a collision would hide a
+    # row from every gate that follows.
+    assert len(by_row) == len(rows), "the rebuild yielded a duplicate candidate_id"
+    reviewed_rows = [row for row in rows if row["candidate_id"] in quarantined]
     entries = sorted(
-        (candidate_historical_suppression_entry(row) for row in rows),
+        (by_row[row["candidate_id"]] for row in reviewed_rows),
         key=historical_suppression_entry_key,
     )
 
-    assert len(rows) == len(entries) == len(manifest["entries"]) == 8
+    # The reviewed cohort rebuilds from live source, byte for byte, in bijection
+    # with the manifest.  A reviewed identity that stopped rebuilding, drifted a
+    # field, or gained a sibling still fails.
+    assert len(entries) == len(manifest["entries"]) == len(quarantined)
     assert entries == manifest["entries"]
-    assert {row["source_event"]["source_rail"] for row in rows} == {
+    assert {row["source_event"]["source_rail"] for row in reviewed_rows} == {
         "usaspending_award_snapshot"
     }
+    # Nothing the source engine sees may escape review: the append-only ledger
+    # is where an issued row is accounted for, and the manifest is where an
+    # unissued historical row is.  A row in neither is a publication failure.
+    ledger_ids = {
+        json.loads(line)["candidate_id"]
+        for line in (ROOT / "data/government_revenue/candidate_ledger.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    }
+    unaccounted = set(by_row) - ledger_ids - quarantined
+    assert not unaccounted, (
+        "first-seen candidates with neither a ledger issuance nor a reviewed "
+        f"historical suppression: {sorted(unaccounted)}"
+    )
 
 
 def test_exact_receipt_bound_reviewed_event_builds_one_context_candidate() -> None:

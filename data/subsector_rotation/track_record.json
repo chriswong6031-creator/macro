@@ -1,168 +1,184 @@
 {
   "schema": "subsector_rotation.track_record.v1",
-  "as_of": "2026-08-07",
-  "generated_at": "2026-08-10T02:04:28.776461+00:00",
+  "as_of": "2026-08-13",
+  "generated_at": "2026-08-14T03:58:44.078408+00:00",
   "is_context_only": true,
-  "n_snapshots": 5909,
-  "n_days": 22,
+  "n_snapshots": 6178,
+  "n_days": 23,
   "horizons": {
     "5": {
-      "n_matured": 5158,
-      "score_ic": 0.0257,
-      "score_ic_t_hac": 0.274,
-      "score_ic_t_gate": 0.274,
-      "score_ic_t_iid": 0.294,
+      "n_matured": 5734,
+      "score_ic": 0.0143,
+      "score_ic_t_hac": 0.153,
+      "score_ic_t_gate": 0.153,
+      "score_ic_t_iid": 0.172,
       "hac_anticonservative": false,
-      "ic_span_days": 35,
-      "indep_windows": 5.0,
+      "ic_span_days": 42,
+      "indep_windows": 6.0,
       "indep_windows_required": 6.0,
       "score_ic_detail": {
-        "mean_ic": 0.0257,
-        "ic_vol": 0.4002,
-        "ic_ir": 0.064,
-        "ic_ir_ann": 0.203,
-        "t_hac": 0.274,
-        "p_hac": 0.7841,
-        "hit": 0.476,
-        "n": 21,
+        "mean_ic": 0.0143,
+        "ic_vol": 0.3895,
+        "ic_ir": 0.037,
+        "ic_ir_ann": 0.116,
+        "t_hac": 0.153,
+        "p_hac": 0.8786,
+        "hit": 0.455,
+        "n": 22,
         "hac_lags": 5,
         "hac_lags_requested": 5,
         "ic_first_date": "2026-06-26",
-        "ic_last_date": "2026-07-31",
-        "ic_span_days": 35,
-        "indep_windows": 5.0
+        "ic_last_date": "2026-08-07",
+        "ic_span_days": 42,
+        "indep_windows": 6.0
       },
       "by_stage": {
         "emerging": {
-          "n": 202,
-          "mean_fwd_rel": -0.0029,
-          "hit_rate": 0.495
+          "n": 254,
+          "mean_fwd_rel": -0.0014,
+          "hit_rate": 0.504
         },
         "neutral": {
-          "n": 4719,
-          "mean_fwd_rel": 0.0021,
+          "n": 5230,
+          "mean_fwd_rel": 0.0015,
           "hit_rate": null
         },
         "fading": {
-          "n": 237,
-          "mean_fwd_rel": 0.0016,
-          "hit_rate": 0.494
+          "n": 250,
+          "mean_fwd_rel": 0.0034,
+          "hit_rate": 0.476
         }
       },
       "v2": {
-        "n_matured": 246,
+        "n_matured": 522,
         "score_ic": null,
         "score_ic_t_hac": null,
         "by_stage": {
           "emerging": {
-            "n": 30,
-            "mean_fwd_rel": 0.0082,
+            "n": 48,
+            "mean_fwd_rel": 0.0084,
             "hit_rate": 0.667
           },
           "neutral": {
-            "n": 181,
-            "mean_fwd_rel": 0.0099,
+            "n": 398,
+            "mean_fwd_rel": 0.0046,
             "hit_rate": null
           },
           "fading": {
-            "n": 35,
-            "mean_fwd_rel": 0.0111,
-            "hit_rate": 0.343
+            "n": 76,
+            "mean_fwd_rel": 0.0075,
+            "hit_rate": 0.408
           }
         }
       }
     },
     "10": {
-      "n_matured": 4419,
-      "score_ic": 0.1248,
-      "score_ic_t_hac": 1.677,
-      "score_ic_t_gate": 1.629,
-      "score_ic_t_iid": 1.629,
-      "hac_anticonservative": true,
-      "ic_span_days": 32,
-      "indep_windows": 2.29,
+      "n_matured": 5472,
+      "score_ic": 0.0707,
+      "score_ic_t_hac": 0.733,
+      "score_ic_t_gate": 0.733,
+      "score_ic_t_iid": 1.006,
+      "hac_anticonservative": false,
+      "ic_span_days": 35,
+      "indep_windows": 2.5,
       "indep_windows_required": 6.0,
       "score_ic_detail": {
-        "mean_ic": 0.1248,
-        "ic_vol": 0.325,
-        "ic_ir": 0.384,
-        "ic_ir_ann": 1.717,
-        "t_hac": 1.677,
-        "p_hac": 0.0935,
-        "hit": 0.611,
-        "n": 18,
+        "mean_ic": 0.0707,
+        "ic_vol": 0.3222,
+        "ic_ir": 0.219,
+        "ic_ir_ann": 0.982,
+        "t_hac": 0.733,
+        "p_hac": 0.4636,
+        "hit": 0.571,
+        "n": 21,
         "hac_lags": 10,
         "hac_lags_requested": 10,
         "ic_first_date": "2026-06-26",
-        "ic_last_date": "2026-07-28",
-        "ic_span_days": 32,
-        "indep_windows": 2.29
+        "ic_last_date": "2026-07-31",
+        "ic_span_days": 35,
+        "indep_windows": 2.5
+      },
+      "by_stage": {
+        "emerging": {
+          "n": 243,
+          "mean_fwd_rel": 0.0034,
+          "hit_rate": 0.502
+        },
+        "neutral": {
+          "n": 4991,
+          "mean_fwd_rel": 0.004,
+          "hit_rate": null
+        },
+        "fading": {
+          "n": 238,
+          "mean_fwd_rel": -0.0035,
+          "hit_rate": 0.5
+        }
+      },
+      "v2": {
+        "n_matured": 261,
+        "score_ic": null,
+        "score_ic_t_hac": null,
+        "by_stage": {
+          "emerging": {
+            "n": 33,
+            "mean_fwd_rel": 0.0296,
+            "hit_rate": 0.788
+          },
+          "neutral": {
+            "n": 191,
+            "mean_fwd_rel": 0.0245,
+            "hit_rate": null
+          },
+          "fading": {
+            "n": 37,
+            "mean_fwd_rel": 0.0026,
+            "hit_rate": 0.378
+          }
+        }
+      }
+    },
+    "21": {
+      "n_matured": 3906,
+      "score_ic": 0.1681,
+      "score_ic_t_hac": 1.62,
+      "score_ic_t_gate": 1.62,
+      "score_ic_t_iid": 1.765,
+      "hac_anticonservative": false,
+      "ic_span_days": 26,
+      "indep_windows": 0.88,
+      "indep_windows_required": 6.0,
+      "score_ic_detail": {
+        "mean_ic": 0.1681,
+        "ic_vol": 0.3688,
+        "ic_ir": 0.456,
+        "ic_ir_ann": 2.954,
+        "t_hac": 1.62,
+        "p_hac": 0.1051,
+        "hit": 0.533,
+        "n": 15,
+        "hac_lags": 14,
+        "hac_lags_requested": 21,
+        "ic_first_date": "2026-06-26",
+        "ic_last_date": "2026-07-22",
+        "ic_span_days": 26,
+        "indep_windows": 0.88
       },
       "by_stage": {
         "emerging": {
           "n": 171,
-          "mean_fwd_rel": 0.0053,
-          "hit_rate": 0.538
+          "mean_fwd_rel": -0.003,
+          "hit_rate": 0.491
         },
         "neutral": {
-          "n": 4046,
-          "mean_fwd_rel": 0.0019,
+          "n": 3569,
+          "mean_fwd_rel": 0.0064,
           "hit_rate": null
         },
         "fading": {
-          "n": 202,
-          "mean_fwd_rel": -0.0129,
-          "hit_rate": 0.579
-        }
-      },
-      "v2": {
-        "n_matured": 0,
-        "score_ic": null,
-        "score_ic_t_hac": null,
-        "by_stage": {}
-      }
-    },
-    "21": {
-      "n_matured": 2943,
-      "score_ic": 0.2565,
-      "score_ic_t_hac": 3.488,
-      "score_ic_t_gate": 2.416,
-      "score_ic_t_iid": 2.416,
-      "hac_anticonservative": true,
-      "ic_span_days": 21,
-      "indep_windows": 0.71,
-      "indep_windows_required": 6.0,
-      "score_ic_detail": {
-        "mean_ic": 0.2565,
-        "ic_vol": 0.3677,
-        "ic_ir": 0.698,
-        "ic_ir_ann": 4.521,
-        "t_hac": 3.488,
-        "p_hac": 0.0005,
-        "hit": 0.667,
-        "n": 12,
-        "hac_lags": 11,
-        "hac_lags_requested": 21,
-        "ic_first_date": "2026-06-26",
-        "ic_last_date": "2026-07-17",
-        "ic_span_days": 21,
-        "indep_windows": 0.71
-      },
-      "by_stage": {
-        "emerging": {
-          "n": 112,
-          "mean_fwd_rel": 0.0085,
-          "hit_rate": 0.527
-        },
-        "neutral": {
-          "n": 2699,
-          "mean_fwd_rel": 0.0001,
-          "hit_rate": null
-        },
-        "fading": {
-          "n": 132,
-          "mean_fwd_rel": -0.0536,
-          "hit_rate": 0.765
+          "n": 166,
+          "mean_fwd_rel": -0.0414,
+          "hit_rate": 0.705
         }
       },
       "v2": {
@@ -212,105 +228,105 @@
   "note_zh": "\u6b63\u5728\u7d2f\u79ef\u524d\u77bb\u89c2\u6d4b\uff1b\u5c1a\u65e0\u5468\u671f\u901a\u8fc7 Newey-West \u663e\u8457\u6027\u68c0\u9a8c\u3002\u65e9\u671f\u6570\u636e\u4e3a\u6682\u5b9a\uff0c\u4ec5\u4f9b\u53c2\u8003\u3002",
   "recent_misses": [
     {
-      "date": "2026-07-17",
-      "key": "transportationwarehousing",
-      "name": "Warehousing",
-      "theme": "Transportation & Logistics",
+      "date": "2026-07-22",
+      "key": "blockchainmining",
+      "name": "Mining",
+      "theme": "Crypto & Blockchain",
       "stage": "emerging",
-      "fwd_rel": -0.1798,
+      "fwd_rel": -0.1922,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-17",
-      "key": "commagribiofuels",
-      "name": "Biofuels",
-      "theme": "Commodities Agriculture",
-      "stage": "emerging",
-      "fwd_rel": -0.1457,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-17",
+      "date": "2026-07-22",
       "key": "hardwareservers",
       "name": "Servers",
       "theme": "Hardware",
       "stage": "fading",
-      "fwd_rel": 0.1128,
+      "fwd_rel": 0.1414,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-17",
-      "key": "hardwarenetworking",
-      "name": "Networking",
-      "theme": "Hardware",
+      "date": "2026-07-22",
+      "key": "cybersecuritythreatops",
+      "name": "ThreatOps",
+      "theme": "Cybersecurity",
       "stage": "fading",
-      "fwd_rel": 0.0953,
+      "fwd_rel": 0.1347,
       "horizon_d": 21
     },
     {
-      "date": "2026-07-17",
-      "key": "bigdatainfrastructure",
-      "name": "Infrastructure",
-      "theme": "Big Data",
-      "stage": "fading",
-      "fwd_rel": 0.0934,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-17",
-      "key": "hardwarestorage",
-      "name": "Storage",
-      "theme": "Hardware",
-      "stage": "fading",
-      "fwd_rel": 0.0754,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-17",
-      "key": "cloudhardware",
-      "name": "Hardware",
-      "theme": "Cloud Computing",
-      "stage": "fading",
-      "fwd_rel": 0.0689,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-17",
-      "key": "commenergyoil",
-      "name": "Oil",
-      "theme": "Commodities Energy",
+      "date": "2026-07-22",
+      "key": "transportationwarehousing",
+      "name": "Warehousing",
+      "theme": "Transportation & Logistics",
       "stage": "emerging",
-      "fwd_rel": -0.0481,
+      "fwd_rel": -0.134,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-22",
+      "key": "fintechblockchain",
+      "name": "Blockchain",
+      "theme": "FinTech",
+      "stage": "emerging",
+      "fwd_rel": -0.1259,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-22",
+      "key": "realestatehealthcare",
+      "name": "Healthcare",
+      "theme": "Real Estate & REITs",
+      "stage": "emerging",
+      "fwd_rel": -0.1035,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-22",
+      "key": "iotsecurity",
+      "name": "Security",
+      "theme": "Internet of Things",
+      "stage": "fading",
+      "fwd_rel": 0.0868,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-22",
+      "key": "evsmanufacturers",
+      "name": "Manufacturers",
+      "theme": "Electric Vehicles",
+      "stage": "emerging",
+      "fwd_rel": -0.07,
       "horizon_d": 21
     }
   ],
   "head_to_head": {
     "by_horizon": {
       "5": {
-        "n": 5158,
-        "n_v2": 246,
-        "ic": 0.0257,
+        "n": 5734,
+        "n_v2": 522,
+        "ic": 0.0143,
         "ic_v2": null,
         "gap": null,
-        "t_hac": 0.274,
+        "t_hac": 0.153,
         "t_hac_v2": null
       },
       "10": {
-        "n": 4419,
-        "n_v2": 0,
-        "ic": 0.1248,
+        "n": 5472,
+        "n_v2": 261,
+        "ic": 0.0707,
         "ic_v2": null,
         "gap": null,
-        "t_hac": 1.677,
+        "t_hac": 0.733,
         "t_hac_v2": null
       },
       "21": {
-        "n": 2943,
+        "n": 3906,
         "n_v2": 0,
-        "ic": 0.2565,
+        "ic": 0.1681,
         "ic_v2": null,
         "gap": null,
-        "t_hac": 3.488,
+        "t_hac": 1.62,
         "t_hac_v2": null
       },
       "63": {

@@ -301,6 +301,25 @@ def _refresh_qledger_promotion(e: dict) -> dict:
       ready   — True when §3 gate passes (n_dates>=25 AND wilson_ci_low>0.5 — the bound is
                 a hit-rate proportion, so the bar is the coin-flip null, not zero)
       duel_context_line — challenger vs placebo |excess| at 5d (injected into next_step)
+      clock_migration — True while the live n_dates is SMALLER than the history being
+                counted separately on another clock, i.e. while the drop a reader sees
+                is a re-count on a CORRECTED grading clock rather than evidence
+                collapsing (P0a). Clears once the corrected clock's own count catches
+                up; `clock_prior_n_dates` survives it. See below.
+                (round 5) Always False for a `STATE_MIXED_CLOCK` family (one
+                genuinely accruing on two markets at once) — that split never
+                converges to one clock, so it is never a "migration"; see
+                `PromotionResult.clock_migration` in engine/qledger.py.
+
+    P0a — A CLOCK MIGRATION MUST NOT READ AS A PERFORMANCE COLLAPSE. qledger's
+    promotion gate evaluates inside ONE grading-clock basis and never pools two, so
+    the night a family's first explicit-clock grade lands its authority resets: a
+    family that showed n_dates=40 / GRADED yesterday shows n_dates=1 / ACCRUING
+    today. The numbers are correct and the no-pooling rule is deliberate — what was
+    missing is any way for a reader of this tab to tell that apart from a family
+    whose evidence evaporated overnight. The readiness record now carries
+    `clock_migration` + `clock_prior_n_dates` + `migration_note`, and the state line
+    below says so in plain words. The counts are shown SIDE BY SIDE, never summed.
     """
     family = e.get("claim_family") or ""
     tr = _read_json("site/qledger/track_record.json")
@@ -327,6 +346,8 @@ def _refresh_qledger_promotion(e: dict) -> dict:
     ci_low = best.get("wilson_ci_low")
     hr = best.get("hit_rate")
     ex = best.get("excess_mean")
+    ex_abs = best.get("mean_abs_excess")
+    ex_basis = best.get("excess_basis")
     horizon = best.get("_horizon", 5)
     ready = bool(best.get("ready"))
     approaching = bool(best.get("approaching"))
@@ -335,7 +356,19 @@ def _refresh_qledger_promotion(e: dict) -> dict:
     # Build a readable state line
     ci_str = f"{ci_low:.3f}" if ci_low is not None else "n/a"
     hr_str = f"{hr*100:.1f}%" if hr is not None else "salience-only"
-    ex_str = f"{ex*100:.2f}%" if ex is not None else "n/a"
+    # V1 (SIGNED_EXCESS_POOLED_ACROSS_DIRECTIONS): a mixed-direction family has no
+    # signed excess_mean, because grades.excess is raw and a correct bearish call
+    # contributes a negative one. Say so — a bare "n/a" reads as "not measured yet"
+    # and is exactly the ambiguous dash engine/neuralweb/mastermind_context.py
+    # refuses to print.
+    if ex is not None:
+        ex_str = f"{ex*100:.2f}%"
+    elif ex_basis == "magnitude_only" and ex_abs is not None:
+        ex_str = (f"|{ex_abs*100:.2f}%| avg move "
+                  f"(mixed-direction family — a signed mean would measure "
+                  f"universe drift, not skill)")
+    else:
+        ex_str = "not measured yet"
     state = (
         f"n_dates={n_dates}/{needed} @ {horizon}d · CI-low={ci_str} · "
         f"hit={hr_str} · excess={ex_str}"
@@ -345,22 +378,53 @@ def _refresh_qledger_promotion(e: dict) -> dict:
     if proj and not ready:
         state += f" · proj_ready≈{proj}"
 
+    # P0a: name the clock migration IN the state line, with the excluded basis's
+    # own count beside the live one. Without this the line reads as a collapse.
+    migrating = bool(best.get("clock_migration"))
+    prior = best.get("clock_prior_n_dates") or {}
+    prior_max = max(prior.values()) if prior else 0
+    if migrating:
+        state += (f" · RE-ACCRUING on a corrected clock "
+                  f"(earlier history: {prior_max} dates on the previous clock, "
+                  f"counted separately, not lost)")
+
     # Duel context line: challenger vs placebo |excess| at 5d
     ch_ex = duel_ctx.get("challenger_excess_mean_5d")
+    ch_abs = duel_ctx.get("challenger_abs_excess_5d")
+    ch_basis = duel_ctx.get("challenger_excess_basis_5d")
     pl_ex = duel_ctx.get("placebo_covered_abs_excess_5d")
+    n_dates_5d = duel_ctx.get("n_dates_5d", 0)
     duel_line = ""
-    if ch_ex is not None and pl_ex is not None:
+    if pl_ex is not None and ch_basis == "magnitude_only" and ch_abs is not None:
+        # Mixed-direction challenger: the signed mean is withheld (V1), and the
+        # placebo side was already a |excess| — so this is now the like-for-like duel.
+        duel_line = (
+            f"Duel @5d: challenger |excess|={ch_abs*100:.2f}% vs "
+            f"placebo |excess|={pl_ex*100:.2f}% (covered-ticker tape) · "
+            f"magnitude duel — this family calls both directions, so a signed mean "
+            f"is not a skill reading · n_dates={n_dates_5d}"
+        )
+    elif ch_ex is not None and pl_ex is not None:
         duel_line = (
             f"Duel @5d: challenger excess_mean={ch_ex*100:.2f}% vs "
             f"placebo |excess|={pl_ex*100:.2f}% (covered-ticker tape) · "
-            f"n_dates={duel_ctx.get('n_dates_5d',0)}"
+            f"n_dates={n_dates_5d}"
         )
 
     out: dict = {
         "status": "gate_open" if ready else "accruing",
         "state": state,
         "ready": ready,
+        # Machine-readable twin of the state-line suffix, so a renderer can style
+        # the row (or a monitor can suppress a false "regression" alert) without
+        # parsing prose. `status` stays in its existing two-value vocabulary —
+        # a migrating family IS accruing; what changed is why.
+        "clock_migration": migrating,
+        "clock_prior_n_dates": prior,
+        "clock_basis": best.get("clock_basis"),
     }
+    if migrating and best.get("migration_note"):
+        out["migration_note"] = best["migration_note"]
     if duel_line:
         # Append duel context to next_step so it surfaces in the admin tab
         existing_next = e.get("next_step") or ""

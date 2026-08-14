@@ -380,6 +380,11 @@ jobs:
           git clean -ffdx
           echo "CHECKOUT_TRASH=$CHECKOUT_TRASH" >> "$GITHUB_ENV"
           mv .git "$CHECKOUT_TRASH"
+          # A prior managed checkout may be detached and carry only origin/main.
+          # `clone --branch main` asks the local file:// upload-pack for an actual
+          # refs/heads/main; without it, compaction aborts after .git was moved
+          # aside (render 31643182055). Materialise the fetched seed explicitly.
+          git --git-dir="$CHECKOUT_TRASH" update-ref refs/heads/main "$SEED_SHA"
           # Serve a metadata-only depth-1 clone locally. The old tree's blobs stay on
           # disk as regular working files; they are not copied into the new object store.
           git --git-dir="$CHECKOUT_TRASH" config uploadpack.allowFilter true

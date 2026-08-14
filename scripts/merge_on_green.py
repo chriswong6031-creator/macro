@@ -25,6 +25,19 @@ a recovery net. It performs the merge the session would otherwise have sat there
 waiting to perform. The discipline is unchanged — nothing merges until every
 check has CONCLUDED clean — only the waiting moved off the session.
 
+Two 2026-08-13 additions, both measured against the live jam rather than the
+2026-08-11 hosted-pool comments:
+
+  * A baseline whose TESTS never ran (checkout/action-download timeout) is
+    skipped the same way ``cancelled`` already is — it is no information about
+    main. Latching those flakes as ``red`` paused every ordinary merge with
+    zero ``main-red-repair`` PRs in the queue.
+  * A pull request whose only red ``ci-pack-*`` / ``ci-gate`` names (and whose
+    failed legacy jobs, parsed from check-run annotations) are a subset of
+    what main is currently failing, and which did not touch a CI global
+    invalidator, is a LIVE inherited red: merge it. The healed-main refresh
+    path still owns the case where main has since gone green.
+
 MAIN-RED CIRCUIT BREAKER. PR checks prove a head against the base GitHub gave it;
 they do not prove that the rapidly moving source main remains healthy after later
 merges. `integration-baseline.yml` publishes one fast verdict for each source or
@@ -290,10 +303,15 @@ INCOMPLETE_CONCLUSIONS = {"cancelled", "stale"}
 # ordinary pull request.  Third-party successes are useful additional checks but
 # can never substitute for the CI/fence proof the controller is meant to await.
 REQUIRED_CI_ANCHORS = frozenset(f"ci-pack-{index}" for index in range(12))
+REQUIRED_CI_GATE = "ci-gate"
 REQUIRED_FENCE_ANCHOR = "fence-pack"
 REQUIRED_FORK_FENCE_ANCHORS = frozenset(
     {"self-mod-fence", "capability-broker", "grader-manifest"}
 )
+# Standing holds. #5465 is the self-hosted Wave 1 routing PR; #5474/#5477/#5478
+# are ETF children that must not land ahead of parent #5467.
+NEVER_AUTO_MERGE_PULLS = frozenset({5465, 5474, 5477, 5478})
+SKIP_CI_MARKER = "[skip ci]"
 # `_head_check_runs`' cap in .claude/hooks/ship_loop_guard.py, for the same
 # fail-closed reason: PR #3629's head carried 101 check runs, so a single
 # `per_page=100` call hid the tail and a red past page one went unseen.
@@ -357,7 +375,13 @@ MAX_REFRESHES_PER_SWEEP = 8
 # sessions the controller exists to serve.  This is intentionally conservative:
 # an ordinary in-flight proof consumes the same runners as a controller-created one.
 MAX_IN_FLIGHT_PR_PROOFS = 8
-HIGH_LOAD_FAIR_REFRESHES = 1
+# At the last free proof slot, use the durable lease so racing sweep generations
+# cannot both spend it.  This is a serialization THRESHOLD, never a workload floor:
+# run 31768097165 saw 49 active PR proofs against the cap of 8 and nevertheless
+# advertised eight new refresh slots because the former "fair refresh" clamp raised
+# a negative allowance back to eight.  That directly defeated the repo-wide circuit
+# breaker and re-created the CI stampede it was meant to stop.
+HIGH_LOAD_LEASE_THRESHOLD = 1
 ACTIVE_PR_PROOF_STATUSES = ("queued", "in_progress", "pending", "requested", "waiting")
 # The rotation advances by the live pull cap every bucket, so every armed pull
 # request enters the window within ceil(N / cap) buckets — ~40 minutes for a
@@ -619,7 +643,11 @@ def proof_anchor_runs(runs: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     both attempts.
     """
     anchors: dict[str, dict[str, Any]] = {}
-    wanted = REQUIRED_CI_ANCHORS | {REQUIRED_FENCE_ANCHOR} | REQUIRED_FORK_FENCE_ANCHORS
+    wanted = (
+        REQUIRED_CI_ANCHORS
+        | {REQUIRED_FENCE_ANCHOR, REQUIRED_CI_GATE}
+        | REQUIRED_FORK_FENCE_ANCHORS
+    )
     for run in runs:
         name = str(run.get("name") or "")
         if name not in wanted or not is_actions_check(run):
@@ -630,16 +658,99 @@ def proof_anchor_runs(runs: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return anchors
 
 
+def skip_ci_in_message(message: str) -> bool:
+    """True when the commit message opts the commit out of ci.yml."""
+    return SKIP_CI_MARKER in str(message or "").lower()
+
+
+def is_skip_ci_path(name: str) -> bool:
+    """data/, site/, and hot-tape paths do not retrigger ci.yml."""
+    path = str(name or "")
+    if path.startswith(PIPELINE_TREES):
+        return True
+    lowered = path.lower()
+    return (
+        lowered.startswith("hot-tape/")
+        or "/hot_tape" in lowered
+        or lowered.startswith("hot_tape")
+    )
+
+
+def is_skip_ci_noise(message: str, files: list[str] | None) -> bool:
+    """True for a [skip ci] tick or a commit that only touched data/site/hot-tape."""
+    if skip_ci_in_message(message):
+        return True
+    if files is None or not files:
+        return False
+    return all(is_skip_ci_path(name) for name in files if name)
+
+
+def is_base_branch_modified(detail: str) -> bool:
+    """GitHub 405 when main moved under a squash that would otherwise succeed."""
+    return "base branch was modified" in " ".join(str(detail or "").lower().split())
+
+
+def is_content_conflict_detail(detail: str) -> bool:
+    """Affirmative conflict language on a merge or update-branch response."""
+    normalized = " ".join(str(detail or "").lower().split())
+    return "merge conflict" in normalized or "merge conflicts" in normalized
+
+
+def is_retryable_base_tick(
+    detail: str, freshness: "ProofFreshness", live_sha: str
+) -> bool:
+    """True when a refused squash is a skip-ci/data tick, not a content conflict.
+
+    Skip-ci wire ticks move main every 15-30 minutes. GitHub then answers 405/409
+    ("not mergeable" / "base branch was modified") on a still-clean tree. Treating
+    that as stale-proof or `merge-blocked` recreates the drain jam: update-branch
+    re-proves the head, the next tick lands, and the queue never empties.
+    """
+    if is_content_conflict_detail(detail):
+        return False
+    if is_base_branch_modified(detail):
+        return True
+    return freshness.sha_is_skip_ci_tick(live_sha)
+
+
+def never_auto_merge_number(number: Any) -> bool:
+    try:
+        return int(number) in NEVER_AUTO_MERGE_PULLS
+    except (TypeError, ValueError):
+        return False
+
+
+def scheduled_ci_pack_names(runs: list[dict[str, Any]]) -> set[str]:
+    """Pack names ci-plan actually launched on this head.
+
+    Unscheduled ``ci-pack-N`` names are absent, not pending and not red. A
+    scoped PR is merge-eligible when every present pack plus ``ci-gate`` and
+    ``fence-pack`` succeeded.
+    """
+    names: set[str] = set()
+    for run in runs:
+        name = str(run.get("name") or "")
+        if _PACK_CHECK_RE.match(name) and is_actions_check(run):
+            names.add(name)
+    return names
+
+
 def proof_anchor_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
     """Affirmative CI/fence proof state for the exact head.
 
-    ``clean`` requires all twelve CI packs plus either the same-repository
-    ``fence-pack`` or all three fork fence contexts to have succeeded.  Missing,
-    skipped, neutral or cancelled anchors are incomplete evidence, never a pass
-    and never a code accusation.
+    ``clean`` requires every SCHEDULED CI pack (those present as check runs),
+    plus ``ci-gate`` when the dynamic planner ran, plus either the same-
+    repository ``fence-pack`` or all three fork fence contexts. Unscheduled
+    packs are N/A: they are not missing evidence. Skipped, neutral or cancelled
+    scheduled anchors are incomplete, never a pass and never a code accusation.
     """
     anchors = proof_anchor_runs(runs)
-    required = set(REQUIRED_CI_ANCHORS)
+    # `ci-gate` is the stable, affirmative CI verdict for EVERY non-closed PR event.
+    # Require it even before GitHub has registered the ci workflow's first check run.
+    # Otherwise a faster fences workflow can be the only repository proof visible on
+    # the head and read clean: that exact race merged #5555 at 03:53:19Z while its
+    # ci-plan/packs were still queued (runs 31768097165 / 31767764521).
+    required = scheduled_ci_pack_names(runs) | {REQUIRED_CI_GATE}
     standard_fence = anchors.get(REQUIRED_FENCE_ANCHOR)
     fork_fences_present = REQUIRED_FORK_FENCE_ANCHORS <= anchors.keys()
     if standard_fence is not None and (
@@ -916,6 +1027,22 @@ def load_pr_gates(workflows_dir: Path = WORKFLOWS_DIR) -> list[dict[str, Any]]:
     return gates
 
 
+def ownership_matches(rel: str, patterns: list[str] | None) -> list[str]:
+    """Path-filter hits that own a tested surface, never workflow start catch-alls.
+
+    ``**`` (and any other ``START_ONLY_PATH_PATTERNS`` entry) starts ci.yml so a
+    new root cannot bypass the selector. It is not job ownership. Leaving it in
+    the intersection set makes every pull request's surface contain ``**``, so
+    one unowned file (measured: ``mockups/refs/psi/workspace/DESIGN_NOTES.md``
+    in run 31736859799) stales the whole fleet. Strip it here too, in case a
+    caller built gates without going through ``load_pr_gates``.
+    """
+    if not patterns:
+        return []
+    owned = [entry for entry in patterns if entry not in START_ONLY_PATH_PATTERNS]
+    return matching_patterns(rel, owned)
+
+
 class ProofFreshness:
     """Per-sweep answer to: has main moved under this pull request's proof?
 
@@ -966,6 +1093,7 @@ class ProofFreshness:
         # This is a compatibility fallback for older/external check records that do
         # not expose the exact pull_request base SHA used by the primary path below.
         self._merge_bases: dict[str, str | None] = {}
+        self._proof_bound_sha: str | None = None
         self.commit_file_reads = 0
 
     # -- construction ---------------------------------------------------------
@@ -992,7 +1120,8 @@ class ProofFreshness:
             sha = str((entry or {}).get("sha") or "")
             if not sha:
                 raise RuntimeError("main commit listing contains an entry with no SHA")
-            commits.append({"sha": sha})
+            message = str(((entry.get("commit") or {}).get("message")) or "")
+            commits.append({"sha": sha, "message": message})
         if not commits:
             # Unreachable against a real repository, and permitting it would hand
             # the gate a free "main never moved" for every pull request.
@@ -1005,6 +1134,155 @@ class ProofFreshness:
     def snapshot_tip(self) -> str:
         """Exact main tip whose timeline this instance classified."""
         return str((self.commits[0] if self.commits else {}).get("sha") or "")
+
+    @property
+    def proof_bound_sha(self) -> str:
+        """Newest main SHA that would have run CI / product code.
+
+        Walks HEAD newest-first and skips ``[skip ci]`` ticks and commits whose
+        entire file set is data/site/hot-tape. That SHA is the merge-eligibility
+        bound: a green PR is current against this, not against skip-ci HEAD.
+        """
+        if self._proof_bound_sha:
+            return self._proof_bound_sha
+        bound = ""
+        for commit in self.commits:
+            sha = str(commit.get("sha") or "")
+            if not sha:
+                continue
+            message = str(commit.get("message") or "")
+            if skip_ci_in_message(message):
+                continue
+            try:
+                files, truncated = self.files_of(sha)
+            except RuntimeError:
+                bound = sha
+                break
+            if truncated:
+                bound = sha
+                break
+            if is_skip_ci_noise(message, files):
+                continue
+            bound = sha
+            break
+        if not bound and self.commits:
+            bound = str(self.commits[-1].get("sha") or "")
+        self._proof_bound_sha = bound
+        return bound
+
+    def note_merged_commit(
+        self, sha: str, files: list[str] | None, message: str = ""
+    ) -> None:
+        """Record a squash this sweep just landed so the next PR classifies it."""
+        if not sha:
+            return
+        self.commits.insert(0, {"sha": sha, "message": message})
+        self._commit_files[sha] = (list(files or []), False)
+        self._proof_bound_sha = None
+
+    def sha_is_skip_ci_tick(self, sha: str) -> bool:
+        """True when ``sha`` itself carries the ``[skip ci]`` marker.
+
+        File-only data/site bakes are intentionally excluded. 82% of main
+        commits are pipeline bakes; treating those as a generic-409 retry
+        would swallow a real content conflict whenever the tip happened to
+        be a render/nightly (the existing conflict fixture). Wire ticks
+        always stamp ``[skip ci]`` in the message.
+        """
+        wanted = str(sha or "").lower()
+        if not wanted:
+            return False
+        for commit in self.commits:
+            if str(commit.get("sha") or "").lower() != wanted:
+                continue
+            return skip_ci_in_message(str(commit.get("message") or ""))
+        # Unknown SHA: only the marker, never a file-only bake. A render tip
+        # that is not in the frozen window must not launder a real 409.
+        tip = self.snapshot_tip
+        if not tip:
+            return False
+        encoded_tip = urllib.parse.quote(tip, safe="")
+        encoded_live = urllib.parse.quote(sha, safe="")
+        try:
+            status, payload = _request(
+                "GET",
+                f"{GITHUB_API}/repos/{self.repo}/compare/"
+                f"{encoded_tip}...{encoded_live}?per_page=100",
+                self.token,
+            )
+        except Exception:
+            return False
+        if status >= 400 or not isinstance(payload, dict):
+            return False
+        commits = payload.get("commits")
+        if not isinstance(commits, list) or not commits:
+            return False
+        return all(
+            skip_ci_in_message(
+                str((((entry or {}).get("commit") or {}).get("message")) or "")
+            )
+            for entry in commits
+        )
+
+    def live_sha_is_skip_ci_current(self, live_sha: str) -> bool:
+        """True if ``live_sha`` is the snapshot tip or only skip-ci ticks ahead.
+
+        An unknown SHA with no classifiable commits fails closed: that is a
+        product move this snapshot did not see.
+        """
+        live = str(live_sha or "").lower()
+        if not live:
+            return False
+        tip = self.snapshot_tip.lower()
+        if live == tip:
+            return True
+        positions = {
+            str(commit.get("sha") or "").lower(): index
+            for index, commit in enumerate(self.commits)
+        }
+        if live in positions:
+            bound = self.proof_bound_sha.lower()
+            if bound in positions:
+                return positions[live] <= positions[bound]
+            return False
+        return self._newer_tip_is_only_skip_ci(live_sha)
+
+    def _newer_tip_is_only_skip_ci(self, live_sha: str) -> bool:
+        """Classify commits GitHub reports between the frozen tip and a newer HEAD."""
+        tip = self.snapshot_tip
+        if not tip:
+            return False
+        encoded_tip = urllib.parse.quote(tip, safe="")
+        encoded_live = urllib.parse.quote(live_sha, safe="")
+        try:
+            status, payload = _request(
+                "GET",
+                f"{GITHUB_API}/repos/{self.repo}/compare/"
+                f"{encoded_tip}...{encoded_live}?per_page=100",
+                self.token,
+            )
+        except Exception:
+            return False
+        if status >= 400 or not isinstance(payload, dict):
+            return False
+        commits = payload.get("commits")
+        if not isinstance(commits, list) or not commits:
+            # Empty compare while SHA differs: not the same tip, not classifiable.
+            return False
+        for entry in commits:
+            sha = str((entry or {}).get("sha") or "")
+            message = str((((entry or {}).get("commit") or {}).get("message")) or "")
+            if skip_ci_in_message(message):
+                continue
+            if not sha:
+                return False
+            try:
+                files, truncated = self.files_of(sha)
+            except RuntimeError:
+                return False
+            if truncated or not is_skip_ci_noise(message, files):
+                return False
+        return True
 
     def _root_tree(self, tree_sha: str) -> dict[str, tuple[str, str, str]]:
         """Complete top-level tree entries keyed by path, cached by tree object ID.
@@ -1413,7 +1691,7 @@ class ProofFreshness:
         surface: set[str] = set()
         for gate in self.gates:
             for name in files:
-                surface.update(matching_patterns(name, gate["patterns"]))
+                surface.update(ownership_matches(name, gate["patterns"]))
         return surface or None
 
     def stale_for(
@@ -1439,11 +1717,11 @@ class ProofFreshness:
                     )
                 break
             else:
-                return True, (
-                    f"the exact checked proof base {proof_base[:12]} predates or is "
-                    f"outside the newest {len(self.commits)} main commits this sweep "
-                    "can classify"
-                )
+                # Proof base predates the frozen window. Skip-ci data ticks can
+                # fill all 100 newest commits; re-proving then waits on a fresh
+                # main ci.yml that skip-ci never triggers. Classify the visible
+                # window: only a PRODUCT commit in it makes the proof stale.
+                window = list(self.commits)
         else:
             # Compatibility fallback: a check on exact head H necessarily includes
             # every ancestor of H.  The merge base between frozen main and H is
@@ -1472,14 +1750,12 @@ class ProofFreshness:
             else:
                 return None, metadata_problem + "; head ancestry could not be established"
 
-        if len(window) > MAIN_COMMIT_FILE_CAP:
-            return True, (
-                f"main has taken {len(window)} commits since the proof, more than the "
-                f"{MAIN_COMMIT_FILE_CAP} this sweep will classify"
-            )
-
         candidates: set[str] = set()
+        product_commits = 0
         for commit in window:
+            message = str(commit.get("message") or "")
+            if skip_ci_in_message(message):
+                continue
             try:
                 files, truncated = self.files_of(commit["sha"])
             except RuntimeError as exc:
@@ -1488,6 +1764,15 @@ class ProofFreshness:
                 return True, (
                     f"main commit {commit['sha'][:12]} changed too many files to list, "
                     "so it cannot be shown to be outside the surface"
+                )
+            if is_skip_ci_noise(message, files):
+                continue  # data/site/hot-tape tick, not an edit
+            product_commits += 1
+            if product_commits > MAIN_COMMIT_FILE_CAP:
+                return True, (
+                    f"main has taken {product_commits} product commits since the "
+                    f"proof, more than the {MAIN_COMMIT_FILE_CAP} this sweep will "
+                    "classify"
                 )
             if any(
                 name.startswith(CI_DEFINITION_TREES)
@@ -1502,22 +1787,19 @@ class ProofFreshness:
                 continue  # a render/nightly bake, not an edit
             for name in files:
                 matched_specific = False
-                matched_start_only = False
                 for gate in self.gates:
-                    matches = matching_patterns(name, gate["patterns"])
+                    matches = ownership_matches(name, gate["patterns"])
                     candidates.update(matches)
                     matched_specific = matched_specific or bool(matches)
-                    matched_start_only = matched_start_only or bool(
-                        matching_patterns(
-                            name, gate.get("start_only_patterns") or []
-                        )
-                    )
-                if matched_start_only and not matched_specific:
-                    return True, (
-                        f"main commit {commit['sha'][:12]} touched {name}, which is "
-                        "covered only by a workflow start catch-all and has no "
-                        "specific tested-surface owner"
-                    )
+                # Unowned catch-all (mockups/refs/**, DESIGN_NOTES.md, a new
+                # root seen only by ``**``) must NOT invalidate every PR.
+                # Measured 2026-08-13: #5545's DESIGN_NOTES.md matched the
+                # start catch-all with no owner and stale'd six check-clean
+                # heads at once (run 31736859799). A file with no tested-
+                # surface owner is outside every PR's proof, not inside all
+                # of them.
+                if not matched_specific:
+                    continue
 
         if not candidates:
             return False, (
@@ -2714,6 +2996,22 @@ BASELINE_MAX_AGE_HOURS = 6
 #: GitHub permits 100 here; one bounded request keeps the control-plane cost fixed
 #: while leaving enough room to reach the newest real verdict under churn.
 INTEGRATION_BASELINE_RUN_LOOKBACK = 100
+#: Step-name fragments that mean the circuit-breaker's TESTS ran. A failed
+#: baseline whose pytest/selftest steps never concluded is a runner/network
+#: flake (measured 2026-08-13: render-linux checkout died on a 100s codeload
+#: timeout / git promisor EOF). That is the same category as `cancelled`: no
+#: information about main. A real pytest failure still latches the breaker.
+_BASELINE_TEST_STEP_HINTS = (
+    "pytest",
+    "selftest",
+    "must parse",
+    "packing",
+    "skip-only",
+    "named suite",
+    "grammar",
+)
+_PACK_CHECK_RE = re.compile(r"^ci-pack-\d+$")
+_LEGACY_JOB_TITLE_PREFIX = "legacy-job-"
 #: Minimum gap between two sweeper-ordered `integration-baseline.yml` dispatches, and
 #: the reason `ensure_integration_baseline` can be safe at all. MUCH shorter than
 #: `MAIN_BASELINE_MIN_INTERVAL_MINUTES` (30, for ci.yml) because this workflow is the
@@ -2751,6 +3049,53 @@ def _baseline_age_hours(run: dict[str, Any], now: dt.datetime | None = None) -> 
             when = now or dt.datetime.now(dt.timezone.utc)
             return (when - stamp).total_seconds() / 3600.0
     return None
+
+
+def _baseline_failure_is_infra(
+    repo: str, run: dict[str, Any], token: str
+) -> bool:
+    """True only when the circuit-breaker TESTS never ran.
+
+    Fail closed (False) on any doubt: an unreadable jobs listing, a job with no
+    steps, or a pytest/selftest step that concluded success/failure is a real
+    red and must latch the breaker. Checkout/setup timeouts are the skip case.
+    """
+    run_id = run.get("id")
+    if run_id is None:
+        return False
+    try:
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100",
+            token,
+        )
+    except Exception:
+        return False
+    if status >= 400 or not isinstance(payload, dict):
+        return False
+    jobs = payload.get("jobs") or []
+    if not jobs:
+        return False
+    tests_ran = False
+    saw_failure = False
+    for job in jobs:
+        if not isinstance(job, dict):
+            continue
+        if str(job.get("conclusion") or "").lower() == "failure":
+            saw_failure = True
+        for step in job.get("steps") or []:
+            if not isinstance(step, dict):
+                continue
+            name = str(step.get("name") or "").lower()
+            conclusion = str(step.get("conclusion") or "").lower()
+            if conclusion == "failure":
+                saw_failure = True
+            if (
+                any(hint in name for hint in _BASELINE_TEST_STEP_HINTS)
+                and conclusion in {"success", "failure"}
+            ):
+                tests_ran = True
+    return saw_failure and not tests_ran
 
 
 def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
@@ -2818,29 +3163,39 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     if not runs:
         return "unproven", "integration-baseline has not published a run"
 
-    # Walk to the newest run that actually CONCLUDED. An in-flight run and a
-    # `cancelled` one are skipped for the same reason: neither is evidence about main.
-    run = next(
-        (
-            candidate
-            for candidate in runs
-            if str(candidate.get("status") or "").lower() == "completed"
-            and str(candidate.get("conclusion") or "").lower() != "cancelled"
-        ),
-        None,
-    )
+    # Walk to the newest run that actually CONCLUDED with information about
+    # main. An in-flight run, a `cancelled` one, and a failure whose TESTS never
+    # ran are skipped for the same reason: none of them is evidence that source
+    # main is broken. A pytest failure still stops the walk and returns ``red``.
+    skipped_infra = 0
+    run = None
+    for candidate in runs:
+        if str(candidate.get("status") or "").lower() != "completed":
+            continue
+        conclusion = str(candidate.get("conclusion") or "").lower()
+        if conclusion == "cancelled":
+            continue
+        if conclusion in {"failure", "timed_out"}:
+            if _baseline_failure_is_infra(repo, candidate, token):
+                skipped_infra += 1
+                continue
+        run = candidate
+        break
     if run is None:
         in_flight = sum(
             1 for candidate in runs if str(candidate.get("status") or "").lower() != "completed"
         )
         return "unproven", (
             f"none of the last {len(runs)} integration-baseline runs concluded "
-            f"({in_flight} still in flight, {len(runs) - in_flight} cancelled/superseded)"
+            f"({in_flight} still in flight, {skipped_infra} infra-flake, "
+            f"{len(runs) - in_flight - skipped_infra} cancelled/superseded)"
         )
     conclusion = str(run.get("conclusion") or "").lower()
     run_sha = str(run.get("head_sha") or "")
     run_url = str(run.get("html_url") or "")
     detail = f"{run_sha[:12] or 'unknown-sha'} {run_url}".strip()
+    if skipped_infra:
+        detail = f"{detail} (skipped {skipped_infra} infra-flake run(s))"
 
     ref_status, ref_payload = _request(
         "GET", f"{GITHUB_API}/repos/{repo}/git/ref/heads/main", token
@@ -3150,6 +3505,17 @@ class MainProof:
     proved_at: dt.datetime | None
     head_sha: str
     source: str
+    # Names main FAILED on the same proof run. Empty when the run was unreadable
+    # or when every considered job passed. Used by the base-inherited refresh
+    # (a PR whose reds are a subset of main's *clean* names). Live-inherited
+    # red waives on ``failed_legacy_jobs``, not these pack names — packs rebalance.
+    failed_names: frozenset[str] = frozenset()
+    # Legacy job ids parsed from ``::error title=legacy-job-<id>`` annotations
+    # on failed ``ci-pack-*`` jobs of this proof. Empty means "could not read"
+    # OR the run passed every pack — both fail-close the live-inherited path.
+    # Pack *names* are not a stable identity (they rebalance on the selected
+    # job set); this set is the waiver's load-bearing half.
+    failed_legacy_jobs: frozenset[str] = frozenset()
 
     def age_hours(self, now: dt.datetime | None = None) -> float | None:
         """How old the proof is, in hours. None when it could not be dated."""
@@ -3220,9 +3586,239 @@ def _newest_concluded_main_run(
     return None, f"{workflow} has no completed run on main"
 
 
+_PACK_RUNNER_STEP_MARKER = ": step "
+_SHALLOW_CLONE_FENCE_TEXT = "could not determine changed files"
+_SHALLOW_CLONE_MARKERS_TEXT = (
+    "cannot classify files changed from",
+    "fatal: bad revision",
+)
+
+
+def _legacy_job_ids_from_annotations(annotations: list[Any]) -> set[str]:
+    """Parse pack-runner failure identities out of GitHub check-run annotations.
+
+    Only ``legacy-job-<id>`` titles and the pack-runner message shape
+    ``<id>: step '...' exited N`` count. A bare ``": "`` split is too broad:
+    workflow-yaml's packing-contract selftest emits
+    ``title=template-site-sync ...`` / ``REFUSED: templates/wrongway.html ...``,
+    which used to mint a fake job id ``REFUSED`` (measured on main pack-1
+    94604278264 and every PR pack that ran that job, 2026-08-13).
+    """
+    ids: set[str] = set()
+    for item in annotations:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "")
+        message = str(item.get("message") or "")
+        if title.startswith(_LEGACY_JOB_TITLE_PREFIX):
+            job_id = title[len(_LEGACY_JOB_TITLE_PREFIX) :].strip()
+            if job_id:
+                ids.add(job_id)
+            continue
+        text = message or title
+        if _PACK_RUNNER_STEP_MARKER not in text:
+            continue
+        job_id = text.split(":", 1)[0].strip()
+        if job_id and " " not in job_id and "/" not in job_id:
+            ids.add(job_id)
+    return ids
+
+
+def _shallow_clone_false_red_ids(
+    annotations: list[Any], known_ids: set[str]
+) -> set[str]:
+    """#5564 ``fetch-depth:1`` infra reds, not the pull request's own jobs.
+
+    ``self-mod-fence`` prints a distinctive ``could not determine changed files``
+    annotation. ``conflict-markers``'s pack-runner annotation is only
+    ``step ... exited 2``, which is also how a real marker hit looks, so that
+    job counts as the same shallow-clone incident only when the fence sibling
+    fired on this head or the classify-failure string is itself on an
+    annotation (measured 2026-08-13 fleet: they co-occur; unique product reds
+    such as ``marketing-data`` / ``tier-gate`` are not in this set).
+    """
+    blob = "\n".join(
+        f"{item.get('title') or ''}\n{item.get('message') or ''}"
+        for item in annotations
+        if isinstance(item, dict)
+    )
+    out: set[str] = set()
+    fence_infra = (
+        "self-mod-fence" in known_ids and _SHALLOW_CLONE_FENCE_TEXT in blob
+    )
+    if fence_infra:
+        out.add("self-mod-fence")
+        if "conflict-markers" in known_ids:
+            out.add("conflict-markers")
+    if "conflict-markers" in known_ids and any(
+        marker in blob for marker in _SHALLOW_CLONE_MARKERS_TEXT
+    ):
+        out.add("conflict-markers")
+    return out
+
+
+def _annotation_check_run_id(entry: dict[str, Any]) -> Any:
+    """The annotations API takes a *check-run* id, not a workflow *job* id.
+
+    `/actions/runs/{id}/jobs` and `/commits/{sha}/check-runs` are different
+    namespaces. A job's ``id`` 404s against ``/check-runs/{id}/annotations``,
+    which would fail-close the live-inherited path on every real sweep. Prefer
+    ``check_run_url`` (jobs API) or a ``url`` that already names a check-run.
+    """
+    for key in ("check_run_url", "url"):
+        url = str(entry.get(key) or "")
+        marker = "/check-runs/"
+        if marker not in url:
+            continue
+        ident = url.rsplit(marker, 1)[-1].split("?")[0].split("/")[0].strip()
+        if ident:
+            return ident
+    return entry.get("id")
+
+
+def _legacy_identities_from_runs(
+    repo: str, runs: list[dict[str, Any]], token: str
+) -> tuple[frozenset[str], frozenset[str]]:
+    """``(legacy_job_ids, shallow_clone_false_red_ids)``.
+
+    Fail closed: any unreadable failed pack yields two empty sets. The
+    live-inherited path treats that as "do not waive".
+    """
+    if not runs:
+        return frozenset(), frozenset()
+    ids: set[str] = set()
+    collected: list[Any] = []
+    for run in runs:
+        check_id = _annotation_check_run_id(run)
+        if check_id is None:
+            return frozenset(), frozenset()
+        try:
+            status, payload = _request(
+                "GET",
+                f"{GITHUB_API}/repos/{repo}/check-runs/{check_id}/annotations"
+                "?per_page=100",
+                token,
+            )
+        except Exception:
+            return frozenset(), frozenset()
+        if status >= 400:
+            return frozenset(), frozenset()
+        if isinstance(payload, dict):
+            payload = payload.get("annotations")
+        if not isinstance(payload, list):
+            return frozenset(), frozenset()
+        parsed = _legacy_job_ids_from_annotations(payload)
+        if not parsed:
+            return frozenset(), frozenset()
+        ids |= parsed
+        collected.extend(payload)
+    shallow = _shallow_clone_false_red_ids(collected, ids)
+    return frozenset(ids), frozenset(shallow)
+
+
+def _legacy_job_ids_from_runs(
+    repo: str, runs: list[dict[str, Any]], token: str
+) -> frozenset[str]:
+    """Fail closed: any unreadable failed pack yields an empty set."""
+    ids, _shallow = _legacy_identities_from_runs(repo, runs, token)
+    return ids
+
+
+def _touches_ci_control_plane(paths: list[str]) -> bool:
+    """A control-plane edit can change what any pack means; never waive those.
+
+    Fail closed: if the pack runner cannot be imported (sparse-checkout miss),
+    treat the diff as a control-plane touch so live-inherited red cannot fire.
+    """
+    try:
+        from scripts.run_ci_pack import GLOBAL_INVALIDATORS, _matches_any
+    except ImportError:
+        try:
+            from run_ci_pack import GLOBAL_INVALIDATORS, _matches_any  # type: ignore[no-redef]
+        except ImportError:
+            return True
+    return any(_matches_any(GLOBAL_INVALIDATORS, path) for path in paths if path)
+
+
+def _live_inherited_extras(bad_names: set[str]) -> set[str]:
+    """Check names that are neither a rebalancing pack nor the ci-gate aggregate.
+
+    ``ci-pack-N`` numbers are not a stable identity: ``partition_jobs`` balances
+    the *selected* job set, so the same ``unrun-foo`` is pack-7 on a scoped 114-job
+    PR and pack-5 on main's full-suite dispatch. ``ci-gate`` is implied by those
+    pack failures — it is not an extra name that blocks the waiver.
+    """
+    return {
+        name
+        for name in bad_names
+        if not _PACK_CHECK_RE.match(name) and name != "ci-gate"
+    }
+
+
+def _failed_pack_runs(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        run
+        for run in runs
+        if _PACK_CHECK_RE.match(str(run.get("name") or ""))
+        and str(run.get("status") or "").lower() == "completed"
+        and str(run.get("conclusion") or "") not in CLEAN_CONCLUSIONS
+        and not is_spurious_check(str(run.get("name") or ""))
+    ]
+
+
+def live_inherited_red(
+    repo: str,
+    pull: dict[str, Any],
+    runs: list[dict[str, Any]],
+    bad_names: set[str],
+    proof: MainProof,
+    freshness: "ProofFreshness",
+    token: str,
+) -> str | None:
+    """Reason string if this red is main's current weather; None to fail closed.
+
+    Waive on ``legacy-job-*`` annotation identity only. Pack names rebalance on
+    the selected job set, so a PR's ``ci-pack-7`` is not comparable to main's
+    ``ci-pack-5``. ``ci-gate`` is the aggregate of those identities, not an extra
+    name. A CI global invalidator is ineligible — it can change what any pack
+    means.
+
+    After #5564, every PR pack also fails ``self-mod-fence`` / ``conflict-markers``
+    on a shallow clone. Those are not on main (main's live check is
+    dispatch-armed). Subtract that infra before the subset check; what remains
+    must be nonempty and ⊆ ``proof.failed_legacy_jobs``. A fence-only head
+    (nothing left) is not main's weather and stays blocked. Unique product
+    reds (``marketing-data``, ``tier-gate``, …) stay extras.
+    """
+    if not bad_names or not proof.failed_legacy_jobs:
+        return None
+    if _live_inherited_extras(bad_names):
+        return None
+    failed_pack_runs = _failed_pack_runs(runs)
+    if not failed_pack_runs:
+        return None
+    pr_jobs, shallow = _legacy_identities_from_runs(
+        repo, failed_pack_runs, token
+    )
+    own = pr_jobs - shallow
+    if not own or not own <= proof.failed_legacy_jobs:
+        return None
+    files = freshness.pull_files(pull.get("number"))
+    if files is None or _touches_ci_control_plane(files):
+        return None
+    return (
+        "live-inherited red: "
+        + ", ".join(sorted(own))
+        + " already failing on main"
+    )
+
+
 def _run_clean_jobs(
     repo: str, run_id: Any, token: str
-) -> tuple[tuple[frozenset[str], dt.datetime | None] | None, str]:
+) -> tuple[
+    tuple[frozenset[str], frozenset[str], frozenset[str], dt.datetime | None] | None,
+    str,
+]:
     """``(resolved, why)``. ``resolved`` is None ONLY when the run could not be READ.
 
     ``resolved`` is ``(names main PASSED, when the run's verdict landed)``; ``why``
@@ -3273,8 +3869,10 @@ def _run_clean_jobs(
         return None, f"run {run_id}'s job listing returned an unusable payload"
     jobs = payload["jobs"]
     clean: set[str] = set()
+    failed: set[str] = set()
     clean_stamps: list[dt.datetime | None] = []
     considered_stamps: list[dt.datetime | None] = []
+    failed_pack_jobs: list[dict[str, Any]] = []
     for job in jobs:
         if not isinstance(job, dict):
             continue
@@ -3286,13 +3884,18 @@ def _run_clean_jobs(
         when = _parse_dt(job.get("completed_at"))
         considered_stamps.append(when)
         if str(job.get("conclusion") or "").lower() not in PROOF_CLEAN_CONCLUSIONS:
+            failed.add(name)
+            if _PACK_CHECK_RE.match(name):
+                failed_pack_jobs.append(job)
             continue
         clean.add(name)
         clean_stamps.append(when)
+    legacy = _legacy_job_ids_from_runs(repo, failed_pack_jobs, token)
     dating = clean_stamps if clean else considered_stamps
     if not dating or any(stamp is None for stamp in dating):
-        return (frozenset(clean), None), ""
-    return (frozenset(clean), max(stamp for stamp in dating if stamp is not None)), ""
+        return (frozenset(clean), frozenset(failed), legacy, None), ""
+    dated = max(stamp for stamp in dating if stamp is not None)
+    return (frozenset(clean), frozenset(failed), legacy, dated), ""
 
 
 def main_proof(repo: str, token: str) -> MainProof:
@@ -3351,6 +3954,8 @@ def main_proof(repo: str, token: str) -> MainProof:
     """
     try:
         names: set[str] = set()
+        failed_names: set[str] = set()
+        failed_legacy: set[str] = set()
         stamps: list[dt.datetime | None] = []
         sources: list[str] = []
         head_sha = ""
@@ -3362,8 +3967,10 @@ def main_proof(repo: str, token: str) -> MainProof:
             resolved, why = _run_clean_jobs(repo, run.get("id"), token)
             if resolved is None:
                 return MainProof(frozenset(), None, "", f"{workflow} {why}")
-            workflow_names, workflow_at = resolved
+            workflow_names, workflow_failed, workflow_legacy, workflow_at = resolved
             names |= set(workflow_names)
+            failed_names |= set(workflow_failed)
+            failed_legacy |= set(workflow_legacy)
             stamps.append(workflow_at)
             sources.append(
                 f"{workflow}@{run_sha[:12] or '?'}"
@@ -3379,7 +3986,14 @@ def main_proof(repo: str, token: str) -> MainProof:
         proved_at = None if any(stamp is None for stamp in stamps) else min(
             stamp for stamp in stamps if stamp is not None
         )
-        return MainProof(frozenset(names), proved_at, head_sha, " + ".join(sources))
+        return MainProof(
+            frozenset(names),
+            proved_at,
+            head_sha,
+            " + ".join(sources),
+            frozenset(failed_names),
+            frozenset(failed_legacy),
+        )
     except Exception as exc:  # noqa: BLE001 — a diagnostic must never fail a sweep
         return MainProof(frozenset(), None, "", f"main proof lookup raised {exc!r}"[:200])
 
@@ -3444,7 +4058,11 @@ def ensure_main_baseline(
 
     So the sweep dispatches the baseline itself, but ONLY when all three hold:
 
-      1. the proof is undatable or older than MAIN_PROOF_MAX_AGE_HOURS;
+      1. the proof is undatable or older than MAIN_PROOF_MAX_AGE_HOURS, OR it has
+         no ``failed_legacy_jobs`` while this sweep blocked a pack or ``ci-gate``.
+         A clock-fresh green proof cannot feed the live-inherited waiver, and
+         ``ci.yml`` has no ``push`` trigger — skip-ci tape ticks never refresh it.
+         This is NOT a per-commit dispatch: (2) and (3) still bind it;
       2. at least one pull request this sweep evaluated was blocked on a non-spurious
          check — i.e. the staleness actually COST something. An idle repository never
          dispatches, however old its proof is; a proof nothing needed is not a problem;
@@ -3479,7 +4097,11 @@ def ensure_main_baseline(
     """
     try:
         age = proof.age_hours()
-        if age is not None and age <= MAIN_PROOF_MAX_AGE_HOURS:
+        packs_blocked = any(
+            _PACK_CHECK_RE.match(name) or name == "ci-gate" for name in blocked_names
+        )
+        waiver_blind = packs_blocked and not proof.failed_legacy_jobs
+        if age is not None and age <= MAIN_PROOF_MAX_AGE_HOURS and not waiver_blind:
             return f"not needed (proof is {age:.1f}h old)"
         if not blocked_names:
             return "not needed (no pull request was blocked on a check)"
@@ -3519,15 +4141,21 @@ def ensure_main_baseline(
             # proven RED, which reads identically here and has the opposite cause. The
             # proof's own `source` is the thing that distinguishes them, so print it.
             aged = f"undated ({proof.source})" if age is None else f"{age:.1f}h old"
+            weather = (
+                " and has no legacy-job-* weather for the live-inherited waiver"
+                if not proof.failed_legacy_jobs
+                else ""
+            )
             _annotate(
                 "notice",
                 "merge-on-green",
                 f"Dispatched {MAIN_BASELINE_WORKFLOW} on main: this sweep left pull "
                 f"requests blocked on {len(blocked_names)} distinct check(s) "
                 f"({', '.join(sorted(blocked_names)[:6])}) while main's own proof is "
-                f"{aged}, so it could not tell an inherited red from a real one. "
-                f"{MAIN_BASELINE_WORKFLOW} has no `push` trigger, so nothing else "
-                "re-proves main; the next sweep judges those reds against the result.",
+                f"{aged}{weather}, so it could not tell an inherited red from a real "
+                f"one. {MAIN_BASELINE_WORKFLOW} has no `push` trigger, so skip-ci "
+                "tape ticks do not re-prove main; the next sweep judges those reds "
+                "against the result.",
             )
             return "dispatched"
         _annotate(
@@ -4233,6 +4861,13 @@ def sweep_pull(
     if proof is None:
         proof = MainProof(frozenset(), None, "", "no proof supplied")
     number = pull.get("number")
+    if never_auto_merge_number(number):
+        print(
+            f"PR #{number}: standing hold — merge-on-green will not squash-merge "
+            "or rebase this pull request.",
+            flush=True,
+        )
+        return "excluded"
     head_sha = str((pull.get("head") or {}).get("sha") or "")
     if not head_sha:
         _annotate("warning", "merge-on-green", f"PR #{number}: no head sha; skipped.")
@@ -4429,28 +5064,38 @@ def sweep_pull(
                 if update_result != "declined":
                     return update_result
 
-        if blocked_names is not None:
-            # What this sweep could not answer, for `ensure_main_baseline`.
-            blocked_names |= bad_names
-
-        live_pull, authorization = live_authorized_pull(repo, pull, read_token)
-        if live_pull is None:
-            return authorization
-        pull = live_pull
-        added = mark_blocked(repo, pull, red_check_comment(names), merge_token)
-        _annotate(
-            "warning",
-            "merge-on-green",
-            f"PR #{number}: red checks ({', '.join(names[:6])}); "
-            + (
-                "marker written."
-                if added
-                else "no new marker (already labeled, or both writes failed above)."
-            ),
+        inherited_live = live_inherited_red(
+            repo, pull, runs, bad_names, proof, freshness, read_token
         )
-        return verdict
+        if inherited_live:
+            # Main is still red on exactly these packs/jobs. This pull request
+            # did not introduce them and did not touch a CI invalidator, so
+            # blocking it hostages the merge train on weather it cannot change.
+            # Fall through to the clean merge path (freshness, clobber, squash).
+            print(f"PR #{number}: {inherited_live} — merging.", flush=True)
+        else:
+            if blocked_names is not None:
+                # What this sweep could not answer, for `ensure_main_baseline`.
+                blocked_names |= bad_names
 
-    # Every check concluded clean. The remaining question is not WHETHER the head is
+            live_pull, authorization = live_authorized_pull(repo, pull, read_token)
+            if live_pull is None:
+                return authorization
+            pull = live_pull
+            added = mark_blocked(repo, pull, red_check_comment(names), merge_token)
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"PR #{number}: red checks ({', '.join(names[:6])}); "
+                + (
+                    "marker written."
+                    if added
+                    else "no new marker (already labeled, or both writes failed above)."
+                ),
+            )
+            return verdict
+
+    # Every check concluded clean, or the reds are main's current weather.
     # proven but WHICH exact main SHA its pull_request event tested. GitHub records
     # that SHA on the check run itself; timestamps are not proof identity. An
     # unavailable identity defers without mutation because update-branch cannot
@@ -4479,6 +5124,20 @@ def sweep_pull(
             return "lease-rotation-deferred"
         return reprove(repo, pull, reason, read_token, merge_token, budget)
     print(f"PR #{number}: proof still current — {reason}.", flush=True)
+    if MERGE_BLOCKED_LABEL in label_names(pull):
+        # A prior wake stamped merge-blocked (packing-leak inherited red, a
+        # skip-ci-only behind, a since-healed base). Current concluded checks
+        # have no genuine own-red and the proof is still current, so the label
+        # is stale: drop it in this same wake before the squash.
+        clear_blocked(repo, pull, merge_token)
+        pull = {
+            **pull,
+            "labels": [
+                label
+                for label in (pull.get("labels") or [])
+                if str((label or {}).get("name") or "") != MERGE_BLOCKED_LABEL
+            ],
+        }
 
     # THE CLOBBERED-HEAD INVARIANT (the 2026-08-09 phantom merges: #5055 #5061
     # #5078 #5091 — module docstring; #5074 in the same drain was not one).
@@ -4510,14 +5169,22 @@ def sweep_pull(
         )
         return "error"
     live_files, live_base_sha = live_state
-    if not freshness.snapshot_tip or live_base_sha != freshness.snapshot_tip:
+    if not freshness.snapshot_tip:
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"PR #{number}: freshness snapshot has no main tip; not merging.",
+        )
+        return "main-moved"
+    if not freshness.live_sha_is_skip_ci_current(live_base_sha):
         _annotate(
             "notice",
             "merge-on-green",
             f"PR #{number}: main moved from freshness snapshot "
             f"{freshness.snapshot_tip[:12] or '?'} to {live_base_sha[:12]} before "
-            "the merge call. The exact-head proof is intact, but this sweep has not "
-            "classified the new base; left armed for a fresh snapshot.",
+            "the merge call, and the new commits are not skip-ci/data ticks. "
+            "The exact-head proof is intact, but this sweep has not classified "
+            "the new product base; left armed for a fresh snapshot.",
         )
         return "main-moved"
     if live_files == 0:
@@ -4599,12 +5266,13 @@ def sweep_pull(
             "partial base state.",
         )
         return "main-ref-unreadable"
-    if final_main_sha != freshness.snapshot_tip:
+    if not freshness.live_sha_is_skip_ci_current(final_main_sha):
         _annotate(
             "notice",
             "merge-on-green",
             f"PR #{number}: main advanced to {final_main_sha[:12]} after final "
-            "authorization; ending this snapshot before the merge call.",
+            "authorization with a product commit; ending this snapshot before "
+            "the merge call.",
         )
         return "main-moved"
 
@@ -4639,13 +5307,18 @@ def sweep_pull(
         )
         return "merge-unknown"
 
-    try:
-        status, body = _request(
+    merge_payload = {"merge_method": "squash", "sha": head_sha}
+
+    def put_squash_merge() -> tuple[int, Any]:
+        return _request(
             "PUT",
             f"{GITHUB_API}/repos/{repo}/pulls/{number}/merge",
             merge_token,
-            {"merge_method": "squash", "sha": head_sha},
+            merge_payload,
         )
+
+    try:
+        status, body = put_squash_merge()
     except Exception as exc:
         return finish_ambiguous_merge(f"transport error: {exc}")
 
@@ -4656,12 +5329,59 @@ def sweep_pull(
         message = str((body or {}).get("message") or f"HTTP {status}")
         return finish_ambiguous_merge(f"HTTP {status}: {message}")
 
+    merge_detail = str((body or {}).get("message") or f"HTTP {status}")
+    retryable_tick = status in {405, 409} and is_retryable_base_tick(
+        merge_detail, freshness, final_main_sha
+    )
+    if retryable_tick:
+        # Data ticks and a sibling squash in this same sweep move main. GitHub
+        # answers 405 "Base branch was modified" or a generic 409 "not mergeable"
+        # while the tree is still clean (only [skip ci] / data/site since the
+        # proof). Retry once immediately; a second tick-shaped refusal is not a
+        # content conflict and must not force update-branch (that re-proves
+        # forever as the next wire tick lands) or `merge-blocked`.
+        _annotate(
+            "notice",
+            "merge-on-green",
+            f"PR #{number}: squash merge hit HTTP {status} on a skip-ci/data "
+            "tick; retrying once.",
+        )
+        try:
+            status, body = put_squash_merge()
+        except Exception as exc:
+            return finish_ambiguous_merge(f"transport error on base-modified retry: {exc}")
+        if 500 <= status < 600:
+            message = str((body or {}).get("message") or f"HTTP {status}")
+            return finish_ambiguous_merge(f"HTTP {status} on base-modified retry: {message}")
+        merge_detail = str((body or {}).get("message") or f"HTTP {status}")
+        live_tip = live_main_sha(repo, read_token) or final_main_sha
+        if status in {405, 409} and is_retryable_base_tick(
+            merge_detail, freshness, live_tip
+        ):
+            settled, how = already_settled(repo, number, read_token)
+            if settled:
+                return f"already-{how}"
+            clear_blocked(repo, pull, merge_token)
+            _annotate(
+                "notice",
+                "merge-on-green",
+                f"PR #{number}: squash still HTTP {status} after one skip-ci/data "
+                "retry; leaving it armed (not merge-blocked) and continuing the drain.",
+            )
+            return "base-modified"
+
     if status == 200:
+        merged_sha = str((body or {}).get("sha") or "")
         _annotate(
             "notice",
             "merge-on-green",
             f"PR #{number}: every check concluded clean — squash-merged "
-            f"({str((body or {}).get('sha') or '')[:12]}).",
+            f"({merged_sha[:12]}).",
+        )
+        freshness.note_merged_commit(
+            merged_sha or f"merged-{number}",
+            freshness.pull_files(number),
+            message=f"squash merge of #{number}",
         )
         # Cleanup is genuinely best-effort. A label/ref read can fail after GitHub
         # has accepted the merge; that must never hide the `merged` verdict and let
@@ -5039,6 +5759,24 @@ def mark_only_pass(
                 tally["base-red-deferred"] = tally.get("base-red-deferred", 0) + 1
                 continue
 
+            packs = {name for name in bad_names if _PACK_CHECK_RE.match(name)}
+            extras = _live_inherited_extras(bad_names)
+            if (
+                packs
+                and not extras
+                and (proof.failed_legacy_jobs or proof.failed_names)
+            ):
+                print(
+                    f"PR #{number}: red checks "
+                    f"({', '.join(sorted(bad_names)[:6])}) are also currently red on "
+                    "main, so this may be a live-inherited red rather than this pull "
+                    "request's. Deferred to the full sweep, which owns the "
+                    "merge-vs-block decision; nothing marked.",
+                    flush=True,
+                )
+                tally["live-red-deferred"] = tally.get("live-red-deferred", 0) + 1
+                continue
+
             live_pull, authorization = live_authorized_pull(repo, pull, read_token)
             if live_pull is None:
                 print(
@@ -5233,34 +5971,21 @@ def main() -> int:
     if active_pr_proofs is None or not refresh_lease.readable:
         budget.max_refreshes = 0
         refresh_load_detail = refresh_load_detail or "census/lease unreadable; new refreshes paused"
-    elif effective_active_proofs is not None and effective_active_proofs >= MAX_IN_FLIGHT_PR_PROOFS:
-        # The hard cap alone can starve forever when session traffic never drops.
-        # One durable lease is the fairness escape: at most one controller-owned
-        # proof is admitted above the cap, and every later sweep sees the same owner.
-        budget.max_refreshes = HIGH_LOAD_FAIR_REFRESHES
-        budget.requires_refresh_lease = True
-        refresh_load_detail = (
-            f"{active_pr_proofs} indexed pull-request ci run(s) plus "
-            f"{reservation_count} unindexed durable "
-            f"reservation(s), global cap "
-            f"{MAX_IN_FLIGHT_PR_PROOFS}; one durable high-load refresh lane "
-            + (
-                f"is owned by PR #{refresh_lease.owner_number}"
-                if refresh_lease.owner_number is not None
-                else "is available"
-            )
-        )
     else:
         available_refreshes = max(
             0, MAX_IN_FLIGHT_PR_PROOFS - int(effective_active_proofs or 0)
         )
         budget.max_refreshes = min(budget.max_refreshes, available_refreshes)
+        budget.requires_refresh_lease = (
+            0 < budget.max_refreshes <= HIGH_LOAD_LEASE_THRESHOLD
+        )
         refresh_load_detail = (
             f"{active_pr_proofs} indexed pull-request ci run(s) plus "
             f"{reservation_count} unindexed durable "
             f"reservation(s), global cap "
             f"{MAX_IN_FLIGHT_PR_PROOFS}, {budget.max_refreshes} CI workload slot(s) "
             "available this sweep"
+            + (" (durable lease required)" if budget.requires_refresh_lease else "")
         )
     budget.refresh_context = refresh_load_detail
     print(f"PR proof load: {refresh_load_detail}.", flush=True)
@@ -5502,11 +6227,11 @@ def main() -> int:
                     lease_watchdog_reason = (
                         f"lease release retry on PR #{pull.get('number')}"
                     )
-        if verdict in {"merged", "already-merged", "main-moved", "merge-unknown"}:
-            # Main-dependent state above is one immutable snapshot. The merge just
-            # advanced main, so using that snapshot for a second PR would skip the
-            # first merge's definition/surface change. One merge consumes the
-            # snapshot; the next level-triggered sweep rebuilds it from live main.
+        if verdict in {"main-moved", "merge-unknown"}:
+            # A product commit landed under this snapshot, or a merge outcome is
+            # ambiguous. Remaining PRs need a rebuilt main timeline. Skip-ci ticks
+            # and a successful squash do NOT take this path: those continue the
+            # drain (measured 2026-08-13: one-merge-per-sweep was the queue stall).
             left = len(considered) - index - 1
             if left:
                 tally["snapshot-deferred"] = (

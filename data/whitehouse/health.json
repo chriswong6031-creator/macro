@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-13T10:21:19.422187+00:00",
+  "as_of": "2026-08-13T11:59:44.615940+00:00",
   "posts_seen": 11,
   "seen_total": 111,
-  "evaluated": 1,
+  "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-13-the-great-transshipment-scam",
-      "importance": 5,
-      "activated": false,
-      "degraded_reason": "served_by:codex"
-    }
-  ]
+  "gate_scores": []
 }

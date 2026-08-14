@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 import shutil
 from datetime import date, timedelta
 from pathlib import Path
@@ -15,13 +17,82 @@ import engine.release_cpi_coherent_shadow as coherent
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# T-1 decision for the July 2026 CPI print. Tests that mean THIS decision must
+# not read the live nightly truth corpus: 44c90f8f547 moved candidate_data_asof
+# to 2026-08-13, which correctly refuses asof=2026-08-11 (PIT). The safety
+# property stays; only the store is frozen.
+_JULY_CPI_T1_ASOF = date(2026, 8, 11)
+_JULY_CPI_RELEASE_DATE = date(2026, 8, 12)
+_JULY_CPI_PERIOD = "2026-07"
+_FROZEN_TRUTH_CLOCK = "2026-08-11T00:00:00+00:00"
+_TRUTH_CLOCK_KEYS = ("asof", "candidate_data_asof", "evidence_available_at")
+_BOUND_CORPUS_RELS = (
+    coherent.HISTORY_PATH,
+    coherent.PARITY_PATH,
+    coherent.COMPLETION_PATH,
+    coherent.REGISTRY_PATH,
+    coherent.PREREG_PATH,
+    coherent.VINTAGES_PATH,
+    coherent.GASOLINE_PATH,
+)
 
-def test_real_bound_corpus_is_deterministic_and_receipt_linked() -> None:
+
+def _isolate_bound_corpus(tmp_path: Path, *, clock: str = _FROZEN_TRUTH_CLOCK) -> Path:
+    """Copy the committed coherent-shadow inputs onto tmp with frozen truth clocks.
+
+    ``data/release_forecast/cpi_truth/*.json`` is a live nightly store. History
+    hash is over targets only, so rewriting clocks does not retarget the cohort;
+    completion artifact bindings are resealed because the file bytes change.
+    """
+    for rel in _BOUND_CORPUS_RELS:
+        dest = tmp_path / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / rel, dest)
+
+    def _rewrite_clocks(rel: Path) -> dict:
+        path = tmp_path / rel
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        for key in _TRUTH_CLOCK_KEYS:
+            if key in payload:
+                payload[key] = clock
+        path.write_bytes(
+            json.dumps(payload, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+        )
+        return payload
+
+    history = _rewrite_clocks(coherent.HISTORY_PATH)
+    _rewrite_clocks(coherent.PARITY_PATH)
+    completion = json.loads(
+        (tmp_path / coherent.COMPLETION_PATH).read_text(encoding="utf-8")
+    )
+    for key in _TRUTH_CLOCK_KEYS:
+        if key in completion:
+            completion[key] = clock
+
+    def _binding(rel: Path) -> dict:
+        body = (tmp_path / rel).read_bytes()
+        return {
+            "path": rel.as_posix(),
+            "artifact_sha256": hashlib.sha256(body).hexdigest(),
+            "artifact_bytes": len(body),
+            "history_hash": history["history_hash"],
+        }
+
+    artifacts = completion.setdefault("artifacts", {})
+    artifacts["history"] = {**artifacts.get("history", {}), **_binding(coherent.HISTORY_PATH)}
+    artifacts["parity"] = {**artifacts.get("parity", {}), **_binding(coherent.PARITY_PATH)}
+    (tmp_path / coherent.COMPLETION_PATH).write_bytes(
+        json.dumps(completion, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    )
+    return tmp_path
+
+
+def test_real_bound_corpus_is_deterministic_and_receipt_linked(tmp_path: Path) -> None:
     kwargs = {
-        "asof": date(2026, 8, 11),
-        "root": ROOT,
-        "period": "2026-07",
-        "release_date": date(2026, 8, 12),
+        "asof": _JULY_CPI_T1_ASOF,
+        "root": _isolate_bound_corpus(tmp_path),
+        "period": _JULY_CPI_PERIOD,
+        "release_date": _JULY_CPI_RELEASE_DATE,
     }
     for release in ("cpi_headline", "cpi_core"):
         first = coherent.project_cpi_coherent_shadow(release=release, **kwargs)
@@ -56,22 +127,23 @@ def test_real_bound_corpus_is_deterministic_and_receipt_linked() -> None:
             assert coherent.verify_sealed_receipt(first[key])
 
 
-def test_live_cutoff_and_period_gates_fail_closed() -> None:
+def test_live_cutoff_and_period_gates_fail_closed(tmp_path: Path) -> None:
+    root = _isolate_bound_corpus(tmp_path)
     with pytest.raises(coherent.CoherentShadowContractError, match="minus one calendar day"):
         coherent.project_cpi_coherent_shadow(
             release="cpi_core",
             asof=date(2026, 8, 10),
-            root=ROOT,
-            period="2026-07",
-            release_date=date(2026, 8, 12),
+            root=root,
+            period=_JULY_CPI_PERIOD,
+            release_date=_JULY_CPI_RELEASE_DATE,
         )
     with pytest.raises(coherent.CoherentShadowContractError, match="exact month after"):
         coherent.project_cpi_coherent_shadow(
             release="cpi_core",
-            asof=date(2026, 8, 11),
-            root=ROOT,
+            asof=_JULY_CPI_T1_ASOF,
+            root=root,
             period="2026-08",
-            release_date=date(2026, 8, 12),
+            release_date=_JULY_CPI_RELEASE_DATE,
         )
 
 

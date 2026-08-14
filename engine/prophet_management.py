@@ -192,7 +192,10 @@ def compute_management_state(
     # days on the shipped book), so 10 live plans read as overtime/expired at birth
     # and their phase, confidence and recommended action were all computed off it.
     # `plan_clock_date` is the ONE resolution order, shared with the outcome scan.
-    from engine.prophet_bridge import plan_clock_date  # noqa: PLC0415 — avoids a cycle
+    from engine.prophet_bridge import (  # noqa: PLC0415 — avoids a cycle
+        plan_clock_date,
+        price_frame_freshness,
+    )
     signal_date    = _parse_date(str(plan_clock_date(plan) or asof))
     trigger_price  = plan.get("trigger")
     if trigger_price is not None:
@@ -222,6 +225,16 @@ def compute_management_state(
     if price_history.empty:
         raise ValueError("price_history is empty — cannot compute geometry")
     price = float(price_history["close"].iloc[-1])
+
+    # ── 2x. Price-frame freshness (stale-frame action safety) ────────────────
+    # `price` above is the engine's entire market view, and nothing else here
+    # says how OLD it is: the horizon clock keeps advancing with `asof` even
+    # when the tape stopped printing (halt, delisting, feed gap), so a plan can
+    # drift into overtime purely on the calendar and would then emit a
+    # current-looking instruction off a print that is weeks old.  Resolved ONCE
+    # here through the origination freshness authority (same constant, same
+    # stale-erring lag measure as resolve_entry_basis) — consumed at step 9.
+    price_frame = price_frame_freshness(price_history, asof)
 
     t1 = targets[0] if len(targets) >= 1 else None
     t2 = targets[1] if len(targets) >= 2 else None
@@ -397,6 +410,15 @@ def compute_management_state(
     recommended_action = _recommended_action(
         phase=phase, trigger_hit=trigger_hit,
     )
+    if price_frame.get("state") != "current" and phase != "invalidated":
+        # Stale-frame action safety: a stale or unavailable closing print must
+        # never carry MORE action authority than a fresh one.  Every action verb
+        # except "invalidated" reads as "do this now", and "now" is exactly what
+        # a stale frame cannot testify about — so the instruction is withheld,
+        # not remapped.  "invalidated" survives because it mirrors a terminal
+        # phase proven by a real print already inside the frame; the phase
+        # machinery, horizon clock and closure semantics are untouched.
+        recommended_action = None
 
     # ── 10. Static R/R at issuance + grade (§13) ─────────────────────────────
     rr_grade = None
@@ -464,6 +486,20 @@ def compute_management_state(
         "days_elapsed":       days_elapsed,
         "tau":                round(tau, 4),
     }
+
+    if price_frame.get("state") != "current":
+        # Conditional stamp (house precedent: a degraded row discloses, a fresh
+        # population stays byte-for-byte unchanged).  The reliability note is
+        # swapped in the same act so the null action never reads as an omission.
+        out["price_frame"] = dict(price_frame)
+        out["reliability"] = {
+            **out["reliability"],
+            "recommended_action": (
+                "paused — no closing print since "
+                f"{price_frame.get('last_close_date') or 'an unresolved date'}; "
+                "a stale price frame carries no current action authority"
+            ),
+        }
 
     # Validate before returning
     errs = validate_management_state(out)

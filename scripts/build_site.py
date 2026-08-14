@@ -2971,7 +2971,17 @@ BUY_ZONE_STATES = ("FRESH BUY", "TURN SIGNALED")
 def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
     """Group every fund decision by the STOCK it touched, so each ticker's page
     can answer "which thematic/active funds are buying or selling me". Sorted by
-    conviction magnitude within each ticker."""
+    conviction magnitude within each ticker.
+
+    Carries a LEAN slice of the W1 decomposition — the dollar estimate, which
+    component drove it and how persistent it is. This feed is per-stock and
+    ungated, so it stays a slice: the full roll-up lives on the consensus board.
+
+    B1 (masterplan §6c): a fund leg the split guard flagged is a Tier-2 receipt,
+    so it is KEPT here rather than dropped — but it ships `split_adjusted: True`,
+    because its `conviction_pp` is a re-denomination and not a decision. The board
+    and the ledger already exclude it; a consumer of this feed that ranks or
+    describes these entries must read the flag."""
     by: dict[str, list[dict]] = {}
     for r in rows:
         by.setdefault(r["ticker"], []).append({
@@ -2981,6 +2991,10 @@ def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
             "weight_pct": r.get("weight_pct"), "active_chg_pct": r.get("active_chg_pct"),
             "is_new": r.get("is_new", False), "is_exit": r.get("is_exit", False),
             "window": r.get("window", ""),
+            "total_usd": r.get("total_usd"), "flow_usd": r.get("flow_usd"),
+            "selection_usd": r.get("selection_usd"), "driver": r.get("driver"),
+            "streak": r.get("streak") or 0, "is_stale": bool(r.get("is_stale")),
+            "split_adjusted": bool(r.get("split_adjusted")),
         })
     for tk in by:
         by[tk].sort(key=lambda m: -abs(m.get("conviction_pp") or 0))
@@ -3029,6 +3043,55 @@ def _etf_free_tile(total: int) -> dict:
             "tone": "link"}
 
 
+def _etf_flow_block(favored: list[dict]) -> dict[str, dict]:
+    """Per-ticker flow/selection roll-up for the consensus board rows (W1) plus
+    the W2b structural weighting lens.
+
+    `usd_complete` is carried verbatim rather than dropped: a dollar total that
+    covers 2 of a row's 4 funds is a partial number, and the row has to say so.
+
+    THE W2b FIELDS ARE PAID-SIDE ONLY (m19). This block is written into
+    premiumdata/etfs.json and never into the free shell, so the weighting lens
+    costs the 130 KiB shell budget nothing. That restriction is about THIS block
+    and the fields in it — it says nothing about the ETF plane generally, and in
+    particular `site/stockdata/fund_flows.json`, written a few lines below by
+    `build_etf_page`, is deliberately public and stays so. The `weight_receipt`
+    travels with `weighted_usd` deliberately — a weighted number without its
+    arithmetic is exactly the un-auditable "some funds count more" the structural
+    design exists to avoid (masterplan §4)."""
+    return {
+        r["ticker"]: {
+            "total_usd": r.get("total_usd"), "flow_usd": r.get("flow_usd"),
+            "selection_usd": r.get("selection_usd"),
+            "n_funds_flow": r.get("n_funds_flow"),
+            "n_funds_selection": r.get("n_funds_selection"),
+            "n_funds_usd": r.get("n_funds_usd"), "usd_complete": r.get("usd_complete"),
+            "breadth": r.get("breadth"), "max_streak": r.get("max_streak"),
+            "accel_pct_per_day": r.get("accel_pct_per_day"),
+            "contested_components": r.get("contested_components"),
+            "n_stale": r.get("n_stale"),
+            # B1: how many fund legs the split guard set aside on this row, so the
+            # receipt can explain a conviction number that does not match a move a
+            # reader remembers seeing.
+            "n_split_adjusted": r.get("n_split_adjusted"),
+            # M6: the row pools windows of different calendar lengths (40 snapshots
+            # is 25–64 days depending on the fund's publishing cadence).
+            "window_days_min": r.get("window_days_min"),
+            "window_days_max": r.get("window_days_max"),
+            # W2b lens — secondary sort material for the UI, never the default.
+            # M3: `sign_diverges_from_total` travels WITH the weighted number,
+            # because the discount multiplies signed components and can therefore
+            # invert the raw read rather than merely shrink it. A UI that renders
+            # weighted_usd without this flag is presenting a contradiction as a
+            # refinement.
+            "weighted_usd": r.get("weighted_usd"), "weighted_n": r.get("weighted_n"),
+            "sign_diverges_from_total": r.get("sign_diverges_from_total"),
+            "weight_receipt": r.get("weight_receipt"),
+        }
+        for r in favored if r.get("ticker")
+    }
+
+
 def _write_etf_payload(env, site: Path, gate: dict | None, *, favored: list[dict],
                        fresh: list[dict], accumulation: list[dict],
                        trims: list[dict], verdict: dict | None,
@@ -3049,7 +3112,7 @@ def _write_etf_payload(env, site: Path, gate: dict | None, *, favored: list[dict
         payload = {"schema": "tier_payload.v1", "page": "etfs", "gated": False,
                    "built": built, "board_html": "", "fresh_html": "",
                    "accumulation_html": "", "trims_html": "",
-                   "verdict_html": "", "tiles_html": ""}
+                   "verdict_html": "", "tiles_html": "", "flows": {}}
     else:
         macros = env.get_template("_etf_macros.html.j2").module
         payload = {
@@ -3076,6 +3139,10 @@ def _write_etf_payload(env, site: Path, gate: dict | None, *, favored: list[dict
                            if trims else ""),
             "verdict_html": str(macros.hero_verdict(verdict)) if verdict else "",
             "tiles_html": str(macros.hero_tiles(tiles)) if tiles else "",
+            # W1 machine-readable roll-up for the board rows, so the UI wave can
+            # render the $ / breadth columns without re-deriving them client-side.
+            # Paid side only — it is the same graded board, in numbers.
+            "flows": _etf_flow_block(favored),
         }
     path.write_text(json.dumps(payload), encoding="utf-8")
     log.info("etfs: premium payload %s (%d board rows, %d adds, %d trims)",
@@ -3117,6 +3184,28 @@ def build_etf_page(env: Environment, site: Path, generated: str,
         attach_trajectories(split["trims"], cap=cap)
         favored = consensus_favored(rows)
         coverage = fund_coverage()
+        # Marshal the registry's structural fund type onto each coverage row as
+        # a display grouping. The fleet directory groups by how a fund is READ —
+        # an active manager's move is a pick, a theme or sector fund's move is
+        # money arriving — which is the same rule the board's flow/selection
+        # split runs on, so the free directory teaches the distinction the paid
+        # board depends on.
+        #
+        # The registry, not `is_active`: fund_coverage flags only the two funds
+        # that arrive through data/holdings (ARKK, ARKW), while the registry
+        # types ten funds active — ARKF, ARKG, ARKQ, ARKX and IZRL are stock
+        # pickers that were landing in the theme group and being described as
+        # "read on where the money goes", which is the wrong read for them.
+        # Presentation only: nothing ranks, gates or sizes off this, and
+        # fund_registry() is the cached config read the consensus roll-up above
+        # has already done, so it adds no I/O to the render path.
+        from engine.etf_registry import fund_registry
+        _reg = fund_registry()
+        for _c in coverage:
+            _t = (_reg.get(_c.get("fund")) or {}).get("type")
+            _c["fleet_group"] = ("active" if (_t == "active" or
+                                              (_t is None and _c.get("is_active")))
+                                 else "sector" if _t == "sector" else "theme")
     except Exception as e:  # noqa: BLE001 — consensus/coverage are additive, never fatal
         log.error("etf consensus/coverage failed: %s", e)
     # rotation backdrop + Tier-1 synthesis (verdict, stance, fresh conviction)
@@ -6394,11 +6483,19 @@ def main() -> int:
                     }
             except Exception as _wrie:  # noqa: BLE001 — additive; rail just stays hidden
                 log.warning("WRI regime rail input skipped (%s)", _wrie)
+            # The workspace paints every row CLIENT-side from stockdata/index.json,
+            # whose `s` (sector) is one raw English string per ticker — so it cannot
+            # reach the td()/tr() globals a baked page uses, and its sector names sat
+            # in English under data-lang="zh" while every label around them switched.
+            # Same remedy the Options desk already ships (`OEW_SECTOR_ZH`): hand the
+            # page the glossary's answers as a literal map. A name the glossary does
+            # not know is absent from the map and the JS keeps its English.
             write_page(site / "watchlist.html",
                 env.get_template("watchlist.html.j2").render(
                     generated_utc=generated, state_display_json=sd_json,
                     supabase_cfg_json=site_assets.supabase_cfg_json(),
                     wri_regime_json=_json.dumps(_wri_regime),
+                    sector_zh_json=_json.dumps(i18n.sector_lexicon(), ensure_ascii=False),
                     starters_json=_json.dumps(wl.get("suggested", []))))
             _tmark("watchlist")
             log.info("wrote %s", site / "watchlist.html")

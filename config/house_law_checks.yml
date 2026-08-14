@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-11"
+updated: "2026-08-13"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -1936,6 +1936,56 @@ checks:
     owner_program: engine-fix-masterplan
     notes: null
 
+  - law_id: ci.vintage_pin_fence
+    summary: >
+      Tests must not equality-pin a live nightly store (govrev latest/candidates,
+      options episodes.jsonl, prophet plans, spine predictions.parquet, the
+      Release Radar tree under data/release_forecast including cpi_truth,
+      data/fred_vintage/release_targets, vector and commodity alert jsonl,
+      alerts_log.parquet, tripwire latch state). A hand-typed ``== N`` / ``<= N``
+      against a store the nightly advances reddens main and then, through
+      merge-on-green, every armed PR. Legal: a watermarked prefix slice, a
+      census derived from a committed receipt, a named disclosure set, or the
+      #5547 cold-test pattern (bind config.data_dir to empty tmp, or pass
+      explicit root=). Shrink-only baseline: fingerprints leave when the pin
+      is gone; do not add a row to ship a new pin.
+    source_ref:
+      - scripts/check_vintage_pin_fence.py
+      - tests/test_vintage_pin_fence.py
+      - ".github/ci/legacy-jobs.yml"
+    severity: hard
+    check_script: scripts/check_vintage_pin_fence.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: vintage-pin-fence
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - The live scan is a targeted ratchet over tests that read the named
+        stores; it is not a general AST linter of every ``== N`` in the tree.
+      - A store must be added to LIVE_STORES in the script before a new
+        nightly-advanced path is covered.
+      - Default-root readers are a closed set (convergence_tier, measured_ic).
+        A helper that wraps those calls is a known miss unless the test body
+        also names the store or calls the reader directly.
+      - Bare config.data_dir() joins and pd.read_parquet loaders taint only
+        when the suffix matches a named LIVE_STORES path; an unnamed sibling
+        under data/ is invisible until it is added to LIVE_STORES.
+    owner_program: pipeline-reliability
+    notes: >
+      Added with the 2026-08-13 CI traffic-jam fence. The three detonations
+      that motivated it (govrev assert 23==8, options 384→1206, prophet
+      open-keys 10→11) were healed by #5524; leftover equality pins stay on
+      the shrink-only baseline and warn, they never red. Expanded 2026-08-13
+      after #5515 missed spine parquet (#5547) and Release Radar
+      inflation-truth (unrun-release-forecast) plus sibling alert/tripwire
+      stores. Directory prefixes now cover data/release_forecast/** and
+      data/fred_vintage/release_targets/**; parquet loaders of a data_dir
+      path taint the same way a Path(__file__) chain does. The #5547 cold
+      data_dir bind is a legal pattern, not a new check.
+
   # ── Governance hook ────────────────────────────────────────────────────────
 
   - law_id: governance.model_routing
@@ -2590,3 +2640,83 @@ checks:
       llm_proposed_ratified edges exist today, and the point of the check is that the
       first one cannot land quietly. Fixture dates in --selftest are constants with no
       relation to the wall clock — a guard whose fixtures age is a scheduled red.
+
+  - law_id: design.system_ratchet
+    summary: >
+      The design system can only hold if drift is measured before it is banned.
+      templates/ carries ~19k hand-rolled decisions the token layer already owns
+      — colour literals, font stacks, raw radii, shadow palettes declared as
+      custom properties in page-scoped selectors — and each one is a surface that
+      will diverge the next time theme.css moves. A gate that reds on all of them
+      on day one is a gate somebody disables in week one, so this guard ships
+      REPORT-ONLY (R0): it prints per-rule counts plus capped exemplars on every
+      PR and always exits 0. The blocking arm is written and tested from the same
+      commit rather than deferred — `--mode enforce` exits non-zero on the four
+      mechanical rules (colour literal, font-family literal, non-token
+      border-radius, literal-valued custom property outside theme.css) — but it
+      only ever looks at templates a page-registry row marks
+      `design_system.compliant`, or at templates the registry has never seen.
+      That scoping IS the ratchet: a migrated surface cannot regress, a brand-new
+      surface is born compliant, and the backlog is retired one packet at a time
+      instead of in one heroic red-build weekend. Rules 5-8 (new `*-card`
+      classes, banned Tier-1 vocabulary, inline `<style>` byte size, emoji
+      codepoints) are heuristics or measurements and stay warn-tier for as long
+      as this script exists.
+    source_ref:
+      - scripts/check_design_system.py
+      - tests/test_check_design_system.py
+      - config/product_experience/page_registry_overrides.yml
+      - scripts/build_product_page_registry.py
+      - "PR #5459 (design-system constitution + migration factory)"
+    severity: warn
+    check_script: scripts/check_design_system.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: validated-claims
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet:
+      date: "2026-10-01"
+      action: >-
+        R0 is report-only. The R1 blocking flip is ONE later PR that changes this
+        entry's severity to hard AND switches the wired step to `--mode enforce
+        --registry` in lockstep — never one without the other, or the registry
+        describes teeth the job does not have. R1 blocking flip rides the first
+        migration-packet PR; if none has landed by this date, review whether the
+        Sol §J.9 chain is still blocked.
+    known_limits:
+      - >-
+        Static text scan, not a rendered-DOM check: it cannot see a colour a
+        builder interpolates at render time, and it deliberately blanks Jinja
+        expressions and fragment refs (href="#abc", url(#fade)) so a template
+        decision is not reported as a stylesheet literal.
+      - >-
+        Rule 5 (`*-card` classes) is a REGEX HEURISTIC — it cannot tell a new
+        component from a rename, so it counts both. Rule 6 ships a deliberately
+        small seed vocabulary; the full Tier-1 doctrine lint needs a per-surface
+        allowlist (methodology and calibration pages legitimately EXPLAIN the
+        terms it bans) and is a later wave.
+      - >-
+        Rule 7 records inline `<style>` byte size but enforces no growth budget
+        yet; R0 exists partly to establish that baseline.
+      - >-
+        `--mode enforce` with no readable `--registry` treats EVERY template as
+        new and therefore blocking. That is fail-closed and it warns when it
+        happens, but it is not a mode to wire by accident.
+    owner_program: mastermind-design-system
+    notes: >
+      Wired into the `validated-claims` legacy job on purpose: that job already
+      owns templates/** in scripts/run_ci_pack.py's derived scope, so adding this
+      step costs the narrow-diff selector NOTHING, where wiring it into a job
+      that does not own templates/ would hand that job the whole tree and push
+      the pack-selection ceiling. CLOSURE LEGIBILITY is load-bearing in the
+      script and its test: both name exactly one scan root, `templates`, and make
+      no subprocess call, because the scope analyzer widens an opaque edge to
+      every root the module names (incident #5396). Annotations are capped at 10
+      TOTAL, summary first, with full detail printed as plain lines below —
+      19,057 findings would otherwise bury the Actions summary. `--self-check`
+      (alias `--selftest`) proves each rule fires on its own fixture, that a
+      clean fixture passes, and that the traversal itself works; a self-check
+      derived from what it checks cannot fail, so the fixtures are canned in a
+      tempdir rather than read from the live estate.

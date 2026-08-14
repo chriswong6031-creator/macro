@@ -830,7 +830,10 @@ jobs:
         # app.main mounts app.market_memory, whose authenticated stock-data
         # reader imports requests at module scope.  Keep the serving-boundary
         # lane's isolated environment closed over that production import.
-        run: pip install pytest pyyaml jinja2 fastapi httpx requests
+        # ETF board synthesis imports the rotation constants from etf_pulse,
+        # which imports numpy and pandas at module scope.  Keep this environment
+        # closed over the real production import graph.
+        run: pip install pytest pyyaml jinja2 fastapi httpx requests numpy pandas
       - name: tier-preview split contract (no paid row in the free shell)
         run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py -q
       - name: public dashboard preview-tier contracts (anon shell allowlist + controller caps)
@@ -909,6 +912,16 @@ jobs:
         run: python -m pytest tests/test_options_signal_episode.py -q
       - name: sparse exact-option selector preregistration (zero denominator, permanent retrospective fence, no authority)
         run: python -m pytest tests/test_options_sparse_selector_prereg.py -q
+      - name: inert sparse selector runtime + private authenticated dictionary (fail-closed authority and cache forgery)
+        run: >-
+          python -m pytest
+          tests/test_options_sparse_selector_runtime.py
+          tests/test_private_auth_dict.py -q -rs
+      - name: inert sparse selector 4,096-candidate full-drain benchmark (1,024 objects, 4 MiB intent caps)
+        run: >-
+          SPARSE_SELECTOR_PERF=1 python -m pytest
+          tests/test_options_sparse_selector_runtime.py::test_4096_candidate_benchmark
+          -q -rs
       - name: options signal campaign v2 (immutable revisions, causal anchors, exact checkpoint)
         run: python -m pytest tests/test_options_signal_campaign.py -q
       - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
@@ -1507,8 +1520,14 @@ jobs:
       # the day it landed. It belongs in THIS job rather than a new one: the subject
       # is a China native collector reading collectors/tushare_client, and the deps
       # above already carry pandas + requests for exactly that client.
+      # tests/test_china_tushare_range_shards.py joins this step in the SAME breath as
+      # the library it covers, rather than a release later: the range-shard campaign is
+      # the cap fallback the spine now delegates to, so leaving it unnamed here would
+      # reproduce the exact hole this step's comment is about — 1,057 lines of leaf
+      # state, immutable attempt receipts and BSE alias blocking running dark from the
+      # day they landed. Both suites are synthetic and network-free.
       - name: china full-A spine collector + manifest contract (#5116)
-        run: python -m pytest tests/test_china_tushare_spine.py -q
+        run: python -m pytest tests/test_china_tushare_spine.py tests/test_china_tushare_range_shards.py -q
       # The three TuShare takeover suites (lane A #5177 add-ons, lane B #5163
       # minutes, lane C #5162 chips). Same WIRING LAW as every step above, same
       # hole: none of the three lanes named its suite in any run: step, so 144
@@ -1790,7 +1809,18 @@ jobs:
       - name: ci-plan/ci-pack/ci-gate workflow structure contract
         run: python -m pytest tests/test_ci_plan_workflow.py -q
       - name: hosted-runner packing contract
-        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
+        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_check_conflict_markers.py -q
+      # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
+      # the two steps above are: its subject IS .github/workflows/ — specifically the
+      # asymmetry that asia-close.yml carries five cron slots and daily.yml carries one
+      # DST pair, which is why CN self-heals a lost fire and the US lane lost two whole
+      # sessions on 2026-08-11/12. The backstop is an ACTOR, so its suite is mostly the
+      # cases where it must NOT fire; test_primary_still_has_only_the_dst_pair reds if
+      # daily.yml ever grows its own backstop crons and this lane becomes double-firing.
+      - name: nightly backstop selftest (scripts/nightly_backstop.py)
+        run: python3 scripts/nightly_backstop.py --selftest
+      - name: nightly backstop dispatch rule (must never fire over a live run)
+        run: python -m pytest tests/test_nightly_backstop.py -q
       # The terminal CI handoff (`mastermind.ci_handoff.v1`) — the rule deciding WHEN a
       # worker stops. Same subject as the packing step above: the sweeper that step
       # already pins via tests/test_merge_on_green.py is the party that owns the merge
@@ -1943,6 +1973,22 @@ jobs:
       # stdlib + pytest only (reads workflow/dag/builder text; imports no builder).
       - name: render-lane scope contract (flow_desk must stay express-wired)
         run: python -m pytest tests/test_render_flow_desk_scope.py -q
+      # VACUOUS guards: the same lie audit_unrun_tests.py catches, one layer down.
+      # A suite that never runs is caught above; a guard that RUNS, walks a tree
+      # that is not checked out, finds nothing and prints its affirmative OK is
+      # not — it reports green over an empty set. Session worktrees are sparse by
+      # default (policy R8, scripts/worktree_sparse.py), and seven check_*.py
+      # guards did exactly that when measured 2026-08-13. The refusal is
+      # conditional on an EMPTY result set, never on sparseness alone: the 13
+      # lanes that check out partial trees on purpose (live-quotes.yml,
+      # marketing-hot-tape.yml and friends) invoke none of these seven and must
+      # keep passing regardless. One suite owns that conjunction for all seven
+      # guards rather than being split across the seven jobs that own them.
+      # Deliberately LAST in this job: a failing step masks every step after it,
+      # and a new census must never be the thing that hides the established
+      # wiring guards above.
+      - name: guards must refuse, not pass vacuously, on a sparse tree
+        run: python -m pytest tests/test_sparse_guard_refusals.py -q
 
   causal-factory:
     if: ${{ false }}
@@ -2386,6 +2432,28 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: qledger cluster-honest Wilson CI unit tests
         run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
+      # P0a — the explicit horizon-clock contract. STEP PLACEMENT IS DELIBERATE:
+      # run_ci_pack.py returns on the FIRST non-zero step, so a step placed first
+      # MASKS its siblings and one placed last goes DARK behind an earlier red.
+      # These two sit SECOND/THIRD — after the established cluster-honest step
+      # (which stays unmaskable and is the broadest existing qledger check) and
+      # ahead of the altdata/metric-validity steps, which test different concerns
+      # and must not shadow the suite that covers the code this PR rewrote.
+      # test_qledger.py is the primary regression suite for engine/qledger.py and
+      # was named by NO legacy job, so every grading-path change shipped dark; it
+      # is hermetic (tmp_path store + monkeypatched price layer, no data/** reads).
+      - name: qledger contract regression suite
+        run: python -m pytest tests/test_qledger.py -q
+      - name: qledger explicit horizon-clock contract (P0a)
+        run: python -m pytest tests/test_qledger_horizon_clock.py -q
+      # round 5 MINOR: this file was owned by NO legacy job, so
+      # test_register_claims_are_salience_only_macro — which asserts on
+      # register_claims()'s "returns the count REGISTERED OPEN" semantics
+      # this branch's P0a market-dispatch fix redefined (a refused claim no
+      # longer silently inflates the count) — never ran in CI. Sits right
+      # after the horizon-clock step it is a direct consequence of.
+      - name: communique_diff phrase-book + qledger registration contract
+        run: python -m pytest tests/test_communique_diff.py -q
       - name: altdata reboot W2 — per-channel family routing + placebo tests
         run: python -m pytest tests/test_altdata_reboot_families.py -q
       # Metric-validity invariants (epistemics.qledger_metric_validity). grades.excess
@@ -2398,6 +2466,21 @@ jobs:
         run: python -m pytest tests/test_qledger_validity.py -q
       - name: qledger metric-validity guard selftest
         run: python scripts/check_qledger_metric_validity.py --selftest
+      # V1 ENFORCEMENT at the emitter. The two steps above prove the CONTRACT
+      # (engine/qledger_validity.py) is correct; this one proves engine.qledger
+      # ._aggregate — the single chokepoint feeding site/qledger/track_record.json
+      # and, via scripts/grade_qledger.compute_promotion_readiness, the admin
+      # Experiments tab — actually OBEYS it, and that a legal single-direction
+      # family is unchanged.
+      # PLACEMENT (run_ci_pack.py returns on the first non-zero step): deliberately
+      # LAST in this job. Placing it above the two metric-validity steps would let a
+      # break in the enforcement mask the contract's own verdict, which is the
+      # upstream authority; in the reverse order a red contract masks this step, and
+      # that is correct — an enforcement result is uninformative while the rule it
+      # enforces is itself red. It sits with the other _aggregate step (the
+      # cluster-honest CI test) in the same job, so it can never ship dark.
+      - name: qledger V1 excess-legality gate at the emitter
+        run: python -m pytest tests/test_qledger_excess_legality.py -q
 
   altdata-new-sources:
     if: ${{ false }}
@@ -2459,7 +2542,11 @@ jobs:
       - name: install minimal deps
         # pyyaml: engine.factor_exposure loads the W6.1 factor-model charter (YAML) at
         # import, so the test modules need it at collection time (was ModuleNotFoundError).
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # markupsafe: engine.i18n imports Markup at module scope, and the sector-i18n
+        # suite below imports engine.i18n for the glossary half. jinja2: that same suite
+        # renders the ONE shipped template line that publishes window.WL_SECTOR_ZH, to
+        # prove an undefined context still emits `{}` rather than a bare `=`.
+        run: pip install pytest pandas numpy pyarrow pyyaml markupsafe jinja2
       - name: risk_core.js math — §7 sanity anchors + structural invariants
         run: python -m pytest tests/test_risk_core_js.py -q
       - name: watchlist_risk.js chain lane — node-shelled helper tests (TXI W4)
@@ -2475,11 +2562,50 @@ jobs:
         run: python -m pytest tests/test_watchlist_books_js.py -q
       - name: watchstore.js store — registered multi-list seam (W1a)
         run: python -m pytest tests/test_watchstore_multilist_js.py -q
+      # W2 workspace layer over that store: the bulk-entry parser (the anonymous
+      # funnel's front door), the weighting model, the engine-state -> plain-word
+      # stage map (which may only ever DE-ESCALATE), delta-since-visit, and the
+      # read-side guard that stops a focus refetch from reverting a just-made edit.
+      - name: watchlist workspace — entry parser, stage map, focus-refetch guard (W2)
+        run: python -m pytest tests/test_watchlist_workspace_js.py -q
+      # Sector names are the one label on this page with no zh twin in the source:
+      # they arrive as raw English on stockdata/index.json and are painted
+      # client-side, so they rendered in English under data-lang="zh" while
+      # everything around them switched. Nothing raises when that regresses — an
+      # untranslated name renders perfectly — so the guard covers all four ways it
+      # goes quiet: a taxonomy the glossary has gone blind to, the build not
+      # handing the map over, the lookup itself, and a print site that bypasses it.
+      - name: watchlist sector names — glossary, build wiring, print sites (zh)
+        run: python -m pytest tests/test_watchlist_sector_i18n.py -q
       - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
         run: python -m pytest tests/test_factor_exposure.py tests/test_factor_exposure_stress.py -q
 
   house-law-registry:
     if: ${{ false }}
+    # DECLARED scope, UNIONed with the runtime-derived one (run_ci_pack.infer_job_scopes
+    # keeps `set(job.paths) | set(derived)`), and it exists for exactly one entry:
+    # root `config.yml`. That file is where BOTH of this repo's timeless rename maps
+    # live — `breadth.ticker_fixups` and `quality.ticker_key_migrations` — and the next
+    # ticker rename lands the way both modelled ones did, as ONE LINE in one of them.
+    # The unmodelled-rename detector that catches it (build_security_master.
+    # unmodelled_renames, asserted by tests/test_dataos_security_master.py) could not be
+    # REACHED from that edit: scope inference cannot own a repository-ROOT file at all —
+    # SCOPE_REFERENCE_RE and ci_scope_dependencies._PATH_LITERAL both require a tracked
+    # directory prefix — so a fixups-only PR selected 48 jobs and this was not among
+    # them (measured 2026-08-13). Silent gap, in the detector written to close a silent
+    # gap. The remaining entries are not new ownership: they are the paths this job's
+    # own commands already name, listed because _scope_coverage_findings makes a
+    # declared scope that fails to cover them a HARD manifest error. Adding a `run:`
+    # step that names a new path means adding it here too.
+    paths:
+      - config.yml
+      - docs/HOUSE_LAW_CI_GUARD_SUITE.md
+      - scripts/check_claim_passport.py
+      - scripts/check_house_law_registry.py
+      - scripts/check_symbol_rename_drift.py
+      - tests/test_dataos_security_master.py
+      - tests/test_house_law_registry.py
+      - tests/test_ticker_alias_boundary.py
     # Meta-guard: verifies config/house_law_checks.yml is complete and honest.
     # Three checks in sequence:
     #   1. selftest: synthetic assertions prove the meta-guard catches violations.
@@ -2512,6 +2638,21 @@ jobs:
         run: |
           python3 scripts/check_symbol_rename_drift.py
           python -m pytest tests/test_ticker_alias_boundary.py -q
+      # Data OS DOS-1.1: the security master + the TIME-SCOPED alias table, which is
+      # the general form of the boundary the step above guards. It lives HERE and not
+      # in `dataos-foundation` for two reasons, both load-bearing:
+      #   * that job installs pytest + pyyaml ONLY, on purpose — "a pandas/numpy import
+      #     creeping into lib/dataos/ breaks HERE first" — and adding pandas to its pip
+      #     line would switch that canary off. This job already provides pandas+pyarrow.
+      #   * that job is pure unit tests that never open data/; this suite reads the
+      #     COMMITTED artifacts (data/reference/*.parquet), which is what a consumer
+      #     would read and therefore the only honest place to pin them.
+      # It is a `run:` step in an EXISTING job rather than a new job because the legacy
+      # manifest sits near the narrow-diff ceiling (test_ci_pack.py asserts a
+      # representative diff selects <= len(jobs)*4//5); folding suites into a job keeps
+      # the job count, and the arithmetic, where it is.
+      - name: Data OS security master + time-scoped vendor alias table (MMC/MRSH, SATS/ECHO)
+        run: python -m pytest tests/test_dataos_security_master.py -q
       - name: house-law registry tests (idempotency + integration)
         run: python -m pytest tests/test_house_law_registry.py -q
 
@@ -2559,6 +2700,41 @@ jobs:
       - name: evidence-clock unit tests
         run: python -m pytest tests/test_evidence_clock.py -q
 
+  vintage-pin-fence:
+    if: ${{ false }}
+    # Fail-closed: a PR must not equality-pin a live nightly store. Measured
+    # 2026-08-13: govrev latest/candidates ``assert 23 == 8``, options
+    # ``episodes.jsonl`` 384→1206 used as a closed replay, prophet open-keys
+    # 10→11, then after #5515 the spine parquet (pack-7 / #5547) and Release
+    # Radar inflation-truth artifacts (unrun-release-forecast). Each one
+    # reddened main and then, through merge-on-green, the entire armed queue.
+    # Legal: a watermarked prefix slice, a census derived from a committed
+    # receipt, a named disclosure set, or the #5547 cold-test bind of
+    # ``config.data_dir`` to empty tmp. Do not re-type the product literals
+    # and do not grandfather by filename — a new ``== N`` in the same file
+    # still reds.
+    # The rglob over tests/test_*.py is load-bearing for path-aware scope:
+    # inference claims tests/**/*.py so this runs on PRs that touch tests,
+    # not only after the next jam. Main's full suite still runs it.
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    paths:
+      - tests/**
+      - scripts/check_vintage_pin_fence.py
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: vintage-pin fence selftest (post-5515 detonation classes red, legal green)
+        run: python3 scripts/check_vintage_pin_fence.py --selftest
+      - name: vintage-pin fence (new live-store equality pins)
+        run: python3 scripts/check_vintage_pin_fence.py
+      - name: vintage-pin fence unit tests
+        run: python -m pytest tests/test_vintage_pin_fence.py -q
+
   validated-claims:
     if: ${{ false }}
     # BC-2 PR gate: the word "validated" in user-facing surfaces must trace to a
@@ -2573,6 +2749,17 @@ jobs:
         run: python3 scripts/check_validated_claims.py --selftest
       - name: no unearned 'validated' claims in user-facing surfaces
         run: python3 scripts/check_validated_claims.py
+      # design.system_ratchet (R0, REPORT-ONLY — always exits 0). Hosted here and
+      # not in a job of its own for two reasons: a 181st manifest entry reds the
+      # ci_pack narrow-diff ceiling, and this job ALREADY owns templates/** in the
+      # derived scope, so the step costs the selector nothing. The checker is
+      # stdlib-only, hence no pip install. R1 (blocking) is a later PR that flips
+      # the registry severity AND swaps `--mode report` for `--mode enforce
+      # --registry data/...` in lockstep — never one without the other.
+      - name: design-system ratchet selftest (each rule fires on its own fixture)
+        run: python3 scripts/check_design_system.py --self-check
+      - name: design-system ratchet R0 (report-only drift census over templates/)
+        run: python3 scripts/check_design_system.py --mode report
 
   template-site-sync:
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
@@ -2774,42 +2961,79 @@ jobs:
         run: python -m pytest tests/test_ship_loop_guard.py tests/test_agent_worktree_roots.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
-          git fetch origin ${{ github.base_ref || 'main' }}
           BRANCH="${{ github.head_ref }}"
-          TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
-          FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
-          if [ -z "$FILES" ]; then
-            if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ] && \
-               git merge-base --is-ancestor HEAD "origin/${{ github.base_ref || 'main' }}" 2>/dev/null; then
-              # Dispatch on main itself (the ship-loop guard's E1 unblock lever,
-              # `gh workflow run ci.yml --ref main` — hooks #3677): HEAD is main or an
-              # ancestor of it, so the empty three-dot diff is VERIFIED-empty — there is
-              # no PR and no self-modification to classify. R-AUT-5's fail-closed
-              # contract targets UNDETERMINABLE diffs (git errors, shallow clones,
-              # base-ref failures), not this case. Before this arm existed every
-              # dispatch-at-tip run redded here, which made the green-main E1 evidence
-              # unsatisfiable by construction (observed run 30207008917, 2026-07-26).
-              # The ancestor form (not tip-equality) keeps the arm valid when main
-              # advances between dispatch checkout and this step; a dispatched branch
-              # carrying real commits still has a non-empty diff and is classified
-              # by the python fence below as always.
-              echo "self-mod-fence: workflow_dispatch with HEAD on main — zero changes to classify (pass)"
-              exit 0
-            fi
-            # R-AUT-5 fail-closed contract: an empty file list (git diff error, shallow
-            # clone, base-ref resolution failure, or merge-commit HEAD) must BLOCK — not
-            # silently pass.  A fence that errors open is worse than no fence.
-            echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
-            echo "Possible causes: git diff error, shallow clone, or base_ref resolution failure." >&2
-            echo "Resolve by ensuring fetch-depth: 0 and a valid base_ref before this step." >&2
+          TRAILERS=""
+          FILES=""
+          PARSE_RC=0
+          FILES=$(python3 scripts/check_self_mod_fence.py --print-planner-files) || PARSE_RC=$?
+          if [ "$PARSE_RC" -eq 2 ]; then
+            echo "::error:: self-mod-fence: CI_CHANGED_FILES_JSON malformed — fail-closed (exit 1)." >&2
             exit 1
           fi
+          if [ "$PARSE_RC" -eq 0 ]; then
+            # ci-plan already listed the diff (packs are fetch-depth:1 after #5564;
+            # origin/main...HEAD is often a bad revision — measured #5556/#5519/#5499).
+            if [ -z "$FILES" ]; then
+              echo "self-mod-fence: ci-plan reported no changed files — zero changes to classify (pass)"
+              exit 0
+            fi
+          else
+            # Unset env (local / pre-#5564): fall back to git. Fail-closed only when
+            # that fallback cannot determine files either.
+            git fetch origin ${{ github.base_ref || 'main' }}
+            TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
+            FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
+            if [ -z "$FILES" ]; then
+              if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ] && \
+                 git merge-base --is-ancestor HEAD "origin/${{ github.base_ref || 'main' }}" 2>/dev/null; then
+                # Dispatch on main itself (the ship-loop guard's E1 unblock lever,
+                # `gh workflow run ci.yml --ref main` — hooks #3677): HEAD is main or an
+                # ancestor of it, so the empty three-dot diff is VERIFIED-empty — there is
+                # no PR and no self-modification to classify. R-AUT-5's fail-closed
+                # contract targets UNDETERMINABLE diffs (git errors, shallow clones,
+                # base-ref failures), not this case. Before this arm existed every
+                # dispatch-at-tip run redded here, which made the green-main E1 evidence
+                # unsatisfiable by construction (observed run 30207008917, 2026-07-26).
+                # The ancestor form (not tip-equality) keeps the arm valid when main
+                # advances between dispatch checkout and this step; a dispatched branch
+                # carrying real commits still has a non-empty diff and is classified
+                # by the python fence below as always.
+                echo "self-mod-fence: workflow_dispatch with HEAD on main — zero changes to classify (pass)"
+                exit 0
+              fi
+              echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
+              echo "Possible causes: CI_CHANGED_FILES_JSON unset/malformed, git diff error, or base_ref resolution failure." >&2
+              exit 1
+            fi
+          fi
+          TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
           python3 scripts/check_self_mod_fence.py \
             --branch "$BRANCH" \
             --files $FILES \
             --trailers "$TRAILERS"
       - name: self-mod-fence test suite
         run: python -m pytest tests/test_self_mod_fence.py -q
+      - name: agent-os record contract (schema fail-closed, join fail-open)
+        # ORDERED LAST IN THIS JOB, deliberately. `run_ci_pack.py:_run_job` returns on
+        # the FIRST nonzero step, so any step placed before `self-mod-fence live check`
+        # can make that fence never run — the F2 fence would go dark for the PR while
+        # the job reports a failure that has nothing to do with self-modification.
+        # A knowledge-plane record check must never be able to blind a security fence,
+        # so it sits behind every fence step in this job.
+        #
+        # Folded in as a STEP, not a new job, also deliberately: the manifest sits at
+        # the narrow-diff ceiling (test_representative_narrow_diffs_skip_at_least_one
+        # _quarter_of_jobs asserts selected <= len(jobs)*4//5), so adding a job can red
+        # an unrelated pack, and a `paths:` scope cannot fix it — infer_job_scopes()
+        # UNIONS declared paths with inferred ones, so a declaration only ever WIDENS.
+        # Keeping the job COUNT fixed keeps that arithmetic still.
+        run: |
+          # Direct invocation FIRST and deliberately: the pytest suite skips itself
+          # when agentos/ is outside a sparse cone, so a store that failed to check
+          # out would otherwise pass as a skip. This line cannot skip.
+          python3 scripts/agentos.py validate
+          python -m pytest tests/test_agentos_schema.py tests/test_agentos_status.py \
+            tests/test_agentos_compile.py -q
 
   capability-broker:
     if: ${{ false }}
@@ -4940,6 +5164,12 @@ jobs:
         run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
         run: python -m pytest tests/test_portfolio_brief.py -q
+      - name: retention spine — change history, digest composer, changes endpoint (W6)
+        # engine/portfolio_changes (state digest + diff) and engine/portfolio_digest (the
+        # change-triggered email COMPOSER — the send path is deliberately unwired, and a
+        # test in here asserts the module imports no mailer so no build can send). Same
+        # install set as the brief suite above; the file pins that set from the AST.
+        run: python -m pytest tests/test_portfolio_changes.py -q
       - name: theme_lanes side-write contract (source of truth for the Portfolio brief)
         # The theme_lanes.v1 side-artifact + the page-byte-identity invariant that keep
         # the State-of-Themes page and the Portfolio brief's lanes in lockstep. Only the
@@ -5435,7 +5665,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps plus the schema/API wheels
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi httpx2
       # Wave 9D: the admissibility fences on issuer graph expansion — exact
       # identifier + verbatim Exhibit 21 name only, no discovery_query_ticker, no
       # similarity, no LLM assertion; PIT; the proposed-edge-cannot-become-a-
@@ -5490,7 +5720,7 @@ jobs:
       # fixtures grew beyond this legacy lane's original eight-minute budget,
       # and keeping them here made the entire ownership lane time out.
       - name: award-event spine, candidates, entity + workspace contracts
-        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_bridge.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
+        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_api_auth.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_bridge.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
       # Recipient->issuer attribution: the Wave 9D discovery tool that proposes
       # candidates for the reviewed graph. Named by NO run: step until 2026-08-06 —
       # the proposal tool's 60 tests could not go red on main, which is the same
@@ -6054,6 +6284,19 @@ jobs:
       # segregation gate the moment it does.
       - name: force-majeure outage backfill (segregation both ways, nightly passthrough, collision rule, idempotence)
         run: python -m pytest tests/test_prophet_outage_backfill.py -q
+      # Force-majeure 2026-08-11 outage RECONSTRUCTION (operator 2026-08-13). A STEP in
+      # this job rather than a job of its own: it shares this job's import closure and
+      # its whole point is that the two windows are checked together — the segregation
+      # law above now reads a REGISTRY of chartered windows built from both lanes'
+      # constants, so splitting them across jobs would let one half go green against a
+      # registry the other half had already widened.
+      #
+      # What is pinned here and nowhere else: the price truncation (a poisoned 2026-08-12
+      # bar must not reach the tree the board builder reads, and the fence that re-proves
+      # it must fire when one is planted), the chronology refusal, and the pinned
+      # pre-#5370 code vintage. The tests are pure — no board is built in CI.
+      - name: force-majeure outage reconstruction 2026-08-11 (price truncation, chronology, pinned vintage)
+        run: python -m pytest tests/test_prophet_outage_backfill_20260811.py -q
       # The user-facing half of the same feature (#5301): the plain-word EN/ZH chip,
       # receipt and footnote a reconstructed plan carries, plus the record split.
       # Wired HERE, with the lane that mints those plans, and wired at all because it
@@ -6588,7 +6831,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        # pandas.read_html is exercised by the ETF sponsor-registry parser;
+        # pandas alone does not provide an HTML parser on a clean runner.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn lxml
       - name: spotlight tilt — W9-B US demotion is display-only + the tilt still moves weighted markets
         run: python -m pytest tests/test_spotlight.py -q
       - name: etf_pulse sector leg + analyst delta channel — each pins the data branch it exercises
@@ -6600,6 +6845,34 @@ jobs:
       # are already in this job's venv line.
       - name: etf board synthesis — bilingual backdrop tile + pulse-dated rotation (zh-leak / §B9.6 pins)
         run: python -m pytest tests/test_etf_board.py -q
+      # W1 flow-vs-selection (2026-08-12): the decomposition identity plus every
+      # robustness guard standing between a raw sponsor file and a published
+      # dollar figure — split / duplicate-day / weight-sum / cadence / exit
+      # continuity, each with its own adversarial fixture. Registered on arrival
+      # rather than added to the unrun census. Needs pandas+pyarrow (parquet
+      # fixtures) and imports scripts.build_site for the payload wiring; this
+      # job's venv line already carries both.
+      - name: etf flow/selection decomposition — identity, $ estimates, robustness guards
+        run: python -m pytest tests/test_etf_flow_decomposition.py -q
+      # W2a/W3 companions (2026-08-12), registered on arrival — this manifest is
+      # explicit-file (no pytest glob), so an unregistered suite runs in ZERO jobs
+      # (see the test_etf_board note above). Registry needs pyyaml; the ledger
+      # suite needs pandas+pyarrow and pins the nightly lane gate + price freeze;
+      # the windows tile renders measurement.html.j2 (jinja2). All deps already
+      # on this job's venv line.
+      - name: etf fund registry — universe coverage, type enum, sponsor drift pin
+        run: python -m pytest tests/test_etf_registry.py -q
+      - name: etf board ledger — lane gate, idempotency, frozen-price grading
+        run: python -m pytest tests/test_etf_board_ledger.py -q
+      - name: etf board windows tile — three states, zh parity, vocab
+        run: python -m pytest tests/test_etf_board_windows_tile.py -q
+      - name: etf weighting lens — discount identity, golden default ordering, receipts
+        run: python -m pytest tests/test_etf_weighting.py -q
+      # W3 partial-NAV sleeve support: pins the declared nav_equity_frac bounds,
+      # both ranked-consumer call sites, and the conservative sweep/swap filters.
+      # Uses pandas+pyarrow for the on-disk sponsor receipt; both are above.
+      - name: etf partial-NAV sleeve — declared bounds and sweep/swap guards
+        run: python -m pytest tests/test_etf_partial_nav_sleeve.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
 
@@ -6726,6 +6999,16 @@ jobs:
         run: python -m pytest tests/test_signup_email_validation.py -q
       - name: shared-GitHub-quota hook — the guard that keeps polling loops off the REST pool
         run: python -m pytest tests/test_gh_quota_guard.py -q
+      # 2026-08-14 — the Prophet US rescue lane, registered HERE rather than in a new
+      # job because the legacy-jobs manifest sits at the narrow-diff ceiling and a
+      # 181st entry reds it. Same family as the two above: a subprocess/path-string
+      # guard whose subject the import-derived auditor cannot see, so it would arrive
+      # DARK by default — the exact leak this job is named after. It reaches its
+      # subject by loading scripts/prophet_rescue.py through importlib from a path
+      # literal, and it carries the four mutation-pinned dispatch-safety invariants
+      # (§0.4 a-d) plus the no-stop-a-run AST pin; unrun, all of that is decoration.
+      - name: prophet rescue lane — pure decide() matrix + the four dispatch-safety pins
+        run: python -m pytest tests/test_prophet_rescue.py -q
 
   # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
   # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed
@@ -6745,14 +7028,18 @@ jobs:
   #
   # Runtime: the witness-replay test runs engine.signal_gate.gate() on seven
   # full-history series from data/hk_search/closes_deep.parquet — minutes, not
-  # seconds; budget 8.  Deps: the builder-wiring tests import scripts/build_hk.py
+  # seconds.  Documented ~83s on a fast Mac Studio; measured ~2:27 (~1.8×) on
+  # the same host, and it crosses an 8-minute cap on a busy 4-core hosted
+  # runner mid-backlog.  8 → 15, the same ceiling as unrun-market-plumbing.
+  # Weight is not derived from timeout-minutes, so this does not rebalance
+  # packs.  Deps: the builder-wiring tests import scripts/build_hk.py
   # (plotly) and reach lib.config (pyyaml) — measured in a clean venv, where
   # pytest+pandas+pyarrow+jinja2 alone left 23 tests red on those two imports.
   # The shared unrun-* install repeated BYTE-FOR-BYTE keeps this job inside the
   # set's single venv instead of adding one.
   unrun-hk-board:
     if: ${{ false }}
-    timeout-minutes: 8
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -6781,8 +7068,10 @@ jobs:
       # needs this job's wide install exactly — the same dep-list trap the
       # census recorded for the pair above.  Cost measured as this job's third
       # step over the full sequence: 68.5s (rank, 163 tests) + 13.5s (ui, 83) +
-      # 1.5s (this, 10) = ~83s against timeout-minutes: 8, so the budget is
-      # untouched and the witness replay keeps its headroom.
+      # 1.5s (this, 10) = ~83s documented; measured ~2:27 (~1.8×) locally, and
+      # it times out at 8 minutes on a busy hosted runner. timeout-minutes is
+      # 15 — same ceiling as unrun-market-plumbing — so the witness replay
+      # keeps its headroom.
       - name: hk reclaim-veto admission policy — the dropped leg and its blast radius
         run: python -m pytest tests/test_hk_reclaim_veto_policy.py -q
 
@@ -7414,6 +7703,14 @@ jobs:
         run: pip install pytest pyyaml
       - name: page registry — committed-JSON drift guard + derivation contracts
         run: TZ=UTC python -m pytest tests/test_build_product_page_registry.py -q
+      # DS-PR-1 suites, appended rather than given their own manifest entry: a
+      # 181st job reds tests/test_ci_pack.py's narrow-diff ceiling, and both
+      # suites' scopes (templates/**, the registry builder, the committed JSON)
+      # are already inside this job's honestly-broad derived scope.
+      - name: design-system — registry schema + archetype vocabulary
+        run: TZ=UTC python -m pytest tests/test_page_registry_design_system.py -q
+      - name: design-system — ratchet rules, modes and annotation shape
+        run: TZ=UTC python -m pytest tests/test_check_design_system.py -q
 
   product-experience-capture:
     if: ${{ false }}
@@ -7510,3 +7807,122 @@ jobs:
         run: >-
           PYTHONDONTWRITEBYTECODE=1 python -m pytest
           tests/test_options_mastermindx_capture.py -q -rs
+
+  dataos-foundation:
+    # Mastermind Data OS foundation library (lib/dataos/**) — the canonical identity,
+    # temporal, price-basis, null, registry and quality spine every later Data OS wave
+    # builds on. WITHOUT THIS JOB the six suites are dead code: there is no broad
+    # `pytest tests/` anywhere in CI, so a test file no `run:` step names never runs,
+    # and the vocabulary would drift from the incidents it encodes with nothing going
+    # red. That is not hypothetical here — lib/dataos/nulls.py shipped in the first
+    # pass with no suite AND no `run:` entry, and a mutation deleting §D6's headline
+    # law outright ("0 may never mean absence" -> `if False:`) failed NOTHING. Every
+    # name in the `run:` step below is load-bearing; adding a suite to tests/ without
+    # adding it HERE ships it dark. What it pins, concretely: the MMC->MRSH
+    # alias table answering DIFFERENTLY
+    # either side of 2026-01-14 (the rename that left data/baskets/ohlcv/MMC.parquet
+    # nonexistent for seven months while the `insurance` basket quietly rendered
+    # 18/19 members); the fail-closed PIT law, whose whole failure mode is a SILENT
+    # latest-vintage return; the price-basis naming law and the measured NVDA
+    # 2024-06-03 store bases (114.80 / 114.80 / 115.00 / 1150.00, all called some form
+    # of "close"); and that config/dataset_registry.yml still validates clean.
+    #
+    # PURE UNIT TESTS BY CONSTRUCTION: nothing here reads data/, which is not
+    # materialized in an agent worktree, so the suite behaves identically on a full
+    # checkout and in this thin lane. Deps are pytest + pyyaml only — the library
+    # imports stdlib-only and pulls yaml lazily inside registry.load_registry, so a
+    # pandas/numpy import creeping into lib/dataos/ breaks HERE first.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - .github/ci/legacy-jobs.yml
+      - .github/workflows/ci.yml
+      - config/dataset_registry.yml
+      - lib/dataos/**
+      - tests/test_dataos_identity.py
+      - tests/test_dataos_nulls.py
+      - tests/test_dataos_price.py
+      - tests/test_dataos_quality.py
+      - tests/test_dataos_registry.py
+      - tests/test_dataos_temporal.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: Data OS identity / temporal / price-basis / nulls / registry / quality contracts
+        run: >-
+          PYTHONDONTWRITEBYTECODE=1 python -m pytest
+          tests/test_dataos_identity.py
+          tests/test_dataos_temporal.py
+          tests/test_dataos_price.py
+          tests/test_dataos_nulls.py
+          tests/test_dataos_registry.py
+          tests/test_dataos_quality.py -q -rs
+
+  dataos-identity-seams:
+    # DOS-1.2 — the identity seam gate. `config/identity_seams.yml` declares every surface
+    # in this tree that answers "which security is this?", classified ADOPT /
+    # ALIAS-INTO-MASTER / KNOWINGLY-DIFFERENT / RETIRE against the DOS-1.1 master, and this
+    # suite makes an ADOPT-class DISAGREEMENT fail.
+    #
+    # WHY IT IS A SEPARATE JOB FROM `dataos-foundation`: that lane is deliberately thin
+    # (pytest + pyyaml only) so a pandas/numpy import creeping into lib/dataos/ breaks there
+    # FIRST. This suite must read the committed master parquet, so it needs pandas+pyarrow —
+    # putting it in the thin lane would destroy that tripwire. Two jobs, two purposes.
+    #
+    # WITHOUT THIS JOB the registry is prose. The cost of an ungoverned seam is already
+    # measured in this repo: MMC->MRSH lived in scripts/fetch_basket_extras but not in its
+    # sibling scripts/fetch_basket_ohlcv, so data/baskets/ohlcv/MMC.parquet never existed and
+    # for seven months the `insurance` basket rendered 18/19 members and
+    # us_sector_financials 75/76 — and NOTHING WENT RED. This suite is the thing that goes red.
+    #
+    # The gate is mutation-proven, not asserted: making engine/ledger_identity disagree with
+    # the master fails the agreement test; blanking a KNOWINGLY-DIFFERENT `reason` fails the
+    # schema test; deleting a registry row fails completeness; and silently "fixing" the
+    # declared GOOG/GOOGL divergence in config/share_class_equiv.yml fails the divergence
+    # test. Non-emptiness guards are explicit, because an agreement gate over zero securities
+    # is green forever and means nothing.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - .github/ci/legacy-jobs.yml
+      - .github/workflows/ci.yml
+      - config.yml
+      - config/identity_seams.yml
+      - config/share_class_equiv.yml
+      - config/theme_graph_identity_breaks.yml
+      - config/biocatalyst_sponsor_ticker_map.yml
+      - config/us_search_aliases_zh.json
+      - config/delisted_symbols.yml
+      - data/reference/**
+      - lib/dataos/identity.py
+      - lib/ticker_aliases.py
+      - lib/delisted_symbols.py
+      - lib/symbol_directory_receipts.py
+      - engine/ledger_identity.py
+      - engine/entity_resolver.py
+      - engine/name_resolver.py
+      - collectors/edgar_deadnames.py
+      - collectors/china_universe.py
+      - collectors/china_ths_concepts.py
+      - collectors/china_analyst.py
+      - collectors/china_tushare_spine.py
+      - tests/test_identity_seam_agreement.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        # pandas+pyarrow: the suite reads the committed security_master/vendor_aliases
+        # parquet through lib.dataos.identity.VendorAliasTable. pyyaml: the registry itself.
+        run: pip install pytest pyyaml pandas pyarrow
+      - name: identity seams — ADOPT surfaces must agree, divergences must stay declared
+        run: >-
+          PYTHONDONTWRITEBYTECODE=1 python -m pytest
+          tests/test_identity_seam_agreement.py -q -rs

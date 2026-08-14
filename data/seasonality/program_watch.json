@@ -1,9 +1,9 @@
 {
-  "asof": "2026-08-07",
+  "asof": "2026-08-13",
   "counts": {
     "fired": 2,
-    "unavailable": 0,
-    "waiting": 2
+    "unavailable": 1,
+    "waiting": 1
   },
   "schema": "seasonality.program_watch.v1",
   "tripwires": [
@@ -22,10 +22,10 @@
         ],
         "matched": [],
         "matched_by_content": [],
-        "n_files_scanned": 59
+        "n_files_scanned": 60
       },
       "handoff_doc": "research/SEASONALITY_BIOCATALYST_INTEGRATION_SEAM.md",
-      "headline": "No BioCatalyst seasonality event-projection schema yet (59 contract files scanned).",
+      "headline": "No BioCatalyst seasonality event-projection schema yet (60 contract files scanned).",
       "key": "biocatalyst_event_contract",
       "operator_prompt": "The BioCatalyst seasonality event-projection contract has NOT landed yet, so the event clock stays dark and there is nothing to reconcile. Nothing to do here tonight; when it lands this tripwire fires and carries the reconciliation prompt. If you want to chase it, research/SEASONALITY_BIOCATALYST_INTEGRATION_SEAM.md names the seam and the producer session.",
       "state": "waiting",
@@ -34,27 +34,30 @@
     {
       "evidence": {
         "by_row_type": {
-          "register": 49
+          "grade": 1,
+          "register": 69
         },
         "closed_out_ungradable": 0,
-        "earliest_pending_occurrence_end": "2026-08-12",
-        "grade_status_counts": {},
-        "graded": 0,
-        "graded_total": 0,
+        "earliest_pending_occurrence_end": "2026-08-16",
+        "grade_status_counts": {
+          "graded": 1
+        },
+        "graded": 1,
+        "graded_total": 1,
         "graded_unregistered": 0,
         "keyless_rows": 0,
         "malformed": 0,
         "path": "data/seasonality/nw_forward_ledger.jsonl",
-        "pending": 49,
+        "pending": 68,
         "pending_without_readable_end": 0,
-        "registered": 49
+        "registered": 69
       },
       "handoff_doc": "research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md",
-      "headline": "49 seasonality windows registered, 0 graded — the earliest pending window closes 2026-08-12.",
+      "headline": "1 of 69 registered seasonality windows now carry a grade.",
       "key": "first_matured_grade",
-      "operator_prompt": "No seasonality window has been graded yet, so there is no calibration read to run — a grade cannot exist before its window closes. Nothing to do tonight; this tripwire fires with the calibration prompt when the first one lands. Context: research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md.",
-      "state": "waiting",
-      "why": "A grade cannot exist before its window closes, so this is expected-null at birth rather than a stall. The close date above is when to expect the first one; nothing before then is news."
+      "operator_prompt": "The seasonality forward ledger has its first graded window. Read research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md, then run the calibration read: grade counts by symbol, realized vs registered p, and whether the sample is anywhere near the pre-registered gate. Report it as accrual, not as a verdict — one grade is not a result — and update the Calibration Lab forward-record line.",
+      "state": "fired",
+      "why": "This is the first forward evidence the calendar clock has any edge at all. Everything before it was a registered window with no outcome. Close-outs (ungradable_missing_prices) are NOT counted here — they are closed windows with no outcome, so they are not evidence."
     },
     {
       "evidence": {
@@ -85,10 +88,10 @@
       "evidence": {
         "checked": [
           {
-            "detail": "engine/seasonality/foundation.py names spa_reality_check=True; engine/validation.py defines spa_reality_check=False, defines ['reality_check', 'spa_test']",
+            "detail": "engine/seasonality/foundation.py names spa_reality_check=False; engine/validation.py defines spa_reality_check=False, defines ['reality_check', 'spa_test']",
             "key": "foundation_names_a_validation_symbol_that_does_not_exist",
             "prompt": "engine/seasonality/foundation.py declares 'spa_reality_check' as a selection control, but engine/validation.py defines no such symbol — it defines reality_check and spa_test. Reconcile the manifest to the real API (or add the wrapper), and add a test that asserts every declared selection control resolves to a defined symbol.",
-            "state": "open"
+            "state": "closed"
           },
           {
             "detail": "config/synapse.yml:data-neuralweb-biopharma-seasonality-state notes mention the v2 per-state schema=True (matched 'v2') (1314 chars of notes read)",
@@ -97,36 +100,23 @@
             "state": "closed"
           },
           {
-            "detail": ".github/workflows/daily.yml: build_prophet first invoked at line 2339, build_stock_seasonality first invoked at line 3810 (comments excluded; line order, which is only an ordering guarantee inside one sequential job)",
+            "detail": ".github/workflows/daily.yml: build_prophet found=True, build_stock_seasonality found=False",
             "key": "daily_workflow_runs_prophet_before_seasonality",
             "prompt": ".github/workflows/daily.yml runs build_prophet before build_stock_seasonality, so the Prophet lane can never read the night's fresh seasonality artifacts. Decide explicitly: either reorder the nightly, or document why the one-night lag is correct — and mirror whichever it is into config/dag.yml.",
-            "state": "open"
+            "state": "unavailable"
           }
         ],
-        "n_closed": 1,
-        "n_open": 2,
-        "n_unavailable": 0,
-        "open": [
-          {
-            "detail": "engine/seasonality/foundation.py names spa_reality_check=True; engine/validation.py defines spa_reality_check=False, defines ['reality_check', 'spa_test']",
-            "key": "foundation_names_a_validation_symbol_that_does_not_exist",
-            "prompt": "engine/seasonality/foundation.py declares 'spa_reality_check' as a selection control, but engine/validation.py defines no such symbol — it defines reality_check and spa_test. Reconcile the manifest to the real API (or add the wrapper), and add a test that asserts every declared selection control resolves to a defined symbol.",
-            "state": "open"
-          },
-          {
-            "detail": ".github/workflows/daily.yml: build_prophet first invoked at line 2339, build_stock_seasonality first invoked at line 3810 (comments excluded; line order, which is only an ordering guarantee inside one sequential job)",
-            "key": "daily_workflow_runs_prophet_before_seasonality",
-            "prompt": ".github/workflows/daily.yml runs build_prophet before build_stock_seasonality, so the Prophet lane can never read the night's fresh seasonality artifacts. Decide explicitly: either reorder the nightly, or document why the one-night lag is correct — and mirror whichever it is into config/dag.yml.",
-            "state": "open"
-          }
-        ]
+        "n_closed": 2,
+        "n_open": 0,
+        "n_unavailable": 1,
+        "open": []
       },
       "handoff_doc": "research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md",
-      "headline": "2 of 3 deferred follow-up(s) still open: foundation_names_a_validation_symbol_that_does_not_exist, daily_workflow_runs_prophet_before_seasonality",
+      "headline": "1 of 3 deferred follow-up(s) could not be checked in this checkout.",
       "key": "deferred_followups",
-      "operator_prompt": "Clear the open seasonality follow-ups. Each has its own one-line prompt in evidence.open of data/seasonality/program_watch.json; context is research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md.",
-      "state": "fired",
-      "why": "None of these break a build, which is exactly why they rot: each one is a small wrong statement about the system that a later session will read as true. Each carries its own prompt in evidence.open."
+      "operator_prompt": "Re-run the seasonality program watch in a complete checkout — some follow-up inputs were unreadable.",
+      "state": "unavailable",
+      "why": "An unreadable input is not a closed follow-up."
     }
   ]
 }

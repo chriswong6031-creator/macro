@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "WFRD-BULL-20260731",
-  "asof": "2026-08-12",
+  "asof": "2026-08-13",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 73.1,
-  "raw_confidence": 73.1,
-  "delta_vs_base": 13.1,
+  "management_confidence": 72.8,
+  "raw_confidence": 72.5,
+  "delta_vs_base": 12.8,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
-    "progress": 30.9,
+    "progress": 28.5,
     "pace": 100.0,
     "retention": 50.0,
     "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.525,
-    "dist_to_t1_r": 0.975,
-    "dist_to_t2_r": 2.475,
-    "horizon_pct_used": 11.1,
-    "p1": 0.35,
-    "p2": 0.175,
+    "dist_to_stop_r": 1.471,
+    "dist_to_t1_r": 1.029,
+    "dist_to_t2_r": 2.529,
+    "horizon_pct_used": 13.3,
+    "p1": 0.3143,
+    "p2": 0.1571,
     "p3": null,
-    "move_r": 0.525,
+    "move_r": 0.471,
     "mfe_r": 0.525,
     "mae_r": 0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 5,
-  "tau": 0.1111
+  "days_elapsed": 6,
+  "tau": 0.1333
 }

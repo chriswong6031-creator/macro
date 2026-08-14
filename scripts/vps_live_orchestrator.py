@@ -273,8 +273,16 @@ class Orchestrator:
             ["--display", "--out", str(self.stage_dir / "quotes.json")],
             outputs=self._publish_pairs(("quotes.json",)),
             timeout=45,
+            # Coverage is resolved/REQUESTED, and --display's universe is no longer
+            # ~35 macro tiles: it now carries the scraped board leg too (2026-08-13,
+            # ~168 symbols). A total Yahoo outage on the .SS/.SZ leg alone would put
+            # a perfectly good tile-only snapshot at ~21% and a single missing tile
+            # under the old 0.20 floor — refusing the publish and freezing the served
+            # file for EVERY page. 0.10 keeps the gate on what it was built to catch
+            # (an empty/collapsed fetch) instead of on the size of the new leg; it is
+            # the same floor the full-universe lane below already uses.
             validator=lambda path: quote_snapshot_error(
-                path, min_resolved=5, min_coverage=0.20
+                path, min_resolved=5, min_coverage=0.10
             ),
         )
 

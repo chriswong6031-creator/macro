@@ -6,6 +6,21 @@
    * generations: grd1-* describes primes/actions and grsd1-* describes
    * receipt-bound subaward observations. Never compare them to each other.
    */
+  /* /api/government-revenue/* is a paid (site_full) surface and authenticates on
+   * the Authorization header, not the session cookie, so every read has to carry
+   * the Supabase bearer token. Same shape as capital_structure.js; shared by both
+   * factories below. Resolved per call, not at load time, because theme.js (which
+   * defines MDXAuth) is loaded after this script. */
+  function withAuth(headers){
+    headers=headers||{};
+    if(!(global.MDXAuth&&global.MDXAuth.client))return Promise.resolve(headers);
+    return global.MDXAuth.client().then(function(client){return client.auth.getSession()}).then(function(result){
+      var token=result&&result.data&&result.data.session&&result.data.session.access_token;
+      if(token)headers.Authorization='Bearer '+token;
+      return headers;
+    }).catch(function(){return headers});
+  }
+
   global.createGovernmentRevenueDossier=function(api){
     var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,factCell=api.factCell,hostFor=api.host,getSelected=api.selected;
     var epoch=0,session=null,searchTimer=null;
@@ -15,7 +30,9 @@
     function fetchPage(route,rail){
       var prefix=rail==='subaward'?'grsd1-':rail==='idv'?'griv1-':'grd1-';
       if(typeof global.fetch!=='function')return Promise.reject(new Error('unavailable'));
-      return global.fetch('/api/government-revenue/'+route,{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(r){if(!r.ok)throw new Error('http_'+r.status);return r.json()}).then(function(x){
+      return withAuth({Accept:'application/json'}).then(function(headers){
+        return global.fetch('/api/government-revenue/'+route,{credentials:'same-origin',headers:headers});
+      }).then(function(r){if(!r.ok)throw new Error('http_'+r.status);return r.json()}).then(function(x){
         if(!obj(x)||x.schema_version!=='1.0.0'||!new RegExp('^'+prefix+'[a-f0-9]{24}$').test(text(x.content_id,'')))throw new Error('contract');
         return x;
       });
@@ -196,7 +213,9 @@
     function validAuthority(value){return obj(value)&&value.tier==='display'&&value.context_only===true&&value.can_rank===false&&value.can_size===false&&value.can_gate===false&&value.can_originate_signal===false&&value.can_add_candidates===false&&value.can_escalate===false}
     function fetchBudget(route){
       if(typeof global.fetch!=='function')return Promise.reject(new Error('unavailable'));
-      return global.fetch('/api/government-revenue/'+route,{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(response){if(!response.ok)throw new Error('http_'+response.status);return response.json()}).then(function(value){
+      return withAuth({Accept:'application/json'}).then(function(headers){
+        return global.fetch('/api/government-revenue/'+route,{credentials:'same-origin',headers:headers});
+      }).then(function(response){if(!response.ok)throw new Error('http_'+response.status);return response.json()}).then(function(value){
         if(!obj(value)||value.contract!=='government_budget_program_graph.v1'||value.schema_version!=='1.0.0'||!/^grbg1-[a-f0-9]{24}$/.test(text(value.content_id,''))||!validAuthority(value.authority))throw new Error('contract');
         return value;
       });

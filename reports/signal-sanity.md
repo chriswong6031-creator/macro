@@ -1,14 +1,22 @@
-# Signal sanity — 2026-08-10
+# Signal sanity — 2026-08-14
 
-**✅ OK** · 0 failure(s), 0 warning(s)
+**🚨 FAIL** · 1 failure(s), 1 warning(s)
 
 | board | as_of | records | coverage | status |
 |---|---|---:|---:|---|
-| standouts (engine buy-board) | 2026-08-07 | 79 | 79 | ok |
-| briefing (Phase-5 priority queue) | 2026-08-09 | 25 | 25 | ok |
-| radar (divergence radar) | 2026-08-09 | 255 | 255 | ok |
-| altdata (alt-data desk) | 2026-08-10 | 30 | 30 | ok |
-| news (news flow) | 2026-08-10 | 413 | 195 | ok |
-| intel_hub (5-desk command) | 2026-08-09 | 30 | 30 | ok |
+| standouts (engine buy-board) | 2026-08-13 | 71 | 71 | ok |
+| briefing (Phase-5 priority queue) | 2026-08-13 | 25 | 25 | ok |
+| radar (divergence radar) | 2026-08-13 | 259 | 259 | ok |
+| altdata (alt-data desk) | 2026-08-14 | 30 | 30 | ok |
+| news (news flow) | 2026-08-14 | 283 | 13 | 🚨 fail |
+| intel_hub (5-desk command) | 2026-08-13 | 30 | 30 | ok |
+
+## Failures (these block publish)
+
+- news: coverage 13 < floor 100 (news flow)
+
+## Warnings
+
+- news.n_recent: mean drifted 134% (1.75→4.08) vs 2026-08-13
 
 _Invariants: coverage floor · score-column degeneracy · content-freeze (as_of advanced but values identical) · staleness · distribution drift. Ground-truth-free — see engine/signal_sanity.py._

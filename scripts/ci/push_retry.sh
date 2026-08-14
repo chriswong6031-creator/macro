@@ -167,78 +167,90 @@ push_do() {
 # caller can use its existing porcelain rebase + specialised conflict guards.
 push_metadata_replay_commit() {
   local render_parent="$1" onto="$2" render_commit="$3" message="$4" index_path="$5"
-  local onto_commit tree commit rc=0 status path base_entry onto_entry render_entry
-  local meta mode oid diff_path
+  local onto_commit tree commit rc=0 render_diff onto_diff index_info temp_base
 
   onto_commit=$(git rev-parse "${onto}^{commit}") || return 1
   rm -f -- "$index_path" "$index_path.lock"
-  diff_path=$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/push-metadata-diff.XXXXXX") \
+  temp_base="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
+  render_diff=$(mktemp "${temp_base%/}/push-metadata-render.XXXXXX") \
     || return 1
+  onto_diff=$(mktemp "${temp_base%/}/push-metadata-onto.XXXXXX") \
+    || { rm -f -- "$render_diff"; return 1; }
+  index_info=$(mktemp "${temp_base%/}/push-metadata-index.XXXXXX") \
+    || { rm -f -- "$render_diff" "$onto_diff"; return 1; }
   # Process substitution discards the producer's exit status.  Capture the
-  # complete NUL stream first so a diff-tree process that emits a prefix and
-  # then fails can never be mistaken for a complete replay.
-  if ! git diff-tree -r --no-commit-id --no-renames --name-status -z \
-      "$render_parent" "$render_commit" > "$diff_path"; then
+  # complete NUL streams first so a producer that emits a prefix and then fails
+  # can never be mistaken for a complete replay.  The old implementation then
+  # spawned three `git ls-tree` processes plus one `git update-index` PER PATH.
+  # A scope=macro render changed 2,817 paths, making this supposedly cheap path
+  # take 4-5 minutes and lose every five-minute hot-tape race.  Two raw diffs
+  # and one index-info update keep the work O(paths) inside a fixed number of
+  # processes.  Perl preserves arbitrary path bytes with NUL record separators
+  # on both macOS and Linux (the runners' awk variants do not agree on RS=NUL).
+  if ! git diff-tree -r --no-commit-id --no-renames --no-abbrev --raw -z \
+      "$render_parent" "$render_commit" > "$render_diff"; then
     printf 'metadata replay cannot enumerate the generated diff\n' >&2
-    rm -f -- "$index_path" "$index_path.lock" "$diff_path"
+    rm -f -- "$index_path" "$index_path.lock" "$render_diff" "$onto_diff" "$index_info"
+    return 1
+  fi
+  if ! git diff-tree -r --no-commit-id --no-renames --no-abbrev --raw -z \
+      "$render_parent" "$onto_commit" > "$onto_diff"; then
+    printf 'metadata replay cannot enumerate changes on the target tree\n' >&2
+    rm -f -- "$index_path" "$index_path.lock" "$render_diff" "$onto_diff" "$index_info"
     return 1
   fi
   GIT_INDEX_FILE="$index_path" git read-tree "$onto_commit" || rc=$?
-  while [ "$rc" -eq 0 ]; do
-    status=""
-    if ! IFS= read -r -d '' status; then
-      if [ -n "$status" ]; then
-        printf 'metadata replay received a truncated status entry\n' >&2
-        rc=1
-      fi
-      break
-    fi
-    path=""
-    if ! IFS= read -r -d '' path; then
-      printf 'metadata replay received a truncated status/path pair\n' >&2
-      rc=1
-      break
-    fi
-    if [ -z "$status" ] || [ -z "$path" ]; then
-      printf 'metadata replay received an empty status/path entry\n' >&2
-      rc=1
-      break
-    fi
-    base_entry=$(git ls-tree "$render_parent" -- "$path") || rc=$?
-    [ "$rc" -eq 0 ] || break
-    onto_entry=$(git ls-tree "$onto_commit" -- "$path") || rc=$?
-    [ "$rc" -eq 0 ] || break
-    render_entry=$(git ls-tree "$render_commit" -- "$path") || rc=$?
-    [ "$rc" -eq 0 ] || break
-    if [ "$onto_entry" != "$base_entry" ] && [ "$onto_entry" != "$render_entry" ]; then
-      printf 'metadata replay conflict: newer main also changed %s\n' "$path" >&2
-      rc=1
-      break
-    fi
-    case "$status" in
-      D)
-        GIT_INDEX_FILE="$index_path" git update-index --force-remove -- "$path" || rc=$?
-        ;;
-      A|M|T)
-        meta=${render_entry%%$'\t'*}
-        mode=${meta%% *}
-        oid=${meta##* }
-        GIT_INDEX_FILE="$index_path" git update-index --add --cacheinfo \
-          "$mode" "$oid" "$path" || rc=$?
-        ;;
-      *)
-        printf 'metadata replay cannot apply status %s for %s\n' "$status" "$path" >&2
-        rc=1
-        ;;
-    esac
-  done < "$diff_path"
+  if [ "$rc" -eq 0 ] && ! perl -0 -e '
+      use strict;
+      use warnings;
+      my ($onto_file, $render_file) = @ARGV;
+      sub read_raw {
+        my ($file) = @_;
+        open my $fh, "<:raw", $file or die "open $file: $!\n";
+        my %entries;
+        while (defined(my $header = <$fh>)) {
+          my $path = <$fh>;
+          die "metadata replay received a truncated raw entry\n" unless defined $path;
+          chomp($header, $path);
+          $header =~ s/^:// or die "metadata replay received a malformed raw entry\n";
+          my ($old_mode, $new_mode, $old_oid, $new_oid, $status) = split / /, $header, 5;
+          die "metadata replay cannot apply status $status for $path\n"
+            unless defined($status) && $status =~ /^(?:A|M|D|T)$/;
+          $entries{$path} = [$new_mode, $new_oid, $status];
+        }
+        close $fh or die "close $file: $!\n";
+        return %entries;
+      }
+      my %onto = read_raw($onto_file);
+      my %render = read_raw($render_file);
+      binmode STDOUT, ":raw";
+      for my $path (sort keys %render) {
+        my ($new_mode, $new_oid, $status) = @{$render{$path}};
+        if (my $upstream = $onto{$path}) {
+          if ($upstream->[0] ne $new_mode || $upstream->[1] ne $new_oid) {
+            print STDERR "metadata replay conflict: newer main also changed $path\n";
+            exit 1;
+          }
+        }
+        if ($status eq "D") {
+          print "0 0000000000000000000000000000000000000000\t$path\0";
+        } else {
+          print "$new_mode $new_oid\t$path\0";
+        }
+      }
+    ' "$onto_diff" "$render_diff" > "$index_info"; then
+    rc=1
+  fi
+  if [ "$rc" -eq 0 ]; then
+    GIT_INDEX_FILE="$index_path" git update-index -z --index-info < "$index_info" || rc=$?
+  fi
   if [ "$rc" -eq 0 ]; then
     tree=$(GIT_INDEX_FILE="$index_path" git write-tree --missing-ok) || rc=$?
   fi
   if [ "$rc" -eq 0 ]; then
     commit=$(printf '%s\n' "$message" | git commit-tree "$tree" -p "$onto_commit") || rc=$?
   fi
-  rm -f -- "$index_path" "$index_path.lock" "$diff_path"
+  rm -f -- "$index_path" "$index_path.lock" "$render_diff" "$onto_diff" "$index_info"
   [ "$rc" -eq 0 ] || return "$rc"
   printf '%s\n' "$commit"
 }
@@ -392,8 +404,8 @@ push_on_main_ok() {
 # ---------------------------------------------------------------------------
 
 push_quarantine_untracked_collisions() {
-  local target="${1:-origin/main}" target_commit temp_base list quarantine f entry
-  local collisions=0 moved=0
+  local target="${1:-origin/main}" target_commit temp_base list target_paths collisions_list
+  local quarantine f collisions=0 moved=0
 
   if ! target_commit=$(git rev-parse --verify "${target}^{commit}"); then
     PUSH_FAIL_CLASS="sync"
@@ -415,67 +427,94 @@ push_quarantine_untracked_collisions() {
     return 1
   }
   if ! git -c core.quotePath=false ls-files --others --exclude-standard -z > "$list" \
-    || ! git -c core.quotePath=false ls-files --others --ignored --exclude-standard -z >> "$list"; then
+      || ! git -c core.quotePath=false ls-files --others --ignored --exclude-standard -z >> "$list"; then
     rm -f -- "$list"
     PUSH_FAIL_CLASS="sync"
     echo "::error title=collision enumeration failed::git could not enumerate untracked paths; refusing an unverified checkout sweep"
     return 1
   fi
-
-  while IFS= read -r -d '' f; do
-    if ! entry=$(git ls-tree --name-only "$target_commit" -- "$f"); then
-      rm -f -- "$list"
-      PUSH_FAIL_CLASS="sync"
-      echo "::error title=collision tree lookup failed::could not inspect ${target} for an untracked path; refusing an unverified checkout sweep"
-      return 1
-    fi
-    [ -z "$entry" ] || collisions=$(( collisions + 1 ))
-  done < "$list"
+  target_paths=$(mktemp "${temp_base%/}/push-target-paths.XXXXXX") || {
+    rm -f -- "$list"
+    PUSH_FAIL_CLASS="sync"
+    echo "::error title=collision list unavailable::could not create a target-tree path list"
+    return 1
+  }
+  collisions_list=$(mktemp "${temp_base%/}/push-collisions.XXXXXX") || {
+    rm -f -- "$list" "$target_paths"
+    PUSH_FAIL_CLASS="sync"
+    echo "::error title=collision list unavailable::could not create a collision path list"
+    return 1
+  }
+  # The retained render workspace contains ~15k ignored builder outputs.  The
+  # old loop launched `git ls-tree` once for every path (and did it again while
+  # moving collisions), consuming about three minutes before every retry could
+  # even attempt its push.  Enumerate the target tree once, then intersect the
+  # two NUL-delimited sets in one Perl process.  Exact bytes are kept; no newline
+  # or shell-word splitting is introduced for paths with spaces.  Perl is already
+  # the cross-platform alarm dependency for push_do; unlike the runner awk builds,
+  # it has consistent NUL record semantics on macOS and Linux.
+  if ! git ls-tree -r --name-only -z "$target_commit" > "$target_paths" \
+      || ! perl -0 -e '
+        use strict;
+        use warnings;
+        my ($tree_file, $candidate_file) = @ARGV;
+        open my $tree, "<:raw", $tree_file or die "open $tree_file: $!\n";
+        my %tracked;
+        while (defined(my $path = <$tree>)) { $tracked{$path} = 1 if length $path; }
+        close $tree or die "close $tree_file: $!\n";
+        open my $candidates, "<:raw", $candidate_file
+          or die "open $candidate_file: $!\n";
+        my %seen;
+        binmode STDOUT, ":raw";
+        while (defined(my $path = <$candidates>)) {
+          print $path if length($path) && $tracked{$path} && !$seen{$path}++;
+        }
+        close $candidates or die "close $candidate_file: $!\n";
+      ' "$target_paths" "$list" > "$collisions_list"; then
+    rm -f -- "$list" "$target_paths" "$collisions_list"
+    PUSH_FAIL_CLASS="sync"
+    echo "::error title=collision tree lookup failed::could not inspect ${target} for untracked paths; refusing an unverified checkout sweep"
+    return 1
+  fi
+  collisions=$(perl -0ne '$n++ if length; END { print $n + 0 }' "$collisions_list")
 
   if [ "$collisions" -eq 0 ]; then
-    rm -f -- "$list"
+    rm -f -- "$list" "$target_paths" "$collisions_list"
     PUSH_QUARANTINE_COUNT=0
     return 0
   fi
   if [ "${GITHUB_ACTIONS:-}" != "true" ] || [ -z "${RUNNER_TEMP:-}" ] || [ ! -d "$RUNNER_TEMP" ]; then
-    rm -f -- "$list"
+    rm -f -- "$list" "$target_paths" "$collisions_list"
     PUSH_FAIL_CLASS="collision-quarantine"
     echo "::error title=untracked checkout collision::${collisions} untracked path(s) collide with ${target}; refusing to relocate local work outside GitHub Actions"
     return 1
   fi
 
   quarantine=$(mktemp -d "${RUNNER_TEMP%/}/push-untracked-collision.XXXXXX") || {
-    rm -f -- "$list"
+    rm -f -- "$list" "$target_paths" "$collisions_list"
     PUSH_FAIL_CLASS="collision-quarantine"
     echo "::error title=collision quarantine unavailable::could not create an Actions-only quarantine under RUNNER_TEMP"
     return 1
   }
   mkdir -p "$quarantine/files" || {
-    rm -f -- "$list"
+    rm -f -- "$list" "$target_paths" "$collisions_list"
     PUSH_FAIL_CLASS="collision-quarantine"
     echo "::error title=collision quarantine unavailable::could not initialize the Actions-only quarantine"
     return 1
   }
   printf '%s\n' "$target_commit" > "$quarantine/target-commit.txt"
   while IFS= read -r -d '' f; do
-    entry=$(git ls-tree --name-only "$target_commit" -- "$f") || {
-      rm -f -- "$list"
-      PUSH_FAIL_CLASS="collision-quarantine"
-      echo "::error title=collision tree lookup failed::could not inspect ${target} while quarantining; refusing the rebase"
-      return 1
-    }
-    [ -z "$entry" ] && continue
     mkdir -p "$quarantine/files/$(dirname "$f")" \
       && mv -- "$f" "$quarantine/files/$f" \
       && printf '%s\0' "$f" >> "$quarantine/paths.nul" || {
-        rm -f -- "$list"
+        rm -f -- "$list" "$target_paths" "$collisions_list"
         PUSH_FAIL_CLASS="collision-quarantine"
         echo "::error title=collision quarantine failed::could not quarantine a proven untracked collision; refusing the rebase"
         return 1
       }
     moved=$(( moved + 1 ))
-  done < "$list"
-  rm -f -- "$list"
+  done < "$collisions_list"
+  rm -f -- "$list" "$target_paths" "$collisions_list"
   PUSH_QUARANTINE_COUNT="$moved"
   PUSH_QUARANTINE_DIR="$quarantine"
   echo "::notice title=untracked checkout collision quarantined::moved ${moved} proven untracked collision(s) to ${quarantine}; ${target} is authoritative for the rebase"

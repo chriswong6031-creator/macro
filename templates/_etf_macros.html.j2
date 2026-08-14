@@ -38,13 +38,76 @@
 {% macro stance(s) -%}
 {%- if s -%}<span class="stpill st-{{ s.tone }}"{% if s.why %} data-tip-en="{{ s.why.en }}" data-tip-zh="{{ s.why.zh }}"{% endif %}><span class="stdot"></span>{{ b(s) }}</span>{%- endif -%}
 {%- endmacro %}
-{# ---- breadth(na, nt): fund-agreement constellation — accumulating vs trimming ---- #}
+{# ---- breadth(na, nt): fund-agreement constellation — accumulating vs trimming ----
+   The count used to live in a title= attribute, which is monolingual by
+   construction (a Chinese reader got English, and the house rule bans putting
+   the translation there). It is a LENS data-tip now, so both languages get it. #}
 {% macro breadth(na, nt) -%}
-<span class="bdots" title="{{ na }} fund{{ 's' if na != 1 else '' }} accumulating{% if nt %}, {{ nt }} trimming{% endif %}">
+<span class="bdots" data-tip-en="{{ na }} fund{{ 's' if na != 1 else '' }} buying{% if nt %} · {{ nt }} selling{% endif %}" data-tip-zh="{{ na }} 只基金买入{% if nt %} · {{ nt }} 只卖出{% endif %}">
 {%- for i in range([na, 6] | min) %}<i class="up"></i>{% endfor -%}
 {%- if na > 6 %}<i class="ov">+{{ na - 6 }}</i>{% endif -%}
 {%- if nt %}<i class="sep"></i>{% for i in range([nt, 4] | min) %}<i class="dn"></i>{% endfor %}{% endif -%}
 </span>
+{%- endmacro %}
+{# ══ money-source vocabulary (W1 decomposition, presented at glance tier) ══════
+   Two different things move a fund's share count. When investors put money into
+   a theme fund, creation scales EVERY holding at once — the theme is being
+   bought, mechanically. Anything beyond that common scale is the manager
+   choosing this name over the others.
+
+   How it is presented (doctrine + masterplan R2):
+   · the SPLIT rides fund COUNTS, not dollars — counts are the page's primary,
+     manipulation-resistant lens, they are defined even when a sponsor publishes
+     no market values, and they cannot be confused with the pp headline's unit;
+   · the two tones are a CATEGORY pair, never a direction: investor money takes
+     the market hue (indigo), the manager's pick takes the page's own INK — a
+     filing is signed by a person. Neither flips under 中文 红涨绿跌;
+   · the row says which side leads in two plain words; the full sentence is
+     printed ONCE in the board legend, never per row (Law 4). #}
+{% macro srail(nf, ns) -%}
+{%- set a = nf or 0 -%}{%- set b = ns or 0 -%}{%- set tot = a + b -%}
+{%- if tot -%}<span class="srail"><i class="sr-f" style="width:{{ "%.0f" | format(100.0 * a / tot) }}%"></i><i class="sr-s"></i></span>{%- endif -%}
+{%- endmacro %}
+{% macro source(nf, ns) -%}
+{%- set a = nf or 0 -%}{%- set b = ns or 0 -%}
+{%- if a or b -%}
+<span class="src {{ 'sc-f' if a > b else 'sc-s' if b > a else 'sc-b' }}">{{ srail(a, b) }}<span class="src-t">
+{%- if a > b %}{{ t('investor money', '投资者资金') }}{% elif b > a %}{{ t('manager picks', '经理人选股') }}{% else %}{{ t('both at once', '两者兼有') }}{% endif -%}
+</span></span>
+{%- endif -%}
+{%- endmacro %}
+{# ---- srcword(d): the same two plain words for ONE fund's decision -----------
+   A single fund has one leading half, so there is no proportion to draw — the
+   rail would always be 100/0. Word only. #}
+{% macro srcword(d) -%}
+{%- if d == 'flow' -%}<span class="src sc-f"><i class="sw sw-f"></i><span class="src-t">{{ t('investor money', '投资者资金') }}</span></span>
+{%- elif d == 'selection' -%}<span class="src sc-s"><i class="sw sw-s"></i><span class="src-t">{{ t('manager pick', '经理人选股') }}</span></span>
+{%- endif -%}
+{%- endmacro %}
+{# ---- money(usd, complete): the DOLLAR size of a decision ---------------------
+   Deliberately quiet: mono figures, muted ink, no direction colour, never bold.
+   R2 keeps one primary number per row and that is the pp headline; this is the
+   size behind it, in the receipt voice. A value-less row prints an em dash —
+   never $0 — because "no fund on this row publishes values" and "nothing moved"
+   are different facts. The trailing + means the total is a floor. #}
+{% macro money(usd, complete=true) -%}
+{%- if usd is none -%}<span class="mny none">—</span>
+{%- else -%}
+{%- set a = usd if usd >= 0 else -usd -%}
+{%- if a < 100000 -%}<span class="mny none">—</span>
+{%- else -%}<span class="mny">≈${% if a >= 1.0e9 %}{{ "%.1f" | format(a / 1.0e9) }}B{% elif a >= 1.0e6 %}{{ "%.0f" | format(a / 1.0e6) }}M{% else %}{{ "%.0f" | format(a / 1.0e3) }}K{% endif %}{% if not complete %}<i class="pl">+</i>{% endif %}</span>
+{%- endif -%}
+{%- endif -%}
+{%- endmacro %}
+{# ---- persist(streak, accel): ONE persistence chip, never two -----------------
+   A single add is an event; four in a row is a programme. Where there is no
+   streak worth naming, a rising pace is the next best tell. Capped at one chip
+   so the row stays inside its one-line budget (Law 4). #}
+{% macro persist(streak, accel) -%}
+{%- set s = streak or 0 -%}
+{%- if s >= 3 %}<span class="prs">{{ s }} {{ t('in a row', '连续') }}</span>
+{%- elif accel is not none and accel > 0.05 %}<span class="prs">{{ t('picking up', '正在加速') }}</span>
+{%- endif -%}
 {%- endmacro %}
 {# ---- hero_verdict(v) / hero_tiles(tiles) ----------------------------------
    The two hero blocks the tier gate swaps. Macros rather than {% include %}d
@@ -68,9 +131,15 @@
 </div>
 {%- endmacro %}
 {# ---- presbar(net, scale): center-anchored net-conviction pressure bar ---- #}
+{# Clamped at the track's own width: the board's shared scale is not a maximum,
+   so an outsized row (SPCX at +36pp against a scale of ~10) used to draw a fill
+   half again as long as its track. `overflow:hidden` on .pbar hid that while
+   the card clipped it; the card is overflow-visible now so the row popovers can
+   escape, and the fill ran across the stance column. The exact figure is on the
+   row anyway — the bar only has to say "off the top of this scale". #}
 {% macro presbar(net, scale) -%}
 {%- set a = net if net >= 0 else -net -%}
 {%- set frac = (a / scale) if scale else 0 -%}
-{%- set w = (7 + 93 * frac) if a > 0.0001 else 0 -%}
+{%- set w = ([7 + 93 * frac, 100] | min) if a > 0.0001 else 0 -%}
 <span class="pbar"><span class="pb-mid"></span><span class="pb-fill {{ 'u' if net >= 0 else 'd' }}" style="width:{{ "%.0f" | format(w) }}%"></span></span>
 {%- endmacro %}

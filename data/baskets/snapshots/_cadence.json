@@ -1,0 +1,8 @@
+{
+  "schema": "basket_membership_cadence.v1",
+  "suite": "baskets",
+  "writer": "scripts.build_baskets",
+  "checked_at": "2026-08-14T04:59:38Z",
+  "membership_sha": "66ce56e0460968c5bb33b6938fec0a3429f6a8ffe0bedb85705db9706852e793",
+  "last_snapshot_date": "2026-08-13"
+}
