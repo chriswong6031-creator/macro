@@ -1,0 +1,387 @@
+{
+  "asof": "2026-08-13",
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "blind_sha256": "88e2b0d86eaa2e031841de28a10bdae4f4c798395dd1726f39e3feb3773291bd",
+  "calibration_history_cutoff": "2026-02-11",
+  "calibration_material": "component (i) of \u00a74 only \u2014 the drawn names' own history. The permitted pre-boundary history of undrawn pool names was NOT consumed; using less than the permitted material is strictly conservative and is recorded here.",
+  "calibration_sha256": "77e111c11672524c826948455a8c2ea5b812cdddb3f0d9dac1807b253604e9d0",
+  "fingerprint_spec_hash": "0e3457b11f41452e1c3efac3858196f5f42b573d1961b798ea581e1590b33187",
+  "n_calibration_names_drawn": 759,
+  "n_calibration_names_read": 734,
+  "partition_name": "SI-SEALED-CAL-P1",
+  "partition_procedure_sha256": "a546c64983431f0afca01cfd9aacc230ef3bed875520c44898090520cf98164a",
+  "receipts": {
+    "D1": {
+      "declared": false,
+      "n_legs": 3142,
+      "raw": 65.0,
+      "rule": "P25 of candidate tier-1 (depth >= 35%) episode durations, rounded DOWN to the nearest 5 sessions.",
+      "value": 65
+    },
+    "D2": {
+      "declared": false,
+      "n_legs": 6305,
+      "raw": 35.0,
+      "rule": "P25 of candidate tier-2 (depth >= 20%) episode durations, rounded DOWN to the nearest 5 sessions.",
+      "value": 35
+    },
+    "E": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 5 sessions \u2014 how long a gap keeps the dislocation state alive.",
+      "value": 5
+    },
+    "J": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 40 percentile points.",
+      "value": 40.0
+    },
+    "M": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 63 sessions \u2014 one quarter for a reclaim to resolve held/failed.",
+      "value": 63
+    },
+    "N": {
+      "declared": false,
+      "floor": 0.8,
+      "grid": [
+        {
+          "N": 10,
+          "n_surviving_N": 16459,
+          "share_also_surviving_2N": 0.734370253356826
+        },
+        {
+          "N": 15,
+          "n_surviving_N": 13741,
+          "share_also_surviving_2N": 0.7407757805108799
+        },
+        {
+          "N": 21,
+          "n_surviving_N": 11726,
+          "share_also_surviving_2N": 0.7525157769060208
+        },
+        {
+          "N": 31,
+          "n_surviving_N": 9837,
+          "share_also_surviving_2N": 0.7500254142523127
+        },
+        {
+          "N": 42,
+          "n_surviving_N": 8581,
+          "share_also_surviving_2N": 0.7511944994755856
+        }
+      ],
+      "note": "NO grid value cleared the 80% floor \u2014 the grid's largest N is used and this failure is reported rather than the floor being lowered",
+      "rule": "smallest of {10,15,21,31,42} such that at least 80% of calibration tier-2-depth candidate lows surviving N sessions also survive 2N \u2014 the label-stability knee. Candidate lows are qualified on DEPTH ONLY, so the rule that chooses N does not presuppose N.",
+      "value": 42
+    },
+    "P_pre": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 5 sessions of pre-leg attribution window.",
+      "value": 5
+    },
+    "R": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 126 sessions \u2014 how long a washout or breakdown stays 'recent' for the reclaim rule.",
+      "value": 126
+    },
+    "S_reclaim": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 5 consecutive sessions above the 200DMA make a recapture 'sustained'. Registration \u00a77 says 'sustained' without an operational definition; this supplies one rather than leaving the reclaim type unbuildable.",
+      "value": 5
+    },
+    "V": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 21 sessions \u2014 the band-jump lookback.",
+      "value": 21
+    },
+    "X": {
+      "declared": false,
+      "n_names": 732,
+      "note": "median of per-name medians over 126d-high refresh dates",
+      "raw": 4.86074282926211,
+      "rule": "median over calibration names of (0.15 * close / ATR14) evaluated at each name's rolling-126d-high refresh dates, rounded to the nearest 0.5. The inner quantity is 'how many ATRs is a 15% fall for this name at its high', so X is the A0 gate that admits the same economic move Y admits.",
+      "value": 5.0
+    },
+    "Y": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 15% \u2014 the F2 resets-convention anchor, so the decline qualification shares its threshold with the drawdown-grammar feature that counts resets.",
+      "value": 0.15
+    },
+    "delta": {
+      "declared": false,
+      "n_durable_lows": 8819,
+      "raw": 0.732906836103274,
+      "rule": "P75 of min |price - low| / A0 within the +w window over calibration tier-2+ durable lows, rounded to the nearest 0.25.",
+      "value": 0.75
+    },
+    "g": {
+      "declared": false,
+      "gap_bases_pooled": [
+        "close_vs_prev_close",
+        "open_vs_prev_close"
+      ],
+      "n_name_days": 2238578,
+      "raw": 1.7789390087127686,
+      "rule": "pooled P99 of gap_atr over calibration name-days, rounded to the nearest 0.5. The gap basis is plane-dependent and the pooled statistic mixes both bases; that asymmetry is recorded on every state row.",
+      "value": 2.0
+    },
+    "k": {
+      "declared": false,
+      "n_candidates": 79478,
+      "raw": 0.5698555751086047,
+      "rule": "P25 of the 21-session post-minimum rebound in A0 units over calibration raw local minima at tier-2 depth, rounded to the nearest 0.5.",
+      "value": 0.5
+    },
+    "m": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 10 sessions for a failed breakdown to recover the undercut level.",
+      "value": 10
+    },
+    "theta_bd": {
+      "declared": false,
+      "n_name_days": 904609,
+      "raw": 0.23132994771003723,
+      "rule": "pooled P75 of |d200| given d200 < 0 over calibration name-days, rounded to the nearest 1%.",
+      "value": 0.23
+    },
+    "theta_dw": {
+      "declared": false,
+      "n_name_days": 2063900,
+      "raw": 0.4339263141155243,
+      "rule": "pooled P85 of |dd| (dd = close/252d-max - 1) over calibration name-days, rounded to the nearest 5%.",
+      "value": 0.45
+    },
+    "theta_fs": {
+      "declared": false,
+      "n_violations": 70132,
+      "raw": 3.811765827458565,
+      "rule": "P75 of the A0-depth of candidate-low violations (the lower low that killed an N-survival candidate), rounded to the nearest 0.25.",
+      "value": 3.75
+    },
+    "theta_pb": {
+      "declared": false,
+      "n_name_days": 1177909,
+      "raw": 0.06333404034376144,
+      "rule": "pooled P50 of |dd| given d200 > 0 over calibration name-days, rounded to the nearest 1%.",
+      "value": 0.06
+    },
+    "theta_up": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 0 \u2014 structural uptrend begins at the 200DMA, not at an offset nobody could defend.",
+      "value": 0.0
+    },
+    "w": {
+      "declared": true,
+      "note": "declared, not partition-computed",
+      "rule": "declared, not partition-computed. 15 sessions \u2014 grain-neutral useful-zone width, chosen so a weekly-grain instrument is not mechanically excluded.",
+      "value": 15
+    },
+    "z": {
+      "declared": false,
+      "n_candidates": 79478,
+      "raw_pct": 3.121421987879901,
+      "rule": "the same statistic as k expressed in percent, rounded to the nearest 1%.",
+      "value": 0.03
+    }
+  },
+  "rules": {
+    "D1": "P25 of candidate tier-1 (depth >= 35%) episode durations, rounded DOWN to the nearest 5 sessions.",
+    "D2": "P25 of candidate tier-2 (depth >= 20%) episode durations, rounded DOWN to the nearest 5 sessions.",
+    "E": "declared, not partition-computed. 5 sessions \u2014 how long a gap keeps the dislocation state alive.",
+    "J": "declared, not partition-computed. 40 percentile points.",
+    "M": "declared, not partition-computed. 63 sessions \u2014 one quarter for a reclaim to resolve held/failed.",
+    "N": "smallest of {10,15,21,31,42} such that at least 80% of calibration tier-2-depth candidate lows surviving N sessions also survive 2N \u2014 the label-stability knee. Candidate lows are qualified on DEPTH ONLY, so the rule that chooses N does not presuppose N.",
+    "P_pre": "declared, not partition-computed. 5 sessions of pre-leg attribution window.",
+    "R": "declared, not partition-computed. 126 sessions \u2014 how long a washout or breakdown stays 'recent' for the reclaim rule.",
+    "S_reclaim": "declared, not partition-computed. 5 consecutive sessions above the 200DMA make a recapture 'sustained'. Registration \u00a77 says 'sustained' without an operational definition; this supplies one rather than leaving the reclaim type unbuildable.",
+    "V": "declared, not partition-computed. 21 sessions \u2014 the band-jump lookback.",
+    "X": "median over calibration names of (0.15 * close / ATR14) evaluated at each name's rolling-126d-high refresh dates, rounded to the nearest 0.5. The inner quantity is 'how many ATRs is a 15% fall for this name at its high', so X is the A0 gate that admits the same economic move Y admits.",
+    "Y": "declared, not partition-computed. 15% \u2014 the F2 resets-convention anchor, so the decline qualification shares its threshold with the drawdown-grammar feature that counts resets.",
+    "delta": "P75 of min |price - low| / A0 within the +w window over calibration tier-2+ durable lows, rounded to the nearest 0.25.",
+    "g": "pooled P99 of gap_atr over calibration name-days, rounded to the nearest 0.5. The gap basis is plane-dependent and the pooled statistic mixes both bases; that asymmetry is recorded on every state row.",
+    "k": "P25 of the 21-session post-minimum rebound in A0 units over calibration raw local minima at tier-2 depth, rounded to the nearest 0.5.",
+    "m": "declared, not partition-computed. 10 sessions for a failed breakdown to recover the undercut level.",
+    "theta_bd": "pooled P75 of |d200| given d200 < 0 over calibration name-days, rounded to the nearest 1%.",
+    "theta_dw": "pooled P85 of |dd| (dd = close/252d-max - 1) over calibration name-days, rounded to the nearest 5%.",
+    "theta_fs": "P75 of the A0-depth of candidate-low violations (the lower low that killed an N-survival candidate), rounded to the nearest 0.25.",
+    "theta_pb": "pooled P50 of |dd| given d200 > 0 over calibration name-days, rounded to the nearest 1%.",
+    "theta_up": "declared, not partition-computed. 0 \u2014 structural uptrend begins at the 200DMA, not at an offset nobody could defend.",
+    "w": "declared, not partition-computed. 15 sessions \u2014 grain-neutral useful-zone width, chosen so a weekly-grain instrument is not mechanically excluded.",
+    "z": "the same statistic as k expressed in percent, rounded to the nearest 1%."
+  },
+  "schema": "stock_identity.constants.v1",
+  "sealing": "SI-SEALED-CAL-P1 sets/freezes this constant family exactly once and is thereafter excluded from confirmatory grading. Constants never change after sealing; a revision voids the affected preregs.",
+  "sensitivity_grid": {
+    "keys": [
+      "X",
+      "N",
+      "k",
+      "z",
+      "theta_dw",
+      "g"
+    ],
+    "perturbation": "+/-20%",
+    "results": [
+      {
+        "constant": null,
+        "episode_delta_vs_base": 0,
+        "max_state_share_delta": 0.0,
+        "n_episodes": 1920,
+        "n_names": 36,
+        "variant": "base"
+      },
+      {
+        "constant": "X",
+        "episode_delta_vs_base": -28,
+        "max_state_share_delta": 0.0,
+        "n_episodes": 1892,
+        "n_names": 36,
+        "variant": "X_plus20"
+      },
+      {
+        "constant": "X",
+        "episode_delta_vs_base": 26,
+        "max_state_share_delta": 0.0,
+        "n_episodes": 1946,
+        "n_names": 36,
+        "variant": "X_minus20"
+      },
+      {
+        "constant": "N",
+        "episode_delta_vs_base": -2,
+        "max_state_share_delta": 0.0,
+        "n_episodes": 1918,
+        "n_names": 36,
+        "variant": "N_plus20"
+      },
+      {
+        "constant": "N",
+        "episode_delta_vs_base": 2,
+        "max_state_share_delta": 0.0,
+        "n_episodes": 1922,
+        "n_names": 36,
+        "variant": "N_minus20"
+      },
+      {
+        "constant": "k",
+        "episode_delta_vs_base": 0,
+        "max_state_share_delta": 0.0,
+        "n_episodes": 1920,
+        "n_names": 36,
+        "variant": "k_plus20"
+      },
+      {
+        "constant": "k",
+        "episode_delta_vs_base": 0,
+        "max_state_share_delta": 0.0,
+        "n_episodes": 1920,
+        "n_names": 36,
+        "variant": "k_minus20"
+      },
+      {
+        "constant": "z",
+        "episode_delta_vs_base": 0,
+        "max_state_share_delta": 0.0,
+        "n_episodes": 1920,
+        "n_names": 36,
+        "variant": "z_plus20"
+      },
+      {
+        "constant": "z",
+        "episode_delta_vs_base": 0,
+        "max_state_share_delta": 0.0,
+        "n_episodes": 1920,
+        "n_names": 36,
+        "variant": "z_minus20"
+      },
+      {
+        "constant": "theta_dw",
+        "episode_delta_vs_base": 23,
+        "max_state_share_delta": 0.04664025978660387,
+        "n_episodes": 1943,
+        "n_names": 36,
+        "variant": "theta_dw_plus20"
+      },
+      {
+        "constant": "theta_dw",
+        "episode_delta_vs_base": -59,
+        "max_state_share_delta": 0.06078935160403953,
+        "n_episodes": 1861,
+        "n_names": 36,
+        "variant": "theta_dw_minus20"
+      },
+      {
+        "constant": "g",
+        "episode_delta_vs_base": 0,
+        "max_state_share_delta": 0.014470256574956285,
+        "n_episodes": 1920,
+        "n_names": 36,
+        "variant": "g_plus20"
+      },
+      {
+        "constant": "g",
+        "episode_delta_vs_base": 0,
+        "max_state_share_delta": 0.03180423223780466,
+        "n_episodes": 1920,
+        "n_names": 36,
+        "variant": "g_minus20"
+      }
+    ],
+    "status": "registered in the Trial Ledger BEFORE running; diagnostic only",
+    "trial_effective_n": 13,
+    "trial_family": "stock_identity_w1_calibration",
+    "trial_grid_sha256": "ba2b29b445c50c674775c8c0a24a319dbb4e033dd8fb8a402cef553471353c32"
+  },
+  "si_constants_spec_hash": "9c27994aa757a39ae3e2e7b2ec781ff94365581d60e827354662a8347a761d03",
+  "skipped_on_hygiene": {
+    "ABX": "unacknowledged reused symbol: Barrick retired ABX in the 2018 rename to GOLD; the file's 2020-09 onward tape is a different instrument, and the reuse is absent from reused_ticker_acks / ticker_key_migrations / breadth.ticker_fixups"
+  },
+  "state_slope_lookback_sessions": 21,
+  "tier_depth_floors": {
+    "tier1": 0.35,
+    "tier2": 0.2
+  },
+  "universe_sha256": "841ed5461c159c2c9964da1f3b2ce99edb3176b037fc8d07d7c03d0e13f8c659",
+  "values": {
+    "D1": 65,
+    "D2": 35,
+    "E": 5,
+    "J": 40.0,
+    "M": 63,
+    "N": 42,
+    "P_pre": 5,
+    "R": 126,
+    "S_reclaim": 5,
+    "V": 21,
+    "X": 5.0,
+    "Y": 0.15,
+    "delta": 0.75,
+    "g": 2.0,
+    "k": 0.5,
+    "m": 10,
+    "theta_bd": 0.23,
+    "theta_dw": 0.45,
+    "theta_fs": 3.75,
+    "theta_pb": 0.06,
+    "theta_up": 0.0,
+    "w": 15,
+    "z": 0.03
+  },
+  "version": "v1"
+}
