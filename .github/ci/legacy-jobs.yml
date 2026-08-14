@@ -1790,10 +1790,13 @@ jobs:
       # check_skip_only_suites.py steps below exist to catch.
       - name: install minimal deps
         run: pip install pytest pyyaml pandas numpy pyarrow jinja2 requests
+      # The MAIN invocation of check_workflow_yaml moved to ci-plan's fast
+      # preflight (2026-08-14 incident): a broken workflow file now refuses the
+      # run in minutes, before any pack launches. The selftest stays HERE so a
+      # detector that quietly stopped detecting still reds the deep lane — the
+      # preflight proves the tree, this proves the guard.
       - name: check_workflow_yaml selftest
         run: python scripts/check_workflow_yaml.py --selftest
-      - name: "all workflow files must parse with on:/jobs: blocks"
-        run: python scripts/check_workflow_yaml.py .github/workflows
       # ci.yml's Wave B job graph (2026-08-11), wired here because the step above is
       # the closest existing owner: both read .github/workflows/ as their subject and
       # both need only pytest+pyyaml, already installed above. A parse gate proves the
@@ -1854,6 +1857,12 @@ jobs:
       # filename: three test_-shaped files under research/ are CLI measurement
       # instruments that collect nothing, and reporting those as work items is how
       # a census stops being read. Selftest first, same reason as the two below.
+      # Same promotion as check_workflow_yaml above (2026-08-14): the MAIN
+      # audit_unrun_tests invocation now runs in ci-plan's preflight, so a new
+      # suite wired into no workflow — the exact defect that surfaced at
+      # minute 67 of run 31763116872 (PR #5506) — refuses the run before any
+      # pack launches. Selftest and unit suites remain here as the
+      # guard-of-the-guard.
       - name: audit_unrun_tests selftest
         run: python scripts/audit_unrun_tests.py --selftest
       # ARMED 2026-08-09. The census reported for three weeks and the backlog did not
@@ -1872,8 +1881,6 @@ jobs:
       # install-line comments above give: a glob runner would auto-run unvetted suites
       # and re-create the ERROR-at-collection class those comments document, so a new
       # suite is wired into the job that owns its subject, by hand, on purpose.
-      - name: "no suite may be named by zero run: steps (baseline-gated)"
-        run: python scripts/audit_unrun_tests.py
       - name: unrun-census discovery unit tests
         run: python -m pytest tests/test_audit_unrun_tests.py -q
       # SKIP-ONLY suites: a test that skips in every job naming it executes
@@ -1899,8 +1906,6 @@ jobs:
       # 1,700-entry path list is not a guard. Selftest first, same reason as above.
       - name: check_ci_trigger_closure selftest
         run: python scripts/check_ci_trigger_closure.py --selftest
-      - name: every guarded suite's subjects must reach its own trigger paths
-        run: python scripts/check_ci_trigger_closure.py
       - name: trigger-closure guard unit tests
         run: python -m pytest tests/test_ci_trigger_closure.py -q
       # render.yml's per-scope publish wiring. #3718 fixed the international

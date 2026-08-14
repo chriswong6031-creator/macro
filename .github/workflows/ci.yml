@@ -4147,6 +4147,7 @@ jobs:
       plan_sha: ${{ steps.plan.outputs.plan_sha }}
       reason: ${{ steps.plan.outputs.reason }}
       changed_files: ${{ steps.plan.outputs.changed_files }}
+      plan_document: ${{ steps.plan.outputs.plan_document }}
     steps:
       # NO sparse-clear step and NO setup-node here, unlike `ci-pack` below. Both of
       # those exist for conditions this job cannot meet: the sparse-clear guards a
@@ -4156,14 +4157,15 @@ jobs:
       # which planning never executes. Adding either would be cargo cult.
       - uses: actions/checkout@v4
         with:
-          # `fetch-depth: 0` is REQUIRED, not an optimisation. `changed_files` diffs
-          # against the immutable PR base SHA, and a shallow clone does not contain
-          # that commit — the diff would fail, the planner would widen to the full
-          # suite by law, and the plan would be meaningless on every PR. The
-          # blob:none filter keeps full history cheap. Packs do NOT repeat this
-          # fetch: they consume `changed_files` and shallow-checkout.
+          # DEPTH 1, deliberately (2026-08-14 incident). The old `fetch-depth: 0`
+          # existed only so `git diff` could reach the immutable PR base SHA, and
+          # it cost 7-8 minutes of history fetch on this ~64k-file repository —
+          # the single largest planner component in run 31763116872. The diff now
+          # arrives from the PR files API (step below) with the same
+          # widen-on-any-doubt law, so the planner needs only the tree it
+          # analyzes. blob:none keeps the object transfer minimal.
           filter: blob:none
-          fetch-depth: 0
+          fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -4171,6 +4173,45 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ci-plan-runner"
           "$RUNNER_TEMP/ci-plan-runner/bin/pip" install pyyaml
+      # The diff, from metadata rather than history. Emits EXACTLY one line —
+      # a JSON array, or `null` meaning "unknowable, run everything" — into
+      # CI_CHANGED_FILES_JSON, which resolve_changed_files() already prefers
+      # over `git diff`. Every failure shape (HTTP error, 3000-file truncation,
+      # missing token) emits `null` and therefore WIDENS; a partial list is the
+      # one forbidden output. Non-PR events skip this step and keep the
+      # full-suite semantics of an absent diff.
+      - name: resolve the PR diff from the files API
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          changed="$(python3 scripts/ci_plan_changed_files.py)"
+          printf 'CI_CHANGED_FILES_JSON<<ci_plan_diff_eof\n%s\nci_plan_diff_eof\n' "$changed" >> "$GITHUB_ENV"
+      # Scope inference is a pure function of (manifest, selector scripts, the
+      # first-party .py surface). This key hashes exactly those inputs, so a
+      # cache hit is byte-identical to recomputation and a producer commit that
+      # only touches data/site/markdown cannot churn it. NO restore-keys, on
+      # purpose: a prefix restore would hand the planner a map for a DIFFERENT
+      # tree, and the in-file identity check only guards the manifest job set,
+      # not tree freshness. Exact hit or honest 106s recomputation.
+      - name: derive the scope-map cache key
+        id: scope-key
+        run: |
+          key=$(
+            {
+              for root in app admin collectors engine lib research scripts tests tools worker; do
+                git ls-tree -r "HEAD:$root" 2>/dev/null | grep '\.py$' || true
+              done
+              git rev-parse HEAD:.github/ci/legacy-jobs.yml
+            } | shasum -a 256 | cut -d' ' -f1
+          )
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+      - name: restore the derived scope map
+        uses: actions/cache@v4
+        with:
+          path: .ci-plan-cache
+          key: ci-scope-v2-${{ steps.scope-key.outputs.key }}
       # Same `env`-built, UNQUOTED shell-argument idiom as the pack step below, and
       # for the same two reasons: a folded `>-` scalar tolerates no `#` and no
       # varying indent, and an empty `CI_SCOPE_ARG` must word-split away to nothing
@@ -4203,7 +4244,53 @@ jobs:
           --plan-only
           --github-output "$GITHUB_OUTPUT"
           --emit-plan-json -
+          --scope-cache .ci-plan-cache/scope-map.json
           $CI_SCOPE_ARG
+      # The plan document also ships as a run ARTIFACT: job outputs are not
+      # retrievable through the REST API after the fact, and the merge
+      # controller's overlap gate (does a main advance actually touch THIS
+      # PR's proven surface?) reads the published plan of the head's newest
+      # completed run. 14 days outlives any armed PR's useful life.
+      - name: materialize the plan document for the artifact
+        if: steps.plan.outputs.plan_document != ''
+        env:
+          PLAN_DOCUMENT: ${{ steps.plan.outputs.plan_document }}
+        run: |
+          mkdir -p ci-plan-artifact
+          printf '%s' "$PLAN_DOCUMENT" > ci-plan-artifact/plan-document.json
+      - name: publish the plan document artifact
+        if: steps.plan.outputs.plan_document != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-plan-document
+          path: ci-plan-artifact/plan-document.json
+          retention-days: 14
+      # FAST PREFLIGHT (2026-08-14 incident). Run 31763116872 spent 67 minutes
+      # reaching a failure — PR #5506's new prophet-lifecycle suite wired into
+      # no workflow — that these checks prove in seconds from a depth-1 tree.
+      # They run AFTER the plan step so a preflight red still leaves the plan
+      # outputs published, and BEFORE any pack launches because `ci-pack`
+      # requires this whole job to succeed: a structural defect now refuses the
+      # fanout instead of surfacing at minute 40+ of pack execution. Deps are
+      # pyyaml + stdlib, all installed above; the pack-side selftests and unit
+      # suites for these guards stay in `workflow-yaml` (legacy manifest) as
+      # the deeper second line.
+      - name: "preflight: every workflow file parses with on:/jobs:"
+        run: '"$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/check_workflow_yaml.py .github/workflows'
+      - name: "preflight: no test suite may be named by zero run: steps"
+        run: '"$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/audit_unrun_tests.py'
+      - name: "preflight: ci trigger closure covers every suite dependency"
+        run: '"$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/check_ci_trigger_closure.py'
+      # Guarded on a REAL diff list: when the files API widened to `null` the
+      # script would fall back to `git diff origin/main`, which a depth-1
+      # clone cannot serve, and an infra widen must never read as a content
+      # red. The in-pack `conflict-markers` legacy job remains the deep line
+      # for exactly that widened case.
+      - name: "preflight: no git conflict markers in PR content"
+        if: github.event_name == 'pull_request' && env.CI_CHANGED_FILES_JSON != 'null' && env.CI_CHANGED_FILES_JSON != ''
+        run: '"$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/check_conflict_markers.py --changed-from "origin/${CI_BASE_REF:-main}"'
+        env:
+          CI_BASE_REF: ${{ github.base_ref }}
   ci-pack:
     needs: ci-plan
     # A closed PR needs only the workflow-level concurrency side effect above.
@@ -4374,6 +4461,27 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ci-pack-runner"
           "$RUNNER_TEMP/ci-pack-runner/bin/pip" install pyyaml
+      # CONSUME THE PUBLISHED PLAN (2026-08-14 incident). Each launched pack
+      # used to re-derive the entire plan — ~106s of scope inference times
+      # twelve runners — purely to verify parity with ci-plan. The plan
+      # document now rides down as a job output; this step materializes it and
+      # the run step below executes exactly that document, with parity proven
+      # by recomputing the document's digest against `--expect-plan-sha`
+      # instead of re-running inference. When ci-plan could not publish a
+      # document (planner fallback), PLAN_JSON_ARG stays empty, word-splits
+      # away, and the pack self-plans exactly as before — the fail-safe path
+      # is unchanged.
+      - name: materialize the published plan
+        env:
+          PLAN_DOCUMENT: ${{ needs.ci-plan.outputs.plan_document }}
+        run: |
+          if [ -n "$PLAN_DOCUMENT" ]; then
+            printf '%s' "$PLAN_DOCUMENT" > "$RUNNER_TEMP/ci-plan-document.json"
+            echo "PLAN_JSON_ARG=--plan-json $RUNNER_TEMP/ci-plan-document.json" >> "$GITHUB_ENV"
+          else
+            echo "PLAN_JSON_ARG=" >> "$GITHUB_ENV"
+            echo "::notice title=ci-pack-unpinned::no published plan document; this pack will re-derive the plan itself"
+          fi
       # `--changed-from` is passed ONLY on pull requests, so a legacy job that
       # has a proven derived/declared scope runs only when the immutable PR diff
       # can reach it. Main's baseline and every workflow_dispatch omit the flag
@@ -4401,6 +4509,12 @@ jobs:
       # recomputes and runs the full widened selection, and a genuine manifest defect
       # still fails all twelve packs red on their own `run_ci_pack.py` invocation.
       # Pinning is a PARITY check between plan and execution, never the only gate.
+      #
+      # `$PLAN_JSON_ARG` (2026-08-14) is the third rider: `--plan-json <path>`
+      # when the step above materialized a published document, nothing when it
+      # did not. run_ci_pack.py refuses `--plan-json` without
+      # `--expect-plan-sha`, and both outputs are written by the same planner
+      # emission, so the pair always travels together.
       - name: validate and run legacy CI pack
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
@@ -4420,6 +4534,7 @@ jobs:
           --pack-count 12
           $CI_SCOPE_ARG
           $PLAN_SHA_ARG
+          $PLAN_JSON_ARG
           --execute
   # ONE STABLE NAME FOR "CI SAID YES" (Wave B, 2026-08-11). Every other check name
   # in this workflow is now conditional: `ci-pack-N` exists only when the plan
@@ -4448,27 +4563,57 @@ jobs:
       # Plain `run: |` block, not a folded scalar — shell `if` blocks need their
       # newlines, and the folded-scalar rules above (no `#`, one indent) would
       # forbid this shape outright.
+      # The adjudication is unchanged; what is new (2026-08-14 incident, Phase
+      # 10) is the CLASSIFICATION line. Every run now ends with exactly one
+      # machine-readable `CI_CLASS=<class>` on stdout and a one-row summary
+      # table, so a developer — or the merge controller — learns "what kind of
+      # failure" from the run page instead of thirty minutes of pack logs:
+      #   structural-preflight  ci-plan planned fine but a preflight guard red
+      #   planner-infra         ci-plan died before publishing any plan
+      #   pack-failure          a selected legacy job failed (see the pack's
+      #                         CI_PACK_FAILED_JOBS line / step summary)
+      #   superseded            packs cancelled by a newer head or operator
+      #   no-work               planner proved the diff reaches no legacy job
+      #   pass                  everything selected concluded green
       - name: adjudicate CI result
         env:
           PLAN_RESULT: ${{ needs.ci-plan.result }}
           PACK_RESULT: ${{ needs.ci-pack.result }}
           HAS_WORK: ${{ needs.ci-plan.outputs.has_work }}
           PLAN_REASON: ${{ needs.ci-plan.outputs.reason }}
+          PLAN_SHA: ${{ needs.ci-plan.outputs.plan_sha }}
         run: |
           echo "plan=$PLAN_RESULT pack=$PACK_RESULT has_work=$HAS_WORK"
           echo "reason: $PLAN_REASON"
+          classify() {
+            echo "CI_CLASS=$1"
+            printf '### ci-gate verdict\n\n| class | detail |\n|---|---|\n| `%s` | %s |\n' "$1" "$2" >> "$GITHUB_STEP_SUMMARY"
+          }
           if [ "$PLAN_RESULT" != "success" ]; then
+            if [ -n "$PLAN_SHA" ]; then
+              classify structural-preflight "plan published ($PLAN_SHA) but a preflight guard failed — fix the structural defect it names; no pack ran"
+            else
+              classify planner-infra "ci-plan died before publishing a plan ($PLAN_RESULT)"
+            fi
             echo "::error title=ci-gate::CI planning did not succeed ($PLAN_RESULT)"
             exit 1
           fi
           if [ "$HAS_WORK" = "false" ]; then
+            classify no-work "planner proved no pack work is required"
             echo "::notice title=ci-gate::planner proved no pack work is required"
             exit 0
           fi
           # cancelled here is a workflow cancel (new SHA / operator), not
           # fail-fast sibling-cancel: the pack matrix is fail-fast:false so
           # one red pack cannot wipe the other eleven proofs.
-          if [ "$PACK_RESULT" != "success" ]; then
+          if [ "$PACK_RESULT" = "cancelled" ]; then
+            classify superseded "packs cancelled (newer head or operator); this run proves nothing"
             echo "::error title=ci-gate::one or more selected CI packs did not succeed ($PACK_RESULT)"
             exit 1
           fi
+          if [ "$PACK_RESULT" != "success" ]; then
+            classify pack-failure "a selected legacy job failed — the red pack's summary names it (CI_PACK_FAILED_JOBS)"
+            echo "::error title=ci-gate::one or more selected CI packs did not succeed ($PACK_RESULT)"
+            exit 1
+          fi
+          classify pass "all selected packs green ($PLAN_REASON)"

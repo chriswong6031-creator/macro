@@ -76,7 +76,9 @@ def _gate_script() -> str:
     return str(steps[0]["run"])
 
 
-def _run_gate(*, plan: str, pack: str, has_work: str) -> subprocess.CompletedProcess[str]:
+def _run_gate(
+    *, plan: str, pack: str, has_work: str, plan_sha: str = "pinnedsha"
+) -> subprocess.CompletedProcess[str]:
     """Execute ci-gate's adjudication script with the `needs` context it would see."""
     return subprocess.run(
         ["bash", "-c", _gate_script()],
@@ -86,6 +88,8 @@ def _run_gate(*, plan: str, pack: str, has_work: str) -> subprocess.CompletedPro
             "PACK_RESULT": pack,
             "HAS_WORK": has_work,
             "PLAN_REASON": "pinned by tests/test_ci_plan_workflow.py",
+            "PLAN_SHA": plan_sha,
+            "GITHUB_STEP_SUMMARY": os.devnull,
         },
         capture_output=True,
         text=True,
@@ -94,10 +98,20 @@ def _run_gate(*, plan: str, pack: str, has_work: str) -> subprocess.CompletedPro
     )
 
 
+def _ci_class(result: subprocess.CompletedProcess[str]) -> str:
+    """The one CI_CLASS= token the gate printed, or '' if it printed none/many."""
+    tokens = [
+        line.split("=", 1)[1]
+        for line in result.stdout.splitlines()
+        if line.startswith("CI_CLASS=")
+    ]
+    return tokens[0] if len(tokens) == 1 else ""
+
+
 # ─── ci-plan ────────────────────────────────────────────────────────────────────
 
 
-def test_ci_plan_job_exists_and_publishes_all_four_outputs() -> None:
+def test_ci_plan_job_exists_and_publishes_all_six_outputs() -> None:
     """`ci-pack` and `ci-gate` read these outputs by name.
 
     Drop or rename one and the consumer expression silently evaluates to the empty
@@ -105,8 +119,10 @@ def test_ci_plan_job_exists_and_publishes_all_four_outputs() -> None:
     gate is never `'true'` so the ENTIRE matrix is skipped on every PR, and
     `plan_sha` empty just unpins the parity check.  Two of those three failures are
     green-looking. `changed_files` empty makes every pack re-diff a shallow clone
-    and fail-safe-widen to the full suite — the throughput hole this output exists
-    to close.
+    and fail-safe-widen to the full suite. `plan_document` empty silently demotes
+    every pack from the consume-the-plan fast path back to a full ~106s
+    re-inference each — green-looking again, and the 2026-08-14 incident's ×12
+    overhead quietly returns.
     """
     job = _job("ci-plan")
     assert job["outputs"] == {
@@ -115,6 +131,7 @@ def test_ci_plan_job_exists_and_publishes_all_four_outputs() -> None:
         "plan_sha": "${{ steps.plan.outputs.plan_sha }}",
         "reason": "${{ steps.plan.outputs.reason }}",
         "changed_files": "${{ steps.plan.outputs.changed_files }}",
+        "plan_document": "${{ steps.plan.outputs.plan_document }}",
     }
 
 
@@ -128,16 +145,78 @@ def test_ci_plan_is_fenced_against_closed_events() -> None:
     assert _job("ci-plan")["if"] == "github.event.action != 'closed'"
 
 
-def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
-    """`changed_files` diffs against the PR base SHA, which a shallow clone lacks.
+def test_ci_plan_checks_out_depth_one_and_diffs_via_the_files_api() -> None:
+    """The planner's diff is METADATA, not history (2026-08-14 incident).
 
-    Drop `fetch-depth: 0` and the diff fails, the planner widens to the full suite by
-    law (fail-SAFE), and every PR runs everything while the plan still reports
-    success.  The regression costs the entire feature and reds nothing.
+    `fetch-depth: 0` here cost 7-8 minutes of history fetch per plan (run
+    31763116872) purely so `git diff` could reach the base SHA. The diff now
+    arrives from the PR files API into `CI_CHANGED_FILES_JSON`, which
+    `resolve_changed_files` prefers over git. Three regressions this pins:
+    reintroducing the deep fetch (the latency returns), dropping the diff step
+    (every PR silently widens to the full suite — green-looking), and running
+    the diff step without a token (same silent widen).
     """
-    checkouts = [s for s in _job("ci-plan")["steps"] if str(s.get("uses", "")).startswith("actions/checkout@")]
+    job = _job("ci-plan")
+    checkouts = [s for s in job["steps"] if str(s.get("uses", "")).startswith("actions/checkout@")]
     assert len(checkouts) == 1, f"ci-plan should check out exactly once, found {len(checkouts)}"
-    assert checkouts[0]["with"]["fetch-depth"] == 0
+    assert checkouts[0]["with"]["fetch-depth"] == 1
+    diff_steps = [s for s in job["steps"] if "ci_plan_changed_files.py" in str(s.get("run", ""))]
+    assert len(diff_steps) == 1, "ci-plan must resolve the diff from the files API exactly once"
+    diff = diff_steps[0]
+    assert diff.get("if") == "github.event_name == 'pull_request'"
+    assert diff["env"]["GH_TOKEN"] == "${{ secrets.GITHUB_TOKEN }}"
+    assert diff["env"]["CI_PR_NUMBER"] == "${{ github.event.pull_request.number }}"
+    assert "CI_CHANGED_FILES_JSON" in str(diff["run"])
+
+
+def test_ci_plan_scope_cache_is_exact_match_only() -> None:
+    """The scope map may be cached, never approximated.
+
+    `restore-keys` on this cache would hand the planner a map derived from a
+    DIFFERENT tree; the in-file identity check guards only the manifest's job
+    set, not tree freshness, so a prefix restore could silently mis-scope every
+    PR that follows. Exact hit or honest recomputation are the only two states.
+    """
+    job = _job("ci-plan")
+    caches = [s for s in job["steps"] if str(s.get("uses", "")).startswith("actions/cache@")]
+    assert len(caches) == 1, "ci-plan should restore exactly one scope-map cache"
+    assert "restore-keys" not in caches[0]["with"]
+    assert "steps.scope-key.outputs.key" in caches[0]["with"]["key"]
+    run = _plan_step()["run"]
+    assert "--scope-cache .ci-plan-cache/scope-map.json" in run
+
+
+def test_ci_plan_preflight_guards_run_after_the_plan_and_before_any_pack() -> None:
+    """Structural defects must refuse the fanout in minutes (2026-08-14).
+
+    Run 31763116872 took 67 minutes to surface `tests/test_prophet_lifecycle_state.py`
+    wired into no workflow — a fact `audit_unrun_tests` proves in seconds. These
+    steps live in `ci-plan` AFTER the plan step (so a preflight red still leaves
+    the plan outputs published for diagnosis) and gate `ci-pack` through the
+    job-level `needs`, so no pack can launch past a structural red. Dropping any
+    one of them reopens its late-failure class silently.
+    """
+    steps = _job("ci-plan")["steps"]
+    runs = [str(s.get("run", "")) for s in steps]
+    plan_index = next(i for i, r in enumerate(runs) if "--plan-only" in r)
+    for needle in (
+        "scripts/check_workflow_yaml.py .github/workflows",
+        "scripts/audit_unrun_tests.py",
+        "scripts/check_ci_trigger_closure.py",
+        "scripts/check_conflict_markers.py",
+    ):
+        matches = [i for i, r in enumerate(runs) if needle in r]
+        assert matches, f"ci-plan preflight lost its {needle} guard"
+        assert all(i > plan_index for i in matches), (
+            f"{needle} must run AFTER the plan step so a preflight red still "
+            "publishes the plan outputs"
+        )
+    conflict_step = next(s for s in steps if "check_conflict_markers.py" in str(s.get("run", "")))
+    assert "env.CI_CHANGED_FILES_JSON != 'null'" in str(conflict_step.get("if", "")), (
+        "the conflict-marker preflight must skip when the diff widened to null — "
+        "a depth-1 clone cannot serve its git fallback and an infra widen must "
+        "not read as a content red"
+    )
 
 
 def test_ci_plan_passes_pack_count_twelve() -> None:
@@ -274,6 +353,33 @@ def test_ci_pack_pins_the_plan_hash_and_unpins_itself_when_there_is_none() -> No
     )
 
 
+def test_ci_pack_consumes_the_published_plan_and_falls_back_when_absent() -> None:
+    """Packs EXECUTE the published plan; re-derivation is the fallback, not the norm.
+
+    The materialize step turns `plan_document` into a file plus `--plan-json` in
+    `$PLAN_JSON_ARG`, and writes an EMPTY `PLAN_JSON_ARG` when ci-plan published
+    nothing — the argument must then word-split away so the pack self-plans
+    (the fail-safe path). Three silent regressions this pins: dropping the
+    materialize step (every pack quietly pays the ~106s re-inference again),
+    quoting the argument (an empty positional kills argparse on the fallback
+    path), and materializing from anything other than the job output (a pack
+    could execute a plan for a different head).
+    """
+    job = _job("ci-pack")
+    materialize = [s for s in job["steps"] if "ci-plan-document.json" in str(s.get("run", ""))]
+    assert len(materialize) == 1, "ci-pack must materialize the published plan exactly once"
+    step = materialize[0]
+    assert step["env"]["PLAN_DOCUMENT"] == "${{ needs.ci-plan.outputs.plan_document }}"
+    body = str(step["run"])
+    assert "PLAN_JSON_ARG=--plan-json" in body
+    assert "PLAN_JSON_ARG=" in body.replace("PLAN_JSON_ARG=--plan-json", "", 1), (
+        "the materialize step must also write the EMPTY fallback assignment"
+    )
+    run = _pack_step()["run"]
+    assert " $PLAN_JSON_ARG " in f" {run} ", "the plan-json argument must ride unquoted"
+    assert '"$PLAN_JSON_ARG"' not in run and "'$PLAN_JSON_ARG'" not in run
+
+
 def test_pack_shell_arguments_stay_unquoted_so_an_empty_value_disappears() -> None:
     """Quoting either env-built argument turns "absent" into an empty positional word.
 
@@ -397,3 +503,39 @@ def test_ci_gate_passes_when_the_selected_packs_all_succeeded() -> None:
     """
     proc = _run_gate(plan="success", pack="success", has_work="true")
     assert proc.returncode == 0, f"ci-gate refused a fully green run: {proc.stdout}\n{proc.stderr}"
+
+
+def test_ci_gate_classifies_every_terminal_shape_exactly_once() -> None:
+    """Phase-10 contract (2026-08-14 incident): one CI_CLASS= line per run.
+
+    The classification is what lets a developer — and the merge controller —
+    learn "what KIND of failure" from the run page instead of thirty minutes of
+    pack logs. Each terminal shape must emit exactly one machine-readable line
+    with the agreed class token; zero lines silently re-opens the
+    read-the-logs era and two lines makes the parse ambiguous, so `_ci_class`
+    returns '' for both defects.
+
+      * plan red + published sha  -> structural-preflight (the plan step
+        succeeded and published, so the red is a preflight guard)
+      * plan red + no sha         -> planner-infra
+      * no-work                   -> no-work
+      * pack cancelled            -> superseded (proves nothing, but is not a
+        content failure — the sweeper must not mark the PR merge-blocked on it)
+      * pack failure/skipped      -> pack-failure
+      * all green                 -> pass
+    """
+    cases = [
+        (dict(plan="failure", pack="skipped", has_work="true"), "structural-preflight"),
+        (dict(plan="failure", pack="skipped", has_work="true", plan_sha=""), "planner-infra"),
+        (dict(plan="success", pack="skipped", has_work="false"), "no-work"),
+        (dict(plan="success", pack="cancelled", has_work="true"), "superseded"),
+        (dict(plan="success", pack="failure", has_work="true"), "pack-failure"),
+        (dict(plan="success", pack="skipped", has_work="true"), "pack-failure"),
+        (dict(plan="success", pack="success", has_work="true"), "pass"),
+    ]
+    for kwargs, expected in cases:
+        proc = _run_gate(**kwargs)
+        assert _ci_class(proc) == expected, (
+            f"gate context {kwargs} classified as {_ci_class(proc)!r}, "
+            f"expected {expected!r}:\n{proc.stdout}"
+        )

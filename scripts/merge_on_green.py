@@ -5788,15 +5788,46 @@ def mark_only_pass(
                 continue
             pull = live_pull
             added = mark_blocked(repo, pull, red_check_comment(names), merge_token)
+            if added:
+                marker_detail = "marker written."
+                marker_level = "warning"
+            else:
+                # READ-AFTER-WRITE (2026-08-14 incident). "Already labeled" and
+                # "both writes silently failed" are OPPOSITE outcomes that this
+                # line used to report identically — and an unmarked red is
+                # exactly the invisible state #5291 proved fatal. One GET
+                # settles which happened; only a confirmed-absent marker is an
+                # error, because that is the state the disarm window can eat.
+                status, live = _request(
+                    "GET",
+                    f"{GITHUB_API}/repos/{repo}/issues/{number}/labels",
+                    read_token,
+                )
+                if status == 200 and isinstance(live, list):
+                    live_names = {
+                        str(entry.get("name") or "") for entry in live
+                    }
+                    if MERGE_BLOCKED_LABEL in live_names:
+                        marker_detail = "no new marker (already labeled — verified live)."
+                        marker_level = "warning"
+                    else:
+                        marker_detail = (
+                            "MARKER MISSING: both writes failed and the live head "
+                            "verifiably carries no merge-blocked label — this red "
+                            "is currently invisible to a label-filtered sweep."
+                        )
+                        marker_level = "error"
+                else:
+                    marker_detail = (
+                        "no new marker, and the verification read failed "
+                        f"(HTTP {status}) — treat this head as possibly unmarked."
+                    )
+                    marker_level = "warning"
             _annotate(
-                "warning",
+                marker_level,
                 "merge-on-green",
                 f"PR #{number}: red checks ({', '.join(names[:6])}); "
-                + (
-                    "marker written."
-                    if added
-                    else "no new marker (already labeled, or both writes failed above)."
-                ),
+                + marker_detail,
             )
             tally[verdict] = tally.get(verdict, 0) + 1
         except RateLimited as exc:

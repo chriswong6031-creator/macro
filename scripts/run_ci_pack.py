@@ -52,7 +52,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 PACK_JOB_ID = "ci-pack"
 DISABLED_IF = "${{ false }}"
-ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "steps", "timeout-minutes"}
+ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "scope", "steps", "timeout-minutes"}
 ALLOWED_STEP_KEYS = {"name", "run", "uses", "with"}
 
 # ---------------------------------------------------------------------------
@@ -200,6 +200,14 @@ PIP_INSTALL_RE = re.compile(
 # (legacy-job groups only; checkout excluded). Pack 1's 56-minute wall-clock
 # was 31 minutes of fetch-depth:0 stampede plus these underweighted heavies
 # sitting together because the 2026-08-11 local Mac weights were stale.
+# One pack per this many estimated seconds of selected work (weight units
+# approximate seconds for the observed heavies below and are a coarse floor
+# elsewhere). 600 keeps a typical scoped pack near ten minutes of execution —
+# large enough that runner spin-up (~1-2 min) stays amortized, small enough
+# that a narrow PR gets one or two runners instead of twelve. Full-suite runs
+# never consult this: they keep the caller's pack count (see build_plan).
+PACK_TARGET_SECONDS = 600
+
 OBSERVED_COMMAND_SECONDS = {
     "engine-render-guards": 1036,
     "workflow-yaml": 438,
@@ -239,6 +247,25 @@ class LegacyJob:
     # Empty means UNSCOPED — the job runs on every pull request. Declaring a
     # scope is opt-in, so adding one can only ever remove work, never add it.
     paths: tuple[str, ...] = ()
+    # Patterns whose provenance is an OPAQUE fallback: a subprocess call or
+    # filesystem traversal somewhere in the job's closure widened it to whole
+    # scan roots. They still select the job for code/data edits, but a
+    # narrative file (`**/*.md`) never matches this tier — an otherwise-unowned
+    # handoff note under `research/**` was measured selecting 118/188 jobs and
+    # all 12 packs through these patterns alone (2026-08-14 incident model).
+    # A job whose commands demonstrably read markdown keeps its fallbacks in
+    # `paths` instead, so a doc-censusing suite never loses its subject.
+    fallback_paths: tuple[str, ...] = ()
+    # True when the manifest declares `scope: exclusive` — the declared
+    # `paths:` then REPLACE inference instead of being unioned under it, and
+    # the declaration is coverage-audited fatally at load time. This is the
+    # curated tier for expensive jobs whose inferred scope is fallback smear.
+    exclusive: bool = False
+
+    @property
+    def is_scoped(self) -> bool:
+        """Whether ANY tier can narrow this job off a diff."""
+        return bool(self.paths or self.fallback_paths)
 
 
 @functools.lru_cache(maxsize=None)
@@ -610,7 +637,17 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
             fallbacks.update(narrow_to_suffixes(roots, suffixes))
         return tuple(sorted(fallbacks))
 
-    def infer_job_paths(definition: dict[str, Any]) -> tuple[str, ...] | None:
+    def infer_job_paths(
+        definition: dict[str, Any],
+    ) -> tuple[set[str], set[str]] | None:
+        """(owned, fallback) or None when the job cannot be scoped at all.
+
+        ``owned`` carries NAMED evidence: closure files, literal references,
+        and any fallback of a job whose commands demonstrably mention
+        markdown. ``fallback`` carries OPAQUE widening only — subprocess and
+        traversal root claims — and is the tier a narrative file can never
+        select (see ``LegacyJob.fallback_paths``).
+        """
         commands = [
             str(step["run"])
             for step in definition.get("steps", [])
@@ -619,6 +656,7 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
             and "pip install" not in str(step["run"])
         ]
         owned: set[str] = set()
+        fallback: set[str] = set()
         named_any = False
         named_pytest = False
         for command in commands:
@@ -638,7 +676,7 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
                 if fallbacks is None:
                     return None
                 owned.update(closure.files)
-                owned.update(exclude_peer_test_ownership(fallbacks))
+                fallback.update(exclude_peer_test_ownership(fallbacks))
                 named_pytest = True
                 named_any = True
 
@@ -655,27 +693,79 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
                     if fallbacks is None:
                         return None
                     owned.update(closure.files)
-                    owned.update(fallbacks)
+                    fallback.update(fallbacks)
+        if not named_any:
+            return None
         if named_pytest:
             # Script-path fallbacks in the same job re-introduced ``*`` / ``tests/**``
             # after the named-suite filter (marketing-engine still matched a prophet
             # test via ``tests/**``). Strip catch-alls from the FINAL set whenever
             # the job named specific pytest files.
-            owned = set(exclude_peer_test_ownership(owned))
-        return tuple(sorted(owned)) if named_any and owned else None
+            fallback = set(exclude_peer_test_ownership(fallback))
+        # A suffix-narrowed fallback that NAMES `.md` is a deliberate
+        # markdown-kind claim (a `glob("*.md")` census), not smear — it must
+        # keep selecting on markdown edits, so it rides in the owned tier.
+        md_kind = {pattern for pattern in fallback if ".md" in pattern}
+        owned.update(md_kind)
+        fallback -= md_kind
+        # Likewise a job whose commands mention markdown reads narrative files
+        # on purpose (doc linters, handoff censuses). ALL its opaque claims
+        # keep matching `.md` edits via the owned tier.
+        if ".md" in "\n".join(commands):
+            owned.update(fallback)
+            fallback = set()
+        fallback -= owned
+        return (owned, fallback) if owned or fallback else None
 
     inferred: list[LegacyJob] = []
     scoped = 0
+    declared = 0
     for job in jobs:
-        paths = infer_job_paths(job.definition)
-        if paths:
+        if job.exclusive:
+            # The curated tier: the manifest's own coverage-audited `paths:`
+            # ARE the scope. Inference is skipped entirely, so fallback smear
+            # from an opaque edge deep in a suite's closure cannot re-widen a
+            # job the operator deliberately narrowed.
+            inferred.append(replace(job, fallback_paths=()))
+            declared += 1
+            continue
+        result = infer_job_paths(job.definition)
+        if result:
+            owned, fallback = result
             inferred.append(
-                replace(job, paths=tuple(sorted(set(job.paths) | set(paths))))
+                replace(
+                    job,
+                    paths=tuple(sorted(set(job.paths) | owned)),
+                    fallback_paths=tuple(sorted(fallback)),
+                )
             )
             scoped += 1
         else:
-            inferred.append(replace(job, paths=()))
-    return inferred, f"derived scopes for {scoped}/{len(inferred)} jobs"
+            inferred.append(replace(job, paths=(), fallback_paths=()))
+    summary = f"derived scopes for {scoped}/{len(inferred)} jobs"
+    if declared:
+        summary += f"; {declared} declared exclusive"
+    return inferred, summary
+
+
+def _job_diff_match(job: LegacyJob, changed: Iterable[str]) -> tuple[str, str] | None:
+    """The first (changed path, tier) that selects this job, or None.
+
+    Tier order is deliberate: a NAMED owner (`declared` for exclusive jobs,
+    `owned` for closure/literal evidence) always outranks an opaque `fallback`
+    claim in the explanation, and the fallback tier never fires for a
+    narrative file — an unowned `.md` selecting 118/188 jobs through smeared
+    root claims is the measured 2026-08-14 incident this split exists to end.
+    """
+    for path in changed:
+        if _matches_any(job.paths, path):
+            return path, ("declared" if job.exclusive else "owned")
+    for path in changed:
+        if _matches_any(PASSIVE_UNOWNED_PATTERNS, path):
+            continue
+        if _matches_any(job.fallback_paths, path):
+            return path, "fallback"
+    return None
 
 
 def select_jobs(
@@ -688,18 +778,18 @@ def select_jobs(
     invalidators = [path for path in changed if _matches_any(GLOBAL_INVALIDATORS, path)]
     if invalidators:
         return jobs, f"full suite: global invalidator changed ({invalidators[0]})"
-    scoped_jobs = [job for job in jobs if job.paths]
+    scoped_jobs = [job for job in jobs if job.is_scoped]
     unowned = [
         path for path in changed
-        if not any(_matches_any(job.paths, path) for job in scoped_jobs)
+        if not any(_job_diff_match(job, [path]) for job in scoped_jobs)
         and not _matches_any(PASSIVE_UNOWNED_PATTERNS, path)
     ]
     selected = [
         job
         for job in jobs
-        if not job.paths or any(_matches_any(job.paths, path) for path in changed)
+        if not job.is_scoped or _job_diff_match(job, changed)
     ]
-    unscoped = sum(1 for job in jobs if not job.paths)
+    unscoped = sum(1 for job in jobs if not job.is_scoped)
     reason = (
         f"scoped to {len(changed)} changed file(s): {len(selected)}/{len(jobs)} jobs "
         f"({unscoped} unscoped always-on, "
@@ -711,6 +801,29 @@ def select_jobs(
             f"({unowned[0]})"
         )
     return selected, reason
+
+
+def explain_selection(
+    jobs: Iterable[LegacyJob], changed: list[str] | None
+) -> dict[str, str]:
+    """job_id -> why it was selected, for the published plan document.
+
+    Every selected EXPENSIVE job must be able to answer "which changed path
+    put you here" (incident requirement, 2026-08-14). Always-on jobs say so
+    explicitly; scoped jobs name the first matching path and the tier the
+    match came from. Unselected jobs are absent.
+    """
+    if changed is None:
+        return {}
+    explanations: dict[str, str] = {}
+    for job in jobs:
+        if not job.is_scoped:
+            explanations[job.job_id] = "always-on (no derivable scope)"
+            continue
+        match = _job_diff_match(job, changed)
+        if match:
+            explanations[job.job_id] = f"{match[0]} ({match[1]})"
+    return explanations
 
 
 def _workflow_jobs(path: Path) -> dict[str, dict[str, Any]]:
@@ -815,6 +928,26 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 _scope_coverage_findings(str(job_id), raw_definition, scope)
             )
 
+        # `scope: exclusive` is the CURATED tier: the declared `paths:` above
+        # REPLACE inference for this job instead of being unioned under it.
+        # The coverage audit just ran and is FATAL here like any other finding,
+        # so an exclusive job that fails to cover a file its own commands name
+        # cannot load — mis-declaring narrow is a loud manifest error, not a
+        # silent false green. An exclusive job with no paths would be a job
+        # that never runs on any pull request; refuse that outright.
+        raw_scope_mode = raw_definition.get("scope")
+        if raw_scope_mode not in (None, "exclusive"):
+            findings.append(
+                f"{prefix} scope must be the literal 'exclusive' when present"
+            )
+        exclusive = raw_scope_mode == "exclusive"
+        if exclusive and not scope:
+            findings.append(
+                f"{prefix} declares scope: exclusive but no paths — an "
+                "exclusive job with no declared surface would never run on "
+                "any pull request"
+            )
+
         legacy.append(
             LegacyJob(
                 job_id=str(job_id),
@@ -822,6 +955,7 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 ordinal=ordinal,
                 weight=_job_weight(str(job_id), raw_definition),
                 paths=scope,
+                exclusive=exclusive,
             )
         )
 
@@ -920,6 +1054,17 @@ class CIPackPlan:
     changed_paths: tuple[str, ...] | None = field(
         default=None, compare=False, repr=False
     )
+    # Why each selected job was selected (job_id -> "path (tier)"), published
+    # in the plan document so an expensive job's presence is always
+    # explainable from the run page. Not hashed: prose about a decision, not
+    # the decision.
+    explanations: dict[str, str] = field(
+        default_factory=dict, compare=False, repr=False
+    )
+    # sha256 of the manifest file the plan was computed from. Not hashed
+    # (same-commit checkouts guarantee it); packs consuming the published plan
+    # verify it as tamper evidence before executing.
+    manifest_sha256: str = field(default="", compare=False, repr=False)
 
     @property
     def pack_count(self) -> int:
@@ -963,6 +1108,8 @@ class CIPackPlan:
             "matrix": self.matrix(),
             "has_work": self.has_work,
             "plan_sha256": self.plan_sha256,
+            "manifest_sha256": self.manifest_sha256,
+            "explanations": dict(sorted(self.explanations.items())),
         }
 
 
@@ -1004,6 +1151,92 @@ def _canonical_digest(payload: dict[str, Any]) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+SCOPE_CACHE_SCHEMA = "ci.scope_map.v1"
+
+
+def _scope_cache_key(jobs: list[LegacyJob]) -> str:
+    """Identity of the manifest's scope-relevant surface.
+
+    The workflow-level `actions/cache` key (scan-root tree OIDs + selector
+    script hashes) is the real freshness guarantee; this internal key merely
+    refuses a restore that does not describe THIS manifest's job set, so a
+    mis-keyed or hand-copied cache recomputes instead of mis-scoping.
+    """
+    payload = [[job.job_id, list(job.paths), job.exclusive] for job in jobs]
+    return _canonical_digest({"schema": SCOPE_CACHE_SCHEMA, "jobs": payload})
+
+
+def _infer_job_scopes_cached(
+    jobs: list[LegacyJob], cache_path: Path | None
+) -> tuple[list[LegacyJob], str]:
+    """infer_job_scopes with a durable cache, because the inference is pure.
+
+    Scope inference is a function of the first-party tree and the manifest —
+    both pinned by the caller's cache key — and costs ~106s of AST walking per
+    invocation (measured). One planner computes it per (tree, manifest) and
+    every later plan on the same base restores in milliseconds. Any doubt
+    about the cache recomputes: caching is an optimization and must never be
+    able to narrow a selection the live inference would have widened.
+    """
+    if cache_path is None:
+        return infer_job_scopes(jobs)
+    key = _scope_cache_key(jobs)
+    if cache_path.is_file():
+        try:
+            doc: Any = json.loads(cache_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            doc = None
+        stored = doc.get("jobs") if isinstance(doc, dict) else None
+        if (
+            isinstance(doc, dict)
+            and doc.get("schema") == SCOPE_CACHE_SCHEMA
+            and doc.get("key") == key
+            and isinstance(stored, dict)
+            and set(stored) == {job.job_id for job in jobs}
+            and all(
+                isinstance(entry, dict)
+                and isinstance(entry.get("paths"), list)
+                and isinstance(entry.get("fallback_paths"), list)
+                for entry in stored.values()
+            )
+        ):
+            restored = [
+                replace(
+                    job,
+                    paths=tuple(stored[job.job_id]["paths"]),
+                    fallback_paths=tuple(stored[job.job_id]["fallback_paths"]),
+                )
+                for job in jobs
+            ]
+            summary = str(doc.get("summary", "restored scope map"))
+            return restored, f"{summary} (cached)"
+    inferred, summary = infer_job_scopes(jobs)
+    try:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(
+            json.dumps(
+                {
+                    "schema": SCOPE_CACHE_SCHEMA,
+                    "key": key,
+                    "summary": summary,
+                    "jobs": {
+                        job.job_id: {
+                            "paths": list(job.paths),
+                            "fallback_paths": list(job.fallback_paths),
+                        }
+                        for job in inferred
+                    },
+                },
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+    return inferred, summary
+
+
 def build_plan(
     jobs: Iterable[LegacyJob],
     changed: list[str] | None,
@@ -1011,6 +1244,7 @@ def build_plan(
     changed_from: str | None,
     scope_mode: str,
     pack_count: int = 12,
+    scope_cache: Path | None = None,
 ) -> CIPackPlan:
     """Decide, once, what this CI run executes.
 
@@ -1032,7 +1266,7 @@ def build_plan(
         and changed is not None
         and not invalidated
     ):
-        jobs, scope_summary = infer_job_scopes(jobs)
+        jobs, scope_summary = _infer_job_scopes_cached(jobs, scope_cache)
 
     eligible, reason = select_jobs(jobs, changed)
     predicted_job_ids = tuple(job.job_id for job in eligible)
@@ -1046,9 +1280,35 @@ def build_plan(
             f"{reason}"
         )
 
+    # WORKERS SCALE WITH SELECTED WORK (2026-08-14 incident). Twelve packs for
+    # a three-job diff spends nine runner spin-ups on nothing, and 32 armed
+    # PRs x 12 packs was the measured Enterprise-concurrency saturation (pack
+    # queue delays of 62s-37m43s on identical matrices). The pack count is
+    # therefore derived from the selected weight, one pack per
+    # PACK_TARGET_SECONDS of estimated work — but ONLY when scoping actually
+    # narrowed the run: main's baseline, every workflow_dispatch, scope-mode
+    # off/shadow, and every full-suite fallback keep the caller's pack_count,
+    # because the sweeper's main-proof reader anchors on the full
+    # ci-pack-0..11 set for main baselines and a full suite genuinely needs
+    # the width.
+    effective_pack_count = pack_count
+    narrowed = (
+        changed is not None
+        and bool(changed_from)
+        and scope_mode == "active"
+        and not invalidated
+        and bool(eligible)
+        and len(eligible) < len(jobs)
+    )
+    if narrowed:
+        selected_weight = sum(job.weight for job in eligible)
+        effective_pack_count = max(
+            1, min(pack_count, -(-selected_weight // PACK_TARGET_SECONDS))
+        )
+
     # Balance across the SELECTED set, not the full manifest — otherwise a
     # scoped run would leave whole packs empty while one pack carried it all.
-    packs = partition_jobs(eligible, pack_count)
+    packs = partition_jobs(eligible, effective_pack_count)
     pack_jobs = tuple(tuple(job.job_id for job in pack) for pack in packs)
     pack_weights = tuple(sum(job.weight for job in pack) for pack in packs)
     eligible_job_ids = tuple(job.job_id for job in eligible)
@@ -1074,7 +1334,7 @@ def build_plan(
             plan_hash_payload(
                 changed_from=changed_from,
                 scope_mode=scope_mode,
-                pack_count=pack_count,
+                pack_count=effective_pack_count,
                 eligible_job_ids=eligible_job_ids,
                 pack_jobs=pack_jobs,
                 pack_weights=pack_weights,
@@ -1083,6 +1343,11 @@ def build_plan(
         scoped_jobs=tuple(jobs),
         predicted_job_ids=predicted_job_ids,
         changed_paths=tuple(changed) if changed is not None else None,
+        explanations=(
+            explain_selection(jobs, changed)
+            if narrowed
+            else {"*": reason}
+        ),
     )
 
 
@@ -1092,16 +1357,21 @@ def plan_from_workflow(
     changed_from: str | None,
     scope_mode: str,
     pack_count: int = 12,
+    scope_cache: Path | None = None,
 ) -> CIPackPlan:
     """Load the manifest, resolve the diff, and plan — the whole decision."""
     legacy = load_legacy_jobs(workflow)
     changed = resolve_changed_files(changed_from)
-    return build_plan(
+    plan = build_plan(
         legacy,
         changed,
         changed_from=changed_from,
         scope_mode=scope_mode,
         pack_count=pack_count,
+        scope_cache=scope_cache,
+    )
+    return replace(
+        plan, manifest_sha256=hashlib.sha256(workflow.read_bytes()).hexdigest()
     )
 
 
@@ -1128,6 +1398,7 @@ def _write_github_output(
     plan_sha: str,
     reason: str,
     changed_files_json: str = "null",
+    plan_document_json: str = "",
 ) -> None:
     """Append the ci-plan outputs to a `$GITHUB_OUTPUT` file.
 
@@ -1146,6 +1417,7 @@ def _write_github_output(
             ("plan_sha", plan_sha),
             ("reason", reason),
             ("changed_files", changed_files_json),
+            ("plan_document", plan_document_json),
         )
     )
     # ONE append, never five: a failure between writes would leave GitHub parsing
@@ -1199,6 +1471,13 @@ def _emit_plan_artifacts(args: argparse.Namespace, plan: CIPackPlan) -> None:
         plan_sha=plan.plan_sha256,
         reason=reason,
         changed_files_json=changed_files_json,
+        # The whole decision rides to the packs as one compact JSON line, so a
+        # pack EXECUTES the published plan instead of re-deriving it (the ×12
+        # 106s re-inference this replaces was ~40% of measured pack overhead).
+        # Compact JSON carries no newline, so the heredoc form stays valid.
+        plan_document_json=json.dumps(
+            plan.to_dict(), sort_keys=True, separators=(",", ":")
+        ),
     )
 
 
@@ -1241,6 +1520,121 @@ def _resolve_pack(plan: CIPackPlan, pack_index: int) -> list[LegacyJob]:
     """
     by_id = {job.job_id: job for job in plan.scoped_jobs}
     return [by_id[job_id] for job_id in plan.pack_jobs[pack_index]]
+
+
+def _plan_digest_from_document(document: dict[str, Any]) -> str:
+    """Recompute the decision hash from a published plan document alone.
+
+    The document deliberately contains every field the hash covers, so a pack
+    can prove the plan it downloaded is internally consistent AND identical to
+    the sha ci-plan published — without re-running inference. Tampering with
+    the job lists, the weights, or the pack count changes this digest.
+    """
+    return _canonical_digest(
+        plan_hash_payload(
+            changed_from=document.get("changed_from"),
+            scope_mode=str(document["scope_mode"]),
+            pack_count=len(document["packs"]),
+            eligible_job_ids=[str(item) for item in document["eligible_jobs"]],
+            pack_jobs=[
+                [str(item) for item in pack["jobs"]] for pack in document["packs"]
+            ],
+            pack_weights=[int(pack["weight"]) for pack in document["packs"]],
+        )
+    )
+
+
+def _execute_from_plan(args: argparse.Namespace) -> int:
+    """CONSUME the published plan and execute this pack's slice of it.
+
+    This is the fast path every launched pack takes when ci-plan published a
+    document (2026-08-14 incident repair): the pack verifies the document's
+    digest against BOTH its own recomputation-from-the-document and the
+    `--expect-plan-sha` the workflow pinned, verifies the manifest bytes match
+    what the planner read, and then executes exactly the planned job ids. No
+    scope inference runs here — the measured 106.5s×12 planner re-derivation
+    this replaces bought parity, and the digest now buys the same parity for
+    the cost of a hash.
+
+    Every doubt is a LOUD exit 2, never a silent widen: ci-plan already
+    succeeded when this path runs, so a pack that cannot read the plan is
+    evidence of drift, and drift on a control plane must red the run.
+    """
+    try:
+        document = json.loads(Path(args.plan_json).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        print(
+            f"::error title=ci-plan-consume::pack {args.pack_index} cannot read "
+            f"the published plan at {args.plan_json}: {_one_line(str(exc))}",
+            flush=True,
+        )
+        return 2
+    if not args.expect_plan_sha:
+        print(
+            "::error title=ci-plan-consume::--plan-json requires "
+            "--expect-plan-sha; an unpinned published plan is not evidence",
+            flush=True,
+        )
+        return 2
+    try:
+        if document.get("schema") != PLAN_SCHEMA:
+            raise ManifestError(
+                f"plan schema {document.get('schema')!r} != {PLAN_SCHEMA!r}"
+            )
+        recomputed = _plan_digest_from_document(document)
+        published = str(document.get("plan_sha256", ""))
+        if recomputed != published or recomputed != args.expect_plan_sha:
+            print(
+                "::error title=ci-plan-parity::pack "
+                f"{args.pack_index} plan digest mismatch: document says "
+                f"{published or '<absent>'}, recomputed {recomputed}, workflow "
+                f"pinned {args.expect_plan_sha}; refusing to run a suite the "
+                "published plan does not describe",
+                flush=True,
+            )
+            return 2
+        manifest_sha = str(document.get("manifest_sha256", ""))
+        actual_manifest_sha = hashlib.sha256(
+            args.workflow.read_bytes()
+        ).hexdigest()
+        if manifest_sha and manifest_sha != actual_manifest_sha:
+            print(
+                "::error title=ci-plan-consume::manifest drifted between plan "
+                f"and pack: planner read {manifest_sha[:16]}…, this checkout "
+                f"has {actual_manifest_sha[:16]}…",
+                flush=True,
+            )
+            return 2
+        legacy = load_legacy_jobs(args.workflow)
+        by_id = {job.job_id: job for job in legacy}
+        packs = document["packs"]
+        if not 0 <= args.pack_index < len(packs):
+            raise ManifestError(
+                f"pack index {args.pack_index} outside the plan's "
+                f"{len(packs)} pack(s)"
+            )
+        planned_ids = [str(item) for item in packs[args.pack_index]["jobs"]]
+        missing = [job_id for job_id in planned_ids if job_id not in by_id]
+        if missing:
+            raise ManifestError(
+                f"planned job(s) absent from the manifest: {', '.join(missing)}"
+            )
+        selected = [by_id[job_id] for job_id in planned_ids]
+    except (ManifestError, KeyError, TypeError, ValueError) as exc:
+        print(
+            f"::error title=ci-plan-consume::pack {args.pack_index} cannot "
+            f"execute the published plan: {_one_line(str(exc))}",
+            flush=True,
+        )
+        return 2
+    print(
+        f"Executing published plan {args.expect_plan_sha[:16]}…: pack "
+        f"{args.pack_index} carries {len(selected)} of "
+        f"{len(document['eligible_jobs'])} selected job(s) "
+        f"({document.get('reason', 'no reason recorded')})."
+    )
+    print("Selected jobs: " + ", ".join(job.job_id for job in selected))
+    return execute_pack(selected)
 
 
 def render_command(command: str, *, base_ref: str, head_ref: str) -> str:
@@ -1425,6 +1819,19 @@ def execute_pack(
     )
     print("CI_PACK_FAILED_JOBS=" + json.dumps(failed_ids), flush=True)
     if failures:
+        # The first actionable failure belongs on the run page, not thirty
+        # minutes deep in a pack log (incident requirement, 2026-08-14). The
+        # step summary is best-effort: a missing env var or a write error must
+        # never change the pack's verdict.
+        summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+        if summary_path:
+            try:
+                with open(summary_path, "a", encoding="utf-8") as handle:
+                    handle.write("### Failed legacy jobs in this pack\n\n")
+                    for failure in failures:
+                        handle.write(f"- `{failure.splitlines()[0]}`\n")
+            except OSError:
+                pass
         print("\nLegacy CI failures:", file=sys.stderr)
         for failure in failures:
             print(f"  - {failure}", file=sys.stderr)
@@ -1471,6 +1878,27 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="refuse to execute unless the recomputed plan hashes to this sha256",
     )
     parser.add_argument(
+        "--plan-json",
+        default=None,
+        metavar="PATH",
+        help=(
+            "execute this pack's slice of a PUBLISHED plan document instead of "
+            "re-deriving the plan; requires --execute and --expect-plan-sha, "
+            "and refuses loudly on any digest or manifest mismatch"
+        ),
+    )
+    parser.add_argument(
+        "--scope-cache",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "restore/persist the derived scope map here; the caller owns the "
+            "freshness key (actions/cache keyed on scan-root tree OIDs), this "
+            "file only ever short-circuits an identical recomputation"
+        ),
+    )
+    parser.add_argument(
         "--github-output",
         type=Path,
         default=None,
@@ -1494,6 +1922,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--execute and --validate-only are mutually exclusive")
     if args.execute and args.plan_only:
         parser.error("--execute and --plan-only are mutually exclusive")
+    if args.plan_json and not args.execute:
+        parser.error("--plan-json only makes sense with --execute")
+    if args.plan_json and not args.expect_plan_sha:
+        parser.error("--plan-json requires --expect-plan-sha")
     if not 0 <= args.pack_index < args.pack_count:
         parser.error("--pack-index must be between 0 and pack-count - 1")
     return args
@@ -1502,11 +1934,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     try:
+        if args.plan_json:
+            # The pack fast path: consume the published plan, never re-plan.
+            # A missing/empty plan output in the workflow word-splits the flag
+            # away entirely, so the legacy self-planning path below remains
+            # the fallback whenever ci-plan could not publish a document.
+            return _execute_from_plan(args)
         plan = plan_from_workflow(
             args.workflow,
             changed_from=args.changed_from,
             scope_mode=args.scope_mode,
             pack_count=args.pack_count,
+            scope_cache=args.scope_cache,
         )
         shadow = args.scope_mode == "shadow" and args.changed_from
         if shadow:

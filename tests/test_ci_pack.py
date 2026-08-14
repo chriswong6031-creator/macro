@@ -321,12 +321,18 @@ def test_derived_closure_follows_relative_first_party_imports() -> None:
 
 
 def test_whole_tree_glob_job_owns_every_scanned_code_root() -> None:
-    """A tree scan cannot be narrowed to the scanner suite's import closure."""
+    """A tree scan cannot be narrowed to the scanner suite's import closure.
+
+    Since the 2026-08-14 narrative-tier split those opaque root claims live in
+    `fallback_paths` — still selecting the guard for every code edit, no
+    longer selecting it for an unowned handoff note.
+    """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     export_guard = next(job for job in jobs if job.job_id == "all-exports-resolve")
-    assert "engine/**" in export_guard.paths
-    assert "scripts/**" in export_guard.paths
-    assert "research/**" in export_guard.paths
+    claims = set(export_guard.paths) | set(export_guard.fallback_paths)
+    assert "engine/**" in claims
+    assert "scripts/**" in claims
+    assert "research/**" in claims
     selected, _ = PACK.select_jobs(jobs, ["engine/market_state.py"])
     assert export_guard in selected
 
@@ -1310,13 +1316,22 @@ def test_github_output_is_byte_stable_and_parses_as_heredoc(tmp_path: Path) -> N
         )
     assert first.read_text() == second.read_text()
     outputs = _parse_github_output(first.read_text())
-    assert set(outputs) == {"matrix", "has_work", "plan_sha", "reason", "changed_files"}
+    assert set(outputs) == {
+        "matrix", "has_work", "plan_sha", "reason", "changed_files",
+        "plan_document",
+    }
     assert json.loads(outputs["matrix"]) == {
         "include": [{"pack": index} for index in range(12)]
     }
     assert outputs["has_work"] == "true"
     assert len(outputs["plan_sha"]) == 64
     assert outputs["changed_files"] == "null"
+    # The published document must survive the heredoc round trip intact and
+    # carry the digest the packs verify — this is the pack consume-path's
+    # transport, so a corrupt serialization here is a fleet-wide refusal.
+    document = json.loads(outputs["plan_document"])
+    assert document["plan_sha256"] == outputs["plan_sha"]
+    assert PACK._plan_digest_from_document(document) == outputs["plan_sha"]
 
 
 def test_matrix_mode_overrules_a_no_work_plan_without_changing_its_hash(
@@ -1422,7 +1437,7 @@ def test_emit_plan_json_prints_exactly_one_machine_line(
         "schema", "changed_from", "scope_mode", "reason", "scope_summary",
         "legacy_job_count", "eligible_job_count", "eligible_jobs",
         "skipped_job_count", "skipped_jobs", "packs", "nonempty_pack_indices",
-        "matrix", "has_work", "plan_sha256",
+        "matrix", "has_work", "plan_sha256", "manifest_sha256", "explanations",
     }
     assert document["schema"] == PACK.PLAN_SCHEMA == "ci.pack_plan.v1"
     assert [entry["index"] for entry in document["packs"]] == list(range(12))
@@ -1708,7 +1723,10 @@ def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> 
         for step in plan["steps"]
         if str(step.get("uses", "")).startswith("actions/checkout@")
     )
-    assert plan_checkout["with"]["fetch-depth"] == 0
+    # Depth 1 since the 2026-08-14 incident repair: the planner's diff comes
+    # from the PR files API, so the 7-8 minute full-history fetch is retired.
+    assert plan_checkout["with"]["fetch-depth"] == 1
+    assert plan_checkout["with"]["filter"] == "blob:none"
 
 
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
@@ -1954,3 +1972,201 @@ def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> N
         "deeper, inside the engine module the test imports. Fix by adding "
         '- "contracts/government_revenue/**" to that paths list.'
     )
+
+
+# ─── 2026-08-14 incident regression fixtures ────────────────────────────────────
+# The traffic-jam incident (research/CI_MERGE_CONTROL_PLANE_RECOVERY_2026_08_14.md)
+# measured a one-line markdown edit selecting 118/188 jobs and 12/12 packs through
+# opaque-fallback smear alone. The fixtures below pin the REPAIRED behavior for
+# the measured real-PR shapes, with headroom so ordinary manifest growth does not
+# red them; a breach here means the narrative-tier or dynamic-pack repair
+# regressed, not that one more job landed.
+
+
+_INFERRED_CACHE: list = []
+
+
+def _inferred_jobs() -> list:
+    """One shared inference for every fixture below.
+
+    A full infer_job_scopes over the live manifest costs ~106s; five fixtures
+    re-deriving it independently would add ~9 minutes to the workflow-yaml
+    pack job for zero extra evidence. The objects are frozen dataclasses, so
+    sharing is safe.
+    """
+    if not _INFERRED_CACHE:
+        _INFERRED_CACHE.append(PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))[0])
+    return _INFERRED_CACHE[0]
+
+
+def test_narrative_markdown_cannot_ride_opaque_fallbacks() -> None:
+    """An unowned handoff note must select only always-on jobs and HONEST owners.
+
+    Measured pre-repair: research/DESIGN_NOTES.md -> 118/188 jobs (116 through
+    fallback root claims). Post-repair: 3. The bound is 12 (not 3) so honest
+    new md readers can appear without touching this test; the smear class it
+    guards against does not grow by ones, it returns by hundreds.
+    """
+    jobs = _inferred_jobs()
+    for path in (
+        "research/DESIGN_NOTES.md",
+        "research/SOME_FUTURE_HANDOFF_2099-01-01.md",
+        "mockups/refs/psi/workspace/DESIGN_NOTES.md",
+    ):
+        selected, reason = PACK.select_jobs(jobs, [path])
+        assert len(selected) <= 12, (path, len(selected), reason)
+
+
+def test_honest_markdown_owners_survive_the_narrative_tier() -> None:
+    """The tier split must not orphan jobs that really read markdown.
+
+    docs/DESIGN_DOCTRINE.md is literally read by house-law-registry (closure
+    evidence, `owned` tier). Over-excluding md from EVERY tier would silently
+    unwire doc guards — the opposite failure to the smear.
+    """
+    jobs = _inferred_jobs()
+    selected, reason = PACK.select_jobs(jobs, ["research/DESIGN_NOTES.md"])
+    assert any(job.job_id == "house-law-registry" for job in selected), reason
+
+
+def test_pack_count_scales_with_selected_weight() -> None:
+    """A 3-job diff must not allocate twelve runners (incident Phase 2).
+
+    And the two full-suite shapes must ALWAYS keep the caller's twelve packs:
+    the merge controller's main-proof reader anchors on ci-pack-0..11 for main
+    baselines, so a dynamic full suite would break the fleet's proof ladder.
+    """
+    jobs = _inferred_jobs()
+    narrow = PACK.build_plan(
+        jobs,
+        ["research/DESIGN_NOTES.md"],
+        changed_from="basesha",
+        scope_mode="active",
+        pack_count=12,
+    )
+    assert narrow.pack_count <= 2, narrow.pack_jobs
+    assert narrow.has_work
+
+    full_none = PACK.build_plan(
+        jobs, None, changed_from=None, scope_mode="active", pack_count=12
+    )
+    assert full_none.pack_count == 12
+    assert len(full_none.nonempty_pack_indices) == 12
+
+    invalidated = PACK.build_plan(
+        jobs,
+        [".github/workflows/ci.yml"],
+        changed_from="basesha",
+        scope_mode="active",
+        pack_count=12,
+    )
+    assert invalidated.pack_count == 12
+    assert len(invalidated.nonempty_pack_indices) == 12
+
+
+def test_plan_document_round_trips_through_the_pack_digest() -> None:
+    """A pack consuming the published document must recompute the same sha.
+
+    This is the parity that replaced the ×12 re-inference: if the document's
+    serialization ever drops or reorders a hashed field, every pack refuses
+    every plan fleet-wide. Tampering with any hashed field must change the
+    recomputed digest.
+    """
+    jobs = _inferred_jobs()
+    plan = PACK.build_plan(
+        jobs,
+        ["research/DESIGN_NOTES.md"],
+        changed_from="basesha",
+        scope_mode="active",
+        pack_count=12,
+    )
+    document = plan.to_dict()
+    assert PACK._plan_digest_from_document(document) == plan.plan_sha256
+    tampered = json.loads(json.dumps(document))
+    tampered["packs"][0]["jobs"] = list(tampered["packs"][0]["jobs"])[::-1] or ["x"]
+    assert PACK._plan_digest_from_document(tampered) != plan.plan_sha256
+
+
+def test_selection_explanations_name_a_path_for_every_scoped_selection() -> None:
+    """Every selected expensive job must answer "which changed path put you here"."""
+    jobs = _inferred_jobs()
+    changed = ["research/DESIGN_NOTES.md"]
+    plan = PACK.build_plan(
+        jobs, changed, changed_from="basesha", scope_mode="active", pack_count=12
+    )
+    assert plan.explanations, "a narrowed plan must carry explanations"
+    for job_id in plan.eligible_job_ids:
+        assert job_id in plan.explanations, f"{job_id} selected with no explanation"
+        entry = plan.explanations[job_id]
+        assert entry == "always-on (no derivable scope)" or "(" in entry
+
+
+def test_exclusive_scope_replaces_inference_and_audits_coverage(tmp_path: Path) -> None:
+    """`scope: exclusive` is declared-wins: inference must not re-widen it.
+
+    And the coverage audit is FATAL for it: an exclusive job whose commands
+    name a file outside its declared paths must refuse to load — mis-declaring
+    narrow has to be loud, because the silent version is a guard that stops
+    running on the PRs that can break it.
+    """
+    workflow = tmp_path / "legacy.yml"
+    workflow.write_text(
+        """
+jobs:
+  curated:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    scope: exclusive
+    paths:
+      - "engine/example/**"
+    steps:
+      - run: echo engine/example only
+  plain:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo unscoped
+""",
+        encoding="utf-8",
+    )
+    jobs = PACK.load_legacy_jobs(workflow)
+    curated = {job.job_id: job for job in jobs}["curated"]
+    assert curated.exclusive and curated.paths == ("engine/example/**",)
+    inferred, _ = PACK.infer_job_scopes(jobs)
+    curated_after = {job.job_id: job for job in inferred}["curated"]
+    assert curated_after.paths == ("engine/example/**",)
+    assert curated_after.fallback_paths == ()
+
+    bad = tmp_path / "bad.yml"
+    bad.write_text(
+        """
+jobs:
+  curated:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    scope: exclusive
+    paths:
+      - "engine/example/**"
+    steps:
+      - run: python -m pytest tests/test_ci_pack.py -q
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(PACK.ManifestError, match="do not cover"):
+        PACK.load_legacy_jobs(bad)
+
+    empty = tmp_path / "empty.yml"
+    empty.write_text(
+        """
+jobs:
+  curated:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    scope: exclusive
+    steps:
+      - run: echo no paths declared
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(PACK.ManifestError, match="scope: exclusive but no paths"):
+        PACK.load_legacy_jobs(empty)

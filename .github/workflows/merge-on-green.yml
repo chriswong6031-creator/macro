@@ -113,10 +113,18 @@ jobs:
     # vanished proof cannot strand the high-load lane and unrelated cancellations
     # cannot recreate the sweep storm. Only the resulting serialized full sweep may
     # add or remove the lease label.
+    # `skipped` is additionally fenced out entirely (2026-08-14 incident): a
+    # skipped ci.yml conclusion is a closed-PR zero-runner replacement run —
+    # measured at 20 of 44 ci.yml runs in a 2h window — and it carries no
+    # information a sweep could act on: nothing concluded, nothing went green,
+    # nothing went red. Admitting them bought 12-second cancelled sweeper runs
+    # at fleet scale (394 sweeper runs in the 8h jam window, 64% cancelled)
+    # and kept the merge-control runner busy replacing its own pending queue.
     if: >-
       github.event_name != 'workflow_run'
       || (
         github.event.workflow_run.conclusion != ''
+        && github.event.workflow_run.conclusion != 'skipped'
         && (
           github.event.workflow_run.name != 'fences'
           || github.event.workflow_run.head_branch != 'main'
