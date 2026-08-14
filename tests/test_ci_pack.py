@@ -696,7 +696,7 @@ def test_shadow_mode_emits_machine_readable_plan_and_job_results(
     skipped = PACK.LegacyJob("would-skip", definition, 1, 1, ("site/**",))
     jobs = [owner, skipped]
     monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: jobs)
-    monkeypatch.setattr(PACK, "changed_files", lambda base: ["engine/example.py"])
+    _stub_planner_paths(monkeypatch, ["engine/example.py"])
     monkeypatch.setattr(PACK, "infer_job_scopes", lambda loaded: (loaded, "test scopes"))
     assert PACK.main([
         "--workflow", str(MANIFEST),
@@ -810,6 +810,64 @@ def _plan_job(
         weight=weight,
         paths=paths,
     )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_pack_runner_planner_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pack jobs inject planner env; unit tests must not inherit the live PR diff.
+
+    Measured 2026-08-13: main ci.yml run 31746772926 and PR #5560 pack-1 redded
+    workflow-yaml because packing-contract tests monkeypatched ``changed_files``
+    while ``plan_from_workflow`` reads ``resolve_changed_files`` →
+    ``CI_CHANGED_FILES_JSON``. On main the value was ``null`` (full suite); on
+    #5560 it was the live 81-file PR list. Tests expecting an unscoped/full
+    fixture plan then asserted against the hosted runner's diff.
+    """
+    for name in (
+        "CI_CHANGED_FILES_JSON",
+        "CI_SCOPE_MODE",
+        "CI_DYNAMIC_MATRIX_MODE",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+
+def _stub_planner_paths(
+    monkeypatch: pytest.MonkeyPatch, paths: list[str] | None
+) -> None:
+    """Pin the #5564 production path (resolve_changed_files), not git."""
+    monkeypatch.setattr(
+        PACK,
+        "resolve_changed_files",
+        lambda changed_from, explicit_json=None, _paths=paths: _paths,
+    )
+
+
+def test_packing_contract_ignores_ambient_ci_changed_files_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The leak that redded every PR's pack-1 after #5564.
+
+    Plant an 81-file live-PR list (the #5560 shape) as ambient env. The fixture
+    still passes ``engine/example.py``. would-skip (``site/**``) must stay
+    skipped — if this selects would-skip, the test inherited the hosted
+    runner's diff and pack-1 is red on every unrelated PR.
+    """
+    ambient = [f"site/leak_{index}.html" for index in range(81)]
+    monkeypatch.setenv("CI_CHANGED_FILES_JSON", json.dumps(ambient))
+    assert PACK.resolve_changed_files("base-sha") == ambient
+    _stub_planner_paths(monkeypatch, ["engine/example.py"])
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("owner", 0, paths=("engine/**",)),
+        _plan_job("would-skip", 1, paths=("site/**",)),
+    ]
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    plan = PACK.plan_from_workflow(
+        MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
+    )
+    assert set(plan.eligible_job_ids) == {"owner"}
+    assert plan.skipped_job_ids == ("would-skip",)
+    assert PACK.resolve_changed_files("base-sha") == ["engine/example.py"]
 
 
 def _freeze_scope_inference(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1079,9 +1137,7 @@ def test_rename_plans_both_the_old_and_the_new_owner(
         _plan_job("elsewhere", 2, paths=("site/**",)),
     ]
     monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
-    monkeypatch.setattr(
-        PACK, "changed_files", lambda base: ["engine/old.py", "engine/new.py"]
-    )
+    _stub_planner_paths(monkeypatch, ["engine/old.py", "engine/new.py"])
     plan = PACK.plan_from_workflow(
         MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
     )
@@ -1089,7 +1145,7 @@ def test_rename_plans_both_the_old_and_the_new_owner(
     assert plan.skipped_job_ids == ("elsewhere",)
 
     # Non-vacuity: with only the new side in the diff, the old owner is skipped.
-    monkeypatch.setattr(PACK, "changed_files", lambda base: ["engine/new.py"])
+    _stub_planner_paths(monkeypatch, ["engine/new.py"])
     narrowed = PACK.plan_from_workflow(
         MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
     )
@@ -1269,19 +1325,17 @@ def test_matrix_mode_overrules_a_no_work_plan_without_changing_its_hash(
 ) -> None:
     """The dynamic matrix's kill switch, pinned where it is actually visible.
 
-    On the real 180-job manifest every diff still fills all twelve packs, so
-    `active` and `shadow` emit the SAME matrix and a test against the manifest
-    alone would pass without exercising the mode at all. Only a no-work plan
-    separates them.
-
-    The hash must be identical across modes: it is a plan input, and the mode is
-    an emission policy. If the mode entered the hash, flipping the repository
-    variable mid-run would make every in-flight pack refuse its own plan.
+    After #5564, empty packs are omitted (`nonempty_pack_indices` only). A
+    no-work plan must emit ``{"include": []}`` in active mode — not pack 0 —
+    and shadow/off must still launch all twelve. The hash must be identical
+    across modes: it is a plan input, and the mode is an emission policy. If
+    the mode entered the hash, flipping the repository variable mid-run would
+    make every in-flight pack refuse its own plan.
     """
     _freeze_scope_inference(monkeypatch)
     jobs = [_plan_job("engine-owner", 0, paths=("engine/**",))]
     monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
-    monkeypatch.setattr(PACK, "changed_files", lambda base: ["research/NOTE.md"])
+    _stub_planner_paths(monkeypatch, ["research/NOTE.md"])
     emitted: dict[str, dict[str, str]] = {}
     for mode in ("active", "shadow", "off"):
         path = tmp_path / mode

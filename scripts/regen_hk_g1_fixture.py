@@ -104,6 +104,41 @@ keeps the diff on a future re-pin surgical, and avoids the documented NaN hazard
 that the full schema's ``state``/``last`` payloads can carry (see
 ``buy_signal()``'s docstring in ``engine/signal_gate.py``).
 
+*The marker widening, adjudicated 2026-08-13* — the upstream marker HAS since widened,
+three times, and the prune's own warning fired on **157 of 157** markers, which is the
+same thing as being switched off: a warning that cannot stay quiet cannot announce
+anything, and it could no longer distinguish a fourth key from a Tuesday.  Re-measured
+against the read closure above, the prune is still CORRECT and the four stored keys are
+still exactly what is read — so the remedy is the reviewed allowlist
+:data:`MARKER_DROPPED_KEYS`, not a wider fixture:
+
+  * ``reasons`` (#4583), ``signal_date`` (#5071, Prophet US) and ``confirmed_date``
+    (#5258, Prophet US) are the three live keys; ``recorded_at``
+    (``engine/marker_integrity.merge_markers``) is render-time provenance this path
+    cannot emit, allowlisted so the schema closure is exact.
+  * READ CLOSURE, re-measured: ``engine/hk_board_rank.py`` reads
+    ``last.{type,quality,date,reason}`` and ``engine/us_board_rank.py`` reads
+    ``last.{date,type}`` — nothing reads the three.  ``TestG1FixtureIsNotStale::
+    test_witness_verdicts_replay_from_the_live_panel`` compares ``eligible``/``ticks``/
+    ``fresh_bars``/``above200``/``weekly_bull`` and never touches ``last`` at all.
+  * The three are DISPLAY/AUDIT tier by their own contracts — ``SCHEMA.json`` calls
+    ``reasons`` "display-only, never a gate input", and ``engine/marker_integrity.py``
+    files the two dates under ``_DERIVED_DATE_FIELDS``, "a function of the marker's own
+    ``date`` plus the grid, NOT independent facts".  Storing a value derived from inputs
+    the fixture already freezes buys no witness and costs a re-pin every time the
+    Prophet date family moves; ``confirmed_date`` would additionally import the very
+    live-null hazard the prune exists to keep out.
+  * The marker schema is not left unguarded by the drop: it has its own surface in
+    ``research/signal_engine/SCHEMA.json`` (``additionalProperties: false``),
+    ``engine/marker_integrity.py`` and ``engine/prophet_integrity.py``.  Widening here
+    would DUPLICATE that coverage inside a board-replay fixture, which is not what this
+    file is a witness of.
+
+The allowlist is pinned to that schema by ``tests/test_regen_hk_g1_fixture.py``, so a
+FIFTH key reds the guard rather than being swallowed, and the per-ticker WARNING now
+fires only on a key nobody has reviewed.  The stored shape is unchanged, so this
+adjudication is byte-neutral on the fixture.
+
 *Default ``reclaim_veto``* — the gate is called as
 ``signal_gate.compact(signal_gate.gate(ticker, series))``, i.e. with the DEFAULT
 ``reclaim_veto=True``, not the HK-production ``reclaim_veto=False``.  That is
@@ -193,6 +228,50 @@ PRICE_3DP_BELOW = 1.0
 STORED_VERDICT_KEYS = ("eligible", "tier_cascade", "ticks", "fresh_bars",
                        "above200", "weekly_bull", "provisional", "asof", "last")
 MARKER_KEYS = ("date", "type", "quality", "reason")
+
+#: Marker keys the PUBLISHED contract declares that this fixture deliberately does NOT
+#: store — the reviewed allowlist behind the widening warning in :func:`prune_verdict`.
+#: Reviewed 2026-08-13 (HK board program) after that warning fired on 157 of 157
+#: markers, i.e. on every marker in the file, which is the same thing as being switched
+#: off: a warning that cannot stay quiet cannot announce anything.  Each entry names the
+#: lane that added the key and why the era-stamped shape still drops it.  A key OUTSIDE
+#: ``MARKER_KEYS | MARKER_DROPPED_KEYS`` is an UNREVIEWED widening and still warns per
+#: ticker — that is the warning's whole charter, and it is what stays live here.
+#:
+#: The set is not a wish.  ``tests/test_regen_hk_g1_fixture.py`` pins
+#: ``MARKER_KEYS | MARKER_DROPPED_KEYS`` to ``$defs/marker`` in
+#: ``research/signal_engine/SCHEMA.json`` — ``additionalProperties: false``, a cross-repo
+#: published contract — so a key added upstream REDS that guard instead of being silently
+#: swallowed here.  The allowlist can therefore only ever be as wide as the contract it
+#: was reviewed against.
+MARKER_DROPPED_KEYS = {
+    "reasons": (
+        "#4583 — the exhaustive ordered account of the buy-filter legs beside the "
+        "first-match `reason`. SCHEMA.json declares it display-only, never a gate "
+        "input, and it is emitted ONLY when the verdict is over-determined (1 of 157 "
+        "markers here). The board builders read `reason`; nothing reads `reasons`."),
+    "signal_date": (
+        "#5071 (Prophet US — lossless, date-safe origination) — the KNOWABILITY close "
+        "of this marker's own 3D bucket. A pure function of the marker `date` plus the "
+        "bucketing grid, both of which the frozen window already fixes, so it carries "
+        "no witness the fixture does not already hold. NOTE the name collision: the HK "
+        "vetoed lane publishes a ROW field also called `signal_date`, sourced from "
+        "`read['cross_date']` in engine/hk_board_rank.py — a cross-read of the price "
+        "series, NOT this marker key, so the drop does not starve it."),
+    "confirmed_date": (
+        "#5258 (Prophet US — reclaim-veto conditional waiver, us_prophet_v1 -> v2) — "
+        "the PIT anchor the waiver is judged against. engine/marker_integrity.py files "
+        "it under _DERIVED_DATE_FIELDS: 'a function of the marker's own date plus the "
+        "grid, NOT an independent fact'. It is null while a marker is mid-confirmation, "
+        "which is precisely the live-null hazard this prune keeps out of a frozen "
+        "replay."),
+    "recorded_at": (
+        "engine/marker_integrity.merge_markers — the run that FIRST published a marker. "
+        "Render-time provenance stamped onto the merged site payload and never emitted "
+        "by signal_quality.analyze(), so gate() over a raw close panel cannot produce it "
+        "on this path. Allowlisted anyway so the schema closure above is EXACT rather "
+        "than carrying an unexplained hole."),
+}
 CLOSE_DECIMALS = 3
 PAYLOAD_KEYS = ("verdicts", "meta", "closes")
 
@@ -232,13 +311,31 @@ def _scalar(value):
     return value
 
 
-def prune_verdict(ticker: str, full: dict) -> dict:
+def marker_extra_keys(marker: dict) -> tuple[list[str], list[str]]:
+    """``(reviewed, unreviewed)`` keys this marker carries beyond the stored four.
+
+    Split rather than merely counted, because the two mean opposite things.  A
+    REVIEWED drop is a decision already taken and recorded in
+    :data:`MARKER_DROPPED_KEYS`, so it is summarised ONCE per run — still disclosed,
+    never per-ticker noise.  An UNREVIEWED key is the event the warning exists for and
+    is announced per ticker, loudly, exactly as before.
+    """
+    extra = [k for k in marker if k not in MARKER_KEYS]
+    reviewed = sorted(k for k in extra if k in MARKER_DROPPED_KEYS)
+    unreviewed = sorted(k for k in extra if k not in MARKER_DROPPED_KEYS)
+    return reviewed, unreviewed
+
+
+def prune_verdict(ticker: str, full: dict, dropped: dict | None = None) -> dict:
     """The era-stamped 9-key verdict, in the committed insertion order.
 
     ``last`` is normalised to the four marker keys with explicit None fill — live
     sell/cut markers omit ``quality``/``reason``, and the fixture stores all four
-    on all 157.  A marker carrying keys OUTSIDE the four means the upstream shape
-    widened and this prune is dropping data, so it is announced loudly.
+    on all 157.  A marker carrying an UNREVIEWED key outside the four means the
+    upstream shape widened past the last adjudication and this prune is dropping data,
+    so it is announced loudly.  Keys already adjudicated into
+    :data:`MARKER_DROPPED_KEYS` are collected into ``dropped`` (key -> tickers) for the
+    caller's one-line disclosure instead, so the warning keeps meaning what it says.
     """
     out: dict = {}
     for key in STORED_VERDICT_KEYS:
@@ -249,11 +346,16 @@ def prune_verdict(ticker: str, full: dict) -> dict:
         if not marker:
             out["last"] = None
             continue
-        extra = [k for k in marker if k not in MARKER_KEYS]
-        if extra:
-            say(f"WARNING {ticker}: marker carries keys outside the stored four "
-                f"{sorted(extra)} — the upstream marker shape widened and this "
-                f"prune is dropping them; proceeding with the era-stamped shape")
+        reviewed, unreviewed = marker_extra_keys(marker)
+        if unreviewed:
+            say(f"WARNING {ticker}: marker carries UNREVIEWED keys outside the stored "
+                f"four {unreviewed} — the upstream marker shape widened past the last "
+                f"review and this prune is dropping them; proceeding with the "
+                f"era-stamped shape. Adjudicate them into MARKER_DROPPED_KEYS (or widen "
+                f"the stored shape) before trusting this re-pin")
+        if dropped is not None:
+            for extra_key in reviewed:
+                dropped.setdefault(extra_key, []).append(ticker)
         out["last"] = {k: _scalar(marker.get(k)) for k in MARKER_KEYS}
     return out
 
@@ -358,13 +460,14 @@ def build_payload(panel: "pd.DataFrame", as_of: str, committed: dict) -> dict:
     closes: dict = {}
     minted: list = []
     rule_drift: list = []
+    dropped_keys: dict = {}
     for ticker in tickers:
         series = hist[ticker].dropna()
 
         # The witness replay's exact call — DEFAULT reclaim_veto, same slice.
         full = signal_gate.compact(
             signal_gate.gate(ticker, panel[ticker].loc[:as_of].dropna()))
-        verdicts[ticker] = prune_verdict(ticker, full)
+        verdicts[ticker] = prune_verdict(ticker, full, dropped_keys)
 
         last_px = float(series.iloc[-1])
         price = (round(last_px, 2) if last_px >= PRICE_3DP_BELOW
@@ -394,7 +497,8 @@ def build_payload(panel: "pd.DataFrame", as_of: str, committed: dict) -> dict:
         }
 
     return {"verdicts": verdicts, "meta": meta, "closes": closes,
-            "rule": rule, "minted": minted, "rule_drift": rule_drift}
+            "rule": rule, "minted": minted, "rule_drift": rule_drift,
+            "dropped_keys": dropped_keys}
 
 
 def assemble(committed: dict, payload: dict, sha16: str) -> dict:
@@ -701,6 +805,15 @@ def main(argv: list[str] | None = None) -> int:
         f"closes through {as_of}; window lengths {lengths} "
         f"({len(payload['minted'])} cut by the era rule, the rest re-cut from their "
         f"own committed first date)")
+
+    # The reviewed drops, disclosed once — a prune that drops data silently is how the
+    # stored shape would quietly stop describing the marker it claims to freeze.  The
+    # per-ticker WARNING above is reserved for keys no one has adjudicated yet.
+    if payload["dropped_keys"]:
+        counts = ", ".join(f"{key} x{len(tickers)}"
+                           for key, tickers in sorted(payload["dropped_keys"].items()))
+        say(f"marker keys dropped by the era-stamped shape (reviewed, "
+            f"MARKER_DROPPED_KEYS): {counts}")
 
     old_sha = str(committed.get("_source_sha256_16") or "")
     new_sha = hashlib.sha256(panel_path.read_bytes()).hexdigest()[:16]

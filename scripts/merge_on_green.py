@@ -3518,8 +3518,24 @@ def _newest_concluded_main_run(
     return None, f"{workflow} has no completed run on main"
 
 
+_PACK_RUNNER_STEP_MARKER = ": step "
+_SHALLOW_CLONE_FENCE_TEXT = "could not determine changed files"
+_SHALLOW_CLONE_MARKERS_TEXT = (
+    "cannot classify files changed from",
+    "fatal: bad revision",
+)
+
+
 def _legacy_job_ids_from_annotations(annotations: list[Any]) -> set[str]:
-    """Parse pack-runner failure identities out of GitHub check-run annotations."""
+    """Parse pack-runner failure identities out of GitHub check-run annotations.
+
+    Only ``legacy-job-<id>`` titles and the pack-runner message shape
+    ``<id>: step '...' exited N`` count. A bare ``": "`` split is too broad:
+    workflow-yaml's packing-contract selftest emits
+    ``title=template-site-sync ...`` / ``REFUSED: templates/wrongway.html ...``,
+    which used to mint a fake job id ``REFUSED`` (measured on main pack-1
+    94604278264 and every PR pack that ran that job, 2026-08-13).
+    """
     ids: set[str] = set()
     for item in annotations:
         if not isinstance(item, dict):
@@ -3532,12 +3548,45 @@ def _legacy_job_ids_from_annotations(annotations: list[Any]) -> set[str]:
                 ids.add(job_id)
             continue
         text = message or title
-        if ": " not in text and ": step " not in text:
+        if _PACK_RUNNER_STEP_MARKER not in text:
             continue
         job_id = text.split(":", 1)[0].strip()
         if job_id and " " not in job_id and "/" not in job_id:
             ids.add(job_id)
     return ids
+
+
+def _shallow_clone_false_red_ids(
+    annotations: list[Any], known_ids: set[str]
+) -> set[str]:
+    """#5564 ``fetch-depth:1`` infra reds, not the pull request's own jobs.
+
+    ``self-mod-fence`` prints a distinctive ``could not determine changed files``
+    annotation. ``conflict-markers``'s pack-runner annotation is only
+    ``step ... exited 2``, which is also how a real marker hit looks, so that
+    job counts as the same shallow-clone incident only when the fence sibling
+    fired on this head or the classify-failure string is itself on an
+    annotation (measured 2026-08-13 fleet: they co-occur; unique product reds
+    such as ``marketing-data`` / ``tier-gate`` are not in this set).
+    """
+    blob = "\n".join(
+        f"{item.get('title') or ''}\n{item.get('message') or ''}"
+        for item in annotations
+        if isinstance(item, dict)
+    )
+    out: set[str] = set()
+    fence_infra = (
+        "self-mod-fence" in known_ids and _SHALLOW_CLONE_FENCE_TEXT in blob
+    )
+    if fence_infra:
+        out.add("self-mod-fence")
+        if "conflict-markers" in known_ids:
+            out.add("conflict-markers")
+    if "conflict-markers" in known_ids and any(
+        marker in blob for marker in _SHALLOW_CLONE_MARKERS_TEXT
+    ):
+        out.add("conflict-markers")
+    return out
 
 
 def _annotation_check_run_id(entry: dict[str, Any]) -> Any:
@@ -3559,17 +3608,22 @@ def _annotation_check_run_id(entry: dict[str, Any]) -> Any:
     return entry.get("id")
 
 
-def _legacy_job_ids_from_runs(
+def _legacy_identities_from_runs(
     repo: str, runs: list[dict[str, Any]], token: str
-) -> frozenset[str]:
-    """Fail closed: any unreadable failed pack yields an empty set."""
+) -> tuple[frozenset[str], frozenset[str]]:
+    """``(legacy_job_ids, shallow_clone_false_red_ids)``.
+
+    Fail closed: any unreadable failed pack yields two empty sets. The
+    live-inherited path treats that as "do not waive".
+    """
     if not runs:
-        return frozenset()
+        return frozenset(), frozenset()
     ids: set[str] = set()
+    collected: list[Any] = []
     for run in runs:
         check_id = _annotation_check_run_id(run)
         if check_id is None:
-            return frozenset()
+            return frozenset(), frozenset()
         try:
             status, payload = _request(
                 "GET",
@@ -3578,18 +3632,28 @@ def _legacy_job_ids_from_runs(
                 token,
             )
         except Exception:
-            return frozenset()
+            return frozenset(), frozenset()
         if status >= 400:
-            return frozenset()
+            return frozenset(), frozenset()
         if isinstance(payload, dict):
             payload = payload.get("annotations")
         if not isinstance(payload, list):
-            return frozenset()
+            return frozenset(), frozenset()
         parsed = _legacy_job_ids_from_annotations(payload)
         if not parsed:
-            return frozenset()
+            return frozenset(), frozenset()
         ids |= parsed
-    return frozenset(ids)
+        collected.extend(payload)
+    shallow = _shallow_clone_false_red_ids(collected, ids)
+    return frozenset(ids), frozenset(shallow)
+
+
+def _legacy_job_ids_from_runs(
+    repo: str, runs: list[dict[str, Any]], token: str
+) -> frozenset[str]:
+    """Fail closed: any unreadable failed pack yields an empty set."""
+    ids, _shallow = _legacy_identities_from_runs(repo, runs, token)
+    return ids
 
 
 def _touches_ci_control_plane(paths: list[str]) -> bool:
@@ -3650,6 +3714,13 @@ def live_inherited_red(
     ``ci-pack-5``. ``ci-gate`` is the aggregate of those identities, not an extra
     name. A CI global invalidator is ineligible — it can change what any pack
     means.
+
+    After #5564, every PR pack also fails ``self-mod-fence`` / ``conflict-markers``
+    on a shallow clone. Those are not on main (main's live check is
+    dispatch-armed). Subtract that infra before the subset check; what remains
+    must be nonempty and ⊆ ``proof.failed_legacy_jobs``. A fence-only head
+    (nothing left) is not main's weather and stays blocked. Unique product
+    reds (``marketing-data``, ``tier-gate``, …) stay extras.
     """
     if not bad_names or not proof.failed_legacy_jobs:
         return None
@@ -3658,15 +3729,18 @@ def live_inherited_red(
     failed_pack_runs = _failed_pack_runs(runs)
     if not failed_pack_runs:
         return None
-    pr_jobs = _legacy_job_ids_from_runs(repo, failed_pack_runs, token)
-    if not pr_jobs or not pr_jobs <= proof.failed_legacy_jobs:
+    pr_jobs, shallow = _legacy_identities_from_runs(
+        repo, failed_pack_runs, token
+    )
+    own = pr_jobs - shallow
+    if not own or not own <= proof.failed_legacy_jobs:
         return None
     files = freshness.pull_files(pull.get("number"))
     if files is None or _touches_ci_control_plane(files):
         return None
     return (
         "live-inherited red: "
-        + ", ".join(sorted(pr_jobs))
+        + ", ".join(sorted(own))
         + " already failing on main"
     )
 
