@@ -351,6 +351,99 @@ def _git_head_mode(root: Path, rel: str) -> int | None:
         return None
 
 
+def _filesystem_static_candidate_present(root: Path, rel: str) -> bool:
+    current = root
+    parts = PurePosixPath(rel).parts
+    for index, part in enumerate(parts):
+        current /= part
+        try:
+            mode = current.lstat().st_mode
+        except FileNotFoundError:
+            return False
+        except OSError as exc:
+            raise committed_scope_index.ScopeIndexError(
+                f"cannot inspect submitted static path candidate {rel}: {exc}"
+            ) from exc
+        if stat.S_ISLNK(mode):
+            raise committed_scope_index.ScopeIndexError(
+                f"submitted static path candidate {rel!r} traverses symbolic link "
+                f"{current.relative_to(root).as_posix()!r}"
+            )
+        if index < len(parts) - 1:
+            if stat.S_ISREG(mode):
+                return False
+            if not stat.S_ISDIR(mode):
+                raise committed_scope_index.ScopeIndexError(
+                    f"submitted static path candidate {rel!r} traverses an unsafe file type"
+                )
+            continue
+        if stat.S_ISREG(mode):
+            return True
+        if stat.S_ISDIR(mode):
+            return False
+        raise committed_scope_index.ScopeIndexError(
+            f"submitted static path candidate {rel!r} has an unsafe file type"
+        )
+    return False
+
+
+def _submitted_static_candidate_present(root: Path, rel: str) -> bool:
+    """Read regular-file existence from submitted HEAD, never a sparse tree."""
+    try:
+        probe = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--verify", "HEAD^{commit}"],
+            capture_output=True,
+            check=False,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise committed_scope_index.ScopeIndexError(
+            f"cannot identify submitted HEAD for static path candidate {rel}: {exc}"
+        ) from exc
+    if probe.returncode != 0:
+        stderr = probe.stderr.lower()
+        if b"not a git repository" in stderr or b"unknown revision" in stderr:
+            return _filesystem_static_candidate_present(root, rel)
+        raise committed_scope_index.ScopeIndexError(
+            f"cannot identify submitted HEAD for static path candidate {rel}"
+        )
+
+    parts = PurePosixPath(rel).parts
+    for index in range(len(parts)):
+        prefix = PurePosixPath(*parts[: index + 1]).as_posix()
+        contains = _git_head_contains(root, prefix)
+        if contains is False:
+            return False
+        mode = _git_head_mode(root, prefix) if contains else None
+        if contains is None or mode is None:
+            raise committed_scope_index.ScopeIndexError(
+                f"cannot inspect submitted HEAD mode for static path candidate {prefix}"
+            )
+        kind = mode & 0o170000
+        if kind == 0o120000:
+            raise committed_scope_index.ScopeIndexError(
+                f"submitted static path candidate {rel!r} traverses symbolic link "
+                f"{prefix!r}"
+            )
+        if index < len(parts) - 1:
+            if kind == 0o100000:
+                return False
+            if kind != 0o040000:
+                raise committed_scope_index.ScopeIndexError(
+                    f"submitted static path candidate {rel!r} traverses unsafe Git "
+                    f"mode {mode:o} at {prefix!r}"
+                )
+            continue
+        if kind == 0o100000:
+            return True
+        if kind == 0o040000:
+            return False
+        raise committed_scope_index.ScopeIndexError(
+            f"submitted static path candidate {rel!r} has unsafe Git mode {mode:o}"
+        )
+    return False
+
+
 def _is_controlled_text(root: Path, rel: str) -> bool:
     if _matches_any(PASSIVE_UNOWNED_PATTERNS, rel):
         return False
@@ -504,6 +597,7 @@ def run_preflight(
         "changed_tests_examined": 0,
         "changed_tests_wired": 0,
         "changed_python_signatures_examined": 0,
+        "changed_static_path_candidates_examined": 0,
         "conflict_files_scanned": 0,
         "known_executable_paths": 0,
         "manifest_jobs": 0,
@@ -518,8 +612,11 @@ def run_preflight(
         if not index_path.is_absolute():
             index_path = root / index_path
         try:
-            signature_inventory = (
-                committed_scope_index.load_dependency_signature_inventory(index_path)
+            (
+                signature_inventory,
+                candidate_inventory,
+            ) = committed_scope_index.load_dependency_contract_inventories(
+                index_path
             )
         except (OSError, committed_scope_index.ScopeIndexError) as exc:
             dependency_signature_findings.append(
@@ -533,6 +630,7 @@ def run_preflight(
                 )
             )
             signature_inventory = None
+            candidate_inventory = None
 
         if signature_inventory is not None:
             for rel in sorted(path for path in changed if path.endswith(".py")):
@@ -580,6 +678,39 @@ def run_preflight(
                                 path=rel,
                             )
                         )
+
+        if candidate_inventory is not None:
+            affected_candidates = sorted(
+                candidate
+                for candidate in candidate_inventory
+                if not candidate.endswith(".py")
+                and any(
+                    candidate == changed_path
+                    or candidate.startswith(changed_path + "/")
+                    for changed_path in changed
+                )
+            )
+            for rel in affected_candidates:
+                metrics["changed_static_path_candidates_examined"] += 1
+                try:
+                    submitted_present = _submitted_static_candidate_present(root, rel)
+                    committed_scope_index.verify_changed_static_path_candidate(
+                        candidate_inventory, rel, submitted_present
+                    )
+                except committed_scope_index.ScopeIndexError as exc:
+                    code = (
+                        "static_path_candidate_unsafe"
+                        if "symbolic link" in str(exc) or "unsafe" in str(exc)
+                        else "static_path_candidate_stale"
+                    )
+                    dependency_signature_findings.append(
+                        _finding(
+                            code,
+                            "planner_configuration_failure",
+                            str(exc),
+                            path=rel,
+                        )
+                    )
     findings.extend(dependency_signature_findings)
 
     manifest_path = root / CI_MANIFEST
@@ -794,6 +925,8 @@ def run_preflight(
         "dependency_signature_blob_unreadable",
         "dependency_signature_index_invalid",
         "dependency_signature_stale",
+        "static_path_candidate_stale",
+        "static_path_candidate_unsafe",
     }
     return {
         "checks": {

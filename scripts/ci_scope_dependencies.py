@@ -213,6 +213,66 @@ def _data_lines(source: str, tree: ast.Module) -> set[int]:
     return covered
 
 
+def _static_path_candidate_provenance(
+    source: str, tree: ast.Module
+) -> tuple[dict[tuple[str, str], int], dict[tuple[str, str], int]]:
+    """Return all statically legible repo-path candidates, present or absent.
+
+    ``direct_reads`` historically discarded a literal until its target existed.
+    The committed scope index needs the larger candidate set so an absent target
+    becoming a file cannot silently change ownership.  Keep extraction here,
+    beside the live selector, so candidate and read semantics cannot diverge.
+    """
+    candidates: dict[tuple[str, str], int] = {}
+    data_candidates: dict[tuple[str, str], int] = {}
+    bases = _checkout_bases(tree)
+    docstrings = _docstring_ids(tree)
+    data_lines = _data_lines(source, tree)
+
+    def record(kind: str, rel: str, line: int) -> None:
+        target = data_candidates if line in data_lines else candidates
+        target.setdefault((kind, rel), line)
+
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and id(node) not in docstrings
+        ):
+            match = _PATH_LITERAL.fullmatch(node.value.strip())
+            if match:
+                record("path literal", match.group(0).split("#")[0], node.lineno)
+
+        if not (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div)):
+            continue
+        chain = _join_segments(node)
+        if chain is None:
+            continue
+        base, segments = chain
+        rooted = _mentions_file_dunder(base) or (
+            isinstance(base, ast.Name) and base.id in bases
+        )
+        joined = "/".join(segments)
+        if rooted and joined.split("/")[0] in LITERAL_DIRS:
+            record("path join", joined, node.lineno)
+    return candidates, data_candidates
+
+
+def static_path_candidates(source: str) -> tuple[str, ...]:
+    """Deterministic static path candidates consulted by ``direct_reads``.
+
+    Candidates explicitly marked as runtime data are excluded.  Existence is
+    intentionally not consulted here; the committed-index boundary validates
+    canonical paths and binds that separate topology bit.
+    """
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError):
+        return ()
+    candidates, _data_candidates = _static_path_candidate_provenance(source, tree)
+    return tuple(sorted({rel for _kind, rel in candidates}))
+
+
 def _resolve(module: str) -> list[str]:
     """Repository-relative files a dotted module can denote, existing only."""
     base = module.replace(".", "/")
@@ -247,10 +307,6 @@ def direct_reads(
     except SyntaxError:
         return files
 
-    bases = _checkout_bases(tree)
-    docstrings = _docstring_ids(tree)
-    data_lines = _data_lines(source, tree)
-
     for node in ast.walk(tree):
         names: list[str] = []
         if isinstance(node, ast.Import):
@@ -277,36 +333,13 @@ def direct_reads(
                 for rel in _resolve(first.value):
                     record(rel, "import_module", node.lineno)
 
-        if (
-            isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-            and id(node) not in docstrings
-        ):
-            match = _PATH_LITERAL.fullmatch(node.value.strip())
-            if match and (ROOT / match.group(0).split("#")[0]).is_file():
-                rel = match.group(0).split("#")[0]
-                if node.lineno in data_lines:
-                    excused(rel, "path literal", node.lineno)
-                else:
-                    record(rel, "path literal", node.lineno)
-
-        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
-            chain = _join_segments(node)
-            if chain is not None:
-                base, segments = chain
-                rooted = _mentions_file_dunder(base) or (
-                    isinstance(base, ast.Name) and base.id in bases
-                )
-                joined = "/".join(segments)
-                if (
-                    rooted
-                    and joined.split("/")[0] in LITERAL_DIRS
-                    and (ROOT / joined).is_file()
-                ):
-                    if node.lineno in data_lines:
-                        excused(joined, "path join", node.lineno)
-                    else:
-                        record(joined, "path join", node.lineno)
+    candidates, data_candidates = _static_path_candidate_provenance(source, tree)
+    for (kind, rel), line in candidates.items():
+        if (ROOT / rel).is_file():
+            record(rel, kind, line)
+    for (kind, rel), line in data_candidates.items():
+        if (ROOT / rel).is_file():
+            excused(rel, kind, line)
 
     kept = {rel: why for rel, why in files.items() if not rel.endswith("__init__.py")}
     if collect_data is not None:
@@ -648,36 +681,11 @@ def dependency_structure_record(rel: str, source: str) -> dict[str, object]:
         else:
             dynamic_imports.add("dynamic")
 
-    docstrings = _docstring_ids(tree)
-    data_lines = _data_lines(source, tree)
-    checkout_bases = _checkout_bases(tree)
     path_reads: set[str] = set()
-    for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-            and id(node) not in docstrings
-        ):
-            match = _PATH_LITERAL.fullmatch(node.value.strip())
-            if match and node.lineno not in data_lines:
-                path_reads.add(f"literal:{match.group(0).split('#')[0]}")
-
-        if not (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div)):
-            continue
-        chain = _join_segments(node)
-        if chain is None:
-            continue
-        base, segments = chain
-        rooted = _mentions_file_dunder(base) or (
-            isinstance(base, ast.Name) and base.id in checkout_bases
-        )
-        joined = "/".join(segments)
-        if (
-            rooted
-            and joined.split("/")[0] in LITERAL_DIRS
-            and node.lineno not in data_lines
-        ):
-            path_reads.add(f"join:{joined}")
+    candidates, _data_candidates = _static_path_candidate_provenance(source, tree)
+    for (kind, rel), _line in candidates.items():
+        label = "literal" if kind == "path literal" else "join"
+        path_reads.add(f"{label}:{rel}")
 
     ambiguity_prefix = f"{normalized_rel}:"
     ambiguities: set[str] = set()

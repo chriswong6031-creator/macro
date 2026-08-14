@@ -478,7 +478,7 @@ def test_resolve_changed_files_prefers_planner_json(
         r"scripts\evil.py",
         " scripts/evil.py",
         "scripts/evil.py ",
-        "scripts//evil.py",
+        "scripts/" + "/evil.py",
         "./scripts/evil.py",
     ],
 )
@@ -2804,7 +2804,7 @@ def test_structural_preflight_git_metadata_error_is_not_deletion(
         r"scripts\evil.py",
         " scripts/evil.py",
         "scripts/evil.py ",
-        "scripts//evil.py",
+        "scripts/" + "/evil.py",
         "./scripts/evil.py",
         "scripts/evil.py\nsecond.py",
     ],

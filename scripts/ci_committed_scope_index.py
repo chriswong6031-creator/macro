@@ -21,20 +21,22 @@ import importlib
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import tempfile
 import time
 from dataclasses import dataclass, replace
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-SCHEMA = "ci.committed_scope_index.v2"
+SCHEMA = "ci.committed_scope_index.v3"
 DEPENDENCY_SIGNATURE_SCHEMA = "ci.dependency_signature_inventory.v1"
+STATIC_PATH_CANDIDATE_SCHEMA = "ci.static_path_candidate_inventory.v1"
 DEFAULT_MANIFEST = Path(".github/ci/legacy-jobs.yml")
 SELECTOR_SOURCES = (
     Path("scripts/run_ci_pack.py"),
@@ -49,6 +51,7 @@ TOP_LEVEL_KEYS = {
     "manifest",
     "selector_sources",
     "dependency_signatures",
+    "static_path_candidates",
     "job_count",
     "job_inventory",
     "jobs",
@@ -68,6 +71,7 @@ class ScopeIndexVerification:
     index_sha256: str
     manifest_sha256: str
     dependency_signature_count: int
+    static_path_candidate_count: int
     elapsed_seconds: float
 
 
@@ -191,14 +195,83 @@ def _tracked_python_paths(repo_root: Path) -> tuple[str, ...]:
     return tuple(paths)
 
 
-def _dependency_signature_receipts(repo_root: Path) -> dict[str, Any]:
-    """Fingerprint dependency structure, never complete Python source bytes."""
+def _canonical_static_candidate_path(value: Any, *, label: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ScopeIndexError(f"{label} must be a non-empty string")
+    candidate = PurePosixPath(value)
+    if (
+        value != value.strip()
+        or candidate.is_absolute()
+        or candidate.as_posix() != value
+        or "\\" in value
+        or any(part in {"", ".", ".."} for part in candidate.parts)
+        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+    ):
+        raise ScopeIndexError(
+            f"{label} must be a canonical repository-relative POSIX path: {value!r}"
+        )
     try:
-        from scripts.ci_scope_dependencies import dependency_structure_sha256
+        from scripts.ci_scope_dependencies import LITERAL_DIRS
     except (ImportError, OSError, SyntaxError) as exc:
-        raise ScopeIndexError(f"cannot import dependency signature analyzer: {exc}") from exc
+        raise ScopeIndexError(f"cannot import static path roots: {exc}") from exc
+    if not candidate.parts or candidate.parts[0] not in LITERAL_DIRS:
+        raise ScopeIndexError(
+            f"{label} starts outside the static path roots: {value!r}"
+        )
+    return value
+
+
+def _worktree_static_candidate_present(repo_root: Path, relative: str) -> bool:
+    """Whether ``relative`` is a regular file, rejecting symlink indirection."""
+    current = repo_root
+    parts = PurePosixPath(relative).parts
+    for index, part in enumerate(parts):
+        current /= part
+        try:
+            mode = current.lstat().st_mode
+        except FileNotFoundError:
+            return False
+        except OSError as exc:
+            raise ScopeIndexError(
+                f"cannot inspect static path candidate {relative}: {exc}"
+            ) from exc
+        if stat.S_ISLNK(mode):
+            raise ScopeIndexError(
+                f"static path candidate {relative!r} traverses symbolic link "
+                f"{current.relative_to(repo_root).as_posix()!r}"
+            )
+        if index < len(parts) - 1:
+            if stat.S_ISREG(mode):
+                return False
+            if not stat.S_ISDIR(mode):
+                raise ScopeIndexError(
+                    f"static path candidate {relative!r} traverses an unsafe file type"
+                )
+            continue
+        if stat.S_ISREG(mode):
+            return True
+        if stat.S_ISDIR(mode):
+            return False
+        raise ScopeIndexError(
+            f"static path candidate {relative!r} is not a regular file or directory"
+        )
+    return False
+
+
+def _dependency_contract_receipts(
+    repo_root: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Bind Python structure plus static path existence in one source scan."""
+    try:
+        from scripts.ci_scope_dependencies import (
+            dependency_structure_sha256,
+            static_path_candidates,
+        )
+    except (ImportError, OSError, SyntaxError) as exc:
+        raise ScopeIndexError(f"cannot import dependency analyzers: {exc}") from exc
 
     records: list[dict[str, str]] = []
+    candidate_paths: set[str] = set()
     for relative in _tracked_python_paths(repo_root):
         source, _label = _repo_file(
             repo_root, relative, label=f"tracked Python source {relative}"
@@ -215,11 +288,32 @@ def _dependency_signature_receipts(repo_root: Path) -> dict[str, Any]:
                 "signature_sha256": dependency_structure_sha256(relative, text),
             }
         )
-    return {
-        "schema": DEPENDENCY_SIGNATURE_SCHEMA,
-        "python_count": len(records),
-        "files": records,
-    }
+        for candidate in static_path_candidates(text):
+            candidate_paths.add(
+                _canonical_static_candidate_path(
+                    candidate,
+                    label=f"static path candidate found in {relative}",
+                )
+            )
+    candidates = [
+        {
+            "path": relative,
+            "present": _worktree_static_candidate_present(repo_root, relative),
+        }
+        for relative in sorted(candidate_paths)
+    ]
+    return (
+        {
+            "schema": DEPENDENCY_SIGNATURE_SCHEMA,
+            "python_count": len(records),
+            "files": records,
+        },
+        {
+            "schema": STATIC_PATH_CANDIDATE_SCHEMA,
+            "candidate_count": len(candidates),
+            "candidates": candidates,
+        },
+    )
 
 
 def _validate_path(path: Any, *, job_id: str, position: int) -> str:
@@ -399,11 +493,78 @@ def _dependency_signature_inventory(
     return inventory
 
 
-def load_dependency_signature_inventory(index_path: Path | str) -> dict[str, str]:
-    """Load the digest-bound structural inventory without scanning live sources."""
+def _static_path_candidate_inventory(
+    document: Mapping[str, Any],
+) -> dict[str, bool]:
+    raw_inventory = _require_exact_keys(
+        document["static_path_candidates"],
+        {"schema", "candidate_count", "candidates"},
+        label="static path candidate inventory",
+    )
+    if raw_inventory["schema"] != STATIC_PATH_CANDIDATE_SCHEMA:
+        raise ScopeIndexError(
+            "unsupported static path candidate schema "
+            f"{raw_inventory['schema']!r}; expected {STATIC_PATH_CANDIDATE_SCHEMA!r}"
+        )
+    count = raw_inventory["candidate_count"]
+    if type(count) is not int or count < 0:
+        raise ScopeIndexError(
+            "static path candidate_count must be a non-negative integer"
+        )
+    candidates = raw_inventory["candidates"]
+    if not isinstance(candidates, list):
+        raise ScopeIndexError("static path candidates must be an array")
+    if len(candidates) != count:
+        raise ScopeIndexError(
+            "static path candidate_count/candidates length disagree: "
+            f"{count} != {len(candidates)}"
+        )
+
+    inventory: dict[str, bool] = {}
+    observed: list[str] = []
+    for index, raw in enumerate(candidates):
+        receipt = _require_exact_keys(
+            raw,
+            {"path", "present"},
+            label=f"static path candidate record {index}",
+        )
+        path = _canonical_static_candidate_path(
+            receipt["path"], label=f"static path candidate record {index} path"
+        )
+        if path in inventory:
+            raise ScopeIndexError(f"duplicate static path candidate {path!r}")
+        present = receipt["present"]
+        if type(present) is not bool:
+            raise ScopeIndexError(
+                f"static path candidate {path!r} present must be a boolean"
+            )
+        inventory[path] = present
+        observed.append(path)
+    if observed != sorted(observed):
+        raise ScopeIndexError("static path candidate paths must be sorted canonically")
+    return inventory
+
+
+def load_dependency_contract_inventories(
+    index_path: Path | str,
+) -> tuple[dict[str, str], dict[str, bool]]:
+    """Load both digest-bound dependency inventories with one index read."""
     document = _read_index(Path(index_path).resolve())
     _verify_digest_and_schema(document)
-    return _dependency_signature_inventory(document)
+    return (
+        _dependency_signature_inventory(document),
+        _static_path_candidate_inventory(document),
+    )
+
+
+def load_dependency_signature_inventory(index_path: Path | str) -> dict[str, str]:
+    """Load the digest-bound structural inventory without scanning live sources."""
+    return load_dependency_contract_inventories(index_path)[0]
+
+
+def load_static_path_candidate_inventory(index_path: Path | str) -> dict[str, bool]:
+    """Load digest-bound static candidate existence without scanning sources."""
+    return load_dependency_contract_inventories(index_path)[1]
 
 
 def verify_changed_python_source(
@@ -446,6 +607,33 @@ def verify_changed_python_source(
             "regenerate .github/ci/scope-index.json"
         )
     return observed
+
+
+def verify_changed_static_path_candidate(
+    inventory: Mapping[str, bool],
+    relative_path: str,
+    submitted_present: bool,
+) -> str:
+    """Verify one candidate's regular-file existence in the submitted tree."""
+    path = _canonical_static_candidate_path(
+        relative_path, label="changed static path candidate"
+    )
+    if type(submitted_present) is not bool:
+        raise ScopeIndexError("submitted static path presence must be a boolean")
+    if path not in inventory:
+        raise ScopeIndexError(f"static path candidate {path!r} is not indexed")
+    expected = inventory[path]
+    if type(expected) is not bool:
+        raise ScopeIndexError(
+            f"static path candidate {path!r} has invalid indexed presence"
+        )
+    if expected != submitted_present:
+        transition = "was added" if submitted_present else "was deleted"
+        raise ScopeIndexError(
+            "static path candidate inventory is stale: "
+            f"{path} {transition}; regenerate .github/ci/scope-index.json"
+        )
+    return "present" if submitted_present else "absent"
 
 
 def _write_index(path: Path, document: Mapping[str, Any]) -> None:
@@ -528,7 +716,7 @@ def generate_scope_index(
     )
     manifest_sha = _sha256_file(manifest, label="legacy manifest")
     selector_receipts = _selector_receipts(root)
-    dependency_receipts = _dependency_signature_receipts(root)
+    dependency_receipts, candidate_receipts = _dependency_contract_receipts(root)
     pack = _pack_module(pack_module)
     try:
         live_jobs = list(pack.load_legacy_jobs(manifest))
@@ -576,6 +764,7 @@ def generate_scope_index(
         },
         "selector_sources": selector_receipts,
         "dependency_signatures": dependency_receipts,
+        "static_path_candidates": candidate_receipts,
         "job_count": len(records),
         "job_inventory": inventory,
         "jobs": records,
@@ -592,9 +781,10 @@ def _verify_document(
     repo_root: Path,
     manifest_path: Path | str,
     pack_module: Any | None,
-) -> tuple[list[Any], str, str, int]:
+) -> tuple[list[Any], str, str, int, int]:
     digest = _verify_digest_and_schema(document)
     dependency_inventory = _dependency_signature_inventory(document)
+    candidate_inventory = _static_path_candidate_inventory(document)
 
     manifest_record = _require_exact_keys(
         document["manifest"], {"path", "sha256"}, label="manifest receipt"
@@ -735,7 +925,13 @@ def _verify_document(
                 f"ordinal/weight=({recorded_ordinal}, {recorded_weight})"
             )
         replacements.append(replace(live_job, paths=paths))
-    return replacements, digest, recorded_manifest_sha, len(dependency_inventory)
+    return (
+        replacements,
+        digest,
+        recorded_manifest_sha,
+        len(dependency_inventory),
+        len(candidate_inventory),
+    )
 
 
 def verify_scope_index(
@@ -750,7 +946,13 @@ def verify_scope_index(
     started = time.perf_counter()
     root = Path(repo_root).resolve()
     document = _read_index(Path(index_path).resolve())
-    jobs, digest, manifest_sha, dependency_signature_count = _verify_document(
+    (
+        jobs,
+        digest,
+        manifest_sha,
+        dependency_signature_count,
+        static_path_candidate_count,
+    ) = _verify_document(
         document,
         repo_root=root,
         manifest_path=manifest_path,
@@ -761,6 +963,7 @@ def verify_scope_index(
         index_sha256=digest,
         manifest_sha256=manifest_sha,
         dependency_signature_count=dependency_signature_count,
+        static_path_candidate_count=static_path_candidate_count,
         elapsed_seconds=time.perf_counter() - started,
     )
 
@@ -827,6 +1030,7 @@ def main(
                         "index": str(args.output),
                         "jobs": document["job_count"],
                         "dependency_signatures": document["dependency_signatures"]["python_count"],
+                        "static_path_candidates": document["static_path_candidates"]["candidate_count"],
                         "index_sha256": document["index_sha256"],
                     },
                     sort_keys=True,
@@ -847,6 +1051,7 @@ def main(
                     "index": str(args.index),
                         "jobs": len(receipt.jobs),
                         "dependency_signatures": receipt.dependency_signature_count,
+                        "static_path_candidates": receipt.static_path_candidate_count,
                         "index_sha256": receipt.index_sha256,
                     "elapsed_seconds": round(receipt.elapsed_seconds, 6),
                 },

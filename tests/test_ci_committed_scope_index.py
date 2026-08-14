@@ -124,6 +124,32 @@ def _write_and_reseal(path: Path, payload: dict) -> None:
     )
 
 
+def _install_static_candidate_fixture(tiny_repo: Path) -> tuple[Path, Path, Path]:
+    config = tiny_repo / "config"
+    config.mkdir(exist_ok=True)
+    present = config / "present.yml"
+    missing = config / "missing.yml"
+    link = config / "link.yml"
+    present.write_text("value: one\n", encoding="utf-8")
+    (tiny_repo / "engine/worker.py").write_text(
+        "from pathlib import Path\n"
+        "ROOT = Path(__file__).resolve().parents[1]\n"
+        "PRESENT = 'config/present.yml'\n"
+        "MISSING = ROOT / 'config' / 'missing.yml'\n"
+        "LINK = 'config/link.yml'\n"
+        "DATA = 'config/runtime.json'  # ci-trigger-closure: data\n"
+        "def calculate():\n"
+        "    return 1\n",
+        encoding="utf-8",
+    )
+    return present, missing, link
+
+
+def _commit_fixture(tiny_repo: Path, message: str) -> None:
+    subprocess.run(["git", "add", "-A"], cwd=tiny_repo, check=True)
+    subprocess.run(["git", "commit", "-qm", message], cwd=tiny_repo, check=True)
+
+
 def test_generation_is_deterministic_and_load_returns_legacy_job_replacements(
     tiny_repo: Path,
 ) -> None:
@@ -159,6 +185,148 @@ def test_generation_is_deterministic_and_load_returns_legacy_job_replacements(
         repo_root=tiny_repo,
         pack_module=ci_pack,
     ) == list(receipt.jobs)
+
+
+def test_generation_and_verify_bind_present_and_absent_static_path_candidates(
+    tiny_repo: Path,
+) -> None:
+    _install_static_candidate_fixture(tiny_repo)
+    index = _generate(tiny_repo)
+    payload = _read(index)
+    inventory = scope_index.load_static_path_candidate_inventory(index)
+    receipt = scope_index.verify_scope_index(
+        index,
+        repo_root=tiny_repo,
+        pack_module=ci_pack,
+    )
+
+    assert payload["schema"] == "ci.committed_scope_index.v3"
+    assert payload["static_path_candidates"]["schema"] == (
+        "ci.static_path_candidate_inventory.v1"
+    )
+    assert inventory["config/present.yml"] is True
+    assert inventory["config/missing.yml"] is False
+    assert inventory["config/link.yml"] is False
+    assert "config/runtime.json" not in inventory
+    assert receipt.static_path_candidate_count == len(inventory)
+    assert scope_index.verify_changed_static_path_candidate(
+        inventory, "config/present.yml", True
+    ) == "present"
+    assert scope_index.verify_changed_static_path_candidate(
+        inventory, "config/missing.yml", False
+    ) == "absent"
+
+
+def test_static_path_candidate_tamper_is_digest_bound(tiny_repo: Path) -> None:
+    _install_static_candidate_fixture(tiny_repo)
+    index = _generate(tiny_repo)
+    payload = _read(index)
+    record = next(
+        item
+        for item in payload["static_path_candidates"]["candidates"]
+        if item["path"] == "config/present.yml"
+    )
+    record["present"] = False
+    index.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(scope_index.ScopeIndexError, match="digest mismatch"):
+        scope_index.load_static_path_candidate_inventory(index)
+
+
+def test_static_path_candidate_inventory_rejects_noncanonical_resealed_path(
+    tiny_repo: Path,
+) -> None:
+    _install_static_candidate_fixture(tiny_repo)
+    index = _generate(tiny_repo)
+    payload = _read(index)
+    payload["static_path_candidates"]["candidates"][0]["path"] = (
+        "config/" + "../outside.yml"
+    )
+    _write_and_reseal(index, payload)
+
+    with pytest.raises(scope_index.ScopeIndexError, match="canonical"):
+        scope_index.load_static_path_candidate_inventory(index)
+
+
+def test_static_path_candidate_addition_and_deletion_require_regeneration(
+    tiny_repo: Path,
+) -> None:
+    _install_static_candidate_fixture(tiny_repo)
+    index = _generate(tiny_repo)
+    inventory = scope_index.load_static_path_candidate_inventory(index)
+
+    with pytest.raises(scope_index.ScopeIndexError, match="missing.yml was added"):
+        scope_index.verify_changed_static_path_candidate(
+            inventory, "config/missing.yml", True
+        )
+    with pytest.raises(scope_index.ScopeIndexError, match="present.yml was deleted"):
+        scope_index.verify_changed_static_path_candidate(
+            inventory, "config/present.yml", False
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "changed", "expected_status", "expected_code"),
+    [
+        ("add", "config/missing.yml", "fail", "static_path_candidate_stale"),
+        ("delete", "config/present.yml", "fail", "static_path_candidate_stale"),
+        ("modify", "config/present.yml", "pass", None),
+        ("symlink", "config/link.yml", "fail", "static_path_candidate_unsafe"),
+    ],
+)
+def test_preflight_checks_static_candidate_topology_from_submitted_head(
+    tiny_repo: Path,
+    mutation: str,
+    changed: str,
+    expected_status: str,
+    expected_code: str | None,
+) -> None:
+    present, missing, link = _install_static_candidate_fixture(tiny_repo)
+    index = _generate(tiny_repo)
+    subprocess.run(["git", "init", "-q"], cwd=tiny_repo, check=True)
+    subprocess.run(
+        ["git", "config", "user.name", "CI Test"], cwd=tiny_repo, check=True
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "ci-test@example.invalid"],
+        cwd=tiny_repo,
+        check=True,
+    )
+    _commit_fixture(tiny_repo, "indexed fixture")
+
+    if mutation == "add":
+        missing.write_text("value: added\n", encoding="utf-8")
+    elif mutation == "delete":
+        present.unlink()
+    elif mutation == "modify":
+        present.write_text("value: modified\n", encoding="utf-8")
+    else:
+        link.symlink_to("present.yml")
+    _commit_fixture(tiny_repo, f"{mutation} candidate")
+
+    submitted = tiny_repo / changed
+    submitted.unlink(missing_ok=True)  # prove the check reads HEAD, not sparse state
+    result = structural_preflight.run_preflight(
+        tiny_repo,
+        [changed],
+        scope_index_path=index,
+    )
+
+    assert result["status"] == expected_status
+    assert result["metrics"]["changed_static_path_candidates_examined"] == 1
+    codes = {finding["code"] for finding in result["findings"]}
+    if expected_code is None:
+        assert not {"static_path_candidate_stale", "static_path_candidate_unsafe"} & codes
+    else:
+        assert expected_code in codes
+
+
+def test_generation_rejects_static_candidate_symlink(tiny_repo: Path) -> None:
+    _present, _missing, link = _install_static_candidate_fixture(tiny_repo)
+    link.symlink_to("present.yml")
+
+    with pytest.raises(scope_index.ScopeIndexError, match="symbolic link"):
+        _generate(tiny_repo)
 
 
 def test_cli_generate_and_verify(tiny_repo: Path, capsys: pytest.CaptureFixture) -> None:
@@ -493,8 +661,8 @@ def test_ordinal_or_weight_mismatch_fails_closed(
         "../secret",
         "/absolute",
         "engine\\module.py",
-        "engine/./module.py",
-        "engine//module.py",
+        "engine/" + "./module.py",
+        "engine/" + "/module.py",
         " tests/test_alpha.py",
         7,
     ],
