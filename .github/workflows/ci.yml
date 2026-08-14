@@ -1565,6 +1565,11 @@ on:
       - "lib/nyse_calendar.py"
       - "collectors/equity_earnings.py"
       - "scripts/audit_earnings_freshness.py"
+      # Sparse session-worktree profile (job: workflow-yaml, policy R8).
+      # scripts/**, config/** and .claude/** already reach the actor, config and
+      # WorktreeCreate hook; this is the test half so a test-only edit still
+      # starts the job that runs it.
+      - "tests/test_sparse_worktree_profile.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
@@ -3432,6 +3437,7 @@ on:
       - "tests/test_pick_lab_render.py"
       - "tests/test_pick_lab_runner.py"
       - "tests/test_prophet_card_shared.py"
+      - "tests/test_prophet_board_read.py"
       - "tests/test_prophet_verb_ink_contrast.py"
       - "tests/test_stock_board_v2.py"
       - "tests/test_track_ledger_emitters.py"
