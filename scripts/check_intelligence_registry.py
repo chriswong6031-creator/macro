@@ -33,10 +33,17 @@ FAIL CLOSED
 A previous round printed "0 integrity violation(s)" when it could not read its inputs —
 "I could not look" rendered as "I looked and it was clean", in the one line a CI reader
 sees. The summary line here ALWAYS carries an ``inputs=`` clause; when anything was
-unreadable it reads ``inputs=INCOMPLETE`` and NAMES what was missed, and ``--strict`` exits
-non-zero on it. Structural violations exit non-zero unconditionally: they are properties of
-the derivation and of the hand-edited overlay, green by construction on arrival, so they
-cannot fire fleet-wide for nobody's fault.
+unreadable it reads ``inputs=INCOMPLETE`` and NAMES what was missed.
+
+AN INCOMPLETE READ EXITS NON-ZERO ON EVERY RUN, WITH OR WITHOUT ``--strict`` (ruling
+2026-08-14). It is a RUN-LEVEL defect — the guard failed to do its job — not a condition of
+the corpus, so it is not the kind of thing an advisory tier exists to soften. Making it
+conditional on a flag nobody passes in CI meant the fail-closed channel printed a warning
+and returned success, which is the same green a clean run returns. Structural violations
+exit non-zero for the same reason: they are properties of the derivation and of the
+hand-edited overlay, green by construction on arrival, so they cannot fire fleet-wide for
+nobody's fault. ``--strict`` keeps its own distinct meaning — content FINDINGS also red —
+and stays reserved for T7's promotion era.
 
 SEVERITY
 --------
@@ -44,7 +51,8 @@ Registered at ``warn``, not ``hard``, deliberately — see the entry's notes in
 ``config/house_law_checks.yml``. The dominant output is the pre-existing C-1 backlog, and a
 gate that reds the fleet on first wiring for a condition nobody introduced gets routed
 around instead of obeyed. ``--strict`` is the promotion lever T7 pulls once the backlog is
-drained.
+drained. That leniency covers FINDINGS only: a run that could not read its inputs is not a
+lenient case, it is a run that did not happen.
 
 Annotations are emitted with a bare ``print`` and ``flush=True`` per CLAUDE.md §"GitHub
 annotations must START the line" — a logger would prefix the line and GitHub would silently
@@ -52,18 +60,21 @@ drop it.
 
 Usage
 -----
-  python3 scripts/check_intelligence_registry.py            # report; violations exit 1
-  python3 scripts/check_intelligence_registry.py --strict   # findings + INCOMPLETE inputs
-                                                            #   also exit non-zero
+  python3 scripts/check_intelligence_registry.py            # violations OR an INCOMPLETE
+                                                            #   input set exit 1
+  python3 scripts/check_intelligence_registry.py --strict   # content findings also exit 1
   python3 scripts/check_intelligence_registry.py --json
   python3 scripts/check_intelligence_registry.py --selftest
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
 import copy
+import io
 import json
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
@@ -77,6 +88,7 @@ from engine.intelligence_registry import (  # noqa: E402
     validate_structure,
 )
 from engine.species_registry import VALID_VALIDATION_STATUSES  # noqa: E402
+from scripts import build_intelligence_registry as builder  # noqa: E402
 from scripts.build_intelligence_registry import build  # noqa: E402
 
 TITLE = "engine-authority-evidence"
@@ -193,6 +205,129 @@ def _codes(registry: dict[str, Any]) -> set[str]:
 
 def _codes_for(registry: dict[str, Any], engine_id: str) -> set[str]:
     return {f.code for f in audit_content(registry) if f.engine_id == engine_id}
+
+
+# ---------------------------------------------------------------------------
+# Fixture ROOT — ONE fixture source, shared by --selftest and by the test suites
+# ---------------------------------------------------------------------------
+#
+# The in-memory fixtures above exercise the DERIVATION. Everything that is a property of
+# FILE I/O — the sparse-worktree ladder, the fail-closed channel, the exit code, a
+# malformed store — needs a real directory, so this writes the smallest root that reads
+# COMPLETE. A control then flips exactly one input and can attribute the result to that
+# flip.
+#
+# The suites IMPORT this rather than growing their own copy. Two fixture corpora is how
+# two definitions of "a complete input set" drift apart, and the one that drifts is
+# always the one the gate is not run against.
+#
+# It also gives the suites a C-1 finding and a derived exclusion BY CONSTRUCTION, which is
+# what let the live-corpus assertions move off config/synapse.yml: a test that needs "at
+# least one unevidenced authority artifact" must not be asking the live tree for one — the
+# C-1 backlog is the thing T7 exists to DRAIN, and draining it would have reddened the lane
+# that reported it.
+
+#: Everything a caller needs to address the fixture without re-deriving the ids.
+FIXTURE_PRODUCER = "engine/fixture_gate.py"
+FIXTURE_PROGRAM = "fixture-prog"
+FIXTURE_ENGINE_ID = f"{FIXTURE_PRODUCER}::{FIXTURE_PROGRAM}"
+FIXTURE_EXCLUDED_ENGINE_ID = f"<MANUAL>::{FIXTURE_PROGRAM}"
+
+#: One authority-bearing artifact with NO qual_ladder_ref (the C-1 exemplar) and one
+#: placeholder-producer artifact (the DERIVED exclusion, which is what makes the
+#: pre-exclusion cell partition observably different from the built engine ids).
+_FIXTURE_ROOT_SYNAPSE = """\
+meta:
+  schema_version: 1
+artifacts:
+  fixture-gate:
+    path: data/fixture_gate.json
+    format: json
+    producer: engine/fixture_gate.py
+    owner_program: fixture-prog
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 24
+    schema: fixture
+    tier: scored
+    horizon_role: context
+    consumers: []
+  fixture-manual-chip:
+    path: site/fixture_manual.json
+    format: json
+    producer: <MANUAL>
+    owner_program: fixture-prog
+    cadence: manual
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 24
+    schema: fixture
+    tier: display
+    horizon_role: context
+    consumers: []
+"""
+
+_FIXTURE_ROOT_CLAIMS = '{"desk": "fixture_desk", "horizon_d": 21, "direction": 1}\n'
+_FIXTURE_ROOT_OVERLAY = "schema_version: 1\nengines: {}\n"
+_FIXTURE_ROOT_QUAL_LADDER = "fixture.ladder:\n  note: a fixture prereg ladder key\n"
+_FIXTURE_ROOT_SPECIES = '{"species": []}\n'
+_FIXTURE_ROOT_PRODUCER_SOURCE = '"""Fixture producer. Imports no qledger, registers no desk."""\n'
+
+
+def write_fixture_root(
+    root: Path,
+    *,
+    synapse: str | None = None,
+    claims: str | None = None,
+    overlay: str | None = None,
+    qual_ladder: str | None = None,
+    species: str | None = None,
+) -> Path:
+    """Materialise a COMPLETE fixture root at ``root`` and return it.
+
+    Every input is overridable AS TEXT, because the states worth controlling for are
+    exactly the ones no object can express: bytes that do not parse. Passing ``""`` writes
+    an empty file (a real state); the default is used only when the argument is omitted.
+
+    ``root`` should be a fresh directory. The builder caches reads per ``(root, rel)``
+    within a process, so reusing one directory for two variants would serve the first
+    variant's text to the second — a control that silently tests nothing.
+    """
+    root.mkdir(parents=True, exist_ok=True)
+    files = {
+        "config/synapse.yml": _FIXTURE_ROOT_SYNAPSE if synapse is None else synapse,
+        "config/intelligence_registry_overlay.yml": (
+            _FIXTURE_ROOT_OVERLAY if overlay is None else overlay
+        ),
+        "config/qual_ladder.yml": (
+            _FIXTURE_ROOT_QUAL_LADDER if qual_ladder is None else qual_ladder
+        ),
+        "data/species/registry.json": _FIXTURE_ROOT_SPECIES if species is None else species,
+        "data/qledger/claims.jsonl": _FIXTURE_ROOT_CLAIMS if claims is None else claims,
+        FIXTURE_PRODUCER: _FIXTURE_ROOT_PRODUCER_SOURCE,
+    }
+    for rel, text in files.items():
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return root
+
+
+@contextlib.contextmanager
+def fixture_root(**overrides: str):
+    """A throwaway fixture root, for callers with no tmp_path of their own."""
+    with tempfile.TemporaryDirectory(prefix="t1-fixture-") as tmp:
+        yield write_fixture_root(Path(tmp) / "repo", **overrides)
+
+
+def _run_on_fixture(argv: list[str], **overrides: str) -> tuple[int, str]:
+    """Run the CLI against a throwaway fixture root; return (exit code, stdout)."""
+    with fixture_root(**overrides) as root:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = main([*argv, "--root", str(root)])
+        return rc, buf.getvalue()
 
 
 def _selftest() -> int:
@@ -625,6 +760,128 @@ def _selftest() -> int:
         bool(validate_structure(deflated, valid_validation_statuses=statuses)),
     )
 
+    # ---- THE FIXTURE ROOT: a real build, over real files -------------------
+    #
+    # Everything below runs the BUILDER against a directory. These are the controls the
+    # in-memory fixtures structurally cannot carry — a store that opens and does not
+    # parse, an exit code, a line in the log body.
+    with fixture_root() as clean_root:
+        clean_registry, clean_report = build(clean_root)
+    add(
+        "POSITIVE CONTROL — the fixture ROOT reads COMPLETE (so any INCOMPLETE below is "
+        "attributable to the one input that control flipped)",
+        clean_report["inputs_complete"] is True and clean_report["unreadable_inputs"] == [],
+    )
+    add(
+        "POSITIVE CONTROL — the fixture root derives its C-1 exemplar and its DERIVED "
+        "exclusion by construction",
+        "AUTHORITY_WITHOUT_EVIDENCE" in _codes_for(clean_registry, FIXTURE_ENGINE_ID)
+        and [r["engine_id"] for r in clean_registry["excluded"]]
+        == [FIXTURE_EXCLUDED_ENGINE_ID],
+    )
+
+    # ---- A MALFORMED STORE IS INCOMPLETE, NEVER "ZERO ROWS" ----------------
+    #
+    # The reader swallowed a json.JSONDecodeError per line and returned whatever parsed,
+    # so a store of pure garbage and a store that was read cleanly and held no desk rows
+    # produced the SAME report. Blank lines and `#` comments stay skippable.
+    malformed_claims = (
+        '{"desk": "fixture_desk", "horizon_d": 21}\n'
+        "\n"
+        "# a comment line, skippable and uncounted\n"
+        "{not json at all\n"
+        '{"desk": "fixture_desk", "horizon_d": 63}\n'
+        '{"desk": "fixture_desk", truncated…\n'
+    )
+    rc_malformed, out_malformed = _run_on_fixture([], claims=malformed_claims)
+    add(
+        "NEGATIVE — a claims store with 2 unparseable lines reads INCOMPLETE and NAMES "
+        "the store with the count (not 'zero rows')",
+        "inputs=INCOMPLETE" in out_malformed
+        and "claims.jsonl (2 unparseable line(s) of 4)" in out_malformed,
+    )
+    add(
+        "NEGATIVE — a partially blind run exits NON-ZERO with NO --strict flag "
+        "(an incomplete read is a RUN-level defect, not a corpus condition)",
+        rc_malformed != 0,
+    )
+    with fixture_root(claims=malformed_claims) as partial_root:
+        _, partial_report = build(partial_root)
+    add(
+        "POSITIVE CONTROL — the rows that DID parse are KEPT under disclosed partial "
+        "blindness (the null law represents the gap; it does not delete the readable half)",
+        partial_report["sources"][str(builder.CLAIMS_REL)].endswith(
+            "(2 unparseable line(s))"
+        ),
+    )
+    rc_clean, out_clean = _run_on_fixture([])
+    add(
+        "POSITIVE CONTROL — a fully valid claims store raises NO false alarm",
+        rc_clean == 0 and "inputs=complete" in out_clean,
+    )
+    with fixture_root(claims='[1, 2, 3]\n{"desk": "fixture_desk"}\n') as list_root:
+        _, list_report = build(list_root)
+    add(
+        "NEGATIVE — a line that is VALID JSON but not an object (a bare list) is counted "
+        "unparseable, not skipped as a row with no desk",
+        any(
+            "claims.jsonl (1 unparseable line(s) of 2)" in name
+            for name in list_report["unreadable_inputs"]
+        ),
+    )
+
+    # ---- A DOCUMENT THAT READS BUT DOES NOT PARSE --------------------------
+    rc_bad_synapse, out_bad_synapse = _run_on_fixture([], synapse="{unclosed: [mapping\n")
+    add(
+        "NEGATIVE — a synapse.yml that READS but does not parse is NOT CHECKED and exits "
+        "non-zero, never a bare traceback",
+        rc_bad_synapse != 0 and "NOT CHECKED" in out_bad_synapse,
+    )
+    rc_list_synapse, out_list_synapse = _run_on_fixture([], synapse="- a\n- b\n")
+    add(
+        "NEGATIVE — a synapse.yml that parses to a LIST is NOT CHECKED too (a mapping is "
+        "the only shape a partition can be derived from)",
+        rc_list_synapse != 0 and "NOT CHECKED" in out_list_synapse,
+    )
+    with fixture_root(overlay="{unclosed: [mapping\n") as bad_overlay_root:
+        _, bad_overlay_report = build(bad_overlay_root)
+    add(
+        "NEGATIVE — an unparseable overlay is treated as ABSENT and NAMED, with "
+        "sources='unparseable' (never an empty overlay, never a traceback)",
+        str(builder.OVERLAY_REL) in bad_overlay_report["unreadable_inputs"]
+        and bad_overlay_report["sources"][str(builder.OVERLAY_REL)] == "unparseable",
+    )
+    with fixture_root(overlay="- not\n- a mapping\n") as list_overlay_root:
+        _, list_overlay_report = build(list_overlay_root)
+    add(
+        "NEGATIVE — an overlay that parses to a LIST is named the same way",
+        str(builder.OVERLAY_REL) in list_overlay_report["unreadable_inputs"],
+    )
+    with fixture_root(overlay="") as empty_overlay_root:
+        _, empty_overlay_report = build(empty_overlay_root)
+    add(
+        "POSITIVE CONTROL — an EMPTY overlay file is READ, not unreadable ('no curated "
+        "rows' is what it honestly says)",
+        empty_overlay_report["inputs_complete"] is True,
+    )
+    with fixture_root(qual_ladder="- not\n- a mapping\n") as bad_ladder_root:
+        _, bad_ladder_report = build(bad_ladder_root)
+    add(
+        "NEGATIVE — a qual_ladder that parses to a NON-DICT is the NULL, not zero keys "
+        "(zero keys would resolve every ref against nothing and ACCUSE it)",
+        str(builder.QUAL_LADDER_REL) in bad_ladder_report["unreadable_inputs"],
+    )
+
+    # ---- THE C-1 BACKLOG SURVIVES A TERMINAL ------------------------------
+    add(
+        "NEGATIVE — C-1 rows are printed as PLAIN STDOUT lines, not annotation-only (the "
+        "law's primary deliverable must survive a terminal and a grep of the log body)",
+        any(
+            line.startswith(f"  [AUTHORITY_WITHOUT_EVIDENCE] {FIXTURE_ENGINE_ID}:")
+            for line in out_clean.splitlines()
+        ),
+    )
+
     ok = True
     for label, passed in checks:
         print(f"  [{'PASS' if passed else 'FAIL'}] {label}", flush=True)
@@ -655,7 +912,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--strict",
         action="store_true",
-        help="content findings and INCOMPLETE inputs also exit non-zero",
+        help=(
+            "content FINDINGS also exit non-zero (reserved for T7's promotion era). An "
+            "INCOMPLETE input set exits non-zero on EVERY run, with or without this flag."
+        ),
     )
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--selftest", action="store_true")
@@ -669,8 +929,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         registry, report = build(root)
     except SystemExit as exc:
-        # config/synapse.yml is readable from neither the worktree nor HEAD. Nothing could
-        # be derived, so nothing was checked — say that, never a clean count.
+        # config/synapse.yml is readable from neither the worktree nor HEAD, or it reads
+        # and does not parse as a YAML mapping. Nothing could be derived, so nothing was
+        # checked — say that, never a clean count, and never a bare traceback.
         message = str(exc)
         if args.json:
             print(
@@ -689,9 +950,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(f"::error title={TITLE}::{message}", flush=True)
             print(
-                "intelligence registry: NOT CHECKED — config/synapse.yml is unreadable, "
-                "so 0 violations would be 'I could not look' dressed as 'I looked and it "
-                "was clean'. inputs=INCOMPLETE (config/synapse.yml)",
+                "intelligence registry: NOT CHECKED — config/synapse.yml is unreadable or "
+                "unparseable, so 0 violations would be 'I could not look' dressed as 'I "
+                "looked and it was clean'. inputs=INCOMPLETE (config/synapse.yml)",
                 flush=True,
             )
         return 1
@@ -727,7 +988,9 @@ def main(argv: list[str] | None = None) -> int:
             ),
             flush=True,
         )
-        return 1 if violations or (args.strict and (findings or incomplete)) else 0
+        # An INCOMPLETE read reds unconditionally — see the module docstring's FAIL CLOSED
+        # section. --strict adds ONLY the content findings.
+        return 1 if violations or incomplete or (args.strict and findings) else 0
 
     for violation in violations:
         print(f"::error title={TITLE}::{violation}", flush=True)
@@ -753,9 +1016,12 @@ def main(argv: list[str] | None = None) -> int:
             f"::warning title={TITLE}::[{code}] {count} engine(s) — detail on stdout below",
             flush=True,
         )
+    # EVERY finding also goes to stdout, C-1 INCLUDED. The annotation budget re-ranks what
+    # GitHub renders; it must not decide what the LOG contains. C-1 is the law's primary
+    # deliverable, and it was annotation-only — invisible to a terminal run, to `| grep`,
+    # and to anyone reading the raw job log rather than the Actions summary.
     for finding in findings:
-        if finding.code != "AUTHORITY_WITHOUT_EVIDENCE":
-            print(f"  [{finding.code}] {finding.engine_id}: {finding.detail}", flush=True)
+        print(f"  [{finding.code}] {finding.engine_id}: {finding.detail}", flush=True)
 
     if incomplete:
         print(
@@ -780,9 +1046,11 @@ def main(argv: list[str] | None = None) -> int:
         flush=True,
     )
 
-    if violations:
+    # Mirrors the --json return above, deliberately in the same shape so the two modes
+    # cannot drift into disagreeing about what a failing run is.
+    if violations or incomplete:
         return 1
-    if args.strict and (findings or incomplete):
+    if args.strict and findings:
         return 1
     return 0
 

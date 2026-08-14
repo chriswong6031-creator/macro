@@ -27,6 +27,13 @@ Inputs (each may be unreadable; each unreadable one is NAMED, never silently def
   data/species/registry.json             lifecycle states (SPARSE-TOLERANT)
   data/qledger/claims.jsonl              desk row counts + declared horizons (SPARSE-TOLERANT)
 
+"Unreadable" includes PARTIAL: a store that opens but whose lines do not all parse is
+partially blind, and the count lands in ``unreadable_inputs`` beside the wholly-absent
+inputs. The rows that DID parse stay in the view — under the null law the incompleteness
+must be REPRESENTED, not made to disappear along with the readable half. A document that
+reads but does not PARSE (synapse, overlay, qual_ladder) is the same state as one that
+could not be read: it is named, never defaulted, and never a traceback.
+
 THE SPARSE-WORKTREE LADDER
 --------------------------
 Agent worktrees here have NO ``data/`` on disk while ~39,900 data paths are tracked in
@@ -48,6 +55,7 @@ import json
 import subprocess
 import sys
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -175,20 +183,62 @@ def _load_species(root: Path) -> tuple[list[dict] | None, str]:
         return None, "unparseable"
 
 
-def _load_qledger(root: Path) -> tuple[dict[str, int] | None, dict[str, list[int]] | None, str]:
+@dataclass(frozen=True)
+class QLedgerRead:
+    """One read of the claim corpus, WITH ITS OWN BLINDNESS ACCOUNTED FOR.
+
+    ``unparseable`` counts candidate lines the reader could not turn into a row — invalid
+    JSON, or valid JSON that is not an object. Blank lines and ``#`` comments are not
+    candidates and are never counted. ``considered`` is the number of candidate lines, so
+    the pair is reportable as "n of m".
+
+    The reader used to ``continue`` past a bad line, which made an UNREADABLE store
+    indistinguishable from a store that was read successfully and held zero desk rows —
+    "I could not look" rendered as "I looked and found nothing", the exact substitution
+    CLAUDE.md §Epistemics forbids. The parsed rows are KEPT (display-tier accrual continues
+    under disclosed partial blindness; the null law requires the incompleteness be
+    REPRESENTED, not that the readable half be discarded) and the count is surfaced so the
+    fail-closed channel can carry it.
+    """
+
+    rows: dict[str, int] | None
+    horizons: dict[str, list[int]] | None
+    source: str
+    unparseable: int
+    considered: int
+
+    @property
+    def source_label(self) -> str:
+        """The provenance string for ``report['sources']`` — partial blindness included."""
+        if not self.unparseable:
+            return self.source
+        return f"{self.source} ({self.unparseable} unparseable line(s))"
+
+
+def _load_qledger(root: Path) -> QLedgerRead:
     """Desk row counts and declared horizons from the claim corpus."""
     text, source = read_tracked(root, CLAIMS_REL)
     if text is None:
-        return None, None, source
+        return QLedgerRead(None, None, source, 0, 0)
     rows: Counter[str] = Counter()
     horizons: dict[str, set[int]] = defaultdict(set)
+    unparseable = 0
+    considered = 0
     for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
+        considered += 1
         try:
             record = json.loads(line)
         except json.JSONDecodeError:
+            unparseable += 1
+            continue
+        if not isinstance(record, dict):
+            # Valid JSON, wrong shape — a bare list or scalar carries no desk and cannot
+            # be read as a claim. Counting it is what separates "the store is malformed"
+            # from "the store has no rows for this desk".
+            unparseable += 1
             continue
         desk = record.get("desk")
         if not desk:
@@ -197,11 +247,48 @@ def _load_qledger(root: Path) -> tuple[dict[str, int] | None, dict[str, list[int
         horizon = record.get("horizon_d")
         if isinstance(horizon, int):
             horizons[desk].add(horizon)
-    return dict(rows), {k: sorted(v) for k, v in horizons.items()}, source
+    return QLedgerRead(
+        dict(rows),
+        {k: sorted(v) for k, v in horizons.items()},
+        source,
+        unparseable,
+        considered,
+    )
+
+
+def _load_overlay(root: Path) -> tuple[dict[str, Any] | None, str, bool]:
+    """Return (overlay, source, readable) for the curated overlay.
+
+    An overlay that READS but does not parse — or parses to something that is not a
+    mapping — is treated as ABSENT and NAMED, never as an empty overlay and never as a
+    traceback. The distinction matters because an absent overlay silently means "no
+    curated rows", which is exactly the value a broken overlay would fake.
+
+    An EMPTY file is a different state and stays readable: ``yaml.safe_load("")`` is
+    ``None``, the file was read, and "no curated rows" is what it honestly says.
+    """
+    text, source = read_tracked(root, OVERLAY_REL)
+    if text is None:
+        return None, source, False
+    try:
+        data = yaml.safe_load(text)
+    except yaml.YAMLError:
+        return None, "unparseable", False
+    if data is None:
+        return None, source, True
+    if not isinstance(data, dict):
+        return None, "unparseable", False
+    return data, source, True
 
 
 def _qual_ladder_keys(root: Path) -> tuple[set[str] | None, str]:
-    """The field keys of ``config/qual_ladder.yml`` — one half of ref resolution."""
+    """The field keys of ``config/qual_ladder.yml`` — one half of ref resolution.
+
+    A non-dict document is the NULL, not an empty key set: ``set()`` reads as "I looked
+    and this ladder has zero keys", which would silently resolve every ``qual_ladder_ref``
+    against nothing and report the refs as unresolvable rather than unchecked. Its
+    siblings (:func:`_load_species`, :func:`_load_overlay`) already answer ``None`` here.
+    """
     text, source = read_tracked(root, QUAL_LADDER_REL)
     if text is None:
         return None, source
@@ -209,7 +296,9 @@ def _qual_ladder_keys(root: Path) -> tuple[set[str] | None, str]:
         data = yaml.safe_load(text)
     except yaml.YAMLError:
         return None, "unparseable"
-    return (set(data) if isinstance(data, dict) else set()), source
+    if not isinstance(data, dict):
+        return None, "unparseable"
+    return set(data), source
 
 
 def _scan_producers(
@@ -274,13 +363,28 @@ def build(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
             f"FATAL: {SYNAPSE_REL} is readable from neither the worktree nor HEAD — "
             f"there is nothing to derive from."
         )
-    synapse = yaml.safe_load(synapse_text)
+    # A synapse that READS but does not parse is the same epistemic state as one that
+    # could not be read at all: nothing can be derived. It must reach the caller as the
+    # NOT CHECKED path, never as a bare YAMLError traceback (a traceback is a crash, and a
+    # crashed gate is indistinguishable from an infrastructure failure in a job log).
+    try:
+        synapse = yaml.safe_load(synapse_text)
+    except yaml.YAMLError as exc:
+        raise SystemExit(
+            f"FATAL: {SYNAPSE_REL} was read from {synapse_source} but does not parse as "
+            f"YAML ({type(exc).__name__}) — there is nothing to derive from."
+        ) from exc
+    if not isinstance(synapse, dict):
+        raise SystemExit(
+            f"FATAL: {SYNAPSE_REL} was read from {synapse_source} but parses to "
+            f"{type(synapse).__name__}, not a mapping — there is nothing to derive from."
+        )
 
-    overlay_text, overlay_source = read_tracked(root, OVERLAY_REL)
-    overlay = yaml.safe_load(overlay_text) if overlay_text is not None else None
+    overlay, overlay_source, overlay_ok = _load_overlay(root)
 
     species, species_source = _load_species(root)
-    desk_rows, desk_horizons, qledger_source = _load_qledger(root)
+    qledger = _load_qledger(root)
+    desk_rows, desk_horizons = qledger.rows, qledger.horizons
     ladder_keys, ladder_source = _qual_ladder_keys(root)
     article2, article2_source = _article2_modules()
 
@@ -310,7 +414,7 @@ def build(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
     unreadable_inputs: list[str] = []
     for name, ok in (
-        (str(OVERLAY_REL), overlay_text is not None),
+        (str(OVERLAY_REL), overlay_ok),
         (str(QUAL_LADDER_REL), ladder_keys is not None),
         (str(SPECIES_REL), species is not None),
         (str(CLAIMS_REL), desk_rows is not None),
@@ -318,6 +422,14 @@ def build(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     ):
         if not ok:
             unreadable_inputs.append(name)
+    # PARTIAL blindness on a store that DID open. The rows that parsed stay in the view —
+    # display-tier accrual continues under disclosed partial blindness — but the run is no
+    # longer entitled to call its inputs complete.
+    if qledger.unparseable:
+        unreadable_inputs.append(
+            f"{CLAIMS_REL} ({qledger.unparseable} unparseable line(s) of "
+            f"{qledger.considered})"
+        )
     unreadable_inputs += [f"producer:{p}" for p in sorted(unreadable_producers)]
 
     report = {
@@ -325,7 +437,7 @@ def build(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
             str(SYNAPSE_REL): synapse_source,
             str(OVERLAY_REL): overlay_source,
             str(SPECIES_REL): species_source,
-            str(CLAIMS_REL): qledger_source,
+            str(CLAIMS_REL): qledger.source_label,
             str(QUAL_LADDER_REL): ladder_source,
             "article2": article2_source,
         },

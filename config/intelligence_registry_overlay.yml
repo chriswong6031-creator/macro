@@ -85,8 +85,9 @@ engines: {}
 # Deliberately EMPTY on arrival.
 #
 # output_class is the single largest human cost in T1 — the builder reports the engines
-# that require one, and `--proposals PATH` emits a derived proposal per engine for review.
-# Those proposals are NOT ratified here yet. A wrong metric contract is worse than a null
-# one, so no output_class is guessed to make a gate green; the warn-tier law
+# that require one, and stops there. THERE IS NO PROPOSAL MODE: an earlier round shipped
+# `--proposals PATH`, which emitted a derived guess per engine, and it was deleted with the
+# rest of the generated-artifact design. A wrong metric contract is worse than a null one,
+# so no output_class is guessed to make a gate green; the warn-tier law
 # `epistemics.engine_authority_evidence` reports the gap on every PR and the count is
 # trackable. Ratification is T7's work in research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md.

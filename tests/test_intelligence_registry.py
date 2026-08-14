@@ -12,8 +12,15 @@ committed artifact pinned by equality and then as counts pinned in this file.
 
 The exception is §LIVE INPUTS at the bottom. Those tests run the builder over the real
 tree and assert only that it does not crash and returns a WELL-FORMED structure — no count,
-no name, no value. Two of them simulate the volatility directly: a synthetic claim append
-and a synthetic synapse artifact, each asserting the derivation stays structurally valid.
+no name, no value. Three of them simulate the volatility directly: a synthetic claim
+append, a MALFORMED claim append, and a synthetic synapse artifact, each asserting the
+derivation stays structurally valid and only the intended thing moves.
+
+Anything needing an input with a KNOWN property — an unevidenced authority artifact, an
+excluded cell, a broken import — uses `check_intelligence_registry.write_fixture_root`, the
+same fixture source the guard's own --selftest uses. Which tests may reach the live tree at
+all is pinned by AST against a frozen allowlist in
+`tests/test_check_intelligence_registry.py`.
 
 Nothing here reads data/ from the worktree; the sparse-cone ladder is exercised through the
 builder's own probes.
@@ -38,6 +45,8 @@ from engine.intelligence_registry import (
     OUTPUT_CLASSES,
     OVERLAY_ALLOWED_KEYS,
     OVERLAY_FORBIDDEN_KEYS,
+    QUAL_LADDER_RESOLUTIONS,
+    QUAL_LADDER_RESOLVED,
     SCHEMA,
     DeskScan,
     audit_content,
@@ -387,6 +396,31 @@ def test_the_builder_propagates_the_article2_null_rather_than_an_empty_list():
     assert "return [], " not in source and "return []," not in source
 
 
+def test_a_REAL_article2_import_failure_lands_in_unreadable_inputs(monkeypatch, tmp_path):
+    """THE SAME PROPERTY, REPRODUCED RATHER THAN GREPPED. The test above reads the source;
+    this one breaks the import for real (the name is removed from the module the helper
+    imports it FROM) and follows the null all the way to the fail-closed channel. Without
+    it, 'the table could not be imported' could still render as 'no Article-2 modules
+    exist' anywhere between the helper and the report."""
+    import scripts.build_intelligence_registry as builder
+    import scripts.check_intelligence_registry as guard
+    import scripts.check_synapse_reads as reads
+
+    monkeypatch.delattr(reads, "_ENTRY_ARTICLE2_MODULES")
+
+    modules, source = builder._article2_modules()
+    assert modules is None, "an unimportable table is the NULL, never an empty list"
+    assert source.startswith("unimportable"), source
+
+    root = guard.write_fixture_root(tmp_path / "repo")
+    _, report = builder.build(root)
+    assert (
+        "scripts/check_synapse_reads.py::_ENTRY_ARTICLE2_MODULES"
+        in report["unreadable_inputs"]
+    )
+    assert report["inputs_complete"] is False
+
+
 # ---------------------------------------------------------------------------
 # evidence_ref — the C-1 fix
 # ---------------------------------------------------------------------------
@@ -549,6 +583,64 @@ def test_an_UNCHECKED_ref_is_NOT_counted_as_evidence():
     assert row["evidence_ref"] is None, "an unprobed ref is not evidence"
     assert row["authority_evidence"]["unchecked_artifacts"] == ["a"]
     assert "AUTHORITY_EVIDENCE_UNCHECKED" in _codes(registry)
+
+
+#: EVERY resolution state, and exactly what each one is worth. The table is the assertion:
+#: (ref, ladder keys, existing files) -> (resolution, the ONE bucket it lands in,
+#: evidence_ref, the AUTHORITY_* codes that fire).
+_EVIDENCE_STATE_TABLE = [
+    (None, set(), set(), None, "unevidenced_artifacts", None,
+     {"AUTHORITY_WITHOUT_EVIDENCE"}),
+    ("altdata.action", {"altdata.action"}, set(), "qual_ladder_key", None,
+     ["altdata.action"], set()),
+    ("research/P.md", set(), {"research/P.md"}, "repo_path", None, ["research/P.md"], set()),
+    ("lol/nope.md", set(), set(), "unresolved", "unresolvable_artifacts", None,
+     {"AUTHORITY_EVIDENCE_UNRESOLVABLE"}),
+    # THE EPISTEMIC NULL. No probe was supplied, so nothing was looked at.
+    ("research/P.md", None, None, "unchecked", "unchecked_artifacts", None,
+     {"AUTHORITY_EVIDENCE_UNCHECKED"}),
+]
+
+
+@pytest.mark.parametrize(
+    "ref,keys,files,resolution,bucket,evidence_ref,codes", _EVIDENCE_STATE_TABLE
+)
+def test_the_evidence_states_are_enumerated_and_unchecked_is_never_evidence(
+    ref, keys, files, resolution, bucket, evidence_ref, codes
+):
+    """ALL FIVE STATES OF ONE AUTHORITY-BEARING ARTIFACT, IN ONE TABLE.
+
+    The handoff claimed the `unchecked` null "still counts as evidence in one C-1 path".
+    This enumerates every place the resolution is read — the three disjoint buckets in
+    `authority_evidence`, the `evidence_ref` roll-up, and the codes `audit_content` emits
+    — so the claim is decided rather than argued. An `unchecked` ref must land in its OWN
+    bucket, must NOT roll up into evidence_ref, and must raise its own code; what it must
+    never do is clear the gate silently.
+    """
+    buckets = ("unevidenced_artifacts", "unresolvable_artifacts", "unchecked_artifacts")
+    synapse = _synapse({"a": _artifact(tier="scored", qual_ladder_ref=ref)})
+    registry = build_registry(
+        synapse=synapse,
+        qual_ladder_keys=keys,
+        file_exists=None if files is None else (lambda p: p in files),
+    )
+    row = registry["engines"][0]
+    assert row["artifacts"][0]["qual_ladder_ref_resolution"] == resolution
+    assert row["evidence_ref"] == evidence_ref
+    for name in buckets:
+        expected = ["a"] if name == bucket else []
+        assert row["authority_evidence"][name] == expected, name
+    assert {
+        f.code for f in audit_content(registry) if f.code.startswith("AUTHORITY_")
+    } == codes
+
+
+def test_unchecked_is_outside_the_resolved_vocabulary_by_construction():
+    """The roll-up filter is a set membership, so the exclusion is checkable directly
+    rather than only through its effects."""
+    assert "unchecked" in QUAL_LADDER_RESOLUTIONS
+    assert "unchecked" not in QUAL_LADDER_RESOLVED
+    assert QUAL_LADDER_RESOLVED == {"qual_ladder_key", "repo_path"}
 
 
 def test_the_C1_heal_names_EVERY_unevidenced_artifact_not_just_the_first():
@@ -1213,6 +1305,49 @@ def test_a_nightly_CLAIM_APPEND_invalidates_nothing(monkeypatch):
         sorted((f.code, f.engine_id) for f in audit_content(after))
         == sorted((f.code, f.engine_id) for f in audit_content(before))
     ), "a nightly claim append changed the finding set — that is a scheduled fleet-wide red"
+
+
+def test_a_MALFORMED_claim_append_flips_inputs_complete_to_False(monkeypatch):
+    """THE OTHER HALF OF THE APPEND SIMULATION, and the B2 negative control in test form.
+
+    The pair matters: a VALID append must change nothing (above), and a MALFORMED one must
+    change exactly ONE thing — `inputs_complete`. The reader used to swallow a per-line
+    JSONDecodeError and return whatever parsed, so a corrupted store and a store read
+    cleanly with zero desk rows produced byte-identical reports. The rows that DID parse
+    stay in the view: under the null law the incompleteness must be REPRESENTED, not made
+    to disappear along with the readable half.
+
+    The live store is never touched — `_patched_read` mutates the TEXT the builder reads.
+    """
+    import scripts.build_intelligence_registry as builder
+
+    builder._READ_CACHE.clear()
+    before, before_report = builder.build(REPO)
+    assert before_report["inputs_complete"] is True, "the baseline read must be complete"
+
+    try:
+        _patched_read(
+            monkeypatch,
+            builder.CLAIMS_REL,
+            lambda text: text + '{"desk": "brand_new", "horizon_d": 21}\n{ not json\n',
+        )
+        after, after_report = builder.build(REPO)
+    finally:
+        builder._READ_CACHE.clear()
+
+    assert after_report["inputs_complete"] is False
+    assert any(
+        "claims.jsonl" in name and "unparseable line(s)" in name
+        for name in after_report["unreadable_inputs"]
+    ), after_report["unreadable_inputs"]
+    # ...and nothing else moved: the engine set and the finding set are untouched, so the
+    # blindness is REPORTED rather than paid for by discarding the readable half.
+    assert {r["engine_id"] for r in after["engines"]} == {
+        r["engine_id"] for r in before["engines"]
+    }
+    assert sorted((f.code, f.engine_id) for f in audit_content(after)) == sorted(
+        (f.code, f.engine_id) for f in audit_content(before)
+    )
 
 
 def test_a_SIBLING_PR_adding_a_synapse_artifact_invalidates_nothing(monkeypatch):

@@ -2970,14 +2970,25 @@ checks:
         the job log; `warn` governs how loudly the registry treats it, not whether the
         script reports it.
       - >-
-        FAIL CLOSED, NOT SILENT. The summary line ALWAYS carries an `inputs=` clause. When
-        any input could not be read it reads `inputs=INCOMPLETE (...)` and NAMES what was
-        missed, and --strict exits non-zero on that alone; when config/synapse.yml itself
-        is unreadable the run prints NOT CHECKED and exits 1 rather than a violation count
-        it did not earn. Sparse agent worktrees carry no data/ on disk while ~39,900 data
-        paths are tracked in HEAD, so every read — including producer SOURCE and the
-        qual_ladder_ref probe — goes through the worktree-then-`git show` ladder, and a
-        producer readable from neither is announced rather than silently skipped.
+        FAIL CLOSED, NOT SILENT, AND UNCONDITIONALLY (ruling 2026-08-14). The summary line
+        ALWAYS carries an `inputs=` clause. When any input could not be read it reads
+        `inputs=INCOMPLETE (...)`, NAMES what was missed, and the run EXITS NON-ZERO — with
+        or without --strict, in plain and --json mode alike. An incomplete read is a
+        RUN-LEVEL defect (the guard failed to do its job), not a condition of the corpus,
+        so the advisory tier does not cover it; gating it on a flag CI does not pass meant
+        the fail-closed channel printed its warning and then returned the same exit code a
+        clean run returns. --strict retains its own distinct meaning: content FINDINGS also
+        red, reserved for T7's promotion era. "Unreadable" includes PARTIAL: a store that
+        opens but whose lines do not all parse is named with its count
+        (`data/qledger/claims.jsonl (2 unparseable line(s) of 4)`) while the rows that DID
+        parse stay in the view — the null law requires the incompleteness be REPRESENTED,
+        not that the readable half be discarded. A document that reads but does not PARSE
+        is the same state as one that could not be read: synapse -> NOT CHECKED + exit 1,
+        overlay and qual_ladder -> treated as absent and NAMED, never a bare traceback.
+        Sparse agent worktrees carry no data/ on disk while ~39,900 data paths are tracked
+        in HEAD, so every read — including producer SOURCE and the qual_ladder_ref probe —
+        goes through the worktree-then-`git show` ladder, and a producer readable from
+        neither is announced rather than silently skipped.
       - >-
         `not_an_engine` is the most destructive of the four overlay keys and was once the
         least gated: a 3-character reason removed an authority-bearing engine with every
@@ -3096,6 +3107,12 @@ checks:
         Advisory by default (exit 0 with ::warning annotations); only --strict exits
         non-zero, and --strict is deliberately NOT passed in CI yet. The findings are
         PRE-EXISTING CONDITIONS of the corpus, not regressions any PR author caused.
+        Advisory by default for FINDINGS (exit 0 with ::warning annotations); only --strict
+        reds on them, and --strict is deliberately NOT passed in CI yet. The findings are
+        PRE-EXISTING CONDITIONS of the corpus, not regressions any PR author caused. That
+        leniency does NOT extend to blindness: an INCOMPLETE input set exits non-zero on
+        every run (ruling 2026-08-14) — see the FAIL CLOSED known_limit on the sibling law
+        governance.intelligence_registry_integrity.
         MEASURED 2026-08-12 on the derived view (378 engines over 642 synapse artifacts, 7
         cells excluded): 181 findings — 21 AUTHORITY_WITHOUT_EVIDENCE, 113
         OUTPUT_CLASS_MISSING, 45 SCORED_PATH_SURFACES_INCOMPLETE, 2 SPECIES_UNBOUND, 0
@@ -3184,8 +3201,13 @@ checks:
         four-key overlay, one rationale per row.
       - >-
         ANNOTATION BUDGET: C-1 findings are annotated per engine (each names its concrete
-        heal); every other code is aggregated into one annotation with a count, with full
-        detail on stdout. One annotation per finding would bury the actionable rows.
+        heal); every other code is aggregated into one annotation with a count; the
+        fail-closed COULD NOT LOOK line is a third channel, budgeted at exactly one. One
+        annotation per finding would bury the actionable rows. The budget governs only what
+        GitHub RENDERS: since 2026-08-14 EVERY finding, C-1 included, is also printed as a
+        plain `  [CODE] engine: detail` line, because an annotation-only deliverable is
+        invisible to a terminal run, to a grep of the log body, and to anyone reading the
+        raw job log rather than the Actions summary.
       - >-
         Resolvability is NOT adequacy. AUTHORITY_EVIDENCE_UNRESOLVABLE proves only that a
         qual_ladder_ref points at something real — a key in config/qual_ladder.yml or a
