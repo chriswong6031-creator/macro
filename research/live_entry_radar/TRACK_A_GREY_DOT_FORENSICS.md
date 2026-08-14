@@ -7,11 +7,11 @@ Every load-bearing claim carries a `file:line` receipt. `UNVERIFIED` marks anyth
 
 `charting-app`'s working tree is branch `claude/terminal-audit-fixes-20260713` @ `687da219`
 (2026-07-13); the canonical tip is `origin/master` @ `82cb8cbf` (2026-08-13). The entire
-amber-EARLY / bottom-watch / point-in-time layer landed in `935389d4` "Surface early bottom
-entries and durable Prophet receipts (#392)" (2026-08-11) — **not in the working tree**
-(`signal_layer/confluence_v2.py` 562 ln @HEAD vs 1211 ln @origin/master). Citations: `@om:N` =
-line N of `git show origin/master:<path>`; `@HEAD:N` = the stale tree. **Anyone reading the
-checked-out files is reading a superseded, leak-carrying G0.**
+amber-EARLY / bottom-watch / point-in-time layer landed in `935389d4` "Surface early bottom entries
+and durable Prophet receipts (#392)" (2026-08-11) — **not in the working tree**
+(`signal_layer/confluence_v2.py` 562 ln @HEAD vs 1211 ln @origin/master). Citations: `@om:N` = line
+N of `git show origin/master:<path>`; `@HEAD:N` = the stale tree. **Anyone reading the checked-out
+files is reading a superseded, leak-carrying G0.**
 
 ## §1. G0 — exact math, constant by constant
 
@@ -30,11 +30,9 @@ session before the next opens (`@om:161`). Bar value = **close of its last sessi
 
 **2D bars — calendar, deliberately different from 3D** (`confluence_v2.py@om:620`):
 `dc.resample("2B").last().dropna()` on the DAILY close — left-edge label, anchored to the first
-daily row, empty buckets dropped. Availability is computed separately as the bucket's **last
-actual session**, `dc.index.to_series().resample("2B").max()` (`@om:623`), `NaT` dropped
-(`@om:624-626`). Partial in-progress buckets are not suppressed: a live half-bucket is usable the
-day it prints.
-
+daily row, empty buckets dropped. Availability is computed separately as the bucket's **last actual
+session**, `dc.index.to_series().resample("2B").max()` (`@om:623`), `NaT` dropped (`@om:624-626`).
+Partial in-progress buckets are not suppressed: a live half-bucket is usable the day it prints.
 **Price source is CLOSE ONLY** — `s3` is built from `daily_close` (`confluence.py@om:250-253`);
 "Every stream is **close-only-safe** (no intrabar OHLC required)" (`confluence_v2.py@om:26-27`).
 
@@ -43,7 +41,6 @@ day it prints.
 Constants, one block (`confluence.py@om:57-64`): `RSI_LEN, FAST_LEN, BASE_LEN, SIG_LEN = 14, 14,
 60, 5`; `STOCH_RSI_LEN, STOCH_LEN, SMOOTH_K, SMOOTH_D = 14, 14, 3, 3`; `OB, OS = 80, 20`;
 `CONF_W = 8`.
-
 * **RSI** (`@om:89-101`) — Wilder, `n=14`, on the **3D close series** `s3`; `_rma` (`@om:68-86`) is
   **SMA-seeded** (mean of first 14 valid) then recursive `α=1/n` (the header notes
   `ewm(alpha=1/n, adjust=True)` does NOT match Pine and flips near-threshold crosses, `@om:70-74`);
@@ -61,7 +58,6 @@ Constants, one block (`confluence.py@om:57-64`): `RSI_LEN, FAST_LEN, BASE_LEN, S
   is a *different* function used only by the recipe score — **G0 never touches it.**
 
 ### 1.3 The three legs (on the dropna'd 3D rows)
-
 ```
 stoch_bull = crossover(k, d)                         # confluence_v2@om:616
 from_os    = d.rolling(CONF_W).min() < OS            # confluence_v2@om:617
@@ -85,18 +81,13 @@ dot        = stoch_bull & from_os & mapped(rising2)  # confluence_v2@om:640
 ### 1.4 Point-in-time availability (the `known_at` rule)
 
 `compute_signals` now emits `known_ts` — "the session on which each bar's current value became
-knowable" = the bar's CLOSE session (`confluence.py@om:242-243, 322-328`), whose comment states
-the hazard: "For the live incomplete 3D bar this advances each session; a signal printed on Jul 28
+knowable" = the bar's CLOSE session (`confluence.py@om:242-243, 322-328`), whose comment states the
+hazard: "For the live incomplete 3D bar this advances each session; a signal printed on Jul 28
 inside a Jul 24-opened bar must not be presented as knowable on Jul 24." `_known_dates`
 (`confluence_v2.py@om:590-597`) reads it with a fallback to the chart label. The 2D→3D join
-(`confluence_v2.py@om:630-638`):
-
-```
-rising_known = Series(rising2, index=known2)                 # relabel by LAST ACTUAL SESSION
-rising_known = rising_known[~dup].sort_index()               # dedupe, keep last
-pos = rising_known.index.searchsorted(row_known, "right")-1  # newest 2D state known at 3D close
-mapped[pos < 0] = False
-```
+(`confluence_v2.py@om:630-638`) relabels `rising2` by `known2` (each bucket's last actual session),
+dedupes keeping last, then takes
+`pos = rising_known.index.searchsorted(row_known, "right") - 1`, with `pos < 0 → False`.
 
 **Rule in one sentence: a higher-timeframe bar becomes usable on the last real trading session
 inside it, and each 3D row consumes only the newest 2D state whose availability date is ≤ that 3D
@@ -115,9 +106,7 @@ must not see its rising hist."
 backdates the signal by 1–4 calendar days.
 
 ### 1.5 The ~4.6-day docstring, verbatim
-
 `signal_layer/confluence_v2.py@om:644-651` (identical at `@HEAD:352-359`):
-
 ```
 """GRID_GATE anticipation form (a) — the EARLY pre-cross dot (~4.6d lead, hollow):
 
@@ -131,19 +120,17 @@ Returns the list of 3D-open-date strings on which the dot fires (chronological).
 
 **The "4.6d" number is not sourced in the Terminal repo.** The nearest published figure is in the
 Macro repo, where the detector is named `m2d_s3d_early`:
-`research/signal_engine/CONFLUENCE_TUNING.md:105` gives **"+4.89 d"** under *"days earlier
-(mean)"* vs the `base3d` confirmed buy at **coverage of base moves = 49.9%** — a matched-pair mean
-over the ~half of base moves it anticipates, **not** "every dot precedes a buy by 4.6 days".
+`research/signal_engine/CONFLUENCE_TUNING.md:105` gives **"+4.89 d"** under *"days earlier (mean)"*
+vs the `base3d` confirmed buy at **coverage of base moves = 49.9%** — a matched-pair mean over the
+~half of base moves it anticipates, **not** "every dot precedes a buy by 4.6 days".
 `CHARTER.md:199` quotes the mechanism as "~5 trading days" and adds that acting on it early was
-empirically WORSE entry quality (deeper drawdown). Treat "~4.6d" as a paraphrase of a superseded
+empirically WORSE entry quality (deeper drawdown). "~4.6d" is a paraphrase of a superseded
 study — `UNVERIFIED` as stated.
 
 ## §2. Emitter / glyph trace
 
 ### 2.1 Event type and side channel
-
 `build_v2` (`confluence_v2.py@om:1072`) is the sole emitter. At `@om:1170-1179`:
-
 ```python
 bottom_watches = bottom_watch_events(sig, close, high=high, low=low)
 promoted_dot_dates = {str(w.get("ts")) for w in bottom_watches if w.get("kind") == "early_dot"}
@@ -157,25 +144,22 @@ unpromoted_early_dots = [ts for ts in early_dots(sig, close) if ts not in promot
 
 Two emissions result. (i) `early_dots: [<YYYY-MM-DD>...]` — a bare **date-string side channel**,
 last 40 (`@om:1201`, cap `SIDE_CHANNEL_CAP = 40` `@om:64`), re-capped to 40 in the doc
-(`contracts.py@om:185,214`) and to 12 in the model slice (`@om:642`); **no signal type, no price,
-no quality** — not a member of the unified signal stream. (ii) `bottom_watches: [...]`
-(`@om:1204`) → `contracts.py@om:348-378` stamps `type="BOTTOM_WATCH"`, `scored=False`,
-`subtype ∈ {early_dot, blocked_trigger}`. Schema: `contracts/indicator.v1.schema.json@om:133`
+(`contracts.py@om:185,214`) and 12 in the model slice (`@om:642`); **no signal type, no price, no
+quality** — not part of the unified signal stream. (ii) `bottom_watches: [...]` (`@om:1204`) →
+`contracts.py@om:348-378` stamps `type="BOTTOM_WATCH"`, `scored=False`,
+`subtype ∈ {early_dot, blocked_trigger}`. Schema `contracts/indicator.v1.schema.json@om:133`
 enumerates `BOTTOM_WATCH`; `@om:231` "False on display/watch-only events"; `@om:238`
 "anticipation-dot origin or raw blocked CB/revBuy origin"; `@om:260` the washout facts block.
 
 ### 2.2 Rendering (frontend = `terminal/`)
 
-**Grey dot (ordinary, unpromoted)** — `terminal/components/ChartPanel.tsx@om:3845-3855`:
-
-```
-if (showDetailRef.current) {                                // "Signals detail" chip, @om:3845
-  const g = mk("g", { opacity: 0.55 });                     // @om:3852
-  g.appendChild(mk("circle", { cx: x, cy: y + 9, r: 2.2, fill: t2.mut }));   // @om:3853
-```
-Circle, r = **2.2 px**, group opacity **0.55**, **9 px below the bar LOW** (`y = yOf(b.l)`,
-`@om:3851`), fill `t2.mut` = CSS `--muted` = **`#717a8e`** (`terminal/app/globals.css:9`).
-Bar-snapping in `resolveSideChannels` (`@om:2373-2379`); cleared on non-daily TFs (`@om:7048`).
+**Grey dot (ordinary, unpromoted)** — `terminal/components/ChartPanel.tsx@om:3845-3855`, gated by
+`if (showDetailRef.current)` (the "Signals detail" chip, `@om:3845`):
+`mk("circle", { cx: x, cy: y + 9, r: 2.2, fill: t2.mut })` inside `mk("g", { opacity: 0.55 })`
+(`@om:3852-3853`). Circle, r = **2.2 px**, group opacity **0.55**, **9 px below the bar LOW**
+(`y = yOf(b.l)`, `@om:3851`), fill `t2.mut` = CSS `--muted` = **`#717a8e`**
+(`terminal/app/globals.css:9`). Bar-snapping in `resolveSideChannels` (`@om:2373-2379`); cleared on
+non-daily TFs (`@om:7048`).
 
 **Amber EARLY marker (washout-promoted)** — `ChartPanel.tsx@om:3538`:
 `BOTTOM_WATCH: { dir: "up", fill: t2.signal, tc: "#231800", txt: "EARLY" }` — an **up-pointing
@@ -185,16 +169,15 @@ marker with the literal text label `EARLY`**, fill `t2.signal` = `--signal` = **
 ### 2.3 Git history of the grey→amber change
 
 `935389d4` (2026-08-11, PR #392) is the **only** commit introducing the promotion: touched
-`confluence_v2.py` (+351), `contracts.py` (+105), `ChartPanel.tsx` (+100), `OracleDash.tsx`
-(+115), `indicator.v1.schema.json` (+62), added `tests/test_bottom_watch_lane.py` (236 ln).
-Pickaxe `git log --all -S"gray side"` returns exactly it and its pre-squash twin `02d302a3`. The
-grey-dot render itself is unchanged since the `9ef273b4` VPS snapshot
+`confluence_v2.py` (+351), `contracts.py` (+105), `ChartPanel.tsx` (+100), `OracleDash.tsx` (+115),
+`indicator.v1.schema.json` (+62), added `tests/test_bottom_watch_lane.py` (236 ln). Pickaxe
+`git log --all -S"gray side"` returns exactly it and its pre-squash twin `02d302a3`. The grey-dot
+render itself is unchanged since the `9ef273b4` VPS snapshot
 (`git log -L 2182,2192:terminal/components/ChartPanel.tsx@HEAD`). Earlier "amber" commits
-(`397700aa` #375, `07244dff` #376, `e152fd85` #378) are the **washout-override** ⊘/star classes —
-a different lane, not the anticipation dot.
+(`397700aa` #375, `07244dff` #376, `e152fd85` #378) are the **washout-override** ⊘/star classes — a
+different lane, not the anticipation dot.
 
 ### 2.4 Does a grey dot still render today? YES
-
 Only washout-context dots are promoted; every ordinary dot still emits into `early_dots` and still
 paints the `#717a8e` circle. Measured (§2.6): NVDA 8 dots ≥2025 with **0** promotions; TSLA 10
 dots, **0**; NFLX 11 dots with only **3** promoted. Grey remains the dominant form.
@@ -204,10 +187,10 @@ dots, **0**; NFLX 11 dots with only **3** promoted. Grey remains the dominant fo
 It is the *only* grey/muted dot rendered by the chart's signal layer; positioned below the bar as
 an anticipation mark distinct from the BUY ▲ (`@om:3846`); the in-code name for the class is
 literally "the old **gray** side-channel dot" (`@om:1175`); and the description matches the
-operator's. No competing grey marker exists in `ChartPanel.tsx`. Residual risk: he may be
-recalling the pre-#392 rendering, in which case some remembered dots are now amber. Definitive
-confirmation needs (a) the operator naming one dated dot on one symbol and (b) that date appearing
-in that symbol's `early_dots` / `bottom_watches` — one lookup, no new code.
+operator's. No competing grey marker exists in `ChartPanel.tsx`. Residual risk: he may be recalling
+the pre-#392 rendering, so some remembered dots are now amber. Definitive confirmation needs the
+operator naming one dated dot on one symbol, then checking that date against that symbol's
+`early_dots` / `bottom_watches` — one lookup, no new code.
 
 ### 2.6 Fired dates — ACTUALLY RUN (2026-08-13)
 
@@ -216,8 +199,7 @@ No CLI or artifact emits these: `signal_layer`'s only `__main__` is `confluence.
 is a slim 2026-06-18 mockup with no `early_dots` key. Cheapest real path (≈40 s, no new tooling):
 stage `git show origin/master:signal_layer/*` into a temp dir and call the shipped functions —
 `compute_signals(pd.read_parquet(DATA/f"{t}.parquet")["close"].dropna())` → `early_dots(sig, c)`.
-Deep store spans NVDA 1999-01-22→**2026-07-08** (stale ~5 weeks). `SIGNAL_ERA = gc_v2_wo2`. Dates
-are 3D bar **OPEN** dates (§1.4).
+Store spans NVDA 1999-01-22→**2026-07-08**; `SIGNAL_ERA = gc_v2_wo2`; dates are **OPEN** dates.
 
 | ticker | `early_dots` ≥2025-01-01 (all-history n) | `bottom_watches` ≥2025 (ts / known_ts / kind) |
 |---|---|---|
@@ -250,33 +232,28 @@ not there. **Monthly PIT** (`@om:657-683`): `resample("ME").last()`, dwell `.shi
 `searchsorted(row_known, "right")-1` — same discipline as §1.4, because "`resample('ME')` uses a
 calendar month-end label that may not be a session" (`@om:661-663`).
 
-**Emission** (`@om:774-804`): candidates = `(early_dot_mask | trig) & washed`, where
-`trig = (CB | revBuy) & washed` (`@om:715`). `trig` true → `kind="blocked_trigger"`,
-`quality="washout_trigger_watch"` (the stronger subtype; it **de-duplicates** an anticipation dot
-on the same bar, `@om:765-766`); else `kind="early_dot"`, `quality="washout_early_watch"`. Each
-event carries `ts`, `known_ts`, `trigger_ts`, `trigger_known_ts`, `price`, **`scored: False`**
-(`@om:799`), and `washout_ctx` with the frozen rule string
-`"bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"` plus `drawdown_252`,
+**Emission** (`@om:774-804`): candidates = `(early_dot_mask | trig) & washed`, `trig = (CB|revBuy)
+& washed` (`@om:715`). `trig` true → `kind="blocked_trigger"`, `quality="washout_trigger_watch"`
+(the stronger subtype; it **de-duplicates** an anticipation dot on the same bar, `@om:765-766`);
+else `kind="early_dot"`, `quality="washout_early_watch"`. Each event carries `ts`, `known_ts`,
+`trigger_ts`, `trigger_known_ts`, `price`, **`scored: False`** (`@om:799`), and `washout_ctx` =
+`"bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"` + `drawdown_252`,
 `monthly_oversold_dwell`, `recent_3d_oversold` (`@om:785-790`). `_event_risk_metadata`
 (`@om:719-753`) appends a PIT `sweep_low` (min low from 2 bars before the fire), `atr14`, an
-ATR×0.5 `stop_level`, and `risk_basis ∈ {daily_ohlc_atr14, close_proxy_atr14}` — explicitly
-flagging when close was substituted for absent OHLC.
-
-**Semantics: display/watch only.** "Every event is explicitly `scored:false`; no position, alert or
-backtest behavior changes" (`@om:766-767`); "This is context only: it never weakens the classic
-`bear_block` entry rule" (`@om:691`). `contracts.py@om:541` keeps `BOTTOM_WATCH` out of the scored
-state.
+ATR×0.5 `stop_level`, and `risk_basis ∈ {daily_ohlc_atr14, close_proxy_atr14}` — flagging when
+close was substituted for absent OHLC. **Semantics: display/watch only** — "no position, alert or
+backtest behavior changes" (`@om:766-767`), "it never weakens the classic `bear_block` entry rule"
+(`@om:691`), and `contracts.py@om:541` keeps `BOTTOM_WATCH` out of the scored state.
 
 ## §4. Data plane and artifacts
 
-* **Store:** `DATA = $MACRO_REPO/data/stocks/<SYM>.parquet`, default
-  `/Users/chriswong/Documents/Cluade/Macro Dashboard` (`confluence.py@om:53-55`). **The Terminal
-  signal layer reads the MACRO repo's OHLC store** — the two repos already share a data plane. 229
-  parquet files; columns `close, high, low, volume` **with no `open`** (verified by read), hence
-  `bar_quality: "synthetic_open_deepstore"` (`contracts.py@HEAD:65`).
+* **Store:** `DATA = $MACRO_REPO/data/stocks/<SYM>.parquet` (`confluence.py@om:53-55`). **The
+  Terminal signal layer reads the MACRO repo's OHLC store** — the two repos already share a data
+  plane. 229 parquet files; columns `close, high, low, volume` **with no `open`** (verified by
+  read), hence `bar_quality: "synthetic_open_deepstore"` (`contracts.py@HEAD:65`).
 * **Vendor / adjustment:** Polygon daily aggs, Yahoo `period=max` preferred when deeper —
   "(split/div adjusted, back to IPO)" (`ingest/build_polygon_universe.py:34`; manifest
-  `"source": "polygon"` `:117`). Spot-check: NVDA 2024-06-05 close = 122.23 ⇒ **post-10:1-split
+  `"source": "polygon"` `:117`). Spot-check NVDA 2024-06-05 close = 122.23 ⇒ **post-10:1-split
   adjusted**. Daily RTH bars; no extended-hours series reaches the signal layer. Local copy's last
   bar: **2026-07-08**.
 * **Versioned artifact — YES.** `mastermind.indicator/v1` (`contracts.py@om:29`, schema
@@ -288,29 +265,29 @@ state.
   `source_hash(src, params) = "sha256:" + sha256(src + "\x00" + json(params, sort_keys))`
   (`contracts.py@om:128-133`); `strategy_spec_hash(id, params) = sha256({id,params})[:8]`
   (`@om:135-141`, "so ingest can detect a LANE-STALE artifact"). Hashed params `FLAGSHIP_PARAMS`
-  (`@HEAD:36-44`) = `{confW:8, rsiLen:14, useMTF:true, confirmTF:"1W", macd_on:"rsi",
-  macd_fast:14, macd_slow:60, macd_signal:5, buy_rsi_max:65, ext_rsi:70, rev_bars:3,
-  no_cut_exits:true}`. Second identity axis: `SIGNAL_ERA` (**`gc_v2_wo2`**,
-  `signal_layer/__init__.py`), asserted in tests and stamped on every emission.
+  (`@HEAD:36-44`) = `{confW:8, rsiLen:14, useMTF:true, confirmTF:"1W", macd_on:"rsi", macd_fast:14,
+  macd_slow:60, macd_signal:5, buy_rsi_max:65, ext_rsi:70, rev_bars:3, no_cut_exits:true}`. Second
+  identity axis: `SIGNAL_ERA` (**`gc_v2_wo2`**, `signal_layer/__init__.py`), asserted in tests and
+  stamped on every emission.
 * **Fixture convention:** `tests/test_bottom_watch_lane.py@om:27-51` builds **synthetic** `sig`
   frames (`_frame(n)`), not recorded real-data goldens. A parity module exists —
   `signal_layer/golden_gate.py` (235 ln, "Golden-reference parity gate — INVERTED (audit #7)") —
-  but its header warns the exported-vector gate reflects the **dashboard's** canon sequence, not
+  but its header warns its exported-vector gate reflects the **dashboard's** canon sequence, not
   this engine's. **No known-answer fixture for `early_dots` exists anywhere.**
 
 **Cross-repo fork hazard (verified):** `Macro Dashboard/research/signal_engine/confluence.py` still
 exists. Diffed against `origin/master:signal_layer/confluence.py`: **38 changed lines, all the
 module header/`DATA` path plus the `known_ts` addition** — oscillator and 3D-bar math is
 byte-identical, so the Terminal header's claim that it "has CORRECTED the math vs that copy"
-(`confluence.py@om:31-35`) is **stale**. But the Macro copy has **zero** occurrences of
-`known_ts`, so it cannot express §1.4's PIT rule, and there is no `confluence_v2.py` on the Macro
-side at all. The `m2d_s3d_early` corpus in `research/signal_engine/` (`CONFLUENCE_TUNING.md`,
-`tuning_lead.py`, `tuning_stops.py`, `TIERED_CASCADE.md`) all predates the PIT fix.
+(`confluence.py@om:31-35`) is **stale**. But the Macro copy has **zero** occurrences of `known_ts`,
+so it cannot express §1.4's PIT rule, and there is no `confluence_v2.py` on the Macro side at all.
+The `m2d_s3d_early` corpus in `research/signal_engine/` (`CONFLUENCE_TUNING.md`, `tuning_lead.py`,
+`tuning_stops.py`, `TIERED_CASCADE.md`) all predates the PIT fix.
 
 ## §5. Known-answer fixture plan
 
 Extractable today from the shared deep store with the shipped functions. Freeze each as
-`{symbol, feed_end, expected_early_dots[], expected_bottom_watches[]}` plus the `source_hash` and
+`{symbol, feed_end, expected_early_dots[], expected_bottom_watches[]}` + the `source_hash` and
 `SIGNAL_ERA` it was cut under.
 
 | # | ticker | window | asserts | why |
@@ -328,31 +305,29 @@ Extractable today from the shared deep store with the shipped functions. Freeze 
 spec. Not (b).**
 
 1. **The data plane is already shared.** The Terminal signal layer reads
-   `$MACRO_REPO/data/stocks/*.parquet` (`confluence.py@om:53-55`). Macro *produces* the bars G0
-   consumes, so there is no data-coupling barrier to (a) and no vendor/adjustment reconciliation —
-   the usual reason to prefer a reimplementation is absent.
+   `$MACRO_REPO/data/stocks/*.parquet` (`confluence.py@om:53-55`) — Macro *produces* the bars G0
+   consumes, so (a) has no data-coupling barrier and no vendor/adjustment reconciliation; the usual
+   reason to prefer a reimplementation is absent.
 2. **A versioned, hashed artifact already exists.** `mastermind.indicator/v1` carries `early_dots`
    + `BOTTOM_WATCH` with `known_ts`, `source_hash`, `SIGNAL_ERA` (§4). Macro consumes
    `<SYM>.slice.json` and pins on `(source_hash, SIGNAL_ERA)` — exactly what `strategy_spec_hash`
    was written for (`@om:137-139`).
 3. **(b) is the worst option here.** `confluence_v2.py` is 1211 ln with a hard
    `from .washout_override import …` (`@om:41`, 1107 ln) pulling the whole override/ledger/era
-   machinery; a "pure" extraction forks four files across two repos with no shared package boundary
-   (no installable package, no version pin, `sys.path.insert` bootstrapping throughout `ingest/`
-   and `tests/`). The last attempt is the evidence: `research/signal_engine/confluence.py` drifted
-   into a *silent* fork the Terminal header still mis-describes, missing `known_ts` entirely (§4).
-4. **(c) is a fallback, not a co-equal.** If Radar needs a cadence the nightly slice lane does not
-   serve, reproduce G0 in Macro under a **locked spec** = §1 of this document + §5 fixtures + a
-   `spec_hash` computed the way `source_hash` is, gated by a parity test re-running F1–F6 against a
-   freshly generated Terminal slice. Do **not** seed it from
-   `research/signal_engine/confluence.py` (no PIT, no v2 layer) or from the checked-out
-   `charting-app` tree (§0: leaking 2D map).
+   machinery; a "pure" extraction forks four files across two repos with no shared package boundary.
+   The last attempt is the evidence: `research/signal_engine/confluence.py` drifted into a *silent*
+   fork the Terminal header still mis-describes, missing `known_ts` entirely (§4).
+4. **(c) is a fallback, not a co-equal.** If Radar needs a cadence the nightly slice lane cannot
+   serve, reproduce G0 in Macro under a **locked spec** = §1 + §5 fixtures + a `spec_hash` computed
+   the way `source_hash` is, gated by a parity test re-running F1–F6 against a freshly generated
+   Terminal slice. Do **not** seed it from `research/signal_engine/confluence.py` (no PIT, no v2
+   layer) or from the checked-out `charting-app` tree (§0: leaking 2D map).
 
-Constraints observed: no installable package or version pin on either side; both repos bootstrap
-via `sys.path.insert(0, ROOT)`; the store the slices are built from is currently **5 weeks stale
-(last bar 2026-07-08)**, so an artifact-consumption design needs its own freshness gate; and
-`early_dots` is capped at 40 in the doc and 12 in the model slice (`@om:185, 642`), so a Radar
-needing deep history must read the raw emission, not the model slice.
+Constraints observed: no installable package or version pin on either side; both repos bootstrap via
+`sys.path.insert(0, ROOT)`; the store the slices are built from is **5 weeks stale (last bar
+2026-07-08)**, so artifact consumption needs its own freshness gate; and `early_dots` is capped at
+40 in the doc and 12 in the model slice (`@om:185, 642`), so a Radar needing deep history must read
+the raw emission, not the model slice.
 
 ## §7. Other `signal_layer/` primitives — inventory only (OUT OF SCOPE for V1)
 
@@ -370,6 +345,6 @@ needing deep history must read the raw emission, not the model slice.
 | `seasonal_regime.py` | 592 | Regime-aware forward seasonal-outlook engine from daily adjusted closes. |
 | `regime_calendar.py` | 156 | Static macro-regime reference calendar 1970–2027 — the one curated-knowledge layer. |
 
-Outside `signal_layer/` but referenced above: `terminal/lib/signalVerdict.ts` (993 ln,
-verdict/soft-quality classification consumed by `ChartPanel.tsx`) and `terminal/lib/pine.ts` (the
-flagship Pine source string, `B1/S1` early vs `B2/S2` confirm grammar).
+Outside `signal_layer/`: `terminal/lib/signalVerdict.ts` (993 ln, verdict/soft-quality
+classification consumed by `ChartPanel.tsx`); `terminal/lib/pine.ts` (flagship Pine source string,
+`B1/S1` early vs `B2/S2` confirm grammar).
