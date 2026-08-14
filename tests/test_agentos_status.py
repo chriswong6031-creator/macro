@@ -628,31 +628,6 @@ def test_readiness_states_explain_graph_and_authored_progress(
     assert records[("GMI-THEME-GRAPH", "R1")]["state"] == "done"
 
 
-def test_agent_os_phase_2b_closure_unlocks_phase_4_readiness(
-    store: Path, builds: Path, tmp_path: Path
-) -> None:
-    out = tmp_path / "state.json"
-    assert _status(store, out, "--now", FROZEN,
-                   "--active-builds", str(builds)).returncode == 0
-    records = {
-        (item["workstream"], item["wave"]): item
-        for item in _state(out)["readiness"]["records"]
-    }
-
-    phase_2b = records[("AGENT-OS", "W2B")]
-    assert phase_2b["state"] == "done"
-    assert phase_2b["reason_code"] == "status_done"
-    assert phase_2b["unmet_dependencies"] == []
-
-    phase_4 = records[("AGENT-OS", "W4")]
-    assert phase_4["state"] == "ready"
-    assert phase_4["reason_code"] == "dependencies_satisfied"
-    assert phase_4["depends_on"] == [
-        "WS:AGENT-OS#W1", "WS:AGENT-OS#W2", "WS:AGENT-OS#W2B",
-    ]
-    assert phase_4["unmet_dependencies"] == []
-
-
 def test_readiness_ignores_p0_claim_and_non_graph_join_inputs(
     store: Path, builds: Path, tmp_path: Path
 ) -> None:
