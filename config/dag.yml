@@ -4601,7 +4601,7 @@ modules:
       - /Users/chriswong/.mastermind_private/prophet_option_shadow_lifecycle_v1/
     writes:
       - /Users/chriswong/.mastermind_private/options_sparse_selector_v1/
-      - /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/
+      - /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/
     impure: true
     needs_secrets: true
     event_driven: true

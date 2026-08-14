@@ -62,7 +62,7 @@ SELECTOR_ROOT = Path(
     "/Users/chriswong/.mastermind_private/options_sparse_selector_v1"
 )
 OPS_ROOT = Path(
-    "/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1"
+    "/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2"
 )
 MARK_ROOT = Path(
     "/Users/chriswong/.mastermind_private/prophet_option_mark_observations_v1"
@@ -74,13 +74,13 @@ W1A_RECEIPT_ROOT: None = None
 PROPOSALS_ARMED = False
 
 RUNTIME_ROOT = Path(
-    "/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1"
+    "/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v2"
 )
 RUNTIME_MANIFEST = RUNTIME_ROOT / "runtime_closure.json"
 RUNTIME_MARKER = RUNTIME_ROOT / ".options_sparse_selector_persistent_runtime_root"
-RUNTIME_MARKER_BODY = b"options.sparse_selector.persistent_runtime_root/v1\n"
+RUNTIME_MARKER_BODY = b"options.sparse_selector.persistent_runtime_root/v2\n"
 RUNTIME_MARKER_SHA256 = (
-    "3a340239f359c167e295cb14f4182b33765d6017d12b3b11e131e29939b993fc"
+    "345be79791bfc688abaf2ead17244f66fd818c4feee3a2ef4412d4febcb79685"
 )
 RUNTIME_PYTHON = RUNTIME_ROOT / "runtime/bin/python3.12"
 RUNTIME_SITE_PACKAGES = RUNTIME_ROOT / "runtime/lib/python3.12/site-packages"
@@ -691,10 +691,13 @@ def _attest_runtime_carrier(repository: RepositoryState) -> dict[str, Any]:
     if (
         not isinstance(native_files, list)
         or not native_files
+        or any(not isinstance(item, str) for item in native_files)
+        or native_files != sorted(native_files)
         or len(native_files) != len(set(native_files))
+        or native_files.count("bin/python3.12") != 1
         or any(
             _runtime_relative(item, label="runtime native") not in by_path
-            or by_path[item]["mode"] != 0o555
+            or by_path[item]["mode"] not in {0o444, 0o555}
             for item in native_files
         )
         or type(native_loaded) is not int

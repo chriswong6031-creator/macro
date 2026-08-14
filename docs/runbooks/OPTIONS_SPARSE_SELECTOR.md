@@ -46,9 +46,9 @@ change.
 No path is configurable by environment or launchd arguments in this canary:
 
 - reviewed checkout: `/Users/chriswong/options-sparse-selector-ops-wt`;
-- sealed runtime: `/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1`;
+- sealed runtime: `/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v2`;
 - durable selector store: `/Users/chriswong/.mastermind_private/options_sparse_selector_v1`;
-- operational receipts: `/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1`;
+- operational receipts: `/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2`;
 - mark evidence: `/Users/chriswong/.mastermind_private/prophet_option_mark_observations_v1`;
 - lifecycle evidence: `/Users/chriswong/.mastermind_private/prophet_option_shadow_lifecycle_v1`; and
 - launchd label: `com.mastermind.optionssparseselector`.
@@ -68,16 +68,23 @@ a clean standalone checkout whose `origin/main` contains the reviewed activation
 merge. Do not install from the dirty `flow-ops-wt` checkout and do not trigger,
 rerun, or backfill the daily workflow.
 
+For the v1-to-v2 replacement, first stop the existing label before changing the
+checkout or installed plist. Retain the v1 runtime and operational roots exactly
+as incident evidence; never reuse, copy into, or delete them. The durable
+`options_sparse_selector_v1` selector root is the final production root and is
+also never removed.
+
 ```sh
 set -eu
+if /bin/launchctl print gui/501/com.mastermind.optionssparseselector >/dev/null 2>&1; then
+  /bin/launchctl bootout gui/501/com.mastermind.optionssparseselector
+fi
 /bin/chmod 700 /Users/chriswong/.mastermind_private
 /usr/bin/stat -f '%Su %Lp' /Users/chriswong/.mastermind_private
-/usr/bin/git clone --no-checkout --filter=blob:none --sparse \
-  --config 'core.sshCommand=/usr/bin/ssh -i /Users/chriswong/.ssh/macro_dashboard_deploy -o IdentitiesOnly=yes -o BatchMode=yes' \
-  git@github.com:mastermindx-market-intelligence/macro.git \
-  /Users/chriswong/options-sparse-selector-ops-wt
+/usr/bin/test -d /Users/chriswong/options-sparse-selector-ops-wt/.git
 /bin/chmod 755 /Users/chriswong/options-sparse-selector-ops-wt
 cd /Users/chriswong/options-sparse-selector-ops-wt
+/usr/bin/test -z "$(/usr/bin/git status --porcelain)"
 /usr/bin/git fetch --prune origin
 /usr/bin/git sparse-checkout set \
   engine lib scripts ops/launchd contracts/options research/options_estate
@@ -85,17 +92,17 @@ cd /Users/chriswong/options-sparse-selector-ops-wt
 /usr/bin/git status --porcelain
 release_sha="$(/usr/bin/git rev-parse --verify 'refs/remotes/origin/main^{commit}')"
 
-/bin/mkdir /Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1
-/bin/chmod 700 /Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1
-/usr/bin/printf 'options.sparse_selector.persistent_runtime_root/v1\n' > \
-  /Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1/.options_sparse_selector_persistent_runtime_root
+/bin/mkdir /Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v2
+/bin/chmod 700 /Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v2
+/usr/bin/printf 'options.sparse_selector.persistent_runtime_root/v2\n' > \
+  /Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v2/.options_sparse_selector_persistent_runtime_root
 /bin/chmod 600 \
-  /Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1/.options_sparse_selector_persistent_runtime_root
+  /Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v2/.options_sparse_selector_persistent_runtime_root
 
-/bin/mkdir /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1
-/bin/chmod 700 /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1
+/bin/mkdir /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2
+/bin/chmod 700 /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2
 
-install_receipt="/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/runtime_install_receipt.json"
+install_receipt="/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/runtime_install_receipt.json"
 install_receipt_tmp="${install_receipt}.tmp"
 /usr/bin/python3 ops/launchd/run_options_sparse_selector_verified.py \
   --install-persistent-target \
@@ -105,10 +112,10 @@ install_receipt_tmp="${install_receipt}.tmp"
   "$install_receipt_tmp"
 /bin/chmod 600 "$install_receipt_tmp"
 /bin/mv "$install_receipt_tmp" "$install_receipt"
-manifest_receipt="/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/runtime_closure.sha256"
+manifest_receipt="/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/runtime_closure.sha256"
 manifest_receipt_tmp="${manifest_receipt}.tmp"
 /usr/bin/shasum -a 256 \
-  /Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1/runtime_closure.json > \
+  /Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v2/runtime_closure.json > \
   "$manifest_receipt_tmp"
 /bin/chmod 600 "$manifest_receipt_tmp"
 /bin/mv "$manifest_receipt_tmp" "$manifest_receipt"
@@ -117,16 +124,16 @@ manifest_receipt_tmp="${manifest_receipt}.tmp"
   /Users/chriswong/Library/LaunchAgents/com.mastermind.optionssparseselector.plist
 /usr/bin/shasum -a 256 \
   /Users/chriswong/Library/LaunchAgents/com.mastermind.optionssparseselector.plist > \
-  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/installed_plist.sha256
+  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/installed_plist.sha256
 /bin/chmod 600 \
-  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/installed_plist.sha256
+  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/installed_plist.sha256
 /bin/launchctl enable gui/501/com.mastermind.optionssparseselector
 /bin/launchctl bootstrap gui/501 \
   /Users/chriswong/Library/LaunchAgents/com.mastermind.optionssparseselector.plist
 /usr/bin/printf '0\n' > \
-  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/launchctl_bootstrap.exit
+  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/launchctl_bootstrap.exit
 /bin/chmod 600 \
-  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/launchctl_bootstrap.exit
+  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/launchctl_bootstrap.exit
 ```
 
 Do not kickstart the job for acceptance. Let the next normal 300-second fire
@@ -142,6 +149,13 @@ manifest SHA-256, and bootstrap exit code under the operational root.
 The supervised parent `chmod` is a prerequisite on the M1 host: it only removes
 group/other traversal from the caller-owned private namespace and does not
 change or delete any existing producer object.
+
+The first v1 operational fire on 2026-08-14 refused before reading source or
+creating the selector root because the runner treated manifest-sealed,
+non-executable native libraries as executable-only files. Retain the v1 runtime
+and operational roots unchanged as incident evidence; never reuse or copy them.
+This v2 installation accepts only the carrier-sealed native modes while still
+requiring the copied Python executable itself to be `0555`.
 
 ## Rollback
 
@@ -164,15 +178,15 @@ calling the nightly producers:
 
 ```sh
 /bin/launchctl print gui/501/com.mastermind.optionssparseselector > \
-  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/launchctl_print.txt
+  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/launchctl_print.txt
 /bin/chmod 600 \
-  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/launchctl_print.txt
-/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1/runtime/bin/python3.12 \
+  /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/launchctl_print.txt
+/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v2/runtime/bin/python3.12 \
   -I -S -B \
   /Users/chriswong/options-sparse-selector-ops-wt/scripts/run_options_sparse_selector.py --status
 ```
 
-The fixed private `options_sparse_selector_ops_v1/launchd.{stdout,stderr}.log`
+The fixed private `options_sparse_selector_ops_v2/launchd.{stdout,stderr}.log`
 files opened by launchd are supporting diagnostics only, never canonical
 receipts. The runner-owned records under the fixed operational root are the
 retained proof: `status.json`, `halt.json`, `slot_claim.json`, and immutable
