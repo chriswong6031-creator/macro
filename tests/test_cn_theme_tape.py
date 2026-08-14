@@ -439,25 +439,85 @@ _REAL = {
                     reason="committed CN artifacts unavailable")
 def test_the_2026_08_04_incident_is_narrated_on_the_real_artifacts():
     """The operator saw Gold Miners top-ranked with no picks and the page said
-    nothing. It must now say: the sector turned, and here is where each name is."""
+    nothing. It must now say: the sector turned, and here is where each name is.
+
+    THIS CASE PINS THE ACCOUNTING, NEVER THE NIGHT'S VERDICT — and it was rewritten on
+    2026-08-13 because the first draft did the opposite. Written on 2026-08-05 it
+    asserted that evening's reading: Recovery, zero live, and 湖南黄金 the one `blocked`
+    name on `veto: bearish divergence`. Every one of those is a nightly OUTPUT. On
+    2026-08-07 the ledger moved 002155.SZ to `flat: cut` — a mapped, ordinary state
+    that retires a name to the `quiet` group, which by design carries tickers under one
+    shared reason rather than a fabricated per-name rejection. The name never left the
+    basket, never left the ledger (it is still scored at the newest stamp) and never
+    stopped being counted; only its bucket moved, and the case failed for a transition
+    the panel exists to narrate. A suite that reds when its subject is working teaches
+    the next reader to delete it, so the day's verdict is now READ from the artifacts
+    and never re-asserted.
+
+    What is left is what a producer change would actually break: the join still
+    resolves (basket keys, the `b-<key>` cycle convention, the stamp columns), each
+    shown row's buckets still PARTITION its membership, and the incident's own theme
+    still reaches the page carrying every one of its names.
+    """
+    membership = json.loads(_REAL["membership"].read_text())
     tape = build_cn_theme_tape(
-        json.loads(_REAL["membership"].read_text()),
+        membership,
         pd.read_parquet(_REAL["cycles"]),
         pd.read_parquet(_REAL["candidates"]),
     )
-    assert tape is not None
+    assert tape is not None, (
+        "the real artifacts no longer join — a basket key, the `b-<key>` cycle id "
+        "convention or a stamp column has moved under this panel")
+
+    plain = {word for words in PHASE_WORDS.values() for word in words}
+    for row in tape["rows"]:
+        # The accounting, on the real ledger. The fixture suite proves the partition in
+        # the small; here it meets 22 real baskets, where a bucket that dropped a member
+        # would be exactly the silence this panel was built to end.
+        assert sum(row["counts"][k] for k in BUCKET_KEYS) == row["n_members"], row["key"]
+        named = [m["t"] for group in row["members"].values() for m in group]
+        assert len(named) == len(set(named)), row["key"]
+        assert len(named) + row["counts"]["quiet"] == row["n_members"], row["key"]
+        # Law 2: the engine's own phase enum never reaches the glance tier.
+        assert row["state_en"] in plain and row["state_zh"] in plain, row["key"]
+        assert row["phase"] not in (row["state_en"], row["state_zh"]), row["key"]
+        assert row["stance"] in STANCES and row["say_en"] and row["say_zh"], row["key"]
+
     gold = next((r for r in tape["rows"] if r["key"] == "cn_gold"), None)
-    assert gold is not None, "the incident's own theme must never fall off the panel"
-    assert gold["state_en"] == "Early turn" and gold["state_zh"] == "初现拐点"
-    assert gold["counts"]["live"] == 0
+    assert gold is not None, (
+        "the incident's own theme is not on the panel. The row set is a CONDITION — "
+        "turned, or holding a live pick — so an absence is legitimate only once Gold "
+        "Miners has left Recovery with nothing live. Read the cycle before relaxing "
+        "this: a turned theme falling off the panel is the original incident again.")
 
-    everyone = [m for g in gold["members"].values() for m in g]
-    hunan = next((m for m in everyone if m["t"] == "002155.SZ"), None)
-    assert hunan is not None, "湖南黄金 must be accounted for, not silently absent"
-    assert hunan["zh"] == "湖南黄金"
+    real_members = [str(m.get("ticker")) for m in membership["baskets"]["cn_gold"]["members"]
+                    if not m.get("removed")]
+    assert "002155.SZ" in real_members, (
+        "湖南黄金 has left the basket. That is a universe change, not drift — re-point "
+        "this case at a currently-held name instead of letting it pass on a smaller "
+        "basket, which would retire the guard without saying so.")
+    assert gold["n_members"] == len(real_members)
 
+    # Accounted for means COUNTED — not necessarily named in a bucket list. `quiet` is a
+    # real answer ("no setup here yet"), and a name sitting there is still on the page.
+    # Silence is the only failure, so the assertion is the whole basket, not one bucket.
+    placed = {m["t"] for group in gold["members"].values() for m in group}
+    assert not gold["quiet_more"], "the quiet sample must not elide a name on a 6-name basket"
+    accounted = placed | set(gold["quiet_sample"])
+    assert accounted == set(real_members), (
+        "every Gold Miners name must land in exactly one bucket; unaccounted: "
+        f"{sorted(set(real_members) - accounted)}")
+
+    hunan = next((m for group in gold["members"].values() for m in group
+                  if m["t"] == "002155.SZ"), None)
     out = _render(tape)
-    assert "湖南黄金" in out and "Gold Miners" in out
+    assert "Gold Miners" in out
+    assert "002155.SZ" in out, "the incident's own name must reach the page"
+    if hunan is not None:
+        # In a named bucket the panel prints ticker AND zh name; the quiet remainder
+        # prints the ticker alone, under the group's one shared reason.
+        assert hunan["zh"] == "湖南黄金"
+        assert "湖南黄金" in out
 
 
 def test_the_glance_tier_copy_stays_inside_its_word_budgets():

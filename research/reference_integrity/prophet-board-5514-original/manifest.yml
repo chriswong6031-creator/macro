@@ -1,0 +1,36 @@
+# RIG artifact manifest — founding regression fixture (RIG V1 §3/§10).
+# The original Prophet Board reference mockup, frozen by SHA. Terminal status:
+# revise — "block the reference, preserve the good architecture, revise the card."
+# The active #5514 revision branch is a DIFFERENT artifact and is not governed by
+# this manifest; it gets its own RIG artifact set when re-submitted.
+schema: mastermind.rig_manifest.v1
+reference_id: prophet-board-5514-original
+scope: full
+status: revise
+
+surface:
+  route: us_stocks.html
+  registry_row: us_stocks
+  archetype: discovery_board
+
+author:
+  identity: "design authority (mockup lane), PR #5514 original head session"
+  role: designer
+
+reference_files:
+  - path: research/reference_integrity/prophet-board-5514-original/evidence/original_668e595/index.html
+    frozen_sha: 668e5954876f078755537605942c644fcbbb8a1d
+  - path: research/reference_integrity/prophet-board-5514-original/evidence/original_668e595/board.js
+    frozen_sha: 668e5954876f078755537605942c644fcbbb8a1d
+  - path: research/reference_integrity/prophet-board-5514-original/evidence/original_668e595/board.css
+    frozen_sha: 668e5954876f078755537605942c644fcbbb8a1d
+  - path: research/reference_integrity/prophet-board-5514-original/evidence/original_668e595/board-data.js
+    frozen_sha: 668e5954876f078755537605942c644fcbbb8a1d
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml

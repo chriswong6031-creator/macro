@@ -37,6 +37,14 @@
     visual artifact before the normal ship chain proceeds.
 11. **Perf budget respected:** the packet's page-weight/perf line (packet §I.5 pattern) holds,
     and generated-family packets carry a render-budget line — render budget is repo law.
+12. **Reference integrity (RIG V1 amendment, 2026-08-12):** the packet's canonical reference
+    carries a valid Reference Integrity approval receipt
+    (`research/REFERENCE_INTEGRITY_GATE_V1.md` §7/§12; `scripts/check_reference_integrity.py`
+    enforces via the packet's `RIG-RECEIPT:` line). A reference without one is **provisional**:
+    it may be iterated against, but no registry row may flip `compliant: true` on it and no
+    migration may claim reference conformance as final acceptance. Gate §0.1's "reviewer
+    compares against the reference" is therefore conditional on the reference having earned
+    canonical status — conformance to an unapproved reference proves nothing.
 
 ---
 
@@ -59,7 +67,10 @@ spawn-handoff law applied to migration: quality travels in the packet, not by po
 # MIGRATION PACKET — <route>            packet-id: MP-<seq>  date  author
 1  ROUTE + TEMPLATE      site route(s); owning template(s)/builder(s) with paths
 2  ARCHETYPE             letter + one line on why; registry row id
-3  CANONICAL REFERENCE   the mockup/page this must match (path or route) + specimen
+3  CANONICAL REFERENCE   the mockup/page this must match (path or route) + specimen +
+                         a `RIG-RECEIPT: <reference-id>` line naming its approved
+                         Reference Integrity artifact (RIG V1 §12; checker-enforced —
+                         a packet citing an unapproved reference cannot merge)
 4  PRIMARY QUESTION      one sentence (registry `primary_user_question`)
 5  PRIMITIVES TO REUSE   the §11 components this page composes (explicit list)
 6  MODULE DISPOSITIONS   table: current module → RETAIN / COMPRESS / MERGE-INTO <x> /
@@ -92,7 +103,13 @@ image paths (never prose descriptions of a look).
    (DS-PR-1 seeds all rows; §7 docket orders the queue).
 2. **Design** — for a first-of-archetype page: reference mockup (mockup gate, packet law).
    For a follower page: the archetype reference + a delta note suffice; no new mockup unless
-   the page carries a novel module.
+   the page carries a novel module. **RIG amendment (2026-08-12):** a reference that
+   redesigns an existing customer-facing surface then passes the Reference Integrity Gate —
+   production baseline → capability dispositions → independent dual critique (rationale-
+   quarantined) → design-authority verdict → approval receipt — BEFORE step 3 may cite it.
+   Reference creation and migration are two systems and never blend
+   (`research/REFERENCE_INTEGRITY_GATE_V1.md` §0; follower pages take Lightweight RIG per
+   its §2).
 3. **Packet** — authored per §2, committed, collisions checked.
 4. **Build** — one packet = one PR = one page/family (families migrate at the template level).
 5. **Verify** — ratchet lint + evidence capture + reviewer pass against §0.
@@ -315,3 +332,28 @@ Two independent Opus red-team passes ran 2026-08-12 (full record + dispositions:
 
 Standing dissents: none — the two partially-rejected findings and their grounds are in the
 master doc §18.12.
+
+## §10 Reference creation vs migration — the RIG amendment (2026-08-12)
+
+The factory validates **implementation against a reference**. The first Prophet Board
+mockup (PR #5514, original head `668e5954`) proved that is not enough: a reference can be
+mechanically correct, design-system compliant, and fully tested — and still make the product
+substantially worse. The missing stage is governed by the **Reference Integrity Gate**
+(`research/REFERENCE_INTEGRITY_GATE_V1.md`; founding fixture
+`research/reference_integrity/prophet-board-5514-original/`):
+
+```
+Reference creation (RIG):  production truth → capability/user-job audit → proposed
+                           reference → independent product + taste critics (rationale-
+                           quarantined) → design-authority verdict → approval receipt
+Migration (this factory):  approved reference → packet → build → conformance verification
+```
+
+Binding consequences inside this document: gate §0.12 (approval receipt before a registry
+row flips), packet field 3's `RIG-RECEIPT:` line, and pipeline §3.2's review stage. The
+Wave-0 references (`macro_reference`, `today_reference`, `utility_reference`) predate the
+gate and are grandfathered as **provisional**: their first consuming packet owns the RIG
+backfill (their recorded §9/master-§18 red-team passes seed the critic evidence). Prior
+capability dispositions at reference altitude (RETAIN / IMPROVE / RELOCATE / REMOVE /
+BLOCKED_DATA, RIG §1) are distinct from this factory's §2.6 module dispositions at
+migration altitude — different questions, both mandatory, never merged.

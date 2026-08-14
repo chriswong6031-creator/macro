@@ -1,0 +1,85 @@
+# Revision continuity closure (RIG V1.1 §13) — a REVISE may not evaporate between cycles.
+# research/reference_integrity/<reference-id>/continuity.yml
+#
+# REQUIRED whenever this cycle follows a predecessor that did NOT approve. Every unresolved
+# predecessor blocker and every design-authority condition gets exactly ONE disposition, by id.
+# There is no missing state and no implicit state — the same law as §1's no-implicit-deletion,
+# applied to findings instead of capabilities.
+#
+# DERIVE IT, DON'T WRITE IT FROM MEMORY (§13.5):
+#     python3 scripts/check_reference_integrity.py --mandate <reference-id> > \
+#         research/reference_integrity/<reference-id>/continuity.yml
+# That prints this file pre-filled with EVERY open item from the predecessor's own verdict,
+# each carrying `disposition: <REQUIRED>` and the predecessor's note as context. A partial,
+# self-authored scope is indistinguishable from a complete one until a critic re-finds the gap.
+#
+# DECLARE THE LINEAGE IN manifest.yml (this file does not replace it):
+#     lineage:
+#       predecessors:            # ordered OLDEST → NEAREST
+#         - <older ancestor>     # provenance only
+#         - <nearest predecessor>  # the closure obligation runs against THIS one
+# A chain is closed link by link: the nearest predecessor's own continuity.yml already closed
+# the older one. But every non-approved set governing the same surface.route must still be
+# NAMED here, or `undeclared-predecessor` fires — declaring a conveniently old ancestor is not
+# a way out (§13.2).
+#
+# The gate is armed at draft and in_review, not only at a terminal status (§13.4): a successor
+# that dropped a prior item is refused BEFORE two independent critics are spent re-finding it.
+schema: mastermind.rig_continuity.v1
+reference_id: <same as manifest>
+
+predecessors:
+  - reference_id: <predecessor reference-id — the NEAREST one carries the obligation>
+    verdict: REVISE            # the predecessor's own recorded verdict (REVISE | REJECT)
+    source: on_disk            # on_disk = its artifact set is in this checkout
+                               # snapshot = it is not (its PR is still open) — then source_ref
+                               #            below is REQUIRED and proves where the set came from
+    # source_ref: >
+    #   <PR / SHA / path proving the snapshot, e.g. "PR #5533 head f717aab2, artifact set
+    #   research/reference_integrity/<id>/verdict.yml at that head">
+
+    closure:                   # EVERY open predecessor item: blocking_findings resolved
+                               # upheld_revise, plus every conditions[] entry. Rows the
+                               # predecessor closed itself (resolved_by_change / overridden)
+                               # are already closed there and are NOT carried forward.
+
+      - id: <predecessor blocking-finding id or condition id, e.g. PRC-301 / COND-04>
+        kind: blocker          # blocker | condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          <what is true in the new SHA that was not true before — checkable by a stranger>
+        changed_files:         # at least one path, in the new SHA
+          - <path that carries the fix>
+
+      - id: <id>
+        kind: condition
+        disposition: CARRIED_BLOCK    # legal, honest, and it BLOCKS approval
+        note: >
+          <what is still unresolved and why it did not move this cycle. A CARRIED_BLOCK is not
+          a failure of this artifact — it is the true state, recorded. What is illegal is
+          leaving it unstated, which resets the debt to zero for the next cycle.>
+
+      - id: <id>
+        kind: blocker
+        disposition: OVERRIDDEN       # permanent record: who overrode what, and why
+        authority: <design authority identity>
+        rationale: <why the item is overridden rather than fixed or carried>
+        finding: <the predecessor id being overridden — same as `id` above>
+
+      - id: <id>
+        kind: condition
+        disposition: SUPERSEDED
+        superseded_by: <the later finding / ruling id that replaces it>
+        linkage: <why that genuinely replaces this item — naming it is not showing it>
+
+      # RENAMED between cycles? Keep the new id and name what it closes, or the rename
+      # silently drops the item:
+      # - id: PRC-301
+      #   predecessor_ref: PRC-207
+      #   kind: blocker
+      #   disposition: CARRIED_BLOCK
+      #   note: <...>
+
+# OPTIONAL — proposal.yml may restate this closure set as `revision_mandate: [<id>, ...]`
+# (the builder's work order). If it exists it must cover every id above, or `mandate-incomplete`
+# fires. continuity.yml is the record; the mandate is only a restatement of it.

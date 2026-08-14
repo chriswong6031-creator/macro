@@ -323,10 +323,30 @@ if [ -n "$LOCAL_LLM_BASE_URL" ] && [ -n "$LOCAL_LLM_MODEL" ]; then
   preflight_local_llm
 fi
 
+# Per-invocation attempt ceiling. This was a flat 64, which is comfortably above
+# the ~22-38 calls/day steady state and comfortably BELOW earnings season: the
+# 2026 Q2 window carried 294 calls on 07-30, 320 on 08-05 and 462 on 08-06
+# against a 3-runs-a-day ceiling of 192. The durable queue means nothing is ever
+# lost, but a ceiling under the arrival rate means the qualitative overlay runs
+# permanently behind the records it annotates, and after any outage it never
+# catches up — measured 2026-08-14, 990 still pending after a clean 64/64 run.
+#
+# 256 is derived from the measured rate, not picked: a scored call costs ~6s on
+# the local Qwen (64 calls in 6.5 min, 2026-08-14), so 256 is ~26 min of a
+# 3-hour slot, and the run lock above already makes an overrun safe. Override
+# with EARNINGS_WORKER_LIMIT when draining a large backlog by hand.
+EARNINGS_WORKER_LIMIT="${EARNINGS_WORKER_LIMIT:-256}"
+case "$EARNINGS_WORKER_LIMIT" in
+  ''|*[!0-9]*)
+    echo "ERROR: EARNINGS_WORKER_LIMIT must be a positive integer" >&2
+    exit 1
+    ;;
+esac
+
 args=(
   "$OPS_ROOT/tools/earnings_worker/run_worker.py"
   --terminal-auto
-  --limit 64
+  --limit "$EARNINGS_WORKER_LIMIT"
   --provider-order "$PROVIDER_ORDER"
   --repo-root "$OPS_ROOT"
   --terminal-state "$STATE_PATH"

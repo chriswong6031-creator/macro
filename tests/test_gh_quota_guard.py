@@ -39,18 +39,6 @@ assert _HOOK_SPEC and _HOOK_SPEC.loader
 GUARD = importlib.util.module_from_spec(_HOOK_SPEC)
 _HOOK_SPEC.loader.exec_module(GUARD)
 
-# The pure handoff contract, loaded the way the guard loads it. Registration in
-# sys.modules is load-bearing: `HandoffVerdict` is a @dataclass under
-# `from __future__ import annotations`, and dataclass creation dereferences
-# `sys.modules[cls.__module__]`.
-_CONTRACT_SPEC = importlib.util.spec_from_file_location(
-    "_test_ci_handoff_contract_quota", ROOT / "scripts" / "ci_handoff_contract.py"
-)
-assert _CONTRACT_SPEC and _CONTRACT_SPEC.loader
-CONTRACT = importlib.util.module_from_spec(_CONTRACT_SPEC)
-sys.modules["_test_ci_handoff_contract_quota"] = CONTRACT
-_CONTRACT_SPEC.loader.exec_module(CONTRACT)
-
 # ─────────────────────────────────────────────────────────────────────────────
 # No test in this file may reach api.github.com
 # ─────────────────────────────────────────────────────────────────────────────
@@ -84,56 +72,6 @@ def _gh_shim(tmp_path_factory, monkeypatch):
     monkeypatch.setenv("PATH", f"{shim_dir}{os.pathsep}{os.environ['PATH']}")
     monkeypatch.delenv("GH_SHIM_EXIT", raising=False)
     monkeypatch.setenv("GH_SHIM_PAYLOAD", "[]")
-
-
-@pytest.fixture(autouse=True)
-def _isolated_handoff_root(tmp_path_factory, monkeypatch):
-    """No test in this file may read or write the operator's real ~/.mastermind.
-
-    Autouse and unconditional: shape 5 resolves a sentinel for any CI-observation
-    command, so a test that merely says `gh run watch` would otherwise consult the
-    HOST's live handoff state and pass or fail according to whatever a real session
-    happened to be doing. An empty override directory is "no handoff in effect",
-    which is the pre-Wave-A answer every older test in this file expects.
-    """
-    monkeypatch.setenv(
-        CONTRACT.SENTINEL_DIR_ENV, str(tmp_path_factory.mktemp("handoffs"))
-    )
-
-
-def _handoff_repo(tmp_path: Path, *, sentinel_head: str | None = None, pr: int = 4242) -> Path:
-    """A git checkout with an origin remote, plus a sentinel for `sentinel_head`.
-
-    Defaults to a sentinel matching the checkout's actual HEAD (an ACTIVE handoff).
-    Pass `sentinel_head` to write a STALE one — the shape a worker leaves behind by
-    committing after it handed off.
-    """
-    repo = tmp_path / "checkout"
-    repo.mkdir()
-    subprocess.run(("git", "init", "-q", "-b", "claude/feature", "."),
-                   cwd=repo, check=True, capture_output=True)
-    for key, value in (("user.email", "t@example.com"), ("user.name", "T")):
-        subprocess.run(("git", "config", key, value), cwd=repo, check=True, capture_output=True)
-    subprocess.run(("git", "remote", "add", "origin", "https://github.com/acme/widgets.git"),
-                   cwd=repo, check=True, capture_output=True)
-    (repo / "work.txt").write_text("session work\n", encoding="utf-8")
-    subprocess.run(("git", "add", "work.txt"), cwd=repo, check=True, capture_output=True)
-    subprocess.run(("git", "commit", "-qm", "feat: work"), cwd=repo, check=True,
-                   capture_output=True)
-    head = subprocess.run(("git", "rev-parse", "HEAD"), cwd=repo, check=True,
-                          capture_output=True, text=True).stdout.strip()
-
-    path = CONTRACT.sentinel_path("acme/widgets", "claude/feature")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({
-        "repo": "acme/widgets",
-        "branch": "claude/feature",
-        "head_sha": sentinel_head or head,
-        "pr_number": pr,
-        "handoff_id": CONTRACT.receipt_id("acme/widgets", pr, sentinel_head or head),
-        "accepted_at": "2026-08-11T12:00:00Z",
-    }), encoding="utf-8")
-    return repo
 
 
 def _stamp(minutes_ago: float) -> str:
@@ -505,24 +443,27 @@ def test_prose_about_the_dispatch_is_not_a_dispatch(monkeypatch):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Shape 5: CI observation after a terminal handoff (Wave A)
+# The RETIRED shape 5: CI observation is legal again (operator, 2026-08-12)
 # ─────────────────────────────────────────────────────────────────────────────
 #
-# Shapes 1-3 THROTTLE babysitting. This one ENDS it. A worker that pushed an exact
-# head, armed `merge-on-green`, and wrote a handoff sentinel has finished its job:
-# the sweeper owns the merge and a controller event owns the resume. Every poll
-# after that spends the shared REST pool to learn a fact the worker may no longer
-# act on, and holds a large context open across a 30-34 minute run — CLAUDE.md's
-# measured most-expensive shape (Fable burn is CONTEXT x TURNS).
+# This guard once carried a fifth shape: once a worker had armed `merge-on-green`
+# and written a handoff sentinel, ANY command that read CI state was denied, on
+# the theory that the sweeper owned the merge from there.
 #
-# The sentinel is keyed on (repo, branch, head), so this deny expires by itself the
-# moment the worker makes a new commit. Nothing here is fail-closed.
+# The operator removed that rule. A session owns its pull request through
+# commit -> push -> PR -> CI -> squash-merge -> live verification, so reading check
+# state is part of the job, not a violation of it — and in the field the deny
+# blocked a session from even DIAGNOSING the red its own pull request was stuck on
+# while it sat `merge-blocked`.
+#
+# Shapes 1-4 are untouched and still decide everything below. They govern HOW a
+# session watches CI (one slow watcher, no unthrottled loop, no `--paginate` over
+# check-runs, no re-dispatch over a live proof) — never WHETHER it may.
 
 @pytest.mark.parametrize("cmd", [
-    # `--interval 60` is DELIBERATE: shape 1 allows exactly this command, so a deny
-    # here can only be the handoff rule and not the old quota rule wearing its coat.
+    # Every one of these was a shape-5 deny. Each is now judged by shapes 1-4
+    # alone, and each passes them: a slow watcher, a one-shot read, or a polite loop.
     "gh run watch 31309720615 --interval 60",
-    "gh run watch 31309720615",
     "gh pr checks 4242 --watch",
     "gh pr checks 4242",
     "gh run view 31309720615",
@@ -530,87 +471,38 @@ def test_prose_about_the_dispatch_is_not_a_dispatch(monkeypatch):
     'gh api "repos/acme/widgets/commits/$SHA/check-runs?per_page=100"',
     "gh api repos/acme/widgets/actions/runs/31309720615 --jq '.status'",
     "gh api repos/acme/widgets/actions/runs/1/jobs",
-    # The wrapper form: a polite 300s loop is still babysitting once CI is not ours.
     "until [ x = y ]; do gh pr view 4242 --json state; sleep 300; done",
 ])
-def test_ci_observation_is_denied_once_the_handoff_sentinel_is_active(tmp_path, cmd):
-    repo = _handoff_repo(tmp_path)
-    assert _denied(cmd, cwd=repo)
+def test_ci_observation_is_never_denied_for_owning_an_open_pull_request(cmd):
+    """No state outside the command line may make a CI read illegal.
 
-
-def test_the_handoff_denial_states_the_terminal_contract_verbatim(tmp_path):
-    """These two sentences ARE the worker's stop condition. A paraphrase per call
-    site is how a contract becomes folklore, so the wording is pinned here."""
-    repo = _handoff_repo(tmp_path)
-    head = subprocess.run(("git", "rev-parse", "HEAD"), cwd=repo, check=True,
-                          capture_output=True, text=True).stdout.strip()
-    d = _run("gh run watch 1 --interval 60", cwd=repo)
-    reason = (d or {}).get("permissionDecisionReason", "")
-    assert (
-        f"CI ownership was handed to merge-on-green at {head}. This worker is terminal.\n"
-        "Start a fresh repair/continuation session only after the controller emits an event."
-    ) in reason
-    assert head in reason, "the deny must name the head the handoff covers"
-    assert "CI_HANDOFF=" in reason, "and point at the marker that ends the worker"
-
-
-def test_a_stale_sentinel_from_an_older_head_does_not_deny(tmp_path):
-    """THE ESCAPE. A worker that committed after handing off has work the sweeper
-    was never given, so CI is its business again — and `active_sentinel` says so
-    without anyone having to delete a file.
-
-    This is also the whole reason the sentinel carries a head at all: keyed on
-    (repo, branch) alone it would brick the branch forever.
+    The session that armed the label is the session that still has to land the
+    merge; a guard that hid the check state from it turned an unfinished job into
+    a reported-complete one.
     """
-    repo = _handoff_repo(tmp_path, sentinel_head="f" * 40)
-    assert not _denied("gh run watch 1 --interval 60", cwd=repo)
-    assert not _denied("gh pr checks 4242 --watch", cwd=repo)
-    assert not _denied('gh api "repos/acme/widgets/commits/x/check-runs"', cwd=repo)
+    assert not _denied(cmd)
 
 
-def test_no_sentinel_at_all_leaves_the_old_deny_matrix_exactly_as_it_was(tmp_path):
-    """Control: the repo is real, the sentinel root is empty. Shape 1's boundary
-    must still be the thing that decides."""
-    repo = _handoff_repo(tmp_path, sentinel_head="f" * 40)
-    assert _denied("gh run watch 1", cwd=repo), "hot interval is still shape 1"
-    assert not _denied("gh run watch 1 --interval 60", cwd=repo)
+def test_the_quota_shapes_still_decide_the_same_commands():
+    """Control for the test above: retiring shape 5 must not have retired shape 1.
+
+    Same verb, same subject, same session — only the interval differs, and that is
+    now the ONLY thing that decides.
+    """
+    assert _denied("gh run watch 31309720615"), "the 3s default is still the trap"
+    assert not _denied("gh run watch 31309720615 --interval 60")
 
 
-@pytest.mark.parametrize("cmd", [
-    "gh pr comment 4242 --body 'handing off'",
-    "gh pr edit 4242 --add-label merge-on-green",
-    "gh pr create --title x --body y",
-    "gh issue list --limit 5",
-    "gh api rate_limit --jq '.resources.core.remaining'",
-    "gh pr view 4242 --json state,mergedAt",
-    "gh workflow run render.yml --ref main",
-    "git log --oneline -3",
-])
-def test_unrelated_gh_work_stays_legal_under_an_active_handoff(tmp_path, cmd):
-    """The handoff ends CI OBSERVATION, not the worker's ability to finish speaking:
-    arming the label and leaving a comment are how the handoff is made in the first
-    place, and a guard that blocked them would forbid its own precondition."""
-    repo = _handoff_repo(tmp_path)
-    assert not _denied(cmd, cwd=repo)
+def test_no_gh_command_is_denied_merely_because_a_pull_request_is_armed():
+    """The words that used to end a worker's life must not appear in any deny.
 
-
-def test_a_missing_or_broken_checkout_fails_open(tmp_path):
-    """FAIL OPEN, like every other rule in this guard: a guard that bricks the
-    harness is worse than a missed warning."""
-    _handoff_repo(tmp_path)
-    assert not _denied("gh run watch 1 --interval 60", cwd=tmp_path / "not-a-directory")
-    plain = tmp_path / "plain"
-    plain.mkdir()
-    assert not _denied("gh run watch 1 --interval 60", cwd=plain), "no git repo -> allow"
-
-
-def test_an_unloadable_contract_fails_open(tmp_path, monkeypatch):
-    """The contract is loaded by path; if the file is gone, the guard must allow."""
-    monkeypatch.setattr(GUARD, "CONTRACT_CACHE", [])
-    monkeypatch.setattr(GUARD, "CONTRACT_PATH", tmp_path / "gone" / "contract.py")
-    assert GUARD.ci_handoff_contract() is None
-    assert GUARD.handoff_sentinel(tmp_path) is None
-    assert GUARD.check("gh run watch 1 --interval 60", str(tmp_path)) is None
+    A grep-level pin. The retired shape denied with "CI HANDOFF IN EFFECT" and
+    told the session to print a terminal marker instead of finishing; it resolved
+    that state through a now-deleted contract module loaded by file path. One
+    lowercase substring covers the rule, its deny text, its marker, and its
+    module, in every casing anyone would reintroduce them in.
+    """
+    assert "handoff" not in HOOK.read_text(encoding="utf-8").lower()
 
 
 class _ExplodingSubprocess:
@@ -621,7 +513,7 @@ class _ExplodingSubprocess:
 
     def run(self, *args, **kwargs):
         self.calls.append(args)
-        raise AssertionError(f"a non-CI command must spawn no subprocess: {args!r}")
+        raise AssertionError(f"a command outside shape 4 must spawn no subprocess: {args!r}")
 
 
 @pytest.mark.parametrize("cmd", [
@@ -633,42 +525,36 @@ class _ExplodingSubprocess:
     "gh pr merge 4242 --squash",
     "gh pr view 4242 --json state",
     "gh run rerun --failed 302186",
+    "gh run watch 302186 --interval 60",
+    "gh pr checks 4242",
 ])
-def test_a_non_ci_command_costs_no_git_probe_and_no_network(monkeypatch, cmd):
-    """ORDER IS THE CONTRACT: cheap regex first, subprocesses only after it matches.
+def test_a_command_outside_shape_four_costs_no_subprocess(monkeypatch, cmd):
+    """ORDER IS THE CONTRACT: cheap regex first, subprocesses only after a match.
 
-    Resolving the sentinel costs three git reads. Spending them on every `gh`
-    command in the fleet would make an anti-waste guard the waste — so the shape
-    gate is pinned at the seam, not by inspection.
+    Shape 4's probe is one REST call against the pool this hook exists to protect,
+    so it may only ever be spent on an exact `gh workflow run <proof>` match.
+    Pinned at the seam rather than by inspection.
     """
     exploding = _ExplodingSubprocess()
     monkeypatch.setattr(GUARD, "subprocess", exploding)
-
-    def _never(*_a, **_k):
-        raise AssertionError("the sentinel resolver must not be reached")
-
-    monkeypatch.setattr(GUARD, "handoff_sentinel", _never)
-    monkeypatch.setattr(GUARD, "ci_handoff_contract", _never)
-
     assert GUARD.check(cmd, "/some/checkout") is None
     assert exploding.calls == []
 
 
-def test_the_shape_gate_is_not_vacuous(monkeypatch):
-    """Control for the test above: a command that DOES observe CI must reach the
-    resolver, or the no-probe pin would pass by matching nothing at all."""
+def test_the_probe_gate_is_not_vacuous(monkeypatch):
+    """Control for the test above: a real proof dispatch MUST reach the probe, or
+    the no-subprocess pin would pass by matching nothing at all."""
     seen = []
-    monkeypatch.setattr(GUARD, "handoff_sentinel", lambda cwd=None: seen.append(cwd))
-    assert GUARD.check("gh run watch 1 --interval 60", "/some/checkout") is None
-    assert seen == ["/some/checkout"], "the resolver runs, and is told where to look"
+    monkeypatch.setattr(GUARD, "live_proof_reason", lambda workflow: seen.append(workflow))
+    assert GUARD.check("gh workflow run ci.yml --ref main", "/some/checkout") is None
+    assert seen == ["ci.yml"], "the probe runs, and is told which workflow to look at"
 
 
-def test_prose_about_the_handoff_is_not_an_observation(tmp_path):
-    """Writing ABOUT the trap stays legal here too — the same lesson shape 1 learned
-    in production the first minute it was live."""
-    repo = _handoff_repo(tmp_path)
-    assert not _denied("echo 'do not gh run watch after the handoff'", cwd=repo)
-    assert not _denied('git commit -m "deny gh pr checks once CI is handed off"', cwd=repo)
+def test_prose_about_the_quota_traps_is_not_an_invocation():
+    """Writing ABOUT the trap stays legal — the lesson shape 1 learned in production
+    the first minute it was live, when it blocked its own commit message."""
+    assert not _denied("echo 'do not gh run watch at the default interval'")
+    assert not _denied('git commit -m "deny gh pr checks in a tight loop"')
 
 
 # ─────────────────────────────────────────────────────────────────────────────

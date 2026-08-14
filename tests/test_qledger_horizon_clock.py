@@ -2480,31 +2480,176 @@ def test_the_duel_compares_normally_when_both_sides_share_a_basis(tmp_path):
 
 
 def test_promotion_on_a_legacy_only_family_is_the_documented_status_quo(tmp_path):
-    """PINS WHAT THIS PR DOES **NOT** CHANGE, because the first draft of its own
-    commit message overstated it.
+    """P0c-2 — CEO RULING 2026-08-13 §5 SUPERSEDES THE STATUS QUO THIS TEST USED
+    TO PIN. The docstring this test carried until today said, verbatim,
+    "changing it later is a deliberate act with a failing test attached" — this
+    is that act, and the authority for it is the CEO's 2026-08-13 §5 ruling:
+    "Legacy-clock evidence remains VISIBLE but cannot independently create a
+    new promotion after the explicit-clock discontinuity ... a legacy-only
+    family may not newly produce `ready=True`, a readiness alert, or an
+    authority transition."
 
+    THE OLD BEHAVIOUR (pinned here 2026-08-1x, before this ruling):
     `_authority_clock_basis` returns the sole basis when a family has exactly
-    one — and for every live family today that basis IS `CLOCK_LEGACY`, since no
-    explicit-clock grade row exists yet. So `promotion_check` on the DEFAULT
-    path does grant `eligible=True` with `clock_basis='legacy_calendar_unstamped'`.
+    one — and for every live family that basis IS `CLOCK_LEGACY`, since no
+    explicit-clock grade row exists yet — so `promotion_check` on the DEFAULT
+    path used to grant `eligible=True` with
+    `clock_basis='legacy_calendar_unstamped'` and `current_state=STATE_GRADED`.
+    That was deliberate at the time: refusing it outright would have made every
+    family on the board permanently un-promotable, which was judged a
+    fleet-wide product decision, not a side effect of the clock-plumbing PR.
 
-    That is deliberate and is the status quo: refusing it would make every
-    family on the board permanently un-promotable until it accrues 25 dates on
-    the new clock, which is a fleet-wide product decision, not a side effect to
-    slip into a clock-plumbing PR. What this PR narrows is strictly the
-    STRADDLING case — `promotion_check_by_market` no longer mints a per-basis
-    legacy verdict beside the real ones.
-
-    This test exists so the boundary is asserted rather than assumed, and so a
-    future change to it is a deliberate act with a failing test attached."""
+    THE NEW BEHAVIOUR (this test, from 2026-08-13 onward): the CEO ruling makes
+    exactly that fleet-wide call, and makes it in the withdrawing direction.
+    `eligible` is now unconditionally False on a legacy-only basis once it
+    reaches GRADED territory, and `current_state` reads the new, distinct
+    `STATE_LEGACY_NOT_AUTHORITY_ELIGIBLE` chip instead of `STATE_GRADED` — a
+    reader can tell "historical evidence, not authority" from "authority
+    pending" without parsing prose. The NUMBERS are unchanged and still
+    reported: `n_dates`, `wilson_ci_low`, and the legacy basis's own count all
+    still compute and publish exactly as before — only the verdict withdraws."""
     claims, grades = _legacy_plus_two_market_store(n_legacy=30, n_us=0, n_cn=0)
     _write_store(tmp_path, claims, grades)
     pr = q.promotion_check("f", 21, root=tmp_path, control_only=True)
     assert pr.clock_basis == q.CLOCK_LEGACY
+    assert pr.current_state == q.STATE_LEGACY_NOT_AUTHORITY_ELIGIBLE
+    assert pr.current_state != q.STATE_GRADED
+    assert pr.current_state != q.STATE_MIXED_CLOCK, (
+        "a legacy-only family is not a basis COLLISION — it simply has no "
+        "explicit-clock evidence yet; that is a different state for a "
+        "different reason")
+    assert pr.eligible is False, (
+        "P0c-2 (CEO ruling 2026-08-13 §5): legacy-clock evidence cannot "
+        "independently mint a new promotion, however large its n_dates or "
+        "however clean its Wilson CI")
+    # the numbers stay VISIBLE — this ruling withdraws AUTHORITY, not disclosure
+    assert pr.n_dates == 30
+    assert pr.wilson_ci_low is not None and pr.wilson_ci_low > q.PROMOTION_MIN_CI_LOW, (
+        "the fixture's CI genuinely clears the bar — the withdrawal must be the "
+        "clock-basis rule firing, not an incidental CI failure")
+
+
+def test_legacy_only_family_reports_numbers_but_no_readiness_alert(tmp_path):
+    """NOT DONE UNLESS #1. `scripts.grade_qledger.compute_promotion_readiness`
+    (the nightly W6 post-step that feeds `run_status.json` and the first-cross
+    Telegram/Discord alert) reads `pr.eligible` straight into `rec["ready"]` —
+    so once `promotion_check` withdraws authority on a legacy-only basis, the
+    withdrawal reaches the operator-facing readiness row and the alert-fire
+    loop (`run_readiness_post_step`) for free, with no separate change needed
+    in grade_qledger.py. This pins that: `ready` is False, and — critically —
+    `n_dates`/`hit_rate` are STILL published. This ruling withdraws authority,
+    not disclosure.
+
+    `approaching` (`n_dates >= 20 and not ready`, unchanged/untouched by this
+    PR) reads True here — 30 dates and a clean CI genuinely sit past that
+    numeric marker, and `_summarise_readiness` therefore lists this family under
+    `families_approaching`, not `families_ready`. That is a pre-existing,
+    unrelated field this ruling deliberately leaves alone (out of scope per the
+    brief — see the P0c-2 build report); the one hard requirement is that NO
+    alert fires, and `_fire_readiness_alert`/`run_readiness_post_step` key
+    exclusively off `ready`, never `approaching`."""
+    import scripts.grade_qledger as grader
+
+    claims, grades = _legacy_plus_two_market_store(n_legacy=30, n_us=0, n_cn=0)
+    _write_store(tmp_path, claims, grades)
+    readiness = grader.compute_promotion_readiness(tmp_path, families=["f"])
+    cell = readiness["f"]["21"]
+
+    assert cell["ready"] is False
+    assert cell["n_dates"] == 30, "the honest n stays visible"
+    assert cell["hit_rate"] == 1.0, "the legacy track record stays honest"
+    assert cell["clock_basis"] == q.CLOCK_LEGACY
+
+    # ...and the summary — which `run_readiness_post_step`'s first-cross alert
+    # loop mirrors exactly (`if rec.get("ready") ...`) — agrees: nothing here
+    # is ever eligible to fire the readiness alert.
+    ready, approaching = grader._summarise_readiness(readiness)
+    assert ready == [], "a legacy-only family must never appear in families_ready"
+    assert "f@21d" in approaching
+
+
+def test_explicit_clock_evidence_that_independently_clears_the_bar_still_promotes(
+        tmp_path):
+    """NOT DONE UNLESS #2 — NEGATIVE CONTROL. This ruling withdraws authority
+    from the LEGACY basis specifically; it must not freeze the board. A family
+    whose ONLY evidence is on the explicit v1 clock — no legacy rows at all —
+    still promotes normally once its own n clears §3, exactly as before P0c-2."""
+    claims, grades = _legacy_plus_two_market_store(n_legacy=0, n_us=25, n_cn=0)
+    _write_store(tmp_path, claims, grades)
+    pr = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+
+    assert pr.clock_basis == _v1(market=q.MARKET_US)
+    assert pr.clock_basis != q.CLOCK_LEGACY
     assert pr.current_state == q.STATE_GRADED
+    assert pr.current_state != q.STATE_LEGACY_NOT_AUTHORITY_ELIGIBLE
     assert pr.eligible is True, (
-        "legacy-only promotion is the documented status quo; changing it is a "
-        "fleet-wide decision, not a side effect of the clock contract")
+        "explicit-clock evidence must independently satisfy the promotion "
+        f"gate; reason={pr.reason}")
+    assert pr.n_dates == 25
+
+
+def test_legacy_n_and_explicit_n_are_never_summed_to_clear_the_threshold(
+        tmp_path):
+    """NOT DONE UNLESS #3. Legacy 20 dates + explicit 10 dates = 30 >= 25 IF
+    pooled — but the ruling forbids pooling ("never combine legacy N +
+    explicit-clock N to clear a threshold"), and the partition-by-basis
+    machinery (`_authority_clock_basis`, family_bases filtering in
+    `promotion_check`) already enforces exactly this for straddled families:
+    the gate evaluates inside the explicit basis ALONE and counts nothing
+    else. This pins it under the P0c-2 lens: the explicit leg's OWN 10 dates
+    must not clear the 25-date floor, and the legacy 20 must not be added in
+    to help it."""
+    claims, grades = _legacy_plus_two_market_store(n_legacy=20, n_us=10, n_cn=0)
+    _write_store(tmp_path, claims, grades)
+    pr = q.promotion_check("f", 21, root=tmp_path, control_only=True)
+
+    assert pr.clock_basis == _v1(market=q.MARKET_US), (
+        "legacy + exactly one explicit basis -> the explicit basis, never pooled")
+    assert pr.n_dates == 10, (
+        "the explicit leg's OWN count only — 20 legacy dates must not be added "
+        "in to help it clear 25")
+    assert pr.n_dates < q.PROMOTION_MIN_DATES
+    assert pr.eligible is False
+    assert f"n_dates={pr.n_dates} < {q.PROMOTION_MIN_DATES}" in pr.reason
+    # the excluded legacy history is disclosed, never silently dropped and
+    # never silently added
+    assert pr.clock_prior_n_dates == {q.CLOCK_LEGACY: 20}
+
+
+def test_legacy_authority_withdrawal_never_touches_the_hand_edited_ladder_registry(
+        tmp_path):
+    """NOT DONE UNLESS #4. Authority is actually HELD in
+    `config/qual_ladder.yml`'s `ladder_state` field — a hand-edited registry
+    (see that file's header: "ladder_state: DISPLAY | SHADOW | CONFIRMER |
+    SCORED", and e.g. the china_validation.news_sentiment entry: "this entry's
+    ladder_state must be manually promoted to CONFIRMER after the gate
+    clears"). Nothing on today's live board sits at CONFIRMER or SCORED yet
+    (HONEST SEEDING, 2026-07-02: "NOTHING has passed the §3 gate yet"), and
+    neither `promotion_check` nor `compute_promotion_readiness`/
+    `emit_ladder_states` ever opens that file for writing — both only ever
+    write `site/qledger/track_record.json`, a computed/advisory artifact. So a
+    legacy-only family flipping to ineligible under this ruling CANNOT revoke
+    anything an operator has already promoted by hand: there is no code path
+    from this verdict to that file at all. Pinned by construction: running
+    every promotion-gate entry point on a legacy-only family well past the old
+    eligible=True threshold leaves config/qual_ladder.yml byte-identical."""
+    import scripts.grade_qledger as grader
+
+    ladder_path = Path(__file__).resolve().parents[1] / "config" / "qual_ladder.yml"
+    before = ladder_path.read_bytes()
+
+    claims, grades = _legacy_plus_two_market_store(n_legacy=40, n_us=0, n_cn=0)
+    _write_store(tmp_path, claims, grades)
+    q.promotion_check("f", 21, root=tmp_path, control_only=True)
+    grader.compute_promotion_readiness(tmp_path, families=["f"])
+    q.emit_ladder_states(root=tmp_path, families=["f"])
+
+    after = ladder_path.read_bytes()
+    assert after == before, (
+        "a promotion-gate call touched the hand-edited authority registry — "
+        "this ruling must never revoke an already-granted rung")
+
+
 # =========================================================================== #
 # P0a-2 — THE MARKET RESOLVER, HARDENED
 #

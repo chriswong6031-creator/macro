@@ -1,0 +1,147 @@
+# Critic receipt — Reviewer B (Visual / Taste), founding RIG review.
+# Two-pass record; pass 1 produced under rationale quarantine (DESIGN_NOTES.md withheld),
+# pass 2 after reveal. Findings recorded verbatim from the independent reviewer.
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-5514-original
+role: visual_taste
+artifact_sha: 668e5954876f078755537605942c644fcbbb8a1d
+
+reviewer:
+  identity: "independent opus designer agent — RIG founding review B"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job
+    - production-before artifact (live screenshots + _prophet_card.html.j2 hue/identity system)
+    - proposed-after artifact (34 rendered crops + frozen index.html/board.css/board.js)
+  rationale_received_after_first_pass: true
+
+first_pass:
+  frozen_at: "2026-08-13T06:20:00Z"
+  verdict: BLOCK
+  findings:
+    - id: VTC-001
+      severity: blocker
+      finding: >
+        The board's own header chip says "Posture · Act on the best few" (board.js:589) but
+        nothing on the surface identifies the few — pri (range 47.1-90.5) exists on every
+        row and is consumed only as a sort key (board.js:140), never rendered, so in a
+        5-across auto-fill grid of 62 Ready cards (crop 01) rank is position-only and
+        invisible below row two; production printed PRIORITY 90 plus an
+        operator-calibrated FEATURED cohort (twice tone-corrected 2026-08-03), and as
+        canon this deletes that signature with no replacement — the lifecycle ruling
+        forbids hueing the LIFECYCLE, it does not require deleting the separate
+        priority/verb channel, and DESIGN_DOCTRINE §7 already sanctions the non-numeric
+        remedy ("non-verbal encodings … that need no vocabulary at all").
+    - id: VTC-002
+      severity: blocker
+      finding: >
+        The card body is a per-class constant printed once per row: the payload carries 10
+        distinct do strings across 179 rows, so filtering to Entered (96 rows, the largest
+        live cell) renders 96 cards reading the identical 19-word sentence — crop
+        22-life-entered.png is a grey wall where only ticker and digits differ — and Ready
+        (62 rows) has 3 variants; that prose occupies ~3 of the card's ~7 lines while the
+        differentiating facts get one, which is DESIGN_DOCTRINE Law 4's named defect ("a
+        constant belongs in the footer, once") executed at 96×, and a material scanning
+        regression against production's chip+track+one-zone-line card.
+    - id: VTC-003
+      severity: major
+      finding: >
+        The one sentence carrying the stance is silently clipped mid-word with no
+        recovery: .pv-do is -webkit-line-clamp:3; overflow:hidden (board.css:405-408) with
+        no data-tip, no expand affordance, and the card is an <article>, not a link — crop
+        01 RIO ends at "the plan waits at the band rathe…", while the ZH render of the
+        same card (crop 03) is untruncated, so EN readers get a strictly worse contract
+        than ZH readers.
+    - id: VTC-004
+      severity: major
+      finding: >
+        A card that quotes hard limits never says where price is now — px is present on 45
+        rows and is rendered in the Candidates shelf (board.js:471) but on no setup card,
+        so "Accumulate into the $61.14-$63.43 zone. Do not pay above $64.35" (crop 01,
+        DAR) leaves "am I allowed to act today" half-answered; partial coverage argues for
+        this design's own best-in-class disclosed-absence idiom (the — Watch cell, "empty
+        today, not missing"), not for omission.
+    - id: VTC-005
+      severity: major
+      finding: >
+        In a system that deleted hue, two of seven identity marks fall below the 3:1
+        non-text contrast floor in BOTH themes — measured off the crops, Overtime cap is
+        2.59:1 dark / 2.10:1 light, Resolved 2.25:1 / 2.15:1 (board.css:256-257,279-289) —
+        and crop 24 shows the Overtime cap effectively absent; mitigated only because the
+        cell word is always adjacent, which means the weight channel is decorative exactly
+        where the state is most decision-relevant.
+    - id: VTC-006
+      severity: major
+      finding: >
+        Mobile dissolves the partition the hero's caption asserts: at ≤720px
+        .mx-ladder-gap { display:none } and the seven cells wrap 4+3 (board.css:622-623),
+        so "the six cells below add up to this number" now reads across a block where
+        Resolved sits inline in row two and its "not in today's count" note floats
+        centered under all seven (crop 04) — on desktop the gap column and vertical rule
+        make the exclusion a visual fact, on mobile it becomes a caption you must take on
+        trust.
+    - id: VTC-007
+      severity: minor
+      finding: >
+        Staleness became arithmetic instead of a sentence — the page stamps "SETTLED CLOSE
+        2026-08-12" while the candidate shelf footer reads "screened 2026-08-10" two
+        sections apart (crops 24/30), and the two-session gap is stated nowhere; correctly
+        scoping the lag to the screener improves on production's page-wide amber bar, but
+        "screened 2 sessions ago" is the Law 3 form and costs nothing.
+    - id: VTC-008
+      severity: minor
+      finding: >
+        Type personality is weight-and-size only — one family (Inter) 8.5px-40px, no
+        display face, no motion beyond three transitions, and a fully monochrome field
+        whose only chroma is the violet lock CTA and link ink; the nominated signature
+        (the count ladder) renders on the real payload as grey boxes with 3 of 7 cells
+        empty (crop 01), so the boldness the design reserves for it never actually gets
+        spent — disciplined but close to anonymous; .pv-znl at 8.5px uppercase and the
+        9.5px chips sit at the legibility floor.
+    - id: VTC-009
+      severity: minor
+      finding: >
+        One focus-visible rule for six-plus interactive types — .mx-cell only
+        (board.css:173); .ladder-clear, .view-btn, .mx-tier-primary,
+        .pv-mark[tabindex="0"] and the section links fall back to UA rings on a near-black
+        surface, in a page that otherwise clears the quality floor cleanly.
+  strengths:
+    - "The Plans-vs-Candidates split is the single biggest product idea here and it beats production outright — SETUPS (lifecycle) / CANDIDATES ('a candidate is not a setup') answers the user job's 'at what stage' clause cleanly."
+    - "Entry / T1 / Void pinned to a footer rail on 100% of cards is the best card-level improvement in the artifact — production made you decode 'ZONE $52.15-$53.81' and never showed the void level at all."
+    - "The count ladder is a genuinely well-reasoned signature: headline stat fused with filter control, cell IDENTITY (inset weight cap) and SELECTION (background fill + full-bleed rule) on different properties/widths/positions so they can never collide; the same .mx-cap geometry on the card top makes ladder and grid one governed population."
+    - "The absence discipline is the best honesty-in-UI work in this repo: — for key-absent vs receding 0 for honest-zero, 'Watch tier publishes from the next nightly', per-cell empty explanations with a real escape button, Resolved visibly outside the sum with its own dashed chrome."
+    - "The anon gate fixes a doctrine §5.8 hazard rather than inheriting it — skeleton ghosts instead of blur-teaser (which becomes a dirty smudge in light), and 'The counts above stay honest whether you subscribe or not' turns the paywall into a trust statement."
+    - "Bilingual work is structural, not translated: idiomatic ZH (观察/就绪/入场/达标/超时/失效, 择优出手), italic suppressed for CJK with weight carrying emphasis, and the hue-free lifecycle grammar provably cannot be corrupted by the 红涨绿跌 flip."
+    - "Light is designed, not swapped — the --ink-mix-* ratios do real work; the light board reads at least as well as dark; the table view is a legitimate density escape hatch that states its own completeness."
+    - "'day 8 of 45' / 'past its 45-day window' is a better temporal device than production's bare 'Aug 10', and stating the plan's own arithmetic while refusing to claim the Overtime cell the engine has at 0 is intellectually honest under pressure."
+
+second_pass:
+  amended_at: "2026-08-13T06:34:00Z"
+  amendments:
+    - {finding: VTC-001, action: upheld, note: "Aggravated, not excused — §1 asserts 'the first screen answers all three clauses… the grid says which ones' when the grid only says which EXIST; §2.3 covers no-verb-hue at the card head but not deleting the featured cohort or the priority readout; pri is a plan-book field on 179/179 (not a 25% candidate join, so Q1 does not reach it); §5 discloses every other removal while §7 files the operator-calibrated .pv-featured away as 'the rail removed'."}
+    - {finding: VTC-002, action: upheld, note: "Unaddressed in §6 despite being the same species as Q1 — the author measured lane to the row (44/179) and escalated it, but never measured that do collapses to 10 strings across 179 rows (1 across the 96-row Entered cell) while occupying ~40% of card height; P0 §B's 'why' field is cover for the field existing, not for its form."}
+    - {finding: VTC-003, action: upheld, note: "Nowhere in the notes; 60/60 verify.py checks assert zero horizontal scroll but nothing about actionable copy dying mid-word, and the EN-clips/ZH-doesn't asymmetry escaped even Q6's careful zh audit."}
+    - {finding: VTC-004, action: downgraded, note: "major→minor: Q1 is the model response — 45/179 measured, conservative rendering chosen, principle stated ('enrichments never carry structure'), decision escalated by name to PR-0(c) as BLOCKING; the product hole survives but with justification, measurement and an owner — a tracked gap, not a design defect."}
+    - {finding: VTC-005, action: upheld, note: "Slightly aggravated — §2.1's verify.py G1 already resolves the marks' COMPUTED styles against live tokens to prove hue-neutrality, so the harness that would have caught 2.59:1/2.10:1 on Overtime existed and was pointed one assertion away from the contrast floor of the channel that replaced colour."}
+    - {finding: VTC-006, action: downgraded, note: "major→minor: §2.4 shows the exclusion carried three redundant ways by design; mobile deletes only the first (.mx-ladder-gap), leaving the label and the not-in-default-grid rule intact; residual is the unanchored grid-column note — placement polish."}
+    - {finding: VTC-007, action: upheld, note: "Unaddressed, and the notes prove both dates were known (§0: asof 2026-08-12 vs as_of 2026-08-10); Q3's own principle is 'print only the derivable figure' — the two-session gap is derivable in one subtraction."}
+    - {finding: VTC-008, action: downgraded, note: "Half withdrawn — §7's hard scope bind rules the display-face/palette charge out of bounds, and §1 gives the signature a genuinely strong non-decorative justification; what survives is that the well-argued signature under-renders on the live payload at 3 of 7 cells empty. Stays at the minor floor."}
+    - {finding: VTC-009, action: downgraded, note: "Partly explained — §7 confirms shipped primitives are lifted verbatim and carry their own focus treatment in production, so the frozen artifact understates coverage; residual is this artifact's own new .ladder-clear and .pv-mark[tabindex=0]."}
+  verdict: BLOCK
+  closing_note: >
+    The rationale legitimately explains the hue-free card head (§2.3, ruling-backed), the
+    dropped chart/name/price (Q1 — measured at 45/179, escalated to PR-0(c) by name), the
+    scope bind that rules out a display face (§7), and the deliberate mobile redundancy for
+    Resolved (§2.4); it is the most rigorous design document I have read in this repo, and
+    four of my nine findings move because of it. What it cannot excuse is that the same
+    instrument — measure the field, state the consequence, escalate to the owning lane —
+    was never turned on the two things that decide the paying user's first question: do
+    collapsing to one sentence across 96 cards, and pri living on all 179 rows as the sort
+    key while rendering nowhere. §1 does not merely omit that gap, it claims the opposite
+    ("the first screen answers all three clauses"), and §7 files the erasure of the shipped
+    board's operator-calibrated featured cohort under "the rail removed" — so as canonical
+    law this would freeze a board whose own header chip says "Act on the best few" above a
+    grid that never says which.

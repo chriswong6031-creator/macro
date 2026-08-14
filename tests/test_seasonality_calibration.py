@@ -988,7 +988,13 @@ def test_every_calibration_artifact_carries_shadow_tier(calibrated, evaluation, 
 
 def test_nothing_here_promotes_anything(evaluation):
     assert "shadow tier" in evaluation["promotion"]
-    assert "zero matured grades" in evaluation["promotion"]
+    assert evaluation["promotion"].startswith("NONE")
+    # NOT `"zero matured grades" in ...`. That pinned a literal against itself — the
+    # hardcoded string was the only source of the claim AND the only thing checked — so
+    # it stayed green straight through 2026-08-14, the night the first window matured
+    # and made the claim false. `evaluate` never reads the ledger; a ledger fact does
+    # not belong in its output or in this assertion. The promotion DECISION does, and
+    # the structural checks below carry the rest.
     # Structural rather than prose-matching: no entry point named for promotion,
     # and no literal tier value other than shadow anywhere in the module.
     public = [n for n in dir(C) if not n.startswith("_") and callable(getattr(C, n))]

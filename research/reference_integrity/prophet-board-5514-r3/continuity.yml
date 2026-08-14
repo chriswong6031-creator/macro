@@ -1,0 +1,166 @@
+# Revision continuity closure (RIG §13 / rule L10) — prophet-board-5514-r3.
+#
+# This is the law's own first consumer, and it is deliberately the cycle that EXPOSED the
+# hole. Written from the r2 verdict record, not from the r3 builder's rationale: that
+# difference is the entire point. Had this file been required at r3's draft, the four
+# CARRIED_BLOCK rows below would have been visible before a single critic was dispatched —
+# instead they were re-discovered by an independent critic two passes later, two of them for
+# the third consecutive revision.
+#
+# NOTE ON PROVENANCE: the r3 artifact set itself lands via PR #5552. This file lands with the
+# gate (PR #5520) because the gate is what makes it mandatory. In this checkout the r3
+# directory has no manifest.yml, so it is not yet a discoverable artifact set and this file is
+# inert; the two halves compose when both PRs are on main.
+schema: mastermind.rig_continuity.v1
+reference_id: prophet-board-5514-r3
+
+predecessors:
+  - reference_id: prophet-board-5514-r2
+    verdict: REVISE
+    source: snapshot
+    source_ref: >
+      PR #5533 (rig: r2 cycle on revised Prophet reference 0fc975a), artifact set
+      research/reference_integrity/prophet-board-5514-r2/verdict.yml at PR head
+      f717aab2df6e5538d16360d09204ff3d612dcc76. Not present in this checkout: #5533 is still
+      open, so the closure set below is transcribed from that verdict rather than resolved on
+      disk. Condition ids COND-R2-01..07 are minted here by list position at that head and are
+      pinned by this source_ref, because the r2 verdict predates §13.3 and its conditions were
+      written as bare strings.
+    closure:
+      # ── the four r2 blocking findings ──────────────────────────────────────
+      - id: PRC-201
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The ⚠N risk carrier is restored as a counted pill in the card's marks row with a
+          hover/focus popover carrying the sentences, ported from the shipped card template.
+          18 of 179 rows carry flags in the frozen fixture. Independently confirmed by both r3
+          critics and by the artifact's own harness (caution carrier exists, every pill carries
+          its sentences, every pill keyboard-reachable).
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.js
+          - mockups/refs/institutionalize/us_stocks/board.css
+      - id: PRC-202
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Zone treatment is stance-branched again off the payload's zk field — active 19 /
+          re-add 7 / muted 35 / no-band 118 — so the active buy-zone ink appears only on
+          actionable stances and the anti-chase encoding production had is restored.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.js
+          - mockups/refs/institutionalize/us_stocks/board.css
+      - id: PRC-203
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The reference-only view exemption is deleted; paid and today render one universe.
+          Arithmetic closes: 62+95+0+0+2 = 159 = live_total; 159 live + 20 resolved = 179 =
+          active_count; 40 rendered + "+119 more" = 159.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.js
+      - id: PRC-207
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The producer-less Regime / Breadth / Posture chips are deleted outright with nothing
+          in their place, and Groups is rebound to us_standouts.themes_in_favour — 8 themes
+          with rank, recommendation, run length, member count and a printed as-of, plus an
+          explicit no-read empty state when the key is absent.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.js
+          - mockups/refs/institutionalize/us_stocks/board.css
+          - mockups/refs/institutionalize/us_stocks/board-data.js
+
+      # ── the seven r2 authority conditions ──────────────────────────────────
+      - id: COND-R2-01
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          "Blockers PRC-201/202/203/207 resolved by change; receipts re-run against the new
+          frozen SHA." All four are RESOLVED_BY_CHANGE above, and a full fresh two-pass critic
+          cycle ran against the new frozen SHA 6ad6b51b under rationale quarantine.
+        changed_files:
+          - mockups/refs/institutionalize/us_stocks/board.js
+          - mockups/refs/institutionalize/us_stocks/board.css
+      - id: COND-R2-02
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          "Reviewer B's four conditions, of which the first is not waivable." Partially met, so
+          it does not close: VTC-204 (Featured aura + --pv-buy pin) is implemented on
+          background/border/box-shadow but NOT on the ::before rail, which takes --pvh and
+          renders a different hue 1px from the ring; VTC-203 (light card/canvas inversion) IS
+          fixed; VTC-206 (390w opportunity above the fold) IS fixed. VTC-202 (stance values
+          distinct from the direction tokens) is HALF met and is the non-waivable one: it was
+          applied to the chart hue but not to the chip — dark :root sets --ink-mix-up:100%, so
+          --ink-up IS --up, and the solid BUY chip and the up-change text both resolve to
+          #45b873. A dark Buy card is still two direction inks. Re-raised at r3 as DA-002.
+      - id: COND-R2-03
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          "Card links to the name's detail surface or the hover affordance is removed
+          (PRC-209); the overflow table carries the board's own sort key and stance, and drops
+          the banned Entry/Void/T1 levels or the card-tier ban is re-adjudicated
+          (PRC-211/212)." Neither half moved. The card root is still <article>; 0 of 179 names
+          route anywhere; the only card href is an inert "#id=" fragment on 2 rows with no
+          consumer. The table still prints Entry / Void / First target and still omits stance,
+          Priority and zone. Re-raised at r3 as PRC-301 — THIRD consecutive revision — and the
+          table half as the auth.table_levels adjudication.
+      - id: COND-R2-04
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          "Freshness truth: the as-of stamp reflects the oldest feeding vintage or per-source
+          stamps return; the degraded/behind state has a slot; the card date names its referent
+          (PRC-205). Priority/Featured carry their printed nulls and selection rule (PRC-206)."
+          No part moved. The header can only ever assert "Settled close"; no stale/behind/
+          degraded path exists anywhere in the artifact, while production ships the amber
+          "2 sessions behind — check a live quote before you act" banner in all four board
+          captures. Re-raised at r3 as PRC-305 — THIRD consecutive revision.
+      - id: COND-R2-05
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          Compound condition, partially met, so it does not close. MET: PRC-215, the
+          double-declared `enriched` variable is gone and the coverage arithmetic is computed
+          once. NOT MET: PRC-214 (anon gate copy still promises "entry, target and void levels
+          included" that no card renders — re-raised as PRC-302); PRC-213 (the track-record
+          proof strip still renders nowhere; the RELOCATE destination is four bare "#ev"
+          anchors and zero numbers — re-raised as PRC-307); PRC-208 (27 rows are life=entered
+          carrying a "wait" stance chip — re-raised as PRC-312); PRC-216 (390w Resolved
+          partition).
+      - id: COND-R2-06
+        kind: condition
+        disposition: CARRIED_BLOCK
+        note: >
+          "The three critical WORSE tasks (risk_before_acting, open_name_detail,
+          staleness_awareness) and the caution_popover disposition gap close with the above."
+          One of three closed: risk_before_acting is cured by PRC-201 and card.caution_popover
+          now carries a real disposition. open_name_detail and staleness_awareness are both
+          still WORSE in the r3 proposal ledger, and both are r3 blockers (PRC-301, PRC-305).
+      - id: COND-R2-07
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          "Resubmission is a new frozen SHA + fresh critic receipts under a new artifact set or
+          an appended cycle with re-frozen receipts." Met exactly: new frozen SHA 6ad6b51b, new
+          artifact set prophet-board-5514-r3, two fresh independent critics, both first passes
+          frozen by sha256 before any reveal.
+        changed_files:
+          - research/reference_integrity/prophet-board-5514-r3/manifest.yml
+          - research/reference_integrity/prophet-board-5514-r3/proposal.yml
+          - research/reference_integrity/prophet-board-5514-r3/reviews/product_regression.yml
+          - research/reference_integrity/prophet-board-5514-r3/reviews/visual_taste.yml
+
+# ── What this file demonstrates (the reason §13 exists) ───────────────────────
+# 5 of 11 predecessor items are CARRIED_BLOCK, and every one of them was re-found from
+# scratch by the r3 critics at real cost: COND-R2-03 -> PRC-301, COND-R2-04 -> PRC-305,
+# COND-R2-05 -> PRC-302/307/312, COND-R2-02 -> DA-002, COND-R2-06 -> PRC-301/305 again via
+# the task matrix. Two of them are in their third consecutive revision.
+# Under §13.4 this file is required at DRAFT, so that pattern is visible before the fleet
+# spends two independent Opus critics re-deriving it.
+#
+# A CARRIED_BLOCK is not a failure of this artifact — it is the honest state, legally
+# recorded. What was illegal was leaving it unstated.
