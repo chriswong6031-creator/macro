@@ -1336,6 +1336,11 @@ on:
       # suite when only the test itself is edited (same one-sided-trigger trap
       # as the et_gate entry above; workflow files are already path-covered).
       - "tests/test_workflow_file_size.py"
+      # 2026-08-13 US nightly cron redundancy (the CN five-slot idiom, ported). The
+      # actor and its suite must reach the workflow-yaml job when either is edited
+      # alone; the workflow it schedules is already covered by ".github/workflows/**".
+      - "scripts/nightly_backstop.py"
+      - "tests/test_nightly_backstop.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).
