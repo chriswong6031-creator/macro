@@ -1394,7 +1394,16 @@ finra:
 # panel on the factors page (latest COMPLETED quarter — the bulk set is published
 # quarterly, so it is a slow conviction read, not real-time). Fetched from build_factors.
 sec_insider:
-  zip_url: https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/{q}_form345.zip
+  # SEC moved NEW quarterly sets to /files/datastandardsinnovation/ starting with
+  # 2026q2 (published 2026-07-09; the DERA -> Office of Data Standards Innovation
+  # reorg). Neither home redirects to the other — old quarters serve ONLY from
+  # /files/structureddata/ and 2026q2+ ONLY from the new path — so the collector
+  # probes zip_url first, then each zip_url_fallbacks entry, and treats a quarter
+  # as unpublished only when EVERY home 404s. The old single-URL read swallowed
+  # the 404 as "not published" and froze the panel at 2026q1 for five weeks.
+  zip_url: https://www.sec.gov/files/datastandardsinnovation/data/insider-transactions-data-sets/{q}_form345.zip
+  zip_url_fallbacks:
+    - https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/{q}_form345.zip
   # SEC's WAF 403s any User-Agent containing 'github.com' (scraper heuristic) and
   # rejects non-contactable addresses, so the committed default is an example.com
   # placeholder that passes. SEC fair-access asks for a REAL contact — set

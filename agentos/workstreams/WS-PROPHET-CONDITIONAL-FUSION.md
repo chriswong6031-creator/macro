@@ -23,8 +23,12 @@ decisions:
 landmines:
   - "Context-vector store accrual STOPPED 2026-08-07 (4 stamped days total) while the
     board runs nightly — chipped for diagnosis; PR-1 verifies the fix. Masterplan §4.0."
-  - "short_int context dimension is snapshot_not_pit BY CONSTRUCTION (query date
-    ignored) — any historical join of it is leakage; forward-accrual only until fixed."
+  - "short_int historical leakage FIXED in #5602: pit_settlement via knowable_date
+    (= settlement + 10d), historical dates never fall back to the snapshot. Residual:
+    committed history depth is 3 settlements (first knowable 2026-07-10) and the 2018+
+    panel parquet is absent on the primary checkout — re-run
+    scripts/backfill_finra_short_interest.py before deep historical joins; flip
+    families.yml pit_status only after PR-1a and #5602 both merge."
   - "insider panel collector stopped at 2026q1 — insider__absent is 100% on Aug rows;
     the first-named lobe of the CEO ruling cannot be evaluated until repaired."
   - "data/edgar/sue_phase0.json records a shallow-panel WIRE verdict that the deep

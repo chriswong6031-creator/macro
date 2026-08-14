@@ -19,10 +19,12 @@ Run:
 """
 from __future__ import annotations
 
+import io
 import json
 import os
 import sys
 import time
+import zipfile
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -157,6 +159,99 @@ class TestSecInsiderGate:
                             lambda: calls.append(1) or None)
         sec_insider.fetch_insider()
         assert calls
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# collectors/sec_insider.py — panel URL-home fallback + staleness tripwire
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestSecInsiderPanelAccrual:
+    """The 2026q2 publication-path move: SEC now publishes new quarterly form345
+    sets under /files/datastandardsinnovation/ while old quarters stay ONLY under
+    /files/structureddata/. The old single-URL fetch read the resulting 404 as
+    "quarter not published" and silently froze the panel at 2026q1 — so (a) every
+    fetch must probe every configured home before concluding absence, and (b) a
+    panel whose newest quarter trails the current one by 2+ must raise a
+    line-start ::warning annotation instead of a log.info skip."""
+
+    _CFG = {
+        "zip_url": "https://new.example/{q}_form345.zip",
+        "zip_url_fallbacks": ["https://old.example/{q}_form345.zip"],
+    }
+
+    class _Resp:
+        def __init__(self, status: int, content: bytes = b""):
+            self.status_code, self.content = status, content
+
+    @staticmethod
+    def _zip_bytes() -> bytes:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("SUBMISSION.tsv", "ACCESSION_NUMBER\n")
+        return buf.getvalue()
+
+    def test_get_zip_falls_back_to_legacy_home_on_404(self, monkeypatch):
+        monkeypatch.setattr(sec_insider, "_cfg", lambda: dict(self._CFG))
+        seen, payload = [], self._zip_bytes()
+
+        class S:
+            def get(_s, url, timeout=None):
+                seen.append(url)
+                if url.startswith("https://new."):
+                    return self._Resp(404)
+                return self._Resp(200, payload)
+
+        monkeypatch.setattr(sec_insider, "_session", lambda: S())
+        out = sec_insider._get_zip("2025q4", retries=2)
+        assert out is not None and out[0] == "2025q4"
+        assert seen == ["https://new.example/2025q4_form345.zip",
+                        "https://old.example/2025q4_form345.zip"]
+
+    def test_absent_at_every_home_is_a_permanent_skip(self, monkeypatch):
+        monkeypatch.setattr(sec_insider, "_cfg", lambda: dict(self._CFG))
+        seen = []
+
+        class S:
+            def get(_s, url, timeout=None):
+                seen.append(url)
+                return self._Resp(404)
+
+        monkeypatch.setattr(sec_insider, "_session", lambda: S())
+        assert sec_insider._get_zip("2026q3", retries=8) is None
+        assert len(seen) == 2      # one probe per home; a real 404 burns no retries
+
+    # -- staleness tripwire ----------------------------------------------------
+
+    @staticmethod
+    def _q_back(back: int) -> str:
+        """Quarter label `back` quarters before the current wall-clock quarter."""
+        now = datetime.now(timezone.utc)
+        idx = now.year * 4 + (now.month - 1) // 3 - back
+        return f"{idx // 4}q{idx % 4 + 1}"
+
+    def _seed_panel(self, tmp_path, newest_back: int) -> None:
+        pdir = tmp_path / "sec_insider" / "panel"
+        pdir.mkdir(parents=True)
+        pd.DataFrame({"ticker": ["AAPL"], "filing_date": [pd.Timestamp("2026-01-15")]}
+                     ).to_parquet(pdir / f"{self._q_back(newest_back)}.parquet")
+
+    def test_stale_panel_emits_line_start_warning(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        monkeypatch.setattr(sec_insider, "_get_zip", lambda q, retries=8: None)
+        self._seed_panel(tmp_path, 2)              # newest trails by TWO quarters
+        sec_insider.backfill_panel(start=self._q_back(2))
+        line = next((ln for ln in capsys.readouterr().out.splitlines()
+                     if "sec-insider-panel-stale" in ln), "")
+        assert line.startswith("::warning ")       # column 0 — or GitHub drops it
+        assert self._q_back(2) in line
+
+    def test_publication_lag_of_one_quarter_is_quiet(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        monkeypatch.setattr(sec_insider, "_get_zip", lambda q, retries=8: None)
+        self._seed_panel(tmp_path, 1)              # the design's steady state
+        sec_insider.backfill_panel(start=self._q_back(1))
+        assert "::warning" not in capsys.readouterr().out
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

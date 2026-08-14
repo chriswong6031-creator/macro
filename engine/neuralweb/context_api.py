@@ -45,8 +45,12 @@ factor       data/factordata/panel/YYYY-MM partition row at (ticker, date);
 attention    data/attention/<TICKER>.parquet as-of (absent-tolerant).
 insider      data/sec_insider/panel/*.parquet filing_date <= date trailing
              90 calendar days aggregate; absent-tolerant.
-short_int    data/finra/short_interest.parquet snapshot; basis='snapshot_not_pit'
-             when date != settlement_date; absent-tolerant.
+short_int    historical dates: data/finra/short_interest_history.parquet unioned
+             with the host-only short_interest_panel.parquet, resolved on
+             knowable_date (= settlement + 10 calendar days), basis='pit_settlement'.
+             Current dates: data/finra/short_interest.parquet snapshot,
+             basis='snapshot_not_pit'.  Absent-tolerant, and a historical date the
+             PIT stores cannot answer is absent — never the current snapshot.
 options      data/options_skew/snapshots.parquet + data/polygon_gex per-ticker
              summaries; 2026-06+; absent-tolerant.
 spine        data/neuralweb/spine_index.parquet rows for (symbol=ticker,
@@ -819,7 +823,25 @@ def _insider_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
 # Short interest dimension
 # ---------------------------------------------------------------------------
 
+#: Mirrors KNOWABLE_LAG_DAYS in scripts/backfill_finra_short_interest.py, the
+#: canonical FINRA dissemination convention: FINRA publishes ~7 calendar days
+#: after settlement, and 10 is the deliberately conservative floor — erring long
+#: can only make a study pessimistic, erring short manufactures look-ahead.  The
+#: two constants are pinned together by a drift test; change them as a pair.
+_SI_KNOWABLE_LAG_DAYS = 10
+
 _si_cache: dict[str, pd.DataFrame | None] = {}
+_si_pit_cache: dict[str, pd.DataFrame | None] = {}
+
+#: Panel columns the PIT resolver consumes.  The full store is 3.87M rows x 15
+#: columns and this loader is cached for the life of the process, so the unused
+#: columns (issue_name, market_class, si_change_shares, split_flag) would be
+#: resident memory for every consumer of the module.
+_SI_PANEL_COLUMNS = [
+    "ticker", "settlement_date", "knowable_date", "short_shares",
+    "prev_short_shares", "avg_daily_vol", "days_to_cover", "si_change_pct",
+    "dtc_capped", "is_listed", "revision_flag",
+]
 
 
 def _load_si(data: Path) -> pd.DataFrame | None:
@@ -840,12 +862,95 @@ def _load_si(data: Path) -> pd.DataFrame | None:
         return None
 
 
-def _short_int_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
-    """Single settlement snapshot from data/finra/short_interest.parquet.
+def _si_normalise(df: pd.DataFrame) -> pd.DataFrame:
+    """Put one short-interest store on the (settlement_date, knowable_date) shape.
 
-    basis='snapshot_not_pit' when date != settlement date (most historical queries).
+    settlement_date is a STRING in the history store and a datetime in the panel,
+    so both are coerced.  knowable_date is derived when the store does not carry
+    one: the history store has no publication field at all, and the panel's
+    column subset can degrade on an older vintage.  Derivation is the documented
+    convention, which is the only knowability evidence those rows have.
     """
-    data = _data_dir(root)
+    df["settlement_date"] = pd.to_datetime(df["settlement_date"], errors="coerce")
+    if "knowable_date" in df.columns:
+        df["knowable_date"] = pd.to_datetime(df["knowable_date"], errors="coerce")
+    else:
+        df["knowable_date"] = df["settlement_date"] + pd.Timedelta(days=_SI_KNOWABLE_LAG_DAYS)
+    return df
+
+
+def _load_si_pit(data: Path) -> pd.DataFrame | None:
+    """Union of the two PIT short-interest stores, cached per process.
+
+    They answer the same question at different vintages.  short_interest_history
+    accrues nightly from the collector but is thin (no dtc_capped/is_listed/
+    revision_flag).  short_interest_panel is the manual backfill: richer, but
+    gitignored (Mac-local, absent on CI) and its tail lags whenever it has not
+    been rebuilt.  Panel rows are concatenated LAST so keep='last' hands an
+    overlapping settlement to the richer vintage, while history rows for
+    settlements newer than the panel's tail survive the dedup.
+
+    Either store may be missing or unreadable; both gone → None, which the caller
+    maps to an absent marker.  Never raises (CI-runner safety law).
+    """
+    hist_p = data / "finra" / "short_interest_history.parquet"
+    panel_p = data / "finra" / "short_interest_panel.parquet"
+    key = f"{hist_p}|{panel_p}"
+    if key in _si_pit_cache:
+        return _si_pit_cache[key]
+
+    frames: list[pd.DataFrame] = []
+
+    if hist_p.exists():
+        try:
+            frames.append(_si_normalise(pd.read_parquet(hist_p)))
+        except Exception as e:  # noqa: BLE001 — one unreadable store must not blind the other
+            log.debug("context_api: cannot read finra/short_interest_history.parquet: %s", e)
+
+    if panel_p.exists():
+        try:
+            try:
+                panel = pd.read_parquet(panel_p, columns=_SI_PANEL_COLUMNS)
+            except Exception:  # noqa: BLE001 — an older panel vintage lacks some of them
+                panel = pd.read_parquet(panel_p)
+                keep = [c for c in _SI_PANEL_COLUMNS if c in panel.columns]
+                if keep:
+                    panel = panel[keep]
+            frames.append(_si_normalise(panel))
+        except Exception as e:  # noqa: BLE001
+            log.debug("context_api: cannot read finra/short_interest_panel.parquet: %s", e)
+
+    if not frames:
+        _si_pit_cache[key] = None
+        return None
+
+    pit = pd.concat(frames, ignore_index=True)
+    if {"ticker", "settlement_date"} <= set(pit.columns):
+        pit = pit.drop_duplicates(subset=["settlement_date", "ticker"], keep="last")
+    _si_pit_cache[key] = pit
+    return pit
+
+
+def _si_json_safe(v: Any) -> Any:
+    """Coerce one store cell to a JSON-serialisable scalar.
+
+    The brain gateway serialises dimension payloads straight to JSON, so a
+    pd.Timestamp, NaT, or numpy int64/bool_ leaking out of the parquet row would
+    raise at response time rather than here.  Both PIT stores carry all three.
+    """
+    if isinstance(v, pd.Timestamp):
+        return None if pd.isna(v) else str(v.date())
+    try:
+        if v is None or pd.isna(v):
+            return None
+    except (TypeError, ValueError):  # non-scalar cell — pass through untouched
+        return v
+    item = getattr(v, "item", None)
+    return item() if callable(item) else v
+
+
+def _si_snapshot_dim(ticker: str, data: Path) -> dict:
+    """Latest-settlement snapshot lookup — current-date queries only."""
     si = _load_si(data)
     if si is None:
         return _absent("data/finra/short_interest.parquet absent")
@@ -869,8 +974,6 @@ def _short_int_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
     # Basis is always snapshot_not_pit: a FINRA settlement snapshot is not a daily
     # PIT label regardless of how close the query date is to the settlement date.
     # We carry the settlement date as the as_of for honest provenance.
-    # Directional note: we check 0 <= (date_ts - settlement_ts).days < 2 only to
-    # determine whether the snapshot is near-match vs stale — both remain snapshot_not_pit.
     basis = "snapshot_not_pit"
 
     return _present(
@@ -878,6 +981,57 @@ def _short_int_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
                for k, v in (row.to_dict() if hasattr(row, "to_dict") else dict(row)).items()},
         as_of=str(settlement_ts.date()) if settlement_ts is not None else None,
         basis=basis,
+    )
+
+
+def _short_int_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
+    """FINRA short interest: PIT for historical dates, snapshot for current ones.
+
+    A historical date resolves against the history/panel union on knowable_date
+    (= settlement + _SI_KNOWABLE_LAG_DAYS), basis='pit_settlement'.  The current
+    snapshot is NEVER consulted for a historical date: it holds only the latest
+    settlement, so every historical hit against it was look-ahead by construction.
+    A historical date the PIT stores cannot answer returns absent — falling back
+    to the snapshot is the leak this ladder exists to close.
+
+    A current date (today, the same one-day tolerance context_snapshot applies to
+    is_today, or forward) keeps the snapshot path and its snapshot_not_pit basis:
+    a bi-monthly settlement figure is not a daily PIT label however close the
+    query date sits to it.
+    """
+    data = _data_dir(root)
+    if (_today_ts() - date_ts) <= pd.Timedelta(days=1):
+        return _si_snapshot_dim(ticker, data)
+
+    try:
+        pit = _load_si_pit(data)
+    except Exception as e:  # noqa: BLE001
+        return _absent(f"PIT short-interest store unreadable: {e}")
+    if pit is None:
+        return _absent("no PIT short-interest store (history/panel absent)")
+    if "ticker" not in pit.columns:
+        return _absent("short_interest: PIT store has no ticker column")
+
+    rows = pit[pit["ticker"] == ticker]
+    if rows.empty:
+        return _absent(f"short_interest: {ticker} not in PIT store")
+
+    knowable = rows[rows["knowable_date"] <= date_ts]
+    if knowable.empty:
+        return _absent(
+            f"short_interest: no settlement knowable on or before {date_ts.date()} "
+            f"(publication lag {_SI_KNOWABLE_LAG_DAYS}d)"
+        )
+
+    # na_position keeps an undated settlement from outranking a real one; sorting
+    # rather than idxmax so an all-NaT column degrades instead of raising.
+    row = knowable.sort_values("settlement_date", na_position="first").iloc[-1]
+    settlement_ts = row["settlement_date"]
+
+    return _present(
+        value={k: _si_json_safe(v) for k, v in row.to_dict().items()},
+        as_of=str(settlement_ts.date()) if pd.notna(settlement_ts) else None,
+        basis="pit_settlement",
     )
 
 
