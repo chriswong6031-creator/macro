@@ -54,7 +54,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 PACK_JOB_ID = "ci-pack"
 DISABLED_IF = "${{ false }}"
-ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "steps", "timeout-minutes"}
+ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "scope", "steps", "timeout-minutes"}
 ALLOWED_STEP_KEYS = {"name", "run", "uses", "with"}
 
 # ---------------------------------------------------------------------------
@@ -131,6 +131,11 @@ GLOBAL_INVALIDATORS = (
 # 180 jobs merely because it carries its handoff/provenance note.
 PASSIVE_UNOWNED_PATTERNS = ("**/*.md",)
 
+# Bounded `.md` mention in a job command. A substring test also fires on
+# `.mdx` / `.mdown` / `.mdc` and incidental `.md` inside a URL, which would
+# promote every opaque fallback of those jobs back into the owned tier.
+MD_COMMAND_RE = re.compile(r"\.md(?![A-Za-z0-9])")
+
 # A statically opaque subprocess or tree traversal must own every established
 # repository surface it could inspect.  This is deliberately broad: it keeps
 # whole-tree guards such as all-exports-resolve selected for every engine/script
@@ -203,6 +208,7 @@ PIP_INSTALL_RE = re.compile(
 # (legacy-job groups only; checkout excluded). Pack 1's 56-minute wall-clock
 # was 31 minutes of fetch-depth:0 stampede plus these underweighted heavies
 # sitting together because the 2026-08-11 local Mac weights were stale.
+PACK_TARGET_SECONDS = 600
 OBSERVED_COMMAND_SECONDS = {
     # The former engine-render-guards serialized 1,170 command-seconds. These
     # shard weights preserve that measured total; the 1,036-second mega-step was
@@ -249,6 +255,20 @@ class LegacyJob:
     # Empty means UNSCOPED — the job runs on every pull request. Declaring a
     # scope is opt-in, so adding one can only ever remove work, never add it.
     paths: tuple[str, ...] = ()
+    # Patterns whose provenance is an OPAQUE fallback: a subprocess call or
+    # filesystem traversal somewhere in the job's closure widened it to whole
+    # scan roots. They still select the job for code/data edits, but a
+    # narrative file (`**/*.md`) never matches this tier.
+    fallback_paths: tuple[str, ...] = ()
+    # True when the manifest declares `scope: exclusive` — the declared
+    # `paths:` then REPLACE inference instead of being unioned under it, and
+    # the declaration is coverage-audited fatally at load time.
+    exclusive: bool = False
+
+    @property
+    def is_scoped(self) -> bool:
+        """Whether ANY tier can narrow this job off a diff."""
+        return bool(self.paths or self.fallback_paths)
 
 
 @functools.lru_cache(maxsize=None)
@@ -424,6 +444,13 @@ def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
         if pattern in triggers:
             return True
     if not pattern.endswith("/**"):
+        # `app/*` is a single-level subset of `app/**`. Any edit it covers
+        # also matches that ancestor trigger, so the run starts. Exclusive
+        # declarations use this form on purpose (`*` does not cross `/`).
+        if pattern.endswith("/*"):
+            parent = pattern[: -len("/*")]
+            if f"{parent}/**" in triggers:
+                return True
         return False
     # A subtree scope is startable when an ANCESTOR subtree is a trigger, for the
     # same reason: `data/smart_money/**` matches a subset of `data/**`.
@@ -686,7 +713,17 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
             fallbacks.update(narrow_to_suffixes(roots, suffixes))
         return tuple(sorted(fallbacks))
 
-    def infer_job_paths(definition: dict[str, Any]) -> tuple[str, ...] | None:
+    def infer_job_paths(
+        definition: dict[str, Any],
+    ) -> tuple[set[str], set[str]] | None:
+        """(owned, fallback) or None when the job cannot be scoped at all.
+
+        ``owned`` carries NAMED evidence: closure files, literal references,
+        and any fallback of a job whose commands demonstrably mention
+        markdown. ``fallback`` carries OPAQUE widening only — subprocess and
+        traversal root claims — and is the tier a narrative file can never
+        select (see ``LegacyJob.fallback_paths``).
+        """
         commands = [
             str(step["run"])
             for step in definition.get("steps", [])
@@ -695,6 +732,7 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
             and "pip install" not in str(step["run"])
         ]
         owned: set[str] = set()
+        fallback: set[str] = set()
         named_any = False
         named_pytest = False
         for command in commands:
@@ -714,7 +752,7 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
                 if fallbacks is None:
                     return None
                 owned.update(closure.files)
-                owned.update(exclude_peer_test_ownership(fallbacks))
+                fallback.update(exclude_peer_test_ownership(fallbacks))
                 named_pytest = True
                 named_any = True
 
@@ -731,27 +769,72 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
                     if fallbacks is None:
                         return None
                     owned.update(closure.files)
-                    owned.update(fallbacks)
+                    fallback.update(fallbacks)
+        if not named_any:
+            return None
         if named_pytest:
             # Script-path fallbacks in the same job re-introduced ``*`` / ``tests/**``
             # after the named-suite filter (marketing-engine still matched a prophet
             # test via ``tests/**``). Strip catch-alls from the FINAL set whenever
             # the job named specific pytest files.
-            owned = set(exclude_peer_test_ownership(owned))
-        return tuple(sorted(owned)) if named_any and owned else None
+            fallback = set(exclude_peer_test_ownership(fallback))
+        # A job whose commands mention markdown reads narrative files on
+        # purpose (doc linters, handoff censuses). ALL its opaque claims keep
+        # matching `.md` edits via the owned tier.
+        if MD_COMMAND_RE.search("\n".join(commands)):
+            owned.update(fallback)
+            fallback = set()
+        fallback -= owned
+        return (owned, fallback) if owned else None
 
     inferred: list[LegacyJob] = []
     scoped = 0
+    declared = 0
     for job in jobs:
-        paths = infer_job_paths(job.definition)
-        if paths:
+        if job.exclusive:
+            # The curated tier: the manifest's own coverage-audited `paths:`
+            # ARE the scope. Inference is skipped entirely, so fallback smear
+            # from an opaque edge deep in a suite's closure cannot re-widen a
+            # job the operator deliberately narrowed.
+            inferred.append(replace(job, fallback_paths=()))
+            declared += 1
+            continue
+        result = infer_job_paths(job.definition)
+        if result:
+            owned, fallback = result
             inferred.append(
-                replace(job, paths=tuple(sorted(set(job.paths) | set(paths))))
+                replace(
+                    job,
+                    paths=tuple(sorted(set(job.paths) | owned)),
+                    fallback_paths=tuple(sorted(fallback)),
+                )
             )
             scoped += 1
         else:
-            inferred.append(replace(job, paths=()))
-    return inferred, f"derived scopes for {scoped}/{len(inferred)} jobs"
+            inferred.append(replace(job, paths=(), fallback_paths=()))
+    summary = f"derived scopes for {scoped}/{len(inferred)} jobs"
+    if declared:
+        summary += f"; {declared} declared exclusive"
+    return inferred, summary
+
+
+def _job_diff_match(job: LegacyJob, changed: Iterable[str]) -> tuple[str, str] | None:
+    """The first (changed path, tier) that selects this job, or None.
+
+    Tier order is deliberate: a NAMED owner (`declared` for exclusive jobs,
+    `owned` for closure/literal evidence) always outranks an opaque `fallback`
+    claim in the explanation, and the fallback tier never fires for a
+    narrative file.
+    """
+    for path in changed:
+        if _matches_any(job.paths, path):
+            return path, ("declared" if job.exclusive else "owned")
+    for path in changed:
+        if _matches_any(PASSIVE_UNOWNED_PATTERNS, path):
+            continue
+        if _matches_any(job.fallback_paths, path):
+            return path, "fallback"
+    return None
 
 
 def select_jobs(
@@ -764,18 +847,18 @@ def select_jobs(
     invalidators = [path for path in changed if _matches_any(GLOBAL_INVALIDATORS, path)]
     if invalidators:
         return jobs, f"full suite: global invalidator changed ({invalidators[0]})"
-    scoped_jobs = [job for job in jobs if job.paths]
+    scoped_jobs = [job for job in jobs if job.is_scoped]
     unowned = [
         path for path in changed
-        if not any(_matches_any(job.paths, path) for job in scoped_jobs)
+        if not any(_job_diff_match(job, [path]) for job in scoped_jobs)
         and not _matches_any(PASSIVE_UNOWNED_PATTERNS, path)
     ]
     selected = [
         job
         for job in jobs
-        if not job.paths or any(_matches_any(job.paths, path) for path in changed)
+        if not job.is_scoped or _job_diff_match(job, changed)
     ]
-    unscoped = sum(1 for job in jobs if not job.paths)
+    unscoped = sum(1 for job in jobs if not job.is_scoped)
     reason = (
         f"scoped to {len(changed)} changed file(s): {len(selected)}/{len(jobs)} jobs "
         f"({unscoped} unscoped always-on, "
@@ -891,6 +974,26 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 _scope_coverage_findings(str(job_id), raw_definition, scope)
             )
 
+        # `scope: exclusive` is the CURATED tier: the declared `paths:` above
+        # REPLACE inference for this job instead of being unioned under it.
+        # The coverage audit just ran and is FATAL here like any other finding,
+        # so an exclusive job that fails to cover a file its own commands name
+        # cannot load — mis-declaring narrow is a loud manifest error, not a
+        # silent false green. An exclusive job with no paths would be a job
+        # that never runs on any pull request; refuse that outright.
+        raw_scope_mode = raw_definition.get("scope")
+        if raw_scope_mode not in (None, "exclusive"):
+            findings.append(
+                f"{prefix} scope must be the literal 'exclusive' when present"
+            )
+        exclusive = raw_scope_mode == "exclusive"
+        if exclusive and not scope:
+            findings.append(
+                f"{prefix} declares scope: exclusive but no paths — an "
+                "exclusive job with no declared surface would never run on "
+                "any pull request"
+            )
+
         legacy.append(
             LegacyJob(
                 job_id=str(job_id),
@@ -898,6 +1001,7 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 ordinal=ordinal,
                 weight=_job_weight(str(job_id), raw_definition),
                 paths=scope,
+                exclusive=exclusive,
             )
         )
 
