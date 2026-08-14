@@ -742,26 +742,99 @@ def _read_disclosures_from_git(repo: Path) -> dict[str, Any]:
     return data
 
 
-def _quarantined_plan_ids_at(repo: Path, commit: str) -> set[str]:
-    """Audit-quarantined plan ids from the pinned correction overlay.
+def _plan_corrections_at(repo: Path, commit: str) -> list[dict[str, Any]]:
+    """The validated append-only plan-correction rows as they stood at ``commit``.
 
-    Mirrors ``build_prophet``'s use of ``apply_plan_corrections``: a quarantined plan
-    must not monopolise its ticker's opportunity slot, so it is excluded before the
-    open-key set is derived.
+    Read through ``engine.prophet_integrity.load_plan_corrections`` — the same strict
+    loader the nightly uses — so a malformed or ambiguous overlay fails closed here
+    exactly as it would there, instead of degrading to "no corrections".
     """
     blob = blob_at(repo, commit, PLAN_CORRECTIONS_RELPATH)
     if blob is None:
-        return set()
+        return []
     from engine.prophet_integrity import load_plan_corrections  # noqa: PLC0415
 
     with tempfile.TemporaryDirectory(prefix="prophet_backfill_corr_") as tmpdir:
         path = Path(tmpdir) / "plan_corrections.jsonl"
         path.write_bytes(blob)
-        rows = load_plan_corrections(path)
-    return {
-        str(row.get("id")) for row in rows
-        if row.get("id") and row.get("integrity_status") == "quarantined"
+        return list(load_plan_corrections(path))
+
+
+def _plan_projection(
+    plans: dict[str, dict], correction_rows: list[dict[str, Any]]
+) -> Any:
+    """The nightly's own effective-plan projection, built from PINNED inputs.
+
+    This is a thin delegation to ``engine.prophet_integrity.apply_plan_corrections``
+    and it is deliberately not a second implementation of the overlay.  The hand-rolled
+    predicate this replaced was wrong twice over and silently resolved NOTHING: it
+    tested ``row["integrity_status"]`` on a *correction* row (which carries ``field`` /
+    ``new_value``, never a bare disposition key — 0 of 373 shipped rows have it), and
+    it collected ``row["id"]``, the CORRECTION id
+    (``HEI-BULL-20260731:integrity_status:20260808``), where the caller needs the PLAN
+    id.  The replay lane therefore saw 0 quarantined plans while the nightly saw 12,
+    and the two lanes disagreed about which slots were free.
+
+    Delegating is what keeps the "mirrors ``build_prophet``" claim TRUE: there is now
+    one authority for the effective disposition, and a change to it moves both lanes.
+
+    A correction overlay that cannot be applied to the pinned plan set is a REFUSAL,
+    not an empty projection — an unreadable disposition must never read as "clean".
+    """
+    from engine.prophet_integrity import (  # noqa: PLC0415
+        QUARANTINED,
+        PlanCorrectionError,
+        apply_plan_corrections,
+    )
+
+    try:
+        projection = apply_plan_corrections(plans, correction_rows)
+    except PlanCorrectionError as exc:
+        raise BackfillRefused(
+            f"the plan correction overlay does not apply to the pinned plan baseline "
+            f"({exc}). Refusing to replay against a tree whose audit dispositions this "
+            "run cannot resolve: an unresolvable overlay is indistinguishable from "
+            "'nothing is quarantined', which is exactly the failure this path had."
+        ) from exc
+
+    # Loudness gate.  Every row that SETS integrity_status=quarantined must surface in
+    # the projection — `(corrects_id, field)` targets are unique, so a declared
+    # quarantine is the effective one.  `declared - resolved` is therefore provably a
+    # broken reader, never a legitimate state, and it is precisely the shape that shipped
+    # silently.  (`resolved - declared` is legitimate: a plan may publish the disposition
+    # itself, with no correction row at all.)
+    declared = {
+        str(row.get("corrects_id"))
+        for row in correction_rows
+        if row.get("field") == "integrity_status"
+        and row.get("new_value") == QUARANTINED
     }
+    unresolved = declared - set(projection.quarantined_ids)
+    if unresolved:
+        print(
+            "::warning title=prophet-backfill-quarantine-reader::"
+            f"{len(unresolved)} plan(s) are declared quarantined by a correction row "
+            f"but do not resolve as quarantined in the projection "
+            f"({', '.join(sorted(unresolved)[:5])}). The disposition reader is broken; "
+            "the open-key set this run derives cannot be trusted.",
+            flush=True,
+        )
+    return projection
+
+
+def _quarantined_plan_ids_at(
+    repo: Path, commit: str, plans: dict[str, dict]
+) -> set[str]:
+    """Effective-quarantined PLAN ids for the pinned tree at ``commit``.
+
+    ``plans`` is the pinned baseline (``load_plans_at(repo, commit)``): the overlay is
+    applied to the plan set, not read off the correction rows, because the effective
+    disposition is a property of the projected PLAN.  Returns plan ids — the same
+    identities ``build_prophet`` subtracts before deriving its open-key set.
+    """
+    return set(
+        _plan_projection(plans, _plan_corrections_at(repo, commit)).quarantined_ids
+    )
 
 
 def _head_sha(repo: Path) -> str | None:
@@ -908,9 +981,17 @@ def run_backfill(
     # ── plan baseline + post-bake proof (M6) ─────────────────────────────────
     baseline_plans = load_plans_at(repo, baseline_sha)
     closed_ids = load_closed_ids_at(repo, baseline_sha)
-    quarantined_ids = _quarantined_plan_ids_at(repo, baseline_sha)
+    # ONE projection for both consumers: the quarantine set and the actionable set come
+    # out of the same effective view the nightly builds, so the two lanes cannot drift
+    # apart the way they had (the replay resolved 0 quarantined against the nightly's 12).
+    correction_rows = _plan_corrections_at(repo, baseline_sha)
+    plan_projection = _plan_projection(baseline_plans, correction_rows)
+    quarantined_ids = set(plan_projection.quarantined_ids)
+    declared_quarantines = sum(
+        1 for row in correction_rows if row.get("field") == "integrity_status"
+    )
     actionable = {
-        plan_id: plan for plan_id, plan in baseline_plans.items()
+        plan_id: plan for plan_id, plan in plan_projection.plans.items()
         if plan_id not in quarantined_ids
     }
     active_keys = open_plan_keys(actionable, closed_ids)
@@ -939,11 +1020,16 @@ def run_backfill(
             )
         baseline_proof["waived"] = True
 
+    # The quarantine count is reported against what the overlay CLAIMS, so a reader
+    # that resolves nothing is legible as broken rather than as "there are none" —
+    # the old line printed a bare 0 for both states.
     log.info(
-        "backfill: plans baseline %s — %d plan(s), %d closed, %d quarantined, "
-        "%d open key(s), %d recorded >= %s",
+        "backfill: plans baseline %s — %d plan(s), %d closed, %d quarantined "
+        "(from %d correction row(s), %d of them integrity_status), %d open key(s), "
+        "%d recorded >= %s",
         baseline_sha[:12], len(baseline_plans), len(closed_ids),
-        len(quarantined_ids), len(active_keys), len(post_bake), LIVE_WINS_FROM,
+        len(quarantined_ids), len(correction_rows), declared_quarantines,
+        len(active_keys), len(post_bake), LIVE_WINS_FROM,
     )
 
     # ── PIT geometry (B4) ────────────────────────────────────────────────────

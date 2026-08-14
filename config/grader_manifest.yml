@@ -42,7 +42,7 @@ files:
 
     '
 - path: scripts/sample_qledger_placebo.py
-  sha256: 15fb32261fb5971c359524f20e09199e325464d449a97c0ae5542cf4c6b042be
+  sha256: 0b8cda9b10221eaee746e9a82750870422007438687ec59eefdb56ca944a81e2
   role: placebo_sampler
   notes: 'qledger placebo sampler: draws control claims from the qledger for use in
     placebo-adjusted evaluation of falsifier accuracy.

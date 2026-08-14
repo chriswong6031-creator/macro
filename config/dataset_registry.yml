@@ -248,13 +248,13 @@ datasets:
       which is the whole thesis. fetch_vintages() REWRITES this parquet wholesale, so
       the append-only revision chain lives in ALFRED, not here.
 
-  # ── Reference / identity spine (§D2) — DECLARED, NOT YET PRODUCED ──────────
+  # ── Reference / identity spine (§D2) — PRODUCED (DOS-1.1, 2026-08-13) ───────
   - dataset_id: reference.security_master
     layer: L2
-    status: PROPOSED
+    status: PRODUCED
     owner: macro-dashboard
-    producer: (none yet — §D12 phase 1)
-    storage: (not yet produced)
+    producer: scripts/build_security_master.py
+    storage: data/reference/security_master.parquet
     format: parquet
     grain: [security_id]
     identity:
@@ -262,7 +262,16 @@ datasets:
       id_type: SEC
     temporal_profile: SNAPSHOT_SERIES
     timezone: UTC
-    frequency: daily
+    # ON_DEMAND, not `1d`: NOTHING schedules this producer. It is in no workflow, no
+    # cron and no nightly step, and saying "daily" would be the same class of lie as a
+    # PROPOSED row claiming a store — the next session joins on it and gets a frozen
+    # snapshot with no signal that it is frozen (gate G1, one step downstream).
+    # tests/test_dataos_security_master.py::
+    # test_the_committed_artifact_is_not_stale_against_the_current_seeds is the
+    # freshness detector instead: it rebuilds from the CURRENT seeds on top of the
+    # committed artifact and reds when a seed change would add a security. Remedy is
+    # one command: python3 scripts/build_security_master.py --report
+    frequency: on_demand
     conflict_policy: DOMAIN_AUTHORITY
     quality_checks: [uniqueness, referential, completeness]
     version: "0.1.0"
@@ -276,18 +285,31 @@ datasets:
       effective_at: {dtype: "datetime64[ns]", nullable: false}
       ingested_at: {dtype: "datetime64[ns]", nullable: false}
     notes: >
-      PROPOSED. lib/dataos/identity.py is the ALLOCATOR (mint-once); this dataset is the
-      AUTHORITY (the stored value). Nothing writes it yet, and saying so is the point —
-      a row that claims a store that does not exist is how the next session builds against
-      a ghost. §D12 puts it in phase 1 because every other dataset joins on it and it is
-      the only defect class here with a measured 7-month silent loss.
+      lib/dataos/identity.py is the ALLOCATOR (mint-once, a pure derivation); this
+      dataset is the AUTHORITY (the stored value). Re-running the producer NEVER
+      re-mints an existing security_id — it joins a committed row by listing_key and
+      keeps every stored column, so a later correction to inception facts appends an
+      ALIAS instead (§D2). Seeded from data/breadth/constituents.parquet,
+      data/baskets/membership.json and config/delisted_symbols.yml; the VENUE comes from
+      the newest data/symbol_directory/snapshots/*.parquet (exit ledger first for a
+      delisted name — the directory is a CURRENT listing set and cannot carry a finished
+      tape). Coverage is REPORTED, not asserted: the 2026-08-13 seed resolved 703/711,
+      8 unresolved and named in data/reference/_receipt.json. effective_at is NOT a
+      listing date — no in-repo US listing-date source exists (§4) and back-dating one
+      from a store's earliest bar would be fabrication, so it carries the earliest DATED
+      OBSERVATION in the committed seeds instead. NOT SCHEDULED (frequency: on_demand)
+      — no workflow, cron or nightly step runs the producer, so the freshness contract
+      is a TEST rather than a lane: the suite rebuilds from the current seeds on top of
+      the committed artifact and reds when a seed change would add a security, which is
+      the moment a re-run is owed. DISPLAY TIER: nothing reads this as authority yet;
+      the master becomes authority at spec §11.4.
 
   - dataset_id: reference.vendor_aliases
     layer: L2
-    status: PROPOSED
+    status: PRODUCED
     owner: macro-dashboard
-    producer: (none yet — §D12 phase 1)
-    storage: (not yet produced)
+    producer: scripts/build_security_master.py
+    storage: data/reference/vendor_aliases.parquet
     format: parquet
     grain: [vendor, vendor_symbol, valid_from]
     identity:
@@ -295,7 +317,7 @@ datasets:
       id_type: SEC
     temporal_profile: SNAPSHOT_SERIES
     timezone: UTC
-    frequency: daily
+    frequency: on_demand   # same producer, same reason — see reference.security_master
     conflict_policy: DOMAIN_AUTHORITY
     quality_checks: [uniqueness, referential, temporal_integrity]
     version: "0.1.0"
@@ -314,9 +336,42 @@ datasets:
           the day the MMC/MRSH answer has to be unambiguous.
       ingested_at: {dtype: "datetime64[ns]", nullable: false}
     notes: >
-      PROPOSED. Supersedes lib/ticker_aliases.py — 53 lines, 2 entries, Yahoo-only and
-      TIMELESS, which is why it can say "MMC means MRSH" but not "MMC meant MMC before
+      Supersedes lib/ticker_aliases.py — 53 lines, 2 entries, Yahoo-only and TIMELESS,
+      which is why it can say "MMC means MRSH" but not "MMC meant MMC before
       2026-01-14". Its own docstring records the 7-month silent production loss the
       time-scoped table exists to prevent: data/baskets/ohlcv/MMC.parquet never existed,
       the `insurance` basket rendered 18/19 members and `us_sector_financials` 75/76.
-    supersedes: lib/ticker_aliases.py
+      PRODUCED as of 2026-08-13, and it now answers DIFFERENTLY either side of both
+      dated renames: yahoo/MMC before 2026-01-14 and yahoo/MRSH from it, yahoo+ledger+
+      membership SATS before 2026-06-24 and ECHO from it — one security_id on each side
+      (SEC:US-XNYS-MMC, SEC:US-XNAS-SATS).
+      FIVE vendor SPACES in TWO FAMILIES, and reading one family as the other is the
+      MMC outage in a new costume (adversarial review 2026-08-13), so the names say
+      which clock they run on. HISTORICAL NAMING — "what did this space call it ON that
+      day", DATED across a rename: `yahoo` (what the price vendor called it), `membership`
+      (this repo's own key) and `ledger` (the signal-archive key space). CURRENT CATALOG
+      — "what string do I use TODAY, for a bar of ANY date", ONE OPEN-BOUNDED row at
+      today's symbol: `yahoo_fetch` (reproduces lib.ticker_aliases.fetch_symbol — Yahoo
+      migrated Marsh's WHOLE history onto MRSH, so a backfill of 2020 requests MRSH, not
+      the MMC the historical space correctly reports) and `store` (reproduces
+      lib.ticker_aliases.store_key — data/stocks/ECHO.parquet holds EchoStar back to
+      2008 and data/baskets/ohlcv/MMC.parquet is the file that exists). `supersedes:`
+      below is the CURRENT-CATALOG family only; the historical rows are not, and must
+      never be used as, a fetch-symbol or store-key resolver.
+      The membership space does NOT generalise from MMC: it moves when the repo's own
+      key moves. breadth.ticker_fixups pins MRSH back to MMC (Marsh's repo key did NOT
+      move, so that row is open), while quality.ticker_key_migrations ratifies
+      SATS->ECHO (EchoStar's DID, so that pair is dated). Leaving membership open at
+      today's ECHO re-labelled EchoStar's whole repo-side past — the timeless-map defect
+      this dataset exists to end, and it shipped here until 2026-08-13.
+      Fiserv is the undated case and stays open-bounded on its historical rows: the
+      vendor LAGS that rename and no in-repo source dates it, so an open bound is the
+      honest absence of a claim.
+      lib/dataos/identity.VendorAliasTable is the only reader, and the producer
+      round-trips every row through it before writing, so an ambiguous table fails at
+      write time rather than in a consumer — which is also why a current-catalog space
+      carries one row per security and not two: the reader refuses rows that overlap on
+      (vendor, security_id), and "what do I call it today" has exactly one answer.
+      DISPLAY TIER: nothing reads it as authority yet; lib/ticker_aliases.py remains the
+      live seam until spec §11.4.
+    supersedes: lib/ticker_aliases.py   # the `yahoo_fetch`/`store` rows only — see notes

@@ -78,7 +78,16 @@ def main() -> int:
         print(f"communique_diff: {c.get('n_events', 0)} events "
               f"({c.get('n_appeared', 0)} appeared, {c.get('n_dropped', 0)} dropped, "
               f"{c.get('n_lead_shift', 0)} lead-shift); "
-              f"cold_start_organs={result.get('cold_start_organs')}")
+              f"claims={result.get('n_claims', 0)} registered, "
+              f"{result.get('n_claims_clock_refused', 0)} clock-refused; "
+              f"cold_start_organs={result.get('cold_start_organs')}", flush=True)
+        if result.get("n_claims_clock_refused"):
+            # A producer going dark must be readable in the Actions summary, not
+            # only in the artifact. Bare print, line-start (house law).
+            print(f"::warning title=communique-diff-clock-refused::"
+                  f"{result['n_claims_clock_refused']} communique_diff claims were "
+                  f"refused by the qledger horizon clock and are NOT on the "
+                  f"forward log", flush=True)
     return 0
 
 
